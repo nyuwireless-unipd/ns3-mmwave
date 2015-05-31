@@ -1,0 +1,84 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+
+# def configure(conf):
+#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+
+def build(bld):
+    module = bld.create_ns3_module('mmwave', ['core','network', 'spectrum', 'virtual-net-device','point-to-point','applications','internet', 'lte'])
+    module.source = [
+        'helper/mmwave-helper.cc',
+        'helper/mmwave-phy-rx-trace.cc',
+        'model/mmwave-net-device.cc',
+        'model/mmwave-enb-net-device.cc',
+        'model/mmwave-ue-net-device.cc',
+        'model/mmwave-phy.cc',
+        'model/mmwave-enb-phy.cc',
+        'model/mmwave-ue-phy.cc',
+        'model/mmwave-spectrum-phy.cc',
+        'model/mmwave-spectrum-value-helper.cc',
+        'model/mmwave-beamforming.cc',
+        'model/mmwave-interference.cc',
+        'model/mmwave-chunk-processor.cc',
+        'model/mmwave-mac.cc',
+        'model/mmwave-mac-scheduler.cc',
+        'model/mmwave-rr-mac-scheduler.cc',
+        'model/mmwave-control-messages.cc',
+        'model/mmwave-spectrum-signal-parameters.cc',
+        'model/mmwave-radio-bearer-tag.cc',
+        'model/mmwave-amc.cc',
+        'model/mmwave-phy-mac-common.cc',
+        'model/mmwave-mac-sched-sap.cc',
+        'model/mmwave-phy-sap.cc',
+        'model/mmwave-mi-error-model.cc',
+        'model/mmwave-enb-mac.cc',
+        'model/mmwave-ue-mac.cc',
+        'model/mmwave-rrc-protocol-ideal.cc',
+        'model/mmwave-channel-matrix.cc',
+        ]
+
+    module_test = bld.create_ns3_module_test_library('mmwave')
+    module_test.source = [
+        'mmwave-test-suite.cc'
+        ]
+
+    headers = bld(features='ns3header')
+    headers.module = 'mmwave'
+    headers.source = [
+        'helper/mmwave-helper.h',
+        'helper/mmwave-phy-rx-trace.h',
+        'model/mmwave-net-device.h',
+        'model/mmwave-enb-net-device.h',
+        'model/mmwave-ue-net-device.h',
+        'model/mmwave-phy.h',
+        'model/mmwave-enb-phy.h',
+        'model/mmwave-ue-phy.h',
+        'model/mmwave-spectrum-phy.h',
+        'model/mmwave-spectrum-value-helper.h',
+        'model/mmwave-beamforming.h',
+        'model/mmwave-interference.h',
+        'model/mmwave-chunk-processor.h',
+        'model/mmwave-mac.h',
+        'model/mmwave-phy-mac-common.h',
+        'model/mmwave-mac-scheduler.h',
+        'model/mmwave-rr-mac-scheduler.h',
+        'model/mmwave-control-messages.h',
+        'model/mmwave-spectrum-signal-parameters.h',
+        'model/mmwave-radio-bearer-tag.h',
+        'model/mmwave-amc.h',
+        'model/mmwave-mac-sched-sap.h',
+        'model/mmwave-phy-sap.h',
+        'model/mmwave-mi-error-model.h',
+        'model/mmwave-enb-mac.h',
+        'model/mmwave-ue-mac.h',
+        'model/mmwave-rrc-protocol-ideal.h',
+        'model/mmwave-channel-matrix.h',
+        ]
+
+    if bld.env.ENABLE_EXAMPLES:
+        bld.recurse('examples')
+
+    # bld.ns3_python_bindings()
+
