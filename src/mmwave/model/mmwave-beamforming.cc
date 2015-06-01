@@ -311,17 +311,6 @@ mmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	//uniform->SetAntithetic(true);
 	int randomInstance = uniform->GetValue (0,INSTANCE-1);
 
-	/*
-	// make sure selected instance is different for each channel model
-	do
-	{
-		randomInstance = uniform->GetValue (0,INSTANCE-1);
-		it = std::find (m_pickedInstance.begin(), m_pickedInstance.end(), randomInstance);
-	} while (it != m_pickedInstance.end());
-	m_pickedInstance.push_back(randomInstance);
-	NS_LOG_INFO ("pick "<<randomInstance<<" instance");
-	*/
-
 	Ptr<BeamformingParams> bfParams = Create<BeamformingParams> ();
 	bfParams->m_enbW = g_enbAntennaInstance.at (randomInstance);
 	bfParams->m_ueW = g_ueAntennaInstance.at (randomInstance);
