@@ -17,6 +17,7 @@
 #include <ns3/mmwave-ue-phy.h>
 #include <ns3/antenna-array-model.h>
 #include <ns3/node.h>
+#include <algorithm>
 
 namespace ns3{
 

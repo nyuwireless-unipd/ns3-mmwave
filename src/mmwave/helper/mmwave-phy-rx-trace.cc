@@ -8,7 +8,7 @@
 #include <ns3/log.h>
 #include "mmwave-phy-rx-trace.h"
 #include <ns3/simulator.h>
-
+#include <stdio.h>
 
 namespace ns3 {
 
