@@ -163,8 +163,6 @@ private:
 	uint32_t m_pathNum;
 	uint32_t m_enbAntennaSize;
 	uint32_t m_ueAntennaSize;
-	std::vector<int> m_pickedInstance;
-
 };
 
 }  //namespace ns3
