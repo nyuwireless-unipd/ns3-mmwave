@@ -1427,6 +1427,11 @@ LteEnbRrc::GetTypeId (void)
                    UintegerValue (4),
                    MakeUintegerAccessor (&LteEnbRrc::m_rsrqFilterCoefficient),
                    MakeUintegerChecker<uint8_t> (0))
+	.AddAttribute ("mmWaveDevice",
+				   "Indicates whether RRC is for mmWave base station",
+				   BooleanValue (false),
+				   MakeBooleanAccessor (&LteEnbRrc::m_ismmWave),
+				   MakeBooleanChecker ())
 
     // Trace sources
     .AddTraceSource ("NewUeContext",
@@ -1691,8 +1696,11 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
   m_ulBandwidth = ulBandwidth;
   m_cellId = cellId;
   m_cphySapProvider->SetCellId (cellId);
-  m_ffrRrcSapProvider->SetCellId (cellId);
-  m_ffrRrcSapProvider->SetBandwidth(ulBandwidth, dlBandwidth);
+  if (!m_ismmWave)
+  {
+	  m_ffrRrcSapProvider->SetCellId (cellId);
+	  m_ffrRrcSapProvider->SetBandwidth(ulBandwidth, dlBandwidth);
+  }
 
   /*
    * Initializing the list of UE measurement configuration (m_ueMeasConfig).
