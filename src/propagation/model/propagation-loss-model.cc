@@ -386,8 +386,6 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 	    }
 	  else if (PRef < (1-POut))
 	    {
-		  NS_FATAL_ERROR ("Dont want NLoS");
-
 		  scenario.m_channelScenario = 'n';
 		  if (m_frequency ==28e9)
 		  {
