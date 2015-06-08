@@ -144,10 +144,10 @@ mmWaveUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t pro
     if (protocolNumber != Ipv4L3Protocol::PROT_NUMBER)
 	{
 	  NS_LOG_INFO("unsupported protocol " << protocolNumber << ", only IPv4 is supported");
-	  return true;
+	  return false;
 	}
 
-    return m_phy->SendPacket (packet);
+    return m_nas->Send (packet);
 }
 
 Ptr<mmWaveUePhy>

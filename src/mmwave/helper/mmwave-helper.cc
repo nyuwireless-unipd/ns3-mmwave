@@ -465,10 +465,12 @@ mmWaveHelper::RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	m_beamforming->SetBeamformingVector (ueDevice,closestEnbDevice);
 
 	Ptr<EpcUeNas> ueNas = ueDevice->GetObject<mmWaveUeNetDevice> ()->GetNas ();
-	ueNas->Connect (closestEnbDevice->GetObject<mmWaveEnbNetDevice> ()->GetCellId (), closestEnbDevice->GetObject<mmWaveEnbNetDevice> ()->GetEarfcn ());
+	ueNas->Connect (closestEnbDevice->GetObject<mmWaveEnbNetDevice> ()->GetCellId (),
+					closestEnbDevice->GetObject<mmWaveEnbNetDevice> ()->GetEarfcn ());
+
 	if (m_epcHelper != 0)
 	{
-	// activate default EPS bearer
+		// activate default EPS bearer
 		m_epcHelper->ActivateEpsBearer (ueDevice, ueDevice->GetObject<mmWaveUeNetDevice> ()->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
 	}
 
@@ -486,6 +488,12 @@ Ptr<mmWavePhyMacCommon>
 mmWaveHelper::GetPhyMacConfigurable (void)
 {
 	return (m_PhyMACCommon);
+}
+
+void
+mmWaveHelper::SetEpcHelper (Ptr<EpcHelper> epcHelper)
+{
+	m_epcHelper = epcHelper;
 }
 
 class DrbActivator : public SimpleRefCount<DrbActivator>

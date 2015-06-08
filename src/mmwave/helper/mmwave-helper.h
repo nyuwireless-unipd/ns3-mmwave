@@ -65,6 +65,7 @@ public:
 	Ptr<mmWavePhyMacCommon> GetPhyMacConfigurable (void);
 	void ActivateDataRadioBearer (NetDeviceContainer ueDevices, EpsBearer bearer);
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
+	void SetEpcHelper (Ptr<EpcHelper> epcHelper);
 
 
 protected:

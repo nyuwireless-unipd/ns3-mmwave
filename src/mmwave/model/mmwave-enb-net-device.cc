@@ -188,7 +188,7 @@ mmWaveEnbNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t pr
 	NS_LOG_FUNCTION (this << packet   << dest << protocolNumber);
 	NS_ASSERT_MSG (protocolNumber == Ipv4L3Protocol::PROT_NUMBER, "unsupported protocol " << protocolNumber << ", only IPv4 is supported");
 
-	return false;
+	return m_rrc->SendData (packet);
 }
 
 void
