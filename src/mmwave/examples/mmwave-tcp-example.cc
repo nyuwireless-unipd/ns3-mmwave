@@ -16,11 +16,10 @@
 using namespace ns3;
 
 /**
- * Sample simulation script for LTE+EPC. It instantiates several eNodeB,
- * attaches one UE per eNodeB starts a flow for each UE to  and from a remote host.
- * It also  starts yet another flow between each UE pair.
+ * A script to simulate the DOWNLINK TCP data over mmWave links
+ * with the mmWave devices and the LTE EPC.
  */
-NS_LOG_COMPONENT_DEFINE ("EpcFirstExample");
+NS_LOG_COMPONENT_DEFINE ("mmWaveTCPExample");
 
 
 class MyApp : public Application
@@ -101,43 +100,41 @@ MyApp::StopApplication (void)
       m_socket->Close ();
     }
 }
-int send_num=1;
-int rev_num=1;
+
 void
 MyApp::SendPacket (void)
 {
-  Ptr<Packet> packet = Create<Packet> (m_packetSize);
-  m_socket->Send (packet);
-  NS_LOG_DEBUG ("Sending:    "<<send_num++ << "\t" << Simulator::Now ().GetSeconds ());
-  if (++m_packetsSent < m_nPackets)
-    {
-      ScheduleTx ();
-    }
+	static int send_num = 1;
+	Ptr<Packet> packet = Create<Packet> (m_packetSize);
+	m_socket->Send (packet);
+	NS_LOG_DEBUG ("Sending:    "<<send_num++ << "\t" << Simulator::Now ().GetSeconds ());
+
+  	if (++m_packetsSent < m_nPackets)
+	{
+	    ScheduleTx ();
+	}
 }
 
 static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
 {
-	 *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
 }
-
 
 
 void
 MyApp::ScheduleTx (void)
 {
-  if (m_running)
-    {
-      Time tNext (Seconds (m_packetSize * 8 / static_cast<double> (m_dataRate.GetBitRate ())));
-      m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
-    }
+	if (m_running)
+	{
+		Time tNext (Seconds (m_packetSize * 8 / static_cast<double> (m_dataRate.GetBitRate ())));
+		m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
+	}
 }
 
 static void
 CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 {
-
- // NS_LOG_UNCOND ("CwndChange: "<<Simulator::Now ().GetSeconds () << "\t" << newCwnd);
-  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
 }
 
 
@@ -147,8 +144,10 @@ main (int argc, char *argv[])
 
 	//LogComponentEnable ("TcpSocketBase", LOG_LEVEL_INFO);
 	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-
-	double stopTime = 19.9;
+	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
+	double stopTime = 5.9;
+	double simStopTime = 7.00;
+	Ipv4Address remoteHostAddr;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -177,13 +176,13 @@ main (int argc, char *argv[])
 	PointToPointHelper p2ph;
 	p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 	p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
-	p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
+	p2ph.SetChannelAttribute ("Delay", TimeValue (MicroSeconds (1)));
 	NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 	Ipv4AddressHelper ipv4h;
 	ipv4h.SetBase ("1.0.0.0", "255.0.0.0");
 	Ipv4InterfaceContainer internetIpIfaces = ipv4h.Assign (internetDevices);
 	// interface 0 is localhost, 1 is the p2p device
-	// Ipv4Address remoteHostAddr = internetIpIfaces.GetAddress (1);
+	remoteHostAddr = internetIpIfaces.GetAddress (1);
 
 	Ipv4StaticRoutingHelper ipv4RoutingHelper;
 	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
@@ -195,16 +194,16 @@ main (int argc, char *argv[])
 	ueNodes.Create(1);
 
 	// Install Mobility Model
+	MobilityHelper enbmobility;
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
 	enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
-	MobilityHelper enbmobility;
 	enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	enbmobility.SetPositionAllocator(enbPositionAlloc);
 	enbmobility.Install (enbNodes);
+
 	MobilityHelper uemobility;
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-	uePositionAlloc->Add (Vector (0.0, 50.0, 0.0));
-	//uePositionAlloc->Add (Vector (0.0, 100.0, 0.0));
+	uePositionAlloc->Add (Vector (30.0, 0.0, 0.0));
 	uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	uemobility.SetPositionAllocator(uePositionAlloc);
 	uemobility.Install (ueNodes);
@@ -214,50 +213,51 @@ main (int argc, char *argv[])
 	NetDeviceContainer ueDevs = mmwaveHelper->InstallUeDevice (ueNodes);
 
 	// Install the IP stack on the UEs
+	// Assign IP address to UEs, and install applications
 	internet.Install (ueNodes);
 	Ipv4InterfaceContainer ueIpIface;
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueDevs));
-	// Assign IP address to UEs, and install applications
 
 	mmwaveHelper->RegisterToClosestEnb (ueDevs, enbDevs);
 	mmwaveHelper->EnableTraces ();
 
-	Ptr<Node> ueNode = ueNodes.Get (0);
 	// Set the default gateway for the UE
+	Ptr<Node> ueNode = ueNodes.Get (0);
 	Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
 	ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
-	//mmwaveHelper->ActivateEpsBearer (ueLteDevs, EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT), EpcTft::Default ());
-
-	// Attach one UE per eNodeB
-
-
 	// Install and start applications on UEs and remote host
-	uint16_t sinkPort = 8080;
+	uint16_t sinkPort = 20000;
+
 	Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), sinkPort));
 	PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
 	ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes.Get (0));
 	sinkApps.Start (Seconds (0.));
-	sinkApps.Stop (Seconds (stopTime));
+	sinkApps.Stop (Seconds (simStopTime));
 
 	Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
 
 	Ptr<MyApp> app = CreateObject<MyApp> ();
-	app->Setup (ns3TcpSocket, sinkAddress, 1024*128, 5000, DataRate ("10Gb/s"));
+	app->Setup (ns3TcpSocket, sinkAddress, 1000, 500, DataRate ("1Mb/s"));
 	remoteHostContainer.Get (0)->AddApplication (app);
 
 	AsciiTraceHelper asciiTraceHelper;
-	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmwave-tcp-window.txt");
+	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-window.txt");
 	ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
 
-	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmwave-tcp-data.txt");
+	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data.txt");
 	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
 
 	app->SetStartTime (Seconds (0.1));
 	app->SetStopTime (Seconds (stopTime));
 
-	Simulator::Stop (Seconds (20));
+
+	p2ph.EnablePcapAll("mmwave-sgi-capture");
+
+	Simulator::Stop (Seconds (simStopTime));
 	Simulator::Run ();
+
+
 	Simulator::Destroy ();
 
 	return 0;

@@ -326,7 +326,7 @@ mmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	mac->SetmmWavePhySapProvider (phy->GetmmWavePhySapProvider());
 
 	bool useIdealRrc = true;
-		if (useIdealRrc)
+	if (useIdealRrc)
 	{
 		Ptr<mmWaveEnbRrcProtocolIdeal> rrcProtocol = CreateObject<mmWaveEnbRrcProtocolIdeal> ();
 		rrcProtocol->SetLteEnbRrcSapProvider (rrc->GetLteEnbRrcSapProvider ());
@@ -381,6 +381,7 @@ mmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	dlPhy->SetCellId (cellId);
 	ulPhy->SetDevice (device);
 	n->AddDevice (device);
+
 	dlPhy->SetmmWavePhyRxDataEndOkCallback (MakeCallback (&mmWaveEnbPhy::PhyDataPacketReceived, phy));
 
 	//mac->SetForwardUpCallback (MakeCallback (&mmWaveEnbNetDevice::Receive, device));
@@ -392,9 +393,9 @@ mmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	NS_LOG_LOGIC ("Channel Frequency: " << freq);
 	bool freqOk = m_pathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (freq));
 	if (!freqOk)
-	  {
-	    NS_LOG_WARN ("Propagation model does not have a Frequency attribute");
-	  }
+	{
+		NS_LOG_WARN ("Propagation model does not have a Frequency attribute");
+	}
 
 	device->Initialize ();
 

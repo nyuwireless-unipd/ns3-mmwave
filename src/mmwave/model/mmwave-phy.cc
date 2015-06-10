@@ -175,7 +175,10 @@ mmWavePhy::SendRachPreamble (uint32_t PreambleId, uint32_t Rnti)
 void
 mmWavePhy::SetMacData (Ptr<PacketBurst> pb)
 {
-	m_packetBurstQueue.push_back (pb);
+	if (pb->GetNPackets() > 0)
+	{
+		m_packetBurstQueue.push_back (pb);
+	}
 }
 
 std::list<Ptr<mmWaveControlMessages> >

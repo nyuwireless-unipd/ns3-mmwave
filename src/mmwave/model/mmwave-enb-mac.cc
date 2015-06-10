@@ -231,7 +231,6 @@ mmWaveEnbMac::ReceiveRachPreamble (uint32_t raId)
 void
 mmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 {
-	//NS_LOG_UNCOND ("-------------------------------------------------RLC -> ENB Packet fragment Size:"<<params.pdu->GetSize ());
 	LteRadioBearerTag tag (params.rnti, params.lcid, params.layer);
 	params.pdu->AddPacketTag (tag);
 	bool flag = QueueData(params.pdu);
@@ -357,7 +356,6 @@ mmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 						for (lcidIt = rntiIt->second.begin (); lcidIt!= rntiIt->second.end (); lcidIt++)
 						{
 							(*lcidIt).second->NotifyTxOpportunity (alMap.m_user.at(i).m_tbsSize, 0, 0);
-							//NS_LOG_UNCOND ("Notice the rlc Tx Opportunity"<<alMap.m_user.at(i).m_tbsSize);
 						}
 					}
 

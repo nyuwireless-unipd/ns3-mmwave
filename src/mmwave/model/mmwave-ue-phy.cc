@@ -329,7 +329,7 @@ mmWaveUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
 
 	slotType stype = m_CurrentTDDMap.m_slotType.at (slotNo-1);
 
-	/*set tbSize for Downlink Rx, only consider 1 user use the whole bandwidth*/
+	/*set tbSize for Downlink Rx, only consider that 1 user uses the whole bandwidth*/
 	if( stype == DATA)
 	{
 		if(!isUL)
