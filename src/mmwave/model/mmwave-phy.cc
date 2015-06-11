@@ -175,10 +175,7 @@ mmWavePhy::SendRachPreamble (uint32_t PreambleId, uint32_t Rnti)
 void
 mmWavePhy::SetMacData (Ptr<PacketBurst> pb)
 {
-	if (pb->GetNPackets() > 0)
-	{
-		m_packetBurstQueue.push_back (pb);
-	}
+	m_packetBurstQueue.push_back (pb);
 }
 
 std::list<Ptr<mmWaveControlMessages> >
@@ -214,22 +211,18 @@ mmWavePhy::GetPacketBurst (void)
 {
 	if (m_packetBurstQueue.empty())
 	{
-		Ptr<PacketBurst> empty = CreateObject <PacketBurst> ();
-		m_packetBurstQueue.push_back (empty);
-		return (0);//empty;
+		return (0);
 	}
 
 	if (m_packetBurstQueue.at (0)->GetSize () > 0)
 	{
 		Ptr<PacketBurst> ret = m_packetBurstQueue.at (0)->Copy ();
 		m_packetBurstQueue.erase (m_packetBurstQueue.begin ());
-		m_packetBurstQueue.push_back (CreateObject <PacketBurst> ());
 		return (ret);
 	}
     else
 	{
 		m_packetBurstQueue.erase (m_packetBurstQueue.begin ());
-		m_packetBurstQueue.push_back (CreateObject <PacketBurst> ());
 		return (0);
 	}
 }

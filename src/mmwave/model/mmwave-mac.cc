@@ -58,15 +58,14 @@ mmWaveMac::GetPacketBurstFromMacQueue ()
 	NS_LOG_FUNCTION (this);
 
 	Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-	if (m_macQueue->GetSize() != 0)
+	if (m_macQueue->GetNPackets () > 0)
 	{
 		pb = m_macQueue->Copy ();
-		Ptr<PacketBurst> newQ = CreateObject <PacketBurst> ();
-		m_macQueue = newQ;
+		m_macQueue->Dispose ();
+		m_macQueue = CreateObject <PacketBurst> ();
 	}
+
 	return pb;
-
-
 }
 
 

@@ -34,20 +34,13 @@ mmWaveUePhy::mmWaveUePhy (Ptr<mmWaveSpectrumPhy> dlPhy, Ptr<mmWaveSpectrumPhy> u
   m_nrsubframe (0),
   m_nrFrame (0),
   m_AllocatedBandwidth (0),
-  m_packetChunkSize (500),//Just an arbitrary default value
   m_prevSlot (2),
   m_ReceptionEnabled (false)
 {
 	NS_LOG_FUNCTION (this);
 
-	//m_amc = CreateObject <mmWaveAmc> (m_PhyMACConfig);
-
 	m_ueCphySapProvider = new MemberLteUeCphySapProvider<mmWaveUePhy> (this);
 	Simulator::ScheduleNow (&mmWaveUePhy::SubframeIndication, this, 1, 1);
-
-	m_packetBurstQueue.clear ();
-	Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-	m_packetBurstQueue.push_back (pb);
 }
 
 mmWaveUePhy::~mmWaveUePhy ()
@@ -141,13 +134,6 @@ double
 mmWaveUePhy::GetNoiseFigure () const
 {
 	return m_noiseFigure;
-}
-
-bool
-mmWaveUePhy::SendPacket(Ptr<Packet> packet)
-{
-	SetMacData (packet);
-	return true;
 }
 
 Ptr<SpectrumValue>
@@ -384,7 +370,7 @@ mmWaveUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
 	{
 		delay = MicroSeconds (1);
 	}
-	dataPeriod = dataPeriod - delay  - NanoSeconds (1);/*-1ns as margin to avoid overlapping simulator events*/
+	dataPeriod = dataPeriod - delay - NanoSeconds (1);/*-1ns as margin to avoid overlapping simulator events*/
 	m_prevSlot = (int)isUL;
 
 	if (isUL == true)
@@ -439,7 +425,8 @@ mmWaveUePhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
 		{
 			if ( AllocMap.m_user.at (i).userImsi == DevRnti )
 			{
-				m_ReceptionEnabled = true;if (stype == DATA)
+				m_ReceptionEnabled = true;
+				if (stype == DATA)
 				{
 					totalTbSize = totalTbSize + AllocMap.m_user.at (i).m_tbsSize;
 				}
@@ -487,12 +474,6 @@ mmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 }
 
 void
-mmWaveUePhy::SetForwardUpCallback (Callback <void, Ptr<Packet> > cb)
-{
-	m_forwardUpCallback = cb;
-}
-
-void
 mmWaveUePhy::SendDataChannel (Ptr<PacketBurst> pb, Time duration)
 {
 	std::list<Ptr<mmWaveControlMessages> > ctrlMsg ;
@@ -511,20 +492,6 @@ uint32_t
 mmWaveUePhy::GetAbsoulteSubframeNo ()
 {
 	return ((m_nrFrame-1)*8 + m_nrsubframe);
-}
-
-void
-mmWaveUePhy::SetMacData (Ptr<Packet> p)
-{
-	if ( (m_packetBurstQueue.at (m_packetBurstQueue.size () - 1)->GetSize () + p->GetSize ()) <= m_packetChunkSize )
-	{
-		m_packetBurstQueue.at (m_packetBurstQueue.size () - 1)->AddPacket (p);
-	}
-	else
-	{
-		m_packetBurstQueue.push_back (CreateObject <PacketBurst> ());
-		m_packetBurstQueue.at (m_packetBurstQueue.size () - 1)->AddPacket (p);
-	}
 }
 
 Ptr<mmWaveCqiReport>

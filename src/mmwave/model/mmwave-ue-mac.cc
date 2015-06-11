@@ -231,14 +231,13 @@ mmWaveUeMac::GetmmWaveUeCmacSapProvider (void)
 void
 mmWaveUeMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo)
 {
-	//NS_LOG_UNCOND ("MAC SF Ind");
 	if (!m_DataTxAllocationList.m_AllocationMapforSF.empty())
 	{
 		allocationMap alMap;
+		bool flag = false;
 		while(!m_DataTxAllocationList.m_AllocationMapforSF.empty())
 		{
 			std::list<allocationMap>::iterator amIt;
-			bool flag = false;
 
 			amIt = m_DataTxAllocationList.m_AllocationMapforSF.begin ();
 			alMap = (*amIt);
@@ -269,8 +268,11 @@ mmWaveUeMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32
 				break;
 			}
 		}
-		Ptr<PacketBurst> pb = GetPacketBurstFromMacQueue ();
-		m_phySapProvider->SendMacPdu (pb);
+		if (flag)
+		{
+			Ptr<PacketBurst> pb = GetPacketBurstFromMacQueue ();
+			m_phySapProvider->SendMacPdu (pb);
+		}
 	}
 
 }

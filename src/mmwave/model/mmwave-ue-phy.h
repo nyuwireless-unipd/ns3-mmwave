@@ -74,15 +74,11 @@ public:
 
 	void PhyDataPacketReceived (Ptr<Packet> p);
 
-	void SetForwardUpCallback (Callback <void, Ptr<Packet> > cb);
-
 	void SendDataChannel (Ptr<PacketBurst> pb, Time duration);
 
 	void SendControlChannels (std::list<Ptr<mmWaveControlMessages> > ctrlMsg, Time prd);
 
 	uint32_t GetAbsoulteSubframeNo (); // Used for tracing purposes
-
-	void SetMacData (Ptr<Packet> p);
 
 	Ptr<mmWaveCqiReport> CreateDlCqiFeedbackMessage (const SpectrumValue& sinr);
 	void GenerateDlCqiReport (const SpectrumValue& sinr);
@@ -93,7 +89,6 @@ public:
 	uint16_t GetRnti ();
 
 private:
-
 	void DoReset ();
 	void DoStartCellSearch (uint16_t dlEarfcn);
 	void DoSynchronizeWithEnb (uint16_t cellId);
@@ -117,14 +112,10 @@ private:
 
 	uint32_t m_AllocatedBandwidth;
 
-	Callback <void, Ptr<Packet> > m_forwardUpCallback;
-
 	TracedCallback< uint64_t, SpectrumValue&, SpectrumValue& > m_reportCurrentCellRsrpSinrTrace;
 
 	TracedCallback<uint64_t, uint64_t> m_reportULTbSize;
 	TracedCallback<uint64_t, uint64_t> m_reportDLTbSize;
-	// The packet size that can be sent
-	uint32_t m_packetChunkSize;
 
 	uint8_t m_prevSlot;
 
