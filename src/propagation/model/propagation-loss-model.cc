@@ -391,7 +391,7 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 		  {
 			  sigma = 8.7;
 		  }
-		  else if (m_frequency == 73e8)
+		  else if (m_frequency == 73e9)
 		  {
 			  sigma = 7.7;
 		  }
@@ -419,7 +419,7 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 			  alpha = 61.4;
 			  beta = 2;
 	        }
-	      else if (m_frequency == 73e8)
+	      else if (m_frequency == 73e9)
 	        {
 			  alpha = 69.8;
 			  beta = 2;
@@ -437,7 +437,7 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 			  alpha = 72.0;
 			  beta = 2.92;
 			}
-		  else if (m_frequency == 73e8)
+		  else if (m_frequency == 73e9)
 			{
 			  alpha = 82.7;
 			  beta = 2.69;
