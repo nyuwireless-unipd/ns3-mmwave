@@ -18,6 +18,7 @@
 #include <ns3/antenna-array-model.h>
 #include <ns3/node.h>
 #include <algorithm>
+#include <ns3/double.h>
 
 namespace ns3{
 
@@ -59,9 +60,25 @@ mmWaveBeamforming::mmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 TypeId
 mmWaveBeamforming::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::mmWaveBeamforming")
-  .SetParent<Object> ();
-  return tid;
+	static TypeId tid = TypeId ("ns3::mmWaveBeamforming")
+		.SetParent<Object> ()
+		.AddAttribute ("ChunkWidth",
+				   "Width of each chunk in Hz",
+				   DoubleValue (13.889e6),
+				   MakeDoubleAccessor (&mmWaveBeamforming::m_chunkWidth),
+				   MakeDoubleChecker<double> ())
+		.AddAttribute ("SystemBandwidth",
+				   "Band width of the system in Hz",
+				   DoubleValue (1e9),
+				   MakeDoubleAccessor (&mmWaveBeamforming::systemBandwidth),
+				   MakeDoubleChecker<double> ())
+		.AddAttribute ("CentreFreq",
+				   "The center frequency in Hz",
+				   DoubleValue (28e9),
+				   MakeDoubleAccessor (&mmWaveBeamforming::m_centreFrequency),
+				   MakeDoubleChecker<double> ())
+	;
+  	return tid;
 }
 
 mmWaveBeamforming::~mmWaveBeamforming ()
@@ -390,12 +407,11 @@ mmWaveBeamforming::GetAllRbGainVector (Ptr<BeamformingParams> bfParams, double s
 		double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
 		for (int chunkIndex = 0; chunkIndex < CHUNK_PER_RB*RBS; chunkIndex++)
 		{
-			double f = 27.5e9;
-			double bw = 13.9e6;
+			double f = m_centreFrequency - systemBandwidth/2;
 			Time time = Simulator::Now ();
 			double t = time.GetSeconds ();
 
-			std::complex<double> delay (cos (2*M_PI*(f+bw*chunkIndex)*DelaySpread[pathIndex]), sin (2*M_PI*(f+bw*chunkIndex)*DelaySpread[pathIndex]));
+			std::complex<double> delay (cos (2*M_PI*(f+m_chunkWidth*chunkIndex)*DelaySpread[pathIndex]), sin (2*M_PI*(f+m_chunkWidth*chunkIndex)*DelaySpread[pathIndex]));
 			std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
 			std::complex<double> smallScaleFading = sigma*delay/doppler;
 			NS_LOG_INFO (smallScaleFading);

@@ -163,6 +163,9 @@ private:
 	uint32_t m_pathNum;
 	uint32_t m_enbAntennaSize;
 	uint32_t m_ueAntennaSize;
+	double m_chunkWidth;
+	double m_centreFrequency;
+	double systemBandwidth;
 };
 
 }  //namespace ns3

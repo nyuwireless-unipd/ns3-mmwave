@@ -58,7 +58,7 @@ mmWavePhyMacCommon::GetTypeId (void)
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("ChunkWidth",
 						   "Width of each chunk in Hz",
-						   DoubleValue (13.889e6), /*zml default value is 30????*/
+						   DoubleValue (13.889e6),
 						   MakeDoubleAccessor (&mmWavePhyMacCommon::m_chunkWidth),
 						   MakeDoubleChecker<double> ())
 			.AddAttribute ("ResourceBlockNum",
