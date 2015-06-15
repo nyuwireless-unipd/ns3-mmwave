@@ -165,63 +165,13 @@ mmWaveRRMacScheduler::DoSchedTriggerReq (const struct mmWaveMacSchedSapProvider:
 
 	if (usrList.size() == 0)
 	{
-		/* No users associated hence no scheduling*/
-		return;
-	}
-	std::string strPattern = m_PhyMACConfig->GetStaticTDDPattern();
-	for (uint16_t loop = 0; loop < strPattern.length(); loop++)
-	{
-		char type = strPattern.at(loop);
-		if (type == 'c')
+		for (uint16_t loop = 0; loop < m_PhyMACConfig->GetSlotPerSubframe(); loop++)
 		{
+			allocationMap alMap;
+			alMap.m_IsUL = (loop%2 != 0) ? true : false;
+
 			pattern.m_slotType.push_back (CTRL);
-		}
-		else if (type == 'd')
-		{
-			pattern.m_slotType.push_back (DATA);
-		}
-		else
-		{
-			NS_LOG_ERROR ("Error in TDD pattern entry");
-		}
-	}
 
-	if (!m_isDirnUpdated)
-	{
-		SetScheduleDirection (strPattern);
-	}
-
-
-	if (m_NextUserDL != 0 || m_NextUserUL != 0)
-	{
-		uint16_t count = 0;
-		std::list <uint64_t>::iterator it;
-		for (it = usrList.begin (); it != usrList.end (); it++)
-		{
-			if (*it == m_NextUserDL)
-			{
-				dlit = it;
-				count++;
-			}
-
-			if (*it == m_NextUserUL)
-			{
-				ulit = it;
-				count++;
-			}
-
-			if (count == 2) { break; }
-		}
-	}
-
-
-	for (uint32_t i = 0; i < m_PhyMACConfig->GetSlotPerSubframe (); i++)
-	{
-		allocationMap alMap;
-		alMap.m_IsUL = (m_directions[i] == 'U') ? true : false;
-
-		if (pattern.m_slotType.at (i) == CTRL)
-		{
 			for (uint16_t j = 0; j < m_PhyMACConfig->GetRBperSlot(); j++)
 			{
 				AllocatedTo user;
@@ -230,53 +180,122 @@ mmWaveRRMacScheduler::DoSchedTriggerReq (const struct mmWaveMacSchedSapProvider:
 				user.userImsi = 0;
 				alMap.m_user.push_back (user);
 			}
+
+			allocList.m_AllocationMapforSF.push_back (alMap);
 		}
-		else
+	}
+	else
+	{
+		std::string strPattern = m_PhyMACConfig->GetStaticTDDPattern();
+		for (uint16_t loop = 0; loop < strPattern.length(); loop++)
 		{
-			for (uint16_t j = 0; j < m_PhyMACConfig->GetRBperSlot(); j++)
+			char type = strPattern.at(loop);
+			if (type == 'c')
 			{
-				// Assume omni-directional control messages
-				AllocatedTo user;
-				user.userImsi = alMap.m_IsUL ? (*ulit) : (*dlit);
-
-				int cqi = 1;
-				if (!m_rxCqi.empty())
-				{
-					std::map <uint64_t, schedCqi>::iterator mapIt = m_rxCqi.find(user.userImsi);
-
-					if (mapIt == m_rxCqi.end ())
-					{
-						cqi = 1;
-					}
-					else
-					{
-						schedCqi userCqiInfo = (*mapIt).second;
-						cqi = userCqiInfo.m_wbCqi;
-					}
-				}
-				user.m_mcs = m_amc->GetMcsFromCqi(cqi);
-				user.m_tbsSize = (m_amc->GetTbSizeFromMcs (user.m_mcs, 1/*m_PhyMACConfig->GetNumChunkPerRB ()*/) / 8);
-
-				alMap.m_user.push_back (user);
-
+				pattern.m_slotType.push_back (CTRL);
 			}
-			if (alMap.m_IsUL)
+			else if (type == 'd')
 			{
-				ulit++;
-				ulit = (ulit != usrList.end ()) ? ulit : usrList.begin ();
+				pattern.m_slotType.push_back (DATA);
 			}
 			else
 			{
-				dlit++;
-				dlit = (dlit != usrList.end ()) ? dlit : usrList.begin ();
+				NS_LOG_ERROR ("Error in TDD pattern entry");
 			}
-
 		}
-		allocList.m_AllocationMapforSF.push_back (alMap);
-	}
 
-	m_NextUserDL = (*dlit);
-	m_NextUserUL = (*ulit);
+		if (!m_isDirnUpdated)
+		{
+			SetScheduleDirection (strPattern);
+		}
+
+
+		if (m_NextUserDL != 0 || m_NextUserUL != 0)
+		{
+			uint16_t count = 0;
+			std::list <uint64_t>::iterator it;
+			for (it = usrList.begin (); it != usrList.end (); it++)
+			{
+				if (*it == m_NextUserDL)
+				{
+					dlit = it;
+					count++;
+				}
+
+				if (*it == m_NextUserUL)
+				{
+					ulit = it;
+					count++;
+				}
+
+				if (count == 2) { break; }
+			}
+		}
+
+
+		for (uint32_t i = 0; i < m_PhyMACConfig->GetSlotPerSubframe (); i++)
+		{
+			allocationMap alMap;
+			alMap.m_IsUL = (m_directions[i] == 'U') ? true : false;
+
+			if (pattern.m_slotType.at (i) == CTRL)
+			{
+				for (uint16_t j = 0; j < m_PhyMACConfig->GetRBperSlot(); j++)
+				{
+					AllocatedTo user;
+					// Assume omni-directional control messages
+					user.noAllocation = true;
+					user.userImsi = 0;
+					alMap.m_user.push_back (user);
+				}
+			}
+			else
+			{
+				for (uint16_t j = 0; j < m_PhyMACConfig->GetRBperSlot(); j++)
+				{
+					// Assume omni-directional control messages
+					AllocatedTo user;
+					user.userImsi = alMap.m_IsUL ? (*ulit) : (*dlit);
+
+					int cqi = 1;
+					if (!m_rxCqi.empty())
+					{
+						std::map <uint64_t, schedCqi>::iterator mapIt = m_rxCqi.find(user.userImsi);
+
+						if (mapIt == m_rxCqi.end ())
+						{
+							cqi = 1;
+						}
+						else
+						{
+							schedCqi userCqiInfo = (*mapIt).second;
+							cqi = userCqiInfo.m_wbCqi;
+						}
+					}
+					user.m_mcs = m_amc->GetMcsFromCqi(cqi);
+					user.m_tbsSize = (m_amc->GetTbSizeFromMcs (user.m_mcs, 1/*m_PhyMACConfig->GetNumChunkPerRB ()*/) / 8);
+
+					alMap.m_user.push_back (user);
+
+				}
+				if (alMap.m_IsUL)
+				{
+					ulit++;
+					ulit = (ulit != usrList.end ()) ? ulit : usrList.begin ();
+				}
+				else
+				{
+					dlit++;
+					dlit = (dlit != usrList.end ()) ? dlit : usrList.begin ();
+				}
+
+			}
+			allocList.m_AllocationMapforSF.push_back (alMap);
+		}
+
+		m_NextUserDL = (*dlit);
+		m_NextUserUL = (*ulit);
+	}
 
 	ret.m_allocationList = allocList;
 	ret.m_tddPattern = pattern;
