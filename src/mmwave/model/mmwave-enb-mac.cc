@@ -322,7 +322,14 @@ mmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 		params.m_ueList = m_associatedUE;
 		m_macSchedSapProvider->SchedTriggerReq (params);
 		std::map <uint32_t, allocationList>::iterator it = m_scheduleMap.find (sfn);
-		m_DataTxAllocationList = (*it).second;
+		if (it != m_scheduleMap.end ())
+		{
+			m_DataTxAllocationList = (*it).second;
+		}
+		else
+		{
+			NS_LOG_ERROR ("No scheduling decision for SFN: "<< sfn);
+		}
 	}
 
 	// Manage Data Tx
