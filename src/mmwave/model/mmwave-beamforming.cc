@@ -234,7 +234,7 @@ mmWaveBeamforming::LoadUeAntenna ()
 void
 mmWaveBeamforming::LoadEnbSpatialSignature ()
 {
-	std::string filename = "src/mmwave/model/BeamFormingMatrix/TxspatialSigniture.txt";
+	std::string filename = "src/mmwave/model/BeamFormingMatrix/TxSpatialSigniture.txt";
 	NS_LOG_FUNCTION (this << "Loading TxspatialSigniture file " << filename);
 	std::ifstream singlefile;
 	std::string line;
@@ -270,7 +270,7 @@ mmWaveBeamforming::LoadEnbSpatialSignature ()
 void
 mmWaveBeamforming::LoadUeSpatialSignature ()
 {
-	std::string strFilename = "src/mmwave/model/BeamFormingMatrix/RxspatialSigniture.txt";
+	std::string strFilename = "src/mmwave/model/BeamFormingMatrix/RxSpatialSigniture.txt";
 	NS_LOG_FUNCTION (this << "Loading RxspatialSigniture file " << strFilename);
 	std::ifstream singlefile;
 	std::complex<double> complexVar;
