@@ -63,6 +63,7 @@ public:
 	std::string GetSchedulerType () const;
 
 	Ptr<mmWavePhyMacCommon> GetPhyMacConfigurable (void);
+	void SetPhyMacConfigurationParameters (std::string paramName, std::string value);
 	void ActivateDataRadioBearer (NetDeviceContainer ueDevices, EpsBearer bearer);
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
 	void SetEpcHelper (Ptr<EpcHelper> epcHelper);

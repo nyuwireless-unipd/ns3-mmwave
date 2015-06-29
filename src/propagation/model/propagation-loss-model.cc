@@ -367,18 +367,16 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
   double PNlos = 1-POut - PLos;
   double alpha, beta, sigma;
 
-  NS_LOG_INFO ("tx("<<a<<")->rx("<<b<<")");
   channelScenarioMap_t::const_iterator it;
   it = m_channelScenarioMap.find(std::make_pair(a,b));
   if (it == m_channelScenarioMap.end ())
     {
 	  channelScenario scenario;
 	  Ptr<UniformRandomVariable> uniformVariable = CreateObject <UniformRandomVariable> ();
-	  //uniformVariable->SetAntithetic(true);
 	  Ptr<NormalRandomVariable> normalVariable = CreateObject <NormalRandomVariable> ();
 	  normalVariable->SetAntithetic(true);
 	  double PRef = uniformVariable->GetValue(0,1);
-	  NS_LOG_DEBUG ("PRef="<<PRef);
+
 	  if (PRef < PLos)
 	    {
 		  scenario.m_channelScenario = 'l';
@@ -397,7 +395,7 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 		  }
 		  else
 		  {
-			  NS_FATAL_ERROR ("Other frequency is not impletmented.");
+			  NS_FATAL_ERROR ("The model currently supports only 28 GHz and 73 GHz carrier frequencies.");
 		  }
 	    }
 	  else

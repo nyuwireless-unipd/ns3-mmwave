@@ -48,9 +48,12 @@ AntennaArrayModel::SetBeamformingVector (complexVector_t antennaWeights, Ptr<Net
 		std::map< Ptr<NetDevice>, complexVector_t >::iterator iter = m_beamformingVectorMap.find (device);
 		if (iter != m_beamformingVectorMap.end ())
 		{
-			m_beamformingVectorMap.erase (iter);
+			(*iter).second = antennaWeights;
 		}
-		m_beamformingVectorMap.insert (std::make_pair (device, antennaWeights) );
+		else
+		{
+			m_beamformingVectorMap.insert (std::make_pair (device, antennaWeights) );
+		}
 	}
 	m_beamformingVector = antennaWeights;
 }

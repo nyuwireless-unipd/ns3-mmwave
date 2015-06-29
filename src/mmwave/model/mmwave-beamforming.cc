@@ -27,11 +27,9 @@ NS_LOG_COMPONENT_DEFINE ("mmWaveBeamforming");
 NS_OBJECT_ENSURE_REGISTERED (mmWaveBeamforming);
 
 // number of channel matrix instance in beamforming files
-#define INSTANCE 100
 // period of updating channel matrix
-#define LONG_TRM_PARM_UPDATE_TIME 0.099999
-#define RBS 4
-#define CHUNK_PER_RB 18
+static const double g_longTermUpdatePeriod = 0.099999;
+static const uint32_t g_numInstance = 100;
 
 complex2DVector_t g_enbAntennaInstance; //100 instance of txW
 complex2DVector_t g_ueAntennaInstance; //100 instance of rxW
@@ -65,18 +63,23 @@ mmWaveBeamforming::GetTypeId (void)
 		.AddAttribute ("ChunkWidth",
 				   "Width of each chunk in Hz",
 				   DoubleValue (13.889e6),
-				   MakeDoubleAccessor (&mmWaveBeamforming::m_chunkWidth),
-				   MakeDoubleChecker<double> ())
-		.AddAttribute ("SystemBandwidth",
-				   "Band width of the system in Hz",
-				   DoubleValue (1e9),
-				   MakeDoubleAccessor (&mmWaveBeamforming::systemBandwidth),
+				   MakeDoubleAccessor (&mmWaveBeamforming::m_subbandWidth),
 				   MakeDoubleChecker<double> ())
 		.AddAttribute ("CentreFreq",
 				   "The center frequency in Hz",
 				   DoubleValue (28e9),
 				   MakeDoubleAccessor (&mmWaveBeamforming::m_centreFrequency),
 				   MakeDoubleChecker<double> ())
+		.AddAttribute ("NumResourceBlocks",
+				   "Number of resource blocks in one slot",
+				   UintegerValue (4),
+				   MakeUintegerAccessor (&mmWaveBeamforming::m_numResourceBlocks),
+				   MakeUintegerChecker<uint32_t> ())
+		.AddAttribute ("NumSubbandPerRB",
+			       "Number of sub-bands in one resource block",
+				   UintegerValue (18),
+				   MakeUintegerAccessor (&mmWaveBeamforming::m_numSubbbandPerRB),
+				   MakeUintegerChecker<uint32_t> ())
 	;
   	return tid;
 }
@@ -296,7 +299,7 @@ mmWaveBeamforming::LoadUeSpatialSignature ()
 	     if (counter % m_pathNum == 0)
 	     {
 		   	 g_ueSpatialInstance.push_back (rxSpatialMatrix);
-		   	rxSpatialMatrix.clear ();
+		   	 rxSpatialMatrix.clear ();
 		 }
 	     counter++;
 	}
@@ -315,6 +318,8 @@ mmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 		}
 
 	}
+
+	Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &mmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 }
 
 
@@ -326,7 +331,7 @@ mmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	Ptr<UniformRandomVariable> uniform = CreateObject<UniformRandomVariable> ();
 	std::vector<int>::iterator it;
 	//uniform->SetAntithetic(true);
-	int randomInstance = uniform->GetValue (0,INSTANCE-1);
+	int randomInstance = uniform->GetValue (0, g_numInstance-1);
 
 	Ptr<BeamformingParams> bfParams = Create<BeamformingParams> ();
 	bfParams->m_enbW = g_enbAntennaInstance.at (randomInstance);
@@ -342,7 +347,15 @@ mmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	}
 	m_channelMatrixMap.insert(std::make_pair(key,bfParams));
 	//update channel matrix periodically
-	Simulator::Schedule (Seconds (LONG_TRM_PARM_UPDATE_TIME), &mmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
+	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &mmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
+
+	Ptr<mmWaveUeNetDevice> UeDev =
+					DynamicCast<mmWaveUeNetDevice> (ueDevice);
+	if (UeDev->GetTargetEnb ())
+	{
+		Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
+		SetBeamformingVector (ueDevice, targetBs);
+	}
 }
 
 void
@@ -363,10 +376,7 @@ mmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 			EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 	ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
 	enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
-	Simulator::Schedule (Seconds (LONG_TRM_PARM_UPDATE_TIME), &mmWaveBeamforming::SetBeamformingVector,this,ueDevice,enbDevice);
-
-
-
+	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &mmWaveBeamforming::SetBeamformingVector,this,ueDevice,enbDevice);
 }
 
 complexVector_t
@@ -405,19 +415,16 @@ mmWaveBeamforming::GetAllRbGainVector (Ptr<BeamformingParams> bfParams, double s
 	for (int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 	{
 		double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
-		for (int chunkIndex = 0; chunkIndex < CHUNK_PER_RB*RBS; chunkIndex++)
+		for (int chunkIndex = 0; chunkIndex < m_numSubbbandPerRB*m_numResourceBlocks; chunkIndex++)
 		{
-			double f = m_centreFrequency - systemBandwidth/2;
+			double f = m_centreFrequency - GetSystemBandwidth ()/2;
 			Time time = Simulator::Now ();
 			double t = time.GetSeconds ();
 
-			std::complex<double> delay (cos (2*M_PI*(f+m_chunkWidth*chunkIndex)*DelaySpread[pathIndex]), sin (2*M_PI*(f+m_chunkWidth*chunkIndex)*DelaySpread[pathIndex]));
+			std::complex<double> delay (cos (2*M_PI*(f+m_subbandWidth*chunkIndex)*DelaySpread[pathIndex]), sin (2*M_PI*(f+m_subbandWidth*chunkIndex)*DelaySpread[pathIndex]));
 			std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
 			std::complex<double> smallScaleFading = sigma*delay/doppler;
-			NS_LOG_INFO (smallScaleFading);
-			//double real = normalVar->GetValue (0,sigma*sigma);
-			//double imag = normalVar->GetValue (0,sigma*sigma);
-			//std::complex<double> cmplxVar (real,imag);
+
 			if (pathIndex == 0)
 			{
 				chunkGain.push_back (bfParams->m_beam.at (pathIndex)*smallScaleFading);
@@ -459,8 +466,8 @@ mmWaveBeamforming::GetPsd (Ptr<const SpectrumValue> rxPsd, complexVector_t allRb
 
 Ptr<SpectrumValue>
 mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
-                                                   Ptr<const MobilityModel> a,
-                                                   Ptr<const MobilityModel> b) const
+												Ptr<const MobilityModel> a,
+												Ptr<const MobilityModel> b) const
 {
 	Ptr<NetDevice> enbDevice, ueDevice;
 
@@ -470,28 +477,25 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	key_t dlkey = std::make_pair(rxDevice,txDevice);
 	key_t ulkey = std::make_pair(txDevice,rxDevice);
 
-	std::map< key_t, Ptr<BeamformingParams> >::iterator it = m_channelMatrixMap.find(dlkey);
-	if(it != m_channelMatrixMap.end ())
+	std::map< key_t, Ptr<BeamformingParams> >::iterator it;
+	if(m_channelMatrixMap.find(dlkey) != m_channelMatrixMap.end ())
 	{
 		// this is downlink case
 		enbDevice = txDevice;
 		ueDevice = rxDevice;
+		it = m_channelMatrixMap.find(dlkey);
+	}
+	else if (m_channelMatrixMap.find(ulkey) != m_channelMatrixMap.end ())
+	{
+		// this is uplink case
+		ueDevice = txDevice;
+		enbDevice = rxDevice;
+		it = m_channelMatrixMap.find(ulkey);
 	}
 	else
 	{
-		std::map< key_t, Ptr<BeamformingParams> >::iterator iter = m_channelMatrixMap.find(ulkey);
-		if (iter != m_channelMatrixMap.end ())
-		{
-			// this is uplink case
-			ueDevice = txDevice;
-			enbDevice = rxDevice;
-			it = iter;
-		}
-		else
-		{
-			// enb to enb or ue to ue transmission, skip beamforming.
-			return rxPsd;
-		}
+		// enb to enb or ue to ue transmission, set to 0. Do no consider such scenarios.
+		return 0;
 	}
 	Ptr<BeamformingParams> bfParams = it->second;
 
@@ -518,10 +522,6 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		return rxPsd;
 	}
 
-	//NS_LOG_UNCOND ("enbW:"<<bfParams->m_enbW.at (0).real()<<" "<<bfParams->m_enbW.at (0).imag());
-	//NS_LOG_UNCOND ("ueW:"<<bfParams->m_ueW.at (0).real()<<" "<<bfParams->m_ueW.at (0).imag());
-	//NS_LOG_UNCOND ("enbE:"<<bfParams->m_channelMatrix.m_enbSpatialMatrix.at (1).at (1).real()<<" "<<bfParams->m_channelMatrix.m_enbSpatialMatrix.at (1).at (1).imag());
-	//NS_LOG_UNCOND ("ueE:"<<bfParams->m_channelMatrix.m_ueSpatialMatrix.at (1).at (1).real()<<" "<<bfParams->m_channelMatrix.m_ueSpatialMatrix.at (1).at (1).imag());
 	complexVector_t allRbGain;
 
 	Vector rxSpeed = b->GetVelocity();
@@ -531,9 +531,15 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
 	allRbGain = GetAllRbGainVector (bfParams,  relativeSpeed);
 	Ptr<SpectrumValue> bfPsd = GetPsd (rxPsd, allRbGain);
-	//NS_LOG_UNCOND (10*Log10((*bfPsd)/(*rxPsd)));
-
 	return bfPsd;
+}
+
+double
+mmWaveBeamforming::GetSystemBandwidth () const
+{
+	double bw = 0.00;
+	bw = m_subbandWidth*m_numSubbbandPerRB*m_numResourceBlocks;
+	return bw;
 }
 
 }// namespace ns3

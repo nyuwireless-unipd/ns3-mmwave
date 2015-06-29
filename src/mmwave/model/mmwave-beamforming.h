@@ -131,6 +131,13 @@ private:
 	* \param enbDevice a pointer to enbNetDevice
 	*/
 	void SetChannelMatrix(Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
+
+	/**
+	* \breif Calculate the system bandwidth using
+	* 		 the user defined parameters
+	* \return value of the system abndwith
+	*/
+	double GetSystemBandwidth () const;
 	/**
 	* \breif Calculate long term fading
 	* \param bfParas a pointer to beamforming vectors
@@ -163,9 +170,10 @@ private:
 	uint32_t m_pathNum;
 	uint32_t m_enbAntennaSize;
 	uint32_t m_ueAntennaSize;
-	double m_chunkWidth;
+	double m_subbandWidth;
 	double m_centreFrequency;
-	double systemBandwidth;
+	uint32_t m_numResourceBlocks;
+	uint32_t m_numSubbbandPerRB;
 };
 
 }  //namespace ns3
