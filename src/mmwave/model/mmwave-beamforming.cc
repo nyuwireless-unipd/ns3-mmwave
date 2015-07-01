@@ -406,63 +406,39 @@ mmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
 	return longTerm;
 }
 
-complexVector_t
-mmWaveBeamforming::GetAllRbGainVector (Ptr<BeamformingParams> bfParams, double speed) const
+Ptr<SpectrumValue>
+mmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<BeamformingParams> bfParams, double speed) const
 {
 	NS_LOG_FUNCTION (this);
-	Ptr<NormalRandomVariable> normalVar = CreateObject<NormalRandomVariable> ();
-	complexVector_t chunkGain;
-	for (int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
+	Ptr<SpectrumValue> tempPsd = Copy<SpectrumValue> (txPsd);
+
+	Values::iterator vit = tempPsd->ValuesBegin ();
+	uint16_t iSubband = 0;
+	while (vit != tempPsd->ValuesEnd ())
 	{
-		double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
-		for (int chunkIndex = 0; chunkIndex < m_numSubbbandPerRB*m_numResourceBlocks; chunkIndex++)
+		std::complex<double> subsbandGain (0.0,0.0);
+		if ((*vit) != 0.00)
 		{
-			double f = m_centreFrequency - GetSystemBandwidth ()/2;
-			Time time = Simulator::Now ();
-			double t = time.GetSeconds ();
-
-			std::complex<double> delay (cos (2*M_PI*(f+m_subbandWidth*chunkIndex)*DelaySpread[pathIndex]), sin (2*M_PI*(f+m_subbandWidth*chunkIndex)*DelaySpread[pathIndex]));
-			std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
-			std::complex<double> smallScaleFading = sigma*delay/doppler;
-
-			if (pathIndex == 0)
+			double fsb = m_centreFrequency - GetSystemBandwidth ()/2 + m_subbandWidth*iSubband ;
+			for (unsigned int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 			{
-				chunkGain.push_back (bfParams->m_beam.at (pathIndex)*smallScaleFading);
-			}
-			else
-			{
-				chunkGain.at (chunkIndex) = chunkGain.at (chunkIndex) +
-						bfParams->m_beam.at (pathIndex)*smallScaleFading;
-			}
-		}
-	}
-	return chunkGain;
+				double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
+				Time time = Simulator::Now ();
+				double t = time.GetSeconds ();
 
-}
-
-Ptr<SpectrumValue>
-mmWaveBeamforming::GetPsd (Ptr<const SpectrumValue> rxPsd, complexVector_t allRbGainVector) const
-{
-	Ptr<SpectrumValue> bfPsd = Copy<SpectrumValue> (rxPsd);
-	Values::iterator vit = bfPsd->ValuesBegin ();
-	uint32_t subChannel = 0;
-	while (vit != bfPsd->ValuesEnd ())
-	{
-		if (*vit != 0.0)
-		{
-            double bfGain = pow (std::abs(allRbGainVector.at (subChannel)),2);
-	        /* the beam forming vector is considered to be in Watt/Hz.
-	         * Verify when files are available */
-	        *vit = (*vit) * bfGain;
-	        //NS_LOG_INFO ("Linear Gain ="<<bfGain<<", Rx Power with Beam forming="<<*vit);
+				std::complex<double> delay (cos (2*M_PI*fsb*DelaySpread[pathIndex]), sin (2*M_PI*fsb*DelaySpread[pathIndex]));
+				std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
+				std::complex<double> smallScaleFading = sigma*delay/doppler;
+				subsbandGain = subsbandGain + bfParams->m_beam.at (pathIndex)*smallScaleFading;
+			}
+			*vit = (*vit)*(norm (subsbandGain));
 		}
 		vit++;
-		subChannel++;
+		iSubband++;
 	}
-	//NS_LOG_LOGIC (this <<" "<< *bfPsd);
-	return bfPsd;
-}
+	return tempPsd;
 
+}
 
 Ptr<SpectrumValue>
 mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
@@ -497,6 +473,7 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		// enb to enb or ue to ue transmission, set to 0. Do no consider such scenarios.
 		return 0;
 	}
+
 	Ptr<BeamformingParams> bfParams = it->second;
 
 	Ptr<mmWaveUeNetDevice> UeDev =
@@ -518,19 +495,15 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	}
 	else
 	{
-		NS_LOG_UNCOND ("Antena model of Tx and Rx are not configured");
 		return rxPsd;
 	}
-
-	complexVector_t allRbGain;
 
 	Vector rxSpeed = b->GetVelocity();
 	Vector txSpeed = a->GetVelocity();
 	double relativeSpeed = (rxSpeed.x-txSpeed.x)
 			+(rxSpeed.y-txSpeed.y)+(rxSpeed.z-txSpeed.z);
 
-	allRbGain = GetAllRbGainVector (bfParams,  relativeSpeed);
-	Ptr<SpectrumValue> bfPsd = GetPsd (rxPsd, allRbGain);
+	Ptr<SpectrumValue> bfPsd = GetChannelGainVector (rxPsd, bfParams,  relativeSpeed);
 	return bfPsd;
 }
 

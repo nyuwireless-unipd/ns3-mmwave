@@ -145,21 +145,15 @@ private:
 	*/
 	complexVector_t GetLongTermFading (Ptr<BeamformingParams> bfParams) const;
 	/**
-	* \breif Calculate gain of all rbs
+	* \breif calculate power spectrum density considering beamformign and fading
 	* \param bfParas a pointer to beamforming vectors
+	* \param Psd set of values vs frequency representing the
+	*              transmission power. See SpectrumChannel for details
 	* \param speed a double value to relative speed of tx and rx
-	* \return complex vector of all rbs gain
-	*/
-	complexVector_t GetAllRbGainVector (Ptr<BeamformingParams> bfParams, double speed) const;
-	/**
-	* \breif calculate power spectrum density after beamformign and fading
-	* \param txPsd set of values vs frequency representing the
-	*              transmission power. See SpectrumChannel for details.
-	* \param allRbgainVector complex vector of beamforming and fading gain
-	* \return set of values vs frequency representing the received
+	* \return cset of values vs frequency representing the received
 	*         power in the same units used for the txPsd parameter.
 	*/
-	Ptr<SpectrumValue> GetPsd (Ptr<const SpectrumValue> rxPsd, complexVector_t allRbGainVector) const;
+	Ptr<SpectrumValue> GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<BeamformingParams> bfParams, double speed) const;
 
 	/**
 	* \a map to store channel matrix
