@@ -37,6 +37,9 @@ complex3DVector_t g_enbSpatialInstance; //this stores 100 instance of txE
 complex3DVector_t g_ueSpatialInstance; //this stores 100 instance of rxE
 double2DVector_t g_smallScaleFadingInstance;    //this stores 100 instance of sigma vector
 
+/*
+ * The delay spread and Doppler shift is not based on measurement data at this time
+ */
 static const double DelaySpread[20]  = {0, 3e-9, 4e-9, 5e-9, 5e-9, 6e-9, 7e-9, 7e-9, 7e-9, 17e-9,
 			18e-9, 20e-9, 23e-9, 24e-9, 26e-9, 38e-9, 40e-9, 42e-9, 45e-9, 50e-9};
 
