@@ -79,12 +79,6 @@ public:
 	* \param enbDevices a pointer to enbNetDevice container
 	*/
 	void Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
-	/**
-	* \breif Set the beamforming vector of connected enbs and ues
-	* \param ueDevice a pointer to ueNetDevice
-	* \param enbDevice a pointer to enbNetDevice
-	*/
-	void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
 
 private:
 	/**
@@ -126,12 +120,17 @@ private:
 	                                                   Ptr<const MobilityModel> a,
 	                                                   Ptr<const MobilityModel> b) const;
 	/**
+	* \breif Set the beamforming vector of connected enbs and ues
+	* \param ueDevice a pointer to ueNetDevice
+	* \param enbDevice a pointer to enbNetDevice
+	*/
+	void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
+	/**
 	* \breif Store the channel matrix to channelMatrixMap
 	* \param ueDevice a pointer to ueNetDevice
 	* \param enbDevice a pointer to enbNetDevice
 	*/
 	void SetChannelMatrix(Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
-
 	/**
 	* \breif Calculate the system bandwidth using
 	* 		 the user defined parameters

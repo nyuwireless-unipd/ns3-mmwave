@@ -433,13 +433,12 @@ MmWaveHelper::RegisterToClosestEnb (NetDeviceContainer ueDevices, NetDeviceConta
 {
 	NS_LOG_FUNCTION(this);
 
-	m_beamforming->Initial(ueDevices,enbDevices);
-
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
 		RegisterToClosestEnb(*i, enbDevices);
 	}
 
+	m_beamforming->Initial(ueDevices,enbDevices);
 }
 
 void
@@ -468,8 +467,6 @@ MmWaveHelper::RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy ()->AddUePhy (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), ueDevice);
 	ueDevice->GetObject<MmWaveUeNetDevice> ()->GetPhy ()->RegisterToEnb (cellId, configParams);
 	closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetMac ()->AssociateUeMAC (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi ());
-
-	m_beamforming->SetBeamformingVector (ueDevice,closestEnbDevice);
 
 	Ptr<EpcUeNas> ueNas = ueDevice->GetObject<MmWaveUeNetDevice> ()->GetNas ();
 	ueNas->Connect (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId (),
