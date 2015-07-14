@@ -277,7 +277,7 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
 
-		it->second.m_numRlcPdu;  // used to count remaining RLC requests
+		//it->second.m_numRlcPdu;  // used to count remaining RLC requests
 		if (it->second.m_numRlcPdu == 1)
 		{
 			// wait for all RLC PDUs to be received

@@ -26,7 +26,7 @@ main (int argc, char *argv[])
    * 	Time (micro-sec)  |  Tb-size in bytes
    * */
 
-  Ptr<mmWaveHelper> ptr_mmWave = CreateObject<mmWaveHelper> ();
+  Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
   ptr_mmWave->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
   ptr_mmWave->Initialize();
 

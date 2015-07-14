@@ -38,7 +38,7 @@ def build(bld):
         'model/mmwave-ue-mac.cc',
         'model/mmwave-rrc-protocol-ideal.cc',
         'model/mmwave-channel-matrix.cc',
-	'model/buildings-obstacle-propagation-loss-model.cc'
+	'model/buildings-obstacle-propagation-loss-model.cc',
         'model/mmwave-mac-pdu-header.cc',
         ]
 
@@ -79,7 +79,7 @@ def build(bld):
         'model/mmwave-ue-mac.h',
         'model/mmwave-rrc-protocol-ideal.h',
         'model/mmwave-channel-matrix.h',
-	'model/buildings-obstacle-propagation-loss-model.h'
+	'model/buildings-obstacle-propagation-loss-model.h',
         'model/mmwave-mac-pdu-header.h',
 
         ]
