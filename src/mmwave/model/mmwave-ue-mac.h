@@ -16,57 +16,80 @@
 
 namespace ns3
 {
-class mmWaveControlMessages;
+class MmWaveControlMessage;
 
-class mmWaveUeMac : public mmWaveMac
+class MmWaveUeMac : public Object
 {
 	friend class UeMemberLteUeCmacSapProvider;
 	friend class UeMemberLteMacSapProvider;
+	friend class MacUeMemberPhySapUser;
+
 public:
 	static TypeId GetTypeId (void);
 
-	mmWaveUeMac (void);
-	~mmWaveUeMac (void);
+	MmWaveUeMac (void);
+	~MmWaveUeMac (void);
 
-	void  SetmmWaveUeCmacSapUser (LteUeCmacSapUser* s);
-	LteUeCmacSapProvider*  GetmmWaveUeCmacSapProvider (void);
-	LteMacSapProvider*  GetmmWaveMacSapProvider (void);
+	void  SetUeCmacSapUser (LteUeCmacSapUser* s);
+	LteUeCmacSapProvider*  GetUeCmacSapProvider (void);
+	LteMacSapProvider*  GetUeMacSapProvider (void);
+
+	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	void DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
-	void DoReceivemmWaveControlMessage  (Ptr<mmWaveControlMessages> msg);
 
-	mmWavePhySapUser* GetmmWavePhySapUser ();
-	void SetmmWavePhySapProvider (mmWavePhySapProvider* ptr);
-
-	void DoReceivePhyPdu (Ptr<Packet> p);
+	MmWavePhySapUser* GetUePhySapUser ();
+	void SetUePhySapProvider (MmWavePhySapProvider* ptr);
 
 	void RecvRaResponse (BuildRarListElement_s raResponse);
 
-
 private:
-
-	void RandomlySelectAndSendRaPreamble ();
-	void SendRaPreamble (bool contention);
 
 	void DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params);
 	void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
+
+  // forwarded from PHY SAP
+	void DoReceivePhyPdu (Ptr<Packet> p);
+	void DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg);
+
 	// forwarded from UE CMAC SAP
 	void DoConfigureRach (LteUeCmacSapProvider::RachConfig rc);
 	void DoStartContentionBasedRandomAccessProcedure ();
 	void DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t rapId, uint8_t prachMask);
-	void DoAddLc (uint8_t lcId, LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
+	void AddLc (uint8_t lcId, LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
 	void DoRemoveLc (uint8_t lcId);
 	void DoReset ();
+
+	void RandomlySelectAndSendRaPreamble ();
+	void SendRaPreamble (bool contention);
+  void SendReportBufferStatus (void);
+
+  std::map<uint8_t, struct MacPduInfo>::iterator AddToMacPduMap (TbInfoElement tb, unsigned activeLcs);
+
+	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
+
 	LteUeCmacSapUser* m_cmacSapUser;
 	LteUeCmacSapProvider* m_cmacSapProvider;
 
-	Schedule m_DataTxTDDMap;
-	allocationList m_DataTxAllocationList;
+	TddSlotTypeList m_DataTxTDDMap;
+	SfAllocationInfo m_DataTxAllocationList;
 
-	mmWavePhySapProvider* m_phySapProvider;
-	mmWavePhySapUser* m_phySapUser;
-
+	MmWavePhySapProvider* m_phySapProvider;
+	MmWavePhySapUser* m_phySapUser;
 	LteMacSapProvider* m_macSapProvider;
+
+	uint32_t m_frameNum;
+	uint32_t m_sfNum;
+	uint32_t m_slotNum;
+
+	uint8_t	m_tbUid;
+	std::map<uint8_t, struct MacPduInfo> m_macPduMap;
+
+	std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> m_ulBsrReceived; // BSR received from RLC (the last one)
+	Time m_bsrPeriodicity;
+	Time m_bsrLast;
+	bool m_freshUlBsr; // true when a BSR has been received in the last TTI
 
 	Ptr<UniformRandomVariable> m_raPreambleUniformVariable;
 	uint8_t m_raPreambleId;
@@ -82,8 +105,7 @@ private:
 	std::map <uint8_t, LcInfo> m_lcInfoMap;
 	uint8_t m_rnti;
 
-
-
+	bool m_waitingForRaResponse;
 
 };
 

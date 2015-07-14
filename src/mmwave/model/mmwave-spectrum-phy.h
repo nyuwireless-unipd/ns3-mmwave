@@ -33,7 +33,7 @@ namespace ns3{
 struct tbInfo_t
 {
   uint16_t size;
-  uint8_t mcs;
+  uint8_t m_mcs;
   std::vector<int> rbBitmap;
   bool downlink;
   bool corrupt;
@@ -41,19 +41,22 @@ struct tbInfo_t
 
 typedef std::map<uint16_t, tbInfo_t> expectedTbs_t;
 
-typedef Callback< void, Ptr<Packet> > mmWavePhyRxDataEndOkCallback;
+typedef Callback< void, Ptr<Packet> > MmWavePhyRxDataEndOkCallback;
+typedef Callback< void, std::list<Ptr<MmWaveControlMessage> > > MmWavePhyRxCtrlEndOkCallback;
 
-class mmWaveSpectrumPhy : public SpectrumPhy
+
+class MmWaveSpectrumPhy : public SpectrumPhy
 {
 public:
-	mmWaveSpectrumPhy();
-	virtual ~mmWaveSpectrumPhy();
+	MmWaveSpectrumPhy();
+	virtual ~MmWaveSpectrumPhy();
 
 	enum State
 	  {
 	    IDLE = 0,
 		TX,
-		RX
+		RX_DATA,
+		RX_CTRL
 	  };
 
 	static TypeId GetTypeId(void);
@@ -69,29 +72,33 @@ public:
 	Ptr<AntennaModel> GetRxAntenna ();
 	void SetAntenna (Ptr<AntennaModel> a);
 
+  void SetState (State newState);
+
 	void SetNoisePowerSpectralDensity (Ptr<const SpectrumValue> noisePsd);
 	void SetTxPowerSpectralDensity (Ptr<SpectrumValue> TxPsd);
 	void StartRx (Ptr<SpectrumSignalParameters> params);
-	void StartRxData (Ptr<mmwaveSpectrumSignalParametersDataFrame> params);
-	void StartRxControl (Ptr<SpectrumSignalParameters> params);
+	void StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> params);
+	void StartRxCtrl (Ptr<SpectrumSignalParameters> params);
 	Ptr<SpectrumChannel> GetSpectrumChannel();
 	void SetCellId (uint16_t cellId);
 
-	bool StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<mmWaveControlMessages> > ctrlMsgList, Time duration);
+	bool StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsgList, Time duration, uint8_t slotInd);
 
-	bool StartTxDlControlFrames (std::list<Ptr<mmWaveControlMessages> > ctrlMsgList, Time duration); // control frames from enb to ue
+	bool StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> > ctrlMsgList, Time duration); // control frames from enb to ue
 	bool StartTxUlControlFrames (void); // control frames from ue to enb
 
-	void SetmmWavePhyRxDataEndOkCallback (mmWavePhyRxDataEndOkCallback c);
+	void SetPhyRxDataEndOkCallback (MmWavePhyRxDataEndOkCallback c);
+	void SetPhyRxCtrlEndOkCallback (MmWavePhyRxCtrlEndOkCallback c);
 
 	void AddDataPowerChunkProcessor (Ptr<mmWaveChunkProcessor> p);
 	void AddDataSinrChunkProcessor (Ptr<mmWaveChunkProcessor> p);
 
 	void UpdateSinrPerceived (const SpectrumValue& sinr);
 
-	void AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t mcs, std::vector<int> map, bool downlink);
+	void AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t m_mcs, std::vector<int> map, bool downlink);
 
 private:
+  void ChangeState (State newState);
 	void EndTx ();
 	void EndRxData ();
 	void EndRxCtrl ();
@@ -104,15 +111,19 @@ private:
 	Ptr<SpectrumValue> m_txPsd;
 	//Ptr<PacketBurst> m_txPacketBurst;
 	std::list<Ptr<PacketBurst> > m_rxPacketBurstList;
+  std::list<Ptr<MmWaveControlMessage> > m_rxControlMessageList;
+
+  Time m_firstRxStart;
+  Time m_firstRxDuration;
 
 	Ptr<AntennaModel> m_anetnna;
 
 	uint16_t m_cellId;
 
 	State m_state;
-	/*This will keep growing in number*/
 
-	mmWavePhyRxDataEndOkCallback m_mmWavePhyRxDataEndOkCallback;
+  MmWavePhyRxCtrlEndOkCallback    m_phyRxCtrlEndOkCallback;
+	MmWavePhyRxDataEndOkCallback m_phyRxDataEndOkCallback;
 
 	TracedCallback<EnbPhyPacketCountParameter> m_reportEnbPacketCount;
 	TracedCallback<UePhyPacketCountParameter> m_reportUePacketCount;

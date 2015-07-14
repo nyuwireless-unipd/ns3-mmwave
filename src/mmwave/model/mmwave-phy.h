@@ -18,6 +18,7 @@
 #include <ns3/spectrum-interference.h>
 #include <ns3/generic-phy.h>
 #include <ns3/antenna-array-model.h>
+#include "mmwave-phy-mac-common.h"
 #include "mmwave-spectrum-phy.h"
 #include "mmwave-net-device.h"
 #include "mmwave-phy-sap.h"
@@ -26,23 +27,23 @@
 
 namespace ns3 {
 
-class mmWaveNetDevice;
-class mmWaveControlMessages;
+class MmWaveNetDevice;
+class MmWaveControlMessage;
 
-class mmWavePhy : public Object
+class MmWavePhy : public Object
 {
 public:
-	mmWavePhy();
+	MmWavePhy();
 
-	mmWavePhy(Ptr<mmWaveSpectrumPhy> dlChannelPhy, Ptr<mmWaveSpectrumPhy> ulChannelPhy);
+	MmWavePhy(Ptr<MmWaveSpectrumPhy> dlChannelPhy, Ptr<MmWaveSpectrumPhy> ulChannelPhy);
 
-	virtual ~mmWavePhy ();
+	virtual ~MmWavePhy ();
 
 	static TypeId GetTypeId (void);
 
-	void SetDevice (Ptr<mmWaveNetDevice> d);
+	void SetDevice (Ptr<MmWaveNetDevice> d);
 
-	Ptr<mmWaveNetDevice> GetDevice ();
+	Ptr<MmWaveNetDevice> GetDevice ();
 
 	void SetChannel (Ptr<SpectrumChannel> c);
 
@@ -53,6 +54,8 @@ public:
 	virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity () = 0;
 
 	void DoDispose ();
+
+	virtual void DoInitialize (void);
 
 	/**
 	 * \returns transmission time interval
@@ -65,49 +68,56 @@ public:
 	void SetNoiseFigure (double nf);
 	double GetNoiseFigure (void) const;
 
-	void SetControlMessages (Ptr<mmWaveControlMessages> m);
-	std::list<Ptr<mmWaveControlMessages> > GetControlMessages (void);
+	void SetControlMessage (Ptr<MmWaveControlMessage> m);
+	std::list<Ptr<MmWaveControlMessage> > GetControlMessages (void);
 
-	void SetMacData (Ptr<PacketBurst> pb);
+	virtual void SetMacPdu (Ptr<Packet> pb);
 
-	void SendRachPreamble (uint32_t PreambleId, uint32_t Rnti);
+	virtual void SendRachPreamble (uint32_t PreambleId, uint32_t Rnti);
 
 
-	Ptr<PacketBurst> GetPacketBurst (void);
+//	virtual Ptr<PacketBurst> GetPacketBurst (void);
+	virtual Ptr<PacketBurst> GetPacketBurst (uint8_t sfNum, uint8_t slotNum);
 
-	void SetCofigurationParameters (Ptr<mmWavePhyMacCommon> ptrConfig);
-	Ptr<mmWavePhyMacCommon> GetConfigurationParameters (void) const;
+	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
-	mmWavePhySapProvider* GetmmWavePhySapProvider ();
-	void SetmmWavePhySapUser (mmWavePhySapUser* ptr);
+	MmWavePhySapProvider* GetPhySapProvider ();
+	void SetPhySapUser (MmWavePhySapUser* ptr);
 
 	void UpdateCurrentAllocationAndSchedule (uint32_t frame, uint32_t sf);
 
 protected:
-	Ptr<mmWaveNetDevice> m_netDevice;
+	Ptr<MmWaveNetDevice> m_netDevice;
 
-	Ptr<mmWaveSpectrumPhy> m_downlinkSpectrumPhy;
-	Ptr<mmWaveSpectrumPhy> m_uplinkSpectrumPhy;
+	Ptr<MmWaveSpectrumPhy> m_spectrumPhy;
+	Ptr<MmWaveSpectrumPhy> m_downlinkSpectrumPhy;
+	Ptr<MmWaveSpectrumPhy> m_uplinkSpectrumPhy;
 
 	double m_txPower;
 	double m_noiseFigure;
 
 	uint16_t m_cellId;
 
-	Ptr<mmWavePhyMacCommon> m_PhyMACConfig;
+	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
-	std::vector< Ptr<PacketBurst> > m_packetBurstQueue;
-	std::vector< std::list<Ptr<mmWaveControlMessages> > > m_controlMessagesQueue;
+//	std::vector< Ptr<PacketBurst> > m_packetBurstQueue;
+	std::vector< std::vector< Ptr<PacketBurst> > > m_packetBurstQueue;
+	std::vector< std::list<Ptr<MmWaveControlMessage> > > m_controlMessageQueue;
 
-	Schedule m_CurrentTDDMap;
-	allocationList m_CurrentAllocationList;
+	TddSlotTypeList m_currTddMap;
+//	std::list<SfAllocationInfo> m_sfAllocInfoList;
+	SfAllocationInfo m_currSfAllocInfo;
 
-	std::map <uint32_t,Schedule> m_TDDPatternsFrorSF;
+	Time m_ctrlPeriod;
+	Time m_dataPeriod;
 
-	std::map <uint32_t,allocationList> m_AllocationListforSF;
+	std::map <uint32_t,TddSlotTypeList> m_tddPatternForSlotMap;
 
-	mmWavePhySapProvider* m_phySapProvider;
-	mmWavePhySapUser* m_phySapUser;
+	std::map <uint32_t,SfAllocationInfo> m_slotAllocInfoMap;
+
+	MmWavePhySapProvider* m_phySapProvider;
+	MmWavePhySapUser* m_phySapUser;
 
 	uint32_t m_raPreambleId;
 

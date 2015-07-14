@@ -38,21 +38,21 @@ class mmWaveSpectrumValueHelper
 {
 public:
 
-  static Ptr<SpectrumModel> GetSpectrumModel (Ptr<mmWavePhyMacCommon> ptrConfig);
+  static Ptr<SpectrumModel> GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig);
 
 
 
-  static Ptr<SpectrumValue> CreateTxPowerSpectralDensity (Ptr<mmWavePhyMacCommon> ptrConfig,
+  static Ptr<SpectrumValue> CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig,
                                                           double powerTx,
                                                           std::vector <int> activeRbs);
 
 
-  static Ptr<SpectrumValue> CreateTxPowerSpectralDensity (Ptr<mmWavePhyMacCommon> ptrConfig,
+  static Ptr<SpectrumValue> CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig,
                                                           double powerTx,
                                                           std::map<int, double> powerTxMap,
                                                           std::vector <int> activeRbs);
 
-  static Ptr<SpectrumValue> CreateNoisePowerSpectralDensity (Ptr<mmWavePhyMacCommon> ptrConfig, double noiseFigure);
+  static Ptr<SpectrumValue> CreateNoisePowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double noiseFigure);
 
 
   static Ptr<SpectrumValue> CreateNoisePowerSpectralDensity (double noiseFigure, Ptr<SpectrumModel> spectrumModel);

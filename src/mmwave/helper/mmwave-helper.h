@@ -35,19 +35,19 @@
 namespace ns3 {
 
 /* ... */
-class mmWaveUePhy;
-class mmWaveEnbPhy;
+class MmWaveUePhy;
+class MmWaveEnbPhy;
 class SpectrumChannel;
 class SpectrumpropagationLossModel;
 class mmWaveSpectrumValueHelper;
 class PropagationLossModel;
 
 
-class mmWaveHelper : public Object
+class MmWaveHelper : public Object
 {
 public:
-	mmWaveHelper(void);
-	virtual ~mmWaveHelper(void);
+	MmWaveHelper(void);
+	virtual ~MmWaveHelper(void);
 
 	static TypeId GetTypeId (void);
 	virtual void DoDispose (void);
@@ -62,8 +62,8 @@ public:
 	void SetSchedulerType (std::string type);
 	std::string GetSchedulerType () const;
 
-	Ptr<mmWavePhyMacCommon> GetPhyMacConfigurable (void);
 	void SetPhyMacConfigurationParameters (std::string paramName, std::string value);
+    Ptr<MmWavePhyMacCommon> GetPhyMacConfigurable (void);
 	void ActivateDataRadioBearer (NetDeviceContainer ueDevices, EpsBearer bearer);
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
 	void SetEpcHelper (Ptr<EpcHelper> epcHelper);
@@ -101,7 +101,7 @@ private:
 
 	Ptr<mmWavePhyRxTrace> m_phyStats;
 
-	Ptr<mmWavePhyMacCommon> m_PhyMACCommon;
+	Ptr<MmWavePhyMacCommon> m_PhyMACCommon;
 
 	ObjectFactory m_ffrAlgorithmFactory;
 	ObjectFactory m_enbAntennaModelFactory;

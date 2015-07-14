@@ -352,8 +352,8 @@ mmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	//update channel matrix periodically
 	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &mmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
 
-	Ptr<mmWaveUeNetDevice> UeDev =
-					DynamicCast<mmWaveUeNetDevice> (ueDevice);
+	Ptr<MmWaveUeNetDevice> UeDev =
+					DynamicCast<MmWaveUeNetDevice> (ueDevice);
 	if (UeDev->GetTargetEnb ())
 	{
 		Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
@@ -368,10 +368,10 @@ mmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 	std::map< key_t, Ptr<BeamformingParams> >::iterator it = m_channelMatrixMap.find(key);
 	NS_ASSERT_MSG (it != m_channelMatrixMap.end (), "could not find");
 	Ptr<BeamformingParams> bfParams = it->second;
-	Ptr<mmWaveEnbNetDevice> EnbDev =
-				DynamicCast<mmWaveEnbNetDevice> (enbDevice);
-	Ptr<mmWaveUeNetDevice> UeDev =
-				DynamicCast<mmWaveUeNetDevice> (ueDevice);
+	Ptr<MmWaveEnbNetDevice> EnbDev =
+				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
+	Ptr<MmWaveUeNetDevice> UeDev =
+				DynamicCast<MmWaveUeNetDevice> (ueDevice);
 
 	Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
 			UeDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
@@ -386,10 +386,10 @@ complexVector_t
 mmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
 {
 	complexVector_t longTerm;
-	for (int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
+	for (unsigned pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 	{
 		std::complex<double> txsum (0,0);
-		for (int txAntennaIndex = 0; txAntennaIndex < m_enbAntennaSize; txAntennaIndex++)
+		for (unsigned txAntennaIndex = 0; txAntennaIndex < m_enbAntennaSize; txAntennaIndex++)
 		{
 			txsum = txsum +
 					bfParams->m_enbW.at (txAntennaIndex)*
@@ -397,7 +397,7 @@ mmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
 		}
 
 		std::complex<double> rxsum (0,0);
-		for (int rxAntennaIndex = 0; rxAntennaIndex < m_ueAntennaSize; rxAntennaIndex++)
+		for (unsigned rxAntennaIndex = 0; rxAntennaIndex < m_ueAntennaSize; rxAntennaIndex++)
 		{
 			rxsum = rxsum +
 					bfParams->m_ueW.at (rxAntennaIndex)*
@@ -479,10 +479,10 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
 	Ptr<BeamformingParams> bfParams = it->second;
 
-	Ptr<mmWaveUeNetDevice> UeDev =
-				DynamicCast<mmWaveUeNetDevice> (ueDevice);
-	Ptr<mmWaveEnbNetDevice> EnbDev =
-				DynamicCast<mmWaveEnbNetDevice> (enbDevice);
+	Ptr<MmWaveUeNetDevice> UeDev =
+				DynamicCast<MmWaveUeNetDevice> (ueDevice);
+	Ptr<MmWaveEnbNetDevice> EnbDev =
+				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
 	Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
 			UeDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 	Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (

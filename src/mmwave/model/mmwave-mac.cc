@@ -15,35 +15,35 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("mmWaveMac");
+NS_LOG_COMPONENT_DEFINE ("MmWaveMac");
 
-NS_OBJECT_ENSURE_REGISTERED (mmWaveMac);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveMac);
 
-mmWaveMac::mmWaveMac ()
+MmWaveMac::MmWaveMac ()
 {
 	m_macQueue = CreateObject <PacketBurst> ();
 }
 
-mmWaveMac::~mmWaveMac ()
+MmWaveMac::~MmWaveMac ()
 {
 
 }
 
 
 void
-mmWaveMac::SetCofigurationParameters (Ptr<mmWavePhyMacCommon> ptrConfig)
+MmWaveMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
-	m_PhyMACConfig = ptrConfig;
+	m_phyMacConfig = ptrConfig;
 }
 
-Ptr<mmWavePhyMacCommon>
-mmWaveMac::GetConfigurationParameters (void) const
+Ptr<MmWavePhyMacCommon>
+MmWaveMac::GetConfigurationParameters (void) const
 {
-	return m_PhyMACConfig;
+	return m_phyMacConfig;
 }
 
 bool
-mmWaveMac::QueueData (Ptr<Packet> packet)
+MmWaveMac::QueueData (Ptr<Packet> packet)
 {
 	NS_LOG_INFO ("Queue in Mac");
 
@@ -53,7 +53,7 @@ mmWaveMac::QueueData (Ptr<Packet> packet)
 }
 
 Ptr<PacketBurst>
-mmWaveMac::GetPacketBurstFromMacQueue ()
+MmWaveMac::GetPacketBurstFromMacQueue ()
 {
 	NS_LOG_FUNCTION (this);
 
