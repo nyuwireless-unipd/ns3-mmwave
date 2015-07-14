@@ -264,14 +264,14 @@ mmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
 
   // Add X2 interface to both eNBs' X2 entities
   Ptr<EpcX2> enb1X2 = enb1->GetObject<EpcX2> ();
-  Ptr<mmWaveEnbNetDevice> enb1LteDev = enb1->GetDevice (0)->GetObject<mmWaveEnbNetDevice> ();
+  Ptr<MmWaveEnbNetDevice> enb1LteDev = enb1->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
   uint16_t enb1CellId = enb1LteDev->GetCellId ();
-  NS_LOG_LOGIC ("mmWaveEnbNetDevice #1 = " << enb1LteDev << " - CellId = " << enb1CellId);
+  NS_LOG_LOGIC ("MmWaveEnbNetDevice #1 = " << enb1LteDev << " - CellId = " << enb1CellId);
 
   Ptr<EpcX2> enb2X2 = enb2->GetObject<EpcX2> ();
-  Ptr<mmWaveEnbNetDevice> enb2LteDev = enb2->GetDevice (0)->GetObject<mmWaveEnbNetDevice> ();
+  Ptr<MmWaveEnbNetDevice> enb2LteDev = enb2->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
   uint16_t enb2CellId = enb2LteDev->GetCellId ();
-  NS_LOG_LOGIC ("mmWaveEnbNetDevice #2 = " << enb2LteDev << " - CellId = " << enb2CellId);
+  NS_LOG_LOGIC ("MmWaveEnbNetDevice #2 = " << enb2LteDev << " - CellId = " << enb2CellId);
 
   enb1X2->AddX2Interface (enb1CellId, enb1X2Address, enb2CellId, enb2X2Address);
   enb2X2->AddX2Interface (enb2CellId, enb2X2Address, enb1CellId, enb1X2Address);
@@ -310,7 +310,7 @@ mmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_
   NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
   
   m_mme->AddBearer (imsi, tft, bearer);
-  Ptr<mmWaveUeNetDevice> uemmWaveDevice = ueDevice->GetObject<mmWaveUeNetDevice> ();
+  Ptr<MmWaveUeNetDevice> uemmWaveDevice = ueDevice->GetObject<MmWaveUeNetDevice> ();
   if (uemmWaveDevice)
     {
       uemmWaveDevice->GetNas ()->ActivateEpsBearer (bearer, tft);

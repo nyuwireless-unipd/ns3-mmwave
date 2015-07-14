@@ -18,7 +18,7 @@ class mmWaveAmc: public Object
 public:
 	static TypeId GetTypeId (void);
 	mmWaveAmc ();
-	mmWaveAmc(Ptr<mmWavePhyMacCommon> ConfigParams);
+	mmWaveAmc(Ptr<MmWavePhyMacCommon> ConfigParams);
 	virtual ~mmWaveAmc();
 	enum AmcModel
 	{
@@ -35,7 +35,7 @@ private:
 	  double m_ber;
 	  AmcModel m_amcModel;
 
-	  Ptr<mmWavePhyMacCommon> m_ConfigParams;
+	  Ptr<MmWavePhyMacCommon> m_ConfigParams;
 };
 
 } // end namespace ns3

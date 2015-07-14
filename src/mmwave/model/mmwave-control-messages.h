@@ -10,29 +10,29 @@
 
 #include <ns3/ptr.h>
 #include <ns3/simple-ref-count.h>
-#include "mmwave-phy-mac-common.h"
-#include <list>
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/ff-mac-common.h>
+#include "mmwave-phy-mac-common.h"
+#include <list>
 
 namespace ns3 {
 
-
-class mmWaveControlMessages : public SimpleRefCount<mmWaveControlMessages>
+class MmWaveControlMessage : public SimpleRefCount<MmWaveControlMessage>
 {
 public:
 	enum messageType
 	{
-		RSC_ALLOCATION, // The resources allocation map from the BS to the attached UEs
-		CQI,
-	    MIB, // Master Information Block
-	    SIB1, // System Information Block Type 1
-	    RACH_PREAMBLE, // Random Access Preamble
-	    RAR, // Random Access Response
+		DCI, // The resources allocation map from the BS to the attached UEs
+		DL_CQI,
+		MIB, // Master Information Block
+		SIB1, // System Information Block Type 1
+		RACH_PREAMBLE, // Random Access Preamble
+		RAR, // Random Access Response
+		BSR // Buffer Status Report
 	};
 
-	mmWaveControlMessages (void);
-	virtual ~mmWaveControlMessages (void);
+	MmWaveControlMessage (void);
+	virtual ~MmWaveControlMessage (void);
 
 	void SetMessageType (messageType type);
 
@@ -47,38 +47,67 @@ private:
  * for the UEs attached to a given BS.                      *
  ************************************************************/
 
-class mmWaveResourceAllocation : public mmWaveControlMessages
+class MmWaveDciMessage : public MmWaveControlMessage
 {
 public:
-	mmWaveResourceAllocation (void);
-	virtual ~mmWaveResourceAllocation (void);
+	MmWaveDciMessage (void);
+	virtual ~MmWaveDciMessage (void);
 
-	void SetAllocationMap (allocationList allocMap);
-	allocationList GetAllocationMap (void);
+//	void SetRbAllocationMap (SfAllocationInfo allocMap);
+//	SfAllocationInfo GetRbAllocationMap (void);
 
-	void SetSchedule (Schedule sched);
-	Schedule GetSchedule (void);
+	void SetDciInfoElement (DciInfoElement dci);
+	DciInfoElement GetDciInfoElement (void);
 
-	void SetSFNSF (uint32_t sfn);
-	uint32_t GetSFNSF (void);
+	void SetSfnSf (uint32_t sfn);
+	uint32_t GetSfnSf (void);
 
 private:
-	uint32_t m_sfnsf;
-	allocationList m_rscAllocationMap;
-	Schedule m_currentSchedule;
+	uint32_t m_sfnSf;  // frame num and sf num for debugging
+//	SfAllocationInfo m_rscAllocationMap;
+	DciInfoElement m_dciInfoElement;
 };
 
-class mmWaveCqiReport : public mmWaveControlMessages
+class MmWaveDlCqiMessage : public MmWaveControlMessage
 {
 public:
-	mmWaveCqiReport (void);
-	virtual ~mmWaveCqiReport (void);
+	MmWaveDlCqiMessage (void);
+	virtual ~MmWaveDlCqiMessage (void);
 
-	void SetCqiReport (CqiInfo cqi);
-	CqiInfo GetCqiReport ();
+	void SetDlCqi (DlCqiInfo cqi);
+	DlCqiInfo GetDlCqi ();
 
 private:
-	CqiInfo m_Cqi;
+	DlCqiInfo m_cqi;
+};
+
+
+/**
+ * \ingroup mmwave
+ * The uplink BsrLteControlMessage defines the specific
+ * extension of the CE element for reporting the buffer status report
+ */
+class MmWaveBsrMessage : public MmWaveControlMessage
+{
+public:
+	MmWaveBsrMessage (void);
+  virtual ~MmWaveBsrMessage (void);
+
+  /**
+  * \brief add a BSR feedback record into the message.
+  * \param bsr the BSR feedback
+  */
+  void SetBsr (MacCeElement bsr);
+
+  /**
+  * \brief Get BSR informations
+  * \return BSR message
+  */
+  MacCeElement GetBsr (void);
+
+private:
+  MacCeElement m_bsr;
+
 };
 
 
@@ -90,13 +119,13 @@ private:
  *        within the control channel (BCCH).
  *
  */
-class MibmmWaveControlMessage : public mmWaveControlMessages
+class MmWaveMibMessage : public MmWaveControlMessage
 {
 public:
   /**
    * \brief Create a new instance of MIB control message.
    */
-  MibmmWaveControlMessage (void);
+  MmWaveMibMessage (void);
 
   /**
    * \brief Replace the MIB content of this control message.
@@ -113,7 +142,7 @@ public:
 private:
   LteRrcSap::MasterInformationBlock m_mib;
 
-}; // end of class MibmmWaveControlMessage
+}; // end of class MmWaveMibMessage
 
 
 // ---------------------------------------------------------------------------
@@ -124,13 +153,13 @@ private:
  *        (SIB1) within the control channel (BCCH).
  *
  */
-class Sib1mmWaveControlMessage : public mmWaveControlMessages
+class MmWaveSib1Message : public MmWaveControlMessage
 {
 public:
   /**
    * \brief Create a new instance of SIB1 control message.
    */
-  Sib1mmWaveControlMessage (void);
+  MmWaveSib1Message (void);
 
   /**
    * \brief Replace the SIB1 content of this control message.
@@ -147,7 +176,7 @@ public:
 private:
   LteRrcSap::SystemInformationBlockType1 m_sib1;
 
-}; // end of class Sib1mmWaveControlMessage
+}; // end of class MmWaveSib1Message
 // ---------------------------------------------------------------------------
 
 /**
@@ -155,10 +184,10 @@ private:
  *
  * abstract model for the Random Access Preamble
  */
-class RachPreamblemmWaveControlMessage : public mmWaveControlMessages
+class MmWaveRachPreambleMessage : public MmWaveControlMessage
 {
 public:
-  RachPreamblemmWaveControlMessage (void);
+  MmWaveRachPreambleMessage (void);
 
   /**
    * Set the Random Access Preamble Identifier (RAPID), see 3GPP TS 36.321 6.2.2
@@ -184,10 +213,10 @@ private:
  *
  * abstract model for the MAC Random Access Response message
  */
-class RarmmWaveControlMessage : public mmWaveControlMessages
+class MmWaveRarMessage : public MmWaveControlMessage
 {
 public:
-	RarmmWaveControlMessage (void);
+	MmWaveRarMessage (void);
 
   /**
    *

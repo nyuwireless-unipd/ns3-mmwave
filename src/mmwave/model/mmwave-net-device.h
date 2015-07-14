@@ -22,13 +22,13 @@ namespace ns3{
 class Node;
 class Packet;
 
-class mmWaveNetDevice : public NetDevice
+class MmWaveNetDevice : public NetDevice
 {
 public:
 	static TypeId GetTypeId (void);
 
-	mmWaveNetDevice (void);
-	virtual ~mmWaveNetDevice (void);
+	MmWaveNetDevice (void);
+	virtual ~MmWaveNetDevice (void);
 
     virtual void DoDispose (void);
 

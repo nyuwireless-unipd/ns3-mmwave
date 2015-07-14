@@ -38,6 +38,7 @@ def build(bld):
         'model/mmwave-ue-mac.cc',
         'model/mmwave-rrc-protocol-ideal.cc',
         'model/mmwave-channel-matrix.cc',
+        'model/mmwave-mac-pdu-header.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('mmwave')
@@ -77,6 +78,7 @@ def build(bld):
         'model/mmwave-ue-mac.h',
         'model/mmwave-rrc-protocol-ideal.h',
         'model/mmwave-channel-matrix.h',
+        'model/mmwave-mac-pdu-header.h',
         ]
 
     if bld.env.ENABLE_EXAMPLES:

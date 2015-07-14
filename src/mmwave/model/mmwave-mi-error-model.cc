@@ -42,7 +42,7 @@
 
 
 
-NS_LOG_COMPONENT_DEFINE ("mmWaveMiErrorModel");
+NS_LOG_COMPONENT_DEFINE ("MmWaveMiErrorModel");
 
 namespace ns3 {
 
@@ -298,7 +298,7 @@ static const double cEcrTable [9][38] = {
 
 
 double 
-mmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map, uint8_t mcs)
+MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map, uint8_t mcs)
 {
   NS_LOG_FUNCTION (sinr << &map << (uint32_t) mcs);
   
@@ -383,7 +383,7 @@ mmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
 
 
 double 
-mmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint16_t cbSize)
+MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint16_t cbSize)
 {
   NS_LOG_FUNCTION (mib << (uint32_t) ecrId << (uint32_t) cbSize);
   double b = 0;
@@ -427,7 +427,7 @@ mmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint16_t cbSize)
 }
 
 TbStats_t
-mmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size_Byte, uint8_t mcs)
+MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size_Byte, uint8_t mcs)
 {
   NS_LOG_FUNCTION (sinr << &map << (uint32_t) size_Byte << (uint32_t) mcs);
   double MI = Mib(sinr, map, mcs);
@@ -529,7 +529,7 @@ mmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       errorRate *= pow (1.0 - cbler, Cminus);
       errorRate = 1.0 - errorRate;
     }
-  NS_LOG_INFO ("--------------------mmWaveMiErrorModel: TB size of " << tbSize << " needs of " << B1 << " bits reparted in " << C << " CBs as "<< Cplus << " block(s) of " << Kplus << " and " << Cminus << " of " << Kminus);
+  NS_LOG_INFO ("--------------------MmWaveMiErrorModel: TB size of " << tbSize << " needs of " << B1 << " bits reparted in " << C << " CBs as "<< Cplus << " block(s) of " << Kplus << " and " << Cminus << " of " << Kminus);
   NS_LOG_LOGIC (" Error rate " << errorRate);
   TbStats_t ret;
   ret.tbler = errorRate;

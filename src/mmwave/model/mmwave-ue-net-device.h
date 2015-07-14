@@ -25,18 +25,18 @@ namespace ns3{
 class Packet;
 class PacketBurst;
 class Node;
-class mmWavePhy;
-class mmWaveUePhy;
-class mmWaveUeMac;
-class mmWaveEnbNetDevice;
+//class MmWavePhy;
+class MmWaveUePhy;
+class MmWaveUeMac;
+class MmWaveEnbNetDevice;
 
-class mmWaveUeNetDevice : public mmWaveNetDevice
+class MmWaveUeNetDevice : public MmWaveNetDevice
 {
 public:
 	static TypeId GetTypeId (void);
 
-	mmWaveUeNetDevice (void);
-	virtual ~mmWaveUeNetDevice (void);
+	MmWaveUeNetDevice (void);
+	virtual ~MmWaveUeNetDevice (void);
 	virtual void DoDispose ();
 
 	uint32_t GetCsgId () const;
@@ -47,9 +47,9 @@ public:
 
 	virtual bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
 
-	Ptr<mmWaveUePhy> GetPhy (void) const;
+	Ptr<MmWaveUePhy> GetPhy (void) const;
 
-	Ptr<mmWaveUeMac> GetMac (void) const;
+	Ptr<MmWaveUeMac> GetMac (void) const;
 
 	uint64_t GetImsi () const;
 
@@ -61,9 +61,9 @@ public:
 
 	void SetEarfcn (uint16_t earfcn);
 
-	void SetTargetEnb (Ptr<mmWaveEnbNetDevice> enb);
+	void SetTargetEnb (Ptr<MmWaveEnbNetDevice> enb);
 
-	Ptr<mmWaveEnbNetDevice> GetTargetEnb (void);
+	Ptr<MmWaveEnbNetDevice> GetTargetEnb (void);
 
     void SetAntennaNum (uint8_t antennaNum);
 
@@ -75,9 +75,9 @@ protected:
 
 private:
 
-  Ptr<mmWaveEnbNetDevice> m_targetEnb;
-  Ptr<mmWaveUePhy> m_phy;
-  Ptr<mmWaveUeMac> m_mac;
+  Ptr<MmWaveEnbNetDevice> m_targetEnb;
+  Ptr<MmWaveUePhy> m_phy;
+  Ptr<MmWaveUeMac> m_mac;
 
   Ptr<LteUeRrc> m_rrc;
   Ptr<EpcUeNas> m_nas;

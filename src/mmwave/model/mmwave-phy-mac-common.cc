@@ -16,268 +16,360 @@
 namespace ns3
 {
 
-NS_LOG_COMPONENT_DEFINE ("mmWavePhyMacCommon");
+NS_LOG_COMPONENT_DEFINE ("MmWavePhyMacCommon");
 
-NS_OBJECT_ENSURE_REGISTERED (mmWavePhyMacCommon);
+NS_OBJECT_ENSURE_REGISTERED (MmWavePhyMacCommon);
 
 TypeId
-mmWavePhyMacCommon::GetTypeId (void)
+MmWavePhyMacCommon::GetTypeId (void)
 {
-	static TypeId tid = TypeId("ns3::mmWavePhyMacCommon")
+	static TypeId tid = TypeId("ns3::MmWavePhyMacCommon")
 			.SetParent<Object> ()
-			.AddConstructor<mmWavePhyMacCommon> ()
+			.AddConstructor<MmWavePhyMacCommon> ()
 			.AddAttribute ("SymbolPerSlot",
 						   "Number of symbols per slot",
 						   UintegerValue (30),
-						   MakeUintegerAccessor (&mmWavePhyMacCommon::m_symbolsPerSlot),
+						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_symbolsPerSlot),
 						   MakeUintegerChecker<uint32_t> ())
+		   .AddAttribute ("CtrlSymbols",
+							 "Number of OFDM symbols for DL control per subframe",
+							 UintegerValue (1),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_ctrlSymbols),
+							 MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("SymbolPeriod",
 						   "Symbol period in microseconds",
 						   DoubleValue (4.16),
-						   MakeDoubleAccessor (&mmWavePhyMacCommon::m_symbolPeriod),
+						   MakeDoubleAccessor (&MmWavePhyMacCommon::m_symbolPeriod),
 						   MakeDoubleChecker<double> ())
 			.AddAttribute ("SlotsPerSubframe",
 						   "Number of slots in one subframe",
 						   UintegerValue (8),
-						   MakeUintegerAccessor (&mmWavePhyMacCommon::m_slotsPerSubframe),
+						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_slotsPerSubframe),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("SubframePerFrame",
 						   "Number of subframe per frame",
 						   UintegerValue (10),
-						   MakeUintegerAccessor (&mmWavePhyMacCommon::m_subframesPerFrame),
+						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_subframesPerFrame),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("SubcarriersPerChunk",
 						   "Number of sub-carriers per chunk",
 						   UintegerValue (48),
-						   MakeUintegerAccessor (&mmWavePhyMacCommon::m_numSubCarriersPerChunk),
+						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_numSubCarriersPerChunk),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("ChunkPerRB",
 						   "Number of chunks comprising a resource block",
-						   UintegerValue (18),
-						   MakeUintegerAccessor (&mmWavePhyMacCommon::m_chunksPerRB),
+						   UintegerValue (9),
+						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_chunksPerRb),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("ChunkWidth",
 						   "Width of each chunk in Hz",
-						   DoubleValue (13.889e6), /*zml default value is 30????*/
-						   MakeDoubleAccessor (&mmWavePhyMacCommon::m_chunkWidth),
+						   DoubleValue (13.889e6),
+						   MakeDoubleAccessor (&MmWavePhyMacCommon::m_chunkWidth),
 						   MakeDoubleChecker<double> ())
 			.AddAttribute ("ResourceBlockNum",
 						   "Number of resource blocks the entire bandwidth is split into",
-						   UintegerValue (4),
-						   MakeUintegerAccessor (&mmWavePhyMacCommon::m_rscBlocksPerSlot),
+						   UintegerValue (8),
+						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_numRb),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("NumReferenceSymbols",
 						   "Number of reference symbols per slot",
 						   UintegerValue (6),
-						   MakeUintegerAccessor (&mmWavePhyMacCommon::m_numRefSymbols),
+						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_numRefSymbols),
 						   MakeUintegerChecker<uint32_t> ())
-			.AddAttribute ("CentreFreq",
+			.AddAttribute ("CenterFreq",
 						   "The center frequency in Hz",
 						   DoubleValue (28e9),
-						   MakeDoubleAccessor (&mmWavePhyMacCommon::m_centreFrequency),
+						   MakeDoubleAccessor (&MmWavePhyMacCommon::m_centerFrequency),
 						   MakeDoubleChecker<double> ())
 			.AddAttribute ("TDDPattern",
 						   "The control-data pattern for TDD transmission",
 						   StringValue ("ccdddddd"),
-						   MakeStringAccessor (&mmWavePhyMacCommon::m_staticTddPattern),
+						   MakeStringAccessor (&MmWavePhyMacCommon::m_staticTddPattern),
 						   MakeStringChecker ())
-
+		  .AddAttribute ("UlSchedDelay",
+							 "Number of TTIs between UL scheduling decision and subframe to which it applies",
+							 UintegerValue (3),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_ulSchedDelay),
+							 MakeUintegerChecker<uint32_t> ())
+		  .AddAttribute ("NumRbPerRbg",
+							 "Number of resource blocks per resource block group",
+							 UintegerValue (1),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_numRbPerRbg),
+							 MakeUintegerChecker<uint32_t> ())
+			.AddAttribute ("WbCqiPeriod",
+							 "Microseconds between wideband DL-CQI reports",
+							 DoubleValue (500.0),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_wbCqiPeriodUs),
+							 MakeUintegerChecker<double> ())
+		 .AddAttribute ("GuardPeriod",
+							 "Guard period for UL to DL slot transition in microseconds",
+							 DoubleValue (4.16),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_guardPeriod),
+							 MakeUintegerChecker<double> ())
 	;
 
 	return tid;
 }
 
-mmWavePhyMacCommon::mmWavePhyMacCommon ()
+MmWavePhyMacCommon::MmWavePhyMacCommon ()
 : m_symbolsPerSlot (30),
   m_symbolPeriod (4.16),
+  m_ctrlSymbols (1),
   m_slotsPerSubframe (8),
   m_subframesPerFrame (10),
   m_numRefSymbols (6),
+	m_numRbPerRbg (4),
   m_numSubCarriersPerChunk (48),
-  m_chunksPerRB (18),
+  m_chunksPerRb (18),
   m_chunkWidth (14e6),
-  m_rscBlocksPerSlot (4),
-  m_centreFrequency (28e9),
-  m_L1L2CtrlLatency (2),
-  m_L1L2DataLatency (3)
+  m_numRb (20),
+  m_centerFrequency (28e9),
+	m_guardPeriod (4.16),
+  m_l1L2CtrlLatency (2),
+  m_l1L2DataLatency (3),
+	m_wbCqiPeriodUs (500)
 {
-	NS_LOG_INFO ("Initialized mmWavePhyMacCommon");
+	NS_LOG_INFO ("Initialized MmWavePhyMacCommon");
 }
-mmWavePhyMacCommon::~mmWavePhyMacCommon (void)
+MmWavePhyMacCommon::~MmWavePhyMacCommon (void)
 {
 
 }
 
 uint32_t
-mmWavePhyMacCommon::GetSymbPerSlot (void)
+MmWavePhyMacCommon::GetSymbPerSlot (void)
 {
 	return m_symbolsPerSlot;
 }
 
 double
-mmWavePhyMacCommon::GetSymbolPeriod (void)
+MmWavePhyMacCommon::GetSymbolPeriod (void)
 {
 	return m_symbolPeriod;
 }
 
+uint32_t
+MmWavePhyMacCommon::GetCtrlSymbols (void)
+{
+	return m_ctrlSymbols;
+}
+
 double
-mmWavePhyMacCommon::GetTTI (void)
+MmWavePhyMacCommon::GetTti (void)
 {
 	return (m_symbolsPerSlot*m_symbolPeriod*1e-6);
 }
 
 uint32_t
-mmWavePhyMacCommon::GetSlotPerSubframe (void)
+MmWavePhyMacCommon::GetSlotsPerSubframe (void)
 {
 	return m_slotsPerSubframe;
 }
 uint32_t
-mmWavePhyMacCommon::GetSubframePerFrame (void)
+MmWavePhyMacCommon::GetSubframesPerFrame (void)
 {
 	return m_subframesPerFrame;
 }
 
 uint32_t
-mmWavePhyMacCommon::GetNumReferenceSymbols (void)
+MmWavePhyMacCommon::GetNumReferenceSymbols (void)
 {
 	return m_numRefSymbols;
 }
 
+double
+MmWavePhyMacCommon::GetGuardPeriod (void)
+{
+	return m_guardPeriod;
+}
+
+uint8_t
+MmWavePhyMacCommon::GetUlSchedDelay (void)
+{
+	return m_ulSchedDelay;
+}
+
 uint32_t
-mmWavePhyMacCommon::GetNumSCperChunk (void)
+MmWavePhyMacCommon::GetNumSCperChunk (void)
 {
 	return m_numSubCarriersPerChunk;
 }
+
+
 double
-mmWavePhyMacCommon::GetChunkWidth (void)
+MmWavePhyMacCommon::GetChunkWidth (void)
 {
 	return m_chunkWidth;
 }
 
 uint32_t
-mmWavePhyMacCommon::GetNumChunkPerRB (void)
+MmWavePhyMacCommon::GetNumChunkPerRb (void)
 {
-	return m_chunksPerRB;
+	return m_chunksPerRb;
 }
 uint32_t
-mmWavePhyMacCommon::GetRBperSlot (void)
+MmWavePhyMacCommon::GetNumRb (void)
 {
-	return m_rscBlocksPerSlot;
-}
-double
-mmWavePhyMacCommon::GetRBWidth (void)
-{
-	return (m_chunksPerRB*m_chunkWidth);
-}
-double
-mmWavePhyMacCommon::GetSystemBandwidth (void)
-{
-	return (GetRBWidth ()*m_rscBlocksPerSlot);
+	return m_numRb;
 }
 
 uint32_t
-mmWavePhyMacCommon::GetTotalNumChunk ()
+MmWavePhyMacCommon::GetNumRbPerRbg (void)
 {
-	return (m_chunksPerRB*m_rscBlocksPerSlot);
+	return m_numRbPerRbg;
 }
 
 double
-mmWavePhyMacCommon::GetCentreFrequency (void)
+MmWavePhyMacCommon::GetRBWidth (void)
 {
-	return m_centreFrequency;
+	return (m_chunksPerRb*m_chunkWidth);
+}
+
+double
+MmWavePhyMacCommon::GetSystemBandwidth (void)
+{
+	return (GetRBWidth ()*m_numRb);
 }
 
 uint32_t
-mmWavePhyMacCommon::GetL1L2CtrlLatency (void)
+MmWavePhyMacCommon::GetTotalNumChunk ()
 {
-	return m_L1L2CtrlLatency;
+	return (m_chunksPerRb*m_numRb);
+}
+
+double
+MmWavePhyMacCommon::GetCentreFrequency (void)
+{
+	return m_centerFrequency;
 }
 
 uint32_t
-mmWavePhyMacCommon::GetL1L2DataLatency (void)
+MmWavePhyMacCommon::GetL1L2CtrlLatency (void)
 {
-	return m_L1L2DataLatency;
+	return m_l1L2CtrlLatency;
+}
+
+uint32_t
+MmWavePhyMacCommon::GetL1L2DataLatency (void)
+{
+	return m_l1L2DataLatency;
+}
+
+double
+MmWavePhyMacCommon::GetWbCqiPeriodUs (void)
+{
+	return m_wbCqiPeriodUs;
 }
 
 std::string
-mmWavePhyMacCommon::GetStaticTDDPattern ()
+MmWavePhyMacCommon::GetStaticTDDPattern ()
 {
 	return m_staticTddPattern;
 }
 
 void
-mmWavePhyMacCommon::SetSymbPerSlot (uint32_t numSym)
+MmWavePhyMacCommon::SetSymbPerSlot (uint32_t numSym)
 {
 	m_symbolsPerSlot = numSym;
 }
 
 void
-mmWavePhyMacCommon::SetSymbolPeriod (double prdSym)
+MmWavePhyMacCommon::SetSymbolPeriod (double prdSym)
 {
 	m_symbolPeriod = prdSym;
 }
 
 void
-mmWavePhyMacCommon::SetSlotPerSubframe (uint32_t numSlot)
+MmWavePhyMacCommon::SetCtrlSymbols (uint32_t ctrlSymbols)
+{
+	m_ctrlSymbols = ctrlSymbols;
+}
+
+void
+MmWavePhyMacCommon::SetSlotPerSubframe (uint32_t numSlot)
 {
 	m_slotsPerSubframe = numSlot;
 }
 
 void
-mmWavePhyMacCommon::SetSubframePerFrame (uint32_t numSf)
+MmWavePhyMacCommon::SetSubframePerFrame (uint32_t numSf)
 {
 	m_subframesPerFrame = numSf;
 }
 
 void
-mmWavePhyMacCommon::SetNumReferenceSymbols (uint32_t refSym)
+MmWavePhyMacCommon::SetNumReferenceSymbols (uint32_t refSym)
 {
 	m_numRefSymbols = refSym;
 }
 
 void
-mmWavePhyMacCommon::SetNumSCperChunk (uint32_t numSC)
+MmWavePhyMacCommon::SetGuardPeriod (double usec)
+{
+	m_guardPeriod = usec;
+}
+
+void
+MmWavePhyMacCommon::SetUlSchedDelay (uint32_t tti)
+{
+	m_ulSchedDelay = tti;
+}
+
+void
+MmWavePhyMacCommon::SetNumSCperChunk (uint32_t numSC)
 {
 	m_numSubCarriersPerChunk = numSC;
 }
 
 void
-mmWavePhyMacCommon::SetNumChunkPerRB (uint32_t numChunk)
+MmWavePhyMacCommon::SetNumChunkPerRB (uint32_t numChunk)
 {
-	m_chunksPerRB = numChunk;
+	m_chunksPerRb = numChunk;
 }
 
 void
-mmWavePhyMacCommon::SetChunkWidth (double chumkWidth)
+MmWavePhyMacCommon::SetChunkWidth (double chumkWidth)
 {
 	m_chunkWidth = chumkWidth;
 }
 void
-mmWavePhyMacCommon::SetRBperSlot (uint32_t numRB)
+MmWavePhyMacCommon::SetNumRb (uint32_t numRB)
 {
-	m_rscBlocksPerSlot = numRB;
+	m_numRb = numRB;
 }
 
 void
-mmWavePhyMacCommon::SetCentreFrequency (double fc)
+MmWavePhyMacCommon::SetNumRbPerRbg (uint32_t numRB)
 {
-	m_centreFrequency = fc;
+	m_numRbPerRbg = numRB;
 }
 
 void
-mmWavePhyMacCommon::SetL1L2CtrlLatency (uint32_t del)
+MmWavePhyMacCommon::SetCentreFrequency (double fc)
 {
-	m_L1L2CtrlLatency = del;
+	m_centerFrequency = fc;
 }
 
 void
-mmWavePhyMacCommon::SetL1L2DataLatency (uint32_t del)
+MmWavePhyMacCommon::SetL1L2CtrlLatency (uint32_t delaySfs)
 {
-	m_L1L2DataLatency = del;
+	m_l1L2CtrlLatency = delaySfs;
 }
 
 void
-mmWavePhyMacCommon::SetStaticTDDPattern (std::string p)
+MmWavePhyMacCommon::SetL1L2DataLatency (uint32_t delaySlots)
+{
+	m_l1L2DataLatency = delaySlots;
+}
+
+void
+MmWavePhyMacCommon::SetWbCqiPeriodUs (double us)
+{
+	m_wbCqiPeriodUs = us;
+}
+
+void
+MmWavePhyMacCommon::SetStaticTDDPattern (std::string p)
 {
 	if (p.length () != m_slotsPerSubframe)
 	{
@@ -330,24 +422,24 @@ L1toL2Messages::IsTDDPatternRequested (void)
 }
 
 void
-L1toL2Messages::SetTxOpportunityInfo (allocationMap allocMap)
+L1toL2Messages::SetTxOpportunityInfo (SlotAllocInfo allocMap)
 {
 	m_TxOpportunity = allocMap;
 }
 
 void
-L1toL2Messages::RequestAllocationMap (bool req)
+L1toL2Messages::RequestRbAllocationMap (bool req)
 {
-	m_GetAllocationMap = req;
+	m_GetRbAllocationMap = req;
 }
 
 bool
-L1toL2Messages::IsAllocationMapRequested ()
+L1toL2Messages::IsRbAllocationMapRequested ()
 {
-	return m_GetAllocationMap;
+	return m_GetRbAllocationMap;
 }
 
-allocationMap
+SlotAllocInfo
 L1toL2Messages::GetTxOpportunityInfo (void)
 {
 	return m_TxOpportunity;
@@ -391,7 +483,7 @@ L2toL1Messages::~L2toL1Messages (void)
 }
 
 void
-L2toL1Messages::SetTDDPattern (Schedule pattern, SFNSF sf)
+L2toL1Messages::SetTDDPattern (TddSlotTypeList pattern, SFNSF sf)
 {
 	m_tddPatternforSF.m_SF = sf;
 	m_tddPatternforSF.m_tddMap = pattern;
