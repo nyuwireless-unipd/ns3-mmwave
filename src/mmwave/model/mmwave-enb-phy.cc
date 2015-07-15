@@ -257,14 +257,12 @@ MmWaveEnbPhy::StartSubFrame (void)
 {
 	NS_LOG_FUNCTION (this);
 
-	NS_LOG_DEBUG ("4.16 us == " << NanoSeconds (4160) << " 4.1600000000000001 == " << NanoSeconds (4160.0000000000001));
 	std::vector <int> channelRB;
 	std::vector <SlotAllocInfo>::iterator itAllocMap;
 	++m_nrSlots;
 
 	uint16_t slotInd = ((m_nrSlots-1)%(m_phyMacConfig->GetSlotsPerSubframe ())) + 1;
 	uint16_t sfInd = (m_nrSlots-1)/(m_phyMacConfig->GetSlotsPerSubframe ()) + 1;
-	NS_LOG_DEBUG ("ENB frame " << m_nrFrames << " subframe " << sfInd<< " slot " << slotInd);
 
 	for (uint8_t i = 0; i< m_phyMacConfig->GetTotalNumChunk(); i++)
 	{
@@ -342,6 +340,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 							{
 								NS_LOG_ERROR ("Slot already assigned in UL");
 							}
+
 							TbAllocInfo tbAllocInfo;
 							tbAllocInfo.m_rnti = dciInfo.m_rnti;
 							tbAllocInfo.m_tbInfo = *tbIt;
@@ -423,7 +422,7 @@ MmWaveEnbPhy::StartSubFrame (void)
   SlotAllocInfo::TddMode slotDir = m_currSfAllocInfo.m_tddPattern[slotInd-1];
   SlotAllocInfo& slotInfo = m_currSfAllocInfo.m_slotAllocInfo[slotInd-1];
   // if no scheduling decision available, slotDir will be 'NA', so we assume a default schedule with odd slots being DL and even UL
-  if (slotDir == SlotAllocInfo::DL || (slotDir == SlotAllocInfo::NA && (((slotInd-1)%2) == 0)) ) // Downlink slot
+  if (slotDir == SlotAllocInfo::DL || slotInd == 1) // Downlink slot
   {
   	if (slotInfo.m_slotType == SlotAllocInfo::CTRL_DATA || slotInfo.m_slotType == SlotAllocInfo::DATA)
   	{
@@ -442,19 +441,12 @@ MmWaveEnbPhy::StartSubFrame (void)
 
   		if(slotInfo.m_slotType == SlotAllocInfo::CTRL_DATA)
   		{
-  			if (slotInfo.m_numCtrlSym == 0)
-  			{
-  				slotInfo.m_numCtrlSym = 1;
-  			}
-  			else if (slotInfo.m_numCtrlSym > m_phyMacConfig->GetSymbPerSlot())
-  			{
-  				NS_FATAL_ERROR ("Control period exceeds slot period");
-  			}
   			// the -1 ns ensures control period ends before data period and events do not overlap
   			ctrlPeriod = NanoSeconds (1000 * slotInfo.m_numCtrlSym * m_phyMacConfig->GetSymbolPeriod ());
   			dataPeriod = NanoSeconds (1000 * ( m_phyMacConfig->GetSymbPerSlot() - slotInfo.m_numCtrlSym) * \
   			                           m_phyMacConfig->GetSymbolPeriod ());
-  			NS_LOG_DEBUG ("ENB TXing CTRL period start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod);
+  			NS_LOG_DEBUG ("ENB TXing CTRL period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  			              " start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod);
     		SendCtrlChannels(ctrlMsg, ctrlPeriod);
   		}
   		else
@@ -490,11 +482,12 @@ MmWaveEnbPhy::StartSubFrame (void)
   				NS_ASSERT ((macHeader.GetSubframeNum() == sfInd) && (macHeader.GetSlotNum() == slotInd));
   			}
   		}
-			NS_LOG_DEBUG ("ENB TXing DATA period start " << Simulator::Now()+ctrlPeriod << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (5.0));
+			NS_LOG_DEBUG ("ENB TXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+			              " start " << Simulator::Now()+ctrlPeriod << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (5.0));
   		Simulator::Schedule (ctrlPeriod, &MmWaveEnbPhy::SendDataChannels, this, pktBurst, dataPeriod-NanoSeconds (5.0), slotInfo);
   	}
   }
-  else if (slotDir == SlotAllocInfo::UL || (slotDir == SlotAllocInfo::NA && (((slotInd-1)%2) == 1)))  // Uplink slot
+  else if (slotDir == SlotAllocInfo::UL || slotInd == 2)  // Uplink slot
   {
 		NS_LOG_DEBUG ("Slot scheduled for Uplink Data");
   	for (unsigned itb = 0; itb < slotInfo.m_tbInfo.size (); itb++)
@@ -513,6 +506,13 @@ MmWaveEnbPhy::StartSubFrame (void)
   		}
   		m_downlinkSpectrumPhy->AddExpectedTb(tbAllocInfo.m_rnti, tbInfoElem.m_tbSize, tbInfoElem.m_mcs, bwChunkMap, true);
   	}
+		NS_LOG_DEBUG ("ENB RXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
+  }
+  else
+  {
+  	NS_LOG_DEBUG ("ENB no allocation frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  			              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
   }
 
   m_prevSlotDir = slotDir;

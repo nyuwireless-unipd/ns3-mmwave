@@ -231,8 +231,8 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		{
 			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
-
-		it->second.m_numRlcPdu;  // used to count remaining RLC requests
+		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
+		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
 		if (it->second.m_numRlcPdu == 1)
 		{
 			// wait for all RLC PDUs to be received
@@ -244,7 +244,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		}
 		else
 		{
-			it->second.m_numRlcPdu--;
+			it->second.m_numRlcPdu--; // decrement count of remaining RLC requests
 		}
 	}
 }
@@ -482,8 +482,8 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 						if ((statusPduPriority) && ((*itBsr).second.statusPduSize == statusPduMinSize))
 						{
 							MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
-							macPduMapIt->second.m_macHeader.AddSubheader (subheader);
-							(*lcIt).second.macSapUser->NotifyTxOpportunity ((*itBsr).second.statusPduSize, 0, macPduMapIt->first);
+//							macPduMapIt->second.m_macHeader.AddSubheader (subheader);
+							(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize - subheader.GetSize ()), 0, macPduMapIt->first);
 							NS_LOG_LOGIC (this << "\t" << bytesPerActiveLc << " send  " << (*itBsr).second.statusPduSize << " status bytes to LC " << (uint32_t)(*lcIt).first << " statusQueue " << (*itBsr).second.statusPduSize << " retxQueue" << (*itBsr).second.retxQueueSize << " txQueue" <<  (*itBsr).second.txQueueSize);
 							(*itBsr).second.statusPduSize = 0;
 							break;
@@ -495,8 +495,8 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 							if (((*itBsr).second.statusPduSize > 0) && (bytesForThisLc > (*itBsr).second.statusPduSize))
 							{
 								MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
-								macPduMapIt->second.m_macHeader.AddSubheader (subheader);
-								(*lcIt).second.macSapUser->NotifyTxOpportunity ((*itBsr).second.statusPduSize, 0, macPduMapIt->first);
+//								macPduMapIt->second.m_macHeader.AddSubheader (subheader);
+								(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize - subheader.GetSize ()), 0, macPduMapIt->first);
 								bytesForThisLc -= (*itBsr).second.statusPduSize;
 								NS_LOG_DEBUG (this << " serve STATUS " << (*itBsr).second.statusPduSize);
 								(*itBsr).second.statusPduSize = 0;
@@ -517,8 +517,8 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 								{
 									NS_LOG_DEBUG (this << " serve retx DATA, bytes " << bytesForThisLc);
 									MacSubheader subheader((*lcIt).first, bytesForThisLc);
-									macPduMapIt->second.m_macHeader.AddSubheader (subheader);
-									(*lcIt).second.macSapUser->NotifyTxOpportunity (bytesForThisLc, 0, macPduMapIt->first);
+//									macPduMapIt->second.m_macHeader.AddSubheader (subheader);
+									(*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize ()), 0, macPduMapIt->first);
 									if ((*itBsr).second.retxQueueSize >= bytesForThisLc)
 									{
 										(*itBsr).second.retxQueueSize -= bytesForThisLc;
@@ -547,8 +547,8 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 									}
 									NS_LOG_DEBUG (this << " serve tx DATA, bytes " << bytesForThisLc << ", RLC overhead " << rlcOverhead);
 									MacSubheader subheader((*lcIt).first, bytesForThisLc);
-									macPduMapIt->second.m_macHeader.AddSubheader (subheader);
-									(*lcIt).second.macSapUser->NotifyTxOpportunity (bytesForThisLc, 0, macPduMapIt->first);
+//									macPduMapIt->second.m_macHeader.AddSubheader (subheader);
+									(*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize ()), 0, macPduMapIt->first);
 									if ((*itBsr).second.txQueueSize >= bytesForThisLc - rlcOverhead)
 									{
 										(*itBsr).second.txQueueSize -= bytesForThisLc - rlcOverhead;

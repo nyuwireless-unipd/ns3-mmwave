@@ -44,12 +44,14 @@ main (int argc, char *argv[])
 {
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
-	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
-	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
+//	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
+//	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
+//	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
+	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
+	LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+	LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
 
 
   uint16_t numberOfNodes = 1;

@@ -226,7 +226,6 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 		{
 			if (DlCtrlRxParams->cellId == m_cellId)
 			{
-				//NS_LOG_UNCOND (this<<"Received Control Signal!!!");
 				StartRxCtrl (params);
 			}
 			else
