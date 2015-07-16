@@ -454,7 +454,7 @@ MmWaveEnbPhy::StartSubFrame (void)
   			ctrlPeriod = NanoSeconds (1000 * slotInfo.m_numCtrlSym * m_phyMacConfig->GetSymbolPeriod ());
   			dataPeriod = NanoSeconds (1000 * ( m_phyMacConfig->GetSymbPerSlot() - slotInfo.m_numCtrlSym) * \
   			                           m_phyMacConfig->GetSymbolPeriod ());
-  			NS_LOG_UNCOND ("ENB TXing CTRL period start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod);
+  			NS_LOG_DEBUG ("ENB TXing CTRL period start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod);
     		SendCtrlChannels(ctrlMsg, ctrlPeriod);
   		}
   		else

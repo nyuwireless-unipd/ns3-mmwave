@@ -246,7 +246,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 			{
 				continue; // DCI not for me
 			}
-			NS_LOG_UNCOND ("===========Received DCI");
+			//NS_LOG_UNCOND ("===========Received DCI");
 
 			// process TB info elements and set SF schedule
 			for (std::vector<TbInfoElement>::const_iterator tbIt = dciInfoElem.m_tbInfoElements.begin(); \
