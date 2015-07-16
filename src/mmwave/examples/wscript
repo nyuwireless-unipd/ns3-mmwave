@@ -7,4 +7,5 @@ def build(bld):
     obj.source = 'mmwave-tcp-example.cc'
     obj = bld.create_ns3_program('mmwave-simple-epc', ['mmwave'])
     obj.source = 'mmwave-simple-epc.cc'
-
+    obj = bld.create_ns3_program('mmwave-simple-building-obstacle', ['mmwave'])
+    obj.source = 'mmwave-simple-building-obstacle.cc'

@@ -50,7 +50,7 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("mmWaveSpectrumValueHelper");
 
 Ptr<SpectrumModel>
-mmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<mmWavePhyMacCommon> ptrConfig)
+mmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
   NS_LOG_FUNCTION (ptrConfig->GetCentreFrequency() << (uint32_t) ptrConfig->GetTotalNumChunk());
   Ptr<SpectrumModel> model;
@@ -79,7 +79,7 @@ mmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<mmWavePhyMacCommon> ptrConfig)
 }
 
 Ptr<SpectrumValue> 
-mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<mmWavePhyMacCommon> ptrConfig, double powerTx, std::vector <int> activeRbs)
+mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double powerTx, std::vector <int> activeRbs)
 {
     Ptr<SpectrumModel> model = GetSpectrumModel (ptrConfig);
     Ptr<SpectrumValue> txPsd = Create <SpectrumValue> (model);
@@ -102,7 +102,7 @@ mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<mmWavePhyMacCommon>
 }
 
 Ptr<SpectrumValue>
-mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<mmWavePhyMacCommon> ptrConfig, double powerTx, std::map<int, double> powerTxMap, std::vector <int> activeRbs)
+mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double powerTx, std::map<int, double> powerTxMap, std::vector <int> activeRbs)
 {
 	Ptr<SpectrumValue> dummy;
 	 return dummy;
@@ -111,7 +111,7 @@ mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<mmWavePhyMacCommon>
 
 
 Ptr<SpectrumValue>
-mmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (Ptr<mmWavePhyMacCommon> ptrConfig, double noiseFigure)
+mmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double noiseFigure)
 {
   Ptr<SpectrumModel> model = GetSpectrumModel (ptrConfig);
   Ptr<SpectrumValue> noisePsd = CreateNoisePowerSpectralDensity (noiseFigure, model);

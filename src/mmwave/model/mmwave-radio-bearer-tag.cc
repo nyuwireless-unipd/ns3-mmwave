@@ -11,73 +11,133 @@
 
 namespace ns3 {
 
-NS_OBJECT_ENSURE_REGISTERED (mmWaveRadioBearerTag);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveRadioBearerTag);
 
 TypeId
-mmWaveRadioBearerTag::GetTypeId (void)
+MmWaveRadioBearerTag::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::mmWaveRadioBearerTag")
+  static TypeId tid = TypeId ("ns3::MmWaveRadioBearerTag")
     .SetParent<Tag> ()
-    .AddConstructor<mmWaveRadioBearerTag> ()
-    .AddAttribute ("imsi", "The imsi that indicates the UE to which packet belongs",
+    .AddConstructor<MmWaveRadioBearerTag> ()
+    .AddAttribute ("rnti", "The rnti that indicates the UE to which packet belongs",
                    UintegerValue (0),
-                   MakeUintegerAccessor (&mmWaveRadioBearerTag::GetImsi),
-                   MakeUintegerChecker<uint64_t> ())
+                   MakeUintegerAccessor (&MmWaveRadioBearerTag::GetRnti),
+                   MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("lcid", "The id whithin the UE identifying the logical channel to which the packet belongs",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&MmWaveRadioBearerTag::GetLcid),
+                   MakeUintegerChecker<uint8_t> ())
+	 .AddAttribute ("size", "Size in bytes of the RLC PDU",
+									UintegerValue (0),
+									MakeUintegerAccessor (&MmWaveRadioBearerTag::GetSize),
+									MakeUintegerChecker<uint32_t> ())
   ;
   return tid;
 }
 
 TypeId
-mmWaveRadioBearerTag::GetInstanceTypeId (void) const
+MmWaveRadioBearerTag::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
-mmWaveRadioBearerTag::mmWaveRadioBearerTag ()
-  : m_imsi (0)
+MmWaveRadioBearerTag::MmWaveRadioBearerTag ()
+  : m_rnti (0),
+    m_lcid (0),
+    m_layer (0),
+    m_size (0)
+{
+}
+MmWaveRadioBearerTag::MmWaveRadioBearerTag (uint16_t rnti, uint8_t lcid, uint32_t size)
+  : m_rnti (rnti),
+    m_lcid (lcid),
+    m_size (size)
 {
 }
 
-mmWaveRadioBearerTag::mmWaveRadioBearerTag (uint64_t imsi)
-: m_imsi (imsi)
+MmWaveRadioBearerTag::MmWaveRadioBearerTag (uint16_t rnti, uint8_t lcid, uint32_t size, uint8_t layer)
+: m_rnti (rnti),
+  m_lcid (lcid),
+  m_layer (layer),
+  m_size (size)
 {
 }
 
 void
-mmWaveRadioBearerTag::SetImsi (uint64_t imsi)
+MmWaveRadioBearerTag::SetRnti (uint16_t rnti)
 {
-  m_imsi = imsi;
+  m_rnti = rnti;
 }
 
+void
+MmWaveRadioBearerTag::SetLcid (uint8_t lcid)
+{
+  m_lcid = lcid;
+}
+
+void
+MmWaveRadioBearerTag::SetLayer (uint8_t layer)
+{
+  m_layer = layer;
+}
+
+void
+MmWaveRadioBearerTag::SetSize (uint32_t size)
+{
+  m_size = size;
+}
 
 uint32_t
-mmWaveRadioBearerTag::GetSerializedSize (void) const
+MmWaveRadioBearerTag::GetSerializedSize (void) const
 {
   return 4;
 }
 
 void
-mmWaveRadioBearerTag::Serialize (TagBuffer i) const
+MmWaveRadioBearerTag::Serialize (TagBuffer i) const
 {
-  i.WriteU64 (m_imsi);
+  i.WriteU16 (m_rnti);
+  i.WriteU8 (m_lcid);
+  i.WriteU8 (m_layer);
+  i.WriteU32 (m_size);
 }
 
 void
-mmWaveRadioBearerTag::Deserialize (TagBuffer i)
+MmWaveRadioBearerTag::Deserialize (TagBuffer i)
 {
-  m_imsi = (uint64_t) i.ReadU64 ();
+  m_rnti = (uint16_t) i.ReadU16 ();
+  m_lcid = (uint8_t) i.ReadU8 ();
+  m_layer = (uint8_t) i.ReadU8 ();
 }
 
-uint64_t
-mmWaveRadioBearerTag::GetImsi () const
+uint16_t
+MmWaveRadioBearerTag::GetRnti () const
 {
-  return m_imsi;
+  return m_rnti;
+}
+
+uint8_t
+MmWaveRadioBearerTag::GetLcid () const
+{
+  return m_lcid;
+}
+
+uint8_t
+MmWaveRadioBearerTag::GetLayer () const
+{
+  return m_layer;
+}
+
+uint32_t
+MmWaveRadioBearerTag::GetSize () const
+{
+  return m_size;
 }
 
 void
-mmWaveRadioBearerTag::Print (std::ostream &os) const
+MmWaveRadioBearerTag::Print (std::ostream &os) const
 {
-	os << "imsi=" << m_imsi;
+  os << "rnti=" << m_rnti << ", lcid=" << (uint16_t) m_lcid << ", layer=" << (uint16_t)m_layer;
 }
 
 } // namespace ns3

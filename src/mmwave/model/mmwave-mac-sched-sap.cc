@@ -10,12 +10,12 @@
 namespace ns3
 {
 
-mmWaveMacSchedSapProvider::~mmWaveMacSchedSapProvider ()
+MmWaveMacSchedSapProvider::~MmWaveMacSchedSapProvider ()
 {
 
 }
 
-mmWaveMacSchedSapUser::~mmWaveMacSchedSapUser ()
+MmWaveMacSchedSapUser::~MmWaveMacSchedSapUser ()
 {
 
 }

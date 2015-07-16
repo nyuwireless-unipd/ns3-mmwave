@@ -16,6 +16,7 @@
 #include "mmwave-control-messages.h"
 #include <ns3/packet.h>
 #include <ns3/packet-burst.h>
+#include <ns3/lte-mac-sap.h>
 #include <map>
 #include <list>
 #include "mmwave-mac-sched-sap.h"
@@ -23,21 +24,22 @@
 
 namespace ns3 {
 
-class mmWaveMac : public Object
+class MmWaveMac : public Object
 {
 public:
 	/* Do not put the set TypeId function. */
-	mmWaveMac ();
-	~mmWaveMac ();
+	MmWaveMac ();
+	~MmWaveMac ();
 
-	void SetCofigurationParameters (Ptr<mmWavePhyMacCommon> ptrConfig);
-	Ptr<mmWavePhyMacCommon> GetConfigurationParameters (void) const;
+
+	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	bool QueueData (Ptr<Packet> packet);
 	Ptr<PacketBurst> GetPacketBurstFromMacQueue ();
 
 protected:
-	Ptr<mmWavePhyMacCommon> m_PhyMACConfig;
+	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
 	Ptr<PacketBurst>  m_macQueue;
 

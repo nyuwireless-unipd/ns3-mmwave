@@ -7,13 +7,19 @@
 
 
 #include "mmwave-enb-mac.h"
+#include "mmwave-phy-mac-common.h"
+#include "mmwave-mac-pdu-header.h"
+#include "mmwave-mac-sched-sap.h"
+#include "mmwave-mac-scheduler.h"
+#include <ns3/lte-mac-sap.h>
+#include <ns3/lte-enb-cmac-sap.h>
 #include <ns3/log.h>
 
 namespace ns3
 {
-NS_LOG_COMPONENT_DEFINE ("mmWaveEnbMac");
+NS_LOG_COMPONENT_DEFINE ("MmWaveEnbMac");
 
-NS_OBJECT_ENSURE_REGISTERED (mmWaveEnbMac);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveEnbMac);
 
 
 
@@ -22,10 +28,10 @@ NS_OBJECT_ENSURE_REGISTERED (mmWaveEnbMac);
 // //////////////////////////////////////
 
 
-class EnbMacMemberLteEnbCmacSapProvider : public LteEnbCmacSapProvider
+class MmWaveEnbMacMemberEnbCmacSapProvider : public LteEnbCmacSapProvider
 {
 public:
-  EnbMacMemberLteEnbCmacSapProvider (mmWaveEnbMac* mac);
+  MmWaveEnbMacMemberEnbCmacSapProvider (MmWaveEnbMac* mac);
 
   // inherited from LteEnbCmacSapProvider
   virtual void ConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth);
@@ -40,65 +46,65 @@ public:
 
 
 private:
-  mmWaveEnbMac* m_mac;
+  MmWaveEnbMac* m_mac;
 };
 
 
-EnbMacMemberLteEnbCmacSapProvider::EnbMacMemberLteEnbCmacSapProvider (mmWaveEnbMac* mac)
+MmWaveEnbMacMemberEnbCmacSapProvider::MmWaveEnbMacMemberEnbCmacSapProvider (MmWaveEnbMac* mac)
   : m_mac (mac)
 {
 }
 
 void
-EnbMacMemberLteEnbCmacSapProvider::ConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth)
+MmWaveEnbMacMemberEnbCmacSapProvider::ConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth)
 {
   m_mac->DoConfigureMac (ulBandwidth, dlBandwidth);
 }
 
 void
-EnbMacMemberLteEnbCmacSapProvider::AddUe (uint16_t rnti)
+MmWaveEnbMacMemberEnbCmacSapProvider::AddUe (uint16_t rnti)
 {
   m_mac->DoAddUe (rnti);
 }
 
 void
-EnbMacMemberLteEnbCmacSapProvider::RemoveUe (uint16_t rnti)
+MmWaveEnbMacMemberEnbCmacSapProvider::RemoveUe (uint16_t rnti)
 {
   m_mac->DoRemoveUe (rnti);
 }
 
 void
-EnbMacMemberLteEnbCmacSapProvider::AddLc (LcInfo lcinfo, LteMacSapUser* msu)
+MmWaveEnbMacMemberEnbCmacSapProvider::AddLc (LcInfo lcinfo, LteMacSapUser* msu)
 {
   m_mac->DoAddLc (lcinfo, msu);
 }
 
 void
-EnbMacMemberLteEnbCmacSapProvider::ReconfigureLc (LcInfo lcinfo)
+MmWaveEnbMacMemberEnbCmacSapProvider::ReconfigureLc (LcInfo lcinfo)
 {
   m_mac->DoReconfigureLc (lcinfo);
 }
 
 void
-EnbMacMemberLteEnbCmacSapProvider::ReleaseLc (uint16_t rnti, uint8_t lcid)
+MmWaveEnbMacMemberEnbCmacSapProvider::ReleaseLc (uint16_t rnti, uint8_t lcid)
 {
   m_mac->DoReleaseLc (rnti, lcid);
 }
 
 void
-EnbMacMemberLteEnbCmacSapProvider::UeUpdateConfigurationReq (UeConfig params)
+MmWaveEnbMacMemberEnbCmacSapProvider::UeUpdateConfigurationReq (UeConfig params)
 {
-  m_mac->DoUeUpdateConfigurationReq (params);
+  m_mac->UeUpdateConfigurationReq (params);
 }
 
 LteEnbCmacSapProvider::RachConfig
-EnbMacMemberLteEnbCmacSapProvider::GetRachConfig ()
+MmWaveEnbMacMemberEnbCmacSapProvider::GetRachConfig ()
 {
   return m_mac->DoGetRachConfig ();
 }
 
 LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue
-EnbMacMemberLteEnbCmacSapProvider::AllocateNcRaPreamble (uint16_t rnti)
+MmWaveEnbMacMemberEnbCmacSapProvider::AllocateNcRaPreamble (uint16_t rnti)
 {
   return m_mac->DoAllocateNcRaPreamble (rnti);
 }
@@ -106,170 +112,228 @@ EnbMacMemberLteEnbCmacSapProvider::AllocateNcRaPreamble (uint16_t rnti)
 
 
 
-/* SAP */
+// SAP
 // ENB MAC-Phy
-class MacEnbMembermmWavePhySapUser : public mmWavePhySapUser
+class MmWaveMacEnbMemberPhySapUser : public MmWavePhySapUser
 {
 public:
-	MacEnbMembermmWavePhySapUser (mmWaveEnbMac* mac);
+	MmWaveMacEnbMemberPhySapUser (MmWaveEnbMac* mac);
 
 	virtual void ReceivePhyPdu (Ptr<Packet> p);
 
-	virtual void ReceivemmWaveControlMessage (Ptr<mmWaveControlMessages> msg);
+	virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg);
 
 	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
 
-	virtual void CqiReport (CqiInfo cqi);
+	virtual void CqiReport (DlCqiInfo cqi);
 
 	virtual void ReceiveRachPreamble (uint32_t raId);
 private:
-	mmWaveEnbMac* m_mac;
+	MmWaveEnbMac* m_mac;
 };
 
-MacEnbMembermmWavePhySapUser::MacEnbMembermmWavePhySapUser (mmWaveEnbMac* mac)
+MmWaveMacEnbMemberPhySapUser::MmWaveMacEnbMemberPhySapUser (MmWaveEnbMac* mac)
 :m_mac(mac)
 {
 
 }
 
 void
-MacEnbMembermmWavePhySapUser::ReceivePhyPdu (Ptr<Packet> p)
+MmWaveMacEnbMemberPhySapUser::ReceivePhyPdu (Ptr<Packet> p)
 {
-	m_mac->PhyPacketRx (p);
+	m_mac->DoReceivePhyPdu (p);
 }
 
 void
-MacEnbMembermmWavePhySapUser::ReceivemmWaveControlMessage (Ptr<mmWaveControlMessages> msg)
+MmWaveMacEnbMemberPhySapUser::ReceiveControlMessage (Ptr<MmWaveControlMessage> msg)
 {
-	m_mac->DoReceivemmWaveControlMessage(msg);
+	m_mac->DoReceiveControlMessage(msg);
 }
 
 void
-MacEnbMembermmWavePhySapUser::SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo)
+MmWaveMacEnbMemberPhySapUser::SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo)
 {
 	m_mac->DoSubframeIndication(frameNo, subframeNo, slotNo);
 }
 
 void
-MacEnbMembermmWavePhySapUser::CqiReport (CqiInfo cqi)
+MmWaveMacEnbMemberPhySapUser::CqiReport (DlCqiInfo cqi)
 {
 
 }
 
 void
-MacEnbMembermmWavePhySapUser::ReceiveRachPreamble (uint32_t raId)
+MmWaveMacEnbMemberPhySapUser::ReceiveRachPreamble (uint32_t raId)
 {
 	m_mac->ReceiveRachPreamble(raId);
 }
 
 // MAC Sched
 
-class MacMemberMacSchedSapUser : public mmWaveMacSchedSapUser
+class MmWaveMacMemberMacSchedSapUser : public MmWaveMacSchedSapUser
 {
 public:
-	MacMemberMacSchedSapUser (mmWaveEnbMac* mac);
+	MmWaveMacMemberMacSchedSapUser (MmWaveEnbMac* mac);
 	virtual void SchedConfigInd (const struct SchedConfigIndParameters& params);
 private:
-	mmWaveEnbMac* m_mac;
+	MmWaveEnbMac* m_mac;
 };
 
-MacMemberMacSchedSapUser::MacMemberMacSchedSapUser (mmWaveEnbMac* mac)
+MmWaveMacMemberMacSchedSapUser::MmWaveMacMemberMacSchedSapUser (MmWaveEnbMac* mac)
 :m_mac(mac)
 {
-	/* Some blank spaces*/
+//	 Some blank spaces
 }
 
 void
-MacMemberMacSchedSapUser::SchedConfigInd (const struct SchedConfigIndParameters& params)
+MmWaveMacMemberMacSchedSapUser::SchedConfigInd (const struct SchedConfigIndParameters& params)
 {
 	m_mac->DoSchedConfigIndication (params);
 }
 
 
 TypeId
-mmWaveEnbMac::GetTypeId (void)
+MmWaveEnbMac::GetTypeId (void)
 {
-	static TypeId tid = TypeId ("ns3::mmWaveEnbMac")
-			.SetParent<mmWaveMac> ()
-			.AddConstructor<mmWaveEnbMac> ()
+	static TypeId tid = TypeId ("ns3::MmWaveEnbMac")
+			.SetParent<MmWaveMac> ()
+			.AddConstructor<MmWaveEnbMac> ()
 	;
 	return tid;
 }
 
-mmWaveEnbMac::mmWaveEnbMac (void)
-	:mmWaveMac (),
+MmWaveEnbMac::MmWaveEnbMac (void) :
 	 m_frameNum (0),
 	 m_sfNum (0),
-	 m_slotNum (0)
-{
-	m_cmacSapProvider = new EnbMacMemberLteEnbCmacSapProvider (this);
-	m_macSapProvider = new EnbMacMemberLteMacSapProvider<mmWaveEnbMac> (this);
-
-	NS_LOG_FUNCTION (this);
-	m_phySapUser = new MacEnbMembermmWavePhySapUser (this);
-	m_macSchedSapUser = new MacMemberMacSchedSapUser (this);
-}
-
-mmWaveEnbMac::~mmWaveEnbMac (void)
+	 m_slotNum (0),
+	 m_tbUid (0)
 {
 	NS_LOG_FUNCTION (this);
+	m_cmacSapProvider = new MmWaveEnbMacMemberEnbCmacSapProvider (this);
+	m_macSapProvider = new EnbMacMemberLteMacSapProvider<MmWaveEnbMac> (this);
+	m_phySapUser = new MmWaveMacEnbMemberPhySapUser (this);
+	m_macSchedSapUser = new MmWaveMacMemberMacSchedSapUser (this);
 }
 
-void
-mmWaveEnbMac::DoDispose (void)
+MmWaveEnbMac::~MmWaveEnbMac (void)
 {
 	NS_LOG_FUNCTION (this);
 }
 
 void
-mmWaveEnbMac::ReceiveRachPreamble (uint32_t raId)
+MmWaveEnbMac::DoDispose (void)
+{
+	NS_LOG_FUNCTION (this);
+  m_dlCqiReceived.clear ();
+  m_ulCqiReceived.clear ();
+  m_ulCeReceived.clear ();
+//  m_dlInfoListReceived.clear ();
+//  m_ulInfoListReceived.clear ();
+//  m_miDlHarqProcessesPackets.clear ();
+  delete m_macSapProvider;
+  delete m_cmacSapProvider;
+  delete m_macSchedSapUser;
+//  delete m_macCschedSapUser;
+  delete m_phySapUser;
+}
+
+void
+MmWaveEnbMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+{
+	m_phyMacConfig = ptrConfig;
+}
+
+Ptr<MmWavePhyMacCommon>
+MmWaveEnbMac::GetConfigurationParameters (void) const
+{
+	return m_phyMacConfig;
+}
+
+void
+MmWaveEnbMac::ReceiveRachPreamble (uint32_t raId)
 {
 	++m_receivedRachPreambleCount[raId];
 }
 
 // forwarded from LteMacSapProvider
 void
-mmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
+MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 {
-	LteRadioBearerTag tag (params.rnti, params.lcid, params.layer);
-	params.pdu->AddPacketTag (tag);
-	bool flag = QueueData(params.pdu);
-	NS_ASSERT (flag);
-}
-void
-mmWaveEnbMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters)
-{
-	//NS_LOG_UNCOND ("***************************************ENB__Reporting buffer staftus");
-}
+	// TB UID passed back along with RLC data as HARQ process ID
+	uint32_t tbMapKey = ((params.rnti & 0xFFFF) << 8) | (params.harqProcessId & 0xFF);
+	std::map<uint32_t, struct MacPduInfo>::iterator it = m_macPduMap.find (tbMapKey);
+	if (it == m_macPduMap.end ())
+	{
+		NS_FATAL_ERROR ("No MAC PDU storage element found for this TB UID/RNTI");
+	}
+	else
+	{
+		if(it->second.m_pdu == 0)
+		{
+			it->second.m_pdu = params.pdu;
+		}
+		else
+		{
+			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
+		}
 
+		//it->second.m_numRlcPdu;  // used to count remaining RLC requests
+		if (it->second.m_numRlcPdu == 1)
+		{
+			// wait for all RLC PDUs to be received
+			it->second.m_pdu->AddHeader (it->second.m_macHeader);
+			LteRadioBearerTag bearerTag (params.rnti, it->second.m_size, 0);
+			it->second.m_pdu->AddPacketTag (bearerTag);
+		  m_phySapProvider->SendMacPdu (it->second.m_pdu);
+			m_macPduMap.erase (it);  // delete map entry
+		}
+		else
+		{
+			it->second.m_numRlcPdu--;
+		}
+	}
+}
 
 LteMacSapProvider*
-mmWaveEnbMac::GetmmWaveMacSapProvider (void)
+MmWaveEnbMac::GetUeMacSapProvider (void)
 {
   return m_macSapProvider;
 }
 
 LteEnbCmacSapProvider*
-mmWaveEnbMac::GetmmWaveEnbCmacSapProvider (void)
+MmWaveEnbMac::GetEnbCmacSapProvider (void)
 {
   return m_cmacSapProvider;
 }
 void
-mmWaveEnbMac::SetmmWaveEnbCmacSapUser (LteEnbCmacSapUser* s)
+MmWaveEnbMac::SetEnbCmacSapUser (LteEnbCmacSapUser* s)
 {
   m_cmacSapUser = s;
 }
 
 void
-mmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo)
+MmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo)
 {
 	m_frameNum = frameNo;
 	m_sfNum = subframeNo;
 	m_slotNum = slotNo;
 
+	// --- DOWNLINK ---
+	// Send Dl-CQI info to the scheduler	if(m_dlCqiReceived.size () > 0)
+	{
+		MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters dlCqiInfoReq;
+		dlCqiInfoReq.m_sfnsf = ((0x3FF & frameNo) << 16) | ((0xFF & subframeNo) << 8) | ((0xFF & slotNo));
+
+		dlCqiInfoReq.m_cqiList.insert (dlCqiInfoReq.m_cqiList.begin (), m_dlCqiReceived.begin (), m_dlCqiReceived.end ());
+		m_dlCqiReceived.erase (m_dlCqiReceived.begin (), m_dlCqiReceived.end ());
+
+		m_macSchedSapProvider->SchedDlCqiInfoReq (dlCqiInfoReq);
+	}
+
 	if (!m_receivedRachPreambleCount.empty ())
 	{
-		Ptr<RarmmWaveControlMessage> rarMsg = Create<RarmmWaveControlMessage> ();
+    // process received RACH preambles and notify the scheduler
+		Ptr<MmWaveRarMessage> rarMsg = Create<MmWaveRarMessage> ();
 
 		for (std::map<uint8_t, uint32_t>::const_iterator it = m_receivedRachPreambleCount.begin ();
 				it != m_receivedRachPreambleCount.end ();
@@ -277,233 +341,272 @@ mmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 		{
 			uint32_t rnti = m_cmacSapUser->AllocateTemporaryCellRnti ();
 			NS_LOG_INFO (rnti);
-			RarmmWaveControlMessage::Rar rar;
+			MmWaveRarMessage::Rar rar;
 			rar.rapId = (*it).first;
 			rar.rarPayload.m_rnti = rnti;
 			rarMsg->AddRar (rar);
 			NS_ASSERT_MSG((*it).second ==1, "Two user send the same Rach ID, collision detected");
 		}
-		m_phySapProvider->SendmmWaveControlMessage (rarMsg);
+		m_phySapProvider->SendControlMessage (rarMsg);
 		m_receivedRachPreambleCount.clear ();
 	}
 
-	if(m_ReceivedCqi.size () > 0)
+	// --- UPLINK ---
+	// Send UL-CQI info to the scheduler
+	std::vector <MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters>::iterator itCqi;
+	for (uint16_t i = 0; i < m_ulCqiReceived.size (); i++)
 	{
-		mmWaveMacSchedSapProvider::SchedCqiInfoReqParameters cqiInfoReq;
-		cqiInfoReq.m_sfnsf = ((0x3FF & frameNo) << 16) | ((0xFF & subframeNo) << 8) | ((0xFF & slotNo));
-
-		cqiInfoReq.m_cqiList.insert (cqiInfoReq.m_cqiList.begin (), m_ReceivedCqi.begin (), m_ReceivedCqi.end ());
-		m_ReceivedCqi.erase (m_ReceivedCqi.begin (), m_ReceivedCqi.end ());
-
-		m_macSchedSapProvider->SchedCqiInfoReq (cqiInfoReq);
-	}
-
-	if (m_slotNum==1)
-	{
-		uint32_t dlSchedFrameNo = m_frameNum;
-		uint32_t dlSchedSubframeNo = m_sfNum;
-
-		if (dlSchedSubframeNo + m_PhyMACConfig->GetL1L2CtrlLatency() > m_PhyMACConfig->GetSubframePerFrame() )
+		if (subframeNo > 1)
 		{
-		  dlSchedFrameNo++;
-		  dlSchedSubframeNo = (dlSchedSubframeNo + m_PhyMACConfig->GetL1L2CtrlLatency()) - m_PhyMACConfig->GetSubframePerFrame();
+//			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNo) << 4) | (0xF & (subframeNo - 1));
+			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNo) << 16) | ((0xFF & (subframeNo-1)) << 8) | ((0xFF & slotNo));
 		}
 		else
 		{
-		  dlSchedSubframeNo = dlSchedSubframeNo + m_PhyMACConfig->GetL1L2CtrlLatency();
+//			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & (frameNo-1)) << 4) | (0xF & 10);
+			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & (frameNo-1)) << 16) | ((0xFF & 8) << 8) | ((0xFF & slotNo));
+
+		}
+		m_macSchedSapProvider->SchedUlCqiInfoReq (m_ulCqiReceived.at (i));
+	}
+	m_ulCqiReceived.clear ();
+
+	// Send BSR reports to the scheduler
+	if (m_ulCeReceived.size () > 0)
+	{
+		MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters ulMacReq;
+		ulMacReq.m_sfnSf = ((0x3FF & frameNo) << 4) | (0xF & subframeNo);
+		ulMacReq.m_macCeList.insert (ulMacReq.m_macCeList.begin (), m_ulCeReceived.begin (), m_ulCeReceived.end ());
+		m_ulCeReceived.erase (m_ulCeReceived.begin (), m_ulCeReceived.end ());
+		m_macSchedSapProvider->SchedUlMacCtrlInfoReq (ulMacReq);
+	}
+
+	if (m_slotNum == 1)
+	{
+		// trigger scheduler
+		uint32_t dlSchedFrameNo = m_frameNum;
+		uint32_t dlSchedSubframeNo = m_sfNum;
+
+		if (dlSchedSubframeNo + m_phyMacConfig->GetL1L2CtrlLatency () > m_phyMacConfig->GetSubframesPerFrame ())
+		{
+		  dlSchedFrameNo++;
+		  dlSchedSubframeNo = (dlSchedSubframeNo + m_phyMacConfig->GetL1L2CtrlLatency()) - m_phyMacConfig->GetSubframesPerFrame();
+		}
+		else
+		{
+		  dlSchedSubframeNo = dlSchedSubframeNo + m_phyMacConfig->GetL1L2CtrlLatency();
 		}
 
-		mmWaveMacSchedSapProvider::SchedTriggerReqParameters params;
+		MmWaveMacSchedSapProvider::SchedTriggerReqParameters params;
 		uint32_t sfn = ((0x3FF & dlSchedFrameNo) << 16) | ((0xFF & dlSchedSubframeNo) << 8) | ((0xFF & 1));;
 		params.m_snfSf = sfn;
 
 		//NS_LOG_UNCOND ("Req for :"<< dlSchedFrameNo << "  "<<dlSchedSubframeNo);
 
-		params.m_ueList = m_associatedUE;
+		params.m_ueList = m_associatedUe;
 		m_macSchedSapProvider->SchedTriggerReq (params);
-		std::map <uint32_t, allocationList>::iterator it = m_scheduleMap.find (sfn);
-		m_DataTxAllocationList = (*it).second;
-	}
-
-	// Manage Data Tx
-	if (!m_DataTxAllocationList.m_AllocationMapforSF.empty())
-	{
-		allocationMap alMap;
-		while(!m_DataTxAllocationList.m_AllocationMapforSF.empty())
-		{
-			std::list<allocationMap>::iterator amIt;
-			bool flag = false;
-
-			amIt = m_DataTxAllocationList.m_AllocationMapforSF.begin ();
-			alMap = (*amIt);
-			m_DataTxAllocationList.m_AllocationMapforSF.pop_front ();
-			if (alMap.m_IsUL == true)
-			{
-				continue;
-			}
-
-			for (uint32_t i = 0; i < alMap.m_user.size (); i++)
-			{
-				if (alMap.m_user.at(i).noAllocation == false)
-				{
-					flag = true;
-
-					std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (alMap.m_user.at(i).userImsi);
-					if (rntiIt != m_rlcAttached.end ())
-					{
-						std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.begin ();
-
-						for (lcidIt = rntiIt->second.begin (); lcidIt!= rntiIt->second.end (); lcidIt++)
-						{
-							(*lcidIt).second->NotifyTxOpportunity (alMap.m_user.at(i).m_tbsSize, 0, 0);
-						}
-					}
-
-				}
-			}
-
-			if (flag)
-			{
-				break;
-			}
-		}
-		Ptr<PacketBurst> pb = GetPacketBurstFromMacQueue ();
-		m_phySapProvider->SendMacPdu (pb);
 	}
 }
 
 void
-mmWaveEnbMac::AssociateUeMAC (uint64_t imsi)
+MmWaveEnbMac::AssociateUeMAC (uint64_t imsi)
 {
 	//NS_LOG_UNCOND (this<<"Associate UE (imsi:"<< imsi<<" ) with enb");
 
-	//m_associatedUE.push_back (imsi);
+	//m_associatedUe.push_back (imsi);
 
 }
 
 void
-mmWaveEnbMac::SetForwardUpCallback (Callback <void, Ptr<Packet> > cb)
+MmWaveEnbMac::SetForwardUpCallback (Callback <void, Ptr<Packet> > cb)
 {
 	m_forwardUpCallback = cb;
 }
 
 void
-mmWaveEnbMac::PhyPacketRx (Ptr<Packet> p)
+MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 {
-	//m_forwardUpCallback (p);
-
 	NS_LOG_FUNCTION (this);
 	LteRadioBearerTag tag;
 	p->RemovePacketTag (tag);
 	uint16_t rnti = tag.GetRnti ();
-
-	uint8_t lcid = tag.GetLcid ();
+	MmWaveMacPduHeader macHeader;
+	p->RemoveHeader (macHeader);
 	std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
 	NS_ASSERT_MSG (rntiIt != m_rlcAttached.end (), "could not find RNTI" << rnti);
-	std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (lcid);
-	NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << lcid);
-	//NS_LOG_UNCOND ("Enb Mac Rx Packet, tag_Rnti:"<<rnti<<" enb_Rnti:"<<(int)(*rntiIt).first);
-	(*lcidIt).second->ReceivePdu (p);
+	std::vector<MacSubheader> macSubheaders = macHeader.GetSubheaders ();
+	uint32_t currPos = 0;
+	for (unsigned ipdu = 0; ipdu < macSubheaders.size (); ipdu++)
+	{
+		std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (macSubheaders[ipdu].m_lcid);
+		NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << macSubheaders[ipdu].m_lcid);
+		Ptr<Packet> rlcPdu;
+		if (p->GetSize () < (uint32_t)macSubheaders[ipdu].m_size)
+		{
+			NS_LOG_DEBUG ("RLC PDU size less than what is specified in MAC header (actual= " \
+			              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+			rlcPdu = p->CreateFragment (currPos, p->GetSize ());
+			currPos += p->GetSize ();
+		}
+		else
+		{
+			rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
+			currPos += (uint32_t)macSubheaders[ipdu].m_size;
+		}
+		NS_LOG_DEBUG ("Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
+		(*lcidIt).second->ReceivePdu (rlcPdu);
+	}
 }
 
-mmWavePhySapUser*
-mmWaveEnbMac::GetmmWavePhySapUser ()
+MmWavePhySapUser*
+MmWaveEnbMac::GetUePhySapUser ()
 {
 	return m_phySapUser;
 }
 
 void
-mmWaveEnbMac::SetmmWavePhySapProvider (mmWavePhySapProvider* ptr)
+MmWaveEnbMac::SetUePhySapProvider (MmWavePhySapProvider* ptr)
 {
 	m_phySapProvider = ptr;
 }
 
-mmWaveMacSchedSapUser*
-mmWaveEnbMac::GetmmWaveMacSchedSapUser ()
+MmWaveMacSchedSapUser*
+MmWaveEnbMac::GetMmWaveMacSchedSapUser ()
 {
 	return m_macSchedSapUser;
 }
 
 void
-mmWaveEnbMac::SetmmWaveMacSchedSapProvider (mmWaveMacSchedSapProvider* ptr)
+MmWaveEnbMac::SetMmWaveMacSchedSapProvider (MmWaveMacSchedSapProvider* ptr)
 {
 	m_macSchedSapProvider = ptr;
 }
 
 void
-mmWaveEnbMac::DoReceivemmWaveControlMessage  (Ptr<mmWaveControlMessages> msg)
+MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 {
 	NS_LOG_FUNCTION (this << msg);
 
 	switch (msg->GetMessageType())
 	{
-	case (mmWaveControlMessages::CQI):
-	{
-		Ptr<mmWaveCqiReport> cqi = DynamicCast<mmWaveCqiReport> (msg);
-		CqiInfo cqiElement;
-		cqiElement = cqi->GetCqiReport ();
-		NS_ASSERT (cqiElement.m_ueId != 0);
-		m_ReceivedCqi.push_back (cqiElement);
-		break;
-	}
-	default:
-		NS_LOG_INFO ("Control message not supported/expected");
-	}
+		case (MmWaveControlMessage::DL_CQI):
+		{
+			Ptr<MmWaveDlCqiMessage> cqi = DynamicCast<MmWaveDlCqiMessage> (msg);
+			DlCqiInfo cqiElement = cqi->GetDlCqi ();
+			NS_ASSERT (cqiElement.m_rnti != 0);
+			m_dlCqiReceived.push_back (cqiElement);
+			break;
+		}
+		case (MmWaveControlMessage::BSR):
+		{
+			Ptr<MmWaveBsrMessage> bsr = DynamicCast<MmWaveBsrMessage> (msg);
+		  m_ulCeReceived.push_back (bsr->GetBsr ());
+			break;
+		}
+		default:
+			NS_LOG_INFO ("Control message not supported/expected");
+		}
 
 }
 
 void
-mmWaveEnbMac::DoSchedConfigIndication (mmWaveMacSchedSapUser::SchedConfigIndParameters ind)
+MmWaveEnbMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params)
 {
-	uint16_t allocSize = ind.m_allocationList.m_AllocationMapforSF.size();
-	uint16_t patLen = ind.m_tddPattern.m_slotType.size ();
+  NS_LOG_FUNCTION (this);
+  MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters schedParams;
+  schedParams.m_logicalChannelIdentity = params.lcid;
+  schedParams.m_rlcRetransmissionHolDelay = params.retxQueueHolDelay;
+  schedParams.m_rlcRetransmissionQueueSize = params.retxQueueSize;
+  schedParams.m_rlcStatusPduSize = params.statusPduSize;
+  schedParams.m_rlcTransmissionQueueHolDelay = params.txQueueHolDelay;
+  schedParams.m_rlcTransmissionQueueSize = params.txQueueSize;
+  schedParams.m_rnti = params.rnti;
 
-	NS_ASSERT_MSG (allocSize == patLen, "Pattern length and allocation map length should be same");
-	//m_DataTxAllocationList.
-
-	m_scheduleMap.insert(std::make_pair(ind.m_sfn, ind.m_allocationList));
-
-	Ptr<mmWaveResourceAllocation> msg = Create<mmWaveResourceAllocation> ();
-	msg->SetAllocationMap (ind.m_allocationList);
-	msg->SetSchedule (ind.m_tddPattern);
-	msg->SetSFNSF (ind.m_sfn);
-	/*uint32_t key = msg->GetSFNSF ();
-	NS_LOG_UNCOND("Frame Num"<< (key >> 16) <<" Subframe Num:" << ((key & 0xff00)>>8) );*/
-	m_phySapProvider->SendmmWaveControlMessage (msg);
-
+  m_macSchedSapProvider->SchedDlRlcBufferReq (schedParams);
 }
+
+void
+MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndParameters ind)
+{
+	std::map<uint16_t, SchedInfoElement>::iterator schedTt;
+	// process scheduling entries and generate messages for PHY
+	for (schedTt = ind.m_schedInfoMap.begin (); schedTt != ind.m_schedInfoMap.end (); schedTt++)
+	{
+		// Create DCI message object and send to PHY
+		SchedInfoElement& schedInfo = schedTt->second;
+		uint16_t rnti = schedInfo.m_rnti;
+		Ptr<MmWaveDciMessage> dciMsg = Create<MmWaveDciMessage> ();
+		dciMsg->SetDciInfoElement (schedInfo.m_dci);
+		dciMsg->SetSfnSf (ind.m_sfn);
+		m_phySapProvider->SendControlMessage (dciMsg);
+    std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
+
+		for (unsigned int itb = 0; itb < schedInfo.m_dci.m_tbInfoElements.size (); itb++)
+		{
+			// iterate through RLC PDUs for each slot
+			TbInfoElement& tbInfo = schedInfo.m_dci.m_tbInfoElements[itb];
+			std::vector<RlcPduInfo>& rlcPduElems = schedInfo.m_rlcPduList[itb];
+
+			MacPduInfo macPduInfo (schedInfo.m_frameNum, schedInfo.m_sfNum, tbInfo.m_slotInd+1, \
+			                       tbInfo.m_tbSize, rlcPduElems.size ());
+			uint8_t tbUid = AllocateTbUid ();
+			// insert into MAC PDU map
+			uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
+			std::map<uint32_t, struct MacPduInfo>::iterator macPduIt = \
+					(m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo))).first;
+			for (unsigned int ipdu = 0; ipdu < rlcPduElems.size (); ipdu++)
+			{
+				NS_ASSERT_MSG (rntiIt != m_rlcAttached.end (), "could not find RNTI" << rnti);
+				std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (rlcPduElems[ipdu].m_lcid);
+				NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduElems[ipdu].m_lcid);
+				MacSubheader subheader (rlcPduElems[ipdu].m_lcid, rlcPduElems[ipdu].m_size);
+				macPduIt->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
+				// Instead of passing the HARQ process number to RLC, use a unique identifier to match the RLC PDU to its TB
+				NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int)rlcPduElems[ipdu].m_size);
+        (*lcidIt).second->NotifyTxOpportunity (rlcPduElems[ipdu].m_size, 0, tbUid);
+			}
+
+		}
+	}
+}
+
+uint8_t MmWaveEnbMac::AllocateTbUid (void)
+{
+	return m_tbUid++;
+}
+
 // ////////////////////////////////////////////
 // CMAC SAP
 // ////////////////////////////////////////////
 
 void
-mmWaveEnbMac::DoConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth)
+MmWaveEnbMac::DoConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth)
 {
   NS_LOG_FUNCTION (this << " ulBandwidth=" << (uint16_t) ulBandwidth << " dlBandwidth=" << (uint16_t) dlBandwidth);
 }
 
 
 void
-mmWaveEnbMac::DoAddUe (uint16_t rnti)
+MmWaveEnbMac::DoAddUe (uint16_t rnti)
 {
 	NS_LOG_FUNCTION (this << " rnti=" << rnti);
 	std::map<uint8_t, LteMacSapUser*> empty;
 	std::pair <std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator, bool>
 	  ret = m_rlcAttached.insert (std::pair <uint16_t,  std::map<uint8_t, LteMacSapUser*> >
 								  (rnti, empty));
-	m_associatedUE.push_back (rnti);
+	m_associatedUe.push_back (rnti);
 	NS_ASSERT_MSG (ret.second, "element already present, RNTI already existed");
 
 }
 
 void
-mmWaveEnbMac::DoRemoveUe (uint16_t rnti)
+MmWaveEnbMac::DoRemoveUe (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << " rnti=" << rnti);
 }
 
 void
-mmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
+MmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_FUNCTION (this);
@@ -527,19 +630,19 @@ mmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
 }
 
 void
-mmWaveEnbMac::DoReconfigureLc (LteEnbCmacSapProvider::LcInfo lcinfo)
+MmWaveEnbMac::DoReconfigureLc (LteEnbCmacSapProvider::LcInfo lcinfo)
 {
   NS_FATAL_ERROR ("not implemented");
 }
 
 void
-mmWaveEnbMac::DoReleaseLc (uint16_t rnti, uint8_t lcid)
+MmWaveEnbMac::DoReleaseLc (uint16_t rnti, uint8_t lcid)
 {
   NS_FATAL_ERROR ("not implemented");
 }
 
 void
-mmWaveEnbMac::DoUeUpdateConfigurationReq (LteEnbCmacSapProvider::UeConfig params)
+MmWaveEnbMac::UeUpdateConfigurationReq (LteEnbCmacSapProvider::UeConfig params)
 {
   NS_LOG_FUNCTION (this);
   //FfMacCschedSapProvider::CschedUeConfigReqParameters req;
@@ -550,16 +653,16 @@ mmWaveEnbMac::DoUeUpdateConfigurationReq (LteEnbCmacSapProvider::UeConfig params
 }
 
 LteEnbCmacSapProvider::RachConfig
-mmWaveEnbMac::DoGetRachConfig ()
+MmWaveEnbMac::DoGetRachConfig ()
 {
   struct LteEnbCmacSapProvider::RachConfig rc;
   return rc;
 }
 
 LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue
-mmWaveEnbMac::DoAllocateNcRaPreamble (uint16_t rnti)
+MmWaveEnbMac::DoAllocateNcRaPreamble (uint16_t rnti)
 {
-  LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue ret;
+	LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue ret;
   return ret;
 }
 

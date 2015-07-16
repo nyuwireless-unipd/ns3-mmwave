@@ -1,16 +1,13 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 #include "ns3/core-module.h"
-#include "ns3/network-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/config-store.h"
 #include "ns3/mmwave-helper.h"
 #include <ns3/buildings-helper.h>
-#include "ns3/global-route-manager.h"
-#include "ns3/ipv4-global-routing-helper.h"
-#include "ns3/internet-module.h"
-#include "ns3/applications-module.h"
 #include "ns3/log.h"
+#include <ns3/buildings-module.h>
+
 
 using namespace ns3;
 
@@ -19,22 +16,6 @@ main (int argc, char *argv[])
 {
   CommandLine cmd;
   cmd.Parse (argc, argv);
-//  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
-
-//  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
-//  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-//  LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_INFO);
-
-  //LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
-  //LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-  //LogComponentEnable("mmWaveInterference",LOG_LEVEL_ALL);
-  //LogComponentEnable("mmWaveBeamforming",LOG_LEVEL_ALL);
-  //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-  //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
   /* Information regarding the traces generated:
    *
@@ -46,16 +27,24 @@ main (int argc, char *argv[])
    * */
 
   Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
-
+  ptr_mmWave->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
   ptr_mmWave->Initialize();
-
-  /* A configuration example.
-   * ptr_mmWave->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
   enbNodes.Create (1);
   ueNodes.Create (1);
+
+  Ptr < Building > building;
+  building = Create<Building> ();
+  building->SetBoundaries (Box (20.0, 40.0,
+                                0.0, 20.0,
+                                0.0, 20.0));
+  building->SetBuildingType (Building::Residential);
+  building->SetExtWallsType (Building::ConcreteWithWindows);
+  building->SetNFloors (1);
+  building->SetNRoomsX (1);
+  building->SetNRoomsY (1);
 
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
@@ -65,12 +54,20 @@ main (int argc, char *argv[])
   enbmobility.Install (enbNodes);
   BuildingsHelper::Install (enbNodes);
 
+
+  MobilityHelper uemobility;
+  uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
+  uemobility.Install (ueNodes);
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (60, -20, 0));
+  ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 100, 0));
+  /*
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
+  uePositionAlloc->Add (Vector (80.0, -80.0, 0.0));
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
+  */
   BuildingsHelper::Install (ueNodes);
 
   NetDeviceContainer enbNetDev = ptr_mmWave->InstallEnbDevice (enbNodes);
@@ -84,10 +81,9 @@ main (int argc, char *argv[])
   enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
   EpsBearer bearer (q);
   ptr_mmWave->ActivateDataRadioBearer (ueNetDev, bearer);
+  BuildingsHelper::MakeMobilityModelConsistent ();
 
-
-
-  Simulator::Stop (Seconds (0.3));
+  Simulator::Stop (Seconds (1));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;

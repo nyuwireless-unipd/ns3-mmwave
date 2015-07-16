@@ -90,14 +90,14 @@ private:
  * resources. 
  * 
  */
-class mmWaveEnbRrcProtocolIdeal : public Object
+class MmWaveEnbRrcProtocolIdeal : public Object
 {
-  friend class MemberLteEnbRrcSapUser<mmWaveEnbRrcProtocolIdeal>;
+  friend class MemberLteEnbRrcSapUser<MmWaveEnbRrcProtocolIdeal>;
 
 public:
 
-  mmWaveEnbRrcProtocolIdeal ();
-  virtual ~mmWaveEnbRrcProtocolIdeal ();
+  MmWaveEnbRrcProtocolIdeal ();
+  virtual ~MmWaveEnbRrcProtocolIdeal ();
 
   // inherited from Object
   virtual void DoDispose (void);
