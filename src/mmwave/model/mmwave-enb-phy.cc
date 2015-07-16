@@ -548,6 +548,12 @@ MmWaveEnbPhy::EndFrame (void)
 void
 MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo& slotInfo)
 {
+	if (slotInfo.m_isOmni)
+	{
+		Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+		antennaArray->ChangeToOmniTx ();
+	}
+
 	if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())
 	{ // update beamforming vectors (currently supports 1 user only)
 		std::map<uint16_t, std::vector<unsigned> >::iterator ueRbIt = slotInfo.m_ueRbMap.begin();

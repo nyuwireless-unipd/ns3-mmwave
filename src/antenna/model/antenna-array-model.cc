@@ -16,7 +16,7 @@ NS_OBJECT_ENSURE_REGISTERED (AntennaArrayModel);
 
 AntennaArrayModel::AntennaArrayModel()
 {
-
+	m_omniTx = false;
 }
 
 AntennaArrayModel::~AntennaArrayModel()
@@ -61,6 +61,7 @@ AntennaArrayModel::SetBeamformingVector (complexVector_t antennaWeights, Ptr<Net
 void
 AntennaArrayModel::ChangeBeamformingVector (Ptr<NetDevice> device)
 {
+	m_omniTx = false;
 	std::map< Ptr<NetDevice>, complexVector_t >::iterator it = m_beamformingVectorMap.find (device);
 	NS_ASSERT_MSG (it != m_beamformingVectorMap.end (), "could not find");
 	m_beamformingVector = it->second;
@@ -69,8 +70,25 @@ AntennaArrayModel::ChangeBeamformingVector (Ptr<NetDevice> device)
 complexVector_t
 AntennaArrayModel::GetBeamformingVector ()
 {
+	if(m_omniTx)
+	{
+		NS_FATAL_ERROR ("omi transmission do not need beamforming vector");
+	}
 	return m_beamformingVector;
 }
+
+void
+AntennaArrayModel::ChangeToOmniTx ()
+{
+	m_omniTx = true;
+}
+
+bool
+AntennaArrayModel::IsOmniTx ()
+{
+	return m_omniTx;
+}
+
 
 complexVector_t
 AntennaArrayModel::GetBeamformingVector (Ptr<NetDevice> device)

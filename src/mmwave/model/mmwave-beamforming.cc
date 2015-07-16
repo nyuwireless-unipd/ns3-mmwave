@@ -457,7 +457,7 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	key_t ulkey = std::make_pair(txDevice,rxDevice);
 
 	std::map< key_t, Ptr<BeamformingParams> >::iterator it;
-	if(m_channelMatrixMap.find(dlkey) != m_channelMatrixMap.end ())
+	if (m_channelMatrixMap.find(dlkey) != m_channelMatrixMap.end ())
 	{
 		// this is downlink case
 		enbDevice = txDevice;
@@ -487,18 +487,31 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			UeDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 	Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 			EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
-	complexVector_t ueW = ueAntennaArray->GetBeamformingVector();
-	complexVector_t enbW = enbAntennaArray->GetBeamformingVector();
 
-	if(!ueW.empty() && !enbW.empty())
+	if (enbAntennaArray->IsOmniTx ())
 	{
-		bfParams->m_ueW = ueW;
-		bfParams->m_enbW = enbW;
-		bfParams->m_beam = GetLongTermFading (bfParams);
+		complexVector_t vec;
+		for (int i=0; i<m_pathNum; i++)
+		{
+			vec.push_back(std::complex<double> (1,0));
+		}
+		bfParams->m_beam = vec;
 	}
 	else
 	{
-		return rxPsd;
+		complexVector_t ueW = ueAntennaArray->GetBeamformingVector();
+		complexVector_t enbW = enbAntennaArray->GetBeamformingVector();
+
+		if (!ueW.empty() && !enbW.empty())
+		{
+			bfParams->m_ueW = ueW;
+			bfParams->m_enbW = enbW;
+			bfParams->m_beam = GetLongTermFading (bfParams);
+		}
+		else
+		{
+			NS_FATAL_ERROR ("empty beamforming vector");
+		}
 	}
 
 	Vector rxSpeed = b->GetVelocity();
@@ -507,6 +520,7 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			+(rxSpeed.y-txSpeed.y)+(rxSpeed.z-txSpeed.z);
 
 	Ptr<SpectrumValue> bfPsd = GetChannelGainVector (rxPsd, bfParams,  relativeSpeed);
+	NS_LOG_DEBUG ((*bfPsd)/(*rxPsd));
 	return bfPsd;
 }
 
