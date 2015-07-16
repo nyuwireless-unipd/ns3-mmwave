@@ -111,9 +111,9 @@ private:
 	void DoReconfigureLc (LteEnbCmacSapProvider::LcInfo lcinfo);
 	void DoReleaseLc (uint16_t  rnti, uint8_t lcid);
 	void UeUpdateConfigurationReq (LteEnbCmacSapProvider::UeConfig params);
-	LteEnbCmacSapProvider::RachConfig DoGetRachConfig ();
-	LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue DoAllocateNcRaPreamble (uint16_t rnti);
-	uint8_t AllocateTbUid ();
+  LteEnbCmacSapProvider::RachConfig DoGetRachConfig ();
+  LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue DoAllocateNcRaPreamble (uint16_t rnti);
+  uint8_t AllocateTbUid ();
 
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 

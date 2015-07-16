@@ -43,7 +43,7 @@ MmWaveUeNetDevice::GetTypeId (void)
 		                   PointerValue (),
 		                   MakePointerAccessor (&MmWaveUeNetDevice::m_nas),
 		                   MakePointerChecker <EpcUeNas> ())
-		.AddAttribute ("MmWaveUeRrc",
+		.AddAttribute ("mmWaveUeRrc",
 		                   "The RRC associated to this UeNetDevice",
 		                   PointerValue (),
 		                   MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),

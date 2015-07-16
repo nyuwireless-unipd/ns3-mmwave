@@ -44,18 +44,20 @@ main (int argc, char *argv[])
 {
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-/*	LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
-	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
-	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);*/
+//	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
+//	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
+//	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
+	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
+	LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+	LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
 
 
   uint16_t numberOfNodes = 1;
-  double simTime = 0.3;
+  double simTime = 0.05;
   double distance = 200.0;
-  double interPacketInterval = 1;
+  double interPacketInterval = 10;
 
   // Command line arguments
   CommandLine cmd;
@@ -66,7 +68,7 @@ main (int argc, char *argv[])
   cmd.Parse(argc, argv);
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-  Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+  Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();
 
   mmwaveHelper->SetEpcHelper (epcHelper);
 

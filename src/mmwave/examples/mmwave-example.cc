@@ -20,9 +20,9 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.Parse (argc, argv);
 //  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
- // LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
- // LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
+  LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
+  LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
+  LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
 
 //  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
 //  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);

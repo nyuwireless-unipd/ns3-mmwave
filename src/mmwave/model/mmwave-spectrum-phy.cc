@@ -226,8 +226,11 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 		{
 			if (DlCtrlRxParams->cellId == m_cellId)
 			{
+<<<<<<< HEAD
 
 				//NS_LOG_UNCOND (this<<"Received Control Signal!!!");
+=======
+>>>>>>> origin/master
 				StartRxCtrl (params);
             }
 			else
@@ -241,9 +244,10 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 void
 MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> params)
 {
+	m_interferenceData->StartRx (params->psd);
+
 	NS_LOG_FUNCTION(this);
 
-	m_interferenceData->StartRx (params->psd);
 	Ptr<MmWaveEnbNetDevice> enbRx =
 				DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
 	Ptr<MmWaveUeNetDevice> ueRx =
@@ -254,16 +258,16 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
 		NS_FATAL_ERROR("Cannot receive while transmitting");
 		break;
 	case RX_CTRL:
-		NS_FATAL_ERROR("Cannot receive control in data period");
-		break;
+			NS_FATAL_ERROR("Cannot receive control in data period");
+			break;
 	case RX_DATA:
 	case IDLE:
 	{
 		if (params->cellId == m_cellId)
 		{
-			if (m_rxPacketBurstList.empty () && m_rxControlMessageList.empty ())
+			if (m_rxPacketBurstList.empty())
 			{
-				NS_ASSERT (m_state == IDLE);
+        NS_ASSERT (m_state == IDLE);
 				// first transmission, i.e., we're IDLE and we start RX
 				m_firstRxStart = Simulator::Now ();
 				m_firstRxDuration = params->duration;
@@ -393,12 +397,12 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
 				}
 			}
 			break;
-		}
+	}
 	default:
-		{
-			NS_FATAL_ERROR ("unknown state");
-			break;
-		}
+	{
+	    NS_FATAL_ERROR ("unknown state");
+	    break;
+	}
 	}
 }
 
@@ -421,7 +425,6 @@ MmWaveSpectrumPhy::EndRxData ()
 	for (std::list<Ptr<PacketBurst> >::const_iterator i = m_rxPacketBurstList.begin ();
 		 i != m_rxPacketBurstList.end (); ++i)
 	{
-
 		for (std::list<Ptr<Packet> >::const_iterator j = (*i)->Begin (); j != (*i)->End (); ++j)
 		{
 			LteRadioBearerTag tag;
@@ -453,7 +456,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				{
 					//Drop Packet
 					Time t =  Simulator::Now ();
-					//NS_LOG_UNCOND (t.GetSeconds()<< " Dropped packet");
+					//NS_LOG_UNCOND (t.GetSeconds());
 				}
 			}
 			else
@@ -480,10 +483,13 @@ MmWaveSpectrumPhy::EndRxCtrl ()
 	NS_ASSERT(m_state = RX_CTRL);
 
 	// control error model not supported
-    // forward control messages of this frame to LtePhy
-    if (!m_rxControlMessageList.empty () && !m_phyRxCtrlEndOkCallback.IsNull ())
+  // forward control messages of this frame to LtePhy
+  if (!m_rxControlMessageList.empty ())
     {
-    	m_phyRxCtrlEndOkCallback (m_rxControlMessageList);
+      if (!m_phyRxCtrlEndOkCallback.IsNull ())
+        {
+          m_phyRxCtrlEndOkCallback (m_rxControlMessageList);
+        }
     }
 
 	m_state = IDLE;
@@ -496,7 +502,7 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 	switch (m_state)
 	{
 	case RX_DATA:
-    case RX_CTRL:
+  case RX_CTRL:
 		NS_FATAL_ERROR ("cannot TX while RX: Cannot transmit while receiving");
 		break;
 	case TX:

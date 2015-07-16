@@ -16,6 +16,19 @@ struct MacSubheader
 		m_lcid (lcid), m_size (size)
 	{
 	}
+
+	uint32_t GetSize ()
+	{
+		if (m_size > 127)
+		{
+			return 3;
+		}
+		else
+		{
+			return 2;
+		}
+	}
+
   uint8_t   m_lcid;
   uint16_t  m_size;
 };

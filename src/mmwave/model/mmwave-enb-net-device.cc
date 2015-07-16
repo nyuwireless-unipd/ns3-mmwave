@@ -48,7 +48,7 @@ TypeId MmWaveEnbNetDevice::GetTypeId()
 						   PointerValue (),
 						   MakePointerAccessor (&MmWaveEnbNetDevice::m_mac),
 						   MakePointerChecker <MmWaveEnbMac> ())
-		.AddAttribute ("MmWaveScheduler",
+		.AddAttribute ("mmWaveScheduler",
 						"The Scheduler associated with the MAC",
 						PointerValue (),
 					    MakePointerAccessor (&MmWaveEnbNetDevice::m_scheduler),

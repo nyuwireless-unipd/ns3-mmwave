@@ -50,19 +50,19 @@ mmWaveChunkProcessor::EvaluateChunk (const SpectrumValue& sinr, Time duration)
 void
 mmWaveChunkProcessor::End ()
 {
-	NS_LOG_FUNCTION (this);
-	if (m_totDuration.GetSeconds () > 0)
-	{
-		std::vector<mmWaveChunkProcessorCallback>::iterator it;
-		for (it = m_mmWaveChunkProcessorCallbacks.begin (); it != m_mmWaveChunkProcessorCallbacks.end (); it++)
-		{
-			(*it)((*m_sumValues) / m_totDuration.GetSeconds ());
-		}
-	}
-	else
-	{
-		NS_LOG_WARN ("m_numSinr == 0");
-	}
+  NS_LOG_FUNCTION (this);
+  if (m_totDuration.GetSeconds () > 0)
+    {
+      std::vector<mmWaveChunkProcessorCallback>::iterator it;
+      for (it = m_mmWaveChunkProcessorCallbacks.begin (); it != m_mmWaveChunkProcessorCallbacks.end (); it++)
+        {
+          (*it)((*m_sumValues) / m_totDuration.GetSeconds ());
+        }
+    }
+  else
+    {
+      NS_LOG_WARN ("m_numSinr == 0");
+    }
 }
 
 
