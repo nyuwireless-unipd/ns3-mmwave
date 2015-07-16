@@ -276,20 +276,17 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		{
 			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
-<<<<<<< HEAD
 
-		//it->second.m_numRlcPdu;  // used to count remaining RLC requests
-=======
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
 		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
->>>>>>> origin/master
+
 		if (it->second.m_numRlcPdu == 1)
 		{
 			// wait for all RLC PDUs to be received
 			it->second.m_pdu->AddHeader (it->second.m_macHeader);
 			LteRadioBearerTag bearerTag (params.rnti, it->second.m_size, 0);
 			it->second.m_pdu->AddPacketTag (bearerTag);
-		  m_phySapProvider->SendMacPdu (it->second.m_pdu);
+		    m_phySapProvider->SendMacPdu (it->second.m_pdu);
 			m_macPduMap.erase (it);  // delete map entry
 		}
 		else
@@ -544,7 +541,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 		dciMsg->SetDciInfoElement (schedInfo.m_dci);
 		dciMsg->SetSfnSf (ind.m_sfn);
 		m_phySapProvider->SendControlMessage (dciMsg);
-    std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
+		std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
 
 		for (unsigned int itb = 0; itb < schedInfo.m_dci.m_tbInfoElements.size (); itb++)
 		{
@@ -556,9 +553,9 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 			                       tbInfo.m_tbSize, rlcPduElems.size ());
 			uint8_t tbUid = AllocateTbUid ();
 			// insert into MAC PDU map
-			uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
-			std::map<uint32_t, struct MacPduInfo>::iterator macPduIt = \
-					(m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo))).first;
+			//uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
+			//std::map<uint32_t, struct MacPduInfo>::iterator macPduIt = \
+			//		(m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo))).first;
 			for (unsigned int ipdu = 0; ipdu < rlcPduElems.size (); ipdu++)
 			{
 				NS_ASSERT_MSG (rntiIt != m_rlcAttached.end (), "could not find RNTI" << rnti);
