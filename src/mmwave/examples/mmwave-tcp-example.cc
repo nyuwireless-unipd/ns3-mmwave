@@ -154,7 +154,7 @@ main (int argc, char *argv[])
 	cmd.Parse(argc, argv);
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-	Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();
+	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 
 	ConfigStore inputConfig;

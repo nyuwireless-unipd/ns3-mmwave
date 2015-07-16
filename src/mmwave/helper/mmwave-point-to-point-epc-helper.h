@@ -47,19 +47,19 @@ class EpcMme;
  * an MME node. The S1-U, X2-U and X2-C interfaces are realized over
  * PointToPoint links. 
  */
-class mmWavePointToPointEpcHelper : public EpcHelper
+class MmWavePointToPointEpcHelper : public EpcHelper
 {
 public:
   
   /** 
    * Constructor
    */
-	mmWavePointToPointEpcHelper ();
+	MmWavePointToPointEpcHelper ();
 
   /** 
    * Destructor
    */  
-  virtual ~mmWavePointToPointEpcHelper ();
+  virtual ~MmWavePointToPointEpcHelper ();
   
   // inherited from Object
   static TypeId GetTypeId (void);

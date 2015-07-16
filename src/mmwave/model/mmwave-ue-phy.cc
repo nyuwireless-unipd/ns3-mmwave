@@ -36,7 +36,7 @@ MmWaveUePhy::MmWaveUePhy (Ptr<MmWaveSpectrumPhy> dlPhy, Ptr<MmWaveSpectrumPhy> u
   m_prevSlot (0)
 {
 	NS_LOG_FUNCTION (this);
-  m_wbCqiLast = Simulator::Now ();
+	m_wbCqiLast = Simulator::Now ();
 	m_ueCphySapProvider = new MemberLteUeCphySapProvider<MmWaveUePhy> (this);
 	m_pucchSlotInd = 2; // default slot containing dedicated UL control channel
 	Simulator::ScheduleNow (&MmWaveUePhy::SubframeIndication, this, 1, 1);}
@@ -246,6 +246,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 			{
 				continue; // DCI not for me
 			}
+			NS_LOG_UNCOND ("===========Received DCI");
 
 			// process TB info elements and set SF schedule
 			for (std::vector<TbInfoElement>::const_iterator tbIt = dciInfoElem.m_tbInfoElements.begin(); \
@@ -410,6 +411,8 @@ MmWaveUePhy::ProcessSubframe ()
 	uint32_t slotInd = ((m_nrSlots-1)%m_phyMacConfig->GetSlotsPerSubframe ()) + 1;
 	uint32_t sfInd = ((m_nrSlots-1)/m_phyMacConfig->GetSlotsPerSubframe ()) + 1;
 
+	ResetReception ();
+	//m_receptionEnabled = true;
 	if (slotInd == m_phyMacConfig->GetSlotsPerSubframe ())
 	{
 		m_sfAllocInfoUpdated = false;
@@ -747,7 +750,7 @@ void
 MmWaveUePhy::DoConfigureUplink (uint16_t ulEarfcn, uint8_t ulBandwidth)
 {
 	NS_LOG_FUNCTION (this << ulEarfcn << ulBandwidth);
-  m_ulConfigured = true;
+	m_ulConfigured = true;
 }
 
 void

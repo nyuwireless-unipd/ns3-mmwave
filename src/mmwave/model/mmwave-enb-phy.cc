@@ -257,7 +257,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 {
 	NS_LOG_FUNCTION (this);
 
-	NS_LOG_DEBUG ("4.16 us == " << NanoSeconds (4160) << " 4.1600000000000001 == " << NanoSeconds (4160.0000000000001));
+	//NS_LOG_DEBUG ("4.16 us == " << NanoSeconds (4160) << " 4.1600000000000001 == " << NanoSeconds (4160.0000000000001));
 	std::vector <int> channelRB;
 	std::vector <SlotAllocInfo>::iterator itAllocMap;
 	++m_nrSlots;
@@ -284,7 +284,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 	if(slotInd == 1)
 	{
 		uint32_t sfn = ((0x3FF & m_nrFrames) << 16) | ((0xFF & sfInd) << 8) | ((0xFF & 1));
-	  m_prevSlotDir = SlotAllocInfo::NA;
+		m_prevSlotDir = SlotAllocInfo::NA;
 
 		// create new subframe allocation info
 		m_currSfAllocInfo = SfAllocationInfo (m_phyMacConfig->GetSlotsPerSubframe ());
@@ -310,7 +310,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 
 				DciInfoElement dciInfo = dci->GetDciInfoElement ();
 
-		  	std::set <uint16_t>::iterator ueIt = m_ueAttachedRnti.find (dciInfo.m_rnti);
+				std::set <uint16_t>::iterator ueIt = m_ueAttachedRnti.find (dciInfo.m_rnti);
 				if (ueIt == m_ueAttachedRnti.end ())
 				{
 					NS_LOG_ERROR ("UE not attached");
@@ -454,7 +454,7 @@ MmWaveEnbPhy::StartSubFrame (void)
   			ctrlPeriod = NanoSeconds (1000 * slotInfo.m_numCtrlSym * m_phyMacConfig->GetSymbolPeriod ());
   			dataPeriod = NanoSeconds (1000 * ( m_phyMacConfig->GetSymbPerSlot() - slotInfo.m_numCtrlSym) * \
   			                           m_phyMacConfig->GetSymbolPeriod ());
-  			NS_LOG_DEBUG ("ENB TXing CTRL period start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod);
+  			NS_LOG_UNCOND ("ENB TXing CTRL period start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod);
     		SendCtrlChannels(ctrlMsg, ctrlPeriod);
   		}
   		else
@@ -490,7 +490,7 @@ MmWaveEnbPhy::StartSubFrame (void)
   				NS_ASSERT ((macHeader.GetSubframeNum() == sfInd) && (macHeader.GetSlotNum() == slotInd));
   			}
   		}
-			NS_LOG_DEBUG ("ENB TXing DATA period start " << Simulator::Now()+ctrlPeriod << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (5.0));
+		NS_LOG_DEBUG ("ENB TXing DATA period start " << Simulator::Now()+ctrlPeriod << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (5.0));
   		Simulator::Schedule (ctrlPeriod, &MmWaveEnbPhy::SendDataChannels, this, pktBurst, dataPeriod-NanoSeconds (5.0), slotInfo);
   	}
   }

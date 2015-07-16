@@ -23,11 +23,11 @@ class MmWaveRrMemberMacSchedSapProvider : public MmWaveMacSchedSapProvider
 public:
 	MmWaveRrMemberMacSchedSapProvider (MmWaveRrMacScheduler* sched);
 
-  virtual void SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
+    virtual void SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
 	virtual void SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
 	virtual void SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params);
 	virtual void SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
-  virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
+    virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
 
 private:
 	MmWaveRrMemberMacSchedSapProvider ();
@@ -317,18 +317,18 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 	ret.m_sfn = params.m_snfSf;
 	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
 
-  RefreshDlCqiMaps ();
-  RefreshUlCqiMaps ();
+	RefreshDlCqiMaps ();
+	RefreshUlCqiMaps ();
 
 	for (unsigned int islot = 0; islot < m_phyMacConfig->GetSlotsPerSubframe (); islot++)
 	{
 		if ((islot % 2) == 0) // schedule current slot for DOWNLINK
 		{
-		  // Create RBG map (DL res alloc type 0)
-		  std::vector <bool> rbgMap;
-		  uint16_t rbgAllocatedNum = 0;
-		  std::set <uint16_t> rntiAllocated;
-		  rbgMap.resize (m_phyMacConfig->GetNumRb (), false);
+			// Create RBG map (DL res alloc type 0)
+			std::vector <bool> rbgMap;
+			uint16_t rbgAllocatedNum = 0;
+			std::set <uint16_t> rntiAllocated;
+			rbgMap.resize (m_phyMacConfig->GetNumRb (), false);
 
 			// Get the actual active flows (unique RNTI-LCID pairs)
 			std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;

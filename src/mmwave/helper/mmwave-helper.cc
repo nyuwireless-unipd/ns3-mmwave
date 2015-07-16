@@ -259,7 +259,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	device->SetAttribute ("MmWaveUePhy", PointerValue(phy));
 	device->SetAttribute ("MmWaveUeMac", PointerValue(mac));
 	device->SetAttribute ("EpcUeNas", PointerValue (nas));
-	device->SetAttribute ("mmWaveUeRrc", PointerValue (rrc));
+	device->SetAttribute ("MmWaveUeRrc", PointerValue (rrc));
 
 	phy->SetDevice (device);
 	//phy->SetForwardUpCallback (MakeCallback (&MmWaveUeNetDevice::Receive, device));
@@ -377,7 +377,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	device->SetAttribute ("CellId", UintegerValue (cellId));
 	device->SetAttribute ("MmWaveEnbPhy", PointerValue (phy));
 	device->SetAttribute ("MmWaveEnbMac", PointerValue (mac));
-	device->SetAttribute ("mmWaveScheduler", PointerValue(sched));
+	device->SetAttribute ("MmWaveScheduler", PointerValue(sched));
 	device->SetAttribute ("ConnectedLteRRC", PointerValue (rrc));
 
 
