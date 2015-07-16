@@ -97,6 +97,18 @@ struct DciInfoElement
 
 struct SlotAllocInfo
 {
+	SlotAllocInfo () :
+		m_tddMode(NA), m_isOmni (0), m_slotType (CTRL_DATA), m_numCtrlSym(0), m_slotInd (0)
+	{
+
+	}
+
+	SlotAllocInfo (uint8_t slotInd) :
+		m_tddMode(NA), m_isOmni (0), m_slotType (CTRL_DATA), m_numCtrlSym(0), m_slotInd (slotInd)
+	{
+
+	}
+
 	enum TddMode
 	{
 		NA = 0,
@@ -110,18 +122,6 @@ struct SlotAllocInfo
 		DATA = 1,
 		CTRL = 2
 	};
-
-	SlotAllocInfo () :
-		m_tddMode(NA), m_isOmni (0), m_slotType (CTRL_DATA), m_numCtrlSym(0), m_slotInd (0)
-	{
-
-	}
-
-	SlotAllocInfo (uint8_t slotInd, TddMode tddMode, TddSlotType slotType) :
-		m_tddMode(tddMode), m_isOmni (0), m_slotType (slotType), m_numCtrlSym(0), m_slotInd (slotInd)
-	{
-
-	}
 
 	std::vector<TbAllocInfo> m_tbInfo;
 	std::map<uint16_t, std::vector<unsigned> > m_ueRbMap;
@@ -146,12 +146,8 @@ struct SfAllocationInfo
 		m_tddPattern.resize (numSlots, SlotAllocInfo::NA);
 		for (unsigned i = 0; i < numSlots; i++)
 		{
-			m_slotAllocInfo.push_back (SlotAllocInfo (i+1, SlotAllocInfo::NA, SlotAllocInfo::DATA));
+			m_slotAllocInfo.push_back (SlotAllocInfo (i+1));
 		}
-		// first slot always set to Downlink CTRL + DATA
-		m_slotAllocInfo[0].m_tddMode = SlotAllocInfo::DL;
-		m_slotAllocInfo[0].m_slotType = SlotAllocInfo::CTRL_DATA;
-		m_slotAllocInfo[0].m_numCtrlSym = 1;
 	}
 
 	std::vector <SlotAllocInfo::TddMode> m_tddPattern;

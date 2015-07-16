@@ -480,8 +480,7 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 					newTbInfoElem.m_mcs = m_amc->GetMcsFromCqi ((*itCqi).second);
 				}
 
-				MmWaveMacPduHeader macHeader;
-				int tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, m_phyMacConfig->GetNumRb()) / 8) - macHeader.GetSerializedSize ();
+				int tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, m_phyMacConfig->GetNumRb()) / 8);
 				uint16_t rlcPduSize = tbSize / lcNum;
 				while ((*it).m_rnti == schedInfo.m_rnti)
 				{
@@ -648,17 +647,17 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 					}
 					continue;
 				}*/
-//				if (rbAllocated + rbPerFlow - 1 > numRb)
-//				{
-//					// limit to physical resources last resource assignment
-//					rbPerFlow = numRb - rbAllocated;
-//					// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
-//					if (rbPerFlow < 1)
-//					{
-//						// terminate allocation
-//						rbPerFlow = 0;
-//					}
-//				}
+				if (rbAllocated + rbPerFlow - 1 > numRb)
+				{
+					// limit to physical resources last resource assignment
+					rbPerFlow = numRb - rbAllocated;
+					// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
+					if (rbPerFlow < 3)
+					{
+						// terminate allocation
+						rbPerFlow = 0;
+					}
+				}
 				uint16_t rnti = (*it).first;
 				NS_LOG_INFO (this << " try to allocate " << rnti);
 				// find existing or create new scheduling info element/DCI element
@@ -719,17 +718,17 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 						break;
 					}
 					rbAllocated++;
-//					if (rbAllocated + rbPerFlow - 1 > numRb)
-//					{
-//						// limit to physical resources last resource assignment
-//						rbPerFlow = numRb - rbAllocated;
-//						// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
-//						if (rbPerFlow < 3)
-//						{
-//							// terminate allocation
-//							rbPerFlow = 0;
-//						}
-//					}
+					if (rbAllocated + rbPerFlow - 1 > numRb)
+					{
+						// limit to physical resources last resource assignment
+						rbPerFlow = numRb - rbAllocated;
+						// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
+						if (rbPerFlow < 3)
+						{
+							// terminate allocation
+							rbPerFlow = 0;
+						}
+					}
 				}
 				if (!allocated)
 				{
@@ -783,8 +782,7 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 					}
 					newTbInfoElem.m_mcs = m_amc->GetMcsFromCqi (cqi);
 				}
-				MmWaveMacPduHeader macHeader;
-				newTbInfoElem.m_tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, rbPerFlow) / 8) - macHeader.GetSerializedSize (); // MCS 0 -> UL-AMC TBD
+				newTbInfoElem.m_tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, rbPerFlow) / 8); // MCS 0 -> UL-AMC TBD
 
 				UpdateUlRlcBufferInfo (schedInfo.m_rnti, newTbInfoElem.m_tbSize);
 				newTbInfoElem.m_ndi = 1;
