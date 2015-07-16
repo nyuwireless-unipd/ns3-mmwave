@@ -276,8 +276,13 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		{
 			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
+<<<<<<< HEAD
 
 		//it->second.m_numRlcPdu;  // used to count remaining RLC requests
+=======
+		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
+		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
+>>>>>>> origin/master
 		if (it->second.m_numRlcPdu == 1)
 		{
 			// wait for all RLC PDUs to be received
@@ -289,7 +294,7 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		}
 		else
 		{
-			it->second.m_numRlcPdu--;
+			it->second.m_numRlcPdu--; // decrement count of remaining RLC requests
 		}
 	}
 }
@@ -559,11 +564,10 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 				NS_ASSERT_MSG (rntiIt != m_rlcAttached.end (), "could not find RNTI" << rnti);
 				std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (rlcPduElems[ipdu].m_lcid);
 				NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduElems[ipdu].m_lcid);
-				MacSubheader subheader (rlcPduElems[ipdu].m_lcid, rlcPduElems[ipdu].m_size);
-				macPduIt->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
 				// Instead of passing the HARQ process number to RLC, use a unique identifier to match the RLC PDU to its TB
 				NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int)rlcPduElems[ipdu].m_size);
-        (*lcidIt).second->NotifyTxOpportunity (rlcPduElems[ipdu].m_size, 0, tbUid);
+				MacSubheader subheader (rlcPduElems[ipdu].m_lcid, rlcPduElems[ipdu].m_size);
+				(*lcidIt).second->NotifyTxOpportunity ((rlcPduElems[ipdu].m_size - subheader.GetSize ()), 0, tbUid);
 			}
 
 		}
