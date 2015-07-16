@@ -9,7 +9,6 @@
 #define SRC_MMWAVE_MODEL_MMWAVE_RR_MAC_SCHEDULER_H_
 
 
-#include "mmwave-mac-sched-sap.h"
 #include "mmwave-mac-scheduler.h"
 #include "mmwave-amc.h"
 #include "string"
@@ -18,131 +17,57 @@
 
 namespace ns3 {
 
-class MmWaveRrMacScheduler : public MmWaveMacScheduler
+class mmWaveRRMacScheduler : public mmWaveMacScheduler
 {
 public:
-	MmWaveRrMacScheduler ();
+	mmWaveRRMacScheduler ();
 
-	virtual ~MmWaveRrMacScheduler ();
+	virtual ~mmWaveRRMacScheduler ();
 	virtual void DoDispose (void);
 	static TypeId GetTypeId (void);
 
-	virtual void SetMacSchedSapUser (MmWaveMacSchedSapUser* sap);
+	virtual void SetMacSchedSapUser (mmWaveMacSchedSapUser* sap);
 
-	virtual MmWaveMacSchedSapProvider* GetMacSchedSapProvider ();
+	virtual mmWaveMacSchedSapProvider* GetMacSchedSapProvider ();
 
-	virtual void ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config);
+	virtual void ConfigureCommonParameters (Ptr<mmWavePhyMacCommon> config);
 
-  void DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
+	void DoSchedCqiInfoReq (const mmWaveMacSchedSapProvider::SchedCqiInfoReqParameters& params); // Put in UML
 
-	void DoSchedDlCqiInfoReq (const MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params); // Put in UML
+	void DoSchedTriggerReq (const struct mmWaveMacSchedSapProvider::SchedTriggerReqParameters& params); // Put in UML
 
-  void DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
+	struct schedCqi
+	{
+		uint16_t m_wbCqi;
+		std::vector<int> m_rbCqi;
+	};
 
-	void DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params); // Put in UML
-
-  void DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
-
-  static bool SortRlcBufferReq (MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters i, MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters j);
-
-  void RefreshDlCqiMaps (void);
-  void RefreshUlCqiMaps (void);
-
-  void UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size);
-  void UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size);
-
-	friend class MmWaveRrMemberMacSchedSapProvider;
+	friend class mmWaveRrMemberMacSchedSapProvider;
 
 private:
-	uint32_t
-	BsrId2BufferSize (uint8_t val)
-	{
-	  NS_ABORT_MSG_UNLESS (val < 64, "val = " << val << " is out of range");
-	  return BufferSizeLevelBsrTable[val];
-	}
-
-	uint8_t
-	BufferSize2BsrId (uint32_t val)
-	{
-	  int index = 0;
-	  if (BufferSizeLevelBsrTable[63] < val)
-	    {
-	      index = 63;
-	    }
-	  else
-	    {
-	      while (BufferSizeLevelBsrTable[index] < val)
-	        {
-	          NS_ASSERT (index < 64);
-	          index++;
-	        }
-	    }
-
-	  return (index);
-	}
-
-
 	void SetTBSizeAssigned ();
-	SfAllocationInfo ScheduleUsersInTime (uint32_t slotNum);
+	allocationList ScheduleUsersInTime (uint32_t slotNum);
 	void SetScheduleDirection  (std::string patt);
 
-	TddSlotTypeList m_tddMap;
+	Schedule m_tddMap;
 
 	Ptr<mmWaveAmc> m_amc;
 
-  /*
-	 * Vectors of UE's RLC info
-	*/
-	std::list <MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters> m_rlcBufferReq;
-
 	std::map <uint64_t, uint32_t> m_AssignedTBSizeMap;
 
- /*
-	* Map of UE's DL CQI WB received
-	*/
-	std::map <uint16_t,uint8_t> m_wbCqiRxed;
-	/*
-	* Map of UE's timers on DL CQI WB received
-	*/
-	std::map <uint16_t,uint32_t> m_wbCqiTimers;
-
-  uint32_t m_cqiTimersThreshold; // # of TTIs for which a CQI can be considered valid
-
-  /*
-  * Map of UEs' UL-CQI per RBG
-  */
-  std::map <uint16_t, std::vector <double> > m_ueUlCqi;
-  /*
-  * Map of UEs' timers on UL-CQI per RBG
-  */
-  std::map <uint16_t, uint32_t> m_ueCqiTimers;
-
-  /*
-  * Map of UE's buffer status reports received
-  */
-  std::map <uint16_t,uint32_t> m_ceBsrRxed;
+	std::map <uint64_t, schedCqi> m_rxCqi;
 
 	std::string m_directions; //UL or DL Need to to this in a better way
 	bool m_isDirnUpdated;
 
-	uint64_t m_nextRntiDl;
-	uint64_t m_nextRntiUl;
+	uint64_t m_NextUserDL;
+	uint64_t m_NextUserUL;
 
-	uint32_t m_subframeNo;
-	uint32_t m_frameNo;
+	uint32_t m_SubframeNo;
+	uint32_t m_FrameNo;
 
-	uint8_t m_tbUid;
-
-	MmWaveMacSchedSapProvider* m_macSchedSapProvider;
-	MmWaveMacSchedSapUser* m_macSchedSapUser;
-
-	uint32_t m_numChunks;
-
-  /*
-  * Map of previous allocated UE per RBG
-  * (used to retrieve info from UL-CQI)
-  */
-  std::map <uint16_t, std::vector <uint16_t> > m_allocationMaps;
+	mmWaveMacSchedSapProvider* m_macSchedSapProvider;
+	mmWaveMacSchedSapUser* m_macSchedSapUser;
 };
 
 }

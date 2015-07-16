@@ -11,138 +11,124 @@
 #include <ns3/packet.h>
 #include <ns3/log.h>
 #include "mmwave-phy.h"
-#include "mmwave-phy-sap.h"
 #include <sstream>
-#include <vector>
+#include "mmwave-phy-sap.h"
+
 
 namespace ns3{
 
-NS_LOG_COMPONENT_DEFINE ("MmWavePhy");
+NS_LOG_COMPONENT_DEFINE ("mmWavePhy");
 
-NS_OBJECT_ENSURE_REGISTERED ( MmWavePhy);
+NS_OBJECT_ENSURE_REGISTERED ( mmWavePhy);
 
 /*   SAP   */
-class MmWaveMemberPhySapProvider : public MmWavePhySapProvider
+class MembermmWavePhySapProvider : public mmWavePhySapProvider
 {
 public:
-	MmWaveMemberPhySapProvider (MmWavePhy* phy);
+	MembermmWavePhySapProvider (mmWavePhy* phy);
 
-	virtual void SendMacPdu (Ptr<Packet> p );
+	virtual void SendMacPdu (Ptr<PacketBurst> p );
 
-	virtual void SendControlMessage (Ptr<MmWaveControlMessage> msg);
+	virtual void SendmmWaveControlMessage (Ptr<mmWaveControlMessages> msg);
 
 	virtual void SendRachPreamble(uint8_t PreambleId, uint8_t Rnti);
 private:
-	MmWavePhy* m_phy;
+	mmWavePhy* m_phy;
 };
 
-MmWaveMemberPhySapProvider::MmWaveMemberPhySapProvider (MmWavePhy* phy)
+MembermmWavePhySapProvider::MembermmWavePhySapProvider (mmWavePhy* phy)
 :m_phy(phy)
 {
-//	 Nothing more to do
+	/* Nothing more to do*/
 }
 
 void
-MmWaveMemberPhySapProvider::SendMacPdu (Ptr<Packet> p)
+MembermmWavePhySapProvider::SendMacPdu (Ptr<PacketBurst> pb)
 {
-	m_phy->SetMacPdu (p);
+	m_phy->SetMacData (pb);
 }
 
 void
-MmWaveMemberPhySapProvider::SendControlMessage (Ptr<MmWaveControlMessage> msg)
+MembermmWavePhySapProvider::SendmmWaveControlMessage (Ptr<mmWaveControlMessages> msg)
 {
-	m_phy->SetControlMessage(msg); //May need to change
+	m_phy->SetControlMessages(msg); //May need to change
 }
 
 void
-MmWaveMemberPhySapProvider::SendRachPreamble(uint8_t PreambleId, uint8_t Rnti)
+MembermmWavePhySapProvider::SendRachPreamble(uint8_t PreambleId, uint8_t Rnti)
 {
 	m_phy->SendRachPreamble (PreambleId, Rnti);
 }
 /* ======= */
 
 TypeId
-MmWavePhy::GetTypeId ()
+mmWavePhy::GetTypeId ()
 {
 	static TypeId
 	    tid =
-	    TypeId ("ns3::MmWavePhy")
+	    TypeId ("ns3::mmWavePhy")
 	    .SetParent<Object> ()
 	;
 
 	return tid;
 }
 
-MmWavePhy::MmWavePhy()
+mmWavePhy::mmWavePhy()
 {
 	NS_LOG_FUNCTION (this);
 	NS_FATAL_ERROR ("This constructor should not be called");
 }
 
-MmWavePhy::MmWavePhy(Ptr<MmWaveSpectrumPhy> dlChannelPhy, Ptr<MmWaveSpectrumPhy> ulChannelPhy)
+mmWavePhy::mmWavePhy(Ptr<mmWaveSpectrumPhy> dlChannelPhy, Ptr<mmWaveSpectrumPhy> ulChannelPhy)
 	:m_downlinkSpectrumPhy(dlChannelPhy),
 	 m_uplinkSpectrumPhy(ulChannelPhy),
 	 m_cellId(0)
 {
+	m_phySapProvider = new MembermmWavePhySapProvider (this);
 	NS_LOG_FUNCTION(this);
-	m_phySapProvider = new MmWaveMemberPhySapProvider (this);
 }
 
-MmWavePhy::~MmWavePhy ()
+mmWavePhy::~mmWavePhy ()
 {
 
 }
 
 void
-MmWavePhy::DoInitialize ()
-{
-	m_packetBurstQueue.resize (m_phyMacConfig->GetSubframesPerFrame ());
-	for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame (); i++)
-	{
-		m_packetBurstQueue[i] = std::vector<Ptr<PacketBurst> > (m_phyMacConfig->GetSlotsPerSubframe (), 0);
-		for (unsigned j = 0; j < m_phyMacConfig->GetSlotsPerSubframe (); j++)
-		{
-			m_packetBurstQueue[i][j] = CreateObject<PacketBurst> ();
-		}
-	}
-}
-
-void
-MmWavePhy::DoDispose ()
+mmWavePhy::DoDispose ()
 {
 	NS_LOG_FUNCTION (this);
-	m_controlMessageQueue.clear ();
+	m_controlMessagesQueue.clear ();
 
 	Object::DoDispose ();
 }
 
 void
-MmWavePhy::SetDevice (Ptr<MmWaveNetDevice> d)
+mmWavePhy::SetDevice (Ptr<mmWaveNetDevice> d)
 {
 	m_netDevice = d;
 }
 
-Ptr<MmWaveNetDevice>
-MmWavePhy::GetDevice ()
+Ptr<mmWaveNetDevice>
+mmWavePhy::GetDevice ()
 {
 	return m_netDevice;
 }
 
 void
-MmWavePhy::SetChannel (Ptr<SpectrumChannel> c)
+mmWavePhy::SetChannel (Ptr<SpectrumChannel> c)
 {
 
 }
 
 double
-MmWavePhy::GetTti (void) const
+mmWavePhy::GetTti (void) const
 {
 	NS_LOG_FUNCTION (this);
-	return m_phyMacConfig->GetTti();
+	return m_PhyMACConfig->GetTTI();
 }
 
 void
-MmWavePhy::DoSetCellId (uint16_t cellId)
+mmWavePhy::DoSetCellId (uint16_t cellId)
 {
 
 	NS_LOG_FUNCTION (this);
@@ -151,223 +137,183 @@ MmWavePhy::DoSetCellId (uint16_t cellId)
 
 
 void
-MmWavePhy::SetNoiseFigure (double nf)
+mmWavePhy::SetNoiseFigure (double nf)
 {
 	m_noiseFigure = nf;
 }
 
 double
-MmWavePhy::GetNoiseFigure (void) const
+mmWavePhy::GetNoiseFigure (void) const
 {
 	return m_noiseFigure;
 }
 
 void
-MmWavePhy::SendRachPreamble (uint32_t PreambleId, uint32_t Rnti)
+mmWavePhy::SetControlMessages (Ptr<mmWaveControlMessages> m)
+{
+	if (m_controlMessagesQueue.empty ())
+	{
+		std::list<Ptr<mmWaveControlMessages> > l;
+		l.push_back(m);
+		m_controlMessagesQueue.push_back (l);
+	}
+	else
+	{
+		m_controlMessagesQueue.at (m_controlMessagesQueue.size () - 1).push_back (m);
+	}
+}
+
+void
+mmWavePhy::SendRachPreamble (uint32_t PreambleId, uint32_t Rnti)
 {
 	m_raPreambleId = PreambleId;
-	Ptr<MmWaveRachPreambleMessage> msg = Create<MmWaveRachPreambleMessage> ();
+	Ptr<RachPreamblemmWaveControlMessage> msg = Create<RachPreamblemmWaveControlMessage> ();
 	msg->SetRapId (PreambleId);
-	SetControlMessage (msg);
+	SetControlMessages (msg);
 }
 
 void
-MmWavePhy::SetMacPdu (Ptr<Packet> p)
+mmWavePhy::SetMacData (Ptr<PacketBurst> pb)
 {
-	MmWaveMacPduHeader header;
-	if(p->PeekHeader (header))
+	if (pb->GetNPackets() > 0)
 	{
-		uint8_t sfNum = header.GetSubframeNum ();
-		uint8_t slotNum = header.GetSlotNum ();
-		//	uint16_t key = ((0xFF * sfNum) << 8) | (0xFF * slotNum);
-		NS_ASSERT((sfNum > 0) && (sfNum <= m_phyMacConfig->GetSubframesPerFrame ()));
-		NS_ASSERT((slotNum > 0) && (slotNum <= m_phyMacConfig->GetSlotsPerSubframe ()));
-//		NS_ASSERT ((header.GetSubframeNum() == sfNum) && (header.GetSlotNum() == slotNum));
-
-//		NS_LOG_DEBUG ("m_packetBurstQueue.size () == " << m_packetBurstQueue.size () << " " << m_packetBurstQueue[sfNum-1].size ());
-		Ptr<PacketBurst> pburst = m_packetBurstQueue[sfNum-1][slotNum-1];
-//		std::list< Ptr<Packet> > pkts = pburst->GetPackets ();
-//		NS_LOG_DEBUG ("pkts.size () == " << pkts.size ());
-		pburst->AddPacket (p);
-	}
-	else
-	{
-		NS_FATAL_ERROR ("No MAC packet PDU header available");
+		m_packetBurstQueue.push_back (pb);
 	}
 }
 
-Ptr<PacketBurst>
-MmWavePhy::GetPacketBurst (uint8_t sfNum, uint8_t slotNum)
-{
-	Ptr<PacketBurst> pburst;
-	if((m_packetBurstQueue.size () >= sfNum) && (m_packetBurstQueue[sfNum-1].size () >= slotNum))
-	{
-		pburst = m_packetBurstQueue[sfNum-1][slotNum-1];
-		std::list< Ptr<Packet> > pkts = pburst->GetPackets ();
-		if (!pkts.empty ())
-		{
-			MmWaveMacPduHeader macHeader;
-			pkts.front ()->PeekHeader (macHeader);
-			NS_ASSERT ((macHeader.GetSubframeNum() == sfNum) && (macHeader.GetSlotNum() == slotNum));
-		}
-		m_packetBurstQueue[sfNum-1][slotNum-1] = CreateObject<PacketBurst> ();
-	}
-	else
-	{
-		NS_FATAL_ERROR ("GetPacketBurst(): Subframe and slot index out of bounds");
-	}
-
-	return pburst;
-}
-
-void
-MmWavePhy::SetControlMessage (Ptr<MmWaveControlMessage> m)
-{
-	if (m_controlMessageQueue.empty ())
-	{
-		std::list<Ptr<MmWaveControlMessage> > l;
-		l.push_back(m);
-		m_controlMessageQueue.push_back (l);
-	}
-	else
-	{
-		m_controlMessageQueue.at (m_controlMessageQueue.size () - 1).push_back (m);
-	}
-}
-
-std::list<Ptr<MmWaveControlMessage> >
-MmWavePhy::GetControlMessages (void)
+std::list<Ptr<mmWaveControlMessages> >
+mmWavePhy::GetControlMessages (void)
 {
 	NS_LOG_FUNCTION (this);
-	if (m_controlMessageQueue.empty())
+	if (m_controlMessagesQueue.empty())
 	{
-		std::list<Ptr<MmWaveControlMessage> > emptylist;
+		std::list<Ptr<mmWaveControlMessages> > emptylist;
 		return (emptylist);
 	}
 
-	if (m_controlMessageQueue.at (0).size () > 0)
+	if (m_controlMessagesQueue.at (0).size () > 0)
 	{
-	    std::list<Ptr<MmWaveControlMessage> > ret = m_controlMessageQueue.front ();
-	    m_controlMessageQueue.erase (m_controlMessageQueue.begin ());
-	    std::list<Ptr<MmWaveControlMessage> > newlist;
-	    m_controlMessageQueue.push_back (newlist);
+	    std::list<Ptr<mmWaveControlMessages> > ret = m_controlMessagesQueue.front ();
+	    m_controlMessagesQueue.erase (m_controlMessagesQueue.begin ());
+	    std::list<Ptr<mmWaveControlMessages> > newlist;
+	    m_controlMessagesQueue.push_back (newlist);
 	    return (ret);
 	}
 	else
 	{
-	    m_controlMessageQueue.erase (m_controlMessageQueue.begin ());
-	    std::list<Ptr<MmWaveControlMessage> > newlist;
-	    m_controlMessageQueue.push_back (newlist);
-	    std::list<Ptr<MmWaveControlMessage> > emptylist;
+	    m_controlMessagesQueue.erase (m_controlMessagesQueue.begin ());
+	    std::list<Ptr<mmWaveControlMessages> > newlist;
+	    m_controlMessagesQueue.push_back (newlist);
+	    std::list<Ptr<mmWaveControlMessages> > emptylist;
 	    return (emptylist);
 	}
 }
 
+Ptr<PacketBurst>
+mmWavePhy::GetPacketBurst (void)
+{
+	if (m_packetBurstQueue.empty())
+	{
+		Ptr<PacketBurst> empty = CreateObject <PacketBurst> ();
+		m_packetBurstQueue.push_back (empty);
+		return (0);//empty;
+	}
+
+	if (m_packetBurstQueue.at (0)->GetSize () > 0)
+	{
+		Ptr<PacketBurst> ret = m_packetBurstQueue.at (0)->Copy ();
+		m_packetBurstQueue.erase (m_packetBurstQueue.begin ());
+		m_packetBurstQueue.push_back (CreateObject <PacketBurst> ());
+		return (ret);
+	}
+    else
+	{
+		m_packetBurstQueue.erase (m_packetBurstQueue.begin ());
+		m_packetBurstQueue.push_back (CreateObject <PacketBurst> ());
+		return (0);
+	}
+}
+
 void
-MmWavePhy::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+mmWavePhy::SetCofigurationParameters (Ptr<mmWavePhyMacCommon> ptrConfig)
 {
-	m_phyMacConfig = ptrConfig;
+	m_PhyMACConfig = ptrConfig;
 }
 
-Ptr<MmWavePhyMacCommon>
-MmWavePhy::GetConfigurationParameters (void) const
+Ptr<mmWavePhyMacCommon>
+mmWavePhy::GetConfigurationParameters (void) const
 {
-	return m_phyMacConfig;
+	return m_PhyMACConfig;
 }
 
 
-MmWavePhySapProvider*
-MmWavePhy::GetPhySapProvider ()
+mmWavePhySapProvider*
+mmWavePhy::GetmmWavePhySapProvider ()
 {
 	return m_phySapProvider;
 }
 
 void
-MmWavePhy::SetPhySapUser (MmWavePhySapUser* ptr)
+mmWavePhy::SetmmWavePhySapUser (mmWavePhySapUser* ptr)
 {
 	m_phySapUser = ptr;
 }
 
 void
-MmWavePhy::UpdateCurrentAllocationAndSchedule (uint32_t frame, uint32_t sf)
+mmWavePhy::UpdateCurrentAllocationAndSchedule (uint32_t frame, uint32_t sf)
 {
-	/*std::map<uint32_t,TddSlotTypeList>::iterator it_sched;
+	std::map<uint32_t,Schedule>::iterator it_sched;
 
 	uint32_t sfnsf = ((0x3FF & frame) << 16) | ((0xFF & sf) << 8) | ((0xFF & 1));
 
 	//NS_LOG_UNCOND ("Search SFN : "<< sfnsf);
 
-	it_sched = m_tddPatternForSlotMap.find(sfnsf);
-	if (it_sched != m_tddPatternForSlotMap.end ())
+	it_sched = m_TDDPatternsFrorSF.find(sfnsf);
+	if (it_sched != m_TDDPatternsFrorSF.end ())
 	{
-		m_currTddMap = (*it_sched).second;
-		m_tddPatternForSlotMap.erase (it_sched);
+		m_CurrentTDDMap = (*it_sched).second;
+		m_TDDPatternsFrorSF.erase (it_sched);
 	}
 	else
 	{
-		 Should be discussed before finalizing
-		TddSlotTypeList defaultSched;
-		for (uint32_t i = 0; i< m_phyMacConfig->GetSlotsPerSubframe(); i++)
+		/* Should be discussed before finalizing */
+		Schedule defaultSched;
+		for (uint32_t i = 0; i< m_PhyMACConfig->GetSlotPerSubframe(); i++)
 		{
-			defaultSched.push_back (CTRL);
+			defaultSched.m_slotType.push_back (CTRL);
 		}
-		m_currTddMap = defaultSched;
+		m_CurrentTDDMap = defaultSched;
 	}
 
-	std::map<uint32_t,SfAllocationInfo>::iterator it_alloc;
-	it_alloc = m_slotAllocInfoMap.find(sfnsf);
-	if (it_alloc != m_slotAllocInfoMap.end ())
+	std::map<uint32_t,allocationList>::iterator it_alloc;
+	it_alloc = m_AllocationListforSF.find(sfnsf);
+	if (it_alloc != m_AllocationListforSF.end ())
 	{
-		m_currentSfAllocInfo = (*it_alloc).second;
-		m_slotAllocInfoMap.erase (it_alloc);
+		m_CurrentAllocationList = (*it_alloc).second;
+		m_AllocationListforSF.erase (it_alloc);
 	}
 	else
 	{
-		SfAllocationInfo defaultAllocList;
-		unsigned numSymbPerSlot = m_phyMacConfig->GetSymbPerSlot();
-		unsigned numCtrlSym = m_phyMacConfig->GetCtrlSymbols();
-		unsigned remCtrlSym = numCtrlSym;	// remaining ctrl symbols in subframe
-
-		for (uint32_t i = 0; i< m_phyMacConfig->GetSlotsPerSubframe (); i++)
+		allocationList defaultAllocList;
+		for (uint32_t i = 0; i< m_PhyMACConfig->GetSlotPerSubframe(); i++)
 		{
-			SlotAllocInfo allocInfo;
-			allocInfo.m_isUl = (bool)((i+1)%2);
-
-			if(remCtrlSym > 0)
+			allocationMap alMap;
+			alMap.m_IsUL = (bool)((i+1)%2);
+			for(uint32_t j = 0; j < m_PhyMACConfig->GetRBperSlot (); j++)
 			{
-				if(remCtrlSym >= numSymbPerSlot)
-				{
-					allocInfo.m_numCtrlSym = numSymbPerSlot;
-					allocInfo.m_slotType = SlotAllocInfo::CTRL;
-					remCtrlSym -= numSymbPerSlot;
-				}
-				else
-				{
-					allocInfo.m_numCtrlSym = remCtrlSym;
-					allocInfo.m_slotType = SlotAllocInfo::CTRL_DATA;
-					remCtrlSym = 0;
-				}
-			}
-			else
-			{
-				allocInfo.m_numCtrlSym = 0;
-				allocInfo.m_slotType = SlotAllocInfo::DATA;
+				AllocatedTo usr;
+				usr.noAllocation = true;
+				usr.userImsi = 0;
+				alMap.m_user.push_back (usr);
+				/* What about MCS??*/
 			}
 
-			for(uint32_t j = 0; j < m_phyMacConfig->GetNumRb (); j++)
-			{
-				RbAllocationInfo usr;
-				usr.m_noAllocation = true;
-				usr.m_userImsi = 0;
-				allocInfo.m_user.push_back (usr);
-				 What about MCS??
-			}
-
-			defaultAllocList.m_slotAllocInfo.push_back (allocInfo);
+			defaultAllocList.m_AllocationMapforSF.push_back (alMap);
 		}
 
-		m_currentSfAllocInfo = defaultAllocList;
-	}*/
+		m_CurrentAllocationList = defaultAllocList;
+
+	}
 }
 
 

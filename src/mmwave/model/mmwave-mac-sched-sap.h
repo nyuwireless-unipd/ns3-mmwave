@@ -10,44 +10,20 @@
 
 #include "mmwave-phy-mac-common.h"
 #include <set>
-#include <map>
 
 namespace ns3
 {
 
-class MmWaveMacSchedSapProvider
+class mmWaveMacSchedSapProvider
 {
 public:
-	virtual ~MmWaveMacSchedSapProvider ();
+	virtual ~mmWaveMacSchedSapProvider ();
 
-	struct SchedDlRlcBufferReqParameters
-	{
-		uint16_t  m_rnti;
-		uint8_t   m_logicalChannelIdentity;
-		uint32_t  m_rlcTransmissionQueueSize;
-		uint16_t  m_rlcTransmissionQueueHolDelay;
-		uint32_t  m_rlcRetransmissionQueueSize;
-		uint16_t  m_rlcRetransmissionHolDelay;
-		uint16_t  m_rlcStatusPduSize;
-	};
-
-	struct SchedDlCqiInfoReqParameters
+	struct SchedCqiInfoReqParameters
 	{
 		uint32_t m_sfnsf;
-		std::vector <struct DlCqiInfo> m_cqiList;
+		std::vector <struct CqiInfo> m_cqiList;
 	};
-
-  struct SchedUlMacCtrlInfoReqParameters
-  {
-    uint16_t  m_sfnSf;
-    std::vector <struct MacCeElement> m_macCeList;
-  };
-
-  struct SchedUlCqiInfoReqParameters
-  {
-    uint32_t  m_sfnSf;
-    struct UlCqiInfo m_ulCqi;
-  };
 
 	struct SchedTriggerReqParameters
 	{
@@ -55,32 +31,24 @@ public:
 		std::list <uint64_t> m_ueList; // Add HARQ elements here...make a struct for this if needed
 	};
 
-  virtual void SchedDlRlcBufferReq (const struct SchedDlRlcBufferReqParameters& params) = 0;
-
-	virtual void SchedDlCqiInfoReq (const SchedDlCqiInfoReqParameters& params) = 0;
-
-	virtual void SchedUlCqiInfoReq (const struct SchedUlCqiInfoReqParameters& params) = 0;
-
 	virtual void SchedTriggerReq (const struct SchedTriggerReqParameters& params) = 0;
 
-  virtual void SchedUlMacCtrlInfoReq (const struct SchedUlMacCtrlInfoReqParameters& params) = 0;
+	virtual void SchedCqiInfoReq (const struct SchedCqiInfoReqParameters& params) = 0;
 
 private:
 
 };
 
-class MmWaveMacSchedSapUser
+class mmWaveMacSchedSapUser
 {
 public:
-	virtual ~MmWaveMacSchedSapUser ();
+	virtual ~mmWaveMacSchedSapUser ();
 
 	struct SchedConfigIndParameters
 	{
 		uint32_t m_sfn;
-//		TddSlotTypeList m_tddPattern;
-//		SfAllocationInfo m_allocationList;
-
-		std::map<uint16_t, SchedInfoElement> m_schedInfoMap;
+		Schedule m_tddPattern;
+		allocationList m_allocationList;
 	};
 
 	virtual void SchedConfigInd (const struct SchedConfigIndParameters& params) = 0;

@@ -367,16 +367,18 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
   double PNlos = 1-POut - PLos;
   double alpha, beta, sigma;
 
+  NS_LOG_INFO ("tx("<<a<<")->rx("<<b<<")");
   channelScenarioMap_t::const_iterator it;
   it = m_channelScenarioMap.find(std::make_pair(a,b));
   if (it == m_channelScenarioMap.end ())
     {
 	  channelScenario scenario;
 	  Ptr<UniformRandomVariable> uniformVariable = CreateObject <UniformRandomVariable> ();
+	  //uniformVariable->SetAntithetic(true);
 	  Ptr<NormalRandomVariable> normalVariable = CreateObject <NormalRandomVariable> ();
 	  normalVariable->SetAntithetic(true);
 	  double PRef = uniformVariable->GetValue(0,1);
-
+	  NS_LOG_DEBUG ("PRef="<<PRef);
 	  if (PRef < PLos)
 	    {
 		  scenario.m_channelScenario = 'l';
@@ -389,13 +391,13 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 		  {
 			  sigma = 8.7;
 		  }
-		  else if (m_frequency == 73e9)
+		  else if (m_frequency == 73e8)
 		  {
 			  sigma = 7.7;
 		  }
 		  else
 		  {
-			  NS_FATAL_ERROR ("The model currently supports only 28 GHz and 73 GHz carrier frequencies.");
+			  NS_FATAL_ERROR ("Other frequency is not impletmented.");
 		  }
 	    }
 	  else
@@ -417,7 +419,7 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 			  alpha = 61.4;
 			  beta = 2;
 	        }
-	      else if (m_frequency == 73e9)
+	      else if (m_frequency == 73e8)
 	        {
 			  alpha = 69.8;
 			  beta = 2;
@@ -435,7 +437,7 @@ mmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 			  alpha = 72.0;
 			  beta = 2.92;
 			}
-		  else if (m_frequency == 73e9)
+		  else if (m_frequency == 73e8)
 			{
 			  alpha = 82.7;
 			  beta = 2.69;

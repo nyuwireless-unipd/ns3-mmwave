@@ -10,12 +10,12 @@
 namespace ns3
 {
 
-MmWavePhySapProvider::~MmWavePhySapProvider ()
+mmWavePhySapProvider::~mmWavePhySapProvider ()
 {
 
 }
 
-MmWavePhySapUser::~MmWavePhySapUser ()
+mmWavePhySapUser::~mmWavePhySapUser ()
 {
 
 }

@@ -23,13 +23,14 @@
 #include <ns3/mmwave-mi-error-model.h>
 
 
+
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumPhy");
+NS_LOG_COMPONENT_DEFINE ("mmWaveSpectrumPhy");
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveSpectrumPhy);
+NS_OBJECT_ENSURE_REGISTERED (mmWaveSpectrumPhy);
 
-MmWaveSpectrumPhy::MmWaveSpectrumPhy()
+mmWaveSpectrumPhy::mmWaveSpectrumPhy()
 	:m_state(IDLE)
 {
 	m_interferenceData = CreateObject<mmWaveInterference> ();
@@ -37,99 +38,85 @@ MmWaveSpectrumPhy::MmWaveSpectrumPhy()
 	m_random->SetAttribute ("Min", DoubleValue (0.0));
 	m_random->SetAttribute ("Max", DoubleValue (1.0));
 }
-MmWaveSpectrumPhy::~MmWaveSpectrumPhy()
+mmWaveSpectrumPhy::~mmWaveSpectrumPhy()
 {
 
 }
 
 TypeId
-MmWaveSpectrumPhy::GetTypeId(void)
+mmWaveSpectrumPhy::GetTypeId(void)
 {
 	static TypeId
 		tid =
-	    TypeId ("ns3::MmWaveSpectrumPhy")
+	    TypeId ("ns3::mmWaveSpectrumPhy")
 	    .SetParent<NetDevice> ()
 		.AddTraceSource ("ReportEnbTxRxPacketCount",
 						 "The no. of packets received and transmitted by the Base Station",
-						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_reportEnbPacketCount))
+						 MakeTraceSourceAccessor (&mmWaveSpectrumPhy::m_reportEnbPacketCount))
 		.AddTraceSource ("ReportUeTxRxPacketCount",
 						 "The no. of packets received and transmitted by the User Device",
-						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_reportUePacketCount))
+						 MakeTraceSourceAccessor (&mmWaveSpectrumPhy::m_reportUePacketCount))
 
 		;
 
 	return tid;
 }
 void
-MmWaveSpectrumPhy::DoDispose()
+mmWaveSpectrumPhy::DoDispose()
 {
 
 }
 
 void
-MmWaveSpectrumPhy::SetDevice(Ptr<NetDevice> d)
+mmWaveSpectrumPhy::SetDevice(Ptr<NetDevice> d)
 {
 	m_device = d;
 }
 
 Ptr<NetDevice>
-MmWaveSpectrumPhy::GetDevice()
+mmWaveSpectrumPhy::GetDevice()
 {
 	return m_device;
 }
 
 void
-MmWaveSpectrumPhy::SetMobility (Ptr<MobilityModel> m)
+mmWaveSpectrumPhy::SetMobility (Ptr<MobilityModel> m)
 {
 	m_mobility = m;
 }
 
 Ptr<MobilityModel>
-MmWaveSpectrumPhy::GetMobility ()
+mmWaveSpectrumPhy::GetMobility ()
 {
 	return m_mobility;
 }
 
 void
-MmWaveSpectrumPhy::SetChannel (Ptr<SpectrumChannel> c)
+mmWaveSpectrumPhy::SetChannel (Ptr<SpectrumChannel> c)
 {
 	m_channel = c;
 }
 
 Ptr<const SpectrumModel>
-MmWaveSpectrumPhy::GetRxSpectrumModel () const
+mmWaveSpectrumPhy::GetRxSpectrumModel () const
 {
 	return m_rxSpectrumModel;
 }
 
 Ptr<AntennaModel>
-MmWaveSpectrumPhy::GetRxAntenna ()
+mmWaveSpectrumPhy::GetRxAntenna ()
 {
 	return m_anetnna;
 }
 
 void
-MmWaveSpectrumPhy::SetAntenna (Ptr<AntennaModel> a)
+mmWaveSpectrumPhy::SetAntenna (Ptr<AntennaModel> a)
 {
 	m_anetnna = a;
 }
 
 void
-MmWaveSpectrumPhy::SetState (State newState)
-{
-  ChangeState (newState);
-}
-
-void
-MmWaveSpectrumPhy::ChangeState (State newState)
-{
-  NS_LOG_LOGIC (this << " state: " << m_state << " -> " << newState);
-  m_state = newState;
-}
-
-
-void
-MmWaveSpectrumPhy::SetNoisePowerSpectralDensity(Ptr<const SpectrumValue> noisePsd)
+mmWaveSpectrumPhy::SetNoisePowerSpectralDensity(Ptr<const SpectrumValue> noisePsd)
 {
 	NS_LOG_FUNCTION (this << noisePsd);
 	NS_ASSERT (noisePsd);
@@ -139,26 +126,19 @@ MmWaveSpectrumPhy::SetNoisePowerSpectralDensity(Ptr<const SpectrumValue> noisePs
 }
 
 void
-MmWaveSpectrumPhy::SetTxPowerSpectralDensity (Ptr<SpectrumValue> TxPsd)
+mmWaveSpectrumPhy::SetTxPowerSpectralDensity (Ptr<SpectrumValue> TxPsd)
 {
 	m_txPsd = TxPsd;
 }
 
 void
-MmWaveSpectrumPhy::SetPhyRxDataEndOkCallback (MmWavePhyRxDataEndOkCallback c)
+mmWaveSpectrumPhy::SetmmWavePhyRxDataEndOkCallback (mmWavePhyRxDataEndOkCallback c)
 {
-	m_phyRxDataEndOkCallback = c;
-}
-
-
-void
-MmWaveSpectrumPhy::SetPhyRxCtrlEndOkCallback (MmWavePhyRxCtrlEndOkCallback c)
-{
-  m_phyRxCtrlEndOkCallback = c;
+	m_mmWavePhyRxDataEndOkCallback = c;
 }
 
 void
-MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t mcs, std::vector<int> map, bool downlink)
+mmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t mcs, std::vector<int> map, bool downlink)
 {
 	//tbId.m_layer = layer;
 	expectedTbs_t::iterator it;
@@ -174,30 +154,30 @@ MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t mcs, std
 
 
 void
-MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
+mmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 {
 
 	NS_LOG_FUNCTION(this);
 
-	Ptr<MmWaveEnbNetDevice> EnbTx =
-			DynamicCast<MmWaveEnbNetDevice> (params->txPhy->GetDevice ());
-	Ptr<MmWaveEnbNetDevice> enbRx =
-			DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-	if((EnbTx != 0 && enbRx != 0) || (EnbTx == 0 && enbRx == 0))
+	Ptr<mmWaveEnbNetDevice> EnbTx =
+			DynamicCast<mmWaveEnbNetDevice> (params->txPhy->GetDevice ());
+	Ptr<mmWaveEnbNetDevice> EnbRx =
+			DynamicCast<mmWaveEnbNetDevice> (GetDevice ());
+	if((EnbTx != 0 && EnbRx != 0) || (EnbTx == 0 && EnbRx == 0))
 	{
 		NS_LOG_INFO ("BS to BS or UE to UE transmission neglected.");
 		return;
 	}
 
-	Ptr<MmwaveSpectrumSignalParametersDataFrame> mmwaveDataRxParams =
-			DynamicCast<MmwaveSpectrumSignalParametersDataFrame> (params);
+	Ptr<mmwaveSpectrumSignalParametersDataFrame> mmwaveDataRxParams =
+			DynamicCast<mmwaveSpectrumSignalParametersDataFrame> (params);
 
 	if (mmwaveDataRxParams!=0)
 	{
 		bool isAllocated = true;
-		Ptr<MmWaveUeNetDevice> ueRx = DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+		Ptr<mmWaveUeNetDevice> UeRx = DynamicCast<mmWaveUeNetDevice> (GetDevice ());
 
-		if ((ueRx!=0) && (ueRx->GetPhy ()->IsReceptionEnabled () == false))
+		if ((UeRx!=0) && (UeRx->GetPhy ()->IsReceptionEnabled () == false))
 		{
 			isAllocated = false;
 		}
@@ -211,7 +191,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 			}
 			else
 			{
-				if (ueRx != 0)
+				if (UeRx != 0)
 				{
 					m_interferenceData->AddSignal (mmwaveDataRxParams->psd, mmwaveDataRxParams->duration);
 				}
@@ -220,16 +200,15 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 	}
 	else
 	{
-		Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> DlCtrlRxParams =
-				DynamicCast<MmWaveSpectrumSignalParametersDlCtrlFrame> (params);
+		Ptr<mmwaveSpectrumSignalParametersDlCtrlFrame> DlCtrlRxParams =
+				DynamicCast<mmwaveSpectrumSignalParametersDlCtrlFrame> (params);
 		if (DlCtrlRxParams!=0)
 		{
 			if (DlCtrlRxParams->cellId == m_cellId)
 			{
-
 				//NS_LOG_UNCOND (this<<"Received Control Signal!!!");
-				StartRxCtrl (params);
-            }
+				StartRxControl (params);
+			}
 			else
 			{
 				// Do nothing
@@ -239,83 +218,67 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 }
 
 void
-MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> params)
+mmWaveSpectrumPhy::StartRxData (Ptr<mmwaveSpectrumSignalParametersDataFrame> params)
 {
 	m_interferenceData->StartRx (params->psd);
 
 	NS_LOG_FUNCTION(this);
 
-	Ptr<MmWaveEnbNetDevice> enbRx =
-				DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-	Ptr<MmWaveUeNetDevice> ueRx =
-				DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+	Ptr<mmWaveEnbNetDevice> EnbRx =
+				DynamicCast<mmWaveEnbNetDevice> (GetDevice ());
+	Ptr<mmWaveUeNetDevice> UeRx =
+				DynamicCast<mmWaveUeNetDevice> (GetDevice ());
 	switch(m_state)
 	{
 	case TX:
 		NS_FATAL_ERROR("Cannot receive while transmitting");
 		break;
-	case RX_CTRL:
-			NS_FATAL_ERROR("Cannot receive control in data period");
-			break;
-	case RX_DATA:
+
+	case RX:
 	case IDLE:
 	{
+#if 0
+		if (UeRx /*&& (params->psd/params->duration > 0)*/ ) //Need to discuss the limit
+		{
+			/* Process the control messages for the User*/
+			UeRx->GetPhy ()->ReceivemmWaveControlMessageList (params->ctrlMsgList, params->cellId);
+		}
+#endif
+
 		if (params->cellId == m_cellId)
 		{
+			m_state = RX;
+
 			if (m_rxPacketBurstList.empty())
 			{
-        NS_ASSERT (m_state == IDLE);
-				// first transmission, i.e., we're IDLE and we start RX
-				m_firstRxStart = Simulator::Now ();
-				m_firstRxDuration = params->duration;
-				NS_LOG_LOGIC (this << " scheduling EndRx with delay " << params->duration.GetSeconds () << "s");
-
-				Simulator::Schedule (params->duration, &MmWaveSpectrumPhy::EndRxData, this);
-			}
-			else
-			{
-				NS_ASSERT (m_state == RX_DATA);
-				// sanity check: if there are multiple RX events, they
-				// should occur at the same time and have the same
-				// duration, otherwise the interference calculation
-				// won't be correct
-				NS_ASSERT ((m_firstRxStart == Simulator::Now ()) && (m_firstRxDuration == params->duration));
+				Simulator::Schedule (params->duration, &mmWaveSpectrumPhy::EndRxData, this);
 			}
 
-			ChangeState (RX_DATA);
-			if (params->packetBurst && !params->packetBurst->GetPackets ().empty ())
+			if (params->packetBurst)
 			{
 				m_rxPacketBurstList.push_back (params->packetBurst);
 			}
-			NS_LOG_DEBUG (this << " insert msgs " << params->ctrlMsgList.size ());
-			m_rxControlMessageList.insert (m_rxControlMessageList.end (), params->ctrlMsgList.begin (), params->ctrlMsgList.end ());
-
-			NS_LOG_LOGIC (this << " numSimultaneousRxEvents = " << m_rxPacketBurstList.size ());
 
 			/* This section is used for trace */
-			if (enbRx)
+			if (EnbRx)
 			{
 				EnbPhyPacketCountParameter traceParam;
 				traceParam.m_noBytes = (params->packetBurst)?params->packetBurst->GetSize ():0;
 				traceParam.m_cellId = params->cellId;
 				traceParam.m_isTx = false;
-				traceParam.m_subframeno = enbRx->GetPhy ()->GetAbsoluteSubframeNo ();
+				traceParam.m_subframeno = EnbRx->GetPhy ()->GetAbsoulteSubframeNo ();
 				m_reportEnbPacketCount (traceParam);
 			}
-			else if (ueRx)
+			else if (UeRx)
 			{
 				UePhyPacketCountParameter traceParam;
 				traceParam.m_noBytes = (params->packetBurst)?params->packetBurst->GetSize ():0;
-				traceParam.m_imsi = ueRx->GetImsi ();
+				traceParam.m_imsi = UeRx->GetImsi ();
 				traceParam.m_isTx = false;
-				traceParam.m_subframeno = ueRx->GetPhy ()->GetAbsoluteSubframeNo ();
+				traceParam.m_subframeno = UeRx->GetPhy ()->GetAbsoulteSubframeNo ();
 				m_reportUePacketCount (traceParam);
 			}
-		}
-		else
-		{
-			NS_LOG_LOGIC (this << " not in sync with this signal (cellId="
-			              << params->cellId  << ", m_cellId=" << m_cellId << ")");
+			/**********************************/
 		}
 	}
 	break;
@@ -325,75 +288,40 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
 }
 
 void
-MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
+mmWaveSpectrumPhy::StartRxControl (Ptr<SpectrumSignalParameters> params)
 {
 	NS_LOG_FUNCTION (this);
-	// RDF: method currently supports Downlink control only!
 	switch (m_state)
 	{
-		case TX:
-			NS_FATAL_ERROR ("Cannot RX while TX: according to FDD channel access, the physical layer for transmission cannot be used for reception");
-			break;
-		case RX_DATA:
-			NS_FATAL_ERROR ("Cannot RX data while receiving control");
-			break;
-		case RX_CTRL:
-		case IDLE:
+	case TX:
+	{
+		NS_FATAL_ERROR ("Already transmitting or receiving");
+		break;
+	}
+	case RX:
+	case IDLE:
+	{
+		m_state = RX;
+		Ptr<mmwaveSpectrumSignalParametersDlCtrlFrame> DlCtrlRxParams =
+					DynamicCast<mmwaveSpectrumSignalParametersDlCtrlFrame> (params);
+		Ptr<mmWaveUePhy> uePhy;
+		if ( GetDevice ()->GetObject <mmWaveUeNetDevice> ())
 		{
-			// the behavior is similar when we're IDLE or RX because we can receive more signals
-			// simultaneously (e.g., at the eNB).
-			Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> dlCtrlRxParams = \
-					DynamicCast<MmWaveSpectrumSignalParametersDlCtrlFrame> (params);
-			// To check if we're synchronized to this signal, we check for the CellId
-			uint16_t cellId = 0;
-			if (dlCtrlRxParams != 0)
-			{
-				cellId = dlCtrlRxParams->cellId;
-			}
-			else
-			{
-				NS_LOG_ERROR ("SpectrumSignalParameters type not supported");
-			}
-			// check presence of PSS for UE measuerements
-			/*if (dlCtrlRxParams->pss == true)
-			{
-				SpectrumValue pssPsd = *params->psd;
-				if (!m_phyRxPssCallback.IsNull ())
-				{
-					m_phyRxPssCallback (cellId, params->psd);
-				}
-			}*/
-			if (cellId  == m_cellId)
-			{
-				if(m_state == RX_CTRL)
-				{
-					NS_FATAL_ERROR ("Already receiving control data from serving cell");
-				}
-				NS_LOG_LOGIC (this << " synchronized with this signal (cellId=" << cellId << ")");
-				if (m_state == IDLE)
-				{
-					// first transmission, i.e., we're IDLE and we start RX
-					NS_ASSERT (m_rxControlMessageList.empty ());
-//					m_firstRxStart = Simulator::Now ();
-//					m_firstRxDuration = params->duration;
-					NS_LOG_LOGIC (this << " scheduling EndRx with delay " << params->duration);
-					// store the DCIs
-					m_rxControlMessageList = dlCtrlRxParams->ctrlMsgList;
-					Simulator::Schedule (params->duration, &MmWaveSpectrumPhy::EndRxCtrl, this);
-					ChangeState (RX_CTRL);
-				}
-				else if (m_state == RX_CTRL)
-				{
-					NS_FATAL_ERROR ("Already receiving control period");
-					// sanity check: if there are multiple RX events, they
-					// should occur at the same time and have the same
-					// duration, otherwise the interference calculation
-					// won't be correct
-//					NS_ASSERT ((m_firstRxStart == Simulator::Now ())
-//					           && (m_firstRxDuration == params->duration));
-				}
-			}
-			break;
+			uePhy = GetDevice ()->GetObject <mmWaveUeNetDevice> ()->GetPhy ();
+		}
+
+		if (uePhy != 0)
+		{
+			uePhy->ReceivemmWaveControlMessageList (DlCtrlRxParams->ctrlMsgList, DlCtrlRxParams->cellId);
+		}
+		else
+		{
+			Ptr<mmWaveEnbPhy> enbPhy = GetDevice ()->GetObject <mmWaveEnbNetDevice> ()->GetPhy ();
+			enbPhy->PhyCtrlMessageReceived (DlCtrlRxParams->ctrlMsgList);
+
+		}
+		Simulator::Schedule (params->duration, &mmWaveSpectrumPhy::EndRxCtrl, this);
+		break;
 	}
 	default:
 	{
@@ -404,16 +332,16 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
 }
 
 void
-MmWaveSpectrumPhy::EndRxData ()
+mmWaveSpectrumPhy::EndRxData ()
 {
 	m_interferenceData->EndRx();
 
-	NS_ASSERT(m_state = RX_DATA);
+	NS_ASSERT(m_state = RX);
 	expectedTbs_t::iterator itTb = m_expectedTbs.begin ();
-	while (itTb != m_expectedTbs.end ())
+	while (itTb!=m_expectedTbs.end ())
 	{
-        TbStats_t tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
-        								(*itTb).second.rbBitmap, (*itTb).second.size, (*itTb).second.m_mcs);
+        TbStats_t tbStats = mmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
+        								(*itTb).second.rbBitmap, (*itTb).second.size, (*itTb).second.mcs);
         (*itTb).second.corrupt = m_random->GetValue () > tbStats.tbler ? false : true;
 		itTb++;
 	}
@@ -425,29 +353,14 @@ MmWaveSpectrumPhy::EndRxData ()
 		for (std::list<Ptr<Packet> >::const_iterator j = (*i)->Begin (); j != (*i)->End (); ++j)
 		{
 			LteRadioBearerTag tag;
-
-			if((*j)->PeekPacketTag (tag) == false)
-			{
-				Ptr<MmWaveEnbNetDevice> enbRx =
-							DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-				Ptr<MmWaveUeNetDevice> ueRx =
-							DynamicCast<MmWaveUeNetDevice> (GetDevice ());
-				if (enbRx)
-				{
-					NS_FATAL_ERROR ("No radio bearer tag found (eNB dest)");
-				}
-				else if (ueRx)
-				{
-					NS_FATAL_ERROR ("No radio bearer tag found (UE dest)");
-				}
-			}
+			(*j)->PeekPacketTag (tag);
 			uint16_t rnti = tag.GetRnti ();
 			itTb = m_expectedTbs.find (rnti);
 			if(itTb != m_expectedTbs.end ())
 			{
 				if (!(*itTb).second.corrupt)
 				{
-					m_phyRxDataEndOkCallback (*j);
+					m_mmWavePhyRxDataEndOkCallback (*j);
 				}
 				else
 				{
@@ -463,43 +376,27 @@ MmWaveSpectrumPhy::EndRxData ()
 		}
 	}
 
-	if (!m_rxControlMessageList.empty () && !m_phyRxCtrlEndOkCallback.IsNull ())
-	{
-		m_phyRxCtrlEndOkCallback (m_rxControlMessageList);
-	}
 
 	m_state = IDLE;
 	m_rxPacketBurstList.clear ();
 	m_expectedTbs.clear ();
-	m_rxControlMessageList.clear ();
+
 }
 
 void
-MmWaveSpectrumPhy::EndRxCtrl ()
+mmWaveSpectrumPhy::EndRxCtrl ()
 {
-	NS_ASSERT(m_state = RX_CTRL);
-
-	// control error model not supported
-  // forward control messages of this frame to LtePhy
-  if (!m_rxControlMessageList.empty ())
-    {
-      if (!m_phyRxCtrlEndOkCallback.IsNull ())
-        {
-          m_phyRxCtrlEndOkCallback (m_rxControlMessageList);
-        }
-    }
-
+	NS_ASSERT(m_state = RX);
 	m_state = IDLE;
-	m_rxControlMessageList.clear ();
+
 }
 
 bool
-MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsgList, Time duration, uint8_t slotInd)
+mmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<mmWaveControlMessages> > ctrlMsgList, Time duration)
 {
 	switch (m_state)
 	{
-	case RX_DATA:
-  case RX_CTRL:
+	case RX:
 		NS_FATAL_ERROR ("cannot TX while RX: Cannot transmit while receiving");
 		break;
 	case TX:
@@ -510,44 +407,43 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 		NS_ASSERT(m_txPsd);
 
 		m_state = TX;
-		Ptr<MmwaveSpectrumSignalParametersDataFrame> txParams = new MmwaveSpectrumSignalParametersDataFrame ();
+		Ptr<mmwaveSpectrumSignalParametersDataFrame> txParams = new mmwaveSpectrumSignalParametersDataFrame ();
 		txParams->duration = duration;
-		txParams->txPhy = this->GetObject<SpectrumPhy> ();
+		txParams->txPhy = GetObject<SpectrumPhy> ();
 		txParams->psd = m_txPsd;
 		txParams->packetBurst = pb;
 		txParams->cellId = m_cellId;
 		txParams->ctrlMsgList = ctrlMsgList;
-		txParams->slotInd = slotInd;
-		NS_LOG_DEBUG ("ctrlMsgList.size () == " << txParams->ctrlMsgList.size ());
 
 		/* This section is used for trace */
-		Ptr<MmWaveEnbNetDevice> enbTx =
-					DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-		Ptr<MmWaveUeNetDevice> ueTx =
-					DynamicCast<MmWaveUeNetDevice> (GetDevice ());
-		if (enbTx)
+
+		Ptr<mmWaveEnbNetDevice> EnbRx =
+					DynamicCast<mmWaveEnbNetDevice> (GetDevice ());
+		Ptr<mmWaveUeNetDevice> UeRx =
+					DynamicCast<mmWaveUeNetDevice> (GetDevice ());
+		if (EnbRx)
 		{
 			EnbPhyPacketCountParameter traceParam;
 			traceParam.m_noBytes = (txParams->packetBurst)?txParams->packetBurst->GetSize ():0;
 			traceParam.m_cellId = txParams->cellId;
 			traceParam.m_isTx = true;
-			traceParam.m_subframeno = enbTx->GetPhy ()->GetAbsoluteSubframeNo ();
+			traceParam.m_subframeno = EnbRx->GetPhy ()->GetAbsoulteSubframeNo ();
 			m_reportEnbPacketCount (traceParam);
 		}
-		else if (ueTx)
+		else if (UeRx)
 		{
 			UePhyPacketCountParameter traceParam;
 			traceParam.m_noBytes = (txParams->packetBurst)?txParams->packetBurst->GetSize ():0;
-			traceParam.m_imsi = ueTx->GetImsi ();
+			traceParam.m_imsi = UeRx->GetImsi ();
 			traceParam.m_isTx = true;
-			traceParam.m_subframeno = ueTx->GetPhy ()->GetAbsoluteSubframeNo ();
+			traceParam.m_subframeno = UeRx->GetPhy ()->GetAbsoulteSubframeNo ();
 			m_reportUePacketCount (traceParam);
 		}
 		/**********************************/
 
 		m_channel->StartTx (txParams);
 
-		Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
+		Simulator::Schedule (duration, &mmWaveSpectrumPhy::EndTx, this);
 	}
 	break;
 	default:
@@ -557,14 +453,13 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 }
 
 bool
-MmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> > ctrlMsgList, Time duration)
+mmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<mmWaveControlMessages> > ctrlMsgList, Time duration)
 {
 	NS_LOG_LOGIC (this << " state: " << m_state);
 
 	switch (m_state)
 	{
-  case RX_DATA:
-	case RX_CTRL:
+	case RX:
 		NS_FATAL_ERROR ("cannot TX while RX: Cannot transmit while receiving");
 		break;
 	case TX:
@@ -576,7 +471,7 @@ MmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> >
 
 		m_state = TX;
 
-		Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> txParams = Create<MmWaveSpectrumSignalParametersDlCtrlFrame> ();
+		Ptr<mmwaveSpectrumSignalParametersDlCtrlFrame> txParams = Create<mmwaveSpectrumSignalParametersDlCtrlFrame> ();
 		txParams->duration = duration;
 		txParams->txPhy = GetObject<SpectrumPhy> ();
 		txParams->psd = m_txPsd;
@@ -584,14 +479,14 @@ MmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> >
 		txParams->pss = true;
 		txParams->ctrlMsgList = ctrlMsgList;
 		m_channel->StartTx (txParams);
-		Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
+		Simulator::Schedule (duration, &mmWaveSpectrumPhy::EndTx, this);
 	}
 	}
 	return false;
 }
 
 void
-MmWaveSpectrumPhy::EndTx()
+mmWaveSpectrumPhy::EndTx()
 {
 	NS_ASSERT (m_state == TX);
 
@@ -599,32 +494,32 @@ MmWaveSpectrumPhy::EndTx()
 }
 
 Ptr<SpectrumChannel>
-MmWaveSpectrumPhy::GetSpectrumChannel ()
+mmWaveSpectrumPhy::GetSpectrumChannel ()
 {
 	return m_channel;
 }
 
 void
-MmWaveSpectrumPhy::SetCellId (uint16_t cellId)
+mmWaveSpectrumPhy::SetCellId (uint16_t cellId)
 {
 	m_cellId = cellId;
 }
 
 
 void
-MmWaveSpectrumPhy::AddDataPowerChunkProcessor (Ptr<mmWaveChunkProcessor> p)
+mmWaveSpectrumPhy::AddDataPowerChunkProcessor (Ptr<mmWaveChunkProcessor> p)
 {
 	m_interferenceData->AddPowerChunkProcessor (p);
 }
 
 void
-MmWaveSpectrumPhy::AddDataSinrChunkProcessor (Ptr<mmWaveChunkProcessor> p)
+mmWaveSpectrumPhy::AddDataSinrChunkProcessor (Ptr<mmWaveChunkProcessor> p)
 {
 	m_interferenceData->AddSinrChunkProcessor (p);
 }
 
 void
-MmWaveSpectrumPhy::UpdateSinrPerceived (const SpectrumValue& sinr)
+mmWaveSpectrumPhy::UpdateSinrPerceived (const SpectrumValue& sinr)
 {
 	NS_LOG_FUNCTION (this << sinr);
 	m_sinrPerceived = sinr;

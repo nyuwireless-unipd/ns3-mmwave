@@ -10,39 +10,45 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveMacScheduler");
+NS_LOG_COMPONENT_DEFINE ("mmWaveMacScheduler");
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveMacScheduler);
+NS_OBJECT_ENSURE_REGISTERED (mmWaveMacScheduler);
 
-MmWaveMacScheduler::MmWaveMacScheduler ()
+mmWaveMacScheduler::mmWaveMacScheduler ()
 {
 	NS_LOG_FUNCTION (this);
 }
 
-MmWaveMacScheduler::~MmWaveMacScheduler ()
+mmWaveMacScheduler::~mmWaveMacScheduler ()
 {
 	NS_LOG_FUNCTION (this);
 }
 
 void
-MmWaveMacScheduler::DoDispose (void)
+mmWaveMacScheduler::DoDispose (void)
 {
 	NS_LOG_FUNCTION (this);
 }
 
 TypeId
-MmWaveMacScheduler::GetTypeId (void)
+mmWaveMacScheduler::GetTypeId (void)
 {
-    static TypeId tid = TypeId ("ns3::MmWaveMacScheduler")
-    .SetParent<Object> ();
+    static TypeId tid = TypeId ("ns3::mmWaveMacScheduler")
+    .SetParent<Object> ()
+	.AddAttribute ("TimeDivisionDuplexPattern",
+			"The pattern in which slots are assigned to UL, DL or Sync",
+			StringValue ("ccdddddd"),
+			MakeStringAccessor (&mmWaveMacScheduler::m_TDDPattern),
+			MakeStringChecker ())
+	;
 
   return tid;
 }
 
 /*void
-MmWaveMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
+mmWaveMacScheduler::ConfigureCommonParameters (Ptr<mmWavePhyMacCommon> config)
 {
-	m_phyMacConfig = config;
+	m_PhyMACConfig = config;
 }*/
 
 }

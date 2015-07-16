@@ -27,54 +27,54 @@
 
 namespace ns3{
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveEnbNetDevice");
+NS_LOG_COMPONENT_DEFINE ("mmWaveEnbNetDevice");
 
-NS_OBJECT_ENSURE_REGISTERED ( MmWaveEnbNetDevice);
+NS_OBJECT_ENSURE_REGISTERED ( mmWaveEnbNetDevice);
 
-TypeId MmWaveEnbNetDevice::GetTypeId()
+TypeId mmWaveEnbNetDevice::GetTypeId()
 {
 	static TypeId
 	    tid =
-	    TypeId ("ns3::MmWaveEnbNetDevice")
-	    .SetParent<MmWaveNetDevice> ()
-	    .AddConstructor<MmWaveEnbNetDevice> ()
-		.AddAttribute ("MmWaveEnbPhy",
+	    TypeId ("ns3::mmWaveEnbNetDevice")
+	    .SetParent<mmWaveNetDevice> ()
+	    .AddConstructor<mmWaveEnbNetDevice> ()
+		.AddAttribute ("mmWaveEnbPhy",
 			           "The PHY associated to this EnbNetDevice",
 			           PointerValue (),
-			           MakePointerAccessor (&MmWaveEnbNetDevice::m_phy),
-		               MakePointerChecker <MmWaveEnbPhy> ())
-		.AddAttribute ("MmWaveEnbMac",
+			           MakePointerAccessor (&mmWaveEnbNetDevice::m_phy),
+		               MakePointerChecker <mmWaveEnbPhy> ())
+		.AddAttribute ("mmWaveEnbMac",
 						   "The MAC associated to this EnbNetDevice",
 						   PointerValue (),
-						   MakePointerAccessor (&MmWaveEnbNetDevice::m_mac),
-						   MakePointerChecker <MmWaveEnbMac> ())
+						   MakePointerAccessor (&mmWaveEnbNetDevice::m_mac),
+						   MakePointerChecker <mmWaveEnbMac> ())
 		.AddAttribute ("mmWaveScheduler",
 						"The Scheduler associated with the MAC",
 						PointerValue (),
-					    MakePointerAccessor (&MmWaveEnbNetDevice::m_scheduler),
-					    MakePointerChecker <MmWaveMacScheduler> ())
+					    MakePointerAccessor (&mmWaveEnbNetDevice::m_scheduler),
+					    MakePointerChecker <mmWaveMacScheduler> ())
 		.AddAttribute ("ConnectedLteRRC",
 						"The RRC layer associated with the ENB",
 						PointerValue (),
-						MakePointerAccessor (&MmWaveEnbNetDevice::m_rrc),
+						MakePointerAccessor (&mmWaveEnbNetDevice::m_rrc),
 						MakePointerChecker <LteEnbRrc> ())
 		.AddAttribute ("CellId",
 					   "Cell Identifier",
 					   UintegerValue (0),
-					   MakeUintegerAccessor (&MmWaveEnbNetDevice::m_cellId),
+					   MakeUintegerAccessor (&mmWaveEnbNetDevice::m_cellId),
 					   MakeUintegerChecker<uint16_t> ())
 		.AddAttribute ("AntennaNum",
 					   "Antenna number of the device",
 					   UintegerValue (64),
-					   MakeUintegerAccessor (&MmWaveEnbNetDevice::SetAntennaNum,
-											 &MmWaveEnbNetDevice::GetAntennaNum),
+					   MakeUintegerAccessor (&mmWaveEnbNetDevice::SetAntennaNum,
+											 &mmWaveEnbNetDevice::GetAntennaNum),
 					   MakeUintegerChecker<uint8_t> ())
 	;
 
 	return tid;
 }
 
-MmWaveEnbNetDevice::MmWaveEnbNetDevice()
+mmWaveEnbNetDevice::mmWaveEnbNetDevice()
 	:m_cellId(0),
 	 m_Bandwidth (72),
 	 m_Earfcn(1),
@@ -84,13 +84,13 @@ MmWaveEnbNetDevice::MmWaveEnbNetDevice()
 	NS_LOG_FUNCTION (this);
 }
 
-MmWaveEnbNetDevice::~MmWaveEnbNetDevice()
+mmWaveEnbNetDevice::~mmWaveEnbNetDevice()
 {
 	NS_LOG_FUNCTION (this);
 }
 
 void
-MmWaveEnbNetDevice::DoInitialize(void)
+mmWaveEnbNetDevice::DoInitialize(void)
 {
 	NS_LOG_FUNCTION(this);
 	m_isConstructed = true;
@@ -99,48 +99,48 @@ MmWaveEnbNetDevice::DoInitialize(void)
 }
 
 void
-MmWaveEnbNetDevice::DoDispose()
+mmWaveEnbNetDevice::DoDispose()
 {
 	NS_LOG_FUNCTION (this);
 }
 
-Ptr<MmWaveEnbPhy>
-MmWaveEnbNetDevice::GetPhy (void) const
+Ptr<mmWaveEnbPhy>
+mmWaveEnbNetDevice::GetPhy (void) const
 {
 	NS_LOG_FUNCTION (this);
 	return m_phy;
 }
 
 uint16_t
-MmWaveEnbNetDevice::GetCellId () const
+mmWaveEnbNetDevice::GetCellId () const
 {
 	NS_LOG_FUNCTION (this);
 	return m_cellId;
 }
 
 uint8_t
-MmWaveEnbNetDevice::GetBandwidth () const
+mmWaveEnbNetDevice::GetBandwidth () const
 {
 	NS_LOG_FUNCTION (this);
 	return m_Bandwidth;
 }
 
 void
-MmWaveEnbNetDevice::SetBandwidth (uint8_t bw)
+mmWaveEnbNetDevice::SetBandwidth (uint8_t bw)
 {
 	NS_LOG_FUNCTION (this);
 	m_Bandwidth = bw;
 }
 
 void
-MmWaveEnbNetDevice::SetEarfcn(uint16_t earfcn)
+mmWaveEnbNetDevice::SetEarfcn(uint16_t earfcn)
 {
 	NS_LOG_FUNCTION (this);
 	m_Earfcn = earfcn;
 }
 
 uint16_t
-MmWaveEnbNetDevice::GetEarfcn() const
+mmWaveEnbNetDevice::GetEarfcn() const
 {
 	NS_LOG_FUNCTION (this);
 	return m_Earfcn;
@@ -148,42 +148,42 @@ MmWaveEnbNetDevice::GetEarfcn() const
 }
 
 void
-MmWaveEnbNetDevice::SetMac (Ptr<MmWaveEnbMac> mac)
+mmWaveEnbNetDevice::SetMac (Ptr<mmWaveEnbMac> mac)
 {
 	m_mac = mac;
 }
 
-Ptr<MmWaveEnbMac>
-MmWaveEnbNetDevice::GetMac (void)
+Ptr<mmWaveEnbMac>
+mmWaveEnbNetDevice::GetMac (void)
 {
 	return m_mac;
 }
 
 void
-MmWaveEnbNetDevice::SetRrc (Ptr<LteEnbRrc> rrc)
+mmWaveEnbNetDevice::SetRrc (Ptr<LteEnbRrc> rrc)
 {
 	m_rrc = rrc;
 }
 
 Ptr<LteEnbRrc>
-MmWaveEnbNetDevice::GetRrc (void)
+mmWaveEnbNetDevice::GetRrc (void)
 {
 	return m_rrc;
 }
 
 void
-MmWaveEnbNetDevice::SetAntennaNum (uint8_t antennaNum)
+mmWaveEnbNetDevice::SetAntennaNum (uint8_t antennaNum)
 {
 	m_antennaNum = antennaNum;
 }
 uint8_t
-MmWaveEnbNetDevice::GetAntennaNum () const
+mmWaveEnbNetDevice::GetAntennaNum () const
 {
 	return m_antennaNum;
 }
 
 bool
-MmWaveEnbNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
+mmWaveEnbNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
 	NS_LOG_FUNCTION (this << packet   << dest << protocolNumber);
 	NS_ASSERT_MSG (protocolNumber == Ipv4L3Protocol::PROT_NUMBER, "unsupported protocol " << protocolNumber << ", only IPv4 is supported");
@@ -192,7 +192,7 @@ MmWaveEnbNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t pr
 }
 
 void
-MmWaveEnbNetDevice::UpdateConfig (void)
+mmWaveEnbNetDevice::UpdateConfig (void)
 {
   NS_LOG_FUNCTION (this);
 

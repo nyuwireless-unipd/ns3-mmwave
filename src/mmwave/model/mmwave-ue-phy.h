@@ -22,25 +22,25 @@ namespace ns3{
 class PacketBurst;
 class mmwEnbPhy;
 
-class MmWaveUePhy : public MmWavePhy
+class mmWaveUePhy : public mmWavePhy
 {
 	friend class UeMemberLteUePhySapProvider;
-	friend class MemberLteUeCphySapProvider<MmWaveUePhy>;
+	friend class MemberLteUeCphySapProvider<mmWaveUePhy>;
 
 public:
-	MmWaveUePhy ();
+	mmWaveUePhy ();
 
-	MmWaveUePhy (Ptr<MmWaveSpectrumPhy> ulPhy, Ptr<MmWaveSpectrumPhy> dlPhy);
+	mmWaveUePhy (Ptr<mmWaveSpectrumPhy> ulPhy, Ptr<mmWaveSpectrumPhy> dlPhy);
 
-	virtual ~MmWaveUePhy ();
+	virtual ~mmWaveUePhy ();
 
 	// inherited from Object
 	static TypeId GetTypeId (void);
 	virtual void DoInitialize (void);
 	virtual void DoDispose (void);
 
-	LteUeCphySapProvider* GetUeCphySapProvider ();
-	void SetUeCphySapUser (LteUeCphySapUser* s);
+	LteUeCphySapProvider* GetmmWaveUeCphySapProvider ();
+	void SetmmWaveUeCphySapUser (LteUeCphySapUser* s);
 
 	void SetTxPower (double pow);
 	double GetTxPower () const;
@@ -60,29 +60,32 @@ public:
 	void SetSubChannelsForTransmission(std::vector <int> mask);
 	std::vector <int> GetSubChannelsForTransmission(void);
 
-	void DoSendControlMessage (Ptr<MmWaveControlMessage> msg);
+	void DoSendmmWaveControlMessage (Ptr<mmWaveControlMessages> msg);
 
-	void RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config);
-	Ptr<MmWaveSpectrumPhy> GetDlSpectrumPhy () const;
-	Ptr<MmWaveSpectrumPhy> GetUlSpectrumPhy () const;
+	void RegisterToEnb (uint16_t cellId, Ptr<mmWavePhyMacCommon> config);
+	Ptr<mmWaveSpectrumPhy> GetDlSpectrumPhy () const;
+	Ptr<mmWaveSpectrumPhy> GetUlSpectrumPhy () const;
 
-	void ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > msgList);
+	void ReceivemmWaveControlMessageList (std::list<Ptr<mmWaveControlMessages> > msgList, uint32_t cellId);
 
 	void SubframeIndication (uint32_t frameNo, uint32_t subframeNo);
-	void ProcessSubframe ();
 
 	uint32_t GetSubframeNumber (void);
 
 	void PhyDataPacketReceived (Ptr<Packet> p);
-	void SendDataChannels (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time duration, uint8_t slotInd);
 
-	void SendCtrlChannels (std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time prd);
-    
-	uint32_t GetAbsoluteSubframeNo (); // Used for tracing purposes
-    
-	Ptr<MmWaveDlCqiMessage> CreateDlCqiFeedbackMessage (const SpectrumValue& sinr);
-    
-    void GenerateDlCqiReport (const SpectrumValue& sinr);
+	void SetForwardUpCallback (Callback <void, Ptr<Packet> > cb);
+
+	void SendDataChannel (Ptr<PacketBurst> pb, Time duration);
+
+	void SendControlChannels (std::list<Ptr<mmWaveControlMessages> > ctrlMsg, Time prd);
+
+	uint32_t GetAbsoulteSubframeNo (); // Used for tracing purposes
+
+	void SetMacData (Ptr<Packet> p);
+
+	Ptr<mmWaveCqiReport> CreateDlCqiFeedbackMessage (const SpectrumValue& sinr);
+	void GenerateDlCqiReport (const SpectrumValue& sinr);
 
 	bool IsReceptionEnabled ();
 	void ResetReception ();
@@ -90,6 +93,7 @@ public:
 	uint16_t GetRnti ();
 
 private:
+
 	void DoReset ();
 	void DoStartCellSearch (uint16_t dlEarfcn);
 	void DoSynchronizeWithEnb (uint16_t cellId);
@@ -101,10 +105,6 @@ private:
 	void DoSetTransmissionMode (uint8_t txMode);
 	void DoSetSrsConfigurationIndex (uint16_t srcCi);
 
-	void ReceiveDataPeriod (uint32_t slotNum);
-	void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
-	std::list<TbAllocInfo> DequeueUlTbAlloc ();
-
 	LteUeCphySapProvider* m_ueCphySapProvider;
 	LteUeCphySapUser* m_ueCphySapUser;
 
@@ -112,33 +112,23 @@ private:
 	std::vector <int> m_subChannelsForTx;
 	std::vector <int> m_subChannelsforRx;
 
-	uint32_t m_nrSlots;
-	uint32_t m_nrFrames;
-	uint32_t m_numRbg;
+	uint32_t m_nrsubframe;
+	uint32_t m_nrFrame;
 
-  Time m_wbCqiPeriod; /**< Wideband Periodic CQI: 2, 5, 10, 16, 20, 32, 40, 64, 80 or 160 ms */
-  Time m_wbCqiLast;
+	uint32_t m_AllocatedBandwidth;
 
-	SlotAllocInfo::TddMode m_prevSlotDir;
-
-	SfAllocationInfo m_currSfAllocInfo;
-  std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB transmissions
-	bool m_ulGrant; 	// true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
-	uint8_t m_pucchSlotInd;
-	bool m_sfAllocInfoUpdated;
-	Time m_ctrlPeriod;
-	Time m_dataPeriod;	// data period length in microseconds
-
-  bool m_dlConfigured;
-  bool m_ulConfigured;
+	Callback <void, Ptr<Packet> > m_forwardUpCallback;
 
 	TracedCallback< uint64_t, SpectrumValue&, SpectrumValue& > m_reportCurrentCellRsrpSinrTrace;
 
-	TracedCallback<uint64_t, uint64_t> m_reportUlTbSize;
-	TracedCallback<uint64_t, uint64_t> m_reportDlTbSize;
+	TracedCallback<uint64_t, uint64_t> m_reportULTbSize;
+	TracedCallback<uint64_t, uint64_t> m_reportDLTbSize;
+	// The packet size that can be sent
+	uint32_t m_packetChunkSize;
+
 	uint8_t m_prevSlot;
 
-	bool m_receptionEnabled;
+	bool m_ReceptionEnabled;
 	uint16_t m_rnti;
 
 

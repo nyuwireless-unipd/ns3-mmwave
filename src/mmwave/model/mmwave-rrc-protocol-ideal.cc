@@ -172,7 +172,7 @@ mmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
   uint16_t cellId = m_rrc->GetCellId ();  
 
   // walk list of all nodes to get the peer eNB
-  Ptr<MmWaveEnbNetDevice> enbDev;
+  Ptr<mmWaveEnbNetDevice> enbDev;
   NodeList::Iterator listEnd = NodeList::End ();
   bool found = false;
   for (NodeList::Iterator i = NodeList::Begin (); 
@@ -185,7 +185,7 @@ mmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
            (j < nDevs) && (!found);
            j++)
         {
-          enbDev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+          enbDev = node->GetDevice (j)->GetObject <mmWaveEnbNetDevice> ();
           if (enbDev == 0)
             {
               continue;
@@ -202,62 +202,62 @@ mmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
     }
   NS_ASSERT_MSG (found, " Unable to find eNB with CellId =" << cellId);
   m_enbRrcSapProvider = enbDev->GetRrc ()->GetLteEnbRrcSapProvider ();  
-  Ptr<MmWaveEnbRrcProtocolIdeal> enbRrcProtocolIdeal = enbDev->GetRrc ()->GetObject<MmWaveEnbRrcProtocolIdeal> ();
+  Ptr<mmWaveEnbRrcProtocolIdeal> enbRrcProtocolIdeal = enbDev->GetRrc ()->GetObject<mmWaveEnbRrcProtocolIdeal> ();
   enbRrcProtocolIdeal->SetUeRrcSapProvider (m_rnti, m_ueRrcSapProvider);
 }
 
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveEnbRrcProtocolIdeal);
+NS_OBJECT_ENSURE_REGISTERED (mmWaveEnbRrcProtocolIdeal);
 
-MmWaveEnbRrcProtocolIdeal::MmWaveEnbRrcProtocolIdeal ()
+mmWaveEnbRrcProtocolIdeal::mmWaveEnbRrcProtocolIdeal ()
   :  m_enbRrcSapProvider (0)
 {
   NS_LOG_FUNCTION (this);
-  m_enbRrcSapUser = new MemberLteEnbRrcSapUser<MmWaveEnbRrcProtocolIdeal> (this);
+  m_enbRrcSapUser = new MemberLteEnbRrcSapUser<mmWaveEnbRrcProtocolIdeal> (this);
 }
 
-MmWaveEnbRrcProtocolIdeal::~MmWaveEnbRrcProtocolIdeal ()
+mmWaveEnbRrcProtocolIdeal::~mmWaveEnbRrcProtocolIdeal ()
 {
   NS_LOG_FUNCTION (this);
 }
 
 void
-MmWaveEnbRrcProtocolIdeal::DoDispose ()
+mmWaveEnbRrcProtocolIdeal::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
   delete m_enbRrcSapUser;  
 }
 
 TypeId
-MmWaveEnbRrcProtocolIdeal::GetTypeId (void)
+mmWaveEnbRrcProtocolIdeal::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::MmWaveEnbRrcProtocolIdeal")
+  static TypeId tid = TypeId ("ns3::mmWaveEnbRrcProtocolIdeal")
     .SetParent<Object> ()
-    .AddConstructor<MmWaveEnbRrcProtocolIdeal> ()
+    .AddConstructor<mmWaveEnbRrcProtocolIdeal> ()
     ;
   return tid;
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::SetLteEnbRrcSapProvider (LteEnbRrcSapProvider* p)
+mmWaveEnbRrcProtocolIdeal::SetLteEnbRrcSapProvider (LteEnbRrcSapProvider* p)
 {
   m_enbRrcSapProvider = p;
 }
 
 LteEnbRrcSapUser* 
-MmWaveEnbRrcProtocolIdeal::GetLteEnbRrcSapUser ()
+mmWaveEnbRrcProtocolIdeal::GetLteEnbRrcSapUser ()
 {
   return m_enbRrcSapUser;
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::SetCellId (uint16_t cellId)
+mmWaveEnbRrcProtocolIdeal::SetCellId (uint16_t cellId)
 {
   m_cellId = cellId;
 }
 
 LteUeRrcSapProvider* 
-MmWaveEnbRrcProtocolIdeal::GetUeRrcSapProvider (uint16_t rnti)
+mmWaveEnbRrcProtocolIdeal::GetUeRrcSapProvider (uint16_t rnti)
 {
   std::map<uint16_t, LteUeRrcSapProvider*>::const_iterator it;
   it = m_enbRrcSapProviderMap.find (rnti);
@@ -266,7 +266,7 @@ MmWaveEnbRrcProtocolIdeal::GetUeRrcSapProvider (uint16_t rnti)
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvider* p)
+mmWaveEnbRrcProtocolIdeal::SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvider* p)
 {
   std::map<uint16_t, LteUeRrcSapProvider*>::iterator it;
   it = m_enbRrcSapProviderMap.find (rnti);
@@ -275,7 +275,7 @@ MmWaveEnbRrcProtocolIdeal::SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvid
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params)
+mmWaveEnbRrcProtocolIdeal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params)
 {
   NS_LOG_FUNCTION (this << rnti);
   m_enbRrcSapProviderMap[rnti] = 0;
@@ -283,14 +283,14 @@ MmWaveEnbRrcProtocolIdeal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUePa
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoRemoveUe (uint16_t rnti)
+mmWaveEnbRrcProtocolIdeal::DoRemoveUe (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << rnti);
   m_enbRrcSapProviderMap.erase (rnti);
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation msg)
+mmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation msg)
 {
   NS_LOG_FUNCTION (this << m_cellId);
   // walk list of all nodes to get UEs with this cellId
@@ -301,7 +301,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation
       int nDevs = node->GetNDevices ();
       for (int j = 0; j < nDevs; ++j)
         {
-          Ptr<MmWaveUeNetDevice> mmWaveUeDev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<mmWaveUeNetDevice> mmWaveUeDev = node->GetDevice (j)->GetObject <mmWaveUeNetDevice> ();
           if (mmWaveUeDev != 0)
             {
               Ptr<LteUeRrc> ueRrc = mmWaveUeDev->GetRrc ();
@@ -321,7 +321,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg)
+mmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteUeRrcSapProvider::RecvRrcConnectionSetup,
@@ -330,7 +330,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::R
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg)
+mmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteUeRrcSapProvider::RecvRrcConnectionReconfiguration,
@@ -339,7 +339,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, Lt
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
+mmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteUeRrcSapProvider::RecvRrcConnectionReestablishment,
@@ -348,7 +348,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishment (uint16_t rnti, Lt
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishmentReject (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentReject msg)
+mmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishmentReject (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentReject msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteUeRrcSapProvider::RecvRrcConnectionReestablishmentReject,
@@ -357,7 +357,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishmentReject (uint16_t rn
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::RrcConnectionRelease msg)
+mmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::RrcConnectionRelease msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteUeRrcSapProvider::RecvRrcConnectionRelease,
@@ -366,7 +366,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap:
 }
 
 void 
-MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::RrcConnectionReject msg)
+mmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::RrcConnectionReject msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteUeRrcSapProvider::RecvRrcConnectionReject,
@@ -375,12 +375,12 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::
 }
 
 /*
- * The purpose of MmWaveEnbRrcProtocolIdeal is to avoid encoding
+ * The purpose of mmWaveEnbRrcProtocolIdeal is to avoid encoding
  * messages. In order to do so, we need to have some form of encoding for
  * inter-node RRC messages like HandoverPreparationInfo and HandoverCommand. Doing so
  * directly is not practical (these messages includes a lot of
  * information elements, so encoding all of them would defeat the
- * purpose of MmWaveEnbRrcProtocolIdeal. The workaround is to store the
+ * purpose of mmWaveEnbRrcProtocolIdeal. The workaround is to store the
  * actual message in a global map, so that then we can just encode the
  * key in a header and send that between eNBs over X2.
  * 
@@ -463,7 +463,7 @@ uint32_t IdealHandoverPreparationInfoHeader::Deserialize (Buffer::Iterator start
 
 
 Ptr<Packet> 
-MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverPreparationInformation (LteRrcSap::HandoverPreparationInfo msg)
+mmWaveEnbRrcProtocolIdeal::DoEncodeHandoverPreparationInformation (LteRrcSap::HandoverPreparationInfo msg)
 {
   uint32_t msgId = ++g_handoverPreparationInfoMsgIdCounter;
   NS_ASSERT_MSG (g_handoverPreparationInfoMsgMap.find (msgId) == g_handoverPreparationInfoMsgMap.end (), "msgId " << msgId << " already in use");
@@ -477,7 +477,7 @@ MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverPreparationInformation (LteRrcSap::Ha
 }
 
 LteRrcSap::HandoverPreparationInfo 
-MmWaveEnbRrcProtocolIdeal::DoDecodeHandoverPreparationInformation (Ptr<Packet> p)
+mmWaveEnbRrcProtocolIdeal::DoDecodeHandoverPreparationInformation (Ptr<Packet> p)
 {
   IdealHandoverPreparationInfoHeader h;
   p->RemoveHeader (h);
@@ -569,7 +569,7 @@ uint32_t IdealHandoverCommandHeader::Deserialize (Buffer::Iterator start)
 
 
 Ptr<Packet> 
-MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReconfiguration msg)
+mmWaveEnbRrcProtocolIdeal::DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReconfiguration msg)
 {
   uint32_t msgId = ++g_handoverCommandMsgIdCounter;
   NS_ASSERT_MSG (g_handoverCommandMsgMap.find (msgId) == g_handoverCommandMsgMap.end (), "msgId " << msgId << " already in use");
@@ -583,7 +583,7 @@ MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReco
 }
 
 LteRrcSap::RrcConnectionReconfiguration
-MmWaveEnbRrcProtocolIdeal::DoDecodeHandoverCommand (Ptr<Packet> p)
+mmWaveEnbRrcProtocolIdeal::DoDecodeHandoverCommand (Ptr<Packet> p)
 {
   IdealHandoverCommandHeader h;
   p->RemoveHeader (h);

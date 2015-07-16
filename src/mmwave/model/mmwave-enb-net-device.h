@@ -27,22 +27,22 @@ namespace ns3{
 class Packet;
 class PacketBurst;
 class Node;
-//class MmWavePhy;
-class MmWaveEnbPhy;
-class MmWaveEnbMac;
+class mmWavePhy;
+class mmWaveEnbPhy;
+class mmWaveEnbMac;
 
-class MmWaveEnbNetDevice : public MmWaveNetDevice
+class mmWaveEnbNetDevice : public mmWaveNetDevice
 {
 public:
 	static TypeId GetTypeId (void);
 
-	MmWaveEnbNetDevice ();
+	mmWaveEnbNetDevice ();
 
-	virtual ~MmWaveEnbNetDevice (void);
+	virtual ~mmWaveEnbNetDevice (void);
 	virtual void DoDispose (void);
 	virtual bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
 
-    Ptr<MmWaveEnbPhy> GetPhy (void) const;
+    Ptr<mmWaveEnbPhy> GetPhy (void) const;
 
     uint16_t GetCellId () const;
 
@@ -54,9 +54,9 @@ public:
 
     uint16_t GetEarfcn() const;
 
-    void SetMac (Ptr<MmWaveEnbMac> mac);
+    void SetMac (Ptr<mmWaveEnbMac> mac);
 
-    Ptr<MmWaveEnbMac> GetMac (void);
+    Ptr<mmWaveEnbMac> GetMac (void);
 
     void SetRrc (Ptr<LteEnbRrc> rrc);
 
@@ -74,11 +74,11 @@ protected:
 
 private:
 
-	Ptr<MmWaveEnbPhy> m_phy;
+	Ptr<mmWaveEnbPhy> m_phy;
 
-	Ptr<MmWaveEnbMac> m_mac;
+	Ptr<mmWaveEnbMac> m_mac;
 
-	Ptr<MmWaveMacScheduler> m_scheduler;
+	Ptr<mmWaveMacScheduler> m_scheduler;
 
 	Ptr<LteEnbRrc> m_rrc;
 

@@ -16,190 +16,190 @@
 
 namespace ns3{
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveNetDevice");
+NS_LOG_COMPONENT_DEFINE ("mmWaveNetDevice");
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveNetDevice);
+NS_OBJECT_ENSURE_REGISTERED (mmWaveNetDevice);
 
-TypeId MmWaveNetDevice::GetTypeId ()
+TypeId mmWaveNetDevice::GetTypeId ()
 {
 	static TypeId
 	    tid =
-	    TypeId ("ns3::MmWaveNetDevice")
+	    TypeId ("ns3::mmWaveNetDevice")
 	    .SetParent<NetDevice> ()
 		.AddAttribute ("Mtu", "The MAC-level Maximum Transmission Unit",
 					   UintegerValue (30000),
-					   MakeUintegerAccessor (&MmWaveNetDevice::SetMtu,
-											 &MmWaveNetDevice::GetMtu),
+					   MakeUintegerAccessor (&mmWaveNetDevice::SetMtu,
+											 &mmWaveNetDevice::GetMtu),
 					   MakeUintegerChecker<uint16_t> ())
 ;
 
 	return tid;
 }
 
-MmWaveNetDevice::MmWaveNetDevice (void)
+mmWaveNetDevice::mmWaveNetDevice (void)
 {
   NS_LOG_FUNCTION (this);
 }
 
 
-MmWaveNetDevice::~MmWaveNetDevice (void)
+mmWaveNetDevice::~mmWaveNetDevice (void)
 {
   NS_LOG_FUNCTION (this);
 }
 
 void
-MmWaveNetDevice::DoDispose (void)
+mmWaveNetDevice::DoDispose (void)
 {
 	m_node = 0;
 	NetDevice::DoDispose ();
 }
 
 void
-MmWaveNetDevice::SetIfIndex (const uint32_t index)
+mmWaveNetDevice::SetIfIndex (const uint32_t index)
 {
 	m_ifIndex = index;
 }
 uint32_t
-MmWaveNetDevice::GetIfIndex (void) const
+mmWaveNetDevice::GetIfIndex (void) const
 {
 	return m_ifIndex;
 }
 Ptr<Channel>
-MmWaveNetDevice::GetChannel (void) const
+mmWaveNetDevice::GetChannel (void) const
 {
 	return 0;
 }
 void
-MmWaveNetDevice::SetAddress (Address address)
+mmWaveNetDevice::SetAddress (Address address)
 {
 	NS_LOG_FUNCTION (this << address);
 	m_macaddress = Mac48Address::ConvertFrom (address);
 }
 Address
-MmWaveNetDevice::GetAddress (void) const
+mmWaveNetDevice::GetAddress (void) const
 {
 	NS_LOG_FUNCTION (this);
 	return m_macaddress;
 }
 bool
-MmWaveNetDevice::SetMtu (const uint16_t mtu)
+mmWaveNetDevice::SetMtu (const uint16_t mtu)
 {
 	m_mtu = mtu;
 	return true;
 }
 uint16_t
-MmWaveNetDevice::GetMtu (void) const
+mmWaveNetDevice::GetMtu (void) const
 {
 	return m_mtu;
 }
 bool
-MmWaveNetDevice::IsLinkUp (void) const
+mmWaveNetDevice::IsLinkUp (void) const
 {
 	return m_linkUp;
 }
 void
-MmWaveNetDevice::AddLinkChangeCallback (Callback<void> callback)
+mmWaveNetDevice::AddLinkChangeCallback (Callback<void> callback)
 {
 
 }
 bool
-MmWaveNetDevice::IsBroadcast (void) const
+mmWaveNetDevice::IsBroadcast (void) const
 {
 	return false;
 }
 Address
-MmWaveNetDevice::GetBroadcast (void) const
+mmWaveNetDevice::GetBroadcast (void) const
 {
 	return Mac48Address::GetBroadcast ();
 }
 bool
-MmWaveNetDevice::IsMulticast (void) const
+mmWaveNetDevice::IsMulticast (void) const
 {
 	return false;
 }
 Address
-MmWaveNetDevice::GetMulticast (Ipv4Address multicastGroup) const
+mmWaveNetDevice::GetMulticast (Ipv4Address multicastGroup) const
 {
 	return Mac48Address ("01:00:5e:00:00:00");
 }
 bool
-MmWaveNetDevice::IsBridge (void) const
+mmWaveNetDevice::IsBridge (void) const
 {
 	return false;
 }
 bool
-MmWaveNetDevice::IsPointToPoint (void) const
+mmWaveNetDevice::IsPointToPoint (void) const
 {
 	return false;
 }
 
 bool
-MmWaveNetDevice::SendFrom (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
+mmWaveNetDevice::SendFrom (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
 {
 	NS_FATAL_ERROR ("Send from not supported");
 	return false;
 }
 
 Ptr<Node>
-MmWaveNetDevice::GetNode (void) const
+mmWaveNetDevice::GetNode (void) const
 {
 	return m_node;
 }
 
 void
-MmWaveNetDevice::SetNode (Ptr<Node> node)
+mmWaveNetDevice::SetNode (Ptr<Node> node)
 {
 	m_node = node;
 }
 
 bool
-MmWaveNetDevice::NeedsArp (void) const
+mmWaveNetDevice::NeedsArp (void) const
 {
 	return false;
 }
 
 Address
-MmWaveNetDevice::GetMulticast (Ipv6Address addr) const
+mmWaveNetDevice::GetMulticast (Ipv6Address addr) const
 {
 	Address dummy;
 	return dummy;
 }
 
 void
-MmWaveNetDevice::SetReceiveCallback (ReceiveCallback cb)
+mmWaveNetDevice::SetReceiveCallback (ReceiveCallback cb)
 {
 	NS_LOG_FUNCTION (this);
 	m_rxCallback = cb;
 }
 
 void
-MmWaveNetDevice::SetPromiscReceiveCallback (PromiscReceiveCallback cb)
+mmWaveNetDevice::SetPromiscReceiveCallback (PromiscReceiveCallback cb)
 {
 
 }
 
 bool
-MmWaveNetDevice::SupportsSendFrom (void) const
+mmWaveNetDevice::SupportsSendFrom (void) const
 {
 	return false;
 }
 
 void
-MmWaveNetDevice::Receive (Ptr<Packet> p)
+mmWaveNetDevice::Receive (Ptr<Packet> p)
 {
 	NS_LOG_FUNCTION (this << p);
 	m_rxCallback (this, p, Ipv4L3Protocol::PROT_NUMBER, Address ());
 }
 
 bool
-MmWaveNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
+mmWaveNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
 	bool ret = DoSend ( packet, dest, protocolNumber);
 	return ret;
 }
 
 Ipv4Address
-MmWaveNetDevice::GetPacketDestination (Ptr<Packet> packet)
+mmWaveNetDevice::GetPacketDestination (Ptr<Packet> packet)
 {
 	Ipv4Address dest_ip;
 	Ptr<Packet> q = packet->Copy();

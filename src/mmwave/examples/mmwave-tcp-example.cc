@@ -153,7 +153,7 @@ main (int argc, char *argv[])
 	CommandLine cmd;
 	cmd.Parse(argc, argv);
 
-	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+	Ptr<mmWaveHelper> mmwaveHelper = CreateObject<mmWaveHelper> ();
 	Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 

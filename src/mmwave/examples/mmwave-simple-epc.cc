@@ -46,10 +46,6 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
 	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
 	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
-	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
 
 
   uint16_t numberOfNodes = 1;
@@ -65,7 +61,7 @@ main (int argc, char *argv[])
   cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
   cmd.Parse(argc, argv);
 
-  Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+  Ptr<mmWaveHelper> mmwaveHelper = CreateObject<mmWaveHelper> ();
   Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();
 
   mmwaveHelper->SetEpcHelper (epcHelper);

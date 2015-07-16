@@ -78,10 +78,10 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 
 	Ptr<NetDevice> txDevice = a->GetObject<Node> ()->GetDevice (0);
 	Ptr<NetDevice> rxDevice = b->GetObject<Node> ()->GetDevice (0);
-	Ptr<MmWaveEnbNetDevice> txEnb =
-					DynamicCast<MmWaveEnbNetDevice> (txDevice);
-	Ptr<MmWaveUeNetDevice> rxUe =
-					DynamicCast<MmWaveUeNetDevice> (rxDevice);
+	Ptr<mmWaveEnbNetDevice> txEnb =
+					DynamicCast<mmWaveEnbNetDevice> (txDevice);
+	Ptr<mmWaveUeNetDevice> rxUe =
+					DynamicCast<mmWaveUeNetDevice> (rxDevice);
 
 	uint8_t txAntennaNum[2];
 	uint8_t rxAntennaNum[2];
@@ -106,10 +106,10 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 	{
 		NS_LOG_INFO ("this is uplink case");
 
-		Ptr<MmWaveUeNetDevice> txUe =
-						DynamicCast<MmWaveUeNetDevice> (txDevice);
-		Ptr<MmWaveEnbNetDevice> rxEnb =
-						DynamicCast<MmWaveEnbNetDevice> (rxDevice);
+		Ptr<mmWaveUeNetDevice> txUe =
+						DynamicCast<mmWaveUeNetDevice> (txDevice);
+		Ptr<mmWaveEnbNetDevice> rxEnb =
+						DynamicCast<mmWaveEnbNetDevice> (rxDevice);
 
 		txAntennaNum[0] = sqrt (txUe->GetAntennaNum ());
 		txAntennaNum[1] = sqrt (txUe->GetAntennaNum ());
@@ -188,7 +188,7 @@ mmWaveChannelMatrix::CalcBeamformingVector(complex2DVector_t spatialMatrix) cons
 	{
 		complexVector_t antennaWeights_New;
 
-		for(unsigned pathIndex = 0; pathIndex<spatialMatrix.size (); pathIndex++)
+		for(int pathIndex = 0; pathIndex<spatialMatrix.size (); pathIndex++)
 		{
 			std::complex<double> sum;
 			for (int i = 0; i< antennaNum; i++)
@@ -291,11 +291,11 @@ mmWaveChannelMatrix::GetBfGain (Ptr<mmWaveBeamFormingParams> bfParams, double sp
 			{
 				/* beam forming*/
 				std::complex<double> txSum, rxSum;
-				for (unsigned i = 0; i < bfParams->m_channelParams.m_txSpatialMatrix.at (pathIndex).size (); i++)
+				for (int i = 0; i < bfParams->m_channelParams.m_txSpatialMatrix.at (pathIndex).size (); i++)
 				{
 					txSum += std::conj(bfParams->m_channelParams.m_txSpatialMatrix.at (pathIndex).at (i))*bfParams->m_txW.at (i);
 				}
-				for (unsigned i = 0; i < bfParams->m_channelParams.m_rxSpatialMatrix.at (pathIndex).size (); i++)
+				for (int i = 0; i < bfParams->m_channelParams.m_rxSpatialMatrix.at (pathIndex).size (); i++)
 				{
 					rxSum += bfParams->m_channelParams.m_rxSpatialMatrix.at (pathIndex). at (i)*std::conj(bfParams->m_rxW.at (i));
 				}

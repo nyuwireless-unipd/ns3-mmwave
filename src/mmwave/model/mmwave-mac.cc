@@ -15,35 +15,35 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveMac");
+NS_LOG_COMPONENT_DEFINE ("mmWaveMac");
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveMac);
+NS_OBJECT_ENSURE_REGISTERED (mmWaveMac);
 
-MmWaveMac::MmWaveMac ()
+mmWaveMac::mmWaveMac ()
 {
 	m_macQueue = CreateObject <PacketBurst> ();
 }
 
-MmWaveMac::~MmWaveMac ()
+mmWaveMac::~mmWaveMac ()
 {
 
 }
 
 
 void
-MmWaveMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+mmWaveMac::SetCofigurationParameters (Ptr<mmWavePhyMacCommon> ptrConfig)
 {
-	m_phyMacConfig = ptrConfig;
+	m_PhyMACConfig = ptrConfig;
 }
 
-Ptr<MmWavePhyMacCommon>
-MmWaveMac::GetConfigurationParameters (void) const
+Ptr<mmWavePhyMacCommon>
+mmWaveMac::GetConfigurationParameters (void) const
 {
-	return m_phyMacConfig;
+	return m_PhyMACConfig;
 }
 
 bool
-MmWaveMac::QueueData (Ptr<Packet> packet)
+mmWaveMac::QueueData (Ptr<Packet> packet)
 {
 	NS_LOG_INFO ("Queue in Mac");
 
@@ -53,19 +53,20 @@ MmWaveMac::QueueData (Ptr<Packet> packet)
 }
 
 Ptr<PacketBurst>
-MmWaveMac::GetPacketBurstFromMacQueue ()
+mmWaveMac::GetPacketBurstFromMacQueue ()
 {
 	NS_LOG_FUNCTION (this);
 
 	Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-	if (m_macQueue->GetNPackets () > 0)
+	if (m_macQueue->GetSize() != 0)
 	{
 		pb = m_macQueue->Copy ();
-		m_macQueue->Dispose ();
-		m_macQueue = CreateObject <PacketBurst> ();
+		Ptr<PacketBurst> newQ = CreateObject <PacketBurst> ();
+		m_macQueue = newQ;
 	}
-
 	return pb;
+
+
 }
 
 

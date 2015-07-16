@@ -14,5 +14,3 @@ build/*
 .project
 
 .cproject
-
-*.pcap

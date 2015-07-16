@@ -12,142 +12,115 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("mmWaveControlMessage");
 
-MmWaveControlMessage::MmWaveControlMessage (void)
+mmWaveControlMessages::mmWaveControlMessages (void)
 {
 	NS_LOG_INFO (this);
 }
 
-MmWaveControlMessage::~MmWaveControlMessage (void)
+mmWaveControlMessages::~mmWaveControlMessages (void)
 {
 	NS_LOG_INFO (this);
 }
 
 void
-MmWaveControlMessage::SetMessageType (messageType type)
+mmWaveControlMessages::SetMessageType (messageType type)
 {
 	m_messageType = type;
 }
 
-MmWaveControlMessage::messageType
-MmWaveControlMessage::GetMessageType (void)
+mmWaveControlMessages::messageType
+mmWaveControlMessages::GetMessageType (void)
 {
 	return m_messageType;
 }
 
-MmWaveDciMessage::MmWaveDciMessage (void)
+mmWaveResourceAllocation::mmWaveResourceAllocation (void)
 {
 	NS_LOG_INFO (this);
-	SetMessageType (MmWaveControlMessage::DCI);
+	SetMessageType (mmWaveControlMessages::RSC_ALLOCATION);
 }
 
-MmWaveDciMessage::~MmWaveDciMessage (void)
+mmWaveResourceAllocation::~mmWaveResourceAllocation (void)
 {
 	NS_LOG_INFO (this);
 }
 
-/*void
-MmWaveDciMessage::SetRbAllocationMap (SfAllocationInfo allocMap)
+void
+mmWaveResourceAllocation::SetAllocationMap (allocationList allocMap)
 {
 	m_rscAllocationMap = allocMap;
 }
 
-SfAllocationInfo
-MmWaveDciMessage::GetRbAllocationMap (void)
+allocationList
+mmWaveResourceAllocation::GetAllocationMap (void)
 {
 	return m_rscAllocationMap;
-}*/
-
-void
-MmWaveDciMessage::SetDciInfoElement (DciInfoElement dci)
-{
-	m_dciInfoElement = dci;
-}
-
-DciInfoElement
-MmWaveDciMessage::GetDciInfoElement (void)
-{
-	return m_dciInfoElement;
 }
 
 void
-MmWaveDciMessage::SetSfnSf (uint32_t sfn)
+mmWaveResourceAllocation::SetSchedule (Schedule sched)
 {
-	m_sfnSf = sfn;
+	m_currentSchedule = sched;
+}
+
+Schedule
+mmWaveResourceAllocation::GetSchedule (void)
+{
+	return m_currentSchedule;
+}
+
+void
+mmWaveResourceAllocation::SetSFNSF (uint32_t sfn)
+{
+	m_sfnsf = sfn;
 }
 
 uint32_t
-MmWaveDciMessage::GetSfnSf (void)
+mmWaveResourceAllocation::GetSFNSF (void)
 {
-	return m_sfnSf;
+	return m_sfnsf;
 }
 
-MmWaveDlCqiMessage::MmWaveDlCqiMessage (void)
+mmWaveCqiReport::mmWaveCqiReport (void)
 {
-	SetMessageType (MmWaveControlMessage::DL_CQI);
+	SetMessageType (mmWaveControlMessages::CQI);
 	NS_LOG_INFO (this);
 }
-MmWaveDlCqiMessage::~MmWaveDlCqiMessage (void)
+mmWaveCqiReport::~mmWaveCqiReport (void)
 {
 	NS_LOG_INFO (this);
 }
 
 void
-MmWaveDlCqiMessage::SetDlCqi (DlCqiInfo cqi)
+mmWaveCqiReport::SetCqiReport (CqiInfo cqi)
 {
-	m_cqi = cqi;
+	m_Cqi = cqi;
 }
 
-DlCqiInfo
-MmWaveDlCqiMessage::GetDlCqi ()
+CqiInfo
+mmWaveCqiReport::GetCqiReport ()
 {
-	return m_cqi;
-}
-
-// ----------------------------------------------------------------------------------------------------------
-
-MmWaveBsrMessage::MmWaveBsrMessage (void)
-{
-  SetMessageType (MmWaveControlMessage::BSR);
-}
-
-
-MmWaveBsrMessage::~MmWaveBsrMessage (void)
-{
-
-}
-
-void
-MmWaveBsrMessage::SetBsr (MacCeElement bsr)
-{
-  m_bsr = bsr;
-
-}
-
-
-MacCeElement
-MmWaveBsrMessage::GetBsr (void)
-{
-  return m_bsr;
+	return m_Cqi;
 }
 
 // ----------------------------------------------------------------------------------------------------------
 
 
 
-MmWaveMibMessage::MmWaveMibMessage (void)
+MibmmWaveControlMessage::MibmmWaveControlMessage (void)
 {
-  SetMessageType (MmWaveControlMessage::MIB);
+  SetMessageType (mmWaveControlMessages::MIB);
 }
 
 
 void
-MmWaveMibMessage::SetMib (LteRrcSap::MasterInformationBlock  mib)
+MibmmWaveControlMessage::SetMib (LteRrcSap::MasterInformationBlock  mib)
 {
   m_mib = mib;
 }
 
 LteRrcSap::MasterInformationBlock
-MmWaveMibMessage::GetMib () const
+MibmmWaveControlMessage::GetMib () const
 {
   return m_mib;
 }
@@ -157,20 +130,20 @@ MmWaveMibMessage::GetMib () const
 
 
 
-MmWaveSib1Message::MmWaveSib1Message (void)
+Sib1mmWaveControlMessage::Sib1mmWaveControlMessage (void)
 {
-  SetMessageType (MmWaveControlMessage::SIB1);
+  SetMessageType (mmWaveControlMessages::SIB1);
 }
 
 
 void
-MmWaveSib1Message::SetSib1 (LteRrcSap::SystemInformationBlockType1 sib1)
+Sib1mmWaveControlMessage::SetSib1 (LteRrcSap::SystemInformationBlockType1 sib1)
 {
   m_sib1 = sib1;
 }
 
 LteRrcSap::SystemInformationBlockType1
-MmWaveSib1Message::GetSib1 () const
+Sib1mmWaveControlMessage::GetSib1 () const
 {
   return m_sib1;
 }
@@ -179,19 +152,19 @@ MmWaveSib1Message::GetSib1 () const
 
 // ----------------------------------------------------------------------------------------------------------
 
-MmWaveRachPreambleMessage::MmWaveRachPreambleMessage (void)
+RachPreamblemmWaveControlMessage::RachPreamblemmWaveControlMessage (void)
 {
-  SetMessageType (MmWaveControlMessage::RACH_PREAMBLE);
+  SetMessageType (mmWaveControlMessages::RACH_PREAMBLE);
 }
 
 void
-MmWaveRachPreambleMessage::SetRapId (uint32_t rapId)
+RachPreamblemmWaveControlMessage::SetRapId (uint32_t rapId)
 {
   m_rapId = rapId;
 }
 
 uint32_t
-MmWaveRachPreambleMessage::GetRapId () const
+RachPreamblemmWaveControlMessage::GetRapId () const
 {
   return m_rapId;
 }
@@ -199,39 +172,39 @@ MmWaveRachPreambleMessage::GetRapId () const
 // ----------------------------------------------------------------------------------------------------------
 
 
-MmWaveRarMessage::MmWaveRarMessage (void)
+RarmmWaveControlMessage::RarmmWaveControlMessage (void)
 {
-  SetMessageType (MmWaveControlMessage::RAR);
+  SetMessageType (mmWaveControlMessages::RAR);
 }
 
 
 void
-MmWaveRarMessage::SetRaRnti (uint16_t raRnti)
+RarmmWaveControlMessage::SetRaRnti (uint16_t raRnti)
 {
   m_raRnti = raRnti;
 }
 
 uint16_t
-MmWaveRarMessage::GetRaRnti () const
+RarmmWaveControlMessage::GetRaRnti () const
 {
   return m_raRnti;
 }
 
 
 void
-MmWaveRarMessage::AddRar (Rar rar)
+RarmmWaveControlMessage::AddRar (Rar rar)
 {
   m_rarList.push_back (rar);
 }
 
-std::list<MmWaveRarMessage::Rar>::const_iterator
-MmWaveRarMessage::RarListBegin () const
+std::list<RarmmWaveControlMessage::Rar>::const_iterator
+RarmmWaveControlMessage::RarListBegin () const
 {
   return m_rarList.begin ();
 }
 
-std::list<MmWaveRarMessage::Rar>::const_iterator
-MmWaveRarMessage::RarListEnd () const
+std::list<RarmmWaveControlMessage::Rar>::const_iterator
+RarmmWaveControlMessage::RarListEnd () const
 {
   return m_rarList.end ();
 }

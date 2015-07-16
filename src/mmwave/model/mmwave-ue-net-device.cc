@@ -26,67 +26,67 @@
 
 namespace ns3{
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveUeNetDevice");
+NS_LOG_COMPONENT_DEFINE ("mmWaveUeNetDevice");
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveUeNetDevice);
+NS_OBJECT_ENSURE_REGISTERED (mmWaveUeNetDevice);
 
 TypeId
-MmWaveUeNetDevice::GetTypeId (void)
+mmWaveUeNetDevice::GetTypeId (void)
 {
 	static TypeId
 	    tid =
-	    TypeId ("ns3::MmWaveUeNetDevice")
-	    .SetParent<MmWaveNetDevice> ()
-	    .AddConstructor<MmWaveUeNetDevice> ()
+	    TypeId ("ns3::mmWaveUeNetDevice")
+	    .SetParent<mmWaveNetDevice> ()
+	    .AddConstructor<mmWaveUeNetDevice> ()
 		.AddAttribute ("EpcUeNas",
 		                   "The NAS associated to this UeNetDevice",
 		                   PointerValue (),
-		                   MakePointerAccessor (&MmWaveUeNetDevice::m_nas),
+		                   MakePointerAccessor (&mmWaveUeNetDevice::m_nas),
 		                   MakePointerChecker <EpcUeNas> ())
 		.AddAttribute ("mmWaveUeRrc",
 		                   "The RRC associated to this UeNetDevice",
 		                   PointerValue (),
-		                   MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),
+		                   MakePointerAccessor (&mmWaveUeNetDevice::m_rrc),
 		                   MakePointerChecker <LteUeRrc> ())
-		.AddAttribute ("MmWaveUePhy",
+		.AddAttribute ("mmWaveUePhy",
 						"The PHY associated to this UeNetDevice",
 						PointerValue (),
-						MakePointerAccessor (&MmWaveUeNetDevice::m_phy),
-						MakePointerChecker <MmWaveUePhy> ())
-		.AddAttribute ("MmWaveUeMac",
+						MakePointerAccessor (&mmWaveUeNetDevice::m_phy),
+						MakePointerChecker <mmWaveUePhy> ())
+		.AddAttribute ("mmWaveUeMac",
 						"The MAC associated to this UeNetDevice",
 						PointerValue (),
-						MakePointerAccessor (&MmWaveUeNetDevice::m_mac),
-						MakePointerChecker <MmWaveUeMac> ())
+						MakePointerAccessor (&mmWaveUeNetDevice::m_mac),
+						MakePointerChecker <mmWaveUeMac> ())
 		.AddAttribute ("Imsi",
 			 "International Mobile Subscriber Identity assigned to this UE",
 			 UintegerValue (0),
-			 MakeUintegerAccessor (&MmWaveUeNetDevice::m_imsi),
+			 MakeUintegerAccessor (&mmWaveUeNetDevice::m_imsi),
 			 MakeUintegerChecker<uint64_t> ())
 		.AddAttribute ("AntennaNum",
 					   "Antenna number of the device",
 					   UintegerValue (16),
-					   MakeUintegerAccessor (&MmWaveUeNetDevice::SetAntennaNum,
-											 &MmWaveUeNetDevice::GetAntennaNum),
+					   MakeUintegerAccessor (&mmWaveUeNetDevice::SetAntennaNum,
+											 &mmWaveUeNetDevice::GetAntennaNum),
 					   MakeUintegerChecker<uint8_t> ())
 	;
 	return tid;
 }
 
-MmWaveUeNetDevice::MmWaveUeNetDevice (void)
+mmWaveUeNetDevice::mmWaveUeNetDevice (void)
 	: m_isConstructed (false)
 
 {
 	NS_LOG_FUNCTION (this);
 }
 
-MmWaveUeNetDevice::~MmWaveUeNetDevice (void)
+mmWaveUeNetDevice::~mmWaveUeNetDevice (void)
 {
 
 }
 
 void
-MmWaveUeNetDevice::DoInitialize (void)
+mmWaveUeNetDevice::DoInitialize (void)
 {
 	m_isConstructed = true;
 	UpdateConfig ();
@@ -95,20 +95,20 @@ MmWaveUeNetDevice::DoInitialize (void)
 
 }
 void
-MmWaveUeNetDevice::DoDispose ()
+mmWaveUeNetDevice::DoDispose ()
 {
 	m_rrc->Dispose ();
 }
 
 uint32_t
-MmWaveUeNetDevice::GetCsgId () const
+mmWaveUeNetDevice::GetCsgId () const
 {
   NS_LOG_FUNCTION (this);
   return m_csgId;
 }
 
 void
-MmWaveUeNetDevice::SetCsgId (uint32_t csgId)
+mmWaveUeNetDevice::SetCsgId (uint32_t csgId)
 {
   NS_LOG_FUNCTION (this << csgId);
   m_csgId = csgId;
@@ -116,7 +116,7 @@ MmWaveUeNetDevice::SetCsgId (uint32_t csgId)
 }
 
 void
-MmWaveUeNetDevice::UpdateConfig (void)
+mmWaveUeNetDevice::UpdateConfig (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -138,7 +138,7 @@ MmWaveUeNetDevice::UpdateConfig (void)
 }
 
 bool
-MmWaveUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
+mmWaveUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
 	NS_LOG_FUNCTION (this << dest << protocolNumber);
     if (protocolNumber != Ipv4L3Protocol::PROT_NUMBER)
@@ -150,20 +150,20 @@ MmWaveUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t pro
     return m_nas->Send (packet);
 }
 
-Ptr<MmWaveUePhy>
-MmWaveUeNetDevice::GetPhy (void) const
+Ptr<mmWaveUePhy>
+mmWaveUeNetDevice::GetPhy (void) const
 {
 	return m_phy; //Inherited from mmwaveNetDevice
 }
 
-Ptr<MmWaveUeMac>
-MmWaveUeNetDevice::GetMac (void) const
+Ptr<mmWaveUeMac>
+mmWaveUeNetDevice::GetMac (void) const
 {
 	return m_mac;
 }
 
 Ptr<EpcUeNas>
-MmWaveUeNetDevice::GetNas (void) const
+mmWaveUeNetDevice::GetNas (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_nas;
@@ -171,50 +171,50 @@ MmWaveUeNetDevice::GetNas (void) const
 
 
 Ptr<LteUeRrc>
-MmWaveUeNetDevice::GetRrc (void) const
+mmWaveUeNetDevice::GetRrc (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_rrc;
 }
 
 uint64_t
-MmWaveUeNetDevice::GetImsi () const
+mmWaveUeNetDevice::GetImsi () const
 {
 	return m_imsi;
 }
 
 uint16_t
-MmWaveUeNetDevice::GetEarfcn () const
+mmWaveUeNetDevice::GetEarfcn () const
 {
 	return m_earfcn;
 }
 
 void
-MmWaveUeNetDevice::SetEarfcn (uint16_t earfcn)
+mmWaveUeNetDevice::SetEarfcn (uint16_t earfcn)
 {
 	m_earfcn = earfcn;
 }
 
 void
-MmWaveUeNetDevice::SetTargetEnb (Ptr<MmWaveEnbNetDevice> enb)
+mmWaveUeNetDevice::SetTargetEnb (Ptr<mmWaveEnbNetDevice> enb)
 {
 	m_targetEnb = enb;
 }
 
-Ptr<MmWaveEnbNetDevice>
-MmWaveUeNetDevice::GetTargetEnb (void)
+Ptr<mmWaveEnbNetDevice>
+mmWaveUeNetDevice::GetTargetEnb (void)
 {
 	return m_targetEnb;
 }
 
 uint8_t
-MmWaveUeNetDevice::GetAntennaNum () const
+mmWaveUeNetDevice::GetAntennaNum () const
 {
 	return m_antennaNum;
 }
 
 void
-MmWaveUeNetDevice::SetAntennaNum (uint8_t antennaNum)
+mmWaveUeNetDevice::SetAntennaNum (uint8_t antennaNum)
 {
 	m_antennaNum = antennaNum;
 }

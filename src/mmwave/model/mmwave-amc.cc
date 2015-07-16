@@ -39,7 +39,7 @@ mmWaveAmc::mmWaveAmc ()
 	NS_LOG_ERROR ("This construcor should not be invoked");
 }
 
-mmWaveAmc::mmWaveAmc (Ptr<MmWavePhyMacCommon> ConfigParams)
+mmWaveAmc::mmWaveAmc (Ptr<mmWavePhyMacCommon> ConfigParams)
 : m_ConfigParams (ConfigParams)
 {
 	NS_LOG_INFO ("Initialze AMC module");
@@ -92,7 +92,7 @@ mmWaveAmc::GetTbSizeFromMcs (int mcs, int nprb)
 	NS_LOG_FUNCTION (mcs);
 	NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
 	//NS_ASSERT_MSG (nprb < 5, "NPRB=" << nprb);
-	int rscElement = m_ConfigParams->GetNumSCperChunk ()*m_ConfigParams->GetNumChunkPerRb ()*nprb*(m_ConfigParams->GetSymbPerSlot () - m_ConfigParams->GetNumReferenceSymbols ());
+	int rscElement = m_ConfigParams->GetNumSCperChunk ()*m_ConfigParams->GetNumChunkPerRB ()*nprb*(m_ConfigParams->GetSymbPerSlot () - m_ConfigParams->GetNumReferenceSymbols ());
 	double s = SpectralEfficiencyForMcs[mcs];
 
 	int tbSize = rscElement*s - CRC;
@@ -160,7 +160,7 @@ mmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 				TbStats_t tbStats;
 				while (mcs <= 28)
 				{
-					tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, (uint16_t)GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs);
+					tbStats = mmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, (uint16_t)GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs);
 					if (tbStats.tbler > 0.1)
 					{
 						break;

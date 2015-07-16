@@ -13,33 +13,33 @@
 
 namespace ns3 {
 
-class MmWaveControlMessage;
+class mmWaveControlMessages;
 /* Mac to Phy comm*/
-class MmWavePhySapProvider
+class mmWavePhySapProvider
 {
 public:
-	virtual ~MmWavePhySapProvider ();
+	virtual ~mmWavePhySapProvider ();
 
-	virtual void SendMacPdu (Ptr<Packet> p ) = 0;
+	virtual void SendMacPdu (Ptr<PacketBurst> p ) = 0;
 
-	virtual void SendControlMessage (Ptr<MmWaveControlMessage> msg) = 0;
+	virtual void SendmmWaveControlMessage (Ptr<mmWaveControlMessages> msg) = 0;
 
 	virtual void SendRachPreamble(uint8_t PreambleId, uint8_t Rnti) = 0;
 };
 
 /* Phy to Mac comm */
-class MmWavePhySapUser
+class mmWavePhySapUser
 {
 public:
-	virtual ~MmWavePhySapUser ();
+	virtual ~mmWavePhySapUser ();
 
 	virtual void ReceivePhyPdu (Ptr<Packet> p) = 0;
 
-	virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg) = 0;
+	virtual void ReceivemmWaveControlMessage (Ptr<mmWaveControlMessages> msg) = 0;
 
 	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo) = 0;
 
-	virtual void CqiReport (DlCqiInfo cqi) = 0;
+	virtual void CqiReport (CqiInfo cqi) = 0;
 
 	virtual void ReceiveRachPreamble (uint32_t raId) = 0;
 };

@@ -66,7 +66,7 @@ struct TbStats_t
 /**
  * This class provides the BLER estimation based on mutual information metrics
  */
-class MmWaveMiErrorModel
+class mmWaveMiErrorModel
 {
 
 public:

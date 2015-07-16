@@ -19,18 +19,18 @@
 namespace ns3{
 
 class PacketBurst;
-class MmWaveNetDevice;
-class MmWaveUePhy;
-class MmWaveEnbMac;
+class mmWaveNetDevice;
+class mmWaveUePhy;
+class mmWaveEnbMac;
 
-class MmWaveEnbPhy : public MmWavePhy
+class mmWaveEnbPhy : public mmWavePhy
 {
-	friend class MemberLteEnbCphySapProvider<MmWaveEnbPhy>;
+	friend class MemberLteEnbCphySapProvider<mmWaveEnbPhy>;
 public:
-	MmWaveEnbPhy ();
+	mmWaveEnbPhy ();
 
-	MmWaveEnbPhy (Ptr<MmWaveSpectrumPhy> , Ptr<MmWaveSpectrumPhy>);
-	virtual ~MmWaveEnbPhy ();
+	mmWaveEnbPhy (Ptr<mmWaveSpectrumPhy> , Ptr<mmWaveSpectrumPhy>);
+	virtual ~mmWaveEnbPhy ();
 
 	static TypeId GetTypeId (void);
 	virtual void DoInitialize (void);
@@ -45,7 +45,7 @@ public:
 	void SetNoiseFigure (double pf);
 	double GetNoiseFigure () const;
 
-	void CalcChannelQualityForUe (std::vector <double> sinr, Ptr<MmWaveSpectrumPhy> ue);
+	void CalcChannelQualityForUe (std::vector <double> sinr, Ptr<mmWaveSpectrumPhy> ue);
 
 	virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity ();
 
@@ -59,25 +59,24 @@ public:
 	void EndSubFrame (void);
 	void EndFrame (void);
 
-	void SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo& slotInfo);
+	void SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd);
 
-	void SendCtrlChannels (std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time slotPrd);
+	void SendCtrlChannels (std::list<Ptr<mmWaveControlMessages> > ctrlMsg, Time slotPrd);
 
-	Ptr<MmWaveSpectrumPhy> GetDlSpectrumPhy () const;
-	Ptr<MmWaveSpectrumPhy> GetUlSpectrumPhy () const;
+	Ptr<mmWaveSpectrumPhy> GetDlSpectrumPhy () const;
+	Ptr<mmWaveSpectrumPhy> GetUlSpectrumPhy () const;
 
 	/**virtual void SendIdealControlMessage(Ptr<IdealControlMessage> msg);
 	virtual void ReceiveIdealControlMessage(Ptr<IdealControlMessage> msg)**/
 
 	bool AddUePhy (uint64_t imsi, Ptr<NetDevice> ueDevice);
 
-//	void SetMacPdu (Ptr<Packet> pb);
 
 	void PhyDataPacketReceived (Ptr<Packet> p);
 
-	void PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msgList);
+	void PhyCtrlMessageReceived (std::list<Ptr<mmWaveControlMessages> > msgList);
 
-	uint32_t GetAbsoluteSubframeNo (); // Used for tracing purposes
+	uint32_t GetAbsoulteSubframeNo (); // Used for tracing purposes
 
 	int8_t DoGetReferenceSignalPower () const;
 
@@ -98,15 +97,8 @@ private:
 	void DoSetBandwidth (uint8_t Bandwidth );
 	void DoSetEarfcn (uint16_t Earfcn );
 
-	void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
-	std::list<TbAllocInfo> DequeueUlTbAlloc ();
-
-	uint32_t m_nrSlots;
 	uint32_t m_nrFrames;
-
-  uint32_t m_numRbg;
-
-	SlotAllocInfo::TddMode m_prevSlotDir;
+	uint32_t m_nrSubFrames;
 
 	std::set <uint64_t> m_ueAttached;
 
@@ -121,8 +113,6 @@ private:
 	LteRrcSap::SystemInformationBlockType1 m_sib1;
 	std::set <uint16_t> m_ueAttachedRnti;
 
-  std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB receptions
-	std::vector< std::vector< Ptr<PacketBurst> > > m_packetBurstQueue;
 
 };
 

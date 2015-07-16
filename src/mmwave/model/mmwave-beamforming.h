@@ -79,6 +79,12 @@ public:
 	* \param enbDevices a pointer to enbNetDevice container
 	*/
 	void Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
+	/**
+	* \breif Set the beamforming vector of connected enbs and ues
+	* \param ueDevice a pointer to ueNetDevice
+	* \param enbDevice a pointer to enbNetDevice
+	*/
+	void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
 
 private:
 	/**
@@ -120,23 +126,11 @@ private:
 	                                                   Ptr<const MobilityModel> a,
 	                                                   Ptr<const MobilityModel> b) const;
 	/**
-	* \breif Set the beamforming vector of connected enbs and ues
-	* \param ueDevice a pointer to ueNetDevice
-	* \param enbDevice a pointer to enbNetDevice
-	*/
-	void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
-	/**
 	* \breif Store the channel matrix to channelMatrixMap
 	* \param ueDevice a pointer to ueNetDevice
 	* \param enbDevice a pointer to enbNetDevice
 	*/
 	void SetChannelMatrix(Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
-	/**
-	* \breif Calculate the system bandwidth using
-	* 		 the user defined parameters
-	* \return value of the system abndwith
-	*/
-	double GetSystemBandwidth () const;
 	/**
 	* \breif Calculate long term fading
 	* \param bfParas a pointer to beamforming vectors
@@ -144,15 +138,21 @@ private:
 	*/
 	complexVector_t GetLongTermFading (Ptr<BeamformingParams> bfParams) const;
 	/**
-	* \breif calculate power spectrum density considering beamformign and fading
+	* \breif Calculate gain of all rbs
 	* \param bfParas a pointer to beamforming vectors
-	* \param Psd set of values vs frequency representing the
-	*              transmission power. See SpectrumChannel for details
 	* \param speed a double value to relative speed of tx and rx
-	* \return cset of values vs frequency representing the received
+	* \return complex vector of all rbs gain
+	*/
+	complexVector_t GetAllRbGainVector (Ptr<BeamformingParams> bfParams, double speed) const;
+	/**
+	* \breif calculate power spectrum density after beamformign and fading
+	* \param txPsd set of values vs frequency representing the
+	*              transmission power. See SpectrumChannel for details.
+	* \param allRbgainVector complex vector of beamforming and fading gain
+	* \return set of values vs frequency representing the received
 	*         power in the same units used for the txPsd parameter.
 	*/
-	Ptr<SpectrumValue> GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<BeamformingParams> bfParams, double speed) const;
+	Ptr<SpectrumValue> GetPsd (Ptr<const SpectrumValue> rxPsd, complexVector_t allRbGainVector) const;
 
 	/**
 	* \a map to store channel matrix
@@ -163,10 +163,6 @@ private:
 	uint32_t m_pathNum;
 	uint32_t m_enbAntennaSize;
 	uint32_t m_ueAntennaSize;
-	double m_subbandWidth;
-	double m_centreFrequency;
-	uint32_t m_numResourceBlocks;
-	uint32_t m_numSubbbandPerRB;
 };
 
 }  //namespace ns3
