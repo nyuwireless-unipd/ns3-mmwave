@@ -479,10 +479,10 @@ MmWaveHelper::RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	}
 
 	// tricks needed for the simplified LTE-only simulations
-	if (m_epcHelper == 0)
-	{
+	//if (m_epcHelper == 0)
+	//{
 		ueDevice->GetObject<MmWaveUeNetDevice> ()->SetTargetEnb (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ());
-	}
+	//}
 
 }
 
