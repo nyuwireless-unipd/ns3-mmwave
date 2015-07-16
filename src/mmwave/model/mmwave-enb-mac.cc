@@ -554,9 +554,8 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 			uint8_t tbUid = AllocateTbUid ();
 			// insert into MAC PDU map
 			uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
-			std::map<uint32_t, struct MacPduInfo>::iterator macPduIt = \
-					(m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo))).first;
-			NS_LOG_DEBUG ("Insert in MAC PDU for "<< (*macPduIt).first);
+			m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo));
+
 			for (unsigned int ipdu = 0; ipdu < rlcPduElems.size (); ipdu++)
 			{
 				NS_ASSERT_MSG (rntiIt != m_rlcAttached.end (), "could not find RNTI" << rnti);
