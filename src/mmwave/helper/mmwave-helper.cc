@@ -251,8 +251,8 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	phy->SetCofigurationParameters (m_PhyMACCommon);
 	mac->SetCofigurationParameters (m_PhyMACCommon);
 
-	phy->SetPhySapUser (mac->GetUePhySapUser());
-	mac->SetUePhySapProvider (phy->GetPhySapProvider());
+	phy->SetPhySapUser (mac->GetPhySapUser());
+	mac->SetPhySapProvider (phy->GetPhySapProvider());
 
 	device->SetNode(n);
 	device->SetAttribute ("Imsi", UintegerValue(imsi));
@@ -294,6 +294,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
 
 	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
+  pData->AddCallback (MakeCallback (&MmWaveEnbPhy::GenerateDataCqiReport, phy));
 	pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
 	dlPhy->AddDataSinrChunkProcessor (pData);
 
@@ -327,8 +328,8 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
 	sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
 
-	phy->SetPhySapUser (mac->GetUePhySapUser());
-	mac->SetUePhySapProvider (phy->GetPhySapProvider());
+	phy->SetPhySapUser (mac->GetPhySapUser());
+	mac->SetPhySapProvider (phy->GetPhySapProvider());
 
 	bool useIdealRrc = true;
 	if (useIdealRrc)
