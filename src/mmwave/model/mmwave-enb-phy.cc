@@ -553,7 +553,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 	if (slotInfo.m_isOmni)
 	{
 		Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
-//		antennaArray->ChangeToOmniTx ();
+		antennaArray->ChangeToOmniTx ();
 	}
 
 	if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())

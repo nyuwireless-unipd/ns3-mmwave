@@ -74,15 +74,15 @@ public:
 	uint32_t GetSubframeNumber (void);
 
 	void PhyDataPacketReceived (Ptr<Packet> p);
-
 	void SendDataChannels (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time duration, uint8_t slotInd);
 
 	void SendCtrlChannels (std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time prd);
-
+    
 	uint32_t GetAbsoluteSubframeNo (); // Used for tracing purposes
-
+    
 	Ptr<MmWaveDlCqiMessage> CreateDlCqiFeedbackMessage (const SpectrumValue& sinr);
-	void GenerateDlCqiReport (const SpectrumValue& sinr);
+    
+    void GenerateDlCqiReport (const SpectrumValue& sinr);
 
 	bool IsReceptionEnabled ();
 	void ResetReception ();
@@ -140,7 +140,6 @@ private:
 
 	TracedCallback<uint64_t, uint64_t> m_reportUlTbSize;
 	TracedCallback<uint64_t, uint64_t> m_reportDlTbSize;
-
 	uint8_t m_prevSlot;
 
 	bool m_receptionEnabled;

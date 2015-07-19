@@ -39,8 +39,7 @@ MmWaveUePhy::MmWaveUePhy (Ptr<MmWaveSpectrumPhy> dlPhy, Ptr<MmWaveSpectrumPhy> u
   m_wbCqiLast = Simulator::Now ();
 	m_ueCphySapProvider = new MemberLteUeCphySapProvider<MmWaveUePhy> (this);
 	m_pucchSlotInd = 2; // default slot containing dedicated UL control channel
-	Simulator::ScheduleNow (&MmWaveUePhy::SubframeIndication, this, 1, 1);
-}
+	Simulator::ScheduleNow (&MmWaveUePhy::SubframeIndication, this, 1, 1);}
 
 MmWaveUePhy::~MmWaveUePhy ()
 {

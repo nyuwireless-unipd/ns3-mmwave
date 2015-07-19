@@ -227,7 +227,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 			if (DlCtrlRxParams->cellId == m_cellId)
 			{
 				StartRxCtrl (params);
-			}
+            }
 			else
 			{
 				// Do nothing

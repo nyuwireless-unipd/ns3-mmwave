@@ -24,9 +24,12 @@ public:
 	virtual double GetGainDb (Angles a);
 	void SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
 	void ChangeBeamformingVector (Ptr<NetDevice> device);
+	void ChangeToOmniTx ();
 	complexVector_t GetBeamformingVector ();
 	complexVector_t GetBeamformingVector (Ptr<NetDevice> device);
+	bool IsOmniTx ();
 private:
+	bool m_omniTx;
 	complexVector_t m_beamformingVector;
 	std::map<Ptr<NetDevice>, complexVector_t> m_beamformingVectorMap;
 

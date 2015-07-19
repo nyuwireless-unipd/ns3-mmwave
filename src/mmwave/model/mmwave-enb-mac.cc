@@ -289,8 +289,7 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 			{
 				NS_LOG_DEBUG("Subheader " << i << " size " << it->second.m_macHeader.GetSubheaders().at(i).m_size);
 			}
-		    m_phySapProvider->SendMacPdu (it->second.m_pdu);
-
+			m_phySapProvider->SendMacPdu (it->second.m_pdu);
 			m_macPduMap.erase (it);  // delete map entry
 		}
 		else

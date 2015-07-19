@@ -220,6 +220,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		}
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
 		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
+
 		if (it->second.m_numRlcPdu == 1)
 		{
 			// wait for all RLC PDUs to be received
