@@ -52,7 +52,9 @@ public:
 	struct SchedTriggerReqParameters
 	{
 		uint32_t m_snfSf;
-		std::list <uint64_t> m_ueList; // Add HARQ elements here...make a struct for this if needed
+    std::vector <struct DlHarqInfo> m_dlHarqInfoList;
+    std::vector <struct UlHarqInfo> m_ulHarqInfoList;
+		std::list <uint16_t> m_ueList;
 	};
 
   virtual void SchedDlRlcBufferReq (const struct SchedDlRlcBufferReqParameters& params) = 0;

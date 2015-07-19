@@ -75,11 +75,15 @@ public:
 
 	void PhyDataPacketReceived (Ptr<Packet> p);
 
+	void GenerateDataCqiReport (const SpectrumValue& sinr);
+
 	void PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msgList);
 
 	uint32_t GetAbsoluteSubframeNo (); // Used for tracing purposes
 
 	int8_t DoGetReferenceSignalPower () const;
+
+	void SetPhySapUser (MmWaveEnbPhySapUser* ptr);
 
 private:
 
@@ -115,6 +119,8 @@ private:
 	uint8_t m_prevSlot; // 1->UL 0->DL 2->Unspecified
 
 	std::vector< Ptr<NetDevice> > m_deviceMap;
+
+	MmWaveEnbPhySapUser* m_phySapUser;
 
 	LteEnbCphySapProvider* m_enbCphySapProvider;
 	LteEnbCphySapUser* m_enbCphySapUser;

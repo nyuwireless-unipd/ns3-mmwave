@@ -111,11 +111,6 @@ struct SlotAllocInfo
 		CTRL = 2
 	};
 
-	SlotAllocInfo () :
-		m_tddMode(NA), m_isOmni (0), m_slotType (CTRL_DATA), m_numCtrlSym(0), m_slotInd (0)
-	{
-
-	}
 
 	SlotAllocInfo (uint8_t slotInd, TddMode tddMode, TddSlotType slotType) :
 		m_tddMode(tddMode), m_isOmni (0), m_slotType (slotType), m_numCtrlSym(0), m_slotInd (slotInd)
@@ -138,7 +133,6 @@ struct SfAllocationInfo
 	SfAllocationInfo ()
 	{
 		m_tddPattern.resize (8);
-		m_slotAllocInfo.resize(8);
 	}
 
 	SfAllocationInfo (unsigned int numSlots)
@@ -263,6 +257,28 @@ struct EnbPhyPacketCountParameter
 	uint32_t m_subframeno;
 };
 
+struct DlHarqInfo
+{
+  uint16_t  m_rnti;
+  uint8_t   m_harqProcessId;
+  enum HarqStatus
+  {
+    ACK, NACK
+  };
+  std::vector <enum HarqStatus> m_harqStatus;
+};
+
+struct UlHarqInfo
+{
+  uint16_t  m_rnti;
+  std::vector <uint16_t> m_ulReception;
+  enum ReceptionStatus
+  {
+    Ok, NotOk, NotValid
+  } m_receptionStatus;
+  uint8_t   m_tpc;
+};
+
 
 class MmWavePhyMacCommon : public Object
 {
@@ -295,6 +311,8 @@ public:
 	uint32_t	 	GetL1L2DataLatency (void);
 	double	GetWbCqiPeriodUs (void);
 	std::string GetStaticTDDPattern ();
+	uint32_t	 	GetNumHarqProcess (void);
+	uint8_t GetHarqDlTimeout (void);
 
 	void SetSymbPerSlot (uint32_t sym);
 	void SetSymbolPeriod (double prd);
@@ -315,6 +333,8 @@ public:
 	void SetL1L2DataLatency (uint32_t delaySlot);
 	void SetWbCqiPeriodUs (double us);
 	void SetStaticTDDPattern (std::string p);
+	void SetNumHarqProcess (uint32_t numProc);
+	void SetHarqDlTimeout (uint8_t harqDlTimeout);
 
 private:
 	uint32_t m_symbolsPerSlot;
@@ -329,6 +349,8 @@ private:
 	uint32_t m_chunksPerRb;
 	double m_chunkWidth; //enter in Hz.
 	uint32_t m_numRb;
+	uint8_t m_numHarqProcess;
+	uint8_t m_harqDlTimeout;
 
 	double m_centerFrequency;
 	double   m_guardPeriod; 		// UL to DL switching time in micro seconds
@@ -336,7 +358,6 @@ private:
 	uint32_t m_l1L2CtrlLatency; // In no. of sub-frames
 	uint32_t m_l1L2DataLatency; // In no. of slots
 	uint32_t m_ulSchedDelay;	// delay between transmission of UL-DCI and corresponding subframe in TTIs
-
 	uint32_t m_wbCqiPeriodUs;	// WB CQI periodicity in microseconds
 
 	std::string m_staticTddPattern;

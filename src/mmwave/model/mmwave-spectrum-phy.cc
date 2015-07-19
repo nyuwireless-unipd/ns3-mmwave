@@ -416,6 +416,11 @@ MmWaveSpectrumPhy::EndRxData ()
 		itTb++;
 	}
 
+	Ptr<MmWaveEnbNetDevice> enbRx =
+				DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
+	Ptr<MmWaveUeNetDevice> ueRx =
+				DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+
 
 	for (std::list<Ptr<PacketBurst> >::const_iterator i = m_rxPacketBurstList.begin ();
 		 i != m_rxPacketBurstList.end (); ++i)
@@ -426,10 +431,6 @@ MmWaveSpectrumPhy::EndRxData ()
 
 			if((*j)->PeekPacketTag (tag) == false)
 			{
-				Ptr<MmWaveEnbNetDevice> enbRx =
-							DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-				Ptr<MmWaveUeNetDevice> ueRx =
-							DynamicCast<MmWaveUeNetDevice> (GetDevice ());
 				if (enbRx)
 				{
 					NS_FATAL_ERROR ("No radio bearer tag found (eNB dest)");

@@ -283,12 +283,6 @@ MmWavePhy::GetPhySapProvider ()
 }
 
 void
-MmWavePhy::SetPhySapUser (MmWavePhySapUser* ptr)
-{
-	m_phySapUser = ptr;
-}
-
-void
 MmWavePhy::UpdateCurrentAllocationAndSchedule (uint32_t frame, uint32_t sf)
 {
 	/*std::map<uint32_t,TddSlotTypeList>::iterator it_sched;

@@ -15,10 +15,6 @@ MmWavePhySapProvider::~MmWavePhySapProvider ()
 
 }
 
-MmWavePhySapUser::~MmWavePhySapUser ()
-{
-
-}
 
 }
 

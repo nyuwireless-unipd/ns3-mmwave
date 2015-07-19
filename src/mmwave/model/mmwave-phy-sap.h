@@ -10,6 +10,7 @@
 
 #include <ns3/packet-burst.h>
 #include <ns3/mmwave-phy-mac-common.h>
+#include <ns3/mmwave-mac-sched-sap.h>
 
 namespace ns3 {
 
@@ -28,10 +29,12 @@ public:
 };
 
 /* Phy to Mac comm */
-class MmWavePhySapUser
+class MmWaveEnbPhySapUser
 {
 public:
-	virtual ~MmWavePhySapUser ();
+	virtual ~MmWaveEnbPhySapUser ()
+	{
+	}
 
 	virtual void ReceivePhyPdu (Ptr<Packet> p) = 0;
 
@@ -39,10 +42,25 @@ public:
 
 	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo) = 0;
 
-	virtual void CqiReport (DlCqiInfo cqi) = 0;
+	virtual void UlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi) = 0;
 
 	virtual void ReceiveRachPreamble (uint32_t raId) = 0;
 };
+
+class MmWaveUePhySapUser
+{
+public:
+	virtual ~MmWaveUePhySapUser ()
+	{
+	}
+
+	virtual void ReceivePhyPdu (Ptr<Packet> p) = 0;
+
+	virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg) = 0;
+
+	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo) = 0;
+};
+
 }
 
 

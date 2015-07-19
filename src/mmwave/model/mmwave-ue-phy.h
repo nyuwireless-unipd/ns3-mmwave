@@ -89,6 +89,8 @@ public:
 
 	uint16_t GetRnti ();
 
+	void SetPhySapUser (MmWaveUePhySapUser* ptr);
+
 private:
 	void DoReset ();
 	void DoStartCellSearch (uint16_t dlEarfcn);
@@ -104,6 +106,8 @@ private:
 	void ReceiveDataPeriod (uint32_t slotNum);
 	void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
 	std::list<TbAllocInfo> DequeueUlTbAlloc ();
+
+	MmWaveUePhySapUser* m_phySapUser;
 
 	LteUeCphySapProvider* m_ueCphySapProvider;
 	LteUeCphySapUser* m_ueCphySapUser;

@@ -75,6 +75,7 @@ public:
 	// forwarded from LteMacSapProvider
 	void DoTransmitPdu (LteMacSapProvider::TransmitPduParameters);
 	void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters);
+  void DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi);
 
 	void DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
 
@@ -90,8 +91,8 @@ public:
 
 	void DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndParameters ind);
 
-	MmWavePhySapUser* GetUePhySapUser ();
-	void SetUePhySapProvider (MmWavePhySapProvider* ptr);
+	MmWaveEnbPhySapUser* GetPhySapUser ();
+	void SetPhySapProvider (MmWavePhySapProvider* ptr);
 
 	MmWaveMacSchedSapUser* GetMmWaveMacSchedSapUser ();
 	void SetMmWaveMacSchedSapProvider (MmWaveMacSchedSapProvider* ptr);
@@ -128,10 +129,7 @@ private:
 	uint8_t	m_tbUid;
 	std::map<uint32_t, struct MacPduInfo> m_macPduMap;
 
-	/* The MAC data queue is a map of Destination MAC Address, IMSI, Packet burst*/
-	std::map <Ipv4Address, uint64_t> m_mac2imsimap;
-
-	std::list <uint64_t> m_associatedUe;
+	std::list <uint16_t> m_associatedUe;
 
 	Callback <void, Ptr<Packet> > m_forwardUpCallback;
 
@@ -139,12 +137,8 @@ private:
 	std::vector <MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters> m_ulCqiReceived;
   std::vector <MacCeElement> m_ulCeReceived; // CE received (BSR up to now)
 
-//	std::map <uint32_t, SfAllocationInfo> m_scheduleMap;
-//	TddSlotTypeList m_DataTxTDDMap;
-//	SfAllocationInfo m_DataTxAllocationList;
-
 	MmWavePhySapProvider* m_phySapProvider;
-	MmWavePhySapUser* m_phySapUser;
+	MmWaveEnbPhySapUser* m_phySapUser;
 
 	MmWaveMacSchedSapProvider* m_macSchedSapProvider;
 	MmWaveMacSchedSapUser* m_macSchedSapUser;
@@ -153,8 +147,8 @@ private:
 
 	std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> > m_rlcAttached;
 
-	std::map <uint16_t, uint16_t> m_lcidAndHarqProcToSfnMap;
-
+	std::vector <DlHarqInfo> m_dlHarqInfoListReceived; // DL HARQ feedback received
+	std::vector <UlHarqInfo> m_ulHarqInfoListReceived; // UL HARQ feedback received
 
 };
 

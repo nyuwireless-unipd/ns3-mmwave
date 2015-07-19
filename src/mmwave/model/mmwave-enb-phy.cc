@@ -394,7 +394,8 @@ MmWaveEnbPhy::StartSubFrame (void)
 	  	}
 	  	else
 	  	{
-	  		SlotAllocInfo& slotInfo = m_currSfAllocInfo.m_slotAllocInfo[ulAllocIt->m_tbInfo.m_slotInd]; // DL res alloc info, applies to this subframe
+	  		SlotAllocInfo& slotInfo = m_currSfAllocInfo.m_slotAllocInfo[(unsigned) ulAllocIt->m_tbInfo.m_slotInd]; // DL res alloc info, applies to this subframe
+				NS_LOG_INFO ("ENB: UL slot " << (unsigned) slotInfo.m_slotInd);
 	  		slotInfo.m_tbInfo.push_back (*ulAllocIt);
 	  		if (m_currSfAllocInfo.m_tddPattern[ulAllocIt->m_tbInfo.m_slotInd] == SlotAllocInfo::NA)
 	  		{
@@ -446,14 +447,15 @@ MmWaveEnbPhy::StartSubFrame (void)
   			dataPeriod = NanoSeconds (1000 * ( m_phyMacConfig->GetSymbPerSlot() - slotInfo.m_numCtrlSym) * \
   			                           m_phyMacConfig->GetSymbolPeriod ());
   			NS_LOG_DEBUG ("ENB TXing CTRL period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
-  			              " start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod);
-    		SendCtrlChannels(ctrlMsg, ctrlPeriod);
+  			              " start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod-NanoSeconds(1.0));
+    		SendCtrlChannels(ctrlMsg, ctrlPeriod-NanoSeconds(1.0));
   		}
   		else
   		{
     		if (slotDir == SlotAllocInfo::DL && m_prevSlotDir == SlotAllocInfo::UL)  // if curr slot == DL and prev slot == UL
     		{
-    			guardPeriod = NanoSeconds (1000 * m_phyMacConfig->GetGuardPeriod ());
+//    			guardPeriod = NanoSeconds (1000 * m_phyMacConfig->GetGuardPeriod ());
+    			guardPeriod = Seconds (0.0);
     			dataPeriod = NanoSeconds (1000 * m_phyMacConfig->GetSymbPerSlot() * m_phyMacConfig->GetSymbolPeriod ()) - \
     					guardPeriod;
     		}
@@ -483,8 +485,8 @@ MmWaveEnbPhy::StartSubFrame (void)
   			}
   		}
 			NS_LOG_DEBUG ("ENB TXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
-			              " start " << Simulator::Now()+ctrlPeriod << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (5.0));
-  		Simulator::Schedule (ctrlPeriod, &MmWaveEnbPhy::SendDataChannels, this, pktBurst, dataPeriod-NanoSeconds (5.0), slotInfo);
+			              " start " << Simulator::Now()+ctrlPeriod+NanoSeconds(1.0) << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (2.0));
+  		Simulator::Schedule (ctrlPeriod, &MmWaveEnbPhy::SendDataChannels, this, pktBurst, dataPeriod-NanoSeconds (2.0), slotInfo);
   	}
   }
   else if (slotDir == SlotAllocInfo::UL || slotInd == 2)  // Uplink slot
@@ -548,6 +550,12 @@ MmWaveEnbPhy::EndFrame (void)
 void
 MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo& slotInfo)
 {
+	if (slotInfo.m_isOmni)
+	{
+		Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+//		antennaArray->ChangeToOmniTx ();
+	}
+
 	if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())
 	{ // update beamforming vectors (currently supports 1 user only)
 		std::map<uint16_t, std::vector<unsigned> >::iterator ueRbIt = slotInfo.m_ueRbMap.begin();
@@ -604,6 +612,29 @@ MmWaveEnbPhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
 	m_phySapUser->ReceivePhyPdu(p);
 }
+
+void
+MmWaveEnbPhy::GenerateDataCqiReport (const SpectrumValue& sinr)
+{
+  NS_LOG_FUNCTION (this << sinr);
+
+  Values::const_iterator it;
+  MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi;
+  ulcqi.m_ulCqi.m_type = UlCqiInfo::PUSCH;
+  int i = 0;
+  for (it = sinr.ConstValuesBegin (); it != sinr.ConstValuesEnd (); it++)
+  {
+  	double sinrdb = 10 * std::log10 ((*it));
+  	//       NS_LOG_DEBUG ("ULCQI RB " << i << " value " << sinrdb);
+  	// convert from double to fixed point notation Sxxxxxxxxxxx.xxx
+  	int16_t sinrFp = LteFfConverter::double2fpS11dot3 (sinrdb);
+  	ulcqi.m_ulCqi.m_sinr.push_back (sinrFp);
+  	i++;
+  }
+
+  m_phySapUser->UlCqiReport (ulcqi);
+}
+
 
 void
 MmWaveEnbPhy::PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msgList)
@@ -735,6 +766,12 @@ MmWaveEnbPhy::DoGetReferenceSignalPower () const
 {
   NS_LOG_FUNCTION (this);
   return m_txPower;
+}
+
+void
+MmWaveEnbPhy::SetPhySapUser (MmWaveEnbPhySapUser* ptr)
+{
+	m_phySapUser = ptr;
 }
 
 }

@@ -106,6 +106,16 @@ MmWavePhyMacCommon::GetTypeId (void)
 							 DoubleValue (4.16),
 							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_guardPeriod),
 							 MakeUintegerChecker<double> ())
+		 .AddAttribute ("NumHarqProcess",
+							 "Number of concurrent stop-and-wait Hybrid ARQ processes per user",
+							 UintegerValue (20),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_numHarqProcess),
+							 MakeUintegerChecker<uint8_t> ())
+		 .AddAttribute ("HarqDlTimeout",
+							 "Number of concurrent stop-and-wait Hybrid ARQ processes per user",
+							 UintegerValue (20),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_harqDlTimeout),
+							 MakeUintegerChecker<uint8_t> ())
 	;
 
 	return tid;
@@ -123,6 +133,8 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
   m_chunksPerRb (18),
   m_chunkWidth (14e6),
   m_numRb (20),
+  m_numHarqProcess (20),
+  m_harqDlTimeout (20),
   m_centerFrequency (28e9),
 	m_guardPeriod (4.16),
   m_l1L2CtrlLatency (2),
@@ -267,6 +279,18 @@ MmWavePhyMacCommon::GetStaticTDDPattern ()
 	return m_staticTddPattern;
 }
 
+uint32_t
+MmWavePhyMacCommon::GetNumHarqProcess (void)
+{
+	return m_numHarqProcess;
+}
+
+uint8_t
+MmWavePhyMacCommon::GetHarqDlTimeout (void)
+{
+	return m_harqDlTimeout;
+}
+
 void
 MmWavePhyMacCommon::SetSymbPerSlot (uint32_t numSym)
 {
@@ -376,6 +400,18 @@ MmWavePhyMacCommon::SetStaticTDDPattern (std::string p)
 		NS_LOG_ERROR ("TDD pattern length should be equal to the number of slots per SF");
 	}
 	m_staticTddPattern = p;
+}
+
+void
+MmWavePhyMacCommon::SetNumHarqProcess (uint32_t numProcess)
+{
+	m_numHarqProcess = numProcess;
+}
+
+void
+MmWavePhyMacCommon::SetHarqDlTimeout (uint8_t harqDlTimeout)
+{
+	m_harqDlTimeout = harqDlTimeout;
 }
 
 #if 0

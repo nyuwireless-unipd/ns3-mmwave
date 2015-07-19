@@ -83,7 +83,7 @@ public:
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	MmWavePhySapProvider* GetPhySapProvider ();
-	void SetPhySapUser (MmWavePhySapUser* ptr);
+//	void SetPhySapUser (MmWavePhySapUser* ptr);
 
 	void UpdateCurrentAllocationAndSchedule (uint32_t frame, uint32_t sf);
 
@@ -117,7 +117,6 @@ protected:
 	std::map <uint32_t,SfAllocationInfo> m_slotAllocInfoMap;
 
 	MmWavePhySapProvider* m_phySapProvider;
-	MmWavePhySapUser* m_phySapUser;
 
 	uint32_t m_raPreambleId;
 

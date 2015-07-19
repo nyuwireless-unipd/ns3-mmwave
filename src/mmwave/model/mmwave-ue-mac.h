@@ -39,8 +39,8 @@ public:
 
 	void DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
 
-	MmWavePhySapUser* GetUePhySapUser ();
-	void SetUePhySapProvider (MmWavePhySapProvider* ptr);
+	MmWaveUePhySapUser* GetPhySapUser ();
+	void SetPhySapProvider (MmWavePhySapProvider* ptr);
 
 	void RecvRaResponse (BuildRarListElement_s raResponse);
 
@@ -76,7 +76,7 @@ private:
 	SfAllocationInfo m_DataTxAllocationList;
 
 	MmWavePhySapProvider* m_phySapProvider;
-	MmWavePhySapUser* m_phySapUser;
+	MmWaveUePhySapUser* m_phySapUser;
 	LteMacSapProvider* m_macSapProvider;
 
 	uint32_t m_frameNum;

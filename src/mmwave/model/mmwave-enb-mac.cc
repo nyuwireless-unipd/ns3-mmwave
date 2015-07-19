@@ -111,10 +111,9 @@ MmWaveEnbMacMemberEnbCmacSapProvider::AllocateNcRaPreamble (uint16_t rnti)
 
 
 
-
 // SAP
 // ENB MAC-Phy
-class MmWaveMacEnbMemberPhySapUser : public MmWavePhySapUser
+class MmWaveMacEnbMemberPhySapUser : public MmWaveEnbPhySapUser
 {
 public:
 	MmWaveMacEnbMemberPhySapUser (MmWaveEnbMac* mac);
@@ -125,7 +124,7 @@ public:
 
 	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
 
-	virtual void CqiReport (DlCqiInfo cqi);
+	virtual void UlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters cqi);
 
 	virtual void ReceiveRachPreamble (uint32_t raId);
 private:
@@ -157,9 +156,9 @@ MmWaveMacEnbMemberPhySapUser::SubframeIndication (uint32_t frameNo, uint32_t sub
 }
 
 void
-MmWaveMacEnbMemberPhySapUser::CqiReport (DlCqiInfo cqi)
+MmWaveMacEnbMemberPhySapUser::UlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi)
 {
-
+	m_mac->DoUlCqiReport(ulcqi);
 }
 
 void
@@ -227,8 +226,8 @@ MmWaveEnbMac::DoDispose (void)
   m_dlCqiReceived.clear ();
   m_ulCqiReceived.clear ();
   m_ulCeReceived.clear ();
-//  m_dlInfoListReceived.clear ();
-//  m_ulInfoListReceived.clear ();
+//  m_dlHarqInfoListReceived.clear ();
+//  m_ulHarqInfoListReceived.clear ();
 //  m_miDlHarqProcessesPackets.clear ();
   delete m_macSapProvider;
   delete m_cmacSapProvider;
@@ -276,15 +275,22 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		{
 			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
+
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
 		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
+
 		if (it->second.m_numRlcPdu == 1)
-		{
-			// wait for all RLC PDUs to be received
+		{			// wait for all RLC PDUs to be received
 			it->second.m_pdu->AddHeader (it->second.m_macHeader);
 			LteRadioBearerTag bearerTag (params.rnti, it->second.m_size, 0);
 			it->second.m_pdu->AddPacketTag (bearerTag);
-		  m_phySapProvider->SendMacPdu (it->second.m_pdu);
+			NS_LOG_DEBUG ("eNB sending MAC pdu size " << it->second.m_pdu->GetSize());
+			for (unsigned i = 0; i < it->second.m_macHeader.GetSubheaders().size(); i++)
+			{
+				NS_LOG_DEBUG("Subheader " << i << " size " << it->second.m_macHeader.GetSubheaders().at(i).m_size);
+			}
+		    m_phySapProvider->SendMacPdu (it->second.m_pdu);
+
 			m_macPduMap.erase (it);  // delete map entry
 		}
 		else
@@ -401,7 +407,21 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 		uint32_t sfn = ((0x3FF & dlSchedFrameNo) << 16) | ((0xFF & dlSchedSubframeNo) << 8) | ((0xFF & 1));;
 		params.m_snfSf = sfn;
 
-		//NS_LOG_UNCOND ("Req for :"<< dlSchedFrameNo << "  "<<dlSchedSubframeNo);
+		// Forward DL HARQ feebacks collected during last subframe TTI
+		if (m_dlHarqInfoListReceived.size () > 0)
+		{
+			params.m_dlHarqInfoList = m_dlHarqInfoListReceived;
+			// empty local buffer
+			m_dlHarqInfoListReceived.clear ();
+		}
+
+		// Forward UL HARQ feebacks collected during last TTI
+		if (m_ulHarqInfoListReceived.size () > 0)
+		{
+			params.m_ulHarqInfoList = m_ulHarqInfoListReceived;
+			// empty local buffer
+			m_ulHarqInfoListReceived.clear ();
+		}
 
 		params.m_ueList = m_associatedUe;
 		m_macSchedSapProvider->SchedTriggerReq (params);
@@ -441,31 +461,36 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 		std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (macSubheaders[ipdu].m_lcid);
 		NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << macSubheaders[ipdu].m_lcid);
 		Ptr<Packet> rlcPdu;
-		if (p->GetSize () < (uint32_t)macSubheaders[ipdu].m_size)
-		{
-			NS_LOG_DEBUG ("RLC PDU size less than what is specified in MAC header (actual= " \
-			              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
-			rlcPdu = p->CreateFragment (currPos, p->GetSize ());
-			currPos += p->GetSize ();
-		}
-		else
-		{
-			rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
-			currPos += (uint32_t)macSubheaders[ipdu].m_size;
-		}
+		if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
+			{
+				NS_LOG_ERROR ("Packet size less than specified in MAC header (actual= " \
+				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+			}
+			else if ((p->GetSize ()-currPos) > (uint32_t)macSubheaders[ipdu].m_size)
+			{
+				NS_LOG_DEBUG ("Fragmenting MAC PDU (packet size greater than specified in MAC header (actual= " \
+				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+				rlcPdu = p->CreateFragment (currPos, p->GetSize ());
+				currPos += p->GetSize ();
+			}
+			else
+			{
+				rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
+				currPos += (uint32_t)macSubheaders[ipdu].m_size;
+			}
 		NS_LOG_DEBUG ("Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
 		(*lcidIt).second->ReceivePdu (rlcPdu);
 	}
 }
 
-MmWavePhySapUser*
-MmWaveEnbMac::GetUePhySapUser ()
+MmWaveEnbPhySapUser*
+MmWaveEnbMac::GetPhySapUser ()
 {
 	return m_phySapUser;
 }
 
 void
-MmWaveEnbMac::SetUePhySapProvider (MmWavePhySapProvider* ptr)
+MmWaveEnbMac::SetPhySapProvider (MmWavePhySapProvider* ptr)
 {
 	m_phySapProvider = ptr;
 }
@@ -481,6 +506,21 @@ MmWaveEnbMac::SetMmWaveMacSchedSapProvider (MmWaveMacSchedSapProvider* ptr)
 {
 	m_macSchedSapProvider = ptr;
 }
+
+void
+MmWaveEnbMac::DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi)
+{
+  if (ulcqi.m_ulCqi.m_type == UlCqiInfo::PUSCH)
+    {
+      NS_LOG_DEBUG (this << " eNB rxed an PUSCH UL-CQI");
+    }
+  else if (ulcqi.m_ulCqi.m_type == UlCqiInfo::SRS)
+    {
+      NS_LOG_DEBUG (this << " eNB rxed an SRS UL-CQI");
+    }
+  m_ulCqiReceived.push_back (ulcqi);
+}
+
 
 void
 MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
@@ -503,9 +543,15 @@ MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 		  m_ulCeReceived.push_back (bsr->GetBsr ());
 			break;
 		}
+		case (MmWaveControlMessage::DL_HARQ):
+	  {
+			//	      Ptr<DlHarqFeedbackLteControlMessage> dlharq = DynamicCast<DlHarqFeedbackLteControlMessage> (msg);
+			//	      DoDlInfoListElementHarqFeeback (dlharq->GetDlHarqFeedback ());
+			break;
+	  }
 		default:
 			NS_LOG_INFO ("Control message not supported/expected");
-		}
+	}
 
 }
 
@@ -539,7 +585,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 		dciMsg->SetDciInfoElement (schedInfo.m_dci);
 		dciMsg->SetSfnSf (ind.m_sfn);
 		m_phySapProvider->SendControlMessage (dciMsg);
-    std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
+		std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
 
 		for (unsigned int itb = 0; itb < schedInfo.m_dci.m_tbInfoElements.size (); itb++)
 		{
@@ -552,8 +598,8 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 			uint8_t tbUid = AllocateTbUid ();
 			// insert into MAC PDU map
 			uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
-			std::map<uint32_t, struct MacPduInfo>::iterator macPduIt = \
-					(m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo))).first;
+			m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo));
+
 			for (unsigned int ipdu = 0; ipdu < rlcPduElems.size (); ipdu++)
 			{
 				NS_ASSERT_MSG (rntiIt != m_rlcAttached.end (), "could not find RNTI" << rnti);

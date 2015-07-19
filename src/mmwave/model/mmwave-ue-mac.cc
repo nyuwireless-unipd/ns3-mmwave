@@ -6,6 +6,7 @@
  */
 
 #include "mmwave-ue-mac.h"
+#include "mmwave-phy-sap.h"
 #include <ns3/log.h>
 
 namespace ns3
@@ -114,9 +115,9 @@ UeMemberLteMacSapProvider::ReportBufferStatus (ReportBufferStatusParameters para
 }
 
 
+class MmWaveUePhySapUser;
 
-
-class MacUeMemberPhySapUser : public MmWavePhySapUser
+class MacUeMemberPhySapUser : public MmWaveUePhySapUser
 {
 public:
 	MacUeMemberPhySapUser (MmWaveUeMac* mac);
@@ -126,9 +127,6 @@ public:
 	virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg);
 
 	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
-
-	virtual void CqiReport (DlCqiInfo cqi);
-	virtual void ReceiveRachPreamble (uint32_t raId);
 
 private:
 	MmWaveUeMac* m_mac;
@@ -157,17 +155,6 @@ MacUeMemberPhySapUser::SubframeIndication (uint32_t frameNo, uint32_t subframeNo
 	m_mac->DoSubframeIndication(frameNo, subframeNo, slotNo);
 }
 
-void
-MacUeMemberPhySapUser::CqiReport (DlCqiInfo cqi)
-{
-
-}
-
-void
-MacUeMemberPhySapUser::ReceiveRachPreamble (uint32_t raId)
-{
-
-}
 //-----------------------------------------------------------------------
 
 TypeId
@@ -367,9 +354,14 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (macSubheaders[ipdu].m_lcid);
 			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid");
 			Ptr<Packet> rlcPdu;
-			if (p->GetSize () < (uint32_t)macSubheaders[ipdu].m_size)
+			if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
 			{
-				NS_LOG_DEBUG ("RLC PDU size less than what is specified in MAC header (actual= " \
+				NS_LOG_ERROR ("Packet size less than specified in MAC header (actual= " \
+				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+			}
+			else if ((p->GetSize ()-currPos) > (uint32_t)macSubheaders[ipdu].m_size)
+			{
+				NS_LOG_DEBUG ("Fragmenting MAC PDU (packet size greater than specified in MAC header (actual= " \
 				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
 				rlcPdu = p->CreateFragment (currPos, p->GetSize ());
 				currPos += p->GetSize ();
@@ -377,7 +369,7 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			else
 			{
 				rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
-				currPos += macSubheaders[ipdu].m_size;
+				currPos += (uint32_t)macSubheaders[ipdu].m_size;
 			}
 			it->second.macSapUser->ReceivePdu (rlcPdu);
 		}
@@ -614,14 +606,14 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 	}
 }
 
-MmWavePhySapUser*
-MmWaveUeMac::GetUePhySapUser ()
+MmWaveUePhySapUser*
+MmWaveUeMac::GetPhySapUser ()
 {
 	return m_phySapUser;
 }
 
 void
-MmWaveUeMac::SetUePhySapProvider (MmWavePhySapProvider* ptr)
+MmWaveUeMac::SetPhySapProvider (MmWavePhySapProvider* ptr)
 {
 	m_phySapProvider = ptr;
 }

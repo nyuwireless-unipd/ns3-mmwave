@@ -28,7 +28,8 @@ public:
 		SIB1, // System Information Block Type 1
 		RACH_PREAMBLE, // Random Access Preamble
 		RAR, // Random Access Response
-		BSR // Buffer Status Report
+		BSR, // Buffer Status Report
+		DL_HARQ // DL HARQ feedback
 	};
 
 	MmWaveControlMessage (void);
