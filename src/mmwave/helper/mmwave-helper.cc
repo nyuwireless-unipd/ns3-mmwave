@@ -5,6 +5,8 @@
 #include <ns3/abort.h>
 #include <ns3/pointer.h>
 #include <iostream>
+#include <string>
+#include <sstream>
 #include "mmwave-helper.h"
 #include <ns3/abort.h>
 #include <ns3/buildings-propagation-loss-model.h>
@@ -498,59 +500,72 @@ MmWaveHelper::GetPhyMacConfigurable (void)
 void
 MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::string value)
 {
+	std::stringstream ss (value);
+
 	if (paramName.compare("CentreFreq") == 0)
 	{
-		double cf = std::stod (value);
+		double cf;
+		ss >> cf;
 		m_PhyMACCommon->SetAttribute ("CentreFreq", DoubleValue(cf));
 		m_beamforming->SetAttribute ("CentreFreq", DoubleValue(cf));
 	}
 	else if (paramName.compare("SymbolPerSlot") == 0)
 	{
-		uint32_t symNum = std::stoi (value);
+		uint32_t symNum;
+		std::stringstream ss (value);
+		ss >> symNum;
 		m_PhyMACCommon->SetAttribute ("SymbolPerSlot", UintegerValue(symNum));
 
 	}
 	else if (paramName.compare("SymbolLength") == 0)
 	{
-		double prd = std::stod (value);
+		double prd;
+		ss >> prd;
 		m_PhyMACCommon->SetAttribute ("SymbolPeriod", DoubleValue(prd));
 	}
 	else if (paramName.compare("SlotsPerSubframe") == 0)
 	{
-		uint32_t slt = std::stoi (value);
+		uint32_t slt;
+		ss >> slt;
 		m_PhyMACCommon->SetAttribute ("SlotsPerSubframe", UintegerValue(slt));
 	}
 	else if (paramName.compare("SubframePerFrame") == 0)
 	{
-		uint32_t sf = std::stoi (value);
+		uint32_t sf;
+		ss >> sf;
 		m_PhyMACCommon->SetAttribute ("SubframePerFrame", UintegerValue(sf));
 	}
 	else if (paramName.compare("SubcarriersPerSubband") == 0)
 	{
-		uint32_t sc = std::stoi (value);
+		uint32_t sc;
+		ss >> sc;
 		m_PhyMACCommon->SetAttribute ("SubcarriersPerChunk", UintegerValue(sc));
 	}
 	else if (paramName.compare("SubbandPerRB") == 0)
 	{
-		uint32_t sb = std::stoi (value);
+		uint32_t sb;
+		ss >> sb;
 		m_PhyMACCommon->SetAttribute ("ChunkPerRB", UintegerValue(sb));
 		m_beamforming->SetAttribute ("NumSubbandPerRB", UintegerValue(sb));
 	}
 	else if (paramName.compare("SubbandWidth") == 0)
 	{
-		double w = std::stod (value);
+		double w;
+		ss >> w;
 		m_PhyMACCommon->SetAttribute ("ChunkWidth", DoubleValue(w));
 		m_beamforming->SetAttribute ("ChunkWidth", DoubleValue(w));
 	}
 	else if (paramName.compare("NumResourceBlock") == 0)
 	{
-		uint32_t rb = std::stoi (value);
+		uint32_t rb;
+		ss >> rb;
 		m_PhyMACCommon->SetAttribute ("ResourceBlockNum", UintegerValue(rb));
 		m_beamforming->SetAttribute ("NumResourceBlocks", UintegerValue(rb));
 	}
 	else if (paramName.compare("NumReferenceSymbols") == 0)
 	{
-		uint32_t ref = std::stoi (value);
+		uint32_t ref;
+		ss >> ref;
 		m_PhyMACCommon->SetAttribute ("NumReferenceSymbols", UintegerValue(ref));
 
 	}
