@@ -206,11 +206,13 @@ MmWaveEnbPhy::StartFrame (void)
 
 	Ptr<MmWaveMibMessage> mibMsg = Create<MmWaveMibMessage> ();
 	mibMsg->SetMib(mib);
+	/*
 	if (m_controlMessageQueue.empty())
 	{
 		std::list<Ptr<MmWaveControlMessage> > l;
 		m_controlMessageQueue.push_back (l);
 	}
+	*/
 	m_controlMessageQueue.at (0).push_back (mibMsg);
 
 	StartSubFrame();
