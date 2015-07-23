@@ -612,6 +612,15 @@ MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 void
 MmWaveUePhy::SendDataChannels (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time duration, uint8_t slotInd)
 {
+
+	Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+	/* set beamforming vector;
+	 * for UE, you can choose 16 antenna with 0-7 sectors, or 4 antenna with 0-3 sectors
+	 * input is (sector, antenna number)
+	 *
+	 * */
+	antennaArray->SetSector (3,16);
+
 	m_downlinkSpectrumPhy->StartTxDataFrames (pb, ctrlMsg, duration, slotInd);
 }
 
@@ -798,6 +807,12 @@ void
 MmWaveUePhy::SetPhySapUser (MmWaveUePhySapUser* ptr)
 {
 	m_phySapUser = ptr;
+}
+
+void
+MmWaveUePhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
+{
+  m_harqPhyModule = harq;
 }
 
 }

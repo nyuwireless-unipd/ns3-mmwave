@@ -15,6 +15,7 @@
 #include <map>
 #include <ns3/lte-ue-phy-sap.h>
 #include <ns3/lte-ue-cphy-sap.h>
+#include <ns3/mmwave-harq-phy.h>
 
 
 namespace ns3{
@@ -91,6 +92,9 @@ public:
 
 	void SetPhySapUser (MmWaveUePhySapUser* ptr);
 
+	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
+
+
 private:
 	void DoReset ();
 	void DoStartCellSearch (uint16_t dlEarfcn);
@@ -120,21 +124,21 @@ private:
 	uint32_t m_nrFrames;
 	uint32_t m_numRbg;
 
-  Time m_wbCqiPeriod; /**< Wideband Periodic CQI: 2, 5, 10, 16, 20, 32, 40, 64, 80 or 160 ms */
-  Time m_wbCqiLast;
+	Time m_wbCqiPeriod; /**< Wideband Periodic CQI: 2, 5, 10, 16, 20, 32, 40, 64, 80 or 160 ms */
+	Time m_wbCqiLast;
 
 	SlotAllocInfo::TddMode m_prevSlotDir;
 
 	SfAllocationInfo m_currSfAllocInfo;
-  std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB transmissions
+	std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB transmissions
 	bool m_ulGrant; 	// true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
 	uint8_t m_pucchSlotInd;
 	bool m_sfAllocInfoUpdated;
 	Time m_ctrlPeriod;
 	Time m_dataPeriod;	// data period length in microseconds
 
-  bool m_dlConfigured;
-  bool m_ulConfigured;
+	bool m_dlConfigured;
+	bool m_ulConfigured;
 
 	TracedCallback< uint64_t, SpectrumValue&, SpectrumValue& > m_reportCurrentCellRsrpSinrTrace;
 
@@ -144,6 +148,8 @@ private:
 
 	bool m_receptionEnabled;
 	uint16_t m_rnti;
+	Ptr<MmWaveHarqPhy> m_harqPhyModule;
+
 
 
 };

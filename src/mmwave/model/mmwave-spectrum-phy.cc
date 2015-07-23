@@ -517,6 +517,8 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 		txParams->cellId = m_cellId;
 		txParams->ctrlMsgList = ctrlMsgList;
 		txParams->slotInd = slotInd;
+		txParams->txAntenna = m_anetnna;
+
 		NS_LOG_DEBUG ("ctrlMsgList.size () == " << txParams->ctrlMsgList.size ());
 
 		/* This section is used for trace */
@@ -582,6 +584,7 @@ MmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> >
 		txParams->cellId = m_cellId;
 		txParams->pss = true;
 		txParams->ctrlMsgList = ctrlMsgList;
+		txParams->txAntenna = m_anetnna;
 		m_channel->StartTx (txParams);
 		Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
 	}
@@ -627,6 +630,12 @@ MmWaveSpectrumPhy::UpdateSinrPerceived (const SpectrumValue& sinr)
 {
 	NS_LOG_FUNCTION (this << sinr);
 	m_sinrPerceived = sinr;
+}
+
+void
+MmWaveSpectrumPhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
+{
+  m_harqPhyModule = harq;
 }
 
 

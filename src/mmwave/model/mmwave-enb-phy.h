@@ -15,6 +15,7 @@
 #include "mmwave-mac.h"
 #include <ns3/lte-enb-phy-sap.h>
 #include <ns3/lte-enb-cphy-sap.h>
+#include <ns3/mmwave-harq-phy.h>
 
 namespace ns3{
 
@@ -85,6 +86,8 @@ public:
 
 	void SetPhySapUser (MmWaveEnbPhySapUser* ptr);
 
+	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
+
 private:
 
 	bool AddUePhy (uint16_t rnti);
@@ -127,8 +130,9 @@ private:
 	LteRrcSap::SystemInformationBlockType1 m_sib1;
 	std::set <uint16_t> m_ueAttachedRnti;
 
-  std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB receptions
+	std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB receptions
 	std::vector< std::vector< Ptr<PacketBurst> > > m_packetBurstQueue;
+	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 
 };
 

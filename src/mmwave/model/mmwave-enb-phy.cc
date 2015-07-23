@@ -558,6 +558,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 		antennaArray->ChangeToOmniTx ();
 	}
 
+	/*
 	if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())
 	{ // update beamforming vectors (currently supports 1 user only)
 		std::map<uint16_t, std::vector<unsigned> >::iterator ueRbIt = slotInfo.m_ueRbMap.begin();
@@ -575,6 +576,17 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 				break;
 			}
 		}
+	}
+	*/
+	if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())
+	{
+		Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+		/* set beamforming vector;
+		 * for ENB, you can choose 64 antenna with 0-15 sectors, or 4 antenna with 0-3 sectors;
+		 * input is (sector, antenna number)
+		 *
+		 * */
+		antennaArray->SetSector (0,64);
 	}
 
 	std::list<Ptr<MmWaveControlMessage> > ctrlMsg;
@@ -775,5 +787,12 @@ MmWaveEnbPhy::SetPhySapUser (MmWaveEnbPhySapUser* ptr)
 {
 	m_phySapUser = ptr;
 }
+
+void
+MmWaveEnbPhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
+{
+  m_harqPhyModule = harq;
+}
+
 
 }

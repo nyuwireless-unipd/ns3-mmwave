@@ -59,6 +59,7 @@ main (int argc, char *argv[])
 
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
+
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator(enbPositionAlloc);
@@ -68,6 +69,7 @@ main (int argc, char *argv[])
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
   uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
+
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
@@ -87,7 +89,7 @@ main (int argc, char *argv[])
 
 
 
-  Simulator::Stop (Seconds (0.3));
+  Simulator::Stop (Seconds (0.03));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
