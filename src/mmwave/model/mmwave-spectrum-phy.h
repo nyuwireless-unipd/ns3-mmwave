@@ -27,12 +27,7 @@
 #include "ns3/mmwave-beamforming.h"
 #include "mmwave-interference.h"
 #include "mmwave-control-messages.h"
-<<<<<<< HEAD
 #include "mmwave-harq-phy.h"
-=======
-#include <ns3/mmwave-harq-phy.h>
-
->>>>>>> 0089c2076d4cc0764f29aa538c0a9c63b8d9113a
 
 namespace ns3{
 
