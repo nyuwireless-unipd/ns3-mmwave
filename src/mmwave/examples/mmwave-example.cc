@@ -89,7 +89,7 @@ main (int argc, char *argv[])
 
 
 
-  Simulator::Stop (Seconds (0.3));
+  Simulator::Stop (Seconds (0.03));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;

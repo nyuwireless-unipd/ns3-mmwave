@@ -47,6 +47,7 @@ main (int argc, char *argv[])
 //	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
 //	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
 //	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
+<<<<<<< HEAD
 //	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_DEBUG);
@@ -55,6 +56,8 @@ main (int argc, char *argv[])
 
 //	LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
 //	LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
+=======
+>>>>>>> 0089c2076d4cc0764f29aa538c0a9c63b8d9113a
 	//LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
 	//LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
@@ -64,15 +67,19 @@ main (int argc, char *argv[])
 
 
   uint16_t numberOfNodes = 1;
+<<<<<<< HEAD
   double simTime = 0.30;
   double distance = 80.0;
   double interPacketInterval = 1000;
+=======
+  double simTime = 0.3;
+  double interPacketInterval = 10;
+>>>>>>> 0089c2076d4cc0764f29aa538c0a9c63b8d9113a
 
   // Command line arguments
   CommandLine cmd;
   cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", numberOfNodes);
   cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
-  cmd.AddValue("distance", "Distance between eNBs [m]", distance);
   cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
   cmd.Parse(argc, argv);
 
@@ -117,12 +124,17 @@ main (int argc, char *argv[])
   enbNodes.Create(numberOfNodes);
   ueNodes.Create(numberOfNodes);
 
+<<<<<<< HEAD
+=======
+  // Install Mobility Model
+>>>>>>> 0089c2076d4cc0764f29aa538c0a9c63b8d9113a
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator(enbPositionAlloc);
   enbmobility.Install (enbNodes);
+<<<<<<< HEAD
 //  BuildingsHelper::Install (enbNodes);
 
   MobilityHelper uemobility;
@@ -132,6 +144,15 @@ main (int argc, char *argv[])
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
 //  BuildingsHelper::Install (ueNodes);
+=======
+
+  MobilityHelper uemobility;
+  Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
+  uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
+  uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  uemobility.SetPositionAllocator(uePositionAlloc);
+  uemobility.Install (ueNodes);
+>>>>>>> 0089c2076d4cc0764f29aa538c0a9c63b8d9113a
 
   // Install mmWave Devices to the nodes
   NetDeviceContainer enbmmWaveDevs = mmwaveHelper->InstallEnbDevice (enbNodes);

@@ -27,7 +27,12 @@
 #include "ns3/mmwave-beamforming.h"
 #include "mmwave-interference.h"
 #include "mmwave-control-messages.h"
+<<<<<<< HEAD
 #include "mmwave-harq-phy.h"
+=======
+#include <ns3/mmwave-harq-phy.h>
+
+>>>>>>> 0089c2076d4cc0764f29aa538c0a9c63b8d9113a
 
 namespace ns3{
 
@@ -73,7 +78,7 @@ public:
 	Ptr<AntennaModel> GetRxAntenna ();
 	void SetAntenna (Ptr<AntennaModel> a);
 
-  void SetState (State newState);
+	void SetState (State newState);
 
 	void SetNoisePowerSpectralDensity (Ptr<const SpectrumValue> noisePsd);
 	void SetTxPowerSpectralDensity (Ptr<SpectrumValue> TxPsd);
@@ -102,7 +107,7 @@ public:
 
 
 private:
-  void ChangeState (State newState);
+	void ChangeState (State newState);
 	void EndTx ();
 	void EndRxData ();
 	void EndRxCtrl ();
@@ -115,10 +120,10 @@ private:
 	Ptr<SpectrumValue> m_txPsd;
 	//Ptr<PacketBurst> m_txPacketBurst;
 	std::list<Ptr<PacketBurst> > m_rxPacketBurstList;
-  std::list<Ptr<MmWaveControlMessage> > m_rxControlMessageList;
+	std::list<Ptr<MmWaveControlMessage> > m_rxControlMessageList;
 
-  Time m_firstRxStart;
-  Time m_firstRxDuration;
+	Time m_firstRxStart;
+	Time m_firstRxDuration;
 
 	Ptr<AntennaModel> m_anetnna;
 
@@ -126,7 +131,7 @@ private:
 
 	State m_state;
 
-  MmWavePhyRxCtrlEndOkCallback    m_phyRxCtrlEndOkCallback;
+	MmWavePhyRxCtrlEndOkCallback    m_phyRxCtrlEndOkCallback;
 	MmWavePhyRxDataEndOkCallback m_phyRxDataEndOkCallback;
 
 	TracedCallback<EnbPhyPacketCountParameter> m_reportEnbPacketCount;
