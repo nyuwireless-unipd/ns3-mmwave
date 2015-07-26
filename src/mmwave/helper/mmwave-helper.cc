@@ -90,7 +90,9 @@ MmWaveHelper::DoInitialize()
 	NS_LOG_FUNCTION (this);
 
 	m_channel = m_channelFactory.Create<SpectrumChannel> ();
-	m_beamforming = CreateObject<mmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+	//m_beamforming = CreateObject<mmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+	m_beamforming = CreateObject<mmWaveChannelMatrix> ();
+
 	m_channel->AddSpectrumPropagationLossModel (m_beamforming);
 
 	m_PhyMACCommon = CreateObject <MmWavePhyMacCommon> () ;
@@ -185,6 +187,11 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	Ptr<MmWaveSpectrumPhy> dlPhy = CreateObject<MmWaveSpectrumPhy> ();
 
 	Ptr<MmWaveUePhy> phy = CreateObject<MmWaveUePhy> (dlPhy, ulPhy);
+
+	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_PhyMACCommon->GetNumHarqProcess ());
+	dlPhy->SetHarqPhyModule (harq);
+	ulPhy->SetHarqPhyModule (harq);
+	phy->SetHarqPhyModule (harq);
 
 	/* Do not do this here. Do it during registration with the BS
 	 * phy->SetCofigurationParameters(m_PhyMACCommon);*/
@@ -294,6 +301,11 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	Ptr<MmWaveSpectrumPhy> dlPhy = CreateObject<MmWaveSpectrumPhy> ();
 
 	Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
+
+	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_PhyMACCommon->GetNumHarqProcess ());
+	dlPhy->SetHarqPhyModule (harq);
+	ulPhy->SetHarqPhyModule (harq);
+	phy->SetHarqPhyModule (harq);
 
 	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
   pData->AddCallback (MakeCallback (&MmWaveEnbPhy::GenerateDataCqiReport, phy));
@@ -515,7 +527,6 @@ MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::stri
 		std::stringstream ss (value);
 		ss >> symNum;
 		m_PhyMACCommon->SetAttribute ("SymbolPerSlot", UintegerValue(symNum));
-
 	}
 	else if (paramName.compare("SymbolLength") == 0)
 	{

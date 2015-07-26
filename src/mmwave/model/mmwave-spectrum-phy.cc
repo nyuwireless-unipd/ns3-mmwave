@@ -365,31 +365,33 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
 			{
 				if(m_state == RX_CTRL)
 				{
-					NS_FATAL_ERROR ("Already receiving control data from serving cell");
+					Ptr<MmWaveUeNetDevice> ueRx =
+									DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+					if (ueRx)
+					{
+						NS_FATAL_ERROR ("UE already receiving control data from serving cell");
+					}
+					NS_ASSERT ((m_firstRxStart == Simulator::Now ())
+					           && (m_firstRxDuration == params->duration));
 				}
 				NS_LOG_LOGIC (this << " synchronized with this signal (cellId=" << cellId << ")");
 				if (m_state == IDLE)
 				{
 					// first transmission, i.e., we're IDLE and we start RX
 					NS_ASSERT (m_rxControlMessageList.empty ());
-//					m_firstRxStart = Simulator::Now ();
-//					m_firstRxDuration = params->duration;
+					m_firstRxStart = Simulator::Now ();
+					m_firstRxDuration = params->duration;
 					NS_LOG_LOGIC (this << " scheduling EndRx with delay " << params->duration);
 					// store the DCIs
 					m_rxControlMessageList = dlCtrlRxParams->ctrlMsgList;
 					Simulator::Schedule (params->duration, &MmWaveSpectrumPhy::EndRxCtrl, this);
 					ChangeState (RX_CTRL);
 				}
-				else if (m_state == RX_CTRL)
+				else
 				{
-					NS_FATAL_ERROR ("Already receiving control period");
-					// sanity check: if there are multiple RX events, they
-					// should occur at the same time and have the same
-					// duration, otherwise the interference calculation
-					// won't be correct
-//					NS_ASSERT ((m_firstRxStart == Simulator::Now ())
-//					           && (m_firstRxDuration == params->duration));
+					m_rxControlMessageList.insert (m_rxControlMessageList.end (), dlCtrlRxParams->ctrlMsgList.begin (), dlCtrlRxParams->ctrlMsgList.end ());
 				}
+
 			}
 			break;
 	}
@@ -410,9 +412,9 @@ MmWaveSpectrumPhy::EndRxData ()
 	expectedTbs_t::iterator itTb = m_expectedTbs.begin ();
 	while (itTb != m_expectedTbs.end ())
 	{
-        TbStats_t tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
-        								(*itTb).second.rbBitmap, (*itTb).second.size, (*itTb).second.m_mcs);
-        (*itTb).second.corrupt = m_random->GetValue () > tbStats.tbler ? false : true;
+		TbStats_t tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
+		                                                                  (*itTb).second.rbBitmap, (*itTb).second.size, (*itTb).second.m_mcs);
+		(*itTb).second.corrupt = m_random->GetValue () > tbStats.tbler ? false : true;
 		itTb++;
 	}
 
@@ -457,7 +459,8 @@ MmWaveSpectrumPhy::EndRxData ()
 			}
 			else
 			{
-				NS_FATAL_ERROR ("End of the tbMap");
+//				NS_FATAL_ERROR ("End of the tbMap");
+				// Packet is for other device
 			}
 		}
 	}
@@ -517,6 +520,8 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 		txParams->cellId = m_cellId;
 		txParams->ctrlMsgList = ctrlMsgList;
 		txParams->slotInd = slotInd;
+		txParams->txAntenna = m_anetnna;
+
 		NS_LOG_DEBUG ("ctrlMsgList.size () == " << txParams->ctrlMsgList.size ());
 
 		/* This section is used for trace */
@@ -582,6 +587,7 @@ MmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> >
 		txParams->cellId = m_cellId;
 		txParams->pss = true;
 		txParams->ctrlMsgList = ctrlMsgList;
+		txParams->txAntenna = m_anetnna;
 		m_channel->StartTx (txParams);
 		Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
 	}
@@ -627,6 +633,12 @@ MmWaveSpectrumPhy::UpdateSinrPerceived (const SpectrumValue& sinr)
 {
 	NS_LOG_FUNCTION (this << sinr);
 	m_sinrPerceived = sinr;
+}
+
+void
+MmWaveSpectrumPhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
+{
+  m_harqPhyModule = harq;
 }
 
 

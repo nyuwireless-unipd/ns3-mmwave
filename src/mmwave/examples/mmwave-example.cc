@@ -20,9 +20,9 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.Parse (argc, argv);
 //  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
 
 //  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
 //  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
@@ -59,6 +59,7 @@ main (int argc, char *argv[])
 
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
+
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator(enbPositionAlloc);
@@ -68,6 +69,7 @@ main (int argc, char *argv[])
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
   uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
+
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);

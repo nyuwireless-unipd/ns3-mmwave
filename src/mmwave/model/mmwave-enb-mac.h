@@ -16,6 +16,9 @@
 
 namespace ns3
 {
+
+typedef std::vector <std::vector < Ptr<PacketBurst> > > DlHarqProcessesBuffer_t;
+
 class MmWaveEnbMac : public Object
 {
 	friend class MmWaveEnbMacMemberEnbCmacSapProvider;
@@ -75,7 +78,7 @@ public:
 	// forwarded from LteMacSapProvider
 	void DoTransmitPdu (LteMacSapProvider::TransmitPduParameters);
 	void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters);
-  void DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi);
+	void DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi);
 
 	void DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
 
@@ -112,9 +115,9 @@ private:
 	void DoReconfigureLc (LteEnbCmacSapProvider::LcInfo lcinfo);
 	void DoReleaseLc (uint16_t  rnti, uint8_t lcid);
 	void UeUpdateConfigurationReq (LteEnbCmacSapProvider::UeConfig params);
-  LteEnbCmacSapProvider::RachConfig DoGetRachConfig ();
-  LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue DoAllocateNcRaPreamble (uint16_t rnti);
-  uint8_t AllocateTbUid ();
+	LteEnbCmacSapProvider::RachConfig DoGetRachConfig ();
+	LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue DoAllocateNcRaPreamble (uint16_t rnti);
+	uint8_t AllocateTbUid ();
 
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
@@ -135,7 +138,7 @@ private:
 
 	std::vector <DlCqiInfo> m_dlCqiReceived;
 	std::vector <MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters> m_ulCqiReceived;
-  std::vector <MacCeElement> m_ulCeReceived; // CE received (BSR up to now)
+	std::vector <MacCeElement> m_ulCeReceived; // CE received (BSR up to now)
 
 	MmWavePhySapProvider* m_phySapProvider;
 	MmWaveEnbPhySapUser* m_phySapUser;
@@ -149,6 +152,7 @@ private:
 
 	std::vector <DlHarqInfo> m_dlHarqInfoListReceived; // DL HARQ feedback received
 	std::vector <UlHarqInfo> m_ulHarqInfoListReceived; // UL HARQ feedback received
+	std::map <uint16_t, DlHarqProcessesBuffer_t> m_miDlHarqProcessesPackets; // Packet under trasmission of the DL HARQ process
 
 };
 

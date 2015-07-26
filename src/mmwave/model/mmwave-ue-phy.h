@@ -15,6 +15,7 @@
 #include <map>
 #include <ns3/lte-ue-phy-sap.h>
 #include <ns3/lte-ue-cphy-sap.h>
+#include <ns3/mmwave-harq-phy.h>
 
 
 namespace ns3{
@@ -91,6 +92,9 @@ public:
 
 	void SetPhySapUser (MmWaveUePhySapUser* ptr);
 
+	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
+
+
 private:
 	void DoReset ();
 	void DoStartCellSearch (uint16_t dlEarfcn);
@@ -130,7 +134,9 @@ private:
 	bool m_ulGrant; 	// true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
 	uint8_t m_pucchSlotInd;
 	bool m_sfAllocInfoUpdated;
-	Time m_ctrlPeriod;
+	Time m_dlCtrlPeriod;
+	Time m_ulCtrlPeriod;
+
 	Time m_dataPeriod;	// data period length in microseconds
 
   bool m_dlConfigured;
@@ -144,6 +150,8 @@ private:
 
 	bool m_receptionEnabled;
 	uint16_t m_rnti;
+	Ptr<MmWaveHarqPhy> m_harqPhyModule;
+
 
 
 };

@@ -27,6 +27,7 @@
 #include "ns3/mmwave-beamforming.h"
 #include "mmwave-interference.h"
 #include "mmwave-control-messages.h"
+#include "mmwave-harq-phy.h"
 
 namespace ns3{
 
@@ -97,6 +98,9 @@ public:
 
 	void AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t m_mcs, std::vector<int> map, bool downlink);
 
+	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
+
+
 private:
   void ChangeState (State newState);
 	void EndTx ();
@@ -133,6 +137,8 @@ private:
 	expectedTbs_t m_expectedTbs;
 
 	Ptr<UniformRandomVariable> m_random;
+
+	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 
 
 

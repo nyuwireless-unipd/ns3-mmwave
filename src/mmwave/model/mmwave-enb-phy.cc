@@ -206,11 +206,13 @@ MmWaveEnbPhy::StartFrame (void)
 
 	Ptr<MmWaveMibMessage> mibMsg = Create<MmWaveMibMessage> ();
 	mibMsg->SetMib(mib);
+	/*
 	if (m_controlMessageQueue.empty())
 	{
 		std::list<Ptr<MmWaveControlMessage> > l;
 		m_controlMessageQueue.push_back (l);
 	}
+	*/
 	m_controlMessageQueue.at (0).push_back (mibMsg);
 
 	StartSubFrame();
@@ -368,7 +370,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 							TbAllocInfo tbAllocInfo;
 							tbAllocInfo.m_rnti = dciInfo.m_rnti;
 							tbAllocInfo.m_tbInfo = *tbIt;
-							for (unsigned irb = tbIt->m_rbStart; irb < tbIt->m_rbLen; irb++) // assumes res alloc type 0
+							for (unsigned irb = tbIt->m_rbStart; irb < (tbIt->m_rbStart + tbIt->m_rbLen); irb++) // assumes res alloc type 0
 							{
 								tbAllocInfo.m_rbMap.push_back (irb);
 							}
@@ -499,7 +501,7 @@ MmWaveEnbPhy::StartSubFrame (void)
   		NS_LOG_DEBUG ("UE " << tbAllocInfo.m_rnti << " TBS " << tbInfoElem.m_tbSize << " MCS " << tbInfoElem.m_mcs << \
   		              " RBs " << tbAllocInfo.m_rbMap.front () << "-" <<  tbAllocInfo.m_rbMap.back ());
   		std::vector<int> bwChunkMap;
-  		for(unsigned irb = 0; irb < m_phyMacConfig->GetNumRb (); irb++)
+  		for(unsigned irb = tbAllocInfo.m_tbInfo.m_rbStart; irb < (tbAllocInfo.m_tbInfo.m_rbStart + tbAllocInfo.m_tbInfo.m_rbLen); irb++)
   		{
   			for(unsigned ichunk = 0; ichunk < m_phyMacConfig->GetNumChunkPerRb (); ichunk++)
   			{
@@ -508,8 +510,16 @@ MmWaveEnbPhy::StartSubFrame (void)
   		}
   		m_downlinkSpectrumPhy->AddExpectedTb(tbAllocInfo.m_rnti, tbInfoElem.m_tbSize, tbInfoElem.m_mcs, bwChunkMap, true);
   	}
-		NS_LOG_DEBUG ("ENB RXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
-		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
+  	if (slotInd == 2)
+  	{
+  		NS_LOG_DEBUG ("ENB RXing CTRL+DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
+  	}
+  	else
+  	{
+  		NS_LOG_DEBUG ("ENB RXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
+  	}
   }
   else
   {
@@ -556,6 +566,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 		antennaArray->ChangeToOmniTx ();
 	}
 
+	/*
 	if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())
 	{ // update beamforming vectors (currently supports 1 user only)
 		std::map<uint16_t, std::vector<unsigned> >::iterator ueRbIt = slotInfo.m_ueRbMap.begin();
@@ -573,6 +584,17 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 				break;
 			}
 		}
+	}
+	*/
+	if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())
+	{
+		Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+		/* set beamforming vector;
+		 * for ENB, you can choose 64 antenna with 0-15 sectors, or 4 antenna with 0-3 sectors;
+		 * input is (sector, antenna number)
+		 *
+		 * */
+		antennaArray->SetSector (0,64);
 	}
 
 	std::list<Ptr<MmWaveControlMessage> > ctrlMsg;
@@ -773,5 +795,12 @@ MmWaveEnbPhy::SetPhySapUser (MmWaveEnbPhySapUser* ptr)
 {
 	m_phySapUser = ptr;
 }
+
+void
+MmWaveEnbPhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
+{
+  m_harqPhyModule = harq;
+}
+
 
 }

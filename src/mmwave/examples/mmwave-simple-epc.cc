@@ -47,17 +47,26 @@ main (int argc, char *argv[])
 //	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
 //	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
 //	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("mmWaveInterference", LOG_LEVEL_LOGIC);
+//	LogComponentEnable ("mmWaveSpectrumValueHelper", LOG_LEVEL_LOGIC);
+
+//	LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+//	LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
+	//LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+	//LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-	LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-	LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
+	//LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
+	  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
 
 
   uint16_t numberOfNodes = 1;
-  double simTime = 0.05;
-  double distance = 200.0;
-  double interPacketInterval = 10;
+  double simTime = 0.30;
+  double distance = 80.0;
+  double interPacketInterval = 1000;
 
   // Command line arguments
   CommandLine cmd;
@@ -108,17 +117,21 @@ main (int argc, char *argv[])
   enbNodes.Create(numberOfNodes);
   ueNodes.Create(numberOfNodes);
 
-  // Install Mobility Model
-  Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
-  for (uint16_t i = 0; i < numberOfNodes; i++)
-    {
-      positionAlloc->Add (Vector(distance * i, 0, 0));
-    }
-  MobilityHelper mobility;
-  mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-  mobility.SetPositionAllocator(positionAlloc);
-  mobility.Install(enbNodes);
-  mobility.Install(ueNodes);
+  Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
+  enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
+  MobilityHelper enbmobility;
+  enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  enbmobility.SetPositionAllocator(enbPositionAlloc);
+  enbmobility.Install (enbNodes);
+//  BuildingsHelper::Install (enbNodes);
+
+  MobilityHelper uemobility;
+  Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
+  uePositionAlloc->Add (Vector (distance, 0.0, 0.0));
+  uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  uemobility.SetPositionAllocator(uePositionAlloc);
+  uemobility.Install (ueNodes);
+//  BuildingsHelper::Install (ueNodes);
 
   // Install mmWave Devices to the nodes
   NetDeviceContainer enbmmWaveDevs = mmwaveHelper->InstallEnbDevice (enbNodes);
@@ -155,30 +168,32 @@ main (int argc, char *argv[])
       PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), otherPort));
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
       serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
-      serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
+//      serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
 
       UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
-      dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+//      dlClient.SetAttribute ("PacketSize", UintegerValue (10000));
+      dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
       dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
       UdpClientHelper ulClient (remoteHostAddr, ulPort);
-      ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+//      ulClient.SetAttribute ("PacketSize", UintegerValue (10000));
+      ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
       UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
-      client.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+      client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
       client.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
       clientApps.Add (dlClient.Install (remoteHost));
       clientApps.Add (ulClient.Install (ueNodes.Get(u)));
-      if (u+1 < ueNodes.GetN ())
+      /*if (u+1 < ueNodes.GetN ())
         {
           clientApps.Add (client.Install (ueNodes.Get(u+1)));
         }
       else
         {
           clientApps.Add (client.Install (ueNodes.Get(0)));
-        }
+        }*/
     }
   serverApps.Start (Seconds (0.01));
   clientApps.Start (Seconds (0.01));

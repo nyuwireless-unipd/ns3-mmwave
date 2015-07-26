@@ -941,7 +941,7 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 			unsigned int rbPerFlow = m_phyMacConfig->GetNumRb () / nflows;
 			if (rbPerFlow == 0)
 			{
-				rbPerFlow = 1;  // at least 3 rbg per flow (till available resource) to ensure TxOpportunity >= 7 bytes
+				rbPerFlow = 1;  // at least 1 rbg per flow (till available resource) to ensure TxOpportunity >= 7 bytes
 			}
 			uint16_t rbAllocated = 0;
 
@@ -1023,7 +1023,7 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 
 				bool allocated = false;
 				NS_LOG_INFO (this << " RB Allocated " << rbAllocated << " rbPerFlow " << rbPerFlow << " flows " << nflows);
-				while ((!allocated)&&((rbAllocated + rbPerFlow - numRb) < 1) && (rbPerFlow != 0))
+				while ((!allocated)&&((numRb - rbAllocated + rbPerFlow ) > 1) && (rbPerFlow != 0))
 				{
 					// check availability
 					bool free = true;

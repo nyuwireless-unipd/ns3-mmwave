@@ -29,6 +29,7 @@
 #include <ns3/boolean.h>
 #include <ns3/epc-helper.h>
 #include <ns3/lte-ffr-algorithm.h>
+#include <ns3/mmwave-channel-matrix.h>
 
 
 
@@ -82,7 +83,9 @@ private:
 	void EnableTransportBlockTrace ();
 
 	Ptr<SpectrumChannel> m_channel;
-	Ptr<mmWaveBeamforming> m_beamforming;
+	//Ptr<mmWaveBeamforming> m_beamforming;
+	Ptr<mmWaveChannelMatrix> m_beamforming;
+
 
 	Ptr<Object> m_pathlossModel;
 

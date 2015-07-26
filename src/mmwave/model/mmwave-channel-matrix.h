@@ -11,6 +11,7 @@
 #include <ns3/net-device.h>
 #include <map>
 #include <ns3/angles.h>
+#include <ns3/net-device-container.h>
 
 
 
@@ -33,9 +34,9 @@ struct ChannelParams : public SimpleRefCount<ChannelParams>
 
 struct mmWaveBeamFormingParams : public SimpleRefCount<mmWaveBeamFormingParams>
 {
-	complexVector_t 	m_txW; // tx antenna weights
-	complexVector_t 	m_rxW; // rx antenna weights
-	ChannelParams  		m_channelParams;
+	complexVector_t 		m_txW; // tx antenna weights
+	complexVector_t 		m_rxW; // rx antenna weights
+	Ptr<ChannelParams>  	m_channelParams;
 };
 
 
@@ -49,6 +50,8 @@ public:
 	static TypeId GetTypeId (void);
 	void DoDispose ();
 	void ConnectDevices (Ptr<NetDevice> dev1, Ptr<NetDevice> dev2);
+	void Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
+
 
 private:
 
@@ -63,7 +66,12 @@ private:
 	complexVector_t CalcBeamformingVector (complex2DVector_t SpatialMatrix) const;
 
 	mutable std::map< key_t, int > m_connectedPair;
-	double m_antennaSeperation;
+	mutable std::map< key_t, Ptr<ChannelParams> > m_channelMatrixMap;
+	double m_antennaSeparation; //the ratio of the distance between 2 antennas over wave length
+	double m_subBW;
+	double m_centreF;
+	uint32_t m_numRB;
+	uint32_t m_numSBPerRB;
 
 };
 
