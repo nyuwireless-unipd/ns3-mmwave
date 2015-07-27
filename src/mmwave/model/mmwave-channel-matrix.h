@@ -12,6 +12,7 @@
 #include <map>
 #include <ns3/angles.h>
 #include <ns3/net-device-container.h>
+#include <ns3/random-variable-stream.h>
 
 
 
@@ -30,6 +31,12 @@ struct ChannelParams : public SimpleRefCount<ChannelParams>
 {
 	complex2DVector_t 	m_txSpatialMatrix; // tx side spatial matrix
 	complex2DVector_t 	m_rxSpatialMatrix; // rx side spatial matrix
+	doubleVector_t 		m_powerFraction; // store subpath power fraction
+	doubleVector_t 		m_delaySpread; // store delay spread
+	doubleVector_t 		m_doppler; // store doppler
+
+
+
 };
 
 struct mmWaveBeamFormingParams : public SimpleRefCount<mmWaveBeamFormingParams>
@@ -59,11 +66,11 @@ private:
 														Ptr<const MobilityModel> a,
 														Ptr<const MobilityModel> b) const;
 
-	complex2DVector_t GenSpatialMatrix (Angles angle, uint8_t* antennaNum) const;
+	complex2DVector_t GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const;
 	complexVector_t GenSinglePath (double hAngle, double vAngle, uint8_t* antennaNum) const;
 	doubleVector_t GetBfGain (Ptr<mmWaveBeamFormingParams> bfParams, double speed) const;
 	Ptr<SpectrumValue> GetPsd (Ptr<const SpectrumValue> rxPsd, doubleVector_t gain) const;
-	complexVector_t CalcBeamformingVector (complex2DVector_t SpatialMatrix) const;
+	//complexVector_t CalcBeamformingVector (complex2DVector_t SpatialMatrix) const;
 
 	mutable std::map< key_t, int > m_connectedPair;
 	mutable std::map< key_t, Ptr<ChannelParams> > m_channelMatrixMap;
@@ -72,6 +79,9 @@ private:
 	double m_centreF;
 	uint32_t m_numRB;
 	uint32_t m_numSBPerRB;
+	Ptr<UniformRandomVariable> m_uniformRv;
+	Ptr<ExponentialRandomVariable> m_expRv;
+
 
 };
 

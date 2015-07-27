@@ -83,16 +83,33 @@ AntennaArrayModel::GetTypeId ()
 double
 AntennaArrayModel::GetGainDb (Angles a)
 {
+	NS_ASSERT (m_minAngle<=m_maxAngle);
 	double gain;
-	if(a.phi >= m_minAngle && a.phi <= m_maxAngle)
+	if (m_maxAngle <= M_PI)
 	{
-		gain = 0;
+		if(a.phi < m_minAngle || a.phi > m_maxAngle)
+		{
+			gain = -500;
+			NS_LOG_UNCOND ("++++++++++++++++++++++blocked");	}
+		else
+		{
+			gain = 0;
+		}
 	}
 	else
 	{
-		gain = -500;
-		NS_LOG_UNCOND ("++++++++++++++++++++++blocked");
+		double maxAngle = m_maxAngle - 2*M_PI;
+		if(a.phi < m_minAngle && a.phi > maxAngle)
+		{
+			gain = -500;
+			NS_LOG_UNCOND ("++++++++++++++++++++++blocked");	}
+		else
+		{
+			gain = 0;
+		}
+
 	}
+
 	return gain;
 }
 
@@ -171,24 +188,25 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 	{
 		case 64:
 		{
-			if(sector == 0 || sector == 1 || sector == 2 || sector == 3)
+			if(sector == 0 || sector == 1 || sector == 14 || sector == 15)
+			{
+				m_minAngle = -0.5*M_PI;
+				m_maxAngle = 0.5*M_PI;
+			}
+			else if(sector == 2 || sector == 3 || sector == 4 || sector == 5)
 			{
 				m_minAngle = 0;
-				m_maxAngle = M_PI/2;
-			}
-			else if(sector == 4 || sector == 5 || sector == 6 || sector == 7)
-			{
-				m_minAngle = M_PI/2;
 				m_maxAngle = M_PI;
 			}
-			else if(sector == 8 || sector == 9 || sector == 10 || sector == 11)
+			else if(sector == 6 || sector == 7 || sector == 8 || sector == 9)
+			{
+				m_minAngle = 0.5*M_PI;
+				m_maxAngle = 1.5*M_PI;
+			}
+
+			else if(sector == 10 || sector == 11 || sector == 12 || sector == 13)
 			{
 				m_minAngle = -1*M_PI;
-				m_maxAngle = -1*M_PI/2;
-			}
-			else if(sector == 12 || sector == 13 || sector == 14 || sector == 15)
-			{
-				m_minAngle = -1*M_PI/2;
 				m_maxAngle = 0;
 			}
 			else
@@ -210,25 +228,24 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 		}
 		case 16:
 		{
-
-			if(sector == 0 || sector == 1)
+			if(sector == 0 || sector == 7)
+			{
+				m_minAngle = -0.5*M_PI;
+				m_maxAngle = 0.5*M_PI;
+			}
+			else if(sector == 1 || sector == 2)
 			{
 				m_minAngle = 0;
-				m_maxAngle = M_PI/2;
-			}
-			else if(sector == 2 || sector == 3)
-			{
-				m_minAngle = M_PI/2;
 				m_maxAngle = M_PI;
 			}
-			else if(sector == 4 || sector == 5)
+			else if(sector == 3 || sector == 4)
+			{
+				m_minAngle = 0.5*M_PI;
+				m_maxAngle = 1.5*M_PI;
+			}
+			else if(sector == 5 || sector == 6)
 			{
 				m_minAngle = -1*M_PI;
-				m_maxAngle = -1*M_PI/2;
-			}
-			else if(sector == 6 || sector == 7)
-			{
-				m_minAngle = -1*M_PI/2;
 				m_maxAngle = 0;
 			}
 			else
@@ -251,22 +268,22 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 		{
 			if(sector == 0)
 			{
-				m_minAngle = 0;
-				m_maxAngle = M_PI/2;
+				m_minAngle = M_PI;
+				m_maxAngle = 0.5*M_PI;
 			}
 			else if(sector == 1)
 			{
-				m_minAngle = M_PI/2;
+				m_minAngle = 0.5*M_PI;
 				m_maxAngle = M_PI;
 			}
 			else if(sector == 2)
 			{
 				m_minAngle = -1*M_PI;
-				m_maxAngle = -1*M_PI/2;
+				m_maxAngle = -0.5*M_PI;
 			}
 			else if(sector == 3)
 			{
-				m_minAngle = -1*M_PI/2;
+				m_minAngle = -0.5*M_PI;
 				m_maxAngle = 0;
 			}
 			else

@@ -25,13 +25,13 @@ NS_LOG_COMPONENT_DEFINE ("mmWaveChannelMatrix");
 
 NS_OBJECT_ENSURE_REGISTERED (mmWaveChannelMatrix);
 
-static const double PowerSpread[7]  = {0.6598, 0.1466, 0.1100, 0.0733, 0.0051, 0.0029, 0.0022};
-static const double DelaySpread[7]  = {0, 3e-9, 7e-9, 9e-9, 12e-9, 19e-9, 41e-9};
-static const double DopplerShift[7] = {0.4, 0.6, 0.3, 0.8, 0.4, 0.9, 0.5};
+static const double CdfOfClusterNum[4] = {0.480, 0.761, 0.927, 1.0}; //Cdf of cluster number equal {1,2,3,4}
 
 mmWaveChannelMatrix::mmWaveChannelMatrix ()
 	:m_antennaSeparation(0.5)
 {
+	m_uniformRv = CreateObject<UniformRandomVariable> ();
+	m_expRv = CreateObject<ExponentialRandomVariable> ();
 
 }
 
@@ -73,7 +73,6 @@ void
 mmWaveChannelMatrix::DoDispose ()
 {
 	NS_LOG_FUNCTION (this);
-	NS_LOG_INFO (m_subBW<<m_centreF<<m_numRB<<m_numSBPerRB);
 }
 
 void
@@ -176,18 +175,128 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 	{
 		/*make sure txAngles rxAngles exist, i.e., the position of tx and rx cannot be the same*/
 
-		complex2DVector_t txSpatialMatrix = GenSpatialMatrix (txAngles,txAntennaNum);
-		complex2DVector_t rxSpatialMatrix = GenSpatialMatrix (rxAngles,rxAntennaNum);
+		//Generate the cluster number depend on Poisson distribution.
+		double Pref = m_uniformRv->GetValue (0,1);
+		std::vector<uint16_t> cluster;
+		uint16_t clusterNum;
+		if (Pref < CdfOfClusterNum[0])
+		{
+			clusterNum = 1;
+
+		}
+		else if (Pref < CdfOfClusterNum[1])
+		{
+			clusterNum = 2;
+
+		}
+		else if (Pref < CdfOfClusterNum[2])
+		{
+			clusterNum = 3;
+		}
+		else
+		{
+			clusterNum = 4;
+		}
+
+		for (int i = 0; i < clusterNum; i++)
+		{
+			uint16_t subpath = m_uniformRv->GetInteger (1,10);
+			cluster.push_back (subpath);
+		}
+
+		//Generate cluster power fraction for each cluster
+		doubleVector_t clusterPowerFraction;
+		Ptr<NormalRandomVariable> normalRv = CreateObject<NormalRandomVariable> ();
+		for(int i = 0; i < clusterNum; i++)
+		{
+			double u = m_uniformRv->GetValue (0,1);
+			double z = normalRv->GetValue(0,16);
+			//double p = std::pow(u,1.8)*std::pow(10,(-0.1)*z); this is the correct formula, but the result is not convincing
+			double p = std::pow(u,1.8)*std::pow(10,(0.1)*z)/cluster.at (i);
+			clusterPowerFraction.push_back (p);
+		}
+		std::sort (clusterPowerFraction.begin (), clusterPowerFraction.end (),std::greater<double>());
+		doubleVector_t powerFraction;
+		for(int i = 0; i < clusterNum; i++)
+		{
+
+			for (int l = 0; l < cluster.at (i); l++)
+			{
+				powerFraction.push_back (clusterPowerFraction. at (i)*std::pow(10, m_uniformRv->GetValue(0, 0.6)));
+			}
+
+		}
+		//normalize cluster power fraction
+		double powerSum = 0;
+		uint32_t s = powerFraction.size ();
+		for (int j = 0; j< s; j++)
+		{
+			powerSum += powerFraction. at(j);
+		}
+		for (int j = 0; j< s; j++)
+		{
+			powerFraction.at (j) = powerFraction.at (j)/powerSum;
+			NS_LOG_UNCOND (j<<" "<<powerFraction. at (j));
+		}
+
+		doubleVector_t clusterDelay;
+		for (int i = 0; i < clusterNum; i++)
+		{
+			double tao = m_expRv->GetValue (83,300);
+			clusterDelay.push_back (tao);
+		}
+		std::sort (clusterDelay.begin (), clusterDelay.end ());
+		for (int i = 0; i < clusterNum; i++)
+		{
+			if (i == 0)
+			{
+				clusterDelay.at (0) = 0;
+			}
+			else
+			{
+			clusterDelay.at (i) = (clusterDelay.at (i-1)+clusterDelay.at (i)-clusterDelay.at (0)+25)*1e-9;
+			}
+		}
+
+		doubleVector_t subpathDelay;
+		double bandwidth = m_subBW*m_numSBPerRB*m_numRB;
+		for (int i = 0; i < clusterNum; i++)
+		{
+			for (int j = 0; j < cluster.at (i); j++)
+			{
+				subpathDelay.push_back (clusterDelay. at(i)+std::pow(1/bandwidth*j, m_uniformRv->GetValue(0,0.43)+1));
+				NS_LOG_UNCOND ("cluster"<<i<<"subpath"<<j<<":"<<clusterDelay. at(i)+std::pow(1/bandwidth*j, m_uniformRv->GetValue(0,0.43)+1));
+			}
+		}
+
+		doubleVector_t dopplerShift;
+		for (int i = 0; i < subpathDelay.size (); i++)
+		{
+			dopplerShift.push_back(m_uniformRv->GetValue (0,1));
+		}
+
+
+		complex2DVector_t txSpatialMatrix = GenSpatialMatrix (cluster,txAngles,txAntennaNum);
+		complex2DVector_t rxSpatialMatrix = GenSpatialMatrix (cluster,rxAngles,rxAntennaNum);
 		Ptr<ChannelParams> channel = Create<ChannelParams> ();
 
 		channel->m_txSpatialMatrix = txSpatialMatrix;
 		channel->m_rxSpatialMatrix = rxSpatialMatrix;
+		channel->m_powerFraction = powerFraction;
+		channel->m_delaySpread = subpathDelay;
+		channel->m_doppler = dopplerShift;
+
+
 		m_channelMatrixMap.insert(std::make_pair(key,channel));
 
 		key_t reverseKey = std::make_pair(rxDevice,txDevice);
 		Ptr<ChannelParams> reverseChannel = Create<ChannelParams> ();
 		reverseChannel->m_txSpatialMatrix = rxSpatialMatrix;
 		reverseChannel->m_rxSpatialMatrix = txSpatialMatrix;
+		reverseChannel->m_powerFraction = powerFraction;
+		reverseChannel->m_delaySpread = subpathDelay;
+		reverseChannel->m_doppler = dopplerShift;
+
 		m_channelMatrixMap.insert(std::make_pair(reverseKey,reverseChannel));
 
 		bfParams->m_channelParams = channel;
@@ -197,8 +306,9 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 		bfParams->m_channelParams = (*it).second;
 	}
 	//	calculate antenna weights, better method should be implemented
-	complexVector_t txW = txAntennaArray->GetBeamformingVector();
-	complexVector_t rxW = rxAntennaArray->GetBeamformingVector();
+	bfParams->m_txW = txAntennaArray->GetBeamformingVector();
+	bfParams->m_rxW = rxAntennaArray->GetBeamformingVector();
+
 	/*
 	std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
 	if(it1 != m_connectedPair.end ())
@@ -212,16 +322,6 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 		}
 	}
 	*/
-	bfParams->m_txW = txW;
-	bfParams->m_rxW = rxW;
-
-
-	/*
-	Time time = Simulator::Now ();
-	int frame = time.GetMilliSeconds ();
-	int subframe = time.GetMicroSeconds ()/125%8;
-	*/
-
 
 	Vector rxSpeed = b->GetVelocity();
 	Vector txSpeed = a->GetVelocity();
@@ -230,6 +330,8 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 	doubleVector_t gain = GetBfGain(bfParams, relativeSpeed);
 	Ptr<SpectrumValue> bfPsd = GetPsd(rxPsd, gain);
 
+
+	/*loging the beamforming gain for debug*/
 	Values::iterator bfit = bfPsd->ValuesBegin ();
 	Values::iterator rxit = rxPsd->ValuesBegin ();
 	uint32_t subChannel = 0;
@@ -246,19 +348,15 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 	//NS_LOG_UNCOND ("TxAngle("<<txAngles.phi*180/M_PI<<") RxAngle("<<rxAngles.phi*180/M_PI
 	//		<<") Speed["<<relativeSpeed<<"]");
 	//NS_LOG_UNCOND ("Gain("<<10*Log10((*bfPsd)/(*txPsd))<<"dB)");
-	//NS_LOG_UNCOND ("txW"<<bfParams->m_txW.at (4)<<bfParams->m_txW.at (5)<<bfParams->m_txW.at (6)<<bfParams->m_txW.at (7)<<bfParams->m_txW.at (8)<<bfParams->m_txW.at (9));
 	return bfPsd;
 
 
 }
 
+/*
 complexVector_t
 mmWaveChannelMatrix::CalcBeamformingVector(complex2DVector_t spatialMatrix) const
 {
-	/*
-	 *    use power algorithm to calculate beamforming vector
-	 *
-	 * */
 	complexVector_t antennaWeights;
 	uint16_t antennaNum = spatialMatrix.at (0).size ();
 	for (int i = 0; i< antennaNum; i++)
@@ -304,31 +402,36 @@ mmWaveChannelMatrix::CalcBeamformingVector(complex2DVector_t spatialMatrix) cons
 	}
 	return antennaWeights;
 }
+*/
 
 
 complex2DVector_t
-mmWaveChannelMatrix::GenSpatialMatrix (Angles angle, uint8_t* antennaNum) const
+mmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const
 {
 	complex2DVector_t spatialMatrix;
-	// generate the primary cluster
-	Ptr<UniformRandomVariable> rv = CreateObject<UniformRandomVariable> ();
-	//int32_t cluster = rv->GetInteger (5,7);
-	int32_t cluster = 7;
-
-	for(int pathIndex = 0; pathIndex < cluster; pathIndex++)
+	for(int clusterIndex = 0; clusterIndex < cluster.size (); clusterIndex++)
 	{
-		complexVector_t singlePath;
-		if (pathIndex ==0)
+		double azimuthAngle;
+		double verticalAngle;
+		if (clusterIndex == 0)
 		{
-			singlePath = GenSinglePath (angle.phi, angle.theta, antennaNum);
+			//directed cluster
+			azimuthAngle = angle.phi;
+			verticalAngle = angle.theta;
 		}
 		else
 		{
-			double azimuthAngle = rv->GetValue (-1*M_PI,M_PI);
-			singlePath = GenSinglePath (azimuthAngle, angle.theta, antennaNum);
-
+			//reflected cluster
+			azimuthAngle = m_uniformRv->GetValue (-1*M_PI,M_PI);
+			verticalAngle = angle.theta;
 		}
-		spatialMatrix.push_back(singlePath);
+		for(int subpathIndex = 0; subpathIndex < cluster. at (clusterIndex); subpathIndex++)
+		{
+			complexVector_t singlePath;
+			double subpathAngle = m_expRv->GetValue (0.178,0.7)/2;
+			singlePath = GenSinglePath (azimuthAngle+std::pow(-1,subpathIndex)*subpathAngle, verticalAngle, antennaNum);
+			spatialMatrix.push_back(singlePath);
+		}
 	}
 	return spatialMatrix;
 }
@@ -368,14 +471,14 @@ mmWaveChannelMatrix::GetBfGain (Ptr<mmWaveBeamFormingParams> bfParams, double sp
 		{
 			/*
 			 * should not define carrier frequency and bandwidth here*/
-			double f = 27.5e9;
-			double bw = 13.9e6;
+			double fsb = m_centreF - (0.5*m_subBW*m_numSBPerRB*m_numRB) + m_subBW*chunkIndex ;
 			Time time = Simulator::Now ();
 			double t = time.GetSeconds ();
-
-			std::complex<double> delay (cos (2*M_PI*(f+bw*chunkIndex)*DelaySpread[pathIndex]), sin (2*M_PI*(f+bw*chunkIndex)*DelaySpread[pathIndex]));
-			std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
-			std::complex<double> smallScaleFading = sqrt(PowerSpread[pathIndex])*delay*doppler;
+			double w1 = 2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex);
+			double w2 = 2*M_PI*t*speed*bfParams->m_channelParams->m_doppler.at (pathIndex);
+			std::complex<double> delay (cos (w1), sin (w1));
+			std::complex<double> doppler (cos (w2), sin (w2));
+			std::complex<double> smallScaleFading = sqrt(bfParams->m_channelParams->m_powerFraction. at(pathIndex))*delay*doppler;
 
 			NS_LOG_INFO (smallScaleFading);
 
