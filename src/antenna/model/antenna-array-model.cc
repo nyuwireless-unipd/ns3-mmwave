@@ -134,7 +134,6 @@ AntennaArrayModel::SetBeamformingVector (complexVector_t antennaWeights, Ptr<Net
 void
 AntennaArrayModel::ChangeBeamformingVector (Ptr<NetDevice> device)
 {
-	NS_LOG_UNCOND (device);
 	m_omniTx = false;
 	std::map< Ptr<NetDevice>, complexVector_t >::iterator it = m_beamformingVectorMap.find (device);
 	NS_ASSERT_MSG (it != m_beamformingVectorMap.end (), "could not find");

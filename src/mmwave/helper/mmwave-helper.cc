@@ -90,8 +90,8 @@ MmWaveHelper::DoInitialize()
 	NS_LOG_FUNCTION (this);
 
 	m_channel = m_channelFactory.Create<SpectrumChannel> ();
-	//m_beamforming = CreateObject<mmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
-	m_beamforming = CreateObject<mmWaveChannelMatrix> ();
+	m_beamforming = CreateObject<mmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+	//m_beamforming = CreateObject<mmWaveChannelMatrix> ();
 
 	m_channel->AddSpectrumPropagationLossModel (m_beamforming);
 

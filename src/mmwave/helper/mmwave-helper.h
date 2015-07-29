@@ -83,8 +83,8 @@ private:
 	void EnableTransportBlockTrace ();
 
 	Ptr<SpectrumChannel> m_channel;
-	//Ptr<mmWaveBeamforming> m_beamforming;
-	Ptr<mmWaveChannelMatrix> m_beamforming;
+	Ptr<mmWaveBeamforming> m_beamforming;
+	//Ptr<mmWaveChannelMatrix> m_beamforming;
 
 
 	Ptr<Object> m_pathlossModel;
