@@ -90,7 +90,8 @@ AntennaArrayModel::GetGainDb (Angles a)
 		if(a.phi < m_minAngle || a.phi > m_maxAngle)
 		{
 			gain = -500;
-			NS_LOG_UNCOND ("++++++++++++++++++++++blocked");	}
+			//NS_LOG_UNCOND ("++++++++++++++++++++++blocked");
+		}
 		else
 		{
 			gain = 0;
@@ -102,7 +103,8 @@ AntennaArrayModel::GetGainDb (Angles a)
 		if(a.phi < m_minAngle && a.phi > maxAngle)
 		{
 			gain = -500;
-			NS_LOG_UNCOND ("++++++++++++++++++++++blocked");	}
+			//NS_LOG_UNCOND ("++++++++++++++++++++++blocked");
+			}
 		else
 		{
 			gain = 0;

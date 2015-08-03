@@ -269,11 +269,13 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 
 		if (isAllocated)
 		{
+			m_interferenceData->AddSignal (mmwaveDataRxParams->psd, mmwaveDataRxParams->duration);
 			if(mmwaveDataRxParams->cellId == m_cellId)
 			{
-				m_interferenceData->AddSignal (mmwaveDataRxParams->psd, mmwaveDataRxParams->duration);
+				//m_interferenceData->AddSignal (mmwaveDataRxParams->psd, mmwaveDataRxParams->duration);
 				StartRxData (mmwaveDataRxParams);
 			}
+			/*
 			else
 			{
 				if (ueRx != 0)
@@ -281,6 +283,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 					m_interferenceData->AddSignal (mmwaveDataRxParams->psd, mmwaveDataRxParams->duration);
 				}
 			}
+			*/
 		}
 	}
 	else
