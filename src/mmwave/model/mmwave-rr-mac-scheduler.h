@@ -23,11 +23,11 @@ class MmWaveRrMacScheduler : public MmWaveMacScheduler
 public:
 	typedef std::vector < uint8_t > DlHarqProcessesStatus_t;
 	typedef std::vector < uint8_t > DlHarqProcessesTimer_t;
-	typedef std::vector < DlDciListElement_s > DlHarqProcessesDciBuffer_t;
-	typedef std::vector < std::vector <struct RlcPduListElement_s> > RlcPduList_t; // vector of the LCs and layers per UE
-	typedef std::vector < RlcPduList_t > DlHarqRlcPduListBuffer_t; // vector of the 8 HARQ processes per UE
+	typedef std::vector < TbInfoElement > DlHarqProcessesTbInfoList_t;
+	typedef std::vector < std::vector <struct RlcPduInfo> > DlHarqRlcPduList_t; // vector of the LCs and layers per UE
+//	typedef std::vector < RlcPduElement > DlHarqRlcPduList_t; // vector of the 8 HARQ processes per UE
 
-	typedef std::vector < UlDciListElement_s > UlHarqProcessesDciBuffer_t;
+	typedef std::vector < TbInfoElement > UlHarqProcessesTbInfoList_t;
 	typedef std::vector < uint8_t > UlHarqProcessesStatus_t;
 
 
@@ -48,8 +48,6 @@ public:
 	void DoSchedDlCqiInfoReq (const MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params); // Put in UML
 
   void DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
-
-	void DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params); // Put in UML
 
   void DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
 
@@ -91,6 +89,29 @@ private:
 	  return (index);
 	}
 
+	uint8_t UpdateDlHarqProcessId (uint16_t rnti);
+	uint8_t UpdateUlHarqProcessId (uint16_t rnti);
+
+	void DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
+
+	void DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
+	                          MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
+	                          unsigned int frameNum,
+	                          unsigned int sfNum,
+	                          unsigned int islot);
+
+	void DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
+	                          MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
+	                          unsigned int frameNum,
+	                          unsigned int sfNum,
+	                          unsigned int islot);
+
+
+  /**
+  * \brief Refresh HARQ processes according to the timers
+  *
+  */
+  void RefreshHarqProcesses ();
 
 	void SetTBSizeAssigned ();
 	SfAllocationInfo ScheduleUsersInTime (uint32_t slotNum);
@@ -160,7 +181,7 @@ private:
   */
   bool m_harqOn;
   uint8_t m_numHarqProcess;
-  uint8_t m_harqDlTimeout;
+  uint8_t m_harqTimeout;
 
   std::map <uint16_t, uint8_t> m_dlHarqCurrentProcessId;
   //HARQ status
@@ -168,16 +189,16 @@ private:
   // x>0: process Id equal to `x` trasmission count
   std::map <uint16_t, DlHarqProcessesStatus_t> m_dlHarqProcessesStatus;
   std::map <uint16_t, DlHarqProcessesTimer_t> m_dlHarqProcessesTimer;
-  std::map <uint16_t, DlHarqProcessesDciBuffer_t> m_dlHarqProcessesDciBuffer;
-  std::map <uint16_t, DlHarqRlcPduListBuffer_t> m_dlHarqProcessesRlcPduListBuffer;
-  std::vector <DlInfoListElement_s> m_dlInfoListBuffered; // HARQ retx buffered
+  std::map <uint16_t, DlHarqProcessesTbInfoList_t> m_dlHarqProcessesTbInfoMap;
+  std::map <uint16_t, DlHarqRlcPduList_t> m_dlHarqProcessesRlcPduMap;
+  std::vector <DlHarqInfo> m_dlHarqInfoList; // HARQ retx buffered
 
   std::map <uint16_t, uint8_t> m_ulHarqCurrentProcessId;
   //HARQ status
   // 0: process Id available
   // x>0: process Id equal to `x` trasmission count
   std::map <uint16_t, UlHarqProcessesStatus_t> m_ulHarqProcessesStatus;
-  std::map <uint16_t, UlHarqProcessesDciBuffer_t> m_ulHarqProcessesDciBuffer;
+  std::map <uint16_t, UlHarqProcessesTbInfoList_t> m_ulHarqProcessesTbInfoMap;
 
 
 };

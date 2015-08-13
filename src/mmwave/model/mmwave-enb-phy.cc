@@ -284,6 +284,9 @@ MmWaveEnbPhy::StartSubFrame (void)
 	if(slotInd == 1)
 	{
 		uint32_t sfn = ((0x3FF & m_nrFrames) << 16) | ((0xFF & sfInd) << 8) | ((0xFF & 1));
+
+	  m_harqPhyModule->SubframeIndication (m_nrFrames, sfInd);
+
 	  m_prevSlotDir = SlotAllocInfo::NA;
 
 		// create new subframe allocation info
@@ -671,11 +674,10 @@ MmWaveEnbPhy::PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msg
 			NS_LOG_INFO ("received CQI");
 			m_phySapUser->ReceiveControlMessage (msg);
 		}
-		if (msg->GetMessageType () == MmWaveControlMessage::BSR)
+		else if (msg->GetMessageType () == MmWaveControlMessage::BSR)
 		{
 			NS_LOG_INFO ("received BSR");
 			m_phySapUser->ReceiveControlMessage (msg);
-
 		}
 		else if (msg->GetMessageType() == MmWaveControlMessage::RACH_PREAMBLE)
 	  {
@@ -683,7 +685,16 @@ MmWaveEnbPhy::PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msg
 			NS_ASSERT (m_cellId > 0);
 			Ptr<MmWaveRachPreambleMessage> rachPreamble = DynamicCast<MmWaveRachPreambleMessage> (msg);
 			m_phySapUser->ReceiveRachPreamble (rachPreamble->GetRapId ());
-
+		}
+		else if (msg->GetMessageType() == MmWaveControlMessage::DL_HARQ)
+		{
+			Ptr<MmWaveDlHarqFeedbackMessage> dlharqMsg = DynamicCast<MmWaveDlHarqFeedbackMessage> (msg);
+			DlHarqInfo dlharq = dlharqMsg->GetDlHarqFeedback ();
+			// check whether the UE is connected
+			if (m_ueAttached.find (dlharq.m_rnti) != m_ueAttached.end ())
+			{
+				m_phySapUser->ReceiveControlMessage (msg);
+			}
 		}
 
 		ctrlIt++;
@@ -801,5 +812,12 @@ MmWaveEnbPhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
   m_harqPhyModule = harq;
 }
 
+void
+MmWaveEnbPhy::ReceiveUlHarqFeedback (UlHarqInfo mes)
+{
+  NS_LOG_FUNCTION (this);
+  // forward to scheduler
+  m_phySapUser->UlHarqFeedback (mes);
+}
 
 }

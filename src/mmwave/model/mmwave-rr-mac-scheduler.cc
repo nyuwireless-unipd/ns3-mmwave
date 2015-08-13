@@ -101,13 +101,13 @@ MmWaveRrMacScheduler::DoDispose (void)
 	NS_LOG_FUNCTION (this);
 	m_AssignedTBSizeMap.clear();
 	m_wbCqiRxed.clear();
-  m_dlHarqProcessesDciBuffer.clear ();
+  m_dlHarqProcessesTbInfoMap.clear ();
   m_dlHarqProcessesTimer.clear ();
-  m_dlHarqProcessesRlcPduListBuffer.clear ();
-  m_dlInfoListBuffered.clear ();
+  m_dlHarqProcessesRlcPduMap.clear ();
+  m_dlHarqInfoList.clear ();
   m_ulHarqCurrentProcessId.clear ();
   m_ulHarqProcessesStatus.clear ();
-  m_ulHarqProcessesDciBuffer.clear ();
+  m_ulHarqProcessesTbInfoMap.clear ();
 //  delete m_cschedSapProvider;
 //  delete m_macSchedSapProvider;
 	//m_directions.clear ();
@@ -126,7 +126,7 @@ MmWaveRrMacScheduler::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
                    "Activate/Deactivate the HARQ [by default is active].",
-                   BooleanValue (true),
+                   BooleanValue (false),
                    MakeBooleanAccessor (&MmWaveRrMacScheduler::m_harqOn),
                    MakeBooleanChecker ())
 		;
@@ -153,7 +153,7 @@ MmWaveRrMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
 	m_amc = CreateObject <mmWaveAmc> (m_phyMacConfig);
 	m_numRbg = m_phyMacConfig->GetNumRb () / m_phyMacConfig->GetNumRbPerRbg ();
 	m_numHarqProcess = m_phyMacConfig->GetNumHarqProcess ();
-	m_harqDlTimeout = m_phyMacConfig->GetHarqDlTimeout ();
+	m_harqTimeout = m_phyMacConfig->GetHarqTimeout ();
 }
 
 void
@@ -181,12 +181,36 @@ MmWaveRrMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvi
   NS_LOG_INFO (this << " RNTI " << params.m_rnti << " LC " << (uint16_t)params.m_logicalChannelIdentity << " RLC tx size " << params.m_rlcTransmissionQueueHolDelay << " RLC retx size " << params.m_rlcRetransmissionQueueSize << " RLC stat size " <<  params.m_rlcStatusPduSize);
   // initialize statistics of the flow in case of new flows
   if (newLc == true)
-    {
-      m_wbCqiRxed.insert ( std::pair<uint16_t, uint8_t > (params.m_rnti, 1)); // only codeword 0 at this stage (SISO)
-      // initialized to 1 (i.e., the lowest value for transmitting a signal)
-      m_wbCqiTimers.insert ( std::pair<uint16_t, uint32_t > (params.m_rnti, m_cqiTimersThreshold));
-    }
+  {
+  	m_wbCqiRxed.insert ( std::pair<uint16_t, uint8_t > (params.m_rnti, 1)); // only codeword 0 at this stage (SISO)
+  	// initialized to 1 (i.e., the lowest value for transmitting a signal)
+  	m_wbCqiTimers.insert ( std::pair<uint16_t, uint32_t > (params.m_rnti, m_cqiTimersThreshold));
+  }
 
+  if (m_dlHarqCurrentProcessId.find (params.m_rnti) == m_dlHarqCurrentProcessId.end ())
+  {
+  	// TODO: Add Csched SAP (currently no csched sap methods, so put this code here for now - RDF)
+  	m_dlHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+  	DlHarqProcessesStatus_t dlHarqPrcStatus;
+  	dlHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
+  	m_dlHarqProcessesStatus.insert (std::pair <uint16_t, DlHarqProcessesStatus_t> (params.m_rnti, dlHarqPrcStatus));
+  	DlHarqProcessesTimer_t dlHarqProcessesTimer;
+  	dlHarqProcessesTimer.resize (m_phyMacConfig->GetNumHarqProcess (),0);
+  	m_dlHarqProcessesTimer.insert (std::pair <uint16_t, DlHarqProcessesTimer_t> (params.m_rnti, dlHarqProcessesTimer));
+  	DlHarqProcessesTbInfoList_t dlHarqTbInfoList;
+  	dlHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_dlHarqProcessesTbInfoMap.insert (std::pair <uint16_t, DlHarqProcessesTbInfoList_t> (params.m_rnti, dlHarqTbInfoList));
+  	DlHarqRlcPduList_t dlHarqRlcPduList;
+  	dlHarqRlcPduList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_dlHarqProcessesRlcPduMap.insert (std::pair <uint16_t, DlHarqRlcPduList_t> (params.m_rnti, dlHarqRlcPduList));
+  	m_ulHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+  	UlHarqProcessesStatus_t ulHarqPrcStatus;
+  	ulHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
+  	m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (params.m_rnti, ulHarqPrcStatus));
+  	UlHarqProcessesTbInfoList_t ulHarqTbInfoList;
+  	ulHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_ulHarqProcessesTbInfoMap.insert (std::pair <uint16_t, UlHarqProcessesTbInfoList_t> (params.m_rnti, ulHarqTbInfoList));
+  }
   return;
 }
 
@@ -327,7 +351,7 @@ MmWaveRrMacScheduler::SetScheduleDirection  (std::string patt)
 	m_directions = "CCDDDUUU";
 	m_isDirnUpdated = true;*/
 }
-/*
+
 void
 MmWaveRrMacScheduler::RefreshHarqProcesses ()
 {
@@ -338,7 +362,7 @@ MmWaveRrMacScheduler::RefreshHarqProcesses ()
 	{
 		for (uint16_t i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
 		{
-			if ((*itTimers).second.at (i) == HARQ_DL_TIMEOUT)
+			if ((*itTimers).second.at (i) == m_phyMacConfig->GetHarqTimeout ())
 			{
 				// reset HARQ process
 
@@ -358,7 +382,1027 @@ MmWaveRrMacScheduler::RefreshHarqProcesses ()
 		}
 	}
 
-}*/
+}
+
+uint8_t
+MmWaveRrMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
+{
+  NS_LOG_FUNCTION (this << rnti);
+
+
+  if (m_harqOn == false)
+    {
+      return (0);
+    }
+
+  std::map <uint16_t, uint8_t>::iterator it = m_dlHarqCurrentProcessId.find (rnti);
+  if (it == m_dlHarqCurrentProcessId.end ())
+    {
+      NS_FATAL_ERROR ("No Process Id found for this RNTI " << rnti);
+    }
+  std::map <uint16_t, DlHarqProcessesStatus_t>::iterator itStat = m_dlHarqProcessesStatus.find (rnti);
+  if (itStat == m_dlHarqProcessesStatus.end ())
+    {
+      NS_FATAL_ERROR ("No Process Id Statusfound for this RNTI " << rnti);
+    }
+  uint8_t i = (*it).second;
+  do
+    {
+      i = (i + 1) % m_phyMacConfig->GetNumHarqProcess ();
+    }
+  while ( ((*itStat).second.at (i) != 0)&&(i != (*it).second));
+  if ((*itStat).second.at (i) == 0)
+    {
+      (*it).second = i;
+      (*itStat).second.at (i) = 1;
+    }
+  else
+    {
+      return (m_phyMacConfig->GetNumHarqProcess () + 1); // return a not valid harq proc id
+    }
+
+  return ((*it).second);
+}
+
+uint8_t
+MmWaveRrMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
+{
+  NS_LOG_FUNCTION (this << rnti);
+
+
+  if (m_harqOn == false)
+    {
+      return (0);
+    }
+
+  std::map <uint16_t, uint8_t>::iterator it = m_ulHarqCurrentProcessId.find (rnti);
+  if (it == m_ulHarqCurrentProcessId.end ())
+    {
+      NS_FATAL_ERROR ("No Process Id found for this RNTI " << rnti);
+    }
+  std::map <uint16_t, DlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
+  if (itStat == m_ulHarqProcessesStatus.end ())
+    {
+      NS_FATAL_ERROR ("No Process Id Statusfound for this RNTI " << rnti);
+    }
+  uint8_t i = (*it).second;
+  do
+    {
+      i = (i + 1) % m_phyMacConfig->GetNumHarqProcess ();
+    }
+  while ( ((*itStat).second.at (i) != 0)&&(i != (*it).second));
+  if ((*itStat).second.at (i) == 0)
+    {
+      (*it).second = i;
+      (*itStat).second.at (i) = 1;
+    }
+  else
+    {
+      return (m_phyMacConfig->GetNumHarqProcess () + 1); // return a not valid harq proc id
+    }
+
+  return ((*it).second);
+}
+
+void
+MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
+                                           MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
+                                           unsigned int frameNum,
+                                           unsigned int sfNum,
+                                           unsigned int islot)
+{
+	// Create RBG map (DL res alloc type 0)
+	std::vector <bool> rbgMap;
+	uint16_t rbgAllocatedNum = 0;
+	std::set <uint16_t> rntiAllocated;
+	rbgMap.resize (m_phyMacConfig->GetNumRb (), false);
+
+	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
+
+	// ****************** this section for HARQ retx ******************
+
+	//   update UL HARQ proc id
+//	std::map <uint16_t, uint8_t>::iterator itProcId;
+//	for (itProcId = m_ulHarqCurrentProcessId.begin (); itProcId != m_ulHarqCurrentProcessId.end (); itProcId++)
+//	{
+//		(*itProcId).second = ((*itProcId).second + 1) % m_phyMacConfig->GetNumHarqProcess ();
+//	}
+
+	// Process DL HARQ feedback
+	RefreshHarqProcesses ();
+	// retrieve past HARQ retx buffered
+	if (m_dlHarqInfoList.size () > 0)
+	{
+		if (params.m_dlHarqInfoList.size () > 0)
+		{
+			NS_LOG_INFO (this << " Received DL-HARQ feedback");
+			m_dlHarqInfoList.insert (m_dlHarqInfoList.end (), params.m_dlHarqInfoList.begin (), params.m_dlHarqInfoList.end ());
+		}
+	}
+	else
+	{
+		if (params.m_dlHarqInfoList.size () > 0)
+		{
+			m_dlHarqInfoList = params.m_dlHarqInfoList;
+		}
+	}
+	if (m_harqOn == false)
+	{
+		// Ignore HARQ feedback
+		m_dlHarqInfoList.clear ();
+	}
+	else
+	{
+		std::vector <struct DlHarqInfo> dlInfoListUntxed;
+		for (uint16_t i = 0; i < m_dlHarqInfoList.size (); i++)
+		{
+			std::set <uint16_t>::iterator itRnti = rntiAllocated.find (m_dlHarqInfoList.at (i).m_rnti);
+			if (itRnti != rntiAllocated.end ())
+			{
+				// RNTI already allocated for retx
+				continue;
+			}
+			//		uint8_t nLayers = m_dlHarqInfoList.at (i).m_harqStatus.size ();
+			//			        std::vector <bool> retx;
+			NS_LOG_INFO (this << " Processing DLHARQ feedback");
+			//			        if (nLayers == 1)
+			//			          {
+			//			            retx.push_back (m_dlHarqInfoList.at (i).m_harqStatus.at (0) == DlInfoListElement_s::NACK);
+			//			            retx.push_back (false);
+			//			          }
+			//			        else
+			//			          {
+			//			            retx.push_back (m_dlHarqInfoList.at (i).m_harqStatus.at (0) == DlInfoListElement_s::NACK);
+			//			            retx.push_back (m_dlHarqInfoList.at (i).m_harqStatus.at (1) == DlInfoListElement_s::NACK);
+			//			          }
+			//			        if (retx.at (0) || retx.at (1))
+			if(m_dlHarqInfoList.at (i).m_harqStatus.at (0) == DlHarqInfo::NACK)
+			{
+				// retrieve HARQ process information
+				uint16_t rnti = m_dlHarqInfoList.at (i).m_rnti;
+				uint8_t harqId = m_dlHarqInfoList.at (i).m_harqProcessId;
+				NS_LOG_INFO (this << " HARQ retx RNTI " << rnti << " harqId " << (uint16_t)harqId);
+				std::map <uint16_t, DlHarqProcessesTbInfoList_t>::iterator itHarq = m_dlHarqProcessesTbInfoMap.find (rnti);
+				if (itHarq == m_dlHarqProcessesTbInfoMap.end ())
+				{
+					NS_FATAL_ERROR ("No info find in HARQ buffer for UE " << rnti);
+				}
+
+				TbInfoElement harqTbInfo = (*itHarq).second.at (harqId);
+				//			if (dci.m_rv.size () == 1)
+				//			{
+				//				rv = dci.m_rv.at (0);
+				//			}
+				//			else
+				//			{
+				//				rv = (dci.m_rv.at (0) > dci.m_rv.at (1) ? dci.m_rv.at (0) : dci.m_rv.at (1));
+				//			}
+
+				if (harqTbInfo.m_rv == 3)
+				{
+					// maximum number of retx reached -> drop process
+					NS_LOG_INFO ("Max number of retransmissions reached -> drop process");
+					std::map <uint16_t, DlHarqProcessesStatus_t>::iterator it = m_dlHarqProcessesStatus.find (rnti);
+					if (it == m_dlHarqProcessesStatus.end ())
+					{
+						NS_LOG_ERROR ("No info find in HARQ buffer for UE (might change eNB) " << m_dlHarqInfoList.at (i).m_rnti);
+					}
+					(*it).second.at (harqId) = 0;
+					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduMap.find (rnti);
+					if (itRlcPdu == m_dlHarqProcessesRlcPduMap.end ())
+					{
+						NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlHarqInfoList.at (i).m_rnti);
+					}
+					for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)
+					{
+						(*itRlcPdu).second.at (harqId).clear ();
+					}
+					continue;
+				}
+				// check the feasibility of retransmitting on the same RBGs
+				// translate the DCI to Spectrum framework
+				std::vector <int> dciRbg;
+				uint32_t mask = 0x1;
+				NS_LOG_INFO ("Original RBGs " << harqTbInfo.m_rbBitmap << " rnti " << rnti);
+				for (unsigned int j = 0; j < m_phyMacConfig->GetNumRb (); j++)
+				{
+					if (((harqTbInfo.m_rbBitmap & mask) >> j) == 1)
+					{
+						dciRbg.push_back (j);
+						NS_LOG_INFO ("\t" << j);
+					}
+					mask = (mask << 1);
+				}
+				bool free = true;
+				for (uint8_t j = 0; j < dciRbg.size (); j++)
+				{
+					if (rbgMap.at (dciRbg.at (j)) == true)
+					{
+						free = false;
+						break;
+					}
+				}
+				if (free)
+				{
+					// use the same RBGs for the retx
+					// reserve RBGs
+					for (uint8_t j = 0; j < dciRbg.size (); j++)
+					{
+						rbgMap.at (dciRbg.at (j)) = true;
+						NS_LOG_INFO ("RBG " << dciRbg.at (j) << " assigned");
+						rbgAllocatedNum++;
+					}
+
+					NS_LOG_INFO (this << " Send retx in the same RBGs");
+				}
+				else
+				{
+					// find RBGs for sending HARQ retx
+					uint8_t j = 0;
+					uint8_t rbgId = (dciRbg.at (dciRbg.size () - 1) + 1) % m_phyMacConfig->GetNumRb ();
+					uint8_t startRbg = dciRbg.at (dciRbg.size () - 1);
+					std::vector <bool> rbgMapCopy = rbgMap;
+					while ((j < dciRbg.size ())&&(startRbg != rbgId))
+					{
+						if (rbgMapCopy.at (rbgId) == false)
+						{
+							rbgMapCopy.at (rbgId) = true;
+							dciRbg.at (j) = rbgId;
+							j++;
+						}
+						rbgId = (rbgId + 1) % m_phyMacConfig->GetNumRb ();
+					}
+					if (j == dciRbg.size ())
+					{
+						// find new RBGs -> update DCI map
+						uint32_t rbgMask = 0;
+						for (uint16_t k = 0; k < dciRbg.size (); k++)
+						{
+							rbgMask = rbgMask + (0x1 << dciRbg.at (k));
+							NS_LOG_INFO (this << " New allocated RBG " << dciRbg.at (k));
+							rbgAllocatedNum++;
+						}
+						harqTbInfo.m_rbBitmap = rbgMask;
+						rbgMap = rbgMapCopy;
+					}
+					else
+					{
+						// HARQ retx cannot be performed on this TTI -> store it
+						dlInfoListUntxed.push_back (m_dlHarqInfoList.at (i));
+						NS_LOG_INFO (this << " No resource for this retx -> buffer it");
+					}
+				}
+				// retrieve RLC PDU list for retx TBsize and update DCI
+				//			BuildDataListElement_s newEl;
+				std::map<uint16_t, SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
+				if (schedIt == schedInfoMap.end ())
+				{
+					SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+					newSchedInfo.m_rnti = rnti;
+					DciInfoElement newDci;
+					newDci.m_rnti = rnti;
+					newDci.m_tddBitmap = 0;
+					//			        newDci.m_harqProcess = UpdateHarqProcessId ((*it).m_rnti);
+					newSchedInfo.m_dci = newDci;
+					newSchedInfo.m_frameNum = frameNum;
+					newSchedInfo.m_sfNum = sfNum;
+					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> (rnti, newSchedInfo))).first;
+				}
+
+				std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
+				if (itRlcList == m_dlHarqProcessesRlcPduMap.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << rnti);
+				}
+
+				harqTbInfo.m_ndi = 0;
+				harqTbInfo.m_rv++;
+				(*itHarq).second.at (harqId).m_rv++;
+				NS_LOG_INFO (this << "HARQ ReTx RV " << (uint16_t)harqTbInfo.m_rv);
+
+
+				/*			for (uint8_t j = 0; j < nLayers; j++)
+			{
+				if (retx.at (j))
+				{
+					if (j >= dci.m_ndi.size ())
+					{
+						// for avoiding errors in MIMO transient phases
+						dci.m_ndi.push_back (0);
+						dci.m_rv.push_back (0);
+						dci.m_mcs.push_back (0);
+						dci.m_tbsSize.push_back (0);
+						NS_LOG_INFO (this << " layer " << (uint16_t)j << " no txed (MIMO transition)");
+
+					}
+					else
+					{
+						dci.m_ndi.at (j) = 0;
+						dci.m_rv.at (j)++;
+						(*itHarq).second.at (harqId).m_rv.at (j)++;
+						NS_LOG_INFO (this << " layer " << (uint16_t)j << " RV " << (uint16_t)dci.m_rv.at (j));
+					}
+				}
+				else
+				{
+					// empty TB of layer j
+					dci.m_ndi.at (j) = 0;
+					dci.m_rv.at (j) = 0;
+					dci.m_mcs.at (j) = 0;
+					dci.m_tbsSize.at (j) = 0;
+					NS_LOG_INFO (this << " layer " << (uint16_t)j << " no retx");
+				}
+			}*/
+
+				for (uint16_t k = 0; k < (*itRlcList).second.at(harqTbInfo.m_harqProcess).size (); k++)
+				{
+					std::vector <RlcPduInfo> rlcPduListPerLc;
+					//					for (uint8_t j = 0; j < nLayers; j++)
+					//					{
+					//						if (retx.at (j))
+					//						{
+					//							if (j < dci.m_ndi.size ())
+					//							{
+					//								rlcPduListPerLc.push_back ((*itRlcPdu).second.at (j).at (dci.m_harqProcess).at (k));
+					//							}
+					//						}
+					//					}
+
+					rlcPduListPerLc.push_back ((*itRlcList).second.at (harqTbInfo.m_harqProcess).at (k));
+
+
+					if (rlcPduListPerLc.size () > 0)
+					{
+						schedIt->second.m_rlcPduList.push_back (rlcPduListPerLc);
+					}
+				}
+				//				schedIt->second.m_rnti = rnti;
+				schedIt->second.m_dci.m_tbInfoElements.push_back (harqTbInfo);
+				(*itHarq).second.at (harqId).m_rv = harqTbInfo.m_rv;
+				// refresh timer
+				std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer = m_dlHarqProcessesTimer.find (rnti);
+				if (itHarqTimer== m_dlHarqProcessesTimer.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)rnti);
+				}
+				(*itHarqTimer).second.at (harqId) = 0;
+				rntiAllocated.insert (rnti);
+			}
+			else
+			{
+				// update HARQ process status
+				NS_LOG_INFO (this << " HARQ ACK UE " << m_dlHarqInfoList.at (i).m_rnti);
+				std::map <uint16_t, DlHarqProcessesStatus_t>::iterator it = m_dlHarqProcessesStatus.find (m_dlHarqInfoList.at (i).m_rnti);
+				if (it == m_dlHarqProcessesStatus.end ())
+				{
+					NS_FATAL_ERROR ("No info find in HARQ buffer for UE " << m_dlHarqInfoList.at (i).m_rnti);
+				}
+				(*it).second.at (m_dlHarqInfoList.at (i).m_harqProcessId) = 0;
+				std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduMap.find (m_dlHarqInfoList.at (i).m_rnti);
+				if (itRlcPdu == m_dlHarqProcessesRlcPduMap.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlHarqInfoList.at (i).m_rnti);
+				}
+				(*itRlcPdu).second.at (m_dlHarqInfoList.at (i).m_harqProcessId).clear ();
+
+				//				for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)
+				//				{
+				//					(*itRlcPdu).second.at (k).at (m_dlHarqInfoList.at (i).m_harqProcessId).clear ();
+				//				}
+			}
+		}
+		m_dlHarqInfoList.clear ();
+		m_dlHarqInfoList = dlInfoListUntxed;
+
+		if (rbgAllocatedNum == m_phyMacConfig->GetNumRb ())
+		{
+			// all the RBGs are already allocated -> exit
+			//			if ((ret.m_buildDataList.size () > 0) || (ret.m_buildRarList.size () > 0))
+			//			{
+			//				m_schedSapUser->SchedDlConfigInd (ret);
+			//			}
+			return;
+		}
+	}
+
+	// Get the actual active flows (unique RNTI-LCID pairs)
+	std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
+	m_rlcBufferReq.sort (SortRlcBufferReq);
+	int nflows = 0;
+	int nTbs = 0;
+
+	std::map <uint16_t,uint8_t> lcActivesPerRnti; // tracks how many active LCs per RNTI there are
+	std::map <uint16_t,uint8_t>::iterator itLcRnti;
+	for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
+	{
+		// remove old entries of this UE-LC
+		std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).m_rnti);
+
+		if ( (((*it).m_rlcTransmissionQueueSize > 0)
+				|| ((*it).m_rlcRetransmissionQueueSize > 0)
+				|| ((*it).m_rlcStatusPduSize > 0))
+				&& (itRnti == rntiAllocated.end ()) )  // UE must not be allocated for HARQ retx
+			//			  				  			&& (HarqProcessAvailability ((*it).m_rnti))  ) // UE needs HARQ proc free
+		{
+			NS_LOG_LOGIC (this << " User " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity << " is active, status  " << (*it).m_rlcStatusPduSize << " retx " << (*it).m_rlcRetransmissionQueueSize << " tx " << (*it).m_rlcTransmissionQueueSize);
+			std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find ((*it).m_rnti);
+			uint8_t cqi = 0;
+			if (itCqi != m_wbCqiRxed.end ())
+			{
+				cqi = (*itCqi).second;
+			}
+			else
+			{
+				cqi = 1; // lowest value fro trying a transmission
+			}
+			if (cqi != 0)
+			{
+				// CQI == 0 means "out of range" (see table 7.2.3-1 of 36.213)
+				nflows++;
+				itLcRnti = lcActivesPerRnti.find ((*it).m_rnti);
+				if (itLcRnti != lcActivesPerRnti.end ())
+				{
+					(*itLcRnti).second++;
+				}
+				else
+				{
+					lcActivesPerRnti.insert (std::pair<uint16_t, uint8_t > ((*it).m_rnti, 1));
+					nTbs++;
+				}
+
+			}
+		}
+	}
+
+	if (nflows == 0)
+	{
+		return; // no DL flows to be scheduled
+	}
+
+	// int rbgPerTb = (nTbs > 0) ? ((numRbg - rbgAllocatedNum) / nTbs) : INT_MAX;
+	unsigned int rbgPerTb = (nTbs > 0) ? (m_phyMacConfig->GetNumRb ()  / nTbs) : m_phyMacConfig->GetNumRb ();
+
+	NS_LOG_INFO (this << " Flows to be transmitted " << nflows << " rbgPerTb " << rbgPerTb);
+	if (rbgPerTb == 0)
+	{
+		rbgPerTb = 1;  // at least 1 rbg per TB (till available resource)
+	}
+
+	unsigned int rbgAllocated = 0;
+
+	// round robin assignment to all UEs registered starting from the subsequent of the one
+	// served last scheduling trigger event
+	if (m_nextRntiDl != 0)
+	{
+		for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
+		{
+			if ((*it).m_rnti == m_nextRntiDl)
+			{
+				break;
+			}
+		}
+
+		if (it == m_rlcBufferReq.end ())
+		{
+			NS_FATAL_ERROR (this << " no user found");
+		}
+	}
+	else
+	{
+		it = m_rlcBufferReq.begin ();
+		m_nextRntiDl = (*it).m_rnti;
+	}
+	//			std::map <uint16_t,uint8_t>::iterator itTxMode;
+	do
+	{
+		itLcRnti = lcActivesPerRnti.find ((*it).m_rnti);
+		//				std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).m_rnti);
+		//				if ((itLcRnti == lcActivesPerRnti.end ())||(itRnti != rntiAllocated.end ()))
+		if ((itLcRnti == lcActivesPerRnti.end ()))
+		{
+			// skip this RNTI (no active queue or already allocated for HARQ)
+			uint16_t rntiDiscared = (*it).m_rnti;
+			while (it != m_rlcBufferReq.end ())
+			{
+				if ((*it).m_rnti != rntiDiscared)
+				{
+					break;
+				}
+				it++;
+			}
+			if (it == m_rlcBufferReq.end ())
+			{
+				// restart from the first
+				it = m_rlcBufferReq.begin ();
+			}
+			continue;
+		}
+
+		int lcNum = (*itLcRnti).second;
+
+		// find existing or create new scheduling info element/DCI element
+		std::map<uint16_t,SchedInfoElement>::iterator schedIt = schedInfoMap.find ((*it).m_rnti);
+		if (schedIt == schedInfoMap.end ())
+		{
+			SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+			newSchedInfo.m_rnti = (*it).m_rnti;
+			DciInfoElement newDci;
+			newDci.m_rnti = (*it).m_rnti;
+			newDci.m_tddBitmap = 0;
+			newDci.m_format = 0;
+			newDci.m_cceIndex = 0;
+			//			        newDci.m_harqProcess = UpdateHarqProcessId ((*it).m_rnti);
+			newSchedInfo.m_dci = newDci;
+			newSchedInfo.m_frameNum = frameNum;
+			newSchedInfo.m_sfNum = sfNum;
+			schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> ((*it).m_rnti, newSchedInfo))).first;
+		}
+
+		SchedInfoElement& schedInfo = schedIt->second;
+		//				schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << islot));
+		TbInfoElement newTbInfoElem;
+		newTbInfoElem.m_resAlloc = 0;
+		newTbInfoElem.m_rbBitmap = 0;
+		newTbInfoElem.m_slotInd = islot;
+		newTbInfoElem.m_rbShift = 0;
+		newTbInfoElem.m_rbStart = 0;
+		newTbInfoElem.m_rbLen = 0;
+		newTbInfoElem.m_harqProcess = UpdateDlHarqProcessId ((*it).m_rnti);
+
+		schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+
+		std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (schedInfo.m_rnti);
+
+		if (itCqi == m_wbCqiRxed.end ())
+		{
+			newTbInfoElem.m_mcs = 0; // no info on this user -> lowest MCS
+		}
+		else
+		{
+			newTbInfoElem.m_mcs = m_amc->GetMcsFromCqi ((*itCqi).second);
+		}
+
+		MmWaveMacPduHeader macHeader;
+		int tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, m_phyMacConfig->GetNumRb()) / 8) - macHeader.GetSerializedSize ();
+		uint16_t rlcPduSize = tbSize / lcNum;
+		while ((*it).m_rnti == schedInfo.m_rnti)
+		{
+			if ( ((*it).m_rlcTransmissionQueueSize > 0)
+					|| ((*it).m_rlcRetransmissionQueueSize > 0)
+					|| ((*it).m_rlcStatusPduSize > 0) )
+			{
+
+				RlcPduInfo newRlcEl;
+				newRlcEl.m_lcid = (*it).m_logicalChannelIdentity;
+				NS_LOG_INFO (this << "LCID " << (uint32_t) newRlcEl.m_lcid << " size " << rlcPduSize << " ID " << (*it).m_rnti);
+				newRlcEl.m_size = rlcPduSize;
+				UpdateDlRlcBufferInfo ((*it).m_rnti, newRlcEl.m_lcid, rlcPduSize);
+
+				if (m_harqOn == true)
+				{
+					// store RLC PDU list for HARQ
+					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduMap.find ((*it).m_rnti);
+					if (itRlcPdu == m_dlHarqProcessesRlcPduMap.end ())
+					{
+						NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << (*it).m_rnti);
+					}
+					(*itRlcPdu).second.at (newTbInfoElem.m_harqProcess).push_back (newRlcEl);
+				}
+
+				// push new element onto RLC PDU vector for this TB
+				schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (newRlcEl);
+				NS_LOG_DEBUG ("RLC PDU for LCID " << (unsigned int)newRlcEl.m_lcid << " of size " << newRlcEl.m_size << " added for TB " << schedInfo.m_rlcPduList.size ()-1);
+				lcNum--;
+			}
+			it++;
+			if (it == m_rlcBufferReq.end ())
+			{
+				// restart from the first
+				it = m_rlcBufferReq.begin ();
+				break;
+			}
+		}
+		uint32_t rbgMask = 0;
+		uint16_t i = 0;
+		NS_LOG_INFO (this << " slot " << islot+1 << " DL - Allocate user " << schedInfo.m_rnti << " LCs " << (uint16_t)(*itLcRnti).second << " bytes " << tbSize << " mcs " << (uint16_t) newTbInfoElem.m_mcs << " harqId " << (uint16_t)newTbInfoElem.m_harqProcess );
+		while (i < rbgPerTb)
+		{
+			if (rbgMap.at (rbgAllocated) == false)
+			{
+				rbgMask = rbgMask + (0x1 << rbgAllocated);
+				i++;
+				rbgMap.at (rbgAllocated) = true;
+				rbgAllocatedNum++;
+			}
+			rbgAllocated++;
+		}
+		newTbInfoElem.m_rbBitmap = rbgMask; // (32 bit bitmap see 7.1.6 of 36.213)
+		newTbInfoElem.m_tbSize = tbSize;
+		newTbInfoElem.m_ndi = 1;
+		newTbInfoElem.m_rv = 0;
+
+		// newDci.m_tpc = 1; //1 is mapped to 0 in Accumulated Mode and to -1 in Absolute Mode
+
+		schedInfo.m_dci.m_tbInfoElements.push_back (newTbInfoElem);
+
+		if (m_harqOn == true)
+		{
+			// store DCI for HARQ
+			std::map <uint16_t, DlHarqProcessesTbInfoList_t>::iterator itTbInfo = m_dlHarqProcessesTbInfoMap.find (schedInfo.m_dci.m_rnti);
+			if (itTbInfo == m_dlHarqProcessesTbInfoMap.end ())
+			{
+				NS_FATAL_ERROR ("Unable to find RNTI entry in DCI HARQ buffer for RNTI " << schedInfo.m_rnti);
+			}
+			(*itTbInfo).second.at (newTbInfoElem.m_harqProcess) = newTbInfoElem;
+			// refresh timer
+			std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer =  m_dlHarqProcessesTimer.find (schedInfo.m_dci.m_rnti);
+			if (itHarqTimer== m_dlHarqProcessesTimer.end ())
+			{
+				NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)schedInfo.m_dci.m_rnti);
+			}
+			(*itHarqTimer).second.at (newTbInfoElem.m_harqProcess) = 0;
+		}
+		// ...more parameters -> ignored in this version
+
+		if (rbgAllocatedNum == m_phyMacConfig->GetNumRb ())
+		{
+			m_nextRntiDl = schedInfo.m_rnti; // store last RNTI served
+			break;                       // no more RGB to be allocated
+		}
+	}
+	while ((*it).m_rnti != m_nextRntiDl);
+}
+
+void
+MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
+                                           MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
+                                           unsigned int frameNum,
+                                           unsigned int sfNum,
+                                           unsigned int islot)
+{
+	// schedule slot in n+3th subframe for UL
+	// Create RB map (UL res alloc type 0)
+	std::vector <bool> rbMap;
+  uint16_t rbAllocatedNum = 0;
+	std::set <uint16_t> rntiAllocated;
+	std::vector <uint16_t> rbgAllocationMap;
+	uint32_t numRb = m_phyMacConfig->GetNumRb ();
+	rbMap.resize (numRb);
+	rbgAllocationMap.resize (numRb);
+	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
+
+	if (m_harqOn == true)
+	{
+		//   Process UL HARQ feedback
+		for (uint16_t i = 0; i < params.m_ulHarqInfoList.size (); i++)
+		{
+			if (params.m_ulHarqInfoList.at (i).m_receptionStatus == UlHarqInfo::NotOk)
+			{
+				// retx correspondent block: retrieve the UL-DCI
+				uint16_t rnti = params.m_ulHarqInfoList.at (i).m_rnti;
+				std::map <uint16_t, uint8_t>::iterator itProcId = m_ulHarqCurrentProcessId.find (rnti);
+				if (itProcId == m_ulHarqCurrentProcessId.end ())
+				{
+					NS_LOG_ERROR ("No info find in HARQ buffer for UE (might change eNB) " << rnti);
+				}
+				uint8_t harqId = (*itProcId).second;
+				NS_LOG_INFO (this << " UL-HARQ retx RNTI " << rnti << " harqId " << (uint16_t)harqId);
+				std::map <uint16_t, UlHarqProcessesTbInfoList_t>::iterator itHarq = m_ulHarqProcessesTbInfoMap.find (rnti);
+				if (itHarq == m_ulHarqProcessesTbInfoMap.end ())
+				{
+					NS_LOG_ERROR ("No info find in UL-HARQ buffer for UE (might change eNB) " << rnti);
+				}
+				TbInfoElement harqTbInfo = (*itHarq).second.at (harqId);
+				std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
+				if (itStat == m_ulHarqProcessesStatus.end ())
+				{
+					NS_LOG_ERROR ("No info find in HARQ buffer for UE (might change eNB) " << rnti);
+				}
+				if ((*itStat).second.at (harqId) > 3)
+				{
+					NS_LOG_INFO ("Max number of retransmissions reached (UL)-> drop process");
+					continue;
+				}
+				bool free = true;
+				for (int j = harqTbInfo.m_rbStart; j < harqTbInfo.m_rbStart + harqTbInfo.m_rbLen; j++)
+				{
+					if (rbMap.at (j) == true)
+					{
+						free = false;
+						NS_LOG_INFO (this << " BUSY " << j);
+					}
+				}
+				if (free)
+				{
+					// retx on the same RBs
+					for (int j = harqTbInfo.m_rbStart; j < harqTbInfo.m_rbStart + harqTbInfo.m_rbLen; j++)
+					{
+						rbMap.at (j) = true;
+						rbgAllocationMap.at (j) = rnti;
+						NS_LOG_INFO ("\tRB " << j);
+						rbAllocatedNum++;
+					}
+					NS_LOG_INFO (this << " Send retx in the same RBGs " << (uint16_t)harqTbInfo.m_rbStart << " to " << harqTbInfo.m_rbStart + harqTbInfo.m_rbLen << " RV " << (*itStat).second.at (harqId) + 1);
+				}
+//				else
+//				{
+//					NS_LOG_INFO ("Cannot allocate retx due to RACH allocations for UE " << rnti);
+//					continue;
+//				}
+				harqTbInfo.m_ndi = 0;
+
+				std::map<uint16_t, SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
+				if (schedIt == schedInfoMap.end ())
+				{
+					SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+					newSchedInfo.m_rnti = rnti;
+					DciInfoElement newDci;
+					newDci.m_rnti = rnti;
+					newDci.m_tddBitmap = 0;
+					newDci.m_format = 0;
+					newDci.m_cceIndex = 0;
+					//			        newDci.m_harqProcess = UpdateHarqProcessId ((*it).m_rnti);
+					newSchedInfo.m_dci = newDci;
+					newSchedInfo.m_frameNum = frameNum;
+					newSchedInfo.m_sfNum = sfNum;
+					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> (rnti, newSchedInfo))).first;
+				}
+
+				// Update HARQ buffers with new HarqId
+				(*itStat).second.at ((*itProcId).second) = (*itStat).second.at (harqId) + 1;
+				(*itStat).second.at (harqId) = 0;
+				(*itHarq).second.at ((*itProcId).second) = harqTbInfo;
+				schedIt->second.m_dci.m_tbInfoElements.push_back (harqTbInfo);
+				rntiAllocated.insert (rnti);
+			}
+		}
+	}
+
+	std::map <uint16_t,uint32_t>::iterator it;
+	int nflows = 0;
+
+	for (it = m_ceBsrRxed.begin (); it != m_ceBsrRxed.end (); it++)
+	{
+		//			      std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).first);
+		//			      // select UEs with queues not empty and not yet allocated for HARQ
+		//			      NS_LOG_INFO (this << " UE " << (*it).first << " queue " << (*it).second);
+		//			      if (((*it).second > 0)&&(itRnti == rntiAllocated.end ()))
+		//			        {
+		//			          nflows++;
+		//			        }
+		if ((*it).second > 0)
+		{
+			nflows++;
+		}
+	}
+	if (nflows == 0)
+	{
+		return;  // no UL flows to be scheduled
+	}
+
+	// Divide the remaining resources equally among the active users starting from after the one served last scheduling trigger
+	//			  uint16_t rbPerFlow = numRbg / (nflows + rntiAllocated.size ());
+	unsigned int rbPerFlow = m_phyMacConfig->GetNumRb () / nflows;
+	if (rbPerFlow == 0)
+	{
+		rbPerFlow = 1;  // at least 1 rbg per flow (till available resource) to ensure TxOpportunity >= 7 bytes
+	}
+	uint16_t rbAllocated = 0;
+
+	if (m_nextRntiUl != 0)
+	{
+		for (it = m_ceBsrRxed.begin (); it != m_ceBsrRxed.end (); it++)
+		{
+			if ((*it).first == m_nextRntiUl)
+			{
+				break;
+			}
+		}
+		if (it == m_ceBsrRxed.end ())
+		{
+			NS_LOG_ERROR (this << " no user found");
+		}
+	}
+	else
+	{
+		it = m_ceBsrRxed.begin ();
+		m_nextRntiUl = (*it).first;
+	}
+
+	NS_LOG_INFO (this << " NFlows " << nflows << " RB per Flow " << rbPerFlow);
+	do
+	{
+		/*std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).first);
+					if ((itRnti != rntiAllocated.end ())||((*it).second == 0))
+					{
+						// UE already allocated for UL-HARQ -> skip it
+						it++;
+						if (it == m_ceBsrRxed.end ())
+						{
+							// restart from the first
+							it = m_ceBsrRxed.begin ();
+						}
+						continue;
+					}*/
+		//				if (rbAllocated + rbPerFlow - 1 > numRb)
+		//				{
+		//					// limit to physical resources last resource assignment
+		//					rbPerFlow = numRb - rbAllocated;
+		//					// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
+		//					if (rbPerFlow < 1)
+		//					{
+		//						// terminate allocation
+		//						rbPerFlow = 0;
+		//					}
+		//				}
+		uint16_t rnti = (*it).first;
+		NS_LOG_INFO (this << " try to allocate " << rnti);
+		// find existing or create new scheduling info element/DCI element
+		std::map<uint16_t,SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
+		if (schedIt == schedInfoMap.end ())
+		{
+			SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+			newSchedInfo.m_rnti = (*it).first;
+			DciInfoElement newDci;
+			newDci.m_rnti = (*it).first;
+			newDci.m_tddBitmap = 0;
+			//			        newDci.m_harqProcess = UpdateHarqProcessId ((*it).m_rnti);
+			newSchedInfo.m_dci = newDci;
+			newSchedInfo.m_frameNum = frameNum;
+			newSchedInfo.m_sfNum = sfNum;
+			schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> ((*it).first, newSchedInfo))).first;
+		}
+
+		SchedInfoElement& schedInfo = schedIt->second;
+		schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << islot)); // set bit for UL
+		TbInfoElement newTbInfoElem;
+		newTbInfoElem.m_resAlloc = 0;
+		newTbInfoElem.m_rbLen = rbPerFlow;
+		newTbInfoElem.m_slotInd = islot;
+		newTbInfoElem.m_rbBitmap = 0;
+		newTbInfoElem.m_rbShift = 0;
+		newTbInfoElem.m_harqProcess = UpdateUlHarqProcessId (rnti);
+		schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+
+		//				UlDciListElement uldci;
+		//				uldci.m_rnti = (*it).first;
+		//				uldci.m_rbLen = rbPerFlow;
+
+		bool allocated = false;
+		NS_LOG_INFO (this << " RB Allocated " << rbAllocated << " rbPerFlow " << rbPerFlow << " flows " << nflows);
+		while ((!allocated)&&((numRb - rbAllocated + rbPerFlow ) > 1) && (rbPerFlow != 0))
+		{
+			// check availability
+			bool free = true;
+			for (uint16_t j = rbAllocated; j < rbAllocated + rbPerFlow; j++)
+			{
+				if (rbMap.at (j) == true)
+				{
+					free = false;
+					break;
+				}
+			}
+			if (free)
+			{
+				newTbInfoElem.m_rbStart = rbAllocated;
+
+				for (uint16_t j = rbAllocated; j < rbAllocated + rbPerFlow; j++)
+				{
+					rbMap.at (j) = true;
+					// store info on allocation for managing ul-cqi interpretation
+					rbgAllocationMap.at (j) = (*it).first;
+					NS_LOG_INFO ("\t " << j);
+				}
+				rbAllocated += rbPerFlow;
+				allocated = true;
+				break;
+			}
+			rbAllocated++;
+			//					if (rbAllocated + rbPerFlow - 1 > numRb)
+			//					{
+			//						// limit to physical resources last resource assignment
+			//						rbPerFlow = numRb - rbAllocated;
+			//						// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
+			//						if (rbPerFlow < 3)
+			//						{
+			//							// terminate allocation
+			//							rbPerFlow = 0;
+			//						}
+			//					}
+		}
+		if (!allocated)
+		{
+			// unable to allocate new resource: finish scheduling
+			m_nextRntiUl = (*it).first;
+			m_allocationMaps.insert (std::pair <uint16_t, std::vector <uint16_t> > (params.m_snfSf, rbgAllocationMap));
+			break;
+		}
+		std::map <uint16_t, std::vector <double> >::iterator itCqi = m_ueUlCqi.find ((*it).first);
+		int cqi = 0;
+		if (itCqi == m_ueUlCqi.end ())
+		{
+			// no cqi info about this UE
+			newTbInfoElem.m_mcs = 0; // MCS 0 -> UL-AMC TBD
+			NS_LOG_INFO (this << " UE does not have ULCQI " << (*it).first );
+		}
+		else
+		{
+			// take the lowest CQI value (worst RB)
+			double minSinr = (*itCqi).second.at (newTbInfoElem.m_rbStart);
+			for (uint16_t i = newTbInfoElem.m_rbStart; i < newTbInfoElem.m_rbStart + newTbInfoElem.m_rbLen; i++)
+			{
+				if ((*itCqi).second.at (i) < minSinr)
+				{
+					minSinr = (*itCqi).second.at (i);
+				}
+			}
+			// translate SINR -> cqi: WILD ACK: same as DL
+			double s = log2 ( 1 + (
+					std::pow (10, minSinr / 10 )  /
+					( (-std::log (5.0 * 0.00005 )) / 1.5) ));
+
+
+			cqi = m_amc->GetCqiFromSpectralEfficiency (s);
+			if (cqi == 0)
+			{
+				it++;
+				if (it == m_ceBsrRxed.end ())
+				{
+					// restart from the first
+					it = m_ceBsrRxed.begin ();
+				}
+				NS_LOG_DEBUG (this << " UE discared for CQI=0, RNTI " << schedInfo.m_rnti);
+				// remove UE from allocation map
+				for (uint16_t i = newTbInfoElem.m_rbStart; i < newTbInfoElem.m_rbStart + newTbInfoElem.m_rbLen; i++)
+				{
+					rbgAllocationMap.at (i) = 0;
+				}
+				continue; // CQI == 0 means "out of range" (see table 7.2.3-1 of 36.213)
+			}
+			newTbInfoElem.m_mcs = m_amc->GetMcsFromCqi (cqi);
+		}
+		MmWaveMacPduHeader macHeader;
+		newTbInfoElem.m_tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, rbPerFlow) / 8) - macHeader.GetSerializedSize (); // MCS 0 -> UL-AMC TBD
+
+		UpdateUlRlcBufferInfo (schedInfo.m_rnti, newTbInfoElem.m_tbSize);
+		newTbInfoElem.m_ndi = 1;
+		/*uldci.m_cceIndex = 0;
+					uldci.m_aggrLevel = 1;
+					uldci.m_ueTxAntennaSelection = 3; // antenna selection OFF
+					uldci.m_hopping = false;
+					uldci.m_n2Dmrs = 0;
+					uldci.m_tpc = 0; // no power control
+					uldci.m_cqiRequest = false; // only period CQI at this stage
+					uldci.m_ulIndex = 0; // TDD parameter
+					uldci.m_dai = 1; // TDD parameter
+					uldci.m_freqHopping = 0;
+					uldci.m_pdcchPowerOffset = 0; // not used
+		 */
+		schedInfo.m_dci.m_tbInfoElements.push_back (newTbInfoElem);
+		// store DCI for HARQ_PERIOD
+		uint8_t harqId = 0;
+		if (m_harqOn == true)
+		{
+			std::map <uint16_t, uint8_t>::iterator itProcId = m_ulHarqCurrentProcessId.find (schedInfo.m_rnti);
+			if (itProcId == m_ulHarqCurrentProcessId.end ())
+			{
+				NS_FATAL_ERROR ("No info find in HARQ buffer for UE " << schedInfo.m_rnti);
+			}
+			harqId = (*itProcId).second;
+			std::map <uint16_t, UlHarqProcessesTbInfoList_t>::iterator itTbInfo = m_ulHarqProcessesTbInfoMap.find (schedInfo.m_rnti);
+			if (itTbInfo == m_ulHarqProcessesTbInfoMap.end ())
+			{
+				NS_FATAL_ERROR ("Unable to find RNTI entry in UL DCI HARQ buffer for RNTI " << schedInfo.m_rnti);
+			}
+			(*itTbInfo).second.at (harqId) = newTbInfoElem;
+			// Update HARQ process status (RV 0)
+			std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (schedInfo.m_rnti);
+			if (itStat == m_ulHarqProcessesStatus.end ())
+			{
+				NS_LOG_ERROR ("No info find in HARQ buffer for UE (might change eNB) " << schedInfo.m_rnti);
+			}
+			(*itStat).second.at (harqId) = 0;
+		}
+
+		NS_LOG_INFO (this << " slot " << islot+1 << " UL Allocation - UE " << (*it).first << " startPRB " << (uint32_t)newTbInfoElem.m_rbStart << " nPRB " << (uint32_t)newTbInfoElem.m_rbLen << " CQI " << cqi << " MCS " << (uint32_t)newTbInfoElem.m_mcs << " TBsize " << newTbInfoElem.m_tbSize << " harqId " << (uint16_t)harqId);
+
+		it++;
+		if (it == m_ceBsrRxed.end ())
+		{
+			// restart from the first
+			it = m_ceBsrRxed.begin ();
+		}
+		if ((rbAllocated == numRb) || (rbPerFlow == 0))
+		{
+			// Stop allocation: no more PRBs
+			m_nextRntiUl = (*it).first;
+			break;
+		}
+	}
+	while (((*it).first != m_nextRntiUl)&&(rbPerFlow!=0));
+
+	m_allocationMaps.insert (std::pair <uint16_t, std::vector <uint16_t> > (params.m_snfSf, rbgAllocationMap));
+}
 
 void
 MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
@@ -369,7 +1413,7 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 
 	MmWaveMacSchedSapUser::SchedConfigIndParameters ret;
 	ret.m_sfn = params.m_snfSf;
-	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
+//	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
 
   RefreshDlCqiMaps ();
   RefreshUlCqiMaps ();
@@ -378,805 +1422,11 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 	{
 		if ((islot % 2) == 0) // schedule current slot for DOWNLINK
 		{
-		  // Create RBG map (DL res alloc type 0)
-		  std::vector <bool> rbgMap;
-		  uint16_t rbgAllocatedNum = 0;
-		  std::set <uint16_t> rntiAllocated;
-		  rbgMap.resize (m_phyMacConfig->GetNumRb (), false);
-
-		  // ****************** this section for HARQ retx ******************
-
-		 /* //   update UL HARQ proc id
-		  std::map <uint16_t, uint8_t>::iterator itProcId;
-		  for (itProcId = m_ulHarqCurrentProcessId.begin (); itProcId != m_ulHarqCurrentProcessId.end (); itProcId++)
-		  {
-		  	(*itProcId).second = ((*itProcId).second + 1) % m_phyMacConfig->GetNumHarqProcess ();
-		  }
-
-		  // Process DL HARQ feedback
-		    RefreshHarqProcesses ();
-		    // retrieve past HARQ retx buffered
-		    if (m_dlInfoListBuffered.size () > 0)
-		      {
-		        if (params.m_dlInfoList.size () > 0)
-		          {
-		            NS_LOG_INFO (this << " Received DL-HARQ feedback");
-		            m_dlInfoListBuffered.insert (m_dlInfoListBuffered.end (), params.m_dlInfoList.begin (), params.m_dlInfoList.end ());
-		          }
-		      }
-		    else
-		      {
-		        if (params.m_dlInfoList.size () > 0)
-		          {
-		            m_dlInfoListBuffered = params.m_dlInfoList;
-		          }
-		      }
-		    if (m_harqOn == false)
-		      {
-		        // Ignore HARQ feedback
-		        m_dlInfoListBuffered.clear ();
-		      }
-		    std::vector <struct DlInfoListElement_s> dlInfoListUntxed;
-		    for (uint16_t i = 0; i < m_dlInfoListBuffered.size (); i++)
-		      {
-		        std::set <uint16_t>::iterator itRnti = rntiAllocated.find (m_dlInfoListBuffered.at (i).m_rnti);
-		        if (itRnti != rntiAllocated.end ())
-		          {
-		            // RNTI already allocated for retx
-		            continue;
-		          }
-		        uint8_t nLayers = m_dlInfoListBuffered.at (i).m_harqStatus.size ();
-		        std::vector <bool> retx;
-		        NS_LOG_INFO (this << " Processing DLHARQ feedback");
-		        if (nLayers == 1)
-		          {
-		            retx.push_back (m_dlInfoListBuffered.at (i).m_harqStatus.at (0) == DlInfoListElement_s::NACK);
-		            retx.push_back (false);
-		          }
-		        else
-		          {
-		            retx.push_back (m_dlInfoListBuffered.at (i).m_harqStatus.at (0) == DlInfoListElement_s::NACK);
-		            retx.push_back (m_dlInfoListBuffered.at (i).m_harqStatus.at (1) == DlInfoListElement_s::NACK);
-		          }
-		        if (retx.at (0) || retx.at (1))
-		          {
-		            // retrieve HARQ process information
-		            uint16_t rnti = m_dlInfoListBuffered.at (i).m_rnti;
-		            uint8_t harqId = m_dlInfoListBuffered.at (i).m_harqProcessId;
-		            NS_LOG_INFO (this << " HARQ retx RNTI " << rnti << " harqId " << (uint16_t)harqId);
-		            std::map <uint16_t, DlHarqProcessesDciBuffer_t>::iterator itHarq = m_dlHarqProcessesDciBuffer.find (rnti);
-		            if (itHarq == m_dlHarqProcessesDciBuffer.end ())
-		              {
-		                NS_FATAL_ERROR ("No info find in HARQ buffer for UE " << rnti);
-		              }
-
-		            DlDciListElement_s dci = (*itHarq).second.at (harqId);
-		            int rv = 0;
-		            if (dci.m_rv.size () == 1)
-		              {
-		                rv = dci.m_rv.at (0);
-		              }
-		            else
-		              {
-		                rv = (dci.m_rv.at (0) > dci.m_rv.at (1) ? dci.m_rv.at (0) : dci.m_rv.at (1));
-		              }
-
-		            if (rv == 3)
-		              {
-		                // maximum number of retx reached -> drop process
-		                NS_LOG_INFO ("Max number of retransmissions reached -> drop process");
-		                std::map <uint16_t, DlHarqProcessesStatus_t>::iterator it = m_dlHarqProcessesStatus.find (rnti);
-		                if (it == m_dlHarqProcessesStatus.end ())
-		                  {
-		                    NS_LOG_ERROR ("No info find in HARQ buffer for UE (might change eNB) " << m_dlInfoListBuffered.at (i).m_rnti);
-		                  }
-		                (*it).second.at (harqId) = 0;
-		                std::map <uint16_t, DlHarqRlcPduListBuffer_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduListBuffer.find (rnti);
-		                if (itRlcPdu == m_dlHarqProcessesRlcPduListBuffer.end ())
-		                  {
-		                    NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlInfoListBuffered.at (i).m_rnti);
-		                  }
-		                for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)
-		                  {
-		                    (*itRlcPdu).second.at (k).at (harqId).clear ();
-		                  }
-		                continue;
-		              }
-		            // check the feasibility of retransmitting on the same RBGs
-		            // translate the DCI to Spectrum framework
-		            std::vector <int> dciRbg;
-		            uint32_t mask = 0x1;
-		            NS_LOG_INFO ("Original RBGs " << dci.m_rbBitmap << " rnti " << dci.m_rnti);
-		            for (int j = 0; j < 32; j++)
-		              {
-		                if (((dci.m_rbBitmap & mask) >> j) == 1)
-		                  {
-		                    dciRbg.push_back (j);
-		                    NS_LOG_INFO ("\t" << j);
-		                  }
-		                mask = (mask << 1);
-		              }
-		            bool free = true;
-		            for (uint8_t j = 0; j < dciRbg.size (); j++)
-		              {
-		                if (rbgMap.at (dciRbg.at (j)) == true)
-		                  {
-		                    free = false;
-		                    break;
-		                  }
-		              }
-		            if (free)
-		              {
-		                // use the same RBGs for the retx
-		                // reserve RBGs
-		                for (uint8_t j = 0; j < dciRbg.size (); j++)
-		                  {
-		                    rbgMap.at (dciRbg.at (j)) = true;
-		                    NS_LOG_INFO ("RBG " << dciRbg.at (j) << " assigned");
-		                    rbgAllocatedNum++;
-		                  }
-
-		                NS_LOG_INFO (this << " Send retx in the same RBGs");
-		              }
-		            else
-		              {
-		                // find RBGs for sending HARQ retx
-		                uint8_t j = 0;
-		                uint8_t rbgId = (dciRbg.at (dciRbg.size () - 1) + 1) % rbgNum;
-		                uint8_t startRbg = dciRbg.at (dciRbg.size () - 1);
-		                std::vector <bool> rbgMapCopy = rbgMap;
-		                while ((j < dciRbg.size ())&&(startRbg != rbgId))
-		                  {
-		                    if (rbgMapCopy.at (rbgId) == false)
-		                      {
-		                        rbgMapCopy.at (rbgId) = true;
-		                        dciRbg.at (j) = rbgId;
-		                        j++;
-		                      }
-		                    rbgId = (rbgId + 1) % rbgNum;
-		                  }
-		                if (j == dciRbg.size ())
-		                  {
-		                    // find new RBGs -> update DCI map
-		                    uint32_t rbgMask = 0;
-		                    for (uint16_t k = 0; k < dciRbg.size (); k++)
-		                      {
-		                        rbgMask = rbgMask + (0x1 << dciRbg.at (k));
-		                        NS_LOG_INFO (this << " New allocated RBG " << dciRbg.at (k));
-		                        rbgAllocatedNum++;
-		                      }
-		                    dci.m_rbBitmap = rbgMask;
-		                    rbgMap = rbgMapCopy;
-		                  }
-		                else
-		                  {
-		                    // HARQ retx cannot be performed on this TTI -> store it
-		                    dlInfoListUntxed.push_back (m_dlInfoListBuffered.at (i));
-		                    NS_LOG_INFO (this << " No resource for this retx -> buffer it");
-		                  }
-		              }
-		            // retrieve RLC PDU list for retx TBsize and update DCI
-		            BuildDataListElement_s newEl;
-		            std::map <uint16_t, DlHarqRlcPduListBuffer_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduListBuffer.find (rnti);
-		            if (itRlcPdu == m_dlHarqProcessesRlcPduListBuffer.end ())
-		              {
-		                NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << rnti);
-		              }
-		            for (uint8_t j = 0; j < nLayers; j++)
-		              {
-		                if (retx.at (j))
-		                  {
-		                    if (j >= dci.m_ndi.size ())
-		                      {
-		                        // for avoiding errors in MIMO transient phases
-		                        dci.m_ndi.push_back (0);
-		                        dci.m_rv.push_back (0);
-		                        dci.m_mcs.push_back (0);
-		                        dci.m_tbsSize.push_back (0);
-		                        NS_LOG_INFO (this << " layer " << (uint16_t)j << " no txed (MIMO transition)");
-
-		                      }
-		                    else
-		                      {
-		                        dci.m_ndi.at (j) = 0;
-		                        dci.m_rv.at (j)++;
-		                        (*itHarq).second.at (harqId).m_rv.at (j)++;
-		                        NS_LOG_INFO (this << " layer " << (uint16_t)j << " RV " << (uint16_t)dci.m_rv.at (j));
-		                      }
-		                  }
-		                else
-		                  {
-		                    // empty TB of layer j
-		                    dci.m_ndi.at (j) = 0;
-		                    dci.m_rv.at (j) = 0;
-		                    dci.m_mcs.at (j) = 0;
-		                    dci.m_tbsSize.at (j) = 0;
-		                    NS_LOG_INFO (this << " layer " << (uint16_t)j << " no retx");
-		                  }
-		              }
-
-		            for (uint16_t k = 0; k < (*itRlcPdu).second.at (0).at (dci.m_harqProcess).size (); k++)
-		              {
-		                std::vector <struct RlcPduListElement_s> rlcPduListPerLc;
-		                for (uint8_t j = 0; j < nLayers; j++)
-		                  {
-		                    if (retx.at (j))
-		                      {
-		                        if (j < dci.m_ndi.size ())
-		                          {
-		                            rlcPduListPerLc.push_back ((*itRlcPdu).second.at (j).at (dci.m_harqProcess).at (k));
-		                          }
-		                      }
-		                  }
-
-		                if (rlcPduListPerLc.size () > 0)
-		                  {
-		                    newEl.m_rlcPduList.push_back (rlcPduListPerLc);
-		                  }
-		              }
-		            newEl.m_rnti = rnti;
-		            newEl.m_dci = dci;
-		            (*itHarq).second.at (harqId).m_rv = dci.m_rv;
-		            // refresh timer
-		            std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer = m_dlHarqProcessesTimer.find (rnti);
-		            if (itHarqTimer== m_dlHarqProcessesTimer.end ())
-		              {
-		                NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)rnti);
-		              }
-		            (*itHarqTimer).second.at (harqId) = 0;
-		            ret.m_buildDataList.push_back (newEl);
-		            rntiAllocated.insert (rnti);
-		          }
-		        else
-		          {
-		            // update HARQ process status
-		            NS_LOG_INFO (this << " HARQ ACK UE " << m_dlInfoListBuffered.at (i).m_rnti);
-		            std::map <uint16_t, DlHarqProcessesStatus_t>::iterator it = m_dlHarqProcessesStatus.find (m_dlInfoListBuffered.at (i).m_rnti);
-		            if (it == m_dlHarqProcessesStatus.end ())
-		              {
-		                NS_FATAL_ERROR ("No info find in HARQ buffer for UE " << m_dlInfoListBuffered.at (i).m_rnti);
-		              }
-		            (*it).second.at (m_dlInfoListBuffered.at (i).m_harqProcessId) = 0;
-		            std::map <uint16_t, DlHarqRlcPduListBuffer_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduListBuffer.find (m_dlInfoListBuffered.at (i).m_rnti);
-		            if (itRlcPdu == m_dlHarqProcessesRlcPduListBuffer.end ())
-		              {
-		                NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlInfoListBuffered.at (i).m_rnti);
-		              }
-		            for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)
-		              {
-		                (*itRlcPdu).second.at (k).at (m_dlInfoListBuffered.at (i).m_harqProcessId).clear ();
-		              }
-		          }
-		      }
-		    m_dlInfoListBuffered.clear ();
-		    m_dlInfoListBuffered = dlInfoListUntxed;
-
-		    if (rbgAllocatedNum == rbgNum)
-		      {
-		        // all the RBGs are already allocated -> exit
-		        if ((ret.m_buildDataList.size () > 0) || (ret.m_buildRarList.size () > 0))
-		          {
-		            m_schedSapUser->SchedDlConfigInd (ret);
-		          }
-		        return;
-		      }*/
-
-
-			// Get the actual active flows (unique RNTI-LCID pairs)
-			std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
-			m_rlcBufferReq.sort (SortRlcBufferReq);
-			int nflows = 0;
-			int nTbs = 0;
-
-			std::map <uint16_t,uint8_t> lcActivesPerRnti; // tracks how many active LCs per RNTI there are
-			std::map <uint16_t,uint8_t>::iterator itLcRnti;
-			for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
-			{
-				// remove old entries of this UE-LC
-				std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).m_rnti);
-
-				if ( (((*it).m_rlcTransmissionQueueSize > 0)
-						|| ((*it).m_rlcRetransmissionQueueSize > 0)
-						|| ((*it).m_rlcStatusPduSize > 0))
-						&& (itRnti == rntiAllocated.end ()) )  // UE must not be allocated for HARQ retx
-					//			  				  			&& (HarqProcessAvailability ((*it).m_rnti))  ) // UE needs HARQ proc free
-				{
-					NS_LOG_LOGIC (this << " User " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity << " is active, status  " << (*it).m_rlcStatusPduSize << " retx " << (*it).m_rlcRetransmissionQueueSize << " tx " << (*it).m_rlcTransmissionQueueSize);
-					std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find ((*it).m_rnti);
-					uint8_t cqi = 0;
-					if (itCqi != m_wbCqiRxed.end ())
-					{
-						cqi = (*itCqi).second;
-					}
-					else
-					{
-						cqi = 1; // lowest value fro trying a transmission
-					}
-					if (cqi != 0)
-					{
-						// CQI == 0 means "out of range" (see table 7.2.3-1 of 36.213)
-						nflows++;
-						itLcRnti = lcActivesPerRnti.find ((*it).m_rnti);
-						if (itLcRnti != lcActivesPerRnti.end ())
-						{
-							(*itLcRnti).second++;
-						}
-						else
-						{
-							lcActivesPerRnti.insert (std::pair<uint16_t, uint8_t > ((*it).m_rnti, 1));
-							nTbs++;
-						}
-
-					}
-				}
-			}
-
-			if (nflows == 0)
-			{
-				continue; // no DL flows to be scheduled
-			}
-
-			// int rbgPerTb = (nTbs > 0) ? ((numRbg - rbgAllocatedNum) / nTbs) : INT_MAX;
-			unsigned int rbgPerTb = (nTbs > 0) ? (m_phyMacConfig->GetNumRb ()  / nTbs) : m_phyMacConfig->GetNumRb ();
-
-			NS_LOG_INFO (this << " Flows to be transmitted " << nflows << " rbgPerTb " << rbgPerTb);
-			if (rbgPerTb == 0)
-			{
-				rbgPerTb = 1;  // at least 1 rbg per TB (till available resource)
-			}
-
-			unsigned int rbgAllocated = 0;
-
-			// round robin assignment to all UEs registered starting from the subsequent of the one
-			// served last scheduling trigger event
-			if (m_nextRntiDl != 0)
-			{
-				for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
-				{
-					if ((*it).m_rnti == m_nextRntiDl)
-					{
-						break;
-					}
-				}
-
-				if (it == m_rlcBufferReq.end ())
-				{
-					NS_FATAL_ERROR (this << " no user found");
-				}
-			}
-			else
-			{
-				it = m_rlcBufferReq.begin ();
-				m_nextRntiDl = (*it).m_rnti;
-			}
-//			std::map <uint16_t,uint8_t>::iterator itTxMode;
-			do
-			{
-				itLcRnti = lcActivesPerRnti.find ((*it).m_rnti);
-//				std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).m_rnti);
-//				if ((itLcRnti == lcActivesPerRnti.end ())||(itRnti != rntiAllocated.end ()))
-				if ((itLcRnti == lcActivesPerRnti.end ()))
-				{
-					// skip this RNTI (no active queue or already allocated for HARQ)
-					uint16_t rntiDiscared = (*it).m_rnti;
-					while (it != m_rlcBufferReq.end ())
-					{
-						if ((*it).m_rnti != rntiDiscared)
-						{
-							break;
-						}
-						it++;
-					}
-					if (it == m_rlcBufferReq.end ())
-					{
-						// restart from the first
-						it = m_rlcBufferReq.begin ();
-					}
-					continue;
-				}
-
-				int lcNum = (*itLcRnti).second;
-
-				// find existing or create new scheduling info element/DCI element
-				std::map<uint16_t,SchedInfoElement>::iterator schedIt = schedInfoMap.find ((*it).m_rnti);
-				if (schedIt == schedInfoMap.end ())
-				{
-					SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
-					newSchedInfo.m_rnti = (*it).m_rnti;
-					DciInfoElement newDci;
-					newDci.m_rnti = (*it).m_rnti;
-					newDci.m_tddBitmap = 0;
-					//			        newDci.m_harqProcess = UpdateHarqProcessId ((*it).m_rnti);
-					newSchedInfo.m_dci = newDci;
-					newSchedInfo.m_frameNum = frameNum;
-					newSchedInfo.m_sfNum = sfNum;
-					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> ((*it).m_rnti, newSchedInfo))).first;
-				}
-
-				SchedInfoElement& schedInfo = schedIt->second;
-//				schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << islot));
-				TbInfoElement newTbInfoElem;
-				newTbInfoElem.m_resAlloc = 0;
-				newTbInfoElem.m_rbBitmap = 0;
-				newTbInfoElem.m_slotInd = islot;
-				schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
-
-				std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (schedInfo.m_rnti);
-
-				if (itCqi == m_wbCqiRxed.end ())
-				{
-					newTbInfoElem.m_mcs = 0; // no info on this user -> lowest MCS
-				}
-				else
-				{
-					newTbInfoElem.m_mcs = m_amc->GetMcsFromCqi ((*itCqi).second);
-				}
-
-				MmWaveMacPduHeader macHeader;
-				int tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, m_phyMacConfig->GetNumRb()) / 8) - macHeader.GetSerializedSize ();
-				uint16_t rlcPduSize = tbSize / lcNum;
-				while ((*it).m_rnti == schedInfo.m_rnti)
-				{
-					if ( ((*it).m_rlcTransmissionQueueSize > 0)
-							|| ((*it).m_rlcRetransmissionQueueSize > 0)
-							|| ((*it).m_rlcStatusPduSize > 0) )
-					{
-
-						RlcPduInfo newRlcEl;
-						newRlcEl.m_lcid = (*it).m_logicalChannelIdentity;
-						NS_LOG_INFO (this << "LCID " << (uint32_t) newRlcEl.m_lcid << " size " << rlcPduSize << " ID " << (*it).m_rnti);
-						newRlcEl.m_size = rlcPduSize;
-						UpdateDlRlcBufferInfo ((*it).m_rnti, newRlcEl.m_lcid, rlcPduSize);
-
-						/*if (m_harqOn == true)
-			                      {
-			                        // store RLC PDU list for HARQ
-			                        std::map <uint16_t, DlHarqRlcPduListBuffer_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduListBuffer.find ((*it).m_rnti);
-			                        if (itRlcPdu == m_dlHarqProcessesRlcPduListBuffer.end ())
-			                          {
-			                            NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << (*it).m_rnti);
-			                          }
-			                        (*itRlcPdu).second.at (j).at (newDci.m_harqProcess).push_back (newRlcEl);
-			                      }*/
-
-						// push new element onto RLC PDU vector for this TB
-						schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (newRlcEl);
-						NS_LOG_DEBUG ("RLC PDU for LCID " << (unsigned int)newRlcEl.m_lcid << " of size " << newRlcEl.m_size << " added for TB " << schedInfo.m_rlcPduList.size ()-1);
-						lcNum--;
-					}
-					it++;
-					if (it == m_rlcBufferReq.end ())
-					{
-						// restart from the first
-						it = m_rlcBufferReq.begin ();
-						break;
-					}
-				}
-				uint32_t rbgMask = 0;
-				uint16_t i = 0;
-				NS_LOG_INFO (this << " slot " << islot+1 << " DL - Allocate user " << schedInfo.m_rnti << " LCs " << (uint16_t)(*itLcRnti).second << " bytes " << tbSize << " mcs " << (uint16_t) newTbInfoElem.m_mcs << " harqId " << (uint16_t)newTbInfoElem.m_harqProcess );
-				while (i < rbgPerTb)
-				{
-					if (rbgMap.at (rbgAllocated) == false)
-					{
-						rbgMask = rbgMask + (0x1 << rbgAllocated);
-						i++;
-						rbgMap.at (rbgAllocated) = true;
-						rbgAllocatedNum++;
-					}
-					rbgAllocated++;
-				}
-				newTbInfoElem.m_rbBitmap = rbgMask; // (32 bit bitmap see 7.1.6 of 36.213)
-
-				newTbInfoElem.m_tbSize = tbSize;
-				newTbInfoElem.m_ndi = 1;
-				newTbInfoElem.m_rv = 0;
-
-				// newDci.m_tpc = 1; //1 is mapped to 0 in Accumulated Mode and to -1 in Absolute Mode
-
-				schedInfo.m_dci.m_tbInfoElements.push_back (newTbInfoElem);
-
-				/*			        if (m_harqOn == true)
-			          {
-			            // store DCI for HARQ
-			            std::map <uint16_t, DlHarqProcessesDciBuffer_t>::iterator itDci = m_dlHarqProcessesDciBuffer.find (newSchedInfo.m_rnti);
-			            if (itDci == m_dlHarqProcessesDciBuffer.end ())
-			              {
-			                NS_FATAL_ERROR ("Unable to find RNTI entry in DCI HARQ buffer for RNTI " << newSchedInfo.m_rnti);
-			              }
-			            (*itDci).second.at (newDci.m_harqProcess) = newDci;
-			            // refresh timer
-			            std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer =  m_dlHarqProcessesTimer.find (newSchedInfo.m_rnti);
-			            if (itHarqTimer== m_dlHarqProcessesTimer.end ())
-			              {
-			                NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)newSchedInfo.m_rnti);
-			              }
-			            (*itHarqTimer).second.at (newDci.m_harqProcess) = 0;
-			          }*/
-				// ...more parameters -> ignored in this version
-
-				if (rbgAllocatedNum == m_phyMacConfig->GetNumRb ())
-				{
-					m_nextRntiDl = schedInfo.m_rnti; // store last RNTI served
-					break;                       // no more RGB to be allocated
-				}
-			}
-			while ((*it).m_rnti != m_nextRntiDl);
-		}	// *********************************** END OF DOWNLINK SECTION ***************************//
+			DoSchedDlTriggerReq (params, ret, frameNum, sfNum, islot);
+		}
 		else
 		{
-			// schedule slot in n+3th subframe for UL
-			// Create RB map (UL res alloc type 0)
-			std::vector <bool> rbMap;
-			std::set <uint16_t> rntiAllocated;
-			std::vector <uint16_t> rbgAllocationMap;
-			uint32_t numRb = m_phyMacConfig->GetNumRb ();
-			rbMap.resize (numRb);
-			rbgAllocationMap.resize (numRb);
-
-			std::map <uint16_t,uint32_t>::iterator it;
-			int nflows = 0;
-
-			for (it = m_ceBsrRxed.begin (); it != m_ceBsrRxed.end (); it++)
-			{
-				//			      std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).first);
-				//			      // select UEs with queues not empty and not yet allocated for HARQ
-				//			      NS_LOG_INFO (this << " UE " << (*it).first << " queue " << (*it).second);
-				//			      if (((*it).second > 0)&&(itRnti == rntiAllocated.end ()))
-				//			        {
-				//			          nflows++;
-				//			        }
-				if ((*it).second > 0)
-				{
-					nflows++;
-				}
-			}
-			if (nflows == 0)
-			{
-				continue;  // no UL flows to be scheduled
-			}
-
-			// Divide the remaining resources equally among the active users starting from after the one served last scheduling trigger
-			//			  uint16_t rbPerFlow = numRbg / (nflows + rntiAllocated.size ());
-			unsigned int rbPerFlow = m_phyMacConfig->GetNumRb () / nflows;
-			if (rbPerFlow == 0)
-			{
-				rbPerFlow = 1;  // at least 1 rbg per flow (till available resource) to ensure TxOpportunity >= 7 bytes
-			}
-			uint16_t rbAllocated = 0;
-
-			if (m_nextRntiUl != 0)
-			{
-				for (it = m_ceBsrRxed.begin (); it != m_ceBsrRxed.end (); it++)
-				{
-					if ((*it).first == m_nextRntiUl)
-					{
-						break;
-					}
-				}
-				if (it == m_ceBsrRxed.end ())
-				{
-					NS_LOG_ERROR (this << " no user found");
-				}
-			}
-			else
-			{
-				it = m_ceBsrRxed.begin ();
-				m_nextRntiUl = (*it).first;
-			}
-
-			NS_LOG_INFO (this << " NFlows " << nflows << " RB per Flow " << rbPerFlow);
-			do
-			{
-				/*std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).first);
-				if ((itRnti != rntiAllocated.end ())||((*it).second == 0))
-				{
-					// UE already allocated for UL-HARQ -> skip it
-					it++;
-					if (it == m_ceBsrRxed.end ())
-					{
-						// restart from the first
-						it = m_ceBsrRxed.begin ();
-					}
-					continue;
-				}*/
-//				if (rbAllocated + rbPerFlow - 1 > numRb)
-//				{
-//					// limit to physical resources last resource assignment
-//					rbPerFlow = numRb - rbAllocated;
-//					// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
-//					if (rbPerFlow < 1)
-//					{
-//						// terminate allocation
-//						rbPerFlow = 0;
-//					}
-//				}
-				uint16_t rnti = (*it).first;
-				NS_LOG_INFO (this << " try to allocate " << rnti);
-				// find existing or create new scheduling info element/DCI element
-				std::map<uint16_t,SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
-				if (schedIt == schedInfoMap.end ())
-				{
-					SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
-					newSchedInfo.m_rnti = (*it).first;
-					DciInfoElement newDci;
-					newDci.m_rnti = (*it).first;
-					newDci.m_tddBitmap = 0;
-					//			        newDci.m_harqProcess = UpdateHarqProcessId ((*it).m_rnti);
-					newSchedInfo.m_dci = newDci;
-					newSchedInfo.m_frameNum = frameNum;
-					newSchedInfo.m_sfNum = sfNum;
-					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> ((*it).first, newSchedInfo))).first;
-				}
-
-				SchedInfoElement& schedInfo = schedIt->second;
-				schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << islot)); // set bit for UL
-				TbInfoElement newTbInfoElem;
-				newTbInfoElem.m_resAlloc = 0;
-				newTbInfoElem.m_rbLen = rbPerFlow;
-				newTbInfoElem.m_slotInd = islot;
-				schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
-
-//				UlDciListElement uldci;
-//				uldci.m_rnti = (*it).first;
-//				uldci.m_rbLen = rbPerFlow;
-
-				bool allocated = false;
-				NS_LOG_INFO (this << " RB Allocated " << rbAllocated << " rbPerFlow " << rbPerFlow << " flows " << nflows);
-				while ((!allocated)&&((numRb - rbAllocated + rbPerFlow ) > 1) && (rbPerFlow != 0))
-				{
-					// check availability
-					bool free = true;
-					for (uint16_t j = rbAllocated; j < rbAllocated + rbPerFlow; j++)
-					{
-						if (rbMap.at (j) == true)
-						{
-							free = false;
-							break;
-						}
-					}
-					if (free)
-					{
-						newTbInfoElem.m_rbStart = rbAllocated;
-
-						for (uint16_t j = rbAllocated; j < rbAllocated + rbPerFlow; j++)
-						{
-							rbMap.at (j) = true;
-							// store info on allocation for managing ul-cqi interpretation
-							rbgAllocationMap.at (j) = (*it).first;
-							NS_LOG_INFO ("\t " << j);
-						}
-						rbAllocated += rbPerFlow;
-						allocated = true;
-						break;
-					}
-					rbAllocated++;
-//					if (rbAllocated + rbPerFlow - 1 > numRb)
-//					{
-//						// limit to physical resources last resource assignment
-//						rbPerFlow = numRb - rbAllocated;
-//						// at least 3 rbg per flow to ensure TxOpportunity >= 7 bytes
-//						if (rbPerFlow < 3)
-//						{
-//							// terminate allocation
-//							rbPerFlow = 0;
-//						}
-//					}
-				}
-				if (!allocated)
-				{
-					// unable to allocate new resource: finish scheduling
-					m_nextRntiUl = (*it).first;
-
-					m_allocationMaps.insert (std::pair <uint16_t, std::vector <uint16_t> > (params.m_snfSf, rbgAllocationMap));
-					break;
-				}
-				std::map <uint16_t, std::vector <double> >::iterator itCqi = m_ueUlCqi.find ((*it).first);
-				int cqi = 0;
-				if (itCqi == m_ueUlCqi.end ())
-				{
-					// no cqi info about this UE
-					newTbInfoElem.m_mcs = 0; // MCS 0 -> UL-AMC TBD
-					NS_LOG_INFO (this << " UE does not have ULCQI " << (*it).first );
-				}
-				else
-				{
-					// take the lowest CQI value (worst RB)
-					double minSinr = (*itCqi).second.at (newTbInfoElem.m_rbStart);
-					for (uint16_t i = newTbInfoElem.m_rbStart; i < newTbInfoElem.m_rbStart + newTbInfoElem.m_rbLen; i++)
-					{
-						if ((*itCqi).second.at (i) < minSinr)
-						{
-							minSinr = (*itCqi).second.at (i);
-						}
-					}
-					// translate SINR -> cqi: WILD ACK: same as DL
-					double s = log2 ( 1 + (
-							std::pow (10, minSinr / 10 )  /
-							( (-std::log (5.0 * 0.00005 )) / 1.5) ));
-
-
-					cqi = m_amc->GetCqiFromSpectralEfficiency (s);
-					if (cqi == 0)
-					{
-						it++;
-						if (it == m_ceBsrRxed.end ())
-						{
-							// restart from the first
-							it = m_ceBsrRxed.begin ();
-						}
-						NS_LOG_DEBUG (this << " UE discared for CQI=0, RNTI " << schedInfo.m_rnti);
-						// remove UE from allocation map
-						for (uint16_t i = newTbInfoElem.m_rbStart; i < newTbInfoElem.m_rbStart + newTbInfoElem.m_rbLen; i++)
-						{
-							rbgAllocationMap.at (i) = 0;
-						}
-						continue; // CQI == 0 means "out of range" (see table 7.2.3-1 of 36.213)
-					}
-					newTbInfoElem.m_mcs = m_amc->GetMcsFromCqi (cqi);
-				}
-				MmWaveMacPduHeader macHeader;
-				newTbInfoElem.m_tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, rbPerFlow) / 8) - macHeader.GetSerializedSize (); // MCS 0 -> UL-AMC TBD
-
-				UpdateUlRlcBufferInfo (schedInfo.m_rnti, newTbInfoElem.m_tbSize);
-				newTbInfoElem.m_ndi = 1;
-				/*uldci.m_cceIndex = 0;
-				uldci.m_aggrLevel = 1;
-				uldci.m_ueTxAntennaSelection = 3; // antenna selection OFF
-				uldci.m_hopping = false;
-				uldci.m_n2Dmrs = 0;
-				uldci.m_tpc = 0; // no power control
-				uldci.m_cqiRequest = false; // only period CQI at this stage
-				uldci.m_ulIndex = 0; // TDD parameter
-				uldci.m_dai = 1; // TDD parameter
-				uldci.m_freqHopping = 0;
-				uldci.m_pdcchPowerOffset = 0; // not used
-				*/
-				schedInfo.m_dci.m_tbInfoElements.push_back (newTbInfoElem);
-				// store DCI for HARQ_PERIOD
-				uint8_t harqId = 0;
-				/*if (m_harqOn == true)
-				{
-					std::map <uint16_t, uint8_t>::iterator itProcId;
-					itProcId = m_ulHarqCurrentProcessId.find (uldci.m_rnti);
-					if (itProcId == m_ulHarqCurrentProcessId.end ())
-					{
-						NS_FATAL_ERROR ("No info find in HARQ buffer for UE " << uldci.m_rnti);
-					}
-					harqId = (*itProcId).second;
-					std::map <uint16_t, UlHarqProcessesDciBuffer_t>::iterator itDci = m_ulHarqProcessesDciBuffer.find (uldci.m_rnti);
-					if (itDci == m_ulHarqProcessesDciBuffer.end ())
-					{
-						NS_FATAL_ERROR ("Unable to find RNTI entry in UL DCI HARQ buffer for RNTI " << uldci.m_rnti);
-					}
-					(*itDci).second.at (harqId) = uldci;
-					// Update HARQ process status (RV 0)
-					std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (uldci.m_rnti);
-					if (itStat == m_ulHarqProcessesStatus.end ())
-					{
-						NS_LOG_ERROR ("No info find in HARQ buffer for UE (might change eNB) " << uldci.m_rnti);
-					}
-					(*itStat).second.at (harqId) = 0;
-				}*/
-
-				NS_LOG_INFO (this << " slot " << islot+1 << " UL Allocation - UE " << (*it).first << " startPRB " << (uint32_t)newTbInfoElem.m_rbStart << " nPRB " << (uint32_t)newTbInfoElem.m_rbLen << " CQI " << cqi << " MCS " << (uint32_t)newTbInfoElem.m_mcs << " TBsize " << newTbInfoElem.m_tbSize << " harqId " << (uint16_t)harqId);
-
-				it++;
-				if (it == m_ceBsrRxed.end ())
-				{
-					// restart from the first
-					it = m_ceBsrRxed.begin ();
-				}
-				if ((rbAllocated == numRb) || (rbPerFlow == 0))
-				{
-					// Stop allocation: no more PRBs
-					m_nextRntiUl = (*it).first;
-					break;
-				}
-			}
-			while (((*it).first != m_nextRntiUl)&&(rbPerFlow!=0));
-
-		  m_allocationMaps.insert (std::pair <uint16_t, std::vector <uint16_t> > (params.m_snfSf, rbgAllocationMap));
+			DoSchedUlTriggerReq (params, ret, frameNum, sfNum, islot);
 		}
 	}
 
@@ -1372,6 +1622,131 @@ MmWaveRrMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size)
     }
 
 }
+
+/*
+void
+MmWaveRrMacScheduler::DoCschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+  // Read the subset of parameters used
+  m_cschedCellConfig = params;
+  m_rachAllocationMap.resize (m_cschedCellConfig.m_ulBandwidth, 0);
+  FfMacCschedSapUser::CschedUeConfigCnfParameters cnf;
+  cnf.m_result = SUCCESS;
+  m_cschedSapUser->CschedUeConfigCnf (cnf);
+  return;
+}
+
+void
+MmWaveRrMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
+{
+  NS_LOG_FUNCTION (this << " RNTI " << params.m_rnti << " txMode " << (uint16_t)params.m_transmissionMode);
+  std::map <uint16_t,uint8_t>::iterator it = m_uesTxMode.find (params.m_rnti);
+  if (it == m_uesTxMode.end ())
+    {
+//      m_uesTxMode.insert (std::pair <uint16_t, double> (params.m_rnti, params.m_transmissionMode));
+      // generate HARQ buffers
+      m_dlHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+      DlHarqProcessesStatus_t dlHarqPrcStatus;
+      dlHarqPrcStatus.resize (8,0);
+      m_dlHarqProcessesStatus.insert (std::pair <uint16_t, DlHarqProcessesStatus_t> (params.m_rnti, dlHarqPrcStatus));
+      DlHarqProcessesTimer_t dlHarqProcessesTimer;
+      dlHarqProcessesTimer.resize (8,0);
+      m_dlHarqProcessesTimer.insert (std::pair <uint16_t, DlHarqProcessesTimer_t> (params.m_rnti, dlHarqProcessesTimer));
+      DlHarqProcessesDciBuffer_t dlHarqdci;
+      dlHarqdci.resize (8);
+      m_dlHarqProcessesTbInfoMap.insert (std::pair <uint16_t, DlHarqProcessesTbInfoList_t> (params.m_rnti, dlHarqdci));
+      DlHarqRlcPduListBuffer_t dlHarqRlcPdu;
+      dlHarqRlcPdu.resize (2);
+      dlHarqRlcPdu.at (0).resize (8);
+      dlHarqRlcPdu.at (1).resize (8);
+      m_dlHarqProcessesRlcPduMap.insert (std::pair <uint16_t, DlHarqRlcPduListBuffer_t> (params.m_rnti, dlHarqRlcPdu));
+      m_ulHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+      UlHarqProcessesStatus_t ulHarqPrcStatus;
+      ulHarqPrcStatus.resize (8,0);
+      m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (params.m_rnti, ulHarqPrcStatus));
+      UlHarqProcessesDciBuffer_t ulHarqdci;
+      ulHarqdci.resize (8);
+      m_ulHarqProcessesTbInfoMap.insert (std::pair <uint16_t, UlHarqProcessesTbInfoList_t> (params.m_rnti, ulHarqdci));
+    }
+  else
+    {
+      (*it).second = params.m_transmissionMode;
+    }
+  return;
+}
+
+void
+MmWaveRrMacScheduler::DoCschedLcConfigReq (const struct MmwaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+  // Not used at this stage (LCs updated by DoSchedDlRlcBufferReq)
+  return;
+}
+
+void
+MmWaveRrMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+    for (uint16_t i = 0; i < params.m_logicalChannelIdentity.size (); i++)
+    {
+     std::list<FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
+      while (it!=m_rlcBufferReq.end ())
+        {
+          if (((*it).m_rnti == params.m_rnti)&&((*it).m_logicalChannelIdentity == params.m_logicalChannelIdentity.at (i)))
+            {
+              it = m_rlcBufferReq.erase (it);
+            }
+          else
+            {
+              it++;
+            }
+        }
+    }
+  return;
+}
+
+void
+MmWaveRrMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
+{
+  NS_LOG_FUNCTION (this << " Release RNTI " << params.m_rnti);
+
+  m_uesTxMode.erase (params.m_rnti);
+  m_dlHarqCurrentProcessId.erase (params.m_rnti);
+  m_dlHarqProcessesStatus.erase  (params.m_rnti);
+  m_dlHarqProcessesTimer.erase (params.m_rnti);
+  m_dlHarqProcessesDciBuffer.erase  (params.m_rnti);
+  m_dlHarqProcessesRlcPduListBuffer.erase  (params.m_rnti);
+  m_ulHarqCurrentProcessId.erase  (params.m_rnti);
+  m_ulHarqProcessesStatus.erase  (params.m_rnti);
+  m_ulHarqProcessesDciBuffer.erase  (params.m_rnti);
+  m_ceBsrRxed.erase (params.m_rnti);
+  std::list<FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
+  while (it != m_rlcBufferReq.end ())
+    {
+      if ((*it).m_rnti == params.m_rnti)
+        {
+          NS_LOG_INFO (this << " Erase RNTI " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity);
+          it = m_rlcBufferReq.erase (it);
+        }
+      else
+        {
+          it++;
+        }
+    }
+  if (m_nextRntiUl == params.m_rnti)
+    {
+      m_nextRntiUl = 0;
+    }
+
+  if (m_nextRntiDl == params.m_rnti)
+    {
+      m_nextRntiDl = 0;
+    }
+
+  return;
+}
+*/
 
 }
 

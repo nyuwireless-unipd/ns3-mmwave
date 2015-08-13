@@ -312,7 +312,7 @@ public:
 	double	GetWbCqiPeriodUs (void);
 	std::string GetStaticTDDPattern ();
 	uint32_t	 	GetNumHarqProcess (void);
-	uint8_t GetHarqDlTimeout (void);
+	uint8_t GetHarqTimeout (void);
 
 	void SetSymbPerSlot (uint32_t sym);
 	void SetSymbolPeriod (double prd);
@@ -350,7 +350,7 @@ private:
 	double m_chunkWidth; //enter in Hz.
 	uint32_t m_numRb;
 	uint8_t m_numHarqProcess;
-	uint8_t m_harqDlTimeout;
+	uint8_t m_harqTimeout;
 
 	double m_centerFrequency;
 	double   m_guardPeriod; 		// UL to DL switching time in micro seconds

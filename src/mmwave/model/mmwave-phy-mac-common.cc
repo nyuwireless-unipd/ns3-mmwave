@@ -114,7 +114,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 		 .AddAttribute ("HarqDlTimeout",
 							 "Number of concurrent stop-and-wait Hybrid ARQ processes per user",
 							 UintegerValue (20),
-							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_harqDlTimeout),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_harqTimeout),
 							 MakeUintegerChecker<uint8_t> ())
 	;
 
@@ -134,7 +134,7 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
   m_chunkWidth (14e6),
   m_numRb (20),
   m_numHarqProcess (20),
-  m_harqDlTimeout (20),
+  m_harqTimeout (20),
   m_centerFrequency (28e9),
 	m_guardPeriod (4.16),
   m_l1L2CtrlLatency (2),
@@ -286,9 +286,9 @@ MmWavePhyMacCommon::GetNumHarqProcess (void)
 }
 
 uint8_t
-MmWavePhyMacCommon::GetHarqDlTimeout (void)
+MmWavePhyMacCommon::GetHarqTimeout (void)
 {
-	return m_harqDlTimeout;
+	return m_harqTimeout;
 }
 
 void
@@ -411,7 +411,7 @@ MmWavePhyMacCommon::SetNumHarqProcess (uint32_t numProcess)
 void
 MmWavePhyMacCommon::SetHarqDlTimeout (uint8_t harqDlTimeout)
 {
-	m_harqDlTimeout = harqDlTimeout;
+	m_harqTimeout = harqDlTimeout;
 }
 
 #if 0

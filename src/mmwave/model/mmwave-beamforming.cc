@@ -491,7 +491,7 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	if (enbAntennaArray->IsOmniTx ())
 	{
 		complexVector_t vec;
-		for (int i=0; i<m_pathNum; i++)
+		for (unsigned int i=0; i<m_pathNum; i++)
 		{
 			vec.push_back(std::complex<double> (1,0));
 		}

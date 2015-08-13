@@ -218,7 +218,7 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 			{
 				sector = 15-sector;
 			}
-			for(int i = 0; i< antennaNum; i++)
+			for(unsigned int i = 0; i< antennaNum; i++)
 			{
 				std::complex<double> cmplx (Enb22DegreeBFVectorReal[sector][i],Enb22DegreeBFVectorImag[sector][i]);
 				cmplxVector.push_back(cmplx);
@@ -256,7 +256,7 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 			{
 				sector = 7-sector;
 			}
-			for(int i = 0; i< antennaNum; i++)
+			for(unsigned int i = 0; i< antennaNum; i++)
 			{
 				std::complex<double> cmplx (Ue45DegreeBFVectorReal[sector][i],Ue45DegreeBFVectorImag[sector][i]);
 				cmplxVector.push_back(cmplx);
@@ -293,7 +293,7 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 			{
 				sector = 3-sector;
 			}
-			for(int i = 0; i< antennaNum; i++)
+			for(unsigned int i = 0; i< antennaNum; i++)
 			{
 				std::complex<double> cmplx (All90DegreeBFVectorReal[sector][i],All90DegreeBFVectorImag[sector][i]);
 				cmplxVector.push_back(cmplx);
@@ -308,11 +308,11 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 
 	//normalize antennaWeights;
 	double weightSum = 0;
-	for (int i = 0; i< antennaNum; i++)
+	for (unsigned int i = 0; i< antennaNum; i++)
 	{
 		weightSum += pow (std::abs(cmplxVector. at(i)),2);
 	}
-	for (int i = 0; i< antennaNum; i++)
+	for (unsigned int i = 0; i< antennaNum; i++)
 	{
 		cmplxVector. at(i) = cmplxVector. at(i)/sqrt(weightSum);
 	}

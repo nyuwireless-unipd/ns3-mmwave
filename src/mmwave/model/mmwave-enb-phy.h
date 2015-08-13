@@ -88,6 +88,9 @@ public:
 
 	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
 
+	void ReceiveUlHarqFeedback (UlHarqInfo mes);
+
+
 private:
 
 	bool AddUePhy (uint16_t rnti);

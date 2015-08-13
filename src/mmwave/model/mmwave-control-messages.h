@@ -210,7 +210,7 @@ private:
 // ---------------------------------------------------------------------------
 
 /**
- * \ingroup lte
+ * \ingroup mmWave
  *
  * abstract model for the MAC Random Access Response message
  */
@@ -263,6 +263,35 @@ public:
 private:
   std::list<Rar> m_rarList;
   uint16_t m_raRnti;
+
+};
+
+
+/**
+ * \ingroup mmEave
+ * The downlink MmwaveDlHarqFeedbackMessage defines the specific
+ * messages for transmitting the DL HARQ feedback through PUCCH
+ */
+class MmWaveDlHarqFeedbackMessage : public MmWaveControlMessage
+{
+public:
+	MmWaveDlHarqFeedbackMessage (void);
+  virtual ~MmWaveDlHarqFeedbackMessage (void);
+
+  /**
+  * \brief add a DL HARQ feedback record into the message.
+  * \param m the DL HARQ feedback
+  */
+  void SetDlHarqFeedback (DlHarqInfo m);
+
+  /**
+  * \brief Get DL HARQ informations
+  * \return DL HARQ message
+  */
+  DlHarqInfo GetDlHarqFeedback (void);
+
+private:
+  DlHarqInfo m_dlHarqInfo;
 
 };
 

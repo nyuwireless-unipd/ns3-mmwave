@@ -8,6 +8,7 @@
 #include <ns3/object-factory.h>
 #include <ns3/log.h>
 #include <ns3/ptr.h>
+#include <ns3/boolean.h>
 #include <cmath>
 #include <ns3/simulator.h>
 #include <ns3/trace-source-accessor.h>
@@ -28,6 +29,38 @@ namespace ns3 {
 NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumPhy");
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveSpectrumPhy);
+
+static const double EffectiveCodingRate[29] = {
+  0.08,
+  0.1,
+  0.11,
+  0.15,
+  0.19,
+  0.24,
+  0.3,
+  0.37,
+  0.44,
+  0.51,
+  0.3,
+  0.33,
+  0.37,
+  0.42,
+  0.48,
+  0.54,
+  0.6,
+  0.43,
+  0.45,
+  0.5,
+  0.55,
+  0.6,
+  0.65,
+  0.7,
+  0.75,
+  0.8,
+  0.85,
+  0.89,
+  0.92
+};
 
 MmWaveSpectrumPhy::MmWaveSpectrumPhy()
 	:m_state(IDLE)
@@ -55,7 +88,11 @@ MmWaveSpectrumPhy::GetTypeId(void)
 		.AddTraceSource ("ReportUeTxRxPacketCount",
 						 "The no. of packets received and transmitted by the User Device",
 						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_reportUePacketCount))
-
+		.AddAttribute ("DataErrorModelEnabled",
+										"Activate/Deactivate the error model of data (TBs of PDSCH and PUSCH) [by default is active].",
+										BooleanValue (true),
+									 MakeBooleanAccessor (&MmWaveSpectrumPhy::m_dataErrorModelEnabled),
+										MakeBooleanChecker ())
 		;
 
 	return tid;
@@ -158,20 +195,48 @@ MmWaveSpectrumPhy::SetPhyRxCtrlEndOkCallback (MmWavePhyRxCtrlEndOkCallback c)
 }
 
 void
-MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t mcs, std::vector<int> map, bool downlink)
+MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs, std::vector<int> map, uint8_t harqId, uint8_t rv, bool downlink)
 {
-	//tbId.m_layer = layer;
-	expectedTbs_t::iterator it;
+	//layer = layer;
+	ExpectedTbMap_t::iterator it;
 	it = m_expectedTbs.find (rnti);
 	if (it != m_expectedTbs.end ())
 	{
 		m_expectedTbs.erase (it);
 	}
 	// insert new entry
-	tbInfo_t tbInfo = {size, mcs, map, downlink, false};
-	m_expectedTbs.insert (std::pair<uint16_t, tbInfo_t> (rnti,tbInfo));
+	ExpectedTbInfo_t tbInfo = {ndi, size, mcs, map, harqId, rv, 0.0, downlink, false, false};
+	m_expectedTbs.insert (std::pair<uint16_t, ExpectedTbInfo_t> (rnti,tbInfo));
 }
 
+void
+MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t mcs, std::vector<int> map, bool downlink)
+{
+	//layer = layer;
+	ExpectedTbMap_t::iterator it;
+	it = m_expectedTbs.find (rnti);
+	if (it != m_expectedTbs.end ())
+	{
+		m_expectedTbs.erase (it);
+	}
+	// insert new entry
+	ExpectedTbInfo_t tbInfo = {1, size, mcs, map, 0, 0, 0.0, downlink, false, false};
+	m_expectedTbs.insert (std::pair<uint16_t, ExpectedTbInfo_t> (rnti,tbInfo));
+}
+
+void
+MmWaveSpectrumPhy::SetPhyDlHarqFeedbackCallback (MmWavePhyDlHarqFeedbackCallback c)
+{
+  NS_LOG_FUNCTION (this);
+  m_phyDlHarqFeedbackCallback = c;
+}
+
+void
+MmWaveSpectrumPhy::SetPhyUlHarqFeedbackCallback (MmWavePhyUlHarqFeedbackCallback c)
+{
+  NS_LOG_FUNCTION (this);
+  m_phyUlHarqFeedbackCallback = c;
+}
 
 void
 MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
@@ -227,7 +292,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 			if (DlCtrlRxParams->cellId == m_cellId)
 			{
 				StartRxCtrl (params);
-            }
+			}
 			else
 			{
 				// Do nothing
@@ -409,12 +474,32 @@ MmWaveSpectrumPhy::EndRxData ()
 	m_interferenceData->EndRx();
 
 	NS_ASSERT(m_state = RX_DATA);
-	expectedTbs_t::iterator itTb = m_expectedTbs.begin ();
+	ExpectedTbMap_t::iterator itTb = m_expectedTbs.begin ();
 	while (itTb != m_expectedTbs.end ())
 	{
-		TbStats_t tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
-		                                                                  (*itTb).second.rbBitmap, (*itTb).second.size, (*itTb).second.m_mcs);
-		(*itTb).second.corrupt = m_random->GetValue () > tbStats.tbler ? false : true;
+		if ((m_dataErrorModelEnabled)&&(m_rxPacketBurstList.size ()>0))
+		{
+			HarqProcessInfoList_t harqInfoList;
+			if ((*itTb).second.ndi == 0)
+			{
+				// TB retxed: retrieve HARQ history
+				uint16_t ulHarqId = 0;
+				if ((*itTb).second.downlink)
+				{
+					harqInfoList = m_harqPhyModule->GetHarqProcessInfoDl ((*itTb).second.harqProcessId, 0);
+				}
+				else
+				{
+					harqInfoList = m_harqPhyModule->GetHarqProcessInfoUl ((*itTb).first, ulHarqId);
+				}
+			}
+
+			TbStats_t tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
+			                                                                  (*itTb).second.rbBitmap, (*itTb).second.size, (*itTb).second.mcs, harqInfoList);
+      (*itTb).second.mi = tbStats.mi;
+			(*itTb).second.corrupt = m_random->GetValue () > tbStats.tbler ? false : true;
+      NS_LOG_DEBUG (this << "RNTI " << (*itTb).first << " size " << (*itTb).second.size << " mcs " << (uint32_t)(*itTb).second.mcs << " bitmap " << (*itTb).second.rbBitmap.size () << " layer " << 0 << " TBLER " << tbStats.tbler << " corrupted " << (*itTb).second.corrupt);
+		}
 		itTb++;
 	}
 
@@ -423,7 +508,7 @@ MmWaveSpectrumPhy::EndRxData ()
 	Ptr<MmWaveUeNetDevice> ueRx =
 				DynamicCast<MmWaveUeNetDevice> (GetDevice ());
 
-
+  std::map <uint16_t, DlHarqInfo> harqDlInfoMap;
 	for (std::list<Ptr<PacketBurst> >::const_iterator i = m_rxPacketBurstList.begin ();
 		 i != m_rxPacketBurstList.end (); ++i)
 	{
@@ -443,6 +528,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				}
 			}
 			uint16_t rnti = tag.GetRnti ();
+			uint16_t layer = 0;
 			itTb = m_expectedTbs.find (rnti);
 			if(itTb != m_expectedTbs.end ())
 			{
@@ -453,8 +539,8 @@ MmWaveSpectrumPhy::EndRxData ()
 				else
 				{
 					//Drop Packet
-					Time t =  Simulator::Now ();
-					//NS_LOG_UNCOND (t.GetSeconds());
+//					Time t =  Simulator::Now ();
+					NS_LOG_INFO ("TB failed");
 				}
 			}
 			else
@@ -462,8 +548,88 @@ MmWaveSpectrumPhy::EndRxData ()
 //				NS_FATAL_ERROR ("End of the tbMap");
 				// Packet is for other device
 			}
+
+			// send HARQ feedback (if not already done for this TB)
+			if (!(*itTb).second.harqFeedbackSent)
+			{
+				(*itTb).second.harqFeedbackSent = true;
+				if (!(*itTb).second.downlink)
+				{
+					UlHarqInfo harqUlInfo;
+					harqUlInfo.m_rnti = rnti;
+					harqUlInfo.m_tpc = 0;
+					if ((*itTb).second.corrupt)
+					{
+						harqUlInfo.m_receptionStatus = UlHarqInfo::NotOk;
+						NS_LOG_DEBUG (this << " RNTI " << rnti << " send UL-HARQ-NACK");
+						m_harqPhyModule->UpdateUlHarqProcessStatus (rnti, (*itTb).second.mi, (*itTb).second.size, (*itTb).second.size / EffectiveCodingRate [(*itTb).second.mcs]);
+					}
+					else
+					{
+						harqUlInfo.m_receptionStatus = UlHarqInfo::Ok;
+						NS_LOG_DEBUG (this << " RNTI " << rnti << " send UL-HARQ-ACK");
+						m_harqPhyModule->ResetUlHarqProcessStatus (rnti, (*itTb).second.harqProcessId);
+					}
+					if (!m_phyUlHarqFeedbackCallback.IsNull ())
+					{
+						m_phyUlHarqFeedbackCallback (harqUlInfo);
+					}
+				}
+				else
+				{
+					std::map <uint16_t, DlHarqInfo>::iterator itHarq = harqDlInfoMap.find (rnti);
+					if (itHarq==harqDlInfoMap.end ())
+					{
+						DlHarqInfo harqDlInfo;
+						harqDlInfo.m_harqStatus.resize (1, DlHarqInfo::NACK);
+						harqDlInfo.m_rnti = rnti;
+						harqDlInfo.m_harqProcessId = (*itTb).second.harqProcessId;
+						if ((*itTb).second.corrupt)
+						{
+							harqDlInfo.m_harqStatus.at (0) = DlHarqInfo::NACK;
+							NS_LOG_DEBUG (this << " RNTI " << rnti << " harqId " << (uint16_t)(*itTb).second.harqProcessId << " layer " <<(uint16_t)layer << " send DL-HARQ-NACK");
+							m_harqPhyModule->UpdateDlHarqProcessStatus ((*itTb).second.harqProcessId, 0, (*itTb).second.mi, (*itTb).second.size, (*itTb).second.size / EffectiveCodingRate [(*itTb).second.mcs]);
+						}
+						else
+						{
+
+							harqDlInfo.m_harqStatus.at (0) = DlHarqInfo::ACK;
+							NS_LOG_DEBUG (this << " RNTI " << rnti << " harqId " << (uint16_t)(*itTb).second.harqProcessId << " layer " <<(uint16_t)layer << " size " << (*itTb).second.size << " send DL-HARQ-ACK");
+							m_harqPhyModule->ResetDlHarqProcessStatus ((*itTb).second.harqProcessId);
+						}
+						harqDlInfoMap.insert (std::pair <uint16_t, DlHarqInfo> (rnti, harqDlInfo));
+					}
+					else
+					{
+						if ((*itTb).second.corrupt)
+						{
+							(*itHarq).second.m_harqStatus.at (layer) = DlHarqInfo::NACK;
+							NS_LOG_DEBUG (this << " RNTI " << rnti << " harqId " << (uint16_t)(*itTb).second.harqProcessId << " layer " <<(uint16_t)layer << " size " << (*itHarq).second.m_harqStatus.size () << " send DL-HARQ-NACK");
+							m_harqPhyModule->UpdateDlHarqProcessStatus ((*itTb).second.harqProcessId, layer, (*itTb).second.mi, (*itTb).second.size, (*itTb).second.size / EffectiveCodingRate [(*itTb).second.mcs]);
+						}
+						else
+						{
+							NS_ASSERT_MSG (layer < (*itHarq).second.m_harqStatus.size (), " layer " << (uint16_t)layer);
+							(*itHarq).second.m_harqStatus.at (layer) = DlHarqInfo::ACK;
+							NS_LOG_DEBUG (this << " RNTI " << rnti << " harqId " << (uint16_t)(*itTb).second.harqProcessId << " layer " << (uint16_t)layer << " size " << (*itHarq).second.m_harqStatus.size () << " send DL-HARQ-ACK");
+							m_harqPhyModule->ResetDlHarqProcessStatus ((*itTb).second.harqProcessId);
+						}
+					}
+				} // end if ((*itTb).second.downlink) HARQ
+			} // end if (!(*itTb).second.harqFeedbackSent)
 		}
 	}
+
+	// send DL HARQ feedback to LtePhy
+	std::map <uint16_t, DlHarqInfo>::iterator itHarq;
+	for (itHarq = harqDlInfoMap.begin (); itHarq != harqDlInfoMap.end (); itHarq++)
+	{
+		if (!m_phyDlHarqFeedbackCallback.IsNull ())
+		{
+			m_phyDlHarqFeedbackCallback ((*itHarq).second);
+		}
+	}
+	  // forward control messages of this frame to MmWavePhy
 
 	if (!m_rxControlMessageList.empty () && !m_phyRxCtrlEndOkCallback.IsNull ())
 	{

@@ -45,17 +45,6 @@ MmWaveDciMessage::~MmWaveDciMessage (void)
 	NS_LOG_INFO (this);
 }
 
-/*void
-MmWaveDciMessage::SetRbAllocationMap (SfAllocationInfo allocMap)
-{
-	m_rscAllocationMap = allocMap;
-}
-
-SfAllocationInfo
-MmWaveDciMessage::GetRbAllocationMap (void)
-{
-	return m_rscAllocationMap;
-}*/
 
 void
 MmWaveDciMessage::SetDciInfoElement (DciInfoElement dci)
@@ -236,6 +225,29 @@ MmWaveRarMessage::RarListEnd () const
   return m_rarList.end ();
 }
 
+MmWaveDlHarqFeedbackMessage::MmWaveDlHarqFeedbackMessage (void)
+{
+  SetMessageType (MmWaveControlMessage::DL_HARQ);
+}
+
+
+MmWaveDlHarqFeedbackMessage::~MmWaveDlHarqFeedbackMessage (void)
+{
+
+}
+
+void
+MmWaveDlHarqFeedbackMessage::SetDlHarqFeedback (DlHarqInfo m)
+{
+  m_dlHarqInfo = m;
+}
+
+
+DlHarqInfo
+MmWaveDlHarqFeedbackMessage::GetDlHarqFeedback (void)
+{
+  return m_dlHarqInfo;
+}
 
 }
 

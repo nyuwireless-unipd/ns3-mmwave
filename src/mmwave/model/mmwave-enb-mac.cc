@@ -127,6 +127,9 @@ public:
 	virtual void UlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters cqi);
 
 	virtual void ReceiveRachPreamble (uint32_t raId);
+
+  virtual void UlHarqFeedback (UlHarqInfo params);
+
 private:
 	MmWaveEnbMac* m_mac;
 };
@@ -165,6 +168,12 @@ void
 MmWaveMacEnbMemberPhySapUser::ReceiveRachPreamble (uint32_t raId)
 {
 	m_mac->ReceiveRachPreamble(raId);
+}
+
+void
+MmWaveMacEnbMemberPhySapUser::UlHarqFeedback (UlHarqInfo params)
+{
+  m_mac->DoUlHarqFeedback (params);
 }
 
 // MAC Sched
@@ -413,19 +422,19 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 		params.m_snfSf = sfn;
 
 		// Forward DL HARQ feebacks collected during last subframe TTI
-		if (m_dlHarqInfoListReceived.size () > 0)
+		if (m_dlHarqInfoReceived.size () > 0)
 		{
-			params.m_dlHarqInfoList = m_dlHarqInfoListReceived;
+			params.m_dlHarqInfoList = m_dlHarqInfoReceived;
 			// empty local buffer
-			m_dlHarqInfoListReceived.clear ();
+			m_dlHarqInfoReceived.clear ();
 		}
 
 		// Forward UL HARQ feebacks collected during last TTI
-		if (m_ulHarqInfoListReceived.size () > 0)
+		if (m_ulHarqInfoReceived.size () > 0)
 		{
-			params.m_ulHarqInfoList = m_ulHarqInfoListReceived;
+			params.m_ulHarqInfoList = m_ulHarqInfoReceived;
 			// empty local buffer
-			m_ulHarqInfoListReceived.clear ();
+			m_ulHarqInfoReceived.clear ();
 		}
 
 		params.m_ueList = m_associatedUe;
@@ -550,14 +559,49 @@ MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 		}
 		case (MmWaveControlMessage::DL_HARQ):
 	  {
-			//	      Ptr<DlHarqFeedbackLteControlMessage> dlharq = DynamicCast<DlHarqFeedbackLteControlMessage> (msg);
-			//	      DoDlInfoListElementHarqFeeback (dlharq->GetDlHarqFeedback ());
+			Ptr<MmWaveDlHarqFeedbackMessage> dlharq = DynamicCast<MmWaveDlHarqFeedbackMessage> (msg);
+			DoDlHarqFeedback (dlharq->GetDlHarqFeedback ());
 			break;
 	  }
 		default:
 			NS_LOG_INFO ("Control message not supported/expected");
 	}
 
+}
+
+void
+MmWaveEnbMac::DoUlHarqFeedback (UlHarqInfo params)
+{
+  NS_LOG_FUNCTION (this);
+  m_ulHarqInfoReceived.push_back (params);
+}
+
+void
+MmWaveEnbMac::DoDlHarqFeedback (DlHarqInfo params)
+{
+  NS_LOG_FUNCTION (this);
+  // Update HARQ buffer
+  std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator it =  m_miDlHarqProcessesPackets.find (params.m_rnti);
+  NS_ASSERT (it!=m_miDlHarqProcessesPackets.end ());
+  for (uint8_t layer = 0; layer < params.m_harqStatus.size (); layer++)
+    {
+      if (params.m_harqStatus.at (layer)==DlHarqInfo::ACK)
+        {
+          // discard buffer
+          Ptr<PacketBurst> emptyBuf = CreateObject <PacketBurst> ();
+          (*it).second.at (layer).at (params.m_harqProcessId) = emptyBuf;
+          NS_LOG_DEBUG (this << " HARQ-ACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId << " layer " << (uint16_t)layer);
+        }
+      else if (params.m_harqStatus.at (layer)==DlHarqInfo::NACK)
+        {
+          NS_LOG_DEBUG (this << " HARQ-NACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId << " layer " << (uint16_t)layer);
+        }
+      else
+        {
+          NS_FATAL_ERROR (" HARQ functionality not implemented");
+        }
+    }
+  m_dlHarqInfoReceived.push_back (params);
 }
 
 void
@@ -596,6 +640,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 		{
 			// iterate through RLC PDUs for each slot
 			TbInfoElement& tbInfo = schedInfo.m_dci.m_tbInfoElements[itb];
+			NS_ASSERT (schedInfo.m_rlcPduList.size () > 0);
 			std::vector<RlcPduInfo>& rlcPduElems = schedInfo.m_rlcPduList[itb];
 
 			MacPduInfo macPduInfo (schedInfo.m_frameNum, schedInfo.m_sfNum, tbInfo.m_slotInd+1, \
@@ -680,7 +725,7 @@ MmWaveEnbMac::DoAddUe (uint16_t rnti)
 	m_associatedUe.push_back (rnti);
 	NS_ASSERT_MSG (ret.second, "element already present, RNTI already existed");
 
-	// Create DL trasmission HARQ buffers
+	// Create DL transmission HARQ buffers
 	std::vector < Ptr<PacketBurst> > dlHarqLayer0pkt;
 	uint16_t harqNum = m_phyMacConfig->GetNumHarqProcess ();
 	dlHarqLayer0pkt.resize (harqNum);

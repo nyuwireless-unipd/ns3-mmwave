@@ -95,7 +95,7 @@ MmWaveHelper::DoInitialize()
 
 	m_channel->AddSpectrumPropagationLossModel (m_beamforming);
 
-	m_PhyMACCommon = CreateObject <MmWavePhyMacCommon> () ;
+	m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
 
 	m_pathlossModel = m_pathlossModelFactory.Create ();
 	Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
@@ -188,18 +188,19 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
 	Ptr<MmWaveUePhy> phy = CreateObject<MmWaveUePhy> (dlPhy, ulPhy);
 
-	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_PhyMACCommon->GetNumHarqProcess ());
+	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
 	dlPhy->SetHarqPhyModule (harq);
 	ulPhy->SetHarqPhyModule (harq);
 	phy->SetHarqPhyModule (harq);
 
 	/* Do not do this here. Do it during registration with the BS
-	 * phy->SetCofigurationParameters(m_PhyMACCommon);*/
+	 * phy->SetCofigurationParameters(m_phyMacCommon);*/
 
 	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
 	pData->AddCallback (MakeCallback (&MmWaveUePhy::GenerateDlCqiReport, phy));
 	pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
 	dlPhy->AddDataSinrChunkProcessor (pData);
+  dlPhy->SetPhyDlHarqFeedbackCallback (MakeCallback (&MmWaveUePhy::ReceiveLteDlHarqFeedback, phy));
 
 	ulPhy->SetChannel(m_channel);
 	dlPhy->SetChannel(m_channel);
@@ -257,8 +258,8 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
 	uint64_t imsi = ++m_imsiCounter;
 
-	phy->SetCofigurationParameters (m_PhyMACCommon);
-	mac->SetCofigurationParameters (m_PhyMACCommon);
+	phy->SetCofigurationParameters (m_phyMacCommon);
+	mac->SetCofigurationParameters (m_phyMacCommon);
 
 	phy->SetPhySapUser (mac->GetPhySapUser());
 	mac->SetPhySapProvider (phy->GetPhySapProvider());
@@ -302,7 +303,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
 
-	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_PhyMACCommon->GetNumHarqProcess ());
+	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
 	dlPhy->SetHarqPhyModule (harq);
 	ulPhy->SetHarqPhyModule (harq);
 	phy->SetHarqPhyModule (harq);
@@ -312,7 +313,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
 	dlPhy->AddDataSinrChunkProcessor (pData);
 
-	phy->SetCofigurationParameters(m_PhyMACCommon);
+	phy->SetCofigurationParameters(m_phyMacCommon);
 
 	ulPhy->SetChannel (m_channel);
 	dlPhy->SetChannel (m_channel);
@@ -329,7 +330,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	ulPhy->SetAntenna (antenna);
 
 	Ptr<MmWaveEnbMac> mac = CreateObject<MmWaveEnbMac> ();
-	mac->SetCofigurationParameters (m_PhyMACCommon);
+	mac->SetCofigurationParameters (m_phyMacCommon);
 	Ptr<MmWaveMacScheduler> sched = m_schedulerFactory.Create<MmWaveMacScheduler> ();
 
 	/*to use the dummy ffrAlgorithm, I changed the bandwidth to 25 in EnbNetDevice
@@ -338,7 +339,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
 	*/
 	Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
-	sched->ConfigureCommonParameters (m_PhyMACCommon);
+	sched->ConfigureCommonParameters (m_phyMacCommon);
 	mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
 	sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
 
@@ -404,13 +405,14 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	dlPhy->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, phy));
 	dlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, phy));
+  dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));
 
 	//mac->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
 	rrc->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
 
 
 	NS_LOG_LOGIC ("set the propagation model frequencies");
-	double freq = m_PhyMACCommon->GetCentreFrequency ();
+	double freq = m_phyMacCommon->GetCentreFrequency ();
 	NS_LOG_LOGIC ("Channel Frequency: " << freq);
 	bool freqOk = m_pathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (freq));
 	if (!freqOk)
@@ -506,7 +508,7 @@ MmWaveHelper::RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 Ptr<MmWavePhyMacCommon>
 MmWaveHelper::GetPhyMacConfigurable (void)
 {
-	return (m_PhyMACCommon);
+	return (m_phyMacCommon);
 }
 
 void
@@ -518,7 +520,7 @@ MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::stri
 	{
 		double cf;
 		ss >> cf;
-		m_PhyMACCommon->SetAttribute ("CentreFreq", DoubleValue(cf));
+		m_phyMacCommon->SetAttribute ("CentreFreq", DoubleValue(cf));
 		m_beamforming->SetAttribute ("CentreFreq", DoubleValue(cf));
 	}
 	else if (paramName.compare("SymbolPerSlot") == 0)
@@ -526,63 +528,63 @@ MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::stri
 		uint32_t symNum;
 		std::stringstream ss (value);
 		ss >> symNum;
-		m_PhyMACCommon->SetAttribute ("SymbolPerSlot", UintegerValue(symNum));
+		m_phyMacCommon->SetAttribute ("SymbolPerSlot", UintegerValue(symNum));
 	}
 	else if (paramName.compare("SymbolLength") == 0)
 	{
 		double prd;
 		ss >> prd;
-		m_PhyMACCommon->SetAttribute ("SymbolPeriod", DoubleValue(prd));
+		m_phyMacCommon->SetAttribute ("SymbolPeriod", DoubleValue(prd));
 	}
 	else if (paramName.compare("SlotsPerSubframe") == 0)
 	{
 		uint32_t slt;
 		ss >> slt;
-		m_PhyMACCommon->SetAttribute ("SlotsPerSubframe", UintegerValue(slt));
+		m_phyMacCommon->SetAttribute ("SlotsPerSubframe", UintegerValue(slt));
 	}
 	else if (paramName.compare("SubframePerFrame") == 0)
 	{
 		uint32_t sf;
 		ss >> sf;
-		m_PhyMACCommon->SetAttribute ("SubframePerFrame", UintegerValue(sf));
+		m_phyMacCommon->SetAttribute ("SubframePerFrame", UintegerValue(sf));
 	}
 	else if (paramName.compare("SubcarriersPerSubband") == 0)
 	{
 		uint32_t sc;
 		ss >> sc;
-		m_PhyMACCommon->SetAttribute ("SubcarriersPerChunk", UintegerValue(sc));
+		m_phyMacCommon->SetAttribute ("SubcarriersPerChunk", UintegerValue(sc));
 	}
 	else if (paramName.compare("SubbandPerRB") == 0)
 	{
 		uint32_t sb;
 		ss >> sb;
-		m_PhyMACCommon->SetAttribute ("ChunkPerRB", UintegerValue(sb));
+		m_phyMacCommon->SetAttribute ("ChunkPerRB", UintegerValue(sb));
 		m_beamforming->SetAttribute ("NumSubbandPerRB", UintegerValue(sb));
 	}
 	else if (paramName.compare("SubbandWidth") == 0)
 	{
 		double w;
 		ss >> w;
-		m_PhyMACCommon->SetAttribute ("ChunkWidth", DoubleValue(w));
+		m_phyMacCommon->SetAttribute ("ChunkWidth", DoubleValue(w));
 		m_beamforming->SetAttribute ("ChunkWidth", DoubleValue(w));
 	}
 	else if (paramName.compare("NumResourceBlock") == 0)
 	{
 		uint32_t rb;
 		ss >> rb;
-		m_PhyMACCommon->SetAttribute ("ResourceBlockNum", UintegerValue(rb));
+		m_phyMacCommon->SetAttribute ("ResourceBlockNum", UintegerValue(rb));
 		m_beamforming->SetAttribute ("NumResourceBlocks", UintegerValue(rb));
 	}
 	else if (paramName.compare("NumReferenceSymbols") == 0)
 	{
 		uint32_t ref;
 		ss >> ref;
-		m_PhyMACCommon->SetAttribute ("NumReferenceSymbols", UintegerValue(ref));
+		m_phyMacCommon->SetAttribute ("NumReferenceSymbols", UintegerValue(ref));
 
 	}
 	else if (paramName.compare("TDDControlDataPattern") == 0)
 	{
-		m_PhyMACCommon->SetAttribute ("TDDPattern", StringValue (value));
+		m_phyMacCommon->SetAttribute ("TDDPattern", StringValue (value));
 
 	}
 	else

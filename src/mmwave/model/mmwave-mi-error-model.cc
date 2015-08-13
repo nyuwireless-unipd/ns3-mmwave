@@ -66,6 +66,10 @@ namespace ns3 {
     26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37    
   };
 
+  // Table of ECR of the standard MCSs
+  static const double McsEcrTable [29] = {0.08, 0.1, 0.11, 0.15, 0.19, 0.24, 0.3, 0.37, 0.44, 0.51, 0.3, 0.33, 0.37, 0.42, 0.48, 0.54, 0.6, 0.43, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.89, 0.92
+  };
+
 #if 0 // currently unused
   // Table with ECRs obtained with retransmissions with BLER curves
   static const double HarqRetxEcr[9] = {0.00064, 0.000512, 0.000041, 0.09, 0.027, 0.0081, 0.185, 0.079, 0.034
@@ -427,33 +431,59 @@ MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint16_t cbSize)
 }
 
 TbStats_t
-MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size_Byte, uint8_t mcs)
+MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, HarqProcessInfoList_t miHistory)
 {
-  NS_LOG_FUNCTION (sinr << &map << (uint32_t) size_Byte << (uint32_t) mcs);
-  double MI = Mib(sinr, map, mcs);
+  NS_LOG_FUNCTION (sinr << &map << (uint32_t) size << (uint32_t) mcs);
+
+  double tbMi = Mib(sinr, map, mcs);
+  double MI = 0.0;
+  double Reff = 0.0;
   NS_ASSERT (mcs < 29);
-  NS_LOG_DEBUG (" MI " << MI);
-  // estimate CB size (according to sec 5.1.2 of TS 36.212)
-  uint16_t cbSize = 6144; // max size of a codeblock (including CRC)
-  uint32_t tbSize = size_Byte * 8; //convert from bytes to bits
-  uint32_t C = 0; // no. of codeblocks
-  uint32_t Cplus = 0; // no. of codeblocks with size K+
-  uint32_t Kplus = 0; // size of large codeblocks
-  uint32_t Cminus = 0; // no. of codeblocks with size K-
-  uint32_t Kminus = 0; //size of smaller codeblocks
-  uint32_t B1 = 0;
-  if (tbSize <= cbSize)
+  if (miHistory.size ()>0)
     {
-      // only one codeblock
-      C = 1;
-      B1 = tbSize;
+      // evaluate R_eff and MI_eff
+      uint16_t codeBitsSum = 0;
+      double miSum = 0.0;
+      for (uint16_t i = 0; i < miHistory.size (); i++)
+        {
+          NS_LOG_DEBUG (" Sum MI " << miHistory.at (i).m_mi << " Ci " << miHistory.at (i).m_codeBits);
+          codeBitsSum += miHistory.at (i).m_codeBits;
+          miSum += (miHistory.at (i).m_mi*miHistory.at (i).m_codeBits);
+        }
+      codeBitsSum += (((double)size*8.0) / McsEcrTable [mcs]);
+      miSum += (tbMi*(((double)size*8.0) / McsEcrTable [mcs]));
+      Reff = miHistory.at (0).m_infoBits / (double)codeBitsSum; // information bits are the size of the first TB
+      MI = miSum / (double)codeBitsSum;
     }
   else
     {
-	  // add CRC to each code block
-	  uint32_t crcSize = 24;
-      C = ceil ((double)tbSize / ((double)(cbSize-crcSize)));
-      B1 = tbSize + C * crcSize;
+      MI = tbMi;
+    }
+  NS_LOG_DEBUG (" MI " << MI << " Reff " << Reff << " HARQ " << miHistory.size ());
+  // estimate CB size (according to sec 5.1.2 of TS 36.212)
+  uint16_t Z = 6144; // max size of a codeblock (including CRC)
+  uint32_t B = size * 8;
+//   B = 1234;
+  uint32_t L = 0;
+  uint32_t C = 0; // no. of codeblocks
+  uint32_t Cplus = 0; // no. of codeblocks with size K+
+  uint32_t Kplus = 0; // no. of codeblocks with size K+
+  uint32_t Cminus = 0; // no. of codeblocks with size K+
+  uint32_t Kminus = 0; // no. of codeblocks with size K+
+  uint32_t B1 = 0;
+  uint32_t deltaK = 0;
+  if (B <= Z)
+    {
+      // only one codeblock
+      L = 0;
+      C = 1;
+      B1 = B;
+    }
+  else
+    {
+      L = 24;
+      C = ceil ((double)B / ((double)(Z-L)));
+      B1 = B + C * L;
     }
   // first segmentation: K+ = minimum K in table such that C * K >= B1
 //   uint i = 0;
@@ -504,36 +534,86 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
   uint16_t KplusId = mid;
   Kplus = cbSizeTable[mid];
 
-  double errorRate = 1.0;
-  uint8_t ecrId = McsEcrBlerTableMapping[mcs];
-  NS_LOG_DEBUG ("NO HARQ MCS " << (uint16_t)mcs << " ECR id " << (uint16_t)ecrId);
 
   if (C==1)
     {
       Cplus = 1;
       Cminus = 0;
       Kminus = 0;
-      errorRate = MappingMiBler (MI, ecrId, Kplus);
     }
   else
     {
       // second segmentation size: K- = maximum K in table such that K < K+
       // -fstrict-overflow sensitive, see bug 1868
       Kminus = cbSizeTable[ KplusId > 1 ? KplusId - 1 : 0];
-      uint32_t deltaK = Kplus - Kminus;
+      deltaK = Kplus - Kminus;
       Cminus = floor ((((double) C * Kplus) - (double)B1) / (double)deltaK);
       Cplus = C - Cminus;
+    }
+  NS_LOG_INFO ("--------------------LteMiErrorModel: TB size of " << B << " needs of " << B1 << " bits reparted in " << C << " CBs as "<< Cplus << " block(s) of " << Kplus << " and " << Cminus << " of " << Kminus);
+
+  double errorRate = 1.0;
+  uint8_t ecrId = 0;
+  if (miHistory.size ()==0)
+    {
+      // first tx -> get ECR from MCS
+      ecrId = McsEcrBlerTableMapping[mcs];
+      NS_LOG_DEBUG ("NO HARQ MCS " << (uint16_t)mcs << " ECR id " << (uint16_t)ecrId);
+    }
+  else
+    {
+      NS_LOG_DEBUG ("HARQ block no. " << miHistory.size ());
+      // harq retx -> get closest ECR to Reff from available ones
+      if (mcs <= MI_QPSK_MAX_ID)
+        {
+          // Modulation order 2
+          uint8_t i = MI_QPSK_MAX_ID;
+          while ((BlerCurvesEcrMap[i]>Reff)&&(i>0))
+            {
+              i--;
+            }
+          ecrId = i;
+        }
+      else if (mcs <= MI_16QAM_MAX_ID)
+        {
+          // Modulation order 4
+          uint8_t i = MI_16QAM_MAX_ID;
+          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MI_QPSK_MAX_ID + 1))
+            {
+              i--;
+            }
+          ecrId = i;
+        }
+      else
+        {
+          // Modulation order 6
+          uint8_t i = MI_64QAM_MAX_ID;
+          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MI_16QAM_MAX_ID + 1))
+            {
+              i--;
+            }
+          ecrId = i;
+        }
+      NS_LOG_DEBUG ("HARQ ECR " << (uint16_t)ecrId);
+    }
+
+  if (C!=1)
+    {
       double cbler = MappingMiBler (MI, ecrId, Kplus);
       errorRate *= pow (1.0 - cbler, Cplus);
       cbler = MappingMiBler (MI, ecrId, Kminus);
       errorRate *= pow (1.0 - cbler, Cminus);
       errorRate = 1.0 - errorRate;
     }
-  NS_LOG_INFO ("--------------------MmWaveMiErrorModel: TB size of " << tbSize << " needs of " << B1 << " bits reparted in " << C << " CBs as "<< Cplus << " block(s) of " << Kplus << " and " << Cminus << " of " << Kminus);
+  else
+    {
+      errorRate = MappingMiBler (MI, ecrId, Kplus);
+    }
+
   NS_LOG_LOGIC (" Error rate " << errorRate);
   TbStats_t ret;
   ret.tbler = errorRate;
-  ret.mi = MI;
+  ret.mi = tbMi;
   return ret;
 }
 

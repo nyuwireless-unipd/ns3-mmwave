@@ -31,19 +31,36 @@
 
 namespace ns3{
 
-struct tbInfo_t
+struct ExpectedTbInfo_t
 {
+  uint8_t ndi;
   uint16_t size;
-  uint8_t m_mcs;
+  uint8_t mcs;
   std::vector<int> rbBitmap;
+  uint8_t harqProcessId;
+  uint8_t rv;
+  double mi;
   bool downlink;
   bool corrupt;
+  bool harqFeedbackSent;
 };
 
-typedef std::map<uint16_t, tbInfo_t> expectedTbs_t;
+typedef std::map<uint16_t, ExpectedTbInfo_t> ExpectedTbMap_t;
 
 typedef Callback< void, Ptr<Packet> > MmWavePhyRxDataEndOkCallback;
 typedef Callback< void, std::list<Ptr<MmWaveControlMessage> > > MmWavePhyRxCtrlEndOkCallback;
+
+/**
+* This method is used by the LteSpectrumPhy to notify the PHY about
+* the status of a certain DL HARQ process
+*/
+typedef Callback< void, DlHarqInfo > MmWavePhyDlHarqFeedbackCallback;
+
+/**
+* This method is used by the LteSpectrumPhy to notify the PHY about
+* the status of a certain UL HARQ process
+*/
+typedef Callback< void, UlHarqInfo > MmWavePhyUlHarqFeedbackCallback;
 
 
 class MmWaveSpectrumPhy : public SpectrumPhy
@@ -90,12 +107,15 @@ public:
 
 	void SetPhyRxDataEndOkCallback (MmWavePhyRxDataEndOkCallback c);
 	void SetPhyRxCtrlEndOkCallback (MmWavePhyRxCtrlEndOkCallback c);
+	void SetPhyDlHarqFeedbackCallback (MmWavePhyDlHarqFeedbackCallback c);
+	void SetPhyUlHarqFeedbackCallback (MmWavePhyUlHarqFeedbackCallback c);
 
 	void AddDataPowerChunkProcessor (Ptr<mmWaveChunkProcessor> p);
 	void AddDataSinrChunkProcessor (Ptr<mmWaveChunkProcessor> p);
 
 	void UpdateSinrPerceived (const SpectrumValue& sinr);
 
+	void AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs, std::vector<int> map, uint8_t harqId, uint8_t rv, bool downlink);
 	void AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t m_mcs, std::vector<int> map, bool downlink);
 
 	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
@@ -127,16 +147,22 @@ private:
 	State m_state;
 
 	MmWavePhyRxCtrlEndOkCallback    m_phyRxCtrlEndOkCallback;
-	MmWavePhyRxDataEndOkCallback m_phyRxDataEndOkCallback;
+	MmWavePhyRxDataEndOkCallback 		m_phyRxDataEndOkCallback;
+
+	MmWavePhyDlHarqFeedbackCallback m_phyDlHarqFeedbackCallback;
+	MmWavePhyUlHarqFeedbackCallback m_phyUlHarqFeedbackCallback;
 
 	TracedCallback<EnbPhyPacketCountParameter> m_reportEnbPacketCount;
 	TracedCallback<UePhyPacketCountParameter> m_reportUePacketCount;
 
 	SpectrumValue m_sinrPerceived;
 
-	expectedTbs_t m_expectedTbs;
+	ExpectedTbMap_t m_expectedTbs;
 
 	Ptr<UniformRandomVariable> m_random;
+
+	bool m_dataErrorModelEnabled; // when true (default) the phy error model is enabled
+	bool m_ctrlErrorModelEnabled; // when true (default) the phy error model is enabled for DL ctrl frame
 
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 

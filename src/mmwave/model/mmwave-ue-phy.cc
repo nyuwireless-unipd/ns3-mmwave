@@ -705,6 +705,16 @@ MmWaveUePhy::GenerateDlCqiReport (const SpectrumValue& sinr)
 	}
 }
 
+void
+MmWaveUePhy::ReceiveLteDlHarqFeedback (DlHarqInfo m)
+{
+  NS_LOG_FUNCTION (this);
+  // generate feedback to eNB and send it through ideal PUCCH
+  Ptr<MmWaveDlHarqFeedbackMessage> msg = Create<MmWaveDlHarqFeedbackMessage> ();
+  msg->SetDlHarqFeedback (m);
+  DoSendControlMessage (msg);
+}
+
 bool
 MmWaveUePhy::IsReceptionEnabled ()
 {

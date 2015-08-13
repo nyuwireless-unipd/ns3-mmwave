@@ -22,6 +22,7 @@ typedef std::vector <std::vector < Ptr<PacketBurst> > > DlHarqProcessesBuffer_t;
 class MmWaveEnbMac : public Object
 {
 	friend class MmWaveEnbMacMemberEnbCmacSapProvider;
+	friend class MmWaveMacEnbMemberPhySapUser;
 
 public:
 	static TypeId GetTypeId (void);
@@ -36,25 +37,25 @@ public:
 		SfAllocationInfo m_allocationList;
 	};*/
 
-//  struct TransmitPduParameters
-//  {
-//    Ptr<Packet> pdu;  /**< the RLC PDU */
-//    uint16_t    rnti; /**< the C-RNTI identifying the UE */
-//    uint8_t     lcid; /**< the logical channel id corresponding to the sending RLC instance */
-//    uint8_t     layer; /**< the layer value that was passed by the MAC in the call to NotifyTxOpportunity that generated this PDU */
-//    uint8_t     harqProcessId; /**< the HARQ process id that was passed by the MAC in the call to NotifyTxOpportunity that generated this PDU */
-//  };
-//
-//  struct ReportBufferStatusParameters
-//  {
-//    uint16_t rnti;  /**< the C-RNTI identifying the UE */
-//    uint8_t lcid;  /**< the logical channel id corresponding to the sending RLC instance */
-//    uint32_t txQueueSize;  /**< the current size of the RLC transmission queue */
-//    uint16_t txQueueHolDelay;  /**< the Head Of Line delay of the transmission queue */
-//    uint32_t retxQueueSize;  /**<  the current size of the RLC retransmission queue in bytes */
-//    uint16_t retxQueueHolDelay;  /**<  the Head Of Line delay of the retransmission queue */
-//    uint16_t statusPduSize;  /**< the current size of the pending STATUS RLC  PDU message in bytes */
-//  };
+  struct TransmitPduParameters
+  {
+    Ptr<Packet> pdu;  /**< the RLC PDU */
+    uint16_t    rnti; /**< the C-RNTI identifying the UE */
+    uint8_t     lcid; /**< the logical channel id corresponding to the sending RLC instance */
+    uint8_t     layer; /**< the layer value that was passed by the MAC in the call to NotifyTxOpportunity that generated this PDU */
+    uint8_t     harqProcessId; /**< the HARQ process id that was passed by the MAC in the call to NotifyTxOpportunity that generated this PDU */
+  };
+
+  struct ReportBufferStatusParameters
+  {
+    uint16_t rnti;  /**< the C-RNTI identifying the UE */
+    uint8_t lcid;  /**< the logical channel id corresponding to the sending RLC instance */
+    uint32_t txQueueSize;  /**< the current size of the RLC transmission queue */
+    uint16_t txQueueHolDelay;  /**< the Head Of Line delay of the transmission queue */
+    uint32_t retxQueueSize;  /**<  the current size of the RLC retransmission queue in bytes */
+    uint16_t retxQueueHolDelay;  /**<  the Head Of Line delay of the retransmission queue */
+    uint16_t statusPduSize;  /**< the current size of the pending STATUS RLC  PDU message in bytes */
+  };
 
 /*
   struct RachConfig
@@ -119,6 +120,9 @@ private:
 	LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue DoAllocateNcRaPreamble (uint16_t rnti);
 	uint8_t AllocateTbUid ();
 
+	void DoDlHarqFeedback (DlHarqInfo params);
+	void DoUlHarqFeedback (UlHarqInfo params);
+
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
 	LteMacSapProvider* m_macSapProvider;
@@ -150,8 +154,8 @@ private:
 
 	std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> > m_rlcAttached;
 
-	std::vector <DlHarqInfo> m_dlHarqInfoListReceived; // DL HARQ feedback received
-	std::vector <UlHarqInfo> m_ulHarqInfoListReceived; // UL HARQ feedback received
+	std::vector <DlHarqInfo> m_dlHarqInfoReceived; // DL HARQ feedback received
+	std::vector <UlHarqInfo> m_ulHarqInfoReceived; // UL HARQ feedback received
 	std::map <uint16_t, DlHarqProcessesBuffer_t> m_miDlHarqProcessesPackets; // Packet under trasmission of the DL HARQ process
 
 };

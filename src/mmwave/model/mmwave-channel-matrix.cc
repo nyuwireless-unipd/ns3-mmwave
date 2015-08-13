@@ -18,6 +18,7 @@
 #include <ns3/mmwave-ue-phy.h>
 #include <ns3/mmwave-enb-phy.h>
 #include <ns3/double.h>
+#include <algorithm>
 
 namespace ns3{
 
@@ -229,11 +230,11 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 		//normalize cluster power fraction
 		double powerSum = 0;
 		uint32_t s = powerFraction.size ();
-		for (int j = 0; j< s; j++)
+		for (unsigned int j = 0; j< s; j++)
 		{
 			powerSum += powerFraction. at(j);
 		}
-		for (int j = 0; j< s; j++)
+		for (unsigned int j = 0; j< s; j++)
 		{
 			powerFraction.at (j) = powerFraction.at (j)/powerSum;
 			NS_LOG_UNCOND (j<<" "<<powerFraction. at (j));
@@ -270,7 +271,7 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 		}
 
 		doubleVector_t dopplerShift;
-		for (int i = 0; i < subpathDelay.size (); i++)
+		for (unsigned int i = 0; i < subpathDelay.size (); i++)
 		{
 			dopplerShift.push_back(m_uniformRv->GetValue (0,1));
 		}
@@ -409,7 +410,7 @@ complex2DVector_t
 mmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const
 {
 	complex2DVector_t spatialMatrix;
-	for(int clusterIndex = 0; clusterIndex < cluster.size (); clusterIndex++)
+	for(unsigned int clusterIndex = 0; clusterIndex < cluster.size (); clusterIndex++)
 	{
 		double azimuthAngle;
 		double verticalAngle;

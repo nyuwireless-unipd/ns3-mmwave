@@ -104,7 +104,7 @@ private:
 
 	Ptr<mmWavePhyRxTrace> m_phyStats;
 
-	Ptr<MmWavePhyMacCommon> m_PhyMACCommon;
+	Ptr<MmWavePhyMacCommon> m_phyMacCommon;
 
 	ObjectFactory m_ffrAlgorithmFactory;
 	ObjectFactory m_enbAntennaModelFactory;

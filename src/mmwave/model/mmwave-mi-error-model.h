@@ -38,7 +38,7 @@
 #include <ns3/ptr.h>
 #include <stdint.h>
 #include <ns3/spectrum-value.h>
-
+#include "mmwave-harq-phy.h"
 
 
 
@@ -96,7 +96,7 @@ public:
    * \param mcs the MCS of the TB
    * \return the TB error rate and MI
    */
-  static TbStats_t GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size_Byte, uint8_t mcs);
+  static TbStats_t GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, HarqProcessInfoList_t miHistory);
 
 
 //private:

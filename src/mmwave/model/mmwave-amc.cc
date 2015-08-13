@@ -160,7 +160,8 @@ mmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 				TbStats_t tbStats;
 				while (mcs <= 28)
 				{
-					tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, (uint16_t)GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs);
+					HarqProcessInfoList_t harqInfoList;
+					tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, (uint16_t)GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs, harqInfoList);
 					if (tbStats.tbler > 0.1)
 					{
 						break;

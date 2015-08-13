@@ -94,6 +94,8 @@ public:
 
 	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
 
+	void ReceiveLteDlHarqFeedback (DlHarqInfo m);
+
 
 private:
 	void DoReset ();
