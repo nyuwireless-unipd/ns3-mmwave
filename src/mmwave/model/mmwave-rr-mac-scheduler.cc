@@ -662,22 +662,20 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 					DciInfoElement newDci;
 					newDci.m_rnti = rnti;
 					newDci.m_tddBitmap = 0;
+					newDci.m_format = 0;
+					newDci.m_cceIndex = 0;
 					//			        newDci.m_harqProcess = UpdateHarqProcessId ((*it).m_rnti);
 					newSchedInfo.m_dci = newDci;
 					newSchedInfo.m_frameNum = frameNum;
 					newSchedInfo.m_sfNum = sfNum;
 					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> (rnti, newSchedInfo))).first;
 				}
-
-				std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
-				if (itRlcList == m_dlHarqProcessesRlcPduMap.end ())
-				{
-					NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << rnti);
-				}
-
+				SchedInfoElement& schedInfo = schedIt->second;
 				harqTbInfo.m_ndi = 0;
+				harqTbInfo.m_slotInd = islot;
 				harqTbInfo.m_rv++;
 				(*itHarq).second.at (harqId).m_rv++;
+				schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
 				NS_LOG_INFO (this << "HARQ ReTx RV " << (uint16_t)harqTbInfo.m_rv);
 
 
@@ -714,9 +712,15 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 				}
 			}*/
 
+				std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
+				if (itRlcList == m_dlHarqProcessesRlcPduMap.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << rnti);
+				}
+
+				std::vector <RlcPduInfo> rlcPduListPerLc;
 				for (uint16_t k = 0; k < (*itRlcList).second.at(harqTbInfo.m_harqProcess).size (); k++)
 				{
-					std::vector <RlcPduInfo> rlcPduListPerLc;
 					//					for (uint8_t j = 0; j < nLayers; j++)
 					//					{
 					//						if (retx.at (j))
@@ -729,15 +733,13 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 					//					}
 
 					rlcPduListPerLc.push_back ((*itRlcList).second.at (harqTbInfo.m_harqProcess).at (k));
-
-
-					if (rlcPduListPerLc.size () > 0)
-					{
-						schedIt->second.m_rlcPduList.push_back (rlcPduListPerLc);
-					}
+				}
+				if (rlcPduListPerLc.size () > 0)
+				{
+					schedInfo.m_rlcPduList.push_back (rlcPduListPerLc);
 				}
 				//				schedIt->second.m_rnti = rnti;
-				schedIt->second.m_dci.m_tbInfoElements.push_back (harqTbInfo);
+				schedInfo.m_dci.m_tbInfoElements.push_back (harqTbInfo);
 				(*itHarq).second.at (harqId).m_rv = harqTbInfo.m_rv;
 				// refresh timer
 				std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer = m_dlHarqProcessesTimer.find (rnti);
@@ -1110,6 +1112,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 //					continue;
 //				}
 				harqTbInfo.m_ndi = 0;
+				harqTbInfo.m_slotInd = islot;
 
 				std::map<uint16_t, SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
 				if (schedIt == schedInfoMap.end ())
@@ -1127,6 +1130,8 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 					newSchedInfo.m_sfNum = sfNum;
 					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> (rnti, newSchedInfo))).first;
 				}
+				SchedInfoElement& schedInfo = schedIt->second;
+				schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << islot)); // set bit for UL
 
 				// Update HARQ buffers with new HarqId
 				(*itStat).second.at ((*itProcId).second) = (*itStat).second.at (harqId) + 1;
@@ -1369,12 +1374,12 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 				NS_FATAL_ERROR ("No info find in HARQ buffer for UE " << schedInfo.m_rnti);
 			}
 			harqId = (*itProcId).second;
-			std::map <uint16_t, UlHarqProcessesTbInfoList_t>::iterator itTbInfo = m_ulHarqProcessesTbInfoMap.find (schedInfo.m_rnti);
-			if (itTbInfo == m_ulHarqProcessesTbInfoMap.end ())
+			std::map <uint16_t, UlHarqProcessesTbInfoList_t>::iterator itHarqTbInfo = m_ulHarqProcessesTbInfoMap.find (schedInfo.m_rnti);
+			if (itHarqTbInfo == m_ulHarqProcessesTbInfoMap.end ())
 			{
 				NS_FATAL_ERROR ("Unable to find RNTI entry in UL DCI HARQ buffer for RNTI " << schedInfo.m_rnti);
 			}
-			(*itTbInfo).second.at (harqId) = newTbInfoElem;
+			(*itHarqTbInfo).second.at (harqId) = newTbInfoElem;
 			// Update HARQ process status (RV 0)
 			std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (schedInfo.m_rnti);
 			if (itStat == m_ulHarqProcessesStatus.end ())

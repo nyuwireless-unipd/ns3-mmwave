@@ -66,7 +66,7 @@ main (int argc, char *argv[])
   cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
   cmd.Parse(argc, argv);
 
-  Config::SetDefault ("ns3::MmWaveRrMacScheduler::HarqEnabled", BooleanValue(false));
+  Config::SetDefault ("ns3::MmWaveRrMacScheduler::HarqEnabled", BooleanValue(true));
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();

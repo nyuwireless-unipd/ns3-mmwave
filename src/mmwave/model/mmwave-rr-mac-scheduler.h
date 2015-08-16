@@ -24,7 +24,7 @@ public:
 	typedef std::vector < uint8_t > DlHarqProcessesStatus_t;
 	typedef std::vector < uint8_t > DlHarqProcessesTimer_t;
 	typedef std::vector < TbInfoElement > DlHarqProcessesTbInfoList_t;
-	typedef std::vector < std::vector <struct RlcPduInfo> > DlHarqRlcPduList_t; // vector of the LCs and layers per UE
+	typedef std::vector < std::vector <struct RlcPduInfo> > DlHarqRlcPduList_t; // vector of the LCs per per UE HARQ process
 //	typedef std::vector < RlcPduElement > DlHarqRlcPduList_t; // vector of the 8 HARQ processes per UE
 
 	typedef std::vector < TbInfoElement > UlHarqProcessesTbInfoList_t;

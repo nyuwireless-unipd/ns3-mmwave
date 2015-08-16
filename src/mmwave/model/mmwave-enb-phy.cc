@@ -484,9 +484,9 @@ MmWaveEnbPhy::StartSubFrame (void)
   			std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
   			if (!pkts.empty ())
   			{
-  				MmWaveMacPduHeader macHeader;
-  				pkts.front ()->PeekHeader (macHeader);
-  				NS_ASSERT ((macHeader.GetSubframeNum() == sfInd) && (macHeader.GetSlotNum() == slotInd));
+  				MmWaveMacPduTag macTag;
+  				pkts.front ()->PeekPacketTag (macTag);
+  				NS_ASSERT ((macTag.GetSubframeNum() == sfInd) && (macTag.GetSlotNum() == slotInd));
   			}
   		}
 			NS_LOG_DEBUG ("ENB TXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \

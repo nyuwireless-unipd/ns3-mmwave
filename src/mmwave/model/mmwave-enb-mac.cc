@@ -679,7 +679,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 			}
 			else
 			{
-				NS_LOG_UNCOND ("Retransmission");
+				NS_LOG_INFO ("DL retransmission");
 				if (tbInfo.m_tbSize > 0)
 				{
 					// HARQ retransmission -> retrieve TB from HARQ buffer
@@ -690,6 +690,12 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					for (std::list<Ptr<Packet> >::const_iterator j = pb->Begin (); j != pb->End (); ++j)
 					{
 						Ptr<Packet> pkt = (*j)->Copy ();
+						// update header metadata for retransmission
+						MmWaveMacPduTag tag;
+						pkt->RemovePacketTag (tag);
+						tag.SetFrameNum (schedInfo.m_frameNum);
+						tag.SetSubframeNum (schedInfo.m_sfNum);
+						tag.SetSlotNum (tbInfo.m_slotInd);
 						m_phySapProvider->SendMacPdu (pkt);
 					}
 				}

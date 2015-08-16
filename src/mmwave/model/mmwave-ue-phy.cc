@@ -254,7 +254,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 
 			// process TB info elements and set SF schedule
 			for (std::vector<TbInfoElement>::const_iterator tbIt = dciInfoElem.m_tbInfoElements.begin(); \
-			tbIt != dciInfoElem.m_tbInfoElements.end(); tbIt++)
+				tbIt != dciInfoElem.m_tbInfoElements.end(); tbIt++)
 			{
 				// loop through TB info elements (can be multiple per DCI)
 				SlotAllocInfo* slotInfo; // get reference to slot information
@@ -551,9 +551,9 @@ MmWaveUePhy::ProcessSubframe ()
 					std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
 					if (!pkts.empty ())
 					{
-						MmWaveMacPduHeader macHeader;
-						pkts.front ()->PeekHeader (macHeader);
-						NS_ASSERT ((macHeader.GetSubframeNum() == sfInd) && (macHeader.GetSlotNum() == slotInd));
+						MmWaveMacPduTag tag;
+						pkts.front ()->PeekPacketTag (tag);
+						NS_ASSERT ((tag.GetSubframeNum() == sfInd) && (tag.GetSlotNum() == slotInd));
 					}
 
 					if (0 && slotDir == SlotAllocInfo::DL && m_prevSlotDir == SlotAllocInfo::UL)  // if curr slot == DL and prev slot == UL

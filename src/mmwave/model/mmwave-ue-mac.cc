@@ -615,6 +615,13 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 				for (std::list<Ptr<Packet> >::const_iterator j = pb->Begin (); j != pb->End (); ++j)
 				{
 					Ptr<Packet> pkt = (*j)->Copy ();
+					// update packet tag
+					MmWaveMacPduTag tag;
+					pkt->RemovePacketTag (tag);
+					tag.SetFrameNum (m_frameNum);
+					tag.SetSubframeNum (m_sfNum);
+					tag.SetSlotNum (m_slotNum);
+					pkt->AddPacketTag (tag);
 					m_phySapProvider->SendMacPdu (pkt);
 				}
 				m_miUlHarqProcessesPacketTimer.at (m_harqProcessId) = m_phyMacConfig->GetHarqTimeout();

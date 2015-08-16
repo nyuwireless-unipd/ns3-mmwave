@@ -40,7 +40,7 @@ public:
   virtual TypeId  GetInstanceTypeId (void) const;
 
   /**
-   * Create an empty MacP PDU tag
+   * Create an empty Mac header
    */
   MmWaveMacPduHeader ();
 
@@ -51,36 +51,6 @@ public:
   virtual uint32_t  GetSerializedSize () const;
   virtual void Print (std::ostream &os) const;
   void  AddSubheader (MacSubheader rlcPduInfo);
-
-  uint16_t  GetFrameNum (void) const
-  {
-  	return m_frameNum;
-  }
-
-  void  SetFrameNum (uint16_t frameNum)
-  {
-  	this->m_frameNum = frameNum;
-  }
-
-  uint8_t  GetSubframeNum (void) const
-  {
-    return m_sfNum;
-  }
-
-  void  SetSubframeNum (uint8_t sfNum)
-  {
-    this->m_sfNum = sfNum;
-  }
-
-  uint8_t  GetSlotNum (void) const
-  {
-    return m_slotNum;
-  }
-
-  void  SetSlotNum (uint8_t slotNum)
-  {
-    this->m_slotNum = slotNum;
-  }
 
   void SetSubheaders (std::vector<MacSubheader> macSubheaderList)
   {
@@ -93,9 +63,6 @@ public:
   }
 
 protected:
-  uint8_t m_frameNum;
-  uint8_t m_sfNum;
-  uint8_t m_slotNum;
   std::vector<MacSubheader> m_subheaderList;
   uint32_t m_headerSize;
 };

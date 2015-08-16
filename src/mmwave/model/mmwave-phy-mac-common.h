@@ -15,6 +15,7 @@
 #include <ns3/packet.h>
 #include <ns3/string.h>
 #include "mmwave-mac-pdu-header.h"
+#include "mmwave-mac-pdu-tag.h"
 
 namespace ns3 {
 
@@ -47,7 +48,9 @@ struct MacPduInfo
 		m_numRlcPdu = numRlcPdu;
 		m_size = size;
 		m_pdu = Create<Packet> ();
-		m_macHeader = MmWaveMacPduHeader (frameNum, sfNum, slotNum);
+		m_macHeader = MmWaveMacPduHeader ();
+		MmWaveMacPduTag tag (frameNum, sfNum, slotNum);
+		m_pdu->AddPacketTag (tag);
 	}
 
 	uint16_t m_frameNum;

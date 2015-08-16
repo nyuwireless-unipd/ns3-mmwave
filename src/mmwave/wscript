@@ -40,6 +40,7 @@ def build(bld):
         'model/mmwave-channel-matrix.cc',
 		'model/buildings-obstacle-propagation-loss-model.cc',
         'model/mmwave-mac-pdu-header.cc',
+        'model/mmwave-mac-pdu-tag.cc',
         'model/mmwave-harq-phy.cc',        
         ]
 
@@ -82,6 +83,7 @@ def build(bld):
         'model/mmwave-channel-matrix.h',
 		'model/buildings-obstacle-propagation-loss-model.h',
         'model/mmwave-mac-pdu-header.h',
+        'model/mmwave-mac-pdu-tag.h',
         'model/mmwave-harq-phy.h'
         ]
 

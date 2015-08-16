@@ -26,17 +26,8 @@ namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveMacPduHeader);
 
-MmWaveMacPduHeader::MmWaveMacPduHeader ()
-  : m_frameNum (0), m_sfNum (0), m_slotNum(0)
+MmWaveMacPduHeader::MmWaveMacPduHeader () : m_headerSize (0)
 {
-	m_headerSize = 2;
-}
-
-
-MmWaveMacPduHeader::MmWaveMacPduHeader (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
-  :  m_frameNum (frameNum), m_sfNum (sfNum), m_slotNum (slotNum)
-{
-	m_headerSize = 2;
 }
 
 TypeId
@@ -63,15 +54,6 @@ MmWaveMacPduHeader::GetSerializedSize (void) const
 void
 MmWaveMacPduHeader::Serialize (Buffer::Iterator i) const
 {
-//	i.WriteU32 (m_frameNum);
-//	i.WriteU32 (m_sfNum);
-	//uint8_t absSlotNum = (uint8_t)((m_sfNum - 1) * 8 + m_slotNum -1); // this should not be hard coded like this, I know
-	//i.WriteU8 (absSlotNum);
-
-	// RDF TODO: decide if we need slot num in the MAC header and what format
-	i.WriteU8 (m_sfNum);
-	i.WriteU8 (m_slotNum);
-
 	// RDF TODO: implement BSR MAC control elements
 
 	// this part builds the MAC sub-header format from 36.321 sec 6.1.2
@@ -105,11 +87,8 @@ MmWaveMacPduHeader::Serialize (Buffer::Iterator i) const
 uint32_t
 MmWaveMacPduHeader::Deserialize (Buffer::Iterator i)
 {
-	m_sfNum = (uint8_t)i.ReadU8 ();
-	m_slotNum = (uint8_t)i.ReadU8 ();
-	m_headerSize = 2;
-
 	// decode sub-headers and create RLC info elements
+	m_headerSize = 0;
 	bool done = false;
 	while (!done)
 	{
@@ -141,7 +120,6 @@ MmWaveMacPduHeader::Deserialize (Buffer::Iterator i)
 void
 MmWaveMacPduHeader::Print (std::ostream &os) const
 {
-  os << m_frameNum << " " << m_sfNum << " " << m_slotNum;
 }
 
 void

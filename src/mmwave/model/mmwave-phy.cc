@@ -174,11 +174,11 @@ MmWavePhy::SendRachPreamble (uint32_t PreambleId, uint32_t Rnti)
 void
 MmWavePhy::SetMacPdu (Ptr<Packet> p)
 {
-	MmWaveMacPduHeader header;
-	if(p->PeekHeader (header))
+	MmWaveMacPduTag tag;
+	if(p->PeekPacketTag (tag))
 	{
-		uint8_t sfNum = header.GetSubframeNum ();
-		uint8_t slotNum = header.GetSlotNum ();
+		uint8_t sfNum = tag.GetSubframeNum ();
+		uint8_t slotNum = tag.GetSlotNum ();
 		//	uint16_t key = ((0xFF * sfNum) << 8) | (0xFF * slotNum);
 		NS_ASSERT((sfNum > 0) && (sfNum <= m_phyMacConfig->GetSubframesPerFrame ()));
 		NS_ASSERT((slotNum > 0) && (slotNum <= m_phyMacConfig->GetSlotsPerSubframe ()));
@@ -206,9 +206,9 @@ MmWavePhy::GetPacketBurst (uint8_t sfNum, uint8_t slotNum)
 		std::list< Ptr<Packet> > pkts = pburst->GetPackets ();
 		if (!pkts.empty ())
 		{
-			MmWaveMacPduHeader macHeader;
-			pkts.front ()->PeekHeader (macHeader);
-			NS_ASSERT ((macHeader.GetSubframeNum() == sfNum) && (macHeader.GetSlotNum() == slotNum));
+			MmWaveMacPduTag tag;
+			pkts.front ()->PeekPacketTag (tag);
+			NS_ASSERT ((tag.GetSubframeNum() == sfNum) && (tag.GetSlotNum() == slotNum));
 		}
 		m_packetBurstQueue[sfNum-1][slotNum-1] = CreateObject<PacketBurst> ();
 	}
