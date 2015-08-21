@@ -501,9 +501,13 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			bfParams->m_enbW = enbW;
 			bfParams->m_beam = GetLongTermFading (bfParams);
 		}
-		else
+		else if(ueW.empty())
 		{
-			NS_FATAL_ERROR ("empty beamforming vector");
+			NS_FATAL_ERROR ("UE beamforming vector is not configured, make sure this UE is registered to ENB");
+		}
+		else if(enbW.empty())
+		{
+			NS_FATAL_ERROR ("ENB beamforming vector is not configured, make sure UE is registered to this ENB");
 		}
 	}
 
