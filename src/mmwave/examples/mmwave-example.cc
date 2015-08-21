@@ -32,7 +32,7 @@ main (int argc, char *argv[])
   //LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
   //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
   //LogComponentEnable("mmWaveInterference",LOG_LEVEL_ALL);
-  //LogComponentEnable("mmWaveBeamforming",LOG_LEVEL_ALL);
+  //LogComponentEnable("MmWaveBeamforming",LOG_LEVEL_ALL);
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 

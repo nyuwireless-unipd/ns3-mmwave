@@ -21,7 +21,7 @@
 #include <ns3/spectrum-signal-parameters.h>
 #include <ns3/mobility-model.h>
 #include <ns3/spectrum-propagation-loss-model.h>
-
+#include <ns3/mmwave-phy-mac-common.h>
 
 
 namespace ns3{
@@ -57,9 +57,9 @@ struct BeamformingParams : public SimpleRefCount<BeamformingParams>
 
 /**
 * \ingroup mmWave
-* \mmWaveBeamforming models the beamforming gain and fading distortion in frequency and time for the mmWave channel
+* \MmWaveBeamforming models the beamforming gain and fading distortion in frequency and time for the mmWave channel
 */
-class mmWaveBeamforming : public SpectrumPropagationLossModel
+class MmWaveBeamforming : public SpectrumPropagationLossModel
 {
 public:
 	/**
@@ -67,11 +67,14 @@ public:
 	* \param enbAntenna antenna number of enb
 	* \param ueAntenna antenna number of ue
 	*/
-	mmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna);
-	virtual ~mmWaveBeamforming();
+	MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna);
+	virtual ~MmWaveBeamforming();
 
 	static TypeId GetTypeId (void);
 	void DoDispose();
+	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
+
 	void LoadFile();
 	/**
 	* \breif Set the channel matrix for each link
@@ -86,7 +89,7 @@ private:
 	* \param strCmplx a string store complex bumber i.e. 3+2i,
 	* \return a complex number of the string
 	*/
-	std::complex<double> parseComplex (std::string strCmplx);
+	std::complex<double> ParseComplex (std::string strCmplx);
 	/**
 	* \breif Load file which store small scale fading sigma vector
 	*/
@@ -163,10 +166,13 @@ private:
 	uint32_t m_pathNum;
 	uint32_t m_enbAntennaSize;
 	uint32_t m_ueAntennaSize;
-	double m_subbandWidth;
-	double m_centreFrequency;
-	uint32_t m_numResourceBlocks;
-	uint32_t m_numSubbbandPerRB;
+//	double m_subbandWidth;
+//	double m_centreFrequency;
+//	uint32_t m_numResourceBlocks;
+//	uint32_t m_numSubbbandPerRB;
+
+private:
+	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 };
 
 }  //namespace ns3

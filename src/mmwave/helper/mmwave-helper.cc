@@ -90,12 +90,14 @@ MmWaveHelper::DoInitialize()
 	NS_LOG_FUNCTION (this);
 
 	m_channel = m_channelFactory.Create<SpectrumChannel> ();
-	m_beamforming = CreateObject<mmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
-	//m_beamforming = CreateObject<mmWaveChannelMatrix> ();
+	m_beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+	//m_beamforming = CreateObject<MmWaveChannelMatrix> ();
 
 	m_channel->AddSpectrumPropagationLossModel (m_beamforming);
 
 	m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
+
+	m_beamforming->SetCofigurationParameters (m_phyMacCommon);
 
 	m_pathlossModel = m_pathlossModelFactory.Create ();
 	Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();

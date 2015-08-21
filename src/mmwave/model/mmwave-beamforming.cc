@@ -1,5 +1,5 @@
 /*
- * mmWaveBeamforming.cc
+ * MmWaveBeamforming.cc
  *
  *  Created on: 2014年11月25日
  *      Author: menglei
@@ -22,9 +22,9 @@
 
 namespace ns3{
 
-NS_LOG_COMPONENT_DEFINE ("mmWaveBeamforming");
+NS_LOG_COMPONENT_DEFINE ("MmWaveBeamforming");
 
-NS_OBJECT_ENSURE_REGISTERED (mmWaveBeamforming);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveBeamforming);
 
 // number of channel matrix instance in beamforming files
 // period of updating channel matrix
@@ -48,7 +48,7 @@ static const double DopplerShift[20] = {0.73, 0.78, 0.68, 0.71, 0.79, 0.69, 0.66
 
 
 
-mmWaveBeamforming::mmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
+MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 	:m_pathNum (20),
 	m_enbAntennaSize(enbAntenna),
 	m_ueAntennaSize(ueAntenna)
@@ -59,47 +59,40 @@ mmWaveBeamforming::mmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 
 
 TypeId
-mmWaveBeamforming::GetTypeId (void)
+MmWaveBeamforming::GetTypeId (void)
 {
-	static TypeId tid = TypeId ("ns3::mmWaveBeamforming")
+	static TypeId tid = TypeId ("ns3::MmWaveBeamforming")
 		.SetParent<Object> ()
-		.AddAttribute ("ChunkWidth",
-				   "Width of each chunk in Hz",
-				   DoubleValue (13.889e6),
-				   MakeDoubleAccessor (&mmWaveBeamforming::m_subbandWidth),
-				   MakeDoubleChecker<double> ())
-		.AddAttribute ("CentreFreq",
-				   "The center frequency in Hz",
-				   DoubleValue (28e9),
-				   MakeDoubleAccessor (&mmWaveBeamforming::m_centreFrequency),
-				   MakeDoubleChecker<double> ())
-		.AddAttribute ("NumResourceBlocks",
-				   "Number of resource blocks in one slot",
-				   UintegerValue (4),
-				   MakeUintegerAccessor (&mmWaveBeamforming::m_numResourceBlocks),
-				   MakeUintegerChecker<uint32_t> ())
-		.AddAttribute ("NumSubbandPerRB",
-			       "Number of sub-bands in one resource block",
-				   UintegerValue (18),
-				   MakeUintegerAccessor (&mmWaveBeamforming::m_numSubbbandPerRB),
-				   MakeUintegerChecker<uint32_t> ())
 	;
   	return tid;
 }
 
-mmWaveBeamforming::~mmWaveBeamforming ()
+MmWaveBeamforming::~MmWaveBeamforming ()
 {
 
 }
 
 void
-mmWaveBeamforming::DoDispose ()
+MmWaveBeamforming::DoDispose ()
 {
 	NS_LOG_FUNCTION (this);
 }
 
+void
+MmWaveBeamforming::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+{
+	m_phyMacConfig = ptrConfig;
+}
+
+Ptr<MmWavePhyMacCommon>
+MmWaveBeamforming::GetConfigurationParameters (void) const
+{
+	return m_phyMacConfig;
+}
+
+
 std::complex<double>
-mmWaveBeamforming::parseComplex (std::string strCmplx)
+MmWaveBeamforming::ParseComplex (std::string strCmplx)
 {
     double re = 0.00;
     double im = 0.00;
@@ -143,7 +136,7 @@ mmWaveBeamforming::parseComplex (std::string strCmplx)
 }
 
 void
-mmWaveBeamforming::LoadFile()
+MmWaveBeamforming::LoadFile()
 {
 	LoadSmallScaleFading ();
 	LoadEnbAntenna ();
@@ -154,7 +147,7 @@ mmWaveBeamforming::LoadFile()
 
 
 void
-mmWaveBeamforming::LoadSmallScaleFading ()
+MmWaveBeamforming::LoadSmallScaleFading ()
 {
 	std::string filename = "src/mmwave/model/BeamFormingMatrix/SmallScaleFading.txt";
 	NS_LOG_FUNCTION (this << "Loading SmallScaleFading file " << filename);
@@ -182,7 +175,7 @@ mmWaveBeamforming::LoadSmallScaleFading ()
 }
 
 void
-mmWaveBeamforming::LoadEnbAntenna ()
+MmWaveBeamforming::LoadEnbAntenna ()
 {
 	std::string filename = "src/mmwave/model/BeamFormingMatrix/TxAntenna.txt";
 	NS_LOG_FUNCTION (this << "Loading TxAntenna file " << filename);
@@ -200,7 +193,7 @@ mmWaveBeamforming::LoadEnbAntenna ()
         std::istringstream stream(line);
         while( getline(stream,token,',') ) //Parse each comma separated string in a line
         {
-        	complexVar = parseComplex(token);
+        	complexVar = ParseComplex(token);
 		    txAntenna.push_back(complexVar);
 		}
 		g_enbAntennaInstance.push_back(txAntenna);
@@ -210,7 +203,7 @@ mmWaveBeamforming::LoadEnbAntenna ()
 
 
 void
-mmWaveBeamforming::LoadUeAntenna ()
+MmWaveBeamforming::LoadUeAntenna ()
 {
 	std::string filename = "src/mmwave/model/BeamFormingMatrix/RxAntenna.txt";
 	NS_LOG_FUNCTION (this << "Loading RxAntenna file " << filename);
@@ -229,7 +222,7 @@ mmWaveBeamforming::LoadUeAntenna ()
 		std::istringstream stream(line);
 		while( getline(stream,token,',') ) //Parse each comma separated string in a line
 		{
-			complexVar = parseComplex(token);
+			complexVar = ParseComplex(token);
 		    rxAntenna.push_back(complexVar);
 		}
 		g_ueAntennaInstance.push_back(rxAntenna);
@@ -238,7 +231,7 @@ mmWaveBeamforming::LoadUeAntenna ()
 }
 
 void
-mmWaveBeamforming::LoadEnbSpatialSignature ()
+MmWaveBeamforming::LoadEnbSpatialSignature ()
 {
 	std::string filename = "src/mmwave/model/BeamFormingMatrix/TxSpatialSigniture.txt";
 	NS_LOG_FUNCTION (this << "Loading TxspatialSigniture file " << filename);
@@ -259,7 +252,7 @@ mmWaveBeamforming::LoadEnbSpatialSignature ()
 		std::istringstream stream(line);
 		while( getline(stream,token,',') ) //Parse each comma separated string in a line
 		{
-			complexVar = parseComplex(token);
+			complexVar = ParseComplex(token);
 			txSpatialElement.push_back(complexVar);
 		}
 		txSpatialMatrix.push_back(txSpatialElement);
@@ -274,7 +267,7 @@ mmWaveBeamforming::LoadEnbSpatialSignature ()
 }
 
 void
-mmWaveBeamforming::LoadUeSpatialSignature ()
+MmWaveBeamforming::LoadUeSpatialSignature ()
 {
 	std::string strFilename = "src/mmwave/model/BeamFormingMatrix/RxSpatialSigniture.txt";
 	NS_LOG_FUNCTION (this << "Loading RxspatialSigniture file " << strFilename);
@@ -295,7 +288,7 @@ mmWaveBeamforming::LoadUeSpatialSignature ()
 	     std::istringstream stream(line);
 	     while (getline(stream,token,',') ) //Parse each comma separated string in a line
 	     {
-	    	 complexVar = parseComplex (token);
+	    	 complexVar = ParseComplex (token);
 	    	 rxSpatialElement.push_back (complexVar);
 	     }
 	     rxSpatialMatrix.push_back (rxSpatialElement);
@@ -311,7 +304,7 @@ mmWaveBeamforming::LoadUeSpatialSignature ()
 
 
 void
-mmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
+MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
 {
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
@@ -322,12 +315,12 @@ mmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 
 	}
 
-	Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &mmWaveBeamforming::Initial,this,ueDevices,enbDevices);
+	Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 }
 
 
 void
-mmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
+MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
 {
 	key_t key = std::make_pair(ueDevice,enbDevice);
 
@@ -350,7 +343,7 @@ mmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	}
 	m_channelMatrixMap.insert(std::make_pair(key,bfParams));
 	//update channel matrix periodically
-	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &mmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
+	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
 
 	Ptr<MmWaveUeNetDevice> UeDev =
 					DynamicCast<MmWaveUeNetDevice> (ueDevice);
@@ -362,7 +355,7 @@ mmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 }
 
 void
-mmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
+MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
 {
 	key_t key = std::make_pair(ueDevice,enbDevice);
 	std::map< key_t, Ptr<BeamformingParams> >::iterator it = m_channelMatrixMap.find(key);
@@ -379,11 +372,11 @@ mmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 			EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 	ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
 	enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
-	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &mmWaveBeamforming::SetBeamformingVector,this,ueDevice,enbDevice);
+	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::SetBeamformingVector,this,ueDevice,enbDevice);
 }
 
 complexVector_t
-mmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
+MmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
 {
 	complexVector_t longTerm;
 	for (unsigned pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
@@ -410,7 +403,7 @@ mmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
 }
 
 Ptr<SpectrumValue>
-mmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<BeamformingParams> bfParams, double speed) const
+MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<BeamformingParams> bfParams, double speed) const
 {
 	NS_LOG_FUNCTION (this);
 	Ptr<SpectrumValue> tempPsd = Copy<SpectrumValue> (txPsd);
@@ -422,7 +415,7 @@ mmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 		std::complex<double> subsbandGain (0.0,0.0);
 		if ((*vit) != 0.00)
 		{
-			double fsb = m_centreFrequency - GetSystemBandwidth ()/2 + m_subbandWidth*iSubband ;
+			double fsb = m_phyMacConfig->GetCentreFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband ;
 			for (unsigned int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 			{
 				double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
@@ -444,7 +437,7 @@ mmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 }
 
 Ptr<SpectrumValue>
-mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
+MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 												Ptr<const MobilityModel> a,
 												Ptr<const MobilityModel> b) const
 {
@@ -525,10 +518,10 @@ mmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 }
 
 double
-mmWaveBeamforming::GetSystemBandwidth () const
+MmWaveBeamforming::GetSystemBandwidth () const
 {
 	double bw = 0.00;
-	bw = m_subbandWidth*m_numSubbbandPerRB*m_numResourceBlocks;
+	bw = m_phyMacConfig->GetChunkWidth () * m_phyMacConfig->GetNumChunkPerRb () * m_phyMacConfig->GetNumRb ();
 	return bw;
 }
 

@@ -1,5 +1,5 @@
 /*
- * mmWaveChannelMatrix.cc
+ * MmWaveChannelMatrix.cc
  *
  *  Created on: 2014年11月25日
  *      Author: menglei
@@ -22,13 +22,13 @@
 
 namespace ns3{
 
-NS_LOG_COMPONENT_DEFINE ("mmWaveChannelMatrix");
+NS_LOG_COMPONENT_DEFINE ("MmWaveChannelMatrix");
 
-NS_OBJECT_ENSURE_REGISTERED (mmWaveChannelMatrix);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveChannelMatrix);
 
 static const double CdfOfClusterNum[4] = {0.480, 0.761, 0.927, 1.0}; //Cdf of cluster number equal {1,2,3,4}
 
-mmWaveChannelMatrix::mmWaveChannelMatrix ()
+MmWaveChannelMatrix::MmWaveChannelMatrix ()
 	:m_antennaSeparation(0.5)
 {
 	m_uniformRv = CreateObject<UniformRandomVariable> ();
@@ -37,47 +37,60 @@ mmWaveChannelMatrix::mmWaveChannelMatrix ()
 }
 
 TypeId
-mmWaveChannelMatrix::GetTypeId (void)
+MmWaveChannelMatrix::GetTypeId (void)
 {
-	static TypeId tid = TypeId ("ns3::mmWaveChannelMatrix")
+	static TypeId tid = TypeId ("ns3::MmWaveChannelMatrix")
 	.SetParent<Object> ()
 	.AddAttribute ("ChunkWidth",
 			   "Width of each chunk in Hz",
 			   DoubleValue (13.889e6),
-			   MakeDoubleAccessor (&mmWaveChannelMatrix::m_subBW),
+			   MakeDoubleAccessor (&MmWaveChannelMatrix::m_subBW),
 			   MakeDoubleChecker<double> ())
 	.AddAttribute ("CentreFreq",
 			   "The center frequency in Hz",
 			   DoubleValue (28e9),
-			   MakeDoubleAccessor (&mmWaveChannelMatrix::m_centreF),
+			   MakeDoubleAccessor (&MmWaveChannelMatrix::m_centreF),
 			   MakeDoubleChecker<double> ())
 	.AddAttribute ("NumResourceBlocks",
 			   "Number of resource blocks in one slot",
 			   UintegerValue (4),
-			   MakeUintegerAccessor (&mmWaveChannelMatrix::m_numRB),
+			   MakeUintegerAccessor (&MmWaveChannelMatrix::m_numRB),
 			   MakeUintegerChecker<uint32_t> ())
 	.AddAttribute ("NumSubbandPerRB",
 			   "Number of sub-bands in one resource block",
 			   UintegerValue (18),
-			   MakeUintegerAccessor (&mmWaveChannelMatrix::m_numSBPerRB),
+			   MakeUintegerAccessor (&MmWaveChannelMatrix::m_numSBPerRB),
 			   MakeUintegerChecker<uint32_t> ())
 	;
 	return tid;
 }
 
-mmWaveChannelMatrix::~mmWaveChannelMatrix ()
+MmWaveChannelMatrix::~MmWaveChannelMatrix ()
 {
 
 }
 
 void
-mmWaveChannelMatrix::DoDispose ()
+MmWaveChannelMatrix::DoDispose ()
 {
 	NS_LOG_FUNCTION (this);
 }
 
 void
-mmWaveChannelMatrix::ConnectDevices (Ptr<NetDevice> dev1, Ptr<NetDevice> dev2)
+MmWaveChannelMatrix::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+{
+	m_phyMacConfig = ptrConfig;
+}
+
+Ptr<MmWavePhyMacCommon>
+MmWaveChannelMatrix::GetConfigurationParameters (void) const
+{
+	return m_phyMacConfig;
+}
+
+
+void
+MmWaveChannelMatrix::ConnectDevices (Ptr<NetDevice> dev1, Ptr<NetDevice> dev2)
 {
 	key_t key = std::make_pair(dev1,dev2);
 
@@ -90,7 +103,7 @@ mmWaveChannelMatrix::ConnectDevices (Ptr<NetDevice> dev1, Ptr<NetDevice> dev2)
 }
 
 void
-mmWaveChannelMatrix::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
+MmWaveChannelMatrix::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
 {
 
 	NS_LOG_INFO (&ueDevices<<&enbDevices);
@@ -111,7 +124,7 @@ mmWaveChannelMatrix::Initial(NetDeviceContainer ueDevices, NetDeviceContainer en
 }
 
 Ptr<SpectrumValue>
-mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
+MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
                                                    Ptr<const MobilityModel> a,
                                                    Ptr<const MobilityModel> b) const
 {
@@ -356,7 +369,7 @@ mmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 
 /*
 complexVector_t
-mmWaveChannelMatrix::CalcBeamformingVector(complex2DVector_t spatialMatrix) const
+MmWaveChannelMatrix::CalcBeamformingVector(complex2DVector_t spatialMatrix) const
 {
 	complexVector_t antennaWeights;
 	uint16_t antennaNum = spatialMatrix.at (0).size ();
@@ -407,7 +420,7 @@ mmWaveChannelMatrix::CalcBeamformingVector(complex2DVector_t spatialMatrix) cons
 
 
 complex2DVector_t
-mmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const
+MmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const
 {
 	complex2DVector_t spatialMatrix;
 	for(unsigned int clusterIndex = 0; clusterIndex < cluster.size (); clusterIndex++)
@@ -439,7 +452,7 @@ mmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles ang
 
 
 complexVector_t
-mmWaveChannelMatrix::GenSinglePath (double hAngle, double vAngle, uint8_t* antennaNum) const
+MmWaveChannelMatrix::GenSinglePath (double hAngle, double vAngle, uint8_t* antennaNum) const
 {
 	NS_LOG_FUNCTION (this);
 	complexVector_t singlePath;
@@ -459,7 +472,7 @@ mmWaveChannelMatrix::GenSinglePath (double hAngle, double vAngle, uint8_t* anten
 }
 
 doubleVector_t
-mmWaveChannelMatrix::GetBfGain (Ptr<mmWaveBeamFormingParams> bfParams, double speed) const
+MmWaveChannelMatrix::GetBfGain (Ptr<mmWaveBeamFormingParams> bfParams, double speed) const
 {
 	NS_LOG_FUNCTION (this);
 	doubleVector_t gain;
@@ -511,7 +524,7 @@ mmWaveChannelMatrix::GetBfGain (Ptr<mmWaveBeamFormingParams> bfParams, double sp
 }
 
 Ptr<SpectrumValue>
-mmWaveChannelMatrix::GetPsd (Ptr<const SpectrumValue> rxPsd, doubleVector_t gain) const
+MmWaveChannelMatrix::GetPsd (Ptr<const SpectrumValue> rxPsd, doubleVector_t gain) const
 {
 	Ptr<SpectrumValue> bfPsd = Copy<SpectrumValue> (rxPsd);
 	Values::iterator vit = bfPsd->ValuesBegin ();

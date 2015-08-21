@@ -13,7 +13,7 @@
 #include <ns3/angles.h>
 #include <ns3/net-device-container.h>
 #include <ns3/random-variable-stream.h>
-
+#include "mmwave-phy-mac-common.h"
 
 
 
@@ -47,17 +47,20 @@ struct mmWaveBeamFormingParams : public SimpleRefCount<mmWaveBeamFormingParams>
 };
 
 
-class mmWaveChannelMatrix : public SpectrumPropagationLossModel
+class MmWaveChannelMatrix : public SpectrumPropagationLossModel
 {
 public:
 
-	mmWaveChannelMatrix ();
-	virtual ~mmWaveChannelMatrix ();
+	MmWaveChannelMatrix ();
+	virtual ~MmWaveChannelMatrix ();
 
 	static TypeId GetTypeId (void);
 	void DoDispose ();
 	void ConnectDevices (Ptr<NetDevice> dev1, Ptr<NetDevice> dev2);
 	void Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
+
+	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 
 private:
@@ -81,7 +84,7 @@ private:
 	uint32_t m_numSBPerRB;
 	Ptr<UniformRandomVariable> m_uniformRv;
 	Ptr<ExponentialRandomVariable> m_expRv;
-
+	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
 };
 
