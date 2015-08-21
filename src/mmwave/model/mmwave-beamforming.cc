@@ -503,11 +503,15 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		}
 		else if(ueW.empty())
 		{
-			NS_FATAL_ERROR ("UE beamforming vector is not configured, make sure this UE is registered to ENB");
+			NS_LOG_DEBUG ("UE beamforming vector is not configured, make sure this UE is registered to ENB");
+			*rxPsd = (*rxPsd)*0;
+			return rxPsd;
 		}
 		else if(enbW.empty())
 		{
-			NS_FATAL_ERROR ("ENB beamforming vector is not configured, make sure UE is registered to this ENB");
+			NS_LOG_DEBUG ("ENB beamforming vector is not configured, make sure UE is registered to this ENB");
+			*rxPsd = (*rxPsd)*0;
+			return rxPsd;
 		}
 	}
 
