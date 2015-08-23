@@ -192,7 +192,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
 	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
 	dlPhy->SetHarqPhyModule (harq);
-	ulPhy->SetHarqPhyModule (harq);
+//	ulPhy->SetHarqPhyModule (harq);
 	phy->SetHarqPhyModule (harq);
 
 	/* Do not do this here. Do it during registration with the BS
@@ -307,7 +307,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
 	dlPhy->SetHarqPhyModule (harq);
-	ulPhy->SetHarqPhyModule (harq);
+//	ulPhy->SetHarqPhyModule (harq);
 	phy->SetHarqPhyModule (harq);
 
 	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();

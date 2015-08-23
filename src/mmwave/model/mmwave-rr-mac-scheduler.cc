@@ -787,6 +787,8 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 		}
 	}
 
+	// END OF HARQ SECTION
+
 	// Get the actual active flows (unique RNTI-LCID pairs)
 	std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
 	m_rlcBufferReq.sort (SortRlcBufferReq);
@@ -847,7 +849,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 	NS_LOG_INFO (this << " Flows to be transmitted " << nflows << " rbgPerTb " << rbgPerTb);
 	if (rbgPerTb == 0)
 	{
-		rbgPerTb = 1;  // at least 1 rbg per TB (till available resource)
+		rbgPerTb = 1;
 	}
 
 	unsigned int rbgAllocated = 0;
@@ -986,7 +988,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 		}
 		uint32_t rbgMask = 0;
 		uint16_t i = 0;
-		NS_LOG_INFO (this << " slot " << islot+1 << " DL - Allocate user " << schedInfo.m_rnti << " LCs " << (uint16_t)(*itLcRnti).second << " bytes " << tbSize << " mcs " << (uint16_t) newTbInfoElem.m_mcs << " harqId " << (uint16_t)newTbInfoElem.m_harqProcess );
+		NS_LOG_INFO (this << " slot " << islot+1 << " DL Allocation - UE " << schedInfo.m_rnti << " LCs " << (uint16_t)(*itLcRnti).second << " bytes " << tbSize << " mcs " << (uint16_t) newTbInfoElem.m_mcs << " harqId " << (uint16_t)newTbInfoElem.m_harqProcess );
 		while (i < rbgPerTb)
 		{
 			if (rbgMap.at (rbgAllocated) == false)
@@ -1028,7 +1030,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 
 		if (rbgAllocatedNum == m_phyMacConfig->GetNumRb ())
 		{
-			m_nextRntiDl = schedInfo.m_rnti; // store last RNTI served
+			m_nextRntiDl = (*it).m_rnti; // store last RNTI served
 			break;                       // no more RGB to be allocated
 		}
 	}

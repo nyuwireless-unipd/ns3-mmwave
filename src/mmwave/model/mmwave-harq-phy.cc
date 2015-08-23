@@ -17,12 +17,12 @@ MmWaveHarqPhy::MmWaveHarqPhy (uint32_t harqNum)
 	// Create DL Decodification HARQ buffers
 	std::vector <HarqProcessInfoList_t> dlHarqLayer0;
 	dlHarqLayer0.resize (m_harqNum);
-	/*
 	std::vector <HarqProcessInfoList_t> dlHarqLayer1;
 	dlHarqLayer1.resize (m_harqNum);
-	*/
 	m_miDlHarqProcessesInfoMap.push_back (dlHarqLayer0);
-	//m_miDlHarqProcessesInfoMap.push_back (dlHarqLayer1);
+	m_miDlHarqProcessesInfoMap.push_back (dlHarqLayer1);
+	NS_LOG_DEBUG ("m_miDlHarqProcessesInfoMap size == " << m_miDlHarqProcessesInfoMap.size());
+
 }
 
 
@@ -130,11 +130,16 @@ void
 MmWaveHarqPhy::ResetDlHarqProcessStatus (uint8_t id)
 {
   NS_LOG_FUNCTION (this << (uint16_t) id);
-  for (uint8_t i = 0; i < m_miDlHarqProcessesInfoMap.size (); i++)
-    {
-      m_miDlHarqProcessesInfoMap.at (i).at (id).clear ();
-    }
-  
+
+  for (unsigned int i = 0; i < m_miDlHarqProcessesInfoMap.size (); i++)
+  {
+//  	if(!m_miDlHarqProcessesInfoMap.at (i).at (id).empty())
+  	{
+//  		m_miDlHarqProcessesInfoMap.at (i).at (id).clear ();
+  	}
+  }
+	NS_LOG_DEBUG ("m_miDlHarqProcessesInfoMap size == " << m_miDlHarqProcessesInfoMap.size());
+
 }
 
 
