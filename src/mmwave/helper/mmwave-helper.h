@@ -29,7 +29,7 @@
 #include <ns3/boolean.h>
 #include <ns3/epc-helper.h>
 #include <ns3/lte-ffr-algorithm.h>
-#include <ns3/mmwave-channel-matrix.h>
+#include <ns3/mmwave-beamforming.h>
 
 
 
@@ -69,6 +69,8 @@ public:
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
 	void SetEpcHelper (Ptr<EpcHelper> epcHelper);
 
+	void SetHarqEnabled (bool harqEnabled);
+	bool GetHarqEnabled ();
 
 protected:
 	virtual void DoInitialize();
@@ -112,7 +114,7 @@ private:
 
 	Ptr<EpcHelper> m_epcHelper;
 
-
+	bool m_harqEnabled;
 };
 
 }

@@ -71,6 +71,11 @@ MmWaveHelper::GetTypeId (void)
 				      MakeStringAccessor (&MmWaveHelper::SetSchedulerType,
 				                          &MmWaveHelper::GetSchedulerType),
 				      MakeStringChecker ())
+	  .AddAttribute ("HarqEnabled",
+					"Enable Hybrid ARQ",
+					BooleanValue (false),
+					MakeBooleanAccessor (&MmWaveHelper::m_harqEnabled),
+					MakeBooleanChecker ())
 	;
 
 	return tid;
@@ -146,6 +151,18 @@ MmWaveHelper::GetSchedulerType () const
 	return m_schedulerFactory.GetTypeId ().GetName ();
 }
 
+void
+MmWaveHelper::SetHarqEnabled (bool harqEnabled)
+{
+	m_harqEnabled = harqEnabled;
+}
+
+bool
+MmWaveHelper::GetHarqEnabled ()
+{
+	return m_harqEnabled;
+}
+
 NetDeviceContainer
 MmWaveHelper::InstallUeDevice (NodeContainer c)
 {
@@ -202,7 +219,10 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	pData->AddCallback (MakeCallback (&MmWaveUePhy::GenerateDlCqiReport, phy));
 	pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
 	dlPhy->AddDataSinrChunkProcessor (pData);
-  dlPhy->SetPhyDlHarqFeedbackCallback (MakeCallback (&MmWaveUePhy::ReceiveLteDlHarqFeedback, phy));
+	if(m_harqEnabled)
+	{
+		dlPhy->SetPhyDlHarqFeedbackCallback (MakeCallback (&MmWaveUePhy::ReceiveLteDlHarqFeedback, phy));
+	}
 
 	ulPhy->SetChannel(m_channel);
 	dlPhy->SetChannel(m_channel);
