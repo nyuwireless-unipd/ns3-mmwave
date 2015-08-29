@@ -67,7 +67,7 @@ private:
   void SendReportBufferStatus (void);
   void RefreshHarqProcessesPacketBuffer (void);
 
-  std::map<uint8_t, struct MacPduInfo>::iterator AddToMacPduMap (TbInfoElement tb, unsigned activeLcs);
+  std::map<uint32_t, struct MacPduInfo>::iterator AddToMacPduMap (TbInfoElement tb, unsigned activeLcs);
 
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
@@ -86,7 +86,7 @@ private:
 	uint32_t m_slotNum;
 
 	uint8_t	m_tbUid;
-	std::map<uint8_t, struct MacPduInfo> m_macPduMap;
+	std::map<uint32_t, struct MacPduInfo> m_macPduMap;
 
 	std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> m_ulBsrReceived; // BSR received from RLC (the last one)
 	Time m_bsrPeriodicity;

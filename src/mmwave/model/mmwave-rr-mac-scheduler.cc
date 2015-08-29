@@ -1279,7 +1279,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 					rbMap.at (j) = true;
 					// store info on allocation for managing ul-cqi interpretation
 					rbgAllocationMap.at (j) = (*it).first;
-					NS_LOG_INFO ("\t " << j);
+					NS_LOG_INFO ("\t rbAllocated " << j);
 				}
 				rbAllocated += rbPerFlow;
 				allocated = true;
@@ -1421,10 +1421,10 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 
 	MmWaveMacSchedSapUser::SchedConfigIndParameters ret;
 	ret.m_sfn = params.m_snfSf;
-//	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
+	//	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
 
-  RefreshDlCqiMaps ();
-  RefreshUlCqiMaps ();
+	RefreshDlCqiMaps ();
+	RefreshUlCqiMaps ();
 
 	for (unsigned int slotNum = 0; slotNum < m_phyMacConfig->GetSlotsPerSubframe (); slotNum++)
 	{

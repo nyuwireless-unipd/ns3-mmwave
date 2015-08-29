@@ -157,6 +157,8 @@ private:
 	uint64_t m_nextRntiDl;
 	uint64_t m_nextRntiUl;
 
+	uint32_t m_tddBitmap;
+
 	uint32_t m_subframeNo;
 	uint32_t m_frameNo;
 

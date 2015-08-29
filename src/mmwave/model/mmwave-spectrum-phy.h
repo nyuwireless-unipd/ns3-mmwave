@@ -166,7 +166,7 @@ private:
 
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 
-
+	bool m_isEnb;
 
 };
 

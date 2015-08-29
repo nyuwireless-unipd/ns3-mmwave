@@ -18,14 +18,14 @@ int
 main (int argc, char *argv[])
 {
 //  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
+//  LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
+//  LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
 
 //  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
 //  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveHarqPhy", LOG_LEVEL_DEBUG);
+  LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_DEBUG);
+//  LogComponentEnable ("MmWaveHarqPhy", LOG_LEVEL_DEBUG);
 
 
   //LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
@@ -46,10 +46,10 @@ main (int argc, char *argv[])
    * */
 
 
-  uint16_t numEnb = 1;
-  uint16_t numUe = 4;
+  uint16_t numEnb = 2;
+  uint16_t numUe = 5;
 
-  double simTime = 0.3;
+  double simTime = 0.06;
   double interPacketInterval = 10;
 
   // Command line arguments
@@ -67,6 +67,8 @@ main (int argc, char *argv[])
   Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
 
   ptr_mmWave->Initialize();
+
+  ptr_mmWave->SetHarqEnabled (false);
 
   /* A configuration example.
    * ptr_mmWave->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
@@ -108,7 +110,7 @@ main (int argc, char *argv[])
 
 
 
-  Simulator::Stop (Seconds (0.03));
+  Simulator::Stop (Seconds (simTime));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
