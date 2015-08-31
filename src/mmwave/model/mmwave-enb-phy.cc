@@ -388,7 +388,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 		// process uplink assignments for current subframe
 	  std::list<TbAllocInfo> ulAllocInfoList = DequeueUlTbAlloc ();
 	  std::list<TbAllocInfo>::iterator ulAllocIt = ulAllocInfoList.begin ();
-	  NS_LOG_DEBUG (this << " eNB Expected UL TBs " << ulAllocInfoList.size ());
+	  NS_LOG_DEBUG ("eNB Expected UL TBs " << ulAllocInfoList.size ());
 	  while(ulAllocIt != ulAllocInfoList.end ())
 	  {
 	  	std::set <uint16_t>::iterator ueIt = m_ueAttachedRnti.find ((*ulAllocIt).m_rnti);
@@ -434,11 +434,11 @@ MmWaveEnbPhy::StartSubFrame (void)
   	{
   		if(slotInfo.m_slotType == SlotAllocInfo::CTRL_DATA)
   		{
-  			NS_LOG_DEBUG ("Slot scheduled for Downlink Ctrl+Data");
+  			NS_LOG_DEBUG ("Slot " << slotInd << " scheduled for Downlink Ctrl+Data");
   		}
   		else
   		{
-  			NS_LOG_DEBUG ("Slot scheduled for Downlink Data");
+  			NS_LOG_DEBUG ("Slot " << slotInd << " scheduled for Downlink Data");
   		}
 
   		Time ctrlPeriod;
@@ -496,12 +496,12 @@ MmWaveEnbPhy::StartSubFrame (void)
   }
   else if (slotDir == SlotAllocInfo::UL || slotInd == 2)  // Uplink slot
   {
-		NS_LOG_DEBUG ("Slot scheduled for Uplink Data");
+		NS_LOG_DEBUG ("Slot scheduled " << slotInd << "  for Uplink Data");
   	for (unsigned itb = 0; itb < slotInfo.m_tbInfo.size (); itb++)
   	{
   		TbAllocInfo tbAllocInfo = slotInfo.m_tbInfo[itb];
   		TbInfoElement tbInfoElem = tbAllocInfo.m_tbInfo;
-  		NS_LOG_DEBUG ("UE " << tbAllocInfo.m_rnti << " TBS " << tbInfoElem.m_tbSize << " MCS " << tbInfoElem.m_mcs << \
+  		NS_LOG_DEBUG ("UE " << tbAllocInfo.m_rnti << " TBS " << tbInfoElem.m_tbSize << " MCS " << (int)tbInfoElem.m_mcs << \
   		              " RBs " << tbAllocInfo.m_rbMap.front () << "-" <<  tbAllocInfo.m_rbMap.back ());
   		std::vector<int> bwChunkMap;
   		for(unsigned irb = tbAllocInfo.m_tbInfo.m_rbStart; irb < (tbAllocInfo.m_tbInfo.m_rbStart + tbAllocInfo.m_tbInfo.m_rbLen); irb++)

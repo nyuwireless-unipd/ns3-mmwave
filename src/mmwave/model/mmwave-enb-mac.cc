@@ -122,7 +122,7 @@ public:
 
 	virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg);
 
-	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
+	virtual void SubframeIndication (uint32_t frameNum, uint32_t subframeNum, uint32_t slotNum);
 
 	virtual void UlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters cqi);
 
@@ -153,9 +153,9 @@ MmWaveMacEnbMemberPhySapUser::ReceiveControlMessage (Ptr<MmWaveControlMessage> m
 }
 
 void
-MmWaveMacEnbMemberPhySapUser::SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo)
+MmWaveMacEnbMemberPhySapUser::SubframeIndication (uint32_t frameNum, uint32_t subframeNum, uint32_t slotNum)
 {
-	m_mac->DoSubframeIndication(frameNo, subframeNo, slotNo);
+	m_mac->DoSubframeIndication(frameNum, subframeNum, slotNum);
 }
 
 void
@@ -332,17 +332,17 @@ MmWaveEnbMac::SetEnbCmacSapUser (LteEnbCmacSapUser* s)
 }
 
 void
-MmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo)
+MmWaveEnbMac::DoSubframeIndication (uint32_t frameNum, uint32_t subframeNum, uint32_t slotNum)
 {
-	m_frameNum = frameNo;
-	m_sfNum = subframeNo;
-	m_slotNum = slotNo;
+	m_frameNum = frameNum;
+	m_sfNum = subframeNum;
+	m_slotNum = slotNum;
 
 	// --- DOWNLINK ---
 	// Send Dl-CQI info to the scheduler	if(m_dlCqiReceived.size () > 0)
 	{
 		MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters dlCqiInfoReq;
-		dlCqiInfoReq.m_sfnsf = ((0x3FF & frameNo) << 16) | ((0xFF & subframeNo) << 8) | ((0xFF & slotNo));
+		dlCqiInfoReq.m_sfnsf = ((0x3FF & frameNum) << 16) | ((0xFF & subframeNum) << 8) | ((0xFF & slotNum));
 
 		dlCqiInfoReq.m_cqiList.insert (dlCqiInfoReq.m_cqiList.begin (), m_dlCqiReceived.begin (), m_dlCqiReceived.end ());
 		m_dlCqiReceived.erase (m_dlCqiReceived.begin (), m_dlCqiReceived.end ());
@@ -376,17 +376,7 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 	std::vector <MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters>::iterator itCqi;
 	for (uint16_t i = 0; i < m_ulCqiReceived.size (); i++)
 	{
-		if (subframeNo > 1)
-		{
-//			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNo) << 4) | (0xF & (subframeNo - 1));
-			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNo) << 16) | ((0xFF & (subframeNo-1)) << 8) | ((0xFF & slotNo));
-		}
-		else
-		{
-//			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & (frameNo-1)) << 4) | (0xF & 10);
-			m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & (frameNo-1)) << 16) | ((0xFF & 8) << 8) | ((0xFF & slotNo));
-
-		}
+		m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNum) << 16) | ((0xFF & subframeNum) << 8) | (0xFF & slotNum);
 		m_macSchedSapProvider->SchedUlCqiInfoReq (m_ulCqiReceived.at (i));
 	}
 	m_ulCqiReceived.clear ();
@@ -395,7 +385,7 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 	if (m_ulCeReceived.size () > 0)
 	{
 		MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters ulMacReq;
-		ulMacReq.m_sfnSf = ((0x3FF & frameNo) << 4) | (0xF & subframeNo);
+		ulMacReq.m_sfnSf = ((0x3FF & frameNum) << 8) | (0xFF & subframeNum);
 		ulMacReq.m_macCeList.insert (ulMacReq.m_macCeList.begin (), m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_ulCeReceived.erase (m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_macSchedSapProvider->SchedUlMacCtrlInfoReq (ulMacReq);
@@ -404,21 +394,21 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint3
 	if (m_slotNum == 1)
 	{
 		// trigger scheduler
-		uint32_t dlSchedFrameNo = m_frameNum;
-		uint32_t dlSchedSubframeNo = m_sfNum;
+		uint32_t dlSchedframeNum = m_frameNum;
+		uint32_t dlSchedSubframeNum = m_sfNum;
 
-		if (dlSchedSubframeNo + m_phyMacConfig->GetL1L2CtrlLatency () > m_phyMacConfig->GetSubframesPerFrame ())
+		if (dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency () > m_phyMacConfig->GetSubframesPerFrame ())
 		{
-		  dlSchedFrameNo++;
-		  dlSchedSubframeNo = (dlSchedSubframeNo + m_phyMacConfig->GetL1L2CtrlLatency()) - m_phyMacConfig->GetSubframesPerFrame();
+		  dlSchedframeNum++;
+		  dlSchedSubframeNum = (dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency()) - m_phyMacConfig->GetSubframesPerFrame();
 		}
 		else
 		{
-		  dlSchedSubframeNo = dlSchedSubframeNo + m_phyMacConfig->GetL1L2CtrlLatency();
+		  dlSchedSubframeNum = dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency();
 		}
 
 		MmWaveMacSchedSapProvider::SchedTriggerReqParameters params;
-		uint32_t sfn = ((0x3FF & dlSchedFrameNo) << 16) | ((0xFF & dlSchedSubframeNo) << 8) | ((0xFF & 1));;
+		uint32_t sfn = ((0x3FF & dlSchedframeNum) << 16) | ((0xFF & dlSchedSubframeNum) << 8) | (0xFF & 1);
 		params.m_snfSf = sfn;
 
 		// Forward DL HARQ feebacks collected during last subframe TTI

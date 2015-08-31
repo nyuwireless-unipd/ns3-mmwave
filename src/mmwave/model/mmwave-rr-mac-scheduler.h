@@ -126,8 +126,6 @@ private:
 	*/
 	std::list <MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters> m_rlcBufferReq;
 
-	std::map <uint64_t, uint32_t> m_AssignedTBSizeMap;
-
  /*
 	* Map of UE's DL CQI WB received
 	*/
@@ -173,7 +171,7 @@ private:
   * Map of previous allocated UE per RBG
   * (used to retrieve info from UL-CQI)
   */
-  std::map <uint16_t, std::vector <uint16_t> > m_allocationMaps;
+  std::map <uint32_t, std::vector <uint16_t> > m_allocationMaps;
 
   // HARQ attributes
   /**

@@ -398,7 +398,7 @@ MmWaveUePhy::SubframeIndication (uint32_t nrFrames, uint32_t nrSlots)
 	if (slotInd == 1)
 	{
 		// delay for control period reception/processing
-		NS_LOG_DEBUG ("UE RXing CTRL period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+		NS_LOG_DEBUG ("UE " << m_rnti << " RXing CTRL period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
 		              " start " << Simulator::Now() << " end " << Simulator::Now()+m_dlCtrlPeriod);
 		Simulator::Schedule (m_dlCtrlPeriod, &MmWaveUePhy::ProcessSubframe, this);
 	}
@@ -437,7 +437,7 @@ MmWaveUePhy::ProcessSubframe ()
 		{
 			m_ulGrant = true;
 		}
-		NS_LOG_DEBUG (this << " eNB Expected UL TBs " << ulAllocInfoList.size ());
+		NS_LOG_DEBUG ("eNB Expected UL TBs " << ulAllocInfoList.size () << " from UE " << m_rnti);
 		while(it != ulAllocInfoList.end ())
 		{
 			NS_ASSERT(m_currSfAllocInfo.m_slotAllocInfo.size ()>0);
@@ -514,8 +514,8 @@ MmWaveUePhy::ProcessSubframe ()
 					SetSubChannelsForReception (dlRbChunks);
 
 					// send TB info to LteSpectrumPhy
-					NS_LOG_DEBUG (this << " UE " << m_rnti << " DL-DCI " << tbAlloc.m_rnti << " bitmap "  << tbAlloc.m_tbInfo.m_rbBitmap);
-					NS_LOG_DEBUG ("UE RXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+					NS_LOG_DEBUG ("UE " << m_rnti << " DL-DCI " << tbAlloc.m_rnti << " bitmap "  << tbAlloc.m_tbInfo.m_rbBitmap);
+					NS_LOG_DEBUG ("UE " << m_rnti << " RXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
 											              " start " << Simulator::Now() << " end " << (Simulator::Now()+slotEnd));
 					m_downlinkSpectrumPhy->AddExpectedTb (tbAlloc.m_rnti, tbAlloc.m_tbInfo.m_tbSize, tbAlloc.m_tbInfo.m_mcs, dlRbChunks, true);
 					m_reportDlTbSize (GetDevice ()->GetObject <MmWaveUeNetDevice> ()->GetImsi(), tbAlloc.m_tbInfo.m_tbSize);
@@ -567,7 +567,7 @@ MmWaveUePhy::ProcessSubframe ()
 
 					Time dataPeriod = Seconds (m_phyMacConfig->GetTti()) - ctrlGuardPeriod;
 
-					NS_LOG_DEBUG (this << " UE " << m_rnti << " UL-DCI " << tbAlloc.m_rnti << " rbStart "  << (unsigned)tbAlloc.m_tbInfo.m_rbStart << " rbLen "  << (unsigned)tbAlloc.m_tbInfo.m_rbLen);
+					NS_LOG_DEBUG ("UE " << m_rnti << " UL-DCI " << tbAlloc.m_rnti << " rbStart "  << (unsigned)tbAlloc.m_tbInfo.m_rbStart << " rbLen "  << (unsigned)tbAlloc.m_tbInfo.m_rbLen);
 										NS_LOG_DEBUG ("UE " << m_rnti << " TXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
 																              " start " << Simulator::Now()+ctrlGuardPeriod+NanoSeconds(2.0) << " end " << Simulator::Now()+ctrlGuardPeriod+dataPeriod-NanoSeconds(1.0));
 					Simulator::Schedule (ctrlGuardPeriod+NanoSeconds(1.0), &MmWaveUePhy::SendDataChannels, this, pktBurst, ctrlMsg, dataPeriod-NanoSeconds(2.0), slotInd);
