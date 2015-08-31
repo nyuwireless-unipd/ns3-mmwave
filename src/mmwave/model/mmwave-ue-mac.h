@@ -85,7 +85,7 @@ private:
 	uint32_t m_sfNum;
 	uint32_t m_slotNum;
 
-	uint8_t	m_tbUid;
+	//uint8_t	m_tbUid;
 	std::map<uint32_t, struct MacPduInfo> m_macPduMap;
 
 	std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> m_ulBsrReceived; // BSR received from RLC (the last one)
