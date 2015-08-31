@@ -71,15 +71,14 @@ private:
 
 	complex2DVector_t GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const;
 	complexVector_t GenSinglePath (double hAngle, double vAngle, uint8_t* antennaNum) const;
-	doubleVector_t GetBfGain (Ptr<mmWaveBeamFormingParams> bfParams, double speed) const;
-	Ptr<SpectrumValue> GetPsd (Ptr<const SpectrumValue> rxPsd, doubleVector_t gain) const;
 	//complexVector_t CalcBeamformingVector (complex2DVector_t SpatialMatrix) const;
+	Ptr<SpectrumValue> GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmWaveBeamFormingParams> bfParams, double speed) const;
+	double GetSystemBandwidth () const;
 
 	mutable std::map< key_t, int > m_connectedPair;
 	mutable std::map< key_t, Ptr<ChannelParams> > m_channelMatrixMap;
 	double m_antennaSeparation; //the ratio of the distance between 2 antennas over wave length
 	double m_subBW;
-	double m_centreF;
 	uint32_t m_numRB;
 	uint32_t m_numSBPerRB;
 	Ptr<UniformRandomVariable> m_uniformRv;
