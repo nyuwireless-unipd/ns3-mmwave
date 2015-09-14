@@ -94,13 +94,13 @@ private:
 
 	void DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
 
-	void DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
+	bool DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
 	                          MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
 	                          unsigned int frameNum,
 	                          unsigned int sfNum,
 	                          unsigned int islot);
 
-	void DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
+	bool DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
 	                          MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
 	                          unsigned int frameNum,
 	                          unsigned int sfNum,

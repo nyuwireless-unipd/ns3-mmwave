@@ -325,7 +325,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 						// loop through resource allocation info elements (can be multiple per DCI corresponding to TBs)
 						SlotAllocInfo* slotInfo; // get reference to slot information
 						SlotAllocInfo::TddMode slotMode;
-						if ( ((dciInfo.m_tddBitmap >> tbIt->m_slotInd) & 0x1) == 0)
+						if ( ((dciInfo.m_tddBitmap >> tbIt->m_slotInd) & 0x1) == 0 && (dciInfo.m_tbInfoElements.size () > 0))
 						{
 							slotMode = SlotAllocInfo::DL;
 						}
@@ -451,7 +451,7 @@ MmWaveEnbPhy::StartSubFrame (void)
   			ctrlPeriod = NanoSeconds (1000 * slotInfo.m_numCtrlSym * m_phyMacConfig->GetSymbolPeriod ());
   			dataPeriod = NanoSeconds (1000 * ( m_phyMacConfig->GetSymbPerSlot() - slotInfo.m_numCtrlSym) * \
   			                           m_phyMacConfig->GetSymbolPeriod ());
-  			NS_LOG_DEBUG ("ENB TXing CTRL period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  			NS_LOG_DEBUG ("ENB TXing CTRL period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
   			              " start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod-NanoSeconds(1.0));
     		SendCtrlChannels(ctrlMsg, ctrlPeriod-NanoSeconds(1.0));
   		}
@@ -489,7 +489,7 @@ MmWaveEnbPhy::StartSubFrame (void)
   				NS_ASSERT ((macTag.GetSubframeNum() == sfInd) && (macTag.GetSlotNum() == slotInd));
   			}
   		}
-			NS_LOG_DEBUG ("ENB TXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+			NS_LOG_DEBUG ("ENB TXing DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
 			              " start " << Simulator::Now()+ctrlPeriod+NanoSeconds(1.0) << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (2.0));
   		Simulator::Schedule (ctrlPeriod, &MmWaveEnbPhy::SendDataChannels, this, pktBurst, dataPeriod-NanoSeconds (2.0), slotInfo);
   	}
@@ -515,18 +515,18 @@ MmWaveEnbPhy::StartSubFrame (void)
   	}
   	if (slotInd == 2)
   	{
-  		NS_LOG_DEBUG ("ENB RXing CTRL+DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  		NS_LOG_DEBUG ("ENB RXing CTRL+DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
   		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
   	}
   	else
   	{
-  		NS_LOG_DEBUG ("ENB RXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  		NS_LOG_DEBUG ("ENB RXing DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
   		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
   	}
   }
   else
   {
-  	NS_LOG_DEBUG ("ENB no allocation frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+  	NS_LOG_DEBUG ("ENB no allocation frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
   			              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
   }
 

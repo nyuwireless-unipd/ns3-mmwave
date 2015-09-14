@@ -15,6 +15,7 @@ NS_LOG_COMPONENT_DEFINE ("MmWaveUeMac");
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveUeMac);
 
+uint8_t MmWaveUeMac::g_raPreambleId = 0;
 
 ///////////////////////////////////////////////////////////
 // SAP forwarders
@@ -697,7 +698,8 @@ MmWaveUeMac::RandomlySelectAndSendRaPreamble ()
 void
 MmWaveUeMac::SendRaPreamble(bool contention)
 {
-	m_raPreambleId = m_raPreambleUniformVariable->GetInteger (0, 64 - 1);
+	//m_raPreambleId = m_raPreambleUniformVariable->GetInteger (0, 64 - 1);
+	m_raPreambleId = g_raPreambleId++;
 	/*raRnti should be subframeNo -1 */
 	m_raRnti = 1;
 	m_phySapProvider->SendRachPreamble(m_raPreambleId, m_raRnti);

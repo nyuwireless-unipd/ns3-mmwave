@@ -46,8 +46,8 @@ main (int argc, char *argv[])
    * */
 
 
-  uint16_t numEnb = 2;
-  uint16_t numUe = 5;
+  uint16_t numEnb = 1;
+  uint16_t numUe = 20;
 
   double simTime = 0.06;
   double interPacketInterval = 10;
@@ -89,7 +89,9 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
+  uePositionAlloc->Add (Vector (0.0, 0.0, 0.0));
+  //uePositionAlloc->Add (Vector (500.0, 0.0, 0.0));
+
 
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);

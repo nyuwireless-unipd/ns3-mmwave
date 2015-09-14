@@ -239,12 +239,22 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 		{
 			Ptr<MmWaveDciMessage> dciMsg = DynamicCast<MmWaveDciMessage> (msg);
 			DciInfoElement dciInfoElem = dciMsg->GetDciInfoElement ();
+
+			Ptr<MmWaveDciMessage> dci = DynamicCast<MmWaveDciMessage> (msg);
+			unsigned dciSfn = dci->GetSfnSf ();
+			unsigned dciFrame = ((dciSfn >> 16) & 0x3FF);
+			unsigned dciSf = ((dciSfn >> 8) & 0xFF);
+			if(dciFrame != m_nrFrames || dciSf != sfInd)
+			{
+				NS_FATAL_ERROR ("DCI intended for different subframe (dci= " << dciFrame<<" "<<dciSf<<", actual= "<<m_nrFrames<<" "<<sfInd);
+			}
+
 			if (dciInfoElem.m_rnti != m_rnti)
 			{
 				continue; // DCI not for me
 			}
 
-			NS_LOG_DEBUG ("UE: DCI received in frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd);
+			NS_LOG_DEBUG ("UE " << m_rnti << " DCI received in frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << " nTB " << dciInfoElem.m_tbInfoElements.size() );
 
 			if(slotInd == 1 && !m_sfAllocInfoUpdated) 		// reset SF allocation info prior to DCI reception
 			{
@@ -264,7 +274,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 				if (ulSlot)
 				{
 					slotMode = SlotAllocInfo::UL;
-					NS_ASSERT ((tbIt->m_slotInd % 2) == 1);
+					//NS_ASSERT ((tbIt->m_slotInd % 2) == 1);
 				}
 				else
 				{
@@ -304,6 +314,14 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 					TbAllocInfo tbAllocInfo;
 					tbAllocInfo.m_rnti = dciInfoElem.m_rnti;
 					tbAllocInfo.m_tbInfo = *tbIt;
+					tbAllocInfo.m_sfnSf.m_frameNum = dciFrame;
+					unsigned ulSfNum = dciSf + m_phyMacConfig->GetUlSchedDelay () - 1;
+					if (ulSfNum > 10)
+					{
+						ulSfNum = ulSfNum % 10;
+					}
+					tbAllocInfo.m_sfnSf.m_subframeNum = ulSfNum;
+					tbAllocInfo.m_sfnSf.m_slotNum = tbIt->m_slotInd+1;
 					for (unsigned irb = 0; irb < tbAllocInfo.m_tbInfo.m_rbLen; irb++) // assumes res alloc type 0
 					{
 						tbAllocInfo.m_rbMap.push_back (tbAllocInfo.m_tbInfo.m_rbStart + irb);
@@ -355,7 +373,7 @@ MmWaveUePhy::QueueUlTbAlloc (TbAllocInfo m)
 {
   NS_LOG_FUNCTION (this);
 //  NS_LOG_DEBUG ("UL TB Info Elem queue size == " << m_ulTbAllocQueue.size ());
-  m_ulTbAllocQueue.at (m_phyMacConfig->GetUlSchedDelay () - 1).push_back (m);
+  m_ulTbAllocQueue.at (m_phyMacConfig->GetUlSchedDelay ()-1).push_back (m);
 }
 
 std::list<TbAllocInfo>
@@ -399,7 +417,7 @@ MmWaveUePhy::SubframeIndication (uint32_t nrFrames, uint32_t nrSlots)
 	if (slotInd == 1)
 	{
 		// delay for control period reception/processing
-		NS_LOG_DEBUG ("UE " << m_rnti << " RXing CTRL period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+		NS_LOG_DEBUG ("UE " << m_rnti << " RXing CTRL period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
 		              " start " << Simulator::Now() << " end " << Simulator::Now()+m_dlCtrlPeriod);
 		Simulator::Schedule (m_dlCtrlPeriod, &MmWaveUePhy::ProcessSubframe, this);
 	}
@@ -415,7 +433,7 @@ MmWaveUePhy::ProcessSubframe ()
 	uint32_t slotInd = ((m_nrSlots-1)%m_phyMacConfig->GetSlotsPerSubframe ()) + 1;
 	uint32_t sfInd = ((m_nrSlots-1)/m_phyMacConfig->GetSlotsPerSubframe ()) + 1;
 
-	NS_LOG_INFO ("UE " << m_rnti << " frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd);
+	NS_LOG_INFO ("UE " << m_rnti << " frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd);
 
 	if (slotInd == m_phyMacConfig->GetSlotsPerSubframe ())
 	{
@@ -441,9 +459,10 @@ MmWaveUePhy::ProcessSubframe ()
 		NS_LOG_DEBUG ("eNB Expected UL TBs " << ulAllocInfoList.size () << " from UE " << m_rnti);
 		while(it != ulAllocInfoList.end ())
 		{
+			NS_ASSERT(it->m_sfnSf.m_subframeNum == sfInd);
 			NS_ASSERT(m_currSfAllocInfo.m_slotAllocInfo.size ()>0);
 			SlotAllocInfo& slotInfo = m_currSfAllocInfo.m_slotAllocInfo[it->m_tbInfo.m_slotInd];
-			NS_ASSERT(slotInfo.m_tbInfo.size()==0);
+			//NS_ASSERT(slotInfo.m_tbInfo.size()==0);
 			slotInfo.m_tbInfo.push_back (*it);
 			if (m_currSfAllocInfo.m_tddPattern[it->m_tbInfo.m_slotInd] == SlotAllocInfo::NA)
 			{
@@ -483,7 +502,7 @@ MmWaveUePhy::ProcessSubframe ()
 		SetSubChannelsForTransmission (ulRbChunks);
 		// assume for now that the PUCCH is transmitted over one OFDM symbol across all RBs
 //		NS_LOG_DEBUG ("UE " << m_rnti << " TXing PUCCH (num ctrl msgs == " << ctrlMsg.size () << ")");
-		NS_LOG_DEBUG ("UE " << m_rnti << " TXing CTRL period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+		NS_LOG_DEBUG ("UE " << m_rnti << " TXing CTRL period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
 		              " start " << Simulator::Now() << " end " << (Simulator::Now()+m_ulCtrlPeriod));
 		MmWaveUePhy::SendCtrlChannels (ctrlMsg, m_ulCtrlPeriod);
 		m_prevSlotDir = SlotAllocInfo::UL;
@@ -516,7 +535,7 @@ MmWaveUePhy::ProcessSubframe ()
 
 					// send TB info to LteSpectrumPhy
 					NS_LOG_DEBUG ("UE " << m_rnti << " DL-DCI " << tbAlloc.m_rnti << " bitmap "  << tbAlloc.m_tbInfo.m_rbBitmap);
-					NS_LOG_DEBUG ("UE " << m_rnti << " RXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+					NS_LOG_DEBUG ("UE " << m_rnti << " RXing DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
 											              " start " << Simulator::Now() << " end " << (Simulator::Now()+slotEnd));
 					m_downlinkSpectrumPhy->AddExpectedTb (tbAlloc.m_rnti, tbAlloc.m_tbInfo.m_tbSize, tbAlloc.m_tbInfo.m_mcs, dlRbChunks, true);
 					m_reportDlTbSize (GetDevice ()->GetObject <MmWaveUeNetDevice> ()->GetImsi(), tbAlloc.m_tbInfo.m_tbSize);
@@ -569,7 +588,7 @@ MmWaveUePhy::ProcessSubframe ()
 					Time dataPeriod = Seconds (m_phyMacConfig->GetTti()) - ctrlGuardPeriod;
 
 					NS_LOG_DEBUG ("UE " << m_rnti << " UL-DCI " << tbAlloc.m_rnti << " rbStart "  << (unsigned)tbAlloc.m_tbInfo.m_rbStart << " rbLen "  << (unsigned)tbAlloc.m_tbInfo.m_rbLen);
-										NS_LOG_DEBUG ("UE " << m_rnti << " TXing DATA period frame " << m_nrFrames << " sf " << sfInd << " slot " << slotInd << \
+										NS_LOG_DEBUG ("UE " << m_rnti << " TXing DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
 																              " start " << Simulator::Now()+ctrlGuardPeriod+NanoSeconds(2.0) << " end " << Simulator::Now()+ctrlGuardPeriod+dataPeriod-NanoSeconds(1.0));
 					Simulator::Schedule (ctrlGuardPeriod+NanoSeconds(1.0), &MmWaveUePhy::SendDataChannels, this, pktBurst, ctrlMsg, dataPeriod-NanoSeconds(2.0), slotInd);
 					m_reportUlTbSize (GetDevice ()->GetObject <MmWaveUeNetDevice> ()->GetImsi(), tbAlloc.m_tbInfo.m_tbSize);

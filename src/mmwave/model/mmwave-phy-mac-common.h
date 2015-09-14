@@ -19,10 +19,10 @@
 
 namespace ns3 {
 
-struct SFNSF
+struct SfnSf
 {
 	uint16_t m_frameNum;
-	uint16_t m_subFrameNum;
+	uint16_t m_subframeNum;
 	uint16_t m_slotNum;
 };
 
@@ -84,6 +84,7 @@ struct TbAllocInfo
 	{
 
 	}
+	struct SfnSf m_sfnSf;
 	uint16_t m_rnti;
 	std::vector<unsigned> m_rbMap;
 	TbInfoElement m_tbInfo;

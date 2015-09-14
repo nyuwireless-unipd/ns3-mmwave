@@ -112,6 +112,7 @@ private:
 	uint8_t m_rnti;
 
 	bool m_waitingForRaResponse;
+	static uint8_t g_raPreambleId;
 
 };
 

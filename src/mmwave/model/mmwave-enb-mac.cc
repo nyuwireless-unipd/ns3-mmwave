@@ -365,7 +365,7 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNum, uint32_t subframeNum, uin
 			rar.rapId = (*it).first;
 			rar.rarPayload.m_rnti = rnti;
 			rarMsg->AddRar (rar);
-			NS_ASSERT_MSG((*it).second ==1, "Two user send the same Rach ID, collision detected");
+			//NS_ASSERT_MSG((*it).second ==1, "Two user send the same Rach ID, collision detected");
 		}
 		m_phySapProvider->SendControlMessage (rarMsg);
 		m_receivedRachPreambleCount.clear ();
@@ -376,7 +376,7 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNum, uint32_t subframeNum, uin
 	std::vector <MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters>::iterator itCqi;
 	for (uint16_t i = 0; i < m_ulCqiReceived.size (); i++)
 	{
-		m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNum) << 16) | ((0xFF & subframeNum) << 8) | (0xFF & slotNum);
+		//m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNum) << 16) | ((0xFF & subframeNum) << 8) | (0xFF & slotNum);
 		m_macSchedSapProvider->SchedUlCqiInfoReq (m_ulCqiReceived.at (i));
 	}
 	m_ulCqiReceived.clear ();
@@ -522,6 +522,9 @@ MmWaveEnbMac::DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParamet
     {
       NS_LOG_DEBUG (this << " eNB rxed an SRS UL-CQI");
     }
+  ulcqi.m_sfnSf = ((0x3FF & m_frameNum) << 16) | ((0xFF & m_sfNum) << 8) | (0xFF & m_slotNum);
+  NS_LOG_INFO("*** UL CQI report SINR " << LteFfConverter::fpS11dot3toDouble (ulcqi.m_ulCqi.m_sinr[0]) << " frame " << m_frameNum << " subframe " << m_sfNum << " slot " << m_slotNum );
+
   m_ulCqiReceived.push_back (ulcqi);
 }
 
