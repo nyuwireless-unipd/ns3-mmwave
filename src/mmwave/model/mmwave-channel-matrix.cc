@@ -504,7 +504,7 @@ MmWaveChannelMatrix::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmWaveB
 				std::complex<double> delay (cos (2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex)), sin (2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex)));
 				//std::complex<double> delay (cos (2*M_PI*fsb*DelaySpread[pathIndex]), sin (2*M_PI*fsb*DelaySpread[pathIndex]));
 				std::complex<double> doppler (cos (2*M_PI*t*speed*bfParams->m_channelParams->m_doppler.at (pathIndex)), sin (2*M_PI*t*speed*bfParams->m_channelParams->m_doppler.at (pathIndex)));
-				std::complex<double> smallScaleFading = sqrt(bfParams->m_channelParams->m_powerFraction. at(pathIndex))*delay/doppler;
+				std::complex<double> smallScaleFading = sqrt(bfParams->m_channelParams->m_powerFraction. at(pathIndex))*doppler/delay;
 
 				if(bfParams->m_txW.empty ()||bfParams->m_rxW.empty ())
 				{
