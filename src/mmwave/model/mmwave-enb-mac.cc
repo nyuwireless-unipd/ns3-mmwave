@@ -633,9 +633,13 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 		{
 			// iterate through RLC PDUs for each slot
 			TbInfoElement& tbInfo = schedInfo.m_dci.m_tbInfoElements[itb];
+			if ( ((schedInfo.m_dci.m_tddBitmap >> tbInfo.m_slotInd) & 0x1) == 1)  // skip UL TBs
+			{
+				continue;
+			}
 			NS_ASSERT (schedInfo.m_rlcPduList.size () > 0);
 			std::vector<RlcPduInfo>& rlcPduElems = schedInfo.m_rlcPduList[itb];
-
+			NS_ASSERT (rlcPduElems.size () > 0);
 			MacPduInfo macPduInfo (schedInfo.m_frameNum, schedInfo.m_sfNum, tbInfo.m_slotInd+1, \
 			                       tbInfo.m_tbSize, rlcPduElems.size ());
 			//uint8_t tbUid = AllocateTbUid ();
