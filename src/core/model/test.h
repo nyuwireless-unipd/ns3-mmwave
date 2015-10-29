@@ -28,29 +28,44 @@
 #include <limits>
 #include <stdint.h>
 
+#include "non-copyable.h"
 #include "system-wall-clock-ms.h"
-#include "deprecated.h"
+
+/**
+ * \file
+ * \ingroup testing
+ * \brief Definition of the testing macros and declaration of
+ * the testing classes.
+ */
 
 /**
  * \ingroup core
  * \defgroup testing Testing
  * \brief Tools to define and execute unit tests.
+ *
+ * This module lists the normal Testing API.  Most of these
+ * macros forward to the implementation macros in testingimpl.
+ * You should generally use these macros only.
+ */
+/**
+ * \ingroup testing
+ * \defgroup testingimpl Testing Implementation
+ * \brief Internal implementation of the Testing system.
  */
 
 // 
 // Note on below macros:
 //
-// When multiple statements are used in a macro, they should be bound together 
-// in a loop syntactically, so the macro can appear safely inside if clauses 
-// or other places that expect a single statement or a statement block.  The
-// "strange" do while construct is a generally expected best practice for
-// defining a robust macro.
+// When multiple statements are used in a macro, they should be bound
+// together in a loop syntactically, so the macro can appear safely
+// inside if clauses or other places that expect a single statement or
+// a statement block.  The "strange" do while construct is a generally
+// expected best practice for defining a robust macro.
 //
 
 /**
  * \ingroup testing
  * \brief Check if we should assert on errors, and do so
- * \internal
  */
 #define ASSERT_ON_FAILURE                       \
   do {                                          \
@@ -63,7 +78,6 @@
 /**
  * \ingroup testing
  * \brief If we shouldn't continue on errors, return
- * \internal
  */
 #define CONTINUE_ON_FAILURE                                             \
   do {                                                                  \
@@ -76,7 +90,6 @@
 /**
  * \ingroup testing
  * \brief If we shouldn't continue on errors, return test status
- * \internal
  */
 #define CONTINUE_ON_FAILURE_RETURNS_BOOL                                \
   do {                                                                  \
@@ -93,10 +106,9 @@
 // ===========================================================================
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual and expected (limit) value are equal and report
  * and abort if not.
- * \internal
  */
 #define NS_TEST_ASSERT_MSG_EQ_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
@@ -120,13 +132,14 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual and expected (limit) value are equal and report
- * and abort if not.
+ * \brief Test that an actual and expected (limit) value are equal and
+ * report and abort if not.
  *
- * Check to see if the expected (limit) value is equal to the actual value found
- * in a test case.  If the two values are equal nothing happens, but if the 
- * comparison fails, an error is reported in a consistent way and the execution
- * of the current test case is aborted.
+ * Check to see if the expected (limit) value is equal to the actual
+ * value found in a test case.  If the two values are equal nothing
+ * happens, but if the comparison fails, an error is reported in a
+ * consistent way and the execution of the current test case is
+ * aborted.
  *
  * The message is interpreted as a stream, for example:
  *
@@ -137,22 +150,21 @@
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the expected value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the expected value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  *
- * \warning Do not use this macro if you are comparing floating point numbers
- * (float or double) as it is unlikely to do what you expect.  Use 
- * NS_TEST_ASSERT_MSG_EQ_TOL instead.
+ * \warning Do not use this macro if you are comparing floating point
+ * numbers (float or double) as it is unlikely to do what you expect.
+ * Use NS_TEST_ASSERT_MSG_EQ_TOL instead.
  */
 #define NS_TEST_ASSERT_MSG_EQ(actual, limit, msg) \
   NS_TEST_ASSERT_MSG_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual and expected (limit) value are equal and report
  * and abort if not.
- * \internal
  */
 #define NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL_INTERNAL(actual, limit, msg, file, line) \
   do {                                                                  \
@@ -165,7 +177,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) == " +        \
+        ReportTestFailure (std::string (#actual) + " (actual) == " +    \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -176,13 +188,14 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual and expected (limit) value are equal and report
- * and abort if not.
+ * \brief Test that an actual and expected (limit) value are equal and
+ * report and abort if not.
  *
- * Check to see if the expected (limit) value is equal to the actual value found
- * in a test case.  If the two values are equal nothing happens, but if the 
- * comparison fails, an error is reported in a consistent way and the execution
- * of the current test case is aborted.
+ * Check to see if the expected (limit) value is equal to the actual
+ * value found in a test case.  If the two values are equal nothing
+ * happens, but if the comparison fails, an error is reported in a
+ * consistent way and the execution of the current test case is
+ * aborted.
  *
  * The message is interpreted as a stream, for example:
  *
@@ -193,13 +206,13 @@
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the expected value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the expected value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  *
- * \warning Do not use this macro if you are comparing floating point numbers
- * (float or double) as it is unlikely to do what you expect.  Use 
- * NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL_TOL instead.
+ * \warning Do not use this macro if you are comparing floating point
+ * numbers (float or double) as it is unlikely to do what you expect.
+ * Use NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL_TOL instead.
  *
  * This function returns a boolean value.
  *
@@ -208,13 +221,12 @@
   NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
- * \brief Test that an actual and expected (limit) value are equal and report
- * if not.
+ * \ingroup testingimpl
+ * \brief Test that an actual and expected (limit) value are equal and
+ * report if not.
  * 
- * Required to avoid use of return statement which allows use in methods 
- * (esp. callbacks) returning void.
- * \internal
+ * Required to avoid use of return statement which allows use in
+ * methods (esp. callbacks) returning void.
  */
 #define NS_TEST_EXPECT_MSG_EQ_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
@@ -227,7 +239,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) == " +        \
+        ReportTestFailure (std::string (#actual) + " (actual) == " +    \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -237,13 +249,14 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual and expected (limit) value are equal and report
- * if not.
+ * \brief Test that an actual and expected (limit) value are equal and
+ * report if not.
  *
- * Check to see if the expected (lmit) value is equal to the actual value found
- * in a test case.  If the two values are equal nothing happens, but if the 
- * comparison fails, an error is reported in a consistent way.  EXPECT* macros
- * do not return if an error is detected.
+ * Check to see if the expected (lmit) value is equal to the actual
+ * value found in a test case.  If the two values are equal nothing
+ * happens, but if the comparison fails, an error is reported in a
+ * consistent way.  EXPECT* macros do not return if an error is
+ * detected.
  *
  * The message is interpreted as a stream, for example:
  *
@@ -254,13 +267,13 @@
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the expected value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the expected value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  *
- * \warning Do not use this macro if you are comparing floating point numbers
- * (float or double) as it is unlikely to do what you expect.  Use 
- * NS_TEST_EXPECT_MSG_EQ_TOL instead.
+ * \warning Do not use this macro if you are comparing floating point
+ * numbers (float or double) as it is unlikely to do what you expect.
+ * Use NS_TEST_EXPECT_MSG_EQ_TOL instead.
  */
 #define NS_TEST_EXPECT_MSG_EQ(actual, limit, msg) \
   NS_TEST_EXPECT_MSG_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -271,10 +284,9 @@
 // ===========================================================================
 
 /**
- * \ingroup testing
- * \brief Test that actual and expected (limit) values are equal to plus
- * or minus some tolerance and report and abort if not.
- * \internal
+ * \ingroup testingimpl
+ * \brief Test that actual and expected (limit) values are equal to
+ * plus or minus some tolerance and report and abort if not.
  */
 #define NS_TEST_ASSERT_MSG_EQ_TOL_INTERNAL(actual, limit, tol, msg, file, line) \
   do {                                                                  \
@@ -292,7 +304,7 @@
                    << " (limit) + " << #tol << " (tol) && "             \
                    << #actual << " (actual) > " << #limit               \
                    << " (limit) - " << #tol << " (tol)";                \
-        ReportTestFailure (condStream.str (), actualStream.str (),          \
+        ReportTestFailure (condStream.str (), actualStream.str (),      \
                        limitStream.str (), msgStream.str (),            \
                        file, line);                                     \
         CONTINUE_ON_FAILURE;                                            \
@@ -302,64 +314,69 @@
 /**
  * \ingroup testing
  *
- * \brief Test that actual and expected (limit) values are equal to plus
- * or minus some tolerance and report and abort if not.
+ * \brief Test that actual and expected (limit) values are equal to
+ * plus or minus some tolerance and report and abort if not.
  *
- * Check to see if the expected (limit) value is equal to the actual value found
- * in a test case to some tolerance.  This is not the same thing as asking if
- * two floating point are equal to within some epsilon, but is useful for that
- * case.  This assertion is geared toward more of a measurement problem.
- * Consider measuring a physical rod of some kind that you have ordered.
- * You need to determine if it is "good."  You want to measure the rod
- * to an arbitrary precision of sixteen significant figures, you will
+ * Check to see if the expected (limit) value is equal to the actual
+ * value found in a test case to some tolerance.  This is not the same
+ * thing as asking if two floating point are equal to within some
+ * epsilon, but is useful for that case.  This assertion is geared
+ * toward more of a measurement problem.  Consider measuring a
+ * physical rod of some kind that you have ordered.  You need to
+ * determine if it is "good."  You want to measure the rod to an
+ * arbitrary precision of sixteen significant figures, you will
  * measure the rod to determine if its length is within the tolerances
  * you provided.  For example, 12.00 inches plus or minus .005 inch
  * may be just fine.
  * 
- * In ns-3, you might want to measure a signal to noise ratio and check to see
- * if the answer is what you expect.  If you naively measure (double)1128.93 and
- * compare this number with a constant 1128.93 you are almost certainly going to
- * have your test fail because of floating point rounding errors.  We provide a
- * floating point comparison function ns3::TestDoubleIsEqual() but you will 
- * probably quickly find that is not what you want either.  It may turn out to
- * be the case that when you measured an snr that printed as 1128.93, what was 
- * actually measured was something more like 1128.9287653857625442 for example.
- * Given that the double epsilon is on the order of 0.0000000000000009,
- * you would need to provide sixteen significant figures of expected value
- * for this kind of test to pass even with a typical test for floating point
- * "approximate equality."  That is clearly not required or desired.
- * You really want to be able to provide 1128.93 along with a tolerance
- * just like you provided 12 inches +- 0.005 inch above.
+ * In ns-3, you might want to measure a signal to noise ratio and
+ * check to see if the answer is what you expect.  If you naively
+ * measure (double)1128.93 and compare this number with a constant
+ * 1128.93 you are almost certainly going to have your test fail
+ * because of floating point rounding errors.  We provide a floating
+ * point comparison function ns3::TestDoubleIsEqual() but you will
+ * probably quickly find that is not what you want either.  It may
+ * turn out to be the case that when you measured an snr that printed
+ * as 1128.93, what was actually measured was something more like
+ * 1128.9287653857625442 for example.  Given that the double epsilon
+ * is on the order of 0.0000000000000009, you would need to provide
+ * sixteen significant figures of expected value for this kind of test
+ * to pass even with a typical test for floating point "approximate
+ * equality."  That is clearly not required or desired.  You really
+ * want to be able to provide 1128.93 along with a tolerance just like
+ * you provided 12 inches +- 0.005 inch above.
  *
- * This assertion is designed for real measurements by taking into account
- * measurement tolerances.  By doing so it also automatically compensates for 
- * floating point rounding errors.    If you really want to check floating point
- * equality down to the numeric_limits<double>::epsilon () range, consider
- * using ns3::TestDoubleIsEqual().
+ * This assertion is designed for real measurements by taking into
+ * account measurement tolerances.  By doing so it also automatically
+ * compensates for floating point rounding errors.  If you really want
+ * to check floating point equality down to the
+ * numeric_limits<double>::epsilon () range, consider using
+ * ns3::TestDoubleIsEqual().
  *
- * \note Mixing signed and unsigned types can lead to misleading results.
+ * \note Mixing signed and unsigned types can lead to misleading
+ * results.
  *
  * The message is interpreted as a stream, for example:
  *
  * \code
- * NS_TEST_ASSERT_MSG_EQ_TOL (snr, 1128.93, 0.005, "wrong snr (" << snr << ") in test");
+ *   NS_TEST_ASSERT_MSG_EQ_TOL (snr, 1128.93, 0.005,
+ *                              "wrong snr (" << snr << ") in test");
  * \endcode
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the expected value of the test.
- * \param tol Tolerance of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the expected value of the test.
+ * \param [in] tol Tolerance of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_ASSERT_MSG_EQ_TOL(actual, limit, tol, msg)                 \
   NS_TEST_ASSERT_MSG_EQ_TOL_INTERNAL (actual, limit, tol, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
- * \brief Test that actual and expected (limit) values are equal to plus
- * or minus some tolerance and report and abort if not.
- * \internal
+ * \ingroup testingimpl
+ * \brief Test that actual and expected (limit) values are equal to
+ * plus or minus some tolerance and report and abort if not.
  */
 #define NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL_INTERNAL(actual, limit, tol, msg, file, line) \
   do {                                                                  \
@@ -377,7 +394,7 @@
                    << " (limit) + " << #tol << " (tol) && "             \
                    << #actual << " (actual) > " << #limit               \
                    << " (limit) - " << #tol << " (tol)";                \
-        ReportTestFailure (condStream.str (), actualStream.str (),          \
+        ReportTestFailure (condStream.str (), actualStream.str (),      \
                        limitStream.str (), msgStream.str (),            \
                        file, line);                                     \
         CONTINUE_ON_FAILURE_RETURNS_BOOL;                               \
@@ -387,70 +404,75 @@
 /**
  * \ingroup testing
  *
- * \brief Test that actual and expected (limit) values are equal to plus
- * or minus some tolerance and report and abort if not.
+ * \brief Test that actual and expected (limit) values are equal to
+ * plus or minus some tolerance and report and abort if not.
  *
- * Check to see if the expected (limit) value is equal to the actual value found
- * in a test case to some tolerance.  This is not the same thing as asking if
- * two floating point are equal to within some epsilon, but is useful for that
- * case.  This assertion is geared toward more of a measurement problem.
- * Consider measuring a physical rod of some kind that you have ordered.
- * You need to determine if it is "good."  You want to measure the rod
- * to an arbitrary precision of sixteen significant figures, you will
+ * Check to see if the expected (limit) value is equal to the actual
+ * value found in a test case to some tolerance.  This is not the same
+ * thing as asking if two floating point are equal to within some
+ * epsilon, but is useful for that case.  This assertion is geared
+ * toward more of a measurement problem.  Consider measuring a
+ * physical rod of some kind that you have ordered.  You need to
+ * determine if it is "good."  You want to measure the rod to an
+ * arbitrary precision of sixteen significant figures, you will
  * measure the rod to determine if its length is within the tolerances
  * you provided.  For example, 12.00 inches plus or minus .005 inch
  * may be just fine.
  * 
- * In ns-3, you might want to measure a signal to noise ratio and check to see
- * if the answer is what you expect.  If you naively measure (double)1128.93 and
- * compare this number with a constant 1128.93 you are almost certainly going to
- * have your test fail because of floating point rounding errors.  We provide a
- * floating point comparison function ns3::TestDoubleIsEqual() but you will 
- * probably quickly find that is not what you want either.  It may turn out to
- * be the case that when you measured an snr that printed as 1128.93, what was 
- * actually measured was something more like 1128.9287653857625442 for example.
- * Given that the double epsilon is on the order of 0.0000000000000009,
- * you would need to provide sixteen significant figures of expected value
- * for this kind of test to pass even with a typical test for floating point
- * "approximate equality."  That is clearly not required or desired.
- * You really want to be able to provide  1128.93 along with a tolerance
- * just like you provided 12 inches +- 0.005 inch above.
+ * In ns-3, you might want to measure a signal to noise ratio and
+ * check to see if the answer is what you expect.  If you naively
+ * measure (double)1128.93 and compare this number with a constant
+ * 1128.93 you are almost certainly going to have your test fail
+ * because of floating point rounding errors.  We provide a floating
+ * point comparison function ns3::TestDoubleIsEqual() but you will
+ * probably quickly find that is not what you want either.  It may
+ * turn out to be the case that when you measured an snr that printed
+ * as 1128.93, what was actually measured was something more like
+ * 1128.9287653857625442 for example.  Given that the double epsilon
+ * is on the order of 0.0000000000000009, you would need to provide
+ * sixteen significant figures of expected value for this kind of test
+ * to pass even with a typical test for floating point "approximate
+ * equality."  That is clearly not required or desired.  You really
+ * want to be able to provide 1128.93 along with a tolerance just like
+ * you provided 12 inches +- 0.005 inch above.
  *
- * This assertion is designed for real measurements by taking into account
- * measurement tolerances.  By doing so it also automatically compensates for 
- * floating point rounding errors.    If you really want to check floating point
- * equality down to the numeric_limits<double>::epsilon () range,
- * consider using ns3::TestDoubleIsEqual().
+ * This assertion is designed for real measurements by taking into
+ * account measurement tolerances.  By doing so it also automatically
+ * compensates for floating point rounding errors.  If you really want
+ * to check floating point equality down to the
+ * numeric_limits<double>::epsilon () range, consider using
+ * ns3::TestDoubleIsEqual().
  *
- * \note Mixing signed and unsigned types can lead to misleading results.
+ * \note Mixing signed and unsigned types can lead to misleading
+ * results.
  *
  * The message is interpreted as a stream, for example:
  *
  * \code
- * NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL (snr, 1128.93, 0.005, "wrong snr (" << snr << ") in test");
+ *   NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL (snr, 1128.93, 0.005,
+ *                                           "wrong snr (" << snr << ") in test");
  * \endcode
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the expected value of the test.
- * \param tol Tolerance of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the expected value of the test.
+ * \param [in] tol Tolerance of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  *
  * This function returns a boolean value.
  *
  */
-#define NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL(actual, limit, tol, msg)                 \
+#define NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL(actual, limit, tol, msg)  \
   NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL_INTERNAL (actual, limit, tol, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
- * \brief Test that actual and expected (limit) values are equal to plus or minus
- * some tolerance and report if not.
+ * \ingroup testingimpl
+ * \brief Test that actual and expected (limit) values are equal to
+ * plus or minus some tolerance and report if not.
  * 
- * Required to avoid use of return statement which allows use in methods 
- * (esp. callbacks) returning void.
- * \internal
+ * Required to avoid use of return statement which allows use in
+ * methods (esp. callbacks) returning void.
  */
 #define NS_TEST_EXPECT_MSG_EQ_TOL_INTERNAL(actual, limit, tol, msg, file, line) \
   do {                                                                  \
@@ -468,7 +490,7 @@
                    << " (limit) + " << #tol << " (tol) && "             \
                    << #actual << " (actual) > " << #limit               \
                    << " (limit) - " << #tol << " (tol)";                \
-        ReportTestFailure (condStream.str (), actualStream.str (),          \
+        ReportTestFailure (condStream.str (), actualStream.str (),      \
                        limitStream.str (), msgStream.str (),            \
                        file, line);                                     \
       }                                                                 \
@@ -477,55 +499,61 @@
 /**
  * \ingroup testing
  *
- * \brief Test that actual and expected (limit) values are equal to plus
- * or minus some tolerance and report if not.
+ * \brief Test that actual and expected (limit) values are equal to
+ * plus or minus some tolerance and report if not.
  *
- * Check to see if the expected (limit) value is equal to the actual value found
- * in a test case to some tolerance.  This is not the same thing as asking if
- * two floating point are equal to within some epsilon, but is useful for that
- * case.  This assertion is geared toward more of a measurement problem.
- * Consider measuring a physical rod of some kind that you have ordered.
- * You need to  determine if it is "good."  You want to measure the rod
- * to an arbitrary precision  of sixteen significant figures,
- * you will measure the rod to determine if its length is within
- * the tolerances you provided.  For example, 12.00 inches plus 
- * or minus .005 inch may be just fine.
+ * Check to see if the expected (limit) value is equal to the actual
+ * value found in a test case to some tolerance.  This is not the same
+ * thing as asking if two floating point are equal to within some
+ * epsilon, but is useful for that case.  This assertion is geared
+ * toward more of a measurement problem.  Consider measuring a
+ * physical rod of some kind that you have ordered.  You need to
+ * determine if it is "good."  You want to measure the rod to an
+ * arbitrary precision of sixteen significant figures, you will
+ * measure the rod to determine if its length is within the tolerances
+ * you provided.  For example, 12.00 inches plus or minus .005 inch
+ * may be just fine.
  * 
- * In ns-3, you might want to measure a signal to noise ratio and check to see
- * if the answer is what you expect.  If you naively measure (double)1128.93 and
- * compare this number with a constant 1128.93 you are almost certainly going to
- * have your test fail because of floating point rounding errors.  We provide a
- * floating point comparison function ns3::TestDoubleIsEqual() but you will 
- * probably quickly find that is not what you want either.  It may turn out to
- * be the case that when you measured an snr that printed as 1128.93, what was 
- * actually measured was something more like 1128.9287653857625442 for example.
- * Given that the double epsilon is on the order of 0.0000000000000009,
- * you would  need to provide sixteen significant figures of expected value
- * for this kind of test to pass even with a typical test for floating point
- * "approximate equality."  That is clearly not required or desired.
- * You really want to be able to provide 1128.93 along with a tolerance
- * just like you provided 12 inches +- 0.005 inch above.
+ * In ns-3, you might want to measure a signal to noise ratio and
+ * check to see if the answer is what you expect.  If you naively
+ * measure (double)1128.93 and compare this number with a constant
+ * 1128.93 you are almost certainly going to have your test fail
+ * because of floating point rounding errors.  We provide a floating
+ * point comparison function ns3::TestDoubleIsEqual() but you will
+ * probably quickly find that is not what you want either.  It may
+ * turn out to be the case that when you measured an snr that printed
+ * as 1128.93, what was actually measured was something more like
+ * 1128.9287653857625442 for example.  Given that the double epsilon
+ * is on the order of 0.0000000000000009, you would need to provide
+ * sixteen significant figures of expected value for this kind of test
+ * to pass even with a typical test for floating point "approximate
+ * equality."  That is clearly not required or desired.  You really
+ * want to be able to provide 1128.93 along with a tolerance just like
+ * you provided 12 inches +- 0.005 inch above.
  *
- * This assertion is designed for real measurements by taking into account
- * measurement tolerances.  By doing so it also automatically compensates for 
- * floating point rounding errors.    If you really want to check floating point
- * equality down to the numeric_limits<double>::epsilon () range,
- * consider using ns3::TestDoubleIsEqual().
+ * This assertion is designed for real measurements by taking into
+ * account measurement tolerances.  By doing so it also automatically
+ * compensates for floating point rounding errors.  If you really want
+ * to check floating point equality down to the
+ * numeric_limits<double>::epsilon () range, consider using
+ * ns3::TestDoubleIsEqual().
  *
- * \note Mixing signed and unsigned types can lead to misleading results.
+ * \note Mixing signed and unsigned types can lead to misleading
+ * results.
  *
  * The message is interpreted as a stream, for example:
  *
  * \code
- * NS_TEST_EXPECT_MSG_EQ_TOL (snr, 1128.93, 0.005, "wrong snr (" << snr << ") in test");
+ *   NS_TEST_EXPECT_MSG_EQ_TOL (snr, 1128.93, 0.005,
+ *                              "wrong snr (" << snr << ") in test");
  * \endcode
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the expected value of the test.
- * \param tol Tolerance of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the expected value of the test.
+ * \param [in] tol Tolerance of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_EXPECT_MSG_EQ_TOL(actual, limit, tol, msg) \
   NS_TEST_EXPECT_MSG_EQ_TOL_INTERNAL (actual, limit, tol, msg, __FILE__, __LINE__)
@@ -535,10 +563,9 @@
 // ===========================================================================
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual and expected (limit) value are not equal and 
  * report and abort if not.
- * \internal
  */
 #define NS_TEST_ASSERT_MSG_NE_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
@@ -551,7 +578,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) != " +        \
+        ReportTestFailure (std::string (#actual) + " (actual) != " +    \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -562,13 +589,14 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual and expected (limit) value are not equal and 
- * report and abort if not.
+ * \brief Test that an actual and expected (limit) value are not equal
+ * and report and abort if not.
  *
- * Check to see if the expected (limit) value is not equal to the actual value
- * found in a test case.  If the two values are not equal nothing happens, but 
- * if the comparison fails, an error is reported in a consistent way and the 
- * execution of the current test case is aborted.
+ * Check to see if the expected (limit) value is not equal to the
+ * actual value found in a test case.  If the two values are not equal
+ * nothing happens, but if the comparison fails, an error is reported
+ * in a consistent way and the execution of the current test case is
+ * aborted.
  *
  * The message is interpreted as a stream, for example:
  *
@@ -579,21 +607,20 @@
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the value that actual is tested against.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the value that actual is tested against.
+ * \param [in] msg Message that is output if the test does not pass.
  *
- * \warning Do not use this macro if you are comparing floating point numbers
- * (float or double).  Use NS_TEST_ASSERT_MSG_FLNE instead.
+ * \warning Do not use this macro if you are comparing floating point
+ * numbers (float or double).  Use NS_TEST_ASSERT_MSG_FLNE instead.
  */
 #define NS_TEST_ASSERT_MSG_NE(actual, limit, msg) \
   NS_TEST_ASSERT_MSG_NE_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual and expected (limit) value are not equal and 
  * report and abort if not.
- * \internal
  */
 #define NS_TEST_ASSERT_MSG_NE_RETURNS_BOOL_INTERNAL(actual, limit, msg, file, line) \
   do {                                                                  \
@@ -606,7 +633,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) != " +        \
+        ReportTestFailure (std::string (#actual) + " (actual) != " +    \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -617,13 +644,14 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual and expected (limit) value are not equal and 
- * report and abort if not.
+ * \brief Test that an actual and expected (limit) value are not equal
+ * and report and abort if not.
  *
- * Check to see if the expected (limit) value is not equal to the actual value
- * found in a test case.  If the two values are equal nothing happens, but if 
- * the comparison fails, an error is reported in a consistent way and the 
- * execution of the current test case is aborted.
+ * Check to see if the expected (limit) value is not equal to the
+ * actual value found in a test case.  If the two values are equal
+ * nothing happens, but if the comparison fails, an error is reported
+ * in a consistent way and the execution of the current test case is
+ * aborted.
  *
  * The message is interpreted as a stream, for example:
  *
@@ -634,12 +662,12 @@
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the expected value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the expected value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  *
- * \warning Do not use this macro if you are comparing floating point numbers
- * (float or double).  Use NS_TEST_ASSERT_MSG_FLNE instead.
+ * \warning Do not use this macro if you are comparing floating point
+ * numbers (float or double).  Use NS_TEST_ASSERT_MSG_FLNE instead.
  *
  * This function returns a boolean value.
  *
@@ -648,13 +676,12 @@
   NS_TEST_ASSERT_MSG_NE_RETURNS_BOOL_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual and expected (limit) value are not equal and 
  * report if not.
  * 
  * Required to avoid use of return statement which allows use in methods 
  * (callbacks) returning void.
- * \internal
  */
 #define NS_TEST_EXPECT_MSG_NE_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
@@ -667,7 +694,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) != " +        \
+        ReportTestFailure (std::string (#actual) + " (actual) != " +    \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -677,13 +704,14 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual and expected (limit) value are not equal and 
- * report if not.
+ * \brief Test that an actual and expected (limit) value are not equal
+ * and report if not.
  *
- * Check to see if the expected (limit) value is not equal to the actual value 
- * found in a test case.  If the two values are not equal nothing happens, but 
- * if the comparison fails, an error is reported in a consistent way.  EXPECT* 
- * macros do not return if an error is detected.
+ * Check to see if the expected (limit) value is not equal to the
+ * actual value found in a test case.  If the two values are not equal
+ * nothing happens, but if the comparison fails, an error is reported
+ * in a consistent way.  EXPECT* macros do not return if an error is
+ * detected.
  *
  * The message is interpreted as a stream, for example:
  *
@@ -694,12 +722,12 @@
  *
  * is legal.
  * 
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the value that actual is tested against.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the value that actual is tested against.
+ * \param [in] msg Message that is output if the test does not pass.
  *
- * \warning Do not use this macro if you are comparing floating point numbers
- * (float or double).  Use NS_TEST_EXPECT_MSG_FLNE instead.
+ * \warning Do not use this macro if you are comparing floating point
+ * numbers (float or double).  Use NS_TEST_EXPECT_MSG_FLNE instead.
  */
 #define NS_TEST_EXPECT_MSG_NE(actual, limit, msg) \
   NS_TEST_EXPECT_MSG_NE_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -709,10 +737,9 @@
 // ===========================================================================
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual value is less than a limit and report and abort
  * if not.
- * \internal
  */
 #define NS_TEST_ASSERT_MSG_LT_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
@@ -725,7 +752,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) < " +         \
+        ReportTestFailure (std::string (#actual) + " (actual) < " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -734,14 +761,13 @@
   } while (false)
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual value is less than or equal to a limit and report
  * and abort if not.
- * \internal
  */
 #define NS_TEST_ASSERT_MSG_LT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
-    if (!((actual) <= (limit)))                                          \
+    if (!((actual) <= (limit)))                                         \
       {                                                                 \
         ASSERT_ON_FAILURE;                                              \
         std::ostringstream msgStream;                                   \
@@ -750,7 +776,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) < " +         \
+        ReportTestFailure (std::string (#actual) + " (actual) < " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -761,19 +787,19 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is less than a limit and report and abort
- * if not.
+ * \brief Test that an actual value is less than a limit and report
+ * and abort if not.
  *
- * Check to see if the actual value found in a test case is less than the 
- * limit value.  If the actual value is lesser nothing happens, but if the 
- * check fails, an error is reported in a consistent way and the execution
- * of the current test case is aborted.
+ * Check to see if the actual value found in a test case is less than
+ * the limit value.  If the actual value is lesser nothing happens,
+ * but if the check fails, an error is reported in a consistent way
+ * and the execution of the current test case is aborted.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_ASSERT_MSG_LT(actual, limit, msg) \
   NS_TEST_ASSERT_MSG_LT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -781,30 +807,30 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is less than or equal to a limit and
- * report and abort if not.
+ * \brief Test that an actual value is less than or equal to a limit
+ * and report and abort if not.
  *
- * Check to see if the actual value found in a test case is less than or equal
- * to the limit value.  If the actual value is lesser or equal nothing happens,
- * but if the check fails, an error is reported in a consistent way and the
- * execution of the current test case is aborted.
+ * Check to see if the actual value found in a test case is less than
+ * or equal to the limit value.  If the actual value is lesser or
+ * equal nothing happens, but if the check fails, an error is reported
+ * in a consistent way and the execution of the current test case is
+ * aborted.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_ASSERT_MSG_LT_OR_EQ(actual, limit, msg) \
   NS_TEST_ASSERT_MSG_LT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual value is less than a limit and report if not.
  * 
  * Required to avoid use of return statement which allows use in methods 
  * (callbacks) returning void.
- * \internal
  */
 #define NS_TEST_EXPECT_MSG_LT_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
@@ -817,7 +843,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) < " +         \
+        ReportTestFailure (std::string (#actual) + " (actual) < " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -825,17 +851,16 @@
   } while (false)
 
 /**
- * \ingroup testing
- * \brief Test that an actual value is less than or equal to a limit and report
- * if not.
+ * \ingroup testingimpl
+ * \brief Test that an actual value is less than or equal to a limit
+ * and report if not.
  *
- * Required to avoid use of return statement which allows use in methods
- * (callbacks) returning void.
- * \internal
+ * Required to avoid use of return statement which allows use in
+ * methods (callbacks) returning void.
  */
 #define NS_TEST_EXPECT_MSG_LT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
-    if (!((actual) <= (limit)))                                          \
+    if (!((actual) <= (limit)))                                         \
       {                                                                 \
         ASSERT_ON_FAILURE;                                              \
         std::ostringstream msgStream;                                   \
@@ -844,7 +869,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) < " +         \
+        ReportTestFailure (std::string (#actual) + " (actual) < " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -854,18 +879,19 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is less than a limit and report if not.
+ * \brief Test that an actual value is less than a limit and report if
+ * not.
  *
- * Check to see if the actual value found in a test case is less than the 
- * limit value.  If the actual value is lesser nothing happens, but if the 
- * check fails, an error is reported in a consistent way.  EXPECT* macros do 
- * not return if an error is detected.
+ * Check to see if the actual value found in a test case is less than
+ * the limit value.  If the actual value is lesser nothing happens,
+ * but if the check fails, an error is reported in a consistent way.
+ * EXPECT* macros do not return if an error is detected.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_EXPECT_MSG_LT(actual, limit, msg) \
   NS_TEST_EXPECT_MSG_LT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -873,19 +899,20 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is less than or equal to a limit and report
- *        if not.
+ * \brief Test that an actual value is less than or equal to a limit
+ * and report if not.
  *
- * Check to see if the actual value found in a test case is less than or equal to
- * the limit value.  If the actual value is lesser or equal nothing happens, but
- * if the check fails, an error is reported in a consistent way.  EXPECT* macros
- * do not return if an error is detected.
+ * Check to see if the actual value found in a test case is less than
+ * or equal to the limit value.  If the actual value is lesser or
+ * equal nothing happens, but if the check fails, an error is reported
+ * in a consistent way.  EXPECT* macros do not return if an error is
+ * detected.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_EXPECT_MSG_LT_OR_EQ(actual, limit, msg) \
   NS_TEST_EXPECT_MSG_LT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -895,10 +922,9 @@
 // ===========================================================================
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual value is greater than a limit and report and abort
  * if not.
- * \internal
  */
 #define NS_TEST_ASSERT_MSG_GT_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
@@ -911,7 +937,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) > " +         \
+        ReportTestFailure (std::string (#actual) + " (actual) > " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -920,14 +946,13 @@
   } while (false)
 
 /**
- * \ingroup testing
- * \brief Test that an actual value is greater than or equal to a limit and
- * report and abort if not.
- * \internal
+ * \ingroup testingimpl
+ * \brief Test that an actual value is greater than or equal to a
+ * limit and report and abort if not.
  */
 #define NS_TEST_ASSERT_MSG_GT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
-    if (!((actual) >= (limit)))                                          \
+    if (!((actual) >= (limit)))                                         \
       {                                                                 \
         ASSERT_ON_FAILURE;                                              \
         std::ostringstream msgStream;                                   \
@@ -936,7 +961,7 @@
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) > " +         \
+        ReportTestFailure (std::string (#actual) + " (actual) > " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -947,19 +972,20 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is greater than a limit and report and abort
- * if not.
+ * \brief Test that an actual value is greater than a limit and report
+ * and abort if not.
  *
- * Check to see if the actual value found in a test case is greater than the 
- * limit value.  If the actual value is greater nothing happens, but if the 
- * check fails, an error is reported in a consistent way and the execution
- * of the current test case is aborted.
+ * Check to see if the actual value found in a test case is greater
+ * than the limit value.  If the actual value is greater nothing
+ * happens, but if the check fails, an error is reported in a
+ * consistent way and the execution of the current test case is
+ * aborted.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_ASSERT_MSG_GT(actual, limit, msg) \
   NS_TEST_ASSERT_MSG_GT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -967,43 +993,43 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is greater than or equal to a limit and
- * report and abort if not.
+ * \brief Test that an actual value is greater than or equal to a
+ * limit and report and abort if not.
  *
- * Check to see if the actual value found in a test case is greater than or
- * equal to the limit value.  If the actual value is greater nothing happens, but
- * if the check fails, an error is reported in a consistent way and the execution
- * of the current test case is aborted.
+ * Check to see if the actual value found in a test case is greater
+ * than or equal to the limit value.  If the actual value is greater
+ * nothing happens, but if the check fails, an error is reported in a
+ * consistent way and the execution of the current test case is
+ * aborted.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_ASSERT_MSG_GT_OR_EQ(actual, limit, msg) \
   NS_TEST_ASSERT_MSG_GT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  * \brief Test that an actual value is greater than a limit and report if not.
  * 
  * Required to avoid use of return statement which allows use in methods 
  * (callbacks) returning void.
- * \internal
  */
 #define NS_TEST_EXPECT_MSG_GT_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
     if (!((actual) > (limit)))                                          \
       {                                                                 \
-        ASSERT_ON_FAILURE;                                               \
+        ASSERT_ON_FAILURE;                                              \
         std::ostringstream msgStream;                                   \
         msgStream << msg;                                               \
         std::ostringstream actualStream;                                \
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) > " +      \
+        ReportTestFailure (std::string (#actual) + " (actual) > " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -1011,26 +1037,25 @@
   } while (false)
 
 /**
- * \ingroup testing
- * \brief Test that an actual value is greater than a or equal to limit and
- * report if not.
+ * \ingroup testingimpl
+ * \brief Test that an actual value is greater than or equal to limit
+ * and report if not.
  *
- * Required to avoid use of return statement which allows use in methods
- * (callbacks) returning void.
- * \internal
+ * Required to avoid use of return statement which allows use in
+ * methods (callbacks) returning void.
  */
 #define NS_TEST_EXPECT_MSG_GT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
   do {                                                                  \
-    if (!((actual) >= (limit)))                                          \
+    if (!((actual) >= (limit)))                                         \
       {                                                                 \
-        ASSERT_ON_FAILURE;                                               \
+        ASSERT_ON_FAILURE;                                              \
         std::ostringstream msgStream;                                   \
         msgStream << msg;                                               \
         std::ostringstream actualStream;                                \
         actualStream << actual;                                         \
         std::ostringstream limitStream;                                 \
         limitStream << limit;                                           \
-        ReportTestFailure (std::string (#actual) + " (actual) > " +      \
+        ReportTestFailure (std::string (#actual) + " (actual) > " +     \
                        std::string (#limit) + " (limit)",               \
                        actualStream.str (), limitStream.str (),         \
                        msgStream.str (), file, line);                   \
@@ -1040,18 +1065,20 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is greater than a limit and report if not.
+ * \brief Test that an actual value is greater than a limit and report
+ * if not.
  *
- * Check to see if the actual value found in a test case is greater than the 
- * limit value.  If the actual value is greater nothing happens, but if the 
- * check fails, an error is reported in a consistent way.  EXPECT* macros do 
- * not return if an error is detected.
+ * Check to see if the actual value found in a test case is greater
+ * than the limit value.  If the actual value is greater nothing
+ * happens, but if the check fails, an error is reported in a
+ * consistent way.  EXPECT* macros do not return if an error is
+ * detected.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_EXPECT_MSG_GT(actual, limit, msg) \
   NS_TEST_EXPECT_MSG_GT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -1059,19 +1086,20 @@
 /**
  * \ingroup testing
  *
- * \brief Test that an actual value is greater than or equal to limit and report
- * if not.
+ * \brief Test that an actual value is greater than or equal to limit
+ * and report if not.
  *
- * Check to see if the actual value found in a test case is greater than or
- * equal to the limit value.  If the actual value is greater nothing happens,
- * but if the check fails, an error is reported in a consistent way.  EXPECT* macros do
- * not return if an error is detected.
+ * Check to see if the actual value found in a test case is greater
+ * than or equal to the limit value.  If the actual value is greater
+ * nothing happens, but if the check fails, an error is reported in a
+ * consistent way.  EXPECT* macros do not return if an error is
+ * detected.
  *
  * The message is interpreted as a stream.
  *
- * \param actual Expression for the actual value found during the test.
- * \param limit Expression for the limit value of the test.
- * \param msg Message that is output if the test does not pass.
+ * \param [in] actual Expression for the actual value found during the test.
+ * \param [in] limit Expression for the limit value of the test.
+ * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_EXPECT_MSG_GT_OR_EQ(actual, limit, msg) \
   NS_TEST_EXPECT_MSG_GT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
@@ -1079,22 +1107,28 @@
 namespace ns3 {
 
 /**
- * \brief Compare two double precision floating point numbers and declare them
- * equal if they are within some epsilon of each other.
+ * \ingroup testing
+ * \brief Compare two double precision floating point numbers and
+ * declare them equal if they are within some epsilon of each other.
  *
- * Approximate comparison of floating point numbers near equality is trickier
- * than one may expect and is well-discussed in the literature.  Basic 
- * strategies revolve around a suggestion by Knuth to compare the floating 
- * point numbers as binary integers, supplying a maximum difference between
- * them .  This max difference is specified in Units in the Last Place (ulps)
- * or a floating point epsilon.
+ * Approximate comparison of floating point numbers near equality is
+ * trickier than one may expect and is well-discussed in the
+ * literature.  Basic strategies revolve around a suggestion by Knuth
+ * to compare the floating point numbers as binary integers, supplying
+ * a maximum difference between them .  This max difference is
+ * specified in Units in the Last Place (ulps) or a floating point
+ * epsilon.
  *
- * This routine is based on the GNU Scientific Library function gsl_fcmp.
+ * This routine is based on the GNU Scientific Library function
+ * gsl_fcmp.
  * 
- * \param a The first of double precision floating point numbers to compare
- * \param b The second of double precision floating point numbers to compare
- * \param epsilon The second of double precision floating point numberss to compare
- * \returns Returns true if the doubles are equal to a precision defined by epsilon
+ * \param [in] a The first of double precision floating point
+ *               numbers to compare
+ * \param [in] b The second of double precision floating point
+ *               numbers to compare
+ * \param [in] epsilon The tolerance to use in the comparison.
+ * \returns Returns \c true if the doubles are equal to a precision
+ *          defined by epsilon
  */
 bool TestDoubleIsEqual (const double a, const double b, 
                         const double epsilon = std::numeric_limits<double>::epsilon ());
@@ -1107,16 +1141,13 @@ class TestRunnerImpl;
  * \brief encapsulates test code
  *
  * To allow a new test to be run within the ns-3 test framework, users
- * need to create subclasses of this base class, override the DoRun method,
- * and use the NS_TEST_* macros within DoRun.
+ * need to create subclasses of this base class, override the DoRun
+ * method, and use the NS_TEST_* macros within DoRun.
  */
-class TestCase
+class TestCase : private NonCopyable
 {
 public:
-  /**
-   * \enum TestDuration
-   * \brief How long the test takes to execute.
-   */
+  /** \brief How long the test takes to execute. */
   enum TestDuration {
     QUICK         = 1,  //!< Fast test.
     EXTENSIVE     = 2,  //!< Medium length test.
@@ -1129,108 +1160,125 @@ public:
   virtual ~TestCase ();
 
   /**
-   * \return name of this test
+   * \return The name of this test
    */
   std::string GetName (void) const;  
 
 protected:
   /**
-   * \param name the name of the new TestCase created
+   * \brief Constructor.
+   *
+   * \param [in] name The name of the new TestCase created
    */
   TestCase (std::string name);
 
   /**
-   * \brief Add an individual child TestCase case to this TestCase.
-   *
-   * \param testCase Pointer to the TestCase object to be added.
-   *
-   * \deprecated this method will go away in future versions of 
-   * ns-3. Please use instead AddTestCase (TestCase, TestDuration)  
-   */
-  void AddTestCase (TestCase *testCase) NS_DEPRECATED;
-
-  /**
    * \brief Add an individual child TestCase to this test suite.
    *
-   * \param testCase Pointer to the TestCase object to be added.
-   * \param duration Amount of time this test takes to execute.
+   * \param [in] testCase Pointer to the TestCase object to be added.
+   * \param [in] duration Amount of time this test takes to execute.
    */
   void AddTestCase (TestCase *testCase, enum TestDuration duration);
 
   /**
-   * \param directory the directory where the test data is located
+   * \brief Set the data directory where reference trace files can be
+   * found.
    *
-   * In general, this method is invoked as SetDataDir (NS_TEST_SOURCEDIR);
-   * However, if a module contains a test directory with subdirectories
-   * (e.g. src/mesh/test), and the test data (e.g. pcap traces) is located
-   * in one of these subdirectories, then the variable NS_TEST_SOURCEDIR 
-   * may not work and the user may want to explicitly pass in a 
-   * directory string.
+   * \param [in] directory The directory where the test data is
+   * located
+   *
+   * In general, this method is invoked as SetDataDir
+   * (NS_TEST_SOURCEDIR); However, if a module contains a test
+   * directory with subdirectories (e.g. src/mesh/test), and the test
+   * data (e.g. pcap traces) is located in one of these
+   * subdirectories, then the variable NS_TEST_SOURCEDIR may not work
+   * and the user may want to explicitly pass in a directory string.
    *
    * Note that NS_TEST_SOURCEDIR is set in src/wscript for each module
    */
   void SetDataDir (std::string directory);
 
   /**
-   * \deprecated
-   * This method is deprecated. IsStatusFailure replaces it.
-   */
-  bool GetErrorStatus (void) const NS_DEPRECATED;
-  /**
-   * \return true if the tests have failed, false otherwise.
+   * \brief Check if any tests failed.
+   *
+   * \return \c true if any of the tests have failed, \c false otherwise.
    */
   bool IsStatusFailure (void) const;
   /**
-   * \return true if the tests have succeeded, false otherwise.
+   * \brief Check if all tests passed.
+   *
+   * \return \c true if the tests have succeeded, \c false otherwise.
    */
   bool IsStatusSuccess (void) const;
 
   /**
-   * \return a pointer to the parent of this test
+   * \brief Get the parent of this TestCsse.
+   *
+   * \return A pointer to the parent of this test.
    */
   TestCase * GetParent () const;
 
   /**
+   * \name Internal Interface
+   * These methods are the interface used by test macros and should not
+   * be used directly by normal test code.
    * @{
-   * \internal
-   * The methods below are used only by test macros and should not
-   * be used by normal users.
    */
   /**
-   * Log the failure of this TestCase.
+   * \brief Log the failure of this TestCase.
+   *
+   * \param [in] cond The test condition.
+   * \param [in] actual Actual value of the test.
+   * \param [in] limit Expected value of the test.
+   * \param [in] message Message indicating the type of failure.
+   * \param [in] file The file where the test failed.
+   * \param [in] line The line number in \p file where the test failed.
    */
   void ReportTestFailure (std::string cond, std::string actual, 
                       std::string limit, std::string message, 
                       std::string file, int32_t line);
   /**
-   * \return should we assert on failure, per the TestSuite configuration
+   * \brief Check if this run should assert on failure.
+   *
+   * \return \c true if we should assert on failure.
    */
   bool MustAssertOnFailure (void) const;
   /**
-   * \return should we continue on failure, per the TestSuite configuration
+   * \brief Check if this run should continue on failure.
+   *
+   * \return \c true if we should continue on failure.
    */
   bool MustContinueOnFailure (void) const;
   /**
-   * \param filename the bare (no path) file name
-   * \return the full path to filename in the data directory
+   * \brief Construct the full path to a file in the data directory.
+   *
+   * The data directory is configured by SetDataDirectory().
+   *
+   * \param [in] filename The bare (no path) file name
+   * \return The full path to \p filename in the data directory
    */
   std::string CreateDataDirFilename (std::string filename);
   /**
-   * \param filename the bare (no path) file name
-   * \return the full path to filename in the temporary directory.
+   * \brief Construct the full path to a file in a temporary directory.
+   *
    *  If the TestRunner is invoked with "--update-data", this will be
    *  the data directory instead.
+   *
+   * \param [in] filename The bare (no path) file name
+   * \return The full path to \p filename in the temporary directory.
    */
   std::string CreateTempDirFilename (std::string filename);
   /**@}*/
+  
 private:
   friend class TestRunnerImpl;
 
   /**
-   * \brief Implementation to do any local setup required for this TestCase.
+   * \brief Implementation to do any local setup required for this
+   * TestCase.
    *
-   * Subclasses should override this method to perform any costly per-test setup
-   * before DoRun is invoked.
+   * Subclasses should override this method to perform any costly
+   * per-test setup before DoRun is invoked.
    */
   virtual void DoSetup (void);
 
@@ -1242,34 +1290,30 @@ private:
   virtual void DoRun (void) = 0;
 
   /**
-   * \brief Implementation to do any local setup required for this TestCase.
+   * \brief Implementation to do any local setup required for this
+   * TestCase.
    *
-   * Subclasses should override this method to perform any costly per-test teardown
+   * Subclasses should override this method to perform any costly
+   * per-test teardown
    */
   virtual void DoTeardown (void);
 
-  /**
-   * Private, to block copying
-   */
-  TestCase (TestCase& tc);
-  /**
-   * Private, to block copying
-   */
-  TestCase& operator= (TestCase& tc);
-
   // methods called by TestRunnerImpl
   /**
-   * Actually run this TestCase
+   * \brief Actually run this TestCase
    *
-   * \param runner The test runner implementation.
+   * \param [in] runner The test runner implementation.
    */
   void Run (TestRunnerImpl *runner);
   /**
-   * \return the failure status of this TestCase and all it's children
+   * \copydoc IsStatusFailure()
    */
   bool IsFailed (void) const;
 
-  // Forward declaration is enough, since we only include a pointer here
+  /**
+   * \ingroup testingimpl
+   * \brief Container for results from a TestCase.
+   */
   struct Result;
 
   TestCase *m_parent;                   //!< Pointer to my parent TestCase
@@ -1305,27 +1349,27 @@ public:
   /**
    * \brief Constuct a new test suite.
    *
-   * \param name The name of the test suite.
-   * \param type The TestType of the test suite (defaults to UNIT test).
+   * \param [in] name The name of the test suite.
+   * \param [in] type The TestType of the test suite (defaults to UNIT test).
    */
   TestSuite (std::string name, Type type = UNIT);
 
   /**
    * \brief get the kind of test this test suite implements
    *
-   * \returns the Type of the suite.
+   * \returns The Type of the suite.
    */
   TestSuite::Type GetTestType (void);
 
 private:
+  // Inherited
   virtual void DoRun (void);
-
 
   TestSuite::Type m_type;               //!< Type of this TestSuite
 };
 
 /**
- * \ingroup testing
+ * \ingroup testingimpl
  *
  * \brief A runner to execute tests.
  */
@@ -1333,11 +1377,12 @@ class TestRunner
 {
 public:
   /**
-   * Run the requested suite of tests.
+   * Run the requested suite of tests,
+   * according to the given command line arguments.
    *
-   * \param argc number of elements in \pname{argv}
-   * \param argv vector of command line arguments
-   * \returns success status
+   * \param [in] argc The number of elements in \pname{argv}
+   * \param [in] argv The vector of command line arguments
+   * \returns Success status
    */
   static int Run (int argc, char *argv[]);
 };
@@ -1348,7 +1393,7 @@ public:
  * \brief A simple way to store test vectors (for stimulus or from responses)
  */
 template <typename T>
-class TestVectors
+class TestVectors : private NonCopyable
 {
 public:
   /**
@@ -1361,41 +1406,32 @@ public:
   virtual ~TestVectors ();
 
   /**
-   * \param reserve the number of entries to reserve
+   * \brief Set the expected length of this vector.
+   *
+   * \param [in] reserve The number of entries to reserve
    */
   void Reserve (uint32_t reserve);
 
   /**
-   * \param vector the test vector to add
-   * \returns the new test vector index
+   * \param [in] vector The test vector to add
+   * 
+   * \returns The new test vector index
    */
   uint32_t Add (T vector);
 
   /**
-   * \return the number of test vectors
+   * \brief Get the total number of test vectors.
+   * \return The number of test vectors
    */
   uint32_t GetN (void) const;
   /**
-   * Get the i'th test vector
-   * \param i the requested vector index
-   * \return the requested vector
+   * \brief Get the i'th test vector
+   * \param [in] i The requested vector index
+   * \return The requested vector
    */
   T Get (uint32_t i) const;
 
 private:
-  /**
-   * Copy constructor, private to block copying
-   */
-  TestVectors (const TestVectors& tv);
-  /**
-   * Assignment, private to prevent copying
-   */
-  TestVectors& operator= (const TestVectors& tv);
-  /**
-   * Comparison (unimplemented?)
-   */
-  bool operator== (const TestVectors& tv) const;
-
   typedef std::vector<T> TestVector;    //!< Container type
   TestVector m_vectors;                 //!< The list of test vectors
 };

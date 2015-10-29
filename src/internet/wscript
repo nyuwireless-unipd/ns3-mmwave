@@ -65,7 +65,7 @@ def configure(conf):
         conf.msg("Checking for NSC location", False)
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
                                      "NSC not found (see option --with-nsc)")
-	return
+        return
     
     if Options.platform in ['linux', 'freebsd']:
         arch = os.uname()[4]
@@ -244,6 +244,13 @@ def build(bld):
         'test/rtt-test.cc',
         'test/codel-queue-test-suite.cc',
         ]
+    privateheaders = bld(features='ns3privateheader')
+    privateheaders.module = 'internet'
+    privateheaders.source = [
+        'model/tcp-option-winscale.h',
+        'model/tcp-option-ts.h',
+        'model/tcp-option-rfc793.h',
+        ]
     headers = bld(features='ns3header')
     headers.module = 'internet'
     headers.source = [
@@ -256,7 +263,6 @@ def build(bld):
         'model/ipv4-interface.h',
         'model/ipv4-l3-protocol.h',
         'model/ipv6-l3-protocol.h',
-        'model/ipv4-end-point.h',
         'model/ipv6-extension.h',
         'model/ipv6-extension-demux.h',
         'model/ipv6-extension-header.h',

@@ -42,6 +42,7 @@ TypeId Ipv6Interface::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::Ipv6Interface")
     .SetParent<Object> ()
+    .SetGroupName ("Internet")
   ;
   return tid;
 }
@@ -120,7 +121,7 @@ void Ipv6Interface::DoSetup ()
     {
       icmpv6 = proto->GetObject <Icmpv6L4Protocol> ();
     }
-  if (icmpv6)
+  if (icmpv6 && !m_ndCache)
     {
       m_ndCache = icmpv6->CreateCache (m_device, this);
     }
@@ -178,6 +179,7 @@ void Ipv6Interface::SetUp ()
     {
       return;
     }
+  DoSetup ();
   m_ifup = true;
 }
 
@@ -503,6 +505,12 @@ void Ipv6Interface::SetNsDadUid (Ipv6Address address, uint32_t uid)
         }
     }
   /* not found, maybe address has expired */
+}
+
+Ptr<NdiscCache> Ipv6Interface::GetNdiscCache () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_ndCache;
 }
 
 } /* namespace ns3 */

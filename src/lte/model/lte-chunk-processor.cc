@@ -25,9 +25,9 @@
 #include <ns3/spectrum-value.h>
 #include "lte-chunk-processor.h"
 
-NS_LOG_COMPONENT_DEFINE ("LteChunkProcessor");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteChunkProcessor");
 
 LteChunkProcessor::LteChunkProcessor ()
 {
@@ -83,6 +83,20 @@ LteChunkProcessor::End ()
     {
       NS_LOG_WARN ("m_numSinr == 0");
     }
+}
+
+
+  
+void
+LteSpectrumValueCatcher::ReportValue (const SpectrumValue& value)
+{
+  m_value = value.Copy ();
+}
+
+Ptr<SpectrumValue> 
+LteSpectrumValueCatcher::GetValue ()
+{
+  return m_value;
 }
 
 

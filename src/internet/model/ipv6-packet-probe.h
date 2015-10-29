@@ -103,15 +103,13 @@ private:
    * \param packet the traced packet
    * \param ipv6 the IPv6 object for the traced packet
    * \param interface the IPv6 interface for the traced packet
-   *
-   * \internal
    */
   void TraceSink (Ptr<const Packet> packet, Ptr<Ipv6> ipv6, uint32_t interface);
 
   /// Traced Callback: the packet, the Ipv6 object and the interface.
-  TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_output;
+  ns3::TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_output;
   /// Traced Callback: the previous packet's size and the actual packet's size.
-  TracedCallback<uint32_t, uint32_t> m_outputBytes;
+  ns3::TracedCallback<uint32_t, uint32_t> m_outputBytes;
 
   /// The traced packet.
   Ptr<const Packet> m_packet;

@@ -29,6 +29,7 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("GnuplotAggregator");
+
 NS_OBJECT_ENSURE_REGISTERED (GnuplotAggregator);
 
 TypeId
@@ -36,6 +37,7 @@ GnuplotAggregator::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::GnuplotAggregator")
     .SetParent<DataCollectionObject> ()
+    .SetGroupName ("Stats")
   ;
 
   return tid;

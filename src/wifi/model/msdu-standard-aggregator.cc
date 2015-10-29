@@ -17,15 +17,15 @@
  *
  * Author: Mirko Banchi <mk.banchi@gmail.com>
  */
+
 #include "ns3/log.h"
 #include "ns3/uinteger.h"
-
 #include "amsdu-subframe-header.h"
 #include "msdu-standard-aggregator.h"
 
-NS_LOG_COMPONENT_DEFINE ("MsduStandardAggregator");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("MsduStandardAggregator");
 
 NS_OBJECT_ENSURE_REGISTERED (MsduStandardAggregator);
 
@@ -34,6 +34,7 @@ MsduStandardAggregator::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::MsduStandardAggregator")
     .SetParent<MsduAggregator> ()
+    .SetGroupName ("Wifi")
     .AddConstructor<MsduStandardAggregator> ()
     .AddAttribute ("MaxAmsduSize", "Max length in byte of an A-MSDU",
                    UintegerValue (7935),
@@ -87,4 +88,4 @@ MsduStandardAggregator::CalculatePadding (Ptr<const Packet> packet)
   return (4 - (packet->GetSize () % 4 )) % 4;
 }
 
-}  // namespace ns3
+} //namespace ns3

@@ -24,15 +24,18 @@
 #include "ns3/names.h"
 #include "ns3/log.h"
 
+namespace ns3 {
+
 NS_LOG_COMPONENT_DEFINE ("EnergyHarvesterContainer");
 
-namespace ns3 {
-    
+NS_OBJECT_ENSURE_REGISTERED (EnergyHarvesterContainer);
+
 TypeId
 EnergyHarvesterContainer::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::EnergyHarvesterContainer")
     .SetParent<Object> ()
+    .SetGroupName ("Energy")
     .AddConstructor<EnergyHarvesterContainer> ()
   ;
   return tid;

@@ -32,6 +32,7 @@ AirtimeLinkMetricCalculator::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dot11s::AirtimeLinkMetricCalculator")
     .SetParent<Object> ()
+    .SetGroupName ("Mesh")
     .AddConstructor<AirtimeLinkMetricCalculator> ()
     .AddAttribute ( "TestLength",
                     "Rate should be estimated using test length.",
@@ -95,7 +96,7 @@ AirtimeLinkMetricCalculator::CalculateMetric (Mac48Address peerAddress, Ptr<Mesh
   //calculate metric
   uint32_t metric = (uint32_t)((double)( /*Overhead + payload*/
                                  mac->GetPifs () + mac->GetSlot () + mac->GetEifsNoDifs () + //DIFS + SIFS + AckTxTime = PIFS + SLOT + EifsNoDifs
-                                 mac->GetWifiPhy ()->CalculateTxDuration (m_testFrame->GetSize (), txVector, WIFI_PREAMBLE_LONG)
+                                 mac->GetWifiPhy ()->CalculateTxDuration (m_testFrame->GetSize (), txVector, WIFI_PREAMBLE_LONG, mac->GetWifiPhy ()->GetFrequency(), 0, 0)
                                  ).GetMicroSeconds () / (10.24 * (1.0 - failAvg)));
   return metric;
 }

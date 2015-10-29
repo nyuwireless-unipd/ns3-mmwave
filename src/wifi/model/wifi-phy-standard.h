@@ -17,11 +17,11 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #ifndef WIFI_PHY_STANDARD_H
 #define WIFI_PHY_STANDARD_H
 
 namespace ns3 {
-
 
 /**
  * \ingroup wifi
@@ -45,12 +45,14 @@ enum WifiPhyStandard
    *  ACM MOBICOM, 2001.
    */
   WIFI_PHY_STANDARD_holland,
-  // 11n support
+  /** HT OFDM PHY for the 2.4 GHz band (clause 20) */
   WIFI_PHY_STANDARD_80211n_2_4GHZ,
-  // needed for different mac parameters
-  WIFI_PHY_STANDARD_80211n_5GHZ
+  /** HT OFDM PHY for the 5 GHz band (clause 20) */
+  WIFI_PHY_STANDARD_80211n_5GHZ,
+  /** VHT OFDM PHY (clause 22) */
+  WIFI_PHY_STANDARD_80211ac
 };
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* WIFI_PHY_STANDARD_H */

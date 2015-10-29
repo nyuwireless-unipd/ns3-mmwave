@@ -386,6 +386,45 @@ public:
    */
   virtual void ReportDrop (Ipv6Header ipHeader, Ptr<Packet> p, DropReason dropReason);
 
+  /**
+   * TracedCallback signature for packet sent, forwarded or
+   * local-delivered events.
+   *
+   * \param [in] header The Ipv6Header.
+   * \param [in] packet The packet.
+   * \param [in] interface
+   */
+  typedef void (* SentTracedCallback)
+    (const Ipv6Header & header, Ptr<const Packet> packet, uint32_t interface);
+   
+  /**
+   * TracedCallback signature for packet transmission or reception events.
+   *
+   * \param [in] packet The packet.
+   * \param [in] ipv6
+   * \param [in] interface
+   * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
+   * and will be changed to \c Ptr<const Ipv6> in a future release.
+   */
+  typedef void (* TxRxTracedCallback)
+    (Ptr<const Packet> packet, Ptr<Ipv6> ipv6, uint32_t interface);
+
+  /**
+   * TracedCallback signature for packet drop events.
+   *
+   * \param [in] header The Ipv6Header.
+   * \param [in] packet The packet.
+   * \param [in] reason The reason the packet was dropped.
+   * \param [in] ipv6
+   * \param [in] interface
+   * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
+   * and will be changed to \c Ptr<const Ipv6> in a future release.
+   */
+  typedef void (* DropTracedCallback)
+    (const Ipv6Header & header, Ptr<const Packet> packet,
+     DropReason reason, Ptr<Ipv6> ipv6,
+     uint32_t interface);
+   
 protected:
   /**
    * \brief Dispose object.
@@ -431,16 +470,22 @@ private:
 
   /**
    * \brief Callback to trace TX (transmission) packets.
+   * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
+   * and will be changed to \c Ptr<const Ipv6> in a future release.
    */ 
   TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_txTrace;
 
   /**
    * \brief Callback to trace RX (reception) packets.
+   * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
+   * and will be changed to \c Ptr<const Ipv6> in a future release.
    */ 
   TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_rxTrace;
 
   /**
    * \brief Callback to trace drop packets.
+   * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
+   * and will be changed to \c Ptr<const Ipv6> in a future release.
    */ 
   TracedCallback<const Ipv6Header &, Ptr<const Packet>, DropReason, Ptr<Ipv6>, uint32_t> m_dropTrace;
 

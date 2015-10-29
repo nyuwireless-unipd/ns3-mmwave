@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #include "wifi-mac-trailer.h"
 #include "ns3/assert.h"
 
@@ -37,10 +38,12 @@ WifiMacTrailer::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::WifiMacTrailer")
     .SetParent<Trailer> ()
+    .SetGroupName ("Wifi")
     .AddConstructor<WifiMacTrailer> ()
   ;
   return tid;
 }
+
 TypeId
 WifiMacTrailer::GetInstanceTypeId (void) const
 {
@@ -51,21 +54,24 @@ void
 WifiMacTrailer::Print (std::ostream &os) const
 {
 }
+
 uint32_t
 WifiMacTrailer::GetSerializedSize (void) const
 {
   return WIFI_MAC_FCS_LENGTH;
 }
+
 void
 WifiMacTrailer::Serialize (Buffer::Iterator start) const
 {
   start.Prev (WIFI_MAC_FCS_LENGTH);
   start.WriteU32 (0);
 }
+
 uint32_t
 WifiMacTrailer::Deserialize (Buffer::Iterator start)
 {
   return WIFI_MAC_FCS_LENGTH;
 }
 
-} // namespace ns3
+} //namespace ns3

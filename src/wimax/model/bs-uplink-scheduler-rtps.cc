@@ -33,9 +33,10 @@
 #include "bs-link-manager.h"
 #include "bandwidth-manager.h"
 
-NS_LOG_COMPONENT_DEFINE ("UplinkSchedulerRtps");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UplinkSchedulerRtps");
+  
 NS_OBJECT_ENSURE_REGISTERED (UplinkSchedulerRtps);
   
 
@@ -70,7 +71,11 @@ UplinkSchedulerRtps::~UplinkSchedulerRtps (void)
 TypeId
 UplinkSchedulerRtps::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::UplinkSchedulerRtps").SetParent<UplinkScheduler> ();
+  static TypeId tid = TypeId ("ns3::UplinkSchedulerRtps")
+    .SetParent<UplinkScheduler> ()
+    .SetGroupName("Wimax")
+    .AddConstructor<UplinkSchedulerRtps> ()
+    ;
   return tid;
 }
 

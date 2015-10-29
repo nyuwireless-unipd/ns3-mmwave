@@ -35,6 +35,10 @@
 
 namespace ns3 {
 
+/**
+ * \ingroup tap-bridge
+ * Class to perform the actual reading from a socket
+ */
 class TapBridgeFdReader : public FdReader
 {
 private:
@@ -103,6 +107,10 @@ class Node;
 class TapBridge : public NetDevice
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   /**
@@ -210,8 +218,6 @@ public:
 
 protected:
   /**
-   * \internal
-   *
    * Call out to a separate process running as suid root in order to get our
    * tap device created.  We do this to avoid having the entire simulation 
    * running as root.  If this method returns, we'll have a socket waiting 
@@ -219,16 +225,33 @@ protected:
    */
   virtual void DoDispose (void);
 
+  /**
+   * Receives a packet from a bridged Device
+   * \param device the originating port
+   * \param packet the received packet
+   * \param protocol the packet protocol (e.g., Ethertype)
+   * \param src the packet source
+   * \param dst the packet destination
+   * \param packetType the packet type (e.g., host, broadcast, etc.)
+   * \returns true on success
+   */
   bool ReceiveFromBridgedDevice (Ptr<NetDevice> device, Ptr<const Packet> packet, uint16_t protocol,
                                  Address const &src, Address const &dst, PacketType packetType);
 
-  bool DiscardFromBridgedDevice (Ptr<NetDevice> device, Ptr<const Packet> packet, uint16_t protocol, Address const &src);
+  /**
+   * Receives a packet from a bridged Device
+   * \param device the originating port
+   * \param packet the received packet
+   * \param protocol the packet protocol (e.g., Ethertype)
+   * \param src the packet source
+   * \returns true on success
+   */
+  bool DiscardFromBridgedDevice (Ptr<NetDevice> device, Ptr<const Packet> packet, uint16_t protocol,
+                                 Address const &src);
 
 private:
 
   /**
-   * \internal
-   *
    * Call out to a separate process running as suid root in order to get our
    * tap device created.  We do this to avoid having the entire simulation 
    * running as root.  If this method returns, we'll have a socket waiting 
@@ -237,41 +260,31 @@ private:
   void CreateTap (void);
 
   /**
-   * \internal
-   *
    * Spin up the device
    */
   void StartTapDevice (void);
 
   /**
-   * \internal
-   *
    * Tear down the device
    */
   void StopTapDevice (void);
 
   /**
-   * \internal
-   *
    * Callback to process packets that are read
    */
   void ReadCallback (uint8_t *buf, ssize_t len);
 
-  /*
-   * \internal
-   *
+  /**
    * Forward a packet received from the tap device to the bridged ns-3 
    * device
    *
    * \param buf A character buffer containing the actual packet bits that were
    *            received from the host.
-   * \param buf The length of the buffer.
+   * \param len The length of the buffer.
    */
   void ForwardToBridgedDevice (uint8_t *buf, ssize_t len);
 
   /**
-   * \internal
-   *
    * The host we are bridged to is in the evil real world.  Do some sanity
    * checking on a received packet to make sure it isn't too evil for our
    * poor naive virginal simulator to handle.
@@ -288,14 +301,16 @@ private:
    *               either the Ethernet header in the case of type interpretation
    *               (DIX framing) or from the 802.2 LLC header in the case of 
    *               length interpretation (802.3 framing).
+   * \returns the packet, or null if the packet has been filtered.
    */
   Ptr<Packet> Filter (Ptr<Packet> packet, Address *src, Address *dst, uint16_t *type);
 
+  /**
+   * Notifies that the link is up and ready.
+   */
   void NotifyLinkUp (void);
 
   /**
-   * \internal
-   *
    * Callback used to hook the standard packet receive callback of the TapBridge
    * ns-3 net device.  This is never called, and therefore no packets will ever
    * be received forwarded up the IP stack on the ghost node through this device.
@@ -303,8 +318,6 @@ private:
   NetDevice::ReceiveCallback m_rxCallback;
 
   /**
-   * \internal
-   *
    * Callback used to hook the promiscuous packet receive callback of the TapBridge
    * ns-3 net device.  This is never called, and therefore no packets will ever
    * be received forwarded up the IP stack on the ghost node through this device.
@@ -316,70 +329,52 @@ private:
   NetDevice::PromiscReceiveCallback m_promiscRxCallback;
 
   /**
-   * \internal
-   *
    * Pointer to the (ghost) Node to which we are connected.
    */
   Ptr<Node> m_node;
 
 
   /**
-   * \internal
-   *
    * The ns-3 interface index of this TapBridge net device.
    */
   uint32_t m_ifIndex;
 
   /**
-   * \internal
-   *
    * The common mtu to use for the net devices
    */
   uint16_t m_mtu;
 
   /**
-   * \internal
-   *
    * The socket (actually interpreted as fd) to use to talk to the Tap device on
    * the real internet host.
    */
   int m_sock;
 
   /**
-   * \internal
-   *
    * The ID of the ns-3 event used to schedule the start up of the underlying
    * host Tap device and ns-3 read thread.
    */
   EventId m_startEvent;
 
   /**
-   * \internal
-   *
    * The ID of the ns-3 event used to schedule the tear down of the underlying
    * host Tap device and ns-3 read thread.
    */
   EventId m_stopEvent;
 
   /**
-   * \internal
-   *
    * Includes the ns-3 read thread used to do blocking reads on the fd
    * corresponding to the host device.
    */
   Ptr<TapBridgeFdReader> m_fdReader;
 
   /**
-   * \internal
-   *
    * The operating mode of the bridge.  Tells basically who creates and
    * configures the underlying network tap.
    */
   Mode m_mode;
 
   /**
-   * \internal
-   *
    * The (unused) MAC address of the TapBridge net device.  Since the TapBridge
    * is implemented as a ns-3 net device, it is required to implement certain
    * functionality.  In this case, the TapBridge is automatically assigned a
@@ -388,43 +383,31 @@ private:
   Mac48Address m_address;
 
   /**
-   * \internal
-   *
    * Time to start spinning up the device
    */
   Time m_tStart;
 
   /**
-   * \internal
-   *
    * Time to start tearing down the device
    */
   Time m_tStop;
 
   /**
-   * \internal
-   *
    * The name of the device to create on the host.  If the device name is the
    * empty string, we allow the host kernel to choose a name.
    */
   std::string m_tapDeviceName;
 
   /**
-   * \internal
-   *
    * The IP address to use as the device default gateway on the host.
    */
   Ipv4Address m_tapGateway;
 
   /**
-   * \internal
-   *
    * The IP address to use as the device IP on the host.
    */
   Ipv4Address m_tapIp;
   /**
-   * \internal
-   *
    * The MAC address to use as the hardware address on the host; only used
    * in UseLocal mode.  This value comes from the MAC
    * address assigned to the bridged ns-3 net device and matches the MAC 
@@ -434,21 +417,15 @@ private:
   Mac48Address m_tapMac;
 
   /**
-   * \internal
-   *
    * The network mask to assign to the device created on the host.
    */
   Ipv4Mask m_tapNetmask;
 
   /**
-   * \internal
-   *
    * The ns-3 net device to which we are bridging.
    */
   Ptr<NetDevice> m_bridgedDevice;
   /**
-   * \internal
-   *
    * Whether the MAC address of the underlying ns-3 device has already been
    * rewritten is stored in this variable (for UseLocal/UseBridge mode only).
    */
@@ -459,7 +436,7 @@ private:
    */
   uint8_t *m_packetBuffer;
 
-  /*
+  /**
    * a copy of the node id so the read thread doesn't have to GetNode() in
    * in order to find the node ID.  Thread unsafe reference counting in 
    * multithreaded apps is not a good thing.
@@ -467,8 +444,6 @@ private:
   uint32_t m_nodeId;
 
   /**
-   * \internal
-   *
    * Flag indicating whether or not the link is up.  In this case,
    * whether or not ns-3 is connected to the underlying TAP device
    * with a file descriptor.
@@ -476,8 +451,6 @@ private:
   bool m_linkUp;
 
   /**
-   * \internal
-   *
    * Callbacks to fire if the link changes state (up or down).
    */
   TracedCallback<> m_linkChangeCallbacks;

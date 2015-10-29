@@ -46,9 +46,9 @@
 #include <cstdlib>
 #include <unistd.h>
 
-NS_LOG_COMPONENT_DEFINE ("TapBridge");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("TapBridge");
 
 FdReader::Data TapBridgeFdReader::DoRead (void)
 {
@@ -80,6 +80,7 @@ TapBridge::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TapBridge")
     .SetParent<NetDevice> ()
+    .SetGroupName ("TapBridge")
     .AddConstructor<TapBridge> ()
     .AddAttribute ("Mtu", "The MAC-level Maximum Transmission Unit",
                    UintegerValue (0),

@@ -26,6 +26,7 @@
 
 #include <ns3/spectrum-phy.h>
 #include <ns3/traced-callback.h>
+#include <ns3/traced-value.h>
 #include <ns3/event-id.h>
 
 namespace ns3 {
@@ -42,6 +43,8 @@ class NetDevice;
 class UniformRandomVariable;
 
 /**
+ * \ingroup lr-wpan
+ *
  * Helper structure to manage the power measurement during ED.
  */
 typedef struct
@@ -52,6 +55,8 @@ typedef struct
 } LrWpanEdPower;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This data structure provides the Bit rate and Symbol rate for a given channel
  * See IEEE802.15.4-2006 Table 1 and 2 in section 6.1.1 and 6.1.2
  */
@@ -62,6 +67,8 @@ typedef  struct
 } LrWpanPhyDataAndSymbolRates;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This data structure provides number of symbols for the PPDU headers: SHR and PHR
  * See IEEE802.15.4-2006 Figure 16, Table 19 and 20 in section 6.3
  */
@@ -73,6 +80,8 @@ typedef  struct
 } LrWpanPhyPpduHeaderSymbolNumber;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This Phy option will be used to index various Tables in IEEE802.15.4-2006
  */
 typedef enum
@@ -88,6 +97,8 @@ typedef enum
 } LrWpanPhyOption;
 
 /**
+ * \ingroup lr-wpan
+ *
  * IEEE802.15.4-2006 PHY Emumerations Table 18
  * in section 6.2.3
  */
@@ -108,7 +119,22 @@ typedef enum
   IEEE_802_15_4_PHY_UNSPECIFIED = 0xc // all cases not covered by ieee802.15.4
 } LrWpanPhyEnumeration;
 
+namespace TracedValueCallback
+{
 /**
+ * \ingroup lr-wpan
+ * TracedValue callback signature for LrWpanPhyEnumeration.
+ *
+ * \param [in] oldValue original value of the traced variable
+ * \param [in] newValue new value of the traced variable
+ */
+  typedef void (* LrWpanPhyEnumeration)(LrWpanPhyEnumeration oldValue,
+                                        LrWpanPhyEnumeration newValue);
+}  // namespace TracedValueCallback
+
+/**
+ * \ingroup lr-wpan
+ *
  * IEEE802.15.4-2006 PHY PIB Attribute Identifiers Table 23 in section 6.4.2
  */
 typedef enum
@@ -124,6 +150,8 @@ typedef enum
 } LrWpanPibAttributeIdentifier;
 
 /**
+ * \ingroup lr-wpan
+ *
  * IEEE802.15.4-2006 PHY PIB Attributes Table 23 in section 6.4.2
  */
 typedef struct
@@ -139,6 +167,8 @@ typedef struct
 } LrWpanPhyPibAttributes;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This method implements the PD SAP: PdDataIndication
  *
  *  @param psduLength number of bytes in the PSDU
@@ -148,6 +178,8 @@ typedef struct
 typedef Callback< void, uint32_t, Ptr<Packet>, uint8_t > PdDataIndicationCallback;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This method implements the PD SAP: PdDataConfirm
  *
  * @param status the status to be transmitted
@@ -155,6 +187,8 @@ typedef Callback< void, uint32_t, Ptr<Packet>, uint8_t > PdDataIndicationCallbac
 typedef Callback< void, LrWpanPhyEnumeration > PdDataConfirmCallback;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This method implements the PD SAP: PlmeCcaConfirm
  *
  * @param status the status of CCA
@@ -162,6 +196,8 @@ typedef Callback< void, LrWpanPhyEnumeration > PdDataConfirmCallback;
 typedef Callback< void, LrWpanPhyEnumeration > PlmeCcaConfirmCallback;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This method implements the PD SAP: PlmeEdConfirm
  *
  * @param status the status of ED
@@ -170,6 +206,8 @@ typedef Callback< void, LrWpanPhyEnumeration > PlmeCcaConfirmCallback;
 typedef Callback< void, LrWpanPhyEnumeration,uint8_t > PlmeEdConfirmCallback;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This method implements the PD SAP: PlmeGetAttributeConfirm
  *
  * @param status the status of PlmeGetAttributeRequest
@@ -181,6 +219,8 @@ typedef Callback< void, LrWpanPhyEnumeration,
                   LrWpanPhyPibAttributes* > PlmeGetAttributeConfirmCallback;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This method implements the PD SAP: PlmeSetTRXStateConfirm
  *
  * @param status the status of PlmeSetTRXStateRequest
@@ -188,6 +228,8 @@ typedef Callback< void, LrWpanPhyEnumeration,
 typedef Callback< void, LrWpanPhyEnumeration > PlmeSetTRXStateConfirmCallback;
 
 /**
+ * \ingroup lr-wpan
+ *
  * This method implements the PD SAP: PlmeSetAttributeConfirm
  *
  * @param status the status of PlmeSetAttributeRequest
@@ -244,7 +286,7 @@ public:
    */
   Ptr<SpectrumChannel> GetChannel (void);
   void SetDevice (Ptr<NetDevice> d);
-  Ptr<NetDevice> GetDevice (void);
+  Ptr<NetDevice> GetDevice (void) const;
 
   /**
    * Set the attached antenna.
@@ -434,6 +476,19 @@ public:
    */
   int64_t AssignStreams (int64_t stream);
 
+  /**
+   * TracedCallback signature for Trx state change events.
+   *
+   * \param [in] time The time of the state change.
+   * \param [in] oldState The old state.
+   * \param [in] newState The new state.
+   * \deprecated The LrWpanPhyEnumeration state is now accessible as the
+   * TracedValue \c TrxStateValue.  The \c TrxState TracedCallback will
+   * be removed in a future release.
+   */
+  typedef void (* StateTracedCallback)
+    (Time time, LrWpanPhyEnumeration oldState, LrWpanPhyEnumeration newState);
+
 protected:
   /**
    * The data and symbol rates for the different PHY options.
@@ -499,7 +554,7 @@ private:
    *
    * \param params signal parameters of the packet
    */
-  void EndRx (Ptr<LrWpanSpectrumSignalParameters> params);
+  void EndRx (Ptr<SpectrumSignalParameters> params);
 
   /**
    * Cancel an ongoing ED procedure. This is called when the transceiver is
@@ -611,6 +666,9 @@ private:
    * The trace source fired when the phy layer changes the transceiver state.
    *
    * \see class CallBackTraceSource
+   * \deprecated The LrWpanPhyEnumeration state is now accessible as the
+   * TracedValue \c TrxStateValue.  This TracedCallback will
+   * be removed in a future release.
    */
   TracedCallback<Time, LrWpanPhyEnumeration, LrWpanPhyEnumeration> m_trxStateLogger;
 
@@ -658,7 +716,7 @@ private:
   /**
    * The current transceiver state.
    */
-  LrWpanPhyEnumeration m_trxState;
+  TracedValue<LrWpanPhyEnumeration> m_trxState;
 
   /**
    * The next pending state to applied after the current action of the PHY is

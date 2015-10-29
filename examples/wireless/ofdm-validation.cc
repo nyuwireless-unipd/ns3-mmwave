@@ -17,6 +17,12 @@
  *
  * Author: Gary Pei <guangyu.pei@boeing.com>
  */
+
+// This example is used to validate NIST and YANS error rate models for OFDM rates.
+//
+// It ouputs plots of the Frame Success Rate versus the Signal-to-noise ratio for
+// both NIST and YANS error rate models and for every OFDM mode.
+
 #include "ns3/core-module.h"
 #include "ns3/yans-error-rate-model.h"
 #include "ns3/nist-error-rate-model.h"
@@ -53,18 +59,30 @@ int main (int argc, char *argv[])
 
   Ptr <YansErrorRateModel> yans = CreateObject<YansErrorRateModel> ();
   Ptr <NistErrorRateModel> nist = CreateObject<NistErrorRateModel> ();
+  WifiTxVector txVector;
 
   for (uint32_t i = 0; i < modes.size (); i++)
     {
       std::cout << modes[i] << std::endl;
       Gnuplot2dDataset yansdataset (modes[i]);
       Gnuplot2dDataset nistdataset (modes[i]);
+      txVector.SetMode (modes[i]);
 
       for (double snr = -5.0; snr <= 30.0; snr += 0.1)
         {
-          double ps = yans->GetChunkSuccessRate (WifiMode (modes[i]), std::pow (10.0,snr/10.0), FrameSize*8);
+          double ps = yans->GetChunkSuccessRate (WifiMode (modes[i]), txVector, std::pow (10.0,snr / 10.0), FrameSize * 8);
           yansdataset.Add (snr, ps);
-          ps = nist->GetChunkSuccessRate (WifiMode (modes[i]), std::pow (10.0,snr/10.0), FrameSize*8);
+          if (ps < 0 || ps > 1)
+            {
+              //error
+              return 0;
+            }
+          ps = nist->GetChunkSuccessRate (WifiMode (modes[i]), txVector, std::pow (10.0,snr / 10.0), FrameSize * 8);
+          if (ps < 0 || ps > 1)
+            {
+              //error
+              return 0;
+            }
           nistdataset.Add (snr, ps);
         }
 

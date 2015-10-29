@@ -1,3 +1,22 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * Copyright (c) 2010 INRIA
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
 #include "int64x64.h"
 #include <stdint.h>
 #include <iostream>
@@ -6,14 +25,34 @@
 #include "assert.h"
 #include "log.h"
 
-// Note:  Logging in this file is largely avoided due to the
-// number of calls that are made to these functions and the possibility
-// of causing recursions leading to stack overflow
-
-NS_LOG_COMPONENT_DEFINE ("int64x64");
+/**
+ * \file
+ * \ingroup highprec
+ * Implementation of the streaming input and output operators for
+ * the ns3::int64x64_t type.
+ */
 
 namespace ns3 {
 
+// Note:  Logging in this file is largely avoided due to the
+// number of calls that are made to these functions and the possibility
+// of causing recursions leading to stack overflow
+NS_LOG_COMPONENT_DEFINE ("int64x64");
+
+/**
+ * \ingroup highprec
+ * Print the high and low words of an int64x64 in hex, for debugging.
+ *
+ * \param [in] hi The high (integer) word.
+ * \param [in] lo The low (fractional) work.
+ */
+#define HEXHILOW(hi, lo) \
+  std::hex << std::setfill ('0') << std::right << " (0x"		\
+	   << std::setw (16) << hi << " "				\
+	   << std::setw (16) << lo					\
+	   << std::dec << std::setfill (' ') << std::left << ")"
+
+  
 /**
  * \internal
  * This algorithm is exact to the precision requested, up to the full
@@ -49,13 +88,6 @@ std::ostream &operator << (std::ostream &os, const int64x64_t &value)
   int64x64_t low(0, absVal.GetLow ());
   int places = 0;    // Number of decimal places printed so far
   bool more = true;  // Should we print more digits?
-
-#define HEXHILOW(hi, lo) \
-  std::hex << std::setfill ('0') << std::right << " (0x"		\
-	   << std::setw (16) << hi << " "				\
-	   << std::setw (16) << lo					\
-	   << std::dec << std::setfill (' ') << std::left << ")"
-
   
   NS_LOG_LOGIC (std::endl
 		<< (floatfield ? " f" : "  ")
@@ -135,6 +167,15 @@ std::ostream &operator << (std::ostream &os, const int64x64_t &value)
   return os;
 }
 
+/**
+ * \ingroup highprec
+ * Read the integer portion of a number from a string containing
+ * just the integral digits (no decimal point or fractional part).
+ *
+ * \param [in] str The string representation of the integral part
+ *             of a number, with no fractional part or decimal point.
+ * \returns    The integer.
+ */
 static uint64_t ReadHiDigits (std::string str)
 {
   const char *buf = str.c_str ();
@@ -148,6 +189,16 @@ static uint64_t ReadHiDigits (std::string str)
   return retval;
 }
 
+/**
+ * \ingroup highprec
+ * Read the fractional part of a number from a string containing
+ * just the decimal digits of the fractional part (no integral part
+ * or decimal point).
+ *
+ * \param [in] str The string representation of the fractional part
+ *             of a number, without integral part or decimal point.
+ * \returns    The decimal portion of the input number.
+ */
 static uint64_t ReadLoDigits (std::string str)
 {
   int64x64_t low;

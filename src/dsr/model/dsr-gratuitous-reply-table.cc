@@ -33,9 +33,10 @@
 #include "ns3/log.h"
 #include <algorithm>
 
-NS_LOG_COMPONENT_DEFINE ("DsrGraReplyTable");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("DsrGraReplyTable");
+  
 namespace dsr {
 
 NS_OBJECT_ENSURE_REGISTERED (GraReply);
@@ -44,6 +45,7 @@ TypeId GraReply::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::GraReply")
     .SetParent<Object> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<GraReply> ()
   ;
   return tid;

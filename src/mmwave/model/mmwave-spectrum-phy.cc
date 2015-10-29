@@ -84,10 +84,12 @@ MmWaveSpectrumPhy::GetTypeId(void)
 	    .SetParent<NetDevice> ()
 		.AddTraceSource ("ReportEnbTxRxPacketCount",
 						 "The no. of packets received and transmitted by the Base Station",
-						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_reportEnbPacketCount))
+						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_reportEnbPacketCount),
+						 "ns3::EnbTxRxPacketCount::TracedCallback")
 		.AddTraceSource ("ReportUeTxRxPacketCount",
 						 "The no. of packets received and transmitted by the User Device",
-						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_reportUePacketCount))
+						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_reportUePacketCount),
+						 "ns3::UeTxRxPacketCount::TracedCallback")
 		.AddAttribute ("DataErrorModelEnabled",
 										"Activate/Deactivate the error model of data (TBs of PDSCH and PUSCH) [by default is active].",
 										BooleanValue (true),
@@ -122,7 +124,7 @@ MmWaveSpectrumPhy::SetDevice(Ptr<NetDevice> d)
 }
 
 Ptr<NetDevice>
-MmWaveSpectrumPhy::GetDevice()
+MmWaveSpectrumPhy::GetDevice() const
 {
 	return m_device;
 }
@@ -556,7 +558,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				{
 					//Drop Packet
 					//					Time t =  Simulator::Now ();
-					NS_LOG_INFO ("TB failed");
+					NS_LOG_UNCOND("TB failed");
 				}
 
 				// send HARQ feedback (if not already done for this TB)

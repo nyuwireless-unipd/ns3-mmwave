@@ -42,6 +42,7 @@ class Mac64Address;
  * \class Ipv6Address
  * \brief Describes an IPv6 address.
  * \see Ipv6Prefix
+ * \see attribute_Ipv6Address
  */
 class Ipv6Address
 {
@@ -383,6 +384,7 @@ private:
  * \class Ipv6Prefix
  * \brief Describes an IPv6 prefix. It is just a bitmask like Ipv4Mask.
  * \see Ipv6Address
+ * \see attribute_Ipv6Prefix
  */
 class Ipv6Prefix
 {
@@ -506,17 +508,8 @@ private:
   friend bool operator != (Ipv6Prefix const &a, Ipv6Prefix const &b);
 };
 
-/**
- * \class ns3::Ipv6AddressValue
- * \brief Hold objects of type ns3::Ipv6Address
- */
-ATTRIBUTE_HELPER_HEADER (Ipv6Address);  //!< Macro to make help make class an ns-3 attribute
-
-/**
- * \class ns3::Ipv6PrefixValue
- * \brief Hold objects of type ns3::Ipv6Prefix
- */
-ATTRIBUTE_HELPER_HEADER (Ipv6Prefix);   //!< Macro to make help make class an ns-3 attribute
+ATTRIBUTE_HELPER_HEADER (Ipv6Address);
+ATTRIBUTE_HELPER_HEADER (Ipv6Prefix);
 
 /**
  * \brief Stream insertion operator.

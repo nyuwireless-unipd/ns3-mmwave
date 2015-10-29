@@ -35,7 +35,7 @@ public:
 
   MyApp ();
   virtual ~MyApp();
-
+  void ChangeDataRate (DataRate rate);
   void Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate);
 
 private:
@@ -83,6 +83,12 @@ MyApp::Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t
 }
 
 void
+MyApp::ChangeDataRate (DataRate rate)
+{
+	m_dataRate = rate;
+}
+
+void
 MyApp::StartApplication (void)
 {
   m_running = true;
@@ -111,21 +117,14 @@ MyApp::StopApplication (void)
 void
 MyApp::SendPacket (void)
 {
-	static int send_num = 1;
 	Ptr<Packet> packet = Create<Packet> (m_packetSize);
 	m_socket->Send (packet);
-	NS_LOG_UNCOND ("Sending:    "<<send_num++ << "\t" << Simulator::Now ().GetSeconds ());
-
   	if (++m_packetsSent < m_nPackets)
 	{
 	    ScheduleTx ();
 	}
 }
 
-static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
-{
-	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
-}
 
 
 void
@@ -145,31 +144,66 @@ CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 }
 
 
+static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
+}
+
+void
+ChangeSpeed(Ptr<Node>  n, Vector speed)
+{
+	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
+}
+
+void
+ChangeDataRate(MyApp app, DataRate rate)
+{
+	app.ChangeDataRate (rate);
+}
+
+void
+ChangeLocation(Ptr<Node>  n, Vector loc)
+{
+	n->GetObject<MobilityModel> ()->SetPosition (loc);
+
+}
+
+
 int
 main (int argc, char *argv[])
 {
 
 	//LogComponentEnable ("TcpSocketBase", LOG_LEVEL_INFO);
 	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
-	double stopTime = 6;
-	double simStopTime = 8.00;
+	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 100));
+	//Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*10));
+	//Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*10));
+	//Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (536*10));
+
+
+	double stopTime = 15;
+	double simStopTime = 15;
 	Ipv4Address remoteHostAddr;
 
 	// Command line arguments
 	CommandLine cmd;
 	cmd.Parse(argc, argv);
 
+    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+
+
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
-	mmwaveHelper->Initialize();
-	Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();
-	mmwaveHelper->SetEpcHelper (epcHelper);
 
-	/*Ptr<LteHelper> mmwaveHelper = CreateObject<LteHelper> ();
-	//mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
+	mmwaveHelper->Initialize();
+	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+	mmwaveHelper->SetEpcHelper (epcHelper);
+/*
+	Ptr<LteHelper> mmwaveHelper = CreateObject<LteHelper> ();
 	Ptr<PointToPointEpcHelper>  epcHelper = CreateObject<PointToPointEpcHelper> ();
-	mmwaveHelper->SetEpcHelper (epcHelper);*/
+	mmwaveHelper->SetEpcHelper (epcHelper);
+	*/
+
 
 	ConfigStore inputConfig;
 	inputConfig.ConfigureDefaults();
@@ -189,8 +223,8 @@ main (int argc, char *argv[])
 	// Create the Internet
 	PointToPointHelper p2ph;
 	p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
-	p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
-	p2ph.SetChannelAttribute ("Delay", TimeValue (MicroSeconds (1)));
+	p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2000));
+	p2ph.SetChannelAttribute ("Delay", TimeValue (MicroSeconds (0)));
 	NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 	Ipv4AddressHelper ipv4h;
 	ipv4h.SetBase ("1.0.0.0", "255.0.0.0");
@@ -209,9 +243,9 @@ main (int argc, char *argv[])
 
 	Ptr < Building > building;
 	building = Create<Building> ();
-	building->SetBoundaries (Box (-40.0, -20.0,
-								0.0, 20.0,
-								0.0, 20.0));
+	building->SetBoundaries (Box (20.0,30.0,
+								0.0, 3.5,
+								0.0, 15.0));
 	building->SetBuildingType (Building::Residential);
 	building->SetExtWallsType (Building::ConcreteWithWindows);
 	building->SetNFloors (1);
@@ -219,7 +253,7 @@ main (int argc, char *argv[])
 	building->SetNRoomsY (1);
 
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-	enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
+	enbPositionAlloc->Add (Vector (0.0, 0.0, 3.0));
 	MobilityHelper enbmobility;
 	enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	enbmobility.SetPositionAllocator(enbPositionAlloc);
@@ -230,16 +264,12 @@ main (int argc, char *argv[])
 	MobilityHelper uemobility;
 	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
 	uemobility.Install (ueNodes);
-	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (20, -20, 0));
+	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (40, -0.2, 1));
 	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
-	/*
-	MobilityHelper uemobility;
-	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-	uePositionAlloc->Add (Vector (80.0, -80.0, 0.0));
-	uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-	uemobility.SetPositionAllocator(uePositionAlloc);
-	uemobility.Install (ueNodes);
-	*/
+
+	Simulator::Schedule (Seconds (5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
+	Simulator::Schedule (Seconds (10), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
+
 	BuildingsHelper::Install (ueNodes);
 
 	// Install LTE Devices to the nodes
@@ -267,13 +297,17 @@ main (int argc, char *argv[])
 	Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), sinkPort));
 	PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
 	ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes.Get (0));
+
 	sinkApps.Start (Seconds (0.));
 	sinkApps.Stop (Seconds (simStopTime));
 
 	Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
 
+
 	Ptr<MyApp> app = CreateObject<MyApp> ();
-	app->Setup (ns3TcpSocket, sinkAddress, 100, 5000, DataRate ("1Mb/s"));
+
+	app->Setup (ns3TcpSocket, sinkAddress, 512, 1000000, DataRate ("10Mb/s"));
+
 	remoteHostContainer.Get (0)->AddApplication (app);
 
 	AsciiTraceHelper asciiTraceHelper;
@@ -283,12 +317,13 @@ main (int argc, char *argv[])
 	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data.txt");
 	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
 
-	app->SetStartTime (Seconds (0.5));
+	app->SetStartTime (Seconds (0.2));
 	app->SetStopTime (Seconds (stopTime));
 
 
 	p2ph.EnablePcapAll("mmwave-sgi-capture");
 	BuildingsHelper::MakeMobilityModelConsistent ();
+	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*100));
 
 	Simulator::Stop (Seconds (simStopTime));
 	Simulator::Run ();

@@ -168,6 +168,14 @@ public:
    */
   State GetState () const;
 
+  /**
+   * TracedCallback signature for state change events.
+   *
+   * \param [in] oldState The old State.
+   * \pararm [in] newState the new State.
+   */
+  typedef void (* StateTracedCallback)
+    (const State oldState, const State newState);
  
 private:
 
@@ -179,16 +187,29 @@ private:
 
   // internal methods
   void DoActivateEpsBearer (EpsBearer bearer, Ptr<EpcTft> tft);
+  /**
+   * Switch the UE RRC to the given state.
+   * \param s the destination state
+   */
   void SwitchToState (State s);
 
+  /// The current UE NAS state.
   State m_state;
 
+  /**
+   * The `StateTransition` trace source. Fired upon every UE NAS state
+   * transition. Exporting old state and new state.
+   * \todo This should be a TracedValue
+   */
   TracedCallback<State, State> m_stateTransitionCallback;
 
+  /// The UE NetDevice.
   Ptr<NetDevice> m_device;
 
+  /// The unique UE identifier.
   uint64_t m_imsi;
 
+  /// Closed Subscriber Group identity.
   uint32_t m_csgId;
 
   LteAsSapProvider* m_asSapProvider;

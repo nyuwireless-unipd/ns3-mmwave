@@ -131,7 +131,7 @@ The FdNetDevice class currently supports three encapsulation modes,
 DIX for Ethernet II frames, LLC for 802.2 LLC/SNAP frames, 
 and DIXPI for Ethernet II frames with an additional TAP PI header.
 This means that traffic traversing the file descriptor is expected to be 
-Ethernet II compatible. 
+Ethernet II compatible.  IEEE 802.1q (VLAN) tagging is not supported.
 Attaching an FdNetDevice to a wireless interface is possible as long as the 
 driver provides Ethernet II frames to the socket API. 
 Note that to associate a FdNetDevice to a wireless card in ad-hoc mode, 
@@ -250,7 +250,7 @@ The emulation helper permits to transparently integrate a simulated
 
 This helper replaces the functionality of the ``EmuNetDevice`` found in
 |ns3| prior to ns-3.17, by bringing this type of device into the common
-framework of the FdNetDevice.  The ``EmuNetDevice`` will be deprecated
+framework of the FdNetDevice.  The ``EmuNetDevice`` was deprecated
 in favor of this new helper.
 
 The device is configured to perform
@@ -261,7 +261,8 @@ One can use this helper in a testbed situation where the host on
 which the simulation is running has a specific interface of interest which
 drives the testbed hardware. You would also need to set this specific interface
 into promiscuous mode and provide an appropriate device name to the |ns3|
-simulation.
+simulation.  Additionally, hardware offloading of segmentation and checksums 
+should be disabled.  
 
 The helper only works if the underlying interface is up and in
 promiscuous mode. Packets will be sent out over the device, but we use MAC

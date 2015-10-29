@@ -39,9 +39,9 @@
 #include <vector>
 #include <algorithm>
 
-NS_LOG_COMPONENT_DEFINE ("UanMacRcGw");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UanMacRcGw");
 
 NS_OBJECT_ENSURE_REGISTERED (UanMacRcGw);
 
@@ -104,6 +104,7 @@ UanMacRcGw::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanMacRcGw")
     .SetParent<UanMac> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanMacRcGw> ()
     .AddAttribute ("MaxReservations",
                    "Maximum number of reservations to accept per cycle.",
@@ -157,10 +158,12 @@ UanMacRcGw::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddTraceSource ("RX",
                      "A packet was destined for and received at this MAC layer.",
-                     MakeTraceSourceAccessor (&UanMacRcGw::m_rxLogger))
+                     MakeTraceSourceAccessor (&UanMacRcGw::m_rxLogger),
+                     "ns3::UanMac::PacketModeTracedCallback")
     .AddTraceSource ("Cycle",
                      "Trace cycle statistics.",
-                     MakeTraceSourceAccessor (&UanMacRcGw::m_cycleLogger))
+                     MakeTraceSourceAccessor (&UanMacRcGw::m_cycleLogger),
+                     "ns3::UanMacRcGw::CycleCallback")
 
   ;
 
@@ -431,7 +434,9 @@ UanMacRcGw::StartCycle (void)
       ctsh.SetDelayToTx (arrivalTime);
       cts->AddHeader (ctsh);
 
-      NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GW Scheduling reception for " << (uint32_t) req.numFrames << " frames at " << (Simulator::Now () + arrivalTime).GetSeconds () << "  (delaytiltx of " << arrivalTime.GetSeconds () << ")  Total length is " << req.length << " with txtime " << req.length * 8 / dataRate << " seconds");
+      NS_LOG_DEBUG (Simulator::Now ().GetSeconds () <<
+                    " GW Scheduling reception for " << (uint32_t) req.numFrames <<
+                    " frames at " << (Simulator::Now () + arrivalTime).GetSeconds () << "  (delaytiltx of " << arrivalTime.GetSeconds () << ")  Total length is " << req.length << " with txtime " << req.length * 8 / dataRate << " seconds");
     }
 
   UanHeaderRcCtsGlobal ctsg;

@@ -198,6 +198,11 @@ MmWaveEnbPhy::StartFrame (void)
 	NS_LOG_FUNCTION (this);
 
 	++m_nrFrames;
+	if (m_nrFrames == 1024)
+	{
+		m_nrFrames = 0;
+	}
+
 	m_nrSlots = 0;
 	/*sending MIB at the beginning of each frame*/
 	LteRrcSap::MasterInformationBlock mib;
@@ -492,6 +497,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 			NS_LOG_DEBUG ("ENB TXing DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
 			              " start " << Simulator::Now()+ctrlPeriod+NanoSeconds(1.0) << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (2.0));
   		Simulator::Schedule (ctrlPeriod, &MmWaveEnbPhy::SendDataChannels, this, pktBurst, dataPeriod-NanoSeconds (2.0), slotInfo);
+
   	}
   }
   else if (slotDir == SlotAllocInfo::UL || slotInd == 2)  // Uplink slot

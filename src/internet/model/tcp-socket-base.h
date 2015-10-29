@@ -47,6 +47,35 @@ class TcpL4Protocol;
 class TcpHeader;
 
 /**
+ * \ingroup tcp
+ *
+ * \brief Helper class to store RTT measurements
+ */
+class RttHistory {
+public:
+  /**
+   * \brief Constructor - builds an RttHistory with the given parameters
+   * \param s First sequence number in packet sent
+   * \param c Number of bytes sent
+   * \param t Time this one was sent
+   */
+  RttHistory (SequenceNumber32 s, uint32_t c, Time t);
+  /**
+   * \brief Copy constructor
+   * \param h the object to copy
+   */
+  RttHistory (const RttHistory& h); // Copy constructor
+public:
+  SequenceNumber32  seq;  //!< First sequence number in packet sent
+  uint32_t        count;  //!< Number of bytes sent
+  Time            time;   //!< Time this one was sent
+  bool            retx;   //!< True if this has been retransmitted
+};
+
+/// Container for RttHistory objects
+typedef std::deque<RttHistory> RttHistory_t;
+
+/**
  * \ingroup socket
  * \ingroup tcp
  *
@@ -101,6 +130,43 @@ public:
    */
   virtual void SetRtt (Ptr<RttEstimator> rtt);
 
+  /**
+   * \brief Sets the Minimum RTO.
+   * \param minRto The minimum RTO.
+   */
+  void SetMinRto (Time minRto);
+
+  /**
+   * \brief Get the Minimum RTO.
+   * \return The minimum RTO.
+   */
+  Time GetMinRto (void) const;
+
+  /**
+   * \brief Sets the Clock Granularity (used in RTO calcs).
+   * \param clockGranularity The Clock Granularity
+   */
+  void SetClockGranularity (Time clockGranularity);
+
+  /**
+   * \brief Get the Clock Granularity (used in RTO calcs).
+   * \return The Clock Granularity.
+   */
+  Time GetClockGranularity (void) const;
+
+  /**
+   * \brief Get a pointer to the Tx buffer
+   * \return a pointer to the tx buffer
+   */
+  Ptr<TcpTxBuffer> GetTxBuffer (void) const;
+
+  /**
+   * \brief Get a pointer to the Rx buffer
+   * \return a pointer to the rx buffer
+   */
+  Ptr<TcpRxBuffer> GetRxBuffer (void) const;
+
+
   // Necessary implementations of null functions from ns3::Socket
   virtual enum SocketErrno GetErrno (void) const;    // returns m_errno
   virtual enum SocketType GetSocketType (void) const; // returns socket type
@@ -132,10 +198,10 @@ protected:
   virtual uint32_t GetRcvBufSize (void) const;
   virtual void     SetSegSize (uint32_t size);
   virtual uint32_t GetSegSize (void) const;
-  virtual void     SetInitialSSThresh (uint32_t threshold) = 0;
-  virtual uint32_t GetInitialSSThresh (void) const = 0;
-  virtual void     SetInitialCwnd (uint32_t cwnd) = 0;
-  virtual uint32_t GetInitialCwnd (void) const = 0;
+  virtual void     SetInitialSSThresh (uint32_t threshold);
+  virtual uint32_t GetInitialSSThresh (void) const;
+  virtual void     SetInitialCwnd (uint32_t cwnd);
+  virtual uint32_t GetInitialCwnd (void) const;
   virtual void     SetConnTimeout (Time timeout);
   virtual Time     GetConnTimeout (void) const;
   virtual void     SetConnCount (uint32_t count);
@@ -227,23 +293,19 @@ protected:
   void ForwardUp6 (Ptr<Packet> packet, Ipv6Header header, uint16_t port, Ptr<Ipv6Interface> incomingInterface);
 
   /**
-   * \brief Called by TcpSocketBase::ForwardUp().
+   * \brief Called by TcpSocketBase::ForwardUp{,6}().
+   *
+   * Get a packet from L3. This is the real function to handle the
+   * incoming packet from lower layers. This is
+   * wrapped by ForwardUp() so that this function can be overloaded by daughter
+   * classes.
    *
    * \param packet the incoming packet
-   * \param header the packet's IPv4 header
-   * \param port the remote port
-   * \param incomingInterface the incoming interface
+   * \param fromAddress the address of the sender of packet
+   * \param toAddress the address of the receiver of packet (hopefully, us)
    */
-  virtual void DoForwardUp (Ptr<Packet> packet, Ipv4Header header, uint16_t port, Ptr<Ipv4Interface> incomingInterface); //Get a pkt from L3
-
-  /**
-   * \brief Called by TcpSocketBase::ForwardUp6().
-   *
-   * \param packet the incoming packet
-   * \param header the packet's IPv6 header
-   * \param port the remote port
-   */
-  virtual void DoForwardUp (Ptr<Packet> packet, Ipv6Header header, uint16_t port);
+  virtual void DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
+                            const Address &toAddress);
 
   /**
    * \brief Called by the L3 protocol when it received an ICMP packet to pass on to TCP.
@@ -466,6 +528,20 @@ protected:
    */
   virtual uint16_t AdvertisedWindowSize (void);
 
+  /**
+   * \brief Update the receiver window (RWND) based on the value of the 
+   * window field in the header.
+   *
+   * This method suppresses updates unless one of the following three 
+   * conditions holds:  1) segment contains new data (advancing the right
+   * edge of the receive buffer), 2) segment does not contain new data
+   * but the segment acks new data (highest sequence number acked advances),
+   * or 3) the advertised window is larger than the current send window
+   *
+   * \param header TcpHeader from which to extract the new window value
+   */
+  void UpdateWindowSize (const TcpHeader& header);
+
 
   // Manage data tx/rx
 
@@ -585,7 +661,7 @@ protected:
    *
    * Calculate our factor from the rxBuffer max size
    *
-   * \param header TcpHeader where the method should add the window scale option
+   * \returns the Window Scale factor
    */
   uint8_t CalculateWScale () const;
 
@@ -609,6 +685,24 @@ protected:
    */
   void AddOptionTimestamp (TcpHeader& header);
 
+  /**
+   * \brief Scale the initial SsThresh value to the correct one
+   *
+   * Set the initial SsThresh to the largest possible advertised window
+   * according to the sender scale factor.
+   *
+   * \param scaleFactor the sender scale factor
+   */
+  virtual void ScaleSsThresh (uint8_t scaleFactor);
+
+  /**
+   * \brief Initialize congestion window
+   *
+   * Default cWnd to 1 MSS (RFC2001, sec.1) and must
+   * not be larger than 2 MSS (RFC2581, sec.3.1). Both m_initiaCWnd and
+   * m_segmentSize are set by the attribute system in ns3::TcpSocket.
+   */
+  virtual void InitializeCwnd ();
 
 protected:
   // Counters and events
@@ -624,10 +718,13 @@ protected:
   uint32_t          m_cnCount;         //!< Count of remaining connection retries
   uint32_t          m_cnRetries;       //!< Number of connection retries before giving up
   TracedValue<Time> m_rto;             //!< Retransmit timeout
+  Time              m_minRto;          //!< minimum value of the Retransmit timeout
+  Time              m_clockGranularity; //!< Clock Granularity used in RTO calcs
   TracedValue<Time> m_lastRtt;         //!< Last RTT sample collected
   Time              m_delAckTimeout;   //!< Time to delay an ACK
   Time              m_persistTimeout;  //!< Time between sending 1-byte probes
   Time              m_cnTimeout;       //!< Timeout for connection retry
+  RttHistory_t      m_history;         //!< List of sent packet
 
   // Connections to other layers of TCP/IP
   Ipv4EndPoint*       m_endPoint;   //!< the IPv4 endpoint
@@ -642,8 +739,8 @@ protected:
   // Rx and Tx buffer management
   TracedValue<SequenceNumber32> m_nextTxSequence; //!< Next seqnum to be sent (SND.NXT), ReTx pushes it back
   TracedValue<SequenceNumber32> m_highTxMark;     //!< Highest seqno ever sent, regardless of ReTx
-  TcpRxBuffer                   m_rxBuffer;       //!< Rx buffer (reordering buffer)
-  TcpTxBuffer                   m_txBuffer;       //!< Tx buffer
+  Ptr<TcpRxBuffer>              m_rxBuffer;       //!< Rx buffer (reordering buffer)
+  Ptr<TcpTxBuffer>              m_txBuffer;       //!< Tx buffer
 
   // State-related attributes
   TracedValue<TcpStates_t> m_state;         //!< TCP state
@@ -658,16 +755,25 @@ protected:
   // Window management
   uint32_t              m_segmentSize; //!< Segment size
   uint16_t              m_maxWinSize;  //!< Maximum window size to advertise
-  TracedValue<uint32_t> m_rWnd;        //!< Flow control window at remote side
+  TracedValue<uint32_t> m_rWnd;        //!< Receiver window (RCV.WND in RFC793)
+  TracedValue<SequenceNumber32> m_highRxMark;     //!< Highest seqno received
+  TracedValue<SequenceNumber32> m_highRxAckMark;  //!< Highest ack received
+
+  // Congestion control
+  TracedValue<uint32_t> m_cWnd;     //!< Congestion window
+  TracedValue<uint32_t> m_ssThresh; //!< Slow start threshold
+  uint32_t               m_initialCWnd;      //!< Initial cWnd value
+  uint32_t               m_initialSsThresh;  //!< Initial Slow Start Threshold value
 
   // Options
-  bool    m_winScalingEnabled;
-  uint8_t m_sndScaleFactor;
-  uint8_t m_rcvScaleFactor;
+  bool    m_winScalingEnabled;    //!< Window Scale option enabled
+  uint8_t m_sndScaleFactor;       //!< Sent Window Scale (i.e., the one of the node)
+  uint8_t m_rcvScaleFactor;       //!< Received Window Scale (i.e., the one of the peer)
 
-  bool     m_timestampEnabled;
-  uint32_t m_timestampToEcho;
-  uint32_t m_lastEchoedTime;
+  bool     m_timestampEnabled;    //!< Timestamp option enabled
+  uint32_t m_timestampToEcho;     //!< Timestamp to echo
+
+  EventId m_sendPendingDataEvent; //!< micro-delay event to send pending data
 };
 
 } // namespace ns3

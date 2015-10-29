@@ -51,6 +51,151 @@ to this file based on your experience, please contribute a patch or drop
 us a note on ns-developers mailing list.</p>
 
 <hr>
+<h1>Changes from ns-3.23 to ns-3.24</h1>
+<h2>New API:</h2>
+<ul>
+  <li>In 'src/wifi', several changes were made to enable partial 802.11ac support:
+    <ul>
+      <li>A new helper (VhtWifiMacHelper) was added to set up a Very high throughput (VHT) MAC entity.</li>
+      <li>A new standard value has been added that enables the new 11ac data rates.</li>
+      <li>A new 11ac preamble has been added.</li>
+      <li>A new information element has been added:  VhtCapabilities. This information element is added to the MAC frame header if the node is a VHT node. This VhtCapabilites information element is used to advertise the VHT capabilites of the node to other nodes in the network.</li>
+    </ul>
+  </li>
+  <li>The ArpCache API was extended to allow the manual removal of ArpCache entries and the addition of permanent (static) entries for IPv4.
+  </li>
+  <li> The SimpleChannel in the 'network' module now allows per-NetDevice blacklists, in order to do hidden terminal testcases.
+  </li>
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+  <li> The signatures on several TcpHeader methods were changed to take const arguments.</li>
+  <li> class TcpL4Protocol replaces Send() methods with SendPacket(), and adds new methods to AddSocket() and RemoveSocket() from a node.  Also, a new PacketReceived() method was introduced to get the TCP header of an incoming packet and check its checksum.</li>
+  <li> The CongestionWindow and SlowStartThreshold trace sources have been moved from the TCP subclasses such as NewReno, Reno, Tahoe, and Westwood to the TcpSocketBase class.</li>
+  <li> The WifiMode object has been refactored:
+    <ul>
+      <li>11n data rates are now renamed according to their MCS value. E.g. OfdmRate65MbpsBW20MHz has been renamed into HtMcs7. 11ac data rates have been defined according to this new renaming.</li>
+      <li>HtWifiMacHelper and VhtWifiMacHelper provide a helper to convert a MCS value into a data rate value.</li>
+      <li>The channel width is no longer tied to the wifimode. It is now included in the TXVECTOR.</li>
+      <li>The physical bitrate is no longer tied to the wifimode. It is computed based on the selected wifimode and on the TXVECTOR parameters (channel width, guard interval and number of spatial streams).</li>
+    </ul>
+  </li>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+  <li> Waf was upgraded to 1.8.12</li>
+  <li> Waf scripts and test.py test runner program were made compatible with Python 3</li>
+</ul>
+<h2>Changed behavior:</h2>
+This section is for behavioral changes to the models that were not due to a bug fix.
+<ul>
+</ul>
+
+<hr>
+<h1>Changes from ns-3.22 to ns-3.23</h1>
+<h2>New API:</h2>
+<ul>
+  <li> The mobility module includes a GeographicPositions class used to
+convert geographic to cartesian coordinates, and to generate randomly
+distributed geographic coordinates.
+  </li>
+  <li>  The spectrum module includes new TvSpectrumTransmitter classes and helpers to create television transmitter(s) that transmit PSD spectrums customized by attributes such as modulation type, power, antenna type, channel frequency, etc.
+  </li>
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+  <li> In LteSpectrumPhy, LtePhyTxEndCallback and the corresponding methods have been removed, since they were unused.
+  </li>
+  <li> In the DataRate class in the network module, CalculateTxTime has been declared deprecated.  CalculateBytesTxTime and CalculateBitsTxTime are to be used instead.  The return value is a Time, instead of a double.
+  </li>
+  <li> In the Wi-Fi InterferenceHelper, the interference event now takes the WifiTxVector as an input parameter, instead of the WifiMode.  A similar change was made to the WifiPhy::RxOkCallback signature.
+  </li>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+  <li> None </li>
+</ul>
+<h2>Changed behavior:</h2>
+This section is for behavioral changes to the models that were not due to a bug fix.
+<ul>
+  <li> In Wi-Fi, HT stations (802.11n) now support two-level aggregation. The InterferenceHelper now distinguishes between the PLCP and regular payload reception, for higher fidelity modeling.  ACKs are now sent using legacy rates and preambles.  Acces points now establish BSSBasicRateSet for control frame transmissions.  PLCP header and PLCP payload reception have been decoupled to improve PHY layer modeling accuracy.  RTS/CTS with A-MPDU is now fully supported.  
+  </li>
+  <li> The mesh module was made more compliant to the IEEE 802.11s-2012 standard and packet traces are now parseable by Wireshark.  
+  </li>
+</ul>
+
+<hr>
+<h1>Changes from ns-3.21 to ns-3.22</h1>
+<h2>New API:</h2>
+<ul>
+  <li> New classes were added for the PARF and APARF WiFi power and rate control mechanisms. 
+  </li>
+  <li> Support for WiFi 802.11n MPDU aggregation has been added.
+  </li>
+  <li> Additional support for modeling of vehicular WiFi networks has been added, including the channel-access coordination feature of IEEE 1609.4.  In addition, a Basic Safety Message (BSM) packet generator and related statistics-gathering classes have been added to the wave module. 
+  </li>
+  <li> A complete LTE release bearer procedure is now implemented which can be invoked by calling the new helper method LteHelper::DeActivateDedicatedEpsBearer ().
+  </li>
+  <li> It is now possible to print the Neighbor Cache (ARP and NDISC) by using
+       the RoutingProtocolHelper
+  </li>
+  <li> A TimeProbe class has been added to the data collection framework in 
+       the stats module, enabling TracedValues emitting values of type 
+       ns3::Time to be handled by the framework.
+  </li>
+  <li> A new attribute 'ClockGranularity' was added to the TcpSocketBase class,
+to control modeling of RTO calculation.
+  </li>
+</ul>
+
+<h2>Changes to existing API:</h2>
+<ul>
+  <li> Several deprecated classes and class methods were removed, including EmuNetDevice, RandomVariable and derived classes, Packet::PeekData(), Ipv6AddressHelper::NewNetwork(Ipv6Address, Ipv6Prefix), Ipv6InterfaceContainer::SetRouter(), Ipv4Route::GetOutputTtl(), TestCase::AddTestCase(TestCase*), and TestCase::GetErrorStatus().
+  </li>
+  <li> Print methods involving routing tables and neighbor caches, in classes Ipv4RoutingHelper and Ipv6RoutingHelper, were converted to static methods.
+  </li>  
+  <li>PointerValue attribute types in class UanChannel (NoiseModel), UanPhyGen (PerModel and SinrModel), UanPhyDual (PerModelPhy1, PerModelPhy2, SinrModelPhy1, and SinrModelPhy2), and SimpleNetDevice (TxQueue), were changed from PointerValue type to StringValue type, making them configurable via the Config subsystem. 
+  </li>
+  <li> WifiPhy::CalculateTxDuration() and WifiPhy::GetPayloadDurationMicroSeconds () now take an additional frequency parameter.
+  </li>
+  <li> The attribute 'Recievers' in class YansWifiPhy was misspelled, so
+       this has been corrected to 'Receivers'.
+  </li>
+  <li> We have now documented the callback function signatures
+       for all TracedSources, using an extra (fourth) argument to
+       TypeId::AddTraceSource to pass the fully-qualified name
+       of the signature typedef.  To ensure that future TraceSources
+       are similarly documented, the three argument version of 
+       AddTraceSource has been deprecated.
+  </li>	
+  <li> The "MinRTO" attribute of the RttEstimator class was moved to the TcpSocketBase class.  The "Gain" attribute of the RttMeanDeviation class was replaced 
+by new "Alpha" and "Beta" attributes.  
+  </li>	
+  <li> Attributes of the TcpTxBuffer and TcpRxBuffer class are now accessible through the TcpSocketBase class.
+  </li>	
+  <li> The LrWpanHelper class has a new constructor allowing users to configure a MultiModelSpectrumChannel as an option, and also provides Set/Get API to allow users to access the underlying channel object. 
+  </li>
+</ul>
+
+<h2>Changes to build system:</h2>
+<ul>
+  <li> waf was upgraded to version 1.7.16
+  </li>
+</ul>
+
+<h2>Changed behavior:</h2>
+This section is for behavioral changes to the models that were not due to a bug fix.
+<ul>
+  <li> The default value of the `Speed` attribute of ConstantSpeedPropagationDelayModel was changed from 300,000,000 m/s to 299,792,458 m/s (speed of light in a vacuum), causing propagation delays using this model to vary slightly.
+  </li>
+  <li> The LrWpanHelper object was previously instantiating only a LogDistancePropagationLossModel on a SingleModelSpectrumChannel, but no PropagationDelayModel.  The constructor now adds by default a ConstantSpeedPropagationDelayModel.
+  </li>
+  <li> The Nix-vector routing implementation now uses a lazy flush mechanism,
+       which dramatically speeds up the creation of large topologies.
+  </li>
+</ul>
+
+<hr>
 <h1>Changes from ns-3.20 to ns-3.21</h1>
 <h2>New API:</h2>
 <ul>
@@ -96,6 +241,8 @@ us a note on ns-developers mailing list.</p>
   <li> Tcp Timestamps and Window Scale options have been added and are enabled by default (controllable by attribute).
   </li>
   <li> A new CoDel queue model has been added to the 'internet' module.  
+  </li>
+  <li> New test macros NS_TEST_ASSERT_MSG_GT_OR_EQ() and NS_TEST_EXPECT_MSG_GT_OR_EQ() have been added.
   </li>
 </ul>
 

@@ -132,9 +132,13 @@ private:
 
   ///\name Interaction with HWMP MAC plugin
   //\{
+  ///\brief Handler for receiving Path Request
   void ReceivePreq (IePreq preq, Mac48Address from, uint32_t interface, Mac48Address fromMp, uint32_t metric);
+  ///\brief Handler for receiving Path Reply
   void ReceivePrep (IePrep prep, Mac48Address from, uint32_t interface, Mac48Address fromMp, uint32_t metric);
+  ///\brief Handler for receiving Path Error
   void ReceivePerr (std::vector<FailedDestination>, Mac48Address from, uint32_t interface, Mac48Address fromMp);
+   ///\brief Send Path Reply
   void SendPrep (
     Mac48Address src,
     Mac48Address dst,
@@ -156,7 +160,7 @@ private:
   /// \return list of addresses where a PERR should be sent to
   std::vector<std::pair<uint32_t, Mac48Address> > GetPerrReceivers (std::vector<FailedDestination> failedDest);
 
-  /// \return list of addresses where a PERR should be sent to
+  /// \return list of addresses where a PREQ should be sent to
   std::vector<Mac48Address> GetPreqReceivers (uint32_t interface);
   /// \return list of addresses where a broadcast should be
   //retransmitted
@@ -261,8 +265,10 @@ private:
   ///\}
   /// Packet Queue
   std::vector<QueuedPacket> m_rqueue;
-  ///\name HWMP-protocol parameters (attributes of GetTypeId)
-  ///\{
+  
+  /// \name HWMP-protocol parameters
+  /// These are all Attributes
+  /// \{
   uint16_t m_maxQueueSize;
   uint8_t m_dot11MeshHWMPmaxPREQretries;
   Time m_dot11MeshHWMPnetDiameterTraversalTime;
@@ -280,6 +286,7 @@ private:
   bool m_doFlag;
   bool m_rfFlag;
   ///\}
+  
   /// Random variable for random start time
   Ptr<UniformRandomVariable> m_coefficient;
   Callback <std::vector<Mac48Address>, uint32_t> m_neighboursCallback;

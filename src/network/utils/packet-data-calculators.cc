@@ -29,7 +29,6 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("PacketDataCalculators");
 
-
 //--------------------------------------------------------------
 //----------------------------------------------
 PacketCounterCalculator::PacketCounterCalculator()
@@ -40,6 +39,17 @@ PacketCounterCalculator::PacketCounterCalculator()
 PacketCounterCalculator::~PacketCounterCalculator()
 {
   NS_LOG_FUNCTION_NOARGS ();
+}
+/* static */
+TypeId
+PacketCounterCalculator::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::PacketCounterCalculator")
+    .SetParent<CounterCalculator<uint32_t> > ()
+    .SetGroupName ("Network")
+    .AddConstructor<PacketCounterCalculator> ()
+    ;
+  return tid;
 }
 void
 PacketCounterCalculator::DoDispose (void)
@@ -85,6 +95,17 @@ PacketSizeMinMaxAvgTotalCalculator::PacketSizeMinMaxAvgTotalCalculator()
 PacketSizeMinMaxAvgTotalCalculator::~PacketSizeMinMaxAvgTotalCalculator()
 {
   NS_LOG_FUNCTION_NOARGS ();
+}
+/* static */
+TypeId
+PacketSizeMinMaxAvgTotalCalculator::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::PacketSizeMinMaxAvgTotalCalculator")
+    .SetParent<MinMaxAvgTotalCalculator<uint32_t> > ()
+    .SetGroupName ("Network")
+    .AddConstructor<PacketSizeMinMaxAvgTotalCalculator> ()
+    ;
+  return tid;
 }
 void
 PacketSizeMinMaxAvgTotalCalculator::DoDispose (void)

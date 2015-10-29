@@ -25,6 +25,13 @@
 #include "ptr.h"
 #include "simple-ref-count.h"
 
+/**
+ * \file
+ * \ingroup attribute
+ * ns3::AttributeValue, ns3::AttributeAccessor and
+ * ns3::AttributeChecker declarations.
+ */
+
 namespace ns3 {
 
 class AttributeAccessor;
@@ -39,8 +46,13 @@ class ObjectBase;
  *
  * The \c ns-3 attribute system is the mechanism used in \c ns-3 to
  * organize, document, and modify the *values* used by the various
- * component models.  Attributes also enable the tracing and statistics
- * gathering in the simulator.
+ * component models.
+ *
+ * Attributes also enable the tracing and statistics gathering
+ * in the simulator.
+ *
+ * See \ref attributehelper for macros to ease the declaration
+ * and definition of Attributes.
  */
 
 /**
@@ -64,8 +76,8 @@ public:
    */
   virtual Ptr<AttributeValue> Copy (void) const = 0;
   /**
-   * \param checker the checker associated to the attribute
-   * \returns a string representation of this value.
+   * \param [in] checker The checker associated to the attribute
+   * \returns A string representation of this value.
    *
    * In most cases, this method will not make any use of the checker argument.
    * However, in a very limited set of cases, the checker argument is needed to
@@ -74,8 +86,8 @@ public:
    */
   virtual std::string SerializeToString (Ptr<const AttributeChecker> checker) const = 0;
   /**
-   * \param value a string representation of the value
-   * \param checker a pointer to the checker associated to the attribute.
+   * \param [in] value A string representation of the value
+   * \param [in] checker A pointer to the checker associated to the attribute.
    * \returns true if the input string was correctly-formatted and could be
    *          successfully deserialized, false otherwise.
    *
@@ -106,8 +118,8 @@ public:
   virtual ~AttributeAccessor ();
 
   /**
-   * \param object the object instance to set the value in
-   * \param value the value to set
+   * \param [in,out] object The object instance to set the value in
+   * \param [in] value The value to set
    * \returns true if the value could be set successfully, false otherwise.
    *
    * This method expects that the caller has checked that the input value is
@@ -115,8 +127,8 @@ public:
    */
   virtual bool Set (ObjectBase * object, const AttributeValue &value) const = 0;
   /**
-   * \param object the object instance to get the value from
-   * \param attribute a pointer to where the value should be set.
+   * \param [in,out] object The object instance to get the value from
+   * \param [out] attribute A pointer to where the value should be set.
    * \returns true if the value could be read successfully, and
    *          stored in the input value, false otherwise.
    *
@@ -161,12 +173,12 @@ public:
    * Create a valid value from the argument value,
    * or reinterpret the argument as a string.
    *
-   * \param value the AttributeValue to check
+   * \param [in] value The AttributeValue to check
    * \return Ptr to a valid value
    */
   Ptr<AttributeValue> CreateValidValue (const AttributeValue &value) const;
   /**
-   * \param value a pointer to the value to check
+   * \param [in] value A pointer to the value to check
    * \returns true if the input value is both of the right type
    *          and if its value is within the requested range. Returns
    *          false otherwise.
@@ -205,8 +217,8 @@ public:
   /**
    * Copy the source to the destination
 
-   * \param source source AttributeValue
-   * \param destination destination AttributeValue
+   * \param [in] source Source AttributeValue
+   * \param [out] destination Destination AttributeValue
    * \return true if copy was successful
    */
   virtual bool Copy (const AttributeValue &source, AttributeValue &destination) const = 0;
@@ -215,17 +227,35 @@ public:
 };
 
 /**
- * \brief A class for an empty attribute value
+ * \brief A class for an empty attribute value.
  *
  * \ingroup attribute
  */
 class EmptyAttributeValue : public AttributeValue
 {
 public:
+  /** Default constructor. */
   EmptyAttributeValue ();
 private:
+  /**
+   * \returns a deep copy of this class, wrapped into an Attribute object.
+   */
   virtual Ptr<AttributeValue> Copy (void) const;
+  /**
+   * \param [in] checker The checker associated to the attribute
+   * \returns a string representation of this value.
+   *
+   * In the EmptyAttributeValue case, the string returned will be simply ""
+   */
   virtual std::string SerializeToString (Ptr<const AttributeChecker> checker) const;
+  /**
+   * \param [in] value A string representation of the value
+   * \param [in] checker A pointer to the checker associated to the attribute.
+   * \returns true if the input string was correctly-formatted and could be
+   *          successfully deserialized, false otherwise.
+   *
+   * In the trivial case of EmptyAttributeValue, this should always return true
+   */
   virtual bool DeserializeFromString (std::string value, Ptr<const AttributeChecker> checker);
 };
 

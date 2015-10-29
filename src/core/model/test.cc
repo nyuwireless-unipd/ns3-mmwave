@@ -19,6 +19,7 @@
 #include "test.h"
 #include "assert.h"
 #include "abort.h"
+#include "singleton.h"
 #include "system-path.h"
 #include "log.h"
 #include <cmath>
@@ -27,6 +28,12 @@
 #include <list>
 #include <map>
 
+
+/**
+ * \file
+ * \ingroup testing
+ * Implementation of the testing classes and functions
+ */
 
 namespace ns3 {
 
@@ -60,18 +67,39 @@ TestDoubleIsEqual (const double x1, const double x2, const double epsilon)
   return true;
 } 
 
+/**
+ * \ingroup testingimpl
+ * Container for details of a test failure.
+ */
 struct TestCaseFailure
 {
+  /**
+   * Constructor.
+   *
+   * \param [in] _cond    The name of the condition being tested.
+   * \param [in] _actual  The actual value returned by the test.
+   * \param [in] _limit   The expected value.
+   * \param [in] _message The associated message.
+   * \param [in] _file    The soure file.
+   * \param [in] _line    The source line.
+   */
   TestCaseFailure (std::string _cond, std::string _actual, 
                    std::string _limit, std::string _message, 
                    std::string _file, int32_t _line);
-  std::string cond;
-  std::string actual;
-  std::string limit;
-  std::string message; 
-  std::string file;
-  int32_t line;
+  std::string cond;    /**< The name of the condition being tested. */
+  std::string actual;  /**< The actual value returned by the test. */
+  std::string limit;   /**< The expected value. */
+  std::string message; /**< The associated message. */
+  std::string file;    /**< The soure file. */
+  int32_t line;        /**< The source line. */
 };
+/**
+ * Output streamer for TestCaseFailure.
+ *
+ * \param [in,out] os The output stream.
+ * \param [in] failure The TestCaseFailure to print.
+ * \returns The stream.
+ */
 std::ostream & operator << (std::ostream & os, const TestCaseFailure & failure)
 {
   os << "    test=\""  << failure.cond
@@ -84,58 +112,143 @@ std::ostream & operator << (std::ostream & os, const TestCaseFailure & failure)
   return os;
 }
 
+/**
+ * \ingroup testingimpl
+ * Container for results from a TestCase.
+ */
 struct TestCase::Result
 {
+  /** Constructor. */
   Result ();
+
+  /** Test running time. */
   SystemWallClockMs clock;
+  /** TestCaseFailure records for each child. */
   std::vector<TestCaseFailure> failure;
+  /** \c true if any child TestCases failed. */
   bool childrenFailed;
 };
 
-class TestRunnerImpl
+/**
+ * \ingroup testingimpl
+ * Container for all tests.
+ */
+class TestRunnerImpl : public Singleton<TestRunnerImpl>
 {
 public:
+  /** Constructor. */
+  TestRunnerImpl ();
+  
+  /**
+   * Add a new top-level TestSuite.
+   * \param [in] testSuite The new TestSuite.
+   */
   void AddTestSuite (TestSuite *testSuite);
-  void StartTestCase (std::string name);
-  void EndTestCase (void);
-  void ReportTestFailure (std::string cond, std::string actual, 
-                      std::string limit, std::string message, 
-                      std::string file, int32_t line);
+  /** \copydoc TestCase::MustAssertOnFailure() */
   bool MustAssertOnFailure (void) const;
+  /** \copydoc TestCase::MustContinueOnFailure() */
   bool MustContinueOnFailure (void) const;
+  /**
+   * Check if this run should update the reference data.
+   * \return \c true if we should update the reference data.
+   */
   bool MustUpdateData (void) const;
+  /**
+   * Get the path to the root of the source tree.
+   *
+   * The root directory is defined by the presence of two files:
+   * "VERSION" and "LICENSE".
+   *
+   * \returns The path to the root.
+   */
   std::string GetTopLevelSourceDir (void) const;
+  /**
+   * Get the path to temporary directory.
+   * \return The temporary directory path.
+   */
   std::string GetTempDir (void) const;
-
+  /** \copydoc TestRunner::Run() */
   int Run (int argc, char *argv[]);
 
-  static TestRunnerImpl *Instance (void);
-
 private:
-  TestRunnerImpl ();
-  ~TestRunnerImpl ();
 
+  /**
+   * Check if this is the root of the source tree.
+   * \param [in] path The path to test.
+   * \returns \c true if \p path is the root.
+   */
   bool IsTopLevelSourceDir (std::string path) const;
+  /**
+   * Clean up characters not allowed in XML.
+   *
+   * XML files have restrictions on certain characters that may be present in
+   * data.  We need to replace these characters with their alternate 
+   * representation on the way into the XML file.
+   *
+   * Specifically, we make these replacements:
+   *    Raw Source | Replacement
+   *    :--------: | :---------:
+   *    '<'        | "&lt;"
+   *    '>'        | "&gt;"
+   *    '&'        | "&amp;"
+   *    '"'        | "&39;"
+   *    '\'        | "&quot;"
+   *
+   * \param [in] xml The raw string.
+   * \returns The sanitized string.
+   */
   std::string ReplaceXmlSpecialCharacters (std::string xml) const;
+  /**
+   * Print the test report.
+   *
+   * \param [in] test The TestCase to print.
+   * \param [in,out] os The output stream.
+   * \param [in] xml Generate XML output if \c true.
+   * \param [in] level Indentation level.
+   */
   void PrintReport (TestCase *test, std::ostream *os, bool xml, int level);
+  /**
+   * Print the list of all requested test suites.
+   *
+   * \param [in] begin Iterator to the first TestCase to print.
+   * \param [in] end Iterator to the end of the list.
+   * \param [in] printTestType Preprend the test type label if \c true.
+   */
   void PrintTestNameList (std::list<TestCase *>::const_iterator begin, 
                           std::list<TestCase *>::const_iterator end,
                           bool printTestType) const;
+  /** Print the list of test types. */
   void PrintTestTypeList (void) const;
+  /**
+   * Print the help text.
+   * \param [in] programName The name of the invoking program.
+   */
   void PrintHelp (const char *programName) const;
+  /**
+   * Generate the list of tests matching the constraints.
+   *
+   * Test name and type contraints are or'ed.  The duration constraint
+   * is and'ed.
+   *
+   * \param [in] testName Include a specific test by name.
+   * \param [in] testType Include all tests of give type.
+   * \param [in] maximumTestDuration Restrict to tests shorter than this.
+   * \returns The list of tests matching the filter constraints.
+   */
   std::list<TestCase *> FilterTests (std::string testName,
                                      enum TestSuite::Type testType,
                                      enum TestCase::TestDuration maximumTestDuration);
 
 
+  /** Container type for the test. */
   typedef std::vector<TestSuite *> TestSuiteVector;
 
-  TestSuiteVector m_suites;
-  std::string m_tempDir;
-  bool m_verbose;
-  bool m_assertOnFailure;
-  bool m_continueOnFailure;
-  bool m_updateData;
+  TestSuiteVector m_suites;  //!< The list of tests.
+  std::string m_tempDir;     //!< The temporary directory.
+  bool m_verbose;            //!< Produce verbose output.
+  bool m_assertOnFailure;    //!< \c true if we should assert on failure.
+  bool m_continueOnFailure;  //!< \c true if we should continue on failure.
+  bool m_updateData;         //!< \c true if we should update reference data.
 };
 
 
@@ -181,42 +294,44 @@ TestCase::~TestCase ()
 }
 
 void
-TestCase::AddTestCase (TestCase *testCase)
-{
-  AddTestCase (testCase, TestCase::QUICK);
-}
-
-void
 TestCase::AddTestCase (TestCase *testCase, enum TestCase::TestDuration duration)
 {
-  // Record this for use later when all test cases are run.
-  testCase->m_duration = duration;
+  NS_LOG_FUNCTION (&testCase << duration);
 
-  NS_LOG_FUNCTION (&testCase);
-  m_children.push_back (testCase);
-  testCase->m_parent = this;
+  // Test names are used to create temporary directories,
+  // so we test for illegal characters.
+  //
+  // Windows: <>:"/\|?*
+  //   http://msdn.microsoft.com/en-us/library/aa365247(v=vs.85).aspx
+  // Mac:     : (deprecated, was path separator in Mac OS Classic, pre X)
+  // Unix:    / (and .. may give trouble?)
+  //
+  // The Windows list is too restrictive:  we like to label
+  // tests with "val = v1 * v2" or "v1 < 3" or "case: foo --> bar"
+  // So we allow ':<>*" 
 
-  std::string::size_type slash, antislash;
-  slash = testCase->m_name.find ("/");
-  antislash = testCase->m_name.find ("\\");
-  if (slash != std::string::npos || antislash != std::string::npos)
+  std::string badchars = "\"/\\|?";
+  // Badchar Class  Regex          Count of failing test names
+  // All            ":<>\"/\\|?*"  611
+  // Allow ':'      "<>\"/\\|?*"   128
+  // Allow ':<>'    "\"/\\|?*"      12
+  // Allow ':<>*'    "\"/\\|?"       0
+
+  std::string::size_type badch = testCase->m_name.find_first_of (badchars);
+  if (badch != std::string::npos)
     {
-      std::string fullname = testCase->m_name;
-      TestCase *current = testCase->m_parent;
-      while (current != 0)
-        {
-          fullname = current->m_name + "/" + fullname;
-          current = current->m_parent;
-        }
-      if (slash != std::string::npos)
-        {
-          NS_FATAL_ERROR ("Invalid test name: cannot contain slashes: \"" << fullname << "\"");
-        }
-      if (antislash != std::string::npos)
-        {
-          NS_FATAL_ERROR ("Invalid test name: cannot contain antislashes: \"" << fullname << "\"");
-        }
+      /*
+        To count the bad test names, use NS_LOG_UNCOND instead
+        of NS_FATAL_ERROR, and the command
+        $ ./waf --run "test-runner --list" 2>&1 | grep "^Invalid" | wc
+      */
+      NS_LOG_UNCOND ("Invalid test name: cannot contain any of '"
+                      << badchars << "': " << testCase->m_name);
     }
+
+  testCase->m_duration = duration;
+  testCase->m_parent = this;
+  m_children.push_back (testCase);
 }
 
 bool
@@ -332,12 +447,6 @@ TestCase::CreateTempDirFilename (std::string filename)
     }
 }
 bool 
-TestCase::GetErrorStatus (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return IsStatusFailure ();
-}
-bool 
 TestCase::IsStatusFailure (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -374,7 +483,7 @@ TestSuite::TestSuite (std::string name, TestSuite::Type type)
     m_type (type)
 {
   NS_LOG_FUNCTION (this << name << type);
-  TestRunnerImpl::Instance ()->AddTestSuite (this);
+  TestRunnerImpl::Get ()->AddTestSuite (this);
 }
 
 TestSuite::Type 
@@ -397,21 +506,6 @@ TestRunnerImpl::TestRunnerImpl ()
    m_updateData (false)
 {
   NS_LOG_FUNCTION (this);
-}
-
-TestRunnerImpl::~TestRunnerImpl ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
-
-
-TestRunnerImpl *
-TestRunnerImpl::Instance (void)
-{
-  NS_LOG_FUNCTION_NOARGS ();
-  static TestRunnerImpl runner;
-  return &runner;
 }
 
 void
@@ -531,9 +625,15 @@ TestRunnerImpl::ReplaceXmlSpecialCharacters (std::string xml) const
   return result;
 }
 
+/** Helper to indent output a specified number of steps. */
 struct Indent
 {
+  /**
+   * Constructor.
+   * \param [in] level The number of steps.  A step is "  ".
+   */
   Indent (int level);
+  /** The number of steps. */
   int level;
 };
 Indent::Indent (int _level)
@@ -541,6 +641,12 @@ Indent::Indent (int _level)
 {
   NS_LOG_FUNCTION (this << _level);
 }
+/**
+ * Output streamer for Indent.
+ * \param [in,out] os The output stream.
+ * \param [in] val The Indent object.
+ * \returns The stream.
+ */
 std::ostream &operator << (std::ostream &os, const Indent &val)
 {
   for (int i = 0; i < val.level; i++)
@@ -949,6 +1055,11 @@ TestRunnerImpl::Run (int argc, char *argv[])
 
   // let's run our tests now.
   bool failed = false;
+  if (tests.size () == 0)
+    {
+      std::cerr << "Error:  no tests match the requested string" << std::endl;
+      return 1;
+    }
   for (std::list<TestCase *>::const_iterator i = tests.begin (); i != tests.end (); ++i)
     {
       TestCase *test = *i;
@@ -977,7 +1088,7 @@ int
 TestRunner::Run (int argc, char *argv[])
 {
   NS_LOG_FUNCTION (argc << argv);
-  return TestRunnerImpl::Instance ()->Run (argc, argv);
+  return TestRunnerImpl::Get ()->Run (argc, argv);
 }
 
 } // namespace ns3

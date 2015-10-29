@@ -127,6 +127,15 @@ struct PhyTransmissionStatParameters
   uint16_t m_size;    ///< Size of transport block
   uint8_t  m_rv;      ///< the redundancy version (HARQ)
   uint8_t  m_ndi;     ///< new data indicator flag
+  
+  /**
+   *  TracedCallback signature.
+   *
+   * \param [in] params Value of the PhyTransmissionionStatParameters.
+   * \todo The argument should be passed by const reference, since it's large.
+   */
+  typedef void (* TracedCallback)(const PhyTransmissionStatParameters params);
+  
 };
 
 
@@ -143,6 +152,15 @@ struct PhyReceptionStatParameters
   uint8_t  m_rv;           ///< the redundancy version (HARQ)
   uint8_t  m_ndi;          ///< new data indicator flag
   uint8_t  m_correctness;  ///< correctness of the TB received
+
+  /**
+   *  TracedCallback signature.
+   *
+   * \param [in] params Value of the PhyReceptionStatParameters.
+   * \todo The argument should be passed by const reference, since it's large.
+   */
+  typedef void (* TracedCallback)(const PhyReceptionStatParameters params);
+  
 };
 
 

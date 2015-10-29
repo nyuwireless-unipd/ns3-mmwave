@@ -35,15 +35,20 @@
 #include "service-flow-record.h"
 #include "service-flow-manager.h"
 
-NS_LOG_COMPONENT_DEFINE ("BSScheduler");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("BSScheduler");
+  
 NS_OBJECT_ENSURE_REGISTERED (BSScheduler);
 
 TypeId
 BSScheduler::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::BSScheduler").SetParent<Object> ();
+  static TypeId tid = TypeId ("ns3::BSScheduler")
+    .SetParent<Object> ()
+    .SetGroupName("Wimax")
+    // No AddConstructor because this is an abstract class.
+    ;
   return tid;
 }
 

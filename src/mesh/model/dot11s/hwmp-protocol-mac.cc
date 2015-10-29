@@ -33,9 +33,11 @@
 #include "ie-dot11s-perr.h"
 
 namespace ns3 {
-namespace dot11s {
 
 NS_LOG_COMPONENT_DEFINE ("HwmpProtocolMac");
+  
+namespace dot11s {
+
 HwmpProtocolMac::HwmpProtocolMac (uint32_t ifIndex, Ptr<HwmpProtocol> protocol) :
   m_ifIndex (ifIndex), m_protocol (protocol)
 {
@@ -97,7 +99,7 @@ HwmpProtocolMac::ReceiveAction (Ptr<Packet> packet, const WifiMacHeader & header
   m_stats.rxMgtBytes += packet->GetSize ();
   WifiActionHeader actionHdr;
   packet->RemoveHeader (actionHdr);
-  if (actionHdr.GetCategory () != WifiActionHeader::MESH_PATH_SELECTION)
+  if (actionHdr.GetCategory () != WifiActionHeader::MESH)
     {
       return true;
     }
@@ -201,6 +203,7 @@ HwmpProtocolMac::UpdateOutcomingFrame (Ptr<Packet> packet, WifiMacHeader & heade
   meshHdr.SetMeshTtl (tag.GetTtl ());
   packet->AddHeader (meshHdr);
   header.SetAddr1 (tag.GetAddress ());
+  header.SetQosMeshControlPresent ();
   return true;
 }
 WifiActionHeader
@@ -208,8 +211,8 @@ HwmpProtocolMac::GetWifiActionHeader ()
 {
   WifiActionHeader actionHdr;
   WifiActionHeader::ActionValue action;
-  action.pathSelection = WifiActionHeader::PATH_SELECTION;
-  actionHdr.SetAction (WifiActionHeader::MESH_PATH_SELECTION, action);
+  action.meshAction = WifiActionHeader::PATH_SELECTION;
+  actionHdr.SetAction (WifiActionHeader::MESH, action); 
   return actionHdr;
 }
 void

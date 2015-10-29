@@ -26,6 +26,7 @@
 #include "uan-net-device.h"
 #include "uan-channel.h"
 #include "ns3/double.h"
+#include "ns3/string.h"
 #include "ns3/log.h"
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
@@ -37,9 +38,9 @@
 #include <cmath>
 
 
-NS_LOG_COMPONENT_DEFINE ("UanPhyDual");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UanPhyDual");
 
 NS_OBJECT_ENSURE_REGISTERED (UanPhyDual);
 NS_OBJECT_ENSURE_REGISTERED (UanPhyCalcSinrDual);
@@ -57,7 +58,8 @@ TypeId
 UanPhyCalcSinrDual::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanPhyCalcSinrDual")
-    .SetParent<Object> ()
+    .SetParent<UanPhyCalcSinr> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPhyCalcSinrDual> ()
   ;
   return tid;
@@ -158,6 +160,7 @@ UanPhyDual::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanPhyDual")
     .SetParent<UanPhy> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPhyDual> ()
     .AddAttribute  ("CcaThresholdPhy1",
                     "Aggregate energy of incoming signals to move to CCA Busy state dB of Phy1.",
@@ -201,33 +204,36 @@ UanPhyDual::GetTypeId (void)
                    MakeUanModesListChecker () )
     .AddAttribute ("PerModelPhy1",
                    "Functor to calculate PER based on SINR and TxMode for Phy1.",
-                   PointerValue (CreateObject<UanPhyPerGenDefault> ()),
+                   StringValue ("ns3::UanPhyPerGenDefault"),
                    MakePointerAccessor (&UanPhyDual::GetPerModelPhy1, &UanPhyDual::SetPerModelPhy1),
                    MakePointerChecker<UanPhyPer> ())
     .AddAttribute ("PerModelPhy2",
                    "Functor to calculate PER based on SINR and TxMode for Phy2.",
-                   PointerValue (CreateObject<UanPhyPerGenDefault> ()),
+                   StringValue ("ns3::UanPhyPerGenDefault"),
                    MakePointerAccessor (&UanPhyDual::GetPerModelPhy2, &UanPhyDual::SetPerModelPhy2),
                    MakePointerChecker<UanPhyPer> ())
     .AddAttribute ("SinrModelPhy1",
                    "Functor to calculate SINR based on pkt arrivals and modes for Phy1.",
-                   PointerValue (CreateObject<UanPhyCalcSinrDual> ()),
+                   StringValue ("ns3::UanPhyCalcSinrDual"),
                    MakePointerAccessor (&UanPhyDual::GetSinrModelPhy1, &UanPhyDual::SetSinrModelPhy1),
                    MakePointerChecker<UanPhyCalcSinr> ())
     .AddAttribute ("SinrModelPhy2",
                    "Functor to calculate SINR based on pkt arrivals and modes for Phy2.",
-                   PointerValue (CreateObject<UanPhyCalcSinrDual> ()),
+                   StringValue ("ns3::UanPhyCalcSinrDual"),
                    MakePointerAccessor (&UanPhyDual::GetSinrModelPhy2, &UanPhyDual::SetSinrModelPhy2),
                    MakePointerChecker<UanPhyCalcSinr> ())
     .AddTraceSource ("RxOk",
                      "A packet was received successfully.",
-                     MakeTraceSourceAccessor (&UanPhyDual::m_rxOkLogger))
+                     MakeTraceSourceAccessor (&UanPhyDual::m_rxOkLogger),
+                     "ns3::UanPhy::TracedCallback")
     .AddTraceSource ("RxError",
                      "A packet was received unsuccessfully.",
-                     MakeTraceSourceAccessor (&UanPhyDual::m_rxErrLogger))
+                     MakeTraceSourceAccessor (&UanPhyDual::m_rxErrLogger),
+                     "ns3::UanPhy::TracedCallback")
     .AddTraceSource ("Tx",
                      "Packet transmission beginning.",
-                     MakeTraceSourceAccessor (&UanPhyDual::m_txLogger))
+                     MakeTraceSourceAccessor (&UanPhyDual::m_txLogger),
+                     "ns3::UanPhy::TracedCallback")
 
   ;
 
@@ -492,7 +498,7 @@ UanPhyDual::GetChannel (void) const
   return m_phy1->GetChannel ();
 }
 Ptr<UanNetDevice>
-UanPhyDual::GetDevice (void)
+UanPhyDual::GetDevice (void) const
 {
   return m_phy1->GetDevice ();
 }

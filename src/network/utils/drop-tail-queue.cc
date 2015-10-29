@@ -21,9 +21,9 @@
 #include "ns3/uinteger.h"
 #include "drop-tail-queue.h"
 
-NS_LOG_COMPONENT_DEFINE ("DropTailQueue");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("DropTailQueue");
 
 NS_OBJECT_ENSURE_REGISTERED (DropTailQueue);
 
@@ -31,11 +31,13 @@ TypeId DropTailQueue::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::DropTailQueue")
     .SetParent<Queue> ()
+    .SetGroupName("Network")
     .AddConstructor<DropTailQueue> ()
     .AddAttribute ("Mode", 
                    "Whether to use bytes (see MaxBytes) or packets (see MaxPackets) as the maximum queue size metric.",
                    EnumValue (QUEUE_MODE_PACKETS),
-                   MakeEnumAccessor (&DropTailQueue::SetMode),
+                   MakeEnumAccessor (&DropTailQueue::SetMode,
+                                     &DropTailQueue::GetMode),
                    MakeEnumChecker (QUEUE_MODE_BYTES, "QUEUE_MODE_BYTES",
                                     QUEUE_MODE_PACKETS, "QUEUE_MODE_PACKETS"))
     .AddAttribute ("MaxPackets", 
@@ -74,7 +76,7 @@ DropTailQueue::SetMode (DropTailQueue::QueueMode mode)
 }
 
 DropTailQueue::QueueMode
-DropTailQueue::GetMode (void)
+DropTailQueue::GetMode (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_mode;

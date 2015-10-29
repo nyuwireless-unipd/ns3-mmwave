@@ -27,9 +27,16 @@
 #include "system-thread.h"
 #include "event-id.h"
 
+/**
+ * \file
+ * \ingroup system
+ * ns3::FdReader declaration.
+ */
+
 namespace ns3 {
 
 /**
+ * \ingroup system
  * \brief A class that asynchronously reads from a file descriptor.
  *
  * This class can be used to start a system thread that reads from a
@@ -40,15 +47,17 @@ namespace ns3 {
 class FdReader : public SimpleRefCount<FdReader>
 {
 public:
+  /** Constructor. */
   FdReader();
+  /** Destructor. */
   virtual ~FdReader();
 
   /**
    * Start a new read thread.
    *
-   * \param fd A valid file descriptor open for reading.
+   * \param [in] fd A valid file descriptor open for reading.
    *
-   * \param readCallback A callback to invoke when new data is
+   * \param [in] readCallback A callback to invoke when new data is
    * available.
    */
   void Start (int fd, Callback<void, uint8_t *, ssize_t> readCallback);
@@ -62,19 +71,26 @@ public:
 protected:
 
   /**
-   * \internal
    * \brief A structure representing data read.
    */
   struct Data
   {
+    /** Default constructor, with null buffer and zero length. */
     Data () : m_buf (0), m_len (0) {}
+    /**
+     * Construct from a buffer of a given length.
+     *
+     * \param [in] buf The buffer.
+     * \param [in] len The size of the buffer, in bytes.
+     */
     Data (uint8_t *buf, ssize_t len) : m_buf (buf), m_len (len) {}
+    /** The read data buffer. */
     uint8_t *m_buf;
+    /** The size of the read data buffer, in bytes. */
     ssize_t m_len;
   };
 
   /**
-   * \internal
    * \brief The read implementation.
    *
    * The value of \p m_len returned controls further processing.  The
@@ -90,20 +106,32 @@ protected:
   virtual FdReader::Data DoRead (void) = 0;
 
   /**
-   * \internal
    * \brief The file descriptor to read from.
    */
   int m_fd;
 
 private:
 
+  /** The asynchronous function which performs the read. */
   void Run (void);
+  /** Event handler scheduled for destroy time to halt the thread. */
   void DestroyEvent (void);
 
+  /** The main thread callback function to invoke when we have data. */
   Callback<void, uint8_t *, ssize_t> m_readCallback;
+  
+  /** The thread doing the read, created and launched by Start(). */
   Ptr<SystemThread> m_readThread;
-  int m_evpipe[2];           // pipe used to signal events between threads
-  bool m_stop;               // true means the read thread should stop
+
+  /** Pipe used to signal events between threads. */
+  int m_evpipe[2];
+  /** Signal the read thread to stop. */
+  bool m_stop;
+  
+  /**
+   * The event scheduled for destroy time which will invoke DestroyEvent
+   * and halt the thread.
+   */
   EventId m_destroyEvent;
 };
 

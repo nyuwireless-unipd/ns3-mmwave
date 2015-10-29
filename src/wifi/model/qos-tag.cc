@@ -17,6 +17,7 @@
  *
  * Author: Mirko Banchi <mk.banchi@gmail.com>
  */
+
 #include "qos-tag.h"
 #include "ns3/tag.h"
 #include "ns3/uinteger.h"
@@ -30,6 +31,7 @@ QosTag::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::QosTag")
     .SetParent<Tag> ()
+    .SetGroupName ("Wifi")
     .AddConstructor<QosTag> ()
     .AddAttribute ("tid", "The tid that indicates AC which packet belongs",
                    UintegerValue (0),

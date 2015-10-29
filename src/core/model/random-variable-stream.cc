@@ -36,9 +36,15 @@
 #include <cmath>
 #include <iostream>
 
-NS_LOG_COMPONENT_DEFINE ("RandomVariableStream");
+/**
+ * \file
+ * \ingroup randomvariable
+ * Implementation of ns3::RandomVariableStream and derivatives.
+ */
 
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("RandomVariableStream");
 
 NS_OBJECT_ENSURE_REGISTERED (RandomVariableStream);
 
@@ -47,6 +53,7 @@ RandomVariableStream::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::RandomVariableStream")
     .SetParent<Object> ()
+    .SetGroupName ("Core")
     .AddAttribute("Stream",
 		  "The stream number for this RNG stream. -1 means \"allocate a stream automatically\". "
 		  "Note that if -1 is set, Get will return -1 so that it is not possible to know which "
@@ -137,6 +144,7 @@ UniformRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UniformRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<UniformRandomVariable> ()
     .AddAttribute("Min", "The lower bound on the values returned by this RNG stream.",
 		  DoubleValue(0),
@@ -207,6 +215,7 @@ ConstantRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ConstantRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<ConstantRandomVariable> ()
     .AddAttribute("Constant", "The constant value returned by this RNG stream.",
 		  DoubleValue(0),
@@ -261,6 +270,7 @@ SequentialRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::SequentialRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<SequentialRandomVariable> ()
     .AddAttribute("Min", "The first value of the sequence.",
 		  DoubleValue(0),
@@ -360,6 +370,7 @@ ExponentialRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ExponentialRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<ExponentialRandomVariable> ()
     .AddAttribute("Mean", "The mean of the values returned by this RNG stream.",
 		  DoubleValue(1.0),
@@ -441,6 +452,7 @@ ParetoRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ParetoRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<ParetoRandomVariable> ()
     .AddAttribute("Mean", "The mean parameter for the Pareto distribution returned by this RNG stream.",
 		  DoubleValue(1.0),
@@ -450,7 +462,7 @@ ParetoRandomVariable::GetTypeId (void)
 		  DoubleValue(2.0),
 		  MakeDoubleAccessor(&ParetoRandomVariable::m_shape),
 		  MakeDoubleChecker<double>())
-    .AddAttribute("Bound", "The upper bound on the values returned by this RNG stream.",
+    .AddAttribute("Bound", "The upper bound on the values returned by this RNG stream (if non-zero).",
 		  DoubleValue(0.0),
 		  MakeDoubleAccessor(&ParetoRandomVariable::m_bound),
 		  MakeDoubleChecker<double>())
@@ -536,6 +548,7 @@ WeibullRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::WeibullRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<WeibullRandomVariable> ()
     .AddAttribute("Scale", "The scale parameter for the Weibull distribution returned by this RNG stream.",
 		  DoubleValue(1.0),
@@ -631,6 +644,7 @@ NormalRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::NormalRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<NormalRandomVariable> ()
     .AddAttribute("Mean", "The mean value for the normal distribution returned by this RNG stream.",
 		  DoubleValue(0.0),
@@ -748,6 +762,7 @@ LogNormalRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::LogNormalRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<LogNormalRandomVariable> ()
     .AddAttribute("Mu", "The mu value for the log-normal distribution returned by this RNG stream.",
 		  DoubleValue(0.0),
@@ -867,6 +882,7 @@ GammaRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::GammaRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<GammaRandomVariable> ()
     .AddAttribute("Alpha", "The alpha value for the gamma distribution returned by this RNG stream.",
 		  DoubleValue(1.0),
@@ -1042,6 +1058,7 @@ ErlangRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ErlangRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<ErlangRandomVariable> ()
     .AddAttribute("K", "The k value for the Erlang distribution returned by this RNG stream.",
 		  IntegerValue(1),
@@ -1153,6 +1170,7 @@ TriangularRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TriangularRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<TriangularRandomVariable> ()
     .AddAttribute("Mean", "The mean value for the triangular distribution returned by this RNG stream.",
 		  DoubleValue(0.5),
@@ -1247,6 +1265,7 @@ ZipfRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ZipfRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<ZipfRandomVariable> ()
     .AddAttribute("N", "The n value for the Zipf distribution returned by this RNG stream.",
 		  IntegerValue(1),
@@ -1337,6 +1356,7 @@ ZetaRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ZetaRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<ZetaRandomVariable> ()
     .AddAttribute("Alpha", "The alpha value for the zeta distribution returned by this RNG stream.",
 		  DoubleValue(3.14),
@@ -1420,6 +1440,7 @@ DeterministicRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::DeterministicRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<DeterministicRandomVariable> ()
     ;
   return tid;
@@ -1512,6 +1533,7 @@ EmpiricalRandomVariable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::EmpiricalRandomVariable")
     .SetParent<RandomVariableStream>()
+    .SetGroupName ("Core")
     .AddConstructor<EmpiricalRandomVariable> ()
     ;
   return tid;
@@ -1594,7 +1616,7 @@ void EmpiricalRandomVariable::CDF (double v, double c)
 void EmpiricalRandomVariable::Validate ()
 {
   NS_LOG_FUNCTION (this);
-  ValueCDF prior;
+  ValueCDF prior = emp[0];
   for (std::vector<ValueCDF>::size_type i = 0; i < emp.size (); ++i)
     {
       ValueCDF& current = emp[i];

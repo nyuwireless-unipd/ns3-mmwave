@@ -36,9 +36,10 @@
 #include "ns3/trace-source-accessor.h"
 #include "ie-dot11s-perr.h"
 
-NS_LOG_COMPONENT_DEFINE ("HwmpProtocol");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("HwmpProtocol");
+  
 namespace dot11s {
 
 NS_OBJECT_ENSURE_REGISTERED (HwmpProtocol);
@@ -48,6 +49,7 @@ HwmpProtocol::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dot11s::HwmpProtocol")
     .SetParent<MeshL2RoutingProtocol> ()
+    .SetGroupName ("Mesh")
     .AddConstructor<HwmpProtocol> ()
     .AddAttribute ( "RandomStart",
                     "Random delay at first proactive PREQ",
@@ -163,7 +165,8 @@ HwmpProtocol::GetTypeId ()
     .AddTraceSource ( "RouteDiscoveryTime",
                       "The time of route discovery procedure",
                       MakeTraceSourceAccessor (
-                        &HwmpProtocol::m_routeDiscoveryTimeCallback)
+                        &HwmpProtocol::m_routeDiscoveryTimeCallback),
+                      "ns3::Time::TracedCallback"
                       )
   ;
   return tid;
@@ -207,7 +210,8 @@ HwmpProtocol::DoInitialize ()
   m_coefficient->SetAttribute ("Max", DoubleValue (m_randomStart.GetSeconds ()));
   if (m_isRoot)
     {
-      SetRoot ();
+      Time randomStart = Seconds (m_coefficient->GetValue ());
+      m_proactivePreqTimer = Simulator::Schedule (randomStart, &HwmpProtocol::SendProactivePreq, this);
     }
 }
 
@@ -1024,8 +1028,6 @@ HwmpProtocol::RetryPathDiscovery (Mac48Address dst, uint8_t numOfRetry)
 void
 HwmpProtocol::SetRoot ()
 {
-  Time randomStart = Seconds (m_coefficient->GetValue ());
-  m_proactivePreqTimer = Simulator::Schedule (randomStart, &HwmpProtocol::SendProactivePreq, this);
   NS_LOG_DEBUG ("ROOT IS: " << m_address);
   m_isRoot = true;
 }

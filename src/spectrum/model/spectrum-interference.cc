@@ -26,10 +26,9 @@
 #include <ns3/log.h>
 
 
-NS_LOG_COMPONENT_DEFINE ("SpectrumInterference");
-
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("SpectrumInterference");
 
 SpectrumInterference::SpectrumInterference ()
   : m_receiving (false),
@@ -44,6 +43,17 @@ SpectrumInterference::SpectrumInterference ()
 SpectrumInterference::~SpectrumInterference ()
 {
   NS_LOG_FUNCTION (this);
+}
+
+TypeId
+SpectrumInterference::GetTypeId ()
+{
+  static TypeId tid = TypeId ("ns3::SpectrumInterference")
+    .SetParent<Object> ()
+    .SetGroupName ("Spectrum")
+    .AddConstructor<SpectrumInterference> ()
+    ;
+  return tid;
 }
 
 void

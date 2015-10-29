@@ -24,9 +24,9 @@
 #include "ethernet-trailer.h"
 #include "crc32.h"
 
-NS_LOG_COMPONENT_DEFINE ("EthernetTrailer");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("EthernetTrailer");
 
 NS_OBJECT_ENSURE_REGISTERED (EthernetTrailer);
 
@@ -108,6 +108,7 @@ EthernetTrailer::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::EthernetTrailer")
     .SetParent<Trailer> ()
+    .SetGroupName("Network")
     .AddConstructor<EthernetTrailer> ()
   ;
   return tid;

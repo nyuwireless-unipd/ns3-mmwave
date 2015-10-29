@@ -24,9 +24,9 @@
 #include "ns3/header.h"
 #include "ipv4-header.h"
 
-NS_LOG_COMPONENT_DEFINE ("Ipv4Header");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Ipv4Header");
 
 NS_OBJECT_ENSURE_REGISTERED (Ipv4Header);
 
@@ -320,6 +320,7 @@ Ipv4Header::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Ipv4Header")
     .SetParent<Header> ()
+    .SetGroupName ("Internet")
     .AddConstructor<Ipv4Header> ()
   ;
   return tid;

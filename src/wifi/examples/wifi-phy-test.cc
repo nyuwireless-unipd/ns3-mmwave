@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #include "ns3/wifi-net-device.h"
 #include "ns3/yans-wifi-channel.h"
 #include "ns3/yans-wifi-phy.h"
@@ -59,7 +60,7 @@ public:
 
 private:
   void Send (void);
-  void Receive (Ptr<Packet> p, double snr, WifiMode mode, enum WifiPreamble preamble);
+  void Receive (Ptr<Packet> p, double snr, WifiTxVector txVector, enum WifiPreamble preamble);
   Ptr<WifiPhy> m_tx;
   struct Input m_input;
   struct Output m_output;
@@ -73,11 +74,11 @@ PsrExperiment::Send (void)
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevel);
   txVector.SetMode (mode);
-  m_tx->SendPacket (p, txVector, WIFI_PREAMBLE_SHORT);
+  m_tx->SendPacket (p, txVector, WIFI_PREAMBLE_LONG, 0, 0);
 }
 
 void
-PsrExperiment::Receive (Ptr<Packet> p, double snr, WifiMode mode, enum WifiPreamble preamble)
+PsrExperiment::Receive (Ptr<Packet> p, double snr, WifiTxVector txVector, enum WifiPreamble preamble)
 {
   m_output.received++;
 }
@@ -120,6 +121,9 @@ PsrExperiment::Run (struct PsrExperiment::Input input)
   tx->SetMobility (posTx);
   rx->SetMobility (posRx);
 
+  tx->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  rx->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+
   rx->SetReceiveOkCallback (MakeCallback (&PsrExperiment::Receive, this));
 
   for (uint32_t i = 0; i < m_input.nPackets; ++i)
@@ -128,7 +132,7 @@ PsrExperiment::Run (struct PsrExperiment::Input input)
     }
   m_tx = tx;
   Simulator::Run ();
-  Simulator::Destroy();
+  Simulator::Destroy ();
   return m_output;
 }
 
@@ -161,7 +165,7 @@ public:
 private:
   void SendA (void) const;
   void SendB (void) const;
-  void Receive (Ptr<Packet> p, double snr, WifiMode mode, enum WifiPreamble preamble);
+  void Receive (Ptr<Packet> p, double snr, WifiTxVector txVector, enum WifiPreamble preamble);
   Ptr<WifiPhy> m_txA;
   Ptr<WifiPhy> m_txB;
   uint32_t m_flowIdA;
@@ -178,7 +182,7 @@ CollisionExperiment::SendA (void) const
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevelA);
   txVector.SetMode (WifiMode (m_input.txModeA));
-  m_txA->SendPacket (p, txVector, WIFI_PREAMBLE_SHORT);
+  m_txA->SendPacket (p, txVector, WIFI_PREAMBLE_LONG, 0, 0);
 }
 
 void
@@ -189,11 +193,11 @@ CollisionExperiment::SendB (void) const
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevelB);
   txVector.SetMode (WifiMode (m_input.txModeB));
-  m_txB->SendPacket (p, txVector, WIFI_PREAMBLE_SHORT);
+  m_txB->SendPacket (p, txVector, WIFI_PREAMBLE_LONG, 0, 0);
 }
 
 void
-CollisionExperiment::Receive (Ptr<Packet> p, double snr, WifiMode mode, enum WifiPreamble preamble)
+CollisionExperiment::Receive (Ptr<Packet> p, double snr, WifiTxVector txVector, enum WifiPreamble preamble)
 {
   FlowIdTag tag;
   if (p->FindFirstMatchingByteTag (tag))
@@ -263,6 +267,9 @@ CollisionExperiment::Run (struct CollisionExperiment::Input input)
   txB->SetMobility (posTxB);
   rx->SetMobility (posRx);
 
+  txA->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  txB->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  rx->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
 
   rx->SetReceiveOkCallback (MakeCallback (&CollisionExperiment::Receive, this));
 
@@ -277,7 +284,7 @@ CollisionExperiment::Run (struct CollisionExperiment::Input input)
   m_txA = txA;
   m_txB = txB;
   Simulator::Run ();
-  Simulator::Destroy();
+  Simulator::Destroy ();
   return m_output;
 }
 
@@ -320,6 +327,7 @@ static void PrintPsrVsDistance (int argc, char *argv[])
   cmd.AddValue ("NPackets", "The number of packets to send", input.nPackets);
   cmd.AddValue ("PacketSize", "The size of each packet sent", input.packetSize);
   cmd.Parse (argc, argv);
+
   for (input.distance = 1.0; input.distance < 165; input.distance += 2.0)
     {
       std::cout << input.distance;
@@ -372,6 +380,7 @@ static void PrintSizeVsRange (int argc, char *argv[])
   cmd.AddValue ("NPackets", "The number of packets to send", input.nPackets);
   cmd.AddValue ("TargetPsr", "The psr needed to assume that we are within range", targetPsr);
   cmd.Parse (argc, argv);
+
   for (input.packetSize = 10; input.packetSize < 3000; input.packetSize += 40)
     {
       double precision = 0.1;
@@ -406,6 +415,8 @@ static void PrintPsrVsCollisionInterval (int argc, char *argv[])
   cmd.AddValue ("NPackets", "The number of packets to send for each transmitter", input.nPackets);
   cmd.AddValue ("xA", "the position of transmitter A", input.xA);
   cmd.AddValue ("xB", "the position of transmitter B", input.xB);
+  cmd.Parse (argc, argv);
+
   for (uint32_t i = 0; i < 100; i += 1)
     {
       CollisionExperiment experiment;
@@ -427,7 +438,6 @@ static void PrintPsrVsCollisionInterval (int argc, char *argv[])
       std::cout << i << " " << perA << " " << perB << std::endl;
     }
 }
-
 
 
 int main (int argc, char *argv[])
@@ -461,6 +471,10 @@ int main (int argc, char *argv[])
   else if (type == "PsrVsCollisionInterval")
     {
       PrintPsrVsCollisionInterval (argc, argv);
+    }
+  else
+    {
+      std::cout << "Wrong arguments!" << std::endl;
     }
 
   return 0;

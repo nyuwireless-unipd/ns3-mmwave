@@ -9,6 +9,303 @@ http://www.nsnam.org including tutorials: http://www.nsnam.org/tutorials.html
 Consult the file CHANGES.html for more detailed information about changed
 API and behavior across ns-3 releases.
 
+Release 3.24.1
+==============
+
+Release 3.24.1 is a maintenance release that fixes three issues:
+- support for Xcode 7 clang compiler version
+- detection of Python bindings location
+- compilation problem on 32-bit gcc-4.4 machine
+
+The issues prevented selected systems from being able to successfully
+build ns-3, and prevented the released version from being able to
+detect the presence of pybindgen used for Python bindings.
+
+Availability
+------------
+This release is available from:
+https://www.nsnam.org/release/ns-allinone-3.24.1.tar.bz2
+
+Supported platforms
+-------------------
+This release has been tested on the following platforms:
+- Ubuntu 15.04 (64 bit) with g++-4.9.2
+- Fedora Core 22 (32 bit) with g++-5.1.1
+- Fedora Core 21 (64 bit) with g++-4.9.2
+- Ubuntu 14.04 (64 bit) with g++-4.8.2
+- Ubuntu 12.04.4 (64 bit) with g++-4.6.3
+- CentOS/RHEL 6.7 (64-bit) with g++-4.4.7
+- OS X Yosemite 10.10.5 with Xcode 7 and Apple LLVM version 7.0.0
+- OS X Yosemite 10.10.5 with Xcode 6.4 and Apple LLVM version 6.1.0
+- FreeBSD 10.2-RELEASE (64 bit) with clang-3.4.1
+
+New user-visible features
+-------------------------
+Features are identical to release 3.24.
+
+Bugs fixed
+----------
+- Bug 2181 - Xcode 7.0 compiler warnings trigger build failure
+- Bug 2182 - pybindgen required version is now a string literal
+- Bug 2184 - integer overflow in MacLow
+
+Known issues
+------------
+In general, known issues are tracked on the project tracker available
+at http://www.nsnam.org/bugzilla/
+
+Release 3.24
+============
+
+Availability
+------------
+This release is available from:
+http://www.nsnam.org/release/ns-allinone-3.24.tar.bz2
+
+Supported platforms
+-------------------
+This release has been tested on the following platforms:
+- Ubuntu 15.04 (64 bit) with g++-4.9.2
+- Fedora Core 22 (32 bit) with g++-5.1.1
+- Fedora Core 21 (64 bit) with g++-4.9.2
+- Ubuntu 14.04 (64 bit) with g++-4.8.2
+- Ubuntu 12.04.4 (32/64 bit) with g++-4.6.3
+- CentOS/RHEL 6.7 (64-bit) with g++-4.4.7
+- OS X Yosemite 10.10.5 with Xcode 6.4 and Apple LLVM version 6.1.0
+- FreeBSD 10.1-RELEASE (64 bit) with clang-3.4.1
+
+New user-visible features
+-------------------------
+- (build system) Python 3 is now supported by waf and test runner programs
+- (wifi) 802.11ac Very High Throughput (VHT) physical layer modes are now 
+  supported.
+- (internet) permanent (static) ARP entries can be created for IPv4
+- (network) SimpleChannel allows per-NetDevice blacklists, in order to do hidden terminal testcases.
+- (documentation) TracedCallback function signatures now documented in Doxygen
+
+Bugs fixed
+----------
+- Bug 730 - Enabling fragmentation at run-time breaks simulation
+- Bug 1249 - doxygen comments on device-level SetMobility ()
+- Bug 1482 - mesh module was producing fatal error with ASCII and netanim traces
+- Bug 1557 - errors in function OpenFlowSwitchNetDevice::BufferFromPacket()
+- Bug 1681 - m_lastNavStart is assigned twice continuously
+- Bug 1736 - default dot11EDCATableMSDULifetime
+- Bug 1901 - mesh module producing malformed pcaps
+- Bug 1929 - TcpL4Protocol::Send must indicate the source address to routing (if known)
+- Bug 1982 - AODV and mesh modules use random variables before seeds can be set
+- Bug 2058 - TCP window update can shrink left edge of window
+- Bug 2063 - FdNetDevice::SendFrom assert does not account for headers correctly
+- Bug 2082 - Empirical RV fails if value provided in CDF function is negative
+- Bug 2093 - MultiModelSpectrumChannel::GetDevice only works for 0-th index
+- Bug 2096 - Wrong pcap information when MPDU aggregation is used
+- Bug 2104 - Sequence Number passed to QosUtilsMapSeqControlToUniqueInteger instead of Sequence Control
+- Bug 2108 - Erroneous implementation in InterferenceHelper
+- Bug 2119 - Fix memory leaks in FdNetDevice test due to non-executed events
+- Bug 2124 - UdpSocketImpl::ShutdownRecv doesn't stop the Ipv[4,6]EndPointDemux
+- Bug 2125 - subclasses must chain up to base class NotifyNewAggregate
+- Bug 2126 - LrWpanNetDevice silently accepts no mobility on the node
+- Bug 2127 - Scheduler benchmark utility works in first run only
+- Bug 2130 - Allow SimpleChannel to simulate hidden terminals
+- Bug 2132 - TcpL4Protocol sends a bad-formatted RST packet
+- Bug 2135 - TCP doesn't honor the socket's output interface
+- Bug 2136 - The usage of tid in wifi and wave module shall be "if (tid > 7)" rather than "if (tid >= 7)"
+- Bug 2138 - SimpleNetDevice could send overlapped packets
+- Bug 2143 - maybe-uninitialized warning
+- Bug 2146 - bug in WAVE channel coordination
+- Bug 2148 - Ipv6Interface::SetUp doesn't re-create the Link-Local addresses
+- Bug 2153 - Incorrect power limits in wifi power control algorithms
+- Bug 2154 - Incorrect power calculation in wifi power adaptation examples
+- Bug 2156 - Duplicate packets when using two level aggregation
+- Bug 2157 - OpenFlowSwitchNetDevice::BufferFromPacket setting eth_type incorrectly
+- Bug 2158 - OpenflowSwitchNetDevice flooding bug
+- Bug 2165 - server replies to SYN (with option TS) with a SYNACK (with option TS) also if the attribute Timestamp is false
+- Bug 2166 - SteadyStateRandomWaypointMobilityModel directs the node to the ground
+- Bug 2170 - AnimationInterface outputs improperly formed XML
+- Bug 2171 - power-adaptation-distance.cc:202:22: error: call to 'pow' is ambiguous
+- Bug 2173 - WifiInformationElement::DeserializeIfPresent attempts to read beyond the end of buffer
+- Bug 2174 - m_rWnd not updated when segments without ACK are received
+- Bug 2177 - Ipv6ExtensionFragmentHeader length is initialized to a wrong value.
+
+Known issues
+------------
+In general, known issues are tracked on the project tracker available
+at http://www.nsnam.org/bugzilla/
+
+Release 3.23
+============
+
+Availability
+------------
+This release is available from:
+http://www.nsnam.org/release/ns-allinone-3.23.tar.bz2
+
+Supported platforms
+-------------------
+This release has been tested on the following platforms:
+- Ubuntu 15.04 (64 bit) with g++-4.9.2
+- Fedora Core 21 (64 bit) with g++-4.9.2
+- Ubuntu 14.04 (64 bit) with g++-4.8.2
+- Ubuntu 12.04.4 (32/64 bit) with g++-4.6.3
+- CentOS/RHEL 6.6 (64-bit) with g++-4.4.7
+- OS X Yosemite 10.10.3 with Xcode 6.3.1 and Apple LLVM version 6.1.0
+- FreeBSD 10.1-RELEASE (64 bit) with clang-3.4.1
+
+New user-visible features
+-------------------------
+- (network) CalculateTxTime has been declared obsolete.
+  CalculateBytesTxTime and CalculateBitsTxTime are to be used instead.
+  The return value is a Time, instead of a double.
+- (mobility) Classes added for converting geographic to cartesian coordinates.
+- (spectrum) TvSpectrumTransmitter models added to create television 
+  transmitter(s) that transmit PSD spectrums customized by attributes such 
+  as modulation type, power, antenna type, channel frequency, etc.
+- (wifi) Several model improvements have been made.  Access points now 
+  establish BSSBasicRateSet for control frame transmissions.  PLCP header 
+  and payload reception have been decoupled for improved PHY modeling
+  accuracy.  RTS/CTS with A-MPDU is now fully supported, and 802.11n
+  stations now support two-level aggregation.
+
+Bugs fixed
+----------
+- Bug 1757 - RLC AM not using NACK_SN
+- Bug 1974 - CalculateTxTime should return a Time, not a double
+- Bug 1982 - AODV and mesh use random variables before seed can be set
+- Bug 2004 - Wrong timeout calculation for 802.11n in WifiMac
+- Bug 2008 - (lr-wpan) Crash if ending rx while status change is in progress
+- Bug 2025 - (lr-wpan) Changing the channel doesn't affect the Tx params
+- Bug 2034 - (lr-wpan) CSMA-CA BackoffPeriod is too short 
+- Bug 2054 - TCP window update can shrink the Left Edge of the window
+- Bug 2066 - A-MPDU reception should check for successful preamble
+- Bug 2067 - TCP performance when advertised window exceeds sender buffer size
+- Bug 2070 - Wrong report of Packets and Bytes stored in CoDeL
+- Bug 2073 - NDisc cache entries update timer might be stuck in a loop
+- Bug 2075 - A-MPDU using RTS/CTS behaves wrongly when MaxSsrc is reached
+- Bug 2076 - TCP MinRTO Attribute is not actually used
+- Bug 2077 - Icmpv6L4Protocol::HandleDestinationUnreachable must check the packet size, not its serialized size
+- Bug 2079 - mcs variable in ht-wifi-network example is confusing
+- Bug 2082 - Empirical RV fails if the value provided in the CDF member function is negative
+- Bug 2083 - BridgeNetDevice may send corrupted packets
+- Bug 2087 - Waf fails to build ns-3 if the path contains accented characters
+- Bug 2090 - (rip-ng) Routes may be added twice on interface activation
+- Bug 2093 - MultiModelSpectrumChannel::GetDevice only works for 0-th index
+- Bug 2095 - (wimax) Wrong values in default-traces.h for 16 QAM 3/4
+- Bug 2097 - ACKs should be sent using legacy rates and preambles in 802.11n
+- Bug 2103 - Ipv[4,6]RoutingHelper::PrintRoutingTableAll[At,Every] hangs if a node doesn't have IP
+
+Known issues
+------------
+In general, known issues are tracked on the project tracker available
+at http://www.nsnam.org/bugzilla/
+
+Release 3.22
+============
+
+Availability
+------------
+This release is available from:
+http://www.nsnam.org/release/ns-allinone-3.22.tar.bz2
+
+Supported platforms
+-------------------
+This release has been tested on the following platforms:
+- Fedora Core 21 (64 bit) with g++-4.9.2
+- Ubuntu 14.10 (32 bit) with g++-4.9.1
+- Ubuntu 14.04 (64 bit) with g++-4.8.2
+- Ubuntu 12.04.4 (32/64 bit) with g++-4.6.3
+- CentOS/RHEL 6.6 (64-bit) with g++-4.4.7
+- OS X Yosemite 10.10 with Xcode 6.1.1 and clang-600.0.56
+- FreeBSD 10.1-RELEASE (64 bit) with clang-3.4.1
+
+New user-visible features
+-------------------------
+- (wifi) Support for MPDU aggregation has been added to the wifi model, 
+  as well as a number of related example programs.
+- (wifi) Added two combined power and rate control mechanisms to the
+  wifi module.  The new mechanisms, PARF and APARF, are the first in the
+  wifi module to jointly control transmission power and data rate.  Two use 
+  case examples (PowerAdaptationDistance and PowerAdaptationInterference) 
+  and a test case have also been added.
+- (lte) In previous releases of the LTE module, the bearer release
+  functionality was only partially supported. As an enhancement, a
+  complete release bearer procedure is now implemented, which can be
+  invoked by calling the new helper method
+  LteHelper::DeActivateDedicatedEpsBearer(). The related output can be
+  seen through the stats collected at different layers like PDCP, RLC,
+  MAC, PHY. To support this implementation, an example and test suite is
+  added within the LTE module examples and tests folder.  
+- (wave) Additional support has been added for WiFi-based vehicular networks, 
+  including the channel-access coordination features of IEEE 1609.4 and a 
+  comprehensive VANET routing example that includes a Basic Safety 
+  Message (BSM) packet generator application and associated statistics 
+  counters.  Together, these allow users to evaluate the performance effects 
+  in a VANET of varying transmission and channel properties (e.g., packet 
+  rate, message size, transmit power, propagation loss model, impact of 
+  routing protocol traffic, etc.).
+- (internet) It is now possible to print the Neighbor Cache (ARP and NDISC) 
+  by using the RoutingProtocolHelper
+- (stats) A new TimeProbe class has been added to hook the data collection 
+  framework to traced values emitting Time objects
+- (documentation) the callback function signatures for all TraceSources
+  is documented in Doxygen
+- (utils) print-introspected-doxygen.cc has had several enhancements;
+  use -h to read the usage message for details.
+- (core) TracedValue and TracedCallback function signatures are now documented,
+  which required changing the TypeId::AddTraceSource API.
+
+Bugs fixed
+----------
+- Bug 1405 - RttEstimator improvements
+- Bug 1551 - NS_LOG_COMPONENT_DEFINE inside or outside of ns3 namespace?
+- Bug 1726 - WiFi Minstrel rate control algorithm doesn't save state
+- Bug 1734 - TcpSocketBase produces spurious delayed ACKs
+- Bug 1758 - Yans and Nist error rate models for 5/6 code rate 802.11n HT
+- Bug 1770 - mesh test and example crash for 32-bit optimized builds
+- Bug 1774 - compute signal power around channel, not across whole band, and fix LrWpanHelper to add a default PropagationDelayModel
+- Bug 1791 - TCP Endpoint never deallocates when closing
+- Bug 1801 - Setting Wi-Fi timing parameters through WifiMac attributes (documentation fix)
+- Bug 1906 - 802.11n PHY configuration for 2.4GHz and 5GHz devices
+- Bug 1957 - UdpSocketImpl is stuck after a Close()
+- Bug 1968 - Missing supported 802.11n HT rates in the WifiPhy constructor
+- Bug 1969 - Support short guard interval durations in 802.11n
+- Bug 1970 - Missing NotifyAckTimeoutStartNow in MacLow::StartDataTxTimers
+- Bug 1971 - 802.11n at 2.4 GHz should include a signal extension duration
+- Bug 1972 - CommandLine duplicate argument handling: documentation updated.
+- Bug 1983 - FlowMonitor returns containers copies instead of references.
+- Bug 1986 - test result divergence for lte-frequency-reuse test
+- Bug 1991 - PcapFileWrapper::CaptureSize attribute (snaplen) has no effect.
+- Bug 1995 - avoid multiple definitions of PI
+- Bug 1996 - RSRQ calculation: misleading variable names
+- Bug 1997 - Fix PlotProbe() documentation and usage for GnuplotHelper and FileHelper
+- Bug 2002 - Hardcoded include paths cause breakage
+- Bug 2011 - Default Speed attribute in ConstantSpeedPropagationDelayModel
+- Bug 2016 - Radvd do not consider the SendAdvert option and don't reply to RS
+- Bug 2020 - Erroneous MCS field in 802.11n PCAP files
+- Bug 2021 - Missing const qualifier in TopologyReader::Link::Attributes{Begin,End}()
+- Bug 2026 - 802.11n Ness parameter badly set for data frames
+- Bug 2027 - Calculation of HT training symbol duration does not accurately follow 802.11n standard
+- Bug 2028 - remove unnecessary Time to double conversions in Wifi models
+- Bug 2029 - new CQI generation approach fix
+- Bug 2030 - provide default values for WifiTxVector
+- Bug 2037 - HT capabilities may print bogus chars
+- Bug 2038 - Stop method does not stop next wave in WaveformGenerator
+- Bug 2042 - LTE a3-rsrp-handover-algorithm.cc:  error: overflow in implicit constant conversion
+- Bug 2043 - print-introspected-doxygen crashes when some modules are disabled 
+- Bug 2044 - Buffer::Iterator::ReadNtohU16() and ReadNtohU32() not implemented correctly
+- Bug 2045 - Missing NS_OBJECT_ENSURE_REGISTERED in TcpTxBuffer and TcpRxBuffer
+- Bug 2046 - set Block Ack timeout when SetStandard is called
+- Bug 2047 - Ipv6EndPointDemux::Lookup may crash
+- Bug 2049 - CQI feedback should always use the same calculation method
+- Bug 2053 - In tcp-socket-base.cc, NotifyDataSent incorrectly called with retransmits
+- Bug 2055 - TCP TxBuffer and RxBuffer traces don't work
+- Nix-vector routing implementation now uses a lazy flush mechanism,
+  which dramatically speeds up the creation of large topologies.
+
+Known issues
+------------
+In general, known issues are tracked on the project tracker available
+at http://www.nsnam.org/bugzilla/
+
 Release 3.21
 ============
 

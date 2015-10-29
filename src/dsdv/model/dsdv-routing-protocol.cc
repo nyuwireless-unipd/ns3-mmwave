@@ -40,9 +40,10 @@
 #include "ns3/double.h"
 #include "ns3/uinteger.h"
 
-NS_LOG_COMPONENT_DEFINE ("DsdvRoutingProtocol");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("DsdvRoutingProtocol");
+  
 namespace dsdv {
   
 NS_OBJECT_ENSURE_REGISTERED (RoutingProtocol);
@@ -65,7 +66,11 @@ struct DeferredRouteOutputTag : public Tag
   static TypeId
   GetTypeId ()
   {
-    static TypeId tid = TypeId ("ns3::dsdv::DeferredRouteOutputTag").SetParent<Tag> ();
+    static TypeId tid = TypeId ("ns3::dsdv::DeferredRouteOutputTag")
+      .SetParent<Tag> ()
+      .SetGroupName ("Dsdv")
+      .AddConstructor<DeferredRouteOutputTag> ()
+      ;
     return tid;
   }
 
@@ -105,6 +110,7 @@ RoutingProtocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::dsdv::RoutingProtocol")
     .SetParent<Ipv4RoutingProtocol> ()
+    .SetGroupName ("Dsdv")
     .AddConstructor<RoutingProtocol> ()
     .AddAttribute ("PeriodicUpdateInterval","Periodic interval between exchange of full routing tables among nodes. ",
                    TimeValue (Seconds (15)),

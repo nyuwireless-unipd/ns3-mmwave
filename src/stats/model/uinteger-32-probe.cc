@@ -27,9 +27,9 @@
 #include "ns3/config.h"
 #include "ns3/trace-source-accessor.h"
 
-NS_LOG_COMPONENT_DEFINE ("Uinteger32Probe");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Uinteger32Probe");
 
 NS_OBJECT_ENSURE_REGISTERED (Uinteger32Probe);
 
@@ -38,10 +38,12 @@ Uinteger32Probe::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::Uinteger32Probe")
     .SetParent<Probe> ()
+    .SetGroupName ("Stats")
     .AddConstructor<Uinteger32Probe> ()
     .AddTraceSource ( "Output",
                       "The uint32_t that serves as output for this probe",
-                      MakeTraceSourceAccessor (&Uinteger32Probe::m_output))
+                      MakeTraceSourceAccessor (&Uinteger32Probe::m_output),
+                     "ns3::TracedValueCallback::Uint32")
   ;
   return tid;
 }

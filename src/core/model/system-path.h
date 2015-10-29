@@ -23,62 +23,102 @@
 #include <string>
 #include <list>
 
+/**
+ * \file
+ * \ingroup systempath
+ * System-independent file and directory function declarations.
+ */
+
 namespace ns3 {
 
 /**
- * \brief Encapsulate OS-specific functions to manipulate file and directory paths.
+ * \ingroup system
+ * \defgroup systempath Host Filesystem
+ * \brief Encapsulate OS-specific functions to manipulate file
+ * and directory paths.
  *
- * The functions provided here are used mostly to implement the ns-3 test framework.
+ * The functions provided here are used mostly to implement
+ * the ns-3 test framework.
+ */
+
+/**
+ * \ingroup systempath
+ * \brief Namespace for various file and directory path functions.
  */
 namespace SystemPath {
 
   /**
-   * \return the directory in which the currently-executing binary is located
+   * \ingroup systempath
+   * Get the file system path to the current executable.
+   *
+   * \return The directory in which the currently-executing binary is located
    */
   std::string FindSelfDirectory (void);
   
   /**
-   * \param left a path element
-   * \param right a path element
-   * \return a concatenation of the two input paths
+   * \ingroup systempath
+   * Join two file system path elements.
+   *
+   * \param [in] left A path element
+   * \param [in] right A path element
+   * \return A concatenation of the two input paths
    */
   std::string Append (std::string left, std::string right);
 
   /**
-   * \param path a path
-   * \return a list of path elements that can be joined together again with
+   * \ingroup systempath
+   * Split a file system path into directories according to
+   * the local path separator.
+   *
+   * This is the inverse of Join.
+   *
+   * \param [in] path A path
+   * \return A list of path elements that can be joined together again with
    *         the Join function.
    * \sa ns3::SystemPath::Join
    */
   std::list<std::string> Split (std::string path);
 
   /**
-   * \param begin iterator to first element to join
-   * \param end iterator to last element to join
-   * \return a path that is a concatenation of all the input elements.
+   * Join a list of file system path directories into a single
+   * file system path.
+   *
+   * This is the inverse of Split.
+   *
+   * \ingroup systempath
+   * \param [in] begin Iterator to first element to join
+   * \param [in] end Iterator to last element to join
+   * \return A path that is a concatenation of all the input elements.
    */
   std::string Join (std::list<std::string>::const_iterator begin,
 		    std::list<std::string>::const_iterator end);
   
   /**
-   * \param path a path which identifies a directory
-   * \return a list of the filenames which are located in the input directory
+   * \ingroup systempath
+   * Get the list of files located in a file system directory.
+   *
+   * \param [in] path A path which identifies a directory
+   * \return A list of the filenames which are located in the input directory
    */
   std::list<std::string> ReadFiles (std::string path);
 
   /**
-   * \return a path which identifies a temporary directory.
+   * \ingroup systempath
+   * Get the name of a temporary directory.
    *
-   * The returned path identifies a directory which does not exist yet
+   * The returned path identifies a directory which does not exist yet.
    * Call ns3::SystemPath::MakeDirectories to create it. Yes, there is a
    * well-known security race in this API but we don't care in ns-3.
+   *
+   * \return A path which identifies a temporary directory.
    */
   std::string MakeTemporaryDirectoryName (void);
 
   /**
-   * \param path a path to a directory
-   *
+   * \ingroup systempath
    * Create all the directories leading to path.
+   *
+   * \param [in] path A path to a directory
    */
   void MakeDirectories (std::string path);
 

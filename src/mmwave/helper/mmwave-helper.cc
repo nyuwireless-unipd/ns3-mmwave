@@ -60,7 +60,7 @@ MmWaveHelper::GetTypeId (void)
 					   "The type of path-loss model to be used. "
 					   "The allowed values for this attributes are the type names "
 					   "of any class inheriting from ns3::PropagationLossModel.",
-					   StringValue ("ns3::mmWavePropagationLossModel"),
+					   StringValue ("ns3::MmWavePropagationLossModel"),
 					   MakeStringAccessor (&MmWaveHelper::SetPathlossModelType),
 					   MakeStringChecker ())
 		.AddAttribute ("Scheduler",

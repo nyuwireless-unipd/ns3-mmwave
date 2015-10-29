@@ -38,6 +38,7 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("UdpTraceClient");
+
 NS_OBJECT_ENSURE_REGISTERED (UdpTraceClient);
 
 /**
@@ -61,6 +62,7 @@ UdpTraceClient::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UdpTraceClient")
     .SetParent<Application> ()
+    .SetGroupName("Applications")
     .AddConstructor<UdpTraceClient> ()
     .AddAttribute ("RemoteAddress",
                    "The destination Address of the outbound packets",

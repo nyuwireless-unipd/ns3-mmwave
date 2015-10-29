@@ -61,6 +61,13 @@ private:
    */
   void ExpireReorderingTimer (void);
   void ExpirePollRetransmitTimer (void);
+  void ExpireRbsTimer (void);
+
+  /** 
+   * method called when the T_status_prohibit timer expires
+   * 
+   */
+  void ExpireStatusProhibitTimer (void);
 
   bool IsInsideReceivingWindow (SequenceNumber10 seqNumber);
 // 
@@ -73,15 +80,17 @@ private:
 
 private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
-    std::vector < Ptr<Packet> > m_txedBuffer;       // Transmitted packets buffer
 
-    struct RetxBuffer
+    struct RetxPdu
     {
       Ptr<Packet> m_pdu;
       uint16_t    m_retxCount;
     };
 
-    std::vector < RetxBuffer > m_retxBuffer;       // Retransmission buffer
+  std::vector <RetxPdu> m_txedBuffer;  ///< Buffer for transmitted and retransmitted PDUs 
+                                       ///< that have not been acked but are not considered 
+                                       ///< for retransmission 
+  std::vector <RetxPdu> m_retxBuffer;  ///< Buffer for PDUs considered for retransmission
 
     uint32_t m_txonBufferSize;
     uint32_t m_retxBufferSize;
@@ -96,8 +105,6 @@ private:
       std::list < Ptr<Packet> >  m_byteSegments;
 
       bool      m_pduComplete;
-      uint16_t  m_totalSize;
-      uint16_t  m_currSize;
     };
 
     std::map <uint16_t, PduBuffer > m_rxonBuffer; // Reception buffer
@@ -142,7 +149,11 @@ private:
   EventId m_pollRetransmitTimer;
   Time    m_pollRetransmitTimerValue;
   EventId m_reorderingTimer;
+  Time    m_reorderingTimerValue;
   EventId m_statusProhibitTimer;
+  Time    m_statusProhibitTimerValue;
+  EventId m_rbsTimer;
+  Time    m_rbsTimerValue;
 
   /**
    * Configurable parameters. See section 7.4 in TS 36.322
@@ -152,6 +163,7 @@ private:
   uint16_t m_pollByte;
   
   bool m_txOpportunityForRetxAlwaysBigEnough;
+  bool m_pollRetransmitTimerJustExpired;
 
   /**
    * SDU Reassembling state

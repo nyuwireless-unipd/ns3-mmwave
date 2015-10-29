@@ -23,9 +23,9 @@
 #include <ns3/log.h>
 #include "ns3/boolean.h"
 
-NS_LOG_COMPONENT_DEFINE ("LteFrStrictAlgorithm");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteFrStrictAlgorithm");
 
 NS_OBJECT_ENSURE_REGISTERED (LteFrStrictAlgorithm);
 
@@ -118,6 +118,7 @@ LteFrStrictAlgorithm::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::LteFrStrictAlgorithm")
     .SetParent<LteFfrAlgorithm> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteFrStrictAlgorithm> ()
     .AddAttribute ("UlCommonSubBandwidth",
                    "Uplink Common SubBandwidth Configuration in number of Resource Block Groups",

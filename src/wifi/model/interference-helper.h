@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #ifndef INTERFERENCE_HELPER_H
 #define INTERFERENCE_HELPER_H
 
@@ -51,15 +52,14 @@ public:
      * Create an Event with the given parameters.
      *
      * \param size packet size
-     * \param payloadMode Wi-Fi mode used for the payload
+     * \param txVector TXVECTOR of the packet
      * \param preamble preamble type
      * \param duration duration of the signal
      * \param rxPower the receive power (w)
-     * \param txvector TXVECTOR of the packet
      */
-    Event (uint32_t size, WifiMode payloadMode,
+    Event (uint32_t size, WifiTxVector txVector,
            enum WifiPreamble preamble,
-           Time duration, double rxPower, WifiTxVector txvector);
+           Time duration, double rxPower);
     ~Event ();
 
     /**
@@ -93,6 +93,12 @@ public:
      */
     uint32_t GetSize (void) const;
     /**
+     * Return the TXVECTOR of the packet.
+     *
+     * \return the TXVECTOR of the packet
+     */
+    WifiTxVector GetTxVector (void) const;
+    /**
      * Return the Wi-Fi mode used for the payload.
      *
      * \return the Wi-Fi mode used for the payload
@@ -104,21 +110,17 @@ public:
      * \return the preamble type of the packet
      */
     enum WifiPreamble GetPreambleType (void) const;
-    /**
-     * Return the TXVECTOR of the packet.
-     *
-     * \return the TXVECTOR of the packet
-     */
-    WifiTxVector GetTxVector (void) const;
+
+
 private:
     uint32_t m_size;
-    WifiMode m_payloadMode;
+    WifiTxVector m_txVector;
     enum WifiPreamble m_preamble;
     Time m_startTime;
     Time m_endTime;
     double m_rxPowerW;
-    WifiTxVector m_txVector;
   };
+
   /**
    * A struct for both SNR and PER
    */
@@ -157,9 +159,9 @@ private:
    */
   Ptr<ErrorRateModel> GetErrorRateModel (void) const;
 
-
   /**
    * \param energyW the minimum energy (W) requested
+   *
    * \returns the expected amount of time the observed
    *          energy on the medium will be higher than
    *          the requested threshold.
@@ -170,25 +172,36 @@ private:
    * Add the packet-related signal to interference helper.
    *
    * \param size packet size
-   * \param payloadMode Wi-Fi mode for the payload
+   * \param txVector TXVECTOR of the packet
    * \param preamble Wi-Fi preamble for the packet
    * \param duration the duration of the signal
-   * \param rxPower receive power (w)
-   * \param txvector TXVECTOR of the packet
+   * \param rxPower receive power (W)
+   *
    * \return InterferenceHelper::Event
    */
-  Ptr<InterferenceHelper::Event> Add (uint32_t size, WifiMode payloadMode,
+  Ptr<InterferenceHelper::Event> Add (uint32_t size, WifiTxVector txVector,
                                       enum WifiPreamble preamble,
-                                      Time duration, double rxPower, WifiTxVector txvector);
+                                      Time duration, double rxPower);
 
   /**
-   * Calculate the SNIR at the start of the packet and accumulate
+   * Calculate the SNIR at the start of the plcp payload and accumulate
    * all SNIR changes in the snir vector.
    *
-   * \param event the event corresponding to the first time the packet arrives
+   * \param event the event corresponding to the first time the corresponding packet arrives
+   *
    * \return struct of SNR and PER
    */
-  struct InterferenceHelper::SnrPer CalculateSnrPer (Ptr<InterferenceHelper::Event> event);
+  struct InterferenceHelper::SnrPer CalculatePlcpPayloadSnrPer (Ptr<InterferenceHelper::Event> event);
+  /**
+   * Calculate the SNIR at the start of the plcp header and accumulate
+   * all SNIR changes in the snir vector.
+   *
+   * \param event the event corresponding to the first time the corresponding packet arrives
+   *
+   * \return struct of SNR and PER
+   */
+  struct InterferenceHelper::SnrPer CalculatePlcpHeaderSnrPer (Ptr<InterferenceHelper::Event> event);
+
   /**
    * Notify that RX has started.
    */
@@ -201,6 +214,8 @@ private:
    * Erase all events.
    */
   void EraseEvents (void);
+
+
 private:
   /**
    * Noise and Interference (thus Ni) event.
@@ -234,6 +249,8 @@ public:
      * \return true if a < o.time, false otherwise
      */
     bool operator < (const NiChange& o) const;
+
+
 private:
     Time m_time;
     double m_delta;
@@ -247,8 +264,6 @@ private:
    */
   typedef std::list<Ptr<Event> > Events;
 
-  //InterferenceHelper (const InterferenceHelper &o);
-  //InterferenceHelper &operator = (const InterferenceHelper &o);
   /**
    * Append the given Event.
    *
@@ -260,6 +275,7 @@ private:
    *
    * \param event
    * \param ni
+   *
    * \return noise and interference power
    */
   double CalculateNoiseInterferenceW (Ptr<Event> event, NiChanges *ni) const;
@@ -269,10 +285,11 @@ private:
    *
    * \param signal
    * \param noiseInterference
-   * \param mode
+   * \param channelWidth
+   *
    * \return SNR in liear ratio
    */
-  double CalculateSnr (double signal, double noiseInterference, WifiMode mode) const;
+  double CalculateSnr (double signal, double noiseInterference, uint32_t channelWidth) const;
   /**
    * Calculate the success rate of the chunk given the SINR, duration, and Wi-Fi mode.
    * The duration and mode are used to calculate how many bits are present in the chunk.
@@ -280,18 +297,31 @@ private:
    * \param snir SINR
    * \param duration
    * \param mode
+   * \param txVector
+   *
    * \return the success rate
    */
-  double CalculateChunkSuccessRate (double snir, Time duration, WifiMode mode) const;
+  double CalculateChunkSuccessRate (double snir, Time duration, WifiMode mode, WifiTxVector txVector) const;
   /**
-   * Calculate the error rate of the given packet. The packet can be divided into
+   * Calculate the error rate of the given plcp payload. The plcp payload can be divided into
    * multiple chunks (e.g. due to interference from other transmissions).
    *
    * \param event
    * \param ni
+   *
    * \return the error rate of the packet
    */
-  double CalculatePer (Ptr<const Event> event, NiChanges *ni) const;
+  double CalculatePlcpPayloadPer (Ptr<const Event> event, NiChanges *ni) const;
+  /**
+   * Calculate the error rate of the plcp header. The plcp header can be divided into
+   * multiple chunks (e.g. due to interference from other transmissions).
+   *
+   * \param event
+   * \param ni
+   *
+   * \return the error rate of the packet
+   */
+  double CalculatePlcpHeaderPer (Ptr<const Event> event, NiChanges *ni) const;
 
   double m_noiseFigure; /**< noise figure (linear) */
   Ptr<ErrorRateModel> m_errorRateModel;
@@ -309,6 +339,6 @@ private:
   void AddNiChangeEvent (NiChange change);
 };
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* INTERFERENCE_HELPER_H */

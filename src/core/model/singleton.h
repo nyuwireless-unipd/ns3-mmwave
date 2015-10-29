@@ -20,28 +20,67 @@
 #ifndef SINGLETON_H
 #define SINGLETON_H
 
+#include "non-copyable.h"
+
+
+/**
+ * \file
+ * \ingroup access
+ * ns3::Singleton declaration and template implementation.
+ */
+
 namespace ns3 {
 
 /**
- * \brief a template singleton
+ * \ingroup access
+ * \brief A template singleton
  *
  * This template class can be used to implement the singleton pattern.
  * The underlying object will be destroyed automatically when the process
- * exits. Note that, if you call Singleton::Get again after the object has
+ * exits.
+ *
+ * For a singleton whose lifetime is bounded by the simulation run,
+ * not the process, see SimulationSingleton.
+ *
+ * To force your `class ExampleS` to be a singleton, inherit from Singleton:
+ * \code
+ *   class ExampleS : public Singleton<ExampleS> { ... };
+ * \endcode
+ *
+ * Then, to reach the singleton instance, just do
+ * \code
+ *   ExampleS::Get ()->...;
+ * \endcode
+ *
+ * \note
+ * If you call Get() again after the object has
  * been destroyed, the object will be re-created which will result in a
  * memory leak as reported by most memory leak checkers. It is up to the
- * user to ensure that Singleton::Get is never called from a static variable
+ * user to ensure that Get() is never called from a static variable
  * finalizer.
  */
 template <typename T>
-class Singleton
+class Singleton : private NonCopyable
 {
 public:
+  /**
+   * Get a pointer to the singleton instance.
+   *
+   * The instance will be automatically deleted when
+   * the process exits.
+   *
+   * \return A pointer to the singleton instance.
+   */
   static T *Get (void);
 
 };
 
 } // namespace ns3
+
+
+/********************************************************************
+ *  Implementation of the templates declared above.
+ ********************************************************************/
 
 namespace ns3 {
 

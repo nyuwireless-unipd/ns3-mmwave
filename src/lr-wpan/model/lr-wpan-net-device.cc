@@ -34,9 +34,9 @@
 #include <ns3/packet.h>
 
 
-NS_LOG_COMPONENT_DEFINE ("LrWpanNetDevice");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LrWpanNetDevice");
 
 NS_OBJECT_ENSURE_REGISTERED (LrWpanNetDevice);
 
@@ -45,6 +45,7 @@ LrWpanNetDevice::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::LrWpanNetDevice")
     .SetParent<NetDevice> ()
+    .SetGroupName ("LrWpan")
     .AddConstructor<LrWpanNetDevice> ()
     .AddAttribute ("Channel", "The channel attached to this device",
                    PointerValue (),
@@ -127,7 +128,12 @@ LrWpanNetDevice::CompleteConfig (void)
   m_mac->SetMcpsDataIndicationCallback (MakeCallback (&LrWpanNetDevice::McpsDataIndication, this));
   m_csmaca->SetMac (m_mac);
 
-  m_phy->SetMobility (m_node->GetObject<MobilityModel> ());
+  Ptr<MobilityModel> mobility = m_node->GetObject<MobilityModel> ();
+  if (!mobility)
+    {
+      NS_LOG_WARN ("LrWpanNetDevice: no Mobility found on the node, probably it's not a good idea.");
+    }
+  m_phy->SetMobility (mobility);
   Ptr<LrWpanErrorModel> model = CreateObject<LrWpanErrorModel> ();
   m_phy->SetErrorModel (model);
   m_phy->SetDevice (this);

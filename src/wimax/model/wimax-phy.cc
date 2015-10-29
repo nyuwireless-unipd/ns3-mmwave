@@ -30,15 +30,19 @@
 #include "ns3/uinteger.h"
 #include "ns3/double.h"
 
-NS_LOG_COMPONENT_DEFINE ("WimaxPhy");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("WimaxPhy");
 
 NS_OBJECT_ENSURE_REGISTERED (WimaxPhy);
 
 TypeId WimaxPhy::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::WimaxPhy").SetParent<Object> ()
+  static TypeId tid = TypeId ("ns3::WimaxPhy")
+    .SetParent<Object> ()
+    .SetGroupName("Wimax")
+
+    // No AddConstructor because this is an abstract class.
 
     .AddAttribute ("Channel",
                    "Wimax channel",

@@ -42,10 +42,11 @@
 #include <algorithm>
 #include <limits>
 
-NS_LOG_COMPONENT_DEFINE ("AodvRoutingProtocol");
-
 namespace ns3
 {
+
+NS_LOG_COMPONENT_DEFINE ("AodvRoutingProtocol");
+
 namespace aodv
 {
 NS_OBJECT_ENSURE_REGISTERED (RoutingProtocol);
@@ -64,8 +65,9 @@ public:
 
   static TypeId GetTypeId ()
   {
-    static TypeId tid = TypeId ("ns3::aodv::DeferredRouteOutputTag").SetParent<Tag> ()
+    static TypeId tid = TypeId ("ns3::aodv::DeferredRouteOutputTag")
       .SetParent<Tag> ()
+      .SetGroupName("Aodv")
       .AddConstructor<DeferredRouteOutputTag> ()
     ;
     return tid;
@@ -157,6 +159,7 @@ RoutingProtocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::aodv::RoutingProtocol")
     .SetParent<Ipv4RoutingProtocol> ()
+    .SetGroupName("Aodv")
     .AddConstructor<RoutingProtocol> ()
     .AddAttribute ("HelloInterval", "HELLO messages emission interval.",
                    TimeValue (Seconds (1)),
@@ -578,12 +581,6 @@ RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 {
   NS_ASSERT (ipv4 != 0);
   NS_ASSERT (m_ipv4 == 0);
-
-  if (EnableHello)
-    {
-      m_htimer.SetFunction (&RoutingProtocol::HelloTimerExpire, this);
-      m_htimer.Schedule (MilliSeconds (m_uniformRandomVariable->GetInteger (0, 100)));
-    }
 
   m_ipv4 = ipv4;
 
@@ -1927,5 +1924,20 @@ RoutingProtocol::FindSubnetBroadcastSocketWithInterfaceAddress (Ipv4InterfaceAdd
   return socket;
 }
 
+void
+RoutingProtocol::DoInitialize (void)
+{
+  NS_LOG_FUNCTION (this);
+  uint32_t startTime;
+  if (EnableHello)
+    {
+      m_htimer.SetFunction (&RoutingProtocol::HelloTimerExpire, this);
+      startTime = m_uniformRandomVariable->GetInteger (0, 100);
+      NS_LOG_DEBUG ("Starting at time " << startTime << "ms");
+      m_htimer.Schedule (MilliSeconds (startTime));
+    }
+  Ipv4RoutingProtocol::DoInitialize ();
 }
-}
+
+} //namespace aodv
+} //namespace ns3

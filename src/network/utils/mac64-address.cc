@@ -25,11 +25,11 @@
 #include <iostream>
 #include <cstring>
 
-NS_LOG_COMPONENT_DEFINE ("Mac64Address");
-
 namespace ns3 {
 
-ATTRIBUTE_HELPER_CPP (Mac64Address);  //!< Macro to make help make class an ns-3 attribute
+NS_LOG_COMPONENT_DEFINE ("Mac64Address");
+
+ATTRIBUTE_HELPER_CPP (Mac64Address);
 
 #define ASCII_a (0x41)
 #define ASCII_z (0x5a)

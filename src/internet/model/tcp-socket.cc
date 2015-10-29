@@ -27,19 +27,24 @@
 #include "ns3/nstime.h"
 #include "tcp-socket.h"
 
-NS_LOG_COMPONENT_DEFINE ("TcpSocket");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("TcpSocket");
 
 NS_OBJECT_ENSURE_REGISTERED (TcpSocket);
 
-const char* const TcpSocket::TcpStateName[LAST_STATE] = { "CLOSED", "LISTEN", "SYN_SENT", "SYN_RCVD", "ESTABLISHED", "CLOSE_WAIT", "LAST_ACK", "FIN_WAIT_1", "FIN_WAIT_2", "CLOSING", "TIME_WAIT" };
+const char* const
+TcpSocket::TcpStateName[TcpSocket::LAST_STATE] = { "CLOSED", "LISTEN", "SYN_SENT",
+                                        "SYN_RCVD", "ESTABLISHED", "CLOSE_WAIT",
+                                        "LAST_ACK", "FIN_WAIT_1", "FIN_WAIT_2",
+                                        "CLOSING", "TIME_WAIT" };
 
 TypeId
 TcpSocket::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpSocket")
     .SetParent<Socket> ()
+    .SetGroupName ("Internet")
     .AddAttribute ("SndBufSize",
                    "TcpSocket maximum transmit buffer size (bytes)",
                    UintegerValue (131072), // 128k

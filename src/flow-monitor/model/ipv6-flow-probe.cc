@@ -31,8 +31,7 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("Ipv6FlowProbe")
-  ;
+NS_LOG_COMPONENT_DEFINE ("Ipv6FlowProbe");
 
 //////////////////////////////////////
 // Ipv6FlowProbeTag class implementation //
@@ -110,6 +109,7 @@ Ipv6FlowProbeTag::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Ipv6FlowProbeTag")
     .SetParent<Tag> ()
+    .SetGroupName ("FlowMonitor")
     .AddConstructor<Ipv6FlowProbeTag> ()
   ;
   return tid;
@@ -226,6 +226,19 @@ Ipv6FlowProbe::Ipv6FlowProbe (Ptr<FlowMonitor> monitor,
   std::ostringstream oss;
   oss << "/NodeList/" << node->GetId () << "/DeviceList/*/TxQueue/Drop";
   Config::ConnectWithoutContext (oss.str (), MakeCallback (&Ipv6FlowProbe::QueueDropLogger, Ptr<Ipv6FlowProbe> (this)));
+}
+
+/* static */
+TypeId
+Ipv6FlowProbe::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::Ipv6FlowProbe")
+    .SetParent<FlowProbe> ()
+    .SetGroupName ("FlowMonitor")
+    // No AddConstructor because this class has no default constructor.
+    ;
+
+  return tid;
 }
 
 Ipv6FlowProbe::~Ipv6FlowProbe ()

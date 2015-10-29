@@ -30,9 +30,9 @@
 #include <ns3/boolean.h>
 #include <ns3/double.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteSimpleSpectrumPhy");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteSimpleSpectrumPhy");
 
 NS_OBJECT_ENSURE_REGISTERED (LteSimpleSpectrumPhy);
 
@@ -64,7 +64,8 @@ LteSimpleSpectrumPhy::GetTypeId (void)
     .SetParent<SpectrumPhy> ()
     .AddTraceSource ("RxStart",
                      "Data reception start",
-                     MakeTraceSourceAccessor (&LteSimpleSpectrumPhy::m_rxStart))
+                     MakeTraceSourceAccessor (&LteSimpleSpectrumPhy::m_rxStart),
+                     "ns3::SpectrumValue::TracedCallback")
   ;
   return tid;
 }
@@ -72,7 +73,7 @@ LteSimpleSpectrumPhy::GetTypeId (void)
 
 
 Ptr<NetDevice>
-LteSimpleSpectrumPhy::GetDevice ()
+LteSimpleSpectrumPhy::GetDevice () const
 {
   NS_LOG_FUNCTION (this);
   return m_device;

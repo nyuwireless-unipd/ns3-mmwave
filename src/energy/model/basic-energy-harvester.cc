@@ -28,10 +28,10 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/simulator.h"
 
+namespace ns3 {
+
 NS_LOG_COMPONENT_DEFINE ("BasicEnergyHarvester");
 
-namespace ns3 {
-  
 NS_OBJECT_ENSURE_REGISTERED (BasicEnergyHarvester);
 
 TypeId
@@ -39,6 +39,7 @@ BasicEnergyHarvester::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::BasicEnergyHarvester")
   .SetParent<EnergyHarvester> ()
+  .SetGroupName ("Energy")
   .AddConstructor<BasicEnergyHarvester> ()
   .AddAttribute ("PeriodicHarvestedPowerUpdateInterval",
                  "Time between two consecutive periodic updates of the harvested power. By default, the value is updated every 1 s",
@@ -53,10 +54,12 @@ BasicEnergyHarvester::GetTypeId (void)
                  MakePointerChecker<RandomVariableStream> ())
   .AddTraceSource ("HarvestedPower",
                    "Harvested power by the BasicEnergyHarvester.",
-                   MakeTraceSourceAccessor (&BasicEnergyHarvester::m_harvestedPower))
+                   MakeTraceSourceAccessor (&BasicEnergyHarvester::m_harvestedPower),
+                   "ns3::TracedValueCallback::Double")
   .AddTraceSource ("TotalEnergyHarvested",
                    "Total energy harvested by the harvester.",
-                   MakeTraceSourceAccessor (&BasicEnergyHarvester::m_totalEnergyHarvestedJ))
+                   MakeTraceSourceAccessor (&BasicEnergyHarvester::m_totalEnergyHarvestedJ),
+                   "ns3::TracedValueCallback::Double")
   ;
   return tid;
 }

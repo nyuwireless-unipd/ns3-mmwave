@@ -37,9 +37,9 @@
 #include <mpi.h>
 #endif
 
-NS_LOG_COMPONENT_DEFINE ("DistributedSimulatorImpl");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("DistributedSimulatorImpl");
 
 NS_OBJECT_ENSURE_REGISTERED (DistributedSimulatorImpl);
 
@@ -82,7 +82,8 @@ TypeId
 DistributedSimulatorImpl::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::DistributedSimulatorImpl")
-    .SetParent<Object> ()
+    .SetParent<SimulatorImpl> ()
+    .SetGroupName ("Mpi")
     .AddConstructor<DistributedSimulatorImpl> ()
   ;
   return tid;
@@ -461,22 +462,22 @@ DistributedSimulatorImpl::Stop (void)
 }
 
 void
-DistributedSimulatorImpl::Stop (Time const &time)
+DistributedSimulatorImpl::Stop (Time const &delay)
 {
-  NS_LOG_FUNCTION (this << time.GetTimeStep ());
+  NS_LOG_FUNCTION (this << delay.GetTimeStep ());
 
-  Simulator::Schedule (time, &Simulator::Stop);
+  Simulator::Schedule (delay, &Simulator::Stop);
 }
 
 //
 // Schedule an event for a _relative_ time in the future.
 //
 EventId
-DistributedSimulatorImpl::Schedule (Time const &time, EventImpl *event)
+DistributedSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
 {
-  NS_LOG_FUNCTION (this << time.GetTimeStep () << event);
+  NS_LOG_FUNCTION (this << delay.GetTimeStep () << event);
 
-  Time tAbsolute = time + TimeStep (m_currentTs);
+  Time tAbsolute = delay + TimeStep (m_currentTs);
 
   NS_ASSERT (tAbsolute.IsPositive ());
   NS_ASSERT (tAbsolute >= TimeStep (m_currentTs));
@@ -492,13 +493,13 @@ DistributedSimulatorImpl::Schedule (Time const &time, EventImpl *event)
 }
 
 void
-DistributedSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
+DistributedSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &delay, EventImpl *event)
 {
-  NS_LOG_FUNCTION (this << context << time.GetTimeStep () << m_currentTs << event);
+  NS_LOG_FUNCTION (this << context << delay.GetTimeStep () << m_currentTs << event);
 
   Scheduler::Event ev;
   ev.impl = event;
-  ev.key.m_ts = m_currentTs + time.GetTimeStep ();
+  ev.key.m_ts = m_currentTs + delay.GetTimeStep ();
   ev.key.m_context = context;
   ev.key.m_uid = m_uid;
   m_uid++;
@@ -595,30 +596,30 @@ DistributedSimulatorImpl::Cancel (const EventId &id)
 }
 
 bool
-DistributedSimulatorImpl::IsExpired (const EventId &ev) const
+DistributedSimulatorImpl::IsExpired (const EventId &id) const
 {
-  if (ev.GetUid () == 2)
+  if (id.GetUid () == 2)
     {
-      if (ev.PeekEventImpl () == 0
-          || ev.PeekEventImpl ()->IsCancelled ())
+      if (id.PeekEventImpl () == 0
+          || id.PeekEventImpl ()->IsCancelled ())
         {
           return true;
         }
       // destroy events.
       for (DestroyEvents::const_iterator i = m_destroyEvents.begin (); i != m_destroyEvents.end (); i++)
         {
-          if (*i == ev)
+          if (*i == id)
             {
               return false;
             }
         }
       return true;
     }
-  if (ev.PeekEventImpl () == 0
-      || ev.GetTs () < m_currentTs
-      || (ev.GetTs () == m_currentTs
-          && ev.GetUid () <= m_currentUid)
-      || ev.PeekEventImpl ()->IsCancelled ())
+  if (id.PeekEventImpl () == 0
+      || id.GetTs () < m_currentTs
+      || (id.GetTs () == m_currentTs
+          && id.GetUid () <= m_currentUid)
+      || id.PeekEventImpl ()->IsCancelled ())
     {
       return true;
     }

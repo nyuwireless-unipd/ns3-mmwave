@@ -36,10 +36,9 @@
 
 #include <cmath>
 
-NS_LOG_COMPONENT_DEFINE ("LteUeRrc");
-
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("LteUeRrc");
 
 /////////////////////////////
 // CMAC SAP forwarder
@@ -87,7 +86,7 @@ UeMemberLteUeCmacSapUser::NotifyRandomAccessFailed ()
 
 
 
-
+/// Map each of UE RRC states to its string representation.
 static const std::string g_ueRrcStateName[LteUeRrc::NUM_STATES] =
 {
   "IDLE_START",
@@ -105,6 +104,10 @@ static const std::string g_ueRrcStateName[LteUeRrc::NUM_STATES] =
   "CONNECTED_REESTABLISHING"
 };
 
+/**
+ * \param s The UE RRC state.
+ * \return The string representation of the given state.
+ */
 static const std::string & ToString (LteUeRrc::State s)
 {
   return g_ueRrcStateName[s];
@@ -166,6 +169,7 @@ LteUeRrc::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::LteUeRrc")
     .SetParent<Object> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteUeRrc> ()
     .AddAttribute ("DataRadioBearerMap", "List of UE RadioBearerInfo for Data Radio Bearers by LCID.",
                    ObjectMapValue (),
@@ -197,46 +201,60 @@ LteUeRrc::GetTypeId (void)
                    MakeTimeChecker ())
     .AddTraceSource ("MibReceived",
                      "trace fired upon reception of Master Information Block",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_mibReceivedTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_mibReceivedTrace),
+                     "ns3::LteUeRrc::MibSibHandoverTracedCallback")
     .AddTraceSource ("Sib1Received",
                      "trace fired upon reception of System Information Block Type 1",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_sib1ReceivedTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_sib1ReceivedTrace),
+                     "ns3::LteUeRrc::MibSibHandoverTracedCallback")
     .AddTraceSource ("Sib2Received",
                      "trace fired upon reception of System Information Block Type 2",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_sib2ReceivedTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_sib2ReceivedTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
     .AddTraceSource ("StateTransition",
                      "trace fired upon every UE RRC state transition",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_stateTransitionTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_stateTransitionTrace),
+                     "ns3::LteUeRrc::StateTracedCallback")
     .AddTraceSource ("InitialCellSelectionEndOk",
                      "trace fired upon successful initial cell selection procedure",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_initialCellSelectionEndOkTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_initialCellSelectionEndOkTrace),
+                     "ns3::LteUeRrc::CellSelectionTracedCallback")
     .AddTraceSource ("InitialCellSelectionEndError",
                      "trace fired upon failed initial cell selection procedure",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_initialCellSelectionEndErrorTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_initialCellSelectionEndErrorTrace),
+                     "ns3::LteUeRrc::CellSelectionTracedCallback")
     .AddTraceSource ("RandomAccessSuccessful",
                      "trace fired upon successful completion of the random access procedure",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_randomAccessSuccessfulTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_randomAccessSuccessfulTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
     .AddTraceSource ("RandomAccessError",
                      "trace fired upon failure of the random access procedure",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_randomAccessErrorTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_randomAccessErrorTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
     .AddTraceSource ("ConnectionEstablished",
                      "trace fired upon successful RRC connection establishment",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_connectionEstablishedTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_connectionEstablishedTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
     .AddTraceSource ("ConnectionTimeout",
                      "trace fired upon timeout RRC connection establishment because of T300",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_connectionTimeoutTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_connectionTimeoutTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
     .AddTraceSource ("ConnectionReconfiguration",
                      "trace fired upon RRC connection reconfiguration",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_connectionReconfigurationTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_connectionReconfigurationTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
     .AddTraceSource ("HandoverStart",
                      "trace fired upon start of a handover procedure",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_handoverStartTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_handoverStartTrace),
+                     "ns3::LteUeRrc::MibSibHandoverTracedCallback")
     .AddTraceSource ("HandoverEndOk",
                      "trace fired upon successful termination of a handover procedure",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_handoverEndOkTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_handoverEndOkTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
     .AddTraceSource ("HandoverEndError",
                      "trace fired upon failure of a handover procedure",
-                     MakeTraceSourceAccessor (&LteUeRrc::m_handoverEndErrorTrace))
+                     MakeTraceSourceAccessor (&LteUeRrc::m_handoverEndErrorTrace),
+                     "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
   ;
   return tid;
 }
@@ -413,6 +431,8 @@ LteUeRrc::DoSendData (Ptr<Packet> packet, uint8_t bid)
 
   uint8_t drbid = Bid2Drbid (bid);
 
+  if (drbid != 0)
+    {
   std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it =   m_drbMap.find (drbid);
   NS_ASSERT_MSG (it != m_drbMap.end (), "could not find bearer with drbid == " << drbid);
 
@@ -426,6 +446,7 @@ LteUeRrc::DoSendData (Ptr<Packet> packet, uint8_t bid)
                      << " (LCID " << (uint32_t) params.lcid << ")"
                      << " (" << packet->GetSize () << " bytes)");
   it->second->m_pdcp->GetLtePdcpSapProvider ()->TransmitPdcpSdu (params);
+    }
 }
 
 
@@ -1116,8 +1137,10 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
   if (pcd.havePdschConfigDedicated)
     {
       // update PdschConfigDedicated (i.e. P_A value)
-	  m_pdschConfigDedicated = pcd.pdschConfigDedicated;
-   }
+      m_pdschConfigDedicated = pcd.pdschConfigDedicated;
+      double paDouble = LteRrcSap::ConvertPdschConfigDedicated2Double (m_pdschConfigDedicated);
+      m_cphySapProvider->SetPa (paDouble);
+    }
 
   std::list<LteRrcSap::SrbToAddMod>::const_iterator stamIt = rrcd.srbToAddModList.begin ();
   if (stamIt != rrcd.srbToAddModList.end ())
@@ -1274,6 +1297,8 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
       NS_ASSERT_MSG (it != m_drbMap.end (), "could not find bearer with given lcid");
       m_drbMap.erase (it);      
       m_bid2DrbidMap.erase (drbid);
+      //Remove LCID
+      m_cmacSapProvider->RemoveLc (drbid + 2);
     }
 }
 
@@ -1422,8 +1447,8 @@ LteUeRrc::ApplyMeasConfig (LteRrcSap::MeasConfig mc)
       NS_LOG_LOGIC (this << " setting quantityConfig");
       m_varMeasConfig.quantityConfig = mc.quantityConfig;
       // we calculate here the coefficient a used for Layer 3 filtering, see 3GPP TS 36.331 section 5.5.3.2
-      m_varMeasConfig.aRsrp = std::pow (0.5, mc.quantityConfig.filterCoefficientRSRP/4.0);
-      m_varMeasConfig.aRsrq = std::pow (0.5, mc.quantityConfig.filterCoefficientRSRQ/4.0);
+      m_varMeasConfig.aRsrp = std::pow (0.5, mc.quantityConfig.filterCoefficientRSRP / 4.0);
+      m_varMeasConfig.aRsrq = std::pow (0.5, mc.quantityConfig.filterCoefficientRSRQ / 4.0);
       NS_LOG_LOGIC (this << " new filter coefficients: aRsrp=" << m_varMeasConfig.aRsrp << ", aRsrq=" << m_varMeasConfig.aRsrq);
 
       for (std::map<uint8_t, LteRrcSap::MeasIdToAddMod>::iterator measIdIt
@@ -1501,7 +1526,7 @@ LteUeRrc::SaveUeMeasurements (uint16_t cellId, double rsrp, double rsrq,
 {
   NS_LOG_FUNCTION (this << cellId << rsrp << rsrq << useLayer3Filtering);
 
-  std::map<uint16_t, MeasValues>::iterator storedMeasIt = m_storedMeasValues.find (cellId);;
+  std::map<uint16_t, MeasValues>::iterator storedMeasIt = m_storedMeasValues.find (cellId);
 
   if (storedMeasIt != m_storedMeasValues.end ())
     {
@@ -2773,10 +2798,16 @@ uint8_t
 LteUeRrc::Bid2Drbid (uint8_t bid)
 {
   std::map<uint8_t, uint8_t>::iterator it = m_bid2DrbidMap.find (bid);
-  NS_ASSERT_MSG (it != m_bid2DrbidMap.end (), "could not find BID " << bid);
+  //NS_ASSERT_MSG (it != m_bid2DrbidMap.end (), "could not find BID " << bid);
+  if (it == m_bid2DrbidMap.end ())
+    {
+      return 0;
+    }
+  else
+    {
   return it->second;
+    }
 }
-
 
 void 
 LteUeRrc::SwitchToState (State newState)

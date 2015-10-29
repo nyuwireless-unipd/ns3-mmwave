@@ -41,11 +41,37 @@ namespace ns3 {
  * as methods for serialization to and deserialization from a byte buffer.
  */
 
-class TcpHeader : public Header 
+class TcpHeader : public Header
 {
 public:
   TcpHeader ();
   virtual ~TcpHeader ();
+
+  /**
+   * \brief Print a TCP header into an output stream
+   *
+   * \param os output stream
+   * \param tc TCP header to print
+   * \return The ostream passed as first argument
+   */
+  friend std::ostream& operator<<(std::ostream& os, TcpHeader const & tc);
+
+  /**
+   * \brief Converts an integer into a human readable list of Tcp flags
+   *
+   * \param flags Bitfield of TCP flags to convert to a readable string
+   * \param delimiter String to insert between flags
+   *
+   * FIN=0x1, SYN=0x2, RST=0x4, PSH=0x8, ACK=0x10, URG=0x20, ECE=0x40, CWR=0x80
+   * TcpHeader::FlagsToString (0x1) should return the following string;
+   *     "FIN"
+   *
+   * TcpHeader::FlagsToString (0xff) should return the following string;
+   *     "FIN|SYN|RST|PSH|ACK|URG|ECE|CWR";
+   *
+   * \return the generated string
+   **/
+  static std::string FlagsToString (uint8_t flags, const std::string& delimiter = "|");
 
   /**
    * \brief Enable checksum calculation for TCP
@@ -169,6 +195,7 @@ public:
   /**
    * \brief Append an option to the TCP header
    * \param option The option to append
+   * \return true if option has been appended, false otherwise
    */
   bool AppendOption (Ptr<TcpOption> option);
 
@@ -186,8 +213,8 @@ public:
    *        IP packet.
    *
    */
-  void InitializeChecksum (Ipv4Address source, 
-                           Ipv4Address destination,
+  void InitializeChecksum (const Ipv4Address &source,
+                           const Ipv4Address &destination,
                            uint8_t protocol);
 
   /**
@@ -204,8 +231,8 @@ public:
    *        IP packet.
    *
    */
-  void InitializeChecksum (Ipv6Address source, 
-                           Ipv6Address destination,
+  void InitializeChecksum (const Ipv6Address &source,
+                           const Ipv6Address &destination,
                            uint8_t protocol);
 
   /**
@@ -222,8 +249,8 @@ public:
    *        IP packet.
    *
    */
-  void InitializeChecksum (Address source, 
-                           Address destination,
+  void InitializeChecksum (const Address &source,
+                           const Address &destination,
                            uint8_t protocol);
 
   /**
@@ -259,6 +286,12 @@ public:
    */
   bool IsChecksumOk (void) const;
 
+  /**
+   * Comparison operator
+   * \param lhs left operand
+   * \param rhs right operand
+   * \return true if the operands are equal
+   */
   friend bool operator== (const TcpHeader &lhs, const TcpHeader &rhs);
 
 private:

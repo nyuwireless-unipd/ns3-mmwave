@@ -73,13 +73,16 @@ MmWaveUePhy::GetTypeId (void)
 					    MakePointerChecker <MmWaveSpectrumPhy> ())
 		.AddTraceSource ("ReportCurrentCellRsrpSinr",
 						 "RSRP and SINR statistics.",
-						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportCurrentCellRsrpSinrTrace))
+						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportCurrentCellRsrpSinrTrace),
+	                     "ns3::mmWaveUePhy::RsrpRsrqTracedCallback")
 		.AddTraceSource ("ReportUplinkTbSize",
 						 "Report allocated uplink TB size for trace.",
-						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportUlTbSize))
+						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportUlTbSize),
+						 "ns3::mmWaveUePhy::UlTbSizeTracedCallback")
 		.AddTraceSource ("ReportDownlinkTbSize",
 						 "Report allocated downlink TB size for trace.",
-						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportDlTbSize))
+						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportDlTbSize),
+						 "ns3::mmWaveUePhy::DlTbSizeTracedCallback")
 ;
 
 	return tid;
@@ -604,6 +607,10 @@ MmWaveUePhy::ProcessSubframe ()
 	{
 		m_nrSlots = 1;
 		m_nrFrames++;
+		if (m_nrFrames == 1024)
+		{
+			m_nrFrames = 0;
+		}
 	}
 	else
 	{
@@ -793,6 +800,12 @@ MmWaveUePhy::DoSynchronizeWithEnb (uint16_t cellId)
 	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
 	m_downlinkSpectrumPhy->GetSpectrumChannel()->AddRx(m_downlinkSpectrumPhy);
 	m_downlinkSpectrumPhy->SetCellId(m_cellId);*/
+}
+
+void
+MmWaveUePhy::DoSetPa (double pa)
+{
+  NS_LOG_FUNCTION (this << pa);
 }
 
 void

@@ -31,9 +31,9 @@
 #include <set>
 #include <cfloat>
 
-NS_LOG_COMPONENT_DEFINE ("FdBetFfMacScheduler");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("FdBetFfMacScheduler");
 
 static const int FdBetType0AllocationRbg[4] = {
   10,       // RGB size 1
@@ -249,6 +249,7 @@ FdBetFfMacScheduler::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::FdBetFfMacScheduler")
     .SetParent<FfMacScheduler> ()
+    .SetGroupName("Lte")
     .AddConstructor<FdBetFfMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
@@ -1334,7 +1335,7 @@ FdBetFfMacScheduler::DoSchedDlCqiInfoReq (const struct FfMacSchedSapProvider::Sc
     {
       if ( params.m_cqiList.at (i).m_cqiType == CqiListElement_s::P10 )
         {
-          // wideband CQI reporting
+          NS_LOG_LOGIC ("wideband CQI " <<  (uint32_t) params.m_cqiList.at (i).m_wbCqi.at (0) << " reported");
           std::map <uint16_t,uint8_t>::iterator it;
           uint16_t rnti = params.m_cqiList.at (i).m_rnti;
           it = m_p10CqiRxed.find (rnti);

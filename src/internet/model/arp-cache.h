@@ -33,6 +33,7 @@
 #include "ns3/object.h"
 #include "ns3/traced-callback.h"
 #include "ns3/sgi-hashmap.h"
+#include "ns3/output-stream-wrapper.h"
 
 namespace ns3 {
 
@@ -76,8 +77,8 @@ public:
   /**
    * \brief Set the NetDevice and Ipv4Interface associated with the ArpCache
    *
-   * \param device The hardware NetDevice associated with this ARP chache
-   * \param interface the Ipv4Interface associated with this ARP chache
+   * \param device The hardware NetDevice associated with this ARP cache
+   * \param interface the Ipv4Interface associated with this ARP cache
    */
   void SetDevice (Ptr<NetDevice> device, Ptr<Ipv4Interface> interface);
   /**
@@ -150,9 +151,21 @@ public:
    */
   ArpCache::Entry *Add (Ipv4Address to);
   /**
+   * \brief Remove an entry.
+   * \param entry pointer to delete it from the list
+   */
+  void Remove (ArpCache::Entry *entry);
+  /**
    * \brief Clear the ArpCache of all entries
    */
   void Flush (void);
+
+  /**
+   * \brief Print the ARP cache entries
+   *
+   * \param stream the ostream the ARP cache entries is printed to
+   */
+  void PrintArpCache (Ptr<OutputStreamWrapper> stream);
 
   /**
    * \brief A record that that holds information about an ArpCache entry
@@ -178,6 +191,12 @@ public:
      */
     void MarkWaitReply (Ptr<Packet> waiting);
     /**
+     * \brief Changes the state of this entry to Permanent.
+     *
+     * The entry must have a valid MacAddress.
+     */
+    void MarkPermanent (void);
+    /**
      * \param waiting
      * \return 
      */
@@ -194,7 +213,10 @@ public:
      * \return True if the state of this entry is wait_reply; false otherwise.
      */
     bool IsWaitReply (void);
-
+    /**
+     * \return True if the state of this entry is permanent; false otherwise.
+     */
+    bool IsPermanent (void); 
     /**
      * \return The MacAddress of this entry
      */
@@ -203,6 +225,10 @@ public:
      * \return The Ipv4Address for this entry
      */
     Ipv4Address GetIpv4Address (void) const;
+    /**
+     * \param macAddress The MacAddress for this entry
+     */
+    void SetMacAddresss (Address macAddress);
     /**
      * \param destination The Ipv4Address for this entry
      */
@@ -219,6 +245,10 @@ public:
      *            packets are pending.
      */
     Ptr<Packet> DequeuePending (void);
+    /**
+     * \brief Clear the pending packet list
+     */
+    void ClearPendingPacket (void);
     /**
      * \returns number of retries that have been sent for an ArpRequest
      *  in WaitReply state.
@@ -240,7 +270,8 @@ private:
     enum ArpCacheEntryState_e {
       ALIVE,
       WAIT_REPLY,
-      DEAD
+      DEAD,
+      PERMANENT
     };
 
     /**
