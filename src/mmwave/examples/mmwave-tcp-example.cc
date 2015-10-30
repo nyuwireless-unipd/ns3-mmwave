@@ -218,7 +218,7 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ueIpIface;
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueDevs));
 
-	mmwaveHelper->RegisterToClosestEnb (ueDevs, enbDevs);
+	mmwaveHelper->AttachToClosestEnb (ueDevs, enbDevs);
 	mmwaveHelper->EnableTraces ();
 
 	// Set the default gateway for the UE

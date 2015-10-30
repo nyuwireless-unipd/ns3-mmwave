@@ -141,7 +141,7 @@ main (int argc, char *argv[])
       ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
     }
 
-  mmwaveHelper->RegisterToClosestEnb (uemmWaveDevs, enbmmWaveDevs);
+  mmwaveHelper->AttachToClosestEnb (uemmWaveDevs, enbmmWaveDevs);
 
 
   // Install and start applications on UEs and remote host

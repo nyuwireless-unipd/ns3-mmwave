@@ -207,6 +207,7 @@ def build(bld):
         'model/ripng.cc',
         'model/ripng-header.cc',
         'helper/ripng-helper.cc',
+        'model/tcp-cubic.cc',
         ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -339,6 +340,7 @@ def build(bld):
         'model/ripng.h',
         'model/ripng-header.h',
         'helper/ripng-helper.h',
+        'model/tcp-cubic.h',
        ]
 
     if bld.env['NSC_ENABLED']:

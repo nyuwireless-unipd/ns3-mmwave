@@ -468,20 +468,20 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 }
 
 void
-MmWaveHelper::RegisterToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
+MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
 {
 	NS_LOG_FUNCTION(this);
 
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
-		RegisterToClosestEnb(*i, enbDevices);
+		AttachToClosestEnb(*i, enbDevices);
 	}
 
 	m_beamforming->Initial(ueDevices,enbDevices);
 }
 
 void
-MmWaveHelper::RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices)
+MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices)
 {
 	NS_LOG_FUNCTION (this);
 	NS_ASSERT_MSG (enbDevices.GetN () > 0, "empty enb device container");

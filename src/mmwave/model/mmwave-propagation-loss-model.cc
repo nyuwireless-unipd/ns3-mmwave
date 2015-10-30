@@ -198,7 +198,7 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 
   //NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
   double lossDb = alpha + beta * 10 * log10(distance) + (*it).second.m_shadowing;
-  NS_LOG_UNCOND ("time="<<Simulator::Now ().GetNanoSeconds () / (double) 1e9<<'\t'<<"POut="<<POut<<'\t'<<"PLos="<<PLos<<'\t'<<"PNlos="<<PNlos<<'\t'<<"lossDb="<<lossDb);
+  NS_LOG_UNCOND ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<lossDb);
   return txPowerDbm - std::max (lossDb, m_minLoss);
 }
 

@@ -155,61 +155,36 @@ ChangeSpeed(Ptr<Node>  n, Vector speed)
 	n->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (speed);
 }
 
-void
-ChangeDataRate(MyApp app, DataRate rate)
-{
-	app.ChangeDataRate (rate);
-}
-
-void
-ChangeLocation(Ptr<Node>  n, Vector loc)
-{
-	n->GetObject<MobilityModel> ()->SetPosition (loc);
-
-}
-
 
 int
 main (int argc, char *argv[])
 {
 
-	//LogComponentEnable ("TcpSocketBase", LOG_LEVEL_INFO);
-	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 100));
 	//Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*10));
 	//Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*10));
-	//Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (536*10));
-
-
-	double stopTime = 15;
-	double simStopTime = 15;
-	Ipv4Address remoteHostAddr;
-
-	// Command line arguments
-	CommandLine cmd;
-	cmd.Parse(argc, argv);
-
     Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+    /*
+     * scenario 1: 1 building;
+     * scenario 2: 3 building;
+     * scenario 3: 6 random located small building, simulate tree and human blockage.
+     * */
+    int scenario = 3;
+	double stopTime = 20;
+	double simStopTime = 20;
 
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
-
 	mmwaveHelper->Initialize();
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
-/*
+
+	/*
 	Ptr<LteHelper> mmwaveHelper = CreateObject<LteHelper> ();
 	Ptr<PointToPointEpcHelper>  epcHelper = CreateObject<PointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
-	*/
-
-
-	ConfigStore inputConfig;
-	inputConfig.ConfigureDefaults();
-
-	// parse again so you can override default values from the command line
-	cmd.Parse(argc, argv);
+*/
 
 	Ptr<Node> pgw = epcHelper->GetPgwNode ();
 
@@ -223,34 +198,103 @@ main (int argc, char *argv[])
 	// Create the Internet
 	PointToPointHelper p2ph;
 	p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
-	p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2000));
-	p2ph.SetChannelAttribute ("Delay", TimeValue (MicroSeconds (0)));
+	p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
+	p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
 	NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 	Ipv4AddressHelper ipv4h;
 	ipv4h.SetBase ("1.0.0.0", "255.0.0.0");
 	Ipv4InterfaceContainer internetIpIfaces = ipv4h.Assign (internetDevices);
 	// interface 0 is localhost, 1 is the p2p device
+	Ipv4Address remoteHostAddr;
 	remoteHostAddr = internetIpIfaces.GetAddress (1);
-
 	Ipv4StaticRoutingHelper ipv4RoutingHelper;
 	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
 	remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
+
+
+
+	switch (scenario)
+	{
+		case 1:
+		{
+			Ptr < Building > building;
+			building = Create<Building> ();
+			building->SetBoundaries (Box (20.0,30.0,
+										0.0, 7.3,
+										0.0, 15.0));
+			break;
+		}
+		case 2:
+		{
+			Ptr < Building > building1;
+			building1 = Create<Building> ();
+			building1->SetBoundaries (Box (30.0,32.0,
+										0.0, 2.0,
+										0.0, 1.5));
+
+			Ptr < Building > building2;
+			building2 = Create<Building> ();
+			building2->SetBoundaries (Box (30.0,32.0,
+										6.0, 8.0,
+										0.0, 15.0));
+
+			Ptr < Building > building3;
+			building3 = Create<Building> ();
+			building3->SetBoundaries (Box (30.0,32.0,
+										10.0, 11.0,
+										0.0, 15.0));
+			break;
+		}
+		case 3:
+		{
+			Ptr < Building > building1;
+			building1 = Create<Building> ();
+			building1->SetBoundaries (Box (34.5,35.0,
+										4.5, 5.0,
+										0.0, 1.5));
+
+			Ptr < Building > building2;
+			building2 = Create<Building> ();
+			building2->SetBoundaries (Box (30.0,30.5,
+										9.5, 10.0,
+										0.0, 1.5));
+
+			Ptr < Building > building3;
+			building3 = Create<Building> ();
+			building3->SetBoundaries (Box (27.0,27.5,
+										5.5, 6.0,
+										0.0, 1.5));
+			Ptr < Building > building4;
+			building1 = Create<Building> ();
+			building1->SetBoundaries (Box (30.0,30.5,
+										6.0, 6.5,
+										0.0, 1.5));
+
+			Ptr < Building > building5;
+			building2 = Create<Building> ();
+			building2->SetBoundaries (Box (35.0,35.5,
+										0.0, 0.5,
+										0.0, 1.5));
+
+			Ptr < Building > building6;
+			building3 = Create<Building> ();
+			building3->SetBoundaries (Box (25.0,25.5,
+										4.0, 4.5,
+										0.0, 1.5));
+			break;
+			break;
+		}
+		default:
+		{
+		    NS_FATAL_ERROR ("Invalid scenario");
+		}
+	}
+
 
 	NodeContainer ueNodes;
 	NodeContainer enbNodes;
 	enbNodes.Create(1);
 	ueNodes.Create(1);
-
-	Ptr < Building > building;
-	building = Create<Building> ();
-	building->SetBoundaries (Box (20.0,30.0,
-								0.0, 3.5,
-								0.0, 15.0));
-	building->SetBuildingType (Building::Residential);
-	building->SetExtWallsType (Building::ConcreteWithWindows);
-	building->SetNFloors (1);
-	building->SetNRoomsX (1);
-	building->SetNRoomsY (1);
 
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
 	enbPositionAlloc->Add (Vector (0.0, 0.0, 3.0));
@@ -259,8 +303,6 @@ main (int argc, char *argv[])
 	enbmobility.SetPositionAllocator(enbPositionAlloc);
 	enbmobility.Install (enbNodes);
 	BuildingsHelper::Install (enbNodes);
-
-
 	MobilityHelper uemobility;
 	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
 	uemobility.Install (ueNodes);
@@ -268,7 +310,7 @@ main (int argc, char *argv[])
 	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
 	Simulator::Schedule (Seconds (5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
-	Simulator::Schedule (Seconds (10), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
+	Simulator::Schedule (Seconds (15), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
 
 	BuildingsHelper::Install (ueNodes);
 
@@ -282,8 +324,7 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ueIpIface;
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueDevs));
 
-	mmwaveHelper->RegisterToClosestEnb (ueDevs, enbDevs);
-	//mmwaveHelper->Attach (ueDevs, enbDevs.Get (0));
+	mmwaveHelper->AttachToClosestEnb (ueDevs, enbDevs);
 	mmwaveHelper->EnableTraces ();
 
 	// Set the default gateway for the UE
@@ -302,33 +343,24 @@ main (int argc, char *argv[])
 	sinkApps.Stop (Seconds (simStopTime));
 
 	Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
-
-
 	Ptr<MyApp> app = CreateObject<MyApp> ();
-
-	app->Setup (ns3TcpSocket, sinkAddress, 512, 1000000, DataRate ("10Mb/s"));
-
+	app->Setup (ns3TcpSocket, sinkAddress, 512, 1000000, DataRate ("30Mb/s"));
 	remoteHostContainer.Get (0)->AddApplication (app);
-
 	AsciiTraceHelper asciiTraceHelper;
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-window.txt");
 	ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
-
 	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data.txt");
 	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
-
 	app->SetStartTime (Seconds (0.2));
 	app->SetStopTime (Seconds (stopTime));
 
 
-	p2ph.EnablePcapAll("mmwave-sgi-capture");
+	//p2ph.EnablePcapAll("mmwave-sgi-capture");
 	BuildingsHelper::MakeMobilityModelConsistent ();
 	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*100));
 
 	Simulator::Stop (Seconds (simStopTime));
 	Simulator::Run ();
-
-
 	Simulator::Destroy ();
 
 	return 0;

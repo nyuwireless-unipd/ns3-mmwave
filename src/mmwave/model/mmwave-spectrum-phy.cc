@@ -558,7 +558,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				{
 					//Drop Packet
 					//					Time t =  Simulator::Now ();
-					NS_LOG_UNCOND("TB failed");
+					NS_LOG_DEBUG ("TB failed");
 				}
 
 				// send HARQ feedback (if not already done for this TB)

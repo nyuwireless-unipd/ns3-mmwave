@@ -187,8 +187,8 @@ main (int argc, char *argv[])
   //LogComponentEnable ("TcpSocketBase", LOG_LEVEL_INFO);
   //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
   //LogComponentEnable ("LteUePhy", LOG_LEVEL_INFO);
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-  //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
+  //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
 
 
 

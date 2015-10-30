@@ -16,10 +16,10 @@ public:
 	~BuildingsObstaclePropagationLossModel ();
 	virtual double GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 	void SetFrequency (double freq);
-	double mmWaveLosLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
-	double mmWaveNlosLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 
 private:
+	double mmWaveLosLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
+	double mmWaveNlosLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 	double m_frequency;
 	double m_lambda;
 };

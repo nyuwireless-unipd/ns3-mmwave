@@ -57,7 +57,7 @@ public:
 	NetDeviceContainer InstallEnbDevice (NodeContainer c);
 	void SetAntenna (uint16_t Nrx, uint16_t Ntx);
 	void SetPathlossModelType (std::string type);
-	void RegisterToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
+	void AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
 	void EnableTraces ();
 
 	void SetSchedulerType (std::string type);
@@ -78,7 +78,7 @@ protected:
 private:
 	Ptr<NetDevice> InstallSingleUeDevice (Ptr<Node> n);
 	Ptr<NetDevice> InstallSingleEnbDevice (Ptr<Node> n);
-	void RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices);
+	void AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices);
 	void EnableDlPhyTrace ();
 	void EnableEnbPacketCountTrace ();
 	void EnableUePacketCountTrace ();
