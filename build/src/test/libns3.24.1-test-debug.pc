@@ -1,0 +1,10 @@
+prefix=/usr/local
+libdir=/usr/local/lib
+includedir=/usr/local/include/ns3.24.1
+
+Name: libns3-test
+Description: ns-3 module ns3-test
+Version: 3.24.1
+Libs: -L${libdir} -lns3.24.1-test-debug
+Cflags: -I${includedir}
+Requires: libns3.24.1-applications-debug libns3.24.1-bridge-debug libns3.24.1-config-store-debug libns3.24.1-csma-debug libns3.24.1-csma-layout-debug libns3.24.1-dsr-debug libns3.24.1-flow-monitor-debug libns3.24.1-internet-debug libns3.24.1-lr-wpan-debug libns3.24.1-lte-debug libns3.24.1-mesh-debug libns3.24.1-mobility-debug libns3.24.1-olsr-debug libns3.24.1-point-to-point-debug libns3.24.1-sixlowpan-debug libns3.24.1-stats-debug libns3.24.1-uan-debug libns3.24.1-wifi-debug

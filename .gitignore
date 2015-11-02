@@ -1,18 +1,2 @@
 
-build/*
 
-*.py
-
-*.pyc
-
-*.txt
-
-
-
-.lock-waf_darwin_build
-
-.project
-
-.cproject
-
-*.pcap

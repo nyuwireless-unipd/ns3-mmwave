@@ -1,0 +1,872 @@
+# project ns (3.24.1) configured on Mon Nov  2 10:30:10 2015 by
+# waf 1.8.12 (abi 98, python 2070af0 on darwin)
+# using ./waf configure
+#
+----------------------------------------
+Setting top to
+/Users/mengleizhang/GitHub/ns3-mmwave
+----------------------------------------
+Setting out to
+/Users/mengleizhang/GitHub/ns3-mmwave/build
+----------------------------------------
+Checking for 'clang' (C compiler)
+find program=['clang'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='CC' -> ['/usr/bin/clang']
+find program=['ar'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='AR' -> ['/usr/bin/ar']
+/usr/bin/clang
+----------------------------------------
+Checking for cc version
+7.0.0
+----------------------------------------
+Checking for 'clang++' (C++ compiler)
+find program=['clang++'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='CXX' -> ['/usr/bin/clang++']
+(tool ar is already loaded, skipping)
+/usr/bin/clang++
+----------------------------------------
+Checking for program 'python'
+/usr/bin/python
+find program=['python'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='PYTHON' -> ['/usr/bin/python']
+['/usr/bin/python', '-c', 'import imp;print(imp.get_tag())']
+err: Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+AttributeError: 'module' object has no attribute 'get_tag'
+
+['/usr/bin/python', '-c', 'import sys\nfor x in sys.version_info: print(str(x))']
+out: 2
+7
+10
+final
+0
+
+['/usr/bin/python', '-c', "from distutils.sysconfig import get_config_var, get_python_lib\n\nprint(repr(get_python_lib(standard_lib=0, prefix='/usr/local') or ''))"]
+out: '/usr/local/lib/python2.7/site-packages'
+
+'/usr/local/lib/python2.7/site-packages'
+
+['/usr/bin/python', '-c', "from distutils.sysconfig import get_config_var, get_python_lib\n\nprint(repr(get_python_lib(plat_specific=1, standard_lib=0, prefix='/usr/local') or ''))"]
+out: '/usr/local/lib/python2.7/site-packages'
+
+'/usr/local/lib/python2.7/site-packages'
+
+----------------------------------------
+Checking for python version
+(2, 7, 10, 'final', 0)
+['/usr/bin/python', '-c', "from distutils.sysconfig import get_config_var, get_python_lib\n\nprint(repr(get_config_var('prefix') or ''))\nprint(repr(get_config_var('SO') or ''))\nprint(repr(get_config_var('LDFLAGS') or ''))\nprint(repr(get_config_var('LIBDIR') or ''))\nprint(repr(get_config_var('LIBPL') or ''))\nprint(repr(get_config_var('INCLUDEPY') or ''))\nprint(repr(get_config_var('Py_ENABLE_SHARED') or ''))\nprint(repr(get_config_var('MACOSX_DEPLOYMENT_TARGET') or ''))\nprint(repr(get_config_var('LDSHARED') or ''))\nprint(repr(get_config_var('CFLAGS') or ''))\nprint(repr(get_config_var('LDVERSION') or ''))"]
+out: '/System/Library/Frameworks/Python.framework/Versions/2.7'
+'.so'
+'-arch i386 -arch x86_64            -Wl,-F.'
+'/System/Library/Frameworks/Python.framework/Versions/2.7/lib'
+'/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config'
+'/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7'
+''
+'10.11'
+'cc -bundle -undefined dynamic_lookup -arch i386 -arch x86_64            -Wl,-F.'
+'-fno-strict-aliasing -fno-common -dynamic -arch i386 -arch x86_64 -g -Os -pipe -fno-common -fno-strict-aliasing -fwrapv -DENABLE_DTRACE -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes -Wshorten-64-to-32 -DNDEBUG -g -fwrapv -Os -Wall -Wstrict-prototypes -DENABLE_DTRACE'
+''
+
+'/System/Library/Frameworks/Python.framework/Versions/2.7'
+'.so'
+'-arch i386 -arch x86_64            -Wl,-F.'
+'/System/Library/Frameworks/Python.framework/Versions/2.7/lib'
+'/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config'
+'/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7'
+''
+'10.11'
+'cc -bundle -undefined dynamic_lookup -arch i386 -arch x86_64            -Wl,-F.'
+'-fno-strict-aliasing -fno-common -dynamic -arch i386 -arch x86_64 -g -Os -pipe -fno-common -fno-strict-aliasing -fwrapv -DENABLE_DTRACE -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes -Wshorten-64-to-32 -DNDEBUG -g -fwrapv -Os -Wall -Wstrict-prototypes -DENABLE_DTRACE'
+''
+
+Configuration returned from ['/usr/bin/python']:
+prefix = '/System/Library/Frameworks/Python.framework/Versions/2.7'
+SO = '.so'
+LDFLAGS = '-arch i386 -arch x86_64            -Wl,-F.'
+LIBDIR = '/System/Library/Frameworks/Python.framework/Versions/2.7/lib'
+LIBPL = '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config'
+INCLUDEPY = '/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7'
+Py_ENABLE_SHARED = ''
+MACOSX_DEPLOYMENT_TARGET = '10.11'
+LDSHARED = 'cc -bundle -undefined dynamic_lookup -arch i386 -arch x86_64            -Wl,-F.'
+CFLAGS = '-fno-strict-aliasing -fno-common -dynamic -arch i386 -arch x86_64 -g -Os -pipe -fno-common -fno-strict-aliasing -fwrapv -DENABLE_DTRACE -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes -Wshorten-64-to-32 -DNDEBUG -g -fwrapv -Os -Wall -Wstrict-prototypes -DENABLE_DTRACE'
+LDVERSION = ''
+
+----------------------------------------
+python-config
+/usr/bin/python-config
+find program=['/usr/bin/python-config', 'python2.7-config', 'python-config-2.7', 'python2.7m-config'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='PYTHON_CONFIG' -> ['/usr/bin/python-config']
+------------------------------------------------------------------
+Asking python-config for pyembed '--cflags --libs --ldflags' flags
+['/usr/bin/python-config', '--cflags', '--libs', '--ldflags']
+out: -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -fno-strict-aliasing -fno-common -dynamic -arch i386 -arch x86_64 -g -Os -pipe -fno-common -fno-strict-aliasing -fwrapv -DENABLE_DTRACE -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes -Wshorten-64-to-32 -DNDEBUG -g -fwrapv -Os -Wall -Wstrict-prototypes -DENABLE_DTRACE
+-lpython2.7 -ldl -framework CoreFoundation
+-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config -lpython2.7 -ldl -framework CoreFoundation
+
+yes
+------------------------------------------------------------------
+Getting pyembed flags from python-config
+==>
+
+#include <Python.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+	void Py_Initialize(void);
+	void Py_Finalize(void);
+#ifdef __cplusplus
+}
+#endif
+int main(int argc, char **argv)
+{
+   (void)argc; (void)argv;
+   Py_Initialize();
+   Py_Finalize();
+   return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_f807f66f3ad28c5c3900baa9c99da893/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-fno-strict-aliasing', '-fno-common', '-dynamic', '-arch', 'i386', '-arch', 'x86_64', '-fno-common', '-fno-strict-aliasing', '-fwrapv', '-fwrapv', '-I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DENABLE_DTRACE', '-DMACOSX', '-DNDEBUG', '-DNDEBUG', '-DENABLE_DTRACE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f807f66f3ad28c5c3900baa9c99da893/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_f807f66f3ad28c5c3900baa9c99da893/testbuild/testprog[0m
+
+['/usr/bin/clang++', '-arch', 'i386', '-arch', 'x86_64', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f807f66f3ad28c5c3900baa9c99da893/testbuild/testprog', '-framework', 'CoreFoundation', '-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config', '-lpython2.7', '-ldl']
+yes
+------------------------------------------------------------------
+Asking python-config for pyext '--cflags --libs --ldflags' flags
+['/usr/bin/python-config', '--cflags', '--libs', '--ldflags']
+out: -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -fno-strict-aliasing -fno-common -dynamic -arch i386 -arch x86_64 -g -Os -pipe -fno-common -fno-strict-aliasing -fwrapv -DENABLE_DTRACE -DMACOSX -DNDEBUG -Wall -Wstrict-prototypes -Wshorten-64-to-32 -DNDEBUG -g -fwrapv -Os -Wall -Wstrict-prototypes -DENABLE_DTRACE
+-lpython2.7 -ldl -framework CoreFoundation
+-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config -lpython2.7 -ldl -framework CoreFoundation
+
+yes
+------------------------------------------------------------------
+Getting pyext flags from python-config
+==>
+
+#include <Python.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+	void Py_Initialize(void);
+	void Py_Finalize(void);
+#ifdef __cplusplus
+}
+#endif
+int main(int argc, char **argv)
+{
+   (void)argc; (void)argv;
+   Py_Initialize();
+   Py_Finalize();
+   return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-fPIC', '-fno-strict-aliasing', '-fno-common', '-dynamic', '-arch', 'i386', '-arch', 'x86_64', '-fno-common', '-fno-strict-aliasing', '-fwrapv', '-fwrapv', '-fPIC', '-I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DENABLE_DTRACE', '-DMACOSX', '-DNDEBUG', '-DNDEBUG', '-DENABLE_DTRACE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/testbuild/testprog.so[0m
+
+['/usr/bin/clang++', '-arch', 'i386', '-arch', 'x86_64', '-bundle', '-undefined', 'dynamic_lookup', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/testbuild/testprog.so', '-framework', 'CoreFoundation', '-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config', '-lpython2.7', '-ldl']
+yes
+------------------------------------------------------------------
+Checking for compilation flag -Wno-array-bounds support
+==>
+int main() { return 0; }
+<==
+[1/1] Compiling [32mbuild/.conf_check_86548a46b3b679409abd6bf7b4096b81/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-Wno-array-bounds', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DHAVE_PYTHON_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_86548a46b3b679409abd6bf7b4096b81/testbuild/test.cpp.1.o']
+ok
+------------------------------------------------------------------
+Checking for pybindgen location
+not found
+------------------------------------------------------------------
+Checking for python module 'pybindgen'
+['/usr/bin/python', '-c', "\nimport pybindgen as current_module\nversion = getattr(current_module, '__version__', None)\nif version is not None:\n\tprint(str(version))\nelse:\n\tprint('unknown version')\n"]
+err: Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+ImportError: No module named pybindgen
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/bindings/python: Could not find the python module 'pybindgen'
+------------------------------------------------------------------
+Checking boost includes
+1_58
+------------------------------------------------------------------
+Checking boost libs
+Found the boost path in /usr/local/lib with the libraries:
+    /usr/local/lib/libboost_atomic-mt.a
+    /usr/local/lib/libboost_atomic-mt.dylib
+    /usr/local/lib/libboost_chrono-mt.a
+    /usr/local/lib/libboost_chrono-mt.dylib
+    /usr/local/lib/libboost_chrono.a
+    /usr/local/lib/libboost_chrono.dylib
+    /usr/local/lib/libboost_container-mt.a
+    /usr/local/lib/libboost_container-mt.dylib
+    /usr/local/lib/libboost_container.a
+    /usr/local/lib/libboost_container.dylib
+    /usr/local/lib/libboost_context-mt.a
+    /usr/local/lib/libboost_context-mt.dylib
+    /usr/local/lib/libboost_coroutine-mt.a
+    /usr/local/lib/libboost_coroutine-mt.dylib
+    /usr/local/lib/libboost_coroutine.a
+    /usr/local/lib/libboost_coroutine.dylib
+    /usr/local/lib/libboost_date_time-mt.a
+    /usr/local/lib/libboost_date_time-mt.dylib
+    /usr/local/lib/libboost_date_time.a
+    /usr/local/lib/libboost_date_time.dylib
+    /usr/local/lib/libboost_exception-mt.a
+    /usr/local/lib/libboost_exception.a
+    /usr/local/lib/libboost_filesystem-mt.a
+    /usr/local/lib/libboost_filesystem-mt.dylib
+    /usr/local/lib/libboost_filesystem.a
+    /usr/local/lib/libboost_filesystem.dylib
+    /usr/local/lib/libboost_graph-mt.a
+    /usr/local/lib/libboost_graph-mt.dylib
+    /usr/local/lib/libboost_graph.a
+    /usr/local/lib/libboost_graph.dylib
+    /usr/local/lib/libboost_iostreams-mt.a
+    /usr/local/lib/libboost_iostreams-mt.dylib
+    /usr/local/lib/libboost_iostreams.a
+    /usr/local/lib/libboost_iostreams.dylib
+    /usr/local/lib/libboost_locale-mt.a
+    /usr/local/lib/libboost_locale-mt.dylib
+    /usr/local/lib/libboost_log-mt.a
+    /usr/local/lib/libboost_log-mt.dylib
+    /usr/local/lib/libboost_log.a
+    /usr/local/lib/libboost_log.dylib
+    /usr/local/lib/libboost_log_setup-mt.a
+    /usr/local/lib/libboost_log_setup-mt.dylib
+    /usr/local/lib/libboost_log_setup.a
+    /usr/local/lib/libboost_log_setup.dylib
+    /usr/local/lib/libboost_math_c99-mt.a
+    /usr/local/lib/libboost_math_c99-mt.dylib
+    /usr/local/lib/libboost_math_c99.a
+    /usr/local/lib/libboost_math_c99.dylib
+    /usr/local/lib/libboost_math_c99f-mt.a
+    /usr/local/lib/libboost_math_c99f-mt.dylib
+    /usr/local/lib/libboost_math_c99f.a
+    /usr/local/lib/libboost_math_c99f.dylib
+    /usr/local/lib/libboost_math_c99l-mt.a
+    /usr/local/lib/libboost_math_c99l-mt.dylib
+    /usr/local/lib/libboost_math_c99l.a
+    /usr/local/lib/libboost_math_c99l.dylib
+    /usr/local/lib/libboost_math_tr1-mt.a
+    /usr/local/lib/libboost_math_tr1-mt.dylib
+    /usr/local/lib/libboost_math_tr1.a
+    /usr/local/lib/libboost_math_tr1.dylib
+    /usr/local/lib/libboost_math_tr1f-mt.a
+    /usr/local/lib/libboost_math_tr1f-mt.dylib
+    /usr/local/lib/libboost_math_tr1f.a
+    /usr/local/lib/libboost_math_tr1f.dylib
+    /usr/local/lib/libboost_math_tr1l-mt.a
+    /usr/local/lib/libboost_math_tr1l-mt.dylib
+    /usr/local/lib/libboost_math_tr1l.a
+    /usr/local/lib/libboost_math_tr1l.dylib
+    /usr/local/lib/libboost_prg_exec_monitor-mt.a
+    /usr/local/lib/libboost_prg_exec_monitor-mt.dylib
+    /usr/local/lib/libboost_prg_exec_monitor.a
+    /usr/local/lib/libboost_prg_exec_monitor.dylib
+    /usr/local/lib/libboost_program_options-mt.a
+    /usr/local/lib/libboost_program_options-mt.dylib
+    /usr/local/lib/libboost_program_options.a
+    /usr/local/lib/libboost_program_options.dylib
+    /usr/local/lib/libboost_python-mt.a
+    /usr/local/lib/libboost_python-mt.dylib
+    /usr/local/lib/libboost_python.a
+    /usr/local/lib/libboost_python.dylib
+    /usr/local/lib/libboost_random-mt.a
+    /usr/local/lib/libboost_random-mt.dylib
+    /usr/local/lib/libboost_random.a
+    /usr/local/lib/libboost_random.dylib
+    /usr/local/lib/libboost_regex-mt.a
+    /usr/local/lib/libboost_regex-mt.dylib
+    /usr/local/lib/libboost_regex.a
+    /usr/local/lib/libboost_regex.dylib
+    /usr/local/lib/libboost_serialization-mt.a
+    /usr/local/lib/libboost_serialization-mt.dylib
+    /usr/local/lib/libboost_serialization.a
+    /usr/local/lib/libboost_serialization.dylib
+    /usr/local/lib/libboost_signals-mt.a
+    /usr/local/lib/libboost_signals-mt.dylib
+    /usr/local/lib/libboost_signals.a
+    /usr/local/lib/libboost_signals.dylib
+    /usr/local/lib/libboost_system-mt.a
+    /usr/local/lib/libboost_system-mt.dylib
+    /usr/local/lib/libboost_system.a
+    /usr/local/lib/libboost_system.dylib
+    /usr/local/lib/libboost_test_exec_monitor-mt.a
+    /usr/local/lib/libboost_test_exec_monitor.a
+    /usr/local/lib/libboost_thread-mt.a
+    /usr/local/lib/libboost_thread-mt.dylib
+    /usr/local/lib/libboost_timer-mt.a
+    /usr/local/lib/libboost_timer-mt.dylib
+    /usr/local/lib/libboost_timer.a
+    /usr/local/lib/libboost_timer.dylib
+    /usr/local/lib/libboost_unit_test_framework-mt.a
+    /usr/local/lib/libboost_unit_test_framework-mt.dylib
+    /usr/local/lib/libboost_unit_test_framework.a
+    /usr/local/lib/libboost_unit_test_framework.dylib
+    /usr/local/lib/libboost_wave-mt.a
+    /usr/local/lib/libboost_wave-mt.dylib
+    /usr/local/lib/libboost_wave.a
+    /usr/local/lib/libboost_wave.dylib
+    /usr/local/lib/libboost_wserialization-mt.a
+    /usr/local/lib/libboost_wserialization-mt.dylib
+    /usr/local/lib/libboost_wserialization.a
+    /usr/local/lib/libboost_wserialization.dylib
+Trying pattern boost_system(-xgcc[0-9]{0,3})-1_58.dylib$
+Trying pattern boost_system-1_58.dylib$
+Trying pattern boost_system(-xgcc[0-9]{0,3}).dylib$
+Trying pattern boost_system.dylib$
+Found boost lib libboost_system.dylib
+Trying pattern boost_signals(-xgcc[0-9]{0,3})-1_58.dylib$
+Trying pattern boost_signals-1_58.dylib$
+Trying pattern boost_signals(-xgcc[0-9]{0,3}).dylib$
+Trying pattern boost_signals.dylib$
+Found boost lib libboost_signals.dylib
+Trying pattern boost_filesystem(-xgcc[0-9]{0,3})-1_58.dylib$
+Trying pattern boost_filesystem-1_58.dylib$
+Trying pattern boost_filesystem(-xgcc[0-9]{0,3}).dylib$
+Trying pattern boost_filesystem.dylib$
+Found boost lib libboost_filesystem.dylib
+ok
+------------------------------------------------------------------
+Checking for boost linkage
+==>
+
+#include <boost/system/error_code.hpp>
+int main() { boost::system::error_code c; }
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_c641610d1689b363adbab3b873131393/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-I/usr/local/include', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DHAVE_PYTHON_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_c641610d1689b363adbab3b873131393/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_c641610d1689b363adbab3b873131393/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_c641610d1689b363adbab3b873131393/testbuild/testprog', '-L/usr/local/lib', '-L/usr/local/lib', '-lboost_system', '-lboost_signals', '-lboost_filesystem']
+ok
+------------------------------------------------------------------
+Checking for click location
+not found
+------------------------------------------------------------------
+Checking for program 'pkg-config'
+not found
+find program=['pkg-config'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='PKGCONFIG' -> None
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/config-store: Could not find the program ['pkg-config']
+------------------------------------------------------------------
+Checking for program 'pkg-config'
+not found
+find program=['pkg-config'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='PKGCONFIG' -> None
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/config-store: Could not find the program ['pkg-config']
+------------------------------------------------------------------
+Checking for type uint128_t
+==>
+#include <stdint.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	if ((uint128_t *) 0) return 0;
+	if (sizeof (uint128_t)) return 0;
+	return 1;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_3fb474b0e7e6766af10be55619f55533/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_3fb474b0e7e6766af10be55619f55533/testbuild/test.cpp.1.o']
+err: ../test.cpp:5:7: error: use of undeclared identifier 'uint128_t'
+        if ((uint128_t *) 0) return 0;
+             ^
+../test.cpp:5:18: error: expected expression
+        if ((uint128_t *) 0) return 0;
+                        ^
+../test.cpp:6:14: error: use of undeclared identifier 'uint128_t'
+        if (sizeof (uint128_t)) return 0;
+                    ^
+3 errors generated.
+
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceback (most recent call last):
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Configure.py", line 339, in run_build
+    bld.compile()
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Build.py", line 182, in compile
+    raise Errors.BuildError(self.producer.error)
+BuildError: Build failed
+ -> task in 'testprog' failed (exit status 1): 
+	{task 4520165840: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_3fb474b0e7e6766af10be55619f55533/testbuild/test.cpp.1.o']
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
+------------------------------------------------------------------
+Checking for type __uint128_t
+==>
+#include <stdint.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	if ((__uint128_t *) 0) return 0;
+	if (sizeof (__uint128_t)) return 0;
+	return 1;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking high precision implementation
+128-bit integer (default)
+------------------------------------------------------------------
+Checking for header stdint.h
+==>
+#include <stdint.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header inttypes.h
+==>
+#include <inttypes.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header sys/inttypes.h
+==>
+#include <sys/inttypes.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_ed1c37b361d1591333365ea5a3752043/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+err: ../test.cpp:1:10: fatal error: 'sys/inttypes.h' file not found
+#include <sys/inttypes.h>
+         ^
+1 error generated.
+
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceback (most recent call last):
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Configure.py", line 339, in run_build
+    bld.compile()
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Build.py", line 182, in compile
+    raise Errors.BuildError(self.producer.error)
+BuildError: Build failed
+ -> task in 'testprog' failed (exit status 1): 
+	{task 4520165904: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
+------------------------------------------------------------------
+Checking for header sys/types.h
+==>
+#include <sys/types.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_514eaf36ed7810affb86c4817080820d/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_514eaf36ed7810affb86c4817080820d/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_514eaf36ed7810affb86c4817080820d/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_514eaf36ed7810affb86c4817080820d/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header sys/stat.h
+==>
+#include <sys/stat.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header dirent.h
+==>
+#include <dirent.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header stdlib.h
+==>
+#include <stdlib.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header signal.h
+==>
+#include <signal.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header pthread.h
+==>
+
+#include <pthread.h>
+int main ()
+{
+   pthread_mutex_t m;
+   pthread_mutex_init (&m, NULL);
+   return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_63125b9148fd9537ff47222dabc0b426/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_63125b9148fd9537ff47222dabc0b426/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_63125b9148fd9537ff47222dabc0b426/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_63125b9148fd9537ff47222dabc0b426/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header stdint.h
+==>
+#include <stdint.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header inttypes.h
+==>
+#include <inttypes.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header sys/inttypes.h
+==>
+#include <sys/inttypes.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_ed1c37b361d1591333365ea5a3752043/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+err: ../test.cpp:1:10: fatal error: 'sys/inttypes.h' file not found
+#include <sys/inttypes.h>
+         ^
+1 error generated.
+
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceback (most recent call last):
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Configure.py", line 339, in run_build
+    bld.compile()
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Build.py", line 182, in compile
+    raise Errors.BuildError(self.producer.error)
+BuildError: Build failed
+ -> task in 'testprog' failed (exit status 1): 
+	{task 4520219280: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
+------------------------------------------------------------------
+Checking for library rt
+==>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/testprog', '-lrt']
+err: ld: library not found for -lrt
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceback (most recent call last):
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Configure.py", line 339, in run_build
+    bld.compile()
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Build.py", line 182, in compile
+    raise Errors.BuildError(self.producer.error)
+BuildError: Build failed
+ -> task in 'testprog' failed (exit status 1): 
+	{task 4519857424: cxxprogram test.cpp.1.o -> testprog}
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/testprog', '-lrt']
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
+------------------------------------------------------------------
+Checking for header sys/ioctl.h
+==>
+#include <sys/ioctl.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_f99b894ba9c9e531a8737805766355ba/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f99b894ba9c9e531a8737805766355ba/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_f99b894ba9c9e531a8737805766355ba/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f99b894ba9c9e531a8737805766355ba/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header net/if.h
+==>
+#include <net/if.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header net/ethernet.h
+==>
+#include <net/ethernet.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_69289a29ca75cbd6ac506482457e21dc/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_69289a29ca75cbd6ac506482457e21dc/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_69289a29ca75cbd6ac506482457e21dc/testbuild/testprog[0m
+
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_69289a29ca75cbd6ac506482457e21dc/testbuild/testprog']
+yes
+------------------------------------------------------------------
+Checking for header linux/if_tun.h
+==>
+#include <linux/if_tun.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_a7065c9971c91a4b1785626aad3054ed/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+err: ../test.cpp:1:10: fatal error: 'linux/if_tun.h' file not found
+#include <linux/if_tun.h>
+         ^
+1 error generated.
+
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: Test does not build: Traceback (most recent call last):
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Configure.py", line 339, in run_build
+    bld.compile()
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Build.py", line 182, in compile
+    raise Errors.BuildError(self.producer.error)
+BuildError: Build failed
+ -> task in 'testprog' failed (exit status 1): 
+	{task 4519703120: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: The configuration failed
+------------------------------------------------------------------
+Checking for header netpacket/packet.h
+==>
+#include <netpacket/packet.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_4852472bc28f96738f990268a8e56362/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_4852472bc28f96738f990268a8e56362/testbuild/test.cpp.1.o']
+err: ../test.cpp:1:10: fatal error: 'netpacket/packet.h' file not found
+#include <netpacket/packet.h>
+         ^
+1 error generated.
+
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: Test does not build: Traceback (most recent call last):
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Configure.py", line 339, in run_build
+    bld.compile()
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Build.py", line 182, in compile
+    raise Errors.BuildError(self.producer.error)
+BuildError: Build failed
+ -> task in 'testprog' failed (exit status 1): 
+	{task 4520221520: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_4852472bc28f96738f990268a8e56362/testbuild/test.cpp.1.o']
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: The configuration failed
+------------------------------------------------------------------
+Checking for NSC location
+not found
+------------------------------------------------------------------
+Checking for OpenFlow location
+not found
+------------------------------------------------------------------
+Checking for program 'pkg-config'
+not found
+find program=['pkg-config'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='PKGCONFIG' -> None
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/stats: Could not find the program ['pkg-config']
+------------------------------------------------------------------
+Checking for header linux/if_tun.h
+==>
+#include <linux/if_tun.h>
+
+int main(int argc, char **argv) {
+	(void)argc; (void)argv;
+	return 0;
+}
+
+<==
+[1/2] Compiling [32mbuild/.conf_check_a7065c9971c91a4b1785626aad3054ed/test.cpp[0m
+
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+err: ../test.cpp:1:10: fatal error: 'linux/if_tun.h' file not found
+#include <linux/if_tun.h>
+         ^
+1 error generated.
+
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/tap-bridge: Test does not build: Traceback (most recent call last):
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Configure.py", line 339, in run_build
+    bld.compile()
+  File "/Users/mengleizhang/GitHub/ns3-mmwave/.waf-1.8.12-f00e5b53f6bbeab1384a38c9cc5d51f7/waflib/Build.py", line 182, in compile
+    raise Errors.BuildError(self.producer.error)
+BuildError: Build failed
+ -> task in 'testprog' failed (exit status 1): 
+	{task 4520301968: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+
+not found
+from /Users/mengleizhang/GitHub/ns3-mmwave/src/tap-bridge: The configuration failed
+------------------------------------------------------------------
+Checking for program 'sudo'
+/usr/bin/sudo
+find program=['sudo'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='SUDO' -> ['/usr/bin/sudo']
+------------------------------------------------------------------
+Checking for program 'valgrind'
+/usr/local/bin/valgrind
+find program=['valgrind'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='VALGRIND' -> ['/usr/local/bin/valgrind']
+------------------------------------------------------------------
+Checking for program 'pkg-config'
+not found
+find program=['pkg-config'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='PKGCONFIG' -> None
+from /Users/mengleizhang/GitHub/ns3-mmwave: Could not find the program ['pkg-config']
+------------------------------------------------------------------
+Checking for program 'doxygen'
+not found
+find program=['doxygen'] paths=['/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0-dp2/bin', '/Users/mengleizhang/Documents/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/Users/mengleizhang/pebble-dev/PebbleSDK-3.0/bin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin', '/opt/X11/bin', '/Library/TeX/texbin'] var='DOXYGEN' -> None
+from /Users/mengleizhang/GitHub/ns3-mmwave: Could not find the program ['doxygen']

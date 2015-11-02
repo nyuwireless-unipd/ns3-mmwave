@@ -1,0 +1,10 @@
+prefix=/usr/local
+libdir=/usr/local/lib
+includedir=/usr/local/include/ns3.24.1
+
+Name: libns3-sixlowpan
+Description: ns-3 module ns3-sixlowpan
+Version: 3.24.1
+Libs: -L${libdir} -lns3.24.1-sixlowpan-debug
+Cflags: -I${includedir}
+Requires: libns3.24.1-internet-debug libns3.24.1-network-debug libns3.24.1-core-debug
