@@ -1,6 +1,6 @@
-# project ns (3.24.1) configured on Mon Nov  2 10:30:10 2015 by
+# project ns (3.24.1) configured on Mon Nov  2 10:39:02 2015 by
 # waf 1.8.12 (abi 98, python 2070af0 on darwin)
-# using ./waf configure
+# using ./waf configure --enable-examples
 #
 ----------------------------------------
 Setting top to
@@ -122,12 +122,12 @@ int main(int argc, char **argv)
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_f807f66f3ad28c5c3900baa9c99da893/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_e120f03d344adf60fc5f33fcfbbe4c7d/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-fno-strict-aliasing', '-fno-common', '-dynamic', '-arch', 'i386', '-arch', 'x86_64', '-fno-common', '-fno-strict-aliasing', '-fwrapv', '-fwrapv', '-I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DENABLE_DTRACE', '-DMACOSX', '-DNDEBUG', '-DNDEBUG', '-DENABLE_DTRACE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f807f66f3ad28c5c3900baa9c99da893/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_f807f66f3ad28c5c3900baa9c99da893/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-fno-strict-aliasing', '-fno-common', '-dynamic', '-arch', 'i386', '-arch', 'x86_64', '-fno-common', '-fno-strict-aliasing', '-fwrapv', '-fwrapv', '-I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DENABLE_DTRACE', '-DMACOSX', '-DNDEBUG', '-DNDEBUG', '-DENABLE_DTRACE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e120f03d344adf60fc5f33fcfbbe4c7d/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_e120f03d344adf60fc5f33fcfbbe4c7d/testbuild/testprog[0m
 
-['/usr/bin/clang++', '-arch', 'i386', '-arch', 'x86_64', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f807f66f3ad28c5c3900baa9c99da893/testbuild/testprog', '-framework', 'CoreFoundation', '-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config', '-lpython2.7', '-ldl']
+['/usr/bin/clang++', '-arch', 'i386', '-arch', 'x86_64', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e120f03d344adf60fc5f33fcfbbe4c7d/testbuild/testprog', '-framework', 'CoreFoundation', '-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config', '-lpython2.7', '-ldl']
 yes
 ------------------------------------------------------------------
 Asking python-config for pyext '--cflags --libs --ldflags' flags
@@ -159,21 +159,21 @@ int main(int argc, char **argv)
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_80475646e84aa8eed470e4d76be7cd08/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-fPIC', '-fno-strict-aliasing', '-fno-common', '-dynamic', '-arch', 'i386', '-arch', 'x86_64', '-fno-common', '-fno-strict-aliasing', '-fwrapv', '-fwrapv', '-fPIC', '-I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DENABLE_DTRACE', '-DMACOSX', '-DNDEBUG', '-DNDEBUG', '-DENABLE_DTRACE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/testbuild/testprog.so[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-fPIC', '-fno-strict-aliasing', '-fno-common', '-dynamic', '-arch', 'i386', '-arch', 'x86_64', '-fno-common', '-fno-strict-aliasing', '-fwrapv', '-fwrapv', '-fPIC', '-I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DENABLE_DTRACE', '-DMACOSX', '-DNDEBUG', '-DNDEBUG', '-DENABLE_DTRACE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_80475646e84aa8eed470e4d76be7cd08/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_80475646e84aa8eed470e4d76be7cd08/testbuild/testprog.so[0m
 
-['/usr/bin/clang++', '-arch', 'i386', '-arch', 'x86_64', '-bundle', '-undefined', 'dynamic_lookup', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_9cf7587a606b6bd16dcf06fedb5ccdf4/testbuild/testprog.so', '-framework', 'CoreFoundation', '-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config', '-lpython2.7', '-ldl']
+['/usr/bin/clang++', '-arch', 'i386', '-arch', 'x86_64', '-bundle', '-undefined', 'dynamic_lookup', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_80475646e84aa8eed470e4d76be7cd08/testbuild/testprog.so', '-framework', 'CoreFoundation', '-L/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/config', '-lpython2.7', '-ldl']
 yes
 ------------------------------------------------------------------
 Checking for compilation flag -Wno-array-bounds support
 ==>
 int main() { return 0; }
 <==
-[1/1] Compiling [32mbuild/.conf_check_86548a46b3b679409abd6bf7b4096b81/test.cpp[0m
+[1/1] Compiling [32mbuild/.conf_check_a2a9678a6a72e140ab42972184710dd2/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-Wno-array-bounds', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DHAVE_PYTHON_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_86548a46b3b679409abd6bf7b4096b81/testbuild/test.cpp.1.o']
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-Wno-array-bounds', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DHAVE_PYTHON_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a2a9678a6a72e140ab42972184710dd2/testbuild/test.cpp.1.o']
 ok
 ------------------------------------------------------------------
 Checking for pybindgen location
@@ -337,12 +337,12 @@ Checking for boost linkage
 int main() { boost::system::error_code c; }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_c641610d1689b363adbab3b873131393/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_912c1d260b6e51123dd6eaa97a69a07b/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-I/usr/local/include', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DHAVE_PYTHON_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_c641610d1689b363adbab3b873131393/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_c641610d1689b363adbab3b873131393/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-I/usr/local/include', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DPYTHONDIR="/usr/local/lib/python2.7/site-packages"', '-DPYTHONARCHDIR="/usr/local/lib/python2.7/site-packages"', '-DHAVE_PYEMBED=1', '-DHAVE_PYEXT=1', '-DHAVE_PYTHON_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_912c1d260b6e51123dd6eaa97a69a07b/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_912c1d260b6e51123dd6eaa97a69a07b/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_c641610d1689b363adbab3b873131393/testbuild/testprog', '-L/usr/local/lib', '-L/usr/local/lib', '-lboost_system', '-lboost_signals', '-lboost_filesystem']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_912c1d260b6e51123dd6eaa97a69a07b/testbuild/testprog', '-L/usr/local/lib', '-L/usr/local/lib', '-lboost_system', '-lboost_signals', '-lboost_filesystem']
 ok
 ------------------------------------------------------------------
 Checking for click location
@@ -370,9 +370,9 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_3fb474b0e7e6766af10be55619f55533/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_8c5e107e150749f4c5ee2149fc22b052/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_3fb474b0e7e6766af10be55619f55533/testbuild/test.cpp.1.o']
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8c5e107e150749f4c5ee2149fc22b052/testbuild/test.cpp.1.o']
 err: ../test.cpp:5:7: error: use of undeclared identifier 'uint128_t'
         if ((uint128_t *) 0) return 0;
              ^
@@ -391,8 +391,8 @@ from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceb
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 4520165840: cxx test.cpp -> test.cpp.1.o}
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_3fb474b0e7e6766af10be55619f55533/testbuild/test.cpp.1.o']
+	{task 4464038352: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8c5e107e150749f4c5ee2149fc22b052/testbuild/test.cpp.1.o']
 
 not found
 from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
@@ -409,12 +409,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_7fec28b98bf92c5a8286717cf48311f1/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_7fec28b98bf92c5a8286717cf48311f1/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_7fec28b98bf92c5a8286717cf48311f1/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e11ed166f50e4fbc2e24c405bae3e33f/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_7fec28b98bf92c5a8286717cf48311f1/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking high precision implementation
@@ -430,12 +430,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header inttypes.h
@@ -448,12 +448,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_39a830f29ad93d69f05a280cf9b83f94/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_39a830f29ad93d69f05a280cf9b83f94/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_39a830f29ad93d69f05a280cf9b83f94/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_39a830f29ad93d69f05a280cf9b83f94/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header sys/inttypes.h
@@ -466,9 +466,9 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_ed1c37b361d1591333365ea5a3752043/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_adc12cd87df1672453ef9ee6d4185e52/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_adc12cd87df1672453ef9ee6d4185e52/testbuild/test.cpp.1.o']
 err: ../test.cpp:1:10: fatal error: 'sys/inttypes.h' file not found
 #include <sys/inttypes.h>
          ^
@@ -481,8 +481,8 @@ from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceb
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 4520165904: cxx test.cpp -> test.cpp.1.o}
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+	{task 4464038352: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_adc12cd87df1672453ef9ee6d4185e52/testbuild/test.cpp.1.o']
 
 not found
 from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
@@ -497,12 +497,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_514eaf36ed7810affb86c4817080820d/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_af50b6ecd8b3da53137716d3b67a0590/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_514eaf36ed7810affb86c4817080820d/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_514eaf36ed7810affb86c4817080820d/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_af50b6ecd8b3da53137716d3b67a0590/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_af50b6ecd8b3da53137716d3b67a0590/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_514eaf36ed7810affb86c4817080820d/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_af50b6ecd8b3da53137716d3b67a0590/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header sys/stat.h
@@ -515,12 +515,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_e6d3da8e9635b3b859bf20549384d1f3/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e6d3da8e9635b3b859bf20549384d1f3/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_e6d3da8e9635b3b859bf20549384d1f3/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ace69c8db81a95ded743fb60a8ae71fc/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_e6d3da8e9635b3b859bf20549384d1f3/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header dirent.h
@@ -533,12 +533,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_78c70043ff6d848631101547eec4c9ea/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_78c70043ff6d848631101547eec4c9ea/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_78c70043ff6d848631101547eec4c9ea/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_d022e0d8848819c2e86b639d9ceaeb12/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_78c70043ff6d848631101547eec4c9ea/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header stdlib.h
@@ -551,12 +551,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_922c2beeb9eba5ab9fbce462bf007c35/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_922c2beeb9eba5ab9fbce462bf007c35/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_922c2beeb9eba5ab9fbce462bf007c35/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_97ed9e0ed1884bfac3e91dda45ee17ce/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_922c2beeb9eba5ab9fbce462bf007c35/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header signal.h
@@ -569,12 +569,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_997160d5eccf24928360af1ed415f5ad/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_997160d5eccf24928360af1ed415f5ad/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_997160d5eccf24928360af1ed415f5ad/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_61e1ab7e5e0f4a4a780fc33d902208b5/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_997160d5eccf24928360af1ed415f5ad/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header pthread.h
@@ -589,12 +589,12 @@ int main ()
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_63125b9148fd9537ff47222dabc0b426/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_5399a66e699433d3c2e451949b227294/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_63125b9148fd9537ff47222dabc0b426/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_63125b9148fd9537ff47222dabc0b426/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_5399a66e699433d3c2e451949b227294/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_5399a66e699433d3c2e451949b227294/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_63125b9148fd9537ff47222dabc0b426/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_5399a66e699433d3c2e451949b227294/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header stdint.h
@@ -607,12 +607,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_INTTYPES_H=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_dd3be103830bccf04fb4b25edf1bbf8a/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b86a0b7398c816ab5951f25b0fea41e5/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header inttypes.h
@@ -625,12 +625,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_39a830f29ad93d69f05a280cf9b83f94/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_39a830f29ad93d69f05a280cf9b83f94/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_39a830f29ad93d69f05a280cf9b83f94/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_24a482efe44774d6260f1cf6afe82927/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_39a830f29ad93d69f05a280cf9b83f94/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header sys/inttypes.h
@@ -643,9 +643,9 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_ed1c37b361d1591333365ea5a3752043/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_adc12cd87df1672453ef9ee6d4185e52/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_adc12cd87df1672453ef9ee6d4185e52/testbuild/test.cpp.1.o']
 err: ../test.cpp:1:10: fatal error: 'sys/inttypes.h' file not found
 #include <sys/inttypes.h>
          ^
@@ -658,8 +658,8 @@ from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceb
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 4520219280: cxx test.cpp -> test.cpp.1.o}
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ed1c37b361d1591333365ea5a3752043/testbuild/test.cpp.1.o']
+	{task 4464091280: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_adc12cd87df1672453ef9ee6d4185e52/testbuild/test.cpp.1.o']
 
 not found
 from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
@@ -673,12 +673,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_1ff38168b32e7a7361e0efdf6144dba7/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE___UINT128_T=1', '-DINT64X64_USE_128=1', '-DHAVE_SYS_TYPES_H=1', '-DHAVE_SYS_STAT_H=1', '-DHAVE_DIRENT_H=1', '-DHAVE_STDLIB_H=1', '-DHAVE_GETENV=1', '-DHAVE_SIGNAL_H=1', '-DHAVE_PTHREAD_H=1', '-DHAVE_STDINT_H=1', '-DHAVE_INTTYPES_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_1ff38168b32e7a7361e0efdf6144dba7/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_1ff38168b32e7a7361e0efdf6144dba7/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/testprog', '-lrt']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_1ff38168b32e7a7361e0efdf6144dba7/testbuild/testprog', '-lrt']
 err: ld: library not found for -lrt
 clang: error: linker command failed with exit code 1 (use -v to see invocation)
 
@@ -689,8 +689,8 @@ from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: Test does not build: Traceb
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 4519857424: cxxprogram test.cpp.1.o -> testprog}
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8219dc8a9f78beebbf703c3ebafb0435/testbuild/testprog', '-lrt']
+	{task 4462419664: cxxprogram test.cpp.1.o -> testprog}
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_1ff38168b32e7a7361e0efdf6144dba7/testbuild/testprog', '-lrt']
 
 not found
 from /Users/mengleizhang/GitHub/ns3-mmwave/src/core: The configuration failed
@@ -705,12 +705,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_f99b894ba9c9e531a8737805766355ba/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_67cbb1ac4cc204be645bb66cd0294eff/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f99b894ba9c9e531a8737805766355ba/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_f99b894ba9c9e531a8737805766355ba/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_67cbb1ac4cc204be645bb66cd0294eff/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_67cbb1ac4cc204be645bb66cd0294eff/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_f99b894ba9c9e531a8737805766355ba/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_67cbb1ac4cc204be645bb66cd0294eff/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header net/if.h
@@ -723,12 +723,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_89e662aa7cd2a340ee845d2238b79731/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_89e662aa7cd2a340ee845d2238b79731/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_89e662aa7cd2a340ee845d2238b79731/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_b5d64eb5891919276a70a8510d2a8ec2/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_89e662aa7cd2a340ee845d2238b79731/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header net/ethernet.h
@@ -741,12 +741,12 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_69289a29ca75cbd6ac506482457e21dc/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_6e3d122529bde9df27ae179fbf2a379b/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_69289a29ca75cbd6ac506482457e21dc/testbuild/test.cpp.1.o']
-[2/2] Linking [33mbuild/.conf_check_69289a29ca75cbd6ac506482457e21dc/testbuild/testprog[0m
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_6e3d122529bde9df27ae179fbf2a379b/testbuild/test.cpp.1.o']
+[2/2] Linking [33mbuild/.conf_check_6e3d122529bde9df27ae179fbf2a379b/testbuild/testprog[0m
 
-['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_69289a29ca75cbd6ac506482457e21dc/testbuild/testprog']
+['/usr/bin/clang++', 'test.cpp.1.o', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_6e3d122529bde9df27ae179fbf2a379b/testbuild/testprog']
 yes
 ------------------------------------------------------------------
 Checking for header linux/if_tun.h
@@ -759,9 +759,9 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_a7065c9971c91a4b1785626aad3054ed/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_ef0799e351d43fd2662599c20a41e2be/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ef0799e351d43fd2662599c20a41e2be/testbuild/test.cpp.1.o']
 err: ../test.cpp:1:10: fatal error: 'linux/if_tun.h' file not found
 #include <linux/if_tun.h>
          ^
@@ -774,8 +774,8 @@ from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: Test does not buil
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 4519703120: cxx test.cpp -> test.cpp.1.o}
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+	{task 4462260944: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ef0799e351d43fd2662599c20a41e2be/testbuild/test.cpp.1.o']
 
 not found
 from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: The configuration failed
@@ -790,9 +790,9 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_4852472bc28f96738f990268a8e56362/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_8d84f15dc3e2255a94914075a27cb85d/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_4852472bc28f96738f990268a8e56362/testbuild/test.cpp.1.o']
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8d84f15dc3e2255a94914075a27cb85d/testbuild/test.cpp.1.o']
 err: ../test.cpp:1:10: fatal error: 'netpacket/packet.h' file not found
 #include <netpacket/packet.h>
          ^
@@ -805,8 +805,8 @@ from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: Test does not buil
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 4520221520: cxx test.cpp -> test.cpp.1.o}
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_4852472bc28f96738f990268a8e56362/testbuild/test.cpp.1.o']
+	{task 4464094864: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_8d84f15dc3e2255a94914075a27cb85d/testbuild/test.cpp.1.o']
 
 not found
 from /Users/mengleizhang/GitHub/ns3-mmwave/src/fd-net-device: The configuration failed
@@ -832,9 +832,9 @@ int main(int argc, char **argv) {
 }
 
 <==
-[1/2] Compiling [32mbuild/.conf_check_a7065c9971c91a4b1785626aad3054ed/test.cpp[0m
+[1/2] Compiling [32mbuild/.conf_check_ef0799e351d43fd2662599c20a41e2be/test.cpp[0m
 
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ef0799e351d43fd2662599c20a41e2be/testbuild/test.cpp.1.o']
 err: ../test.cpp:1:10: fatal error: 'linux/if_tun.h' file not found
 #include <linux/if_tun.h>
          ^
@@ -847,8 +847,8 @@ from /Users/mengleizhang/GitHub/ns3-mmwave/src/tap-bridge: Test does not build: 
     raise Errors.BuildError(self.producer.error)
 BuildError: Build failed
  -> task in 'testprog' failed (exit status 1): 
-	{task 4520301968: cxx test.cpp -> test.cpp.1.o}
-['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_a7065c9971c91a4b1785626aad3054ed/testbuild/test.cpp.1.o']
+	{task 4464177744: cxx test.cpp -> test.cpp.1.o}
+['/usr/bin/clang++', '-O0', '-ggdb', '-g3', '-Wall', '-Werror', '-Wno-unused-local-typedefs', '-Wno-potentially-evaluated-expression', '-DNS3_BUILD_PROFILE_DEBUG', '-DNS3_ASSERT_ENABLE', '-DNS3_LOG_ENABLE', '-DHAVE_SYS_IOCTL_H=1', '-DHAVE_IF_NETS_H=1', '-DHAVE_NET_ETHERNET_H=1', '../test.cpp', '-c', '-o', '/Users/mengleizhang/GitHub/ns3-mmwave/build/.conf_check_ef0799e351d43fd2662599c20a41e2be/testbuild/test.cpp.1.o']
 
 not found
 from /Users/mengleizhang/GitHub/ns3-mmwave/src/tap-bridge: The configuration failed
