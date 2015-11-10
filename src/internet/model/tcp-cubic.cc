@@ -180,11 +180,11 @@ TcpCubic::NewAck (const SequenceNumber32& seq)
             {
               m_cWnd += m_segmentSize;
               m_cWndCnt = 0;
-             NS_LOG_DEBUG("Increment cwnd to " << m_cWnd);
+              NS_LOG_DEBUG("Increment cwnd to " << m_cWnd);
             }
           else
             {
-              NS_LOG_DEBUG("Not enough segments have been ACKed to increment cwnd.");
+        	  NS_LOG_DEBUG("Not enough segments have been ACKed to increment cwnd.");
               m_cWndCnt += 1;
             }
         }
@@ -462,12 +462,11 @@ TcpCubic::CubicUpdate ()
     {
       /* max increment = Smax * rtt / 0.1  */
       min_cnt = (cwndSeg * HZ * 8)/(10 * m_maxIncrement * m_dMin);
-
       /* use concave growth when the target is above the origin */
-      if (cnt < min_cnt && t >= m_k)
+      /*if (cnt < min_cnt && t >= m_k)
         {
           cnt = min_cnt;
-        }
+        }*/
     }
 
 
