@@ -52,7 +52,7 @@ mmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 	uint32_t rb_count = 1;
 	FILE* log_file;
 	char fname[255];
-	sprintf(fname, "UE_%llu_SINR_dB.txt", imsi);
+	sprintf(fname, "UE_%llu_SINR_dB.txt", (long long unsigned ) imsi);
 	log_file = fopen(fname, "a");
 	Values::iterator it = sinr.ValuesBegin();
 	while(it!=sinr.ValuesEnd())
@@ -74,13 +74,12 @@ mmWavePhyRxTrace::ReportPowerTrace (uint64_t imsi, SpectrumValue& power)
 	uint32_t rb_count = 1;
 	FILE* log_file;
 	char fname[255];
-	sprintf (fname, "UE_%llu_ReceivedPower_dB.txt", imsi);
+	printf (fname, "UE_%llu_ReceivedPower_dB.txt", (long long unsigned) imsi);
 	log_file = fopen(fname, "a");
 	Values::iterator it = power.ValuesBegin();
 	while(it!=power.ValuesEnd())
 	{
-		//fprintf(log_file, "%d\t%d\t%f\t \n", slot_count/2, rb_count, 10*log10(*it*1.4e7));
-		fprintf(log_file, "%d\t%d\t%d\t%f\t \n",slot_count/8+1, slot_count%8+1, rb_count, 10*log10(*it*1.4e7));
+		fprintf(log_file, "%llu\t%llu\t%d\t%f\t \n",(long long unsigned) slot_count/8+1,(long long unsigned) slot_count%8+1, rb_count, 10*log10(*it));
 		rb_count++;
 		it++;
 	}
@@ -115,7 +114,7 @@ mmWavePhyRxTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
 {
 	FILE* log_file;
 	char fname[255];
-	sprintf (fname,"UE_%llu_Packet_Trace.txt", param.m_imsi);
+	sprintf (fname,"UE_%llu_Packet_Trace.txt", (long long unsigned) param.m_imsi);
 	log_file = fopen (fname, "a");
 	if (param.m_isTx)
 	{
@@ -136,7 +135,7 @@ mmWavePhyRxTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
 {
 	FILE* log_file;
 	char fname[255];
-	sprintf (fname,"BS_%llu_Packet_Trace.txt", param.m_cellId);
+	sprintf (fname,"BS_%llu_Packet_Trace.txt",(long long unsigned) param.m_cellId);
 	log_file = fopen (fname, "a");
 	if (param.m_isTx)
 	{
@@ -156,11 +155,10 @@ mmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
 {
 	FILE* log_file;
 	char fname[255];
-	sprintf (fname,"UE_%llu_Tb_Size.txt", imsi);
+	sprintf (fname,"UE_%llu_Tb_Size.txt", (long long unsigned) imsi);
 	log_file = fopen (fname, "a");
 
-	fprintf (log_file, "%lld \t %llu \n", Now().GetMicroSeconds (), tbSize);
-
+	fprintf (log_file, "%lld \t %llu \n",(long long int) Now().GetMicroSeconds (), (long long unsigned) tbSize);
 	fflush(log_file);
 	fclose(log_file);
 
