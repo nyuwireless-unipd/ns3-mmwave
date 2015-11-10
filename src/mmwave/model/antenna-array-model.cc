@@ -49,11 +49,11 @@ static const double Ue45DegreeBFVectorImag[4][16] = {
 		{0.000000,0.236867,-0.460252,0.657442,-0.000000,0.236867,-0.460252,0.657442,-0.000000,0.236867,-0.460252,0.657442,-0.000000,0.236867,-0.460252,0.657442,},
 };
 
-static const double All90DegreeBFVectorReal[4][16] = {
+static const double All90DegreeBFVectorReal[2][4] = {
 		{1.000000,-0.605700,1.000000,-0.605700,},
 		{1.000000,-0.605700,1.000000,-0.605700,},
 };
-static const double All90DegreeBFVectorImag[4][16] = {
+static const double All90DegreeBFVectorImag[2][4] = {
 		{-0.000000,-0.795693,-0.000000,-0.795693,},
 		{0.000000,0.795693,-0.000000,0.795693,},
 };

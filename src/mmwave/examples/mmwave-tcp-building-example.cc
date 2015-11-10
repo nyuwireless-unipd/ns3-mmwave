@@ -164,14 +164,18 @@ main (int argc, char *argv[])
 	//Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*10));
 	//Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*10));
     Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	//Config::SetDefault ("ns3::PointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.010)));
+	//Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.010)));
+
+
     /*
      * scenario 1: 1 building;
      * scenario 2: 3 building;
      * scenario 3: 6 random located small building, simulate tree and human blockage.
      * */
-    int scenario = 3;
-	double stopTime = 20;
-	double simStopTime = 20;
+    int scenario = 1;
+	double stopTime = 25;
+	double simStopTime = 25;
 
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
