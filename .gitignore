@@ -7,4 +7,16 @@
 
 *.xml
 
-build/**
+build/*
+
+*.py
+
+*.pyc
+
+.lock-waf_darwin_build
+
+.project
+
+.cproject
+
+*.pcap
