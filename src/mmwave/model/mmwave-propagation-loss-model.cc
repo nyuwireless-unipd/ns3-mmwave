@@ -18,6 +18,7 @@ using namespace ns3;
 
 
 // ------------------------------------------------------------------------- //
+NS_LOG_COMPONENT_DEFINE ("MmWavePropagationLossModel");
 
 NS_OBJECT_ENSURE_REGISTERED (MmWavePropagationLossModel);
 
@@ -196,9 +197,9 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 		  NS_FATAL_ERROR ("Programming Error.");
     }
 
-  //NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
+  NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
   double lossDb = alpha + beta * 10 * log10(distance) + (*it).second.m_shadowing;
-  NS_LOG_UNCOND ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<lossDb);
+  NS_LOG_DEBUG ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<lossDb);
   return txPowerDbm - std::max (lossDb, m_minLoss);
 }
 
