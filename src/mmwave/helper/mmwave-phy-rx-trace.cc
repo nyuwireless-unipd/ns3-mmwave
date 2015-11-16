@@ -58,7 +58,7 @@ mmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 	while(it!=sinr.ValuesEnd())
 	{
 		//fprintf(log_file, "%d\t%d\t%f\t \n", slot_count/2, rb_count, 10*log10(*it));
-		fprintf(log_file, "%llu\t%llu\t%d\t%f\t \n",slot_count/8+1, slot_count%8+1, rb_count, 10*log10(*it));
+		fprintf(log_file, "%llu\t%llu\t%d\t%f\t \n",(long long unsigned) slot_count/8+1, (long long unsigned) slot_count%8+1, rb_count, 10*log10(*it));
 		rb_count++;
 		it++;
 	}

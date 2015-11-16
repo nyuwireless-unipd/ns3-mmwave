@@ -158,11 +158,10 @@ TcpCubic::NewAck (const SequenceNumber32& seq)
       Time rtt = m_rtt->GetEstimate (); //changed by ZMl
       NS_LOG_INFO( "RTT = " << rtt.GetMilliSeconds () );
       // Check if this RTT is the smallest
-      if ( m_dMin == 0 || m_dMin > rtt.GetMilliSeconds () )
+      if ( m_dMin == 0 || m_dMin > rtt.GetMilliSeconds ()<<3 )
         {
-          m_dMin = rtt.GetMilliSeconds ();
+          m_dMin = rtt.GetMilliSeconds ()<<3;
         }
-
 
       // Run the CUBIC update algorithm
       uint32_t cnt = CubicUpdate ();
@@ -315,7 +314,8 @@ TcpCubic::CubicRoot(uint64_t a)
 unsigned long
 TcpCubic::tcp_time_stamp ()
 {
-  return trunc(Simulator::Now().GetSeconds () * JIFFY_RATIO);
+  //return trunc(Simulator::Now().GetSeconds () * JIFFY_RATIO);
+  return m_timestampToEcho;
 }
 
 
@@ -332,6 +332,7 @@ TcpCubic::CubicUpdate ()
   // Convert the cwnd stored in bytes to a cwnd in segments. Whenever the
   // CUBIC algorithm uses cwnd the value cwndSeg will be used.
   uint32_t cwndSeg = m_cWnd / m_segmentSize;
+  NS_LOG_UNCOND (m_cWnd);
   // The suggested amount to add to the new congestion window size.
   uint32_t windowTarget = 0;
   // The new congestion window size recommended by CUBIC.
@@ -462,11 +463,12 @@ TcpCubic::CubicUpdate ()
     {
       /* max increment = Smax * rtt / 0.1  */
       min_cnt = (cwndSeg * HZ * 8)/(10 * m_maxIncrement * m_dMin);
+      min_cnt = min_cnt>>3; //add by ZML
       /* use concave growth when the target is above the origin */
-      /*if (cnt < min_cnt && t >= m_k)
+     if (cnt < min_cnt && t >= m_k)
         {
           cnt = min_cnt;
-        }*/
+        }
     }
 
 
