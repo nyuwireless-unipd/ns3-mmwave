@@ -242,12 +242,12 @@ CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
   ofstream myfile;
   if (newFile)
     {
-      myfile.open ("cwnd.log");
+      myfile.open ("cwnd.txt");
       newFile = false;
     }
   else
     {
-       myfile.open ("cwnd.log", ios::out | ios::app);
+       myfile.open ("cwnd.txt", ios::out | ios::app);
     }
      myfile << Simulator::Now ().GetSeconds () << "," << newCwnd << "\n"; 
      myfile.close();
@@ -309,7 +309,7 @@ main (int argc, char *argv[])
   Ptr<RateErrorModel> em0 = CreateObject<RateErrorModel> ();
   em0->SetAttribute ("ErrorRate", DoubleValue (0.00000));
 
-  Simulator::Schedule (Seconds (15), &ChangeErrorModel, devices.Get (1), em0);
+  //Simulator::Schedule (Seconds (15), &ChangeErrorModel, devices.Get (1), em0);
   /*Simulator::Schedule (Seconds (25), &ChangeErrorModel, devices.Get (1), em);
   Simulator::Schedule (Seconds (35), &ChangeErrorModel, devices.Get (1), em0);
   Simulator::Schedule (Seconds (50), &ChangeErrorModel, devices.Get (1), em);
