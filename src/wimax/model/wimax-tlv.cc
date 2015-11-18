@@ -21,12 +21,24 @@
 
 #include "wimax-tlv.h"
 
-NS_LOG_COMPONENT_DEFINE ("Tlv");
-
 namespace ns3 {
-// NS_OBJECT_ENSURE_REGISTERED ("Tlv")
-//    ;
 
+NS_LOG_COMPONENT_DEFINE ("Tlv");
+  
+// NS_OBJECT_ENSURE_REGISTERED ("Tlv");
+
+/* static */
+TypeId
+Tlv::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::Tlv")
+    .SetParent<Header> ()
+    .SetGroupName ("Wimax")
+    .AddConstructor<Tlv> ()
+    ;
+  return tid;
+}
+  
 TypeId Tlv::GetInstanceTypeId (void) const
 {
   return GetTypeId ();

@@ -28,32 +28,59 @@
 
 #include <csignal>
 
-NS_LOG_COMPONENT_DEFINE ("FatalImpl");
-
-namespace ns3 {
-namespace FatalImpl {
-
 /**
- * Note on implementation: the singleton pattern we use here is tricky because
- * it has to deal with:
- *   - make sure that whoever calls Register (potentially before main enters and 
- *     before any constructor run in this file) succeeds
- *   - make sure that whoever calls Unregister (potentially before FlushStream runs
- *     but also after it runs) succeeds
- *   - make sure that the memory allocated with new is deallocated with delete before
- *     the program exits so that valgrind reports no leaks
+ * \file
+ * \ingroup fatalimpl
+ * \brief Implementation of RegisterStream(), UnregisterStream(), and FlushStreams(); see Implementation note!
+ *
+ * \note Implementation.
+ *
+ * The singleton pattern we use here is tricky because we have to ensure:
+ *
+ *   - RegisterStream() succeeds, even if called before \c main() enters and 
+ *     before any constructor run in this file.
+ *
+ *   - UnregisterStream() succeeds, whether or not FlushStreams() has
+ *     been called.
+ *
+ *   - All memory allocated with \c new is deleted properly before program exit.
  *
  * This is why we go through all the painful hoops below.
  */
 
-/* File-scope */
+namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("FatalImpl");
+  
+namespace FatalImpl {
+
+/**
+ * \ingroup fatalimpl
+ * Anonymous namespace for fatal streams memory implementation
+ * and signal handler.
+ */
 namespace {
+
+/**
+ * \ingroup fatalimpl
+ * \brief Static variable pointing to the list of output streams
+ * to be flushed on fatal errors.
+ *
+ * \returns The address of the static pointer.
+ */
 std::list<std::ostream*> **PeekStreamList (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
   static std::list<std::ostream*> *streams = 0;
   return &streams;
 }
+
+/**
+ * \ingroup fatalimpl
+ * \brief Get the stream list, initializing it if necessary.
+ *
+ * \returns The stream list.
+ */
 std::list<std::ostream*> *GetStreamList (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -64,17 +91,8 @@ std::list<std::ostream*> *GetStreamList (void)
     }
   return *pstreams;
 }
-struct destructor
-{
-  ~destructor ()
-  {
-    NS_LOG_FUNCTION (this);
-    std::list<std::ostream*> **pstreams = PeekStreamList ();
-    delete *pstreams;
-    *pstreams = 0;
-  }
-};
-}
+
+}  // anonymous namespace
 
 void
 RegisterStream (std::ostream* stream)
@@ -100,17 +118,30 @@ UnregisterStream (std::ostream* stream)
     }
 }
 
-
+/**
+ * \ingroup fatalimpl
+ * Anonymous namespace for fatal streams signal hander.
+ *
+ * This is private to the fatal implementation.
+ */
 namespace {
-/* Overrides normal SIGSEGV handler once the
- * HandleTerminate function is run. */
+
+/**
+ * \ingroup fatalimpl
+ * \brief Overrides normal SIGSEGV handler once the HandleTerminate
+ * function is run.
+ *
+ * This is private to the fatal implementation.
+ *
+ * \param [in] sig The signal condition.
+ */
 void sigHandler (int sig)
 {
   NS_LOG_FUNCTION (sig);
   FlushStreams ();
   std::abort ();
 }
-}
+}  // anonymous namespace
 
 void 
 FlushStreams (void)
@@ -157,5 +188,6 @@ FlushStreams (void)
   *pl = 0;
 }
 
-} //FatalImpl
-} //ns3
+} // namespace FatalImpl
+  
+} // namespace ns3

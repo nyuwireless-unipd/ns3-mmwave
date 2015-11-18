@@ -436,7 +436,11 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 
 				std::complex<double> delay (cos (2*M_PI*fsb*DelaySpread[pathIndex]), sin (2*M_PI*fsb*DelaySpread[pathIndex]));
 				std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
+<<<<<<< HEAD
 				std::complex<double> smallScaleFading = m_smallScale ? sqrt(2)*sigma*doppler/delay : sqrt(2)*sigma;
+=======
+				std::complex<double> smallScaleFading = sqrt(2)*sigma*doppler/delay;
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 				subsbandGain = subsbandGain + bfParams->m_beam.at (pathIndex)*smallScaleFading;
 			}
 			*vit = (*vit)*(norm (subsbandGain));

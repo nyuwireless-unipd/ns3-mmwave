@@ -24,9 +24,9 @@
 #include "ns3/boolean.h"
 #include <ns3/log.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteFfrAlgorithm");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteFfrAlgorithm");
 
 static const int Type0AllocationRbg[4] = {
   10,       // RGB size 1
@@ -54,6 +54,7 @@ LteFfrAlgorithm::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::LteFfrAlgorithm")
     .SetParent<Object> ()
+    .SetGroupName("Lte")
     .AddAttribute ("FrCellTypeId",
                    "Downlink FR cell type ID for automatic configuration,"
                    "default value is 0 and it means that user needs to configure FR algorithm manually,"

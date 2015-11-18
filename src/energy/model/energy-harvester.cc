@@ -22,9 +22,9 @@
 #include "energy-harvester.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("EnergyHarvester");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("EnergyHarvester");
     
 NS_OBJECT_ENSURE_REGISTERED (EnergyHarvester);
 
@@ -33,6 +33,7 @@ EnergyHarvester::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::EnergyHarvester")
     .SetParent<Object> ()
+    .SetGroupName ("Energy")
   ;
   return tid;
 }

@@ -26,9 +26,9 @@
 #include "ns3/address-utils.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("TcpHeader");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("TcpHeader");
 
 NS_OBJECT_ENSURE_REGISTERED (TcpHeader);
 
@@ -49,6 +49,34 @@ TcpHeader::TcpHeader ()
 
 TcpHeader::~TcpHeader ()
 {
+}
+
+std::string
+TcpHeader::FlagsToString (uint8_t flags, const std::string& delimiter)
+{
+  static const char* flagNames[8] = {
+    "FIN",
+    "SYN",
+    "RST",
+    "PSH",
+    "ACK",
+    "URG",
+    "ECE",
+    "CWR"
+  };
+  std::string flagsDescription = "";
+  for (uint8_t i = 0; i < 8; ++i)
+    {
+      if (flags & (1 << i))
+        {
+          if (flagsDescription.length() > 0) 
+            {
+              flagsDescription += delimiter;
+            }
+          flagsDescription.append (flagNames[i]);
+        }
+    }
+  return flagsDescription;
 }
 
 void
@@ -148,8 +176,8 @@ TcpHeader::GetUrgentPointer () const
 }
 
 void 
-TcpHeader::InitializeChecksum (Ipv4Address source, 
-                               Ipv4Address destination,
+TcpHeader::InitializeChecksum (const Ipv4Address &source,
+                               const Ipv4Address &destination,
                                uint8_t protocol)
 {
   m_source = source;
@@ -158,8 +186,8 @@ TcpHeader::InitializeChecksum (Ipv4Address source,
 }
 
 void 
-TcpHeader::InitializeChecksum (Ipv6Address source, 
-                               Ipv6Address destination,
+TcpHeader::InitializeChecksum (const Ipv6Address &source,
+                               const Ipv6Address &destination,
                                uint8_t protocol)
 {
   m_source = source;
@@ -168,8 +196,8 @@ TcpHeader::InitializeChecksum (Ipv6Address source,
 }
 
 void 
-TcpHeader::InitializeChecksum (Address source, 
-                               Address destination,
+TcpHeader::InitializeChecksum (const Address &source,
+                               const Address &destination,
                                uint8_t protocol)
 {
   m_source = source;
@@ -231,6 +259,7 @@ TcpHeader::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpHeader")
     .SetParent<Header> ()
+    .SetGroupName ("Internet")
     .AddConstructor<TcpHeader> ()
   ;
   return tid;
@@ -249,41 +278,7 @@ TcpHeader::Print (std::ostream &os)  const
 
   if (m_flags != 0)
     {
-      os<<" [";
-      if ((m_flags & FIN) != 0)
-        {
-          os<<" FIN ";
-        }
-      if ((m_flags & SYN) != 0)
-        {
-          os<<" SYN ";
-        }
-      if ((m_flags & RST) != 0)
-        {
-          os<<" RST ";
-        }
-      if ((m_flags & PSH) != 0)
-        {
-          os<<" PSH ";
-        }
-      if ((m_flags & ACK) != 0)
-        {
-          os<<" ACK ";
-        }
-      if ((m_flags & URG) != 0)
-        {
-          os<<" URG ";
-        }
-      if ((m_flags & ECE) != 0)
-        {
-          os<<" ECE ";
-        }
-      if ((m_flags & CWR) != 0)
-        {
-          os<<" CWR ";
-        }
-
-      os<<"]";
+      os<<" [" << FlagsToString(m_flags) <<"]";
     }
 
   os<<" Seq="<<m_sequenceNumber<<" Ack="<<m_ackNumber<<" Win="<<m_windowSize;
@@ -519,6 +514,13 @@ operator== (const TcpHeader &lhs, const TcpHeader &rhs)
     lhs.m_windowSize      == rhs.m_windowSize      &&
     lhs.m_urgentPointer   == rhs.m_urgentPointer
     );
+}
+
+std::ostream&
+operator<< (std::ostream& os, TcpHeader const & tc)
+{
+  tc.Print (os);
+  return os;
 }
 
 } // namespace ns3

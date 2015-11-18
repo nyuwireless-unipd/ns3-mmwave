@@ -22,9 +22,9 @@
 #include "lte-ffr-distributed-algorithm.h"
 #include <ns3/log.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteFfrDistributedAlgorithm");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteFfrDistributedAlgorithm");
 
 NS_OBJECT_ENSURE_REGISTERED (LteFfrDistributedAlgorithm);
 
@@ -59,6 +59,7 @@ LteFfrDistributedAlgorithm::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::LteFfrDistributedAlgorithm")
     .SetParent<LteFfrAlgorithm> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteFfrDistributedAlgorithm> ()
     .AddAttribute ("CalculationInterval",
                    "Time interval between calculation of Edge sub-band, Default value 1 second",

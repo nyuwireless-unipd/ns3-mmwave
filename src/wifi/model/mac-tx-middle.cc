@@ -16,12 +16,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
- * Author: Mirko Banchi <mk.banchi@gmail.com>
+ * Authors: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
+ *          Mirko Banchi <mk.banchi@gmail.com>
+ *          Ghada Badawy <gbadawy@gmail.com>
  */
 
 #include "ns3/assert.h"
-
 #include "mac-tx-middle.h"
 #include "wifi-mac-header.h"
 
@@ -79,6 +79,32 @@ MacTxMiddle::GetNextSequenceNumberfor (const WifiMacHeader *hdr)
 }
 
 uint16_t
+MacTxMiddle::PeekNextSequenceNumberfor (const WifiMacHeader *hdr)
+{
+  uint16_t retval;
+  if (hdr->IsQosData ()
+      && !hdr->GetAddr1 ().IsGroup ())
+    {
+      uint8_t tid = hdr->GetQosTid ();
+      NS_ASSERT (tid < 16);
+      std::map<Mac48Address, uint16_t*>::iterator it = m_qosSequences.find (hdr->GetAddr1 ());
+      if (it != m_qosSequences.end ())
+        {
+          retval = it->second[tid];
+        }
+      else
+        {
+          retval = 0;
+        }
+    }
+  else
+    {
+      retval = m_sequence;
+    }
+  return retval;
+}
+
+uint16_t
 MacTxMiddle::GetNextSeqNumberByTidAndAddress (uint8_t tid, Mac48Address addr) const
 {
   NS_ASSERT (tid < 16);
@@ -91,4 +117,4 @@ MacTxMiddle::GetNextSeqNumberByTidAndAddress (uint8_t tid, Mac48Address addr) co
   return seq;
 }
 
-} // namespace ns3
+} //namespace ns3

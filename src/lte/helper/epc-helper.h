@@ -39,6 +39,8 @@ class EpcX2;
 class EpcMme;
 
 /**
+ * \ingroup lte
+ *
  * \brief Base helper class to handle the creation of the EPC entities.
  *
  * This class provides the API for the implementation of helpers that
@@ -60,6 +62,10 @@ public:
   virtual ~EpcHelper ();
   
   // inherited from Object
+  /**
+   *  Register this type.
+   *  \return The object TypeId.
+   */
   static TypeId GetTypeId (void);
   virtual void DoDispose ();
 
@@ -101,7 +107,7 @@ public:
    * \param tft the Traffic Flow Template of the new bearer
    * \param bearer struct describing the characteristics of the EPS bearer to be activated
    */
-  virtual void ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer) = 0;
+  virtual uint8_t ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer) = 0;
 
 
   /** 

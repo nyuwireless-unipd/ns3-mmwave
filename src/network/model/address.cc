@@ -25,9 +25,9 @@
 #include <iostream>
 #include <iomanip>
 
-NS_LOG_COMPONENT_DEFINE ("Address");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Address");
 
 Address::Address ()
   : m_type (0),
@@ -169,7 +169,7 @@ Address::Deserialize (TagBuffer buffer)
   buffer.Read (m_data, m_len);
 }
 
-ATTRIBUTE_HELPER_CPP (Address);   //!< Macro to make help make class an ns-3 attribute
+ATTRIBUTE_HELPER_CPP (Address);
 
 
 bool operator == (const Address &a, const Address &b)

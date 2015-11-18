@@ -32,9 +32,9 @@
 #include "arp-cache.h"
 #include "ipv4-interface.h"
 
-NS_LOG_COMPONENT_DEFINE ("ArpL3Protocol");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("ArpL3Protocol");
 
 const uint16_t ArpL3Protocol::PROT_NUMBER = 0x0806;
 
@@ -46,18 +46,26 @@ ArpL3Protocol::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::ArpL3Protocol")
     .SetParent<Object> ()
     .AddConstructor<ArpL3Protocol> ()
+    .SetGroupName ("Internet")
     .AddAttribute ("CacheList",
                    "The list of ARP caches",
                    ObjectVectorValue (),
                    MakeObjectVectorAccessor (&ArpL3Protocol::m_cacheList),
                    MakeObjectVectorChecker<ArpCache> ())
-    .AddAttribute ("RequestJitter", "The jitter in ms a node is allowed to wait before sending an ARP request. Some jitter aims to prevent collisions. By default, the model will wait for a duration in ms defined by a uniform random-variable between 0 and RequestJitter",
+    .AddAttribute ("RequestJitter",
+                   "The jitter in ms a node is allowed to wait "
+                   "before sending an ARP request.  Some jitter aims "
+                   "to prevent collisions. By default, the model "
+                   "will wait for a duration in ms defined by "
+                   "a uniform random-variable between 0 and RequestJitter",
                    StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=10.0]"),
                    MakePointerAccessor (&ArpL3Protocol::m_requestJitter),
                    MakePointerChecker<RandomVariableStream> ())
     .AddTraceSource ("Drop",
-                     "Packet dropped because not enough room in pending queue for a specific cache entry.",
-                     MakeTraceSourceAccessor (&ArpL3Protocol::m_dropTrace))
+                     "Packet dropped because not enough room "
+                     "in pending queue for a specific cache entry.",
+                     MakeTraceSourceAccessor (&ArpL3Protocol::m_dropTrace),
+                     "ns3::Packet::TracedCallback")
   ;
   return tid;
 }
@@ -187,7 +195,8 @@ ArpL3Protocol::Receive (Ptr<NetDevice> device, Ptr<const Packet> p, uint16_t pro
       NS_LOG_LOGIC (cache->GetInterface ()->GetAddress (i).GetLocal () << ", ");
     }
 
-  /** \internal
+  /**
+   * \internal
    * Note: we do not update the ARP cache when we receive an ARP request
    *  from an unknown node. See \bugid{107}
    */
@@ -280,7 +289,7 @@ ArpL3Protocol::Lookup (Ptr<Packet> packet, Ipv4Address destination,
               entry->MarkWaitReply (packet);
               Simulator::Schedule (Time (MilliSeconds (m_requestJitter->GetValue ())), &ArpL3Protocol::SendArpRequest, this, cache, destination);
             } 
-          else if (entry->IsWaitReply ()) 
+          else
             {
               NS_FATAL_ERROR ("Test for possibly unreachable code-- please file a bug report, with a test case, if this is ever hit");
             }
@@ -308,6 +317,17 @@ ArpL3Protocol::Lookup (Ptr<Packet> packet, Ipv4Address destination,
                 {
                   m_dropTrace (packet);
                 }
+            }
+          else if (entry-> IsPermanent ())
+            {
+              NS_LOG_LOGIC ("node="<<m_node->GetId ()<<
+                            ", permanent for " << destination << "valid -- send");
+              *hardwareDestination = entry->GetMacAddress ();
+              return true;
+            }
+          else
+            {
+              NS_LOG_LOGIC ("Test for possibly unreachable code-- please file a bug report, with a test case, if this is ever hit");
             }
         }
     }

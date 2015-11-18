@@ -294,6 +294,14 @@ public:
    */
   void SetQosTxopLimit (uint8_t txop);
   /**
+   * Set the Mesh Control Present flag for the QoS header.
+   */
+  void SetQosMeshControlPresent ();
+  /**
+   * Clear the Mesh Control Present flag for the QoS header.
+   */
+  void SetQosNoMeshControlPresent ();
+  /**
    * Set order bit in the frame control field.
    */
   void SetOrder (void);
@@ -546,7 +554,7 @@ public:
    * Check if the A-MSDU present bit is set in the QoS control field.
    *
    * \return true if the A-MSDU present bit is set,
-   *        false otherwise
+   *         false otherwise
    */
   bool IsQosAmsdu (void) const;
   /**
@@ -567,7 +575,6 @@ public:
    * \return the TXOP limit
    */
   uint8_t GetQosTxopLimit (void) const;
-
   /**
    * Return the size of the WifiMacHeader in octets.
    * GetSerializedSize calls this function.
@@ -581,6 +588,13 @@ public:
    * \returns a string corresponds to the header type.
    */
   const char * GetTypeString (void) const;
+
+  /**
+   * TracedCallback signature for WifiMacHeader
+   *
+   * \param [in] header The header
+   */
+  typedef void (* TracedCallback)(const WifiMacHeader &header);
 
 
 private:
@@ -644,8 +658,6 @@ private:
   uint16_t m_qosStuff;
 };
 
-} // namespace ns3
-
-
+} //namespace ns3
 
 #endif /* WIFI_MAC_HEADER_H */

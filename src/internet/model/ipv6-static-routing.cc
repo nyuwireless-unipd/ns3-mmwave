@@ -33,12 +33,14 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("Ipv6StaticRouting");
+
 NS_OBJECT_ENSURE_REGISTERED (Ipv6StaticRouting);
 
 TypeId Ipv6StaticRouting::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::Ipv6StaticRouting")
     .SetParent<Ipv6RoutingProtocol> ()
+    .SetGroupName ("Internet")
     .AddConstructor<Ipv6StaticRouting> ()
   ;
   return tid;

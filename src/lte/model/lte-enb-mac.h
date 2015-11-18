@@ -120,7 +120,35 @@ public:
   */
   void SetLteEnbPhySapProvider (LteEnbPhySapProvider* s);
 
+  /**
+   * TracedCallback signature for DL scheduling events.
+   *
+   * \param [in] frame Frame number.
+   * \param [in] subframe Subframe number.
+   * \param [in] rnti The C-RNTI identifying the UE.
+   * \param [in] mcs0 The MCS for transport block.. 
+   * \param [in] tbs0Size
+   * \param [in] mcs1 The MCS for transport block.
+   * \param [in] tbs1Size
+   */
+  typedef void (* DlSchedulingTracedCallback)
+    (uint32_t frame, uint32_t subframe,  uint16_t rnti,
+     uint8_t mcs0, uint16_t tbs0Size,
+     uint8_t mcs1, uint16_t tbs1Size);
 
+  /**
+   *  TracedCallback signature for UL scheduling events.
+   *
+   * \param [in] frame Frame number.
+   * \param [in] subframe Subframe number.
+   * \param [in] rnti The C-RNTI identifying the UE.
+   * \param [in] mcs  The MCS for transport block
+   * \param [in] tbsSize
+   */
+  typedef void (* UlSchedulingTracedCallback)
+    (uint32_t frame, uint32_t subframe, uint16_t rnti,
+     uint8_t mcs, uint16_t tbsSize);
+  
 private:
 
   /**
@@ -224,12 +252,14 @@ private:
    * Frame number, Subframe number, RNTI, MCS of TB1, size of TB1,
    * MCS of TB2 (0 if not present), size of TB2 (0 if not present)
    */
-  TracedCallback<uint32_t, uint32_t, uint16_t, uint8_t, uint16_t, uint8_t, uint16_t> m_dlScheduling;
+  TracedCallback<uint32_t, uint32_t, uint16_t,
+                 uint8_t, uint16_t, uint8_t, uint16_t> m_dlScheduling;
   /**
    * Trace information regarding UL scheduling
    * Frame number, Subframe number, RNTI, MCS of TB, size of TB
    */
-  TracedCallback<uint32_t, uint32_t, uint16_t, uint8_t, uint16_t> m_ulScheduling;
+  TracedCallback<uint32_t, uint32_t, uint16_t,
+                 uint8_t, uint16_t> m_ulScheduling;
   
   uint8_t m_macChTtiDelay; // delay of MAC, PHY and channel in terms of TTIs
 

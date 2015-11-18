@@ -36,6 +36,7 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("PacketSocketServer");
+
 NS_OBJECT_ENSURE_REGISTERED (PacketSocketServer);
 
 TypeId
@@ -43,9 +44,11 @@ PacketSocketServer::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PacketSocketServer")
     .SetParent<Application> ()
+    .SetGroupName("Network")
     .AddConstructor<PacketSocketServer> ()
     .AddTraceSource ("Rx", "A packet has been received",
-                     MakeTraceSourceAccessor (&PacketSocketServer::m_rxTrace))
+                     MakeTraceSourceAccessor (&PacketSocketServer::m_rxTrace),
+                     "ns3::Packet::AddressTracedCallback")
   ;
   return tid;
 }

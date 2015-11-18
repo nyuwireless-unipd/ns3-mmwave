@@ -20,6 +20,7 @@
 #ifndef BYTE_TAG_LIST_H
 #define BYTE_TAG_LIST_H
 
+#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #include "ns3/type-id.h"
 #include "tag-buffer.h"
@@ -49,21 +50,15 @@ struct ByteTagListData;
  *     as-needed to emulate COW semantics.
  *
  *   - Each tag tags a unique set of bytes identified by the pair of offsets
- *     (start,end). These offsets are provided by Buffer::GetCurrentStartOffset
- *     and Buffer::GetCurrentEndOffset which means that they are relative to 
- *     the start of the 'virtual byte buffer' as explained in the documentation
- *     for the ns3::Buffer class. Whenever the origin of the offset of the Buffer
- *     instance associated to this ByteTagList instance changes, the Buffer class
- *     reports this to its container Packet class as a bool return value
- *     in Buffer::AddAtStart and Buffer::AddAtEnd. In both cases, when this happens
- *     the Packet class calls ByteTagList::AddAtEnd and ByteTagList::AddAtStart to update
- *     the byte offsets of each tag in the ByteTagList.
+ *     (start,end). These offsets are relative to the start of the packet
+ *     Whenever the origin of the offset changes, the Packet adjusts all
+ *     byte tags using ByteTagList::Adjust method.
  *
- *   - Whenever bytes are removed from the packet byte buffer, the ByteTagList offsets
- *     are never updated because we rely on the fact that they will be updated in
- *     either the next call to Packet::AddHeader or Packet::AddTrailer or when
- *     the user iterates the tag list with Packet::GetTagIterator and 
- *     TagIterator::Next.
+ *   - When packet is reduced in size, byte tags that span outside the packet
+ *     boundaries remain in ByteTagList. It is not a problem as iterator fixes
+ *     the boundaries before returning item. However, when packet is extending,
+ *     it calls ByteTagList::AddAtStart or ByteTagList::AddAtEnd to cut byte
+ *     tags that will otherwise cover new bytes.
  */
 class ByteTagList
 {
@@ -125,8 +120,9 @@ private:
      * \param end End tag
      * \param offsetStart offset to the start of the tag from the virtual byte buffer
      * \param offsetEnd offset to the end of the tag from the virtual byte buffer
+     * \param adjustment adjustment to byte tag offsets
      */
-    Iterator (uint8_t *start, uint8_t *end, int32_t offsetStart, int32_t offsetEnd);
+    Iterator (uint8_t *start, uint8_t *end, int32_t offsetStart, int32_t offsetEnd, int32_t m_adjustment);
 
     /**
      * \brief Prepare the iterator for the next tag
@@ -136,6 +132,7 @@ private:
     uint8_t *m_end;         //!< End tag
     int32_t m_offsetStart;  //!< Offset to the start of the tag from the virtual byte buffer
     int32_t m_offsetEnd;    //!< Offset to the end of the tag from the virtual byte buffer
+    int32_t m_adjustment;   //!< Adjustment to byte tag offsets
     uint32_t m_nextTid;     //!< TypeId of the next tag
     uint32_t m_nextSize;    //!< Size of the next tag
     int32_t m_nextStart;    //!< Start of the next tag
@@ -204,41 +201,31 @@ private:
    */
   ByteTagList::Iterator Begin (int32_t offsetStart, int32_t offsetEnd) const;
 
+  /*
+   * Adjust the offsets stored internally by the adjustment delta.
+   *
+   * \param adjustment value to change stored offsets by
+   */
+  inline void Adjust (int32_t adjustment);
+
   /**
-   * Adjust the offsets stored internally by the adjustment delta and
-   * make sure that all offsets are smaller than appendOffset which represents
+   * Make sure that all offsets are smaller than appendOffset which represents
    * the location where new bytes have been added to the byte buffer.
    * 
-   * \param adjustment value to change stored offsets by
    * \param appendOffset maximum offset value
    *
    */
-  void AddAtEnd (int32_t adjustment, int32_t appendOffset);
+  void AddAtEnd (int32_t appendOffset);
   /**
-   * Adjust the offsets stored internally by the adjustment delta and
-   * make sure that all offsets are bigger than prependOffset which represents
+   * Make sure that all offsets are bigger than prependOffset which represents
    * the location where new bytes have been added to the byte buffer.
    *
-   * \param adjustment value to change stored offsets byte
    * \param prependOffset minimum offset value
    *
    */
-  void AddAtStart (int32_t adjustment, int32_t prependOffset);
+  void AddAtStart (int32_t prependOffset);
 
 private:
-  /**
-   * \brief Check that all offsets are smaller than appendOffset
-   * \param appendOffset the append offset to check
-   * \returns true if the check is false
-   */
-  bool IsDirtyAtEnd (int32_t appendOffset);
-  /**
-   * \brief Check that all offsets are bigger than prependOffset
-   * \param prependOffset the prepend offset to check
-   * \returns true if the check is false
-   */
-  bool IsDirtyAtStart (int32_t prependOffset);
-
   /**
    * \brief Returns an iterator pointing to the very first tag in this list.
    *
@@ -259,9 +246,18 @@ private:
    */
   void Deallocate (struct ByteTagListData *data);
 
+  int32_t m_minStart; // !< minimal start offset
+  int32_t m_maxEnd; // !< maximal end offset
+  int32_t m_adjustment; // !< adjustment to byte tag offsets
   uint16_t m_used; //!< the number of used bytes in the buffer
   struct ByteTagListData *m_data; //!< the ByteTagListData structure
 };
+
+void
+ByteTagList::Adjust (int32_t adjustment)
+{
+  m_adjustment += adjustment;
+}
 
 } // namespace ns3
 

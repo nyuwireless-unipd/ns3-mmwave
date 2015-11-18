@@ -21,8 +21,6 @@
 #include "ns3/assert.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("Buffer");
-
 #define LOG_INTERNAL_STATE(y)                                                                    \
   NS_LOG_LOGIC (y << "start="<<m_start<<", end="<<m_end<<", zero start="<<m_zeroAreaStart<<              \
                 ", zero end="<<m_zeroAreaEnd<<", count="<<m_data->m_count<<", size="<<m_data->m_size<<   \
@@ -48,6 +46,8 @@ static struct Zeroes
 }
 
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Buffer");
 
 
 uint32_t Buffer::g_recommendedStart = 0;
@@ -305,11 +305,10 @@ Buffer::GetInternalEnd (void) const
   return m_end - (m_zeroAreaEnd - m_zeroAreaStart);
 }
 
-bool
+void
 Buffer::AddAtStart (uint32_t start)
 {
   NS_LOG_FUNCTION (this << start);
-  bool dirty;
   NS_ASSERT (CheckInternalState ());
   bool isDirty = m_data->m_count > 1 && m_start > m_data->m_dirtyStart;
   if (m_start >= start && !isDirty)
@@ -321,7 +320,6 @@ Buffer::AddAtStart (uint32_t start)
        */
       NS_ASSERT (m_data->m_count == 1 || m_start == m_data->m_dirtyStart);
       m_start -= start;
-      dirty = m_start > m_data->m_dirtyStart;
       // update dirty area
       m_data->m_dirtyStart = m_start;
     } 
@@ -347,20 +345,15 @@ Buffer::AddAtStart (uint32_t start)
       // update dirty area
       m_data->m_dirtyStart = m_start;
       m_data->m_dirtyEnd = m_end;
-
-      dirty = true;
-
     }
   m_maxZeroAreaStart = std::max (m_maxZeroAreaStart, m_zeroAreaStart);
   LOG_INTERNAL_STATE ("add start=" << start << ", ");
   NS_ASSERT (CheckInternalState ());
-  return dirty;
 }
-bool
+void
 Buffer::AddAtEnd (uint32_t end)
 {
   NS_LOG_FUNCTION (this << end);
-  bool dirty;
   NS_ASSERT (CheckInternalState ());
   bool isDirty = m_data->m_count > 1 && m_end < m_data->m_dirtyEnd;
   if (GetInternalEnd () + end <= m_data->m_size && !isDirty)
@@ -374,9 +367,6 @@ Buffer::AddAtEnd (uint32_t end)
       m_end += end;
       // update dirty area.
       m_data->m_dirtyEnd = m_end;
-
-      dirty = m_end < m_data->m_dirtyEnd;
-
     } 
   else
     {
@@ -400,15 +390,10 @@ Buffer::AddAtEnd (uint32_t end)
       // update dirty area
       m_data->m_dirtyStart = m_start;
       m_data->m_dirtyEnd = m_end;
-
-      dirty = true;
-
     } 
   m_maxZeroAreaStart = std::max (m_maxZeroAreaStart, m_zeroAreaStart);
   LOG_INTERNAL_STATE ("add end=" << end << ", ");
   NS_ASSERT (CheckInternalState ());
-
-  return dirty;
 }
 
 void
@@ -704,19 +689,6 @@ Buffer::Deserialize (const uint8_t *buffer, uint32_t size)
   return (sizeCheck != 0) ? 0 : 1;
 }
 
-int32_t 
-Buffer::GetCurrentStartOffset (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_start;
-}
-int32_t 
-Buffer::GetCurrentEndOffset (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_end;
-}
-
 
 void
 Buffer::TransformIntoRealBuffer (void) const
@@ -840,15 +812,14 @@ bool
 Buffer::Iterator::CheckNoZero (uint32_t start, uint32_t end) const
 {
   NS_LOG_FUNCTION (this << &start << &end);
-  bool ok = true;
   for (uint32_t i = start; i < end; i++)
     {
       if (!Check (i))
         {
-          ok = false;
+          return false;
         }
     }
-  return ok;
+  return true;
 }
 bool 
 Buffer::Iterator::Check (uint32_t i) const

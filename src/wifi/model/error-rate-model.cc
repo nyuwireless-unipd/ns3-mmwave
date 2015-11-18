@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #include "error-rate-model.h"
 
 namespace ns3 {
@@ -27,6 +28,7 @@ TypeId ErrorRateModel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ErrorRateModel")
     .SetParent<Object> ()
+    .SetGroupName ("Wifi")
   ;
   return tid;
 }
@@ -34,16 +36,18 @@ TypeId ErrorRateModel::GetTypeId (void)
 double
 ErrorRateModel::CalculateSnr (WifiMode txMode, double ber) const
 {
-  // This is a very simple binary search.
+  //This is a very simple binary search.
   double low, high, precision;
   low = 1e-25;
   high = 1e25;
   precision = 1e-12;
+  WifiTxVector txVector;
+  txVector.SetMode (txMode);
   while (high - low > precision)
     {
       NS_ASSERT (high >= low);
       double middle = low + (high - low) / 2;
-      if ((1 - GetChunkSuccessRate (txMode, middle, 1)) > ber)
+      if ((1 - GetChunkSuccessRate (txMode, txVector, middle, 1)) > ber)
         {
           low = middle;
         }
@@ -55,4 +59,4 @@ ErrorRateModel::CalculateSnr (WifiMode txMode, double ber) const
   return low;
 }
 
-} // namespace ns3
+} //namespace ns3

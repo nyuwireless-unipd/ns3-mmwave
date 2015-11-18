@@ -23,11 +23,13 @@
 #include "ns3/log.h"
 
 #include "flame-rtable.h"
+
 namespace ns3 {
-namespace flame {
 
 NS_LOG_COMPONENT_DEFINE ("FlameRtable");
 
+namespace flame {
+  
 NS_OBJECT_ENSURE_REGISTERED (FlameRtable);
 
 TypeId
@@ -35,7 +37,9 @@ FlameRtable::GetTypeId ()
 {
   static TypeId tid =
     TypeId ("ns3::flame::FlameRtable")
-    .SetParent<Object> ().AddConstructor<FlameRtable> ()
+    .SetParent<Object> ()
+    .SetGroupName ("Mesh")
+    .AddConstructor<FlameRtable> ()
     .AddAttribute ( "Lifetime",
                     "The lifetime of the routing enrty",
                     TimeValue (Seconds (120)), MakeTimeAccessor (

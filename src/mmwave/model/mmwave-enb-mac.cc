@@ -475,7 +475,11 @@ MmWaveEnbMac::DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParamet
     {
       NS_LOG_DEBUG (this << " eNB rxed an SRS UL-CQI");
     }
+<<<<<<< HEAD
   //ulcqi.m_sfnSf = SfnSf(m_frameNum, m_sfNum, m_slotNum);
+=======
+  ulcqi.m_sfnSf = ((0x3FF & m_frameNum) << 16) | ((0xFF & m_sfNum) << 8) | (0xFF & m_slotNum);
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
   NS_LOG_INFO("*** UL CQI report SINR " << LteFfConverter::fpS11dot3toDouble (ulcqi.m_ulCqi.m_sinr[0]) << " frame " << m_frameNum << " subframe " << m_sfNum << " slot " << m_slotNum );
 
   m_ulCqiReceived.push_back (ulcqi);
@@ -610,12 +614,35 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 		}
 		else
 		{
+<<<<<<< HEAD
 			// create DCI messages
 			DciInfoElementTdma &dciElem = slotAllocInfo.m_dci;
 			uint8_t tbUid = dciElem.m_harqProcess;
 
 			// update Harq Processes
 			if (dciElem.m_ndi == 1)
+=======
+			// iterate through RLC PDUs for each slot
+			TbInfoElement& tbInfo = schedInfo.m_dci.m_tbInfoElements[itb];
+			if ( ((schedInfo.m_dci.m_tddBitmap >> tbInfo.m_slotInd) & 0x1) == 1)  // skip UL TBs
+			{
+				continue;
+			}
+			NS_ASSERT (schedInfo.m_rlcPduList.size () > 0);
+			std::vector<RlcPduInfo>& rlcPduElems = schedInfo.m_rlcPduList[itb];
+			NS_ASSERT (rlcPduElems.size () > 0);
+			MacPduInfo macPduInfo (schedInfo.m_frameNum, schedInfo.m_sfNum, tbInfo.m_slotInd+1, \
+			                       tbInfo.m_tbSize, rlcPduElems.size ());
+			//uint8_t tbUid = AllocateTbUid ();
+			uint8_t tbUid = AllocateTbUid ()%20;
+
+			// insert into MAC PDU map
+			uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
+			m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo));
+
+			//Harq Process
+			if (tbInfo.m_ndi == 1)
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 			{
 				std::vector<RlcPduInfo> &rlcPduInfo = slotAllocInfo.m_rlcPduInfo;
 				NS_ASSERT (rlcPduInfo.size () > 0);

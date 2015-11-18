@@ -26,10 +26,9 @@
 #include <ns3/log.h>
 
 
-NS_LOG_COMPONENT_DEFINE ("LteInterference");
-
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("LteInterference");
 
 LteInterference::LteInterference ()
   : m_receiving (false),
@@ -63,6 +62,7 @@ LteInterference::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::LteInterference")
     .SetParent<Object> ()
+    .SetGroupName("Lte")
   ;
   return tid;
 }

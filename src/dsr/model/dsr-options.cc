@@ -60,9 +60,10 @@
 #include "dsr-options.h"
 #include "dsr-rcache.h"
 
-NS_LOG_COMPONENT_DEFINE ("DsrOptions");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("DsrOptions");
+  
 namespace dsr {
 
 NS_OBJECT_ENSURE_REGISTERED (DsrOptions);
@@ -71,12 +72,19 @@ TypeId DsrOptions::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptions")
     .SetParent<Object> ()
+    .SetGroupName ("Dsr")
     .AddAttribute ("OptionNumber", "The Dsr option number.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&DsrOptions::GetOptionNumber),
                    MakeUintegerChecker<uint8_t> ())
-    .AddTraceSource ("Rx", "Receive DSR packet.",
-                     MakeTraceSourceAccessor (&DsrOptions::m_rxPacketTrace))
+    .AddTraceSource ("Drop",
+                     "Packet dropped.",
+                     MakeTraceSourceAccessor (&DsrOptions::m_dropTrace),
+                     "ns3::Packet::TracedCallback")
+    .AddTraceSource ("Rx",
+                     "Receive DSR packet.",
+                     MakeTraceSourceAccessor (&DsrOptions::m_rxPacketTrace),
+                     "ns3::dsr::DsrOptionSRHeader::TracedCallback")
   ;
   return tid;
 }
@@ -377,6 +385,7 @@ TypeId DsrOptionPad1::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionPad1")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionPad1> ()
   ;
   return tid;
@@ -417,6 +426,7 @@ TypeId DsrOptionPadn::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionPadn")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionPadn> ()
   ;
   return tid;
@@ -457,6 +467,7 @@ TypeId DsrOptionRreq::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRreq")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionRreq> ()
   ;
   return tid;
@@ -956,6 +967,7 @@ TypeId DsrOptionRrep::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRrep")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionRrep> ()
   ;
   return tid;
@@ -1156,6 +1168,7 @@ TypeId DsrOptionSR::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionSR")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionSR> ()
   ;
   return tid;
@@ -1397,6 +1410,7 @@ TypeId DsrOptionRerr::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionRerr")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionRerr> ()
   ;
   return tid;
@@ -1576,6 +1590,7 @@ TypeId DsrOptionAckReq::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionAckReq")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionAckReq> ()
   ;
   return tid;
@@ -1631,6 +1646,7 @@ TypeId DsrOptionAck::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::DsrOptionAck")
     .SetParent<DsrOptions> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<DsrOptionAck> ()
   ;
   return tid;

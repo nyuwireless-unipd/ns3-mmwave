@@ -1,16 +1,51 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * Copyright (c) 2010 INRIA
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
 #include "int64x64-128.h"
 #include "abort.h"
 #include "assert.h"
 #include "log.h"
 
-// Note:  Logging in this file is largely avoided due to the
-// number of calls that are made to these functions and the possibility
-// of causing recursions leading to stack overflow
-
-NS_LOG_COMPONENT_DEFINE ("int64x64-128");
+/**
+ * \file
+ * \ingroup highprec
+ * Implementation of the ns3::int64x64_t type using a native int128_t type.
+ */
 
 namespace ns3 {
 
+// Note:  Logging in this file is largely avoided due to the
+// number of calls that are made to these functions and the possibility
+// of causing recursions leading to stack overflow
+NS_LOG_COMPONENT_DEFINE ("int64x64-128");
+
+/**
+ * \ingroup highprec
+ * Compute the sign of the result of multiplying or dividing
+ * Q64.64 fixed precision operands.
+ *
+ * \param [in]  sa The signed value of the first operand.
+ * \param [in]  sb The signed value of the second operand.
+ * \param [out] ua The unsigned magnitude of the first operand.
+ * \param [out] ub The unsigned magnitude of the second operand.
+ * \returns \c true if the result will be negative.
+ */
 static inline  
 bool
 output_sign (const int128_t sa,

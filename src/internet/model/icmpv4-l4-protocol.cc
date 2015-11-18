@@ -1,3 +1,23 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * Copyright (c) 2008 INRIA
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Author: Mathieu Lacage <mathieu.lacage@cutebugs.net>
+ */
+
 #include "icmpv4-l4-protocol.h"
 #include "ipv4-raw-socket-factory-impl.h"
 #include "ipv4-interface.h"
@@ -23,6 +43,7 @@ Icmpv4L4Protocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Icmpv4L4Protocol")
     .SetParent<IpL4Protocol> ()
+    .SetGroupName ("Internet")
     .AddConstructor<Icmpv4L4Protocol> ()
   ;
   return tid;
@@ -71,7 +92,7 @@ Icmpv4L4Protocol::NotifyNewAggregate ()
             }
         }
     }
-  Object::NotifyNewAggregate ();
+  IpL4Protocol::NotifyNewAggregate ();
 }
 
 uint16_t 

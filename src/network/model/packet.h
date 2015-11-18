@@ -29,6 +29,7 @@
 #include "byte-tag-list.h"
 #include "packet-tag-list.h"
 #include "nix-vector.h"
+#include "ns3/mac48-address.h"
 #include "ns3/callback.h"
 #include "ns3/assert.h"
 #include "ns3/ptr.h"
@@ -36,6 +37,9 @@
 
 namespace ns3 {
 
+// Forward declaration
+class Address;
+  
 /**
  * \ingroup network
  * \defgroup packet Packet
@@ -388,21 +392,6 @@ public:
   void RemoveAtStart (uint32_t size);
 
   /**
-   * \returns a pointer to the internal buffer of the packet.
-   *
-   * If you try to change the content of the buffer
-   * returned by this method, you will die.
-   *
-   * \deprecated
-   * Note that this method is now deprecated and will be removed in
-   * a future version of ns-3. To get access to the content
-   * of the byte buffer of a packet, call CopyData"()" to perform
-   * an explicit copy.
-   *
-   */
-  uint8_t const *PeekData (void) const NS_DEPRECATED;
-
-  /**
    * \brief Copy the packet contents to a byte buffer.
    *
    * \param buffer a pointer to a byte buffer where the packet data 
@@ -467,6 +456,15 @@ public:
    * Trailer::DoPrint methods.
    */
   void Print (std::ostream &os) const;
+
+  /**
+   * \brief Return a string representation of the packet
+   *
+   * An empty string is returned if you haven't called EnablePrinting ()
+   *
+   * \return String representation
+   */
+  std::string ToString (void) const;
 
   /**
    * \brief Returns an iterator which points to the first 'item'
@@ -658,6 +656,50 @@ public:
    */
   Ptr<NixVector> GetNixVector (void) const; 
 
+  /**
+   * TracedCallback signature for Ptr<Packet>
+   *
+   * \param [in] packet The packet.
+   */
+  typedef void (* TracedCallback) (Ptr<const Packet> packet);
+  
+  /**
+   * TracedCallback signature for packet and Address.
+   *
+   * \param [in] packet The packet.
+   * \param [in] address The address.
+   */
+  typedef void (* AddressTracedCallback)
+    (Ptr<const Packet> packet, const Address &address);
+  
+  /**
+   * TracedCallback signature for packet and Mac48Address.
+   *
+   * \param [in] packet The packet.
+   * \param [in] mac The Mac48Address.
+   */
+  typedef void (* Mac48AddressTracedCallback)
+    (Ptr<const Packet> packet, Mac48Address mac);
+  
+  /**
+   * TracedCallback signature for changes in packet size.
+   *
+   * \param [in] oldSize The previous packet's size.
+   * \param [in] newSize The actual packet's size.
+   */
+  typedef void (* SizeTracedCallback)
+    (uint32_t oldSize, uint32_t newSize);
+
+  /**
+   * TracedCallback signature for packet and SINR.
+   *
+   * \param [in] packet The packet.
+   * \param [in] sinr The received SINR.
+   */
+  typedef void (* SinrTracedCallback)
+    (Ptr<const Packet> packet, double sinr);
+    
+  
 private:
   /**
    * \brief Constructor

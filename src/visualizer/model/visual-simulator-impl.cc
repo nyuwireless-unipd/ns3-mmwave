@@ -22,11 +22,9 @@
 #include "ns3/default-simulator-impl.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("VisualSimulatorImpl");
-
 namespace ns3 {
 
-
+NS_LOG_COMPONENT_DEFINE ("VisualSimulatorImpl");
 
 NS_OBJECT_ENSURE_REGISTERED (VisualSimulatorImpl);
 
@@ -47,6 +45,7 @@ VisualSimulatorImpl::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::VisualSimulatorImpl")
     .SetParent<SimulatorImpl> ()
+    .SetGroupName ("Visualizer")
     .AddConstructor<VisualSimulatorImpl> ()
     .AddAttribute ("SimulatorImplFactory",
                    "Factory for the underlying simulator implementation used by the visualizer.",
@@ -142,24 +141,24 @@ VisualSimulatorImpl::Stop (void)
 }
 
 void 
-VisualSimulatorImpl::Stop (Time const &time)
+VisualSimulatorImpl::Stop (Time const &delay)
 {
-  m_simulator->Stop (time);
+  m_simulator->Stop (delay);
 }
 
 //
 // Schedule an event for a _relative_ time in the future.
 //
 EventId
-VisualSimulatorImpl::Schedule (Time const &time, EventImpl *event)
+VisualSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
 {
-  return m_simulator->Schedule (time, event);
+  return m_simulator->Schedule (delay, event);
 }
 
 void
-VisualSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
+VisualSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &delay, EventImpl *event)
 {
-  m_simulator->ScheduleWithContext (context, time, event);
+  m_simulator->ScheduleWithContext (context, delay, event);
 }
 
 EventId
@@ -199,9 +198,9 @@ VisualSimulatorImpl::Cancel (const EventId &id)
 }
 
 bool
-VisualSimulatorImpl::IsExpired (const EventId &ev) const
+VisualSimulatorImpl::IsExpired (const EventId &id) const
 {
-  return m_simulator->IsExpired (ev);
+  return m_simulator->IsExpired (id);
 }
 
 Time 

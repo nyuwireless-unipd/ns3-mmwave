@@ -23,9 +23,9 @@
 #include <ns3/nstime.h>
 #include <ns3/log.h>
 
-NS_LOG_COMPONENT_DEFINE ("ShannonSpectrumErrorModel");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("ShannonSpectrumErrorModel");
 
 NS_OBJECT_ENSURE_REGISTERED (SpectrumErrorModel);
 
@@ -34,6 +34,8 @@ SpectrumErrorModel::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::SpectrumErrorModel")
     .SetParent<Object> ()
+    .SetGroupName ("Spectrum")
+    // No AddConstructor because this is an abstract class.
     ;
   return tid;
 }
@@ -42,6 +44,17 @@ SpectrumErrorModel::~SpectrumErrorModel ()
 {
 }
 
+/* static */
+TypeId
+ShannonSpectrumErrorModel::GetTypeId ()
+{
+  static TypeId tid = TypeId ("ns3::ShannonSpectrumErrorModel")
+    .SetParent<SpectrumErrorModel> ()
+    .SetGroupName ("Spectrum")
+    .AddConstructor<ShannonSpectrumErrorModel> ()
+    ;
+  return tid;
+}
 void
 ShannonSpectrumErrorModel::DoDispose ()
 {

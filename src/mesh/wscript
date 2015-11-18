@@ -1,7 +1,7 @@
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    obj = bld.create_ns3_module('mesh', ['internet', 'wifi', 'applications'])
+    obj = bld.create_ns3_module('mesh', ['internet', 'wifi'])
 
     obj.source = [
         'model/mesh-information-element-vector.cc',
@@ -34,6 +34,7 @@ def build(bld):
         'model/flame/flame-protocol-mac.cc',
         'model/flame/flame-protocol.cc',
         'helper/mesh-helper.cc',
+        'helper/mesh-stack-installer.cc',
         'helper/dot11s/dot11s-installer.cc',
         'helper/flame/flame-installer.cc',
         ]
@@ -56,7 +57,6 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'mesh'
     headers.source = [
-        'model/mesh-information-element.h',
         'model/mesh-information-element-vector.h',
         'model/mesh-point-device.h',
         'model/mesh-l2-routing-protocol.h',

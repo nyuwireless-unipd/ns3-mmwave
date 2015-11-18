@@ -39,7 +39,6 @@
 #include "ns3/uinteger.h"
 #include "ns3/log.h"
 
-#include "ns3/ipv4-end-point.h"
 #include "ns3/arp-l3-protocol.h"
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/ipv6-l3-protocol.h"
@@ -385,8 +384,8 @@ WScalingTestCase::SetupDefaultSim (void)
       break;
     }
 
-  m_server->m_rxBuffer.SetMaxBufferSize (m_maxServerBufferSize);
-  m_source->m_rxBuffer.SetMaxBufferSize (m_maxSourceBufferSize);
+  m_server->m_rxBuffer->SetMaxBufferSize (m_maxServerBufferSize);
+  m_source->m_rxBuffer->SetMaxBufferSize (m_maxSourceBufferSize);
 
   uint16_t port = 50000;
   InetSocketAddress serverlocaladdr (Ipv4Address::GetAny (), port);

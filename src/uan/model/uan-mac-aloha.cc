@@ -26,12 +26,12 @@
 #include "uan-header-common.h"
 
 #include <iostream>
-NS_LOG_COMPONENT_DEFINE ("UanMacAloha");
-
 
 namespace ns3
 {
 
+NS_LOG_COMPONENT_DEFINE ("UanMacAloha");
+  
 NS_OBJECT_ENSURE_REGISTERED (UanMacAloha);
 
 UanMacAloha::UanMacAloha ()
@@ -70,7 +70,8 @@ TypeId
 UanMacAloha::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanMacAloha")
-    .SetParent<Object> ()
+    .SetParent<UanMac> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanMacAloha> ()
   ;
   return tid;

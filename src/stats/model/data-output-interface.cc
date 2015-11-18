@@ -26,7 +26,6 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("DataOutputInterface");
 
-
 //--------------------------------------------------------------
 //----------------------------------------------
 DataOutputInterface::DataOutputInterface()
@@ -37,6 +36,18 @@ DataOutputInterface::~DataOutputInterface()
 {
   NS_LOG_FUNCTION (this);
 }
+/* static */
+TypeId
+DataOutputInterface::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::DataOutputInterface")
+    .SetParent<Object> ()
+    .SetGroupName ("Stats")
+    // No AddConstructor because this is an abstract class.
+    ;
+  return tid;
+}
+  
 void
 DataOutputInterface::DoDispose ()
 {

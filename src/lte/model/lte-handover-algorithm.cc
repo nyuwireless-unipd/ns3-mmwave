@@ -22,9 +22,9 @@
 #include "lte-handover-algorithm.h"
 #include <ns3/log.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteHandoverAlgorithm");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteHandoverAlgorithm");
 
 NS_OBJECT_ENSURE_REGISTERED (LteHandoverAlgorithm);
 
@@ -44,6 +44,7 @@ LteHandoverAlgorithm::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::LteHandoverAlgorithm")
     .SetParent<Object> ()
+    .SetGroupName("Lte")
   ;
   return tid;
 }

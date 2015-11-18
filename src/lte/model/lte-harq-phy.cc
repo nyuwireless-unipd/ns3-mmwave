@@ -23,9 +23,9 @@
 #include <ns3/log.h>
 #include <ns3/assert.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteHarqPhy");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteHarqPhy");
 
 //NS_OBJECT_ENSURE_REGISTERED (LteHarqPhy)
 //  ;
@@ -56,7 +56,7 @@ LteHarqPhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
   NS_LOG_FUNCTION (this);
 
   // left shift UL HARQ buffers
-  std::map <uint16_t, std::vector <HarqProcessInfoList_t> >:: iterator it;
+  std::map <uint16_t, std::vector <HarqProcessInfoList_t> >::iterator it;
   for (it = m_miUlHarqProcessesInfoMap.begin (); it != m_miUlHarqProcessesInfoMap.end (); it++)
     {
       (*it).second.erase ((*it).second.begin ());

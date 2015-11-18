@@ -100,6 +100,14 @@ public:
   virtual void NotifyCcaEnd (void);
   virtual void NotifyTxStart (Time duration);
 
+  /**
+   *  TracedCallback signature for enqueue/dequeue of a packet.
+   *
+   * \param [in] packet The Packet being received.
+   * \param [in] proto The protocol number.
+   */
+  typedef void (* QueueTracedCallback)
+    (Ptr<const Packet> packet, uint16_t proto);
 
 private:
   /** Enum defining possible Phy states. */

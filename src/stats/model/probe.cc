@@ -24,9 +24,9 @@
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("Probe");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Probe");
 
 NS_OBJECT_ENSURE_REGISTERED (Probe);
 
@@ -35,6 +35,7 @@ Probe::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::Probe")
     .SetParent<DataCollectionObject> ()
+    .SetGroupName ("Stats")
     .AddAttribute ("Start",
                    "Time data collection starts",
                    TimeValue (Seconds (0)),

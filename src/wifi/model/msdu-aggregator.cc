@@ -17,14 +17,15 @@
  *
  * Author: Mirko Banchi <mk.banchi@gmail.com>
  */
+
 #include "ns3/log.h"
 
 #include "msdu-aggregator.h"
 #include "wifi-mac-header.h"
 
-NS_LOG_COMPONENT_DEFINE ("MsduAggregator");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("MsduAggregator");
 
 NS_OBJECT_ENSURE_REGISTERED (MsduAggregator);
 
@@ -33,6 +34,7 @@ MsduAggregator::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::MsduAggregator")
     .SetParent<Object> ()
+    .SetGroupName ("Wifi")
   ;
   return tid;
 }
@@ -73,4 +75,4 @@ MsduAggregator::Deaggregate (Ptr<Packet> aggregatedPacket)
   return set;
 }
 
-} // namespace ns3
+} //namespace ns3

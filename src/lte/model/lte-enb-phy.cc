@@ -45,25 +45,32 @@
 #include <ns3/lte-ue-net-device.h>
 #include <ns3/pointer.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteEnbPhy");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteEnbPhy");
 
 NS_OBJECT_ENSURE_REGISTERED (LteEnbPhy);
 
-// duration of the data part of a subframe in DL
-// = 0.001 / 14 * 11 (fixed to 11 symbols) -1ns as margin to avoid overlapping simulator events
+/**
+ * Duration of the data portion of a DL subframe.
+ * Equals to "TTI length * (11/14) - margin".
+ * Data portion is fixed to 11 symbols out of the available 14 symbols.
+ * 1 nanosecond margin is added to avoid overlapping simulator events.
+ */
 static const Time DL_DATA_DURATION = NanoSeconds (785714 -1);
 
-//  delay from subframe start to transmission of the data in DL 
-// = 0.001 / 14 * 3 (ctrl fixed to 3 symbols)
+/**
+ * Delay from the start of a DL subframe to transmission of the data portion.
+ * Equals to "TTI length * (3/14)".
+ * Control portion is fixed to 3 symbols out of the available 14 symbols.
+ */
 static const Time DL_CTRL_DELAY_FROM_SUBFRAME_START = NanoSeconds (214286);
 
 ////////////////////////////////////////
 // member SAP forwarders
 ////////////////////////////////////////
 
-
+/// \todo SetBandwidth() and SetCellId() can be removed.
 class EnbMemberLteEnbPhySapProvider : public LteEnbPhySapProvider
 {
 public:
@@ -145,7 +152,6 @@ LteEnbPhy::LteEnbPhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   m_harqPhyModule = Create <LteHarqPhy> ();
   m_downlinkSpectrumPhy->SetHarqPhyModule (m_harqPhyModule);
   m_uplinkSpectrumPhy->SetHarqPhyModule (m_harqPhyModule);
-  Simulator::ScheduleNow (&LteEnbPhy::StartFrame, this);
 }
 
 TypeId
@@ -153,6 +159,7 @@ LteEnbPhy::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::LteEnbPhy")
     .SetParent<LtePhy> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteEnbPhy> ()
     .AddAttribute ("TxPower",
                    "Transmission power in dBm",
@@ -161,42 +168,51 @@ LteEnbPhy::GetTypeId (void)
                                        &LteEnbPhy::GetTxPower),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("NoiseFigure",
-                   "Loss (dB) in the Signal-to-Noise-Ratio due to non-idealities in the receiver."
-                   " According to Wikipedia (http://en.wikipedia.org/wiki/Noise_figure), this is "
+                   "Loss (dB) in the Signal-to-Noise-Ratio due to "
+                   "non-idealities in the receiver.  According to Wikipedia "
+                   "(http://en.wikipedia.org/wiki/Noise_figure), this is "
                    "\"the difference in decibels (dB) between"
-                   " the noise output of the actual receiver to the noise output of an "
-                   " ideal receiver with the same overall gain and bandwidth when the receivers "
-                   " are connected to sources at the standard noise temperature T0.\" "
-                   "In this model, we consider T0 = 290K.",
+                   " the noise output of the actual receiver to "
+                   "the noise output of an ideal receiver with "
+                   "the same overall gain and bandwidth when the receivers "
+                   "are connected to sources at the standard noise "
+                   "temperature T0.\"  In this model, we consider T0 = 290K.",
                    DoubleValue (5.0),
                    MakeDoubleAccessor (&LteEnbPhy::SetNoiseFigure, 
                                        &LteEnbPhy::GetNoiseFigure),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("MacToChannelDelay",
-                   "The delay in TTI units that occurs between a scheduling decision in the MAC and the actual start of the transmission by the PHY. This is intended to be used to model the latency of real PHY and MAC implementations.",
+                   "The delay in TTI units that occurs between "
+                   "a scheduling decision in the MAC and the actual "
+                   "start of the transmission by the PHY. This is "
+                   "intended to be used to model the latency of real PHY "
+                   "and MAC implementations.",
                    UintegerValue (2),
                    MakeUintegerAccessor (&LteEnbPhy::SetMacChDelay, 
                                          &LteEnbPhy::GetMacChDelay),
                    MakeUintegerChecker<uint8_t> ())
     .AddTraceSource ("ReportUeSinr",
                      "Report UEs' averaged linear SINR",
-                     MakeTraceSourceAccessor (&LteEnbPhy::m_reportUeSinr))
+                     MakeTraceSourceAccessor (&LteEnbPhy::m_reportUeSinr),
+                     "ns3::LteEnbPhy::ReportUeSinrTracedCallback")
     .AddAttribute ("UeSinrSamplePeriod",
-                   "The sampling period for reporting UEs' SINR stats (default value 1)",
-                   UintegerValue (1),
+                   "The sampling period for reporting UEs' SINR stats.",
+                   UintegerValue (1),  /// \todo In what unit is this?
                    MakeUintegerAccessor (&LteEnbPhy::m_srsSamplePeriod),
                    MakeUintegerChecker<uint16_t> ())
     .AddTraceSource ("ReportInterference",
                      "Report linear interference power per PHY RB",
-                     MakeTraceSourceAccessor (&LteEnbPhy::m_reportInterferenceTrace))
+                     MakeTraceSourceAccessor (&LteEnbPhy::m_reportInterferenceTrace),
+                     "ns3::LteEnbPhy::ReportInterferenceTracedCallback")
     .AddAttribute ("InterferenceSamplePeriod",
-                   "The sampling period for reporting interference stats (default value 1)",
-                   UintegerValue (1),
+                   "The sampling period for reporting interference stats",
+                   UintegerValue (1),  /// \todo In what unit is this?
                    MakeUintegerAccessor (&LteEnbPhy::m_interferenceSamplePeriod),
                    MakeUintegerChecker<uint16_t> ())
     .AddTraceSource ("DlPhyTransmission",
                      "DL transmission PHY layer statistics.",
-                     MakeTraceSourceAccessor (&LteEnbPhy::m_dlPhyTransmission))
+                     MakeTraceSourceAccessor (&LteEnbPhy::m_dlPhyTransmission),
+                     "ns3::PhyTransmissionStatParameters::TracedCallback")
     .AddAttribute ("DlSpectrumPhy",
                    "The downlink LteSpectrumPhy associated to this LtePhy",
                    TypeId::ATTR_GET,
@@ -233,6 +249,25 @@ void
 LteEnbPhy::DoInitialize ()
 {
   NS_LOG_FUNCTION (this);
+  bool haveNodeId = false;
+  uint32_t nodeId = 0;
+  if (m_netDevice != 0)
+    {
+      Ptr<Node> node = m_netDevice->GetNode ();
+      if (node != 0)
+        {
+          nodeId = node->GetId ();
+          haveNodeId = true;
+        }
+    }
+  if (haveNodeId)
+    {
+      Simulator::ScheduleWithContext (nodeId, Seconds (0), &LteEnbPhy::StartFrame, this);
+    }
+  else
+    {
+      Simulator::ScheduleNow (&LteEnbPhy::StartFrame, this);
+    }
   Ptr<SpectrumValue> noisePsd = LteSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_ulEarfcn, m_ulBandwidth, m_noiseFigure);
   m_uplinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
   LtePhy::DoInitialize ();

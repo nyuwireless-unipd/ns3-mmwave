@@ -47,7 +47,6 @@ class DcfState
 {
 public:
   DcfState ();
-
   virtual ~DcfState ();
 
   /**
@@ -118,6 +117,7 @@ public:
    */
   bool IsAccessRequested (void) const;
 
+
 private:
   friend class DcfManager;
 
@@ -160,7 +160,14 @@ private:
    * Notify that the device is switching channel.
    */
   void NotifyChannelSwitching (void);
-
+  /**
+   * Notify that the device has started to sleep.
+   */
+  void NotifySleep (void);
+  /**
+   * Notify that the device has started to wake up
+   */
+  void NotifyWakeUp (void);
 
   /**
    * Called by DcfManager to notify a DcfState subclass
@@ -194,22 +201,38 @@ private:
   * Called by DcfManager to notify a DcfState subclass
   * that a channel switching occured.
   *
-  * The subclass is expected to flush the queue of
-  * packets.
+  * The subclass is expected to flush the queue of packets.
   */
-  virtual void DoNotifyChannelSwitching () = 0;
+  virtual void DoNotifyChannelSwitching (void) = 0;
+  /**
+  * Called by DcfManager to notify a DcfState subclass that the device has
+  * begun to sleep.
+  *
+  * The subclass is expected to re-insert the pending packet into the queue
+  */
+  virtual void DoNotifySleep (void) = 0;
+  /**
+  * Called by DcfManager to notify a DcfState subclass that the device
+  * has begun to wake up.
+  *
+  * The subclass is expected to restart a new backoff by
+  * calling DcfState::StartBackoffNow and DcfManager::RequestAccess
+  * is access is still needed.
+  */
+  virtual void DoNotifyWakeUp (void) = 0;
 
   uint32_t m_aifsn;
   uint32_t m_backoffSlots;
-  // the backoffStart variable is used to keep track of the
-  // time at which a backoff was started or the time at which
-  // the backoff counter was last updated.
+  //the backoffStart variable is used to keep track of the
+  //time at which a backoff was started or the time at which
+  //the backoff counter was last updated.
   Time m_backoffStart;
   uint32_t m_cwMin;
   uint32_t m_cwMax;
   uint32_t m_cw;
   bool m_accessRequested;
 };
+
 
 /**
  * \brief Manage a set of ns3::DcfState
@@ -239,6 +262,12 @@ public:
    */
   void SetupPhyListener (Ptr<WifiPhy> phy);
   /**
+   * Remove current registered listener for Phy events.
+   *
+   * \param phy
+   */
+  void RemovePhyListener (Ptr<WifiPhy> phy);
+  /**
    * Set up listener for MacLow events.
    *
    * \param low
@@ -259,7 +288,6 @@ public:
    * one of the Notify methods has been invoked.
    */
   void SetSifs (Time sifs);
-
   /**
    * \param eifsNoDifs the duration of a EIFS minus the duration of DIFS.
    *
@@ -374,6 +402,8 @@ public:
    * Notify that CTS timer has resetted.
    */
   void NotifyCtsTimeoutResetNow ();
+
+
 private:
   /**
    * Update backoff slots for all DcfStates.
@@ -384,6 +414,7 @@ private:
    *
    * \param a
    * \param b
+   *
    * \return the most recent time
    */
   Time MostRecent (Time a, Time b) const;
@@ -393,6 +424,7 @@ private:
    * \param a
    * \param b
    * \param c
+   *
    * \return the most recent time
    */
   Time MostRecent (Time a, Time b, Time c) const;
@@ -403,6 +435,7 @@ private:
    * \param b
    * \param c
    * \param d
+   *
    * \return the most recent time
    */
   Time MostRecent (Time a, Time b, Time c, Time d) const;
@@ -415,6 +448,7 @@ private:
    * \param d
    * \param e
    * \param f
+   *
    * \return the most recent time
    */
   Time MostRecent (Time a, Time b, Time c, Time d, Time e, Time f) const;
@@ -428,6 +462,7 @@ private:
    * \param e
    * \param f
    * \param g
+   *
    * \return the most recent time
    */
   Time MostRecent (Time a, Time b, Time c, Time d, Time e, Time f, Time g) const;
@@ -435,8 +470,7 @@ private:
    * Access will never be granted to the medium _before_
    * the time returned by this method.
    *
-   * \returns the absolute time at which access could start to
-   * be granted
+   * \returns the absolute time at which access could start to be granted
    */
   Time GetAccessGrantStart (void) const;
   /**
@@ -444,6 +478,7 @@ private:
    * started for the given DcfState.
    *
    * \param state
+   *
    * \return the time when the backoff procedure started
    */
   Time GetBackoffStartFor (DcfState *state);
@@ -452,10 +487,13 @@ private:
    * ended (or will ended) for the given DcfState.
    *
    * \param state
+   *
    * \return the time when the backoff procedure ended (or will ended)
    */
   Time GetBackoffEndFor (DcfState *state);
+
   void DoRestartAccessTimeoutIfNeeded (void);
+
   /**
    * Called when access timeout should occur
    * (e.g. backoff procedure expired).
@@ -504,6 +542,6 @@ private:
   LowDcfListener* m_lowListener;
 };
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* DCF_MANAGER_H */

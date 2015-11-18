@@ -23,9 +23,9 @@
 #include <ns3/log.h>
 #include "ns3/boolean.h"
 
-NS_LOG_COMPONENT_DEFINE ("LteFrSoftAlgorithm");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteFrSoftAlgorithm");
 
 NS_OBJECT_ENSURE_REGISTERED (LteFrSoftAlgorithm);
 
@@ -116,6 +116,7 @@ LteFrSoftAlgorithm::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::LteFrSoftAlgorithm")
     .SetParent<LteFfrAlgorithm> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteFrSoftAlgorithm> ()
     .AddAttribute ("UlEdgeSubBandOffset",
                    "Uplink Edge SubBand Offset in number of Resource Block Groups",

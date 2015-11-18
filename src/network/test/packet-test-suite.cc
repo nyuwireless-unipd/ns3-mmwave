@@ -40,7 +40,21 @@ class ATestTagBase : public Tag
 public:
   ATestTagBase () : m_error (false), m_data (0) {}
   ATestTagBase (uint8_t data) : m_error (false), m_data (data) {}
-  virtual int GetData () const {
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
+  static TypeId GetTypeId (void)
+  {
+    static TypeId tid = TypeId ("ATestTagBase")
+      .SetParent<Tag> ()
+      .SetGroupName ("Network")
+      .HideFromDocumentation ()
+    // No AddConstructor because this is an abstract class.
+      ;
+    return tid;
+  }
+  int GetData () const {
     int result = (int)m_data;
     return result;
   }
@@ -52,13 +66,18 @@ template <int N>
 class ATestTag : public ATestTagBase
 {
 public:
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
   static TypeId GetTypeId (void) {
     std::ostringstream oss;
     oss << "anon::ATestTag<" << N << ">";
     static TypeId tid = TypeId (oss.str ().c_str ())
-      .SetParent<Tag> ()
-      .AddConstructor<ATestTag<N> > ()
+      .SetParent<ATestTagBase> ()
+      .SetGroupName ("Network")
       .HideFromDocumentation ()
+      .AddConstructor<ATestTag<N> > ()
     ;
     return tid;
   }
@@ -99,6 +118,20 @@ class ATestHeaderBase : public Header
 {
 public:
   ATestHeaderBase () : Header (), m_error (false) {}
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
+  static TypeId GetTypeId (void)
+  {
+    static TypeId tid = TypeId ("ATestHeaderBase")
+      .SetParent<Header> ()
+      .SetGroupName ("Network")
+      .HideFromDocumentation ()
+      // No AddConstructor because this is an abstract class.
+      ;
+    return tid;
+  }
   bool m_error;
 };
 
@@ -106,13 +139,18 @@ template <int N>
 class ATestHeader : public ATestHeaderBase
 {
 public:
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
   static TypeId GetTypeId (void) {
     std::ostringstream oss;
     oss << "anon::ATestHeader<" << N << ">";
     static TypeId tid = TypeId (oss.str ().c_str ())
-      .SetParent<Header> ()
-      .AddConstructor<ATestHeader<N> > ()
+      .SetParent<ATestHeaderBase> ()
+      .SetGroupName ("Network")
       .HideFromDocumentation ()
+      .AddConstructor<ATestHeader<N> > ()
     ;
     return tid;
   }
@@ -150,6 +188,20 @@ class ATestTrailerBase : public Trailer
 {
 public:
   ATestTrailerBase () : Trailer (), m_error (false) {}
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
+  static TypeId GetTypeId (void)
+  {
+    static TypeId tid = TypeId ("ATestTrailerBase")
+      .SetParent<Trailer> ()
+      .SetGroupName ("Network")
+      .HideFromDocumentation ()
+    // No AddConstructor because this is an abstract class.
+      ;
+    return tid;
+  }
   bool m_error;
 };
 
@@ -157,13 +209,18 @@ template <int N>
 class ATestTrailer : public ATestTrailerBase
 {
 public:
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
   static TypeId GetTypeId (void) {
     std::ostringstream oss;
     oss << "anon::ATestTrailer<" << N << ">";
     static TypeId tid = TypeId (oss.str ().c_str ())
-      .SetParent<Header> ()
-      .AddConstructor<ATestTrailer<N> > ()
+      .SetParent<ATestTrailerBase> ()
+      .SetGroupName ("Network")
       .HideFromDocumentation ()
+      .AddConstructor<ATestTrailer<N> > ()
     ;
     return tid;
   }
@@ -450,6 +507,80 @@ PacketTest::DoRun (void)
     tmp->PeekData ();
     CHECK (tmp, 1, E (20, 1, 1001));
 #endif
+  }
+
+  /* Test reducing tagged packet size and increasing it back. */
+  {
+    Ptr<Packet> tmp = Create<Packet> (0);
+    tmp->AddHeader (ATestHeader<100> ());
+    tmp->AddByteTag (ATestTag<25> ());
+    CHECK (tmp, 1, E (25, 0, 100));
+    tmp->RemoveAtStart (50);
+    CHECK (tmp, 1, E (25, 0, 50));
+    tmp->AddHeader (ATestHeader<50> ());
+    CHECK (tmp, 1, E (25, 50, 100));
+  }
+
+  /* Similar test case, but using trailer instead of header. */
+  {
+    Ptr<Packet> tmp = Create<Packet> (0);
+    tmp->AddTrailer (ATestTrailer<100> ());
+    tmp->AddByteTag (ATestTag<25> ());
+    CHECK (tmp, 1, E (25, 0, 100));
+    tmp->RemoveAtEnd (50);
+    CHECK (tmp, 1, E (25, 0, 50));
+    tmp->AddTrailer (ATestTrailer<50> ());
+    CHECK (tmp, 1, E (25, 0, 50));
+  }
+
+  /* Test reducing tagged packet size and increasing it by half. */
+  {
+    Ptr<Packet> tmp = Create<Packet> (0);
+    tmp->AddHeader (ATestHeader<100> ());
+    tmp->AddByteTag (ATestTag<25> ());
+    CHECK (tmp, 1, E (25, 0, 100));
+    tmp->RemoveAtStart (50);
+    CHECK (tmp, 1, E (25, 0, 50));
+    tmp->AddHeader (ATestHeader<25> ());
+    CHECK (tmp, 1, E (25, 25, 75));
+  }
+
+  /* Similar test case, but using trailer instead of header. */
+  {
+    Ptr<Packet> tmp = Create<Packet> (0);
+    tmp->AddTrailer (ATestTrailer<100> ());
+    tmp->AddByteTag (ATestTag<25> ());
+    CHECK (tmp, 1, E (25, 0, 100));
+    tmp->RemoveAtEnd (50);
+    CHECK (tmp, 1, E (25, 0, 50));
+    tmp->AddTrailer (ATestTrailer<25> ());
+    CHECK (tmp, 1, E (25, 0, 50));
+  }
+
+  /* Test AddPaddingAtEnd. */
+  {
+    Ptr<Packet> tmp = Create<Packet> (0);
+    tmp->AddTrailer (ATestTrailer<100> ());
+    tmp->AddByteTag (ATestTag<25> ());
+    CHECK (tmp, 1, E (25, 0, 100));
+    tmp->RemoveAtEnd (50);
+    CHECK (tmp, 1, E (25, 0, 50));
+    tmp->AddPaddingAtEnd (50);
+    CHECK (tmp, 1, E (25, 0, 50));
+  }
+
+  /* Test reducing tagged packet size and increasing it back,
+   * now using padding bytes to avoid triggering dirty state
+   * in virtual buffer
+   */
+  {
+    Ptr<Packet> tmp = Create<Packet> (100);
+    tmp->AddByteTag (ATestTag<25> ());
+    CHECK (tmp, 1, E (25, 0, 100));
+    tmp->RemoveAtEnd (50);
+    CHECK (tmp, 1, E (25, 0, 50));
+    tmp->AddPaddingAtEnd (50);
+    CHECK (tmp, 1, E (25, 0, 50));
   }
 }
 //--------------------------------------

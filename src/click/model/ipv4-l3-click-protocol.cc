@@ -37,9 +37,9 @@
 #include "ns3/icmpv4-l4-protocol.h"
 #include "ns3/loopback-net-device.h"
 
-NS_LOG_COMPONENT_DEFINE ("Ipv4L3ClickProtocol");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Ipv4L3ClickProtocol");
 
 const uint16_t Ipv4L3ClickProtocol::PROT_NUMBER = 0x0800;
 
@@ -52,6 +52,7 @@ Ipv4L3ClickProtocol::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::Ipv4L3ClickProtocol")
     .SetParent<Ipv4> ()
     .AddConstructor<Ipv4L3ClickProtocol> ()
+    .SetGroupName ("Click")
     .AddAttribute ("DefaultTtl", "The TTL value set by default on all outgoing packets generated on this node.",
                    UintegerValue (64),
                    MakeUintegerAccessor (&Ipv4L3ClickProtocol::m_defaultTtl),
@@ -107,7 +108,7 @@ Ipv4L3ClickProtocol::NotifyNewAggregate ()
           this->SetNode (node);
         }
     }
-  Object::NotifyNewAggregate ();
+  Ipv4::NotifyNewAggregate ();
 }
 
 void

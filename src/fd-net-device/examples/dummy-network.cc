@@ -69,7 +69,7 @@ main (int argc, char *argv[])
   app->SetStartTime (Seconds (0.0));
   app->SetStopTime (Seconds (4.0));
 
-  fd.EnablePcapAll ("dummy-network", false);
+  fd.EnablePcapAll ("dummy-network", true);
 
   Simulator::Stop (Seconds (5.));
   Simulator::Run ();

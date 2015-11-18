@@ -35,9 +35,10 @@
 #include "dsr-fs-header.h"
 
 namespace ns3 {
-namespace dsr {
 
 NS_LOG_COMPONENT_DEFINE ("DsrFsHeader");
+
+namespace dsr {
 
 NS_OBJECT_ENSURE_REGISTERED (DsrFsHeader);
 
@@ -46,6 +47,7 @@ TypeId DsrFsHeader::GetTypeId ()
   static TypeId tid = TypeId ("ns3::dsr::DsrFsHeader")
     .AddConstructor<DsrFsHeader> ()
     .SetParent<Header> ()
+    .SetGroupName ("Dsr")
   ;
   return tid;
 }

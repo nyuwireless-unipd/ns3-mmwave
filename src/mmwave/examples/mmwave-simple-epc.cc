@@ -44,7 +44,7 @@ main (int argc, char *argv[])
 {
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-//	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
+//	LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
 //	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
 //	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
@@ -69,7 +69,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveRrMacScheduler::HarqEnabled", BooleanValue(false));
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-  Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();
+  Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 
   mmwaveHelper->SetEpcHelper (epcHelper);
 
@@ -141,7 +141,7 @@ main (int argc, char *argv[])
       ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
     }
 
-  mmwaveHelper->RegisterToClosestEnb (uemmWaveDevs, enbmmWaveDevs);
+  mmwaveHelper->AttachToClosestEnb (uemmWaveDevs, enbmmWaveDevs);
 
 
   // Install and start applications on UEs and remote host

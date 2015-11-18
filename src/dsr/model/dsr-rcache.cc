@@ -47,9 +47,10 @@
 #include "ns3/address-utils.h"
 #include "ns3/packet.h"
 
-NS_LOG_COMPONENT_DEFINE ("RouteCache");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("RouteCache");
+  
 namespace dsr {
 
 bool CompareRoutesBoth (const RouteCacheEntry &a, const RouteCacheEntry &b)
@@ -137,6 +138,7 @@ TypeId RouteCache::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::RouteCache")
     .SetParent<Object> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<RouteCache> ()
   ;
   return tid;
@@ -1220,7 +1222,7 @@ RouteCache::LookupMacAddress (Ipv4Address addr)
        i != m_arp.end (); ++i)
     {
       ArpCache::Entry * entry = (*i)->Lookup (addr);
-      if (entry != 0 && entry->IsAlive () && !entry->IsExpired ())
+      if (entry != 0 && (entry->IsAlive () || entry->IsPermanent ()) && !entry->IsExpired ())
         {
           hwaddr = Mac48Address::ConvertFrom (entry->GetMacAddress ());
           break;

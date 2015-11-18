@@ -34,10 +34,13 @@
 #include "ns3/string.h"
 #include "ns3/integer.h"
 #include "ns3/test.h"
+#include "ns3/log.h"
 #include "ns3/rng-seed-manager.h"
 #include "ns3/random-variable-stream.h"
 
 using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("RandomVariableStreamGenerators");
 
 namespace {
 
@@ -54,6 +57,57 @@ FillHistoRangeUniformly (double *array, uint32_t n, double start, double end)
     }
 }
 
+bool seedSet = false;
+
+// Over time, this test suite is designed to be run with varying seed
+// values so that the distributions can be evaluated with chi-squared
+// tests.  To enable this, normal invocation of this test suite will
+// result in a seed value corresponding to the seconds since epoch
+// (time (0) from ctime).  Note: this is not a recommended practice for 
+// seeding normal simulations, as described in the ns-3 manual, but
+// suits our purposes here.
+//
+// However, we also want to provide the ability to run this test suite
+// with a repeatable value, such as when the seed or run number is configured
+// to a specific value.  Therefore, we adopt the following policy.  When
+// the test program is being run with the default global values for seed
+// and run number, this function will instead pick a random, time-based
+// seed for use within this test suite.  If the global values for seed or 
+// run number have been configured differently from the default values,
+// the global seed value will be used instead of the time-based one.
+// 
+// For example, this command will cause this test suite to use the 
+// deterministic value of seed=3 every time:
+//   NS_GLOBAL_VALUE="RngSeed=3" ./test.py -s random-variable-stream-generators
+// or equivalently (to see log output):
+//   NS_LOG="RandomVariableStreamGenerators" NS_GLOBAL_VALUE="RngSeed=3" ./waf --run "test-runner --suite=random-variable-stream-generators"
+//  Similarly, if the value of RngRun is not set to 1, the globals will be
+//  used.
+//
+void
+SetTestSuiteSeed (void)
+{
+  if (seedSet == false)
+    {
+      uint32_t seed;
+      if (RngSeedManager::GetSeed () == 1 && RngSeedManager::GetRun () == 1)
+        {
+          seed = static_cast<uint32_t> (time (0));
+          seedSet = true;
+          NS_LOG_DEBUG ("Global seed and run number are default; seeding with time of day: " << seed);
+          
+        }
+      else
+        {
+          seed = RngSeedManager::GetSeed ();
+          seedSet = true;
+          NS_LOG_DEBUG ("Global seed and run number are not default; using the non-default values seed: " <<
+                        seed << " and run: " << RngSeedManager::GetRun ());
+        }
+      SeedManager::SetSeed (seed);
+    }
+}
+
 } // anonymous namespace
 
 // ===========================================================================
@@ -62,9 +116,13 @@ FillHistoRangeUniformly (double *array, uint32_t n, double start, double end)
 class RandomVariableStreamUniformTestCase : public TestCase
 {
 public:
-  static const uint32_t N_RUNS = 5;
-  static const uint32_t N_BINS = 50;
+  // We want the number of observations in each bin to be > 5
+  // The following values should yield many more than 5 per bin
+  static const uint32_t N_BINS = 100;
   static const uint32_t N_MEASUREMENTS = 1000000;
+
+  // Number of times to wrap the Chi-Squared test and retry
+  static const uint32_t N_RUNS = 2;
 
   RandomVariableStreamUniformTestCase ();
   virtual ~RandomVariableStreamUniformTestCase ();
@@ -125,21 +183,26 @@ RandomVariableStreamUniformTestCase::ChiSquaredTest (Ptr<UniformRandomVariable> 
 void
 RandomVariableStreamUniformTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
-  double sum = 0.;
-  double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
+  double confidence = 0.99;
+  double maxStatistic = gsl_cdf_chisq_Pinv (confidence, (N_BINS-1));
+  NS_LOG_DEBUG ("Chi square required at " << confidence << " confidence for " << N_BINS << " bins is " << maxStatistic);
 
+  double result = maxStatistic;
+  // If chi-squared test fails, re-try it up to N_RUNS times
   for (uint32_t i = 0; i < N_RUNS; ++i)
     {
       Ptr<UniformRandomVariable> u = CreateObject<UniformRandomVariable> ();
-      double result = ChiSquaredTest (u);
-      sum += result;
+      result = ChiSquaredTest (u);
+      NS_LOG_DEBUG ("Chi square result is " << result);
+      if (result < maxStatistic)
+        {
+          break;
+        }
     }
 
-  sum /= (double)N_RUNS;
-
-  NS_TEST_ASSERT_MSG_LT (sum, maxStatistic, "Chi-squared statistic out of range");
+  NS_TEST_ASSERT_MSG_LT (result, maxStatistic, "Chi-squared statistic out of range");
 
   double min = 0.0;
   double max = 10.0;
@@ -268,7 +331,7 @@ RandomVariableStreamUniformAntitheticTestCase::ChiSquaredTest (Ptr<UniformRandom
 void
 RandomVariableStreamUniformAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -345,7 +408,7 @@ RandomVariableStreamConstantTestCase::~RandomVariableStreamConstantTestCase ()
 void
 RandomVariableStreamConstantTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   Ptr<ConstantRandomVariable> c = CreateObject<ConstantRandomVariable> ();
 
@@ -395,7 +458,7 @@ RandomVariableStreamSequentialTestCase::~RandomVariableStreamSequentialTestCase 
 void
 RandomVariableStreamSequentialTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   Ptr<SequentialRandomVariable> s = CreateObject<SequentialRandomVariable> ();
 
@@ -509,7 +572,7 @@ RandomVariableStreamNormalTestCase::ChiSquaredTest (Ptr<NormalRandomVariable> n)
 void
 RandomVariableStreamNormalTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -635,7 +698,7 @@ RandomVariableStreamNormalAntitheticTestCase::ChiSquaredTest (Ptr<NormalRandomVa
 void
 RandomVariableStreamNormalAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -766,7 +829,7 @@ RandomVariableStreamExponentialTestCase::ChiSquaredTest (Ptr<ExponentialRandomVa
 void
 RandomVariableStreamExponentialTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -886,7 +949,7 @@ RandomVariableStreamExponentialAntitheticTestCase::ChiSquaredTest (Ptr<Exponenti
 void
 RandomVariableStreamExponentialAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1015,7 +1078,7 @@ RandomVariableStreamParetoTestCase::ChiSquaredTest (Ptr<ParetoRandomVariable> p)
 void
 RandomVariableStreamParetoTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1149,7 +1212,7 @@ RandomVariableStreamParetoAntitheticTestCase::ChiSquaredTest (Ptr<ParetoRandomVa
 void
 RandomVariableStreamParetoAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1291,7 +1354,7 @@ RandomVariableStreamWeibullTestCase::ChiSquaredTest (Ptr<WeibullRandomVariable> 
 void
 RandomVariableStreamWeibullTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1437,7 +1500,7 @@ RandomVariableStreamWeibullAntitheticTestCase::ChiSquaredTest (Ptr<WeibullRandom
 void
 RandomVariableStreamWeibullAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1590,7 +1653,7 @@ RandomVariableStreamLogNormalTestCase::ChiSquaredTest (Ptr<LogNormalRandomVariab
 void
 RandomVariableStreamLogNormalTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1726,7 +1789,7 @@ RandomVariableStreamLogNormalAntitheticTestCase::ChiSquaredTest (Ptr<LogNormalRa
 void
 RandomVariableStreamLogNormalAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1869,7 +1932,7 @@ RandomVariableStreamGammaTestCase::ChiSquaredTest (Ptr<GammaRandomVariable> n)
 void
 RandomVariableStreamGammaTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -1998,7 +2061,7 @@ RandomVariableStreamGammaAntitheticTestCase::ChiSquaredTest (Ptr<GammaRandomVari
 void
 RandomVariableStreamGammaAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -2138,7 +2201,7 @@ RandomVariableStreamErlangTestCase::ChiSquaredTest (Ptr<ErlangRandomVariable> n)
 void
 RandomVariableStreamErlangTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -2270,7 +2333,7 @@ RandomVariableStreamErlangAntitheticTestCase::ChiSquaredTest (Ptr<ErlangRandomVa
 void
 RandomVariableStreamErlangAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double sum = 0.;
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
@@ -2351,7 +2414,7 @@ RandomVariableStreamZipfTestCase::~RandomVariableStreamZipfTestCase ()
 void
 RandomVariableStreamZipfTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   uint32_t n = 1;
   double alpha = 2.0;
@@ -2433,7 +2496,7 @@ RandomVariableStreamZipfAntitheticTestCase::~RandomVariableStreamZipfAntitheticT
 void
 RandomVariableStreamZipfAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   uint32_t n = 1;
   double alpha = 2.0;
@@ -2518,7 +2581,7 @@ RandomVariableStreamZetaTestCase::~RandomVariableStreamZetaTestCase ()
 void
 RandomVariableStreamZetaTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double alpha = 5.0;
   double value;
@@ -2582,7 +2645,7 @@ RandomVariableStreamZetaAntitheticTestCase::~RandomVariableStreamZetaAntitheticT
 void
 RandomVariableStreamZetaAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   double alpha = 5.0;
   double value;
@@ -2651,7 +2714,7 @@ RandomVariableStreamDeterministicTestCase::~RandomVariableStreamDeterministicTes
 void
 RandomVariableStreamDeterministicTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   Ptr<DeterministicRandomVariable> s = CreateObject<DeterministicRandomVariable> ();
 
@@ -2726,7 +2789,7 @@ RandomVariableStreamEmpiricalTestCase::~RandomVariableStreamEmpiricalTestCase ()
 void
 RandomVariableStreamEmpiricalTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   // Create the RNG with a uniform distribution between 0 and 10.
   Ptr<EmpiricalRandomVariable> x = CreateObject<EmpiricalRandomVariable> ();
@@ -2754,6 +2817,13 @@ RandomVariableStreamEmpiricalTestCase::DoRun (void)
   // Test that values have approximately the right mean value.
   double TOLERANCE = expectedMean * 1e-2;
   NS_TEST_ASSERT_MSG_EQ_TOL (valueMean, expectedMean, TOLERANCE, "Wrong mean value."); 
+
+  // Bug 2082: Create the RNG with a uniform distribution between -1 and 1.
+  Ptr<EmpiricalRandomVariable> y = CreateObject<EmpiricalRandomVariable> ();
+  y->CDF (-1.0,  0.0);
+  y->CDF (0.0,  0.5);
+  y->CDF (1.0,  1.0);
+  NS_TEST_ASSERT_MSG_LT (y->GetValue (), 2, "Empirical variable with negative domain");
 }
 
 // ===========================================================================
@@ -2783,7 +2853,7 @@ RandomVariableStreamEmpiricalAntitheticTestCase::~RandomVariableStreamEmpiricalA
 void
 RandomVariableStreamEmpiricalAntitheticTestCase::DoRun (void)
 {
-  SeedManager::SetSeed (time (0));
+  SetTestSuiteSeed ();
 
   // Create the RNG with a uniform distribution between 0 and 10.
   Ptr<EmpiricalRandomVariable> x = CreateObject<EmpiricalRandomVariable> ();

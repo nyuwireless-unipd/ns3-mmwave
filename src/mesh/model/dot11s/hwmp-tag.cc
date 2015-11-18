@@ -86,7 +86,11 @@ HwmpTag::GetSeqno ()
 TypeId
 HwmpTag::GetTypeId ()
 {
-  static TypeId tid = TypeId ("ns3::dot11s::HwmpTag").SetParent<Tag> ().AddConstructor<HwmpTag> ();
+  static TypeId tid = TypeId ("ns3::dot11s::HwmpTag")
+    .SetParent<Tag> ()
+    .SetGroupName ("Mesh")
+    .AddConstructor<HwmpTag> ()
+    ;
   return tid;
 }
 

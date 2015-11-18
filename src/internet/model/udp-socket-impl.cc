@@ -39,9 +39,9 @@
 #include "ipv6-end-point.h"
 #include <limits>
 
-NS_LOG_COMPONENT_DEFINE ("UdpSocketImpl");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UdpSocketImpl");
 
 NS_OBJECT_ENSURE_REGISTERED (UdpSocketImpl);
 
@@ -56,9 +56,12 @@ UdpSocketImpl::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UdpSocketImpl")
     .SetParent<UdpSocket> ()
+    .SetGroupName ("Internet")
     .AddConstructor<UdpSocketImpl> ()
-    .AddTraceSource ("Drop", "Drop UDP packet due to receive buffer overflow",
-                     MakeTraceSourceAccessor (&UdpSocketImpl::m_dropTrace))
+    .AddTraceSource ("Drop",
+                     "Drop UDP packet due to receive buffer overflow",
+                     MakeTraceSourceAccessor (&UdpSocketImpl::m_dropTrace),
+                     "ns3::Packet::TracedCallback")
     .AddAttribute ("IcmpCallback", "Callback invoked whenever an icmp error is received on this socket.",
                    CallbackValue (),
                    MakeCallbackAccessor (&UdpSocketImpl::m_icmpCallback),
@@ -326,6 +329,14 @@ UdpSocketImpl::ShutdownRecv (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
   m_shutdownRecv = true;
+  if (m_endPoint)
+    {
+      m_endPoint->SetRxEnabled (false);
+    }
+  if (m_endPoint6)
+    {
+      m_endPoint6->SetRxEnabled (false);
+    }
   return 0;
 }
 

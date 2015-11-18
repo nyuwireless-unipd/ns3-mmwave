@@ -42,9 +42,9 @@
 #include <fstream>
 #include <iomanip>
 
-NS_LOG_COMPONENT_DEFINE ("NullMessageSimulatorImpl");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("NullMessageSimulatorImpl");
 
 NS_OBJECT_ENSURE_REGISTERED (NullMessageSimulatorImpl);
 
@@ -54,7 +54,8 @@ TypeId
 NullMessageSimulatorImpl::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::NullMessageSimulatorImpl")
-    .SetParent<Object> ()
+    .SetParent<SimulatorImpl> ()
+    .SetGroupName ("Mpi")
     .AddConstructor<NullMessageSimulatorImpl> ()
     .AddAttribute ("SchedulerTune", "Null Message scheduler tuning parameter",
                    DoubleValue (1.0),
@@ -265,9 +266,9 @@ NullMessageSimulatorImpl::ScheduleNullMessageEvent (Ptr<RemoteChannelBundle> bun
 {
   NS_LOG_FUNCTION (this << bundle);
 
-  Time time (m_schedulerTune * bundle->GetDelay ().GetTimeStep ());
+  Time delay (m_schedulerTune * bundle->GetDelay ().GetTimeStep ());
 
-  bundle->SetEventId (Simulator::Schedule (time, &NullMessageSimulatorImpl::NullMessageEventHandler, 
+  bundle->SetEventId (Simulator::Schedule (delay, &NullMessageSimulatorImpl::NullMessageEventHandler, 
                                            this, PeekPointer(bundle)));
 }
 
@@ -278,9 +279,9 @@ NullMessageSimulatorImpl::RescheduleNullMessageEvent (Ptr<RemoteChannelBundle> b
 
   Simulator::Cancel (bundle->GetEventId ());
 
-  Time time (m_schedulerTune * bundle->GetDelay ().GetTimeStep ());
+  Time delay (m_schedulerTune * bundle->GetDelay ().GetTimeStep ());
 
-  bundle->SetEventId (Simulator::Schedule (time, &NullMessageSimulatorImpl::NullMessageEventHandler, 
+  bundle->SetEventId (Simulator::Schedule (delay, &NullMessageSimulatorImpl::NullMessageEventHandler, 
                                            this, PeekPointer(bundle)));
 }
 
@@ -388,22 +389,22 @@ NullMessageSimulatorImpl::Stop (void)
 }
 
 void
-NullMessageSimulatorImpl::Stop (Time const &time)
+NullMessageSimulatorImpl::Stop (Time const &delay)
 {
-  NS_LOG_FUNCTION (this << time.GetTimeStep ());
+  NS_LOG_FUNCTION (this << delay.GetTimeStep ());
 
-  Simulator::Schedule (time, &Simulator::Stop);
+  Simulator::Schedule (delay, &Simulator::Stop);
 }
 
 //
 // Schedule an event for a _relative_ time in the future.
 //
 EventId
-NullMessageSimulatorImpl::Schedule (Time const &time, EventImpl *event)
+NullMessageSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
 {
-  NS_LOG_FUNCTION (this << time.GetTimeStep () << event);
+  NS_LOG_FUNCTION (this << delay.GetTimeStep () << event);
 
-  Time tAbsolute = time + TimeStep (m_currentTs);
+  Time tAbsolute = delay + TimeStep (m_currentTs);
 
   NS_ASSERT (tAbsolute.IsPositive ());
   NS_ASSERT (tAbsolute >= TimeStep (m_currentTs));
@@ -419,11 +420,11 @@ NullMessageSimulatorImpl::Schedule (Time const &time, EventImpl *event)
 }
 
 void
-NullMessageSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
+NullMessageSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &delay, EventImpl *event)
 {
-  NS_LOG_FUNCTION (this << context << time.GetTimeStep () << m_currentTs << event);
+  NS_LOG_FUNCTION (this << context << delay.GetTimeStep () << m_currentTs << event);
 
-  Time tAbsolute(m_currentTs + time.GetTimeStep ());
+  Time tAbsolute(m_currentTs + delay.GetTimeStep ());
 
   NS_ASSERT (tAbsolute.IsPositive ());
   NS_ASSERT (tAbsolute >= TimeStep (m_currentTs));
@@ -527,30 +528,30 @@ NullMessageSimulatorImpl::Cancel (const EventId &id)
 }
 
 bool
-NullMessageSimulatorImpl::IsExpired (const EventId &ev) const
+NullMessageSimulatorImpl::IsExpired (const EventId &id) const
 {
-  if (ev.GetUid () == 2)
+  if (id.GetUid () == 2)
     {
-      if (ev.PeekEventImpl () == 0
-          || ev.PeekEventImpl ()->IsCancelled ())
+      if (id.PeekEventImpl () == 0
+          || id.PeekEventImpl ()->IsCancelled ())
         {
           return true;
         }
       // destroy events.
       for (DestroyEvents::const_iterator i = m_destroyEvents.begin (); i != m_destroyEvents.end (); i++)
         {
-          if (*i == ev)
+          if (*i == id)
             {
               return false;
             }
         }
       return true;
     }
-  if (ev.PeekEventImpl () == 0
-      || ev.GetTs () < m_currentTs
-      || (ev.GetTs () == m_currentTs
-          && ev.GetUid () <= m_currentUid)
-      || ev.PeekEventImpl ()->IsCancelled ())
+  if (id.PeekEventImpl () == 0
+      || id.GetTs () < m_currentTs
+      || (id.GetTs () == m_currentTs
+          && id.GetUid () <= m_currentUid)
+      || id.PeekEventImpl ()->IsCancelled ())
     {
       return true;
     }

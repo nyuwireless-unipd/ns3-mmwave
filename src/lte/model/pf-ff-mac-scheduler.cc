@@ -31,9 +31,9 @@
 #include <set>
 
 
-NS_LOG_COMPONENT_DEFINE ("PfFfMacScheduler");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("PfFfMacScheduler");
 
 static const int PfType0AllocationRbg[4] = {
   10,       // RGB size 1
@@ -252,6 +252,7 @@ PfFfMacScheduler::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PfFfMacScheduler")
     .SetParent<FfMacScheduler> ()
+    .SetGroupName("Lte")
     .AddConstructor<PfFfMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
@@ -1415,7 +1416,7 @@ PfFfMacScheduler::DoSchedDlCqiInfoReq (const struct FfMacSchedSapProvider::Sched
     {
       if ( params.m_cqiList.at (i).m_cqiType == CqiListElement_s::P10 )
         {
-          // wideband CQI reporting
+          NS_LOG_LOGIC ("wideband CQI " <<  (uint32_t) params.m_cqiList.at (i).m_wbCqi.at (0) << " reported");
           std::map <uint16_t,uint8_t>::iterator it;
           uint16_t rnti = params.m_cqiList.at (i).m_rnti;
           it = m_p10CqiRxed.find (rnti);

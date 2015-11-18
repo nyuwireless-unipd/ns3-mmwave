@@ -24,6 +24,12 @@
 #include <string>
 #include <vector>
 
+/**
+ * \file
+ * \ingroup config
+ * Declaration of the various ns3::Config functions and classes.
+ */
+
 namespace ns3 {
 
 class AttributeValue;
@@ -31,20 +37,28 @@ class Object;
 class CallbackBase;
 
 /**
- * \brief Configuration of simulation parameters and tracing
  * \ingroup core
+ * \defgroup config Configuration
+ * \brief Configuration of simulation parameters and tracing.
+ */
+
+/**
+ * \ingroup config
+ * Namespace for the various functions implementing the Config system.
  */
 namespace Config {
 
 /**
+ * \ingroup config
  * Reset the initial value of every attribute as well as the value of every
  * global to what they were before any call to SetDefault and SetGlobal.
  */
 void Reset (void);
 
 /**
- * \param path a path to match attributes.
- * \param value the value to set in all matching attributes.
+ * \ingroup config
+ * \param [in] path A path to match attributes.
+ * \param [in] value The value to set in all matching attributes.
  *
  * This function will attempt to find attributes which
  * match the input path and will then set their value to the input
@@ -52,8 +66,9 @@ void Reset (void);
  */
 void Set (std::string path, const AttributeValue &value);
 /**
- * \param name the full name of the attribute
- * \param value the value to set.
+ * \ingroup config
+ * \param [in] name The full name of the attribute
+ * \param [in] value The value to set.
  *
  * This method overrides the initial value of the 
  * matching attribute. This method cannot fail: it will
@@ -61,31 +76,36 @@ void Set (std::string path, const AttributeValue &value);
  */
 void SetDefault (std::string name, const AttributeValue &value);
 /**
- * \param name the full name of the attribute
- * \param value the value to set.
- * \returns true if the value was set successfully, false otherwise.
+ * \ingroup config
+ * \param [in] name The full name of the attribute
+ * \param [in] value The value to set.
+ * \returns \c true if the value was set successfully, false otherwise.
  *
  * This method overrides the initial value of the 
  * matching attribute. 
  */
 bool SetDefaultFailSafe (std::string name, const AttributeValue &value);
 /**
- * \param name the name of the requested GlobalValue.
- * \param value the value to set
+ * \ingroup config
+ * \param [in] name The name of the requested GlobalValue.
+ * \param [in] value The value to set
  *
  * This method is equivalent to GlobalValue::Bind
  */
 void SetGlobal (std::string name, const AttributeValue &value);
 /**
- * \param name the name of the requested GlobalValue.
- * \param value the value to set
+ * \ingroup config
+ * \param [in] name The name of the requested GlobalValue.
+ * \param [in] value The value to set
+ * \return \c true if the GlobalValue could be set.
  *
  * This method is equivalent to GlobalValue::BindFailSafe
  */
 bool SetGlobalFailSafe (std::string name, const AttributeValue &value);
 /**
- * \param path a path to match trace sources.
- * \param cb the callback to connect to the matching trace sources.
+ * \ingroup config
+ * \param [in] path A path to match trace sources.
+ * \param [in] cb The callback to connect to the matching trace sources.
  *
  * This function will attempt to find all trace sources which
  * match the input path and will then connect the input callback
@@ -93,15 +113,17 @@ bool SetGlobalFailSafe (std::string name, const AttributeValue &value);
  */
 void ConnectWithoutContext (std::string path, const CallbackBase &cb);
 /**
- * \param path a path to match trace sources.
- * \param cb the callback to disconnect to the matching trace sources.
+ * \ingroup config
+ * \param [in] path A path to match trace sources.
+ * \param [in] cb The callback to disconnect to the matching trace sources.
  *
  * This function undoes the work of Config::Connect.
  */
 void DisconnectWithoutContext (std::string path, const CallbackBase &cb);
 /**
- * \param path a path to match trace sources.
- * \param cb the callback to connect to the matching trace sources.
+ * \ingroup config
+ * \param [in] path A path to match trace sources.
+ * \param [in] cb The callback to connect to the matching trace sources.
  *
  * This function will attempt to find all trace sources which
  * match the input path and will then connect the input callback
@@ -110,14 +132,16 @@ void DisconnectWithoutContext (std::string path, const CallbackBase &cb);
  */
 void Connect (std::string path, const CallbackBase &cb);
 /**
- * \param path a path to match trace sources.
- * \param cb the callback to connect to the matching trace sources.
+ * \ingroup config
+ * \param [in] path A path to match trace sources.
+ * \param [in] cb The callback to connect to the matching trace sources.
  *
  * This function undoes the work of Config::ConnectWithContext.
  */
 void Disconnect (std::string path, const CallbackBase &cb);
 
 /**
+ * \ingroup config
  * \brief hold a set of objects which match a specific search string.
  *
  * This class also allows you to perform a set of configuration operations
@@ -127,46 +151,53 @@ void Disconnect (std::string path, const CallbackBase &cb);
 class MatchContainer
 {
 public:
+  /** Const iterator over the objects in this container. */
   typedef std::vector<Ptr<Object> >::const_iterator Iterator;
   MatchContainer ();
-  // constructor used only by implementation.
+  /**
+   * Constructor used only by implementation.
+   *
+   * \param [in] objects The vector of objects to store in this container.
+   * \param [in] contexts The corresponding contexts.
+   * \param [in] path The path used for object matching.
+   */
   MatchContainer (const std::vector<Ptr<Object> > &objects, 
                   const std::vector<std::string> &contexts, 
                   std::string path);
 
   /**
-   * \returns an iterator which points to the first item in the container
+   * \returns An iterator which points to the first item in the container
    */
   MatchContainer::Iterator Begin (void) const;
   /**
-   * \returns an iterator which points to the last item in the container
+   * \returns An iterator which points to the last item in the container
    */
   MatchContainer::Iterator End (void) const;
   /**
-   * \returns the number of items in the container
+   * \returns The number of items in the container
    */
   uint32_t GetN (void) const;
   /**
-   * \param i index of item to lookup ([0,n[)
-   * \returns the item requested.
+   * \param [in] i Index of item to lookup ([0,n[)
+   * \returns The item requested.
    */
   Ptr<Object> Get (uint32_t i) const;
   /**
-   * \param i index of item to lookup ([0,n[)
-   * \returns the fully-qualified matching path associated
+   * \param [in] i Index of item to lookup ([0,n[)
+   * \returns The fully-qualified matching path associated
    *          to the requested item.
    *
    * The matching patch uniquely identifies the requested object.
    */
   std::string GetMatchedPath (uint32_t i) const;
   /**
-   * \returns the path used to perform the object matching.
+   * \returns The path used to perform the object matching.
    */
   std::string GetPath (void) const;
 
   /**
-   * \param name name of attribute to set
-   * \param value value to set to the attribute
+   * \param [in] name Name of attribute to set
+   * \param [in] value Value to set to the attribute
    *
    * Set the specified attribute value to all the objects stored in this
    * container.
@@ -174,8 +205,8 @@ public:
    */
   void Set (std::string name, const AttributeValue &value);
   /**
-   * \param name the name of the trace source to connect to
-   * \param cb the sink to connect to the trace source
+   * \param [in] name The name of the trace source to connect to
+   * \param [in] cb The sink to connect to the trace source
    *
    * Connect the specified sink to all the objects stored in this
    * container.
@@ -183,8 +214,8 @@ public:
    */
   void Connect (std::string name, const CallbackBase &cb);
   /**
-   * \param name the name of the trace source to connect to
-   * \param cb the sink to connect to the trace source
+   * \param [in] name The name of the trace source to connect to
+   * \param [in] cb The sink to connect to the trace source
    *
    * Connect the specified sink to all the objects stored in this
    * container.
@@ -192,8 +223,8 @@ public:
    */
   void ConnectWithoutContext (std::string name, const CallbackBase &cb);
   /**
-   * \param name the name of the trace source to disconnect from
-   * \param cb the sink to disconnect from the trace source
+   * \param [in] name The name of the trace source to disconnect from
+   * \param [in] cb The sink to disconnect from the trace source
    *
    * Disconnect the specified sink from all the objects stored in this
    * container.
@@ -201,49 +232,58 @@ public:
    */
   void Disconnect (std::string name, const CallbackBase &cb);
   /**
-   * \param name the name of the trace source to disconnect from
-   * \param cb the sink to disconnect from the trace source
+   * \param [in] name The name of the trace source to disconnect from
+   * \param [in] cb The sink to disconnect from the trace source
    *
    * Disconnect the specified sink from all the objects stored in this
    * container.
    * \sa ns3::Config::DisconnectWithoutContext
    */
   void DisconnectWithoutContext (std::string name, const CallbackBase &cb);
+  
 private:
+  /** The list of objects in this container. */
   std::vector<Ptr<Object> > m_objects;
+  /** The context for each object. */
   std::vector<std::string> m_contexts;
+  /** The path used to perform the object matching. */
   std::string m_path;
 };
 
 /**
- * \param path the path to perform a match against
- * \returns a container which contains all the objects which match the input
+ * \ingroup config
+ * \param [in] path The path to perform a match against
+ * \returns A container which contains all the objects which match the input
  *          path.
  */
 MatchContainer LookupMatches (std::string path);
 
 /**
- * \param obj a new root object
+ * \ingroup config
+ * \param [in] obj A new root object
  *
  * Each root object is used during path matching as
  * the root of the path by Config::Connect, and Config::Set.
  */
 void RegisterRootNamespaceObject (Ptr<Object> obj);
 /**
- * \param obj a new root object
+ * \ingroup config
+ * \param [in] obj A new root object
  *
  * This function undoes the work of Config::RegisterRootNamespaceObject.
  */
 void UnregisterRootNamespaceObject (Ptr<Object> obj);
 
 /**
- * \returns the number of registered root namespace objects.
+ * \ingroup config
+ * \returns The number of registered root namespace objects.
  */
 uint32_t GetRootNamespaceObjectN (void);
 
 /**
- * \param i the index of the requested object.
- * \returns the requested root namespace object
+ * \ingroup config
+ * \param [in] i The index of the requested object.
+ * \returns The requested root namespace object
  */
 Ptr<Object> GetRootNamespaceObject (uint32_t i);
 

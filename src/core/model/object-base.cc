@@ -27,18 +27,33 @@
 #include <cstdlib>
 #endif
 
-NS_LOG_COMPONENT_DEFINE ("ObjectBase");
+/**
+ * \file
+ * \ingroup object
+ * ns3::ObjectBase class implementation.
+ */
 
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("ObjectBase");
+
 NS_OBJECT_ENSURE_REGISTERED (ObjectBase);
 
+/**
+ * Ensure the TypeId for ObjectBase gets fully configured
+ * to anchor the inheritance tree properly.
+ *
+ * \relates ns3::ObjectBase
+ *
+ * \return The TypeId for ObjectBase.
+ */
 static TypeId
 GetObjectIid (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
   TypeId tid = TypeId ("ns3::ObjectBase");
   tid.SetParent (tid);
+  tid.SetGroupName ("Core");
   return tid;
 }
 

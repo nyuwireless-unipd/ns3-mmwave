@@ -66,8 +66,7 @@ void JakesPropagationExample::Next ()
   std::cout << Simulator::Now ().GetMilliSeconds () << " " << m_loss->CalcRxPower (0, m_firstMobility, m_secondMobility) << std::endl;
 }
 
-int main(int argc, char* argv[])
-
+int main (int argc, char *argv[])
 {
   Config::SetDefault ("ns3::JakesProcess::NumberOfOscillators", UintegerValue (100));
   CommandLine cmd;

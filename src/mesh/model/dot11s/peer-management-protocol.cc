@@ -33,9 +33,12 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/trace-source-accessor.h"
 
-NS_LOG_COMPONENT_DEFINE ("PeerManagementProtocol");
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("PeerManagementProtocol");
+  
 namespace dot11s {
+  
 /***************************************************
  * PeerManager
  ***************************************************/
@@ -46,6 +49,7 @@ PeerManagementProtocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::dot11s::PeerManagementProtocol")
     .SetParent<Object> ()
+    .SetGroupName ("Mesh")
     .AddConstructor<PeerManagementProtocol> ()
     // maximum number of peer links. Now we calculate the total
     // number of peer links on all interfaces
@@ -72,11 +76,13 @@ PeerManagementProtocol::GetTypeId (void)
                     )
     .AddTraceSource ("LinkOpen",
                      "New peer link opened",
-                     MakeTraceSourceAccessor (&PeerManagementProtocol::m_linkOpenTraceSrc)
+                     MakeTraceSourceAccessor (&PeerManagementProtocol::m_linkOpenTraceSrc),
+                     "ns3::PeerManagementProtocol::LinkOpenCloseTracedCallback"
                      )
     .AddTraceSource ("LinkClose",
                      "New peer link closed",
-                     MakeTraceSourceAccessor (&PeerManagementProtocol::m_linkCloseTraceSrc)
+                     MakeTraceSourceAccessor (&PeerManagementProtocol::m_linkCloseTraceSrc),
+                     "ns3::PeerManagementProtocol::LinkOpenCloseTracedCallback"
                      )
 
   ;

@@ -30,6 +30,7 @@
 #include <ns3/spectrum-phy.h>
 #include <ns3/spectrum-channel.h>
 #include <ns3/trace-source-accessor.h>
+#include <ns3/event-id.h>
 
 namespace ns3 {
 
@@ -63,7 +64,7 @@ public:
   void SetMobility (Ptr<MobilityModel> m);
   void SetDevice (Ptr<NetDevice> d);
   Ptr<MobilityModel> GetMobility ();
-  Ptr<NetDevice> GetDevice ();
+  Ptr<NetDevice> GetDevice () const;
   Ptr<const SpectrumModel> GetRxSpectrumModel () const;
   Ptr<AntennaModel> GetRxAntenna ();
   void StartRx (Ptr<SpectrumSignalParameters> params);
@@ -105,9 +106,9 @@ public:
    */
   double GetDutyCycle () const;
 
-  /** 
+  /**
    * set the AntennaModel to be used
-   * 
+   *
    * \param a the Antenna Model
    */
   void SetAntenna (Ptr<AntennaModel> a);
@@ -139,7 +140,7 @@ private:
   Time   m_period;
   double m_dutyCycle;
   Time m_startTime;
-  bool m_active;
+  EventId m_nextWave;
 
   TracedCallback<Ptr<const Packet> > m_phyTxStartTrace;
   TracedCallback<Ptr<const Packet> > m_phyTxEndTrace;

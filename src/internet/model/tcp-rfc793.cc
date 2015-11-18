@@ -21,9 +21,9 @@
 #include "tcp-rfc793.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("TcpRfc793");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("TcpRfc793");
 
 NS_OBJECT_ENSURE_REGISTERED (TcpRfc793);
 
@@ -32,6 +32,7 @@ TcpRfc793::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpRfc793")
     .SetParent<TcpSocketBase> ()
+    .SetGroupName ("Internet")
     .AddConstructor<TcpRfc793> ()
   ;
   return tid;
@@ -87,5 +88,20 @@ TcpRfc793::GetInitialCwnd (void) const
   NS_LOG_WARN ("DoD TCP does not have congestion window");
   return 0;
 }
+
+uint32_t
+TcpRfc793::Window ()
+{
+  NS_LOG_FUNCTION (this);
+  return m_rWnd;
+}
+
+void
+TcpRfc793::ScaleSsThresh (uint8_t scaleFactor)
+{
+  NS_LOG_WARN ("DoD TCP does not perform slow start");
+  return;
+}
+
 
 } // namespace ns3

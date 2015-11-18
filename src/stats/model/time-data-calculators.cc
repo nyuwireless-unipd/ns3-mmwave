@@ -27,7 +27,6 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("TimeDataCalculators");
 
-
 //--------------------------------------------------------------
 //----------------------------------------------
 TimeMinMaxAvgTotalCalculator::TimeMinMaxAvgTotalCalculator()
@@ -40,6 +39,17 @@ TimeMinMaxAvgTotalCalculator::~TimeMinMaxAvgTotalCalculator()
 {
   NS_LOG_FUNCTION (this);
 }
+/* static */
+TypeId
+TimeMinMaxAvgTotalCalculator::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::TimeMinMaxAvgTotalCalculator")
+    .SetParent<DataCalculator> ()
+    .SetGroupName ("Stats")
+    .AddConstructor<TimeMinMaxAvgTotalCalculator> ();
+  return tid;
+}
+  
 void
 TimeMinMaxAvgTotalCalculator::DoDispose (void)
 {

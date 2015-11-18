@@ -34,6 +34,7 @@
 namespace ns3 {
 
 /**
+ * \ingroup fd-net-device
  * \brief build a set of FdNetDevice objects
  * Normally we eschew multiple inheritance, however, the classes
  * PcapUserHelperForDevice and AsciiTraceUserHelperForDevice are
@@ -90,15 +91,18 @@ public:
   virtual NetDeviceContainer Install (const NodeContainer &c) const;
 
 protected:
-  /*
-   * \internal
+
+  /**
+   * This method creates an ns3::FdNetDevice and associates it to a node
+   *
+   * \param node The node to install the device in
+   * \returns A container holding the added net device.
    */
   virtual Ptr<NetDevice> InstallPriv (Ptr<Node> node) const;
 
 private:
   /**
    * \brief Enable pcap output on the indicated net device.
-   * \internal
    *
    * NetDevice-specific implementation mechanism for hooking the trace and
    * writing to the trace file.
@@ -112,7 +116,6 @@ private:
 
   /**
    * \brief Enable ascii trace output on the indicated net device.
-   * \internal
    *
    * NetDevice-specific implementation mechanism for hooking the trace and
    * writing to the trace file.
@@ -120,13 +123,14 @@ private:
    * \param stream The output stream object to use when logging ascii traces.
    * \param prefix Filename prefix to use for ascii trace files.
    * \param nd Net device for which you want to enable tracing.
+   * \param explicitFilename Treat the prefix as an explicit filename if true
    */
   virtual void EnableAsciiInternal (Ptr<OutputStreamWrapper> stream,
                                     std::string prefix,
                                     Ptr<NetDevice> nd,
                                     bool explicitFilename);
 
-  ObjectFactory m_deviceFactory;
+  ObjectFactory m_deviceFactory;  //!< factory for the NetDevices
 };
 
 } // namespace ns3

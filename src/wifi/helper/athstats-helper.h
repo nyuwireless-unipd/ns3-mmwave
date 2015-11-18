@@ -34,7 +34,6 @@
 
 namespace ns3 {
 
-
 class NetDevice;
 
 /**
@@ -54,8 +53,6 @@ public:
 private:
   Time m_interval;
 };
-
-
 
 
 /**
@@ -85,7 +82,6 @@ public:
   static TypeId GetTypeId (void);
   AthstatsWifiTraceSink ();
   virtual ~AthstatsWifiTraceSink ();
-
 
   /**
    * function to be called when the net device transmits a packet
@@ -192,15 +188,9 @@ public:
    */
   void Open (std::string const& name);
 
-private:
-  /**
-   * @internal
-   */
-  void WriteStats ();
 
-  /**
-   * @internal
-   */
+private:
+  void WriteStats ();
   void ResetCounters ();
 
   uint32_t m_txCount;
@@ -216,14 +206,8 @@ private:
 
   Time m_interval;
 
-}; // class AthstatsWifiTraceSink
-
-
-
+}; //class AthstatsWifiTraceSink
 
 } // namespace ns3
-
-
-
 
 #endif /* ATHSTATS_HELPER_H */

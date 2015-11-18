@@ -139,10 +139,10 @@
 
 
 namespace ns3 {
-namespace olsr {
 
 NS_LOG_COMPONENT_DEFINE ("OlsrRoutingProtocol");
-
+  
+namespace olsr {
 
 /********** OLSR class **********/
 
@@ -153,6 +153,7 @@ RoutingProtocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::olsr::RoutingProtocol")
     .SetParent<Ipv4RoutingProtocol> ()
+    .SetGroupName ("Olsr")
     .AddConstructor<RoutingProtocol> ()
     .AddAttribute ("HelloInterval", "HELLO messages emission interval.",
                    TimeValue (Seconds (2)),
@@ -179,11 +180,14 @@ RoutingProtocol::GetTypeId (void)
                                     OLSR_WILL_HIGH, "high",
                                     OLSR_WILL_ALWAYS, "always"))
     .AddTraceSource ("Rx", "Receive OLSR packet.",
-                     MakeTraceSourceAccessor (&RoutingProtocol::m_rxPacketTrace))
+                     MakeTraceSourceAccessor (&RoutingProtocol::m_rxPacketTrace),
+                     "ns3::olsr::RoutingProtocol::PacketTxRxTracedCallback")
     .AddTraceSource ("Tx", "Send OLSR packet.",
-                     MakeTraceSourceAccessor (&RoutingProtocol::m_txPacketTrace))
+                     MakeTraceSourceAccessor (&RoutingProtocol::m_txPacketTrace),
+                     "ns3::olsr::RoutingProtocol::PacketTxRxTracedCallback")
     .AddTraceSource ("RoutingTableChanged", "The OLSR routing table has changed.",
-                     MakeTraceSourceAccessor (&RoutingProtocol::m_routingTableChanged))
+                     MakeTraceSourceAccessor (&RoutingProtocol::m_routingTableChanged),
+                     "ns3::olsr::RoutingProtocol::TableChangeTracedCallback")
   ;
   return tid;
 }

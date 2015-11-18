@@ -21,20 +21,22 @@
  */
 #include "nstime.h"
 #include "abort.h"
-#include "global-value.h"
-#include "enum.h"
-#include "string.h"
-#include "object.h"
-#include "config.h"
 #include "system-mutex.h"
 #include "log.h"
 #include <cmath>
 #include <iomanip>  // showpos
 #include <sstream>
 
-NS_LOG_COMPONENT_DEFINE_MASK ("Time", ns3::LOG_PREFIX_TIME);
+/**
+ * \file
+ * \ingroup time
+ * Implementation of classes ns3::Time and ns3::TimeWithUnit,
+ * and the TimeValue implementation classes.
+ */
 
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE_MASK ("Time", ns3::LOG_PREFIX_TIME);
 
 // The set of marked times
 // static
