@@ -30,10 +30,11 @@
 #define OLSR_PKT_HEADER_SIZE 4
 
 namespace ns3 {
+  
+NS_LOG_COMPONENT_DEFINE ("OlsrHeader");
+
 namespace olsr {
 
-
-NS_LOG_COMPONENT_DEFINE ("OlsrHeader");
 
 /// Scaling factor used in RFC 3626.
 #define OLSR_C 0.0625
@@ -111,6 +112,7 @@ PacketHeader::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::olsr::PacketHeader")
     .SetParent<Header> ()
+    .SetGroupName ("Olsr")
     .AddConstructor<PacketHeader> ()
   ;
   return tid;
@@ -169,6 +171,7 @@ MessageHeader::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::olsr::MessageHeader")
     .SetParent<Header> ()
+    .SetGroupName ("Olsr")
     .AddConstructor<MessageHeader> ()
   ;
   return tid;

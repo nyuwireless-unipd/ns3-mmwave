@@ -125,6 +125,7 @@ public:
    * \return WifiMacQueue
    */
   Ptr<WifiMacQueue > GetQueue () const;
+
   virtual void SetMinCw (uint32_t minCw);
   virtual void SetMaxCw (uint32_t maxCw);
   virtual void SetAifsn (uint32_t aifsn);
@@ -141,15 +142,17 @@ public:
    */
   void Queue (Ptr<const Packet> packet, const WifiMacHeader &hdr);
 
- /**
-  * Assign a fixed random variable stream number to the random variables
-  * used by this model.  Return the number of streams (possibly zero) that
-  * have been assigned.
-  *
-  * \param stream first stream index to use
-  * \return the number of stream indices assigned by this model
-  */
+  /**
+   * Assign a fixed random variable stream number to the random variables
+   * used by this model.  Return the number of streams (possibly zero) that
+   * have been assigned.
+   *
+   * \param stream first stream index to use
+   *
+   * \return the number of stream indices assigned by this model
+   */
   int64_t AssignStreams (int64_t stream);
+
 
 private:
   class TransmissionListener;
@@ -162,7 +165,7 @@ private:
   DcaTxop &operator = (const DcaTxop &);
   DcaTxop (const DcaTxop &o);
 
-  // Inherited from ns3::Object
+  //Inherited from ns3::Object
   /**
    * Return the MacLow associated with this DcaTxop.
    *
@@ -178,6 +181,7 @@ private:
    *         false otherwise
    */
   bool NeedsAccess (void) const;
+
   /**
    * Notify the DCF that access has been granted.
    */
@@ -194,6 +198,15 @@ private:
    * When a channel switching occurs, enqueued packets are removed.
    */
   void NotifyChannelSwitching (void);
+  /**
+   * When sleep operation occurs, if there is a pending packet transmission,
+   * it will be reinserted to the front of the queue.
+   */
+  void NotifySleep (void);
+  /**
+   * When wake up operation occurs, channel access will be restarted
+   */
+  void NotifyWakeUp (void);
 
   /* Event handlers */
   /**
@@ -241,24 +254,29 @@ private:
    * Request access from DCF manager if needed.
    */
   void StartAccessIfNeeded (void);
+
   /**
    * Check if the current packet should be sent with a RTS protection.
    *
    * \param packet
    * \param header
-   * \return true if RTS protection should be used, false otherwise
+   *
+   * \return true if RTS protection should be used,
+   *         false otherwise
    */
   bool NeedRts (Ptr<const Packet> packet, const WifiMacHeader *header);
   /**
    * Check if RTS should be re-transmitted if CTS was missed.
    *
-   * \return true if RTS should be re-transmitted, false otherwise
+   * \return true if RTS should be re-transmitted,
+   *         false otherwise
    */
   bool NeedRtsRetransmission (void);
   /**
    * Check if DATA should be re-transmitted if ACK was missed.
    *
-   * \return true if DATA should be re-transmitted, false otherwise
+   * \return true if DATA should be re-transmitted,
+   *         false otherwise
    */
   bool NeedDataRetransmission (void);
   /**
@@ -304,9 +322,11 @@ private:
    * appropriate Wifi header for the fragment.
    *
    * \param hdr
+   *
    * \return the fragment with the current fragment number
    */
   Ptr<Packet> GetFragmentPacket (WifiMacHeader *hdr);
+
   virtual void DoDispose (void);
 
   Dcf *m_dcf;
@@ -326,8 +346,6 @@ private:
   uint8_t m_fragmentNumber;
 };
 
-} // namespace ns3
-
-
+} //namespace ns3
 
 #endif /* DCA_TXOP_H */

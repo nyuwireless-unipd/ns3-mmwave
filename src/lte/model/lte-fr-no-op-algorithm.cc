@@ -22,9 +22,9 @@
 #include "lte-fr-no-op-algorithm.h"
 #include <ns3/log.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteFrNoOpAlgorithm");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteFrNoOpAlgorithm");
 
 NS_OBJECT_ENSURE_REGISTERED (LteFrNoOpAlgorithm);
 
@@ -58,6 +58,7 @@ LteFrNoOpAlgorithm::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::LteFrNoOpAlgorithm")
     .SetParent<LteFfrAlgorithm> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteFrNoOpAlgorithm> ()
   ;
   return tid;

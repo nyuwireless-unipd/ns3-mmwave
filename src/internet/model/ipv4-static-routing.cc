@@ -34,11 +34,11 @@
 #include "ipv4-static-routing.h"
 #include "ipv4-routing-table-entry.h"
 
-NS_LOG_COMPONENT_DEFINE ("Ipv4StaticRouting");
-
 using std::make_pair;
 
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Ipv4StaticRouting");
 
 NS_OBJECT_ENSURE_REGISTERED (Ipv4StaticRouting);
 
@@ -47,6 +47,7 @@ Ipv4StaticRouting::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Ipv4StaticRouting")
     .SetParent<Ipv4RoutingProtocol> ()
+    .SetGroupName ("Internet")
     .AddConstructor<Ipv4StaticRouting> ()
   ;
   return tid;

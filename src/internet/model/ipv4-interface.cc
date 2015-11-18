@@ -30,9 +30,9 @@
 #include "ns3/node.h"
 #include "ns3/pointer.h"
 
-NS_LOG_COMPONENT_DEFINE ("Ipv4Interface");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Ipv4Interface");
 
 NS_OBJECT_ENSURE_REGISTERED (Ipv4Interface);
 
@@ -41,6 +41,7 @@ Ipv4Interface::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Ipv4Interface")
     .SetParent<Object> ()
+    .SetGroupName ("Internet")
     .AddAttribute ("ArpCache",
                    "The arp cache for this ipv4 interface",
                    PointerValue (0),

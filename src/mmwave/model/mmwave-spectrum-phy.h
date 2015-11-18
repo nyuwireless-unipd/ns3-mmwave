@@ -82,7 +82,7 @@ public:
 	virtual void DoDispose();
 
 	void SetDevice(Ptr<NetDevice> d);
-	Ptr<NetDevice> GetDevice();
+	Ptr<NetDevice> GetDevice () const;
 	void SetMobility (Ptr<MobilityModel> m);
 	Ptr<MobilityModel> GetMobility ();
 	void SetChannel (Ptr<SpectrumChannel> c);

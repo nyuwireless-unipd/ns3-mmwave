@@ -16,36 +16,35 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
- *         Quincy Tse <quincy.tse@nicta.com.au> (Case for Bug 991)
+ * Authors: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
+ *          Quincy Tse <quincy.tse@nicta.com.au> (Case for Bug 991)
+ *          Sébastien Deronne <sebastien.deronne@gmail.com> (Case for bug 730)
  */
 
+#include "ns3/nqos-wifi-mac-helper.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/packet-sink-helper.h"
+#include "ns3/on-off-helper.h"
+#include "ns3/mobility-helper.h"
 #include "ns3/wifi-net-device.h"
-#include "ns3/yans-wifi-channel.h"
 #include "ns3/adhoc-wifi-mac.h"
-#include "ns3/yans-wifi-phy.h"
-#include "ns3/arf-wifi-manager.h"
 #include "ns3/propagation-delay-model.h"
 #include "ns3/propagation-loss-model.h"
-#include "ns3/error-rate-model.h"
 #include "ns3/yans-error-rate-model.h"
 #include "ns3/constant-position-mobility-model.h"
-#include "ns3/node.h"
-#include "ns3/simulator.h"
 #include "ns3/test.h"
-#include "ns3/object-factory.h"
-#include "ns3/dca-txop.h"
-#include "ns3/mac-rx-middle.h"
 #include "ns3/pointer.h"
 #include "ns3/rng-seed-manager.h"
-#include "ns3/edca-txop-n.h"
 #include "ns3/config.h"
 #include "ns3/boolean.h"
+#include "ns3/string.h"
 
 using namespace ns3;
 
-// helper function to assign streams to random variables, to control 
-// randomness in the tests
+//Helper function to assign streams to random variables, to control
+//randomness in the tests
 static void
 AssignWifiRandomStreams (Ptr<WifiMac> mac, int64_t stream)
 {
@@ -76,12 +75,15 @@ AssignWifiRandomStreams (Ptr<WifiMac> mac, int64_t stream)
     }
 }
 
+
 class WifiTest : public TestCase
 {
 public:
   WifiTest ();
 
   virtual void DoRun (void);
+
+
 private:
   void RunOne (void);
   void CreateOne (Vector pos, Ptr<YansWifiChannel> channel);
@@ -118,7 +120,6 @@ WifiTest::CreateOne (Vector pos, Ptr<YansWifiChannel> channel)
   phy->SetErrorRateModel (error);
   phy->SetChannel (channel);
   phy->SetDevice (dev);
-  phy->SetMobility (node);
   phy->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
   Ptr<WifiRemoteStationManager> manager = m_manager.Create<WifiRemoteStationManager> ();
 
@@ -193,28 +194,28 @@ public:
   }
   virtual void DoRun (void)
   {
-    // startingSeq=0, seqNum=2047
+    //startingSeq=0, seqNum=2047
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (0, 2047), false, "2047 is new in comparison to 0");
-    // startingSeq=0, seqNum=2048
+    //startingSeq=0, seqNum=2048
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (0, 2048), true, "2048 is old in comparison to 0");
-    // startingSeq=2048, seqNum=0
+    //startingSeq=2048, seqNum=0
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (2048, 0), true, "0 is old in comparison to 2048");
-    // startingSeq=4095, seqNum=0
+    //startingSeq=4095, seqNum=0
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (4095, 0), false, "0 is new in comparison to 4095");
-    // startingSeq=0, seqNum=4095
+    //startingSeq=0, seqNum=4095
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (0, 4095), true, "4095 is old in comparison to 0");
-    // startingSeq=4095 seqNum=2047
+    //startingSeq=4095 seqNum=2047
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (4095, 2047), true, "2047 is old in comparison to 4095");
-    // startingSeq=2048 seqNum=4095
+    //startingSeq=2048 seqNum=4095
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (2048, 4095), false, "4095 is new in comparison to 2048");
-    // startingSeq=2049 seqNum=0
+    //startingSeq=2049 seqNum=0
     NS_TEST_EXPECT_MSG_EQ (QosUtilsIsOldPacket (2049, 0), false, "0 is new in comparison to 2049");
   }
 };
 
+
 //-----------------------------------------------------------------------------
 /**
- * \internal
  * See \bugid{991}
  */
 class InterferenceHelperSequenceTest : public TestCase
@@ -223,6 +224,8 @@ public:
   InterferenceHelperSequenceTest ();
 
   virtual void DoRun (void);
+
+
 private:
   Ptr<Node> CreateOne (Vector pos, Ptr<YansWifiChannel> channel);
   void SendOnePacket (Ptr<WifiNetDevice> dev);
@@ -266,7 +269,7 @@ InterferenceHelperSequenceTest::CreateOne (Vector pos, Ptr<YansWifiChannel> chan
   phy->SetErrorRateModel (error);
   phy->SetChannel (channel);
   phy->SetDevice (dev);
-  phy->SetMobility (node);
+  phy->SetMobility (mobility);
   phy->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
   Ptr<WifiRemoteStationManager> manager = m_manager.Create<WifiRemoteStationManager> ();
 
@@ -323,21 +326,22 @@ InterferenceHelperSequenceTest::DoRun (void)
   Simulator::Destroy ();
 }
 
+
 //-----------------------------------------------------------------------------
 /**
  * Make sure that when multiple broadcast packets are queued on the same
- * device in a short succession no virtual collision occurs 
+ * device in a short succession no virtual collision occurs
  *
  * The observed behavior is that the first frame will be sent immediately,
  * and the frames are spaced by (backoff + SIFS + AIFS) time intervals
  * (where backoff is a random number of slot sizes up to maximum CW)
- * 
+ *
  * The following test case should _not_ generate virtual collision for the second frame.
  * The seed and run numbers were pick such that the second frame gets backoff = 0.
  *
  *                      frame 1, frame 2
  *                      arrive                SIFS + AIFS
- *                      V                    <-----------> 
+ *                      V                    <----------->
  * time  |--------------|-------------------|-------------|----------->
  *       0              1s                  1.001408s     1.001442s
  *                      ^                   ^             ^
@@ -352,24 +356,22 @@ InterferenceHelperSequenceTest::DoRun (void)
  * since that would require two successions of 0 backoff (one that generates the virtual collision and
  * one after the virtual collision).
  *
- * \internal
  * See \bugid{555}
  */
 
 class Bug555TestCase : public TestCase
 {
 public:
-
   Bug555TestCase ();
 
   virtual void DoRun (void);
 
-private:
 
+private:
   void SendOnePacket (Ptr<WifiNetDevice> dev);
 
   ObjectFactory m_manager;
-  ObjectFactory m_mac; 
+  ObjectFactory m_mac;
   ObjectFactory m_propDelay;
 
   Time m_firstTransmissionTime;
@@ -384,12 +386,12 @@ Bug555TestCase::Bug555TestCase ()
 {
 }
 
-void 
+void
 Bug555TestCase::NotifyPhyTxBegin (Ptr<const Packet> p)
 {
   if (m_numSentPackets == 0)
     {
-      NS_ASSERT_MSG (Simulator::Now() == Time (Seconds (1)), "Packet 0 not transmitted at 1 second");
+      NS_ASSERT_MSG (Simulator::Now () == Time (Seconds (1)), "Packet 0 not transmitted at 1 second");
       m_numSentPackets++;
       m_firstTransmissionTime = Simulator::Now ();
     }
@@ -413,13 +415,13 @@ Bug555TestCase::DoRun (void)
   m_propDelay.SetTypeId ("ns3::ConstantSpeedPropagationDelayModel");
   m_manager.SetTypeId ("ns3::ConstantRateWifiManager");
 
-  // Assign a seed and run number, and later fix the assignment of streams to
-  // WiFi random variables, so that the first backoff used is zero slots
+  //Assign a seed and run number, and later fix the assignment of streams to
+  //WiFi random variables, so that the first backoff used is zero slots
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun (17);
 
-  // Disable the initial jitter of AP beacons (test case was written before
-  // beacon jitter was added)
+  //Disable the initial jitter of AP beacons (test case was written before
+  //beacon jitter was added)
   Config::SetDefault ("ns3::ApWifiMac::EnableBeaconJitter", BooleanValue (false));
 
   Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
@@ -432,10 +434,10 @@ Bug555TestCase::DoRun (void)
   Ptr<WifiNetDevice> txDev = CreateObject<WifiNetDevice> ();
   Ptr<WifiMac> txMac = m_mac.Create<WifiMac> ();
   txMac->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
-  // Fix the stream assignment to the Dcf Txop objects (backoffs)
-  // The below stream assignment will result in the DcaTxop object
-  // using a backoff value of zero for this test when the 
-  // DcaTxop::EndTxNoAck() calls to StartBackoffNow()
+  //Fix the stream assignment to the Dcf Txop objects (backoffs)
+  //The below stream assignment will result in the DcaTxop object
+  //using a backoff value of zero for this test when the
+  //DcaTxop::EndTxNoAck() calls to StartBackoffNow()
   AssignWifiRandomStreams (txMac, 23);
 
   Ptr<ConstantPositionMobilityModel> txMobility = CreateObject<ConstantPositionMobilityModel> ();
@@ -444,7 +446,7 @@ Bug555TestCase::DoRun (void)
   txPhy->SetErrorRateModel (txError);
   txPhy->SetChannel (channel);
   txPhy->SetDevice (txDev);
-  txPhy->SetMobility (txNode);
+  txPhy->SetMobility (txMobility);
   txPhy->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
 
   txPhy->TraceConnectWithoutContext ("PhyTxBegin", MakeCallback (&Bug555TestCase::NotifyPhyTxBegin, this));
@@ -460,7 +462,7 @@ Bug555TestCase::DoRun (void)
   m_firstTransmissionTime = Seconds (0.0);
   m_secondTransmissionTime = Seconds (0.0);
   m_numSentPackets = 0;
-  
+
   Simulator::Schedule (Seconds (1.0), &Bug555TestCase::SendOnePacket, this, txDev);
   Simulator::Schedule (Seconds (1.0), &Bug555TestCase::SendOnePacket, this, txDev);
 
@@ -468,15 +470,157 @@ Bug555TestCase::DoRun (void)
   Simulator::Run ();
   Simulator::Destroy ();
 
-  // First packet has 1408 us of transmit time.   Slot time is 9 us.  
-  // Backoff is 0 slots.  SIFS is 16 us.  AIFS is 2 slots = 18 us.
-  // Should send next packet at 1408 us + (0 * 9 us) + 16 us + 18 us
-  // 1442 us after the first one.
+  //First packet has 1408 us of transmit time.   Slot time is 9 us.
+  //Backoff is 0 slots.  SIFS is 16 us.  AIFS is 2 slots = 18 us.
+  //Should send next packet at 1408 us + (0 * 9 us) + 16 us + 18 us
+  //1442 us after the first one.
   uint32_t expectedWait1 = 1408 + (0 * 9) + 16 + 18;
   Time expectedSecondTransmissionTime = MicroSeconds (expectedWait1) + Seconds (1.0);
 
   NS_TEST_ASSERT_MSG_EQ (m_secondTransmissionTime, expectedSecondTransmissionTime, "The second transmission time not correct!");
 }
+
+
+//-----------------------------------------------------------------------------
+/**
+ * Make sure that when changing the fragmentation threshold during the simulation,
+ * the TCP transmission does not unexpectedly stop.
+ *
+ * The scenario considers a TCP transmission between a 802.11b station and a 802.11b
+ * access point. After the simulation has begun, the fragmentation threshold is set at
+ * a value lower than the packet size. It then checks whether the TCP transmission
+ * continues after the fragmentation threshold modification.
+ *
+ * See \bugid{730}
+ */
+
+class Bug730TestCase : public TestCase
+{
+public:
+  Bug730TestCase ();
+  virtual ~Bug730TestCase ();
+
+  virtual void DoRun (void);
+
+
+private:
+  void Receive (std::string context, Ptr<const Packet> p, const Address &adr);
+
+  uint32_t m_received;
+};
+
+Bug730TestCase::Bug730TestCase ()
+  : TestCase ("Test case for Bug 730"),
+    m_received (0)
+{
+}
+
+Bug730TestCase::~Bug730TestCase ()
+{
+}
+
+void
+Bug730TestCase::Receive (std::string context, Ptr<const Packet> p, const Address &adr)
+{
+  if ((p->GetSize () == 1460) && (Simulator::Now () > Seconds (20)))
+    {
+      m_received++;
+    }
+}
+
+void
+Bug730TestCase::DoRun (void)
+{
+  m_received = 0;
+
+  Config::SetDefault ("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2304"));
+  Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (2));
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1460));
+
+  NodeContainer wifiStaNode;
+  wifiStaNode.Create (1);
+
+  NodeContainer wifiApNode;
+  wifiApNode.Create (1);
+
+  YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
+  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  phy.SetChannel (channel.Create ());
+
+  WifiHelper wifi = WifiHelper::Default ();
+  wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
+  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
+                                "DataMode", StringValue ("DsssRate1Mbps"),
+                                "ControlMode", StringValue ("DsssRate1Mbps"));
+
+  NqosWifiMacHelper mac = NqosWifiMacHelper::Default ();
+  Ssid ssid = Ssid ("ns-3-ssid");
+  mac.SetType ("ns3::StaWifiMac",
+               "Ssid", SsidValue (ssid),
+               "ActiveProbing", BooleanValue (false));
+
+  NetDeviceContainer staDevices;
+  staDevices = wifi.Install (phy, mac, wifiStaNode);
+
+  mac.SetType ("ns3::ApWifiMac",
+               "Ssid", SsidValue (ssid),
+               "BeaconGeneration", BooleanValue (true));
+
+  NetDeviceContainer apDevices;
+  apDevices = wifi.Install (phy, mac, wifiApNode);
+
+  MobilityHelper mobility;
+  Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
+
+  positionAlloc->Add (Vector (0.0, 0.0, 0.0));
+  positionAlloc->Add (Vector (1.0, 0.0, 0.0));
+  mobility.SetPositionAllocator (positionAlloc);
+
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.Install (wifiApNode);
+  mobility.Install (wifiStaNode);
+
+  InternetStackHelper stack;
+  stack.Install (wifiApNode);
+  stack.Install (wifiStaNode);
+
+  Ipv4AddressHelper address;
+  address.SetBase ("10.1.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer StaInterface;
+  StaInterface = address.Assign (staDevices);
+  Ipv4InterfaceContainer ApInterface;
+  ApInterface = address.Assign (apDevices);
+
+  Address sinkLocalAddress (InetSocketAddress (Ipv4Address::GetAny (), 21));
+  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", sinkLocalAddress);
+  ApplicationContainer sinkApp = sinkHelper.Install (wifiApNode.Get (0));
+  sinkApp.Start (Seconds (1.0));
+  sinkApp.Stop (Seconds (51.0));
+
+  OnOffHelper sourceHelper ("ns3::TcpSocketFactory", Address ());
+  sourceHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+  sourceHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  AddressValue remoteAddress (InetSocketAddress (ApInterface.GetAddress (0), 21));
+  sourceHelper.SetAttribute ("Remote", remoteAddress);
+  sourceHelper.SetAttribute ("PacketSize", UintegerValue (1460));
+  sourceHelper.SetAttribute ("DataRate", StringValue ("10Mb/s"));
+  ApplicationContainer sourceApp;
+  sourceApp.Add (sourceHelper.Install (wifiStaNode.Get (0)));
+  sourceApp.Start (Seconds (1.0));
+  sourceApp.Stop (Seconds (51.0));
+
+  Config::Connect ("/NodeList/*/ApplicationList/0/$ns3::PacketSink/Rx", MakeCallback (&Bug730TestCase::Receive, this));
+
+  Simulator::Schedule (Seconds (10.0), Config::Set, "/NodeList/0/DeviceList/0/RemoteStationManager/FragmentationThreshold", StringValue ("800"));
+
+  Simulator::Stop (Seconds (55));
+  Simulator::Run ();
+  Simulator::Destroy ();
+
+  bool result = (m_received > 0);
+  NS_TEST_ASSERT_MSG_EQ (result, true, "packet reception unexpectedly stopped after adapting fragmentation threshold!");
+}
+
 
 //-----------------------------------------------------------------------------
 class WifiTestSuite : public TestSuite
@@ -490,8 +634,9 @@ WifiTestSuite::WifiTestSuite ()
 {
   AddTestCase (new WifiTest, TestCase::QUICK);
   AddTestCase (new QosUtilsIsOldPacketTest, TestCase::QUICK);
-  AddTestCase (new InterferenceHelperSequenceTest, TestCase::QUICK); // Bug 991
-  AddTestCase (new Bug555TestCase, TestCase::QUICK); // Bug 555
+  AddTestCase (new InterferenceHelperSequenceTest, TestCase::QUICK); //Bug 991
+  AddTestCase (new Bug555TestCase, TestCase::QUICK); //Bug 555
+  AddTestCase (new Bug730TestCase, TestCase::QUICK); //Bug 730
 }
 
 static WifiTestSuite g_wifiTestSuite;

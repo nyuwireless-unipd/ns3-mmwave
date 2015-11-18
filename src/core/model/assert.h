@@ -22,6 +22,12 @@
 #define NS_ASSERT_H
 
 /**
+ * \file
+ * \ingroup assert
+ * Definition of assertion macros NS_ASSERT() and NS_ASSERT_MSG().
+ */
+
+/**
  * \ingroup debugging
  * \defgroup assert Assertions
  *
@@ -56,7 +62,7 @@
  * true, the program prints the source file, line number and 
  * unverified condition and halts by calling std::terminate
  *
- * \param condition condition to verify.
+ * \param [in] condition Condition to verify.
  */
 #define NS_ASSERT(condition)                                    \
   do                                                            \
@@ -78,8 +84,8 @@
  * true, the program prints the message to output and
  * halts by calling std::terminate.
  *
- * \param condition condition to verify.
- * \param message message to output
+ * \param [in] condition Condition to verify.
+ * \param [in] message Message to output
  */
 #define NS_ASSERT_MSG(condition, message)             \
   do                                                  \

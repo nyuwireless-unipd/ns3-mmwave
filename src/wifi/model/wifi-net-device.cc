@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #include "wifi-net-device.h"
 #include "wifi-mac.h"
 #include "wifi-phy.h"
@@ -30,9 +31,9 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("WifiNetDevice");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("WifiNetDevice");
 
 NS_OBJECT_ENSURE_REGISTERED (WifiNetDevice);
 
@@ -42,6 +43,7 @@ WifiNetDevice::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::WifiNetDevice")
     .SetParent<NetDevice> ()
     .AddConstructor<WifiNetDevice> ()
+    .SetGroupName ("Wifi")
     .AddAttribute ("Mtu", "The MAC-level Maximum Transmission Unit",
                    UintegerValue (MAX_MSDU_SIZE - LLC_SNAP_HEADER_LENGTH),
                    MakeUintegerAccessor (&WifiNetDevice::SetMtu,
@@ -75,6 +77,7 @@ WifiNetDevice::WifiNetDevice ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
+
 WifiNetDevice::~WifiNetDevice ()
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -91,7 +94,6 @@ WifiNetDevice::DoDispose (void)
   m_mac = 0;
   m_phy = 0;
   m_stationManager = 0;
-  // chain up.
   NetDevice::DoDispose ();
 }
 
@@ -121,6 +123,7 @@ WifiNetDevice::CompleteConfig (void)
   m_mac->SetLinkUpCallback (MakeCallback (&WifiNetDevice::LinkUp, this));
   m_mac->SetLinkDownCallback (MakeCallback (&WifiNetDevice::LinkDown, this));
   m_stationManager->SetupPhy (m_phy);
+  m_stationManager->SetupMac (m_mac);
   m_configComplete = true;
 }
 
@@ -130,28 +133,33 @@ WifiNetDevice::SetMac (Ptr<WifiMac> mac)
   m_mac = mac;
   CompleteConfig ();
 }
+
 void
 WifiNetDevice::SetPhy (Ptr<WifiPhy> phy)
 {
   m_phy = phy;
   CompleteConfig ();
 }
+
 void
 WifiNetDevice::SetRemoteStationManager (Ptr<WifiRemoteStationManager> manager)
 {
   m_stationManager = manager;
   CompleteConfig ();
 }
+
 Ptr<WifiMac>
 WifiNetDevice::GetMac (void) const
 {
   return m_mac;
 }
+
 Ptr<WifiPhy>
 WifiNetDevice::GetPhy (void) const
 {
   return m_phy;
 }
+
 Ptr<WifiRemoteStationManager>
 WifiNetDevice::GetRemoteStationManager (void) const
 {
@@ -163,31 +171,37 @@ WifiNetDevice::SetIfIndex (const uint32_t index)
 {
   m_ifIndex = index;
 }
+
 uint32_t
 WifiNetDevice::GetIfIndex (void) const
 {
   return m_ifIndex;
 }
+
 Ptr<Channel>
 WifiNetDevice::GetChannel (void) const
 {
   return m_phy->GetChannel ();
 }
+
 Ptr<WifiChannel>
 WifiNetDevice::DoGetChannel (void) const
 {
   return m_phy->GetChannel ();
 }
+
 void
 WifiNetDevice::SetAddress (Address address)
 {
   m_mac->SetAddress (Mac48Address::ConvertFrom (address));
 }
+
 Address
 WifiNetDevice::GetAddress (void) const
 {
   return m_mac->GetAddress ();
 }
+
 bool
 WifiNetDevice::SetMtu (const uint16_t mtu)
 {
@@ -198,55 +212,66 @@ WifiNetDevice::SetMtu (const uint16_t mtu)
   m_mtu = mtu;
   return true;
 }
+
 uint16_t
 WifiNetDevice::GetMtu (void) const
 {
   return m_mtu;
 }
+
 bool
 WifiNetDevice::IsLinkUp (void) const
 {
   return m_phy != 0 && m_linkUp;
 }
+
 void
 WifiNetDevice::AddLinkChangeCallback (Callback<void> callback)
 {
   m_linkChanges.ConnectWithoutContext (callback);
 }
+
 bool
 WifiNetDevice::IsBroadcast (void) const
 {
   return true;
 }
+
 Address
 WifiNetDevice::GetBroadcast (void) const
 {
   return Mac48Address::GetBroadcast ();
 }
+
 bool
 WifiNetDevice::IsMulticast (void) const
 {
   return true;
 }
+
 Address
 WifiNetDevice::GetMulticast (Ipv4Address multicastGroup) const
 {
   return Mac48Address::GetMulticast (multicastGroup);
 }
+
 Address WifiNetDevice::GetMulticast (Ipv6Address addr) const
 {
   return Mac48Address::GetMulticast (addr);
 }
+
 bool
 WifiNetDevice::IsPointToPoint (void) const
 {
   return false;
 }
+
 bool
 WifiNetDevice::IsBridge (void) const
 {
   return false;
 }
+
 bool
 WifiNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
@@ -262,22 +287,26 @@ WifiNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolN
   m_mac->Enqueue (packet, realTo);
   return true;
 }
+
 Ptr<Node>
 WifiNetDevice::GetNode (void) const
 {
   return m_node;
 }
+
 void
 WifiNetDevice::SetNode (Ptr<Node> node)
 {
   m_node = node;
   CompleteConfig ();
 }
+
 bool
 WifiNetDevice::NeedsArp (void) const
 {
   return true;
 }
+
 void
 WifiNetDevice::SetReceiveCallback (NetDevice::ReceiveCallback cb)
 {
@@ -326,6 +355,7 @@ WifiNetDevice::LinkUp (void)
   m_linkUp = true;
   m_linkChanges ();
 }
+
 void
 WifiNetDevice::LinkDown (void)
 {
@@ -356,7 +386,7 @@ void
 WifiNetDevice::SetPromiscReceiveCallback (PromiscReceiveCallback cb)
 {
   m_promiscRx = cb;
-  m_mac->SetPromisc();
+  m_mac->SetPromisc ();
 }
 
 bool
@@ -365,5 +395,4 @@ WifiNetDevice::SupportsSendFrom (void) const
   return m_mac->SupportsSendFrom ();
 }
 
-} // namespace ns3
-
+} //namespace ns3

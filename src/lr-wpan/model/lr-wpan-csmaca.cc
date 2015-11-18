@@ -26,9 +26,9 @@
 #include <ns3/log.h>
 #include <algorithm>
 
-NS_LOG_COMPONENT_DEFINE ("LrWpanCsmaCa");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LrWpanCsmaCa");
 
 NS_OBJECT_ENSURE_REGISTERED (LrWpanCsmaCa);
 
@@ -37,6 +37,7 @@ LrWpanCsmaCa::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::LrWpanCsmaCa")
     .SetParent<Object> ()
+    .SetGroupName ("LrWpan")
     .AddConstructor<LrWpanCsmaCa> ()
   ;
   return tid;
@@ -239,7 +240,7 @@ LrWpanCsmaCa::RandomBackoffDelay ()
 
 
   symbolRate = (uint64_t) m_mac->GetPhy ()->GetDataOrSymbolRate (isData); //symbols per second
-  backoffPeriod = (uint64_t)m_random->GetValue (0, upperBound); //num backoff periods
+  backoffPeriod = (uint64_t)m_random->GetValue (0, upperBound+1); // num backoff periods
   randomBackoff = MicroSeconds (backoffPeriod * GetUnitBackoffPeriod () * 1000 * 1000 / symbolRate);
 
   if (IsUnSlottedCsmaCa ())

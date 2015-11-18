@@ -30,6 +30,12 @@ class SocketWriter : public Application
 public:
   SocketWriter ();
   virtual ~SocketWriter ();
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
+  static TypeId GetTypeId (void);
+  
   void Setup (Ptr<Node> node, Address peer);
   void Connect ();
   void Write (uint32_t numBytes);

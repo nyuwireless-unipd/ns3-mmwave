@@ -28,9 +28,9 @@
 
 #include <vector>
 
-NS_LOG_COMPONENT_DEFINE ("TcpOption");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("TcpOption");
 
 NS_OBJECT_ENSURE_REGISTERED (TcpOption);
 
@@ -48,6 +48,7 @@ TcpOption::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOption")
     .SetParent<Object> ()
+    .SetGroupName ("Internet")
   ;
   return tid;
 }
@@ -125,6 +126,7 @@ TcpOptionUnknown::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOptionUnknown")
     .SetParent<TcpOption> ()
+    .SetGroupName ("Internet")
     .AddConstructor<TcpOptionUnknown> ()
   ;
   return tid;

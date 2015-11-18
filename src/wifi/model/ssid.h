@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #ifndef SSID_H
 #define SSID_H
 
@@ -31,6 +32,8 @@ namespace ns3 {
  * \ingroup wifi
  *
  * The IEEE 802.11 SSID Information Element
+ *
+ * \see attribute_Ssid
  */
 class Ssid : public WifiInformationElement
 {
@@ -55,6 +58,7 @@ public:
    * Check if the two SSIDs are equal.
    *
    * \param o SSID to compare to
+   *
    * \return true if the two SSIDs are equal,
    *         false otherwise
    */
@@ -88,13 +92,8 @@ private:
 std::ostream &operator << (std::ostream &os, const Ssid &ssid);
 std::istream &operator >> (std::istream &is, Ssid &ssid);
 
-/**
- * \class ns3::SsidValue
- * \brief hold objects of type ns3::Ssid
- */
-
 ATTRIBUTE_HELPER_HEADER (Ssid);
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* SSID_H */

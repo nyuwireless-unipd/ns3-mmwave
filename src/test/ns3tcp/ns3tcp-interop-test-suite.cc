@@ -110,10 +110,9 @@ Ns3TcpInteroperabilityTestCase::DoSetup (void)
 {
   //
   // We expect there to be a file called tcp-interop-response-vectors.pcap in
-  // response-vectors/ of this directory
+  // the data directory
   //
-  m_pcapFilename = static_cast<std::string> (NS_TEST_SOURCEDIR) + 
-    static_cast<std::string> ("/response-vectors/ns3tcp-interop-response-vectors.pcap");
+  m_pcapFilename = CreateDataDirFilename ("ns3tcp-interop-response-vectors.pcap");
 
   if (m_writeVectors)
     {
@@ -157,15 +156,10 @@ Ns3TcpInteroperabilityTestCase::Ipv4L3Tx (std::string context, Ptr<const Packet>
       Time tNow = Simulator::Now ();
       int64_t tMicroSeconds = tNow.GetMicroSeconds ();
 
-      uint32_t size = p->GetSize ();
-      uint8_t *buf = new uint8_t[size];
-      p->CopyData (buf, size);
-
       m_pcapFile.Write (uint32_t (tMicroSeconds / 1000000), 
                         uint32_t (tMicroSeconds % 1000000), 
-                        buf, 
-                        size);
-      delete [] buf;
+                        p
+                        );
     }
   else
     {
@@ -311,6 +305,9 @@ public:
 Ns3TcpInteroperabilityTestSuite::Ns3TcpInteroperabilityTestSuite ()
   : TestSuite ("ns3-tcp-interoperability", SYSTEM)
 {
+  // We can't use NS_TEST_SOURCEDIR variable here because we use subdirectories
+  SetDataDir ("src/test/ns3tcp/response-vectors");
+  
   AddTestCase (new Ns3TcpInteroperabilityTestCase, TestCase::QUICK);
 }
 

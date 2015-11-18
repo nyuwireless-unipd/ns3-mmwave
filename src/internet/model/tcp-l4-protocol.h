@@ -23,13 +23,11 @@
 
 #include <stdint.h>
 
-#include "ns3/packet.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv6-address.h"
-#include "ns3/ptr.h"
-#include "ns3/object-factory.h"
+#include "ns3/sequence-number.h"
 #include "ip-l4-protocol.h"
-#include "ns3/net-device.h"
+
 
 namespace ns3 {
 
@@ -45,12 +43,24 @@ class Ipv6EndPoint;
 
 /**
  * \ingroup tcp
- * \brief A layer between the sockets interface and IP
+ * \brief Tcp socket creation and multiplexing/demultiplexing
  * 
- * This class allocates "endpoint" objects (ns3::Ipv4EndPoint) for TCP,
+ * A single instance of this class is held by one instance of class Node.
+ *
+ * The creation of TcpSocket are handled in the method CreateSocket, which is
+ * called by TcpSocketFactory. Upon creation, this class is responsible to
+ * the socket initialization and handle multiplexing/demultiplexing of data
+ * between node's TCP sockets. Demultiplexing is done by receiving
+ * packets from IP, and forwards them up to the right socket. Multiplexing
+ * is done through the SendPacket function, which sends the packet down the stack.
+ *
+ * Moreover, this class allocates "endpoint" objects (ns3::Ipv4EndPoint) for TCP,
  * and SHOULD checksum packets its receives from the socket layer going down
- * the stack , but currently checksumming is disabled.  It also receives 
- * packets from IP, and forwards them up to the endpoints.
+ * the stack, but currently checksumming is disabled.
+ *
+ * \see CreateSocket
+ * \see NotifyNewAggregate
+ * \see SendPacket
 */
 
 class TcpL4Protocol : public IpL4Protocol {
@@ -71,16 +81,16 @@ public:
    */
   void SetNode (Ptr<Node> node);
 
-  virtual int GetProtocolNumber (void) const;
-
   /**
-   * \brief Create a TCP socket
+   * \brief Create a TCP socket using the TypeId set by SocketType attribute
+   *
    * \return A smart Socket pointer to a TcpSocket allocated by this instance
    * of the TCP protocol
    */
   Ptr<Socket> CreateSocket (void);
   /**
-   * \brief Create a TCP socket
+   * \brief Create a TCP socket using the specified TypeId
+   *
    * \return A smart Socket pointer to a TcpSocket allocated by this instance
    * of the TCP protocol
    *
@@ -160,6 +170,36 @@ public:
                            Ipv6Address peerAddress, uint16_t peerPort);
 
   /**
+   * \brief Send a packet via TCP (IP-agnostic)
+   *
+   * \param pkt The packet to send
+   * \param outgoing The packet header
+   * \param saddr The source Ipv4Address
+   * \param daddr The destination Ipv4Address
+   * \param oif The output interface bound. Defaults to null (unspecified).
+   */
+  void SendPacket (Ptr<Packet> pkt, const TcpHeader &outgoing,
+                   const Address &saddr, const Address &daddr,
+                   Ptr<NetDevice> oif = 0) const;
+
+  /**
+   * \brief Make a socket fully operational
+   *
+   * Called after a socket has been bound, it is inserted in an internal vector.
+   *
+   * \param socket Socket to be added
+   */
+  void AddSocket (Ptr<TcpSocketBase> socket);
+
+  /**
+   * \brief Remove a socket from the internal list
+   *
+   * \param socket socket to Remove
+   * \return true if the socket has been removed
+   */
+  bool RemoveSocket (Ptr<TcpSocketBase> socket);
+
+  /**
    * \brief Remove an IPv4 Endpoint.
    * \param endPoint the end point to remove
    */
@@ -170,37 +210,12 @@ public:
    */
   void DeAllocate (Ipv6EndPoint *endPoint);
 
-  /**
-   * \brief Send a packet via TCP (IPv4)
-   * \param packet The packet to send
-   * \param saddr The source Ipv4Address
-   * \param daddr The destination Ipv4Address
-   * \param sport The source port number
-   * \param dport The destination port number
-   * \param oif The output interface bound. Defaults to null (unspecified).
-   */
-  void Send (Ptr<Packet> packet,
-             Ipv4Address saddr, Ipv4Address daddr, 
-             uint16_t sport, uint16_t dport, Ptr<NetDevice> oif = 0);
-  /**
-   * \brief Send a packet via TCP (IPv6)
-   * \param packet The packet to send
-   * \param saddr The source Ipv4Address
-   * \param daddr The destination Ipv4Address
-   * \param sport The source port number
-   * \param dport The destination port number
-   * \param oif The output interface bound. Defaults to null (unspecified).
-   */
-  void Send (Ptr<Packet> packet,
-             Ipv6Address saddr, Ipv6Address daddr, 
-             uint16_t sport, uint16_t dport, Ptr<NetDevice> oif = 0);
-
-
+  // From IpL4Protocol
   virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> p,
-                                               Ipv4Header const &header,
+                                               Ipv4Header const &incomingIpHeader,
                                                Ptr<Ipv4Interface> incomingInterface);
   virtual enum IpL4Protocol::RxStatus Receive (Ptr<Packet> p,
-                                               Ipv6Header const &header,
+                                               Ipv6Header const &incomingIpHeader,
                                                Ptr<Ipv6Interface> incomingInterface);
 
   virtual void ReceiveIcmp (Ipv4Address icmpSource, uint8_t icmpTtl,
@@ -212,32 +227,65 @@ public:
                             Ipv6Address payloadSource,Ipv6Address payloadDestination,
                             const uint8_t payload[8]);
 
-  // From IpL4Protocol
   virtual void SetDownTarget (IpL4Protocol::DownTargetCallback cb);
   virtual void SetDownTarget6 (IpL4Protocol::DownTargetCallback6 cb);
-  // From IpL4Protocol
+  virtual int GetProtocolNumber (void) const;
   virtual IpL4Protocol::DownTargetCallback GetDownTarget (void) const;
   virtual IpL4Protocol::DownTargetCallback6 GetDownTarget6 (void) const;
 
 protected:
   virtual void DoDispose (void);
-  /* 
-   * This function will notify other components connected to the node that a new stack member is now connected
-   * This will be used to notify Layer 3 protocol of layer 4 protocol stack to connect them together.
+
+  /**
+   * \brief Setup socket factory and callbacks when aggregated to a node
+   *
+   * This function will notify other components connected to the node that a
+   * new stack member is now connected. This will be used to notify Layer 3
+   * protocol of layer 4 protocol stack to connect them together.
+   * The aggregation is completed by setting the node in the TCP stack, link
+   * it to the ipv4 or ipv6 stack and adding TCP socket factory to the node.
    */
   virtual void NotifyNewAggregate ();
+
+  /**
+   * \brief Get the tcp header of the incoming packet and checks its checksum if needed
+   *
+   * \param packet Received packet
+   * \param incomingTcpHeader Overwritten with the tcp header of the packet
+   * \param source Source address (an underlying Ipv4Address or Ipv6Address)
+   * \param destination Destination address (an underlying Ipv4Address or Ipv6Address)
+   *
+   * \return RX_CSUM_FAILED if the checksum check fails, RX_OK otherwise
+   */
+  enum IpL4Protocol::RxStatus
+  PacketReceived (Ptr<Packet> packet, TcpHeader &incomingTcpHeader,
+                  const Address &source, const Address &destination);
+
+  /**
+   * \brief Check if RST packet should be sent, and in case, send it
+   *
+   * The function is called when no endpoint is found for the received
+   * packet. So TcpL4Protocol do not know to who the packet should be
+   * given to. An RST packet is sent out as reply unless the received packet
+   * has the RST flag set.
+   *
+   * \param incomingHeader TCP header of the incoming packet
+   * \param incomingSAddr Source address of the incoming packet
+   * \param incomingDAddr Destination address of the incoming packet
+   *
+   */
+  void NoEndPointsFound (const TcpHeader &incomingHeader, const Address &incomingSAddr,
+                         const Address &incomingDAddr);
+
 private:
-  Ptr<Node> m_node; //!< the node this stack is associated with
-  Ipv4EndPointDemux *m_endPoints; //!< A list of IPv4 end points.
+  Ptr<Node> m_node;                //!< the node this stack is associated with
+  Ipv4EndPointDemux *m_endPoints;  //!< A list of IPv4 end points.
   Ipv6EndPointDemux *m_endPoints6; //!< A list of IPv6 end points.
-  TypeId m_rttTypeId; //!< The RTT Estimator TypeId
-  TypeId m_socketTypeId; //!< The socket TypeId
-private:
-  friend class TcpSocketBase;
-  void SendPacket (Ptr<Packet>, const TcpHeader &,
-                   Ipv4Address, Ipv4Address, Ptr<NetDevice> oif = 0);
-  void SendPacket (Ptr<Packet>, const TcpHeader &,
-                   Ipv6Address, Ipv6Address, Ptr<NetDevice> oif = 0);
+  TypeId m_rttTypeId;              //!< The RTT Estimator TypeId
+  TypeId m_socketTypeId;           //!< The socket TypeId
+  std::vector<Ptr<TcpSocketBase> > m_sockets;      //!< list of sockets
+  IpL4Protocol::DownTargetCallback m_downTarget;   //!< Callback to send packets over IPv4
+  IpL4Protocol::DownTargetCallback6 m_downTarget6; //!< Callback to send packets over IPv6
 
   /**
    * \brief Copy constructor
@@ -253,9 +301,31 @@ private:
    */
   TcpL4Protocol &operator = (const TcpL4Protocol &);
 
-  std::vector<Ptr<TcpSocketBase> > m_sockets;      //!< list of sockets
-  IpL4Protocol::DownTargetCallback m_downTarget;   //!< Callback to send packets over IPv4
-  IpL4Protocol::DownTargetCallback6 m_downTarget6; //!< Callback to send packets over IPv6
+  /**
+   * \brief Send a packet via TCP (IPv4)
+   *
+   * \param pkt The packet to send
+   * \param outgoing The packet header
+   * \param saddr The source Ipv4Address
+   * \param daddr The destination Ipv4Address
+   * \param oif The output interface bound. Defaults to null (unspecified).
+   */
+  void SendPacketV4 (Ptr<Packet> pkt, const TcpHeader &outgoing,
+                     const Ipv4Address &saddr, const Ipv4Address &daddr,
+                     Ptr<NetDevice> oif = 0) const;
+
+  /**
+   * \brief Send a packet via TCP (IPv6)
+   *
+   * \param pkt The packet to send
+   * \param outgoing The packet header
+   * \param saddr The source Ipv4Address
+   * \param daddr The destination Ipv4Address
+   * \param oif The output interface bound. Defaults to null (unspecified).
+   */
+  void SendPacketV6 (Ptr<Packet> pkt, const TcpHeader &outgoing,
+                     const Ipv6Address &saddr, const Ipv6Address &daddr,
+                     Ptr<NetDevice> oif = 0) const;
 };
 
 } // namespace ns3

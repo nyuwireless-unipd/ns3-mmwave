@@ -108,6 +108,7 @@ Ipv4FlowProbeTag::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Ipv4FlowProbeTag")
     .SetParent<Tag> ()
+    .SetGroupName ("FlowMonitor")
     .AddConstructor<Ipv4FlowProbeTag> ()
   ;
   return tid;
@@ -228,6 +229,19 @@ Ipv4FlowProbe::Ipv4FlowProbe (Ptr<FlowMonitor> monitor,
 
 Ipv4FlowProbe::~Ipv4FlowProbe ()
 {
+}
+
+/* static */
+TypeId
+Ipv4FlowProbe::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::Ipv4FlowProbe")
+    .SetParent<FlowProbe> ()
+    .SetGroupName ("FlowMonitor")
+    // No AddConstructor because this class has no default constructor.
+    ;
+
+  return tid;
 }
 
 void

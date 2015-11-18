@@ -79,7 +79,7 @@ main (int argc, char *argv[])
   NetDeviceContainer ueNetDev = ptr_mmWave->InstallUeDevice (ueNodes);
 
 
-  ptr_mmWave->RegisterToClosestEnb (ueNetDev, enbNetDev);
+  ptr_mmWave->AttachToClosestEnb (ueNetDev, enbNetDev);
   ptr_mmWave->EnableTraces();
 
   // Activate a data radio bearer

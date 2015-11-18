@@ -1,3 +1,23 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * Copyright (c) 2010 INRIA
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Author: Mathieu Lacage <mathieu.lacage@cutebugs.net>
+ */
+
 #include "ns3/buffer.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/double.h"
@@ -136,9 +156,8 @@ BufferTest::DoRun (void)
   buff64.AddAtStart (8);
   i = buff64.Begin ();
   i.WriteU64 (0x0123456789ABCDEFllu);
-  ENSURE_WRITTEN_BYTES (buff64, 8, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01);
   i = buff64.Begin ();
-  NS_TEST_ASSERT_MSG_EQ (i.ReadLsbtohU64 (), 0x0123456789abcdefllu, "Could not read expected value");
+  NS_TEST_ASSERT_MSG_EQ (i.ReadU64 (), 0x0123456789abcdefllu, "Could not read expected value");
   i = buff64.Begin ();
   i.WriteHtolsbU64 (0x0123456789ABCDEFllu);
   ENSURE_WRITTEN_BYTES (buff64, 8, 0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01);
@@ -321,6 +340,25 @@ BufferTest::DoRun (void)
       NS_TEST_ASSERT_MSG_EQ ( evilBuffer [i], cBuf [i] , "Bad buffer peeked");
     }
   free (cBuf);
+
+  /// \internal See \bugid{2044}  Will not pass without bug2044 fix.
+  buffer = Buffer (1);
+  buffer.AddAtEnd (2);
+  i = buffer.Begin ();
+  i.Next (1);
+  i.WriteU8 (0x77);
+  i.WriteU8 (0x66);
+  ENSURE_WRITTEN_BYTES (buffer, 3, 0x00, 0x77, 0x66);
+  i = buffer.Begin ();
+  i.ReadU8 ();
+  uint16_t val1 = i.ReadNtohU16 ();
+  i = buffer.Begin ();
+  i.ReadU8 ();
+  uint16_t val2 = 0;
+  val2 |= i.ReadU8 ();
+  val2 <<= 8;
+  val2 |= i.ReadU8 ();
+  NS_TEST_ASSERT_MSG_EQ (val1, val2, "Bad ReadNtohU16()");
 }
 //-----------------------------------------------------------------------------
 class BufferTestSuite : public TestSuite

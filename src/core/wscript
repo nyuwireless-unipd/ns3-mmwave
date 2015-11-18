@@ -32,8 +32,8 @@ def options(opt):
                          "the implementation-defined numerical precision may "
                          "be less than the other implementations.  "
                          "[Allowed Values: %s]"
-                         % ", ".join([repr(p) for p in int64x64.keys()])),
-                   choices=int64x64.keys(),
+                         % ", ".join([repr(p) for p in list(int64x64.keys())])),
+                   choices=list(int64x64.keys()),
                    dest='int64x64_impl')
                    
     opt.add_option('--disable-pthread',
@@ -157,7 +157,6 @@ def build(bld):
         'model/ref-count-base.cc',
         'model/object.cc',
         'model/test.cc',
-        'model/random-variable.cc',
         'model/random-variable-stream.cc',
         'model/rng-seed-manager.cc',
         'model/rng-stream.cc',
@@ -193,6 +192,7 @@ def build(bld):
     core_test = bld.create_ns3_module_test_library('core')
     core_test.source = [
         'test/attribute-test-suite.cc',
+        'test/build-profile-test-suite.cc',
         'test/callback-test-suite.cc',
         'test/command-line-test-suite.cc',
         'test/config-test-suite.cc',
@@ -201,7 +201,6 @@ def build(bld):
         'test/names-test-suite.cc',
         'test/object-test-suite.cc',
         'test/ptr-test-suite.cc',
-        'test/random-variable-test-suite.cc',
         'test/event-garbage-collector-test-suite.cc',
         'test/many-uniform-random-variables-one-get-value-call-test-suite.cc',
         'test/one-uniform-random-variable-many-get-value-calls-test-suite.cc',
@@ -254,7 +253,6 @@ def build(bld):
         'model/breakpoint.h',
         'model/fatal-error.h',
         'model/test.h',
-        'model/random-variable.h',
         'model/random-variable-stream.h',
         'model/rng-seed-manager.h',
         'model/rng-stream.h',
@@ -299,6 +297,8 @@ def build(bld):
         'model/hash-fnv.h',
         'model/hash.h',
         'model/valgrind.h',
+        'model/non-copyable.h',
+        'model/build-profile.h',
         ]
 
     if sys.platform == 'win32':

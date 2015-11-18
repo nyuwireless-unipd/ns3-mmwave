@@ -27,6 +27,7 @@
 #include "ns3/nstime.h"
 #include "ns3/attribute.h"
 #include "ns3/attribute-helper.h"
+#include "ns3/deprecated.h"
 
 namespace ns3 {
 
@@ -41,32 +42,48 @@ namespace ns3 {
  * Allows for natural and familiar use of data rates.  Allows construction
  * from strings, natural multiplication e.g.:
  * \code
- * DataRate x("56kbps");
- * double nBits = x*ns3::Seconds(19.2);
- * uint32_t nBytes = 20;
- * double txtime = x.CalclulateTxTime(nBytes);
+ *   DataRate x("56kbps");
+ *   double nBits = x*ns3::Seconds (19.2);
+ *   uint32_t nBytes = 20;
+ *   Time txtime = x.CalculateBytesTxTime (nBytes);
  * \endcode
- * This class also supports the regular comparison operators <, >, <=, >=, ==,
- * and !=
+ * This class also supports the regular comparison operators \c <, \c >,
+ * \c <=, \c >=, \c ==, and \c !=
  *
- * Conventions used:
- * "b" stands for bits, "B" for bytes (8 bits) \n
- * "k" stands for 1000, "K" also stands for 1000, "Ki" stands for 1024 \n
- * "M" stand for 1000000, "Mib" stands for 1024 kibibits, or 1048576 bits \n
- * "G" stand for 10^9, "Gib" stands for 1024 mebibits \n
- * whitespace is allowed but not required between the numeric value and units
+ * Data rate specifiers consist of
+ * * A numeric value,
+ * * An optional multiplier prefix and
+ * * A unit.
+ *
+ * Whitespace is allowed but not required between the numeric value and
+ * multipler or unit.
+ *
+ * Supported multiplier prefixes:
+ *
+ * | Prefix   | Value       |
+ * | :------- | ----------: |
+ * | "k", "K" | 1000        |
+ * | "Ki"     | 1024        |
+ * | "M"      | 1000000     |
+ * | "Mi"     | 1024 Ki     |
+ * | "G"      | 10^9        |
+ * | "Gi "    | 1024 Mi     |
  *
  * Supported unit strings:
- * bps, b/s, Bps, B/s \n
- * kbps, kb/s, Kbps, Kb/s, kBps, kB/s, KBps, KB/s, Kib/s, KiB/s \n
- * Mbps, Mb/s, MBps, MB/s, Mib/s, MiB/s \n
- * Gbps, Gb/s, GBps, GB/s, Gib/s, GiB/s \n
- * 
+ *
+ * | Symbol   | Meaning     |
+ * | :------- | :---------- |
+ * | "b"      | bits        |
+ * | "B"      | 8-bit bytes |
+ * | "s", "/s"| per second  |
+ *
  * Examples:
- * "56kbps" = 56,000 bits/s \n
- * "128 kb/s" = 128,000 bits/s \n
- * "8Kib/s" = 1 KiB/s = 8192 bits/s \n
- * "1kB/s" = 8000 bits/s 
+ * * "56kbps" = 56,000 bits/s
+ * * "128 kb/s" = 128,000 bits/s
+ * * "8Kib/s" = 1 KiB/s = 8192 bits/s
+ * * "1kB/s" = 8000 bits/s 
+ *
+ * \see attribute_DataRate
  */
 class DataRate
 {
@@ -148,9 +165,30 @@ public:
    *
    * Calculates the transmission time at this data rate
    * \param bytes The number of bytes (not bits) for which to calculate
-   * \return The transmission time in seconds for the number of bytes specified
+   * \return The transmission time for the number of bytes specified
    */
-  double CalculateTxTime (uint32_t bytes) const;
+  Time CalculateBytesTxTime (uint32_t bytes) const;
+
+  /**
+   * \brief Calculate transmission time
+   *
+   * Calculates the transmission time at this data rate
+   * \param bits The number of bits (not bytes) for which to calculate
+   * \return The transmission time for the number of bits specified
+   */
+  Time CalculateBitsTxTime (uint32_t bits) const;
+
+  /**
+   * \brief Calculate transmission time
+   *
+   * Calculates the transmission time at this data rate
+   * \param bytes The number of bytes (not bits) for which to calculate
+   * \return The transmission time in seconds for the number of bytes specified
+   *
+   * \deprecated This method will go away in future versions of ns-3.
+   * See instead CalculateBytesTxTime()
+   */
+  double CalculateTxTime (uint32_t bytes) const NS_DEPRECATED;
 
   /**
    * Get the underlying bitrate
@@ -159,6 +197,26 @@ public:
   uint64_t GetBitRate () const;
 
 private:
+
+  /**
+   * \brief Parse a string representing a DataRate into an uint64_t
+   *
+   * Allowed unit representations include all combinations of
+   *
+   * * An SI prefix: k, K, M, G
+   * * Decimal or kibibit (as in "Kibps", meaning 1024 bps)
+   * * Bits or bytes (8 bits)
+   * * "bps" or "/s"
+   *
+   * \param [in] s The string representation, including unit
+   * \param [in,out] v The location to put the value, in bits/sec.
+   * \return true if parsing was successful.
+   */
+  static bool DoParse (const std::string s, uint64_t *v);
+
+  // Uses DoParse
+  friend std::istream &operator >> (std::istream &is, DataRate &rate);
+  
   uint64_t m_bps; //!< data rate [bps]
 };
 
@@ -180,13 +238,7 @@ std::ostream &operator << (std::ostream &os, const DataRate &rate);
  */
 std::istream &operator >> (std::istream &is, DataRate &rate);
 
-/**
- * \class ns3::DataRateValue
- * \brief hold objects of type ns3::DataRate
- */
-
-
-ATTRIBUTE_HELPER_HEADER (DataRate);   //!< Macro to make help make data-rate an ns-3 attribute
+ATTRIBUTE_HELPER_HEADER (DataRate);
 
 
 /**

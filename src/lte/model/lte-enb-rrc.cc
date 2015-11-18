@@ -44,11 +44,9 @@
 
 
 
-NS_LOG_COMPONENT_DEFINE ("LteEnbRrc");
-
-
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("LteEnbRrc");
 
 ///////////////////////////////////////////
 // CMAC SAP forwarder
@@ -100,6 +98,7 @@ EnbRrcMemberLteEnbCmacSapUser::RrcConfigurationUpdateInd (UeConfig params)
 ///////////////////////////////////////////
 
 
+/// Map each of UE Manager states to its string representation.
 static const std::string g_ueManagerStateName[UeManager::NUM_STATES] =
 {
   "INITIAL_RANDOM_ACCESS",
@@ -114,6 +113,10 @@ static const std::string g_ueManagerStateName[UeManager::NUM_STATES] =
   "HANDOVER_LEAVING",
 };
 
+/**
+ * \param s The UE manager state.
+ * \return The string representation of the given state.
+ */
 static const std::string & ToString (UeManager::State s)
 {
   return g_ueManagerStateName[s];
@@ -303,8 +306,10 @@ TypeId UeManager::GetTypeId (void)
                    MakeUintegerAccessor (&UeManager::m_rnti),
                    MakeUintegerChecker<uint16_t> ())
     .AddTraceSource ("StateTransition",
-                     "fired upon every UE state transition seen by the UeManager at the eNB RRC",
-                     MakeTraceSourceAccessor (&UeManager::m_stateTransitionTrace))
+                     "fired upon every UE state transition seen by the "
+                     "UeManager at the eNB RRC",
+                     MakeTraceSourceAccessor (&UeManager::m_stateTransitionTrace),
+                     "ns3::UeManager::StateTracedCallback")
   ;
   return tid;
 }
@@ -460,14 +465,29 @@ UeManager::ReleaseDataRadioBearer (uint8_t drbid)
   LteRrcSap::RadioResourceConfigDedicated rrcd;
   rrcd.havePhysicalConfigDedicated = false;
   rrcd.drbToReleaseList.push_back (drbid);
+  //populating RadioResourceConfigDedicated information element as per 3GPP TS 36.331 version 9.2.0
+  rrcd.havePhysicalConfigDedicated = true;
+  rrcd.physicalConfigDedicated = m_physicalConfigDedicated;
  
+  //populating RRCConnectionReconfiguration message as per 3GPP TS 36.331 version 9.2.0 Release 9
   LteRrcSap::RrcConnectionReconfiguration msg;
   msg.haveMeasConfig = false;
   msg.haveMobilityControlInfo = false;
- 
+  msg.radioResourceConfigDedicated = rrcd;
+  msg.haveRadioResourceConfigDedicated = true;
+  //RRC Connection Reconfiguration towards UE
   m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration (m_rnti, msg);
 }
 
+void
+LteEnbRrc::DoSendReleaseDataRadioBearer (uint64_t imsi, uint16_t rnti, uint8_t bearerId)
+{
+  Ptr<UeManager> ueManager = GetUeManager (rnti);
+  // Bearer de-activation towards UE
+  ueManager->ReleaseDataRadioBearer (bearerId);
+  // Bearer de-activation indication towards epc-enb application
+  m_s1SapProvider->DoSendReleaseIndication (imsi,rnti,bearerId);
+}
 
 void 
 UeManager::ScheduleRrcConnectionReconfiguration ()
@@ -644,8 +664,17 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
         params.rnti = m_rnti;
         params.lcid = Bid2Lcid (bid);
         uint8_t drbid = Bid2Drbid (bid);
-        LtePdcpSapProvider* pdcpSapProvider = GetDataRadioBearerInfo (drbid)->m_pdcp->GetLtePdcpSapProvider ();
+        //Transmit PDCP sdu only if DRB ID found in drbMap
+        std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.find (drbid);
+        if (it != m_drbMap.end ())
+          {
+            Ptr<LteDataRadioBearerInfo> bearerInfo = GetDataRadioBearerInfo (drbid);
+            if (bearerInfo != NULL)
+              {
+                LtePdcpSapProvider* pdcpSapProvider = bearerInfo->m_pdcp->GetLtePdcpSapProvider ();
         pdcpSapProvider->TransmitPdcpSdu (params);
+      }
+          }
       }
       break;
 
@@ -865,6 +894,11 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
         }
       SwitchToState (CONNECTED_NORMALLY);
       m_rrc->m_connectionReconfigurationTrace (m_imsi, m_rrc->m_cellId, m_rnti);
+      break;
+
+    // This case is added to NS-3 in order to handle bearer de-activation scenario for CONNECTED state UE
+    case CONNECTED_NORMALLY:
+      NS_LOG_INFO ("ignoring RecvRrcConnectionReconfigurationCompleted in state " << ToString (m_state));
       break;
 
     case HANDOVER_LEAVING:
@@ -1310,6 +1344,7 @@ LteEnbRrc::GetTypeId (void)
   NS_LOG_FUNCTION ("LteEnbRrc::GetTypeId");
   static TypeId tid = TypeId ("ns3::LteEnbRrc")
     .SetParent<Object> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteEnbRrc> ()
     .AddAttribute ("UeMap", "List of UeManager by C-RNTI.",
                    ObjectMapValue (),
@@ -1427,6 +1462,7 @@ LteEnbRrc::GetTypeId (void)
                    UintegerValue (4),
                    MakeUintegerAccessor (&LteEnbRrc::m_rsrqFilterCoefficient),
                    MakeUintegerChecker<uint8_t> (0))
+
 	.AddAttribute ("mmWaveDevice",
 				   "Indicates whether RRC is for mmWave base station",
 				   BooleanValue (false),
@@ -1435,23 +1471,29 @@ LteEnbRrc::GetTypeId (void)
 
     // Trace sources
     .AddTraceSource ("NewUeContext",
-                     "trace fired upon creation of a new UE context",
-                     MakeTraceSourceAccessor (&LteEnbRrc::m_newUeContextTrace))
+                     "Fired upon creation of a new UE context.",
+                     MakeTraceSourceAccessor (&LteEnbRrc::m_newUeContextTrace),
+                     "ns3::LteEnbRrc::NewUeContextTracedCallback")
     .AddTraceSource ("ConnectionEstablished",
-                     "trace fired upon successful RRC connection establishment",
-                     MakeTraceSourceAccessor (&LteEnbRrc::m_connectionEstablishedTrace))
+                     "Fired upon successful RRC connection establishment.",
+                     MakeTraceSourceAccessor (&LteEnbRrc::m_connectionEstablishedTrace),
+                     "ns3::LteEnbRrc::ConnectionHandoverTracedCallback")
     .AddTraceSource ("ConnectionReconfiguration",
                      "trace fired upon RRC connection reconfiguration",
-                     MakeTraceSourceAccessor (&LteEnbRrc::m_connectionReconfigurationTrace))
+                     MakeTraceSourceAccessor (&LteEnbRrc::m_connectionReconfigurationTrace),
+                     "ns3::LteEnbRrc::ConnectionHandoverTracedCallback")
     .AddTraceSource ("HandoverStart",
                      "trace fired upon start of a handover procedure",
-                     MakeTraceSourceAccessor (&LteEnbRrc::m_handoverStartTrace))
+                     MakeTraceSourceAccessor (&LteEnbRrc::m_handoverStartTrace),
+                     "ns3::LteEnbRrc::HandoverStartTracedCallback")
     .AddTraceSource ("HandoverEndOk",
                      "trace fired upon successful termination of a handover procedure",
-                     MakeTraceSourceAccessor (&LteEnbRrc::m_handoverEndOkTrace))
+                     MakeTraceSourceAccessor (&LteEnbRrc::m_handoverEndOkTrace),
+                     "ns3::LteEnbRrc::ConnectionHandoverTracedCallback")
     .AddTraceSource ("RecvMeasurementReport",
                      "trace fired when measurement report is received",
-                     MakeTraceSourceAccessor (&LteEnbRrc::m_recvMeasurementReportTrace))
+                     MakeTraceSourceAccessor (&LteEnbRrc::m_recvMeasurementReportTrace),
+                     "ns3::LteEnbRrc::ReceiveReportTracedCallback")
   ;
   return tid;
 }
@@ -1696,6 +1738,7 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
   m_ulBandwidth = ulBandwidth;
   m_cellId = cellId;
   m_cphySapProvider->SetCellId (cellId);
+
   if (!m_ismmWave)
   {
 	  m_ffrRrcSapProvider->SetCellId (cellId);
@@ -2315,10 +2358,24 @@ LteEnbRrc::SetCsgId (uint32_t csgId, bool csgIndication)
 }
 
 
-// from 3GPP TS 36.213 table 8.2-1 UE Specific SRS Periodicity
+/// Number of distinct SRS periodicity plus one.
 static const uint8_t SRS_ENTRIES = 9;
+/**
+ * Sounding Reference Symbol (SRS) periodicity (TSRS) in milliseconds. Taken
+ * from 3GPP TS 36.213 Table 8.2-1. Index starts from 1.
+ */
 static const uint16_t g_srsPeriodicity[SRS_ENTRIES] = {0, 2, 5, 10, 20, 40,  80, 160, 320};
+/**
+ * The lower bound (inclusive) of the SRS configuration indices (ISRS) which
+ * use the corresponding SRS periodicity (TSRS). Taken from 3GPP TS 36.213
+ * Table 8.2-1. Index starts from 1.
+ */
 static const uint16_t g_srsCiLow[SRS_ENTRIES] =       {0, 0, 2,  7, 17, 37,  77, 157, 317};
+/**
+ * The upper bound (inclusive) of the SRS configuration indices (ISRS) which
+ * use the corresponding SRS periodicity (TSRS). Taken from 3GPP TS 36.213
+ * Table 8.2-1. Index starts from 1.
+ */
 static const uint16_t g_srsCiHigh[SRS_ENTRIES] =      {0, 1, 6, 16, 36, 76, 156, 316, 636};
 
 void 
@@ -2392,7 +2449,7 @@ LteEnbRrc::GetNewSrsConfigurationIndex ()
           for (uint16_t srcCi = g_srsCiLow[m_srsCurrentPeriodicityId]; srcCi < g_srsCiHigh[m_srsCurrentPeriodicityId]; srcCi++) 
             {
               std::set<uint16_t>::iterator it = m_ueSrsConfigurationIndexSet.find (srcCi);
-              if (it==m_ueSrsConfigurationIndexSet.end ())
+              if (it == m_ueSrsConfigurationIndexSet.end ())
                 {
                   m_lastAllocatedConfigurationIndex = srcCi;
                   m_ueSrsConfigurationIndexSet.insert (srcCi);

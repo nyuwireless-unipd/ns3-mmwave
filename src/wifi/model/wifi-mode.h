@@ -15,8 +15,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
+ * Authors: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
+ *          Sébastien Deronne <sebastien.deronne@gmail.com>
  */
+
 #ifndef WIFI_MODE_H
 #define WIFI_MODE_H
 
@@ -30,7 +32,7 @@
 namespace ns3 {
 
 /**
- * This enumeration defines the modulation classes per 
+ * This enumeration defines the modulation classes per
  * (Table 9-4 "Modulation classes"; IEEE 802.11-2012).
  */
 enum WifiModulationClass
@@ -42,8 +44,10 @@ enum WifiModulationClass
   WIFI_MOD_CLASS_IR,
   /** Frequency-hopping spread spectrum (FHSS) PHY (Clause 14) */
   WIFI_MOD_CLASS_FHSS,
-  /** DSSS PHY (Clause 15) and HR/DSSS PHY (Clause 18) */
+  /** DSSS PHY (Clause 15) */
   WIFI_MOD_CLASS_DSSS,
+  /** HR/DSSS PHY (Clause 18) */
+  WIFI_MOD_CLASS_HR_DSSS,
   /** ERP-PBCC PHY (19.6) */
   WIFI_MOD_CLASS_ERP_PBCC,
   /** DSSS-OFDM PHY (19.7) */
@@ -53,9 +57,10 @@ enum WifiModulationClass
   /** OFDM PHY (Clause 17) */
   WIFI_MOD_CLASS_OFDM,
   /** HT PHY (Clause 20) */
-  WIFI_MOD_CLASS_HT
+  WIFI_MOD_CLASS_HT,
+  /** VHT PHY (Clause 22) */
+  WIFI_MOD_CLASS_VHT
 };
-
 
 /**
  * This enumeration defines the various convolutional coding rates
@@ -74,9 +79,8 @@ enum WifiCodeRate
   WIFI_CODE_RATE_2_3,
   /** Rate 1/2 */
   WIFI_CODE_RATE_1_2,
- /** Rate 5/6 */
- WIFI_CODE_RATE_5_6
-
+  /** Rate 5/6 */
+  WIFI_CODE_RATE_5_6
 };
 
 /**
@@ -87,55 +91,69 @@ enum WifiCodeRate
  * to lookup in a global array the characteristics of the
  * associated transmission mode. It is thus extremely cheap to
  * keep a WifiMode variable around.
+ *
+ * \see attribute_WifiMode
  */
 class WifiMode
 {
 public:
   /**
-   * \returns the number of Hz used by this signal
-   */
-  uint32_t GetBandwidth (void) const;
-  /**
+   *
+   * \param channelWidth the considered channel width in MHz
+   * \param isShortGuardInterval whether short guard interval is considered or not
+   * \param nss the considered number of streams
+   *
    * \returns the physical bit rate of this signal.
    *
    * If a transmission mode uses 1/2 FEC, and if its
-   * data rate is 3Mbs, the phy rate is 6Mbs
+   * data rate is 3.25Mbps, the phy rate is 6.5Mbps
    */
-  uint64_t GetPhyRate (void) const;
+  uint64_t GetPhyRate (uint32_t channelWidth, bool isShortGuardInterval, uint8_t nss) const;
   /**
+   *
+   * \param channelWidth the considered channel width in MHz
+   * \param isShortGuardInterval whether short guard interval is considered or not
+   * \param nss the considered number of streams
+   *
    * \returns the data bit rate of this signal.
    */
-  uint64_t GetDataRate (void) const;
+  uint64_t GetDataRate (uint32_t channelWidth, bool isShortGuardInterval, uint8_t nss) const;
   /**
+   *
+   * \param nss the considered number of streams
+   *
    * \returns the coding rate of this transmission mode
    */
-  enum WifiCodeRate GetCodeRate (void) const;
+  enum WifiCodeRate GetCodeRate (uint8_t nss) const;
   /**
+   *
+   * \param nss the considered number of streams
+   *
    * \returns the size of the modulation constellation.
    */
-  uint8_t GetConstellationSize (void) const;
-
+  uint16_t GetConstellationSize (uint8_t nss) const;
+  /**
+   * \returns the MCS value.
+   */
+  uint8_t GetMcsValue (void) const;
   /**
    * \returns a human-readable representation of this WifiMode
    * instance.
    */
   std::string GetUniqueName (void) const;
-
   /**
    * \returns true if this mode is a mandatory mode, false
    *          otherwise.
    */
   bool IsMandatory (void) const;
-
   /**
    * \returns the uid associated to this wireless mode.
    *
    * Each specific wireless mode should have a different uid.
-   * For example, the 802.11b 1Mbs and the 802.11b 2Mbs modes
+   * For example, the 802.11b 1Mbps and the 802.11b 2Mbps modes
    * should have different uids.
    */
   uint32_t GetUid (void) const;
-
   /**
    *
    * \returns the Modulation Class (Section 9.7.8 "Modulation classes"; IEEE 802.11-2012)
@@ -157,6 +175,8 @@ public:
    * \param name std::string of a valid WifiMode name
    */
   WifiMode (std::string name);
+
+
 private:
   friend class WifiModeFactory;
   /**
@@ -171,11 +191,6 @@ private:
 bool operator == (const WifiMode &a, const WifiMode &b);
 std::ostream & operator << (std::ostream & os, const WifiMode &mode);
 std::istream & operator >> (std::istream &is, WifiMode &mode);
-
-/**
- * \class ns3::WifiModeValue
- * \brief hold objects of type ns3::WifiMode
- */
 
 ATTRIBUTE_HELPER_HEADER (WifiMode);
 
@@ -192,15 +207,6 @@ typedef std::vector<WifiMode> WifiModeList;
 typedef WifiModeList::const_iterator WifiModeListIterator;
 
 /**
- * A list of Wi-Fi Modulation and Coding Scheme (MCS).
- */
-typedef std::vector<uint8_t> WifiMcsList;
-/**
- * An iterator for WifiMcsList vector.
- */
-typedef WifiMcsList::const_iterator WifiMcsListIterator;
-
-/**
  * \brief create WifiMode class instances and keep track of them.
  *
  * This factory ensures that each WifiMode created has a unique name
@@ -214,26 +220,37 @@ public:
    *        must be unique accross _all_ instances.
    * \param modClass the class of modulation
    * \param isMandatory true if this WifiMode is mandatory, false otherwise.
-   * \param bandwidth the bandwidth (Hz) of the signal generated when the
-   *        associated WifiMode is used.
-   * \param dataRate the rate (bits/second) at which the user data is transmitted
    * \param codingRate if convolutional coding is used for this rate
    *        then this parameter specifies the convolutional coding rate
    *        used. If there is no explicit convolutional coding step (e.g.,
    *        for DSSS rates) then the caller should set this parameter to
    *        WIFI_CODE_RATE_UNCODED.
    * \param constellationSize the order of the constellation used.
+   *
    * \return WifiMode
    *
-   * Create a WifiMode.
+   * Create a WifiMode (not used for HT or VHT).
    */
   static WifiMode CreateWifiMode (std::string uniqueName,
                                   enum WifiModulationClass modClass,
                                   bool isMandatory,
-                                  uint32_t bandwidth,
-                                  uint32_t dataRate,
                                   enum WifiCodeRate codingRate,
-                                  uint8_t constellationSize);
+                                  uint16_t constellationSize);
+
+  /**
+   * \param uniqueName the name of the associated WifiMode. This name
+   *        must be unique accross _all_ instances.
+   * \param mcsValue the mcs value
+   * \param modClass the class of modulation
+   *
+   * \return WifiMode
+   *
+   * Create a HT or VHT WifiMode.
+   */
+  static WifiMode CreateWifiMcs (std::string uniqueName,
+                                 uint8_t mcsValue,
+                                 enum WifiModulationClass modClass);
+
 
 private:
   friend class WifiMode;
@@ -255,19 +272,18 @@ private:
   struct WifiModeItem
   {
     std::string uniqueUid;
-    uint32_t bandwidth;
-    uint32_t dataRate;
-    uint32_t phyRate;
     enum WifiModulationClass modClass;
-    uint8_t constellationSize;
+    uint16_t constellationSize;
     enum WifiCodeRate codingRate;
     bool isMandatory;
+    uint8_t mcsValue;
   };
 
   /**
    * Search and return WifiMode from a given name.
    *
    * \param name human-readable WifiMode
+   *
    * \return WifiMode
    */
   WifiMode Search (std::string name);
@@ -275,6 +291,7 @@ private:
    * Allocate a WifiModeItem from a given uniqueUid.
    *
    * \param uniqueUid
+   *
    * \return uid
    */
   uint32_t AllocateUid (std::string uniqueUid);
@@ -282,6 +299,7 @@ private:
    * Return a WifiModeItem at the given uid index.
    *
    * \param uid
+   *
    * \return WifiModeItem at the given uid
    */
   WifiModeItem* Get (uint32_t uid);
@@ -293,6 +311,6 @@ private:
   WifiModeItemList m_itemList;
 };
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* WIFI_MODE_H */

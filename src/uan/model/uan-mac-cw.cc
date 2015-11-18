@@ -27,9 +27,9 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("UanMacCw");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UanMacCw");
 
 NS_OBJECT_ENSURE_REGISTERED (UanMacCw);
 
@@ -77,7 +77,8 @@ TypeId
 UanMacCw::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanMacCw")
-    .SetParent<Object> ()
+    .SetParent<UanMac> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanMacCw> ()
     .AddAttribute ("CW",
                    "The MAC parameter CW.",
@@ -91,13 +92,16 @@ UanMacCw::GetTypeId (void)
                    MakeTimeChecker ())
     .AddTraceSource ("Enqueue",
                      "A packet arrived at the MAC for transmission.",
-                     MakeTraceSourceAccessor (&UanMacCw::m_enqueueLogger))
+                     MakeTraceSourceAccessor (&UanMacCw::m_enqueueLogger),
+                     "ns3::UanMacCw::QueueTracedCallback")
     .AddTraceSource ("Dequeue",
                      "A was passed down to the PHY from the MAC.",
-                     MakeTraceSourceAccessor (&UanMacCw::m_dequeueLogger))
+                     MakeTraceSourceAccessor (&UanMacCw::m_dequeueLogger),
+                     "ns3::UanMacCw::QueueTracedCallback")
     .AddTraceSource ("RX",
                      "A packet was destined for this MAC and was received.",
-                     MakeTraceSourceAccessor (&UanMacCw::m_rxLogger))
+                     MakeTraceSourceAccessor (&UanMacCw::m_rxLogger),
+                     "ns3::UanMac::PacketModeTracedCallback")
 
   ;
   return tid;

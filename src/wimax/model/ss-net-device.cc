@@ -42,9 +42,9 @@
 #include "ss-link-manager.h"
 #include "bandwidth-manager.h"
 
-NS_LOG_COMPONENT_DEFINE ("SubscriberStationNetDevice");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("SubscriberStationNetDevice");
 
 NS_OBJECT_ENSURE_REGISTERED (SubscriberStationNetDevice);
 
@@ -61,6 +61,7 @@ SubscriberStationNetDevice::GetTypeId (void)
     TypeId ("ns3::SubscriberStationNetDevice")
 
     .SetParent<WimaxNetDevice> ()
+    .SetGroupName ("Wimax")
 
     .AddConstructor<SubscriberStationNetDevice> ()
 
@@ -183,22 +184,27 @@ SubscriberStationNetDevice::GetTypeId (void)
 
     .AddTraceSource ("SSTxDrop",
                      "A packet has been dropped in the MAC layer before being queued for transmission.",
-                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssTxDropTrace))
+                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssTxDropTrace),
+                     "ns3::Packet::TracedCallback")
 
     .AddTraceSource ("SSPromiscRx",
                      "A packet has been received by this device, has been passed up from the physical layer "
                      "and is being forwarded up the local protocol stack.  This is a promiscuous trace,",
-                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssPromiscRxTrace))
+                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssPromiscRxTrace),
+                     "ns3::Packet::TracedCallback")
 
     .AddTraceSource ("SSRx",
                      "A packet has been received by this device, has been passed up from the physical layer "
                      "and is being forwarded up the local protocol stack.  This is a non-promiscuous trace,",
-                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssRxTrace))
+                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssRxTrace),
+                     "ns3::Packet::TracedCallback")
 
     .AddTraceSource ("SSRxDrop",
                      "A packet has been dropped in the MAC layer after it has been passed up from the physical "
                      "layer.",
-                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssRxDropTrace));
+                     MakeTraceSourceAccessor (&SubscriberStationNetDevice::m_ssRxDropTrace),
+                     "ns3::Packet::TracedCallback")
+    ;
   return tid;
 }
 
@@ -909,7 +915,7 @@ SubscriberStationNetDevice::DoReceive (Ptr<Packet> packet)
         }
       else if (GetInitialRangingConnection () != 0 && cid == GetInitialRangingConnection ()->GetCid () && !fragmentation)
         {
-          m_traceSSRx (packet, GetMacAddress (), &cid);
+          m_traceSSRx (packet, GetMacAddress (), cid);
           packet->RemoveHeader (msgType);
           switch (msgType.GetType ())
             {
@@ -928,7 +934,7 @@ SubscriberStationNetDevice::DoReceive (Ptr<Packet> packet)
         }
       else if (m_basicConnection != 0 && cid == m_basicConnection->GetCid () && !fragmentation)
         {
-          m_traceSSRx (packet, GetMacAddress (), &cid);
+          m_traceSSRx (packet, GetMacAddress (), cid);
           packet->RemoveHeader (msgType);
           switch (msgType.GetType ())
             {
@@ -947,7 +953,7 @@ SubscriberStationNetDevice::DoReceive (Ptr<Packet> packet)
         }
       else if (m_primaryConnection != 0 && cid == m_primaryConnection->GetCid () && !fragmentation)
         {
-          m_traceSSRx (packet, GetMacAddress (), &cid);
+          m_traceSSRx (packet, GetMacAddress (), cid);
           packet->RemoveHeader (msgType);
           switch (msgType.GetType ())
             {
@@ -1037,7 +1043,7 @@ SubscriberStationNetDevice::DoReceive (Ptr<Packet> packet)
         }
       else if (cid.IsMulticast ())
         {
-          m_traceSSRx (packet, GetMacAddress (), &cid);
+          m_traceSSRx (packet, GetMacAddress (), cid);
           ForwardUp (packet, m_baseStationId, GetMacAddress ()); // source shall be BS's address or sender SS's?
         }
       else if (IsPromisc ())

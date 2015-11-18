@@ -28,6 +28,7 @@
 #include "ns3/ptr.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/double.h"
+#include "ns3/string.h"
 #include "ns3/log.h"
 #include "ns3/uan-tx-mode.h"
 #include "ns3/node.h"
@@ -36,9 +37,9 @@
 #include "ns3/acoustic-modem-energy-model.h"
 
 
-NS_LOG_COMPONENT_DEFINE ("UanPhyGen");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UanPhyGen");
 
 NS_OBJECT_ENSURE_REGISTERED (UanPhyGen);
 NS_OBJECT_ENSURE_REGISTERED (UanPhyPerGenDefault);
@@ -61,7 +62,8 @@ TypeId
 UanPhyCalcSinrDefault::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanPhyCalcSinrDefault")
-    .SetParent<Object> ()
+    .SetParent<UanPhyCalcSinr> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPhyCalcSinrDefault> ()
   ;
   return tid;
@@ -108,7 +110,8 @@ TypeId
 UanPhyCalcSinrFhFsk::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanPhyCalcSinrFhFsk")
-    .SetParent<Object> ()
+    .SetParent<UanPhyCalcSinr> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPhyCalcSinrFhFsk> ()
     .AddAttribute ("NumberOfHops",
                    "Number of frequencies in hopping pattern.",
@@ -214,7 +217,8 @@ TypeId
 UanPhyPerGenDefault::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanPhyPerGenDefault")
-    .SetParent<Object> ()
+    .SetParent<UanPhyPer> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPhyPerGenDefault> ()
     .AddAttribute ("Threshold", "SINR cutoff for good packet reception.",
                    DoubleValue (8),
@@ -252,7 +256,8 @@ UanPhyPerUmodem::~UanPhyPerUmodem ()
 TypeId UanPhyPerUmodem::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanPhyPerUmodem")
-    .SetParent<Object> ()
+    .SetParent<UanPhyPer> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPhyPerUmodem> ()
   ;
   return tid;
@@ -430,6 +435,7 @@ UanPhyGen::GetTypeId (void)
 
   static TypeId tid = TypeId ("ns3::UanPhyGen")
     .SetParent<UanPhy> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPhyGen> ()
     .AddAttribute ("CcaThreshold",
                    "Aggregate energy of incoming signals to move to CCA Busy state dB.",
@@ -458,23 +464,26 @@ UanPhyGen::GetTypeId (void)
                    MakeUanModesListChecker () )
     .AddAttribute ("PerModel",
                    "Functor to calculate PER based on SINR and TxMode.",
-                   PointerValue (CreateObject<UanPhyPerGenDefault> ()),
+                   StringValue ("ns3::UanPhyPerGenDefault"),
                    MakePointerAccessor (&UanPhyGen::m_per),
                    MakePointerChecker<UanPhyPer> ())
     .AddAttribute ("SinrModel",
                    "Functor to calculate SINR based on pkt arrivals and modes.",
-                   PointerValue (CreateObject<UanPhyCalcSinrDefault> ()),
+                   StringValue ("ns3::UanPhyCalcSinrDefault"),
                    MakePointerAccessor (&UanPhyGen::m_sinr),
                    MakePointerChecker<UanPhyCalcSinr> ())
     .AddTraceSource ("RxOk",
                      "A packet was received successfully.",
-                     MakeTraceSourceAccessor (&UanPhyGen::m_rxOkLogger))
+                     MakeTraceSourceAccessor (&UanPhyGen::m_rxOkLogger),
+                     "ns3::UanPhy::TracedCallback")
     .AddTraceSource ("RxError",
                      "A packet was received unsuccessfully.",
-                     MakeTraceSourceAccessor (&UanPhyGen::m_rxErrLogger))
+                     MakeTraceSourceAccessor (&UanPhyGen::m_rxErrLogger),
+                     "ns3::UanPhy::TracedCallback")
     .AddTraceSource ("Tx",
                      "Packet transmission beginning.",
-                     MakeTraceSourceAccessor (&UanPhyGen::m_txLogger))
+                     MakeTraceSourceAccessor (&UanPhyGen::m_txLogger),
+                     "ns3::UanPhy::TracedCallback")
   ;
   return tid;
 
@@ -800,7 +809,7 @@ UanPhyGen::GetChannel (void) const
 }
 
 Ptr<UanNetDevice>
-UanPhyGen::GetDevice (void)
+UanPhyGen::GetDevice (void) const
 {
   return m_device;
 }

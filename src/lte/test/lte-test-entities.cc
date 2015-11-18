@@ -20,6 +20,7 @@
 
 #include "ns3/simulator.h"
 #include "ns3/log.h"
+#include "ns3/node.h"
 
 #include "ns3/lte-rlc-header.h"
 #include "ns3/lte-rlc-am-header.h"
@@ -27,10 +28,9 @@
 
 #include "lte-test-entities.h"
 
-NS_LOG_COMPONENT_DEFINE ("LteTestEntities");
-
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("LteTestEntities");
 
 /////////////////////////////////////////////////////////////////////
 
@@ -70,6 +70,12 @@ LteTestRrc::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
   delete m_pdcpSapUser;
+}
+
+void
+LteTestRrc::SetDevice (Ptr<NetDevice> device)
+{
+  m_device = device;
 }
 
 void
@@ -197,8 +203,26 @@ LteTestRrc::Start ()
   p.rnti = 1111;
   p.lcid = 222;
   p.pdcpSdu = Create<Packet> (m_pduSize);
+  
+  bool haveContext = false;
+  Ptr<Node> node;
+  if (m_device != 0)
+    {
+      node = m_device->GetNode ();
+      if (node != 0)
+        {                    
+          haveContext = true;
+        }
+    }
+  if (haveContext)
+    {
+      Simulator::ScheduleWithContext (node->GetId (), Seconds (0), &LtePdcpSapProvider::TransmitPdcpSdu, m_pdcpSapProvider, p);
+    }
+  else
+    {
+      Simulator::Schedule (Seconds (0), &LtePdcpSapProvider::TransmitPdcpSdu, m_pdcpSapProvider, p);
+    }
 
-  Simulator::ScheduleNow (&LtePdcpSapProvider::TransmitPdcpSdu, m_pdcpSapProvider, p);
   m_nextPdu = Simulator::Schedule (m_arrivalTime, &LteTestRrc::Start, this);
 //   Simulator::Run ();
 }
@@ -450,7 +474,25 @@ void
 LteTestMac::SendTxOpportunity (Time time, uint32_t bytes)
 {
   NS_LOG_FUNCTION (this << time << bytes);
-  Simulator::Schedule (time, &LteMacSapUser::NotifyTxOpportunity, m_macSapUser, bytes, 0, 0);
+  bool haveContext = false;
+  Ptr<Node> node;
+  if (m_device != 0)
+    {
+      node = m_device->GetNode ();
+      if (node != 0)
+        {                    
+          haveContext = true;
+        }
+    }
+  if (haveContext)
+    {
+      Simulator::ScheduleWithContext (node->GetId (), time, &LteMacSapUser::NotifyTxOpportunity, m_macSapUser, bytes, 0, 0);
+    }
+  else
+    {
+      Simulator::Schedule (time, &LteMacSapUser::NotifyTxOpportunity, m_macSapUser, bytes, 0, 0);
+    }
+    
   if (m_txOpportunityMode == RANDOM_MODE)
   {
     if (m_txOppTime != Seconds (0))
@@ -569,20 +611,25 @@ LteTestMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameter
 
   if (m_txOpportunityMode == AUTOMATIC_MODE)
     {
-      if (params.statusPduSize)
-        {
-          Simulator::Schedule (Seconds (0.1), &LteMacSapUser::NotifyTxOpportunity,
-                               m_macSapUser, params.statusPduSize + 2, 0, 0);
+      // cancel all previously scheduled TxOpps
+      for (std::list<EventId>::iterator it = m_nextTxOppList.begin ();
+           it != m_nextTxOppList.end ();
+           ++it)
+        {          
+          it->Cancel ();
         }
-      else if (params.txQueueSize)
+      m_nextTxOppList.clear ();
+
+      int32_t size = params.statusPduSize + params.txQueueSize  + params.retxQueueSize;
+      Time time = m_txOppTime;
+      while (size > 0)
         {
-          Simulator::Schedule (Seconds (0.1), &LteMacSapUser::NotifyTxOpportunity,
-                               m_macSapUser, params.txQueueSize + 2, 0, 0);
-        }
-      else if (params.retxQueueSize)
-        {
-          Simulator::Schedule (Seconds (0.1), &LteMacSapUser::NotifyTxOpportunity,
-                               m_macSapUser, params.retxQueueSize + 2, 0, 0);
+          EventId e = Simulator::Schedule (time, 
+                                           &LteMacSapUser::NotifyTxOpportunity,
+                                           m_macSapUser, m_txOppSize, 0, 0);
+          m_nextTxOppList.push_back (e);
+          size -= m_txOppSize;
+          time += m_txOppTime;
         }
     }
 }

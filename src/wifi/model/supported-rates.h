@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #ifndef SUPPORTED_RATES_H
 #define SUPPORTED_RATES_H
 
@@ -26,14 +27,6 @@
 #include "ns3/wifi-information-element.h"
 
 namespace ns3 {
-
-/**
- * This defines the maximum number of supported rates that a STA is
- * allowed to have. Currently this number is set for IEEE 802.11b/g and SISO IEE 802.11n
- * stations which need 2 rates each from Clauses 15 and 18, and then 8
- * from Clause 19.
- */
-#define MAX_SUPPORTED_RATES (32)
 
 class SupportedRates;
 
@@ -61,6 +54,8 @@ public:
    */
   ExtendedSupportedRatesIE (SupportedRates *rates);
 
+  void SetSupportedRates (SupportedRates *rates);
+
   WifiInformationElementId ElementId () const;
   uint8_t GetInformationFieldSize () const;
   void SerializeInformationField (Buffer::Iterator start) const;
@@ -74,15 +69,16 @@ public:
    * WifiInformationElement.
    *
    * \param start
+   *
    * \return an iterator
    */
   Buffer::Iterator Serialize (Buffer::Iterator start) const;
   /**
-   * Return the serialized size of this supported rates 
+   * Return the serialized size of this supported rates
    * information element.
-   * 
-   * \return the serialized size of this supported rates 
-   * information element
+   *
+   * \return the serialized size of this supported rates
+   *         information element
    */
   uint16_t GetSerializedSize () const;
 private:
@@ -110,6 +106,17 @@ class SupportedRates : public WifiInformationElement
 public:
   SupportedRates ();
 
+  SupportedRates (const SupportedRates &);
+  SupportedRates& operator= (const SupportedRates&);
+
+/**
+ * This defines the maximum number of supported rates that a STA is
+ * allowed to have. Currently this number is set for IEEE 802.11b/g and SISO IEE 802.11n
+ * stations which need 2 rates each from Clauses 15 and 18, and then 8
+ * from Clause 19.
+ */
+  static const uint8_t MAX_SUPPORTED_RATES = 32;
+
   /**
    * Add the given rate to the supported rates.
    *
@@ -127,6 +134,7 @@ public:
    * Check if the given rate is supported.
    *
    * \param bs the rate to be checked
+   *
    * \return true if the rate is supported, false otherwise
    */
   bool IsSupportedRate (uint32_t bs) const;
@@ -134,6 +142,7 @@ public:
    * Check if the given rate is a basic rate.
    *
    * \param bs the rate to be checked
+   *
    * \return true if the rate is a basic rate, false otherwise
    */
   bool IsBasicRate (uint32_t bs) const;
@@ -167,13 +176,15 @@ public:
    */
   friend class ExtendedSupportedRatesIE;
   ExtendedSupportedRatesIE extended;
+
+
 private:
-  uint8_t m_nRates;  //!< Number of supported rates
+  uint8_t m_nRates;                      //!< Number of supported rates
   uint8_t m_rates[MAX_SUPPORTED_RATES];  //!< List of supported bitrate (divided by 500000)
 };
 
 std::ostream &operator << (std::ostream &os, const SupportedRates &rates);
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* SUPPORTED_RATES_H */

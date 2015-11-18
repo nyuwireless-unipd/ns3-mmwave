@@ -28,9 +28,9 @@
 
 #define Min(a,b) ((a < b) ? a : b)
 
-NS_LOG_COMPONENT_DEFINE ("RraaWifiManager");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("RraaWifiManager");
 
 /**
  * \brief hold per-remote-station state for RRAA Wifi manager.
@@ -59,6 +59,7 @@ RraaWifiManager::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::RraaWifiManager")
     .SetParent<WifiRemoteStationManager> ()
+    .SetGroupName ("Wifi")
     .AddConstructor<RraaWifiManager> ()
     .AddAttribute ("Basic",
                    "If true the RRAA-BASIC algorithm will be used, otherwise the RRAA wil be used",
@@ -188,10 +189,10 @@ RraaWifiManager::GetTypeId (void)
 RraaWifiManager::RraaWifiManager ()
 {
 }
+
 RraaWifiManager::~RraaWifiManager ()
 {
 }
-
 
 WifiRemoteStation *
 RraaWifiManager::DoCreateStation (void) const
@@ -223,12 +224,12 @@ RraaWifiManager::GetMaxRate (RraaWifiRemoteStation *station)
 {
   return GetNSupported (station) - 1;
 }
+
 uint32_t
 RraaWifiManager::GetMinRate (RraaWifiRemoteStation *station)
 {
   return 0;
 }
-
 
 void
 RraaWifiManager::DoReportRtsFailed (WifiRemoteStation *st)
@@ -245,17 +246,20 @@ RraaWifiManager::DoReportDataFailed (WifiRemoteStation *st)
   station->m_failed++;
   RunBasicAlgorithm (station);
 }
+
 void
 RraaWifiManager::DoReportRxOk (WifiRemoteStation *st,
                                double rxSnr, WifiMode txMode)
 {
 }
+
 void
 RraaWifiManager::DoReportRtsOk (WifiRemoteStation *st,
                                 double ctsSnr, WifiMode ctsMode, double rtsSnr)
 {
   NS_LOG_DEBUG ("self=" << st << " rts ok");
 }
+
 void
 RraaWifiManager::DoReportDataOk (WifiRemoteStation *st,
                                  double ackSnr, WifiMode ackMode, double dataSnr)
@@ -266,10 +270,12 @@ RraaWifiManager::DoReportDataOk (WifiRemoteStation *st,
   station->m_counter--;
   RunBasicAlgorithm (station);
 }
+
 void
 RraaWifiManager::DoReportFinalRtsFailed (WifiRemoteStation *st)
 {
 }
+
 void
 RraaWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 {
@@ -277,19 +283,33 @@ RraaWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 
 WifiTxVector
 RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st,
-                                uint32_t size)
+                                    uint32_t size)
 {
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
+  uint32_t channelWidth = GetChannelWidth (station);
+  if (channelWidth > 20 && channelWidth != 22)
+    {
+      //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
+      channelWidth = 20;
+    }
   if (!station->m_initialized)
     {
       ResetCountersBasic (station);
     }
-  return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetShortGuardInterval (station), Min (GetNumberOfReceiveAntennas (station),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (station), GetStbc (station));
+  return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
 }
+
 WifiTxVector
 RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
-  return WifiTxVector (GetSupported (st, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (st), GetShortGuardInterval (st), Min (GetNumberOfReceiveAntennas (st),GetNumberOfTransmitAntennas()), GetNumberOfTransmitAntennas (st), GetStbc (st));
+  RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
+  uint32_t channelWidth = GetChannelWidth (station);
+  if (channelWidth > 20 && channelWidth != 22)
+    {
+      //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
+      channelWidth = 20;
+    }
+  return WifiTxVector (GetSupported (st, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (st), false, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 bool
@@ -368,13 +388,13 @@ RraaWifiManager::GetThresholds (RraaWifiRemoteStation *station,
                                 uint32_t rate) const
 {
   WifiMode mode = GetSupported (station, rate);
-  return GetThresholds (mode);
+  return GetThresholds (mode, station);
 }
 
 struct RraaWifiManager::ThresholdsItem
-RraaWifiManager::GetThresholds (WifiMode mode) const
+RraaWifiManager::GetThresholds (WifiMode mode, RraaWifiRemoteStation *station) const
 {
-  switch (mode.GetDataRate () / 1000000)
+  switch (mode.GetDataRate (GetChannelWidth (station), GetShortGuardInterval (station), 1) / 1000000)
     {
     case 54:
       {
@@ -467,4 +487,4 @@ RraaWifiManager::IsLowLatency (void) const
   return true;
 }
 
-} // namespace ns3
+} //namespace ns3

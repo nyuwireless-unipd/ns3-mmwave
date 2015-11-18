@@ -79,7 +79,12 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (10.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 
+<<<<<<< HEAD
 	RngSeedManager::SetSeed (1234);
+=======
+	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetHarqEnabled (true);

@@ -17,13 +17,13 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #ifndef YANS_WIFI_HELPER_H
 #define YANS_WIFI_HELPER_H
 
 #include "wifi-helper.h"
 #include "ns3/trace-helper.h"
 #include "ns3/yans-wifi-channel.h"
-#include "ns3/deprecated.h"
 
 namespace ns3 {
 
@@ -129,12 +129,13 @@ public:
   /**
   * Assign a fixed random variable stream number to the random variables
   * used by the channel.  Typically this corresponds to random variables
-  * used in the propagation loss models.  Return the number of streams 
-  * (possibly zero) that have been assigned. 
+  * used in the propagation loss models.  Return the number of streams
+  * (possibly zero) that have been assigned.
   *
-  * \param c NetDeviceContainer of the set of net devices for which the 
+  * \param c NetDeviceContainer of the set of net devices for which the
   *          WifiNetDevice should be modified to use fixed streams
   * \param stream first stream index to use
+  *
   * \return the number of stream indices assigned by this helper
   */
   int64_t AssignStreams (Ptr<YansWifiChannel> c, int64_t stream);
@@ -144,6 +145,7 @@ private:
   std::vector<ObjectFactory> m_propagationLoss;
   ObjectFactory m_propagationDelay;
 };
+
 
 /**
  * \brief Make it easy to create and manage PHY objects for the yans model.
@@ -244,6 +246,15 @@ public:
    */
   void SetPcapDataLinkType (enum SupportedPcapDataLinkTypes dlt);
 
+  /**
+   * Get the data link type of PCAP traces to be used.
+   *
+   * @see SupportedPcapDataLinkTypes
+   *
+   * @returns The data link type of the pcap file (and packets) to be used
+   */
+  uint32_t GetPcapDataLinkType (void) const;
+
 private:
   /**
    * \param node the node on which we wish to create a wifi PHY
@@ -252,7 +263,7 @@ private:
    *
    * This method implements the pure virtual method defined in \ref ns3::WifiPhyHelper.
    */
-  virtual Ptr<WifiPhy> Create (Ptr<Node> node, Ptr<WifiNetDevice> device) const;
+  virtual Ptr<WifiPhy> Create (Ptr<Node> node, Ptr<NetDevice> device) const;
 
   /**
    * @brief Enable pcap output the indicated net device.
@@ -272,7 +283,6 @@ private:
 
   /**
    * \brief Enable ascii trace output on the indicated net device.
-   * \internal
    *
    * NetDevice-specific implementation mechanism for hooking the trace and
    * writing to the trace file.
@@ -293,6 +303,6 @@ private:
   uint32_t m_pcapDlt;
 };
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* YANS_WIFI_HELPER_H */

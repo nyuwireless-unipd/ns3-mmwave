@@ -216,8 +216,7 @@ TestDeterministicByTime (Ptr<PropagationLossModel> model,
   return plot;
 }
 
-int main(int argc, char* argv[])
-
+int main (int argc, char *argv[])
 {
   GnuplotCollection gnuplots ("main-propagation-loss.pdf");
 

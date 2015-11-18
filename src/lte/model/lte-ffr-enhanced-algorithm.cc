@@ -28,9 +28,9 @@
 #include <ns3/double.h>
 #include <cfloat>
 
-NS_LOG_COMPONENT_DEFINE ("LteFfrEnhancedAlgorithm");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteFfrEnhancedAlgorithm");
 
 NS_OBJECT_ENSURE_REGISTERED (LteFfrEnhancedAlgorithm);
 
@@ -120,6 +120,7 @@ LteFfrEnhancedAlgorithm::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::LteFfrEnhancedAlgorithm")
     .SetParent<LteFfrAlgorithm> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteFfrEnhancedAlgorithm> ()
     .AddAttribute ("UlSubBandOffset",
                    "Uplink SubBand Offset for this cell in number of Resource Block Groups",

@@ -38,6 +38,10 @@ def register_types(module):
     module.add_class('ConstantVelocityHelper')
     ## event-id.h (module 'core'): ns3::EventId [class]
     module.add_class('EventId', import_from_module='ns.core')
+    ## geographic-positions.h (module 'mobility'): ns3::GeographicPositions [class]
+    module.add_class('GeographicPositions')
+    ## geographic-positions.h (module 'mobility'): ns3::GeographicPositions::EarthSpheroidType [enumeration]
+    module.add_enum('EarthSpheroidType', ['SPHERE', 'GRS80', 'WGS84'], outer_class=root_module['ns3::GeographicPositions'])
     ## hash.h (module 'core'): ns3::Hasher [class]
     module.add_class('Hasher', import_from_module='ns.core')
     ## ipv4-address.h (module 'network'): ns3::Ipv4Address [class]
@@ -268,6 +272,7 @@ def register_types(module):
     module.add_class('GaussMarkovMobilityModel', parent=root_module['ns3::MobilityModel'])
     ## hierarchical-mobility-model.h (module 'mobility'): ns3::HierarchicalMobilityModel [class]
     module.add_class('HierarchicalMobilityModel', parent=root_module['ns3::MobilityModel'])
+    module.add_container('std::list< ns3::Vector3D >', 'ns3::Vector3D', container_type=u'list')
     typehandlers.add_type_alias(u'ns3::Vector3D', u'ns3::Vector')
     typehandlers.add_type_alias(u'ns3::Vector3D*', u'ns3::Vector*')
     typehandlers.add_type_alias(u'ns3::Vector3D&', u'ns3::Vector&')
@@ -291,6 +296,12 @@ def register_types(module):
     
     nested_module = module.add_cpp_namespace('Hash')
     register_types_ns3_Hash(nested_module)
+    
+    
+    ## Register a nested module for the namespace TracedValueCallback
+    
+    nested_module = module.add_cpp_namespace('TracedValueCallback')
+    register_types_ns3_TracedValueCallback(nested_module)
     
 
 def register_types_ns3_FatalImpl(module):
@@ -327,6 +338,13 @@ def register_types_ns3_Hash_Function(module):
     ## hash-murmur3.h (module 'core'): ns3::Hash::Function::Murmur3 [class]
     module.add_class('Murmur3', import_from_module='ns.core', parent=root_module['ns3::Hash::Implementation'])
 
+def register_types_ns3_TracedValueCallback(module):
+    root_module = module.get_root()
+    
+    typehandlers.add_type_alias(u'void ( * ) ( ns3::Time, ns3::Time ) *', u'ns3::TracedValueCallback::Time')
+    typehandlers.add_type_alias(u'void ( * ) ( ns3::Time, ns3::Time ) **', u'ns3::TracedValueCallback::Time*')
+    typehandlers.add_type_alias(u'void ( * ) ( ns3::Time, ns3::Time ) *&', u'ns3::TracedValueCallback::Time&')
+
 def register_methods(root_module):
     register_Ns3Address_methods(root_module, root_module['ns3::Address'])
     register_Ns3AttributeConstructionList_methods(root_module, root_module['ns3::AttributeConstructionList'])
@@ -335,6 +353,7 @@ def register_methods(root_module):
     register_Ns3CallbackBase_methods(root_module, root_module['ns3::CallbackBase'])
     register_Ns3ConstantVelocityHelper_methods(root_module, root_module['ns3::ConstantVelocityHelper'])
     register_Ns3EventId_methods(root_module, root_module['ns3::EventId'])
+    register_Ns3GeographicPositions_methods(root_module, root_module['ns3::GeographicPositions'])
     register_Ns3Hasher_methods(root_module, root_module['ns3::Hasher'])
     register_Ns3Ipv4Address_methods(root_module, root_module['ns3::Ipv4Address'])
     register_Ns3Ipv4Mask_methods(root_module, root_module['ns3::Ipv4Mask'])
@@ -606,11 +625,6 @@ def register_Ns3CallbackBase_methods(root_module, cls):
     ## callback.h (module 'core'): ns3::CallbackBase::CallbackBase(ns3::Ptr<ns3::CallbackImplBase> impl) [constructor]
     cls.add_constructor([param('ns3::Ptr< ns3::CallbackImplBase >', 'impl')], 
                         visibility='protected')
-    ## callback.h (module 'core'): static std::string ns3::CallbackBase::Demangle(std::string const & mangled) [member function]
-    cls.add_method('Demangle', 
-                   'std::string', 
-                   [param('std::string const &', 'mangled')], 
-                   is_static=True, visibility='protected')
     return
 
 def register_Ns3ConstantVelocityHelper_methods(root_module, cls):
@@ -708,6 +722,23 @@ def register_Ns3EventId_methods(root_module, cls):
                    'ns3::EventImpl *', 
                    [], 
                    is_const=True)
+    return
+
+def register_Ns3GeographicPositions_methods(root_module, cls):
+    ## geographic-positions.h (module 'mobility'): ns3::GeographicPositions::GeographicPositions() [constructor]
+    cls.add_constructor([])
+    ## geographic-positions.h (module 'mobility'): ns3::GeographicPositions::GeographicPositions(ns3::GeographicPositions const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::GeographicPositions const &', 'arg0')])
+    ## geographic-positions.h (module 'mobility'): static ns3::Vector ns3::GeographicPositions::GeographicToCartesianCoordinates(double latitude, double longitude, double altitude, ns3::GeographicPositions::EarthSpheroidType sphType) [member function]
+    cls.add_method('GeographicToCartesianCoordinates', 
+                   'ns3::Vector', 
+                   [param('double', 'latitude'), param('double', 'longitude'), param('double', 'altitude'), param('ns3::GeographicPositions::EarthSpheroidType', 'sphType')], 
+                   is_static=True)
+    ## geographic-positions.h (module 'mobility'): static std::list<ns3::Vector3D,std::allocator<ns3::Vector3D> > ns3::GeographicPositions::RandCartesianPointsAroundGeographicPoint(double originLatitude, double originLongitude, double maxAltitude, int numPoints, double maxDistFromOrigin, ns3::Ptr<ns3::UniformRandomVariable> uniRand) [member function]
+    cls.add_method('RandCartesianPointsAroundGeographicPoint', 
+                   'std::list< ns3::Vector3D >', 
+                   [param('double', 'originLatitude'), param('double', 'originLongitude'), param('double', 'maxAltitude'), param('int', 'numPoints'), param('double', 'maxDistFromOrigin'), param('ns3::Ptr< ns3::UniformRandomVariable >', 'uniRand')], 
+                   is_static=True)
     return
 
 def register_Ns3Hasher_methods(root_module, cls):
@@ -1191,6 +1222,11 @@ def register_Ns3MobilityHelper_methods(root_module, cls):
                    'void', 
                    [param('ns3::Ptr< ns3::OutputStreamWrapper >', 'stream')], 
                    is_static=True)
+    ## mobility-helper.h (module 'mobility'): static double ns3::MobilityHelper::GetDistanceSquaredBetween(ns3::Ptr<ns3::Node> n1, ns3::Ptr<ns3::Node> n2) [member function]
+    cls.add_method('GetDistanceSquaredBetween', 
+                   'double', 
+                   [param('ns3::Ptr< ns3::Node >', 'n1'), param('ns3::Ptr< ns3::Node >', 'n2')], 
+                   is_static=True)
     ## mobility-helper.h (module 'mobility'): std::string ns3::MobilityHelper::GetMobilityModelType() const [member function]
     cls.add_method('GetMobilityModelType', 
                    'std::string', 
@@ -1327,10 +1363,10 @@ def register_Ns3ObjectBase_methods(root_module, cls):
                    'void', 
                    [param('std::string', 'name'), param('ns3::AttributeValue &', 'value')], 
                    is_const=True)
-    ## object-base.h (module 'core'): bool ns3::ObjectBase::GetAttributeFailSafe(std::string name, ns3::AttributeValue & attribute) const [member function]
+    ## object-base.h (module 'core'): bool ns3::ObjectBase::GetAttributeFailSafe(std::string name, ns3::AttributeValue & value) const [member function]
     cls.add_method('GetAttributeFailSafe', 
                    'bool', 
-                   [param('std::string', 'name'), param('ns3::AttributeValue &', 'attribute')], 
+                   [param('std::string', 'name'), param('ns3::AttributeValue &', 'value')], 
                    is_const=True)
     ## object-base.h (module 'core'): ns3::TypeId ns3::ObjectBase::GetInstanceTypeId() const [member function]
     cls.add_method('GetInstanceTypeId', 
@@ -1564,7 +1600,12 @@ def register_Ns3TypeId_methods(root_module, cls):
     ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddTraceSource(std::string name, std::string help, ns3::Ptr<ns3::TraceSourceAccessor const> accessor) [member function]
     cls.add_method('AddTraceSource', 
                    'ns3::TypeId', 
-                   [param('std::string', 'name'), param('std::string', 'help'), param('ns3::Ptr< ns3::TraceSourceAccessor const >', 'accessor')])
+                   [param('std::string', 'name'), param('std::string', 'help'), param('ns3::Ptr< ns3::TraceSourceAccessor const >', 'accessor')], 
+                   deprecated=True)
+    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddTraceSource(std::string name, std::string help, ns3::Ptr<ns3::TraceSourceAccessor const> accessor, std::string callback) [member function]
+    cls.add_method('AddTraceSource', 
+                   'ns3::TypeId', 
+                   [param('std::string', 'name'), param('std::string', 'help'), param('ns3::Ptr< ns3::TraceSourceAccessor const >', 'accessor'), param('std::string', 'callback')])
     ## type-id.h (module 'core'): ns3::TypeId::AttributeInformation ns3::TypeId::GetAttribute(uint32_t i) const [member function]
     cls.add_method('GetAttribute', 
                    'ns3::TypeId::AttributeInformation', 
@@ -1615,6 +1656,11 @@ def register_Ns3TypeId_methods(root_module, cls):
                    'uint32_t', 
                    [], 
                    is_static=True)
+    ## type-id.h (module 'core'): std::size_t ns3::TypeId::GetSize() const [member function]
+    cls.add_method('GetSize', 
+                   'std::size_t', 
+                   [], 
+                   is_const=True)
     ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation ns3::TypeId::GetTraceSource(uint32_t i) const [member function]
     cls.add_method('GetTraceSource', 
                    'ns3::TypeId::TraceSourceInformation', 
@@ -1691,6 +1737,10 @@ def register_Ns3TypeId_methods(root_module, cls):
     cls.add_method('SetParent', 
                    'ns3::TypeId', 
                    [param('ns3::TypeId', 'tid')])
+    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::SetSize(std::size_t size) [member function]
+    cls.add_method('SetSize', 
+                   'ns3::TypeId', 
+                   [param('std::size_t', 'size')])
     ## type-id.h (module 'core'): void ns3::TypeId::SetUid(uint16_t tid) [member function]
     cls.add_method('SetUid', 
                    'void', 
@@ -1725,6 +1775,8 @@ def register_Ns3TypeIdTraceSourceInformation_methods(root_module, cls):
     cls.add_constructor([param('ns3::TypeId::TraceSourceInformation const &', 'arg0')])
     ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation::accessor [variable]
     cls.add_instance_attribute('accessor', 'ns3::Ptr< ns3::TraceSourceAccessor const >', is_const=False)
+    ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation::callback [variable]
+    cls.add_instance_attribute('callback', 'std::string', is_const=False)
     ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation::help [variable]
     cls.add_instance_attribute('help', 'std::string', is_const=False)
     ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation::name [variable]
@@ -2815,11 +2867,21 @@ def register_Ns3CallbackImplBase_methods(root_module, cls):
     cls.add_constructor([])
     ## callback.h (module 'core'): ns3::CallbackImplBase::CallbackImplBase(ns3::CallbackImplBase const & arg0) [copy constructor]
     cls.add_constructor([param('ns3::CallbackImplBase const &', 'arg0')])
+    ## callback.h (module 'core'): std::string ns3::CallbackImplBase::GetTypeid() const [member function]
+    cls.add_method('GetTypeid', 
+                   'std::string', 
+                   [], 
+                   is_pure_virtual=True, is_const=True, is_virtual=True)
     ## callback.h (module 'core'): bool ns3::CallbackImplBase::IsEqual(ns3::Ptr<ns3::CallbackImplBase const> other) const [member function]
     cls.add_method('IsEqual', 
                    'bool', 
                    [param('ns3::Ptr< ns3::CallbackImplBase const >', 'other')], 
                    is_pure_virtual=True, is_const=True, is_virtual=True)
+    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::Demangle(std::string const & mangled) [member function]
+    cls.add_method('Demangle', 
+                   'std::string', 
+                   [param('std::string const &', 'mangled')], 
+                   is_static=True, visibility='protected')
     return
 
 def register_Ns3CallbackValue_methods(root_module, cls):
@@ -2929,10 +2991,10 @@ def register_Ns3EmpiricalRandomVariable_methods(root_module, cls):
                    'double', 
                    [], 
                    is_virtual=True)
-    ## random-variable-stream.h (module 'core'): double ns3::EmpiricalRandomVariable::Interpolate(double arg0, double arg1, double arg2, double arg3, double arg4) [member function]
+    ## random-variable-stream.h (module 'core'): double ns3::EmpiricalRandomVariable::Interpolate(double c1, double c2, double v1, double v2, double r) [member function]
     cls.add_method('Interpolate', 
                    'double', 
-                   [param('double', 'arg0'), param('double', 'arg1'), param('double', 'arg2'), param('double', 'arg3'), param('double', 'arg4')], 
+                   [param('double', 'c1'), param('double', 'c2'), param('double', 'v1'), param('double', 'v2'), param('double', 'r')], 
                    visibility='private', is_virtual=True)
     ## random-variable-stream.h (module 'core'): void ns3::EmpiricalRandomVariable::Validate() [member function]
     cls.add_method('Validate', 
@@ -4595,6 +4657,7 @@ def register_functions(root_module):
                         [])
     register_functions_ns3_FatalImpl(module.get_submodule('FatalImpl'), root_module)
     register_functions_ns3_Hash(module.get_submodule('Hash'), root_module)
+    register_functions_ns3_TracedValueCallback(module.get_submodule('TracedValueCallback'), root_module)
     return
 
 def register_functions_ns3_FatalImpl(module, root_module):
@@ -4605,6 +4668,9 @@ def register_functions_ns3_Hash(module, root_module):
     return
 
 def register_functions_ns3_Hash_Function(module, root_module):
+    return
+
+def register_functions_ns3_TracedValueCallback(module, root_module):
     return
 
 def main():

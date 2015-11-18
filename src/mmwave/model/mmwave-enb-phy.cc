@@ -228,7 +228,21 @@ MmWaveEnbPhy::StartSubFrame (void)
 {
 	NS_LOG_FUNCTION (this);
 
+<<<<<<< HEAD
 	m_lastSfStart = Simulator::Now();
+=======
+	++m_nrFrames;
+	if (m_nrFrames == 1024)
+	{
+		m_nrFrames = 0;
+	}
+
+	m_nrSlots = 0;
+	/*sending MIB at the beginning of each frame*/
+	LteRrcSap::MasterInformationBlock mib;
+	mib.dlBandwidth = (uint8_t)4;
+	mib.systemFrameNumber = 1;
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 
 	m_currSfAllocInfo = m_sfAllocInfo[m_sfNum];
 	m_currSfNumSlots = m_currSfAllocInfo.m_dlSlotAllocInfo.size () + m_currSfAllocInfo.m_ulSlotAllocInfo.size ();
@@ -392,6 +406,7 @@ MmWaveEnbPhy::StartSlot (void)
 			DciInfoElementTdma &dciElem = m_currSfAllocInfo.m_dlSlotAllocInfo[islot].m_dci;
 			if (dciElem.m_tbSize > 0)
 			{
+<<<<<<< HEAD
 				Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
 				dciMsg->SetDciInfoElement (dciElem);
 				dciMsg->SetSfnSf (sfn);
@@ -410,6 +425,88 @@ MmWaveEnbPhy::StartSlot (void)
 				dciMsg->SetSfnSf (sfn);
 				//dciMsgList.push_back (dciMsg);
 				ctrlMsgs.push_back (dciMsg);
+=======
+				// process DCI message
+				Ptr<MmWaveDciMessage> dci = DynamicCast<MmWaveDciMessage> (msg);
+				unsigned dciSfn = dci->GetSfnSf ();
+				if(dciSfn != sfn)
+				{
+					unsigned dciFrame = ((dciSfn >> 16) & 0x3FF);
+					unsigned dciSf = ((dciSfn >> 8) & 0xFF);
+					NS_FATAL_ERROR ("DCI intended for different subframe (dci= "<<dciFrame<<" "<<dciSf<<", actual= "<<m_nrFrames<<" "<<sfInd);
+				}
+
+				DciInfoElement dciInfo = dci->GetDciInfoElement ();
+
+		  	std::set <uint16_t>::iterator ueIt = m_ueAttachedRnti.find (dciInfo.m_rnti);
+				if (ueIt == m_ueAttachedRnti.end ())
+				{
+					NS_LOG_ERROR ("UE not attached");
+				}
+				else
+				{
+					for (std::vector<TbInfoElement>::const_iterator tbIt = dciInfo.m_tbInfoElements.begin(); tbIt != dciInfo.m_tbInfoElements.end(); tbIt++)
+					{
+						// loop through resource allocation info elements (can be multiple per DCI corresponding to TBs)
+						SlotAllocInfo* slotInfo; // get reference to slot information
+						SlotAllocInfo::TddMode slotMode;
+						if ( ((dciInfo.m_tddBitmap >> tbIt->m_slotInd) & 0x1) == 0 && (dciInfo.m_tbInfoElements.size () > 0))
+						{
+							slotMode = SlotAllocInfo::DL;
+						}
+						else
+						{
+							slotMode = SlotAllocInfo::UL;
+						}
+						if (slotMode == SlotAllocInfo::DL)
+						{
+							// Downlink TbInfoElement applies to current subframe
+							slotInfo = &(m_currSfAllocInfo.m_slotAllocInfo[tbIt->m_slotInd]); // DL res alloc info, applies to this subframe
+							if (m_currSfAllocInfo.m_tddPattern[tbIt->m_slotInd] == SlotAllocInfo::NA)
+							{
+								m_currSfAllocInfo.m_tddPattern[tbIt->m_slotInd] = SlotAllocInfo::DL;
+							}
+							else if (m_currSfAllocInfo.m_tddPattern[tbIt->m_slotInd] == SlotAllocInfo::UL)
+							{
+								NS_LOG_ERROR ("Slot already assigned in UL");
+							}
+
+							TbAllocInfo tbAllocInfo;
+							tbAllocInfo.m_rnti = dciInfo.m_rnti;
+							tbAllocInfo.m_tbInfo = *tbIt;
+							for (unsigned irbg = 0; irbg < m_numRbg; irbg++) // assumes res alloc type 0
+							{
+								if((tbIt->m_rbBitmap >> irbg) & 0x1)
+								{
+									tbAllocInfo.m_rbMap.push_back (irbg);
+								}
+							}
+							slotInfo->m_tbInfo.push_back (tbAllocInfo);
+							std::map<uint16_t, std::vector<unsigned> >::iterator ueRbIt = slotInfo->m_ueRbMap.find (dciInfo.m_rnti);
+							if (ueRbIt == slotInfo->m_ueRbMap.end ())
+							{
+								slotInfo->m_ueRbMap.insert (std::pair<uint16_t, std::vector<unsigned> > (dciInfo.m_rnti, tbAllocInfo.m_rbMap));
+							}
+							else
+							{
+								ueRbIt->second.insert(ueRbIt->second.end (), tbAllocInfo.m_rbMap.begin (), tbAllocInfo.m_rbMap.end ());
+							}
+						}
+						else if (slotMode == SlotAllocInfo::UL)
+						{
+							// Uplink TbInfoElement applies to n+3th subframe
+							TbAllocInfo tbAllocInfo;
+							tbAllocInfo.m_rnti = dciInfo.m_rnti;
+							tbAllocInfo.m_tbInfo = *tbIt;
+							for (unsigned irb = tbIt->m_rbStart; irb < (tbIt->m_rbStart + tbIt->m_rbLen); irb++) // assumes res alloc type 0
+							{
+								tbAllocInfo.m_rbMap.push_back (irb);
+							}
+							QueueUlTbAlloc (tbAllocInfo);
+						}
+					}
+				}
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 			}
 		}
 
@@ -463,7 +560,118 @@ MmWaveEnbPhy::StartSlot (void)
 		              << "\t start " << Simulator::Now() << " end " << Simulator::Now() + slotPeriod );
 	}
 
+<<<<<<< HEAD
   m_prevSlotDir = currSlot.m_tddMode;
+=======
+	// transmit or receive slot data
+  SlotAllocInfo::TddMode slotDir = m_currSfAllocInfo.m_tddPattern[slotInd-1];
+  SlotAllocInfo& slotInfo = m_currSfAllocInfo.m_slotAllocInfo[slotInd-1];
+  // if no scheduling decision available, slotDir will be 'NA', so we assume a default schedule with odd slots being DL and even UL
+  if (slotDir == SlotAllocInfo::DL || slotInd == 1) // Downlink slot
+  {
+  	if (slotInfo.m_slotType == SlotAllocInfo::CTRL_DATA || slotInfo.m_slotType == SlotAllocInfo::DATA)
+  	{
+  		if(slotInfo.m_slotType == SlotAllocInfo::CTRL_DATA)
+  		{
+  			NS_LOG_DEBUG ("Slot " << slotInd << " scheduled for Downlink Ctrl+Data");
+  		}
+  		else
+  		{
+  			NS_LOG_DEBUG ("Slot " << slotInd << " scheduled for Downlink Data");
+  		}
+
+  		Time ctrlPeriod;
+  		Time guardPeriod;
+  		Time dataPeriod;
+
+  		if(slotInfo.m_slotType == SlotAllocInfo::CTRL_DATA)
+  		{
+  			// the -1 ns ensures control period ends before data period and events do not overlap
+  			ctrlPeriod = NanoSeconds (1000 * slotInfo.m_numCtrlSym * m_phyMacConfig->GetSymbolPeriod ());
+  			dataPeriod = NanoSeconds (1000 * ( m_phyMacConfig->GetSymbPerSlot() - slotInfo.m_numCtrlSym) * \
+  			                           m_phyMacConfig->GetSymbolPeriod ());
+  			NS_LOG_DEBUG ("ENB TXing CTRL period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
+  			              " start " << Simulator::Now() << " end " << Simulator::Now() + ctrlPeriod-NanoSeconds(1.0));
+    		SendCtrlChannels(ctrlMsg, ctrlPeriod-NanoSeconds(1.0));
+  		}
+  		else
+  		{
+    		if (slotDir == SlotAllocInfo::DL && m_prevSlotDir == SlotAllocInfo::UL)  // if curr slot == DL and prev slot == UL
+    		{
+//    			guardPeriod = NanoSeconds (1000 * m_phyMacConfig->GetGuardPeriod ());
+    			guardPeriod = Seconds (0.0);
+    			dataPeriod = NanoSeconds (1000 * m_phyMacConfig->GetSymbPerSlot() * m_phyMacConfig->GetSymbolPeriod ()) - \
+    					guardPeriod;
+    		}
+    		else
+    		{
+    			guardPeriod = Seconds (0.0);
+    			dataPeriod = NanoSeconds (1000 * m_phyMacConfig->GetSymbPerSlot() * m_phyMacConfig->GetSymbolPeriod ());
+    		}
+  		}
+
+  		for (unsigned itb = 0; itb < slotInfo.m_tbInfo.size (); itb++)	// for loop is for debugging only
+  		{
+  			TbAllocInfo tbAllocInfo = slotInfo.m_tbInfo[itb];
+  			TbInfoElement tbInfoElem = tbAllocInfo.m_tbInfo;
+  			NS_LOG_DEBUG ("UE " << tbAllocInfo.m_rnti << " TBS " << (int)tbInfoElem.m_tbSize << " MCS " << (int)tbInfoElem.m_mcs << " RBs " << tbAllocInfo.m_rbMap.front () << "-" <<  tbAllocInfo.m_rbMap.back ());
+  		}
+
+  		Ptr<PacketBurst> pktBurst = GetPacketBurst (sfInd, slotInd);
+  		if(pktBurst)
+  		{
+  			std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
+  			if (!pkts.empty ())
+  			{
+  				MmWaveMacPduTag macTag;
+  				pkts.front ()->PeekPacketTag (macTag);
+  				NS_ASSERT ((macTag.GetSubframeNum() == sfInd) && (macTag.GetSlotNum() == slotInd));
+  			}
+  		}
+			NS_LOG_DEBUG ("ENB TXing DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
+			              " start " << Simulator::Now()+ctrlPeriod+NanoSeconds(1.0) << " end " << Simulator::Now() + ctrlPeriod + dataPeriod-NanoSeconds (2.0));
+  		Simulator::Schedule (ctrlPeriod, &MmWaveEnbPhy::SendDataChannels, this, pktBurst, dataPeriod-NanoSeconds (2.0), slotInfo);
+
+  	}
+  }
+  else if (slotDir == SlotAllocInfo::UL || slotInd == 2)  // Uplink slot
+  {
+		NS_LOG_DEBUG ("Slot scheduled " << slotInd << "  for Uplink Data");
+  	for (unsigned itb = 0; itb < slotInfo.m_tbInfo.size (); itb++)
+  	{
+  		TbAllocInfo tbAllocInfo = slotInfo.m_tbInfo[itb];
+  		TbInfoElement tbInfoElem = tbAllocInfo.m_tbInfo;
+  		NS_LOG_DEBUG ("UE " << tbAllocInfo.m_rnti << " TBS " << tbInfoElem.m_tbSize << " MCS " << (int)tbInfoElem.m_mcs << \
+  		              " RBs " << tbAllocInfo.m_rbMap.front () << "-" <<  tbAllocInfo.m_rbMap.back ());
+  		std::vector<int> bwChunkMap;
+  		for(unsigned irb = tbAllocInfo.m_tbInfo.m_rbStart; irb < (tbAllocInfo.m_tbInfo.m_rbStart + tbAllocInfo.m_tbInfo.m_rbLen); irb++)
+  		{
+  			for(unsigned ichunk = 0; ichunk < m_phyMacConfig->GetNumChunkPerRb (); ichunk++)
+  			{
+  				bwChunkMap.push_back (ichunk + irb * m_phyMacConfig->GetNumChunkPerRb ());
+  			}
+  		}
+  		m_downlinkSpectrumPhy->AddExpectedTb(tbAllocInfo.m_rnti, tbInfoElem.m_tbSize, tbInfoElem.m_mcs, bwChunkMap, true);
+  	}
+  	if (slotInd == 2)
+  	{
+  		NS_LOG_DEBUG ("ENB RXing CTRL+DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
+  		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
+  	}
+  	else
+  	{
+  		NS_LOG_DEBUG ("ENB RXing DATA period frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
+  		              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
+  	}
+  }
+  else
+  {
+  	NS_LOG_DEBUG ("ENB no allocation frame " << m_nrFrames << " subframe " << sfInd << " slot " << slotInd << \
+  			              " start " << Simulator::Now() << " end " << Simulator::Now() + Seconds(GetTti()) );
+  }
+
+  m_prevSlotDir = slotDir;
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 
 	m_phySapUser->SubframeIndication (SfnSf (m_frameNum, m_sfNum, m_slotNum));  // trigger MAC
 

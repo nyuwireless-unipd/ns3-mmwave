@@ -32,7 +32,6 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("OmnetDataOutput");
 
-
 //--------------------------------------------------------------
 //----------------------------------------------
 OmnetDataOutput::OmnetDataOutput()
@@ -45,6 +44,18 @@ OmnetDataOutput::~OmnetDataOutput()
 {
   NS_LOG_FUNCTION (this);
 }
+/* static */
+TypeId
+OmnetDataOutput::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::OmnetDataOutput")
+    .SetParent<DataOutputInterface> ()
+    .SetGroupName ("Stats")
+    .AddConstructor<OmnetDataOutput> ()
+    ;
+  return tid;
+}
+  
 void
 OmnetDataOutput::DoDispose ()
 {

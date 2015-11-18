@@ -24,7 +24,6 @@
 
 #include <ns3/object.h>
 #include <ns3/angles.h>
-#include <complex>
 
 namespace ns3 {
 

@@ -23,9 +23,9 @@
 #include "ipv4-address.h"
 #include "ns3/assert.h"
 
-NS_LOG_COMPONENT_DEFINE ("Ipv4Address");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Ipv4Address");
 
 #define ASCII_DOT (0x2e)
 #define ASCII_ZERO (0x30)
@@ -422,7 +422,7 @@ bool operator != (Ipv4Mask const &a, Ipv4Mask const &b)
   return !a.IsEqual (b);
 }
 
-ATTRIBUTE_HELPER_CPP (Ipv4Address); //!< Macro to make help make class an ns-3 attribute
-ATTRIBUTE_HELPER_CPP (Ipv4Mask);    //!< Macro to make help make class an ns-3 attribute
+ATTRIBUTE_HELPER_CPP (Ipv4Address);
+ATTRIBUTE_HELPER_CPP (Ipv4Mask);
 
 } // namespace ns3

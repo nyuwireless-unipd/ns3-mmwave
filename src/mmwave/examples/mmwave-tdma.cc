@@ -37,6 +37,7 @@ main (int argc, char *argv[])
    * 	Time (micro-sec)  |  Tb-size in bytes
    * */
 
+<<<<<<< HEAD
 //	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
@@ -95,6 +96,32 @@ main (int argc, char *argv[])
 
   mmwHelper->Initialize();
   mmwHelper->SetHarqEnabled (harqEnabled);
+=======
+
+  uint16_t numEnb = 1;
+  uint16_t numUe = 20;
+
+  double simTime = 0.06;
+  double interPacketInterval = 10;
+
+  // Command line arguments
+  CommandLine cmd;
+  cmd.AddValue("numEnb", "Number of eNBs", numEnb);
+  cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
+  cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
+  cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
+  cmd.Parse(argc, argv);
+
+  Config::SetDefault ("ns3::MmWaveRrMacScheduler::HarqEnabled", BooleanValue (false));
+  Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
+  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
+
+  Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
+
+  ptr_mmWave->Initialize();
+
+  ptr_mmWave->SetHarqEnabled (false);
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 
   /* A configuration example.
    * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
@@ -115,9 +142,15 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
+<<<<<<< HEAD
   uePositionAlloc->Add (Vector (distMin, 0.0, 0.0));
 
   Simulator::Schedule (MilliSeconds(distUpdateInterval), &updateDistance, distMin+distInc, ueNodes.Get (0));
+=======
+  uePositionAlloc->Add (Vector (0.0, 0.0, 0.0));
+  //uePositionAlloc->Add (Vector (500.0, 0.0, 0.0));
+
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
@@ -127,8 +160,13 @@ main (int argc, char *argv[])
   NetDeviceContainer enbNetDev = mmwHelper->InstallEnbDevice (enbNodes);
   NetDeviceContainer ueNetDev = mmwHelper->InstallUeDevice (ueNodes);
 
+<<<<<<< HEAD
   mmwHelper->AttachToClosestEnb (ueNetDev, enbNetDev);
   mmwHelper->EnableTraces();
+=======
+  ptr_mmWave->AttachToClosestEnb (ueNetDev, enbNetDev);
+  ptr_mmWave->EnableTraces();
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 
   // Activate a data radio bearer
   enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;

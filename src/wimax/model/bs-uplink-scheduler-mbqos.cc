@@ -29,9 +29,9 @@
 #include "bandwidth-manager.h"
 #include "connection-manager.h"
 
-NS_LOG_COMPONENT_DEFINE ("UplinkSchedulerMBQoS");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UplinkSchedulerMBQoS");
 
 NS_OBJECT_ENSURE_REGISTERED (UplinkSchedulerMBQoS);
 
@@ -57,6 +57,8 @@ UplinkSchedulerMBQoS::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::UplinkSchedulerMBQoS")
 
     .SetParent<UplinkScheduler> ()
+
+    .SetGroupName("Wimax")
 
     .AddAttribute ("WindowInterval",
                    "The time to wait to reset window",

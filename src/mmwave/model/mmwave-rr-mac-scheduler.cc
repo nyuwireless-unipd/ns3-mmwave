@@ -1079,7 +1079,11 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 	uint32_t numRb = m_phyMacConfig->GetNumRb ();
 	rbMap.resize (numRb);
 	rbgAllocationMap.resize (numRb);
+<<<<<<< HEAD
 	std::map<uint16_t,SchedInfo>& schedInfoMap = ret.m_schedInfoMap;
+=======
+	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 	uint32_t sfn =  ((0x3FF & frameNum) << 16) | ((0xFF & sfNum) << 8) | (0xFF & (slotNum+1));
 
 
@@ -1268,7 +1272,11 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 			schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfo> ((*it).first, newSchedInfo))).first;
 		}
 
+<<<<<<< HEAD
 		SchedInfo& schedInfo = schedIt->second;
+=======
+		SchedInfoElement& schedInfo = schedIt->second;
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 		TbInfoElement newTbInfoElem;
 		newTbInfoElem.m_resAlloc = 0;
 		newTbInfoElem.m_rbLen = rbPerFlow;
@@ -1385,7 +1393,11 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 		newTbInfoElem.m_ndi = 1;
 		schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << slotNum)); // set bit for UL
 		newTbInfoElem.m_harqProcess = UpdateUlHarqProcessId (rnti);
+<<<<<<< HEAD
 		//schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+=======
+		schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 		schedInfo.m_dci.m_tbInfoElements.push_back (newTbInfoElem);
 		success = true;
 
@@ -1465,6 +1477,18 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 		ulFrameNum = frameNum;
 	}
 
+	unsigned ulFrameNum;
+	unsigned ulSfNum = sfNum + m_phyMacConfig->GetUlSchedDelay () - 1;
+	if (ulSfNum > 10)
+	{
+		ulFrameNum = frameNum + 1;
+		ulSfNum = ulSfNum - 10;
+	}
+	else
+	{
+		ulFrameNum = frameNum;
+	}
+
 	RefreshDlCqiMaps ();
 	RefreshUlCqiMaps ();
 
@@ -1487,7 +1511,11 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 				//DoSchedDlTriggerReq (params, ret, frameNum, sfNum, slotNum)
 			}
 
+<<<<<<< HEAD
 //			std::map<uint16_t, SchedInfo>::const_iterator it = ret.m_schedInfoMap.begin ();
+=======
+//			std::map<uint16_t, SchedInfoElement>::const_iterator it = ret.m_schedInfoMap.begin ();
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 //			for (; it != ret.m_schedInfoMap.end (); it++)
 //			{
 //				std::cout << "RrScheduler: UL TBs for rnti " << it->second.m_dci.m_rnti << " frame " << ulFrameNum << " subframe " << (unsigned)ulSfNum << " slotNum " << (unsigned)slotNum;

@@ -42,9 +42,9 @@
 #include "ns3/sequence-number.h"
 #include "rtt-estimator.h"
 
-NS_LOG_COMPONENT_DEFINE("TcpWestwood");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE("TcpWestwood");
 
 NS_OBJECT_ENSURE_REGISTERED(TcpWestwood);
 
@@ -53,12 +53,8 @@ TcpWestwood::GetTypeId (void)
 {
   static TypeId tid = TypeId("ns3::TcpWestwood")
       .SetParent<TcpSocketBase>()
+      .SetGroupName ("Internet")
       .AddConstructor<TcpWestwood>()
-      .AddTraceSource("CongestionWindow", "The TCP connection's congestion window",
-                      MakeTraceSourceAccessor(&TcpWestwood::m_cWnd))
-      .AddTraceSource ("SlowStartThreshold",
-                       "TCP slow start threshold (bytes)",
-                       MakeTraceSourceAccessor (&TcpWestwood::m_ssThresh))
       .AddAttribute("FilterType", "Use this to choose no filter or Tustin's approximation filter",
                     EnumValue(TcpWestwood::TUSTIN), MakeEnumAccessor(&TcpWestwood::m_fType),
                     MakeEnumChecker(TcpWestwood::NONE, "None", TcpWestwood::TUSTIN, "Tustin"))
@@ -67,7 +63,8 @@ TcpWestwood::GetTypeId (void)
                     MakeEnumAccessor(&TcpWestwood::m_pType),
                     MakeEnumChecker(TcpWestwood::WESTWOOD, "Westwood",TcpWestwood::WESTWOODPLUS, "WestwoodPlus"))
       .AddTraceSource("EstimatedBW", "The estimated bandwidth",
-                    MakeTraceSourceAccessor(&TcpWestwood::m_currentBW));
+                    MakeTraceSourceAccessor(&TcpWestwood::m_currentBW),
+                      "ns3::TracedValueCallback::Double");
   return tid;
 }
 
@@ -88,10 +85,6 @@ TcpWestwood::TcpWestwood (void) :
 
 TcpWestwood::TcpWestwood (const TcpWestwood& sock) :
   TcpSocketBase(sock),
-  m_cWnd(sock.m_cWnd),
-  m_ssThresh(sock.m_ssThresh),
-  m_initialCWnd(sock.m_initialCWnd),
-  m_initialSsThresh (sock.m_initialSsThresh),
   m_inFastRec(false),
   m_currentBW(sock.m_currentBW),
   m_lastSampleBW(sock.m_lastSampleBW),
@@ -111,29 +104,6 @@ TcpWestwood::TcpWestwood (const TcpWestwood& sock) :
 
 TcpWestwood::~TcpWestwood (void)
 {
-}
-
-int
-TcpWestwood::Listen (void)
-{
-  NS_LOG_FUNCTION (this);
-  InitializeCwnd();
-  return TcpSocketBase::Listen();
-}
-
-int
-TcpWestwood::Connect (const Address & address)
-{
-  NS_LOG_FUNCTION (this << address);
-  InitializeCwnd();
-  return TcpSocketBase::Connect(address);
-}
-
-uint32_t
-TcpWestwood::Window (void)
-{
-  NS_LOG_FUNCTION (this);
-  return std::min (m_rWnd.Get (), m_cWnd.Get ());
 }
 
 Ptr<TcpSocketBase>
@@ -289,7 +259,10 @@ TcpWestwood::DupAck (const TcpHeader& header, uint32_t count)
     {// Increase cwnd for every additional DUPACK as in Reno
       m_cWnd += m_segmentSize;
       NS_LOG_INFO ("Dupack in fast recovery mode. Increase cwnd to " << m_cWnd);
-      SendPendingData (m_connected);
+      if (!m_sendPendingDataEvent.IsRunning ())
+        {
+          SendPendingData (m_connected);
+        }
     }
 }
 
@@ -304,23 +277,20 @@ TcpWestwood::Retransmit (void)
   if (m_state == CLOSED || m_state == TIME_WAIT)
     return;
   // If all data are received, just return
-  if (m_txBuffer.HeadSequence() >= m_nextTxSequence)
+  if (m_txBuffer->HeadSequence () >= m_nextTxSequence)
     return;
 
   // Upon an RTO, adjust cwnd and ssthresh based on the estimated BW
-  m_ssThresh = std::max (static_cast<double> (2 * m_segmentSize), m_currentBW.Get() * static_cast<double> (m_minRtt.GetSeconds()));
+  m_ssThresh = std::max (static_cast<double> (2 * m_segmentSize), m_currentBW.Get () * static_cast<double> (m_minRtt.GetSeconds ()));
   m_cWnd = m_segmentSize;
 
   // Restart from highest ACK
-  m_nextTxSequence = m_txBuffer.HeadSequence();
+  m_nextTxSequence = m_txBuffer->HeadSequence ();
   NS_LOG_INFO ("RTO. Reset cwnd to " << m_cWnd <<
       ", ssthresh to " << m_ssThresh << ", restart from seqnum " << m_nextTxSequence);
 
-  // Double the next RTO
-  m_rtt->IncreaseMultiplier();
-
   // Retransmit the packet
-  DoRetransmit();
+  DoRetransmit ();
 }
 
 void
@@ -374,55 +344,6 @@ TcpWestwood::Filtering ()
       m_lastSampleBW = sample_bwe;
       m_lastBW = m_currentBW;
     }
-}
-
-void
-TcpWestwood::SetSegSize (uint32_t size)
-{
-  NS_ABORT_MSG_UNLESS(m_state == CLOSED, "TcpWestwood::SetSegSize() cannot change segment size after connection started.");
-  m_segmentSize = size;
-}
-
-void
-TcpWestwood::SetInitialSSThresh (uint32_t threshold)
-{
-  NS_LOG_FUNCTION (this);
-  NS_ABORT_MSG_UNLESS (m_state == CLOSED, "TcpWestwood::SetSSThresh() cannot change initial ssThresh after connection started.");
-  m_initialSsThresh = threshold;
-}
-
-uint32_t
-TcpWestwood::GetInitialSSThresh (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_initialSsThresh;
-}
-
-void
-TcpWestwood::SetInitialCwnd (uint32_t cwnd)
-{
-  NS_ABORT_MSG_UNLESS(m_state == CLOSED, "TcpWestwood::SetInitialCwnd() cannot change initial cwnd after connection started.");
-  m_initialCWnd = cwnd;
-}
-
-uint32_t
-TcpWestwood::GetInitialCwnd (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_initialCWnd;
-}
-
-void
-TcpWestwood::InitializeCwnd(void)
-{
-  NS_LOG_FUNCTION (this);
-  /*
-   * Initialize congestion window, default to 1 MSS (RFC2001, sec.1) and must
-   * not be larger than 2 MSS (RFC2581, sec.3.1). Both m_initiaCWnd and
-   * m_segmentSize are set by the attribute system in ns3::TcpSocket.
-   */
-  m_cWnd = m_initialCWnd * m_segmentSize;
-  m_ssThresh = m_initialSsThresh;
 }
 
 } // namespace ns3

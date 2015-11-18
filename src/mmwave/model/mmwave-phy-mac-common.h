@@ -47,8 +47,13 @@ struct SfnSf
 	}
 
 	uint16_t m_frameNum;
+<<<<<<< HEAD
 	uint8_t m_sfNum;
 	uint8_t m_slotNum;			 // also used for symbol start index in some cases
+=======
+	uint16_t m_subframeNum;
+	uint16_t m_slotNum;
+>>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 };
 
 /* Equivalent to the DCI in LTE*/

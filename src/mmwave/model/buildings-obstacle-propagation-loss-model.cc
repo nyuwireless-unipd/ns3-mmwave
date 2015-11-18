@@ -34,7 +34,7 @@ BuildingsObstaclePropagationLossModel::GetTypeId (void)
 		.SetParent<BuildingsPropagationLossModel> ()
 		.AddConstructor<BuildingsObstaclePropagationLossModel> ()
 		.AddAttribute ("Frequency",
-					   "The Frequency  (default is 2.106 GHz).",
+					   "The Frequency  (default is 28 GHz).",
 					   DoubleValue (28e9),
 					   MakeDoubleAccessor (&BuildingsObstaclePropagationLossModel::SetFrequency),
 					   MakeDoubleChecker<double> ())

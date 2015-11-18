@@ -40,9 +40,9 @@
 #include "ipv6-l3-protocol.h"
 #include "udp-socket-impl.h"
 
-NS_LOG_COMPONENT_DEFINE ("UdpL4Protocol");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UdpL4Protocol");
 
 NS_OBJECT_ENSURE_REGISTERED (UdpL4Protocol);
 
@@ -54,6 +54,7 @@ UdpL4Protocol::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UdpL4Protocol")
     .SetParent<IpL4Protocol> ()
+    .SetGroupName ("Internet")
     .AddConstructor<UdpL4Protocol> ()
     .AddAttribute ("SocketList", "The list of sockets associated to this protocol.",
                    ObjectVectorValue (),
@@ -119,7 +120,7 @@ UdpL4Protocol::NotifyNewAggregate ()
       ipv6->Insert (this);
       this->SetDownTarget6 (MakeCallback (&Ipv6L3Protocol::Send, ipv6));
     }
-  Object::NotifyNewAggregate ();
+  IpL4Protocol::NotifyNewAggregate ();
 }
 
 int 

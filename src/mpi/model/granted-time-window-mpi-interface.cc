@@ -44,7 +44,6 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("GrantedTimeWindowMpiInterface");
 
-
 SentBuffer::SentBuffer ()
 {
   m_buffer = 0;
@@ -94,6 +93,7 @@ GrantedTimeWindowMpiInterface::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::GrantedTimeWindowMpiInterface")
     .SetParent<Object> ()
+    .SetGroupName ("Mpi")
   ;
   return tid;
 }

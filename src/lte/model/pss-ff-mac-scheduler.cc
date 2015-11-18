@@ -34,9 +34,9 @@
 #include <algorithm>
 
 
-NS_LOG_COMPONENT_DEFINE ("PssFfMacScheduler");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("PssFfMacScheduler");
 
 static const int PssType0AllocationRbg[4] = {
   10,       // RGB size 1
@@ -255,6 +255,7 @@ PssFfMacScheduler::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PssFfMacScheduler")
     .SetParent<FfMacScheduler> ()
+    .SetGroupName("Lte")
     .AddConstructor<PssFfMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
@@ -1298,13 +1299,14 @@ PssFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
                 {
                   if (rbgMap.at (i) == true)
                     continue;
-                  if ((m_ffrSapProvider->IsDlRbgAvailableForUe (i, (*it).first)) == false)
-                    continue;
 
                   std::map <uint16_t, pssFlowPerf_t>::iterator itMax = tdUeSet.end ();
                   double metricMax = 0.0;
                   for (it = tdUeSet.begin (); it != tdUeSet.end (); it++)
                     {
+                      if ((m_ffrSapProvider->IsDlRbgAvailableForUe (i, (*it).first)) == false)
+                        continue;
+
                       // calculate PF weigth 
                       double weight = (*it).second.targetThroughput / (*it).second.lastAveragedThroughput;
                       if (weight < 1.0)
@@ -1373,11 +1375,10 @@ PssFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
                           itMax = it;
                         }
                     } // end of tdUeSet
-        
-                  if (itMax == m_flowStatsDl.end ())
+
+                  if (itMax == tdUeSet.end ())
                     {
-                      // no UE available for downlink 
-                      return;
+                      // no UE available for downlink
                     }
                   else
                     {
@@ -1397,13 +1398,12 @@ PssFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
                   if (rbgMap.at (i) == true)
                     continue;
 
-                  if ((m_ffrSapProvider->IsDlRbgAvailableForUe (i, (*it).first)) == false)
-                    continue;
-        
                   std::map <uint16_t, pssFlowPerf_t>::iterator itMax = tdUeSet.end ();
                   double metricMax = 0.0;
                   for (it = tdUeSet.begin (); it != tdUeSet.end (); it++)
                     {
+                      if ((m_ffrSapProvider->IsDlRbgAvailableForUe (i, (*it).first)) == false)
+                        continue;
                       // calculate PF weigth 
                       double weight = (*it).second.targetThroughput / (*it).second.lastAveragedThroughput;
                       if (weight < 1.0)
@@ -1468,11 +1468,10 @@ PssFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
                           itMax = it;
                         }
                     } // end of tdUeSet
-         
-                  if (itMax == m_flowStatsDl.end ())
+
+                  if (itMax == tdUeSet.end ())
                     {
                       // no UE available for downlink 
-                      return;
                     }
                   else
                     {
@@ -1722,7 +1721,7 @@ PssFfMacScheduler::DoSchedDlCqiInfoReq (const struct FfMacSchedSapProvider::Sche
     {
       if ( params.m_cqiList.at (i).m_cqiType == CqiListElement_s::P10 )
         {
-          // wideband CQI reporting
+          NS_LOG_LOGIC ("wideband CQI " <<  (uint32_t) params.m_cqiList.at (i).m_wbCqi.at (0) << " reported");
           std::map <uint16_t,uint8_t>::iterator it;
           uint16_t rnti = params.m_cqiList.at (i).m_rnti;
           it = m_p10CqiRxed.find (rnti);

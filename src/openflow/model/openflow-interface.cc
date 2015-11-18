@@ -22,9 +22,9 @@
 
 namespace ns3 {
 
-namespace ofi {
-
 NS_LOG_COMPONENT_DEFINE ("OpenFlowInterface");
+
+namespace ofi {
 
 Stats::Stats (ofp_stats_types _type, size_t body_len)
 {
@@ -650,6 +650,23 @@ EricssonAction::Execute (er_action_type type, ofpbuf *buffer, const sw_flow_key 
     }
 }
 
+/* static */
+TypeId
+Controller::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::ofi::Controller")
+    .SetParent<Object> ()
+    .SetGroupName ("OpenFlow")
+    .AddConstructor<Controller> ()
+    ;
+  return tid;
+}
+
+Controller::~Controller ()
+{
+  m_switches.clear ();
+}
+
 void
 Controller::AddSwitch (Ptr<OpenFlowSwitchNetDevice> swtch)
 {
@@ -736,6 +753,18 @@ Controller::StartDump (StatsDumpCallback* cb)
     }
 }
 
+/* static */
+TypeId
+DropController::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::ofi::DropController")
+    .SetParent<Controller> ()
+    .SetGroupName ("OpenFlow")
+    .AddConstructor<DropController> ()
+    ;
+  return tid;
+}
+
 void
 DropController::ReceiveFromSwitch (Ptr<OpenFlowSwitchNetDevice> swtch, ofpbuf* buffer)
 {
@@ -766,7 +795,8 @@ DropController::ReceiveFromSwitch (Ptr<OpenFlowSwitchNetDevice> swtch, ofpbuf* b
 TypeId LearningController::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ofi::LearningController")
-    .SetParent (Controller::GetTypeId ())
+    .SetParent <Controller> ()
+    .SetGroupName ("Openflow")
     .AddConstructor<LearningController> ()
     .AddAttribute ("ExpirationTime",
                    "Time it takes for learned MAC state entry/created flow to expire.",

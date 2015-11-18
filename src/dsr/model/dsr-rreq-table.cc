@@ -34,9 +34,10 @@
 #include <algorithm>
 #include <iostream>
 
-NS_LOG_COMPONENT_DEFINE ("RreqTable");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("RreqTable");
+  
 namespace dsr {
 
 NS_OBJECT_ENSURE_REGISTERED (RreqTable);
@@ -45,6 +46,7 @@ TypeId RreqTable::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::dsr::RreqTable")
     .SetParent<Object> ()
+    .SetGroupName ("Dsr")
     .AddConstructor<RreqTable> ()
   ;
   return tid;

@@ -126,7 +126,7 @@ public:
   virtual bool IsStateTx (void);
   virtual bool IsStateCcaBusy (void);
   virtual Ptr<UanChannel> GetChannel (void) const;
-  virtual Ptr<UanNetDevice> GetDevice (void);
+  virtual Ptr<UanNetDevice> GetDevice (void) const;
   virtual void SetChannel (Ptr<UanChannel> channel);
   virtual void SetDevice (Ptr<UanNetDevice> device);
   virtual void SetMac (Ptr<UanMac> mac);
@@ -254,11 +254,11 @@ private:
   Ptr<UanPhy> m_phy2;
 
   /** A packet was received successfully. */
-  TracedCallback<Ptr<const Packet>, double, UanTxMode > m_rxOkLogger;
+  ns3::TracedCallback<Ptr<const Packet>, double, UanTxMode > m_rxOkLogger;
   /** A packet was received unsuccessfully. */
-  TracedCallback<Ptr<const Packet>, double, UanTxMode > m_rxErrLogger;
+  ns3::TracedCallback<Ptr<const Packet>, double, UanTxMode > m_rxErrLogger;
   /** A packet was sent from this Phy. */
-  TracedCallback<Ptr<const Packet>, double, UanTxMode > m_txLogger;
+  ns3::TracedCallback<Ptr<const Packet>, double, UanTxMode > m_txLogger;
   /** Callback when packet received without errors. */
   RxOkCallback m_recOkCb;
   /** Callback when packet received with errors. */

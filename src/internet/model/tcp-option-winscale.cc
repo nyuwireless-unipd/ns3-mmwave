@@ -22,8 +22,9 @@
 #include "tcp-option-winscale.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("TcpOptionWinScale");
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("TcpOptionWinScale");
 
 NS_OBJECT_ENSURE_REGISTERED (TcpOptionWinScale);
 
@@ -42,6 +43,7 @@ TcpOptionWinScale::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOptionWinScale")
     .SetParent<TcpOption> ()
+    .SetGroupName ("Internet")
     .AddConstructor<TcpOptionWinScale> ()
   ;
   return tid;

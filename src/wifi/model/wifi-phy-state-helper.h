@@ -17,6 +17,7 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
 #ifndef WIFI_PHY_STATE_HELPER_H
 #define WIFI_PHY_STATE_HELPER_H
 
@@ -57,6 +58,12 @@ public:
    * \param listener
    */
   void RegisterListener (WifiPhyListener *listener);
+  /**
+   * Remove WifiPhyListener from this WifiPhyStateHelper.
+   *
+   * \param listener
+   */
+  void UnregisterListener (WifiPhyListener *listener);
   /**
    * Return the current state of WifiPhy.
    *
@@ -151,10 +158,10 @@ public:
    *
    * \param packet the successfully received packet
    * \param snr the SNR of the received packet
-   * \param mode the transmission mode of the packet
+   * \param txVector TXVECTOR of the packet
    * \param preamble the preamble of the received packet
    */
-  void SwitchFromRxEndOk (Ptr<Packet> packet, double snr, WifiMode mode, enum WifiPreamble preamble);
+  void SwitchFromRxEndOk (Ptr<Packet> packet, double snr, WifiTxVector txVector, enum WifiPreamble preamble);
   /**
    * Switch from RX after the reception failed.
    *
@@ -179,12 +186,59 @@ public:
    */
   void SwitchFromSleep (Time duration);
 
-  TracedCallback<Time,Time,enum WifiPhy::State> m_stateLogger;
+  /** \todo Why is this public? */
+  TracedCallback<Time, Time, enum WifiPhy::State> m_stateLogger;
+
+  /**
+   * TracedCallback signature for state changes.
+   *
+   * \param [in] start Time when the \p state started.
+   * \param [in] duration Amount of time we've been in (or will be in)
+   *             the \p state.
+   * \param [in] state The state.
+   */
+  typedef void (* StateTracedCallback)
+    (Time start, Time duration, WifiPhy::State state);
+
+  /**
+   * TracedCallback signature for receive end ok event.
+   *
+   * \param [in] packet The received packet.
+   * \param [in] snr    The SNR of the received packet.
+   * \param [in] mode   The transmission mode of the packet.
+   * \param [in] preamble The preamble of the packet.
+   */
+  typedef void (* RxOkTracedCallback)
+    (Ptr<const Packet> packet, double snr, WifiMode mode, WifiPreamble preamble);
+
+  /**
+   * TracedCallback signature for receive end error event.
+   *
+   * \param [in] packet The received packet.
+   * \param [in] snr    The SNR of the received packet.
+   */
+  typedef void (* RxEndErrorTracedCallback)
+    (Ptr<const Packet> packet, double snr);
+
+  /**
+   * TracedCallback signature for transmit event.
+   *
+   * \param [in] packet The received packet.
+   * \param [in] mode   The transmission mode of the packet.
+   * \param [in] preamble The preamble of the packet.
+   * \param [in] power  The transmit power level.
+   */
+  typedef void (* TxTracedCallback)
+    (Ptr<const Packet> packet, WifiMode mode,
+     WifiPreamble preamble, uint8_t power);
+
+
 private:
   /**
    * typedef for a list of WifiPhyListeners
    */
   typedef std::vector<WifiPhyListener *> Listeners;
+  typedef std::vector<WifiPhyListener *>::iterator ListenersI;
 
   /**
    * Log the ideal and CCA states.
@@ -259,6 +313,6 @@ private:
   WifiPhy::RxErrorCallback m_rxErrorCallback;
 };
 
-} // namespace ns3
+} //namespace ns3
 
 #endif /* WIFI_PHY_STATE_HELPER_H */

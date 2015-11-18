@@ -42,12 +42,12 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("mmWavePointToPointEpcHelper");
+NS_LOG_COMPONENT_DEFINE ("MmWavePointToPointEpcHelper");
 
-NS_OBJECT_ENSURE_REGISTERED (mmWavePointToPointEpcHelper);
+NS_OBJECT_ENSURE_REGISTERED (MmWavePointToPointEpcHelper);
 
 
-mmWavePointToPointEpcHelper::mmWavePointToPointEpcHelper ()
+MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
   : m_gtpuUdpPort (2152)  // fixed by the standard
 {
   NS_LOG_FUNCTION (this);
@@ -102,53 +102,54 @@ mmWavePointToPointEpcHelper::mmWavePointToPointEpcHelper ()
   m_sgwPgwApp->SetS11SapMme (m_mme->GetS11SapMme ());
 }
 
-mmWavePointToPointEpcHelper::~mmWavePointToPointEpcHelper ()
+MmWavePointToPointEpcHelper::~MmWavePointToPointEpcHelper ()
 {
   NS_LOG_FUNCTION (this);
 }
 
 TypeId
-mmWavePointToPointEpcHelper::GetTypeId (void)
+MmWavePointToPointEpcHelper::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::mmWavePointToPointEpcHelper")
+  static TypeId tid = TypeId ("ns3::MmWavePointToPointEpcHelper")
     .SetParent<EpcHelper> ()
-    .AddConstructor<mmWavePointToPointEpcHelper> ()
+    .SetGroupName("mmWave")
+    .AddConstructor<MmWavePointToPointEpcHelper> ()
     .AddAttribute ("S1uLinkDataRate", 
                    "The data rate to be used for the next S1-U link to be created",
                    DataRateValue (DataRate ("10Gb/s")),
-                   MakeDataRateAccessor (&mmWavePointToPointEpcHelper::m_s1uLinkDataRate),
+                   MakeDataRateAccessor (&MmWavePointToPointEpcHelper::m_s1uLinkDataRate),
                    MakeDataRateChecker ())
     .AddAttribute ("S1uLinkDelay", 
                    "The delay to be used for the next S1-U link to be created",
                    TimeValue (Seconds (0)),
-                   MakeTimeAccessor (&mmWavePointToPointEpcHelper::m_s1uLinkDelay),
+                   MakeTimeAccessor (&MmWavePointToPointEpcHelper::m_s1uLinkDelay),
                    MakeTimeChecker ())
     .AddAttribute ("S1uLinkMtu", 
                    "The MTU of the next S1-U link to be created. Note that, because of the additional GTP/UDP/IP tunneling overhead, you need a MTU larger than the end-to-end MTU that you want to support.",
                    UintegerValue (2000),
-                   MakeUintegerAccessor (&mmWavePointToPointEpcHelper::m_s1uLinkMtu),
+                   MakeUintegerAccessor (&MmWavePointToPointEpcHelper::m_s1uLinkMtu),
                    MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("X2LinkDataRate",
                    "The data rate to be used for the next X2 link to be created",
                    DataRateValue (DataRate ("10Gb/s")),
-                   MakeDataRateAccessor (&mmWavePointToPointEpcHelper::m_x2LinkDataRate),
+                   MakeDataRateAccessor (&MmWavePointToPointEpcHelper::m_x2LinkDataRate),
                    MakeDataRateChecker ())
     .AddAttribute ("X2LinkDelay",
                    "The delay to be used for the next X2 link to be created",
                    TimeValue (Seconds (0)),
-                   MakeTimeAccessor (&mmWavePointToPointEpcHelper::m_x2LinkDelay),
+                   MakeTimeAccessor (&MmWavePointToPointEpcHelper::m_x2LinkDelay),
                    MakeTimeChecker ())
     .AddAttribute ("X2LinkMtu",
                    "The MTU of the next X2 link to be created. Note that, because of some big X2 messages, you need a big MTU.",
                    UintegerValue (3000),
-                   MakeUintegerAccessor (&mmWavePointToPointEpcHelper::m_x2LinkMtu),
+                   MakeUintegerAccessor (&MmWavePointToPointEpcHelper::m_x2LinkMtu),
                    MakeUintegerChecker<uint16_t> ())
   ;
   return tid;
 }
 
 void
-mmWavePointToPointEpcHelper::DoDispose ()
+MmWavePointToPointEpcHelper::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
   m_tunDevice->SetSendCallback (MakeNullCallback<bool, Ptr<Packet>, const Address&, const Address&, uint16_t> ());
@@ -159,11 +160,11 @@ mmWavePointToPointEpcHelper::DoDispose ()
 
 
 void
-mmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> mmwaveEnbNetDevice, uint16_t cellId)
+MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t cellId)
 {
-  NS_LOG_FUNCTION (this << enb << mmwaveEnbNetDevice << cellId);
+  NS_LOG_FUNCTION (this << enb << lteEnbNetDevice << cellId);
 
-  NS_ASSERT (enb == mmwaveEnbNetDevice->GetNode ());
+  NS_ASSERT (enb == lteEnbNetDevice->GetNode ());
 
   // add an IPv4 stack to the previously created eNB
   InternetStackHelper internet;
@@ -203,13 +204,13 @@ mmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> mmwaveEnbNetD
   // create LTE socket for the ENB 
   Ptr<Socket> enbLteSocket = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::PacketSocketFactory"));
   PacketSocketAddress enbLteSocketBindAddress;
-  enbLteSocketBindAddress.SetSingleDevice (mmwaveEnbNetDevice->GetIfIndex ());
+  enbLteSocketBindAddress.SetSingleDevice (lteEnbNetDevice->GetIfIndex ());
   enbLteSocketBindAddress.SetProtocol (Ipv4L3Protocol::PROT_NUMBER);
   retval = enbLteSocket->Bind (enbLteSocketBindAddress);
   NS_ASSERT (retval == 0);  
   PacketSocketAddress enbLteSocketConnectAddress;
   enbLteSocketConnectAddress.SetPhysicalAddress (Mac48Address::GetBroadcast ());
-  enbLteSocketConnectAddress.SetSingleDevice (mmwaveEnbNetDevice->GetIfIndex ());
+  enbLteSocketConnectAddress.SetSingleDevice (lteEnbNetDevice->GetIfIndex ());
   enbLteSocketConnectAddress.SetProtocol (Ipv4L3Protocol::PROT_NUMBER);
   retval = enbLteSocket->Connect (enbLteSocketConnectAddress);
   NS_ASSERT (retval == 0);  
@@ -235,7 +236,7 @@ mmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> mmwaveEnbNetD
 
 
 void
-mmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
+MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
 {
   NS_LOG_FUNCTION (this << enb1 << enb2);
 
@@ -282,7 +283,7 @@ mmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
 
 
 void 
-mmWavePointToPointEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
+MmWavePointToPointEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
 {
   NS_LOG_FUNCTION (this << imsi << ueDevice );
   
@@ -292,8 +293,8 @@ mmWavePointToPointEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
 
 }
 
-void
-mmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
+uint8_t
+MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
 {
   NS_LOG_FUNCTION (this << ueDevice << imsi);
 
@@ -309,24 +310,25 @@ mmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_
   Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
   NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
   
-  m_mme->AddBearer (imsi, tft, bearer);
-  Ptr<MmWaveUeNetDevice> uemmWaveDevice = ueDevice->GetObject<MmWaveUeNetDevice> ();
-  if (uemmWaveDevice)
+  uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
+  Ptr<MmWaveUeNetDevice> ueLteDevice = ueDevice->GetObject<MmWaveUeNetDevice> ();
+  if (ueLteDevice)
     {
-      uemmWaveDevice->GetNas ()->ActivateEpsBearer (bearer, tft);
+      ueLteDevice->GetNas ()->ActivateEpsBearer (bearer, tft);
     }
+  return bearerId;
 }
 
 
 Ptr<Node>
-mmWavePointToPointEpcHelper::GetPgwNode ()
+MmWavePointToPointEpcHelper::GetPgwNode ()
 {
   return m_sgwPgw;
 }
 
 
 Ipv4InterfaceContainer 
-mmWavePointToPointEpcHelper::AssignUeIpv4Address (NetDeviceContainer ueDevices)
+MmWavePointToPointEpcHelper::AssignUeIpv4Address (NetDeviceContainer ueDevices)
 {
   return m_ueAddressHelper.Assign (ueDevices);
 }
@@ -334,7 +336,7 @@ mmWavePointToPointEpcHelper::AssignUeIpv4Address (NetDeviceContainer ueDevices)
 
 
 Ipv4Address
-mmWavePointToPointEpcHelper::GetUeDefaultGatewayAddress ()
+MmWavePointToPointEpcHelper::GetUeDefaultGatewayAddress ()
 {
   // return the address of the tun device
   return m_sgwPgw->GetObject<Ipv4> ()->GetAddress (1, 0).GetLocal ();

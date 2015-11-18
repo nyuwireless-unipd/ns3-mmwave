@@ -62,7 +62,7 @@ and running on the target system.
 
 The |ns3| code is available in Mercurial repositories on the server
 http://code.nsnam.org.  You can also download a tarball release at
-http://www.nsnam.org/releases/, or you can work with repositories
+http://www.nsnam.org/release/, or you can work with repositories
 using Mercurial.  We recommend using Mercurial unless there's a good reason
 not to.  See the end of this section for instructions on how to get a tarball
 release.
@@ -71,6 +71,12 @@ The simplest way to get started using Mercurial repositories is to use the
 ``ns-3-allinone`` environment.  This is a set of scripts that manages the 
 downloading and building of various subsystems of |ns3| for you.  We 
 recommend that you begin your |ns3| work in this environment.
+
+One practice is to create a directory called ``workspace`` in one's home 
+directory under which one can keep local Mercurial repositories.  
+Any directory name will do, but we'll assume that ``workspace`` is used
+herein (note:  ``repos`` may also be used in some documentation as
+an example directory name).  
 
 Downloading |ns3| Using a Tarball
 +++++++++++++++++++++++++++++++++
@@ -90,32 +96,40 @@ get a copy of a release by typing the following into your Linux shell
   $ cd
   $ mkdir workspace
   $ cd workspace
-  $ wget http://www.nsnam.org/releases/ns-allinone-3.20.tar.bz2
-  $ tar xjf ns-allinone-3.20.tar.bz2
+  $ wget http://www.nsnam.org/release/ns-allinone-3.24.tar.bz2
+  $ tar xjf ns-allinone-3.24.tar.bz2
 
-If you change into the directory ``ns-allinone-3.20`` you should see a
-number of files::
+If you change into the directory ``ns-allinone-3.24`` you should see a
+number of files and directories:
+
+::
 
   $ ls
-  bake      constants.py   ns-3.20               README
-  build.py  netanim-3.103  pybindgen-0.16.0.825  util.py
+  bake      constants.py   ns-3.24                            README
+  build.py  netanim-3.106  pybindgen-0.17.0.post41+ngd10fa60  util.py
 
-You are now ready to build the |ns3| distribution.
+You are now ready to build the base |ns3| distribution and may skip ahead
+to the section on building |ns3|.
 
 Downloading |ns3| Using Bake
 ++++++++++++++++++++++++++++
 
 Bake is a tool for distributed integration and building, 
-developed for the |ns3| project.  First of all, Bake is 
-developed in Python, and should be fetched from the project's 
-master code repositories using a tool called Mercurial, so to 
-run Bake one must have Python and mercurial on one's machine.
+developed for the |ns3| project.  Bake can be used to fetch development
+versions of the |ns3| software, and to download and build extensions to the 
+base |ns3| distribution, such as the Direct Code Execution environment,
+Network Simulation Cradle, ability to create new Python bindings, and
+others.
 
-One practice is to create a directory called ``workspace`` in one's home 
-directory under which one can keep local Mercurial repositories.  
-Any directory name will do, but we'll assume that ``workspace`` is used
-herein (note:  ``repos`` may also be used in some documentation as
-an example directory name).  You can get a copy of ``bake`` by typing the 
+In recent |ns3| releases, Bake has been included in the release
+tarball.  The configuration file included in the released version
+will allow one to download any software that was current at the
+time of the release.  That is, for example, the version of Bake that
+is distributed with the ``ns-3.21`` release can be used to fetch components
+for that |ns3| release or earlier, but can't be used to fetch components
+for later releases (unless the ``bakeconf.xml`` file is updated).
+
+You can also get the most recent copy of ``bake`` by typing the 
 following into your Linux shell (assuming you have installed Mercurial)::
 
   $ cd
@@ -134,7 +148,7 @@ following displayed,
   adding changesets
   adding manifests
   adding file changes
-  added 252 changesets with 661 changes to 62 files
+  added 339 changesets with 796 changes to 63 files
   updating to branch default
   45 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
@@ -152,10 +166,10 @@ distribution of your choice.
 
 There are a few configuration targets available:
 
-1.  ``ns-3.20``:  the module corresponding to the release; it will download
+1.  ``ns-3.24``:  the module corresponding to the release; it will download
     components similar to the release tarball.
 2.  ``ns-3-dev``:  a similar module but using the development code tree
-3.  ``ns-allinone-3.20``:  the module that includes other optional features
+3.  ``ns-allinone-3.24``:  the module that includes other optional features
     such as click routing, openflow for |ns3|, and the Network Simulation
     Cradle
 4.  ``ns-3-allinone``:  similar to the released version of the allinone
@@ -173,7 +187,7 @@ code either by inspection of the repository list or by going to the
 `"ns-3 Releases"
 <http://www.nsnam.org/releases>`_
 web page and clicking on the latest release link.  We'll proceed in
-this tutorial example with ``ns-3.20``.
+this tutorial example with ``ns-3.24``.
 
 We are now going to use the bake tool to pull down the various pieces of 
 |ns3| you will be using.  First, we'll say a word about running bake.
@@ -182,19 +196,24 @@ bake works by downloading source packages into a source directory,
 and installing libraries into a build directory.  bake can be run
 by referencing the binary, but if one chooses to run bake from
 outside of the directory it was downloaded into, it is advisable
-to put bake into your path, such as follows (Linux bash shell example)::
+to put bake into your path, such as follows (Linux bash shell example).
+First, change into the 'bake' directory, and then set the following
+environment variables
 
-  $ export BAKE_HOME=`pwd`/bake
-  $ export PATH=$PATH:$BAKE_HOME
-  $ export PYTHONPATH=$PYTHONPATH:$BAKE_HOME
+::
 
-However, setting environment variables is not strictly necessary to
-complete this tutorial, so we'll call bake directly by specifying the path 
-to it in our shell commands.
+  $ export BAKE_HOME=`pwd`
+  $ export PATH=$PATH:$BAKE_HOME:$BAKE_HOME/build/bin
+  $ export PYTHONPATH=$PYTHONPATH:$BAKE_HOME:$BAKE_HOME/build/lib
+
+This will put the bake.py program into the shell's path, and will allow
+other programs to find executables and libraries created by bake.  Although
+several bake use cases do not require setting PATH and PYTHONPATH as above,
+full builds of ns-3-allinone (with the optional packages) typically do.
 
 Step into the workspace directory and type the following into your shell::
 
-  $ ./bake.py configure -e ns-3.20
+  $ ./bake.py configure -e ns-3.24
 
 Next, we'l ask bake to check whether we have enough tools to download
 various components.  Type::
@@ -227,7 +246,9 @@ You should see something like the following,
 
 In particular, download tools such as Mercurial, CVS, GIT, and Bazaar
 are our principal concerns at this point, since they allow us to fetch
-the code.  Please install missing tools at this stage if you are able to.
+the code.  Please install missing tools at this stage, in the usual
+way for your system (if you are able to), or contact your system 
+administrator as needed to install these tools.
 
 Next, try to download the software::
 
@@ -235,20 +256,23 @@ Next, try to download the software::
 
 should yield something like::
 
-   >> Searching for system dependency pygoocanvas - OK
+   >> Downloading gccxml-ns3 (target directory:gccxml) - OK
    >> Searching for system dependency python-dev - OK
    >> Searching for system dependency pygraphviz - OK
-   >> Downloading pybindgen-0.16.0.825 - OK
+   >> Searching for system dependency pygoocanvas - OK
+   >> Searching for system dependency setuptools - OK
    >> Searching for system dependency g++ - OK
    >> Searching for system dependency qt4 - OK
-   >> Downloading netanim-3.103 - OK
-   >> Downloading ns-3.20 - OK    
+   >> Downloading pygccxml - OK
+   >> Downloading netanim-3.106 - OK
+   >> Downloading pybindgen-0.17.0.post41+ngd10fa60 (target directory:pybindgen) - OK
+   >> Downloading ns-3.24 - OK
 
-The above suggests that three sources have been downloaded.  Check the
+The above suggests that five sources have been downloaded.  Check the
 ``source`` directory now and type ``ls``; one should see::
 
   $ ls
-  netanim-3.103  ns-3.20  pybindgen-0.16.0.825
+  gccxml  netanim-3.106  ns-3.24  pybindgen  pygccxml  pygccxml-1.0.0.zip
 
 You are now ready to build the |ns3| distribution.
 
@@ -267,7 +291,7 @@ native |ns3| build system, Waf, to be introduced later in this tutorial.
 
 If you downloaded
 using a tarball you should have a directory called something like 
-``ns-allinone-3.20`` under your ``~/workspace`` directory.  
+``ns-allinone-3.24`` under your ``~/workspace`` directory.  
 Type the following::
 
   $ ./build.py --enable-examples --enable-tests
@@ -281,31 +305,31 @@ are not necessary for your work, if you wish.
 
 You will see lots of typical compiler output messages displayed as the build
 script builds the various pieces you downloaded.  Eventually you should see the
-following magic words::
+following::
 
-   Waf: Leaving directory `/path/to/workspace/ns-allinone-3.20/ns-3.20/build'
+   Waf: Leaving directory `/path/to/workspace/ns-allinone-3.24/ns-3.24/build'
    'build' finished successfully (6m25.032s)
   
    Modules built:
    antenna                   aodv                      applications             
    bridge                    buildings                 config-store             
    core                      csma                      csma-layout              
-   dsdv                      dsr                       emu                      
-   energy                    fd-net-device             flow-monitor             
-   internet                  lte                       mesh                     
+   dsdv                      dsr                       energy                   
+   fd-net-device             flow-monitor              internet                 
+   lr-wpan                   lte                       mesh                     
    mobility                  mpi                       netanim (no Python)      
    network                   nix-vector-routing        olsr                     
    point-to-point            point-to-point-layout     propagation              
-   spectrum                  stats                     tap-bridge               
-   test (no Python)          tools                     topology-read            
-   uan                       virtual-net-device        wifi                     
-   wimax                    
-  
+   sixlowpan                 spectrum                  stats                    
+   tap-bridge                test (no Python)          topology-read            
+   uan                       virtual-net-device        wave
+   wifi                      wimax                   
+   
    Modules not built (see ns-3 tutorial for explanation):
    brite                     click                     openflow                 
    visualizer               
 
-   Leaving directory `./ns-3.20'
+   Leaving directory `./ns-3.24'
 
 Regarding the portion about modules not built::
 
@@ -331,11 +355,13 @@ may continue to use it to build |ns3|.  Type
 
 and you should see something like::
 
-  >> Building pybindgen-0.16.0.825 - OK
-  >> Building netanim-3.103 - OK
-  >> Building ns-3.20 - OK
+  >> Building gccxml-ns3 - OK
+  >> Building pygccxml - OK
+  >> Building netanim-3.106 - OK
+  >> Building pybindgen-0.17.0.post41+ngd10fa60 - OK
+  >> Building ns-3.24 - OK
 
-*Hint:  you can also perform both steps, download and build by calling 'bake.py deploy'.*
+*Hint:  you can also perform both steps, download and build, by calling 'bake.py deploy'.*
 
 If there happens to be a failure, please have a look at what the following
 command tells you; it may give a hint as to a missing dependency::
@@ -478,6 +504,29 @@ the |ns3| programs by simply typing
 Okay, sorry, I made you build the |ns3| part of the system twice,
 but now you know how to change the configuration and build optimized code.
 
+The build.py script discussed above supports also the ``--enable-examples``
+and ``enable-tests`` arguments, but in general, does not directly support
+other waf options; for example, this will not work:
+
+::
+
+  $ ./build.py --disable-python
+
+will result in
+
+::
+
+  build.py: error: no such option: --disable-python
+
+However, the special operator ``--`` can be used to pass additional
+options through to waf, so instead of the above, the following will work:
+
+::
+
+  $ ./build.py -- --disable-python   
+
+as it generates the underlying command ``./waf configure --disable-python``.
+
 Here are a few more introductory tips about Waf.
 
 Configure vs. Build
@@ -512,6 +561,38 @@ We already saw how you can configure Waf for ``debug`` or ``optimized`` builds::
 
 There is also an intermediate build profile, ``release``.  ``-d`` is a
 synonym for ``--build-profile``.
+
+The build profile controls the use of logging, assertions, and compiler optimization:
+
++--------------------+---------------------------------+-----------------------------------------------------------------+
+| Feature            | Build Profile                                                                                     |
++                    +---------------------------------+-------------------------------+---------------------------------+
+|                    | ``debug``                       | ``release``                   | ``optimized``                   |
++====================+=================================+===============================+=================================+
+| Enabled Features   | |  ``NS3_BUILD_PROFILE_DEBUG``  | ``NS3_BUILD_PROFILE_RELEASE`` | ``NS3_BUILD_PROFILE_OPTIMIZED`` |
+|                    | |  ``NS_LOG...``                |                               |                                 |
+|                    | |  ``NS_ASSERT...``             |                               |                                 |
++--------------------+---------------------------------+-------------------------------+---------------------------------+
+| Code Wrapper Macro | ``NS_BUILD_DEBUG(code)``        |  ``NS_BUILD_RELEASE(code)``   | ``NS_BUILD_OPTIMIZED(code)``    |
++--------------------+---------------------------------+-------------------------------+---------------------------------+
+| Compiler Flags     | ``-O0 -ggdb -g3``               | ``-O3 -g0``                   | ``-O3 -g``                      |
+|                    |                                 | ``-fomit-frame-pointer``      | ``-fstrict-overflow``           |
+|                    |                                 |                               | ``-march=native``               |
++--------------------+---------------------------------+-------------------------------+---------------------------------+
+
+As you can see, logging and assertions are only available in debug builds.
+Recommended practice is to develop your scenario in debug mode, then
+conduct repetitive runs (for statistics or changing parameters) in
+optimized build profile.
+
+If you have code that should only run in specific build profiles,
+use the indicated Code Wrapper macro:
+
+.. sourcecode:: cpp
+
+  NS_BUILD_DEBUG (std::cout << "Part of an output line..." << std::flush; timer.Start ());
+  DoLongInvolvedComputation ();
+  NS_BUILD_DEBUG (timer.Stop (); std::cout << "Done: " << timer << std::endl;)
 
 By default Waf puts the build artifacts in the ``build`` directory.  
 You can specify a different output directory with the ``--out``
@@ -549,8 +630,8 @@ to define some environment variables to help you avoid mistakes::
   $ ./waf configure $NS3CONFIG $NS3OPT
   $ ./waf build
 
-Compilers
-=========
+Compilers and Flags
+===================
 
 In the examples above, Waf uses the GCC C++ compiler, ``g++``, for
 building |ns3|. However, it's possible to change the C++ compiler used by Waf
@@ -573,6 +654,49 @@ More info on ``distcc`` and distributed compilation can be found on it's
 <http://code.google.com/p/distcc/>`_
 under Documentation section.
 
+To add compiler flags, use the ``CXXFLAGS_EXTRA`` environment variable when
+you configure |ns3|.
+
+Install
+=======
+
+Waf may be used to install libraries in various places on the system.
+The default location where libraries and executables are built is
+in the ``build`` directory, and because Waf knows the location of these
+libraries and executables, it is not necessary to install the libraries
+elsewhere.
+
+If users choose to install things outside of the build directory, users
+may issue the ``./waf install`` command.  By default, the prefix for
+installation is ``/usr/local``, so ``./waf install`` will install programs
+into ``/usr/local/bin``, libraries into ``/usr/local/lib``, and headers
+into ``/usr/local/include``.  Superuser privileges are typically needed
+to install to the default prefix, so the typical command would be
+``sudo ./waf install``.  When running programs with Waf, Waf will
+first prefer to use shared libraries in the build directory, then 
+will look for libraries in the library path configured in the local
+environment.  So when installing libraries to the system, it is good
+practice to check that the intended libraries are being used.
+
+Users may choose to install to a different prefix by passing the ``--prefix``
+option at configure time, such as:
+
+::
+
+  ./waf configure --prefix=/opt/local
+
+If later after the build the user issues the ``./waf install`` command, the 
+prefix ``/opt/local`` will be used.
+
+The ``./waf clean`` command should be used prior to reconfiguring 
+the project if Waf will be used to install things at a different prefix.
+
+In summary, it is not necessary to call ``./waf install`` to use |ns3|.
+Most users will not need this command since Waf will pick up the
+current libraries from the ``build`` directory, but some users may find 
+it useful if their use case involves working with programs outside
+of the |ns3| directory.
+
 One Waf
 =======
 
@@ -583,7 +707,7 @@ remember where you are, and invoke Waf like this::
 
   $ ../../../waf ...
 
-but that get's tedious, and error prone, and there are better solutions.
+but that gets tedious, and error prone, and there are better solutions.
 
 If you have the full |ns3| repository this little gem is a start::
 
@@ -725,17 +849,19 @@ using the provided command line template,
 inserting the program name for the ``%s`` placeholder.
 (I admit this is a bit awkward, but that's the way it is.  Patches welcome!)
 
-Another particularly useful example is to run the ``mytest`` test suite
-by itself.  Above, we used the ``./test.py`` script to run a whole slew of
+Another particularly useful example is to run a test suite by itself.
+Let's assume that a ``mytest`` test suite exists (it doesn't).
+Above, we used the ``./test.py`` script to run a whole slew of
 tests in parallel, by repeatedly invoking the real testing program,
 ``test-runner``.  To invoke ``test-runner`` directly for a single test::
 
-  $ ./waf --run test-runner --command-template="% --suite=mytest --verbose"
+  $ ./waf --run test-runner --command-template="%s --suite=mytest --verbose"
 
-This passes the arguments to the ``test-runner`` program.  To print the
-available ``test-runner`` options::
+This passes the arguments to the ``test-runner`` program.
+Since ``mytest`` does not exist, an error message will be generated.
+To print the available ``test-runner`` options::
 
-  $ ./waf --run test-runner --command-template="% --help"
+  $ ./waf --run test-runner --command-template="%s --help"
 
 Debugging
 +++++++++
@@ -744,7 +870,7 @@ To run |ns3| programs under the control of another utility, such as
 a debugger (*e.g.* ``gdb``) or memory checker (*e.g.* ``valgrind``),
 you use a similar ``--command-template="..."`` form.
 
-For example, to run your |ns3| program ``mysim`` with the arguments
+For example, to run your |ns3| program ``hello-simulator`` with the arguments
 ``<args>`` under the ``gdb`` debugger::
 
   $ ./waf --run=hello-simulator --command-template="gdb %s --args <args>"
@@ -765,7 +891,7 @@ debugger::
 Working Directory
 +++++++++++++++++
 
-Waf needs to run from it's location at the top of the |ns3| tree.
+Waf needs to run from its location at the top of the |ns3| tree.
 This becomes the working directory where output files will be written.
 But what if you want to keep those ouf to the |ns3| source tree?  Use
 the ``--cwd`` argument::

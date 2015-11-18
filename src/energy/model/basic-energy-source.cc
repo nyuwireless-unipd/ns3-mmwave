@@ -25,9 +25,9 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/simulator.h"
 
-NS_LOG_COMPONENT_DEFINE ("BasicEnergySource");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("BasicEnergySource");
 
 NS_OBJECT_ENSURE_REGISTERED (BasicEnergySource);
 
@@ -36,6 +36,7 @@ BasicEnergySource::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::BasicEnergySource")
     .SetParent<EnergySource> ()
+    .SetGroupName ("Energy")
     .AddConstructor<BasicEnergySource> ()
     .AddAttribute ("BasicEnergySourceInitialEnergyJ",
                    "Initial energy stored in basic energy source.",
@@ -67,7 +68,8 @@ BasicEnergySource::GetTypeId (void)
                    MakeTimeChecker ())
     .AddTraceSource ("RemainingEnergy",
                      "Remaining energy at BasicEnergySource.",
-                     MakeTraceSourceAccessor (&BasicEnergySource::m_remainingEnergyJ))
+                     MakeTraceSourceAccessor (&BasicEnergySource::m_remainingEnergyJ),
+                     "ns3::TracedValueCallback::Double")
   ;
   return tid;
 }

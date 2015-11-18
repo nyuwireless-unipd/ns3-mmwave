@@ -28,9 +28,9 @@
 #include "ns3/config.h"
 #include "ns3/trace-source-accessor.h"
 
-NS_LOG_COMPONENT_DEFINE ("BooleanProbe");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("BooleanProbe");
 
 NS_OBJECT_ENSURE_REGISTERED (BooleanProbe);
 
@@ -39,10 +39,12 @@ BooleanProbe::GetTypeId ()
 {
   static TypeId tid = TypeId ("ns3::BooleanProbe")
     .SetParent<Probe> ()
+    .SetGroupName ("Stats")
     .AddConstructor<BooleanProbe> ()
     .AddTraceSource ( "Output",
                       "The bool that serves as output for this probe",
-                      MakeTraceSourceAccessor (&BooleanProbe::m_output))
+                      MakeTraceSourceAccessor (&BooleanProbe::m_output),
+                      "ns3::TracedValueCallback::Bool")
   ;
   return tid;
 }

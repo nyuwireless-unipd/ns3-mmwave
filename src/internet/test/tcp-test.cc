@@ -38,7 +38,6 @@
 #include "ns3/uinteger.h"
 #include "ns3/log.h"
 
-#include "ns3/ipv4-end-point.h"
 #include "ns3/arp-l3-protocol.h"
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/ipv6-l3-protocol.h"
@@ -49,9 +48,9 @@
 
 #include <string>
 
-NS_LOG_COMPONENT_DEFINE ("TcpTestSuite");
-
 using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("TcpTestSuite");
 
 class TcpTestCase : public TestCase
 {

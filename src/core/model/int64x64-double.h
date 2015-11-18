@@ -1,3 +1,22 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * Copyright (c) 2010 INRIA
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ */
+
 #include "ns3/core-config.h"
 #if !defined(INT64X64_DOUBLE_H) && (defined (INT64X64_USE_DOUBLE) || defined(PYTHON_SCAN))
 #define INT64X64_DOUBLE_H
@@ -6,6 +25,12 @@
 #include <cmath>  // pow
 #include <utility>  // pair
 
+/**
+ * \file
+ * \ingroup highprec
+ * Declaration and implementation of the ns3::int64x64_t type
+ * using the double type.
+ */
 
 namespace ns3 {
 
@@ -55,7 +80,7 @@ public:
   /**
    * Construct from a floating point value.
    *
-   * \param [in] v floating value to represent
+   * \param [in] v Floating value to represent
    */
   inline int64x64_t (double v)
     : _v (v) {}
@@ -67,7 +92,7 @@ public:
   /**
    * Construct from an integral type.
    *
-   * \param [in] v integer value to represent
+   * \param [in] v Integer value to represent
    */
   inline int64x64_t (int v)
     : _v (v) {}
@@ -129,7 +154,7 @@ private:
   /**
    * Get the high and low portions of this value.
    *
-   * \return a pair of the high and low words
+   * \return A pair of the high and low words
    */
   std::pair<int64_t, uint64_t> GetHighLow (void) const
     {

@@ -162,7 +162,7 @@ public:
    */
   enum State
   {
-    IDLE, TX, RX_DATA, RX_CTRL
+    IDLE, TX_DL_CTRL, TX_DATA, TX_UL_SRS, RX_DL_CTRL, RX_DATA, RX_UL_SRS
   };
 
   // inherited from Object
@@ -174,12 +174,13 @@ public:
   void SetMobility (Ptr<MobilityModel> m);
   void SetDevice (Ptr<NetDevice> d);
   Ptr<MobilityModel> GetMobility ();
-  Ptr<NetDevice> GetDevice ();
+  Ptr<NetDevice> GetDevice () const;
   Ptr<const SpectrumModel> GetRxSpectrumModel () const;
   Ptr<AntennaModel> GetRxAntenna ();
   void StartRx (Ptr<SpectrumSignalParameters> params);
   void StartRxData (Ptr<LteSpectrumSignalParametersDataFrame> params);
-  void StartRxCtrl (Ptr<SpectrumSignalParameters> params);
+  void StartRxDlCtrl (Ptr<LteSpectrumSignalParametersDlCtrlFrame> lteDlCtrlRxParams);
+  void StartRxUlSrs (Ptr<LteSpectrumSignalParametersUlSrsFrame> lteUlSrsRxParams);
 
   void SetHarqPhyModule (Ptr<LteHarqPhy> harq);
 
@@ -420,7 +421,9 @@ public:
 
 private:
   void ChangeState (State newState);
-  void EndTx ();
+  void EndTxData ();
+  void EndTxDlCtrl ();
+  void EndTxUlSrs ();
   void EndRxData ();
   void EndRxDlCtrl ();
   void EndRxUlSrs ();
@@ -450,10 +453,9 @@ private:
   TracedCallback<Ptr<const PacketBurst> > m_phyTxStartTrace;
   TracedCallback<Ptr<const PacketBurst> > m_phyTxEndTrace;
   TracedCallback<Ptr<const PacketBurst> > m_phyRxStartTrace;
-  TracedCallback<Ptr<const Packet> > m_phyRxEndOkTrace;
-  TracedCallback<Ptr<const Packet> > m_phyRxEndErrorTrace;
+  TracedCallback<Ptr<const Packet> >      m_phyRxEndOkTrace;
+  TracedCallback<Ptr<const Packet> >      m_phyRxEndErrorTrace;
 
-  LtePhyTxEndCallback        m_ltePhyTxEndCallback;
   LtePhyRxDataEndErrorCallback   m_ltePhyRxDataEndErrorCallback;
   LtePhyRxDataEndOkCallback      m_ltePhyRxDataEndOkCallback;
   

@@ -27,14 +27,13 @@
 #include "epc-ue-nas.h"
 #include "lte-as-sap.h"
 
-NS_LOG_COMPONENT_DEFINE ("EpcUeNas");
-
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("EpcUeNas");
 
 
 
-
+/// Map each of UE NAS states to its string representation.
 static const std::string g_ueNasStateName[EpcUeNas::NUM_STATES] =
 {
   "OFF",
@@ -44,6 +43,10 @@ static const std::string g_ueNasStateName[EpcUeNas::NUM_STATES] =
   "ACTIVE"
 };
 
+/**
+ * \param s The UE NAS state.
+ * \return The string representation of the given state.
+ */
 static inline const std::string & ToString (EpcUeNas::State s)
 {
   return g_ueNasStateName[s];
@@ -82,10 +85,12 @@ EpcUeNas::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::EpcUeNas")
     .SetParent<Object> ()
+    .SetGroupName("Lte")
     .AddConstructor<EpcUeNas> ()
     .AddTraceSource ("StateTransition",
                      "fired upon every UE NAS state transition",
-                     MakeTraceSourceAccessor (&EpcUeNas::m_stateTransitionCallback))
+                     MakeTraceSourceAccessor (&EpcUeNas::m_stateTransitionCallback),
+                     "ns3::EpcUeNas::StateTracedCallback")
   ;
   return tid;
 }

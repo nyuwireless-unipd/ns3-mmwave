@@ -76,6 +76,23 @@ public:
   virtual void Clear (void);
   int64_t AssignStreams (int64_t stream);
 
+  /**
+   * TracedCallback signature for
+   *
+   * \param [in] now, The current simulation time.
+   * \param [in] delay Minimum path delay of first RTS.
+   * \param [in] numRts Number of pending RTS.
+   * \param [in] totalBytes Length of RTS header.
+   * \param [in] secs Effective window size for RcCtsGlobal message, or
+   *             time to next cycle, both in seconds.
+   * \param [in] ctlRate CTL rate in Bps.
+   * \param [in] actualX Current retry rate.
+   */
+  typedef void (* CycleCallback)
+    (Time now, Time delay, uint32_t numRts, uint32_t totalBytes,
+     double secs, uint32_t ctlRate, double actualX);
+
+  
 private:
   /** Gateway state. */
   enum State {

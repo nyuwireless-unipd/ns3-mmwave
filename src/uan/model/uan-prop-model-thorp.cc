@@ -22,9 +22,9 @@
 #include "ns3/double.h"
 #include "ns3/log.h"
 
-NS_LOG_COMPONENT_DEFINE ("UanPropModelThorp");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("UanPropModelThorp");
 
 NS_OBJECT_ENSURE_REGISTERED (UanPropModelThorp);
 
@@ -40,7 +40,8 @@ TypeId
 UanPropModelThorp::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::UanPropModelThorp")
-    .SetParent<Object> ()
+    .SetParent<UanPropModel> ()
+    .SetGroupName ("Uan")
     .AddConstructor<UanPropModelThorp> ()
     .AddAttribute ("SpreadCoef",
                    "Spreading coefficient used in calculation of Thorp's approximation.",

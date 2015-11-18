@@ -22,13 +22,13 @@
 #include <vector>
 #include <cstring>
 
-NS_LOG_COMPONENT_DEFINE ("ByteTagList");
-
 #define USE_FREE_LIST 1
 #define FREE_LIST_SIZE 1000
 #define OFFSET_MAX (2147483647)
 
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("ByteTagList");
 
 /**
  * \ingroup packet
@@ -106,8 +106,8 @@ ByteTagList::Iterator::PrepareForNext (void)
       TagBuffer buf = TagBuffer (m_current, m_end);
       m_nextTid = buf.ReadU32 ();
       m_nextSize = buf.ReadU32 ();
-      m_nextStart = buf.ReadU32 ();
-      m_nextEnd = buf.ReadU32 ();
+      m_nextStart = buf.ReadU32 () + m_adjustment;
+      m_nextEnd = buf.ReadU32 () + m_adjustment;
       if (m_nextStart >= m_offsetEnd || m_nextEnd <= m_offsetStart)
         {
           m_current += 4 + 4 + 4 + 4 + m_nextSize;
@@ -118,13 +118,14 @@ ByteTagList::Iterator::PrepareForNext (void)
         }
     }
 }
-ByteTagList::Iterator::Iterator (uint8_t *start, uint8_t *end, int32_t offsetStart, int32_t offsetEnd)
+ByteTagList::Iterator::Iterator (uint8_t *start, uint8_t *end, int32_t offsetStart, int32_t offsetEnd, int32_t adjustment)
   : m_current (start),
     m_end (end),
     m_offsetStart (offsetStart),
-    m_offsetEnd (offsetEnd)
+    m_offsetEnd (offsetEnd),
+    m_adjustment (adjustment)
 {
-  NS_LOG_FUNCTION (this << &start << &end << offsetStart << offsetEnd);
+  NS_LOG_FUNCTION (this << &start << &end << offsetStart << offsetEnd << adjustment);
   PrepareForNext ();
 }
 
@@ -137,13 +138,19 @@ ByteTagList::Iterator::GetOffsetStart (void) const
 
 
 ByteTagList::ByteTagList ()
-  : m_used (0),
+  : m_minStart (INT32_MAX),
+    m_maxEnd (INT32_MIN),
+    m_adjustment (0),
+    m_used (0),
     m_data (0)
 {
   NS_LOG_FUNCTION (this);
 }
 ByteTagList::ByteTagList (const ByteTagList &o)
-  : m_used (o.m_used),
+  : m_minStart (o.m_minStart),
+    m_maxEnd (o.m_maxEnd),
+    m_adjustment (o.m_adjustment),
+    m_used (o.m_used),
     m_data (o.m_data)
 {
   NS_LOG_FUNCTION (this << &o);
@@ -161,6 +168,9 @@ ByteTagList::operator = (const ByteTagList &o)
     }
 
   Deallocate (m_data);
+  m_minStart = o.m_minStart;
+  m_maxEnd = o.m_maxEnd;
+  m_adjustment = o.m_adjustment;
   m_data = o.m_data;
   m_used = o.m_used;
   if (m_data != 0)
@@ -200,8 +210,16 @@ ByteTagList::Add (TypeId tid, uint32_t bufferSize, int32_t start, int32_t end)
                              &m_data->data[spaceNeeded]);
   tag.WriteU32 (tid.GetUid ());
   tag.WriteU32 (bufferSize);
-  tag.WriteU32 (start);
-  tag.WriteU32 (end);
+  tag.WriteU32 (start - m_adjustment);
+  tag.WriteU32 (end - m_adjustment);
+  if (start - m_adjustment < m_minStart)
+    {
+      m_minStart = start - m_adjustment;
+    }
+  if (end - m_adjustment > m_maxEnd)
+    {
+      m_maxEnd = end - m_adjustment;
+    }
   m_used = spaceNeeded;
   m_data->dirty = m_used;
   return tag;
@@ -225,6 +243,9 @@ ByteTagList::RemoveAll (void)
 {
   NS_LOG_FUNCTION (this);
   Deallocate (m_data);
+  m_minStart = INT32_MAX;
+  m_maxEnd = INT32_MIN;
+  m_adjustment = 0;
   m_data = 0;
   m_used = 0;
 }
@@ -244,51 +265,19 @@ ByteTagList::Begin (int32_t offsetStart, int32_t offsetEnd) const
   NS_LOG_FUNCTION (this << offsetStart << offsetEnd);
   if (m_data == 0)
     {
-      return Iterator (0, 0, offsetStart, offsetEnd);
+      return Iterator (0, 0, offsetStart, offsetEnd, 0);
     }
   else
     {
-      return Iterator (m_data->data, &m_data->data[m_used], offsetStart, offsetEnd);
+      return Iterator (m_data->data, &m_data->data[m_used], offsetStart, offsetEnd, m_adjustment);
     }
-}
-
-bool 
-ByteTagList::IsDirtyAtEnd (int32_t appendOffset)
-{
-  NS_LOG_FUNCTION (this << appendOffset);
-  ByteTagList::Iterator i = BeginAll ();
-  while (i.HasNext ())
-    {
-      ByteTagList::Iterator::Item item = i.Next ();
-      if (item.end > appendOffset)
-        {
-          return true;
-        }
-    }
-  return false;
-}
-
-bool 
-ByteTagList::IsDirtyAtStart (int32_t prependOffset)
-{
-  NS_LOG_FUNCTION (this << prependOffset);
-  ByteTagList::Iterator i = BeginAll ();
-  while (i.HasNext ())
-    {
-      ByteTagList::Iterator::Item item = i.Next ();
-      if (item.start < prependOffset)
-        {
-          return true;
-        }
-    }
-  return false;
 }
 
 void 
-ByteTagList::AddAtEnd (int32_t adjustment, int32_t appendOffset)
+ByteTagList::AddAtEnd (int32_t appendOffset)
 {
-  NS_LOG_FUNCTION (this << adjustment << appendOffset);
-  if (adjustment == 0 && !IsDirtyAtEnd (appendOffset))
+  NS_LOG_FUNCTION (this << appendOffset);
+  if (m_maxEnd <= appendOffset - m_adjustment)
     {
       return;
     }
@@ -297,57 +286,54 @@ ByteTagList::AddAtEnd (int32_t adjustment, int32_t appendOffset)
   while (i.HasNext ())
     {
       ByteTagList::Iterator::Item item = i.Next ();
-      item.start += adjustment;
-      item.end += adjustment;
 
       if (item.start >= appendOffset)
         {
           continue;
         }
-      else if (item.start < appendOffset && item.end > appendOffset)
+      if (item.end > appendOffset)
         {
           item.end = appendOffset;
         }
-      else
-        {
-          // nothing to do.
-        }
       TagBuffer buf = list.Add (item.tid, item.size, item.start, item.end);
       buf.CopyFrom (item.buf);
+      if (item.end > m_maxEnd)
+        {
+          m_maxEnd = item.end;
+        }
     }
   *this = list;
 }
 
 void 
-ByteTagList::AddAtStart (int32_t adjustment, int32_t prependOffset)
+ByteTagList::AddAtStart (int32_t prependOffset)
 {
-  NS_LOG_FUNCTION (this << adjustment << prependOffset);
-  if (adjustment == 0 && !IsDirtyAtStart (prependOffset))
+  NS_LOG_FUNCTION (this << prependOffset);
+  if (m_minStart >= prependOffset - m_adjustment)
     {
       return;
     }
+  m_minStart = INT32_MAX;
   ByteTagList list;
   ByteTagList::Iterator i = BeginAll ();
   while (i.HasNext ())
     {
       ByteTagList::Iterator::Item item = i.Next ();
-      item.start += adjustment;
-      item.end += adjustment;
 
       if (item.end <= prependOffset)
         {
           continue;
         }
-      else if (item.end > prependOffset && item.start < prependOffset)
+      if (item.start < prependOffset)
         {
           item.start = prependOffset;
         }
-      else
-        {
-          // nothing to do.
-        }
       TagBuffer buf = list.Add (item.tid, item.size, item.start, item.end);
       buf.CopyFrom (item.buf);
+      if (item.start < m_minStart)
+        {
+          m_minStart = item.start;
+        }
     }
   *this = list;
 }

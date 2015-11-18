@@ -72,7 +72,7 @@ public:
    * Ipv4RoutingProtocol stored in the Ipv4 object, for all nodes at the
    * specified time; the output format is routing protocol-specific.
    */
-  void PrintRoutingTableAllAt (Time printTime, Ptr<OutputStreamWrapper> stream) const;
+  static void PrintRoutingTableAllAt (Time printTime, Ptr<OutputStreamWrapper> stream);
 
   /**
    * \brief prints the routing tables of all nodes at regular intervals specified by user.
@@ -83,7 +83,7 @@ public:
    * Ipv4RoutingProtocol stored in the Ipv4 object, for all nodes at the
    * specified time interval; the output format is routing protocol-specific.
    */
-  void PrintRoutingTableAllEvery (Time printInterval, Ptr<OutputStreamWrapper> stream) const;
+  static void PrintRoutingTableAllEvery (Time printInterval, Ptr<OutputStreamWrapper> stream);
 
   /**
    * \brief prints the routing tables of a node at a particular time.
@@ -95,7 +95,7 @@ public:
    * Ipv4RoutingProtocol stored in the Ipv4 object, for the selected node 
    * at the specified time; the output format is routing protocol-specific.
    */
-  void PrintRoutingTableAt (Time printTime, Ptr<Node> node, Ptr<OutputStreamWrapper> stream) const;
+  static void PrintRoutingTableAt (Time printTime, Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
 
   /**
    * \brief prints the routing tables of a node at regular intervals specified by user.
@@ -107,7 +107,69 @@ public:
    * Ipv4RoutingProtocol stored in the Ipv4 object, for the selected node 
    * at the specified interval; the output format is routing protocol-specific.
    */
-  void PrintRoutingTableEvery (Time printInterval, Ptr<Node> node, Ptr<OutputStreamWrapper> stream) const;
+  static void PrintRoutingTableEvery (Time printInterval, Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
+
+  /**
+   * \brief prints the neighbor cache of all nodes at a particular time.
+   * \param printTime the time at which the neighbor cache is supposed to be printed.
+   * \param stream The output stream object to use
+   *
+   * This method calls the PrintArpCache() method of the
+   * ArpCache associated with each Ipv4Interface stored in the Ipv4 object, for all nodes at the
+   * specified time. The output format is similar to:
+   * \verbatim
+     10.1.1.2 dev 1 lladdr 00-06-00:00:00:00:00:02 REACHABLE
+     \endverbatim
+   * Note that the MAC address is printed as "type"-"size"-"actual address"
+   */
+  static void PrintNeighborCacheAllAt (Time printTime, Ptr<OutputStreamWrapper> stream);
+
+  /**
+   * \brief prints the neighbor cache of all nodes at regular intervals specified by user.
+   * \param printInterval the time interval for which the neighbor cache is supposed to be printed.
+   * \param stream The output stream object to use
+   *
+   * This method calls the PrintArpCache() method of the
+   * ArpCache associated with each Ipv4Interface stored in the Ipv4 object, for all nodes at the
+   * specified time. The output format is similar to:
+   * \verbatim
+     10.1.1.2 dev 1 lladdr 00-06-00:00:00:00:00:02 REACHABLE
+     \endverbatim
+   * Note that the MAC address is printed as "type"-"size"-"actual address"
+   */
+  static void PrintNeighborCacheAllEvery (Time printInterval, Ptr<OutputStreamWrapper> stream);
+
+  /**
+   * \brief prints the neighbor cache of a node at a particular time.
+   * \param printTime the time at which the neighbor cache is supposed to be printed.
+   * \param node The node ptr for which we need the neighbor cache to be printed
+   * \param stream The output stream object to use
+   *
+   * This method calls the PrintArpCache() method of the
+   * ArpCache associated with each Ipv4Interface stored in the Ipv4 object, for all nodes at the
+   * specified time. The output format is similar to:
+   * \verbatim
+     10.1.1.2 dev 1 lladdr 00-06-00:00:00:00:00:02 REACHABLE
+     \endverbatim
+   * Note that the MAC address is printed as "type"-"size"-"actual address"
+   */
+  static void PrintNeighborCacheAt (Time printTime, Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
+
+  /**
+   * \brief prints the neighbor cache of a node at regular intervals specified by user.
+   * \param printInterval the time interval for which the neighbor cache is supposed to be printed.
+   * \param node The node ptr for which we need the neighbor cache to be printed
+   * \param stream The output stream object to use
+   *
+   * This method calls the PrintArpCache() method of the
+   * ArpCache associated with each Ipv4Interface stored in the Ipv4 object, for all nodes at the
+   * specified time. The output format is similar to:
+   * \verbatim
+     10.1.1.2 dev 1 lladdr 00-06-00:00:00:00:00:02 REACHABLE
+     \endverbatim
+   * Note that the MAC address is printed as "type"-"size"-"actual address"
+   */
+  static void PrintNeighborCacheEvery (Time printInterval, Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
 
   /**
    * \brief Request a specified routing protocol &lt;T&gt; from Ipv4RoutingProtocol protocol
@@ -123,31 +185,58 @@ public:
   
 private:
   /**
-   * \internal
-   *
    * \brief prints the routing tables of a node.
    * \param node The node ptr for which we need the routing table to be printed
    * \param stream The output stream object to use
    *
    * This method calls the PrintRoutingTable() method of the
-   * Ipv6RoutingProtocol stored in the Ipv6 object;
+   * Ipv4RoutingProtocol stored in the Ipv4 object;
    * the output format is routing protocol-specific.
    */
-  void Print (Ptr<Node> node, Ptr<OutputStreamWrapper> stream) const;
+  static void Print (Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
 
   /**
-   * \internal
-   *
    * \brief prints the routing tables of a node at regular intervals specified by user.
    * \param printInterval the time interval for which the routing table is supposed to be printed.
    * \param node The node ptr for which we need the routing table to be printed
    * \param stream The output stream object to use
    *
    * This method calls the PrintRoutingTable() method of the
-   * Ipv6RoutingProtocol stored in the Ipv6 object, for the selected node
+   * Ipv4RoutingProtocol stored in the Ipv4 object, for the selected node
    * at the specified interval; the output format is routing protocol-specific.
    */
-  void PrintEvery (Time printInterval, Ptr<Node> node, Ptr<OutputStreamWrapper> stream) const;
+  static void PrintEvery (Time printInterval, Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
+
+  /**
+   * \brief prints the neighbor cache of a node.
+   * \param node The node ptr for which we need the neighbor cache to be printed
+   * \param stream The output stream object to use
+   *
+   * This method calls the PrintArpCache() method of the
+   * ArpCache associated with each Ipv4Interface stored in the Ipv4 object, for all nodes at the
+   * specified time. The output format is similar to:
+   * \verbatim
+     10.1.1.2 dev 1 lladdr 00-06-00:00:00:00:00:02 REACHABLE
+     \endverbatim
+   * Note that the MAC address is printed as "type"-"size"-"actual address"
+   */
+  static void PrintArpCache (Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
+
+  /**
+   * \brief prints the neighbor cache of a node at regular intervals specified by user.
+   * \param printInterval the time interval for which the neighbor cache is supposed to be printed.
+   * \param node The node ptr for which we need the neighbor cache to be printed
+   * \param stream The output stream object to use
+   *
+   * This method calls the PrintArpCache() method of the
+   * ArpCache associated with each Ipv4Interface stored in the Ipv4 object, for all nodes at the
+   * specified time. The output format is similar to:
+   * \verbatim
+     10.1.1.2 dev 1 lladdr 00-06-00:00:00:00:00:02 REACHABLE
+     \endverbatim
+   * Note that the MAC address is printed as "type"-"size"-"actual address"
+   */
+  static void PrintArpCacheEvery (Time printInterval, Ptr<Node> node, Ptr<OutputStreamWrapper> stream);
 };
 
 

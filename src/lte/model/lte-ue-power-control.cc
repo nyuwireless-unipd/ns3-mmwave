@@ -26,9 +26,9 @@
 #include <ns3/integer.h>
 #include <ns3/math.h>
 
-NS_LOG_COMPONENT_DEFINE ("LteUePowerControl");
-
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("LteUePowerControl");
 
 NS_OBJECT_ENSURE_REGISTERED (LteUePowerControl);
 
@@ -72,6 +72,7 @@ LteUePowerControl::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::LteUePowerControl")
     .SetParent<Object> ()
+    .SetGroupName("Lte")
     .AddConstructor<LteUePowerControl> ()
     .AddAttribute ("ClosedLoop",
                    "If true Closed Loop mode will be active, otherwise Open Loop",
@@ -117,13 +118,16 @@ LteUePowerControl::GetTypeId (void)
                    MakeIntegerChecker<int16_t> ())
     .AddTraceSource ("ReportPuschTxPower",
                      "Report PUSCH TxPower in dBm",
-                     MakeTraceSourceAccessor (&LteUePowerControl::m_reportPuschTxPower))
+                     MakeTraceSourceAccessor (&LteUePowerControl::m_reportPuschTxPower),
+                     "ns3::LteUePowerControl::TxPowerTracedCallback")
     .AddTraceSource ("ReportPucchTxPower",
                      "Report PUCCH TxPower in dBm",
-                     MakeTraceSourceAccessor (&LteUePowerControl::m_reportPucchTxPower))
+                     MakeTraceSourceAccessor (&LteUePowerControl::m_reportPucchTxPower),
+                     "ns3::LteUePowerControl::TxPowerTracedCallback")
     .AddTraceSource ("ReportSrsTxPower",
                      "Report SRS TxPower in dBm",
-                     MakeTraceSourceAccessor (&LteUePowerControl::m_reportSrsTxPower))
+                     MakeTraceSourceAccessor (&LteUePowerControl::m_reportSrsTxPower),
+                     "ns3::LteUePowerControl::TxPowerTracedCallback")
   ;
   return tid;
 }

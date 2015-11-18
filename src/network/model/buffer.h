@@ -139,7 +139,7 @@ public:
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by one byte.
      */
     inline void WriteU8 (uint8_t  data);
@@ -147,14 +147,14 @@ public:
      * \param data data to write in buffer
      * \param len number of times data must be written in buffer
      *
-     * Write the data in buffer len times and avance the iterator position
+     * Write the data in buffer len times and advance the iterator position
      * by len byte.
      */
     inline void WriteU8 (uint8_t data, uint32_t len);
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by two bytes. The format of the data written in the byte
      * buffer is non-portable. We only ensure that readU16 will
      * return exactly what we wrote with writeU16 if the program
@@ -164,7 +164,7 @@ public:
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by four bytes. The format of the data written in the byte
      * buffer is non-portable. We only ensure that readU32 will
      * return exactly what we wrote with writeU32 if the program
@@ -174,7 +174,7 @@ public:
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by eight bytes. The format of the data written in the byte
      * buffer is non-portable. We only ensure that readU64 will
      * return exactly what we wrote with writeU64 if the program
@@ -184,15 +184,15 @@ public:
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
-     * by two bytes. The data is written in network order and the
+     * Write the data in buffer and advance the iterator position
+     * by two bytes. The data is written in least significant byte order and the
      * input data is expected to be in host order.
      */
     void WriteHtolsbU16 (uint16_t data);
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by four bytes. The data is written in least significant byte order and the
      * input data is expected to be in host order.
      */
@@ -200,7 +200,7 @@ public:
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by eight bytes. The data is written in least significant byte order and the
      * input data is expected to be in host order.
      */
@@ -208,15 +208,15 @@ public:
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
-     * by two bytes. The data is written in least significant byte order and the
+     * Write the data in buffer and advance the iterator position
+     * by two bytes. The data is written in network order and the
      * input data is expected to be in host order.
      */
     inline void WriteHtonU16 (uint16_t data);
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by four bytes. The data is written in network order and the
      * input data is expected to be in host order.
      */
@@ -224,7 +224,7 @@ public:
     /**
      * \param data data to write in buffer
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by eight bytes. The data is written in network order and the
      * input data is expected to be in host order.
      */
@@ -233,7 +233,7 @@ public:
      * \param buffer a byte buffer to copy in the internal buffer.
      * \param size number of bytes to copy.
      *
-     * Write the data in buffer and avance the iterator position
+     * Write the data in buffer and advance the iterator position
      * by size bytes.
      */
     void Write (uint8_t const*buffer, uint32_t size);
@@ -242,7 +242,7 @@ public:
      * \param end the end of the data to copy
      *
      * Write the data delimited by start and end in internal buffer
-     * and avance the iterator position by the number of bytes
+     * and advance the iterator position by the number of bytes
      * copied.
      * The input interators _must_ not point to the same Buffer as
      * we do to avoid overlapping copies. This is enforced
@@ -293,7 +293,7 @@ public:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in network format and returned in host format.
      */
     inline uint16_t ReadNtohU16 (void);
     /**
@@ -301,7 +301,7 @@ public:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in network format and returned in host format.
      */
     inline uint32_t ReadNtohU32 (void);
     /**
@@ -309,7 +309,7 @@ public:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in network format and returned in host format.
      */
     uint64_t ReadNtohU64 (void);
     /**
@@ -317,7 +317,7 @@ public:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in least significant byte format and returned in host format.
      */
     uint16_t ReadLsbtohU16 (void);
     /**
@@ -325,7 +325,7 @@ public:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in least significant byte format and returned in host format.
      */
     uint32_t ReadLsbtohU32 (void);
     /**
@@ -333,7 +333,7 @@ public:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in least signficant byte format and returned in host format.
      */
     uint64_t ReadLsbtohU64 (void);
     /**
@@ -417,7 +417,7 @@ private:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in network format and returned in host format.
      *
      * \warning this is the slow version, please use ReadNtohU16 (void)
      */
@@ -427,7 +427,7 @@ private:
      *
      * Read data and advance the Iterator by the number of bytes
      * read.
-     * The data is read in network format and return in host format.
+     * The data is read in network format and returned in host format.
      *
      * \warning this is the slow version, please use ReadNtohU32 (void)
      */
@@ -496,7 +496,6 @@ private:
 
   /**
    * \param start size to reserve
-   * \returns true if the buffer needed resizing, false otherwise.
    *
    * Add bytes at the start of the Buffer. The
    * content of these bytes is undefined but debugging
@@ -504,10 +503,9 @@ private:
    * Any call to this method invalidates any Iterator
    * pointing to this Buffer.
    */
-  bool AddAtStart (uint32_t start);
+  void AddAtStart (uint32_t start);
   /**
    * \param end size to reserve
-   * \returns true if the buffer needed resizing, false otherwise.
    *
    * Add bytes at the end of the Buffer. The
    * content of these bytes is undefined but debugging
@@ -515,7 +513,7 @@ private:
    * Any call to this method invalidates any Iterator
    * pointing to this Buffer.
    */
-  bool AddAtEnd (uint32_t end);
+  void AddAtEnd (uint32_t end);
 
   /**
    * \param o the buffer to append to the end of this buffer.
@@ -563,14 +561,6 @@ private:
   inline Buffer::Iterator End (void) const;
 
   /**
-   * \brief Create a full copy of the buffer, including
-   * all the internal structures.
-   *
-   * \returns a copy of the buffer
-   */
-  Buffer CreateFullCopy (void) const;
-
-  /**
    * \brief Return the number of bytes required for serialization.
    * \return the number of bytes.
    */
@@ -597,17 +587,6 @@ private:
    * data is placed into this buffer.
    */
   uint32_t Deserialize (const uint8_t* buffer, uint32_t size);
-
-  /**
-   * \brief Returns the current buffer start offset
-   * \return the offset
-   */
-  int32_t GetCurrentStartOffset (void) const;
-  /**
-   * \brief Returns the current buffer end offset
-   * \return the offset
-   */
-  int32_t GetCurrentEndOffset (void) const;
 
   /** 
    * Copy the specified amount of data from the buffer to the given output stream.
@@ -699,6 +678,14 @@ private:
      */
     uint8_t m_data[1];
   };
+
+  /**
+   * \brief Create a full copy of the buffer, including
+   * all the internal structures.
+   *
+   * \returns a copy of the buffer
+   */
+  Buffer CreateFullCopy (void) const;
 
   /**
    * \brief Transform a "Virtual byte buffer" into a "Real byte buffer"
@@ -959,7 +946,7 @@ Buffer::Iterator::ReadNtohU16 (void)
     }
   else if (m_current >= m_zeroEnd)
     {
-      buffer = &m_data[m_current];
+      buffer = &m_data[m_current - (m_zeroEnd - m_zeroStart)];
     }
   else
     {
@@ -983,7 +970,7 @@ Buffer::Iterator::ReadNtohU32 (void)
     }
   else if (m_current >= m_zeroEnd)
     {
-      buffer = &m_data[m_current];
+      buffer = &m_data[m_current - (m_zeroEnd - m_zeroStart)];
     }
   else
     {
@@ -1005,7 +992,7 @@ uint8_t
 Buffer::Iterator::PeekU8 (void)
 {
   NS_ASSERT_MSG (m_current >= m_dataStart &&
-                 m_current <= m_dataEnd,
+                 m_current < m_dataEnd,
                  GetReadErrorMessage ());
 
   if (m_current < m_zeroStart)
