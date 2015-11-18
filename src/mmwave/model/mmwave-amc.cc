@@ -12,13 +12,11 @@
 #include "ns3/enum.h"
 #include "mmwave-mi-error-model.h"
 
-#define CRC 24
-
-NS_LOG_COMPONENT_DEFINE ("mmWaveAmc");
+NS_LOG_COMPONENT_DEFINE ("MmWaveAmc");
 
 namespace ns3 {
 
-NS_OBJECT_ENSURE_REGISTERED (mmWaveAmc);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveAmc);
 
 static const double SpectralEfficiencyForCqi[16] = {
 	0.0, // out of range
@@ -34,45 +32,93 @@ static const double SpectralEfficiencyForMcs[32] = {
 	0, 0, 0
 };
 
-mmWaveAmc::mmWaveAmc ()
+// see spreadsheet from 3GPP R1-081483 "Conveying MCS and TB size via PDCCH"
+/*static const double CodeRateForMcs[32] = {
+		0.076171875,
+		0.096679688,
+		0.1171875,
+		0.152832031,
+		0.188476563,
+		0.244628906,
+		0.30078125,
+		0.369628906,
+		0.438476563,
+		0.513183594,
+		0.587890625,
+		0.331542969,
+		0.369140625,
+		0.423828125,
+		0.478515625,
+		0.540039063,
+		0.6015625,
+		0.642089844,
+		0.455078125,
+		0.504394531,
+		0.553710938,
+		0.602050781,
+		0.650390625,
+		0.702148438,
+		0.75390625,
+		0.803222656,
+		0.852539063,
+		0.889160156,
+		0.92578125
+};*/
+
+// Table 7.1.7.1-1 of 3GPP TS 36.213 v8.8.0
+static const int McsToItbs[29] = {
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18,
+  19, 20, 21, 22, 23, 24, 25, 26
+};
+
+static const int ModulationSchemeForMcs[32] = {
+  2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+  4, 4, 4, 4, 4, 4, 4,
+  6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+  2,  // reserved
+  4,  // reserved
+  6,  // reserved
+};
+
+MmWaveAmc::MmWaveAmc ()
 {
 	NS_LOG_ERROR ("This construcor should not be invoked");
 }
 
-mmWaveAmc::mmWaveAmc (Ptr<MmWavePhyMacCommon> ConfigParams)
-: m_ConfigParams (ConfigParams)
+MmWaveAmc::MmWaveAmc (Ptr<MmWavePhyMacCommon> ConfigParams)
+: m_phyMacConfig (ConfigParams)
 {
 	NS_LOG_INFO ("Initialze AMC module");
 }
 
-mmWaveAmc::~mmWaveAmc ()
+MmWaveAmc::~MmWaveAmc ()
 {
 
 }
 
 TypeId
-mmWaveAmc::GetTypeId (void)
+MmWaveAmc::GetTypeId (void)
 {
-	static TypeId tid = TypeId ("ns3::mmWaveAmc")
+	static TypeId tid = TypeId ("ns3::MmWaveAmc")
 	.SetParent<Object> ()
-	.AddConstructor<mmWaveAmc> ()
+	.AddConstructor<MmWaveAmc> ()
 	.AddAttribute ("Ber",
 				 "The requested BER in assigning MCS (default is 0.00005).",
 				 DoubleValue (0.00005),
-				 MakeDoubleAccessor (&mmWaveAmc::m_ber),
+				 MakeDoubleAccessor (&MmWaveAmc::m_ber),
 				 MakeDoubleChecker<double> ())
 	.AddAttribute ("AmcModel",
 				"AMC model used to assign CQI",
-				 EnumValue (mmWaveAmc::MiErrorModel),
-				 MakeEnumAccessor (&mmWaveAmc::m_amcModel),
-				 MakeEnumChecker (mmWaveAmc::MiErrorModel, "Vienna",
-								  mmWaveAmc::PiroEW2010, "PiroEW2010"))
+				 EnumValue (MmWaveAmc::MiErrorModel),
+				 MakeEnumAccessor (&MmWaveAmc::m_amcModel),
+				 MakeEnumChecker (MmWaveAmc::MiErrorModel, "Vienna",
+								  MmWaveAmc::PiroEW2010, "PiroEW2010"))
 	;
 	return tid;
 }
 
 int
-mmWaveAmc::GetMcsFromCqi (int cqi)
+MmWaveAmc::GetMcsFromCqi (int cqi)
 {
   NS_LOG_FUNCTION (cqi);
   NS_ASSERT_MSG (cqi >= 0 && cqi <= 15, "CQI must be in [0..15] = " << cqi);
@@ -87,27 +133,50 @@ mmWaveAmc::GetMcsFromCqi (int cqi)
 }
 
 int
-mmWaveAmc::GetTbSizeFromMcs (int mcs, int nprb)
+MmWaveAmc::GetTbSizeFromMcs (unsigned mcs, unsigned nprb)
 {
 	NS_LOG_FUNCTION (mcs);
 	NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
 	//NS_ASSERT_MSG (nprb < 5, "NPRB=" << nprb);
-	int rscElement = m_ConfigParams->GetNumSCperChunk ()*m_ConfigParams->GetNumChunkPerRb ()*nprb*(m_ConfigParams->GetSymbPerSlot () - m_ConfigParams->GetNumReferenceSymbols ());
+	int rscElement = m_phyMacConfig->GetNumSCperChunk ()*m_phyMacConfig->GetNumChunkPerRb ()*nprb* \
+			(m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetNumReferenceSymbols ());
 	double s = SpectralEfficiencyForMcs[mcs];
 
-	int tbSize = rscElement*s - CRC;
-	uint16_t cbSize = 6144;  //max size of a code-block (including CRC)
+	int tbSize = rscElement*s - m_crcLen;
+	uint16_t cbSize = 6144;  //max size of a code-block (including m_crcLen)
     if (tbSize > cbSize)
     {
         int C = ceil ((double)tbSize / ((double)(6144)));
-    	tbSize -= C*CRC; //subtract bits of CRC used in code-blocks.
+    	tbSize -= C*m_crcLen; //subtract bits of m_crcLen used in code-blocks.
     }
    	return tbSize;
 
 }
 
+
+int
+MmWaveAmc::GetTbSizeFromMcsSymbols (unsigned mcs, unsigned nsymb)
+{
+	NS_LOG_FUNCTION (mcs);
+	NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
+	//unsigned itb = McsToItbs[mcs];
+	int rscElement = (m_phyMacConfig->GetNumSCperChunk ()*m_phyMacConfig->GetTotalNumChunk()
+			- m_phyMacConfig->GetNumRefScPerSym ())*nsymb;
+	double Rcode = McsEcrTable[mcs];
+	double Qm = ModulationSchemeForMcs[mcs];
+
+	int tbSize = rscElement*Qm*Rcode - m_crcLen;
+	uint16_t cbSize = 6144;  //max size of a code-block (including m_crcLen)
+	if (tbSize > cbSize)
+	{
+		int C = ceil ((double)tbSize / ((double)(6144)));
+		tbSize -= C*m_crcLen; //subtract bits of m_crcLen used in code-blocks.
+	}
+	return tbSize;
+}
+
 std::vector<int>
-mmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
+MmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 {
 	NS_LOG_FUNCTION (this);
 
@@ -161,7 +230,7 @@ mmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 				while (mcs <= 28)
 				{
 					HarqProcessInfoList_t harqInfoList;
-					tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, (uint16_t)GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs, harqInfoList);
+					tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs, harqInfoList);
 					if (tbStats.tbler > 0.1)
 					{
 						break;
@@ -206,8 +275,200 @@ mmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 	return cqi;
 }
 
+std::vector<int>
+MmWaveAmc::CreateCqiFeedbacksTdma (const SpectrumValue& sinr, uint8_t numSym)
+{
+	NS_LOG_FUNCTION (this);
+
+	std::vector<int> cqi;
+	Values::const_iterator it;
+	if (m_amcModel == PiroEW2010)
+	{
+		//use PiroEW2010 model
+		for (it = sinr.ConstValuesBegin (); it != sinr.ConstValuesEnd (); it++)
+		{
+			double sinr_ = (*it);
+			if (sinr_ == 0.0)
+			{
+				cqi.push_back (-1); // SINR == 0 (linear units) means no signal in this RB
+			}
+			else
+			{
+			/*
+			* Compute the spectral efficiency from the SINR
+			*                                        SINR
+			* spectralEfficiency = log2 (1 + -------------------- )
+			*                                    -ln(5*BER)/1.5
+			* NB: SINR must be expressed in linear units
+			*/
+
+			double s = log2 ( 1 + ( sinr_ / ( (-std::log (5.0 * m_ber )) / 1.5) ));
+
+			int cqi_ = GetCqiFromSpectralEfficiency (s);
+
+			NS_LOG_LOGIC (" PRB =" << cqi.size ()
+								<< ", sinr = " << sinr_
+								<< " (=" << 10 * std::log10 (sinr_) << " dB)"
+								<< ", spectral efficiency =" << s
+								<< ", CQI = " << cqi_ << ", BER = " << m_ber);
+
+			cqi.push_back (cqi_);
+			}
+		}
+	}
+	else if (m_amcModel == MiErrorModel)
+	{
+		int chunkId = 0;
+		for (it = sinr.ConstValuesBegin (); it != sinr.ConstValuesEnd (); it++)
+		{
+			uint8_t mcs = 0;
+			TbStats_t tbStats;
+			std::vector <int> chunkMap;
+			chunkMap.push_back (chunkId++);
+			while (mcs <= 28)
+			{
+				HarqProcessInfoList_t harqInfoList;
+				tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, chunkMap, GetTbSizeFromMcsSymbols (mcs, numSym) / 8, mcs, harqInfoList);
+				if (tbStats.tbler > 0.1)
+				{
+					break;
+				}
+				mcs++;
+
+			}
+			if (mcs > 0)
+			{
+				mcs--;
+			}
+			NS_LOG_DEBUG (this << "\t MCS " << (uint16_t)mcs << " TBLER " << tbStats.tbler);
+			int chunkCqi = 0;
+			if ((tbStats.tbler > 0.1)&&(mcs==0))
+			{
+				chunkCqi = 0;
+			}
+			else if (mcs == 28)
+			{
+				chunkCqi = 15; // all MCSs can guarantee the 10 % of BER
+			}
+			else
+			{
+				double s = SpectralEfficiencyForMcs[mcs];
+				chunkCqi = 0;
+				while ((chunkCqi < 15) && (SpectralEfficiencyForCqi[chunkCqi + 1] <= s))
+				{
+					++chunkCqi;
+				}
+			}
+			NS_LOG_DEBUG (this << "\t MCS " << (uint16_t)mcs << "-> CQI " << chunkCqi);
+			cqi.push_back (chunkCqi);
+		}
+	}
+	return cqi;
+}
+
 int
-mmWaveAmc::GetCqiFromSpectralEfficiency (double s)
+MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, uint32_t tbSize, int &mcs)
+{
+	NS_LOG_FUNCTION (this);
+
+	//std::vector<int> cqi;
+	uint8_t cqi;
+	double seAvg;
+
+	Values::const_iterator it;
+	if (m_amcModel == PiroEW2010)
+	{
+		//use PiroEW2010 model
+		for (it = sinr.ConstValuesBegin (); it != sinr.ConstValuesEnd (); it++)
+		{
+			double sinr_ = (*it);
+			if (sinr_ == 0.0)
+			{
+				//cqi.push_back (-1); // SINR == 0 (linear units) means no signal in this RB
+			}
+			else
+			{
+				/*
+				 * Compute the spectral efficiency from the SINR
+				 *                                        SINR
+				 * spectralEfficiency = log2 (1 + -------------------- )
+				 *                                    -ln(5*BER)/1.5
+				 * NB: SINR must be expressed in linear units
+				 */
+
+				double s = log2 ( 1 + ( sinr_ / ( (-std::log (5.0 * m_ber )) / 1.5) ));
+				seAvg += s;
+
+				int cqi_ = GetCqiFromSpectralEfficiency (s);
+
+				NS_LOG_LOGIC (" PRB =" << sinr.GetSpectrumModel()->GetNumBands ()
+				              << ", sinr = " << sinr_
+				              << " (=" << 10 * std::log10 (sinr_) << " dB)"
+				              << ", spectral efficiency =" << s
+				              << ", CQI = " << cqi_ << ", BER = " << m_ber);
+				//cqi.push_back (cqi_);
+			}
+		}
+		seAvg /= sinr.GetSpectrumModel()->GetNumBands ();
+		cqi = GetCqiFromSpectralEfficiency (seAvg);
+	}
+	else if (m_amcModel == MiErrorModel)
+	{
+		std::vector <int> chunkMap;
+		int chunkId = 0;
+		double sinrAvg = 0;
+		for (it = sinr.ConstValuesBegin (); it != sinr.ConstValuesEnd (); it++)
+		{
+			chunkMap.push_back (chunkId++);
+			sinrAvg += *it;
+		}
+		sinrAvg /= chunkId;
+
+		mcs = 0;
+		TbStats_t tbStats;
+		while (mcs <= 28)
+		{
+			HarqProcessInfoList_t harqInfoList;
+			tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, chunkMap, tbSize, mcs, harqInfoList);
+			if (tbStats.tbler > 0.1)
+			{
+				break;
+			}
+			mcs++;
+		}
+		if (mcs > 0)
+		{
+			mcs--;
+		}
+//		HarqProcessInfoList_t harqInfoList;
+//		TbStats_t tbStatsFinal = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, chunkMap, tbSize, mcs, harqInfoList);
+//		NS_LOG_UNCOND ("TBLER " << tbStatsFinal.tbler << " for chunks " << chunkMap.size () << " numSym "
+//		               << (unsigned)numSym << " tbSize " << tbSize << " mcs " << (unsigned)mcs << " sinr " << sinrAvg);
+//		NS_LOG_UNCOND (sinr);
+		if ((tbStats.tbler > 0.1)&&(mcs==0))
+		{
+			cqi = 0;
+		}
+		else if (mcs == 28)
+		{
+			cqi = 15; // all MCSs can guarantee the 10 % of BER
+		}
+		else
+		{
+			double s = SpectralEfficiencyForMcs[mcs];
+			cqi = 0;
+			while ((cqi < 15) && (SpectralEfficiencyForCqi[cqi + 1] <= s))
+			{
+				++cqi;
+			}
+		}
+		NS_LOG_DEBUG (this << "\t MCS " << (uint16_t)mcs << "-> CQI " << cqi);
+	}
+	return cqi;
+}
+
+int
+MmWaveAmc::GetCqiFromSpectralEfficiency (double s)
 {
 	NS_LOG_FUNCTION (s);
 	NS_ASSERT_MSG (s >= 0.0, "negative spectral efficiency = " << s);

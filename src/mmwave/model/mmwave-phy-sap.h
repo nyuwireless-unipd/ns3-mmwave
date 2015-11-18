@@ -26,6 +26,10 @@ public:
 	virtual void SendControlMessage (Ptr<MmWaveControlMessage> msg) = 0;
 
 	virtual void SendRachPreamble(uint8_t PreambleId, uint8_t Rnti) = 0;
+
+	virtual void SetDlSfAllocInfo (SfAllocInfo sfAllocInfo) = 0;
+
+	virtual void SetUlSfAllocInfo (SfAllocInfo sfAllocInfo) = 0;
 };
 
 /* Phy to Mac comm */
@@ -54,7 +58,7 @@ public:
    * \param frameNo frame number
    * \param subframeNo subframe number
    */
-	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo) = 0;
+	virtual void SubframeIndication (SfnSf) = 0;
 
   /**
    * \brief Returns to MAC level the UL-CQI evaluated
@@ -102,7 +106,7 @@ public:
    * \param frameNo frame number
    * \param subframeNo subframe number
    */
-	virtual void SubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo) = 0;
+	virtual void SubframeIndication (SfnSf) = 0;
 };
 
 }

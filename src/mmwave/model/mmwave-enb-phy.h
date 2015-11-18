@@ -54,11 +54,11 @@ public:
 
 	void DoSetSubChannels ();
 
-	void StartFrame (void);
 	void StartSubFrame (void);
+	void StartSlot (void);
 
+	void EndSlot (void);
 	void EndSubFrame (void);
-	void EndFrame (void);
 
 	void SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo& slotInfo);
 
@@ -111,18 +111,17 @@ private:
 	void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
 	std::list<TbAllocInfo> DequeueUlTbAlloc ();
 
-	uint32_t m_nrSlots;
-	uint32_t m_nrFrames;
+	uint8_t m_currSfNumSlots;
 
   uint32_t m_numRbg;
-
-	SlotAllocInfo::TddMode m_prevSlotDir;
 
 	std::set <uint64_t> m_ueAttached;
 
 	std::vector <int> m_listOfSubchannels;
 
 	uint8_t m_prevSlot; // 1->UL 0->DL 2->Unspecified
+
+	SlotAllocInfo::TddMode m_prevSlotDir;
 
 	std::vector< Ptr<NetDevice> > m_deviceMap;
 
@@ -136,7 +135,14 @@ private:
 	std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB receptions
 	std::vector< std::vector< Ptr<PacketBurst> > > m_packetBurstQueue;
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
+	std::vector <int> m_channelChunks;
 
+	Time m_sfPeriod;
+	Time m_lastSfStart;
+
+	uint8_t m_currSymStart;
+
+	TracedCallback< uint64_t, SpectrumValue&, SpectrumValue& > m_ulSinrTrace;
 };
 
 }

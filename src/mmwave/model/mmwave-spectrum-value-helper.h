@@ -34,13 +34,11 @@ namespace ns3 {
  *
  * \brief This class defines all functions to create spectrum model for mmwave
  */
-class mmWaveSpectrumValueHelper
+class MmWaveSpectrumValueHelper
 {
 public:
 
   static Ptr<SpectrumModel> GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig);
-
-
 
   static Ptr<SpectrumValue> CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig,
                                                           double powerTx,

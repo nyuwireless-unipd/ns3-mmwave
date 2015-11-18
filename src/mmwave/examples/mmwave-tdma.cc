@@ -14,28 +14,20 @@
 
 using namespace ns3;
 
+double distUpdateInterval = 10.0;  // in ms
+double distInc = 0.5; // increment by 10 meters
+
+void updateDistance (double dist, Ptr<Node> ue)
+{
+  std::cout << "************* distance changing to " << dist << " *************" << std::endl;
+  Ptr<MobilityModel> mobModel = ue->GetObject<MobilityModel> ();
+  mobModel->SetPosition (Vector (dist, 0.0, 0.0));
+	Simulator::Schedule (MilliSeconds(distUpdateInterval), &updateDistance, dist+distInc, ue);
+}
+
 int 
 main (int argc, char *argv[])
 {
-//  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-//  LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-//  LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
-
-//  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
-//  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_DEBUG);
-//  LogComponentEnable ("MmWaveHarqPhy", LOG_LEVEL_DEBUG);
-
-
-  //LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
-  //LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-  //LogComponentEnable("mmWaveInterference",LOG_LEVEL_ALL);
-  //LogComponentEnable("MmWaveBeamforming",LOG_LEVEL_ALL);
-  //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-  //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
-
   /* Information regarding the traces generated:
    *
    * 1. UE_1_SINR.txt : Gives the SINR for each sub-band
@@ -45,33 +37,67 @@ main (int argc, char *argv[])
    * 	Time (micro-sec)  |  Tb-size in bytes
    * */
 
+//	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveFlexTtiHarqMacScheduler", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWavePhyRxTrace", LOG_LEVEL_DEBUG);
+	//LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
+	//LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
+	//LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
 
-  uint16_t numEnb = 2;
-  uint16_t numUe = 5;
+	uint16_t numEnb = 1;
+	uint16_t numUe = 1;
+	double distMin = 15.0;  // eNB-UE distance in meters
+	double distMax = 250.0;  // eNB-UE distance in meters
+	double simTime = 1.0;
+	bool harqEnabled = true;
+	int mcsDl = -1;
+	std::string channelState = "n";
+	bool smallScale = true;
 
-  double simTime = 0.06;
-  double interPacketInterval = 10;
+	// Command line arguments
+	CommandLine cmd;
+	cmd.AddValue("numEnb", "Number of eNBs", numEnb);
+	cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
+	cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
+	cmd.AddValue("harq", "Enable Hybrid ARQ", harqEnabled);
+	cmd.AddValue("mcsDl", "Fixed DL MCS", mcsDl);
+	cmd.AddValue("channelState", "Channel state 'l'=LOS, 'n'=NLOS, 'a'=all", channelState);
+	cmd.AddValue("distMin", "Initial distance", distMin);
+	cmd.AddValue("distMax", "Final distance", distMax);
+	cmd.AddValue("distInc", "Distance increment", distInc);
+	cmd.AddValue("distUpdateInterval", "Period after which distance is updated", distUpdateInterval);
+	cmd.AddValue("smallScale", "Enable small scale fading", smallScale);
+	cmd.Parse(argc, argv);
 
-  // Command line arguments
-  CommandLine cmd;
-  cmd.AddValue("numEnb", "Number of eNBs", numEnb);
-  cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
-  cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
-  cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
-  cmd.Parse(argc, argv);
+	simTime = ((distMax - distMin) / distInc) * (distUpdateInterval/1000.0);
 
-  Config::SetDefault ("ns3::MmWaveRrMacScheduler::HarqEnabled", BooleanValue (false));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
+	if (mcsDl >= 0 && mcsDl < 29)
+	{
+		Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::FixedMcsDl", BooleanValue(true));
+		Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::McsDefaultDl", UintegerValue(mcsDl));
+	}
 
-  Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
+	Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (Seconds (2*simTime)));
+	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (1.0)));
+	Config::SetDefault ("ns3::MmWaveAmc::Ber", DoubleValue (0.001));
+	Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
+	Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
 
-  ptr_mmWave->Initialize();
+  Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
 
-  ptr_mmWave->SetHarqEnabled (false);
+  mmwHelper->Initialize();
+  mmwHelper->SetHarqEnabled (harqEnabled);
 
   /* A configuration example.
-   * ptr_mmWave->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
+   * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -89,28 +115,28 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
+  uePositionAlloc->Add (Vector (distMin, 0.0, 0.0));
+
+  Simulator::Schedule (MilliSeconds(distUpdateInterval), &updateDistance, distMin+distInc, ueNodes.Get (0));
 
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
-  NetDeviceContainer enbNetDev = ptr_mmWave->InstallEnbDevice (enbNodes);
-  NetDeviceContainer ueNetDev = ptr_mmWave->InstallUeDevice (ueNodes);
+  NetDeviceContainer enbNetDev = mmwHelper->InstallEnbDevice (enbNodes);
+  NetDeviceContainer ueNetDev = mmwHelper->InstallUeDevice (ueNodes);
 
-
-  ptr_mmWave->RegisterToClosestEnb (ueNetDev, enbNetDev);
-  ptr_mmWave->EnableTraces();
+  mmwHelper->AttachToClosestEnb (ueNetDev, enbNetDev);
+  mmwHelper->EnableTraces();
 
   // Activate a data radio bearer
   enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
   EpsBearer bearer (q);
-  ptr_mmWave->ActivateDataRadioBearer (ueNetDev, bearer);
-
-
+  mmwHelper->ActivateDataRadioBearer (ueNetDev, bearer);
 
   Simulator::Stop (Seconds (simTime));
+	NS_LOG_UNCOND ("Simulation running for " << simTime << " seconds");
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;

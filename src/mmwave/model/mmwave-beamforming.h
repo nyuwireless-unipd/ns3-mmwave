@@ -173,6 +173,8 @@ private:
 
 private:
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
+	Time m_longTermUpdatePeriod;
+	bool m_smallScale;
 };
 
 }  //namespace ns3

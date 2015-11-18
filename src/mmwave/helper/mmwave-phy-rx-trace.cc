@@ -12,32 +12,37 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("mmWavePhyRxTrace");
+NS_LOG_COMPONENT_DEFINE ("MmWavePhyRxTrace");
 
-NS_OBJECT_ENSURE_REGISTERED (mmWavePhyRxTrace);
+NS_OBJECT_ENSURE_REGISTERED (MmWavePhyRxTrace);
 
-mmWavePhyRxTrace::mmWavePhyRxTrace()
+std::ofstream MmWavePhyRxTrace::m_rxPacketTraceFile;
+std::string MmWavePhyRxTrace::m_rxPacketTraceFilename;
+
+MmWavePhyRxTrace::MmWavePhyRxTrace()
 {
-
 }
 
-mmWavePhyRxTrace::~mmWavePhyRxTrace()
+MmWavePhyRxTrace::~MmWavePhyRxTrace()
 {
-
+	if (m_rxPacketTraceFile.is_open ())
+	{
+		m_rxPacketTraceFile.close ();
+	}
 }
 
 TypeId
-mmWavePhyRxTrace::GetTypeId (void)
+MmWavePhyRxTrace::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::mmWavePhyRxTrace")
+  static TypeId tid = TypeId ("ns3::MmWavePhyRxTrace")
     .SetParent<Object> ()
-    .AddConstructor<mmWavePhyRxTrace> ()
+    .AddConstructor<MmWavePhyRxTrace> ()
   ;
   return tid;
 }
 
 void
-mmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 																uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power)
 {
 	NS_LOG_INFO ("UE"<<imsi<<"->Generate RsrpSinrTrace");
@@ -46,7 +51,32 @@ mmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback (Ptr<mmWavePhyRxTrace> phySt
 }
 
 void
-mmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
+MmWavePhyRxTrace::UlSinrTraceCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+																uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power)
+{
+	NS_LOG_INFO ("UE"<<imsi<<"->Generate UlSinrTrace");
+	uint64_t slot_count = Now().GetMicroSeconds ()/125;
+	uint32_t rb_count = 1;
+	FILE* log_file;
+	char fname[255];
+	sprintf(fname, "UE_%llu_UL_SINR_dB.txt", imsi);
+	log_file = fopen(fname, "a");
+	Values::iterator it = sinr.ValuesBegin();
+	while(it!=sinr.ValuesEnd())
+	{
+		//fprintf(log_file, "%d\t%d\t%f\t \n", slot_count/2, rb_count, 10*log10(*it));
+		fprintf(log_file, "%llu\t%llu\t%d\t%f\t \n",slot_count/8+1, slot_count%8+1, rb_count, 10*log10(*it));
+		rb_count++;
+		it++;
+	}
+	fflush(log_file);
+	fclose(log_file);
+	//phyStats->ReportInterferenceTrace (imsi, sinr);
+	//phyStats->ReportPowerTrace (imsi, power);
+}
+
+void
+MmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 {
 	uint64_t slot_count = Now().GetMicroSeconds ()/125;
 	uint32_t rb_count = 1;
@@ -67,7 +97,7 @@ mmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 }
 
 void
-mmWavePhyRxTrace::ReportPowerTrace (uint64_t imsi, SpectrumValue& power)
+MmWavePhyRxTrace::ReportPowerTrace (uint64_t imsi, SpectrumValue& power)
 {
 
 	uint32_t slot_count = Now().GetMicroSeconds ()/125;
@@ -89,20 +119,20 @@ mmWavePhyRxTrace::ReportPowerTrace (uint64_t imsi, SpectrumValue& power)
 }
 
 void
-mmWavePhyRxTrace::ReportPacketCountUeCallback (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyRxTrace::ReportPacketCountUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 			UePhyPacketCountParameter param)
 {
 	phyStats->ReportPacketCountUe (param);
 }
 void
-mmWavePhyRxTrace::ReportPacketCountEnbCallback (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyRxTrace::ReportPacketCountEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 		EnbPhyPacketCountParameter param)
 {
 	phyStats->ReportPacketCountEnb (param);
 }
 
 void
-mmWavePhyRxTrace::ReportDownLinkTBSize (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyRxTrace::ReportDownLinkTBSize (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 		uint64_t imsi, uint64_t tbSize)
 {
 	phyStats->ReportDLTbSize (imsi, tbSize);
@@ -111,7 +141,7 @@ mmWavePhyRxTrace::ReportDownLinkTBSize (Ptr<mmWavePhyRxTrace> phyStats, std::str
 
 
 void
-mmWavePhyRxTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
+MmWavePhyRxTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
 {
 	FILE* log_file;
 	char fname[255];
@@ -132,7 +162,7 @@ mmWavePhyRxTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
 }
 
 void
-mmWavePhyRxTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
+MmWavePhyRxTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
 {
 	FILE* log_file;
 	char fname[255];
@@ -152,18 +182,64 @@ mmWavePhyRxTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
 }
 
 void
-mmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
+MmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
 {
 	FILE* log_file;
 	char fname[255];
 	sprintf (fname,"UE_%llu_Tb_Size.txt", imsi);
 	log_file = fopen (fname, "a");
 
-	fprintf (log_file, "%lld \t %llu \n", Now().GetMicroSeconds (), tbSize);
+	fprintf (log_file, "%llu \t %llu\n", Now().GetMicroSeconds (), tbSize);
 
 	fflush(log_file);
 	fclose(log_file);
+}
 
+void
+MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams params)
+{
+	if (!m_rxPacketTraceFile.is_open())
+	{
+		m_rxPacketTraceFilename = "RxPacketTrace.txt";
+		m_rxPacketTraceFile.open(m_rxPacketTraceFilename.c_str ());
+		if (!m_rxPacketTraceFile.is_open())
+		{
+			NS_FATAL_ERROR ("Could not open tracefile");
+		}
+	}
+	m_rxPacketTraceFile << "DlRxTrace\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_slotNum
+			<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
+			<< params.m_sinr << "\t" << params.m_tbler <<" \t" << params.m_corrupt << std::endl;
+
+	if (params.m_corrupt)
+	{
+		NS_LOG_DEBUG ("DL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_slotNum
+				<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
+				<< params.m_sinr << "\t" << params.m_tbler << "\t" << params.m_corrupt);
+	}
+}
+void
+MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams params)
+{
+	if (!m_rxPacketTraceFile.is_open())
+	{
+		m_rxPacketTraceFilename = "RxPacketTrace.txt";
+		m_rxPacketTraceFile.open(m_rxPacketTraceFilename.c_str ());
+		if (!m_rxPacketTraceFile.is_open())
+		{
+			NS_FATAL_ERROR ("Could not open tracefile");
+		}
+	}
+	m_rxPacketTraceFile << "UlRxTrace\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_slotNum
+				<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
+				<< params.m_sinr << "\t" << params.m_tbler <<" \t" << params.m_corrupt << std::endl;
+
+		if (params.m_corrupt)
+		{
+			NS_LOG_DEBUG ("UL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_slotNum
+					<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
+					<< params.m_sinr << "\t" << params.m_tbler << "\t" << params.m_corrupt);
+		}
 }
 
 } /* namespace ns3 */

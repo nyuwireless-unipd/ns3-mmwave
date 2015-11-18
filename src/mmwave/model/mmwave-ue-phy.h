@@ -69,8 +69,10 @@ public:
 
 	void ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > msgList);
 
-	void SubframeIndication (uint32_t frameNo, uint32_t subframeNo);
-	void ProcessSubframe ();
+	void SubframeIndication (uint16_t frameNum, uint8_t subframeNum);
+	void StartSlot ();
+	void EndSlot ();
+
 
 	uint32_t GetSubframeNumber (void);
 
@@ -83,7 +85,7 @@ public:
     
 	Ptr<MmWaveDlCqiMessage> CreateDlCqiFeedbackMessage (const SpectrumValue& sinr);
     
-    void GenerateDlCqiReport (const SpectrumValue& sinr);
+	void GenerateDlCqiReport (const SpectrumValue& sinr);
 
 	bool IsReceptionEnabled ();
 	void ResetReception ();
@@ -118,12 +120,10 @@ private:
 	LteUeCphySapProvider* m_ueCphySapProvider;
 	LteUeCphySapUser* m_ueCphySapUser;
 
-	Ptr<mmWaveAmc> m_amc;
+	Ptr<MmWaveAmc> m_amc;
 	std::vector <int> m_subChannelsForTx;
 	std::vector <int> m_subChannelsforRx;
 
-	uint32_t m_nrSlots;
-	uint32_t m_nrFrames;
 	uint32_t m_numRbg;
 
 	Time m_wbCqiPeriod; /**< Wideband Periodic CQI: 2, 5, 10, 16, 20, 32, 40, 64, 80 or 160 ms */
@@ -131,7 +131,7 @@ private:
 
 	SlotAllocInfo::TddMode m_prevSlotDir;
 
-	SfAllocationInfo m_currSfAllocInfo;
+	SfAllocInfo m_currSfAllocInfo;
 	std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB transmissions
 	bool m_ulGrant; 	// true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
 	uint8_t m_pucchSlotInd;
@@ -140,6 +140,8 @@ private:
 	Time m_ulCtrlPeriod;
 
 	Time m_dataPeriod;	// data period length in microseconds
+	Time m_sfPeriod;
+	Time m_lastSfStart;
 
 	bool m_dlConfigured;
 	bool m_ulConfigured;
@@ -152,10 +154,12 @@ private:
 
 	bool m_receptionEnabled;
 	uint16_t m_rnti;
+
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 
+	std::vector<int> m_channelChunks;
 
-
+	SlotAllocInfo m_currSlot;
 };
 
 

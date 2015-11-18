@@ -19,6 +19,7 @@
  */
 
 #include "mmwave-mac-pdu-tag.h"
+#include "mmwave-phy-mac-common.h"
 #include "ns3/tag.h"
 #include "ns3/uinteger.h"
 
@@ -26,14 +27,13 @@ namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveMacPduTag);
 
-MmWaveMacPduTag::MmWaveMacPduTag () : m_tagSize (2)
+MmWaveMacPduTag::MmWaveMacPduTag () : m_sfnSf (SfnSf()), m_tagSize (4)
 {
 }
 
-MmWaveMacPduTag::MmWaveMacPduTag (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
-  :  m_frameNum (frameNum), m_sfNum (sfNum), m_slotNum (slotNum)
+MmWaveMacPduTag::MmWaveMacPduTag (SfnSf sfn)
+  :  m_sfnSf (sfn), m_tagSize (4)
 {
-	m_tagSize = 2;
 }
 
 TypeId
@@ -60,22 +60,24 @@ MmWaveMacPduTag::GetSerializedSize (void) const
 void
 MmWaveMacPduTag::Serialize (TagBuffer i) const
 {
-	i.WriteU8 (m_sfNum);
-	i.WriteU8 (m_slotNum);
+	i.WriteU16 (m_sfnSf.m_frameNum);
+	i.WriteU8 (m_sfnSf.m_sfNum);
+	i.WriteU8 (m_sfnSf.m_slotNum);
 }
 
 void
 MmWaveMacPduTag::Deserialize (TagBuffer i)
 {
-	m_sfNum = (uint8_t)i.ReadU8 ();
-	m_slotNum = (uint8_t)i.ReadU8 ();
-	m_tagSize = 2;
+	m_sfnSf.m_frameNum = (uint16_t)i.ReadU16 ();
+	m_sfnSf.m_sfNum = (uint8_t)i.ReadU8 ();
+	m_sfnSf.m_slotNum = (uint8_t)i.ReadU8 ();
+	m_tagSize = 4;
 }
 
 void
 MmWaveMacPduTag::Print (std::ostream &os) const
 {
-  os << m_frameNum << " " << m_sfNum << " " << m_slotNum;
+  os << m_sfnSf.m_sfNum << " " << m_sfnSf.m_slotNum;
 }
 
 } // namespace ns3

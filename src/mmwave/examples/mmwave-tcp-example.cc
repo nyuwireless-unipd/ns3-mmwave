@@ -154,7 +154,7 @@ main (int argc, char *argv[])
 	cmd.Parse(argc, argv);
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-	Ptr<mmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmWavePointToPointEpcHelper> ();
+	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 
 	ConfigStore inputConfig;
@@ -218,7 +218,7 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ueIpIface;
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueDevs));
 
-	mmwaveHelper->RegisterToClosestEnb (ueDevs, enbDevs);
+	mmwaveHelper->AttachToClosestEnb (ueDevs, enbDevs);
 	mmwaveHelper->EnableTraces ();
 
 	// Set the default gateway for the UE

@@ -21,8 +21,30 @@
 #include <list>
 #include "mmwave-mac-sched-sap.h"
 #include <ns3/lte-radio-bearer-tag.h>
+#include "mmwave-mac-pdu-header.h"
+#include "mmwave-mac-pdu-tag.h"
+
 
 namespace ns3 {
+
+	struct MacPduInfo
+	{
+		MacPduInfo (SfnSf sfn, uint32_t size, uint8_t numRlcPdu) :
+			m_sfnSf (sfn), m_size (size), m_numRlcPdu (numRlcPdu)
+		{
+
+			m_pdu = Create<Packet> ();
+			m_macHeader = MmWaveMacPduHeader ();
+			MmWaveMacPduTag tag (sfn);
+			m_pdu->AddPacketTag (tag);
+		}
+
+		SfnSf m_sfnSf;
+		uint32_t m_size;
+		uint8_t m_numRlcPdu;
+		Ptr<Packet> m_pdu;
+		MmWaveMacPduHeader m_macHeader;
+	};
 
 class MmWaveMac : public Object
 {
@@ -39,6 +61,7 @@ public:
 	Ptr<PacketBurst> GetPacketBurstFromMacQueue ();
 
 protected:
+
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
 	Ptr<PacketBurst>  m_macQueue;

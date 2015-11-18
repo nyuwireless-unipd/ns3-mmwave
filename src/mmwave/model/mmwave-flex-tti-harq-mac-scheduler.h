@@ -18,22 +18,22 @@
 
 namespace ns3 {
 
-class MmWaveRrMacScheduler : public MmWaveMacScheduler
+class MmWaveFlexTtiHarqMacScheduler : public MmWaveMacScheduler
 {
 public:
 	typedef std::vector < uint8_t > DlHarqProcessesStatus_t;
 	typedef std::vector < uint8_t > DlHarqProcessesTimer_t;
-	typedef std::vector < TbInfoElement > DlHarqProcessesTbInfoList_t;
+	typedef std::vector < DciInfoElementTdma > DlHarqProcessesDciInfoList_t;
 	typedef std::vector < std::vector <struct RlcPduInfo> > DlHarqRlcPduList_t; // vector of the LCs per per UE HARQ process
 //	typedef std::vector < RlcPduElement > DlHarqRlcPduList_t; // vector of the 8 HARQ processes per UE
 
-	typedef std::vector < TbInfoElement > UlHarqProcessesTbInfoList_t;
+	typedef std::vector < DciInfoElementTdma > UlHarqProcessesDciInfoList_t;
 	typedef std::vector < uint8_t > UlHarqProcessesStatus_t;
 
 
-	MmWaveRrMacScheduler ();
+	MmWaveFlexTtiHarqMacScheduler ();
 
-	virtual ~MmWaveRrMacScheduler ();
+	virtual ~MmWaveFlexTtiHarqMacScheduler ();
 	virtual void DoDispose (void);
 	static TypeId GetTypeId (void);
 
@@ -59,9 +59,40 @@ public:
   void UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size);
   void UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size);
 
-	friend class MmWaveRrMacSchedSapProvider;
+	friend class MmWaveFlexTtiHarqMacSchedSapProvider;
 
 private:
+	struct UeSchedInfo
+	{
+		UeSchedInfo () :
+			m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
+			m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
+			m_dlSymbols (0), m_ulSymbols (0),
+			m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
+			m_dlTbSize (0), m_ulTbSize (0),
+			m_dlAllocDone (false), m_ulAllocDone (false)
+		{
+		}
+
+		uint8_t		m_dlMcs;
+		uint8_t		m_ulMcs;
+		uint32_t	m_maxDlBufSize;
+		uint32_t	m_maxUlBufSize;
+		uint8_t		m_maxDlSymbols;
+		uint8_t		m_maxUlSymbols;
+		uint8_t		m_dlSymbols;
+		uint8_t		m_ulSymbols;
+		uint8_t		m_dlSymbolsRetx;
+		uint8_t		m_ulSymbolsRetx;
+		uint32_t	m_dlTbSize;
+		uint32_t	m_ulTbSize;
+		std::vector <struct RlcPduInfo> m_rlcPduInfo;
+		bool			m_dlAllocDone;
+		bool			m_ulAllocDone;
+	};
+
+	unsigned CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize);
+
 	uint32_t
 	BsrId2BufferSize (uint8_t val)
 	{
@@ -113,10 +144,6 @@ private:
   */
   void RefreshHarqProcesses ();
 
-	void SetTBSizeAssigned ();
-	SfAllocInfo ScheduleUsersInTime (uint32_t slotNum);
-	void SetScheduleDirection  (std::string patt);
-
 	TddSlotTypeList m_tddMap;
 
 	Ptr<MmWaveAmc> m_amc;
@@ -140,7 +167,18 @@ private:
   /*
   * Map of UEs' UL-CQI per RBG
   */
-  std::map <uint16_t, std::vector <double> > m_ueUlCqi;
+  struct UlCqiMapElem
+  {
+  	UlCqiMapElem (std::vector<double> ulCqi, uint8_t nSym, uint32_t tbs) :
+  		m_ueUlCqi (ulCqi), m_numSym (nSym), m_tbSize (tbs)
+  	{
+  	}
+  	std::vector <double> m_ueUlCqi;
+  	uint8_t 	m_numSym;
+  	uint32_t	m_tbSize;
+  };
+
+  std::map <uint16_t, struct UlCqiMapElem> m_ueUlCqi;
   /*
   * Map of UEs' timers on UL-CQI per RBG
   */
@@ -154,6 +192,7 @@ private:
 	std::string m_directions; //UL or DL Need to to this in a better way
 	bool m_isDirnUpdated;
 
+	uint16_t m_nextRnti;
 	uint64_t m_nextRntiDl;
 	uint64_t m_nextRntiUl;
 
@@ -169,11 +208,22 @@ private:
 
 	uint32_t m_numChunks;
 
+	struct AllocMapElem
+	{
+		AllocMapElem (std::vector<uint16_t> rntiMap, uint8_t nSym, uint32_t tbs) :
+			m_rntiPerChunk (rntiMap), m_numSym (nSym), m_tbSize (tbs)
+		{
+		}
+
+		std::vector <uint16_t> m_rntiPerChunk;
+		uint8_t m_numSym;
+		uint32_t m_tbSize;
+	};
   /*
   * Map of previous allocated UE per RBG
   * (used to retrieve info from UL-CQI)
   */
-  std::map <uint32_t, std::vector <uint16_t> > m_allocationMaps;
+  std::map <uint32_t, struct AllocMapElem> m_ulAllocationMap;
 
   // HARQ attributes
   /**
@@ -186,21 +236,37 @@ private:
   std::map <uint16_t, uint8_t> m_dlHarqCurrentProcessId;
   //HARQ status
   // 0: process Id available
-  // x>0: process Id equal to `x` transmission count
+  // x>0: process Id equal to `x` trasmission count
   std::map <uint16_t, DlHarqProcessesStatus_t> m_dlHarqProcessesStatus;
   std::map <uint16_t, DlHarqProcessesTimer_t> m_dlHarqProcessesTimer;
-  std::map <uint16_t, DlHarqProcessesTbInfoList_t> m_dlHarqProcessesTbInfoMap;
+  std::map <uint16_t, DlHarqProcessesDciInfoList_t> m_dlHarqProcessesDciInfoMap;
   std::map <uint16_t, DlHarqRlcPduList_t> m_dlHarqProcessesRlcPduMap;
   std::vector <DlHarqInfo> m_dlHarqInfoList; // HARQ retx buffered
+  std::vector <UlHarqInfo> m_ulHarqInfoList; // HARQ retx buffered
 
   std::map <uint16_t, uint8_t> m_ulHarqCurrentProcessId;
   //HARQ status
   // 0: process Id available
   // x>0: process Id equal to `x` trasmission count
   std::map <uint16_t, UlHarqProcessesStatus_t> m_ulHarqProcessesStatus;
-  std::map <uint16_t, UlHarqProcessesTbInfoList_t> m_ulHarqProcessesTbInfoMap;
+  std::map <uint16_t, UlHarqProcessesDciInfoList_t> m_ulHarqProcessesDciInfoMap;
 
-	std::list <SfAllocInfo> m_ulSfAllocInfo; // queue for storing uplink allocations in later scheduling intervals
+  uint32_t m_numDataSymbols;
+
+  // needed to keep track of uplink allocations in later slots
+  std::list <struct SfAllocInfo> m_ulSfAllocInfo;
+
+	static const unsigned m_macHdrSize = 0;
+	static const unsigned m_subHdrSize = 3;
+	static const unsigned m_rlcHdrSize = 3;
+
+	static const double m_berDl = 0.001;
+
+	bool 		m_fixedMcsDl;
+	bool 		m_fixedMcsUl;
+	uint8_t m_mcsDefaultDl;
+	uint8_t m_mcsDefaultUl;
+
 };
 
 }

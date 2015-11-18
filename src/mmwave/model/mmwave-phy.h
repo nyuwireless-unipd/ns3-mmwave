@@ -77,7 +77,7 @@ public:
 
 
 //	virtual Ptr<PacketBurst> GetPacketBurst (void);
-	virtual Ptr<PacketBurst> GetPacketBurst (uint8_t sfNum, uint8_t slotNum);
+	virtual Ptr<PacketBurst> GetPacketBurst (SfnSf);
 
 	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
@@ -86,6 +86,10 @@ public:
 //	void SetPhySapUser (MmWavePhySapUser* ptr);
 
 	void UpdateCurrentAllocationAndSchedule (uint32_t frame, uint32_t sf);
+
+	SfAllocInfo GetSfAllocInfo (uint8_t subframeNum);
+	void SetDlSfAllocInfo (SfAllocInfo sfAllocInfo);
+	void SetUlSfAllocInfo (SfAllocInfo sfAllocInfo);
 
 protected:
 	Ptr<MmWaveNetDevice> m_netDevice;
@@ -103,22 +107,31 @@ protected:
 
 //	std::vector< Ptr<PacketBurst> > m_packetBurstQueue;
 	std::vector< std::vector< Ptr<PacketBurst> > > m_packetBurstQueue;
+	std::map<uint32_t, Ptr<PacketBurst> > m_packetBurstMap;
 	std::vector< std::list<Ptr<MmWaveControlMessage> > > m_controlMessageQueue;
 
 	TddSlotTypeList m_currTddMap;
-//	std::list<SfAllocationInfo> m_sfAllocInfoList;
-	SfAllocationInfo m_currSfAllocInfo;
+//	std::list<SfAllocInfo> m_sfAllocInfoList;
+	SfAllocInfo m_currSfAllocInfo;
+
+	std::vector <SfAllocInfo> m_sfAllocInfo;		// maps subframe num to allocation info
+
+	uint16_t m_frameNum;
+	uint8_t	m_sfNum;
+	uint8_t	m_slotNum;
 
 	Time m_ctrlPeriod;
 	Time m_dataPeriod;
 
 	std::map <uint32_t,TddSlotTypeList> m_tddPatternForSlotMap;
 
-	std::map <uint32_t,SfAllocationInfo> m_slotAllocInfoMap;
+	std::map <uint32_t,SfAllocInfo> m_slotAllocInfoMap;
 
 	MmWavePhySapProvider* m_phySapProvider;
 
 	uint32_t m_raPreambleId;
+
+	bool m_sfAllocInfoUpdated;
 
 private:
 };

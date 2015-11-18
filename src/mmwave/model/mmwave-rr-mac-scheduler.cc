@@ -19,10 +19,10 @@ NS_LOG_COMPONENT_DEFINE ("MmWaveRrMacScheduler");
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveRrMacScheduler);
 
-class MmWaveRrMemberMacSchedSapProvider : public MmWaveMacSchedSapProvider
+class MmWaveRrMacSchedSapProvider : public MmWaveMacSchedSapProvider
 {
 public:
-	MmWaveRrMemberMacSchedSapProvider (MmWaveRrMacScheduler* sched);
+	MmWaveRrMacSchedSapProvider (MmWaveRrMacScheduler* sched);
 
   virtual void SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
 	virtual void SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
@@ -31,46 +31,46 @@ public:
   virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
 
 private:
-	MmWaveRrMemberMacSchedSapProvider ();
+	MmWaveRrMacSchedSapProvider ();
 	MmWaveRrMacScheduler* m_scheduler;
 };
 
-MmWaveRrMemberMacSchedSapProvider::MmWaveRrMemberMacSchedSapProvider ()
+MmWaveRrMacSchedSapProvider::MmWaveRrMacSchedSapProvider ()
 {
 }
 
-MmWaveRrMemberMacSchedSapProvider::MmWaveRrMemberMacSchedSapProvider (MmWaveRrMacScheduler* sched)
+MmWaveRrMacSchedSapProvider::MmWaveRrMacSchedSapProvider (MmWaveRrMacScheduler* sched)
 	:m_scheduler(sched)
 {
 
 }
 
 void
-MmWaveRrMemberMacSchedSapProvider::SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
+MmWaveRrMacSchedSapProvider::SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
 {
   m_scheduler->DoSchedDlRlcBufferReq (params);
 }
 
 void
-MmWaveRrMemberMacSchedSapProvider::SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
+MmWaveRrMacSchedSapProvider::SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
 {
 	m_scheduler->DoSchedTriggerReq(params);
 }
 
 void
-MmWaveRrMemberMacSchedSapProvider::SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
+MmWaveRrMacSchedSapProvider::SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
 {
 	m_scheduler->DoSchedDlCqiInfoReq (params);
 }
 
 void
-MmWaveRrMemberMacSchedSapProvider::SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
+MmWaveRrMacSchedSapProvider::SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
 {
   m_scheduler->DoSchedUlCqiInfoReq (params);
 }
 
 void
-MmWaveRrMemberMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
+MmWaveRrMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
 {
   m_scheduler->DoSchedUlMacCtrlInfoReq (params);
 
@@ -83,11 +83,12 @@ MmWaveRrMacScheduler::MmWaveRrMacScheduler ()
   m_nextRntiDl (0),
   m_nextRntiUl (0),
   m_subframeNo (0),
+  m_tbUid (0),
   m_macSchedSapUser (0)
 {
 	NS_LOG_FUNCTION (this);
 
-	m_macSchedSapProvider = new MmWaveRrMemberMacSchedSapProvider (this);
+	m_macSchedSapProvider = new MmWaveRrMacSchedSapProvider (this);
 }
 
 MmWaveRrMacScheduler::~MmWaveRrMacScheduler ()
@@ -120,7 +121,7 @@ MmWaveRrMacScheduler::GetTypeId (void)
 		.AddConstructor<MmWaveRrMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
-                   UintegerValue (1000),
+                   UintegerValue (100),
                    MakeUintegerAccessor (&MmWaveRrMacScheduler::m_cqiTimersThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
@@ -149,7 +150,7 @@ void
 MmWaveRrMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
 {
 	m_phyMacConfig = config;
-	m_amc = CreateObject <mmWaveAmc> (m_phyMacConfig);
+	m_amc = CreateObject <MmWaveAmc> (m_phyMacConfig);
 	m_numRbg = m_phyMacConfig->GetNumRb () / m_phyMacConfig->GetNumRbPerRbg ();
 	m_numHarqProcess = m_phyMacConfig->GetNumHarqProcess ();
 	m_harqTimeout = m_phyMacConfig->GetHarqTimeout ();
@@ -264,6 +265,10 @@ MmWaveRrMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvide
 {
   NS_LOG_FUNCTION (this);
 
+	unsigned frameNum = params.m_sfnSf >> 16;
+	unsigned subframeNum = (params.m_sfnSf >> 8) & 0xFF;
+	unsigned slotNum = params.m_sfnSf & 0xFF;
+
   switch (params.m_ulCqi.m_type)
     {
     case UlCqiInfo::PUSCH:
@@ -285,20 +290,25 @@ MmWaveRrMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvide
               {
                 // create a new entry
                 std::vector <double> newCqi;
-                for (uint32_t j = 0; j < m_phyMacConfig->GetNumRb () * m_phyMacConfig->GetNumChunkPerRb (); j++)
+                for (uint32_t j = 0; j < (m_phyMacConfig->GetNumRb () * m_phyMacConfig->GetNumChunkPerRb ()); j++)
                   {
-                    if (i == j)
+                		unsigned chunkInd = i * m_phyMacConfig->GetNumChunkPerRb ();
+                    if (chunkInd == j)
                       {
                         newCqi.push_back (sinr);
+                        NS_LOG_INFO ("UL CQI report for RNTI " << (*itMap).second.at (i) << " chunk " << i << " SINR " << sinr << \
+                                      " frame " << frameNum << " subframe " << subframeNum << " slot " << slotNum);
                       }
                     else
                       {
                         // initialize with NO_SINR value.
                         newCqi.push_back (30.0);
                       }
-
                   }
                 m_ueUlCqi.insert (std::pair <uint16_t, std::vector <double> > ((*itMap).second.at (i), newCqi));
+
+
+
                 // generate correspondent timer
                 m_ueCqiTimers.insert (std::pair <uint16_t, uint32_t > ((*itMap).second.at (i), m_cqiTimersThreshold));
               }
@@ -310,6 +320,9 @@ MmWaveRrMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvide
                 std::map <uint16_t, uint32_t>::iterator itTimers;
                 itTimers = m_ueCqiTimers.find ((*itMap).second.at (i));
                 (*itTimers).second = m_cqiTimersThreshold;
+
+                NS_LOG_INFO ("UL CQI report for RNTI " << (*itMap).second.at (i) << " chunk " << i << " SINR " << sinr << \
+                                                      " frame " << frameNum << " subframe " << subframeNum << " slot " << slotNum);
 
               }
 
@@ -391,7 +404,9 @@ MmWaveRrMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
 
   if (m_harqOn == false)
     {
-      return (0);
+  		uint8_t tbUid = m_tbUid;
+  		m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+      return tbUid;
     }
 
   std::map <uint16_t, uint8_t>::iterator it = m_dlHarqCurrentProcessId.find (rnti);
@@ -430,9 +445,11 @@ MmWaveRrMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 
 
   if (m_harqOn == false)
-    {
-      return (0);
-    }
+  {
+  	uint8_t tbUid = m_tbUid;
+  	m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+  	return tbUid;
+  }
 
   std::map <uint16_t, uint8_t>::iterator it = m_ulHarqCurrentProcessId.find (rnti);
   if (it == m_ulHarqCurrentProcessId.end ())
@@ -463,20 +480,21 @@ MmWaveRrMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
   return ((*it).second);
 }
 
-void
+bool
 MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
                                            MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
                                            unsigned int frameNum,
                                            unsigned int sfNum,
                                            unsigned int slotNum)
 {
+	bool success = false; // was able to allocate at least 1 UE
 	// Create RBG map (DL res alloc type 0)
 	std::vector <bool> rbgMap;
 	uint16_t rbgAllocatedNum = 0;
 	std::set <uint16_t> rntiAllocated;
 	rbgMap.resize (m_phyMacConfig->GetNumRb (), false);
 
-	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
+	std::map<uint16_t,SchedInfo>& schedInfoMap = ret.m_schedInfoMap;
 
 	// ****************** this section for HARQ retx ******************
 
@@ -653,10 +671,10 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 				}
 				// retrieve RLC PDU list for retx TBsize and update DCI
 				//			BuildDataListElement_s newEl;
-				std::map<uint16_t, SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
+				std::map<uint16_t, SchedInfo>::iterator schedIt = schedInfoMap.find (rnti);
 				if (schedIt == schedInfoMap.end ())
 				{
-					SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+					SchedInfo newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
 					newSchedInfo.m_rnti = rnti;
 					DciInfoElement newDci;
 					newDci.m_rnti = rnti;
@@ -667,14 +685,15 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 					newSchedInfo.m_dci = newDci;
 					newSchedInfo.m_frameNum = frameNum;
 					newSchedInfo.m_sfNum = sfNum;
-					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> (rnti, newSchedInfo))).first;
+					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfo> (rnti, newSchedInfo))).first;
 				}
-				SchedInfoElement& schedInfo = schedIt->second;
+				SchedInfo& schedInfo = schedIt->second;
 				harqTbInfo.m_ndi = 0;
-				harqTbInfo.m_slotInd = slotNum;
+				harqTbInfo.m_slotIdx = slotNum;
 				harqTbInfo.m_rv++;
 				(*itHarq).second.at (harqId).m_rv++;
-				schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+				//schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+				std::map<uint8_t, std::vector<RlcPduInfo> >::iterator rlcPduMapIt = schedInfo.m_rlcPduMap.insert (std::pair<uint8_t, std::vector<RlcPduInfo> > (harqId, std::vector<RlcPduInfo>() )).first;
 				NS_LOG_INFO (this << "HARQ ReTx RV " << (uint16_t)harqTbInfo.m_rv);
 
 
@@ -717,7 +736,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 					NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << rnti);
 				}
 
-				std::vector <RlcPduInfo> rlcPduListPerLc;
+//				std::vector <RlcPduInfo> rlcPduListPerLc;
 				for (uint16_t k = 0; k < (*itRlcList).second.at(harqTbInfo.m_harqProcess).size (); k++)
 				{
 					//					for (uint8_t j = 0; j < nLayers; j++)
@@ -731,14 +750,16 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 					//						}
 					//					}
 
-					rlcPduListPerLc.push_back ((*itRlcList).second.at (harqTbInfo.m_harqProcess).at (k));
+					//rlcPduListPerLc.push_back ((*itRlcList).second.at (harqTbInfo.m_harqProcess).at (k));
+					rlcPduMapIt->second.push_back ((*itRlcList).second.at (harqTbInfo.m_harqProcess).at (k));
 				}
-				if (rlcPduListPerLc.size () > 0)
-				{
-					schedInfo.m_rlcPduList.push_back (rlcPduListPerLc);
-				}
+//				if (rlcPduListPerLc.size () > 0)
+//				{
+//					schedInfo.m_rlcPduList.push_back (rlcPduListPerLc);
+//				}
 				//				schedIt->second.m_rnti = rnti;
 				schedInfo.m_dci.m_tbInfoElements.push_back (harqTbInfo);
+				success = true;
 				(*itHarq).second.at (harqId).m_rv = harqTbInfo.m_rv;
 				// refresh timer
 				std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer = m_dlHarqProcessesTimer.find (rnti);
@@ -782,10 +803,9 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 			//			{
 			//				m_schedSapUser->SchedDlConfigInd (ret);
 			//			}
-			return;
+			return success;
 		}
 	}
-
 	// END OF HARQ SECTION
 
 	// Get the actual active flows (unique RNTI-LCID pairs)
@@ -807,7 +827,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 				&& (itRnti == rntiAllocated.end ()) )  // UE must not be allocated for HARQ retx
 			//			  				  			&& (HarqProcessAvailability ((*it).m_rnti))  ) // UE needs HARQ proc free
 		{
-			NS_LOG_LOGIC (this << " User " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity << " is active, status  " << (*it).m_rlcStatusPduSize << " retx " << (*it).m_rlcRetransmissionQueueSize << " tx " << (*it).m_rlcTransmissionQueueSize);
+			NS_LOG_INFO (this << " User " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity << " is active, status  " << (*it).m_rlcStatusPduSize << " retx " << (*it).m_rlcRetransmissionQueueSize << " tx " << (*it).m_rlcTransmissionQueueSize);
 			std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find ((*it).m_rnti);
 			uint8_t cqi = 0;
 			if (itCqi != m_wbCqiRxed.end ())
@@ -816,7 +836,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 			}
 			else
 			{
-				cqi = 1; // lowest value fro trying a transmission
+				cqi = 1; // lowest value for trying a transmission
 			}
 			if (cqi != 0)
 			{
@@ -832,14 +852,17 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 					lcActivesPerRnti.insert (std::pair<uint16_t, uint8_t > ((*it).m_rnti, 1));
 					nTbs++;
 				}
-
+			}
+			else
+			{
+				NS_LOG_INFO ("*** RNTI " << (*it).m_rnti << " DL CQI out of range, skipping allocation in DL for slot " << slotNum+1);
 			}
 		}
 	}
 
 	if (nflows == 0)
 	{
-		return; // no DL flows to be scheduled
+		return success; // no DL flows to be scheduled
 	}
 
 	// int rbgPerTb = (nTbs > 0) ? ((numRbg - rbgAllocatedNum) / nTbs) : INT_MAX;
@@ -904,10 +927,10 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 		int lcNum = (*itLcRnti).second;
 
 		// find existing or create new scheduling info element/DCI element
-		std::map<uint16_t,SchedInfoElement>::iterator schedIt = schedInfoMap.find ((*it).m_rnti);
+		std::map<uint16_t,SchedInfo>::iterator schedIt = schedInfoMap.find ((*it).m_rnti);
 		if (schedIt == schedInfoMap.end ())
 		{
-			SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+			SchedInfo newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
 			newSchedInfo.m_rnti = (*it).m_rnti;
 			DciInfoElement newDci;
 			newDci.m_rnti = (*it).m_rnti;
@@ -918,21 +941,21 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 			newSchedInfo.m_dci = newDci;
 			newSchedInfo.m_frameNum = frameNum;
 			newSchedInfo.m_sfNum = sfNum;
-			schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> ((*it).m_rnti, newSchedInfo))).first;
+			schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfo> ((*it).m_rnti, newSchedInfo))).first;
 		}
 
-		SchedInfoElement& schedInfo = schedIt->second;
+		SchedInfo& schedInfo = schedIt->second;
 		//				schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << slotNum));
 		TbInfoElement newTbInfoElem;
 		newTbInfoElem.m_resAlloc = 0;
 		newTbInfoElem.m_rbBitmap = 0;
-		newTbInfoElem.m_slotInd = slotNum;
+		newTbInfoElem.m_slotIdx = slotNum;
 		newTbInfoElem.m_rbShift = 0;
 		newTbInfoElem.m_rbStart = 0;
 		newTbInfoElem.m_rbLen = 0;
 		newTbInfoElem.m_harqProcess = UpdateDlHarqProcessId ((*it).m_rnti);
-
-		schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+		//schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+		std::map<uint8_t, std::vector<RlcPduInfo> >::iterator rlcPduMapIt = schedInfo.m_rlcPduMap.insert (std::pair<uint8_t, std::vector<RlcPduInfo> > (newTbInfoElem.m_harqProcess, std::vector<RlcPduInfo> () )).first;
 
 		std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (schedInfo.m_rnti);
 
@@ -973,8 +996,9 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 				}
 
 				// push new element onto RLC PDU vector for this TB
-				schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (newRlcEl);
-				NS_LOG_INFO ("RLC PDU for LCID " << (unsigned int)newRlcEl.m_lcid << " of size " << newRlcEl.m_size << " added for TB " << schedInfo.m_rlcPduList.size ()-1);
+				//schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (newRlcEl);
+				rlcPduMapIt->second.push_back (newRlcEl);
+				NS_LOG_INFO ("RLC PDU for LCID " << (unsigned int)newRlcEl.m_lcid << " of size " << newRlcEl.m_size << " added for TB " << newTbInfoElem.m_harqProcess);
 				lcNum--;
 			}
 			it++;
@@ -987,7 +1011,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 		}
 		uint32_t rbgMask = 0;
 		uint16_t i = 0;
-		NS_LOG_DEBUG ("slot " << slotNum+1 << " DL Allocation - UE " << schedInfo.m_rnti << " LCs " << (uint16_t)(*itLcRnti).second << " bytes " << tbSize << " mcs " << (uint16_t) newTbInfoElem.m_mcs << " harqId " << (uint16_t)newTbInfoElem.m_harqProcess );
+		NS_LOG_DEBUG ("DL Allocation frame " << frameNum << " subframe " << sfNum << " slot " << slotNum+1 << " " << " RNTI " << schedInfo.m_rnti << " LCs " << (uint16_t)(*itLcRnti).second << " bytes " << tbSize << " mcs " << (uint16_t) newTbInfoElem.m_mcs << " harqId " << (uint16_t)newTbInfoElem.m_harqProcess );
 		while (i < rbgPerTb)
 		{
 			if (rbgMap.at (rbgAllocated) == false)
@@ -1007,6 +1031,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 		// newDci.m_tpc = 1; //1 is mapped to 0 in Accumulated Mode and to -1 in Absolute Mode
 
 		schedInfo.m_dci.m_tbInfoElements.push_back (newTbInfoElem);
+		success = true;
 
 		if (m_harqOn == true)
 		{
@@ -1025,7 +1050,6 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 			}
 			(*itHarqTimer).second.at (newTbInfoElem.m_harqProcess) = 0;
 		}
-		// ...more parameters -> ignored in this version
 
 		if (rbgAllocatedNum == m_phyMacConfig->GetNumRb ())
 		{
@@ -1034,15 +1058,18 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
 		}
 	}
 	while ((*it).m_rnti != m_nextRntiDl);
+
+	return success;
 }
 
-void
+bool
 MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
                                            MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
                                            unsigned int frameNum,
                                            unsigned int sfNum,
                                            unsigned int slotNum)
 {
+	bool success = false; // was able to allocate at least 1 UE
 	// schedule slot in n+3th subframe for UL
 	// Create RB map (UL res alloc type 0)
 	std::vector <bool> rbMap;
@@ -1052,8 +1079,8 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 	uint32_t numRb = m_phyMacConfig->GetNumRb ();
 	rbMap.resize (numRb);
 	rbgAllocationMap.resize (numRb);
-	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
-	uint32_t sfn =  ((0x3FF & frameNum) << 16) | ((0xFF & sfNum) << 8) | ((0xFF & slotNum));
+	std::map<uint16_t,SchedInfo>& schedInfoMap = ret.m_schedInfoMap;
+	uint32_t sfn =  ((0x3FF & frameNum) << 16) | ((0xFF & sfNum) << 8) | (0xFF & (slotNum+1));
 
 
 	if (m_harqOn == true)
@@ -1115,12 +1142,12 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 //					continue;
 //				}
 				harqTbInfo.m_ndi = 0;
-				harqTbInfo.m_slotInd = slotNum;
+				harqTbInfo.m_slotIdx = slotNum;
 
-				std::map<uint16_t, SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
+				std::map<uint16_t, SchedInfo>::iterator schedIt = schedInfoMap.find (rnti);
 				if (schedIt == schedInfoMap.end ())
 				{
-					SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+					SchedInfo newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
 					newSchedInfo.m_rnti = rnti;
 					DciInfoElement newDci;
 					newDci.m_rnti = rnti;
@@ -1131,9 +1158,9 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 					newSchedInfo.m_dci = newDci;
 					newSchedInfo.m_frameNum = frameNum;
 					newSchedInfo.m_sfNum = sfNum;
-					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> (rnti, newSchedInfo))).first;
+					schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfo> (rnti, newSchedInfo))).first;
 				}
-				SchedInfoElement& schedInfo = schedIt->second;
+				SchedInfo& schedInfo = schedIt->second;
 				schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << slotNum)); // set bit for UL
 
 				// Update HARQ buffers with new HarqId
@@ -1141,6 +1168,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 				(*itStat).second.at (harqId) = 0;
 				(*itHarq).second.at ((*itProcId).second) = harqTbInfo;
 				schedIt->second.m_dci.m_tbInfoElements.push_back (harqTbInfo);
+				success = true;
 				rntiAllocated.insert (rnti);
 			}
 		}
@@ -1165,7 +1193,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 	}
 	if (nflows == 0)
 	{
-		return;  // no UL flows to be scheduled
+		return success;  // no UL flows to be scheduled
 	}
 
 	// Divide the remaining resources equally among the active users starting from after the one served last scheduling trigger
@@ -1175,7 +1203,6 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 	{
 		rbPerFlow = 1;  // at least 1 rbg per flow (till available resource) to ensure TxOpportunity >= 7 bytes
 	}
-	uint16_t rbAllocated = 0;
 
 	if (m_nextRntiUl != 0)
 	{
@@ -1226,10 +1253,10 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 		uint16_t rnti = (*it).first;
 		NS_LOG_INFO (this << " try to allocate " << rnti);
 		// find existing or create new scheduling info element/DCI element
-		std::map<uint16_t,SchedInfoElement>::iterator schedIt = schedInfoMap.find (rnti);
+		std::map<uint16_t,SchedInfo>::iterator schedIt = schedInfoMap.find (rnti);
 		if (schedIt == schedInfoMap.end ())
 		{
-			SchedInfoElement newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
+			SchedInfo newSchedInfo (m_phyMacConfig->GetSlotsPerSubframe ());
 			newSchedInfo.m_rnti = (*it).first;
 			DciInfoElement newDci;
 			newDci.m_rnti = (*it).first;
@@ -1238,25 +1265,24 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 			newSchedInfo.m_dci = newDci;
 			newSchedInfo.m_frameNum = frameNum;
 			newSchedInfo.m_sfNum = sfNum;
-			schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfoElement> ((*it).first, newSchedInfo))).first;
+			schedIt = (schedInfoMap.insert (std::pair<uint16_t,SchedInfo> ((*it).first, newSchedInfo))).first;
 		}
 
-		SchedInfoElement& schedInfo = schedIt->second;
-		schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << slotNum)); // set bit for UL
+		SchedInfo& schedInfo = schedIt->second;
 		TbInfoElement newTbInfoElem;
 		newTbInfoElem.m_resAlloc = 0;
 		newTbInfoElem.m_rbLen = rbPerFlow;
-		newTbInfoElem.m_slotInd = slotNum;
+		newTbInfoElem.m_slotIdx = slotNum;
 		newTbInfoElem.m_rbBitmap = 0;
 		newTbInfoElem.m_rbShift = 0;
-		newTbInfoElem.m_harqProcess = UpdateUlHarqProcessId (rnti);
-		schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
+
 
 		//				UlDciListElement uldci;
 		//				uldci.m_rnti = (*it).first;
 		//				uldci.m_rbLen = rbPerFlow;
 
 		bool allocated = false;
+		uint16_t rbAllocated = 0;
 		NS_LOG_INFO (this << " RB Allocated " << rbAllocated << " rbPerFlow " << rbPerFlow << " flows " << nflows);
 		while ((!allocated)&&((numRb - rbAllocated + rbPerFlow ) > 1) && (rbPerFlow != 0))
 		{
@@ -1303,6 +1329,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 			// unable to allocate new resource: finish scheduling
 			m_nextRntiUl = (*it).first;
 			m_allocationMaps.insert (std::pair <uint32_t, std::vector <uint16_t> > (sfn, rbgAllocationMap));
+
 			break;
 		}
 		std::map <uint16_t, std::vector <double> >::iterator itCqi = m_ueUlCqi.find ((*it).first);
@@ -1333,6 +1360,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 			cqi = m_amc->GetCqiFromSpectralEfficiency (s);
 			if (cqi == 0)
 			{
+				NS_LOG_INFO ("*** RNTI " << schedInfo.m_rnti << " UL CQI out of range, skipping allocation in UL for slot " << slotNum+1);
 				it++;
 				if (it == m_ceBsrRxed.end ())
 				{
@@ -1344,6 +1372,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 				for (uint16_t i = newTbInfoElem.m_rbStart; i < newTbInfoElem.m_rbStart + newTbInfoElem.m_rbLen; i++)
 				{
 					rbgAllocationMap.at (i) = 0;
+					rbMap.at (i) = 0;
 				}
 				continue; // CQI == 0 means "out of range" (see table 7.2.3-1 of 36.213)
 			}
@@ -1354,20 +1383,12 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 
 		UpdateUlRlcBufferInfo (schedInfo.m_rnti, newTbInfoElem.m_tbSize);
 		newTbInfoElem.m_ndi = 1;
-		/*uldci.m_cceIndex = 0;
-					uldci.m_aggrLevel = 1;
-					uldci.m_ueTxAntennaSelection = 3; // antenna selection OFF
-					uldci.m_hopping = false;
-					uldci.m_n2Dmrs = 0;
-					uldci.m_tpc = 0; // no power control
-					uldci.m_cqiRequest = false; // only period CQI at this stage
-					uldci.m_ulIndex = 0; // TDD parameter
-					uldci.m_dai = 1; // TDD parameter
-					uldci.m_freqHopping = 0;
-					uldci.m_pdcchPowerOffset = 0; // not used
-		 */
+		schedInfo.m_dci.m_tddBitmap = (schedInfo.m_dci.m_tddBitmap | (0x1 << slotNum)); // set bit for UL
+		newTbInfoElem.m_harqProcess = UpdateUlHarqProcessId (rnti);
+		//schedInfo.m_rlcPduList.push_back(std::vector<RlcPduInfo> ());  // vector to store RLC PDUs for new TB
 		schedInfo.m_dci.m_tbInfoElements.push_back (newTbInfoElem);
-		// store DCI for HARQ_PERIOD
+		success = true;
+
 		uint8_t harqId = 0;
 		if (m_harqOn == true)
 		{
@@ -1392,7 +1413,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 			(*itStat).second.at (harqId) = 0;
 		}
 
-		NS_LOG_DEBUG ("slot " << slotNum+1 << " UL Allocation - UE " << (*it).first << " startPRB " << (uint32_t)newTbInfoElem.m_rbStart << " nPRB " << (uint32_t)newTbInfoElem.m_rbLen << " CQI " << cqi << " MCS " << (uint32_t)newTbInfoElem.m_mcs << " TBsize " << newTbInfoElem.m_tbSize << " harqId " << (uint16_t)harqId);
+		NS_LOG_DEBUG ("UL Allocation frame " << frameNum << " subframe " << sfNum << " slot " << slotNum+1 << " " << " RNTI " << schedInfo.m_dci.m_rnti << " startPRB " << (uint32_t)newTbInfoElem.m_rbStart << " nPRB " << (uint32_t)newTbInfoElem.m_rbLen << " CQI " << cqi << " MCS " << (uint32_t)newTbInfoElem.m_mcs << " TBsize " << newTbInfoElem.m_tbSize << " harqId " << (uint16_t)harqId);
 
 		it++;
 		if (it == m_ceBsrRxed.end ())
@@ -1410,6 +1431,15 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 	while (((*it).first != m_nextRntiUl)&&(rbPerFlow!=0));
 
 	m_allocationMaps.insert (std::pair <uint32_t, std::vector <uint16_t> > (sfn, rbgAllocationMap));
+
+//	std::cout << "Inserting rbgAllocationMap for sfn " << sfn << " frame " << frameNum << " subframe " << sfNum << " slot " << slotNum+1 << " ";
+//	for (unsigned i = 0; i < rbgAllocationMap.size(); i++)
+//	{
+//		std::cout << "RNTI " << rbgAllocationMap[i] << " ";
+//	}
+//	std::cout << std::endl;
+
+	return success;
 }
 
 void
@@ -1421,7 +1451,19 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 
 	MmWaveMacSchedSapUser::SchedConfigIndParameters ret;
 	ret.m_sfn = params.m_snfSf;
-	//	std::map<uint16_t,SchedInfoElement>& schedInfoMap = ret.m_schedInfoMap;
+	//	std::map<uint16_t,SchedInfo>& schedInfoMap = ret.m_schedInfoMap;
+
+	unsigned ulFrameNum;
+	unsigned ulSfNum = sfNum + m_phyMacConfig->GetUlSchedDelay () - 1;
+	if (ulSfNum > 10)
+	{
+		ulFrameNum = frameNum + 1;
+		ulSfNum = ulSfNum - 10;
+	}
+	else
+	{
+		ulFrameNum = frameNum;
+	}
 
 	RefreshDlCqiMaps ();
 	RefreshUlCqiMaps ();
@@ -1430,11 +1472,31 @@ MmWaveRrMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider:
 	{
 		if ((slotNum % 2) == 0) // schedule current slot for DOWNLINK
 		{
-			DoSchedDlTriggerReq (params, ret, frameNum, sfNum, slotNum);
+			if ( !DoSchedDlTriggerReq (params, ret, frameNum, sfNum, slotNum) && (slotNum != 0))
+			{
+				// failed to allocate any users in DL, try to allocate in UL (slot 1 reserved for DL)
+				//DoSchedUlTriggerReq (params, ret, frameNum, sfNum, slotNum);
+			}
 		}
 		else
 		{
-			DoSchedUlTriggerReq (params, ret, frameNum, sfNum, slotNum);
+
+			if ( !DoSchedUlTriggerReq (params, ret, ulFrameNum, ulSfNum, slotNum) && (slotNum != 1))
+			{
+				// failed to allocate any users in UL, try to allocate in DL (slot 2 reserved for UL)
+				//DoSchedDlTriggerReq (params, ret, frameNum, sfNum, slotNum)
+			}
+
+//			std::map<uint16_t, SchedInfo>::const_iterator it = ret.m_schedInfoMap.begin ();
+//			for (; it != ret.m_schedInfoMap.end (); it++)
+//			{
+//				std::cout << "RrScheduler: UL TBs for rnti " << it->second.m_dci.m_rnti << " frame " << ulFrameNum << " subframe " << (unsigned)ulSfNum << " slotNum " << (unsigned)slotNum;
+//				for (unsigned itb = 0; itb < it->second.m_dci.m_tbInfoElements.size (); itb++)
+//				{
+//					std::cout << " tb size " << it->second.m_dci.m_tbInfoElements[itb].m_tbSize;
+//				}
+//				std::cout << std::endl;
+//			}
 		}
 	}
 

@@ -40,7 +40,7 @@ public:
   MmWaveHarqPhy (uint32_t harqNum);
   ~MmWaveHarqPhy ();
 
-  void SubframeIndication (uint32_t frameNo, uint32_t subframeNo);
+  void SubframeIndication (SfnSf);
 
   /**
   * \brief Return the cumulated MI of the HARQ procId in case of retranmissions

@@ -19,6 +19,7 @@
 #include <ns3/node.h>
 #include <algorithm>
 #include <ns3/double.h>
+#include <ns3/boolean.h>
 
 namespace ns3{
 
@@ -28,7 +29,6 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveBeamforming);
 
 // number of channel matrix instance in beamforming files
 // period of updating channel matrix
-static const double g_longTermUpdatePeriod = 0.099999;
 static const uint32_t g_numInstance = 100;
 
 complex2DVector_t g_enbAntennaInstance; //100 instance of txW
@@ -51,7 +51,8 @@ static const double DopplerShift[20] = {0.73, 0.78, 0.68, 0.71, 0.79, 0.69, 0.66
 MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 	:m_pathNum (20),
 	m_enbAntennaSize(enbAntenna),
-	m_ueAntennaSize(ueAntenna)
+	m_ueAntennaSize(ueAntenna),
+	m_smallScale (true)
 {
 	if (g_smallScaleFadingInstance.empty ())
 	LoadFile();
@@ -63,6 +64,16 @@ MmWaveBeamforming::GetTypeId (void)
 {
 	static TypeId tid = TypeId ("ns3::MmWaveBeamforming")
 		.SetParent<Object> ()
+		.AddAttribute ("LongTermUpdatePeriod",
+				   "Time (ms) between periodic updating of channel matrix/beamforming vectors",
+           TimeValue (MilliSeconds (10.0)),
+           MakeTimeAccessor (&MmWaveBeamforming::m_longTermUpdatePeriod),
+           MakeTimeChecker ())
+	 .AddAttribute ("SmallScaleFading",
+									"Enable small scale fading",
+									BooleanValue (true),
+									MakeBooleanAccessor (&MmWaveBeamforming::m_smallScale),
+									MakeBooleanChecker ())
 	;
   	return tid;
 }
@@ -315,7 +326,7 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 
 	}
 
-	Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
+	Simulator::Schedule (m_longTermUpdatePeriod, &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 }
 
 
@@ -328,6 +339,7 @@ MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	std::vector<int>::iterator it;
 	//uniform->SetAntithetic(true);
 	int randomInstance = uniform->GetValue (0, g_numInstance-1);
+	NS_LOG_DEBUG ("************* UPDATING CHANNEL MATRIX (instance " << randomInstance << ") *************");
 
 	Ptr<BeamformingParams> bfParams = Create<BeamformingParams> ();
 	bfParams->m_enbW = g_enbAntennaInstance.at (randomInstance);
@@ -343,7 +355,7 @@ MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	}
 	m_channelMatrixMap.insert(std::make_pair(key,bfParams));
 	//update channel matrix periodically
-	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
+	//Simulator::Schedule (Seconds (m_longTermUpdatePeriod), &MmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
 
 	Ptr<MmWaveUeNetDevice> UeDev =
 					DynamicCast<MmWaveUeNetDevice> (ueDevice);
@@ -372,7 +384,7 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 			EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 	ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
 	enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
-	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::SetBeamformingVector,this,ueDevice,enbDevice);
+	//Simulator::Schedule (Seconds (m_longTermUpdatePeriod), &MmWaveBeamforming::SetBeamformingVector,this,ueDevice,enbDevice);
 }
 
 complexVector_t
@@ -424,7 +436,7 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 
 				std::complex<double> delay (cos (2*M_PI*fsb*DelaySpread[pathIndex]), sin (2*M_PI*fsb*DelaySpread[pathIndex]));
 				std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
-				std::complex<double> smallScaleFading = sqrt(2)*sigma*delay/doppler;
+				std::complex<double> smallScaleFading = m_smallScale ? sqrt(2)*sigma*doppler/delay : sqrt(2)*sigma;
 				subsbandGain = subsbandGain + bfParams->m_beam.at (pathIndex)*smallScaleFading;
 			}
 			*vit = (*vit)*(norm (subsbandGain));
@@ -503,13 +515,13 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		}
 		else if(ueW.empty())
 		{
-			NS_LOG_DEBUG ("UE beamforming vector is not configured, make sure this UE is registered to ENB");
+			NS_LOG_ERROR ("UE beamforming vector is not configured, make sure this UE is registered to ENB");
 			*rxPsd = (*rxPsd)*0;
 			return rxPsd;
 		}
 		else if(enbW.empty())
 		{
-			NS_LOG_DEBUG ("ENB beamforming vector is not configured, make sure UE is registered to this ENB");
+			NS_LOG_ERROR ("ENB beamforming vector is not configured, make sure UE is registered to this ENB");
 			*rxPsd = (*rxPsd)*0;
 			return rxPsd;
 		}
@@ -521,7 +533,9 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			+(rxSpeed.y-txSpeed.y)+(rxSpeed.z-txSpeed.z);
 
 	Ptr<SpectrumValue> bfPsd = GetChannelGainVector (rxPsd, bfParams,  relativeSpeed);
-	NS_LOG_DEBUG ((*bfPsd)/(*rxPsd));
+//	SpectrumValue bfGain = (*bfPsd)/(*rxPsd);
+//	NS_LOG_UNCOND ((*bfPsd)/(*rxPsd));
+//	NS_LOG_UNCOND (Sum (bfGain) / bfGain.GetSpectrumModel ()->GetNumBands ()); // print avg bf gain
 	return bfPsd;
 }
 

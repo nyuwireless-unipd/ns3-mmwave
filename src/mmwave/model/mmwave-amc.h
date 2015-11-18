@@ -13,13 +13,13 @@
 
 namespace ns3 {
 
-class mmWaveAmc: public Object
+class MmWaveAmc: public Object
 {
 public:
 	static TypeId GetTypeId (void);
-	mmWaveAmc ();
-	mmWaveAmc(Ptr<MmWavePhyMacCommon> ConfigParams);
-	virtual ~mmWaveAmc();
+	MmWaveAmc ();
+	MmWaveAmc(Ptr<MmWavePhyMacCommon> ConfigParams);
+	virtual ~MmWaveAmc();
 	enum AmcModel
 	{
 		PiroEW2010,
@@ -27,15 +27,21 @@ public:
 	};
 
 	int GetMcsFromCqi (int cqi);
-	int GetTbSizeFromMcs (int mcs, int nprb);
+	int GetTbSizeFromMcs (unsigned mcs, unsigned nprb);
+	int GetTbSizeFromMcsSymbols (unsigned mcs, unsigned nsym);  // for TDMA
 	std::vector<int> CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize);
+	std::vector<int> CreateCqiFeedbacksTdma (const SpectrumValue& sinr, uint8_t numSym);
+	int CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, uint32_t tbs, int &mcsWb);
 	int GetCqiFromSpectralEfficiency (double s);
+
+	static const unsigned int m_crcLen=24;
 
 private:
 	  double m_ber;
 	  AmcModel m_amcModel;
 
-	  Ptr<MmWavePhyMacCommon> m_ConfigParams;
+	  Ptr<MmWavePhyMacCommon> m_phyMacConfig;
+		Ptr<SpectrumModel> m_lteRbModel;
 };
 
 } // end namespace ns3

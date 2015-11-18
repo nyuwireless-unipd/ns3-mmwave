@@ -122,7 +122,7 @@ public:
 
 	virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg);
 
-	virtual void SubframeIndication (uint32_t frameNum, uint32_t subframeNum, uint32_t slotNum);
+	virtual void SubframeIndication (SfnSf);
 
 	virtual void UlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters cqi);
 
@@ -153,9 +153,9 @@ MmWaveMacEnbMemberPhySapUser::ReceiveControlMessage (Ptr<MmWaveControlMessage> m
 }
 
 void
-MmWaveMacEnbMemberPhySapUser::SubframeIndication (uint32_t frameNum, uint32_t subframeNum, uint32_t slotNum)
+MmWaveMacEnbMemberPhySapUser::SubframeIndication (SfnSf sfn)
 {
-	m_mac->DoSubframeIndication(frameNum, subframeNum, slotNum);
+	m_mac->DoSubframeIndication(sfn);
 }
 
 void
@@ -263,57 +263,6 @@ MmWaveEnbMac::ReceiveRachPreamble (uint32_t raId)
 	++m_receivedRachPreambleCount[raId];
 }
 
-// forwarded from LteMacSapProvider
-void
-MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
-{
-	// TB UID passed back along with RLC data as HARQ process ID
-	uint32_t tbMapKey = ((params.rnti & 0xFFFF) << 8) | (params.harqProcessId & 0xFF);
-	std::map<uint32_t, struct MacPduInfo>::iterator it = m_macPduMap.find (tbMapKey);
-	if (it == m_macPduMap.end ())
-	{
-		NS_FATAL_ERROR ("No MAC PDU storage element found for this TB UID/RNTI");
-	}
-	else
-	{
-		if(it->second.m_pdu == 0)
-		{
-			it->second.m_pdu = params.pdu;
-		}
-		else
-		{
-			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
-		}
-
-		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
-		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
-
-		if (it->second.m_numRlcPdu == 1)
-		{			// wait for all RLC PDUs to be received
-			it->second.m_pdu->AddHeader (it->second.m_macHeader);
-			LteRadioBearerTag bearerTag (params.rnti, it->second.m_size, 0);
-			it->second.m_pdu->AddPacketTag (bearerTag);
-			NS_LOG_DEBUG ("eNB sending MAC pdu size " << it->second.m_pdu->GetSize());
-			for (unsigned i = 0; i < it->second.m_macHeader.GetSubheaders().size(); i++)
-			{
-				NS_LOG_DEBUG("Subheader " << i << " size " << it->second.m_macHeader.GetSubheaders().at(i).m_size);
-			}
-
-			//harq process
-			std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator iter =  m_miDlHarqProcessesPackets.find (params.rnti);
-			NS_ASSERT (iter!=m_miDlHarqProcessesPackets.end ());
-			(*iter).second.at (params.layer).at (params.harqProcessId)->AddPacket (it->second.m_pdu);
-
-			m_phySapProvider->SendMacPdu (it->second.m_pdu);
-			m_macPduMap.erase (it);  // delete map entry
-		}
-		else
-		{
-			it->second.m_numRlcPdu--; // decrement count of remaining RLC requests
-		}
-	}
-}
-
 LteMacSapProvider*
 MmWaveEnbMac::GetUeMacSapProvider (void)
 {
@@ -332,17 +281,17 @@ MmWaveEnbMac::SetEnbCmacSapUser (LteEnbCmacSapUser* s)
 }
 
 void
-MmWaveEnbMac::DoSubframeIndication (uint32_t frameNum, uint32_t subframeNum, uint32_t slotNum)
+MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 {
-	m_frameNum = frameNum;
-	m_sfNum = subframeNum;
-	m_slotNum = slotNum;
+	m_frameNum = sfnSf.m_frameNum;
+	m_sfNum = sfnSf.m_sfNum;
+	m_slotNum = sfnSf.m_slotNum;
 
 	// --- DOWNLINK ---
 	// Send Dl-CQI info to the scheduler	if(m_dlCqiReceived.size () > 0)
 	{
 		MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters dlCqiInfoReq;
-		dlCqiInfoReq.m_sfnsf = ((0x3FF & frameNum) << 16) | ((0xFF & subframeNum) << 8) | ((0xFF & slotNum));
+		dlCqiInfoReq.m_sfnsf = sfnSf;
 
 		dlCqiInfoReq.m_cqiList.insert (dlCqiInfoReq.m_cqiList.begin (), m_dlCqiReceived.begin (), m_dlCqiReceived.end ());
 		m_dlCqiReceived.erase (m_dlCqiReceived.begin (), m_dlCqiReceived.end ());
@@ -365,7 +314,7 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNum, uint32_t subframeNum, uin
 			rar.rapId = (*it).first;
 			rar.rarPayload.m_rnti = rnti;
 			rarMsg->AddRar (rar);
-			NS_ASSERT_MSG((*it).second ==1, "Two user send the same Rach ID, collision detected");
+			//NS_ASSERT_MSG((*it).second ==1, "Two user send the same Rach ID, collision detected");
 		}
 		m_phySapProvider->SendControlMessage (rarMsg);
 		m_receivedRachPreambleCount.clear ();
@@ -376,28 +325,28 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNum, uint32_t subframeNum, uin
 	std::vector <MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters>::iterator itCqi;
 	for (uint16_t i = 0; i < m_ulCqiReceived.size (); i++)
 	{
-		m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNum) << 16) | ((0xFF & subframeNum) << 8) | (0xFF & slotNum);
+		//m_ulCqiReceived.at (i).m_sfnSf = ((0x3FF & frameNum) << 16) | ((0xFF & subframeNum) << 8) | (0xFF & slotNum);
 		m_macSchedSapProvider->SchedUlCqiInfoReq (m_ulCqiReceived.at (i));
 	}
 	m_ulCqiReceived.clear ();
 
-	// Send BSR reports to the scheduler
+	// Send UL BSR reports to the scheduler
 	if (m_ulCeReceived.size () > 0)
 	{
 		MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters ulMacReq;
-		ulMacReq.m_sfnSf = ((0x3FF & frameNum) << 8) | (0xFF & subframeNum);
+		ulMacReq.m_sfnSf = sfnSf;
 		ulMacReq.m_macCeList.insert (ulMacReq.m_macCeList.begin (), m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_ulCeReceived.erase (m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_macSchedSapProvider->SchedUlMacCtrlInfoReq (ulMacReq);
 	}
 
-	if (m_slotNum == 1)
+	if (m_slotNum == 0)
 	{
 		// trigger scheduler
 		uint32_t dlSchedframeNum = m_frameNum;
 		uint32_t dlSchedSubframeNum = m_sfNum;
 
-		if (dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency () > m_phyMacConfig->GetSubframesPerFrame ())
+		if (dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency () >= m_phyMacConfig->GetSubframesPerFrame ())
 		{
 		  dlSchedframeNum++;
 		  dlSchedSubframeNum = (dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency()) - m_phyMacConfig->GetSubframesPerFrame();
@@ -408,8 +357,8 @@ MmWaveEnbMac::DoSubframeIndication (uint32_t frameNum, uint32_t subframeNum, uin
 		}
 
 		MmWaveMacSchedSapProvider::SchedTriggerReqParameters params;
-		uint32_t sfn = ((0x3FF & dlSchedframeNum) << 16) | ((0xFF & dlSchedSubframeNum) << 8) | (0xFF & 1);
-		params.m_snfSf = sfn;
+		SfnSf schedSfn (dlSchedframeNum, dlSchedSubframeNum, 0);
+		params.m_snfSf = schedSfn;
 
 		// Forward DL HARQ feebacks collected during last subframe TTI
 		if (m_dlHarqInfoReceived.size () > 0)
@@ -462,6 +411,10 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 	uint32_t currPos = 0;
 	for (unsigned ipdu = 0; ipdu < macSubheaders.size (); ipdu++)
 	{
+		if (macSubheaders[ipdu].m_size == 0)
+		{
+			continue;
+		}
 		std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (macSubheaders[ipdu].m_lcid);
 		NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << macSubheaders[ipdu].m_lcid);
 		Ptr<Packet> rlcPdu;
@@ -522,6 +475,9 @@ MmWaveEnbMac::DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParamet
     {
       NS_LOG_DEBUG (this << " eNB rxed an SRS UL-CQI");
     }
+  //ulcqi.m_sfnSf = SfnSf(m_frameNum, m_sfNum, m_slotNum);
+  NS_LOG_INFO("*** UL CQI report SINR " << LteFfConverter::fpS11dot3toDouble (ulcqi.m_ulCqi.m_sinr[0]) << " frame " << m_frameNum << " subframe " << m_sfNum << " slot " << m_slotNum );
+
   m_ulCqiReceived.push_back (ulcqi);
 }
 
@@ -573,24 +529,23 @@ MmWaveEnbMac::DoDlHarqFeedback (DlHarqInfo params)
   // Update HARQ buffer
   std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator it =  m_miDlHarqProcessesPackets.find (params.m_rnti);
   NS_ASSERT (it!=m_miDlHarqProcessesPackets.end ());
-  for (uint8_t layer = 0; layer < params.m_harqStatus.size (); layer++)
-    {
-      if (params.m_harqStatus.at (layer)==DlHarqInfo::ACK)
-        {
-          // discard buffer
-          Ptr<PacketBurst> emptyBuf = CreateObject <PacketBurst> ();
-          (*it).second.at (layer).at (params.m_harqProcessId) = emptyBuf;
-          NS_LOG_DEBUG (this << " HARQ-ACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId << " layer " << (uint16_t)layer);
-        }
-      else if (params.m_harqStatus.at (layer)==DlHarqInfo::NACK)
-        {
-          NS_LOG_DEBUG (this << " HARQ-NACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId << " layer " << (uint16_t)layer);
-        }
-      else
-        {
-          NS_FATAL_ERROR (" HARQ functionality not implemented");
-        }
-    }
+
+  if (params.m_harqStatus == DlHarqInfo::ACK)
+  {
+  	// discard buffer
+  	Ptr<PacketBurst> emptyBuf = CreateObject <PacketBurst> ();
+  	(*it).second.at (params.m_harqProcessId) = emptyBuf;
+  	NS_LOG_DEBUG (this << " HARQ-ACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId);
+  }
+  else if (params.m_harqStatus == DlHarqInfo::NACK)
+  {
+  	NS_LOG_DEBUG (this << " HARQ-NACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId);
+  }
+  else
+  {
+  	NS_FATAL_ERROR (" HARQ functionality not implemented");
+  }
+
   m_dlHarqInfoReceived.push_back (params);
 }
 
@@ -610,82 +565,127 @@ MmWaveEnbMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParamet
   m_macSchedSapProvider->SchedDlRlcBufferReq (schedParams);
 }
 
+// forwarded from LteMacSapProvider
+void
+MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
+{
+	// TB UID passed back along with RLC data as HARQ process ID
+	uint32_t tbMapKey = ((params.rnti & 0xFFFF) << 8) | (params.harqProcessId & 0xFF);
+	std::map<uint32_t, struct MacPduInfo>::iterator it = m_macPduMap.find (tbMapKey);
+	if (it == m_macPduMap.end ())
+	{
+		NS_FATAL_ERROR ("No MAC PDU storage element found for this TB UID/RNTI");
+	}
+	else
+	{
+		if(it->second.m_pdu == 0)
+		{
+			it->second.m_pdu = params.pdu;
+		}
+		else
+		{
+			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
+		}
+
+		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
+		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
+		it->second.m_numRlcPdu++;
+	}
+}
+
 void
 MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndParameters ind)
 {
-	std::map<uint16_t, SchedInfoElement>::iterator schedTt;
-	// process scheduling entries and generate messages for PHY
-	for (schedTt = ind.m_schedInfoMap.begin (); schedTt != ind.m_schedInfoMap.end (); schedTt++)
+	m_phySapProvider->SetDlSfAllocInfo (ind.m_dlSfAllocInfo);
+	m_phySapProvider->SetUlSfAllocInfo (ind.m_ulSfAllocInfo);
+
+	for (unsigned islot = 1; islot < ind.m_dlSfAllocInfo.m_dlSlotAllocInfo.size (); islot++)
 	{
-		// Create DCI message object and send to PHY
-		SchedInfoElement& schedInfo = schedTt->second;
-		uint16_t rnti = schedInfo.m_rnti;
-		Ptr<MmWaveDciMessage> dciMsg = Create<MmWaveDciMessage> ();
-		dciMsg->SetDciInfoElement (schedInfo.m_dci);
-		dciMsg->SetSfnSf (ind.m_sfn);
-		m_phySapProvider->SendControlMessage (dciMsg);
+		SlotAllocInfo &slotAllocInfo = ind.m_dlSfAllocInfo.m_dlSlotAllocInfo[islot];
+		uint16_t rnti = slotAllocInfo.m_dci.m_rnti;
 		std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
-
-		for (unsigned int itb = 0; itb < schedInfo.m_dci.m_tbInfoElements.size (); itb++)
+		if (rntiIt == m_rlcAttached.end())
 		{
-			// iterate through RLC PDUs for each slot
-			TbInfoElement& tbInfo = schedInfo.m_dci.m_tbInfoElements[itb];
-			NS_ASSERT (schedInfo.m_rlcPduList.size () > 0);
-			std::vector<RlcPduInfo>& rlcPduElems = schedInfo.m_rlcPduList[itb];
+			NS_FATAL_ERROR ("Scheduled UE " << rntiIt->first << " not attached");
+		}
+		else
+		{
+			// create DCI messages
+			DciInfoElementTdma &dciElem = slotAllocInfo.m_dci;
+			uint8_t tbUid = dciElem.m_harqProcess;
 
-			MacPduInfo macPduInfo (schedInfo.m_frameNum, schedInfo.m_sfNum, tbInfo.m_slotInd+1, \
-			                       tbInfo.m_tbSize, rlcPduElems.size ());
-			//uint8_t tbUid = AllocateTbUid ();
-			uint8_t tbUid = AllocateTbUid ()%20;
-
-			// insert into MAC PDU map
-			uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
-			m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo));
-
-			//Harq Process
-			if (tbInfo.m_ndi == 1)
+			// update Harq Processes
+			if (dciElem.m_ndi == 1)
 			{
-				// new data -> force emptying correspondent harq pkt buffer
-				std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
-				NS_ASSERT(it!=m_miDlHarqProcessesPackets.end());
-				for (uint16_t lcId = 0; lcId < (*it).second.size (); lcId ++)
+				std::vector<RlcPduInfo> &rlcPduInfo = slotAllocInfo.m_rlcPduInfo;
+				NS_ASSERT (rlcPduInfo.size () > 0);
+				SfnSf pduSfn = ind.m_sfnSf;
+				pduSfn.m_slotNum = slotAllocInfo.m_dci.m_symStart;
+				MacPduInfo macPduInfo (pduSfn, slotAllocInfo.m_dci.m_tbSize, rlcPduInfo.size ());
+				// insert into MAC PDU map
+				uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
+				std::pair <std::map<uint32_t, struct MacPduInfo>::iterator, bool> mapRet =
+						m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (tbMapKey, macPduInfo));
+				if (!mapRet.second)
 				{
-					Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-					//(*it).second.at (lcId).at (tbInfo.m_harqProcess) = pb;
-					(*it).second.at (lcId).at (tbUid) = pb;
-
+					NS_FATAL_ERROR ("MAC PDU map element exists");
 				}
-
-				for (unsigned int ipdu = 0; ipdu < rlcPduElems.size (); ipdu++)
+				std::map<uint32_t, struct MacPduInfo>::iterator pduMapIt = mapRet.first;
+				pduMapIt->second.m_numRlcPdu = 0;
+				for (unsigned int ipdu = 0; ipdu < rlcPduInfo.size (); ipdu++)
 				{
 					NS_ASSERT_MSG (rntiIt != m_rlcAttached.end (), "could not find RNTI" << rnti);
-					std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (rlcPduElems[ipdu].m_lcid);
-					NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduElems[ipdu].m_lcid);
-					// Instead of passing the HARQ process number to RLC, use a unique identifier to match the RLC PDU to its TB
-					NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int)rlcPduElems[ipdu].m_size);
-					MacSubheader subheader (rlcPduElems[ipdu].m_lcid, rlcPduElems[ipdu].m_size);
-					(*lcidIt).second->NotifyTxOpportunity ((rlcPduElems[ipdu].m_size - subheader.GetSize ()), 0, tbUid);
+					std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (rlcPduInfo[ipdu].m_lcid);
+					NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduInfo[ipdu].m_lcid);
+					NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int) rlcPduInfo[ipdu].m_size);
+					MacSubheader subheader (rlcPduInfo[ipdu].m_lcid, rlcPduInfo[ipdu].m_size);
+					(*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size)-subheader.GetSize (), 0, tbUid);
 				}
+
+				if (pduMapIt->second.m_numRlcPdu == 0)
+				{
+					MacSubheader subheader (3, 0);  // add subheader for empty packet
+					pduMapIt->second.m_macHeader.AddSubheader (subheader);
+				}
+				pduMapIt->second.m_pdu->AddHeader (pduMapIt->second.m_macHeader);
+				NS_ASSERT (pduMapIt->second.m_pdu->GetSize() > 0);
+				LteRadioBearerTag bearerTag (rnti, pduMapIt->second.m_size, 0);
+				pduMapIt->second.m_pdu->AddPacketTag (bearerTag);
+				NS_LOG_DEBUG ("eNB sending MAC pdu size " << pduMapIt->second.m_pdu->GetSize());
+				for (unsigned i = 0; i < pduMapIt->second.m_macHeader.GetSubheaders().size(); i++)
+				{
+					NS_LOG_DEBUG("Subheader " << i << " size " << pduMapIt->second.m_macHeader.GetSubheaders().at(i).m_size);
+				}
+
+				// new data -> force emptying correspondent harq pkt buffer
+				std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator harqIt = m_miDlHarqProcessesPackets.find (rnti);
+				NS_ASSERT(harqIt!=m_miDlHarqProcessesPackets.end());
+				Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
+				harqIt->second.at (tbUid) = pb;
+				harqIt->second.at (tbUid)->AddPacket (pduMapIt->second.m_pdu);
+
+				m_phySapProvider->SendMacPdu (pduMapIt->second.m_pdu);
+				m_macPduMap.erase (pduMapIt);  // delete map entry
 			}
 			else
 			{
 				NS_LOG_INFO ("DL retransmission");
-				if (tbInfo.m_tbSize > 0)
+				if (dciElem.m_tbSize > 0)
 				{
 					// HARQ retransmission -> retrieve TB from HARQ buffer
 					std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
 					NS_ASSERT(it!=m_miDlHarqProcessesPackets.end());
-					//Ptr<PacketBurst> pb = (*it).second.at (k).at (tbInfo.m_harqProcess);
-					Ptr<PacketBurst> pb = (*it).second.at (0).at (tbUid);
+					Ptr<PacketBurst> pb = it->second.at (tbUid);
 					for (std::list<Ptr<Packet> >::const_iterator j = pb->Begin (); j != pb->End (); ++j)
 					{
 						Ptr<Packet> pkt = (*j)->Copy ();
-						// update header metadata for retransmission
-						MmWaveMacPduTag tag;
-						pkt->RemovePacketTag (tag);
-						tag.SetFrameNum (schedInfo.m_frameNum);
-						tag.SetSubframeNum (schedInfo.m_sfNum);
-						tag.SetSlotNum (tbInfo.m_slotInd);
+						MmWaveMacPduTag tag; 						// update PDU tag for retransmission
+						if(!pkt->RemovePacketTag (tag))
+						{
+							NS_FATAL_ERROR ("No MAC PDU tag");
+						}
+						tag.SetSfn (SfnSf (ind.m_sfnSf.m_frameNum, ind.m_sfnSf.m_sfNum, dciElem.m_symStart));
+						pkt->AddPacketTag (tag);
 						m_phySapProvider->SendMacPdu (pkt);
 					}
 				}
@@ -722,26 +722,15 @@ MmWaveEnbMac::DoAddUe (uint16_t rnti)
 	NS_ASSERT_MSG (ret.second, "element already present, RNTI already existed");
 
 	// Create DL transmission HARQ buffers
-	std::vector < Ptr<PacketBurst> > dlHarqLayer0pkt;
-	uint16_t harqNum = m_phyMacConfig->GetNumHarqProcess ();
-	dlHarqLayer0pkt.resize (harqNum);
-	for (uint8_t i = 0; i < harqNum; i++)
-	{
-		Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-		dlHarqLayer0pkt.at (i) = pb;
-	}
-	/*
-	std::vector < Ptr<PacketBurst> > dlHarqLayer1pkt;
-	dlHarqLayer1pkt.resize (harqNum);
-	for (uint8_t i = 0; i < harqNum; i++)
-	{
-		Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-		dlHarqLayer1pkt.at (i) = pb;
-	}
-	*/
 	DlHarqProcessesBuffer_t buf;
-	buf.push_back (dlHarqLayer0pkt);
-	//buf.push_back (dlHarqLayer1pkt);
+	//std::vector < Ptr<PacketBurst> > dlHarqLayer0pkt;
+	uint16_t harqNum = m_phyMacConfig->GetNumHarqProcess ();
+	buf.resize (harqNum);
+	for (uint8_t i = 0; i < harqNum; i++)
+	{
+		Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
+		buf.at (i) = pb;
+	}
 	m_miDlHarqProcessesPackets.insert (std::pair <uint16_t, DlHarqProcessesBuffer_t> (rnti, buf));
 
 }

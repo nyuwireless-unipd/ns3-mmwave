@@ -1,0 +1,1633 @@
+/*
+ * mmwave-rr-mac-scheduler.cc
+ *
+ *  Created on: Jan 11, 2015
+ *      Author: sourjya
+ */
+
+#include <ns3/log.h>
+#include <ns3/abort.h>
+//#include "mmwave-mac-sched-sap.h"
+#include "mmwave-flex-tti-harq-mac-scheduler.h"
+//#include "mmwave-mac-scheduler.h"
+#include <ns3/lte-common.h>
+#include <ns3/boolean.h>
+#include <stdlib.h>     /* abs */
+#include "mmwave-mac-pdu-header.h"
+#include "mmwave-mac-pdu-tag.h"
+#include "mmwave-spectrum-value-helper.h"
+#include <cmath>
+
+namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiHarqMacScheduler");
+
+NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiHarqMacScheduler);
+
+class MmWaveFlexTtiHarqMacSchedSapProvider : public MmWaveMacSchedSapProvider
+{
+public:
+	MmWaveFlexTtiHarqMacSchedSapProvider (MmWaveFlexTtiHarqMacScheduler* sched);
+
+  virtual void SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
+	virtual void SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
+	virtual void SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params);
+	virtual void SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
+  virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
+
+private:
+  MmWaveFlexTtiHarqMacSchedSapProvider ();
+	MmWaveFlexTtiHarqMacScheduler* m_scheduler;
+};
+
+MmWaveFlexTtiHarqMacSchedSapProvider::MmWaveFlexTtiHarqMacSchedSapProvider ()
+{
+}
+
+MmWaveFlexTtiHarqMacSchedSapProvider::MmWaveFlexTtiHarqMacSchedSapProvider (MmWaveFlexTtiHarqMacScheduler* sched)
+	:m_scheduler(sched)
+{
+
+}
+
+void
+MmWaveFlexTtiHarqMacSchedSapProvider::SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
+{
+  m_scheduler->DoSchedDlRlcBufferReq (params);
+}
+
+void
+MmWaveFlexTtiHarqMacSchedSapProvider::SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
+{
+	m_scheduler->DoSchedTriggerReq(params);
+}
+
+void
+MmWaveFlexTtiHarqMacSchedSapProvider::SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
+{
+	m_scheduler->DoSchedDlCqiInfoReq (params);
+}
+
+void
+MmWaveFlexTtiHarqMacSchedSapProvider::SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
+{
+  m_scheduler->DoSchedUlCqiInfoReq (params);
+}
+
+void
+MmWaveFlexTtiHarqMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
+{
+  m_scheduler->DoSchedUlMacCtrlInfoReq (params);
+
+}
+
+
+MmWaveFlexTtiHarqMacScheduler::MmWaveFlexTtiHarqMacScheduler ()
+: m_directions (""),
+  m_isDirnUpdated (false),
+  m_nextRnti (0),
+  m_subframeNo (0),
+  m_tbUid (0),
+  m_macSchedSapUser (0)
+{
+	NS_LOG_FUNCTION (this);
+
+	m_macSchedSapProvider = new MmWaveFlexTtiHarqMacSchedSapProvider (this);
+}
+
+MmWaveFlexTtiHarqMacScheduler::~MmWaveFlexTtiHarqMacScheduler ()
+{
+	NS_LOG_FUNCTION (this);
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoDispose (void)
+{
+	NS_LOG_FUNCTION (this);
+	m_wbCqiRxed.clear();
+  m_dlHarqProcessesDciInfoMap.clear ();
+  m_dlHarqProcessesTimer.clear ();
+  m_dlHarqProcessesRlcPduMap.clear ();
+  m_dlHarqInfoList.clear ();
+  m_ulHarqCurrentProcessId.clear ();
+  m_ulHarqProcessesStatus.clear ();
+  m_ulHarqProcessesDciInfoMap.clear ();
+//  delete m_cschedSapProvider;
+  delete m_macSchedSapProvider;
+	m_directions.clear ();
+}
+
+TypeId
+MmWaveFlexTtiHarqMacScheduler::GetTypeId (void)
+{
+	static TypeId tid = TypeId ("ns3::MmWaveFlexTtiHarqMacScheduler")
+	    .SetParent<MmWaveMacScheduler> ()
+		.AddConstructor<MmWaveFlexTtiHarqMacScheduler> ()
+    .AddAttribute ("CqiTimerThreshold",
+                   "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
+                   UintegerValue (10),
+                   MakeUintegerAccessor (&MmWaveFlexTtiHarqMacScheduler::m_cqiTimersThreshold),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("HarqEnabled",
+                   "Activate/Deactivate the HARQ [by default is active].",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&MmWaveFlexTtiHarqMacScheduler::m_harqOn),
+                   MakeBooleanChecker ())
+	 .AddAttribute ("FixedMcsDl",
+									"Fix MCS to value set in McsDlDefault",
+									BooleanValue (false),
+									MakeBooleanAccessor (&MmWaveFlexTtiHarqMacScheduler::m_fixedMcsDl),
+									MakeBooleanChecker ())
+	.AddAttribute ("McsDefaultDl",
+								 "Fixed DL MCS",
+								 UintegerValue (1),
+								 MakeUintegerAccessor (&MmWaveFlexTtiHarqMacScheduler::m_mcsDefaultDl),
+								 MakeUintegerChecker<uint8_t> ())
+		;
+
+	return tid;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::SetMacSchedSapUser (MmWaveMacSchedSapUser* sap)
+{
+	m_macSchedSapUser = sap;
+}
+
+MmWaveMacSchedSapProvider*
+MmWaveFlexTtiHarqMacScheduler::GetMacSchedSapProvider ()
+{
+	return m_macSchedSapProvider;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
+{
+	m_phyMacConfig = config;
+	m_amc = CreateObject <MmWaveAmc> (m_phyMacConfig);
+	m_numRbg = m_phyMacConfig->GetNumRb () / m_phyMacConfig->GetNumRbPerRbg ();
+	m_numHarqProcess = m_phyMacConfig->GetNumHarqProcess ();
+	m_harqTimeout = m_phyMacConfig->GetHarqTimeout ();
+	m_numDataSymbols = m_phyMacConfig->GetSymbolsPerSubframe () -
+			m_phyMacConfig->GetDlCtrlSymbols () - m_phyMacConfig->GetUlCtrlSymbols ();
+	NS_ASSERT_MSG (m_phyMacConfig->GetNumRb () == 1, \
+	               "System must be configured with numRb=1 for TDMA mode");
+
+	for (unsigned i = 0; i < m_phyMacConfig->GetUlSchedDelay(); i++)
+	{
+		m_ulSfAllocInfo.push_back (SfAllocInfo (SfnSf (0, i, 0)));
+	}
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
+{
+  NS_LOG_FUNCTION (this << params.m_rnti << (uint32_t) params.m_logicalChannelIdentity);
+  // API generated by RLC for updating RLC parameters on a LC (tx and retx queues)
+  std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
+  bool newLc = true;
+  while (it != m_rlcBufferReq.end ())
+    {
+      // remove old entries of this UE-LC
+      if (((*it).m_rnti == params.m_rnti)&&((*it).m_logicalChannelIdentity == params.m_logicalChannelIdentity))
+        {
+          it = m_rlcBufferReq.erase (it);
+          newLc = false;
+        }
+      else
+        {
+          ++it;
+        }
+    }
+  // add the new parameters
+  m_rlcBufferReq.insert (it, params);
+  NS_LOG_INFO (this << " RNTI " << params.m_rnti << " LC " << (uint16_t)params.m_logicalChannelIdentity << " RLC tx size " << params.m_rlcTransmissionQueueHolDelay << " RLC retx size " << params.m_rlcRetransmissionQueueSize << " RLC stat size " <<  params.m_rlcStatusPduSize);
+  // initialize statistics of the flow in case of new flows
+  if (newLc == true)
+  {
+  	m_wbCqiRxed.insert ( std::pair<uint16_t, uint8_t > (params.m_rnti, 1)); // only codeword 0 at this stage (SISO)
+  	// initialized to 1 (i.e., the lowest value for transmitting a signal)
+  	m_wbCqiTimers.insert ( std::pair<uint16_t, uint32_t > (params.m_rnti, m_cqiTimersThreshold));
+  }
+
+  if (m_dlHarqCurrentProcessId.find (params.m_rnti) == m_dlHarqCurrentProcessId.end ())
+  {
+  	// TODO: Add Csched SAP (currently no csched sap methods, so put this code here for now - RDF)
+  	m_dlHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+  	DlHarqProcessesStatus_t dlHarqPrcStatus;
+  	dlHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
+  	m_dlHarqProcessesStatus.insert (std::pair <uint16_t, DlHarqProcessesStatus_t> (params.m_rnti, dlHarqPrcStatus));
+  	DlHarqProcessesTimer_t dlHarqProcessesTimer;
+  	dlHarqProcessesTimer.resize (m_phyMacConfig->GetNumHarqProcess (),0);
+  	m_dlHarqProcessesTimer.insert (std::pair <uint16_t, DlHarqProcessesTimer_t> (params.m_rnti, dlHarqProcessesTimer));
+  	DlHarqProcessesDciInfoList_t dlHarqTbInfoList;
+  	dlHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_dlHarqProcessesDciInfoMap.insert (std::pair <uint16_t, DlHarqProcessesDciInfoList_t> (params.m_rnti, dlHarqTbInfoList));
+  	DlHarqRlcPduList_t dlHarqRlcPduList;
+  	dlHarqRlcPduList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_dlHarqProcessesRlcPduMap.insert (std::pair <uint16_t, DlHarqRlcPduList_t> (params.m_rnti, dlHarqRlcPduList));
+  }
+  return;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoSchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+
+  std::map <uint16_t,uint8_t>::iterator it;
+  for (unsigned int i = 0; i < params.m_cqiList.size (); i++)
+    {
+      if ( params.m_cqiList.at (i).m_cqiType == DlCqiInfo::WB )
+        {
+          // wideband CQI reporting
+          std::map <uint16_t,uint8_t>::iterator it;
+          uint16_t rnti = params.m_cqiList.at (i).m_rnti;
+          it = m_wbCqiRxed.find (rnti);
+          if (it == m_wbCqiRxed.end ())
+            {
+              // create the new entry
+              m_wbCqiRxed.insert ( std::pair<uint16_t, uint8_t > (rnti, params.m_cqiList.at (i).m_wbCqi) ); // only codeword 0 at this stage (SISO)
+              // generate correspondent timer
+              m_wbCqiTimers.insert ( std::pair<uint16_t, uint32_t > (rnti, m_cqiTimersThreshold));
+            }
+          else
+            {
+              // update the CQI value
+              (*it).second = params.m_cqiList.at (i).m_wbCqi;
+              // update correspondent timer
+              std::map <uint16_t,uint32_t>::iterator itTimers;
+              itTimers = m_wbCqiTimers.find (rnti);
+              (*itTimers).second = m_cqiTimersThreshold;
+            }
+        }
+      else if ( params.m_cqiList.at (i).m_cqiType == DlCqiInfo::SB )
+        {
+          // subband CQI reporting high layer configured
+          // Not used by RR Scheduler
+        }
+      else
+        {
+          NS_LOG_ERROR (this << " CQI type unknown");
+        }
+    }
+
+  return;
+}
+
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+
+	unsigned frameNum = params.m_sfnSf.m_frameNum;
+	unsigned subframeNum =  params.m_sfnSf.m_sfNum;
+	unsigned startSymIdx =  params.m_sfnSf.m_slotNum;
+
+	switch (params.m_ulCqi.m_type)
+	{
+		case UlCqiInfo::PUSCH:
+		{
+			std::map <uint32_t, struct AllocMapElem>::iterator itMap;
+			std::map <uint16_t, struct UlCqiMapElem>::iterator itCqi;
+			itMap = m_ulAllocationMap.find (params.m_sfnSf.Encode ());
+			if (itMap == m_ulAllocationMap.end ())
+			{
+				NS_LOG_INFO (this << " Does not find info on allocation, size : " << m_ulAllocationMap.size ());
+				return;
+			}
+			NS_ASSERT_MSG (itMap->second.m_rntiPerChunk.size () == m_phyMacConfig->GetTotalNumChunk (), "SINR chunk map must cover full BW in TDMA mode");
+			for (unsigned i = 0; i < itMap->second.m_rntiPerChunk.size (); i++)
+			{
+				// convert from fixed point notation Sxxxxxxxxxxx.xxx to double
+				//double sinr = LteFfConverter::fpS11dot3toDouble (params.m_ulCqi.m_sinr.at (i));
+				itCqi = m_ueUlCqi.find (itMap->second.m_rntiPerChunk.at (i));
+				if (itCqi == m_ueUlCqi.end ())
+				{
+					// create a new entry
+					std::vector <double> newCqi;
+					for (unsigned j = 0; j < m_phyMacConfig->GetTotalNumChunk (); j++)
+					{
+						unsigned chunkInd = i;
+						if (chunkInd == j)
+						{
+							newCqi.push_back (params.m_ulCqi.m_sinr.at (i));
+							NS_LOG_INFO ("UL CQI report for RNTI " << itMap->second.m_rntiPerChunk.at (i) << " chunk " << i << " SINR " << params.m_ulCqi.m_sinr.at (i) << \
+							             " frame " << frameNum << " subframe " << subframeNum << " startSym " << startSymIdx);
+						}
+						else
+						{
+							// initialize with NO_SINR value.
+							newCqi.push_back (30.0);
+						}
+					}
+					m_ueUlCqi.insert (std::pair <uint16_t, struct UlCqiMapElem> (itMap->second.m_rntiPerChunk.at (i),
+					                                                             UlCqiMapElem (newCqi, itMap->second.m_numSym, itMap->second.m_tbSize)) );
+					// generate correspondent timer
+					m_ueCqiTimers.insert (std::pair <uint16_t, uint32_t > (itMap->second.m_rntiPerChunk.at (i), m_cqiTimersThreshold));
+				}
+				else
+				{
+					// update the value
+					(*itCqi).second.m_ueUlCqi.at (i) = params.m_ulCqi.m_sinr.at (i);
+					(*itCqi).second.m_numSym = itMap->second.m_numSym;
+					(*itCqi).second.m_tbSize = itMap->second.m_tbSize;
+					// update correspondent timer
+					std::map <uint16_t, uint32_t>::iterator itTimers;
+					itTimers = m_ueCqiTimers.find (itMap->second.m_rntiPerChunk.at (i));
+					(*itTimers).second = m_cqiTimersThreshold;
+
+					NS_LOG_INFO ("UL CQI report for RNTI " << itMap->second.m_rntiPerChunk.at (i) << " chunk " << i << " SINR " << params.m_ulCqi.m_sinr.at (i) << \
+					             " frame " << frameNum << " subframe " << subframeNum << " startSym " << startSymIdx);
+
+				}
+
+			}
+			// remove obsolete info on allocation
+			m_ulAllocationMap.erase (itMap);
+		}
+		break;
+		default:
+			NS_FATAL_ERROR ("Unknown type of UL-CQI");
+	}
+	return;
+}
+
+
+void
+MmWaveFlexTtiHarqMacScheduler::RefreshHarqProcesses ()
+{
+	NS_LOG_FUNCTION (this);
+
+	std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itTimers;
+	for (itTimers = m_dlHarqProcessesTimer.begin (); itTimers != m_dlHarqProcessesTimer.end (); itTimers++)
+	{
+		for (uint16_t i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
+		{
+			if ((*itTimers).second.at (i) == m_phyMacConfig->GetHarqTimeout ())
+			{ // reset HARQ process
+
+				NS_LOG_INFO (this << " Reset HARQ proc " << i << " for RNTI " << (*itTimers).first);
+				std::map <uint16_t, DlHarqProcessesStatus_t>::iterator itStat = m_dlHarqProcessesStatus.find ((*itTimers).first);
+				if (itStat == m_dlHarqProcessesStatus.end ())
+				{
+					NS_FATAL_ERROR ("No Process Id Status found for this RNTI " << (*itTimers).first);
+				}
+				(*itStat).second.at (i) = 0;
+				(*itTimers).second.at (i) = 0;
+			}
+			else
+			{
+				//(*itTimers).second.at (i)++;
+			}
+		}
+	}
+
+}
+
+uint8_t
+MmWaveFlexTtiHarqMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
+{
+	NS_LOG_FUNCTION (this << rnti);
+
+
+	if (m_harqOn == false)
+	{
+		uint8_t tbUid = m_tbUid;
+		m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+		return tbUid;
+	}
+
+//	std::map <uint16_t, uint8_t>::iterator it = m_dlHarqCurrentProcessId.find (rnti);
+//	if (it == m_dlHarqCurrentProcessId.end ())
+//	{
+//		NS_FATAL_ERROR ("No Process Id found for this RNTI " << rnti);
+//	}
+	std::map <uint16_t, DlHarqProcessesStatus_t>::iterator itStat = m_dlHarqProcessesStatus.find (rnti);
+	if (itStat == m_dlHarqProcessesStatus.end ())
+	{
+		NS_FATAL_ERROR ("No Process Id Statusfound for this RNTI " << rnti);
+	}
+
+	// search for available process ID, if none available return numHarqProcess
+	uint8_t harqId = m_phyMacConfig->GetNumHarqProcess ();
+	for (unsigned i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
+	{
+		if(itStat->second[i] == 0)
+		{
+			itStat->second[i] = 1;
+			harqId = i;
+			break;
+		}
+	}
+	return harqId;
+
+//	uint8_t i = (*it).second;
+//	do
+//	{
+//		i = (i + 1) % m_phyMacConfig->GetNumHarqProcess ();
+//	}
+//	while ( ((*itStat).second.at (i) != 0)&&(i != (*it).second));
+//	if ((*itStat).second.at (i) == 0)
+//	{
+//		(*it).second = i;
+//		(*itStat).second.at (i) = 1;
+//	}
+//	else
+//	{
+//		return (m_phyMacConfig->GetNumHarqProcess () + 1); // return a not valid harq proc id
+//	}
+//
+//	return ((*it).second);
+}
+
+uint8_t
+MmWaveFlexTtiHarqMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
+{
+	NS_LOG_FUNCTION (this << rnti);
+
+	if (m_harqOn == false)
+	{
+		uint8_t tbUid = m_tbUid;
+		m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+		return tbUid;
+	}
+
+//	std::map <uint16_t, uint8_t>::iterator it = m_ulHarqCurrentProcessId.find (rnti);
+//	if (it == m_ulHarqCurrentProcessId.end ())
+//	{
+//		NS_FATAL_ERROR ("No Process Id found for this RNTI " << rnti);
+//	}
+	std::map <uint16_t, DlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
+	if (itStat == m_ulHarqProcessesStatus.end ())
+	{
+		NS_FATAL_ERROR ("No Process Id Statusfound for this RNTI " << rnti);
+	}
+
+	// search for available process ID, if none available return numHarqProcess+1
+	uint8_t harqId = m_phyMacConfig->GetNumHarqProcess ();
+	for (unsigned i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
+	{
+		if(itStat->second[i] == 0)
+		{
+			itStat->second[i] = 1;
+			harqId = i;
+			break;
+		}
+	}
+	return harqId;
+//	uint8_t i = (*it).second;
+//	do
+//	{
+//		i = (i + 1) % m_phyMacConfig->GetNumHarqProcess ();
+//	}
+//	while ( ((*itStat).second.at (i) != 0)&&(i != (*it).second));
+//	if ((*itStat).second.at (i) == 0)
+//	{
+//		(*it).second = i;
+//		(*itStat).second.at (i) = 1;
+//	}
+//	else
+//	{
+//		return (m_phyMacConfig->GetNumHarqProcess () + 1); // return a not valid harq proc id
+//	}
+//	return ((*it).second);
+}
+
+unsigned MmWaveFlexTtiHarqMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize)
+{
+	// bisection line search to find minimum number of slots needed to encode entire buffer
+	MmWaveMacPduHeader dummyMacHeader;
+	//unsigned macHdrSize = 10; //dummyMacHeader.GetSerializedSize ();
+	int numSymLow = 0;
+	int numSymHigh = m_phyMacConfig->GetSymbolsPerSubframe();
+
+	int diff = 0;
+	tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8); // start with max value
+	while ((unsigned)tbSize > bufSize)
+	{
+		diff = abs(numSymHigh-numSymLow)/2;
+		if (diff == 0)
+		{
+			tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+			return numSymHigh;
+		}
+		tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh - diff) / 8);
+		if ((unsigned)tbSize > bufSize)
+		{
+			numSymHigh -= diff;
+		}
+		while ((unsigned)tbSize < bufSize)
+		{
+			diff = abs(numSymHigh-numSymLow)/2;
+			if (diff == 0)
+			{
+				tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+				return numSymHigh;
+			}
+			//tmp2 = numSym;
+			tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymLow + diff) / 8);
+			if ((unsigned)tbSize < bufSize)
+			{
+				numSymLow += diff;
+			}
+		}
+	}
+
+	tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+	return (unsigned)numSymHigh;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
+{
+	uint16_t frameNum = params.m_snfSf.m_frameNum;
+	uint8_t	sfNum = params.m_snfSf.m_sfNum;
+	//uint8_t slotNum = params.m_snfSf.m_slotNum;
+
+	MmWaveMacSchedSapUser::SchedConfigIndParameters ret;
+	ret.m_sfnSf = params.m_snfSf;
+	ret.m_dlSfAllocInfo.m_sfnSf = ret.m_sfnSf;
+	if (!m_ulSfAllocInfo.empty ())
+	{
+		ret.m_dlSfAllocInfo = m_ulSfAllocInfo.front ();  // get SfAllocInfo from previous call to scheduler for UL allocations
+		m_ulSfAllocInfo.pop_front ();
+	}
+	SfnSf ulSfn = ret.m_sfnSf;
+	if (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay () >=  m_phyMacConfig->GetSubframesPerFrame ())
+	{
+		ulSfn.m_frameNum++;
+	}
+	ulSfn.m_sfNum = (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
+	NS_LOG_DEBUG ("Scheduling DL frame "<< (unsigned)frameNum << " subframe " << (unsigned)sfNum
+	              << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
+	ret.m_ulSfAllocInfo = SfAllocInfo (ulSfn);
+
+	// add slot for DL control
+	SlotAllocInfo dlCtrlSlot (0, SlotAllocInfo::DL, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
+	dlCtrlSlot.m_dci.m_numSym = 1;
+	dlCtrlSlot.m_dci.m_symStart = 0;
+	ret.m_dlSfAllocInfo.m_dlSlotAllocInfo.push_back (dlCtrlSlot);
+
+	// calculate reserved symbols, subtract symbols already allocated in UL from previous sched iter
+	int resvCtrl = m_phyMacConfig->GetDlCtrlSymbols() + m_phyMacConfig->GetUlCtrlSymbols();
+	int reservedSym = ret.m_dlSfAllocInfo.m_numSymAlloc + resvCtrl;
+	int dlSymAvail = m_phyMacConfig->GetSymbolsPerSubframe () - reservedSym;  // reserved syms include UL allocations
+	int ulSymAvail = m_phyMacConfig->GetSymbolsPerSubframe () - resvCtrl;
+	uint8_t dlSlotIdx = 1;  // slot 0 reserved for DL control
+	uint8_t ulSlotIdx = 0;
+	uint8_t dlSymIdx = m_phyMacConfig->GetDlCtrlSymbols(); // symbols reserved for control at beginning of subframe
+	uint8_t ulSymIdx = m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols();
+
+	// process received CQIs
+	RefreshDlCqiMaps ();
+	RefreshUlCqiMaps ();
+
+	// Process DL HARQ feedback
+	RefreshHarqProcesses ();
+
+	//m_rlcBufferReq.sort (SortRlcBufferReq); 	// sort list by RNTI
+	// number of DL/UL flows for new transmissions (not HARQ RETX)
+	int nFlowsDl = 0;
+	int nFlowsUl = 0;
+	std::map <uint16_t, struct UeSchedInfo> ueInfo;
+	std::map <uint16_t, struct UeSchedInfo>::iterator itUeInfo;
+	std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator itRlcBuf;
+
+	// retrieve past HARQ retx buffered
+	if (m_dlHarqInfoList.size () > 0 && params.m_dlHarqInfoList.size () > 0)
+	{
+		m_dlHarqInfoList.insert (m_dlHarqInfoList.end (), params.m_dlHarqInfoList.begin (), params.m_dlHarqInfoList.end ());
+	}
+	else if (params.m_dlHarqInfoList.size () > 0)
+	{
+		m_dlHarqInfoList = params.m_dlHarqInfoList;
+	}
+	if (m_ulHarqInfoList.size () > 0 && params.m_ulHarqInfoList.size () > 0)
+	{
+		m_ulHarqInfoList.insert (m_ulHarqInfoList.end (), params.m_ulHarqInfoList.begin (), params.m_ulHarqInfoList.end ());
+	}
+	else if (params.m_ulHarqInfoList.size () > 0)
+	{
+		m_ulHarqInfoList = params.m_ulHarqInfoList;
+	}
+
+	if (m_harqOn == false)		// Ignore HARQ feedback
+	{
+		m_dlHarqInfoList.clear ();
+	}
+	else
+	{
+		// Process DL HARQ feedback and assign slots for RETX if resources available
+		std::vector <struct DlHarqInfo> dlInfoListUntxed;  // TBs not able to be retransmitted in this sf
+		std::vector <struct UlHarqInfo> ulInfoListUntxed;  // TBs not able to be retransmitted in this sf
+
+		for (unsigned i = 0; i < m_dlHarqInfoList.size (); i++)
+		{
+			if (dlSymAvail == 0)
+			{
+				break;	// no symbols left to allocate
+			}
+			uint8_t harqId = m_dlHarqInfoList.at (i).m_harqProcessId;
+			uint16_t rnti = m_dlHarqInfoList.at (i).m_rnti;
+			itUeInfo = ueInfo.find (rnti);
+			std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_dlHarqProcessesStatus.find (rnti);
+			if (itStat == m_dlHarqProcessesStatus.end ())
+			{
+				NS_FATAL_ERROR ("No HARQ status info found for UE " << rnti);
+			}
+			std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduMap.find (rnti);
+			if (itRlcPdu == m_dlHarqProcessesRlcPduMap.end ())
+			{
+				NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlHarqInfoList.at (i).m_rnti);
+			}
+			if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK)
+			{
+				//NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-ACK received");
+				itStat->second.at (harqId) = 0;    // release process ID
+				for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)		// clear RLC buffers
+				{
+					itRlcPdu->second.at (harqId).clear ();
+				}
+			}
+			else if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::NACK)
+			{
+				std::map <uint16_t, DlHarqProcessesDciInfoList_t>::iterator itHarq = m_dlHarqProcessesDciInfoMap.find (rnti);
+				if (itHarq == m_dlHarqProcessesDciInfoMap.end ())
+				{
+					NS_FATAL_ERROR ("No DCI/HARQ buffer entry found for UE " << rnti);
+				}
+				DciInfoElementTdma dciInfoReTx = itHarq->second.at (harqId);
+				//NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
+				NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
+				NS_ASSERT(itStat->second.at (harqId) > 0);
+				NS_ASSERT(itStat->second.at (harqId)-1 == dciInfoReTx.m_rv);
+				if (dciInfoReTx.m_rv == 3) // maximum number of retx reached -> drop process
+				{
+					NS_LOG_INFO ("Max number of retransmissions reached -> drop process");
+					itStat->second.at (harqId) = 0;
+					for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)
+					{
+						itRlcPdu->second.at (harqId).clear ();
+					}
+					continue;
+				}
+				// allocate retx if enough symbols are available
+				if (dlSymAvail >= dciInfoReTx.m_numSym)
+				{
+					dlSymAvail -= dciInfoReTx.m_numSym;
+					dciInfoReTx.m_symStart = dlSymIdx;
+					dlSymIdx += dciInfoReTx.m_numSym;
+					dciInfoReTx.m_rv++;
+					dciInfoReTx.m_ndi = 0;
+					itHarq->second.at (harqId) = dciInfoReTx;
+					itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
+					SlotAllocInfo slotInfo (dlSlotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
+					slotInfo.m_dci = dciInfoReTx;
+					NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+							             " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
+							             " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
+					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
+					if (itRlcList == m_dlHarqProcessesRlcPduMap.end ())
+					{
+						NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << rnti);
+					}
+					for (uint16_t k = 0; k < (*itRlcList).second.at(dciInfoReTx.m_harqProcess).size (); k++)
+					{
+						slotInfo.m_rlcPduInfo.push_back ((*itRlcList).second.at (dciInfoReTx.m_harqProcess).at (k));
+					}
+					ret.m_dlSfAllocInfo.m_dlSlotAllocInfo.push_back (slotInfo);
+					ret.m_dlSfAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
+					if (itUeInfo == ueInfo.end())
+					{
+						itUeInfo = ueInfo.insert (std::pair<uint16_t, struct UeSchedInfo> (rnti, UeSchedInfo () )).first;
+					}
+					itUeInfo->second.m_dlSymbolsRetx = dciInfoReTx.m_numSym;
+				}
+				else
+				{
+					NS_LOG_INFO ("No resource for this retx -> buffer it");
+					dlInfoListUntxed.push_back (m_dlHarqInfoList.at (i));
+				}
+			}
+		}
+
+		m_dlHarqInfoList.clear ();
+		m_dlHarqInfoList = dlInfoListUntxed;
+
+		// Process UL HARQ feedback
+		for (uint16_t i = 0; i < params.m_ulHarqInfoList.size (); i++)
+		{
+			if (ulSymAvail == 0)
+			{
+				break;	// no symbols left to allocate
+			}
+			UlHarqInfo harqInfo = params.m_ulHarqInfoList.at (i);
+			uint8_t harqId = harqInfo.m_harqProcessId;
+			uint16_t rnti = harqInfo.m_rnti;
+			itUeInfo = ueInfo.find (rnti);
+			std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
+			if (itStat == m_ulHarqProcessesStatus.end ())
+			{
+				NS_LOG_ERROR ("No info found in HARQ buffer for UE (might have changed eNB) " << rnti);
+			}
+			if (harqInfo.m_receptionStatus == UlHarqInfo::Ok)
+			{
+				//NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-ACK received");
+				if (itStat != m_ulHarqProcessesStatus.end ())
+				{
+					(*itStat).second.at (harqId) = 0;  // release process ID
+				}
+			}
+			else if (harqInfo.m_receptionStatus == UlHarqInfo::NotOk)
+			{
+				std::map <uint16_t, UlHarqProcessesDciInfoList_t>::iterator itHarq = m_ulHarqProcessesDciInfoMap.find (rnti);
+				if (itHarq == m_ulHarqProcessesDciInfoMap.end ())
+				{
+					NS_LOG_ERROR ("No info found in UL-HARQ buffer for UE (might have changed eNB) " << rnti);
+				}
+				// retx correspondent block: retrieve the UL-DCI
+				DciInfoElementTdma dciInfoReTx = itHarq->second.at (harqId);
+				//NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
+				NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
+				NS_ASSERT(itStat->second.at (harqId) > 0);
+				NS_ASSERT(itStat->second.at (harqId)-1 == dciInfoReTx.m_rv);
+				if (dciInfoReTx.m_rv == 3)
+				{
+					NS_LOG_INFO ("Max number of retransmissions reached (UL)-> drop process");
+					(*itStat).second.at (harqId) = 0;
+					continue;
+				}
+
+				if (ulSymAvail >= dciInfoReTx.m_numSym)
+				{
+					ulSymAvail -= dciInfoReTx.m_numSym;
+					ulSymIdx -= dciInfoReTx.m_numSym;
+					dciInfoReTx.m_symStart = ulSymIdx;
+					dciInfoReTx.m_rv++;
+					dciInfoReTx.m_ndi = 0;
+					itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
+					itHarq->second.at (harqId) = dciInfoReTx;
+					SlotAllocInfo slotInfo (ulSlotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
+					slotInfo.m_dci = dciInfoReTx;
+					NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+											 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum <<
+											 " RETX");
+					ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_front (slotInfo);
+					ret.m_ulSfAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
+					if (itUeInfo == ueInfo.end())
+					{
+						itUeInfo = ueInfo.insert (std::pair<uint16_t, struct UeSchedInfo> (rnti, UeSchedInfo () )).first;
+					}
+					itUeInfo->second.m_ulSymbolsRetx = dciInfoReTx.m_numSym;
+				}
+				else
+				{
+					ulInfoListUntxed.push_back (params.m_ulHarqInfoList.at (i));
+				}
+			}
+		}
+
+		m_ulHarqInfoList.clear ();
+		m_ulHarqInfoList = ulInfoListUntxed;
+	}
+
+	// ********************* END OF HARQ SECTION, START OF NEW DATA SCHEDULING ********************* //
+
+	// get info on active DL flows
+	if (dlSymAvail > 0)  // remaining symbols in current subframe after HARQ retx sched
+	{
+		for (itRlcBuf = m_rlcBufferReq.begin (); itRlcBuf != m_rlcBufferReq.end (); itRlcBuf++)
+		{
+			itUeInfo = ueInfo.find (itRlcBuf->m_rnti);
+			//		if (itUeInfo != ueInfo.end () && itUeInfo->second.m_dlSymbols > 0)
+			//		{
+			//			continue;
+			//		}
+
+			if ( (((*itRlcBuf).m_rlcTransmissionQueueSize > 0)
+					|| ((*itRlcBuf).m_rlcRetransmissionQueueSize > 0)
+					|| ((*itRlcBuf).m_rlcStatusPduSize > 0)) )
+			{
+				NS_LOG_INFO (this << " User " << itRlcBuf->m_rnti << " LC " << (uint16_t)itRlcBuf->m_logicalChannelIdentity << " is active, status  " << (*itRlcBuf).m_rlcStatusPduSize << " retx " << (*itRlcBuf).m_rlcRetransmissionQueueSize << " tx " << (*itRlcBuf).m_rlcTransmissionQueueSize);
+				std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (itRlcBuf->m_rnti);
+				uint8_t cqi = 0;
+				if (itCqi != m_wbCqiRxed.end ())
+				{
+					cqi = itCqi->second;
+				}
+				else // no CQI available
+				{
+					NS_LOG_INFO (this << " UE " << itRlcBuf->m_rnti << " does not have DL-CQI");
+					cqi = 1; // lowest value for trying a transmission
+				}
+				if (cqi != 0 || m_fixedMcsDl) 	// CQI == 0 means "out of range" (see table 7.2.3-1 of 36.213)
+				{
+					if (itUeInfo == ueInfo.end ())
+					{
+						nFlowsDl++;  // for simplicity, all RLC LCs are considered as a single flow
+						itUeInfo = ueInfo.insert (std::pair<uint16_t, struct UeSchedInfo> (itRlcBuf->m_rnti, UeSchedInfo () )).first;
+					}
+					else if (itUeInfo->second.m_maxDlBufSize == 0)
+					{
+						nFlowsDl++;
+					}
+
+					if (m_fixedMcsDl)
+					{
+						itUeInfo->second.m_dlMcs = m_mcsDefaultDl;
+					}
+					else
+					{
+						itUeInfo->second.m_dlMcs = m_amc->GetMcsFromCqi (cqi);  // get MCS
+					}
+					RlcPduInfo newRlcEl;
+					newRlcEl.m_lcid = itRlcBuf->m_logicalChannelIdentity;
+					// temporarily store the TX queue size
+					if(itRlcBuf->m_rlcStatusPduSize > 0)
+					{
+						newRlcEl.m_size = itRlcBuf->m_rlcStatusPduSize;
+					}
+					else if (itRlcBuf->m_rlcRetransmissionQueueSize > 0)
+					{
+						newRlcEl.m_size = itRlcBuf->m_rlcRetransmissionQueueSize;
+					}
+					else if (itRlcBuf->m_rlcTransmissionQueueSize > 0)
+					{
+						newRlcEl.m_size = itRlcBuf->m_rlcTransmissionQueueSize;
+					}
+
+					if (newRlcEl.m_size > 0)
+					{
+						if (newRlcEl.m_size < 5)
+						{
+							newRlcEl.m_size = 5;
+						}
+						newRlcEl.m_size += m_rlcHdrSize + m_subHdrSize;
+						itUeInfo->second.m_rlcPduInfo.push_back (newRlcEl);
+						itUeInfo->second.m_maxDlBufSize += newRlcEl.m_size;  // add to total DL buffer size
+					}
+				}
+				else
+				{ // SINR out of range, don't schedule for DL
+					NS_LOG_INFO ("*** RNTI " << itRlcBuf->m_rnti << " DL-CQI out of range, skipping allocation");
+				}
+			}
+		}
+	}
+
+	// get info on active UL flows
+	if (ulSymAvail > 0)  // remaining symbols in future UL subframe after HARQ retx sched
+	{
+		std::map <uint16_t,uint32_t>::iterator ceBsrIt;
+		for (ceBsrIt = m_ceBsrRxed.begin (); ceBsrIt != m_ceBsrRxed.end (); ceBsrIt++)
+		{
+			if (ceBsrIt->second > 0)  // UL buffer size > 0
+			{
+				std::map <uint16_t, struct UlCqiMapElem>::iterator itCqi = m_ueUlCqi.find (ceBsrIt->first);
+				int cqi = 0;
+				int mcs = 0;
+				if (itCqi == m_ueUlCqi.end ()) // no cqi info for this UE
+				{
+					NS_LOG_INFO (this << " UE " << ceBsrIt->first << " does not have UL-CQI");
+					cqi = 1;
+					mcs = 0;
+				}
+				else
+				{
+					cqi = 0;
+					SpectrumValue specVals (MmWaveSpectrumValueHelper::GetSpectrumModel (m_phyMacConfig));
+					Values::iterator specIt = specVals.ValuesBegin();
+					for (unsigned ichunk = 0; ichunk < m_phyMacConfig->GetTotalNumChunk (); ichunk++)
+					{
+						//double sinrLin = std::pow (10, itCqi->second.m_ueUlCqi.at (ichunk) / 10);
+//						double se1 = log2 ( 1 + (std::pow (10, sinrLin / 10 )  /
+//								( (-std::log (5.0 * m_berDl )) / 1.5) ));
+//						cqi += m_amc->GetCqiFromSpectralEfficiency (se1);
+						NS_ASSERT (specIt != specVals.ValuesEnd());
+						*specIt = itCqi->second.m_ueUlCqi.at (ichunk); //sinrLin;
+						specIt++;
+					}
+
+					cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, itCqi->second.m_numSym, itCqi->second.m_tbSize, mcs);
+//					for (unsigned i = 0; i < chunkCqi.size(); i++)
+//					{
+//						cqi += chunkCqi[i];
+//					}
+//					cqi = cqi / m_phyMacConfig->GetTotalNumChunk ();
+
+					// take the lowest CQI value (worst chunk)
+					//				double minSinr = itCqi->second.at (0);
+					//				double sinrLinAvg = std::pow (10, itCqi->second.at (0) / 10);
+					//				for (unsigned ichunk = 1; ichunk < m_phyMacConfig->GetTotalNumChunk (); ichunk++)
+					//				{
+					//					if (itCqi->second.at (ichunk) < minSinr)
+					//					{
+					//						minSinr = itCqi->second.at (ichunk);
+					//					}
+					//					sinrLinAvg += std::pow (10, itCqi->second.at (ichunk) / 10);
+					//				}
+					//				// TODO: verify SE calculation
+					//				sinrLinAvg /= m_phyMacConfig->GetTotalNumChunk ();
+					////				double se = log2 ( 1 + sinrLinAvg );
+					//				double se = log2 ( 1 + (std::pow (10, minSinr / 10 )  /
+					//						( (-std::log (5.0 * 0.00005 )) / 1.5) ));
+					//				cqi = m_amc->GetCqiFromSpectralEfficiency (se);
+					if (cqi == 0) // out of range (SINR too low)
+					{
+						NS_LOG_INFO ("*** RNTI " << ceBsrIt->first << " UL-CQI out of range, skipping allocation in UL");
+						break;  // do not allocate UE in uplink
+					}
+				}
+				nFlowsUl++;
+				itUeInfo = ueInfo.find (ceBsrIt->first);
+				if (itUeInfo == ueInfo.end ())
+				{
+					itUeInfo = ueInfo.insert (std::pair<uint16_t, struct UeSchedInfo> (ceBsrIt->first, UeSchedInfo () )).first;
+				}
+				else if (itUeInfo->second.m_maxUlBufSize == 0)
+				{
+					nFlowsUl++;
+				}
+				itUeInfo->second.m_ulMcs = mcs;//m_amc->GetMcsFromCqi (cqi);  // get MCS
+				itUeInfo->second.m_maxUlBufSize = ceBsrIt->second + m_rlcHdrSize + m_macHdrSize;
+			}
+		}
+	}
+
+	int nFlowsTot = nFlowsDl + nFlowsUl;
+	if (ueInfo.size () == 0)
+	{
+		// add slot for UL control
+		SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
+		ulCtrlSlot.m_dci.m_numSym = 1;
+		ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
+		ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_back (ulCtrlSlot);
+		m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
+		m_macSchedSapUser->SchedConfigInd (ret);
+		return;
+	}
+
+	// compute requested num slots and TB size based on MCS and DL buffer size
+	// final allocated slots may be less
+	int totDlSymReq = 0;
+	int totUlSymReq = 0;
+	for (itUeInfo = ueInfo.begin (); itUeInfo != ueInfo.end (); itUeInfo++)
+	{
+		unsigned dlTbSize = 0;
+		unsigned ulTbSize = 0;
+		if (itUeInfo->second.m_maxDlBufSize > 0)
+		{
+			itUeInfo->second.m_maxDlSymbols = CalcMinTbSizeNumSym (itUeInfo->second.m_dlMcs, itUeInfo->second.m_maxDlBufSize, dlTbSize);
+			itUeInfo->second.m_maxDlBufSize = dlTbSize;
+			totDlSymReq += itUeInfo->second.m_maxDlSymbols;
+		}
+		if (itUeInfo->second.m_maxUlBufSize > 0)
+		{
+			itUeInfo->second.m_maxUlSymbols = CalcMinTbSizeNumSym (itUeInfo->second.m_ulMcs, itUeInfo->second.m_maxUlBufSize+10, ulTbSize);
+			itUeInfo->second.m_maxUlBufSize = ulTbSize;
+			totUlSymReq += itUeInfo->second.m_maxUlSymbols;
+		}
+	}
+
+	std::map <uint16_t, struct UeSchedInfo>::iterator itUeInfoStart;
+	if (m_nextRnti != 0) 	// start with RNTI at which the scheduler left off
+	{
+		itUeInfoStart = ueInfo.find (m_nextRnti);
+		if (itUeInfoStart == ueInfo.end ())
+		{
+			itUeInfoStart = ueInfo.begin ();
+		}
+	}
+	else	// start with first active RNTI
+	{
+		itUeInfoStart = ueInfo.begin ();
+	}
+	itUeInfo = itUeInfoStart;
+
+	// divide OFDM symbols evenly between active UEs, which are then evenly divided between DL and UL flows
+	// for the DL, we know how many UL flows have already been allocated in the current subframe, so we can use
+	// the remaining symbols
+	if (nFlowsDl > 0)
+	{
+		int remSymDl = totDlSymReq;
+		if (remSymDl > dlSymAvail)
+		{
+			remSymDl = dlSymAvail;
+		}
+
+		int nSymPerDlFlow0 = remSymDl / nFlowsDl;  // initial average symbols per non-retx flow
+		if (nSymPerDlFlow0 == 0)
+		{
+			nSymPerDlFlow0 = 1;
+		}
+
+		bool allocated = true; // someone got allocated
+		while (remSymDl > 0 && allocated)
+		{
+			allocated = false;  // additional symbols allocated to this RNTI in this iteration
+			int nRemSymPerFlow = remSymDl / nFlowsDl;
+			if (nRemSymPerFlow == 0)
+			{
+				nRemSymPerFlow = 1;
+			}
+			while (remSymDl > 0)
+			{
+				int addSym = 0;
+				// deficit = difference between requested and allocated symbols
+				int deficit = itUeInfo->second.m_maxDlSymbols - itUeInfo->second.m_dlSymbols;
+				NS_ASSERT (deficit >= 0);
+				if (deficit > 0 && ((itUeInfo->second.m_dlSymbols+itUeInfo->second.m_dlSymbolsRetx) <= nSymPerDlFlow0))
+				{
+					if (deficit < nRemSymPerFlow)
+					{
+						// add remaining symbols to average
+						addSym = deficit;
+						int extra = (nRemSymPerFlow - addSym) / nFlowsDl;
+						nSymPerDlFlow0 += extra;  // add extra to average symbols
+						nRemSymPerFlow += extra;  // add extra to average symbols
+						allocated = true;
+					}
+					else
+					{
+						addSym = nRemSymPerFlow;
+						allocated = true;
+					}
+				}
+				itUeInfo->second.m_dlSymbols += addSym;
+				remSymDl -= addSym;
+				NS_ASSERT (remSymDl >= 0);
+				itUeInfo++;
+				if (itUeInfo == ueInfo.end ())
+				{ // loop around to first RNTI in map
+					itUeInfo = ueInfo.begin ();
+				}
+				if (itUeInfo == itUeInfoStart)
+				{ // break when looped back to initial RNTI or no symbols remain
+					break;
+				}
+			}
+		}
+	}
+
+	// for the UL, we are scheduling a subframe some number of subframes in the future, however we only have
+	// updated information about the current DL flows, so we must determine the average symbols/UL flow
+	// on the total active DL+UL flows in the current subframe
+	int totUlSymActual = 0;  // count the total symbols allocated in UL
+	if (nFlowsUl > 0)
+	{
+		itUeInfo = itUeInfoStart;
+		int remSymTot = (totDlSymReq + totUlSymReq) * nFlowsUl / nFlowsTot;
+		if (remSymTot > ulSymAvail)
+		{
+			remSymTot = ulSymAvail * nFlowsUl / nFlowsTot;
+		}
+
+		int nSymPerUlFlow0 = remSymTot / nFlowsUl;  // initial average symbols per non-retx flow
+		if (nSymPerUlFlow0 == 0)
+		{
+			nSymPerUlFlow0 = 1;
+		}
+
+		bool allocated = true;
+		while (remSymTot > 0 && allocated)
+		{
+			allocated = false;
+			int nRemSymPerFlow = remSymTot / nFlowsUl;
+			if (nRemSymPerFlow == 0)
+			{
+				nRemSymPerFlow = 1;
+			}
+			while (remSymTot > 0)
+			{
+				int addSym = 0;
+				// deficit = difference between requested and allocated symbols
+				int deficit = itUeInfo->second.m_maxUlSymbols - itUeInfo->second.m_ulSymbols;
+				NS_ASSERT (deficit >= 0);
+				if (deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nSymPerUlFlow0))
+				{
+					if (deficit < nRemSymPerFlow)
+					{
+						// add remaining symbols to average
+						addSym = deficit;
+						int extra = (nRemSymPerFlow - addSym) / nFlowsUl;
+						nSymPerUlFlow0 += extra;  // add extra to average symbols
+						nRemSymPerFlow += extra;  // add extra to average symbols
+						allocated = true;
+					}
+					else
+					{
+						addSym = nRemSymPerFlow;
+						allocated = true;
+					}
+				}
+				itUeInfo->second.m_ulSymbols += addSym;
+				totUlSymActual += addSym;
+				remSymTot -= addSym;
+				NS_ASSERT (remSymTot >= 0);
+				itUeInfo++;
+				if (itUeInfo == ueInfo.end ())
+				{ // loop around to first RNTI in map
+					itUeInfo = ueInfo.begin ();
+				}
+				if (itUeInfo == itUeInfoStart)
+				{ // break when looped back to initial RNTI or no symbols remain
+					break;
+				}
+			}
+		}
+	}
+
+	m_nextRnti = itUeInfo->first;
+
+	// create DCI elements and assign symbol indices
+	// such that all DL slots are contiguous (at beginning of subframe)
+	// and all UL slots are contiguous (at end of subframe)
+	itUeInfo = itUeInfoStart;
+
+	//ulSymIdx -= totUlSymActual; // symbols reserved for control at end of subframe before UL ctrl
+	NS_ASSERT (ulSymIdx > 0);
+	do
+	{
+		UeSchedInfo &ueSchedInfo = itUeInfo->second;
+		if (ueSchedInfo.m_dlSymbols > 0)
+		{
+			DciInfoElementTdma dci;
+			dci.m_rnti = itUeInfo->first;
+			dci.m_format = 0;
+			dci.m_symStart = dlSymIdx;
+			dci.m_numSym = ueSchedInfo.m_dlSymbols;
+			dlSymIdx += ueSchedInfo.m_dlSymbols;
+			dci.m_mcs = ueSchedInfo.m_dlMcs;
+			dci.m_rv = 0;
+			dci.m_ndi = 1;
+			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
+			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
+			NS_LOG_DEBUG ("UE" << itUeInfo->first << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
+			SlotAllocInfo slotInfo (dlSlotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
+			slotInfo.m_dci = dci;
+			NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL slots " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
+			             " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
+
+			if (m_harqOn == true)
+			{	// store DCI for HARQ buffer
+				std::map <uint16_t, DlHarqProcessesDciInfoList_t>::iterator itDciInfo = m_dlHarqProcessesDciInfoMap.find (dci.m_rnti);
+				if (itDciInfo == m_dlHarqProcessesDciInfoMap.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find RNTI entry in DCI HARQ buffer for RNTI " << dci.m_rnti);
+				}
+				(*itDciInfo).second.at (dci.m_harqProcess) = dci;
+				// refresh timer
+				std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer =  m_dlHarqProcessesTimer.find (dci.m_rnti);
+				if (itHarqTimer== m_dlHarqProcessesTimer.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)dci.m_rnti);
+				}
+				(*itHarqTimer).second.at (dci.m_harqProcess) = 0;
+			}
+
+			// distribute bytes between active RLC queues
+			unsigned numLc = ueSchedInfo.m_rlcPduInfo.size ();
+			uint16_t rlcPduSize = dci.m_tbSize / numLc;
+			// first for loop computes extra to add to average if some flows are less than average
+			for (unsigned i = 0; i < ueSchedInfo.m_rlcPduInfo.size (); i++)
+			{
+				if (ueSchedInfo.m_rlcPduInfo[i].m_size < rlcPduSize)
+				{
+					rlcPduSize += (rlcPduSize - ueSchedInfo.m_rlcPduInfo[i].m_size) / numLc;
+				}
+			}
+			for (unsigned i = 0; i < ueSchedInfo.m_rlcPduInfo.size (); i++)
+			{
+				if (ueSchedInfo.m_rlcPduInfo[i].m_size > rlcPduSize)
+				{
+					ueSchedInfo.m_rlcPduInfo[i].m_size = rlcPduSize;
+				}
+				// else tbSize equals RLC queue size
+				NS_ASSERT(ueSchedInfo.m_rlcPduInfo[i].m_size > 0);
+				for (itRlcBuf = m_rlcBufferReq.begin (); itRlcBuf != m_rlcBufferReq.end (); itRlcBuf++)
+				{
+					if(itRlcBuf->m_rnti == itUeInfo->first)
+					{
+						if(itRlcBuf->m_rlcTransmissionQueueSize == 0)
+						{
+							NS_FATAL_ERROR ("LC is scheduled but RLC buffer == 0");
+						}
+					}
+				}
+				// update RLC buffer info with expected queue size after scheduling
+				UpdateDlRlcBufferInfo (itUeInfo->first, ueSchedInfo.m_rlcPduInfo[i].m_lcid, ueSchedInfo.m_rlcPduInfo[i].m_size-m_subHdrSize);
+				//schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (itRlcInfo->second[i]);
+				slotInfo.m_rlcPduInfo.push_back (ueSchedInfo.m_rlcPduInfo[i]);
+				if (m_harqOn == true)
+				{
+					// store RLC PDU list for HARQ
+					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduMap.find (dci.m_rnti);
+					if (itRlcPdu == m_dlHarqProcessesRlcPduMap.end ())
+					{
+						NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << dci.m_rnti);
+					}
+					(*itRlcPdu).second.at (dci.m_harqProcess).push_back (ueSchedInfo.m_rlcPduInfo[i]);
+				}
+			}
+			ret.m_dlSfAllocInfo.m_dlSlotAllocInfo.push_back (slotInfo);
+			ret.m_dlSfAllocInfo.m_numSymAlloc += dci.m_numSym;
+		}
+
+		// UL DCI applies to subframe i+Tsched
+		if (ueSchedInfo.m_ulSymbols > 0)
+		{
+			DciInfoElementTdma dci;
+			dci.m_rnti = itUeInfo->first;
+			dci.m_format = 1;
+			NS_ASSERT (ulSymIdx < m_phyMacConfig->GetSymbolsPerSubframe());
+			dci.m_numSym = ueSchedInfo.m_ulSymbols;
+			ulSymIdx -= ueSchedInfo.m_ulSymbols;
+			dci.m_symStart = ulSymIdx;
+			dci.m_mcs = ueSchedInfo.m_ulMcs;
+			dci.m_ndi = 1;
+			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			dci.m_harqProcess = UpdateUlHarqProcessId (itUeInfo->first);
+			NS_LOG_DEBUG ("UE" << itUeInfo->first << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
+			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
+			SlotAllocInfo slotInfo (ulSlotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
+			slotInfo.m_dci = dci;
+			NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL slots " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
+						             " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
+			UpdateUlRlcBufferInfo (itUeInfo->first, dci.m_tbSize - m_subHdrSize);
+			ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_front (slotInfo);  // add to front
+			ret.m_ulSfAllocInfo.m_numSymAlloc += dci.m_numSym;
+			std::vector<uint16_t> ueChunkMap;
+			for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk (); i++)
+			{
+				ueChunkMap.push_back (dci.m_rnti);
+			}
+			SfnSf slotSfn = ret.m_ulSfAllocInfo.m_sfnSf;
+			slotSfn.m_slotNum = dci.m_symStart;  // use the start symbol index of the slot because the absolute UL slot index depends on the future DL allocation
+			// insert into allocation map to recall previous allocations upon receiving UL-CQI
+			m_ulAllocationMap.insert ( std::pair<uint32_t, struct AllocMapElem> (slotSfn.Encode (), AllocMapElem(ueChunkMap, dci.m_numSym, dci.m_tbSize)) );
+
+			if (m_harqOn == true)
+			{
+				uint8_t harqId = dci.m_harqProcess;
+				std::map <uint16_t, UlHarqProcessesDciInfoList_t>::iterator itHarqTbInfo = m_ulHarqProcessesDciInfoMap.find (dci.m_rnti);
+				if (itHarqTbInfo == m_ulHarqProcessesDciInfoMap.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find RNTI entry in UL DCI HARQ buffer for RNTI " << dci.m_rnti);
+				}
+				(*itHarqTbInfo).second.at (harqId) = dci;
+				// Update HARQ process status (RV 0)
+				std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (dci.m_rnti);
+				NS_ASSERT (itStat->second[dci.m_harqProcess] > 0);
+			}
+		}
+		itUeInfo++;
+		if (itUeInfo == ueInfo.end ())
+		{ // loop around to first RNTI in map
+			itUeInfo = ueInfo.begin ();
+		}
+	}
+	while (itUeInfo != itUeInfoStart); // break when looped back to initial RNTI
+
+	// add slot for UL control
+	SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
+	ulCtrlSlot.m_dci.m_numSym = 1;
+	ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
+	ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_back (ulCtrlSlot);
+	m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
+
+	m_macSchedSapUser->SchedConfigInd (ret);
+	return;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
+{
+	NS_LOG_FUNCTION (this);
+
+	std::map <uint16_t,uint32_t>::iterator it;
+
+	for (unsigned int i = 0; i < params.m_macCeList.size (); i++)
+	{
+		if ( params.m_macCeList.at (i).m_macCeType == MacCeElement::BSR )
+		{
+			// buffer status report
+			// note that this scheduler does not differentiate the
+			// allocation according to which LCGs have more/less bytes
+			// to send.
+			// Hence the BSR of different LCGs are just summed up to get
+			// a total queue size that is used for allocation purposes.
+
+			uint32_t buffer = 0;
+			for (uint8_t lcg = 0; lcg < 4; ++lcg)
+			{
+				uint8_t bsrId = params.m_macCeList.at (i).m_macCeValue.m_bufferStatus.at (lcg);
+				buffer += BsrId2BufferSize (bsrId);
+			}
+
+			uint16_t rnti = params.m_macCeList.at (i).m_rnti;
+			it = m_ceBsrRxed.find (rnti);
+			if (it == m_ceBsrRxed.end ())
+			{
+				// create the new entry
+				m_ceBsrRxed.insert ( std::pair<uint16_t, uint32_t > (rnti, buffer));
+				NS_LOG_INFO (this << " Insert RNTI " << rnti << " queue " << buffer);
+			}
+			else
+			{
+				// update the buffer size value
+				(*it).second = buffer;
+				NS_LOG_INFO (this << " Update RNTI " << rnti << " queue " << buffer);
+			}
+
+			if (m_ulHarqCurrentProcessId.find (rnti) == m_ulHarqCurrentProcessId.end ())
+			{
+				// TODO: Add Csched SAP (currently no csched sap methods, so put this code here for now - RDF)
+//				m_ulHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (rnti, 0));
+				UlHarqProcessesStatus_t ulHarqPrcStatus;
+				ulHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
+				m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (rnti, ulHarqPrcStatus));
+				UlHarqProcessesDciInfoList_t ulHarqTbInfoList;
+				ulHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
+				m_ulHarqProcessesDciInfoMap.insert (std::pair <uint16_t, UlHarqProcessesDciInfoList_t> (rnti, ulHarqTbInfoList));
+			}
+		}
+	}
+
+	return;
+}
+
+bool
+MmWaveFlexTtiHarqMacScheduler::SortRlcBufferReq (MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters i, MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters j)
+{
+  return (i.m_rnti < j.m_rnti);
+}
+
+
+void
+MmWaveFlexTtiHarqMacScheduler::RefreshDlCqiMaps (void)
+{
+  NS_LOG_FUNCTION (this << m_wbCqiTimers.size ());
+  // refresh DL CQI P01 Map
+  std::map <uint16_t,uint32_t>::iterator itP10 = m_wbCqiTimers.begin ();
+  while (itP10 != m_wbCqiTimers.end ())
+    {
+      NS_LOG_INFO (this << " P10-CQI for user " << (*itP10).first << " is " << (uint32_t)(*itP10).second << " thr " << (uint32_t)m_cqiTimersThreshold);
+      if ((*itP10).second == 0)
+        {
+          // delete correspondent entries
+          std::map <uint16_t,uint8_t>::iterator itMap = m_wbCqiRxed.find ((*itP10).first);
+          NS_ASSERT_MSG (itMap != m_wbCqiRxed.end (), " Does not find CQI report for user " << (*itP10).first);
+          NS_LOG_INFO (this << " P10-CQI exired for user " << (*itP10).first);
+          m_wbCqiRxed.erase (itMap);
+          std::map <uint16_t,uint32_t>::iterator temp = itP10;
+          itP10++;
+          m_wbCqiTimers.erase (temp);
+        }
+      else
+        {
+          (*itP10).second--;
+          itP10++;
+        }
+    }
+
+  return;
+}
+
+
+void
+MmWaveFlexTtiHarqMacScheduler::RefreshUlCqiMaps (void)
+{
+  // refresh UL CQI  Map
+  std::map <uint16_t,uint32_t>::iterator itUl = m_ueCqiTimers.begin ();
+  while (itUl != m_ueCqiTimers.end ())
+    {
+      NS_LOG_INFO (this << " UL-CQI for user " << (*itUl).first << " is " << (uint32_t)(*itUl).second << " thr " << (uint32_t)m_cqiTimersThreshold);
+      if ((*itUl).second == 0)
+        {
+          // delete correspondent entries
+          std::map <uint16_t, struct UlCqiMapElem>::iterator itMap = m_ueUlCqi.find ((*itUl).first);
+          NS_ASSERT_MSG (itMap != m_ueUlCqi.end (), " Does not find CQI report for user " << (*itUl).first);
+          NS_LOG_INFO (this << " UL-CQI expired for user " << (*itUl).first);
+          itMap->second.m_ueUlCqi.clear ();
+          m_ueUlCqi.erase (itMap);
+          std::map <uint16_t,uint32_t>::iterator temp = itUl;
+          itUl++;
+          m_ueCqiTimers.erase (temp);
+        }
+      else
+        {
+          (*itUl).second--;
+          itUl++;
+        }
+    }
+
+  return;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size)
+{
+  NS_LOG_FUNCTION (this);
+  std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
+  for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
+    {
+      if (((*it).m_rnti == rnti) && ((*it).m_logicalChannelIdentity == lcid))
+        {
+          NS_LOG_INFO (this << " UE " << rnti << " LC " << (uint16_t)lcid << " txqueue " << (*it).m_rlcTransmissionQueueSize << " retxqueue " << (*it).m_rlcRetransmissionQueueSize << " status " << (*it).m_rlcStatusPduSize << " decrease " << size);
+          // Update queues: RLC tx order Status, ReTx, Tx
+          // Update status queue
+           if (((*it).m_rlcStatusPduSize > 0) && (size >= (*it).m_rlcStatusPduSize))
+              {
+                (*it).m_rlcStatusPduSize = 0;
+              }
+            else if (((*it).m_rlcRetransmissionQueueSize > 0) && (size >= (*it).m_rlcRetransmissionQueueSize))
+              {
+                (*it).m_rlcRetransmissionQueueSize = 0;
+              }
+            else if ((*it).m_rlcTransmissionQueueSize > 0)
+              {
+                uint32_t rlcOverhead;
+                if (lcid == 1)
+                  {
+                    // for SRB1 (using RLC AM) it's better to
+                    // overestimate RLC overhead rather than
+                    // underestimate it and risk unneeded
+                    // segmentation which increases delay
+                    rlcOverhead = 4;
+                  }
+                else
+                  {
+                    // minimum RLC overhead due to header
+                    rlcOverhead = 2;
+                  }
+                // update transmission queue
+                if ((*it).m_rlcTransmissionQueueSize <= size - rlcOverhead)
+                  {
+                    (*it).m_rlcTransmissionQueueSize = 0;
+                  }
+                else
+                  {
+                    (*it).m_rlcTransmissionQueueSize -= size - rlcOverhead;
+                  }
+              }
+          return;
+        }
+    }
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size)
+{
+
+  size = size - 2; // remove the minimum RLC overhead
+  std::map <uint16_t,uint32_t>::iterator it = m_ceBsrRxed.find (rnti);
+  if (it != m_ceBsrRxed.end ())
+    {
+      NS_LOG_INFO (this << " Update RLC BSR UE " << rnti << " size " << size << " BSR " << (*it).second);
+      if ((*it).second >= size)
+        {
+          (*it).second -= size;
+        }
+      else
+        {
+          (*it).second = 0;
+        }
+    }
+  else
+    {
+      NS_LOG_ERROR (this << " Does not find BSR report info of UE " << rnti);
+    }
+
+}
+
+/*
+void
+MmWaveFlexTtiHarqMacScheduler::DoCschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+  // Read the subset of parameters used
+  m_cschedCellConfig = params;
+  m_rachAllocationMap.resize (m_cschedCellConfig.m_ulBandwidth, 0);
+  FfMacCschedSapUser::CschedUeConfigCnfParameters cnf;
+  cnf.m_result = SUCCESS;
+  m_cschedSapUser->CschedUeConfigCnf (cnf);
+  return;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
+{
+  NS_LOG_FUNCTION (this << " RNTI " << params.m_rnti << " txMode " << (uint16_t)params.m_transmissionMode);
+  std::map <uint16_t,uint8_t>::iterator it = m_uesTxMode.find (params.m_rnti);
+  if (it == m_uesTxMode.end ())
+    {
+//      m_uesTxMode.insert (std::pair <uint16_t, double> (params.m_rnti, params.m_transmissionMode));
+      // generate HARQ buffers
+      m_dlHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+      DlHarqProcessesStatus_t dlHarqPrcStatus;
+      dlHarqPrcStatus.resize (8,0);
+      m_dlHarqProcessesStatus.insert (std::pair <uint16_t, DlHarqProcessesStatus_t> (params.m_rnti, dlHarqPrcStatus));
+      DlHarqProcessesTimer_t dlHarqProcessesTimer;
+      dlHarqProcessesTimer.resize (8,0);
+      m_dlHarqProcessesTimer.insert (std::pair <uint16_t, DlHarqProcessesTimer_t> (params.m_rnti, dlHarqProcessesTimer));
+      DlHarqProcessesDciBuffer_t dlHarqdci;
+      dlHarqdci.resize (8);
+      m_dlHarqProcessesDciInfoMap.insert (std::pair <uint16_t, DlHarqProcessesDciInfoList_t> (params.m_rnti, dlHarqdci));
+      DlHarqRlcPduListBuffer_t dlHarqRlcPdu;
+      dlHarqRlcPdu.resize (2);
+      dlHarqRlcPdu.at (0).resize (8);
+      dlHarqRlcPdu.at (1).resize (8);
+      m_dlHarqProcessesRlcPduMap.insert (std::pair <uint16_t, DlHarqRlcPduListBuffer_t> (params.m_rnti, dlHarqRlcPdu));
+      m_ulHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+      UlHarqProcessesStatus_t ulHarqPrcStatus;
+      ulHarqPrcStatus.resize (8,0);
+      m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (params.m_rnti, ulHarqPrcStatus));
+      UlHarqProcessesDciBuffer_t ulHarqdci;
+      ulHarqdci.resize (8);
+      m_ulHarqProcessesDciInfoMap.insert (std::pair <uint16_t, UlHarqProcessesDciInfoList_t> (params.m_rnti, ulHarqdci));
+    }
+  else
+    {
+      (*it).second = params.m_transmissionMode;
+    }
+  return;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoCschedLcConfigReq (const struct MmwaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+  // Not used at this stage (LCs updated by DoSchedDlRlcBufferReq)
+  return;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
+{
+  NS_LOG_FUNCTION (this);
+    for (uint16_t i = 0; i < params.m_logicalChannelIdentity.size (); i++)
+    {
+     std::list<FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
+      while (it!=m_rlcBufferReq.end ())
+        {
+          if (((*it).m_rnti == params.m_rnti)&&((*it).m_logicalChannelIdentity == params.m_logicalChannelIdentity.at (i)))
+            {
+              it = m_rlcBufferReq.erase (it);
+            }
+          else
+            {
+              it++;
+            }
+        }
+    }
+  return;
+}
+
+void
+MmWaveFlexTtiHarqMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
+{
+  NS_LOG_FUNCTION (this << " Release RNTI " << params.m_rnti);
+
+  m_uesTxMode.erase (params.m_rnti);
+  m_dlHarqCurrentProcessId.erase (params.m_rnti);
+  m_dlHarqProcessesStatus.erase  (params.m_rnti);
+  m_dlHarqProcessesTimer.erase (params.m_rnti);
+  m_dlHarqProcessesDciBuffer.erase  (params.m_rnti);
+  m_dlHarqProcessesRlcPduListBuffer.erase  (params.m_rnti);
+  m_ulHarqCurrentProcessId.erase  (params.m_rnti);
+  m_ulHarqProcessesStatus.erase  (params.m_rnti);
+  m_ulHarqProcessesDciBuffer.erase  (params.m_rnti);
+  m_ceBsrRxed.erase (params.m_rnti);
+  std::list<FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
+  while (it != m_rlcBufferReq.end ())
+    {
+      if ((*it).m_rnti == params.m_rnti)
+        {
+          NS_LOG_INFO (this << " Erase RNTI " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity);
+          it = m_rlcBufferReq.erase (it);
+        }
+      else
+        {
+          it++;
+        }
+    }
+  if (m_nextRntiUl == params.m_rnti)
+    {
+      m_nextRntiUl = 0;
+    }
+
+  if (m_nextRntiDl == params.m_rnti)
+    {
+      m_nextRntiDl = 0;
+    }
+
+  return;
+}
+*/
+
+}
+
+

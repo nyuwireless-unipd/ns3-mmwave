@@ -30,8 +30,9 @@
 #include <ns3/epc-helper.h>
 #include <ns3/lte-ffr-algorithm.h>
 #include <ns3/mmwave-beamforming.h>
-
-
+#include <ns3/mmwave-channel-matrix.h>
+#include <ns3/radio-bearer-stats-calculator.h>
+#include <ns3/radio-bearer-stats-connector.h>
 
 namespace ns3 {
 
@@ -40,7 +41,7 @@ class MmWaveUePhy;
 class MmWaveEnbPhy;
 class SpectrumChannel;
 class SpectrumpropagationLossModel;
-class mmWaveSpectrumValueHelper;
+class MmWaveSpectrumValueHelper;
 class PropagationLossModel;
 
 
@@ -57,7 +58,7 @@ public:
 	NetDeviceContainer InstallEnbDevice (NodeContainer c);
 	void SetAntenna (uint16_t Nrx, uint16_t Ntx);
 	void SetPathlossModelType (std::string type);
-	void RegisterToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
+	void AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
 	void EnableTraces ();
 
 	void SetSchedulerType (std::string type);
@@ -78,11 +79,16 @@ protected:
 private:
 	Ptr<NetDevice> InstallSingleUeDevice (Ptr<Node> n);
 	Ptr<NetDevice> InstallSingleEnbDevice (Ptr<Node> n);
-	void RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices);
+	void AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices);
 	void EnableDlPhyTrace ();
+	void EnableUlPhyTrace ();
 	void EnableEnbPacketCountTrace ();
 	void EnableUePacketCountTrace ();
 	void EnableTransportBlockTrace ();
+	void EnableRlcTraces (void);
+	Ptr<RadioBearerStatsCalculator> GetRlcStats (void);
+	void EnablePdcpTraces (void);
+	Ptr<RadioBearerStatsCalculator> GetPdcpStats (void);
 
 	Ptr<SpectrumChannel> m_channel;
 	Ptr<MmWaveBeamforming> m_beamforming;
@@ -104,7 +110,7 @@ private:
 	uint16_t m_noTxAntenna;
 	uint16_t m_noRxAntenna;
 
-	Ptr<mmWavePhyRxTrace> m_phyStats;
+	Ptr<MmWavePhyRxTrace> m_phyStats;
 
 	Ptr<MmWavePhyMacCommon> m_phyMacCommon;
 
@@ -115,6 +121,10 @@ private:
 	Ptr<EpcHelper> m_epcHelper;
 
 	bool m_harqEnabled;
+
+  Ptr<RadioBearerStatsCalculator> m_rlcStats;
+  Ptr<RadioBearerStatsCalculator> m_pdcpStats;
+  RadioBearerStatsConnector m_radioBearerStatsConnector;
 };
 
 }

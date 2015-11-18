@@ -19,7 +19,6 @@
 #include <ns3/epc-enb-application.h>
 #include <ns3/epc-x2.h>
 
-
 namespace ns3 {
 
 /* ... */
@@ -60,14 +59,14 @@ MmWaveHelper::GetTypeId (void)
 					   "The type of path-loss model to be used. "
 					   "The allowed values for this attributes are the type names "
 					   "of any class inheriting from ns3::PropagationLossModel.",
-					   StringValue ("ns3::mmWavePropagationLossModel"),
+					   StringValue ("ns3::MmWavePropagationLossModel"),
 					   MakeStringAccessor (&MmWaveHelper::SetPathlossModelType),
 					   MakeStringChecker ())
 		.AddAttribute ("Scheduler",
 				      "The type of scheduler to be used for eNBs. "
 				      "The allowed values for this attributes are the type names "
 				      "of any class inheriting from ns3::MmWaveMacScheduler.",
-				      StringValue ("ns3::MmWaveRrMacScheduler"),
+				      StringValue ("ns3::MmWaveFlexTtiHarqMacScheduler"),
 				      MakeStringAccessor (&MmWaveHelper::SetSchedulerType,
 				                          &MmWaveHelper::GetSchedulerType),
 				      MakeStringChecker ())
@@ -118,7 +117,7 @@ MmWaveHelper::DoInitialize()
 		NS_ASSERT_MSG (plm != 0, " " << m_pathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
 		m_channel->AddPropagationLossModel (plm);
 	}
-	m_phyStats = CreateObject<mmWavePhyRxTrace> ();
+	m_phyStats = CreateObject<MmWavePhyRxTrace> ();
 
 	Object::DoInitialize();
 }
@@ -360,13 +359,13 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	m_ffrAlgorithmFactory.SetTypeId ("ns3::LteFrNoOpAlgorithm");
 	Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
 	*/
-	Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
 	sched->ConfigureCommonParameters (m_phyMacCommon);
 	mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
 	sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
 
 	phy->SetPhySapUser (mac->GetPhySapUser());
 	mac->SetPhySapProvider (phy->GetPhySapProvider());
+	Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
 
 	bool useIdealRrc = true;
 	if (useIdealRrc)
@@ -416,7 +415,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	device->SetAttribute ("MmWaveEnbPhy", PointerValue (phy));
 	device->SetAttribute ("MmWaveEnbMac", PointerValue (mac));
 	device->SetAttribute ("mmWaveScheduler", PointerValue(sched));
-	device->SetAttribute ("ConnectedLteRRC", PointerValue (rrc));
+	device->SetAttribute ("LteEnbRrc", PointerValue (rrc));
 
 
 	phy->SetDevice (device);
@@ -468,20 +467,20 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 }
 
 void
-MmWaveHelper::RegisterToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
+MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
 {
 	NS_LOG_FUNCTION(this);
 
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
-		RegisterToClosestEnb(*i, enbDevices);
+		AttachToClosestEnb(*i, enbDevices);
 	}
 
 	m_beamforming->Initial(ueDevices,enbDevices);
 }
 
 void
-MmWaveHelper::RegisterToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices)
+MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices)
 {
 	NS_LOG_FUNCTION (this);
 	NS_ASSERT_MSG (enbDevices.GetN () > 0, "empty enb device container");
@@ -700,7 +699,7 @@ MmWaveHelper::ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer
   std::ostringstream path;
   path << "/NodeList/" << enbmmWaveDevice->GetNode ()->GetId ()
        << "/DeviceList/" << enbmmWaveDevice->GetIfIndex ()
-       << "/ConnectedLteRRC/ConnectionEstablished";
+       << "/LteEnbRrc/ConnectionEstablished";
   Ptr<DrbActivator> arg = Create<DrbActivator> (ueDevice, bearer);
   Config::Connect (path.str (), MakeBoundCallback (&DrbActivator::ActivateCallback, arg));
 }
@@ -710,17 +709,31 @@ void
 MmWaveHelper::EnableTraces (void)
 {
 	EnableDlPhyTrace ();
+	EnableUlPhyTrace ();
 	//EnableEnbPacketCountTrace ();
 	//EnableUePacketCountTrace ();
-	EnableTransportBlockTrace ();
+	//EnableTransportBlockTrace ();
+	//EnableRlcTraces ();
+	//EnablePdcpTraces ();
 }
 
 void
 MmWaveHelper::EnableDlPhyTrace (void)
 {
 	NS_LOG_FUNCTION_NOARGS ();
-	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
-			MakeBoundCallback (&mmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
+//	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
+//			MakeBoundCallback (&MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
+
+	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
+			MakeBoundCallback (&MmWavePhyRxTrace::RxPacketTraceUeCallback, m_phyStats));
+}
+
+void
+MmWaveHelper::EnableUlPhyTrace (void)
+{
+	NS_LOG_FUNCTION_NOARGS ();
+	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
+			MakeBoundCallback (&MmWavePhyRxTrace::RxPacketTraceEnbCallback, m_phyStats));
 }
 
 void
@@ -728,7 +741,7 @@ MmWaveHelper::EnableEnbPacketCountTrace ()
 {
 	NS_LOG_FUNCTION_NOARGS ();
 	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveEnbPhy/DlSpectrumPhy/ReportEnbTxRxPacketCount",
-			MakeBoundCallback (&mmWavePhyRxTrace::ReportPacketCountEnbCallback, m_phyStats));
+			MakeBoundCallback (&MmWavePhyRxTrace::ReportPacketCountEnbCallback, m_phyStats));
 
 }
 
@@ -737,7 +750,7 @@ MmWaveHelper::EnableUePacketCountTrace ()
 {
 	NS_LOG_FUNCTION_NOARGS ();
 	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/DlSpectrumPhy/ReportUeTxRxPacketCount",
-			MakeBoundCallback (&mmWavePhyRxTrace::ReportPacketCountUeCallback, m_phyStats));
+			MakeBoundCallback (&MmWavePhyRxTrace::ReportPacketCountUeCallback, m_phyStats));
 
 }
 
@@ -746,7 +759,36 @@ MmWaveHelper::EnableTransportBlockTrace ()
 {
 	NS_LOG_FUNCTION_NOARGS ();
 	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportDownlinkTbSize",
-				MakeBoundCallback (&mmWavePhyRxTrace::ReportDownLinkTBSize, m_phyStats));
+				MakeBoundCallback (&MmWavePhyRxTrace::ReportDownLinkTBSize, m_phyStats));
+}
+
+
+void
+MmWaveHelper::EnableRlcTraces (void)
+{
+  NS_ASSERT_MSG (m_rlcStats == 0, "please make sure that LteHelper::EnableRlcTraces is called at most once");
+  m_rlcStats = CreateObject<RadioBearerStatsCalculator> ("RLC");
+  m_radioBearerStatsConnector.EnableRlcStats (m_rlcStats);
+}
+
+Ptr<RadioBearerStatsCalculator>
+MmWaveHelper::GetRlcStats (void)
+{
+  return m_rlcStats;
+}
+
+void
+MmWaveHelper::EnablePdcpTraces (void)
+{
+  NS_ASSERT_MSG (m_pdcpStats == 0, "please make sure that LteHelper::EnablePdcpTraces is called at most once");
+  m_pdcpStats = CreateObject<RadioBearerStatsCalculator> ("PDCP");
+  m_radioBearerStatsConnector.EnablePdcpStats (m_pdcpStats);
+}
+
+Ptr<RadioBearerStatsCalculator>
+MmWaveHelper::GetPdcpStats (void)
+{
+  return m_pdcpStats;
 }
 
 }

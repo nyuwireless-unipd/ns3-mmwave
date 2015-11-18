@@ -17,7 +17,7 @@
 namespace ns3
 {
 
-typedef std::vector <std::vector < Ptr<PacketBurst> > > DlHarqProcessesBuffer_t;
+typedef std::vector < Ptr<PacketBurst> > DlHarqProcessesBuffer_t;
 
 class MmWaveEnbMac : public Object
 {
@@ -34,7 +34,7 @@ public:
 	{
 		uint32_t m_sfn;
 		TddSlotTypeList m_tddPattern;
-		SfAllocationInfo m_allocationList;
+		SfAllocInfo m_allocationList;
 	};*/
 
   struct TransmitPduParameters
@@ -81,7 +81,7 @@ public:
 	void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters);
 	void DoUlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi);
 
-	void DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
+	void DoSubframeIndication (SfnSf sfnSf);
 
 	void AssociateUeMAC (uint64_t imsi);
 

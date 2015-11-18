@@ -33,25 +33,25 @@ public:
 
 	struct SchedDlCqiInfoReqParameters
 	{
-		uint32_t m_sfnsf;
+		SfnSf m_sfnsf;
 		std::vector <struct DlCqiInfo> m_cqiList;
 	};
 
   struct SchedUlMacCtrlInfoReqParameters
   {
-    uint16_t  m_sfnSf;
+		SfnSf  m_sfnSf;
     std::vector <struct MacCeElement> m_macCeList;
   };
 
   struct SchedUlCqiInfoReqParameters
   {
-    uint32_t  m_sfnSf;
+  	SfnSf  m_sfnSf;
     struct UlCqiInfo m_ulCqi;
   };
 
 	struct SchedTriggerReqParameters
 	{
-		uint32_t m_snfSf;
+		SfnSf m_snfSf;
     std::vector <struct DlHarqInfo> m_dlHarqInfoList;
     std::vector <struct UlHarqInfo> m_ulHarqInfoList;
 		std::list <uint16_t> m_ueList;
@@ -78,11 +78,13 @@ public:
 
 	struct SchedConfigIndParameters
 	{
-		uint32_t m_sfn;
+		SfnSf m_sfnSf;
 //		TddSlotTypeList m_tddPattern;
-//		SfAllocationInfo m_allocationList;
+		SfAllocInfo m_sfAllocInfo;
+		SfAllocInfo m_dlSfAllocInfo;
+		SfAllocInfo m_ulSfAllocInfo;
 
-		std::map<uint16_t, SchedInfoElement> m_schedInfoMap;
+		std::map<uint16_t, SchedInfo> m_schedInfoMap;
 	};
 
 	virtual void SchedConfigInd (const struct SchedConfigIndParameters& params) = 0;

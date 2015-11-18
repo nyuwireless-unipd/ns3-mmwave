@@ -17,6 +17,8 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.Parse (argc, argv);
 
+  LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+
   /* Information regarding the traces generated:
    *
    * 1. UE_1_SINR.txt : Gives the SINR for each sub-band
@@ -74,7 +76,7 @@ main (int argc, char *argv[])
   NetDeviceContainer ueNetDev = ptr_mmWave->InstallUeDevice (ueNodes);
 
 
-  ptr_mmWave->RegisterToClosestEnb (ueNetDev, enbNetDev);
+  ptr_mmWave->AttachToClosestEnb (ueNetDev, enbNetDev);
   ptr_mmWave->EnableTraces();
 
   // Activate a data radio bearer

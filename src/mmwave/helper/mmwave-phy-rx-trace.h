@@ -10,30 +10,39 @@
 #include <ns3/object.h>
 #include <ns3/spectrum-value.h>
 #include <ns3/mmwave-phy-mac-common.h>
+#include <fstream>
+#include <iostream>
 
 namespace ns3 {
 
-class mmWavePhyRxTrace : public Object
+class MmWavePhyRxTrace : public Object
 {
 public:
-	mmWavePhyRxTrace();
-	virtual ~mmWavePhyRxTrace();
+	MmWavePhyRxTrace();
+	virtual ~MmWavePhyRxTrace();
 	static TypeId GetTypeId (void);
-	static void ReportCurrentCellRsrpSinrCallback (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+	static void ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 						uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power);
-
-	static void ReportPacketCountUeCallback (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+	static void UlSinrTraceCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+							uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power);
+	static void ReportPacketCountUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 			UePhyPacketCountParameter param);
-	static void ReportPacketCountEnbCallback (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+	static void ReportPacketCountEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 			EnbPhyPacketCountParameter param);
-	static void ReportDownLinkTBSize (Ptr<mmWavePhyRxTrace> phyStats, std::string path,
+	static void ReportDownLinkTBSize (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 			uint64_t imsi, uint64_t tbSize);
+	static void RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams param);
+	static void RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams param);
+
 private:
 	void ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr);
 	void ReportPowerTrace (uint64_t imsi, SpectrumValue& power);
 	void ReportPacketCountUe (UePhyPacketCountParameter param);
 	void ReportPacketCountEnb (EnbPhyPacketCountParameter param);
 	void ReportDLTbSize (uint64_t imsi, uint64_t tbSize);
+
+	static std::ofstream m_rxPacketTraceFile;
+	static std::string m_rxPacketTraceFilename;
 };
 
 } /* namespace ns3 */

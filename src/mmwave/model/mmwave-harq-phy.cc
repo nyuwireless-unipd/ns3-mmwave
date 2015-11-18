@@ -33,9 +33,10 @@ MmWaveHarqPhy::~MmWaveHarqPhy ()
 }
 
 void
-MmWaveHarqPhy::SubframeIndication (uint32_t frameNo, uint32_t subframeNo)
+MmWaveHarqPhy::SubframeIndication (SfnSf sfn)
 {
   NS_LOG_FUNCTION (this);
+  return; // TODO: Proper behavior for Dynamic TDD
 
   // left shift UL HARQ buffers
   std::map <uint16_t, std::vector <HarqProcessInfoList_t> >:: iterator it;

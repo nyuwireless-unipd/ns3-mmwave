@@ -12,6 +12,8 @@
 #include <ns3/log.h>
 #include "mmwave-phy.h"
 #include "mmwave-phy-sap.h"
+#include "mmwave-mac-pdu-tag.h"
+#include "mmwave-mac-pdu-header.h"
 #include <sstream>
 #include <vector>
 
@@ -32,6 +34,11 @@ public:
 	virtual void SendControlMessage (Ptr<MmWaveControlMessage> msg);
 
 	virtual void SendRachPreamble(uint8_t PreambleId, uint8_t Rnti);
+
+	virtual void SetDlSfAllocInfo (SfAllocInfo sfAllocInfo);
+
+	virtual void SetUlSfAllocInfo (SfAllocInfo sfAllocInfo);
+
 private:
 	MmWavePhy* m_phy;
 };
@@ -59,6 +66,19 @@ MmWaveMemberPhySapProvider::SendRachPreamble(uint8_t PreambleId, uint8_t Rnti)
 {
 	m_phy->SendRachPreamble (PreambleId, Rnti);
 }
+
+void
+MmWaveMemberPhySapProvider::SetDlSfAllocInfo (SfAllocInfo sfAllocInfo)
+{
+	m_phy->SetDlSfAllocInfo (sfAllocInfo);
+}
+
+void
+MmWaveMemberPhySapProvider::SetUlSfAllocInfo (SfAllocInfo sfAllocInfo)
+{
+	m_phy->SetUlSfAllocInfo (sfAllocInfo);
+}
+
 /* ======= */
 
 TypeId
@@ -82,7 +102,11 @@ MmWavePhy::MmWavePhy()
 MmWavePhy::MmWavePhy(Ptr<MmWaveSpectrumPhy> dlChannelPhy, Ptr<MmWaveSpectrumPhy> ulChannelPhy)
 	:m_downlinkSpectrumPhy(dlChannelPhy),
 	 m_uplinkSpectrumPhy(ulChannelPhy),
-	 m_cellId(0)
+	 m_cellId(0),
+	 m_frameNum (0),
+	 m_sfNum (0),
+	 m_slotNum (0),
+	 m_sfAllocInfoUpdated (false)
 {
 	NS_LOG_FUNCTION(this);
 	m_phySapProvider = new MmWaveMemberPhySapProvider (this);
@@ -96,7 +120,7 @@ MmWavePhy::~MmWavePhy ()
 void
 MmWavePhy::DoInitialize ()
 {
-	m_packetBurstQueue.resize (m_phyMacConfig->GetSubframesPerFrame ());
+/*	m_packetBurstQueue.resize (m_phyMacConfig->GetSubframesPerFrame ());
 	for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame (); i++)
 	{
 		m_packetBurstQueue[i] = std::vector<Ptr<PacketBurst> > (m_phyMacConfig->GetSlotsPerSubframe (), 0);
@@ -104,7 +128,7 @@ MmWavePhy::DoInitialize ()
 		{
 			m_packetBurstQueue[i][j] = CreateObject<PacketBurst> ();
 		}
-	}
+	}*/
 }
 
 void
@@ -177,18 +201,18 @@ MmWavePhy::SetMacPdu (Ptr<Packet> p)
 	MmWaveMacPduTag tag;
 	if(p->PeekPacketTag (tag))
 	{
-		uint8_t sfNum = tag.GetSubframeNum ();
-		uint8_t slotNum = tag.GetSlotNum ();
-		//	uint16_t key = ((0xFF * sfNum) << 8) | (0xFF * slotNum);
-		NS_ASSERT((sfNum > 0) && (sfNum <= m_phyMacConfig->GetSubframesPerFrame ()));
-		NS_ASSERT((slotNum > 0) && (slotNum <= m_phyMacConfig->GetSlotsPerSubframe ()));
-//		NS_ASSERT ((header.GetSubframeNum() == sfNum) && (header.GetSlotNum() == slotNum));
-
-//		NS_LOG_DEBUG ("m_packetBurstQueue.size () == " << m_packetBurstQueue.size () << " " << m_packetBurstQueue[sfNum-1].size ());
-		Ptr<PacketBurst> pburst = m_packetBurstQueue[sfNum-1][slotNum-1];
-//		std::list< Ptr<Packet> > pkts = pburst->GetPackets ();
-//		NS_LOG_DEBUG ("pkts.size () == " << pkts.size ());
-		pburst->AddPacket (p);
+		NS_ASSERT((tag.GetSfn().m_sfNum >= 0) && (tag.GetSfn().m_sfNum < m_phyMacConfig->GetSymbolsPerSubframe ()));
+		//Ptr<PacketBurst> pburst = m_packetBurstQueue[tag.GetSfn().m_sfNum][tag.GetSfn().m_slotNum];
+		std::map<uint32_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (tag.GetSfn ().Encode());
+		if (it == m_packetBurstMap.end())
+		{
+			it = m_packetBurstMap.insert (std::pair<uint32_t, Ptr<PacketBurst> > (tag.GetSfn ().Encode(), CreateObject<PacketBurst> ())).first;
+		}
+		else
+		{
+			NS_FATAL_ERROR ("Packet burst map entry already exists");
+		}
+		it->second->AddPacket (p);
 	}
 	else
 	{
@@ -197,26 +221,20 @@ MmWavePhy::SetMacPdu (Ptr<Packet> p)
 }
 
 Ptr<PacketBurst>
-MmWavePhy::GetPacketBurst (uint8_t sfNum, uint8_t slotNum)
+MmWavePhy::GetPacketBurst (SfnSf sfn)
 {
 	Ptr<PacketBurst> pburst;
-	if((m_packetBurstQueue.size () >= sfNum) && (m_packetBurstQueue[sfNum-1].size () >= slotNum))
+	std::map<uint32_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (sfn.Encode());
+	if (it == m_packetBurstMap.end())
 	{
-		pburst = m_packetBurstQueue[sfNum-1][slotNum-1];
-		std::list< Ptr<Packet> > pkts = pburst->GetPackets ();
-		if (!pkts.empty ())
-		{
-			MmWaveMacPduTag tag;
-			pkts.front ()->PeekPacketTag (tag);
-			NS_ASSERT ((tag.GetSubframeNum() == sfNum) && (tag.GetSlotNum() == slotNum));
-		}
-		m_packetBurstQueue[sfNum-1][slotNum-1] = CreateObject<PacketBurst> ();
+		NS_LOG_ERROR ("GetPacketBurst(): Packet burst not found for subframe " << (unsigned)sfn.m_sfNum << " slot/sym start "  << (unsigned)sfn.m_slotNum);
+		return 	pburst;
 	}
 	else
 	{
-		NS_FATAL_ERROR ("GetPacketBurst(): Subframe and slot index out of bounds");
+		pburst = it->second;
+		m_packetBurstMap.erase (it);
 	}
-
 	return pburst;
 }
 
@@ -280,6 +298,30 @@ MmWavePhySapProvider*
 MmWavePhy::GetPhySapProvider ()
 {
 	return m_phySapProvider;
+}
+
+
+SfAllocInfo
+MmWavePhy::GetSfAllocInfo (uint8_t subframeNum)
+{
+	return m_sfAllocInfo[subframeNum];
+}
+
+void
+MmWavePhy::SetDlSfAllocInfo (SfAllocInfo sfAllocInfo)
+{
+	// get previously enqueued SfAllocInfo and set DL slot allocations
+	SfAllocInfo &sf = m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum];
+	// merge slot lists
+	sf.m_dlSlotAllocInfo = sfAllocInfo.m_dlSlotAllocInfo;
+	m_sfAllocInfoUpdated = true;
+}
+
+void
+MmWavePhy::SetUlSfAllocInfo (SfAllocInfo sfAllocInfo)
+{
+	// add new SfAllocInfo with UL slot allocation
+	m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
 }
 
 }

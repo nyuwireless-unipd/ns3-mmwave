@@ -34,6 +34,42 @@ MmWaveControlMessage::GetMessageType (void)
 	return m_messageType;
 }
 
+MmWaveTdmaDciMessage::MmWaveTdmaDciMessage (void)
+{
+	NS_LOG_INFO (this);
+	SetMessageType (MmWaveControlMessage::DCI_TDMA);
+}
+
+MmWaveTdmaDciMessage::~MmWaveTdmaDciMessage (void)
+{
+	NS_LOG_INFO (this);
+}
+
+
+void
+MmWaveTdmaDciMessage::SetDciInfoElement (DciInfoElementTdma dci)
+{
+	m_dciInfoElement = dci;
+}
+
+DciInfoElementTdma
+MmWaveTdmaDciMessage::GetDciInfoElement (void)
+{
+	return m_dciInfoElement;
+}
+
+void
+MmWaveTdmaDciMessage::SetSfnSf (SfnSf sfn)
+{
+	m_sfnSf = sfn;
+}
+
+SfnSf
+MmWaveTdmaDciMessage::GetSfnSf (void)
+{
+	return m_sfnSf;
+}
+
 MmWaveDciMessage::MmWaveDciMessage (void)
 {
 	NS_LOG_INFO (this);

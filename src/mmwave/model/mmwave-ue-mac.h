@@ -38,7 +38,7 @@ public:
 	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
-	void DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo, uint32_t slotNo);
+	void DoSubframeIndication (SfnSf sfn);
 
 	MmWaveUePhySapUser* GetPhySapUser ();
 	void SetPhySapProvider (MmWavePhySapProvider* ptr);
@@ -67,7 +67,7 @@ private:
   void SendReportBufferStatus (void);
   void RefreshHarqProcessesPacketBuffer (void);
 
-  std::map<uint32_t, struct MacPduInfo>::iterator AddToMacPduMap (TbInfoElement tb, unsigned activeLcs);
+  std::map<uint32_t, struct MacPduInfo>::iterator AddToMacPduMap (DciInfoElementTdma dci, unsigned activeLcs);
 
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
@@ -75,7 +75,7 @@ private:
 	LteUeCmacSapProvider* m_cmacSapProvider;
 
 	TddSlotTypeList m_DataTxTDDMap;
-	SfAllocationInfo m_DataTxAllocationList;
+	SfAllocInfo m_DataTxAllocationList;
 
 	MmWavePhySapProvider* m_phySapProvider;
 	MmWaveUePhySapUser* m_phySapUser;
@@ -112,6 +112,7 @@ private:
 	uint8_t m_rnti;
 
 	bool m_waitingForRaResponse;
+	static uint8_t g_raPreambleId;
 
 };
 

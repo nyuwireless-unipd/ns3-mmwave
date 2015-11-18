@@ -5,8 +5,11 @@
 
 #include "ns3/packet.h"
 #include "ns3/nstime.h"
+#include "mmwave-phy-mac-common.h"
 
 namespace ns3 {
+
+struct SfnSf;
 
 class MmWaveMacPduTag : public Tag
 {
@@ -19,48 +22,25 @@ public:
    */
   MmWaveMacPduTag ();
 
-  MmWaveMacPduTag (uint16_t frameNo, uint8_t sfNo, uint8_t slotNo);
+  MmWaveMacPduTag (SfnSf sfn);
 
   virtual void  Serialize (TagBuffer i) const;
   virtual void  Deserialize (TagBuffer i);
   virtual uint32_t  GetSerializedSize () const;
   virtual void Print (std::ostream &os) const;
 
-  uint16_t  GetFrameNum (void) const
+  SfnSf  GetSfn (void) const
   {
-  	return m_frameNum;
+  	return m_sfnSf;
   }
 
-  void  SetFrameNum (uint16_t frameNum)
+  void  SetSfn (SfnSf sfn)
   {
-  	this->m_frameNum = frameNum;
+  	this->m_sfnSf = sfn;
   }
-
-  uint8_t  GetSubframeNum (void) const
-  {
-    return m_sfNum;
-  }
-
-  void  SetSubframeNum (uint8_t sfNum)
-  {
-    this->m_sfNum = sfNum;
-  }
-
-  uint8_t  GetSlotNum (void) const
-  {
-    return m_slotNum;
-  }
-
-  void  SetSlotNum (uint8_t slotNum)
-  {
-    this->m_slotNum = slotNum;
-  }
-
 
 protected:
-  uint8_t m_frameNum;
-  uint8_t m_sfNum;
-  uint8_t m_slotNum;
+  SfnSf m_sfnSf;
   uint32_t m_tagSize;
 };
 

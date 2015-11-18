@@ -53,7 +53,7 @@ TypeId MmWaveEnbNetDevice::GetTypeId()
 						PointerValue (),
 					    MakePointerAccessor (&MmWaveEnbNetDevice::m_scheduler),
 					    MakePointerChecker <MmWaveMacScheduler> ())
-		.AddAttribute ("ConnectedLteRRC",
+		.AddAttribute ("LteEnbRrc",
 						"The RRC layer associated with the ENB",
 						PointerValue (),
 						MakePointerAccessor (&MmWaveEnbNetDevice::m_rrc),

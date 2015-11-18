@@ -69,6 +69,11 @@ MmWaveUeNetDevice::GetTypeId (void)
 					   MakeUintegerAccessor (&MmWaveUeNetDevice::SetAntennaNum,
 											 &MmWaveUeNetDevice::GetAntennaNum),
 					   MakeUintegerChecker<uint8_t> ())
+		.AddAttribute ("LteUeRrc",
+						"The RRC layer associated with the ENB",
+						PointerValue (),
+						MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),
+						MakePointerChecker <LteUeRrc> ())
 	;
 	return tid;
 }

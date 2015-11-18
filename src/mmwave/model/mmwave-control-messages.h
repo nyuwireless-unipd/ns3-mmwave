@@ -23,6 +23,7 @@ public:
 	enum messageType
 	{
 		DCI, // The resources allocation map from the BS to the attached UEs
+		DCI_TDMA,
 		DL_CQI,
 		MIB, // Master Information Block
 		SIB1, // System Information Block Type 1
@@ -54,8 +55,8 @@ public:
 	MmWaveDciMessage (void);
 	virtual ~MmWaveDciMessage (void);
 
-//	void SetRbAllocationMap (SfAllocationInfo allocMap);
-//	SfAllocationInfo GetRbAllocationMap (void);
+//	void SetRbAllocationMap (SfAllocInfo allocMap);
+//	SfAllocInfo GetRbAllocationMap (void);
 
 	void SetDciInfoElement (DciInfoElement dci);
 	DciInfoElement GetDciInfoElement (void);
@@ -65,8 +66,30 @@ public:
 
 private:
 	uint32_t m_sfnSf;  // frame num and sf num for debugging
-//	SfAllocationInfo m_rscAllocationMap;
+//	SfAllocInfo m_rscAllocationMap;
 	DciInfoElement m_dciInfoElement;
+};
+
+class MmWaveTdmaDciMessage : public MmWaveControlMessage
+{
+public:
+	MmWaveTdmaDciMessage (void);
+	virtual ~MmWaveTdmaDciMessage (void);
+
+//	void SetRbAllocationMap (SfAllocInfo allocMap);
+//	SfAllocInfo GetRbAllocationMap (void);
+
+	void SetDciInfoElement (DciInfoElementTdma dci);
+	DciInfoElementTdma GetDciInfoElement (void);
+
+	void SetSfnSf (SfnSf sfn);
+	SfnSf GetSfnSf (void);
+
+private:
+	SfnSf m_sfnSf;  // frame num and sf num for debugging
+	bool	m_ulGrant;	// is ul grant
+//	SfAllocInfo m_rscAllocationMap;
+	DciInfoElementTdma m_dciInfoElement;
 };
 
 class MmWaveDlCqiMessage : public MmWaveControlMessage

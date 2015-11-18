@@ -47,10 +47,10 @@ operator << (ostream& os, const vector<int>& v)
 }
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("mmWaveSpectrumValueHelper");
+NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumValueHelper");
 
 Ptr<SpectrumModel>
-mmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
   NS_LOG_FUNCTION (ptrConfig->GetCentreFrequency() << (uint32_t) ptrConfig->GetTotalNumChunk());
   Ptr<SpectrumModel> model;
@@ -79,7 +79,7 @@ mmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 }
 
 Ptr<SpectrumValue> 
-mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double powerTx, std::vector <int> activeRbs)
+MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double powerTx, std::vector <int> activeRbs)
 {
     Ptr<SpectrumModel> model = GetSpectrumModel (ptrConfig);
     Ptr<SpectrumValue> txPsd = Create <SpectrumValue> (model);
@@ -102,7 +102,7 @@ mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon>
 }
 
 Ptr<SpectrumValue>
-mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double powerTx, std::map<int, double> powerTxMap, std::vector <int> activeRbs)
+MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double powerTx, std::map<int, double> powerTxMap, std::vector <int> activeRbs)
 {
 	Ptr<SpectrumValue> dummy;
 	 return dummy;
@@ -111,7 +111,7 @@ mmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon>
 
 
 Ptr<SpectrumValue>
-mmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double noiseFigure)
+MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double noiseFigure)
 {
   Ptr<SpectrumModel> model = GetSpectrumModel (ptrConfig);
   Ptr<SpectrumValue> noisePsd = CreateNoisePowerSpectralDensity (noiseFigure, model);
@@ -119,7 +119,7 @@ mmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (Ptr<MmWavePhyMacComm
 }
 
 Ptr<SpectrumValue>
-mmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (double noiseFigureDb, Ptr<SpectrumModel> spectrumModel)
+MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (double noiseFigureDb, Ptr<SpectrumModel> spectrumModel)
 {
   NS_LOG_FUNCTION (noiseFigureDb << spectrumModel);
   const double kT_dBm_Hz = -174.0;  // dBm/Hz
