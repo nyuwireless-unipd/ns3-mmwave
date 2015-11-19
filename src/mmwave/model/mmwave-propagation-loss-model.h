@@ -69,7 +69,7 @@ private:
   mutable double m_frequency;
   double m_minLoss;
   mutable channelScenarioMap_t m_channelScenarioMap;
-
+  std::string m_channelStates;
 };
 
 #endif

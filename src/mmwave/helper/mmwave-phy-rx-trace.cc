@@ -188,12 +188,8 @@ MmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
 	sprintf (fname,"UE_%llu_Tb_Size.txt", (long long unsigned) imsi);
 	log_file = fopen (fname, "a");
 
-<<<<<<< HEAD
 	fprintf (log_file, "%llu \t %llu\n", Now().GetMicroSeconds (), tbSize);
-
-=======
 	fprintf (log_file, "%lld \t %llu \n",(long long int) Now().GetMicroSeconds (), (long long unsigned) tbSize);
->>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 	fflush(log_file);
 	fclose(log_file);
 }

@@ -40,6 +40,11 @@ MmWavePropagationLossModel::GetTypeId (void)
                    MakeDoubleAccessor (&MmWavePropagationLossModel::SetMinLoss,
                                        &MmWavePropagationLossModel::GetMinLoss),
                    MakeDoubleChecker<double> ())
+    .AddAttribute ("ChannelStates",
+									"'l' for LOS, 'n' for NLOS, 'o' for outage, 'a' for all",
+									StringValue ("a"),
+									MakeStringAccessor (&MmWavePropagationLossModel::m_channelStates),
+									MakeStringChecker ())
   ;
   return tid;
 }
@@ -119,32 +124,32 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 	  normalVariable->SetAntithetic(true);
 	  double PRef = uniformVariable->GetValue(0,1);
 
-	  if (PRef < PLos)
-	    {
-		  scenario.m_channelScenario = 'l';
-		  sigma = 5.8;
-	    }
-	  else if (PRef < (1-POut))
-	    {
-		  scenario.m_channelScenario = 'n';
-		  if (m_frequency ==28e9)
-		  {
-			  sigma = 8.7;
-		  }
-		  else if (m_frequency == 73e9)
-		  {
-			  sigma = 7.7;
-		  }
-		  else
-		  {
-			  NS_FATAL_ERROR ("The model currently supports only 28 GHz and 73 GHz carrier frequencies.");
-		  }
-	    }
+	  if ( m_channelStates.compare("l")==0 || ((PRef < PLos) && m_channelStates.compare("a")==0) )
+	  {
+	  	scenario.m_channelScenario = 'l';
+	  	sigma = 5.8;
+	  }
+	  else if ( m_channelStates.compare("n")==0 || ((PRef < (1-POut)) && m_channelStates.compare("a")==0) )
+	  {
+	  	scenario.m_channelScenario = 'n';
+	  	if (m_frequency ==28e9)
+	  	{
+	  		sigma = 8.7;
+	  	}
+	  	else if (m_frequency == 73e9)
+	  	{
+	  		sigma = 7.7;
+	  	}
+	  	else
+	  	{
+	  		NS_FATAL_ERROR ("The model currently supports only 28 GHz and 73 GHz carrier frequencies.");
+	  	}
+	  }
 	  else
-	    {
-		  scenario.m_channelScenario = 'o';
-		  return (txPowerDbm - 500.00);
-	    }
+	  {
+	  	scenario.m_channelScenario = 'o';
+	  	return (txPowerDbm - 500.00);
+	  }
 	  scenario.m_shadowing = normalVariable->GetValue(0,sigma);
 	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (a,b), scenario));
 	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (b,a), scenario));

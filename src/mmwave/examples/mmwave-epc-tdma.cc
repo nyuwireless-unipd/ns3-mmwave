@@ -45,7 +45,7 @@ main (int argc, char *argv[])
 {
 	//LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-	//	LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
+	//	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
 	//	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
 		LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
@@ -60,10 +60,11 @@ main (int argc, char *argv[])
 
 
 	uint16_t numEnb = 1;
-	uint16_t numUe = 4;
+	uint16_t numUe = 1;
 	double simTime = 0.5;
 	double interPacketInterval = 1000;  // 500 microseconds
 	double distance = 250.0;  // eNB-UE distance in meters
+	bool harqEnabled = false;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -71,23 +72,19 @@ main (int argc, char *argv[])
 	cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
 	cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
 	cmd.AddValue("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
+	cmd.AddValue("harqEnable", "Enable Hybrid ARQ", harqEnabled);
 	cmd.Parse(argc, argv);
 
-	Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (10.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 
-<<<<<<< HEAD
 	RngSeedManager::SetSeed (1234);
-=======
-	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
->>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-	mmwaveHelper->SetHarqEnabled (true);
+	mmwaveHelper->SetHarqEnabled (harqEnabled);
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 
