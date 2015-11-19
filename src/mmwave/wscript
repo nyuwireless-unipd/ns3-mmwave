@@ -42,13 +42,10 @@ def build(bld):
         'model/mmwave-mac-pdu-header.cc',
         'model/mmwave-mac-pdu-tag.cc',
         'model/mmwave-harq-phy.cc',
-<<<<<<< HEAD
         #'model/mmwave-flex-tti-mac-scheduler.cc',         
         'model/mmwave-flex-tti-harq-mac-scheduler.cc',                               
-=======
         'model/mmwave-propagation-loss-model.cc',
         'model/antenna-array-model.cc'       
->>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
         ]
 
     module_test = bld.create_ns3_module_test_library('mmwave')
@@ -92,14 +89,10 @@ def build(bld):
         'model/mmwave-mac-pdu-header.h',
         'model/mmwave-mac-pdu-tag.h',
         'model/mmwave-harq-phy.h',
-<<<<<<< HEAD
         #'model/mmwave-flex-tti-mac-scheduler.h',       
         'model/mmwave-flex-tti-harq-mac-scheduler.h',                         
-=======
         'model/mmwave-propagation-loss-model.h',
         'model/antenna-array-model.h',
-
->>>>>>> b36c54152804fd16ccc9464c4123d6ceeba3fb48
         ]
 
     if bld.env.ENABLE_EXAMPLES:
