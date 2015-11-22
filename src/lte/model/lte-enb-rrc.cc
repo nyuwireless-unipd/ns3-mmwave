@@ -1788,7 +1788,8 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
    * regularly transmitted every 80 ms by default (set the
    * SystemInformationPeriodicity attribute to configure this).
    */
-  Simulator::Schedule (MilliSeconds (16), &LteEnbRrc::SendSystemInformation, this);
+  // mmWave module: Changed scheduling of initial system information to +2ms
+  Simulator::Schedule (MilliSeconds (2), &LteEnbRrc::SendSystemInformation, this);
 
   m_configured = true;
 

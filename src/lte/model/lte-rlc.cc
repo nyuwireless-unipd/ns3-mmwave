@@ -266,7 +266,7 @@ LteRlcSm::ReportBufferStatus ()
   LteMacSapProvider::ReportBufferStatusParameters p;
   p.rnti = m_rnti;
   p.lcid = m_lcid;
-  p.txQueueSize = 80000;
+  p.txQueueSize = 1000000;  // mmWave module: Arbitrarily changed full-buffer BSR to report 1MB available each subframe
   p.txQueueHolDelay = 10;
   p.retxQueueSize = 0;
   p.retxQueueHolDelay = 0;
