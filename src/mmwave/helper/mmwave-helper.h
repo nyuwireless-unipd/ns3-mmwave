@@ -31,8 +31,8 @@
 #include <ns3/lte-ffr-algorithm.h>
 #include <ns3/mmwave-beamforming.h>
 #include <ns3/mmwave-channel-matrix.h>
-#include <ns3/radio-bearer-stats-calculator.h>
-#include <ns3/radio-bearer-stats-connector.h>
+#include <ns3/mmwave-bearer-stats-calculator.h>
+#include <ns3/mmwave-bearer-stats-connector.h>
 
 namespace ns3 {
 
@@ -86,9 +86,9 @@ private:
 	void EnableUePacketCountTrace ();
 	void EnableTransportBlockTrace ();
 	void EnableRlcTraces (void);
-	Ptr<RadioBearerStatsCalculator> GetRlcStats (void);
+	Ptr<MmWaveBearerStatsCalculator> GetRlcStats (void);
 	void EnablePdcpTraces (void);
-	Ptr<RadioBearerStatsCalculator> GetPdcpStats (void);
+	Ptr<MmWaveBearerStatsCalculator> GetPdcpStats (void);
 
 	Ptr<SpectrumChannel> m_channel;
 	Ptr<MmWaveBeamforming> m_beamforming;
@@ -122,9 +122,9 @@ private:
 
 	bool m_harqEnabled;
 
-  Ptr<RadioBearerStatsCalculator> m_rlcStats;
-  Ptr<RadioBearerStatsCalculator> m_pdcpStats;
-  RadioBearerStatsConnector m_radioBearerStatsConnector;
+  Ptr<MmWaveBearerStatsCalculator> m_rlcStats;
+  Ptr<MmWaveBearerStatsCalculator> m_pdcpStats;
+  MmWaveBearerStatsConnector m_radioBearerStatsConnector;
 };
 
 }
