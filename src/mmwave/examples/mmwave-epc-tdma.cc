@@ -47,11 +47,11 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
 	//	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
 	//	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
-		LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveFlexTtiHarqMacScheduler", LOG_LEVEL_DEBUG);
+//		LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 	//LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
@@ -63,7 +63,7 @@ main (int argc, char *argv[])
 	uint16_t numUe = 1;
 	double simTime = 0.5;
 	double interPacketInterval = 1000;  // 500 microseconds
-	double distance = 250.0;  // eNB-UE distance in meters
+	double distance = 100.0;  // eNB-UE distance in meters
 	bool harqEnabled = false;
 
 	// Command line arguments
@@ -75,7 +75,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("harqEnable", "Enable Hybrid ARQ", harqEnabled);
 	cmd.Parse(argc, argv);
 
-	Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (10.0)));

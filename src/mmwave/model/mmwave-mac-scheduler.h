@@ -12,6 +12,7 @@
 #include "mmwave-phy.h"
 #include "mmwave-phy-mac-common.h"
 #include "mmwave-mac-sched-sap.h"
+#include "mmwave-mac-csched-sap.h"
 #include <ns3/string.h>
 #include <ns3/math.h>
 #include <ns3/enum.h>
@@ -45,6 +46,10 @@ public:
 	virtual void SetMacSchedSapUser (MmWaveMacSchedSapUser* sap) = 0;
 
 	virtual MmWaveMacSchedSapProvider* GetMacSchedSapProvider () = 0;
+
+	virtual void SetMacCschedSapUser (MmWaveMacCschedSapUser* sap) = 0;
+
+	virtual MmWaveMacCschedSapProvider* GetMacCschedSapProvider () = 0;
 
 protected:
 

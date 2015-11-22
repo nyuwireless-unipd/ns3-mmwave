@@ -101,11 +101,23 @@ public:
 	MmWaveMacSchedSapUser* GetMmWaveMacSchedSapUser ();
 	void SetMmWaveMacSchedSapProvider (MmWaveMacSchedSapProvider* ptr);
 
+	MmWaveMacCschedSapUser* GetMmWaveMacCschedSapUser ();
+	void SetMmWaveMacCschedSapProvider (MmWaveMacCschedSapProvider* ptr);
+
 	LteMacSapProvider* GetUeMacSapProvider (void);
 	LteEnbCmacSapProvider* GetEnbCmacSapProvider (void);
 
 	void SetEnbCmacSapUser (LteEnbCmacSapUser* s);
 	void ReceiveRachPreamble (uint32_t raId);
+
+	// forwarded from FfMacCchedSapUser
+	void DoCschedCellConfigCnf (MmWaveMacCschedSapUser::CschedCellConfigCnfParameters params);
+	void DoCschedUeConfigCnf (MmWaveMacCschedSapUser::CschedUeConfigCnfParameters params);
+	void DoCschedLcConfigCnf (MmWaveMacCschedSapUser::CschedLcConfigCnfParameters params);
+	void DoCschedLcReleaseCnf (MmWaveMacCschedSapUser::CschedLcReleaseCnfParameters params);
+	void DoCschedUeReleaseCnf (MmWaveMacCschedSapUser::CschedUeReleaseCnfParameters params);
+	void DoCschedUeConfigUpdateInd (MmWaveMacCschedSapUser::CschedUeConfigUpdateIndParameters params);
+	void DoCschedCellConfigUpdateInd (MmWaveMacCschedSapUser::CschedCellConfigUpdateIndParameters params);
 
 private:
 	// forwarded from LteEnbCmacSapProvider
@@ -149,6 +161,8 @@ private:
 
 	MmWaveMacSchedSapProvider* m_macSchedSapProvider;
 	MmWaveMacSchedSapUser* m_macSchedSapUser;
+	MmWaveMacCschedSapProvider* m_macCschedSapProvider;
+	MmWaveMacCschedSapUser* m_macCschedSapUser;
 
 	std::map<uint8_t, uint32_t> m_receivedRachPreambleCount;
 
