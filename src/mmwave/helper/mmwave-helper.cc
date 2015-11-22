@@ -66,7 +66,7 @@ MmWaveHelper::GetTypeId (void)
 				      "The type of scheduler to be used for eNBs. "
 				      "The allowed values for this attributes are the type names "
 				      "of any class inheriting from ns3::MmWaveMacScheduler.",
-				      StringValue ("ns3::MmWaveFlexTtiHarqMacScheduler"),
+				      StringValue ("ns3::MmWaveFlexTtiMacScheduler"),
 				      MakeStringAccessor (&MmWaveHelper::SetSchedulerType,
 				                          &MmWaveHelper::GetSchedulerType),
 				      MakeStringChecker ())
@@ -362,6 +362,8 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	sched->ConfigureCommonParameters (m_phyMacCommon);
 	mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
 	sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
+	mac->SetMmWaveMacCschedSapProvider(sched->GetMacCschedSapProvider());
+	sched->SetMacCschedSapUser (mac->GetMmWaveMacCschedSapUser());
 
 	phy->SetPhySapUser (mac->GetPhySapUser());
 	mac->SetPhySapProvider (phy->GetPhySapProvider());
@@ -713,8 +715,8 @@ MmWaveHelper::EnableTraces (void)
 	//EnableEnbPacketCountTrace ();
 	//EnableUePacketCountTrace ();
 	//EnableTransportBlockTrace ();
-	//EnableRlcTraces ();
-	//EnablePdcpTraces ();
+	EnableRlcTraces ();
+	EnablePdcpTraces ();
 }
 
 void
@@ -766,12 +768,12 @@ MmWaveHelper::EnableTransportBlockTrace ()
 void
 MmWaveHelper::EnableRlcTraces (void)
 {
-  NS_ASSERT_MSG (m_rlcStats == 0, "please make sure that LteHelper::EnableRlcTraces is called at most once");
-  m_rlcStats = CreateObject<RadioBearerStatsCalculator> ("RLC");
+  NS_ASSERT_MSG (m_rlcStats == 0, "please make sure that MmWaveHelper::EnableRlcTraces is called at most once");
+  m_rlcStats = CreateObject<MmWaveBearerStatsCalculator> ("RLC");
   m_radioBearerStatsConnector.EnableRlcStats (m_rlcStats);
 }
 
-Ptr<RadioBearerStatsCalculator>
+Ptr<MmWaveBearerStatsCalculator>
 MmWaveHelper::GetRlcStats (void)
 {
   return m_rlcStats;
@@ -780,12 +782,12 @@ MmWaveHelper::GetRlcStats (void)
 void
 MmWaveHelper::EnablePdcpTraces (void)
 {
-  NS_ASSERT_MSG (m_pdcpStats == 0, "please make sure that LteHelper::EnablePdcpTraces is called at most once");
-  m_pdcpStats = CreateObject<RadioBearerStatsCalculator> ("PDCP");
+  NS_ASSERT_MSG (m_pdcpStats == 0, "please make sure that MmWaveHelper::EnablePdcpTraces is called at most once");
+  m_pdcpStats = CreateObject<MmWaveBearerStatsCalculator> ("PDCP");
   m_radioBearerStatsConnector.EnablePdcpStats (m_pdcpStats);
 }
 
-Ptr<RadioBearerStatsCalculator>
+Ptr<MmWaveBearerStatsCalculator>
 MmWaveHelper::GetPdcpStats (void)
 {
   return m_pdcpStats;
