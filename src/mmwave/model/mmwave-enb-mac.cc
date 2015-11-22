@@ -200,6 +200,71 @@ MmWaveMacMemberMacSchedSapUser::SchedConfigInd (const struct SchedConfigIndParam
 }
 
 
+class MmWaveMacMemberMacCschedSapUser : public MmWaveMacCschedSapUser
+{
+public:
+  MmWaveMacMemberMacCschedSapUser (MmWaveEnbMac* mac);
+
+  virtual void CschedCellConfigCnf (const struct MmWaveMacCschedSapUser::CschedCellConfigCnfParameters& params);
+  virtual void CschedUeConfigCnf (const struct MmWaveMacCschedSapUser::CschedUeConfigCnfParameters& params);
+  virtual void CschedLcConfigCnf (const struct MmWaveMacCschedSapUser::CschedLcConfigCnfParameters& params);
+  virtual void CschedLcReleaseCnf (const struct MmWaveMacCschedSapUser::CschedLcReleaseCnfParameters& params);
+  virtual void CschedUeReleaseCnf (const struct MmWaveMacCschedSapUser::CschedUeReleaseCnfParameters& params);
+  virtual void CschedUeConfigUpdateInd (const struct MmWaveMacCschedSapUser::CschedUeConfigUpdateIndParameters& params);
+  virtual void CschedCellConfigUpdateInd (const struct MmWaveMacCschedSapUser::CschedCellConfigUpdateIndParameters& params);
+
+private:
+  MmWaveEnbMac* m_mac;
+};
+
+
+MmWaveMacMemberMacCschedSapUser::MmWaveMacMemberMacCschedSapUser (MmWaveEnbMac* mac)
+  : m_mac (mac)
+{
+}
+
+void
+MmWaveMacMemberMacCschedSapUser::CschedCellConfigCnf (const struct CschedCellConfigCnfParameters& params)
+{
+  m_mac->DoCschedCellConfigCnf (params);
+}
+
+void
+MmWaveMacMemberMacCschedSapUser::CschedUeConfigCnf (const struct CschedUeConfigCnfParameters& params)
+{
+  m_mac->DoCschedUeConfigCnf (params);
+}
+
+void
+MmWaveMacMemberMacCschedSapUser::CschedLcConfigCnf (const struct CschedLcConfigCnfParameters& params)
+{
+  m_mac->DoCschedLcConfigCnf (params);
+}
+
+void
+MmWaveMacMemberMacCschedSapUser::CschedLcReleaseCnf (const struct CschedLcReleaseCnfParameters& params)
+{
+  m_mac->DoCschedLcReleaseCnf (params);
+}
+
+void
+MmWaveMacMemberMacCschedSapUser::CschedUeReleaseCnf (const struct CschedUeReleaseCnfParameters& params)
+{
+  m_mac->DoCschedUeReleaseCnf (params);
+}
+
+void
+MmWaveMacMemberMacCschedSapUser::CschedUeConfigUpdateInd (const struct CschedUeConfigUpdateIndParameters& params)
+{
+  m_mac->DoCschedUeConfigUpdateInd (params);
+}
+
+void
+MmWaveMacMemberMacCschedSapUser::CschedCellConfigUpdateInd (const struct CschedCellConfigUpdateIndParameters& params)
+{
+  m_mac->DoCschedCellConfigUpdateInd (params);
+}
+
 TypeId
 MmWaveEnbMac::GetTypeId (void)
 {
@@ -221,6 +286,7 @@ MmWaveEnbMac::MmWaveEnbMac (void) :
 	m_macSapProvider = new EnbMacMemberLteMacSapProvider<MmWaveEnbMac> (this);
 	m_phySapUser = new MmWaveMacEnbMemberPhySapUser (this);
 	m_macSchedSapUser = new MmWaveMacMemberMacSchedSapUser (this);
+	m_macCschedSapUser = new MmWaveMacMemberMacCschedSapUser (this);
 }
 
 MmWaveEnbMac::~MmWaveEnbMac (void)
@@ -462,6 +528,18 @@ void
 MmWaveEnbMac::SetMmWaveMacSchedSapProvider (MmWaveMacSchedSapProvider* ptr)
 {
 	m_macSchedSapProvider = ptr;
+}
+
+MmWaveMacCschedSapUser*
+MmWaveEnbMac::GetMmWaveMacCschedSapUser ()
+{
+	return m_macCschedSapUser;
+}
+
+void
+MmWaveEnbMac::SetMmWaveMacCschedSapProvider (MmWaveMacCschedSapProvider* ptr)
+{
+	m_macCschedSapProvider = ptr;
 }
 
 void
@@ -707,6 +785,12 @@ void
 MmWaveEnbMac::DoConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth)
 {
   NS_LOG_FUNCTION (this << " ulBandwidth=" << (uint16_t) ulBandwidth << " dlBandwidth=" << (uint16_t) dlBandwidth);
+  MmWaveMacCschedSapProvider::CschedCellConfigReqParameters params;
+  // Configure the subset of parameters used by FfMacScheduler
+  params.m_ulBandwidth = ulBandwidth;
+  params.m_dlBandwidth = dlBandwidth;
+  //m_macChTtiDelay = m_phySapProvider->GetMacChTtiDelay ();  // Gets set by MmWavePhyMacCommon
+  m_macCschedSapProvider->CschedCellConfigReq (params);
 }
 
 
@@ -718,12 +802,16 @@ MmWaveEnbMac::DoAddUe (uint16_t rnti)
 	std::pair <std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator, bool>
 	 ret = m_rlcAttached.insert (std::pair <uint16_t,  std::map<uint8_t, LteMacSapUser*> >
 								  (rnti, empty));
-	m_associatedUe.push_back (rnti);
 	NS_ASSERT_MSG (ret.second, "element already present, RNTI already existed");
+	//m_associatedUe.push_back (rnti);
+
+	MmWaveMacCschedSapProvider::CschedUeConfigReqParameters params;
+	params.m_rnti = rnti;
+	params.m_transmissionMode = 0; // set to default value (SISO) for avoiding random initialization (valgrind error)
+	m_macCschedSapProvider->CschedUeConfigReq (params);
 
 	// Create DL transmission HARQ buffers
 	DlHarqProcessesBuffer_t buf;
-	//std::vector < Ptr<PacketBurst> > dlHarqLayer0pkt;
 	uint16_t harqNum = m_phyMacConfig->GetNumHarqProcess ();
 	buf.resize (harqNum);
 	for (uint8_t i = 0; i < harqNum; i++)
@@ -739,7 +827,11 @@ void
 MmWaveEnbMac::DoRemoveUe (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << " rnti=" << rnti);
+  MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters params;
+  params.m_rnti = rnti;
+  m_macCschedSapProvider->CschedUeReleaseReq (params);
   m_miDlHarqProcessesPackets.erase (rnti);
+  m_rlcAttached.erase (rnti);
 }
 
 void
@@ -764,6 +856,30 @@ MmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
       NS_LOG_ERROR ("LC already exists");
     }
 
+  // CCCH (LCID 0) is pre-configured
+  // see FF LTE MAC Scheduler
+  // Interface Specification v1.11,
+  // 4.3.4 logicalChannelConfigListElement
+  if (lcinfo.lcId != 0)
+  {
+  	struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters params;
+  	params.m_rnti = lcinfo.rnti;
+  	params.m_reconfigureFlag = false;
+
+  	struct LogicalChannelConfigListElement_s lccle;
+  	lccle.m_logicalChannelIdentity = lcinfo.lcId;
+  	lccle.m_logicalChannelGroup = lcinfo.lcGroup;
+  	lccle.m_direction = LogicalChannelConfigListElement_s::DIR_BOTH;
+  	lccle.m_qosBearerType = lcinfo.isGbr ? LogicalChannelConfigListElement_s::QBT_GBR : LogicalChannelConfigListElement_s::QBT_NON_GBR;
+  	lccle.m_qci = lcinfo.qci;
+  	lccle.m_eRabMaximulBitrateUl = lcinfo.mbrUl;
+  	lccle.m_eRabMaximulBitrateDl = lcinfo.mbrDl;
+  	lccle.m_eRabGuaranteedBitrateUl = lcinfo.gbrUl;
+  	lccle.m_eRabGuaranteedBitrateDl = lcinfo.gbrDl;
+  	params.m_logicalChannelConfigList.push_back (lccle);
+
+  	m_macCschedSapProvider->CschedLcConfigReq (params);
+  }
 }
 
 void
@@ -775,18 +891,26 @@ MmWaveEnbMac::DoReconfigureLc (LteEnbCmacSapProvider::LcInfo lcinfo)
 void
 MmWaveEnbMac::DoReleaseLc (uint16_t rnti, uint8_t lcid)
 {
-  NS_FATAL_ERROR ("not implemented");
+	//Find user based on rnti and then erase lcid stored against the same
+	std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
+	rntiIt->second.erase (lcid);
+
+	struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters params;
+	params.m_rnti = rnti;
+	params.m_logicalChannelIdentity.push_back (lcid);
+	m_macCschedSapProvider->CschedLcReleaseReq (params);
 }
 
 void
 MmWaveEnbMac::UeUpdateConfigurationReq (LteEnbCmacSapProvider::UeConfig params)
 {
   NS_LOG_FUNCTION (this);
-  //FfMacCschedSapProvider::CschedUeConfigReqParameters req;
-  //req.m_rnti = params.m_rnti;
-  //req.m_transmissionMode = params.m_transmissionMode;
-  //req.m_reconfigureFlag = true;
-  //m_macScheduler->CschedUeConfigReq (req);
+  // propagates to scheduler
+  MmWaveMacCschedSapProvider::CschedUeConfigReqParameters req;
+  req.m_rnti = params.m_rnti;
+  req.m_transmissionMode = params.m_transmissionMode;
+  req.m_reconfigureFlag = true;
+  m_macCschedSapProvider->CschedUeConfigReq (req);
 }
 
 LteEnbCmacSapProvider::RachConfig
@@ -801,6 +925,60 @@ MmWaveEnbMac::DoAllocateNcRaPreamble (uint16_t rnti)
 {
 	LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue ret;
   return ret;
+}
+
+// ////////////////////////////////////////////
+// CSCHED SAP
+// ////////////////////////////////////////////
+
+
+void
+MmWaveEnbMac::DoCschedCellConfigCnf (MmWaveMacCschedSapUser::CschedCellConfigCnfParameters params)
+{
+  NS_LOG_FUNCTION (this);
+}
+
+void
+MmWaveEnbMac::DoCschedUeConfigCnf (MmWaveMacCschedSapUser::CschedUeConfigCnfParameters params)
+{
+  NS_LOG_FUNCTION (this);
+}
+
+void
+MmWaveEnbMac::DoCschedLcConfigCnf (MmWaveMacCschedSapUser::CschedLcConfigCnfParameters params)
+{
+  NS_LOG_FUNCTION (this);
+  // Call the CSCHED primitive
+  // m_cschedSap->LcConfigCompleted();
+}
+
+void
+MmWaveEnbMac::DoCschedLcReleaseCnf (MmWaveMacCschedSapUser::CschedLcReleaseCnfParameters params)
+{
+  NS_LOG_FUNCTION (this);
+}
+
+void
+MmWaveEnbMac::DoCschedUeReleaseCnf (MmWaveMacCschedSapUser::CschedUeReleaseCnfParameters params)
+{
+  NS_LOG_FUNCTION (this);
+}
+
+void
+MmWaveEnbMac::DoCschedUeConfigUpdateInd (MmWaveMacCschedSapUser::CschedUeConfigUpdateIndParameters params)
+{
+  NS_LOG_FUNCTION (this);
+  // propagates to RRC
+  LteEnbCmacSapUser::UeConfig ueConfigUpdate;
+  ueConfigUpdate.m_rnti = params.m_rnti;
+  ueConfigUpdate.m_transmissionMode = params.m_transmissionMode;
+  m_cmacSapUser->RrcConfigurationUpdateInd (ueConfigUpdate);
+}
+
+void
+MmWaveEnbMac::DoCschedCellConfigUpdateInd (MmWaveMacCschedSapUser::CschedCellConfigUpdateIndParameters params)
+{
+  NS_LOG_FUNCTION (this);
 }
 
 }

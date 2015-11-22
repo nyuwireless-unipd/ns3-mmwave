@@ -7,9 +7,7 @@
 
 #include <ns3/log.h>
 #include <ns3/abort.h>
-//#include "mmwave-mac-sched-sap.h"
-#include "mmwave-flex-tti-harq-mac-scheduler.h"
-//#include "mmwave-mac-scheduler.h"
+#include "mmwave-flex-tti-maxweight-mac-scheduler.h"
 #include <ns3/lte-common.h>
 #include <ns3/boolean.h>
 #include <stdlib.h>     /* abs */
@@ -20,88 +18,143 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiHarqMacScheduler");
+NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiMaxWeightMacScheduler");
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiHarqMacScheduler);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiMaxWeightMacScheduler);
 
-class MmWaveFlexTtiHarqMacSchedSapProvider : public MmWaveMacSchedSapProvider
+class MmWaveFlexTtiMaxWeightMacCschedSapProvider : public MmWaveMacCschedSapProvider
 {
 public:
-	MmWaveFlexTtiHarqMacSchedSapProvider (MmWaveFlexTtiHarqMacScheduler* sched);
+  MmWaveFlexTtiMaxWeightMacCschedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* scheduler);
 
-  virtual void SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
-	virtual void SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
-	virtual void SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params);
-	virtual void SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
-  virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
+  // inherited from MmWaveMacCschedSapProvider
+  virtual void CschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params);
+  virtual void CschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params);
+  virtual void CschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params);
+  virtual void CschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params);
+  virtual void CschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params);
 
 private:
-  MmWaveFlexTtiHarqMacSchedSapProvider ();
-	MmWaveFlexTtiHarqMacScheduler* m_scheduler;
+  MmWaveFlexTtiMaxWeightMacCschedSapProvider ();
+  MmWaveFlexTtiMaxWeightMacScheduler* m_scheduler;
 };
 
-MmWaveFlexTtiHarqMacSchedSapProvider::MmWaveFlexTtiHarqMacSchedSapProvider ()
+MmWaveFlexTtiMaxWeightMacCschedSapProvider::MmWaveFlexTtiMaxWeightMacCschedSapProvider ()
 {
 }
 
-MmWaveFlexTtiHarqMacSchedSapProvider::MmWaveFlexTtiHarqMacSchedSapProvider (MmWaveFlexTtiHarqMacScheduler* sched)
-	:m_scheduler(sched)
+MmWaveFlexTtiMaxWeightMacCschedSapProvider::MmWaveFlexTtiMaxWeightMacCschedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* scheduler)
+	: m_scheduler (scheduler)
 {
-
 }
 
 void
-MmWaveFlexTtiHarqMacSchedSapProvider::SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
+MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
+{
+  m_scheduler->DoCschedCellConfigReq (params);
+}
+
+void
+MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
+{
+  m_scheduler->DoCschedUeConfigReq (params);
+}
+
+
+void
+MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
+{
+  m_scheduler->DoCschedLcConfigReq (params);
+}
+
+void
+MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
+{
+  m_scheduler->DoCschedLcReleaseReq (params);
+}
+
+void
+MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
+{
+  m_scheduler->DoCschedUeReleaseReq (params);
+}
+
+class MmWaveFlexTtiMaxWeightMacSchedSapProvider : public MmWaveMacSchedSapProvider
+{
+public:
+	MmWaveFlexTtiMaxWeightMacSchedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* sched);
+
+	virtual void SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
+	virtual void SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
+	virtual void SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params);
+	virtual void SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
+	virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
+
+private:
+  MmWaveFlexTtiMaxWeightMacSchedSapProvider ();
+	MmWaveFlexTtiMaxWeightMacScheduler* m_scheduler;
+};
+
+MmWaveFlexTtiMaxWeightMacSchedSapProvider::MmWaveFlexTtiMaxWeightMacSchedSapProvider ()
+{
+}
+
+MmWaveFlexTtiMaxWeightMacSchedSapProvider::MmWaveFlexTtiMaxWeightMacSchedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* sched)
+	:m_scheduler(sched)
+{
+}
+
+void
+MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
 {
   m_scheduler->DoSchedDlRlcBufferReq (params);
 }
 
 void
-MmWaveFlexTtiHarqMacSchedSapProvider::SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
+MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
 {
 	m_scheduler->DoSchedTriggerReq(params);
 }
 
 void
-MmWaveFlexTtiHarqMacSchedSapProvider::SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
 {
 	m_scheduler->DoSchedDlCqiInfoReq (params);
 }
 
 void
-MmWaveFlexTtiHarqMacSchedSapProvider::SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
 {
   m_scheduler->DoSchedUlCqiInfoReq (params);
 }
 
 void
-MmWaveFlexTtiHarqMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
+MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
 {
   m_scheduler->DoSchedUlMacCtrlInfoReq (params);
 
 }
 
 
-MmWaveFlexTtiHarqMacScheduler::MmWaveFlexTtiHarqMacScheduler ()
-: m_directions (""),
-  m_isDirnUpdated (false),
-  m_nextRnti (0),
+MmWaveFlexTtiMaxWeightMacScheduler::MmWaveFlexTtiMaxWeightMacScheduler ()
+: m_nextRnti (0),
   m_subframeNo (0),
   m_tbUid (0),
-  m_macSchedSapUser (0)
+  m_macSchedSapUser (0),
+	m_macCschedSapUser (0)
 {
 	NS_LOG_FUNCTION (this);
-
-	m_macSchedSapProvider = new MmWaveFlexTtiHarqMacSchedSapProvider (this);
+	m_macSchedSapProvider = new MmWaveFlexTtiMaxWeightMacSchedSapProvider (this);
+	m_macCschedSapProvider = new MmWaveFlexTtiMaxWeightMacCschedSapProvider (this);
 }
 
-MmWaveFlexTtiHarqMacScheduler::~MmWaveFlexTtiHarqMacScheduler ()
+MmWaveFlexTtiMaxWeightMacScheduler::~MmWaveFlexTtiMaxWeightMacScheduler ()
 {
 	NS_LOG_FUNCTION (this);
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoDispose (void)
+MmWaveFlexTtiMaxWeightMacScheduler::DoDispose (void)
 {
 	NS_LOG_FUNCTION (this);
 	m_wbCqiRxed.clear();
@@ -112,36 +165,35 @@ MmWaveFlexTtiHarqMacScheduler::DoDispose (void)
   m_ulHarqCurrentProcessId.clear ();
   m_ulHarqProcessesStatus.clear ();
   m_ulHarqProcessesDciInfoMap.clear ();
-//  delete m_cschedSapProvider;
+  delete m_macCschedSapProvider;
   delete m_macSchedSapProvider;
-	m_directions.clear ();
 }
 
 TypeId
-MmWaveFlexTtiHarqMacScheduler::GetTypeId (void)
+MmWaveFlexTtiMaxWeightMacScheduler::GetTypeId (void)
 {
-	static TypeId tid = TypeId ("ns3::MmWaveFlexTtiHarqMacScheduler")
+	static TypeId tid = TypeId ("ns3::MmWaveFlexTtiMaxWeightMacScheduler")
 	    .SetParent<MmWaveMacScheduler> ()
-		.AddConstructor<MmWaveFlexTtiHarqMacScheduler> ()
+		.AddConstructor<MmWaveFlexTtiMaxWeightMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
                    UintegerValue (10),
-                   MakeUintegerAccessor (&MmWaveFlexTtiHarqMacScheduler::m_cqiTimersThreshold),
+                   MakeUintegerAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_cqiTimersThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
                    "Activate/Deactivate the HARQ [by default is active].",
                    BooleanValue (false),
-                   MakeBooleanAccessor (&MmWaveFlexTtiHarqMacScheduler::m_harqOn),
+                   MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_harqOn),
                    MakeBooleanChecker ())
 	 .AddAttribute ("FixedMcsDl",
 									"Fix MCS to value set in McsDlDefault",
 									BooleanValue (false),
-									MakeBooleanAccessor (&MmWaveFlexTtiHarqMacScheduler::m_fixedMcsDl),
+									MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_fixedMcsDl),
 									MakeBooleanChecker ())
 	.AddAttribute ("McsDefaultDl",
 								 "Fixed DL MCS",
 								 UintegerValue (1),
-								 MakeUintegerAccessor (&MmWaveFlexTtiHarqMacScheduler::m_mcsDefaultDl),
+								 MakeUintegerAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_mcsDefaultDl),
 								 MakeUintegerChecker<uint8_t> ())
 		;
 
@@ -149,19 +201,32 @@ MmWaveFlexTtiHarqMacScheduler::GetTypeId (void)
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::SetMacSchedSapUser (MmWaveMacSchedSapUser* sap)
+MmWaveFlexTtiMaxWeightMacScheduler::SetMacSchedSapUser (MmWaveMacSchedSapUser* sap)
 {
 	m_macSchedSapUser = sap;
 }
 
+void
+MmWaveFlexTtiMaxWeightMacScheduler::SetMacCschedSapUser (MmWaveMacCschedSapUser* sap)
+{
+	m_macCschedSapUser = sap;
+}
+
+
 MmWaveMacSchedSapProvider*
-MmWaveFlexTtiHarqMacScheduler::GetMacSchedSapProvider ()
+MmWaveFlexTtiMaxWeightMacScheduler::GetMacSchedSapProvider ()
 {
 	return m_macSchedSapProvider;
 }
 
+MmWaveMacCschedSapProvider*
+MmWaveFlexTtiMaxWeightMacScheduler::GetMacCschedSapProvider ()
+{
+	return m_macCschedSapProvider;
+}
+
 void
-MmWaveFlexTtiHarqMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
+MmWaveFlexTtiMaxWeightMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
 {
 	m_phyMacConfig = config;
 	m_amc = CreateObject <MmWaveAmc> (m_phyMacConfig);
@@ -180,7 +245,7 @@ MmWaveFlexTtiHarqMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
 {
   NS_LOG_FUNCTION (this << params.m_rnti << (uint32_t) params.m_logicalChannelIdentity);
   // API generated by RLC for updating RLC parameters on a LC (tx and retx queues)
@@ -209,29 +274,10 @@ MmWaveFlexTtiHarqMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSche
   	// initialized to 1 (i.e., the lowest value for transmitting a signal)
   	m_wbCqiTimers.insert ( std::pair<uint16_t, uint32_t > (params.m_rnti, m_cqiTimersThreshold));
   }
-
-  if (m_dlHarqCurrentProcessId.find (params.m_rnti) == m_dlHarqCurrentProcessId.end ())
-  {
-  	// TODO: Add Csched SAP (currently no csched sap methods, so put this code here for now - RDF)
-  	m_dlHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
-  	DlHarqProcessesStatus_t dlHarqPrcStatus;
-  	dlHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
-  	m_dlHarqProcessesStatus.insert (std::pair <uint16_t, DlHarqProcessesStatus_t> (params.m_rnti, dlHarqPrcStatus));
-  	DlHarqProcessesTimer_t dlHarqProcessesTimer;
-  	dlHarqProcessesTimer.resize (m_phyMacConfig->GetNumHarqProcess (),0);
-  	m_dlHarqProcessesTimer.insert (std::pair <uint16_t, DlHarqProcessesTimer_t> (params.m_rnti, dlHarqProcessesTimer));
-  	DlHarqProcessesDciInfoList_t dlHarqTbInfoList;
-  	dlHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
-  	m_dlHarqProcessesDciInfoMap.insert (std::pair <uint16_t, DlHarqProcessesDciInfoList_t> (params.m_rnti, dlHarqTbInfoList));
-  	DlHarqRlcPduList_t dlHarqRlcPduList;
-  	dlHarqRlcPduList.resize (m_phyMacConfig->GetNumHarqProcess ());
-  	m_dlHarqProcessesRlcPduMap.insert (std::pair <uint16_t, DlHarqRlcPduList_t> (params.m_rnti, dlHarqRlcPduList));
-  }
-  return;
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoSchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
 
@@ -271,13 +317,11 @@ MmWaveFlexTtiHarqMacScheduler::DoSchedDlCqiInfoReq (const struct MmWaveMacSchedS
           NS_LOG_ERROR (this << " CQI type unknown");
         }
     }
-
-  return;
 }
 
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
 
@@ -356,7 +400,7 @@ MmWaveFlexTtiHarqMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedS
 
 
 void
-MmWaveFlexTtiHarqMacScheduler::RefreshHarqProcesses ()
+MmWaveFlexTtiMaxWeightMacScheduler::RefreshHarqProcesses ()
 {
 	NS_LOG_FUNCTION (this);
 
@@ -387,7 +431,7 @@ MmWaveFlexTtiHarqMacScheduler::RefreshHarqProcesses ()
 }
 
 uint8_t
-MmWaveFlexTtiHarqMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
+MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
 {
 	NS_LOG_FUNCTION (this << rnti);
 
@@ -443,7 +487,7 @@ MmWaveFlexTtiHarqMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
 }
 
 uint8_t
-MmWaveFlexTtiHarqMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
+MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 {
 	NS_LOG_FUNCTION (this << rnti);
 
@@ -495,7 +539,7 @@ MmWaveFlexTtiHarqMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 //	return ((*it).second);
 }
 
-unsigned MmWaveFlexTtiHarqMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize)
+unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize)
 {
 	// bisection line search to find minimum number of slots needed to encode entire buffer
 	MmWaveMacPduHeader dummyMacHeader;
@@ -540,7 +584,7 @@ unsigned MmWaveFlexTtiHarqMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsig
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
 {
 	uint16_t frameNum = params.m_snfSf.m_frameNum;
 	uint8_t	sfNum = params.m_snfSf.m_sfNum;
@@ -1303,7 +1347,7 @@ MmWaveFlexTtiHarqMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSap
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
 {
 	NS_LOG_FUNCTION (this);
 
@@ -1341,18 +1385,6 @@ MmWaveFlexTtiHarqMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSc
 				(*it).second = buffer;
 				NS_LOG_INFO (this << " Update RNTI " << rnti << " queue " << buffer);
 			}
-
-			if (m_ulHarqCurrentProcessId.find (rnti) == m_ulHarqCurrentProcessId.end ())
-			{
-				// TODO: Add Csched SAP (currently no csched sap methods, so put this code here for now - RDF)
-//				m_ulHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (rnti, 0));
-				UlHarqProcessesStatus_t ulHarqPrcStatus;
-				ulHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
-				m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (rnti, ulHarqPrcStatus));
-				UlHarqProcessesDciInfoList_t ulHarqTbInfoList;
-				ulHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
-				m_ulHarqProcessesDciInfoMap.insert (std::pair <uint16_t, UlHarqProcessesDciInfoList_t> (rnti, ulHarqTbInfoList));
-			}
 		}
 	}
 
@@ -1360,14 +1392,14 @@ MmWaveFlexTtiHarqMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSc
 }
 
 bool
-MmWaveFlexTtiHarqMacScheduler::SortRlcBufferReq (MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters i, MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters j)
+MmWaveFlexTtiMaxWeightMacScheduler::SortRlcBufferReq (MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters i, MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters j)
 {
   return (i.m_rnti < j.m_rnti);
 }
 
 
 void
-MmWaveFlexTtiHarqMacScheduler::RefreshDlCqiMaps (void)
+MmWaveFlexTtiMaxWeightMacScheduler::RefreshDlCqiMaps (void)
 {
   NS_LOG_FUNCTION (this << m_wbCqiTimers.size ());
   // refresh DL CQI P01 Map
@@ -1398,7 +1430,7 @@ MmWaveFlexTtiHarqMacScheduler::RefreshDlCqiMaps (void)
 
 
 void
-MmWaveFlexTtiHarqMacScheduler::RefreshUlCqiMaps (void)
+MmWaveFlexTtiMaxWeightMacScheduler::RefreshUlCqiMaps (void)
 {
   // refresh UL CQI  Map
   std::map <uint16_t,uint32_t>::iterator itUl = m_ueCqiTimers.begin ();
@@ -1428,7 +1460,7 @@ MmWaveFlexTtiHarqMacScheduler::RefreshUlCqiMaps (void)
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size)
+MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size)
 {
   NS_LOG_FUNCTION (this);
   std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
@@ -1479,7 +1511,7 @@ MmWaveFlexTtiHarqMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lci
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size)
+MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size)
 {
 
   size = size - 2; // remove the minimum RLC overhead
@@ -1503,61 +1535,56 @@ MmWaveFlexTtiHarqMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t si
 
 }
 
-/*
+
 void
-MmWaveFlexTtiHarqMacScheduler::DoCschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoCschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
   // Read the subset of parameters used
   m_cschedCellConfig = params;
-  m_rachAllocationMap.resize (m_cschedCellConfig.m_ulBandwidth, 0);
-  FfMacCschedSapUser::CschedUeConfigCnfParameters cnf;
+  //m_rachAllocationMap.resize (m_cschedCellConfig.m_ulBandwidth, 0);
+  MmWaveMacCschedSapUser::CschedUeConfigCnfParameters cnf;
   cnf.m_result = SUCCESS;
-  m_cschedSapUser->CschedUeConfigCnf (cnf);
+  m_macCschedSapUser->CschedUeConfigCnf (cnf);
   return;
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
 {
   NS_LOG_FUNCTION (this << " RNTI " << params.m_rnti << " txMode " << (uint16_t)params.m_transmissionMode);
-  std::map <uint16_t,uint8_t>::iterator it = m_uesTxMode.find (params.m_rnti);
-  if (it == m_uesTxMode.end ())
-    {
-//      m_uesTxMode.insert (std::pair <uint16_t, double> (params.m_rnti, params.m_transmissionMode));
-      // generate HARQ buffers
-      m_dlHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
-      DlHarqProcessesStatus_t dlHarqPrcStatus;
-      dlHarqPrcStatus.resize (8,0);
-      m_dlHarqProcessesStatus.insert (std::pair <uint16_t, DlHarqProcessesStatus_t> (params.m_rnti, dlHarqPrcStatus));
-      DlHarqProcessesTimer_t dlHarqProcessesTimer;
-      dlHarqProcessesTimer.resize (8,0);
-      m_dlHarqProcessesTimer.insert (std::pair <uint16_t, DlHarqProcessesTimer_t> (params.m_rnti, dlHarqProcessesTimer));
-      DlHarqProcessesDciBuffer_t dlHarqdci;
-      dlHarqdci.resize (8);
-      m_dlHarqProcessesDciInfoMap.insert (std::pair <uint16_t, DlHarqProcessesDciInfoList_t> (params.m_rnti, dlHarqdci));
-      DlHarqRlcPduListBuffer_t dlHarqRlcPdu;
-      dlHarqRlcPdu.resize (2);
-      dlHarqRlcPdu.at (0).resize (8);
-      dlHarqRlcPdu.at (1).resize (8);
-      m_dlHarqProcessesRlcPduMap.insert (std::pair <uint16_t, DlHarqRlcPduListBuffer_t> (params.m_rnti, dlHarqRlcPdu));
-      m_ulHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
-      UlHarqProcessesStatus_t ulHarqPrcStatus;
-      ulHarqPrcStatus.resize (8,0);
-      m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (params.m_rnti, ulHarqPrcStatus));
-      UlHarqProcessesDciBuffer_t ulHarqdci;
-      ulHarqdci.resize (8);
-      m_ulHarqProcessesDciInfoMap.insert (std::pair <uint16_t, UlHarqProcessesDciInfoList_t> (params.m_rnti, ulHarqdci));
-    }
-  else
-    {
-      (*it).second = params.m_transmissionMode;
-    }
-  return;
+
+  if (m_dlHarqProcessesStatus.find (params.m_rnti) == m_dlHarqProcessesStatus.end ())
+  {
+  	//m_dlHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (params.m_rnti, 0));
+  	DlHarqProcessesStatus_t dlHarqPrcStatus;
+  	dlHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
+  	m_dlHarqProcessesStatus.insert (std::pair <uint16_t, DlHarqProcessesStatus_t> (params.m_rnti, dlHarqPrcStatus));
+  	DlHarqProcessesTimer_t dlHarqProcessesTimer;
+  	dlHarqProcessesTimer.resize (m_phyMacConfig->GetNumHarqProcess (),0);
+  	m_dlHarqProcessesTimer.insert (std::pair <uint16_t, DlHarqProcessesTimer_t> (params.m_rnti, dlHarqProcessesTimer));
+  	DlHarqProcessesDciInfoList_t dlHarqTbInfoList;
+  	dlHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_dlHarqProcessesDciInfoMap.insert (std::pair <uint16_t, DlHarqProcessesDciInfoList_t> (params.m_rnti, dlHarqTbInfoList));
+  	DlHarqRlcPduList_t dlHarqRlcPduList;
+  	dlHarqRlcPduList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_dlHarqProcessesRlcPduMap.insert (std::pair <uint16_t, DlHarqRlcPduList_t> (params.m_rnti, dlHarqRlcPduList));
+  }
+
+  if (m_ulHarqProcessesStatus.find (params.m_rnti) == m_ulHarqProcessesStatus.end ())
+  {
+  	//				m_ulHarqCurrentProcessId.insert (std::pair <uint16_t,uint8_t > (rnti, 0));
+  	UlHarqProcessesStatus_t ulHarqPrcStatus;
+  	ulHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
+  	m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (params.m_rnti, ulHarqPrcStatus));
+  	UlHarqProcessesDciInfoList_t ulHarqTbInfoList;
+  	ulHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
+  	m_ulHarqProcessesDciInfoMap.insert (std::pair <uint16_t, UlHarqProcessesDciInfoList_t> (params.m_rnti, ulHarqTbInfoList));
+  }
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoCschedLcConfigReq (const struct MmwaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
   // Not used at this stage (LCs updated by DoSchedDlRlcBufferReq)
@@ -1565,12 +1592,12 @@ MmWaveFlexTtiHarqMacScheduler::DoCschedLcConfigReq (const struct MmwaveMacCsched
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
     for (uint16_t i = 0; i < params.m_logicalChannelIdentity.size (); i++)
     {
-     std::list<FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
+     std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
       while (it!=m_rlcBufferReq.end ())
         {
           if (((*it).m_rnti == params.m_rnti)&&((*it).m_logicalChannelIdentity == params.m_logicalChannelIdentity.at (i)))
@@ -1587,21 +1614,20 @@ MmWaveFlexTtiHarqMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCsche
 }
 
 void
-MmWaveFlexTtiHarqMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
+MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
 {
   NS_LOG_FUNCTION (this << " Release RNTI " << params.m_rnti);
 
-  m_uesTxMode.erase (params.m_rnti);
-  m_dlHarqCurrentProcessId.erase (params.m_rnti);
+  //m_dlHarqCurrentProcessId.erase (params.m_rnti);
   m_dlHarqProcessesStatus.erase  (params.m_rnti);
   m_dlHarqProcessesTimer.erase (params.m_rnti);
-  m_dlHarqProcessesDciBuffer.erase  (params.m_rnti);
-  m_dlHarqProcessesRlcPduListBuffer.erase  (params.m_rnti);
-  m_ulHarqCurrentProcessId.erase  (params.m_rnti);
+  m_dlHarqProcessesDciInfoMap.erase  (params.m_rnti);
+  m_dlHarqProcessesRlcPduMap.erase  (params.m_rnti);
+  //m_ulHarqCurrentProcessId.erase  (params.m_rnti);
   m_ulHarqProcessesStatus.erase  (params.m_rnti);
-  m_ulHarqProcessesDciBuffer.erase  (params.m_rnti);
+  m_ulHarqProcessesDciInfoMap.erase  (params.m_rnti);
   m_ceBsrRxed.erase (params.m_rnti);
-  std::list<FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
+  std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
   while (it != m_rlcBufferReq.end ())
     {
       if ((*it).m_rnti == params.m_rnti)
@@ -1626,7 +1652,7 @@ MmWaveFlexTtiHarqMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCsche
 
   return;
 }
-*/
+
 
 }
 

@@ -41,7 +41,7 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiHarqMacScheduler", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWavePhyRxTrace", LOG_LEVEL_DEBUG);
 	//LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
@@ -78,11 +78,11 @@ main (int argc, char *argv[])
 
 	if (mcsDl >= 0 && mcsDl < 29)
 	{
-		Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::FixedMcsDl", BooleanValue(true));
-		Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::McsDefaultDl", UintegerValue(mcsDl));
+		Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::FixedMcsDl", BooleanValue(true));
+		Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::McsDefaultDl", UintegerValue(mcsDl));
 	}
 
-	Config::SetDefault ("ns3::MmWaveFlexTtiHarqMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (Seconds (2*simTime)));
