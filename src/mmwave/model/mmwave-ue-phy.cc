@@ -495,7 +495,7 @@ MmWaveUePhy::StartSlot ()
 		NS_LOG_DEBUG ("UE" << m_rnti << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
-		Simulator::ScheduleNow(&MmWaveUePhy::SendDataChannels, this, pktBurst, ctrlMsg, slotPeriod-NanoSeconds(2.0), m_slotNum);
+		Simulator::Schedule (NanoSeconds(1.0), &MmWaveUePhy::SendDataChannels, this, pktBurst, ctrlMsg, slotPeriod-NanoSeconds(2.0), m_slotNum);
 	}
 
 	m_prevSlotDir = currSlot.m_tddMode;
@@ -559,6 +559,11 @@ MmWaveUePhy::EndSlot ()
 		}
 		m_slotNum++;
 		Simulator::Schedule (nextSlotStart+m_lastSfStart-Simulator::Now(), &MmWaveUePhy::StartSlot, this);
+	}
+
+	if (m_receptionEnabled)
+	{
+		m_receptionEnabled = false;
 	}
 }
 
@@ -665,7 +670,7 @@ MmWaveUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
 void
 MmWaveUePhy::GenerateDlCqiReport (const SpectrumValue& sinr)
 {
-	if(m_ulConfigured && (m_rnti > 0))
+	if(m_ulConfigured && (m_rnti > 0) && m_receptionEnabled)
 	{
 		if (Simulator::Now () > m_wbCqiLast + m_wbCqiPeriod)
 		{

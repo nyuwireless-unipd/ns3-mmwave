@@ -133,7 +133,7 @@ MmWaveBearerStatsCalculator::GetEpoch () const
 void
 MmWaveBearerStatsCalculator::UlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t rnti, uint8_t lcid, uint32_t packetSize)
 {
-  NS_LOG_FUNCTION (this << "UlTxPDU" << cellId << imsi << rnti << (uint32_t) lcid << packetSize);
+  NS_LOG_FUNCTION (this << "UlTxPdu" << cellId << imsi << rnti << (uint32_t) lcid << packetSize);
 
   if (!m_ulOutFile.is_open ())
   {
