@@ -458,6 +458,21 @@ MmWaveEnbPhy::StartSlot (void)
 		//NS_LOG_DEBUG ("Slot " << (uint8_t)m_slotNum << " scheduled for Uplink");
 		m_downlinkSpectrumPhy->AddExpectedTb(currSlot.m_dci.m_rnti, currSlot.m_dci.m_ndi, currSlot.m_dci.m_tbSize,
 		                                     currSlot.m_dci.m_mcs, m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, false);
+
+		for (uint8_t i = 0; i < m_deviceMap.size (); i++)
+		{
+			Ptr<MmWaveUeNetDevice> ueDev = DynamicCast<MmWaveUeNetDevice> (m_deviceMap.at (i));
+			uint64_t ueRnti = ueDev->GetPhy ()->GetRnti ();
+			//NS_LOG_UNCOND ("Scheduled rnti:"<<rnti <<" ue rnti:"<< ueRnti);
+			if (currSlot.m_rnti == ueRnti)
+			{
+				//NS_LOG_UNCOND ("Change Beamforming Vector");
+				Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+				antennaArray->ChangeBeamformingVector (m_deviceMap.at (i));
+				break;
+			}
+		}
+
 		NS_LOG_DEBUG ("ENB RXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now() << " end " << Simulator::Now() + slotPeriod );
@@ -548,7 +563,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 		for (uint8_t i = 0; i < m_deviceMap.size (); i++)
 		{
 			Ptr<MmWaveUeNetDevice> ueDev = DynamicCast<MmWaveUeNetDevice> (m_deviceMap.at (i));
-			uint64_t ueRnti = ueDev->GetPhy ()-> GetRnti ();
+			uint64_t ueRnti = ueDev->GetPhy ()->GetRnti ();
 			//NS_LOG_UNCOND ("Scheduled rnti:"<<rnti <<" ue rnti:"<< ueRnti);
 			if (slotInfo.m_rnti == ueRnti)
 			{

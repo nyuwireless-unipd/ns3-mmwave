@@ -49,8 +49,8 @@ main (int argc, char *argv[])
 	//	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
 //		LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 	//LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
@@ -63,7 +63,7 @@ main (int argc, char *argv[])
 	uint16_t numUe = 1;
 	double simTime = 0.5;
 	double interPacketInterval = 1000;  // 500 microseconds
-	double distance = 100.0;  // eNB-UE distance in meters
+	double distance = 150.0;  // eNB-UE distance in meters
 	bool harqEnabled = false;
 
 	// Command line arguments
@@ -78,8 +78,9 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
-	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (10.0)));
+	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
+	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 
 	RngSeedManager::SetSeed (1234);
 
@@ -171,10 +172,10 @@ main (int argc, char *argv[])
 		++otherPort;
 		PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
 		PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
-		PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), otherPort));
+		//PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), otherPort));
 		serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
 		serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
-		serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
+		//serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
 
 		UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
 		dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
@@ -184,7 +185,7 @@ main (int argc, char *argv[])
 		UdpClientHelper ulClient (remoteHostAddr, ulPort);
 		ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
 		ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
-		dlClient.SetAttribute ("PacketSize", UintegerValue(1450));
+		ulClient.SetAttribute ("PacketSize", UintegerValue(1450));
 
 //		UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
 //		client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));

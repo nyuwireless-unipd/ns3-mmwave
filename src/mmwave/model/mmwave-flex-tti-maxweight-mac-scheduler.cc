@@ -761,13 +761,13 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 		m_dlHarqInfoList = dlInfoListUntxed;
 
 		// Process UL HARQ feedback
-		for (uint16_t i = 0; i < params.m_ulHarqInfoList.size (); i++)
+		for (uint16_t i = 0; i < m_ulHarqInfoList.size (); i++)
 		{
 			if (ulSymAvail == 0)
 			{
 				break;	// no symbols left to allocate
 			}
-			UlHarqInfo harqInfo = params.m_ulHarqInfoList.at (i);
+			UlHarqInfo harqInfo = m_ulHarqInfoList.at (i);
 			uint8_t harqId = harqInfo.m_harqProcessId;
 			uint16_t rnti = harqInfo.m_rnti;
 			itUeInfo = ueInfo.find (rnti);
@@ -828,7 +828,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 				}
 				else
 				{
-					ulInfoListUntxed.push_back (params.m_ulHarqInfoList.at (i));
+					ulInfoListUntxed.push_back (m_ulHarqInfoList.at (i));
 				}
 			}
 		}

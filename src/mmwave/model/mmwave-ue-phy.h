@@ -161,6 +161,7 @@ private:
 	std::vector<int> m_channelChunks;
 
 	SlotAllocInfo m_currSlot;
+
 };
 
 
