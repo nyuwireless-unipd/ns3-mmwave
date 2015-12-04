@@ -132,8 +132,6 @@ private:
 	LteRrcSap::SystemInformationBlockType1 m_sib1;
 	std::set <uint16_t> m_ueAttachedRnti;
 
-	std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB receptions
-	std::vector< std::vector< Ptr<PacketBurst> > > m_packetBurstQueue;
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 	std::vector <int> m_channelChunks;
 

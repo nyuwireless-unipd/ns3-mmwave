@@ -15,7 +15,7 @@
 #include "mmwave-ue-net-device.h"
 #include "mmwave-spectrum-value-helper.h"
 #include <ns3/pointer.h>
-
+#include <ns3/node.h>
 
 namespace ns3{
 
@@ -37,7 +37,6 @@ MmWaveUePhy::MmWaveUePhy (Ptr<MmWaveSpectrumPhy> dlPhy, Ptr<MmWaveSpectrumPhy> u
 	NS_LOG_FUNCTION (this);
 	m_wbCqiLast = Simulator::Now ();
 	m_ueCphySapProvider = new MemberLteUeCphySapProvider<MmWaveUePhy> (this);
-	m_pucchSlotInd = 2; // default slot containing dedicated UL control channel
 	Simulator::ScheduleNow (&MmWaveUePhy::SubframeIndication, this, 0, 0);
 }
 
@@ -91,12 +90,6 @@ MmWaveUePhy::DoInitialize (void)
 	m_dlCtrlPeriod = NanoSeconds (1000 * m_phyMacConfig->GetDlCtrlSymbols() * m_phyMacConfig->GetSymbolPeriod());
 	m_ulCtrlPeriod = NanoSeconds (1000 * m_phyMacConfig->GetUlCtrlSymbols() * m_phyMacConfig->GetSymbolPeriod());
 
-	//m_dataPeriod = NanoSeconds (1000 * (m_phyMacConfig->GetSymbPerSlot() - m_phyMacConfig->GetCtrlSymbols()) * m_phyMacConfig->GetSymbolPeriod());
-	//m_numRbg = m_phyMacConfig->GetNumRb () / m_phyMacConfig->GetNumRbPerRbg ();
-	//m_ulTbAllocQueue.resize (m_phyMacConfig->GetUlSchedDelay());
-	//m_currSfAllocInfo = SfAllocInfo (m_phyMacConfig->GetSlotsPerSubframe ());
-
-	//m_sfAllocInfo.resize (m_phyMacConfig->GetSubframesPerFrame());
 	for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame(); i++)
 	{
 		m_sfAllocInfo.push_back(SfAllocInfo(SfnSf (0, i, 0)));
@@ -272,7 +265,6 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 			}
 
 //			NS_LOG_DEBUG ("UE" << m_rnti << " DCI received for RNTI " << dciInfoElem.m_rnti << " in frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " slot " << (unsigned)m_slotNum << " format " << (unsigned)dciInfoElem.m_format << " symStart " << (unsigned)dciInfoElem.m_symStart << " numSym " << (unsigned)dciInfoElem.m_numSym);
-
 
 			if (dciInfoElem.m_rnti != m_rnti)
 			{
@@ -517,14 +509,6 @@ MmWaveUePhy::EndSlot ()
 		if (m_sfNum == m_phyMacConfig->GetSubframesPerFrame ()-1)
 		{
 			sfNum = 0;
-//			if (m_frameNum == 1023)
-//			{
-//				frameNum = 0;
-//			}
-//			else
-//			{
-//				frameNum = m_frameNum + 1;
-//			}
 			frameNum = m_frameNum + 1;
 		}
 		else
@@ -577,7 +561,12 @@ MmWaveUePhy::GetSubframeNumber (void)
 void
 MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
-	m_phySapUser->ReceivePhyPdu (p);
+  Simulator::ScheduleWithContext (m_netDevice->GetNode()->GetId(),
+                                  MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()),
+                                  &MmWaveUePhySapUser::ReceivePhyPdu,
+                                  m_phySapUser,
+                                  p);
+//	m_phySapUser->ReceivePhyPdu (p);
 }
 
 void
@@ -694,7 +683,7 @@ MmWaveUePhy::ReceiveLteDlHarqFeedback (DlHarqInfo m)
   // generate feedback to eNB and send it through ideal PUCCH
   Ptr<MmWaveDlHarqFeedbackMessage> msg = Create<MmWaveDlHarqFeedbackMessage> ();
   msg->SetDlHarqFeedback (m);
-  DoSendControlMessage (msg);
+  Simulator::Schedule (MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()), &MmWaveUePhy::DoSendControlMessage, this, msg);
 }
 
 bool
@@ -750,18 +739,6 @@ MmWaveUePhy::DoSynchronizeWithEnb (uint16_t cellId)
 	{
 		NS_FATAL_ERROR ("Cell ID shall not be zero");
 	}
-	/*
-	m_cellId = cellId;
-	//TBD how to assign bandwitdh and earfcn
-	m_noiseFigure = 5.0;
-	//m_Bandwidth = BANDWIDTH;
-	//m_earfcn = 1;
-
-	Ptr<SpectrumValue> noisePsd =
-			MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_earfcn, m_Bandwidth, m_noiseFigure);
-	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
-	m_downlinkSpectrumPhy->GetSpectrumChannel()->AddRx(m_downlinkSpectrumPhy);
-	m_downlinkSpectrumPhy->SetCellId(m_cellId);*/
 }
 
 void

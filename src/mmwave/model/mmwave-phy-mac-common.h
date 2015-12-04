@@ -594,6 +594,12 @@ public:
 		return m_harqTimeout;
 	}
 
+	inline uint32_t
+	GetTbDecodeLatency (void)
+	{
+		return m_tbDecodeLatencyUs;
+	}
+
 	void
 	SetSymbPerSlot (uint32_t numSym)
 	{
@@ -753,6 +759,12 @@ public:
 		m_harqTimeout = harqDlTimeout;
 	}
 
+	void
+	SetTbDecodeLatency (uint32_t us)
+	{
+		m_tbDecodeLatencyUs = us;
+	}
+
 private:
 	uint32_t m_symbolsPerSlot;
 	double   m_symbolPeriod; // in micro seconds
@@ -782,6 +794,8 @@ private:
 	uint32_t m_l1L2DataLatency; // In no. of slots
 	uint32_t m_ulSchedDelay;	// delay between transmission of UL-DCI and corresponding subframe in TTIs
 	uint32_t m_wbCqiPeriodUs;	// WB CQI periodicity in microseconds
+
+	uint32_t m_tbDecodeLatencyUs;
 
 	std::string m_staticTddPattern;
 };

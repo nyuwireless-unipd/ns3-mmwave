@@ -105,8 +105,6 @@ protected:
 
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
-//	std::vector< Ptr<PacketBurst> > m_packetBurstQueue;
-	std::vector< std::vector< Ptr<PacketBurst> > > m_packetBurstQueue;
 	std::map<uint32_t, Ptr<PacketBurst> > m_packetBurstMap;
 	std::vector< std::list<Ptr<MmWaveControlMessage> > > m_controlMessageQueue;
 

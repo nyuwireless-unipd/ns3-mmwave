@@ -120,15 +120,6 @@ MmWavePhy::~MmWavePhy ()
 void
 MmWavePhy::DoInitialize ()
 {
-/*	m_packetBurstQueue.resize (m_phyMacConfig->GetSubframesPerFrame ());
-	for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame (); i++)
-	{
-		m_packetBurstQueue[i] = std::vector<Ptr<PacketBurst> > (m_phyMacConfig->GetSlotsPerSubframe (), 0);
-		for (unsigned j = 0; j < m_phyMacConfig->GetSlotsPerSubframe (); j++)
-		{
-			m_packetBurstQueue[i][j] = CreateObject<PacketBurst> ();
-		}
-	}*/
 }
 
 void
@@ -202,7 +193,6 @@ MmWavePhy::SetMacPdu (Ptr<Packet> p)
 	if(p->PeekPacketTag (tag))
 	{
 		NS_ASSERT((tag.GetSfn().m_sfNum >= 0) && (tag.GetSfn().m_sfNum < m_phyMacConfig->GetSymbolsPerSubframe ()));
-		//Ptr<PacketBurst> pburst = m_packetBurstQueue[tag.GetSfn().m_sfNum][tag.GetSfn().m_slotNum];
 		std::map<uint32_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (tag.GetSfn ().Encode());
 		if (it == m_packetBurstMap.end())
 		{
