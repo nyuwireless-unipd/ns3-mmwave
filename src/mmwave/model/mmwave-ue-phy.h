@@ -135,7 +135,6 @@ private:
 	SfAllocInfo m_currSfAllocInfo;
 	std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue; // for storing info on future UL TB transmissions
 	bool m_ulGrant; 	// true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
-	uint8_t m_pucchSlotInd;
 	bool m_sfAllocInfoUpdated;
 	Time m_dlCtrlPeriod;
 	Time m_ulCtrlPeriod;

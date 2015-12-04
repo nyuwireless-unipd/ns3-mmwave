@@ -88,7 +88,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 						   MakeStringChecker ())
 		  .AddAttribute ("UlSchedDelay",
 							 "Number of TTIs between UL scheduling decision and subframe to which it applies",
-							 UintegerValue (3),
+							 UintegerValue (2),
 							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_ulSchedDelay),
 							 MakeUintegerChecker<uint32_t> ())
 		  .AddAttribute ("NumRbPerRbg",
@@ -143,9 +143,11 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
   m_harqTimeout (20),
   m_centerFrequency (28e9),
 	m_guardPeriod (4.16),
-  m_l1L2CtrlLatency (2),
-  m_l1L2DataLatency (3),
-	m_wbCqiPeriodUs (500)
+  m_l1L2CtrlLatency (1),
+  m_l1L2DataLatency (1),
+  m_ulSchedDelay (1),
+	m_wbCqiPeriodUs (500),
+	m_tbDecodeLatencyUs (0.0)
 {
 	NS_LOG_INFO ("Initialized MmWavePhyMacCommon");
 }

@@ -278,49 +278,8 @@ MmWaveEnbPhy::StartSubFrame (void)
 		m_controlMessageQueue.at (0).push_back (msg);
 	}
 
-	//Simulator::Schedule (m_sfPeriod, &MmWaveEnbPhy::EndSubFrame, this);
-
 	StartSlot();
 }
-
-/*
-void
-MmWaveEnbPhy::QueueUlTbAlloc (TbAllocInfo m)
-{
-  NS_LOG_FUNCTION (this);
-  m_ulTbAllocQueue.at (m_phyMacConfig->GetUlSchedDelay () - 1).push_back (m);
-}
-
-std::list<TbAllocInfo>
-MmWaveEnbPhy::DequeueUlTbAlloc (void)
-{
-	NS_LOG_FUNCTION (this);
-
-	if (m_ulTbAllocQueue.empty())
-	{
-		std::list<TbAllocInfo> emptylist;
-		return (emptylist);
-	}
-
-	if (m_ulTbAllocQueue.at (0).size () > 0)
-	{
-		std::list<TbAllocInfo> ret = m_ulTbAllocQueue.at (0);
-		m_ulTbAllocQueue.erase (m_ulTbAllocQueue.begin ());
-		std::list<TbAllocInfo> l;
-		m_ulTbAllocQueue.push_back (l);
-		return (ret);
-	}
-	else
-	{
-		m_ulTbAllocQueue.erase (m_ulTbAllocQueue.begin ());
-		std::list<TbAllocInfo> l;
-		m_ulTbAllocQueue.push_back (l);
-		std::list<TbAllocInfo> emptylist;
-		return (emptylist);
-	}
-}
-*/
-
 
 void
 MmWaveEnbPhy::StartSlot (void)
@@ -358,9 +317,6 @@ MmWaveEnbPhy::StartSlot (void)
 //	std::map<uint16_t, std::list<Ptr<MmWaveControlMessage> > > ctrlMsgMap;  // other control messages
 //	std::map<uint16_t, std::list<Ptr<MmWaveControlMessage> > >::iterator itCtrl;
 
-	// get control messages to be transmitted in UE-specific slots
-	std::list <Ptr<MmWaveControlMessage > > ctrlMsgs = GetControlMessages ();
-	std::list <Ptr<MmWaveControlMessage > >::iterator it = ctrlMsgs.begin ();
 //	while (it != ctrlMsgs.end ())
 //	{
 //		uint16_t rnti = 0;
@@ -386,6 +342,9 @@ MmWaveEnbPhy::StartSlot (void)
 
 	if(m_slotNum == 0) // DL control slot
 	{
+		// get control messages to be transmitted in UE-specific slots
+		std::list <Ptr<MmWaveControlMessage > > ctrlMsgs = GetControlMessages ();
+		std::list <Ptr<MmWaveControlMessage > >::iterator it = ctrlMsgs.begin ();
 		// find all DL/UL DCI elements and create DCI messages to be transmitted in DL control period
 		for (unsigned islot = 0; islot < m_currSfAllocInfo.m_dlSlotAllocInfo.size (); islot++)
 		{
@@ -525,6 +484,7 @@ void
 MmWaveEnbPhy::EndSubFrame (void)
 {
 	NS_LOG_FUNCTION (this << Simulator::Now ().GetSeconds ());
+
 	Time sfStart = m_lastSfStart + m_sfPeriod - Simulator::Now();
 	m_slotNum = 0;
 	if (m_sfNum == m_phyMacConfig->GetSubframesPerFrame ()-1)
@@ -621,7 +581,12 @@ MmWaveEnbPhy::AddUePhy (uint64_t imsi, Ptr<NetDevice> ueDevice)
 void
 MmWaveEnbPhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
-	m_phySapUser->ReceivePhyPdu(p);
+	Simulator::ScheduleWithContext (m_netDevice->GetNode()->GetId(),
+	                                MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()),
+	                                &MmWaveEnbPhySapUser::ReceivePhyPdu,
+	                                m_phySapUser,
+	                                p);
+//		m_phySapUser->ReceivePhyPdu(p);
 }
 
 void

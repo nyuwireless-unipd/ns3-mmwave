@@ -534,7 +534,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				}
 				else
 				{
-					NS_LOG_INFO ("TB failed"); 					//Drop Packet
+					NS_LOG_INFO ("TB failed");
 				}
 
 				MmWaveMacPduTag pduTag;
