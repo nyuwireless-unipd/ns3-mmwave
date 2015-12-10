@@ -30,7 +30,7 @@ MmWavePropagationLossModel::GetTypeId (void)
     .AddConstructor<MmWavePropagationLossModel> ()
     .AddAttribute ("Frequency",
                    "The carrier frequency (in Hz) at which propagation occurs  (default is 28 GHz).",
-                   DoubleValue (60e9),
+                   DoubleValue (28e9),
                    MakeDoubleAccessor (&MmWavePropagationLossModel::SetFrequency,
                                        &MmWavePropagationLossModel::GetFrequency),
                    MakeDoubleChecker<double> ())
@@ -118,7 +118,6 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 	  Ptr<NormalRandomVariable> normalVariable = CreateObject <NormalRandomVariable> ();
 	  normalVariable->SetAntithetic(true);
 	  double PRef = uniformVariable->GetValue(0,1);
-
 	  if (PRef < PLos)
 	    {
 		  scenario.m_channelScenario = 'l';
@@ -143,13 +142,14 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 	  else
 	    {
 		  scenario.m_channelScenario = 'o';
-		  return (txPowerDbm - 500.00);
+		  sigma = 0; //do not use for outage scenario
 	    }
 	  scenario.m_shadowing = normalVariable->GetValue(0,sigma);
 	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (a,b), scenario));
 	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (b,a), scenario));
 	  it = m_channelScenarioMap.find(std::make_pair(a,b));
     }
+  NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
   switch ((*it).second.m_channelScenario)
     {
 	  case 'l':
@@ -190,14 +190,13 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 	    }
 	  case 'o':
 	    {
+	      NS_LOG_DEBUG ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<(txPowerDbm - 500.00));
 		  return (txPowerDbm - 500.00);
 		  break;
 	    }
 	  default:
 		  NS_FATAL_ERROR ("Programming Error.");
     }
-
-  NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
   double lossDb = alpha + beta * 10 * log10(distance) + (*it).second.m_shadowing;
   NS_LOG_DEBUG ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<lossDb);
   return txPowerDbm - std::max (lossDb, m_minLoss);
