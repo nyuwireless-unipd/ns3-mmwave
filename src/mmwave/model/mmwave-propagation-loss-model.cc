@@ -144,7 +144,7 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
 		  scenario.m_channelScenario = 'o';
 		  sigma = 0; //do not use for outage scenario
 	    }
-	  scenario.m_shadowing = normalVariable->GetValue(0,sigma);
+	  scenario.m_shadowing = normalVariable->GetValue(0,sigma*sigma);
 	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (a,b), scenario));
 	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (b,a), scenario));
 	  it = m_channelScenarioMap.find(std::make_pair(a,b));
