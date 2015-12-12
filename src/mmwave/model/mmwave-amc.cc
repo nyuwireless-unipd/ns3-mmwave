@@ -162,7 +162,8 @@ mmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 				{
 					HarqProcessInfoList_t harqInfoList;
 					tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, (uint16_t)GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs, harqInfoList);
-					if (tbStats.tbler > 0.1)
+					//if (tbStats.tbler > 0.1) commented by ZML, reduce error because of no HARQ
+					if (tbStats.tbler > 0.0001)
 					{
 						break;
 					}
@@ -175,7 +176,8 @@ mmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 				}
 				NS_LOG_DEBUG (this << "\t RBG " << rbId << " MCS " << (uint16_t)mcs << " TBLER " << tbStats.tbler);
 				int rbgCqi = 0;
-				if ((tbStats.tbler > 0.1)&&(mcs==0))
+				//if ((tbStats.tbler > 0.1)&&(mcs==0)) commented by ZML, reduce error because of no HARQ
+				if ((tbStats.tbler > 0.0001)&&(mcs==0))
 				{
 					rbgCqi = 0;
 				}

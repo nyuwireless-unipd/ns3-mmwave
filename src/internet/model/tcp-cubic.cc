@@ -61,10 +61,10 @@ TypeId TcpCubic::GetTypeId (void)
 TcpCubic::TcpCubic (void)
   : m_retxThresh(3),
     m_inFastRec (false),
+	m_limitedTx (false), // mute valgrind, actual value set by the attribute system
     m_cubeFactor((1ull << (10+3*BICTCP_HZ)) / 410),
-    m_beta(819),        // Based on ns-2 implementation
+    m_beta(717),
     m_bicScale(41),     // Based on Linux 3.11 implementation
-    m_maxIncrement(16), // Based on ns-2 implementation
     m_delayedAck( 2 << ACK_RATIO_SHIFT),
     m_epochStart(0),
     m_windowMax(0),
@@ -91,7 +91,6 @@ TcpCubic::TcpCubic (void)
  */
 TcpCubic::TcpCubic (const TcpCubic& sock) :
   TcpSocketBase(sock),
-  m_recover(sock.m_recover),
   m_retxThresh(sock.m_retxThresh),
   m_inFastRec(sock.m_inFastRec),
   m_limitedTx(sock.m_limitedTx),
@@ -100,7 +99,6 @@ TcpCubic::TcpCubic (const TcpCubic& sock) :
   m_cubeRttScale(sock.m_cubeRttScale),
   m_bicScale(sock.m_bicScale),
   m_betaScale(sock.m_betaScale),
-  m_maxIncrement(sock.m_maxIncrement),
   m_delayedAck(sock.m_delayedAck),
   m_epochStart(sock.m_epochStart),
   m_windowMax(sock.m_windowMax),
@@ -138,13 +136,42 @@ TcpCubic::NewAck (const SequenceNumber32& seq)
   NS_LOG_LOGIC ("TcpCubic receieved ACK for seq " << seq <<
                 " cwnd " << m_cWnd <<
                 " ssthresh " << m_ssThresh);
+  /*From NewReno*/
+  // Check for exit condition of fast recovery
+  if (m_inFastRec && seq < m_recover)
+    { // Partial ACK, partial window deflation (RFC2582 sec.3 bullet #5 paragraph 3)
+		FILE* log_file;
+		char fname[255];
+		sprintf (fname,"size.txt");
+		log_file = fopen (fname, "a");
 
+		fprintf (log_file, "%f \t %u \t %u \n", Now().GetSeconds (), seq.GetValue (), m_recover.GetValue ());
+		fflush(log_file);
+		fclose(log_file);
+
+      m_cWnd += m_segmentSize - (seq - m_txBuffer->HeadSequence ());
+      NS_LOG_INFO ("Partial ACK for seq " << seq << " in fast recovery: cwnd set to " << m_cWnd);
+      m_txBuffer->DiscardUpTo(seq);  //Bug 1850:  retransmit before newack
+      DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
+      TcpSocketBase::NewAck (seq); // update m_nextTxSequence and send new data if allowed by window
+      return;
+    }
+  else if (m_inFastRec && seq >= m_recover)
+    { // Full ACK (RFC2582 sec.3 bullet #5 paragraph 2, option 1)
+      m_cWnd = std::min (m_ssThresh.Get (), BytesInFlight () + m_segmentSize);
+      m_inFastRec = false;
+      NS_LOG_INFO ("Received full ACK for seq " << seq <<". Leaving fast recovery with cwnd set to " << m_cWnd);
+    }
+
+  /*//From Reno
   // Check for exit condition of fast recovery
   if (m_inFastRec)
-    {// First new ACK after fast recovery, reset cwnd as in Reno
+    { // RFC2001, sec.4; RFC2581, sec.3.2
+      // First new ACK after fast recovery: reset cwnd
+      m_cWnd = m_ssThresh;
       m_inFastRec = false;
-      NS_LOG_DEBUG ("Reset cwnd to " << m_cWnd);
-    };
+      NS_LOG_INFO ("Reset cwnd to " << m_cWnd);
+    };*/
 
   NS_LOG_DEBUG( "SegmentSize = " << m_segmentSize );
   // Check if the current cwnd < ssthresh, if so normal cwnd increase
@@ -332,11 +359,10 @@ TcpCubic::CubicUpdate ()
   // Convert the cwnd stored in bytes to a cwnd in segments. Whenever the
   // CUBIC algorithm uses cwnd the value cwndSeg will be used.
   uint32_t cwndSeg = m_cWnd / m_segmentSize;
-  NS_LOG_UNCOND (m_cWnd);
   // The suggested amount to add to the new congestion window size.
   uint32_t windowTarget = 0;
   // The new congestion window size recommended by CUBIC.
-  uint32_t cnt, min_cnt = 0;
+  uint32_t cnt = 0;
 
   // Increment the number of ACKs counted
   m_ackCnt += 1;
@@ -458,26 +484,36 @@ TcpCubic::CubicUpdate ()
       cnt = 100 * cwndSeg;
     }
 
+  /*
+  * The initial growth of cubic function may be too conservative
+  * when the available bandwidth is still unknown.
+  */
+  if (m_lastMax == 0 && cnt > 20)
+  	cnt = 20;   /* increase cwnd 5% per RTT */
 
-  if (m_dMin > 0)
+
+  /*
+   * This part is already removed in Linux Cubic v2.3
+   *
+   * if (m_dMin > 0)
     {
-      /* max increment = Smax * rtt / 0.1  */
+      // max increment = Smax * rtt / 0.1
       min_cnt = (cwndSeg * HZ * 8)/(10 * m_maxIncrement * m_dMin);
       min_cnt = min_cnt>>3; //add by ZML
-      /* use concave growth when the target is above the origin */
+      // use concave growth when the target is above the origin
      if (cnt < min_cnt && t >= m_k)
         {
           cnt = min_cnt;
         }
-    }
+    }*/
 
-
+/*
   // An extra check that the target suggested works in slow start and during
   // low utilization periods.
   if (m_lastMax == 0 ) // couble be aggresive in slow start
    {
      cnt = 50;
-   }
+   }*/
 
 
   // Check the TCP Friendliness version to see if the congestion window should
@@ -486,6 +522,15 @@ TcpCubic::CubicUpdate ()
     {
       cnt = CubicTcpFriendliness(cnt);
     }
+
+	/*FILE* log_file;
+	char fname[255];
+	sprintf (fname,"cnt.txt");
+	log_file = fopen (fname, "a");
+
+	fprintf (log_file, "%f \t %u \n", Now().GetSeconds (), cnt);
+	fflush(log_file);
+	fclose(log_file);*/
 
   NS_LOG_DEBUG( "cnt = " << cnt );
   return cnt;
@@ -530,7 +575,6 @@ TcpCubic::CubicTcpFriendliness(uint32_t cnt)
       cnt = 1;
     }
 
-
   return cnt;
 }
 
@@ -546,6 +590,7 @@ TcpCubic::DupAck (const TcpHeader& t, uint32_t count)
   if (count == m_retxThresh && !m_inFastRec)
     {
       NS_LOG_DEBUG( "Reached " << m_retxThresh << " and not in fast recovery" );     
+      m_recover = m_highTxMark;
 
       // triple duplicate ack triggers fast retransmit (RFC2582 sec.3 bullet #1)
       // TCP Cubic rules
@@ -562,13 +607,13 @@ TcpCubic::DupAck (const TcpHeader& t, uint32_t count)
           m_lastMax = cwndSeg;
         }
 
-
-      uint32_t temp = (cwndSeg * m_beta) / BICTCP_BETA_SCALE;
+      //uint32_t temp = (cwndSeg * m_beta) / BICTCP_BETA_SCALE;
+      uint32_t temp = (BytesInFlight ()/m_segmentSize * m_beta) / BICTCP_BETA_SCALE;
       if (temp < 2U)
         {
          temp = 2;
         }
-      
+
       m_cWnd = temp * m_segmentSize;
       m_ssThresh = temp * m_segmentSize;
  
@@ -578,7 +623,10 @@ TcpCubic::DupAck (const TcpHeader& t, uint32_t count)
   else if (m_inFastRec)
     { // Increase cwnd for every additional dupack (RFC2582, sec.3 bullet #3)
       m_cWnd += m_segmentSize;
-      SendPendingData (m_connected);
+      if (!m_sendPendingDataEvent.IsRunning ())
+        {
+          SendPendingData (m_connected);
+        }
     }
   else if (!m_inFastRec && m_limitedTx && m_txBuffer->SizeFromSequence (m_nextTxSequence) > 0)
     { // RFC3042 Limited transmit: Send a new packet for each duplicated ACK before fast retransmit
@@ -590,6 +638,14 @@ TcpCubic::DupAck (const TcpHeader& t, uint32_t count)
 void
 TcpCubic::Retransmit (void)
 {
+	FILE* log_file;
+	char fname[255];
+	sprintf (fname,"timeout.txt");
+	log_file = fopen (fname, "a");
+
+	fprintf (log_file, "%f \t %u \n", Now().GetSeconds (), 1);
+	fflush(log_file);
+	fclose(log_file);
   // Temporatily do what NewReno does:
   NS_LOG_FUNCTION (this);
   m_inFastRec = false;
@@ -611,8 +667,9 @@ TcpCubic::Retransmit (void)
   // According to RFC2581 sec.3.1, upon RTO, ssthresh is set to half of flight
   // size and cwnd is set to 1*MSS, then the lost packet is retransmitted and
   // TCP back to slow start
-  //  m_ssThresh = std::max (2 * m_segmentSize, BytesInFlight () / 2);
-  //  m_cWnd = m_segmentSize;
+  NS_LOG_UNCOND ("Timeout"<<Simulator::Now ().GetSeconds ());
+  m_ssThresh = std::max (2 * m_segmentSize, BytesInFlight () / 2); //it was commented, which is wrong zml
+  m_cWnd = m_segmentSize;
   m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack
    // NS_LOG_INFO ("RTO. Reset cwnd to " << m_cWnd <<
    //            ", ssthresh to " << m_ssThresh << ", restart from seqnum " << m_nextTxSequence);
