@@ -269,7 +269,7 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 		{
 			if(sector == 0)
 			{
-				m_minAngle = M_PI;
+				m_minAngle = 0;
 				m_maxAngle = 0.5*M_PI;
 			}
 			else if(sector == 1)

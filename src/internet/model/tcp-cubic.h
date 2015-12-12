@@ -161,11 +161,6 @@ protected:
    */
   uint32_t m_betaScale;
 
-  /**
-   * Limit on increment allowed during binary search. Used by the Linux and
-   * ns-2 implementation of CUBIC.
-   */
-  int m_maxIncrement;
 
   // Estimate the ratio of Packets/ACKs << 4
   uint32_t m_delayedAck;
