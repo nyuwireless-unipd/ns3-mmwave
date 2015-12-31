@@ -453,6 +453,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 												Ptr<const MobilityModel> a,
 												Ptr<const MobilityModel> b) const
 {
+	bool downlink;
 	Ptr<NetDevice> enbDevice, ueDevice;
 
 	Ptr<NetDevice> txDevice = a->GetObject<Node> ()->GetDevice (0);
@@ -465,6 +466,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	if (m_channelMatrixMap.find(dlkey) != m_channelMatrixMap.end ())
 	{
 		// this is downlink case
+		downlink = true;
 		enbDevice = txDevice;
 		ueDevice = rxDevice;
 		it = m_channelMatrixMap.find(dlkey);
@@ -472,6 +474,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	else if (m_channelMatrixMap.find(ulkey) != m_channelMatrixMap.end ())
 	{
 		// this is uplink case
+		downlink = false;
 		ueDevice = txDevice;
 		enbDevice = rxDevice;
 		it = m_channelMatrixMap.find(ulkey);
@@ -486,6 +489,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
 	Ptr<MmWaveUeNetDevice> UeDev =
 				DynamicCast<MmWaveUeNetDevice> (ueDevice);
+	Ptr<MmWaveUePhy> uePhy = UeDev->GetPhy ();
 	Ptr<MmWaveEnbNetDevice> EnbDev =
 				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
 	Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
@@ -533,9 +537,36 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			+(rxSpeed.y-txSpeed.y)+(rxSpeed.z-txSpeed.z);
 
 	Ptr<SpectrumValue> bfPsd = GetChannelGainVector (rxPsd, bfParams,  relativeSpeed);
-//	SpectrumValue bfGain = (*bfPsd)/(*rxPsd);
+	SpectrumValue bfGain = (*bfPsd)/(*rxPsd);
+	int nbands = bfGain.GetSpectrumModel ()->GetNumBands ();
 //	NS_LOG_UNCOND ((*bfPsd)/(*rxPsd));
-//	NS_LOG_UNCOND (Sum (bfGain) / bfGain.GetSpectrumModel ()->GetNumBands ()); // print avg bf gain
+//	std::cout << "beam: ";
+//	for (unsigned i = 0; i < bfParams->m_beam.size(); i++)
+//	{
+//		std::cout << bfParams->m_beam.at(i) << " ";
+//	}
+//	std::cout << std::endl;
+//	std::cout << "enbW: ";
+//	//	NS_LOG_UNCOND ((*bfPsd)/(*rxPsd));
+//	for (unsigned i = 0; i < bfParams->m_enbW.size(); i++)
+//	{
+//		std::cout << bfParams->m_enbW.at(i) << " ";
+//	}
+//	std::cout << std::endl;
+//	std::cout << "ueW: ";
+//	for (unsigned i = 0; i < bfParams->m_ueW.size(); i++)
+//		{
+//			std::cout << bfParams->m_ueW.at(i) << " ";
+//		}
+//		std::cout << std::endl;
+	if (downlink)
+	{
+		NS_LOG_DEBUG ("****** DL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands); // print avg bf gain
+	}
+	else
+	{
+		NS_LOG_DEBUG ("****** UL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands);
+	}
 	return bfPsd;
 }
 
