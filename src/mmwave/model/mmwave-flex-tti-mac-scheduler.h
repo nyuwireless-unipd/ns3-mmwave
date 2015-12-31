@@ -28,6 +28,7 @@ public:
 	typedef std::vector < std::vector <struct RlcPduInfo> > DlHarqRlcPduList_t; // vector of the LCs per per UE HARQ process
 	//	typedef std::vector < RlcPduElement > DlHarqRlcPduList_t; // vector of the 8 HARQ processes per UE
 
+	typedef std::vector < uint8_t > UlHarqProcessesTimer_t;
 	typedef std::vector < DciInfoElementTdma > UlHarqProcessesDciInfoList_t;
 	typedef std::vector < uint8_t > UlHarqProcessesStatus_t;
 
@@ -270,7 +271,8 @@ private:
 	//HARQ status
 	// 0: process Id available
 	// x>0: process Id equal to `x` trasmission count
-	std::map <uint16_t, UlHarqProcessesStatus_t> m_ulHarqProcessesStatus;
+	std::map <uint16_t, UlHarqProcessesStatus_t> 	m_ulHarqProcessesStatus;
+	std::map <uint16_t, UlHarqProcessesTimer_t> 	m_ulHarqProcessesTimer;
 	std::map <uint16_t, UlHarqProcessesDciInfoList_t> m_ulHarqProcessesDciInfoMap;
 
 	// needed to keep track of uplink allocations in later slots
@@ -287,6 +289,8 @@ private:
 	uint8_t m_mcsDefaultDl;
 	uint8_t m_mcsDefaultUl;
 
+	bool m_dlOnly;
+	bool m_ulOnly; //for testing
 };
 
 }

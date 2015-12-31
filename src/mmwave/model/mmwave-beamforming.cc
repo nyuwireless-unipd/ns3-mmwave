@@ -52,7 +52,9 @@ MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 	:m_pathNum (20),
 	m_enbAntennaSize(enbAntenna),
 	m_ueAntennaSize(ueAntenna),
-	m_smallScale (true)
+	m_smallScale (true),
+	m_fixSpeed (false),
+	m_ueSpeed (0.0)
 {
 	if (g_smallScaleFadingInstance.empty ())
 	LoadFile();
@@ -74,6 +76,16 @@ MmWaveBeamforming::GetTypeId (void)
 									BooleanValue (true),
 									MakeBooleanAccessor (&MmWaveBeamforming::m_smallScale),
 									MakeBooleanChecker ())
+	 .AddAttribute ("FixSpeed",
+									"Set a fixed speed (even if constant position) so doppler > 0 for testing",
+									BooleanValue (false),
+									MakeBooleanAccessor (&MmWaveBeamforming::m_fixSpeed),
+									MakeBooleanChecker ())
+	 .AddAttribute ("UeSpeed",
+									"UE speed (m/s) for fixed speed test",
+									DoubleValue (0.0),
+									MakeDoubleAccessor (&MmWaveBeamforming::m_ueSpeed),
+									MakeDoubleChecker<double> ())
 	;
   	return tid;
 }
@@ -419,7 +431,10 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 {
 	NS_LOG_FUNCTION (this);
 	Ptr<SpectrumValue> tempPsd = Copy<SpectrumValue> (txPsd);
-
+	if(m_fixSpeed)
+	{
+		speed = m_ueSpeed;
+	}
 	Values::iterator vit = tempPsd->ValuesBegin ();
 	uint16_t iSubband = 0;
 	while (vit != tempPsd->ValuesEnd ())
