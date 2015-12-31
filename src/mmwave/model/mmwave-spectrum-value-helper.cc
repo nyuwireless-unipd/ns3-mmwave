@@ -49,11 +49,16 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumValueHelper");
 
+Ptr<SpectrumModel> MmWaveSpectrumValueHelper::m_model = 0;
+
 Ptr<SpectrumModel>
 MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
   NS_LOG_FUNCTION (ptrConfig->GetCentreFrequency() << (uint32_t) ptrConfig->GetTotalNumChunk());
-  Ptr<SpectrumModel> model;
+  if (m_model != 0 && m_model->GetNumBands () != 0)
+  {
+  	return m_model;
+  }
 
   double fc = ptrConfig->GetCentreFrequency ();
   double f = 0.00;
@@ -74,8 +79,8 @@ MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 
 	  rbs.push_back (rb);
   }
-  model = Create<SpectrumModel> (rbs);
-  return model;
+  m_model = Create<SpectrumModel> (rbs);
+  return m_model;
 }
 
 Ptr<SpectrumValue> 

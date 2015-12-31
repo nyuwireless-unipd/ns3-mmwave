@@ -665,7 +665,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 	{
 		// Process DL HARQ feedback and assign slots for RETX if resources available
 		std::vector <struct DlHarqInfo> dlInfoListUntxed;  // TBs not able to be retransmitted in this sf
-		std::vector <struct UlHarqInfo> ulInfoListUntxed;  // TBs not able to be retransmitted in this sf
+		std::vector <struct UlHarqInfo> ulInfoListUntxed;
 
 		for (unsigned i = 0; i < m_dlHarqInfoList.size (); i++)
 		{
@@ -904,9 +904,9 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 
 					if (newRlcEl.m_size > 0)
 					{
-						if (newRlcEl.m_size < 5)
+						if (newRlcEl.m_size < 6)
 						{
-							newRlcEl.m_size = 5;
+							newRlcEl.m_size = 6;
 						}
 						newRlcEl.m_size += m_rlcHdrSize + m_subHdrSize;
 						itUeInfo->second.m_rlcPduInfo.push_back (newRlcEl);

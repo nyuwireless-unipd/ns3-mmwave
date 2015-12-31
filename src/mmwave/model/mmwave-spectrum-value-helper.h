@@ -55,6 +55,8 @@ public:
 
   static Ptr<SpectrumValue> CreateNoisePowerSpectralDensity (double noiseFigure, Ptr<SpectrumModel> spectrumModel);
 
+private:
+  static Ptr<SpectrumModel> m_model;
 };
 
 
