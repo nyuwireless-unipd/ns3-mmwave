@@ -164,6 +164,7 @@ MmWaveFlexTtiMacScheduler::DoDispose (void)
   m_dlHarqInfoList.clear ();
   m_ulHarqCurrentProcessId.clear ();
   m_ulHarqProcessesStatus.clear ();
+  m_ulHarqProcessesTimer.clear ();
   m_ulHarqProcessesDciInfoMap.clear ();
   delete m_macCschedSapProvider;
   delete m_macSchedSapProvider;
@@ -186,15 +187,25 @@ MmWaveFlexTtiMacScheduler::GetTypeId (void)
                    MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_harqOn),
                    MakeBooleanChecker ())
 	 .AddAttribute ("FixedMcsDl",
-									"Fix MCS to value set in McsDlDefault",
+									"Fix MCS to value set in McsDlDefault (for testing)",
 									BooleanValue (false),
 									MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_fixedMcsDl),
 									MakeBooleanChecker ())
 	.AddAttribute ("McsDefaultDl",
-								 "Fixed DL MCS",
+								 "Fixed DL MCS (for testing)",
 								 UintegerValue (1),
 								 MakeUintegerAccessor (&MmWaveFlexTtiMacScheduler::m_mcsDefaultDl),
 								 MakeUintegerChecker<uint8_t> ())
+	 .AddAttribute ("DlSchedOnly",
+									"Only schedule downlink traffic (for testing)",
+									BooleanValue (false),
+									MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_dlOnly),
+									MakeBooleanChecker ())
+	 .AddAttribute ("UlSchedOnly",
+									"Only schedule uplink traffic (for testing)",
+									BooleanValue (false),
+									MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_ulOnly),
+									MakeBooleanChecker ())
 		;
 
 	return tid;
@@ -411,7 +422,6 @@ MmWaveFlexTtiMacScheduler::RefreshHarqProcesses ()
 		{
 			if ((*itTimers).second.at (i) == m_phyMacConfig->GetHarqTimeout ())
 			{ // reset HARQ process
-
 				NS_LOG_INFO (this << " Reset HARQ proc " << i << " for RNTI " << (*itTimers).first);
 				std::map <uint16_t, DlHarqProcessesStatus_t>::iterator itStat = m_dlHarqProcessesStatus.find ((*itTimers).first);
 				if (itStat == m_dlHarqProcessesStatus.end ())
@@ -423,7 +433,30 @@ MmWaveFlexTtiMacScheduler::RefreshHarqProcesses ()
 			}
 			else
 			{
-				//(*itTimers).second.at (i)++;
+				(*itTimers).second.at (i)++;
+			}
+		}
+	}
+
+	std::map <uint16_t, UlHarqProcessesTimer_t>::iterator itTimers2;
+	for (itTimers2 = m_ulHarqProcessesTimer.begin (); itTimers2 != m_ulHarqProcessesTimer.end (); itTimers2++)
+	{
+		for (uint16_t i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
+		{
+			if ((*itTimers2).second.at (i) == m_phyMacConfig->GetHarqTimeout ())
+			{ // reset HARQ process
+				NS_LOG_INFO (this << " Reset HARQ proc " << i << " for RNTI " << (*itTimers2).first);
+				std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find ((*itTimers2).first);
+				if (itStat == m_ulHarqProcessesStatus.end ())
+				{
+					NS_FATAL_ERROR ("No Process Id Status found for this RNTI " << (*itTimers2).first);
+				}
+				(*itStat).second.at (i) = 0;
+				(*itTimers2).second.at (i) = 0;
+			}
+			else
+			{
+				(*itTimers2).second.at (i)++;
 			}
 		}
 	}
@@ -686,14 +719,15 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			{
 				NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlHarqInfoList.at (i).m_rnti);
 			}
-			if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK)
-			{
+			if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK || itStat->second.at (harqId) == 0)
+			{ // acknowledgment or process timeout, reset process
 				//NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-ACK received");
 				itStat->second.at (harqId) = 0;    // release process ID
-				for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)		// clear RLC buffers
+				for (uint16_t k = 0; k < itRlcPdu->second.size (); k++)		// clear RLC buffers
 				{
 					itRlcPdu->second.at (harqId).clear ();
 				}
+				continue;
 			}
 			else if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::NACK)
 			{
@@ -705,7 +739,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				DciInfoElementTdma dciInfoReTx = itHarq->second.at (harqId);
 				//NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
 				NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
-				NS_ASSERT(itStat->second.at (harqId) > 0);
+				//NS_ASSERT(itStat->second.at (harqId) > 0);
 				NS_ASSERT(itStat->second.at (harqId)-1 == dciInfoReTx.m_rv);
 				if (dciInfoReTx.m_rv == 3) // maximum number of retx reached -> drop process
 				{
@@ -717,6 +751,61 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					}
 					continue;
 				}
+
+				// (1) Check if the CQI has decreased. If no updated value available, use the same MCS minus 1. If CQI is below min threshold, drop process.
+				// (2) Calculate new number of symbols it will take to encode at lower MCS. If this exceeds the total number of symbols, reTX with original parameters.
+				// If exceeds remaining symbols available in this subframe (but not total symbols in SF), update DCI info and try scheduling in next SF.
+
+				/*std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (itRlcBuf->m_rnti);
+				int cqi;
+				int mcsNew;
+				if (itCqi != m_wbCqiRxed.end ())
+				{
+					cqi = itCqi->second;
+					if (cqi == 0)
+					{
+						NS_LOG_INFO ("CQI for reTX is below threshhold. Drop process");
+						itStat->second.at (harqId) = 0;
+						for (uint16_t k = 0; k < (*itRlcPdu).second.size (); k++)
+						{
+							itRlcPdu->second.at (harqId).clear ();
+						}
+						continue;
+					}
+					else
+					{
+						mcsNew = m_amc->GetMcsFromCqi (cqi);  // get MCS
+					}
+				}
+				else
+				{
+					if(dciInfoReTx.m_mcs > 0)
+					{
+						mcsNew = dciInfoReTx.m_mcs - 1;
+					}
+					else
+					{
+						mcsNew = dciInfoReTx.m_mcs;
+					}
+				}
+
+				// compute number of symbols required
+				unsigned numSymReq;
+				if (mcsNew < dciInfoReTx.m_mcs)
+				{
+					numSymReq = m_amc->GetNumSymbolsFromTbsMcs (dciInfoReTx.m_tbSize, mcsNew);
+					while (numSymReq > dlSymAvail && mcsNew < dciInfoReTx.m_mcs);
+					{
+						mcsNew++;
+						numSymReq = m_amc->GetNumSymbolsFromTbsMcs (dciInfoReTx.m_tbSize, mcsNew);
+					}
+				}
+				if (numSymReq > (m_phyMacConfig->GetSymbolsPerSubframe () - resvCtrl))
+				{	// not enough symbols to encode TB at required MCS, attempt in later SF
+					dlInfoListUntxed.push_back (m_dlHarqInfoList.at (i));
+					continue;
+				}*/
+
 				// allocate retx if enough symbols are available
 				if (dlSymAvail >= dciInfoReTx.m_numSym)
 				{
@@ -776,12 +865,12 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			{
 				NS_LOG_ERROR ("No info found in HARQ buffer for UE (might have changed eNB) " << rnti);
 			}
-			if (harqInfo.m_receptionStatus == UlHarqInfo::Ok)
+			if (harqInfo.m_receptionStatus == UlHarqInfo::Ok || itStat->second.at (harqId) == 0)
 			{
 				//NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-ACK received");
 				if (itStat != m_ulHarqProcessesStatus.end ())
 				{
-					(*itStat).second.at (harqId) = 0;  // release process ID
+					itStat->second.at (harqId) = 0;  // release process ID
 				}
 			}
 			else if (harqInfo.m_receptionStatus == UlHarqInfo::NotOk)
@@ -800,7 +889,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				if (dciInfoReTx.m_rv == 3)
 				{
 					NS_LOG_INFO ("Max number of retransmissions reached (UL)-> drop process");
-					(*itStat).second.at (harqId) = 0;
+					itStat->second.at (harqId) = 0;
 					continue;
 				}
 
@@ -840,7 +929,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	// ********************* END OF HARQ SECTION, START OF NEW DATA SCHEDULING ********************* //
 
 	// get info on active DL flows
-	if (dlSymAvail > 0)  // remaining symbols in current subframe after HARQ retx sched
+	if (dlSymAvail > 0 && !m_ulOnly)  // remaining symbols in current subframe after HARQ retx sched
 	{
 		for (itRlcBuf = m_rlcBufferReq.begin (); itRlcBuf != m_rlcBufferReq.end (); itRlcBuf++)
 		{
@@ -922,7 +1011,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	}
 
 	// get info on active UL flows
-	if (ulSymAvail > 0)  // remaining symbols in future UL subframe after HARQ retx sched
+	if (ulSymAvail > 0 && !m_dlOnly)  // remaining symbols in future UL subframe after HARQ retx sched
 	{
 		std::map <uint16_t,uint32_t>::iterator ceBsrIt;
 		for (ceBsrIt = m_ceBsrRxed.begin (); ceBsrIt != m_ceBsrRxed.end (); ceBsrIt++)
@@ -1577,6 +1666,9 @@ MmWaveFlexTtiMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacCschedSapP
   	UlHarqProcessesStatus_t ulHarqPrcStatus;
   	ulHarqPrcStatus.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
   	m_ulHarqProcessesStatus.insert (std::pair <uint16_t, UlHarqProcessesStatus_t> (params.m_rnti, ulHarqPrcStatus));
+  	UlHarqProcessesTimer_t ulHarqProcessesTimer;
+  	ulHarqProcessesTimer.resize (m_phyMacConfig->GetNumHarqProcess (),0);
+  	m_ulHarqProcessesTimer.insert (std::pair <uint16_t, UlHarqProcessesTimer_t> (params.m_rnti, ulHarqProcessesTimer));
   	UlHarqProcessesDciInfoList_t ulHarqTbInfoList;
   	ulHarqTbInfoList.resize (m_phyMacConfig->GetNumHarqProcess ());
   	m_ulHarqProcessesDciInfoMap.insert (std::pair <uint16_t, UlHarqProcessesDciInfoList_t> (params.m_rnti, ulHarqTbInfoList));
@@ -1624,6 +1716,7 @@ MmWaveFlexTtiMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSap
   m_dlHarqProcessesDciInfoMap.erase  (params.m_rnti);
   m_dlHarqProcessesRlcPduMap.erase  (params.m_rnti);
   //m_ulHarqCurrentProcessId.erase  (params.m_rnti);
+  m_ulHarqProcessesTimer.erase (params.m_rnti);
   m_ulHarqProcessesStatus.erase  (params.m_rnti);
   m_ulHarqProcessesDciInfoMap.erase  (params.m_rnti);
   m_ceBsrRxed.erase (params.m_rnti);
