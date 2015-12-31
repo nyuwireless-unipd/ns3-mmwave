@@ -665,7 +665,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	{
 		// Process DL HARQ feedback and assign slots for RETX if resources available
 		std::vector <struct DlHarqInfo> dlInfoListUntxed;  // TBs not able to be retransmitted in this sf
-		std::vector <struct UlHarqInfo> ulInfoListUntxed;  // TBs not able to be retransmitted in this sf
+		std::vector <struct UlHarqInfo> ulInfoListUntxed;
 
 		for (unsigned i = 0; i < m_dlHarqInfoList.size (); i++)
 		{
