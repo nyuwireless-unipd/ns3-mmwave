@@ -1789,7 +1789,7 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
    * SystemInformationPeriodicity attribute to configure this).
    */
   // mmWave module: Changed scheduling of initial system information to +2ms
-  Simulator::Schedule (MilliSeconds (2), &LteEnbRrc::SendSystemInformation, this);
+  Simulator::Schedule (MilliSeconds (16), &LteEnbRrc::SendSystemInformation, this);
 
   m_configured = true;
 
