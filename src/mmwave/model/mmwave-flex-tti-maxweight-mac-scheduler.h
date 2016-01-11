@@ -16,6 +16,8 @@
 #include "string"
 #include <vector>
 #include <set>
+#include <queue>
+#include <functional>
 
 namespace ns3 {
 
@@ -28,6 +30,7 @@ public:
 	typedef std::vector < std::vector <struct RlcPduInfo> > DlHarqRlcPduList_t; // vector of the LCs per per UE HARQ process
 	//	typedef std::vector < RlcPduElement > DlHarqRlcPduList_t; // vector of the 8 HARQ processes per UE
 
+	typedef std::vector < uint8_t > UlHarqProcessesTimer_t;
 	typedef std::vector < DciInfoElementTdma > UlHarqProcessesDciInfoList_t;
 	typedef std::vector < uint8_t > UlHarqProcessesStatus_t;
 
@@ -58,10 +61,57 @@ public:
 	friend class MmWaveFlexTtiMaxWeightMacCschedSapProvider;
 
 private:
+
+	struct UeSchedInfo;
+
+	struct FlowStats
+	{
+		/*FlowStats () :
+			m_isUplink (false), m_ueSchedInfo (0),
+			m_lcid (0), m_arrivalRate (0.0), m_grantedRate(0.0),
+			m_qci (0), m_txQueueHolDelay (0), m_reTxQueueHolDelay (0), m_probErr (0.0),
+			m_deadlineUs (0)
+		{
+		}*/
+
+		FlowStats (bool uplink, UeSchedInfo* ueSchedInfo, uint8_t lcid) :
+			m_isUplink (uplink), m_ueSchedInfo (ueSchedInfo),
+			m_lcid (lcid), m_arrivalRate (0.0), m_grantedRate(0.0),
+			m_qci (0), m_txQueueHolDelay (0), m_reTxQueueHolDelay (0), m_probErr (0.0),
+			m_deadlineUs (0), m_totalBufSize (0), m_totalSchedSize(0)
+		{
+			NS_ASSERT (ueSchedInfo != 0);
+		}
+
+		bool			m_isUplink;					// is uplink?
+		UeSchedInfo* m_ueSchedInfo;	// pointer to parent UE Info
+		uint8_t		m_lcid;						// LCID (for DL) or LC Group ID (for UL)
+		double 		m_arrivalRate;		// Mbps
+		double 		m_grantedRate;		// Mbps
+		uint8_t		m_qci;						// We interpret QCI 69 as delay critical
+		//uint32_t	m_deliveryDebt;
+		double	m_txQueueHolDelay;
+		uint32_t	m_reTxQueueHolDelay;
+		double		m_probErr;				// expected probability of each HARQ TX/reTX failure (i.e. 1/E[num TX to success])
+		double	m_deadlineUs;			// relative deadline
+		std::list<uint32_t> m_txPacketSizes;		// estimated packet sizes from consecutive BSRs
+		uint32_t	m_totalBufSize;
+		std::list<uint32_t> m_retxPacketSizes;
+		std::list<double> m_txPacketDelays;		// estimated delays for each packet
+		std::list<double> m_retxPacketDelays;
+
+		// We maintain a queue of PDU sizes scheduled in the last M subframes.
+		// M = delay between scheduling and transmission (default DL = 1, UL = 2)
+		// The sum of these M elements is subtracted from the BSR to account for
+		// data that has been scheduled but not yet extracted from the DL or UL queue.
+		std::list<uint32_t> m_schedPacketSizes;
+		uint32_t 	m_totalSchedSize;		// total of last M elements in list
+	};
+
 	struct UeSchedInfo
 	{
 		UeSchedInfo () :
-			m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
+			m_rnti (0), m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
 			m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
 			m_dlSymbols (0), m_ulSymbols (0),
 			m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
@@ -70,6 +120,17 @@ private:
 		{
 		}
 
+		UeSchedInfo (uint16_t rnti) :
+			m_rnti (rnti), m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
+			m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
+			m_dlSymbols (0), m_ulSymbols (0),
+			m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
+			m_dlTbSize (0), m_ulTbSize (0),
+			m_dlAllocDone (false), m_ulAllocDone (false)
+		{
+		}
+
+		uint16_t	m_rnti;
 		uint8_t		m_dlMcs;
 		uint8_t		m_ulMcs;
 		uint32_t	m_maxDlBufSize;
@@ -85,7 +146,57 @@ private:
 		std::vector <struct RlcPduInfo> m_rlcPduInfo;
 		bool			m_dlAllocDone;
 		bool			m_ulAllocDone;
+		std::vector<FlowStats> m_flowStatsDl;		// for each LC
+		std::vector<FlowStats> m_flowStatsUl;
 	};
+
+	/*struct CompareWeightDesc
+	{
+
+		CompareWeightDesc (const bool& alg = EDF)
+		{
+			if (alg <= DELIVERY_DEBT)
+			{
+				m_algorithm = alg;
+			}
+		}
+
+		bool operator() (FlowStats* lflow, FlowStats* rflow)
+		{
+			bool retval = false;
+			switch (m_algorithm)
+			{
+				default:
+					retval = 0;
+					break;
+				case EDF:
+					int lRelDeadline = lflow->m_deadlineUs - lflow->m_txQueueHolDelay;
+					int rRelDeadline = rflow->m_deadlineUs - rflow->m_txQueueHolDelay;
+					retval = (lRelDeadline < rRelDeadline);	// earlier deadline > greater weight
+					break;
+				case DELIVERY_DEBT:
+					int lflowDebt = (lflow->m_arrivalRate/(1-lflow->m_probErr)) - lflow->m_grantedRate;
+					int rflowDebt = (rflow->m_arrivalRate/(1-rflow->m_probErr)) - rflow->m_grantedRate;
+					retval = (lflowDebt > rflowDebt);
+					break;
+			}
+			return retval;
+		}
+	};*/
+
+	static bool CompareFlowWeightsEdf (FlowStats* lflow, FlowStats* rflow)
+	{
+		int lRelDeadline = lflow->m_deadlineUs - lflow->m_txQueueHolDelay;
+		int rRelDeadline = rflow->m_deadlineUs - rflow->m_txQueueHolDelay;
+		return (lRelDeadline < rRelDeadline);	// earlier deadline > greater weight
+	}
+
+	static bool CompareFlowWeightsDeliveryDebt (FlowStats* lflow, FlowStats* rflow)
+	{
+		int lflowDebt = (lflow->m_arrivalRate/(1-lflow->m_probErr)) - lflow->m_grantedRate;
+		int rflowDebt = (rflow->m_arrivalRate/(1-rflow->m_probErr)) - rflow->m_grantedRate;
+		return (lflowDebt > rflowDebt);
+	}
 
 	unsigned CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize);
 
@@ -161,7 +272,7 @@ private:
 	                          unsigned int sfNum,
 	                          unsigned int islot);
 
-
+	void DoSchedSetMcs (int mcs);
   /**
    * \brief Refresh HARQ processes according to the timers
    *
@@ -270,7 +381,8 @@ private:
 	//HARQ status
 	// 0: process Id available
 	// x>0: process Id equal to `x` trasmission count
-	std::map <uint16_t, UlHarqProcessesStatus_t> m_ulHarqProcessesStatus;
+	std::map <uint16_t, UlHarqProcessesStatus_t> 	m_ulHarqProcessesStatus;
+	std::map <uint16_t, UlHarqProcessesTimer_t> 	m_ulHarqProcessesTimer;
 	std::map <uint16_t, UlHarqProcessesDciInfoList_t> m_ulHarqProcessesDciInfoMap;
 
 	// needed to keep track of uplink allocations in later slots
@@ -280,12 +392,23 @@ private:
 	static const unsigned m_subHdrSize = 3;
 	static const unsigned m_rlcHdrSize = 3;
 
-	static const double m_berDl = 0.001;
+	double m_berDl;		// used for	SNR-based AMC model
 
+	//for testing
 	bool 		m_fixedMcsDl;
 	bool 		m_fixedMcsUl;
 	uint8_t m_mcsDefaultDl;
 	uint8_t m_mcsDefaultUl;
+	bool m_dlOnly;
+	bool m_ulOnly;
+
+	std::map<uint16_t, UeSchedInfo> m_ueSchedInfoMap;
+
+	enum AlgType { EDF, DELIVERY_DEBT } m_algorithm;
+	//typedef std::priority_queue <FlowStats, std::vector<FlowStats*>, CompareWeightDesc> flowQueue_t;
+	//flowQueue_t m_flowQueue;
+
+	std::vector <FlowStats*> m_flowHeap;
 
 };
 

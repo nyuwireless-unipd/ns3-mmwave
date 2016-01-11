@@ -14,7 +14,7 @@
 
 using namespace ns3;
 
-double distUpdateInterval = 10.0;  // in ms
+double distUpdateInterval = 100.0;  // in ms
 double distInc = 0.5; // increment by 10 meters
 
 void updateDistance (double dist, Ptr<Node> ue)
@@ -58,6 +58,7 @@ main (int argc, char *argv[])
 	int mcsDl = -1;
 	std::string channelState = "n";
 	bool smallScale = true;
+	double speed = 1.0;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -83,6 +84,7 @@ main (int argc, char *argv[])
 	}
 
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (Seconds (2*simTime)));
@@ -90,6 +92,8 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveAmc::Ber", DoubleValue (0.001));
 	Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
 	Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
+	Config::SetDefault ("ns3::MmWaveBeamforming::FixSpeed", BooleanValue (true));
+	Config::SetDefault ("ns3::MmWaveBeamforming::UeSpeed", DoubleValue (speed));
 
   Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
 

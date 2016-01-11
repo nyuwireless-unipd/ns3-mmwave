@@ -448,6 +448,12 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 }
 
 void
+MmWaveEnbMac::SetMcs (int mcs)
+{
+	m_macSchedSapProvider->SchedSetMcs (mcs);
+}
+
+void
 MmWaveEnbMac::AssociateUeMAC (uint64_t imsi)
 {
 	//NS_LOG_UNCOND (this<<"Associate UE (imsi:"<< imsi<<" ) with enb");
@@ -639,6 +645,12 @@ MmWaveEnbMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParamet
   schedParams.m_rlcTransmissionQueueHolDelay = params.txQueueHolDelay;
   schedParams.m_rlcTransmissionQueueSize = params.txQueueSize;
   schedParams.m_rnti = params.rnti;
+
+  schedParams.m_txPacketSizes = params.txPacketSizes;
+  schedParams.m_txPacketDelays = params.txPacketDelays;
+  schedParams.m_retxPacketSizes = params.retxPacketSizes;
+  schedParams.m_retxPacketDelays = params.retxPacketDelays;
+  schedParams.m_arrivalRate = params.arrivalRate;
 
   m_macSchedSapProvider->SchedDlRlcBufferReq (schedParams);
 }

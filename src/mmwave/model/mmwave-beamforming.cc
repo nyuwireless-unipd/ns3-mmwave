@@ -555,6 +555,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	SpectrumValue bfGain = (*bfPsd)/(*rxPsd);
 	int nbands = bfGain.GetSpectrumModel ()->GetNumBands ();
 //	NS_LOG_UNCOND ((*bfPsd)/(*rxPsd));
+//	NS_LOG_UNCOND (Sum((*bfPsd)/(*rxPsd)));
 //	std::cout << "beam: ";
 //	for (unsigned i = 0; i < bfParams->m_beam.size(); i++)
 //	{

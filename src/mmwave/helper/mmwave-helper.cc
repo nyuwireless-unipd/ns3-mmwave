@@ -30,7 +30,9 @@ MmWaveHelper::MmWaveHelper(void)
 	:m_imsiCounter (0),
 	 m_cellIdCounter (0),
 	 m_noTxAntenna (64),
-	 m_noRxAntenna (16)
+	 m_noRxAntenna (16),
+	 m_harqEnabled (true),
+	 m_snrTest (false)
 {
 	NS_LOG_FUNCTION(this);
 	m_channelFactory.SetTypeId (MultiModelSpectrumChannel::GetTypeId ());
@@ -122,6 +124,12 @@ MmWaveHelper::DoInitialize()
 	Object::DoInitialize();
 }
 
+Ptr<PropagationLossModel>
+MmWaveHelper::GetPathLossModel ()
+{
+	return m_pathlossModel->GetObject<PropagationLossModel> ();
+}
+
 void
 MmWaveHelper::SetAntenna (uint16_t Nrx, uint16_t Ntx)
 {
@@ -160,6 +168,18 @@ bool
 MmWaveHelper::GetHarqEnabled ()
 {
 	return m_harqEnabled;
+}
+
+void
+MmWaveHelper::SetSnrTest (bool snrTest)
+{
+	m_snrTest = snrTest;
+}
+
+bool
+MmWaveHelper::GetSnrTest ()
+{
+	return m_snrTest;
 }
 
 NetDeviceContainer
@@ -330,8 +350,11 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	phy->SetHarqPhyModule (harq);
 
 	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
-	pData->AddCallback (MakeCallback (&MmWaveEnbPhy::GenerateDataCqiReport, phy));
-	pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
+	if(!m_snrTest)
+	{
+		pData->AddCallback (MakeCallback (&MmWaveEnbPhy::GenerateDataCqiReport, phy));
+		pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
+	}
 	dlPhy->AddDataSinrChunkProcessor (pData);
 
 	phy->SetCofigurationParameters(m_phyMacCommon);
@@ -394,7 +417,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 		// it does not make sense to use RLC/SM when also using the EPC
 		if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
 		{
-			rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
+			rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_LOWLAT_ALWAYS));
 		}
 	}
 

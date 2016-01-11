@@ -153,7 +153,6 @@ MmWaveAmc::GetTbSizeFromMcs (unsigned mcs, unsigned nprb)
 
 }
 
-
 int
 MmWaveAmc::GetTbSizeFromMcsSymbols (unsigned mcs, unsigned nsymb)
 {
@@ -173,6 +172,27 @@ MmWaveAmc::GetTbSizeFromMcsSymbols (unsigned mcs, unsigned nsymb)
 		tbSize -= C*m_crcLen; //subtract bits of m_crcLen used in code-blocks.
 	}
 	return tbSize;
+}
+
+int
+MmWaveAmc::GetNumSymbolsFromTbsMcs (unsigned tbSize, unsigned mcs)
+{
+	NS_LOG_FUNCTION (mcs);
+	NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
+	//unsigned itb = McsToItbs[mcs];
+	int rscElementPerSym = (m_phyMacConfig->GetNumSCperChunk ()*m_phyMacConfig->GetTotalNumChunk()
+			- m_phyMacConfig->GetNumRefScPerSym ());
+	double Rcode = McsEcrTable[mcs];
+	double Qm = ModulationSchemeForMcs[mcs];
+	uint16_t cbSize = 6144;  //max size of a code-block (including m_crcLen)
+	if (tbSize > cbSize)
+	{
+		int C = ceil ((double)tbSize / ((double)(6144)));
+		tbSize += C*m_crcLen; //subtract bits of m_crcLen used in code-blocks.
+	}
+	int reqRscElement = (tbSize+m_crcLen)/(Qm*Rcode);
+
+	return ceil(reqRscElement / rscElementPerSym);
 }
 
 std::vector<int>
@@ -371,9 +391,13 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 {
 	NS_LOG_FUNCTION (this);
 
+	// produces a single CQI/MCS value
+
 	//std::vector<int> cqi;
 	uint8_t cqi;
 	double seAvg;
+	double mcsAvg;
+	double cqiAvg;
 
 	Values::const_iterator it;
 	if (m_amcModel == PiroEW2010)
@@ -400,6 +424,8 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 				seAvg += s;
 
 				int cqi_ = GetCqiFromSpectralEfficiency (s);
+				mcsAvg += GetMcsFromSpectralEfficiency (s);
+				cqiAvg += cqi_;
 
 				NS_LOG_LOGIC (" PRB =" << sinr.GetSpectrumModel()->GetNumBands ()
 				              << ", sinr = " << sinr_
@@ -410,7 +436,10 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 			}
 		}
 		seAvg /= sinr.GetSpectrumModel()->GetNumBands ();
-		cqi = GetCqiFromSpectralEfficiency (seAvg);
+		mcsAvg /= sinr.GetSpectrumModel()->GetNumBands ();
+		cqiAvg /= sinr.GetSpectrumModel()->GetNumBands ();
+		cqi = ceil(cqiAvg); //GetCqiFromSpectralEfficiency (seAvg);
+		mcs = GetMcsFromSpectralEfficiency (seAvg); //ceil(mcsAvg);
 	}
 	else if (m_amcModel == MiErrorModel)
 	{
@@ -479,6 +508,20 @@ MmWaveAmc::GetCqiFromSpectralEfficiency (double s)
 	}
 	NS_LOG_LOGIC ("cqi = " << cqi);
 	return cqi;
+}
+
+int
+MmWaveAmc::GetMcsFromSpectralEfficiency (double s)
+{
+	NS_LOG_FUNCTION (s);
+	NS_ASSERT_MSG (s >= 0.0, "negative spectral efficiency = " << s);
+	int mcs = 0;
+	while ((mcs < 28) && (SpectralEfficiencyForMcs[mcs+1] < s))
+	{
+		++mcs;
+	}
+	NS_LOG_LOGIC ("cqi = " << mcs);
+	return mcs;
 }
 
 }

@@ -413,13 +413,14 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
 				rlcPdu = p->CreateFragment (currPos, p->GetSize ());
 				currPos += p->GetSize ();
+				it->second.macSapUser->ReceivePdu (rlcPdu);
 			}
 			else
 			{
 				rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
 				currPos += (uint32_t)macSubheaders[ipdu].m_size;
+				it->second.macSapUser->ReceivePdu (rlcPdu);
 			}
-			it->second.macSapUser->ReceivePdu (rlcPdu);
 		}
 	}
 }

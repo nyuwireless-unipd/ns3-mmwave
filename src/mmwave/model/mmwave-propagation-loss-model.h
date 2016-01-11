@@ -56,6 +56,8 @@ public:
    */
   double GetFrequency (void) const;
 
+  void SetLossFixedDb (double loss);
+
 private:
   MmWavePropagationLossModel (const MmWavePropagationLossModel &o);
   MmWavePropagationLossModel & operator = (const MmWavePropagationLossModel &o);
@@ -70,6 +72,8 @@ private:
   double m_minLoss;
   mutable channelScenarioMap_t m_channelScenarioMap;
   std::string m_channelStates;
+  double m_lossFixedDb;
+  bool	m_fixedLossTst;
 };
 
 #endif

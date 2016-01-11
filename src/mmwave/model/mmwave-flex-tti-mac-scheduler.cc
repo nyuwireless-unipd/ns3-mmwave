@@ -89,7 +89,7 @@ public:
 	virtual void SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params);
 	virtual void SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params);
 	virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
-
+	virtual void SchedSetMcs (int mcs);
 private:
   MmWaveFlexTtiMacSchedSapProvider ();
 	MmWaveFlexTtiMacScheduler* m_scheduler;
@@ -132,7 +132,12 @@ void
 MmWaveFlexTtiMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
 {
   m_scheduler->DoSchedUlMacCtrlInfoReq (params);
+}
 
+void
+MmWaveFlexTtiMacSchedSapProvider::SchedSetMcs (int mcs)
+{
+	m_scheduler->DoSchedSetMcs (mcs);
 }
 
 
@@ -195,6 +200,16 @@ MmWaveFlexTtiMacScheduler::GetTypeId (void)
 								 "Fixed DL MCS (for testing)",
 								 UintegerValue (1),
 								 MakeUintegerAccessor (&MmWaveFlexTtiMacScheduler::m_mcsDefaultDl),
+								 MakeUintegerChecker<uint8_t> ())
+	 .AddAttribute ("FixedMcsUl",
+									"Fix MCS to value set in McsUlDefault (for testing)",
+									BooleanValue (false),
+									MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_fixedMcsUl),
+									MakeBooleanChecker ())
+	.AddAttribute ("McsDefaultUl",
+								 "Fixed UL MCS (for testing)",
+								 UintegerValue (1),
+								 MakeUintegerAccessor (&MmWaveFlexTtiMacScheduler::m_mcsDefaultUl),
 								 MakeUintegerChecker<uint8_t> ())
 	 .AddAttribute ("DlSchedOnly",
 									"Only schedule downlink traffic (for testing)",
@@ -752,9 +767,12 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					continue;
 				}
 
-				// (1) Check if the CQI has decreased. If no updated value available, use the same MCS minus 1. If CQI is below min threshold, drop process.
-				// (2) Calculate new number of symbols it will take to encode at lower MCS. If this exceeds the total number of symbols, reTX with original parameters.
-				// If exceeds remaining symbols available in this subframe (but not total symbols in SF), update DCI info and try scheduling in next SF.
+				// (1) Check if the CQI has decreased. If no updated value available, use the same MCS minus 1.
+				// 			If CQI is below min threshold, drop process.
+				// (2) Calculate new number of symbols it will take to encode at lower MCS.
+				//			If this exceeds the total number of symbols, reTX with original parameters.
+				// 			If exceeds remaining symbols available in this subframe (but not total symbols in SF),
+				//			update DCI info and try scheduling in next SF.
 
 				/*std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (itRlcBuf->m_rnti);
 				int cqi;
@@ -1067,7 +1085,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					//				double se = log2 ( 1 + (std::pow (10, minSinr / 10 )  /
 					//						( (-std::log (5.0 * 0.00005 )) / 1.5) ));
 					//				cqi = m_amc->GetCqiFromSpectralEfficiency (se);
-					if (cqi == 0) // out of range (SINR too low)
+					if (cqi == 0 && !m_fixedMcsUl) // out of range (SINR too low)
 					{
 						NS_LOG_INFO ("*** RNTI " << ceBsrIt->first << " UL-CQI out of range, skipping allocation in UL");
 						break;  // do not allocate UE in uplink
@@ -1083,7 +1101,14 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				{
 					nFlowsUl++;
 				}
-				itUeInfo->second.m_ulMcs = mcs;//m_amc->GetMcsFromCqi (cqi);  // get MCS
+				if (m_fixedMcsUl)
+				{
+					itUeInfo->second.m_ulMcs = m_mcsDefaultUl;
+				}
+				else
+				{
+					itUeInfo->second.m_ulMcs = mcs;//m_amc->GetMcsFromCqi (cqi);  // get MCS
+				}
 				itUeInfo->second.m_maxUlBufSize = ceBsrIt->second + m_rlcHdrSize + m_macHdrSize;
 			}
 		}
@@ -1478,6 +1503,16 @@ MmWaveFlexTtiMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedS
 	}
 
 	return;
+}
+
+void
+MmWaveFlexTtiMacScheduler::DoSchedSetMcs (int mcs)
+{
+	if (mcs >= 0 && mcs <= 28)
+	{
+		m_mcsDefaultDl = mcs;
+		m_mcsDefaultUl = mcs;
+	}
 }
 
 bool

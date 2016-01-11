@@ -15,3 +15,7 @@ def build(bld):
     obj.source = 'mmwave-simple-building-obstacle.cc'
     obj = bld.create_ns3_program('mmwave-tcp-building-example', ['mmwave'])
     obj.source = 'mmwave-tcp-building-example.cc'
+    obj = bld.create_ns3_program('mmwave-amc-test', ['mmwave'])
+    obj.source = 'mmwave-amc-test.cc'
+    obj = bld.create_ns3_program('mmwave-amc-test2', ['mmwave'])
+    obj.source = 'mmwave-amc-test2.cc'     
