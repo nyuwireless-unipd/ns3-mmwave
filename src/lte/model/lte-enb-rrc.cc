@@ -40,7 +40,7 @@
 #include <ns3/lte-rlc-um.h>
 #include <ns3/lte-rlc-am.h>
 #include <ns3/lte-pdcp.h>
-
+#include <ns3/lte-rlc-um-lowlat.h>
 
 
 
@@ -1287,6 +1287,7 @@ UeManager::SwitchToState (State newState)
 // eNB RRC methods
 ///////////////////////////////////////////
 
+
 NS_OBJECT_ENSURE_REGISTERED (LteEnbRrc);
 
 LteEnbRrc::LteEnbRrc ()
@@ -1362,7 +1363,8 @@ LteEnbRrc::GetTypeId (void)
                    MakeEnumChecker (RLC_SM_ALWAYS, "RlcSmAlways",
                                     RLC_UM_ALWAYS, "RlcUmAlways",
                                     RLC_AM_ALWAYS, "RlcAmAlways",
-                                    PER_BASED,     "PacketErrorRateBased"))
+                                    PER_BASED,     "PacketErrorRateBased",
+																		RLC_UM_LOWLAT_ALWAYS, "MmwRlcUmAlways"))
     .AddAttribute ("SystemInformationPeriodicity",
                    "The interval for sending system information (Time value)",
                    TimeValue (MilliSeconds (80)),
@@ -2329,6 +2331,10 @@ LteEnbRrc::GetRlcType (EpsBearer bearer)
         {
           return LteRlcAm::GetTypeId ();
         }
+      break;
+
+    case RLC_UM_LOWLAT_ALWAYS:
+      return LteRlcUmLowLat::GetTypeId ();
       break;
 
     default:

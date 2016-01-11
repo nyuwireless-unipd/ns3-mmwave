@@ -85,6 +85,7 @@ struct EpsBearer
     NGBR_VOICE_VIDEO_GAMING = 7,
     NGBR_VIDEO_TCP_PREMIUM  = 8,
     NGBR_VIDEO_TCP_DEFAULT  = 9,
+		GBR_ULTRA_LOW_LAT				= 99,
   } qci;
 
   GbrQosInformation gbrQosInfo;
