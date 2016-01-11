@@ -47,7 +47,13 @@ def build(bld):
         'model/mmwave-flex-tti-mac-scheduler.cc',   
         'model/mmwave-flex-tti-maxweight-mac-scheduler.cc',              
         'model/mmwave-propagation-loss-model.cc',
-        'model/antenna-array-model.cc'       
+        'model/antenna-array-model.cc',
+        #'model/mmwave-enb-cmac-sap.cc',
+        #'model/mmwave-enb-rrc.cc',
+        #'model/mmwave-mac-sap.cc',
+        #'model/mmwave-rrc-sap.cc',
+        #'model/mmwave-rlc.cc',
+        #'model/mmwave-rlc-sap.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('mmwave')
@@ -97,6 +103,12 @@ def build(bld):
         'model/mmwave-flex-tti-maxweight-mac-scheduler.h',         
         'model/mmwave-propagation-loss-model.h',
         'model/antenna-array-model.h',
+        #'model/mmwave-enb-cmac-sap.h',
+        #'model/mmwave-enb-rrc.h',
+        #'model/mmwave-mac-sap.h',
+        #'model/mmwave-rrc-sap.h',
+        #'model/mmwave-rlc.h',
+        #'model/mmwave-rlc-sap.h'
         ]
 
     if bld.env.ENABLE_EXAMPLES:

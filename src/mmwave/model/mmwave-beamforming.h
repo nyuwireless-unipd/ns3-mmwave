@@ -175,6 +175,8 @@ private:
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 	Time m_longTermUpdatePeriod;
 	bool m_smallScale;
+	bool m_fixSpeed;  // used for SINR sweep test
+	double m_ueSpeed;
 };
 
 }  //namespace ns3

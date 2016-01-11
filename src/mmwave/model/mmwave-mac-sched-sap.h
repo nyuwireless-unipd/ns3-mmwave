@@ -29,6 +29,12 @@ public:
 		uint32_t  m_rlcRetransmissionQueueSize;
 		uint16_t  m_rlcRetransmissionHolDelay;
 		uint16_t  m_rlcStatusPduSize;
+
+		std::list<uint32_t>	m_txPacketSizes;
+		std::list<uint32_t>	m_retxPacketSizes;
+		std::list<double>	m_txPacketDelays;
+		std::list<double>	m_retxPacketDelays;
+		double m_arrivalRate;
 	};
 
 	struct SchedDlCqiInfoReqParameters
@@ -66,6 +72,10 @@ public:
 	virtual void SchedTriggerReq (const struct SchedTriggerReqParameters& params) = 0;
 
   virtual void SchedUlMacCtrlInfoReq (const struct SchedUlMacCtrlInfoReqParameters& params) = 0;
+
+  virtual void SchedSetMcs (int mcs)
+  {
+  }
 
 private:
 

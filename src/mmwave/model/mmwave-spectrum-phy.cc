@@ -90,9 +90,9 @@ MmWaveSpectrumPhy::GetTypeId(void)
 						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_rxPacketTraceUe))
 		.AddAttribute ("DataErrorModelEnabled",
 										"Activate/Deactivate the error model of data (TBs of PDSCH and PUSCH) [by default is active].",
-										BooleanValue (true),
-									 MakeBooleanAccessor (&MmWaveSpectrumPhy::m_dataErrorModelEnabled),
-										MakeBooleanChecker ())
+						 BooleanValue (true),
+						 MakeBooleanAccessor (&MmWaveSpectrumPhy::m_dataErrorModelEnabled),
+						 MakeBooleanChecker ())
 		;
 
 	return tid;
@@ -472,7 +472,16 @@ MmWaveSpectrumPhy::EndRxData ()
 {
 	m_interferenceData->EndRx();
 
-	double avgSinr = Sum(m_sinrPerceived)/(m_sinrPerceived.GetSpectrumModel()->GetNumBands());
+	double sinrAvg = Sum(m_sinrPerceived)/(m_sinrPerceived.GetSpectrumModel()->GetNumBands());
+	double sinrMin = 99999999999;
+	for (Values::const_iterator it = m_sinrPerceived.ConstValuesBegin (); it != m_sinrPerceived.ConstValuesEnd (); it++)
+	{
+		if (*it < sinrMin)
+		{
+			sinrMin = *it;
+		}
+	}
+
 	Ptr<MmWaveEnbNetDevice> enbRx = DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
 	Ptr<MmWaveUeNetDevice> ueRx = DynamicCast<MmWaveUeNetDevice> (GetDevice ());
 
@@ -552,7 +561,8 @@ MmWaveSpectrumPhy::EndRxData ()
 				traceParams.m_rnti = rnti;
 				traceParams.m_mcs = itTb->second.mcs;
 				traceParams.m_rv = itTb->second.rv;
-				traceParams.m_sinr = avgSinr;
+				traceParams.m_sinr = sinrAvg;
+				traceParams.m_sinrMin = sinrMin;
 				traceParams.m_tbler = itTb->second.tbler;
 				traceParams.m_corrupt = itTb->second.corrupt;
 				if (enbRx)
@@ -579,15 +589,15 @@ MmWaveSpectrumPhy::EndRxData ()
 							harqUlInfo.m_receptionStatus = UlHarqInfo::NotOk;
 							NS_LOG_DEBUG ("UE" << rnti << " send UL-HARQ-NACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
 														" size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
-														" mi " << itTb->second.mi << " SINRavg " << avgSinr);
+														" mi " << itTb->second.mi << " tbler " << itTb->second.tbler << " SINRavg " << sinrAvg);
 							m_harqPhyModule->UpdateUlHarqProcessStatus (rnti, itTb->second.mi, itTb->second.size, itTb->second.size / EffectiveCodingRate [itTb->second.mcs]);
 						}
 						else
 						{
 							harqUlInfo.m_receptionStatus = UlHarqInfo::Ok;
-							NS_LOG_DEBUG ("UE" << rnti << " send UL-HARQ-ACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
-														" size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
-														" mi " << itTb->second.mi << " SINRavg " << avgSinr);
+//							NS_LOG_DEBUG ("UE" << rnti << " send UL-HARQ-ACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
+//														" size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
+//														" mi " << itTb->second.mi << " tbler " << itTb->second.tbler << " SINRavg " << sinrAvg);
 							m_harqPhyModule->ResetUlHarqProcessStatus (rnti, itTb->second.harqProcessId);
 						}
 						if (!m_phyUlHarqFeedbackCallback.IsNull ())
@@ -609,15 +619,15 @@ MmWaveSpectrumPhy::EndRxData ()
 								harqDlInfo.m_harqStatus = DlHarqInfo::NACK;
 								NS_LOG_DEBUG ("UE" << rnti << " send DL-HARQ-NACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
 															" size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
-															" mi " << itTb->second.mi << " SINRavg " << avgSinr);
+															" mi " << itTb->second.mi << " tbler " << itTb->second.tbler << " SINRavg " << sinrAvg);
 								m_harqPhyModule->UpdateDlHarqProcessStatus (itTb->second.harqProcessId, 0, itTb->second.mi, itTb->second.size, itTb->second.size / EffectiveCodingRate [itTb->second.mcs]);
 							}
 							else
 							{
 								harqDlInfo.m_harqStatus = DlHarqInfo::ACK;
-								NS_LOG_DEBUG ("UE" << rnti << " send DL-HARQ-ACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
-															" size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
-															" mi " << itTb->second.mi << " SINRavg " << avgSinr);
+//								NS_LOG_DEBUG ("UE" << rnti << " send DL-HARQ-ACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
+//															" size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
+//															" mi " << itTb->second.mi << " tbler " << itTb->second.tbler << " SINRavg " << sinrAvg);
 								m_harqPhyModule->ResetDlHarqProcessStatus (itTb->second.harqProcessId);
 							}
 							harqDlInfoMap.insert (std::pair <uint16_t, DlHarqInfo> (rnti, harqDlInfo));
@@ -629,15 +639,15 @@ MmWaveSpectrumPhy::EndRxData ()
 								(*itHarq).second.m_harqStatus = DlHarqInfo::NACK;
 								NS_LOG_DEBUG ("UE" << rnti << " send DL-HARQ-NACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
 															" size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
-															" mi " << itTb->second.mi << " SINRavg " << avgSinr);
+															" mi " << itTb->second.mi << " tbler " << itTb->second.tbler << " SINRavg " << sinrAvg);
 								m_harqPhyModule->UpdateDlHarqProcessStatus (itTb->second.harqProcessId, 0, itTb->second.mi, itTb->second.size, itTb->second.size / EffectiveCodingRate [itTb->second.mcs]);
 							}
 							else
 							{
 								(*itHarq).second.m_harqStatus = DlHarqInfo::ACK;
-								NS_LOG_DEBUG ("UE" << rnti << " send DL-HARQ-ACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
-								              " size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
-								              " mi " << itTb->second.mi << " SINRavg " << avgSinr);
+//								NS_LOG_DEBUG ("UE" << rnti << " send DL-HARQ-ACK" << " harqId " << (unsigned)itTb->second.harqProcessId <<
+//								              " size " << itTb->second.size << " mcs " << (unsigned)itTb->second.mcs <<
+//								              " mi " << itTb->second.mi << " tbler " << itTb->second.tbler << " SINRavg " << sinrAvg);
 								m_harqPhyModule->ResetDlHarqProcessStatus (itTb->second.harqProcessId);
 							}
 						}

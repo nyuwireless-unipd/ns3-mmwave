@@ -162,6 +162,7 @@ private:
 	                          unsigned int sfNum,
 	                          unsigned int islot);
 
+	void DoSchedSetMcs (int mcs);
 
   /**
    * \brief Refresh HARQ processes according to the timers

@@ -83,6 +83,8 @@ public:
 
 	void DoSubframeIndication (SfnSf sfnSf);
 
+	void SetMcs (int mcs);
+
 	void AssociateUeMAC (uint64_t imsi);
 
 	void SetForwardUpCallback (Callback <void, Ptr<Packet> > cb);

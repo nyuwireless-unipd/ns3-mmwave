@@ -45,6 +45,16 @@ MmWavePropagationLossModel::GetTypeId (void)
 									StringValue ("a"),
 									MakeStringAccessor (&MmWavePropagationLossModel::m_channelStates),
 									MakeStringChecker ())
+		.AddAttribute ("LossFixedDb",
+									 "",
+									 DoubleValue (0.0),
+									 MakeDoubleAccessor (&MmWavePropagationLossModel::m_lossFixedDb),
+									 MakeDoubleChecker<double> ())
+		.AddAttribute ("FixedLossTst",
+									 "",
+									 BooleanValue (false),
+									 MakeBooleanAccessor (&MmWavePropagationLossModel::m_fixedLossTst),
+									 MakeBooleanChecker ())
   ;
   return tid;
 }
@@ -80,6 +90,11 @@ MmWavePropagationLossModel::GetFrequency (void) const
   return m_frequency;
 }
 
+void MmWavePropagationLossModel::SetLossFixedDb (double loss)
+{
+	m_lossFixedDb = loss;
+}
+
 double
 MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
                                           Ptr<MobilityModel> a,
@@ -96,116 +111,125 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
    * Xi: Xi~N(0,sigma^2)
    *
    */
-  double distance = a->GetDistanceFrom (b);
-  if (distance < 3*m_lambda)
-    {
-	  //NS_LOG_WARN ("distance not within the far field region => inaccurate propagation loss value");
-    }
-  if (distance <= 0)
-    {
-      return txPowerDbm - m_minLoss;
-    }
 
-  double aOut = 0.0334;
-  double bOut = 5.2;
-  double aLos = 0.0149;
-  double POut = fmax (0, 1-exp(((-1)*aOut*distance)+bOut));
-  double PLos = (1-POut)*exp((-1)*aLos*distance);
-  double PNlos = 1-POut - PLos;
-  double alpha, beta, sigma;
+	if(!m_fixedLossTst)
+	{
+		double distance = a->GetDistanceFrom (b);
+		if (distance < 3*m_lambda)
+		{
+			//NS_LOG_WARN ("distance not within the far field region => inaccurate propagation loss value");
+		}
+		if (distance <= 0)
+		{
+			return txPowerDbm - m_minLoss;
+		}
 
-  channelScenarioMap_t::const_iterator it;
-  it = m_channelScenarioMap.find(std::make_pair(a,b));
-  if (it == m_channelScenarioMap.end ())
-    {
-	  channelScenario scenario;
-	  Ptr<UniformRandomVariable> uniformVariable = CreateObject <UniformRandomVariable> ();
-	  Ptr<NormalRandomVariable> normalVariable = CreateObject <NormalRandomVariable> ();
-	  normalVariable->SetAntithetic(true);
-	  double PRef = uniformVariable->GetValue(0,1);
+		double aOut = 0.0334;
+		double bOut = 5.2;
+		double aLos = 0.0149;
+		double POut = fmax (0, 1-exp(((-1)*aOut*distance)+bOut));
+		double PLos = (1-POut)*exp((-1)*aLos*distance);
+		double PNlos = 1-POut - PLos;
+		double alpha, beta, sigma;
 
-	  if ( m_channelStates.compare("l")==0 || ((PRef < PLos) && m_channelStates.compare("a")==0) )
-	  {
-	  	scenario.m_channelScenario = 'l';
-	  	sigma = 5.8;
-	  }
-	  else if ( m_channelStates.compare("n")==0 || ((PRef < (1-POut)) && m_channelStates.compare("a")==0) )
-	  {
-	  	scenario.m_channelScenario = 'n';
-	  	if (m_frequency ==28e9)
-	  	{
-	  		sigma = 8.7;
-	  	}
-	  	else if (m_frequency == 73e9)
-	  	{
-	  		sigma = 7.7;
-	  	}
-	  	else
-	  	{
-	  		NS_FATAL_ERROR ("The model currently supports only 28 GHz and 73 GHz carrier frequencies.");
-	  	}
-	  }
-	  else
-	  {
-	  	scenario.m_channelScenario = 'o';
-	  	return (txPowerDbm - 500.00);
-	  }
-	  scenario.m_shadowing = normalVariable->GetValue(0,sigma);
-	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (a,b), scenario));
-	  m_channelScenarioMap.insert (std::make_pair(std::make_pair (b,a), scenario));
-	  it = m_channelScenarioMap.find(std::make_pair(a,b));
-    }
-  switch ((*it).second.m_channelScenario)
-    {
-	  case 'l':
-	    {
-	      if (m_frequency == 28e9)
-	        {
-			  alpha = 61.4;
-			  beta = 2;
-	        }
-	      else if (m_frequency == 73e9)
-	        {
-			  alpha = 69.8;
-			  beta = 2;
-	        }
-		  else
-		  {
-			  NS_FATAL_ERROR ("Other frequency is not impletmented.");
-		  }
-		  break;
-	    }
-	  case 'n':
-	    {
-		  if (m_frequency == 28e9)
+		channelScenarioMap_t::const_iterator it;
+		it = m_channelScenarioMap.find(std::make_pair(a,b));
+		if (it == m_channelScenarioMap.end ())
+		{
+			channelScenario scenario;
+			Ptr<UniformRandomVariable> uniformVariable = CreateObject <UniformRandomVariable> ();
+			Ptr<NormalRandomVariable> normalVariable = CreateObject <NormalRandomVariable> ();
+			normalVariable->SetAntithetic(true);
+			double PRef = uniformVariable->GetValue(0,1);
+
+			if ( m_channelStates.compare("l")==0 || ((PRef < PLos) && m_channelStates.compare("a")==0) )
 			{
-			  alpha = 72.0;
-			  beta = 2.92;
+				scenario.m_channelScenario = 'l';
+				sigma = 5.8;
 			}
-		  else if (m_frequency == 73e9)
+			else if ( m_channelStates.compare("n")==0 || ((PRef < (1-POut)) && m_channelStates.compare("a")==0) )
 			{
-			  alpha = 82.7;
-			  beta = 2.69;
+				scenario.m_channelScenario = 'n';
+				if (m_frequency ==28e9)
+				{
+					sigma = 8.7;
+				}
+				else if (m_frequency == 73e9)
+				{
+					sigma = 7.7;
+				}
+				else
+				{
+					NS_FATAL_ERROR ("The model currently supports only 28 GHz and 73 GHz carrier frequencies.");
+				}
 			}
-		  else
-		  {
-			  NS_FATAL_ERROR ("Other frequency is not impletmented.");
-		  }
-		  break;
-	    }
-	  case 'o':
-	    {
-		  return (txPowerDbm - 500.00);
-		  break;
-	    }
-	  default:
-		  NS_FATAL_ERROR ("Programming Error.");
-    }
+			else
+			{
+				scenario.m_channelScenario = 'o';
+				return (txPowerDbm - 500.00);
+			}
+			scenario.m_shadowing = normalVariable->GetValue(0,sigma);
+			m_channelScenarioMap.insert (std::make_pair(std::make_pair (a,b), scenario));
+			m_channelScenarioMap.insert (std::make_pair(std::make_pair (b,a), scenario));
+			it = m_channelScenarioMap.find(std::make_pair(a,b));
+		}
+		switch ((*it).second.m_channelScenario)
+		{
+			case 'l':
+			{
+				if (m_frequency == 28e9)
+				{
+					alpha = 61.4;
+					beta = 2;
+				}
+				else if (m_frequency == 73e9)
+				{
+					alpha = 69.8;
+					beta = 2;
+				}
+				else
+				{
+					NS_FATAL_ERROR ("Other frequency is not impletmented.");
+				}
+				break;
+			}
+			case 'n':
+			{
+				if (m_frequency == 28e9)
+				{
+					alpha = 72.0;
+					beta = 2.92;
+				}
+				else if (m_frequency == 73e9)
+				{
+					alpha = 82.7;
+					beta = 2.69;
+				}
+				else
+				{
+					NS_FATAL_ERROR ("Other frequency is not impletmented.");
+				}
+				break;
+			}
+			case 'o':
+			{
+				return (txPowerDbm - 500.00);
+				break;
+			}
+			default:
+				NS_FATAL_ERROR ("Programming Error.");
+		}
 
-  NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
-  double lossDb = alpha + beta * 10 * log10(distance) + (*it).second.m_shadowing;
-  NS_LOG_DEBUG ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<lossDb);
-  return txPowerDbm - std::max (lossDb, m_minLoss);
+		NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
+		double lossDb = alpha + beta * 10 * log10(distance) + (*it).second.m_shadowing;
+		NS_LOG_DEBUG ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<lossDb);
+		return txPowerDbm - std::max (lossDb, m_minLoss);
+	}
+	else
+	{
+		//std::cout << "RX power changing to " << (txPowerDbm - m_lossFixedDb << std::endl;
+		return txPowerDbm - m_lossFixedDb;
+	}
 }
 
 int64_t

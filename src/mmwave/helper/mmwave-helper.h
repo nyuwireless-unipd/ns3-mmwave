@@ -33,7 +33,7 @@
 #include <ns3/mmwave-channel-matrix.h>
 #include <ns3/mmwave-bearer-stats-calculator.h>
 #include <ns3/mmwave-bearer-stats-connector.h>
-
+#include <ns3/propagation-loss-model.h>
 namespace ns3 {
 
 /* ... */
@@ -65,13 +65,16 @@ public:
 	std::string GetSchedulerType () const;
 
 	void SetPhyMacConfigurationParameters (std::string paramName, std::string value);
-    Ptr<MmWavePhyMacCommon> GetPhyMacConfigurable (void);
+  Ptr<MmWavePhyMacCommon> GetPhyMacConfigurable (void);
 	void ActivateDataRadioBearer (NetDeviceContainer ueDevices, EpsBearer bearer);
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
 	void SetEpcHelper (Ptr<EpcHelper> epcHelper);
 
 	void SetHarqEnabled (bool harqEnabled);
 	bool GetHarqEnabled ();
+	void SetSnrTest (bool snrTest);
+	bool GetSnrTest ();
+	Ptr<PropagationLossModel> GetPathLossModel (void);
 
 protected:
 	virtual void DoInitialize();
@@ -121,6 +124,7 @@ private:
 	Ptr<EpcHelper> m_epcHelper;
 
 	bool m_harqEnabled;
+	bool m_snrTest;
 
   Ptr<MmWaveBearerStatsCalculator> m_rlcStats;
   Ptr<MmWaveBearerStatsCalculator> m_pdcpStats;
