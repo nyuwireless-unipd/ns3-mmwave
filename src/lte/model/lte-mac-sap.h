@@ -119,6 +119,9 @@ public:
    */
   virtual void NotifyHarqDeliveryFailure () = 0;
 
+  virtual void NotifyDlHarqDeliveryFailure (uint8_t harqId);
+
+  virtual void NotifyUlHarqDeliveryFailure (uint8_t harqId);
 
   /**
    * Called by the MAC to notify the RLC of the reception of a new PDU

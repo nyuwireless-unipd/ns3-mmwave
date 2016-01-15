@@ -107,6 +107,8 @@ public:
    * \param subframeNo subframe number
    */
 	virtual void SubframeIndication (SfnSf) = 0;
+
+	//virtual void NotifyHarqDeliveryFailure (uint8_t harqId) = 0;
 };
 
 }

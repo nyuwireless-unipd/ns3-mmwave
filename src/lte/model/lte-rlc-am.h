@@ -51,6 +51,8 @@ public:
    */
   virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
   virtual void DoNotifyHarqDeliveryFailure ();
+  virtual void DoNotifyDlHarqDeliveryFailure (uint8_t harqId);
+  virtual void DoNotifyUlHarqDeliveryFailure (uint8_t harqId);
   virtual void DoReceivePdu (Ptr<Packet> p);
 
 private:
@@ -179,6 +181,7 @@ private:
    */
   SequenceNumber10 m_expectedSeqNumber;
 
+  std::map <uint8_t, uint16_t> m_harqIdToSnMap;
 };
 
 

@@ -499,16 +499,17 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 			{
 				NS_LOG_DEBUG ("Fragmenting MAC PDU (packet size greater than specified in MAC header (actual= " \
 				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
-				rlcPdu = p->CreateFragment (currPos, p->GetSize ());
-				currPos += p->GetSize ();
+				rlcPdu = p->CreateFragment (currPos, macSubheaders[ipdu].m_size);
+				currPos += macSubheaders[ipdu].m_size;
+				(*lcidIt).second->ReceivePdu (rlcPdu);
 			}
 			else
 			{
-				rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
-				currPos += (uint32_t)macSubheaders[ipdu].m_size;
+				rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
+				currPos = p->GetSize ();
+				(*lcidIt).second->ReceivePdu (rlcPdu);
 			}
 		NS_LOG_DEBUG ("Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
-		(*lcidIt).second->ReceivePdu (rlcPdu);
 	}
 }
 
@@ -618,11 +619,22 @@ MmWaveEnbMac::DoDlHarqFeedback (DlHarqInfo params)
   {
   	// discard buffer
   	Ptr<PacketBurst> emptyBuf = CreateObject <PacketBurst> ();
-  	(*it).second.at (params.m_harqProcessId) = emptyBuf;
+  	(*it).second.at (params.m_harqProcessId).m_pktBurst = emptyBuf;
   	NS_LOG_DEBUG (this << " HARQ-ACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId);
   }
   else if (params.m_harqStatus == DlHarqInfo::NACK)
   {
+  	/*if (params.m_numRetx == 3)
+  	{
+  		std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (params.m_rnti);
+  		for (unsigned i = 0; i < (*it).second.at (params.m_harqProcessId).m_lcidList.size (); i++)
+  		{
+				std::map<uint8_t, LteMacSapUser*>::iterator lcidIt =
+						rntiIt->second.find ((*it).second.at (params.m_harqProcessId).m_lcidList[i]);
+				NS_ASSERT (lcidIt != rntiIt->second.end ());
+				lcidIt->second->NotifyDlHarqDeliveryFailure (params.m_harqProcessId);
+  		}
+  	}*/
   	NS_LOG_DEBUG (this << " HARQ-NACK UE " << params.m_rnti << " harqId " << (uint16_t)params.m_harqProcessId);
   }
   else
@@ -720,6 +732,14 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 				{
 					NS_FATAL_ERROR ("MAC PDU map element exists");
 				}
+
+				// new data -> force emptying correspondent harq pkt buffer
+				std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator harqIt = m_miDlHarqProcessesPackets.find (rnti);
+				NS_ASSERT(harqIt!=m_miDlHarqProcessesPackets.end());
+				Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
+				harqIt->second.at (tbUid).m_pktBurst = pb;
+				harqIt->second.at (tbUid).m_lcidList.clear ();
+
 				std::map<uint32_t, struct MacPduInfo>::iterator pduMapIt = mapRet.first;
 				pduMapIt->second.m_numRlcPdu = 0;
 				for (unsigned int ipdu = 0; ipdu < rlcPduInfo.size (); ipdu++)
@@ -730,6 +750,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int) rlcPduInfo[ipdu].m_size);
 					MacSubheader subheader (rlcPduInfo[ipdu].m_lcid, rlcPduInfo[ipdu].m_size);
 					(*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size)-subheader.GetSize (), 0, tbUid);
+					harqIt->second.at (tbUid).m_lcidList.push_back (rlcPduInfo[ipdu].m_lcid);
 				}
 
 				if (pduMapIt->second.m_numRlcPdu == 0)
@@ -747,12 +768,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					NS_LOG_DEBUG("Subheader " << i << " size " << pduMapIt->second.m_macHeader.GetSubheaders().at(i).m_size);
 				}
 
-				// new data -> force emptying correspondent harq pkt buffer
-				std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator harqIt = m_miDlHarqProcessesPackets.find (rnti);
-				NS_ASSERT(harqIt!=m_miDlHarqProcessesPackets.end());
-				Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-				harqIt->second.at (tbUid) = pb;
-				harqIt->second.at (tbUid)->AddPacket (pduMapIt->second.m_pdu);
+				harqIt->second.at (tbUid).m_pktBurst->AddPacket (pduMapIt->second.m_pdu);
 
 				m_phySapProvider->SendMacPdu (pduMapIt->second.m_pdu);
 				m_macPduMap.erase (pduMapIt);  // delete map entry
@@ -765,7 +781,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					// HARQ retransmission -> retrieve TB from HARQ buffer
 					std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
 					NS_ASSERT(it!=m_miDlHarqProcessesPackets.end());
-					Ptr<PacketBurst> pb = it->second.at (tbUid);
+					Ptr<PacketBurst> pb = it->second.at (tbUid).m_pktBurst;
 					for (std::list<Ptr<Packet> >::const_iterator j = pb->Begin (); j != pb->End (); ++j)
 					{
 						Ptr<Packet> pkt = (*j)->Copy ();
@@ -829,7 +845,7 @@ MmWaveEnbMac::DoAddUe (uint16_t rnti)
 	for (uint8_t i = 0; i < harqNum; i++)
 	{
 		Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-		buf.at (i) = pb;
+		buf.at (i).m_pktBurst = pb;
 	}
 	m_miDlHarqProcessesPackets.insert (std::pair <uint16_t, DlHarqProcessesBuffer_t> (rnti, buf));
 

@@ -31,7 +31,8 @@ MmWaveHelper::MmWaveHelper(void)
 	 m_cellIdCounter (0),
 	 m_noTxAntenna (64),
 	 m_noRxAntenna (16),
-	 m_harqEnabled (true),
+	 m_harqEnabled (false),
+	 m_rlcAmEnabled (false),
 	 m_snrTest (false)
 {
 	NS_LOG_FUNCTION(this);
@@ -76,6 +77,11 @@ MmWaveHelper::GetTypeId (void)
 					"Enable Hybrid ARQ",
 					BooleanValue (false),
 					MakeBooleanAccessor (&MmWaveHelper::m_harqEnabled),
+					MakeBooleanChecker ())
+		.AddAttribute ("RlcAmEnabled",
+					"Enable RLC Acknowledged Mode",
+					BooleanValue (false),
+					MakeBooleanAccessor (&MmWaveHelper::m_rlcAmEnabled),
 					MakeBooleanChecker ())
 	;
 
@@ -417,7 +423,14 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 		// it does not make sense to use RLC/SM when also using the EPC
 		if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
 		{
-			rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_LOWLAT_ALWAYS));
+			if (m_rlcAmEnabled)
+			{
+				rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_AM_ALWAYS));
+			}
+			else
+			{
+				rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
+			}
 		}
 	}
 

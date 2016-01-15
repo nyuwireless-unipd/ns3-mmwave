@@ -993,14 +993,20 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					{
 						itUeInfo->second.m_dlMcs = m_amc->GetMcsFromCqi (cqi);  // get MCS
 					}
-					RlcPduInfo newRlcEl;
-					newRlcEl.m_lcid = itRlcBuf->m_logicalChannelIdentity;
+
 					// temporarily store the TX queue size
 					if(itRlcBuf->m_rlcStatusPduSize > 0)
 					{
-						newRlcEl.m_size = itRlcBuf->m_rlcStatusPduSize;
+						RlcPduInfo newRlcStatusPdu;;
+						newRlcStatusPdu.m_lcid = itRlcBuf->m_logicalChannelIdentity;
+						newRlcStatusPdu.m_size += itRlcBuf->m_rlcStatusPduSize + m_subHdrSize;
+						itUeInfo->second.m_rlcPduInfo.push_back (newRlcStatusPdu);
+						itUeInfo->second.m_maxDlBufSize += newRlcStatusPdu.m_size;  // add to total DL buffer size
 					}
-					else if (itRlcBuf->m_rlcRetransmissionQueueSize > 0)
+
+					RlcPduInfo newRlcEl;
+					newRlcEl.m_lcid = itRlcBuf->m_logicalChannelIdentity;
+					if (itRlcBuf->m_rlcRetransmissionQueueSize > 0)
 					{
 						newRlcEl.m_size = itRlcBuf->m_rlcRetransmissionQueueSize;
 					}
@@ -1011,11 +1017,11 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 
 					if (newRlcEl.m_size > 0)
 					{
-						if (newRlcEl.m_size < 5)
+						if (newRlcEl.m_size < 8)
 						{
-							newRlcEl.m_size = 5;
+							newRlcEl.m_size = 8;
 						}
-						newRlcEl.m_size += m_rlcHdrSize + m_subHdrSize;
+						newRlcEl.m_size += m_rlcHdrSize + m_subHdrSize + 10;
 						itUeInfo->second.m_rlcPduInfo.push_back (newRlcEl);
 						itUeInfo->second.m_maxDlBufSize += newRlcEl.m_size;  // add to total DL buffer size
 					}
@@ -1109,7 +1115,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				{
 					itUeInfo->second.m_ulMcs = mcs;//m_amc->GetMcsFromCqi (cqi);  // get MCS
 				}
-				itUeInfo->second.m_maxUlBufSize = ceBsrIt->second + m_rlcHdrSize + m_macHdrSize;
+				itUeInfo->second.m_maxUlBufSize = ceBsrIt->second + m_rlcHdrSize + m_macHdrSize + 8;
 			}
 		}
 	}
@@ -1348,24 +1354,33 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 
 			// distribute bytes between active RLC queues
 			unsigned numLc = ueSchedInfo.m_rlcPduInfo.size ();
-			uint16_t rlcPduSize = dci.m_tbSize / numLc;
+			unsigned bytesRem = dci.m_tbSize;
+			unsigned numFulfilled = 0;
+			uint16_t avgPduSize = bytesRem / numLc;
 			// first for loop computes extra to add to average if some flows are less than average
 			for (unsigned i = 0; i < ueSchedInfo.m_rlcPduInfo.size (); i++)
 			{
-				if (ueSchedInfo.m_rlcPduInfo[i].m_size < rlcPduSize)
+				if (ueSchedInfo.m_rlcPduInfo[i].m_size < avgPduSize)
 				{
-					rlcPduSize += (rlcPduSize - ueSchedInfo.m_rlcPduInfo[i].m_size) / numLc;
+					bytesRem -= ueSchedInfo.m_rlcPduInfo[i].m_size;
+					numFulfilled++;
 				}
 			}
+
+			if (numFulfilled < ueSchedInfo.m_rlcPduInfo.size ())
+			{
+				avgPduSize = bytesRem / (ueSchedInfo.m_rlcPduInfo.size () - numFulfilled);
+			}
+
 			for (unsigned i = 0; i < ueSchedInfo.m_rlcPduInfo.size (); i++)
 			{
-				if (ueSchedInfo.m_rlcPduInfo[i].m_size > rlcPduSize)
+				if (ueSchedInfo.m_rlcPduInfo[i].m_size > avgPduSize)
 				{
-					ueSchedInfo.m_rlcPduInfo[i].m_size = rlcPduSize;
+					ueSchedInfo.m_rlcPduInfo[i].m_size = avgPduSize;
 				}
 				// else tbSize equals RLC queue size
 				NS_ASSERT(ueSchedInfo.m_rlcPduInfo[i].m_size > 0);
-				for (itRlcBuf = m_rlcBufferReq.begin (); itRlcBuf != m_rlcBufferReq.end (); itRlcBuf++)
+				/*for (itRlcBuf = m_rlcBufferReq.begin (); itRlcBuf != m_rlcBufferReq.end (); itRlcBuf++)
 				{
 					if(itRlcBuf->m_rnti == itUeInfo->first)
 					{
@@ -1374,7 +1389,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 							NS_FATAL_ERROR ("LC is scheduled but RLC buffer == 0");
 						}
 					}
-				}
+				}*/
 				// update RLC buffer info with expected queue size after scheduling
 				UpdateDlRlcBufferInfo (itUeInfo->first, ueSchedInfo.m_rlcPduInfo[i].m_lcid, ueSchedInfo.m_rlcPduInfo[i].m_size-m_subHdrSize);
 				//schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (itRlcInfo->second[i]);
@@ -1589,49 +1604,57 @@ MmWaveFlexTtiMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, u
   NS_LOG_FUNCTION (this);
   std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
   for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
-    {
-      if (((*it).m_rnti == rnti) && ((*it).m_logicalChannelIdentity == lcid))
-        {
-          NS_LOG_INFO (this << " UE " << rnti << " LC " << (uint16_t)lcid << " txqueue " << (*it).m_rlcTransmissionQueueSize << " retxqueue " << (*it).m_rlcRetransmissionQueueSize << " status " << (*it).m_rlcStatusPduSize << " decrease " << size);
-          // Update queues: RLC tx order Status, ReTx, Tx
-          // Update status queue
-           if (((*it).m_rlcStatusPduSize > 0) && (size >= (*it).m_rlcStatusPduSize))
-              {
-                (*it).m_rlcStatusPduSize = 0;
-              }
-            else if (((*it).m_rlcRetransmissionQueueSize > 0) && (size >= (*it).m_rlcRetransmissionQueueSize))
-              {
-                (*it).m_rlcRetransmissionQueueSize = 0;
-              }
-            else if ((*it).m_rlcTransmissionQueueSize > 0)
-              {
-                uint32_t rlcOverhead;
-                if (lcid == 1)
-                  {
-                    // for SRB1 (using RLC AM) it's better to
-                    // overestimate RLC overhead rather than
-                    // underestimate it and risk unneeded
-                    // segmentation which increases delay
-                    rlcOverhead = 4;
-                  }
-                else
-                  {
-                    // minimum RLC overhead due to header
-                    rlcOverhead = 2;
-                  }
-                // update transmission queue
-                if ((*it).m_rlcTransmissionQueueSize <= size - rlcOverhead)
-                  {
-                    (*it).m_rlcTransmissionQueueSize = 0;
-                  }
-                else
-                  {
-                    (*it).m_rlcTransmissionQueueSize -= size - rlcOverhead;
-                  }
-              }
-          return;
-        }
-    }
+  {
+  	if (((*it).m_rnti == rnti) && ((*it).m_logicalChannelIdentity == lcid))
+  	{
+  		NS_LOG_INFO (this << " UE " << rnti << " LC " << (uint16_t)lcid << " txqueue " << (*it).m_rlcTransmissionQueueSize << " retxqueue " << (*it).m_rlcRetransmissionQueueSize << " status " << (*it).m_rlcStatusPduSize << " decrease " << size);
+  		// Update queues: RLC tx order Status, ReTx, Tx
+  		// Update status queue
+  		if (((*it).m_rlcStatusPduSize > 0) && (size >= (*it).m_rlcStatusPduSize))
+  		{
+  			(*it).m_rlcStatusPduSize = 0;
+  		}
+
+  		if ((*it).m_rlcRetransmissionQueueSize > 0)
+  		{
+  			if ((*it).m_rlcRetransmissionQueueSize <= (unsigned)(size - (*it).m_rlcStatusPduSize))
+  			{
+  				(*it).m_rlcRetransmissionQueueSize = 0;
+  			}
+  			else
+  			{
+  				(*it).m_rlcRetransmissionQueueSize -= (size - (*it).m_rlcStatusPduSize);
+  			}
+  		}
+  		else if ((*it).m_rlcTransmissionQueueSize > 0)
+  		{
+  			uint32_t rlcOverhead;
+  			if (lcid == 1)
+  			{
+  				// for SRB1 (using RLC AM) it's better to
+  						// overestimate RLC overhead rather than
+  						// underestimate it and risk unneeded
+  				// segmentation which increases delay
+  				rlcOverhead = 4;
+  			}
+  			else
+  			{
+  				// minimum RLC overhead due to header
+  				rlcOverhead = 2;
+  			}
+  			// update transmission queue
+  			if ((*it).m_rlcTransmissionQueueSize <= (size - rlcOverhead - (*it).m_rlcStatusPduSize))
+  			{
+  				(*it).m_rlcTransmissionQueueSize = 0;
+  			}
+  			else
+  			{
+  				(*it).m_rlcTransmissionQueueSize -= (size - rlcOverhead - (*it).m_rlcStatusPduSize);
+  			}
+  		}
+  		return;
+  	}
+  }
 }
 
 void

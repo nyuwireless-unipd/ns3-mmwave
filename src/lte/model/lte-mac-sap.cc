@@ -33,7 +33,15 @@ LteMacSapUser::~LteMacSapUser ()
 {
 }
 
+void
+LteMacSapUser::NotifyDlHarqDeliveryFailure (uint8_t harqId)
+{
+}
 
+void
+LteMacSapUser::NotifyUlHarqDeliveryFailure (uint8_t harqId)
+{
+}
 
 
 } // namespace ns3

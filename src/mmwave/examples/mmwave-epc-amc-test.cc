@@ -12,6 +12,8 @@
 #include "ns3/applications-module.h"
 #include "ns3/log.h"
 #include "ns3/mmwave-propagation-loss-model.h"
+#include "ns3/point-to-point-helper.h"
+#include "ns3/mmwave-point-to-point-epc-helper.h"
 
 using namespace ns3;
 
@@ -69,6 +71,8 @@ main (int argc, char *argv[])
 	bool smallScale = true;
 	double speed = 0.5;
 	double dist = 100.0;
+	double interPacketInterval = 1000;  // 500 microseconds
+
 	// Command line arguments
 	CommandLine cmd;
 	cmd.AddValue("numEnb", "Number of eNBs", numEnb);
@@ -96,7 +100,7 @@ main (int argc, char *argv[])
 	//Config::SetDefault ("ns3::MmWaveAmc::AmcModel", EnumValue (MmWaveAmc::PiroEW2010));
 	Config::SetDefault ("ns3::MmWaveAmc::Ber", DoubleValue (0.01));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
-	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue(true));
+//	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (Seconds (2*simTime)));
@@ -107,53 +111,135 @@ main (int argc, char *argv[])
 	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
 	Config::SetDefault ("ns3::MmWavePropagationLossModel::FixedLossTst", BooleanValue (true));
 	Config::SetDefault ("ns3::MmWavePropagationLossModel::LossFixedDb", DoubleValue (100.0));
+	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 
   Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
 
   mmwHelper->Initialize();
-  mmwHelper->SetHarqEnabled (harqEnabled);
   Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel ()->GetObject<MmWavePropagationLossModel> ();
+  Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+  mmwHelper->SetEpcHelper (epcHelper);
 
-  /* A configuration example.
-   * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
+  ConfigStore inputConfig;
+  inputConfig.ConfigureDefaults();
 
-  NodeContainer enbNodes;
+  // parse again so you can override default values from the command line
+  cmd.Parse(argc, argv);
+
+  Ptr<Node> pgw = epcHelper->GetPgwNode ();
+
+  // Create a single RemoteHost
+  NodeContainer remoteHostContainer;
+  remoteHostContainer.Create (1);
+  Ptr<Node> remoteHost = remoteHostContainer.Get (0);
+  InternetStackHelper internet;
+  internet.Install (remoteHostContainer);
+
+  // Create the Internet
+  PointToPointHelper p2ph;
+  p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
+  p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
+  p2ph.SetChannelAttribute ("Delay", TimeValue (MicroSeconds (100.0)));
+  NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
+  Ipv4AddressHelper ipv4h;
+  ipv4h.SetBase ("1.0.0.0", "255.0.0.0");
+  Ipv4InterfaceContainer internetIpIfaces = ipv4h.Assign (internetDevices);
+  // interface 0 is localhost, 1 is the p2p device
+  Ipv4Address remoteHostAddr = internetIpIfaces.GetAddress (1);
+
+  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
+  remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
+
   NodeContainer ueNodes;
-  enbNodes.Create (numEnb);
-  ueNodes.Create (numUe);
+  NodeContainer enbNodes;
+  enbNodes.Create(numEnb);
+  ueNodes.Create(numUe);
 
+  // Install Mobility Model
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
-
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator(enbPositionAlloc);
   enbmobility.Install (enbNodes);
-  BuildingsHelper::Install (enbNodes);
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
   uePositionAlloc->Add (Vector (dist, 0.0, 0.0));
-
-  Simulator::Schedule (MilliSeconds(0), &updateLoss, lossMin, lossModel);
-
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
-  BuildingsHelper::Install (ueNodes);
 
-  NetDeviceContainer enbNetDev = mmwHelper->InstallEnbDevice (enbNodes);
-  NetDeviceContainer ueNetDev = mmwHelper->InstallUeDevice (ueNodes);
+  Simulator::Schedule (MilliSeconds(0), &updateLoss, lossMin, lossModel);
 
-  mmwHelper->AttachToClosestEnb (ueNetDev, enbNetDev);
-  mmwHelper->EnableTraces();
+  // Install mmWave Devices to the nodes
+  NetDeviceContainer enbmmWaveDevs = mmwHelper->InstallEnbDevice (enbNodes);
+  NetDeviceContainer uemmWaveDevs = mmwHelper->InstallUeDevice (ueNodes);
 
-  // Activate a data radio bearer
-  enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
-  EpsBearer bearer (q);
-  mmwHelper->ActivateDataRadioBearer (ueNetDev, bearer);
+  // Install the IP stack on the UEs
+  internet.Install (ueNodes);
+  Ipv4InterfaceContainer ueIpIface;
+  ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (uemmWaveDevs));
+  // Assign IP address to UEs, and install applications
+  for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
+  {
+  	Ptr<Node> ueNode = ueNodes.Get (u);
+  	// Set the default gateway for the UE
+  	Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
+  	ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
+  }
+
+  mmwHelper->AttachToClosestEnb (uemmWaveDevs, enbmmWaveDevs);
+
+  // Install and start applications on UEs and remote host
+  uint16_t dlPort = 1234;
+  uint16_t ulPort = 2000;
+  uint16_t otherPort = 3000;
+  ApplicationContainer clientApps;
+  ApplicationContainer serverApps;
+  uint32_t packetSize = 500;
+  for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
+  {
+  	++ulPort;
+  	++otherPort;
+  	PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+  	PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+  	//PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), otherPort));
+  	serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
+  	serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
+  	//serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
+
+  	UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
+  	dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+  	dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+  	dlClient.SetAttribute ("PacketSize", UintegerValue(packetSize));
+
+  	UdpClientHelper ulClient (remoteHostAddr, ulPort);
+  	ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+  	ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+  	ulClient.SetAttribute ("PacketSize", UintegerValue(packetSize));
+
+  	//		UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
+  	//		client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+  	//		client.SetAttribute ("MaxPackets", UintegerValue(1000000));
+
+  	clientApps.Add (dlClient.Install (remoteHost));
+  	clientApps.Add (ulClient.Install (ueNodes.Get(u)));
+  	//		if (u+1 < ueNodes.GetN ())
+  	//		{
+  	//			clientApps.Add (client.Install (ueNodes.Get(u+1)));
+  	//		}
+  	//		else
+  	//		{
+  	//			clientApps.Add (client.Install (ueNodes.Get(0)));
+  	//		}
+  }
+  serverApps.Start (Seconds (0.020));
+  clientApps.Start (Seconds (0.020));
+  mmwHelper->EnableTraces ();
 
   Simulator::Stop (Seconds (simTime));
 	NS_LOG_UNCOND ("Simulation running for " << simTime << " seconds");

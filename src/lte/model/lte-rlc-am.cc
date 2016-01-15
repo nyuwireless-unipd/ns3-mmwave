@@ -252,6 +252,13 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
       NS_ASSERT_MSG (sn <= m_vrMs, "first SN not reported as missing = " << sn << ", VR(MS) = " << m_vrMs);      
       rlcAmHeader.SetAckSn (sn); 
 
+      // map SN to HARQ ID
+    	std::map <uint8_t, uint16_t>::iterator itHarqIdMap = m_harqIdToSnMap.find (harqId);
+    	if (itHarqIdMap != m_harqIdToSnMap.end ())
+    	{
+    		m_harqIdToSnMap.erase (itHarqIdMap);
+    	}
+    	m_harqIdToSnMap.insert (std::pair <uint8_t, uint16_t> (harqId, sn.GetValue ()));
 
       NS_LOG_LOGIC ("RLC header: " << rlcAmHeader);
       packet->AddHeader (rlcAmHeader);
@@ -725,6 +732,35 @@ void
 LteRlcAm::DoNotifyHarqDeliveryFailure ()
 {
   NS_LOG_FUNCTION (this);
+}
+
+void
+LteRlcAm::DoNotifyDlHarqDeliveryFailure (uint8_t harqId)
+{
+	NS_LOG_FUNCTION (this);
+
+	std::map <uint8_t, uint16_t>::const_iterator it = m_harqIdToSnMap.find (harqId);
+	NS_ASSERT (it != m_harqIdToSnMap.end ());
+
+	uint16_t seqNumberValue = it->second;
+	if (m_txedBuffer.at (seqNumberValue).m_pdu != 0)
+	{
+		NS_LOG_INFO ("Move SN = " << seqNumberValue << " to retxBuffer");
+		m_retxBuffer.at (seqNumberValue).m_pdu = m_txedBuffer.at (seqNumberValue).m_pdu->Copy ();
+		m_retxBuffer.at (seqNumberValue).m_retxCount = m_txedBuffer.at (seqNumberValue).m_retxCount;
+		m_retxBufferSize += m_retxBuffer.at (seqNumberValue).m_pdu->GetSize ();
+
+		m_txedBufferSize -= m_txedBuffer.at (seqNumberValue).m_pdu->GetSize ();
+		m_txedBuffer.at (seqNumberValue).m_pdu = 0;
+		m_txedBuffer.at (seqNumberValue).m_retxCount = 0;
+	}
+
+	NS_ASSERT (m_retxBuffer.at (seqNumberValue).m_pdu != 0);
+}
+
+void
+LteRlcAm::DoNotifyUlHarqDeliveryFailure (uint8_t harqId)
+{
 }
 
 

@@ -470,9 +470,9 @@ MmWaveUePhy::StartSlot ()
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * currSlot.m_dci.m_numSym);
 		std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
 		Ptr<PacketBurst> pktBurst = GetPacketBurst (SfnSf(m_frameNum, m_sfNum, currSlot.m_dci.m_symStart));
-		std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
-		if (!pkts.empty ())
+		if (pktBurst && pktBurst->GetNPackets () > 0)
 		{
+			std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
 			MmWaveMacPduTag tag;
 			pkts.front ()->PeekPacketTag (tag);
 			NS_ASSERT ((tag.GetSfn().m_sfNum == m_sfNum) && (tag.GetSfn().m_slotNum == currSlot.m_dci.m_symStart));
@@ -482,6 +482,22 @@ MmWaveUePhy::StartSlot ()
 			{
 				NS_FATAL_ERROR ("No radio bearer tag");
 			}
+		}
+		else
+		{
+			// sometimes the UE will be scheduled when no data is queued
+			// in this case, send an empty PDU
+			MmWaveMacPduTag tag (SfnSf(m_frameNum, m_sfNum, currSlot.m_dci.m_symStart));
+			Ptr<Packet> emptyPdu = Create <Packet> ();
+			MmWaveMacPduHeader header;
+			MacSubheader subheader (3, 0);  // lcid = 3, size = 0
+			header.AddSubheader (subheader);
+			emptyPdu->AddHeader (header);
+			emptyPdu->AddPacketTag (tag);
+			LteRadioBearerTag bearerTag (m_rnti, 3, 0);
+			emptyPdu->AddPacketTag (bearerTag);
+			pktBurst = CreateObject<PacketBurst> ();
+			pktBurst->AddPacket (emptyPdu);
 		}
 		m_reportUlTbSize (GetDevice ()->GetObject <MmWaveUeNetDevice> ()->GetImsi(), currSlot.m_dci.m_tbSize);
 		NS_LOG_DEBUG ("UE" << m_rnti << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
@@ -684,6 +700,10 @@ MmWaveUePhy::ReceiveLteDlHarqFeedback (DlHarqInfo m)
   Ptr<MmWaveDlHarqFeedbackMessage> msg = Create<MmWaveDlHarqFeedbackMessage> ();
   msg->SetDlHarqFeedback (m);
   Simulator::Schedule (MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()), &MmWaveUePhy::DoSendControlMessage, this, msg);
+//  if (m.m_harqStatus == DlHarqInfo::NACK)  // Notify MAC/RLC
+//  {
+//  	m_phySapUser->NotifyHarqDeliveryFailure (m.m_harqProcessId);
+//  }
 }
 
 bool

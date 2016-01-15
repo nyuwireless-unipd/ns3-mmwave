@@ -389,6 +389,7 @@ struct DlHarqInfo
     ACK, NACK
   };
   enum HarqStatus m_harqStatus;
+  uint8_t	m_numRetx;
 };
 
 struct UlHarqInfo
@@ -401,6 +402,7 @@ struct UlHarqInfo
     Ok, NotOk, NotValid
   } m_receptionStatus;
   uint8_t   m_tpc;
+  uint8_t	m_numRetx;
 };
 
 
