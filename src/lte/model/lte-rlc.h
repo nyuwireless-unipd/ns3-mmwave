@@ -136,6 +136,7 @@ protected:
   // Interface forwarded by LteMacSapUser
   virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId) = 0;
   virtual void DoNotifyHarqDeliveryFailure () = 0;
+  virtual void DoNotifyHarqDeliveryFailure (uint8_t harqId);
   virtual void DoReceivePdu (Ptr<Packet> p) = 0;
 
   LteMacSapUser* m_macSapUser;

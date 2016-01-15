@@ -32,7 +32,6 @@ namespace ns3 {
 		MacPduInfo (SfnSf sfn, uint32_t size, uint8_t numRlcPdu) :
 			m_sfnSf (sfn), m_size (size), m_numRlcPdu (numRlcPdu)
 		{
-
 			m_pdu = Create<Packet> ();
 			m_macHeader = MmWaveMacPduHeader ();
 			MmWaveMacPduTag tag (sfn);

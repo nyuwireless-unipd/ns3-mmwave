@@ -584,6 +584,7 @@ MmWaveSpectrumPhy::EndRxData ()
 						harqUlInfo.m_rnti = rnti;
 						harqUlInfo.m_tpc = 0;
 						harqUlInfo.m_harqProcessId = itTb->second.harqProcessId;
+						harqUlInfo.m_numRetx = itTb->second.rv;
 						if (itTb->second.corrupt)
 						{
 							harqUlInfo.m_receptionStatus = UlHarqInfo::NotOk;
@@ -614,6 +615,7 @@ MmWaveSpectrumPhy::EndRxData ()
 							harqDlInfo.m_harqStatus = DlHarqInfo::NACK;
 							harqDlInfo.m_rnti = rnti;
 							harqDlInfo.m_harqProcessId = itTb->second.harqProcessId;
+							harqDlInfo.m_numRetx = itTb->second.rv;
 							if (itTb->second.corrupt)
 							{
 								harqDlInfo.m_harqStatus = DlHarqInfo::NACK;

@@ -53,6 +53,7 @@ private:
   // forwarded from PHY SAP
 	void DoReceivePhyPdu (Ptr<Packet> p);
 	void DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg);
+	//void DoNotifyHarqDeliveryFailure (uint8_t harqId);
 
 	// forwarded from UE CMAC SAP
 	void DoConfigureRach (LteUeCmacSapProvider::RachConfig rc);
@@ -93,14 +94,22 @@ private:
 	Time m_bsrLast;
 	bool m_freshUlBsr; // true when a BSR has been received in the last TTI
 
-  uint8_t m_harqProcessId;
-  std::vector < Ptr<PacketBurst> > m_miUlHarqProcessesPacket; // Packets under trasmission of the UL HARQ processes
-  std::vector < uint8_t > m_miUlHarqProcessesPacketTimer; // timer for packet life in the buffer
 
 	Ptr<UniformRandomVariable> m_raPreambleUniformVariable;
 	uint8_t m_raPreambleId;
 	uint8_t m_raRnti;
 
+	struct UlHarqProcessInfo
+		{
+			Ptr<PacketBurst> m_pktBurst;
+			// maintain list of LCs contained in this TB
+			// used to signal HARQ failure to RLC handlers
+			std::vector<uint8_t> m_lcidList;
+		};
+
+  uint8_t m_harqProcessId;
+  std::vector < UlHarqProcessInfo > m_miUlHarqProcessesPacket; // Packets under trasmission of the UL HARQ processes
+  std::vector < uint8_t > m_miUlHarqProcessesPacketTimer; // timer for packet life in the buffer
 
 	struct LcInfo
 	{

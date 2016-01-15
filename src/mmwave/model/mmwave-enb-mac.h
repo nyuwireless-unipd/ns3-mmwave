@@ -17,7 +17,15 @@
 namespace ns3
 {
 
-typedef std::vector < Ptr<PacketBurst> > DlHarqProcessesBuffer_t;
+	struct DlHarqProcessInfo
+	{
+		Ptr<PacketBurst> m_pktBurst;
+		// maintain list of LCs contained in this TB
+		// used to signal HARQ failure to RLC handlers
+		std::vector<uint8_t> m_lcidList;
+	};
+
+typedef std::vector < DlHarqProcessInfo> DlHarqProcessesBuffer_t;
 
 class MmWaveEnbMac : public Object
 {

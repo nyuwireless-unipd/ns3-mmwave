@@ -43,6 +43,7 @@ public:
   // Interface implemented from LteMacSapUser
   virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
   virtual void NotifyHarqDeliveryFailure ();
+  virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
   virtual void ReceivePdu (Ptr<Packet> p);
 
 private:
@@ -69,6 +70,12 @@ void
 LteRlcSpecificLteMacSapUser::NotifyHarqDeliveryFailure ()
 {
   m_rlc->DoNotifyHarqDeliveryFailure ();
+}
+
+void
+LteRlcSpecificLteMacSapUser::NotifyHarqDeliveryFailure (uint8_t harqId)
+{
+  m_rlc->DoNotifyHarqDeliveryFailure (harqId);
 }
 
 void
@@ -165,7 +172,11 @@ LteRlc::GetLteMacSapUser ()
   return m_macSapUser;
 }
 
-
+void
+LteRlc::DoNotifyHarqDeliveryFailure (uint8_t harqId)
+{
+	NS_LOG_FUNCTION (this);
+}
 
 ////////////////////////////////////////
 

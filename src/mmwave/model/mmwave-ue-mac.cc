@@ -129,6 +129,8 @@ public:
 
 	virtual void SubframeIndication (SfnSf sfn);
 
+	//virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
+
 private:
 	MmWaveUeMac* m_mac;
 };
@@ -155,6 +157,12 @@ MacUeMemberPhySapUser::SubframeIndication (SfnSf sfn)
 {
 	m_mac->DoSubframeIndication(sfn);
 }
+
+//void
+//MacUeMemberPhySapUser::NotifyHarqDeliveryFailure (uint8_t harqId)
+//{
+//	m_mac->DoNotifyHarqDeliveryFailure (harqId);
+//}
 
 //-----------------------------------------------------------------------
 
@@ -208,7 +216,7 @@ MmWaveUeMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
   for (uint8_t i = 0; i < m_miUlHarqProcessesPacket.size (); i++)
     {
       Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-      m_miUlHarqProcessesPacket.at (i) = pb;
+      m_miUlHarqProcessesPacket.at (i).m_pktBurst = pb;
     }
   m_miUlHarqProcessesPacketTimer.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
 
@@ -233,10 +241,22 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 	}
 	else
 	{
+		MmWaveMacPduTag tag;
+		it->second.m_pdu->PeekPacketTag (tag);
+		if (tag.GetSfn ().m_frameNum < m_frameNum)
+		{
+			return;
+		}
+		if (it->second.m_size <
+				(it->second.m_pdu->GetSize () + params.pdu->GetSize() + it->second.m_macHeader.GetSerializedSize ()))
+		{
+			NS_FATAL_ERROR ("Maximum TB size exceeded");
+		}
 		it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
 		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
+		m_miUlHarqProcessesPacket.at (params.harqProcessId).m_lcidList.push_back (params.lcid);
 
 		if (it->second.m_numRlcPdu <= 1)
 		{
@@ -244,7 +264,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 			it->second.m_pdu->AddHeader (it->second.m_macHeader);
 			LteRadioBearerTag bearerTag (params.rnti, 0, 0);
 			it->second.m_pdu->AddPacketTag (bearerTag);
-			m_miUlHarqProcessesPacket.at (params.harqProcessId)->AddPacket (it->second.m_pdu);
+			m_miUlHarqProcessesPacket.at (params.harqProcessId).m_pktBurst->AddPacket (it->second.m_pdu);
 			m_miUlHarqProcessesPacketTimer.at (params.harqProcessId) = m_phyMacConfig->GetHarqTimeout ();
 			//m_harqProcessId = (m_harqProcessId + 1) % m_phyMacConfig->GetHarqTimeout();
 			m_phySapProvider->SendMacPdu (it->second.m_pdu);
@@ -348,12 +368,13 @@ MmWaveUeMac::RefreshHarqProcessesPacketBuffer (void)
     {
       if (m_miUlHarqProcessesPacketTimer.at (i) == 0)
         {
-          if (m_miUlHarqProcessesPacket.at (i)->GetSize () > 0)
+          if (m_miUlHarqProcessesPacket.at (i).m_pktBurst->GetSize () > 0)
             {
               // timer expired: drop packets in buffer for this process
               NS_LOG_INFO (this << " HARQ Proc Id " << i << " packets buffer expired");
               Ptr<PacketBurst> emptyPb = CreateObject <PacketBurst> ();
-              m_miUlHarqProcessesPacket.at (i) = emptyPb;
+              m_miUlHarqProcessesPacket.at (i).m_pktBurst = emptyPb;
+              m_miUlHarqProcessesPacket.at (i).m_lcidList.clear ();
             }
         }
       else
@@ -411,19 +432,32 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			{
 				NS_LOG_DEBUG ("Fragmenting MAC PDU (packet size greater than specified in MAC header (actual= " \
 				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
-				rlcPdu = p->CreateFragment (currPos, p->GetSize ());
-				currPos += p->GetSize ();
+				rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
+				currPos += (uint32_t)macSubheaders[ipdu].m_size;
 				it->second.macSapUser->ReceivePdu (rlcPdu);
 			}
 			else
 			{
-				rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
-				currPos += (uint32_t)macSubheaders[ipdu].m_size;
+				rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
+				currPos = p->GetSize ();
 				it->second.macSapUser->ReceivePdu (rlcPdu);
 			}
 		}
 	}
 }
+
+//void
+//MmWaveUeMac::DoNotifyHarqDeliveryFailure (uint8_t harqId)
+//{
+//  NS_LOG_FUNCTION (this);
+//  for (unsigned i = 0; i < m_miUlHarqProcessesPacket.at (harqId).m_lcidList.size (); i++)
+//  {
+//  	uint8_t lcid = m_miUlHarqProcessesPacket.at (harqId).m_lcidList[i];
+//  	std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (lcid);
+//  	NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid");
+//  	it->second.macSapUser->NotifyHarqDeliveryFailure (harqId);
+//  }
+//}
 
 void
 MmWaveUeMac::RecvRaResponse (BuildRarListElement_s raResponse)
@@ -450,8 +484,12 @@ std::map<uint32_t, struct MacPduInfo>::iterator MmWaveUeMac::AddToMacPduMap (Dci
 		sfNum = m_sfNum + m_phyMacConfig->GetUlSchedDelay ();
 	}
 	MacPduInfo macPduInfo (SfnSf(frameNum, sfNum, dci.m_symStart), dci.m_tbSize, activeLcs);
-	std::map<uint32_t, struct MacPduInfo>::iterator it =
-			(m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (dci.m_harqProcess, macPduInfo))).first;
+	std::map<uint32_t, struct MacPduInfo>::iterator it = m_macPduMap.find (dci.m_harqProcess);
+	if (it != m_macPduMap.end ())
+	{
+		m_macPduMap.erase (it);
+	}
+	it = (m_macPduMap.insert (std::pair<uint32_t, struct MacPduInfo> (dci.m_harqProcess, macPduInfo))).first;
 	return it;
 }
 
@@ -473,7 +511,8 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 			{
 				// New transmission -> empty pkt buffer queue (for deleting eventual pkts not acked )
 				Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-				m_miUlHarqProcessesPacket.at (dciInfoElem.m_harqProcess) = pb;
+				m_miUlHarqProcessesPacket.at (dciInfoElem.m_harqProcess).m_pktBurst = pb;
+				m_miUlHarqProcessesPacket.at (dciInfoElem.m_harqProcess).m_lcidList.clear ();
 				// Retrieve data from RLC
 				std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters>::iterator itBsr;
 				uint16_t activeLcs = 0;
@@ -519,7 +558,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 					emptyPdu->AddPacketTag (tag);
 					LteRadioBearerTag bearerTag (dciInfoElem.m_rnti, 3, 0);
 					emptyPdu->AddPacketTag (bearerTag);
-					m_miUlHarqProcessesPacket.at (dciInfoElem.m_harqProcess)->AddPacket (emptyPdu);
+					m_miUlHarqProcessesPacket.at (dciInfoElem.m_harqProcess).m_pktBurst->AddPacket (emptyPdu);
 					m_miUlHarqProcessesPacketTimer.at (dciInfoElem.m_harqProcess) = m_phyMacConfig->GetHarqTimeout ();
 					//m_harqProcessId = (m_harqProcessId + 1) % m_phyMacConfig->GetHarqTimeout();
 					m_phySapProvider->SendMacPdu (emptyPdu);
@@ -553,7 +592,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 						if ((statusPduPriority) && ((*itBsr).second.statusPduSize == statusPduMinSize))
 						{
 							MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
-							(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize - subheader.GetSize ()), 0, dciInfoElem.m_harqProcess);
+							(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess);
 							NS_LOG_LOGIC (this << "\t" << bytesPerActiveLc << " send  " << (*itBsr).second.statusPduSize << " status bytes to LC " << (uint32_t)(*lcIt).first << " statusQueue " << (*itBsr).second.statusPduSize << " retxQueue" << (*itBsr).second.retxQueueSize << " txQueue" <<  (*itBsr).second.txQueueSize);
 							(*itBsr).second.statusPduSize = 0;
 							break;
@@ -564,8 +603,9 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 							NS_LOG_LOGIC (this << "\t" << bytesPerActiveLc << " bytes to LC " << (uint32_t)(*lcIt).first << " statusQueue " << (*itBsr).second.statusPduSize << " retxQueue" << (*itBsr).second.retxQueueSize << " txQueue" <<  (*itBsr).second.txQueueSize);
 							if (((*itBsr).second.statusPduSize > 0) && (bytesForThisLc > (*itBsr).second.statusPduSize))
 							{
-								MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
-								(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize - subheader.GetSize ()), 0, dciInfoElem.m_harqProcess);
+								macPduIt->second.m_numRlcPdu++;		// send status PDU + data PDU
+								//MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
+								(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess);
 								bytesForThisLc -= (*itBsr).second.statusPduSize;
 								NS_LOG_DEBUG (this << " serve STATUS " << (*itBsr).second.statusPduSize);
 								(*itBsr).second.statusPduSize = 0;
@@ -644,7 +684,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 			{
 				// HARQ retransmission -> retrieve data from HARQ buffer
 				NS_LOG_DEBUG (this << " UE MAC RETX HARQ " << (unsigned)dciInfoElem.m_harqProcess);
-				Ptr<PacketBurst> pb = m_miUlHarqProcessesPacket.at (dciInfoElem.m_harqProcess);
+				Ptr<PacketBurst> pb = m_miUlHarqProcessesPacket.at (dciInfoElem.m_harqProcess).m_pktBurst;
 				for (std::list<Ptr<Packet> >::const_iterator j = pb->Begin (); j != pb->End (); ++j)
 				{
 					Ptr<Packet> pkt = (*j)->Copy ();

@@ -399,12 +399,25 @@ MmWaveEnbPhy::StartSlot (void)
 		if(pktBurst && pktBurst->GetNPackets() > 0)
 		{
 			std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
-			if (!pkts.empty ())
-			{
-				MmWaveMacPduTag macTag;
-				pkts.front ()->PeekPacketTag (macTag);
-				NS_ASSERT ((macTag.GetSfn().m_sfNum == m_sfNum) && (macTag.GetSfn().m_slotNum == currSlot.m_dci.m_symStart));
-			}
+			MmWaveMacPduTag macTag;
+			pkts.front ()->PeekPacketTag (macTag);
+			NS_ASSERT ((macTag.GetSfn().m_sfNum == m_sfNum) && (macTag.GetSfn().m_slotNum == currSlot.m_dci.m_symStart));
+		}
+		else
+		{
+			// sometimes the UE will be scheduled when no data is queued
+			// in this case, send an empty PDU
+			MmWaveMacPduTag tag (SfnSf(m_frameNum, m_sfNum, currSlot.m_dci.m_symStart));
+			Ptr<Packet> emptyPdu = Create <Packet> ();
+			MmWaveMacPduHeader header;
+			MacSubheader subheader (3, 0);  // lcid = 3, size = 0
+			header.AddSubheader (subheader);
+			emptyPdu->AddHeader (header);
+			emptyPdu->AddPacketTag (tag);
+			LteRadioBearerTag bearerTag (currSlot.m_dci.m_rnti, 3, 0);
+			emptyPdu->AddPacketTag (bearerTag);
+			pktBurst = CreateObject<PacketBurst> ();
+			pktBurst->AddPacket (emptyPdu);
 		}
 		NS_LOG_DEBUG ("ENB TXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)

@@ -18,4 +18,6 @@ def build(bld):
     obj = bld.create_ns3_program('mmwave-amc-test', ['mmwave'])
     obj.source = 'mmwave-amc-test.cc'
     obj = bld.create_ns3_program('mmwave-amc-test2', ['mmwave'])
-    obj.source = 'mmwave-amc-test2.cc'     
+    obj.source = 'mmwave-amc-test2.cc'
+    obj = bld.create_ns3_program('mmwave-epc-amc-test', ['mmwave'])
+    obj.source = 'mmwave-epc-amc-test.cc'     
