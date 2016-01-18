@@ -1252,6 +1252,7 @@ private:
   TracedCallback<uint64_t, uint16_t, uint16_t, LteRrcSap::MeasurementReport> m_recvMeasurementReportTrace;
   bool m_ismmWave;
 
+  uint32_t m_firstSibTime;		// time in ms of initial SIB
 }; // end of `class LteEnbRrc`
 
 

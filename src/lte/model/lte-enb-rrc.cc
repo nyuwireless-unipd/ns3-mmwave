@@ -1304,7 +1304,8 @@ LteEnbRrc::LteEnbRrc ()
     m_lastAllocatedRnti (0),
     m_srsCurrentPeriodicityId (0),
     m_lastAllocatedConfigurationIndex (0),
-    m_reconfigureUes (false)
+    m_reconfigureUes (false),
+    m_firstSibTime (16)
 {
   NS_LOG_FUNCTION (this);
   m_cmacSapUser = new EnbRrcMemberLteEnbCmacSapUser (this);
@@ -1434,7 +1435,6 @@ LteEnbRrc::GetTypeId (void)
                    IntegerValue (-70),
                    MakeIntegerAccessor (&LteEnbRrc::m_qRxLevMin),
                    MakeIntegerChecker<int8_t> (-70, -22))
-
     // Handover related attributes
     .AddAttribute ("AdmitHandoverRequest",
                    "Whether to admit an X2 handover request from another eNB",
@@ -1464,13 +1464,17 @@ LteEnbRrc::GetTypeId (void)
                    UintegerValue (4),
                    MakeUintegerAccessor (&LteEnbRrc::m_rsrqFilterCoefficient),
                    MakeUintegerChecker<uint8_t> (0))
-
-	.AddAttribute ("mmWaveDevice",
-				   "Indicates whether RRC is for mmWave base station",
-				   BooleanValue (false),
-				   MakeBooleanAccessor (&LteEnbRrc::m_ismmWave),
-				   MakeBooleanChecker ())
-
+		.AddAttribute ("mmWaveDevice",
+						 "Indicates whether RRC is for mmWave base station",
+						 BooleanValue (false),
+						 MakeBooleanAccessor (&LteEnbRrc::m_ismmWave),
+						 MakeBooleanChecker ())
+		.AddAttribute ("FirstSibTime",
+									 "Time in ms of initial SIB message",
+									 // i.e. the variable k in 3GPP TS 36.331 section 5.5.3.2
+									 UintegerValue (16),
+									 MakeUintegerAccessor (&LteEnbRrc::m_firstSibTime),
+									 MakeUintegerChecker<uint32_t> (0))
     // Trace sources
     .AddTraceSource ("NewUeContext",
                      "Fired upon creation of a new UE context.",
@@ -1791,7 +1795,7 @@ LteEnbRrc::ConfigureCell (uint8_t ulBandwidth, uint8_t dlBandwidth,
    * SystemInformationPeriodicity attribute to configure this).
    */
   // mmWave module: Changed scheduling of initial system information to +2ms
-  Simulator::Schedule (MilliSeconds (16), &LteEnbRrc::SendSystemInformation, this);
+  Simulator::Schedule (MilliSeconds (m_firstSibTime), &LteEnbRrc::SendSystemInformation, this);
 
   m_configured = true;
 
