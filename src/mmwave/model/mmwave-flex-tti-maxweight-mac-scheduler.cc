@@ -188,7 +188,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::GetTypeId (void)
 		.AddConstructor<MmWaveFlexTtiMaxWeightMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
-                   UintegerValue (10),
+                   UintegerValue (1000),
                    MakeUintegerAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_cqiTimersThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",

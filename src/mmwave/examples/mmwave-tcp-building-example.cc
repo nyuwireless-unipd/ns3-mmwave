@@ -163,7 +163,9 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 
-	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 100));
+	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 100));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 100));
+	//Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 100));
 	//Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*10));
 	//Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*10));
 	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));

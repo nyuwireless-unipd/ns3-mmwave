@@ -95,6 +95,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", DoubleValue(100.0));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
@@ -106,8 +107,8 @@ main (int argc, char *argv[])
 	RngSeedManager::SetSeed (1234);
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-	//mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
-	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
+	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
+	//mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 
@@ -195,8 +196,8 @@ main (int argc, char *argv[])
 	ApplicationContainer serverApps;
 	uint32_t packetSize = 100;
 
-	/*double dataRateMB = 100000000.0;  // 100 MBps
-	double onTimeSec = .000001; //packetSize / dataRateMB;
+	double dataRateMB = 100e6;  // 100 MBps
+	double onTimeSec = 1e-6; //packetSize / dataRateMB;
 	std::stringstream ss;
 	ss << "ns3::ConstantRandomVariable[Constant=" << onTimeSec << "]";
 	std::cout << "OnTime == " << ss.str() << std::endl;
@@ -212,7 +213,7 @@ main (int argc, char *argv[])
 	ss << "ns3::ExponentialRandomVariable[Mean=" << interPacketInterval*1e-6 << "]";
 	std::cout << "OffTime == " << ss.str() << std::endl;
 	dlClient.SetAttribute ("OffTime", StringValue (ss.str ()));
-	ulClient.SetAttribute ("OffTime", StringValue (ss.str ()));*/
+	ulClient.SetAttribute ("OffTime", StringValue (ss.str ()));
 
 	for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
 	{
@@ -223,21 +224,21 @@ main (int argc, char *argv[])
 		serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
 		serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
 
-		UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
-		dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-		dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
-		dlClient.SetAttribute ("PacketSize", UintegerValue(packetSize));
+//		UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
+//		dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+//		dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+//		dlClient.SetAttribute ("PacketSize", UintegerValue(packetSize));
+//
+//		UdpClientHelper ulClient (remoteHostAddr, ulPort);
+//		ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+//		ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+//		ulClient.SetAttribute ("PacketSize", UintegerValue(packetSize));
 
-		UdpClientHelper ulClient (remoteHostAddr, ulPort);
-		ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-		ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
-		ulClient.SetAttribute ("PacketSize", UintegerValue(packetSize));
-
-//		UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
-//		client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-//		client.SetAttribute ("MaxPackets", UintegerValue(1000000));
-		//dlClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (ueIpIface.GetAddress (u), dlPort)));
-		//ulClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (remoteHostAddr, ulPort)));
+		UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
+		client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+		client.SetAttribute ("MaxPackets", UintegerValue(1000000));
+		dlClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (ueIpIface.GetAddress (u), dlPort)));
+		ulClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (remoteHostAddr, ulPort)));
 
 		clientApps.Add (dlClient.Install (remoteHost));
 		clientApps.Add (ulClient.Install (ueNodes.Get(u)));
