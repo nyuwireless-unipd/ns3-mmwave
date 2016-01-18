@@ -394,17 +394,10 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 	// produces a single CQI/MCS value
 
 	//std::vector<int> cqi;
-<<<<<<< HEAD
-	uint8_t cqi = 0;
-	double seAvg = 0;
-	double mcsAvg = 0;
-	double cqiAvg = 0;
-=======
 	uint8_t cqi=0;
 	double seAvg=0;
 	double mcsAvg=0;
 	double cqiAvg=0;
->>>>>>> 62b457a724a39e7c28ec720000b9266746c15a8c
 
 	Values::const_iterator it;
 	if (m_amcModel == PiroEW2010)
