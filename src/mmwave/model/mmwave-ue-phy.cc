@@ -71,13 +71,16 @@ MmWaveUePhy::GetTypeId (void)
 					    MakePointerChecker <MmWaveSpectrumPhy> ())
 		.AddTraceSource ("ReportCurrentCellRsrpSinr",
 						 "RSRP and SINR statistics.",
-						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportCurrentCellRsrpSinrTrace))
+						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportCurrentCellRsrpSinrTrace),
+						 "ns3::CurrentCellRsrpSinr::TracedCallback")
 		.AddTraceSource ("ReportUplinkTbSize",
 						 "Report allocated uplink TB size for trace.",
-						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportUlTbSize))
+						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportUlTbSize),
+						 "ns3::UlTbSize::TracedCallback")
 		.AddTraceSource ("ReportDownlinkTbSize",
 						 "Report allocated downlink TB size for trace.",
-						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportDlTbSize))
+						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportDlTbSize),
+						 "ns3::DlTbSize::TracedCallback")
 ;
 
 	return tid;
@@ -424,7 +427,7 @@ MmWaveUePhy::SubframeIndication (uint16_t frameNum, uint8_t sfNum)
 void
 MmWaveUePhy::StartSlot ()
 {
-	unsigned slotInd = 0;
+	//unsigned slotInd = 0;
 	SlotAllocInfo currSlot;
 	/*if (m_slotNum >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
 	{

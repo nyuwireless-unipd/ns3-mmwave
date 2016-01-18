@@ -140,6 +140,11 @@ MmWaveFlexTtiMacSchedSapProvider::SchedSetMcs (int mcs)
 	m_scheduler->DoSchedSetMcs (mcs);
 }
 
+const unsigned MmWaveFlexTtiMacScheduler::m_macHdrSize = 0;
+const unsigned MmWaveFlexTtiMacScheduler::m_subHdrSize = 3;
+const unsigned MmWaveFlexTtiMacScheduler::m_rlcHdrSize = 3;
+
+const double MmWaveFlexTtiMacScheduler::m_berDl = 0.001;
 
 MmWaveFlexTtiMacScheduler::MmWaveFlexTtiMacScheduler ()
 : m_nextRnti (0),

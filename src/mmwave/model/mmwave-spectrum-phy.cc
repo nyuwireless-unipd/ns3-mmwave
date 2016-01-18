@@ -84,10 +84,12 @@ MmWaveSpectrumPhy::GetTypeId(void)
 	    .SetParent<NetDevice> ()
 		.AddTraceSource ("RxPacketTraceEnb",
 						 "The no. of packets received and transmitted by the Base Station",
-						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_rxPacketTraceEnb))
+						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_rxPacketTraceEnb),
+						 "ns3::EnbTxRxPacketCount::TracedCallback")
 		.AddTraceSource ("RxPacketTraceUe",
 						 "The no. of packets received and transmitted by the User Device",
-						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_rxPacketTraceUe))
+						 MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_rxPacketTraceUe),
+						 "ns3::UeTxRxPacketCount::TracedCallback")
 		.AddAttribute ("DataErrorModelEnabled",
 										"Activate/Deactivate the error model of data (TBs of PDSCH and PUSCH) [by default is active].",
 						 BooleanValue (true),
