@@ -762,6 +762,10 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 						pduMapIt->second.m_macHeader.AddSubheader (subheader);
 					}
 					pduMapIt->second.m_pdu->AddHeader (pduMapIt->second.m_macHeader);
+
+					MmWaveMacPduHeader hdrTst;
+					pduMapIt->second.m_pdu->PeekHeader (hdrTst);
+
 					NS_ASSERT (pduMapIt->second.m_pdu->GetSize() > 0);
 					LteRadioBearerTag bearerTag (rnti, pduMapIt->second.m_size, 0);
 					pduMapIt->second.m_pdu->AddPacketTag (bearerTag);

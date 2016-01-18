@@ -126,6 +126,11 @@ MmWavePhyMacCommon::GetTypeId (void)
 							 UintegerValue (20),
 							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_harqTimeout),
 							 MakeUintegerChecker<uint8_t> ())
+		 .AddAttribute ("TbDecodeLatency",
+									 "Number of concurrent stop-and-wait Hybrid ARQ processes per user",
+									 UintegerValue (100.0),
+									 MakeUintegerAccessor (&MmWavePhyMacCommon::m_tbDecodeLatencyUs),
+									 MakeUintegerChecker<uint32_t> ())
 	;
 
 	return tid;
@@ -157,7 +162,8 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
   m_l1L2DataLatency (2),
   m_ulSchedDelay (1),
 	m_wbCqiPeriodUs (500),
-	m_tbDecodeLatencyUs (100.0)
+	m_tbDecodeLatencyUs (100.0),
+	m_maxTbSizeBytes (0x7FFF)
 {
 	NS_LOG_INFO ("Initialized MmWavePhyMacCommon");
 }

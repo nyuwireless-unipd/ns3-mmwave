@@ -159,29 +159,37 @@ ChangeSpeed(Ptr<Node>  n, Vector speed)
 int
 main (int argc, char *argv[])
 {
+	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 100));
 	//Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*10));
 	//Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*10));
-    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 	//Config::SetDefault ("ns3::PointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.010)));
 	//Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.010)));
-    Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
-    Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(0));
+	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(false));
+	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
+	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(1.0)));
+	//Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
 
     /*
      * scenario 1: 1 building;
      * scenario 2: 3 building;
      * scenario 3: 6 random located small building, simulate tree and human blockage.
      * */
-    int scenario = 1;
+  int scenario = 1;
 	double stopTime = 25;
 	double simStopTime = 25;
 
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	//mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
-	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
 	mmwaveHelper->Initialize();
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
@@ -358,7 +366,7 @@ main (int argc, char *argv[])
 	ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
 	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data.txt");
 	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
-	app->SetStartTime (Seconds (0.2));
+	app->SetStartTime (Seconds (0.02));
 	app->SetStopTime (Seconds (stopTime));
 
 

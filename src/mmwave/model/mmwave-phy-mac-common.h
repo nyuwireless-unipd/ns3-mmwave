@@ -604,6 +604,12 @@ public:
 		return m_tbDecodeLatencyUs;
 	}
 
+	inline uint32_t
+	GetMaxTbSize (void)
+	{
+		return m_maxTbSizeBytes;
+	}
+
 	void
 	SetSymbPerSlot (uint32_t numSym)
 	{
@@ -769,6 +775,12 @@ public:
 		m_tbDecodeLatencyUs = us;
 	}
 
+	void
+	SetMaxTbSize (uint32_t bytes)
+	{
+		m_maxTbSizeBytes = bytes;
+	}
+
 private:
 	uint32_t m_symbolsPerSlot;
 	double   m_symbolPeriod; // in micro seconds
@@ -800,6 +812,7 @@ private:
 	uint32_t m_wbCqiPeriodUs;	// WB CQI periodicity in microseconds
 
 	uint32_t m_tbDecodeLatencyUs;
+	uint32_t m_maxTbSizeBytes;
 
 	std::string m_staticTddPattern;
 };
