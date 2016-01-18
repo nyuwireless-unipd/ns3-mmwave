@@ -45,9 +45,9 @@ LteRlcUmLowLat::LteRlcUmLowLat ()
     m_windowSize (512),
     m_expectedSeqNumber (0),
 		m_currTotalPacketSize (0),
-		m_lastArrivalTime (0),
-		m_arrivalRate (0.0),
-		m_forgetFactor (0.1)
+		//m_lastArrivalTime (0),
+		m_arrivalRate (0.0)
+		//m_forgetFactor (0.1)
 {
   NS_LOG_FUNCTION (this);
   m_reassemblingState = WAITING_S0_FULL;
@@ -417,6 +417,8 @@ LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t ha
       m_rbsTimer.Cancel ();
       m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
     }*/
+
+  DoReportBufferStatus ();
 }
 
 void

@@ -279,12 +279,11 @@ private:
 	// needed to keep track of uplink allocations in later slots
 	std::list <struct SfAllocInfo> m_ulSfAllocInfo;
 
-	static const unsigned m_macHdrSize = 0;
-	static const unsigned m_subHdrSize = 3;
-	static const unsigned m_rlcHdrSize = 3;
+	static const unsigned m_macHdrSize;
+	static const unsigned m_subHdrSize;
+	static const unsigned m_rlcHdrSize;
 
-	static const double m_berDl = 0.001;
-
+	static const double m_berDl;
 	bool 		m_fixedMcsDl;
 	bool 		m_fixedMcsUl;
 	uint8_t m_mcsDefaultDl;

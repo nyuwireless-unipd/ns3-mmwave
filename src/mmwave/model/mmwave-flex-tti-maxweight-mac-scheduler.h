@@ -388,9 +388,9 @@ private:
 	// needed to keep track of uplink allocations in later slots
 	std::list <struct SfAllocInfo> m_ulSfAllocInfo;
 
-	static const unsigned m_macHdrSize = 0;
-	static const unsigned m_subHdrSize = 3;
-	static const unsigned m_rlcHdrSize = 3;
+	static const unsigned m_macHdrSize;
+	static const unsigned m_subHdrSize;
+	static const unsigned m_rlcHdrSize;
 
 	double m_berDl;		// used for	SNR-based AMC model
 
