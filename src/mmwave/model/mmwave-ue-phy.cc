@@ -427,7 +427,7 @@ MmWaveUePhy::SubframeIndication (uint16_t frameNum, uint8_t sfNum)
 void
 MmWaveUePhy::StartSlot ()
 {
-	unsigned slotInd = 0;
+	//unsigned slotInd = 0;
 	SlotAllocInfo currSlot;
 	/*if (m_slotNum >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
 	{
