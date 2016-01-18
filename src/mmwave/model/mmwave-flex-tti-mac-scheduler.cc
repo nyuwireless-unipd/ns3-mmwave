@@ -655,8 +655,8 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	dlCtrlSlot.m_dci.m_numSym = 1;
 	dlCtrlSlot.m_dci.m_symStart = 0;
 	ret.m_sfAllocInfo.m_slotAllocInfo.push_back (dlCtrlSlot);
-
-	int symAvail = m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetDlCtrlSymbols() - m_phyMacConfig->GetUlCtrlSymbols();
+	int resvCtrl = m_phyMacConfig->GetDlCtrlSymbols() + m_phyMacConfig->GetUlCtrlSymbols();
+	int symAvail = m_phyMacConfig->GetSymbolsPerSubframe () - resvCtrl;
 	uint8_t slotIdx = 1;
 	uint8_t symIdx = m_phyMacConfig->GetDlCtrlSymbols(); // symbols reserved for control at beginning of subframe
 
@@ -794,19 +794,20 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 						mcsNew = dciInfoReTx.m_mcs;
 					}
 				}
-
 				// compute number of symbols required
 				unsigned numSymReq;
 				if (mcsNew < dciInfoReTx.m_mcs)
 				{
 					numSymReq = m_amc->GetNumSymbolsFromTbsMcs (dciInfoReTx.m_tbSize, mcsNew);
-					while (numSymReq > dlSymAvail && mcsNew < dciInfoReTx.m_mcs);
+					while (numSymReq < symAvail && mcsNew < dciInfoReTx.m_mcs);
 					{
 						mcsNew++;
 						numSymReq = m_amc->GetNumSymbolsFromTbsMcs (dciInfoReTx.m_tbSize, mcsNew);
 					}
+					mcsNew--;
+					numSymReq = m_amc->GetNumSymbolsFromTbsMcs (dciInfoReTx.m_tbSize, mcsNew);
 				}
-				if (numSymReq > (m_phyMacConfig->GetSymbolsPerSubframe () - resvCtrl))
+				if (numSymReq <= (m_phyMacConfig->GetSymbolsPerSubframe () - resvCtrl))
 				{	// not enough symbols to encode TB at required MCS, attempt in later SF
 					dlInfoListUntxed.push_back (m_dlHarqInfoList.at (i));
 					continue;
@@ -1215,7 +1216,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				// deficit = difference between requested and allocated symbols
 				deficit = itUeInfo->second.m_maxUlSymbols - itUeInfo->second.m_ulSymbols;
 				NS_ASSERT (deficit >= 0);
-				if (deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nSymPerFlow0))
+				if (remSym > 0 && deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nSymPerFlow0))
 				{
 					if (deficit < nRemSymPerFlow)
 					{
@@ -1268,11 +1269,16 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			dci.m_symStart = symIdx;
 			dci.m_numSym = ueSchedInfo.m_dlSymbols;
 			symIdx += ueSchedInfo.m_dlSymbols;
+			dci.m_ndi = 1;
+			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
+			{
+				dci.m_mcs--;
+				dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			}
 			NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 			dci.m_mcs = ueSchedInfo.m_dlMcs;
 			dci.m_rv = 0;
-			dci.m_ndi = 1;
-			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
 			dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
 			NS_LOG_DEBUG ("UE" << itUeInfo->first << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
@@ -1368,6 +1374,11 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			dci.m_mcs = ueSchedInfo.m_ulMcs;
 			dci.m_ndi = 1;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
+			{
+				dci.m_mcs--;
+				dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			}
 			dci.m_harqProcess = UpdateUlHarqProcessId (itUeInfo->first);
 			NS_LOG_DEBUG ("UE" << itUeInfo->first << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
