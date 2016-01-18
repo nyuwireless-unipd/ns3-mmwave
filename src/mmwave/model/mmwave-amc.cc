@@ -192,7 +192,7 @@ MmWaveAmc::GetNumSymbolsFromTbsMcs (unsigned tbSize, unsigned mcs)
 	}
 	int reqRscElement = (tbSize+m_crcLen)/(Qm*Rcode);
 
-	return ceil(reqRscElement / rscElementPerSym);
+	return ceil((double)reqRscElement / (double)rscElementPerSym);
 }
 
 std::vector<int>
