@@ -67,7 +67,7 @@ MmWaveMacPduHeader::Serialize (Buffer::Iterator i) const
 		}
 		i.WriteU8 (octet1);
 		// second octet F/Length (F=1 if length > 127 bits)
-		uint8_t octet2 = (m_subheaderList[ipdu].m_size & 0x3F);
+		uint8_t octet2 = (m_subheaderList[ipdu].m_size & 0x7F);
 		// third octet = upper 8 bits of length if length > 127
 		uint8_t octet3 = 0;
 		if (m_subheaderList[ipdu].m_size >  127)
@@ -100,7 +100,7 @@ MmWaveMacPduHeader::Deserialize (Buffer::Iterator i)
 		}
 		uint8_t octet2 = (uint8_t)i.ReadU8 ();
 		bool flag = octet2 >> 7;
-		uint16_t size = (octet2 & 0x3F);
+		uint16_t size = (octet2 & 0x7F);
 		if (flag) // size > 127
 		{
 			uint8_t octet3 = (uint8_t)i.ReadU8 ();
