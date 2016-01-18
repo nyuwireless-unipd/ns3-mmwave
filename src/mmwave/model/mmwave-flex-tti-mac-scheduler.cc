@@ -140,6 +140,11 @@ MmWaveFlexTtiMacSchedSapProvider::SchedSetMcs (int mcs)
 	m_scheduler->DoSchedSetMcs (mcs);
 }
 
+const unsigned MmWaveFlexTtiMacScheduler::m_macHdrSize = 0;
+const unsigned MmWaveFlexTtiMacScheduler::m_subHdrSize = 3;
+const unsigned MmWaveFlexTtiMacScheduler::m_rlcHdrSize = 3;
+
+const double MmWaveFlexTtiMacScheduler::m_berDl = 0.001;
 
 MmWaveFlexTtiMacScheduler::MmWaveFlexTtiMacScheduler ()
 : m_nextRnti (0),
@@ -183,7 +188,7 @@ MmWaveFlexTtiMacScheduler::GetTypeId (void)
 		.AddConstructor<MmWaveFlexTtiMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
-                   UintegerValue (10),
+                   UintegerValue (10000),
                    MakeUintegerAccessor (&MmWaveFlexTtiMacScheduler::m_cqiTimersThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
@@ -292,7 +297,7 @@ MmWaveFlexTtiMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSap
     }
   // add the new parameters
   m_rlcBufferReq.insert (it, params);
-  NS_LOG_INFO (this << " RNTI " << params.m_rnti << " LC " << (uint16_t)params.m_logicalChannelIdentity << " RLC tx size " << params.m_rlcTransmissionQueueHolDelay << " RLC retx size " << params.m_rlcRetransmissionQueueSize << " RLC stat size " <<  params.m_rlcStatusPduSize);
+  NS_LOG_INFO ("BSR for RNTI " << params.m_rnti << " LC " << (uint16_t)params.m_logicalChannelIdentity << " RLC tx size " << params.m_rlcTransmissionQueueSize << " RLC retx size " << params.m_rlcRetransmissionQueueSize << " RLC stat size " <<  params.m_rlcStatusPduSize);
   // initialize statistics of the flow in case of new flows
   if (newLc == true)
   {
@@ -1270,6 +1275,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			dci.m_numSym = ueSchedInfo.m_dlSymbols;
 			symIdx += ueSchedInfo.m_dlSymbols;
 			dci.m_ndi = 1;
+			dci.m_mcs = ueSchedInfo.m_dlMcs;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
 			while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
 			{
@@ -1277,7 +1283,6 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
 			}
 			NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
-			dci.m_mcs = ueSchedInfo.m_dlMcs;
 			dci.m_rv = 0;
 			dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());

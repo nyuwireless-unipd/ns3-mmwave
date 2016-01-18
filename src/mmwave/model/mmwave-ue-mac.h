@@ -107,7 +107,7 @@ private:
 			std::vector<uint8_t> m_lcidList;
 		};
 
-  uint8_t m_harqProcessId;
+  //uint8_t m_harqProcessId;
   std::vector < UlHarqProcessInfo > m_miUlHarqProcessesPacket; // Packets under trasmission of the UL HARQ processes
   std::vector < uint8_t > m_miUlHarqProcessesPacketTimer; // timer for packet life in the buffer
 

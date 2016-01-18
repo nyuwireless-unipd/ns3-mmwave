@@ -66,10 +66,10 @@ static const double SpectralEfficiencyForMcs[32] = {
 };*/
 
 // Table 7.1.7.1-1 of 3GPP TS 36.213 v8.8.0
-static const int McsToItbs[29] = {
+/*static const int McsToItbs[29] = {
   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10, 11, 12, 13, 14, 15, 15, 16, 17, 18,
   19, 20, 21, 22, 23, 24, 25, 26
-};
+};*/
 
 static const int ModulationSchemeForMcs[32] = {
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
@@ -394,10 +394,10 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 	// produces a single CQI/MCS value
 
 	//std::vector<int> cqi;
-	uint8_t cqi;
-	double seAvg;
-	double mcsAvg;
-	double cqiAvg;
+	uint8_t cqi = 0;
+	double seAvg = 0;
+	double mcsAvg = 0;
+	double cqiAvg = 0;
 
 	Values::const_iterator it;
 	if (m_amcModel == PiroEW2010)

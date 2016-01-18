@@ -87,7 +87,7 @@ public:
 
 private:
 	SfnSf m_sfnSf;  // frame num and sf num for debugging
-	bool	m_ulGrant;	// is ul grant
+	//bool	m_ulGrant;	// is ul grant
 //	SfAllocInfo m_rscAllocationMap;
 	DciInfoElementTdma m_dciInfoElement;
 };

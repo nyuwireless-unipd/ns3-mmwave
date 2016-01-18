@@ -113,10 +113,10 @@ private:
   std::deque <uint32_t> m_recentArrivalTimes;
   std::deque <uint32_t> m_recentPacketSizes;
   uint32_t	m_currTotalPacketSize;
-  uint64_t m_lastArrivalTime;
+  //uint64_t m_lastArrivalTime;
   double m_arrivalRate;
   static uint32_t m_numArrivalsToAvg;				// average last N arrivals
-  double	m_forgetFactor;
+  //double	m_forgetFactor;
 
 };
 

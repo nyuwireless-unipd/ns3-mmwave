@@ -180,7 +180,7 @@ MmWaveUeMac::MmWaveUeMac (void)
 : m_bsrPeriodicity (MicroSeconds (100.0)), // ideal behavior
   m_bsrLast (MilliSeconds (0)),
   m_freshUlBsr (false),
-  m_harqProcessId (0),
+  //m_harqProcessId (0),
   m_rnti (0),
   m_waitingForRaResponse (true)
 {
