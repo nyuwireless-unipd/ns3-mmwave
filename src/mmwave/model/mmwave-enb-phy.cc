@@ -89,7 +89,8 @@ MmWaveEnbPhy::GetTypeId (void)
 				    MakePointerChecker <MmWaveSpectrumPhy> ())
 	 .AddTraceSource ("UlSinrTrace",
 					  "UL SINR statistics.",
-					  MakeTraceSourceAccessor (&MmWaveEnbPhy::m_ulSinrTrace))
+					  MakeTraceSourceAccessor (&MmWaveEnbPhy::m_ulSinrTrace),
+					  "ns3::UlSinr::TracedCallback")
 
 	;
   return tid;
@@ -306,7 +307,7 @@ MmWaveEnbPhy::StartSlot (void)
 	{
 		// get control messages to be transmitted in DL-Control period
 		std::list <Ptr<MmWaveControlMessage > > ctrlMsgs = GetControlMessages ();
-		std::list <Ptr<MmWaveControlMessage > >::iterator it = ctrlMsgs.begin ();
+		//std::list <Ptr<MmWaveControlMessage > >::iterator it = ctrlMsgs.begin ();
 		// find all DL/UL DCI elements and create DCI messages to be transmitted in DL control period
 		for (unsigned islot = 0; islot < m_currSfAllocInfo.m_slotAllocInfo.size (); islot++)
 		{
