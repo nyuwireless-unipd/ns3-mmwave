@@ -640,12 +640,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 
 	MmWaveMacSchedSapUser::SchedConfigIndParameters ret;
 	ret.m_sfnSf = params.m_snfSf;
-	ret.m_dlSfAllocInfo.m_sfnSf = ret.m_sfnSf;
-	if (!m_ulSfAllocInfo.empty ())
-	{
-		ret.m_dlSfAllocInfo = m_ulSfAllocInfo.front ();  // get SfAllocInfo from previous call to scheduler for UL allocations
-		m_ulSfAllocInfo.pop_front ();
-	}
+	ret.m_sfAllocInfo.m_sfnSf = ret.m_sfnSf;
 	SfnSf ulSfn = ret.m_sfnSf;
 	if (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay () >=  m_phyMacConfig->GetSubframesPerFrame ())
 	{
@@ -654,23 +649,16 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	ulSfn.m_sfNum = (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
 	NS_LOG_DEBUG ("Scheduling DL frame "<< (unsigned)frameNum << " subframe " << (unsigned)sfNum
 	              << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
-	ret.m_ulSfAllocInfo = SfAllocInfo (ulSfn);
 
 	// add slot for DL control
 	SlotAllocInfo dlCtrlSlot (0, SlotAllocInfo::DL, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
 	dlCtrlSlot.m_dci.m_numSym = 1;
 	dlCtrlSlot.m_dci.m_symStart = 0;
-	ret.m_dlSfAllocInfo.m_dlSlotAllocInfo.push_back (dlCtrlSlot);
+	ret.m_sfAllocInfo.m_slotAllocInfo.push_back (dlCtrlSlot);
 
-	// calculate reserved symbols, subtract symbols already allocated in UL from previous sched iter
-	int resvCtrl = m_phyMacConfig->GetDlCtrlSymbols() + m_phyMacConfig->GetUlCtrlSymbols();
-	int reservedSym = ret.m_dlSfAllocInfo.m_numSymAlloc + resvCtrl;
-	int dlSymAvail = m_phyMacConfig->GetSymbolsPerSubframe () - reservedSym;  // reserved syms include UL allocations
-	int ulSymAvail = m_phyMacConfig->GetSymbolsPerSubframe () - resvCtrl;
-	uint8_t dlSlotIdx = 1;  // slot 0 reserved for DL control
-	uint8_t ulSlotIdx = 0;
-	uint8_t dlSymIdx = m_phyMacConfig->GetDlCtrlSymbols(); // symbols reserved for control at beginning of subframe
-	uint8_t ulSymIdx = m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols();
+	int symAvail = m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetDlCtrlSymbols() - m_phyMacConfig->GetUlCtrlSymbols();
+	uint8_t slotIdx = 1;
+	uint8_t symIdx = m_phyMacConfig->GetDlCtrlSymbols(); // symbols reserved for control at beginning of subframe
 
 	// process received CQIs
 	RefreshDlCqiMaps ();
@@ -717,7 +705,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 
 		for (unsigned i = 0; i < m_dlHarqInfoList.size (); i++)
 		{
-			if (dlSymAvail == 0)
+			if (symAvail == 0)
 			{
 				break;	// no symbols left to allocate
 			}
@@ -825,16 +813,17 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				}*/
 
 				// allocate retx if enough symbols are available
-				if (dlSymAvail >= dciInfoReTx.m_numSym)
+				if (symAvail >= dciInfoReTx.m_numSym)
 				{
-					dlSymAvail -= dciInfoReTx.m_numSym;
-					dciInfoReTx.m_symStart = dlSymIdx;
-					dlSymIdx += dciInfoReTx.m_numSym;
+					symAvail -= dciInfoReTx.m_numSym;
+					dciInfoReTx.m_symStart = symIdx;
+					symIdx += dciInfoReTx.m_numSym;
+					NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 					dciInfoReTx.m_rv++;
 					dciInfoReTx.m_ndi = 0;
 					itHarq->second.at (harqId) = dciInfoReTx;
 					itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
-					SlotAllocInfo slotInfo (dlSlotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
+					SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
 					slotInfo.m_dci = dciInfoReTx;
 					NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
 							             " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
@@ -848,8 +837,8 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					{
 						slotInfo.m_rlcPduInfo.push_back ((*itRlcList).second.at (dciInfoReTx.m_harqProcess).at (k));
 					}
-					ret.m_dlSfAllocInfo.m_dlSlotAllocInfo.push_back (slotInfo);
-					ret.m_dlSfAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
+					ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
+					ret.m_sfAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
 					if (itUeInfo == ueInfo.end())
 					{
 						itUeInfo = ueInfo.insert (std::pair<uint16_t, struct UeSchedInfo> (rnti, UeSchedInfo () )).first;
@@ -870,7 +859,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 		// Process UL HARQ feedback
 		for (uint16_t i = 0; i < m_ulHarqInfoList.size (); i++)
 		{
-			if (ulSymAvail == 0)
+			if (symAvail == 0)
 			{
 				break;	// no symbols left to allocate
 			}
@@ -911,22 +900,23 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					continue;
 				}
 
-				if (ulSymAvail >= dciInfoReTx.m_numSym)
+				if (symAvail >= dciInfoReTx.m_numSym)
 				{
-					ulSymAvail -= dciInfoReTx.m_numSym;
-					ulSymIdx -= dciInfoReTx.m_numSym;
-					dciInfoReTx.m_symStart = ulSymIdx;
+					symAvail -= dciInfoReTx.m_numSym;
+					dciInfoReTx.m_symStart = symIdx;
+					symIdx += dciInfoReTx.m_numSym;
+					NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 					dciInfoReTx.m_rv++;
 					dciInfoReTx.m_ndi = 0;
 					itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
 					itHarq->second.at (harqId) = dciInfoReTx;
-					SlotAllocInfo slotInfo (ulSlotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
+					SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
 					slotInfo.m_dci = dciInfoReTx;
 					NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
 											 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum <<
 											 " RETX");
-					ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_front (slotInfo);
-					ret.m_ulSfAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
+					ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
+					ret.m_sfAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
 					if (itUeInfo == ueInfo.end())
 					{
 						itUeInfo = ueInfo.insert (std::pair<uint16_t, struct UeSchedInfo> (rnti, UeSchedInfo () )).first;
@@ -947,7 +937,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	// ********************* END OF HARQ SECTION, START OF NEW DATA SCHEDULING ********************* //
 
 	// get info on active DL flows
-	if (dlSymAvail > 0 && !m_ulOnly)  // remaining symbols in current subframe after HARQ retx sched
+	if (symAvail > 0 && !m_ulOnly)  // remaining symbols in current subframe after HARQ retx sched
 	{
 		for (itRlcBuf = m_rlcBufferReq.begin (); itRlcBuf != m_rlcBufferReq.end (); itRlcBuf++)
 		{
@@ -1035,7 +1025,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	}
 
 	// get info on active UL flows
-	if (ulSymAvail > 0 && !m_dlOnly)  // remaining symbols in future UL subframe after HARQ retx sched
+	if (symAvail > 0 && !m_dlOnly)  // remaining symbols in future UL subframe after HARQ retx sched
 	{
 		std::map <uint16_t,uint32_t>::iterator ceBsrIt;
 		for (ceBsrIt = m_ceBsrRxed.begin (); ceBsrIt != m_ceBsrRxed.end (); ceBsrIt++)
@@ -1127,8 +1117,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 		SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
 		ulCtrlSlot.m_dci.m_numSym = 1;
 		ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
-		ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_back (ulCtrlSlot);
-		m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
+		ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
 		m_macSchedSapUser->SchedConfigInd (ret);
 		return;
 	}
@@ -1173,123 +1162,79 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	// divide OFDM symbols evenly between active UEs, which are then evenly divided between DL and UL flows
 	// for the DL, we know how many UL flows have already been allocated in the current subframe, so we can use
 	// the remaining symbols
-	if (nFlowsDl > 0)
+	if (nFlowsTot > 0)
 	{
-		int remSymDl = totDlSymReq;
-		if (remSymDl > dlSymAvail)
+		int remSym = totDlSymReq + totUlSymReq;
+		if (remSym > symAvail)
 		{
-			remSymDl = dlSymAvail;
+			remSym = symAvail;
 		}
 
-		int nSymPerDlFlow0 = remSymDl / nFlowsDl;  // initial average symbols per non-retx flow
-		if (nSymPerDlFlow0 == 0)
+		int nSymPerFlow0 = remSym / nFlowsTot;  // initial average symbols per non-retx flow
+		if (nSymPerFlow0 == 0)	// minimum of 1
 		{
-			nSymPerDlFlow0 = 1;
+			nSymPerFlow0 = 1;
 		}
 
 		bool allocated = true; // someone got allocated
-		while (remSymDl > 0 && allocated)
+		while (remSym > 0 && allocated)
 		{
 			allocated = false;  // additional symbols allocated to this RNTI in this iteration
-			int nRemSymPerFlow = remSymDl / nFlowsDl;
+			int nRemSymPerFlow = remSym / nFlowsTot;
 			if (nRemSymPerFlow == 0)
 			{
 				nRemSymPerFlow = 1;
 			}
-			while (remSymDl > 0)
+			while (remSym > 0)
 			{
 				int addSym = 0;
 				// deficit = difference between requested and allocated symbols
 				int deficit = itUeInfo->second.m_maxDlSymbols - itUeInfo->second.m_dlSymbols;
 				NS_ASSERT (deficit >= 0);
-				if (deficit > 0 && ((itUeInfo->second.m_dlSymbols+itUeInfo->second.m_dlSymbolsRetx) <= nSymPerDlFlow0))
+				if (deficit > 0 && ((itUeInfo->second.m_dlSymbols+itUeInfo->second.m_dlSymbolsRetx) <= nSymPerFlow0))
 				{
 					if (deficit < nRemSymPerFlow)
 					{
 						// add remaining symbols to average
 						addSym = deficit;
-						int extra = (nRemSymPerFlow - addSym) / nFlowsDl;
-						nSymPerDlFlow0 += extra;  // add extra to average symbols
+						int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
+						nSymPerFlow0 += extra;  // add extra to average symbols
 						nRemSymPerFlow += extra;  // add extra to average symbols
-						allocated = true;
 					}
 					else
 					{
 						addSym = nRemSymPerFlow;
-						allocated = true;
 					}
+					allocated = true;
 				}
 				itUeInfo->second.m_dlSymbols += addSym;
-				remSymDl -= addSym;
-				NS_ASSERT (remSymDl >= 0);
-				itUeInfo++;
-				if (itUeInfo == ueInfo.end ())
-				{ // loop around to first RNTI in map
-					itUeInfo = ueInfo.begin ();
-				}
-				if (itUeInfo == itUeInfoStart)
-				{ // break when looped back to initial RNTI or no symbols remain
-					break;
-				}
-			}
-		}
-	}
+				remSym -= addSym;
+				NS_ASSERT (remSym >= 0);
 
-	// for the UL, we are scheduling a subframe some number of subframes in the future, however we only have
-	// updated information about the current DL flows, so we must determine the average symbols/UL flow
-	// on the total active DL+UL flows in the current subframe
-	int totUlSymActual = 0;  // count the total symbols allocated in UL
-	if (nFlowsUl > 0)
-	{
-		itUeInfo = itUeInfoStart;
-		int remSymTot = (totDlSymReq + totUlSymReq) * nFlowsUl / nFlowsTot;
-		if (remSymTot > ulSymAvail)
-		{
-			remSymTot = ulSymAvail * nFlowsUl / nFlowsTot;
-		}
-
-		int nSymPerUlFlow0 = remSymTot / nFlowsUl;  // initial average symbols per non-retx flow
-		if (nSymPerUlFlow0 == 0)
-		{
-			nSymPerUlFlow0 = 1;
-		}
-
-		bool allocated = true;
-		while (remSymTot > 0 && allocated)
-		{
-			allocated = false;
-			int nRemSymPerFlow = remSymTot / nFlowsUl;
-			if (nRemSymPerFlow == 0)
-			{
-				nRemSymPerFlow = 1;
-			}
-			while (remSymTot > 0)
-			{
-				int addSym = 0;
+				addSym = 0;
 				// deficit = difference between requested and allocated symbols
-				int deficit = itUeInfo->second.m_maxUlSymbols - itUeInfo->second.m_ulSymbols;
+				deficit = itUeInfo->second.m_maxUlSymbols - itUeInfo->second.m_ulSymbols;
 				NS_ASSERT (deficit >= 0);
-				if (deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nSymPerUlFlow0))
+				if (deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nSymPerFlow0))
 				{
 					if (deficit < nRemSymPerFlow)
 					{
 						// add remaining symbols to average
 						addSym = deficit;
-						int extra = (nRemSymPerFlow - addSym) / nFlowsUl;
-						nSymPerUlFlow0 += extra;  // add extra to average symbols
+						int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
+						nSymPerFlow0 += extra;  // add extra to average symbols
 						nRemSymPerFlow += extra;  // add extra to average symbols
-						allocated = true;
 					}
 					else
 					{
 						addSym = nRemSymPerFlow;
-						allocated = true;
 					}
+					allocated = true;
 				}
 				itUeInfo->second.m_ulSymbols += addSym;
-				totUlSymActual += addSym;
-				remSymTot -= addSym;
-				NS_ASSERT (remSymTot >= 0);
+				remSym -= addSym;
+				NS_ASSERT (remSym >= 0);
+
 				itUeInfo++;
 				if (itUeInfo == ueInfo.end ())
 				{ // loop around to first RNTI in map
@@ -1311,7 +1256,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	itUeInfo = itUeInfoStart;
 
 	//ulSymIdx -= totUlSymActual; // symbols reserved for control at end of subframe before UL ctrl
-	NS_ASSERT (ulSymIdx > 0);
+	NS_ASSERT (symIdx > 0);
 	do
 	{
 		UeSchedInfo &ueSchedInfo = itUeInfo->second;
@@ -1320,9 +1265,10 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			DciInfoElementTdma dci;
 			dci.m_rnti = itUeInfo->first;
 			dci.m_format = 0;
-			dci.m_symStart = dlSymIdx;
+			dci.m_symStart = symIdx;
 			dci.m_numSym = ueSchedInfo.m_dlSymbols;
-			dlSymIdx += ueSchedInfo.m_dlSymbols;
+			symIdx += ueSchedInfo.m_dlSymbols;
+			NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 			dci.m_mcs = ueSchedInfo.m_dlMcs;
 			dci.m_rv = 0;
 			dci.m_ndi = 1;
@@ -1330,7 +1276,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
 			NS_LOG_DEBUG ("UE" << itUeInfo->first << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
-			SlotAllocInfo slotInfo (dlSlotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
+			SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
 			slotInfo.m_dci = dci;
 			NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL slots " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
 			             " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
@@ -1405,8 +1351,8 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					(*itRlcPdu).second.at (dci.m_harqProcess).push_back (ueSchedInfo.m_rlcPduInfo[i]);
 				}
 			}
-			ret.m_dlSfAllocInfo.m_dlSlotAllocInfo.push_back (slotInfo);
-			ret.m_dlSfAllocInfo.m_numSymAlloc += dci.m_numSym;
+			ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
+			ret.m_sfAllocInfo.m_numSymAlloc += dci.m_numSym;
 		}
 
 		// UL DCI applies to subframe i+Tsched
@@ -1415,29 +1361,29 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			DciInfoElementTdma dci;
 			dci.m_rnti = itUeInfo->first;
 			dci.m_format = 1;
-			NS_ASSERT (ulSymIdx < m_phyMacConfig->GetSymbolsPerSubframe());
+			NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 			dci.m_numSym = ueSchedInfo.m_ulSymbols;
-			ulSymIdx -= ueSchedInfo.m_ulSymbols;
-			dci.m_symStart = ulSymIdx;
+			dci.m_symStart = symIdx;
+			symIdx -= ueSchedInfo.m_ulSymbols;
 			dci.m_mcs = ueSchedInfo.m_ulMcs;
 			dci.m_ndi = 1;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
 			dci.m_harqProcess = UpdateUlHarqProcessId (itUeInfo->first);
 			NS_LOG_DEBUG ("UE" << itUeInfo->first << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
-			SlotAllocInfo slotInfo (ulSlotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
+			SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, itUeInfo->first);
 			slotInfo.m_dci = dci;
 			NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL slots " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
 						             " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
 			UpdateUlRlcBufferInfo (itUeInfo->first, dci.m_tbSize - m_subHdrSize);
-			ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_front (slotInfo);  // add to front
-			ret.m_ulSfAllocInfo.m_numSymAlloc += dci.m_numSym;
+			ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);  // add to front
+			ret.m_sfAllocInfo.m_numSymAlloc += dci.m_numSym;
 			std::vector<uint16_t> ueChunkMap;
 			for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk (); i++)
 			{
 				ueChunkMap.push_back (dci.m_rnti);
 			}
-			SfnSf slotSfn = ret.m_ulSfAllocInfo.m_sfnSf;
+			SfnSf slotSfn = ret.m_sfAllocInfo.m_sfnSf;
 			slotSfn.m_slotNum = dci.m_symStart;  // use the start symbol index of the slot because the absolute UL slot index depends on the future DL allocation
 			// insert into allocation map to recall previous allocations upon receiving UL-CQI
 			m_ulAllocationMap.insert ( std::pair<uint32_t, struct AllocMapElem> (slotSfn.Encode (), AllocMapElem(ueChunkMap, dci.m_numSym, dci.m_tbSize)) );
@@ -1468,8 +1414,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
 	ulCtrlSlot.m_dci.m_numSym = 1;
 	ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
-	ret.m_ulSfAllocInfo.m_ulSlotAllocInfo.push_back (ulCtrlSlot);
-	m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
+	ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
 
 	m_macSchedSapUser->SchedConfigInd (ret);
 	return;

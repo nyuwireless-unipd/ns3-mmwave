@@ -761,6 +761,7 @@ LteRlcAm::DoNotifyDlHarqDeliveryFailure (uint8_t harqId)
 void
 LteRlcAm::DoNotifyUlHarqDeliveryFailure (uint8_t harqId)
 {
+	// send NACK
 }
 
 

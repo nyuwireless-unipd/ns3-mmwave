@@ -31,6 +31,16 @@ MmWavePhyMacCommon::GetTypeId (void)
 						   UintegerValue (30),
 						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_symbolsPerSlot),
 						   MakeUintegerChecker<uint32_t> ())
+			.AddAttribute ("SymbolsPerSubframe",
+							 "OFDM symbols per subframe",
+							 UintegerValue (24),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_symbolsPerSubframe),
+							 MakeUintegerChecker<uint32_t> ())
+			 .AddAttribute ("SubframePeriod",
+										 "Symbol period in microseconds",
+										 DoubleValue (100.0),
+										 MakeDoubleAccessor (&MmWavePhyMacCommon::m_subframePeriod),
+										 MakeDoubleChecker<double> ())
 		   .AddAttribute ("CtrlSymbols",
 							 "Number of OFDM symbols for DL control per subframe",
 							 UintegerValue (1),
@@ -88,7 +98,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 						   MakeStringChecker ())
 		  .AddAttribute ("UlSchedDelay",
 							 "Number of TTIs between UL scheduling decision and subframe to which it applies",
-							 UintegerValue (2),
+							 UintegerValue (1),
 							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_ulSchedDelay),
 							 MakeUintegerChecker<uint32_t> ())
 		  .AddAttribute ("NumRbPerRbg",
@@ -143,11 +153,11 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
   m_harqTimeout (20),
   m_centerFrequency (28e9),
 	m_guardPeriod (4.16),
-  m_l1L2CtrlLatency (1),
-  m_l1L2DataLatency (1),
+  m_l1L2CtrlLatency (2),
+  m_l1L2DataLatency (2),
   m_ulSchedDelay (1),
 	m_wbCqiPeriodUs (500),
-	m_tbDecodeLatencyUs (0.0)
+	m_tbDecodeLatencyUs (100.0)
 {
 	NS_LOG_INFO ("Initialized MmWavePhyMacCommon");
 }

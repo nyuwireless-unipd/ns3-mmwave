@@ -268,6 +268,7 @@ struct SfAllocInfo
 	//std::vector <SlotAllocInfo::TddMode> m_tddPattern;
 	std::deque <SlotAllocInfo> m_dlSlotAllocInfo;
 	std::deque <SlotAllocInfo> m_ulSlotAllocInfo;
+	std::deque <SlotAllocInfo> m_slotAllocInfo;
 };
 
 

@@ -301,17 +301,18 @@ void
 MmWavePhy::SetDlSfAllocInfo (SfAllocInfo sfAllocInfo)
 {
 	// get previously enqueued SfAllocInfo and set DL slot allocations
-	SfAllocInfo &sf = m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum];
+	//SfAllocInfo &sf = m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum];
 	// merge slot lists
-	sf.m_dlSlotAllocInfo = sfAllocInfo.m_dlSlotAllocInfo;
-	m_sfAllocInfoUpdated = true;
+	//sf.m_dlSlotAllocInfo = sfAllocInfo.m_dlSlotAllocInfo;
+	m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
+	//m_sfAllocInfoUpdated = true;
 }
 
 void
 MmWavePhy::SetUlSfAllocInfo (SfAllocInfo sfAllocInfo)
 {
 	// add new SfAllocInfo with UL slot allocation
-	m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
+	//m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
 }
 
 }

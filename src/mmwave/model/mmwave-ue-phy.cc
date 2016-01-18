@@ -94,18 +94,20 @@ MmWaveUePhy::DoInitialize (void)
 	{
 		m_sfAllocInfo.push_back(SfAllocInfo(SfnSf (0, i, 0)));
 		SlotAllocInfo dlCtrlSlot;
+		dlCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
 		dlCtrlSlot.m_numCtrlSym = 1;
 		dlCtrlSlot.m_tddMode = SlotAllocInfo::DL;
 		dlCtrlSlot.m_dci.m_numSym = 1;
 		dlCtrlSlot.m_dci.m_symStart = 0;
 		SlotAllocInfo ulCtrlSlot;
+		ulCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
 		ulCtrlSlot.m_numCtrlSym = 1;
 		ulCtrlSlot.m_tddMode = SlotAllocInfo::UL;
 		ulCtrlSlot.m_slotIdx = 0xFF;
 		ulCtrlSlot.m_dci.m_numSym = 1;
 		ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
-		m_sfAllocInfo[i].m_dlSlotAllocInfo.push_back (dlCtrlSlot);
-		m_sfAllocInfo[i].m_ulSlotAllocInfo.push_back (ulCtrlSlot);
+		m_sfAllocInfo[i].m_slotAllocInfo.push_back (dlCtrlSlot);
+		m_sfAllocInfo[i].m_slotAllocInfo.push_back (ulCtrlSlot);
 	}
 
 	for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk(); i++)
@@ -280,8 +282,19 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 				SlotAllocInfo slotInfo;
 				slotInfo.m_tddMode = SlotAllocInfo::DL;
 				slotInfo.m_dci = dciInfoElem;
-				slotInfo.m_slotIdx = m_sfAllocInfo[m_sfNum].m_dlSlotAllocInfo.size ();
-				m_currSfAllocInfo.m_dlSlotAllocInfo.push_back (slotInfo);  // add SlotAllocInfo to current SfAllocInfo
+				slotInfo.m_slotIdx = 0;
+				std::deque <SlotAllocInfo>::iterator itSlot;
+				for (itSlot = m_currSfAllocInfo.m_slotAllocInfo.begin ();
+						itSlot != m_currSfAllocInfo.m_slotAllocInfo.end (); itSlot++)
+				{
+					if (itSlot->m_tddMode == SlotAllocInfo::UL)
+					{
+						break;
+					}
+					slotInfo.m_slotIdx++;
+				}
+				//m_currSfAllocInfo.m_slotAllocInfo.push_back (slotInfo);  // add SlotAllocInfo to current SfAllocInfo
+				m_currSfAllocInfo.m_slotAllocInfo.insert (itSlot, slotInfo);
 			}
 			else if (dciInfoElem.m_format == DciInfoElementTdma::UL) // set downlink slot schedule for t+Tul_sched slot
 			{
@@ -295,12 +308,12 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 				SlotAllocInfo slotInfo;
 				slotInfo.m_tddMode = SlotAllocInfo::UL;
 				slotInfo.m_dci = dciInfoElem;
-				SlotAllocInfo ulCtrlSlot = m_sfAllocInfo[ulSfIdx].m_ulSlotAllocInfo.back ();
-				m_sfAllocInfo[ulSfIdx].m_ulSlotAllocInfo.pop_back ();
+				SlotAllocInfo ulCtrlSlot = m_sfAllocInfo[ulSfIdx].m_slotAllocInfo.back ();
+				m_sfAllocInfo[ulSfIdx].m_slotAllocInfo.pop_back ();
 				//ulCtrlSlot.m_slotIdx++;
-				slotInfo.m_slotIdx = m_sfAllocInfo[ulSfIdx].m_ulSlotAllocInfo.size ();
-				m_sfAllocInfo[ulSfIdx].m_ulSlotAllocInfo.push_back (slotInfo);
-				m_sfAllocInfo[ulSfIdx].m_ulSlotAllocInfo.push_back (ulCtrlSlot);
+				slotInfo.m_slotIdx = m_sfAllocInfo[ulSfIdx].m_slotAllocInfo.size ();
+				m_sfAllocInfo[ulSfIdx].m_slotAllocInfo.push_back (slotInfo);
+				m_sfAllocInfo[ulSfIdx].m_slotAllocInfo.push_back (ulCtrlSlot);
 			}
 
 			m_phySapUser->ReceiveControlMessage (msg);
@@ -390,18 +403,20 @@ MmWaveUePhy::SubframeIndication (uint16_t frameNum, uint8_t sfNum)
 	           (m_currSfAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
 	m_sfAllocInfo[m_sfNum] = SfAllocInfo (SfnSf (m_frameNum+1, m_sfNum, 0));
 	SlotAllocInfo dlCtrlSlot;
+	dlCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
 	dlCtrlSlot.m_numCtrlSym = 1;
 	dlCtrlSlot.m_tddMode = SlotAllocInfo::DL;
 	dlCtrlSlot.m_dci.m_numSym = 1;
 	dlCtrlSlot.m_dci.m_symStart = 0;
 	SlotAllocInfo ulCtrlSlot;
+	ulCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
 	ulCtrlSlot.m_numCtrlSym = 1;
 	ulCtrlSlot.m_tddMode = SlotAllocInfo::UL;
 	ulCtrlSlot.m_slotIdx = 0xFF;
 	ulCtrlSlot.m_dci.m_numSym = 1;
 	ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
-	m_sfAllocInfo[m_sfNum].m_dlSlotAllocInfo.push_back (dlCtrlSlot);
-	m_sfAllocInfo[m_sfNum].m_ulSlotAllocInfo.push_back (ulCtrlSlot);
+	m_sfAllocInfo[m_sfNum].m_slotAllocInfo.push_front (dlCtrlSlot);
+	m_sfAllocInfo[m_sfNum].m_slotAllocInfo.push_back (ulCtrlSlot);
 
 	StartSlot ();
 }
@@ -411,7 +426,7 @@ MmWaveUePhy::StartSlot ()
 {
 	unsigned slotInd = 0;
 	SlotAllocInfo currSlot;
-	if (m_slotNum >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
+	/*if (m_slotNum >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
 	{
 		if (m_currSfAllocInfo.m_ulSlotAllocInfo.size () > 0)
 		{
@@ -426,8 +441,9 @@ MmWaveUePhy::StartSlot ()
 			slotInd = m_slotNum;
 			currSlot = m_currSfAllocInfo.m_dlSlotAllocInfo[slotInd];
 		}
-	}
+	}*/
 
+	currSlot = m_currSfAllocInfo.m_slotAllocInfo[m_slotNum];
 	m_currSlot = currSlot;
 
 	NS_LOG_INFO ("UE " << m_rnti << " frame " << m_frameNum << " subframe " << m_sfNum << " slot " << m_slotNum);
@@ -441,7 +457,7 @@ MmWaveUePhy::StartSlot ()
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 				              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
 	}
-	else if (m_slotNum == m_currSfAllocInfo.m_dlSlotAllocInfo.size()+m_currSfAllocInfo.m_ulSlotAllocInfo.size()-1) // reserved UL control
+	else if (m_slotNum == m_currSfAllocInfo.m_slotAllocInfo.size()-1) // reserved UL control
 	{
 		m_receptionEnabled = false;
 		SetSubChannelsForTransmission (m_channelChunks);
@@ -518,7 +534,7 @@ MmWaveUePhy::StartSlot ()
 void
 MmWaveUePhy::EndSlot ()
 {
-	if (m_slotNum == m_currSfAllocInfo.m_dlSlotAllocInfo.size()+m_currSfAllocInfo.m_ulSlotAllocInfo.size()-1)
+	if (m_slotNum == m_currSfAllocInfo.m_slotAllocInfo.size()-1)
 	{	// end of subframe
 		uint16_t frameNum;
 		uint8_t sfNum;
@@ -539,7 +555,7 @@ MmWaveUePhy::EndSlot ()
 	else
 	{
 		Time nextSlotStart;
-		uint8_t slotInd = m_slotNum+1;
+		/*uint8_t slotInd = m_slotNum+1;
 		if (slotInd >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
 		{
 			if (m_currSfAllocInfo.m_ulSlotAllocInfo.size () > 0)
@@ -556,8 +572,10 @@ MmWaveUePhy::EndSlot ()
 				nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
 				                             m_currSfAllocInfo.m_dlSlotAllocInfo[slotInd].m_dci.m_symStart);
 			}
-		}
+		}*/
 		m_slotNum++;
+		nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
+						                             m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
 		Simulator::Schedule (nextSlotStart+m_lastSfStart-Simulator::Now(), &MmWaveUePhy::StartSlot, this);
 	}
 

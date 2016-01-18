@@ -110,25 +110,7 @@ MmWaveEnbPhy::DoInitialize (void)
 	{ // push elements onto queue for initial scheduling delay
 		m_controlMessageQueue.push_back (std::list<Ptr<MmWaveControlMessage> > ());
 	}
-
-	for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame(); i++)
-	{
-		m_sfAllocInfo.push_back(SfAllocInfo(SfnSf (0, i, 0)));
-		SlotAllocInfo dlCtrlSlot;
-		dlCtrlSlot.m_numCtrlSym = 1;
-		dlCtrlSlot.m_tddMode = SlotAllocInfo::DL;
-		dlCtrlSlot.m_dci.m_numSym = 1;
-		dlCtrlSlot.m_dci.m_symStart = 0;
-		SlotAllocInfo ulCtrlSlot;
-		ulCtrlSlot.m_numCtrlSym = 1;
-		ulCtrlSlot.m_tddMode = SlotAllocInfo::UL;
-		ulCtrlSlot.m_slotIdx = 0xFF;
-		ulCtrlSlot.m_dci.m_numSym = 1;
-		ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
-		m_sfAllocInfo[i].m_dlSlotAllocInfo.push_back (dlCtrlSlot);
-		m_sfAllocInfo[i].m_ulSlotAllocInfo.push_back (ulCtrlSlot);
-	}
-	m_sfAllocInfoUpdated = true;
+	//m_sfAllocInfoUpdated = true;
 
 	for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk(); i++)
 	{
@@ -137,6 +119,26 @@ MmWaveEnbPhy::DoInitialize (void)
 	SetSubChannels(m_channelChunks);
 
 	m_sfPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSubframePeriod ());
+
+	for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame(); i++)
+	{
+		m_sfAllocInfo.push_back (SfAllocInfo(SfnSf (m_frameNum, i, 0)));
+		SlotAllocInfo dlCtrlSlot;
+		dlCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
+		dlCtrlSlot.m_numCtrlSym = 1;
+		dlCtrlSlot.m_tddMode = SlotAllocInfo::DL;
+		dlCtrlSlot.m_dci.m_numSym = 1;
+		dlCtrlSlot.m_dci.m_symStart = 0;
+		SlotAllocInfo ulCtrlSlot;
+		ulCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
+		ulCtrlSlot.m_numCtrlSym = 1;
+		ulCtrlSlot.m_tddMode = SlotAllocInfo::UL;
+		ulCtrlSlot.m_slotIdx = 0xFF;
+		ulCtrlSlot.m_dci.m_numSym = 1;
+		ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
+		m_sfAllocInfo[i].m_slotAllocInfo.push_back (dlCtrlSlot);
+		m_sfAllocInfo[i].m_slotAllocInfo.push_back (ulCtrlSlot);
+	}
 
 	MmWavePhy::DoInitialize ();
 }
@@ -231,31 +233,11 @@ MmWaveEnbPhy::StartSubFrame (void)
 	m_lastSfStart = Simulator::Now();
 
 	m_currSfAllocInfo = m_sfAllocInfo[m_sfNum];
-	m_currSfNumSlots = m_currSfAllocInfo.m_dlSlotAllocInfo.size () + m_currSfAllocInfo.m_ulSlotAllocInfo.size ();
+	//m_currSfNumSlots = m_currSfAllocInfo.m_dlSlotAllocInfo.size () + m_currSfAllocInfo.m_ulSlotAllocInfo.size ();
+	m_currSfNumSlots = m_currSfAllocInfo.m_slotAllocInfo.size ();
 
 	NS_ASSERT ((m_currSfAllocInfo.m_sfnSf.m_frameNum == m_frameNum) &&
 	           (m_currSfAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
-
-	// reset SfAllocInfo for next frame
-	if (!m_sfAllocInfoUpdated)
-	{
-		m_sfAllocInfo[m_sfNum] = SfAllocInfo (SfnSf (m_frameNum+1, m_sfNum, 0));
-		SlotAllocInfo dlCtrlSlot;
-		dlCtrlSlot.m_numCtrlSym = 1;
-		dlCtrlSlot.m_tddMode = SlotAllocInfo::DL;
-		dlCtrlSlot.m_dci.m_numSym = 1;
-		dlCtrlSlot.m_dci.m_symStart = 0;
-		SlotAllocInfo ulCtrlSlot;
-		ulCtrlSlot.m_numCtrlSym = 1;
-		ulCtrlSlot.m_tddMode = SlotAllocInfo::UL;
-		ulCtrlSlot.m_slotIdx = 0xFF;
-		ulCtrlSlot.m_dci.m_numSym = 1;
-		ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-2;
-		m_sfAllocInfo[m_sfNum].m_dlSlotAllocInfo.push_back (dlCtrlSlot);
-		m_sfAllocInfo[m_sfNum].m_ulSlotAllocInfo.push_back (ulCtrlSlot);
-	}
-
-	m_sfAllocInfoUpdated = false;
 
 	if (m_sfNum == 0) 		// send MIB at the beginning of each frame
 	{
@@ -271,7 +253,7 @@ MmWaveEnbPhy::StartSubFrame (void)
 		}
 		m_controlMessageQueue.at (0).push_back (mibMsg);
 	}
-	else if (m_sfNum == 5)  // send SIB at beginning of half-frame
+	else if (m_sfNum == 5)  // send SIB at beginning of second half-frame
 	{
 		Ptr<MmWaveSib1Message> msg = Create<MmWaveSib1Message> ();
 		msg->SetSib1 (m_sib1);
@@ -288,7 +270,7 @@ MmWaveEnbPhy::StartSlot (void)
 
 	SlotAllocInfo currSlot;
 
-	uint8_t slotInd = 0;
+	/*uint8_t slotInd = 0;
 	if (m_slotNum >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
 	{
 		if (m_currSfAllocInfo.m_ulSlotAllocInfo.size () > 0)
@@ -306,69 +288,60 @@ MmWaveEnbPhy::StartSlot (void)
 			currSlot = m_currSfAllocInfo.m_dlSlotAllocInfo[slotInd];
 			m_currSymStart = currSlot.m_dci.m_symStart;
 		}
-	}
+	}*/
+
+	//slotInd = m_slotNum;
+	currSlot = m_currSfAllocInfo.m_slotAllocInfo[m_slotNum];
+	m_currSymStart = currSlot.m_dci.m_symStart;
 
 	SfnSf sfn = SfnSf (m_frameNum, m_sfNum, m_slotNum);
   m_harqPhyModule->SubframeIndication (sfn);  // trigger HARQ module
 
   std::list <Ptr<MmWaveControlMessage > > dciMsgList;
-//  std::map<uint16_t, std::list<Ptr<MmWaveTdmaDciMessage> > > dciMsgMap;		// DCI messages for each RNTI
-//	std::map<uint16_t, std::list<Ptr<MmWaveTdmaDciMessage> > >::iterator itDci;
-//	std::map<uint16_t, std::list<Ptr<MmWaveControlMessage> > > ctrlMsgMap;  // other control messages
-//	std::map<uint16_t, std::list<Ptr<MmWaveControlMessage> > >::iterator itCtrl;
-
-//	while (it != ctrlMsgs.end ())
-//	{
-//		uint16_t rnti = 0;
-//		if ((*it)->GetMessageType() == MmWaveControlMessage::RAR)		// RAR only DL message expected here
-//		{
-//			Ptr<MmWaveRarMessage> rarMsg = DynamicCast <MmWaveRarMessage> (*it);
-//			rnti = rarMsg->GetRaRnti ();
-//		}
-//		if (rnti > 0)
-//		{
-//			itCtrl = ctrlMsgMap.find (rnti);
-//			if (itCtrl == ctrlMsgMap.end ())
-//			{
-//				itCtrl = ctrlMsgMap.insert (std::pair<uint16_t, std::vector<Ptr<MmWaveTdmaDciMessage> > >
-//																			(rnti,  std::vector<Ptr<MmWaveTdmaDciMessage> >)).first;
-//			}
-//			it++;
-//		}
-//	}
 
 	Time guardPeriod;
 	Time slotPeriod;
 
 	if(m_slotNum == 0) // DL control slot
 	{
-		// get control messages to be transmitted in UE-specific slots
+		// get control messages to be transmitted in DL-Control period
 		std::list <Ptr<MmWaveControlMessage > > ctrlMsgs = GetControlMessages ();
 		std::list <Ptr<MmWaveControlMessage > >::iterator it = ctrlMsgs.begin ();
 		// find all DL/UL DCI elements and create DCI messages to be transmitted in DL control period
-		for (unsigned islot = 0; islot < m_currSfAllocInfo.m_dlSlotAllocInfo.size (); islot++)
+		for (unsigned islot = 0; islot < m_currSfAllocInfo.m_slotAllocInfo.size (); islot++)
 		{
-			DciInfoElementTdma &dciElem = m_currSfAllocInfo.m_dlSlotAllocInfo[islot].m_dci;
-			if (dciElem.m_tbSize > 0)
+			if (m_currSfAllocInfo.m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL &&
+					m_currSfAllocInfo.m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::DL)
 			{
-				Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
-				dciMsg->SetDciInfoElement (dciElem);
-				dciMsg->SetSfnSf (sfn);
-				dciMsgList.push_back (dciMsg);
-				ctrlMsgs.push_back (dciMsg);
+				DciInfoElementTdma &dciElem = m_currSfAllocInfo.m_slotAllocInfo[islot].m_dci;
+				NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL);
+				if (dciElem.m_tbSize > 0)
+				{
+					Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
+					dciMsg->SetDciInfoElement (dciElem);
+					dciMsg->SetSfnSf (sfn);
+					dciMsgList.push_back (dciMsg);
+					ctrlMsgs.push_back (dciMsg);
+				}
 			}
 		}
+
 		unsigned ulSfNum = (m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
-		for (unsigned islot = 0; islot < m_sfAllocInfo[ulSfNum].m_ulSlotAllocInfo.size (); islot++)
+		for (unsigned islot = 0; islot < m_sfAllocInfo[ulSfNum].m_slotAllocInfo.size (); islot++)
 		{
-			DciInfoElementTdma &dciElem = m_sfAllocInfo[ulSfNum].m_ulSlotAllocInfo[islot].m_dci;
-			if (dciElem.m_tbSize > 0)
+			if (m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL
+					&& m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::UL)
 			{
-				Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
-				dciMsg->SetDciInfoElement (dciElem);
-				dciMsg->SetSfnSf (sfn);
-				//dciMsgList.push_back (dciMsg);
-				ctrlMsgs.push_back (dciMsg);
+				DciInfoElementTdma &dciElem = m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_dci;
+				NS_ASSERT (dciElem.m_format == DciInfoElementTdma::UL);
+				if (dciElem.m_tbSize > 0)
+				{
+					Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
+					dciMsg->SetDciInfoElement (dciElem);
+					dciMsg->SetSfnSf (sfn);
+					//dciMsgList.push_back (dciMsg);
+					ctrlMsgs.push_back (dciMsg);
+				}
 			}
 		}
 
@@ -470,25 +443,27 @@ MmWaveEnbPhy::EndSlot (void)
 	else
 	{
 		Time nextSlotStart;
-		uint8_t slotInd = m_slotNum+1;
-		if (slotInd >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
+		//uint8_t slotInd = m_slotNum+1;
+		/*if (slotInd >= m_currSfAllocInfo.m_slotAllocInfo.size ())
 		{
-			if (m_currSfAllocInfo.m_ulSlotAllocInfo.size () > 0)
+			if (m_currSfAllocInfo.m_slotAllocInfo.size () > 0)
 			{
-				slotInd = slotInd - m_currSfAllocInfo.m_dlSlotAllocInfo.size ();
+				slotInd = slotInd - m_currSfAllocInfo.m_slotAllocInfo.size ();
 				nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
 				                             m_currSfAllocInfo.m_ulSlotAllocInfo[slotInd].m_dci.m_symStart);
 			}
 		}
 		else
 		{
-			if (m_currSfAllocInfo.m_dlSlotAllocInfo.size () > 0)
+			if (m_currSfAllocInfo.m_slotAllocInfo.size () > 0)
 			{
 				nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
-				                             m_currSfAllocInfo.m_dlSlotAllocInfo[slotInd].m_dci.m_symStart);
+				                             m_currSfAllocInfo.m_slotAllocInfo[slotInd].m_dci.m_symStart);
 			}
-		}
+		}*/
 		m_slotNum++;
+		nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
+						                             m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
 		Simulator::Schedule (nextSlotStart+m_lastSfStart-Simulator::Now(), &MmWaveEnbPhy::StartSlot, this);
 	}
 }
