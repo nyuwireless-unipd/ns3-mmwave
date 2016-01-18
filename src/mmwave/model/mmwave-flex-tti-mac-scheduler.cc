@@ -1362,7 +1362,33 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					(*itRlcPdu).second.at (dci.m_harqProcess).push_back (ueSchedInfo.m_rlcPduInfo[i]);
 				}
 			}
-			ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
+			// may need to reorder/reindex slots to maintain DL before UL slot order
+			bool reordered = false;
+
+			std::deque <SlotAllocInfo>::iterator itSlot = ret.m_sfAllocInfo.m_slotAllocInfo.begin ();
+			for (unsigned islot = 0; islot < ret.m_sfAllocInfo.m_slotAllocInfo.size (); islot++)
+			{
+				if (ret.m_sfAllocInfo.m_slotAllocInfo [islot].m_tddMode == SlotAllocInfo::UL)
+				{
+					slotInfo.m_slotIdx = ret.m_sfAllocInfo.m_slotAllocInfo [islot].m_slotIdx;
+					slotInfo.m_dci.m_symStart = ret.m_sfAllocInfo.m_slotAllocInfo [islot].m_dci.m_symStart;
+					ret.m_sfAllocInfo.m_slotAllocInfo.insert (itSlot, slotInfo);
+					for (unsigned jslot = islot+1; jslot < ret.m_sfAllocInfo.m_slotAllocInfo.size (); jslot++)
+					{
+						ret.m_sfAllocInfo.m_slotAllocInfo[jslot].m_slotIdx++;	// increase indices of UL slots
+						ret.m_sfAllocInfo.m_slotAllocInfo[jslot].m_dci.m_symStart =
+																	ret.m_sfAllocInfo.m_slotAllocInfo[jslot-1].m_dci.m_symStart +
+																	ret.m_sfAllocInfo.m_slotAllocInfo[jslot-1].m_dci.m_numSym;
+					}
+					reordered = true;
+					break;
+				}
+				itSlot++;
+			}
+			if (!reordered)
+			{
+				ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
+			}
 			ret.m_sfAllocInfo.m_numSymAlloc += dci.m_numSym;
 		}
 
@@ -1375,7 +1401,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 			dci.m_numSym = ueSchedInfo.m_ulSymbols;
 			dci.m_symStart = symIdx;
-			symIdx -= ueSchedInfo.m_ulSymbols;
+			symIdx += ueSchedInfo.m_ulSymbols;
 			dci.m_mcs = ueSchedInfo.m_ulMcs;
 			dci.m_ndi = 1;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;

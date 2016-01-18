@@ -164,7 +164,7 @@ main (int argc, char *argv[])
 	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 100));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 100));
+	//Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 100));
 	//Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 100));
 	//Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*10));
 	//Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*10));
@@ -326,8 +326,11 @@ main (int argc, char *argv[])
 	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (40, -0.2, 1));
 	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
-	Simulator::Schedule (Seconds (5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
-	Simulator::Schedule (Seconds (15), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
+//	Simulator::Schedule (Seconds (5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
+//	Simulator::Schedule (Seconds (15), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
+
+	Simulator::Schedule (Seconds (0.5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
+	Simulator::Schedule (Seconds (10.5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
 
 	BuildingsHelper::Install (ueNodes);
 
