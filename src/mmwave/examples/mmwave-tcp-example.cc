@@ -145,6 +145,8 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("TcpSocketBase", LOG_LEVEL_INFO);
 	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	double stopTime = 5.9;
 	double simStopTime = 7.00;
 	Ipv4Address remoteHostAddr;
@@ -154,6 +156,7 @@ main (int argc, char *argv[])
 	cmd.Parse(argc, argv);
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 
@@ -238,7 +241,7 @@ main (int argc, char *argv[])
 	Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
 
 	Ptr<MyApp> app = CreateObject<MyApp> ();
-	app->Setup (ns3TcpSocket, sinkAddress, 1000, 500, DataRate ("1Mb/s"));
+	app->Setup (ns3TcpSocket, sinkAddress, 1000, 500, DataRate ("30Mb/s"));
 	remoteHostContainer.Get (0)->AddApplication (app);
 
 	AsciiTraceHelper asciiTraceHelper;

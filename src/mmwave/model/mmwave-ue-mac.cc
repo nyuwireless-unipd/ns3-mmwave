@@ -262,6 +262,14 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		{
 			// wait for all RLC PDUs to be received
 			it->second.m_pdu->AddHeader (it->second.m_macHeader);
+
+			MmWaveMacPduHeader headerTst;
+			it->second.m_pdu->PeekHeader (headerTst);
+			if (headerTst.GetSubheaders ().size () > 0)
+			{
+				NS_LOG_UNCOND(headerTst.GetSubheaders ().at (0).m_size);
+			}
+
 			LteRadioBearerTag bearerTag (params.rnti, 0, 0);
 			it->second.m_pdu->AddPacketTag (bearerTag);
 			m_miUlHarqProcessesPacket.at (params.harqProcessId).m_pktBurst->AddPacket (it->second.m_pdu);

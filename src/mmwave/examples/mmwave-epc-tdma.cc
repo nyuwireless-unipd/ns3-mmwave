@@ -31,6 +31,8 @@
 #include "ns3/mmwave-point-to-point-epc-helper.h"
 #include "ns3/rng-seed-manager.h"
 //#include "ns3/gtk-config-store.h"
+#include <sstream>
+#include <string>
 
 using namespace ns3;
 
@@ -53,6 +55,7 @@ main (int argc, char *argv[])
 	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 //	LogComponentEnable ("LteRlcAm", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
@@ -65,9 +68,12 @@ main (int argc, char *argv[])
 	uint16_t numUe = 1;
 	double simTime = 0.5;
 	double interPacketInterval = 1000;  // 500 microseconds
-	double distance = 150.0;  // eNB-UE distance in meters
+	double minDistance = 10.0;  // eNB-UE distance in meters
+	double maxDistance = 200.0;  // eNB-UE distance in meters
 	bool harqEnabled = false;
 	bool rlcAmEnabled = false;
+	unsigned symPerSf = 24;
+	double sfPeriod = 100.0;
 
 	// Command line arguments
 	CommandLine cmd;
@@ -77,6 +83,8 @@ main (int argc, char *argv[])
 	cmd.AddValue("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
 	cmd.AddValue("harq", "Enable Hybrid ARQ", harqEnabled);
 	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
+	cmd.AddValue("symPerSf", "OFDM symbols per subframe", symPerSf);
+	cmd.AddValue("sfPeriod", "Subframe period = 4.16 * symPerSf", sfPeriod);
 	cmd.Parse(argc, argv);
 
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
@@ -85,15 +93,20 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
+	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
 
 	RngSeedManager::SetSeed (1234);
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-//	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
+	//mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
 	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
@@ -144,7 +157,13 @@ main (int argc, char *argv[])
 
 	MobilityHelper uemobility;
 	Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-	uePositionAlloc->Add (Vector (distance, 0.0, 0.0));
+	Ptr<UniformRandomVariable> distRv = CreateObject<UniformRandomVariable> ();
+
+	for (unsigned i = 0; i < numUe; i++)
+	{
+		double dist = distRv->GetValue (minDistance, maxDistance);
+		uePositionAlloc->Add (Vector (dist, 0.0, 0.0));
+	}
 	uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	uemobility.SetPositionAllocator(uePositionAlloc);
 	uemobility.Install (ueNodes);
@@ -174,17 +193,35 @@ main (int argc, char *argv[])
 	uint16_t otherPort = 3000;
 	ApplicationContainer clientApps;
 	ApplicationContainer serverApps;
-	uint32_t packetSize = 500;
+	uint32_t packetSize = 100;
+
+	/*double dataRateMB = 100000000.0;  // 100 MBps
+	double onTimeSec = .000001; //packetSize / dataRateMB;
+	std::stringstream ss;
+	ss << "ns3::ConstantRandomVariable[Constant=" << onTimeSec << "]";
+	std::cout << "OnTime == " << ss.str() << std::endl;
+	OnOffHelper dlClient ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+	OnOffHelper ulClient ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+	dlClient.SetAttribute ("PacketSize", UintegerValue (packetSize));
+	ulClient.SetAttribute ("PacketSize", UintegerValue (packetSize));
+	dlClient.SetAttribute ("DataRate", DataRateValue (8*dataRateMB));
+	ulClient.SetAttribute ("DataRate", DataRateValue (8*dataRateMB));
+	dlClient.SetAttribute ("OnTime", StringValue (ss.str ()));
+	ulClient.SetAttribute ("OnTime", StringValue (ss.str ()));
+	ss.str("");
+	ss << "ns3::ExponentialRandomVariable[Mean=" << interPacketInterval*1e-6 << "]";
+	std::cout << "OffTime == " << ss.str() << std::endl;
+	dlClient.SetAttribute ("OffTime", StringValue (ss.str ()));
+	ulClient.SetAttribute ("OffTime", StringValue (ss.str ()));*/
+
 	for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
 	{
 		++ulPort;
 		++otherPort;
 		PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
 		PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
-		//PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), otherPort));
 		serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
 		serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
-		//serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
 
 		UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
 		dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
@@ -199,6 +236,8 @@ main (int argc, char *argv[])
 //		UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
 //		client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
 //		client.SetAttribute ("MaxPackets", UintegerValue(1000000));
+		//dlClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (ueIpIface.GetAddress (u), dlPort)));
+		//ulClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (remoteHostAddr, ulPort)));
 
 		clientApps.Add (dlClient.Install (remoteHost));
 		clientApps.Add (ulClient.Install (ueNodes.Get(u)));
@@ -211,8 +250,8 @@ main (int argc, char *argv[])
 //			clientApps.Add (client.Install (ueNodes.Get(0)));
 //		}
 	}
-	serverApps.Start (Seconds (0.020));
-	clientApps.Start (Seconds (0.020));
+	serverApps.Start (Seconds (0.003));
+	clientApps.Start (Seconds (0.003));
 	mmwaveHelper->EnableTraces ();
 	// Uncomment to enable PCAP tracing
 	//p2ph.EnablePcapAll("mmwave-epc-simple");

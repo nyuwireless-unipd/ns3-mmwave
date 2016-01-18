@@ -118,7 +118,7 @@ private:
 	};
 
 	std::map <uint8_t, LcInfo> m_lcInfoMap;
-	uint8_t m_rnti;
+	uint16_t m_rnti;
 
 	bool m_waitingForRaResponse;
 	static uint8_t g_raPreambleId;

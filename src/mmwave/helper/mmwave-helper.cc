@@ -429,7 +429,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			}
 			else
 			{
-				rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
+				rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_LOWLAT_ALWAYS));
 			}
 		}
 	}

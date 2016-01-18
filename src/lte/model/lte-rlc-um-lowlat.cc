@@ -70,6 +70,12 @@ LteRlcUmLowLat::GetTypeId (void)
                    UintegerValue (10 * 1024),
                    MakeUintegerAccessor (&LteRlcUmLowLat::m_maxTxBufferSize),
                    MakeUintegerChecker<uint32_t> ())
+	 .AddAttribute ("ReportBufferStatusTimer",
+									"How much to wait to issue a new Report Buffer Status since the last time "
+									"a new SDU was received",
+									TimeValue (MilliSeconds (20)),
+									MakeTimeAccessor (&LteRlcUmLowLat::m_rbsTimerValue),
+									MakeTimeChecker ())
     ;
   return tid;
 }
@@ -136,6 +142,7 @@ LteRlcUmLowLat::DoTransmitPdcpPdu (Ptr<Packet> p)
   /** Report Buffer Status */
   DoReportBufferStatus ();
   m_rbsTimer.Cancel ();
+  m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
 }
 
 
@@ -405,11 +412,11 @@ LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t ha
 
   m_macSapProvider->TransmitPdu (params);
 
-  if (! m_txBuffer.empty ())
+/*  if (! m_txBuffer.empty ())
     {
       m_rbsTimer.Cancel ();
-      m_rbsTimer = Simulator::Schedule (MilliSeconds (10), &LteRlcUmLowLat::ExpireRbsTimer, this);
-    }
+      m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
+    }*/
 }
 
 void

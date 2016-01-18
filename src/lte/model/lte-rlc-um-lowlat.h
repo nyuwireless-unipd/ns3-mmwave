@@ -94,6 +94,7 @@ private:
    */
   EventId m_reorderingTimer;
   EventId m_rbsTimer;
+  Time    m_rbsTimerValue;
 
   /**
    * Reassembling state
@@ -116,6 +117,7 @@ private:
   double m_arrivalRate;
   static uint32_t m_numArrivalsToAvg;				// average last N arrivals
   double	m_forgetFactor;
+
 };
 
 
