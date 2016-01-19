@@ -267,7 +267,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 			it->second.m_pdu->PeekHeader (headerTst);
 			if (headerTst.GetSubheaders ().size () > 0)
 			{
-				NS_LOG_UNCOND(headerTst.GetSubheaders ().at (0).m_size);
+				//NS_LOG_UNCOND(headerTst.GetSubheaders ().at (0).m_size);
 			}
 
 			LteRadioBearerTag bearerTag (params.rnti, 0, 0);
