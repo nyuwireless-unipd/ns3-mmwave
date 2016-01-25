@@ -70,12 +70,22 @@ MmWaveMacPduHeader::Serialize (Buffer::Iterator i) const
 		uint8_t octet2 = (m_subheaderList[ipdu].m_size & 0x7F);
 		// third octet = upper 8 bits of length if length > 127
 		uint8_t octet3 = 0;
-		if (m_subheaderList[ipdu].m_size >  127)
+		if (m_subheaderList[ipdu].m_size >  0x7F)
 		{
 			octet2 |= (1 << 7);
-			octet3 = ((m_subheaderList[ipdu].m_size >> 7) & 0xFF);
+			octet3 = ((m_subheaderList[ipdu].m_size >> 7) & 0x7F);
 			i.WriteU8 (octet2);
-			i.WriteU8 (octet3);
+			if (m_subheaderList[ipdu].m_size > 0x3FFF)
+			{
+				octet3 |= (1 << 7);		// write extension flag 2
+				uint8_t octet4 = ((m_subheaderList[ipdu].m_size >> 14) & 0xFF);
+				i.WriteU8 (octet3);
+				i.WriteU8 (octet4);
+			}
+			else
+			{
+				i.WriteU8 (octet3);
+			}
 		}
 		else
 		{
@@ -100,12 +110,22 @@ MmWaveMacPduHeader::Deserialize (Buffer::Iterator i)
 		}
 		uint8_t octet2 = (uint8_t)i.ReadU8 ();
 		bool flag = octet2 >> 7;
-		uint16_t size = (octet2 & 0x7F);
+		uint32_t size = (octet2 & 0x7F);
 		if (flag) // size > 127
 		{
 			uint8_t octet3 = (uint8_t)i.ReadU8 ();
-			size |= (octet3 << 7);
-			m_headerSize += 3;
+			size |= (octet3 & 0x7F) << 7;
+			bool flag2 = (octet3 >> 7);
+			if (flag2)
+			{
+				uint8_t octet4 = (uint8_t)i.ReadU8 ();
+				size |= (octet4 << 14);
+				m_headerSize += 4;
+			}
+			else
+			{
+				m_headerSize += 3;
+			}
 		}
 		else
 		{
@@ -126,7 +146,11 @@ void
 MmWaveMacPduHeader::AddSubheader (MacSubheader macSubheader)
 {
 	this->m_subheaderList.push_back (macSubheader);
-	if (macSubheader.m_size > 127)
+	if (macSubheader.m_size > 0x3FFF)
+	{
+		m_headerSize += 4;
+	}
+	else if (macSubheader.m_size > 0x7F)
 	{
 		m_headerSize += 3;
 	}

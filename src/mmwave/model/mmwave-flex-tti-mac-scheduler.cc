@@ -141,7 +141,7 @@ MmWaveFlexTtiMacSchedSapProvider::SchedSetMcs (int mcs)
 }
 
 const unsigned MmWaveFlexTtiMacScheduler::m_macHdrSize = 0;
-const unsigned MmWaveFlexTtiMacScheduler::m_subHdrSize = 3;
+const unsigned MmWaveFlexTtiMacScheduler::m_subHdrSize = 4;
 const unsigned MmWaveFlexTtiMacScheduler::m_rlcHdrSize = 3;
 
 const double MmWaveFlexTtiMacScheduler::m_berDl = 0.001;
@@ -993,7 +993,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					// temporarily store the TX queue size
 					if(itRlcBuf->m_rlcStatusPduSize > 0)
 					{
-						RlcPduInfo newRlcStatusPdu;;
+						RlcPduInfo newRlcStatusPdu;
 						newRlcStatusPdu.m_lcid = itRlcBuf->m_logicalChannelIdentity;
 						newRlcStatusPdu.m_size += itRlcBuf->m_rlcStatusPduSize + m_subHdrSize;
 						itUeInfo->second.m_rlcPduInfo.push_back (newRlcStatusPdu);
@@ -1203,6 +1203,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					{
 						// add remaining symbols to average
 						addSym = deficit;
+						nFlowsTot--;
 						int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
 						nSymPerFlow0 += extra;  // add extra to average symbols
 						nRemSymPerFlow += extra;  // add extra to average symbols
@@ -1227,6 +1228,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					{
 						// add remaining symbols to average
 						addSym = deficit;
+						nFlowsTot--;
 						int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
 						nSymPerFlow0 += extra;  // add extra to average symbols
 						nRemSymPerFlow += extra;  // add extra to average symbols
@@ -1277,11 +1279,11 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			dci.m_ndi = 1;
 			dci.m_mcs = ueSchedInfo.m_dlMcs;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
-			while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
+			/*while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
 			{
 				dci.m_mcs--;
 				dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
-			}
+			}*/
 			NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
 			dci.m_rv = 0;
 			dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
@@ -1404,11 +1406,11 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			dci.m_mcs = ueSchedInfo.m_ulMcs;
 			dci.m_ndi = 1;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
-			while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
+		/*	while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
 			{
 				dci.m_mcs--;
 				dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
-			}
+			}*/
 			dci.m_harqProcess = UpdateUlHarqProcessId (itUeInfo->first);
 			NS_LOG_DEBUG ("UE" << itUeInfo->first << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());

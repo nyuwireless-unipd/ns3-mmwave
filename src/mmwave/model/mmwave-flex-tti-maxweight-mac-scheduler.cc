@@ -142,7 +142,7 @@ MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedSetMcs (int mcs)
 	m_scheduler->DoSchedSetMcs (mcs);
 }
 const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_macHdrSize = 0;
-const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_subHdrSize = 3;
+const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_subHdrSize = 4;
 const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_rlcHdrSize = 3;
 
 
