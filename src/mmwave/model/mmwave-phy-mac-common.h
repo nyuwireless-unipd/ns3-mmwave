@@ -372,6 +372,8 @@ struct RxPacketTraceParams
 	uint32_t m_frameNum;
 	uint8_t  m_sfNum;
 	uint8_t  m_slotNum;
+	uint8_t  m_symStart;
+	uint8_t  m_numSym;
 	uint32_t m_tbSize;
 	uint8_t  m_mcs;
 	uint8_t  m_rv;

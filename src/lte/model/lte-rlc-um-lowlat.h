@@ -117,6 +117,7 @@ private:
   double m_arrivalRate;
   static uint32_t m_numArrivalsToAvg;				// average last N arrivals
   //double	m_forgetFactor;
+  Time m_reorderingTimeExpires;
 
 };
 

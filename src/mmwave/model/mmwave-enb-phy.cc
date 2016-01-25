@@ -403,7 +403,8 @@ MmWaveEnbPhy::StartSlot (void)
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod() * currSlot.m_dci.m_numSym);
 		//NS_LOG_DEBUG ("Slot " << (uint8_t)m_slotNum << " scheduled for Uplink");
 		m_downlinkSpectrumPhy->AddExpectedTb(currSlot.m_dci.m_rnti, currSlot.m_dci.m_ndi, currSlot.m_dci.m_tbSize,
-		                                     currSlot.m_dci.m_mcs, m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, false);
+		                                     currSlot.m_dci.m_mcs, m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, false,
+		                                     currSlot.m_dci.m_symStart, currSlot.m_dci.m_numSym);
 
 		for (uint8_t i = 0; i < m_deviceMap.size (); i++)
 		{

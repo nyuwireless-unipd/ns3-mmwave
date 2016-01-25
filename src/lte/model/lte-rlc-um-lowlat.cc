@@ -76,6 +76,12 @@ LteRlcUmLowLat::GetTypeId (void)
 									TimeValue (MilliSeconds (20)),
 									MakeTimeAccessor (&LteRlcUmLowLat::m_rbsTimerValue),
 									MakeTimeChecker ())
+	 .AddAttribute ("ReorderingTimeExpires",
+									"Time to wait for out of order PDUs"
+									"a new SDU was received",
+									TimeValue (MilliSeconds (100.0)),
+									MakeTimeAccessor (&LteRlcUmLowLat::m_reorderingTimeExpires),
+									MakeTimeChecker ())
     ;
   return tid;
 }
@@ -580,7 +586,7 @@ LteRlcUmLowLat::DoReceivePdu (Ptr<Packet> p)
         {
           NS_LOG_LOGIC ("VR(UH) > VR(UR)");
           NS_LOG_LOGIC ("Start reordering timer");
-          m_reorderingTimer = Simulator::Schedule (Time ("0.1s"),
+          m_reorderingTimer = Simulator::Schedule (m_reorderingTimeExpires,
                                                    &LteRlcUmLowLat::ExpireReorderingTimer ,this);
           m_vrUx = m_vrUh;
           NS_LOG_LOGIC ("New VR(UX) = " << m_vrUx);
@@ -1212,7 +1218,7 @@ LteRlcUmLowLat::ExpireReorderingTimer (void)
   if ( m_vrUh > m_vrUr)
     {
       NS_LOG_LOGIC ("Start reordering timer");
-      m_reorderingTimer = Simulator::Schedule (Time ("0.1s"),
+      m_reorderingTimer = Simulator::Schedule (m_reorderingTimeExpires,
                                                &LteRlcUmLowLat::ExpireReorderingTimer, this);
       m_vrUx = m_vrUh;
       NS_LOG_LOGIC ("New VR(UX) = " << m_vrUx);

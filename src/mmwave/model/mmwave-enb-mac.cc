@@ -726,7 +726,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					NS_ASSERT (rlcPduInfo.size () > 0);
 					SfnSf pduSfn = ind.m_sfnSf;
 					pduSfn.m_slotNum = slotAllocInfo.m_dci.m_symStart;
-					MacPduInfo macPduInfo (pduSfn, slotAllocInfo.m_dci.m_tbSize, rlcPduInfo.size ());
+					MacPduInfo macPduInfo (pduSfn, slotAllocInfo.m_dci.m_tbSize, rlcPduInfo.size (), dciElem);
 					// insert into MAC PDU map
 					uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
 					std::pair <std::map<uint32_t, struct MacPduInfo>::iterator, bool> mapRet =
@@ -798,6 +798,8 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 								NS_FATAL_ERROR ("No MAC PDU tag");
 							}
 							tag.SetSfn (SfnSf (ind.m_sfnSf.m_frameNum, ind.m_sfnSf.m_sfNum, dciElem.m_symStart));
+							tag.SetSymStart(dciElem.m_symStart);
+							tag.SetNumSym(dciElem.m_numSym);
 							pkt->AddPacketTag (tag);
 							m_phySapProvider->SendMacPdu (pkt);
 						}

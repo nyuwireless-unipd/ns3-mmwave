@@ -210,7 +210,8 @@ MmWaveSpectrumPhy::SetPhyRxCtrlEndOkCallback (MmWavePhyRxCtrlEndOkCallback c)
 
 void
 MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs,
-                                  std::vector<int> chunkMap, uint8_t harqId, uint8_t rv, bool downlink)
+                                  std::vector<int> chunkMap, uint8_t harqId, uint8_t rv, bool downlink,
+                                  uint8_t symStart, uint8_t numSym)
 {
 	//layer = layer;
 	ExpectedTbMap_t::iterator it;
@@ -220,7 +221,8 @@ MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uin
 		m_expectedTbs.erase (it);
 	}
 	// insert new entry
-	ExpectedTbInfo_t tbInfo = {ndi, size, mcs, chunkMap, harqId, rv, 0.0, downlink, false, false, 0};
+	//ExpectedTbInfo_t tbInfo = {ndi, size, mcs, chunkMap, harqId, rv, 0.0, downlink, false, false, 0};
+	ExpectedTbInfo_t tbInfo = {ndi, size, mcs, chunkMap, harqId, rv, 0.0, downlink, false, false, 0, symStart, numSym};
 	m_expectedTbs.insert (std::pair<uint16_t, ExpectedTbInfo_t> (rnti,tbInfo));
 }
 
@@ -567,6 +569,9 @@ MmWaveSpectrumPhy::EndRxData ()
 				traceParams.m_sinrMin = sinrMin;
 				traceParams.m_tbler = itTb->second.tbler;
 				traceParams.m_corrupt = itTb->second.corrupt;
+				traceParams.m_symStart = itTb->second.symStart;
+				traceParams.m_numSym = itTb->second.numSym;
+
 				if (enbRx)
 				{
 					m_rxPacketTraceEnb (traceParams);
