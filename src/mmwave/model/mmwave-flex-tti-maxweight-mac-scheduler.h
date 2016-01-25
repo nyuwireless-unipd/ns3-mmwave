@@ -410,6 +410,8 @@ private:
 
 	std::vector <FlowStats*> m_flowHeap;
 
+	bool m_fixedTti;		// one slot per TTI
+	uint8_t	m_symPerSlot; // symbols per slot
 };
 
 }

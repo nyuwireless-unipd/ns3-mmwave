@@ -44,6 +44,8 @@ struct ExpectedTbInfo_t
   bool corrupt;
   bool harqFeedbackSent;
   double tbler;
+  uint8_t		symStart;
+  uint8_t		numSym;
 };
 
 typedef std::map<uint16_t, ExpectedTbInfo_t> ExpectedTbMap_t;
@@ -116,7 +118,8 @@ public:
 
 	void UpdateSinrPerceived (const SpectrumValue& sinr);
 
-	void AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs, std::vector<int> map, uint8_t harqId, uint8_t rv, bool downlink);
+	void AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs, std::vector<int> map, uint8_t harqId,
+	                    uint8_t rv, bool downlink, uint8_t symStart, uint8_t numSym);
 //	void AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t m_mcs, std::vector<int> chunkMap, bool downlink);
 
 	void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);

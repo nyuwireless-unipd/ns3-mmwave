@@ -51,11 +51,11 @@ main (int argc, char *argv[])
 	//	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
 //		LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
+	//LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 //	LogComponentEnable ("LteRlcAm", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
 	//LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
@@ -66,12 +66,13 @@ main (int argc, char *argv[])
 
 	uint16_t numEnb = 1;
 	uint16_t numUe = 1;
-	double simTime = 0.5;
+	double simTime = 0.1;
 	double interPacketInterval = 1000;  // 500 microseconds
 	double minDistance = 10.0;  // eNB-UE distance in meters
 	double maxDistance = 200.0;  // eNB-UE distance in meters
 	bool harqEnabled = false;
 	bool rlcAmEnabled = false;
+	bool fixedTti = false;
 	unsigned symPerSf = 24;
 	double sfPeriod = 100.0;
 
@@ -85,12 +86,15 @@ main (int argc, char *argv[])
 	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
 	cmd.AddValue("symPerSf", "OFDM symbols per subframe", symPerSf);
 	cmd.AddValue("sfPeriod", "Subframe period = 4.16 * symPerSf", sfPeriod);
+	cmd.AddValue("fixedTti", "Fixed TTI scheduler", fixedTti);
 	cmd.Parse(argc, argv);
 
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::FixedTti", BooleanValue(fixedTti));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::SymPerSlot", UintegerValue(6));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
@@ -201,8 +205,8 @@ main (int argc, char *argv[])
 	std::stringstream ss;
 	ss << "ns3::ConstantRandomVariable[Constant=" << onTimeSec << "]";
 	std::cout << "OnTime == " << ss.str() << std::endl;
-	OnOffHelper dlClient ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-	OnOffHelper ulClient ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+	OnOffHelper dlClient ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+	OnOffHelper ulClient ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
 	dlClient.SetAttribute ("PacketSize", UintegerValue (packetSize));
 	ulClient.SetAttribute ("PacketSize", UintegerValue (packetSize));
 	dlClient.SetAttribute ("DataRate", DataRateValue (8*dataRateMB));

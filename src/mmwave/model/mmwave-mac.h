@@ -38,6 +38,15 @@ namespace ns3 {
 			m_pdu->AddPacketTag (tag);
 		}
 
+		MacPduInfo (SfnSf sfn, uint32_t size, uint8_t numRlcPdu, DciInfoElementTdma dci) :
+			m_sfnSf (sfn), m_size (size), m_numRlcPdu (numRlcPdu)
+		{
+			m_pdu = Create<Packet> ();
+			m_macHeader = MmWaveMacPduHeader ();
+			MmWaveMacPduTag tag (sfn, dci.m_symStart, dci.m_numSym);
+			m_pdu->AddPacketTag (tag);
+		}
+
 		SfnSf m_sfnSf;
 		uint32_t m_size;
 		uint8_t m_numRlcPdu;

@@ -1093,11 +1093,11 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 						break;  // do not allocate UE in uplink
 					}
 				}
-				nFlowsUl++;
 				itUeInfo = ueInfo.find (ceBsrIt->first);
 				if (itUeInfo == ueInfo.end ())
 				{
 					itUeInfo = ueInfo.insert (std::pair<uint16_t, struct UeSchedInfo> (ceBsrIt->first, UeSchedInfo () )).first;
+					nFlowsUl++;
 				}
 				else if (itUeInfo->second.m_maxUlBufSize == 0)
 				{
@@ -1362,9 +1362,8 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 					(*itRlcPdu).second.at (dci.m_harqProcess).push_back (ueSchedInfo.m_rlcPduInfo[i]);
 				}
 			}
-			// may need to reorder/reindex slots to maintain DL before UL slot order
+			// reorder/reindex slots to maintain DL before UL slot order
 			bool reordered = false;
-
 			std::deque <SlotAllocInfo>::iterator itSlot = ret.m_sfAllocInfo.m_slotAllocInfo.begin ();
 			for (unsigned islot = 0; islot < ret.m_sfAllocInfo.m_slotAllocInfo.size (); islot++)
 			{
