@@ -30,7 +30,7 @@ struct MacSubheader
 	}
 
   uint8_t   m_lcid;
-  uint16_t  m_size;
+  uint32_t  m_size;		// 22 bits
 };
 
 class MmWaveMacPduHeader : public Header
