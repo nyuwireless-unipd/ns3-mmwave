@@ -18,6 +18,9 @@
 #include <ns3/lte-rrc-protocol-real.h>
 #include <ns3/epc-enb-application.h>
 #include <ns3/epc-x2.h>
+#include <ns3/buildings-obstacle-propagation-loss-model.h>
+
+
 
 namespace ns3 {
 
@@ -65,6 +68,13 @@ MmWaveHelper::GetTypeId (void)
 					   StringValue ("ns3::MmWavePropagationLossModel"),
 					   MakeStringAccessor (&MmWaveHelper::SetPathlossModelType),
 					   MakeStringChecker ())
+		.AddAttribute ("ChannelModel",
+					   "The type of MIMO channel model to be used. "
+					   "The allowed values for this attributes are the type names "
+					   "of any class inheriting from ns3::SpectrumPropagationLossModel.",
+					   StringValue ("ns3::MmWaveBeamforming"),
+					   MakeStringAccessor (&MmWaveHelper::SetChannelModelType),
+					   MakeStringChecker ())
 		.AddAttribute ("Scheduler",
 				      "The type of scheduler to be used for eNBs. "
 				      "The allowed values for this attributes are the type names "
@@ -102,38 +112,54 @@ MmWaveHelper::DoInitialize()
 	NS_LOG_FUNCTION (this);
 
 	m_channel = m_channelFactory.Create<SpectrumChannel> ();
-	m_beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
-	//m_beamforming = CreateObject<MmWaveChannelMatrix> ();
-
-	m_channel->AddSpectrumPropagationLossModel (m_beamforming);
-
 	m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
 
-	m_beamforming->SetCofigurationParameters (m_phyMacCommon);
 
-	m_pathlossModel = m_pathlossModelFactory.Create ();
-	Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
-	if( splm )
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
 	{
-		NS_LOG_LOGIC (this << " using a SpectrumPropagationLossModel");
-		m_channel->AddPropagationLossModel (splm);
+		m_beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+		m_channel->AddSpectrumPropagationLossModel (m_beamforming);
+		m_beamforming->SetCofigurationParameters (m_phyMacCommon);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		m_channelMatrix = CreateObject<MmWaveChannelMatrix> ();
+		m_channel->AddSpectrumPropagationLossModel (m_channelMatrix);
+		m_channelMatrix->SetCofigurationParameters (m_phyMacCommon);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		m_raytracing = CreateObject<MmWaveChannelRaytracing> ();
+		m_channel->AddSpectrumPropagationLossModel (m_raytracing);
+		m_raytracing->SetCofigurationParameters (m_phyMacCommon);
+	}
+
+	if (!m_pathlossModelType.empty ())
+	{
+		m_pathlossModel = m_pathlossModelFactory.Create ();
+		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+		if( splm )
+		{
+			NS_LOG_LOGIC (this << " using a PropagationLossModel");
+			m_channel->AddPropagationLossModel (splm);
+		}
+
+		if (m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ())
+		{
+			Ptr<BuildingsObstaclePropagationLossModel> building = m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
+			building->SetBeamforming (m_beamforming);
+		}
 	}
 	else
 	{
-		NS_LOG_LOGIC (this << " using a PropagationLossModel");
-		Ptr<PropagationLossModel> plm = m_pathlossModel->GetObject<PropagationLossModel> ();
-		NS_ASSERT_MSG (plm != 0, " " << m_pathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
-		m_channel->AddPropagationLossModel (plm);
+		NS_LOG_UNCOND (this << " No PropagationLossModel!");
 	}
+
+
+
 	m_phyStats = CreateObject<MmWavePhyRxTrace> ();
 
 	Object::DoInitialize();
-}
-
-Ptr<PropagationLossModel>
-MmWaveHelper::GetPathLossModel ()
-{
-	return m_pathlossModel->GetObject<PropagationLossModel> ();
 }
 
 void
@@ -147,8 +173,25 @@ void
 MmWaveHelper::SetPathlossModelType (std::string type)
 {
 	NS_LOG_FUNCTION (this << type);
-	m_pathlossModelFactory = ObjectFactory ();
-	m_pathlossModelFactory.SetTypeId (type);
+	m_pathlossModelType = type;
+	if (!type.empty ())
+	{
+		m_pathlossModelFactory = ObjectFactory ();
+		m_pathlossModelFactory.SetTypeId (type);
+	}
+}
+
+Ptr<PropagationLossModel>
+MmWaveHelper::GetPathLossModel ()
+{
+	return m_pathlossModel->GetObject<PropagationLossModel> ();
+}
+
+void
+MmWaveHelper::SetChannelModelType (std::string type)
+{
+	NS_LOG_FUNCTION (this << type);
+	m_channelModelType = type;
 }
 
 void
@@ -473,10 +516,13 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	NS_LOG_LOGIC ("set the propagation model frequencies");
 	double freq = m_phyMacCommon->GetCentreFrequency ();
 	NS_LOG_LOGIC ("Channel Frequency: " << freq);
-	bool freqOk = m_pathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (freq));
-	if (!freqOk)
+	if (!m_pathlossModelType.empty ())
 	{
-		NS_LOG_WARN ("Propagation model does not have a Frequency attribute");
+		bool freqOk = m_pathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (freq));
+		if (!freqOk)
+		{
+			NS_LOG_WARN ("Propagation model does not have a Frequency attribute");
+		}
 	}
 
 	device->Initialize ();
@@ -514,7 +560,18 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 		AttachToClosestEnb(*i, enbDevices);
 	}
 
-	m_beamforming->Initial(ueDevices,enbDevices);
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	{
+		m_beamforming->Initial(ueDevices,enbDevices);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		m_channelMatrix->Initial(ueDevices,enbDevices);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		m_raytracing->Initial(ueDevices,enbDevices);
+	}
 }
 
 void
@@ -580,7 +637,6 @@ MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::stri
 		double cf;
 		ss >> cf;
 		m_phyMacCommon->SetAttribute ("CentreFreq", DoubleValue(cf));
-		m_beamforming->SetAttribute ("CentreFreq", DoubleValue(cf));
 	}
 	else if (paramName.compare("SymbolPerSlot") == 0)
 	{
@@ -618,21 +674,21 @@ MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::stri
 		uint32_t sb;
 		ss >> sb;
 		m_phyMacCommon->SetAttribute ("ChunkPerRB", UintegerValue(sb));
-		m_beamforming->SetAttribute ("NumSubbandPerRB", UintegerValue(sb));
+		m_channelMatrix->SetAttribute ("NumSubbandPerRB", UintegerValue(sb));
 	}
 	else if (paramName.compare("SubbandWidth") == 0)
 	{
 		double w;
 		ss >> w;
 		m_phyMacCommon->SetAttribute ("ChunkWidth", DoubleValue(w));
-		m_beamforming->SetAttribute ("ChunkWidth", DoubleValue(w));
+		m_channelMatrix->SetAttribute ("ChunkWidth", DoubleValue(w));
 	}
 	else if (paramName.compare("NumResourceBlock") == 0)
 	{
 		uint32_t rb;
 		ss >> rb;
 		m_phyMacCommon->SetAttribute ("ResourceBlockNum", UintegerValue(rb));
-		m_beamforming->SetAttribute ("NumResourceBlocks", UintegerValue(rb));
+		m_channelMatrix->SetAttribute ("NumResourceBlocks", UintegerValue(rb));
 	}
 	else if (paramName.compare("NumReferenceSymbols") == 0)
 	{
@@ -751,16 +807,16 @@ MmWaveHelper::EnableTraces (void)
 	//EnableEnbPacketCountTrace ();
 	//EnableUePacketCountTrace ();
 	//EnableTransportBlockTrace ();
-	EnableRlcTraces ();
-	EnablePdcpTraces ();
+	//EnableRlcTraces ();
+	//EnablePdcpTraces ();
 }
 
 void
 MmWaveHelper::EnableDlPhyTrace (void)
 {
 	NS_LOG_FUNCTION_NOARGS ();
-//	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
-//			MakeBoundCallback (&MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
+	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
+			MakeBoundCallback (&MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
 
 	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
 			MakeBoundCallback (&MmWavePhyRxTrace::RxPacketTraceUeCallback, m_phyStats));

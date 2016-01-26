@@ -7,6 +7,7 @@
 #include <ns3/mobility-building-info.h>
 #include <ns3/building-list.h>
 #include <ns3/angles.h>
+#include "ns3/config-store.h"
 
 
 
@@ -52,6 +53,11 @@ BuildingsObstaclePropagationLossModel::SetFrequency (double freq)
 	m_lambda = C / freq;
 }
 
+double
+BuildingsObstaclePropagationLossModel::DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const
+{
+	  return txPowerDbm - GetLoss (a, b);
+}
 
 double
 BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const
@@ -115,11 +121,13 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 		if(los)
 		{
 			//NS_LOG_UNCOND ("LOS");
+			m_beamforming->UpdateMatrices(false);
 			loss = mmWaveLosLoss (a,b);
 		}
 		else
 		{
 			//NS_LOG_UNCOND ("NLOS");
+			m_beamforming->UpdateMatrices(true);
 			loss = mmWaveNlosLoss (a,b);
 		}
 	}
@@ -129,6 +137,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 	}
 
 	loss = std::max (loss, 0.0);
+	NS_LOG_UNCOND (loss);
 
 	return loss;
 }
@@ -163,7 +172,6 @@ BuildingsObstaclePropagationLossModel::mmWaveLosLoss (Ptr<MobilityModel> a, Ptr<
 	}
 
 	double lossDb = alpha + beta * 10 * log10(distance);
-
 	return lossDb;
 }
 double
@@ -188,8 +196,25 @@ BuildingsObstaclePropagationLossModel::mmWaveNlosLoss (Ptr<MobilityModel> a, Ptr
 	}
 	double lossDb = alpha + beta * 10 * log10(distance);
 
+	/*double t = Simulator::Now ().GetSeconds();
+	if (t > 5 && t < 6)
+	{
+		lossDb = lossDb + 50;
+	}
+	else if (t > 8 && t < 9)
+	{
+		lossDb = lossDb + 50;
+	}*/
+
 	return lossDb;
 }
+
+void
+BuildingsObstaclePropagationLossModel::SetBeamforming (Ptr<MmWaveBeamforming> beamforming)
+{
+	m_beamforming = beamforming;
+}
+
 
 
 
