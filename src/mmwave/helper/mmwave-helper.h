@@ -34,6 +34,8 @@
 #include <ns3/mmwave-bearer-stats-calculator.h>
 #include <ns3/mmwave-bearer-stats-connector.h>
 #include <ns3/propagation-loss-model.h>
+#include <ns3/mmwave-channel-raytracing.h>
+
 namespace ns3 {
 
 /* ... */
@@ -58,6 +60,8 @@ public:
 	NetDeviceContainer InstallEnbDevice (NodeContainer c);
 	void SetAntenna (uint16_t Nrx, uint16_t Ntx);
 	void SetPathlossModelType (std::string type);
+	void SetChannelModelType (std::string type);
+	
 	void AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
 	void EnableTraces ();
 
@@ -65,7 +69,7 @@ public:
 	std::string GetSchedulerType () const;
 
 	void SetPhyMacConfigurationParameters (std::string paramName, std::string value);
-  Ptr<MmWavePhyMacCommon> GetPhyMacConfigurable (void);
+    Ptr<MmWavePhyMacCommon> GetPhyMacConfigurable (void);
 	void ActivateDataRadioBearer (NetDeviceContainer ueDevices, EpsBearer bearer);
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
 	void SetEpcHelper (Ptr<EpcHelper> epcHelper);
@@ -95,10 +99,13 @@ private:
 
 	Ptr<SpectrumChannel> m_channel;
 	Ptr<MmWaveBeamforming> m_beamforming;
-	//Ptr<MmWaveChannelMatrix> m_beamforming;
-
+	Ptr<MmWaveChannelMatrix> m_channelMatrix;
+	Ptr<MmWaveChannelRaytracing> m_raytracing;
 
 	Ptr<Object> m_pathlossModel;
+	std::string m_pathlossModelType;
+
+	std::string m_channelModelType;
 
 	ObjectFactory m_enbNetDeviceFactory;
 	ObjectFactory m_ueNetDeviceFactory;

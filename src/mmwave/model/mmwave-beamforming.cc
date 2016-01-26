@@ -10,7 +10,6 @@
 #include <ns3/log.h>
 #include <fstream>
 #include <ns3/simulator.h>
-#include <ns3/random-variable-stream.h>
 #include <ns3/abort.h>
 #include <ns3/mmwave-enb-net-device.h>
 #include <ns3/mmwave-ue-net-device.h>
@@ -54,10 +53,12 @@ MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 	m_ueAntennaSize(ueAntenna),
 	m_smallScale (true),
 	m_fixSpeed (false),
-	m_ueSpeed (0.0)
+	m_ueSpeed (0.0),
+	m_update(true)
 {
 	if (g_smallScaleFadingInstance.empty ())
 	LoadFile();
+	m_uniformRV = CreateObject<UniformRandomVariable> ();
 }
 
 
@@ -68,7 +69,7 @@ MmWaveBeamforming::GetTypeId (void)
 		.SetParent<Object> ()
 		.AddAttribute ("LongTermUpdatePeriod",
 				   "Time (ms) between periodic updating of channel matrix/beamforming vectors",
-           TimeValue (MilliSeconds (10.0)),
+           TimeValue (MilliSeconds (100.0)),
            MakeTimeAccessor (&MmWaveBeamforming::m_longTermUpdatePeriod),
            MakeTimeChecker ())
 	 .AddAttribute ("SmallScaleFading",
@@ -112,7 +113,6 @@ MmWaveBeamforming::GetConfigurationParameters (void) const
 {
 	return m_phyMacConfig;
 }
-
 
 std::complex<double>
 MmWaveBeamforming::ParseComplex (std::string strCmplx)
@@ -333,7 +333,10 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 	{
 		for (NetDeviceContainer::Iterator j = enbDevices.Begin(); j != enbDevices.End(); j++)
 		{
-			SetChannelMatrix (*i,*j);
+			if(m_update)
+			{
+				SetChannelMatrix (*i,*j);
+			}
 		}
 
 	}
@@ -346,11 +349,7 @@ void
 MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
 {
 	key_t key = std::make_pair(ueDevice,enbDevice);
-
-	Ptr<UniformRandomVariable> uniform = CreateObject<UniformRandomVariable> ();
-	std::vector<int>::iterator it;
-	//uniform->SetAntithetic(true);
-	int randomInstance = uniform->GetValue (0, g_numInstance-1);
+	int randomInstance = m_uniformRV->GetValue (0, g_numInstance-1);
 	NS_LOG_DEBUG ("************* UPDATING CHANNEL MATRIX (instance " << randomInstance << ") *************");
 
 	Ptr<BeamformingParams> bfParams = Create<BeamformingParams> ();
@@ -373,8 +372,10 @@ MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 					DynamicCast<MmWaveUeNetDevice> (ueDevice);
 	if (UeDev->GetTargetEnb ())
 	{
-		Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
-		SetBeamformingVector (ueDevice, targetBs);
+		Ptr<NetDevice> targetBs = UeDev->GetTargetEnb();
+		SetBeamformingVector(ueDevice,targetBs);
+
+
 	}
 }
 
@@ -394,8 +395,20 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 			UeDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 	Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 			EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
-	ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
-	enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
+
+	/*double variable = m_uniformRV->GetValue (0, 1);
+	if(m_update && variable<0.1)
+	{
+		ueAntennaArray->SetBeamformingVectorWithDelay (bfParams->m_ueW);
+		enbAntennaArray->SetBeamformingVectorWithDelay (bfParams->m_enbW, ueDevice);
+
+	}
+	else*/
+	{
+		ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
+		enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
+
+	}
 	//Simulator::Schedule (Seconds (m_longTermUpdatePeriod), &MmWaveBeamforming::SetBeamformingVector,this,ueDevice,enbDevice);
 }
 
@@ -577,11 +590,11 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 //		std::cout << std::endl;
 	if (downlink)
 	{
-		NS_LOG_DEBUG ("****** DL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands); // print avg bf gain
+		NS_LOG_UNCOND ("****** DL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands); // print avg bf gain
 	}
 	else
 	{
-		NS_LOG_DEBUG ("****** UL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands);
+		NS_LOG_UNCOND ("****** UL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands);
 	}
 	return bfPsd;
 }
@@ -592,6 +605,11 @@ MmWaveBeamforming::GetSystemBandwidth () const
 	double bw = 0.00;
 	bw = m_phyMacConfig->GetChunkWidth () * m_phyMacConfig->GetNumChunkPerRb () * m_phyMacConfig->GetNumRb ();
 	return bw;
+}
+void
+MmWaveBeamforming::UpdateMatrices (bool update)
+{
+	m_update = update;
 }
 
 }// namespace ns3

@@ -23,6 +23,8 @@ public:
 	static TypeId GetTypeId ();
 	virtual double GetGainDb (Angles a);
 	void SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
+	void SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
+
 	void ChangeBeamformingVector (Ptr<NetDevice> device);
 	void ChangeToOmniTx ();
 	complexVector_t GetBeamformingVector ();

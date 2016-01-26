@@ -22,6 +22,8 @@
 #include <ns3/mobility-model.h>
 #include <ns3/spectrum-propagation-loss-model.h>
 #include <ns3/mmwave-phy-mac-common.h>
+#include <ns3/random-variable-stream.h>
+
 
 
 namespace ns3{
@@ -82,6 +84,8 @@ public:
 	* \param enbDevices a pointer to enbNetDevice container
 	*/
 	void Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
+
+	void UpdateMatrices (bool update);
 
 private:
 	/**
@@ -177,6 +181,8 @@ private:
 	bool m_smallScale;
 	bool m_fixSpeed;  // used for SINR sweep test
 	double m_ueSpeed;
+	bool m_update;
+	Ptr<UniformRandomVariable> m_uniformRV;
 };
 
 }  //namespace ns3

@@ -8,6 +8,8 @@
 #include "antenna-array-model.h"
 #include <ns3/log.h>
 #include <ns3/math.h>
+#include <ns3/simulator.h>
+
 
 NS_LOG_COMPONENT_DEFINE ("AntennaArrayModel");
 
@@ -114,10 +116,17 @@ AntennaArrayModel::GetGainDb (Angles a)
 
 	return gain;
 }
+void
+AntennaArrayModel::SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device)
+{
+	Simulator::Schedule (MilliSeconds(5), &AntennaArrayModel::SetBeamformingVector,this,antennaWeights,device);
+}
+
 
 void
 AntennaArrayModel::SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device)
 {
+
 	if (device != 0)
 	{
 		std::map< Ptr<NetDevice>, complexVector_t >::iterator iter = m_beamformingVectorMap.find (device);
