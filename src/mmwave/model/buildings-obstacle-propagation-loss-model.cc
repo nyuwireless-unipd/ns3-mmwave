@@ -137,7 +137,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 	}
 
 	loss = std::max (loss, 0.0);
-	NS_LOG_UNCOND (loss);
+	NS_LOG_DEBUG (loss);
 
 	return loss;
 }
