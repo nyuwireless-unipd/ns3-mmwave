@@ -45,7 +45,7 @@ TypeId
 MmWaveMacPduTag::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::MmWaveMacPduTag")
-    .SetParent<Header> ()
+    .SetParent<Tag> ()
     .AddConstructor<MmWaveMacPduTag> ();
   return tid;
 }
