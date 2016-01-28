@@ -1619,7 +1619,7 @@ LteRlcAm::DoReportBufferStatus (void)
   r.lcid = m_lcid;
   r.txQueueSize = m_txonBufferSize;
   r.txQueueHolDelay = txonQueueHolDelay.GetMilliSeconds ();
-  r.retxQueueSize = m_retxBufferSize + m_txedBufferSize;
+  r.retxQueueSize = m_retxBufferSize;// + m_txedBufferSize;
   r.retxQueueHolDelay = retxQueueHolDelay.GetMilliSeconds ();
 
   if ( m_statusPduRequested && ! m_statusProhibitTimer.IsRunning () )
