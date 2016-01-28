@@ -13,6 +13,8 @@
 #include "ns3/config-store.h"
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
+#include <ns3/packet.h>
+#include <ns3/tag.h>
 /*#include <ns3/lte-helper.h>
 #include <ns3/epc-helper.h>
 #include <ns3/point-to-point-helper.h>
@@ -28,6 +30,53 @@ using namespace ns3;
  */
 NS_LOG_COMPONENT_DEFINE ("mmWaveTCPExample");
 
+class MyAppTag : public Tag
+{
+public:
+	MyAppTag ()
+	{
+	}
+
+	MyAppTag (Time sendTs) : m_sendTs (sendTs)
+	{
+	}
+
+  static TypeId GetTypeId (void)
+  {
+    static TypeId tid = TypeId ("ns3::MyAppTag")
+      .SetParent<Tag> ()
+      .AddConstructor<MyAppTag> ();
+    return tid;
+  }
+
+  virtual TypeId  GetInstanceTypeId (void) const
+  {
+    return GetTypeId ();
+  }
+
+  virtual void  Serialize (TagBuffer i) const
+  {
+  	i.WriteU64 (m_sendTs.GetNanoSeconds());
+  }
+
+  virtual void  Deserialize (TagBuffer i)
+  {
+  	m_sendTs = NanoSeconds (i.ReadU64 ());
+  }
+
+  virtual uint32_t  GetSerializedSize () const
+  {
+  	return sizeof (m_sendTs);
+  }
+
+  virtual void Print (std::ostream &os) const
+  {
+  	std::cout << m_sendTs;
+  }
+
+	Time m_sendTs;
+};
+
 
 class MyApp : public Application
 {
@@ -37,6 +86,8 @@ public:
   virtual ~MyApp();
   void ChangeDataRate (DataRate rate);
   void Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate);
+
+
 
 private:
   virtual void StartApplication (void);
@@ -118,6 +169,8 @@ void
 MyApp::SendPacket (void)
 {
 	Ptr<Packet> packet = Create<Packet> (m_packetSize);
+	MyAppTag tag (Simulator::Now ());
+
 	m_socket->Send (packet);
   	if (++m_packetsSent < m_nPackets)
 	{
@@ -170,6 +223,30 @@ main (int argc, char *argv[])
 	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
 
+	/*
+	 * scenario 1: 1 building;
+	 * scenario 2: 3 building;
+	 * scenario 3: 6 random located small building, simulate tree and human blockage.
+	 * */
+	int scenario = 1;
+	double stopTime = 25;
+	double simStopTime = 25;
+	bool harqEnabled = true;
+	bool rlcAmEnabled = true;
+
+	CommandLine cmd;
+//	cmd.AddValue("numEnb", "Number of eNBs", numEnb);
+//	cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
+	cmd.AddValue("simTime", "Total duration of the simulation [s])", simStopTime);
+//	cmd.AddValue("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
+	cmd.AddValue("harq", "Enable Hybrid ARQ", harqEnabled);
+	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
+	cmd.Parse(argc, argv);
+
+	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+//	Config::SetDefault ("ns3::PointToPointNetDevice::Mtu", UintegerValue (3000));
+//	Config::SetDefault ("ns3::VirtualNetDevice::Mtu", UintegerValue (3000));
+
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 100000));
 	//Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 100));
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 100000));
@@ -182,27 +259,17 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(0));
-	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(true));
-	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
+	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(24));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(100));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
-	Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(100.0)));
+	Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(1000.0)));
 	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(1.0)));
 	//Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
-
-    /*
-     * scenario 1: 1 building;
-     * scenario 2: 3 building;
-     * scenario 3: 6 random located small building, simulate tree and human blockage.
-     * */
-  int scenario = 1;
-	double stopTime = 25;
-	double simStopTime = 25;
-
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	//mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
@@ -378,7 +445,7 @@ main (int argc, char *argv[])
 
 	Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
 	Ptr<MyApp> app = CreateObject<MyApp> ();
-	app->Setup (ns3TcpSocket, sinkAddress, 512, 1000000, DataRate ("1000Mb/s"));
+	app->Setup (ns3TcpSocket, sinkAddress, 1400, 1000000, DataRate ("1000Mb/s"));
 	remoteHostContainer.Get (0)->AddApplication (app);
 	AsciiTraceHelper asciiTraceHelper;
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-window.txt");
