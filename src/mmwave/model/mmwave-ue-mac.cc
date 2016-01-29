@@ -611,7 +611,10 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 							NS_LOG_LOGIC (this << "\t" << bytesPerActiveLc << " bytes to LC " << (uint32_t)(*lcIt).first << " statusQueue " << (*itBsr).second.statusPduSize << " retxQueue" << (*itBsr).second.retxQueueSize << " txQueue" <<  (*itBsr).second.txQueueSize);
 							if (((*itBsr).second.statusPduSize > 0) && (bytesForThisLc > (*itBsr).second.statusPduSize))
 							{
-								macPduIt->second.m_numRlcPdu++;		// send status PDU + data PDU
+								if ((*itBsr).second.txQueueSize > 0 || (*itBsr).second.retxQueueSize > 0)
+								{
+									macPduIt->second.m_numRlcPdu++;		// send status PDU + data PDU
+								}
 								//MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
 								(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess);
 								bytesForThisLc -= (*itBsr).second.statusPduSize;
