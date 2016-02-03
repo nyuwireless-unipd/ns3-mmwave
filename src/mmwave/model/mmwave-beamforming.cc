@@ -315,6 +315,20 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 
 	}
 
+
+	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+	{
+
+		Ptr<MmWaveUeNetDevice> UeDev =
+						DynamicCast<MmWaveUeNetDevice> (*i);
+		if (UeDev->GetTargetEnb ())
+		{
+			Ptr<NetDevice> targetBs = UeDev->GetTargetEnb();
+			SetBeamformingVector(*i,targetBs);
+
+		}
+	}
+
 	Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 }
 
@@ -344,14 +358,6 @@ MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	m_channelMatrixMap.insert(std::make_pair(key,bfParams));
 	//update channel matrix periodically
 	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
-
-	Ptr<MmWaveUeNetDevice> UeDev =
-					DynamicCast<MmWaveUeNetDevice> (ueDevice);
-	if (UeDev->GetTargetEnb ())
-	{
-		Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
-		SetBeamformingVector (ueDevice, targetBs);
-	}
 }
 
 void
