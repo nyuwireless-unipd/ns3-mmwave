@@ -188,7 +188,7 @@ MmWaveFlexTtiMacScheduler::GetTypeId (void)
 		.AddConstructor<MmWaveFlexTtiMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
-                   UintegerValue (10000),
+                   UintegerValue (1000),
                    MakeUintegerAccessor (&MmWaveFlexTtiMacScheduler::m_cqiTimersThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
@@ -226,6 +226,16 @@ MmWaveFlexTtiMacScheduler::GetTypeId (void)
 									BooleanValue (false),
 									MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_ulOnly),
 									MakeBooleanChecker ())
+	 .AddAttribute ("FixedTti",
+									"Fix slot size",
+									BooleanValue (false),
+									MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_fixedTti),
+									MakeBooleanChecker ())
+	.AddAttribute ("SymPerSlot",
+								 "Number of symbols per slot in Fixed TTI mode",
+								 UintegerValue (6),
+								 MakeUintegerAccessor (&MmWaveFlexTtiMacScheduler::m_symPerSlot),
+								 MakeUintegerChecker<uint8_t> ())
 		;
 
 	return tid;
@@ -1140,12 +1150,20 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 		{
 			itUeInfo->second.m_maxDlSymbols = CalcMinTbSizeNumSym (itUeInfo->second.m_dlMcs, itUeInfo->second.m_maxDlBufSize, dlTbSize);
 			itUeInfo->second.m_maxDlBufSize = dlTbSize;
+			if (m_fixedTti)
+			{
+				itUeInfo->second.m_maxDlSymbols = ceil((double)itUeInfo->second.m_maxDlSymbols/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+			}
 			totDlSymReq += itUeInfo->second.m_maxDlSymbols;
 		}
 		if (itUeInfo->second.m_maxUlBufSize > 0)
 		{
 			itUeInfo->second.m_maxUlSymbols = CalcMinTbSizeNumSym (itUeInfo->second.m_ulMcs, itUeInfo->second.m_maxUlBufSize+10, ulTbSize);
 			itUeInfo->second.m_maxUlBufSize = ulTbSize;
+			if (m_fixedTti)
+			{
+				itUeInfo->second.m_maxUlSymbols = ceil((double)itUeInfo->second.m_maxUlSymbols/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+			}
 			totUlSymReq += itUeInfo->second.m_maxUlSymbols;
 		}
 	}
@@ -1166,8 +1184,6 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 	itUeInfo = itUeInfoStart;
 
 	// divide OFDM symbols evenly between active UEs, which are then evenly divided between DL and UL flows
-	// for the DL, we know how many UL flows have already been allocated in the current subframe, so we can use
-	// the remaining symbols
 	if (nFlowsTot > 0)
 	{
 		int remSym = totDlSymReq + totUlSymReq;
@@ -1176,12 +1192,15 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			remSym = symAvail;
 		}
 
-		int nSymPerFlow0 = remSym / nFlowsTot;  // initial average symbols per non-retx flow
-		if (nSymPerFlow0 == 0)	// minimum of 1
-		{
-			nSymPerFlow0 = 1;
-		}
-
+		//int nSymPerFlow0 = remSym / nFlowsTot;  // initial average symbols per non-retx flow
+//		if (nSymPerFlow0 == 0)	// minimum of 1
+//		{
+//			nSymPerFlow0 = 1;
+//		}
+//		if (m_fixedTti)
+//		{
+//			nSymPerFlow0 = ceil((double)nSymPerFlow0/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+//		}
 		bool allocated = true; // someone got allocated
 		while (remSym > 0 && allocated)
 		{
@@ -1191,26 +1210,47 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			{
 				nRemSymPerFlow = 1;
 			}
+			if (m_fixedTti)
+			{
+				nRemSymPerFlow = ceil((double)nRemSymPerFlow/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+			}
 			while (remSym > 0)
 			{
 				int addSym = 0;
 				// deficit = difference between requested and allocated symbols
 				int deficit = itUeInfo->second.m_maxDlSymbols - itUeInfo->second.m_dlSymbols;
 				NS_ASSERT (deficit >= 0);
-				if (deficit > 0 && ((itUeInfo->second.m_dlSymbols+itUeInfo->second.m_dlSymbolsRetx) <= nSymPerFlow0))
+				if (m_fixedTti)
+				{
+					deficit = ceil((double)deficit/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+				}
+				if (deficit > 0 && ((itUeInfo->second.m_dlSymbols+itUeInfo->second.m_dlSymbolsRetx) <= nRemSymPerFlow))
 				{
 					if (deficit < nRemSymPerFlow)
 					{
-						// add remaining symbols to average
-						addSym = deficit;
-						nFlowsTot--;
-						int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
-						nSymPerFlow0 += extra;  // add extra to average symbols
-						nRemSymPerFlow += extra;  // add extra to average symbols
+						if (deficit > remSym)
+						{
+							addSym = remSym;
+						}
+						else
+						{
+							addSym = deficit;
+							// add remaining symbols to average
+							nFlowsTot--;
+							int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
+							nRemSymPerFlow += extra;  // add extra to average symbols
+						}
 					}
 					else
 					{
-						addSym = nRemSymPerFlow;
+						if (nRemSymPerFlow > remSym)
+						{
+							addSym = remSym;
+						}
+						else
+						{
+							addSym = nRemSymPerFlow;
+						}
 					}
 					allocated = true;
 				}
@@ -1222,22 +1262,44 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				// deficit = difference between requested and allocated symbols
 				deficit = itUeInfo->second.m_maxUlSymbols - itUeInfo->second.m_ulSymbols;
 				NS_ASSERT (deficit >= 0);
-				if (remSym > 0 && deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nSymPerFlow0))
+				if (m_fixedTti)
+				{
+					deficit = ceil((double)deficit/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+				}
+				if (m_fixedTti)
+				{
+					nRemSymPerFlow = ceil((double)nRemSymPerFlow/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+				}
+				if (remSym > 0 && deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nRemSymPerFlow))
 				{
 					if (deficit < nRemSymPerFlow)
 					{
 						// add remaining symbols to average
-						addSym = deficit;
-						nFlowsTot--;
-						int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
-						nSymPerFlow0 += extra;  // add extra to average symbols
-						nRemSymPerFlow += extra;  // add extra to average symbols
+						if (deficit > remSym)
+						{
+							addSym = remSym;
+						}
+						else
+						{
+							addSym = deficit;
+							// add remaining symbols to average
+							nFlowsTot--;
+							int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
+							nRemSymPerFlow += extra;  // add extra to average symbols
+						}
 					}
 					else
 					{
-						addSym = nRemSymPerFlow;
+						if (nRemSymPerFlow > remSym)
+						{
+							addSym = remSym;
+						}
+						else
+						{
+							addSym = nRemSymPerFlow;
+						}
+						allocated = true;
 					}
-					allocated = true;
 				}
 				itUeInfo->second.m_ulSymbols += addSym;
 				remSym -= addSym;
