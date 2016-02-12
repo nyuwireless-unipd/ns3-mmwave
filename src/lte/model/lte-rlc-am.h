@@ -182,6 +182,8 @@ private:
   SequenceNumber10 m_expectedSeqNumber;
 
   std::map <uint8_t, uint16_t> m_harqIdToSnMap;
+
+  uint32_t m_maxTxBufferSize;
 };
 
 
