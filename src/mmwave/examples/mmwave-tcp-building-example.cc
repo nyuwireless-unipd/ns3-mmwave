@@ -286,6 +286,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::FixedTti", BooleanValue(fixedTti));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::SymPerSlot", UintegerValue(6));
+
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
 
@@ -480,6 +481,34 @@ main (int argc, char *argv[])
 
 	//Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
 	//ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
+	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
+
+	//Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
+	//ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
+	app->SetStartTime (Seconds (0.1));
+	app->SetStopTime (Seconds (stopTime));
+	}
+	else
+	{
+	// Install and start applications on UEs and remote host
+	uint16_t sinkPort = 20000;
+
+	Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), sinkPort));
+	PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
+	ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes.Get (0));
+
+	sinkApps.Start (Seconds (0.));
+	sinkApps.Stop (Seconds (simStopTime));
+
+	Ptr<Socket> ns3UdpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
+	Ptr<MyApp> app = CreateObject<MyApp> ();
+	app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("1000Mb/s"));
+
+	remoteHostContainer.Get (0)->AddApplication (app);
+	AsciiTraceHelper asciiTraceHelper;
+	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-udp-data-um.txt");
+	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
+
 	app->SetStartTime (Seconds (0.1));
 	app->SetStopTime (Seconds (stopTime));
 	}
@@ -510,10 +539,13 @@ main (int argc, char *argv[])
 
 	}
 
+	}
+
 
 	//p2ph.EnablePcapAll("mmwave-sgi-capture");
 	BuildingsHelper::MakeMobilityModelConsistent ();
 	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*10000));
+
 	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*1000));
 
 	Simulator::Stop (Seconds (simStopTime));

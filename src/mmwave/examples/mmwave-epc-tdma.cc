@@ -53,7 +53,7 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
+//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 	LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
 	//LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 //	LogComponentEnable ("LteRlcAm", LOG_LEVEL_LOGIC);
@@ -66,10 +66,10 @@ main (int argc, char *argv[])
 
 	uint16_t numEnb = 1;
 	uint16_t numUe = 1;
-	double simTime = 0.1;
+	double simTime = 0.200;
 	double interPacketInterval = 1000;  // 500 microseconds
 	double minDistance = 10.0;  // eNB-UE distance in meters
-	double maxDistance = 200.0;  // eNB-UE distance in meters
+	double maxDistance = 150.0;  // eNB-UE distance in meters
 	bool harqEnabled = false;
 	bool rlcAmEnabled = false;
 	bool fixedTti = false;
@@ -141,7 +141,7 @@ main (int argc, char *argv[])
 	ipv4h.SetBase ("1.0.0.0", "255.0.0.0");
 	Ipv4InterfaceContainer internetIpIfaces = ipv4h.Assign (internetDevices);
 	// interface 0 is localhost, 1 is the p2p device
-	Ipv4Address remoteHostAddr = internetIpIfaces.GetAddress (1);
+	//Ipv4Address remoteHostAddr = internetIpIfaces.GetAddress (1);
 
 	Ipv4StaticRoutingHelper ipv4RoutingHelper;
 	Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
@@ -198,10 +198,10 @@ main (int argc, char *argv[])
 	uint16_t otherPort = 3000;
 	ApplicationContainer clientApps;
 	ApplicationContainer serverApps;
-	uint32_t packetSize = 100;
+	uint32_t packetSize = 500;
 
 	double dataRateMB = 100e6;  // 100 MBps
-	double onTimeSec = 1e-6; //packetSize / dataRateMB;
+	double onTimeSec = 5e-6; //packetSize / dataRateMB;
 	std::stringstream ss;
 	ss << "ns3::ConstantRandomVariable[Constant=" << onTimeSec << "]";
 	std::cout << "OnTime == " << ss.str() << std::endl;
@@ -238,14 +238,14 @@ main (int argc, char *argv[])
 //		ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 //		ulClient.SetAttribute ("PacketSize", UintegerValue(packetSize));
 
-		UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
-		client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-		client.SetAttribute ("MaxPackets", UintegerValue(1000000));
+		//UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
+		//client.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+		//client.SetAttribute ("MaxPackets", UintegerValue(1000000));
 		dlClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (ueIpIface.GetAddress (u), dlPort)));
-		ulClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (remoteHostAddr, ulPort)));
+		//ulClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (remoteHostAddr, ulPort)));
 
 		clientApps.Add (dlClient.Install (remoteHost));
-		clientApps.Add (ulClient.Install (ueNodes.Get(u)));
+//		clientApps.Add (ulClient.Install (ueNodes.Get(u)));
 //		if (u+1 < ueNodes.GetN ())
 //		{
 //			clientApps.Add (client.Install (ueNodes.Get(u+1)));
