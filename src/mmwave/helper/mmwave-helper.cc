@@ -807,8 +807,8 @@ MmWaveHelper::EnableTraces (void)
 	//EnableEnbPacketCountTrace ();
 	//EnableUePacketCountTrace ();
 	//EnableTransportBlockTrace ();
-	//EnableRlcTraces ();
-	//EnablePdcpTraces ();
+	EnableRlcTraces ();
+	EnablePdcpTraces ();
 }
 
 void
