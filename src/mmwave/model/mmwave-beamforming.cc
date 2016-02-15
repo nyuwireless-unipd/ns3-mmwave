@@ -51,6 +51,7 @@ MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 	:m_pathNum (20),
 	m_enbAntennaSize(enbAntenna),
 	m_ueAntennaSize(ueAntenna),
+	m_longTermUpdatePeriod (0),
 	m_smallScale (true),
 	m_fixSpeed (false),
 	m_ueSpeed (0.0),
