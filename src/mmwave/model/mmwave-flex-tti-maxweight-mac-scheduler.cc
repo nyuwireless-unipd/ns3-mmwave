@@ -1434,6 +1434,13 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 				// Update HARQ process status (RV 0)
 				std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (dci.m_rnti);
 				NS_ASSERT (itStat->second[dci.m_harqProcess] > 0);
+				// refresh timer
+				std::map <uint16_t, UlHarqProcessesTimer_t>::iterator itHarqTimer =  m_ulHarqProcessesTimer.find (dci.m_rnti);
+				if (itHarqTimer== m_ulHarqProcessesTimer.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)dci.m_rnti);
+				}
+				(*itHarqTimer).second.at (dci.m_harqProcess) = 0;
 			}
 		}
 	}

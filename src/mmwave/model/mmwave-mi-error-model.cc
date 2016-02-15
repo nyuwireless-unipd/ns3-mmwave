@@ -135,7 +135,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
 
 
 double 
-MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint16_t cbSize)
+MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize)
 {
   NS_LOG_FUNCTION (mib << (uint32_t) ecrId << (uint32_t) cbSize);
   double b = 0;
@@ -190,7 +190,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
   if (miHistory.size ()>0)
     {
       // evaluate R_eff and MI_eff
-      uint16_t codeBitsSum = 0;
+      uint32_t codeBitsSum = 0;
       double miSum = 0.0;
       for (uint16_t i = 0; i < miHistory.size (); i++)
         {
@@ -240,7 +240,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
 // //       NS_LOG_INFO (" K+ " << cbSizeTable[i] << " means " << cbSizeTable[i] * C);
 //       i++;
 //     }
-//   uint16_t KplusId = i;
+//   uint32_t KplusId = i;
 //   Kplus = cbSizeTable[i];
 
   // implement a modified binary search
@@ -279,7 +279,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       mid ++;
     }
 
-  uint16_t KplusId = mid;
+  uint32_t KplusId = mid;
   Kplus = cbSizeTable[mid];
 
 
@@ -362,6 +362,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
   TbStats_t ret;
   ret.tbler = errorRate;
   ret.mi = tbMi;
+  ret.miTotal = MI;
   return ret;
 }
 

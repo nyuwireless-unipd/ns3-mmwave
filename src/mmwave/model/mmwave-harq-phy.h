@@ -22,8 +22,8 @@ struct HarqProcessInfoElement_t
 {
    double m_mi;
    uint8_t m_rv;
-   uint16_t m_infoBits;
-   uint16_t m_codeBits;
+   uint32_t m_infoBits;
+   uint32_t m_codeBits;
 };
 
 typedef std::vector <HarqProcessInfoElement_t> HarqProcessInfoList_t;
@@ -49,7 +49,7 @@ public:
   * \param layer layer no. (for MIMO spatial multiplexing)
   * \return the MI accumulated
   */
-  double GetAccumulatedMiDl (uint8_t harqProcId, uint8_t layer);
+  double GetAccumulatedMiDl (uint16_t rnti, uint8_t harqId);
 
   /**
   * \brief Return the info of the HARQ procId in case of retranmissions
@@ -58,14 +58,14 @@ public:
   * \param layer layer no. (for MIMO spatail multiplexing)
   * \return the vector of the info related to HARQ proc Id
   */
-  HarqProcessInfoList_t GetHarqProcessInfoDl (uint8_t harqProcId, uint8_t layer);
+  HarqProcessInfoList_t GetHarqProcessInfoDl (uint16_t rnti, uint8_t harqProcId);
 
   /**
   * \brief Return the cumulated MI of the HARQ procId in case of retranmissions
   * for UL (synchronous)
   * \return the MI accumulated
   */
-  double GetAccumulatedMiUl (uint16_t rnti);
+  double GetAccumulatedMiUl (uint16_t rnti, uint8_t harqId);
 
   /**
   * \brief Return the info of the HARQ procId in case of retranmissions
@@ -85,14 +85,14 @@ public:
   * \param infoBytes the no. of bytes of info
   * \param mi the total no. of bytes txed
   */
-  void UpdateDlHarqProcessStatus (uint8_t id, uint8_t layer, double mi, uint16_t infoBytes, uint16_t codeBytes);
+  void UpdateDlHarqProcessStatus (uint16_t rnti, uint8_t id, double mi, uint32_t infoBytes, uint32_t codeBytes);
 
   /**
   * \brief Reset  the info associated to the decodification of an HARQ process
   * for DL (asynchronous)
   * \param id the HARQ proc id
   */
-  void ResetDlHarqProcessStatus(uint8_t id);
+  void ResetDlHarqProcessStatus(uint16_t rnti, uint8_t id);
 
   /**
   * \brief Update the MI value associated to the decodification of an HARQ process
@@ -102,7 +102,7 @@ public:
   * \param infoBytes the no. of bytes of info
   * \param mi the total no. of bytes txed
   */
-  void UpdateUlHarqProcessStatus (uint16_t rnti, double mi, uint16_t infoBytes, uint16_t codeBytes);
+  void UpdateUlHarqProcessStatus (uint16_t rnti, uint8_t harqId, double mi, uint32_t infoBytes, uint32_t codeBytes);
 
   /**
   * \brief Reset  the info associated to the decodification of an HARQ process
@@ -115,7 +115,7 @@ public:
 private:
 
   uint32_t m_harqNum;
-  std::vector <std::vector <HarqProcessInfoList_t> > m_miDlHarqProcessesInfoMap;
+  std::map <uint16_t, std::vector <HarqProcessInfoList_t> > m_miDlHarqProcessesInfoMap;
   std::map <uint16_t, std::vector <HarqProcessInfoList_t> > m_miUlHarqProcessesInfoMap;
   
 
