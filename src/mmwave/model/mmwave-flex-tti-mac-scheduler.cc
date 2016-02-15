@@ -566,7 +566,7 @@ MmWaveFlexTtiMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 //	{
 //		NS_FATAL_ERROR ("No Process Id found for this RNTI " << rnti);
 //	}
-	std::map <uint16_t, DlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
+	std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
 	if (itStat == m_ulHarqProcessesStatus.end ())
 	{
 		NS_FATAL_ERROR ("No Process Id Statusfound for this RNTI " << rnti);
@@ -584,22 +584,6 @@ MmWaveFlexTtiMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 		}
 	}
 	return harqId;
-//	uint8_t i = (*it).second;
-//	do
-//	{
-//		i = (i + 1) % m_phyMacConfig->GetNumHarqProcess ();
-//	}
-//	while ( ((*itStat).second.at (i) != 0)&&(i != (*it).second));
-//	if ((*itStat).second.at (i) == 0)
-//	{
-//		(*it).second = i;
-//		(*itStat).second.at (i) = 1;
-//	}
-//	else
-//	{
-//		return (m_phyMacConfig->GetNumHarqProcess () + 1); // return a not valid harq proc id
-//	}
-//	return ((*it).second);
 }
 
 unsigned MmWaveFlexTtiMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize)
@@ -1505,6 +1489,13 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				// Update HARQ process status (RV 0)
 				std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (dci.m_rnti);
 				NS_ASSERT (itStat->second[dci.m_harqProcess] > 0);
+				// refresh timer
+				std::map <uint16_t, UlHarqProcessesTimer_t>::iterator itHarqTimer =  m_ulHarqProcessesTimer.find (dci.m_rnti);
+				if (itHarqTimer== m_ulHarqProcessesTimer.end ())
+				{
+					NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)dci.m_rnti);
+				}
+				(*itHarqTimer).second.at (dci.m_harqProcess) = 0;
 			}
 		}
 		itUeInfo++;

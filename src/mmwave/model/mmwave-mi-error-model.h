@@ -59,6 +59,7 @@ struct TbStats_t
 {
   double tbler;
   double mi;
+  double miTotal;
 };
   
 // global table of the effective code rates (ECR)s that have BLER performance curves
@@ -337,7 +338,7 @@ public:
    * \param cbSize the size of the CB
    * \return the code block error rate
    */
-  static double MappingMiBler (double mib, uint8_t ecrId, uint16_t cbSize);
+  static double MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize);
 
   /**
    * \brief run the error-model algorithm for the specified TB
