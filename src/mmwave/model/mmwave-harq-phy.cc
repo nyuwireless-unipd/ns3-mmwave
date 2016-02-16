@@ -121,6 +121,7 @@ MmWaveHarqPhy::UpdateDlHarqProcessStatus (uint16_t rnti, uint8_t harqId, double 
         harqList.resize (m_harqNum);
         HarqProcessInfoElement_t el;
         el.m_mi = mi;
+        el.m_rv = 0;
         el.m_infoBits = infoBytes * 8;
         el.m_codeBits = codeBytes * 8;
         harqList.at (harqId).push_back (el);
@@ -135,6 +136,14 @@ MmWaveHarqPhy::UpdateDlHarqProcessStatus (uint16_t rnti, uint8_t harqId, double 
           }
         HarqProcessInfoElement_t el;
         el.m_mi = mi;
+        if(!(*it).second.at (harqId).empty ())
+        {
+        	el.m_rv = (*it).second.at (harqId).back().m_rv + 1;
+        }
+        else
+        {
+        	el.m_rv = 0;
+        }
         el.m_infoBits = infoBytes * 8;
         el.m_codeBits = codeBytes * 8;
         (*it).second.at (harqId).push_back (el);
@@ -177,6 +186,7 @@ MmWaveHarqPhy::UpdateUlHarqProcessStatus (uint16_t rnti, uint8_t harqId, double 
       harqList.resize (m_harqNum);
       HarqProcessInfoElement_t el;
       el.m_mi = mi;
+      el.m_rv = 0;
       el.m_infoBits = infoBytes * 8;
       el.m_codeBits = codeBytes * 8;
       harqList.at (harqId).push_back (el);
@@ -191,6 +201,14 @@ MmWaveHarqPhy::UpdateUlHarqProcessStatus (uint16_t rnti, uint8_t harqId, double 
         }
       HarqProcessInfoElement_t el;
       el.m_mi = mi;
+      if(!(*it).second.at (harqId).empty ())
+      {
+      	el.m_rv = (*it).second.at (harqId).back().m_rv + 1;
+      }
+      else
+      {
+      	el.m_rv = 0;
+      }
       el.m_infoBits = infoBytes * 8;
       el.m_codeBits = codeBytes * 8;
       (*it).second.at (harqId).push_back (el);
