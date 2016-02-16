@@ -15,8 +15,8 @@
 
 using namespace ns3;
 
-double updateInterval = 100.0;  // in ms
-double increment = 5.0; // increment by x dB
+double updateInterval = 2000.0;  // in ms
+double increment = 0.5; // increment by x dB
 double lossMin = 100.0;
 double lossMax = 145.0;
 
@@ -64,10 +64,10 @@ main (int argc, char *argv[])
 	double simTime = 1.0;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
-	int mcsDl = -1;
+	int mcs = -1;
 	std::string channelState = "n";
 	bool smallScale = true;
-	double speed = 0.5;
+	double speed = 16;
 	double dist = 100.0;
 	// Command line arguments
 	CommandLine cmd;
@@ -75,27 +75,35 @@ main (int argc, char *argv[])
 	cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
 	cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
 	cmd.AddValue("harq", "Enable Hybrid ARQ", harqEnabled);
-	cmd.AddValue("mcsDl", "Fixed DL MCS", mcsDl);
+	cmd.AddValue("mcs", "Fixed DL MCS", mcs);
 	cmd.AddValue("channelState", "Channel state 'l'=LOS, 'n'=NLOS, 'a'=all", channelState);
 	cmd.AddValue("lossMin", "Initial distance", lossMin);
 	cmd.AddValue("lossMax", "Final distance", lossMax);
-	cmd.AddValue("increment", "Distance increment", increment);
+	cmd.AddValue("increment", "Path loss increment", increment);
 	cmd.AddValue("updateInterval", "Period after which distance is updated", updateInterval);
 	cmd.AddValue("smallScale", "Enable small scale fading", smallScale);
 	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
 	cmd.Parse(argc, argv);
 
+	if (lossMin >= lossMax)
+	{
+		lossMin = lossMax - 1;
+	}
+
 	simTime = ((lossMax - lossMin) / increment) * (updateInterval/1000.0);
 
-	if (mcsDl >= 0 && mcsDl < 29)
+	if (mcs >= 0 && mcs < 29)
 	{
 		Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::FixedMcsDl", BooleanValue(true));
-		Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::McsDefaultDl", UintegerValue(mcsDl));
+		Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::McsDefaultDl", UintegerValue(mcs));
+		Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::FixedMcsUl", BooleanValue(true));
+		Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::McsDefaultUl", UintegerValue(mcs));
 	}
 
 	//Config::SetDefault ("ns3::MmWaveAmc::AmcModel", EnumValue (MmWaveAmc::PiroEW2010));
 	Config::SetDefault ("ns3::MmWaveAmc::Ber", DoubleValue (0.01));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::DlSchedOnly", BooleanValue(false));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
@@ -104,7 +112,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
 	Config::SetDefault ("ns3::MmWaveBeamforming::FixSpeed", BooleanValue (true));
 	Config::SetDefault ("ns3::MmWaveBeamforming::UeSpeed", DoubleValue (speed));
-	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
+	Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
 	Config::SetDefault ("ns3::MmWavePropagationLossModel::FixedLossTst", BooleanValue (true));
 	Config::SetDefault ("ns3::MmWavePropagationLossModel::LossFixedDb", DoubleValue (100.0));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
