@@ -400,14 +400,14 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 	Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 			EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 
-	/*double variable = m_uniformRV->GetValue (0, 1);
-	if(m_update && variable<0.1)
+	double variable = m_uniformRV->GetValue (0, 1);
+	if(m_update && variable<0.08)
 	{
 		ueAntennaArray->SetBeamformingVectorWithDelay (bfParams->m_ueW);
 		enbAntennaArray->SetBeamformingVectorWithDelay (bfParams->m_enbW, ueDevice);
 
 	}
-	else*/
+	else
 	{
 		ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
 		enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
