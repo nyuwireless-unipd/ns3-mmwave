@@ -92,13 +92,13 @@ MmWaveChannelRaytracing::GetConfigurationParameters (void) const
 void
 MmWaveChannelRaytracing::LoadTraces()
 {
-	std::string filename = "src/mmwave/model/Raytracing/traces.txt";
+	std::string filename = "src/mmwave/model/Raytracing/traces10cm.txt";
 	NS_LOG_FUNCTION (this << "Loading Raytracing file " << filename);
 	std::ifstream singlefile;
 	singlefile.open (filename.c_str (), std::ifstream::in);
 
 	NS_LOG_INFO (this << " File: " << filename);
-	NS_ASSERT_MSG(singlefile.good (), " SmallScaleFading file not found");
+	NS_ASSERT_MSG(singlefile.good (), " Raytracing file not found");
     std::string line;
     std::string token;
     uint16_t counter = 0;

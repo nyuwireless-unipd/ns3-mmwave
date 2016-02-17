@@ -119,7 +119,7 @@ AntennaArrayModel::GetGainDb (Angles a)
 void
 AntennaArrayModel::SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device)
 {
-	Simulator::Schedule (MilliSeconds(5), &AntennaArrayModel::SetBeamformingVector,this,antennaWeights,device);
+	Simulator::Schedule (MilliSeconds(8), &AntennaArrayModel::SetBeamformingVector,this,antennaWeights,device);
 }
 
 
