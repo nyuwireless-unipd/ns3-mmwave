@@ -121,7 +121,7 @@ LteRlcAm::GetTypeId (void)
                    MakeBooleanChecker ())
 	 .AddAttribute ("MaxTxBufferSize",
 									"Maximum Size of the Transmission Buffer (in Bytes)",
-									UintegerValue (10 * 1024),
+									UintegerValue (1024 * 1024),
 									MakeUintegerAccessor (&LteRlcAm::m_maxTxBufferSize),
 									MakeUintegerChecker<uint32_t> ())
 
