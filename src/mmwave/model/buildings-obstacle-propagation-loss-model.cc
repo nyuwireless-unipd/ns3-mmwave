@@ -137,6 +137,17 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 	}
 
 	loss = std::max (loss, 0.0);
+	/*double t = Simulator::Now ().GetSeconds();
+	if (t > 5 && t < 5.5)
+	{
+		m_beamforming->UpdateMatrices(false);
+		loss = loss + 50;
+	}
+	else if (t > 8 && t < 8.5)
+	{
+		m_beamforming->UpdateMatrices(false);
+		loss = loss + 50;
+	}*/
 	NS_LOG_DEBUG (loss);
 
 	return loss;
@@ -195,17 +206,6 @@ BuildingsObstaclePropagationLossModel::mmWaveNlosLoss (Ptr<MobilityModel> a, Ptr
 		NS_FATAL_ERROR ("Other frequency is not impletmented.");
 	}
 	double lossDb = alpha + beta * 10 * log10(distance);
-
-	/*double t = Simulator::Now ().GetSeconds();
-	if (t > 5 && t < 6)
-	{
-		lossDb = lossDb + 50;
-	}
-	else if (t > 8 && t < 9)
-	{
-		lossDb = lossDb + 50;
-	}*/
-
 	return lossDb;
 }
 

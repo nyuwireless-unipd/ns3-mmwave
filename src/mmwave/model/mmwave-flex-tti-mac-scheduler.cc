@@ -188,7 +188,7 @@ MmWaveFlexTtiMacScheduler::GetTypeId (void)
 		.AddConstructor<MmWaveFlexTtiMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
-                   UintegerValue (1000),
+                   UintegerValue (100),
                    MakeUintegerAccessor (&MmWaveFlexTtiMacScheduler::m_cqiTimersThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
