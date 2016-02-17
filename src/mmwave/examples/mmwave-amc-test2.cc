@@ -26,7 +26,7 @@ void updateLoss (double loss, Ptr<MmWavePropagationLossModel> model)
 //  Ptr<MobilityModel> mobModel = ue->GetObject<MobilityModel> ();
 //  mobModel->SetPosition (Vector (dist, 0.0, 0.0));
 	model->SetLossFixedDb (loss);
-  std::cout << "************* SINR changing to " << loss << " *************" << std::endl;
+  std::cout << "************* Path loss changing to " << loss << " *************" << std::endl;
   if (loss >= lossMax)
   {
   	return;
@@ -82,6 +82,8 @@ main (int argc, char *argv[])
 	cmd.AddValue("increment", "Path loss increment", increment);
 	cmd.AddValue("updateInterval", "Period after which distance is updated", updateInterval);
 	cmd.AddValue("smallScale", "Enable small scale fading", smallScale);
+	cmd.AddValue("speed", "Constant speed", speed);
+
 	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
 	cmd.Parse(argc, argv);
 
