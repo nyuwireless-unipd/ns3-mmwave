@@ -53,13 +53,13 @@ class AvgDat:
     rateAvg = np.zeros(0)
     tblerAvg = np.zeros(0)
 
-csvDir = 'amc_data'
+csvDir = '..'
 #csvFileList = ['UlRxTrace_AWGN_noharq.tr','UlRxTrace_fading_noharq.tr','UlRxTrace_fading_harq.tr']
 # csvFileList = ['fading_noharq_mcs0.tr','awgn_noharq_mcs0.tr','fading_noharq_mcs5.tr','awgn_noharq_mcs5.tr',\
 #                 'fading_noharq_mcs10.tr','awgn_noharq_mcs10.tr','fading_noharq_mcs15.tr','awgn_noharq_mcs15.tr',\
 #                 'fading_noharq_mcs20.tr','awgn_noharq_mcs20.tr','fading_noharq_mcs28.tr','awgn_noharq_mcs28.tr']
 #csvFileList = ['awgn_noharq_all.tr','fading_noharq_all.tr','fading_harq_all.tr']
-csvFileList = ['fading_noharq_all.tr']
+csvFileList = ['RxPacketTrace.txt']
 datList = [];
 lineSkip = -1;
 rateScale = float(8.0 / 100.0)  # Mbps per 100 microsecond subframe
@@ -101,26 +101,31 @@ for file in csvFileList:
 avgDatList = [ AvgDat(i) for i in range(0,len(csvFileList)) ]
 
 nBuckets = 0
-nBucketElem = 2000
+nBucketElem = 63000
 for i in range(0,len(avgDatList)):
     traceDat = datList[i]
     for j in range(0,29):
         mcsDat = traceDat[j]
-        if (sum(mcsDat.sinr) > 0):
+        if (sum(mcsDat.sinr) > 0 and len(mcsDat.sinr)> nBucketElem):
             #nBuckets = len(mcsDat.rate)/100
             #mcsDat.sinr = np.sort(mcsDat.sinr)
             sortIdx = np.argsort(mcsDat.sinr)
-            mcsDat.sinr = mcsDat.sinr[sortIdx]
-            mcsDat.rate = mcsDat.rate[sortIdx]
-            nBuckets = int(math.ceil((len(mcsDat.sinr)/nBucketElem)))
+            #mcsDat.sinr = mcsDat.sinr[sortIdx]
+            #mcsDat.rate = mcsDat.rate[sortIdx]
+            nBuckets = int(math.ceil((len(mcsDat.rate)/nBucketElem)))
             if(1 and len(mcsDat.sinr) > nBuckets):
-                nBucketElem = int(math.floor(len(mcsDat.sinr) / nBuckets))
+                nBucketElem = int(math.floor(len(mcsDat.rate) / nBuckets))
                 for b in range(0,nBuckets):
                     avgDatList[i].mcs = np.append(avgDatList[i].mcs,j)
                     avgDatList[i].sinrAvg = np.append(avgDatList[i].sinrAvg,\
                                                       np.mean(mcsDat.sinr[ b*nBucketElem:min((b+1)*nBucketElem,len(mcsDat.sinr)) ]))
                     avgDatList[i].rateAvg = np.append(avgDatList[i].rateAvg,\
                                                       np.mean(mcsDat.rate[ b*nBucketElem:min((b+1)*nBucketElem,len(mcsDat.rate)) ]))
+              
+            
+            #sortIdx = np.argsort(avgDatList[i].sinrAvg)
+            #avgDatList[i].sinrAvg = avgDatList[i].sinrAvg[sortIdx]
+            #avgDatList[i].rateAvg = avgDatList[i].rateAvg[sortIdx]
             #avgDatList[i].sinrAvg = np.convolve(mcsDat.sinr, np.ones(nBuckets)/nBuckets, 'valid')
             #avgDatList[i].rateAvg = np.convolve(mcsDat.rate, np.ones(nBuckets)/nBuckets, 'valid')
             
@@ -169,7 +174,15 @@ if plotMcsSinr:
     plt.ylabel("Rate (Mbps)")
     plt.show()
 
+traceDat = datList[0]
+mcsDat = traceDat[0]
+
 plt.clf()
+plt.plot(mcsDat.sinr, label=labels[0])
+plt.show()
+
+plt.clf()
+
 plotSinrRate = True
 if plotSinrRate:
     for i in range(0,len(avgDatList)):
