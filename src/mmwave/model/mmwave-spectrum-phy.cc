@@ -521,7 +521,7 @@ MmWaveSpectrumPhy::EndRxData ()
 			itTb->second.corrupt = m_random->GetValue () > tbStats.tbler ? false : true;
 			if (itTb->second.corrupt)
 			{
-				NS_LOG_UNCOND (this << " RNTI " << itTb->first << " size " << itTb->second.size << " mcs " << (uint32_t)itTb->second.mcs << " bitmap " << itTb->second.rbBitmap.size () << " rv " << rv << " TBLER " << tbStats.tbler << " corrupted " << itTb->second.corrupt);
+				NS_LOG_INFO (this << " RNTI " << itTb->first << " size " << itTb->second.size << " mcs " << (uint32_t)itTb->second.mcs << " bitmap " << itTb->second.rbBitmap.size () << " rv " << rv << " TBLER " << tbStats.tbler << " corrupted " << itTb->second.corrupt);
 			}
 		}
 		itTb++;

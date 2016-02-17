@@ -236,12 +236,11 @@ main (int argc, char *argv[])
 	 * scenario 2: 3 building;
 	 * scenario 3: 6 random located small building, simulate tree and human blockage.
 	 * */
-	int scenario = 2;
-	double stopTime = 6;
-	double simStopTime = 6;
+	int scenario = 3;
+	double stopTime = 25;
+	double simStopTime = 25;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
-	bool fixedTti = false;
 	bool tcp = true;
 
 	CommandLine cmd;
@@ -251,49 +250,38 @@ main (int argc, char *argv[])
 //	cmd.AddValue("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
 	cmd.AddValue("harq", "Enable Hybrid ARQ", harqEnabled);
 	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
-	cmd.AddValue("fixedTti", "Fixed TTI scheduler", fixedTti);
 	cmd.Parse(argc, argv);
 
-	//Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
 //	Config::SetDefault ("ns3::PointToPointNetDevice::Mtu", UintegerValue (3000));
 //	Config::SetDefault ("ns3::VirtualNetDevice::Mtu", UintegerValue (3000));
 
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*32));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*32));
-	//Config::SetDefault ("ns3::TcpSocket::InitialSlowStartThreshold", UintegerValue (0xfffff));
-	//Config::SetDefault ("ns3::PointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.001)));
-	//Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.001)));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(100.0));
-
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(24));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(100));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(2.0)));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
-	//Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
 
-	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::FixedTti", BooleanValue(fixedTti));
-	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::SymPerSlot", UintegerValue(6));
-	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
+
+
 
 	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
 	mmwaveHelper->Initialize();
+
+
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 
@@ -336,8 +324,8 @@ main (int argc, char *argv[])
 		{
 			Ptr < Building > building;
 			building = Create<Building> ();
-			building->SetBoundaries (Box (20.0,30.0,
-										0.0, 7.3,
+			building->SetBoundaries (Box (40.0,60.0,
+										0.0, 6,
 										0.0, 15.0));
 			break;
 		}
@@ -345,19 +333,19 @@ main (int argc, char *argv[])
 		{
 			Ptr < Building > building1;
 			building1 = Create<Building> ();
-			building1->SetBoundaries (Box (30.0,32.0,
+			building1->SetBoundaries (Box (60.0,64.0,
 										0.0, 2.0,
 										0.0, 1.5));
 
 			Ptr < Building > building2;
 			building2 = Create<Building> ();
-			building2->SetBoundaries (Box (30.0,32.0,
+			building2->SetBoundaries (Box (60.0,64.0,
 										6.0, 8.0,
 										0.0, 15.0));
 
 			Ptr < Building > building3;
 			building3 = Create<Building> ();
-			building3->SetBoundaries (Box (30.0,32.0,
+			building3->SetBoundaries (Box (60.0,64.0,
 										10.0, 11.0,
 										0.0, 15.0));
 			break;
@@ -366,36 +354,36 @@ main (int argc, char *argv[])
 		{
 			Ptr < Building > building1;
 			building1 = Create<Building> ();
-			building1->SetBoundaries (Box (34.5,35.0,
+			building1->SetBoundaries (Box (69.5,70.0,
 										4.5, 5.0,
 										0.0, 1.5));
 
 			Ptr < Building > building2;
 			building2 = Create<Building> ();
-			building2->SetBoundaries (Box (30.0,30.5,
+			building2->SetBoundaries (Box (60.0,60.5,
 										9.5, 10.0,
 										0.0, 1.5));
 
 			Ptr < Building > building3;
 			building3 = Create<Building> ();
-			building3->SetBoundaries (Box (27.0,27.5,
+			building3->SetBoundaries (Box (54.0,54.5,
 										5.5, 6.0,
 										0.0, 1.5));
 			Ptr < Building > building4;
 			building1 = Create<Building> ();
-			building1->SetBoundaries (Box (30.0,30.5,
+			building1->SetBoundaries (Box (60.0,60.5,
 										6.0, 6.5,
 										0.0, 1.5));
 
 			Ptr < Building > building5;
 			building2 = Create<Building> ();
-			building2->SetBoundaries (Box (35.0,35.5,
+			building2->SetBoundaries (Box (70.0,70.5,
 										0.0, 0.5,
 										0.0, 1.5));
 
 			Ptr < Building > building6;
 			building3 = Create<Building> ();
-			building3->SetBoundaries (Box (25.0,25.5,
+			building3->SetBoundaries (Box (50.0,50.5,
 										4.0, 4.5,
 										0.0, 1.5));
 			break;
@@ -427,7 +415,7 @@ main (int argc, char *argv[])
 	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (150, -0.2, 1));
 	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
-	Simulator::Schedule (Seconds (2), &ChangeSpeed, ueNodes.Get (0), Vector (0, 3, 0));
+	Simulator::Schedule (Seconds (2), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
 	Simulator::Schedule (Seconds (22), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
 
 	BuildingsHelper::Install (ueNodes);
@@ -464,7 +452,6 @@ main (int argc, char *argv[])
 
 	Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
 	Ptr<MyApp> app = CreateObject<MyApp> ();
-	app->Setup (ns3TcpSocket, sinkAddress, 500, 5000000, DataRate ("1000Mb/s"));
 	app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("1000Mb/s"));
 
 	remoteHostContainer.Get (0)->AddApplication (app);
@@ -497,12 +484,11 @@ main (int argc, char *argv[])
 
 	Ptr<Socket> ns3UdpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
 	Ptr<MyApp> app = CreateObject<MyApp> ();
-	app->Setup (ns3UdpSocket, sinkAddress, 500, 5000000, DataRate ("1000Mb/s"));
 	app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("1000Mb/s"));
 
 	remoteHostContainer.Get (0)->AddApplication (app);
 	AsciiTraceHelper asciiTraceHelper;
-	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-udp-data-um.txt");
+	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-udp-data-am.txt");
 	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
 
 	app->SetStartTime (Seconds (0.1));
@@ -513,7 +499,6 @@ main (int argc, char *argv[])
 
 	//p2ph.EnablePcapAll("mmwave-sgi-capture");
 	BuildingsHelper::MakeMobilityModelConsistent ();
-	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*10000));
 	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*1000));
 
 	Simulator::Stop (Seconds (simStopTime));

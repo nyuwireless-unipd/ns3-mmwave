@@ -92,7 +92,7 @@ MmWaveChannelRaytracing::GetConfigurationParameters (void) const
 void
 MmWaveChannelRaytracing::LoadTraces()
 {
-	std::string filename = "src/mmwave/model/Raytracing/traces.txt";
+	std::string filename = "src/mmwave/model/Raytracing/traces10cm.txt";
 	NS_LOG_FUNCTION (this << "Loading Raytracing file " << filename);
 	std::ifstream singlefile;
 	singlefile.open (filename.c_str (), std::ifstream::in);
