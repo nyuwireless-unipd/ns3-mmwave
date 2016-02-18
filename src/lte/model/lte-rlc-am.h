@@ -89,11 +89,18 @@ private:
       uint16_t    m_retxCount;
     };
 
+    struct RetxSegPdu
+		{
+			Ptr<Packet> m_pdu;
+			uint16_t    m_retxCount;
+			bool			m_lastSegSent;		// all segments sent, waiting for ACK
+		};
+
   std::vector <RetxPdu> m_txedBuffer;  ///< Buffer for transmitted and retransmitted PDUs 
                                        ///< that have not been acked but are not considered 
                                        ///< for retransmission 
   std::vector <RetxPdu> m_retxBuffer;  ///< Buffer for PDUs considered for retransmission
-  std::vector <RetxPdu> m_retxSegBuffer;  // buffer for AM PDU segments
+  std::vector <RetxSegPdu> m_retxSegBuffer;  // buffer for AM PDU segments
 
     uint32_t m_txonBufferSize;
     uint32_t m_retxBufferSize;

@@ -228,7 +228,7 @@ main (int argc, char *argv[])
 {
 //	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
+	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
 
 	/*
