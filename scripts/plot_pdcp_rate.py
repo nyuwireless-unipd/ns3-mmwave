@@ -16,28 +16,22 @@ class PhyTraceDat:
         self.tbler = np.zeros(nlines)
         self.corrupt = np.zeros(nlines)
         self.rate = np.zeros(nint) # num intervals 
-    frameNum = np.zeros(0)
-    sfNum = np.zeros(0)
-    sinr = np.zeros(0) 
-    mcs = np.zeros(0)
-    size = np.zeros(0) 
-    tbler = np.zeros(0)
-    corrupt = np.zeros(0)
-    rate = np.zeros(0)
     
 class RateTraceDat:
-    def __init__(self,nlines,nint,timeToAvg):
+    def __init__(self,id,nlines,nint,timeToAvg):
+        self.rnti = id
         self.timestamp = np.zeros(nlines) 
         self.size = np.zeros(nlines)
         self.rate = np.zeros(nint)
         self.intStart = np.arange(0,nint*timeToAvg,timeToAvg)
 
 csvDir = '.'
-pdcpRlcFiles = ['DlPdcpStats.txt']#,'DlRlcStats.txt','UlPdcpStats.txt','UlRlcStats.txt']
+pdcpRlcFiles = ['DlRlcStats.txt']#,'DlRlcStats.txt','UlPdcpStats.txt','UlRlcStats.txt']
 traces = ['DlRxPDU','DlRxPDU','UlRxPDU','UlRxPDU']
 datMap = {};
 timeToAvg = 1e-3 # average over 1 ms intervals 
 tsLast = 0.0    # timestamp of last entry
+numUsers = 20
 
 itrace = 0;
 for file in pdcpRlcFiles:
@@ -51,14 +45,17 @@ for file in pdcpRlcFiles:
     tsLast = float(c.read().rstrip()) / 1e9
     numInt = int(math.ceil(tsLast / timeToAvg)) + 1
     print str(tsLast) + " " + str(numInt)
-    dat = RateTraceDat(numLines,numInt,timeToAvg)
+    userRateDat = [ RateTraceDat(i,numLines,numInt,timeToAvg) for i in range(0,numUsers+1) ]
+    #dat = RateTraceDat(numLines,numInt,timeToAvg)
     line = 0
     intIdx = 0
     intTs0 = 0.0
     with open(csvPath, 'rb') as csvFile:
         reader = csv.reader(csvFile, delimiter=' ')
         for row in reader:
-            if(row[1] == traces[itrace]): 
+            rnti = int(row[4])
+            if(row[1] == traces[itrace] and rnti <= numUsers): 
+                dat = userRateDat[rnti]
                 match = re.search('\+(.*)ns', row[2])  
                 if (match.group(0) != 'None'):
                     dat.timestamp[line] = float(match.group(1))/1e9  # get time in seconds
@@ -76,10 +73,11 @@ for file in pdcpRlcFiles:
                         intIdx = intIdx + 1
                 line = line + 1
                 if (line == numLines):
-                    break;
-    dat.rate = ((8*dat.rate) / (timeToAvg)) * 1e-6
-    print "avg rate " + str(np.mean(dat.rate)) + " Mbps"
-    datMap['DlRxPDU'] = dat    
+                    break
+    for i in range(0,numUsers+1):        
+        userRateDat[i].rate = ((8*userRateDat[i].rate) / (timeToAvg)) * 1e-6
+        print "UE " + str(i) + " avg rate " + str(np.mean(userRateDat[i].rate[userRateDat[i].rate!=0])) + " Mbps"
+    datMap['DlRxPDU'] = userRateDat    
 
 # for i in range(0,len(dat.intStart)-1):
 #     print str(dat.intStart[i]) + ' ' + str(dat.rate[i]) 
@@ -87,8 +85,8 @@ fig1 = plt.figure()
 ax1 = fig1.add_subplot(111)
 #t = np.arange(0.0,tsLast,timeToAvg)
 dat = datMap['DlRxPDU']
-n = min(len(dat.intStart),len(dat.rate))
-ax1.plot(dat.intStart[0:n],dat.rate[0:n])
+n = min(len(dat[1].intStart),len(dat[1].rate))
+ax1.plot(dat[1].intStart[0:n],dat[1].rate[0:n])
 #ax1.legend(bbox_to_anchor=(0.4, 1.0))
 ax1.set_xlabel('Time (s)')
 ax1.set_ylabel('Rate (Mbps)')

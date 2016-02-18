@@ -38,9 +38,9 @@ class PhyTraceDat:
 #         self.sinr = np.zeros(nint)
 #         self.intStart = np.arange(0,nint*timeToAvg,timeToAvg)
 
-csvDir = '../amc_data'
-traceFiles = ['fading_harq.tr']#,'DlRlcStats.txt','UlPdcpStats.txt','UlRlcStats.txt']
-parsedFiles = ['sinr_rate_awgn_noharq.dat','sinr_rate_awgn_harq.dat','sinr_rate_fading_noharq.dat'] # data files we have already parsed
+csvDir = './amc_data'
+traceFiles = []#,'DlRlcStats.txt','UlPdcpStats.txt','UlRlcStats.txt']
+parsedFiles = ['sinr_rate_awgn_harq.dat','sinr_rate_fading_harq.dat'] # data files we have already parsed
 
 traces = ['UlRxTrace']
 datMap = {};
@@ -117,14 +117,128 @@ for file in traceFiles:
 # plt.show()    
 
 allFiles = parsedFiles + traceFiles
-
+labels = ['AWGN','fast fading']
+ilabel = 0
 fig1 = plt.figure()
 ax1 = fig1.add_subplot(111)
 for file in allFiles:
     dat = datMap[file]
     n = min(len(dat.sinrAvg),len(dat.rateAvg))
-    ax1.plot(dat.sinrAvg[0:n],dat.rateAvg[0:n])
-#ax1.legend(bbox_to_anchor=(0.4, 1.0))
+    ax1.plot(dat.sinrAvg[0:n],dat.rateAvg[0:n],label=labels[ilabel])
+    ilabel += 1
+ax1.legend(bbox_to_anchor=(0.4, 1.0))
+xoffset = 0
+yoffset = 0
+ax1.annotate("1", xy=(-7+xoffset, 100+yoffset), xytext=(-8+xoffset, 100+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+
+ax1.annotate("2", xy=(-6+xoffset, 130+yoffset), xytext=(-7+xoffset, 130+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset = 1
+yoffset += 40
+ax1.annotate("3", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+
+xoffset += 1
+yoffset += 40
+ax1.annotate("4", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+
+xoffset += 1
+yoffset += 40
+ax1.annotate("5", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 60
+ax1.annotate("6", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 90
+ax1.annotate("7", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 90
+ax1.annotate("8", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 75
+ax1.annotate("9", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 2
+yoffset += 120
+ax1.annotate("11", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += .75
+yoffset += 120
+ax1.annotate("12", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += .75
+yoffset += 120
+ax1.annotate("13", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 0.75
+yoffset += 120
+ax1.annotate("14", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1.5
+yoffset += 140
+ax1.annotate("15", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 140
+ax1.annotate("16", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 110
+ax1.annotate("17", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 100
+ax1.annotate("18", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 0.75
+yoffset += 120
+ax1.annotate("19", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 0.75
+yoffset += 180
+ax1.annotate("20", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+
+xoffset += 1.25
+yoffset += 170
+ax1.annotate("21", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 200
+ax1.annotate("22", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 140
+ax1.annotate("23", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+
+xoffset += 0.5
+yoffset += 170
+ax1.annotate("24", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 200
+ax1.annotate("25", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 140
+ax1.annotate("26", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+
+xoffset += 1
+yoffset += 140
+ax1.annotate("27", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
+xoffset += 1
+yoffset += 140
+ax1.annotate("28", xy=(-5+xoffset, 125+yoffset), xytext=(-7+xoffset, 125+yoffset),
+                 arrowprops=dict(arrowstyle="-",linestyle='dashed'))
 ax1.set_xlabel('SINR (dB)')
 ax1.set_ylabel('Rate (Mbps)')
 plt.show()    
