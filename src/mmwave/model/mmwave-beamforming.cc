@@ -355,7 +355,14 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 		}
 	}
 
-	Simulator::Schedule (m_longTermUpdatePeriod, &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
+	if (!m_nextLongTermUpdate)
+	{
+		m_nextLongTermUpdate = CreateObject<ExponentialRandomVariable> ();
+		m_nextLongTermUpdate->SetAttribute ("Mean", DoubleValue (m_longTermUpdatePeriod.GetMicroSeconds ()));
+		m_nextLongTermUpdate->SetAttribute ("Bound", DoubleValue (m_longTermUpdatePeriod.GetMicroSeconds () * 10));
+	}
+
+	Simulator::Schedule (MicroSeconds (m_nextLongTermUpdate->GetValue()), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 }
 
 

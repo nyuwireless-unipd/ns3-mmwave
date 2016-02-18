@@ -183,6 +183,8 @@ private:
 	double m_ueSpeed;
 	bool m_update;
 	Ptr<UniformRandomVariable> m_uniformRV;
+
+  Ptr<ExponentialRandomVariable> m_nextLongTermUpdate;  // next update of long term statistics in microseconds
 };
 
 }  //namespace ns3
