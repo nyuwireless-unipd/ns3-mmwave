@@ -467,7 +467,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 									}
 
 								  // segment packet
-								  uint16_t firstPduSegSize = bytes - 4;
+								  uint16_t firstPduSegSize = bytes - firstSegHdr.GetSerializedSize ();
 								  uint16_t nextPduSegSize = packet->GetSize ()-firstPduSegSize;
 								  Ptr<Packet> firstSeg = packet->CreateFragment (0, firstPduSegSize);
 								  Ptr<Packet> nextSeg = packet->CreateFragment (firstPduSegSize, nextPduSegSize);
@@ -509,6 +509,11 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
 									NS_LOG_UNCOND ("Sending RLC PDU segment, sn= " << seqNumberValue << " offset= " << firstSegHdr.GetSegmentOffset()
 																									 << " size= " << firstPduSegSize);
+
+									if (firstSeg->GetSize () > bytes)
+									{
+										NS_FATAL_ERROR ("PDU header too large " << firstSegHdr);
+									}
 
 									m_macSapProvider->TransmitPdu (params);
 
