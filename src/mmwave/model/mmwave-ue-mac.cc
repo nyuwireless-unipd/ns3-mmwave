@@ -247,16 +247,17 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		{
 			return;
 		}
-		if (it->second.m_size <
-				(it->second.m_pdu->GetSize () + params.pdu->GetSize() + it->second.m_macHeader.GetSerializedSize ()))
-		{
-			NS_FATAL_ERROR ("Maximum TB size exceeded");
-		}
+
 		it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
 		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
 		m_miUlHarqProcessesPacket.at (params.harqProcessId).m_lcidList.push_back (params.lcid);
+		if (it->second.m_size <
+				(params.pdu->GetSize() + it->second.m_macHeader.GetSerializedSize ()))
+		{
+			NS_FATAL_ERROR ("Maximum TB size exceeded");
+		}
 
 		if (it->second.m_numRlcPdu <= 1)
 		{
