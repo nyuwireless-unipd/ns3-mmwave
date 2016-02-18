@@ -57,7 +57,7 @@ main (int argc, char *argv[])
 
 	uint16_t numEnb = 1;
 	uint16_t numUe = 1;
-	double simTime = 5.0;
+	double simTime = 2.0;
 	double interPacketInterval = 100;  // 500 microseconds
 	double minDistance = 10.0;  // eNB-UE distance in meters
 	double maxDistance = 150.0;  // eNB-UE distance in meters
@@ -96,7 +96,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
-	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
+	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
@@ -210,11 +210,11 @@ main (int argc, char *argv[])
       serverApps.Add (packetSinkHelper.Install (ueNodes.Get(u)));
 
       UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
-      dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+      dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
       dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
       UdpClientHelper ulClient (remoteHostAddr, ulPort);
-      ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+      ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
 //      UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
