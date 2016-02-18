@@ -36,7 +36,7 @@ csvDir = '.'
 pdcpRlcFiles = ['DlPdcpStats.txt']#,'DlRlcStats.txt','UlPdcpStats.txt','UlRlcStats.txt']
 traces = ['DlRxPDU','DlRxPDU','UlRxPDU','UlRxPDU']
 datMap = {};
-timeToAvg = 1e-3 # average over 10 ms intervals 
+timeToAvg = 1e-3 # average over 1 ms intervals 
 tsLast = 0.0    # timestamp of last entry
 
 itrace = 0;
@@ -49,8 +49,8 @@ for file in pdcpRlcFiles:
     cmdGetTsLast = 'tail ' + csvPath + ' -n1 | gawk \'match($0, /\+(.*)ns/, matches) {print matches[1]}\''
     c = os.popen(cmdGetTsLast)
     tsLast = float(c.read().rstrip()) / 1e9
-    numInt = int(tsLast / timeToAvg);
-    
+    numInt = int(math.ceil(tsLast / timeToAvg)) + 1
+    print str(tsLast) + " " + str(numInt)
     dat = RateTraceDat(numLines,numInt,timeToAvg)
     line = 0
     intIdx = 0
@@ -61,19 +61,22 @@ for file in pdcpRlcFiles:
             if(row[1] == traces[itrace]): 
                 match = re.search('\+(.*)ns', row[2])  
                 if (match.group(0) != 'None'):
-                    dat.timestamp[line] = float(match.group(1))/1e9
+                    dat.timestamp[line] = float(match.group(1))/1e9  # get time in seconds
                     #print dat.timestamp[line]
                 else:
                     print "No Match"
                 dat.size[line] = int(row[6])
                 while (1):
-                    if ((dat.timestamp[line] >= dat.intStart[intIdx]) and (intIdx == numInt-1 or (dat.timestamp[line] < dat.intStart[intIdx+1]))):
+                    if (intIdx == numInt):
+                        break      
+                    if ((intIdx == 0 or (dat.timestamp[line] >= dat.intStart[intIdx-1])) and (intIdx == numInt-1 or (dat.timestamp[line] < dat.intStart[intIdx]))):
                         dat.rate[intIdx] += dat.size[line]
-                        break;
+                        break
                     else:
-                        #print dat.rate[intIdx]
                         intIdx = intIdx + 1
                 line = line + 1
+                if (line == numLines):
+                    break;
     dat.rate = ((8*dat.rate) / (timeToAvg)) * 1e-6
     print "avg rate " + str(np.mean(dat.rate)) + " Mbps"
     datMap['DlRxPDU'] = dat    
