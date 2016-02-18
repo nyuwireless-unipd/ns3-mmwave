@@ -85,7 +85,7 @@ MmWaveHelper::GetTypeId (void)
 				      MakeStringChecker ())
 	  .AddAttribute ("HarqEnabled",
 					"Enable Hybrid ARQ",
-					BooleanValue (false),
+					BooleanValue (true),
 					MakeBooleanAccessor (&MmWaveHelper::m_harqEnabled),
 					MakeBooleanChecker ())
 		.AddAttribute ("RlcAmEnabled",
