@@ -66,15 +66,17 @@ main (int argc, char *argv[])
 
 	uint16_t numEnb = 1;
 	uint16_t numUe = 1;
-	double simTime = 0.200;
-	double interPacketInterval = 1000;  // 500 microseconds
+	double simTime = 5.0;
+	double interPacketInterval = 100;  // 500 microseconds
 	double minDistance = 10.0;  // eNB-UE distance in meters
-	double maxDistance = 150.0;  // eNB-UE distance in meters
-	bool harqEnabled = false;
+	double maxDistance = 200.0;  // eNB-UE distance in meters
+	bool harqEnabled = true;
 	bool rlcAmEnabled = false;
 	bool fixedTti = false;
 	unsigned symPerSf = 24;
 	double sfPeriod = 100.0;
+	unsigned run = 0;
+
 
 	// Command line arguments
 	CommandLine cmd;
@@ -87,6 +89,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("symPerSf", "OFDM symbols per subframe", symPerSf);
 	cmd.AddValue("sfPeriod", "Subframe period = 4.16 * symPerSf", sfPeriod);
 	cmd.AddValue("fixedTti", "Fixed TTI scheduler", fixedTti);
+	cmd.AddValue("run", "run for RNG (for generating different deterministic sequences for different drops)", fixedTti);
 	cmd.Parse(argc, argv);
 
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
@@ -99,7 +102,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(100.0));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
 	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
 	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
 	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
@@ -109,12 +112,14 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
 
 	RngSeedManager::SetSeed (1234);
+	RngSeedManager::SetRun (run);
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
 	//mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
+	mmwaveHelper->SetHarqEnabled (harqEnabled);
 
 	ConfigStore inputConfig;
 	inputConfig.ConfigureDefaults();
@@ -198,7 +203,7 @@ main (int argc, char *argv[])
 	uint16_t otherPort = 3000;
 	ApplicationContainer clientApps;
 	ApplicationContainer serverApps;
-	uint32_t packetSize = 500;
+	uint32_t packetSize = 1400;
 
 	double dataRateMB = 100e6;  // 100 MBps
 	double onTimeSec = 5e-6; //packetSize / dataRateMB;

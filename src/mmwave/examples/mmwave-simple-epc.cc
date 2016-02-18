@@ -55,23 +55,66 @@ main (int argc, char *argv[])
 	  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
 
 
-  uint16_t numberOfNodes = 1;
-  double simTime = 0.3;
-  double interPacketInterval = 10;
+	uint16_t numEnb = 1;
+	uint16_t numUe = 1;
+	double simTime = 5.0;
+	double interPacketInterval = 100;  // 500 microseconds
+	double minDistance = 10.0;  // eNB-UE distance in meters
+	double maxDistance = 150.0;  // eNB-UE distance in meters
+	bool harqEnabled = true;
+	bool rlcAmEnabled = false;
+	bool fixedTti = false;
+	unsigned symPerSf = 24;
+	double sfPeriod = 100.0;
+	unsigned run = 0;
+	bool smallScale = true;
+	double speed = 3;
 
-  // Command line arguments
-  CommandLine cmd;
-  cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", numberOfNodes);
-  cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
-  cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
-  cmd.Parse(argc, argv);
+	// Command line arguments
+	CommandLine cmd;
+	cmd.AddValue("numEnb", "Number of eNBs", numEnb);
+	cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
+	cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
+	cmd.AddValue("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
+	cmd.AddValue("harq", "Enable Hybrid ARQ", harqEnabled);
+	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
+	cmd.AddValue("symPerSf", "OFDM symbols per subframe", symPerSf);
+	cmd.AddValue("sfPeriod", "Subframe period = 4.16 * symPerSf", sfPeriod);
+	cmd.AddValue("fixedTti", "Fixed TTI scheduler", fixedTti);
+	cmd.AddValue("run", "run for RNG (for generating different deterministic sequences for different drops)", fixedTti);
+	cmd.Parse(argc, argv);
 
-  Config::SetDefault ("ns3::MmWaveRrMacScheduler::HarqEnabled", BooleanValue(false));
+	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
+	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::CqiTimerThreshold", UintegerValue(1000));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::FixedTti", BooleanValue(fixedTti));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::SymPerSlot", UintegerValue(6));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue(symPerSf));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
+	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
+	Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
+	//Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
+	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
+	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
+	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
+	Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
+	Config::SetDefault ("ns3::MmWaveBeamforming::FixSpeed", BooleanValue (true));
+	Config::SetDefault ("ns3::MmWaveBeamforming::UeSpeed", DoubleValue (speed));
+
+	RngSeedManager::SetSeed (1234);
+	RngSeedManager::SetRun (run);
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+	mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
   Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
-
   mmwaveHelper->SetEpcHelper (epcHelper);
+	mmwaveHelper->SetHarqEnabled (harqEnabled);
 
   ConfigStore inputConfig;
   inputConfig.ConfigureDefaults();
@@ -106,8 +149,8 @@ main (int argc, char *argv[])
 
   NodeContainer ueNodes;
   NodeContainer enbNodes;
-  enbNodes.Create(numberOfNodes);
-  ueNodes.Create(numberOfNodes);
+  enbNodes.Create(numEnb);
+  ueNodes.Create(numUe);
 
   // Install Mobility Model
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
@@ -119,8 +162,13 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
-  uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	Ptr<UniformRandomVariable> distRv = CreateObject<UniformRandomVariable> ();
+	for (unsigned i = 0; i < numUe; i++)
+	{
+		double dist = distRv->GetValue (minDistance, maxDistance);
+		uePositionAlloc->Add (Vector (dist, 0.0, 0.0));
+	}
+	uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
 
@@ -169,20 +217,20 @@ main (int argc, char *argv[])
       ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
-      UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
-      client.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
-      client.SetAttribute ("MaxPackets", UintegerValue(1000000));
+//      UdpClientHelper client (ueIpIface.GetAddress (u), otherPort);
+//      client.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+//      client.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
       clientApps.Add (dlClient.Install (remoteHost));
-      clientApps.Add (ulClient.Install (ueNodes.Get(u)));
-      if (u+1 < ueNodes.GetN ())
-        {
-          clientApps.Add (client.Install (ueNodes.Get(u+1)));
-        }
-      else
-        {
-          clientApps.Add (client.Install (ueNodes.Get(0)));
-        }
+      //clientApps.Add (ulClient.Install (ueNodes.Get(u)));
+//      if (u+1 < ueNodes.GetN ())
+//        {
+//          clientApps.Add (client.Install (ueNodes.Get(u+1)));
+//        }
+//      else
+//        {
+//          clientApps.Add (client.Install (ueNodes.Get(0)));
+//        }
     }
   serverApps.Start (Seconds (0.01));
   clientApps.Start (Seconds (0.01));
