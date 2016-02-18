@@ -5,8 +5,8 @@
  *      Author: sourjya
  */
 
-#ifndef SRC_MMWAVE_MODEL_MMWAVE_MAXWEIGHT_MAC_SCHEDULER_H_
-#define SRC_MMWAVE_MODEL_MMWAVE_MAXWEIGHT_MAC_SCHEDULER_H_
+#ifndef SRC_MMWAVE_MODEL_MMWAVE_PF_MAC_SCHEDULER_H_
+#define SRC_MMWAVE_MODEL_MMWAVE_PF_MAC_SCHEDULER_H_
 
 
 #include "mmwave-mac-sched-sap.h"
@@ -21,7 +21,7 @@
 
 namespace ns3 {
 
-class MmWaveFlexTtiMaxWeightMacScheduler : public MmWaveMacScheduler
+class MmWaveFlexTtiPfMacScheduler : public MmWaveMacScheduler
 {
 public:
 	typedef std::vector < uint8_t > DlHarqProcessesStatus_t;
@@ -35,9 +35,9 @@ public:
 	typedef std::vector < uint8_t > UlHarqProcessesStatus_t;
 
 
-	MmWaveFlexTtiMaxWeightMacScheduler ();
+	MmWaveFlexTtiPfMacScheduler ();
 
-	virtual ~MmWaveFlexTtiMaxWeightMacScheduler ();
+	virtual ~MmWaveFlexTtiPfMacScheduler ();
 	virtual void DoDispose (void);
 	static TypeId GetTypeId (void);
 
@@ -61,51 +61,14 @@ public:
 	friend class MmWaveFlexTtiMaxWeightMacCschedSapProvider;
 
 private:
-
-	struct UeSchedInfo;
-
 	struct FlowStats
 	{
-		/*FlowStats () :
-			m_isUplink (false), m_ueSchedInfo (0),
-			m_lcid (0), m_arrivalRate (0.0), m_grantedRate(0.0),
-			m_qci (0), m_txQueueHolDelay (0), m_reTxQueueHolDelay (0), m_probErr (0.0),
-			m_deadlineUs (0)
+		FlowStats (uint8_t lcid) : m_lcid (lcid), m_maxBufSize (0), m_sumRate (0)
 		{
-		}*/
-
-		FlowStats (bool uplink, UeSchedInfo* ueSchedInfo, uint8_t lcid) :
-			m_isUplink (uplink), m_ueSchedInfo (ueSchedInfo),
-			m_lcid (lcid), m_arrivalRate (0.0), m_grantedRate(0.0),
-			m_qci (0), m_txQueueHolDelay (0), m_reTxQueueHolDelay (0), m_probErr (0.0),
-			m_deadlineUs (0), m_totalBufSize (0), m_totalSchedSize(0)
-		{
-			NS_ASSERT (ueSchedInfo != 0);
 		}
-
-		bool			m_isUplink;					// is uplink?
-		UeSchedInfo* m_ueSchedInfo;	// pointer to parent UE Info
-		uint8_t		m_lcid;						// LCID (for DL) or LC Group ID (for UL)
-		double 		m_arrivalRate;		// Mbps
-		double 		m_grantedRate;		// Mbps
-		uint8_t		m_qci;						// We interpret QCI 69 as delay critical
-		//uint32_t	m_deliveryDebt;
-		double	m_txQueueHolDelay;
-		uint32_t	m_reTxQueueHolDelay;
-		double		m_probErr;				// expected probability of each HARQ TX/reTX failure (i.e. 1/E[num TX to success])
-		double	m_deadlineUs;			// relative deadline
-		std::list<uint32_t> m_txPacketSizes;		// estimated packet sizes from consecutive BSRs
-		uint32_t	m_totalBufSize;
-		std::list<uint32_t> m_retxPacketSizes;
-		std::list<double> m_txPacketDelays;		// estimated delays for each packet
-		std::list<double> m_retxPacketDelays;
-
-		// We maintain a queue of PDU sizes scheduled in the last M subframes.
-		// M = delay between scheduling and transmission (default DL = 1, UL = 2)
-		// The sum of these M elements is subtracted from the BSR to account for
-		// data that has been scheduled but not yet extracted from the DL or UL queue.
-		std::list<uint32_t> m_schedPacketSizes;
-		uint32_t 	m_totalSchedSize;		// total of last M elements in list
+		uint8_t	m_lcid;
+		uint32_t	m_maxBufSize;
+		uint32_t	m_sumRate;
 	};
 
 	struct UeSchedInfo
@@ -116,7 +79,8 @@ private:
 			m_dlSymbols (0), m_ulSymbols (0),
 			m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
 			m_dlTbSize (0), m_ulTbSize (0),
-			m_dlAllocDone (false), m_ulAllocDone (false)
+			m_dlAllocDone (false), m_ulAllocDone (false),
+			m_currRatePerSym (0.0), m_sumRate (0.0), m_currPfWeight (0.0)
 		{
 		}
 
@@ -126,7 +90,8 @@ private:
 			m_dlSymbols (0), m_ulSymbols (0),
 			m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
 			m_dlTbSize (0), m_ulTbSize (0),
-			m_dlAllocDone (false), m_ulAllocDone (false)
+			m_dlAllocDone (false), m_ulAllocDone (false),
+			m_currRatePerSym (0.0), m_sumRate (0), m_currPfWeight (0.0)
 		{
 		}
 
@@ -146,56 +111,20 @@ private:
 		std::vector <struct RlcPduInfo> m_rlcPduInfo;
 		bool			m_dlAllocDone;
 		bool			m_ulAllocDone;
+
+		double		m_currRatePerSym;
+		uint32_t	m_sumRate;
+		double 		m_currPfWeight;
+
 		std::vector<FlowStats> m_flowStatsDl;		// for each LC
 		std::vector<FlowStats> m_flowStatsUl;
 	};
 
-	/*struct CompareWeightDesc
+	static bool ComparePfWeights (UeSchedInfo* lUe, UeSchedInfo* rUe)
 	{
-
-		CompareWeightDesc (const bool& alg = EDF)
-		{
-			if (alg <= DELIVERY_DEBT)
-			{
-				m_algorithm = alg;
-			}
-		}
-
-		bool operator() (FlowStats* lflow, FlowStats* rflow)
-		{
-			bool retval = false;
-			switch (m_algorithm)
-			{
-				default:
-					retval = 0;
-					break;
-				case EDF:
-					int lRelDeadline = lflow->m_deadlineUs - lflow->m_txQueueHolDelay;
-					int rRelDeadline = rflow->m_deadlineUs - rflow->m_txQueueHolDelay;
-					retval = (lRelDeadline < rRelDeadline);	// earlier deadline > greater weight
-					break;
-				case DELIVERY_DEBT:
-					int lflowDebt = (lflow->m_arrivalRate/(1-lflow->m_probErr)) - lflow->m_grantedRate;
-					int rflowDebt = (rflow->m_arrivalRate/(1-rflow->m_probErr)) - rflow->m_grantedRate;
-					retval = (lflowDebt > rflowDebt);
-					break;
-			}
-			return retval;
-		}
-	};*/
-
-	static bool CompareFlowWeightsEdf (FlowStats* lflow, FlowStats* rflow)
-	{
-		int lRelDeadline = lflow->m_deadlineUs - lflow->m_txQueueHolDelay;
-		int rRelDeadline = rflow->m_deadlineUs - rflow->m_txQueueHolDelay;
-		return (lRelDeadline < rRelDeadline);	// earlier deadline > greater weight
-	}
-
-	static bool CompareFlowWeightsDeliveryDebt (FlowStats* lflow, FlowStats* rflow)
-	{
-		int lflowDebt = (lflow->m_arrivalRate/(1-lflow->m_probErr)) - lflow->m_grantedRate;
-		int rflowDebt = (rflow->m_arrivalRate/(1-rflow->m_probErr)) - rflow->m_grantedRate;
-		return (lflowDebt > rflowDebt);
+//		double lueWeight = lUe->m_currRatePerSym / lUe->m_sumRate;
+//		double rueWeight = lUe->m_currRatePerSym / lUe->m_sumRate;
+		return (lUe->m_currPfWeight < lUe->m_currPfWeight);
 	}
 
 	unsigned CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize);
@@ -402,13 +331,12 @@ private:
 	bool m_dlOnly;
 	bool m_ulOnly;
 
-	std::map<uint16_t, UeSchedInfo> m_ueSchedInfoMap;
 
-	enum AlgType { EDF, DELIVERY_DEBT } m_algorithm;
 	//typedef std::priority_queue <FlowStats, std::vector<FlowStats*>, CompareWeightDesc> flowQueue_t;
 	//flowQueue_t m_flowQueue;
 
-	std::vector <FlowStats*> m_flowHeap;
+	std::map<uint16_t, UeSchedInfo> m_ueSchedInfoMap;
+	std::vector <UeSchedInfo*> m_ueSchedInfoHeap;
 
 	bool m_fixedTti;		// one slot per TTI
 	uint8_t	m_symPerSlot; // symbols per slot
@@ -417,4 +345,4 @@ private:
 }
 
 
-#endif /* SRC_MMWAVE_MODEL_MMWAVE_MAXWEIGHT_MAC_SCHEDULER_H_ */
+#endif /* SRC_MMWAVE_MODEL_MMWAVE_PF_MAC_SCHEDULER_H_ */
