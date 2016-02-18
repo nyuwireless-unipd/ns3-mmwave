@@ -1176,15 +1176,15 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 			remSym = symAvail;
 		}
 
-		//int nSymPerFlow0 = remSym / nFlowsTot;  // initial average symbols per non-retx flow
-//		if (nSymPerFlow0 == 0)	// minimum of 1
-//		{
-//			nSymPerFlow0 = 1;
-//		}
-//		if (m_fixedTti)
-//		{
-//			nSymPerFlow0 = ceil((double)nSymPerFlow0/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
-//		}
+		int nSymPerFlow0 = remSym / nFlowsTot;  // initial average symbols per non-retx flow
+		if (nSymPerFlow0 == 0)	// minimum of 1
+		{
+			nSymPerFlow0 = 1;
+		}
+		if (m_fixedTti)
+		{
+			nSymPerFlow0 = ceil((double)nSymPerFlow0/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
+		}
 		bool allocated = true; // someone got allocated
 		while (remSym > 0 && allocated)
 		{
@@ -1208,7 +1208,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				{
 					deficit = ceil((double)deficit/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
 				}
-				if (deficit > 0 && ((itUeInfo->second.m_dlSymbols+itUeInfo->second.m_dlSymbolsRetx) <= nRemSymPerFlow))
+				if (deficit > 0 && ((itUeInfo->second.m_dlSymbols+itUeInfo->second.m_dlSymbolsRetx) <= nSymPerFlow0))
 				{
 					if (deficit < nRemSymPerFlow)
 					{
@@ -1222,6 +1222,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 							// add remaining symbols to average
 							nFlowsTot--;
 							int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
+							nSymPerFlow0 += extra;  // add extra to average symbols
 							nRemSymPerFlow += extra;  // add extra to average symbols
 						}
 					}
@@ -1254,7 +1255,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 				{
 					nRemSymPerFlow = ceil((double)nRemSymPerFlow/(double)m_symPerSlot) * m_symPerSlot; // round up to nearest sym per TTI
 				}
-				if (remSym > 0 && deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nRemSymPerFlow))
+				if (remSym > 0 && deficit > 0 && ((itUeInfo->second.m_ulSymbols+itUeInfo->second.m_ulSymbolsRetx) <= nSymPerFlow0))
 				{
 					if (deficit < nRemSymPerFlow)
 					{
@@ -1269,6 +1270,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 							// add remaining symbols to average
 							nFlowsTot--;
 							int extra = (nRemSymPerFlow - addSym) / nFlowsTot;
+							nSymPerFlow0 += extra;  // add extra to average symbols
 							nRemSymPerFlow += extra;  // add extra to average symbols
 						}
 					}
