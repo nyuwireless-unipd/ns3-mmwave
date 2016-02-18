@@ -93,6 +93,7 @@ private:
                                        ///< that have not been acked but are not considered 
                                        ///< for retransmission 
   std::vector <RetxPdu> m_retxBuffer;  ///< Buffer for PDUs considered for retransmission
+  std::vector <RetxPdu> m_retxSegBuffer;  // buffer for AM PDU segments
 
     uint32_t m_txonBufferSize;
     uint32_t m_retxBufferSize;

@@ -141,8 +141,16 @@ LteRlcAmHeader::PopExtensionBit (void)
 uint16_t
 LteRlcAmHeader::PopLengthIndicator (void)
 {
-  uint16_t lengthIndicator = m_lengthIndicators.front ();
-  m_lengthIndicators.pop_front ();
+	uint16_t lengthIndicator;
+	if (!m_lengthIndicators.empty ())
+	{
+		lengthIndicator = m_lengthIndicators.front ();
+	  m_lengthIndicators.pop_front ();
+	}
+	else
+	{
+		lengthIndicator = 0;
+	}
 
   return lengthIndicator;
 }
