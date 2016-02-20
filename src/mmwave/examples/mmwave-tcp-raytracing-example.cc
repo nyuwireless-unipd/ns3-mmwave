@@ -178,8 +178,8 @@ main (int argc, char *argv[])
 	//Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 100));
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*32));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*32));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(true));
@@ -188,6 +188,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
 
 
 
@@ -204,7 +205,7 @@ main (int argc, char *argv[])
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	mmwaveHelper->SetAttribute ("ChannelModel", StringValue ("ns3::MmWaveChannelRaytracing"));
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue (""));
-
+	mmwaveHelper->SetHarqEnabled(true);
 	mmwaveHelper->Initialize();
 	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);

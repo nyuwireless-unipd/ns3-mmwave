@@ -340,12 +340,11 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 		rxAntennaArray->SetBeamformingVector(bfParams->m_rxW,txDevice);
 	}
 
-
-	Vector rxSpeed = b->GetVelocity();
+	/*Vector rxSpeed = b->GetVelocity();
 	Vector txSpeed = a->GetVelocity();
 	double relativeSpeed = (rxSpeed.x-txSpeed.x)
-			+(rxSpeed.y-txSpeed.y)+(rxSpeed.z-txSpeed.z);
-	Ptr<SpectrumValue> bfPsd = GetChannelGain(rxPsd,bfParams, relativeSpeed);
+			+(rxSpeed.y-txSpeed.y)+(rxSpeed.z-txSpeed.z);*/
+	Ptr<SpectrumValue> bfPsd = GetChannelGain(rxPsd,bfParams, m_speed);
 
 
 	/*loging the beamforming gain for debug*/
