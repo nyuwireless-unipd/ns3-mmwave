@@ -339,7 +339,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
               		if (segment)
               		{
-              			NS_LOG_UNCOND ("Sending last RLC PDU segment, sn= " << seqNumberValue << " offset= " << rlcAmHeader.GetSegmentOffset()
+              			NS_LOG_INFO ("Sending last RLC PDU segment, sn= " << seqNumberValue << " offset= " << rlcAmHeader.GetSegmentOffset()
               																			 << " size= " << rlcAmHeader.GetLastOffset()-rlcAmHeader.GetSegmentOffset());
               			// opportunity is large enough to transmit remaining segment, so clear segment buffer
               			m_retxSegBuffer.at(seqNumberValue).m_pdu = 0;
@@ -507,7 +507,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 									params.layer = layer;
 									params.harqProcessId = harqId;
 
-									NS_LOG_UNCOND ("Sending RLC PDU segment, sn= " << seqNumberValue << " offset= " << firstSegHdr.GetSegmentOffset()
+									NS_LOG_INFO ("Sending RLC PDU segment, sn= " << seqNumberValue << " offset= " << firstSegHdr.GetSegmentOffset()
 																									 << " size= " << firstPduSegSize);
 
 									if (firstSeg->GetSize () > bytes)
@@ -1075,7 +1075,7 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
 //              		totalBytes += (*itSeg)->GetSize ();
 //              	}
               	// get header of last segment received
-              	NS_LOG_UNCOND ("RLC AM PDU segment received, offset= " << rlcAmHeader.GetSegmentOffset() <<
+              	NS_LOG_INFO ("RLC AM PDU segment received, offset= " << rlcAmHeader.GetSegmentOffset() <<
 															 " size= " << rlcAmHeader.GetLastOffset()-rlcAmHeader.GetSegmentOffset());
               	LteRlcAmHeader lastSegHdr;
               	it->second.m_byteSegments.back ()->PeekHeader (lastSegHdr);
@@ -1118,7 +1118,7 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
               m_rxonBuffer[ seqNumber.GetValue () ].m_byteSegments.push_back (p);
               if(rlcAmHeader.GetResegmentationFlag () == LteRlcAmHeader::SEGMENT)
               {
-              	NS_LOG_UNCOND ("RLC AM PDU segment received, offset= " << rlcAmHeader.GetSegmentOffset() <<
+              	NS_LOG_INFO ("RLC AM PDU segment received, offset= " << rlcAmHeader.GetSegmentOffset() <<
               																 " size= " << rlcAmHeader.GetLastOffset()-rlcAmHeader.GetSegmentOffset());
               	// received segment
               	m_rxonBuffer[ seqNumber.GetValue () ].m_pduComplete = false;

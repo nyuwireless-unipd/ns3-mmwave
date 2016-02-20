@@ -354,15 +354,15 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 
 		}
 	}
+	Simulator::Schedule (m_longTermUpdatePeriod, &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 
-	if (!m_nextLongTermUpdate)
+	/*if (!m_nextLongTermUpdate)
 	{
 		m_nextLongTermUpdate = CreateObject<ExponentialRandomVariable> ();
 		m_nextLongTermUpdate->SetAttribute ("Mean", DoubleValue (m_longTermUpdatePeriod.GetMicroSeconds ()));
 		m_nextLongTermUpdate->SetAttribute ("Bound", DoubleValue (m_longTermUpdatePeriod.GetMicroSeconds () * 10));
 	}
-
-	Simulator::Schedule (MicroSeconds (m_nextLongTermUpdate->GetValue()), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
+	Simulator::Schedule (MicroSeconds (m_nextLongTermUpdate->GetValue()), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);*/
 }
 
 
@@ -407,7 +407,7 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 	Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 			EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 
-	double variable = m_uniformRV->GetValue (0, 1);
+	/*double variable = m_uniformRV->GetValue (0, 1);
 	if(m_update && variable<0.08)
 	{
 		ueAntennaArray->SetBeamformingVectorWithDelay (bfParams->m_ueW);
@@ -415,11 +415,11 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 
 	}
 	else
-	{
+	{*/
 		ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
 		enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
 
-	}
+	//}
 }
 
 complexVector_t
