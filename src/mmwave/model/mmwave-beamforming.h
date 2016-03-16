@@ -54,7 +54,7 @@ struct BeamformingParams : public SimpleRefCount<BeamformingParams>
 	complexVector_t 	m_enbW; // enb beamforming vector
 	complexVector_t 	m_ueW; // ue beamforming vector
 	channelMatrix       m_channelMatrix;
-	complexVector_t 	m_beam; // product of beamforming vectors and spatial matrices
+	complexVector_t* 	m_beam; // product of beamforming vectors and spatial matrices
 };
 
 /**
@@ -149,7 +149,7 @@ private:
 	* \param bfParas a pointer to beamforming vectors
 	* \return complex vector of gain
 	*/
-	complexVector_t GetLongTermFading (Ptr<BeamformingParams> bfParams) const;
+	complexVector_t* GetLongTermFading (Ptr<BeamformingParams> bfParams) const;
 	/**
 	* \breif calculate power spectrum density considering beamformign and fading
 	* \param bfParas a pointer to beamforming vectors

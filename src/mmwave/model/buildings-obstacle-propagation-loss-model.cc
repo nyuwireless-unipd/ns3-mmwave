@@ -121,13 +121,13 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 		if(los)
 		{
 			//NS_LOG_UNCOND ("LOS");
-			m_beamforming->UpdateMatrices(false);
+			//m_beamforming->UpdateMatrices(false);
 			loss = mmWaveLosLoss (a,b);
 		}
 		else
 		{
 			//NS_LOG_UNCOND ("NLOS");
-			m_beamforming->UpdateMatrices(true);
+			//m_beamforming->UpdateMatrices(true);
 			loss = mmWaveNlosLoss (a,b);
 		}
 	}

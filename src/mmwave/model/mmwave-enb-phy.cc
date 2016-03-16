@@ -267,6 +267,10 @@ MmWaveEnbPhy::StartSubFrame (void)
 void
 MmWaveEnbPhy::StartSlot (void)
 {
+	//assume the control signal is omi
+	Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+	antennaArray->ChangeToOmniTx ();
+
 	NS_LOG_FUNCTION (this);
 
 	SlotAllocInfo currSlot;
@@ -437,6 +441,9 @@ MmWaveEnbPhy::EndSlot (void)
 {
 	NS_LOG_FUNCTION (this << Simulator::Now ().GetSeconds ());
 
+	Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+	antennaArray->ChangeToOmniTx ();
+
 	if (m_slotNum == m_currSfNumSlots-1)
 	{
 		m_slotNum = 0;
@@ -515,13 +522,14 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 			Ptr<MmWaveUeNetDevice> ueDev = DynamicCast<MmWaveUeNetDevice> (m_deviceMap.at (i));
 			uint64_t ueRnti = ueDev->GetPhy ()->GetRnti ();
 			//NS_LOG_UNCOND ("Scheduled rnti:"<<rnti <<" ue rnti:"<< ueRnti);
-			if (slotInfo.m_rnti == ueRnti)
+			if (slotInfo.m_dci.m_rnti == ueRnti)
 			{
 				//NS_LOG_UNCOND ("Change Beamforming Vector");
 				Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
 				antennaArray->ChangeBeamformingVector (m_deviceMap.at (i));
 				break;
 			}
+
 		}
 	}
 

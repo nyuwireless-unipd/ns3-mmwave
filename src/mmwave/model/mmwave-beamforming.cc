@@ -422,10 +422,10 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 	//}
 }
 
-complexVector_t
+complexVector_t*
 MmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
 {
-	complexVector_t longTerm;
+	complexVector_t* longTerm = new complexVector_t();
 	for (unsigned pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 	{
 		std::complex<double> txsum (0,0);
@@ -444,7 +444,7 @@ MmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
 					bfParams->m_channelMatrix.m_ueSpatialMatrix.at (pathIndex).at (rxAntennaIndex);
 		}
 		NS_LOG_INFO ("rxsum="<<rxsum.real ()<<" "<<rxsum.imag ());
-		longTerm.push_back (txsum*rxsum);
+		longTerm->push_back (txsum*rxsum);
 	}
 	return longTerm;
 }
@@ -458,6 +458,15 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 	{
 		speed = m_ueSpeed;
 	}
+
+	bool noSpeed = false;
+	if (speed == 0)
+	{
+		noSpeed = true;
+	}
+	Time time = Simulator::Now ();
+	double t = time.GetSeconds ();
+
 	Values::iterator vit = tempPsd->ValuesBegin ();
 	uint16_t iSubband = 0;
 	while (vit != tempPsd->ValuesEnd ())
@@ -469,13 +478,20 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 			for (unsigned int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 			{
 				double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
-				Time time = Simulator::Now ();
-				double t = time.GetSeconds ();
+				double temp = -2*M_PI*fsb*DelaySpread[pathIndex];
+				std::complex<double> delay (cos (temp), sin (temp));
+				std::complex<double> doppler;
+				if (noSpeed)
+				{
+					doppler = std::complex<double> (1,0);
+				}
+				else
+				{
+					doppler = std::complex<double> (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
+				}
 
-				std::complex<double> delay (cos (2*M_PI*fsb*DelaySpread[pathIndex]), sin (2*M_PI*fsb*DelaySpread[pathIndex]));
-				std::complex<double> doppler (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
-				std::complex<double> smallScaleFading = m_smallScale ? sqrt(2)*sigma*doppler/delay : sqrt(2)*sigma;
-				subsbandGain = subsbandGain + bfParams->m_beam.at (pathIndex)*smallScaleFading;
+				std::complex<double> smallScaleFading = m_smallScale ? sqrt(2)*sigma*doppler*delay : sqrt(2)*sigma;
+				subsbandGain = subsbandGain + (*bfParams->m_beam).at (pathIndex)*smallScaleFading;
 			}
 			*vit = (*vit)*(norm (subsbandGain));
 		}
@@ -537,12 +553,14 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
 	if (enbAntennaArray->IsOmniTx ())
 	{
+		return rxPsd;//zml do not apply fading to omi
+
 		complexVector_t vec;
 		for (unsigned int i=0; i<m_pathNum; i++)
 		{
 			vec.push_back(std::complex<double> (1,0));
 		}
-		bfParams->m_beam = vec;
+		(*bfParams->m_beam) = vec;
 	}
 	else
 	{
