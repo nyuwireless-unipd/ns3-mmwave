@@ -493,6 +493,13 @@ MmWaveChannelMatrix::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmWaveB
 
 	Values::iterator vit = tempPsd->ValuesBegin ();
 	uint16_t iSubband = 0;
+
+	bool noSpeed = false;
+	if (speed == 0)
+	{
+		noSpeed = true;
+	}
+
 	while (vit != tempPsd->ValuesEnd ())
 	{
 		std::complex<double> subsbandGain (0.0,0.0);
@@ -501,10 +508,23 @@ MmWaveChannelMatrix::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmWaveB
 			double fsb = m_phyMacConfig->GetCentreFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband ;
 			for (unsigned int pathIndex = 0; pathIndex < pathNum; pathIndex++)
 			{
-				std::complex<double> delay (cos (2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex)), sin (2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex)));
-				//std::complex<double> delay (cos (2*M_PI*fsb*DelaySpread[pathIndex]), sin (2*M_PI*fsb*DelaySpread[pathIndex]));
-				std::complex<double> doppler (cos (2*M_PI*t*speed*bfParams->m_channelParams->m_doppler.at (pathIndex)), sin (2*M_PI*t*speed*bfParams->m_channelParams->m_doppler.at (pathIndex)));
-				std::complex<double> smallScaleFading = sqrt(bfParams->m_channelParams->m_powerFraction. at(pathIndex))*doppler/delay;
+
+				std::complex<double> doppler;
+				if (noSpeed)
+				{
+					doppler = std::complex<double> (1,0);
+				}
+				else
+				{
+					double f_d = speed*m_phyMacConfig->GetCentreFrequency ()/3e8;
+					double temp_Doppler = 2*M_PI*t*f_d*bfParams->m_channelParams->m_doppler.at (pathIndex);
+					doppler = std::complex<double> (cos (temp_Doppler), sin (temp_Doppler));
+				}
+
+				double temp_delay = -2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex);
+				std::complex<double> delay (cos (temp_delay), sin (temp_delay));
+
+				std::complex<double> smallScaleFading = sqrt(bfParams->m_channelParams->m_powerFraction. at(pathIndex))*doppler*delay;
 
 				if(bfParams->m_txW.empty ()||bfParams->m_rxW.empty ())
 				{
