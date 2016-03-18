@@ -478,8 +478,8 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 			for (unsigned int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 			{
 				double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
-				double temp = -2*M_PI*fsb*DelaySpread[pathIndex];
-				std::complex<double> delay (cos (temp), sin (temp));
+				double temp_delay = -2*M_PI*fsb*DelaySpread[pathIndex];
+				std::complex<double> delay (cos (temp_delay), sin (temp_delay));
 				std::complex<double> doppler;
 				if (noSpeed)
 				{
@@ -487,7 +487,10 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 				}
 				else
 				{
-					doppler = std::complex<double> (cos (2*M_PI*t*speed*DopplerShift[pathIndex]), sin (2*M_PI*t*speed*DopplerShift[pathIndex]));
+					double f_d = speed*m_phyMacConfig->GetCentreFrequency ()/3e8;
+					double temp_Doppler = 2*M_PI*t*f_d*DopplerShift[pathIndex];
+
+					doppler = std::complex<double> (cos (temp_Doppler), sin (temp_Doppler));
 				}
 
 				std::complex<double> smallScaleFading = m_smallScale ? sqrt(2)*sigma*doppler*delay : sqrt(2)*sigma;
