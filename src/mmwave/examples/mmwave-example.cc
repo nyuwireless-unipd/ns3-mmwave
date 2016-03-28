@@ -17,6 +17,10 @@ using namespace ns3;
 int 
 main (int argc, char *argv[])
 {
+
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+
   CommandLine cmd;
   cmd.Parse (argc, argv);
 //  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
@@ -89,7 +93,7 @@ main (int argc, char *argv[])
 
 
 
-  Simulator::Stop (Seconds (0.03));
+  Simulator::Stop (Seconds (1));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
