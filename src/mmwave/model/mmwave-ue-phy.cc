@@ -143,6 +143,18 @@ MmWaveUePhy::GetUeCphySapProvider ()
   return (m_ueCphySapProvider);
 }
 
+void 
+MmWaveUePhy::SetImsi (uint64_t imsi)
+{
+	m_imsi = imsi;
+}
+
+uint64_t
+MmWaveUePhy::GetImsi (void) const
+{
+	return m_imsi;
+}
+
 void
 MmWaveUePhy::SetTxPower (double pow)
 {
@@ -449,7 +461,7 @@ MmWaveUePhy::StartSlot ()
 	currSlot = m_currSfAllocInfo.m_slotAllocInfo[m_slotNum];
 	m_currSlot = currSlot;
 
-	NS_LOG_INFO ("UE " << m_rnti << " frame " << m_frameNum << " subframe " << m_sfNum << " slot " << m_slotNum);
+	NS_LOG_INFO ("MmWave UE " << m_rnti << " frame " << m_frameNum << " subframe " << m_sfNum << " slot " << m_slotNum);
 
 	Time slotPeriod;
 
@@ -478,7 +490,7 @@ MmWaveUePhy::StartSlot ()
 		m_downlinkSpectrumPhy->AddExpectedTb (currSlot.m_dci.m_rnti, currSlot.m_dci.m_ndi, currSlot.m_dci.m_tbSize, currSlot.m_dci.m_mcs,
 		                                      m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, true,
 		                                      currSlot.m_dci.m_symStart, currSlot.m_dci.m_numSym);
-		m_reportDlTbSize (GetDevice ()->GetObject <MmWaveUeNetDevice> ()->GetImsi(), currSlot.m_dci.m_tbSize);
+		m_reportDlTbSize (m_imsi, currSlot.m_dci.m_tbSize);
 		NS_LOG_DEBUG ("UE" << m_rnti << " RXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 		              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
@@ -519,7 +531,7 @@ MmWaveUePhy::StartSlot ()
 			pktBurst = CreateObject<PacketBurst> ();
 			pktBurst->AddPacket (emptyPdu);
 		}
-		m_reportUlTbSize (GetDevice ()->GetObject <MmWaveUeNetDevice> ()->GetImsi(), currSlot.m_dci.m_tbSize);
+		m_reportUlTbSize (m_imsi, currSlot.m_dci.m_tbSize);
 		NS_LOG_DEBUG ("UE" << m_rnti << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
@@ -708,8 +720,7 @@ MmWaveUePhy::GenerateDlCqiReport (const SpectrumValue& sinr)
 			{
 				DoSendControlMessage (msg);
 			}
-			Ptr<MmWaveUeNetDevice> UeRx = DynamicCast<MmWaveUeNetDevice> (GetDevice());
-			m_reportCurrentCellRsrpSinrTrace (UeRx->GetImsi(), newSinr, newSinr);
+			m_reportCurrentCellRsrpSinrTrace (m_imsi, newSinr, newSinr);
 		}
 	}
 }

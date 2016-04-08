@@ -338,6 +338,28 @@ EmuEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
   return bearerId;
 }
 
+uint8_t
+EmuEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, Ptr<EpcUeNas> ueNas, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
+{
+  NS_LOG_FUNCTION (this << ueDevice << imsi);
+
+  // we now retrieve the IPv4 address of the UE and notify it to the SGW;
+  // we couldn't do it before since address assignment is triggered by
+  // the user simulation program, rather than done by the EPC   
+  Ptr<Node> ueNode = ueDevice->GetNode (); 
+  Ptr<Ipv4> ueIpv4 = ueNode->GetObject<Ipv4> ();
+  NS_ASSERT_MSG (ueIpv4 != 0, "UEs need to have IPv4 installed before EPS bearers can be activated");
+  int32_t interface =  ueIpv4->GetInterfaceForDevice (ueDevice);
+  NS_ASSERT (interface >= 0);
+  NS_ASSERT (ueIpv4->GetNAddresses (interface) == 1);
+  Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
+  NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
+  
+  uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
+  Simulator::ScheduleNow (&EpcUeNas::ActivateEpsBearer, ueNas, bearer, tft);
+  return bearerId;
+}
+
 
 Ptr<Node>
 EmuEpcHelper::GetPgwNode ()

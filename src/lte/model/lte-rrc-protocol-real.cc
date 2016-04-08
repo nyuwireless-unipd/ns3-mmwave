@@ -31,6 +31,7 @@
 #include "lte-enb-rrc.h"
 #include "lte-enb-net-device.h"
 #include "lte-ue-net-device.h"
+#include <ns3/mc-ue-net-device.h>
 
 namespace ns3 {
 
@@ -516,19 +517,38 @@ LteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformation msg
         {
           Ptr<LteUeNetDevice> ueDev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
           if (ueDev != 0)
+          {
+            ueRrc = ueDev->GetRrc ();              
+            NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+            if (ueRrc->GetCellId () == m_cellId)
+            {       
+              NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
+              ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+              Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+                                   &LteUeRrcSapProvider::RecvSystemInformation,
+                                   ueRrc->GetLteUeRrcSapProvider (), 
+                                   msg);          
+            }             
+          }
+          else
+          {
+            // it may be a MC device
+            Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
+            if (mcUeDev != 0)
             {
-              Ptr<LteUeRrc> ueRrc = ueDev->GetRrc ();
-              NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+              ueRrc = mcUeDev->GetLteRrc ();              
+              NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetLteImsi () << " that has cellId " << ueRrc->GetCellId ());
               if (ueRrc->GetCellId () == m_cellId)
-                {
-                  NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
-                  ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-                  Simulator::Schedule (RRC_REAL_MSG_DELAY, 
-                                       &LteUeRrcSapProvider::RecvSystemInformation,
-                                       ueRrc->GetLteUeRrcSapProvider (), 
-                                       msg);
-                }
+              {       
+                NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetLteImsi ());
+                ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+                Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+                                     &LteUeRrcSapProvider::RecvSystemInformation,
+                                     ueRrc->GetLteUeRrcSapProvider (), 
+                                     msg);          
+              }             
             }
+          }
         }
     } 
 }

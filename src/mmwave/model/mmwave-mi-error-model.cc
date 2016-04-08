@@ -179,7 +179,7 @@ MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize)
 }
 
 TbStats_t
-MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, HarqProcessInfoList_t miHistory)
+MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, MmWaveHarqProcessInfoList_t miHistory)
 {
   NS_LOG_FUNCTION (sinr << &map << (uint32_t) size << (uint32_t) mcs);
 

@@ -13,6 +13,7 @@
 #include <ns3/mmwave-net-device.h>
 #include <ns3/node.h>
 #include <ns3/mmwave-ue-net-device.h>
+#include <ns3/mc-ue-net-device.h>
 #include <ns3/mmwave-enb-net-device.h>
 #include <ns3/antenna-array-model.h>
 #include <ns3/mmwave-ue-phy.h>
@@ -188,12 +189,28 @@ MmWaveChannelRaytracing::Initial(NetDeviceContainer ueDevices, NetDeviceContaine
 	{
 		Ptr<MmWaveUeNetDevice> UeDev =
 						DynamicCast<MmWaveUeNetDevice> (*i);
-		if (UeDev->GetTargetEnb ())
+		if (UeDev != 0) 
 		{
-			Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
-			ConnectDevices (*i, targetBs);
-			ConnectDevices (targetBs, *i);
-
+			if (UeDev->GetTargetEnb ())
+			{
+				Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
+				ConnectDevices (*i, targetBs);
+				ConnectDevices (targetBs, *i);
+			}
+		}
+		else
+		{	// it may be a McUeNetDevice
+			Ptr<McUeNetDevice> mcUeDev =
+						DynamicCast<McUeNetDevice> (*i);
+			if (mcUeDev != 0) 
+			{
+				if (mcUeDev->GetMmWaveTargetEnb ())
+				{
+					Ptr<NetDevice> targetBs = mcUeDev->GetMmWaveTargetEnb ();
+					ConnectDevices (*i, targetBs);
+					ConnectDevices (targetBs, *i);
+				}
+			}
 		}
 	}
 
@@ -234,6 +251,25 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
 					rxUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 	}
+	else if (txEnb !=0 && rxUe == 0)
+	{
+		Ptr<McUeNetDevice> rxMcUe = DynamicCast<McUeNetDevice> (rxDevice);
+
+		if(rxMcUe != 0)
+		{
+			NS_LOG_INFO ("this is downlink case for MC device");
+
+			txAntennaNum[0] = sqrt (txEnb->GetAntennaNum ());
+			txAntennaNum[1] = sqrt (txEnb->GetAntennaNum ());
+			rxAntennaNum[0] = sqrt (rxMcUe->GetAntennaNum ());
+			rxAntennaNum[1] = sqrt (rxMcUe->GetAntennaNum ());
+
+			txAntennaArray = DynamicCast<AntennaArrayModel> (
+						txEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+			rxAntennaArray = DynamicCast<AntennaArrayModel> (
+						rxMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+		}
+	} 
 	else if (txEnb==0 && rxUe==0 )
 	{
 		NS_LOG_INFO ("this is uplink case");
@@ -244,15 +280,39 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 		Ptr<MmWaveEnbNetDevice> rxEnb =
 						DynamicCast<MmWaveEnbNetDevice> (rxDevice);
 
-		txAntennaNum[0] = sqrt (txUe->GetAntennaNum ());
-		txAntennaNum[1] = sqrt (txUe->GetAntennaNum ());
-		rxAntennaNum[0] = sqrt (rxEnb->GetAntennaNum ());
-		rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
+		if(txUe != 0)
+		{
+			NS_LOG_INFO ("this is uplink case");	
+			txAntennaNum[0] = sqrt (txUe->GetAntennaNum ());
+			txAntennaNum[1] = sqrt (txUe->GetAntennaNum ());
+			rxAntennaNum[0] = sqrt (rxEnb->GetAntennaNum ());
+			rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
 
-		txAntennaArray = DynamicCast<AntennaArrayModel> (
-					txUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
-		rxAntennaArray = DynamicCast<AntennaArrayModel> (
-					rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+			txAntennaArray = DynamicCast<AntennaArrayModel> (
+						txUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+			rxAntennaArray = DynamicCast<AntennaArrayModel> (
+						rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+		}
+		else
+		{
+			Ptr<McUeNetDevice> txMcUe = DynamicCast<McUeNetDevice> (txDevice);
+
+			if(txMcUe != 0)
+			{
+				NS_LOG_INFO ("this is uplink case for MC device");	
+
+				txAntennaNum[0] = sqrt (txMcUe->GetAntennaNum ());
+				txAntennaNum[1] = sqrt (txMcUe->GetAntennaNum ());
+				rxAntennaNum[0] = sqrt (rxEnb->GetAntennaNum ());
+				rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
+
+				txAntennaArray = DynamicCast<AntennaArrayModel> (
+							txMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+				rxAntennaArray = DynamicCast<AntennaArrayModel> (
+							rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+
+			}
+		}
 	}
 	else
 	{

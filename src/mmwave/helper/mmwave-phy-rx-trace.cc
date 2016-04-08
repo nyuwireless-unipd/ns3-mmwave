@@ -59,13 +59,13 @@ MmWavePhyRxTrace::UlSinrTraceCallback (Ptr<MmWavePhyRxTrace> phyStats, std::stri
 	uint32_t rb_count = 1;
 	FILE* log_file;
 	char fname[255];
-	sprintf(fname, "UE_%llu_UL_SINR_dB.txt", imsi);
+	sprintf(fname, "UE_%lu_UL_SINR_dB.txt", imsi);
 	log_file = fopen(fname, "a");
 	Values::iterator it = sinr.ValuesBegin();
 	while(it!=sinr.ValuesEnd())
 	{
 		//fprintf(log_file, "%d\t%d\t%f\t \n", slot_count/2, rb_count, 10*log10(*it));
-		fprintf(log_file, "%llu\t%llu\t%d\t%f\t \n",slot_count/8+1, slot_count%8+1, rb_count, 10*log10(*it));
+		fprintf(log_file, "%lu\t%lu\t%d\t%f\t \n",slot_count/8+1, slot_count%8+1, rb_count, 10*log10(*it));
 		rb_count++;
 		it++;
 	}
@@ -188,7 +188,7 @@ MmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
 	sprintf (fname,"UE_%llu_Tb_Size.txt", (long long unsigned) imsi);
 	log_file = fopen (fname, "a");
 
-	fprintf (log_file, "%llu \t %llu\n", Now().GetMicroSeconds (), tbSize);
+	fprintf (log_file, "%lu \t %lu\n", Now().GetMicroSeconds (), tbSize);
 	fprintf (log_file, "%lld \t %llu \n",(long long int) Now().GetMicroSeconds (), (long long unsigned) tbSize);
 	fflush(log_file);
 	fclose(log_file);

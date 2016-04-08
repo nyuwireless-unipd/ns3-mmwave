@@ -132,12 +132,12 @@ MmWavePhy::DoDispose ()
 }
 
 void
-MmWavePhy::SetDevice (Ptr<MmWaveNetDevice> d)
+MmWavePhy::SetDevice (Ptr<NetDevice> d)
 {
 	m_netDevice = d;
 }
 
-Ptr<MmWaveNetDevice>
+Ptr<NetDevice>
 MmWavePhy::GetDevice ()
 {
 	return m_netDevice;

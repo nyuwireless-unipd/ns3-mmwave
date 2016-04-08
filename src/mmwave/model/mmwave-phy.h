@@ -41,9 +41,9 @@ public:
 
 	static TypeId GetTypeId (void);
 
-	void SetDevice (Ptr<MmWaveNetDevice> d);
+	void SetDevice (Ptr<NetDevice> d);
 
-	Ptr<MmWaveNetDevice> GetDevice ();
+	Ptr<NetDevice> GetDevice ();
 
 	void SetChannel (Ptr<SpectrumChannel> c);
 
@@ -92,7 +92,7 @@ public:
 	void SetUlSfAllocInfo (SfAllocInfo sfAllocInfo);
 
 protected:
-	Ptr<MmWaveNetDevice> m_netDevice;
+	Ptr<NetDevice> m_netDevice;
 
 	Ptr<MmWaveSpectrumPhy> m_spectrumPhy;
 	Ptr<MmWaveSpectrumPhy> m_downlinkSpectrumPhy;

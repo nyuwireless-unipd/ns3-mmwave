@@ -22,10 +22,10 @@ uint8_t MmWaveUeMac::g_raPreambleId = 0;
 ///////////////////////////////////////////////////////////
 
 
-class UeMemberLteUeCmacSapProvider : public LteUeCmacSapProvider
+class UeMemberMmWaveUeCmacSapProvider : public LteUeCmacSapProvider
 {
 public:
-  UeMemberLteUeCmacSapProvider (MmWaveUeMac* mac);
+  UeMemberMmWaveUeCmacSapProvider (MmWaveUeMac* mac);
 
   // inherited from LteUeCmacSapProvider
   virtual void ConfigureRach (RachConfig rc);
@@ -40,53 +40,53 @@ private:
 };
 
 
-UeMemberLteUeCmacSapProvider::UeMemberLteUeCmacSapProvider (MmWaveUeMac* mac)
+UeMemberMmWaveUeCmacSapProvider::UeMemberMmWaveUeCmacSapProvider (MmWaveUeMac* mac)
   : m_mac (mac)
 {
 }
 
 void
-UeMemberLteUeCmacSapProvider::ConfigureRach (RachConfig rc)
+UeMemberMmWaveUeCmacSapProvider::ConfigureRach (RachConfig rc)
 {
   m_mac->DoConfigureRach (rc);
 }
 
   void
-UeMemberLteUeCmacSapProvider::StartContentionBasedRandomAccessProcedure ()
+UeMemberMmWaveUeCmacSapProvider::StartContentionBasedRandomAccessProcedure ()
 {
   m_mac->DoStartContentionBasedRandomAccessProcedure ();
 }
 
  void
-UeMemberLteUeCmacSapProvider::StartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t preambleId, uint8_t prachMask)
+UeMemberMmWaveUeCmacSapProvider::StartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t preambleId, uint8_t prachMask)
 {
   m_mac->DoStartNonContentionBasedRandomAccessProcedure (rnti, preambleId, prachMask);
 }
 
 
 void
-UeMemberLteUeCmacSapProvider::AddLc (uint8_t lcId, LogicalChannelConfig lcConfig, LteMacSapUser* msu)
+UeMemberMmWaveUeCmacSapProvider::AddLc (uint8_t lcId, LogicalChannelConfig lcConfig, LteMacSapUser* msu)
 {
   m_mac->AddLc (lcId, lcConfig, msu);
 }
 
 void
-UeMemberLteUeCmacSapProvider::RemoveLc (uint8_t lcid)
+UeMemberMmWaveUeCmacSapProvider::RemoveLc (uint8_t lcid)
 {
   m_mac->DoRemoveLc (lcid);
 }
 
 void
-UeMemberLteUeCmacSapProvider::Reset ()
+UeMemberMmWaveUeCmacSapProvider::Reset ()
 {
   m_mac->DoReset ();
 }
 
 
-class UeMemberLteMacSapProvider : public LteMacSapProvider
+class UeMemberMmWaveMacSapProvider : public LteMacSapProvider
 {
 public:
-  UeMemberLteMacSapProvider (MmWaveUeMac* mac);
+  UeMemberMmWaveMacSapProvider (MmWaveUeMac* mac);
 
   // inherited from LteMacSapProvider
   virtual void TransmitPdu (TransmitPduParameters params);
@@ -97,20 +97,20 @@ private:
 };
 
 
-UeMemberLteMacSapProvider::UeMemberLteMacSapProvider (MmWaveUeMac* mac)
+UeMemberMmWaveMacSapProvider::UeMemberMmWaveMacSapProvider (MmWaveUeMac* mac)
   : m_mac (mac)
 {
 }
 
 void
-UeMemberLteMacSapProvider::TransmitPdu (TransmitPduParameters params)
+UeMemberMmWaveMacSapProvider::TransmitPdu (TransmitPduParameters params)
 {
   m_mac->DoTransmitPdu (params);
 }
 
 
 void
-UeMemberLteMacSapProvider::ReportBufferStatus (ReportBufferStatusParameters params)
+UeMemberMmWaveMacSapProvider::ReportBufferStatus (ReportBufferStatusParameters params)
 {
   m_mac->DoReportBufferStatus (params);
 }
@@ -185,8 +185,8 @@ MmWaveUeMac::MmWaveUeMac (void)
   m_waitingForRaResponse (true)
 {
 	NS_LOG_FUNCTION (this);
-	m_cmacSapProvider = new UeMemberLteUeCmacSapProvider (this);
-	m_macSapProvider = new UeMemberLteMacSapProvider (this);
+	m_cmacSapProvider = new UeMemberMmWaveUeCmacSapProvider (this);
+	m_macSapProvider = new UeMemberMmWaveMacSapProvider (this);
 	m_phySapUser = new MacUeMemberPhySapUser (this);
 	m_raPreambleUniformVariable = CreateObject<UniformRandomVariable> ();
 }

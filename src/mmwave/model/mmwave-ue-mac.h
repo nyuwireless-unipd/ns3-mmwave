@@ -20,8 +20,8 @@ class MmWaveControlMessage;
 
 class MmWaveUeMac : public Object
 {
-	friend class UeMemberLteUeCmacSapProvider;
-	friend class UeMemberLteMacSapProvider;
+	friend class UeMemberMmWaveUeCmacSapProvider;
+	friend class UeMemberMmWaveMacSapProvider;
 	friend class MacUeMemberPhySapUser;
 
 public:

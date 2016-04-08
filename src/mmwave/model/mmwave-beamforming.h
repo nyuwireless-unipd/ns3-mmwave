@@ -23,6 +23,7 @@
 #include <ns3/spectrum-propagation-loss-model.h>
 #include <ns3/mmwave-phy-mac-common.h>
 #include <ns3/random-variable-stream.h>
+#include <ns3/antenna-array-model.h>
 
 
 
@@ -36,6 +37,7 @@ typedef std::vector<complexVector_t> complex2DVector_t;
 typedef std::vector<complex2DVector_t> complex3DVector_t;
 typedef std::vector<uint32_t> allocatedUeImsiVector_t;
 typedef std::pair<Ptr<NetDevice>, Ptr<NetDevice> > key_t;
+typedef std::pair<Ptr<AntennaArrayModel>, Ptr<AntennaArrayModel> > antennaPair;
 
 /**
 * \store Spatial Signature and small scale fading matrices
@@ -160,6 +162,11 @@ private:
 	*         power in the same units used for the txPsd parameter.
 	*/
 	Ptr<SpectrumValue> GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<BeamformingParams> bfParams, double speed) const;
+
+	/**
+	 * \brief Get the pair of Ptr<AntennaArrayModel> of UE and eNB, given the NetDevices
+	 */
+	antennaPair GetUeEnbAntennaPair (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice) const;
 
 	/**
 	* \a map to store channel matrix

@@ -249,7 +249,7 @@ MmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
 				TbStats_t tbStats;
 				while (mcs <= 28)
 				{
-					HarqProcessInfoList_t harqInfoList;
+					MmWaveHarqProcessInfoList_t harqInfoList;
 					tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs, harqInfoList);
 					if (tbStats.tbler > 0.1)
 					{
@@ -347,7 +347,7 @@ MmWaveAmc::CreateCqiFeedbacksTdma (const SpectrumValue& sinr, uint8_t numSym)
 			chunkMap.push_back (chunkId++);
 			while (mcs <= 28)
 			{
-				HarqProcessInfoList_t harqInfoList;
+				MmWaveHarqProcessInfoList_t harqInfoList;
 				tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, chunkMap, GetTbSizeFromMcsSymbols (mcs, numSym) / 8, mcs, harqInfoList);
 				if (tbStats.tbler > 0.1)
 				{
@@ -457,7 +457,7 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 		TbStats_t tbStats;
 		while (mcs <= 28)
 		{
-			HarqProcessInfoList_t harqInfoList;
+			MmWaveHarqProcessInfoList_t harqInfoList;
 			tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, chunkMap, tbSize, mcs, harqInfoList);
 			if (tbStats.tbler > 0.1)
 			{
@@ -469,7 +469,7 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 		{
 			mcs--;
 		}
-//		HarqProcessInfoList_t harqInfoList;
+//		MmWaveHarqProcessInfoList_t harqInfoList;
 //		TbStats_t tbStatsFinal = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, chunkMap, tbSize, mcs, harqInfoList);
 //		NS_LOG_UNCOND ("TBLER " << tbStatsFinal.tbler << " for chunks " << chunkMap.size () << " numSym "
 //		               << (unsigned)numSym << " tbSize " << tbSize << " mcs " << (unsigned)mcs << " sinr " << sinrAvg);

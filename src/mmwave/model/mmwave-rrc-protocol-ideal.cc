@@ -30,6 +30,7 @@
 #include "ns3/lte-ue-rrc.h"
 #include "ns3/lte-enb-rrc.h"
 #include "mmwave-ue-net-device.h"
+#include "mc-ue-net-device.h"
 #include "mmwave-enb-net-device.h"
 
 NS_LOG_COMPONENT_DEFINE ("mmWaveRrcProtocolIdeal");
@@ -300,23 +301,42 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation
       Ptr<Node> node = *i;
       int nDevs = node->GetNDevices ();
       for (int j = 0; j < nDevs; ++j)
+      {
+        Ptr<MmWaveUeNetDevice> mmWaveUeDev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+        if (mmWaveUeDev != 0)
         {
-          Ptr<MmWaveUeNetDevice> mmWaveUeDev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
-          if (mmWaveUeDev != 0)
-            {
-              Ptr<LteUeRrc> ueRrc = mmWaveUeDev->GetRrc ();
-              NS_LOG_LOGIC ("considering UE IMSI " << mmWaveUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-              if (ueRrc->GetCellId () == m_cellId)
-                {
-                  NS_LOG_LOGIC ("sending SI to IMSI " << mmWaveUeDev->GetImsi ());
-                  ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-                  Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
-                                       &LteUeRrcSapProvider::RecvSystemInformation,
-                                       ueRrc->GetLteUeRrcSapProvider (), 
-                                       msg);          
-                }             
-            }
+          ueRrc = mmWaveUeDev->GetRrc ();
+          NS_LOG_LOGIC ("considering UE IMSI " << mmWaveUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+          if (ueRrc->GetCellId () == m_cellId)
+          {
+            NS_LOG_LOGIC ("sending SI to IMSI " << mmWaveUeDev->GetImsi ());
+            ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+            Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
+                                 &LteUeRrcSapProvider::RecvSystemInformation,
+                                 ueRrc->GetLteUeRrcSapProvider (), 
+                                 msg);          
+          }             
         }
+        else
+        {
+          // it may be a McUeNetDevice
+          Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
+          if (mcUeDev != 0)
+          {
+            ueRrc = mcUeDev->GetMmWaveRrc ();
+            NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetMmWaveImsi () << " that has cellId " << ueRrc->GetCellId ());
+            if (ueRrc->GetCellId () == m_cellId)
+            {
+              NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetMmWaveImsi ());
+              ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+              Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
+                                   &LteUeRrcSapProvider::RecvSystemInformation,
+                                   ueRrc->GetLteUeRrcSapProvider (), 
+                                   msg);          
+            }             
+          }
+        }
+      }
     } 
 }
 

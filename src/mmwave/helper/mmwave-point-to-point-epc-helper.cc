@@ -36,6 +36,7 @@
 #include <ns3/lte-enb-rrc.h>
 #include <ns3/epc-x2.h>
 #include <ns3/mmwave-enb-net-device.h>
+#include <ns3/lte-enb-net-device.h>
 #include <ns3/mmwave-ue-net-device.h>
 #include <ns3/epc-mme.h>
 #include <ns3/epc-ue-nas.h>
@@ -265,20 +266,50 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
 
   // Add X2 interface to both eNBs' X2 entities
   Ptr<EpcX2> enb1X2 = enb1->GetObject<EpcX2> ();
-  Ptr<MmWaveEnbNetDevice> enb1LteDev = enb1->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
-  uint16_t enb1CellId = enb1LteDev->GetCellId ();
-  NS_LOG_LOGIC ("MmWaveEnbNetDevice #1 = " << enb1LteDev << " - CellId = " << enb1CellId);
+  Ptr<MmWaveEnbNetDevice> enb1MmWaveDev = enb1->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
+  Ptr<LteEnbNetDevice> enb1LteDev = enb1->GetDevice (0)->GetObject<LteEnbNetDevice> ();
+  // we may have a LTE or a MmWave eNB
+  uint16_t enb1CellId;
+  if(enb1MmWaveDev != 0)
+  {
+    enb1CellId = enb1MmWaveDev->GetCellId (); 
+    NS_LOG_INFO ("MmWaveEnbNetDevice #1 = " << enb1MmWaveDev << " - CellId = " << enb1CellId);
+  }
+  else if (enb1LteDev != 0)
+  {
+    enb1CellId = enb1LteDev->GetCellId ();  
+    NS_LOG_INFO ("LteEnbNetDevice #1 = " << enb1LteDev << " - CellId = " << enb1CellId);
+  }
 
   Ptr<EpcX2> enb2X2 = enb2->GetObject<EpcX2> ();
-  Ptr<MmWaveEnbNetDevice> enb2LteDev = enb2->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
-  uint16_t enb2CellId = enb2LteDev->GetCellId ();
-  NS_LOG_LOGIC ("MmWaveEnbNetDevice #2 = " << enb2LteDev << " - CellId = " << enb2CellId);
+  Ptr<MmWaveEnbNetDevice> enb2MmWaveDev = enb2->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
+  Ptr<LteEnbNetDevice> enb2LteDev = enb2->GetDevice (0)->GetObject<LteEnbNetDevice> ();
+  // we may have a LTE or a MmWave eNB
+  uint16_t enb2CellId;
+  if(enb2MmWaveDev != 0)
+  {
+    enb2CellId = enb2MmWaveDev->GetCellId (); 
+    NS_LOG_INFO ("MmWaveEnbNetDevice #2 = " << enb2MmWaveDev << " - CellId = " << enb2CellId);
+    enb2MmWaveDev->GetRrc ()->AddX2Neighbour (enb1CellId);
+  }
+  else if (enb2LteDev != 0)
+  {
+    enb2CellId = enb2LteDev->GetCellId ();  
+    NS_LOG_INFO ("LteEnbNetDevice #2 = " << enb2LteDev << " - CellId = " << enb2CellId);
+    enb2LteDev->GetRrc ()->AddX2Neighbour (enb1CellId);
+  }
 
   enb1X2->AddX2Interface (enb1CellId, enb1X2Address, enb2CellId, enb2X2Address);
   enb2X2->AddX2Interface (enb2CellId, enb2X2Address, enb1CellId, enb1X2Address);
 
-  enb1LteDev->GetRrc ()->AddX2Neighbour (enb2LteDev->GetCellId ());
-  enb2LteDev->GetRrc ()->AddX2Neighbour (enb1LteDev->GetCellId ());
+  if(enb1MmWaveDev != 0) 
+  {
+    enb1MmWaveDev->GetRrc ()->AddX2Neighbour (enb2CellId);
+  } 
+  else if(enb1LteDev != 0) 
+  {
+    enb1LteDev->GetRrc ()->AddX2Neighbour (enb2CellId);
+  }  
 }
 
 
@@ -313,9 +344,31 @@ MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_
   uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
   Ptr<MmWaveUeNetDevice> ueLteDevice = ueDevice->GetObject<MmWaveUeNetDevice> ();
   if (ueLteDevice)
-    {
-      ueLteDevice->GetNas ()->ActivateEpsBearer (bearer, tft);
-    }
+  {
+    ueLteDevice->GetNas ()->ActivateEpsBearer (bearer, tft);
+  }
+  return bearerId;
+}
+
+uint8_t
+MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, Ptr<EpcUeNas> ueNas, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
+{
+  NS_LOG_FUNCTION (this << ueDevice << imsi);
+
+  // we now retrieve the IPv4 address of the UE and notify it to the SGW;
+  // we couldn't do it before since address assignment is triggered by
+  // the user simulation program, rather than done by the EPC   
+  Ptr<Node> ueNode = ueDevice->GetNode (); 
+  Ptr<Ipv4> ueIpv4 = ueNode->GetObject<Ipv4> ();
+  NS_ASSERT_MSG (ueIpv4 != 0, "UEs need to have IPv4 installed before EPS bearers can be activated");
+  int32_t interface =  ueIpv4->GetInterfaceForDevice (ueDevice);
+  NS_ASSERT (interface >= 0);
+  NS_ASSERT (ueIpv4->GetNAddresses (interface) == 1);
+  Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
+  NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
+  
+  uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
+  ueNas->ActivateEpsBearer (bearer, tft);
   return bearerId;
 }
 

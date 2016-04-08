@@ -87,6 +87,9 @@ public:
     
 	void GenerateDlCqiReport (const SpectrumValue& sinr);
 
+	void SetImsi (uint64_t imsi);
+	uint64_t GetImsi () const;
+
 	bool IsReceptionEnabled ();
 	void ResetReception ();
 
@@ -154,7 +157,8 @@ private:
 
 	bool m_receptionEnabled;
 	uint16_t m_rnti;
-
+	uint64_t m_imsi;
+	
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 
 	std::vector<int> m_channelChunks;

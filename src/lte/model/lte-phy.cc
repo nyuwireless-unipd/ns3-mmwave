@@ -86,14 +86,14 @@ LtePhy::DoDispose ()
 }
 
 void
-LtePhy::SetDevice (Ptr<LteNetDevice> d)
+LtePhy::SetDevice (Ptr<NetDevice> d)
 {
   NS_LOG_FUNCTION (this << d);
   m_netDevice = d;
 }
 
 
-Ptr<LteNetDevice>
+Ptr<NetDevice>
 LtePhy::GetDevice () const
 {
   NS_LOG_FUNCTION (this);

@@ -673,7 +673,7 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
               {
                 LtePdcpSapProvider* pdcpSapProvider = bearerInfo->m_pdcp->GetLtePdcpSapProvider ();
         pdcpSapProvider->TransmitPdcpSdu (params);
-      }
+              }
           }
       }
       break;

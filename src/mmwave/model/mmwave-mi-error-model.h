@@ -348,7 +348,7 @@ public:
    * \param mcs the MCS of the TB
    * \return the TB error rate and MI
    */
-  static TbStats_t GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, HarqProcessInfoList_t miHistory);
+  static TbStats_t GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, MmWaveHarqProcessInfoList_t miHistory);
 
 
 //private:

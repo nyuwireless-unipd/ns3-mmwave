@@ -19,6 +19,7 @@
 #include "mmwave-ue-net-device.h"
 #include "mmwave-spectrum-value-helper.h"
 #include "mmwave-radio-bearer-tag.h"
+#include "mc-ue-net-device.h"
 
 #include <ns3/node-list.h>
 #include <ns3/node.h>
@@ -413,7 +414,8 @@ MmWaveEnbPhy::StartSlot (void)
 		for (uint8_t i = 0; i < m_deviceMap.size (); i++)
 		{
 			Ptr<MmWaveUeNetDevice> ueDev = DynamicCast<MmWaveUeNetDevice> (m_deviceMap.at (i));
-			uint64_t ueRnti = ueDev->GetPhy ()->GetRnti ();
+			Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (m_deviceMap.at (i));
+			uint64_t ueRnti = (ueDev != 0) ? (ueDev->GetPhy ()->GetRnti ()) : (mcUeDev->GetMmWavePhy()->GetRnti ());
 			//NS_LOG_UNCOND ("Scheduled rnti:"<<rnti <<" ue rnti:"<< ueRnti);
 			if (currSlot.m_rnti == ueRnti)
 			{
@@ -519,8 +521,18 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 		//uint16_t rnti = ueRbIt->first;
 		for (uint8_t i = 0; i < m_deviceMap.size (); i++)
 		{
-			Ptr<MmWaveUeNetDevice> ueDev = DynamicCast<MmWaveUeNetDevice> (m_deviceMap.at (i));
-			uint64_t ueRnti = ueDev->GetPhy ()->GetRnti ();
+			uint64_t ueRnti = 0;
+			Ptr<MmWaveUeNetDevice> ueDev = m_deviceMap.at(i)->GetObject<MmWaveUeNetDevice> ();
+			if (ueDev != 0) 
+			{
+				ueRnti = ueDev->GetPhy ()-> GetRnti ();
+			}
+			else
+			{
+				Ptr<McUeNetDevice> ueMcDev = m_deviceMap.at(i)->GetObject<McUeNetDevice> ();
+				ueRnti = ueMcDev->GetMmWavePhy () -> GetRnti ();
+			} 
+
 			//NS_LOG_UNCOND ("Scheduled rnti:"<<rnti <<" ue rnti:"<< ueRnti);
 			if (slotInfo.m_dci.m_rnti == ueRnti)
 			{

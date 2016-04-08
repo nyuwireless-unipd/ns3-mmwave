@@ -18,7 +18,7 @@ namespace ns3 {
 
 
 
-struct HarqProcessInfoElement_t
+struct MmWaveHarqProcessInfoElement_t
 {
    double m_mi;
    uint8_t m_rv;
@@ -26,7 +26,7 @@ struct HarqProcessInfoElement_t
    uint32_t m_codeBits;
 };
 
-typedef std::vector <HarqProcessInfoElement_t> HarqProcessInfoList_t;
+typedef std::vector <MmWaveHarqProcessInfoElement_t> MmWaveHarqProcessInfoList_t;
 
 /**
  * \ingroup MmWave
@@ -58,7 +58,7 @@ public:
   * \param layer layer no. (for MIMO spatail multiplexing)
   * \return the vector of the info related to HARQ proc Id
   */
-  HarqProcessInfoList_t GetHarqProcessInfoDl (uint16_t rnti, uint8_t harqProcId);
+  MmWaveHarqProcessInfoList_t GetHarqProcessInfoDl (uint16_t rnti, uint8_t harqProcId);
 
   /**
   * \brief Return the cumulated MI of the HARQ procId in case of retranmissions
@@ -74,7 +74,7 @@ public:
   * \param harqProcId the HARQ proc id
   * \return the vector of the info related to HARQ proc Id
   */
-  HarqProcessInfoList_t GetHarqProcessInfoUl (uint16_t rnti, uint8_t harqProcId);
+  MmWaveHarqProcessInfoList_t GetHarqProcessInfoUl (uint16_t rnti, uint8_t harqProcId);
 
   /**
   * \brief Update the Info associated to the decodification of an HARQ process
@@ -115,8 +115,8 @@ public:
 private:
 
   uint32_t m_harqNum;
-  std::map <uint16_t, std::vector <HarqProcessInfoList_t> > m_miDlHarqProcessesInfoMap;
-  std::map <uint16_t, std::vector <HarqProcessInfoList_t> > m_miUlHarqProcessesInfoMap;
+  std::map <uint16_t, std::vector <MmWaveHarqProcessInfoList_t> > m_miDlHarqProcessesInfoMap;
+  std::map <uint16_t, std::vector <MmWaveHarqProcessInfoList_t> > m_miUlHarqProcessesInfoMap;
   
 
 };

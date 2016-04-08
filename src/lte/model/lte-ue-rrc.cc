@@ -33,6 +33,7 @@
 #include <ns3/lte-rlc-am.h>
 #include <ns3/lte-pdcp.h>
 #include <ns3/lte-radio-bearer-info.h>
+#include <ns3/lte-ue-mac.h>
 
 #include <cmath>
 

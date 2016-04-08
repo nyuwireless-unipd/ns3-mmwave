@@ -37,6 +37,7 @@ class VirtualNetDevice;
 class EpcSgwPgwApplication;
 class EpcX2;
 class EpcMme;
+class EpcUeNas;
 
 /**
  * \ingroup lte
@@ -108,6 +109,20 @@ public:
    * \param bearer struct describing the characteristics of the EPS bearer to be activated
    */
   virtual uint8_t ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer) = 0;
+
+  /** 
+   * Activate an EPS bearer, setting up the corresponding S1-U tunnel.
+   * 
+   * 
+   * 
+   * \param ueLteDevice the Ipv4-enabled device of the UE, normally
+   * connected via the LTE radio interface
+   * \param the NAS of that device
+   * \param imsi the unique identifier of the UE
+   * \param tft the Traffic Flow Template of the new bearer
+   * \param bearer struct describing the characteristics of the EPS bearer to be activated
+   */
+  virtual uint8_t ActivateEpsBearer (Ptr<NetDevice> ueLteDevice, Ptr<EpcUeNas> ueNas, uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer) = 0;
 
 
   /** 

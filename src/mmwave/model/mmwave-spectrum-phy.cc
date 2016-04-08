@@ -17,6 +17,7 @@
 #include "mmwave-phy-mac-common.h"
 #include <ns3/mmwave-enb-net-device.h>
 #include <ns3/mmwave-ue-net-device.h>
+#include <ns3/mc-ue-net-device.h>
 #include <ns3/mmwave-ue-phy.h>
 #include "mmwave-radio-bearer-tag.h"
 #include <stdio.h>
@@ -281,9 +282,15 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 		bool isAllocated = true;
 		Ptr<MmWaveUeNetDevice> ueRx = 0;
 		ueRx = DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+		Ptr<McUeNetDevice> rxMcUe = 0;
+		rxMcUe = DynamicCast<McUeNetDevice> (GetDevice ());
 
 		if ((ueRx!=0) && (ueRx->GetPhy ()->IsReceptionEnabled () == false))
-		{
+		{	// if the first cast is 0 (the device is MC) then this if will not be executed
+			isAllocated = false;
+		} 
+		else if ((rxMcUe != 0) && (rxMcUe->GetMmWavePhy()->IsReceptionEnabled() == false))
+		{	// this is executed if the device is MC and is transmitting
 			isAllocated = false;
 		}
 
@@ -335,6 +342,9 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
 				DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
 	Ptr<MmWaveUeNetDevice> ueRx =
 				DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+	Ptr<McUeNetDevice> rxMcUe =
+				DynamicCast<McUeNetDevice> (GetDevice ());
+
 	switch(m_state)
 	{
 	case TX:
@@ -435,7 +445,9 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
 				{
 					Ptr<MmWaveUeNetDevice> ueRx =
 									DynamicCast<MmWaveUeNetDevice> (GetDevice ());
-					if (ueRx)
+					Ptr<McUeNetDevice> rxMcUe =
+									DynamicCast<McUeNetDevice> (GetDevice ());				
+					if (ueRx || rxMcUe)
 					{
 						NS_FATAL_ERROR ("UE already receiving control data from serving cell");
 					}
@@ -488,6 +500,7 @@ MmWaveSpectrumPhy::EndRxData ()
 
 	Ptr<MmWaveEnbNetDevice> enbRx = DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
 	Ptr<MmWaveUeNetDevice> ueRx = DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+	Ptr<McUeNetDevice> rxMcUe = DynamicCast<McUeNetDevice> (GetDevice ());
 
 	NS_ASSERT(m_state = RX_DATA);
 	ExpectedTbMap_t::iterator itTb = m_expectedTbs.begin ();
@@ -495,7 +508,7 @@ MmWaveSpectrumPhy::EndRxData ()
 	{
 		if ((m_dataErrorModelEnabled)&&(m_rxPacketBurstList.size ()>0))
 		{
-			HarqProcessInfoList_t harqInfoList;
+			MmWaveHarqProcessInfoList_t harqInfoList;
 			uint8_t rv = 0;
 			if (itTb->second.ndi == 0)
 			{
@@ -585,6 +598,10 @@ MmWaveSpectrumPhy::EndRxData ()
 				else if (ueRx)
 				{
 					m_rxPacketTraceUe (traceParams);
+				}
+				else if (rxMcUe)
+				{
+					m_rxPacketTraceUe (traceParams); // TODO consider a different trace for MC UE
 				}
 
 				// send HARQ feedback (if not already done for this TB)
@@ -750,10 +767,10 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 		//NS_LOG_DEBUG ("ctrlMsgList.size () == " << txParams->ctrlMsgList.size ());
 
 		/* This section is used for trace */
-		Ptr<MmWaveEnbNetDevice> enbTx =
-					DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-		Ptr<MmWaveUeNetDevice> ueTx =
-					DynamicCast<MmWaveUeNetDevice> (GetDevice ());
+//		Ptr<MmWaveEnbNetDevice> enbTx =
+//					DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
+//		Ptr<MmWaveUeNetDevice> ueTx =
+//					DynamicCast<MmWaveUeNetDevice> (GetDevice ());
 //		if (enbTx)
 //		{
 //			EnbPhyPacketCountParameter traceParam;
