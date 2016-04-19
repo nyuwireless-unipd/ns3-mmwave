@@ -40,4 +40,20 @@ EpcX2SapUser::~EpcX2SapUser ()
 {
 }
 
+EpcX2PdcpUser::~EpcX2PdcpUser()
+{
+}
+
+EpcX2PdcpProvider::~EpcX2PdcpProvider()
+{
+}
+
+EpcX2RlcUser::~EpcX2RlcUser()
+{
+}
+
+EpcX2RlcProvider::~EpcX2RlcProvider()
+{
+}
+
 } // namespace ns3

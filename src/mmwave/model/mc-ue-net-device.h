@@ -103,16 +103,39 @@ public:
    */
     void Receive (Ptr<Packet> p);
 
+    // ---------------------------- Common ----------------------------
+    /**
+	* \brief Returns the CSG ID the UE is currently a member of.
+	* \return the Closed Subscriber Group identity
+	*/
+	uint32_t GetCsgId () const;
+
+	/**
+	* \brief Enlist the UE device as a member of a particular CSG.
+	* \param csgId the intended Closed Subscriber Group identity
+	*
+	* UE is associated with a single CSG identity, and thus becoming a member of
+	* this particular CSG. As a result, the UE may gain access to cells which
+	* belong to this CSG. This does not revoke the UE's access to non-CSG cells.
+	*
+	* \note This restriction only applies to initial cell selection and
+	*       EPC-enabled simulation.
+	*/
+	void SetCsgId (uint32_t csgId);
+
+
+	Ptr<EpcUeNas> GetNas (void) const;
+
+
+	uint64_t GetImsi () const;
+
+
     // -------------------------- LTE methods -------------------------
     Ptr<LteUeMac> GetLteMac (void) const;
 
 	Ptr<LteUeRrc> GetLteRrc () const;
 
 	Ptr<LteUePhy> GetLtePhy (void) const;
-
-	Ptr<EpcUeNas> GetLteNas (void) const;
-
-	uint64_t GetLteImsi () const;
 
 	/**
 	* \return the downlink carrier frequency (EARFCN)
@@ -131,25 +154,6 @@ public:
 	void SetLteDlEarfcn (uint16_t earfcn);
 
 	/**
-	* \brief Returns the CSG ID the UE is currently a member of.
-	* \return the Closed Subscriber Group identity
-	*/
-	uint32_t GetLteCsgId () const;
-
-	/**
-	* \brief Enlist the UE device as a member of a particular CSG.
-	* \param csgId the intended Closed Subscriber Group identity
-	*
-	* UE is associated with a single CSG identity, and thus becoming a member of
-	* this particular CSG. As a result, the UE may gain access to cells which
-	* belong to this CSG. This does not revoke the UE's access to non-CSG cells.
-	*
-	* \note This restriction only applies to initial cell selection and
-	*       EPC-enabled simulation.
-	*/
-	void SetLteCsgId (uint32_t csgId);
-
-	/**
 	* \brief Set the targer eNB where the UE is registered
 	* \param enb
 	*/
@@ -163,20 +167,13 @@ public:
 
 	// ---------------------------- From mmWave ------------------------
 
-	uint32_t GetMmWaveCsgId () const;
-	void SetMmWaveCsgId (uint32_t csgId);
-
 	Ptr<MmWaveUePhy> GetMmWavePhy (void) const;
 
 	Ptr<MmWaveUeMac> GetMmWaveMac (void) const;
 
-	uint64_t GetMmWaveImsi () const;
+	Ptr<LteUeRrc> GetMmWaveRrc () const;
 
 	uint16_t GetMmWaveEarfcn () const;
-
-	Ptr<EpcUeNas> GetMmWaveNas (void) const;
-
-	Ptr<LteUeRrc> GetMmWaveRrc () const;
 
 	void SetMmWaveEarfcn (uint16_t earfcn);
 
@@ -189,7 +186,6 @@ public:
     uint8_t GetAntennaNum () const;
 
 protected:
-
     NetDevice::ReceiveCallback m_rxCallback;
     virtual void DoInitialize (void);
 
@@ -201,11 +197,9 @@ private:
     bool m_linkUp;
     uint32_t m_ifIndex;
 
-
     // From LTE
     bool m_isConstructed;
 	TracedCallback<> m_linkChangeCallbacks;
-
 
 	/**
 	* \brief Propagate attributes and configuration to sub-modules.
@@ -220,35 +214,27 @@ private:
 
 	bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
 
+	// LTE
 
 	Ptr<LteEnbNetDevice> m_lteTargetEnb;
-
 	Ptr<LteUeMac> m_lteMac;
 	Ptr<LteUePhy> m_ltePhy;
 	Ptr<LteUeRrc> m_lteRrc;
-	Ptr<EpcUeNas> m_lteNas;
-
-	uint64_t m_lteImsi; // TODO once there is only one PDCP, consider using only one Imsi
-
 	uint16_t m_lteDlEarfcn; /**< LTE downlink carrier frequency */
 
-	uint32_t m_lteCsgId; // TODO a single csgid
-
-	// From mmWave
+	// MmWave
 	Ptr<MmWaveEnbNetDevice> m_mmWaveTargetEnb;
 	Ptr<MmWaveUePhy> m_mmWavePhy;
 	Ptr<MmWaveUeMac> m_mmWaveMac;
-
-	Ptr<LteUeRrc> m_mmWaveRrc;
-	Ptr<EpcUeNas> m_mmWaveNas;
-
-	uint64_t m_mmWaveImsi;
-
+	Ptr<LteUeRrc> m_mmWaveRrc; // TODO consider a lightweight RRC for the mmwave part
 	uint16_t m_mmWaveEarfcn; /**< MmWave carrier frequency */
-
-	uint32_t m_mmWaveCsgId;
 	uint8_t m_mmWaveAntennaNum;
 
+	// Common
+	Ptr<EpcUeNas> m_nas;
+	uint64_t m_imsi; 
+	uint32_t m_csgId; 
+	
 	// TODO this will be useless
 	Ptr<UniformRandomVariable> m_random;
 

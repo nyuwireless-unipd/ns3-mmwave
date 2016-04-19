@@ -916,6 +916,7 @@ MmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_FUNCTION (this);
+  NS_LOG_INFO("Add LC for lcid " << lcinfo.lcId);
 
   std::map <LteFlowId_t, LteMacSapUser* >::iterator it;
 

@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Manuel Requena <manuel.requena@cttc.es>
+ * Modified by Michele Polese <michele.polese@gmail.com> to add MC functionalities
  */
 
 #ifndef LTE_RLC_AM_H
@@ -24,6 +25,7 @@
 #include <ns3/event-id.h>
 #include <ns3/lte-rlc-sequence-number.h>
 #include <ns3/lte-rlc.h>
+#include <ns3/epc-x2-sap.h>
 
 #include <vector>
 #include <map>
@@ -45,6 +47,11 @@ public:
    * RLC SAP
    */
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p);
+
+  /**
+   * RLC EPC X2 SAP
+   */
+  virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params);
 
   /**
    * MAC SAP
@@ -77,6 +84,8 @@ private:
 //   void ReassembleSnLessThan (uint16_t seqNumber);
 // 
   void ReassembleAndDeliver (Ptr<Packet> packet);
+  void TriggerReceivePdcpPdu(Ptr<Packet> p);
+
 
   void DoReportBufferStatus ();
 

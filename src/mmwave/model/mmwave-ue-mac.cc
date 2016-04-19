@@ -7,6 +7,7 @@
 
 #include "mmwave-ue-mac.h"
 #include "mmwave-phy-sap.h"
+#include <ns3/lte-rlc.h>
 #include <ns3/log.h>
 
 namespace ns3
@@ -449,7 +450,9 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			{
 				rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
 				currPos = p->GetSize ();
-				it->second.macSapUser->ReceivePdu (rlcPdu);
+				LteRlcSpecificLteMacSapUser* user = (LteRlcSpecificLteMacSapUser*)it->second.macSapUser;
+				NS_LOG_INFO("LteMacSapUser " << user);
+				user->ReceivePdu (rlcPdu);
 			}
 		}
 	}

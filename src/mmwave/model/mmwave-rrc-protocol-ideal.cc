@@ -168,6 +168,17 @@ mmWaveUeRrcProtocolIdeal::DoSendMeasurementReport (LteRrcSap::MeasurementReport 
 }
 
 void 
+mmWaveUeRrcProtocolIdeal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti ,uint16_t mmWaveCellId)
+{
+   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
+                        &LteEnbRrcSapProvider::RecvNotifySecondaryCellConnected,
+                        m_enbRrcSapProvider,
+                        m_rnti, 
+                        mmWaveRnti,
+                        mmWaveCellId);
+}
+
+void 
 mmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
 {
   uint16_t cellId = m_rrc->GetCellId ();  
@@ -324,10 +335,10 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation
           if (mcUeDev != 0)
           {
             ueRrc = mcUeDev->GetMmWaveRrc ();
-            NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetMmWaveImsi () << " that has cellId " << ueRrc->GetCellId ());
+            NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
             if (ueRrc->GetCellId () == m_cellId)
             {
-              NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetMmWaveImsi ());
+              NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
               ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
               Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
                                    &LteUeRrcSapProvider::RecvSystemInformation,
@@ -392,6 +403,15 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::
 		       &LteUeRrcSapProvider::RecvRrcConnectionReject,
 		       GetUeRrcSapProvider (rnti), 
 		       msg);
+}
+
+void 
+MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId)
+{
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
+           &LteUeRrcSapProvider::RecvRrcConnectToMmWave,
+           GetUeRrcSapProvider (rnti), 
+           mmWaveCellId);
 }
 
 /*

@@ -23,6 +23,7 @@
 
 #include "ns3/lte-rlc-sequence-number.h"
 #include "ns3/lte-rlc.h"
+#include <ns3/epc-x2-sap.h>
 
 #include <ns3/event-id.h>
 #include <map>
@@ -40,10 +41,17 @@ public:
   static TypeId GetTypeId (void);
   virtual void DoDispose ();
 
+  uint32_t GetMaxBuff();
+
   /**
    * RLC SAP
    */
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p);
+
+  /**
+   * RLC EPC X2 SAP
+   */
+  virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params);
 
   /**
    * MAC SAP
@@ -62,6 +70,7 @@ private:
   void ReassembleSnInterval (SequenceNumber10 lowSeqNumber, SequenceNumber10 highSeqNumber);
 
   void ReassembleAndDeliver (Ptr<Packet> packet);
+  void TriggerReceivePdcpPdu(Ptr<Packet> p);
 
   void DoReportBufferStatus ();
 
@@ -107,7 +116,6 @@ private:
    * Expected Sequence Number
    */
   SequenceNumber10 m_expectedSeqNumber;
-
 };
 
 

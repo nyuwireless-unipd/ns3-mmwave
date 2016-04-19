@@ -27,6 +27,7 @@
 #include "ns3/traced-value.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/nstime.h"
+#include <ns3/epc-x2-sap.h>
 
 #include "ns3/object.h"
 
@@ -42,14 +43,35 @@ namespace ns3 {
 // class LteMacSapProvider;
 // class LteMacSapUser;
 
+class LteRlc;
+
+class LteRlcSpecificLteMacSapUser : public LteMacSapUser
+{
+
+public:
+  LteRlcSpecificLteMacSapUser (LteRlc* rlc);
+
+  // Interface implemented from LteMacSapUser
+  virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
+  virtual void NotifyHarqDeliveryFailure ();
+  virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
+  virtual void ReceivePdu (Ptr<Packet> p);
+
+private:
+  LteRlcSpecificLteMacSapUser ();
+  LteRlc* m_rlc;
+};
+
+
 /**
  * This abstract base class defines the API to interact with the Radio Link Control
  * (LTE_RLC) in LTE, see 3GPP TS 36.322
  *
  */
-class LteRlc : public Object // SimpleRefCount<LteRlc>
+class LteRlc : public Object 
 {
   friend class LteRlcSpecificLteMacSapUser;
+  friend class EpcX2RlcSpecificUser<LteRlc>;
   friend class LteRlcSpecificLteRlcSapProvider<LteRlc>;
 public:
   LteRlc ();
@@ -84,6 +106,22 @@ public:
    * \return the RLC SAP Provider interface offered to the PDCP by this LTE_RLC
    */
   LteRlcSapProvider* GetLteRlcSapProvider ();
+
+  /**
+   * Set the param needed for X2 tunneling
+   * \param the UeDataParams defined in RRC
+   */
+  void SetUeDataParams(EpcX2Sap::UeDataParams params);
+
+  /**
+   * \param s the EpcX2Rlc Provider to the Epc X2 interface
+   */
+  void SetEpcX2RlcProvider (EpcX2RlcProvider * s);
+
+  /**
+   * \return the EpcX2Rlc User, given to X2 to access Rlc SendMcPdcpPdu method
+   */
+  EpcX2RlcUser* GetEpcX2RlcUser ();
 
   /**
    *
@@ -139,6 +177,8 @@ protected:
   virtual void DoNotifyHarqDeliveryFailure (uint8_t harqId);
   virtual void DoReceivePdu (Ptr<Packet> p) = 0;
 
+  virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params) = 0;
+
   LteMacSapUser* m_macSapUser;
   LteMacSapProvider* m_macSapProvider;
 
@@ -153,6 +193,13 @@ protected:
    * Used to inform of a PDU reception from the MAC SAP user
    */
   TracedCallback<uint16_t, uint8_t, uint32_t, uint64_t> m_rxPdu;
+
+  // MC functionalities
+  // UeDataParams needed to forward data to MmWave
+  EpcX2Sap::UeDataParams m_ueDataParams;
+  bool isMc;
+  EpcX2RlcProvider* m_epcX2RlcProvider;
+  EpcX2RlcUser* m_epcX2RlcUser;
 
 };
 
@@ -179,6 +226,7 @@ public:
   virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
   virtual void DoNotifyHarqDeliveryFailure ();
   virtual void DoReceivePdu (Ptr<Packet> p);
+  virtual void DoSendMcPdcpSdu (EpcX2Sap::UeDataParams params);
 
 
 

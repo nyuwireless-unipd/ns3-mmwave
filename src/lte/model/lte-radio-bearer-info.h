@@ -26,6 +26,7 @@
 #include <ns3/eps-bearer.h>
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/ipv4-address.h>
+#include <ns3/epc-x2-sap.h>
 
 namespace ns3 {
 
@@ -82,6 +83,8 @@ public:
   LteRrcSap::LogicalChannelConfig m_logicalChannelConfig;
   uint32_t m_gtpTeid; /**< S1-bearer GTP tunnel endpoint identifier, see 36.423 9.2.1 */
   Ipv4Address m_transportLayerAddress; /**< IP Address of the SGW, see 36.423 9.2.1 */
+  EpcX2Sap::RlcSetupRequest m_rlcSetupRequest; // complete bearer with related info, for MC functionalities
+  bool m_isMc; // true if a bearer is split
 };
 
 

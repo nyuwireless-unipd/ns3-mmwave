@@ -91,6 +91,13 @@ public:
   LteAsSapUser* GetAsSapUser ();
 
   /**
+   * Set the SAP provider to interact with the MmWave light RRC entity (if set)
+   *
+   * \param s the AS SAP provider
+   */
+  void SetMmWaveAsSapProvider (LteAsSapProvider* s);
+
+  /**
    * set the callback used to forward data packets up the stack
    *
    * \param cb the callback
@@ -122,6 +129,17 @@ public:
    * RRC to be camped on a specific eNB.
    */
   void Connect (uint16_t cellId, uint16_t dlEarfcn);
+
+  /**
+   * \brief Causes NAS to tell AS to camp to a specific cell and go to ACTIVE
+   *        state. It also specify which is the cellId for the MmWave BS to which 
+   *        the UE will connect later on
+   * \param cellId the id of the eNB to camp on
+   * \param dlEarfcn the DL frequency of the eNB
+   * \param mmWaveCellId the id of the MmWave cell
+   *
+   */
+  void ConnectMc (uint16_t cellId, uint16_t dlEarfcn, uint16_t mmWaveCellId);
  
   /** 
    * instruct the NAS to disconnect
@@ -180,7 +198,8 @@ public:
 private:
 
   // LTE AS SAP methods
-  void DoNotifyConnectionSuccessful ();
+  void DoNotifyConnectionSuccessful (uint16_t rnti);
+  void DoNotifyConnectToMmWave (uint16_t mmWaveCellId);
   void DoNotifyConnectionFailed ();
   void DoNotifyConnectionReleased ();
   void DoRecvData (Ptr<Packet> packet);
@@ -214,6 +233,7 @@ private:
 
   LteAsSapProvider* m_asSapProvider;
   LteAsSapUser* m_asSapUser;
+  LteAsSapProvider* m_mmWaveAsSapProvider;
 
   uint8_t m_bidCounter;
   EpcTftClassifier m_tftClassifier;
@@ -227,6 +247,9 @@ private:
   };
 
   std::list<BearerToBeActivated> m_bearersToBeActivatedList;
+
+  uint16_t m_mmWaveCellId;
+  uint16_t m_dlEarfcn; // TODO maybe useless
 
 };
 

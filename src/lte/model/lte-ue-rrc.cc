@@ -32,6 +32,7 @@
 #include <ns3/lte-rlc-um.h>
 #include <ns3/lte-rlc-am.h>
 #include <ns3/lte-pdcp.h>
+#include <ns3/mc-ue-pdcp.h>
 #include <ns3/lte-radio-bearer-info.h>
 #include <ns3/lte-ue-mac.h>
 
@@ -282,6 +283,13 @@ LteUeRrc::SetLteUeCmacSapProvider (LteUeCmacSapProvider * s)
   m_cmacSapProvider = s;
 }
 
+void
+LteUeRrc::SetMmWaveUeCmacSapProvider (LteUeCmacSapProvider * s)
+{
+  NS_LOG_FUNCTION (this << s);
+  m_mmWaveCmacSapProvider = s;
+}
+
 LteUeCmacSapUser*
 LteUeRrc::GetLteUeCmacSapUser ()
 {
@@ -308,6 +316,13 @@ LteUeRrc::SetLteMacSapProvider (LteMacSapProvider * s)
 {
   NS_LOG_FUNCTION (this << s);
   m_macSapProvider = s;
+}
+
+void
+LteUeRrc::SetMmWaveMacSapProvider (LteMacSapProvider * s)
+{
+  NS_LOG_FUNCTION (this << s);
+  m_mmWaveMacSapProvider = s;
 }
 
 void
@@ -340,6 +355,18 @@ LteUeRrc::GetRnti () const
 {
   NS_LOG_FUNCTION (this);
   return m_rnti;
+}
+
+void
+LteUeRrc::SetMmWaveCellId (uint16_t mmWaveCellId)
+{
+  m_mmWaveCellId = mmWaveCellId;
+}
+
+uint16_t
+LteUeRrc::GetMmWaveCellId () const
+{
+  return m_mmWaveCellId;
 }
 
 uint16_t
@@ -483,6 +510,14 @@ LteUeRrc::DoDisconnect ()
       NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
       break;
     }
+}
+
+void
+LteUeRrc::DoNotifySecondaryCellConnected(uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+{
+  m_mmWaveRnti = mmWaveRnti;
+  NS_LOG_FUNCTION(this);
+  m_rrcSapUser->SendNotifySecondaryCellConnected(mmWaveRnti, mmWaveCellId);
 }
 
 void
@@ -860,8 +895,10 @@ LteUeRrc::DoRecvRrcConnectionSetup (LteRrcSap::RrcConnectionSetup msg)
         SwitchToState (CONNECTED_NORMALLY);
         LteRrcSap::RrcConnectionSetupCompleted msg2;
         msg2.rrcTransactionIdentifier = msg.rrcTransactionIdentifier;
+        msg2.mmWaveCellId = m_mmWaveCellId; // TODO this will be removed and works only for ideal rrc protocol
+        NS_LOG_ERROR("MmWaveCellId " << m_mmWaveCellId);
         m_rrcSapUser->SendRrcConnectionSetupCompleted (msg2);
-        m_asSapUser->NotifyConnectionSuccessful ();
+        m_asSapUser->NotifyConnectionSuccessful (m_rnti);
         m_connectionEstablishedTrace (m_imsi, m_cellId, m_rnti);
       }
       break;
@@ -870,6 +907,12 @@ LteUeRrc::DoRecvRrcConnectionSetup (LteRrcSap::RrcConnectionSetup msg)
       NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
       break;
     }
+}
+
+void 
+LteUeRrc::DoRecvRrcConnectToMmWave (uint16_t mmWaveCellId)
+{
+  m_asSapUser->NotifyConnectToMmWave(mmWaveCellId);
 }
 
 void
@@ -1213,7 +1256,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
       if (drbMapIt == m_drbMap.end ())
         {
           NS_LOG_INFO ("New Data Radio Bearer");
-        
+
           TypeId rlcTypeId;
           if (m_useRlcSm)
             {
@@ -1254,7 +1297,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           // if we are using RLC/SM we don't care of anything above RLC
           if (rlcTypeId != LteRlcSm::GetTypeId ())
             {
-              Ptr<LtePdcp> pdcp = CreateObject<LtePdcp> ();
+              Ptr<McUePdcp> pdcp = CreateObject<McUePdcp> (); 
               pdcp->SetRnti (m_rnti);
               pdcp->SetLcId (dtamIt->logicalChannelIdentity);
               pdcp->SetLtePdcpSapUser (m_drbPdcpSapUser);
@@ -1283,7 +1326,75 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
         {
           NS_LOG_INFO ("request to modify existing DRBID");
           Ptr<LteDataRadioBearerInfo> drbInfo = drbMapIt->second;
-          /// \todo currently not implemented. Would need to modify drbInfo, and then propagate changes to the MAC
+          NS_LOG_INFO ("Is MC " << dtamIt->is_mc);
+          if(dtamIt->is_mc == true) // we need to setup the RLC for MmWave communications
+          {
+            Ptr<McUePdcp> pdcp = DynamicCast<McUePdcp> (drbInfo->m_pdcp);
+            if(pdcp !=0)
+            {
+              // create Rlc
+              TypeId rlcTypeId;
+              if (m_useRlcSm)
+                {
+                  rlcTypeId = LteRlcSm::GetTypeId ();
+                  NS_LOG_INFO("SM");
+                }
+              else
+                {
+                  switch (dtamIt->rlcConfig.choice)
+                    {
+                    case LteRrcSap::RlcConfig::AM: 
+                      rlcTypeId = LteRlcAm::GetTypeId ();
+                      NS_LOG_INFO("AM");
+                      break;
+              
+                    case LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL: 
+                      rlcTypeId = LteRlcUm::GetTypeId ();
+                      NS_LOG_INFO("UM");
+                      break;
+              
+                    default:
+                      NS_FATAL_ERROR ("unsupported RLC configuration");
+                      break;                
+                    }
+                }
+      
+              ObjectFactory rlcObjectFactory;
+              rlcObjectFactory.SetTypeId (rlcTypeId);
+              Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
+              rlc->SetLteMacSapProvider (m_mmWaveMacSapProvider); 
+              rlc->SetRnti (m_mmWaveRnti);
+              rlc->SetLcId (dtamIt->logicalChannelIdentity);
+
+              struct LteUeCmacSapProvider::LogicalChannelConfig lcConfig;
+              lcConfig.priority = dtamIt->logicalChannelConfig.priority;
+              lcConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
+              lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
+              lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;      
+
+
+              m_mmWaveCmacSapProvider->AddLc (dtamIt->logicalChannelIdentity, 
+                                      lcConfig,
+                                      rlc->GetLteMacSapUser ());
+              if (rlcTypeId != LteRlcSm::GetTypeId ())
+              {
+                pdcp->SetMmWaveRnti (m_mmWaveRnti);
+                pdcp->SetMmWaveRlcSapProvider (rlc->GetLteRlcSapProvider ());
+                rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
+              } 
+              rlc->Initialize();
+              m_rlcMap[dtamIt->drbIdentity] = rlc;
+            }
+            else
+            {
+              NS_FATAL_ERROR("MC setup on a non MC-capable bearer");
+            }
+
+          }
+          else
+          {
+            /// \todo currently not implemented. Would need to modify drbInfo, and then propagate changes to the MAC            
+          }
         }
     }
   

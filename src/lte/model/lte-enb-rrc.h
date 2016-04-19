@@ -40,6 +40,7 @@
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/lte-anr-sap.h>
 #include <ns3/lte-ffr-rrc-sap.h>
+#include <ns3/lte-rlc.h>
 
 #include <map>
 #include <set>
@@ -82,6 +83,7 @@ public:
     HANDOVER_JOINING,
     HANDOVER_PATH_SWITCH,
     HANDOVER_LEAVING,
+    MC_CONNECTION_RECONFIGURATION,
     NUM_STATES
   };
 
@@ -237,6 +239,16 @@ public:
    */
   void RecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params); 
 
+  /**
+   * Setup a new RLC entity and the X2 related connection
+   */
+  void RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params);
+
+  /**
+   * Ack the setup of the RLC remote entity, start the re-configuration on the UE
+   */
+  void RecvRlcSetupCompleted (uint8_t drbid);
+
 
   // METHODS FORWARDED FROM ENB RRC SAP ///////////////////////////////////////
 
@@ -254,6 +266,8 @@ public:
   void RecvRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionReestablishmentComplete msg);
   /// Part of the RRC protocol. Implement the LteEnbRrcSapProvider::RecvMeasurementReport interface.
   void RecvMeasurementReport (LteRrcSap::MeasurementReport msg);
+  ///
+  void RecvNotifySecondaryCellConnected(uint16_t mmWaveRnti, uint16_t mmWaveCellId);
 
 
   // METHODS FORWARDED FROM ENB CMAC SAP //////////////////////////////////////
@@ -419,6 +433,25 @@ private:
    */
   std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
 
+  struct RlcBearerInfo
+  {
+    uint16_t    sourceCellId;
+    uint16_t    targetCellId;
+    uint32_t    gtpTeid;
+    uint16_t    mmWaveRnti;
+    uint16_t    lteRnti;
+    uint8_t     drbid;
+    uint8_t     logicalChannelIdentity;
+    LteRrcSap::RlcConfig rlcConfig;
+    LteRrcSap::LogicalChannelConfig logicalChannelConfig;
+    Ptr<LteRlc> m_rlc;
+  };
+  
+  /**
+   * Map the drb into a RLC (used for remote independent RLC in an MC setup)
+   */
+  std::map <uint8_t, RlcBearerInfo > m_rlcMap;
+
   /**
    * The `Srb0` attribute. SignalingRadioBearerInfo for SRB0.
    */
@@ -462,6 +495,9 @@ private:
   uint16_t m_targetCellId;
   std::list<uint8_t> m_drbsToBeStarted;
   bool m_needPhyMacConfiguration;
+
+  uint16_t m_mmWaveCellId;
+  bool m_isMc;
 
   /**
    * Time limit before a _connection request timeout_ occurs. Set after a new
@@ -550,6 +586,19 @@ public:
    */
   EpcX2SapUser* GetEpcX2SapUser ();
 
+  /**
+   * Set the X2 PDCP Provider this RRC should pass to PDCP layers
+   * \param s the X2 PDCP Provider to be stored in this RRC entity
+   */
+  void SetEpcX2PdcpProvider (EpcX2PdcpProvider* s);
+  EpcX2PdcpProvider* GetEpcX2PdcpProvider () const;
+
+  /**
+   * Set the X2 RLC Provider this RRC should pass to RLC layers
+   * \param s the X2 RLC Provider to be stored in this RRC entity
+   */
+  void SetEpcX2RlcProvider (EpcX2RlcProvider* s);
+  EpcX2RlcProvider* GetEpcX2RlcProvider() const;
 
   /**
    * set the CMAC SAP this RRC should interact with
@@ -733,6 +782,13 @@ public:
   void SetCellId (uint16_t m_cellId);
 
   /** 
+   * get the cell id of this eNB
+   * 
+   * \param m_cellId 
+   */
+  uint16_t GetCellId () const;
+
+  /** 
    * Enqueue an IP data packet on the proper bearer for downlink
    * transmission. Normally expected to be called by the NetDevice
    * forwarding a packet coming from the EpcEnbApplication 
@@ -884,7 +940,8 @@ private:
   void DoRecvRrcConnectionReestablishmentComplete (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentComplete msg);
   /// Part of the RRC protocol. Forwarding LteEnbRrcSapProvider::RecvMeasurementReport interface to UeManager::RecvMeasurementReport
   void DoRecvMeasurementReport (uint16_t rnti, LteRrcSap::MeasurementReport msg);
-
+  ///
+  void DoRecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId);
   // S1 SAP methods
 
   void DoDataRadioBearerSetupRequest (EpcEnbS1SapUser::DataRadioBearerSetupRequestParameters params);
@@ -899,6 +956,8 @@ private:
   void DoRecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params);
   void DoRecvLoadInformation (EpcX2SapUser::LoadInformationParams params);
   void DoRecvResourceStatusUpdate (EpcX2SapUser::ResourceStatusUpdateParams params);
+  void DoRecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params);
+  void DoRecvRlcSetupCompleted (EpcX2SapUser::UeDataParams params);
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
 
   // CMAC SAP methods
@@ -1026,6 +1085,7 @@ private:
    * characteristics is put. Used for MAC Buffer Status Reporting purposes. 
    */
   uint8_t GetLogicalChannelGroup (EpsBearer bearer);
+  uint8_t GetLogicalChannelGroup (bool isGbr);
 
   /** 
    * 
@@ -1050,6 +1110,10 @@ private:
   EpcX2SapUser* m_x2SapUser;
   /// Interface to send messages to neighbour eNodeB over the X2 interface.
   EpcX2SapProvider* m_x2SapProvider;
+  /// Interface to be provided to PDCP
+  EpcX2PdcpProvider* m_x2PdcpProvider;
+  /// Interface to be provided to RLC
+  EpcX2RlcProvider* m_x2RlcProvider;
 
   /// Receive API calls from the eNodeB MAC instance.
   LteEnbCmacSapUser* m_cmacSapUser;
@@ -1132,7 +1196,8 @@ private:
   };
 
   //       TEID      RNTI, DRBID
-  std::map<uint32_t, X2uTeidInfo> m_x2uTeidInfoMap;
+  std::map<uint32_t, X2uTeidInfo> m_x2uTeidInfoMap; // for the handovers
+  std::map<uint32_t, X2uTeidInfo> m_x2uMcTeidInfoMap; // for the MC devices
 
   /**
    * The `DefaultTransmissionMode` attribute. The default UEs' transmission

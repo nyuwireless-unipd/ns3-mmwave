@@ -443,6 +443,8 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	NS_LOG_FUNCTION (this);
 
 	Ptr<McUeNetDevice> device = m_mcUeNetDeviceFactory.Create<McUeNetDevice> ();
+	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
+	uint64_t imsi = ++m_imsiCounter;
 
 	// Phy part of MmWave
 	Ptr<MmWaveSpectrumPhy> mmWaveUlPhy = CreateObject<MmWaveSpectrumPhy> ();
@@ -532,6 +534,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	Ptr<MmWaveUeMac> mmWaveMac = CreateObject<MmWaveUeMac> ();
 	Ptr<LteUeRrc> mmWaveRrc = CreateObject<LteUeRrc> ();
 
+	// TODO lightweight RRC for the mmwave stack
 	if (m_useIdealRrc)
 	{
 		Ptr<mmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<mmWaveUeRrcProtocolIdeal> ();
@@ -556,9 +559,6 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	{
 		mmWaveRrc->SetUseRlcSm (true);
 	}
-	Ptr<EpcUeNas> mmWaveNas = CreateObject<EpcUeNas> ();
-	mmWaveNas->SetAsSapProvider (mmWaveRrc->GetAsSapProvider ());
-	mmWaveRrc->SetAsSapUser (mmWaveNas->GetAsSapUser ());
 
 	mmWaveRrc->SetLteUeCmacSapProvider (mmWaveMac->GetUeCmacSapProvider ());
 	mmWaveMac->SetUeCmacSapUser (mmWaveRrc->GetLteUeCmacSapUser ());
@@ -567,9 +567,6 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	mmWavePhy->SetUeCphySapUser (mmWaveRrc->GetLteUeCphySapUser ());
 	mmWaveRrc->SetLteUeCphySapProvider (mmWavePhy->GetUeCphySapProvider ());
 
-	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
-	uint64_t mmWaveImsi = ++m_imsiCounter;
-
 	mmWavePhy->SetCofigurationParameters (m_phyMacCommon);
 	mmWaveMac->SetCofigurationParameters (m_phyMacCommon);
 
@@ -577,30 +574,20 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	mmWaveMac->SetPhySapProvider (mmWavePhy->GetPhySapProvider());
 
 	device->SetNode(n);
-	device->SetAttribute ("MmWaveImsi", UintegerValue(mmWaveImsi));
 	device->SetAttribute ("MmWaveUePhy", PointerValue(mmWavePhy));
 	device->SetAttribute ("MmWaveUeMac", PointerValue(mmWaveMac));
-	device->SetAttribute ("EpcUeNas", PointerValue (mmWaveNas));
 	device->SetAttribute ("MmWaveUeRrc", PointerValue (mmWaveRrc));
 
 	mmWavePhy->SetDevice (device);
-	mmWavePhy->SetImsi (mmWaveImsi); 
+	mmWavePhy->SetImsi (imsi); 
 	//mmWavePhy->SetForwardUpCallback (MakeCallback (&McUeNetDevice::Receive, device));
 	mmWaveDlPhy->SetDevice(device);
 	mmWaveUlPhy->SetDevice(device);
-	mmWaveNas->SetDevice(device);
-
 
 	mmWaveDlPhy->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveUePhy::PhyDataPacketReceived, mmWavePhy));
 	mmWaveDlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveUePhy::ReceiveControlMessageList, mmWavePhy));
-	mmWaveNas->SetForwardUpCallback (MakeCallback (&McUeNetDevice::Receive, device));
-	if (m_epcHelper != 0)
-	{
-		m_epcHelper->AddUe (device, device->GetMmWaveImsi ());
-	}
 
 	// ----------------------- LTE stack ----------------------
-
 	Ptr<LteUeMac> lteMac = CreateObject<LteUeMac> ();
 	Ptr<LteUeRrc> lteRrc = CreateObject<LteUeRrc> ();
 
@@ -629,11 +616,17 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	Ptr<EpcUeNas> lteNas = CreateObject<EpcUeNas> ();
 
 	lteNas->SetAsSapProvider (lteRrc->GetAsSapProvider ());
+	lteNas->SetMmWaveAsSapProvider (mmWaveRrc->GetAsSapProvider());
 	lteRrc->SetAsSapUser (lteNas->GetAsSapUser ());
+	mmWaveRrc->SetAsSapUser (lteNas->GetAsSapUser ());
 
 	lteRrc->SetLteUeCmacSapProvider (lteMac->GetLteUeCmacSapProvider ());
 	lteMac->SetLteUeCmacSapUser (lteRrc->GetLteUeCmacSapUser ());
 	lteRrc->SetLteMacSapProvider (lteMac->GetLteMacSapProvider ());
+
+	// connect lteRrc (which will setup bearers) also to the MmWave Mac
+	lteRrc->SetMmWaveUeCmacSapProvider (mmWaveMac->GetUeCmacSapProvider());
+	lteRrc->SetMmWaveMacSapProvider (mmWaveMac->GetUeMacSapProvider()); 
 
 	ltePhy->SetLteUePhySapUser (lteMac->GetLteUePhySapUser ());
 	lteMac->SetLteUePhySapProvider (ltePhy->GetLteUePhySapProvider ());
@@ -641,14 +634,10 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	ltePhy->SetLteUeCphySapUser (lteRrc->GetLteUeCphySapUser ());
 	lteRrc->SetLteUeCphySapProvider (ltePhy->GetLteUeCphySapProvider ());
 
-	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
-	uint64_t lteImsi = ++m_imsiCounter;
-
-	device->SetAttribute ("LteImsi", UintegerValue (lteImsi));
 	device->SetAttribute ("LteUePhy", PointerValue (ltePhy));
 	device->SetAttribute ("LteUeMac", PointerValue (lteMac));
 	device->SetAttribute ("LteUeRrc", PointerValue (lteRrc));
-	device->SetAttribute ("LteEpcUeNas", PointerValue (lteNas));
+	device->SetAttribute ("EpcUeNas", PointerValue (lteNas));
 
 	ltePhy->SetDevice (device);
 	lteDlPhy->SetDevice (device);
@@ -663,7 +652,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 
 	if (m_epcHelper != 0)
 	{
-		m_epcHelper->AddUe (device, device->GetLteImsi ());
+		m_epcHelper->AddUe (device, device->GetImsi ());
 	}
 
 	n->AddDevice(device);
@@ -945,13 +934,15 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 		NS_ASSERT_MSG (enbApp != 0, "cannot retrieve EpcEnbApplication");
 
 		// S1 SAPs
-		rrc->SetS1SapProvider (enbApp->GetS1SapProvider ());
-		enbApp->SetS1SapUser (rrc->GetS1SapUser ());
+		// rrc->SetS1SapProvider (enbApp->GetS1SapProvider ());
+		// enbApp->SetS1SapUser (rrc->GetS1SapUser ());
 
 		// X2 SAPs
 		Ptr<EpcX2> x2 = n->GetObject<EpcX2> ();
 		x2->SetEpcX2SapUser (rrc->GetEpcX2SapUser ());
 		rrc->SetEpcX2SapProvider (x2->GetEpcX2SapProvider ());
+	 	rrc->SetEpcX2RlcProvider (x2->GetEpcX2RlcProvider ());
+
 	}
 
 	return device;
@@ -1124,6 +1115,7 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 	  Ptr<EpcX2> x2 = n->GetObject<EpcX2> ();
 	  x2->SetEpcX2SapUser (rrc->GetEpcX2SapUser ());
 	  rrc->SetEpcX2SapProvider (x2->GetEpcX2SapProvider ());
+	  rrc->SetEpcX2PdcpProvider (x2->GetEpcX2PdcpProvider ());
 	}
 
 	return dev;
@@ -1233,45 +1225,9 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	NS_ASSERT_MSG (mmWaveEnbDevices.GetN () > 0 && lteEnbDevices.GetN () > 0, 
 		"empty lte or mmwave enb device container");
 	
-	// Find the closest mmWave station	
+	// Find the closest LTE station
 	Vector uepos = ueDevice->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
 	double minDistance = std::numeric_limits<double>::infinity ();
-	Ptr<NetDevice> closestEnbDevice;
-	for (NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End (); ++i)
-	{
-	  Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
-	  double distance = CalculateDistance (uepos, enbpos);
-	  if (distance < minDistance)
-	    {
-	      minDistance = distance;
-	      closestEnbDevice = *i;
-	    }
-	}
-	NS_ASSERT (closestEnbDevice != 0);
-
-	// Attach the MC device to the MmWave eNB
-	Ptr<MmWaveEnbNetDevice> closestMmWave = closestEnbDevice->GetObject<MmWaveEnbNetDevice> (); 
-	uint16_t mmWaveCellId = closestMmWave->GetCellId ();
-	Ptr<MmWavePhyMacCommon> configParams = closestMmWave->GetPhy()->GetConfigurationParameters();
-
-	closestMmWave->GetPhy ()->AddUePhy (mcDevice->GetMmWaveImsi (), ueDevice);
-	mcDevice->GetMmWavePhy ()->RegisterToEnb (mmWaveCellId, configParams);
-	closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetMmWaveImsi ());
-
-	Ptr<EpcUeNas> ueNas = mcDevice->GetMmWaveNas (); // TODO once there is only one PDCP, there will be one NAS
-	ueNas->Connect (mmWaveCellId,
-					closestMmWave->GetEarfcn ());
-
-	if (m_epcHelper != 0)
-	{
-		// activate default EPS bearer
-		m_epcHelper->ActivateEpsBearer (ueDevice, ueNas, mcDevice->GetMmWaveImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
-	}
-
-	mcDevice->SetMmWaveTargetEnb (closestMmWave);
-
-	// Find the closest LTE station
-	minDistance = std::numeric_limits<double>::infinity ();
 	Ptr<NetDevice> lteClosestEnbDevice;
 	for (NetDeviceContainer::Iterator i = lteEnbDevices.Begin (); i != lteEnbDevices.End (); ++i)
 	{
@@ -1285,18 +1241,48 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	}
 	NS_ASSERT (lteClosestEnbDevice != 0);
 
+	// Find the closest mmWave station	
+	minDistance = std::numeric_limits<double>::infinity ();
+	Ptr<NetDevice> closestEnbDevice;
+	for (NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End (); ++i)
+	{
+	  Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+	  double distance = CalculateDistance (uepos, enbpos);
+	  if (distance < minDistance)
+	    {
+	      minDistance = distance;
+	      closestEnbDevice = *i;
+	    }
+	}
+	NS_ASSERT (closestEnbDevice != 0);
+
+
+  	// Necessary operation to connect MmWave UE to eNB at lower layers
+	Ptr<MmWaveEnbNetDevice> closestMmWave = closestEnbDevice->GetObject<MmWaveEnbNetDevice> (); 
+	uint16_t mmWaveCellId = closestMmWave->GetCellId ();
+	Ptr<MmWavePhyMacCommon> configParams = closestMmWave->GetPhy()->GetConfigurationParameters();
+	closestMmWave->GetPhy ()->AddUePhy (mcDevice->GetImsi (), ueDevice);
+	mcDevice->GetMmWavePhy ()->RegisterToEnb (mmWaveCellId, configParams);
+	NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+	mcDevice->GetLteRrc ()->SetMmWaveCellId (mmWaveCellId); // TODO remove
+	mcDevice->GetMmWaveRrc ()->SetMmWaveCellId (mmWaveCellId);
+	closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ());
+
 	// Attach the MC device the LTE eNB
 	Ptr<LteEnbNetDevice> enbLteDevice = lteClosestEnbDevice->GetObject<LteEnbNetDevice> ();
-	Ptr<EpcUeNas> lteUeNas = mcDevice->GetLteNas ();
-	lteUeNas->Connect (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ());
+	Ptr<EpcUeNas> lteUeNas = mcDevice->GetNas ();
+	lteUeNas->ConnectMc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn (), mmWaveCellId);
 
 	if (m_epcHelper != 0)
 	{
 	  // activate default EPS bearer
-	  m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetLteImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
+	  m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
 	}
 
   	mcDevice->SetLteTargetEnb (enbLteDevice);
+	mcDevice->SetMmWaveTargetEnb (closestMmWave);
+
+	
 }
 
 void
@@ -1443,7 +1429,7 @@ DrbActivator::DrbActivator (Ptr<NetDevice> ueDevice, EpsBearer bearer)
 	}
 	else if (m_ueDevice->GetObject< McUeNetDevice> ())
 	{
-		m_imsi = m_ueDevice->GetObject< McUeNetDevice> ()->GetMmWaveImsi (); // TODO support for LTE part
+		m_imsi = m_ueDevice->GetObject< McUeNetDevice> ()->GetImsi (); // TODO support for LTE part
 	}
 }
 

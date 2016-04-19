@@ -434,6 +434,438 @@ EpcX2HandoverRequestHeader::GetNumberOfIes () const
 
 /////////////////////////////////////////////////////////////////////
 
+NS_OBJECT_ENSURE_REGISTERED (EpcX2RlcSetupRequestHeader);
+
+EpcX2RlcSetupRequestHeader::EpcX2RlcSetupRequestHeader ()
+  : m_numberOfIes (1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1),
+    m_headerLength (2 + 2 + 4 + 2 + 2 + 1 + 38 + 4 + 6),
+    m_sourceCellId (0xfffa),
+    m_targetCellId (0xfffa),
+    m_gtpTeid (0xfffffffa),
+    m_mmWaveRnti (0xfffa),
+    m_lteRnti (0xfffa),
+    m_drbid (0xfa)
+{
+}
+
+EpcX2RlcSetupRequestHeader::~EpcX2RlcSetupRequestHeader ()
+{
+  m_numberOfIes = 0;
+  m_headerLength = 0;
+  m_sourceCellId = 0xfffb;
+  m_targetCellId = 0xfffb;
+  m_gtpTeid = 0xfffffffb;
+  m_mmWaveRnti = 0xfffb;
+  m_lteRnti = 0xfffb;
+  m_drbid = 0xfb;
+}
+
+TypeId
+EpcX2RlcSetupRequestHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::EpcX2RlcSetupRequestHeader")
+    .SetParent<Header> ()
+    .SetGroupName("Lte")
+    .AddConstructor<EpcX2RlcSetupRequestHeader> ()
+  ;
+  return tid;
+}
+
+TypeId
+EpcX2RlcSetupRequestHeader::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+EpcX2RlcSetupRequestHeader::GetSerializedSize (void) const
+{
+  return m_headerLength;
+}
+
+void
+EpcX2RlcSetupRequestHeader::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+
+  i.WriteHtonU16 (m_sourceCellId);
+  i.WriteHtonU16 (m_targetCellId); 
+  i.WriteHtonU32 (m_gtpTeid); 
+  i.WriteHtonU16 (m_mmWaveRnti); 
+  i.WriteHtonU16 (m_lteRnti);
+  i.WriteU8 (m_drbid);
+
+  // LcInfo
+  i.WriteHtonU16 (m_lcInfo.rnti); // TODO consider if unnecessary
+  i.WriteU8 (m_lcInfo.lcId);
+  i.WriteU8 (m_lcInfo.lcGroup);
+  i.WriteU8 (m_lcInfo.qci);
+  i.WriteU8 (m_lcInfo.isGbr);
+  i.WriteHtonU64 (m_lcInfo.mbrUl);
+  i.WriteHtonU64 (m_lcInfo.mbrDl);
+  i.WriteHtonU64 (m_lcInfo.gbrUl);
+  i.WriteHtonU64 (m_lcInfo.gbrDl);
+
+  // RlcConfig
+  i.WriteHtonU32 (m_rlcConfig.choice); // TODO check size
+
+  // LogicalChannelConfiguration
+  i.WriteU8 (m_lcConfig.priority);
+  i.WriteHtonU16 (m_lcConfig.prioritizedBitRateKbps);
+  i.WriteHtonU16 (m_lcConfig.bucketSizeDurationMs);
+  i.WriteU8 (m_lcConfig.logicalChannelGroup);
+}
+
+uint32_t
+EpcX2RlcSetupRequestHeader::Deserialize (Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+
+  m_headerLength = 0;
+  m_numberOfIes = 0;
+
+  m_sourceCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+  
+  m_targetCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+
+  m_gtpTeid = i.ReadNtohU32 ();
+  m_headerLength += 4;
+  m_numberOfIes++;
+
+  m_mmWaveRnti = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+
+  m_lteRnti = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+
+  m_drbid = i.ReadU8 ();
+  m_headerLength += 1;
+  m_numberOfIes++;
+
+  m_lcInfo.rnti = i.ReadNtohU16 (); // TODO consider if unnecessary
+  m_lcInfo.lcId = i.ReadU8 ();
+  m_lcInfo.lcGroup = i.ReadU8 ();
+  m_lcInfo.qci = i.ReadU8 ();
+  m_lcInfo.isGbr = i.ReadU8 ();
+  m_lcInfo.mbrUl = i.ReadNtohU64 ();
+  m_lcInfo.mbrDl = i.ReadNtohU64 ();
+  m_lcInfo.gbrUl = i.ReadNtohU64 ();
+  m_lcInfo.gbrDl = i.ReadNtohU64 ();
+  m_headerLength += 38;
+  m_numberOfIes++;
+
+  uint32_t val = i.ReadNtohU32 ();
+  if (val == LteRrcSap::RlcConfig::AM) {
+    m_rlcConfig.choice = LteRrcSap::RlcConfig::AM;
+  }
+  else if (val == LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL) {
+    m_rlcConfig.choice = LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL;
+  }
+  else if (val == LteRrcSap::RlcConfig::UM_UNI_DIRECTIONAL_UL) {
+    m_rlcConfig.choice = LteRrcSap::RlcConfig::UM_UNI_DIRECTIONAL_UL;
+  }
+  else if (val == LteRrcSap::RlcConfig::UM_UNI_DIRECTIONAL_DL) {
+    m_rlcConfig.choice = LteRrcSap::RlcConfig::UM_UNI_DIRECTIONAL_DL;
+  }
+  else if (val == LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL_LOWLAT) {
+    m_rlcConfig.choice = LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL_LOWLAT;
+  }
+  else {
+    NS_FATAL_ERROR("Unknown value for RlcConfig " << val);
+  }
+  m_headerLength += 4;
+  m_numberOfIes++;
+
+  // LogicalChannelConfiguration
+  m_lcConfig.priority               = i.ReadU8      ();
+  m_lcConfig.prioritizedBitRateKbps = i.ReadNtohU16 ();
+  m_lcConfig.bucketSizeDurationMs   = i.ReadNtohU16 ();
+  m_lcConfig.logicalChannelGroup    = i.ReadU8      ();
+  m_headerLength += 6;
+  m_numberOfIes++;
+
+  return GetSerializedSize ();
+}
+
+void
+EpcX2RlcSetupRequestHeader::Print (std::ostream &os) const
+{
+  os << "SourceCellId = " << m_sourceCellId;
+  os << " TargetCellId = " << m_targetCellId;
+  os << " gtpTeid = " << m_gtpTeid;
+  os << " MmWaveRnti = " << m_mmWaveRnti;
+  os << " LteRnti = " << m_lteRnti;
+  os << " DrbId = " << (uint32_t)m_drbid;
+  os << " RlcConfig " << m_rlcConfig.choice;
+  os << " bucketSizeDurationMs " << m_lcConfig.bucketSizeDurationMs;
+  // TODO complete print
+}
+
+uint16_t
+EpcX2RlcSetupRequestHeader::GetSourceCellId () const
+{
+  return m_sourceCellId;
+}
+
+void
+EpcX2RlcSetupRequestHeader::SetSourceCellId (uint16_t cellId)
+{
+  m_sourceCellId = cellId;
+}
+
+uint16_t
+EpcX2RlcSetupRequestHeader::GetTargetCellId () const
+{
+  return m_targetCellId;
+}
+
+void
+EpcX2RlcSetupRequestHeader::SetTargetCellId (uint16_t targetCellId)
+{
+  m_targetCellId = targetCellId;
+}
+
+uint32_t
+EpcX2RlcSetupRequestHeader::GetGtpTeid () const
+{
+  return m_gtpTeid;
+}
+
+void
+EpcX2RlcSetupRequestHeader::SetGtpTeid (uint32_t gtpTeid)
+{
+  m_gtpTeid = gtpTeid;
+}
+
+void
+EpcX2RlcSetupRequestHeader::SetMmWaveRnti (uint16_t rnti)
+{
+  m_mmWaveRnti = rnti;
+}
+
+uint16_t
+EpcX2RlcSetupRequestHeader::GetMmWaveRnti () const
+{
+  return m_mmWaveRnti;
+}
+
+void
+EpcX2RlcSetupRequestHeader::SetLteRnti (uint16_t rnti)
+{
+  m_lteRnti = rnti;
+}
+
+uint16_t
+EpcX2RlcSetupRequestHeader::GetLteRnti () const
+{
+  return m_lteRnti;
+}
+
+uint32_t
+EpcX2RlcSetupRequestHeader::GetLengthOfIes () const
+{
+  return m_headerLength;
+}
+
+uint32_t
+EpcX2RlcSetupRequestHeader::GetNumberOfIes () const
+{
+  return m_numberOfIes;
+}
+
+void
+EpcX2RlcSetupRequestHeader::SetDrbid (uint8_t drbid)
+{
+  m_drbid = drbid;
+}
+
+uint8_t
+EpcX2RlcSetupRequestHeader::GetDrbid () const
+{
+  return m_drbid;
+}
+
+LteEnbCmacSapProvider::LcInfo 
+EpcX2RlcSetupRequestHeader::GetLcInfo() const
+{
+  return m_lcInfo;
+}
+
+void 
+EpcX2RlcSetupRequestHeader::SetLcInfo(LteEnbCmacSapProvider::LcInfo lcInfo)
+{
+  m_lcInfo = lcInfo;
+}
+
+LteRrcSap::RlcConfig 
+EpcX2RlcSetupRequestHeader::GetRlcConfig() const
+{
+  return m_rlcConfig;
+}
+
+void 
+EpcX2RlcSetupRequestHeader::SetRlcConfig(LteRrcSap::RlcConfig rlcConfig)
+{
+  m_rlcConfig = rlcConfig;
+}
+
+LteRrcSap::LogicalChannelConfig 
+EpcX2RlcSetupRequestHeader::GetLogicalChannelConfig()
+{
+  return m_lcConfig;
+}
+
+void 
+EpcX2RlcSetupRequestHeader::SetLogicalChannelConfig(LteRrcSap::LogicalChannelConfig conf)
+{
+  m_lcConfig = conf;
+}
+
+/////////////////////////////////////////////////////////////////////
+
+NS_OBJECT_ENSURE_REGISTERED (EpcX2RlcSetupCompletedHeader);
+
+EpcX2RlcSetupCompletedHeader::EpcX2RlcSetupCompletedHeader ()
+  : m_numberOfIes (1 + 1 + 1),
+    m_headerLength (2 + 2 + 4),
+    m_sourceCellId (0xfffa),
+    m_targetCellId (0xfffa),
+    m_gtpTeid (0xfffffffa)
+{
+}
+
+EpcX2RlcSetupCompletedHeader::~EpcX2RlcSetupCompletedHeader ()
+{
+  m_numberOfIes = 0;
+  m_headerLength = 0;
+  m_sourceCellId = 0xfffb;
+  m_targetCellId = 0xfffb;
+  m_gtpTeid = 0xfffffffb;
+}
+
+TypeId
+EpcX2RlcSetupCompletedHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::EpcX2RlcSetupCompletedHeader")
+    .SetParent<Header> ()
+    .SetGroupName("Lte")
+    .AddConstructor<EpcX2RlcSetupCompletedHeader> ()
+  ;
+  return tid;
+}
+
+TypeId
+EpcX2RlcSetupCompletedHeader::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+EpcX2RlcSetupCompletedHeader::GetSerializedSize (void) const
+{
+  return m_headerLength;
+}
+
+void
+EpcX2RlcSetupCompletedHeader::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+
+  i.WriteHtonU16 (m_sourceCellId);
+  i.WriteHtonU16 (m_targetCellId); 
+  i.WriteHtonU32 (m_gtpTeid); 
+}
+
+uint32_t
+EpcX2RlcSetupCompletedHeader::Deserialize (Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+
+  m_headerLength = 0;
+  m_numberOfIes = 0;
+
+  m_sourceCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+  
+  m_targetCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+
+  m_gtpTeid = i.ReadNtohU32 ();
+  m_headerLength += 4;
+  m_numberOfIes++;
+
+  return GetSerializedSize ();
+}
+
+void
+EpcX2RlcSetupCompletedHeader::Print (std::ostream &os) const
+{
+  os << "SourceCellId = " << m_sourceCellId;
+  os << " TargetCellId = " << m_targetCellId;
+  os << " gtpTeid = " << m_gtpTeid;
+}
+
+uint16_t
+EpcX2RlcSetupCompletedHeader::GetSourceCellId () const
+{
+  return m_sourceCellId;
+}
+
+void
+EpcX2RlcSetupCompletedHeader::SetSourceCellId (uint16_t cellId)
+{
+  m_sourceCellId = cellId;
+}
+
+uint16_t
+EpcX2RlcSetupCompletedHeader::GetTargetCellId () const
+{
+  return m_targetCellId;
+}
+
+void
+EpcX2RlcSetupCompletedHeader::SetTargetCellId (uint16_t targetCellId)
+{
+  m_targetCellId = targetCellId;
+}
+
+uint32_t
+EpcX2RlcSetupCompletedHeader::GetGtpTeid () const
+{
+  return m_gtpTeid;
+}
+
+void
+EpcX2RlcSetupCompletedHeader::SetGtpTeid (uint32_t gtpTeid)
+{
+  m_gtpTeid = gtpTeid;
+}
+
+
+uint32_t
+EpcX2RlcSetupCompletedHeader::GetLengthOfIes () const
+{
+  return m_headerLength;
+}
+
+uint32_t
+EpcX2RlcSetupCompletedHeader::GetNumberOfIes () const
+{
+  return m_numberOfIes;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////
+
 NS_OBJECT_ENSURE_REGISTERED (EpcX2HandoverRequestAckHeader);
 
 EpcX2HandoverRequestAckHeader::EpcX2HandoverRequestAckHeader ()

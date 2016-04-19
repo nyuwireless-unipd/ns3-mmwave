@@ -44,6 +44,8 @@ LteRlcUm::LteRlcUm ()
 {
   NS_LOG_FUNCTION (this);
   m_reassemblingState = WAITING_S0_FULL;
+  m_epcX2RlcUser = new EpcX2RlcSpecificUser<LteRlcUm> (this);
+  m_epcX2RlcProvider = 0;
 }
 
 LteRlcUm::~LteRlcUm ()
@@ -75,6 +77,12 @@ LteRlcUm::DoDispose ()
   m_rbsTimer.Cancel ();
 
   LteRlc::DoDispose ();
+}
+
+uint32_t
+LteRlcUm::GetMaxBuff()
+{
+  return m_maxTxBufferSize;
 }
 
 /**
@@ -118,6 +126,12 @@ LteRlcUm::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer.Cancel ();
 }
 
+void 
+LteRlcUm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
+{
+  NS_LOG_FUNCTION(this);
+  DoTransmitPdcpPdu(params.ueData);
+}
 
 /**
  * MAC SAP
@@ -664,7 +678,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                               */
                               for ( it = m_sdusBuffer.begin () ; it != m_sdusBuffer.end () ; it++ )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (*it);
+                                  TriggerReceivePdcpPdu (*it);
                                 }
                               m_sdusBuffer.clear ();
                       break;
@@ -677,7 +691,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                               */
                               while ( m_sdusBuffer.size () > 1 )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
 
@@ -701,7 +715,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                */
                               while ( ! m_sdusBuffer.empty () )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
                       break;
@@ -728,7 +742,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                    */
                                   while ( m_sdusBuffer.size () > 1 )
                                     {
-                                      m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                      TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                       m_sdusBuffer.pop_front ();
                                     }
 
@@ -760,14 +774,14 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                               */
                               m_keepS0->AddAtEnd (m_sdusBuffer.front ());
                               m_sdusBuffer.pop_front ();
-                              m_rlcSapUser->ReceivePdcpPdu (m_keepS0);
+                              TriggerReceivePdcpPdu (m_keepS0);
 
                               /**
                                 * Deliver zero, one or multiple PDUs
                                 */
                               while ( ! m_sdusBuffer.empty () )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
                       break;
@@ -790,14 +804,14 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                   */
                                   m_keepS0->AddAtEnd (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
-                                  m_rlcSapUser->ReceivePdcpPdu (m_keepS0);
+                                  TriggerReceivePdcpPdu (m_keepS0);
 
                                   /**
                                   * Deliver zero, one or multiple PDUs
                                   */
                                   while ( m_sdusBuffer.size () > 1 )
                                     {
-                                      m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                      TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                       m_sdusBuffer.pop_front ();
                                     }
 
@@ -840,7 +854,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                */
                               for ( it = m_sdusBuffer.begin () ; it != m_sdusBuffer.end () ; it++ )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (*it);
+                                  TriggerReceivePdcpPdu (*it);
                                 }
                               m_sdusBuffer.clear ();
                       break;
@@ -853,7 +867,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                */
                               while ( m_sdusBuffer.size () > 1 )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
 
@@ -877,7 +891,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                */
                               while ( ! m_sdusBuffer.empty () )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
                       break;
@@ -904,7 +918,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                   */
                                   while ( m_sdusBuffer.size () > 1 )
                                     {
-                                      m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                      TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                       m_sdusBuffer.pop_front ();
                                     }
 
@@ -941,7 +955,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                */
                               while ( ! m_sdusBuffer.empty () )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
                       break;
@@ -959,7 +973,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                */
                               while ( m_sdusBuffer.size () > 1 )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
 
@@ -989,7 +1003,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                */
                               while ( ! m_sdusBuffer.empty () )
                                 {
-                                  m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                  TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                   m_sdusBuffer.pop_front ();
                                 }
                       break;
@@ -1021,7 +1035,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
                                    */
                                   while ( m_sdusBuffer.size () > 1 )
                                     {
-                                      m_rlcSapUser->ReceivePdcpPdu (m_sdusBuffer.front ());
+                                      TriggerReceivePdcpPdu (m_sdusBuffer.front ());
                                       m_sdusBuffer.pop_front ();
                                     }
 
@@ -1048,6 +1062,20 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
         }
     }
 
+}
+
+void
+LteRlcUm::TriggerReceivePdcpPdu(Ptr<Packet> p)
+{
+  if(!isMc) 
+  {
+    m_rlcSapUser->ReceivePdcpPdu(p);
+  }
+  else
+  {
+    m_ueDataParams.ueData = p;
+    m_epcX2RlcProvider->ReceiveMcPdcpSdu(m_ueDataParams);
+  }
 }
 
 

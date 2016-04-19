@@ -194,6 +194,14 @@ LteUeRrcProtocolReal::DoSendMeasurementReport (LteRrcSap::MeasurementReport msg)
 }
 
 void 
+LteUeRrcProtocolReal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+{
+  NS_FATAL_ERROR("Not supported yet");
+  // TODO add the header
+}
+
+
+void 
 LteUeRrcProtocolReal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::RrcConnectionReestablishmentRequest msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -537,10 +545,10 @@ LteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformation msg
             if (mcUeDev != 0)
             {
               ueRrc = mcUeDev->GetLteRrc ();              
-              NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetLteImsi () << " that has cellId " << ueRrc->GetCellId ());
+              NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
               if (ueRrc->GetCellId () == m_cellId)
               {       
-                NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetLteImsi ());
+                NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
                 ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
                 Simulator::Schedule (RRC_REAL_MSG_DELAY, 
                                      &LteUeRrcSapProvider::RecvSystemInformation,
@@ -594,6 +602,22 @@ LteEnbRrcProtocolReal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::RrcC
   transmitPdcpPduParameters.lcid = 0;
 
   m_setupUeParametersMap[rnti].srb0SapProvider->TransmitPdcpPdu (transmitPdcpPduParameters);
+}
+
+void 
+LteEnbRrcProtocolReal::DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveId)
+{
+  NS_FATAL_ERROR("Not supported");
+  Ptr<Packet> packet = Create<Packet> ();
+
+  // TODO add header for this case
+
+  //LteRlcSapProvider::TransmitPdcpPduParameters transmitPdcpPduParameters;
+  //transmitPdcpPduParameters.pdcpPdu = packet;
+  //transmitPdcpPduParameters.rnti = rnti;
+  //transmitPdcpPduParameters.lcid = 0;
+
+  //m_setupUeParametersMap[rnti].srb0SapProvider->TransmitPdcpPdu (transmitPdcpPduParameters);
 }
 
 void 

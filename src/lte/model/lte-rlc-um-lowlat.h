@@ -23,7 +23,8 @@
 
 #include "ns3/lte-rlc-sequence-number.h"
 #include "ns3/lte-rlc.h"
-
+#include <ns3/epc-x2-sap.h>
+ 
 #include <ns3/event-id.h>
 #include <map>
 #include <deque>
@@ -47,6 +48,11 @@ public:
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p);
 
   /**
+   * RLC EPC X2 SAP
+   */
+  virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params);
+
+  /**
    * MAC SAP
    */
   virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
@@ -63,6 +69,7 @@ private:
   void ReassembleSnInterval (SequenceNumber10 lowSeqNumber, SequenceNumber10 highSeqNumber);
 
   void ReassembleAndDeliver (Ptr<Packet> packet);
+  void TriggerReceivePdcpPdu(Ptr<Packet> p);
 
   void DoReportBufferStatus ();
 

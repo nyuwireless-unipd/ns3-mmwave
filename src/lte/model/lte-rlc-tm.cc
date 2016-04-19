@@ -105,6 +105,12 @@ LteRlcTm::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer.Cancel ();
 }
 
+void 
+LteRlcTm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
+{
+  NS_LOG_FUNCTION(this);
+  DoTransmitPdcpPdu(params.ueData);
+}
 
 /**
  * MAC SAP

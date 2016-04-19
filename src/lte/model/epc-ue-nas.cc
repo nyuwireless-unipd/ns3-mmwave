@@ -139,6 +139,13 @@ EpcUeNas::GetAsSapUser ()
 }
 
 void
+EpcUeNas::SetMmWaveAsSapProvider (LteAsSapProvider* s)
+{
+  NS_LOG_FUNCTION (this << s);
+  m_mmWaveAsSapProvider = s;
+}
+
+void
 EpcUeNas::SetForwardUpCallback (Callback <void, Ptr<Packet> > cb)
 {
   NS_LOG_FUNCTION (this);
@@ -171,6 +178,21 @@ EpcUeNas::Connect (uint16_t cellId, uint16_t dlEarfcn)
 
   // tell RRC to go into connected mode
   m_asSapProvider->Connect ();
+}
+
+void
+EpcUeNas::ConnectMc (uint16_t cellId, uint16_t dlEarfcn, uint16_t mmWaveCellId)
+{
+  NS_LOG_FUNCTION (this << cellId << dlEarfcn);
+
+  // force the UE RRC to be camped on a specific eNB
+  m_asSapProvider->ForceCampedOnEnb (cellId, dlEarfcn);
+
+  // tell RRC to go into connected mode
+  m_asSapProvider->Connect ();
+
+  m_mmWaveCellId = mmWaveCellId;
+  m_dlEarfcn = dlEarfcn;
 }
 
 
@@ -234,11 +256,37 @@ EpcUeNas::Send (Ptr<Packet> packet)
 }
 
 void 
-EpcUeNas::DoNotifyConnectionSuccessful ()
+EpcUeNas::DoNotifyConnectionSuccessful (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this);
+  switch (m_state)
+  {
+    case ACTIVE: // this means the Master LTE Cell was already connected 
+      {
+        // notify the LTE eNB RRC that a secondary cell is available
+        m_asSapProvider->NotifySecondaryCellConnected(rnti, m_mmWaveCellId);
+      }
+      break;
 
-  SwitchToState (ACTIVE); // will eventually activate dedicated bearers
+    default:
+      SwitchToState (ACTIVE); // will eventually activate dedicated bearers
+      break;
+  }
+  
+}
+
+void
+EpcUeNas::DoNotifyConnectToMmWave(uint16_t mmWaveCellId)
+{
+  NS_LOG_LOGIC(mmWaveCellId);
+  NS_LOG_LOGIC(m_mmWaveCellId);
+  NS_ASSERT_MSG(mmWaveCellId == m_mmWaveCellId, "Received Cell Id for MmWave is different for the one of ConnectMc");
+  
+  // force the UE RRC to be camped on a specific eNB
+  m_mmWaveAsSapProvider->ForceCampedOnEnb (mmWaveCellId, m_dlEarfcn); // TODO probably the second argument is useless
+
+  // tell RRC to go into connected mode
+  m_mmWaveAsSapProvider->Connect ();
 }
 
 void

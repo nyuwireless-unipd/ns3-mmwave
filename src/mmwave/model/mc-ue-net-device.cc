@@ -50,12 +50,27 @@ TypeId McUeNetDevice::GetTypeId (void)
                    MakeUintegerAccessor (&McUeNetDevice::SetMtu,
                                          &McUeNetDevice::GetMtu),
                    MakeUintegerChecker<uint16_t> ())
-	// LTE stack attributes
-	.AddAttribute ("LteEpcUeNas",
-                   "The NAS associated to the LTE stack of this NetDevice",
+	// Common attributes
+	.AddAttribute ("EpcUeNas",
+                   "The NAS associated to the this NetDevice",
                    PointerValue (),
-                   MakePointerAccessor (&McUeNetDevice::m_lteNas),
+                   MakePointerAccessor (&McUeNetDevice::m_nas),
                    MakePointerChecker <EpcUeNas> ())
+  .AddAttribute ("Imsi",
+                   "International Mobile Subscriber Identity assigned to this UE",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&McUeNetDevice::m_imsi),
+                   MakeUintegerChecker<uint64_t> ())
+   .AddAttribute ("CsgId",
+                   "The Closed Subscriber Group (CSG) identity that this UE is associated with, "
+                   "i.e., giving the UE access to cells which belong to this particular CSG. "
+                   "This restriction only applies to initial cell selection and EPC-enabled simulation. "
+                   "This does not revoke the UE's access to non-CSG cells. ",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&McUeNetDevice::SetCsgId,
+                                         &McUeNetDevice::GetCsgId),
+                   MakeUintegerChecker<uint32_t> ())
+    // LTE stack
     .AddAttribute ("LteUeRrc",
                    "The RRC associated to the LTE stack of this NetDevice",
                    PointerValue (),
@@ -71,11 +86,6 @@ TypeId McUeNetDevice::GetTypeId (void)
                    PointerValue (),
                    MakePointerAccessor (&McUeNetDevice::m_ltePhy),
                    MakePointerChecker <LteUePhy> ())
-    .AddAttribute ("LteImsi",
-                   "International Mobile Subscriber Identity assigned to the LTE stack UE",
-                   UintegerValue (0),
-                   MakeUintegerAccessor (&McUeNetDevice::m_lteImsi),
-                   MakeUintegerChecker<uint64_t> ())
     .AddAttribute ("LteDlEarfcn",
                    "Downlink E-UTRA Absolute Radio Frequency Channel Number (EARFCN) "
                    "as per 3GPP 36.101 Section 5.7.3. ",
@@ -83,21 +93,7 @@ TypeId McUeNetDevice::GetTypeId (void)
                    MakeUintegerAccessor (&McUeNetDevice::SetLteDlEarfcn,
                                          &McUeNetDevice::GetLteDlEarfcn),
                    MakeUintegerChecker<uint16_t> (0, 6149))
-    .AddAttribute ("LteCsgId",
-                   "The Closed Subscriber Group (CSG) identity that this UE is associated with, "
-                   "i.e., giving the UE access to cells which belong to this particular CSG. "
-                   "This restriction only applies to initial cell selection and EPC-enabled simulation. "
-                   "This does not revoke the UE's access to non-CSG cells. ",
-                   UintegerValue (0),
-                   MakeUintegerAccessor (&McUeNetDevice::SetLteCsgId,
-                                         &McUeNetDevice::GetLteCsgId),
-                   MakeUintegerChecker<uint32_t> ())
     // mmWave stack attributes
-    .AddAttribute ("EpcUeNas",
-                   "The NAS associated to the mmWave stack of this NetDevice",
-                   PointerValue (),
-                   MakePointerAccessor (&McUeNetDevice::m_mmWaveNas),
-                   MakePointerChecker <EpcUeNas> ())
 	.AddAttribute ("MmWaveUeRrc",
                    "The RRC associated to the mmWave stack of this NetDevice",
                    PointerValue (),
@@ -113,11 +109,6 @@ TypeId McUeNetDevice::GetTypeId (void)
 					PointerValue (),
 					MakePointerAccessor (&McUeNetDevice::m_mmWaveMac),
 					MakePointerChecker <MmWaveUeMac> ())
-	.AddAttribute ("MmWaveImsi",
-				   "International Mobile Subscriber Identity assigned the mmWave stack of this NetDevice",
-				   UintegerValue (0),
-				   MakeUintegerAccessor (&McUeNetDevice::m_mmWaveImsi),
-				   MakeUintegerChecker<uint64_t> ())
 	.AddAttribute ("AntennaNum of the mmWave stack of this NetDevice",
 				   "Antenna number of the device",
 				   UintegerValue (16),
@@ -130,7 +121,7 @@ TypeId McUeNetDevice::GetTypeId (void)
 
 McUeNetDevice::McUeNetDevice ()
 	: m_isConstructed (false),
-	  m_mmWaveCsgId (0)
+	  m_csgId (0)
 {
 	NS_LOG_FUNCTION (this);
 	m_random = CreateObject<UniformRandomVariable> ();
@@ -154,7 +145,6 @@ McUeNetDevice::DoInitialize (void)
 	m_ltePhy->Initialize ();
 	m_lteMac->Initialize ();
 	m_lteRrc->Initialize ();
-
 }
 
 
@@ -169,8 +159,8 @@ McUeNetDevice::DoDispose (void)
 	m_lteRrc = 0;
 	m_ltePhy->Dispose ();
 	m_ltePhy = 0;
-	m_lteNas->Dispose ();
-	m_lteNas = 0;
+	m_nas->Dispose ();
+	m_nas = 0;
 
 	m_mmWaveTargetEnb = 0;
 	m_mmWaveMac->Dispose ();
@@ -179,8 +169,6 @@ McUeNetDevice::DoDispose (void)
 	m_mmWaveRrc = 0;
 	m_mmWavePhy->Dispose ();
 	m_mmWavePhy = 0;
-	m_mmWaveNas->Dispose ();
-	m_mmWaveNas = 0;
 
 	m_node = 0;
 	NetDevice::DoDispose();
@@ -411,16 +399,14 @@ McUeNetDevice::UpdateConfig (void)
 
 	if (m_isConstructed)
 	{
-		NS_LOG_LOGIC (this << " Updating configuration: IMSI " << m_lteImsi << " " << m_mmWaveImsi
-		             << " CSG ID " << m_lteCsgId << " " << m_mmWaveCsgId);
-		m_lteNas->SetImsi (m_lteImsi);
-		m_mmWaveNas->SetImsi (m_mmWaveImsi);
+		NS_LOG_LOGIC (this << " Updating configuration: IMSI " << m_imsi
+		             << " CSG ID " << m_csgId);
+		m_nas->SetImsi (m_imsi);
 
-		m_lteRrc->SetImsi (m_lteImsi);
-		m_mmWaveRrc->SetImsi (m_mmWaveImsi);
+		m_lteRrc->SetImsi (m_imsi);
+		m_mmWaveRrc->SetImsi (m_imsi);
 
-		m_lteNas->SetCsgId (m_lteCsgId); // this also handles propagation to RRC
-		m_mmWaveNas->SetCsgId (m_mmWaveCsgId);
+		m_nas->SetCsgId (m_csgId); // TODO this also handles propagation to RRC (LTE only for now) 
 	}
 	else
 	{
@@ -456,17 +442,17 @@ McUeNetDevice::GetLtePhy (void) const
 }
 
 Ptr<EpcUeNas>
-McUeNetDevice::GetLteNas (void) const
+McUeNetDevice::GetNas (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_lteNas;
+  return m_nas;
 }
 
 uint64_t
-McUeNetDevice::GetLteImsi () const
+McUeNetDevice::GetImsi () const
 {
   NS_LOG_FUNCTION (this);
-  return m_lteImsi;
+  return m_imsi;
 }
 
 uint16_t
@@ -484,17 +470,17 @@ McUeNetDevice::SetLteDlEarfcn (uint16_t earfcn)
 }
 
 uint32_t
-McUeNetDevice::GetLteCsgId () const
+McUeNetDevice::GetCsgId () const
 {
   NS_LOG_FUNCTION (this);
-  return m_lteCsgId;
+  return m_csgId;
 }
 
 void
-McUeNetDevice::SetLteCsgId (uint32_t csgId)
+McUeNetDevice::SetCsgId (uint32_t csgId)
 {
   NS_LOG_FUNCTION (this << csgId);
-  m_lteCsgId = csgId;
+  m_csgId = csgId;
   UpdateConfig (); // propagate the change down to NAS and RRC
 }
 
@@ -514,21 +500,6 @@ McUeNetDevice::GetLteTargetEnb (void)
 }
 
 
-uint32_t
-McUeNetDevice::GetMmWaveCsgId () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_mmWaveCsgId;
-}
-
-void
-McUeNetDevice::SetMmWaveCsgId (uint32_t csgId)
-{
-  NS_LOG_FUNCTION (this << csgId);
-  m_mmWaveCsgId = csgId;
-  UpdateConfig (); // propagate the change down to NAS and RRC
-}
-
 Ptr<MmWaveUePhy>
 McUeNetDevice::GetMmWavePhy (void) const
 {
@@ -541,25 +512,11 @@ McUeNetDevice::GetMmWaveMac (void) const
 	return m_mmWaveMac;
 }
 
-Ptr<EpcUeNas>
-McUeNetDevice::GetMmWaveNas (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_mmWaveNas;
-}
-
-
 Ptr<LteUeRrc>
 McUeNetDevice::GetMmWaveRrc (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_mmWaveRrc;
-}
-
-uint64_t
-McUeNetDevice::GetMmWaveImsi () const
-{
-	return m_mmWaveImsi;
 }
 
 uint16_t
@@ -607,14 +564,7 @@ McUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protoco
 	  NS_LOG_INFO("unsupported protocol " << protocolNumber << ", only IPv4 is supported");
 	  return true;
 	}  
-	// call once the lte and once the mmWave stack
-	if(m_random->GetValue() > 0.5) {
-    NS_LOG_INFO("Send " << packet->GetSize() << " byte to mmWave stack");
-		return m_mmWaveNas->Send (packet);
-	} else {
-    NS_LOG_INFO("Send " << packet->GetSize() << " byte to lte stack");
-		return m_lteNas->Send (packet);
-	}
+  return m_nas->Send(packet);
 }
 
 }

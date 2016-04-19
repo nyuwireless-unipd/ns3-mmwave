@@ -91,6 +91,12 @@ public:
    */
   virtual void Disconnect () = 0;
 
+  /** 
+   * \brief Tell the RRC that a secondary cell was connected
+   *
+   */
+  virtual void NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId) = 0;
+
 };
 
 
@@ -111,7 +117,13 @@ public:
    * \brief Notify the NAS that RRC Connection Establishment was successful.
    * 
    */
-  virtual void NotifyConnectionSuccessful () = 0;
+  virtual void NotifyConnectionSuccessful (uint16_t rnti) = 0;
+
+  /** 
+   * \brief Notify the NAS that LTE RRC received an indication to connect to a MmWave eNB
+   * 
+   */
+  virtual void NotifyConnectToMmWave (uint16_t mmWaveCellId) = 0;
 
   /** 
    * \brief Notify the NAS that RRC Connection Establishment failed.
@@ -156,6 +168,7 @@ public:
   virtual void Connect (void);
   virtual void SendData (Ptr<Packet> packet, uint8_t bid);
   virtual void Disconnect ();
+  virtual void NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId);
 
 private:
   MemberLteAsSapProvider ();
@@ -215,6 +228,13 @@ MemberLteAsSapProvider<C>::Disconnect ()
   m_owner->DoDisconnect ();
 }
 
+template <class C>
+void 
+MemberLteAsSapProvider<C>::NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId)
+{
+  m_owner->DoNotifySecondaryCellConnected (rnti, mmWaveCellId);
+}
+
 
 /**
  * Template for the implementation of the LteAsSapUser as a member
@@ -228,7 +248,8 @@ public:
   MemberLteAsSapUser (C* owner);
 
   // inherited from LteAsSapUser
-  virtual void NotifyConnectionSuccessful ();
+  virtual void NotifyConnectionSuccessful (uint16_t rnti);
+  virtual void NotifyConnectToMmWave (uint16_t mmWaveCellId);
   virtual void NotifyConnectionFailed ();
   virtual void RecvData (Ptr<Packet> packet);
   virtual void NotifyConnectionReleased ();
@@ -251,9 +272,16 @@ MemberLteAsSapUser<C>::MemberLteAsSapUser ()
 
 template <class C>
 void 
-MemberLteAsSapUser<C>::NotifyConnectionSuccessful ()
+MemberLteAsSapUser<C>::NotifyConnectionSuccessful (uint16_t rnti)
 {
-  m_owner->DoNotifyConnectionSuccessful ();
+  m_owner->DoNotifyConnectionSuccessful (rnti);
+}
+
+template <class C>
+void 
+MemberLteAsSapUser<C>::NotifyConnectToMmWave (uint16_t mmWaveCellId)
+{
+  m_owner->DoNotifyConnectToMmWave (mmWaveCellId);
 }
 
 template <class C>

@@ -143,6 +143,7 @@ public:
    * \param s the CMAC SAP Provider to be used by this RRC
    */
   void SetLteUeCmacSapProvider (LteUeCmacSapProvider * s);
+  void SetMmWaveUeCmacSapProvider (LteUeCmacSapProvider * s);
 
   /**
    *
@@ -174,6 +175,7 @@ public:
    * newly created RLC instances
    */
   void SetLteMacSapProvider (LteMacSapProvider* s);
+  void SetMmWaveMacSapProvider (LteMacSapProvider* s);
 
   /** 
    * Set the AS SAP user to interact with the NAS entity
@@ -206,6 +208,19 @@ public:
    * \return the C-RNTI of the user
    */
   uint16_t GetRnti () const;
+
+// TODO remove later on
+  /**
+   * set the MmWave cell id 
+   * \param mmWaveCellId
+   */
+  void SetMmWaveCellId (uint16_t mmWaveCellId);
+
+  /**
+   * get the MmWave cell id 
+   * \param mmWaveCellId
+   */
+  uint16_t GetMmWaveCellId () const;
 
   /**
    *
@@ -310,6 +325,7 @@ private:
   void DoConnect ();
   void DoSendData (Ptr<Packet> packet, uint8_t bid);
   void DoDisconnect ();
+  void DoNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId);
 
   // CPHY SAP methods
   void DoRecvMasterInformationBlock (uint16_t cellId,
@@ -336,6 +352,8 @@ private:
   void DoRecvRrcConnectionRelease (LteRrcSap::RrcConnectionRelease msg);
   /// Part of the RRC protocol. Implement the LteUeRrcSapProvider::RecvRrcConnectionReject interface.
   void DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg);
+  /// Part of the RRC protocol. Implement the LteUeRrcSapProvider::RecvRrcConnectToMmWave interface.
+  void DoRecvRrcConnectToMmWave (uint16_t mmWaveCellId);
 
  
   // INTERNAL METHODS
@@ -525,11 +543,13 @@ private:
 
   LteUeCmacSapUser* m_cmacSapUser;
   LteUeCmacSapProvider* m_cmacSapProvider;
+  LteUeCmacSapProvider* m_mmWaveCmacSapProvider;
 
   LteUeRrcSapUser* m_rrcSapUser;
   LteUeRrcSapProvider* m_rrcSapProvider;
 
   LteMacSapProvider* m_macSapProvider;
+  LteMacSapProvider* m_mmWaveMacSapProvider;
   LtePdcpSapUser* m_drbPdcpSapUser;
 
   LteAsSapProvider* m_asSapProvider;
@@ -544,6 +564,7 @@ private:
    * The `C-RNTI` attribute. Cell Radio Network Temporary Identifier.
    */
   uint16_t m_rnti;
+  uint16_t m_mmWaveRnti;
   /**
    * The `CellId` attribute. Serving cell identifier.
    */
@@ -567,6 +588,7 @@ private:
    * Radio Bearers by LCID.
    */
   std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
+  std::map <uint8_t, Ptr<LteRlc> > m_rlcMap;
 
   /**
    * True if RLC SM is to be used, false if RLC UM/AM are to be used.
@@ -942,6 +964,7 @@ private:
    *        connection establishment procedure has failed.
    */
   void ConnectionTimeout ();
+  uint16_t m_mmWaveCellId;
 
 }; // end of class LteUeRrc
 

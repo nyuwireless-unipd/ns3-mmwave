@@ -22,9 +22,9 @@
 #define EPC_X2_SAP_H
 
 #include "ns3/packet.h"
-#include "ns3/eps-bearer.h"
 #include "ns3/ipv4-address.h"
-
+#include <ns3/lte-rrc-sap.h>
+#include <ns3/lte-enb-cmac-sap.h>
 #include <bitset>
 
 namespace ns3 {
@@ -330,8 +330,92 @@ public:
     Ptr<Packet> ueData;
   };
 
+  /**
+   * \brief Parameters of the RlcSetupRequest to handle MC connectivity
+   *
+   * Forward UE params during the MC setup
+   */
+  struct RlcSetupRequest
+  {
+    uint16_t    sourceCellId;
+    uint16_t    targetCellId;
+    uint32_t    gtpTeid;
+    uint16_t    mmWaveRnti;
+    uint16_t    lteRnti;
+    uint8_t     drbid;
+    LteEnbCmacSapProvider::LcInfo lcinfo;
+    LteRrcSap::RlcConfig rlcConfig;
+    LteRrcSap::LogicalChannelConfig logicalChannelConfig;
+    TypeId      rlcType;
+
+
+  };
+
 };
 
+
+/**
+ * MC primitives. Part of X2 entity, called by PDCP
+ */
+class EpcX2PdcpProvider : public EpcX2Sap
+{
+public:
+  virtual ~EpcX2PdcpProvider ();
+
+  /*
+   * Service primitives
+   */
+  // X2 sends a Pdcp PDU in downlink to the MmWave eNB for transmission to the UE
+  virtual void SendMcPdcpPdu (UeDataParams params) = 0;
+};
+
+
+/**
+ * MC primitives. Part of PDCP entity, called by X2
+ */
+class EpcX2PdcpUser : public EpcX2Sap
+{
+public:
+  virtual ~EpcX2PdcpUser ();
+
+  /*
+   * Service primitives
+   */
+  // Receive a PDCP PDU in uplink from the MmWave eNB for transmission to CN
+  virtual void ReceiveMcPdcpPdu (UeDataParams params) = 0;
+};
+
+
+/**
+ * MC primitives. Part of X2 entity, called by RLC
+ */
+class EpcX2RlcProvider : public EpcX2Sap
+{
+public:
+  virtual ~EpcX2RlcProvider ();
+
+  /*
+   * Service primitives
+   */
+  // Receive a PDCP SDU from RLC for uplink transmission to PDCP in LTE eNB
+  virtual void ReceiveMcPdcpSdu (UeDataParams params) = 0;
+};
+
+
+/**
+ * MC primitives. Part of RLC entity, called by X2
+ */
+class EpcX2RlcUser : public EpcX2Sap
+{
+public:
+  virtual ~EpcX2RlcUser ();
+
+  /*
+   * Service primitives
+   */
+  // X2 sends a PDCP SDU to RLC for downlink transmission to the UE
+  virtual void SendMcPdcpSdu (UeDataParams params) = 0;
+};
 
 /**
  * These service primitives of this part of the X2 SAP
@@ -361,6 +445,14 @@ public:
   virtual void SendResourceStatusUpdate (ResourceStatusUpdateParams params) = 0;
 
   virtual void SendUeData (UeDataParams params) = 0;
+
+  virtual void SetEpcX2PdcpUser (uint32_t teid, EpcX2PdcpUser * s) = 0;
+
+  virtual void SetEpcX2RlcUser (uint32_t teid, EpcX2RlcUser * s) = 0;
+
+  virtual void SendRlcSetupRequest (RlcSetupRequest params) = 0;
+
+  virtual void SendRlcSetupCompleted (UeDataParams params) = 0;
 };
 
 
@@ -390,6 +482,10 @@ public:
   virtual void RecvLoadInformation (LoadInformationParams params) = 0;
   
   virtual void RecvResourceStatusUpdate (ResourceStatusUpdateParams params) = 0;
+
+  virtual void RecvRlcSetupRequest (RlcSetupRequest params) = 0;
+
+  virtual void RecvRlcSetupCompleted (UeDataParams params) = 0;
 
   virtual void RecvUeData (UeDataParams params) = 0;
 };
@@ -421,6 +517,15 @@ public:
   virtual void SendResourceStatusUpdate (ResourceStatusUpdateParams params);
 
   virtual void SendUeData (UeDataParams params);
+
+  virtual void SetEpcX2PdcpUser (uint32_t teid, EpcX2PdcpUser * s);
+
+  virtual void SetEpcX2RlcUser (uint32_t teid, EpcX2RlcUser * s);
+
+  virtual void SendRlcSetupRequest (RlcSetupRequest params);
+
+  virtual void SendRlcSetupCompleted (UeDataParams params);
+
 
 private:
   EpcX2SpecificEpcX2SapProvider ();
@@ -494,6 +599,34 @@ EpcX2SpecificEpcX2SapProvider<C>::SendUeData (UeDataParams params)
   m_x2->DoSendUeData (params);
 }
 
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SetEpcX2RlcUser (uint32_t teid, EpcX2RlcUser * s)
+{
+  m_x2->SetMcEpcX2RlcUser (teid, s);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SetEpcX2PdcpUser (uint32_t teid, EpcX2PdcpUser * s)
+{
+  m_x2->SetMcEpcX2PdcpUser (teid, s);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SendRlcSetupRequest (RlcSetupRequest params)
+{
+  m_x2->DoSendRlcSetupRequest (params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SendRlcSetupCompleted (UeDataParams params)
+{
+  m_x2->DoSendRlcSetupCompleted (params);
+}
+
 ///////////////////////////////////////
 
 template <class C>
@@ -519,6 +652,10 @@ public:
   virtual void RecvLoadInformation (LoadInformationParams params);
 
   virtual void RecvResourceStatusUpdate (ResourceStatusUpdateParams params);
+
+  virtual void RecvRlcSetupRequest (RlcSetupRequest params);
+
+  virtual void RecvRlcSetupCompleted (UeDataParams params);
 
   virtual void RecvUeData (UeDataParams params);
 
@@ -589,9 +726,155 @@ EpcX2SpecificEpcX2SapUser<C>::RecvResourceStatusUpdate (ResourceStatusUpdatePara
 
 template <class C>
 void
+EpcX2SpecificEpcX2SapUser<C>::RecvRlcSetupRequest (RlcSetupRequest params)
+{
+  m_rrc->DoRecvRlcSetupRequest (params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvRlcSetupCompleted (UeDataParams params)
+{
+  m_rrc->DoRecvRlcSetupCompleted (params);
+}
+
+template <class C>
+void
 EpcX2SpecificEpcX2SapUser<C>::RecvUeData (UeDataParams params)
 {
   m_rrc->DoRecvUeData (params);
+}
+
+/////////////////////////////////////////////
+template <class C>
+class EpcX2PdcpSpecificProvider : public EpcX2PdcpProvider
+{
+public:
+  EpcX2PdcpSpecificProvider (C* x2);
+
+  // Inherited
+  virtual void SendMcPdcpPdu (UeDataParams params);
+
+private:
+  EpcX2PdcpSpecificProvider ();
+  C* m_x2;
+};
+
+template <class C>
+EpcX2PdcpSpecificProvider<C>::EpcX2PdcpSpecificProvider (C* x2)
+  : m_x2 (x2)
+{
+}
+
+template <class C>
+EpcX2PdcpSpecificProvider<C>::EpcX2PdcpSpecificProvider ()
+{
+}
+
+template <class C>
+void
+EpcX2PdcpSpecificProvider<C>::SendMcPdcpPdu(UeDataParams params)
+{
+  m_x2->DoSendMcPdcpPdu(params);
+}
+
+/////////////////////////////////////////////
+template <class C>
+class EpcX2RlcSpecificProvider : public EpcX2RlcProvider
+{
+public:
+  EpcX2RlcSpecificProvider (C* x2);
+
+  // Inherited
+  virtual void ReceiveMcPdcpSdu (UeDataParams params);
+
+private:
+  EpcX2RlcSpecificProvider ();
+  C* m_x2;
+};
+
+template <class C>
+EpcX2RlcSpecificProvider<C>::EpcX2RlcSpecificProvider (C* x2)
+  : m_x2 (x2)
+{
+}
+
+template <class C>
+EpcX2RlcSpecificProvider<C>::EpcX2RlcSpecificProvider ()
+{
+}
+
+template <class C>
+void
+EpcX2RlcSpecificProvider<C>::ReceiveMcPdcpSdu(UeDataParams params)
+{
+  m_x2->DoReceiveMcPdcpSdu(params);
+}
+
+/////////////////////////////////////////////
+template <class C>
+class EpcX2PdcpSpecificUser : public EpcX2PdcpUser
+{
+public:
+  EpcX2PdcpSpecificUser (C* pdcp);
+
+  // Inherited
+  virtual void ReceiveMcPdcpPdu (UeDataParams params);
+
+private:
+  EpcX2PdcpSpecificUser ();
+  C* m_pdcp;
+};
+
+template <class C>
+EpcX2PdcpSpecificUser<C>::EpcX2PdcpSpecificUser (C* pdcp)
+  : m_pdcp (pdcp)
+{
+}
+
+template <class C>
+EpcX2PdcpSpecificUser<C>::EpcX2PdcpSpecificUser ()
+{
+}
+
+template <class C>
+void
+EpcX2PdcpSpecificUser<C>::ReceiveMcPdcpPdu(UeDataParams params)
+{
+  m_pdcp->DoReceiveMcPdcpPdu(params);
+}
+
+/////////////////////////////////////////////
+template <class C>
+class EpcX2RlcSpecificUser : public EpcX2RlcUser
+{
+public:
+  EpcX2RlcSpecificUser (C* rlc);
+
+  // Inherited
+  virtual void SendMcPdcpSdu (UeDataParams params);
+
+private:
+  EpcX2RlcSpecificUser ();
+  C* m_rlc;
+};
+
+template <class C>
+EpcX2RlcSpecificUser<C>::EpcX2RlcSpecificUser (C* rlc)
+  : m_rlc (rlc)
+{
+}
+
+template <class C>
+EpcX2RlcSpecificUser<C>::EpcX2RlcSpecificUser ()
+{
+}
+
+template <class C>
+void
+EpcX2RlcSpecificUser<C>::SendMcPdcpSdu(UeDataParams params)
+{
+  m_rlc->DoSendMcPdcpSdu(params);
 }
 
 } // namespace ns3

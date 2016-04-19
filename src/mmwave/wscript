@@ -49,7 +49,12 @@ def build(bld):
         'model/mmwave-propagation-loss-model.cc',
         'model/antenna-array-model.cc',
         'model/mmwave-channel-raytracing.cc',
-        'model/mc-ue-net-device.cc'
+        'model/mc-ue-net-device.cc',
+        #'model/mmwave-ue-light-rrc.cc',
+        #'model/mmwave-enb-light-rrc.cc',
+        'model/mc-enb-pdcp.cc',
+        'model/mc-ue-pdcp.cc'        
+        
         #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',
         #'model/mmwave-mac-sap.cc',
@@ -106,7 +111,11 @@ def build(bld):
         'model/mmwave-propagation-loss-model.h',
         'model/antenna-array-model.h',
         'model/mmwave-channel-raytracing.h',
-        'model/mc-ue-net-device.h'
+        'model/mc-ue-net-device.h',
+        #'model/mmwave-ue-light-rrc.h',
+        #'model/mmwave-enb-light-rrc.h',
+        'model/mc-enb-pdcp.h',
+        'model/mc-ue-pdcp.h'
         #'model/mmwave-enb-cmac-sap.h',
         #'model/mmwave-enb-rrc.h',
         #'model/mmwave-mac-sap.h',

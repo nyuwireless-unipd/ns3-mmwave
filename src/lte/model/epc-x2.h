@@ -70,6 +70,8 @@ public:
 class EpcX2 : public Object
 {
   friend class EpcX2SpecificEpcX2SapProvider<EpcX2>;
+  friend class EpcX2PdcpSpecificProvider<EpcX2>;
+  friend class EpcX2RlcSpecificProvider<EpcX2>;
 
 public:
   /** 
@@ -95,6 +97,28 @@ public:
    * \return the X2 SAP Provider interface offered by this EPC X2 entity
    */
   EpcX2SapProvider* GetEpcX2SapProvider ();
+
+  /**
+   * \return the X2 Pdcp Provider interface offered by this EPC X2 entity
+   */
+  EpcX2PdcpProvider* GetEpcX2PdcpProvider ();
+
+  /**
+   * \return the X2 Rlc Provider interface offered by this EPC X2 entity
+   */
+  EpcX2RlcProvider* GetEpcX2RlcProvider ();
+
+  /**
+   * \param the teid of the MC device
+   * \param the X2 Rlc User interface associated to the teid
+   */
+  void SetMcEpcX2RlcUser (uint32_t teid, EpcX2RlcUser* rlcUser);
+
+  /**
+   * \param the teid of the MC device
+   * \param the X2 Pdcp User interface associated to the teid
+   */
+  void SetMcEpcX2PdcpUser (uint32_t teid, EpcX2PdcpUser* pdcpUser);
 
 
   /**
@@ -128,6 +152,8 @@ public:
 protected:
   // Interface provided by EpcX2SapProvider
   virtual void DoSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params);
+  virtual void DoSendRlcSetupRequest (EpcX2SapProvider::RlcSetupRequest params);
+  virtual void DoSendRlcSetupCompleted (EpcX2SapProvider::UeDataParams);
   virtual void DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams params);
   virtual void DoSendHandoverPreparationFailure (EpcX2SapProvider::HandoverPreparationFailureParams params);
   virtual void DoSendSnStatusTransfer (EpcX2SapProvider::SnStatusTransferParams params);
@@ -135,10 +161,28 @@ protected:
   virtual void DoSendLoadInformation (EpcX2SapProvider::LoadInformationParams params);
   virtual void DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams params);
   virtual void DoSendUeData (EpcX2SapProvider::UeDataParams params);
+  virtual void DoSendMcPdcpPdu (EpcX2SapProvider::UeDataParams params);
+  virtual void DoReceiveMcPdcpSdu (EpcX2SapProvider::UeDataParams params);
+
 
   EpcX2SapUser* m_x2SapUser;
   EpcX2SapProvider* m_x2SapProvider;
 
+  // TODO need a map for each of these, each associated with a TEID
+  // TODO add an AddMcUe method that is called by RRC on setup of the MC UE
+  
+  /**
+   * Map the PdcpUser to a certain teid
+   */
+  std::map < uint32_t, EpcX2PdcpUser* > m_x2PdcpUserMap;
+  // The PdcpProvider offered by this X2 interface
+  EpcX2PdcpProvider* m_x2PdcpProvider;
+  /**
+   * Map the RlcUser to a certain teid
+   */
+  std::map < uint32_t, EpcX2RlcUser* > m_x2RlcUserMap;
+  // The RlcProvider offered by this X2 interface
+  EpcX2RlcProvider* m_x2RlcProvider;
 
 private:
 

@@ -96,7 +96,8 @@ public:
       AM,
       UM_BI_DIRECTIONAL,
       UM_UNI_DIRECTIONAL_UL,
-      UM_UNI_DIRECTIONAL_DL
+      UM_UNI_DIRECTIONAL_DL,
+      UM_BI_DIRECTIONAL_LOWLAT
     } choice;
   };
 
@@ -218,6 +219,7 @@ public:
     RlcConfig rlcConfig;
     uint8_t logicalChannelIdentity;
     LogicalChannelConfig logicalChannelConfig;
+    bool is_mc;
   };
 
   struct PreambleInfo
@@ -598,6 +600,7 @@ public:
   struct RrcConnectionSetupCompleted
   {
     uint8_t rrcTransactionIdentifier;
+    uint16_t mmWaveCellId;
   };
 
   struct RrcConnectionReconfiguration
@@ -727,6 +730,8 @@ public:
    */
   virtual void SendMeasurementReport (MeasurementReport msg) = 0;
 
+  virtual void SendNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId) = 0;
+
 };
 
 
@@ -802,6 +807,14 @@ public:
    * \param msg the message
    */
   virtual void RecvRrcConnectionReject (RrcConnectionReject msg) = 0;
+
+  /**
+   * \brief Receive an _RRCConnectToMmWave_ message from the serving eNodeB
+   *        during an RRC connection establishment procedure
+   *        (added to support MC functionalities).
+   * \param msg the message
+   */
+  virtual void RecvRrcConnectToMmWave (uint16_t mmWaveCellId) = 0;
 
 };
 
@@ -885,6 +898,15 @@ public:
    * \param msg the message
    */
   virtual void SendRrcConnectionReject (uint16_t rnti, RrcConnectionReject msg) = 0;
+
+  /**
+   * \brief Send an _RRCConnectToMmWave_ message to a UE
+   *        during an RRC connection establishment procedure
+   *        (added to support MC functionalities).
+   * \param rnti the RNTI of the destination UE
+   * \param msg the message
+   */
+  virtual void SendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId) = 0;
 
   virtual Ptr<Packet> EncodeHandoverPreparationInformation (HandoverPreparationInfo msg) = 0;
   virtual HandoverPreparationInfo DecodeHandoverPreparationInformation (Ptr<Packet> p) = 0;
@@ -970,6 +992,7 @@ public:
    */
   virtual void RecvMeasurementReport (uint16_t rnti, MeasurementReport msg) = 0;
 
+  virtual void RecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId) = 0;
 };
 
 
@@ -1001,6 +1024,7 @@ public:
   virtual void SendRrcConnectionReestablishmentRequest (RrcConnectionReestablishmentRequest msg);
   virtual void SendRrcConnectionReestablishmentComplete (RrcConnectionReestablishmentComplete msg);
   virtual void SendMeasurementReport (MeasurementReport msg);
+  virtual void SendNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId);
 
 private:
   MemberLteUeRrcSapUser ();
@@ -1067,6 +1091,13 @@ MemberLteUeRrcSapUser<C>::SendMeasurementReport (MeasurementReport msg)
   m_owner->DoSendMeasurementReport (msg);
 }
 
+template <class C>
+void
+MemberLteUeRrcSapUser<C>::SendNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+{
+  m_owner->DoSendNotifySecondaryCellConnected (mmWaveRnti, mmWaveCellId);
+}
+
 /**
  * Template for the implementation of the LteUeRrcSapProvider as a member
  * of an owner class of type C to which all methods are forwarded
@@ -1087,6 +1118,7 @@ public:
   virtual void RecvRrcConnectionReestablishmentReject (RrcConnectionReestablishmentReject msg);
   virtual void RecvRrcConnectionRelease (RrcConnectionRelease msg);
   virtual void RecvRrcConnectionReject (RrcConnectionReject msg);
+  virtual void RecvRrcConnectToMmWave (uint16_t mmWaveCellId);
 
 private:
   MemberLteUeRrcSapProvider ();
@@ -1160,6 +1192,13 @@ MemberLteUeRrcSapProvider<C>::RecvRrcConnectionReject (RrcConnectionReject msg)
   Simulator::ScheduleNow (&C::DoRecvRrcConnectionReject, m_owner, msg);
 }
 
+template <class C>
+void
+MemberLteUeRrcSapProvider<C>::RecvRrcConnectToMmWave (uint16_t mmWaveCellId)
+{
+  Simulator::ScheduleNow (&C::DoRecvRrcConnectToMmWave, m_owner, mmWaveCellId);
+}
+
 
 /**
  * Template for the implementation of the LteEnbRrcSapUser as a member
@@ -1183,6 +1222,7 @@ public:
   virtual void SendRrcConnectionReestablishmentReject (uint16_t rnti, RrcConnectionReestablishmentReject msg);
   virtual void SendRrcConnectionRelease (uint16_t rnti, RrcConnectionRelease msg);
   virtual void SendRrcConnectionReject (uint16_t rnti, RrcConnectionReject msg);
+  virtual void SendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId);
   virtual Ptr<Packet> EncodeHandoverPreparationInformation (HandoverPreparationInfo msg);
   virtual HandoverPreparationInfo DecodeHandoverPreparationInformation (Ptr<Packet> p);
   virtual Ptr<Packet> EncodeHandoverCommand (RrcConnectionReconfiguration msg);
@@ -1268,6 +1308,13 @@ MemberLteEnbRrcSapUser<C>::SendRrcConnectionReject (uint16_t rnti, RrcConnection
 }
 
 template <class C>
+void
+MemberLteEnbRrcSapUser<C>::SendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId)
+{
+  m_owner->DoSendRrcConnectToMmWave (rnti, mmWaveCellId);
+}
+
+template <class C>
 Ptr<Packet>
 MemberLteEnbRrcSapUser<C>::EncodeHandoverPreparationInformation (HandoverPreparationInfo msg)
 {
@@ -1316,6 +1363,7 @@ public:
   virtual void RecvRrcConnectionReestablishmentRequest (uint16_t rnti, RrcConnectionReestablishmentRequest msg);
   virtual void RecvRrcConnectionReestablishmentComplete (uint16_t rnti, RrcConnectionReestablishmentComplete msg);
   virtual void RecvMeasurementReport (uint16_t rnti, MeasurementReport msg);
+  virtual void RecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId);
 
 private:
   MemberLteEnbRrcSapProvider ();
@@ -1380,6 +1428,13 @@ void
 MemberLteEnbRrcSapProvider<C>::RecvMeasurementReport (uint16_t rnti, MeasurementReport msg)
 {
   Simulator::ScheduleNow (&C::DoRecvMeasurementReport, m_owner, rnti, msg);
+}
+
+template <class C>
+void
+MemberLteEnbRrcSapProvider<C>::RecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+{
+  Simulator::ScheduleNow (&C::DoRecvNotifySecondaryCellConnected, m_owner, rnti, mmWaveRnti, mmWaveCellId);
 }
 
 

@@ -24,7 +24,7 @@
 
 #include "ns3/lte-rlc.h"
 #include "ns3/lte-rlc-tag.h"
-// #include "lte-mac-sap.h"
+#include "lte-mac-sap.h"
 #include "ns3/lte-rlc-sap.h"
 // #include "ff-mac-sched-sap.h"
 
@@ -35,21 +35,6 @@ NS_LOG_COMPONENT_DEFINE ("LteRlc");
 
 ///////////////////////////////////////
 
-class LteRlcSpecificLteMacSapUser : public LteMacSapUser
-{
-public:
-  LteRlcSpecificLteMacSapUser (LteRlc* rlc);
-
-  // Interface implemented from LteMacSapUser
-  virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
-  virtual void NotifyHarqDeliveryFailure ();
-  virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
-  virtual void ReceivePdu (Ptr<Packet> p);
-
-private:
-  LteRlcSpecificLteMacSapUser ();
-  LteRlc* m_rlc;
-};
 
 LteRlcSpecificLteMacSapUser::LteRlcSpecificLteMacSapUser (LteRlc* rlc)
   : m_rlc (rlc)
@@ -97,6 +82,7 @@ LteRlc::LteRlc ()
 {
   NS_LOG_FUNCTION (this);
   m_rlcSapProvider = new LteRlcSpecificLteRlcSapProvider<LteRlc> (this);
+  m_epcX2RlcUser = new EpcX2RlcSpecificUser<LteRlc> (this);
   m_macSapUser = new LteRlcSpecificLteMacSapUser (this);
 }
 
@@ -176,6 +162,25 @@ void
 LteRlc::DoNotifyHarqDeliveryFailure (uint8_t harqId)
 {
 	NS_LOG_FUNCTION (this);
+}
+
+void
+LteRlc::SetUeDataParams(EpcX2Sap::UeDataParams params)
+{
+  isMc = true;
+  m_ueDataParams = params;
+}
+
+void 
+LteRlc::SetEpcX2RlcProvider (EpcX2RlcProvider * s)
+{
+  m_epcX2RlcProvider = s;
+}
+
+EpcX2RlcUser* 
+LteRlc::GetEpcX2RlcUser ()
+{
+  return m_epcX2RlcUser;
 }
 
 ////////////////////////////////////////
@@ -283,6 +288,13 @@ LteRlcSm::ReportBufferStatus ()
   p.retxQueueHolDelay = 0;
   p.statusPduSize = 0;
   m_macSapProvider->ReportBufferStatus (p);
+}
+
+void 
+LteRlcSm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
+{
+  NS_LOG_FUNCTION(this);
+  NS_FATAL_ERROR("Not supported");
 }
 
 

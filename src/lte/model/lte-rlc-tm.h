@@ -52,6 +52,8 @@ public:
   virtual void DoNotifyHarqDeliveryFailure ();
   virtual void DoReceivePdu (Ptr<Packet> p);
 
+  virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params);
+
 private:
   void ExpireRbsTimer (void);
   void DoReportBufferStatus ();
