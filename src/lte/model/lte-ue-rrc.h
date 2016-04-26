@@ -965,6 +965,7 @@ private:
    */
   void ConnectionTimeout ();
   uint16_t m_mmWaveCellId;
+  bool m_isMc;
 
 }; // end of class LteUeRrc
 

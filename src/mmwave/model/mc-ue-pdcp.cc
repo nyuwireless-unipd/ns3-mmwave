@@ -210,8 +210,14 @@ McUePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   params.lcid = m_lcid;
   params.pdcpPdu = p;
 
-  // m_rlcSapProvider->TransmitPdcpPdu (params);
-  m_mmWaveRlcSapProvider->TransmitPdcpPdu (params);
+  if(m_mmWaveRlcSapProvider == 0 || m_txSequenceNumber % 2 == 0)
+  {
+    m_rlcSapProvider->TransmitPdcpPdu (params);
+  }
+  else
+  {
+    m_mmWaveRlcSapProvider->TransmitPdcpPdu (params);
+  }
 }
 
 void

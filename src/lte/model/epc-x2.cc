@@ -446,6 +446,21 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
       m_x2SapUser->RecvRlcSetupCompleted (params);
     }
+  else if (procedureCode == EpcX2Header::NotifyMcConnection)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: NOTIFY MC CONNECTION");
+      
+      EpcX2NotifyMcConnectionHeader x2mcHeader;
+      packet->RemoveHeader(x2mcHeader);
+
+      NS_LOG_INFO ("X2 NotifyMcConnection header: " << x2mcHeader);
+
+      EpcX2SapUser::ExpectMcUeParams params;
+      params.targetCellId = x2mcHeader.GetTargetCellId();
+      params.imsi = x2mcHeader.GetImsi();
+
+      m_x2SapUser->RecvNotifyMcConnection(params);  
+    }
   else
     {
       NS_ASSERT_MSG (false, "ProcedureCode NOT SUPPORTED!!!");
@@ -605,6 +620,50 @@ EpcX2::DoSendRlcSetupRequest (EpcX2SapProvider::RlcSetupRequest params)
   // Send the X2 message through the socket
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
 }
+
+void
+EpcX2::DoSendNotifyMcConnection (EpcX2SapProvider::ExpectMcUeParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+  NS_LOG_LOGIC ("imsi = " << params.imsi);
+
+  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.targetCellId) != m_x2InterfaceSockets.end (),
+                 "Missing infos for targetCellId = " << params.targetCellId);
+  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.targetCellId];
+  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+  NS_LOG_INFO ("Send X2 message: NOTIFY MC CONNECTION");
+
+  // Build the X2 message
+  EpcX2NotifyMcConnectionHeader x2mcHeader;
+  x2mcHeader.SetTargetCellId(params.targetCellId);
+  x2mcHeader.SetImsi(params.imsi);
+
+  EpcX2Header x2Header;
+  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
+  x2Header.SetProcedureCode (EpcX2Header::NotifyMcConnection);
+  x2Header.SetLengthOfIes (x2mcHeader.GetLengthOfIes ());
+  x2Header.SetNumberOfIes (x2mcHeader.GetNumberOfIes ());
+
+  NS_LOG_INFO ("X2 header: " << x2Header);
+  NS_LOG_INFO ("X2 NotifyMcConnection header: " << x2mcHeader);
+
+  // Build the X2 packet
+  Ptr<Packet> packet = Create <Packet> ();
+  packet->AddHeader (x2mcHeader);
+  packet->AddHeader (x2Header);
+  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+  // Send the X2 message through the socket
+  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+}
+
 
 void
 EpcX2::DoSendRlcSetupCompleted (EpcX2Sap::UeDataParams params)

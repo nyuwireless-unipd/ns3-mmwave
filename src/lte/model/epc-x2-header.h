@@ -60,8 +60,9 @@ public:
     SnStatusTransfer        = 4,
     UeContextRelease        = 5,
     ResourceStatusReporting = 10,
-    RlcSetupRequest         = 11,
-    RlcSetupCompleted       = 12
+    RlcSetupRequest         = 11, // added for MC functionalities
+    RlcSetupCompleted       = 12,
+    NotifyMcConnection      = 13
   };
 
   enum TypeOfMessage_t {
@@ -223,6 +224,36 @@ private:
   uint16_t          m_sourceCellId;
   uint16_t          m_targetCellId;
   uint32_t          m_gtpTeid;
+};
+
+class EpcX2NotifyMcConnectionHeader : public Header
+{
+public:
+  EpcX2NotifyMcConnectionHeader ();
+  virtual ~EpcX2NotifyMcConnectionHeader ();
+
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual void Print (std::ostream &os) const;
+
+  uint16_t GetTargetCellId () const;
+  void SetTargetCellId (uint16_t targetCellId);
+
+  uint64_t GetImsi () const;
+  void SetImsi (uint64_t imsi);
+
+  uint32_t GetLengthOfIes () const;
+  uint32_t GetNumberOfIes () const;
+
+private:
+  uint32_t          m_numberOfIes;
+  uint32_t          m_headerLength;
+
+  uint16_t          m_targetCellId;
+  uint64_t          m_imsi;
 };
 
 class EpcX2HandoverRequestAckHeader : public Header

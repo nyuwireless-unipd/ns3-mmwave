@@ -589,6 +589,7 @@ public:
   struct RrcConnectionRequest
   {
     uint64_t ueIdentity;
+    bool isMc;
   };
 
   struct RrcConnectionSetup

@@ -959,6 +959,7 @@ private:
   void DoRecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params);
   void DoRecvRlcSetupCompleted (EpcX2SapUser::UeDataParams params);
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
+  void DoRecvNotifyMcConnection(EpcX2SapUser::ExpectMcUeParams params);
 
   // CMAC SAP methods
 

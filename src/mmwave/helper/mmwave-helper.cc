@@ -534,7 +534,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	Ptr<MmWaveUeMac> mmWaveMac = CreateObject<MmWaveUeMac> ();
 	Ptr<LteUeRrc> mmWaveRrc = CreateObject<LteUeRrc> ();
 
-	// TODO lightweight RRC for the mmwave stack
+	mmWaveRrc->SetAttribute("SecondaryRRC", BooleanValue(true));
 	if (m_useIdealRrc)
 	{
 		Ptr<mmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<mmWaveUeRrcProtocolIdeal> ();
@@ -934,8 +934,8 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 		NS_ASSERT_MSG (enbApp != 0, "cannot retrieve EpcEnbApplication");
 
 		// S1 SAPs
-		// rrc->SetS1SapProvider (enbApp->GetS1SapProvider ());
-		// enbApp->SetS1SapUser (rrc->GetS1SapUser ());
+		rrc->SetS1SapProvider (enbApp->GetS1SapProvider ());
+		enbApp->SetS1SapUser (rrc->GetS1SapUser ());
 
 		// X2 SAPs
 		Ptr<EpcX2> x2 = n->GetObject<EpcX2> ();

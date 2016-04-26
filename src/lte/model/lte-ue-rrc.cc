@@ -257,6 +257,11 @@ LteUeRrc::GetTypeId (void)
                      "trace fired upon failure of a handover procedure",
                      MakeTraceSourceAccessor (&LteUeRrc::m_handoverEndErrorTrace),
                      "ns3::LteUeRrc::ImsiCidRntiTracedCallback")
+    .AddAttribute ("SecondaryRRC",
+                     "True if this the RRC in charge of the secondary cell (MmWaveCell) for a MC device",
+                     BooleanValue (false),
+                     MakeBooleanAccessor (&LteUeRrc::m_isMc),
+                     MakeBooleanChecker ())
   ;
   return tid;
 }
@@ -552,6 +557,7 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
         SwitchToState (IDLE_CONNECTING);
         LteRrcSap::RrcConnectionRequest msg;
         msg.ueIdentity = m_imsi;
+        msg.isMc = m_isMc;
         m_rrcSapUser->SendRrcConnectionRequest (msg); 
         m_connectionTimeout = Simulator::Schedule (m_t300,
                                                    &LteUeRrc::ConnectionTimeout,

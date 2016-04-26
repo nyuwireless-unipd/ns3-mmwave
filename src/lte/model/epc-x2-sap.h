@@ -351,6 +351,12 @@ public:
 
   };
 
+  struct ExpectMcUeParams
+  {
+    uint64_t imsi;
+    uint16_t targetCellId;
+  };
+
 };
 
 
@@ -453,6 +459,9 @@ public:
   virtual void SendRlcSetupRequest (RlcSetupRequest params) = 0;
 
   virtual void SendRlcSetupCompleted (UeDataParams params) = 0;
+
+  // notify the secondary cell to expect the connection of a MC device
+  virtual void SendNotifyMcConnection (ExpectMcUeParams params) = 0;
 };
 
 
@@ -488,6 +497,8 @@ public:
   virtual void RecvRlcSetupCompleted (UeDataParams params) = 0;
 
   virtual void RecvUeData (UeDataParams params) = 0;
+
+  virtual void RecvNotifyMcConnection (ExpectMcUeParams params) = 0;
 };
 
 ///////////////////////////////////////
@@ -525,6 +536,8 @@ public:
   virtual void SendRlcSetupRequest (RlcSetupRequest params);
 
   virtual void SendRlcSetupCompleted (UeDataParams params);
+
+  virtual void SendNotifyMcConnection (ExpectMcUeParams params);
 
 
 private:
@@ -627,6 +640,14 @@ EpcX2SpecificEpcX2SapProvider<C>::SendRlcSetupCompleted (UeDataParams params)
   m_x2->DoSendRlcSetupCompleted (params);
 }
 
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SendNotifyMcConnection (ExpectMcUeParams params)
+{
+  m_x2->DoSendNotifyMcConnection (params);
+}
+
 ///////////////////////////////////////
 
 template <class C>
@@ -658,6 +679,8 @@ public:
   virtual void RecvRlcSetupCompleted (UeDataParams params);
 
   virtual void RecvUeData (UeDataParams params);
+
+  virtual void RecvNotifyMcConnection (ExpectMcUeParams params);
 
 private:
   EpcX2SpecificEpcX2SapUser ();
@@ -744,6 +767,14 @@ EpcX2SpecificEpcX2SapUser<C>::RecvUeData (UeDataParams params)
 {
   m_rrc->DoRecvUeData (params);
 }
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvNotifyMcConnection (ExpectMcUeParams params)
+{
+  m_rrc->DoRecvNotifyMcConnection (params);
+}
+
 
 /////////////////////////////////////////////
 template <class C>

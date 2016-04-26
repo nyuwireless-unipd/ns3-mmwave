@@ -160,6 +160,7 @@ protected:
   virtual void DoSendUeContextRelease (EpcX2SapProvider::UeContextReleaseParams params);
   virtual void DoSendLoadInformation (EpcX2SapProvider::LoadInformationParams params);
   virtual void DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams params);
+  virtual void DoSendNotifyMcConnection (EpcX2SapProvider::ExpectMcUeParams params);
   virtual void DoSendUeData (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendMcPdcpPdu (EpcX2SapProvider::UeDataParams params);
   virtual void DoReceiveMcPdcpSdu (EpcX2SapProvider::UeDataParams params);

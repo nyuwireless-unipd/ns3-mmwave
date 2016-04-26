@@ -333,7 +333,7 @@ UeManager::SetImsi (uint64_t imsi)
 }
 
 void
-UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gtpTeid, Ipv4Address transportLayerAddress)
+UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gtpTeid, Ipv4Address transportLayerAddress) 
 {
   NS_LOG_FUNCTION (this << (uint32_t) m_rnti);
 
@@ -823,91 +823,98 @@ UeManager::RecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params)
 }
 
 void
-UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params)
+UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO only on MC
 {
-  NS_LOG_INFO("Setup remote RLC in cell " << m_rrc->GetCellId());
-  NS_ASSERT_MSG(params.mmWaveRnti == m_rnti, "Rnti not correct");
-  // setup TEIDs to receive data eventually forwarded over X2-U 
-  LteEnbRrc::X2uTeidInfo x2uTeidInfo;
-  x2uTeidInfo.rnti = m_rnti;
-  x2uTeidInfo.drbid = params.drbid;
-  std::pair<std::map<uint32_t, LteEnbRrc::X2uTeidInfo>::iterator, bool> ret;
-  ret = m_rrc->m_x2uMcTeidInfoMap.insert (std::pair<uint32_t, LteEnbRrc::X2uTeidInfo> (params.gtpTeid, x2uTeidInfo));
-  NS_ASSERT_MSG (ret.second == true, "overwriting a pre-existing entry in m_x2uTeidInfoMap");
-  NS_LOG_INFO("Added entry in m_x2uMcTeidInfoMap");
-
-  // create new Rlc
-  // define a new struct similar to LteDataRadioBearerInfo with only rlc
-  RlcBearerInfo rlcInfo;
-  rlcInfo.targetCellId = params.sourceCellId;
-  rlcInfo.gtpTeid = params.gtpTeid;
-  rlcInfo.mmWaveRnti = params.mmWaveRnti;
-  rlcInfo.lteRnti = params.lteRnti;
-  rlcInfo.drbid = params.drbid;
-  rlcInfo.rlcConfig = params.rlcConfig;
-  rlcInfo.logicalChannelConfig = params.logicalChannelConfig;
-
-  uint8_t lcid = Drbid2Lcid(params.drbid);
-
-  EpsBearer bearer;
-  TypeId rlcTypeId = m_rrc->GetRlcType (bearer); // actually, this doesn't depend on bearer
-
-  ObjectFactory rlcObjectFactory;
-  rlcObjectFactory.SetTypeId (rlcTypeId);
-  Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
-  NS_LOG_INFO("Created rlc " << rlc);
-  rlc->SetLteMacSapProvider (m_rrc->m_macSapProvider);
-  rlc->SetRnti (m_rnti);
-
-  rlcInfo.m_rlc = rlc;
-
-  rlc->SetLcId (lcid);
-
-  if (rlcTypeId != LteRlcSm::GetTypeId ())
+  if(m_isMc)
   {
-    // connect with remote PDCP
-    rlc->SetEpcX2RlcProvider (m_rrc->GetEpcX2RlcProvider());
-    EpcX2Sap::UeDataParams ueParams;
-    ueParams.sourceCellId = m_rrc->GetCellId();
-    ueParams.targetCellId = rlcInfo.targetCellId;
-    ueParams.gtpTeid = rlcInfo.gtpTeid;
-    rlc->SetUeDataParams(ueParams);
-    m_rrc->m_x2SapProvider->SetEpcX2RlcUser (params.gtpTeid, rlc->GetEpcX2RlcUser());
+    NS_LOG_INFO("Setup remote RLC in cell " << m_rrc->GetCellId());
+    NS_ASSERT_MSG(params.mmWaveRnti == m_rnti, "Rnti not correct");
+    // setup TEIDs to receive data eventually forwarded over X2-U 
+    LteEnbRrc::X2uTeidInfo x2uTeidInfo;
+    x2uTeidInfo.rnti = m_rnti;
+    x2uTeidInfo.drbid = params.drbid;
+    std::pair<std::map<uint32_t, LteEnbRrc::X2uTeidInfo>::iterator, bool> ret;
+    ret = m_rrc->m_x2uMcTeidInfoMap.insert (std::pair<uint32_t, LteEnbRrc::X2uTeidInfo> (params.gtpTeid, x2uTeidInfo));
+    NS_ASSERT_MSG (ret.second == true, "overwriting a pre-existing entry in m_x2uTeidInfoMap");
+    NS_LOG_INFO("Added entry in m_x2uMcTeidInfoMap");
+
+    // create new Rlc
+    // define a new struct similar to LteDataRadioBearerInfo with only rlc
+    RlcBearerInfo rlcInfo;
+    rlcInfo.targetCellId = params.sourceCellId;
+    rlcInfo.gtpTeid = params.gtpTeid;
+    rlcInfo.mmWaveRnti = params.mmWaveRnti;
+    rlcInfo.lteRnti = params.lteRnti;
+    rlcInfo.drbid = params.drbid;
+    rlcInfo.rlcConfig = params.rlcConfig;
+    rlcInfo.logicalChannelConfig = params.logicalChannelConfig;
+
+    uint8_t lcid = Drbid2Lcid(params.drbid);
+
+    EpsBearer bearer;
+    TypeId rlcTypeId = m_rrc->GetRlcType (bearer); // actually, this doesn't depend on bearer
+
+    ObjectFactory rlcObjectFactory;
+    rlcObjectFactory.SetTypeId (rlcTypeId);
+    Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
+    NS_LOG_INFO("Created rlc " << rlc);
+    rlc->SetLteMacSapProvider (m_rrc->m_macSapProvider);
+    rlc->SetRnti (m_rnti);
+
+    rlcInfo.m_rlc = rlc;
+
+    rlc->SetLcId (lcid);
+
+    if (rlcTypeId != LteRlcSm::GetTypeId ())
+    {
+      // connect with remote PDCP
+      rlc->SetEpcX2RlcProvider (m_rrc->GetEpcX2RlcProvider());
+      EpcX2Sap::UeDataParams ueParams;
+      ueParams.sourceCellId = m_rrc->GetCellId();
+      ueParams.targetCellId = rlcInfo.targetCellId;
+      ueParams.gtpTeid = rlcInfo.gtpTeid;
+      rlc->SetUeDataParams(ueParams);
+      m_rrc->m_x2SapProvider->SetEpcX2RlcUser (params.gtpTeid, rlc->GetEpcX2RlcUser());
+    }
+
+    LteEnbCmacSapProvider::LcInfo lcinfo;
+    lcinfo.rnti = m_rnti;
+    lcinfo.lcId = lcid;
+    lcinfo.lcGroup = m_rrc->GetLogicalChannelGroup (params.lcinfo.isGbr);
+    lcinfo.qci = params.lcinfo.qci;
+    lcinfo.isGbr = params.lcinfo.isGbr;
+    lcinfo.mbrUl = params.lcinfo.mbrUl;
+    lcinfo.mbrDl = params.lcinfo.mbrDl;
+    lcinfo.gbrUl = params.lcinfo.gbrUl;
+    lcinfo.gbrDl = params.lcinfo.gbrDl;
+    m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
+
+    rlcInfo.logicalChannelIdentity = lcid;
+    rlcInfo.logicalChannelConfig.priority = params.logicalChannelConfig.priority;
+    rlcInfo.logicalChannelConfig.logicalChannelGroup = lcinfo.lcGroup;
+    if (params.lcinfo.isGbr)
+      {
+        rlcInfo.logicalChannelConfig.prioritizedBitRateKbps = params.logicalChannelConfig.prioritizedBitRateKbps;
+      }
+    else
+      {
+        rlcInfo.logicalChannelConfig.prioritizedBitRateKbps = 0;
+      }
+    rlcInfo.logicalChannelConfig.bucketSizeDurationMs = params.logicalChannelConfig.bucketSizeDurationMs;
+
+    m_rlcMap[params.drbid] = rlcInfo; //TODO add assert 
+
+    // Ack the LTE BS, that will trigger the setup in the UE
+    EpcX2Sap::UeDataParams ackParams;
+    ackParams.sourceCellId = params.targetCellId;
+    ackParams.targetCellId = params.sourceCellId;
+    ackParams.gtpTeid = params.gtpTeid;
+    m_rrc->m_x2SapProvider->SendRlcSetupCompleted(ackParams);
   }
-
-  LteEnbCmacSapProvider::LcInfo lcinfo;
-  lcinfo.rnti = m_rnti;
-  lcinfo.lcId = lcid;
-  lcinfo.lcGroup = m_rrc->GetLogicalChannelGroup (params.lcinfo.isGbr);
-  lcinfo.qci = params.lcinfo.qci;
-  lcinfo.isGbr = params.lcinfo.isGbr;
-  lcinfo.mbrUl = params.lcinfo.mbrUl;
-  lcinfo.mbrDl = params.lcinfo.mbrDl;
-  lcinfo.gbrUl = params.lcinfo.gbrUl;
-  lcinfo.gbrDl = params.lcinfo.gbrDl;
-  m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
-
-  rlcInfo.logicalChannelIdentity = lcid;
-  rlcInfo.logicalChannelConfig.priority = params.logicalChannelConfig.priority;
-  rlcInfo.logicalChannelConfig.logicalChannelGroup = lcinfo.lcGroup;
-  if (params.lcinfo.isGbr)
-    {
-      rlcInfo.logicalChannelConfig.prioritizedBitRateKbps = params.logicalChannelConfig.prioritizedBitRateKbps;
-    }
   else
-    {
-      rlcInfo.logicalChannelConfig.prioritizedBitRateKbps = 0;
-    }
-  rlcInfo.logicalChannelConfig.bucketSizeDurationMs = params.logicalChannelConfig.bucketSizeDurationMs;
-
-  m_rlcMap[params.drbid] = rlcInfo; //TODO add assert 
-
-  // Ack the LTE BS, that will trigger the setup in the UE
-  EpcX2Sap::UeDataParams ackParams;
-  ackParams.sourceCellId = params.targetCellId;
-  ackParams.targetCellId = params.sourceCellId;
-  ackParams.gtpTeid = params.gtpTeid;
-  m_rrc->m_x2SapProvider->SendRlcSetupCompleted(ackParams);
+  {
+    NS_FATAL_ERROR("This is not a MC device");
+  }
 }
 
 void
@@ -933,7 +940,7 @@ UeManager::CompleteSetupUe (LteEnbRrcSapProvider::CompleteSetupUeParameters para
 }
 
 void
-UeManager::RecvRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg)
+UeManager::RecvRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg) 
 {
   NS_LOG_FUNCTION (this);
   switch (m_state)
@@ -941,11 +948,12 @@ UeManager::RecvRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg)
     case INITIAL_RANDOM_ACCESS:
       {
         m_connectionRequestTimeout.Cancel ();
+        m_isMc = msg.isMc;
 
-        if (m_rrc->m_admitRrcConnectionRequest == true) // TODO avoid that for MC sends the inital message
+        if (m_rrc->m_admitRrcConnectionRequest == true)
           {
             m_imsi = msg.ueIdentity;
-            if (m_rrc->m_s1SapProvider != 0)
+            if (!m_isMc && m_rrc->m_s1SapProvider != 0)
               {
                 m_rrc->m_s1SapProvider->InitialUeMessage (m_imsi, m_rnti);
               }
@@ -1000,8 +1008,14 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
       NS_LOG_LOGIC("Msg " << msg.mmWaveCellId);
       NS_LOG_LOGIC("Set " << m_rrc->GetCellId());
       if(msg.mmWaveCellId != m_rrc->GetCellId())
-      {
-        m_rrc->m_rrcSapUser->SendRrcConnectToMmWave (m_rnti, msg.mmWaveCellId);
+      {       
+        // tell the mmwave that an UE with a certain IMSI will connect
+        // EpcX2SapProvider::ExpectMcUeParams params;
+        // params.imsi = m_imsi;
+        // params.targetCellId = msg.mmWaveCellId;
+        // m_rrc->m_x2SapProvider->SendNotifyMcConnection(params);
+
+        m_rrc->m_rrcSapUser->SendRrcConnectToMmWave (m_rnti, msg.mmWaveCellId); 
       }
       m_rrc->m_connectionEstablishedTrace (m_imsi, m_rrc->m_cellId, m_rnti);
       break;
@@ -1067,7 +1081,10 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
             b.teid =  it->second->m_gtpTeid;
             params.bearersToBeSwitched.push_back (b);
           }
-        m_rrc->m_s1SapProvider->PathSwitchRequest (params);
+        if(!m_isMc)
+        {
+          m_rrc->m_s1SapProvider->PathSwitchRequest (params);
+        }
       }
       break;
 
@@ -1161,7 +1178,6 @@ void
 UeManager::RecvNotifySecondaryCellConnected(uint16_t mmWaveRnti, uint16_t mmWaveCellId)
 {
   m_mmWaveCellId = mmWaveCellId;
-  m_isMc = true;
 
   NS_LOG_INFO("Map size " << m_drbMap.size());
 
@@ -2416,6 +2432,13 @@ LteEnbRrc::DoRecvUeData (EpcX2SapUser::UeDataParams params)
     }
 }
 
+void
+LteEnbRrc::DoRecvNotifyMcConnection(EpcX2SapUser::ExpectMcUeParams params)
+{
+}
+
+
+
 
 uint16_t 
 LteEnbRrc::DoAllocateTemporaryCellRnti ()
@@ -2543,7 +2566,7 @@ LteEnbRrc::AddUe (UeManager::State state)
 
   NS_ASSERT_MSG (found, "no more RNTIs available (do you have more than 65535 UEs in a cell?)");
   m_lastAllocatedRnti = rnti;
-  Ptr<UeManager> ueManager = CreateObject<UeManager> (this, rnti, state);
+  Ptr<UeManager> ueManager = CreateObject<UeManager> (this, rnti, state); 
   m_ueMap.insert (std::pair<uint16_t, Ptr<UeManager> > (rnti, ueManager));
   ueManager->Initialize ();
   NS_LOG_DEBUG (this << " New UE RNTI " << rnti << " cellId " << m_cellId << " srs CI " << ueManager->GetSrsConfigurationIndex ());
