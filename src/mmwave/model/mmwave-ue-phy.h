@@ -64,6 +64,7 @@ public:
 	void DoSendControlMessage (Ptr<MmWaveControlMessage> msg);
 
 	void RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config);
+	void RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config);
 	Ptr<MmWaveSpectrumPhy> GetDlSpectrumPhy () const;
 	Ptr<MmWaveSpectrumPhy> GetUlSpectrumPhy () const;
 
@@ -164,6 +165,8 @@ private:
 	std::vector<int> m_channelChunks;
 
 	SlotAllocInfo m_currSlot;
+
+	std::map<uint16_t, Ptr<MmWavePhyMacCommon> > m_registeredEnb;
 
 };
 

@@ -126,7 +126,7 @@ MmWaveUePhy::DoInitialize (void)
 void
 MmWaveUePhy::DoDispose (void)
 {
-
+	m_registeredEnb.clear();
 }
 
 void
@@ -244,6 +244,13 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
 	m_downlinkSpectrumPhy->GetSpectrumChannel()->AddRx(m_downlinkSpectrumPhy);
 	m_downlinkSpectrumPhy->SetCellId(m_cellId);
+}
+
+void 
+MmWaveUePhy::RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
+{
+	NS_ASSERT_MSG(m_registeredEnb.find(cellId) == m_registeredEnb.end(), "Enb already registered");
+	m_registeredEnb[cellId] = config;
 }
 
 Ptr<MmWaveSpectrumPhy>

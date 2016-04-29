@@ -338,32 +338,32 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 			if(m_update)
 			{
 				SetChannelMatrix (*i,*j); // this call is independent on the subclass of NetDevice
+				SetBeamformingVector(*i,*j); // possible beamforming vector for all the UE eNB pairs
 			}
 		}
 
 	}
 
-	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
-	{
+	// for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+	// {
 
-		Ptr<MmWaveUeNetDevice> UeDev = (*i)->GetObject<MmWaveUeNetDevice> ();
-						// DynamicCast<MmWaveUeNetDevice> (*i);
-		if (UeDev != 0) { // It actually is a MmWaveUeNetDevice
-			if (UeDev->GetTargetEnb ())
-			{
-				Ptr<NetDevice> targetBs = UeDev->GetTargetEnb();
-				SetBeamformingVector(*i,targetBs);
+	// 	Ptr<MmWaveUeNetDevice> UeDev = (*i)->GetObject<MmWaveUeNetDevice> ();
+	// 	if (UeDev != 0) { // It actually is a MmWaveUeNetDevice
+	// 		if (UeDev->GetTargetEnb ())
+	// 		{
+	// 			Ptr<NetDevice> targetBs = UeDev->GetTargetEnb();
+	// 			SetBeamformingVector(*i,targetBs);
 
-			}
-		} else { // It is a McUeNetDevice
-			Ptr<McUeNetDevice> mcUeDev = (*i)->GetObject<McUeNetDevice> (); 
-			if (mcUeDev->GetMmWaveTargetEnb())
-			{
-				Ptr<NetDevice> targetBs = mcUeDev->GetMmWaveTargetEnb();
-				SetBeamformingVector(*i, targetBs);
-			}
-		}
-	}
+	// 		}
+	// 	} else { // It is a McUeNetDevice
+	// 		Ptr<McUeNetDevice> mcUeDev = (*i)->GetObject<McUeNetDevice> (); 
+	// 		if (mcUeDev->GetMmWaveTargetEnb())
+	// 		{
+	// 			Ptr<NetDevice> targetBs = mcUeDev->GetMmWaveTargetEnb();
+	// 			SetBeamformingVector(*i, targetBs);
+	// 		}
+	// 	}
+	// }
 	Simulator::Schedule (m_longTermUpdatePeriod, &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 
 	/*if (!m_nextLongTermUpdate)
@@ -508,6 +508,14 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 	}
 	return tempPsd;
 
+}
+
+Ptr<SpectrumValue>
+MmWaveBeamforming::CalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
+												Ptr<const MobilityModel> a,
+												Ptr<const MobilityModel> b) const
+{
+	return DoCalcRxPowerSpectralDensity(txPsd, a, b);
 }
 
 Ptr<SpectrumValue>

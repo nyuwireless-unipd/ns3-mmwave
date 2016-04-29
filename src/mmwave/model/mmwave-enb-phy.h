@@ -90,6 +90,8 @@ public:
 
 	void ReceiveUlHarqFeedback (UlHarqInfo mes);
 
+	void UpdateUeSinrEstimate ();
+
 
 private:
 
@@ -131,6 +133,10 @@ private:
 	LteEnbCphySapUser* m_enbCphySapUser;
 	LteRrcSap::SystemInformationBlockType1 m_sib1;
 	std::set <uint16_t> m_ueAttachedRnti;
+	std::map <uint64_t, Ptr<NetDevice> > m_ueAttachedImsiMap;
+	std::map <uint64_t, double > m_sinrMap;
+	std::map <uint64_t, Ptr<SpectrumValue> > m_rxPsdMap;
+	double m_updateSinrPeriod;
 
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 	std::vector <int> m_channelChunks;

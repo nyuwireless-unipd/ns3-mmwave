@@ -47,8 +47,8 @@ main (int argc, char *argv[])
   LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
   //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
   //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
   //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
   //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
@@ -60,13 +60,15 @@ main (int argc, char *argv[])
   //LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable("LteEnbMac", LOG_LEVEL_INFO);
   LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
+  LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
   LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
   LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
   LogComponentEnable("McEnbPdcp", LOG_LEVEL_ALL);
   LogComponentEnable("McUePdcp", LOG_LEVEL_ALL);
+  //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   uint16_t numberOfNodes = 1;
-  double simTime = 5.0;
+  double simTime = 3.0;
   double interPacketInterval = 100;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
@@ -160,7 +162,8 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (20.0, 20.0, 0.0));
+  uePositionAlloc->Add (Vector (20.0, 0.0, 1.0));
+  uePositionAlloc->Add (Vector (60.0, 0.0, 1.0));
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
@@ -195,7 +198,7 @@ main (int argc, char *argv[])
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
   bool dl = 1;
-  bool ul = 0;
+  bool ul = 1;
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
   {
       if(dl)

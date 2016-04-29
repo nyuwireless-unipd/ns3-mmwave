@@ -16,6 +16,7 @@
 #include <ns3/spectrum-channel.h>
 #include <ns3/spectrum-signal-parameters.h>
 #include <ns3/spectrum-interference.h>
+#include <ns3/propagation-loss-model.h>
 #include <ns3/generic-phy.h>
 #include <ns3/antenna-array-model.h>
 #include "mmwave-phy-mac-common.h"
@@ -91,6 +92,11 @@ public:
 	void SetDlSfAllocInfo (SfAllocInfo sfAllocInfo);
 	void SetUlSfAllocInfo (SfAllocInfo sfAllocInfo);
 
+	// hacks needed to compute SINR at eNB for each UE, without pilots
+	void AddSpectrumPropagationLossModel(Ptr<SpectrumPropagationLossModel> model);
+	void AddPropagationLossModel(Ptr<PropagationLossModel> model);
+
+
 protected:
 	Ptr<NetDevice> m_netDevice;
 
@@ -130,6 +136,10 @@ protected:
 	uint32_t m_raPreambleId;
 
 	bool m_sfAllocInfoUpdated;
+
+	// hack to allow eNB to compute the SINR, periodically, without pilots 
+	Ptr<SpectrumPropagationLossModel> m_spectrumPropagationLossModel;
+	Ptr<PropagationLossModel> m_propagationLoss;
 
 private:
 };

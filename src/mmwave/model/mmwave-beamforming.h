@@ -89,6 +89,11 @@ public:
 
 	void UpdateMatrices (bool update);
 
+	// hack to allow MmWaveEnbPhy to compute SINR even without pilots
+	Ptr<SpectrumValue> CalcRxPowerSpectralDensity(Ptr<const SpectrumValue> txPsd,
+	                                                   Ptr<const MobilityModel> a,
+	                                                   Ptr<const MobilityModel> b) const;
+
 private:
 	/**
 	* \breif Get complex number from a string

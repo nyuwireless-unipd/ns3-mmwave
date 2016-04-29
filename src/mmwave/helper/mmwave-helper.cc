@@ -638,6 +638,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	device->SetAttribute ("LteUeMac", PointerValue (lteMac));
 	device->SetAttribute ("LteUeRrc", PointerValue (lteRrc));
 	device->SetAttribute ("EpcUeNas", PointerValue (lteNas));
+	device->SetAttribute ("Imsi", UintegerValue(imsi));
 
 	ltePhy->SetDevice (device);
 	lteDlPhy->SetDevice (device);
@@ -813,6 +814,32 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	ulPhy->SetMobility (mm);
 	dlPhy->SetMobility (mm);
 
+	// hack to allow periodic computation of SINR at the eNB, without pilots
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	{
+		phy->AddSpectrumPropagationLossModel(m_beamforming);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		phy->AddSpectrumPropagationLossModel(m_channelMatrix);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		phy->AddSpectrumPropagationLossModel(m_raytracing);
+	}
+	if (!m_pathlossModelType.empty ())
+	{
+		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+		if( splm )
+		{
+			phy->AddPropagationLossModel (splm);
+		}
+	}
+	else
+	{
+		NS_LOG_UNCOND (this << " No PropagationLossModel!");
+	}
+
 	/* Antenna model */
 	Ptr<AntennaModel> antenna = (m_enbAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
 	NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
@@ -907,7 +934,6 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	//mac->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
 	rrc->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
-
 
 	NS_LOG_LOGIC ("set the propagation model frequencies");
 	double freq = m_phyMacCommon->GetCentreFrequency ();
@@ -1198,6 +1224,7 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 	ueDevice->GetObject<MmWaveUeNetDevice> ()->GetPhy ()->RegisterToEnb (cellId, configParams);
 	closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetMac ()->AssociateUeMAC (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi ());
 
+	// connect to the closest one
 	Ptr<EpcUeNas> ueNas = ueDevice->GetObject<MmWaveUeNetDevice> ()->GetNas ();
 	ueNas->Connect (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId (),
 					closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetEarfcn ());
@@ -1256,18 +1283,26 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	}
 	NS_ASSERT (closestEnbDevice != 0);
 
-
   	// Necessary operation to connect MmWave UE to eNB at lower layers
+  	for(NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End(); ++i)
+  	{
+  		Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> (); 
+		uint16_t mmWaveCellId = mmWaveEnb->GetCellId ();
+		Ptr<MmWavePhyMacCommon> configParams = mmWaveEnb->GetPhy()->GetConfigurationParameters();
+		mmWaveEnb->GetPhy ()->AddUePhy (mcDevice->GetImsi (), ueDevice);
+		// register MmWave eNBs informations in the MmWaveUePhy
+		mcDevice->GetMmWavePhy ()->RegisterOtherEnb (mmWaveCellId, configParams);
+		//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
+		NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+  	}
+	
+	// for the closest cell	
 	Ptr<MmWaveEnbNetDevice> closestMmWave = closestEnbDevice->GetObject<MmWaveEnbNetDevice> (); 
 	uint16_t mmWaveCellId = closestMmWave->GetCellId ();
 	Ptr<MmWavePhyMacCommon> configParams = closestMmWave->GetPhy()->GetConfigurationParameters();
-	closestMmWave->GetPhy ()->AddUePhy (mcDevice->GetImsi (), ueDevice);
 	mcDevice->GetMmWavePhy ()->RegisterToEnb (mmWaveCellId, configParams);
-	NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
-	mcDevice->GetLteRrc ()->SetMmWaveCellId (mmWaveCellId); // TODO remove
+	mcDevice->GetLteRrc ()->SetMmWaveCellId (mmWaveCellId);
 	mcDevice->GetMmWaveRrc ()->SetMmWaveCellId (mmWaveCellId);
-	closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ());
-
 	// Attach the MC device the LTE eNB
 	Ptr<LteEnbNetDevice> enbLteDevice = lteClosestEnbDevice->GetObject<LteEnbNetDevice> ();
 	Ptr<EpcUeNas> lteUeNas = mcDevice->GetNas ();
@@ -1279,6 +1314,7 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	  m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
 	}
 
+	// TODO list all the enbs
   	mcDevice->SetLteTargetEnb (enbLteDevice);
 	mcDevice->SetMmWaveTargetEnb (closestMmWave);
 

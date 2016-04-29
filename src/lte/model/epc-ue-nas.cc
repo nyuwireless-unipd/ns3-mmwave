@@ -65,6 +65,7 @@ EpcUeNas::EpcUeNas ()
 {
   NS_LOG_FUNCTION (this);
   m_asSapUser = new MemberLteAsSapUser<EpcUeNas> (this);
+  m_mmWaveAsSapProvider = 0;
 }
 
 
@@ -280,9 +281,11 @@ EpcUeNas::DoNotifyConnectToMmWave(uint16_t mmWaveCellId)
 {
   NS_LOG_LOGIC(mmWaveCellId);
   NS_LOG_LOGIC(m_mmWaveCellId);
-  NS_ASSERT_MSG(mmWaveCellId == m_mmWaveCellId, "Received Cell Id for MmWave is different for the one of ConnectMc");
   
   if(m_mmWaveAsSapProvider != 0) {
+
+    NS_ASSERT_MSG(mmWaveCellId == m_mmWaveCellId, "Received Cell Id for MmWave is different for the one of ConnectMc");
+
     // force the UE RRC to be camped on a specific eNB
     m_mmWaveAsSapProvider->ForceCampedOnEnb (mmWaveCellId, m_dlEarfcn); // TODO probably the second argument is useless
 

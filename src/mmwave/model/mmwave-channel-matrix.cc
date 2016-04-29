@@ -600,4 +600,13 @@ MmWaveChannelMatrix::GetSystemBandwidth () const
 }
 
 
+Ptr<SpectrumValue> 
+MmWaveChannelMatrix::CalcRxPowerSpectralDensity(Ptr<const SpectrumValue> txPsd,
+	                                                   Ptr<const MobilityModel> a,
+	                                                   Ptr<const MobilityModel> b) const
+{
+	return DoCalcRxPowerSpectralDensity(txPsd, a, b);
+}
+
+
 }// namespace ns3

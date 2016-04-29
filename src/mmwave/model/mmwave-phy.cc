@@ -315,4 +315,16 @@ MmWavePhy::SetUlSfAllocInfo (SfAllocInfo sfAllocInfo)
 	//m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
 }
 
+void 
+MmWavePhy::AddPropagationLossModel(Ptr<PropagationLossModel> model)
+{
+	m_propagationLoss = model;
+}
+
+void 
+MmWavePhy::AddSpectrumPropagationLossModel(Ptr<SpectrumPropagationLossModel> model)
+{
+	m_spectrumPropagationLossModel = model;
+}
+
 }
