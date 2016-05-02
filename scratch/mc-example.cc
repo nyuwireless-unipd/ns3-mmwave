@@ -38,6 +38,20 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("McFirstExample");
 
+void
+ChangePosition(Ptr<Node> node, Vector vector)
+{
+  Ptr<MobilityModel> model = node->GetObject<MobilityModel> ();
+  model->SetPosition(vector);
+}
+
+void
+PrintPosition(Ptr<Node> node)
+{
+  Ptr<MobilityModel> model = node->GetObject<MobilityModel> ();
+  NS_LOG_UNCOND(model->GetPosition());
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -61,11 +75,16 @@ main (int argc, char *argv[])
   //LogComponentEnable("LteEnbMac", LOG_LEVEL_INFO);
   LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
   LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
-  LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
-  LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
+  //LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
+  //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
   LogComponentEnable("McEnbPdcp", LOG_LEVEL_ALL);
   LogComponentEnable("McUePdcp", LOG_LEVEL_ALL);
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
+
+  // rng things
+  RngSeedManager::SetSeed (1);
+  RngSeedManager::SetRun (1);  
+
 
   uint16_t numberOfNodes = 1;
   double simTime = 3.0;
@@ -143,7 +162,7 @@ main (int argc, char *argv[])
   NodeContainer mmWaveEnbNodes;
   NodeContainer lteEnbNodes;
   NodeContainer allEnbNodes;
-  mmWaveEnbNodes.Create(3);
+  mmWaveEnbNodes.Create(2);
   lteEnbNodes.Create(1);
   ueNodes.Create(1);
   allEnbNodes.Add(lteEnbNodes);
@@ -151,10 +170,10 @@ main (int argc, char *argv[])
 
   // Install Mobility Model
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  enbPositionAlloc->Add (Vector (0.0, 0.0, 5.0));
-  enbPositionAlloc->Add (Vector (0.0, 0.0, 3.0));
-  enbPositionAlloc->Add (Vector (70.0, 70.0, 3.0));
-  enbPositionAlloc->Add (Vector (70.0, -70.0, 3.0)); 
+  enbPositionAlloc->Add (Vector (50.0, 50.0, 5.0));
+  enbPositionAlloc->Add (Vector (50.0, 50.0, 3.0));
+  enbPositionAlloc->Add (Vector (150.0, 50.0, 3.0));
+  //enbPositionAlloc->Add (Vector (100.0, -100.0, 3.0)); 
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator(enbPositionAlloc);
@@ -162,8 +181,7 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (20.0, 0.0, 1.0));
-  uePositionAlloc->Add (Vector (60.0, 0.0, 1.0));
+  uePositionAlloc->Add (Vector (30.0, 50.0, 1.0));
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
@@ -187,7 +205,7 @@ main (int argc, char *argv[])
   }
 
   // Add X2 interfaces
-  mmwaveHelper->AddX2Interface (allEnbNodes);
+  mmwaveHelper->AddX2Interface (lteEnbNodes, mmWaveEnbNodes);
 
   // Manual attachment
   mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
@@ -226,7 +244,10 @@ main (int argc, char *argv[])
   // Start applications
   serverApps.Start (Seconds (0.7));
   clientApps.Start (Seconds (0.7));
+
   mmwaveHelper->EnableTraces ();
+
+  Simulator::Schedule(Seconds(1.0), &ChangePosition, ueNodes.Get(0), Vector(170.0, 50.0, 1.0));
 
   // Uncomment to enable PCAP tracing
   // p2ph.EnablePcapAll("mmwave-epc-simple");
