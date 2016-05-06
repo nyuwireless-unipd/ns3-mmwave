@@ -16,6 +16,8 @@
 #include <ns3/lte-ue-phy-sap.h>
 #include <ns3/lte-ue-cphy-sap.h>
 #include <ns3/mmwave-harq-phy.h>
+#include "mmwave-enb-net-device.h"
+
 
 
 namespace ns3{
@@ -64,7 +66,7 @@ public:
 	void DoSendControlMessage (Ptr<MmWaveControlMessage> msg);
 
 	void RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config);
-	void RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config);
+	void RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config, Ptr<MmWaveEnbNetDevice> enb);
 	Ptr<MmWaveSpectrumPhy> GetDlSpectrumPhy () const;
 	Ptr<MmWaveSpectrumPhy> GetUlSpectrumPhy () const;
 
@@ -166,7 +168,7 @@ private:
 
 	SlotAllocInfo m_currSlot;
 
-	std::map<uint16_t, Ptr<MmWavePhyMacCommon> > m_registeredEnb;
+	std::map<uint16_t, std::pair<Ptr<MmWavePhyMacCommon>, Ptr<MmWaveEnbNetDevice> > > m_registeredEnb;
 
 };
 

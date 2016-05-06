@@ -37,8 +37,8 @@ public:
 	virtual void DoInitialize (void);
 	virtual void DoDispose (void);
 
-	void SetmmWaveEnbCphySapUser (LteEnbCphySapUser* s);
-	LteEnbCphySapProvider* GetmmWaveEnbCphySapProvider ();
+	void SetMmWaveEnbCphySapUser (LteEnbCphySapUser* s);
+	LteEnbCphySapProvider* GetMmWaveEnbCphySapProvider ();
 
 	void SetTxPower (double pow);
 	double GetTxPower () const;

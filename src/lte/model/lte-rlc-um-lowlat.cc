@@ -1253,10 +1253,12 @@ LteRlcUmLowLat::TriggerReceivePdcpPdu(Ptr<Packet> p)
 {
   if(!isMc) 
   {
+    NS_LOG_INFO(this << " RlcUmLowLat forwards packet to PDCP (either from MmWave or LTE stack)");
     m_rlcSapUser->ReceivePdcpPdu(p);
   }
   else
   {
+    NS_LOG_INFO(this << " MmWave Rlc Um LowLat forwards packet to remote PDCP");
     m_ueDataParams.ueData = p;
     m_epcX2RlcProvider->ReceiveMcPdcpSdu(m_ueDataParams);
   }

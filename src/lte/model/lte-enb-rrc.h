@@ -53,7 +53,8 @@ class LteDataRadioBearerInfo;
 class LteEnbRrc;
 class Packet;
 
-
+typedef std::map<uint64_t, double> ImsiSinrMap;
+typedef std::map<uint16_t, double> CellSinrMap;
 
 /**
  * \ingroup lte
@@ -83,6 +84,7 @@ public:
     HANDOVER_JOINING,
     HANDOVER_PATH_SWITCH,
     HANDOVER_LEAVING,
+    PREPARE_MC_CONNECTION_RECONFIGURATION,
     MC_CONNECTION_RECONFIGURATION,
     NUM_STATES
   };
@@ -124,6 +126,11 @@ public:
    * \param imsi the IMSI
    */
   void SetImsi (uint64_t imsi);
+
+  // set if this is a MC device
+  void SetIsMc (bool isMc);
+  // know if this is a MC device
+  bool GetIsMc (void) const;
 
   /** 
    * Setup a new data radio bearer, including both the configuration
@@ -217,6 +224,8 @@ public:
    * 
    */
   void SendUeContextRelease ();
+
+  void SendRrcConnectionSwitch(bool useMmWaveConnection);
 
   /** 
    * Take the necessary actions in response to the reception of an X2 HO preparation failure message
@@ -451,6 +460,10 @@ private:
    * Map the drb into a RLC (used for remote independent RLC in an MC setup)
    */
   std::map <uint8_t, RlcBearerInfo > m_rlcMap;
+  /**
+   * Map the drb into a RLCSetupRequest (used to handover remote independent RLC in an MC setup)
+   */
+  std::vector <EpcX2SapUser::RlcSetupRequest> m_rlcRequestVector;
 
   /**
    * The `Srb0` attribute. SignalingRadioBearerInfo for SRB0.
@@ -553,6 +566,7 @@ class LteEnbRrc : public Object
   friend class MemberEpcEnbS1SapUser<LteEnbRrc>;
   friend class EpcX2SpecificEpcX2SapUser<LteEnbRrc>;
   friend class UeManager;
+  friend class MemberLteEnbCphySapUser<LteEnbRrc>;
 
 public:
   /**
@@ -782,6 +796,13 @@ public:
   void SetCellId (uint16_t m_cellId);
 
   /** 
+   * If this is a MmWave eNB RRC, set the cell id of the closest LTE cell
+   * 
+   * \param cellId 
+   */
+  void SetClosestLteCellId (uint16_t cellId);
+
+  /** 
    * get the cell id of this eNB
    * 
    * \param m_cellId 
@@ -920,6 +941,16 @@ public:
   typedef void (* ReceiveReportTracedCallback)
     (uint64_t imsi, uint16_t cellId, uint16_t rnti,
      LteRrcSap::MeasurementReport report);
+
+  /**
+   * This method maps Imsi to Rnti, so that the UeManager of a certain UE
+   * can be retrieved also with the Imsi
+   */
+  void RegisterImsiToRnti(uint64_t imsi, uint16_t rnti);
+
+  uint16_t GetRntiFromImsi(uint64_t imsi);
+
+  uint64_t GetImsiFromRnti(uint16_t rnti);
   
 private:
 
@@ -959,7 +990,8 @@ private:
   void DoRecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params);
   void DoRecvRlcSetupCompleted (EpcX2SapUser::UeDataParams params);
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
-  void DoRecvNotifyMcConnection(EpcX2SapUser::ExpectMcUeParams params);
+  void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
+  void DoRecvMcHandoverRequest(EpcX2SapUser::RequestMcHandoverParams params);
 
   // CMAC SAP methods
 
@@ -980,6 +1012,9 @@ private:
   uint8_t DoAddUeMeasReportConfigForFfr (LteRrcSap::ReportConfigEutra reportConfig);
   void DoSetPdschConfigDedicated (uint16_t rnti, LteRrcSap::PdschConfigDedicated pa);
   void DoSendLoadInformation (EpcX2Sap::LoadInformationParams params);
+
+  // CPHY SAP methods
+  void DoUpdateUeSinrEstimate(LteEnbCphySapUser::UeAssociatedSinrInfo info);
 
   // Internal methods
 
@@ -1105,6 +1140,12 @@ private:
    */
   void SendSystemInformation ();
 
+  /** 
+   * method used to periodically check if switching of MC devices or handover of MmWave dev is needed
+   * 
+   */
+  void TriggerUeAssociationUpdate();
+
   Callback <void, Ptr<Packet> > m_forwardUpCallback;
 
   /// Interface to receive messages from neighbour eNodeB over the X2 interface.
@@ -1158,6 +1199,8 @@ private:
   bool m_configured;
   /// Cell identifier. Must be unique across the simulation.
   uint16_t m_cellId;
+  /// Closest LTE Cell identifier (for MmWave cells only).
+  uint16_t m_lteCellId;
   /// Downlink E-UTRA Absolute Radio Frequency Channel Number.
   uint16_t m_dlEarfcn;
   /// Uplink E-UTRA Absolute Radio Frequency Channel Number.
@@ -1319,6 +1362,21 @@ private:
   bool m_ismmWave;
 
   uint32_t m_firstSibTime;		// time in ms of initial SIB
+
+  // for MmWave eNBs
+  ImsiSinrMap m_ueImsiSinrMap;
+
+  // for LTE eNBs
+  std::map<uint16_t, ImsiSinrMap> m_cellSinrMap;
+  uint16_t m_numNewSinrReports;
+  std::map<uint64_t, uint16_t> m_bestMmWaveCellForImsiMap;
+  std::map<uint64_t, uint16_t> m_lastMmWaveCell;
+  std::map<uint64_t, bool> m_mmWaveCellSetupCompleted;
+  std::map<uint64_t, bool> m_imsiUsingLte;
+  std::map<uint64_t, CellSinrMap> m_imsiCellSinrMap;
+  std::map<uint64_t, uint16_t> m_imsiRntiMap;
+  std::map<uint16_t, uint64_t> m_rntiImsiMap;
+
 }; // end of `class LteEnbRrc`
 
 

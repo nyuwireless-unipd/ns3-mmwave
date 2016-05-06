@@ -571,6 +571,11 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
         msg.rrcTransactionIdentifier = m_lastRrcTransactionIdentifier;
         m_rrcSapUser->SendRrcConnectionReconfigurationCompleted (msg);
 
+        if(m_isMc)
+        {
+          m_asSapUser->NotifyHandoverSuccessful (m_rnti, m_cellId); // this triggers          
+        }
+
         // 3GPP TS 36.331 section 5.5.6.1 Measurements related actions upon handover
         std::map<uint8_t, LteRrcSap::MeasIdToAddMod>::iterator measIdIt;
         for (measIdIt = m_varMeasConfig.measIdList.begin ();
@@ -901,8 +906,6 @@ LteUeRrc::DoRecvRrcConnectionSetup (LteRrcSap::RrcConnectionSetup msg)
         SwitchToState (CONNECTED_NORMALLY);
         LteRrcSap::RrcConnectionSetupCompleted msg2;
         msg2.rrcTransactionIdentifier = msg.rrcTransactionIdentifier;
-        msg2.mmWaveCellId = m_mmWaveCellId; // TODO this will be removed and works only for ideal rrc protocol
-        NS_LOG_ERROR("MmWaveCellId " << m_mmWaveCellId);
         m_rrcSapUser->SendRrcConnectionSetupCompleted (msg2);
         m_asSapUser->NotifyConnectionSuccessful (m_rnti);
         m_connectionEstablishedTrace (m_imsi, m_cellId, m_rnti);
@@ -1055,6 +1058,27 @@ LteUeRrc::DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg)
   m_hasReceivedSib2 = false;         // invalidate the previously received SIB2
   SwitchToState (IDLE_CAMPED_NORMALLY);
   m_asSapUser->NotifyConnectionFailed ();  // inform upper layer
+}
+
+void
+LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
+{
+  std::vector<uint8_t> drbidList = msg.drbidList;
+  for(std::vector<uint8_t>::iterator iter = drbidList.begin(); iter != drbidList.end(); ++iter)
+  {
+    if(m_drbMap.find(*iter) != m_drbMap.end())
+    {
+      Ptr<McUePdcp> pdcp = DynamicCast<McUePdcp>(m_drbMap.find(*iter)->second->m_pdcp);
+      if(pdcp != 0)
+      {
+        pdcp->SwitchConnection(msg.useMmWaveConnection);
+      }
+      else
+      {
+        NS_FATAL_ERROR("Trying to switch a non MC bearer");
+      }
+    }
+  }
 }
 
 
@@ -1390,6 +1414,9 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
               } 
               rlc->Initialize();
               m_rlcMap[dtamIt->drbIdentity] = rlc;
+
+              bool useMmWaveConnection = true;
+              pdcp->SwitchConnection(useMmWaveConnection);
             }
             else
             {

@@ -213,15 +213,15 @@ MmWaveUeMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 
-  m_miUlHarqProcessesPacket.resize (m_phyMacConfig->GetNumHarqProcess ());
-  for (uint8_t i = 0; i < m_miUlHarqProcessesPacket.size (); i++)
-    {
-      Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
-      m_miUlHarqProcessesPacket.at (i).m_pktBurst = pb;
-    }
-  m_miUlHarqProcessesPacketTimer.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
+	m_miUlHarqProcessesPacket.resize (m_phyMacConfig->GetNumHarqProcess ());
+	for (uint8_t i = 0; i < m_miUlHarqProcessesPacket.size (); i++)
+	{
+		Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
+		m_miUlHarqProcessesPacket.at (i).m_pktBurst = pb;
+	}
+	m_miUlHarqProcessesPacketTimer.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
 
-  m_bsrPeriodicity = MicroSeconds (m_phyMacConfig->GetSymbolsPerSubframe());
+	m_bsrPeriodicity = MicroSeconds (m_phyMacConfig->GetSymbolsPerSubframe());
 }
 
 Ptr<MmWavePhyMacCommon>
@@ -740,7 +740,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 		if (m_waitingForRaResponse == true)
 		{
 			Ptr<MmWaveRarMessage> rarMsg = DynamicCast<MmWaveRarMessage> (msg);
-			NS_LOG_LOGIC (this << "got RAR with RA-RNTI " << (uint32_t) rarMsg->GetRaRnti () << ", expecting " << (uint32_t) m_raRnti);
+			NS_LOG_INFO (this << "got RAR with RA-RNTI " << (uint32_t) rarMsg->GetRaRnti () << ", expecting " << (uint32_t) m_raRnti);
 			for (std::list<MmWaveRarMessage::Rar>::const_iterator it = rarMsg->RarListBegin ();
 					it != rarMsg->RarListEnd ();
 					++it)
@@ -797,9 +797,15 @@ void
 MmWaveUeMac::SendRaPreamble(bool contention)
 {
 	//m_raPreambleId = m_raPreambleUniformVariable->GetInteger (0, 64 - 1);
-	m_raPreambleId = g_raPreambleId++;
+	if(contention)
+	{
+		m_raPreambleId = g_raPreambleId++;
+	}
+	// else m_raPreambleId was already set
+	
 	/*raRnti should be subframeNo -1 */
 	m_raRnti = 1;
+	m_waitingForRaResponse = true;
 	m_phySapProvider->SendRachPreamble(m_raPreambleId, m_raRnti);
 }
 
@@ -809,6 +815,9 @@ MmWaveUeMac::DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint
 	NS_LOG_FUNCTION (this << " rnti" << rnti);
 	NS_ASSERT_MSG (prachMask == 0, "requested PRACH MASK = " << (uint32_t) prachMask << ", but only PRACH MASK = 0 is supported");
 	m_rnti = rnti;
+	m_raPreambleId = preambleId;
+  	bool contention = false;
+  	SendRaPreamble (contention);
 }
 
 void
@@ -839,6 +848,26 @@ void
 MmWaveUeMac::DoReset ()
 {
 	NS_LOG_FUNCTION (this);
+	std::map <uint8_t, LcInfo>::iterator it = m_lcInfoMap.begin ();
+	while (it != m_lcInfoMap.end ())
+	{
+	  // don't delete CCCH)
+	  if (it->first == 0)
+	    {          
+	      ++it;
+	    }
+	  else
+	    {
+	      // note: use of postfix operator preserves validity of iterator
+	      m_lcInfoMap.erase (it++);
+	    }
+	}
+
+	// m_noRaResponseReceivedEvent.Cancel ();
+	// m_rachConfigured = false;
+	m_freshUlBsr = false;
+	m_ulBsrReceived.clear ();
+
 }
 //////////////////////////////////////////////
 

@@ -52,7 +52,6 @@ MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 	:m_pathNum (20),
 	m_enbAntennaSize(enbAntenna),
 	m_ueAntennaSize(ueAntenna),
-	m_longTermUpdatePeriod (0),
 	m_smallScale (true),
 	m_fixSpeed (false),
 	m_ueSpeed (0.0),
@@ -61,6 +60,7 @@ MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
 	if (g_smallScaleFadingInstance.empty ())
 	LoadFile();
 	m_uniformRV = CreateObject<UniformRandomVariable> ();
+	Initialize();
 }
 
 
@@ -331,6 +331,8 @@ MmWaveBeamforming::LoadUeSpatialSignature ()
 void
 MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
 {
+	m_longTermUpdatePeriod = MilliSeconds (100.0);
+	NS_LOG_INFO("Update channel matrix and bf vector, update after " << m_longTermUpdatePeriod);
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
 		for (NetDeviceContainer::Iterator j = enbDevices.Begin(); j != enbDevices.End(); j++)
@@ -381,7 +383,7 @@ MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 {
 	key_t key = std::make_pair(ueDevice,enbDevice);
 	int randomInstance = m_uniformRV->GetValue (0, g_numInstance-1);
-	NS_LOG_DEBUG ("************* UPDATING CHANNEL MATRIX (instance " << randomInstance << ") *************");
+	NS_LOG_UNCOND ("************* UPDATING CHANNEL MATRIX (instance " << randomInstance << ") *************");
 
 	Ptr<BeamformingParams> bfParams = Create<BeamformingParams> ();
 	bfParams->m_enbW = g_enbAntennaInstance.at (randomInstance);
@@ -421,8 +423,8 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 	}
 	else
 	{*/
-		ueAntennaArray->SetBeamformingVector (bfParams->m_ueW);
-		enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
+	ueAntennaArray->SetBeamformingVector (bfParams->m_ueW, enbDevice);
+	enbAntennaArray->SetBeamformingVector (bfParams->m_enbW, ueDevice);
 
 	//}
 }
@@ -605,7 +607,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	Ptr<SpectrumValue> bfPsd = GetChannelGainVector (rxPsd, bfParams,  relativeSpeed);
 	SpectrumValue bfGain = (*bfPsd)/(*rxPsd);
 	int nbands = bfGain.GetSpectrumModel ()->GetNumBands ();
-//	NS_LOG_UNCOND ((*bfPsd)/(*rxPsd));
+//	NS_LOG_UNCOND (*bfPsd);
 //	NS_LOG_UNCOND (Sum((*bfPsd)/(*rxPsd)));
 //	std::cout << "beam: ";
 //	for (unsigned i = 0; i < bfParams->m_beam.size(); i++)
@@ -640,11 +642,11 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	
 	if (downlink)
 	{
-		NS_LOG_DEBUG ("****** DL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands); // print avg bf gain
+		NS_LOG_UNCOND ("****** DL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands); // print avg bf gain
 	}
 	else
 	{
-		NS_LOG_DEBUG ("****** UL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands);
+		NS_LOG_UNCOND ("****** UL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands);
 	}
 	return bfPsd;
 }

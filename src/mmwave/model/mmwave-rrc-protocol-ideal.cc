@@ -405,6 +405,13 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::
 		       msg);
 }
 
+
+void 
+MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionSwitch (uint16_t rnti, LteRrcSap::RrcConnectionSwitch msg)
+{
+  NS_FATAL_ERROR("A MmWave eNB should not use this primitive");
+}
+
 void 
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId)
 {

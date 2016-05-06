@@ -354,6 +354,8 @@ private:
   void DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg);
   /// Part of the RRC protocol. Implement the LteUeRrcSapProvider::RecvRrcConnectToMmWave interface.
   void DoRecvRrcConnectToMmWave (uint16_t mmWaveCellId);
+  /// Part of the RRC protocol. Implement the LteUeRrcSapProvider:;RecvRrcConnectionSwitch interface.
+  void DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg);
 
  
   // INTERNAL METHODS

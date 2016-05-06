@@ -151,7 +151,7 @@ MmWaveEnbPhy::DoInitialize (void)
 		m_sfAllocInfo[i].m_slotAllocInfo.push_back (ulCtrlSlot);
 	}
 
-	Simulator::Schedule(MilliSeconds(m_updateSinrPeriod), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
+	Simulator::Schedule(MilliSeconds(0), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
 	MmWavePhy::DoInitialize ();
 }
 void
@@ -161,14 +161,14 @@ MmWaveEnbPhy::DoDispose (void)
 }
 
 void
-MmWaveEnbPhy::SetmmWaveEnbCphySapUser (LteEnbCphySapUser* s)
+MmWaveEnbPhy::SetMmWaveEnbCphySapUser (LteEnbCphySapUser* s)
 {
   NS_LOG_FUNCTION (this);
   m_enbCphySapUser = s;
 }
 
 LteEnbCphySapProvider*
-MmWaveEnbPhy::GetmmWaveEnbCphySapProvider ()
+MmWaveEnbPhy::GetMmWaveEnbCphySapProvider ()
 {
   NS_LOG_FUNCTION (this);
   return m_enbCphySapProvider;
@@ -249,6 +249,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 	{
 		// distinguish between MC and MmWaveNetDevice
 		Ptr<MmWaveUeNetDevice> ueNetDevice = DynamicCast<MmWaveUeNetDevice> (ue->second);
+		Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
 		Ptr<MmWaveUePhy> uePhy;
 		// get tx power
 		double ueTxPower = 0;
@@ -257,18 +258,15 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 			uePhy = ueNetDevice->GetPhy();
 			ueTxPower = uePhy->GetTxPower();
 		}
-		else // it may be a MC device
+		else if (mcUeDev != 0) // it may be a MC device
 		{
-			Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
-			if(mcUeDev)
-			{
-				uePhy = mcUeDev->GetMmWavePhy ();
-				ueTxPower = uePhy->GetTxPower();
-			}
-			else
-			{
-				NS_FATAL_ERROR("Unrecognized device");
-			}
+			
+			uePhy = mcUeDev->GetMmWavePhy ();
+			ueTxPower = uePhy->GetTxPower();	
+		}
+		else
+		{
+			NS_FATAL_ERROR("Unrecognized device");
 		}
 		NS_LOG_LOGIC("UE Tx power = " << ueTxPower);
 	    double powerTxW = std::pow (10., (ueTxPower - 30) / 10);
@@ -295,6 +293,8 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		rxAntennaArray->ChangeBeamformingVector (ue->second);									// TODO check if this is the correct antenna
 		Ptr<AntennaArrayModel> txAntennaArray = DynamicCast<AntennaArrayModel> (uePhy->GetDlSpectrumPhy ()->GetRxAntenna());
 																						// Dl, since the Ul is not actually used (TDD device)
+		txAntennaArray->ChangeBeamformingVector (m_netDevice);									// TODO check if this is the correct antenna
+		
 		double pathLossDb = 0;
 		if (txAntennaArray != 0)
 		{
@@ -316,13 +316,14 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		  NS_LOG_LOGIC ("propagationGainDb = " << propagationGainDb << " dB");
 		  pathLossDb -= propagationGainDb;
 		}                    
-		NS_LOG_LOGIC ("total pathLoss = " << pathLossDb << " dB");    
+		NS_LOG_UNCOND ("total pathLoss = " << pathLossDb << " dB");    
 
 		double pathGainLinear = std::pow (10.0, (-pathLossDb) / 10.0);
 		Ptr<SpectrumValue> rxPsd = txPsd->Copy();
 		*(rxPsd) *= pathGainLinear;              
 
 		Ptr<MmWaveBeamforming> beamforming = DynamicCast<MmWaveBeamforming> (m_spectrumPropagationLossModel);
+		//beamforming->SetBeamformingVector(ue->second, m_netDevice);
 		Ptr<MmWaveChannelMatrix> channelMatrix = DynamicCast<MmWaveChannelMatrix> (m_spectrumPropagationLossModel);
 		Ptr<MmWaveChannelRaytracing> rayTracing = DynamicCast<MmWaveChannelRaytracing> (m_spectrumPropagationLossModel);
 		if (beamforming != 0)
@@ -342,6 +343,27 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		}
 		m_rxPsdMap[ue->first] = rxPsd;
 		*totalReceivedPsd += *rxPsd;
+
+		// set back the bf vector to the main eNB
+		if(ueNetDevice != 0) 
+		{														// target not set yet
+			if((ueNetDevice->GetTargetEnb() != m_netDevice) && (ueNetDevice->GetTargetEnb() != 0))
+			{
+				txAntennaArray->ChangeBeamformingVector(ueNetDevice->GetTargetEnb());
+			}
+		}
+		else if (mcUeDev != 0) // it may be a MC device
+		{															// target not set yet
+			if((mcUeDev->GetMmWaveTargetEnb() != m_netDevice) && (mcUeDev->GetMmWaveTargetEnb() != 0))
+			{
+				txAntennaArray->ChangeBeamformingVector(mcUeDev->GetMmWaveTargetEnb());
+			}	
+		}
+		else
+		{
+			NS_FATAL_ERROR("Unrecognized device");
+		}
+
 	}
 
 	for(std::map<uint64_t, Ptr<SpectrumValue> >::iterator ue = m_rxPsdMap.begin(); ue != m_rxPsdMap.end(); ++ue)
@@ -352,8 +374,12 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		NS_LOG_LOGIC("sinr " << sinr);
 		double sinrAvg = Sum(sinr)/(sinr.GetSpectrumModel()->GetNumBands()); 
 		m_sinrMap[ue->first] = sinrAvg;
-		NS_LOG_INFO("CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
+		NS_LOG_UNCOND("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
 	}
+
+	LteEnbCphySapUser::UeAssociatedSinrInfo info;
+	info.ueImsiSinrMap = m_sinrMap;
+	m_enbCphySapUser->UpdateUeSinrEstimate(info);
 	Simulator::Schedule(MilliSeconds(m_updateSinrPeriod), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
 
 }
@@ -734,9 +760,9 @@ MmWaveEnbPhy::PhyDataPacketReceived (Ptr<Packet> p)
 void
 MmWaveEnbPhy::GenerateDataCqiReport (const SpectrumValue& sinr)
 {
-  NS_LOG_INFO ("Sinr from DataCqiReport = " << sinr);
+  NS_LOG_LOGIC ("Sinr from DataCqiReport = " << sinr);
   double sinrAvg = Sum(sinr)/(sinr.GetSpectrumModel()->GetNumBands()); 
-  NS_LOG_INFO ("Average SINR " << 10*std::log10(sinrAvg));
+  NS_LOG_UNCOND ("Average SINR on DataCqiReport " << 10*std::log10(sinrAvg));
 
   Values::const_iterator it;
   MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi;

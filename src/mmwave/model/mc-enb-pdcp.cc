@@ -71,7 +71,8 @@ McEnbPdcp::McEnbPdcp ()
     m_lcid (0),
     m_epcX2PdcpProvider (0),
     m_txSequenceNumber (0),
-    m_rxSequenceNumber (0)
+    m_rxSequenceNumber (0),
+    m_useMmWaveConnection (false)
 {
   NS_LOG_FUNCTION (this);
   m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<McEnbPdcp> (this);
@@ -227,11 +228,20 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   params.lcid = m_lcid;
   params.pdcpPdu = p;
 
-  if(m_epcX2PdcpProvider == 0 || (m_txSequenceNumber % 2 == 0)) {
+  if(m_epcX2PdcpProvider == 0 || (!m_useMmWaveConnection)) 
+  {
+    NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink LTE stack");
     m_rlcSapProvider->TransmitPdcpPdu (params);
-  } else {
+  } 
+  else if (m_useMmWaveConnection) 
+  {
+    NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink MmWave stack on remote cell " << m_ueDataParams.targetCellId);
     m_ueDataParams.ueData = p;
     m_epcX2PdcpProvider->SendMcPdcpPdu (m_ueDataParams);
+  } 
+  else 
+  {
+    NS_FATAL_ERROR("Invalid combination");
   }
   // TODO switch -- or if the m_epcX2PdcpProvider is 0 always use the rlcSapProvider
 }
@@ -241,6 +251,7 @@ McEnbPdcp::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
+  NS_LOG_INFO(this << " McEnbPdcp received uplink Pdu");
   // Receiver timestamp
   PdcpTag pdcpTag;
   Time delay;
@@ -272,6 +283,12 @@ McEnbPdcp::DoReceiveMcPdcpPdu (EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this << m_mmWaveRnti << (uint32_t) m_lcid);
   DoReceivePdu(params.ueData);
+}
+
+void
+McEnbPdcp::SwitchConnection (bool useMmWaveConnection)
+{
+  m_useMmWaveConnection = useMmWaveConnection;
 }
 
 

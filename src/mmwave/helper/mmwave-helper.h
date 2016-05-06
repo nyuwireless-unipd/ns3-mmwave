@@ -139,6 +139,7 @@ public:
 	std::string GetLteHandoverAlgorithmType () const;
 
 	void AddX2Interface (NodeContainer enbNodes);
+	void AddX2Interface (NodeContainer lteEnbNodes, NodeContainer mmWaveEnbNodes);
 	void AddX2Interface (Ptr<Node> enbNode1, Ptr<Node> enbNode2);
 
 protected:

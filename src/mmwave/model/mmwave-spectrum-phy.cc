@@ -106,6 +106,22 @@ MmWaveSpectrumPhy::DoDispose()
 
 }
 
+void 
+MmWaveSpectrumPhy::Reset ()
+{
+  NS_LOG_FUNCTION (this);
+  m_cellId = 0;
+  m_state = IDLE;
+  m_endTxEvent.Cancel ();
+  m_endRxDataEvent.Cancel ();
+  m_endRxDlCtrlEvent.Cancel ();
+  m_rxControlMessageList.clear ();
+  m_expectedTbs.clear ();
+  m_rxPacketBurstList.clear ();
+  //m_txPacketBurst = 0;
+  m_rxSpectrumModel = 0;
+}
+
 void
 MmWaveSpectrumPhy::SetDevice(Ptr<NetDevice> d)
 {
@@ -366,7 +382,7 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
 				m_firstRxDuration = params->duration;
 				NS_LOG_LOGIC (this << " scheduling EndRx with delay " << params->duration.GetSeconds () << "s");
 
-				Simulator::Schedule (params->duration, &MmWaveSpectrumPhy::EndRxData, this);
+				m_endRxDataEvent = Simulator::Schedule (params->duration, &MmWaveSpectrumPhy::EndRxData, this);
 			}
 			else
 			{
@@ -464,7 +480,7 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
 					NS_LOG_LOGIC (this << " scheduling EndRx with delay " << params->duration);
 					// store the DCIs
 					m_rxControlMessageList = dlCtrlRxParams->ctrlMsgList;
-					Simulator::Schedule (params->duration, &MmWaveSpectrumPhy::EndRxCtrl, this);
+					m_endRxDlCtrlEvent = Simulator::Schedule (params->duration, &MmWaveSpectrumPhy::EndRxCtrl, this);
 					ChangeState (RX_CTRL);
 				}
 				else
@@ -792,7 +808,7 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 
 		m_channel->StartTx (txParams);
 
-		Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
+		m_endTxEvent = Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
 	}
 	break;
 	default:
@@ -830,7 +846,8 @@ MmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> >
 		txParams->ctrlMsgList = ctrlMsgList;
 		txParams->txAntenna = m_antenna;
 		m_channel->StartTx (txParams);
-		Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
+		m_endTxEvent = Simulator::Schedule (duration, &MmWaveSpectrumPhy::EndTx, this);
+		//NS_LOG_UNCOND("Tx to cellId " << txParams->cellId << " m_cellID " << m_cellId);
 	}
 	}
 	return false;

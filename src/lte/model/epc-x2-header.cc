@@ -148,12 +148,13 @@ EpcX2Header::SetNumberOfIes (uint32_t numberOfIes)
 NS_OBJECT_ENSURE_REGISTERED (EpcX2HandoverRequestHeader);
 
 EpcX2HandoverRequestHeader::EpcX2HandoverRequestHeader ()
-  : m_numberOfIes (1 + 1 + 1 + 1),
-    m_headerLength (6 + 5 + 12 + (3 + 4 + 8 + 8 + 4)),
+  : m_numberOfIes (1 + 1 + 1 + 1 + 1 + 1),
+    m_headerLength (6 + 5 + 12 + (3 + 4 + 8 + 8 + 4) + 1),
     m_oldEnbUeX2apId (0xfffa),
     m_cause (0xfffa),
     m_targetCellId (0xfffa),
-    m_mmeUeS1apId (0xfffffffa)
+    m_mmeUeS1apId (0xfffffffa),
+    m_isMc (0xfa)
 {
   m_erabsToBeSetupList.clear ();
 }
@@ -166,6 +167,7 @@ EpcX2HandoverRequestHeader::~EpcX2HandoverRequestHeader ()
   m_cause = 0xfffb;
   m_targetCellId = 0xfffb;
   m_mmeUeS1apId = 0xfffffffb;
+  m_isMc = 0xfb;
   m_erabsToBeSetupList.clear ();
 }
 
@@ -238,6 +240,7 @@ EpcX2HandoverRequestHeader::Serialize (Buffer::Iterator start) const
       i.WriteHtonU32 (m_erabsToBeSetupList [j].gtpTeid);
     }
 
+  i.WriteU8(m_isMc);
 }
 
 uint32_t
@@ -302,6 +305,10 @@ EpcX2HandoverRequestHeader::Deserialize (Buffer::Iterator start)
       m_headerLength += 48;
     }
 
+  m_isMc = i.ReadU8();
+  m_numberOfIes++;
+  m_headerLength++;
+
   return GetSerializedSize ();
 }
 
@@ -315,6 +322,7 @@ EpcX2HandoverRequestHeader::Print (std::ostream &os) const
   os << " UeAggrMaxBitRateDownlink = " << m_ueAggregateMaxBitRateDownlink;
   os << " UeAggrMaxBitRateUplink = " << m_ueAggregateMaxBitRateUplink;
   os << " NumOfBearers = " << m_erabsToBeSetupList.size ();
+  os << " isMc = " << m_isMc;
 
   std::vector <EpcX2Sap::ErabToBeSetupItem>::size_type sz = m_erabsToBeSetupList.size ();
   if (sz > 0)
@@ -333,6 +341,7 @@ EpcX2HandoverRequestHeader::Print (std::ostream &os) const
           os << "]";
         }
     }
+
 }
 
 uint16_t
@@ -357,6 +366,18 @@ void
 EpcX2HandoverRequestHeader::SetCause (uint16_t cause)
 {
   m_cause = cause;
+}
+
+bool
+EpcX2HandoverRequestHeader::GetIsMc () const
+{
+  return m_isMc;
+}
+
+void
+EpcX2HandoverRequestHeader::SetIsMc (bool isMc)
+{
+  m_isMc = isMc;
 }
 
 uint16_t
@@ -865,58 +886,61 @@ EpcX2RlcSetupCompletedHeader::GetNumberOfIes () const
 
 /////////////////////////////////////////////////////////////////////
 
-NS_OBJECT_ENSURE_REGISTERED (EpcX2NotifyMcConnectionHeader);
+NS_OBJECT_ENSURE_REGISTERED (EpcX2RequestMcHandoverHeader);
 
-EpcX2NotifyMcConnectionHeader::EpcX2NotifyMcConnectionHeader ()
-  : m_numberOfIes (1 + 1),
-    m_headerLength (2 + 8),
+EpcX2RequestMcHandoverHeader::EpcX2RequestMcHandoverHeader ()
+  : m_numberOfIes (1 + 1 + 1),
+    m_headerLength (2 + 2 + 8),
     m_targetCellId (0xfffa),
+    m_oldCellId (0xfffa),
     m_imsi (0xfffffffffffffffa)
 {
 }
 
-EpcX2NotifyMcConnectionHeader::~EpcX2NotifyMcConnectionHeader ()
+EpcX2RequestMcHandoverHeader::~EpcX2RequestMcHandoverHeader ()
 {
   m_numberOfIes = 0;
   m_headerLength = 0;
   m_targetCellId = 0xfffb;
+  m_oldCellId = 0xfffb;
   m_imsi = 0xfffffffffffffffb;
 }
 
 TypeId
-EpcX2NotifyMcConnectionHeader::GetTypeId (void)
+EpcX2RequestMcHandoverHeader::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::EpcX2NotifyMcConnectionHeader")
+  static TypeId tid = TypeId ("ns3::EpcX2RequestMcHandoverHeader")
     .SetParent<Header> ()
     .SetGroupName("Lte")
-    .AddConstructor<EpcX2NotifyMcConnectionHeader> ()
+    .AddConstructor<EpcX2RequestMcHandoverHeader> ()
   ;
   return tid;
 }
 
 TypeId
-EpcX2NotifyMcConnectionHeader::GetInstanceTypeId (void) const
+EpcX2RequestMcHandoverHeader::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 uint32_t
-EpcX2NotifyMcConnectionHeader::GetSerializedSize (void) const
+EpcX2RequestMcHandoverHeader::GetSerializedSize (void) const
 {
   return m_headerLength;
 }
 
 void
-EpcX2NotifyMcConnectionHeader::Serialize (Buffer::Iterator start) const
+EpcX2RequestMcHandoverHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
 
   i.WriteHtonU16 (m_targetCellId); 
+  i.WriteHtonU16 (m_oldCellId); 
   i.WriteHtonU64 (m_imsi); 
 }
 
 uint32_t
-EpcX2NotifyMcConnectionHeader::Deserialize (Buffer::Iterator start)
+EpcX2RequestMcHandoverHeader::Deserialize (Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
 
@@ -924,6 +948,10 @@ EpcX2NotifyMcConnectionHeader::Deserialize (Buffer::Iterator start)
   m_numberOfIes = 0;
   
   m_targetCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+
+  m_oldCellId = i.ReadNtohU16 ();
   m_headerLength += 2;
   m_numberOfIes++;
 
@@ -935,45 +963,58 @@ EpcX2NotifyMcConnectionHeader::Deserialize (Buffer::Iterator start)
 }
 
 void
-EpcX2NotifyMcConnectionHeader::Print (std::ostream &os) const
+EpcX2RequestMcHandoverHeader::Print (std::ostream &os) const
 {
   os << " TargetCellId = " << m_targetCellId;
+  os << " oldCellId = " << m_oldCellId;
   os << " imsi = " << m_imsi;
 }
 
 uint16_t
-EpcX2NotifyMcConnectionHeader::GetTargetCellId () const
+EpcX2RequestMcHandoverHeader::GetTargetCellId () const
 {
   return m_targetCellId;
 }
 
 void
-EpcX2NotifyMcConnectionHeader::SetTargetCellId (uint16_t targetCellId)
+EpcX2RequestMcHandoverHeader::SetTargetCellId (uint16_t targetCellId)
 {
   m_targetCellId = targetCellId;
 }
 
 uint64_t
-EpcX2NotifyMcConnectionHeader::GetImsi () const
+EpcX2RequestMcHandoverHeader::GetImsi () const
 {
   return m_imsi;
 }
 
 void
-EpcX2NotifyMcConnectionHeader::SetImsi (uint64_t imsi)
+EpcX2RequestMcHandoverHeader::SetImsi (uint64_t imsi)
 {
   m_imsi = imsi;
 }
 
+uint16_t
+EpcX2RequestMcHandoverHeader::GetOldCellId () const
+{
+  return m_oldCellId;
+}
+
+void
+EpcX2RequestMcHandoverHeader::SetOldCellId (uint16_t oldCellId)
+{
+  m_oldCellId = oldCellId;
+}
+
 
 uint32_t
-EpcX2NotifyMcConnectionHeader::GetLengthOfIes () const
+EpcX2RequestMcHandoverHeader::GetLengthOfIes () const
 {
   return m_headerLength;
 }
 
 uint32_t
-EpcX2NotifyMcConnectionHeader::GetNumberOfIes () const
+EpcX2RequestMcHandoverHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
 }
@@ -2036,5 +2077,200 @@ EpcX2ResourceStatusUpdateHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
 }
+
+////////////////
+
+NS_OBJECT_ENSURE_REGISTERED (EpcX2UeImsiSinrUpdateHeader);
+
+EpcX2UeImsiSinrUpdateHeader::EpcX2UeImsiSinrUpdateHeader ()
+  : m_numberOfIes (1 + 1),
+    m_headerLength (2 + 2)
+{
+  m_map.clear ();
+}
+
+EpcX2UeImsiSinrUpdateHeader::~EpcX2UeImsiSinrUpdateHeader ()
+{
+  m_numberOfIes = 0;
+  m_headerLength = 0;
+  m_map.clear ();
+}
+
+TypeId
+EpcX2UeImsiSinrUpdateHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::EpcX2UeImsiSinrUpdateHeader")
+    .SetParent<Header> ()
+    .SetGroupName("Lte")
+    .AddConstructor<EpcX2UeImsiSinrUpdateHeader> ()
+  ;
+  return tid;
+}
+
+TypeId
+EpcX2UeImsiSinrUpdateHeader::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+EpcX2UeImsiSinrUpdateHeader::GetSerializedSize (void) const
+{
+  return m_headerLength;
+}
+
+void
+EpcX2UeImsiSinrUpdateHeader::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+
+  i.WriteHtonU16 (m_sourceCellId);
+
+  std::map <uint64_t, double>::size_type sz = m_map.size ();
+  i.WriteHtonU16 (sz);              // number of elements in the map
+
+  for (std::map<uint64_t, double>::const_iterator iter = m_map.begin(); iter != m_map.end(); ++iter)
+    {
+      i.WriteHtonU64 (iter->first); // imsi
+      i.WriteHtonU64 (pack754(iter->second)); // sinr
+    }
+}
+
+uint32_t
+EpcX2UeImsiSinrUpdateHeader::Deserialize (Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+
+  m_headerLength = 0;
+
+  m_sourceCellId = i.ReadNtohU16();
+  m_headerLength += 2;
+  m_numberOfIes = 1;
+
+  int sz = i.ReadNtohU16 ();
+  for (int j = 0; j < sz; j++)
+    {
+      uint64_t imsi = i.ReadNtohU64();
+      double sinr = unpack754(i.ReadNtohU64());
+      m_map[imsi] = sinr;
+    }
+
+  m_headerLength += 2 + sz * 16;
+  m_numberOfIes += 1 + sz;
+
+  return GetSerializedSize ();
+}
+
+void
+EpcX2UeImsiSinrUpdateHeader::Print (std::ostream &os) const
+{
+  os << "SourceCellId " << m_sourceCellId;
+  for(std::map<uint64_t, double>::const_iterator iter = m_map.begin(); iter != m_map.end(); ++iter)
+  {
+    os << " Imsi " << iter->first << " sinr " << 10*std::log10(iter->second);
+  }
+}
+
+uint16_t 
+EpcX2UeImsiSinrUpdateHeader::GetSourceCellId () const
+{
+  return m_sourceCellId;
+}
+
+void
+EpcX2UeImsiSinrUpdateHeader::SetSourceCellId(uint16_t cellId)
+{
+  m_sourceCellId = cellId;
+}
+
+std::map <uint64_t, double>
+EpcX2UeImsiSinrUpdateHeader::GetUeImsiSinrMap () const
+{
+  return m_map;
+}
+
+void
+EpcX2UeImsiSinrUpdateHeader::SetUeImsiSinrMap (std::map <uint64_t, double> map)
+{
+  m_map = map;
+
+  std::map <uint64_t, double>::size_type sz = m_map.size ();
+  m_headerLength += sz * 16;
+  m_numberOfIes += sz;
+}
+
+uint32_t
+EpcX2UeImsiSinrUpdateHeader::GetLengthOfIes () const
+{
+  return m_headerLength;
+}
+
+uint32_t
+EpcX2UeImsiSinrUpdateHeader::GetNumberOfIes () const
+{
+  return m_numberOfIes;
+}
+
+uint64_t 
+EpcX2UeImsiSinrUpdateHeader::pack754(long double f)
+{
+  uint16_t bits = 64;
+  uint16_t expbits = 11;
+  long double fnorm;
+  int shift;
+  long long sign, exp, significand;
+  unsigned significandbits = bits - expbits - 1; // -1 for sign bit
+
+  if (f == 0.0) return 0; // get this special case out of the way
+
+  // check sign and begin normalization
+  if (f < 0) { sign = 1; fnorm = -f; }
+  else { sign = 0; fnorm = f; }
+
+  // get the normalized form of f and track the exponent
+  shift = 0;
+  while(fnorm >= 2.0) { fnorm /= 2.0; shift++; }
+  while(fnorm < 1.0) { fnorm *= 2.0; shift--; }
+  fnorm = fnorm - 1.0;
+
+  // calculate the binary form (non-float) of the significand data
+  significand = fnorm * ((1LL<<significandbits) + 0.5f);
+
+  // get the biased exponent
+  exp = shift + ((1<<(expbits-1)) - 1); // shift + bias
+
+  // return the final answer
+  return (sign<<(bits-1)) | (exp<<(bits-expbits-1)) | significand;
+}
+
+long double 
+EpcX2UeImsiSinrUpdateHeader::unpack754(uint64_t i)
+{
+  uint16_t bits = 64;
+  uint16_t expbits = 11;
+  long double result;
+  long long shift;
+  unsigned bias;
+  unsigned significandbits = bits - expbits - 1; // -1 for sign bit
+
+  if (i == 0) return 0.0;
+
+  // pull the significand
+  result = (i&((1LL<<significandbits)-1)); // mask
+  result /= (1LL<<significandbits); // convert back to float
+  result += 1.0f; // add the one back on
+
+  // deal with the exponent
+  bias = (1<<(expbits-1)) - 1;
+  shift = ((i>>significandbits)&((1LL<<expbits)-1)) - bias;
+  while(shift > 0) { result *= 2.0; shift--; }
+  while(shift < 0) { result /= 2.0; shift++; }
+
+  // sign it
+  result *= (i>>(bits-1))&1? -1.0: 1.0;
+
+  return result;
+}
+
 
 } // namespace ns3

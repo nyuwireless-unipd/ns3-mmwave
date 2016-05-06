@@ -601,7 +601,6 @@ public:
   struct RrcConnectionSetupCompleted
   {
     uint8_t rrcTransactionIdentifier;
-    uint16_t mmWaveCellId;
   };
 
   struct RrcConnectionReconfiguration
@@ -645,6 +644,13 @@ public:
   struct RrcConnectionRelease
   {
     uint8_t rrcTransactionIdentifier;
+  };
+
+  struct RrcConnectionSwitch
+  {
+    uint8_t rrcTransactionIdentifier;
+    std::vector<uint8_t> drbidList;
+    uint16_t useMmWaveConnection;
   };
 
   struct RrcConnectionReject
@@ -810,6 +816,14 @@ public:
   virtual void RecvRrcConnectionReject (RrcConnectionReject msg) = 0;
 
   /**
+   * \brief Receive an _RRCConnectionSwitch_ message from the serving eNodeB
+   *        to switch data connection from LTE to MmWave or viceversa
+   *        (added to support MC functionalities)
+   * \param msg the message
+   */
+  virtual void RecvRrcConnectionSwitch (RrcConnectionSwitch msg) = 0;
+
+  /**
    * \brief Receive an _RRCConnectToMmWave_ message from the serving eNodeB
    *        during an RRC connection establishment procedure
    *        (added to support MC functionalities).
@@ -901,11 +915,19 @@ public:
   virtual void SendRrcConnectionReject (uint16_t rnti, RrcConnectionReject msg) = 0;
 
   /**
+   * \brief Send an _RRCConnectionSwitch_ message to a UE
+   *        (added to support MC functionalities).
+   * \param rnti the RNTI of the destination UE
+   * \param msg the message
+   */
+  virtual void SendRrcConnectionSwitch (uint16_t rnti, RrcConnectionSwitch msg) = 0;
+
+  /**
    * \brief Send an _RRCConnectToMmWave_ message to a UE
    *        during an RRC connection establishment procedure
    *        (added to support MC functionalities).
    * \param rnti the RNTI of the destination UE
-   * \param msg the message
+   * \param mmWaveCellId the cellId to which connect
    */
   virtual void SendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId) = 0;
 
@@ -1120,6 +1142,7 @@ public:
   virtual void RecvRrcConnectionRelease (RrcConnectionRelease msg);
   virtual void RecvRrcConnectionReject (RrcConnectionReject msg);
   virtual void RecvRrcConnectToMmWave (uint16_t mmWaveCellId);
+  virtual void RecvRrcConnectionSwitch (RrcConnectionSwitch msg);
 
 private:
   MemberLteUeRrcSapProvider ();
@@ -1200,6 +1223,12 @@ MemberLteUeRrcSapProvider<C>::RecvRrcConnectToMmWave (uint16_t mmWaveCellId)
   Simulator::ScheduleNow (&C::DoRecvRrcConnectToMmWave, m_owner, mmWaveCellId);
 }
 
+template <class C>
+void
+MemberLteUeRrcSapProvider<C>::RecvRrcConnectionSwitch (RrcConnectionSwitch msg)
+{
+  Simulator::ScheduleNow (&C::DoRecvRrcConnectionSwitch, m_owner, msg);
+}
 
 /**
  * Template for the implementation of the LteEnbRrcSapUser as a member
@@ -1223,6 +1252,7 @@ public:
   virtual void SendRrcConnectionReestablishmentReject (uint16_t rnti, RrcConnectionReestablishmentReject msg);
   virtual void SendRrcConnectionRelease (uint16_t rnti, RrcConnectionRelease msg);
   virtual void SendRrcConnectionReject (uint16_t rnti, RrcConnectionReject msg);
+  virtual void SendRrcConnectionSwitch (uint16_t rnti, RrcConnectionSwitch msg);
   virtual void SendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId);
   virtual Ptr<Packet> EncodeHandoverPreparationInformation (HandoverPreparationInfo msg);
   virtual HandoverPreparationInfo DecodeHandoverPreparationInformation (Ptr<Packet> p);
@@ -1306,6 +1336,13 @@ void
 MemberLteEnbRrcSapUser<C>::SendRrcConnectionReject (uint16_t rnti, RrcConnectionReject msg)
 {
   m_owner->DoSendRrcConnectionReject (rnti, msg);
+}
+
+template <class C>
+void
+MemberLteEnbRrcSapUser<C>::SendRrcConnectionSwitch (uint16_t rnti, RrcConnectionSwitch msg)
+{
+  m_owner->DoSendRrcConnectionSwitch (rnti, msg);
 }
 
 template <class C>

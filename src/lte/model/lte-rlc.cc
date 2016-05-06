@@ -78,7 +78,8 @@ LteRlc::LteRlc ()
   : m_rlcSapUser (0),
     m_macSapProvider (0),
     m_rnti (0),
-    m_lcid (0)
+    m_lcid (0),
+    isMc(false) // TODO refactor this!!
 {
   NS_LOG_FUNCTION (this);
   m_rlcSapProvider = new LteRlcSpecificLteRlcSapProvider<LteRlc> (this);

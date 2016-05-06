@@ -13,6 +13,7 @@
 #include <ns3/double.h>
 #include "mmwave-ue-phy.h"
 #include "mmwave-ue-net-device.h"
+#include "mc-ue-net-device.h"
 #include "mmwave-spectrum-value-helper.h"
 #include <ns3/pointer.h>
 #include <ns3/node.h>
@@ -239,18 +240,41 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	m_noiseFigure = 5.0;
 	m_phyMacConfig = config;
 
+	Ptr<MmWaveEnbNetDevice> enbNetDevice = m_registeredEnb.find(cellId)->second.second;
+	if(DynamicCast<MmWaveUeNetDevice>(m_netDevice))
+	{
+		DynamicCast<MmWaveUeNetDevice>(m_netDevice)->SetTargetEnb(enbNetDevice);
+	}
+	else if(DynamicCast<McUeNetDevice>(m_netDevice))
+	{
+		DynamicCast<McUeNetDevice>(m_netDevice)->SetMmWaveTargetEnb(enbNetDevice);
+	}
+	// call antennaarrya to change the bf vector
+	Ptr<AntennaArrayModel> txAntennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+	if(txAntennaArray != 0)
+	{
+		txAntennaArray->ChangeBeamformingVector(enbNetDevice);
+	}
+	else
+	{
+		NS_FATAL_ERROR("UE is not using an AntennaArrayModel");
+	}
+	
+
 	Ptr<SpectrumValue> noisePsd =
 			MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
 	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
 	m_downlinkSpectrumPhy->GetSpectrumChannel()->AddRx(m_downlinkSpectrumPhy);
 	m_downlinkSpectrumPhy->SetCellId(m_cellId);
+	NS_LOG_INFO("Registered to eNB with CellId " << m_cellId);
 }
 
 void 
-MmWaveUePhy::RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
+MmWaveUePhy::RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config, Ptr<MmWaveEnbNetDevice> enbNetDevice)
 {
 	NS_ASSERT_MSG(m_registeredEnb.find(cellId) == m_registeredEnb.end(), "Enb already registered");
-	m_registeredEnb[cellId] = config;
+	std::pair<Ptr<MmWavePhyMacCommon>, Ptr<MmWaveEnbNetDevice> > pair(config, enbNetDevice);
+	m_registeredEnb[cellId] = pair;
 }
 
 Ptr<MmWaveSpectrumPhy>
@@ -446,6 +470,19 @@ MmWaveUePhy::SubframeIndication (uint16_t frameNum, uint8_t sfNum)
 void
 MmWaveUePhy::StartSlot ()
 {
+	Ptr<AntennaArrayModel> txAntennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+	if(m_cellId > 0)
+	{
+		if(txAntennaArray != 0)
+		{
+			txAntennaArray->ChangeBeamformingVector(m_registeredEnb.find(m_cellId)->second.second);
+		}
+		else
+		{
+			NS_FATAL_ERROR("UE is not using an AntennaArrayModel");
+		}
+	}
+
 	//unsigned slotInd = 0;
 	SlotAllocInfo currSlot;
 	/*if (m_slotNum >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
@@ -769,6 +806,23 @@ void
 MmWaveUePhy::DoReset ()
 {
 	NS_LOG_FUNCTION (this);
+	 m_rnti = 0;
+  	m_raPreambleId = 255; // value out of range
+
+  m_packetBurstMap.clear ();
+  m_controlMessageQueue.clear ();
+  m_subChannelsForTx.clear ();
+  //for (int i = 0; i < m_macChTtiDelay; i++)
+  //  {
+  //    Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
+  //    m_packetBurstQueue.push_back (pb);
+  //    std::list<Ptr<LteControlMessage> > l;
+  //    m_controlMessagesQueue.push_back (l);
+  //  }
+  //std::vector <int> ulRb;
+  //m_subChannelsForTransmissionQueue.resize (m_macChTtiDelay, ulRb);
+
+  m_downlinkSpectrumPhy->Reset ();
 }
 
 void
@@ -798,6 +852,17 @@ MmWaveUePhy::DoSynchronizeWithEnb (uint16_t cellId)
 	if (cellId == 0)
 	{
 		NS_FATAL_ERROR ("Cell ID shall not be zero");
+	}
+	else
+	{
+		if(m_registeredEnb.find(cellId) != m_registeredEnb.end())
+		{
+			RegisterToEnb(m_registeredEnb.find(cellId)->first, m_registeredEnb.find(cellId)->second.first);
+		}
+		else
+		{
+			NS_FATAL_ERROR("Unknown eNB");
+		}
 	}
 }
 

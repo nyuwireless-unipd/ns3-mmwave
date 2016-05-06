@@ -137,7 +137,7 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
                    MakeDataRateChecker ())
     .AddAttribute ("X2LinkDelay",
                    "The delay to be used for the next X2 link to be created",
-                   TimeValue (Seconds (0.010)),
+                   TimeValue (Seconds (0.0001)),
                    MakeTimeAccessor (&MmWavePointToPointEpcHelper::m_x2LinkDelay),
                    MakeTimeChecker ())
     .AddAttribute ("X2LinkMtu",

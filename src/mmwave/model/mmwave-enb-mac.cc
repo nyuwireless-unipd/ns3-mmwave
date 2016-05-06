@@ -310,7 +310,22 @@ MmWaveEnbMac::GetTypeId (void)
 	static TypeId tid = TypeId ("ns3::MmWaveEnbMac")
 			.SetParent<MmWaveMac> ()
 			.AddConstructor<MmWaveEnbMac> ()
-	;
+			.AddAttribute ("NumberOfRaPreambles",
+		           "how many random access preambles are available for the contention based RACH process",
+		           UintegerValue (50),
+		           MakeUintegerAccessor (&MmWaveEnbMac::m_numberOfRaPreambles),
+		           MakeUintegerChecker<uint8_t> (4, 64))
+		    .AddAttribute ("PreambleTransMax",
+                   "Maximum number of random access preamble transmissions",
+                   UintegerValue (50),
+                   MakeUintegerAccessor (&MmWaveEnbMac::m_preambleTransMax),
+                   MakeUintegerChecker<uint8_t> (3, 200))
+		    .AddAttribute ("RaResponseWindowSize",
+                   "length of the window (in TTIs) for the reception of the random access response (RAR); the resulting RAR timeout is this value + 3 ms",
+                   UintegerValue (3),
+                   MakeUintegerAccessor (&MmWaveEnbMac::m_raResponseWindowSize),
+                   MakeUintegerChecker<uint8_t> (2, 10))
+		;
 	return tid;
 }
 
@@ -326,6 +341,7 @@ MmWaveEnbMac::MmWaveEnbMac (void) :
 	m_phySapUser = new MmWaveMacEnbMemberPhySapUser (this);
 	m_macSchedSapUser = new MmWaveMacMemberMacSchedSapUser (this);
 	m_macCschedSapUser = new MmWaveMacMemberMacCschedSapUser (this);
+	Initialize();
 }
 
 MmWaveEnbMac::~MmWaveEnbMac (void)
@@ -406,15 +422,27 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 
 	if (!m_receivedRachPreambleCount.empty ())
 	{
-    // process received RACH preambles and notify the scheduler
+    	// process received RACH preambles and notify the scheduler
 		Ptr<MmWaveRarMessage> rarMsg = Create<MmWaveRarMessage> ();
 
 		for (std::map<uint8_t, uint32_t>::const_iterator it = m_receivedRachPreambleCount.begin ();
 				it != m_receivedRachPreambleCount.end ();
 				++it)
 		{
-			uint32_t rnti = m_cmacSapUser->AllocateTemporaryCellRnti ();
-			NS_LOG_INFO (rnti);
+			uint16_t rnti;
+			std::map<uint8_t, NcRaPreambleInfo>::iterator jt = m_allocatedNcRaPreambleMap.find (it->first);
+			NS_LOG_LOGIC("received RapId " << (uint16_t)it->first);
+			if (jt != m_allocatedNcRaPreambleMap.end ())
+			{
+			  rnti = jt->second.rnti;
+			  NS_LOG_INFO ("preambleId previously allocated for NC based RA, RNTI =" << (uint32_t) rnti << ", sending RAR");
+			  
+			}
+			else
+			{
+			  rnti = m_cmacSapUser->AllocateTemporaryCellRnti ();
+			  NS_LOG_INFO ("preambleId " << (uint32_t) it->first << ": allocated T-C-RNTI " << (uint32_t) rnti << ", sending RAR");
+			}
 			MmWaveRarMessage::Rar rar;
 			rar.rapId = (*it).first;
 			rar.rarPayload.m_rnti = rnti;
@@ -548,7 +576,7 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 				currPos = p->GetSize ();
 				(*lcidIt).second->ReceivePdu (rlcPdu);
 			}
-		NS_LOG_DEBUG ("Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
+		NS_LOG_DEBUG ("MmWave Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
 	}
 }
 
@@ -1001,8 +1029,39 @@ MmWaveEnbMac::DoGetRachConfig ()
 LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue
 MmWaveEnbMac::DoAllocateNcRaPreamble (uint16_t rnti)
 {
+	bool found = false;
+	uint8_t preambleId;
+	for (preambleId = m_numberOfRaPreambles; preambleId < 64; ++preambleId)
+	{
+	  std::map<uint8_t, NcRaPreambleInfo>::iterator it = m_allocatedNcRaPreambleMap.find (preambleId);
+	  if ((it ==  m_allocatedNcRaPreambleMap.end ())
+	      || (it->second.expiryTime < Simulator::Now ()))
+	    {
+	      found = true;
+	      NcRaPreambleInfo preambleInfo;
+	      uint32_t expiryIntervalMs = (uint32_t) m_preambleTransMax * ((uint32_t) m_raResponseWindowSize + 5); 
+	      
+	      preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs);
+	      preambleInfo.rnti = rnti;
+	      NS_LOG_INFO ("allocated preamble for NC based RA: preamble " << (uint16_t)preambleId << ", RNTI " << preambleInfo.rnti << ", exiryTime " << preambleInfo.expiryTime);
+	      m_allocatedNcRaPreambleMap[preambleId] = preambleInfo; // create if not exist, update otherwise
+	      break;
+	    }
+	}
 	LteEnbCmacSapProvider::AllocateNcRaPreambleReturnValue ret;
-  return ret;
+	if (found)
+	{
+	  ret.valid = true;
+	  ret.raPreambleId = preambleId;
+	  ret.raPrachMaskIndex = 0;
+	}
+	else
+	{
+	  ret.valid = false;
+	  ret.raPreambleId = 0;
+	  ret.raPrachMaskIndex = 0;
+	}
+	return ret;
 }
 
 // ////////////////////////////////////////////

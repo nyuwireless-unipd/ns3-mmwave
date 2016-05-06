@@ -160,17 +160,14 @@ protected:
   virtual void DoSendUeContextRelease (EpcX2SapProvider::UeContextReleaseParams params);
   virtual void DoSendLoadInformation (EpcX2SapProvider::LoadInformationParams params);
   virtual void DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams params);
-  virtual void DoSendNotifyMcConnection (EpcX2SapProvider::ExpectMcUeParams params);
   virtual void DoSendUeData (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendMcPdcpPdu (EpcX2SapProvider::UeDataParams params);
   virtual void DoReceiveMcPdcpSdu (EpcX2SapProvider::UeDataParams params);
-
+  virtual void DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params);
+  virtual void DoSendMcHandoverRequest (EpcX2SapProvider::RequestMcHandoverParams params);
 
   EpcX2SapUser* m_x2SapUser;
   EpcX2SapProvider* m_x2SapProvider;
-
-  // TODO need a map for each of these, each associated with a TEID
-  // TODO add an AddMcUe method that is called by RRC on setup of the MC UE
   
   /**
    * Map the PdcpUser to a certain teid

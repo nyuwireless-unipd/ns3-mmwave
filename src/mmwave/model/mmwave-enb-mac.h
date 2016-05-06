@@ -181,6 +181,27 @@ private:
 	std::vector <DlHarqInfo> m_dlHarqInfoReceived; // DL HARQ feedback received
 	std::vector <UlHarqInfo> m_ulHarqInfoReceived; // UL HARQ feedback received
 	std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t> m_miDlHarqProcessesPackets; // Packet under trasmission of the DL HARQ process
+	
+	/**
+	* info associated with a preamble allocated for non-contention based RA
+	* 
+	*/
+	struct NcRaPreambleInfo
+	{   
+		uint16_t rnti; ///< rnti previously allocated for this non-contention based RA procedure
+		Time expiryTime; ///< value the expiration time of this allocation (so that stale preambles can be reused)
+	};
+
+	uint8_t m_numberOfRaPreambles;
+	uint8_t m_preambleTransMax;
+	uint8_t m_raResponseWindowSize;
+
+	/**
+	* map storing as key the random acccess preamble IDs allocated for
+	* non-contention based access, and as value the associated info
+	* 
+	*/
+	std::map<uint8_t, NcRaPreambleInfo> m_allocatedNcRaPreambleMap;
 
 };
 

@@ -26,6 +26,7 @@
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/lte-enb-cmac-sap.h>
 #include <bitset>
+#include <map>
 
 namespace ns3 {
 
@@ -216,6 +217,26 @@ public:
     TimeCriticalHandover
   };
 
+  /**
+   * \brief Parameters of the RlcSetupRequest to handle MC connectivity
+   *
+   * Forward UE params during the MC setup
+   */
+  struct RlcSetupRequest
+  {
+    uint16_t    sourceCellId;
+    uint16_t    targetCellId;
+    uint32_t    gtpTeid;
+    uint16_t    mmWaveRnti;
+    uint16_t    lteRnti;
+    uint8_t     drbid;
+    LteEnbCmacSapProvider::LcInfo lcinfo;
+    LteRrcSap::RlcConfig rlcConfig;
+    LteRrcSap::LogicalChannelConfig logicalChannelConfig;
+    TypeId      rlcType;
+  };
+
+
 
   /**
    * \brief Parameters of the HANDOVER REQUEST message.
@@ -231,6 +252,7 @@ public:
     uint32_t            mmeUeS1apId;
     uint64_t            ueAggregateMaxBitRateDownlink;
     uint64_t            ueAggregateMaxBitRateUplink;
+    bool                isMc;
     std::vector <ErabToBeSetupItem> bearers;
     Ptr<Packet>         rrcContext;
   };
@@ -330,31 +352,18 @@ public:
     Ptr<Packet> ueData;
   };
 
-  /**
-   * \brief Parameters of the RlcSetupRequest to handle MC connectivity
-   *
-   * Forward UE params during the MC setup
-   */
-  struct RlcSetupRequest
+  struct RequestMcHandoverParams
+  {
+    uint64_t imsi;
+    uint16_t oldCellId;
+    uint16_t targetCellId;
+  };
+
+  struct UeImsiSinrParams
   {
     uint16_t    sourceCellId;
     uint16_t    targetCellId;
-    uint32_t    gtpTeid;
-    uint16_t    mmWaveRnti;
-    uint16_t    lteRnti;
-    uint8_t     drbid;
-    LteEnbCmacSapProvider::LcInfo lcinfo;
-    LteRrcSap::RlcConfig rlcConfig;
-    LteRrcSap::LogicalChannelConfig logicalChannelConfig;
-    TypeId      rlcType;
-
-
-  };
-
-  struct ExpectMcUeParams
-  {
-    uint64_t imsi;
-    uint16_t targetCellId;
+    std::map<uint64_t, double> ueImsiSinrMap; 
   };
 
 };
@@ -460,8 +469,9 @@ public:
 
   virtual void SendRlcSetupCompleted (UeDataParams params) = 0;
 
-  // notify the secondary cell to expect the connection of a MC device
-  virtual void SendNotifyMcConnection (ExpectMcUeParams params) = 0;
+  virtual void SendUeSinrUpdate (UeImsiSinrParams params) = 0;
+
+  virtual void SendMcHandoverRequest (RequestMcHandoverParams params) = 0;
 };
 
 
@@ -498,7 +508,10 @@ public:
 
   virtual void RecvUeData (UeDataParams params) = 0;
 
-  virtual void RecvNotifyMcConnection (ExpectMcUeParams params) = 0;
+  virtual void RecvUeSinrUpdate(UeImsiSinrParams params) = 0;
+
+  virtual void RecvMcHandoverRequest (RequestMcHandoverParams params) = 0;
+
 };
 
 ///////////////////////////////////////
@@ -537,7 +550,9 @@ public:
 
   virtual void SendRlcSetupCompleted (UeDataParams params);
 
-  virtual void SendNotifyMcConnection (ExpectMcUeParams params);
+  virtual void SendUeSinrUpdate (UeImsiSinrParams params);
+
+  virtual void SendMcHandoverRequest (RequestMcHandoverParams params);
 
 
 private:
@@ -640,12 +655,18 @@ EpcX2SpecificEpcX2SapProvider<C>::SendRlcSetupCompleted (UeDataParams params)
   m_x2->DoSendRlcSetupCompleted (params);
 }
 
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SendUeSinrUpdate (UeImsiSinrParams params)
+{
+  m_x2->DoSendUeSinrUpdate (params);
+}
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapProvider<C>::SendNotifyMcConnection (ExpectMcUeParams params)
+EpcX2SpecificEpcX2SapProvider<C>::SendMcHandoverRequest (RequestMcHandoverParams params)
 {
-  m_x2->DoSendNotifyMcConnection (params);
+  m_x2->DoSendMcHandoverRequest (params);
 }
 
 ///////////////////////////////////////
@@ -680,7 +701,10 @@ public:
 
   virtual void RecvUeData (UeDataParams params);
 
-  virtual void RecvNotifyMcConnection (ExpectMcUeParams params);
+  virtual void RecvUeSinrUpdate (UeImsiSinrParams params);
+
+  virtual void RecvMcHandoverRequest (RequestMcHandoverParams params);
+
 
 private:
   EpcX2SpecificEpcX2SapUser ();
@@ -770,10 +794,18 @@ EpcX2SpecificEpcX2SapUser<C>::RecvUeData (UeDataParams params)
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapUser<C>::RecvNotifyMcConnection (ExpectMcUeParams params)
+EpcX2SpecificEpcX2SapUser<C>::RecvUeSinrUpdate (UeImsiSinrParams params)
 {
-  m_rrc->DoRecvNotifyMcConnection (params);
+  m_rrc->DoRecvUeSinrUpdate (params);
 }
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvMcHandoverRequest (RequestMcHandoverParams params)
+{
+  m_rrc->DoRecvMcHandoverRequest (params);
+}
+
 
 
 /////////////////////////////////////////////

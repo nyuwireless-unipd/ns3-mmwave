@@ -119,6 +119,8 @@ public:
    */
   virtual void NotifyConnectionSuccessful (uint16_t rnti) = 0;
 
+  virtual void NotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId) = 0;
+
   /** 
    * \brief Notify the NAS that LTE RRC received an indication to connect to a MmWave eNB
    * 
@@ -249,6 +251,7 @@ public:
 
   // inherited from LteAsSapUser
   virtual void NotifyConnectionSuccessful (uint16_t rnti);
+  virtual void NotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId);
   virtual void NotifyConnectToMmWave (uint16_t mmWaveCellId);
   virtual void NotifyConnectionFailed ();
   virtual void RecvData (Ptr<Packet> packet);
@@ -275,6 +278,13 @@ void
 MemberLteAsSapUser<C>::NotifyConnectionSuccessful (uint16_t rnti)
 {
   m_owner->DoNotifyConnectionSuccessful (rnti);
+}
+
+template <class C>
+void 
+MemberLteAsSapUser<C>::NotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId)
+{
+  m_owner->DoNotifyHandoverSuccessful (rnti, mmWaveCellId);
 }
 
 template <class C>

@@ -466,6 +466,32 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 		mmWaveDlPhy->SetPhyDlHarqFeedbackCallback (MakeCallback (&MmWaveUePhy::ReceiveLteDlHarqFeedback, mmWavePhy));
 	}
 
+	// hack to allow periodic computation of SINR at the eNB, without pilots
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	{
+		mmWavePhy->AddSpectrumPropagationLossModel(m_beamforming);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		mmWavePhy->AddSpectrumPropagationLossModel(m_channelMatrix);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		mmWavePhy->AddSpectrumPropagationLossModel(m_raytracing);
+	}
+	if (!m_pathlossModelType.empty ())
+	{
+		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+		if( splm )
+		{
+			mmWavePhy->AddPropagationLossModel (splm);
+		}
+	}
+	else
+	{
+		NS_LOG_UNCOND (this << " No PropagationLossModel!");
+	}
+
 	// Phy part of LTE
 	Ptr<LteSpectrumPhy> lteDlPhy = CreateObject<LteSpectrumPhy> ();
 	Ptr<LteSpectrumPhy> lteUlPhy = CreateObject<LteSpectrumPhy> ();
@@ -680,6 +706,31 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
 	/* Do not do this here. Do it during registration with the BS
 	 * phy->SetCofigurationParameters(m_phyMacCommon);*/
+
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	{
+		phy->AddSpectrumPropagationLossModel(m_beamforming);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		phy->AddSpectrumPropagationLossModel(m_channelMatrix);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		phy->AddSpectrumPropagationLossModel(m_raytracing);
+	}
+	if (!m_pathlossModelType.empty ())
+	{
+		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+		if( splm )
+		{
+			phy->AddPropagationLossModel (splm);
+		}
+	}
+	else
+	{
+		NS_LOG_UNCOND (this << " No PropagationLossModel!");
+	}
 
 	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
 	pData->AddCallback (MakeCallback (&MmWaveUePhy::GenerateDlCqiReport, phy));
@@ -905,8 +956,8 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	mac->SetEnbCmacSapUser (rrc->GetLteEnbCmacSapUser ());
 
 	rrc->SetLteMacSapProvider (mac->GetUeMacSapProvider ());
-	phy->SetmmWaveEnbCphySapUser (rrc->GetLteEnbCphySapUser ());
-	rrc->SetLteEnbCphySapProvider (phy->GetmmWaveEnbCphySapProvider ());
+	phy->SetMmWaveEnbCphySapUser (rrc->GetLteEnbCphySapUser ());
+	rrc->SetLteEnbCphySapProvider (phy->GetMmWaveEnbCphySapProvider ());
 
 	//FFR SAP
 	//rrc->SetLteFfrRrcSapProvider (ffrAlgorithm->GetLteFfrRrcSapProvider ());
@@ -934,6 +985,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	//mac->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
 	rrc->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
+	rrc->SetAttribute("mmWaveDevice", BooleanValue(true));
 
 	NS_LOG_LOGIC ("set the propagation model frequencies");
 	double freq = m_phyMacCommon->GetCentreFrequency ();
@@ -1268,21 +1320,6 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	}
 	NS_ASSERT (lteClosestEnbDevice != 0);
 
-	// Find the closest mmWave station	
-	minDistance = std::numeric_limits<double>::infinity ();
-	Ptr<NetDevice> closestEnbDevice;
-	for (NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End (); ++i)
-	{
-	  Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
-	  double distance = CalculateDistance (uepos, enbpos);
-	  if (distance < minDistance)
-	    {
-	      minDistance = distance;
-	      closestEnbDevice = *i;
-	    }
-	}
-	NS_ASSERT (closestEnbDevice != 0);
-
   	// Necessary operation to connect MmWave UE to eNB at lower layers
   	for(NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End(); ++i)
   	{
@@ -1291,22 +1328,15 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 		Ptr<MmWavePhyMacCommon> configParams = mmWaveEnb->GetPhy()->GetConfigurationParameters();
 		mmWaveEnb->GetPhy ()->AddUePhy (mcDevice->GetImsi (), ueDevice);
 		// register MmWave eNBs informations in the MmWaveUePhy
-		mcDevice->GetMmWavePhy ()->RegisterOtherEnb (mmWaveCellId, configParams);
+		mcDevice->GetMmWavePhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
 		//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
 		NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
   	}
 	
-	// for the closest cell	
-	Ptr<MmWaveEnbNetDevice> closestMmWave = closestEnbDevice->GetObject<MmWaveEnbNetDevice> (); 
-	uint16_t mmWaveCellId = closestMmWave->GetCellId ();
-	Ptr<MmWavePhyMacCommon> configParams = closestMmWave->GetPhy()->GetConfigurationParameters();
-	mcDevice->GetMmWavePhy ()->RegisterToEnb (mmWaveCellId, configParams);
-	mcDevice->GetLteRrc ()->SetMmWaveCellId (mmWaveCellId);
-	mcDevice->GetMmWaveRrc ()->SetMmWaveCellId (mmWaveCellId);
-	// Attach the MC device the LTE eNB
+	// Attach the MC device the LTE eNB, the best MmWave eNB will be selected automatically
 	Ptr<LteEnbNetDevice> enbLteDevice = lteClosestEnbDevice->GetObject<LteEnbNetDevice> ();
 	Ptr<EpcUeNas> lteUeNas = mcDevice->GetNas ();
-	lteUeNas->ConnectMc (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn (), mmWaveCellId);
+	lteUeNas->Connect (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ()); // the MmWaveCell will be automatically selected
 
 	if (m_epcHelper != 0)
 	{
@@ -1314,10 +1344,7 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	  m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
 	}
 
-	// TODO list all the enbs
   	mcDevice->SetLteTargetEnb (enbLteDevice);
-	mcDevice->SetMmWaveTargetEnb (closestMmWave);
-
 	
 }
 
@@ -1344,6 +1371,61 @@ MmWaveHelper::AddX2Interface (Ptr<Node> enbNode1, Ptr<Node> enbNode2)
   NS_LOG_INFO ("setting up the X2 interface");
 
   m_epcHelper->AddX2Interface (enbNode1, enbNode2);
+}
+
+void
+MmWaveHelper::AddX2Interface (NodeContainer lteEnbNodes, NodeContainer mmWaveEnbNodes)
+{
+	NS_LOG_FUNCTION(this);
+
+	NS_ASSERT_MSG (m_epcHelper != 0, "X2 interfaces cannot be set up when the EPC is not used");
+
+	for (NodeContainer::Iterator i = mmWaveEnbNodes.Begin (); i != mmWaveEnbNodes.End (); ++i)
+    {
+      for (NodeContainer::Iterator j = i + 1; j != mmWaveEnbNodes.End (); ++j)
+        {
+          AddX2Interface (*i, *j);
+        }
+    }
+    for (NodeContainer::Iterator i = mmWaveEnbNodes.Begin (); i != mmWaveEnbNodes.End (); ++i)
+    {
+    	// get the position of the mmWave eNB
+	 	Vector mmWavePos = (*i)->GetObject<MobilityModel> ()->GetPosition ();
+  		double minDistance = std::numeric_limits<double>::infinity ();
+  		Ptr<Node> closestLteNode;
+		for (NodeContainer::Iterator j = lteEnbNodes.Begin(); j != lteEnbNodes.End (); ++j)
+		{
+			AddX2Interface (*i, *j);
+			Vector ltePos = (*j)->GetObject<MobilityModel> ()->GetPosition ();
+			double distance = CalculateDistance (mmWavePos, ltePos);
+			if (distance < minDistance)
+		    {
+				minDistance = distance;
+				closestLteNode = *j;
+		    }
+		}
+
+		// get closestLteNode cellId and store it in the MmWaveEnb RRC
+		Ptr<LteEnbNetDevice> closestEnbDevice = closestLteNode->GetDevice(0)->GetObject <LteEnbNetDevice> ();
+		if(closestEnbDevice != 0)
+		{
+			uint16_t lteCellId = closestEnbDevice->GetRrc()->GetCellId();
+			NS_LOG_LOGIC("ClosestLteCellId " << lteCellId);	
+			(*i)->GetDevice(0)->GetObject <MmWaveEnbNetDevice> ()->GetRrc()->SetClosestLteCellId(lteCellId);
+		}
+		else
+		{
+			NS_FATAL_ERROR("LteDevice not retrieved");
+		}
+		
+    }
+    for (NodeContainer::Iterator i = lteEnbNodes.Begin (); i != lteEnbNodes.End (); ++i)
+    {
+      for (NodeContainer::Iterator j = i + 1; j != lteEnbNodes.End (); ++j)
+        {
+          AddX2Interface (*i, *j);
+        }
+    }
 }
 
 /* Call this from a script to configure the MAC PHY common parameters

@@ -94,6 +94,13 @@ public:
 	                                                   Ptr<const MobilityModel> a,
 	                                                   Ptr<const MobilityModel> b) const;
 
+	/**
+	* \breif Set the beamforming vector of connected enbs and ues
+	* \param ueDevice a pointer to ueNetDevice
+	* \param enbDevice a pointer to enbNetDevice
+	*/
+	void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
+
 private:
 	/**
 	* \breif Get complex number from a string
@@ -133,12 +140,7 @@ private:
 	Ptr<SpectrumValue> DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	                                                   Ptr<const MobilityModel> a,
 	                                                   Ptr<const MobilityModel> b) const;
-	/**
-	* \breif Set the beamforming vector of connected enbs and ues
-	* \param ueDevice a pointer to ueNetDevice
-	* \param enbDevice a pointer to enbNetDevice
-	*/
-	void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
+	
 	/**
 	* \breif Store the channel matrix to channelMatrixMap
 	* \param ueDevice a pointer to ueNetDevice

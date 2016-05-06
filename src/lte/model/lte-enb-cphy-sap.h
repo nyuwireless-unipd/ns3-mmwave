@@ -23,6 +23,7 @@
 #define LTE_ENB_CPHY_SAP_H
 
 #include <stdint.h>
+#include <map>
 #include <ns3/ptr.h>
 
 #include <ns3/lte-rrc-sap.h>
@@ -133,6 +134,13 @@ public:
    * destructor
    */
   virtual ~LteEnbCphySapUser ();
+
+  struct UeAssociatedSinrInfo
+  {
+    std::map<uint64_t, double> ueImsiSinrMap;
+  };
+
+  virtual void UpdateUeSinrEstimate(LteEnbCphySapUser::UeAssociatedSinrInfo info) = 0;
 
 };
 
@@ -265,6 +273,8 @@ class MemberLteEnbCphySapUser : public LteEnbCphySapUser
 {
 public:
   MemberLteEnbCphySapUser (C* owner);
+  virtual void UpdateUeSinrEstimate(UeAssociatedSinrInfo info);
+
 
   // methods inherited from LteEnbCphySapUser go here
 
@@ -283,6 +293,14 @@ template <class C>
 MemberLteEnbCphySapUser<C>::MemberLteEnbCphySapUser ()
 {
 }
+
+template <class C>
+void
+MemberLteEnbCphySapUser<C>::UpdateUeSinrEstimate(UeAssociatedSinrInfo info)
+{
+  return m_owner->DoUpdateUeSinrEstimate(info);
+}
+
 
 
 

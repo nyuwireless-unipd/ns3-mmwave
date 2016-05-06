@@ -199,6 +199,7 @@ private:
 
   // LTE AS SAP methods
   void DoNotifyConnectionSuccessful (uint16_t rnti);
+  void DoNotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId);
   void DoNotifyConnectToMmWave (uint16_t mmWaveCellId);
   void DoNotifyConnectionFailed ();
   void DoNotifyConnectionReleased ();

@@ -55,8 +55,9 @@ BuildingsObstaclePropagationLossModel::SetFrequency (double freq)
 
 double
 BuildingsObstaclePropagationLossModel::DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const
-{
+{	
 	  return txPowerDbm - GetLoss (a, b);
+
 }
 
 double
@@ -148,7 +149,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 		m_beamforming->UpdateMatrices(false);
 		loss = loss + 50;
 	}*/
-	NS_LOG_DEBUG (loss);
+	//NS_LOG_UNCOND (a << " " << b << " pathloss " << loss);
 
 	return loss;
 }

@@ -68,7 +68,8 @@ McUePdcp::McUePdcp ()
     m_rnti (0),
     m_lcid (0),
     m_txSequenceNumber (0),
-    m_rxSequenceNumber (0)
+    m_rxSequenceNumber (0),
+    m_useMmWaveConnection (false)
 {
   NS_LOG_FUNCTION (this);
   m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<McUePdcp> (this);
@@ -210,13 +211,19 @@ McUePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   params.lcid = m_lcid;
   params.pdcpPdu = p;
 
-  if(m_mmWaveRlcSapProvider == 0 || m_txSequenceNumber % 2 == 0)
+  if(m_mmWaveRlcSapProvider == 0 || (!m_useMmWaveConnection))
   {
+    NS_LOG_INFO(this << " McUePdcp: Tx packet to uplink LTE stack");
     m_rlcSapProvider->TransmitPdcpPdu (params);
+  }
+  else if (m_useMmWaveConnection)
+  {
+    NS_LOG_INFO(this << " McUePdcp: Tx packet to uplink MmWave stack");
+    m_mmWaveRlcSapProvider->TransmitPdcpPdu (params);
   }
   else
   {
-    m_mmWaveRlcSapProvider->TransmitPdcpPdu (params);
+    NS_FATAL_ERROR ("Invalid combination");
   }
 }
 
@@ -225,6 +232,7 @@ McUePdcp::DoReceivePdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
+  NS_LOG_INFO(this << " McUePdcp received dowlink Pdu");
   // Receiver timestamp
   PdcpTag pdcpTag;
   Time delay;
@@ -249,6 +257,12 @@ McUePdcp::DoReceivePdu (Ptr<Packet> p)
   params.rnti = m_rnti;
   params.lcid = m_lcid;
   m_pdcpSapUser->ReceivePdcpSdu (params);
+}
+
+void
+McUePdcp::SwitchConnection (bool useMmWaveConnection)
+{
+  m_useMmWaveConnection = useMmWaveConnection;
 }
 
 

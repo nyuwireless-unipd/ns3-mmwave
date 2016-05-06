@@ -62,7 +62,9 @@ public:
     ResourceStatusReporting = 10,
     RlcSetupRequest         = 11, // added for MC functionalities
     RlcSetupCompleted       = 12,
-    NotifyMcConnection      = 13
+    NotifyMcConnection      = 13,
+    UpdateUeSinr            = 14,
+    RequestMcHandover       = 15
   };
 
   enum TypeOfMessage_t {
@@ -102,6 +104,9 @@ public:
   uint16_t GetCause () const;
   void SetCause (uint16_t cause);
 
+  bool GetIsMc () const;
+  void SetIsMc (bool isMc);
+
   uint16_t GetTargetCellId () const;
   void SetTargetCellId (uint16_t targetCellId);
 
@@ -131,6 +136,7 @@ private:
   uint64_t          m_ueAggregateMaxBitRateDownlink;
   uint64_t          m_ueAggregateMaxBitRateUplink;
   std::vector <EpcX2Sap::ErabToBeSetupItem> m_erabsToBeSetupList;
+  bool              m_isMc;
 };
 
 
@@ -226,11 +232,11 @@ private:
   uint32_t          m_gtpTeid;
 };
 
-class EpcX2NotifyMcConnectionHeader : public Header
+class EpcX2RequestMcHandoverHeader : public Header
 {
 public:
-  EpcX2NotifyMcConnectionHeader ();
-  virtual ~EpcX2NotifyMcConnectionHeader ();
+  EpcX2RequestMcHandoverHeader ();
+  virtual ~EpcX2RequestMcHandoverHeader ();
 
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;
@@ -241,6 +247,9 @@ public:
 
   uint16_t GetTargetCellId () const;
   void SetTargetCellId (uint16_t targetCellId);
+
+  uint16_t GetOldCellId () const;
+  void SetOldCellId (uint16_t oldCellId);
 
   uint64_t GetImsi () const;
   void SetImsi (uint64_t imsi);
@@ -253,6 +262,7 @@ private:
   uint32_t          m_headerLength;
 
   uint16_t          m_targetCellId;
+  uint16_t          m_oldCellId;
   uint64_t          m_imsi;
 };
 
@@ -463,6 +473,41 @@ private:
   std::vector <EpcX2Sap::CellMeasurementResultItem> m_cellMeasurementResultList;
 };
 
+class EpcX2UeImsiSinrUpdateHeader : public Header
+{
+public:
+  EpcX2UeImsiSinrUpdateHeader ();
+  virtual ~EpcX2UeImsiSinrUpdateHeader ();
+
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual void Print (std::ostream &os) const;
+
+
+  std::map <uint64_t, double> GetUeImsiSinrMap () const;
+  void SetUeImsiSinrMap (std::map<uint64_t, double> map);
+
+  uint16_t GetSourceCellId () const;
+  void SetSourceCellId (uint16_t sourceCellId);
+
+  uint32_t GetLengthOfIes () const;
+  uint32_t GetNumberOfIes () const;
+
+private:
+  uint32_t          m_numberOfIes;
+  uint32_t          m_headerLength;
+
+  // from http://beej.us/guide/bgnet/examples/ieee754.c, to convert 
+  // uint64_t to double and viceversa according to IEEE754 format
+  static uint64_t pack754(long double f);
+  static long double unpack754(uint64_t i);
+
+  std::map <uint64_t, double> m_map;
+  uint16_t m_sourceCellId;
+};
 
 } // namespace ns3
 

@@ -209,14 +209,14 @@ MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::
 	m_rxPacketTraceFile << "DlRxTrace\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 			<< "\t" << (unsigned)params.m_numSym
 			<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-			<< params.m_sinr << "\t" << params.m_tbler <<" \t" << params.m_corrupt << "\t" << params.m_sinrMin << std::endl;
+			<< 10*std::log10(params.m_sinr) << "\t" << params.m_tbler <<" \t" << params.m_corrupt << "\t" << params.m_sinrMin << std::endl;
 
 	if (params.m_corrupt)
 	{
 		NS_LOG_DEBUG ("DL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 		    << "\t" << (unsigned)params.m_numSym
 				<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-				<< params.m_sinr << "\t" << params.m_tbler << "\t" << params.m_corrupt);
+				<< 10*std::log10(params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt);
 	}
 }
 void
@@ -234,14 +234,14 @@ MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std:
 	m_rxPacketTraceFile << "UlRxTrace\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 				<< "\t" << (unsigned)params.m_numSym
 				<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-				<< params.m_sinr << "\t" << params.m_tbler <<" \t" << params.m_corrupt << "\t" << params.m_sinrMin << std::endl;
+				<< 10*std::log10(params.m_sinr) << "\t" << params.m_tbler <<" \t" << params.m_corrupt << "\t" << params.m_sinrMin << std::endl;
 
 		if (params.m_corrupt)
 		{
 			NS_LOG_DEBUG ("UL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
 			    << "\t" << (unsigned)params.m_numSym
 					<< "\t" << params.m_rnti << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-					<< params.m_sinr << "\t" << params.m_tbler << "\t" << params.m_corrupt << "\t" << params.m_sinrMin);
+					<< 10*std::log10(params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt << "\t" << params.m_sinrMin);
 		}
 }
 

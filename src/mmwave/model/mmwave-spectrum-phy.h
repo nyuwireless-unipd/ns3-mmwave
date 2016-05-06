@@ -83,6 +83,8 @@ public:
 	static TypeId GetTypeId(void);
 	virtual void DoDispose();
 
+	void Reset();
+
 	void SetDevice(Ptr<NetDevice> d);
 	Ptr<NetDevice> GetDevice () const;
 	void SetMobility (Ptr<MobilityModel> m);
@@ -171,6 +173,11 @@ private:
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 
 	bool m_isEnb;
+
+	EventId m_endTxEvent;
+	EventId m_endRxDataEvent;
+  	EventId m_endRxDlCtrlEvent;
+
 
 };
 

@@ -154,6 +154,12 @@ public:
     (const uint16_t rnti, const uint8_t lcid,
      const uint32_t size, const uint64_t delay);
 
+  /**
+   * Switch between LTE and MmWave
+   */
+  void SwitchConnection(bool useMmWaveConnection);
+
+
 
 protected:
   // Interface provided to upper RRC entity
@@ -195,6 +201,8 @@ private:
    * Constants. See section 7.2 in TS 36.323
    */
   static const uint16_t m_maxPdcpSn = 4095;
+
+  bool m_useMmWaveConnection;
 
 };
 
