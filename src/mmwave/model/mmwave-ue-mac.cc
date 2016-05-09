@@ -443,28 +443,31 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 				continue;
 			}
 			std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (macSubheaders[ipdu].m_lcid);
-			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
-			Ptr<Packet> rlcPdu;
-			if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
+			//NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
+			if(it!=m_lcInfoMap.end ())
 			{
-				NS_LOG_ERROR ("Packet size less than specified in MAC header (actual= " \
-				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
-			}
-			else if ((p->GetSize ()-currPos) > (uint32_t)macSubheaders[ipdu].m_size)
-			{
-				NS_LOG_DEBUG ("Fragmenting MAC PDU (packet size greater than specified in MAC header (actual= " \
-				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
-				rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
-				currPos += (uint32_t)macSubheaders[ipdu].m_size;
-				it->second.macSapUser->ReceivePdu (rlcPdu);
-			}
-			else
-			{
-				rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
-				currPos = p->GetSize ();
-				LteRlcSpecificLteMacSapUser* user = (LteRlcSpecificLteMacSapUser*)it->second.macSapUser;
-				NS_LOG_INFO("LteMacSapUser " << user);
-				user->ReceivePdu (rlcPdu);
+				Ptr<Packet> rlcPdu;
+				if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
+				{
+					NS_LOG_ERROR ("Packet size less than specified in MAC header (actual= " \
+					              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+				}
+				else if ((p->GetSize ()-currPos) > (uint32_t)macSubheaders[ipdu].m_size)
+				{
+					NS_LOG_DEBUG ("Fragmenting MAC PDU (packet size greater than specified in MAC header (actual= " \
+					              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+					rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
+					currPos += (uint32_t)macSubheaders[ipdu].m_size;
+					it->second.macSapUser->ReceivePdu (rlcPdu);
+				}
+				else
+				{
+					rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
+					currPos = p->GetSize ();
+					LteRlcSpecificLteMacSapUser* user = (LteRlcSpecificLteMacSapUser*)it->second.macSapUser;
+					NS_LOG_INFO("LteMacSapUser " << user);
+					user->ReceivePdu (rlcPdu);
+				}
 			}
 		}
 	}
