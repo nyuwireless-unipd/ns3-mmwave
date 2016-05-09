@@ -130,6 +130,10 @@ public:
 
 	virtual void SubframeIndication (SfnSf sfn);
 
+	virtual void SetConfigurationParameters(Ptr<MmWavePhyMacCommon> params);
+
+
+
 	//virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
 
 private:
@@ -157,6 +161,12 @@ void
 MacUeMemberPhySapUser::SubframeIndication (SfnSf sfn)
 {
 	m_mac->DoSubframeIndication(sfn);
+}
+
+void
+MacUeMemberPhySapUser::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> params)
+{
+	m_mac->SetCofigurationParameters(params);
 }
 
 //void
@@ -213,12 +223,14 @@ MmWaveUeMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 
+	m_miUlHarqProcessesPacket.clear();
 	m_miUlHarqProcessesPacket.resize (m_phyMacConfig->GetNumHarqProcess ());
 	for (uint8_t i = 0; i < m_miUlHarqProcessesPacket.size (); i++)
 	{
 		Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
 		m_miUlHarqProcessesPacket.at (i).m_pktBurst = pb;
 	}
+	m_miUlHarqProcessesPacketTimer.clear();
 	m_miUlHarqProcessesPacketTimer.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
 
 	m_bsrPeriodicity = MicroSeconds (m_phyMacConfig->GetSymbolsPerSubframe());
@@ -431,7 +443,7 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 				continue;
 			}
 			std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (macSubheaders[ipdu].m_lcid);
-			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid");
+			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
 			Ptr<Packet> rlcPdu;
 			if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
 			{
@@ -858,15 +870,19 @@ MmWaveUeMac::DoReset ()
 	    }
 	  else
 	    {
-	      // note: use of postfix operator preserves validity of iterator
-	      m_lcInfoMap.erase (it++);
+	      	// note: use of postfix operator preserves validity of iterator
+    		NS_LOG_LOGIC("RemoveLc " << (uint16_t)it->first);
+	      	m_lcInfoMap.erase (it++);
 	    }
 	}
 
 	// m_noRaResponseReceivedEvent.Cancel ();
 	// m_rachConfigured = false;
+	m_miUlHarqProcessesPacket.clear();
+	m_miUlHarqProcessesPacketTimer.clear();
 	m_freshUlBsr = false;
 	m_ulBsrReceived.clear ();
+	m_macPduMap.clear();
 
 }
 //////////////////////////////////////////////

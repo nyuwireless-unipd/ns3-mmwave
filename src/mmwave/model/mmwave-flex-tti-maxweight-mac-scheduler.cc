@@ -1306,7 +1306,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
 			dci.m_harqProcess = UpdateDlHarqProcessId (ueInfo->m_rnti);
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
-			//NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
+			NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
 			SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, ueInfo->m_rnti);
 			slotInfo.m_dci = dci;
 			NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
@@ -1791,7 +1791,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMac
     {
       if ((*it).m_rnti == params.m_rnti)
         {
-          NS_LOG_INFO (this << " Erase RNTI " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity);
+          NS_LOG_LOGIC (this << " Erase RNTI " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity);
           it = m_rlcBufferReq.erase (it);
         }
       else
@@ -1807,6 +1807,34 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMac
   if (m_nextRntiDl == params.m_rnti)
     {
       m_nextRntiDl = 0;
+    }
+
+
+  // for(std::vector<UlHarqInfo>::iterator iter = m_ulHarqInfoList.begin(); iter != m_ulHarqInfoList.end(); ++iter)
+  // {
+  // 	if(iter->m_rnti == params.m_rnti)
+  // 	{
+  // 		iter = m_ulHarqInfoList.erase(iter);
+  // 	}
+  // }
+
+	// for(std::vector<FlowStats*>::iterator flowIt = m_flowHeap.begin(); flowIt != m_flowHeap.end(); ++flowIt)
+    // {
+    // 	NS_LOG_UNCOND("In map rnti " << (*flowIt)->m_ueSchedInfo->m_rnti << " uplink " << (*flowIt)->m_isUplink << " lcid " << (uint16_t)(*flowIt)->m_lcid);
+    // }
+
+    std::vector<FlowStats*>::iterator flowIt = m_flowHeap.begin();
+    while(flowIt != m_flowHeap.end())
+    {
+    	if((*flowIt)->m_ueSchedInfo->m_rnti == params.m_rnti)
+    	{
+    		flowIt = m_flowHeap.erase(flowIt);
+    	}
+    	else
+    	{
+    		++flowIt;
+    	}
+    	
     }
 
   return;

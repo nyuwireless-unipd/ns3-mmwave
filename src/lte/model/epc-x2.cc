@@ -518,9 +518,15 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
   {
     // call rlc interface
-    NS_LOG_INFO("Call RLC interface");
     EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
-    user -> SendMcPdcpSdu(params);
+    if(user != 0)
+    {
+      user -> SendMcPdcpSdu(params);
+    }
+    else
+    {
+      NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+    }
   } 
   else if (gtpu.GetMessageType() == EpcX2Header::McForwardUplinkData)
   {
@@ -533,6 +539,18 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
     m_x2SapUser->RecvUeData (params);
   }
 }
+
+void 
+EpcX2::DoNotifyMmWaveHandover (EpcX2SapProvider::NotifyMmWaveHandoverParams params)
+{
+  NS_LOG_FUNCTION(this);
+  // Rlc endpoints are no more valid
+  for(std::vector<uint32_t>::iterator teidIter = params.teidVector.begin(); teidIter != params.teidVector.end(); ++teidIter)
+  {
+    m_x2RlcUserMap.find(*teidIter)->second = 0;
+  }
+}
+
 
 
 //

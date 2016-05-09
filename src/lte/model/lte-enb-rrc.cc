@@ -705,6 +705,7 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
 
     case CONNECTED_NORMALLY:
     case CONNECTION_RECONFIGURATION:
+    case MC_CONNECTION_RECONFIGURATION:
     case CONNECTION_REESTABLISHMENT:
     case HANDOVER_PREPARATION:
     case HANDOVER_JOINING:
@@ -1092,7 +1093,8 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
               pdcp->SwitchConnection(useMmWaveConnection);
               m_rrc->m_lastMmWaveCell[m_imsi] = m_mmWaveCellId;
               m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
-              NS_LOG_INFO("Imsi " << m_imsi << " m_mmWaveCellSetupCompleted set to " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi]);
+              NS_LOG_INFO("Imsi " << m_imsi << " m_mmWaveCellSetupCompleted set to " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi] << 
+                " for cell " <<  m_rrc->m_lastMmWaveCell[m_imsi]);
               m_rrc->m_imsiUsingLte[m_imsi] = false;
             }     
             else
@@ -2296,35 +2298,10 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       {
         if(maxSinrCellId == m_bestMmWaveCellForImsiMap[imsi] && !m_imsiUsingLte[imsi])
         {
-          // do not need to update anything
-        }
-        else
-        {
-          NS_LOG_INFO("alreadyAssociatedImsi " << alreadyAssociatedImsi << " onHandoverImsi " << onHandoverImsi);
-          if(m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] == maxSinrCellId && alreadyAssociatedImsi && !onHandoverImsi) 
-          // it is on LTE, but now the last used MmWave cell is not in outage
+          if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId) // not on LTE, handover between MmWave cells
+          // this may happen when channel changes while there is an handover
           {
-            // switch back to MmWave
-            Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
-            bool useMmWaveConnection = true;
-            m_imsiUsingLte[imsi] = !useMmWaveConnection;
-            ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
-          }
-          else if (m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] != maxSinrCellId && alreadyAssociatedImsi && !onHandoverImsi)
-          // it is on LTE, but now a MmWave cell different from the last used is not in outage, so we need to handover
-          {
-            // already using LTE connection
-            // trigger ho via X2
-            EpcX2SapProvider::RequestMcHandoverParams params;
-            params.imsi = imsi;
-            params.targetCellId = maxSinrCellId;
-            params.oldCellId = m_bestMmWaveCellForImsiMap[imsi];
-            m_x2SapProvider->SendMcHandoverRequest(params);
-
-            m_mmWaveCellSetupCompleted[imsi] = false;
-          }
-          else if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId) // not on LTE, handover between MmWave cells
-          {
+            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " channel changed previously");
             // switch to LTE to avoid data being lost
             Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
             bool useMmWaveConnection = false;
@@ -2335,7 +2312,55 @@ LteEnbRrc::TriggerUeAssociationUpdate()
             EpcX2SapProvider::RequestMcHandoverParams params;
             params.imsi = imsi;
             params.targetCellId = maxSinrCellId;
-            params.oldCellId = m_bestMmWaveCellForImsiMap[imsi];
+            params.oldCellId = m_lastMmWaveCell[imsi];
+            m_x2SapProvider->SendMcHandoverRequest(params);
+
+            m_mmWaveCellSetupCompleted[imsi] = false;
+            m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
+            NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << 10*std::log10(maxSinr));
+          } 
+        }
+        else
+        {
+          NS_LOG_INFO("alreadyAssociatedImsi " << alreadyAssociatedImsi << " onHandoverImsi " << onHandoverImsi);
+          if(m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] == maxSinrCellId && alreadyAssociatedImsi && !onHandoverImsi) 
+          // it is on LTE, but now the last used MmWave cell is not in outage
+          {
+            // switch back to MmWave
+            NS_LOG_INFO("----- on LTE, switch to lastMmWaveCell " << m_lastMmWaveCell[imsi]);
+            Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
+            bool useMmWaveConnection = true;
+            m_imsiUsingLte[imsi] = !useMmWaveConnection;
+            ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
+          }
+          else if (m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] != maxSinrCellId && alreadyAssociatedImsi && !onHandoverImsi)
+          // it is on LTE, but now a MmWave cell different from the last used is not in outage, so we need to handover
+          {
+            // already using LTE connection
+            NS_LOG_INFO("----- on LTE, switch to new MmWaveCell " << maxSinrCellId);
+            // trigger ho via X2
+            EpcX2SapProvider::RequestMcHandoverParams params;
+            params.imsi = imsi;
+            params.targetCellId = maxSinrCellId;
+            params.oldCellId = m_lastMmWaveCell[imsi];
+            m_x2SapProvider->SendMcHandoverRequest(params);
+
+            m_mmWaveCellSetupCompleted[imsi] = false;
+          }
+          else if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId) // not on LTE, handover between MmWave cells
+          {
+            // switch to LTE to avoid data being lost
+            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId);
+            Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
+            bool useMmWaveConnection = false;
+            m_imsiUsingLte[imsi] = !useMmWaveConnection;
+            ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
+
+            // trigger ho via X2
+            EpcX2SapProvider::RequestMcHandoverParams params;
+            params.imsi = imsi;
+            params.targetCellId = maxSinrCellId;
+            params.oldCellId = m_lastMmWaveCell[imsi];
             m_x2SapProvider->SendMcHandoverRequest(params);
 
             m_mmWaveCellSetupCompleted[imsi] = false;

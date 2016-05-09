@@ -108,6 +108,11 @@ public:
    */
 	virtual void SubframeIndication (SfnSf) = 0;
 
+	/**
+	 * When PHY connects to a new eNB, update the configuration parameters
+	 */
+	virtual void SetConfigurationParameters(Ptr<MmWavePhyMacCommon> params) = 0;
+
 	//virtual void NotifyHarqDeliveryFailure (uint8_t harqId) = 0;
 };
 

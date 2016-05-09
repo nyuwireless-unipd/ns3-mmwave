@@ -36,7 +36,7 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteRrcProtocolIdeal");
 
-static const Time RRC_IDEAL_MSG_DELAY = MilliSeconds (0);
+static const Time RRC_IDEAL_MSG_DELAY = MilliSeconds (1);
 
 NS_OBJECT_ENSURE_REGISTERED (LteUeRrcProtocolIdeal);
 

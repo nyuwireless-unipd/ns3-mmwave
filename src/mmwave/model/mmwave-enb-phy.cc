@@ -316,7 +316,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		  NS_LOG_LOGIC ("propagationGainDb = " << propagationGainDb << " dB");
 		  pathLossDb -= propagationGainDb;
 		}                    
-		NS_LOG_UNCOND ("total pathLoss = " << pathLossDb << " dB");    
+		//NS_LOG_UNCOND ("total pathLoss = " << pathLossDb << " dB");    
 
 		double pathGainLinear = std::pow (10.0, (-pathLossDb) / 10.0);
 		Ptr<SpectrumValue> rxPsd = txPsd->Copy();
@@ -374,7 +374,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		NS_LOG_LOGIC("sinr " << sinr);
 		double sinrAvg = Sum(sinr)/(sinr.GetSpectrumModel()->GetNumBands()); 
 		m_sinrMap[ue->first] = sinrAvg;
-		NS_LOG_UNCOND("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
+		//NS_LOG_UNCOND("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
 	}
 
 	LteEnbCphySapUser::UeAssociatedSinrInfo info;
@@ -762,7 +762,7 @@ MmWaveEnbPhy::GenerateDataCqiReport (const SpectrumValue& sinr)
 {
   NS_LOG_LOGIC ("Sinr from DataCqiReport = " << sinr);
   double sinrAvg = Sum(sinr)/(sinr.GetSpectrumModel()->GetNumBands()); 
-  NS_LOG_UNCOND ("Average SINR on DataCqiReport " << 10*std::log10(sinrAvg));
+  NS_LOG_INFO ("Average SINR on DataCqiReport " << 10*std::log10(sinrAvg));
 
   Values::const_iterator it;
   MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi;
@@ -818,7 +818,7 @@ MmWaveEnbPhy::PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msg
 			Ptr<MmWaveDlHarqFeedbackMessage> dlharqMsg = DynamicCast<MmWaveDlHarqFeedbackMessage> (msg);
 			DlHarqInfo dlharq = dlharqMsg->GetDlHarqFeedback ();
 			// check whether the UE is connected
-			if (m_ueAttached.find (dlharq.m_rnti) != m_ueAttached.end ())
+			if (m_ueAttachedRnti.find (dlharq.m_rnti) != m_ueAttachedRnti.end ())
 			{
 				m_phySapUser->ReceiveControlMessage (msg);
 			}
@@ -882,6 +882,15 @@ MmWaveEnbPhy::AddUePhy (uint16_t rnti)
 void
 MmWaveEnbPhy::DoRemoveUe (uint16_t rnti)
 {
+	std::set <uint16_t>::iterator it = m_ueAttachedRnti.find(rnti);
+	if (it != m_ueAttachedRnti.end ())
+	{
+		m_ueAttachedRnti.erase(it);
+	}
+	else
+	{
+		NS_FATAL_ERROR("Impossible to remove UE, not attached!");
+	}
   NS_LOG_FUNCTION (this << rnti);
 }
 
@@ -944,7 +953,11 @@ MmWaveEnbPhy::ReceiveUlHarqFeedback (UlHarqInfo mes)
 {
   NS_LOG_FUNCTION (this);
   // forward to scheduler
-  m_phySapUser->UlHarqFeedback (mes);
+  //
+  if(m_ueAttachedRnti.find(mes.m_rnti) != m_ueAttachedRnti.end())
+  {
+  	m_phySapUser->UlHarqFeedback (mes);
+  }
 }
 
 }

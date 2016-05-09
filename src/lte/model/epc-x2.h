@@ -165,6 +165,7 @@ protected:
   virtual void DoReceiveMcPdcpSdu (EpcX2SapProvider::UeDataParams params);
   virtual void DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params);
   virtual void DoSendMcHandoverRequest (EpcX2SapProvider::RequestMcHandoverParams params);
+  virtual void DoNotifyMmWaveHandover (EpcX2SapProvider::NotifyMmWaveHandoverParams params);
 
   EpcX2SapUser* m_x2SapUser;
   EpcX2SapProvider* m_x2SapProvider;

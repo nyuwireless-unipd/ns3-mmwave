@@ -84,6 +84,8 @@ public:
 	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
+	void SetCellId(uint16_t cellId);
+
 	// forwarded from LteMacSapProvider
 	void DoTransmitPdu (LteMacSapProvider::TransmitPduParameters);
 	void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters);
@@ -202,6 +204,8 @@ private:
 	* 
 	*/
 	std::map<uint8_t, NcRaPreambleInfo> m_allocatedNcRaPreambleMap;
+
+	uint16_t m_cellId;
 
 };
 

@@ -239,6 +239,7 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	//TBD how to assign bandwitdh and earfcn
 	m_noiseFigure = 5.0;
 	m_phyMacConfig = config;
+	m_phySapUser->SetConfigurationParameters(config);
 
 	Ptr<MmWaveEnbNetDevice> enbNetDevice = m_registeredEnb.find(cellId)->second.second;
 	if(DynamicCast<MmWaveUeNetDevice>(m_netDevice))
@@ -263,7 +264,7 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 
 	Ptr<SpectrumValue> noisePsd =
 			MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
-	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
+	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);	
 	m_downlinkSpectrumPhy->GetSpectrumChannel()->AddRx(m_downlinkSpectrumPhy);
 	m_downlinkSpectrumPhy->SetCellId(m_cellId);
 	NS_LOG_INFO("Registered to eNB with CellId " << m_cellId);
@@ -655,12 +656,12 @@ MmWaveUePhy::GetSubframeNumber (void)
 void
 MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
-  Simulator::ScheduleWithContext (m_netDevice->GetNode()->GetId(),
+    Simulator::ScheduleWithContext (m_netDevice->GetNode()->GetId(),
                                   MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()),
                                   &MmWaveUePhySapUser::ReceivePhyPdu,
                                   m_phySapUser,
                                   p);
-//	m_phySapUser->ReceivePhyPdu (p);
+	//m_phySapUser->ReceivePhyPdu (p);
 }
 
 void
@@ -807,11 +808,13 @@ MmWaveUePhy::DoReset ()
 {
 	NS_LOG_FUNCTION (this);
 	 m_rnti = 0;
+	m_cellId = 0;
   	m_raPreambleId = 255; // value out of range
 
   m_packetBurstMap.clear ();
   m_controlMessageQueue.clear ();
   m_subChannelsForTx.clear ();
+
   //for (int i = 0; i < m_macChTtiDelay; i++)
   //  {
   //    Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();

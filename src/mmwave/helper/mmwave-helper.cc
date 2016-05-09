@@ -979,6 +979,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	ulPhy->SetDevice (device);
 	n->AddDevice (device);
 
+	mac->SetCellId(cellId);
 	dlPhy->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, phy));
 	dlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, phy));
   	dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));

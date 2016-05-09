@@ -39,7 +39,7 @@ NS_LOG_COMPONENT_DEFINE ("mmWaveRrcProtocolIdeal");
 namespace ns3 {
 
 
-static const Time RRC_IDEAL_MSG_DELAY = MilliSeconds (0);
+static const Time RRC_IDEAL_MSG_DELAY = MilliSeconds (1);
 
 NS_OBJECT_ENSURE_REGISTERED (mmWaveUeRrcProtocolIdeal);
 

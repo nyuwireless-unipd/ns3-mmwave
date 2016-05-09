@@ -514,6 +514,12 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 	}
 }
 
+void 
+MmWaveEnbMac::SetCellId (uint16_t cellId)
+{
+	m_cellId = cellId;
+}
+
 void
 MmWaveEnbMac::SetMcs (int mcs)
 {
@@ -902,7 +908,7 @@ MmWaveEnbMac::DoConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth)
 void
 MmWaveEnbMac::DoAddUe (uint16_t rnti)
 {
-	NS_LOG_FUNCTION (this << " rnti=" << rnti);
+	NS_LOG_FUNCTION (this << " DoAddUe rnti=" << rnti);
 	std::map<uint8_t, LteMacSapUser*> empty;
 	std::pair <std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator, bool>
 	 ret = m_rlcAttached.insert (std::pair <uint16_t,  std::map<uint8_t, LteMacSapUser*> >
@@ -936,6 +942,13 @@ MmWaveEnbMac::DoRemoveUe (uint16_t rnti)
   params.m_rnti = rnti;
   m_macCschedSapProvider->CschedUeReleaseReq (params);
   m_miDlHarqProcessesPackets.erase (rnti);
+  // for(std::vector<UlHarqInfo>::iterator iter = m_ulHarqInfoReceived.begin(); iter != m_ulHarqInfoReceived.end(); ++iter)
+  // {
+  // 	if(iter->m_rnti == rnti)
+  // 	{
+  // 		iter = m_ulHarqInfoReceived.erase(iter);
+  // 	}
+  // }
   m_rlcAttached.erase (rnti);
 }
 

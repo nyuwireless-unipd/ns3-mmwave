@@ -573,7 +573,7 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
 
         if(m_isMc)
         {
-          m_asSapUser->NotifyHandoverSuccessful (m_rnti, m_cellId); // this triggers          
+          m_asSapUser->NotifyHandoverSuccessful (m_rnti, m_cellId); // this triggers MC reconfiguration         
         }
 
         // 3GPP TS 36.331 section 5.5.6.1 Measurements related actions upon handover
@@ -937,7 +937,7 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           SwitchToState (CONNECTED_HANDOVER);
           const LteRrcSap::MobilityControlInfo& mci = msg.mobilityControlInfo;
           m_handoverStartTrace (m_imsi, m_cellId, m_rnti, mci.targetPhysCellId);
-          m_cmacSapProvider->Reset ();
+          m_cmacSapProvider->Reset (); // TODO if interRatHoCapable, check which of the two to reset
           m_cphySapProvider->Reset ();
           m_cellId = mci.targetPhysCellId;
           NS_ASSERT (mci.haveCarrierFreq);
@@ -962,6 +962,7 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           m_srb1 = 0; // new instance will be be created within ApplyRadioResourceConfigDedicated
 
           m_drbMap.clear (); // dispose all DRBs
+          m_rlcMap.clear (); // dispose all MmWave RLCs
           ApplyRadioResourceConfigDedicated (msg.radioResourceConfigDedicated);
 
           if (msg.haveMeasConfig)
@@ -1229,7 +1230,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           const uint8_t lcid = 1; // fixed LCID for SRB1
 
           Ptr<LteRlc> rlc = CreateObject<LteRlcAm> ();
-          rlc->SetLteMacSapProvider (m_macSapProvider);
+          rlc->SetLteMacSapProvider (m_macSapProvider); // TODO check which sapProvider to use for interRatHoCapable
           rlc->SetRnti (m_rnti);
           rlc->SetLcId (lcid);      
 
@@ -1256,7 +1257,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           lcConfig.bucketSizeDurationMs = stamIt->logicalChannelConfig.bucketSizeDurationMs;
           lcConfig.logicalChannelGroup = stamIt->logicalChannelConfig.logicalChannelGroup;
       
-          m_cmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+          m_cmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ()); // TODO check which sapProvider to use for interRatHoCapable
       
           ++stamIt;
           NS_ASSERT_MSG (stamIt == rrcd.srbToAddModList.end (), "at most one SrbToAdd supported");     
@@ -1313,7 +1314,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           ObjectFactory rlcObjectFactory;
           rlcObjectFactory.SetTypeId (rlcTypeId);
           Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
-          rlc->SetLteMacSapProvider (m_macSapProvider);
+          rlc->SetLteMacSapProvider (m_macSapProvider); // TODO interRatHoCapable 
           rlc->SetRnti (m_rnti);
           rlc->SetLcId (dtamIt->logicalChannelIdentity);
 
@@ -1347,6 +1348,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
           lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;      
 
+          // TODO check which for interRatHoCapable
           m_cmacSapProvider->AddLc (dtamIt->logicalChannelIdentity,
                                     lcConfig,
                                     rlc->GetLteMacSapUser ());

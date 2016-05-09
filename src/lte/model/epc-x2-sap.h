@@ -257,6 +257,12 @@ public:
     Ptr<Packet>         rrcContext;
   };
 
+  struct NotifyMmWaveHandoverParams
+  {
+    std::vector<uint32_t> teidVector;
+  };
+
+
   /**
    * \brief Parameters of the HANDOVER REQUEST ACKNOWLEDGE message.
    *
@@ -472,6 +478,8 @@ public:
   virtual void SendUeSinrUpdate (UeImsiSinrParams params) = 0;
 
   virtual void SendMcHandoverRequest (RequestMcHandoverParams params) = 0;
+
+  virtual void NotifyMmWaveHandover (NotifyMmWaveHandoverParams params) = 0;
 };
 
 
@@ -553,6 +561,9 @@ public:
   virtual void SendUeSinrUpdate (UeImsiSinrParams params);
 
   virtual void SendMcHandoverRequest (RequestMcHandoverParams params);
+
+  virtual void NotifyMmWaveHandover (NotifyMmWaveHandoverParams params);
+
 
 
 private:
@@ -667,6 +678,13 @@ void
 EpcX2SpecificEpcX2SapProvider<C>::SendMcHandoverRequest (RequestMcHandoverParams params)
 {
   m_x2->DoSendMcHandoverRequest (params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::NotifyMmWaveHandover (NotifyMmWaveHandoverParams params)
+{
+  m_x2->DoNotifyMmWaveHandover (params);
 }
 
 ///////////////////////////////////////
