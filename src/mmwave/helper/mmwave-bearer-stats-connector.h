@@ -28,6 +28,8 @@
 #include <ns3/config.h>
 #include <ns3/simple-ref-count.h>
 #include <ns3/ptr.h>
+#include "mc-stats-calculator.h"
+
 
 #include <set>
 #include <map>
@@ -35,6 +37,7 @@
 namespace ns3 {
 
 class MmWaveBearerStatsCalculator;
+//class McStatsCalculator;
 
 /**
  * \ingroup lte
@@ -66,6 +69,8 @@ public:
    * \param pdcpStats statistics calculator for PDCP layer
    */
   void EnablePdcpStats (Ptr<MmWaveBearerStatsCalculator> pdcpStats);
+
+  void EnableMcStats  (Ptr<McStatsCalculator> mcStats);
 
   /**
    * Connects trace sinks to appropriate trace sources
@@ -262,6 +267,7 @@ private:
 
   Ptr<MmWaveBearerStatsCalculator> m_rlcStats; //!< Calculator for RLC Statistics
   Ptr<MmWaveBearerStatsCalculator> m_pdcpStats; //!< Calculator for PDCP Statistics
+  Ptr<McStatsCalculator> m_mcStats;
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUe; //!< stores all UEs for which RLC and PDCP traces were connected

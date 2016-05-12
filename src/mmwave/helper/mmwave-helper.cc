@@ -406,6 +406,21 @@ MmWaveHelper::InstallMcUeDevice (NodeContainer c) {
 }
 
 NetDeviceContainer
+MmWaveHelper::InstallInterRatHoCapableUeDevice (NodeContainer c) {
+	NS_LOG_FUNCTION (this);
+	Initialize ();  // Run DoInitialize (), if necessary
+	NetDeviceContainer devices;
+	for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
+	  {
+	    Ptr<Node> node = *i;
+	    Ptr<NetDevice> device = InstallSingleInterRatHoCapableUeDevice (node);
+	    device->SetAddress (Mac48Address::Allocate ());
+	    devices.Add (device);
+	  }
+	return devices;
+}
+
+NetDeviceContainer
 MmWaveHelper::InstallEnbDevice (NodeContainer c)
 {
 	NS_LOG_FUNCTION (this);
@@ -563,7 +578,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	mmWaveRrc->SetAttribute("SecondaryRRC", BooleanValue(true));
 	if (m_useIdealRrc)
 	{
-		Ptr<mmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<mmWaveUeRrcProtocolIdeal> ();
+		Ptr<LteUeRrcProtocolIdeal> rrcProtocol = CreateObject<LteUeRrcProtocolIdeal> ();
 		rrcProtocol->SetUeRrc (mmWaveRrc);
 		mmWaveRrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (mmWaveRrc->GetLteUeRrcSapProvider ());
@@ -689,6 +704,228 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 }
 
 Ptr<NetDevice>
+MmWaveHelper::InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n)
+{
+	NS_LOG_FUNCTION (this);
+
+	// Use a McUeNetDevice but install a single RRC
+	Ptr<McUeNetDevice> device = m_mcUeNetDeviceFactory.Create<McUeNetDevice> ();
+	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
+	uint64_t imsi = ++m_imsiCounter;
+
+	// Phy part of MmWave
+	Ptr<MmWaveSpectrumPhy> mmWaveUlPhy = CreateObject<MmWaveSpectrumPhy> ();
+	Ptr<MmWaveSpectrumPhy> mmWaveDlPhy = CreateObject<MmWaveSpectrumPhy> ();
+
+	Ptr<MmWaveUePhy> mmWavePhy = CreateObject<MmWaveUePhy> (mmWaveDlPhy, mmWaveUlPhy);
+
+	Ptr<MmWaveHarqPhy> mmWaveHarq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
+	
+	mmWaveDlPhy->SetHarqPhyModule (mmWaveHarq);
+	mmWavePhy->SetHarqPhyModule (mmWaveHarq);
+
+	Ptr<mmWaveChunkProcessor> mmWavepData = Create<mmWaveChunkProcessor> ();
+	mmWavepData->AddCallback (MakeCallback (&MmWaveUePhy::GenerateDlCqiReport, mmWavePhy));
+	mmWavepData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, mmWaveDlPhy));
+	mmWaveDlPhy->AddDataSinrChunkProcessor (mmWavepData);
+	if(m_harqEnabled)
+	{
+		mmWaveDlPhy->SetPhyDlHarqFeedbackCallback (MakeCallback (&MmWaveUePhy::ReceiveLteDlHarqFeedback, mmWavePhy));
+	}
+
+	// hack to allow periodic computation of SINR at the eNB, without pilots
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	{
+		mmWavePhy->AddSpectrumPropagationLossModel(m_beamforming);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		mmWavePhy->AddSpectrumPropagationLossModel(m_channelMatrix);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		mmWavePhy->AddSpectrumPropagationLossModel(m_raytracing);
+	}
+	if (!m_pathlossModelType.empty ())
+	{
+		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+		if( splm )
+		{
+			mmWavePhy->AddPropagationLossModel (splm);
+		}
+	}
+	else
+	{
+		NS_LOG_UNCOND (this << " No PropagationLossModel!");
+	}
+
+	// Phy part of LTE
+	Ptr<LteSpectrumPhy> lteDlPhy = CreateObject<LteSpectrumPhy> ();
+	Ptr<LteSpectrumPhy> lteUlPhy = CreateObject<LteSpectrumPhy> ();
+
+	Ptr<LteUePhy> ltePhy = CreateObject<LteUePhy> (lteDlPhy, lteUlPhy);
+
+	Ptr<LteHarqPhy> lteHarq = Create<LteHarqPhy> ();
+	lteDlPhy->SetHarqPhyModule (lteHarq);
+	lteUlPhy->SetHarqPhyModule (lteHarq);
+	ltePhy->SetHarqPhyModule (lteHarq);
+
+	Ptr<LteChunkProcessor> pRs = Create<LteChunkProcessor> ();
+	pRs->AddCallback (MakeCallback (&LteUePhy::ReportRsReceivedPower, ltePhy));
+	lteDlPhy->AddRsPowerChunkProcessor (pRs);
+
+	Ptr<LteChunkProcessor> pInterf = Create<LteChunkProcessor> ();
+	pInterf->AddCallback (MakeCallback (&LteUePhy::ReportInterference, ltePhy));
+	lteDlPhy->AddInterferenceCtrlChunkProcessor (pInterf); // for RSRQ evaluation of UE Measurements
+
+	Ptr<LteChunkProcessor> pCtrl = Create<LteChunkProcessor> ();
+	pCtrl->AddCallback (MakeCallback (&LteSpectrumPhy::UpdateSinrPerceived, lteDlPhy));
+	lteDlPhy->AddCtrlSinrChunkProcessor (pCtrl);
+
+	Ptr<LteChunkProcessor> pData = Create<LteChunkProcessor> ();
+	pData->AddCallback (MakeCallback (&LteSpectrumPhy::UpdateSinrPerceived, lteDlPhy));
+	lteDlPhy->AddDataSinrChunkProcessor (pData);
+
+	if (m_usePdschForCqiGeneration)
+	{
+		// CQI calculation based on PDCCH for signal and PDSCH for interference
+		pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateMixedCqiReport, ltePhy));
+		Ptr<LteChunkProcessor> pDataInterf = Create<LteChunkProcessor> ();      
+		pDataInterf->AddCallback (MakeCallback (&LteUePhy::ReportDataInterference, ltePhy));
+		lteDlPhy->AddInterferenceDataChunkProcessor (pDataInterf);
+	}
+	else
+	{
+		// CQI calculation based on PDCCH for both signal and interference
+		pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, ltePhy));
+	}
+
+	// Set MmWave channel
+	mmWaveUlPhy->SetChannel(m_channel);
+	mmWaveDlPhy->SetChannel(m_channel);
+	// Set LTE channel
+	lteUlPhy->SetChannel(m_uplinkChannel);
+	lteDlPhy->SetChannel(m_downlinkChannel);
+
+	Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
+	NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling MmWaveHelper::InstallUeDevice ()");
+	mmWaveUlPhy->SetMobility(mm);
+	mmWaveDlPhy->SetMobility(mm);
+	lteUlPhy->SetMobility(mm);
+	lteDlPhy->SetMobility(mm);
+
+	// Antenna model for mmWave and for LTE
+	Ptr<AntennaModel> antenna = (m_ueAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
+	NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
+	mmWaveUlPhy->SetAntenna (antenna);
+	mmWaveDlPhy->SetAntenna (antenna);
+	antenna = (m_lteUeAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
+	lteUlPhy->SetAntenna (antenna);
+	lteDlPhy->SetAntenna (antenna);
+
+	// ----------------------- mmWave MAC and connections -------------
+	Ptr<MmWaveUeMac> mmWaveMac = CreateObject<MmWaveUeMac> ();
+
+	mmWavePhy->SetCofigurationParameters (m_phyMacCommon);
+	mmWaveMac->SetCofigurationParameters (m_phyMacCommon);
+
+	mmWavePhy->SetPhySapUser (mmWaveMac->GetPhySapUser());
+	mmWaveMac->SetPhySapProvider (mmWavePhy->GetPhySapProvider());
+
+	device->SetNode(n);
+	device->SetAttribute ("MmWaveUePhy", PointerValue(mmWavePhy));
+	device->SetAttribute ("MmWaveUeMac", PointerValue(mmWaveMac));
+
+	mmWavePhy->SetDevice (device);
+	mmWavePhy->SetImsi (imsi); 
+	//mmWavePhy->SetForwardUpCallback (MakeCallback (&McUeNetDevice::Receive, device));
+	mmWaveDlPhy->SetDevice(device);
+	mmWaveUlPhy->SetDevice(device);
+
+	mmWaveDlPhy->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveUePhy::PhyDataPacketReceived, mmWavePhy));
+	mmWaveDlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveUePhy::ReceiveControlMessageList, mmWavePhy));
+
+	// ----------------------- LTE stack ----------------------
+	Ptr<LteUeMac> lteMac = CreateObject<LteUeMac> ();
+	Ptr<LteUeRrc> rrc = CreateObject<LteUeRrc> (); //  single rrc 
+
+	if (m_useIdealRrc)
+	{
+		Ptr<LteUeRrcProtocolIdeal> rrcProtocol = CreateObject<LteUeRrcProtocolIdeal> ();
+		rrcProtocol->SetUeRrc (rrc);
+		rrc->AggregateObject (rrcProtocol);
+		rrcProtocol->SetLteUeRrcSapProvider (rrc->GetLteUeRrcSapProvider ());
+		rrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
+	}
+	else
+	{
+		Ptr<LteUeRrcProtocolReal> rrcProtocol = CreateObject<LteUeRrcProtocolReal> ();
+		rrcProtocol->SetUeRrc (rrc);
+		rrc->AggregateObject (rrcProtocol);
+		rrcProtocol->SetLteUeRrcSapProvider (rrc->GetLteUeRrcSapProvider ());
+		rrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
+	}
+
+	if (m_epcHelper != 0)
+	{
+		rrc->SetUseRlcSm (false);
+	}
+
+	Ptr<EpcUeNas> lteNas = CreateObject<EpcUeNas> ();
+
+	lteNas->SetAsSapProvider (rrc->GetAsSapProvider ());
+	rrc->SetAsSapUser (lteNas->GetAsSapUser ());
+
+	// CMAC SAP
+	lteMac->SetLteUeCmacSapUser (rrc->GetLteUeCmacSapUser ());
+	mmWaveMac->SetUeCmacSapUser (rrc->GetLteUeCmacSapUser ());
+	rrc->SetLteUeCmacSapProvider (lteMac->GetLteUeCmacSapProvider ());
+	rrc->SetMmWaveUeCmacSapProvider (mmWaveMac->GetUeCmacSapProvider());
+
+	// CPHY SAP
+	ltePhy->SetLteUeCphySapUser (rrc->GetLteUeCphySapUser ());
+	mmWavePhy->SetUeCphySapUser (rrc->GetLteUeCphySapUser ());
+	rrc->SetLteUeCphySapProvider (ltePhy->GetLteUeCphySapProvider ());
+	rrc->SetMmWaveUeCphySapProvider (mmWavePhy->GetUeCphySapProvider());
+
+	// MAC SAP
+	rrc->SetLteMacSapProvider (lteMac->GetLteMacSapProvider ());
+	rrc->SetMmWaveMacSapProvider (mmWaveMac->GetUeMacSapProvider()); 
+
+	rrc->SetAttribute ("InterRatHoCapable", BooleanValue(true));
+
+	ltePhy->SetLteUePhySapUser (lteMac->GetLteUePhySapUser ());
+	lteMac->SetLteUePhySapProvider (ltePhy->GetLteUePhySapProvider ());
+
+	device->SetAttribute ("LteUePhy", PointerValue (ltePhy));
+	device->SetAttribute ("LteUeMac", PointerValue (lteMac));
+	device->SetAttribute ("LteUeRrc", PointerValue (rrc));
+	device->SetAttribute ("EpcUeNas", PointerValue (lteNas));
+	device->SetAttribute ("Imsi", UintegerValue(imsi));
+
+	ltePhy->SetDevice (device);
+	lteDlPhy->SetDevice (device);
+	lteUlPhy->SetDevice (device);
+	lteNas->SetDevice (device);
+
+	lteDlPhy->SetLtePhyRxDataEndOkCallback (MakeCallback (&LteUePhy::PhyPduReceived, ltePhy));
+	lteDlPhy->SetLtePhyRxCtrlEndOkCallback (MakeCallback (&LteUePhy::ReceiveLteControlMessageList, ltePhy));
+	lteDlPhy->SetLtePhyRxPssCallback (MakeCallback (&LteUePhy::ReceivePss, ltePhy));
+	lteDlPhy->SetLtePhyDlHarqFeedbackCallback (MakeCallback (&LteUePhy::ReceiveLteDlHarqFeedback, ltePhy));
+	lteNas->SetForwardUpCallback (MakeCallback (&McUeNetDevice::Receive, device));
+
+	if (m_epcHelper != 0)
+	{
+		m_epcHelper->AddUe (device, device->GetImsi ());
+	}
+
+	n->AddDevice(device);
+	device->Initialize();
+
+	return device;
+}
+
+Ptr<NetDevice>
 MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 {
 	Ptr<MmWaveUeNetDevice> device = m_ueNetDeviceFactory.Create<MmWaveUeNetDevice> ();
@@ -760,7 +997,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	Ptr<LteUeRrc> rrc = CreateObject<LteUeRrc> ();
 	if (m_useIdealRrc)
 	{
-		Ptr<mmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<mmWaveUeRrcProtocolIdeal> ();
+		Ptr<LteUeRrcProtocolIdeal> rrcProtocol = CreateObject<LteUeRrcProtocolIdeal> ();
 		rrcProtocol->SetUeRrc (rrc);
 		rrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (rrc->GetLteUeRrcSapProvider ());
@@ -918,7 +1155,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	if (m_useIdealRrc)
 	{
-		Ptr<MmWaveEnbRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveEnbRrcProtocolIdeal> ();
+		Ptr<LteEnbRrcProtocolIdeal> rrcProtocol = CreateObject<LteEnbRrcProtocolIdeal> ();
 		rrcProtocol->SetLteEnbRrcSapProvider (rrc->GetLteEnbRrcSapProvider ());
 		rrc->SetLteEnbRrcSapUser (rrcProtocol->GetLteEnbRrcSapUser ());
 		rrc->AggregateObject (rrcProtocol);
@@ -1250,6 +1487,32 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 	}
 }
 
+// for InterRatHoCapable devices
+void
+MmWaveHelper::AttachIrToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices)
+{
+	NS_LOG_FUNCTION (this);
+
+	// set initial conditions on beamforming before attaching the UE to the eNBs
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	{
+		m_beamforming->Initial(ueDevices,mmWaveEnbDevices);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		m_channelMatrix->Initial(ueDevices,mmWaveEnbDevices);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		m_raytracing->Initial(ueDevices,mmWaveEnbDevices);
+	}
+
+	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+	{
+		AttachIrToClosestEnb(*i, mmWaveEnbDevices, lteEnbDevices);
+	}
+}
+
 void
 MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices)
 {
@@ -1345,8 +1608,84 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	  m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
 	}
 
-  	mcDevice->SetLteTargetEnb (enbLteDevice);
+  	mcDevice->SetLteTargetEnb (enbLteDevice);	
+}
+
+void
+MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices)
+{
+	NS_LOG_FUNCTION (this);
+	Ptr<McUeNetDevice> mcDevice = ueDevice->GetObject<McUeNetDevice> ();
+	Ptr<LteUeRrc> ueRrc = mcDevice->GetLteRrc();
+
+	NS_ASSERT_MSG (ueRrc != 0, "McUeDevice with undefined rrc");
+
+	NS_ASSERT_MSG (mmWaveEnbDevices.GetN () > 0 && lteEnbDevices.GetN () > 0, 
+		"empty lte or mmwave enb device container");
 	
+	// Find the closest LTE station
+	Vector uepos = ueDevice->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+	double minDistance = std::numeric_limits<double>::infinity ();
+	Ptr<NetDevice> lteClosestEnbDevice;
+	for (NetDeviceContainer::Iterator i = lteEnbDevices.Begin (); i != lteEnbDevices.End (); ++i)
+	{
+		Ptr<LteEnbNetDevice> lteEnb = (*i)->GetObject<LteEnbNetDevice> ();
+		uint16_t cellId = lteEnb->GetCellId();
+		ueRrc->AddLteCellId(cellId);
+		// TODO fix this
+		//Ptr<LteEnbRrc> enbRrc = lteEnb->GetRrc();
+		//enbRrc->SetInterRatHoMode();
+	  	Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+	  	double distance = CalculateDistance (uepos, enbpos);
+	  	if (distance < minDistance)
+	    {
+	      minDistance = distance;
+	      lteClosestEnbDevice = *i;
+	    }
+	}
+	NS_ASSERT (lteClosestEnbDevice != 0);
+
+  	// Necessary operation to connect MmWave UE to eNB at lower layers
+  	minDistance = std::numeric_limits<double>::infinity ();
+	Ptr<NetDevice> closestEnbDevice;
+  	for(NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End(); ++i)
+  	{
+  		Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> (); 
+		uint16_t mmWaveCellId = mmWaveEnb->GetCellId ();
+		ueRrc->AddMmWaveCellId(mmWaveCellId);
+		Ptr<MmWavePhyMacCommon> configParams = mmWaveEnb->GetPhy()->GetConfigurationParameters();
+		mmWaveEnb->GetPhy ()->AddUePhy (mcDevice->GetImsi (), ueDevice);
+		// register MmWave eNBs informations in the MmWaveUePhy
+		mcDevice->GetMmWavePhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
+		//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
+		NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+
+		//TODO fix this
+		//Ptr<LteEnbRrc> enbRrc = mmWaveEnb->GetRrc();
+		//enbRrc->SetInterRatHoMode();
+		Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+	    double distance = CalculateDistance (uepos, enbpos);
+	    if (distance < minDistance)
+	    {
+	        minDistance = distance;
+	        closestEnbDevice = *i;
+	    }
+  	}
+	
+	// Attach the MC device the Closest MmWave eNB
+	Ptr<MmWaveEnbNetDevice> enbDevice = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ();
+	Ptr<EpcUeNas> lteUeNas = mcDevice->GetNas ();
+	lteUeNas->Connect (enbDevice->GetCellId (), enbDevice->GetEarfcn ()); // force connection to the MmWave eNB
+
+	if (m_epcHelper != 0)
+	{
+	  // activate default EPS bearer
+	  m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
+	}
+
+	Ptr<LteEnbNetDevice> enbLteDevice = lteClosestEnbDevice->GetObject<LteEnbNetDevice> ();
+  	mcDevice->SetLteTargetEnb (enbLteDevice);
+  	mcDevice->SetMmWaveTargetEnb (enbDevice);
 }
 
 void
@@ -1627,6 +1966,7 @@ MmWaveHelper::EnableTraces (void)
 	//EnableTransportBlockTrace ();
 	EnableRlcTraces ();
 	EnablePdcpTraces ();
+	EnableMcTraces ();
 }
 
 
@@ -1703,6 +2043,20 @@ Ptr<MmWaveBearerStatsCalculator>
 MmWaveHelper::GetPdcpStats (void)
 {
   return m_pdcpStats;
+}
+
+void
+MmWaveHelper::EnableMcTraces (void)
+{
+  NS_ASSERT_MSG (m_mcStats == 0, "please make sure that MmWaveHelper::EnableMcTraces is called at most once");
+  m_mcStats = CreateObject<McStatsCalculator> ();
+  m_radioBearerStatsConnector.EnableMcStats (m_mcStats);
+}
+
+Ptr<McStatsCalculator>
+MmWaveHelper::GetMcStats (void)
+{
+  return m_mcStats;
 }
 
 }

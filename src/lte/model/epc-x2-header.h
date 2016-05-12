@@ -64,7 +64,8 @@ public:
     RlcSetupCompleted       = 12,
     NotifyMcConnection      = 13,
     UpdateUeSinr            = 14,
-    RequestMcHandover       = 15
+    RequestMcHandover       = 15,
+    NotifyMmWaveLteHandover = 16
   };
 
   enum TypeOfMessage_t {
@@ -232,11 +233,11 @@ private:
   uint32_t          m_gtpTeid;
 };
 
-class EpcX2RequestMcHandoverHeader : public Header
+class EpcX2McHandoverHeader : public Header
 {
 public:
-  EpcX2RequestMcHandoverHeader ();
-  virtual ~EpcX2RequestMcHandoverHeader ();
+  EpcX2McHandoverHeader ();
+  virtual ~EpcX2McHandoverHeader ();
 
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;

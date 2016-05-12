@@ -340,6 +340,8 @@ MmWaveUeMac::SendReportBufferStatus (void)
   bsr.m_rnti = m_rnti;
   bsr.m_macCeType = MacCeElement::BSR;
 
+  bool send = true;
+
   // BSR is reported for each LCG
   std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters>::iterator it;
   std::vector<uint32_t> queue (4, 0); // one value per each of the 4 LCGs, initialized to 0
@@ -348,13 +350,19 @@ MmWaveUeMac::SendReportBufferStatus (void)
       uint8_t lcid = it->first;
       std::map <uint8_t, LcInfo>::iterator lcInfoMapIt;
       lcInfoMapIt = m_lcInfoMap.find (lcid);
-      NS_ASSERT (lcInfoMapIt !=  m_lcInfoMap.end ());
-      NS_ASSERT_MSG ((lcid != 0) || (((*it).second.txQueueSize == 0)
+      if (lcInfoMapIt !=  m_lcInfoMap.end ())
+      {
+      	NS_ASSERT_MSG ((lcid != 0) || (((*it).second.txQueueSize == 0)
                                      && ((*it).second.retxQueueSize == 0)
                                      && ((*it).second.statusPduSize == 0)),
                      "BSR should not be used for LCID 0");
-      uint8_t lcg = lcInfoMapIt->second.lcConfig.logicalChannelGroup;
-      queue.at (lcg) += ((*it).second.txQueueSize + (*it).second.retxQueueSize + (*it).second.statusPduSize);
+      	uint8_t lcg = lcInfoMapIt->second.lcConfig.logicalChannelGroup;
+      	queue.at (lcg) += ((*it).second.txQueueSize + (*it).second.retxQueueSize + (*it).second.statusPduSize);
+      }
+      else
+      {
+      	send = false;
+      }
     }
 
   // FF API says that all 4 LCGs are always present
@@ -366,7 +374,10 @@ MmWaveUeMac::SendReportBufferStatus (void)
   // create the feedback to eNB
   Ptr<MmWaveBsrMessage> msg = Create<MmWaveBsrMessage> ();
   msg->SetBsr (bsr);
-  m_phySapProvider->SendControlMessage (msg);
+  if(send)
+  {
+	m_phySapProvider->SendControlMessage (msg);
+  }
 }
 
 void
@@ -878,6 +889,7 @@ MmWaveUeMac::DoReset ()
 	      	m_lcInfoMap.erase (it++);
 	    }
 	}
+	m_rnti = 0;
 
 	// m_noRaResponseReceivedEvent.Cancel ();
 	// m_rachConfigured = false;

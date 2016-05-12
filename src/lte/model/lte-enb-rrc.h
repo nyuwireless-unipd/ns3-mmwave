@@ -132,6 +132,8 @@ public:
   // know if this is a MC device
   bool GetIsMc (void) const;
 
+  //void SetIsInterRatHoCapable (bool isInterRatHoCapable);
+
   /** 
    * Setup a new data radio bearer, including both the configuration
    * within the eNB and the necessary RRC signaling with the UE
@@ -340,8 +342,11 @@ public:
     (uint64_t imsi, uint16_t cellId, uint16_t rnti,
      State oldState, State newState);
 
+  //void SetFirstConnection();
+
 private:
 
+  //bool m_firstConnection;
   /** 
    * Add a new LteDataRadioBearerInfo structure to the UeManager
    * 
@@ -511,6 +516,7 @@ private:
 
   uint16_t m_mmWaveCellId;
   bool m_isMc;
+  //bool m_isInterRatHoCapable;
 
   /**
    * Time limit before a _connection request timeout_ occurs. Set after a new
@@ -951,6 +957,8 @@ public:
   uint16_t GetRntiFromImsi(uint64_t imsi);
 
   uint64_t GetImsiFromRnti(uint16_t rnti);
+
+  //void SetInterRatHoMode ();
   
 private:
 
@@ -991,7 +999,8 @@ private:
   void DoRecvRlcSetupCompleted (EpcX2SapUser::UeDataParams params);
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
   void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
-  void DoRecvMcHandoverRequest(EpcX2SapUser::RequestMcHandoverParams params);
+  void DoRecvMcHandoverRequest(EpcX2SapUser::McHandoverParams params);
+  //void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::McHandoverParams params);
 
   // CMAC SAP methods
 
@@ -1145,6 +1154,12 @@ private:
    * 
    */
   void TriggerUeAssociationUpdate();
+
+  /** 
+   * method used to periodically check if HO between MmWave and LTE is needed
+   * 
+   */
+  //void UpdateUeHandoverAssociation();
 
   Callback <void, Ptr<Packet> > m_forwardUpCallback;
 
@@ -1360,6 +1375,8 @@ private:
    */
   TracedCallback<uint64_t, uint16_t, uint16_t, LteRrcSap::MeasurementReport> m_recvMeasurementReportTrace;
   bool m_ismmWave;
+  bool m_interRatHoMode;
+  //bool m_firstReport;
 
   uint32_t m_firstSibTime;		// time in ms of initial SIB
 

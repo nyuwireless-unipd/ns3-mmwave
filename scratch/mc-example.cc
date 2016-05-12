@@ -183,7 +183,7 @@ main (int argc, char *argv[])
   //LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
   LogComponentEnable("EpcUeNas",LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
+  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
@@ -194,7 +194,7 @@ main (int argc, char *argv[])
   //LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_ALL);
   LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
   LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_INFO);
-  //LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
+  LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable("LteEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
@@ -204,16 +204,17 @@ main (int argc, char *argv[])
   LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
   LogComponentEnable("LteRlcUm", LOG_LEVEL_INFO);
   LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
+  LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_LOGIC);
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   // rng things
-  RngSeedManager::SetSeed (2);
-  RngSeedManager::SetRun (90);  
+  RngSeedManager::SetSeed (4);
+  RngSeedManager::SetRun (11);  
 
 
   uint16_t numberOfNodes = 1;
-  double simTime = 60.0;
-  double interPacketInterval = 1;  // 500 microseconds
+  double simTime = 30.0;
+  double interPacketInterval = 500;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
   bool fixedTti = false;
@@ -261,6 +262,8 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(0.1)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MilliSeconds(0.1)));
+
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"));
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
@@ -362,7 +365,7 @@ main (int argc, char *argv[])
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, -5, 0));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (150, -5, 0));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes
@@ -403,7 +406,7 @@ main (int argc, char *argv[])
         PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
         serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
         UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
-        dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+        dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
         dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
         clientApps.Add (dlClient.Install (remoteHost));
 
@@ -414,15 +417,15 @@ main (int argc, char *argv[])
         PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
         serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
         UdpClientHelper ulClient (remoteHostAddr, ulPort);
-        ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+        ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
         ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
         clientApps.Add (ulClient.Install (ueNodes.Get(u)));
       }
   }
 
   // Start applications
-  serverApps.Start (Seconds (0.7));
-  clientApps.Start (Seconds (0.7));
+  serverApps.Start (Seconds (0.5));
+  clientApps.Start (Seconds (0.5));
 
 
   Simulator::Schedule(Seconds(1.0), &ChangeSpeed, ueNodes.Get(0), Vector(5, 0, 0));

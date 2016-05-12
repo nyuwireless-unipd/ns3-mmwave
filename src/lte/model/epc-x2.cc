@@ -370,6 +370,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
           EpcX2SapUser::UeContextReleaseParams params;
           params.oldEnbUeX2apId = x2UeCtxReleaseHeader.GetOldEnbUeX2apId ();
           params.newEnbUeX2apId = x2UeCtxReleaseHeader.GetNewEnbUeX2apId ();
+          params.sourceCellId = cellsInfo->m_remoteCellId;
 
           NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
           NS_LOG_LOGIC ("newEnbUeX2apId = " << params.newEnbUeX2apId);
@@ -456,7 +457,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
       EpcX2UeImsiSinrUpdateHeader x2ueSinrUpdateHeader;
       packet->RemoveHeader(x2ueSinrUpdateHeader);
 
-      NS_LOG_INFO ("X2 NotifyMcConnection header: " << x2ueSinrUpdateHeader);
+      NS_LOG_INFO ("X2 SinrUpdateHeader header: " << x2ueSinrUpdateHeader);
 
       EpcX2SapUser::UeImsiSinrParams params;
       params.ueImsiSinrMap = x2ueSinrUpdateHeader.GetUeImsiSinrMap();
@@ -468,17 +469,33 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
     {
       NS_LOG_LOGIC ("Recv X2 message: REQUEST MC HANDOVER");
       
-      EpcX2RequestMcHandoverHeader x2mcHeader;
+      EpcX2McHandoverHeader x2mcHeader;
       packet->RemoveHeader(x2mcHeader);
 
       NS_LOG_INFO ("X2 RequestMcHandover header: " << x2mcHeader);
 
-      EpcX2SapUser::RequestMcHandoverParams params;
+      EpcX2SapUser::McHandoverParams params;
       params.targetCellId = x2mcHeader.GetTargetCellId();
       params.imsi = x2mcHeader.GetImsi();
       params.oldCellId = x2mcHeader.GetOldCellId();
 
       m_x2SapUser->RecvMcHandoverRequest(params);  
+    }
+  else if (procedureCode == EpcX2Header::NotifyMmWaveLteHandover)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: NOTIFY MMWAVE HANDOVER TO LTE");
+      
+      EpcX2McHandoverHeader x2mcHeader;
+      packet->RemoveHeader(x2mcHeader);
+
+      NS_LOG_INFO ("X2 McHandover header: " << x2mcHeader);
+
+      EpcX2SapUser::McHandoverParams params;
+      params.targetCellId = x2mcHeader.GetTargetCellId(); // the new MmWave cell to which the UE is connected
+      params.imsi = x2mcHeader.GetImsi(); 
+      params.oldCellId = x2mcHeader.GetOldCellId(); // actually, the LTE cell ID
+
+      m_x2SapUser->RecvLteMmWaveHandoverCompleted(params);  
     }
   else
     {
@@ -539,19 +556,6 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
     m_x2SapUser->RecvUeData (params);
   }
 }
-
-void 
-EpcX2::DoNotifyMmWaveHandover (EpcX2SapProvider::NotifyMmWaveHandoverParams params)
-{
-  NS_LOG_FUNCTION(this);
-  // Rlc endpoints are no more valid
-  for(std::vector<uint32_t>::iterator teidIter = params.teidVector.begin(); teidIter != params.teidVector.end(); ++teidIter)
-  {
-    m_x2RlcUserMap.find(*teidIter)->second = 0;
-  }
-}
-
-
 
 //
 // Implementation of the X2 SAP Provider
@@ -1124,7 +1128,7 @@ EpcX2::DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params)
 
 
 void
-EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::RequestMcHandoverParams params)
+EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::McHandoverParams params)
 {
   NS_LOG_FUNCTION (this);
 
@@ -1140,10 +1144,10 @@ EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::RequestMcHandoverParams params
   NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
   NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
 
-  NS_LOG_INFO ("Send X2 message: RQUEST MC HANDOVER");
+  NS_LOG_INFO ("Send X2 message: REQUEST MC HANDOVER");
 
   // Build the X2 message
-  EpcX2RequestMcHandoverHeader x2mcHeader;
+  EpcX2McHandoverHeader x2mcHeader;
   x2mcHeader.SetTargetCellId(params.targetCellId);
   x2mcHeader.SetImsi(params.imsi);
   x2mcHeader.SetOldCellId(params.oldCellId);
@@ -1151,6 +1155,53 @@ EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::RequestMcHandoverParams params
   EpcX2Header x2Header;
   x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
   x2Header.SetProcedureCode (EpcX2Header::RequestMcHandover);
+  x2Header.SetLengthOfIes (x2mcHeader.GetLengthOfIes ());
+  x2Header.SetNumberOfIes (x2mcHeader.GetNumberOfIes ());
+
+  NS_LOG_INFO ("X2 header: " << x2Header);
+  NS_LOG_INFO ("X2 RequestMcHandover header: " << x2mcHeader);
+
+  // Build the X2 packet
+  Ptr<Packet> packet = Create <Packet> ();
+  packet->AddHeader (x2mcHeader);
+  packet->AddHeader (x2Header);
+  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+  // Send the X2 message through the socket
+  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+}
+
+
+
+void
+EpcX2::DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::McHandoverParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("lteCellId = " << params.oldCellId);
+  NS_LOG_LOGIC ("imsi = " << params.imsi);
+  NS_LOG_LOGIC ("MmWave cellId = " << params.targetCellId);
+
+  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.oldCellId) != m_x2InterfaceSockets.end (),
+                 "Missing infos for oldCellId = " << params.oldCellId);
+  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.oldCellId];
+  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+  NS_LOG_INFO ("Send X2 message: NOTIFY MMWAVE HANDOVER TO LTE");
+
+  // Build the X2 message
+  EpcX2McHandoverHeader x2mcHeader;
+  x2mcHeader.SetTargetCellId(params.targetCellId);
+  x2mcHeader.SetImsi(params.imsi);
+  x2mcHeader.SetOldCellId(params.oldCellId);
+
+  EpcX2Header x2Header;
+  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
+  x2Header.SetProcedureCode (EpcX2Header::NotifyMmWaveLteHandover);
   x2Header.SetLengthOfIes (x2mcHeader.GetLengthOfIes ());
   x2Header.SetNumberOfIes (x2mcHeader.GetNumberOfIes ());
 

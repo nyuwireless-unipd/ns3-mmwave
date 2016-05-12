@@ -137,7 +137,7 @@ MmWaveBearerStatsCalculator::UlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (!m_ulOutFile.is_open ())
   {
-  	m_ulOutFile.open (GetUlOutputFilename ().c_str (), std::ios_base::app);
+  	m_ulOutFile.open (GetUlOutputFilename ().c_str ());
   }
 
   if (m_protocolType == "RLC")
@@ -149,7 +149,7 @@ MmWaveBearerStatsCalculator::UlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   	m_ulOutFile << "PDCP ";
   }
 
-  m_ulOutFile << "UlTxPDU " << Simulator::Now () << " "<< cellId << " "
+  m_ulOutFile << "UlTxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
   		<< rnti << " " << (uint32_t) lcid << " " << packetSize << " " << std::endl;
 
   /*ImsiLcidPair_t p (imsi, lcid);
@@ -170,7 +170,7 @@ MmWaveBearerStatsCalculator::DlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (!m_dlOutFile.is_open ())
   {
-  	m_dlOutFile.open (GetDlOutputFilename ().c_str (), std::ios_base::app);
+  	m_dlOutFile.open (GetDlOutputFilename ().c_str ());
   }
 
   if (m_protocolType == "RLC")
@@ -182,7 +182,7 @@ MmWaveBearerStatsCalculator::DlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   	m_dlOutFile << "PDCP ";
   }
 
-  m_dlOutFile << "DlTxPDU " << Simulator::Now () << " "<< cellId << " "
+  m_dlOutFile << "DlTxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
   		<< rnti << " " << (uint32_t) lcid << " " << packetSize << " " << std::endl;
 
 
@@ -205,7 +205,7 @@ MmWaveBearerStatsCalculator::UlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (!m_ulOutFile.is_open ())
   {
-  	m_ulOutFile.open (GetUlOutputFilename ().c_str (), std::ios_base::app);
+  	m_ulOutFile.open (GetUlOutputFilename ().c_str ());
   }
 
   if (m_protocolType == "RLC")
@@ -217,7 +217,7 @@ MmWaveBearerStatsCalculator::UlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   	m_ulOutFile << "PDCP ";
   }
 
-  m_ulOutFile << "UlRxPDU " << Simulator::Now () << " "<< cellId << " "
+  m_ulOutFile << "UlRxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
   		<< rnti << " " << (uint32_t) lcid << " " << packetSize << " " << delay << std::endl;
 
   /*ImsiLcidPair_t p (imsi, lcid);
@@ -247,7 +247,7 @@ MmWaveBearerStatsCalculator::DlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (!m_dlOutFile.is_open ())
   {
-  	m_dlOutFile.open (GetDlOutputFilename ().c_str (), std::ios_base::app);
+  	m_dlOutFile.open (GetDlOutputFilename ().c_str ());
   }
 
   if (m_protocolType == "RLC")
@@ -259,7 +259,7 @@ MmWaveBearerStatsCalculator::DlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   	m_dlOutFile << "PDCP ";
   }
 
-  m_dlOutFile << "DlRxPDU " << Simulator::Now () << " "<< cellId << " "
+  m_dlOutFile << "DlRxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
   		<< rnti << " " << (uint32_t) lcid << " " << packetSize << " " << delay << std::endl;
 
  /* ImsiLcidPair_t p (imsi, lcid);

@@ -57,6 +57,12 @@ public:
   uint16_t cellId; //!< cellId
 };
 
+struct McBoundCallbackArgument : public SimpleRefCount<McBoundCallbackArgument>
+{
+public:
+  Ptr<McStatsCalculator> stats;
+};
+
 /**
  * Callback function for DL TX statistics for both RLC and PDCP
  * /param arg
@@ -125,6 +131,21 @@ UlRxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
   arg->stats->UlRxPdu (arg->cellId, arg->imsi, rnti, lcid, packetSize, delay);
 }
 
+void
+SwitchToLteCallback (Ptr<McBoundCallbackArgument> arg, std::string path, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION (path << rnti << cellId << imsi);
+ 
+  arg->stats->SwitchToLte (imsi, cellId, rnti);
+}
+
+void
+SwitchToMmWaveCallback (Ptr<McBoundCallbackArgument> arg, std::string path, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION (path << rnti << cellId << imsi);
+ 
+  arg->stats->SwitchToMmWave (imsi, cellId, rnti);
+}
 
 
 MmWaveBearerStatsConnector::MmWaveBearerStatsConnector ()
@@ -144,6 +165,13 @@ MmWaveBearerStatsConnector::EnablePdcpStats (Ptr<MmWaveBearerStatsCalculator> pd
 {
   m_pdcpStats = pdcpStats;
   EnsureConnected ();
+}
+
+void
+MmWaveBearerStatsConnector::EnableMcStats (Ptr<McStatsCalculator> mcStats)
+{
+  m_mcStats = mcStats;
+  EnsureConnected();
 }
 
 void 
@@ -386,6 +414,15 @@ MmWaveBearerStatsConnector::ConnectTracesUe (std::string context, uint64_t imsi,
 		       MakeBoundCallback (&DlRxPduCallback, arg));
       Config::Connect (basePath + "/Srb1/LtePdcp/TxPDU",
 		       MakeBoundCallback (&UlTxPduCallback, arg));
+    }
+  if(m_mcStats)
+    {
+      Ptr<McBoundCallbackArgument> arg = Create<McBoundCallbackArgument> ();
+      arg->stats = m_mcStats;
+      Config::Connect (basePath + "/SwitchToLte",
+            MakeBoundCallback (&SwitchToLteCallback, arg));
+      Config::Connect (basePath + "/SwitchToMmWave",
+            MakeBoundCallback (&SwitchToMmWaveCallback, arg));
     }
 }
 

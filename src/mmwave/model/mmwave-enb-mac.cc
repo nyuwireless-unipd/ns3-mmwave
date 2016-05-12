@@ -436,7 +436,7 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 			{
 			  rnti = jt->second.rnti;
 			  NS_LOG_INFO ("preambleId previously allocated for NC based RA, RNTI =" << (uint32_t) rnti << ", sending RAR");
-			  
+			  m_allocatedNcRaPreambleMap.erase(jt);
 			}
 			else
 			{

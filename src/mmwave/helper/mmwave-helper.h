@@ -33,6 +33,7 @@
 #include <ns3/mmwave-beamforming.h>
 #include <ns3/mmwave-channel-matrix.h>
 #include <ns3/mmwave-bearer-stats-calculator.h>
+#include <ns3/mc-stats-calculator.h>
 #include <ns3/mmwave-bearer-stats-connector.h>
 #include <ns3/propagation-loss-model.h>
 #include <ns3/mmwave-channel-raytracing.h>
@@ -68,6 +69,7 @@ public:
 
 	NetDeviceContainer InstallUeDevice (NodeContainer c);
 	NetDeviceContainer InstallMcUeDevice (NodeContainer c);
+	NetDeviceContainer InstallInterRatHoCapableUeDevice(NodeContainer c);
 	NetDeviceContainer InstallEnbDevice (NodeContainer c);
 	NetDeviceContainer InstallLteEnbDevice (NodeContainer c);
 	void SetAntenna (uint16_t Nrx, uint16_t Ntx);
@@ -79,9 +81,17 @@ public:
 	 */ 
 	void AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
 	/**
-	 * Attach MC ueDevices to the closest LTE & mmWave enbDevice
+	 * Attach MC ueDevices to the closest LTE enbDevice, register all MmWave eNBs to the MmWaveUePhy
 	 */
 	void AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
+
+	/**
+	 * Attach MC ueDevices to the closest MmWave eNB device, register all MmWave eNBs to the MmWaveUePhy,
+	 * store all cellId in each LteUeRrc layer.
+	 * This must be used when attaching InterRatHandover capable devices
+	 */
+	void AttachIrToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
+
 
 	void EnableTraces ();
 
@@ -150,9 +160,12 @@ private:
 	Ptr<NetDevice> InstallSingleMcUeDevice (Ptr<Node> n);
 	Ptr<NetDevice> InstallSingleEnbDevice (Ptr<Node> n);
 	Ptr<NetDevice> InstallSingleLteEnbDevice (Ptr<Node> n);
+	Ptr<NetDevice> InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n);
 
 	void AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices);
 	void AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
+	void AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
+
 	void EnableDlPhyTrace ();
 	void EnableUlPhyTrace ();
 	void EnableEnbPacketCountTrace ();
@@ -162,6 +175,8 @@ private:
 	Ptr<MmWaveBearerStatsCalculator> GetRlcStats (void);
 	void EnablePdcpTraces (void);
 	Ptr<MmWaveBearerStatsCalculator> GetPdcpStats (void);
+	void EnableMcTraces (void);
+	Ptr<McStatsCalculator> GetMcStats (void);
 
 	Ptr<SpectrumChannel> m_channel; // mmWave TDD channel	
 	Ptr<SpectrumChannel> m_downlinkChannel; /// The downlink LTE channel used in the simulation.
@@ -230,6 +245,7 @@ private:
 
 	Ptr<MmWaveBearerStatsCalculator> m_rlcStats;
 	Ptr<MmWaveBearerStatsCalculator> m_pdcpStats;
+	Ptr<McStatsCalculator> m_mcStats;
 	MmWaveBearerStatsConnector m_radioBearerStatsConnector;
 };
 

@@ -257,12 +257,6 @@ public:
     Ptr<Packet>         rrcContext;
   };
 
-  struct NotifyMmWaveHandoverParams
-  {
-    std::vector<uint32_t> teidVector;
-  };
-
-
   /**
    * \brief Parameters of the HANDOVER REQUEST ACKNOWLEDGE message.
    *
@@ -358,7 +352,7 @@ public:
     Ptr<Packet> ueData;
   };
 
-  struct RequestMcHandoverParams
+  struct McHandoverParams
   {
     uint64_t imsi;
     uint16_t oldCellId;
@@ -477,9 +471,10 @@ public:
 
   virtual void SendUeSinrUpdate (UeImsiSinrParams params) = 0;
 
-  virtual void SendMcHandoverRequest (RequestMcHandoverParams params) = 0;
+  virtual void SendMcHandoverRequest (McHandoverParams params) = 0;
 
-  virtual void NotifyMmWaveHandover (NotifyMmWaveHandoverParams params) = 0;
+  virtual void NotifyLteMmWaveHandoverCompleted (McHandoverParams params) = 0;
+
 };
 
 
@@ -518,7 +513,9 @@ public:
 
   virtual void RecvUeSinrUpdate(UeImsiSinrParams params) = 0;
 
-  virtual void RecvMcHandoverRequest (RequestMcHandoverParams params) = 0;
+  virtual void RecvMcHandoverRequest (McHandoverParams params) = 0;
+
+  virtual void RecvLteMmWaveHandoverCompleted (McHandoverParams params) = 0;
 
 };
 
@@ -560,9 +557,9 @@ public:
 
   virtual void SendUeSinrUpdate (UeImsiSinrParams params);
 
-  virtual void SendMcHandoverRequest (RequestMcHandoverParams params);
+  virtual void SendMcHandoverRequest (McHandoverParams params);
 
-  virtual void NotifyMmWaveHandover (NotifyMmWaveHandoverParams params);
+  virtual void NotifyLteMmWaveHandoverCompleted (McHandoverParams params);
 
 
 
@@ -675,16 +672,16 @@ EpcX2SpecificEpcX2SapProvider<C>::SendUeSinrUpdate (UeImsiSinrParams params)
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapProvider<C>::SendMcHandoverRequest (RequestMcHandoverParams params)
+EpcX2SpecificEpcX2SapProvider<C>::SendMcHandoverRequest (McHandoverParams params)
 {
   m_x2->DoSendMcHandoverRequest (params);
 }
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapProvider<C>::NotifyMmWaveHandover (NotifyMmWaveHandoverParams params)
+EpcX2SpecificEpcX2SapProvider<C>::NotifyLteMmWaveHandoverCompleted (McHandoverParams params)
 {
-  m_x2->DoNotifyMmWaveHandover (params);
+  m_x2->DoNotifyLteMmWaveHandoverCompleted(params);
 }
 
 ///////////////////////////////////////
@@ -721,7 +718,9 @@ public:
 
   virtual void RecvUeSinrUpdate (UeImsiSinrParams params);
 
-  virtual void RecvMcHandoverRequest (RequestMcHandoverParams params);
+  virtual void RecvMcHandoverRequest (McHandoverParams params);
+
+  virtual void RecvLteMmWaveHandoverCompleted (McHandoverParams params);
 
 
 private:
@@ -819,9 +818,16 @@ EpcX2SpecificEpcX2SapUser<C>::RecvUeSinrUpdate (UeImsiSinrParams params)
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapUser<C>::RecvMcHandoverRequest (RequestMcHandoverParams params)
+EpcX2SpecificEpcX2SapUser<C>::RecvMcHandoverRequest (McHandoverParams params)
 {
   m_rrc->DoRecvMcHandoverRequest (params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvLteMmWaveHandoverCompleted (McHandoverParams params)
+{
+  // TODO m_rrc->DoRecvLteMmWaveHandoverCompleted (params);
 }
 
 

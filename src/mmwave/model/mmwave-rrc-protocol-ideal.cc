@@ -39,7 +39,7 @@ NS_LOG_COMPONENT_DEFINE ("mmWaveRrcProtocolIdeal");
 namespace ns3 {
 
 
-static const Time RRC_IDEAL_MSG_DELAY = MilliSeconds (1);
+static const Time RRC_IDEAL_MSG_DELAY = MicroSeconds (500);
 
 NS_OBJECT_ENSURE_REGISTERED (mmWaveUeRrcProtocolIdeal);
 
@@ -335,16 +335,36 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation
           if (mcUeDev != 0)
           {
             ueRrc = mcUeDev->GetMmWaveRrc ();
-            NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-            if (ueRrc->GetCellId () == m_cellId)
+            if(ueRrc != 0) // actually is using 2 connections
             {
-              NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
-              ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-              Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
-                                   &LteUeRrcSapProvider::RecvSystemInformation,
-                                   ueRrc->GetLteUeRrcSapProvider (), 
-                                   msg);          
-            }             
+              NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+              if (ueRrc->GetCellId () == m_cellId)
+              {
+                NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+                Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
+                                     &LteUeRrcSapProvider::RecvSystemInformation,
+                                     ueRrc->GetLteUeRrcSapProvider (), 
+                                     msg);          
+              }
+            }
+            else // it may have just a double stack up to MAC layer
+            {
+              ueRrc = mcUeDev->GetLteRrc ();
+              if(ueRrc != 0) 
+              {
+                NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+                if (ueRrc->GetCellId () == m_cellId)
+                {
+                  NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                  ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+                  Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
+                                       &LteUeRrcSapProvider::RecvSystemInformation,
+                                       ueRrc->GetLteUeRrcSapProvider (), 
+                                       msg);          
+                }
+              }
+            }               
           }
         }
       }

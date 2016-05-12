@@ -886,9 +886,9 @@ EpcX2RlcSetupCompletedHeader::GetNumberOfIes () const
 
 /////////////////////////////////////////////////////////////////////
 
-NS_OBJECT_ENSURE_REGISTERED (EpcX2RequestMcHandoverHeader);
+NS_OBJECT_ENSURE_REGISTERED (EpcX2McHandoverHeader);
 
-EpcX2RequestMcHandoverHeader::EpcX2RequestMcHandoverHeader ()
+EpcX2McHandoverHeader::EpcX2McHandoverHeader ()
   : m_numberOfIes (1 + 1 + 1),
     m_headerLength (2 + 2 + 8),
     m_targetCellId (0xfffa),
@@ -897,7 +897,7 @@ EpcX2RequestMcHandoverHeader::EpcX2RequestMcHandoverHeader ()
 {
 }
 
-EpcX2RequestMcHandoverHeader::~EpcX2RequestMcHandoverHeader ()
+EpcX2McHandoverHeader::~EpcX2McHandoverHeader ()
 {
   m_numberOfIes = 0;
   m_headerLength = 0;
@@ -907,30 +907,30 @@ EpcX2RequestMcHandoverHeader::~EpcX2RequestMcHandoverHeader ()
 }
 
 TypeId
-EpcX2RequestMcHandoverHeader::GetTypeId (void)
+EpcX2McHandoverHeader::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::EpcX2RequestMcHandoverHeader")
+  static TypeId tid = TypeId ("ns3::EpcX2McHandoverHeader")
     .SetParent<Header> ()
     .SetGroupName("Lte")
-    .AddConstructor<EpcX2RequestMcHandoverHeader> ()
+    .AddConstructor<EpcX2McHandoverHeader> ()
   ;
   return tid;
 }
 
 TypeId
-EpcX2RequestMcHandoverHeader::GetInstanceTypeId (void) const
+EpcX2McHandoverHeader::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 uint32_t
-EpcX2RequestMcHandoverHeader::GetSerializedSize (void) const
+EpcX2McHandoverHeader::GetSerializedSize (void) const
 {
   return m_headerLength;
 }
 
 void
-EpcX2RequestMcHandoverHeader::Serialize (Buffer::Iterator start) const
+EpcX2McHandoverHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
 
@@ -940,7 +940,7 @@ EpcX2RequestMcHandoverHeader::Serialize (Buffer::Iterator start) const
 }
 
 uint32_t
-EpcX2RequestMcHandoverHeader::Deserialize (Buffer::Iterator start)
+EpcX2McHandoverHeader::Deserialize (Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
 
@@ -963,7 +963,7 @@ EpcX2RequestMcHandoverHeader::Deserialize (Buffer::Iterator start)
 }
 
 void
-EpcX2RequestMcHandoverHeader::Print (std::ostream &os) const
+EpcX2McHandoverHeader::Print (std::ostream &os) const
 {
   os << " TargetCellId = " << m_targetCellId;
   os << " oldCellId = " << m_oldCellId;
@@ -971,50 +971,50 @@ EpcX2RequestMcHandoverHeader::Print (std::ostream &os) const
 }
 
 uint16_t
-EpcX2RequestMcHandoverHeader::GetTargetCellId () const
+EpcX2McHandoverHeader::GetTargetCellId () const
 {
   return m_targetCellId;
 }
 
 void
-EpcX2RequestMcHandoverHeader::SetTargetCellId (uint16_t targetCellId)
+EpcX2McHandoverHeader::SetTargetCellId (uint16_t targetCellId)
 {
   m_targetCellId = targetCellId;
 }
 
 uint64_t
-EpcX2RequestMcHandoverHeader::GetImsi () const
+EpcX2McHandoverHeader::GetImsi () const
 {
   return m_imsi;
 }
 
 void
-EpcX2RequestMcHandoverHeader::SetImsi (uint64_t imsi)
+EpcX2McHandoverHeader::SetImsi (uint64_t imsi)
 {
   m_imsi = imsi;
 }
 
 uint16_t
-EpcX2RequestMcHandoverHeader::GetOldCellId () const
+EpcX2McHandoverHeader::GetOldCellId () const
 {
   return m_oldCellId;
 }
 
 void
-EpcX2RequestMcHandoverHeader::SetOldCellId (uint16_t oldCellId)
+EpcX2McHandoverHeader::SetOldCellId (uint16_t oldCellId)
 {
   m_oldCellId = oldCellId;
 }
 
 
 uint32_t
-EpcX2RequestMcHandoverHeader::GetLengthOfIes () const
+EpcX2McHandoverHeader::GetLengthOfIes () const
 {
   return m_headerLength;
 }
 
 uint32_t
-EpcX2RequestMcHandoverHeader::GetNumberOfIes () const
+EpcX2McHandoverHeader::GetNumberOfIes () const
 {
   return m_numberOfIes;
 }

@@ -129,7 +129,8 @@ public:
    * \param s the CPHY SAP Provider
    */
   void SetLteUeCphySapProvider (LteUeCphySapProvider * s);
-
+  void SetMmWaveUeCphySapProvider (LteUeCphySapProvider * s);
+  
   /**
    *
    *
@@ -209,18 +210,18 @@ public:
    */
   uint16_t GetRnti () const;
 
-// TODO remove later on
-  /**
-   * set the MmWave cell id 
-   * \param mmWaveCellId
-   */
-  void SetMmWaveCellId (uint16_t mmWaveCellId);
 
   /**
-   * get the MmWave cell id 
-   * \param mmWaveCellId
+   * add an entry to the m_isMmWaveCellMap, respectively
+   * set to 1 or 0
    */
-  uint16_t GetMmWaveCellId () const;
+  void AddMmWaveCellId (uint16_t cellId);
+  void AddLteCellId (uint16_t cellId);
+
+  /**
+   * Switch lower layers' providers when connecting to a certain CellId
+   */ 
+  bool SwitchLowerLayerProviders (uint16_t cellId);
 
   /**
    *
@@ -542,15 +543,22 @@ private:
 
   LteUeCphySapUser* m_cphySapUser;
   LteUeCphySapProvider* m_cphySapProvider;
+  // CphyProviders for InterRat handover between MmWave and LTE
+  LteUeCphySapProvider* m_lteCphySapProvider;
+  LteUeCphySapProvider* m_mmWaveCphySapProvider;
 
   LteUeCmacSapUser* m_cmacSapUser;
   LteUeCmacSapProvider* m_cmacSapProvider;
+  // CmacProviders for InterRat handover between MmWave and LTE
+  LteUeCmacSapProvider* m_lteCmacSapProvider;
   LteUeCmacSapProvider* m_mmWaveCmacSapProvider;
 
   LteUeRrcSapUser* m_rrcSapUser;
   LteUeRrcSapProvider* m_rrcSapProvider;
 
   LteMacSapProvider* m_macSapProvider;
+  // MacProviders for InterRat handover between MmWave and LTE
+  LteMacSapProvider* m_lteMacSapProvider;
   LteMacSapProvider* m_mmWaveMacSapProvider;
   LtePdcpSapUser* m_drbPdcpSapUser;
 
@@ -681,6 +689,19 @@ private:
    * procedure. Exporting IMSI, cell ID, and RNTI.
    */
   TracedCallback<uint64_t, uint16_t, uint16_t> m_handoverEndErrorTrace;
+
+  /**
+   * The `SwitchToLte` trace source. Fired upon receiving a command to 
+   * switch to LTE RAT. Exporting IMSI, cellId, RNTI.
+   */
+  TracedCallback<uint64_t, uint16_t, uint16_t> m_switchToLteTrace;
+
+  /**
+   * The `SwitchToMmWave` trace source. Fired upon receiving a command to 
+   * switch to MmWave RAT. Exporting IMSI, cellId, RNTI.
+   */
+  TracedCallback<uint64_t, uint16_t, uint16_t> m_switchToMmWaveTrace;
+
 
   /// True if a connection request by upper layers is pending.
   bool m_connectionPending;
@@ -966,8 +987,11 @@ private:
    *        connection establishment procedure has failed.
    */
   void ConnectionTimeout ();
-  uint16_t m_mmWaveCellId;
   bool m_isMc;
+  uint16_t m_mmWaveCellId;
+
+  std::map<uint16_t, bool> m_isMmWaveCellMap;
+  bool m_interRatHoCapable;
 
 }; // end of class LteUeRrc
 
