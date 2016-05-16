@@ -24,6 +24,8 @@
 
 #include <ns3/log.h>
 
+#include "ns3/string.h"
+#include "ns3/nstime.h"
 
 #include <ns3/lte-enb-rrc.h>
 #include <ns3/lte-enb-net-device.h>
@@ -33,6 +35,7 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveBearerStatsConnector");
+NS_OBJECT_ENSURE_REGISTERED (MmWaveBearerStatsConnector);
 
 /**
   * Less than operator for CellIdRnti, because it is used as key in map
@@ -149,8 +152,62 @@ SwitchToMmWaveCallback (Ptr<McBoundCallbackArgument> arg, std::string path, uint
 
 
 MmWaveBearerStatsConnector::MmWaveBearerStatsConnector ()
-  : m_connected (false)
+  : m_connected (false),
+    m_enbHandoverFilename ("EnbHandoverStats.txt"),
+    m_ueHandoverFilename ("UeHandoverStats.txt"),
+    m_cellIdInTimeHandoverFilename ("CellIdStatsHandover.txt")
 {
+
+}
+
+MmWaveBearerStatsConnector::~MmWaveBearerStatsConnector ()
+{
+  NS_LOG_FUNCTION (this);
+  if(m_enbHandoverOutFile.is_open())
+  {
+    m_enbHandoverOutFile.close();
+  }
+  if(m_ueHandoverOutFile.is_open())
+  {
+    m_ueHandoverOutFile.close();
+  }
+  if(m_cellIdInTimeHandoverOutFile.is_open())
+  {
+    m_cellIdInTimeHandoverOutFile.close();
+  }
+}
+
+TypeId
+MmWaveBearerStatsConnector::GetTypeId (void)
+{
+  static TypeId tid =
+    TypeId ("ns3::MmWaveBearerStatsConnector") 
+    .SetParent<Object> ()
+    .AddConstructor<MmWaveBearerStatsConnector> ()
+    .SetGroupName("Lte")
+    .AddAttribute ("EnbHandoverOutputFilename",
+                   "Name of the file where the eNB handover traces will be saved.",
+                   StringValue ("EnbHandoverStats.txt"),
+                   MakeStringAccessor (&MmWaveBearerStatsConnector::SetEnbHandoverOutputFilename),
+                   MakeStringChecker ())
+    .AddAttribute ("UeHandoverOutputFilename",
+                   "Name of the file where the UE handover traces will be saved.",
+                   StringValue ("UeHandoverStats.txt"),
+                   MakeStringAccessor (&MmWaveBearerStatsConnector::SetUeHandoverOutputFilename),
+                   MakeStringChecker ())
+    .AddAttribute ("CellIdStatsHandoverOutputFilename",
+                   "Name of the file where the current cellId for the UE will be stored.",
+                   StringValue ("CellIdStatsHandover.txt"),
+                   MakeStringAccessor (&MmWaveBearerStatsConnector::SetCellIdStatsOutputFilename),
+                   MakeStringChecker ())
+  ;
+  return tid;
+}
+
+void
+MmWaveBearerStatsConnector::DoDispose ()
+{
+  NS_LOG_FUNCTION (this);
 }
 
 void 
@@ -221,12 +278,14 @@ MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe (MmWaveBearerStats
 void 
 MmWaveBearerStatsConnector::NotifyHandoverStartUe (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti, uint16_t targetCellId)
 {
+  c->PrintUeStartHandover(imsi, cellId, targetCellId, rnti);
   c->DisconnectTracesUe (context, imsi, cellId, rnti);
 }
 
 void 
 MmWaveBearerStatsConnector::NotifyHandoverEndOkUe (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
+  c->PrintUeEndHandover (imsi, cellId, rnti);
   c->ConnectTracesUe (context, imsi, cellId, rnti);
 }
 
@@ -245,13 +304,100 @@ MmWaveBearerStatsConnector::NotifyConnectionReconfigurationEnb (MmWaveBearerStat
 void 
 MmWaveBearerStatsConnector::NotifyHandoverStartEnb (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti, uint16_t targetCellId)
 {
+  c->PrintEnbStartHandover(imsi, cellId, targetCellId, rnti);
   c->DisconnectTracesEnb (context, imsi, cellId, rnti);
 }
 
 void 
 MmWaveBearerStatsConnector::NotifyHandoverEndOkEnb (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
+  c->PrintEnbEndHandover (imsi, cellId, rnti);
   c->ConnectTracesEnb (context, imsi, cellId, rnti);
+}
+
+std::string 
+MmWaveBearerStatsConnector::GetEnbHandoverOutputFilename (void)
+{
+  return m_enbHandoverFilename;
+}
+
+std::string 
+MmWaveBearerStatsConnector::GetUeHandoverOutputFilename (void)
+{
+  return m_ueHandoverFilename;
+}
+
+std::string 
+MmWaveBearerStatsConnector::GetCellIdStatsOutputFilename (void)
+{
+  return m_cellIdInTimeHandoverFilename;
+}
+
+void MmWaveBearerStatsConnector::SetEnbHandoverOutputFilename (std::string outputFilename)
+{
+  m_enbHandoverFilename = outputFilename;
+}
+
+void 
+MmWaveBearerStatsConnector::SetUeHandoverOutputFilename (std::string outputFilename)
+{
+  m_ueHandoverFilename = outputFilename;
+}
+
+void
+MmWaveBearerStatsConnector::SetCellIdStatsOutputFilename (std::string outputFilename)
+{
+  m_cellIdInTimeHandoverFilename = outputFilename;
+}
+
+void 
+MmWaveBearerStatsConnector::PrintEnbStartHandover(uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION(this << " NotifyHandoverStartEnb " << Simulator::Now().GetSeconds());
+  if(!m_enbHandoverOutFile.is_open ())
+  {
+    m_enbHandoverOutFile.open(GetEnbHandoverOutputFilename() .c_str());
+  }
+  m_enbHandoverOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << sourceCellid << " " << targetCellId << std::endl;
+}
+
+void 
+MmWaveBearerStatsConnector::PrintEnbEndHandover(uint64_t imsi, uint16_t targetCellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION("NotifyHandoverOkEnb " << Simulator::Now().GetSeconds());
+  if(!m_enbHandoverOutFile.is_open ())
+  {
+    m_enbHandoverOutFile.open(GetEnbHandoverOutputFilename() .c_str());
+  }
+  m_enbHandoverOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
+}
+
+void 
+MmWaveBearerStatsConnector::PrintUeStartHandover(uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION("NotifyHandoverStartUe " << Simulator::Now().GetSeconds());
+  if(!m_ueHandoverOutFile.is_open ())
+  {
+    m_ueHandoverOutFile.open(GetUeHandoverOutputFilename() .c_str());
+  }
+  m_ueHandoverOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << sourceCellid << " " << targetCellId << std::endl;
+}
+
+void 
+MmWaveBearerStatsConnector::PrintUeEndHandover(uint64_t imsi, uint16_t targetCellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION("NotifyHandoverOkUe " << Simulator::Now().GetSeconds());
+  if(!m_ueHandoverOutFile.is_open ())
+  {
+    m_ueHandoverOutFile.open(GetUeHandoverOutputFilename() .c_str());
+  }
+  m_ueHandoverOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
+
+  if(!m_cellIdInTimeHandoverOutFile.is_open ())
+  {
+    m_cellIdInTimeHandoverOutFile.open(GetCellIdStatsOutputFilename() .c_str());
+  }
+  m_cellIdInTimeHandoverOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
 }
 
 void 

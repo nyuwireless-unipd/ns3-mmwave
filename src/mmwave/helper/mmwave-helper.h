@@ -246,7 +246,7 @@ private:
 	Ptr<MmWaveBearerStatsCalculator> m_rlcStats;
 	Ptr<MmWaveBearerStatsCalculator> m_pdcpStats;
 	Ptr<McStatsCalculator> m_mcStats;
-	MmWaveBearerStatsConnector m_radioBearerStatsConnector;
+	Ptr<MmWaveBearerStatsConnector> m_radioBearerStatsConnector;
 };
 
 }

@@ -1,6 +1,7 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,6 +18,9 @@
  *
  * Author: Jaume Nin <jnin@cttc.cat>
  *         Nicola Baldo <nbaldo@cttc.cat>
+ *
+ * Modified by Michele Polese <michele.polese@gmail.com>
+ *     (support for RRC_CONNECTED->RRC_IDLE state transition + support for real S1AP link)
  */
 
 
@@ -85,7 +89,7 @@ EpcEnbApplication::EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSock
     m_sgwS1uAddress (sgwS1uAddress),
     m_gtpuUdpPort (2152), // fixed by the standard
     m_s1SapUser (0),
-    m_s1apSapMme (0),
+    m_s1apSapEnbProvider (0),
     m_cellId (cellId)
 {
   NS_LOG_FUNCTION (this << lteSocket << s1uSocket << sgwS1uAddress);
@@ -108,7 +112,7 @@ EpcEnbApplication::SetS1SapUser (EpcEnbS1SapUser * s)
   m_s1SapUser = s;
 }
 
-  
+
 EpcEnbS1SapProvider* 
 EpcEnbApplication::GetS1SapProvider ()
 {
@@ -116,9 +120,9 @@ EpcEnbApplication::GetS1SapProvider ()
 }
 
 void 
-EpcEnbApplication::SetS1apSapMme (EpcS1apSapMme * s)
+EpcEnbApplication::SetS1apSapMme (EpcS1apSapEnbProvider * s)
 {
-  m_s1apSapMme = s;
+  m_s1apSapEnbProvider = s;
 }
 
   
@@ -134,7 +138,7 @@ EpcEnbApplication::DoInitialUeMessage (uint64_t imsi, uint16_t rnti)
   NS_LOG_FUNCTION (this);
   // side effect: create entry if not exist
   m_imsiRntiMap[imsi] = rnti;
-  m_s1apSapMme->InitialUeMessage (imsi, rnti, imsi, m_cellId);
+  m_s1apSapEnbProvider->SendInitialUeMessage (imsi, rnti, imsi, m_cellId); // TODO if more than one MME is used, extend this call
 }
 
 void 
@@ -170,7 +174,7 @@ EpcEnbApplication::DoPathSwitchRequest (EpcEnbS1SapProvider::PathSwitchRequestPa
 
       erabToBeSwitchedInDownlinkList.push_back (erab);
     }
-  m_s1apSapMme->PathSwitchRequest (enbUeS1Id, mmeUeS1Id, gci, erabToBeSwitchedInDownlinkList);
+  m_s1apSapEnbProvider->SendPathSwitchRequest (enbUeS1Id, mmeUeS1Id, gci, erabToBeSwitchedInDownlinkList);
 }
 
 void 
@@ -195,13 +199,13 @@ void
 EpcEnbApplication::DoInitialContextSetupRequest (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, std::list<EpcS1apSapEnb::ErabToBeSetupItem> erabToBeSetupList)
 {
   NS_LOG_FUNCTION (this);
-  
+  NS_LOG_INFO("In EnpEnbApplication DoInitialContextSetupRequest size of the erabToBeSetupList is " << erabToBeSetupList.size());
+
   for (std::list<EpcS1apSapEnb::ErabToBeSetupItem>::iterator erabIt = erabToBeSetupList.begin ();
        erabIt != erabToBeSetupList.end ();
        ++erabIt)
     {
       // request the RRC to setup a radio bearer
-
       uint64_t imsi = mmeUeS1Id;
       std::map<uint64_t, uint16_t>::iterator imsiIt = m_imsiRntiMap.find (imsi);
       NS_ASSERT_MSG (imsiIt != m_imsiRntiMap.end (), "unknown IMSI");
@@ -257,7 +261,7 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
   std::map<uint16_t, std::map<uint8_t, uint32_t> >::iterator rntiIt = m_rbidTeidMap.find (rnti);
   if (rntiIt == m_rbidTeidMap.end ())
     {
-      NS_LOG_WARN ("UE context not found, discarding packet");
+      NS_LOG_WARN ("UE context not found, discarding packet when receiving from lteSocket");
     }
   else
     {
@@ -277,15 +281,22 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
   GtpuHeader gtpu;
   packet->RemoveHeader (gtpu);
   uint32_t teid = gtpu.GetTeid ();
-  std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
-  NS_ASSERT (it != m_teidRbidMap.end ());
 
   /// \internal
   /// Workaround for \bugid{231}
   SocketAddressTag tag;
   packet->RemovePacketTag (tag);
-  
-  SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
+
+  std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
+  if (it != m_teidRbidMap.end ())
+    {
+      SendToLteSocket (packet, it->second.m_rnti, it->second.m_bid);
+    }
+  else
+    {
+      packet = 0;
+      NS_LOG_DEBUG("UE context not found, discarding packet when receiving from s1uSocket");
+    }  
 }
 
 void 
@@ -322,6 +333,6 @@ EpcEnbApplication::DoReleaseIndication (uint64_t imsi, uint16_t rnti, uint8_t be
   erab.erabId = bearerId;
   erabToBeReleaseIndication.push_back (erab);
   //From 3GPP TS 23401-950 Section 5.4.4.2, enB sends EPS bearer Identity in Bearer Release Indication message to MME
-  m_s1apSapMme->ErabReleaseIndication (imsi, rnti, erabToBeReleaseIndication);
+  m_s1apSapEnbProvider->SendErabReleaseIndication (imsi, rnti, erabToBeReleaseIndication);
 }
 }  // namespace ns3

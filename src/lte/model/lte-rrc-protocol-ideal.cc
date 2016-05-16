@@ -408,8 +408,8 @@ LteEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation ms
                                      &LteUeRrcSapProvider::RecvSystemInformation,
                                      ueRrc->GetLteUeRrcSapProvider (), 
                                      msg);          
-              }
-              else if(mcUeDev->GetMmWaveRrc()->GetCellId() == m_cellId)
+              }       //if the first condition is false, the second is not executed
+              else if(mcUeDev->GetMmWaveRrc() != 0 && mcUeDev->GetMmWaveRrc()->GetCellId() == m_cellId)
               {
                 NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
                 Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
@@ -417,7 +417,6 @@ LteEnbRrcProtocolIdeal::DoSendSystemInformation (LteRrcSap::SystemInformation ms
                                      mcUeDev->GetMmWaveRrc()->GetLteUeRrcSapProvider (), 
                                      msg); 
               }
-
             }
           }
         }

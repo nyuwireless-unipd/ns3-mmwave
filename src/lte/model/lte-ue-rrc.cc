@@ -1327,7 +1327,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           const uint8_t lcid = 1; // fixed LCID for SRB1
 
           Ptr<LteRlc> rlc = CreateObject<LteRlcAm> ();
-          rlc->SetLteMacSapProvider (m_macSapProvider); // TODO check which sapProvider to use for interRatHoCapable
+          rlc->SetLteMacSapProvider (m_macSapProvider);
           rlc->SetRnti (m_rnti);
           rlc->SetLcId (lcid);      
 
@@ -1354,7 +1354,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           lcConfig.bucketSizeDurationMs = stamIt->logicalChannelConfig.bucketSizeDurationMs;
           lcConfig.logicalChannelGroup = stamIt->logicalChannelConfig.logicalChannelGroup;
       
-          m_cmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ()); // TODO check which sapProvider to use for interRatHoCapable
+          m_cmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
       
           ++stamIt;
           NS_ASSERT_MSG (stamIt == rrcd.srbToAddModList.end (), "at most one SrbToAdd supported");     
@@ -2855,20 +2855,27 @@ LteUeRrc::SendMeasurementReport (uint8_t measId)
   LteRrcSap::MeasResults& measResults = measurementReport.measResults;
   measResults.measId = measId;
 
-  std::map<uint16_t, MeasValues>::iterator servingMeasIt = m_storedMeasValues.find (m_cellId);
-  NS_ASSERT (servingMeasIt != m_storedMeasValues.end ());
-  measResults.rsrpResult = EutranMeasurementMapping::Dbm2RsrpRange (servingMeasIt->second.rsrp);
-  measResults.rsrqResult = EutranMeasurementMapping::Db2RsrqRange (servingMeasIt->second.rsrq);
-  NS_LOG_INFO (this << " reporting serving cell "
-               "RSRP " << (uint32_t) measResults.rsrpResult << " (" << servingMeasIt->second.rsrp << " dBm) "
-               "RSRQ " << (uint32_t) measResults.rsrqResult << " (" << servingMeasIt->second.rsrq << " dB)");
-  measResults.haveMeasResultNeighCells = false;
-  std::map<uint8_t, VarMeasReport>::iterator measReportIt = m_varMeasReportList.find (measId);
-  if (measReportIt == m_varMeasReportList.end ())
+  bool cellHasMeasures = true; // measurements are available only for LTE cells
+  if(m_isMmWaveCellMap.find(m_cellId) != m_isMmWaveCellMap.end())
+  {
+    cellHasMeasures = !m_isMmWaveCellMap.find(m_cellId)->second;
+  }
+  if(cellHasMeasures)
+  {
+    std::map<uint16_t, MeasValues>::iterator servingMeasIt = m_storedMeasValues.find (m_cellId);
+    NS_ASSERT (servingMeasIt != m_storedMeasValues.end ());
+    measResults.rsrpResult = EutranMeasurementMapping::Dbm2RsrpRange (servingMeasIt->second.rsrp);
+    measResults.rsrqResult = EutranMeasurementMapping::Db2RsrqRange (servingMeasIt->second.rsrq);
+    NS_LOG_INFO (this << " reporting serving cell "
+                 "RSRP " << (uint32_t) measResults.rsrpResult << " (" << servingMeasIt->second.rsrp << " dBm) "
+                 "RSRQ " << (uint32_t) measResults.rsrqResult << " (" << servingMeasIt->second.rsrq << " dB)");
+    measResults.haveMeasResultNeighCells = false;
+    std::map<uint8_t, VarMeasReport>::iterator measReportIt = m_varMeasReportList.find (measId);
+    if (measReportIt == m_varMeasReportList.end ())
     {
       NS_LOG_ERROR ("no entry found in m_varMeasReportList for measId " << (uint32_t) measId);
     }
-  else
+    else
     {
       if (!(measReportIt->second.cellsTriggeredList.empty ()))
         {
@@ -2992,6 +2999,7 @@ LteUeRrc::SendMeasurementReport (uint8_t measId)
       // send the measurement report to eNodeB
       m_rrcSapUser->SendMeasurementReport (measurementReport);
     } 
+  }
 }
 
 void 

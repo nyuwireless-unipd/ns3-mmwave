@@ -342,11 +342,22 @@ public:
     (uint64_t imsi, uint16_t cellId, uint16_t rnti,
      State oldState, State newState);
 
-  //void SetFirstConnection();
+  void SetFirstConnection();
+
+  /**
+   * This method is called by the eNB RRC to notify the 
+   * UeManager that the handover from a MmWave cell to LTE
+   * was completed. Then, according to the state of 
+   * the UeManager, it will modify the m_mmWaveCellSetupCompleted map
+   * of RRC.
+   */
+  void RecvNotifyLteMmWaveHandoverCompleted();
 
 private:
 
-  //bool m_firstConnection;
+  bool m_firstConnection;
+  bool m_receivedLteMmWaveHandoverCompleted;
+  uint16_t m_queuedHandoverRequestCellId;
   /** 
    * Add a new LteDataRadioBearerInfo structure to the UeManager
    * 
@@ -515,6 +526,8 @@ private:
   bool m_needPhyMacConfiguration;
 
   uint16_t m_mmWaveCellId;
+  uint16_t m_mmWaveRnti;
+  bool m_mmWaveCellAvailableForMcSetup;
   bool m_isMc;
   //bool m_isInterRatHoCapable;
 
@@ -958,7 +971,7 @@ public:
 
   uint64_t GetImsiFromRnti(uint16_t rnti);
 
-  //void SetInterRatHoMode ();
+  void SetInterRatHoMode ();
   
 private:
 
@@ -1000,7 +1013,7 @@ private:
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
   void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
   void DoRecvMcHandoverRequest(EpcX2SapUser::McHandoverParams params);
-  //void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::McHandoverParams params);
+  void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::McHandoverParams params);
 
   // CMAC SAP methods
 
@@ -1159,7 +1172,7 @@ private:
    * method used to periodically check if HO between MmWave and LTE is needed
    * 
    */
-  //void UpdateUeHandoverAssociation();
+  void UpdateUeHandoverAssociation();
 
   Callback <void, Ptr<Packet> > m_forwardUpCallback;
 
@@ -1376,7 +1389,7 @@ private:
   TracedCallback<uint64_t, uint16_t, uint16_t, LteRrcSap::MeasurementReport> m_recvMeasurementReportTrace;
   bool m_ismmWave;
   bool m_interRatHoMode;
-  //bool m_firstReport;
+  bool m_firstReport;
 
   uint32_t m_firstSibTime;		// time in ms of initial SIB
 

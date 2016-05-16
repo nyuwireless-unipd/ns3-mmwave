@@ -84,6 +84,7 @@ public:
 	virtual void DoDispose();
 
 	void Reset();
+	void ResetSpectrumModel();
 
 	void SetDevice(Ptr<NetDevice> d);
 	Ptr<NetDevice> GetDevice () const;

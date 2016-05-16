@@ -119,7 +119,13 @@ MmWaveSpectrumPhy::Reset ()
   m_expectedTbs.clear ();
   m_rxPacketBurstList.clear ();
   //m_txPacketBurst = 0;
-  m_rxSpectrumModel = 0;
+  //m_rxSpectrumModel = 0;
+}
+
+void
+MmWaveSpectrumPhy::ResetSpectrumModel()
+{
+	m_rxSpectrumModel = 0;
 }
 
 void
@@ -364,6 +370,7 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
 	switch(m_state)
 	{
 	case TX:
+		NS_LOG_UNCOND(this << " m_cellId");
 		NS_FATAL_ERROR("Cannot receive while transmitting");
 		break;
 	case RX_CTRL:

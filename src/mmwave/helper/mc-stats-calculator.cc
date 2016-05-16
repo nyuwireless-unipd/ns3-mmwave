@@ -13,8 +13,8 @@ NS_OBJECT_ENSURE_REGISTERED ( McStatsCalculator);
 
 McStatsCalculator::McStatsCalculator ()
   : m_lteOutputFilename ("LteSwitchStats.txt"),
-    m_mmWaveOutputFilename ("MmWaveSwitchStats.txt")
-
+    m_mmWaveOutputFilename ("MmWaveSwitchStats.txt"),
+    m_cellInTimeFilename ("CellIdStats.txt")
 {
   NS_LOG_FUNCTION (this);
 }
@@ -29,6 +29,10 @@ McStatsCalculator::~McStatsCalculator ()
   if(m_lteOutFile.is_open())
   {
     m_lteOutFile.close();
+  }
+  if(m_cellInTimeOutFile.is_open())
+  {
+    m_cellInTimeOutFile.close();
   }
 }
 
@@ -49,6 +53,11 @@ McStatsCalculator::GetTypeId (void)
                    "Name of the file where the MmWave Switch will be saved.",
                    StringValue ("MmWaveSwitchStats.txt"),
                    MakeStringAccessor (&McStatsCalculator::SetMmWaveOutputFilename),
+                   MakeStringChecker ())
+    .AddAttribute ("CellIdInTimeOutputFilename",
+                   "Name of the file where the MmWave Switch will be saved.",
+                   StringValue ("CellIdStats.txt"),
+                   MakeStringAccessor (&McStatsCalculator::SetCellIdInTimeOutputFilename),
                    MakeStringChecker ())
   ;
   return tid;
@@ -86,6 +95,18 @@ McStatsCalculator::GetMmWaveOutputFilename ()
 }
 
 void
+McStatsCalculator::SetCellIdInTimeOutputFilename (std::string outputFilename)
+{
+  m_cellInTimeFilename = outputFilename;
+}
+
+std::string
+McStatsCalculator::GetCellIdInTimeOutputFilename() 
+{
+  return m_cellInTimeFilename;
+}
+
+void
 McStatsCalculator::SwitchToLte (uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << "SwitchToLte" << cellId << imsi << rnti);
@@ -96,6 +117,12 @@ McStatsCalculator::SwitchToLte (uint64_t imsi, uint16_t cellId, uint16_t rnti)
   }
 
   m_lteOutFile << "SwitchToLte " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << imsi << " " << cellId << " " << rnti << " " << std::endl;
+
+  if(!m_cellInTimeOutFile.is_open())
+  {
+    m_cellInTimeOutFile.open (GetCellIdInTimeOutputFilename().c_str());
+  }
+  m_cellInTimeOutFile << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << imsi << " " << cellId << " " << rnti << " " << std::endl;
 }
 
 void
@@ -109,6 +136,12 @@ McStatsCalculator::SwitchToMmWave (uint64_t imsi, uint16_t cellId, uint16_t rnti
   }
 
   m_mmWaveOutFile << "SwitchToMmWave " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << imsi << " " << cellId << " " << rnti << " " << std::endl;
+
+  if(!m_cellInTimeOutFile.is_open())
+  {
+    m_cellInTimeOutFile.open (GetCellIdInTimeOutputFilename().c_str());
+  }
+  m_cellInTimeOutFile << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << imsi << " " << cellId << " " << rnti << " " << std::endl;
 }
 
 } // namespace ns3

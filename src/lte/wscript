@@ -97,6 +97,7 @@ def build(bld):
         'model/epc-enb-s1-sap.cc',
         'model/epc-s1ap-sap.cc',
         'model/epc-s11-sap.cc',
+        'model/epc-s1ap.cc',
         'model/lte-as-sap.cc',
         'model/epc-ue-nas.cc',
         'model/lte-harq-phy.cc',
@@ -122,6 +123,8 @@ def build(bld):
         'model/lte-ffr-distributed-algorithm.cc',
         'model/lte-ue-power-control.cc',
         'model/lte-rlc-um-lowlat.cc',
+        'model/epc-mme-application.cc',
+        'model/epc-s1ap-header.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('lte')
@@ -273,6 +276,8 @@ def build(bld):
         'model/epc-enb-s1-sap.h',
         'model/epc-s1ap-sap.h',
         'model/epc-s11-sap.h',
+        'model/epc-s1ap.h',
+        'model/epc-mme-application.h',
         'model/lte-as-sap.h',
         'model/epc-ue-nas.h',
         'model/lte-harq-phy.h',
@@ -297,7 +302,8 @@ def build(bld):
         'model/lte-ffr-enhanced-algorithm.h',
         'model/lte-ffr-distributed-algorithm.h',     
 		'model/lte-ue-power-control.h',     
-		'model/lte-rlc-um-lowlat.h',      
+		'model/lte-rlc-um-lowlat.h', 
+        'model/epc-s1ap-header.h'     
         ]
 
     if (bld.env['ENABLE_EMU']):

@@ -170,6 +170,10 @@ private:
 
 	std::map<uint16_t, std::pair<Ptr<MmWavePhyMacCommon>, Ptr<MmWaveEnbNetDevice> > > m_registeredEnb;
 
+	EventId m_sendDataChannelEvent;
+	EventId m_sendDlHarqFeedbackEvent;
+	bool m_phyReset;
+
 };
 
 

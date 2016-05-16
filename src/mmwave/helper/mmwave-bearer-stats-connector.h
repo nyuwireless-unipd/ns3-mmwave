@@ -29,7 +29,9 @@
 #include <ns3/simple-ref-count.h>
 #include <ns3/ptr.h>
 #include "mc-stats-calculator.h"
-
+#include <fstream>
+#include "ns3/object.h"
+#include <string>
 
 #include <set>
 #include <map>
@@ -50,11 +52,25 @@ class MmWaveBearerStatsCalculator;
  * LteHelper::EnableRlcTraces().
  */
 
-class MmWaveBearerStatsConnector
+class MmWaveBearerStatsConnector : public Object
 {
 public:
   /// Constructor
   MmWaveBearerStatsConnector ();
+
+  /**
+   * Class destructor
+   */
+  virtual
+  ~MmWaveBearerStatsConnector ();
+
+  // Inherited from ns3::Object
+  /**
+   *  Register this type.
+   *  \return The object TypeId.
+   */
+  static TypeId GetTypeId (void);
+  void DoDispose ();
 
   /**
    * Enables trace sinks for RLC layer. Usually, this function
@@ -178,6 +194,14 @@ public:
    */
   static void NotifyHandoverEndOkEnb (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
+  std::string GetEnbHandoverOutputFilename (void);
+  std::string GetUeHandoverOutputFilename (void);
+  std::string GetCellIdStatsOutputFilename (void);
+  
+  void SetEnbHandoverOutputFilename (std::string outputFilename);
+  void SetUeHandoverOutputFilename (std::string outputFilename);
+  void SetCellIdStatsOutputFilename (std::string outputFilename);
+
 private:
   /**
    * Creates UE Manager path and stores it in m_ueManagerPathByCellIdRnti
@@ -264,6 +288,11 @@ private:
    */
   void DisconnectTracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
+  void PrintEnbStartHandover(uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti);
+  void PrintEnbEndHandover(uint64_t imsi, uint16_t targetCellId, uint16_t rnti);
+  void PrintUeStartHandover(uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti);
+  void PrintUeEndHandover(uint64_t imsi, uint16_t targetCellId, uint16_t rnti);
+
 
   Ptr<MmWaveBearerStatsCalculator> m_rlcStats; //!< Calculator for RLC Statistics
   Ptr<MmWaveBearerStatsCalculator> m_pdcpStats; //!< Calculator for PDCP Statistics
@@ -291,6 +320,14 @@ private:
    * List UE Manager Paths by CellIdRnti
    */
   std::map<CellIdRnti, std::string> m_ueManagerPathByCellIdRnti;
+
+  std::string m_enbHandoverFilename;
+  std::string m_ueHandoverFilename;
+  std::string m_cellIdInTimeHandoverFilename;
+
+  std::ofstream m_enbHandoverOutFile;
+  std::ofstream m_ueHandoverOutFile;
+  std::ofstream m_cellIdInTimeHandoverOutFile;
 
 };
 

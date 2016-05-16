@@ -210,6 +210,7 @@ MmWaveHelper::DoInitialize()
 	}
 
 	m_phyStats = CreateObject<MmWavePhyRxTrace> ();
+	m_radioBearerStatsConnector = CreateObject<MmWaveBearerStatsConnector> ();
 
 	// setup of LTE channels & related
 	m_downlinkChannel = m_lteChannelFactory.Create<SpectrumChannel> ();
@@ -464,6 +465,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	// Phy part of MmWave
 	Ptr<MmWaveSpectrumPhy> mmWaveUlPhy = CreateObject<MmWaveSpectrumPhy> ();
 	Ptr<MmWaveSpectrumPhy> mmWaveDlPhy = CreateObject<MmWaveSpectrumPhy> ();
+	NS_LOG_UNCOND("UE " << imsi << " MmWaveSpectrumPhy " << mmWaveDlPhy);
 
 	Ptr<MmWaveUePhy> mmWavePhy = CreateObject<MmWaveUePhy> (mmWaveDlPhy, mmWaveUlPhy);
 
@@ -1078,6 +1080,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	Ptr<MmWaveSpectrumPhy> dlPhy = CreateObject<MmWaveSpectrumPhy> ();
 
 	Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
+	NS_LOG_UNCOND("eNB " << cellId << " MmWaveSpectrumPhy " << dlPhy);
 
 	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
 	dlPhy->SetHarqPhyModule (harq);
@@ -1632,9 +1635,9 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 		Ptr<LteEnbNetDevice> lteEnb = (*i)->GetObject<LteEnbNetDevice> ();
 		uint16_t cellId = lteEnb->GetCellId();
 		ueRrc->AddLteCellId(cellId);
-		// TODO fix this
-		//Ptr<LteEnbRrc> enbRrc = lteEnb->GetRrc();
-		//enbRrc->SetInterRatHoMode();
+		// Let the RRC know that the UE in this simulation is InterRatHoCapable
+		Ptr<LteEnbRrc> enbRrc = lteEnb->GetRrc();
+		enbRrc->SetInterRatHoMode();
 	  	Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
 	  	double distance = CalculateDistance (uepos, enbpos);
 	  	if (distance < minDistance)
@@ -1660,9 +1663,9 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 		//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
 		NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
 
-		//TODO fix this
-		//Ptr<LteEnbRrc> enbRrc = mmWaveEnb->GetRrc();
-		//enbRrc->SetInterRatHoMode();
+		// Let the RRC know that the UE in this simulation is InterRatHoCapable
+		Ptr<LteEnbRrc> enbRrc = mmWaveEnb->GetRrc();
+		enbRrc->SetInterRatHoMode();
 		Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
 	    double distance = CalculateDistance (uepos, enbpos);
 	    if (distance < minDistance)
@@ -1959,8 +1962,8 @@ MmWaveHelper::ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer
 void
 MmWaveHelper::EnableTraces (void)
 {
-	EnableDlPhyTrace ();
-	EnableUlPhyTrace ();
+	//EnableDlPhyTrace ();
+	//EnableUlPhyTrace ();
 	//EnableEnbPacketCountTrace ();
 	//EnableUePacketCountTrace ();
 	//EnableTransportBlockTrace ();
@@ -2022,7 +2025,7 @@ MmWaveHelper::EnableRlcTraces (void)
 {
   NS_ASSERT_MSG (m_rlcStats == 0, "please make sure that MmWaveHelper::EnableRlcTraces is called at most once");
   m_rlcStats = CreateObject<MmWaveBearerStatsCalculator> ("RLC");
-  m_radioBearerStatsConnector.EnableRlcStats (m_rlcStats);
+  m_radioBearerStatsConnector->EnableRlcStats (m_rlcStats);
 }
 
 Ptr<MmWaveBearerStatsCalculator>
@@ -2036,7 +2039,7 @@ MmWaveHelper::EnablePdcpTraces (void)
 {
   NS_ASSERT_MSG (m_pdcpStats == 0, "please make sure that MmWaveHelper::EnablePdcpTraces is called at most once");
   m_pdcpStats = CreateObject<MmWaveBearerStatsCalculator> ("PDCP");
-  m_radioBearerStatsConnector.EnablePdcpStats (m_pdcpStats);
+  m_radioBearerStatsConnector->EnablePdcpStats (m_pdcpStats);
 }
 
 Ptr<MmWaveBearerStatsCalculator>
@@ -2050,7 +2053,7 @@ MmWaveHelper::EnableMcTraces (void)
 {
   NS_ASSERT_MSG (m_mcStats == 0, "please make sure that MmWaveHelper::EnableMcTraces is called at most once");
   m_mcStats = CreateObject<McStatsCalculator> ();
-  m_radioBearerStatsConnector.EnableMcStats (m_mcStats);
+  m_radioBearerStatsConnector->EnableMcStats (m_mcStats);
 }
 
 Ptr<McStatsCalculator>

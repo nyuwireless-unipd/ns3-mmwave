@@ -326,7 +326,7 @@ LteSpectrumPhy::Reset ()
   m_txControlMessageList.clear ();
   m_rxPacketBurstList.clear ();
   m_txPacketBurst = 0;
-  m_rxSpectrumModel = 0;
+  //m_rxSpectrumModel = 0;
 }
 
 

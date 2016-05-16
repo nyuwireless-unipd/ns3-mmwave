@@ -510,7 +510,7 @@ MmWaveEnbPhy::StartSlot (void)
 
 		// TX control period
 		slotPeriod = NanoSeconds (1000.0*m_phyMacConfig->GetSymbolPeriod ()*m_phyMacConfig->GetDlCtrlSymbols());
-		NS_LOG_DEBUG ("ENB TXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now() << " end " << Simulator::Now() + slotPeriod-NanoSeconds(1.0));
 		SendCtrlChannels(ctrlMsgs, slotPeriod-NanoSeconds(1.0)); // -1 ns ensures control ends before data period
@@ -518,7 +518,7 @@ MmWaveEnbPhy::StartSlot (void)
 	else if (m_slotNum == m_currSfNumSlots-1) // UL control slot
 	{
 		slotPeriod = NanoSeconds (1000.0*m_phyMacConfig->GetSymbolPeriod ()*m_phyMacConfig->GetUlCtrlSymbols());
-		NS_LOG_DEBUG ("ENB RXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("ENB " << m_cellId << " RXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 							    << "\t start " << Simulator::Now() << " end " << Simulator::Now() + slotPeriod);
 	}
@@ -555,7 +555,7 @@ MmWaveEnbPhy::StartSlot (void)
 			pktBurst = CreateObject<PacketBurst> ();
 			pktBurst->AddPacket (emptyPdu);
 		}
-		NS_LOG_DEBUG ("ENB TXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now()+NanoSeconds(1.0) << " end " << Simulator::Now() + slotPeriod-NanoSeconds (2.0));
 		Simulator::Schedule (NanoSeconds(1.0), &MmWaveEnbPhy::SendDataChannels, this, pktBurst, slotPeriod-NanoSeconds (2.0), currSlot);
@@ -583,7 +583,7 @@ MmWaveEnbPhy::StartSlot (void)
 			}
 		}
 
-		NS_LOG_DEBUG ("ENB RXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("ENB " << m_cellId << " RXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now() << " end " << Simulator::Now() + slotPeriod );
 	}
@@ -798,17 +798,17 @@ MmWaveEnbPhy::PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msg
 
 		if (msg->GetMessageType () == MmWaveControlMessage::DL_CQI)
 		{
-			NS_LOG_INFO ("received CQI");
+			NS_LOG_INFO ("ENB " << m_cellId << " received CQI");
 			m_phySapUser->ReceiveControlMessage (msg);
 		}
 		else if (msg->GetMessageType () == MmWaveControlMessage::BSR)
 		{
-			NS_LOG_INFO ("received BSR");
+			NS_LOG_INFO ("ENB " << m_cellId << " received BSR");
 			m_phySapUser->ReceiveControlMessage (msg);
 		}
 		else if (msg->GetMessageType() == MmWaveControlMessage::RACH_PREAMBLE)
 	  {
-			NS_LOG_INFO ("received RACH_PREAMBLE");
+			NS_LOG_INFO ("ENB " << m_cellId << " received RACH_PREAMBLE");
 			NS_ASSERT (m_cellId > 0);
 			Ptr<MmWaveRachPreambleMessage> rachPreamble = DynamicCast<MmWaveRachPreambleMessage> (msg);
 			m_phySapUser->ReceiveRachPreamble (rachPreamble->GetRapId ());

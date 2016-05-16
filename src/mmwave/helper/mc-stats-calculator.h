@@ -37,9 +37,11 @@ public:
 
   std::string GetLteOutputFilename (void);
   std::string GetMmWaveOutputFilename (void);
+  std::string GetCellIdInTimeOutputFilename (void);
   
   void SetLteOutputFilename (std::string outputFilename);
   void SetMmWaveOutputFilename (std::string outputFilename);
+  void SetCellIdInTimeOutputFilename (std::string outputFilename);
 
   void
   SwitchToLte (uint64_t imsi, uint16_t cellId, uint16_t rnti);
@@ -58,8 +60,11 @@ private:
    */
   std::string m_mmWaveOutputFilename;
 
+  std::string m_cellInTimeFilename;
+
   std::ofstream m_lteOutFile;
   std::ofstream m_mmWaveOutFile;
+  std::ofstream m_cellInTimeOutFile;
 };
 
 } // namespace ns3

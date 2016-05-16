@@ -19,7 +19,7 @@
  *         Nicola Baldo <nbaldo@cttc.es>
  *         Manuel Requena <manuel.requena@cttc.es>
  */
-
+#include <ns3/point-to-point-helper.h>
 #include <ns3/emu-epc-helper.h>
 #include <ns3/log.h>
 #include <ns3/inet-socket-address.h>
@@ -35,15 +35,18 @@
 
 #include <ns3/lte-enb-rrc.h>
 #include <ns3/epc-x2.h>
+#include <ns3/epc-s1ap.h>
 #include <ns3/lte-enb-net-device.h>
 #include <ns3/lte-ue-net-device.h>
-#include <ns3/epc-mme.h>
+#include <ns3/epc-mme-application.h>
 #include <ns3/epc-ue-nas.h>
 #include <ns3/string.h>
 #include <ns3/abort.h>
 
 #include <iomanip>
 #include <iostream>
+
+// TODO S1AP is a P2P link, extend to support emulation on this link
 
 namespace ns3 {
 
@@ -53,7 +56,8 @@ NS_OBJECT_ENSURE_REGISTERED (EmuEpcHelper);
 
 
 EmuEpcHelper::EmuEpcHelper () 
-  : m_gtpuUdpPort (2152)  // fixed by the standard
+  : m_gtpuUdpPort (2152),  // fixed by the standard
+    m_s1apUdpPort (36412)
 {
   NS_LOG_FUNCTION (this);
 
@@ -91,6 +95,21 @@ EmuEpcHelper::GetTypeId (void)
                    StringValue ("00:00:00:eb:00"),
                    MakeStringAccessor (&EmuEpcHelper::m_enbMacAddressBase),
                    MakeStringChecker ())
+    .AddAttribute ("S1apLinkDataRate", 
+                   "The data rate to be used for the S1-AP link to be created",
+                   DataRateValue (DataRate ("10Mb/s")),
+                   MakeDataRateAccessor (&EmuEpcHelper::m_s1apLinkDataRate),
+                   MakeDataRateChecker ())
+    .AddAttribute ("S1apLinkDelay", 
+                   "The delay to be used for the S1-AP link to be created",
+                   TimeValue (Seconds (0.1)),
+                   MakeTimeAccessor (&EmuEpcHelper::m_s1apLinkDelay),
+                   MakeTimeChecker ())
+    .AddAttribute ("S1apLinkMtu", 
+                   "The MTU of the next S1-AP link to be created",
+                   UintegerValue (2000),
+                   MakeUintegerAccessor (&EmuEpcHelper::m_s1apLinkMtu),
+                   MakeUintegerChecker<uint16_t> ())
     ;
   return tid;
 }
@@ -103,7 +122,7 @@ EmuEpcHelper::DoInitialize ()
 
   // we use a /8 net for all UEs
   m_ueAddressHelper.SetBase ("7.0.0.0", "255.0.0.0");
-
+  m_s1apIpv4AddressHelper.SetBase ("11.0.0.0", "255.255.255.252");
   
  
   // create SgwPgwNode
@@ -111,10 +130,19 @@ EmuEpcHelper::DoInitialize ()
   InternetStackHelper internet;
   internet.SetIpv4StackInstall (true);
   internet.Install (m_sgwPgw);
+
+  // create MmeNode
+  m_mmeNode = CreateObject<Node> ();
+  internet.Install (m_mmeNode);
   
-  // create S1-U socket
+  // create S1-U socket for SgwPgwNode
   Ptr<Socket> sgwPgwS1uSocket = Socket::CreateSocket (m_sgwPgw, TypeId::LookupByName ("ns3::UdpSocketFactory"));
   int retval = sgwPgwS1uSocket->Bind (InetSocketAddress (Ipv4Address::GetAny (), m_gtpuUdpPort));
+  NS_ASSERT (retval == 0);
+
+  // create S1-AP socket for MmeNode
+  Ptr<Socket> mmeS1apSocket = Socket::CreateSocket (m_mmeNode, TypeId::LookupByName ("ns3::UdpSocketFactory"));
+  retval = mmeS1apSocket->Bind (InetSocketAddress (Ipv4Address::GetAny (), m_s1apUdpPort)); // it listens on any IP, port m_s1apUdpPort
   NS_ASSERT (retval == 0);
 
   // create TUN device implementing tunneling of user data over GTP-U/UDP/IP 
@@ -141,10 +169,18 @@ EmuEpcHelper::DoInitialize ()
   // connect SgwPgwApplication and virtual net device for tunneling
   m_tunDevice->SetSendCallback (MakeCallback (&EpcSgwPgwApplication::RecvFromTunDevice, m_sgwPgwApp));
 
-  // Create MME and connect with SGW via S11 interface
-  m_mme = CreateObject<EpcMme> ();
-  m_mme->SetS11SapSgw (m_sgwPgwApp->GetS11SapSgw ());
-  m_sgwPgwApp->SetS11SapMme (m_mme->GetS11SapMme ());
+  // create S1apMme object and aggregate it with the m_mmeNode
+  Ptr<EpcS1apMme> s1apMme = CreateObject<EpcS1apMme> (mmeS1apSocket, 1); // for now, only one mme!
+  m_mmeNode->AggregateObject(s1apMme);
+
+  // create EpcMmeApplication and connect with SGW via S11 interface
+  m_mmeApp = CreateObject<EpcMmeApplication> ();
+  m_mmeNode->AddApplication (m_mmeApp);
+  m_mmeApp->SetS11SapSgw (m_sgwPgwApp->GetS11SapSgw ());
+  m_sgwPgwApp->SetS11SapMme (m_mmeApp->GetS11SapMme ());
+  // connect m_mmeApp to the s1apMme
+  m_mmeApp->SetS1apSapMmeProvider(s1apMme->GetEpcS1apSapMmeProvider());
+  s1apMme->SetEpcS1apSapMmeUser(m_mmeApp->GetS1apSapMme());
 
   // Create EmuFdNetDevice for SGW
   EmuFdNetDeviceHelper emu;
@@ -232,6 +268,29 @@ EmuEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
   retval = enbLteSocket->Connect (enbLteSocketConnectAddress);
   NS_ASSERT (retval == 0);  
   
+  // create a point to point link between the new eNB and the MME with
+  // the corresponding new NetDevices on each side
+  NodeContainer enbMmeNodes;
+  enbMmeNodes.Add (m_mmeNode);
+  enbMmeNodes.Add (enb);
+  PointToPointHelper p2ph_mme;
+  p2ph_mme.SetDeviceAttribute ("DataRate", DataRateValue (m_s1apLinkDataRate));
+  p2ph_mme.SetDeviceAttribute ("Mtu", UintegerValue (m_s1apLinkMtu));
+  p2ph_mme.SetChannelAttribute ("Delay", TimeValue (m_s1apLinkDelay));  
+  NetDeviceContainer enbMmeDevices = p2ph_mme.Install (enb, m_mmeNode);
+  NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB after installing p2p dev: " << enb->GetObject<Ipv4> ()->GetNInterfaces ());  
+
+  m_s1apIpv4AddressHelper.NewNetwork ();
+  Ipv4InterfaceContainer enbMmeIpIfaces = m_s1apIpv4AddressHelper.Assign (enbMmeDevices);
+  NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB after assigning Ipv4 addr to S1 dev: " << enb->GetObject<Ipv4> ()->GetNInterfaces ());
+  
+  Ipv4Address mme_enbAddress = enbMmeIpIfaces.GetAddress (0);
+  Ipv4Address mmeAddress = enbMmeIpIfaces.GetAddress (1);
+
+  // create S1-AP socket for the ENB
+  Ptr<Socket> enbS1apSocket = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::UdpSocketFactory"));
+  retval = enbS1apSocket->Bind (InetSocketAddress (mme_enbAddress, m_s1apUdpPort));
+  NS_ASSERT (retval == 0);
 
   NS_LOG_INFO ("create EpcEnbApplication");
   Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId);
@@ -246,9 +305,18 @@ EmuEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, uint16_t ce
   enb->AggregateObject (x2);
 
   NS_LOG_INFO ("connect S1-AP interface");
-  m_mme->AddEnb (cellId, enbAddress, enbApp->GetS1apSapEnb ());
+
+  uint16_t mmeId = 1;
+  Ptr<EpcS1apEnb> s1apEnb = CreateObject<EpcS1apEnb> (enbS1apSocket, mme_enbAddress, mmeAddress, cellId, mmeId); // only one mme!
+  enb->AggregateObject(s1apEnb);
+  enbApp->SetS1apSapMme (s1apEnb->GetEpcS1apSapEnbProvider ());
+  s1apEnb->SetEpcS1apSapEnbUser (enbApp->GetS1apSapEnb());
+  m_mmeApp->AddEnb (cellId, mme_enbAddress); // TODO consider if this can be removed
+  // add the interface to the S1AP endpoint on the MME
+  Ptr<EpcS1apMme> s1apMme = m_mmeNode->GetObject<EpcS1apMme> ();
+  s1apMme->AddS1apInterface (cellId, mme_enbAddress);
+  
   m_sgwPgwApp->AddEnb (cellId, enbAddress, sgwAddress);
-  enbApp->SetS1apSapMme (m_mme->GetS1apSapMme ());
 }
 
 
@@ -307,7 +375,7 @@ EmuEpcHelper::AddUe (Ptr<NetDevice> ueDevice, uint64_t imsi)
 {
   NS_LOG_FUNCTION (this << imsi << ueDevice );
   
-  m_mme->AddUe (imsi);
+  m_mmeApp->AddUe (imsi);
   m_sgwPgwApp->AddUe (imsi);
   
 }
@@ -329,7 +397,7 @@ EmuEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi, Ptr<Epc
   Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
   NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
   
-  uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
+  uint8_t bearerId = m_mmeApp->AddBearer (imsi, tft, bearer);
   Ptr<LteUeNetDevice> ueLteDevice = ueDevice->GetObject<LteUeNetDevice> ();
   if (ueLteDevice)
     {
@@ -355,7 +423,7 @@ EmuEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, Ptr<EpcUeNas> ueNas, u
   Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
   NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
   
-  uint8_t bearerId = m_mme->AddBearer (imsi, tft, bearer);
+  uint8_t bearerId = m_mmeApp->AddBearer (imsi, tft, bearer);
   Simulator::ScheduleNow (&EpcUeNas::ActivateEpsBearer, ueNas, bearer, tft);
   return bearerId;
 }

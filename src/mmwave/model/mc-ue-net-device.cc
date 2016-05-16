@@ -141,7 +141,10 @@ McUeNetDevice::DoInitialize (void)
 	m_isConstructed = true;
 	UpdateConfig ();
 	m_mmWavePhy->DoInitialize ();
-	m_mmWaveRrc->Initialize ();
+  if(m_mmWaveRrc!=0)
+  {
+    m_mmWaveRrc->Initialize ();
+  }
 	m_ltePhy->Initialize ();
 	m_lteMac->Initialize ();
 	m_lteRrc->Initialize ();
@@ -165,7 +168,10 @@ McUeNetDevice::DoDispose (void)
 	m_mmWaveTargetEnb = 0;
 	m_mmWaveMac->Dispose ();
 	m_mmWaveMac = 0;
-	m_mmWaveRrc->Dispose ();
+  if(m_mmWaveRrc != 0)
+  {
+    m_mmWaveRrc->Dispose ();
+  }
 	m_mmWaveRrc = 0;
 	m_mmWavePhy->Dispose ();
 	m_mmWavePhy = 0;
@@ -404,8 +410,11 @@ McUeNetDevice::UpdateConfig (void)
 		m_nas->SetImsi (m_imsi);
 
 		m_lteRrc->SetImsi (m_imsi);
-		m_mmWaveRrc->SetImsi (m_imsi);
-
+    if(m_mmWaveRrc!=0)
+    {
+      m_mmWaveRrc->SetImsi (m_imsi);  
+    }
+		
 		m_nas->SetCsgId (m_csgId); // TODO this also handles propagation to RRC (LTE only for now) 
 	}
 	else

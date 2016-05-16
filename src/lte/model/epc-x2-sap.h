@@ -827,7 +827,7 @@ template <class C>
 void
 EpcX2SpecificEpcX2SapUser<C>::RecvLteMmWaveHandoverCompleted (McHandoverParams params)
 {
-  // TODO m_rrc->DoRecvLteMmWaveHandoverCompleted (params);
+  m_rrc->DoRecvLteMmWaveHandoverCompleted (params);
 }
 
 

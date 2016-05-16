@@ -31,6 +31,10 @@
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
 
+#include <iostream>
+#include <ctime>
+#include <stdlib.h>
+
 using namespace ns3;
 
 /**
@@ -174,6 +178,8 @@ static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave 
     ns3::UintegerValue(400), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
     ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
+static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
+    ns3::BooleanValue(false), ns3::MakeBooleanChecker());
 
 int
 main (int argc, char *argv[])
@@ -181,10 +187,11 @@ main (int argc, char *argv[])
   LogComponentEnable ("LteUeRrc", LOG_LEVEL_INFO);
   LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
-  LogComponentEnable("EpcUeNas",LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_LOGIC);
-  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
+  //LogComponentEnable("EpcUeNas",LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
   //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
@@ -192,35 +199,42 @@ main (int argc, char *argv[])
   //LogComponentEnable("LteUePhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("mmWavePhyRxTrace", LOG_LEVEL_ALL);
   //LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_ALL);
-  LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
+  //LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
   LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_INFO);
-  LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
+  //LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable("LteEnbMac", LOG_LEVEL_INFO);
-  //LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
+  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
   //LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
   //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
-  LogComponentEnable("McEnbPdcp", LOG_LEVEL_INFO);
-  LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
-  LogComponentEnable("LteRlcUm", LOG_LEVEL_INFO);
-  LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
-  LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("McEnbPdcp", LOG_LEVEL_INFO);
+  //LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
+  //LogComponentEnable("LteRlcUm", LOG_LEVEL_INFO);
+  //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
+  LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
+  LogComponentEnable("EpcMmeApplication", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_LOGIC);
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   // rng things
-  RngSeedManager::SetSeed (4);
-  RngSeedManager::SetRun (11);  
-
+  uint32_t seedSet = 2;
+  uint32_t runSet = 76;
+  RngSeedManager::SetSeed (seedSet);
+  RngSeedManager::SetRun (runSet); 
+  char seedSetStr[21];
+  char runSetStr[21];
+  sprintf(seedSetStr, "%d", seedSet);
+  sprintf(runSetStr, "%d", runSet);
 
   uint16_t numberOfNodes = 1;
   double simTime = 30.0;
-  double interPacketInterval = 500;  // 500 microseconds
+  double interPacketInterval = 200;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
-
+  
   // Command line arguments
   CommandLine cmd;
   cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", numberOfNodes);
@@ -229,6 +243,7 @@ main (int argc, char *argv[])
   cmd.Parse(argc, argv);
 
   UintegerValue uintegerValue;
+  BooleanValue booleanValue;
   GlobalValue::GetValueByName("numBlocks", uintegerValue);
   uint32_t numBlocks = uintegerValue.Get();
   GlobalValue::GetValueByName("mmw1Dist", uintegerValue);
@@ -242,6 +257,30 @@ main (int argc, char *argv[])
   uint32_t minimumBuildingWidth = 10;
   uint32_t buildingZ = 15;
   
+  GlobalValue::GetValueByName("fastSwitching", booleanValue);
+  bool fastSwitching = booleanValue.Get();
+  bool hardHandover = !fastSwitching;
+
+  std::string path = "./data/";
+  std::string mmWaveOutName = "MmWaveSwitchStats";
+  std::string lteOutName = "LteSwitchStats";
+  std::string dlRlcOutName = "DlRlcStats";
+  std::string dlPdcpOutName = "DlPdcpStats";
+  std::string ulRlcOutName = "UlRlcStats";
+  std::string ulPdcpOutName = "UlPdcpStats";
+  std::string ueHandoverOutName = "UeHandoverStats";
+  std::string enbHandoverOutName = "EnbHandoverStats";
+  std::string cellIdInTimeOutName = "CellIdStats";
+  std::string cellIdInTimeHandoverOutName = "CellIdStatsHandover";
+  std::string extension = ".txt";
+  //get current time
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer[80];
+  time (&rawtime);
+  timeinfo = localtime(&rawtime);
+  strftime(buffer,80,"%d-%m-%Y%I:%M:%S",timeinfo);
+  std::string time_str(buffer);
 
   Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
   Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
@@ -263,7 +302,17 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(0.1)));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MilliSeconds(0.1)));
-
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MilliSeconds(10)));
+  Config::SetDefault ("ns3::McStatsCalculator::MmWaveOutputFilename", StringValue                 (path + mmWaveOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::McStatsCalculator::LteOutputFilename", StringValue                    (path + lteOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::McStatsCalculator::CellIdInTimeOutputFilename", StringValue           (path + cellIdInTimeOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue        (path + dlRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue        (path + ulRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlPdcpOutputFilename", StringValue       (path + dlPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlPdcpOutputFilename", StringValue       (path + ulPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::UeHandoverOutputFilename", StringValue    (path + ueHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverOutputFilename", StringValue   (path + enbHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::CellIdStatsHandoverOutputFilename", StringValue(path + cellIdInTimeHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"));
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
@@ -371,7 +420,19 @@ main (int argc, char *argv[])
   // Install mmWave, lte, mc Devices to the nodes
   NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
   NetDeviceContainer mmWaveEnbDevs = mmwaveHelper->InstallEnbDevice (mmWaveEnbNodes);
-  NetDeviceContainer mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
+  NetDeviceContainer mcUeDevs;
+  if(fastSwitching)
+  {
+    mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
+  } 
+  else if(hardHandover)
+  {
+    mcUeDevs = mmwaveHelper->InstallInterRatHoCapableUeDevice (ueNodes);
+  }
+  else
+  {
+    NS_FATAL_ERROR("Invalid option");
+  }
 
   // Install the IP stack on the UEs
   internet.Install (ueNodes);
@@ -390,7 +451,15 @@ main (int argc, char *argv[])
   mmwaveHelper->AddX2Interface (lteEnbNodes, mmWaveEnbNodes);
 
   // Manual attachment
-  mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
+  if(fastSwitching)
+  {
+    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  
+  }
+  else if(hardHandover)
+  {
+    mmwaveHelper->AttachIrToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
+  }
+  
 
   // Install and start applications on UEs and remote host
   uint16_t dlPort = 1234;
