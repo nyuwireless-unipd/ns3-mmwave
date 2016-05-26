@@ -214,6 +214,8 @@ public:
    */
   std::bitset<32> GetMtmsi () const;
 
+  std::bitset<1> GetIsMc () const;
+
 private:
   std::bitset<8> m_mmec;
   std::bitset<32> m_mTmsi;
@@ -223,6 +225,77 @@ private:
     MO_SIGNALLING, MO_DATA, SPARE3, SPARE2, SPARE1
   } m_establishmentCause;
   std::bitset<1> m_spare;
+};
+
+class RrcConnectToMmWaveHeader : public RrcDlCcchMessage
+{
+public:
+  RrcConnectToMmWaveHeader();
+  ~RrcConnectToMmWaveHeader();
+
+  // Inherited from RrcAsn1Header 
+  static TypeId GetTypeId (void);
+  void PreSerialize () const;
+  uint32_t Deserialize (Buffer::Iterator bIterator);
+  void Print (std::ostream &os) const;
+
+  /**
+   //TODO doc
+   */
+  void SetMessage (uint16_t mmWaveId);
+
+  uint16_t GetMessage () const;
+
+private:
+  std::bitset<16> m_mmWaveId;
+};
+
+class RrcNotifySecondaryConnectedHeader : public RrcUlDcchMessage
+{
+public:
+  RrcNotifySecondaryConnectedHeader();
+  ~RrcNotifySecondaryConnectedHeader();
+
+  // Inherited from RrcAsn1Header 
+  static TypeId GetTypeId (void);
+  void PreSerialize () const;
+  uint32_t Deserialize (Buffer::Iterator bIterator);
+  void Print (std::ostream &os) const;
+
+  /**
+   //TODO doc
+   */
+  void SetMessage (uint16_t mmWaveId, uint16_t mmWaveRnti);
+
+  std::pair<uint16_t, uint16_t> GetMessage () const;
+
+private:
+  std::bitset<16> m_mmWaveId;
+  std::bitset<16> m_mmWaveRnti;
+};
+
+class RrcConnectionSwitchHeader : public RrcDlDcchMessage
+{
+public:
+  RrcConnectionSwitchHeader();
+  ~RrcConnectionSwitchHeader();
+
+  // Inherited from RrcAsn1Header 
+  static TypeId GetTypeId (void);
+  void PreSerialize () const;
+  uint32_t Deserialize (Buffer::Iterator bIterator);
+  void Print (std::ostream &os) const;
+
+  /**
+   //TODO doc
+   */
+  void SetMessage (LteRrcSap::RrcConnectionSwitch msg);
+
+  LteRrcSap::RrcConnectionSwitch GetMessage () const;
+  uint8_t GetRrcTransactionIdentifier () const;
+
+private:
+  mutable LteRrcSap::RrcConnectionSwitch m_msg;
 };
 
 /**

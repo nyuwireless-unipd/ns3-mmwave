@@ -737,6 +737,8 @@ MmWaveEnbMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParamet
   schedParams.m_retxPacketDelays = params.retxPacketDelays;
   schedParams.m_arrivalRate = params.arrivalRate;
 
+  NS_LOG_LOGIC("ReportBufferStatus for lcid " << (uint16_t)params.lcid << " rnti " << params.rnti << " txPacketSizes " << params.txPacketSizes.size());
+
   m_macSchedSapProvider->SchedDlRlcBufferReq (schedParams);
 }
 
@@ -761,7 +763,6 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		{
 			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
-
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
 		it->second.m_macHeader.AddSubheader (subheader); // add RLC PDU sub-header into MAC header
 		it->second.m_numRlcPdu++;
@@ -979,7 +980,7 @@ MmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
   // see FF LTE MAC Scheduler
   // Interface Specification v1.11,
   // 4.3.4 logicalChannelConfigListElement
-  if (lcinfo.lcId != 0)
+  if (true)//(lcinfo.lcId != 0)
   {
   	struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters params;
   	params.m_rnti = lcinfo.rnti;

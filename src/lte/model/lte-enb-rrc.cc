@@ -302,6 +302,10 @@ TypeId UeManager::GetTypeId (void)
                    ObjectMapValue (),
                    MakeObjectMapAccessor (&UeManager::m_drbMap),
                    MakeObjectMapChecker<LteDataRadioBearerInfo> ())
+    .AddAttribute ("DataRadioRlcMap", "List of UE Secondary RLC by DRBID.",
+                   ObjectMapValue (),
+                   MakeObjectMapAccessor (&UeManager::m_rlcMap),
+                   MakeObjectMapChecker<RlcBearerInfo> ())
     .AddAttribute ("Srb0", "SignalingRadioBearerInfo for SRB0",
                    PointerValue (),
                    MakePointerAccessor (&UeManager::m_srb0),
@@ -321,6 +325,10 @@ TypeId UeManager::GetTypeId (void)
                      "UeManager at the eNB RRC",
                      MakeTraceSourceAccessor (&UeManager::m_stateTransitionTrace),
                      "ns3::UeManager::StateTracedCallback")
+    .AddTraceSource ("SecondaryRlcCreated",
+                     "fired upon receiving RecvRlcSetupRequest",
+                     MakeTraceSourceAccessor (&UeManager::m_secondaryRlcCreatedTrace),
+                     "ns3::UeManager::ImsiCidRntiTracedCallback")
   ;
   return tid;
 }
@@ -909,14 +917,14 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
 
     // create new Rlc
     // define a new struct similar to LteDataRadioBearerInfo with only rlc
-    RlcBearerInfo rlcInfo;
-    rlcInfo.targetCellId = params.sourceCellId; // i.e. the LTE cell
-    rlcInfo.gtpTeid = params.gtpTeid;
-    rlcInfo.mmWaveRnti = m_rnti;
-    rlcInfo.lteRnti = params.lteRnti;
-    rlcInfo.drbid = params.drbid;
-    rlcInfo.rlcConfig = params.rlcConfig;
-    rlcInfo.logicalChannelConfig = params.logicalChannelConfig;
+    Ptr<RlcBearerInfo> rlcInfo = CreateObject<RlcBearerInfo> ();
+    rlcInfo->targetCellId = params.sourceCellId; // i.e. the LTE cell
+    rlcInfo->gtpTeid = params.gtpTeid;
+    rlcInfo->mmWaveRnti = m_rnti;
+    rlcInfo->lteRnti = params.lteRnti;
+    rlcInfo->drbid = params.drbid;
+    rlcInfo->rlcConfig = params.rlcConfig;
+    rlcInfo->logicalChannelConfig = params.logicalChannelConfig;
 
     uint8_t lcid = Drbid2Lcid(params.drbid);
 
@@ -930,7 +938,7 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
     rlc->SetLteMacSapProvider (m_rrc->m_macSapProvider);
     rlc->SetRnti (m_rnti);
 
-    rlcInfo.m_rlc = rlc;
+    rlcInfo->m_rlc = rlc;
 
     rlc->SetLcId (lcid);
 
@@ -940,8 +948,8 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
       rlc->SetEpcX2RlcProvider (m_rrc->GetEpcX2RlcProvider());
       EpcX2Sap::UeDataParams ueParams;
       ueParams.sourceCellId = m_rrc->GetCellId();
-      ueParams.targetCellId = rlcInfo.targetCellId; // the LTE cell
-      ueParams.gtpTeid = rlcInfo.gtpTeid;
+      ueParams.targetCellId = rlcInfo->targetCellId; // the LTE cell
+      ueParams.gtpTeid = rlcInfo->gtpTeid;
       rlc->SetUeDataParams(ueParams);
       m_rrc->m_x2SapProvider->SetEpcX2RlcUser (params.gtpTeid, rlc->GetEpcX2RlcUser());
     }
@@ -958,20 +966,23 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
     lcinfo.gbrDl = params.lcinfo.gbrDl;
     m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
 
-    rlcInfo.logicalChannelIdentity = lcid;
-    rlcInfo.logicalChannelConfig.priority = params.logicalChannelConfig.priority;
-    rlcInfo.logicalChannelConfig.logicalChannelGroup = lcinfo.lcGroup;
+    rlcInfo->logicalChannelIdentity = lcid;
+    rlcInfo->logicalChannelConfig.priority = params.logicalChannelConfig.priority;
+    rlcInfo->logicalChannelConfig.logicalChannelGroup = lcinfo.lcGroup;
     if (params.lcinfo.isGbr)
       {
-        rlcInfo.logicalChannelConfig.prioritizedBitRateKbps = params.logicalChannelConfig.prioritizedBitRateKbps;
+        rlcInfo->logicalChannelConfig.prioritizedBitRateKbps = params.logicalChannelConfig.prioritizedBitRateKbps;
       }
     else
       {
-        rlcInfo.logicalChannelConfig.prioritizedBitRateKbps = 0;
+        rlcInfo->logicalChannelConfig.prioritizedBitRateKbps = 0;
       }
-    rlcInfo.logicalChannelConfig.bucketSizeDurationMs = params.logicalChannelConfig.bucketSizeDurationMs;
+    rlcInfo->logicalChannelConfig.bucketSizeDurationMs = params.logicalChannelConfig.bucketSizeDurationMs;
 
     m_rlcMap[params.drbid] = rlcInfo; //TODO add assert 
+
+    // callback to notify the BearerConnector that new rlcs are available
+    m_secondaryRlcCreatedTrace(m_imsi, m_rrc->m_cellId, m_rnti);
 
     // Ack the LTE BS, that will trigger the setup in the UE
     EpcX2Sap::UeDataParams ackParams;
@@ -1072,7 +1083,7 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
     case CONNECTION_SETUP:
       m_connectionSetupTimeout.Cancel ();
       StartDataRadioBearers ();
-      NS_LOG_UNCOND("m_firstConnection " << m_firstConnection);
+      NS_LOG_INFO("m_firstConnection " << m_firstConnection);
       if(m_firstConnection)
       {
         m_firstConnection = false;
@@ -1132,7 +1143,6 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
             }
           }
         }
-
     // no break so that also the CONNECTION_RECONFIGURATION code is executed
     case CONNECTION_RECONFIGURATION:
       StartDataRadioBearers ();
@@ -1603,7 +1613,7 @@ UeManager::SwitchToState (State newState)
   NS_LOG_FUNCTION (this << ToString (newState));
   State oldState = m_state;
   m_state = newState;
-  NS_LOG_INFO (this << " IMSI " << m_imsi << " RNTI " << m_rnti << " UeManager "
+  NS_LOG_INFO (this << " IMSI " << m_imsi << " RNTI " << m_rnti << " CellId " << m_rrc->m_cellId << " UeManager "
                     << ToString (oldState) << " --> " << ToString (newState));
   m_stateTransitionTrace (m_imsi, m_rrc->m_cellId, m_rnti, oldState, newState);
 
@@ -1863,6 +1873,11 @@ LteEnbRrc::GetTypeId (void)
              BooleanValue (false),
              MakeBooleanAccessor (&LteEnbRrc::m_interRatHoMode),
              MakeBooleanChecker ())
+    .AddAttribute ("HoSinrDifference",
+             "The value for which an handover between MmWave eNB is triggered",
+             DoubleValue (2),
+             MakeDoubleAccessor (&LteEnbRrc::m_sinrThresholdDifference),
+             MakeDoubleChecker<double> ())
     // Trace sources
     .AddTraceSource ("NewUeContext",
                      "Fired upon creation of a new UE context.",
@@ -2411,7 +2426,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
 
       for(CellSinrMap::iterator cellIter = imsiIter->second.begin(); cellIter != imsiIter->second.end(); ++cellIter)
       {
-        NS_LOG_UNCOND("Cell " << cellIter->first << " reports " << 10*std::log10(cellIter->second));
+        NS_LOG_INFO("Cell " << cellIter->first << " reports " << 10*std::log10(cellIter->second));
         if(cellIter->second > maxSinr)
         {
           maxSinr = cellIter->second;
@@ -2423,12 +2438,12 @@ LteEnbRrc::TriggerUeAssociationUpdate()
         }
       }
       double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
-      NS_LOG_UNCOND("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
+      NS_LOG_INFO("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
           " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << 10*std::log10(currentSinr) << " sinrDifference " << sinrDifference);
       if (10*std::log10(maxSinr) < -5 || (m_imsiUsingLte[imsi] && 10*std::log10(maxSinr) < -5 + 1)) // no MmWaveCell can serve this UE
       {
         // outage, perform fast switching if MC device or hard handover
-        NS_LOG_INFO("----- Warn: outage detected ------");
+        NS_LOG_INFO("----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
         if(m_imsiUsingLte[imsi] == false) 
         {
           NS_LOG_INFO("Switch to LTE stack");
@@ -2446,10 +2461,10 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       {
         if(maxSinrCellId == m_bestMmWaveCellForImsiMap[imsi] && !m_imsiUsingLte[imsi])
         {
-          if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > 1) // not on LTE, handover between MmWave cells
+          if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > m_sinrThresholdDifference) // not on LTE, handover between MmWave cells
           // this may happen when channel changes while there is an handover
           {
-            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " channel changed previously");
+            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " channel changed previously at time " << Simulator::Now().GetSeconds());
             // switch to LTE to avoid data being lost
             Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
             bool useMmWaveConnection = false;
@@ -2467,9 +2482,9 @@ LteEnbRrc::TriggerUeAssociationUpdate()
             m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
             NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << 10*std::log10(maxSinr));
           } 
-          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < 1)
+          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < m_sinrThresholdDifference)
           {
-            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " not triggered due to small diff " << sinrDifference);
+            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " not triggered due to small diff " << sinrDifference << " at time " << Simulator::Now().GetSeconds());
           }
         }
         else
@@ -2479,7 +2494,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
           // it is on LTE, but now the last used MmWave cell is not in outage
           {
             // switch back to MmWave
-            NS_LOG_INFO("----- on LTE, switch to lastMmWaveCell " << m_lastMmWaveCell[imsi]);
+            NS_LOG_INFO("----- on LTE, switch to lastMmWaveCell " << m_lastMmWaveCell[imsi] << " at time " << Simulator::Now().GetSeconds());
             Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
             bool useMmWaveConnection = true;
             m_imsiUsingLte[imsi] = !useMmWaveConnection;
@@ -2489,7 +2504,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
           // it is on LTE, but now a MmWave cell different from the last used is not in outage, so we need to handover
           {
             // already using LTE connection
-            NS_LOG_INFO("----- on LTE, switch to new MmWaveCell " << maxSinrCellId);
+            NS_LOG_INFO("----- on LTE, switch to new MmWaveCell " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
             // trigger ho via X2
             EpcX2SapProvider::McHandoverParams params;
             params.imsi = imsi;
@@ -2499,10 +2514,10 @@ LteEnbRrc::TriggerUeAssociationUpdate()
 
             m_mmWaveCellSetupCompleted[imsi] = false;
           }
-          else if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > 1) // not on LTE, handover between MmWave cells
+          else if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > m_sinrThresholdDifference) // not on LTE, handover between MmWave cells
           {
             // switch to LTE to avoid data being lost
-            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId);
+            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
             Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
             bool useMmWaveConnection = false;
             m_imsiUsingLte[imsi] = !useMmWaveConnection;
@@ -2517,9 +2532,9 @@ LteEnbRrc::TriggerUeAssociationUpdate()
 
             m_mmWaveCellSetupCompleted[imsi] = false;
           }
-          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < 1)
+          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < m_sinrThresholdDifference)
           {
-            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " not triggered due to small diff " << sinrDifference);
+            NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " not triggered due to small diff " << sinrDifference << " at time " << Simulator::Now().GetSeconds());
           }
           m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
           NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << 10*std::log10(maxSinr));
@@ -2563,7 +2578,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
 
       for(CellSinrMap::iterator cellIter = imsiIter->second.begin(); cellIter != imsiIter->second.end(); ++cellIter)
       {
-        NS_LOG_UNCOND("Cell " << cellIter->first << " reports " << 10*std::log10(cellIter->second));
+        NS_LOG_INFO("Cell " << cellIter->first << " reports " << 10*std::log10(cellIter->second));
         if(cellIter->second > maxSinr)
         {
           maxSinr = cellIter->second;
@@ -2575,7 +2590,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
         }
       }
       double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
-      NS_LOG_UNCOND("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
+      NS_LOG_INFO("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
           " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << 10*std::log10(currentSinr) << " sinrDifference " << sinrDifference);
 
       // check if MmWave cells are in outage. In this case the UE should handover to LTE cell
@@ -2613,7 +2628,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
       {
         if(maxSinrCellId == m_bestMmWaveCellForImsiMap[imsi] && !m_imsiUsingLte[imsi])
         {
-          if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > 1) // not on LTE, handover between MmWave cells
+          if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > m_sinrThresholdDifference) // not on LTE, handover between MmWave cells
           // this may happen when channel changes while there is an handover
           {
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " channel changed previously");
@@ -2628,7 +2643,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
             m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
             NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << 10*std::log10(maxSinr));
           } 
-          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < 1)
+          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < m_sinrThresholdDifference)
           {
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " not triggered due to small diff " << sinrDifference);
           }
@@ -2645,7 +2660,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
             NS_LOG_INFO("Handover to MmWave " << m_bestMmWaveCellForImsiMap[imsi]);
             SendHandoverRequest(GetRntiFromImsi(imsi), m_bestMmWaveCellForImsiMap[imsi]);
           }
-          else if (!m_imsiUsingLte[imsi] && alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > 1) // not on LTE, handover between MmWave cells
+          else if (!m_imsiUsingLte[imsi] && alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > m_sinrThresholdDifference) // not on LTE, handover between MmWave cells
           {
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId);
                         // trigger ho via X2
@@ -2657,7 +2672,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
 
             m_mmWaveCellSetupCompleted[imsi] = false;
           }
-          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < 1)
+          else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < m_sinrThresholdDifference)
           {
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " not triggered due to small diff " << sinrDifference);
           }

@@ -152,6 +152,9 @@ RrcAsn1Header::SerializeDrbToAddModList (std::list<LteRrcSap::DrbToAddMod> drbTo
 
       // Serialize logicalChannelConfig
       SerializeLogicalChannelConfig (it->logicalChannelConfig);
+
+      // MmWave MC functionalities: is_mc field
+      SerializeBoolean (it->is_mc);
     }
 }
 
@@ -2004,6 +2007,8 @@ RrcAsn1Header::DeserializeDrbToAddModList (std::list<LteRrcSap::DrbToAddMod> *dr
         {
           bIterator = DeserializeLogicalChannelConfig (&drbToAddMod.logicalChannelConfig,bIterator);
         }
+
+      bIterator = DeserializeBoolean(&drbToAddMod.is_mc,bIterator);
 
       drbToAddModList->insert (drbToAddModList->end (),drbToAddMod);
     }
@@ -3957,7 +3962,7 @@ RrcConnectionRequestHeader::PreSerialize () const
   SerializeEnum (8,m_establishmentCause);
 
   // Serialize spare : BIT STRING (SIZE (1))
-  SerializeBitstring (std::bitset<1> ());
+  SerializeBitstring (m_spare);
 
   // Finish serialization
   FinalizeSerialization ();
@@ -3966,7 +3971,7 @@ RrcConnectionRequestHeader::PreSerialize () const
 uint32_t
 RrcConnectionRequestHeader::Deserialize (Buffer::Iterator bIterator)
 {
-  std::bitset<1> dummy;
+  //std::bitset<1> dummy;
   std::bitset<0> optionalOrDefaultMask;
   int selectedOption;
 
@@ -3997,7 +4002,7 @@ RrcConnectionRequestHeader::Deserialize (Buffer::Iterator bIterator)
   bIterator = DeserializeEnum (8,&selectedOption,bIterator);
 
   // Deserialize spare
-  bIterator = DeserializeBitstring (&dummy,bIterator);
+  bIterator = DeserializeBitstring (&m_spare,bIterator);
 
   return GetSerializedSize ();
 }
@@ -4007,6 +4012,7 @@ RrcConnectionRequestHeader::SetMessage (LteRrcSap::RrcConnectionRequest msg)
 {
   m_mTmsi = std::bitset<32> ((uint32_t)msg.ueIdentity);
   m_mmec = std::bitset<8> ((uint32_t)(msg.ueIdentity >> 32));
+  m_spare = std::bitset<1> (msg.isMc); 
   m_isDataSerialized = false;
 }
 
@@ -4015,7 +4021,7 @@ RrcConnectionRequestHeader::GetMessage () const
 {
   LteRrcSap::RrcConnectionRequest msg;
   msg.ueIdentity = (((uint64_t) m_mmec.to_ulong ()) << 32) | (m_mTmsi.to_ulong ());
-
+  msg.isMc = (bool) m_spare[0];
   return msg;
 }
 
@@ -4029,6 +4035,157 @@ std::bitset<32>
 RrcConnectionRequestHeader::GetMtmsi () const
 {
   return m_mTmsi;
+}
+
+std::bitset<1>
+RrcConnectionRequestHeader::GetIsMc () const
+{
+  return m_spare;
+}
+
+//////////////////// RrcConnectionRequest class ////////////////////////
+
+// Constructor
+RrcConnectToMmWaveHeader::RrcConnectToMmWaveHeader () : RrcDlCcchMessage ()
+{
+  m_mmWaveId = std::bitset<16> (0ul);
+}
+
+// Destructor
+RrcConnectToMmWaveHeader::~RrcConnectToMmWaveHeader ()
+{
+}
+
+TypeId
+RrcConnectToMmWaveHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::RrcConnectToMmWaveHeader")
+    .SetParent<Header> ()
+    .SetGroupName("Lte")
+  ;
+  return tid;
+}
+
+void
+RrcConnectToMmWaveHeader::Print (std::ostream &os) const
+{
+  os << "MmWaveId:" << m_mmWaveId << std::endl;
+}
+
+void
+RrcConnectToMmWaveHeader::PreSerialize () const
+{
+  m_serializationResult = Buffer ();
+
+  SerializeDlCcchMessage (4);
+
+  // Serialize mmWaveId : MMEC ::= BIT STRING (SIZE (16))
+  SerializeBitstring (m_mmWaveId);
+
+  // Finish serialization
+  FinalizeSerialization ();
+}
+
+uint32_t
+RrcConnectToMmWaveHeader::Deserialize (Buffer::Iterator bIterator)
+{
+
+  bIterator = DeserializeDlCcchMessage (bIterator);
+
+  // Deserialize mmWaveId
+  bIterator = DeserializeBitstring (&m_mmWaveId,bIterator);
+
+  return GetSerializedSize ();
+}
+
+void
+RrcConnectToMmWaveHeader::SetMessage (uint16_t mmWaveId)
+{
+  m_mmWaveId = std::bitset<16> ((uint16_t)mmWaveId);
+  m_isDataSerialized = false;
+}
+
+uint16_t
+RrcConnectToMmWaveHeader::GetMessage () const
+{
+  uint16_t mmWaveId = (uint16_t)(m_mmWaveId.to_ulong ());
+  return mmWaveId;
+}
+
+//////////////////// RrcNotifySecondaryConnectedHeader class ////////////////////////
+
+// Constructor
+RrcNotifySecondaryConnectedHeader::RrcNotifySecondaryConnectedHeader ()
+{
+  m_mmWaveId = std::bitset<16> (0ul);
+  m_mmWaveRnti = std::bitset<16> (0ul);
+}
+
+// Destructor
+RrcNotifySecondaryConnectedHeader::~RrcNotifySecondaryConnectedHeader ()
+{
+}
+
+TypeId
+RrcNotifySecondaryConnectedHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::RrcNotifySecondaryConnectedHeader")
+    .SetParent<Header> ()
+    .SetGroupName("Lte")
+  ;
+  return tid;
+}
+
+void
+RrcNotifySecondaryConnectedHeader::Print (std::ostream &os) const
+{
+  os << "MmWaveId:" << m_mmWaveId << std::endl;
+  os << "MmWaveRnti:" << m_mmWaveRnti << std::endl;
+}
+
+void
+RrcNotifySecondaryConnectedHeader::PreSerialize () const
+{
+  m_serializationResult = Buffer ();
+
+  SerializeUlDcchMessage (5);
+
+  // Serialize mmWaveId : MMEC ::= BIT STRING (SIZE (16))
+  SerializeBitstring (m_mmWaveId);
+  SerializeBitstring (m_mmWaveRnti);
+
+  // Finish serialization
+  FinalizeSerialization ();
+}
+
+uint32_t
+RrcNotifySecondaryConnectedHeader::Deserialize (Buffer::Iterator bIterator)
+{
+
+  bIterator = DeserializeUlDcchMessage (bIterator);
+
+  // Deserialize mmWaveId
+  bIterator = DeserializeBitstring (&m_mmWaveId,bIterator);
+  bIterator = DeserializeBitstring (&m_mmWaveRnti,bIterator);
+
+  return GetSerializedSize ();
+}
+
+void
+RrcNotifySecondaryConnectedHeader::SetMessage (uint16_t mmWaveId, uint16_t mmWaveRnti)
+{
+  m_mmWaveRnti = std::bitset<16> ((uint16_t)mmWaveRnti);
+  m_mmWaveId = std::bitset<16> ((uint16_t)mmWaveId);
+  m_isDataSerialized = false;
+}
+
+std::pair<uint16_t, uint16_t>
+RrcNotifySecondaryConnectedHeader::GetMessage () const
+{
+  uint16_t mmWaveId = (uint16_t)(m_mmWaveId.to_ulong ());
+  uint16_t mmWaveRnti = (uint16_t)(m_mmWaveRnti.to_ulong ());
+  
+  return std::pair<uint16_t, uint16_t>(mmWaveId, mmWaveRnti);
 }
 
 
@@ -4405,6 +4562,91 @@ uint8_t
 RrcConnectionReconfigurationCompleteHeader::GetRrcTransactionIdentifier () const
 {
   return m_rrcTransactionIdentifier;
+}
+
+//////////////////// RrcConnectionSwitchHeader class ////////////////////////
+
+RrcConnectionSwitchHeader::RrcConnectionSwitchHeader ()
+{
+}
+
+RrcConnectionSwitchHeader::~RrcConnectionSwitchHeader ()
+{
+}
+
+void
+RrcConnectionSwitchHeader::PreSerialize () const
+{
+  m_serializationResult = Buffer ();
+
+  // Serialize DCCH message
+  SerializeDlDcchMessage (6);
+
+  // Serialize rrc-TransactionIdentifier
+  SerializeInteger (m_msg.rrcTransactionIdentifier,0,3);
+
+  // Serialize the number of brbId
+  SerializeInteger(m_msg.drbidList.size(), 0, 255);
+
+  std::vector<uint8_t>::iterator drbIt = m_msg.drbidList.begin();
+  for(; drbIt != m_msg.drbidList.end(); ++drbIt)
+  {
+    SerializeInteger(*drbIt, 0, 255);
+  }
+
+  SerializeInteger(m_msg.useMmWaveConnection, 0, 65535);
+
+  // Finish serialization
+  FinalizeSerialization ();
+}
+
+uint32_t
+RrcConnectionSwitchHeader::Deserialize (Buffer::Iterator bIterator)
+{
+  int n;
+  bIterator = DeserializeDlDcchMessage (bIterator);
+  bIterator = DeserializeInteger (&n,0,3,bIterator);
+  m_msg.rrcTransactionIdentifier = (uint8_t)n;
+
+  bIterator = DeserializeInteger (&n,0,255,bIterator);
+  int listSize = n;
+
+  for(int i = 0; i < listSize; i++)
+  {
+    bIterator = DeserializeInteger (&n,0,255,bIterator);
+    uint8_t drb = (uint8_t)n;
+    m_msg.drbidList.push_back(drb);
+  }
+
+  bIterator = DeserializeInteger (&n,0,65535,bIterator);
+  m_msg.useMmWaveConnection = (uint16_t)n;
+
+  return GetSerializedSize ();
+}
+
+void
+RrcConnectionSwitchHeader::Print (std::ostream &os) const
+{
+  os << "rrcTransactionIdentifier: " << (int) m_msg.rrcTransactionIdentifier << std::endl;
+}
+
+void
+RrcConnectionSwitchHeader::SetMessage (LteRrcSap::RrcConnectionSwitch msg)
+{
+  m_msg = msg;
+  m_isDataSerialized = false;
+}
+
+LteRrcSap::RrcConnectionSwitch
+RrcConnectionSwitchHeader::GetMessage () const
+{
+  return m_msg;
+}
+
+uint8_t
+RrcConnectionSwitchHeader::GetRrcTransactionIdentifier () const
+{
+  return m_msg.rrcTransactionIdentifier;
 }
 
 //////////////////// RrcConnectionReconfigurationHeader class ////////////////////////
@@ -6356,7 +6598,7 @@ RrcUlCcchMessage::DeserializeUlCcchMessage (Buffer::Iterator bIterator)
   else if (n == 0)
     {
       // Deserialize c1
-      bIterator = DeserializeChoice (2,false,&m_messageType,bIterator);
+      bIterator = DeserializeChoice (3,false,&m_messageType,bIterator);
     }
 
   return bIterator;
@@ -6369,7 +6611,7 @@ RrcUlCcchMessage::SerializeUlCcchMessage (int messageType) const
   // Choose c1
   SerializeChoice (2,0,false);
   // Choose message type
-  SerializeChoice (2,messageType,false);
+  SerializeChoice (3,messageType,false);
 }
 
 ///////////////////  RrcDlCcchMessage //////////////////////////////////
@@ -6417,9 +6659,8 @@ RrcDlCcchMessage::DeserializeDlCcchMessage (Buffer::Iterator bIterator)
   else if (n == 0)
     {
       // Deserialize c1
-      bIterator = DeserializeChoice (4,false,&m_messageType,bIterator);
+      bIterator = DeserializeChoice (5,false,&m_messageType,bIterator);
     }
-
   return bIterator;
 }
 
@@ -6430,7 +6671,7 @@ RrcDlCcchMessage::SerializeDlCcchMessage (int messageType) const
   // Choose c1
   SerializeChoice (2,0,false);
   // Choose message type
-  SerializeChoice (4,messageType,false);
+  SerializeChoice (5,messageType,false);
 }
 
 } // namespace ns3

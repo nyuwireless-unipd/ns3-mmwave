@@ -180,16 +180,23 @@ static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of b
     ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
     ns3::BooleanValue(false), ns3::MakeBooleanChecker());
-
+static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
+    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
+static ns3::GlobalValue g_outPath("outPath",
+    "The path of output log files",
+    ns3::StringValue("./"), ns3::MakeStringChecker());
 int
 main (int argc, char *argv[])
 {
   LogComponentEnable ("LteUeRrc", LOG_LEVEL_INFO);
   LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
+  //LogComponentEnable ("LteRlcTm", LOG_LEVEL_LOGIC);
   //LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
   //LogComponentEnable("EpcUeNas",LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
+  //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_LOGIC);
+  //LogComponentEnable ("LteUeMac", LOG_LEVEL_LOGIC);
   //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
@@ -211,20 +218,11 @@ main (int argc, char *argv[])
   //LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
   //LogComponentEnable("LteRlcUm", LOG_LEVEL_INFO);
   //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
-  LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
   LogComponentEnable("EpcMmeApplication", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_LOGIC);
+  LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
-
-  // rng things
-  uint32_t seedSet = 2;
-  uint32_t runSet = 76;
-  RngSeedManager::SetSeed (seedSet);
-  RngSeedManager::SetRun (runSet); 
-  char seedSetStr[21];
-  char runSetStr[21];
-  sprintf(seedSetStr, "%d", seedSet);
-  sprintf(runSetStr, "%d", runSet);
 
   uint16_t numberOfNodes = 1;
   double simTime = 30.0;
@@ -244,6 +242,7 @@ main (int argc, char *argv[])
 
   UintegerValue uintegerValue;
   BooleanValue booleanValue;
+  StringValue stringValue;
   GlobalValue::GetValueByName("numBlocks", uintegerValue);
   uint32_t numBlocks = uintegerValue.Get();
   GlobalValue::GetValueByName("mmw1Dist", uintegerValue);
@@ -261,7 +260,19 @@ main (int argc, char *argv[])
   bool fastSwitching = booleanValue.Get();
   bool hardHandover = !fastSwitching;
 
-  std::string path = "./data/";
+  // rng things
+  GlobalValue::GetValueByName("runNumber", uintegerValue);
+  uint32_t runSet = uintegerValue.Get();
+  uint32_t seedSet = 5;
+  RngSeedManager::SetSeed (seedSet);
+  RngSeedManager::SetRun (runSet); 
+  char seedSetStr[21];
+  char runSetStr[21];
+  sprintf(seedSetStr, "%d", seedSet);
+  sprintf(runSetStr, "%d", runSet);
+
+  GlobalValue::GetValueByName("outPath", stringValue);
+  std::string path = stringValue.Get();
   std::string mmWaveOutName = "MmWaveSwitchStats";
   std::string lteOutName = "LteSwitchStats";
   std::string dlRlcOutName = "DlRlcStats";
@@ -273,13 +284,22 @@ main (int argc, char *argv[])
   std::string cellIdInTimeOutName = "CellIdStats";
   std::string cellIdInTimeHandoverOutName = "CellIdStatsHandover";
   std::string extension = ".txt";
+  std::string version;
+  if(fastSwitching)
+  {
+    version = "mc";
+  }
+  else if(hardHandover)
+  {
+    version = "hh";
+  }
   //get current time
   time_t rawtime;
   struct tm * timeinfo;
   char buffer[80];
   time (&rawtime);
   timeinfo = localtime(&rawtime);
-  strftime(buffer,80,"%d-%m-%Y%I:%M:%S",timeinfo);
+  strftime(buffer,80,"%d_%m_%Y_%I_%M_%S",timeinfo);
   std::string time_str(buffer);
 
   Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
@@ -300,19 +320,19 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(0.1)));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MilliSeconds(0.1)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(1)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MilliSeconds(1)));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MilliSeconds(10)));
-  Config::SetDefault ("ns3::McStatsCalculator::MmWaveOutputFilename", StringValue                 (path + mmWaveOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::McStatsCalculator::LteOutputFilename", StringValue                    (path + lteOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::McStatsCalculator::CellIdInTimeOutputFilename", StringValue           (path + cellIdInTimeOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue        (path + dlRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue        (path + ulRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlPdcpOutputFilename", StringValue       (path + dlPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlPdcpOutputFilename", StringValue       (path + ulPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::UeHandoverOutputFilename", StringValue    (path + ueHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverOutputFilename", StringValue   (path + enbHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::CellIdStatsHandoverOutputFilename", StringValue(path + cellIdInTimeHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::McStatsCalculator::MmWaveOutputFilename", StringValue                 (path + version + mmWaveOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::McStatsCalculator::LteOutputFilename", StringValue                    (path + version + lteOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::McStatsCalculator::CellIdInTimeOutputFilename", StringValue           (path + version + cellIdInTimeOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue        (path + version + dlRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue        (path + version + ulRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlPdcpOutputFilename", StringValue       (path + version + dlPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlPdcpOutputFilename", StringValue       (path + version + ulPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::UeHandoverOutputFilename", StringValue    (path + version + ueHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverOutputFilename", StringValue   (path + version + enbHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::CellIdStatsHandoverOutputFilename", StringValue(path + version + cellIdInTimeHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"));
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();

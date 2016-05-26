@@ -23,6 +23,7 @@
 #include "mmwave-bearer-stats-connector.h"
 
 #include <ns3/log.h>
+#include <ns3/config.h>
 
 #include "ns3/string.h"
 #include "ns3/nstime.h"
@@ -241,18 +242,28 @@ MmWaveBearerStatsConnector::EnsureConnected ()
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyNewUeContextEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/RandomAccessSuccessful",
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyRandomAccessSuccessfulUe, this));
+      Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/RandomAccessSuccessful",
+           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyRandomAccessSuccessfulUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionReconfiguration",
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionReconfiguration",
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe, this));
+      Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/ConnectionReconfiguration",
+           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverStart",
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverStart",
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartUe, this));
+      Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/HandoverStart",
+           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverEndOk",
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndOk",
 		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
+      Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/HandoverEndOk",
+          MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
+      Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/SwitchToMmWave",
+           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifySwitchToMmWaveUe, this));
       m_connected = true;
     }
 }
@@ -313,6 +324,18 @@ MmWaveBearerStatsConnector::NotifyHandoverEndOkEnb (MmWaveBearerStatsConnector* 
 {
   c->PrintEnbEndHandover (imsi, cellId, rnti);
   c->ConnectTracesEnb (context, imsi, cellId, rnti);
+}
+
+void
+MmWaveBearerStatsConnector::NotifySwitchToMmWaveUe (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+{
+  c->ConnectSecondaryTracesUe (context, imsi, cellId, rnti);
+}
+
+void 
+MmWaveBearerStatsConnector::NotifySecondaryMmWaveEnbAvailable (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+{
+  c->ConnectSecondaryTracesEnb (context, imsi, cellId, rnti);
 }
 
 std::string 
@@ -458,6 +481,10 @@ MmWaveBearerStatsConnector::ConnectSrb0Traces (std::string context, uint64_t ims
                        MakeBoundCallback (&DlTxPduCallback, arg));
       Config::Connect (ueManagerPath + "/Srb1/LteRlc/RxPDU",
                        MakeBoundCallback (&UlRxPduCallback, arg));
+      
+      Config::Connect (ueManagerPath + "/SecondaryRlcCreated",
+                       MakeBoundCallback (&NotifySecondaryMmWaveEnbAvailable, this));
+
     }
   if (m_pdcpStats)
     {
@@ -530,6 +557,9 @@ MmWaveBearerStatsConnector::ConnectTracesUe (std::string context, uint64_t imsi,
   NS_LOG_FUNCTION (this << context);
   NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteUeRrc/");
   std::string basePath = context.substr (0, context.rfind ("/"));
+  Config::MatchContainer objects = Config::LookupMatches(basePath + "/DataRadioBearerMap/*/LteRlc/");
+  NS_LOG_LOGIC("basePath " << basePath);
+
   if (m_rlcStats)
     {
       Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
@@ -544,6 +574,15 @@ MmWaveBearerStatsConnector::ConnectTracesUe (std::string context, uint64_t imsi,
 		       MakeBoundCallback (&UlTxPduCallback, arg));
       Config::Connect (basePath + "/Srb1/LteRlc/RxPDU",
 		       MakeBoundCallback (&DlRxPduCallback, arg));
+      // for MC devices
+      Config::Disconnect (basePath + "/DataRadioRlcMap/LteRlc/TxPDU",
+           MakeBoundCallback (&UlTxPduCallback, arg));
+      Config::Disconnect (basePath + "/DataRadioRlcMap/LteRlc/RxPDU",
+           MakeBoundCallback (&DlRxPduCallback, arg));
+      Config::Connect (basePath + "/DataRadioRlcMap/LteRlc/TxPDU",
+           MakeBoundCallback (&UlTxPduCallback, arg));
+      Config::Connect (basePath + "/DataRadioRlcMap/LteRlc/RxPDU",
+           MakeBoundCallback (&DlRxPduCallback, arg));
 
     }
   if (m_pdcpStats)
@@ -629,5 +668,51 @@ MmWaveBearerStatsConnector::DisconnectTracesEnb (std::string context, uint64_t i
 }
 
 
+void
+MmWaveBearerStatsConnector::ConnectSecondaryTracesUe (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+{
+  NS_LOG_LOGIC (this << context);
+  NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteUeRrc/");
+  std::string basePath = context.substr (0, context.rfind ("/"));
+  Config::MatchContainer objects = Config::LookupMatches(basePath + "/DataRadioRlcMap/*");
+  NS_LOG_LOGIC("basePath " << basePath);
+
+  if (m_rlcStats)
+    {
+      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      arg->imsi = imsi;
+      arg->cellId = cellId; 
+      arg->stats = m_rlcStats;
+      // for MC devices
+      Config::Connect (basePath + "/DataRadioRlcMap/*/TxPDU",
+           MakeBoundCallback (&UlTxPduCallback, arg));
+      Config::Connect (basePath + "/DataRadioRlcMap/*/RxPDU",
+           MakeBoundCallback (&DlRxPduCallback, arg));
+    }
+}
+
+void
+MmWaveBearerStatsConnector::ConnectSecondaryTracesEnb (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION (this << context);
+  NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteEnbRrc/UeMap/*");
+  std::ostringstream basePath;
+  basePath <<  context.substr (0, context.rfind ("/"));
+  Config::MatchContainer objects = Config::LookupMatches(basePath.str() + "/DataRadioRlcMap/*/LteRlc/");
+  NS_LOG_LOGIC("basePath " << basePath.str());
+
+  if (m_rlcStats)
+    {
+      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      arg->imsi = imsi;
+      arg->cellId = cellId; 
+      arg->stats = m_rlcStats;
+      // for MC devices
+      Config::Connect (basePath.str() + "/DataRadioRlcMap/*/LteRlc/RxPDU",
+           MakeBoundCallback (&UlRxPduCallback, arg));
+      Config::Connect (basePath.str() + "/DataRadioRlcMap/*/LteRlc/TxPDU",
+           MakeBoundCallback (&DlTxPduCallback, arg));
+    }
+}
 
 } // namespace ns3

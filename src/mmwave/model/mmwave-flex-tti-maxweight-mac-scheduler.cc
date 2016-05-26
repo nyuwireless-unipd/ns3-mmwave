@@ -311,7 +311,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMa
   	{
   		if (params.m_txPacketSizes.size () > 0)
   		{
-  			itUe->second.m_flowStatsDl[lcid].m_txPacketSizes.clear ();
+  			itUe->second.m_flowStatsDl.at(lcid).m_txPacketSizes.clear ();
   			itUe->second.m_flowStatsDl[lcid].m_txPacketDelays.clear ();
   			// add the new DL PDCP packet sizes and their delays
   			uint32_t totalSize = 0;
@@ -796,6 +796,9 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 	std::map <uint8_t, FlowStats>::iterator itFlow;
 	std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator itRlcBuf;
 
+	// UL grant for msg3 transmission
+
+
 	// retrieve past HARQ retx buffered
 	if (m_dlHarqInfoList.size () > 0 && params.m_dlHarqInfoList.size () > 0)
 	{
@@ -1036,9 +1039,11 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 								MmWaveFlexTtiMaxWeightMacScheduler::CompareFlowWeightsEdf);		// Sort flow heap by relative deadline
 			flowIt = m_flowHeap.begin();
 			bool flowFound = false;
+
 			while (!flowFound && flowIt != m_flowHeap.end () && symAvail > 0)		// find flow with CQI in range (not in outage)
 			{
 				FlowStats* flow = *flowIt;		// get Earliest Deadline flow
+
 				if (flow->m_txPacketSizes.empty ())
 				{
 					flowIt++;

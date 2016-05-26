@@ -113,6 +113,31 @@ LteSignalingRadioBearerInfo::GetTypeId (void)
   return tid;
 }
 
+RlcBearerInfo::RlcBearerInfo (void)
+{
+}
+
+RlcBearerInfo::~RlcBearerInfo (void)
+{
+}
+  
+TypeId 
+RlcBearerInfo::GetTypeId (void)
+{
+  static TypeId
+    tid =
+    TypeId ("ns3::RlcBearerInfo")
+    .SetParent<Object> ()
+    .AddConstructor<RlcBearerInfo> ()
+    .AddAttribute ("LteRlc", "RLC instance of the secondary connection.",
+                   PointerValue (),
+                   MakePointerAccessor (&RlcBearerInfo::m_rlc),
+                   MakePointerChecker<LteRlc> ())
+    ;
+  return tid;
+}
+
+
 
 
 } // namespace ns3

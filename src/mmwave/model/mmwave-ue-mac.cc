@@ -348,6 +348,8 @@ MmWaveUeMac::SendReportBufferStatus (void)
   for (it = m_ulBsrReceived.begin (); it != m_ulBsrReceived.end (); it++)
     {
       uint8_t lcid = it->first;
+      //NS_LOG_UNCOND("MmWave lcid of BSR " << (uint16_t)lcid << " queue size " << (*it).second.txQueueSize);
+
       std::map <uint8_t, LcInfo>::iterator lcInfoMapIt;
       lcInfoMapIt = m_lcInfoMap.find (lcid);
       if (lcInfoMapIt !=  m_lcInfoMap.end ())
@@ -442,10 +444,10 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 	p->RemovePacketTag (tag);
 	MmWaveMacPduHeader macHeader;
 	p->RemoveHeader (macHeader);
-
 	if (tag.GetRnti () == m_rnti) // packet is for the current user
 	{
 		std::vector<MacSubheader> macSubheaders = macHeader.GetSubheaders ();
+		//NS_LOG_UNCOND("MmWaveUeMac receive PHY pdu with " << macSubheaders.size() << " pdu");
 		uint32_t currPos = 0;
 		for (unsigned ipdu = 0; ipdu < macSubheaders.size (); ipdu++)
 		{
@@ -453,8 +455,9 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			{
 				continue;
 			}
+			//NS_LOG_UNCOND("It is for lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
 			std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (macSubheaders[ipdu].m_lcid);
-			//NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
+			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
 			if(it!=m_lcInfoMap.end ())
 			{
 				Ptr<Packet> rlcPdu;
@@ -502,9 +505,28 @@ MmWaveUeMac::RecvRaResponse (BuildRarListElement_s raResponse)
 {
   NS_LOG_FUNCTION (this);
   m_waitingForRaResponse = false;
+  //m_noRaResponseReceivedEvent.Cancel ();
+  NS_LOG_INFO ("got RAR for RAPID " << (uint32_t) m_raPreambleId << ", setting T-C-RNTI = " << raResponse.m_rnti);
   m_rnti = raResponse.m_rnti;
   m_cmacSapUser->SetTemporaryCellRnti (m_rnti);
+  
   m_cmacSapUser->NotifyRandomAccessSuccessful ();
+  // trigger tx opportunity for Message 3 over LC 0
+  // this is needed since Message 3's UL GRANT is in the RAR, not in UL-DCIs
+  // const uint8_t lc0Lcid = 0;
+  // std::map <uint8_t, LcInfo>::iterator lc0InfoIt = m_lcInfoMap.find (lc0Lcid);
+  // NS_ASSERT (lc0InfoIt != m_lcInfoMap.end ());
+  // std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters>::iterator lc0BsrIt
+  //   = m_ulBsrReceived.find (lc0Lcid);
+  // if ((lc0BsrIt != m_ulBsrReceived.end ())
+  //     && (lc0BsrIt->second.txQueueSize > 0))
+  //   {
+  //     NS_ASSERT_MSG (raResponse.m_grant.m_tbSize > lc0BsrIt->second.txQueueSize, 
+  //                    "segmentation of Message 3 is not allowed raResponse.m_grant.m_tbSize " << raResponse.m_grant.m_tbSize 
+  //                    << " lc0BsrIt->second.txQueueSize " << lc0BsrIt->second.txQueueSize);
+  //     lc0InfoIt->second.macSapUser->NotifyTxOpportunity (raResponse.m_grant.m_tbSize, 0, 0); 
+  //     lc0BsrIt->second.txQueueSize = 0;
+  //   }
 }
 
 std::map<uint32_t, struct MacPduInfo>::iterator MmWaveUeMac::AddToMacPduMap (DciInfoElementTdma dci, unsigned activeLcs)

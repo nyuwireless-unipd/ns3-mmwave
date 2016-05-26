@@ -42,7 +42,7 @@ MmWaveHelper::MmWaveHelper(void)
 	 m_harqEnabled (false),
 	 m_rlcAmEnabled (false),
 	 m_snrTest (false),
-	 m_useIdealRrc (true)
+	 m_useIdealRrc (false)
 {
 	NS_LOG_FUNCTION(this);
  	m_channelFactory.SetTypeId (MultiModelSpectrumChannel::GetTypeId ());
@@ -1401,14 +1401,14 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 
 	NS_LOG_LOGIC ("set the propagation model frequencies");
 	double dlFreq = LteSpectrumValueHelper::GetCarrierFrequency (dev->GetDlEarfcn ());
-	NS_LOG_LOGIC ("DL freq: " << dlFreq);
+	NS_LOG_UNCOND ("DL freq: " << dlFreq);
 	bool dlFreqOk = m_downlinkPathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (dlFreq));
 	if (!dlFreqOk)
 	{
 	  NS_LOG_WARN ("DL propagation model does not have a Frequency attribute");
 	}
 	double ulFreq = LteSpectrumValueHelper::GetCarrierFrequency (dev->GetUlEarfcn ());
-	NS_LOG_LOGIC ("UL freq: " << ulFreq);
+	NS_LOG_UNCOND ("UL freq: " << ulFreq);
 	bool ulFreqOk = m_uplinkPathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (ulFreq));
 	if (!ulFreqOk)
 	{

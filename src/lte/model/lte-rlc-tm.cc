@@ -219,6 +219,20 @@ LteRlcTm::DoReportBufferStatus (void)
   r.retxQueueHolDelay = 0;
   r.statusPduSize = 0;
 
+  // from UM low lat
+  for (unsigned i = 0; i < m_txBuffer.size(); i++)
+  {
+    if (i == 20)  // only include up to the first 20 packets
+    {
+      break;
+    }
+    r.txPacketSizes.push_back (m_txBuffer[i]->GetSize ());
+    RlcTag holTimeTag;
+    m_txBuffer[i]->PeekPacketTag (holTimeTag);
+    holDelay = Simulator::Now () - holTimeTag.GetSenderTimestamp ();
+    r.txPacketDelays.push_back (holDelay.GetMicroSeconds ());
+  }
+
   NS_LOG_LOGIC ("Send ReportBufferStatus = " << r.txQueueSize << ", " << r.txQueueHolDelay );
   m_macSapProvider->ReportBufferStatus (r);
 }

@@ -87,6 +87,24 @@ public:
   bool m_isMc; // true if a bearer is split
 };
 
+class RlcBearerInfo : public Object
+{
+public:
+  RlcBearerInfo (void);
+  virtual ~RlcBearerInfo (void);
+  static TypeId GetTypeId (void);
+    
+    uint16_t    sourceCellId;
+    uint16_t    targetCellId;
+    uint32_t    gtpTeid;
+    uint16_t    mmWaveRnti;
+    uint16_t    lteRnti;
+    uint8_t     drbid;
+    uint8_t     logicalChannelIdentity;
+    LteRrcSap::RlcConfig rlcConfig;
+    LteRrcSap::LogicalChannelConfig logicalChannelConfig;
+    Ptr<LteRlc> m_rlc;
+};
 
 
 

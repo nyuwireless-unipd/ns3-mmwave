@@ -142,11 +142,11 @@ MmWaveBearerStatsCalculator::UlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (m_protocolType == "RLC")
   {
-  	m_ulOutFile << "RLC ";
+  	m_ulOutFile << "R ";
   }
   else
   {
-  	m_ulOutFile << "PDCP ";
+  	m_ulOutFile << "P ";
   }
 
   m_ulOutFile << "UlTxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
@@ -175,11 +175,11 @@ MmWaveBearerStatsCalculator::DlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (m_protocolType == "RLC")
   {
-  	m_dlOutFile << "RLC ";
+  	m_dlOutFile << "R ";
   }
   else
   {
-  	m_dlOutFile << "PDCP ";
+  	m_dlOutFile << "P ";
   }
 
   m_dlOutFile << "DlTxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
@@ -210,11 +210,11 @@ MmWaveBearerStatsCalculator::UlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (m_protocolType == "RLC")
   {
-  	m_ulOutFile << "RLC ";
+  	m_ulOutFile << "R ";
   }
   else
   {
-  	m_ulOutFile << "PDCP ";
+  	m_ulOutFile << "P ";
   }
 
   m_ulOutFile << "UlRxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
@@ -252,11 +252,11 @@ MmWaveBearerStatsCalculator::DlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
 
   if (m_protocolType == "RLC")
   {
-  	m_dlOutFile << "RLC ";
+  	m_dlOutFile << "R ";
   }
   else
   {
-  	m_dlOutFile << "PDCP ";
+  	m_dlOutFile << "P ";
   }
 
   m_dlOutFile << "DlRxPDU " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "

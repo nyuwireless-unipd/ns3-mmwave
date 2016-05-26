@@ -291,9 +291,7 @@ LteUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 
 void
 LteUeMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params)
-{
-  NS_LOG_FUNCTION (this << (uint32_t) params.lcid);
-  
+{  
   std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters>::iterator it;
   
   
@@ -337,6 +335,7 @@ LteUeMac::SendReportBufferStatus (void)
   for (it = m_ulBsrReceived.begin (); it != m_ulBsrReceived.end (); it++)
     {
       uint8_t lcid = it->first;
+      NS_LOG_INFO("LTE lcid of BSR " << (uint16_t)lcid << " queue size " << (*it).second.txQueueSize);
       std::map <uint8_t, LcInfo>::iterator lcInfoMapIt;
       lcInfoMapIt = m_lcInfoMap.find (lcid);
       NS_ASSERT (lcInfoMapIt !=  m_lcInfoMap.end ());

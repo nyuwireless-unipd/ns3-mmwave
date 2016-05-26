@@ -50,6 +50,7 @@ namespace ns3 {
 class LteRadioBearerInfo;
 class LteSignalingRadioBearerInfo;
 class LteDataRadioBearerInfo;
+class RlcBearerInfo;
 class LteEnbRrc;
 class Packet;
 
@@ -342,6 +343,16 @@ public:
     (uint64_t imsi, uint16_t cellId, uint16_t rnti,
      State oldState, State newState);
 
+  /**
+   * TracedCallback signature for imsi, cellId and rnti events.
+   *
+   * \param [in] imsi
+   * \param [in] cellId
+   * \param [in] rnti
+   */
+  typedef void (* ImsiCidRntiTracedCallback)
+    (uint64_t imsi, uint16_t cellId, uint16_t rnti);
+
   void SetFirstConnection();
 
   /**
@@ -457,25 +468,11 @@ private:
    * DRBID.
    */
   std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
-
-  struct RlcBearerInfo
-  {
-    uint16_t    sourceCellId;
-    uint16_t    targetCellId;
-    uint32_t    gtpTeid;
-    uint16_t    mmWaveRnti;
-    uint16_t    lteRnti;
-    uint8_t     drbid;
-    uint8_t     logicalChannelIdentity;
-    LteRrcSap::RlcConfig rlcConfig;
-    LteRrcSap::LogicalChannelConfig logicalChannelConfig;
-    Ptr<LteRlc> m_rlc;
-  };
   
   /**
    * Map the drb into a RLC (used for remote independent RLC in an MC setup)
    */
-  std::map <uint8_t, RlcBearerInfo > m_rlcMap;
+  std::map <uint8_t, Ptr<RlcBearerInfo> > m_rlcMap;
   /**
    * Map the drb into a RLCSetupRequest (used to handover remote independent RLC in an MC setup)
    */
@@ -518,6 +515,12 @@ private:
    * state, and new state.
    */
   TracedCallback<uint64_t, uint16_t, uint16_t, State, State> m_stateTransitionTrace;
+
+  /**
+   * The `SwitchToMmWaveEnb` trace source. Fired upon receiving an ACK to a command to 
+   * switch to MmWave RAT. Exporting IMSI, cellId, RNTI.
+   */
+  TracedCallback<uint64_t, uint16_t, uint16_t> m_secondaryRlcCreatedTrace;
 
   uint16_t m_sourceX2apId;
   uint16_t m_sourceCellId;
@@ -1406,6 +1409,8 @@ private:
   std::map<uint64_t, CellSinrMap> m_imsiCellSinrMap;
   std::map<uint64_t, uint16_t> m_imsiRntiMap;
   std::map<uint16_t, uint64_t> m_rntiImsiMap;
+
+  double m_sinrThresholdDifference;
 
 }; // end of `class LteEnbRrc`
 

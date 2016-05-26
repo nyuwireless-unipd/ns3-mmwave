@@ -1865,6 +1865,20 @@ LteRlcAm::DoReportBufferStatus (void)
   r.txQueueHolDelay = txonQueueHolDelay.GetMilliSeconds ();
   r.retxQueueSize = m_retxBufferSize;// + m_txedBufferSize;
   r.retxQueueHolDelay = retxQueueHolDelay.GetMilliSeconds ();
+  
+  // from UM low lat TODO check
+  for (unsigned i = 0; i < m_txonBuffer.size(); i++)
+  {
+    if (i == 20)  // only include up to the first 20 packets
+    {
+      break;
+    }
+    r.txPacketSizes.push_back (m_txonBuffer[i]->GetSize ());
+    RlcTag holTimeTag;
+    m_txonBuffer[i]->PeekPacketTag (holTimeTag);
+    Time holDelay = Simulator::Now () - holTimeTag.GetSenderTimestamp ();
+    r.txPacketDelays.push_back (holDelay.GetMicroSeconds ());
+  }
 
   if ( m_statusPduRequested && ! m_statusProhibitTimer.IsRunning () )
     {

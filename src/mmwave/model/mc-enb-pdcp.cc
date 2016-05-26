@@ -243,7 +243,6 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   {
     NS_FATAL_ERROR("Invalid combination");
   }
-  // TODO switch -- or if the m_epcX2PdcpProvider is 0 always use the rlcSapProvider
 }
 
 void

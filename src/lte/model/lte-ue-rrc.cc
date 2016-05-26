@@ -164,6 +164,7 @@ LteUeRrc::DoDispose ()
   delete m_drbPdcpSapUser;
   delete m_asSapProvider;
   m_drbMap.clear ();
+  m_rlcMap.clear ();
 }
 
 TypeId
@@ -177,6 +178,10 @@ LteUeRrc::GetTypeId (void)
                    ObjectMapValue (),
                    MakeObjectMapAccessor (&LteUeRrc::m_drbMap),
                    MakeObjectMapChecker<LteDataRadioBearerInfo> ())
+    .AddAttribute ("DataRadioRlcMap", "List of UE RLC for Secondary Connection by LCID.",
+                   ObjectMapValue (),
+                   MakeObjectMapAccessor (&LteUeRrc::m_rlcMap),
+                   MakeObjectMapChecker<LteRlc> ())
     .AddAttribute ("Srb0", "SignalingRadioBearerInfo for SRB0",
                    PointerValue (),
                    MakePointerAccessor (&LteUeRrc::m_srb0),
@@ -429,24 +434,24 @@ LteUeRrc::SwitchLowerLayerProviders (uint16_t cellId)
   {
     if(m_isMmWaveCellMap.find(cellId)->second)
     {
-      NS_LOG_UNCOND("Switch SAP to MmWave");
-      NS_LOG_UNCOND("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      NS_LOG_INFO("Switch SAP to MmWave");
+      NS_LOG_LOGIC("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       m_cphySapProvider = m_mmWaveCphySapProvider;
       m_cmacSapProvider = m_mmWaveCmacSapProvider;
       m_macSapProvider = m_mmWaveMacSapProvider;
       
-      NS_LOG_UNCOND("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       return true;
     }
     else
     {
-      NS_LOG_UNCOND("Switch SAP to LTE");
-      NS_LOG_UNCOND("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      NS_LOG_INFO("Switch SAP to LTE");
+      NS_LOG_LOGIC("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       m_cphySapProvider = m_lteCphySapProvider;
       m_cmacSapProvider = m_lteCmacSapProvider;
       m_macSapProvider = m_lteMacSapProvider;
 
-      NS_LOG_UNCOND("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       return true;
     }
   }
@@ -534,7 +539,16 @@ LteUeRrc::DoInitialize (void)
   lcConfig.bucketSizeDurationMs = 65535; // maximum
   lcConfig.logicalChannelGroup = 0; // all SRBs mapped to LCG 0
 
-  m_cmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+  
+  if(m_interRatHoCapable)
+  {
+    m_mmWaveCmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+    m_lteCmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+  }
+  else
+  {
+    m_cmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+  }
 
 }
 
@@ -1017,7 +1031,7 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
     case CONNECTED_NORMALLY:
       if (msg.haveMobilityControlInfo)
         {
-          NS_LOG_INFO ("haveMobilityControlInfo == true");
+          NS_LOG_INFO ("UE " << m_rnti << " on cellId " << m_cellId << " haveMobilityControlInfo == true");
           SwitchToState (CONNECTED_HANDOVER);
           const LteRrcSap::MobilityControlInfo& mci = msg.mobilityControlInfo;
           m_handoverStartTrace (m_imsi, m_cellId, m_rnti, mci.targetPhysCellId);
@@ -1060,7 +1074,7 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
         }
       else
         {
-          NS_LOG_INFO ("haveMobilityControlInfo == false");
+          NS_LOG_INFO ("UE " << m_rnti << " on cellId " << m_cellId << " haveMobilityControlInfo == false");
           if (msg.haveRadioResourceConfigDedicated)
             {
               ApplyRadioResourceConfigDedicated (msg.radioResourceConfigDedicated);
@@ -1161,12 +1175,12 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
         pdcp->SwitchConnection(msg.useMmWaveConnection);
         if(msg.useMmWaveConnection)
         {
-          NS_LOG_UNCOND("LteUeRrc SwitchToMmWave " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
+          NS_LOG_INFO("LteUeRrc SwitchToMmWave " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
           m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
         }
         else
         {
-          NS_LOG_UNCOND("LteUeRrc SwitchToLte " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
+          NS_LOG_INFO("LteUeRrc SwitchToLte " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
           m_switchToLteTrace(m_imsi, m_cellId, m_rnti);          
         }
       }
@@ -1319,6 +1333,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
     {
       if (m_srb1 == 0)
         {
+          NS_LOG_INFO("Setup SBR1 for rnti " << m_rnti << " on cell " << m_cellId);
           // SRB1 not setup yet        
           NS_ASSERT_MSG ((m_state == IDLE_CONNECTING) || (m_state == CONNECTED_HANDOVER), 
                          "unexpected state " << ToString (m_state));
@@ -1516,7 +1531,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
 
               bool useMmWaveConnection = true;
               pdcp->SwitchConnection(useMmWaveConnection);
-              NS_LOG_UNCOND("LteUeRrc SwitchToMmWave " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
+              NS_LOG_INFO("LteUeRrc SwitchToMmWave " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
               m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
             }
             else
@@ -3069,7 +3084,7 @@ LteUeRrc::SwitchToState (State newState)
   NS_LOG_FUNCTION (this << ToString (newState));
   State oldState = m_state;
   m_state = newState;
-  NS_LOG_INFO (this << " IMSI " << m_imsi << " RNTI " << m_rnti << " UeRrc "
+  NS_LOG_INFO (this << " IMSI " << m_imsi << " RNTI " << m_rnti << " CellId " << m_cellId << " UeRrc "
                     << ToString (oldState) << " --> " << ToString (newState));
   m_stateTransitionTrace (m_imsi, m_cellId, m_rnti, oldState, newState);
 

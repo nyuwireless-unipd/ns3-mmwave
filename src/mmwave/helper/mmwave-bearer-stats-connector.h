@@ -194,6 +194,11 @@ public:
    */
   static void NotifyHandoverEndOkEnb (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
+  // TODO doc
+  static void NotifySwitchToMmWaveUe (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
+
+  static void NotifySecondaryMmWaveEnbAvailable (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
+
   std::string GetEnbHandoverOutputFilename (void);
   std::string GetUeHandoverOutputFilename (void);
   std::string GetCellIdStatsOutputFilename (void);
@@ -287,6 +292,9 @@ private:
    * \param rnti
    */
   void DisconnectTracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
+  void ConnectSecondaryTracesUe (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
+  void ConnectSecondaryTracesEnb (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
   void PrintEnbStartHandover(uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti);
   void PrintEnbEndHandover(uint64_t imsi, uint16_t targetCellId, uint16_t rnti);
