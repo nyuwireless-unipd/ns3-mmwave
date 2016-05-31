@@ -275,13 +275,34 @@ MmWaveEnbPhy::StartSlot (void)
 
 	SlotAllocInfo currSlot;
 
+	/*uint8_t slotInd = 0;
+	if (m_slotNum >= m_currSfAllocInfo.m_dlSlotAllocInfo.size ())
+	{
+		if (m_currSfAllocInfo.m_ulSlotAllocInfo.size () > 0)
+		{
+			slotInd = m_slotNum - m_currSfAllocInfo.m_dlSlotAllocInfo.size ();
+			currSlot = m_currSfAllocInfo.m_ulSlotAllocInfo[slotInd];
+			m_currSymStart = currSlot.m_dci.m_symStart;
+		}
+	}
+	else
+	{
+		if (m_currSfAllocInfo.m_ulSlotAllocInfo.size () > 0)
+		{
+			slotInd = m_slotNum;
+			currSlot = m_currSfAllocInfo.m_dlSlotAllocInfo[slotInd];
+			m_currSymStart = currSlot.m_dci.m_symStart;
+		}
+	}*/
+
+	//slotInd = m_slotNum;
 	currSlot = m_currSfAllocInfo.m_slotAllocInfo[m_slotNum];
 	m_currSymStart = currSlot.m_dci.m_symStart;
 
 	SfnSf sfn = SfnSf (m_frameNum, m_sfNum, m_slotNum);
-    m_harqPhyModule->SubframeIndication (sfn);  // trigger HARQ module
+  m_harqPhyModule->SubframeIndication (sfn);  // trigger HARQ module
 
-    std::list <Ptr<MmWaveControlMessage > > dciMsgList;
+  std::list <Ptr<MmWaveControlMessage > > dciMsgList;
 
 	Time guardPeriod;
 	Time slotPeriod;
@@ -290,6 +311,8 @@ MmWaveEnbPhy::StartSlot (void)
 	{
 		// get control messages to be transmitted in DL-Control period
 		std::list <Ptr<MmWaveControlMessage > > ctrlMsgs = GetControlMessages ();
+		//std::list <Ptr<MmWaveControlMessage > >::iterator it = ctrlMsgs.begin ();
+		// find all DL/UL DCI elements and create DCI messages to be transmitted in DL control period
 		for (unsigned islot = 0; islot < m_currSfAllocInfo.m_slotAllocInfo.size (); islot++)
 		{
 			if (m_currSfAllocInfo.m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL &&
@@ -321,6 +344,7 @@ MmWaveEnbPhy::StartSlot (void)
 					Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
 					dciMsg->SetDciInfoElement (dciElem);
 					dciMsg->SetSfnSf (sfn);
+					//dciMsgList.push_back (dciMsg);
 					ctrlMsgs.push_back (dciMsg);
 				}
 			}
@@ -344,7 +368,11 @@ MmWaveEnbPhy::StartSlot (void)
 	{
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod() * currSlot.m_dci.m_numSym);
 		NS_ASSERT (currSlot.m_tddMode == SlotAllocInfo::DL);
-
+		//NS_LOG_DEBUG ("Slot " << m_slotNum << " scheduled for Downlink");
+		//			if (m_prevSlotDir == SlotAllocInfo::UL)  // if curr slot == DL and prev slot == UL
+		//			{
+		//				guardPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetGuardPeriod ());
+		//			}
 		Ptr<PacketBurst> pktBurst = GetPacketBurst (SfnSf (m_frameNum, m_sfNum, currSlot.m_dci.m_symStart));
 		if(pktBurst && pktBurst->GetNPackets() > 0)
 		{
@@ -401,7 +429,7 @@ MmWaveEnbPhy::StartSlot (void)
 		              << "\t start " << Simulator::Now() << " end " << Simulator::Now() + slotPeriod );
 	}
 
-    m_prevSlotDir = currSlot.m_tddMode;
+  m_prevSlotDir = currSlot.m_tddMode;
 
 	m_phySapUser->SubframeIndication (SfnSf (m_frameNum, m_sfNum, m_slotNum));  // trigger MAC
 
