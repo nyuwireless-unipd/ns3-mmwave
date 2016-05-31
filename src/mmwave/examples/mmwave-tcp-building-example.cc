@@ -210,11 +210,10 @@ static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
 }
 
-
-static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint32_t newSstresh)
+/*static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint32_t newSstresh)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSstresh << "\t" << newSstresh << std::endl;
-}
+}*/
 
 void
 ChangeSpeed(Ptr<Node>  n, Vector speed)
@@ -232,21 +231,50 @@ main (int argc, char *argv[])
 //	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
 //	LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
 
-	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1000));
-	//Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*4));
-	//Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*4));
-    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
+	/*
+	 * scenario 1: 1 building;
+	 * scenario 2: 3 building;
+	 * scenario 3: 6 random located small building, simulate tree and human blockage.
+	 * */
+	int scenario = 3;
+	double stopTime = 25;
+	double simStopTime = 25;
+	bool harqEnabled = true;
+	bool rlcAmEnabled = true;
+	bool tcp = true;
+
+	CommandLine cmd;
+//	cmd.AddValue("numEnb", "Number of eNBs", numEnb);
+//	cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
+	cmd.AddValue("simTime", "Total duration of the simulation [s])", simStopTime);
+//	cmd.AddValue("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
+	cmd.AddValue("harq", "Enable Hybrid ARQ", harqEnabled);
+	cmd.AddValue("rlcAm", "Enable RLC-AM", rlcAmEnabled);
+	cmd.Parse(argc, argv);
+
+	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+//	Config::SetDefault ("ns3::PointToPointNetDevice::Mtu", UintegerValue (3000));
+//	Config::SetDefault ("ns3::VirtualNetDevice::Mtu", UintegerValue (3000));
+
+	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
+	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
+	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
 
 
-    /*
-     * scenario 1: 1 building;
-     * scenario 2: 3 building;
-     * scenario 3: 6 random located small building, simulate tree and human blockage.
-     * */
-    int scenario = 3;
-	double stopTime = 50;
-	double simStopTime = 50;
-	int tcp = 0;
+
+
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 
@@ -384,11 +412,11 @@ main (int argc, char *argv[])
 	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
 	uemobility.Install (ueNodes);
 
-	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (60, -0.2, 1));
+	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (150, -0.2, 1));
 	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
-	Simulator::Schedule (Seconds (5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0.75, 0));
-	Simulator::Schedule (Seconds (35), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
+	Simulator::Schedule (Seconds (2), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
+	Simulator::Schedule (Seconds (22), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
 
 	BuildingsHelper::Install (ueNodes);
 
@@ -424,8 +452,8 @@ main (int argc, char *argv[])
 
 	Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
 	Ptr<MyApp> app = CreateObject<MyApp> ();
+	app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("1000Mb/s"));
 
-	app->Setup (ns3TcpSocket, sinkAddress, 536, 1000000, DataRate ("30Mb/s"));
 	remoteHostContainer.Get (0)->AddApplication (app);
 	AsciiTraceHelper asciiTraceHelper;
 	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-window-newreno.txt");
@@ -437,10 +465,9 @@ main (int argc, char *argv[])
 	Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data-newreno.txt");
 	sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
 
-	Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh.txt");
-	ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
-	app->SetStartTime (Seconds (0.2));
-
+	//Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
+	//ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
+	app->SetStartTime (Seconds (0.1));
 	app->SetStopTime (Seconds (stopTime));
 	}
 	else
@@ -470,10 +497,9 @@ main (int argc, char *argv[])
 	}
 
 
+	//p2ph.EnablePcapAll("mmwave-sgi-capture");
 	BuildingsHelper::MakeMobilityModelConsistent ();
-
-	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*100));
-	p2ph.EnablePcapAll ("mmWave", true);
+	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*1000));
 
 	Simulator::Stop (Seconds (simStopTime));
 	Simulator::Run ();

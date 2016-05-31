@@ -354,8 +354,15 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 
 		}
 	}
+	Simulator::Schedule (m_longTermUpdatePeriod, &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 
-	Simulator::Schedule (Seconds (m_longTermUpdatePeriod), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
+	/*if (!m_nextLongTermUpdate)
+	{
+		m_nextLongTermUpdate = CreateObject<ExponentialRandomVariable> ();
+		m_nextLongTermUpdate->SetAttribute ("Mean", DoubleValue (m_longTermUpdatePeriod.GetMicroSeconds ()));
+		m_nextLongTermUpdate->SetAttribute ("Bound", DoubleValue (m_longTermUpdatePeriod.GetMicroSeconds () * 10));
+	}
+	Simulator::Schedule (MicroSeconds (m_nextLongTermUpdate->GetValue()), &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);*/
 }
 
 
@@ -380,8 +387,7 @@ MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enb
 	}
 	m_channelMatrixMap.insert(std::make_pair(key,bfParams));
 	//update channel matrix periodically
-
-	//Simulator::Schedule (Seconds (g_longTermUpdatePeriod), &MmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
+	//Simulator::Schedule (Seconds (m_longTermUpdatePeriod), &MmWaveBeamforming::SetChannelMatrix,this,ueDevice,enbDevice);
 }
 
 void
