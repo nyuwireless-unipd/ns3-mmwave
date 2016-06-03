@@ -459,6 +459,8 @@ UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gt
   req.lcinfo = lcinfo;
   req.logicalChannelConfig = drbInfo->m_logicalChannelConfig;
   req.rlcConfig = drbInfo->m_rlcConfig;
+  req.targetCellId = 0;
+  req.mmWaveRnti = 0;
   // mmWaveRnti & targetCellId will be set before sending the request
   drbInfo->m_rlcSetupRequest = req;
 
@@ -2420,7 +2422,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       uint64_t imsi = imsiIter->first;
       double maxSinr = 0;
       double currentSinr = 0;
-      uint16_t maxSinrCellId;
+      uint16_t maxSinrCellId = 0;
       bool alreadyAssociatedImsi = false;
       bool onHandoverImsi = true;
       // On RecvRrcConnectionRequest for a new RNTI, the Lte Enb RRC stores the imsi
@@ -2571,9 +2573,9 @@ LteEnbRrc::UpdateUeHandoverAssociation()
       uint64_t imsi = imsiIter->first;
       double maxSinr = 0;
       double currentSinr = 0;
-      uint16_t maxSinrCellId;
-      bool alreadyAssociatedImsi;
-      bool onHandoverImsi;
+      uint16_t maxSinrCellId = 0;
+      bool alreadyAssociatedImsi = false;
+      bool onHandoverImsi = true;
       
       // If the LteEnbRrc is InterRatHo mode, the MmWave eNB notifies the 
       // LTE eNB of the first access of a certain imsi. This is stored in a map
