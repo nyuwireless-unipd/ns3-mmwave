@@ -557,7 +557,7 @@ main (int argc, char *argv[])
   // Create the Internet by connecting remoteHost to pgw. Setup routing too
   PointToPointHelper p2ph;
   p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
-  p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
+  p2ph.SetDeviceAttribute ("Mtu", UintegerValue (2500));
   p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010)));
   NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
   Ipv4AddressHelper ipv4h;
@@ -717,7 +717,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP DL app for UE " << u);
           OnOffHelper dlClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
-          dlClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1400);
+          dlClientHelper.SetConstantRate(DataRate ("200Mb/s"), 1500);
           clientApps.Add (dlClientHelper.Install (remoteHost));
           PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), dlPort));
@@ -728,7 +728,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP UL app for UE " << u);
           OnOffHelper ulClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (remoteHostAddr, ulPort));
-          ulClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1400);
+          ulClientHelper.SetConstantRate(DataRate ("200Mb/s"), 1500);
           clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
           PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), ulPort));

@@ -335,7 +335,7 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   Ptr<MmWaveEnbNetDevice> enb1MmWaveDev = enb1->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
   Ptr<LteEnbNetDevice> enb1LteDev = enb1->GetDevice (0)->GetObject<LteEnbNetDevice> ();
   // we may have a LTE or a MmWave eNB
-  uint16_t enb1CellId;
+  uint16_t enb1CellId = 0;
   if(enb1MmWaveDev != 0)
   {
     enb1CellId = enb1MmWaveDev->GetCellId (); 
@@ -351,7 +351,7 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   Ptr<MmWaveEnbNetDevice> enb2MmWaveDev = enb2->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
   Ptr<LteEnbNetDevice> enb2LteDev = enb2->GetDevice (0)->GetObject<LteEnbNetDevice> ();
   // we may have a LTE or a MmWave eNB
-  uint16_t enb2CellId;
+  uint16_t enb2CellId = 0;
   if(enb2MmWaveDev != 0)
   {
     enb2CellId = enb2MmWaveDev->GetCellId (); 
