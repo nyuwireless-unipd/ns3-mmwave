@@ -176,6 +176,10 @@ MmWaveBearerStatsConnector::~MmWaveBearerStatsConnector ()
   {
     m_cellIdInTimeHandoverOutFile.close();
   }
+  if(m_mmWaveSinrOutFile.is_open())
+  {
+    m_mmWaveSinrOutFile.close();
+  }
 }
 
 TypeId
@@ -191,6 +195,11 @@ MmWaveBearerStatsConnector::GetTypeId (void)
                    StringValue ("EnbHandoverStats.txt"),
                    MakeStringAccessor (&MmWaveBearerStatsConnector::SetEnbHandoverOutputFilename),
                    MakeStringChecker ())
+    .AddAttribute ("MmWaveSinrOutputFilename",
+               "Name of the file where the mmWave eNB sinr will be saved.",
+               StringValue ("MmWaveSinrTime.txt"),
+               MakeStringAccessor (&MmWaveBearerStatsConnector::SetMmWaveSinrOutputFilename),
+               MakeStringChecker ())
     .AddAttribute ("UeHandoverOutputFilename",
                    "Name of the file where the UE handover traces will be saved.",
                    StringValue ("UeHandoverStats.txt"),
@@ -264,6 +273,8 @@ MmWaveBearerStatsConnector::EnsureConnected ()
           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/SwitchToMmWave",
            MakeBoundCallback (&MmWaveBearerStatsConnector::NotifySwitchToMmWaveUe, this));
+      Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/NotifyMmWaveSinr",
+          MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyMmWaveSinr, this));
       m_connected = true;
     }
 }
@@ -338,10 +349,33 @@ MmWaveBearerStatsConnector::NotifySecondaryMmWaveEnbAvailable (MmWaveBearerStats
   c->ConnectSecondaryTracesEnb (context, imsi, cellId, rnti);
 }
 
+void 
+MmWaveBearerStatsConnector::NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, double sinr)
+{
+  c->PrintMmWaveSinr (imsi, cellId, sinr);
+}
+
+void
+MmWaveBearerStatsConnector::PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, double sinr)
+{
+  NS_LOG_FUNCTION(this << " PrintMmWaveSinr " << Simulator::Now().GetSeconds());
+  if(!m_mmWaveSinrOutFile.is_open ())
+  {
+    m_mmWaveSinrOutFile.open(GetMmWaveSinrOutputFilename() .c_str());
+  }
+  m_mmWaveSinrOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << cellId << " " << sinr << std::endl;
+}
+
 std::string 
 MmWaveBearerStatsConnector::GetEnbHandoverOutputFilename (void)
 {
   return m_enbHandoverFilename;
+}
+
+std::string 
+MmWaveBearerStatsConnector::GetMmWaveSinrOutputFilename (void)
+{
+  return m_mmWaveSinrOutputFilename;
 }
 
 std::string 
@@ -371,6 +405,12 @@ void
 MmWaveBearerStatsConnector::SetCellIdStatsOutputFilename (std::string outputFilename)
 {
   m_cellIdInTimeHandoverFilename = outputFilename;
+}
+
+void
+MmWaveBearerStatsConnector::SetMmWaveSinrOutputFilename (std::string outputFilename)
+{
+  m_mmWaveSinrOutputFilename = outputFilename;
 }
 
 void 

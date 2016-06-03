@@ -738,12 +738,21 @@ MmWaveUePhy::GetSubframeNumber (void)
 void
 MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
-    Simulator::ScheduleWithContext (m_netDevice->GetNode()->GetId(),
-                                  MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()),
-                                  &MmWaveUePhySapUser::ReceivePhyPdu,
-                                  m_phySapUser,
-                                  p);
-	//m_phySapUser->ReceivePhyPdu (p);
+	if(!m_phyReset) 
+	{
+		m_forwardToMacEvent.push_back(Simulator::Schedule(MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()), &MmWaveUePhy::DelayPhyDataPacketReceived, this, p));
+	}
+    //Simulator::ScheduleWithContext (m_netDevice->GetNode()->GetId(),
+    //                              MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()),
+    //                              &MmWaveUePhySapUser::ReceivePhyPdu,
+    //                              m_phySapUser,
+    //                              p);
+}
+
+void 
+MmWaveUePhy::DelayPhyDataPacketReceived (Ptr<Packet> p)
+{
+	m_phySapUser->ReceivePhyPdu (p);
 }
 
 void
@@ -889,7 +898,7 @@ void
 MmWaveUePhy::DoReset ()
 {
 	NS_LOG_FUNCTION (this);
-	 m_rnti = 0;
+	m_rnti = 0;
 	m_cellId = 0;
   	m_raPreambleId = 255; // value out of range
 
@@ -912,6 +921,10 @@ MmWaveUePhy::DoReset ()
 	m_downlinkSpectrumPhy->Reset ();
   	// clear DCI 
   	m_phyReset = true;
+  	for(std::vector<EventId>::iterator it = m_forwardToMacEvent.begin(); it != m_forwardToMacEvent.end(); ++it)
+  	{
+  		(*it).Cancel();
+  	}
 	//m_currSfAllocInfo.m_slotAllocInfo.clear();
 	//m_currSfAllocInfo.m_slotAllocInfo.clear();
 }

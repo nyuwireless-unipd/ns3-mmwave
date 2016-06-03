@@ -643,6 +643,7 @@ UeManager::PrepareHandover (uint16_t cellId)
       break;
 
     case CONNECTION_RECONFIGURATION:
+    case HANDOVER_JOINING: // there may be some delays in the TX of RRC messages, thus an handover may be completed at UE side, but not at eNB side
       {
         m_queuedHandoverRequestCellId = cellId;
         NS_LOG_INFO("UeManager is in CONNECTION_RECONFIGURATION, postpone the PrepareHandover command to cell " << m_queuedHandoverRequestCellId);
@@ -1225,6 +1226,12 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
           ueCtxReleaseParams.sourceCellId = m_sourceCellId;
           m_rrc->m_x2SapProvider->SendUeContextRelease (ueCtxReleaseParams);
           SwitchToState(CONNECTED_NORMALLY);
+          NS_LOG_INFO("m_queuedHandoverRequestCellId " << m_queuedHandoverRequestCellId);
+          if(m_queuedHandoverRequestCellId > 0)
+          {
+            NS_LOG_INFO("Call the postponed PrepareHandover to cell " << m_queuedHandoverRequestCellId);
+            PrepareHandover(m_queuedHandoverRequestCellId);
+          }
         }
       }
       break;
@@ -1875,7 +1882,7 @@ LteEnbRrc::GetTypeId (void)
              MakeBooleanChecker ())
     .AddAttribute ("HoSinrDifference",
              "The value for which an handover between MmWave eNB is triggered",
-             DoubleValue (2),
+             DoubleValue (1.5),
              MakeDoubleAccessor (&LteEnbRrc::m_sinrThresholdDifference),
              MakeDoubleChecker<double> ())
     // Trace sources
@@ -1903,6 +1910,10 @@ LteEnbRrc::GetTypeId (void)
                      "trace fired when measurement report is received",
                      MakeTraceSourceAccessor (&LteEnbRrc::m_recvMeasurementReportTrace),
                      "ns3::LteEnbRrc::ReceiveReportTracedCallback")
+    .AddTraceSource ("NotifyMmWaveSinr",
+                 "trace fired when measurement report is received from mmWave cells, for each cell, for each UE",
+                 MakeTraceSourceAccessor (&LteEnbRrc::m_notifyMmWaveSinrTrace),
+                 "ns3::LteEnbRrc::NotifyMmWaveSinrTracedCallback")
   ;
   return tid;
 }
@@ -2351,6 +2362,9 @@ LteEnbRrc::DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params)
   {
     uint64_t imsi = imsiIter->first;
     double sinr = imsiIter->second;
+
+    m_notifyMmWaveSinrTrace(imsi, mmWaveCellId, sinr);
+    
     NS_LOG_LOGIC("Imsi " << imsi << " sinr " << sinr);
 
     if(m_imsiCellSinrMap.find(imsi) != m_imsiCellSinrMap.end())
@@ -2407,8 +2421,8 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       double maxSinr = 0;
       double currentSinr = 0;
       uint16_t maxSinrCellId;
-      bool alreadyAssociatedImsi;
-      bool onHandoverImsi;
+      bool alreadyAssociatedImsi = false;
+      bool onHandoverImsi = true;
       // On RecvRrcConnectionRequest for a new RNTI, the Lte Enb RRC stores the imsi
       // of the UE and insert a new false entry in m_mmWaveCellSetupCompleted.
       // After the first connection to a MmWave eNB, the entry becomes true.
@@ -2423,6 +2437,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
         alreadyAssociatedImsi = false;
         onHandoverImsi = true;
       }
+      NS_LOG_INFO("alreadyAssociatedImsi " << alreadyAssociatedImsi << " onHandoverImsi " << onHandoverImsi);
 
       for(CellSinrMap::iterator cellIter = imsiIter->second.begin(); cellIter != imsiIter->second.end(); ++cellIter)
       {
@@ -2489,7 +2504,6 @@ LteEnbRrc::TriggerUeAssociationUpdate()
         }
         else
         {
-          NS_LOG_INFO("alreadyAssociatedImsi " << alreadyAssociatedImsi << " onHandoverImsi " << onHandoverImsi);
           if(m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] == maxSinrCellId && alreadyAssociatedImsi && !onHandoverImsi) 
           // it is on LTE, but now the last used MmWave cell is not in outage
           {
@@ -2769,7 +2783,7 @@ LteEnbRrc::SendHandoverRequest (uint16_t rnti, uint16_t cellId)
   NS_LOG_LOGIC ("Request to send HANDOVER REQUEST");
   NS_ASSERT (m_configured);
 
-  NS_LOG_INFO("LteEnbRrc SendHandoverRequest at time " << Simulator::Now().GetSeconds() << " to cellId " << cellId);
+  NS_LOG_INFO("LteEnbRrc on cell " << m_cellId << " for rnti " << rnti << " SendHandoverRequest at time " << Simulator::Now().GetSeconds() << " to cellId " << cellId);
 
   Ptr<UeManager> ueManager = GetUeManager (rnti);
   ueManager->PrepareHandover (cellId);

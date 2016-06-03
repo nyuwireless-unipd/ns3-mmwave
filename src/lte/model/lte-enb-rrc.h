@@ -964,6 +964,9 @@ public:
     (uint64_t imsi, uint16_t cellId, uint16_t rnti,
      LteRrcSap::MeasurementReport report);
 
+  typedef void (* NotifyMmWaveSinrTracedCallback)
+    (uint64_t imsi, uint16_t cellId, double sinr);
+
   /**
    * This method maps Imsi to Rnti, so that the UeManager of a certain UE
    * can be retrieved also with the Imsi
@@ -1390,6 +1393,9 @@ private:
    * received. Exporting IMSI, cell ID, and RNTI.
    */
   TracedCallback<uint64_t, uint16_t, uint16_t, LteRrcSap::MeasurementReport> m_recvMeasurementReportTrace;
+
+  TracedCallback<uint64_t, uint16_t, double> m_notifyMmWaveSinrTrace;
+
   bool m_ismmWave;
   bool m_interRatHoMode;
   bool m_firstReport;

@@ -80,6 +80,8 @@ public:
 	uint32_t GetSubframeNumber (void);
 
 	void PhyDataPacketReceived (Ptr<Packet> p);
+	void DelayPhyDataPacketReceived (Ptr<Packet> p);
+
 	void SendDataChannels (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time duration, uint8_t slotInd);
 
 	void SendCtrlChannels (std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time prd);
@@ -172,6 +174,7 @@ private:
 
 	EventId m_sendDataChannelEvent;
 	EventId m_sendDlHarqFeedbackEvent;
+	std::vector<EventId> m_forwardToMacEvent;
 	bool m_phyReset;
 
 };

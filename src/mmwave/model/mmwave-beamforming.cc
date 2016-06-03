@@ -366,6 +366,7 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 	// 		}
 	// 	}
 	// }
+
 	Simulator::Schedule (m_longTermUpdatePeriod, &MmWaveBeamforming::Initial,this,ueDevices,enbDevices);
 
 	/*if (!m_nextLongTermUpdate)
