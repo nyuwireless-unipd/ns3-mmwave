@@ -340,6 +340,12 @@ UeManager::SetSource (uint16_t sourceCellId, uint16_t sourceX2apId)
   m_sourceCellId = sourceCellId;
 }
 
+std::pair<uint16_t, uint16_t>
+UeManager::GetSource (void)
+{
+  return std::pair<uint16_t, uint16_t> (m_sourceCellId, m_sourceX2apId);
+}
+
 void 
 UeManager::SetImsi (uint64_t imsi)
 {
@@ -861,6 +867,37 @@ UeManager::RecvHandoverPreparationFailure (uint16_t cellId)
       NS_ASSERT (cellId == m_targetCellId);
       NS_LOG_INFO ("target eNB sent HO preparation failure, aborting HO");
       SwitchToState (CONNECTED_NORMALLY);
+      break;
+
+    case HANDOVER_LEAVING:
+      NS_ASSERT (cellId == m_targetCellId);
+      NS_LOG_INFO ("target eNB sent HO preparation failure, aborting HO because RrcConnectionReconfigurationCompleted was not received at target");
+      
+      // re-send connection reconfiguration, in case RrcConnectionReconfiguration was actually received
+      // LteRrcSap::RrcConnectionReconfiguration handoverCommand = GetRrcConnectionReconfigurationForHandover ();
+      // handoverCommand.haveMobilityControlInfo = true;
+      // handoverCommand.mobilityControlInfo.targetPhysCellId = m_rrc->m_cellId;
+      // handoverCommand.mobilityControlInfo.haveCarrierFreq = true;
+      // handoverCommand.mobilityControlInfo.carrierFreq.dlCarrierFreq = m_rrc->m_dlEarfcn;
+      // handoverCommand.mobilityControlInfo.carrierFreq.ulCarrierFreq = m_rrc->m_ulEarfcn;
+      // handoverCommand.mobilityControlInfo.haveCarrierBandwidth = true;
+      // handoverCommand.mobilityControlInfo.carrierBandwidth.dlBandwidth = m_rrc->m_dlBandwidth;
+      // handoverCommand.mobilityControlInfo.carrierBandwidth.ulBandwidth = m_rrc->m_ulBandwidth;
+      // handoverCommand.mobilityControlInfo.newUeIdentity = m_rnti;
+      // handoverCommand.mobilityControlInfo.haveRachConfigDedicated = true;
+      // handoverCommand.mobilityControlInfo.rachConfigDedicated.raPreambleIndex = anrcrv.raPreambleId;
+      // handoverCommand.mobilityControlInfo.rachConfigDedicated.raPrachMaskIndex = anrcrv.raPrachMaskIndex;
+
+      // LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider->GetRachConfig ();
+      // handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
+      // handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
+      // handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
+
+      // m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration (m_rnti, handoverCommand);
+      // SwitchToState (HANDOVER_JOINING);
+      // m_handoverJoiningTimeout = Simulator::Schedule (m_rrc->m_handoverJoiningTimeoutDuration,
+      //                                                 &LteEnbRrc::HandoverJoiningTimeout,
+      //                                                 m_rrc, m_rnti);
       break;
 
     default:
@@ -1884,7 +1921,7 @@ LteEnbRrc::GetTypeId (void)
              MakeBooleanChecker ())
     .AddAttribute ("HoSinrDifference",
              "The value for which an handover between MmWave eNB is triggered",
-             DoubleValue (1.5),
+             DoubleValue (2),
              MakeDoubleAccessor (&LteEnbRrc::m_sinrThresholdDifference),
              MakeDoubleChecker<double> ())
     // Trace sources
@@ -2591,6 +2628,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
         alreadyAssociatedImsi = false;
         onHandoverImsi = true;
       }
+      NS_LOG_INFO("alreadyAssociatedImsi " << alreadyAssociatedImsi << " onHandoverImsi " << onHandoverImsi);
 
       for(CellSinrMap::iterator cellIter = imsiIter->second.begin(); cellIter != imsiIter->second.end(); ++cellIter)
       {
@@ -2666,7 +2704,6 @@ LteEnbRrc::UpdateUeHandoverAssociation()
         }
         else
         {
-          NS_LOG_INFO("alreadyAssociatedImsi " << alreadyAssociatedImsi << " onHandoverImsi " << onHandoverImsi);
           if(m_imsiUsingLte[imsi] && alreadyAssociatedImsi && !onHandoverImsi) 
           // it is on LTE, but now the a MmWave cell is not in outage
           {
@@ -2764,9 +2801,22 @@ void
 LteEnbRrc::HandoverJoiningTimeout (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << rnti);
+  NS_LOG_UNCOND("Handover joining Timeout on cell " << m_cellId);
   NS_ASSERT_MSG (GetUeManager (rnti)->GetState () == UeManager::HANDOVER_JOINING,
                  "HandoverJoiningTimeout in unexpected state " << ToString (GetUeManager (rnti)->GetState ()));
-  RemoveUe (rnti);
+  
+  // notify the LTE eNB (coordinator) of the failure
+  uint16_t sourceCellId = (GetUeManager (rnti)->GetSource()).first;
+
+  NS_LOG_INFO ("rejecting handover request from cellId " << sourceCellId);
+  EpcX2SapProvider::HandoverFailedParams res;
+  res.sourceCellId = sourceCellId;
+  res.targetCellId = m_cellId;
+  res.coordinatorId = m_lteCellId;
+  res.imsi = GetImsiFromRnti(rnti);
+  m_x2SapProvider->NotifyCoordinatorHandoverFailed(res);
+  // schedule the removal of the UE
+  Simulator::Schedule(MilliSeconds(300), &LteEnbRrc::RemoveUe, this, rnti);
 }
 
 void
@@ -2817,6 +2867,7 @@ void
 LteEnbRrc::DoRecvRrcConnectionReconfigurationCompleted (uint16_t rnti, LteRrcSap::RrcConnectionReconfigurationCompleted msg)
 {
   NS_LOG_FUNCTION (this << rnti);
+  NS_LOG_UNCOND("Received RRC connection reconf completed on cell " << m_cellId);
   GetUeManager (rnti)->RecvRrcConnectionReconfigurationCompleted (msg);
 }
 
@@ -3125,12 +3176,12 @@ LteEnbRrc::DoRecvUeData (EpcX2SapUser::UeDataParams params)
 {
   NS_LOG_FUNCTION (this);
 
-  NS_LOG_LOGIC ("Recv UE DATA FORWARDING through X2 interface");
-  NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
-  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
-  NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
-  NS_LOG_LOGIC ("ueData = " << params.ueData);
-  NS_LOG_LOGIC ("ueData size = " << params.ueData->GetSize ());
+  NS_LOG_INFO ("Recv UE DATA FORWARDING through X2 interface");
+  NS_LOG_INFO ("sourceCellId = " << params.sourceCellId);
+  NS_LOG_INFO ("targetCellId = " << params.targetCellId);
+  NS_LOG_INFO ("gtpTeid = " << params.gtpTeid);
+  NS_LOG_INFO ("ueData = " << params.ueData);
+  NS_LOG_INFO ("ueData size = " << params.ueData->GetSize ());
 
   std::map<uint32_t, X2uTeidInfo>::iterator 
     teidInfoIt = m_x2uTeidInfoMap.find (params.gtpTeid);

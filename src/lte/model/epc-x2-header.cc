@@ -1019,6 +1019,141 @@ EpcX2McHandoverHeader::GetNumberOfIes () const
   return m_numberOfIes;
 }
 
+/////////////////////////////////////////////////////////////////////
+
+NS_OBJECT_ENSURE_REGISTERED (EpcX2NotifyCoordinatorHandoverFailedHeader);
+
+EpcX2NotifyCoordinatorHandoverFailedHeader::EpcX2NotifyCoordinatorHandoverFailedHeader ()
+  : m_numberOfIes (1 + 1 + 1),
+    m_headerLength (2 + 2 + 8),
+    m_targetCellId (0xfffa),
+    m_sourceCellId (0xfffa),
+    m_imsi (0xfffffffffffffffa)
+{
+}
+
+EpcX2NotifyCoordinatorHandoverFailedHeader::~EpcX2NotifyCoordinatorHandoverFailedHeader ()
+{
+  m_numberOfIes = 0;
+  m_headerLength = 0;
+  m_targetCellId = 0xfffb;
+  m_sourceCellId = 0xfffb;
+  m_imsi = 0xfffffffffffffffb;
+}
+
+TypeId
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::EpcX2NotifyCoordinatorHandoverFailedHeader")
+    .SetParent<Header> ()
+    .SetGroupName("Lte")
+    .AddConstructor<EpcX2NotifyCoordinatorHandoverFailedHeader> ()
+  ;
+  return tid;
+}
+
+TypeId
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetSerializedSize (void) const
+{
+  return m_headerLength;
+}
+
+void
+EpcX2NotifyCoordinatorHandoverFailedHeader::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+
+  i.WriteHtonU16 (m_targetCellId); 
+  i.WriteHtonU16 (m_sourceCellId); 
+  i.WriteHtonU64 (m_imsi); 
+}
+
+uint32_t
+EpcX2NotifyCoordinatorHandoverFailedHeader::Deserialize (Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+
+  m_headerLength = 0;
+  m_numberOfIes = 0;
+  
+  m_targetCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+
+  m_sourceCellId = i.ReadNtohU16 ();
+  m_headerLength += 2;
+  m_numberOfIes++;
+
+  m_imsi = i.ReadNtohU64 ();
+  m_headerLength += 8;
+  m_numberOfIes++;
+
+  return GetSerializedSize ();
+}
+
+void
+EpcX2NotifyCoordinatorHandoverFailedHeader::Print (std::ostream &os) const
+{
+  os << " TargetCellId = " << m_targetCellId;
+  os << " oldCellId = " << m_sourceCellId;
+  os << " imsi = " << m_imsi;
+}
+
+uint16_t
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetTargetCellId () const
+{
+  return m_targetCellId;
+}
+
+void
+EpcX2NotifyCoordinatorHandoverFailedHeader::SetTargetCellId (uint16_t targetCellId)
+{
+  m_targetCellId = targetCellId;
+}
+
+uint64_t
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetImsi () const
+{
+  return m_imsi;
+}
+
+void
+EpcX2NotifyCoordinatorHandoverFailedHeader::SetImsi (uint64_t imsi)
+{
+  m_imsi = imsi;
+}
+
+uint16_t
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetSourceCellId () const
+{
+  return m_sourceCellId;
+}
+
+void
+EpcX2NotifyCoordinatorHandoverFailedHeader::SetSourceCellId (uint16_t oldCellId)
+{
+  m_sourceCellId = oldCellId;
+}
+
+
+uint32_t
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetLengthOfIes () const
+{
+  return m_headerLength;
+}
+
+uint32_t
+EpcX2NotifyCoordinatorHandoverFailedHeader::GetNumberOfIes () const
+{
+  return m_numberOfIes;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////

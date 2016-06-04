@@ -366,6 +366,14 @@ public:
     std::map<uint64_t, double> ueImsiSinrMap; 
   };
 
+  struct HandoverFailedParams
+  {
+    uint64_t imsi;
+    uint16_t coordinatorId;
+    uint16_t sourceCellId;
+    uint16_t targetCellId;
+  };
+
 };
 
 
@@ -475,6 +483,8 @@ public:
 
   virtual void NotifyLteMmWaveHandoverCompleted (McHandoverParams params) = 0;
 
+  virtual void NotifyCoordinatorHandoverFailed (HandoverFailedParams params) = 0;
+
 };
 
 
@@ -560,6 +570,8 @@ public:
   virtual void SendMcHandoverRequest (McHandoverParams params);
 
   virtual void NotifyLteMmWaveHandoverCompleted (McHandoverParams params);
+
+  virtual void NotifyCoordinatorHandoverFailed (HandoverFailedParams params);
 
 
 
@@ -682,6 +694,13 @@ void
 EpcX2SpecificEpcX2SapProvider<C>::NotifyLteMmWaveHandoverCompleted (McHandoverParams params)
 {
   m_x2->DoNotifyLteMmWaveHandoverCompleted(params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::NotifyCoordinatorHandoverFailed (HandoverFailedParams params)
+{
+  m_x2->DoNotifyCoordinatorHandoverFailed(params);
 }
 
 ///////////////////////////////////////

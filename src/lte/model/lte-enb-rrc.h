@@ -120,6 +120,7 @@ public:
    * \param sourceX2apId 
    */
   void SetSource (uint16_t sourceCellId, uint16_t sourceX2apId);
+  std::pair<uint16_t, uint16_t> GetSource (void);
 
   /** 
    * Set the IMSI
@@ -1254,6 +1255,7 @@ private:
    */
   std::map<uint16_t, Ptr<UeManager> > m_ueMap;
 
+  //std::map<uint16_t, EpcX2SapUser::HandoverRequestParams> m_requestMap;
   /**
    * List of measurement configuration which are active in every UE attached to
    * this eNodeB instance.

@@ -14,7 +14,8 @@ def build(bld):
         'helper/mmwave-point-to-point-epc-helper.cc',
         'helper/mmwave-bearer-stats-calculator.cc',        
         'helper/mmwave-bearer-stats-connector.cc', 
-        'helper/mc-stats-calculator.cc',        
+        'helper/mc-stats-calculator.cc', 
+        'helper/core-network-stats-calculator.cc',               
         'model/mmwave-net-device.cc',
         'model/mmwave-enb-net-device.cc',
         'model/mmwave-ue-net-device.cc',
@@ -51,8 +52,6 @@ def build(bld):
         'model/antenna-array-model.cc',
         'model/mmwave-channel-raytracing.cc',
         'model/mc-ue-net-device.cc',
-        #'model/mmwave-ue-light-rrc.cc',
-        #'model/mmwave-enb-light-rrc.cc',
         'model/mc-enb-pdcp.cc',
         'model/mc-ue-pdcp.cc'        
         
@@ -77,6 +76,7 @@ def build(bld):
         'helper/mmwave-point-to-point-epc-helper.h',
         'helper/mmwave-bearer-stats-calculator.h',
         'helper/mc-stats-calculator.h',        
+        'helper/core-network-stats-calculator.h',        
         'helper/mmwave-bearer-stats-connector.h',        
         'model/mmwave-net-device.h',
         'model/mmwave-enb-net-device.h',

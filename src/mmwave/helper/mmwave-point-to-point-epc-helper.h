@@ -29,6 +29,7 @@
 #include <ns3/epc-tft.h>
 #include <ns3/eps-bearer.h>
 #include <ns3/epc-helper.h>
+#include <ns3/core-network-stats-calculator.h>
 
 namespace ns3 {
 
@@ -210,6 +211,8 @@ private:
    * because of some big X2 messages, you need a big MTU.
    */
   uint16_t m_x2LinkMtu;
+
+  Ptr<CoreNetworkStatsCalculator> m_cnStats;
 
 };
 

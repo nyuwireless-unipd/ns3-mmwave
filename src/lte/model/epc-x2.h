@@ -25,6 +25,8 @@
 #include "ns3/callback.h"
 #include "ns3/ptr.h"
 #include "ns3/object.h"
+ #include "ns3/traced-value.h"
+#include "ns3/trace-source-accessor.h"
 
 #include "ns3/epc-x2-sap.h"
 
@@ -148,6 +150,16 @@ public:
    */
   void RecvFromX2uSocket (Ptr<Socket> socket);
 
+  /**
+   * TracedCallback signature for
+   *
+   * \param [in] source 
+   * \param [in] target 
+   * \param [in] bytes The packet size.
+   * \param [in] delay Delay since sender timestamp, in ns.
+   */
+  typedef void (* ReceiveTracedCallback)
+    (uint16_t sourceCellId, uint16_t targetCellId, uint32_t bytes, uint64_t delay, bool data);
 
 protected:
   // Interface provided by EpcX2SapProvider
@@ -166,7 +178,8 @@ protected:
   virtual void DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params);
   virtual void DoSendMcHandoverRequest (EpcX2SapProvider::McHandoverParams params);
   virtual void DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::McHandoverParams params);
-
+  virtual void DoNotifyCoordinatorHandoverFailed(EpcX2SapProvider::HandoverFailedParams params);
+  
   EpcX2SapUser* m_x2SapUser;
   EpcX2SapProvider* m_x2SapProvider;
   
@@ -202,6 +215,8 @@ private:
    */
   uint16_t m_x2cUdpPort;
   uint16_t m_x2uUdpPort;
+
+  TracedCallback<uint16_t, uint16_t, uint32_t, uint64_t, bool> m_rxPdu;
 
 };
 

@@ -65,7 +65,8 @@ public:
     NotifyMcConnection      = 13,
     UpdateUeSinr            = 14,
     RequestMcHandover       = 15,
-    NotifyMmWaveLteHandover = 16
+    NotifyMmWaveLteHandover = 16,
+    NotifyCoordinatorHandoverFailed = 17
   };
 
   enum TypeOfMessage_t {
@@ -264,6 +265,40 @@ private:
 
   uint16_t          m_targetCellId;
   uint16_t          m_oldCellId;
+  uint64_t          m_imsi;
+};
+
+class EpcX2NotifyCoordinatorHandoverFailedHeader : public Header
+{
+public:
+  EpcX2NotifyCoordinatorHandoverFailedHeader ();
+  virtual ~EpcX2NotifyCoordinatorHandoverFailedHeader ();
+
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual void Print (std::ostream &os) const;
+
+  uint16_t GetTargetCellId () const;
+  void SetTargetCellId (uint16_t targetCellId);
+
+  uint16_t GetSourceCellId () const;
+  void SetSourceCellId (uint16_t oldCellId);
+
+  uint64_t GetImsi () const;
+  void SetImsi (uint64_t imsi);
+
+  uint32_t GetLengthOfIes () const;
+  uint32_t GetNumberOfIes () const;
+
+private:
+  uint32_t          m_numberOfIes;
+  uint32_t          m_headerLength;
+
+  uint16_t          m_targetCellId;
+  uint16_t          m_sourceCellId;
   uint64_t          m_imsi;
 };
 
