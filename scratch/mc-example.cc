@@ -414,13 +414,13 @@ main (int argc, char *argv[])
 
   uint16_t numberOfNodes = 1;
   double simTime = 30.0;
-  double interPacketInterval = 200;  // 500 microseconds
+  double interPacketInterval = 20;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
-  bool tcp = true;
+  bool tcp = false;
 
   
   // Command line arguments
