@@ -369,7 +369,7 @@ static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of b
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
     ns3::BooleanValue(false), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(16), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -420,7 +420,7 @@ main (int argc, char *argv[])
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
-  bool tcp = false;
+  bool tcp = true;
 
   
   // Command line arguments
@@ -474,6 +474,7 @@ main (int argc, char *argv[])
   std::string cellIdInTimeOutName = "CellIdStats";
   std::string cellIdInTimeHandoverOutName = "CellIdStatsHandover";
   std::string mmWaveSinrOutputFilename = "MmWaveSinrTime";
+  std::string x2statOutputFilename = "X2Stats";
   std::string extension = ".txt";
   std::string version;
   if(fastSwitching)
@@ -525,6 +526,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverOutputFilename", StringValue   (path + version + enbHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::CellIdStatsHandoverOutputFilename", StringValue(path + version + cellIdInTimeHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::MmWaveSinrOutputFilename", StringValue(path + version + mmWaveSinrOutputFilename + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::CoreNetworkStatsCalculator::X2FileName", StringValue                  (path + version + x2statOutputFilename    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
 
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
@@ -717,7 +719,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP DL app for UE " << u);
           OnOffHelper dlClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
-          dlClientHelper.SetConstantRate(DataRate ("200Mb/s"), 1500);
+          dlClientHelper.SetConstantRate(DataRate ("500Mb/s"), 1500);
           clientApps.Add (dlClientHelper.Install (remoteHost));
           PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), dlPort));
@@ -728,7 +730,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP UL app for UE " << u);
           OnOffHelper ulClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (remoteHostAddr, ulPort));
-          ulClientHelper.SetConstantRate(DataRate ("200Mb/s"), 1500);
+          ulClientHelper.SetConstantRate(DataRate ("500Mb/s"), 1500);
           clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
           PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), ulPort));

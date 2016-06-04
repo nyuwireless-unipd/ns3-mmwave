@@ -1850,14 +1850,14 @@ LteEnbRrc::GetTypeId (void)
                    "X2 HO REQ ACK by source eNB, transmission of the Handover "
                    "Command, non-contention-based random access and reception "
                    "of the RRC CONNECTION RECONFIGURATION COMPLETE message.",
-                   TimeValue (MilliSeconds (200)),
+                   TimeValue (MilliSeconds (1200)),
                    MakeTimeAccessor (&LteEnbRrc::m_handoverJoiningTimeoutDuration),
                    MakeTimeChecker ())
     .AddAttribute ("HandoverLeavingTimeoutDuration",
                    "After issuing a Handover Command, if neither RRC "
                    "CONNECTION RE-ESTABLISHMENT nor X2 UE Context Release has "
                    "been previously received, the UE context is destroyed.",
-                   TimeValue (MilliSeconds (500)),
+                   TimeValue (MilliSeconds (1500)),
                    MakeTimeAccessor (&LteEnbRrc::m_handoverLeavingTimeoutDuration),
                    MakeTimeChecker ())
 
@@ -2801,20 +2801,23 @@ void
 LteEnbRrc::HandoverJoiningTimeout (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << rnti);
-  NS_LOG_UNCOND("Handover joining Timeout on cell " << m_cellId);
+  NS_LOG_INFO("Handover joining Timeout on cell " << m_cellId);
   NS_ASSERT_MSG (GetUeManager (rnti)->GetState () == UeManager::HANDOVER_JOINING,
                  "HandoverJoiningTimeout in unexpected state " << ToString (GetUeManager (rnti)->GetState ()));
   
   // notify the LTE eNB (coordinator) of the failure
-  uint16_t sourceCellId = (GetUeManager (rnti)->GetSource()).first;
+  if(m_ismmWave)
+  {
+    uint16_t sourceCellId = (GetUeManager (rnti)->GetSource()).first;
 
-  NS_LOG_INFO ("rejecting handover request from cellId " << sourceCellId);
-  EpcX2SapProvider::HandoverFailedParams res;
-  res.sourceCellId = sourceCellId;
-  res.targetCellId = m_cellId;
-  res.coordinatorId = m_lteCellId;
-  res.imsi = GetImsiFromRnti(rnti);
-  m_x2SapProvider->NotifyCoordinatorHandoverFailed(res);
+    NS_LOG_INFO ("rejecting handover request from cellId " << sourceCellId);
+    EpcX2SapProvider::HandoverFailedParams res;
+    res.sourceCellId = sourceCellId;
+    res.targetCellId = m_cellId;
+    res.coordinatorId = m_lteCellId;
+    res.imsi = GetImsiFromRnti(rnti);
+    m_x2SapProvider->NotifyCoordinatorHandoverFailed(res);
+  }
   // schedule the removal of the UE
   Simulator::Schedule(MilliSeconds(300), &LteEnbRrc::RemoveUe, this, rnti);
 }
@@ -2867,7 +2870,7 @@ void
 LteEnbRrc::DoRecvRrcConnectionReconfigurationCompleted (uint16_t rnti, LteRrcSap::RrcConnectionReconfigurationCompleted msg)
 {
   NS_LOG_FUNCTION (this << rnti);
-  NS_LOG_UNCOND("Received RRC connection reconf completed on cell " << m_cellId);
+  NS_LOG_INFO("Received RRC connection reconf completed on cell " << m_cellId);
   GetUeManager (rnti)->RecvRrcConnectionReconfigurationCompleted (msg);
 }
 
