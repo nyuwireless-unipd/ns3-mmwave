@@ -1850,14 +1850,14 @@ LteEnbRrc::GetTypeId (void)
                    "X2 HO REQ ACK by source eNB, transmission of the Handover "
                    "Command, non-contention-based random access and reception "
                    "of the RRC CONNECTION RECONFIGURATION COMPLETE message.",
-                   TimeValue (MilliSeconds (1200)),
+                   TimeValue (Seconds (45)),
                    MakeTimeAccessor (&LteEnbRrc::m_handoverJoiningTimeoutDuration),
                    MakeTimeChecker ())
     .AddAttribute ("HandoverLeavingTimeoutDuration",
                    "After issuing a Handover Command, if neither RRC "
                    "CONNECTION RE-ESTABLISHMENT nor X2 UE Context Release has "
                    "been previously received, the UE context is destroyed.",
-                   TimeValue (MilliSeconds (1500)),
+                   TimeValue (Seconds (45)),
                    MakeTimeAccessor (&LteEnbRrc::m_handoverLeavingTimeoutDuration),
                    MakeTimeChecker ())
 
