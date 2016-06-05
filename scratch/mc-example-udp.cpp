@@ -413,7 +413,7 @@ main (int argc, char *argv[])
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   uint16_t numberOfNodes = 1;
-  double simTime = 90.0;
+  double simTime = 45.0;
   double interPacketInterval = 50;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
@@ -636,7 +636,7 @@ main (int argc, char *argv[])
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, -5, 0));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (100, -5, 0));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes
