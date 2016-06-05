@@ -93,11 +93,13 @@ public:
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags,
                                 Address &fromAddress);
   virtual int GetSockName (Address &address) const; 
+  virtual int GetPeerName (Address &address) const;
   virtual int MulticastJoinGroup (uint32_t interfaceIndex, const Address &groupAddress);
   virtual int MulticastLeaveGroup (uint32_t interfaceIndex, const Address &groupAddress);
   virtual void BindToNetDevice (Ptr<NetDevice> netdevice);
   virtual bool SetAllowBroadcast (bool allowBroadcast);
   virtual bool GetAllowBroadcast () const;
+  virtual void Ipv6JoinGroup (Ipv6Address address, Socket::Ipv6MulticastFilterMode filterMode, std::vector<Ipv6Address> sourceAddresses);
 
 private:
   // Attributes set through UdpSocket base class 
@@ -170,13 +172,6 @@ private:
    */
   int DoSend (Ptr<Packet> p);
   /**
-   * \brief Send a packet to a specific destination
-   * \param p packet
-   * \param daddr destination address
-   * \returns 0 on success, -1 on failure
-   */
-  int DoSendTo (Ptr<Packet> p, const Address &daddr);
-  /**
    * \brief Send a packet to a specific destination and port (IPv4)
    * \param p packet
    * \param daddr destination address
@@ -227,13 +222,13 @@ private:
   uint16_t m_defaultPort;   //!< Default port
   TracedCallback<Ptr<const Packet> > m_dropTrace; //!< Trace for dropped packets
 
-  enum SocketErrno         m_errno;           //!< Socket error code
+  mutable enum SocketErrno m_errno;           //!< Socket error code
   bool                     m_shutdownSend;    //!< Send no longer allowed
   bool                     m_shutdownRecv;    //!< Receive no longer allowed
   bool                     m_connected;       //!< Connection established
   bool                     m_allowBroadcast;  //!< Allow send broadcast packets
 
-  std::queue<Ptr<Packet> > m_deliveryQueue; //!< Queue for incoming packets
+  std::queue<std::pair<Ptr<Packet>, Address> > m_deliveryQueue; //!< Queue for incoming packets
   uint32_t m_rxAvailable;                   //!< Number of available bytes to be received
 
   // Socket attributes

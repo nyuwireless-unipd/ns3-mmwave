@@ -38,9 +38,6 @@
 #include "ns3/ipv6-l3-protocol.h"
 #include "ns3/icmpv6-l4-protocol.h"
 #include "ns3/udp-l4-protocol.h"
-#include "ns3/ipv6-static-routing.h"
-#include "ns3/ipv6-list-routing.h"
-#include "ns3/ipv6-list-routing-helper.h"
 #include "ns3/ripng.h"
 #include "ns3/ripng-helper.h"
 #include "ns3/node-container.h"
@@ -115,10 +112,8 @@ Ipv6RipngTest::DoRun (void)
   NodeContainer all (nodes, routers);
 
   RipNgHelper ripNgRouting;
-  Ipv6ListRoutingHelper listRH;
-  listRH.Add (ripNgRouting, 0);
   InternetStackHelper internetv6routers;
-  internetv6routers.SetRoutingHelper (listRH);
+  internetv6routers.SetRoutingHelper (ripNgRouting);
   internetv6routers.Install (routers);
 
   InternetStackHelper internetv6nodes;
@@ -326,10 +321,8 @@ Ipv6RipngCountToInfinityTest::DoRun (void)
   ripNgRouting.SetInterfaceMetric (routerB, 2, 10);
   ripNgRouting.SetInterfaceMetric (routerC, 1, 10);
 
-  Ipv6ListRoutingHelper listRH;
-  listRH.Add (ripNgRouting, 0);
   InternetStackHelper internetv6routers;
-  internetv6routers.SetRoutingHelper (listRH);
+  internetv6routers.SetRoutingHelper (ripNgRouting);
   internetv6routers.Install (routers);
 
   InternetStackHelper internetv6nodes;
@@ -486,11 +479,10 @@ void Ipv6RipngSplitHorizonStrategyTest::ReceivePktProbe (Ptr<Socket> socket)
 {
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
-  Ptr<Packet> receivedPacketProbe = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
+  Address srcAddr;
+  Ptr<Packet> receivedPacketProbe = socket->RecvFrom (std::numeric_limits<uint32_t>::max (), 0, srcAddr);
   NS_ASSERT (availableData == receivedPacketProbe->GetSize ());
-  SocketAddressTag tag;
-  receivedPacketProbe->RemovePacketTag (tag);
-  Ipv6Address senderAddress = Inet6SocketAddress::ConvertFrom (tag.GetAddress ()).GetIpv6 ();
+  Ipv6Address senderAddress = Inet6SocketAddress::ConvertFrom (srcAddr).GetIpv6 ();
 
   if (senderAddress == "fe80::200:ff:fe00:4")
     {
@@ -543,10 +535,8 @@ Ipv6RipngSplitHorizonStrategyTest::DoRun (void)
   RipNgHelper ripNgRouting;
   ripNgRouting.Set ("SplitHorizon", EnumValue (m_setStrategy));
 
-  Ipv6ListRoutingHelper listRH;
-  listRH.Add (ripNgRouting, 0);
   InternetStackHelper internetv6routers;
-  internetv6routers.SetRoutingHelper (listRH);
+  internetv6routers.SetRoutingHelper (ripNgRouting);
   internetv6routers.Install (routers);
 
   InternetStackHelper internetv6nodes;
@@ -622,6 +612,7 @@ Ipv6RipngSplitHorizonStrategyTest::DoRun (void)
   Ptr<SocketFactory> rxSocketFactory = listener->GetObject<UdpSocketFactory> ();
   Ptr<Socket> rxSocket = rxSocketFactory->CreateSocket ();
   NS_TEST_EXPECT_MSG_EQ (rxSocket->Bind (Inet6SocketAddress (Ipv6Address ("ff02::9"), 521)), 0, "trivial");
+  rxSocket->BindToNetDevice (listenerDev);
   rxSocket->SetRecvCallback (MakeCallback (&Ipv6RipngSplitHorizonStrategyTest::ReceivePktProbe, this));
 
   // ------ Now the tests ------------

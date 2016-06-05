@@ -249,8 +249,8 @@ EpcEnbApplication::RecvFromLteSocket (Ptr<Socket> socket)
 
   /// \internal
   /// Workaround for \bugid{231}
-  SocketAddressTag satag;
-  packet->RemovePacketTag (satag);
+  //SocketAddressTag satag;
+  //packet->RemovePacketTag (satag);
 
   EpsBearerTag tag;
   bool found = packet->RemovePacketTag (tag);
@@ -284,8 +284,8 @@ EpcEnbApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 
   /// \internal
   /// Workaround for \bugid{231}
-  SocketAddressTag tag;
-  packet->RemovePacketTag (tag);
+  //SocketAddressTag tag;
+  //packet->RemovePacketTag (tag);
 
   std::map<uint32_t, EpsFlowId_t>::iterator it = m_teidRbidMap.find (teid);
   if (it != m_teidRbidMap.end ())

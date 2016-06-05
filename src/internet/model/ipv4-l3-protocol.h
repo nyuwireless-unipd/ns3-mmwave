@@ -117,33 +117,16 @@ public:
   Ptr<Socket> CreateRawSocket (void);
   void DeleteRawSocket (Ptr<Socket> socket);
 
-  /**
-   * \param protocol a template for the protocol to add to this L4 Demux.
-   * \returns the L4Protocol effectively added.
-   *
-   * Invoke Copy on the input template to get a copy of the input
-   * protocol which can be used on the Node on which this L4 Demux 
-   * is running. The new L4Protocol is registered internally as
-   * a working L4 Protocol and returned from this method.
-   * The caller does not get ownership of the returned pointer.
-   */
-  void Insert (Ptr<IpL4Protocol> protocol);
-  /**
-   * \param protocolNumber number of protocol to lookup
-   *        in this L4 Demux
-   * \returns a matching L4 Protocol
-   *
-   * This method is typically called by lower layers
-   * to forward packets up the stack to the right protocol.
-   */
+  virtual void Insert (Ptr<IpL4Protocol> protocol);
+  virtual void Insert (Ptr<IpL4Protocol> protocol, uint32_t interfaceIndex);
+
+  virtual void Remove (Ptr<IpL4Protocol> protocol);
+  virtual void Remove (Ptr<IpL4Protocol> protocol, uint32_t interfaceIndex);
+
   virtual Ptr<IpL4Protocol> GetProtocol (int protocolNumber) const;
-  /**
-   * \param protocol protocol to remove from this demux.
-   *
-   * The input value to this method should be the value
-   * returned from the Ipv4L4Protocol::Insert method.
-   */
-  void Remove (Ptr<IpL4Protocol> protocol);
+  virtual Ptr<IpL4Protocol> GetProtocol (int protocolNumber, int32_t interfaceIndex) const;
+
+  virtual Ipv4Address SourceAddressSelection (uint32_t interface, Ipv4Address dest);
 
   /**
    * \param ttl default ttl to use
@@ -162,7 +145,7 @@ public:
    * \param device network device
    * \param p the packet
    * \param protocol protocol value
-   * \param from address of the correspondant
+   * \param from address of the correspondent
    * \param to address of the destination
    * \param packetType type of the packet
    */
@@ -250,6 +233,7 @@ public:
   /**
    * TracedCallback signature for packet transmission or reception events.
    *
+   * \param [in] header The Ipv4Header.
    * \param [in] packet The packet.
    * \param [in] ipv4
    * \param [in] interface
@@ -403,12 +387,18 @@ private:
   bool IsUnicast (Ipv4Address ad, Ipv4Mask interfaceMask) const;
 
   /**
+   * \brief Pair of a packet and an Ipv4 header.
+   */
+  typedef std::pair<Ptr<Packet>, Ipv4Header> Ipv4PayloadHeaderPair;
+
+  /**
    * \brief Fragment a packet
    * \param packet the packet
+   * \param ipv4Header the IPv4 header
    * \param outIfaceMtu the MTU of the interface
    * \param listFragments the list of fragments
    */
-  void DoFragmentation (Ptr<Packet> packet, uint32_t outIfaceMtu, std::list<Ptr<Packet> >& listFragments);
+  void DoFragmentation (Ptr<Packet> packet, const Ipv4Header& ipv4Header, uint32_t outIfaceMtu, std::list<Ipv4PayloadHeaderPair>& listFragments);
 
   /**
    * \brief Process a packet fragment
@@ -426,24 +416,47 @@ private:
    * \param iif Input Interface
    */
   void HandleFragmentsTimeout ( std::pair<uint64_t, uint32_t> key, Ipv4Header & ipHeader, uint32_t iif);
-  
+
+  /**
+   * \brief Make a copy of the packet, add the header and invoke the TX trace callback
+   * \param ipHeader the IP header that will be added to the packet
+   * \param packet the packet
+   * \param ipv4 the Ipv4 protocol
+   * \param interface the interface index
+   *
+   * Note: If the TracedCallback API ever is extended, we could consider
+   * to check for connected functions before adding the header
+   */
+  void CallTxTrace (const Ipv4Header & ipHeader, Ptr<Packet> packet, Ptr<Ipv4> ipv4, uint32_t interface);
+
   /**
    * \brief Container of the IPv4 Interfaces.
    */
   typedef std::vector<Ptr<Ipv4Interface> > Ipv4InterfaceList;
   /**
+   * \brief Container of NetDevices registered to IPv4 and their interface indexes.
+   */
+  typedef std::map<Ptr<const NetDevice>, uint32_t > Ipv4InterfaceReverseContainer;
+  /**
    * \brief Container of the IPv4 Raw Sockets.
    */
   typedef std::list<Ptr<Ipv4RawSocketImpl> > SocketList;
+
+  /**
+   * \brief Container of the IPv4 L4 keys: protocol number, interface index
+   */
+  typedef std::pair<int, int32_t> L4ListKey_t;
+
   /**
    * \brief Container of the IPv4 L4 instances.
    */
-   typedef std::list<Ptr<IpL4Protocol> > L4List_t;
+  typedef std::map<L4ListKey_t, Ptr<IpL4Protocol> > L4List_t;
 
   bool m_ipForward;      //!< Forwarding packets (i.e. router mode) state.
   bool m_weakEsModel;    //!< Weak ES model state
   L4List_t m_protocols;  //!< List of transport protocol.
   Ipv4InterfaceList m_interfaces; //!< List of IPv4 interfaces.
+  Ipv4InterfaceReverseContainer m_reverseInterfacesContainer; //!< Container of NetDevice / Interface index associations.
   uint8_t m_defaultTos;  //!< Default TOS
   uint8_t m_defaultTtl;  //!< Default TTL
   std::map<std::pair<uint64_t, uint8_t>, uint16_t> m_identification; //!< Identification (for each {src, dst, proto} tuple)

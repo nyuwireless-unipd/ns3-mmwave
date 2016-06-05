@@ -20,8 +20,8 @@
 
 #include "ipv4-interface.h"
 #include "loopback-net-device.h"
-#include "ns3/ipv4-address.h"
 #include "ipv4-l3-protocol.h"
+#include "ipv4-queue-disc-item.h"
 #include "arp-l3-protocol.h"
 #include "arp-cache.h"
 #include "ns3/net-device.h"
@@ -64,6 +64,7 @@ Ipv4Interface::Ipv4Interface ()
     m_metric (1),
     m_node (0), 
     m_device (0),
+    m_tc (0),
     m_cache (0)
 {
   NS_LOG_FUNCTION (this);
@@ -80,6 +81,8 @@ Ipv4Interface::DoDispose (void)
   NS_LOG_FUNCTION (this);
   m_node = 0;
   m_device = 0;
+  m_tc = 0;
+  m_cache = 0;
   Object::DoDispose ();
 }
 
@@ -97,6 +100,13 @@ Ipv4Interface::SetDevice (Ptr<NetDevice> device)
   NS_LOG_FUNCTION (this << device);
   m_device = device;
   DoSetup ();
+}
+
+void
+Ipv4Interface::SetTrafficControl (Ptr<TrafficControlLayer> tc)
+{
+  NS_LOG_FUNCTION (this << tc);
+  m_tc = tc;
 }
 
 void
@@ -198,34 +208,37 @@ Ipv4Interface::SetForwarding (bool val)
 }
 
 void
-Ipv4Interface::Send (Ptr<Packet> p, Ipv4Address dest)
+Ipv4Interface::Send (Ptr<Packet> p, const Ipv4Header & hdr, Ipv4Address dest)
 {
   NS_LOG_FUNCTION (this << *p << dest);
   if (!IsUp ())
     {
       return;
     }
-  // Check for a loopback device
+
+  // Check for a loopback device, if it's the case we don't pass through
+  // traffic control layer
   if (DynamicCast<LoopbackNetDevice> (m_device))
     {
       /// \todo additional checks needed here (such as whether multicast
       /// goes to loopback)?
-      m_device->Send (p, m_device->GetBroadcast (), 
-                      Ipv4L3Protocol::PROT_NUMBER);
+      p->AddHeader (hdr);
+      m_device->Send (p, m_device->GetBroadcast (), Ipv4L3Protocol::PROT_NUMBER);
       return;
     } 
+
+  NS_ASSERT (m_tc != 0);
+
   // is this packet aimed at a local interface ?
   for (Ipv4InterfaceAddressListCI i = m_ifaddrs.begin (); i != m_ifaddrs.end (); ++i)
     {
       if (dest == (*i).GetLocal ())
         {
-          Ptr<Ipv4L3Protocol> ipv4 = m_node->GetObject<Ipv4L3Protocol> ();
-
-          ipv4->Receive (m_device, p, Ipv4L3Protocol::PROT_NUMBER, 
+          p->AddHeader (hdr);
+          m_tc->Receive (m_device, p, Ipv4L3Protocol::PROT_NUMBER,
                          m_device->GetBroadcast (),
                          m_device->GetBroadcast (),
-                         NetDevice::PACKET_HOST // note: linux uses PACKET_LOOPBACK here
-                         );
+                         NetDevice::PACKET_HOST);
           return;
         }
     }
@@ -266,22 +279,20 @@ Ipv4Interface::Send (Ptr<Packet> p, Ipv4Address dest)
           if (!found)
             {
               NS_LOG_LOGIC ("ARP Lookup");
-              found = arp->Lookup (p, dest, m_device, m_cache, &hardwareDestination);
+              found = arp->Lookup (p, hdr, dest, m_device, m_cache, &hardwareDestination);
             }
         }
 
       if (found)
         {
           NS_LOG_LOGIC ("Address Resolved.  Send.");
-          m_device->Send (p, hardwareDestination,
-                          Ipv4L3Protocol::PROT_NUMBER);
+          m_tc->Send (m_device, Create<Ipv4QueueDiscItem> (p, hardwareDestination, Ipv4L3Protocol::PROT_NUMBER, hdr));
         }
     }
   else
     {
       NS_LOG_LOGIC ("Doesn't need ARP");
-      m_device->Send (p, m_device->GetBroadcast (), 
-                      Ipv4L3Protocol::PROT_NUMBER);
+      m_tc->Send (m_device, Create<Ipv4QueueDiscItem> (p, m_device->GetBroadcast (), Ipv4L3Protocol::PROT_NUMBER, hdr));
     }
 }
 

@@ -131,6 +131,21 @@ Ipv4RawSocketImpl::GetSockName (Address &address) const
   address = InetSocketAddress (m_src, 0);
   return 0;
 }
+int
+Ipv4RawSocketImpl::GetPeerName (Address &address) const
+{
+  NS_LOG_FUNCTION (this << address);
+
+  if (m_dst == Ipv4Address::GetAny ())
+    {
+      m_err = ERROR_NOTCONN;
+      return -1;
+    }
+
+  address = InetSocketAddress (m_dst, 0);
+
+  return 0;
+}
 int 
 Ipv4RawSocketImpl::Close (void)
 {
@@ -237,17 +252,19 @@ Ipv4RawSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags,
       if (route != 0)
         {
           NS_LOG_LOGIC ("Route exists");
+          uint32_t pktSize = p->GetSize ();
           if (!m_iphdrincl)
             {
               ipv4->Send (p, route->GetSource (), dst, m_protocol, route);
             }
           else
             {
+              pktSize += header.GetSerializedSize ();
               ipv4->SendWithHeader (p, header, route);
             }
-          NotifyDataSent (p->GetSize ());
+          NotifyDataSent (pktSize);
           NotifySend (GetTxAvailable ());
-          return p->GetSize ();
+          return pktSize;
         }
       else
         {

@@ -442,7 +442,7 @@ WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<Packet> packet, double snr, WifiTxVec
 }
 
 void
-WifiPhyStateHelper::SwitchFromRxEndError (Ptr<const Packet> packet, double snr)
+WifiPhyStateHelper::SwitchFromRxEndError (Ptr<Packet> packet, double snr)
 {
   m_rxErrorTrace (packet, snr);
   NotifyRxEndError ();

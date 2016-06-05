@@ -38,6 +38,7 @@ namespace ns3
 
 class NetDevice;
 class Ipv6Interface;
+class Ipv6Header;
 
 /**
  * \class NdiscCache
@@ -82,10 +83,17 @@ public:
 
   /**
    * \brief Lookup in the cache.
-   * \param dst destination address
-   * \return the entry if found, 0 otherwise
+   * \param dst destination address.
+   * \return the entry if found, 0 otherwise.
    */
   NdiscCache::Entry* Lookup (Ipv6Address dst);
+
+  /**
+   * \brief Lookup in the cache for a MAC address.
+   * \param dst destination MAC address.
+   * \return a list of matching entries.
+   */
+  std::list<NdiscCache::Entry*> LookupInverse (Address dst);
 
   /**
    * \brief Add an entry.
@@ -132,6 +140,11 @@ public:
   void PrintNdiscCache (Ptr<OutputStreamWrapper> stream);
 
   /**
+   * \brief Pair of a packet and an Ipv4 header.
+   */
+  typedef std::pair<Ptr<Packet>, Ipv6Header> Ipv6PayloadHeaderPair;
+
+  /**
    * \class Entry
    * \brief A record that holds information about an NdiscCache entry.
    */
@@ -148,14 +161,14 @@ public:
      * \brief Changes the state to this entry to INCOMPLETE.
      * \param p packet that wait to be sent
      */
-    void MarkIncomplete (Ptr<Packet> p);
+    void MarkIncomplete (Ipv6PayloadHeaderPair p);
 
     /**
      * \brief Changes the state to this entry to REACHABLE.
      * \param mac MAC address
      * \return the list of packet waiting
      */
-    std::list<Ptr<Packet> > MarkReachable (Address mac);
+    std::list<Ipv6PayloadHeaderPair> MarkReachable (Address mac);
 
     /**
      * \brief Changes the state to this entry to PROBE.
@@ -167,7 +180,7 @@ public:
      * \param mac L2 address
      * \return the list of packet waiting
      */
-    std::list<Ptr<Packet> > MarkStale (Address mac);
+    std::list<Ipv6PayloadHeaderPair> MarkStale (Address mac);
 
     /**
      * \brief Changes the state to this entry to STALE.
@@ -185,10 +198,15 @@ public:
     void MarkDelay ();
 
     /**
+     * \brief Change the state to this entry to PERMANENT.
+     */
+    void MarkPermanent ();
+
+    /**
      * \brief Add a packet (or replace old value) in the queue.
      * \param p packet to add
      */
-    void AddWaitingPacket (Ptr<Packet> p);
+    void AddWaitingPacket (Ipv6PayloadHeaderPair p);
 
     /**
      * \brief Clear the waiting packet list.
@@ -226,6 +244,12 @@ public:
     bool IsProbe () const;
 
     /**
+     * \brief Is the entry PERMANENT
+     * \return true if the entry is in PERMANENT state, false otherwise
+     */
+    bool IsPermanent () const;
+
+    /**
      * \brief Get the MAC address of this entry.
      * \return the L2 address
      */
@@ -256,14 +280,14 @@ public:
     Time GetLastReachabilityConfirmation () const;
 
     /**
-     * \brief Update the time of last reachability confirmation.
-     */
-    void UpdateLastReachabilityconfirmation ();
-
-    /**
      * \brief Start the reachable timer.
      */
     void StartReachableTimer ();
+
+    /**
+     * \brief Update the reachable timer.
+     */
+    void UpdateReachableTimer ();
 
     /**
      * \brief Start retransmit timer.
@@ -328,7 +352,8 @@ private:
       REACHABLE, /**< Mapping exists between IPv6 and L2 addresses */
       STALE, /**< Mapping is stale */
       DELAY, /**< Try to wait contact from remote host */
-      PROBE /**< Try to contact IPv6 address to know again its L2 address */
+      PROBE, /**< Try to contact IPv6 address to know again its L2 address */
+      PERMANENT /**< Permanent Mapping exists between IPv6 and L2 addresses */
     };
 
     /**
@@ -349,7 +374,7 @@ private:
     /**
      * \brief The list of packet waiting.
      */
-    std::list<Ptr<Packet> > m_waiting;
+    std::list<Ipv6PayloadHeaderPair> m_waiting;
 
     /**
      * \brief Type of node (router or host).

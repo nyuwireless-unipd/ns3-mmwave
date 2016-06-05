@@ -31,6 +31,8 @@
 
 namespace ns3 {
 
+class WifiTxVector;
+
 /**
  * This enumeration defines the modulation classes per
  * (Table 9-4 "Modulation classes"; IEEE 802.11-2012).
@@ -110,6 +112,15 @@ public:
    */
   uint64_t GetPhyRate (uint32_t channelWidth, bool isShortGuardInterval, uint8_t nss) const;
   /**
+   * \param txVector the WifiTxVector of the signal
+   *
+   * \returns the physical bit rate of this signal.
+   *
+   * If a transmission mode uses 1/2 FEC, and if its
+   * data rate is 3.25Mbps, the phy rate is 6.5Mbps
+   */
+  uint64_t GetPhyRate (WifiTxVector txVector) const;
+  /**
    *
    * \param channelWidth the considered channel width in MHz
    * \param isShortGuardInterval whether short guard interval is considered or not
@@ -119,19 +130,19 @@ public:
    */
   uint64_t GetDataRate (uint32_t channelWidth, bool isShortGuardInterval, uint8_t nss) const;
   /**
+   * \param txVector the WifiTxVector of the signal
    *
-   * \param nss the considered number of streams
-   *
+   * \returns the data bit rate of this signal.
+   */
+  uint64_t GetDataRate (WifiTxVector txVector) const;
+  /**
    * \returns the coding rate of this transmission mode
    */
-  enum WifiCodeRate GetCodeRate (uint8_t nss) const;
+  enum WifiCodeRate GetCodeRate (void) const;
   /**
-   *
-   * \param nss the considered number of streams
-   *
    * \returns the size of the modulation constellation.
    */
-  uint16_t GetConstellationSize (uint8_t nss) const;
+  uint16_t GetConstellationSize (void) const;
   /**
    * \returns the MCS value.
    */
@@ -159,7 +170,26 @@ public:
    * \returns the Modulation Class (Section 9.7.8 "Modulation classes"; IEEE 802.11-2012)
    * to which this WifiMode belongs.
    */
-  enum WifiModulationClass GetModulationClass () const;
+  enum WifiModulationClass GetModulationClass () const;  
+  /**
+   * \returns the rate (in bps) of the non-HT Reference Rate
+   * which corresponds to the HT MCS of this WifiMode.
+   *
+   * To convert an HT MCS to is corresponding non-HT Reference Rate
+   * use the modulation and coding rate of the HT MCS
+   * and lookup in Table 9-5 of IEEE 802.11-2012.
+   */
+  uint64_t GetNonHtReferenceRate (void) const;
+  /**
+   * \returns true if this WifiMode has a
+   * a code rate strictly higher than mode.
+   */
+  bool IsHigherCodeRate (WifiMode mode) const;
+  /**
+   * \returns true if this WifiMode has a
+   * a rate strictly higher than mode.
+   */
+  bool IsHigherDataRate (WifiMode mode) const;
 
   /**
    * Create an invalid WifiMode. Calling any method on the

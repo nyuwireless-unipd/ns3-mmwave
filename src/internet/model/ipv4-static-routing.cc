@@ -235,7 +235,7 @@ Ipv4StaticRouting::LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)
       rtentry->SetDestination (dest);
       rtentry->SetGateway (Ipv4Address::GetZero ());
       rtentry->SetOutputDevice (oif);
-      rtentry->SetSource (m_ipv4->GetAddress (oif->GetIfIndex (), 0).GetLocal ());
+      rtentry->SetSource (m_ipv4->GetAddress (m_ipv4->GetInterfaceForDevice (oif), 0).GetLocal ());
       return rtentry;
     }
 
@@ -281,9 +281,13 @@ Ipv4StaticRouting::LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)
           uint32_t interfaceIdx = route->GetInterface ();
           rtentry = Create<Ipv4Route> ();
           rtentry->SetDestination (route->GetDest ());
-          rtentry->SetSource (SourceAddressSelection (interfaceIdx, route->GetDest ()));
+          rtentry->SetSource (m_ipv4->SourceAddressSelection (interfaceIdx, route->GetDest ()));
           rtentry->SetGateway (route->GetGateway ());
           rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+          if (masklen == 32)
+            {
+              break;
+            }
         }
     }
   if (rtentry != 0)
@@ -495,7 +499,7 @@ Ipv4StaticRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &ipHeader,
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev); 
 
   // Multicast recognition; handle local delivery here
-  //
+
   if (ipHeader.GetDestination ().IsMulticast ())
     {
       NS_LOG_LOGIC ("Multicast destination");
@@ -514,48 +518,26 @@ Ipv4StaticRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &ipHeader,
           return false; // Let other routing protocols try to handle this
         }
     }
-  if (ipHeader.GetDestination ().IsBroadcast ())
-    {
-      NS_LOG_LOGIC ("For me (Ipv4Addr broadcast address)");
-      /// \todo Local Deliver for broadcast
-      /// \todo Forward broadcast
-    }
 
-  NS_LOG_LOGIC ("Unicast destination");
-  /// \todo Configurable option to enable \RFC{1222} Strong End System Model
-  // Right now, we will be permissive and allow a source to send us
-  // a packet to one of our other interface addresses; that is, the
-  // destination unicast address does not match one of the iif addresses,
-  // but we check our other interfaces.  This could be an option
-  // (to remove the outer loop immediately below and just check iif).
-  for (uint32_t j = 0; j < m_ipv4->GetNInterfaces (); j++)
+  if (m_ipv4->IsDestinationAddress (ipHeader.GetDestination (), iif))
     {
-      for (uint32_t i = 0; i < m_ipv4->GetNAddresses (j); i++)
+      if (!lcb.IsNull ())
         {
-          Ipv4InterfaceAddress iaddr = m_ipv4->GetAddress (j, i);
-          Ipv4Address addr = iaddr.GetLocal ();
-          if (addr.IsEqual (ipHeader.GetDestination ()))
-            {
-              if (j == iif)
-                {
-                  NS_LOG_LOGIC ("For me (destination " << addr << " match)");
-                }
-              else
-                {
-                  NS_LOG_LOGIC ("For me (destination " << addr << " match) on another interface " << ipHeader.GetDestination ());
-                }
-              lcb (p, ipHeader, iif);
-              return true;
-            }
-          if (ipHeader.GetDestination ().IsEqual (iaddr.GetBroadcast ()))
-            {
-              NS_LOG_LOGIC ("For me (interface broadcast address)");
-              lcb (p, ipHeader, iif);
-              return true;
-            }
-          NS_LOG_LOGIC ("Address "<< addr << " not a match");
+          NS_LOG_LOGIC ("Local delivery to " << ipHeader.GetDestination ());
+          lcb (p, ipHeader, iif);
+          return true;
+        }
+      else
+        {
+          // The local delivery callback is null.  This may be a multicast
+          // or broadcast packet, so return false so that another
+          // multicast routing protocol can handle it.  It should be possible
+          // to extend this to explicitly check whether it is a unicast
+          // packet, and invoke the error callback if so
+          return false;
         }
     }
+
   // Check if input device supports IP forwarding
   if (m_ipv4->IsForwarding (iif) == false)
     {
@@ -712,6 +694,12 @@ Ipv4StaticRouting::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 {
   NS_LOG_FUNCTION (this << stream);
   std::ostream* os = stream->GetStream ();
+
+  *os << "Node: " << m_ipv4->GetObject<Node> ()->GetId ()
+      << ", Time: " << Now().As (Time::S)
+      << ", Local time: " << GetObject<Node> ()->GetLocalTime ().As (Time::S)
+      << ", Ipv4StaticRouting table" << std::endl;
+
   if (GetNRoutes () > 0)
     {
       *os << "Destination     Gateway         Genmask         Flags Metric Ref    Use Iface" << std::endl;
@@ -751,32 +739,7 @@ Ipv4StaticRouting::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
           *os << std::endl;
         }
     }
-}
-Ipv4Address
-Ipv4StaticRouting::SourceAddressSelection (uint32_t interfaceIdx, Ipv4Address dest)
-{
-  NS_LOG_FUNCTION (this << interfaceIdx << " " << dest);
-  if (m_ipv4->GetNAddresses (interfaceIdx) == 1)  // common case
-    {
-      return m_ipv4->GetAddress (interfaceIdx, 0).GetLocal ();
-    }
-  // no way to determine the scope of the destination, so adopt the
-  // following rule:  pick the first available address (index 0) unless
-  // a subsequent address is on link (in which case, pick the primary
-  // address if there are multiple)
-  Ipv4Address candidate = m_ipv4->GetAddress (interfaceIdx, 0).GetLocal ();
-  for (uint32_t i = 0; i < m_ipv4->GetNAddresses (interfaceIdx); i++)
-    {
-      Ipv4InterfaceAddress test = m_ipv4->GetAddress (interfaceIdx, i);
-      if (test.GetLocal ().CombineMask (test.GetMask ()) == dest.CombineMask (test.GetMask ()))
-        {
-          if (test.IsSecondary () == false) 
-            {
-              return test.GetLocal ();
-            }
-        }
-    }
-  return candidate;
+  *os << std::endl;
 }
 
 } // namespace ns3

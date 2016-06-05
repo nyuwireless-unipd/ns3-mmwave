@@ -95,6 +95,7 @@ public:
   virtual int Bind6 ();
 
   virtual int GetSockName (Address& address) const;
+  virtual int GetPeerName (Address& address) const;
 
   virtual int Close ();
   virtual int ShutdownSend ();
@@ -107,6 +108,7 @@ public:
   virtual int SendTo (Ptr<Packet> p, uint32_t flags, const Address& toAddress);
   virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flags);
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags, Address& fromAddress);
+  virtual void Ipv6JoinGroup (Ipv6Address address, Socket::Ipv6MulticastFilterMode filterMode, std::vector<Ipv6Address> sourceAddresses);
 
   /**
    * \brief Set protocol field.
@@ -183,7 +185,7 @@ private:
   /**
    * \brief Last error number.
    */
-  enum Socket::SocketErrno m_err;
+  mutable enum Socket::SocketErrno m_err;
 
   /**
    * \brief Node.

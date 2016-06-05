@@ -39,6 +39,19 @@ namespace ns3 {
 class WifiChannel;
 class NetDevice;
 
+/**
+ * This enumeration defines the type of an MPDU.
+ */
+enum mpduType
+{
+  /** The MPDU is not part of an A-MPDU */
+  NORMAL_MPDU = 0,
+  /** The MPDU is part of an A-MPDU, but is not the last aggregate */
+  MPDU_IN_AGGREGATE,
+  /** The MPDU is the last aggregate in an A-MPDU */
+  LAST_MPDU_IN_AGGREGATE
+};
+
 struct signalNoiseDbm
 {
   double signal; //in dBm
@@ -47,8 +60,8 @@ struct signalNoiseDbm
 
 struct mpduInfo
 {
-  uint8_t packetType;
-  uint32_t referenceNumber;
+  enum mpduType type;
+  uint32_t mpduRefNumber;
 };
 
 /**
@@ -180,7 +193,7 @@ public:
    * arg1: packet received unsuccessfully
    * arg2: snr of packet
    */
-  typedef Callback<void, Ptr<const Packet>, double> RxErrorCallback;
+  typedef Callback<void, Ptr<Packet>, double> RxErrorCallback;
 
   static TypeId GetTypeId (void);
 
@@ -221,10 +234,17 @@ public:
    *        this packet, and txPowerLevel, a power level to use to send this packet. The real transmission
    *        power is calculated as txPowerMin + txPowerLevel * (txPowerMax - txPowerMin) / nTxLevels
    * \param preamble the type of preamble to use to send this packet.
-   * \param packetType the type of the packet 0 is not A-MPDU, 1 is a MPDU that is part of an A-MPDU and 2 is the last MPDU in an A-MPDU
-   * \param mpduReferenceNumber the A-MPDU reference number (must be a different value for each A-MPDU but the same for each subframe within one A-MPDU)
    */
-  virtual void SendPacket (Ptr<const Packet> packet, WifiTxVector txVector, enum WifiPreamble preamble, uint8_t packetType, uint32_t mpduReferenceNumber) = 0;
+  virtual void SendPacket (Ptr<const Packet> packet, WifiTxVector txVector, enum WifiPreamble preamble) = 0;
+  /**
+   * \param packet the packet to send
+   * \param txVector the TXVECTOR that has tx parameters such as mode, the transmission mode to use to send
+   *        this packet, and txPowerLevel, a power level to use to send this packet. The real transmission
+   *        power is calculated as txPowerMin + txPowerLevel * (txPowerMax - txPowerMin) / nTxLevels
+   * \param preamble the type of preamble to use to send this packet.
+   * \param mpdutype the type of the MPDU as defined in WifiPhy::mpduType.
+   */
+  virtual void SendPacket (Ptr<const Packet> packet, WifiTxVector txVector, enum WifiPreamble preamble, enum mpduType mpdutype) = 0;
 
   /**
    * \param listener the new listener
@@ -302,12 +322,21 @@ public:
    * \param txVector the TXVECTOR used for the transmission of this packet
    * \param preamble the type of preamble to use for this packet.
    * \param frequency the channel center frequency (MHz)
-   * \param packetType the type of the packet 0 is not A-MPDU, 1 is a MPDU that is part of an A-MPDU and 2 is the last MPDU in an A-MPDU
+   *
+   * \return the total amount of time this PHY will stay busy for the transmission of these bytes.
+   */
+  Time CalculateTxDuration (uint32_t size, WifiTxVector txVector, enum WifiPreamble preamble, double frequency);
+  /**
+   * \param size the number of bytes in the packet to send
+   * \param txVector the TXVECTOR used for the transmission of this packet
+   * \param preamble the type of preamble to use for this packet.
+   * \param frequency the channel center frequency (MHz)
+   * \param mpdutype the type of the MPDU as defined in WifiPhy::mpduType.
    * \param incFlag this flag is used to indicate that the static variables need to be update or not. This function is called a couple of times for the same packet so static variables should not be increased each time.
    *
    * \return the total amount of time this PHY will stay busy for the transmission of these bytes.
    */
-  Time CalculateTxDuration (uint32_t size, WifiTxVector txVector, enum WifiPreamble preamble, double frequency, uint8_t packetType, uint8_t incFlag);
+  Time CalculateTxDuration (uint32_t size, WifiTxVector txVector, enum WifiPreamble preamble, double frequency, enum mpduType mpdutype, uint8_t incFlag);
 
   /**
    * \param txVector the transmission parameters used for this packet
@@ -388,12 +417,21 @@ public:
    * \param txVector the TXVECTOR used for the transmission of this packet
    * \param preamble the type of preamble to use for this packet
    * \param frequency the channel center frequency (MHz)
-   * \param packetType the type of the packet (0 is not A-MPDU, 1 is a MPDU that is part of an A-MPDU and 2 is the last MPDU in an A-MPDU)
+   *
+   * \return the duration of the payload
+   */
+  Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, WifiPreamble preamble, double frequency);
+  /**
+   * \param size the number of bytes in the packet to send
+   * \param txVector the TXVECTOR used for the transmission of this packet
+   * \param preamble the type of preamble to use for this packet
+   * \param frequency the channel center frequency (MHz)
+   * \param mpdutype the type of the MPDU as defined in WifiPhy::mpduType.
    * \param incFlag this flag is used to indicate that the static variables need to be update or not. This function is called a couple of times for the same packet so static variables should not be increased each time
    *
    * \return the duration of the payload
    */
-  Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, WifiPreamble preamble, double frequency, uint8_t packetType, uint8_t incFlag);
+  Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, WifiPreamble preamble, double frequency, enum mpduType mpdutype, uint8_t incFlag);
 
   /**
    * The WifiPhy::GetNModes() and WifiPhy::GetMode() methods are used
@@ -444,13 +482,13 @@ public:
   virtual bool IsModeSupported (WifiMode mode) const = 0;
 
   /**
-   * \param txMode the transmission mode
+   * \param txVector the transmission vector
    * \param ber the probability of bit error rate
    *
    * \return the minimum snr which is required to achieve
-   *          the requested ber for the specified transmission mode. (W/W)
+   *          the requested ber for the specified transmission vector. (W/W)
    */
-  virtual double CalculateSnr (WifiMode txMode, double ber) const = 0;
+  virtual double CalculateSnr (WifiTxVector txVector, double ber) const = 0;
 
   /**
   * The WifiPhy::NBssMembershipSelectors() method is used
@@ -1017,6 +1055,15 @@ public:
    * \return MCS 9 from VHT MCS values
    */
   static WifiMode GetVhtMcs9 ();
+  /**
+   * The standard disallows certain combinations of WifiMode, number of
+   * spatial streams, and channel widths.  This method can be used to
+   * check whether this WifiTxVector contains an invalid combination.
+   *
+   * \param txVector the WifiTxVector to inspect
+   * \return true if the WifiTxVector parameters are allowed by the standard
+   */
+  static bool IsValidTxVector (WifiTxVector txVector);
 
   /**
    * Public method used to fire a PhyTxBegin trace.
@@ -1111,8 +1158,7 @@ public:
    */
   typedef void (* MonitorSnifferRxCallback)(Ptr<const Packet> packet, uint16_t channelFreqMhz,
                                             uint16_t channelNumber, uint32_t rate, WifiPreamble preamble,
-                                            WifiTxVector txVector, struct mpduInfo aMpdu,
-                                            struct signalNoiseDbm signalNoise);
+                                            WifiTxVector txVector, struct mpduInfo aMpdu, struct signalNoiseDbm signalNoise);
 
   /**
    * Public method used to fire a MonitorSniffer trace for a wifi packet being transmitted.
@@ -1220,6 +1266,14 @@ public:
    */
   virtual bool GetGreenfield (void) const = 0;
   /**
+   * \param preamble sets whether short PLCP preamble is supported or not
+   */
+  virtual void SetShortPlcpPreambleSupported (bool preamble) = 0;
+  /**
+   * \return true if short PLCP preamble is supported, false otherwise
+   */
+  virtual bool GetShortPlcpPreambleSupported (void) const = 0;
+  /**
    * \return the channel width
    */
   virtual uint32_t GetChannelWidth (void) const = 0;
@@ -1227,7 +1281,54 @@ public:
    * \param channelwidth channel width
    */
   virtual void SetChannelWidth (uint32_t channelwidth) = 0;
-
+  /**
+   * \return the maximum number of supported Rx spatial streams
+   */
+  virtual uint8_t GetSupportedRxSpatialStreams (void) const = 0;
+  /**
+   * \return the maximum number of supported Tx spatial streams
+   */
+  virtual uint8_t GetSupportedTxSpatialStreams (void) const = 0;
+  /**
+   * \param width channel width (in MHz) to support
+   */
+  virtual void AddSupportedChannelWidth (uint32_t width) = 0;
+  /**
+   * \return a vector containing the supported channel widths, values in MHz
+   */
+  virtual std::vector<uint32_t> GetSupportedChannelWidthSet (void) const = 0;
+  /**
+   * Convert from dBm to Watts.
+   *
+   * \param dbm the power in dBm
+   *
+   * \return the equivalent Watts for the given dBm
+   */
+  double DbmToW (double dbm) const;
+  /**
+   * Convert from dB to ratio.
+   *
+   * \param db
+   *
+   * \return ratio
+   */
+  double DbToRatio (double db) const;
+  /**
+   * Convert from Watts to dBm.
+   *
+   * \param w the power in Watts
+   *
+   * \return the equivalent dBm for the given Watts
+   */
+  double WToDbm (double w) const;
+  /**
+   * Convert from ratio to dB.
+   *
+   * \param ratio
+   *
+   * \return dB
+   */
+  double RatioToDb (double ratio) const;
 
 private:
   /**
@@ -1290,8 +1391,7 @@ private:
    * const  references because of their sizes.
    */
   TracedCallback<Ptr<const Packet>, uint16_t, uint16_t, uint32_t,
-                 WifiPreamble, WifiTxVector,
-                 struct mpduInfo, struct signalNoiseDbm> m_phyMonitorSniffRxTrace;
+                 WifiPreamble, WifiTxVector, struct mpduInfo, struct signalNoiseDbm> m_phyMonitorSniffRxTrace;
 
   /**
    * A trace source that emulates a wifi device in monitor mode
@@ -1306,10 +1406,9 @@ private:
    * of its size.
    */
   TracedCallback<Ptr<const Packet>, uint16_t, uint16_t, uint32_t,
-                 WifiPreamble, WifiTxVector,
-                 struct mpduInfo> m_phyMonitorSniffTxTrace;
+                 WifiPreamble, WifiTxVector, struct mpduInfo> m_phyMonitorSniffTxTrace;
 
-  uint32_t m_totalAmpduNumSymbols; //!< Number of symbols previously transmitted for the MPDUs in an A-MPDU, used for the computation of the number of symbols needed for the last MPDU in the A-MPDU
+  double m_totalAmpduNumSymbols;   //!< Number of symbols previously transmitted for the MPDUs in an A-MPDU, used for the computation of the number of symbols needed for the last MPDU in the A-MPDU
   uint32_t m_totalAmpduSize;       //!< Total size of the previously transmitted MPDUs in an A-MPDU, used for the computation of the number of symbols needed for the last MPDU in the A-MPDU
 };
 

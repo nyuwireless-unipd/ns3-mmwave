@@ -317,7 +317,6 @@ void
 WifiNetDevice::ForwardUp (Ptr<Packet> packet, Mac48Address from, Mac48Address to)
 {
   LlcSnapHeader llc;
-  packet->RemoveHeader (llc);
   enum NetDevice::PacketType type;
   if (to.IsBroadcast ())
     {
@@ -339,9 +338,14 @@ WifiNetDevice::ForwardUp (Ptr<Packet> packet, Mac48Address from, Mac48Address to
   if (type != NetDevice::PACKET_OTHERHOST)
     {
       m_mac->NotifyRx (packet);
+      packet->RemoveHeader (llc);
       m_forwardUp (this, packet, llc.GetType (), from);
     }
-
+  else
+    {
+      packet->RemoveHeader (llc);
+    }
+    
   if (!m_promiscRx.IsNull ())
     {
       m_mac->NotifyPromiscRx (packet);

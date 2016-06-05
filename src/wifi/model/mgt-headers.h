@@ -31,8 +31,9 @@
 #include "supported-rates.h"
 #include "ssid.h"
 #include "ht-capabilities.h"
-#include "ht-capabilities.h"
+#include "ht-operations.h"
 #include "vht-capabilities.h"
+#include "erp-information.h"
 
 namespace ns3 {
 
@@ -65,31 +66,41 @@ public:
    */
   void SetListenInterval (uint16_t interval);
   /**
+   * Set the Capability information.
+   *
+   * \param capabilities Capability information
+   */
+  void SetCapabilities (CapabilityInformation capabilities);
+  /**
    * Set the HT capabilities.
    *
    * \param htcapabilities HT capabilities
    */
   void SetHtCapabilities (HtCapabilities htcapabilities);
   /**
-    * Set the VHT capabilities.
-    *
-    * \param vhtcapabilities VHT capabilities
-    */
+   * Set the VHT capabilities.
+   *
+   * \param vhtcapabilities VHT capabilities
+   */
   void SetVhtCapabilities (VhtCapabilities vhtcapabilities);
   /**
-  * Return the VHT capabilities.
-  *
-  * \return VHT capabilities
-  */
-  VhtCapabilities GetVhtCapabilities (void) const;
-
+   * Return the Capability information.
+   *
+   * \return Capability information
+   */
+  CapabilityInformation GetCapabilities (void) const;
   /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
   HtCapabilities GetHtCapabilities (void) const;
-
+  /**
+   * Return the VHT capabilities.
+   *
+   * \return VHT capabilities
+   */
+  VhtCapabilities GetVhtCapabilities (void) const;
   /**
    * Return the Service Set Identifier (SSID).
    *
@@ -126,8 +137,8 @@ private:
   SupportedRates m_rates;             //!< List of supported rates
   CapabilityInformation m_capability; //!< Capability information
   HtCapabilities m_htCapability;      //!< HT capabilities
-  uint16_t m_listenInterval;
   VhtCapabilities m_vhtCapability;    //!< VHT capabilities
+  uint16_t m_listenInterval;
 };
 
 
@@ -154,22 +165,46 @@ public:
    */
   SupportedRates GetSupportedRates (void);
   /**
+   * Return the Capability information.
+   *
+   * \return Capability information
+   */
+  CapabilityInformation GetCapabilities (void) const;
+  /**
+   * Set the Capability information.
+   *
+   * \param capabilities Capability information
+   */
+  void SetCapabilities (CapabilityInformation capabilities);
+  /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
   HtCapabilities GetHtCapabilities (void) const;
   /**
-    * Set the VHT capabilities.
-    *
-    * \param vhtcapabilities VHT capabilities
-    */
+   * Return the HT operations.
+   *
+   * \return HT operations
+   */
+  HtOperations GetHtOperations (void) const;
+  /**
+   * Return the ERP information.
+   *
+   * \return the ERP information
+   */
+  ErpInformation GetErpInformation (void) const;
+  /**
+   * Set the VHT capabilities.
+   *
+   * \param vhtcapabilities VHT capabilities
+   */
   void SetVhtCapabilities (VhtCapabilities vhtcapabilities);
   /**
-  * Return the VHT capabilities.
-  *
-  * \return VHT capabilities
-  */
+   * Return the VHT capabilities.
+   *
+   * \return VHT capabilities
+   */
   VhtCapabilities GetVhtCapabilities (void) const;
   /**
    * Set the HT capabilities.
@@ -177,6 +212,12 @@ public:
    * \param htcapabilities HT capabilities
    */
   void SetHtCapabilities (HtCapabilities htcapabilities);
+  /**
+   * Set the HT operations.
+   *
+   * \param htoperations HT operations
+   */
+  void SetHtOperations (HtOperations htoperations);
   /**
    * Set the supported rates.
    *
@@ -189,6 +230,12 @@ public:
    * \param code the status code
    */
   void SetStatusCode (StatusCode code);
+  /**
+   * Set the ERP information.
+   *
+   * \param erpInformation the ERP information
+   */
+  void SetErpInformation (ErpInformation erpInformation);
 
   /**
    * Register this type.
@@ -201,13 +248,16 @@ public:
   virtual void Serialize (Buffer::Iterator start) const;
   virtual uint32_t Deserialize (Buffer::Iterator start);
 
+
 private:
   SupportedRates m_rates; //!< List of supported rates
   CapabilityInformation m_capability; //!< Capability information
   StatusCode m_code; //!< Status code
   uint16_t m_aid;
   HtCapabilities m_htCapability; //!< HT capabilities
+  HtOperations m_htOperations; //!< HT operations
   VhtCapabilities m_vhtCapability; //!< VHT capabilities
+  ErpInformation m_erpInformation;    //!< ERP information
 };
 
 
@@ -245,6 +295,12 @@ public:
    */
   SupportedRates GetSupportedRates (void) const;
   /**
+   * Set the HT capabilities.
+   *
+   * \param htcapabilities HT capabilities
+   */
+  void SetHtCapabilities (HtCapabilities htcapabilities);
+  /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
@@ -264,13 +320,6 @@ public:
   VhtCapabilities GetVhtCapabilities (void) const;
 
   /**
-   * Set the HT capabilities.
-   *
-   * \param htcapabilities HT capabilities
-   */
-  void SetHtCapabilities (HtCapabilities htcapabilities);
-
-  /**
    * Register this type.
    * \return The TypeId.
    */
@@ -283,9 +332,9 @@ public:
 
 
 private:
-  Ssid m_ssid;                   //!< Service Set ID (SSID)
-  SupportedRates m_rates;        //!< List of supported rates
-  HtCapabilities m_htCapability; //!< HT capabilities
+  Ssid m_ssid;                     //!< Service Set ID (SSID)
+  SupportedRates m_rates;          //!< List of supported rates
+  HtCapabilities m_htCapability;   //!< HT capabilities
   VhtCapabilities m_vhtCapability; //!< VHT capabilities
 };
 
@@ -319,29 +368,59 @@ public:
    */
   SupportedRates GetSupportedRates (void) const;
   /**
+   * Return the Capability information.
+   *
+   * \return Capability information
+   */
+  CapabilityInformation GetCapabilities (void) const;
+  /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
   HtCapabilities GetHtCapabilities (void) const;
   /**
-   * Set the VHT capabilities.
+   * Return the HT operations.
    *
-   * \param vhtcapabilities VHT capabilities
+   * \return HT operations
    */
-  void SetVhtCapabilities (VhtCapabilities vhtcapabilities);
+  HtOperations GetHtOperations (void) const;
   /**
-  * Return the VHT capabilities.
-  *
-  * \return VHT capabilities
-  */
+   * Return the VHT capabilities.
+   *
+   * \return VHT capabilities
+   */
   VhtCapabilities GetVhtCapabilities (void) const;
+  /**
+   * Return the ERP information.
+   *
+   * \return the ERP information
+   */
+  ErpInformation GetErpInformation (void) const;
+  /**
+   * Set the Capability information.
+   *
+   * \param capabilities Capability information
+   */
+  void SetCapabilities (CapabilityInformation capabilities);
   /**
    * Set the HT capabilities.
    *
    * \param htcapabilities HT capabilities
    */
   void SetHtCapabilities (HtCapabilities htcapabilities);
+  /**
+   * Set the HT operations.
+   *
+   * \param htoperations HT operations
+   */
+  void SetHtOperations (HtOperations htoperations);
+  /**
+   * Set the VHT capabilities.
+   *
+   * \param vhtcapabilities VHT capabilities
+   */
+  void SetVhtCapabilities (VhtCapabilities vhtcapabilities);
   /**
    * Set the Service Set Identifier (SSID).
    *
@@ -361,6 +440,12 @@ public:
    */
   void SetSupportedRates (SupportedRates rates);
   /**
+   * Set the ERP information.
+   *
+   * \param erpInformation the ERP information
+   */
+  void SetErpInformation (ErpInformation erpInformation);
+  /**
    * Return the time stamp.
    *
    * \return time stamp
@@ -378,6 +463,7 @@ public:
   virtual void Serialize (Buffer::Iterator start) const;
   virtual uint32_t Deserialize (Buffer::Iterator start);
 
+
 private:
   uint64_t m_timestamp;               //!< Timestamp
   Ssid m_ssid;                        //!< Service set ID (SSID)
@@ -385,7 +471,9 @@ private:
   SupportedRates m_rates;             //!< List of supported rates
   CapabilityInformation m_capability; //!< Capability information
   HtCapabilities m_htCapability;      //!< HT capabilities
+  HtOperations m_htOperations;        //!< HT operations
   VhtCapabilities m_vhtCapability;    //!< VHT capabilities
+  ErpInformation m_erpInformation;    //!< ERP information
 };
 
 

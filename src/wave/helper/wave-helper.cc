@@ -168,7 +168,7 @@ PcapSniffTxEvent (
             mcsRate = rate - 128;
 
             mcsKnown |= RadiotapHeader::MCS_KNOWN_BANDWIDTH;
-            if (txVector.GetChannelWidth () == 40000000)
+            if (txVector.GetChannelWidth () == 40)
               {
                 mcsFlags |= RadiotapHeader::MCS_FLAGS_BANDWIDTH_40;
               }
@@ -209,7 +209,6 @@ PcapSniffTxEvent (
         if (txVector.IsAggregation ())
           {
             uint16_t ampduStatusFlags = RadiotapHeader::A_MPDU_STATUS_NONE;
-            ampduStatusFlags |= RadiotapHeader::A_MPDU_STATUS_DELIMITER_CRC_KNOWN;
             ampduStatusFlags |= RadiotapHeader::A_MPDU_STATUS_LAST_KNOWN;
             /* For PCAP file, MPDU Delimiter and Padding should be removed by the MAC Driver */
             AmpduSubframeHeader hdr;
@@ -217,11 +216,11 @@ PcapSniffTxEvent (
             p->RemoveHeader (hdr);
             extractedLength = hdr.GetLength ();
             p = p->CreateFragment (0, static_cast<uint32_t> (extractedLength));
-            if (aMpdu.packetType == 2 || (hdr.GetEof () == true && hdr.GetLength () > 0))
+            if (aMpdu.type == LAST_MPDU_IN_AGGREGATE || (hdr.GetEof () == true && hdr.GetLength () > 0))
               {
                 ampduStatusFlags |= RadiotapHeader::A_MPDU_STATUS_LAST;
               }
-            header.SetAmpduStatus (aMpdu.referenceNumber, ampduStatusFlags, hdr.GetCrc ());
+            header.SetAmpduStatus (aMpdu.mpduRefNumber, ampduStatusFlags, hdr.GetCrc ());
           }
 
         if (preamble == WIFI_PREAMBLE_VHT)
@@ -250,15 +249,15 @@ PcapSniffTxEvent (
 
             vhtKnown |= RadiotapHeader::VHT_KNOWN_BANDWIDTH;
             //not all bandwidth values are currently supported
-            if (txVector.GetChannelWidth () == 40000000)
+            if (txVector.GetChannelWidth () == 40)
               {
                 vhtBandwidth = 1;
               }
-            else if (txVector.GetChannelWidth () == 80000000)
+            else if (txVector.GetChannelWidth () == 80)
               {
                 vhtBandwidth = 4;
               }
-            else if (txVector.GetChannelWidth () == 160000000)
+            else if (txVector.GetChannelWidth () == 160)
               {
                 vhtBandwidth = 11;
               }
@@ -365,7 +364,7 @@ PcapSniffRxEvent (
             mcsRate = rate - 128;
 
             mcsKnown |= RadiotapHeader::MCS_KNOWN_BANDWIDTH;
-            if (txVector.GetChannelWidth () == 40000000)
+            if (txVector.GetChannelWidth () == 40)
               {
                 mcsFlags |= RadiotapHeader::MCS_FLAGS_BANDWIDTH_40;
               }
@@ -405,7 +404,7 @@ PcapSniffRxEvent (
 
         if (txVector.IsAggregation ())
           {
-            uint16_t ampduStatusFlags = 0;
+            uint16_t ampduStatusFlags = RadiotapHeader::A_MPDU_STATUS_NONE;
             ampduStatusFlags |= RadiotapHeader::A_MPDU_STATUS_DELIMITER_CRC_KNOWN;
             ampduStatusFlags |= RadiotapHeader::A_MPDU_STATUS_LAST_KNOWN;
             /* For PCAP file, MPDU Delimiter and Padding should be removed by the MAC Driver */
@@ -414,11 +413,11 @@ PcapSniffRxEvent (
             p->RemoveHeader (hdr);
             extractedLength = hdr.GetLength ();
             p = p->CreateFragment (0, static_cast<uint32_t> (extractedLength));
-            if (aMpdu.packetType == 2 || (hdr.GetEof () == true && hdr.GetLength () > 0))
+            if (aMpdu.type == LAST_MPDU_IN_AGGREGATE || (hdr.GetEof () == true && hdr.GetLength () > 0))
               {
                 ampduStatusFlags |= RadiotapHeader::A_MPDU_STATUS_LAST;
               }
-            header.SetAmpduStatus (aMpdu.referenceNumber, ampduStatusFlags, hdr.GetCrc ());
+            header.SetAmpduStatus (aMpdu.mpduRefNumber, ampduStatusFlags, hdr.GetCrc ());
           }
 
         if (preamble == WIFI_PREAMBLE_VHT)
@@ -447,15 +446,15 @@ PcapSniffRxEvent (
 
             vhtKnown |= RadiotapHeader::VHT_KNOWN_BANDWIDTH;
             //not all bandwidth values are currently supported
-            if (txVector.GetChannelWidth () == 40000000)
+            if (txVector.GetChannelWidth () == 40)
               {
                 vhtBandwidth = 1;
               }
-            else if (txVector.GetChannelWidth () == 80000000)
+            else if (txVector.GetChannelWidth () == 80)
               {
                 vhtBandwidth = 4;
               }
-            else if (txVector.GetChannelWidth () == 160000000)
+            else if (txVector.GetChannelWidth () == 160)
               {
                 vhtBandwidth = 11;
               }

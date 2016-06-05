@@ -39,6 +39,7 @@ namespace ns3 {
 
 class NetDevice;
 class Ipv4Interface;
+class Ipv4Header;
 
 /**
  * \ingroup arp
@@ -147,6 +148,13 @@ public:
    */
   ArpCache::Entry *Lookup (Ipv4Address destination);
   /**
+   * \brief Do lookup in the ARP cache against a MAC address
+   * \param destination The destination MAC address to lookup
+   * of
+   * \return A std::list of ArpCache::Entry with info about layer 2
+   */
+  std::list<ArpCache::Entry *> LookupInverse (Address destination);
+  /**
    * \brief Add an Ipv4Address to this ARP cache
    */
   ArpCache::Entry *Add (Ipv4Address to);
@@ -166,6 +174,11 @@ public:
    * \param stream the ostream the ARP cache entries is printed to
    */
   void PrintArpCache (Ptr<OutputStreamWrapper> stream);
+
+  /**
+   * \brief Pair of a packet and an Ipv4 header.
+   */
+  typedef std::pair<Ptr<Packet>, Ipv4Header> Ipv4PayloadHeaderPair;
 
   /**
    * \brief A record that that holds information about an ArpCache entry
@@ -189,7 +202,7 @@ public:
     /**
      * \param waiting
      */
-    void MarkWaitReply (Ptr<Packet> waiting);
+    void MarkWaitReply (Ipv4PayloadHeaderPair waiting);
     /**
      * \brief Changes the state of this entry to Permanent.
      *
@@ -200,7 +213,7 @@ public:
      * \param waiting
      * \return 
      */
-    bool UpdateWaitReply (Ptr<Packet> waiting);
+    bool UpdateWaitReply (Ipv4PayloadHeaderPair waiting);
     /**
      * \return True if the state of this entry is dead; false otherwise.
      */
@@ -244,7 +257,7 @@ public:
      * \returns 0 is no packet is pending, the next packet to send if 
      *            packets are pending.
      */
-    Ptr<Packet> DequeuePending (void);
+    Ipv4PayloadHeaderPair DequeuePending (void);
     /**
      * \brief Clear the pending packet list
      */
@@ -263,6 +276,11 @@ public:
      */
     void ClearRetries (void);
 
+    /**
+     * \brief Update the entry when seeing a packet
+     */
+    void UpdateSeen (void);
+
 private:
     /**
      * \brief ARP cache entry states
@@ -275,11 +293,6 @@ private:
     };
 
     /**
-     * \brief Update the entry when seeing a packet
-     */
-    void UpdateSeen (void);
-
-    /**
      * \brief Returns the entry timeout
      * \returns the entry timeout
      */
@@ -290,7 +303,7 @@ private:
     Time m_lastSeen; //!< last moment a packet from that address has been seen
     Address m_macAddress; //!< entry's MAC address
     Ipv4Address m_ipv4Address; //!< entry's IP address
-    std::list<Ptr<Packet> > m_pending; //!< list of pending packets for the entry's IP
+    std::list<Ipv4PayloadHeaderPair> m_pending; //!< list of pending packets for the entry's IP
     uint32_t m_retries; //!< rerty counter
   };
 

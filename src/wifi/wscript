@@ -1,7 +1,7 @@
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    obj = bld.create_ns3_module('wifi', ['network', 'internet', 'applications', 'propagation', 'energy'])
+    obj = bld.create_ns3_module('wifi', ['network', 'propagation', 'energy'])
     obj.source = [
         'model/wifi-information-element.cc',
         'model/wifi-information-element-vector.cc',
@@ -47,6 +47,7 @@ def build(bld):
         'model/aarfcd-wifi-manager.cc',
         'model/cara-wifi-manager.cc',
         'model/minstrel-wifi-manager.cc',
+        'model/minstrel-ht-wifi-manager.cc',
         'model/qos-tag.cc',
         'model/qos-utils.cc',
         'model/edca-txop-n.cc',
@@ -71,7 +72,9 @@ def build(bld):
         'model/ampdu-tag.cc',
         'model/wifi-radio-energy-model.cc',
         'model/wifi-tx-current-model.cc',
-	'model/vht-capabilities.cc',
+        'model/vht-capabilities.cc',
+        'model/erp-information.cc',
+        'model/ht-operations.cc',
         'helper/wifi-radio-energy-model-helper.cc',
         'helper/vht-wifi-mac-helper.cc',
         'helper/ht-wifi-mac-helper.cc',
@@ -80,6 +83,7 @@ def build(bld):
         'helper/yans-wifi-helper.cc',
         'helper/nqos-wifi-mac-helper.cc',
         'helper/qos-wifi-mac-helper.cc',
+        'helper/wifi-mac-helper.cc',
         ]
 
     obj_test = bld.create_ns3_module_test_library('wifi')
@@ -90,6 +94,7 @@ def build(bld):
         'test/power-rate-adaptation-test.cc',
         'test/wifi-test.cc',
         'test/wifi-aggregation-test.cc',
+        'test/wifi-error-rate-models-test.cc',
         ]
 
     headers = bld(features='ns3header')
@@ -121,6 +126,7 @@ def build(bld):
         'model/aarfcd-wifi-manager.h',
         'model/cara-wifi-manager.h',
         'model/minstrel-wifi-manager.h',
+        'model/minstrel-ht-wifi-manager.h',
         'model/wifi-mac.h',
         'model/regular-wifi-mac.h',
         'model/supported-rates.h',
@@ -137,6 +143,7 @@ def build(bld):
         'model/edca-txop-n.h',
         'model/msdu-aggregator.h',
         'model/amsdu-subframe-header.h',
+        'model/msdu-standard-aggregator.h',
         'model/qos-tag.h',
         'model/mgt-headers.h',
         'model/status-code.h',
@@ -162,7 +169,9 @@ def build(bld):
         'model/ampdu-tag.h',
         'model/wifi-radio-energy-model.h',
         'model/wifi-tx-current-model.h',
-	'model/vht-capabilities.h',
+        'model/vht-capabilities.h',
+        'model/erp-information.h',
+        'model/ht-operations.h',
         'helper/wifi-radio-energy-model-helper.h',
         'helper/vht-wifi-mac-helper.h',
         'helper/ht-wifi-mac-helper.h',
@@ -171,6 +180,7 @@ def build(bld):
         'helper/yans-wifi-helper.h',
         'helper/nqos-wifi-mac-helper.h',
         'helper/qos-wifi-mac-helper.h',
+        'helper/wifi-mac-helper.h',
         ]
 
     if bld.env['ENABLE_GSL']:

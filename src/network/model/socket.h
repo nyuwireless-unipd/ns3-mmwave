@@ -109,6 +109,23 @@ public:
   };
 
   /**
+   * \enum Ipv6MulticastFilterMode
+   * \brief Enumeration of the possible filter of a socket.
+   *
+   * A socket can have filters on specific sources to include only
+   * packets incoming from them, or to exclude packets incoming
+   * from specific sources.
+   * Moreover, inclusion and exclusion also works as a leave,
+   * since "joining" a group without allowed sources is equivalent
+   * to leaving it.
+   */
+  enum Ipv6MulticastFilterMode
+  {
+    INCLUDE=1,
+    EXCLUDE
+  };
+
+  /**
    * This method wraps the creation of sockets that is performed
    * on a given node by a SocketFactory specified by TypeId.
    * 
@@ -561,6 +578,13 @@ public:
   virtual int GetSockName (Address &address) const = 0; 
 
   /**
+   * \brief Get the peer address of a connected socket.
+   * \param address the address this socket is connected to.
+   * \returns 0 if success, -1 otherwise
+   */
+  virtual int GetPeerName (Address &address) const = 0;
+
+  /**
    * \brief Bind a socket to specific device.
    *
    * This method corresponds to using setsockopt() SO_BINDTODEVICE
@@ -817,6 +841,35 @@ public:
    */
   bool IsIpv6RecvHopLimit (void) const;
  
+  /**
+   * \brief Joins a IPv6 multicast group.
+   *
+   * Based on the filter mode and source addresses this can be interpreted as a
+   * join, leave, or modification to source filtering on a multicast group.
+   *
+   * Mind that a socket can join only one multicast group. Any attempt to join another group will remove the old one.
+   *
+   *
+   * \param address Requested multicast address.
+   * \param filterMode Socket filtering mode (INCLUDE | EXCLUDE).
+   * \param sourceAddresses All the source addresses on which socket is interested or not interested.
+   */
+  virtual void Ipv6JoinGroup (Ipv6Address address, Ipv6MulticastFilterMode filterMode, std::vector<Ipv6Address> sourceAddresses);
+
+  /**
+   * \brief Joins a IPv6 multicast group without filters.
+   *
+   * A socket can join only one multicast group. Any attempt to join another group will remove the old one.
+   *
+   * \param address Group address on which socket wants to join.
+   */
+  virtual void Ipv6JoinGroup (Ipv6Address address);
+
+  /**
+   * \brief Leaves IPv6 multicast group this socket is joined to.
+   */
+  virtual void Ipv6LeaveGroup (void);
+
 protected:
   /**
    * \brief Notify through the callback (if set) that the connection has been
@@ -913,6 +966,7 @@ protected:
 
   Ptr<NetDevice> m_boundnetdevice; //!< the device this socket is bound to (might be null).
   bool m_recvPktInfo; //!< if the socket should add packet info tags to the packet forwarded to L4.
+  Ipv6Address m_ipv6MulticastGroupAddress; //!< IPv6 multicast group address.
 
 private:
   Callback<void, Ptr<Socket> >                   m_connectionSucceeded;  //!< connection succeeded callback
@@ -942,54 +996,6 @@ private:
 
   uint8_t m_ipv6Tclass;     //!< the socket IPv6 Tclass
   uint8_t m_ipv6HopLimit;   //!< the socket IPv6 Hop Limit
-};
-
-/**
- * \brief This class implements a tag that carries an address
- * of a packet across the socket interface.
- */
-class SocketAddressTag : public Tag
-{
-public:
-  SocketAddressTag ();
-
-  /**
-   * \brief Set the tag's address
-   *
-   * \param addr the address
-   */
-  void SetAddress (Address addr);
-
-  /**
-   * \brief Get the tag's address
-   *
-   * \returns the address
-   */
-  Address GetAddress (void) const;
-
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-
-  // inherited function, no need to doc.
-  virtual TypeId GetInstanceTypeId (void) const;
-
-  // inherited function, no need to doc.
-  virtual uint32_t GetSerializedSize (void) const;
-
-  // inherited function, no need to doc.
-  virtual void Serialize (TagBuffer i) const;
-
-  // inherited function, no need to doc.
-  virtual void Deserialize (TagBuffer i);
-
-  // inherited function, no need to doc.
-  virtual void Print (std::ostream &os) const;
-
-private:
-  Address m_address; //!< the address carried by the tag
 };
 
 /**

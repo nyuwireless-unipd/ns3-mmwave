@@ -134,11 +134,28 @@ int Ipv6RawSocketImpl::GetSockName (Address& address) const
   return 0;
 }
 
+int
+Ipv6RawSocketImpl::GetPeerName (Address& address) const
+{
+  NS_LOG_FUNCTION (this << address);
+
+  if (m_dst.IsAny ())
+    {
+      m_err = ERROR_NOTCONN;
+      return -1;
+    }
+
+  address = Inet6SocketAddress (m_dst, 0);
+
+  return 0;
+}
+
 int Ipv6RawSocketImpl::Close ()
 {
   NS_LOG_FUNCTION_NOARGS ();
   Ptr<Ipv6L3Protocol> ipv6 = m_node->GetObject<Ipv6L3Protocol> ();
 
+  Ipv6LeaveGroup ();
   if (ipv6)
     {
       ipv6->DeleteRawSocket (this);
@@ -244,6 +261,7 @@ int Ipv6RawSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address& toA
                 }
             }
 
+          uint32_t pktSize = p->GetSize ();
           if (m_src.IsAny ())
             {
               ipv6->Send (p, route->GetSource (), dst, m_protocol, route);
@@ -253,7 +271,9 @@ int Ipv6RawSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address& toA
               ipv6->Send (p, m_src, dst, m_protocol, route);
             }
           // Return only payload size (as Linux does).
-          return p->GetSize () - hdr.GetSerializedSize ();
+          NotifyDataSent (pktSize);
+          NotifySend (GetTxAvailable ());
+          return pktSize;
         }
       else
         {
@@ -295,6 +315,50 @@ Ptr<Packet> Ipv6RawSocketImpl::RecvFrom (uint32_t maxSize, uint32_t flags, Addre
     }
 
   return data.packet;
+}
+
+void
+Ipv6RawSocketImpl::Ipv6JoinGroup (Ipv6Address address, Socket::Ipv6MulticastFilterMode filterMode, std::vector<Ipv6Address> sourceAddresses)
+{
+  NS_LOG_FUNCTION (this << address << &filterMode << &sourceAddresses);
+
+  // We can join only one multicast group (or change its params)
+  NS_ASSERT_MSG ((m_ipv6MulticastGroupAddress == address || m_ipv6MulticastGroupAddress.IsAny ()), "Can join only one IPv6 multicast group.");
+
+  m_ipv6MulticastGroupAddress = address;
+
+  Ptr<Ipv6L3Protocol> ipv6l3 = m_node->GetObject <Ipv6L3Protocol> ();
+  if (ipv6l3)
+    {
+      if (filterMode == INCLUDE && sourceAddresses.empty ())
+        {
+          // it is a leave
+          if (m_boundnetdevice)
+            {
+              int32_t index = ipv6l3->GetInterfaceForDevice (m_boundnetdevice);
+              NS_ASSERT_MSG (index >= 0, "Interface without a valid index");
+              ipv6l3->RemoveMulticastAddress (address, index);
+            }
+          else
+            {
+              ipv6l3->RemoveMulticastAddress (address);
+            }
+        }
+      else
+        {
+          // it is a join or a modification
+          if (m_boundnetdevice)
+            {
+              int32_t index = ipv6l3->GetInterfaceForDevice (m_boundnetdevice);
+              NS_ASSERT_MSG (index >= 0, "Interface without a valid index");
+              ipv6l3->AddMulticastAddress (address, index);
+            }
+          else
+            {
+              ipv6l3->AddMulticastAddress (address);
+            }
+        }
+    }
 }
 
 uint32_t Ipv6RawSocketImpl::GetTxAvailable () const

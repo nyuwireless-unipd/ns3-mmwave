@@ -510,70 +510,41 @@ Socket::IsIpv6RecvHopLimit (void) const
   return m_ipv6RecvHopLimit;
 }
 
+void
+Socket::Ipv6JoinGroup (Ipv6Address address, Ipv6MulticastFilterMode filterMode, std::vector<Ipv6Address> sourceAddresses)
+{
+  NS_LOG_FUNCTION (this<<address<<&filterMode<<&sourceAddresses);
+  NS_ASSERT_MSG (false,"Ipv6JoinGroup not implemented on this socket");
+}
+
+void
+Socket::Ipv6JoinGroup (Ipv6Address address)
+{
+  NS_LOG_FUNCTION (this<<address);
+
+  // Join Group. Note that joining a group with no sources means joining without source restrictions.
+  std::vector<Ipv6Address> sourceAddresses;
+  Ipv6JoinGroup (address, EXCLUDE, sourceAddresses);
+}
+
+void
+Socket::Ipv6LeaveGroup (void)
+{
+  NS_LOG_FUNCTION (this);
+  if(m_ipv6MulticastGroupAddress.IsAny () )
+    {
+      NS_LOG_INFO (" The socket was not bound to any group.");
+      return;
+    }
+  // Leave Group. Note that joining a group with no sources means leaving it.
+  std::vector<Ipv6Address> sourceAddresses;
+  Ipv6JoinGroup (m_ipv6MulticastGroupAddress, INCLUDE, sourceAddresses);
+  m_ipv6MulticastGroupAddress = Ipv6Address::GetAny ();
+}
+
 /***************************************************************
  *           Socket Tags
  ***************************************************************/
-
-SocketAddressTag::SocketAddressTag ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
-void 
-SocketAddressTag::SetAddress (Address addr)
-{
-  NS_LOG_FUNCTION (this << addr);
-  m_address = addr;
-}
-
-Address 
-SocketAddressTag::GetAddress (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_address;
-}
-
-NS_OBJECT_ENSURE_REGISTERED (SocketAddressTag);
-
-TypeId
-SocketAddressTag::GetTypeId (void)
-{
-  static TypeId tid = TypeId ("ns3::SocketAddressTag")
-    .SetParent<Tag> ()
-    .SetGroupName("Network")
-    .AddConstructor<SocketAddressTag> ()
-  ;
-  return tid;
-}
-TypeId
-SocketAddressTag::GetInstanceTypeId (void) const
-{
-  return GetTypeId ();
-}
-uint32_t
-SocketAddressTag::GetSerializedSize (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_address.GetSerializedSize ();
-}
-void
-SocketAddressTag::Serialize (TagBuffer i) const
-{
-  NS_LOG_FUNCTION (this << &i);
-  m_address.Serialize (i);
-}
-void
-SocketAddressTag::Deserialize (TagBuffer i)
-{
-  NS_LOG_FUNCTION (this << &i);
-  m_address.Deserialize (i);
-}
-void
-SocketAddressTag::Print (std::ostream &os) const
-{
-  NS_LOG_FUNCTION (this << &os);
-  os << "address=" << m_address;
-}
 
 SocketIpTtlTag::SocketIpTtlTag ()
 {

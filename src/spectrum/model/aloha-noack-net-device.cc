@@ -35,6 +35,12 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("AlohaNoackNetDevice");
 
+/**
+ * \brief Output stream operator
+ * \param os output stream
+ * \param state the state to print
+ * \return an output stream
+ */
 std::ostream& operator<< (std::ostream& os, AlohaNoackNetDevice::State state)
 {
   switch (state)
@@ -372,7 +378,7 @@ AlohaNoackNetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Add
       else
         {
           NS_LOG_LOGIC ("enqueueing new packet");
-          if (m_queue->Enqueue (packet) == false)
+          if (m_queue->Enqueue (Create<QueueItem> (packet)) == false)
             {
               m_macTxDropTrace (packet);
               sendOk = false;
@@ -383,7 +389,7 @@ AlohaNoackNetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Add
     {
       NS_LOG_LOGIC ("deferring TX, enqueueing new packet");
       NS_ASSERT (m_queue);
-      if (m_queue->Enqueue (packet) == false)
+      if (m_queue->Enqueue (Create<QueueItem> (packet)) == false)
         {
           m_macTxDropTrace (packet);
           sendOk = false;
@@ -428,8 +434,9 @@ AlohaNoackNetDevice::NotifyTransmissionEnd (Ptr<const Packet>)
   NS_ASSERT (m_queue);
   if (m_queue->IsEmpty () == false)
     {
-      m_currentPkt = m_queue->Dequeue ();
-      NS_ASSERT (m_currentPkt);
+      Ptr<QueueItem> item = m_queue->Dequeue ();
+      NS_ASSERT (item);
+      m_currentPkt = item->GetPacket ();
       NS_LOG_LOGIC ("scheduling transmission now");
       Simulator::ScheduleNow (&AlohaNoackNetDevice::StartTransmission, this);
     }

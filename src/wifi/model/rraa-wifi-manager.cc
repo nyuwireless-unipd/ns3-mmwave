@@ -282,8 +282,7 @@ RraaWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 }
 
 WifiTxVector
-RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st,
-                                    uint32_t size)
+RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
   uint32_t channelWidth = GetChannelWidth (station);
@@ -309,7 +308,16 @@ RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
-  return WifiTxVector (GetSupported (st, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (st), false, 1, 0, channelWidth, GetAggregation (station), false);
+  WifiTxVector rtsTxVector;
+  if (GetUseNonErpProtection () == false)
+    {
+      rtsTxVector = WifiTxVector (GetSupported (st, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (st), false, 1, 0, channelWidth, GetAggregation (station), false);
+    }
+  else
+    {
+      rtsTxVector = WifiTxVector (GetNonErpSupported (st, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (st), false, 1, 0, channelWidth, GetAggregation (station), false);
+    }
+  return rtsTxVector;
 }
 
 bool
@@ -394,7 +402,8 @@ RraaWifiManager::GetThresholds (RraaWifiRemoteStation *station,
 struct RraaWifiManager::ThresholdsItem
 RraaWifiManager::GetThresholds (WifiMode mode, RraaWifiRemoteStation *station) const
 {
-  switch (mode.GetDataRate (GetChannelWidth (station), GetShortGuardInterval (station), 1) / 1000000)
+  uint8_t nss = 1;  // This RAA only supports 1 spatial stream
+  switch (mode.GetDataRate (GetChannelWidth (station), GetShortGuardInterval (station), nss) / 1000000)
     {
     case 54:
       {

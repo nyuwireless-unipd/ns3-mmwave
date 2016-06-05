@@ -558,8 +558,8 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
 
   GtpuHeader gtpu;
   packet->RemoveHeader (gtpu);
-  SocketAddressTag satag;
-  packet->RemovePacketTag(satag);
+  //SocketAddressTag satag;
+  //packet->RemovePacketTag(satag);
 
   NS_LOG_LOGIC ("GTP-U header: " << gtpu);
 

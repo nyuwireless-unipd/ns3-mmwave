@@ -219,10 +219,12 @@ ArpCache::HandleWaitReplyTimeout (void)
                             entry->GetRetries ());
               entry->MarkDead ();
               entry->ClearRetries ();
-              Ptr<Packet> pending = entry->DequeuePending ();
-              while (pending != 0)
+              Ipv4PayloadHeaderPair pending = entry->DequeuePending ();
+              while (pending.first != 0)
                 {
-                  m_dropTrace (pending);
+                  // add the Ipv4 header for tracing purposes
+                  pending.first->AddHeader (pending.second);
+                  m_dropTrace (pending.first);
                   pending = entry->DequeuePending ();
                 }
             }
@@ -292,6 +294,24 @@ ArpCache::PrintArpCache (Ptr<OutputStreamWrapper> stream)
         }
     }
 }
+
+std::list<ArpCache::Entry *>
+ArpCache::LookupInverse (Address to)
+{
+  NS_LOG_FUNCTION (this << to);
+
+  std::list<ArpCache::Entry *> entryList;
+  for (CacheI i = m_arpCache.begin (); i != m_arpCache.end (); i++)
+    {
+      ArpCache::Entry *entry = (*i).second;
+      if (entry->GetMacAddress () == to)
+        {
+          entryList.push_back (entry);
+        }
+    }
+  return entryList;
+}
+
 
 ArpCache::Entry *
 ArpCache::Lookup (Ipv4Address to)
@@ -392,16 +412,17 @@ ArpCache::Entry::MarkAlive (Address macAddress)
 void
 ArpCache::Entry::MarkPermanent (void)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this << m_macAddress);
   NS_ASSERT (!m_macAddress.IsInvalid ());
+
   m_state = PERMANENT;
   ClearRetries ();
   UpdateSeen ();
 }
 bool
-ArpCache::Entry::UpdateWaitReply (Ptr<Packet> waiting)
+ArpCache::Entry::UpdateWaitReply (Ipv4PayloadHeaderPair waiting)
 {
-  NS_LOG_FUNCTION (this << waiting);
+  NS_LOG_FUNCTION (this << waiting.first);
   NS_ASSERT (m_state == WAIT_REPLY);
   /* We are already waiting for an answer so
    * we dump the previously waiting packet and
@@ -415,11 +436,13 @@ ArpCache::Entry::UpdateWaitReply (Ptr<Packet> waiting)
   return true;
 }
 void 
-ArpCache::Entry::MarkWaitReply (Ptr<Packet> waiting)
+ArpCache::Entry::MarkWaitReply (Ipv4PayloadHeaderPair waiting)
 {
-  NS_LOG_FUNCTION (this << waiting);
+  NS_LOG_FUNCTION (this << waiting.first);
   NS_ASSERT (m_state == ALIVE || m_state == DEAD);
   NS_ASSERT (m_pending.empty ());
+  NS_ASSERT_MSG (waiting.first, "Can not add a null packet to the ARP queue");
+
   m_state = WAIT_REPLY;
   m_pending.push_back (waiting);
   UpdateSeen ();
@@ -482,17 +505,18 @@ ArpCache::Entry::IsExpired (void) const
     } 
   return false;
 }
-Ptr<Packet> 
+ArpCache::Ipv4PayloadHeaderPair
 ArpCache::Entry::DequeuePending (void)
 {
   NS_LOG_FUNCTION (this);
   if (m_pending.empty ())
     {
-      return 0;
+      Ipv4Header h;
+      return Ipv4PayloadHeaderPair (0, h);
     }
   else
     {
-      Ptr<Packet> p = m_pending.front ();
+      Ipv4PayloadHeaderPair p = m_pending.front ();
       m_pending.pop_front ();
       return p;
     }

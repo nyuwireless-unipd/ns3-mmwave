@@ -21,9 +21,12 @@
 #include "ns3/ptr.h"
 #include "ns3/node.h"
 #include "ns3/net-device.h"
+#include "ns3/loopback-net-device.h"
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-address-generator.h"
 #include "ns3/simulator.h"
+#include "ns3/traffic-control-helper.h"
+#include "ns3/traffic-control-layer.h"
 #include "ipv4-address-helper.h"
 
 namespace ns3 {
@@ -157,6 +160,17 @@ Ipv4AddressHelper::Assign (const NetDeviceContainer &c)
       ipv4->SetMetric (interface, 1);
       ipv4->SetUp (interface);
       retval.Add (ipv4, interface);
+
+      // Install the default traffic control configuration if the traffic
+      // control layer has been aggregated, if this is not 
+      // a loopback interface, and there is no queue disc installed already
+      Ptr<TrafficControlLayer> tc = node->GetObject<TrafficControlLayer> ();
+      if (tc && DynamicCast<LoopbackNetDevice> (device) == 0 && tc->GetRootQueueDiscOnDevice (device) == 0)
+        {
+          NS_LOG_LOGIC ("Installing default traffic control configuration");
+          TrafficControlHelper tcHelper = TrafficControlHelper::Default ();
+          tcHelper.Install (device);
+        }
     }
   return retval;
 }

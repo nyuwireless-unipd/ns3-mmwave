@@ -420,7 +420,7 @@ main (int argc, char *argv[])
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
-  bool tcp = false;
+  bool tcp = true;
 
   
   // Command line arguments
@@ -530,7 +530,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::CoreNetworkStatsCalculator::X2FileName", StringValue                  (path + version + x2statOutputFilename    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
 
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"));
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
   Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
@@ -725,7 +725,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP DL app for UE " << u);
           OnOffHelper dlClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
-          dlClientHelper.SetConstantRate(DataRate ("500Mb/s"), 1500);
+          dlClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1500);
           clientApps.Add (dlClientHelper.Install (remoteHost));
           PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), dlPort));
@@ -736,7 +736,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP UL app for UE " << u);
           OnOffHelper ulClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (remoteHostAddr, ulPort));
-          ulClientHelper.SetConstantRate(DataRate ("500Mb/s"), 1500);
+          ulClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1500);
           clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
           PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), ulPort));
@@ -778,7 +778,7 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (0.5));
 
 
-  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(2, 0, 0));
+  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(5, 0, 0));
   double numPrints = 100;
   for(int i = 0; i < numPrints; i++)
   {

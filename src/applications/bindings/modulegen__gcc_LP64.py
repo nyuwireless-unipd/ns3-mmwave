@@ -40,8 +40,6 @@ def register_types(module):
     module.add_class('AttributeConstructionList', import_from_module='ns.core')
     ## attribute-construction-list.h (module 'core'): ns3::AttributeConstructionList::Item [struct]
     module.add_class('Item', import_from_module='ns.core', outer_class=root_module['ns3::AttributeConstructionList'])
-    ## average.h (module 'stats'): ns3::Average<double> [class]
-    module.add_class('Average', import_from_module='ns.stats', template_parameters=['double'])
     ## buffer.h (module 'network'): ns3::Buffer [class]
     module.add_class('Buffer', import_from_module='ns.network')
     ## buffer.h (module 'network'): ns3::Buffer::Iterator [class]
@@ -157,13 +155,9 @@ def register_types(module):
     ## trace-helper.h (module 'network'): ns3::PcapHelper [class]
     module.add_class('PcapHelper', import_from_module='ns.network')
     ## trace-helper.h (module 'network'): ns3::PcapHelper [enumeration]
-    module.add_enum('', ['DLT_NULL', 'DLT_EN10MB', 'DLT_PPP', 'DLT_RAW', 'DLT_IEEE802_11', 'DLT_LINUX_SSL', 'DLT_PRISM_HEADER', 'DLT_IEEE802_11_RADIO', 'DLT_IEEE802_15_4', 'DLT_NETLINK'], outer_class=root_module['ns3::PcapHelper'], import_from_module='ns.network')
+    module.add_enum('', ['DLT_NULL', 'DLT_EN10MB', 'DLT_PPP', 'DLT_RAW', 'DLT_IEEE802_11', 'DLT_LINUX_SLL', 'DLT_PRISM_HEADER', 'DLT_IEEE802_11_RADIO', 'DLT_IEEE802_15_4', 'DLT_NETLINK'], outer_class=root_module['ns3::PcapHelper'], import_from_module='ns.network')
     ## trace-helper.h (module 'network'): ns3::PcapHelperForDevice [class]
     module.add_class('PcapHelperForDevice', allow_subclassing=True, import_from_module='ns.network')
-    ## ping6-helper.h (module 'applications'): ns3::Ping6Helper [class]
-    module.add_class('Ping6Helper')
-    ## radvd-helper.h (module 'applications'): ns3::RadvdHelper [class]
-    module.add_class('RadvdHelper')
     ## simple-net-device-helper.h (module 'network'): ns3::SimpleNetDeviceHelper [class]
     module.add_class('SimpleNetDeviceHelper', import_from_module='ns.network')
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::Object, ns3::ObjectBase, ns3::ObjectDeleter> [class]
@@ -180,6 +174,8 @@ def register_types(module):
     module.add_class('TagBuffer', import_from_module='ns.network')
     ## nstime.h (module 'core'): ns3::TimeWithUnit [class]
     module.add_class('TimeWithUnit', import_from_module='ns.core')
+    ## traced-value.h (module 'core'): ns3::TracedValue<unsigned int> [class]
+    module.add_class('TracedValue', import_from_module='ns.core', template_parameters=['unsigned int'])
     ## type-id.h (module 'core'): ns3::TypeId [class]
     module.add_class('TypeId', import_from_module='ns.core')
     ## type-id.h (module 'core'): ns3::TypeId::AttributeFlag [enumeration]
@@ -198,8 +194,6 @@ def register_types(module):
     module.add_class('UdpServerHelper')
     ## udp-client-server-helper.h (module 'applications'): ns3::UdpTraceClientHelper [class]
     module.add_class('UdpTraceClientHelper')
-    ## v4ping-helper.h (module 'applications'): ns3::V4PingHelper [class]
-    module.add_class('V4PingHelper')
     ## empty.h (module 'core'): ns3::empty [class]
     module.add_class('empty', import_from_module='ns.core')
     ## int64x64-double.h (module 'core'): ns3::int64x64_t [class]
@@ -248,12 +242,6 @@ def register_types(module):
     module.add_enum('', ['VHT_FLAGS_NONE', 'VHT_FLAGS_STBC', 'VHT_FLAGS_TXOP_PS_NOT_ALLOWED', 'VHT_FLAGS_GUARD_INTERVAL', 'VHT_FLAGS_SHORT_GI_NSYM_DISAMBIGUATION', 'VHT_FLAGS__LDPC_EXTRA_OFDM_SYMBOL', 'VHT_FLAGS_BEAMFORMED'], outer_class=root_module['ns3::RadiotapHeader'], import_from_module='ns.network')
     ## random-variable-stream.h (module 'core'): ns3::RandomVariableStream [class]
     module.add_class('RandomVariableStream', import_from_module='ns.core', parent=root_module['ns3::Object'])
-    ## red-queue.h (module 'network'): ns3::RedQueue [class]
-    module.add_class('RedQueue', import_from_module='ns.network', parent=root_module['ns3::Queue'])
-    ## red-queue.h (module 'network'): ns3::RedQueue [enumeration]
-    module.add_enum('', ['DTYPE_NONE', 'DTYPE_FORCED', 'DTYPE_UNFORCED'], outer_class=root_module['ns3::RedQueue'], import_from_module='ns.network')
-    ## red-queue.h (module 'network'): ns3::RedQueue::Stats [struct]
-    module.add_class('Stats', import_from_module='ns.network', outer_class=root_module['ns3::RedQueue'])
     ## seq-ts-header.h (module 'applications'): ns3::SeqTsHeader [class]
     module.add_class('SeqTsHeader', parent=root_module['ns3::Header'])
     ## random-variable-stream.h (module 'core'): ns3::SequentialRandomVariable [class]
@@ -270,6 +258,8 @@ def register_types(module):
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::EventImpl', 'ns3::empty', 'ns3::DefaultDeleter<ns3::EventImpl>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::Hash::Implementation, ns3::empty, ns3::DefaultDeleter<ns3::Hash::Implementation> > [class]
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::Hash::Implementation', 'ns3::empty', 'ns3::DefaultDeleter<ns3::Hash::Implementation>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
+    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter<ns3::NetDeviceQueue> > [class]
+    module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::NetDeviceQueue', 'ns3::empty', 'ns3::DefaultDeleter<ns3::NetDeviceQueue>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::NixVector, ns3::empty, ns3::DefaultDeleter<ns3::NixVector> > [class]
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::NixVector', 'ns3::empty', 'ns3::DefaultDeleter<ns3::NixVector>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::OutputStreamWrapper, ns3::empty, ns3::DefaultDeleter<ns3::OutputStreamWrapper> > [class]
@@ -284,20 +274,22 @@ def register_types(module):
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::PbbPacket', 'ns3::Header', 'ns3::DefaultDeleter<ns3::PbbPacket>'], parent=root_module['ns3::Header'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::PbbTlv, ns3::empty, ns3::DefaultDeleter<ns3::PbbTlv> > [class]
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::PbbTlv', 'ns3::empty', 'ns3::DefaultDeleter<ns3::PbbTlv>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter<ns3::RadvdInterface> > [class]
-    module.add_class('SimpleRefCount', automatic_type_narrowing=True, template_parameters=['ns3::RadvdInterface', 'ns3::empty', 'ns3::DefaultDeleter<ns3::RadvdInterface>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter<ns3::RadvdPrefix> > [class]
-    module.add_class('SimpleRefCount', automatic_type_narrowing=True, template_parameters=['ns3::RadvdPrefix', 'ns3::empty', 'ns3::DefaultDeleter<ns3::RadvdPrefix>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
+    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::QueueItem, ns3::empty, ns3::DefaultDeleter<ns3::QueueItem> > [class]
+    module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::QueueItem', 'ns3::empty', 'ns3::DefaultDeleter<ns3::QueueItem>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::TraceSourceAccessor, ns3::empty, ns3::DefaultDeleter<ns3::TraceSourceAccessor> > [class]
     module.add_class('SimpleRefCount', automatic_type_narrowing=True, import_from_module='ns.core', template_parameters=['ns3::TraceSourceAccessor', 'ns3::empty', 'ns3::DefaultDeleter<ns3::TraceSourceAccessor>'], parent=root_module['ns3::empty'], memory_policy=cppclass.ReferenceCountingMethodsPolicy(incref_method='Ref', decref_method='Unref', peekref_method='GetReferenceCount'))
+    ## sll-header.h (module 'network'): ns3::SllHeader [class]
+    module.add_class('SllHeader', import_from_module='ns.network', parent=root_module['ns3::Header'])
+    ## sll-header.h (module 'network'): ns3::SllHeader::PacketType [enumeration]
+    module.add_enum('PacketType', ['UNICAST_FROM_PEER_TO_ME', 'BROADCAST_BY_PEER', 'MULTICAST_BY_PEER', 'INTERCEPTED_PACKET', 'SENT_BY_US'], outer_class=root_module['ns3::SllHeader'], import_from_module='ns.network')
     ## socket.h (module 'network'): ns3::Socket [class]
     module.add_class('Socket', import_from_module='ns.network', parent=root_module['ns3::Object'])
     ## socket.h (module 'network'): ns3::Socket::SocketErrno [enumeration]
     module.add_enum('SocketErrno', ['ERROR_NOTERROR', 'ERROR_ISCONN', 'ERROR_NOTCONN', 'ERROR_MSGSIZE', 'ERROR_AGAIN', 'ERROR_SHUTDOWN', 'ERROR_OPNOTSUPP', 'ERROR_AFNOSUPPORT', 'ERROR_INVAL', 'ERROR_BADF', 'ERROR_NOROUTETOHOST', 'ERROR_NODEV', 'ERROR_ADDRNOTAVAIL', 'ERROR_ADDRINUSE', 'SOCKET_ERRNO_LAST'], outer_class=root_module['ns3::Socket'], import_from_module='ns.network')
     ## socket.h (module 'network'): ns3::Socket::SocketType [enumeration]
     module.add_enum('SocketType', ['NS3_SOCK_STREAM', 'NS3_SOCK_SEQPACKET', 'NS3_SOCK_DGRAM', 'NS3_SOCK_RAW'], outer_class=root_module['ns3::Socket'], import_from_module='ns.network')
-    ## socket.h (module 'network'): ns3::SocketAddressTag [class]
-    module.add_class('SocketAddressTag', import_from_module='ns.network', parent=root_module['ns3::Tag'])
+    ## socket.h (module 'network'): ns3::Socket::Ipv6MulticastFilterMode [enumeration]
+    module.add_enum('Ipv6MulticastFilterMode', ['INCLUDE', 'EXCLUDE'], outer_class=root_module['ns3::Socket'], import_from_module='ns.network')
     ## socket-factory.h (module 'network'): ns3::SocketFactory [class]
     module.add_class('SocketFactory', import_from_module='ns.network', parent=root_module['ns3::Object'])
     ## socket.h (module 'network'): ns3::SocketIpTosTag [class]
@@ -426,14 +418,16 @@ def register_types(module):
     module.add_class('Mac64AddressChecker', import_from_module='ns.network', parent=root_module['ns3::AttributeChecker'])
     ## mac64-address.h (module 'network'): ns3::Mac64AddressValue [class]
     module.add_class('Mac64AddressValue', import_from_module='ns.network', parent=root_module['ns3::AttributeValue'])
-    ## basic-data-calculators.h (module 'stats'): ns3::MinMaxAvgTotalCalculator<double> [class]
-    module.add_class('MinMaxAvgTotalCalculator', import_from_module='ns.stats', template_parameters=['double'], parent=[root_module['ns3::DataCalculator'], root_module['ns3::StatisticalSummary']])
     ## basic-data-calculators.h (module 'stats'): ns3::MinMaxAvgTotalCalculator<unsigned int> [class]
     module.add_class('MinMaxAvgTotalCalculator', import_from_module='ns.stats', template_parameters=['unsigned int'], parent=[root_module['ns3::DataCalculator'], root_module['ns3::StatisticalSummary']])
     ## net-device.h (module 'network'): ns3::NetDevice [class]
     module.add_class('NetDevice', import_from_module='ns.network', parent=root_module['ns3::Object'])
     ## net-device.h (module 'network'): ns3::NetDevice::PacketType [enumeration]
     module.add_enum('PacketType', ['PACKET_HOST', 'NS3_PACKET_HOST', 'PACKET_BROADCAST', 'NS3_PACKET_BROADCAST', 'PACKET_MULTICAST', 'NS3_PACKET_MULTICAST', 'PACKET_OTHERHOST', 'NS3_PACKET_OTHERHOST'], outer_class=root_module['ns3::NetDevice'], import_from_module='ns.network')
+    ## net-device.h (module 'network'): ns3::NetDeviceQueue [class]
+    module.add_class('NetDeviceQueue', import_from_module='ns.network', parent=root_module['ns3::SimpleRefCount< ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter<ns3::NetDeviceQueue> >'])
+    ## net-device.h (module 'network'): ns3::NetDeviceQueueInterface [class]
+    module.add_class('NetDeviceQueueInterface', import_from_module='ns.network', parent=root_module['ns3::Object'])
     ## nix-vector.h (module 'network'): ns3::NixVector [class]
     module.add_class('NixVector', import_from_module='ns.network', parent=root_module['ns3::SimpleRefCount< ns3::NixVector, ns3::empty, ns3::DefaultDeleter<ns3::NixVector> >'])
     ## node.h (module 'network'): ns3::Node [class]
@@ -480,16 +474,10 @@ def register_types(module):
     module.add_class('PbbPacket', import_from_module='ns.network', parent=root_module['ns3::SimpleRefCount< ns3::PbbPacket, ns3::Header, ns3::DefaultDeleter<ns3::PbbPacket> >'])
     ## packetbb.h (module 'network'): ns3::PbbTlv [class]
     module.add_class('PbbTlv', import_from_module='ns.network', parent=root_module['ns3::SimpleRefCount< ns3::PbbTlv, ns3::empty, ns3::DefaultDeleter<ns3::PbbTlv> >'])
-    ## ping6.h (module 'applications'): ns3::Ping6 [class]
-    module.add_class('Ping6', parent=root_module['ns3::Application'])
     ## probe.h (module 'stats'): ns3::Probe [class]
     module.add_class('Probe', import_from_module='ns.stats', parent=root_module['ns3::DataCollectionObject'])
-    ## radvd.h (module 'applications'): ns3::Radvd [class]
-    module.add_class('Radvd', parent=root_module['ns3::Application'])
-    ## radvd-interface.h (module 'applications'): ns3::RadvdInterface [class]
-    module.add_class('RadvdInterface', parent=root_module['ns3::SimpleRefCount< ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter<ns3::RadvdInterface> >'])
-    ## radvd-prefix.h (module 'applications'): ns3::RadvdPrefix [class]
-    module.add_class('RadvdPrefix', parent=root_module['ns3::SimpleRefCount< ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter<ns3::RadvdPrefix> >'])
+    ## net-device.h (module 'network'): ns3::QueueItem [class]
+    module.add_class('QueueItem', import_from_module='ns.network', parent=root_module['ns3::SimpleRefCount< ns3::QueueItem, ns3::empty, ns3::DefaultDeleter<ns3::QueueItem> >'])
     ## error-model.h (module 'network'): ns3::RateErrorModel [class]
     module.add_class('RateErrorModel', import_from_module='ns.network', parent=root_module['ns3::ErrorModel'])
     ## error-model.h (module 'network'): ns3::RateErrorModel::ErrorUnit [enumeration]
@@ -518,8 +506,6 @@ def register_types(module):
     module.add_class('UdpTraceClient', parent=root_module['ns3::Application'])
     ## uinteger.h (module 'core'): ns3::UintegerValue [class]
     module.add_class('UintegerValue', import_from_module='ns.core', parent=root_module['ns3::AttributeValue'])
-    ## v4ping.h (module 'applications'): ns3::V4Ping [class]
-    module.add_class('V4Ping', parent=root_module['ns3::Application'])
     ## address.h (module 'network'): ns3::AddressChecker [class]
     module.add_class('AddressChecker', import_from_module='ns.network', parent=root_module['ns3::AttributeChecker'])
     ## address.h (module 'network'): ns3::AddressValue [class]
@@ -536,11 +522,10 @@ def register_types(module):
     module.add_class('PacketProbe', import_from_module='ns.network', parent=root_module['ns3::Probe'])
     ## packetbb.h (module 'network'): ns3::PbbAddressTlv [class]
     module.add_class('PbbAddressTlv', import_from_module='ns.network', parent=root_module['ns3::PbbTlv'])
-    module.add_container('std::vector< ns3::Ipv6Address >', 'ns3::Ipv6Address', container_type=u'vector')
     module.add_container('std::list< ns3::Ptr< ns3::Packet > >', 'ns3::Ptr< ns3::Packet >', container_type=u'list')
+    module.add_container('std::vector< ns3::Ipv6Address >', 'ns3::Ipv6Address', container_type=u'vector')
     module.add_container('std::list< unsigned int >', 'unsigned int', container_type=u'list')
     module.add_container('std::list< ns3::Ptr< ns3::Socket > >', 'ns3::Ptr< ns3::Socket >', container_type=u'list')
-    module.add_container('std::list< ns3::Ptr< ns3::RadvdPrefix > >', 'ns3::Ptr< ns3::RadvdPrefix >', container_type=u'list')
     typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', u'ns3::GenericPhyTxEndCallback')
     typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >*', u'ns3::GenericPhyTxEndCallback*')
     typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >&', u'ns3::GenericPhyTxEndCallback&')
@@ -680,7 +665,6 @@ def register_methods(root_module):
     register_Ns3AsciiTraceHelperForDevice_methods(root_module, root_module['ns3::AsciiTraceHelperForDevice'])
     register_Ns3AttributeConstructionList_methods(root_module, root_module['ns3::AttributeConstructionList'])
     register_Ns3AttributeConstructionListItem_methods(root_module, root_module['ns3::AttributeConstructionList::Item'])
-    register_Ns3Average__Double_methods(root_module, root_module['ns3::Average< double >'])
     register_Ns3Buffer_methods(root_module, root_module['ns3::Buffer'])
     register_Ns3BufferIterator_methods(root_module, root_module['ns3::Buffer::Iterator'])
     register_Ns3BulkSendHelper_methods(root_module, root_module['ns3::BulkSendHelper'])
@@ -729,8 +713,6 @@ def register_methods(root_module):
     register_Ns3PcapFile_methods(root_module, root_module['ns3::PcapFile'])
     register_Ns3PcapHelper_methods(root_module, root_module['ns3::PcapHelper'])
     register_Ns3PcapHelperForDevice_methods(root_module, root_module['ns3::PcapHelperForDevice'])
-    register_Ns3Ping6Helper_methods(root_module, root_module['ns3::Ping6Helper'])
-    register_Ns3RadvdHelper_methods(root_module, root_module['ns3::RadvdHelper'])
     register_Ns3SimpleNetDeviceHelper_methods(root_module, root_module['ns3::SimpleNetDeviceHelper'])
     register_Ns3SimpleRefCount__Ns3Object_Ns3ObjectBase_Ns3ObjectDeleter_methods(root_module, root_module['ns3::SimpleRefCount< ns3::Object, ns3::ObjectBase, ns3::ObjectDeleter >'])
     register_Ns3Simulator_methods(root_module, root_module['ns3::Simulator'])
@@ -739,6 +721,7 @@ def register_methods(root_module):
     register_Ns3Tag_methods(root_module, root_module['ns3::Tag'])
     register_Ns3TagBuffer_methods(root_module, root_module['ns3::TagBuffer'])
     register_Ns3TimeWithUnit_methods(root_module, root_module['ns3::TimeWithUnit'])
+    register_Ns3TracedValue__Unsigned_int_methods(root_module, root_module['ns3::TracedValue< unsigned int >'])
     register_Ns3TypeId_methods(root_module, root_module['ns3::TypeId'])
     register_Ns3TypeIdAttributeInformation_methods(root_module, root_module['ns3::TypeId::AttributeInformation'])
     register_Ns3TypeIdTraceSourceInformation_methods(root_module, root_module['ns3::TypeId::TraceSourceInformation'])
@@ -747,7 +730,6 @@ def register_methods(root_module):
     register_Ns3UdpEchoServerHelper_methods(root_module, root_module['ns3::UdpEchoServerHelper'])
     register_Ns3UdpServerHelper_methods(root_module, root_module['ns3::UdpServerHelper'])
     register_Ns3UdpTraceClientHelper_methods(root_module, root_module['ns3::UdpTraceClientHelper'])
-    register_Ns3V4PingHelper_methods(root_module, root_module['ns3::V4PingHelper'])
     register_Ns3Empty_methods(root_module, root_module['ns3::empty'])
     register_Ns3Int64x64_t_methods(root_module, root_module['ns3::int64x64_t'])
     register_Ns3Chunk_methods(root_module, root_module['ns3::Chunk'])
@@ -763,8 +745,6 @@ def register_methods(root_module):
     register_Ns3Queue_methods(root_module, root_module['ns3::Queue'])
     register_Ns3RadiotapHeader_methods(root_module, root_module['ns3::RadiotapHeader'])
     register_Ns3RandomVariableStream_methods(root_module, root_module['ns3::RandomVariableStream'])
-    register_Ns3RedQueue_methods(root_module, root_module['ns3::RedQueue'])
-    register_Ns3RedQueueStats_methods(root_module, root_module['ns3::RedQueue::Stats'])
     register_Ns3SeqTsHeader_methods(root_module, root_module['ns3::SeqTsHeader'])
     register_Ns3SequentialRandomVariable_methods(root_module, root_module['ns3::SequentialRandomVariable'])
     register_Ns3SimpleRefCount__Ns3AttributeAccessor_Ns3Empty_Ns3DefaultDeleter__lt__ns3AttributeAccessor__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::AttributeAccessor, ns3::empty, ns3::DefaultDeleter<ns3::AttributeAccessor> >'])
@@ -773,6 +753,7 @@ def register_methods(root_module):
     register_Ns3SimpleRefCount__Ns3CallbackImplBase_Ns3Empty_Ns3DefaultDeleter__lt__ns3CallbackImplBase__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::CallbackImplBase, ns3::empty, ns3::DefaultDeleter<ns3::CallbackImplBase> >'])
     register_Ns3SimpleRefCount__Ns3EventImpl_Ns3Empty_Ns3DefaultDeleter__lt__ns3EventImpl__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::EventImpl, ns3::empty, ns3::DefaultDeleter<ns3::EventImpl> >'])
     register_Ns3SimpleRefCount__Ns3HashImplementation_Ns3Empty_Ns3DefaultDeleter__lt__ns3HashImplementation__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::Hash::Implementation, ns3::empty, ns3::DefaultDeleter<ns3::Hash::Implementation> >'])
+    register_Ns3SimpleRefCount__Ns3NetDeviceQueue_Ns3Empty_Ns3DefaultDeleter__lt__ns3NetDeviceQueue__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter<ns3::NetDeviceQueue> >'])
     register_Ns3SimpleRefCount__Ns3NixVector_Ns3Empty_Ns3DefaultDeleter__lt__ns3NixVector__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::NixVector, ns3::empty, ns3::DefaultDeleter<ns3::NixVector> >'])
     register_Ns3SimpleRefCount__Ns3OutputStreamWrapper_Ns3Empty_Ns3DefaultDeleter__lt__ns3OutputStreamWrapper__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::OutputStreamWrapper, ns3::empty, ns3::DefaultDeleter<ns3::OutputStreamWrapper> >'])
     register_Ns3SimpleRefCount__Ns3Packet_Ns3Empty_Ns3DefaultDeleter__lt__ns3Packet__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::Packet, ns3::empty, ns3::DefaultDeleter<ns3::Packet> >'])
@@ -780,11 +761,10 @@ def register_methods(root_module):
     register_Ns3SimpleRefCount__Ns3PbbMessage_Ns3Empty_Ns3DefaultDeleter__lt__ns3PbbMessage__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::PbbMessage, ns3::empty, ns3::DefaultDeleter<ns3::PbbMessage> >'])
     register_Ns3SimpleRefCount__Ns3PbbPacket_Ns3Header_Ns3DefaultDeleter__lt__ns3PbbPacket__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::PbbPacket, ns3::Header, ns3::DefaultDeleter<ns3::PbbPacket> >'])
     register_Ns3SimpleRefCount__Ns3PbbTlv_Ns3Empty_Ns3DefaultDeleter__lt__ns3PbbTlv__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::PbbTlv, ns3::empty, ns3::DefaultDeleter<ns3::PbbTlv> >'])
-    register_Ns3SimpleRefCount__Ns3RadvdInterface_Ns3Empty_Ns3DefaultDeleter__lt__ns3RadvdInterface__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter<ns3::RadvdInterface> >'])
-    register_Ns3SimpleRefCount__Ns3RadvdPrefix_Ns3Empty_Ns3DefaultDeleter__lt__ns3RadvdPrefix__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter<ns3::RadvdPrefix> >'])
+    register_Ns3SimpleRefCount__Ns3QueueItem_Ns3Empty_Ns3DefaultDeleter__lt__ns3QueueItem__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::QueueItem, ns3::empty, ns3::DefaultDeleter<ns3::QueueItem> >'])
     register_Ns3SimpleRefCount__Ns3TraceSourceAccessor_Ns3Empty_Ns3DefaultDeleter__lt__ns3TraceSourceAccessor__gt___methods(root_module, root_module['ns3::SimpleRefCount< ns3::TraceSourceAccessor, ns3::empty, ns3::DefaultDeleter<ns3::TraceSourceAccessor> >'])
+    register_Ns3SllHeader_methods(root_module, root_module['ns3::SllHeader'])
     register_Ns3Socket_methods(root_module, root_module['ns3::Socket'])
-    register_Ns3SocketAddressTag_methods(root_module, root_module['ns3::SocketAddressTag'])
     register_Ns3SocketFactory_methods(root_module, root_module['ns3::SocketFactory'])
     register_Ns3SocketIpTosTag_methods(root_module, root_module['ns3::SocketIpTosTag'])
     register_Ns3SocketIpTtlTag_methods(root_module, root_module['ns3::SocketIpTtlTag'])
@@ -847,9 +827,10 @@ def register_methods(root_module):
     register_Ns3Mac48AddressValue_methods(root_module, root_module['ns3::Mac48AddressValue'])
     register_Ns3Mac64AddressChecker_methods(root_module, root_module['ns3::Mac64AddressChecker'])
     register_Ns3Mac64AddressValue_methods(root_module, root_module['ns3::Mac64AddressValue'])
-    register_Ns3MinMaxAvgTotalCalculator__Double_methods(root_module, root_module['ns3::MinMaxAvgTotalCalculator< double >'])
     register_Ns3MinMaxAvgTotalCalculator__Unsigned_int_methods(root_module, root_module['ns3::MinMaxAvgTotalCalculator< unsigned int >'])
     register_Ns3NetDevice_methods(root_module, root_module['ns3::NetDevice'])
+    register_Ns3NetDeviceQueue_methods(root_module, root_module['ns3::NetDeviceQueue'])
+    register_Ns3NetDeviceQueueInterface_methods(root_module, root_module['ns3::NetDeviceQueueInterface'])
     register_Ns3NixVector_methods(root_module, root_module['ns3::NixVector'])
     register_Ns3Node_methods(root_module, root_module['ns3::Node'])
     register_Ns3NormalRandomVariable_methods(root_module, root_module['ns3::NormalRandomVariable'])
@@ -873,11 +854,8 @@ def register_methods(root_module):
     register_Ns3PbbMessageIpv6_methods(root_module, root_module['ns3::PbbMessageIpv6'])
     register_Ns3PbbPacket_methods(root_module, root_module['ns3::PbbPacket'])
     register_Ns3PbbTlv_methods(root_module, root_module['ns3::PbbTlv'])
-    register_Ns3Ping6_methods(root_module, root_module['ns3::Ping6'])
     register_Ns3Probe_methods(root_module, root_module['ns3::Probe'])
-    register_Ns3Radvd_methods(root_module, root_module['ns3::Radvd'])
-    register_Ns3RadvdInterface_methods(root_module, root_module['ns3::RadvdInterface'])
-    register_Ns3RadvdPrefix_methods(root_module, root_module['ns3::RadvdPrefix'])
+    register_Ns3QueueItem_methods(root_module, root_module['ns3::QueueItem'])
     register_Ns3RateErrorModel_methods(root_module, root_module['ns3::RateErrorModel'])
     register_Ns3ReceiveListErrorModel_methods(root_module, root_module['ns3::ReceiveListErrorModel'])
     register_Ns3SimpleChannel_methods(root_module, root_module['ns3::SimpleChannel'])
@@ -891,7 +869,6 @@ def register_methods(root_module):
     register_Ns3UdpServer_methods(root_module, root_module['ns3::UdpServer'])
     register_Ns3UdpTraceClient_methods(root_module, root_module['ns3::UdpTraceClient'])
     register_Ns3UintegerValue_methods(root_module, root_module['ns3::UintegerValue'])
-    register_Ns3V4Ping_methods(root_module, root_module['ns3::V4Ping'])
     register_Ns3AddressChecker_methods(root_module, root_module['ns3::AddressChecker'])
     register_Ns3AddressValue_methods(root_module, root_module['ns3::AddressValue'])
     register_Ns3ApplicationPacketProbe_methods(root_module, root_module['ns3::ApplicationPacketProbe'])
@@ -1216,71 +1193,6 @@ def register_Ns3AttributeConstructionListItem_methods(root_module, cls):
     cls.add_instance_attribute('name', 'std::string', is_const=False)
     ## attribute-construction-list.h (module 'core'): ns3::AttributeConstructionList::Item::value [variable]
     cls.add_instance_attribute('value', 'ns3::Ptr< ns3::AttributeValue >', is_const=False)
-    return
-
-def register_Ns3Average__Double_methods(root_module, cls):
-    ## average.h (module 'stats'): ns3::Average<double>::Average(ns3::Average<double> const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::Average< double > const &', 'arg0')])
-    ## average.h (module 'stats'): ns3::Average<double>::Average() [constructor]
-    cls.add_constructor([])
-    ## average.h (module 'stats'): double ns3::Average<double>::Avg() const [member function]
-    cls.add_method('Avg', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): uint32_t ns3::Average<double>::Count() const [member function]
-    cls.add_method('Count', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): double ns3::Average<double>::Error90() const [member function]
-    cls.add_method('Error90', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): double ns3::Average<double>::Error95() const [member function]
-    cls.add_method('Error95', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): double ns3::Average<double>::Error99() const [member function]
-    cls.add_method('Error99', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): double ns3::Average<double>::Max() const [member function]
-    cls.add_method('Max', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): double ns3::Average<double>::Mean() const [member function]
-    cls.add_method('Mean', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): double ns3::Average<double>::Min() const [member function]
-    cls.add_method('Min', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): void ns3::Average<double>::Reset() [member function]
-    cls.add_method('Reset', 
-                   'void', 
-                   [])
-    ## average.h (module 'stats'): double ns3::Average<double>::Stddev() const [member function]
-    cls.add_method('Stddev', 
-                   'double', 
-                   [], 
-                   is_const=True)
-    ## average.h (module 'stats'): void ns3::Average<double>::Update(double const & x) [member function]
-    cls.add_method('Update', 
-                   'void', 
-                   [param('double const &', 'x')])
-    ## average.h (module 'stats'): double ns3::Average<double>::Var() const [member function]
-    cls.add_method('Var', 
-                   'double', 
-                   [], 
-                   is_const=True)
     return
 
 def register_Ns3Buffer_methods(root_module, cls):
@@ -2021,6 +1933,11 @@ def register_Ns3Ipv4Address_methods(root_module, cls):
                    'ns3::Ipv4Address', 
                    [], 
                    is_static=True)
+    ## ipv4-address.h (module 'network'): bool ns3::Ipv4Address::IsAny() const [member function]
+    cls.add_method('IsAny', 
+                   'bool', 
+                   [], 
+                   is_const=True)
     ## ipv4-address.h (module 'network'): bool ns3::Ipv4Address::IsBroadcast() const [member function]
     cls.add_method('IsBroadcast', 
                    'bool', 
@@ -2033,6 +1950,11 @@ def register_Ns3Ipv4Address_methods(root_module, cls):
                    is_const=True)
     ## ipv4-address.h (module 'network'): bool ns3::Ipv4Address::IsLocalMulticast() const [member function]
     cls.add_method('IsLocalMulticast', 
+                   'bool', 
+                   [], 
+                   is_const=True)
+    ## ipv4-address.h (module 'network'): bool ns3::Ipv4Address::IsLocalhost() const [member function]
+    cls.add_method('IsLocalhost', 
                    'bool', 
                    [], 
                    is_const=True)
@@ -2212,7 +2134,7 @@ def register_Ns3Ipv6Address_methods(root_module, cls):
     cls.add_method('IsAllHostsMulticast', 
                    'bool', 
                    [], 
-                   is_const=True)
+                   deprecated=True, is_const=True)
     ## ipv6-address.h (module 'network'): bool ns3::Ipv6Address::IsAllNodesMulticast() const [member function]
     cls.add_method('IsAllNodesMulticast', 
                    'bool', 
@@ -3408,10 +3330,14 @@ def register_Ns3PcapFile_methods(root_module, cls):
     cls.add_method('GetVersionMinor', 
                    'uint16_t', 
                    [])
-    ## pcap-file.h (module 'network'): void ns3::PcapFile::Init(uint32_t dataLinkType, uint32_t snapLen=ns3::PcapFile::SNAPLEN_DEFAULT, int32_t timeZoneCorrection=ns3::PcapFile::ZONE_DEFAULT, bool swapMode=false) [member function]
+    ## pcap-file.h (module 'network'): void ns3::PcapFile::Init(uint32_t dataLinkType, uint32_t snapLen=ns3::PcapFile::SNAPLEN_DEFAULT, int32_t timeZoneCorrection=ns3::PcapFile::ZONE_DEFAULT, bool swapMode=false, bool nanosecMode=false) [member function]
     cls.add_method('Init', 
                    'void', 
-                   [param('uint32_t', 'dataLinkType'), param('uint32_t', 'snapLen', default_value='ns3::PcapFile::SNAPLEN_DEFAULT'), param('int32_t', 'timeZoneCorrection', default_value='ns3::PcapFile::ZONE_DEFAULT'), param('bool', 'swapMode', default_value='false')])
+                   [param('uint32_t', 'dataLinkType'), param('uint32_t', 'snapLen', default_value='ns3::PcapFile::SNAPLEN_DEFAULT'), param('int32_t', 'timeZoneCorrection', default_value='ns3::PcapFile::ZONE_DEFAULT'), param('bool', 'swapMode', default_value='false'), param('bool', 'nanosecMode', default_value='false')])
+    ## pcap-file.h (module 'network'): bool ns3::PcapFile::IsNanoSecMode() [member function]
+    cls.add_method('IsNanoSecMode', 
+                   'bool', 
+                   [])
     ## pcap-file.h (module 'network'): void ns3::PcapFile::Open(std::string const & filename, std::_Ios_Openmode mode) [member function]
     cls.add_method('Open', 
                    'void', 
@@ -3491,72 +3417,6 @@ def register_Ns3PcapHelperForDevice_methods(root_module, cls):
                    'void', 
                    [param('std::string', 'prefix'), param('ns3::Ptr< ns3::NetDevice >', 'nd'), param('bool', 'promiscuous'), param('bool', 'explicitFilename')], 
                    is_pure_virtual=True, is_virtual=True)
-    return
-
-def register_Ns3Ping6Helper_methods(root_module, cls):
-    ## ping6-helper.h (module 'applications'): ns3::Ping6Helper::Ping6Helper(ns3::Ping6Helper const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::Ping6Helper const &', 'arg0')])
-    ## ping6-helper.h (module 'applications'): ns3::Ping6Helper::Ping6Helper() [constructor]
-    cls.add_constructor([])
-    ## ping6-helper.h (module 'applications'): ns3::ApplicationContainer ns3::Ping6Helper::Install(ns3::NodeContainer c) [member function]
-    cls.add_method('Install', 
-                   'ns3::ApplicationContainer', 
-                   [param('ns3::NodeContainer', 'c')])
-    ## ping6-helper.h (module 'applications'): void ns3::Ping6Helper::SetAttribute(std::string name, ns3::AttributeValue const & value) [member function]
-    cls.add_method('SetAttribute', 
-                   'void', 
-                   [param('std::string', 'name'), param('ns3::AttributeValue const &', 'value')])
-    ## ping6-helper.h (module 'applications'): void ns3::Ping6Helper::SetIfIndex(uint32_t ifIndex) [member function]
-    cls.add_method('SetIfIndex', 
-                   'void', 
-                   [param('uint32_t', 'ifIndex')])
-    ## ping6-helper.h (module 'applications'): void ns3::Ping6Helper::SetLocal(ns3::Ipv6Address ip) [member function]
-    cls.add_method('SetLocal', 
-                   'void', 
-                   [param('ns3::Ipv6Address', 'ip')])
-    ## ping6-helper.h (module 'applications'): void ns3::Ping6Helper::SetRemote(ns3::Ipv6Address ip) [member function]
-    cls.add_method('SetRemote', 
-                   'void', 
-                   [param('ns3::Ipv6Address', 'ip')])
-    ## ping6-helper.h (module 'applications'): void ns3::Ping6Helper::SetRoutersAddress(std::vector<ns3::Ipv6Address, std::allocator<ns3::Ipv6Address> > routers) [member function]
-    cls.add_method('SetRoutersAddress', 
-                   'void', 
-                   [param('std::vector< ns3::Ipv6Address >', 'routers')])
-    return
-
-def register_Ns3RadvdHelper_methods(root_module, cls):
-    ## radvd-helper.h (module 'applications'): ns3::RadvdHelper::RadvdHelper(ns3::RadvdHelper const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::RadvdHelper const &', 'arg0')])
-    ## radvd-helper.h (module 'applications'): ns3::RadvdHelper::RadvdHelper() [constructor]
-    cls.add_constructor([])
-    ## radvd-helper.h (module 'applications'): void ns3::RadvdHelper::AddAnnouncedPrefix(uint32_t interface, ns3::Ipv6Address prefix, uint32_t prefixLength) [member function]
-    cls.add_method('AddAnnouncedPrefix', 
-                   'void', 
-                   [param('uint32_t', 'interface'), param('ns3::Ipv6Address', 'prefix'), param('uint32_t', 'prefixLength')])
-    ## radvd-helper.h (module 'applications'): void ns3::RadvdHelper::ClearPrefixes() [member function]
-    cls.add_method('ClearPrefixes', 
-                   'void', 
-                   [])
-    ## radvd-helper.h (module 'applications'): void ns3::RadvdHelper::DisableDefaultRouterForInterface(uint32_t interface) [member function]
-    cls.add_method('DisableDefaultRouterForInterface', 
-                   'void', 
-                   [param('uint32_t', 'interface')])
-    ## radvd-helper.h (module 'applications'): void ns3::RadvdHelper::EnableDefaultRouterForInterface(uint32_t interface) [member function]
-    cls.add_method('EnableDefaultRouterForInterface', 
-                   'void', 
-                   [param('uint32_t', 'interface')])
-    ## radvd-helper.h (module 'applications'): ns3::Ptr<ns3::RadvdInterface> ns3::RadvdHelper::GetRadvdInterface(uint32_t interface) [member function]
-    cls.add_method('GetRadvdInterface', 
-                   'ns3::Ptr< ns3::RadvdInterface >', 
-                   [param('uint32_t', 'interface')])
-    ## radvd-helper.h (module 'applications'): ns3::ApplicationContainer ns3::RadvdHelper::Install(ns3::Ptr<ns3::Node> node) [member function]
-    cls.add_method('Install', 
-                   'ns3::ApplicationContainer', 
-                   [param('ns3::Ptr< ns3::Node >', 'node')])
-    ## radvd-helper.h (module 'applications'): void ns3::RadvdHelper::SetAttribute(std::string name, ns3::AttributeValue const & value) [member function]
-    cls.add_method('SetAttribute', 
-                   'void', 
-                   [param('std::string', 'name'), param('ns3::AttributeValue const &', 'value')])
     return
 
 def register_Ns3SimpleNetDeviceHelper_methods(root_module, cls):
@@ -3876,6 +3736,40 @@ def register_Ns3TimeWithUnit_methods(root_module, cls):
     cls.add_constructor([param('ns3::TimeWithUnit const &', 'arg0')])
     ## nstime.h (module 'core'): ns3::TimeWithUnit::TimeWithUnit(ns3::Time const time, ns3::Time::Unit const unit) [constructor]
     cls.add_constructor([param('ns3::Time const', 'time'), param('ns3::Time::Unit const', 'unit')])
+    return
+
+def register_Ns3TracedValue__Unsigned_int_methods(root_module, cls):
+    ## traced-value.h (module 'core'): ns3::TracedValue<unsigned int>::TracedValue() [constructor]
+    cls.add_constructor([])
+    ## traced-value.h (module 'core'): ns3::TracedValue<unsigned int>::TracedValue(ns3::TracedValue<unsigned int> const & o) [copy constructor]
+    cls.add_constructor([param('ns3::TracedValue< unsigned int > const &', 'o')])
+    ## traced-value.h (module 'core'): ns3::TracedValue<unsigned int>::TracedValue(unsigned int const & v) [constructor]
+    cls.add_constructor([param('unsigned int const &', 'v')])
+    ## traced-value.h (module 'core'): void ns3::TracedValue<unsigned int>::Connect(ns3::CallbackBase const & cb, std::basic_string<char,std::char_traits<char>,std::allocator<char> > path) [member function]
+    cls.add_method('Connect', 
+                   'void', 
+                   [param('ns3::CallbackBase const &', 'cb'), param('std::string', 'path')])
+    ## traced-value.h (module 'core'): void ns3::TracedValue<unsigned int>::ConnectWithoutContext(ns3::CallbackBase const & cb) [member function]
+    cls.add_method('ConnectWithoutContext', 
+                   'void', 
+                   [param('ns3::CallbackBase const &', 'cb')])
+    ## traced-value.h (module 'core'): void ns3::TracedValue<unsigned int>::Disconnect(ns3::CallbackBase const & cb, std::basic_string<char,std::char_traits<char>,std::allocator<char> > path) [member function]
+    cls.add_method('Disconnect', 
+                   'void', 
+                   [param('ns3::CallbackBase const &', 'cb'), param('std::string', 'path')])
+    ## traced-value.h (module 'core'): void ns3::TracedValue<unsigned int>::DisconnectWithoutContext(ns3::CallbackBase const & cb) [member function]
+    cls.add_method('DisconnectWithoutContext', 
+                   'void', 
+                   [param('ns3::CallbackBase const &', 'cb')])
+    ## traced-value.h (module 'core'): unsigned int ns3::TracedValue<unsigned int>::Get() const [member function]
+    cls.add_method('Get', 
+                   'unsigned int', 
+                   [], 
+                   is_const=True)
+    ## traced-value.h (module 'core'): void ns3::TracedValue<unsigned int>::Set(unsigned int const & v) [member function]
+    cls.add_method('Set', 
+                   'void', 
+                   [param('unsigned int const &', 'v')])
     return
 
 def register_Ns3TypeId_methods(root_module, cls):
@@ -4214,32 +4108,6 @@ def register_Ns3UdpTraceClientHelper_methods(root_module, cls):
                    'ns3::ApplicationContainer', 
                    [param('ns3::NodeContainer', 'c')])
     ## udp-client-server-helper.h (module 'applications'): void ns3::UdpTraceClientHelper::SetAttribute(std::string name, ns3::AttributeValue const & value) [member function]
-    cls.add_method('SetAttribute', 
-                   'void', 
-                   [param('std::string', 'name'), param('ns3::AttributeValue const &', 'value')])
-    return
-
-def register_Ns3V4PingHelper_methods(root_module, cls):
-    ## v4ping-helper.h (module 'applications'): ns3::V4PingHelper::V4PingHelper(ns3::V4PingHelper const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::V4PingHelper const &', 'arg0')])
-    ## v4ping-helper.h (module 'applications'): ns3::V4PingHelper::V4PingHelper(ns3::Ipv4Address remote) [constructor]
-    cls.add_constructor([param('ns3::Ipv4Address', 'remote')])
-    ## v4ping-helper.h (module 'applications'): ns3::ApplicationContainer ns3::V4PingHelper::Install(ns3::NodeContainer nodes) const [member function]
-    cls.add_method('Install', 
-                   'ns3::ApplicationContainer', 
-                   [param('ns3::NodeContainer', 'nodes')], 
-                   is_const=True)
-    ## v4ping-helper.h (module 'applications'): ns3::ApplicationContainer ns3::V4PingHelper::Install(ns3::Ptr<ns3::Node> node) const [member function]
-    cls.add_method('Install', 
-                   'ns3::ApplicationContainer', 
-                   [param('ns3::Ptr< ns3::Node >', 'node')], 
-                   is_const=True)
-    ## v4ping-helper.h (module 'applications'): ns3::ApplicationContainer ns3::V4PingHelper::Install(std::string nodeName) const [member function]
-    cls.add_method('Install', 
-                   'ns3::ApplicationContainer', 
-                   [param('std::string', 'nodeName')], 
-                   is_const=True)
-    ## v4ping-helper.h (module 'applications'): void ns3::V4PingHelper::SetAttribute(std::string name, ns3::AttributeValue const & value) [member function]
     cls.add_method('SetAttribute', 
                    'void', 
                    [param('std::string', 'name'), param('ns3::AttributeValue const &', 'value')])
@@ -4736,6 +4604,10 @@ def register_Ns3PcapFileWrapper_methods(root_module, cls):
     cls.add_method('Write', 
                    'void', 
                    [param('ns3::Time', 't'), param('uint8_t const *', 'buffer'), param('uint32_t', 'length')])
+    ## pcap-file-wrapper.h (module 'network'): ns3::Ptr<ns3::Packet> ns3::PcapFileWrapper::Read(ns3::Time & t) [member function]
+    cls.add_method('Read', 
+                   'ns3::Ptr< ns3::Packet >', 
+                   [param('ns3::Time &', 't')])
     ## pcap-file-wrapper.h (module 'network'): uint32_t ns3::PcapFileWrapper::GetMagic() [member function]
     cls.add_method('GetMagic', 
                    'uint32_t', 
@@ -4771,18 +4643,33 @@ def register_Ns3Queue_methods(root_module, cls):
     cls.add_constructor([param('ns3::Queue const &', 'arg0')])
     ## queue.h (module 'network'): ns3::Queue::Queue() [constructor]
     cls.add_constructor([])
-    ## queue.h (module 'network'): ns3::Ptr<ns3::Packet> ns3::Queue::Dequeue() [member function]
+    ## queue.h (module 'network'): ns3::Ptr<ns3::QueueItem> ns3::Queue::Dequeue() [member function]
     cls.add_method('Dequeue', 
-                   'ns3::Ptr< ns3::Packet >', 
+                   'ns3::Ptr< ns3::QueueItem >', 
                    [])
     ## queue.h (module 'network'): void ns3::Queue::DequeueAll() [member function]
     cls.add_method('DequeueAll', 
                    'void', 
                    [])
-    ## queue.h (module 'network'): bool ns3::Queue::Enqueue(ns3::Ptr<ns3::Packet> p) [member function]
+    ## queue.h (module 'network'): bool ns3::Queue::Enqueue(ns3::Ptr<ns3::QueueItem> item) [member function]
     cls.add_method('Enqueue', 
                    'bool', 
-                   [param('ns3::Ptr< ns3::Packet >', 'p')])
+                   [param('ns3::Ptr< ns3::QueueItem >', 'item')])
+    ## queue.h (module 'network'): uint32_t ns3::Queue::GetMaxBytes() const [member function]
+    cls.add_method('GetMaxBytes', 
+                   'uint32_t', 
+                   [], 
+                   is_const=True)
+    ## queue.h (module 'network'): uint32_t ns3::Queue::GetMaxPackets() const [member function]
+    cls.add_method('GetMaxPackets', 
+                   'uint32_t', 
+                   [], 
+                   is_const=True)
+    ## queue.h (module 'network'): ns3::Queue::QueueMode ns3::Queue::GetMode() const [member function]
+    cls.add_method('GetMode', 
+                   'ns3::Queue::QueueMode', 
+                   [], 
+                   is_const=True)
     ## queue.h (module 'network'): uint32_t ns3::Queue::GetNBytes() const [member function]
     cls.add_method('GetNBytes', 
                    'uint32_t', 
@@ -4823,35 +4710,61 @@ def register_Ns3Queue_methods(root_module, cls):
                    'bool', 
                    [], 
                    is_const=True)
-    ## queue.h (module 'network'): ns3::Ptr<ns3::Packet const> ns3::Queue::Peek() const [member function]
+    ## queue.h (module 'network'): ns3::Ptr<const ns3::QueueItem> ns3::Queue::Peek() const [member function]
     cls.add_method('Peek', 
-                   'ns3::Ptr< ns3::Packet const >', 
+                   'ns3::Ptr< ns3::QueueItem const >', 
                    [], 
                    is_const=True)
+    ## queue.h (module 'network'): ns3::Ptr<ns3::QueueItem> ns3::Queue::Remove() [member function]
+    cls.add_method('Remove', 
+                   'ns3::Ptr< ns3::QueueItem >', 
+                   [])
     ## queue.h (module 'network'): void ns3::Queue::ResetStatistics() [member function]
     cls.add_method('ResetStatistics', 
                    'void', 
                    [])
-    ## queue.h (module 'network'): void ns3::Queue::Drop(ns3::Ptr<ns3::Packet> packet) [member function]
+    ## queue.h (module 'network'): void ns3::Queue::SetDropCallback(ns3::Callback<void, ns3::Ptr<ns3::QueueItem>, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty> cb) [member function]
+    cls.add_method('SetDropCallback', 
+                   'void', 
+                   [param('ns3::Callback< void, ns3::Ptr< ns3::QueueItem >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', 'cb')], 
+                   is_virtual=True)
+    ## queue.h (module 'network'): void ns3::Queue::SetMaxBytes(uint32_t maxBytes) [member function]
+    cls.add_method('SetMaxBytes', 
+                   'void', 
+                   [param('uint32_t', 'maxBytes')])
+    ## queue.h (module 'network'): void ns3::Queue::SetMaxPackets(uint32_t maxPackets) [member function]
+    cls.add_method('SetMaxPackets', 
+                   'void', 
+                   [param('uint32_t', 'maxPackets')])
+    ## queue.h (module 'network'): void ns3::Queue::SetMode(ns3::Queue::QueueMode mode) [member function]
+    cls.add_method('SetMode', 
+                   'void', 
+                   [param('ns3::Queue::QueueMode', 'mode')])
+    ## queue.h (module 'network'): void ns3::Queue::Drop(ns3::Ptr<ns3::QueueItem> item) [member function]
     cls.add_method('Drop', 
                    'void', 
-                   [param('ns3::Ptr< ns3::Packet >', 'packet')], 
+                   [param('ns3::Ptr< ns3::QueueItem >', 'item')], 
                    visibility='protected')
-    ## queue.h (module 'network'): ns3::Ptr<ns3::Packet> ns3::Queue::DoDequeue() [member function]
+    ## queue.h (module 'network'): ns3::Ptr<ns3::QueueItem> ns3::Queue::DoDequeue() [member function]
     cls.add_method('DoDequeue', 
-                   'ns3::Ptr< ns3::Packet >', 
+                   'ns3::Ptr< ns3::QueueItem >', 
                    [], 
                    is_pure_virtual=True, visibility='private', is_virtual=True)
-    ## queue.h (module 'network'): bool ns3::Queue::DoEnqueue(ns3::Ptr<ns3::Packet> p) [member function]
+    ## queue.h (module 'network'): bool ns3::Queue::DoEnqueue(ns3::Ptr<ns3::QueueItem> item) [member function]
     cls.add_method('DoEnqueue', 
                    'bool', 
-                   [param('ns3::Ptr< ns3::Packet >', 'p')], 
+                   [param('ns3::Ptr< ns3::QueueItem >', 'item')], 
                    is_pure_virtual=True, visibility='private', is_virtual=True)
-    ## queue.h (module 'network'): ns3::Ptr<ns3::Packet const> ns3::Queue::DoPeek() const [member function]
+    ## queue.h (module 'network'): ns3::Ptr<const ns3::QueueItem> ns3::Queue::DoPeek() const [member function]
     cls.add_method('DoPeek', 
-                   'ns3::Ptr< ns3::Packet const >', 
+                   'ns3::Ptr< ns3::QueueItem const >', 
                    [], 
                    is_pure_virtual=True, is_const=True, visibility='private', is_virtual=True)
+    ## queue.h (module 'network'): ns3::Ptr<ns3::QueueItem> ns3::Queue::DoRemove() [member function]
+    cls.add_method('DoRemove', 
+                   'ns3::Ptr< ns3::QueueItem >', 
+                   [], 
+                   is_pure_virtual=True, visibility='private', is_virtual=True)
     return
 
 def register_Ns3RadiotapHeader_methods(root_module, cls):
@@ -5080,74 +4993,6 @@ def register_Ns3RandomVariableStream_methods(root_module, cls):
                    is_const=True, visibility='protected')
     return
 
-def register_Ns3RedQueue_methods(root_module, cls):
-    ## red-queue.h (module 'network'): ns3::RedQueue::RedQueue(ns3::RedQueue const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::RedQueue const &', 'arg0')])
-    ## red-queue.h (module 'network'): ns3::RedQueue::RedQueue() [constructor]
-    cls.add_constructor([])
-    ## red-queue.h (module 'network'): int64_t ns3::RedQueue::AssignStreams(int64_t stream) [member function]
-    cls.add_method('AssignStreams', 
-                   'int64_t', 
-                   [param('int64_t', 'stream')])
-    ## red-queue.h (module 'network'): ns3::Queue::QueueMode ns3::RedQueue::GetMode() [member function]
-    cls.add_method('GetMode', 
-                   'ns3::Queue::QueueMode', 
-                   [])
-    ## red-queue.h (module 'network'): uint32_t ns3::RedQueue::GetQueueSize() [member function]
-    cls.add_method('GetQueueSize', 
-                   'uint32_t', 
-                   [])
-    ## red-queue.h (module 'network'): ns3::RedQueue::Stats ns3::RedQueue::GetStats() [member function]
-    cls.add_method('GetStats', 
-                   'ns3::RedQueue::Stats', 
-                   [])
-    ## red-queue.h (module 'network'): static ns3::TypeId ns3::RedQueue::GetTypeId() [member function]
-    cls.add_method('GetTypeId', 
-                   'ns3::TypeId', 
-                   [], 
-                   is_static=True)
-    ## red-queue.h (module 'network'): void ns3::RedQueue::SetMode(ns3::Queue::QueueMode mode) [member function]
-    cls.add_method('SetMode', 
-                   'void', 
-                   [param('ns3::Queue::QueueMode', 'mode')])
-    ## red-queue.h (module 'network'): void ns3::RedQueue::SetQueueLimit(uint32_t lim) [member function]
-    cls.add_method('SetQueueLimit', 
-                   'void', 
-                   [param('uint32_t', 'lim')])
-    ## red-queue.h (module 'network'): void ns3::RedQueue::SetTh(double minTh, double maxTh) [member function]
-    cls.add_method('SetTh', 
-                   'void', 
-                   [param('double', 'minTh'), param('double', 'maxTh')])
-    ## red-queue.h (module 'network'): ns3::Ptr<ns3::Packet> ns3::RedQueue::DoDequeue() [member function]
-    cls.add_method('DoDequeue', 
-                   'ns3::Ptr< ns3::Packet >', 
-                   [], 
-                   visibility='private', is_virtual=True)
-    ## red-queue.h (module 'network'): bool ns3::RedQueue::DoEnqueue(ns3::Ptr<ns3::Packet> p) [member function]
-    cls.add_method('DoEnqueue', 
-                   'bool', 
-                   [param('ns3::Ptr< ns3::Packet >', 'p')], 
-                   visibility='private', is_virtual=True)
-    ## red-queue.h (module 'network'): ns3::Ptr<ns3::Packet const> ns3::RedQueue::DoPeek() const [member function]
-    cls.add_method('DoPeek', 
-                   'ns3::Ptr< ns3::Packet const >', 
-                   [], 
-                   is_const=True, visibility='private', is_virtual=True)
-    return
-
-def register_Ns3RedQueueStats_methods(root_module, cls):
-    ## red-queue.h (module 'network'): ns3::RedQueue::Stats::Stats() [constructor]
-    cls.add_constructor([])
-    ## red-queue.h (module 'network'): ns3::RedQueue::Stats::Stats(ns3::RedQueue::Stats const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::RedQueue::Stats const &', 'arg0')])
-    ## red-queue.h (module 'network'): ns3::RedQueue::Stats::forcedDrop [variable]
-    cls.add_instance_attribute('forcedDrop', 'uint32_t', is_const=False)
-    ## red-queue.h (module 'network'): ns3::RedQueue::Stats::qLimDrop [variable]
-    cls.add_instance_attribute('qLimDrop', 'uint32_t', is_const=False)
-    ## red-queue.h (module 'network'): ns3::RedQueue::Stats::unforcedDrop [variable]
-    cls.add_instance_attribute('unforcedDrop', 'uint32_t', is_const=False)
-    return
-
 def register_Ns3SeqTsHeader_methods(root_module, cls):
     ## seq-ts-header.h (module 'applications'): ns3::SeqTsHeader::SeqTsHeader(ns3::SeqTsHeader const & arg0) [copy constructor]
     cls.add_constructor([param('ns3::SeqTsHeader const &', 'arg0')])
@@ -5311,6 +5156,18 @@ def register_Ns3SimpleRefCount__Ns3HashImplementation_Ns3Empty_Ns3DefaultDeleter
                    is_static=True)
     return
 
+def register_Ns3SimpleRefCount__Ns3NetDeviceQueue_Ns3Empty_Ns3DefaultDeleter__lt__ns3NetDeviceQueue__gt___methods(root_module, cls):
+    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter<ns3::NetDeviceQueue> >::SimpleRefCount() [constructor]
+    cls.add_constructor([])
+    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter<ns3::NetDeviceQueue> >::SimpleRefCount(ns3::SimpleRefCount<ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter<ns3::NetDeviceQueue> > const & o) [copy constructor]
+    cls.add_constructor([param('ns3::SimpleRefCount< ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter< ns3::NetDeviceQueue > > const &', 'o')])
+    ## simple-ref-count.h (module 'core'): static void ns3::SimpleRefCount<ns3::NetDeviceQueue, ns3::empty, ns3::DefaultDeleter<ns3::NetDeviceQueue> >::Cleanup() [member function]
+    cls.add_method('Cleanup', 
+                   'void', 
+                   [], 
+                   is_static=True)
+    return
+
 def register_Ns3SimpleRefCount__Ns3NixVector_Ns3Empty_Ns3DefaultDeleter__lt__ns3NixVector__gt___methods(root_module, cls):
     ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::NixVector, ns3::empty, ns3::DefaultDeleter<ns3::NixVector> >::SimpleRefCount() [constructor]
     cls.add_constructor([])
@@ -5395,24 +5252,12 @@ def register_Ns3SimpleRefCount__Ns3PbbTlv_Ns3Empty_Ns3DefaultDeleter__lt__ns3Pbb
                    is_static=True)
     return
 
-def register_Ns3SimpleRefCount__Ns3RadvdInterface_Ns3Empty_Ns3DefaultDeleter__lt__ns3RadvdInterface__gt___methods(root_module, cls):
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter<ns3::RadvdInterface> >::SimpleRefCount() [constructor]
+def register_Ns3SimpleRefCount__Ns3QueueItem_Ns3Empty_Ns3DefaultDeleter__lt__ns3QueueItem__gt___methods(root_module, cls):
+    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::QueueItem, ns3::empty, ns3::DefaultDeleter<ns3::QueueItem> >::SimpleRefCount() [constructor]
     cls.add_constructor([])
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter<ns3::RadvdInterface> >::SimpleRefCount(ns3::SimpleRefCount<ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter<ns3::RadvdInterface> > const & o) [copy constructor]
-    cls.add_constructor([param('ns3::SimpleRefCount< ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter< ns3::RadvdInterface > > const &', 'o')])
-    ## simple-ref-count.h (module 'core'): static void ns3::SimpleRefCount<ns3::RadvdInterface, ns3::empty, ns3::DefaultDeleter<ns3::RadvdInterface> >::Cleanup() [member function]
-    cls.add_method('Cleanup', 
-                   'void', 
-                   [], 
-                   is_static=True)
-    return
-
-def register_Ns3SimpleRefCount__Ns3RadvdPrefix_Ns3Empty_Ns3DefaultDeleter__lt__ns3RadvdPrefix__gt___methods(root_module, cls):
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter<ns3::RadvdPrefix> >::SimpleRefCount() [constructor]
-    cls.add_constructor([])
-    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter<ns3::RadvdPrefix> >::SimpleRefCount(ns3::SimpleRefCount<ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter<ns3::RadvdPrefix> > const & o) [copy constructor]
-    cls.add_constructor([param('ns3::SimpleRefCount< ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter< ns3::RadvdPrefix > > const &', 'o')])
-    ## simple-ref-count.h (module 'core'): static void ns3::SimpleRefCount<ns3::RadvdPrefix, ns3::empty, ns3::DefaultDeleter<ns3::RadvdPrefix> >::Cleanup() [member function]
+    ## simple-ref-count.h (module 'core'): ns3::SimpleRefCount<ns3::QueueItem, ns3::empty, ns3::DefaultDeleter<ns3::QueueItem> >::SimpleRefCount(ns3::SimpleRefCount<ns3::QueueItem, ns3::empty, ns3::DefaultDeleter<ns3::QueueItem> > const & o) [copy constructor]
+    cls.add_constructor([param('ns3::SimpleRefCount< ns3::QueueItem, ns3::empty, ns3::DefaultDeleter< ns3::QueueItem > > const &', 'o')])
+    ## simple-ref-count.h (module 'core'): static void ns3::SimpleRefCount<ns3::QueueItem, ns3::empty, ns3::DefaultDeleter<ns3::QueueItem> >::Cleanup() [member function]
     cls.add_method('Cleanup', 
                    'void', 
                    [], 
@@ -5429,6 +5274,61 @@ def register_Ns3SimpleRefCount__Ns3TraceSourceAccessor_Ns3Empty_Ns3DefaultDelete
                    'void', 
                    [], 
                    is_static=True)
+    return
+
+def register_Ns3SllHeader_methods(root_module, cls):
+    ## sll-header.h (module 'network'): ns3::SllHeader::SllHeader(ns3::SllHeader const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::SllHeader const &', 'arg0')])
+    ## sll-header.h (module 'network'): ns3::SllHeader::SllHeader() [constructor]
+    cls.add_constructor([])
+    ## sll-header.h (module 'network'): uint32_t ns3::SllHeader::Deserialize(ns3::Buffer::Iterator start) [member function]
+    cls.add_method('Deserialize', 
+                   'uint32_t', 
+                   [param('ns3::Buffer::Iterator', 'start')], 
+                   is_virtual=True)
+    ## sll-header.h (module 'network'): uint16_t ns3::SllHeader::GetArpType() const [member function]
+    cls.add_method('GetArpType', 
+                   'uint16_t', 
+                   [], 
+                   is_const=True)
+    ## sll-header.h (module 'network'): ns3::TypeId ns3::SllHeader::GetInstanceTypeId() const [member function]
+    cls.add_method('GetInstanceTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## sll-header.h (module 'network'): ns3::SllHeader::PacketType ns3::SllHeader::GetPacketType() const [member function]
+    cls.add_method('GetPacketType', 
+                   'ns3::SllHeader::PacketType', 
+                   [], 
+                   is_const=True)
+    ## sll-header.h (module 'network'): uint32_t ns3::SllHeader::GetSerializedSize() const [member function]
+    cls.add_method('GetSerializedSize', 
+                   'uint32_t', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## sll-header.h (module 'network'): static ns3::TypeId ns3::SllHeader::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## sll-header.h (module 'network'): void ns3::SllHeader::Print(std::ostream & os) const [member function]
+    cls.add_method('Print', 
+                   'void', 
+                   [param('std::ostream &', 'os')], 
+                   is_const=True, is_virtual=True)
+    ## sll-header.h (module 'network'): void ns3::SllHeader::Serialize(ns3::Buffer::Iterator start) const [member function]
+    cls.add_method('Serialize', 
+                   'void', 
+                   [param('ns3::Buffer::Iterator', 'start')], 
+                   is_const=True, is_virtual=True)
+    ## sll-header.h (module 'network'): void ns3::SllHeader::SetArpType(uint16_t arphdType) [member function]
+    cls.add_method('SetArpType', 
+                   'void', 
+                   [param('uint16_t', 'arphdType')])
+    ## sll-header.h (module 'network'): void ns3::SllHeader::SetPacketType(ns3::SllHeader::PacketType type) [member function]
+    cls.add_method('SetPacketType', 
+                   'void', 
+                   [param('ns3::SllHeader::PacketType', 'type')])
     return
 
 def register_Ns3Socket_methods(root_module, cls):
@@ -5510,6 +5410,11 @@ def register_Ns3Socket_methods(root_module, cls):
                    'ns3::Ptr< ns3::Node >', 
                    [], 
                    is_pure_virtual=True, is_const=True, is_virtual=True)
+    ## socket.h (module 'network'): int ns3::Socket::GetPeerName(ns3::Address & address) const [member function]
+    cls.add_method('GetPeerName', 
+                   'int', 
+                   [param('ns3::Address &', 'address')], 
+                   is_pure_virtual=True, is_const=True, is_virtual=True)
     ## socket.h (module 'network'): uint32_t ns3::Socket::GetRxAvailable() const [member function]
     cls.add_method('GetRxAvailable', 
                    'uint32_t', 
@@ -5535,6 +5440,21 @@ def register_Ns3Socket_methods(root_module, cls):
                    'ns3::TypeId', 
                    [], 
                    is_static=True)
+    ## socket.h (module 'network'): void ns3::Socket::Ipv6JoinGroup(ns3::Ipv6Address address, ns3::Socket::Ipv6MulticastFilterMode filterMode, std::vector<ns3::Ipv6Address,std::allocator<ns3::Ipv6Address> > sourceAddresses) [member function]
+    cls.add_method('Ipv6JoinGroup', 
+                   'void', 
+                   [param('ns3::Ipv6Address', 'address'), param('ns3::Socket::Ipv6MulticastFilterMode', 'filterMode'), param('std::vector< ns3::Ipv6Address >', 'sourceAddresses')], 
+                   is_virtual=True)
+    ## socket.h (module 'network'): void ns3::Socket::Ipv6JoinGroup(ns3::Ipv6Address address) [member function]
+    cls.add_method('Ipv6JoinGroup', 
+                   'void', 
+                   [param('ns3::Ipv6Address', 'address')], 
+                   is_virtual=True)
+    ## socket.h (module 'network'): void ns3::Socket::Ipv6LeaveGroup() [member function]
+    cls.add_method('Ipv6LeaveGroup', 
+                   'void', 
+                   [], 
+                   is_virtual=True)
     ## socket.h (module 'network'): bool ns3::Socket::IsIpRecvTos() const [member function]
     cls.add_method('IsIpRecvTos', 
                    'bool', 
@@ -5760,52 +5680,6 @@ def register_Ns3Socket_methods(root_module, cls):
                    'void', 
                    [param('uint32_t', 'spaceAvailable')], 
                    visibility='protected')
-    return
-
-def register_Ns3SocketAddressTag_methods(root_module, cls):
-    ## socket.h (module 'network'): ns3::SocketAddressTag::SocketAddressTag(ns3::SocketAddressTag const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::SocketAddressTag const &', 'arg0')])
-    ## socket.h (module 'network'): ns3::SocketAddressTag::SocketAddressTag() [constructor]
-    cls.add_constructor([])
-    ## socket.h (module 'network'): void ns3::SocketAddressTag::Deserialize(ns3::TagBuffer i) [member function]
-    cls.add_method('Deserialize', 
-                   'void', 
-                   [param('ns3::TagBuffer', 'i')], 
-                   is_virtual=True)
-    ## socket.h (module 'network'): ns3::Address ns3::SocketAddressTag::GetAddress() const [member function]
-    cls.add_method('GetAddress', 
-                   'ns3::Address', 
-                   [], 
-                   is_const=True)
-    ## socket.h (module 'network'): ns3::TypeId ns3::SocketAddressTag::GetInstanceTypeId() const [member function]
-    cls.add_method('GetInstanceTypeId', 
-                   'ns3::TypeId', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## socket.h (module 'network'): uint32_t ns3::SocketAddressTag::GetSerializedSize() const [member function]
-    cls.add_method('GetSerializedSize', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## socket.h (module 'network'): static ns3::TypeId ns3::SocketAddressTag::GetTypeId() [member function]
-    cls.add_method('GetTypeId', 
-                   'ns3::TypeId', 
-                   [], 
-                   is_static=True)
-    ## socket.h (module 'network'): void ns3::SocketAddressTag::Print(std::ostream & os) const [member function]
-    cls.add_method('Print', 
-                   'void', 
-                   [param('std::ostream &', 'os')], 
-                   is_const=True, is_virtual=True)
-    ## socket.h (module 'network'): void ns3::SocketAddressTag::Serialize(ns3::TagBuffer i) const [member function]
-    cls.add_method('Serialize', 
-                   'void', 
-                   [param('ns3::TagBuffer', 'i')], 
-                   is_const=True, is_virtual=True)
-    ## socket.h (module 'network'): void ns3::SocketAddressTag::SetAddress(ns3::Address addr) [member function]
-    cls.add_method('SetAddress', 
-                   'void', 
-                   [param('ns3::Address', 'addr')])
     return
 
 def register_Ns3SocketFactory_methods(root_module, cls):
@@ -7076,35 +6950,31 @@ def register_Ns3DropTailQueue_methods(root_module, cls):
     cls.add_constructor([param('ns3::DropTailQueue const &', 'arg0')])
     ## drop-tail-queue.h (module 'network'): ns3::DropTailQueue::DropTailQueue() [constructor]
     cls.add_constructor([])
-    ## drop-tail-queue.h (module 'network'): ns3::Queue::QueueMode ns3::DropTailQueue::GetMode() const [member function]
-    cls.add_method('GetMode', 
-                   'ns3::Queue::QueueMode', 
-                   [], 
-                   is_const=True)
     ## drop-tail-queue.h (module 'network'): static ns3::TypeId ns3::DropTailQueue::GetTypeId() [member function]
     cls.add_method('GetTypeId', 
                    'ns3::TypeId', 
                    [], 
                    is_static=True)
-    ## drop-tail-queue.h (module 'network'): void ns3::DropTailQueue::SetMode(ns3::Queue::QueueMode mode) [member function]
-    cls.add_method('SetMode', 
-                   'void', 
-                   [param('ns3::Queue::QueueMode', 'mode')])
-    ## drop-tail-queue.h (module 'network'): ns3::Ptr<ns3::Packet> ns3::DropTailQueue::DoDequeue() [member function]
+    ## drop-tail-queue.h (module 'network'): ns3::Ptr<ns3::QueueItem> ns3::DropTailQueue::DoDequeue() [member function]
     cls.add_method('DoDequeue', 
-                   'ns3::Ptr< ns3::Packet >', 
+                   'ns3::Ptr< ns3::QueueItem >', 
                    [], 
                    visibility='private', is_virtual=True)
-    ## drop-tail-queue.h (module 'network'): bool ns3::DropTailQueue::DoEnqueue(ns3::Ptr<ns3::Packet> p) [member function]
+    ## drop-tail-queue.h (module 'network'): bool ns3::DropTailQueue::DoEnqueue(ns3::Ptr<ns3::QueueItem> item) [member function]
     cls.add_method('DoEnqueue', 
                    'bool', 
-                   [param('ns3::Ptr< ns3::Packet >', 'p')], 
+                   [param('ns3::Ptr< ns3::QueueItem >', 'item')], 
                    visibility='private', is_virtual=True)
-    ## drop-tail-queue.h (module 'network'): ns3::Ptr<ns3::Packet const> ns3::DropTailQueue::DoPeek() const [member function]
+    ## drop-tail-queue.h (module 'network'): ns3::Ptr<const ns3::QueueItem> ns3::DropTailQueue::DoPeek() const [member function]
     cls.add_method('DoPeek', 
-                   'ns3::Ptr< ns3::Packet const >', 
+                   'ns3::Ptr< ns3::QueueItem const >', 
                    [], 
                    is_const=True, visibility='private', is_virtual=True)
+    ## drop-tail-queue.h (module 'network'): ns3::Ptr<ns3::QueueItem> ns3::DropTailQueue::DoRemove() [member function]
+    cls.add_method('DoRemove', 
+                   'ns3::Ptr< ns3::QueueItem >', 
+                   [], 
+                   visibility='private', is_virtual=True)
     return
 
 def register_Ns3EmpiricalRandomVariable_methods(root_module, cls):
@@ -7952,76 +7822,6 @@ def register_Ns3Mac64AddressValue_methods(root_module, cls):
                    [param('ns3::Mac64Address const &', 'value')])
     return
 
-def register_Ns3MinMaxAvgTotalCalculator__Double_methods(root_module, cls):
-    ## basic-data-calculators.h (module 'stats'): ns3::MinMaxAvgTotalCalculator<double>::MinMaxAvgTotalCalculator(ns3::MinMaxAvgTotalCalculator<double> const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::MinMaxAvgTotalCalculator< double > const &', 'arg0')])
-    ## basic-data-calculators.h (module 'stats'): ns3::MinMaxAvgTotalCalculator<double>::MinMaxAvgTotalCalculator() [constructor]
-    cls.add_constructor([])
-    ## basic-data-calculators.h (module 'stats'): static ns3::TypeId ns3::MinMaxAvgTotalCalculator<double>::GetTypeId() [member function]
-    cls.add_method('GetTypeId', 
-                   'ns3::TypeId', 
-                   [], 
-                   is_static=True)
-    ## basic-data-calculators.h (module 'stats'): void ns3::MinMaxAvgTotalCalculator<double>::Output(ns3::DataOutputCallback & callback) const [member function]
-    cls.add_method('Output', 
-                   'void', 
-                   [param('ns3::DataOutputCallback &', 'callback')], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): void ns3::MinMaxAvgTotalCalculator<double>::Reset() [member function]
-    cls.add_method('Reset', 
-                   'void', 
-                   [])
-    ## basic-data-calculators.h (module 'stats'): void ns3::MinMaxAvgTotalCalculator<double>::Update(double const i) [member function]
-    cls.add_method('Update', 
-                   'void', 
-                   [param('double const', 'i')])
-    ## basic-data-calculators.h (module 'stats'): long int ns3::MinMaxAvgTotalCalculator<double>::getCount() const [member function]
-    cls.add_method('getCount', 
-                   'long int', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): double ns3::MinMaxAvgTotalCalculator<double>::getMax() const [member function]
-    cls.add_method('getMax', 
-                   'double', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): double ns3::MinMaxAvgTotalCalculator<double>::getMean() const [member function]
-    cls.add_method('getMean', 
-                   'double', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): double ns3::MinMaxAvgTotalCalculator<double>::getMin() const [member function]
-    cls.add_method('getMin', 
-                   'double', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): double ns3::MinMaxAvgTotalCalculator<double>::getSqrSum() const [member function]
-    cls.add_method('getSqrSum', 
-                   'double', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): double ns3::MinMaxAvgTotalCalculator<double>::getStddev() const [member function]
-    cls.add_method('getStddev', 
-                   'double', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): double ns3::MinMaxAvgTotalCalculator<double>::getSum() const [member function]
-    cls.add_method('getSum', 
-                   'double', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): double ns3::MinMaxAvgTotalCalculator<double>::getVariance() const [member function]
-    cls.add_method('getVariance', 
-                   'double', 
-                   [], 
-                   is_const=True, is_virtual=True)
-    ## basic-data-calculators.h (module 'stats'): void ns3::MinMaxAvgTotalCalculator<double>::DoDispose() [member function]
-    cls.add_method('DoDispose', 
-                   'void', 
-                   [], 
-                   visibility='protected', is_virtual=True)
-    return
-
 def register_Ns3MinMaxAvgTotalCalculator__Unsigned_int_methods(root_module, cls):
     ## basic-data-calculators.h (module 'stats'): ns3::MinMaxAvgTotalCalculator<unsigned int>::MinMaxAvgTotalCalculator(ns3::MinMaxAvgTotalCalculator<unsigned int> const & arg0) [copy constructor]
     cls.add_constructor([param('ns3::MinMaxAvgTotalCalculator< unsigned int > const &', 'arg0')])
@@ -8097,7 +7897,7 @@ def register_Ns3NetDevice_methods(root_module, cls):
     cls.add_constructor([])
     ## net-device.h (module 'network'): ns3::NetDevice::NetDevice(ns3::NetDevice const & arg0) [copy constructor]
     cls.add_constructor([param('ns3::NetDevice const &', 'arg0')])
-    ## net-device.h (module 'network'): void ns3::NetDevice::AddLinkChangeCallback(ns3::Callback<void,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty> callback) [member function]
+    ## net-device.h (module 'network'): void ns3::NetDevice::AddLinkChangeCallback(ns3::Callback<void, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty> callback) [member function]
     cls.add_method('AddLinkChangeCallback', 
                    'void', 
                    [param('ns3::Callback< void, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', 'callback')], 
@@ -8224,6 +8024,83 @@ def register_Ns3NetDevice_methods(root_module, cls):
                    is_pure_virtual=True, is_const=True, is_virtual=True)
     return
 
+def register_Ns3NetDeviceQueue_methods(root_module, cls):
+    ## net-device.h (module 'network'): ns3::NetDeviceQueue::NetDeviceQueue(ns3::NetDeviceQueue const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::NetDeviceQueue const &', 'arg0')])
+    ## net-device.h (module 'network'): ns3::NetDeviceQueue::NetDeviceQueue() [constructor]
+    cls.add_constructor([])
+    ## net-device.h (module 'network'): bool ns3::NetDeviceQueue::HasWakeCallbackSet() const [member function]
+    cls.add_method('HasWakeCallbackSet', 
+                   'bool', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## net-device.h (module 'network'): bool ns3::NetDeviceQueue::IsStopped() const [member function]
+    cls.add_method('IsStopped', 
+                   'bool', 
+                   [], 
+                   is_const=True)
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::SetWakeCallback(ns3::Callback<void, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty> cb) [member function]
+    cls.add_method('SetWakeCallback', 
+                   'void', 
+                   [param('ns3::Callback< void, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', 'cb')], 
+                   is_virtual=True)
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::Start() [member function]
+    cls.add_method('Start', 
+                   'void', 
+                   [], 
+                   is_virtual=True)
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::Stop() [member function]
+    cls.add_method('Stop', 
+                   'void', 
+                   [], 
+                   is_virtual=True)
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::Wake() [member function]
+    cls.add_method('Wake', 
+                   'void', 
+                   [], 
+                   is_virtual=True)
+    return
+
+def register_Ns3NetDeviceQueueInterface_methods(root_module, cls):
+    ## net-device.h (module 'network'): ns3::NetDeviceQueueInterface::NetDeviceQueueInterface(ns3::NetDeviceQueueInterface const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::NetDeviceQueueInterface const &', 'arg0')])
+    ## net-device.h (module 'network'): ns3::NetDeviceQueueInterface::NetDeviceQueueInterface() [constructor]
+    cls.add_constructor([])
+    ## net-device.h (module 'network'): uint8_t ns3::NetDeviceQueueInterface::GetSelectedQueue(ns3::Ptr<ns3::QueueItem> item) const [member function]
+    cls.add_method('GetSelectedQueue', 
+                   'uint8_t', 
+                   [param('ns3::Ptr< ns3::QueueItem >', 'item')], 
+                   is_const=True)
+    ## net-device.h (module 'network'): ns3::Ptr<ns3::NetDeviceQueue> ns3::NetDeviceQueueInterface::GetTxQueue(uint8_t i) const [member function]
+    cls.add_method('GetTxQueue', 
+                   'ns3::Ptr< ns3::NetDeviceQueue >', 
+                   [param('uint8_t', 'i')], 
+                   is_const=True)
+    ## net-device.h (module 'network'): uint8_t ns3::NetDeviceQueueInterface::GetTxQueuesN() const [member function]
+    cls.add_method('GetTxQueuesN', 
+                   'uint8_t', 
+                   [], 
+                   is_const=True)
+    ## net-device.h (module 'network'): static ns3::TypeId ns3::NetDeviceQueueInterface::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueueInterface::SetSelectQueueCallback(ns3::Callback<unsigned char, ns3::Ptr<ns3::QueueItem>, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty> cb) [member function]
+    cls.add_method('SetSelectQueueCallback', 
+                   'void', 
+                   [param('ns3::Callback< unsigned char, ns3::Ptr< ns3::QueueItem >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', 'cb')])
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueueInterface::SetTxQueuesN(uint8_t numTxQueues) [member function]
+    cls.add_method('SetTxQueuesN', 
+                   'void', 
+                   [param('uint8_t', 'numTxQueues')])
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueueInterface::DoDispose() [member function]
+    cls.add_method('DoDispose', 
+                   'void', 
+                   [], 
+                   visibility='protected', is_virtual=True)
+    return
+
 def register_Ns3NixVector_methods(root_module, cls):
     cls.add_output_stream_operator()
     ## nix-vector.h (module 'network'): ns3::NixVector::NixVector() [constructor]
@@ -8301,6 +8178,11 @@ def register_Ns3Node_methods(root_module, cls):
     ## node.h (module 'network'): uint32_t ns3::Node::GetId() const [member function]
     cls.add_method('GetId', 
                    'uint32_t', 
+                   [], 
+                   is_const=True)
+    ## node.h (module 'network'): ns3::Time ns3::Node::GetLocalTime() const [member function]
+    cls.add_method('GetLocalTime', 
+                   'ns3::Time', 
                    [], 
                    is_const=True)
     ## node.h (module 'network'): uint32_t ns3::Node::GetNApplications() const [member function]
@@ -8785,6 +8667,11 @@ def register_Ns3PacketSocket_methods(root_module, cls):
     cls.add_method('GetNode', 
                    'ns3::Ptr< ns3::Node >', 
                    [], 
+                   is_const=True, is_virtual=True)
+    ## packet-socket.h (module 'network'): int ns3::PacketSocket::GetPeerName(ns3::Address & address) const [member function]
+    cls.add_method('GetPeerName', 
+                   'int', 
+                   [param('ns3::Address &', 'address')], 
                    is_const=True, is_virtual=True)
     ## packet-socket.h (module 'network'): uint32_t ns3::PacketSocket::GetRxAvailable() const [member function]
     cls.add_method('GetRxAvailable', 
@@ -9969,49 +9856,6 @@ def register_Ns3PbbTlv_methods(root_module, cls):
                    visibility='protected')
     return
 
-def register_Ns3Ping6_methods(root_module, cls):
-    ## ping6.h (module 'applications'): ns3::Ping6::Ping6(ns3::Ping6 const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::Ping6 const &', 'arg0')])
-    ## ping6.h (module 'applications'): ns3::Ping6::Ping6() [constructor]
-    cls.add_constructor([])
-    ## ping6.h (module 'applications'): static ns3::TypeId ns3::Ping6::GetTypeId() [member function]
-    cls.add_method('GetTypeId', 
-                   'ns3::TypeId', 
-                   [], 
-                   is_static=True)
-    ## ping6.h (module 'applications'): void ns3::Ping6::SetIfIndex(uint32_t ifIndex) [member function]
-    cls.add_method('SetIfIndex', 
-                   'void', 
-                   [param('uint32_t', 'ifIndex')])
-    ## ping6.h (module 'applications'): void ns3::Ping6::SetLocal(ns3::Ipv6Address ipv6) [member function]
-    cls.add_method('SetLocal', 
-                   'void', 
-                   [param('ns3::Ipv6Address', 'ipv6')])
-    ## ping6.h (module 'applications'): void ns3::Ping6::SetRemote(ns3::Ipv6Address ipv6) [member function]
-    cls.add_method('SetRemote', 
-                   'void', 
-                   [param('ns3::Ipv6Address', 'ipv6')])
-    ## ping6.h (module 'applications'): void ns3::Ping6::SetRouters(std::vector<ns3::Ipv6Address, std::allocator<ns3::Ipv6Address> > routers) [member function]
-    cls.add_method('SetRouters', 
-                   'void', 
-                   [param('std::vector< ns3::Ipv6Address >', 'routers')])
-    ## ping6.h (module 'applications'): void ns3::Ping6::DoDispose() [member function]
-    cls.add_method('DoDispose', 
-                   'void', 
-                   [], 
-                   visibility='protected', is_virtual=True)
-    ## ping6.h (module 'applications'): void ns3::Ping6::StartApplication() [member function]
-    cls.add_method('StartApplication', 
-                   'void', 
-                   [], 
-                   visibility='private', is_virtual=True)
-    ## ping6.h (module 'applications'): void ns3::Ping6::StopApplication() [member function]
-    cls.add_method('StopApplication', 
-                   'void', 
-                   [], 
-                   visibility='private', is_virtual=True)
-    return
-
 def register_Ns3Probe_methods(root_module, cls):
     ## probe.h (module 'stats'): ns3::Probe::Probe(ns3::Probe const & arg0) [copy constructor]
     cls.add_constructor([param('ns3::Probe const &', 'arg0')])
@@ -10039,323 +9883,25 @@ def register_Ns3Probe_methods(root_module, cls):
                    is_const=True, is_virtual=True)
     return
 
-def register_Ns3Radvd_methods(root_module, cls):
-    ## radvd.h (module 'applications'): ns3::Radvd::Radvd(ns3::Radvd const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::Radvd const &', 'arg0')])
-    ## radvd.h (module 'applications'): ns3::Radvd::Radvd() [constructor]
-    cls.add_constructor([])
-    ## radvd.h (module 'applications'): void ns3::Radvd::AddConfiguration(ns3::Ptr<ns3::RadvdInterface> routerInterface) [member function]
-    cls.add_method('AddConfiguration', 
-                   'void', 
-                   [param('ns3::Ptr< ns3::RadvdInterface >', 'routerInterface')])
-    ## radvd.h (module 'applications'): int64_t ns3::Radvd::AssignStreams(int64_t stream) [member function]
-    cls.add_method('AssignStreams', 
-                   'int64_t', 
-                   [param('int64_t', 'stream')])
-    ## radvd.h (module 'applications'): static ns3::TypeId ns3::Radvd::GetTypeId() [member function]
-    cls.add_method('GetTypeId', 
-                   'ns3::TypeId', 
-                   [], 
-                   is_static=True)
-    ## radvd.h (module 'applications'): ns3::Radvd::MAX_INITIAL_RTR_ADVERTISEMENTS [variable]
-    cls.add_static_attribute('MAX_INITIAL_RTR_ADVERTISEMENTS', 'uint32_t const', is_const=True)
-    ## radvd.h (module 'applications'): ns3::Radvd::MAX_INITIAL_RTR_ADVERT_INTERVAL [variable]
-    cls.add_static_attribute('MAX_INITIAL_RTR_ADVERT_INTERVAL', 'uint32_t const', is_const=True)
-    ## radvd.h (module 'applications'): ns3::Radvd::MAX_RA_DELAY_TIME [variable]
-    cls.add_static_attribute('MAX_RA_DELAY_TIME', 'uint32_t const', is_const=True)
-    ## radvd.h (module 'applications'): ns3::Radvd::MIN_DELAY_BETWEEN_RAS [variable]
-    cls.add_static_attribute('MIN_DELAY_BETWEEN_RAS', 'uint32_t const', is_const=True)
-    ## radvd.h (module 'applications'): void ns3::Radvd::DoDispose() [member function]
-    cls.add_method('DoDispose', 
-                   'void', 
-                   [], 
-                   visibility='protected', is_virtual=True)
-    ## radvd.h (module 'applications'): void ns3::Radvd::StartApplication() [member function]
-    cls.add_method('StartApplication', 
-                   'void', 
-                   [], 
-                   visibility='private', is_virtual=True)
-    ## radvd.h (module 'applications'): void ns3::Radvd::StopApplication() [member function]
-    cls.add_method('StopApplication', 
-                   'void', 
-                   [], 
-                   visibility='private', is_virtual=True)
-    return
-
-def register_Ns3RadvdInterface_methods(root_module, cls):
-    ## radvd-interface.h (module 'applications'): ns3::RadvdInterface::RadvdInterface(ns3::RadvdInterface const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::RadvdInterface const &', 'arg0')])
-    ## radvd-interface.h (module 'applications'): ns3::RadvdInterface::RadvdInterface(uint32_t interface) [constructor]
-    cls.add_constructor([param('uint32_t', 'interface')])
-    ## radvd-interface.h (module 'applications'): ns3::RadvdInterface::RadvdInterface(uint32_t interface, uint32_t maxRtrAdvInterval, uint32_t minRtrAdvInterval) [constructor]
-    cls.add_constructor([param('uint32_t', 'interface'), param('uint32_t', 'maxRtrAdvInterval'), param('uint32_t', 'minRtrAdvInterval')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::AddPrefix(ns3::Ptr<ns3::RadvdPrefix> routerPrefix) [member function]
-    cls.add_method('AddPrefix', 
-                   'void', 
-                   [param('ns3::Ptr< ns3::RadvdPrefix >', 'routerPrefix')])
-    ## radvd-interface.h (module 'applications'): uint8_t ns3::RadvdInterface::GetCurHopLimit() const [member function]
-    cls.add_method('GetCurHopLimit', 
-                   'uint8_t', 
+def register_Ns3QueueItem_methods(root_module, cls):
+    cls.add_output_stream_operator()
+    ## net-device.h (module 'network'): ns3::QueueItem::QueueItem(ns3::Ptr<ns3::Packet> p) [constructor]
+    cls.add_constructor([param('ns3::Ptr< ns3::Packet >', 'p')])
+    ## net-device.h (module 'network'): ns3::Ptr<ns3::Packet> ns3::QueueItem::GetPacket() const [member function]
+    cls.add_method('GetPacket', 
+                   'ns3::Ptr< ns3::Packet >', 
                    [], 
                    is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetDefaultLifeTime() const [member function]
-    cls.add_method('GetDefaultLifeTime', 
+    ## net-device.h (module 'network'): uint32_t ns3::QueueItem::GetPacketSize() const [member function]
+    cls.add_method('GetPacketSize', 
                    'uint32_t', 
                    [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint8_t ns3::RadvdInterface::GetDefaultPreference() const [member function]
-    cls.add_method('GetDefaultPreference', 
-                   'uint8_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetHomeAgentLifeTime() const [member function]
-    cls.add_method('GetHomeAgentLifeTime', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetHomeAgentPreference() const [member function]
-    cls.add_method('GetHomeAgentPreference', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetInterface() const [member function]
-    cls.add_method('GetInterface', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): ns3::Time ns3::RadvdInterface::GetLastRaTxTime() [member function]
-    cls.add_method('GetLastRaTxTime', 
-                   'ns3::Time', 
-                   [])
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetLinkMtu() const [member function]
-    cls.add_method('GetLinkMtu', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetMaxRtrAdvInterval() const [member function]
-    cls.add_method('GetMaxRtrAdvInterval', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetMinDelayBetweenRAs() const [member function]
-    cls.add_method('GetMinDelayBetweenRAs', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetMinRtrAdvInterval() const [member function]
-    cls.add_method('GetMinRtrAdvInterval', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): std::list<ns3::Ptr<ns3::RadvdPrefix>, std::allocator<ns3::Ptr<ns3::RadvdPrefix> > > ns3::RadvdInterface::GetPrefixes() const [member function]
-    cls.add_method('GetPrefixes', 
-                   'std::list< ns3::Ptr< ns3::RadvdPrefix > >', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetReachableTime() const [member function]
-    cls.add_method('GetReachableTime', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): uint32_t ns3::RadvdInterface::GetRetransTimer() const [member function]
-    cls.add_method('GetRetransTimer', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsHomeAgentFlag() const [member function]
-    cls.add_method('IsHomeAgentFlag', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsHomeAgentInfo() const [member function]
-    cls.add_method('IsHomeAgentInfo', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsInitialRtrAdv() [member function]
-    cls.add_method('IsInitialRtrAdv', 
-                   'bool', 
-                   [])
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsIntervalOpt() const [member function]
-    cls.add_method('IsIntervalOpt', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsManagedFlag() const [member function]
-    cls.add_method('IsManagedFlag', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsMobRtrSupportFlag() const [member function]
-    cls.add_method('IsMobRtrSupportFlag', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsOtherConfigFlag() const [member function]
-    cls.add_method('IsOtherConfigFlag', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsSendAdvert() const [member function]
-    cls.add_method('IsSendAdvert', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): bool ns3::RadvdInterface::IsSourceLLAddress() const [member function]
-    cls.add_method('IsSourceLLAddress', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetCurHopLimit(uint8_t curHopLimit) [member function]
-    cls.add_method('SetCurHopLimit', 
+                   is_const=True, is_virtual=True)
+    ## net-device.h (module 'network'): void ns3::QueueItem::Print(std::ostream & os) const [member function]
+    cls.add_method('Print', 
                    'void', 
-                   [param('uint8_t', 'curHopLimit')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetDefaultLifeTime(uint32_t defaultLifeTime) [member function]
-    cls.add_method('SetDefaultLifeTime', 
-                   'void', 
-                   [param('uint32_t', 'defaultLifeTime')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetDefaultPreference(uint8_t defaultPreference) [member function]
-    cls.add_method('SetDefaultPreference', 
-                   'void', 
-                   [param('uint8_t', 'defaultPreference')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetHomeAgentFlag(bool homeAgentFlag) [member function]
-    cls.add_method('SetHomeAgentFlag', 
-                   'void', 
-                   [param('bool', 'homeAgentFlag')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetHomeAgentInfo(bool homeAgentFlag) [member function]
-    cls.add_method('SetHomeAgentInfo', 
-                   'void', 
-                   [param('bool', 'homeAgentFlag')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetHomeAgentLifeTime(uint32_t homeAgentLifeTime) [member function]
-    cls.add_method('SetHomeAgentLifeTime', 
-                   'void', 
-                   [param('uint32_t', 'homeAgentLifeTime')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetHomeAgentPreference(uint32_t homeAgentPreference) [member function]
-    cls.add_method('SetHomeAgentPreference', 
-                   'void', 
-                   [param('uint32_t', 'homeAgentPreference')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetIntervalOpt(bool intervalOpt) [member function]
-    cls.add_method('SetIntervalOpt', 
-                   'void', 
-                   [param('bool', 'intervalOpt')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetLastRaTxTime(ns3::Time now) [member function]
-    cls.add_method('SetLastRaTxTime', 
-                   'void', 
-                   [param('ns3::Time', 'now')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetLinkMtu(uint32_t linkMtu) [member function]
-    cls.add_method('SetLinkMtu', 
-                   'void', 
-                   [param('uint32_t', 'linkMtu')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetManagedFlag(bool managedFlag) [member function]
-    cls.add_method('SetManagedFlag', 
-                   'void', 
-                   [param('bool', 'managedFlag')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetMaxRtrAdvInterval(uint32_t maxRtrAdvInterval) [member function]
-    cls.add_method('SetMaxRtrAdvInterval', 
-                   'void', 
-                   [param('uint32_t', 'maxRtrAdvInterval')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetMinDelayBetweenRAs(uint32_t minDelayBetweenRAs) [member function]
-    cls.add_method('SetMinDelayBetweenRAs', 
-                   'void', 
-                   [param('uint32_t', 'minDelayBetweenRAs')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetMinRtrAdvInterval(uint32_t minRtrAdvInterval) [member function]
-    cls.add_method('SetMinRtrAdvInterval', 
-                   'void', 
-                   [param('uint32_t', 'minRtrAdvInterval')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetMobRtrSupportFlag(bool mobRtrSupportFlag) [member function]
-    cls.add_method('SetMobRtrSupportFlag', 
-                   'void', 
-                   [param('bool', 'mobRtrSupportFlag')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetOtherConfigFlag(bool otherConfigFlag) [member function]
-    cls.add_method('SetOtherConfigFlag', 
-                   'void', 
-                   [param('bool', 'otherConfigFlag')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetReachableTime(uint32_t reachableTime) [member function]
-    cls.add_method('SetReachableTime', 
-                   'void', 
-                   [param('uint32_t', 'reachableTime')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetRetransTimer(uint32_t retransTimer) [member function]
-    cls.add_method('SetRetransTimer', 
-                   'void', 
-                   [param('uint32_t', 'retransTimer')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetSendAdvert(bool sendAdvert) [member function]
-    cls.add_method('SetSendAdvert', 
-                   'void', 
-                   [param('bool', 'sendAdvert')])
-    ## radvd-interface.h (module 'applications'): void ns3::RadvdInterface::SetSourceLLAddress(bool sourceLLAddress) [member function]
-    cls.add_method('SetSourceLLAddress', 
-                   'void', 
-                   [param('bool', 'sourceLLAddress')])
-    return
-
-def register_Ns3RadvdPrefix_methods(root_module, cls):
-    ## radvd-prefix.h (module 'applications'): ns3::RadvdPrefix::RadvdPrefix(ns3::RadvdPrefix const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::RadvdPrefix const &', 'arg0')])
-    ## radvd-prefix.h (module 'applications'): ns3::RadvdPrefix::RadvdPrefix(ns3::Ipv6Address network, uint8_t prefixLength, uint32_t preferredLifeTime=604800, uint32_t validLifeTime=2592000, bool onLinkFlag=true, bool autonomousFlag=true, bool routerAddrFlag=false) [constructor]
-    cls.add_constructor([param('ns3::Ipv6Address', 'network'), param('uint8_t', 'prefixLength'), param('uint32_t', 'preferredLifeTime', default_value='604800'), param('uint32_t', 'validLifeTime', default_value='2592000'), param('bool', 'onLinkFlag', default_value='true'), param('bool', 'autonomousFlag', default_value='true'), param('bool', 'routerAddrFlag', default_value='false')])
-    ## radvd-prefix.h (module 'applications'): ns3::Ipv6Address ns3::RadvdPrefix::GetNetwork() const [member function]
-    cls.add_method('GetNetwork', 
-                   'ns3::Ipv6Address', 
-                   [], 
-                   is_const=True)
-    ## radvd-prefix.h (module 'applications'): uint32_t ns3::RadvdPrefix::GetPreferredLifeTime() const [member function]
-    cls.add_method('GetPreferredLifeTime', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-prefix.h (module 'applications'): uint8_t ns3::RadvdPrefix::GetPrefixLength() const [member function]
-    cls.add_method('GetPrefixLength', 
-                   'uint8_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-prefix.h (module 'applications'): uint32_t ns3::RadvdPrefix::GetValidLifeTime() const [member function]
-    cls.add_method('GetValidLifeTime', 
-                   'uint32_t', 
-                   [], 
-                   is_const=True)
-    ## radvd-prefix.h (module 'applications'): bool ns3::RadvdPrefix::IsAutonomousFlag() const [member function]
-    cls.add_method('IsAutonomousFlag', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-prefix.h (module 'applications'): bool ns3::RadvdPrefix::IsOnLinkFlag() const [member function]
-    cls.add_method('IsOnLinkFlag', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-prefix.h (module 'applications'): bool ns3::RadvdPrefix::IsRouterAddrFlag() const [member function]
-    cls.add_method('IsRouterAddrFlag', 
-                   'bool', 
-                   [], 
-                   is_const=True)
-    ## radvd-prefix.h (module 'applications'): void ns3::RadvdPrefix::SetAutonomousFlag(bool autonomousFlag) [member function]
-    cls.add_method('SetAutonomousFlag', 
-                   'void', 
-                   [param('bool', 'autonomousFlag')])
-    ## radvd-prefix.h (module 'applications'): void ns3::RadvdPrefix::SetNetwork(ns3::Ipv6Address network) [member function]
-    cls.add_method('SetNetwork', 
-                   'void', 
-                   [param('ns3::Ipv6Address', 'network')])
-    ## radvd-prefix.h (module 'applications'): void ns3::RadvdPrefix::SetOnLinkFlag(bool onLinkFlag) [member function]
-    cls.add_method('SetOnLinkFlag', 
-                   'void', 
-                   [param('bool', 'onLinkFlag')])
-    ## radvd-prefix.h (module 'applications'): void ns3::RadvdPrefix::SetPreferredLifeTime(uint32_t preferredLifeTime) [member function]
-    cls.add_method('SetPreferredLifeTime', 
-                   'void', 
-                   [param('uint32_t', 'preferredLifeTime')])
-    ## radvd-prefix.h (module 'applications'): void ns3::RadvdPrefix::SetPrefixLength(uint8_t prefixLength) [member function]
-    cls.add_method('SetPrefixLength', 
-                   'void', 
-                   [param('uint8_t', 'prefixLength')])
-    ## radvd-prefix.h (module 'applications'): void ns3::RadvdPrefix::SetRouterAddrFlag(bool routerAddrFlag) [member function]
-    cls.add_method('SetRouterAddrFlag', 
-                   'void', 
-                   [param('bool', 'routerAddrFlag')])
-    ## radvd-prefix.h (module 'applications'): void ns3::RadvdPrefix::SetValidLifeTime(uint32_t validLifeTime) [member function]
-    cls.add_method('SetValidLifeTime', 
-                   'void', 
-                   [param('uint32_t', 'validLifeTime')])
+                   [param('std::ostream &', 'os')], 
+                   is_const=True, is_virtual=True)
     return
 
 def register_Ns3RateErrorModel_methods(root_module, cls):
@@ -10499,7 +10045,7 @@ def register_Ns3SimpleNetDevice_methods(root_module, cls):
     cls.add_constructor([param('ns3::SimpleNetDevice const &', 'arg0')])
     ## simple-net-device.h (module 'network'): ns3::SimpleNetDevice::SimpleNetDevice() [constructor]
     cls.add_constructor([])
-    ## simple-net-device.h (module 'network'): void ns3::SimpleNetDevice::AddLinkChangeCallback(ns3::Callback<void,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty,ns3::empty> callback) [member function]
+    ## simple-net-device.h (module 'network'): void ns3::SimpleNetDevice::AddLinkChangeCallback(ns3::Callback<void, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty> callback) [member function]
     cls.add_method('AddLinkChangeCallback', 
                    'void', 
                    [param('ns3::Callback< void, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', 'callback')], 
@@ -10981,33 +10527,6 @@ def register_Ns3UintegerValue_methods(root_module, cls):
     cls.add_method('Set', 
                    'void', 
                    [param('uint64_t const &', 'value')])
-    return
-
-def register_Ns3V4Ping_methods(root_module, cls):
-    ## v4ping.h (module 'applications'): ns3::V4Ping::V4Ping(ns3::V4Ping const & arg0) [copy constructor]
-    cls.add_constructor([param('ns3::V4Ping const &', 'arg0')])
-    ## v4ping.h (module 'applications'): ns3::V4Ping::V4Ping() [constructor]
-    cls.add_constructor([])
-    ## v4ping.h (module 'applications'): static ns3::TypeId ns3::V4Ping::GetTypeId() [member function]
-    cls.add_method('GetTypeId', 
-                   'ns3::TypeId', 
-                   [], 
-                   is_static=True)
-    ## v4ping.h (module 'applications'): void ns3::V4Ping::DoDispose() [member function]
-    cls.add_method('DoDispose', 
-                   'void', 
-                   [], 
-                   visibility='private', is_virtual=True)
-    ## v4ping.h (module 'applications'): void ns3::V4Ping::StartApplication() [member function]
-    cls.add_method('StartApplication', 
-                   'void', 
-                   [], 
-                   visibility='private', is_virtual=True)
-    ## v4ping.h (module 'applications'): void ns3::V4Ping::StopApplication() [member function]
-    cls.add_method('StopApplication', 
-                   'void', 
-                   [], 
-                   visibility='private', is_virtual=True)
     return
 
 def register_Ns3AddressChecker_methods(root_module, cls):

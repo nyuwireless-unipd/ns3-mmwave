@@ -48,7 +48,10 @@ public:
     : m_txop (txop)
   {
   }
-
+  virtual bool IsEdca (void) const
+  {
+    return false;
+  }
 private:
   virtual void DoNotifyAccessGranted (void)
   {
@@ -277,9 +280,7 @@ DcaTxop::Queue (Ptr<const Packet> packet, const WifiMacHeader &hdr)
 {
   NS_LOG_FUNCTION (this << packet << &hdr);
   WifiMacTrailer fcs;
-  uint32_t fullPacketSize = hdr.GetSerializedSize () + packet->GetSize () + fcs.GetSerializedSize ();
-  m_stationManager->PrepareForQueue (hdr.GetAddr1 (), &hdr,
-                                     packet, fullPacketSize);
+  m_stationManager->PrepareForQueue (hdr.GetAddr1 (), &hdr, packet);
   m_queue->Enqueue (packet, hdr);
   StartAccessIfNeeded ();
 }
@@ -321,14 +322,6 @@ DcaTxop::Low (void)
 {
   NS_LOG_FUNCTION (this);
   return m_low;
-}
-
-bool
-DcaTxop::NeedRts (Ptr<const Packet> packet, const WifiMacHeader *header)
-{
-  NS_LOG_FUNCTION (this << packet << header);
-  return m_stationManager->NeedRts (header->GetAddr1 (), header,
-                                    packet);
 }
 
 void
@@ -475,14 +468,6 @@ DcaTxop::NotifyAccessGranted (void)
         {
           WifiMacHeader hdr;
           Ptr<Packet> fragment = GetFragmentPacket (&hdr);
-          if (NeedRts (fragment, &hdr))
-            {
-              params.EnableRts ();
-            }
-          else
-            {
-              params.DisableRts ();
-            }
           if (IsLastFragment ())
             {
               NS_LOG_DEBUG ("fragmenting last fragment size=" << fragment->GetSize ());
@@ -498,16 +483,6 @@ DcaTxop::NotifyAccessGranted (void)
         }
       else
         {
-          if (NeedRts (m_currentPacket, &m_currentHdr))
-            {
-              params.EnableRts ();
-              NS_LOG_DEBUG ("tx unicast rts");
-            }
-          else
-            {
-              params.DisableRts ();
-              NS_LOG_DEBUG ("tx unicast");
-            }
           params.DisableNextData ();
           Low ()->StartTransmission (m_currentPacket, &m_currentHdr,
                                      params, m_transmissionListener);

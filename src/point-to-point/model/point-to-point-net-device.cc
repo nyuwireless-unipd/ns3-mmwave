@@ -207,6 +207,23 @@ PointToPointNetDevice::ProcessHeader (Ptr<Packet> p, uint16_t& param)
 }
 
 void
+PointToPointNetDevice::NotifyNewAggregate (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_queueInterface == 0)
+    {
+      Ptr<NetDeviceQueueInterface> ndqi = this->GetObject<NetDeviceQueueInterface> ();
+      //verify that it's a valid netdevice queue interface and that
+      //the netdevice queue interface was not set before
+      if (ndqi != 0)
+        {
+          m_queueInterface = ndqi;
+        }
+    }
+  NetDevice::NotifyNewAggregate ();
+}
+
+void
 PointToPointNetDevice::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
@@ -214,6 +231,8 @@ PointToPointNetDevice::DoDispose ()
   m_channel = 0;
   m_receiveErrorModel = 0;
   m_currentPkt = 0;
+  m_queue = 0;
+  m_queueInterface = 0;
   NetDevice::DoDispose ();
 }
 
@@ -280,18 +299,45 @@ PointToPointNetDevice::TransmitComplete (void)
   m_phyTxEndTrace (m_currentPkt);
   m_currentPkt = 0;
 
-  Ptr<Packet> p = m_queue->Dequeue ();
-  if (p == 0)
+  Ptr<NetDeviceQueue> txq;
+  if (m_queueInterface)
+  {
+    txq = m_queueInterface->GetTxQueue (0);
+  }
+
+  Ptr<QueueItem> item = m_queue->Dequeue ();
+  if (item == 0)
     {
-      //
-      // No packet was on the queue, so we just exit.
-      //
+      NS_LOG_LOGIC ("No pending packets in device queue after tx complete");
+      if (txq)
+      {
+        NS_LOG_DEBUG ("The device queue is being woken up (" << m_queue->GetNPackets () <<
+                      " packets and " << m_queue->GetNBytes () << " bytes inside)");
+        txq->Wake ();
+      }
       return;
     }
 
   //
-  // Got another packet off of the queue, so start the transmit process agin.
+  // Got another packet off of the queue, so start the transmit process again.
+  // If the queue was stopped, start it again if there is room for another packet.
+  // Note that we cannot wake the upper layers because otherwise a packet is sent
+  // to the device while the machine state is busy, thus causing the assert in
+  // TransmitStart to fail.
   //
+  if (txq && txq->IsStopped ())
+    {
+      if ((m_queue->GetMode () == Queue::QUEUE_MODE_PACKETS &&
+           m_queue->GetNPackets () < m_queue->GetMaxPackets ()) ||
+          (m_queue->GetMode () == Queue::QUEUE_MODE_BYTES &&
+           m_queue->GetNBytes () + m_mtu <= m_queue->GetMaxBytes ()))
+        {
+          NS_LOG_DEBUG ("The device queue is being started (" << m_queue->GetNPackets () <<
+                        " packets and " << m_queue->GetNBytes () << " bytes inside)");
+          txq->Start ();
+        }
+    }
+  Ptr<Packet> p = item->GetPacket ();
   m_snifferTrace (p);
   m_promiscSnifferTrace (p);
   TransmitStart (p);
@@ -510,6 +556,14 @@ PointToPointNetDevice::Send (
   const Address &dest, 
   uint16_t protocolNumber)
 {
+  Ptr<NetDeviceQueue> txq;
+  if (m_queueInterface)
+  {
+    txq = m_queueInterface->GetTxQueue (0);
+  }
+
+  NS_ASSERT_MSG (!txq || !txq->IsStopped (), "Send should not be called when the device is stopped");
+
   NS_LOG_FUNCTION (this << packet << dest << protocolNumber);
   NS_LOG_LOGIC ("p=" << packet << ", dest=" << &dest);
   NS_LOG_LOGIC ("UID is " << packet->GetUid ());
@@ -535,23 +589,60 @@ PointToPointNetDevice::Send (
   //
   // We should enqueue and dequeue the packet to hit the tracing hooks.
   //
-  if (m_queue->Enqueue (packet))
+  if (m_queue->Enqueue (Create<QueueItem> (packet)))
     {
       //
       // If the channel is ready for transition we send the packet right now
       // 
       if (m_txMachineState == READY)
         {
-          packet = m_queue->Dequeue ();
+          packet = m_queue->Dequeue ()->GetPacket ();
+          // We have enqueued a packet and dequeued a (possibly different) packet. We
+          // need to check if there is still room for another packet only if the queue
+          // is in byte mode (the enqueued packet might be larger than the dequeued
+          // packet, thus leaving no room for another packet)
+          if (txq)
+            {
+              if (m_queue->GetMode () == Queue::QUEUE_MODE_BYTES &&
+                  m_queue->GetNBytes () + m_mtu > m_queue->GetMaxBytes ())
+                {
+                  NS_LOG_DEBUG ("The device queue is being stopped (" << m_queue->GetNPackets () <<
+                                " packets and " << m_queue->GetNBytes () << " bytes inside)");
+                  txq->Stop ();
+                }
+            }
           m_snifferTrace (packet);
           m_promiscSnifferTrace (packet);
           return TransmitStart (packet);
         }
+      // We have enqueued a packet but we have not dequeued any packet. Thus, we
+      // need to check whether the queue is able to store another packet. If not,
+      // we stop the queue
+      if (txq)
+        {
+          if ((m_queue->GetMode () == Queue::QUEUE_MODE_PACKETS &&
+               m_queue->GetNPackets () >= m_queue->GetMaxPackets ()) ||
+              (m_queue->GetMode () == Queue::QUEUE_MODE_BYTES &&
+               m_queue->GetNBytes () + m_mtu > m_queue->GetMaxBytes ()))
+            {
+              NS_LOG_DEBUG ("The device queue is being stopped (" << m_queue->GetNPackets () <<
+                            " packets and " << m_queue->GetNBytes () << " bytes inside)");
+              txq->Stop ();
+            }
+        }
       return true;
     }
 
-  // Enqueue may fail (overflow)
+  // Enqueue may fail (overflow). This should not happen if the traffic control
+  // module has been installed. Anyway, stop the tx queue, so that the upper layers
+  // do not send packets until there is room in the queue again.
   m_macTxDropTrace (packet);
+  if (txq)
+  {
+    NS_LOG_ERROR ("BUG! Device queue full when the queue is not stopped! (" << m_queue->GetNPackets () <<
+                  " packets and " << m_queue->GetNBytes () << " bytes inside)");
+    txq->Stop ();
+  }
   return false;
 }
 

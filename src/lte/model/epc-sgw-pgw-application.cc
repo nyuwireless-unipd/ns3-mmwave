@@ -185,8 +185,8 @@ EpcSgwPgwApplication::RecvFromS1uSocket (Ptr<Socket> socket)
 
   /// \internal
   /// Workaround for \bugid{231}
-  SocketAddressTag tag;
-  packet->RemovePacketTag (tag);
+  //SocketAddressTag tag;
+  //packet->RemovePacketTag (tag);
 
   SendToTunDevice (packet, teid);
 }

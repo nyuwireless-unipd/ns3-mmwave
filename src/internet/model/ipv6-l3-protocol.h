@@ -104,24 +104,14 @@ public:
    */
   void SetNode (Ptr<Node> node);
 
-  /**
-   * \brief Add an L4 protocol.
-   * \param protocol L4 protocol
-   */
-  void Insert (Ptr<IpL4Protocol> protocol);
+  virtual void Insert (Ptr<IpL4Protocol> protocol);
+  virtual void Insert (Ptr<IpL4Protocol> protocol, uint32_t interfaceIndex);
 
-  /**
-   * \brief Remove an L4 protocol.
-   * \param protocol L4 protocol to remove
-   */
-  void Remove (Ptr<IpL4Protocol> protocol);
+  virtual void Remove (Ptr<IpL4Protocol> protocol);
+  virtual void Remove (Ptr<IpL4Protocol> protocol, uint32_t interfaceIndex);
 
-  /**
-   * \brief Get L4 protocol by protocol number.
-   * \param protocolNumber protocol number
-   * \return corresponding Ipv6L4Protocol or 0 if not found
-   */
   virtual Ptr<IpL4Protocol> GetProtocol (int protocolNumber) const;
+  virtual Ptr<IpL4Protocol> GetProtocol (int protocolNumber, int32_t interfaceIndex) const;
 
   /**
    * \brief Create raw IPv6 socket.
@@ -154,23 +144,13 @@ public:
    * \param device network device
    * \param p the packet
    * \param protocol next header value
-   * \param from address of the correspondant
+   * \param from address of the correspondent
    * \param to address of the destination
    * \param packetType type of the packet
    */
   void Receive (Ptr<NetDevice> device, Ptr<const Packet> p, uint16_t protocol, const Address &from, const Address &to, NetDevice::PacketType packetType);
 
-  /**
-   * \brief Higher-level layers call this method to send a packet
-   * down the stack to the MAC and PHY layers.
-   *
-   * \param packet packet to send
-   * \param source source address of packet
-   * \param destination address of packet
-   * \param protocol number of packet
-   * \param route route to take
-   */
-  void Send (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination, uint8_t protocol, Ptr<Ipv6Route> route);
+  virtual void Send (Ptr<Packet> packet, Ipv6Address source, Ipv6Address destination, uint8_t protocol, Ptr<Ipv6Route> route);
 
   /**
    * \brief Set routing protocol for this stack.
@@ -400,6 +380,7 @@ public:
   /**
    * TracedCallback signature for packet transmission or reception events.
    *
+   * \param [in] header The Ipv6Header.
    * \param [in] packet The packet.
    * \param [in] ipv6
    * \param [in] interface
@@ -424,7 +405,48 @@ public:
     (const Ipv6Header & header, Ptr<const Packet> packet,
      DropReason reason, Ptr<Ipv6> ipv6,
      uint32_t interface);
-   
+
+  /**
+   * Adds a multicast address to the list of addresses to pass to local deliver.
+   * \param address the address.
+   */
+  void AddMulticastAddress (Ipv6Address address);
+
+  /**
+   * Adds a multicast address to the list of addresses to pass to local deliver.
+   * \param address the address.
+   * \param interface the incoming interface.
+   */
+  void AddMulticastAddress (Ipv6Address address, uint32_t interface);
+
+  /**
+   * Removes a multicast address from the list of addresses to pass to local deliver.
+   * \param address the address.
+   */
+  void RemoveMulticastAddress (Ipv6Address address);
+
+  /**
+   * Removes a multicast address from the list of addresses to pass to local deliver.
+   * \param address the address.
+   * \param interface the incoming interface.
+   */
+  void RemoveMulticastAddress (Ipv6Address address, uint32_t interface);
+
+  /**
+   * Checks if the address has been registered.
+   * \param address the address.
+   * \return true if the address is registered.
+   */
+  bool IsRegisteredMulticastAddress (Ipv6Address address) const;
+
+  /**
+   * Checks if the address has been registered for a specific interface.
+   * \param address the address.
+   * \param interface the incoming interface.
+   * \return true if the address is registered.
+   */
+  bool IsRegisteredMulticastAddress (Ipv6Address address, uint32_t interface) const;
+
 protected:
   /**
    * \brief Dispose object.
@@ -446,7 +468,12 @@ private:
   /**
    * \brief Container of the IPv6 Interfaces.
    */
-  typedef std::list<Ptr<Ipv6Interface> > Ipv6InterfaceList;
+  typedef std::vector<Ptr<Ipv6Interface> > Ipv6InterfaceList;
+
+  /**
+   * \brief Container of NetDevices registered to IPv6 and their interface indexes.
+   */
+  typedef std::map<Ptr<const NetDevice>, uint32_t > Ipv6InterfaceReverseContainer;
 
   /**
    * \brief Container of the IPv6 Raw Sockets.
@@ -454,9 +481,14 @@ private:
   typedef std::list<Ptr<Ipv6RawSocketImpl> > SocketList;
 
   /**
+   * \brief Container of the IPv6 L4 keys: protocol number, interface index
+   */
+  typedef std::pair<int, int32_t> L4ListKey_t;
+
+  /**
    * \brief Container of the IPv6 L4 instances.
    */
-  typedef std::list<Ptr<IpL4Protocol> > L4List_t;
+  typedef std::map<L4ListKey_t, Ptr<IpL4Protocol> > L4List_t;
 
   /**
    * \brief Container of the IPv6 Autoconfigured addresses.
@@ -467,6 +499,18 @@ private:
    * \brief Iterator of the container of the IPv6 Autoconfigured addresses.
    */
   typedef std::list< Ptr<Ipv6AutoconfiguredPrefix> >::iterator Ipv6AutoconfiguredPrefixListI;
+
+  /**
+   * \brief Make a copy of the packet, add the header and invoke the TX trace callback
+   * \param ipHeader the IP header that will be added to the packet
+   * \param packet the packet
+   * \param ipv6 the Ipv6 protocol
+   * \param interface the interface index
+   *
+   * Note: If the TracedCallback API ever is extended, we could consider
+   * to check for connected functions before adding the header
+   */
+  void CallTxTrace (const Ipv6Header & ipHeader, Ptr<Packet> packet, Ptr<Ipv6> ipv6, uint32_t interface);
 
   /**
    * \brief Callback to trace TX (transmission) packets.
@@ -645,6 +689,11 @@ private:
   Ipv6InterfaceList m_interfaces;
 
   /**
+   * Container of NetDevice / Interface index associations.
+   */
+  Ipv6InterfaceReverseContainer m_reverseInterfacesContainer;
+
+  /**
    * \brief Number of IPv6 interfaces managed by the stack.
    */
   uint32_t m_nInterfaces;
@@ -658,6 +707,11 @@ private:
    * \brief Default TCLASS for outgoing packets.
    */
   uint8_t m_defaultTclass;
+
+  /**
+   * \brief Rejects packets directed to an interface with wrong address (\RFC{1222}).
+   */
+  bool m_strongEndSystemModel;
 
   /**
    * \brief Routing protocol.
@@ -678,6 +732,51 @@ private:
    * \brief Allow ICMPv6 Redirect sending state
    */
   bool m_sendIcmpv6Redirect;
+
+  /**
+   * \brief IPv6 multicast addresses / interface key.
+   */
+  typedef std::pair<Ipv6Address, uint64_t> Ipv6RegisteredMulticastAddressKey_t;
+
+  /**
+   * \brief Container of the IPv6 multicast addresses.
+   */
+  typedef std::map<Ipv6RegisteredMulticastAddressKey_t, uint32_t> Ipv6RegisteredMulticastAddress_t;
+
+  /**
+   * \brief Container Iterator of the IPv6 multicast addresses.
+   */
+  typedef std::map<Ipv6RegisteredMulticastAddressKey_t, uint32_t>::iterator Ipv6RegisteredMulticastAddressIter_t;
+
+  /**
+   * \brief Container Const Iterator of the IPv6 multicast addresses.
+   */
+  typedef std::map<Ipv6RegisteredMulticastAddressKey_t, uint32_t>::const_iterator Ipv6RegisteredMulticastAddressCIter_t;
+
+  /**
+   * \brief Container of the IPv6 multicast addresses.
+   */
+  typedef std::map<Ipv6Address, uint32_t> Ipv6RegisteredMulticastAddressNoInterface_t;
+
+  /**
+   * \brief Container Iterator of the IPv6 multicast addresses.
+   */
+  typedef std::map<Ipv6Address, uint32_t>::iterator Ipv6RegisteredMulticastAddressNoInterfaceIter_t;
+
+  /**
+   * \brief Container Const Iterator of the IPv6 multicast addresses.
+   */
+  typedef std::map<Ipv6Address, uint32_t>::const_iterator Ipv6RegisteredMulticastAddressNoInterfaceCIter_t;
+
+  /**
+   * \brief List of multicast IP addresses of interest, divided per interface.
+   */
+  Ipv6RegisteredMulticastAddress_t m_multicastAddresses;
+
+  /**
+   * \brief List of multicast IP addresses of interest for all the interfaces.
+   */
+  Ipv6RegisteredMulticastAddressNoInterface_t m_multicastAddressesNoInterface;
 };
 
 } /* namespace ns3 */
