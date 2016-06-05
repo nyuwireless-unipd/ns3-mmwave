@@ -122,9 +122,6 @@ MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
   // connect m_mmeApp to the s1apMme
   m_mmeApp->SetS1apSapMmeProvider(s1apMme->GetEpcS1apSapMmeProvider());
   s1apMme->SetEpcS1apSapMmeUser(m_mmeApp->GetS1apSapMme());
-
-  // print stats
-  m_cnStats = CreateObject<CoreNetworkStatsCalculator> ();
 }
 
 MmWavePointToPointEpcHelper::~MmWavePointToPointEpcHelper ()
@@ -381,16 +378,6 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   {
     enb1LteDev->GetRrc ()->AddX2Neighbour (enb2CellId);
   }  
-
-  Config::MatchContainer cont = Config::LookupMatches("/NodeList/*/$ns3::EpcX2");
-
-  for(Config::MatchContainer::Iterator iter = cont.Begin(); iter != cont.End(); ++iter)
-  {
-    NS_LOG_UNCOND("Object " << *iter);
-  }
-  // add traces
-  Config::Connect ("/NodeList/*/$ns3::EpcX2/RxPDU",
-     MakeCallback (&CoreNetworkStatsCalculator::LogX2Packet, m_cnStats));
 }
 
 

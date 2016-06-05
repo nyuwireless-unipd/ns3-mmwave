@@ -413,14 +413,14 @@ main (int argc, char *argv[])
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   uint16_t numberOfNodes = 1;
-  double simTime = 30.0;
+  double simTime = 60.0;
   double interPacketInterval = 20;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
-  bool tcp = false;
+  bool tcp = true;
 
   
   // Command line arguments
@@ -513,6 +513,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(1)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MilliSeconds(1)));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MilliSeconds(10)));
   Config::SetDefault ("ns3::McStatsCalculator::MmWaveOutputFilename", StringValue                 (path + version + mmWaveOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
@@ -530,9 +531,14 @@ main (int argc, char *argv[])
 
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
-  //Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
-  //Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
-  //Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
+  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+
+  Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
@@ -634,7 +640,7 @@ main (int argc, char *argv[])
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (150, -5, 0));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, -5, 0));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes
@@ -772,7 +778,7 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (0.5));
 
 
-  Simulator::Schedule(Seconds(1.0), &ChangeSpeed, ueNodes.Get(0), Vector(5, 0, 0));
+  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(5, 0, 0));
   double numPrints = 100;
   for(int i = 0; i < numPrints; i++)
   {

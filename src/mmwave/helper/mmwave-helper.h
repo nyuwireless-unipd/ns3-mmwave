@@ -46,6 +46,8 @@
 #include <ns3/epc-enb-s1-sap.h>
 #include <ns3/lte-anr.h>
 #include <ns3/lte-spectrum-value-helper.h>
+#include <ns3/core-network-stats-calculator.h>
+
 
 namespace ns3 {
 
@@ -247,6 +249,8 @@ private:
 	Ptr<MmWaveBearerStatsCalculator> m_pdcpStats;
 	Ptr<McStatsCalculator> m_mcStats;
 	Ptr<MmWaveBearerStatsConnector> m_radioBearerStatsConnector;
+  	Ptr<CoreNetworkStatsCalculator> m_cnStats;
+
 };
 
 }

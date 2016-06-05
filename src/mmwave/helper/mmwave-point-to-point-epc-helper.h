@@ -212,8 +212,6 @@ private:
    */
   uint16_t m_x2LinkMtu;
 
-  Ptr<CoreNetworkStatsCalculator> m_cnStats;
-
 };
 
 

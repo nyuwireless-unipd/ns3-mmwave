@@ -246,7 +246,7 @@ MmWaveHelper::DoInitialize()
 	}
 	// TODO consider if adding LTE fading
 	// TODO add mac & phy LTE stats
-
+	m_cnStats = 0;
 	Object::DoInitialize();
 }
 
@@ -1705,6 +1705,13 @@ MmWaveHelper::AddX2Interface (NodeContainer enbNodes)
           AddX2Interface (*i, *j);
         }
     }
+
+	// print stats
+ 	m_cnStats = CreateObject<CoreNetworkStatsCalculator> ();
+
+	// add traces
+  	Config::Connect ("/NodeList/*/$ns3::EpcX2/RxPDU",
+    	MakeCallback (&CoreNetworkStatsCalculator::LogX2Packet, m_cnStats));
 }
 
 void
@@ -1769,6 +1776,15 @@ MmWaveHelper::AddX2Interface (NodeContainer lteEnbNodes, NodeContainer mmWaveEnb
           AddX2Interface (*i, *j);
         }
     }
+    // print stats
+    if(m_cnStats == 0)
+    {
+	 	m_cnStats = CreateObject<CoreNetworkStatsCalculator> ();
+    }
+ 	
+	// add traces
+  	Config::Connect ("/NodeList/*/$ns3::EpcX2/RxPDU",
+    	MakeCallback (&CoreNetworkStatsCalculator::LogX2Packet, m_cnStats));
 }
 
 /* Call this from a script to configure the MAC PHY common parameters
