@@ -940,11 +940,11 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
 			if (itStat == m_ulHarqProcessesStatus.end ())
 			{
-				NS_LOG_ERROR ("No info found in HARQ buffer for UE (might have changed eNB) " << rnti);
+				NS_LOG_UNCOND ("No info found in HARQ buffer for UE (might have changed eNB) " << rnti);
 			}
 			if (harqInfo.m_receptionStatus == UlHarqInfo::Ok || itStat->second.at (harqId) == 0)
 			{
-				//NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-ACK received");
+				NS_LOG_UNCOND ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-ACK received");
 				if (itStat != m_ulHarqProcessesStatus.end ())
 				{
 					itStat->second.at (harqId) = 0;  // release process ID
