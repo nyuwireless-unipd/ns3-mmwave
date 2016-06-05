@@ -413,7 +413,7 @@ main (int argc, char *argv[])
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   uint16_t numberOfNodes = 1;
-  double simTime = 90.0;
+  double simTime = 45.0;
   double interPacketInterval = 50;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
