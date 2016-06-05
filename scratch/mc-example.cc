@@ -367,9 +367,9 @@ static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave 
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
     ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
-    ns3::BooleanValue(false), ns3::MakeBooleanChecker());
+    ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-    ns3::UintegerValue(16), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -413,14 +413,14 @@ main (int argc, char *argv[])
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   uint16_t numberOfNodes = 1;
-  double simTime = 60.0;
+  double simTime = 90.0;
   double interPacketInterval = 20;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
-  bool tcp = true;
+  bool tcp = false;
 
   
   // Command line arguments
@@ -778,7 +778,7 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (0.5));
 
 
-  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(5, 0, 0));
+  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(2, 0, 0));
   double numPrints = 100;
   for(int i = 0; i < numPrints; i++)
   {

@@ -230,6 +230,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
   if (packet->FindFirstMatchingByteTag(epcX2Tag))
     {
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
+      packet->RemovePacketTag(epcX2Tag);
     }
 
   m_rxPdu(cellsInfo->m_remoteCellId, cellsInfo->m_localCellId, packet->GetSize (), delay.GetNanoSeconds (), 0);
@@ -551,6 +552,7 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   if (packet->FindFirstMatchingByteTag(epcX2Tag))
     {
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
+      packet->RemovePacketTag(epcX2Tag);
     }
   m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 
