@@ -227,7 +227,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
   EpcX2Tag epcX2Tag;
   Time delay;
-  if (packet->FindFirstMatchingByteTag(epcX2Tag))
+  if (packet->PeekPacketTag(epcX2Tag))
     {
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
       packet->RemovePacketTag(epcX2Tag);
@@ -549,7 +549,7 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
 
   EpcX2Tag epcX2Tag;
   Time delay;
-  if (packet->FindFirstMatchingByteTag(epcX2Tag))
+  if (packet->PeekPacketTag(epcX2Tag))
     {
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
       packet->RemovePacketTag(epcX2Tag);
@@ -644,7 +644,7 @@ EpcX2::DoSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params)
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -700,7 +700,7 @@ EpcX2::DoSendRlcSetupRequest (EpcX2SapProvider::RlcSetupRequest params)
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -750,7 +750,7 @@ EpcX2::DoSendRlcSetupCompleted (EpcX2Sap::UeDataParams params)
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -802,7 +802,7 @@ EpcX2::DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams para
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -854,7 +854,7 @@ EpcX2::DoSendHandoverPreparationFailure (EpcX2SapProvider::HandoverPreparationFa
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -904,7 +904,7 @@ EpcX2::DoNotifyCoordinatorHandoverFailed(EpcX2SapProvider::HandoverFailedParams 
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -956,7 +956,7 @@ EpcX2::DoSendSnStatusTransfer (EpcX2SapProvider::SnStatusTransferParams params)
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -1005,7 +1005,7 @@ EpcX2::DoSendUeContextRelease (EpcX2SapProvider::UeContextReleaseParams params)
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -1052,7 +1052,7 @@ EpcX2::DoSendLoadInformation (EpcX2SapProvider::LoadInformationParams params)
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -1104,7 +1104,7 @@ EpcX2::DoSendResourceStatusUpdate (EpcX2SapProvider::ResourceStatusUpdateParams 
   packet->AddHeader (x2Header);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
@@ -1141,7 +1141,7 @@ EpcX2::DoSendUeData (EpcX2SapProvider::UeDataParams params)
   packet->AddHeader (gtpu);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("Forward UE DATA through X2 interface");
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));
@@ -1176,7 +1176,7 @@ EpcX2::DoSendMcPdcpPdu(EpcX2Sap::UeDataParams params)
   packet->AddHeader (gtpu);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("Forward MC UE DATA through X2 interface");
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));  
@@ -1211,7 +1211,7 @@ EpcX2::DoReceiveMcPdcpSdu(EpcX2Sap::UeDataParams params)
   packet->AddHeader (gtpu);
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   NS_LOG_INFO ("Forward MC UE DATA through X2 interface");
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2uUdpPort));  
@@ -1255,7 +1255,7 @@ EpcX2::DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params)
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   // Send the X2 message through the socket
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
@@ -1303,7 +1303,7 @@ EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::McHandoverParams params)
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   // Send the X2 message through the socket
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
@@ -1353,7 +1353,7 @@ EpcX2::DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::McHandoverParams pa
   NS_LOG_INFO ("packetLen = " << packet->GetSize ());
 
   EpcX2Tag tag (Simulator::Now());
-  packet->AddByteTag (tag);
+  packet->AddPacketTag (tag);
 
   // Send the X2 message through the socket
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
