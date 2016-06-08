@@ -992,6 +992,8 @@ private:
 
   std::map<uint16_t, bool> m_isMmWaveCellMap;
   bool m_interRatHoCapable;
+  LteRrcSap::RachConfigDedicated m_rachConfigDedicated;
+  bool m_ncRaStarted;
 
 }; // end of class LteUeRrc
 

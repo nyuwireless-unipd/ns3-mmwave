@@ -375,6 +375,7 @@ LteUeMac::RandomlySelectAndSendRaPreamble ()
 void
 LteUeMac::SendRaPreamble (bool contention)
 {
+  NS_LOG_UNCOND("SendRaPreamble " << (uint16_t)m_raPreambleId << " contention " << contention);
   NS_LOG_FUNCTION (this << (uint32_t) m_raPreambleId << contention);
   // Since regular UL LteControlMessages need m_ulConfigured = true in
   // order to be sent by the UE, the rach preamble needs to be sent
@@ -390,6 +391,7 @@ LteUeMac::SendRaPreamble (bool contention)
   // 3GPP 36.321 5.1.4 
   Time raWindowBegin = MilliSeconds (3); 
   Time raWindowEnd = MilliSeconds (3 + m_rachConfig.raResponseWindowSize);
+  NS_LOG_UNCOND("m_rachConfig.raResponseWindowSize " << m_rachConfig.raResponseWindowSize);
   Simulator::Schedule (raWindowBegin, &LteUeMac::StartWaitingForRaResponse, this);
   m_noRaResponseReceivedEvent = Simulator::Schedule (raWindowEnd, &LteUeMac::RaResponseTimeout, this, contention);
 }
@@ -462,6 +464,7 @@ void
 LteUeMac::DoConfigureRach (LteUeCmacSapProvider::RachConfig rc)
 {
   NS_LOG_FUNCTION (this);
+  NS_LOG_UNCOND("DoConfigureRach");
   m_rachConfig = rc;
   m_rachConfigured = true;
 }
@@ -717,6 +720,7 @@ LteUeMac::DoReceiveLteControlMessage (Ptr<LteControlMessage> msg)
     }
   else if (msg->GetMessageType () == LteControlMessage::RAR)
     {
+      NS_LOG_UNCOND("Got Rar");
       if (m_waitingForRaResponse)
         {
           Ptr<RarLteControlMessage> rarMsg = DynamicCast<RarLteControlMessage> (msg);

@@ -3179,12 +3179,12 @@ LteEnbRrc::DoRecvUeData (EpcX2SapUser::UeDataParams params)
 {
   NS_LOG_FUNCTION (this);
 
-  NS_LOG_INFO ("Recv UE DATA FORWARDING through X2 interface");
-  NS_LOG_INFO ("sourceCellId = " << params.sourceCellId);
-  NS_LOG_INFO ("targetCellId = " << params.targetCellId);
-  NS_LOG_INFO ("gtpTeid = " << params.gtpTeid);
-  NS_LOG_INFO ("ueData = " << params.ueData);
-  NS_LOG_INFO ("ueData size = " << params.ueData->GetSize ());
+  NS_LOG_LOGIC ("Recv UE DATA FORWARDING through X2 interface");
+  NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
+  NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
+  NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
+  NS_LOG_LOGIC ("ueData = " << params.ueData);
+  NS_LOG_LOGIC ("ueData size = " << params.ueData->GetSize ());
 
   std::map<uint32_t, X2uTeidInfo>::iterator 
     teidInfoIt = m_x2uTeidInfoMap.find (params.gtpTeid);

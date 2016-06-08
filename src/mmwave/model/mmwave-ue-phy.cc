@@ -37,6 +37,7 @@ MmWaveUePhy::MmWaveUePhy (Ptr<MmWaveSpectrumPhy> dlPhy, Ptr<MmWaveSpectrumPhy> u
 {
 	NS_LOG_FUNCTION (this);
 	m_wbCqiLast = Simulator::Now ();
+	m_cellSinrMap.clear();
 	m_ueCphySapProvider = new MemberLteUeCphySapProvider<MmWaveUePhy> (this);
 	Simulator::ScheduleNow (&MmWaveUePhy::SubframeIndication, this, 0, 0);
 }
@@ -198,6 +199,37 @@ void
 MmWaveUePhy::SetSubChannelsForReception(std::vector <int> mask)
 {
 
+}
+
+void
+MmWaveUePhy::UpdateSinrEstimate(uint16_t cellId, double sinr)
+{
+	NS_LOG_FUNCTION(this);
+	if(m_cellSinrMap.find(cellId) != m_cellSinrMap.end())
+	{
+		m_cellSinrMap.find(cellId)->second = sinr;
+	}
+	else
+	{
+		m_cellSinrMap.insert(std::pair<uint16_t, double> (cellId, sinr));
+	}
+
+	// if(cellId == m_cellId) // update for SNR of the current cell
+	// {
+	// 	double currentCellSinr = m_cellSinrMap.find(m_cellId);
+	// 	if(currentCellSinr < m_outageThreshold)
+	// 	{
+	// 		m_consecutiveSinrBelowThreshold++;
+	// 		if(m_consecutiveSinrBelowThreshold > m_n310)
+	// 		{
+	// 			// TODO raise a call to upper layers
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		m_consecutiveSinrBelowThreshold = 0;
+	// 	}	
+	// }
 }
 
 std::vector <int>

@@ -955,6 +955,7 @@ LteUePhy::ReceiveLteControlMessageList (std::list<Ptr<LteControlMessage> > msgLi
       else if (msg->GetMessageType () == LteControlMessage::RAR)
         {
           Ptr<RarLteControlMessage> rarMsg = DynamicCast<RarLteControlMessage> (msg);
+          NS_LOG_UNCOND("Rx rar in LteUePhy, rarMsg rnti " << rarMsg->GetRaRnti() << " m_raRnti " << m_raRnti);
           if (rarMsg->GetRaRnti () == m_raRnti)
             {
               for (std::list<RarLteControlMessage::Rar>::const_iterator it = rarMsg->RarListBegin (); it != rarMsg->RarListEnd (); ++it)

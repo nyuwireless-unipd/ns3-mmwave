@@ -138,7 +138,8 @@ LteUeRrc::LteUeRrc ()
     m_hasReceivedMib (false),
     m_hasReceivedSib1 (false),
     m_hasReceivedSib2 (false),
-    m_csgWhiteList (0)
+    m_csgWhiteList (0),
+    m_ncRaStarted (true)
 {
   NS_LOG_FUNCTION (this);
   m_cphySapUser = new MemberLteUeCphySapUser<LteUeRrc> (this);
@@ -439,7 +440,8 @@ LteUeRrc::SwitchLowerLayerProviders (uint16_t cellId)
       m_cphySapProvider = m_mmWaveCphySapProvider;
       m_cmacSapProvider = m_mmWaveCmacSapProvider;
       m_macSapProvider = m_mmWaveMacSapProvider;
-      
+
+      m_hasReceivedSib2 = false;
       NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       return true;
     }
@@ -450,6 +452,8 @@ LteUeRrc::SwitchLowerLayerProviders (uint16_t cellId)
       m_cphySapProvider = m_lteCphySapProvider;
       m_cmacSapProvider = m_lteCmacSapProvider;
       m_macSapProvider = m_lteMacSapProvider;
+
+      m_hasReceivedSib2 = false;
 
       NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       return true;
@@ -980,6 +984,11 @@ LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
               NS_ASSERT (m_connectionPending);
               StartConnection ();
             }
+          if (m_state == CONNECTED_HANDOVER && m_interRatHoCapable && !m_ncRaStarted)
+            {
+              m_ncRaStarted = true;
+              m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, m_rachConfigDedicated.raPreambleIndex, m_rachConfigDedicated.raPrachMaskIndex);  
+            }
           break;
 
         default: // IDLE_START, IDLE_CELL_SEARCH, IDLE_WAIT_MIB, IDLE_WAIT_MIB_SIB1, IDLE_WAIT_SIB1
@@ -1047,7 +1056,15 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           m_rnti = msg.mobilityControlInfo.newUeIdentity;
           m_srb0->m_rlc->SetRnti (m_rnti);
           NS_ASSERT_MSG (mci.haveRachConfigDedicated, "handover is only supported with non-contention-based random access procedure");
-          m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, mci.rachConfigDedicated.raPreambleIndex, mci.rachConfigDedicated.raPrachMaskIndex);
+          if(m_interRatHoCapable)
+          {
+            m_rachConfigDedicated = mci.rachConfigDedicated;
+            m_ncRaStarted = false;
+          }
+          else
+          {
+            m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, mci.rachConfigDedicated.raPreambleIndex, mci.rachConfigDedicated.raPrachMaskIndex);
+          }
           m_cphySapProvider->SetRnti (m_rnti);
           m_lastRrcTransactionIdentifier = msg.rrcTransactionIdentifier;
           NS_ASSERT (msg.haveRadioResourceConfigDedicated);

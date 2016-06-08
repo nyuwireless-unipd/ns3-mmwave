@@ -367,9 +367,9 @@ static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave 
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
     ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
-    ns3::BooleanValue(false), ns3::MakeBooleanChecker());
+    ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(25), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -385,13 +385,14 @@ main (int argc, char *argv[])
   //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_LOGIC);
   //LogComponentEnable ("LteUeMac", LOG_LEVEL_LOGIC);
+  //LogComponentEnable ("LteEnbMac", LOG_LEVEL_LOGIC);
   //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
   //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
   //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-  //LogComponentEnable("LteUePhy", LOG_LEVEL_INFO);
+  LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_INFO);
   //LogComponentEnable ("mmWavePhyRxTrace", LOG_LEVEL_ALL);
   //LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_ALL);
   //LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
@@ -404,7 +405,7 @@ main (int argc, char *argv[])
   //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
   //LogComponentEnable("McEnbPdcp", LOG_LEVEL_INFO);
   //LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
-  //LogComponentEnable("LteRlcUm", LOG_LEVEL_INFO);
+  LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
   //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
   //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
   LogComponentEnable("EpcMmeApplication", LOG_LEVEL_LOGIC);
@@ -416,7 +417,7 @@ main (int argc, char *argv[])
   double simTime = 45.0;
   double interPacketInterval = 50;  // 500 microseconds
   bool harqEnabled = true;
-  bool rlcAmEnabled = false;
+  bool rlcAmEnabled = true;
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
@@ -535,11 +536,11 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 *1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 1024));
 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-  mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
+  //mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
   Ptr<MmWavePointToPointEpcHelper> epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
   mmwaveHelper->SetEpcHelper (epcHelper);
   mmwaveHelper->SetHarqEnabled (harqEnabled);
@@ -749,11 +750,11 @@ main (int argc, char *argv[])
     {
         if(dl)
         {
-          PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+          UdpServerHelper dlPacketSinkHelper (dlPort);
           serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
           UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
           dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-          dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+          dlClient.SetAttribute ("MaxPackets", UintegerValue(0xFFFFFFFF));
           clientApps.Add (dlClient.Install (remoteHost));
 
         }
@@ -764,7 +765,7 @@ main (int argc, char *argv[])
           serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
           UdpClientHelper ulClient (remoteHostAddr, ulPort);
           ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-          ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+          ulClient.SetAttribute ("MaxPackets", UintegerValue(0xFFFFFFFF));
           clientApps.Add (ulClient.Install (ueNodes.Get(u)));
         }
     }

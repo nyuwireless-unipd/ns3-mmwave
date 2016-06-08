@@ -106,6 +106,8 @@ public:
 
 	void ReceiveLteDlHarqFeedback (DlHarqInfo m);
 
+	void UpdateSinrEstimate(uint16_t cellId, double sinr);
+
 
 private:
 	void DoReset ();
@@ -176,6 +178,10 @@ private:
 	EventId m_sendDlHarqFeedbackEvent;
 	std::vector<EventId> m_forwardToMacEvent;
 	bool m_phyReset;
+
+	std::map<uint16_t, double> m_cellSinrMap;
+
+	uint8_t m_consecutiveSinrBelowThreshold;
 
 };
 

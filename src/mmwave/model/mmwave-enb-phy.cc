@@ -70,7 +70,7 @@ MmWaveEnbPhy::GetTypeId (void)
 	               MakeDoubleChecker<double> ())
 	.AddAttribute ("UpdateSinrEstimatePeriod",
 	               "Period (in ms) of update of SINR estimate of all the UE",
-	               DoubleValue (1.68),
+	               DoubleValue (1.68), //TODO 1.6
 	               MakeDoubleAccessor (&MmWaveEnbPhy::m_updateSinrPeriod),
 	               MakeDoubleChecker<double> ())
 	.AddAttribute ("NoiseFigure",
@@ -376,6 +376,33 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		m_sinrMap[ue->first] = sinrAvg;
 		//NS_LOG_UNCOND("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
 	}
+
+	// if(m_roundFromLastUeSinrUpdate >= (m_ueUpdateSinrPeriod/m_updateSinrPeriod))
+	// {
+	// 	m_roundFromLastUeSinrUpdate = 0;
+	// 	for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin(); ue != m_ueAttachedImsiMap.end(); ++ue)
+	// 	{
+	// 		// distinguish between MC and MmWaveNetDevice
+	// 		Ptr<MmWaveUeNetDevice> ueNetDevice = DynamicCast<MmWaveUeNetDevice> (ue->second);
+	// 		Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
+	// 		Ptr<MmWaveUePhy> uePhy;
+	// 		if(ueNetDevice != 0) 
+	// 		{
+	// 			uePhy = ueNetDevice->GetPhy();
+	// 		}
+	// 		else if (mcUeDev != 0) // it may be a MC device
+	// 		{
+	// 			uePhy = mcUeDev->GetMmWavePhy ();
+	// 		}
+	// 		uePhy->UpdateSinrEstimate(m_cellId, m_sinrMap[ue->first].second);
+	// 	}
+	// }
+	// else
+	// {
+	// 	m_roundFromLastUeSinrUpdate++;
+	// }
+
+	// 
 
 	LteEnbCphySapUser::UeAssociatedSinrInfo info;
 	info.ueImsiSinrMap = m_sinrMap;
