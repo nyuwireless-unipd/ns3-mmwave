@@ -391,7 +391,6 @@ LteUeMac::SendRaPreamble (bool contention)
   // 3GPP 36.321 5.1.4 
   Time raWindowBegin = MilliSeconds (3); 
   Time raWindowEnd = MilliSeconds (3 + m_rachConfig.raResponseWindowSize);
-  NS_LOG_UNCOND("m_rachConfig.raResponseWindowSize " << m_rachConfig.raResponseWindowSize);
   Simulator::Schedule (raWindowBegin, &LteUeMac::StartWaitingForRaResponse, this);
   m_noRaResponseReceivedEvent = Simulator::Schedule (raWindowEnd, &LteUeMac::RaResponseTimeout, this, contention);
 }
@@ -720,7 +719,6 @@ LteUeMac::DoReceiveLteControlMessage (Ptr<LteControlMessage> msg)
     }
   else if (msg->GetMessageType () == LteControlMessage::RAR)
     {
-      NS_LOG_UNCOND("Got Rar");
       if (m_waitingForRaResponse)
         {
           Ptr<RarLteControlMessage> rarMsg = DynamicCast<RarLteControlMessage> (msg);

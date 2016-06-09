@@ -1037,6 +1037,9 @@ LteEnbCmacSapProvider::RachConfig
 MmWaveEnbMac::DoGetRachConfig ()
 {
   struct LteEnbCmacSapProvider::RachConfig rc;
+    rc.numberOfRaPreambles = m_numberOfRaPreambles;
+  rc.preambleTransMax = m_preambleTransMax;
+  rc.raResponseWindowSize = m_raResponseWindowSize;
   return rc;
 }
 

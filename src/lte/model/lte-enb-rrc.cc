@@ -2496,10 +2496,12 @@ LteEnbRrc::TriggerUeAssociationUpdate()
           currentSinr = cellIter->second;
         }
       }
-      long double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
-      NS_LOG_INFO("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
-          " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << 10*std::log10(currentSinr) << " sinrDifference " << sinrDifference);
-      if (10*std::log10(maxSinr) < m_outageThreshold || (m_imsiUsingLte[imsi] && 10*std::log10(maxSinr) < m_outageThreshold + 2)) // no MmWaveCell can serve this UE
+      long double sinrDifference = std::abs(10*(std::log10((long double)maxSinr) - std::log10((long double)currentSinr)));
+      long double maxSinrDb = 10*std::log10((long double)maxSinr);
+      long double currentSinrDb = 10*std::log10((long double)currentSinr);
+      NS_LOG_INFO("MaxSinr " << maxSinrDb << " in cell " << maxSinrCellId << 
+          " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << currentSinrDb << " sinrDifference " << sinrDifference);
+      if (maxSinrDb < m_outageThreshold || (m_imsiUsingLte[imsi] && maxSinrDb < m_outageThreshold + 2)) // no MmWaveCell can serve this UE
       {
         // outage, perform fast switching if MC device or hard handover
         NS_LOG_INFO("----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
@@ -2539,7 +2541,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
 
             m_mmWaveCellSetupCompleted[imsi] = false;
             m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
-            NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << 10*std::log10(maxSinr));
+            NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << maxSinrDb);
           } 
           else if(alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference < m_sinrThresholdDifference)
           {
@@ -2595,7 +2597,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " not triggered due to small diff " << sinrDifference << " at time " << Simulator::Now().GetSeconds());
           }
           m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
-          NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << 10*std::log10(maxSinr));
+          NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << maxSinrDb);
         }
       }
     }
@@ -2648,12 +2650,14 @@ LteEnbRrc::UpdateUeHandoverAssociation()
           currentSinr = cellIter->second;
         }
       }
-      long double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
-      NS_LOG_INFO("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
-          " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << 10*std::log10(currentSinr) << " sinrDifference " << sinrDifference);
 
+      long double sinrDifference = std::abs(10*(std::log10((long double)maxSinr) - std::log10((long double)currentSinr)));
+      long double maxSinrDb = 10*std::log10((long double)maxSinr);
+      long double currentSinrDb = 10*std::log10((long double)currentSinr);
+      NS_LOG_INFO("MaxSinr " << maxSinrDb << " in cell " << maxSinrCellId << 
+          " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << currentSinrDb << " sinrDifference " << sinrDifference);
       // check if MmWave cells are in outage. In this case the UE should handover to LTE cell
-      if (10*std::log10(maxSinr) < m_outageThreshold || (m_imsiUsingLte[imsi] && 10*std::log10(maxSinr) < m_outageThreshold + 1)) // no MmWaveCell can serve this UE
+      if (maxSinrDb < m_outageThreshold || (m_imsiUsingLte[imsi] && maxSinrDb < m_outageThreshold + 2)) // no MmWaveCell can serve this UE
       {
         // outage, perform handover to LTE
         NS_LOG_INFO("----- Warn: outage detected ------");

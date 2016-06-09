@@ -369,7 +369,7 @@ static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of b
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
     ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-    ns3::UintegerValue(25), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(24), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -392,7 +392,7 @@ main (int argc, char *argv[])
   //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
   //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
   //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-  LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_INFO);
+  //LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_INFO);
   //LogComponentEnable ("mmWavePhyRxTrace", LOG_LEVEL_ALL);
   //LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_ALL);
   //LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
@@ -405,7 +405,7 @@ main (int argc, char *argv[])
   //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
   //LogComponentEnable("McEnbPdcp", LOG_LEVEL_INFO);
   //LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
-  LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
   //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
   //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
   LogComponentEnable("EpcMmeApplication", LOG_LEVEL_LOGIC);
@@ -414,7 +414,7 @@ main (int argc, char *argv[])
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   uint16_t numberOfNodes = 1;
-  double simTime = 45.0;
+  double simTime = 40.0;
   double interPacketInterval = 50;  // 500 microseconds
   bool harqEnabled = true;
   bool rlcAmEnabled = true;

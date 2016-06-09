@@ -1338,21 +1338,10 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 	  EnumValue epsBearerToRlcMapping;
 	  rrc->GetAttribute ("EpsBearerToRlcMapping", epsBearerToRlcMapping);
 	  // it does not make sense to use RLC/SM when also using the EPC
-
-// ***************** RDF EDIT 6/9/2016 ***************** //
-//	  if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
-//	    {
-//	      rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
-//	    }
-
-    if (m_rlcAmEnabled)
-      {
-        rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_AM_ALWAYS));
-      }
-      else
-      {
-        rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_LOWLAT_ALWAYS));
-      }
+	  if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
+	    {
+	      rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
+	    }
 	}
 
 	rrc->SetLteEnbCmacSapProvider (mac->GetLteEnbCmacSapProvider ());

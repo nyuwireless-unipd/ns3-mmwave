@@ -240,7 +240,7 @@ MmWaveUePhy::UpdateSinrEstimate(uint16_t cellId, double sinr)
 		{
 			m_consecutiveSinrBelowThreshold = 0;
 		}	
-		NS_LOG_UNCOND("Phy layers: update sinr value for cell " << m_cellId << " to " << currentCellSinr << " m_consecutiveSinrBelowThreshold " << (uint16_t)m_consecutiveSinrBelowThreshold);
+		NS_LOG_UNCOND("Phy layers: update sinr value for cell " << m_cellId << " to " << currentCellSinr << " m_consecutiveSinrBelowThreshold " << (uint16_t)m_consecutiveSinrBelowThreshold << " at time " << Simulator::Now());
 	}
 }
 

@@ -495,8 +495,7 @@ LteEnbMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo)
               if (jt != m_allocatedNcRaPreambleMap.end ())
                 {
                   rnti = jt->second.rnti;
-                  NS_LOG_INFO ("preambleId previously allocated for NC based RA, RNTI =" << (uint32_t) rnti << ", sending RAR");
-                  
+                  NS_LOG_INFO ("preambleId previously allocated for NC based RA, RNTI =" << (uint32_t) rnti << ", sending RAR");                  
                 }
               else
                 {
