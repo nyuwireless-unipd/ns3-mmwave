@@ -350,13 +350,13 @@ MmWaveBearerStatsConnector::NotifySecondaryMmWaveEnbAvailable (MmWaveBearerStats
 }
 
 void 
-MmWaveBearerStatsConnector::NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, double sinr)
+MmWaveBearerStatsConnector::NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, long double sinr)
 {
   c->PrintMmWaveSinr (imsi, cellId, sinr);
 }
 
 void
-MmWaveBearerStatsConnector::PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, double sinr)
+MmWaveBearerStatsConnector::PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, long double sinr)
 {
   NS_LOG_FUNCTION(this << " PrintMmWaveSinr " << Simulator::Now().GetSeconds());
   if(!m_mmWaveSinrOutFile.is_open ())

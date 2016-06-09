@@ -514,7 +514,6 @@ LteUeRrc::SetUseRlcSm (bool val)
   m_useRlcSm = val;
 }
 
-
 void
 LteUeRrc::DoInitialize (void)
 {
@@ -641,6 +640,12 @@ LteUeRrc::DoSetTemporaryCellRnti (uint16_t rnti)
   m_rnti = rnti;
   m_srb0->m_rlc->SetRnti (m_rnti);
   m_cphySapProvider->SetRnti (m_rnti);
+}
+
+void
+LteUeRrc::DoNotifyRadioLinkFailure (double lastSinrValue)
+{
+  NS_LOG_UNCOND("Rlf");
 }
 
 void

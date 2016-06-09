@@ -136,7 +136,9 @@ private:
 	std::map <uint64_t, Ptr<NetDevice> > m_ueAttachedImsiMap;
 	std::map <uint64_t, double > m_sinrMap;
 	std::map <uint64_t, Ptr<SpectrumValue> > m_rxPsdMap;
-	double m_updateSinrPeriod;
+	double m_updateSinrPeriod; // the period of SINR update for eNBs
+	double m_ueUpdateSinrPeriod; // the period of SINR reporting to the UEs
+	uint16_t m_roundFromLastUeSinrUpdate; // the ratio between the two above
 
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 	std::vector <int> m_channelChunks;

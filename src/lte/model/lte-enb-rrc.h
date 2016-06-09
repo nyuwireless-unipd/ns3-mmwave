@@ -966,7 +966,7 @@ public:
      LteRrcSap::MeasurementReport report);
 
   typedef void (* NotifyMmWaveSinrTracedCallback)
-    (uint64_t imsi, uint16_t cellId, double sinr);
+    (uint64_t imsi, uint16_t cellId, long double sinr);
 
   /**
    * This method maps Imsi to Rnti, so that the UeManager of a certain UE
@@ -1396,7 +1396,7 @@ private:
    */
   TracedCallback<uint64_t, uint16_t, uint16_t, LteRrcSap::MeasurementReport> m_recvMeasurementReportTrace;
 
-  TracedCallback<uint64_t, uint16_t, double> m_notifyMmWaveSinrTrace;
+  TracedCallback<uint64_t, uint16_t, long double> m_notifyMmWaveSinrTrace;
 
   bool m_ismmWave;
   bool m_interRatHoMode;
@@ -1418,7 +1418,9 @@ private:
   std::map<uint64_t, uint16_t> m_imsiRntiMap;
   std::map<uint16_t, uint64_t> m_rntiImsiMap;
 
-  double m_sinrThresholdDifference;
+  long double m_sinrThresholdDifference;
+
+  long double m_outageThreshold;
 
 }; // end of `class LteEnbRrc`
 

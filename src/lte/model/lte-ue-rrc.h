@@ -334,6 +334,7 @@ private:
   void DoRecvSystemInformationBlockType1 (uint16_t cellId,
                                           LteRrcSap::SystemInformationBlockType1 msg);
   void DoReportUeMeasurements (LteUeCphySapUser::UeMeasurementsParameters params);
+  void DoNotifyRadioLinkFailure (double lastSinrValue);
 
   // RRC SAP methods
 

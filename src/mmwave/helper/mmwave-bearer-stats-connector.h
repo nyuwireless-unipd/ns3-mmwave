@@ -199,9 +199,9 @@ public:
 
   static void NotifySecondaryMmWaveEnbAvailable (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
-  static void NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, double sinr);
+  static void NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, long double sinr);
 
-  void PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, double sinr);
+  void PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, long double sinr);
 
   std::string GetEnbHandoverOutputFilename (void);
   std::string GetUeHandoverOutputFilename (void);

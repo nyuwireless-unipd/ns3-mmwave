@@ -83,6 +83,16 @@ MmWaveUePhy::GetTypeId (void)
 						 "Report allocated downlink TB size for trace.",
 						 MakeTraceSourceAccessor (&MmWaveUePhy::m_reportDlTbSize),
 						 "ns3::DlTbSize::TracedCallback")
+		.AddAttribute ("OutageThreshold",
+                   "SNR threshold for outage events [dB]",
+                   DoubleValue (-5.0),
+                   MakeDoubleAccessor (&MmWaveUePhy::m_outageThreshold),
+                   MakeDoubleChecker<long double> (-70.0, 10.0))
+		.AddAttribute ("n310",
+                   "Counter for SINR below threshold events",
+                   UintegerValue (2),
+                   MakeUintegerAccessor (&MmWaveUePhy::m_n310),
+                   MakeUintegerChecker<uint32_t> ())
 ;
 
 	return tid;
@@ -214,22 +224,24 @@ MmWaveUePhy::UpdateSinrEstimate(uint16_t cellId, double sinr)
 		m_cellSinrMap.insert(std::pair<uint16_t, double> (cellId, sinr));
 	}
 
-	// if(cellId == m_cellId) // update for SNR of the current cell
-	// {
-	// 	double currentCellSinr = m_cellSinrMap.find(m_cellId);
-	// 	if(currentCellSinr < m_outageThreshold)
-	// 	{
-	// 		m_consecutiveSinrBelowThreshold++;
-	// 		if(m_consecutiveSinrBelowThreshold > m_n310)
-	// 		{
-	// 			// TODO raise a call to upper layers
-	// 		}
-	// 	}
-	// 	else
-	// 	{
-	// 		m_consecutiveSinrBelowThreshold = 0;
-	// 	}	
-	// }
+	if(cellId == m_cellId) // update for SNR of the current cell
+	{
+		long double currentCellSinr = 10*std::log10(m_cellSinrMap.find(m_cellId)->second);
+		if(currentCellSinr < m_outageThreshold)
+		{
+			m_consecutiveSinrBelowThreshold++;
+			if(m_consecutiveSinrBelowThreshold > m_n310)
+			{
+				// TODO raise a call to upper layers
+				NS_LOG_UNCOND("Phy layer detects SNR below threshold for " << m_n310 << " times");
+			}
+		}
+		else
+		{
+			m_consecutiveSinrBelowThreshold = 0;
+		}	
+		NS_LOG_UNCOND("Phy layers: update sinr value for cell " << m_cellId << " to " << currentCellSinr << " m_consecutiveSinrBelowThreshold " << (uint16_t)m_consecutiveSinrBelowThreshold);
+	}
 }
 
 std::vector <int>

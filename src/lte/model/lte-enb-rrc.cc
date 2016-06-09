@@ -1860,6 +1860,11 @@ LteEnbRrc::GetTypeId (void)
                    TimeValue (Seconds (45)),
                    MakeTimeAccessor (&LteEnbRrc::m_handoverLeavingTimeoutDuration),
                    MakeTimeChecker ())
+    .AddAttribute ("OutageThreshold",
+                   "SNR threshold for outage events [dB]",
+                   DoubleValue (-5.0),
+                   MakeDoubleAccessor (&LteEnbRrc::m_outageThreshold),
+                   MakeDoubleChecker<long double> (-70.0, 10.0))
 
     // Cell selection related attribute
     .AddAttribute ("QRxLevMin",
@@ -2457,8 +2462,8 @@ LteEnbRrc::TriggerUeAssociationUpdate()
     for(std::map<uint64_t, CellSinrMap>::iterator imsiIter = m_imsiCellSinrMap.begin(); imsiIter != m_imsiCellSinrMap.end(); ++imsiIter)
     {
       uint64_t imsi = imsiIter->first;
-      double maxSinr = 0;
-      double currentSinr = 0;
+      long double maxSinr = 0;
+      long double currentSinr = 0;
       uint16_t maxSinrCellId = 0;
       bool alreadyAssociatedImsi = false;
       bool onHandoverImsi = true;
@@ -2491,10 +2496,10 @@ LteEnbRrc::TriggerUeAssociationUpdate()
           currentSinr = cellIter->second;
         }
       }
-      double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
+      long double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
       NS_LOG_INFO("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
           " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << 10*std::log10(currentSinr) << " sinrDifference " << sinrDifference);
-      if (10*std::log10(maxSinr) < -5 || (m_imsiUsingLte[imsi] && 10*std::log10(maxSinr) < -5 + 1)) // no MmWaveCell can serve this UE
+      if (10*std::log10(maxSinr) < m_outageThreshold || (m_imsiUsingLte[imsi] && 10*std::log10(maxSinr) < m_outageThreshold + 2)) // no MmWaveCell can serve this UE
       {
         // outage, perform fast switching if MC device or hard handover
         NS_LOG_INFO("----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
@@ -2596,7 +2601,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
     }
   }
   
-  Simulator::Schedule(MilliSeconds(1.68), &LteEnbRrc::TriggerUeAssociationUpdate, this);
+  Simulator::Schedule(MilliSeconds(1.6), &LteEnbRrc::TriggerUeAssociationUpdate, this);
 }
 
 void
@@ -2608,8 +2613,8 @@ LteEnbRrc::UpdateUeHandoverAssociation()
     for(std::map<uint64_t, CellSinrMap>::iterator imsiIter = m_imsiCellSinrMap.begin(); imsiIter != m_imsiCellSinrMap.end(); ++imsiIter)
     {
       uint64_t imsi = imsiIter->first;
-      double maxSinr = 0;
-      double currentSinr = 0;
+      long double maxSinr = 0;
+      long double currentSinr = 0;
       uint16_t maxSinrCellId = 0;
       bool alreadyAssociatedImsi = false;
       bool onHandoverImsi = true;
@@ -2643,12 +2648,12 @@ LteEnbRrc::UpdateUeHandoverAssociation()
           currentSinr = cellIter->second;
         }
       }
-      double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
+      long double sinrDifference = std::abs(10*(std::log10(maxSinr) - std::log10(currentSinr)));
       NS_LOG_INFO("MaxSinr " << 10*std::log10(maxSinr) << " in cell " << maxSinrCellId << 
           " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << 10*std::log10(currentSinr) << " sinrDifference " << sinrDifference);
 
       // check if MmWave cells are in outage. In this case the UE should handover to LTE cell
-      if (10*std::log10(maxSinr) < -5 || (m_imsiUsingLte[imsi] && 10*std::log10(maxSinr) < -5 + 1)) // no MmWaveCell can serve this UE
+      if (10*std::log10(maxSinr) < m_outageThreshold || (m_imsiUsingLte[imsi] && 10*std::log10(maxSinr) < m_outageThreshold + 1)) // no MmWaveCell can serve this UE
       {
         // outage, perform handover to LTE
         NS_LOG_INFO("----- Warn: outage detected ------");
@@ -2736,7 +2741,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
     }
   }
 
-  Simulator::Schedule(MilliSeconds(1.68), &LteEnbRrc::UpdateUeHandoverAssociation, this);
+  Simulator::Schedule(MilliSeconds(1.6), &LteEnbRrc::UpdateUeHandoverAssociation, this);
 
 }
 

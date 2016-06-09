@@ -182,6 +182,8 @@ private:
 	std::map<uint16_t, double> m_cellSinrMap;
 
 	uint8_t m_consecutiveSinrBelowThreshold;
+	long double m_outageThreshold;
+	uint8_t m_n310;
 
 };
 

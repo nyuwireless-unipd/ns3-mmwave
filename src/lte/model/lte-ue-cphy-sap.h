@@ -209,6 +209,8 @@ public:
    */
   virtual void ReportUeMeasurements (UeMeasurementsParameters params) = 0;
 
+  virtual void NotifyRadioLinkFailure (double lastSinrValue) = 0;
+
 };
 
 
@@ -350,6 +352,8 @@ public:
                                                 LteRrcSap::SystemInformationBlockType1 sib1);
   virtual void ReportUeMeasurements (LteUeCphySapUser::UeMeasurementsParameters params);
 
+  virtual void NotifyRadioLinkFailure (double lastSinrValue);
+
 private:
   MemberLteUeCphySapUser ();
   C* m_owner;
@@ -388,6 +392,14 @@ MemberLteUeCphySapUser<C>::ReportUeMeasurements (LteUeCphySapUser::UeMeasurement
 {
   m_owner->DoReportUeMeasurements (params);
 }
+
+template <class C>
+void
+MemberLteUeCphySapUser<C>::NotifyRadioLinkFailure (double lastSinrValue)
+{
+  m_owner->DoNotifyRadioLinkFailure(lastSinrValue);
+}
+
 
 
 } // namespace ns3
