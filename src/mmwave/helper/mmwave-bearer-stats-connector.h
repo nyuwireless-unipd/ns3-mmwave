@@ -203,13 +203,17 @@ public:
 
   void PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, long double sinr);
 
-  std::string GetEnbHandoverOutputFilename (void);
-  std::string GetUeHandoverOutputFilename (void);
+  std::string GetEnbHandoverStartOutputFilename (void);
+  std::string  GetUeHandoverStartOutputFilename (void);
+  std::string GetEnbHandoverEndOutputFilename (void);
+  std::string  GetUeHandoverEndOutputFilename (void);
   std::string GetCellIdStatsOutputFilename (void);
   std::string GetMmWaveSinrOutputFilename (void);
   
-  void SetEnbHandoverOutputFilename (std::string outputFilename);
-  void SetUeHandoverOutputFilename (std::string outputFilename);
+  void SetEnbHandoverStartOutputFilename (std::string outputFilename);
+  void  SetUeHandoverStartOutputFilename (std::string outputFilename);
+  void SetEnbHandoverEndOutputFilename (std::string outputFilename);
+  void  SetUeHandoverEndOutputFilename (std::string outputFilename);
   void SetCellIdStatsOutputFilename (std::string outputFilename);
   void SetMmWaveSinrOutputFilename (std::string outputFilename);
 
@@ -335,13 +339,17 @@ private:
    */
   std::map<CellIdRnti, std::string> m_ueManagerPathByCellIdRnti;
 
-  std::string m_enbHandoverFilename;
-  std::string m_ueHandoverFilename;
+  std::string m_enbHandoverStartFilename;
+  std::string m_enbHandoverEndFilename;
+  std::string  m_ueHandoverStartFilename;
+  std::string  m_ueHandoverEndFilename;
   std::string m_cellIdInTimeHandoverFilename;
   std::string m_mmWaveSinrOutputFilename;
 
-  std::ofstream m_enbHandoverOutFile;
-  std::ofstream m_ueHandoverOutFile;
+  std::ofstream m_enbHandoverStartOutFile;
+  std::ofstream  m_ueHandoverStartOutFile;
+  std::ofstream m_enbHandoverEndOutFile;
+  std::ofstream  m_ueHandoverEndOutFile;
   std::ofstream m_cellIdInTimeHandoverOutFile;
   std::ofstream m_mmWaveSinrOutFile;
 };
