@@ -358,6 +358,16 @@ PrintPosition(Ptr<Node> node)
   NS_LOG_UNCOND("Position +****************************** " << model->GetPosition() << " at time " << Simulator::Now().GetSeconds());
 }
 
+void 
+PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName, uint32_t prevLost)
+{
+  std::ofstream logFile(fileName.c_str(), std::ofstream::app);
+  logFile << Simulator::Now().GetSeconds() << " " << app->GetLost() - prevLost << std::endl;
+  prevLost =  app->GetLost() - prevLost;
+  logFile.close();
+  Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, app, fileName, prevLost);
+}
+
 static ns3::GlobalValue g_mmw1DistFromMainStreet("mmw1Dist", "Distance from the main street of the first MmWaveEnb",
     ns3::UintegerValue(50), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmw2DistFromMainStreet("mmw2Dist", "Distance from the main street of the second MmWaveEnb",
@@ -367,7 +377,7 @@ static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave 
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
     ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
-    ns3::BooleanValue(true), ns3::MakeBooleanChecker());
+    ns3::BooleanValue(false), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
     ns3::UintegerValue(24), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
@@ -470,8 +480,10 @@ main (int argc, char *argv[])
   std::string dlPdcpOutName = "DlPdcpStats";
   std::string ulRlcOutName = "UlRlcStats";
   std::string ulPdcpOutName = "UlPdcpStats";
-  std::string ueHandoverOutName = "UeHandoverStats";
-  std::string enbHandoverOutName = "EnbHandoverStats";
+  std::string  ueHandoverStartOutName =  "UeHandoverStartStats";
+  std::string enbHandoverStartOutName = "EnbHandoverStartStats";
+  std::string  ueHandoverEndOutName =  "UeHandoverEndStats";
+  std::string enbHandoverEndOutName = "EnbHandoverEndStats";
   std::string cellIdInTimeOutName = "CellIdStats";
   std::string cellIdInTimeHandoverOutName = "CellIdStatsHandover";
   std::string mmWaveSinrOutputFilename = "MmWaveSinrTime";
@@ -525,18 +537,20 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue        (path + version + ulRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlPdcpOutputFilename", StringValue       (path + version + dlPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlPdcpOutputFilename", StringValue       (path + version + ulPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::UeHandoverOutputFilename", StringValue    (path + version + ueHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverOutputFilename", StringValue   (path + version + enbHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::UeHandoverStartOutputFilename", StringValue    (path + version +  ueHandoverStartOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverStartOutputFilename", StringValue   (path + version + enbHandoverStartOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::UeHandoverEndOutputFilename", StringValue    (path + version +  ueHandoverEndOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverEndOutputFilename", StringValue   (path + version + enbHandoverEndOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::CellIdStatsHandoverOutputFilename", StringValue(path + version + cellIdInTimeHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::MmWaveSinrOutputFilename", StringValue(path + version + mmWaveSinrOutputFilename + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::CoreNetworkStatsCalculator::X2FileName", StringValue                  (path + version + x2statOutputFilename    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-
+  std::string lostFilename = path + version + "LostUdpPackets" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension;
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"))
 
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
@@ -691,7 +705,7 @@ main (int argc, char *argv[])
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
   bool dl = 1;
-  bool ul = 1;
+  bool ul = 0;
 
   if(tcp)
   {
@@ -751,7 +765,11 @@ main (int argc, char *argv[])
         if(dl)
         {
           UdpServerHelper dlPacketSinkHelper (dlPort);
+          dlPacketSinkHelper.SetAttribute ("PacketWindowSize", UintegerValue(256));
           serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
+
+          Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, DynamicCast<UdpServer>(serverApps.Get(serverApps.GetN()-1)), lostFilename, 0);
+
           UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
           dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
           dlClient.SetAttribute ("MaxPackets", UintegerValue(0xFFFFFFFF));
@@ -762,6 +780,7 @@ main (int argc, char *argv[])
         {
           ++ulPort;
           PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+          ulPacketSinkHelper.SetAttribute ("PacketWindowSize", UintegerValue(256));
           serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
           UdpClientHelper ulClient (remoteHostAddr, ulPort);
           ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
