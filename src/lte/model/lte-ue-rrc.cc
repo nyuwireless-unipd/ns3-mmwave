@@ -992,6 +992,7 @@ LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
           if (m_state == CONNECTED_HANDOVER && m_interRatHoCapable && !m_ncRaStarted)
             {
               m_ncRaStarted = true;
+              NS_LOG_UNCOND("StartNonContentionBasedRandomAccessProcedure after SIB2 received at time " << Simulator::Now());
               m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, m_rachConfigDedicated.raPreambleIndex, m_rachConfigDedicated.raPrachMaskIndex);  
             }
           break;

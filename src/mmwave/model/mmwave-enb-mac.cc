@@ -468,6 +468,7 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 	{
 		MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters ulMacReq;
 		ulMacReq.m_sfnSf = sfnSf;
+		NS_LOG_UNCOND("ulMacReq.m_macCeList size " << m_ulCeReceived.size());
 		ulMacReq.m_macCeList.insert (ulMacReq.m_macCeList.begin (), m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_ulCeReceived.erase (m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_macSchedSapProvider->SchedUlMacCtrlInfoReq (ulMacReq);
@@ -658,7 +659,7 @@ MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 		case (MmWaveControlMessage::BSR):
 		{
 			Ptr<MmWaveBsrMessage> bsr = DynamicCast<MmWaveBsrMessage> (msg);
-		  m_ulCeReceived.push_back (bsr->GetBsr ());
+		  	m_ulCeReceived.push_back (bsr->GetBsr ());
 			break;
 		}
 		case (MmWaveControlMessage::DL_HARQ):
@@ -1037,7 +1038,7 @@ LteEnbCmacSapProvider::RachConfig
 MmWaveEnbMac::DoGetRachConfig ()
 {
   struct LteEnbCmacSapProvider::RachConfig rc;
-    rc.numberOfRaPreambles = m_numberOfRaPreambles;
+	rc.numberOfRaPreambles = m_numberOfRaPreambles;
   rc.preambleTransMax = m_preambleTransMax;
   rc.raResponseWindowSize = m_raResponseWindowSize;
   return rc;

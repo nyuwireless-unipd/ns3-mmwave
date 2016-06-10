@@ -323,11 +323,20 @@ MmWaveUeMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParamete
   it = m_ulBsrReceived.find (params.lcid);
   if (it!=m_ulBsrReceived.end ())
     {
+      if(params.lcid == 1)
+      {
+        NS_LOG_UNCOND("Update entry");
+      }
+      
       // update entry
       (*it).second = params;
     }
   else
     {
+      if(params.lcid == 1)
+      {
+        NS_LOG_UNCOND("Insert entry");
+      }
       m_ulBsrReceived.insert (std::pair<uint8_t, LteMacSapProvider::ReportBufferStatusParameters> (params.lcid, params));
     }
   m_freshUlBsr = true;
@@ -362,7 +371,7 @@ MmWaveUeMac::SendReportBufferStatus (void)
   for (it = m_ulBsrReceived.begin (); it != m_ulBsrReceived.end (); it++)
     {
       uint8_t lcid = it->first;
-      //NS_LOG_UNCOND("MmWave lcid of BSR " << (uint16_t)lcid << " queue size " << (*it).second.txQueueSize);
+      NS_LOG_UNCOND("MmWave lcid of BSR " << (uint16_t)lcid << " queue size " << (*it).second.txQueueSize);
 
       std::map <uint8_t, LcInfo>::iterator lcInfoMapIt;
       lcInfoMapIt = m_lcInfoMap.find (lcid);
@@ -377,6 +386,7 @@ MmWaveUeMac::SendReportBufferStatus (void)
       }
       else
       {
+        NS_LOG_UNCOND("lcid not found");
       	send = false;
       }
     }
@@ -802,7 +812,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 		if (m_waitingForRaResponse == true)
 		{
 			Ptr<MmWaveRarMessage> rarMsg = DynamicCast<MmWaveRarMessage> (msg);
-			NS_LOG_INFO (this << "got RAR with RA-RNTI " << (uint32_t) rarMsg->GetRaRnti () << ", expecting " << (uint32_t) m_raRnti);
+			NS_LOG_UNCOND (this << "got RAR with RA-RNTI " << (uint32_t) rarMsg->GetRaRnti () << ", expecting " << (uint32_t) m_raRnti);
 			for (std::list<MmWaveRarMessage::Rar>::const_iterator it = rarMsg->RarListBegin ();
 					it != rarMsg->RarListEnd ();
 					++it)
@@ -869,7 +879,7 @@ MmWaveUeMac::SendRaPreamble(bool contention)
 	m_raRnti = 1;
 	m_waitingForRaResponse = true;
 
-	NS_LOG_INFO("SendRachPreamble at time " << Simulator::Now());
+	NS_LOG_UNCOND("SendRachPreamble at time " << Simulator::Now());
 	m_phySapProvider->SendRachPreamble(m_raPreambleId, m_raRnti);
 }
 
@@ -888,7 +898,7 @@ MmWaveUeMac::DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint
   	else // instead in a single connectivity framework, the UE must wait for the periodic update with the channel estimate
   	{
   		Time delay = MilliSeconds(m_randomAccessProcedureDelay->GetValue());
-  		NS_LOG_LOGIC("Schedule RA with delay " << delay);
+  		NS_LOG_UNCOND("Schedule RA with delay " << delay);
   		Simulator::Schedule(delay, &MmWaveUeMac::SendRaPreamble, this, contention);
   	}
 }

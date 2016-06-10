@@ -442,6 +442,12 @@ LteRlcUmLowLat::DoNotifyHarqDeliveryFailure ()
   NS_LOG_FUNCTION (this);
 }
 
+std::vector < Ptr<Packet> > 
+LteRlcUmLowLat::GetTxBuffer()
+{
+  return m_txBuffer;
+}
+
 void
 LteRlcUmLowLat::DoReceivePdu (Ptr<Packet> p)
 {

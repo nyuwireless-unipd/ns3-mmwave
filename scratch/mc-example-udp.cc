@@ -359,13 +359,12 @@ PrintPosition(Ptr<Node> node)
 }
 
 void 
-PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName, uint32_t prevLost)
+PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
 {
   std::ofstream logFile(fileName.c_str(), std::ofstream::app);
-  logFile << Simulator::Now().GetSeconds() << " " << app->GetLost() - prevLost << std::endl;
-  prevLost =  app->GetLost() - prevLost;
+  logFile << Simulator::Now().GetSeconds() << " " << app->GetLost() << std::endl;
   logFile.close();
-  Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, app, fileName, prevLost);
+  Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, app, fileName);
 }
 
 static ns3::GlobalValue g_mmw1DistFromMainStreet("mmw1Dist", "Distance from the main street of the first MmWaveEnb",
@@ -547,10 +546,10 @@ main (int argc, char *argv[])
   std::string lostFilename = path + version + "LostUdpPackets" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension;
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"))
 
-  Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
-  Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 1024));
 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
@@ -768,7 +767,7 @@ main (int argc, char *argv[])
           dlPacketSinkHelper.SetAttribute ("PacketWindowSize", UintegerValue(256));
           serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
 
-          Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, DynamicCast<UdpServer>(serverApps.Get(serverApps.GetN()-1)), lostFilename, 0);
+          Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, DynamicCast<UdpServer>(serverApps.Get(serverApps.GetN()-1)), lostFilename);
 
           UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
           dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));

@@ -369,7 +369,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
 			// Hence the BSR of different LCGs are just summed up to get
 			// a total queue size that is used for allocation purposes.
 			uint16_t rnti = params.m_macCeList.at (i).m_rnti;
-  		std::map <uint16_t, struct UeSchedInfo>::iterator itUe = m_ueSchedInfoMap.find (rnti);
+			NS_LOG_UNCOND("In MmWaveFlexTtiMaxWeightMacScheduler DoSchedUlMacCtrlInfoReq for rnti " << rnti);
+  			std::map <uint16_t, struct UeSchedInfo>::iterator itUe = m_ueSchedInfoMap.find (rnti);
 
 			uint32_t buffer = 0;
 			for (uint8_t lcg = 1; lcg <= 3; ++lcg)
@@ -382,7 +383,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
 
 					if (itUe == m_ueSchedInfoMap.end ())
 					{
-						NS_LOG_ERROR ("UE entry not found in sched info map");
+						NS_LOG_UNCOND ("UE entry not found in sched info map");
 					}
 					else
 					{
@@ -399,8 +400,17 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
 								itUe->second.m_flowStatsUl[lcg].m_txQueueHolDelay = m_phyMacConfig->GetSubframePeriod ();
 							}
 						}
+						else
+						{
+							NS_LOG_UNCOND("diff " << diff);
+						}
 					}
 				}
+				else
+				{
+					NS_LOG_UNCOND("bufSize " << bufSize);
+				}
+				NS_LOG_UNCOND("itUe->second.m_flowStatsUl[lcg].m_totalBufSize " << itUe->second.m_flowStatsUl[lcg].m_totalBufSize);
 			}
 		}
 	}
@@ -1166,6 +1176,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 						cqi = 1;
 						mcs = 0;
 					}
+					NS_LOG_UNCOND("Alloc for rnti " << ueInfo->m_rnti << " cqi " << mcs);
 					if (cqi != 0)
 					{
 						flowFound = true;
@@ -1216,8 +1227,11 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 							ueInfo->m_ulTbSize += pduSize;
 							symAvail = 0;
 						}
-						NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_ulSymbols <<
+						if(ueInfo->m_rnti == 2)
+						{
+							NS_LOG_UNCOND ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_ulSymbols <<
 												              " UL symbols at MCS " << (unsigned)ueInfo->m_ulMcs << " (remaining == " << symAvail << ")");
+						}
 						uint32_t sduSize = pduSize - (m_rlcHdrSize + m_subHdrSize);
 						flow->m_totalSchedSize += sduSize;
 						flow->m_totalBufSize -= sduSize;

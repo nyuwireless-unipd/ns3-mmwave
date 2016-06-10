@@ -47,6 +47,13 @@ LteRlcAm::LteRlcAm ()
   m_txedBuffer.resize (1024);
   m_txedBufferSize = 0;
 
+  // LL HO
+  m_transmittingRlcSduBufferSize = 0;
+  m_txedRlcSduBuffer.resize (0);
+  m_txedRlcSduBufferSize = 0;
+  is_fragmented = 0;
+  //
+
   m_statusPduRequested = false;
   m_statusPduBufferSize = 0;
 
@@ -71,11 +78,15 @@ LteRlcAm::LteRlcAm ()
   // Configurable parameters
   m_maxRetxThreshold = 5;
   m_pollPdu = 1;
-  m_pollByte = 50;
+  m_pollByte = 50; // 1500000
 
   // SDU reassembling process
   m_reassemblingState = WAITING_S0_FULL;
   m_expectedSeqNumber = 0;
+
+  //LL HO: Reassemble
+  m_reassembleExpectedSeqNumber = 0;
+  m_assemblingState = WAITING_SI_SF;
 
   m_pollRetransmitTimerJustExpired = false;
 
@@ -153,6 +164,16 @@ LteRlcAm::DoDispose ()
   m_keepS0 = 0;
   m_controlPduBuffer = 0;
 
+  // LL HO
+  m_sdusAssembleBuffer.clear ();
+  m_reassembleExpectedSeqNumber = 0;
+  m_expectedSeqNumber = 0;
+  m_transmittingRlcSduBufferSize = 0;
+  m_transmittingRlcSduBuffer.clear();
+  is_fragmented = 0;
+  m_txedRlcSduBuffer.clear ();
+  m_txedRlcSduBufferSize = 0;
+
   LteRlc::DoDispose ();
 }
 
@@ -166,33 +187,68 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
-  if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
+  if(m_lcid == 1)
   {
-  	/** Store arrival time */
-  	Time now = Simulator::Now ();
-  	RlcTag timeTag (now);
-  	p->AddPacketTag (timeTag);
+    if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
+  {
+    /** Store arrival time */
+    Time now = Simulator::Now ();
+    RlcTag timeTag (now);
+    p->AddPacketTag (timeTag);
 
-  	/** Store PDCP PDU */
+    /** Store PDCP PDU */
 
-  	LteRlcSduStatusTag tag;
-  	tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
-  	p->AddPacketTag (tag);
+    LteRlcSduStatusTag tag;
+    tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
+    p->AddPacketTag (tag);
 
-  	NS_LOG_LOGIC ("Txon Buffer: New packet added");
-  	m_txonBuffer.push_back (p);
-  	m_txonBufferSize += p->GetSize ();
-  	NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
-  	NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+    NS_LOG_UNCOND ("Txon Buffer: New packet added");
+    m_txonBuffer.push_back (p);
+    m_txonBufferSize += p->GetSize ();
+    NS_LOG_UNCOND ("NumOfBuffers = " << m_txonBuffer.size() );
+    NS_LOG_UNCOND ("txonBufferSize = " << m_txonBufferSize);
   }
   else
   {
-  	// Discard full RLC SDU
-  	NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
-  	NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
-  	NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);
-  	NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
+    // Discard full RLC SDU
+    NS_LOG_UNCOND ("TxBuffer is full. RLC SDU discarded");
+    NS_LOG_UNCOND ("MaxTxBufferSize = " << m_maxTxBufferSize);
+    NS_LOG_UNCOND ("txonBufferSize    = " << m_txonBufferSize);
+    NS_LOG_UNCOND ("packet size     = " << p->GetSize ());
   }
+
+  }
+  else
+  {
+    if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
+  {
+    /** Store arrival time */
+    Time now = Simulator::Now ();
+    RlcTag timeTag (now);
+    p->AddPacketTag (timeTag);
+
+    /** Store PDCP PDU */
+
+    LteRlcSduStatusTag tag;
+    tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
+    p->AddPacketTag (tag);
+
+    NS_LOG_LOGIC ("Txon Buffer: New packet added");
+    m_txonBuffer.push_back (p);
+    m_txonBufferSize += p->GetSize ();
+    NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
+    NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+  }
+  else
+  {
+    // Discard full RLC SDU
+    NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
+    NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
+    NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);
+    NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
+  }
+  }
+  
 
   /** Report Buffer Status */
   DoReportBufferStatus ();
@@ -585,6 +641,16 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   //
   //
 
+  // LL HO
+  // if m_vtS is not inside the transmitting window: simply return
+  //      otherwise continue constructing sending RLC PDU with m_vtS is 
+  //      the sequence number and deliver it to the lower layer.
+  if (!IsInsideTransmittingWindow()){
+    NS_LOG_LOGIC ("SEQ = " << m_vtS << " is NOT inside transmitting window [ " << m_vtA << " , " << m_vtMs << " ). Discard TxOppotunity");
+    return;
+  } 
+ 
+
   Ptr<Packet> packet = Create<Packet> ();
   LteRlcAmHeader rlcAmHeader;
   rlcAmHeader.SetDataPdu ();
@@ -610,6 +676,18 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   NS_LOG_LOGIC ("Next segment size = " << nextSegmentSize);
   NS_LOG_LOGIC ("Remove SDU from TxBuffer");
   Ptr<Packet> firstSegment = (*(m_txonBuffer.begin ()))->Copy ();
+  
+  // LL HO
+  // tricky: store the incomplete Rlc SDU for forwarding to 
+  // target eNB in lossless HO. This will reduce the work of 
+  // reassemling the incomplete SDU later.
+  Ptr<Packet> entireSdu ;
+  // store complete the last complete SDU of the txonBuffer.
+  if (!is_fragmented){
+    NS_LOG_DEBUG ("Last complete SDU in txonBuffer size = " << firstSegment->GetSize() << " SEQ = " << m_vtS );
+    entireSdu = (*(m_txonBuffer.begin ()))->Copy ();
+  }
+
   m_txonBufferSize -= (*(m_txonBuffer.begin()))->GetSize ();
   NS_LOG_LOGIC ("txBufferSize      = " << m_txonBufferSize );
   m_txonBuffer.erase (m_txonBuffer.begin ());
@@ -634,6 +712,9 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
           // Segment txBuffer.FirstBuffer and
           // Give back the remaining segment to the transmission buffer
           Ptr<Packet> newSegment = firstSegment->CreateFragment (0, currSegmentSize);
+          // LL HO: This firstSegment is fragmented. Update the status variable.
+          is_fragmented = 1;        
+
           NS_LOG_LOGIC ("    newSegment size   = " << newSegment->GetSize ());
 
           // Status tag of the new and remaining segments
@@ -659,6 +740,9 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
           if (firstSegment->GetSize () > 0)
             {
               firstSegment->AddPacketTag (oldTag);
+
+              //LL HO Mark the first SDU is txonBuffer is fragmented. This maybe not needed.
+              is_fragmented = 1;
 
               m_txonBuffer.insert (m_txonBuffer.begin (), firstSegment);
               m_txonBufferSize += (*(m_txonBuffer.begin()))->GetSize ();
@@ -765,12 +849,35 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
           // (more segments)
           firstSegment = (*(m_txonBuffer.begin ()))->Copy ();
+          
+          // LL HO
+          // New complete SDU is taken from txonBuffer so reset the 
+          // status is_fragmented.
+          is_fragmented = 0;
+          m_txedRlcSduBuffer.push_back((*(m_txonBuffer.begin()))->Copy());
+          NS_LOG_DEBUG ("m_txedRlcSduBuffer.size() = " << m_txedRlcSduBuffer.size());
+          if (m_txedRlcSduBuffer.size() > 1024){
+            NS_LOG_DEBUG ("m_txedRlcSduBuffer.size() = " << m_txedRlcSduBuffer.size() << " clear and resize");
+            m_txedRlcSduBuffer.clear();
+            m_txedRlcSduBuffer.resize(0);
+            NS_LOG_DEBUG ("m_txedRlcSduBuffer.size() = " << m_txedRlcSduBuffer.size() << " after clear and resize");
+          }
+          // Store the last complete SDU before segmentation in txonBuffer.
+          entireSdu = (*(m_txonBuffer.begin ()))->Copy ();
+
           m_txonBufferSize -= (*(m_txonBuffer.begin()))->GetSize ();
           m_txonBuffer.erase (m_txonBuffer.begin ());
           NS_LOG_LOGIC ("        txBufferSize = " << m_txonBufferSize );
         }
-
     }
+
+  // LL HO tricky: store the complete version of the LAST incomplete Rlc SDU for forwarding to 
+  // target eNB in lossless HO. This will reduce the work of 
+  // reassemling the incomplete SDU later.
+  if (entireSdu != NULL){
+    m_segmented_rlcsdu = entireSdu;
+    NS_LOG_DEBUG ("entireSdu = " << m_segmented_rlcsdu->GetSize() << " SEQ = " << m_vtS );
+  }
 
   //
   // Build RLC header
@@ -897,6 +1004,20 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   m_macSapProvider->TransmitPdu (params);
 }
 
+/* LL HO
+ * Check if the current m_vtS (sending SEQ) is 
+ * inside the transmitting window.
+ */
+bool 
+LteRlcAm::IsInsideTransmittingWindow(){
+  //36.322 Section 5.1.3.1.1: window is m_vtA <= SN < m_vtMs, here: m_vtA <= SN <= m_vtMs.
+  if (m_vtS < m_vtMs && m_vtS >= m_vtA){
+    return true;
+  }
+  else
+    return false;
+}
+
 void
 LteRlcAm::DoNotifyHarqDeliveryFailure ()
 {
@@ -934,6 +1055,560 @@ LteRlcAm::DoNotifyUlHarqDeliveryFailure (uint8_t harqId)
 	// send NACK
 }
 
+// LL HO 
+// Packet: RlcPdu
+// Assemble RlcPdus in txed/retxBuffer to RlcSdu.
+// Note: if handover happens when RlcPdu is smaller than RlcSdu,
+// the switch condition often ends up with: NO LOSS S1 11 case 
+// and multiple RlcPdus is combined to create a RlcSdu (1500B).
+void
+LteRlcAm::Reassemble (Ptr<Packet> packet)
+{
+  LteRlcAmHeader rlcAmHeader;
+  packet->RemoveHeader (rlcAmHeader);
+  uint8_t framingInfo = rlcAmHeader.GetFramingInfo ();
+  SequenceNumber10 currSeqNumber = rlcAmHeader.GetSequenceNumber ();
+  bool expectedSnLost;
+  NS_LOG_DEBUG("currSeqNumber = " << currSeqNumber << "expected = " << m_reassembleExpectedSeqNumber);
+  //Starting state: WITH LOSS.
+  if ( currSeqNumber != m_reassembleExpectedSeqNumber )
+    {
+      expectedSnLost = true;
+      NS_LOG_LOGIC ("There are losses. Expected SN = " << m_reassembleExpectedSeqNumber  << ". Current SN = " << currSeqNumber);
+      m_reassembleExpectedSeqNumber = currSeqNumber + 1;
+    }
+  else
+    {
+      expectedSnLost = false;
+      NS_LOG_LOGIC ("No losses. Expected SN = " << m_reassembleExpectedSeqNumber  << ". Current SN = " << currSeqNumber);
+      m_reassembleExpectedSeqNumber = m_reassembleExpectedSeqNumber + 1;
+    }
+
+  // Build list of SDUs
+  uint8_t extensionBit;
+  uint16_t lengthIndicator;
+  do
+    {
+      extensionBit = rlcAmHeader.PopExtensionBit ();
+      NS_LOG_DEBUG ("E = " << (uint16_t)extensionBit);
+
+      if ( extensionBit == 0 )
+        {
+          m_sdusAssembleBuffer.push_back (packet);
+        }
+      else // extensionBit == 1
+        {
+          lengthIndicator = rlcAmHeader.PopLengthIndicator ();
+          NS_LOG_LOGIC ("LI = " << lengthIndicator);
+          NS_LOG_DEBUG ("LI = " << lengthIndicator);
+
+          // Check if there is enough data in the packet
+          if ( lengthIndicator >= packet->GetSize () )
+            {
+              NS_LOG_LOGIC ("INTERNAL ERROR: Not enough data in the packet (" << packet->GetSize () << "). Needed LI=" << lengthIndicator);
+              NS_LOG_DEBUG ("INTERNAL ERROR: Not enough data in the packet (" << packet->GetSize () << "). Needed LI=" << lengthIndicator);
+              /// \todo What to do in this case? Discard packet and continue? Or Assert?
+            }
+
+          // Split packet in two fragments
+          Ptr<Packet> data_field = packet->CreateFragment (0, lengthIndicator);
+          packet->RemoveAtStart (lengthIndicator);
+
+          m_sdusAssembleBuffer.push_back (data_field);
+        }
+    }
+  while ( extensionBit == 1 );
+
+  std::list < Ptr<Packet> >::iterator it;
+  
+  //m_assemblingState = WAITING_SI_SF;
+  // Current reassembling state
+  if      (m_assemblingState == WAITING_S0_FULL)  NS_LOG_DEBUG ("Reassembling State = 'WAITING_S0_FULL'");
+  else if (m_assemblingState == WAITING_SI_SF)    NS_LOG_DEBUG ("Reassembling State = 'WAITING_SI_SF'");
+  else                                              NS_LOG_DEBUG ("Reassembling State = Unknown state");
+
+  // Received framing Info
+  NS_LOG_LOGIC ("Framing Info = " << (uint16_t)framingInfo);
+  NS_LOG_LOGIC ("m_sdusAssembleBuffer = " << m_sdusAssembleBuffer.size ());
+  NS_LOG_DEBUG ("Framing Info = " << (uint16_t)framingInfo);
+  NS_LOG_DEBUG ("m_sdusAssembleBuffer = " << m_sdusAssembleBuffer.size ());
+ // Reassemble the list of SDUs (when there is no losses)
+  if (!expectedSnLost)
+    {
+      NS_LOG_DEBUG ("Reassembling NO LOSS ");
+      switch (m_assemblingState)
+        {
+          case WAITING_S0_FULL: //Not waiting to complete a SDU.
+                  switch (framingInfo)
+                    {
+                      //RlcPdu = RlcSdu, without loss -> m_sdusAssembleBuffer contains all RLC SDUs.
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::LAST_BYTE):
+                              m_assemblingState = WAITING_S0_FULL;
+
+                              NS_LOG_DEBUG (" S0 00 ");
+                              /**
+                              * Deliver one or multiple PDUs
+                              */
+                              for ( it = m_sdusAssembleBuffer.begin () ; it != m_sdusAssembleBuffer.end () ; it++ )
+                                {
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << (*it)->GetSize());
+                                  m_transmittingRlcSdus.push_back (*it);
+                                  m_transmittingRlcSduBufferSize += (*it)->GetSize ();
+                                }
+                              m_sdusAssembleBuffer.clear ();
+                      break;
+                      
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+                              //Received a PDU with the last part is a portion of a SDU.
+                              //Switch to waiting for complete SDU state.
+                              m_assemblingState = WAITING_SI_SF;
+                              NS_LOG_DEBUG (" S0 01 ");
+
+                              /**
+                              * Deliver full PDUs
+                              */
+                              //Previous recorded SDUs must be complete SDUs. The last PDU could 
+                              //be: (1) a part of the SDU, (2) several SDUs and a part of the last SDU.
+                              while ( m_sdusAssembleBuffer.size () > 1 )
+                                {
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                  m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                  m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+
+                              /**
+                              * Keep S0. Keep the last incomplete SDU in the sduBuffer
+                              * to wait for its ending portion.
+                              */
+                              m_keepS0 = m_sdusAssembleBuffer.front ();
+                              m_sdusAssembleBuffer.pop_front ();
+                      break;
+                      //This could not happen because in this state, PDU should presents complete 
+                      //SDU or the last part of PDU is a portion of RLC.
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::LAST_BYTE):
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+                      default:
+                              /**
+                              * ERROR: Transition not possible
+                              */
+                              NS_LOG_LOGIC ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                              NS_LOG_DEBUG ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                      break;
+                    }
+          break;
+
+          case WAITING_SI_SF:
+                  switch (framingInfo)
+                    {
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::LAST_BYTE): //finish the previous S0.
+                              m_assemblingState = WAITING_S0_FULL;  //switch state to not waiting for S0 full.
+
+                              NS_LOG_DEBUG (" SI 10 ");
+                              /**
+                              * Deliver (Kept)S0 + SN
+                              */
+                              //Received an ending flag, if the state is waiting for the ending, 
+                              //then switch to complete (S0_full)
+                              m_keepS0->AddAtEnd (m_sdusAssembleBuffer.front ());
+                              m_sdusAssembleBuffer.pop_front ();
+                              NS_LOG_DEBUG ("Received Pdu Size = " << m_keepS0->GetSize ());
+                              m_transmittingRlcSdus.push_back (m_keepS0);
+                              m_transmittingRlcSduBufferSize += m_keepS0->GetSize ();
+
+                              /**
+                                * Deliver zero, one or multiple PDUs
+                                */
+                              //Deliver the complete SDUs after the first portion of SDU that completes
+                              //the above S0.
+                              while ( ! m_sdusAssembleBuffer.empty () )
+                                {
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                  m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                  m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                      break;
+
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+                              m_assemblingState = WAITING_SI_SF;
+                              NS_LOG_DEBUG (" SI 11 ");
+                      
+                              /**
+                              * Keep SI
+                              */
+                              if ( m_sdusAssembleBuffer.size () == 1 )
+                                {
+                                  m_keepS0->AddAtEnd (m_sdusAssembleBuffer.front ());
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                              else // m_sdusAssembleBuffer.size () > 1
+                                {
+                                  /**
+                                  * Deliver (Kept)S0 + SN
+                                  */
+                                  m_keepS0->AddAtEnd (m_sdusAssembleBuffer.front ());
+                                  m_sdusAssembleBuffer.pop_front ();
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_keepS0->GetSize ());
+                                  m_transmittingRlcSdus.push_back (m_keepS0);
+                                  m_transmittingRlcSduBufferSize += m_keepS0->GetSize ();
+
+                                  /**
+                                  * Deliver zero, one or multiple PDUs
+                                  */
+                                  while ( m_sdusAssembleBuffer.size () > 1 )
+                                    {
+                                      NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                      m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                      m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                      m_sdusAssembleBuffer.pop_front ();
+                                    }
+
+                                  /**
+                                  * Keep S0
+                                  */
+                                  m_keepS0 = m_sdusAssembleBuffer.front ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                      break;
+
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::LAST_BYTE):
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+                      default:
+                              /**
+                                * ERROR: Transition not possible
+                                */
+                              NS_LOG_LOGIC ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                              NS_LOG_DEBUG ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                      break;
+                    }
+          break;
+
+          default:
+                NS_LOG_LOGIC ("INTERNAL ERROR: Wrong reassembling state = " << (uint32_t) m_assemblingState);
+          break;
+        }
+    }
+  else // Reassemble the list of SDUs (when there are losses, i.e. the received SN is not the expected one)
+    {
+    NS_LOG_DEBUG ("Reassembling WITH LOSS");
+    switch (m_assemblingState)
+        {
+          case WAITING_S0_FULL:
+                  switch (framingInfo)
+                    {
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::LAST_BYTE):
+                              m_assemblingState = WAITING_S0_FULL;
+                              NS_LOG_DEBUG (" S0 00");
+                              /**
+                               * Deliver one or multiple PDUs
+                               */
+                              for ( it = m_sdusAssembleBuffer.begin () ; it != m_sdusAssembleBuffer.end () ; it++ )
+                                { 
+                                  m_transmittingRlcSdus.push_back (*it);
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << (*it)->GetSize ());
+                                  m_transmittingRlcSduBufferSize += (*it)->GetSize ();
+                                }
+                              m_sdusAssembleBuffer.clear ();
+                      break;
+
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+                              m_assemblingState = WAITING_SI_SF;
+
+                              NS_LOG_DEBUG (" S0 01 ");
+                              /**
+                               * Deliver full PDUs
+                               */
+                              while ( m_sdusAssembleBuffer.size () > 1 )
+                                {
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                  m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                  m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+
+                              /**
+                               * Keep S0
+                               */
+                              m_keepS0 = m_sdusAssembleBuffer.front ();
+                              m_sdusAssembleBuffer.pop_front ();
+                      break;
+
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::LAST_BYTE):
+                              m_assemblingState = WAITING_S0_FULL;
+                              NS_LOG_DEBUG (" S0 10");
+                              /**
+                               * Discard the first junk portion of SDU.
+                               */
+                              m_sdusAssembleBuffer.pop_front ();
+
+                              /**
+                               * Deliver zero, one or multiple PDUs
+                               */
+                              while ( ! m_sdusAssembleBuffer.empty () )
+                                {
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                  m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                  m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                      break;
+
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+                              NS_LOG_DEBUG(" S0 11");
+                              
+                              if ( m_sdusAssembleBuffer.size () == 1 )
+                                {
+                                  m_assemblingState = WAITING_S0_FULL;
+                                }
+                              else
+                                {
+                                  m_assemblingState = WAITING_SI_SF;
+                                }
+                              /**
+                               * Discard SI or SN
+                               */
+                              m_sdusAssembleBuffer.pop_front ();
+
+                              if ( m_sdusAssembleBuffer.size () > 0 )
+                                {
+                                  /**
+                                  * Deliver zero, one or multiple PDUs
+                                  */
+                                  while ( m_sdusAssembleBuffer.size () > 1 )
+                                    {
+                                      NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                      m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                      m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                      m_sdusAssembleBuffer.pop_front ();
+                                    }
+
+                                  /**
+                                  * Keep S0
+                                  */
+                                  m_keepS0 = m_sdusAssembleBuffer.front ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                      break;
+
+                      default:
+                              /**
+                               * ERROR: Transition not possible
+                               */
+                              NS_LOG_LOGIC ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                              NS_LOG_DEBUG ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                      break;
+                    }
+          break;
+
+          case WAITING_SI_SF:
+                  switch (framingInfo)
+                    {
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::LAST_BYTE):
+                              m_assemblingState = WAITING_S0_FULL;
+
+                              NS_LOG_DEBUG (" SI 00");
+                              /**
+                               * Discard S0
+                               */
+                              m_keepS0 = 0;
+
+                              /**
+                               * Deliver one or multiple PDUs
+                               */
+                              while ( ! m_sdusAssembleBuffer.empty () )
+                                {
+                                  m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                  m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                      break;
+
+                      case (LteRlcAmHeader::FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+                              m_assemblingState = WAITING_SI_SF;
+
+                              NS_LOG_DEBUG (" SI 01");
+                              /**
+                               * Discard S0
+                               */
+                              m_keepS0 = 0;
+
+                              /**
+                               * Deliver zero, one or multiple PDUs
+                               */
+                              while ( m_sdusAssembleBuffer.size () > 1 )
+                                {
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                  m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                  m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+
+                              /**
+                               * Keep S0
+                               */
+                              m_keepS0 = m_sdusAssembleBuffer.front ();
+                              m_sdusAssembleBuffer.pop_front ();
+
+                      break;
+
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::LAST_BYTE):
+                              NS_LOG_DEBUG (" SI 10");
+                              m_assemblingState = WAITING_S0_FULL;
+
+                              /**
+                               * Discard S0
+                               */
+                              m_keepS0 = 0;
+
+                              /**
+                               * Discard SI or SN
+                               */
+                              m_sdusAssembleBuffer.pop_front ();
+
+                              /**
+                               * Deliver zero, one or multiple PDUs
+                               */
+                              while ( ! m_sdusAssembleBuffer.empty () )
+                                {
+                                  m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                  m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                      break;
+
+                      case (LteRlcAmHeader::NO_FIRST_BYTE | LteRlcAmHeader::NO_LAST_BYTE):
+
+                              NS_LOG_DEBUG(" SI 11");
+                              if ( m_sdusAssembleBuffer.size () == 1 )
+                                {
+                                  m_assemblingState = WAITING_SI_SF;
+                                  m_reassembleExpectedSeqNumber = currSeqNumber - 1; //With loss + SI_SF: Jump here until sdusBuffer is larger than 1, meaning a new SDU begins.
+                                }
+                              else
+                                {
+                                  m_assemblingState = WAITING_SI_SF;
+                                }
+
+                              /**
+                               * Discard S0
+                               */
+                              m_keepS0 = 0;
+
+                              /**
+                               * Discard SI or SN
+                               */
+                              m_sdusAssembleBuffer.pop_front ();
+
+                              if ( m_sdusAssembleBuffer.size () > 0 )
+                                {
+                                  /**
+                                   * Deliver zero, one or multiple PDUs
+                                   */
+                                  while ( m_sdusAssembleBuffer.size () > 1 )
+                                    {
+                                      NS_LOG_DEBUG ("Received Pdu Size = " << m_sdusAssembleBuffer.front()->GetSize ());
+                                      m_transmittingRlcSdus.push_back (m_sdusAssembleBuffer.front ());
+                                      m_transmittingRlcSduBufferSize += m_sdusAssembleBuffer.front()->GetSize ();
+                                      m_sdusAssembleBuffer.pop_front ();
+                                    }
+
+                                  /**
+                                   * Keep S0
+                                   */
+                                  m_keepS0 = m_sdusAssembleBuffer.front ();
+                                  m_sdusAssembleBuffer.pop_front ();
+                                }
+                      break;
+
+                      default:
+                              /**
+                                * ERROR: Transition not possible
+                                */
+                              NS_LOG_LOGIC ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                              NS_LOG_DEBUG ("INTERNAL ERROR: Transition not possible. FI = " << (uint32_t) framingInfo);
+                      break;
+                    }
+          break;
+
+          default:
+                NS_LOG_LOGIC ("INTERNAL ERROR: Wrong reassembling state = " << (uint32_t) m_assemblingState);
+                NS_LOG_DEBUG ("INTERNAL ERROR: Wrong reassembling state = " << (uint32_t) m_assemblingState);
+          break;
+        }
+  }
+  NS_LOG_DEBUG ("End RlcPdutoRlcSdu... transmittingRlcSduBufferSize= " << m_transmittingRlcSdus.size() << " Bytes= " << m_transmittingRlcSduBufferSize);
+}
+
+// LL HO
+void 
+LteRlcAm::CreateRlcSduBuffer(){
+  NS_LOG_DEBUG (this);
+  LtePdcpHeader pdcpHeader;
+  for (std::vector < Ptr<Packet> >::iterator it = m_transmittingRlcSdus.begin(); it != m_transmittingRlcSdus.end(); ++it){
+    (*it)->PeekHeader(pdcpHeader);
+    NS_LOG_DEBUG ("RLCSDU_SEQ = " << pdcpHeader.GetSequenceNumber());
+    m_transmittingRlcSduBuffer[pdcpHeader.GetSequenceNumber()] = (*it)->Copy();
+  }
+}
+
+// LL HO
+void 
+LteRlcAm::RlcPdusToRlcSdus (std::vector < RetxPdu > RlcPdus){
+
+  NS_LOG_DEBUG (this << "in RlcPdusTo..." );
+  uint16_t isGotExpectedSeqNumber = 0;
+  for ( std::vector <RetxPdu>::iterator it = RlcPdus.begin(); it != RlcPdus.end (); it++)
+        {
+          if (it->m_pdu == 0){
+            continue;
+          }
+          NS_LOG_DEBUG (this << "Pdu = " << it->m_pdu );
+          Ptr<Packet> p = it->m_pdu->Copy();
+
+          // Get RLC header parameters
+          LteRlcAmHeader rlcAmHeader;
+          p->PeekHeader (rlcAmHeader);
+          NS_LOG_DEBUG("RLC header: " << rlcAmHeader);
+          
+          //Always enter the Reassemble function with LOSS mode.
+          if (isGotExpectedSeqNumber  == 0){ 
+              isGotExpectedSeqNumber = 1;
+              m_reassembleExpectedSeqNumber = rlcAmHeader.GetSequenceNumber()+1; //To make the condition WITH LOSS true.
+          }
+          if ( rlcAmHeader.IsDataPdu () )
+            {
+              SequenceNumber10 seqNumber = rlcAmHeader.GetSequenceNumber ();
+
+              if ( rlcAmHeader.GetResegmentationFlag () == LteRlcAmHeader::SEGMENT )
+                {
+                  NS_LOG_DEBUG ("PDU segment in Txed/Retx buffer ( *absolute* SN = " << seqNumber << " )");
+                }
+              else if ( rlcAmHeader.GetResegmentationFlag () == LteRlcAmHeader::PDU )
+                {
+                  NS_LOG_DEBUG ("PDU in Txed/Retx buffer ( *absolute* SN = " << seqNumber << " )");
+                }
+              else
+                {
+                  NS_ASSERT_MSG (false, "Neither a PDU segment nor a PDU Txed/Retx buffer");
+                  return ;
+                }
+              Reassemble(p);
+            }
+          else if ( rlcAmHeader.IsControlPdu () )
+            {
+              NS_LOG_DEBUG ("Control AM RLC PDU in Txed/Retx buffer. Discard");
+            }
+          else
+            {
+              NS_LOG_DEBUG ("Wrong AM RLC PDU type in Txed/Retx buffer");
+              return;
+            }
+    }
+    CreateRlcSduBuffer();
+}
 
 void
 LteRlcAm::DoReceivePdu (Ptr<Packet> p)
@@ -1894,6 +2569,11 @@ LteRlcAm::DoReportBufferStatus (void)
       NS_LOG_INFO ("Send ReportBufferStatus: " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " 
                                                << r.retxQueueSize << ", " << r.retxQueueHolDelay << ", " 
                                                << r.statusPduSize);
+      if(m_lcid == 1) {
+              NS_LOG_UNCOND ("Send ReportBufferStatus: " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " 
+                                               << r.retxQueueSize << ", " << r.retxQueueHolDelay << ", " 
+                                               << r.statusPduSize << ", " << r.txPacketSizes.size());
+      }
       m_macSapProvider->ReportBufferStatus (r);
     }
   else

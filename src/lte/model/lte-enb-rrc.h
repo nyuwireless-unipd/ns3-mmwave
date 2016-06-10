@@ -41,6 +41,7 @@
 #include <ns3/lte-anr-sap.h>
 #include <ns3/lte-ffr-rrc-sap.h>
 #include <ns3/lte-rlc.h>
+#include <ns3/lte-rlc-am.h>
 
 #include <map>
 #include <set>
@@ -366,7 +367,9 @@ public:
   void RecvNotifyLteMmWaveHandoverCompleted();
 
 private:
-
+  //Lossless HO: merge 2 buffers into 1 with increment order.
+  std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
+  
   bool m_firstConnection;
   bool m_receivedLteMmWaveHandoverCompleted;
   uint16_t m_queuedHandoverRequestCellId;
@@ -568,6 +571,10 @@ private:
    * UE CONTEXT RELEASE is received.
    */
   EventId m_handoverLeavingTimeout;
+
+  std::vector < Ptr<Packet> > m_x2forwardingBuffer;
+  uint32_t m_x2forwardingBufferSize;
+  uint32_t m_maxx2forwardingBufferSize;
 
 }; // end of `class UeManager`
 
@@ -1421,6 +1428,8 @@ private:
   long double m_sinrThresholdDifference;
 
   long double m_outageThreshold;
+
+  uint32_t m_x2_received_cnt;
 
 }; // end of `class LteEnbRrc`
 
