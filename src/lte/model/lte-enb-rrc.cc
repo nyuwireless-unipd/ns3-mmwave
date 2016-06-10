@@ -42,6 +42,8 @@
 #include <ns3/lte-pdcp.h>
 #include <ns3/lte-rlc-um-lowlat.h>
 #include <ns3/mc-enb-pdcp.h>
+#include "ns3/lte-pdcp-tag.h"
+
 
 
 
@@ -770,6 +772,11 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
       {
         NS_LOG_LOGIC ("forwarding data to target eNB over X2-U");
         uint8_t drbid = Bid2Drbid (bid);
+
+        // In the handover case, we are interested in the additional delay over X2
+        PdcpTag pdcpTag (Simulator::Now ());
+        p->AddByteTag (pdcpTag);
+
         EpcX2Sap::UeDataParams params;
         params.sourceCellId = m_rrc->m_cellId;
         params.targetCellId = m_targetCellId;

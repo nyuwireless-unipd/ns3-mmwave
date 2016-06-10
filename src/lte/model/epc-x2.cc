@@ -24,7 +24,7 @@
 #include "ns3/node.h"
 #include "ns3/epc-gtpu-header.h"
 #include "ns3/epc-x2-tag.h"
-
+#include "ns3/lte-pdcp-tag.h"
 
 #include "ns3/epc-x2-header.h"
 #include "ns3/epc-x2.h"
@@ -571,6 +571,9 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
 
   if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
   {
+    // add PdcpTag
+    PdcpTag pdcpTag (Simulator::Now ());
+    params.ueData->AddByteTag (pdcpTag);
     // call rlc interface
     EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
     if(user != 0)

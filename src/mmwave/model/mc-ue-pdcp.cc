@@ -204,7 +204,7 @@ McUePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   // Sender timestamp
   PdcpTag pdcpTag (Simulator::Now ());
   p->AddByteTag (pdcpTag);
-  m_txPdu (m_rnti, m_lcid, p->GetSize ());
+  //m_txPdu (m_rnti, m_lcid, p->GetSize ());
 
   LteRlcSapProvider::TransmitPdcpPduParameters params;
   params.rnti = m_rnti;
@@ -242,8 +242,8 @@ McUePdcp::DoReceivePdu (Ptr<Packet> p)
     }
   m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
-  //p->RemoveAllByteTags();
-  //NS_LOG_WARN("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
+  p->RemoveAllByteTags();
+  NS_LOG_WARN("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
 
   LtePdcpHeader pdcpHeader;
   p->RemoveHeader (pdcpHeader);

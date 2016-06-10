@@ -218,23 +218,25 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
   p->AddHeader (pdcpHeader);
 
-  // Sender timestamp
-  PdcpTag pdcpTag (Simulator::Now ());
-  p->AddByteTag (pdcpTag);
-  m_txPdu (m_rnti, m_lcid, p->GetSize ());
-
   LteRlcSapProvider::TransmitPdcpPduParameters params;
   params.rnti = m_rnti;
   params.lcid = m_lcid;
-  params.pdcpPdu = p;
 
   if(m_epcX2PdcpProvider == 0 || (!m_useMmWaveConnection)) 
   {
     NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink LTE stack");
+
+    // Sender timestamp. We will use this to measure the delay on top of RLC
+    PdcpTag pdcpTag (Simulator::Now ());
+    p->AddByteTag (pdcpTag);
+    // m_txPdu (m_rnti, m_lcid, p->GetSize ());
+    params.pdcpPdu = p;
+
     m_rlcSapProvider->TransmitPdcpPdu (params);
   } 
   else if (m_useMmWaveConnection) 
   {
+    // Do not add sender time stamp: we are not interested in adding X2 delay for MC connections
     NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink MmWave stack on remote cell " << m_ueDataParams.targetCellId);
     m_ueDataParams.ueData = p;
     m_epcX2PdcpProvider->SendMcPdcpPdu (m_ueDataParams);
@@ -260,8 +262,8 @@ McEnbPdcp::DoReceivePdu (Ptr<Packet> p)
     }
   m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
-  //p->RemoveAllByteTags();
-  //NS_LOG_WARN("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
+  p->RemoveAllByteTags();
+  NS_LOG_WARN("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
   
   LtePdcpHeader pdcpHeader;
   p->RemoveHeader (pdcpHeader);
