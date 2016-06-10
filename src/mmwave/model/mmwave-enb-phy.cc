@@ -71,7 +71,7 @@ MmWaveEnbPhy::GetTypeId (void)
 	               MakeDoubleChecker<double> ())
 	.AddAttribute ("UpdateSinrEstimatePeriod",
 	               "Period (in ms) of update of SINR estimate of all the UE",
-	               DoubleValue (1.6), //TODO 1.6
+	               DoubleValue (1.6), //TODO considering refactoring in MmWavePhyMacCommon
 	               MakeDoubleAccessor (&MmWaveEnbPhy::m_updateSinrPeriod),
 	               MakeDoubleChecker<double> ())
 	.AddAttribute ("UpdateUeSinrEstimatePeriod",

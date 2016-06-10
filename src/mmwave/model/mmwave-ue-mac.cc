@@ -183,6 +183,16 @@ MmWaveUeMac::GetTypeId (void)
 	static TypeId tid = TypeId ("ns3::MmWaveUeMac")
 			.SetParent<MmWaveMac> ()
 			.AddConstructor<MmWaveUeMac> ()
+			.AddAttribute ("UpdateUeSinrEstimatePeriod",
+               "Period (in ms) of reporting of SINR estimate of all the UE",
+               DoubleValue (25.6),
+               MakeDoubleAccessor (&MmWaveUeMac::m_ueUpdateSinrPeriod),
+               MakeDoubleChecker<double> ())
+		    .AddAttribute ("InterRatHoCapable",
+                 "True if this UE supports hard handover between LTE and MmWave",
+                 BooleanValue (false),
+                 MakeBooleanAccessor (&MmWaveUeMac::m_interRatHoCapable),
+                 MakeBooleanChecker ())
 	;
 	return tid;
 }
@@ -200,6 +210,7 @@ MmWaveUeMac::MmWaveUeMac (void)
 	m_macSapProvider = new UeMemberMmWaveMacSapProvider (this);
 	m_phySapUser = new MacUeMemberPhySapUser (this);
 	m_raPreambleUniformVariable = CreateObject<UniformRandomVariable> ();
+	m_randomAccessProcedureDelay = CreateObject<UniformRandomVariable> ();
 }
 
 MmWaveUeMac::~MmWaveUeMac (void)
@@ -234,6 +245,9 @@ MmWaveUeMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 	m_miUlHarqProcessesPacketTimer.resize (m_phyMacConfig->GetNumHarqProcess (), 0);
 
 	m_bsrPeriodicity = MicroSeconds (m_phyMacConfig->GetSymbolsPerSubframe());
+
+  	m_randomAccessProcedureDelay->SetAttribute ("Min", DoubleValue (0.0));
+  	m_randomAccessProcedureDelay->SetAttribute ("Max", DoubleValue (m_ueUpdateSinrPeriod));
 }
 
 Ptr<MmWavePhyMacCommon>
@@ -854,6 +868,8 @@ MmWaveUeMac::SendRaPreamble(bool contention)
 	/*raRnti should be subframeNo -1 */
 	m_raRnti = 1;
 	m_waitingForRaResponse = true;
+
+	NS_LOG_INFO("SendRachPreamble at time " << Simulator::Now());
 	m_phySapProvider->SendRachPreamble(m_raPreambleId, m_raRnti);
 }
 
@@ -865,7 +881,16 @@ MmWaveUeMac::DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint
 	m_rnti = rnti;
 	m_raPreambleId = preambleId;
   	bool contention = false;
-  	SendRaPreamble (contention);
+  	if(!m_interRatHoCapable) // we assume that the LTE eNB can send directionality info, thus the UE has not to wait to collect updated info
+  	{
+	  	SendRaPreamble (contention);  		
+  	}
+  	else // instead in a single connectivity framework, the UE must wait for the periodic update with the channel estimate
+  	{
+  		Time delay = MilliSeconds(m_randomAccessProcedureDelay->GetValue());
+  		NS_LOG_LOGIC("Schedule RA with delay " << delay);
+  		Simulator::Schedule(delay, &MmWaveUeMac::SendRaPreamble, this, contention);
+  	}
 }
 
 void
@@ -922,6 +947,15 @@ MmWaveUeMac::DoReset ()
 	m_macPduMap.clear();
 
 }
+
+int64_t
+MmWaveUeMac::AssignStreams (int64_t stream)
+{
+ NS_LOG_FUNCTION (this << stream);
+ m_randomAccessProcedureDelay->SetStream (stream);
+ return 1;
+}
+
 //////////////////////////////////////////////
 
 

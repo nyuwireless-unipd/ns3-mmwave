@@ -45,6 +45,16 @@ public:
 
 	void RecvRaResponse (BuildRarListElement_s raResponse);
 
+	/**
+	* Assign a fixed random variable stream number to the random variables
+	* used by this model.  Return the number of streams (possibly zero) that
+	* have been assigned.
+	*
+	* \param stream first stream index to use
+	* \return the number of stream indices assigned by this model
+	*/
+	int64_t AssignStreams (int64_t stream);
+
 private:
 
 	void DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params);
@@ -122,6 +132,9 @@ private:
 
 	bool m_waitingForRaResponse;
 	static uint8_t g_raPreambleId;
+	Ptr<UniformRandomVariable> m_randomAccessProcedureDelay;
+	double m_ueUpdateSinrPeriod;
+	bool m_interRatHoCapable;
 
 };
 

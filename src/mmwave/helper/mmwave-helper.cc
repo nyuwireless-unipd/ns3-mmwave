@@ -830,6 +830,7 @@ MmWaveHelper::InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n)
 
 	mmWavePhy->SetCofigurationParameters (m_phyMacCommon);
 	mmWaveMac->SetCofigurationParameters (m_phyMacCommon);
+	mmWaveMac->SetAttribute("InterRatHoCapable", BooleanValue(true));
 
 	mmWavePhy->SetPhySapUser (mmWaveMac->GetPhySapUser());
 	mmWaveMac->SetPhySapProvider (mmWavePhy->GetPhySapProvider());
