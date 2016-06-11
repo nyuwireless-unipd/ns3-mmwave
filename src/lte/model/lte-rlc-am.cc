@@ -2566,14 +2566,9 @@ LteRlcAm::DoReportBufferStatus (void)
 
   if ( r.txQueueSize != 0 || r.retxQueueSize != 0 || r.statusPduSize != 0 )
     {
-      NS_LOG_INFO ("Send ReportBufferStatus: " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " 
-                                               << r.retxQueueSize << ", " << r.retxQueueHolDelay << ", " 
-                                               << r.statusPduSize);
-      if(m_lcid == 1) {
-              NS_LOG_UNCOND ("Send ReportBufferStatus: " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " 
+      NS_LOG_UNCOND ("Send ReportBufferStatus: " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " 
                                                << r.retxQueueSize << ", " << r.retxQueueHolDelay << ", " 
                                                << r.statusPduSize << ", " << r.txPacketSizes.size());
-      }
       m_macSapProvider->ReportBufferStatus (r);
     }
   else

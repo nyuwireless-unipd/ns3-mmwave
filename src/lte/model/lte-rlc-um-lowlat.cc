@@ -1197,7 +1197,7 @@ LteRlcUmLowLat::DoReportBufferStatus (void)
 
   r.arrivalRate = m_arrivalRate;
 
-  NS_LOG_LOGIC ("Send ReportBufferStatus = " << r.txQueueSize << ", " << r.txQueueHolDelay );
+  NS_LOG_UNCOND ("Send ReportBufferStatus = " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " << r.txPacketSizes.size());
   m_macSapProvider->ReportBufferStatus (r);
 }
 

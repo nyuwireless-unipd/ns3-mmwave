@@ -902,7 +902,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 					itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
 					SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
 					slotInfo.m_dci = dciInfoReTx;
-					NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+					NS_LOG_UNCOND ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
 							             " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
 							             " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
 					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
@@ -1034,6 +1034,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			itUeAllocMap->second->m_dlSymbolsRetx = 0;
 			itUeAllocMap->second->m_ulSymbolsRetx = 0;
 		}
+		NS_LOG_UNCOND("No further symbols available");
 		return;
 	}
 
@@ -1061,97 +1062,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 				}
 
 				UeSchedInfo* ueInfo = flow->m_ueSchedInfo;
-				if (!flow->m_isUplink && symAvail > 0)
-				{
-					std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (ueInfo->m_rnti);
-					uint8_t cqi = 0;
-					if (itCqi != m_wbCqiRxed.end ())
-					{
-						cqi = itCqi->second;
-					}
-					else // no CQI available
-					{
-						NS_LOG_INFO (this << " UE " << ueInfo->m_rnti << " does not have DL-CQI");
-						cqi = 1; // lowest value for trying a transmission
-					}
-					if (cqi != 0)
-					{
-						flowFound = true;
-						itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
-						if (itUeAllocMap == ueAllocMap.end ())
-						{
-							itUeAllocMap = ueAllocMap.insert(std::pair <uint16_t, struct UeSchedInfo*> (ueInfo->m_rnti, ueInfo)).first;
-						}
-						ueInfo->m_dlMcs = m_amc->GetMcsFromCqi (cqi);  // get MCS
-						// compute total TB size if we send whole RLC PDU
-						uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
-						// get required symbols to send whole RLC PDU
-						// (could be zero additional symbols if enough resources already allocated)
-						uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_dlTbSize + pduSize)*8, ueInfo->m_dlMcs) - ueInfo->m_dlSymbols;
-						if (numSymReq <= (unsigned)symAvail)	// sufficient symbols to TX whole RLC PDU at this MCS
-						{
-							flow->m_txPacketSizes.pop_front ();
-							// fixed TTI: slot must be multiple of m_symPerSlot symbols
-							// (for last slot, can be less due to control period)
-							if (m_fixedTti)
-							{
-								uint32_t numSymFixed = m_symPerSlot * ceil((double)numSymReq/(double)m_symPerSlot);
-								if (numSymFixed > (unsigned)symAvail)
-								{
-									numSymFixed = symAvail;
-								}
-								if (numSymFixed > numSymReq)
-								{
-									numSymReq = numSymFixed;
-									// recalculate TB size in case numSymReq increased
-									pduSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + numSymReq) / 8 - ueInfo->m_dlTbSize;
-								}
-							}
-							ueInfo->m_dlSymbols += numSymReq;		// add to total symbols/bits for UE
-							ueInfo->m_dlTbSize += pduSize;
-							symAvail -= numSymReq;
-							flow->m_txPacketDelays.pop_front ();
-							if (flow->m_txPacketDelays.size () > 0)
-							{
-								// add the difference in delays/arrival times between the old and new HOL packet to the deadline
-								// assume all packets have the same initial deadline
-								flow->m_txQueueHolDelay = flow->m_txPacketDelays.front ();
-								//flow->m_deadlineUs += oldHolDelay - flow->m_txQueueHolDelay;
-							}
-						}
-						else	// insufficient symbols, allocate remaining symbols (must segment RLC PDU)
-						{
-							// get maximum TB size from MCS and available symbols
-							uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + symAvail);
-							pduSize = ceil(tbSizeBits/8.0) - ueInfo->m_dlTbSize - (m_rlcHdrSize + m_subHdrSize);
-							//NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
-							flow->m_txPacketSizes.front () -= pduSize;		// subtract from HOL packet
-							ueInfo->m_dlSymbols += symAvail;
-							ueInfo->m_dlTbSize += pduSize;
-							symAvail = 0;
-						}
-						NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_dlSymbols <<
-						              " DL symbols at MCS " << (unsigned)ueInfo->m_dlMcs << " (remaining == " << symAvail << ")");
-						RlcPduInfo rlcInfo (flow->m_lcid, pduSize);
-						ueInfo->m_rlcPduInfo.push_back (rlcInfo);
-						uint32_t sduSize = pduSize - (m_rlcHdrSize + m_subHdrSize);
-						//flow->m_totalSchedSize += sduSize;
-						flow->m_totalBufSize -= sduSize;
-						/*flow->m_schedPacketSizes.push_front (sduSize);
-						if (flow->m_schedPacketSizes.size () > m_phyMacConfig->GetL1L2CtrlLatency ())
-						{
-							flow->m_totalSchedSize -= flow->m_schedPacketSizes.back ();
-							flow->m_schedPacketSizes.pop_back ();
-						}*/
-					}
-					else
-					{
-						// out of range (SINR too low)
-						NS_LOG_INFO ("*** RNTI " << ueInfo->m_rnti << " DL-CQI out of range, skipping allocation in UL");
-						flowIt++; // try next flow
-					}
-				}
-				else if (flow->m_isUplink && symAvail > 0)
+				NS_LOG_UNCOND("Consider UE " << ueInfo->m_rnti << " with ul flow " << flow->m_isUplink << " symAvail " << symAvail);
+				if (flow->m_isUplink && symAvail > 0)
 				{
 					std::map <uint16_t, struct UlCqiMapElem>::iterator itCqi = m_ueUlCqi.find (ueInfo->m_rnti);
 					int cqi = 0;
@@ -1249,6 +1161,97 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 						flowIt++; // try next flow
 					}
 				}
+				else if (!flow->m_isUplink && symAvail > 0)
+				{
+					std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (ueInfo->m_rnti);
+					uint8_t cqi = 0;
+					if (itCqi != m_wbCqiRxed.end ())
+					{
+						cqi = itCqi->second;
+					}
+					else // no CQI available
+					{
+						NS_LOG_INFO (this << " UE " << ueInfo->m_rnti << " does not have DL-CQI");
+						cqi = 1; // lowest value for trying a transmission
+					}
+					if (cqi != 0)
+					{
+						flowFound = true;
+						itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
+						if (itUeAllocMap == ueAllocMap.end ())
+						{
+							itUeAllocMap = ueAllocMap.insert(std::pair <uint16_t, struct UeSchedInfo*> (ueInfo->m_rnti, ueInfo)).first;
+						}
+						ueInfo->m_dlMcs = m_amc->GetMcsFromCqi (cqi);  // get MCS
+						// compute total TB size if we send whole RLC PDU
+						uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
+						// get required symbols to send whole RLC PDU
+						// (could be zero additional symbols if enough resources already allocated)
+						uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_dlTbSize + pduSize)*8, ueInfo->m_dlMcs) - ueInfo->m_dlSymbols;
+						if (numSymReq <= (unsigned)symAvail)	// sufficient symbols to TX whole RLC PDU at this MCS
+						{
+							flow->m_txPacketSizes.pop_front ();
+							// fixed TTI: slot must be multiple of m_symPerSlot symbols
+							// (for last slot, can be less due to control period)
+							if (m_fixedTti)
+							{
+								uint32_t numSymFixed = m_symPerSlot * ceil((double)numSymReq/(double)m_symPerSlot);
+								if (numSymFixed > (unsigned)symAvail)
+								{
+									numSymFixed = symAvail;
+								}
+								if (numSymFixed > numSymReq)
+								{
+									numSymReq = numSymFixed;
+									// recalculate TB size in case numSymReq increased
+									pduSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + numSymReq) / 8 - ueInfo->m_dlTbSize;
+								}
+							}
+							ueInfo->m_dlSymbols += numSymReq;		// add to total symbols/bits for UE
+							ueInfo->m_dlTbSize += pduSize;
+							symAvail -= numSymReq;
+							flow->m_txPacketDelays.pop_front ();
+							if (flow->m_txPacketDelays.size () > 0)
+							{
+								// add the difference in delays/arrival times between the old and new HOL packet to the deadline
+								// assume all packets have the same initial deadline
+								flow->m_txQueueHolDelay = flow->m_txPacketDelays.front ();
+								//flow->m_deadlineUs += oldHolDelay - flow->m_txQueueHolDelay;
+							}
+						}
+						else	// insufficient symbols, allocate remaining symbols (must segment RLC PDU)
+						{
+							// get maximum TB size from MCS and available symbols
+							uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + symAvail);
+							pduSize = ceil(tbSizeBits/8.0) - ueInfo->m_dlTbSize - (m_rlcHdrSize + m_subHdrSize);
+							//NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
+							flow->m_txPacketSizes.front () -= pduSize;		// subtract from HOL packet
+							ueInfo->m_dlSymbols += symAvail;
+							ueInfo->m_dlTbSize += pduSize;
+							symAvail = 0;
+						}
+						NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_dlSymbols <<
+						              " DL symbols at MCS " << (unsigned)ueInfo->m_dlMcs << " (remaining == " << symAvail << ")");
+						RlcPduInfo rlcInfo (flow->m_lcid, pduSize);
+						ueInfo->m_rlcPduInfo.push_back (rlcInfo);
+						uint32_t sduSize = pduSize - (m_rlcHdrSize + m_subHdrSize);
+						//flow->m_totalSchedSize += sduSize;
+						flow->m_totalBufSize -= sduSize;
+						/*flow->m_schedPacketSizes.push_front (sduSize);
+						if (flow->m_schedPacketSizes.size () > m_phyMacConfig->GetL1L2CtrlLatency ())
+						{
+							flow->m_totalSchedSize -= flow->m_schedPacketSizes.back ();
+							flow->m_schedPacketSizes.pop_back ();
+						}*/
+					}
+					else
+					{
+						// out of range (SINR too low)
+						NS_LOG_INFO ("*** RNTI " << ueInfo->m_rnti << " DL-CQI out of range, skipping allocation in UL");
+						flowIt++; // try next flow
+					}
+				}
+				
 				else
 				{
 					flowIt++;
