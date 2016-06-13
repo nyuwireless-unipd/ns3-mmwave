@@ -676,34 +676,54 @@ UeManager::PrepareHandover (uint16_t cellId)
  * Merge 2 buffers of RlcAmPdus into 1 vector with increment order of Pdus
  */
 std::vector < LteRlcAm::RetxPdu >
-UeManager::MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second){
+UeManager::MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second)
+{
   LteRlcAmHeader rlcamHeader_1, rlcamHeader_2;
   std::vector < LteRlcAm::RetxPdu> result;
   std::vector < LteRlcAm::RetxPdu>::iterator it_1 = first.begin();
   std::vector < LteRlcAm::RetxPdu>::iterator it_2 = second.begin();
+  bool end_1_reached = false;
+  bool end_2_reached = false;
   while (it_1 != first.end() && it_2 != second.end()){
     while ((*it_1).m_pdu == 0){
-      it_1++;
+      ++it_1;
+      if(it_1 == first.end())
+      {
+        end_1_reached = true;
+        break;
+      }
     }
     while ((*it_2).m_pdu == 0){
-      it_2++;
-    }
-    (*it_1).m_pdu->PeekHeader(rlcamHeader_1);
-    (*it_2).m_pdu->PeekHeader(rlcamHeader_2);
-    if (rlcamHeader_1.GetSequenceNumber() > rlcamHeader_2.GetSequenceNumber()){
-      result.push_back((*it_2));  
-      ++it_2;       
-    }
-    else if (rlcamHeader_2.GetSequenceNumber() > rlcamHeader_1.GetSequenceNumber()){
-      result.push_back((*it_1));
-      ++it_1;         
-    }
-    else {
-      result.push_back((*it_1));
-      ++it_1;
       ++it_2;
+      if(it_2 == second.end())
+      {
+        end_2_reached = true;
+        break;
+      }
     }
-    NS_LOG_DEBUG ("first,second = " << rlcamHeader_1.GetSequenceNumber() << "," << rlcamHeader_2.GetSequenceNumber());
+    if(!end_1_reached && !end_2_reached)
+    {
+      (*it_1).m_pdu->PeekHeader(rlcamHeader_1);
+      (*it_2).m_pdu->PeekHeader(rlcamHeader_2);
+      if (rlcamHeader_1.GetSequenceNumber() > rlcamHeader_2.GetSequenceNumber()){
+        result.push_back((*it_2));  
+        ++it_2;       
+      }
+      else if (rlcamHeader_2.GetSequenceNumber() > rlcamHeader_1.GetSequenceNumber()){
+        result.push_back((*it_1));
+        ++it_1;         
+      }
+      else {
+        result.push_back((*it_1));
+        ++it_1;
+        ++it_2;
+      }
+      NS_LOG_DEBUG ("first,second = " << rlcamHeader_1.GetSequenceNumber() << "," << rlcamHeader_2.GetSequenceNumber());
+    }
+    else
+    {
+      break;
+    }
   }
   while (it_1 != first.end()){
     result.push_back((*it_1));
@@ -729,6 +749,8 @@ UeManager::RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params
   // decode the message and eventually reencode it. This way we can
   // support both a real RRC protocol implementation and an ideal one
   // without actual RRC protocol encoding. 
+
+  // TODO for MC devices, when performing handover between mmWave cells, forward the Rlc buffers
 
   Ptr<Packet> encodedHandoverCommand = params.rrcContext;
   LteRrcSap::RrcConnectionReconfiguration handoverCommand = m_rrc->m_rrcSapUser->DecodeHandoverCommand (encodedHandoverCommand);
@@ -772,12 +794,14 @@ UeManager::RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params
     {
       //Copy lte-rlc-am.m_txOnBuffer to X2 forwarding buffer.
       Ptr<LteRlcAm> rlcAm = drbIt->second->m_rlc->GetObject<LteRlcAm>();
-      std::vector < Ptr<Packet> > txonBuffer = rlcAm->GetTxBuffer();
       uint32_t txonBufferSize = rlcAm->GetTxBufferSize();
-      std::vector < LteRlcAm::RetxPdu > txedBuffer = rlcAm->GetTxedBuffer();
+      std::vector < Ptr<Packet> > txonBuffer = rlcAm->GetTxBuffer();
+      //m_x2forwardingBufferSize =  drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize();
+      //m_x2forwardingBuffer = drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBuffer();
       uint32_t txedBufferSize = rlcAm->GetTxedBufferSize();
-      std::vector < LteRlcAm::RetxPdu > retxBuffer = rlcAm->GetRetxBuffer();
+      std::vector < LteRlcAm::RetxPdu > txedBuffer = rlcAm->GetTxedBuffer();
       uint32_t retxBufferSize = rlcAm->GetRetxBufferSize();
+      std::vector < LteRlcAm::RetxPdu > retxBuffer = rlcAm->GetRetxBuffer();
       
       //Translate Pdus in Rlc txed/retx buffer into RLC Sdus
       //and put these Sdus into rlcAm->m_transmittingRlcSdus.
@@ -823,7 +847,7 @@ UeManager::RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params
           Ptr<Packet> segmentedRlcsdu = rlcAm->GetSegmentedRlcsdu();
           if (segmentedRlcsdu != NULL){
             segmentedRlcsdu->PeekHeader(pdcpHeader);
-            NS_LOG_DEBUG(this << "SegmenetedRlcSdu = " << segmentedRlcsdu->GetSize() << " SEQ = " << pdcpHeader.GetSequenceNumber());
+            NS_LOG_DEBUG(this << "SegmentedRlcSdu = " << segmentedRlcsdu->GetSize() << " SEQ = " << pdcpHeader.GetSequenceNumber());
             //insert the complete version of the fragmented SDU to the front of txonBuffer.
             txonBuffer.insert(txonBuffer.begin(),segmentedRlcsdu);
           }
@@ -1086,6 +1110,11 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
       if(pdcp != 0)
       {
         pdcp->SwitchConnection(useMmWaveConnection);
+        // TODO forward packets in RLC buffers! 
+        // when a switch happens, the swicth target RETX and TXED buffers of RLC AM are emptied, and 
+        // the different windows are resetted.
+        // then the switch message is sent and the RLC buffers are fed back to the pdpc
+
       }     
       else
       {
@@ -2143,7 +2172,7 @@ LteEnbRrc::GetTypeId (void)
              MakeBooleanChecker ())
     .AddAttribute ("HoSinrDifference",
              "The value for which an handover between MmWave eNB is triggered",
-             DoubleValue (2),
+             DoubleValue (3),
              MakeDoubleAccessor (&LteEnbRrc::m_sinrThresholdDifference),
              MakeDoubleChecker<double> ())
     // Trace sources

@@ -187,40 +187,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
-  if(m_lcid == 1)
-  {
-    if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
-  {
-    /** Store arrival time */
-    Time now = Simulator::Now ();
-    RlcTag timeTag (now);
-    p->AddPacketTag (timeTag);
-
-    /** Store PDCP PDU */
-
-    LteRlcSduStatusTag tag;
-    tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
-    p->AddPacketTag (tag);
-
-    NS_LOG_UNCOND ("Txon Buffer: New packet added");
-    m_txonBuffer.push_back (p);
-    m_txonBufferSize += p->GetSize ();
-    NS_LOG_UNCOND ("NumOfBuffers = " << m_txonBuffer.size() );
-    NS_LOG_UNCOND ("txonBufferSize = " << m_txonBufferSize);
-  }
-  else
-  {
-    // Discard full RLC SDU
-    NS_LOG_UNCOND ("TxBuffer is full. RLC SDU discarded");
-    NS_LOG_UNCOND ("MaxTxBufferSize = " << m_maxTxBufferSize);
-    NS_LOG_UNCOND ("txonBufferSize    = " << m_txonBufferSize);
-    NS_LOG_UNCOND ("packet size     = " << p->GetSize ());
-  }
-
-  }
-  else
-  {
-    if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
+  if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
   {
     /** Store arrival time */
     Time now = Simulator::Now ();
@@ -247,8 +214,6 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
     NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);
     NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
   }
-  }
-  
 
   /** Report Buffer Status */
   DoReportBufferStatus ();
@@ -472,6 +437,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
                   NS_LOG_INFO ("Move SN = " << seqNumberValue << " back to txedBuffer");
                   m_txedBuffer.at (seqNumberValue).m_pdu = m_retxBuffer.at (seqNumberValue).m_pdu->Copy ();
                   m_txedBuffer.at (seqNumberValue).m_retxCount = m_retxBuffer.at (seqNumberValue).m_retxCount;
+                  NS_ASSERT_MSG(m_txedBuffer.at (seqNumberValue).m_pdu != 0, "Just inserted an invalid pointer");
                   m_txedBufferSize += m_txedBuffer.at (seqNumberValue).m_pdu->GetSize ();
 
                   m_retxBufferSize -= m_retxBuffer.at (seqNumberValue).m_pdu->GetSize ();
@@ -987,6 +953,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   m_txedBufferSize += packet->GetSize ();
   m_txedBuffer.at ( rlcAmHeader.GetSequenceNumber ().GetValue () ).m_pdu = packet->Copy ();
   m_txedBuffer.at ( rlcAmHeader.GetSequenceNumber ().GetValue () ).m_retxCount = 0;
+  NS_ASSERT_MSG(m_txedBuffer.at (rlcAmHeader.GetSequenceNumber ().GetValue ()).m_pdu != 0, "Just inserted an invalid pointer");
 
   // Sender timestamp
   RlcTag rlcTag (Simulator::Now ());
@@ -1002,6 +969,65 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   params.harqProcessId = harqId;
 
   m_macSapProvider->TransmitPdu (params);
+}
+
+std::vector < Ptr<Packet> > 
+LteRlcAm::GetTxBuffer()
+{
+  std::vector < Ptr<Packet> > toBeReturned;
+  toBeReturned.insert(toBeReturned.begin(), m_txonBuffer.begin(), m_txonBuffer.end());
+  m_txonBuffer.clear();
+  m_txonBufferSize = 0;
+  return toBeReturned;
+}
+uint32_t LteRlcAm::GetTxBufferSize()
+{
+  return m_txonBufferSize;
+}
+
+std::vector < LteRlcAm::RetxPdu > 
+LteRlcAm::GetTxedBuffer()
+{
+  //std::vector < LteRlcAm::RetxPdu > toBeReturned;
+  //toBeReturned.insert(toBeReturned.begin(), m_txedBuffer.begin(), m_txedBuffer.end());
+  return m_txedBuffer;
+}
+uint32_t 
+LteRlcAm::GetTxedBufferSize()
+{
+  return m_txedBufferSize;
+}
+
+std::vector < LteRlcAm::RetxPdu > 
+LteRlcAm::GetRetxBuffer()
+{
+  std::vector < LteRlcAm::RetxPdu > toBeReturned;
+  toBeReturned.insert(toBeReturned.begin(), m_retxBuffer.begin(), m_retxBuffer.end());
+  return toBeReturned;
+}
+
+uint32_t 
+LteRlcAm::GetRetxBufferSize()
+{
+  return m_retxBufferSize;
+}
+
+std::map < uint32_t, Ptr<Packet> > 
+LteRlcAm::GetTransmittingRlcSduBuffer()
+{
+  return m_transmittingRlcSduBuffer;
+  // TODO check if it must be emptied
+}
+uint32_t 
+LteRlcAm::GetTransmittingRlcSduBufferSize()
+{
+  return m_transmittingRlcSduBufferSize;
+}
+
+Ptr<Packet> 
+LteRlcAm::GetSegmentedRlcsdu()
+{
+  return m_segmented_rlcsdu;
 }
 
 /* LL HO
@@ -1556,11 +1582,11 @@ LteRlcAm::CreateRlcSduBuffer(){
 
 // LL HO
 void 
-LteRlcAm::RlcPdusToRlcSdus (std::vector < RetxPdu > RlcPdus){
+LteRlcAm::RlcPdusToRlcSdus (std::vector < LteRlcAm::RetxPdu > RlcPdus){
 
   NS_LOG_DEBUG (this << "in RlcPdusTo..." );
   uint16_t isGotExpectedSeqNumber = 0;
-  for ( std::vector <RetxPdu>::iterator it = RlcPdus.begin(); it != RlcPdus.end (); it++)
+  for ( std::vector <LteRlcAm::RetxPdu>::iterator it = RlcPdus.begin(); it != RlcPdus.end (); it++)
         {
           if (it->m_pdu == 0){
             continue;

@@ -61,37 +61,19 @@ public:
   virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params);
 
   // LL HO
-  std::vector < Ptr<Packet> > GetTxBuffer(){
-    return m_txonBuffer;
-  }
-  uint32_t GetTxBufferSize(){
-    return m_txonBufferSize;
-  }
+  std::vector < Ptr<Packet> > GetTxBuffer();
+  uint32_t GetTxBufferSize();
   
-  std::vector < RetxPdu > GetTxedBuffer(){
-    return m_txedBuffer;
-  }
-  uint32_t GetTxedBufferSize(){
-    return m_txedBufferSize;
-  }
+  std::vector < RetxPdu > GetTxedBuffer();
+  uint32_t GetTxedBufferSize();
 
-  std::vector < RetxPdu > GetRetxBuffer(){
-    return m_retxBuffer;
-  }
-  uint32_t GetRetxBufferSize(){
-    return m_retxBufferSize;
-  }
+  std::vector < RetxPdu > GetRetxBuffer();
+  uint32_t GetRetxBufferSize();
 
-  std::map < uint32_t, Ptr<Packet> > GetTransmittingRlcSduBuffer(){
-    return m_transmittingRlcSduBuffer;
-  }
-  uint32_t GetTransmittingRlcSduBufferSize(){
-    return m_transmittingRlcSduBufferSize;
-  }
+  std::map < uint32_t, Ptr<Packet> > GetTransmittingRlcSduBuffer();
+  uint32_t GetTransmittingRlcSduBufferSize();
 
-  Ptr<Packet> GetSegmentedRlcsdu(){
-    return m_segmented_rlcsdu;
-  }
+  Ptr<Packet> GetSegmentedRlcsdu();
   ///< translate a vector of Rlc PDUs to Rlc SDUs 
   ///< and put the Rlc SDUs into m_transmittingRlcSdus.
   void  RlcPdusToRlcSdus (std::vector < RetxPdu >  Pdus);
