@@ -547,6 +547,7 @@ LteUeMac::DoReceivePhyPdu (Ptr<Packet> p)
       std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (tag.GetLcid ());
       if (it != m_lcInfoMap.end ())
         {
+          NS_LOG_UNCOND("LteUeMac ReceivePhyPdu");
           it->second.macSapUser->ReceivePdu (p);
         }
       else

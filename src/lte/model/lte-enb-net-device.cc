@@ -95,13 +95,13 @@ TypeId LteEnbNetDevice::GetTypeId (void)
                    MakePointerChecker <LteEnbPhy> ())
     .AddAttribute ("UlBandwidth",
                    "Uplink Transmission Bandwidth Configuration in number of Resource Blocks",
-                   UintegerValue (50),
+                   UintegerValue (100),
                    MakeUintegerAccessor (&LteEnbNetDevice::SetUlBandwidth, 
                                          &LteEnbNetDevice::GetUlBandwidth),
                    MakeUintegerChecker<uint8_t> ())
     .AddAttribute ("DlBandwidth",
                    "Downlink Transmission Bandwidth Configuration in number of Resource Blocks",
-                   UintegerValue (50),
+                   UintegerValue (100),
                    MakeUintegerAccessor (&LteEnbNetDevice::SetDlBandwidth, 
                                          &LteEnbNetDevice::GetDlBandwidth),
                    MakeUintegerChecker<uint8_t> ())

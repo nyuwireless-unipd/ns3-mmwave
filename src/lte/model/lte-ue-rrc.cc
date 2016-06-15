@@ -182,7 +182,7 @@ LteUeRrc::GetTypeId (void)
     .AddAttribute ("DataRadioRlcMap", "List of UE RLC for Secondary Connection by LCID.",
                    ObjectMapValue (),
                    MakeObjectMapAccessor (&LteUeRrc::m_rlcMap),
-                   MakeObjectMapChecker<LteRlc> ())
+                   MakeObjectMapChecker<RlcBearerInfo> ())
     .AddAttribute ("Srb0", "SignalingRadioBearerInfo for SRB0",
                    PointerValue (),
                    MakePointerAccessor (&LteUeRrc::m_srb0),
@@ -1196,6 +1196,122 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
       if(pdcp != 0)
       {
         pdcp->SwitchConnection(msg.useMmWaveConnection);
+
+        if(msg.useMmWaveConnection)
+        {
+          uint8_t lcid = m_drbMap.find(*iter)->second->m_logicalChannelIdentity;
+          m_cmacSapProvider->RemoveLc (lcid);
+
+          // reset the LTE RLC
+          TypeId rlcTypeId;
+          if (m_useRlcSm)
+            {
+              rlcTypeId = LteRlcSm::GetTypeId ();
+            }
+          else
+            {
+              switch (m_drbMap.find(*iter)->second->m_rlcConfig.choice)
+                {
+                case LteRrcSap::RlcConfig::AM: 
+                  rlcTypeId = LteRlcAm::GetTypeId ();
+                  break;
+          
+                case LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL: 
+                  rlcTypeId = LteRlcUm::GetTypeId ();
+                  break;
+          
+                default:
+                  NS_FATAL_ERROR ("unsupported RLC configuration");
+                  break;                
+                }
+            }
+  
+          ObjectFactory rlcObjectFactory;
+          rlcObjectFactory.SetTypeId (rlcTypeId);
+          Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
+          rlc->SetLteMacSapProvider (m_macSapProvider);
+          rlc->SetRnti (m_rnti);
+          rlc->SetLcId (lcid);
+
+          m_drbMap.find(*iter)->second->m_rlc = rlc;
+ 
+          // we need PDCP only for real RLC, i.e., RLC/UM or RLC/AM
+          // if we are using RLC/SM we don't care of anything above RLC
+          if (rlcTypeId != LteRlcSm::GetTypeId ())
+            {
+              pdcp->SetLteRlcSapProvider (rlc->GetLteRlcSapProvider ()); 
+              rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
+            }
+
+          struct LteUeCmacSapProvider::LogicalChannelConfig lcConfig;
+          lcConfig.priority = m_drbMap.find(*iter)->second->m_logicalChannelConfig.priority;
+          lcConfig.prioritizedBitRateKbps = m_drbMap.find(*iter)->second->m_logicalChannelConfig.prioritizedBitRateKbps;
+          lcConfig.bucketSizeDurationMs =   m_drbMap.find(*iter)->second->m_logicalChannelConfig.bucketSizeDurationMs;
+          lcConfig.logicalChannelGroup =    m_drbMap.find(*iter)->second->m_logicalChannelConfig.logicalChannelGroup;
+
+          m_cmacSapProvider->AddLc (lcid,
+                                    lcConfig,
+                                    rlc->GetLteMacSapUser ());
+          rlc->Initialize ();
+
+        }
+        else
+        {
+          m_mmWaveCmacSapProvider->RemoveLc(m_rlcMap.find(*iter)->second->logicalChannelIdentity);
+          // create Rlc
+          TypeId rlcTypeId;
+          if (m_useRlcSm)
+            {
+              rlcTypeId = LteRlcSm::GetTypeId ();
+              NS_LOG_INFO("SM");
+            }
+          else
+            {
+              switch (m_rlcMap.find(*iter)->second->rlcConfig.choice)
+                {
+                case LteRrcSap::RlcConfig::AM: 
+                  rlcTypeId = LteRlcAm::GetTypeId ();
+                  NS_LOG_INFO("AM");
+                  break;
+          
+                case LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL: 
+                  rlcTypeId = LteRlcUm::GetTypeId ();
+                  NS_LOG_INFO("UM");
+                  break;
+          
+                default:
+                  NS_FATAL_ERROR ("unsupported RLC configuration");
+                  break;                
+                }
+            }
+  
+          ObjectFactory rlcObjectFactory;
+          rlcObjectFactory.SetTypeId (rlcTypeId);
+          Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
+          rlc->SetLteMacSapProvider (m_mmWaveMacSapProvider); 
+          rlc->SetRnti (m_mmWaveRnti);
+          rlc->SetLcId (m_rlcMap.find(*iter)->second->logicalChannelIdentity);
+
+          struct LteUeCmacSapProvider::LogicalChannelConfig lcConfig;
+          lcConfig.priority =               m_rlcMap.find(*iter)->second->logicalChannelConfig.priority;
+          lcConfig.prioritizedBitRateKbps = m_rlcMap.find(*iter)->second->logicalChannelConfig.prioritizedBitRateKbps;
+          lcConfig.bucketSizeDurationMs =   m_rlcMap.find(*iter)->second->logicalChannelConfig.bucketSizeDurationMs;
+          lcConfig.logicalChannelGroup =    m_rlcMap.find(*iter)->second->logicalChannelConfig.logicalChannelGroup;      
+
+          m_mmWaveCmacSapProvider->AddLc (m_rlcMap.find(*iter)->second->logicalChannelIdentity, 
+                                  lcConfig,
+                                  rlc->GetLteMacSapUser ());
+          if (rlcTypeId != LteRlcSm::GetTypeId ())
+          {
+            pdcp->SetMmWaveRnti (m_mmWaveRnti);
+            pdcp->SetMmWaveRlcSapProvider (rlc->GetLteRlcSapProvider ());
+            rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
+          } 
+          rlc->Initialize();
+          m_rlcMap.find(*iter)->second->m_rlc = rlc;
+
+        }
+
         if(msg.useMmWaveConnection)
         {
           NS_LOG_INFO("LteUeRrc SwitchToMmWave " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
@@ -1445,7 +1561,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
                   break;                
                 }
             }
-  
+
           ObjectFactory rlcObjectFactory;
           rlcObjectFactory.SetTypeId (rlcTypeId);
           Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
@@ -1458,6 +1574,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           drbInfo->m_epsBearerIdentity = dtamIt->epsBearerIdentity;
           drbInfo->m_logicalChannelIdentity = dtamIt->logicalChannelIdentity;
           drbInfo->m_drbIdentity = dtamIt->drbIdentity;
+          drbInfo->m_rlcConfig.choice = dtamIt->rlcConfig.choice;
  
           // we need PDCP only for real RLC, i.e., RLC/UM or RLC/AM
           // if we are using RLC/SM we don't care of anything above RLC
@@ -1473,6 +1590,13 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
             }
 
           m_bid2DrbidMap[dtamIt->epsBearerIdentity] = dtamIt->drbIdentity;
+
+          struct LteRrcSap::LogicalChannelConfig lcConfigToStore;
+          lcConfigToStore.priority = dtamIt->logicalChannelConfig.priority;
+          lcConfigToStore.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
+          lcConfigToStore.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
+          lcConfigToStore.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
+          drbInfo->m_logicalChannelConfig = lcConfigToStore;
   
           m_drbMap.insert (std::pair<uint8_t, Ptr<LteDataRadioBearerInfo> > (dtamIt->drbIdentity, drbInfo));
   
@@ -1481,7 +1605,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           lcConfig.priority = dtamIt->logicalChannelConfig.priority;
           lcConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
           lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
-          lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;      
+          lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
 
           // TODO check which for interRatHoCapable
           m_cmacSapProvider->AddLc (dtamIt->logicalChannelIdentity,
@@ -1550,7 +1674,23 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
                 rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
               } 
               rlc->Initialize();
-              m_rlcMap[dtamIt->drbIdentity] = rlc;
+
+              Ptr<RlcBearerInfo> rlcInfo = CreateObject<RlcBearerInfo>();
+              rlcInfo->m_rlc = rlc;
+              rlcInfo->rlcConfig.choice = dtamIt->rlcConfig.choice;
+              rlcInfo->logicalChannelIdentity = dtamIt->logicalChannelIdentity;
+              rlcInfo->mmWaveRnti = m_mmWaveRnti;
+
+              LteRrcSap::LogicalChannelConfig logicalChannelConfig;
+              logicalChannelConfig.priority = dtamIt->logicalChannelConfig.priority;
+              logicalChannelConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
+              logicalChannelConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
+              logicalChannelConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;  
+
+              rlcInfo->logicalChannelConfig = logicalChannelConfig;
+
+
+              m_rlcMap[dtamIt->drbIdentity] = rlcInfo;
 
               bool useMmWaveConnection = true;
               pdcp->SwitchConnection(useMmWaveConnection);

@@ -178,6 +178,11 @@ public:
    */
   void SwitchConnection(bool useMmWaveConnection);
 
+  /**
+   * Return true if this PDCP is configured to forward data to the mmWave eNB
+   */
+  bool GetUseMmWaveConnection() const;
+
 protected:
   // Interface provided to upper RRC entity
   virtual void DoTransmitPdcpSdu (Ptr<Packet> p);

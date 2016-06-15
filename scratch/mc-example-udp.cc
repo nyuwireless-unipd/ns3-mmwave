@@ -378,7 +378,7 @@ static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of b
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
     ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -393,12 +393,12 @@ main (int argc, char *argv[])
   //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("LteUeMac", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("LteEnbMac", LOG_LEVEL_LOGIC);
+  LogComponentEnable ("LteUeMac", LOG_LEVEL_INFO);
+  LogComponentEnable ("LteEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-  //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+  LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
   //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
   //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
   //LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_INFO);
@@ -412,9 +412,9 @@ main (int argc, char *argv[])
   //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
   //LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
   //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
-  //LogComponentEnable("McEnbPdcp", LOG_LEVEL_INFO);
-  //LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
-  //LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
+  LogComponentEnable("McEnbPdcp", LOG_LEVEL_LOGIC);
+  LogComponentEnable("McUePdcp", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("LteRlcAm", LOG_LEVEL_INFO);
   //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
   //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
   LogComponentEnable("EpcMmeApplication", LOG_LEVEL_LOGIC);
@@ -549,7 +549,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10.0)));
-  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (10 * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (100 * 1024 * 1024));
 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();

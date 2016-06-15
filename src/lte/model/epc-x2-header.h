@@ -66,7 +66,8 @@ public:
     UpdateUeSinr            = 14,
     RequestMcHandover       = 15,
     NotifyMmWaveLteHandover = 16,
-    NotifyCoordinatorHandoverFailed = 17
+    NotifyCoordinatorHandoverFailed = 17,
+    SwitchConnection        = 18
   };
 
   enum TypeOfMessage_t {
@@ -543,6 +544,41 @@ private:
 
   std::map <uint64_t, double> m_map;
   uint16_t m_sourceCellId;
+};
+
+class EpcX2ConnectionSwitchHeader : public Header
+{
+public:
+  EpcX2ConnectionSwitchHeader ();
+  virtual ~EpcX2ConnectionSwitchHeader ();
+
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual void Print (std::ostream &os) const;
+
+
+  uint16_t GetMmWaveRnti () const;
+  void SetMmWaveRnti (uint16_t rnti);
+
+  bool GetUseMmWaveConnection () const;
+  void SetUseMmWaveConnection (bool useMmWaveConnection);
+
+  uint8_t GetDrbid () const;
+  void SetDrbid (uint8_t bid);
+
+  uint32_t GetLengthOfIes () const;
+  uint32_t GetNumberOfIes () const;
+
+private:
+  uint32_t          m_numberOfIes;
+  uint32_t          m_headerLength;
+
+  uint16_t m_mmWaveRnti;
+  uint8_t m_drbid;
+  bool     m_useMmWaveConnection;
 };
 
 } // namespace ns3

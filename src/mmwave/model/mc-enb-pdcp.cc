@@ -164,6 +164,7 @@ void
 McEnbPdcp::SetLteRlcSapProvider (LteRlcSapProvider * s)
 {
   NS_LOG_FUNCTION (this << s);
+  NS_LOG_UNCOND("Change LteRlcSapProvider");
   m_rlcSapProvider = s;
 }
 
@@ -232,6 +233,10 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
     // m_txPdu (m_rnti, m_lcid, p->GetSize ());
     params.pdcpPdu = p;
 
+    NS_LOG_UNCOND("Params.rnti " << params.rnti);
+    NS_LOG_UNCOND("Params.m_lcid " << params.lcid);
+    NS_LOG_UNCOND("Params.pdcpPdu " << params.pdcpPdu);
+
     m_rlcSapProvider->TransmitPdcpPdu (params);
   } 
   else if (m_useMmWaveConnection) 
@@ -274,12 +279,14 @@ McEnbPdcp::DoReceivePdu (Ptr<Packet> p)
     {
       m_rxSequenceNumber = 0;
     }
-
-  LtePdcpSapUser::ReceivePdcpSduParameters params;
-  params.pdcpSdu = p;
-  params.rnti = m_rnti;
-  params.lcid = m_lcid;
-  m_pdcpSapUser->ReceivePdcpSdu (params);
+  if(p->GetSize() > 20 + 8 + 12)
+  {
+    LtePdcpSapUser::ReceivePdcpSduParameters params;
+    params.pdcpSdu = p;
+    params.rnti = m_rnti;
+    params.lcid = m_lcid;
+    m_pdcpSapUser->ReceivePdcpSdu (params);
+  }
 }
 
 void
@@ -294,6 +301,13 @@ McEnbPdcp::SwitchConnection (bool useMmWaveConnection)
 {
   m_useMmWaveConnection = useMmWaveConnection;
 }
+
+bool
+McEnbPdcp::GetUseMmWaveConnection() const
+{
+  return m_useMmWaveConnection && (m_epcX2PdcpProvider != 0);
+}
+
 
 
 } // namespace ns3

@@ -919,6 +919,10 @@ void
 MmWaveUeMac::DoRemoveLc (uint8_t lcId)
 {
 	NS_LOG_FUNCTION (this << " lcId" << lcId);
+  NS_ASSERT_MSG (m_lcInfoMap.find (lcId) != m_lcInfoMap.end (), "cannot remove channel because LCID " << lcId << " not found");
+
+  m_lcInfoMap.erase(m_lcInfoMap.find(lcId));
+
 }
 
 LteMacSapProvider*

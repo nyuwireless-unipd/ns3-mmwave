@@ -98,7 +98,7 @@ void LtePdcpHeader::Serialize (Buffer::Iterator start) const
   Buffer::Iterator i = start;
 
   i.WriteU8 ( (m_dcBit << 7) | (m_sequenceNumber & 0x0F00) >> 8 );
-  i.WriteU8 ( (m_sequenceNumber & 0x00FF) );
+  i.WriteU8 ( (uint8_t)(m_sequenceNumber & 0x00FF) );
 }
 
 uint32_t LtePdcpHeader::Deserialize (Buffer::Iterator start)

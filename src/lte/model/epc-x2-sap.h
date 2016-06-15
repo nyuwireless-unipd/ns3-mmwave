@@ -374,6 +374,14 @@ public:
     uint16_t targetCellId;
   };
 
+  struct SwitchConnectionParams
+  {
+    uint32_t mmWaveRnti;
+    uint16_t mmWaveCellId;
+    uint8_t drbid;
+    bool useMmWaveConnection;
+  };
+
 };
 
 
@@ -485,6 +493,8 @@ public:
 
   virtual void NotifyCoordinatorHandoverFailed (HandoverFailedParams params) = 0;
 
+  virtual void SendSwitchConnectionToMmWave (SwitchConnectionParams params) = 0;
+
 };
 
 
@@ -526,6 +536,8 @@ public:
   virtual void RecvMcHandoverRequest (McHandoverParams params) = 0;
 
   virtual void RecvLteMmWaveHandoverCompleted (McHandoverParams params) = 0;
+
+  virtual void RecvConnectionSwitchToMmWave (SwitchConnectionParams params) = 0;
 
 };
 
@@ -573,6 +585,7 @@ public:
 
   virtual void NotifyCoordinatorHandoverFailed (HandoverFailedParams params);
 
+  virtual void SendSwitchConnectionToMmWave (SwitchConnectionParams params);
 
 
 private:
@@ -703,6 +716,13 @@ EpcX2SpecificEpcX2SapProvider<C>::NotifyCoordinatorHandoverFailed (HandoverFaile
   m_x2->DoNotifyCoordinatorHandoverFailed(params);
 }
 
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SendSwitchConnectionToMmWave (SwitchConnectionParams params)
+{
+  m_x2->DoSendSwitchConnectionToMmWave(params);
+}
+
 ///////////////////////////////////////
 
 template <class C>
@@ -740,6 +760,8 @@ public:
   virtual void RecvMcHandoverRequest (McHandoverParams params);
 
   virtual void RecvLteMmWaveHandoverCompleted (McHandoverParams params);
+
+  virtual void RecvConnectionSwitchToMmWave (SwitchConnectionParams params);
 
 
 private:
@@ -849,6 +871,12 @@ EpcX2SpecificEpcX2SapUser<C>::RecvLteMmWaveHandoverCompleted (McHandoverParams p
   m_rrc->DoRecvLteMmWaveHandoverCompleted (params);
 }
 
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvConnectionSwitchToMmWave (SwitchConnectionParams params)
+{
+  m_rrc->DoRecvConnectionSwitchToMmWave (params);
+}
 
 
 /////////////////////////////////////////////

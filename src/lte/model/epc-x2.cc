@@ -513,16 +513,21 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
       m_x2SapUser->RecvLteMmWaveHandoverCompleted(params);  
     }
-  else if (procedureCode == EpcX2Header::NotifyCoordinatorHandoverFailed)
+  else if (procedureCode == EpcX2Header::SwitchConnection)
     {
-      NS_LOG_LOGIC ("Recv X2 message: NOTIFY COORDINATOR HANDOVER FAILED");
+      NS_LOG_LOGIC ("Recv X2 message: SWITCH CONNECTION");
       
-      EpcX2NotifyCoordinatorHandoverFailedHeader x2mcHeader;
+      EpcX2ConnectionSwitchHeader x2mcHeader;
       packet->RemoveHeader(x2mcHeader);
 
-      NS_LOG_INFO ("X2 NotifyCoordinatorHandoverFailed header: " << x2mcHeader);
+      NS_LOG_INFO ("X2 SwitchConnection header: " << x2mcHeader);
 
-      // TODO
+      EpcX2SapUser::SwitchConnectionParams params;
+      params.mmWaveRnti = x2mcHeader.GetMmWaveRnti();
+      params.useMmWaveConnection = x2mcHeader.GetUseMmWaveConnection();
+      params.drbid = x2mcHeader.GetDrbid();
+
+      m_x2SapUser->RecvConnectionSwitchToMmWave(params);
     }
   else
     {
@@ -1312,8 +1317,6 @@ EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::McHandoverParams params)
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
 }
 
-
-
 void
 EpcX2::DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::McHandoverParams params)
 {
@@ -1343,6 +1346,54 @@ EpcX2::DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::McHandoverParams pa
   EpcX2Header x2Header;
   x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
   x2Header.SetProcedureCode (EpcX2Header::NotifyMmWaveLteHandover);
+  x2Header.SetLengthOfIes (x2mcHeader.GetLengthOfIes ());
+  x2Header.SetNumberOfIes (x2mcHeader.GetNumberOfIes ());
+
+  NS_LOG_INFO ("X2 header: " << x2Header);
+  NS_LOG_INFO ("X2 RequestMcHandover header: " << x2mcHeader);
+
+  // Build the X2 packet
+  Ptr<Packet> packet = Create <Packet> ();
+  packet->AddHeader (x2mcHeader);
+  packet->AddHeader (x2Header);
+  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+  EpcX2Tag tag (Simulator::Now());
+  packet->AddPacketTag (tag);
+
+  // Send the X2 message through the socket
+  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+}
+
+void
+EpcX2::DoSendSwitchConnectionToMmWave(EpcX2SapProvider::SwitchConnectionParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("MmWaveCellId = " << params.mmWaveCellId);
+  NS_LOG_LOGIC ("MmWaveRnti = " << params.mmWaveRnti);
+  NS_LOG_LOGIC ("UseMmWaveConnection " << params.useMmWaveConnection);
+
+  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.mmWaveCellId) != m_x2InterfaceSockets.end (),
+                 "Missing infos for mmWaveCellId = " << params.mmWaveCellId);
+  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.mmWaveCellId];
+  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+  NS_LOG_INFO ("Send X2 message: SEND CONNECTION SWITCH MESSAGE");
+
+  // Build the X2 message
+  EpcX2ConnectionSwitchHeader x2mcHeader;
+  x2mcHeader.SetMmWaveRnti(params.mmWaveRnti);
+  x2mcHeader.SetUseMmWaveConnection(params.useMmWaveConnection);
+  x2mcHeader.SetDrbid(params.drbid);
+
+  EpcX2Header x2Header;
+  x2Header.SetMessageType (EpcX2Header::InitiatingMessage);
+  x2Header.SetProcedureCode (EpcX2Header::SwitchConnection);
   x2Header.SetLengthOfIes (x2mcHeader.GetLengthOfIes ());
   x2Header.SetNumberOfIes (x2mcHeader.GetNumberOfIes ());
 

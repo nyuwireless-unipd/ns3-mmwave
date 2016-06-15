@@ -103,6 +103,7 @@ public:
     uint8_t     logicalChannelIdentity;
     LteRrcSap::RlcConfig rlcConfig;
     LteRrcSap::LogicalChannelConfig logicalChannelConfig;
+    LteEnbCmacSapProvider::LcInfo lcinfo;
     Ptr<LteRlc> m_rlc;
 };
 

@@ -22,6 +22,7 @@
 #define LTE_RLC_SAP_H
 
 #include "ns3/packet.h"
+#include "ns3/log.h"
 
 namespace ns3 {
 
@@ -106,6 +107,7 @@ LteRlcSpecificLteRlcSapProvider<C>::LteRlcSpecificLteRlcSapProvider ()
 template <class C>
 void LteRlcSpecificLteRlcSapProvider<C>::TransmitPdcpPdu (TransmitPdcpPduParameters params)
 {
+  NS_LOG_UNCOND("Call RLC!");
   m_rlc->DoTransmitPdcpPdu (params.pdcpPdu);
 }
 

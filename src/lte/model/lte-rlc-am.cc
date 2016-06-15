@@ -200,7 +200,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
     tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
     p->AddPacketTag (tag);
 
-    NS_LOG_LOGIC ("Txon Buffer: New packet added");
+    NS_LOG_UNCOND ("Txon Buffer: New packet added");
     m_txonBuffer.push_back (p);
     m_txonBufferSize += p->GetSize ();
     NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );

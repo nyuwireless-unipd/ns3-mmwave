@@ -479,6 +479,7 @@ UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gt
   // mmWaveRnti & targetCellId will be set before sending the request
   drbInfo->m_rlcSetupRequest = req;
 
+  drbInfo->m_epsBearer = bearer;
   drbInfo->m_isMc = false;
 
   ScheduleRrcConnectionReconfiguration ();
@@ -789,172 +790,208 @@ UeManager::RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params
         drbIt != m_drbMap.end ();
         ++drbIt)
   {
-    // RlcBuffers forwarding only for RlcAm bearers.
-    if (0 != drbIt->second->m_rlc->GetObject<LteRlcAm> ())
-    {
-      //Copy lte-rlc-am.m_txOnBuffer to X2 forwarding buffer.
-      Ptr<LteRlcAm> rlcAm = drbIt->second->m_rlc->GetObject<LteRlcAm>();
-      uint32_t txonBufferSize = rlcAm->GetTxBufferSize();
-      std::vector < Ptr<Packet> > txonBuffer = rlcAm->GetTxBuffer();
-      //m_x2forwardingBufferSize =  drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize();
-      //m_x2forwardingBuffer = drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBuffer();
-      uint32_t txedBufferSize = rlcAm->GetTxedBufferSize();
-      std::vector < LteRlcAm::RetxPdu > txedBuffer = rlcAm->GetTxedBuffer();
-      uint32_t retxBufferSize = rlcAm->GetRetxBufferSize();
-      std::vector < LteRlcAm::RetxPdu > retxBuffer = rlcAm->GetRetxBuffer();
-      
-      //Translate Pdus in Rlc txed/retx buffer into RLC Sdus
-      //and put these Sdus into rlcAm->m_transmittingRlcSdus.
-      NS_LOG_INFO("retxBuffer size = " << retxBufferSize);
-      NS_LOG_INFO("txedBuffer size = " << txedBufferSize);
-      //Merge txed and retx buffers into a single buffer before doing RlcPdusToRlc.
-      if ( retxBufferSize + txedBufferSize > 0 ){
-        std::vector< LteRlcAm::RetxPdu > sortedTxedRetxBuffer;
-        if (retxBufferSize == 0){
-          sortedTxedRetxBuffer = txedBuffer;
-        }
-        else if (txedBufferSize == 0){
-          sortedTxedRetxBuffer = retxBuffer;
-        }
-        else {
-          sortedTxedRetxBuffer = MergeBuffers(txedBuffer, retxBuffer);
-        }
-        rlcAm->RlcPdusToRlcSdus(sortedTxedRetxBuffer);  
+    ForwardRlcBuffers(drbIt->second->m_rlc, drbIt->second->m_pdcp, drbIt->second->m_gtpTeid, 0, 0);
+  }
+}
+
+// This code from the LL HO implementation is refactored in a function
+// in order to be used also when switching from LTE to MmWave and back
+void
+UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTeid, bool mcLteToMmWaveForwarding, uint8_t bid)
+{
+  // RlcBuffers forwarding only for RlcAm bearers.
+  if (0 != rlc->GetObject<LteRlcAm> ())
+  {
+    //Copy lte-rlc-am.m_txOnBuffer to X2 forwarding buffer.
+    Ptr<LteRlcAm> rlcAm = rlc->GetObject<LteRlcAm>();
+    uint32_t txonBufferSize = rlcAm->GetTxBufferSize();
+    std::vector < Ptr<Packet> > txonBuffer = rlcAm->GetTxBuffer();
+    //m_x2forwardingBufferSize =  drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBufferSize();
+    //m_x2forwardingBuffer = drbIt->second->m_rlc->GetObject<LteRlcAm>()->GetTxBuffer();
+    uint32_t txedBufferSize = rlcAm->GetTxedBufferSize();
+    std::vector < LteRlcAm::RetxPdu > txedBuffer = rlcAm->GetTxedBuffer();
+    uint32_t retxBufferSize = rlcAm->GetRetxBufferSize();
+    std::vector < LteRlcAm::RetxPdu > retxBuffer = rlcAm->GetRetxBuffer();
+    
+    //Translate Pdus in Rlc txed/retx buffer into RLC Sdus
+    //and put these Sdus into rlcAm->m_transmittingRlcSdus.
+    NS_LOG_INFO("retxBuffer size = " << retxBufferSize);
+    NS_LOG_INFO("txedBuffer size = " << txedBufferSize);
+    //Merge txed and retx buffers into a single buffer before doing RlcPdusToRlc.
+    if ( retxBufferSize + txedBufferSize > 0 ){
+      std::vector< LteRlcAm::RetxPdu > sortedTxedRetxBuffer;
+      if (retxBufferSize == 0){
+        sortedTxedRetxBuffer = txedBuffer;
       }
+      else if (txedBufferSize == 0){
+        sortedTxedRetxBuffer = retxBuffer;
+      }
+      else {
+        sortedTxedRetxBuffer = MergeBuffers(txedBuffer, retxBuffer);
+      }
+      rlcAm->RlcPdusToRlcSdus(sortedTxedRetxBuffer);  
+    }
 
-      //Construct the forwarding buffer
-      //Forwarding buffer = retxBuffer + txedBuffer + txonBuffer.
-      if ( txonBufferSize > 0 ){
-        LtePdcpHeader pdcpHeader;
-        for (std::vector< Ptr<Packet> >::iterator it = txonBuffer.begin(); it != txonBuffer.end(); ++it){
-          (*it)->PeekHeader(pdcpHeader);
-          NS_LOG_DEBUG("txonBuffer SEQ = " << pdcpHeader.GetSequenceNumber() << " Size = " << (*it)->GetSize());
+    //Construct the forwarding buffer
+    //Forwarding buffer = retxBuffer + txedBuffer + txonBuffer.
+    if ( txonBufferSize > 0 ){
+      LtePdcpHeader pdcpHeader;
+      for (std::vector< Ptr<Packet> >::iterator it = txonBuffer.begin(); it != txonBuffer.end(); ++it){
+        (*it)->PeekHeader(pdcpHeader);
+        NS_LOG_DEBUG("txonBuffer SEQ = " << pdcpHeader.GetSequenceNumber() << " Size = " << (*it)->GetSize());
+      }
+      // this cycle adds the SDUs given by the merge of txed and retxed buffers
+      if ( rlcAm->GetTransmittingRlcSduBufferSize() > 0){ //something inside the RLC AM's transmitting buffer 
+              NS_LOG_DEBUG ("ADDING TRANSMITTING SDUS OF RLC AM TO X2FORWARDINGBUFFER... Size = " << rlcAm->GetTransmittingRlcSduBufferSize() );
+              //copy the RlcSdu buffer (map) to forwardingBuffer.
+              std::map < uint32_t, Ptr<Packet> > rlcAmTransmittingBuffer = rlcAm->GetTransmittingRlcSduBuffer();
+              NS_LOG_DEBUG (" *** SIZE = " << rlcAmTransmittingBuffer.size());
+              for (std::map< uint32_t, Ptr<Packet> >::iterator it = rlcAmTransmittingBuffer.begin(); it != rlcAmTransmittingBuffer.end(); ++it){
+                if (it->second != 0){
+                  NS_LOG_LOGIC ( this << " add to forwarding buffer SEQ = " << it->first << " Ptr<Packet> = " << it->second );
+                  m_x2forwardingBuffer.push_back(it->second);
+                }
+              } 
+        NS_LOG_DEBUG(this << " ADDING TXONBUFFER OF RLC AM " << m_rnti << " Size = " << txonBufferSize) ;
+
+      
+        Ptr<Packet> segmentedRlcsdu = rlcAm->GetSegmentedRlcsdu();
+        if (segmentedRlcsdu != NULL){
+          segmentedRlcsdu->PeekHeader(pdcpHeader);
+          NS_LOG_DEBUG(this << "SegmentedRlcSdu = " << segmentedRlcsdu->GetSize() << " SEQ = " << pdcpHeader.GetSequenceNumber());
+          //insert the complete version of the fragmented SDU to the front of txonBuffer.
+          txonBuffer.insert(txonBuffer.begin(),segmentedRlcsdu);
         }
-        if ( rlcAm->GetTransmittingRlcSduBufferSize() > 0){ //something inside the RLC AM's transmitting buffer 
-                NS_LOG_DEBUG ("ADDING TRANSMITTING SDUS OF RLC AM TO X2FORWARDINGBUFFER... Size = " << rlcAm->GetTransmittingRlcSduBufferSize() );
-                //copy the RlcSdu buffer (map) to forwardingBuffer.
-                std::map < uint32_t, Ptr<Packet> > rlcAmTransmittingBuffer = rlcAm->GetTransmittingRlcSduBuffer();
-                NS_LOG_DEBUG (" *** SIZE = " << rlcAmTransmittingBuffer.size());
-                for (std::map< uint32_t, Ptr<Packet> >::iterator it = rlcAmTransmittingBuffer.begin(); it != rlcAmTransmittingBuffer.end(); ++it){
-                  if (it->second != 0){
-                    NS_LOG_LOGIC ( this << " add to forwarding buffer SEQ = " << it->first << " Ptr<Packet> = " << it->second );
-                    m_x2forwardingBuffer.push_back(it->second);
-                  }
-                } 
-          NS_LOG_DEBUG(this << " ADDING TXONBUFFER OF RLC AM " << m_rnti << " Size = " << txonBufferSize) ;
+        m_x2forwardingBuffer.insert(m_x2forwardingBuffer.end(), txonBuffer.begin(), txonBuffer.end());
+        m_x2forwardingBufferSize += rlcAm->GetTransmittingRlcSduBufferSize() + txonBufferSize;
 
-        
-          Ptr<Packet> segmentedRlcsdu = rlcAm->GetSegmentedRlcsdu();
-          if (segmentedRlcsdu != NULL){
-            segmentedRlcsdu->PeekHeader(pdcpHeader);
-            NS_LOG_DEBUG(this << "SegmentedRlcSdu = " << segmentedRlcsdu->GetSize() << " SEQ = " << pdcpHeader.GetSequenceNumber());
-            //insert the complete version of the fragmented SDU to the front of txonBuffer.
-            txonBuffer.insert(txonBuffer.begin(),segmentedRlcsdu);
-          }
-          m_x2forwardingBuffer.insert(m_x2forwardingBuffer.end(), txonBuffer.begin(), txonBuffer.end());
-          m_x2forwardingBufferSize += rlcAm->GetTransmittingRlcSduBufferSize() + txonBufferSize;
-
-          //Get the rlcAm
-          std::vector < Ptr <Packet> > rlcAmTxedSduBuffer = rlcAm->GetTxedRlcSduBuffer();
-          LtePdcpHeader pdcpHeader_1;
-          m_x2forwardingBuffer.at(0)->PeekHeader(pdcpHeader_1);
-          uint16_t i = 0;
-          for (std::vector< Ptr<Packet> >::iterator it = rlcAmTxedSduBuffer.begin(); it != rlcAmTxedSduBuffer.end(); ++it){
-            if ((*it) != NULL){
-              (*it)->PeekHeader(pdcpHeader);
-              //NS_LOG_DEBUG("rlcAmTxedSduBuffer SEQ = " << pdcpHeader.GetSequenceNumber() << " Size = " << (*it)->GetSize());
-            
-              //add the previous SDU of the forwarding buffer to the forwarding buffer.
-              if (pdcpHeader.GetSequenceNumber() >= (pdcpHeader_1.GetSequenceNumber() - 2) && pdcpHeader.GetSequenceNumber() <= (pdcpHeader_1.GetSequenceNumber()) ){
-                NS_LOG_DEBUG("Added previous SDU to forwarding buffer SEQ = " << pdcpHeader.GetSequenceNumber() << " Size = " << (*it)->GetSize());
-                m_x2forwardingBuffer.insert(m_x2forwardingBuffer.begin()+i, (*it)->Copy());
-                ++i;
-              }
+        //Get the rlcAm
+        std::vector < Ptr <Packet> > rlcAmTxedSduBuffer = rlcAm->GetTxedRlcSduBuffer();
+        LtePdcpHeader pdcpHeader_1;
+        m_x2forwardingBuffer.at(0)->PeekHeader(pdcpHeader_1);
+        uint16_t i = 0;
+        for (std::vector< Ptr<Packet> >::iterator it = rlcAmTxedSduBuffer.begin(); it != rlcAmTxedSduBuffer.end(); ++it){
+          if ((*it) != NULL){
+            (*it)->PeekHeader(pdcpHeader);
+            //NS_LOG_DEBUG("rlcAmTxedSduBuffer SEQ = " << pdcpHeader.GetSequenceNumber() << " Size = " << (*it)->GetSize());
+          
+            //add the previous SDU of the forwarding buffer to the forwarding buffer.
+            if (pdcpHeader.GetSequenceNumber() >= (pdcpHeader_1.GetSequenceNumber() - 2) && pdcpHeader.GetSequenceNumber() <= (pdcpHeader_1.GetSequenceNumber()) ){
+              NS_LOG_DEBUG("Added previous SDU to forwarding buffer SEQ = " << pdcpHeader.GetSequenceNumber() << " Size = " << (*it)->GetSize());
+              m_x2forwardingBuffer.insert(m_x2forwardingBuffer.begin()+i, (*it)->Copy());
+              ++i;
             }
           }
-          
         }
-        else { //TransmittingBuffer is empty. Only copy TxonBuffer.
+        
+      }
+      else 
+      { //TransmittingBuffer is empty. Only copy TxonBuffer.
         NS_LOG_DEBUG(this << " ADDING TXONBUFFER OF RLC AM " << m_rnti << " Size = " << txonBufferSize) ;
         m_x2forwardingBuffer = txonBuffer;
         m_x2forwardingBufferSize += txonBufferSize;
-        }
       }
     }
-    //For RlcUM, no forwarding available as the simulator itself (seamless HO).
-    //However, as the LTE-UMTS book, PDCP txbuffer should be forwarded for seamless 
-    //HO. Enable this code for txbuffer forwarding in seamless HO (which is believe to 
-    //be correct).
-    else if (0 != drbIt->second->m_rlc->GetObject<LteRlcUm> ())
-    {
-      //Copy lte-rlc-um.m_txOnBuffer to X2 forwarding buffer.
-      NS_LOG_DEBUG(this << " Copying txonBuffer from RLC UM " << m_rnti);
-      m_x2forwardingBuffer = drbIt->second->m_rlc->GetObject<LteRlcUm>()->GetTxBuffer();
-      m_x2forwardingBufferSize =  drbIt->second->m_rlc->GetObject<LteRlcUm>()->GetTxBufferSize();
-    }
-    else if (0 != drbIt->second->m_rlc->GetObject<LteRlcUmLowLat> ())
-    {
-      //Copy lte-rlc-um-low-lat.m_txOnBuffer to X2 forwarding buffer.
-      NS_LOG_DEBUG(this << " Copying txonBuffer from RLC UM " << m_rnti);
-      m_x2forwardingBuffer = drbIt->second->m_rlc->GetObject<LteRlcUmLowLat>()->GetTxBuffer();
-      m_x2forwardingBufferSize =  drbIt->second->m_rlc->GetObject<LteRlcUmLowLat>()->GetTxBufferSize();
-    }
-    //LteRlcAm m_txBuffer stores PDCP "PDU".
-    NS_LOG_DEBUG(this << " m_x2forw buffer size = " << m_x2forwardingBufferSize);
-      //Forwarding the packet inside m_x2forwardingBuffer to target eNB.  
-    while (!m_x2forwardingBuffer.empty())
-    {
-      uint8_t drbid = Bid2Drbid (drbIt->second->m_drbIdentity);        
-      NS_LOG_DEBUG(this << " Forwarding m_x2forwardingBuffer to target eNB, drbid = " << uint16_t(drbid) );
-      EpcX2Sap::UeDataParams params;
-      params.sourceCellId = m_rrc->m_cellId;
-      params.targetCellId = m_targetCellId;
-      params.gtpTeid = GetDataRadioBearerInfo (drbid)->m_gtpTeid;
-      //Remove tags to get PDCP SDU from PDCP PDU.
-      //Ptr<Packet> rlcAmSdu =  (*(m_x2forwardingBuffer.begin()))->Copy();
-      Ptr<Packet> rlcAmSdu =  m_x2forwardingBuffer.at(0);
-      //Tags to be removed from rlcAmSdu (from outer to inner)
-      //LteRlcSduStatusTag rlcSduStatusTag;
-      //RlcTag  rlcTag; //rlc layer timestamp
-      //PdcpTag pdcpTag;  //pdcp layer timestamp
-      LtePdcpHeader pdcpHeader;
-      
-      
-      NS_LOG_DEBUG ("RlcSdu size = " << rlcAmSdu->GetSize() );
-      //rlcAmSdu->RemoveHeader(pdcpHeader); //remove pdcp header
-      
-      //only forward data PDCP PDUs (1-DATA_PDU,0-CTR_PDU)
-      rlcAmSdu->PeekHeader(pdcpHeader);
-      if (pdcpHeader.GetDcBit() == 1 )
-      { //ignore control SDU.
-        NS_LOG_LOGIC ("SEQ = " << pdcpHeader.GetSequenceNumber());
-        NS_LOG_LOGIC ("removed pdcp header, size = " << rlcAmSdu->GetSize());
+  }
+  //For RlcUM, no forwarding available as the simulator itself (seamless HO).
+  //However, as the LTE-UMTS book, PDCP txbuffer should be forwarded for seamless 
+  //HO. Enable this code for txbuffer forwarding in seamless HO (which is believe to 
+  //be correct).
+  else if (0 != rlc->GetObject<LteRlcUm> ())
+  {
+    //Copy lte-rlc-um.m_txOnBuffer to X2 forwarding buffer.
+    NS_LOG_DEBUG(this << " Copying txonBuffer from RLC UM " << m_rnti);
+    m_x2forwardingBuffer = rlc->GetObject<LteRlcUm>()->GetTxBuffer();
+    m_x2forwardingBufferSize =  rlc->GetObject<LteRlcUm>()->GetTxBufferSize();
+  }
+  else if (0 != rlc->GetObject<LteRlcUmLowLat> ())
+  {
+    //Copy lte-rlc-um-low-lat.m_txOnBuffer to X2 forwarding buffer.
+    NS_LOG_DEBUG(this << " Copying txonBuffer from RLC UM " << m_rnti);
+    m_x2forwardingBuffer = rlc->GetObject<LteRlcUmLowLat>()->GetTxBuffer();
+    m_x2forwardingBufferSize =  rlc->GetObject<LteRlcUmLowLat>()->GetTxBufferSize();
+  }
+  //LteRlcAm m_txBuffer stores PDCP "PDU".
+  NS_LOG_DEBUG(this << " m_x2forw buffer size = " << m_x2forwardingBufferSize);
+    //Forwarding the packet inside m_x2forwardingBuffer to target eNB. 
 
-        rlcAmSdu->RemoveHeader(pdcpHeader); //remove pdcp header
-        rlcAmSdu->RemoveAllPacketTags();
-        NS_LOG_LOGIC ("removed tags, size = " << rlcAmSdu->GetSize() );
-        params.ueData = rlcAmSdu;
-        /*
-        rlcAmSdu->RemovePacketTag(rlcSduStatusTag); //remove Rlc status tag.
-        NS_LOG_DEBUG ("removed rlc status tag, size = " << rlcAmSdu->GetSize() );
-        rlcAmSdu->RemovePacketTag(rlcTag);  //remove Rlc timestamp
-        NS_LOG_DEBUG ("removed rlc timestamp, size = " << rlcAmSdu->GetSize() );
-        //rlcAmSdu->RemoveByteTag(pdcpTag); //remove pdcp timestamp
-        //NS_LOG_DEBUG ("removed pdcp timestamp, size = " << rlcAmSdu->GetSize());
-        */
+  // Prepare the variables for the LTE to MmWave DC forward
+  Ptr<McEnbPdcp> mcPdcp;
+  if(mcLteToMmWaveForwarding)
+  {
+    mcPdcp = DynamicCast<McEnbPdcp>(pdcp);
+    NS_ASSERT_MSG(mcPdcp != 0, "Invalid option for standard PDCP");
+    NS_ASSERT_MSG(bid > 0, "Bid can't be 0");
+    NS_ASSERT_MSG(mcPdcp->GetUseMmWaveConnection(), "The McEnbPdcp is not forwarding data to the mmWave eNB, check if the switch happened!");
+  }
 
+  while (!m_x2forwardingBuffer.empty())
+  {
+    NS_LOG_DEBUG(this << " Forwarding m_x2forwardingBuffer to target eNB, gtpTeid = " << gtpTeid );
+    EpcX2Sap::UeDataParams params;
+    params.sourceCellId = m_rrc->m_cellId;
+    params.targetCellId = m_targetCellId;
+    params.gtpTeid = gtpTeid;
+    //Remove tags to get PDCP SDU from PDCP PDU.
+    //Ptr<Packet> rlcSdu =  (*(m_x2forwardingBuffer.begin()))->Copy();
+    Ptr<Packet> rlcSdu =  m_x2forwardingBuffer.at(0);
+    //Tags to be removed from rlcSdu (from outer to inner)
+    //LteRlcSduStatusTag rlcSduStatusTag;
+    //RlcTag  rlcTag; //rlc layer timestamp
+    //PdcpTag pdcpTag;  //pdcp layer timestamp
+    LtePdcpHeader pdcpHeader;
+    
+    
+    NS_LOG_DEBUG ("RlcSdu size = " << rlcSdu->GetSize() );
+    //rlcSdu->RemoveHeader(pdcpHeader); //remove pdcp header
+    
+    //only forward data PDCP PDUs (1-DATA_PDU,0-CTR_PDU)
+    rlcSdu->PeekHeader(pdcpHeader);
+    if (pdcpHeader.GetDcBit() == 1 )
+    { //ignore control SDU.
+      NS_LOG_LOGIC ("SEQ = " << pdcpHeader.GetSequenceNumber());
+      NS_LOG_LOGIC ("removed pdcp header, size = " << rlcSdu->GetSize());
+
+      rlcSdu->RemoveHeader(pdcpHeader); //remove pdcp header
+      rlcSdu->RemoveAllPacketTags(); // this does not remove byte tags
+      NS_LOG_LOGIC ("removed tags, size = " << rlcSdu->GetSize() );
+      params.ueData = rlcSdu;
+      /*
+      rlcSdu->RemovePacketTag(rlcSduStatusTag); //remove Rlc status tag.
+      NS_LOG_DEBUG ("removed rlc status tag, size = " << rlcSdu->GetSize() );
+      rlcSdu->RemovePacketTag(rlcTag);  //remove Rlc timestamp
+      NS_LOG_DEBUG ("removed rlc timestamp, size = " << rlcSdu->GetSize() );
+      //rlcSdu->RemoveByteTag(pdcpTag); //remove pdcp timestamp
+      //NS_LOG_DEBUG ("removed pdcp timestamp, size = " << rlcSdu->GetSize());
+      */
+
+      if(!mcLteToMmWaveForwarding)
+      {
+        NS_LOG_UNCOND("Forward to target cell in HO");
         m_rrc->m_x2SapProvider->SendUeData (params);
         NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
         NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
         NS_LOG_LOGIC ("gtpTeid = " << params.gtpTeid);
         NS_LOG_LOGIC ("ueData = " << params.ueData);
         NS_LOG_LOGIC ("ueData size = " << params.ueData->GetSize ());
-
-        NS_LOG_LOGIC(this << " After forwarding: buffer size = " << m_x2forwardingBufferSize );
       }
-      m_x2forwardingBufferSize -= (*(m_x2forwardingBuffer.begin()))->GetSize();
-      m_x2forwardingBuffer.erase (m_x2forwardingBuffer.begin());
+      else // the target eNB has no PDCP entity. Thus re-insert the packets in the 
+      // LTE eNB PDCP, which will forward them to the MmWave RLC entity. 
+      // Thus this method must be called after the switch to MmWave is done!
+      {
+        NS_LOG_UNCOND("Forward to mmWave cell in switch");
+        NS_ASSERT(mcPdcp != 0);
+        NS_ASSERT(mcPdcp->GetUseMmWaveConnection());
+        LtePdcpSapProvider::TransmitPdcpSduParameters pdcpParams;
+        pdcpParams.pdcpSdu = rlcSdu;
+        pdcpParams.rnti = m_rnti;
+        pdcpParams.lcid = Bid2Lcid (bid);
+        mcPdcp->GetLtePdcpSapProvider()->TransmitPdcpSdu(pdcpParams);
+      }
     }
+    m_x2forwardingBufferSize -= (*(m_x2forwardingBuffer.begin()))->GetSize();
+    m_x2forwardingBuffer.erase (m_x2forwardingBuffer.begin());
+    NS_LOG_LOGIC(this << " After forwarding: buffer size = " << m_x2forwardingBufferSize );
   }
 }
 
@@ -1093,40 +1130,6 @@ UeManager::SendUeContextRelease ()
     }
 }
 
-void
-UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
-{
-  LteRrcSap::RrcConnectionSwitch msg;
-  msg.rrcTransactionIdentifier = GetNewRrcTransactionIdentifier();
-  std::vector<uint8_t> drbidVector;
-  for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it =  m_drbMap.begin ();
-     it != m_drbMap.end ();
-     ++it)
-  {
-    if(it->second->m_isMc)
-    {
-      drbidVector.push_back(it->first); 
-      Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp>(it->second->m_pdcp);
-      if(pdcp != 0)
-      {
-        pdcp->SwitchConnection(useMmWaveConnection);
-        // TODO forward packets in RLC buffers! 
-        // when a switch happens, the swicth target RETX and TXED buffers of RLC AM are emptied, and 
-        // the different windows are resetted.
-        // then the switch message is sent and the RLC buffers are fed back to the pdpc
-
-      }     
-      else
-      {
-        NS_FATAL_ERROR("A device defined as MC has not a McEnbPdcp");
-      }
-    }
-  }
-  msg.drbidList = drbidVector;
-  msg.useMmWaveConnection = useMmWaveConnection;
-  m_rrc->m_rrcSapUser->SendRrcConnectionSwitch(m_rnti, msg);  
-}
-
 void 
 UeManager::RecvHandoverPreparationFailure (uint16_t cellId)
 {
@@ -1250,6 +1253,7 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
     lcinfo.gbrUl = params.lcinfo.gbrUl;
     lcinfo.gbrDl = params.lcinfo.gbrDl;
     m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
+    rlcInfo->lcinfo = lcinfo;
 
     rlcInfo->logicalChannelIdentity = lcid;
     rlcInfo->logicalChannelConfig.priority = params.logicalChannelConfig.priority;
@@ -1509,6 +1513,7 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
           ueCtxReleaseParams.newEnbUeX2apId = m_rnti;
           ueCtxReleaseParams.sourceCellId = m_sourceCellId;
           m_rrc->m_x2SapProvider->SendUeContextRelease (ueCtxReleaseParams);
+          m_rrc->m_handoverEndOkTrace (m_imsi, m_rrc->m_cellId, m_rnti);
           SwitchToState(CONNECTED_NORMALLY);
           NS_LOG_INFO("m_queuedHandoverRequestCellId " << m_queuedHandoverRequestCellId);
           if(m_queuedHandoverRequestCellId > 0)
@@ -1670,6 +1675,144 @@ UeManager::RecvNotifySecondaryCellConnected(uint16_t mmWaveRnti, uint16_t mmWave
         NS_LOG_INFO("MC Bearer already setup"); // TODO consider bearer modifications
       }  
     }
+  }
+}
+
+
+void
+UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
+{
+  LteRrcSap::RrcConnectionSwitch msg;
+  msg.rrcTransactionIdentifier = GetNewRrcTransactionIdentifier();
+  std::vector<uint8_t> drbidVector;
+  for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it =  m_drbMap.begin ();
+     it != m_drbMap.end ();
+     ++it)
+  {
+    if(it->second->m_isMc)
+    {
+      drbidVector.push_back(it->first); 
+      Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp>(it->second->m_pdcp);
+      if(pdcp != 0)
+      {
+        //m_rrc->m_x2SapProvider->
+        pdcp->SwitchConnection(useMmWaveConnection);
+        // TODO forward packets in RLC buffers! 
+        // when a switch happens, the swicth target RETX and TXED buffers of RLC AM are emptied, and 
+        // the different windows are resetted.
+        // then the switch message is sent and the RLC buffers are fed back to the pdpc
+        if(!m_rrc->m_ismmWave && useMmWaveConnection) // 
+        {
+          NS_LOG_UNCOND("UeManager: forward LTE RLC buffers to mmWave");
+          ForwardRlcBuffers(it->second->m_rlc, it->second->m_pdcp, it->second->m_gtpTeid, 1, it->first);
+          // TODO consider if it is the case to create a new rlc!
+
+          // reset RLC and LC
+          it->second->m_rlc = 0;
+          uint8_t lcid = it->second->m_logicalChannelIdentity;
+          m_rrc->m_cmacSapProvider->ReleaseLc(m_rnti, lcid);
+
+          TypeId rlcTypeId = m_rrc->GetRlcType (it->second->m_epsBearer);
+
+          ObjectFactory rlcObjectFactory;
+          rlcObjectFactory.SetTypeId (rlcTypeId);
+          Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
+          rlc->SetLteMacSapProvider (m_rrc->m_macSapProvider);
+          rlc->SetRnti (m_rnti);
+
+          it->second->m_rlc = rlc;
+
+          NS_LOG_UNCOND("Reset RLC in LTE eNB after switch, new rlc " << rlc);
+
+          rlc->SetLcId (lcid);
+
+          // we need PDCP only for real RLC, i.e., RLC/UM or RLC/AM
+          // if we are using RLC/SM we don't care of anything above RLC
+          if (rlcTypeId != LteRlcSm::GetTypeId ())
+          {
+            DynamicCast<McEnbPdcp>(it->second->m_pdcp)->SetLteRlcSapProvider (rlc->GetLteRlcSapProvider ());
+            rlc->SetLteRlcSapUser (DynamicCast<McEnbPdcp>(it->second->m_pdcp)->GetLteRlcSapUser ());
+          }
+
+          LteEnbCmacSapProvider::LcInfo lcinfo;
+          lcinfo.rnti = m_rnti;
+          lcinfo.lcId = lcid;
+          lcinfo.lcGroup = m_rrc->GetLogicalChannelGroup (it->second->m_epsBearer);
+          lcinfo.qci =   it->second->m_epsBearer.qci;
+          lcinfo.isGbr = it->second->m_epsBearer.IsGbr ();
+          lcinfo.mbrUl = it->second->m_epsBearer.gbrQosInfo.mbrUl;
+          lcinfo.mbrDl = it->second->m_epsBearer.gbrQosInfo.mbrDl;
+          lcinfo.gbrUl = it->second->m_epsBearer.gbrQosInfo.gbrUl;
+          lcinfo.gbrDl = it->second->m_epsBearer.gbrQosInfo.gbrDl;
+          m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
+        }
+        else if(!m_rrc->m_ismmWave && !useMmWaveConnection)
+        {
+          // switch from mmWave to LTE: it will be the mmWave cell that forwards the data back to LTE
+          EpcX2SapProvider::SwitchConnectionParams params;
+          params.mmWaveRnti = m_mmWaveRnti;
+          params.mmWaveCellId = m_mmWaveCellId;
+          params.useMmWaveConnection = useMmWaveConnection;
+          params.drbid = it->first;
+          m_rrc->m_x2SapProvider->SendSwitchConnectionToMmWave(params);
+        }
+
+      }     
+      else
+      {
+        NS_FATAL_ERROR("A device defined as MC has not a McEnbPdcp");
+      }
+    }
+  }
+  msg.drbidList = drbidVector;
+  msg.useMmWaveConnection = useMmWaveConnection;
+  m_rrc->m_rrcSapUser->SendRrcConnectionSwitch(m_rnti, msg);  
+}
+
+
+void 
+UeManager::RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid)
+{
+  NS_ASSERT_MSG(m_rlcMap.find(drbid) != m_rlcMap.end(), "drbid not found in m_rlcMap");
+  NS_LOG_UNCOND("RecvConnectionSwitchToMmWave on cell " << m_rrc->m_cellId << " switch " << useMmWaveConnection << " for drbid " << (uint32_t)drbid);
+  if(!useMmWaveConnection)
+  {
+    //Ptr<RlcBearerInfo> rlcInfo = m_rlcMap.find(drbid)->second;
+    m_targetCellId = m_rrc->m_lteCellId;
+    ForwardRlcBuffers(m_rlcMap.find(drbid)->second->m_rlc, 0, m_rlcMap.find(drbid)->second->gtpTeid, 0, 0);
+    // TODO consider if it is the case to create a new rlc!
+
+    m_rlcMap.find(drbid)->second->m_rlc = 0;
+
+    uint8_t lcid = m_rlcMap.find(drbid)->second->logicalChannelIdentity;
+    m_rrc->m_cmacSapProvider->ReleaseLc(m_rnti, lcid);
+
+    EpsBearer bearer;
+    TypeId rlcTypeId = m_rrc->GetRlcType (bearer); // actually, this doesn't depend on bearer
+
+    ObjectFactory rlcObjectFactory;
+    rlcObjectFactory.SetTypeId (rlcTypeId);
+    Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
+    NS_LOG_INFO("Reset rlc in mmWave after switch to LTE " << rlc);
+    rlc->SetLteMacSapProvider (m_rrc->m_macSapProvider);
+    rlc->SetRnti (m_rnti);
+
+    m_rlcMap.find(drbid)->second->m_rlc = rlc;
+    rlc->SetLcId (lcid);
+
+    if (rlcTypeId != LteRlcSm::GetTypeId ())
+    {
+      // connect with remote PDCP
+      rlc->SetEpcX2RlcProvider (m_rrc->GetEpcX2RlcProvider());
+      EpcX2Sap::UeDataParams ueParams;
+      ueParams.sourceCellId = m_rrc->GetCellId();
+      ueParams.targetCellId = m_rlcMap.find(drbid)->second->targetCellId; // the LTE cell
+      ueParams.gtpTeid = m_rlcMap.find(drbid)->second->gtpTeid;
+      rlc->SetUeDataParams(ueParams);
+      m_rrc->m_x2SapProvider->SetEpcX2RlcUser (m_rlcMap.find(drbid)->second->gtpTeid, rlc->GetEpcX2RlcUser());
+    }
+
+    m_rrc->m_cmacSapProvider->AddLc (m_rlcMap.find(drbid)->second->lcinfo, rlc->GetLteMacSapUser ());
   }
 }
 
@@ -2001,6 +2144,7 @@ LteEnbRrc::LteEnbRrc ()
   m_cphySapUser = new MemberLteEnbCphySapUser<LteEnbRrc> (this);
   m_imsiCellSinrMap.clear();
   m_x2_received_cnt = 0;
+  m_switchEnabled = true;
 }
 
 
@@ -2720,7 +2864,9 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       if(m_mmWaveCellSetupCompleted.find(imsi) != m_mmWaveCellSetupCompleted.end())
       {
         alreadyAssociatedImsi = true;
+        //onHandoverImsi = (!m_switchEnabled) ? true : !m_mmWaveCellSetupCompleted.find(imsi)->second;
         onHandoverImsi = !m_mmWaveCellSetupCompleted.find(imsi)->second;
+
       }
       else
       {
@@ -2758,6 +2904,8 @@ LteEnbRrc::TriggerUeAssociationUpdate()
           bool useMmWaveConnection = false; 
           m_imsiUsingLte[imsi] = !useMmWaveConnection;
           ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
+          //m_switchEnabled = false;
+          //Simulator::Schedule(MilliSeconds(50), &LteEnbRrc::EnableSwitching, this, imsi);
         }
         else
         {
@@ -2850,6 +2998,12 @@ LteEnbRrc::TriggerUeAssociationUpdate()
   }
   
   Simulator::Schedule(MilliSeconds(1.6), &LteEnbRrc::TriggerUeAssociationUpdate, this);
+}
+
+void
+LteEnbRrc::EnableSwitching(uint64_t imsi)
+{
+  m_switchEnabled = true;
 }
 
 void
@@ -3377,6 +3531,17 @@ LteEnbRrc::DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::McHandoverParams para
 }
 
 void
+LteEnbRrc::DoRecvConnectionSwitchToMmWave (EpcX2SapUser::SwitchConnectionParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("Recv X2 message: SWITCH CONNECTION");
+
+  GetUeManager(params.mmWaveRnti)->RecvConnectionSwitchToMmWave(params.useMmWaveConnection, params.drbid);
+}
+
+
+void
 LteEnbRrc::DoRecvLoadInformation (EpcX2SapUser::LoadInformationParams params)
 {
   NS_LOG_FUNCTION (this);
@@ -3449,7 +3614,15 @@ LteEnbRrc::DoRecvUeData (EpcX2SapUser::UeDataParams params)
     }
   else
     {
-      NS_FATAL_ERROR ("X2-U data received but no X2uTeidInfo found");
+      teidInfoIt = m_x2uMcTeidInfoMap.find(params.gtpTeid);
+      if(teidInfoIt != m_x2uMcTeidInfoMap.end ())
+      {
+        GetUeManager (teidInfoIt->second.rnti)->SendData (teidInfoIt->second.drbid, params.ueData);
+      }
+      else
+      {
+        NS_FATAL_ERROR ("X2-U data received but no X2uTeidInfo found");
+      }
     }
 }
 

@@ -25,6 +25,8 @@
 #include "ns3/lte-pdcp-header.h"
 #include "ns3/lte-pdcp-sap.h"
 #include "ns3/lte-pdcp-tag.h"
+#include "ns3/seq-ts-header.h"
+
 
 namespace ns3 {
 
@@ -245,21 +247,32 @@ McUePdcp::DoReceivePdu (Ptr<Packet> p)
   p->RemoveAllByteTags();
   NS_LOG_WARN("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
 
-  LtePdcpHeader pdcpHeader;
-  p->RemoveHeader (pdcpHeader);
-  NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
+  if(p->GetSize() > 3)
+  {
+    LtePdcpHeader pdcpHeader;
+    p->RemoveHeader (pdcpHeader);
+    NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
 
-  m_rxSequenceNumber = pdcpHeader.GetSequenceNumber () + 1;
-  if (m_rxSequenceNumber > m_maxPdcpSn)
+    // SeqTsHeader seqTs;
+    // p->PeekHeader (seqTs);
+    // NS_LOG_UNCOND("Carrying UDP packet " << (uint32_t)seqTs.GetSeq());
+
+
+    m_rxSequenceNumber = pdcpHeader.GetSequenceNumber () + 1;
+    if (m_rxSequenceNumber > m_maxPdcpSn)
+      {
+        m_rxSequenceNumber = 0;
+      }
+
+    if(p->GetSize() > 20 + 8 + 12)
     {
-      m_rxSequenceNumber = 0;
+      LtePdcpSapUser::ReceivePdcpSduParameters params;
+      params.pdcpSdu = p;
+      params.rnti = m_rnti;
+      params.lcid = m_lcid;
+      m_pdcpSapUser->ReceivePdcpSdu (params);
     }
-
-  LtePdcpSapUser::ReceivePdcpSduParameters params;
-  params.pdcpSdu = p;
-  params.rnti = m_rnti;
-  params.lcid = m_lcid;
-  m_pdcpSapUser->ReceivePdcpSdu (params);
+  }
 }
 
 void

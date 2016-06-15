@@ -179,6 +179,7 @@ protected:
   virtual void DoSendMcHandoverRequest (EpcX2SapProvider::McHandoverParams params);
   virtual void DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::McHandoverParams params);
   virtual void DoNotifyCoordinatorHandoverFailed(EpcX2SapProvider::HandoverFailedParams params);
+  virtual void DoSendSwitchConnectionToMmWave(EpcX2SapProvider::SwitchConnectionParams params);
   
   EpcX2SapUser* m_x2SapUser;
   EpcX2SapProvider* m_x2SapProvider;

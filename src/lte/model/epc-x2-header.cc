@@ -2407,5 +2407,131 @@ EpcX2UeImsiSinrUpdateHeader::unpack754(uint64_t i)
   return result;
 }
 
+/////////////////////////////////////////////////////////////////////
+
+NS_OBJECT_ENSURE_REGISTERED (EpcX2ConnectionSwitchHeader);
+
+EpcX2ConnectionSwitchHeader::EpcX2ConnectionSwitchHeader ()
+  : m_numberOfIes (1 + 1 + 1),
+    m_headerLength (2 + 1 + 1),
+    m_mmWaveRnti (0xfffa),
+    m_drbid (0xfa),
+    m_useMmWaveConnection (0)
+{
+
+}
+
+EpcX2ConnectionSwitchHeader::~EpcX2ConnectionSwitchHeader ()
+{
+  m_numberOfIes = 0;
+  m_headerLength = 0;
+  m_mmWaveRnti          = 0xfffb;
+  m_drbid = 0xfb;
+  m_useMmWaveConnection = 0;
+}
+
+TypeId
+EpcX2ConnectionSwitchHeader::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::EpcX2ConnectionSwitchHeader")
+    .SetParent<Header> ()
+    .SetGroupName("Lte")
+    .AddConstructor<EpcX2ConnectionSwitchHeader> ()
+  ;
+  return tid;
+}
+
+TypeId
+EpcX2ConnectionSwitchHeader::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+EpcX2ConnectionSwitchHeader::GetSerializedSize (void) const
+{
+  return m_headerLength;
+}
+
+void
+EpcX2ConnectionSwitchHeader::Serialize (Buffer::Iterator start) const
+{
+  Buffer::Iterator i = start;
+
+  i.WriteHtonU16 (m_mmWaveRnti);
+  i.WriteU8 (m_drbid);
+  i.WriteU8 (m_useMmWaveConnection);
+}
+
+uint32_t
+EpcX2ConnectionSwitchHeader::Deserialize (Buffer::Iterator start)
+{
+  Buffer::Iterator i = start;
+
+  m_mmWaveRnti = i.ReadNtohU16 ();
+  m_drbid = i.ReadU8();
+  m_useMmWaveConnection = (bool)i.ReadU8 ();
+  m_numberOfIes = 3;
+  m_headerLength = 4;
+
+  return GetSerializedSize ();
+}
+
+void
+EpcX2ConnectionSwitchHeader::Print (std::ostream &os) const
+{
+  os << "m_mmWaveRnti = " << m_mmWaveRnti;
+  os << " m_useMmWaveConnection = " << m_useMmWaveConnection;
+  os << " m_drbid = " << (uint16_t)m_drbid;
+}
+
+uint16_t
+EpcX2ConnectionSwitchHeader::GetMmWaveRnti () const
+{
+  return m_mmWaveRnti;
+}
+
+void
+EpcX2ConnectionSwitchHeader::SetMmWaveRnti (uint16_t rnti)
+{
+  m_mmWaveRnti = rnti;
+}
+
+bool
+EpcX2ConnectionSwitchHeader::GetUseMmWaveConnection () const
+{
+  return m_useMmWaveConnection;
+}
+
+void
+EpcX2ConnectionSwitchHeader::SetUseMmWaveConnection (bool useMmWaveConnection)
+{
+  m_useMmWaveConnection = useMmWaveConnection;
+}
+
+uint8_t
+EpcX2ConnectionSwitchHeader::GetDrbid () const
+{
+  return m_drbid;
+}
+
+void
+EpcX2ConnectionSwitchHeader::SetDrbid (uint8_t bid)
+{
+  m_drbid = bid;
+}
+
+uint32_t
+EpcX2ConnectionSwitchHeader::GetLengthOfIes () const
+{
+  return m_headerLength;
+}
+
+uint32_t
+EpcX2ConnectionSwitchHeader::GetNumberOfIes () const
+{
+  return m_numberOfIes;
+}
+
 
 } // namespace ns3

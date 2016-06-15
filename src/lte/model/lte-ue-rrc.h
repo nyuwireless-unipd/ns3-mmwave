@@ -30,7 +30,7 @@
 #include <ns3/lte-ue-cphy-sap.h>
 #include <ns3/lte-rrc-sap.h>
 #include <ns3/traced-callback.h>
-
+#include <ns3/lte-radio-bearer-info.h>
 #include <map>
 #include <set>
 
@@ -599,7 +599,7 @@ private:
    * Radio Bearers by LCID.
    */
   std::map <uint8_t, Ptr<LteDataRadioBearerInfo> > m_drbMap;
-  std::map <uint8_t, Ptr<LteRlc> > m_rlcMap;
+  std::map <uint8_t, Ptr<RlcBearerInfo> > m_rlcMap;
 
   /**
    * True if RLC SM is to be used, false if RLC UM/AM are to be used.

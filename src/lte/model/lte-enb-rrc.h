@@ -41,6 +41,7 @@
 #include <ns3/lte-anr-sap.h>
 #include <ns3/lte-ffr-rrc-sap.h>
 #include <ns3/lte-rlc.h>
+#include <ns3/lte-pdcp.h>
 #include <ns3/lte-rlc-am.h>
 
 #include <map>
@@ -366,9 +367,28 @@ public:
    */
   void RecvNotifyLteMmWaveHandoverCompleted();
 
+  /**
+   * Notify a mmWave remote UeManager that a switch is expected. 
+   * If the switch is to LTE, forward RLC buffers to LTE eNB
+   */
+  void RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid);
+
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
+  /**
+   * Forward the content of RLC buffers. For RLC UM and UM LowLat, forward txBuffer.
+   * For RLC AM, forward the merge of retx and txed buffers, and txBuffer
+   * @param the RLC entity
+   * @param the PDCP entity, if the mcLteToMmWaveForwarding is false it can be 0
+   * @param the gtpTeid that identifies the X2 connection to be used
+   * @param a bool that specifies if this operation involves a classic forwarding (to PDCP of the target eNB)
+   * or a LTE to MmWave Dual Connectivity forwarding, which needs the packets to be inserted back in the LTE PDCP
+   * (there is no PDCP in the MmWave eNB in DC setup)
+   * @param the bearer id, used only if mcLteToMmWaveForwarding is true
+   */
+  void ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTeid, bool mcLteToMmWaveForwarding, uint8_t bid);
+
   
   bool m_firstConnection;
   bool m_receivedLteMmWaveHandoverCompleted;
@@ -1028,6 +1048,7 @@ private:
   void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
   void DoRecvMcHandoverRequest(EpcX2SapUser::McHandoverParams params);
   void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::McHandoverParams params);
+  void DoRecvConnectionSwitchToMmWave (EpcX2SapUser::SwitchConnectionParams params);
 
   // CMAC SAP methods
 
@@ -1053,6 +1074,9 @@ private:
   void DoUpdateUeSinrEstimate(LteEnbCphySapUser::UeAssociatedSinrInfo info);
 
   // Internal methods
+
+  void EnableSwitching(uint64_t imsi);
+  bool m_switchEnabled;
 
   /**
    * Allocate a new RNTI for a new UE. This is done in the following cases:
@@ -1188,6 +1212,7 @@ private:
    */
   void UpdateUeHandoverAssociation();
 
+  
   Callback <void, Ptr<Packet> > m_forwardUpCallback;
 
   /// Interface to receive messages from neighbour eNodeB over the X2 interface.
