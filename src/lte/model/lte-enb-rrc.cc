@@ -1766,6 +1766,7 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
   }
   msg.drbidList = drbidVector;
   msg.useMmWaveConnection = useMmWaveConnection;
+  NS_LOG_UNCOND("SendRrcConnectionSwitch to " << m_rnti << " with useMmWaveConnection " << msg.useMmWaveConnection << " at time " << Simulator::Now().GetSeconds());
   m_rrc->m_rrcSapUser->SendRrcConnectionSwitch(m_rnti, msg);  
 }
 

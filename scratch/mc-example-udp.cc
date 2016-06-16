@@ -378,7 +378,7 @@ static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of b
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
     ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-    ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -393,12 +393,12 @@ main (int argc, char *argv[])
   //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_LOGIC);
-  LogComponentEnable ("LteUeMac", LOG_LEVEL_INFO);
-  LogComponentEnable ("LteEnbMac", LOG_LEVEL_INFO);
+  //LogComponentEnable ("LteUeMac", LOG_LEVEL_INFO);
+  //LogComponentEnable ("LteEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-  LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
+  //LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
   //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
   //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
   //LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_INFO);

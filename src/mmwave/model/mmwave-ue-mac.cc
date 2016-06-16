@@ -907,8 +907,8 @@ void
 MmWaveUeMac::AddLc (uint8_t lcId,  LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu)
 {
 	NS_LOG_FUNCTION (this << " lcId" << (uint32_t) lcId);
-	NS_ASSERT_MSG (m_lcInfoMap.find (lcId) == m_lcInfoMap.end (), "cannot add channel because LCID " << lcId << " is already present");
-
+	//NS_ASSERT_MSG (m_lcInfoMap.find (lcId) == m_lcInfoMap.end (), "cannot add channel because LCID " << lcId << " is already present");
+NS_LOG_UNCOND("Add LC in " << m_rnti << " lcid " << (uint32_t)lcId);
 	LcInfo lcInfo;
 	lcInfo.lcConfig = lcConfig;
 	lcInfo.macSapUser = msu;
@@ -919,10 +919,11 @@ void
 MmWaveUeMac::DoRemoveLc (uint8_t lcId)
 {
 	NS_LOG_FUNCTION (this << " lcId" << lcId);
-  NS_ASSERT_MSG (m_lcInfoMap.find (lcId) != m_lcInfoMap.end (), "cannot remove channel because LCID " << lcId << " not found");
-
-  m_lcInfoMap.erase(m_lcInfoMap.find(lcId));
-
+  NS_LOG_UNCOND("Remove LC in " << m_rnti << " lcid " << (uint32_t)lcId);
+  if(m_lcInfoMap.find (lcId) != m_lcInfoMap.end ())
+  {
+    m_lcInfoMap.erase(m_lcInfoMap.find(lcId));  
+  }
 }
 
 LteMacSapProvider*

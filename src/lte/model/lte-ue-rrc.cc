@@ -147,6 +147,7 @@ LteUeRrc::LteUeRrc ()
   m_rrcSapProvider = new MemberLteUeRrcSapProvider<LteUeRrc> (this);
   m_drbPdcpSapUser = new LtePdcpSpecificLtePdcpSapUser<LteUeRrc> (this);
   m_asSapProvider = new MemberLteAsSapProvider<LteUeRrc> (this);
+  //m_onLte = true; // MC devices first connect to a LTE macro eNB
 }
 
 
@@ -1187,6 +1188,7 @@ LteUeRrc::DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg)
 void
 LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
 {
+  NS_LOG_UNCOND("Recv RRC Connection Switch on rnti " << m_rnti << " of cell " << m_cellId << " m_mmWaveCellId " << m_mmWaveCellId << " in state " << ToString(m_state));
   std::vector<uint8_t> drbidList = msg.drbidList;
   for(std::vector<uint8_t>::iterator iter = drbidList.begin(); iter != drbidList.end(); ++iter)
   {
@@ -1197,7 +1199,7 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
       {
         pdcp->SwitchConnection(msg.useMmWaveConnection);
 
-        if(msg.useMmWaveConnection)
+        if(msg.useMmWaveConnection) // I was on LTE, now I switch to mmWave
         {
           uint8_t lcid = m_drbMap.find(*iter)->second->m_logicalChannelIdentity;
           m_cmacSapProvider->RemoveLc (lcid);
@@ -1255,7 +1257,7 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
           rlc->Initialize ();
 
         }
-        else
+        else // I was on mmWave, and I switch to LTE
         {
           m_mmWaveCmacSapProvider->RemoveLc(m_rlcMap.find(*iter)->second->logicalChannelIdentity);
           // create Rlc
@@ -1301,6 +1303,7 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
           m_mmWaveCmacSapProvider->AddLc (m_rlcMap.find(*iter)->second->logicalChannelIdentity, 
                                   lcConfig,
                                   rlc->GetLteMacSapUser ());
+
           if (rlcTypeId != LteRlcSm::GetTypeId ())
           {
             pdcp->SetMmWaveRnti (m_mmWaveRnti);
@@ -1317,7 +1320,7 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
           NS_LOG_INFO("LteUeRrc SwitchToMmWave " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
           m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
         }
-        else
+        else if(!msg.useMmWaveConnection)
         {
           NS_LOG_INFO("LteUeRrc SwitchToLte " << m_imsi << m_cellId << m_rnti << " at time " << Simulator::Now().GetSeconds());
           m_switchToLteTrace(m_imsi, m_cellId, m_rnti);          
@@ -1694,7 +1697,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
 
               bool useMmWaveConnection = true;
               pdcp->SwitchConnection(useMmWaveConnection);
-              NS_LOG_INFO("LteUeRrc SwitchToMmWave " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
+              NS_LOG_INFO("LteUeRrc SwitchToMmWave and create new rlc " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
               m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
             }
             else
