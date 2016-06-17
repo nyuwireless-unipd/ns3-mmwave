@@ -28,6 +28,9 @@
 #include "ns3/ptr.h"
 #include "ns3/address.h"
 #include "packet-loss-counter.h"
+ #include <fstream>
+#include <string>
+ 
 namespace ns3 {
 /**
  * \ingroup applications
@@ -78,6 +81,10 @@ public:
    *  be a multiple of 8
    */
   void SetPacketWindowSize (uint16_t size);
+
+  void SetReceivedFilename(std::string name);
+  std::string GetReceivedFilename() const;
+
 protected:
   virtual void DoDispose (void);
 
@@ -100,6 +107,9 @@ private:
   Ptr<Socket> m_socket6; //!< IPv6 Socket
   uint32_t m_received; //!< Number of received packets
   PacketLossCounter m_lossCounter; //!< Lost packet counter
+
+  std::string m_receivedFilename;
+  std::ofstream m_udpReceivedFile;
 };
 
 } // namespace ns3

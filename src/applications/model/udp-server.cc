@@ -29,6 +29,7 @@
 #include "ns3/socket-factory.h"
 #include "ns3/packet.h"
 #include "ns3/uinteger.h"
+#include "ns3/string.h"
 #include "packet-loss-counter.h"
 
 #include "seq-ts-header.h"
@@ -59,6 +60,11 @@ UdpServer::GetTypeId (void)
                    MakeUintegerAccessor (&UdpServer::GetPacketWindowSize,
                                          &UdpServer::SetPacketWindowSize),
                    MakeUintegerChecker<uint16_t> (8,256))
+    .AddAttribute ("ReceivedPacketsFilename",
+                   "Name of the file where the number of received packets will be saved.",
+                   StringValue ("UdpReceived.txt"),
+                   MakeStringAccessor (&UdpServer::SetReceivedFilename),
+                   MakeStringChecker ())
   ;
   return tid;
 }
@@ -74,6 +80,19 @@ UdpServer::~UdpServer ()
 {
   NS_LOG_FUNCTION (this);
 }
+
+void 
+UdpServer::SetReceivedFilename(std::string name)
+{
+  m_receivedFilename = name;
+}
+
+std::string 
+UdpServer::GetReceivedFilename() const
+{
+  return m_receivedFilename;
+}
+
 
 uint16_t
 UdpServer::GetPacketWindowSize () const
@@ -107,6 +126,14 @@ void
 UdpServer::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
+
+  if(!m_udpReceivedFile.is_open())
+  {
+    m_udpReceivedFile.open(GetReceivedFilename().c_str());
+  }
+  m_udpReceivedFile << m_received << std::endl;
+  m_udpReceivedFile.close();
+
   Application::DoDispose ();
 }
 

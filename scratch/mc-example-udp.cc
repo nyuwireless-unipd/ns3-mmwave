@@ -375,7 +375,19 @@ static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave 
     ns3::UintegerValue(400), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
     ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
+static ns3::GlobalValue g_interPckInterval("interPckInterval", "Interarrival time of UDP packets (us)",
+    ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
+static ns3::GlobalValue g_bufferSize("bufferSize", "RLC tx buffer size (MB)",
+    ns3::UintegerValue(10), ns3::MakeUintegerChecker<uint32_t>());
+static ns3::GlobalValue g_x2Latency("x2Latency", "Latency on X2 interface (us)",
+    ns3::DoubleValue(1), ns3::MakeDoubleChecker<double>());
+static ns3::GlobalValue g_mmeLatency("mmeLatency", "Latency on MME interface (us)",
+    ns3::DoubleValue(10000), ns3::MakeDoubleChecker<double>());
+static ns3::GlobalValue g_mobileUeSpeed("mobileSpeed", "The speed of the UE (m/s)",
+    ns3::DoubleValue(5), ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
+    ns3::BooleanValue(true), ns3::MakeBooleanChecker());
+static ns3::GlobalValue g_rlcAmEnabled("rlcAmEnabled", "If true, use RLC AM, else use RLC UM",
     ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
     ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
@@ -423,10 +435,9 @@ main (int argc, char *argv[])
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
 
   uint16_t numberOfNodes = 1;
-  double simTime = 40.0;
-  double interPacketInterval = 50;  // 500 microseconds
+  //double simTime = 2.0;
+  //double interPacketInterval = 50;  // 500 microseconds
   bool harqEnabled = true;
-  bool rlcAmEnabled = true;
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
@@ -436,13 +447,14 @@ main (int argc, char *argv[])
   // Command line arguments
   CommandLine cmd;
   cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", numberOfNodes);
-  cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
-  cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
+  //cmd.AddValue("simTime", "Total duration of the simulation [s])", simTime);
+  //cmd.AddValue("interPacketInterval", "Inter packet interval [ms])", interPacketInterval);
   cmd.Parse(argc, argv);
 
   UintegerValue uintegerValue;
   BooleanValue booleanValue;
   StringValue stringValue;
+  DoubleValue doubleValue;
   GlobalValue::GetValueByName("numBlocks", uintegerValue);
   uint32_t numBlocks = uintegerValue.Get();
   GlobalValue::GetValueByName("mmw1Dist", uintegerValue);
@@ -455,10 +467,31 @@ main (int argc, char *argv[])
   uint32_t streetWidth = 15;
   uint32_t minimumBuildingWidth = 10;
   uint32_t buildingZ = 15;
+
+  uint32_t ueInitialPosition = 100;
+  uint32_t ueFinalPosition = 300;
   
   GlobalValue::GetValueByName("fastSwitching", booleanValue);
   bool fastSwitching = booleanValue.Get();
   bool hardHandover = !fastSwitching;
+
+  GlobalValue::GetValueByName("rlcAmEnabled", booleanValue);
+  bool rlcAmEnabled = booleanValue.Get();
+  GlobalValue::GetValueByName("bufferSize", uintegerValue);
+  uint32_t bufferSize = uintegerValue.Get();
+  GlobalValue::GetValueByName("interPckInterval", uintegerValue);
+  uint32_t interPacketInterval = uintegerValue.Get();
+  GlobalValue::GetValueByName("x2Latency", doubleValue);
+  double x2Latency = doubleValue.Get();
+  GlobalValue::GetValueByName("mmeLatency", doubleValue);
+  double mmeLatency = doubleValue.Get();
+  GlobalValue::GetValueByName("mobileSpeed", doubleValue);
+  double ueSpeed = doubleValue.Get();
+
+  double simTime = ((double)ueFinalPosition - (double)ueInitialPosition)/ueSpeed;
+
+  NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " << 
+      interPacketInterval << " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed);
 
   // rng things
   GlobalValue::GetValueByName("runNumber", uintegerValue);
@@ -487,6 +520,8 @@ main (int argc, char *argv[])
   std::string cellIdInTimeHandoverOutName = "CellIdStatsHandover";
   std::string mmWaveSinrOutputFilename = "MmWaveSinrTime";
   std::string x2statOutputFilename = "X2Stats";
+  std::string udpSentFilename = "UdpSent";
+  std::string udpReceivedFilename = "UdpReceived";
   std::string extension = ".txt";
   std::string version;
   if(fastSwitching)
@@ -518,17 +553,17 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue(sfPeriod));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue(100));
-  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
+  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
   //Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
   Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
   Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue(MicroSeconds(100.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(0.99)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MicroSeconds(x2Latency)));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MilliSeconds(1)));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MilliSeconds(10)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(1000)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
   Config::SetDefault ("ns3::McStatsCalculator::MmWaveOutputFilename", StringValue                 (path + version + mmWaveOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::McStatsCalculator::LteOutputFilename", StringValue                    (path + version + lteOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::McStatsCalculator::CellIdInTimeOutputFilename", StringValue           (path + version + cellIdInTimeOutName    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
@@ -545,11 +580,13 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::CoreNetworkStatsCalculator::X2FileName", StringValue                  (path + version + x2statOutputFilename    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   std::string lostFilename = path + version + "LostUdpPackets" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension;
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"))
-
-  Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
-  Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
+  Config::SetDefault ("ns3::UdpServer::ReceivedPacketsFilename", StringValue(path + version + "ReceivedUdp" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::UdpClient::SentPacketsFilename", StringValue(path + version + "SentUdp" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  
+  Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10.0)));
-  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (100 * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
@@ -645,13 +682,13 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (0, -5, 0));
+  uePositionAlloc->Add (Vector (ueInitialPosition, -5, 0));
   uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (100, -5, 0));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes
@@ -794,8 +831,8 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (0.5));
 
 
-  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(5, 0, 0));
-  double numPrints = 100;
+  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(ueSpeed, 0, 0));
+  double numPrints = 0;
   for(int i = 0; i < numPrints; i++)
   {
    Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0)); 

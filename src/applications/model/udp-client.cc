@@ -30,6 +30,7 @@
 #include "ns3/uinteger.h"
 #include "udp-client.h"
 #include "seq-ts-header.h"
+#include "ns3/string.h"
 #include <cstdlib>
 #include <cstdio>
 
@@ -69,6 +70,11 @@ UdpClient::GetTypeId (void)
                    UintegerValue (1024),
                    MakeUintegerAccessor (&UdpClient::m_size),
                    MakeUintegerChecker<uint32_t> (12,1500))
+    .AddAttribute ("SentPacketsFilename",
+                   "Name of the file where the number of sent packets will be saved.",
+                   StringValue ("UdpSent.txt"),
+                   MakeStringAccessor (&UdpClient::SetSentFilename),
+                   MakeStringChecker ())
   ;
   return tid;
 }
@@ -85,6 +91,19 @@ UdpClient::~UdpClient ()
 {
   NS_LOG_FUNCTION (this);
 }
+
+void
+UdpClient::SetSentFilename(std::string name)
+{
+  m_sentFilename = name;
+}
+
+std::string
+UdpClient::GetSentFilename() const
+{
+  return m_sentFilename;
+}
+
 
 void
 UdpClient::SetRemote (Ipv4Address ip, uint16_t port)
@@ -114,6 +133,14 @@ void
 UdpClient::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
+
+  if(!m_udpSentFile.is_open())
+  {
+    m_udpSentFile.open(GetSentFilename().c_str());
+  }
+  m_udpSentFile << m_sent << std::endl;
+  m_udpSentFile.close();
+
   Application::DoDispose ();
 }
 

@@ -27,6 +27,8 @@
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
 #include "ns3/ipv4-address.h"
+#include <fstream>
+#include <string>
 
 namespace ns3 {
 
@@ -72,6 +74,9 @@ public:
    */
   void SetRemote (Address ip, uint16_t port);
 
+  void SetSentFilename(std::string name);
+  std::string GetSentFilename() const;
+
 protected:
   virtual void DoDispose (void);
 
@@ -94,6 +99,9 @@ private:
   Address m_peerAddress; //!< Remote peer address
   uint16_t m_peerPort; //!< Remote peer port
   EventId m_sendEvent; //!< Event to send the next packet
+
+  std::string m_sentFilename;
+  std::ofstream m_udpSentFile;
 
 };
 
