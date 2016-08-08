@@ -23,6 +23,7 @@
 #include "ns3/pointer.h"
 #include "ns3/object-vector.h"
 #include "ns3/packet.h"
+#include "ns3/socket.h"
 #include "ns3/unused.h"
 #include "queue-disc.h"
 
@@ -576,7 +577,7 @@ QueueDisc::DequeuePacket ()
       // queue disc should try not to dequeue a packet destined to a stopped queue).
       // Otherwise, ask the queue disc to dequeue a packet only if the (unique) queue
       // is not stopped.
-      if (m_devQueueIface->GetTxQueuesN ()>1 || !m_devQueueIface->GetTxQueue (0)->IsStopped ())
+      if (m_devQueueIface->GetNTxQueues ()>1 || !m_devQueueIface->GetTxQueue (0)->IsStopped ())
         {
           item = Dequeue ();
           // If the item is not null, add the header to the packet.
@@ -621,6 +622,12 @@ QueueDisc::Transmit (Ptr<QueueDiscItem> item)
       return false;
     }
 
+  // a single queue device makes no use of the priority tag
+  if (m_devQueueIface->GetNTxQueues () == 1)
+    {
+      SocketPriorityTag priorityTag;
+      item->GetPacket ()->RemovePacketTag (priorityTag);
+    }
   m_device->Send (item->GetPacket (), item->GetAddress (), item->GetProtocol ());
 
   // the behavior here slightly diverges from Linux. In Linux, it is advised that

@@ -7,10 +7,34 @@ pfifo_fast queue disc
 Model Description
 *****************
 
-Linux pfifo_fast is the default priority queue enabled on Linux
-systems. Packets are enqueued in three FIFO droptail queues according
-to three priority bands based on the classification returned by
-the configured packet filters.
+PfifoFastQueueDisc behaves like pfifo_fast, which is the default queue disc
+enabled on Linux systems (init systems such as systemd may override such default
+setting). Packets are enqueued in three priority bands (implemented
+as FIFO droptail queues) based on their priority (users can read
+:ref:`Socket-options` for details on how to set packet priority).
+The four least significant bits of the priority are used to determine
+the selected band according to the following table:
+
+==============  ======
+Priority & 0xf  Band
+==============  ======
+    0            1
+    1            2
+    2            2
+    3            2
+    4            1
+    5            2
+    6            0
+    7            0
+    8            1
+    9            1
+   10            1
+   11            1
+   12            1
+   13            1
+   14            1
+   15            1
+==============  ======
 
 The system behaves similar to three ns3::DropTail queues operating
 together, in which packets from higher priority bands are always
@@ -22,15 +46,7 @@ plays the same role as txqueuelen in Linux. If no internal queue is
 provided, three DropTail queues having each a capacity equal to limit are
 created by default. User is allowed to provide queues, but they must be
 three, operate in packet mode and each have a capacity not less
-than limit.
-
-It is necessary to provide at least one packet filter. To simulate the
-Linux behavior, the PfifoFastIpv4PacketFilter and/or the PfifoFastIpv6PacketFilter
-shall be provided. These filters classify packets based on their Type of
-Service bits or DSCP bits. If the filters are unable to classify a packet,
-i.e., they return -1 (PF_NO_MATCH), that packet is enqueued into band 1
-(normal service).
-
+than limit. No packet filter can be added to a PfifoFastQueueDisc.
 
 
 Attributes
@@ -43,14 +59,14 @@ The PfifoFastQueueDisc class holds a single attribute:
 Examples
 ========
 
-The traffic-control example located in ``examples/traffic-control`` shows how to configure
-and install a pfifo_fast queue on Ipv4 nodes.
+Various examples located in ``src/traffic-control/examples`` (e.g., codel-vs-pfifo-asymmetric.cc)
+shows how to configure and install a PfifoFastQueueDisc on internet nodes.
 
 Validation
 **********
 
 The pfifo_fast model is tested using :cpp:class:`PfifoFastQueueDiscTestSuite` class defined
-in ``src/traffic-control/test/pfifo-fast-queue-disc-test-suite.cc``. The suite includes 4 test cases:
+in ``src/test/ns3tc/pfifo-fast-queue-disc-test-suite.cc``. The suite includes 4 test cases:
 
 * Test 1: The first test checks whether IPv4 packets are enqueued in the correct band based on the TOS byte
 * Test 2: The second test checks whether IPv4 packets are enqueued in the correct band based on the TOS byte

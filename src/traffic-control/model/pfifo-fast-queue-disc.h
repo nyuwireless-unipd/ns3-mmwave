@@ -32,8 +32,7 @@ namespace ns3 {
  *
  * Linux pfifo_fast is the default priority queue enabled on Linux
  * systems. Packets are enqueued in three FIFO droptail queues according
- * to three priority bands based on the classification returned by
- * the configured packet filters.
+ * to three priority bands based on the packet priority.
  *
  * The system behaves similar to three ns3::DropTail queues operating
  * together, in which packets from higher priority bands are always
@@ -45,14 +44,7 @@ namespace ns3 {
  * provided, three DropTail queues having each a capacity equal to limit are
  * created by default. User is allowed to provide queues, but they must be
  * three, operate in packet mode and each have a capacity not less
- * than limit.
- *
- * It is necessary to provide at least one packet filter. To simulate the
- * Linux behavior, the PfifoFastIpv4PacketFilter and/or the PfifoFastIpv6PacketFilter
- * shall be provided. These filters classify packets based on their Type of
- * Service bits or DSCP bits. If the filters are unable to classify a packet,
- * i.e., they return -1 (PF_NO_MATCH), that packet is enqueued into band 1
- * (normal service).
+ * than limit. No packet filter can be provided.
  */
 class PfifoFastQueueDisc : public QueueDisc {
 public:
@@ -71,6 +63,12 @@ public:
   virtual ~PfifoFastQueueDisc();
 
 private:
+  /**
+   * Priority to band map. Values are taken from the prio2band array used by
+   * the Linux pfifo_fast queue disc.
+   */
+  static const uint32_t prio2band[16];
+
   virtual bool DoEnqueue (Ptr<QueueDiscItem> item);
   virtual Ptr<QueueDiscItem> DoDequeue (void);
   virtual Ptr<const QueueDiscItem> DoPeek (void) const;

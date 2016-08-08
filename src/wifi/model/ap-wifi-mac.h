@@ -30,7 +30,9 @@
 #include "vht-capabilities.h"
 #include "amsdu-subframe-header.h"
 #include "supported-rates.h"
+#include "dsss-parameter-set.h"
 #include "erp-information.h"
+#include "edca-parameter-set.h"
 #include "ns3/random-variable-stream.h"
 
 namespace ns3 {
@@ -209,6 +211,12 @@ private:
    */
   ErpInformation GetErpInformation (void) const;
   /**
+   * Return the EDCA Parameter Set of the current AP.
+   *
+   * \return the EDCA Parameter Set that we support
+   */
+  EdcaParameterSet GetEdcaParameterSet (void) const;
+  /**
    * Return the HT operations of the current AP.
    *
    * \return the HT operations that we support
@@ -221,6 +229,12 @@ private:
    * \return SupportedRates all rates that we support
    */
   SupportedRates GetSupportedRates (void) const;
+  /**
+   * Return the DSSS Parameter Set that we support.
+   *
+   * \return the DSSS Parameter Set that we support
+   */
+  DsssParameterSet GetDsssParameterSet (void) const;
   /**
    * Enable or disable beacon generation of the AP.
    *

@@ -34,24 +34,6 @@
  * efficient adaptation to link failures.  It simply flushes all nix-vector 
  * routing caches. Finally, IPv6 is not supported.
  *
- * \section api API and Usage
- *
- * The Nix-vector routing protocol must be added to a list of routing 
- * protocols.  It is important that list routing is utilized.
- *
- *    Example:
- *
- *    Ipv4NixVectorHelper nixRouting;
- *    Ipv4StaticRoutingHelper staticRouting;
- *
- *    Ipv4ListRoutingHelper list;
- *    list.Add (staticRouting, 0);
- *    list.Add (nixRouting, 10);
- *
- *    InternetStackHelper stack;
- *    stack.SetRoutingHelper (list);
- *    stack.Install (allNodes);
- *
  * \section impl Implementation
  *
  * ns-3 nix-vector-routing performs on-demand route computation using 
@@ -65,4 +47,6 @@
  * current node extracts the appropriate neighbor-index from the 
  * nix-vector and transmits the packet through the corresponding 
  * net-device.  This continues until the packet reaches the destination.
- * */
+ *
+ */
+

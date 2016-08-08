@@ -18,10 +18,13 @@
  *
  * Authors:  Stefano Avallone <stavallo@unina.it>
  *           Tom Henderson <tomhend@u.washington.edu>
+ *           Pasquale Imputato <p.imputato@gmail.com>
  */
 
 #include "ns3/log.h"
 #include "ns3/enum.h"
+#include "ns3/tcp-header.h"
+#include "ns3/udp-header.h"
 #include "ipv4-queue-disc-item.h"
 #include "ipv4-packet-filter.h"
 
@@ -60,134 +63,88 @@ Ipv4PacketFilter::CheckProtocol (Ptr<QueueDiscItem> item) const
 
 // ------------------------------------------------------------------------- //
 
-NS_OBJECT_ENSURE_REGISTERED (PfifoFastIpv4PacketFilter);
+NS_OBJECT_ENSURE_REGISTERED (FqCoDelIpv4PacketFilter);
 
-TypeId 
-PfifoFastIpv4PacketFilter::GetTypeId (void)
+TypeId
+FqCoDelIpv4PacketFilter::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::PfifoFastIpv4PacketFilter")
+  static TypeId tid = TypeId ("ns3::FqCoDelIpv4PacketFilter")
     .SetParent<Ipv4PacketFilter> ()
     .SetGroupName ("Internet")
-    .AddConstructor<PfifoFastIpv4PacketFilter> ()
-    .AddAttribute ("Mode",
-                   "Whether to interpret the TOS byte as legacy TOS or DSCP",
-                   EnumValue (PF_MODE_DSCP),
-                   MakeEnumAccessor (&PfifoFastIpv4PacketFilter::m_trafficClassMode),
-                   MakeEnumChecker (PF_MODE_TOS, "TOS semantics",
-                                    PF_MODE_DSCP, "DSCP semantics"))
+    .AddConstructor<FqCoDelIpv4PacketFilter> ()
+    .AddAttribute ("Perturbation",
+                   "The salt used as an additional input to the hash function of this filter",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&FqCoDelIpv4PacketFilter::m_perturbation),
+                   MakeUintegerChecker<uint32_t> ())
   ;
   return tid;
 }
 
-PfifoFastIpv4PacketFilter::PfifoFastIpv4PacketFilter ()
+FqCoDelIpv4PacketFilter::FqCoDelIpv4PacketFilter ()
 {
   NS_LOG_FUNCTION (this);
 }
 
-PfifoFastIpv4PacketFilter::~PfifoFastIpv4PacketFilter()
+FqCoDelIpv4PacketFilter::~FqCoDelIpv4PacketFilter ()
 {
   NS_LOG_FUNCTION (this);
 }
 
 int32_t
-PfifoFastIpv4PacketFilter::DoClassify (Ptr<QueueDiscItem> item) const
+FqCoDelIpv4PacketFilter::DoClassify (Ptr<QueueDiscItem> item) const
 {
   NS_LOG_FUNCTION (this << item);
-  uint32_t band;
   Ptr<Ipv4QueueDiscItem> ipv4Item = DynamicCast<Ipv4QueueDiscItem> (item);
 
   NS_ASSERT (ipv4Item != 0);
 
-  if (m_trafficClassMode == PF_MODE_TOS)
+  Ipv4Header hdr = ipv4Item->GetHeader ();
+  Ipv4Address src = hdr.GetSource ();
+  Ipv4Address dest = hdr.GetDestination ();
+  uint8_t prot = hdr.GetProtocol ();
+  uint16_t fragOffset = hdr.GetFragmentOffset ();
+
+  TcpHeader tcpHdr;
+  UdpHeader udpHdr;
+  uint16_t srcPort = 0;
+  uint16_t destPort = 0;
+
+  Ptr<Packet> pkt = ipv4Item->GetPacket ();
+
+  if (prot == 6 && fragOffset == 0) // TCP
     {
-      uint8_t tos = ipv4Item->GetHeader ().GetTos ();
-      band = TosToBand (tos);
-      NS_LOG_DEBUG ("Found Ipv4 packet; TOS " << (uint8_t) tos << " band " << band);
+      pkt->PeekHeader (tcpHdr);
+      srcPort = tcpHdr.GetSourcePort ();
+      destPort = tcpHdr.GetDestinationPort ();
     }
-  else
+  else if (prot == 17 && fragOffset == 0) // UDP
     {
-      Ipv4Header::DscpType dscp = ipv4Item->GetHeader ().GetDscp ();
-      band = DscpToBand (dscp);
-      NS_LOG_DEBUG ("Found Ipv4 packet; DSCP " << ipv4Item->GetHeader ().DscpTypeToString (dscp) << " band " << band);
+      pkt->PeekHeader (udpHdr);
+      srcPort = udpHdr.GetSourcePort ();
+      destPort = udpHdr.GetDestinationPort ();
     }
 
-  return band;
-}
+  /* serialize the 5-tuple and the perturbation in buf */
+  uint8_t buf[17];
+  src.Serialize (buf);
+  dest.Serialize (buf + 4);
+  buf[8] = prot;
+  buf[9] = (srcPort >> 8) & 0xff;
+  buf[10] = srcPort & 0xff;
+  buf[11] = (destPort >> 8) & 0xff;
+  buf[12] = destPort & 0xff;
+  buf[13] = (m_perturbation >> 24) & 0xff;
+  buf[14] = (m_perturbation >> 16) & 0xff;
+  buf[15] = (m_perturbation >> 8) & 0xff;
+  buf[16] = m_perturbation & 0xff;
 
-uint32_t
-PfifoFastIpv4PacketFilter::TosToBand (uint8_t tos) const
-{
-  NS_LOG_FUNCTION (this << (uint16_t) tos);
+  /* Linux calculates the jhash2 (jenkins hash), we calculate the murmur3 */
+  uint32_t hash = Hash32 ((char*) buf, 17);
 
-  uint32_t band = 1;
-  switch (tos) {
-    case 0x10 :
-    case 0x12 :
-    case 0x14 :
-    case 0x16 :
-      band = 0;
-      break;
-    case 0x0 :
-    case 0x4 :
-    case 0x6 :
-    case 0x18 :
-    case 0x1a :
-    case 0x1c :
-    case 0x1e :
-      band = 1;
-      break;
-    case 0x2 :
-    case 0x8 :
-    case 0xa :
-    case 0xc :
-    case 0xe :
-      band = 2;
-      break;
-    default :
-      NS_LOG_ERROR ("Invalid TOS " << (uint16_t) tos);
-  }
-  return band;
-}
+  NS_LOG_DEBUG ("Found Ipv4 packet; hash value " << hash);
 
-uint32_t
-PfifoFastIpv4PacketFilter::DscpToBand (Ipv4Header::DscpType dscpType) const
-{
-  NS_LOG_FUNCTION (this);
-
-  uint32_t band = 1;
-  switch (dscpType) {
-    case Ipv4Header::DSCP_EF :
-    case Ipv4Header::DSCP_AF13 :
-    case Ipv4Header::DSCP_AF23 :
-    case Ipv4Header::DSCP_AF33 :
-    case Ipv4Header::DSCP_AF43 :
-    case Ipv4Header::DscpDefault :
-    case Ipv4Header::DSCP_CS2 :
-    case Ipv4Header::DSCP_CS3 :
-      band = 1;
-      break;
-    case Ipv4Header::DSCP_AF11 :
-    case Ipv4Header::DSCP_AF21 :
-    case Ipv4Header::DSCP_AF31 :
-    case Ipv4Header::DSCP_AF41 :
-    case Ipv4Header::DSCP_CS1 :
-      band = 2;
-      break;
-    case Ipv4Header::DSCP_AF12 :
-    case Ipv4Header::DSCP_AF22 :
-    case Ipv4Header::DSCP_AF32 :
-    case Ipv4Header::DSCP_AF42 :
-    case Ipv4Header::DSCP_CS4 :
-    case Ipv4Header::DSCP_CS5 :
-    case Ipv4Header::DSCP_CS6 :
-    case Ipv4Header::DSCP_CS7 :
-      band = 0;
-      break;
-    default :
-      band = 1;
-  }
-  NS_LOG_DEBUG ("Band returned:  " << band);
-  return band;
+  return hash;
 }
 
 } // namespace ns3

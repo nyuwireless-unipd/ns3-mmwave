@@ -37,6 +37,7 @@ namespace ns3 {
 class Node;
 class Channel;
 class Packet;
+class QueueLimits;
 
 /**
  * \ingroup network
@@ -77,6 +78,24 @@ public:
    * \return the size of the packet included in this item.
    */
   virtual uint32_t GetPacketSize (void) const;
+
+  /**
+   * \enum Uint8Values
+   * \brief 1-byte fields of the packet whose value can be retrieved, if present
+   */
+  enum Uint8Values
+    {
+      IP_DSFIELD
+    };
+
+  /**
+   * \brief Retrieve the value of a given field from the packet, if present
+   * \param field the field whose value has to be retrieved
+   * \param value the output parameter to store the retrieved value
+   *
+   * \return true if the requested field is present in the packet, false otherwise.
+   */
+  virtual bool GetUint8Value (Uint8Values field, uint8_t &value) const;
 
   /**
    * \brief Print the item contents.
@@ -138,7 +157,6 @@ std::ostream& operator<< (std::ostream& os, const QueueItem &item);
  * stopped or not) and data used by techniques such as Byte Queue Limits.
  *
  * This class roughly models the struct netdev_queue of Linux.
- * \todo Implement BQL
  */
 class NetDeviceQueue : public SimpleRefCount<NetDeviceQueue>
 {
@@ -147,27 +165,27 @@ public:
   virtual ~NetDeviceQueue();
 
   /**
-   * Called by the device to start this (hardware) transmission queue.
+   * Called by the device to start this device transmission queue.
    * This is the analogous to the netif_tx_start_queue function of the Linux kernel.
    */
   virtual void Start (void);
 
   /**
-   * Called by the device to stop this (hardware) transmission queue.
+   * Called by the device to stop this device transmission queue.
    * This is the analogous to the netif_tx_stop_queue function of the Linux kernel.
    */
   virtual void Stop (void);
 
   /**
    * Called by the device to wake the queue disc associated with this
-   * (hardware) transmission queue. This is done by invoking the wake callback.
+   * device transmission queue. This is done by invoking the wake callback.
    * This is the analogous to the netif_tx_wake_queue function of the Linux kernel.
    */
   virtual void Wake (void);
 
   /**
    * \brief Get the status of the device transmission queue.
-   * \return true if the (hardware) transmission queue is stopped.
+   * \return true if the device transmission queue is stopped.
    *
    * Called by queue discs to enquire about the status of a given transmission queue.
    * This is the analogous to the netif_tx_queue_stopped function of the Linux kernel.
@@ -190,14 +208,39 @@ public:
   virtual void SetWakeCallback (WakeCallback cb);
 
   /**
-   * \brief Check whether a wake callback has been set on this device queue.
-   * \return true if the wake callback has been set.
+   * \brief Called by the netdevice to report the number of bytes queued to the device queue
+   * \param bytes number of bytes queued to the device queue
    */
-  virtual bool HasWakeCallbackSet (void) const;
+  void NotifyQueuedBytes (uint32_t bytes);
+
+  /**
+   * \brief Called by the netdevice to report the number of bytes it is going to transmit
+   * \param bytes number of bytes the device is going to transmit
+   */
+  void NotifyTransmittedBytes (uint32_t bytes);
+
+  /**
+   * \brief Reset queue limits state
+   */
+  void ResetQueueLimits ();
+
+  /**
+   * \brief Set queue limits to this queue
+   * \param ql the queue limits associated to this queue
+   */
+  void SetQueueLimits (Ptr<QueueLimits> ql);
+
+  /**
+   * \brief Get queue limits to this queue
+   * \return the queue limits associated to this queue
+   */
+  Ptr<QueueLimits> GetQueueLimits ();
 
 private:
-  bool m_stopped;   //!< Status of the transmission queue
-  WakeCallback m_wakeCallback;   //!< Wake callback
+  bool m_stoppedByDevice;         //!< True if the queue has been stopped by the device
+  bool m_stoppedByQueueLimits;    //!< True if the queue has been stopped by a queue limits object
+  Ptr<QueueLimits> m_queueLimits; //!< Queue limits object
+  WakeCallback m_wakeCallback;    //!< Wake callback
 };
 
 
@@ -206,15 +249,15 @@ private:
  *
  * \brief Network device transmission queue interface
  *
- * This interface is required by the traffic control layer to access the information
- * about the status of the transmission queues of a device. Thus, every NetDevice
- * (but loopback) needs to create this interface. NetDevices supporting flow control
- * can start and stop their device transmission queues and wake the upper layers through
- * this interface. By default, a NetDeviceQueueInterface object is created with a single
- * device transmission queue. Therefore, multi-queue devices need to call SetTxQueuesN
- * to create additional queues (before a root queue disc is installed, i.e., typically
- * before an IPv4/IPv6 address is assigned to the device), implement a GetSelectedQueue
- * method and pass a callback to such a method through the SetSelectedQueueCallback method.
+ * This interface is used by the traffic control layer and by the aggregated
+ * device to access the transmission queues of the device. Additionally, through
+ * this interface, traffic control aware netdevices can:
+ * - set the number of transmission queues
+ * - set the method used (by upper layers) to determine the transmission queue
+ *   in which the netdevice would enqueue a given packet
+ * This interface is created and aggregated to a device by the traffic control
+ * layer when an Ipv{4,6}Interface is added to the device or a queue disc is
+ * installed on the device.
  */
 class NetDeviceQueueInterface : public Object
 {
@@ -247,18 +290,25 @@ public:
    * \brief Get the number of device transmission queues.
    * \return the number of device transmission queues.
    */
-  uint8_t GetTxQueuesN (void) const;
+  uint8_t GetNTxQueues (void) const;
 
   /**
-   * \brief Set the number of device transmission queues.
-   * \param numTxQueues number of device transmission queues.
+   * \brief Set the number of device transmission queues to create.
+   * \param numTxQueues number of device transmission queues to create.
    *
-   * Called by a device to set the number of device transmission queues.
-   * This method can be called by a NetDevice at initialization time only, because
-   * it is not possible to change the number of device transmission queues after
-   * the wake callbacks have been set on the device queues.
+   * A multi-queue netdevice must call this method from within its
+   * NotifyNewAggregate method to set the number of device transmission queues
+   * to create.
    */
   void SetTxQueuesN (uint8_t numTxQueues);
+
+  /**
+   * \brief Create the device transmission queues.
+   *
+   * Called by the traffic control layer just after aggregating this netdevice
+   * queue interface to the netdevice.
+   */
+  void CreateTxQueues (void);
 
   /// Callback invoked to determine the tx queue selected for a given packet
   typedef Callback< uint8_t, Ptr<QueueItem> > SelectQueueCallback;
@@ -267,22 +317,20 @@ public:
    * \brief Set the select queue callback.
    * \param cb the callback to set.
    *
-   * Called by a device to set the select queue callback, i.e., the method used
-   * to select a device transmission queue for a given packet.
+   * A multi-queue netdevice must call this method from within its
+   * NotifyNewAggregate method to set the select queue callback, i.e., the
+   * method used to select a device transmission queue for a given packet.
    */
   void SetSelectQueueCallback (SelectQueueCallback cb);
 
   /**
-   * \brief Get the id of the transmission queue selected for the given packet.
+   * \brief Get the select queue callback.
+   * \return the select queue callback.
    *
-   * \param item the packet.
-   * \return the id of the transmission queue selected for the given packet.
-   *
-   * Called by the traffic control when it needs to determine which device
-   * transmission queue a given packet must be enqueued into. This function
-   * calls the select queue callback, if set by the device. Return 0 otherwise.
+   * Called by the traffic control layer to get the select queue callback set
+   * by a multi-queue device.
    */
-  uint8_t GetSelectedQueue (Ptr<QueueItem> item) const;
+  SelectQueueCallback GetSelectQueueCallback (void) const;
 
 protected:
   /**
@@ -293,6 +341,7 @@ protected:
 private:
   std::vector< Ptr<NetDeviceQueue> > m_txQueuesVector;   //!< Device transmission queues
   SelectQueueCallback m_selectQueueCallback;   //!< Select queue callback
+  uint8_t m_numTxQueues;   //!< Number of transmission queues to create
 };
 
 
@@ -336,11 +385,22 @@ private:
  *   - set the select queue callback through the netdevice queue interface, if
  *     the device is multi-queue
  * In order to support flow control, a Traffic Control aware device must:
- *   - stop a device queue when there is no room for another packet. It must
- *     be avoided the situation in which a packet is received while the queue
- *     is not stopped and there is no room for the packet in the queue. Should
- *     such a situation occur, the device queue should be immediately stopped
- *   - wake up the queue disc when the device queue is empty.
+ *   - stop a device queue when there is no room for another packet. This check
+ *     is typically performed after successfully enqueuing a packet in the device
+ *     queue. Failing to enqueue a packet because there is no room for the packet
+ *     in the queue should be avoided. Should such a situation occur, the device
+ *     queue should be immediately stopped
+ *   - wake up the queue disc when the device queue is empty. This check is
+ *     typically performed after a dequeue operation fails because the device
+ *     queue is empty.
+ *   - start a device queue when the queue is stopped and there is room for
+ *     another packet. This check is typically performed after successfully
+ *     dequeuing a packet from the device queue
+ * In order to support BQL, a Traffic Control aware device must:
+ *   - call NotifyQueuedBytes after successfully enqueuing a packet in the
+ *     device queue
+ *   - call NotifyTransmittedBytes after successfully dequeuing a packet from
+ *     the device queue
  */
 class NetDevice : public Object
 {

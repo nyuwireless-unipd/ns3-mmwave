@@ -19,12 +19,14 @@
  */
 
 #include "wifi-net-device.h"
-#include "wifi-mac.h"
+#include "regular-wifi-mac.h"
 #include "wifi-phy.h"
 #include "wifi-remote-station-manager.h"
 #include "wifi-channel.h"
+#include "qos-utils.h"
 #include "ns3/llc-snap-header.h"
 #include "ns3/packet.h"
+#include "ns3/socket.h"
 #include "ns3/uinteger.h"
 #include "ns3/pointer.h"
 #include "ns3/node.h"
@@ -94,6 +96,7 @@ WifiNetDevice::DoDispose (void)
   m_mac = 0;
   m_phy = 0;
   m_stationManager = 0;
+  m_queueInterface = 0;
   NetDevice::DoDispose ();
 }
 
@@ -125,6 +128,42 @@ WifiNetDevice::CompleteConfig (void)
   m_stationManager->SetupPhy (m_phy);
   m_stationManager->SetupMac (m_mac);
   m_configComplete = true;
+}
+
+void
+WifiNetDevice::NotifyNewAggregate (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_queueInterface == 0)
+    {
+      Ptr<NetDeviceQueueInterface> ndqi = this->GetObject<NetDeviceQueueInterface> ();
+      //verify that it's a valid netdevice queue interface and that
+      //the netdevice queue interface was not set before
+      if (ndqi != 0)
+        {
+          m_queueInterface = ndqi;
+          if (m_mac == 0)
+            {
+              NS_LOG_WARN ("A mac has not been installed yet, using a single tx queue");
+            }
+          else
+            {
+              Ptr<RegularWifiMac> mac = DynamicCast<RegularWifiMac> (m_mac);
+              if (mac != 0)
+                {
+                  BooleanValue qosSupported;
+                  mac->GetAttributeFailSafe ("QosSupported", qosSupported);
+                  if (qosSupported.Get ())
+                    {
+                      m_queueInterface->SetTxQueuesN (4);
+                      // register the select queue callback
+                      m_queueInterface->SetSelectQueueCallback (MakeCallback (&WifiNetDevice::SelectQueue, this));
+                    }
+                }
+            }
+        }
+    }
+  NetDevice::NotifyNewAggregate ();
 }
 
 void
@@ -275,6 +314,7 @@ WifiNetDevice::IsBridge (void) const
 bool
 WifiNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
+  NS_LOG_FUNCTION (this << packet << dest << protocolNumber);
   NS_ASSERT (Mac48Address::IsMatchingType (dest));
 
   Mac48Address realTo = Mac48Address::ConvertFrom (dest);
@@ -316,6 +356,7 @@ WifiNetDevice::SetReceiveCallback (NetDevice::ReceiveCallback cb)
 void
 WifiNetDevice::ForwardUp (Ptr<Packet> packet, Mac48Address from, Mac48Address to)
 {
+  NS_LOG_FUNCTION (this << packet << from << to);
   LlcSnapHeader llc;
   enum NetDevice::PacketType type;
   if (to.IsBroadcast ())
@@ -370,6 +411,7 @@ WifiNetDevice::LinkDown (void)
 bool
 WifiNetDevice::SendFrom (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
 {
+  NS_LOG_FUNCTION (this << packet << source << dest << protocolNumber);
   NS_ASSERT (Mac48Address::IsMatchingType (dest));
   NS_ASSERT (Mac48Address::IsMatchingType (source));
 
@@ -397,6 +439,38 @@ bool
 WifiNetDevice::SupportsSendFrom (void) const
 {
   return m_mac->SupportsSendFrom ();
+}
+
+uint8_t
+WifiNetDevice::SelectQueue (Ptr<QueueItem> item) const
+{
+  NS_LOG_FUNCTION (this << item);
+
+  NS_ASSERT (m_queueInterface != 0);
+
+  if (m_queueInterface->GetNTxQueues () == 1)
+    {
+      return 0;
+    }
+
+  uint8_t dscp, priority = 0;
+  if (item->GetUint8Value (QueueItem::IP_DSFIELD, dscp))
+    {
+      // if the QoS map element is implemented, it should be used here
+      // to set the priority.
+      // User priority is set to the three most significant bits of the DS field
+      priority = dscp >> 5;
+    }
+
+  // replace the priority tag
+  SocketPriorityTag priorityTag;
+  priorityTag.SetPriority (priority);
+  item->GetPacket ()->ReplacePacketTag (priorityTag);
+
+  // if the admission control were implemented, here we should check whether
+  // the access category assigned to the packet should be downgraded
+
+  return QosUtilsMapTidToAc (priority);
 }
 
 } //namespace ns3

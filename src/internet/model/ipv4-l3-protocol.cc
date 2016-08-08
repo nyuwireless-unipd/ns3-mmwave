@@ -57,12 +57,6 @@ Ipv4L3Protocol::GetTypeId (void)
     .SetParent<Ipv4> ()
     .SetGroupName ("Internet")
     .AddConstructor<Ipv4L3Protocol> ()
-    .AddAttribute ("DefaultTos",
-                   "The TOS value set by default on "
-                   "all outgoing packets generated on this node.",
-                   UintegerValue (0),
-                   MakeUintegerAccessor (&Ipv4L3Protocol::m_defaultTos),
-                   MakeUintegerChecker<uint8_t> ())
     .AddAttribute ("DefaultTtl",
                    "The TTL value set by default on "
                    "all outgoing packets generated on this node.",
@@ -741,7 +735,7 @@ Ipv4L3Protocol::Send (Ptr<Packet> packet,
       ttl = tag.GetTtl ();
     }
 
-  uint8_t tos = m_defaultTos;
+  uint8_t tos = 0;
   SocketIpTosTag ipTosTag;
   found = packet->RemovePacketTag (ipTosTag);
   if (found)
@@ -1048,6 +1042,17 @@ Ipv4L3Protocol::IpForward (Ptr<Ipv4Route> rtentry, Ptr<const Packet> p, const Ip
       m_dropTrace (header, packet, DROP_TTL_EXPIRED, m_node->GetObject<Ipv4> (), interface);
       return;
     }
+  // in case the packet still has a priority tag attached, remove it
+  SocketPriorityTag priorityTag;
+  packet->RemovePacketTag (priorityTag);
+  uint8_t priority = Socket::IpTos2Priority (ipHeader.GetTos ());
+  // add a priority tag if the priority is not null
+  if (priority)
+    {
+      priorityTag.SetPriority (priority);
+      packet->AddPacketTag (priorityTag);
+    }
+
   m_unicastForwardTrace (ipHeader, packet, interface);
   SendRealOut (rtentry, packet, ipHeader);
 }
@@ -1396,6 +1401,8 @@ Ipv4L3Protocol::RouteInputError (Ptr<const Packet> p, const Ipv4Header & ipHeade
   NS_LOG_FUNCTION (this << p << ipHeader << sockErrno);
   NS_LOG_LOGIC ("Route input failure-- dropping packet to " << ipHeader << " with errno " << sockErrno); 
   m_dropTrace (ipHeader, p, DROP_ROUTE_ERROR, m_node->GetObject<Ipv4> (), 0);
+
+  // \todo Send an ICMP no route.
 }
 
 void

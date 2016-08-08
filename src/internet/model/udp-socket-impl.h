@@ -42,11 +42,28 @@ class Ipv6Header;
 class Ipv6Interface;
 
 /**
+ * \ingroup socket
  * \ingroup udp
+ *
  * \brief A sockets interface to UDP
  * 
  * This class subclasses ns3::UdpSocket, and provides a socket interface
  * to ns3's implementation of UDP.
+ *
+ * For IPv4 packets, the TOS is set according to the following rules:
+ * - if the socket is connected, the TOS set for the socket is used
+ * - if the socket is not connected, the TOS specified in the destination address
+ *   passed to SendTo is used, while the TOS set for the socket is ignored
+ * In both cases, a SocketIpTos tag is only added to the packet if the resulting
+ * TOS is non-null. The Bind and Connect operations set the TOS for the
+ * socket to the value specified in the provided address.
+ * If the TOS determined for a packet (as described above) is not null, the
+ * packet is assigned a priority based on that TOS value (according to the
+ * Socket::IpTos2Priority function). Otherwise, the priority set for the
+ * socket is assigned to the packet. Setting a TOS for a socket also sets a
+ * priority for the socket (according to the Socket::IpTos2Priority function).
+ * A SocketPriority tag is only added to the packet if the resulting priority
+ * is non-null.
  */
 
 class UdpSocketImpl : public UdpSocket
@@ -176,9 +193,10 @@ private:
    * \param p packet
    * \param daddr destination address
    * \param dport destination port
+   * \param tos ToS
    * \returns 0 on success, -1 on failure
    */
-  int DoSendTo (Ptr<Packet> p, Ipv4Address daddr, uint16_t dport);
+  int DoSendTo (Ptr<Packet> p, Ipv4Address daddr, uint16_t dport, uint8_t tos);
   /**
    * \brief Send a packet to a specific destination and port (IPv6)
    * \param p packet

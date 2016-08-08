@@ -934,7 +934,7 @@ MinstrelHtWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
         }
 
       return WifiTxVector (GetMcsSupported (station, mcsIndex), GetDefaultTxPowerLevel (), GetLongRetryCount (station),
-                           group.sgi, group.streams, GetNess (station), group.chWidth, !station->m_isSampling, GetStbc (station));
+                           group.sgi, group.streams, GetNess (station), group.chWidth, GetAggregation (station) && !station->m_isSampling, GetStbc (station));
     }
 }
 
@@ -1430,7 +1430,8 @@ MinstrelHtWifiManager::SetBestProbabilityRate (MinstrelHtWifiRemoteStation *stat
         {
           station->m_maxProbRate = index;
         }
-      if (rate.ewmaProb > group->m_ratesTable[group->m_maxProbRate].ewmaProb)
+      maxGPRateId = GetRateId (group->m_maxProbRate);
+      if (rate.ewmaProb > group->m_ratesTable[maxGPRateId].ewmaProb)
         {
           group->m_maxProbRate = index;
         }

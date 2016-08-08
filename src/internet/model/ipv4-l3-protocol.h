@@ -54,7 +54,9 @@ class Icmpv4L4Protocol;
 
 
 /**
- * \brief Implement the Ipv4 layer.
+ * \ingroup ipv4
+ *
+ * \brief Implement the IPv4 layer.
  * 
  * This is the actual implementation of IP.  It contains APIs to send and
  * receive packets at the IP layer, as well as APIs for IP routing.
@@ -457,7 +459,6 @@ private:
   L4List_t m_protocols;  //!< List of transport protocol.
   Ipv4InterfaceList m_interfaces; //!< List of IPv4 interfaces.
   Ipv4InterfaceReverseContainer m_reverseInterfacesContainer; //!< Container of NetDevice / Interface index associations.
-  uint8_t m_defaultTos;  //!< Default TOS
   uint8_t m_defaultTtl;  //!< Default TTL
   std::map<std::pair<uint64_t, uint8_t>, uint16_t> m_identification; //!< Identification (for each {src, dst, proto} tuple)
   Ptr<Node> m_node; //!< Node attached to stack.
@@ -489,7 +490,6 @@ private:
   SocketList m_sockets; //!< List of IPv4 raw sockets.
 
   /**
-   * \class Fragments
    * \brief A Set of Fragment belonging to the same packet (src, dst, identification and proto)
    */
   class Fragments : public SimpleRefCount<Fragments>

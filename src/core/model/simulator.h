@@ -64,8 +64,6 @@ class Scheduler;
  * A simple example of how to use the Simulator class to schedule events
  * is shown in sample-simulator.cc:
  * @include src/core/examples/sample-simulator.cc
- *
- * @todo Define what the simulation or event context means.
  */
 class Simulator 
 {
@@ -166,8 +164,34 @@ public:
    * current simulation time.
    * @param [in] delay The stop time, relative to the current time.
    */
-  static void Stop (Time const &delay);
+  static void Stop (const Time &delay);
 
+  /**
+   * Get the current simulation context.
+   *
+   * The simulation context is the ns-3 notion of a Logical Process.
+   * Events in a single context should only modify state associated with
+   * that context. Events for objects in other contexts should be
+   * scheduled with ScheduleWithContext() to track the context switches.
+   * In other words, events in different contexts should be mutually
+   * thread safe, by not modify overlapping model state.
+   *
+   * In circumstances where the context can't be determined, such as
+   * during object initialization, the \c enum value \c NO_CONTEXT
+   * should be used.
+   *
+   * @return The current simulation context
+   */
+  static uint32_t GetContext (void);
+
+  /** Context enum values. */
+  enum {
+    /**
+     * Flag for events not associated with any particular context.
+     */
+    NO_CONTEXT = 0xffffffff
+  };
+  
   /**
    * @name Schedule events (in the same context) to run at a future time.
    */
@@ -181,8 +205,8 @@ public:
    * When the event expires (when it becomes due to be run), the 
    * input method will be invoked on the input object.
    *
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
@@ -193,9 +217,9 @@ public:
 
   /**
    * @see Schedule(const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
@@ -207,10 +231,10 @@ public:
 
   /**
    * @see Schedule(const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
@@ -223,11 +247,11 @@ public:
 
   /**
    * @see Schedule(const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
@@ -242,12 +266,12 @@ public:
 
   /**
    * @see Schedule(const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
@@ -263,13 +287,13 @@ public:
 
   /**
    * @see Schedule(const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
-   * @tparam T5 @inferred Type of fifth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
+   * @tparam T5 @deduced Type of fifth argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
@@ -285,7 +309,10 @@ public:
   static EventId Schedule (Time const &delay, MEM mem_ptr, OBJ obj, 
                            T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
   /**
-   * @copybrief Schedule(const Time&,MEM,OBJ)
+   * Schedule an event to expire after @p delay.
+   * This can be thought of as scheduling an event
+   * for the current simulation time plus the @p delay  passed as a
+   * parameter.
    *
    * When the event expires (when it becomes due to be run), the
    * function will be invoked with any supplied arguments.
@@ -297,8 +324,8 @@ public:
 
   /**
    * @see Schedule(const Time&,(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke.
@@ -309,10 +336,10 @@ public:
 
   /**
    * @see Schedule(const Time&,(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
@@ -325,12 +352,12 @@ public:
 
   /**
    * @see Schedule(const Time&,void(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
@@ -344,14 +371,14 @@ public:
 
   /**
    * @see Schedule(const Time&,(*)(void))
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
@@ -366,16 +393,16 @@ public:
 
   /**
    * @see Schedule(const Time&,void(*)(void))
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam U5 @inferred Formal type of the fifth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
-   * @tparam T5 @inferred Actual type of the fifth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam U5 @deduced Formal type of the fifth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
+   * @tparam T5 @deduced Actual type of the fifth argument.
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
@@ -403,8 +430,8 @@ public:
    * This method is thread-safe: it can be called from any thread.
    *
    * @see Schedule(const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
@@ -415,9 +442,9 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
@@ -429,10 +456,10 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
@@ -445,11 +472,11 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
@@ -464,12 +491,12 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
@@ -485,13 +512,13 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
-   * @tparam T5 @inferred Type of fifth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
+   * @tparam T5 @deduced Type of fifth argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] mem_ptr Member method pointer to invoke
@@ -507,7 +534,9 @@ public:
   static void ScheduleWithContext (uint32_t context, Time const &delay, MEM mem_ptr, OBJ obj, 
                                    T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
   /**
-   * @copybrief ScheduleWithContext(uint32_t,const Time&,MEM,OBJ)
+   * Schedule an event with the given context.
+   * A context of 0xffffffff means no context is specified.
+   * This method is thread-safe: it can be called from any thread.
    *
    * When the event expires (when it becomes due to be run), the
    * function will be invoked with any supplied arguments.
@@ -521,8 +550,8 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
@@ -534,10 +563,10 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
@@ -550,12 +579,12 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
@@ -569,14 +598,14 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
@@ -591,16 +620,16 @@ public:
 
   /**
    * @see ScheduleWithContext(uint32_t,const Time&,(*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam U5 @inferred Formal type of the fifth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
-   * @tparam T5 @inferred Actual type of the fifth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam U5 @deduced Formal type of the fifth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
+   * @tparam T5 @deduced Actual type of the fifth argument.
    * @param [in] context User-specified context parameter
    * @param [in] delay The relative expiration time of the event.
    * @param [in] f The function to invoke
@@ -625,8 +654,8 @@ public:
    * to expire "Now" are scheduled FIFO, after all normal events
    * have expired. 
    *
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @return The EventId of the scheduled event.
@@ -636,9 +665,9 @@ public:
 
   /**
    * @see ScheduleNow(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -650,10 +679,10 @@ public:
 
   /**
    * @see ScheduleNow(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -666,11 +695,11 @@ public:
 
   /**
    * @see ScheduleNow(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -684,12 +713,12 @@ public:
 
   /**
    * @see ScheduleNow(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -704,13 +733,13 @@ public:
                               T1 a1, T2 a2, T3 a3, T4 a4);
   /**
    * @see ScheduleNow(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
-   * @tparam T5 @inferred Type of fifth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
+   * @tparam T5 @deduced Type of fifth argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -736,8 +765,8 @@ public:
 
   /**
    * @see ScheduleNow(*)
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @return The EventId of the scheduled event.
@@ -748,10 +777,10 @@ public:
 
   /**
    * @see ScheduleNow(*)
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -763,12 +792,12 @@ public:
 
   /**
    * @see ScheduleNow(*)
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -781,14 +810,14 @@ public:
 
   /**
    * @see ScheduleNow(*)
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -802,16 +831,16 @@ public:
 
   /**
    * @see ScheduleNow(*)
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam U5 @inferred Formal type of the fifth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
-   * @tparam T5 @inferred Actual type of the fifth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam U5 @deduced Formal type of the fifth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
+   * @tparam T5 @deduced Actual type of the fifth argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -836,8 +865,8 @@ public:
    * after all normal events have expired and only when 
    * Simulator::Destroy is invoked.
    *
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @return The EventId of the scheduled event.
@@ -847,9 +876,9 @@ public:
 
   /**
    * @see ScheduleDestroy(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -861,10 +890,10 @@ public:
 
   /**
    * @see ScheduleDestroy(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -877,11 +906,11 @@ public:
 
   /**
    * @see ScheduleDestroy(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -895,12 +924,12 @@ public:
 
   /**
    * @see ScheduleDestroy(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -915,13 +944,13 @@ public:
                                   T1 a1, T2 a2, T3 a3, T4 a4);
   /**
    * @see ScheduleDestroy(MEM,OBJ)
-   * @tparam MEM @inferred Class method function signature type.
-   * @tparam OBJ @inferred Class type of the object.
-   * @tparam T1 @inferred Type of first argument.
-   * @tparam T2 @inferred Type of second argument.
-   * @tparam T3 @inferred Type of third argument.
-   * @tparam T4 @inferred Type of fourth argument.
-   * @tparam T5 @inferred Type of fifth argument.
+   * @tparam MEM @deduced Class method function signature type.
+   * @tparam OBJ @deduced Class type of the object.
+   * @tparam T1 @deduced Type of first argument.
+   * @tparam T2 @deduced Type of second argument.
+   * @tparam T3 @deduced Type of third argument.
+   * @tparam T4 @deduced Type of fourth argument.
+   * @tparam T5 @deduced Type of fifth argument.
    * @param [in] mem_ptr Member method pointer to invoke
    * @param [in] obj The object on which to invoke the member method
    * @param [in] a1 The first argument to pass to the invoked method
@@ -946,8 +975,8 @@ public:
 
   /**
    * @see ScheduleDestory((*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @return The EventId of the scheduled event.
@@ -958,10 +987,10 @@ public:
 
   /**
    * @see ScheduleDestory((*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -973,12 +1002,12 @@ public:
 
   /**
    * @see ScheduleDestory((*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -991,14 +1020,14 @@ public:
 
   /**
    * @see ScheduleDestory((*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -1012,16 +1041,16 @@ public:
 
   /**
    * @see ScheduleDestory((*)())
-   * @tparam U1 @inferred Formal type of the first argument to the function.
-   * @tparam U2 @inferred Formal type of the second argument to the function.
-   * @tparam U3 @inferred Formal type of the third argument to the function.
-   * @tparam U4 @inferred Formal type of the fourth argument to the function.
-   * @tparam U5 @inferred Formal type of the fifth argument to the function.
-   * @tparam T1 @inferred Actual type of the first argument.
-   * @tparam T2 @inferred Actual type of the second argument.
-   * @tparam T3 @inferred Actual type of the third argument.
-   * @tparam T4 @inferred Actual type of the fourth argument.
-   * @tparam T5 @inferred Actual type of the fifth argument.
+   * @tparam U1 @deduced Formal type of the first argument to the function.
+   * @tparam U2 @deduced Formal type of the second argument to the function.
+   * @tparam U3 @deduced Formal type of the third argument to the function.
+   * @tparam U4 @deduced Formal type of the fourth argument to the function.
+   * @tparam U5 @deduced Formal type of the fifth argument to the function.
+   * @tparam T1 @deduced Actual type of the first argument.
+   * @tparam T2 @deduced Actual type of the second argument.
+   * @tparam T3 @deduced Actual type of the third argument.
+   * @tparam T4 @deduced Actual type of the fourth argument.
+   * @tparam T5 @deduced Actual type of the fifth argument.
    * @param [in] f The function to invoke
    * @param [in] a1 The first argument to pass to the function to invoke
    * @param [in] a2 The second argument to pass to the function to invoke
@@ -1109,20 +1138,13 @@ public:
   static Time GetMaximumSimulationTime (void);
 
   /**
-   * Get the current simulation context.
-   *
-   * @return The current simulation context
-   */
-  static uint32_t GetContext (void);
-
-  /**
    * Schedule a future event execution (in the same context).
    *
    * @param [in] delay Delay until the event expires.
    * @param [in] event The event to schedule.
    * @returns A unique identifier for the newly-scheduled event.
    */
-  static EventId Schedule (Time const &delay, const Ptr<EventImpl> &event);
+  static EventId Schedule (const Time &delay, const Ptr<EventImpl> &event);
 
   /**
    * Schedule a future event execution (in a different context).

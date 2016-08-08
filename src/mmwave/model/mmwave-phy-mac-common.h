@@ -811,7 +811,7 @@ private:
 	uint32_t m_l1L2CtrlLatency; // In no. of sub-frames
 	uint32_t m_l1L2DataLatency; // In no. of slots
 	uint32_t m_ulSchedDelay;	// delay between transmission of UL-DCI and corresponding subframe in TTIs
-	uint32_t m_wbCqiPeriodUs;	// WB CQI periodicity in microseconds
+	double m_wbCqiPeriodUs;	// WB CQI periodicity in microseconds
 
 	uint32_t m_tbDecodeLatencyUs;
 	uint32_t m_maxTbSizeBytes;

@@ -35,6 +35,7 @@
 #include "mpdu-aggregator.h"
 #include "mgt-headers.h"
 #include "qos-blocked-destinations.h"
+#include "ns3/simulator.h"
 
 #undef NS_LOG_APPEND_CONTEXT
 #define NS_LOG_APPEND_CONTEXT if (m_low != 0) { std::clog << "[mac=" << m_low->GetAddress () << "] "; }
@@ -122,6 +123,10 @@ public:
   virtual void MissedBlockAck (uint32_t nMpdus)
   {
     m_txop->MissedBlockAck (nMpdus);
+  }
+  virtual void StartNextFragment (void)
+  {
+    m_txop->StartNextFragment ();
   }
   virtual void StartNext (void)
   {
@@ -258,7 +263,9 @@ EdcaTxopN::EdcaTxopN ()
     m_msduAggregator (0),
     m_mpduAggregator (0),
     m_typeOfStation (STA),
-    m_blockAckType (COMPRESSED_BLOCK_ACK)
+    m_blockAckType (COMPRESSED_BLOCK_ACK),
+    m_startTxop (Seconds (0)),
+    m_isAccessRequestedForRts (false)
 {
   NS_LOG_FUNCTION (this);
   m_transmissionListener = new EdcaTxopN::TransmissionListener (this);
@@ -402,6 +409,13 @@ EdcaTxopN::SetAifsn (uint32_t aifsn)
   m_dcf->SetAifsn (aifsn);
 }
 
+void
+EdcaTxopN::SetTxopLimit (Time txopLimit)
+{
+  NS_LOG_FUNCTION (this << txopLimit);
+  m_dcf->SetTxopLimit (txopLimit);
+}
+
 uint32_t
 EdcaTxopN::GetMinCw (void) const
 {
@@ -423,6 +437,13 @@ EdcaTxopN::GetAifsn (void) const
   return m_dcf->GetAifsn ();
 }
 
+Time
+EdcaTxopN::GetTxopLimit (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_dcf->GetTxopLimit ();
+}
+
 void
 EdcaTxopN::SetTxMiddle (MacTxMiddle *txMiddle)
 {
@@ -433,7 +454,6 @@ EdcaTxopN::SetTxMiddle (MacTxMiddle *txMiddle)
 Ptr<MacLow>
 EdcaTxopN::Low (void)
 {
-  NS_LOG_FUNCTION (this);
   return m_low;
 }
 
@@ -464,7 +484,7 @@ uint16_t EdcaTxopN::PeekNextSequenceNumberfor (WifiMacHeader *hdr)
 Ptr<const Packet>
 EdcaTxopN::PeekNextRetransmitPacket (WifiMacHeader &header,Mac48Address recipient, uint8_t tid, Time *timestamp)
 {
-  return m_baManager->PeekNextPacket (header,recipient,tid, timestamp);
+  return m_baManager->PeekNextPacketByTidAndAddress (header,recipient,tid, timestamp);
 }
 
 void
@@ -477,6 +497,7 @@ void
 EdcaTxopN::NotifyAccessGranted (void)
 {
   NS_LOG_FUNCTION (this);
+  m_isAccessRequestedForRts = false;
   if (m_currentPacket == 0)
     {
       if (m_queue->IsEmpty () && !m_baManager->HasPackets ())
@@ -552,7 +573,7 @@ EdcaTxopN::NotifyAccessGranted (void)
           params.EnableAck ();
         }
       if (((m_currentHdr.IsQosData () && !m_currentHdr.IsQosAmsdu ())
-           ||(m_currentHdr.IsData () && !m_currentHdr.IsQosData () && m_currentHdr.IsQosAmsdu ()))
+          || (m_currentHdr.IsData () && !m_currentHdr.IsQosData ()))
           && (m_blockAckThreshold == 0 || m_blockAckType == BASIC_BLOCK_ACK)
           && NeedFragmentation ())
         {
@@ -620,6 +641,7 @@ EdcaTxopN::NotifyAccessGranted (void)
                 }
             }
           params.DisableNextData ();
+          m_startTxop = Simulator::Now ();
           m_low->StartTransmission (m_currentPacket, &m_currentHdr,
                                     params, m_transmissionListener);
           if (!GetAmpduExist (m_currentHdr.GetAddr1 ()))
@@ -633,7 +655,49 @@ EdcaTxopN::NotifyAccessGranted (void)
 void EdcaTxopN::NotifyInternalCollision (void)
 {
   NS_LOG_FUNCTION (this);
-  NotifyCollision ();
+  bool resetDcf = false;
+  if (m_isAccessRequestedForRts)
+    {
+      if (!NeedRtsRetransmission ())
+      {
+        resetDcf = true;
+        m_stationManager->ReportFinalRtsFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
+      }
+      else
+      {
+        m_stationManager->ReportRtsFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
+      }
+    }
+  else
+    {
+      if (!NeedDataRetransmission ())
+      {
+        resetDcf = true;
+        m_stationManager->ReportFinalDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
+      }
+      else
+      {
+        m_stationManager->ReportDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
+      }
+    }
+  if (resetDcf)
+    {
+      NS_LOG_DEBUG ("reset DCF");
+      if (!m_txFailedCallback.IsNull ())
+        {
+          m_txFailedCallback (m_currentHdr);
+        }
+      //to reset the dcf.
+      m_currentPacket = 0;
+      m_dcf->ResetCw ();
+    }
+  else
+    {
+      m_dcf->UpdateFailedCw ();
+    }
+  m_backoffTrace = m_rng->GetNext (0, m_dcf->GetCw ());
+  m_dcf->StartBackoffNow (m_backoffTrace);
+  RestartAccessIfNeeded ();
 }
 
 void
@@ -851,12 +915,14 @@ EdcaTxopN::GotAck (double snr, WifiMode txMode)
             }
         }
       m_currentPacket = 0;
-
       m_dcf->ResetCw ();
-      m_cwTrace = m_dcf->GetCw ();
-      m_backoffTrace = m_rng->GetNext (0, m_dcf->GetCw ());
-      m_dcf->StartBackoffNow (m_backoffTrace);
-      RestartAccessIfNeeded ();
+      if (!HasTxop ())
+        {
+          m_cwTrace = m_dcf->GetCw ();
+          m_backoffTrace = m_rng->GetNext (0, m_dcf->GetCw ());
+          m_dcf->StartBackoffNow (m_backoffTrace);
+          RestartAccessIfNeeded ();
+        }
     }
   else
     {
@@ -1024,6 +1090,29 @@ EdcaTxopN::RestartAccessIfNeeded (void)
        || !m_queue->IsEmpty () || m_baManager->HasPackets ())
       && !m_dcf->IsAccessRequested ())
     {
+      Ptr<const Packet> packet;
+      WifiMacHeader hdr;
+      if (m_currentPacket != 0)
+        {
+          packet = m_currentPacket;
+          hdr = m_currentHdr;
+        }
+      else if (m_baManager->HasPackets ())
+        {
+          packet = m_baManager->PeekNextPacket (hdr);
+        }
+      else if (m_queue->PeekFirstAvailable (&hdr, m_currentPacketTimestamp, m_qosBlockedDestinations) != 0)
+        {
+          packet = m_queue->PeekFirstAvailable (&hdr, m_currentPacketTimestamp, m_qosBlockedDestinations);
+        }
+      if (packet != 0)
+        {
+          m_isAccessRequestedForRts = m_stationManager->NeedRts (hdr.GetAddr1 (), &hdr, packet, m_low->GetDataTxVector (packet, &hdr));
+        }
+      else
+        {
+          m_isAccessRequestedForRts = false;
+        }
       m_manager->RequestAccess (m_dcf);
     }
 }
@@ -1036,6 +1125,29 @@ EdcaTxopN::StartAccessIfNeeded (void)
       && (!m_queue->IsEmpty () || m_baManager->HasPackets ())
       && !m_dcf->IsAccessRequested ())
     {
+      Ptr<const Packet> packet;
+      WifiMacHeader hdr;
+      if (m_currentPacket != 0)
+        {
+          packet = m_currentPacket;
+          hdr = m_currentHdr;
+        }
+      else if (m_baManager->HasPackets ())
+        {
+          packet = m_baManager->PeekNextPacket (hdr);
+        }
+      else if (m_queue->PeekFirstAvailable (&hdr, m_currentPacketTimestamp, m_qosBlockedDestinations) != 0)
+        {
+          packet = m_queue->PeekFirstAvailable (&hdr, m_currentPacketTimestamp, m_qosBlockedDestinations);
+        }
+      if (packet != 0)
+        {
+          m_isAccessRequestedForRts = m_stationManager->NeedRts (hdr.GetAddr1 (), &hdr, packet, m_low->GetDataTxVector (packet, &hdr));
+        }
+      else
+        {
+          m_isAccessRequestedForRts = false;
+        }
       m_manager->RequestAccess (m_dcf);
     }
 }
@@ -1091,7 +1203,7 @@ EdcaTxopN::NextFragment (void)
 }
 
 void
-EdcaTxopN::StartNext (void)
+EdcaTxopN::StartNextFragment (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("start next packet fragment");
@@ -1112,6 +1224,113 @@ EdcaTxopN::StartNext (void)
       params.EnableNextData (GetNextFragmentSize ());
     }
   Low ()->StartTransmission (fragment, &hdr, params, m_transmissionListener);
+}
+
+void
+EdcaTxopN::StartNext (void)
+{
+  NS_LOG_FUNCTION (this);
+  WifiMacHeader hdr;
+  Time tstamp;
+
+  Ptr<const Packet> peekedPacket = m_queue->PeekByTidAndAddress (&hdr,
+                                                                 m_currentHdr.GetQosTid (),
+                                                                 WifiMacHeader::ADDR1,
+                                                                 m_currentHdr.GetAddr1 (),
+                                                                 &tstamp);
+  if (peekedPacket == 0)
+    {
+      return;
+    }
+    
+  MacLowTransmissionParameters params;
+  params.DisableOverrideDurationId ();
+  if (m_currentHdr.IsQosData () && m_currentHdr.IsQosBlockAck ())
+    {
+      params.DisableAck ();
+    }
+  else
+    {
+      params.EnableAck ();
+    }
+    
+  WifiTxVector dataTxVector = m_stationManager->GetDataTxVector (m_currentHdr.GetAddr1 (), &m_currentHdr, peekedPacket);
+  if (m_stationManager->NeedRts (m_currentHdr.GetAddr1 (), &m_currentHdr, peekedPacket, dataTxVector))
+    {
+      params.EnableRts ();
+    }
+  else
+    {
+      params.DisableRts ();
+    }
+
+  if (GetTxopRemaining () >= Low ()->CalculateOverallTxTime (peekedPacket, &hdr, params))
+    {
+      NS_LOG_DEBUG ("start next packet");
+      m_currentPacket = m_queue->DequeueByTidAndAddress (&hdr,
+                                                         m_currentHdr.GetQosTid (),
+                                                         WifiMacHeader::ADDR1,
+                                                         m_currentHdr.GetAddr1 ());
+      Low ()->StartTransmission (m_currentPacket, &m_currentHdr, params, m_transmissionListener);
+    }
+}
+
+Time
+EdcaTxopN::GetTxopRemaining (void)
+{
+  Time remainingTxop = GetTxopLimit ();
+  remainingTxop -= (Simulator::Now () - m_startTxop);
+  if (remainingTxop < MicroSeconds (0))
+    {
+      remainingTxop = MicroSeconds (0);
+    }
+  NS_LOG_FUNCTION (this << remainingTxop);
+  return remainingTxop;
+}
+
+bool
+EdcaTxopN::HasTxop (void)
+{
+  NS_LOG_FUNCTION (this);
+  WifiMacHeader hdr;
+  Time tstamp;
+  if (!m_currentHdr.IsQosData ())
+    {
+      return false;
+    }
+
+  Ptr<const Packet> peekedPacket = m_queue->PeekByTidAndAddress (&hdr,
+                                                                 m_currentHdr.GetQosTid (),
+                                                                 WifiMacHeader::ADDR1,
+                                                                 m_currentHdr.GetAddr1 (),
+                                                                 &tstamp);
+  if (peekedPacket == 0)
+    {
+      return false;
+    }
+
+  MacLowTransmissionParameters params;
+  params.DisableOverrideDurationId ();
+  if (m_currentHdr.IsQosData () && m_currentHdr.IsQosBlockAck ())
+    {
+      params.DisableAck ();
+    }
+  else
+    {
+      params.EnableAck ();
+    }
+
+  WifiTxVector dataTxVector = m_stationManager->GetDataTxVector (m_currentHdr.GetAddr1 (), &m_currentHdr, peekedPacket);
+  if (m_stationManager->NeedRts (m_currentHdr.GetAddr1 (), &m_currentHdr, peekedPacket, dataTxVector))
+    {
+      params.EnableRts ();
+    }
+  else
+    {
+      params.DisableRts ();
+    }
+
+  return (GetTxopRemaining () >= Low ()->CalculateOverallTxTime (peekedPacket, &hdr, params));
 }
 
 void

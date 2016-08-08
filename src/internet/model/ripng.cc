@@ -33,6 +33,7 @@
 #include "ns3/enum.h"
 #include "ns3/uinteger.h"
 #include "ns3/ipv6-packet-info-tag.h"
+#include "ns3/simulator.h"
 
 #define RIPNG_ALL_NODE "ff02::9"
 #define RIPNG_PORT 521
@@ -244,7 +245,7 @@ bool RipNg::RouteInput (Ptr<const Packet> p, const Ipv6Header &header, Ptr<const
         {
           ecb (p, header, Socket::ERROR_NOROUTETOHOST);
         }
-      return false;
+      return true;
     }
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination");

@@ -18,10 +18,13 @@
  *
  * Authors:  Stefano Avallone <stavallo@unina.it>
  *           Tom Henderson <tomhend@u.washington.edu>
+ *           Pasquale Imputato <p.imputato@gmail.com>
  */
 
 #include "ns3/log.h"
 #include "ns3/enum.h"
+#include "ns3/tcp-header.h"
+#include "ns3/udp-header.h"
 #include "ipv6-queue-disc-item.h"
 #include "ipv6-packet-filter.h"
 
@@ -60,84 +63,87 @@ Ipv6PacketFilter::CheckProtocol (Ptr<QueueDiscItem> item) const
 
 // ------------------------------------------------------------------------- //
 
-NS_OBJECT_ENSURE_REGISTERED (PfifoFastIpv6PacketFilter);
+NS_OBJECT_ENSURE_REGISTERED (FqCoDelIpv6PacketFilter);
 
-TypeId 
-PfifoFastIpv6PacketFilter::GetTypeId (void)
+TypeId
+FqCoDelIpv6PacketFilter::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::PfifoFastIpv6PacketFilter")
+  static TypeId tid = TypeId ("ns3::FqCoDelIpv6PacketFilter")
     .SetParent<Ipv6PacketFilter> ()
     .SetGroupName ("Internet")
-    .AddConstructor<PfifoFastIpv6PacketFilter> ()
+    .AddConstructor<FqCoDelIpv6PacketFilter> ()
+    .AddAttribute ("Perturbation",
+                   "The salt used as an additional input to the hash function of this filter",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&FqCoDelIpv6PacketFilter::m_perturbation),
+                   MakeUintegerChecker<uint32_t> ())
   ;
   return tid;
 }
 
-PfifoFastIpv6PacketFilter::PfifoFastIpv6PacketFilter ()
+FqCoDelIpv6PacketFilter::FqCoDelIpv6PacketFilter ()
 {
   NS_LOG_FUNCTION (this);
 }
 
-PfifoFastIpv6PacketFilter::~PfifoFastIpv6PacketFilter()
+FqCoDelIpv6PacketFilter::~FqCoDelIpv6PacketFilter ()
 {
   NS_LOG_FUNCTION (this);
 }
 
 int32_t
-PfifoFastIpv6PacketFilter::DoClassify (Ptr<QueueDiscItem> item) const
+FqCoDelIpv6PacketFilter::DoClassify (Ptr< QueueDiscItem > item) const
 {
   NS_LOG_FUNCTION (this << item);
-  uint32_t band;
   Ptr<Ipv6QueueDiscItem> ipv6Item = DynamicCast<Ipv6QueueDiscItem> (item);
 
   NS_ASSERT (ipv6Item != 0);
 
-  Ipv6Header::DscpType dscp = ipv6Item->GetHeader ().GetDscp ();
-  band = DscpToBand (dscp);
-  NS_LOG_DEBUG ("Found Ipv6 packet; DSCP " << ipv6Item->GetHeader ().DscpTypeToString (dscp) << " band " << band);
+  Ipv6Header hdr = ipv6Item->GetHeader ();
+  Ipv6Address src = hdr.GetSourceAddress ();
+  Ipv6Address dest = hdr.GetDestinationAddress ();
+  uint8_t prot = hdr.GetNextHeader ();
 
-  return band;
-}
+  TcpHeader tcpHdr;
+  UdpHeader udpHdr;
+  uint16_t srcPort = 0;
+  uint16_t destPort = 0;
 
-uint32_t
-PfifoFastIpv6PacketFilter::DscpToBand (Ipv6Header::DscpType dscpType) const
-{
-  NS_LOG_FUNCTION (this);
+  Ptr<Packet> pkt = ipv6Item->GetPacket ();
 
-  uint32_t band = 1;
-  switch (dscpType) {
-    case Ipv6Header::DSCP_EF :
-    case Ipv6Header::DSCP_AF13 :
-    case Ipv6Header::DSCP_AF23 :
-    case Ipv6Header::DSCP_AF33 :
-    case Ipv6Header::DSCP_AF43 :
-    case Ipv6Header::DscpDefault :
-    case Ipv6Header::DSCP_CS2 :
-    case Ipv6Header::DSCP_CS3 :
-      band = 1;
-      break;
-    case Ipv6Header::DSCP_AF11 :
-    case Ipv6Header::DSCP_AF21 :
-    case Ipv6Header::DSCP_AF31 :
-    case Ipv6Header::DSCP_AF41 :
-    case Ipv6Header::DSCP_CS1 :
-      band = 2;
-      break;
-    case Ipv6Header::DSCP_AF12 :
-    case Ipv6Header::DSCP_AF22 :
-    case Ipv6Header::DSCP_AF32 :
-    case Ipv6Header::DSCP_AF42 :
-    case Ipv6Header::DSCP_CS4 :
-    case Ipv6Header::DSCP_CS5 :
-    case Ipv6Header::DSCP_CS6 :
-    case Ipv6Header::DSCP_CS7 :
-      band = 0;
-      break;
-    default :
-      band = 1;
-  }
-  NS_LOG_DEBUG ("Band returned:  " << band);
-  return band;
+  if (prot == 6) // TCP
+    {
+      pkt->PeekHeader (tcpHdr);
+      srcPort = tcpHdr.GetSourcePort ();
+      destPort = tcpHdr.GetDestinationPort ();
+    }
+  else if (prot == 17) // UDP
+    {
+      pkt->PeekHeader (udpHdr);
+      srcPort = udpHdr.GetSourcePort ();
+      destPort = udpHdr.GetDestinationPort ();
+    }
+
+  /* serialize the 5-tuple and the perturbation in buf */
+  uint8_t buf[41];
+  src.Serialize (buf);
+  dest.Serialize (buf + 16);
+  buf[32] = prot;
+  buf[33] = (srcPort >> 8) & 0xff;
+  buf[34] = srcPort & 0xff;
+  buf[35] = (destPort >> 8) & 0xff;
+  buf[36] = destPort & 0xff;
+  buf[37] = (m_perturbation >> 24) & 0xff;
+  buf[38] = (m_perturbation >> 16) & 0xff;
+  buf[39] = (m_perturbation >> 8) & 0xff;
+  buf[40] = m_perturbation & 0xff;
+
+  /* Linux calculates the jhash2 (jenkins hash), we calculate the murmur3 */
+  uint32_t hash = Hash32 ((char*) buf, 41);
+
+  NS_LOG_DEBUG ("Found Ipv6 packet; hash of the five tuple " << hash);
+
+  return hash;
 }
 
 } // namespace ns3

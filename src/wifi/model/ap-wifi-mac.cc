@@ -27,7 +27,6 @@
 #include "ns3/string.h"
 #include "ns3/pointer.h"
 #include "ns3/boolean.h"
-#include "qos-tag.h"
 #include "wifi-phy.h"
 #include "dcf-manager.h"
 #include "mac-rx-middle.h"
@@ -284,8 +283,7 @@ ApWifiMac::ForwardDown (Ptr<const Packet> packet, Mac48Address from,
       hdr.SetQosAckPolicy (WifiMacHeader::NORMAL_ACK);
       hdr.SetQosNoEosp ();
       hdr.SetQosNoAmsdu ();
-      //Transmission of multiple frames in the same TXOP is not
-      //supported for now
+      //Transmission of multiple frames in the same Polled TXOP is not supported for now
       hdr.SetQosTxopLimit (0);
       //Fill in the QoS control field in the MAC header
       hdr.SetQosTid (tid);
@@ -391,6 +389,18 @@ ApWifiMac::GetSupportedRates (void) const
   return rates;
 }
 
+DsssParameterSet
+ApWifiMac::GetDsssParameterSet (void) const
+{
+  DsssParameterSet dsssParameters;
+  if (m_dsssSupported)
+    {
+      dsssParameters.SetDsssSupported (1);
+      dsssParameters.SetCurrentChannel (m_phy->GetChannelNumber ());
+    }
+  return dsssParameters;
+}
+
 CapabilityInformation
 ApWifiMac::GetCapabilities (void) const
 {
@@ -419,6 +429,51 @@ ApWifiMac::GetErpInformation (void) const
         }
     }
   return information;
+}
+
+EdcaParameterSet
+ApWifiMac::GetEdcaParameterSet (void) const
+{
+  EdcaParameterSet edcaParameters;
+  edcaParameters.SetQosSupported (1);
+  if (m_qosSupported)
+    {
+      Ptr<EdcaTxopN> edca;
+      Time txopLimit;
+
+      edca = m_edca.find (AC_BE)->second;
+      txopLimit = edca->GetTxopLimit ();
+      edcaParameters.SetBeAci(0);
+      edcaParameters.SetBeCWmin(edca->GetMinCw ());
+      edcaParameters.SetBeCWmax(edca->GetMaxCw ());
+      edcaParameters.SetBeAifsn(edca->GetAifsn ());
+      edcaParameters.SetBeTXOPLimit(txopLimit.GetMicroSeconds () / 32);
+      
+      edca = m_edca.find (AC_BK)->second;
+      txopLimit = edca->GetTxopLimit ();
+      edcaParameters.SetBkAci(1);
+      edcaParameters.SetBkCWmin(edca->GetMinCw ());
+      edcaParameters.SetBkCWmax(edca->GetMaxCw ());
+      edcaParameters.SetBkAifsn(edca->GetAifsn ());
+      edcaParameters.SetBkTXOPLimit(txopLimit.GetMicroSeconds () / 32);
+      
+      edca = m_edca.find (AC_VI)->second;
+      txopLimit = edca->GetTxopLimit ();
+      edcaParameters.SetViAci(2);
+      edcaParameters.SetViCWmin(edca->GetMinCw ());
+      edcaParameters.SetViCWmax(edca->GetMaxCw ());
+      edcaParameters.SetViAifsn(edca->GetAifsn ());
+      edcaParameters.SetViTXOPLimit(txopLimit.GetMicroSeconds () / 32);
+      
+      edca = m_edca.find (AC_VO)->second;
+      txopLimit = edca->GetTxopLimit ();
+      edcaParameters.SetVoAci(3);
+      edcaParameters.SetVoCWmin(edca->GetMinCw ());
+      edcaParameters.SetVoCWmax(edca->GetMaxCw ());
+      edcaParameters.SetVoAifsn(edca->GetAifsn ());
+      edcaParameters.SetVoTXOPLimit(txopLimit.GetMicroSeconds () / 32);
+    }
+  return edcaParameters;
 }
 
 HtOperations
@@ -459,9 +514,17 @@ ApWifiMac::SendProbeResp (Mac48Address to)
   probe.SetCapabilities (GetCapabilities ());
   m_stationManager->SetShortPreambleEnabled (GetShortPreambleEnabled ());
   m_stationManager->SetShortSlotTimeEnabled (GetShortSlotTimeEnabled ());
+  if (m_dsssSupported)
+    {
+      probe.SetDsssParameterSet (GetDsssParameterSet ());
+    }
   if (m_erpSupported)
     {
       probe.SetErpInformation (GetErpInformation ());
+    }
+  if (m_qosSupported)
+    {
+      probe.SetEdcaParameterSet (GetEdcaParameterSet ());
     }
   if (m_htSupported || m_vhtSupported)
     {
@@ -512,6 +575,10 @@ ApWifiMac::SendAssocResp (Mac48Address to, bool success)
     {
       assoc.SetErpInformation (GetErpInformation ());
     }
+  if (m_qosSupported)
+    {
+      assoc.SetEdcaParameterSet (GetEdcaParameterSet ());
+    }
   if (m_htSupported || m_vhtSupported)
     {
       assoc.SetHtCapabilities (GetHtCapabilities ());
@@ -550,9 +617,17 @@ ApWifiMac::SendOneBeacon (void)
   beacon.SetCapabilities (GetCapabilities ());
   m_stationManager->SetShortPreambleEnabled (GetShortPreambleEnabled ());
   m_stationManager->SetShortSlotTimeEnabled (GetShortSlotTimeEnabled ());
+  if (m_dsssSupported)
+    {
+      beacon.SetDsssParameterSet (GetDsssParameterSet ());
+    }
   if (m_erpSupported)
     {
       beacon.SetErpInformation (GetErpInformation ());
+    }
+  if (m_qosSupported)
+    {
+      beacon.SetEdcaParameterSet (GetEdcaParameterSet ());
     }
   if (m_htSupported || m_vhtSupported)
     {

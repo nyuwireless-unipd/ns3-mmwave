@@ -22,12 +22,10 @@
 #define IPV6_INTERFACE_H
 
 #include <list>
-
-#include "ns3/ipv6-header.h"
-#include "ns3/ipv6-interface-address.h"
 #include "ns3/ptr.h"
 #include "ns3/object.h"
-#include "ns3/timer.h"
+#include "ipv6-interface-address.h"
+#include "ns3/traffic-control-layer.h"
 
 namespace ns3
 {
@@ -35,12 +33,15 @@ namespace ns3
 class NetDevice;
 class Packet;
 class Node;
-class TrafficControlLayer;
 class NdiscCache;
+class Ipv6InterfaceAddress;
+class Ipv6Address;
+class Ipv6Header;
 
 /**
- * \class Ipv6Interface
- * \brief The IPv6 representation of a network interface
+ * \ingroup ipv6
+ *
+ * \brief The IPv6 representation of a network interface.
  *
  * By default IPv6 interfaces are created in the "down" state
  * with IP "fe80::1" and a /64 prefix. Before becoming usable,

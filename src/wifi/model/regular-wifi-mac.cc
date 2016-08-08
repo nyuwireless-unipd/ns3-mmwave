@@ -42,7 +42,8 @@ NS_OBJECT_ENSURE_REGISTERED (RegularWifiMac);
 RegularWifiMac::RegularWifiMac () :
   m_htSupported (0),
   m_vhtSupported (0),
-  m_erpSupported (0)
+  m_erpSupported (0),
+  m_dsssSupported (0)
 {
   NS_LOG_FUNCTION (this);
   m_rxMiddle = new MacRxMiddle ();
@@ -289,28 +290,28 @@ RegularWifiMac::SetBkMaxAmpduSize (uint32_t size)
 void
 RegularWifiMac::SetVoBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << threshold);
+  NS_LOG_FUNCTION (this << (uint16_t) threshold);
   GetVOQueue ()->SetBlockAckThreshold (threshold);
 }
 
 void
 RegularWifiMac::SetViBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << threshold);
+  NS_LOG_FUNCTION (this << (uint16_t) threshold);
   GetVIQueue ()->SetBlockAckThreshold (threshold);
 }
 
 void
 RegularWifiMac::SetBeBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << threshold);
+  NS_LOG_FUNCTION (this << (uint16_t) threshold);
   GetBEQueue ()->SetBlockAckThreshold (threshold);
 }
 
 void
 RegularWifiMac::SetBkBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << threshold);
+  NS_LOG_FUNCTION (this << (uint16_t) threshold);
   GetBKQueue ()->SetBlockAckThreshold (threshold);
 }
 
@@ -522,7 +523,24 @@ void
 RegularWifiMac::SetErpSupported (bool enable)
 {
   NS_LOG_FUNCTION (this);
+  if (enable)
+    {
+      SetDsssSupported (true);
+    }
   m_erpSupported = enable;
+}
+
+void
+RegularWifiMac::SetDsssSupported (bool enable)
+{
+  NS_LOG_FUNCTION (this);
+  m_dsssSupported = enable;
+}
+
+bool
+RegularWifiMac::GetDsssSupported () const
+{
+  return m_dsssSupported;
 }
 
 void
@@ -1091,10 +1109,14 @@ RegularWifiMac::FinishConfigureStandard (enum WifiPhyStandard standard)
     case WIFI_PHY_STANDARD_80211ac:
       SetVhtSupported (true);
     case WIFI_PHY_STANDARD_80211n_5GHZ:
+      SetHtSupported (true);
+      cwmin = 15;
+      cwmax = 1023;
+      break;
     case WIFI_PHY_STANDARD_80211n_2_4GHZ:
       SetHtSupported (true);
     case WIFI_PHY_STANDARD_80211g:
-      m_erpSupported = true;
+      SetErpSupported (true);
     case WIFI_PHY_STANDARD_holland:
     case WIFI_PHY_STANDARD_80211a:
     case WIFI_PHY_STANDARD_80211_10MHZ:
@@ -1103,6 +1125,7 @@ RegularWifiMac::FinishConfigureStandard (enum WifiPhyStandard standard)
       cwmax = 1023;
       break;
     case WIFI_PHY_STANDARD_80211b:
+      SetDsssSupported (true);
       cwmin = 31;
       cwmax = 1023;
       break;
@@ -1116,14 +1139,15 @@ RegularWifiMac::FinishConfigureStandard (enum WifiPhyStandard standard)
 void
 RegularWifiMac::ConfigureContentionWindow (uint32_t cwMin, uint32_t cwMax)
 {
+  bool isDsssOnly = m_dsssSupported && !m_erpSupported;
   //The special value of AC_BE_NQOS which exists in the Access
   //Category enumeration allows us to configure plain old DCF.
-  ConfigureDcf (m_dca, cwMin, cwMax, AC_BE_NQOS);
+  ConfigureDcf (m_dca, cwMin, cwMax, isDsssOnly, AC_BE_NQOS);
 
   //Now we configure the EDCA functions
   for (EdcaQueues::iterator i = m_edca.begin (); i != m_edca.end (); ++i)
   {
-    ConfigureDcf (i->second, cwMin, cwMax, i->first);
+    ConfigureDcf (i->second, cwMin, cwMax, isDsssOnly, i->first);
   }
 }
 

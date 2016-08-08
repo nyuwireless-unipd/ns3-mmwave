@@ -51,6 +51,135 @@ to this file based on your experience, please contribute a patch or drop
 us a note on ns-developers mailing list.</p>
 
 <hr>
+<h1>Changes from ns-3.25 to ns-3.26</h1>
+<h2>New API:</h2>
+<ul>
+<li>A <b>SocketPriorityTag</b> is introduced to carry the packet priority. Such a tag
+    is added to packets by sockets that support this mechanism (UdpSocketImpl,
+    TcpSocketBase and PacketSocket). The base class Socket has a new SetPriority
+    method to set the socket priority. When the IPv4 protocol is used, the
+    priority is set based on the ToS. See the Socket options section of the
+    Network model for more information.
+</li>
+<li>A <b>WifiNetDevice::SelectQueue</b> method has been added to determine the user
+    priority of an MSDU. This method is called by the traffic control layer before
+    enqueuing a packet in the queue disc, if a queue disc is installed on
+    the outgoing device, or passing a packet to the device, otherwise. The
+    user priority is set to the three most significant bits of the DS field
+    (TOS field in case of IPv4 and Traffic Class field in case of IPv6). The
+    packet priority carried by the SocketPriorityTag is set to the user priority.
+</li>
+<li>The <b>PfifoFastQueueDisc</b> classifies packets into bands based on their priority.
+    See the pfifo_fast queue disc section of the Traffic Control Layer model
+    for more information.
+</li>
+<li> A new class <b>SpectrumWifiPhy</b> has been introduced that makes use of the Spectrum module.  Its functionality and API is currently very similar to that of the YansWifiPhy, especially because it reuses the same InterferenceHelper and ErrorModel classes (for this release).  Some example programs in the 'examples/wireless/' directory, such as 'wifi-spectrum-per-example.cc', illustrate how the SpectrumWifiPhy class can be substituted for the default YansWifiPhy PHY model.
+</li>
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+<li>SocketAddressTag was a long-standing API glitch. It was used to replicate 
+    the RecvFrom effect (i.e., to know the source address of packet) without 
+    calling RecvFrom.
+    This option is more harmful than useful, because in case of tunnels the 
+    new tag needs to replace the old one. Moreover, there is no real need 
+    to create a new API when there is a perfectly working one (i.e., RecvFrom).
+    As a consequence, SocketAddressTag has been completely removed from ns-3.
+    Users can use RecvFrom (for UDP), GetPeerName (for TCP), or similar. 
+</li>
+<li>InetSockAddress can now store a ToS value, which can be set through its
+    SetTos method. The Bind and Connect methods of UDP (UdpSocketImpl) and
+    TCP (TcpSocketBase) sockets set the socket ToS value to the value provided
+    through the address input parameter (of type InetSockAddress). See the
+    Socket options section of the Network model for more information.
+</li>
+<li>The QosTag is removed as it has been superseded by the SocketPriorityTag.</li>
+<li>The Ipv4L3Protocol::DefaultTos attribute is removed.</li>
+<li>The attributes YansWifiPhy::Frequency, YansWifiPhy::ChannelNumber, and YansWifiPhy::ChannelWidth, and the related accessor methods, were moved to base class WifiPhy.  YansWifiPhy::GetChannelFrequencyMhz() was deleted.  A new method WifiPhy::DefineChannelNumber () was added to allow users to define relationships between channel number, standard, frequency, and channel width.
+</li>
+<li> The class <b>WifiSpectrumValueHelper</b> has been refactored; previously it was an abstract base class supporting the WifiSpectrumValue5MhzFactory spectrum model.  It now contains various static member methods supporting the creation of power spectral densities with the granularity of a Wi-Fi OFDM subcarrier bandwidth.  The class WifiSpectrumValue5MhzFactory and its API remain but it is not subclassed.</li>
+<li> A new method InterferenceHelper::AddForeignSignal has been introduced to support use of the SpectrumWifiPhy (so that non-Wi-Fi signals may be handled as noise power).</li>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+</ul>
+<h2>Changed behavior:</h2>
+This section is for behavioral changes to the models that were not due to a bug fix.
+<ul>
+  <li> (wifi) The relationship between channel number, frequency, channel width, and Wi-Fi standard has been revised (see bug 2412).  Previously, ChannelNumber and Frequency were attributes of class YansWifiPhy, and the frequency was defined as the start of the band.  Now, Frequency has been redefined to be the center frequency of the channel, and the underlying device relies on the pair of frequency and channel width to control behavior; the channel number and Wi-Fi standard are used as attributes to configure frequency and channel width.  The wifi module documentation discusses this change and the new behavior.
+</ul>
+
+<hr>
+<h1>Changes from ns-3.24 to ns-3.25</h1>
+<h2>New API:</h2>
+<ul>
+  <li> In 'src/internet/test', a new environment is created to test TCP properties.</li>
+  <li> The 'src/traffic-control' module has been added, with new API for adding and configuring queue discs and packet filters.</li>
+  <li> Related to traffic control, a new interface has been added to the
+NetDevice to provide a queue interface to access device queue state and
+register callbacks used for flow control.</li>
+  <li> In 'src/wifi', a new rate control (MinstrelHT) has been added for
+802.11n/ac modes.</li>
+  <li> In 'src/wifi', a new helper (WifiMacHelper) is added and is a merged helper from all previously existing MAC helpers (NqosWifiMacHelper, QosWifiMacHelper, HtWifiMacHelper and VhtWifiMacHelper).</li>
+  <li> It is now possible to use RIPv2 in IPv4 network simulations.</li>
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+  <li>TCP-related changes:
+    <ul>
+      <li>Classes TcpRfc793, TcpTahoe, and TcpReno were removed.</li>
+      <li>The 'TcpNewReno' log component was effectively replaced by 'TcpCongestionOps'
+      <li>TCP Hybla and HighSpeed have been added.</li>
+      <li>Added the concept of Congestion State Machine inside TcpSocketBase.</li>
+      <li>Merged Fast Recovery and Fast Retransmit inside TcpSocketBase.</li>
+      <li>Some member variables have been moved from TcpSocketBase inside TcpSocketState. Attributes are not touched.</li>
+      <li>Congestion control splitted from TcpSocketBase as subclass of TcpCongestionOps.</li>
+      <li>Added Rx and Tx callbacks on TcpSocketBase.</li>
+      <li>Added BytesInFlight trace source on TcpSocketBase. The trace is updated when the implementation requests the value.</li>
+      <li>Added attributes about the number of connection and data retransmission attempts.</li>
+    </ul>
+  </li>
+  <li> ns-3 is now capable of serializing SLL (a.k.a. cooked) headers.
+       This is used in DCE to allow the generation of pcap directly readable by wireshark.
+  </li>
+  <li> In the WifiHelper class in the wifi module, Default has been declared deprecated. This is now immediately handled by the constructor of the class.</li>
+  <li> The API for configuring 802.11n/ac aggregation has been modified to be more user friendly. As any MAC layer attributes, aggregation parameters can now also be configured through WifiMacHelper::SetType. </li>
+  <li> The class Queue and subclasses derived from it have been changed in two ways:
+  <ul>
+    <li>Queues no longer enqueue simple Packets but instead enqueue QueueItem objects, which include Packet but possibly other information such as headers.</li>
+    <li>The attributes governing the mode of operation (packets or bytes) and the maximum size have been moved to base class Queue.</li>
+  </ul>
+  </li>
+  <li> Users of advanced queues (RED, CoDel) who have been using them directly in the NetDevice will need to adjust to the following changes:
+    <ul>
+      <li> RED and CoDel are no longer specializations of the Queue classe, but are now specializations of the new QueueDisc class. This means that RED and CoDel can now be installed in the context of the new Traffic Control layer instead of as queues in (some) NetDevices. The reason for such a change is to make the ns-3 stack much more similar to that of real operating systems (Linux has been taken as a reference).  Queuing disciplines such as RED and CoDel can now be tested with all the NetDevices, including WifiNetDevices. </li>
+      <li> NetDevices still use queues to buffer packets. The only subclass of Queue currently available for this purpose is DropTailQueue. If one wants to approximate the old behavior, one needs to set the DropTailQueue MaxPackets attribute to very low values, e.g., 1.</li>
+      <li> The Traffic Control layer features a mechanism by which packets dropped by the NetDevice are requeued in the queue disc (more precisely: if NetDevice::Send returns false, the packet is requeued), so that they are retransmitted later. This means that the MAC drop traces may include packets that have not been actually lost, because they have been dropped by the device, requeued by the traffic control layer and successfully retransmitted. To get the correct number of packets that have been actually lost, one has to subtract the number of packets requeued from the number of packets dropped as reported by the MAC drop trace. </li>
+    </ul>
+  </li>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+  <li> Waf was upgraded to 1.8.19</li>
+  <li> A new waf build option, --check-profile, was added to allow users to check the currently active build profile.  It is discussed in bug 2202 in the tracker.</li>
+</ul>
+<h2>Changed behavior:</h2>
+This section is for behavioral changes to the models that were not due to a bug fix.
+<ul>
+  <li>TCP behavioral changes:
+    <ul>
+      <li>TCP closes connection after a number of failed segment retries,
+        rather than trying indefinitely. The maximum number of retries, for both SYN
+        attempts and data attempts, is controlled by attributes.</li>
+      <li>Congestion algorithms not compliant with Fast Retransmit
+        and Fast Recovery (TCP 793, Reno, Tahoe) have been removed.</li>
+    </ul>
+  </li>
+  <li> 802.11n/ac MPDU aggregation is now enabled by default for both AC_BE and AC_VI.</li>
+  <li> The introduction of the traffic control layer leads to some additional buffering by default in the stack; when a device queue fills up, additional packets become enqueued at the traffic control layer.</li>
+</ul>
+
+<hr>
 <h1>Changes from ns-3.23 to ns-3.24</h1>
 <h2>New API:</h2>
 <ul>
