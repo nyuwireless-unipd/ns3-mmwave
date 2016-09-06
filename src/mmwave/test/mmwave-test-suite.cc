@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 // Include a header file from your module to test.
-#include "ns3/mmwave.h"
+#include "ns3/mmwave-helper.h"
 
 // An essential include is test.h
 #include "ns3/test.h"
