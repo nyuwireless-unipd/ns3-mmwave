@@ -200,8 +200,9 @@ public:
   static void NotifySecondaryMmWaveEnbAvailable (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
   static void NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, long double sinr);
-
   void PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, long double sinr);
+  static void NotifyLteSinr (MmWaveBearerStatsConnector* c, std::string context, uint16_t cellId, uint16_t rnti, double rsrp, double sinr);
+  void PrintLteSinr (uint16_t rnti, uint16_t cellId, double sinr);
 
   std::string GetEnbHandoverStartOutputFilename (void);
   std::string  GetUeHandoverStartOutputFilename (void);
@@ -209,6 +210,7 @@ public:
   std::string  GetUeHandoverEndOutputFilename (void);
   std::string GetCellIdStatsOutputFilename (void);
   std::string GetMmWaveSinrOutputFilename (void);
+  std::string GetLteSinrOutputFilename (void);
   
   void SetEnbHandoverStartOutputFilename (std::string outputFilename);
   void  SetUeHandoverStartOutputFilename (std::string outputFilename);
@@ -216,6 +218,7 @@ public:
   void  SetUeHandoverEndOutputFilename (std::string outputFilename);
   void SetCellIdStatsOutputFilename (std::string outputFilename);
   void SetMmWaveSinrOutputFilename (std::string outputFilename);
+  void SetLteSinrOutputFilename (std::string outputFilename);
 
 private:
   /**
@@ -345,6 +348,7 @@ private:
   std::string  m_ueHandoverEndFilename;
   std::string m_cellIdInTimeHandoverFilename;
   std::string m_mmWaveSinrOutputFilename;
+  std::string m_lteSinrOutputFilename;
 
   std::ofstream m_enbHandoverStartOutFile;
   std::ofstream  m_ueHandoverStartOutFile;
@@ -352,6 +356,7 @@ private:
   std::ofstream  m_ueHandoverEndOutFile;
   std::ofstream m_cellIdInTimeHandoverOutFile;
   std::ofstream m_mmWaveSinrOutFile;
+  std::ofstream m_lteSinrOutFile;
 };
 
 

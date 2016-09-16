@@ -468,7 +468,7 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 	{
 		MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters ulMacReq;
 		ulMacReq.m_sfnSf = sfnSf;
-		NS_LOG_UNCOND("ulMacReq.m_macCeList size " << m_ulCeReceived.size());
+		NS_LOG_DEBUG("ulMacReq.m_macCeList size " << m_ulCeReceived.size());
 		ulMacReq.m_macCeList.insert (ulMacReq.m_macCeList.begin (), m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_ulCeReceived.erase (m_ulCeReceived.begin (), m_ulCeReceived.end ());
 		m_macSchedSapProvider->SchedUlMacCtrlInfoReq (ulMacReq);
@@ -959,7 +959,7 @@ MmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_FUNCTION (this);
-  NS_LOG_UNCOND("Add LC for lcid " << lcinfo.lcId);
+  NS_LOG_INFO("Add LC for lcid " << lcinfo.lcId);
 
   std::map <LteFlowId_t, LteMacSapUser* >::iterator it;
 
@@ -974,7 +974,7 @@ MmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
     }
   else
     {
-      NS_LOG_UNCOND ("LC already exists");
+      NS_LOG_INFO ("LC already exists");
     }
 
   // CCCH (LCID 0) is pre-configured
@@ -1013,7 +1013,7 @@ void
 MmWaveEnbMac::DoReleaseLc (uint16_t rnti, uint8_t lcid)
 {
 	//Find user based on rnti and then erase lcid stored against the same
-	NS_LOG_UNCOND("ReleaseLc");
+	NS_LOG_INFO("ReleaseLc");
 	std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
 	rntiIt->second.erase (lcid);
 

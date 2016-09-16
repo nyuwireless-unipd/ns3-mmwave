@@ -370,7 +370,7 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
 	switch(m_state)
 	{
 	case TX:
-		NS_LOG_UNCOND(this << " m_cellId");
+		NS_LOG_INFO(this << " m_cellId");
 		NS_FATAL_ERROR("Cannot receive while transmitting");
 		break;
 	case RX_CTRL:

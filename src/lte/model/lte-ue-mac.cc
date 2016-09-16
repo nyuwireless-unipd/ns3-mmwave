@@ -375,7 +375,7 @@ LteUeMac::RandomlySelectAndSendRaPreamble ()
 void
 LteUeMac::SendRaPreamble (bool contention)
 {
-  NS_LOG_UNCOND("SendRaPreamble " << (uint16_t)m_raPreambleId << " contention " << contention);
+  NS_LOG_INFO("SendRaPreamble " << (uint16_t)m_raPreambleId << " contention " << contention);
   NS_LOG_FUNCTION (this << (uint32_t) m_raPreambleId << contention);
   // Since regular UL LteControlMessages need m_ulConfigured = true in
   // order to be sent by the UE, the rach preamble needs to be sent
@@ -463,7 +463,6 @@ void
 LteUeMac::DoConfigureRach (LteUeCmacSapProvider::RachConfig rc)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_UNCOND("DoConfigureRach");
   m_rachConfig = rc;
   m_rachConfigured = true;
 }
@@ -547,7 +546,7 @@ LteUeMac::DoReceivePhyPdu (Ptr<Packet> p)
       std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (tag.GetLcid ());
       if (it != m_lcInfoMap.end ())
         {
-          NS_LOG_UNCOND("LteUeMac ReceivePhyPdu");
+          NS_LOG_INFO("LteUeMac ReceivePhyPdu");
           it->second.macSapUser->ReceivePdu (p);
         }
       else

@@ -646,7 +646,7 @@ LteUeRrc::DoSetTemporaryCellRnti (uint16_t rnti)
 void
 LteUeRrc::DoNotifyRadioLinkFailure (double lastSinrValue)
 {
-  NS_LOG_UNCOND("Rlf");
+  NS_LOG_DEBUG("Rlf");
 }
 
 void
@@ -993,7 +993,7 @@ LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
           if (m_state == CONNECTED_HANDOVER && m_interRatHoCapable && !m_ncRaStarted)
             {
               m_ncRaStarted = true;
-              NS_LOG_UNCOND("StartNonContentionBasedRandomAccessProcedure after SIB2 received at time " << Simulator::Now());
+              NS_LOG_INFO("StartNonContentionBasedRandomAccessProcedure after SIB2 received at time " << Simulator::Now());
               m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, m_rachConfigDedicated.raPreambleIndex, m_rachConfigDedicated.raPrachMaskIndex);  
             }
           break;
@@ -1188,7 +1188,7 @@ LteUeRrc::DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg)
 void
 LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
 {
-  NS_LOG_UNCOND("Recv RRC Connection Switch on rnti " << m_rnti << " of cell " << m_cellId << " m_mmWaveCellId " << m_mmWaveCellId << " in state " << ToString(m_state));
+  NS_LOG_INFO("Recv RRC Connection Switch on rnti " << m_rnti << " of cell " << m_cellId << " m_mmWaveCellId " << m_mmWaveCellId << " in state " << ToString(m_state));
   std::vector<uint8_t> drbidList = msg.drbidList;
   for(std::vector<uint8_t>::iterator iter = drbidList.begin(); iter != drbidList.end(); ++iter)
   {

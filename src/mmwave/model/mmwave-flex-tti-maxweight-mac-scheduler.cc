@@ -369,7 +369,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
 			// Hence the BSR of different LCGs are just summed up to get
 			// a total queue size that is used for allocation purposes.
 			uint16_t rnti = params.m_macCeList.at (i).m_rnti;
-			NS_LOG_UNCOND("In MmWaveFlexTtiMaxWeightMacScheduler DoSchedUlMacCtrlInfoReq for rnti " << rnti);
+			NS_LOG_INFO("In MmWaveFlexTtiMaxWeightMacScheduler DoSchedUlMacCtrlInfoReq for rnti " << rnti);
   			std::map <uint16_t, struct UeSchedInfo>::iterator itUe = m_ueSchedInfoMap.find (rnti);
 
 			uint32_t buffer = 0;
@@ -383,7 +383,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
 
 					if (itUe == m_ueSchedInfoMap.end ())
 					{
-						NS_LOG_UNCOND ("UE entry not found in sched info map");
+						NS_LOG_INFO ("UE entry not found in sched info map");
 					}
 					else
 					{
@@ -402,15 +402,15 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
 						}
 						else
 						{
-							NS_LOG_UNCOND("diff " << diff);
+							NS_LOG_INFO("diff " << diff);
 						}
 					}
 				}
 				else
 				{
-					NS_LOG_UNCOND("bufSize " << bufSize);
+					NS_LOG_INFO("bufSize " << bufSize);
 				}
-				NS_LOG_UNCOND("itUe->second.m_flowStatsUl[lcg].m_totalBufSize " << itUe->second.m_flowStatsUl[lcg].m_totalBufSize);
+				NS_LOG_INFO("itUe->second.m_flowStatsUl[lcg].m_totalBufSize " << itUe->second.m_flowStatsUl[lcg].m_totalBufSize);
 			}
 		}
 	}
@@ -902,7 +902,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 					itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
 					SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
 					slotInfo.m_dci = dciInfoReTx;
-					NS_LOG_UNCOND ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+					NS_LOG_INFO ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
 							             " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
 							             " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
 					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
@@ -950,11 +950,11 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			std::map <uint16_t, UlHarqProcessesStatus_t>::iterator itStat = m_ulHarqProcessesStatus.find (rnti);
 			if (itStat == m_ulHarqProcessesStatus.end ())
 			{
-				NS_LOG_UNCOND ("No info found in HARQ buffer for UE (might have changed eNB) " << rnti);
+				NS_LOG_INFO ("No info found in HARQ buffer for UE (might have changed eNB) " << rnti);
 			}
 			if (harqInfo.m_receptionStatus == UlHarqInfo::Ok || itStat->second.at (harqId) == 0)
 			{
-				NS_LOG_UNCOND ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-ACK received");
+				NS_LOG_INFO ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-ACK received");
 				if (itStat != m_ulHarqProcessesStatus.end ())
 				{
 					itStat->second.at (harqId) = 0;  // release process ID
@@ -1034,7 +1034,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			itUeAllocMap->second->m_dlSymbolsRetx = 0;
 			itUeAllocMap->second->m_ulSymbolsRetx = 0;
 		}
-		NS_LOG_UNCOND("No further symbols available");
+		NS_LOG_INFO("No further symbols available");
 		return;
 	}
 
@@ -1062,7 +1062,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 				}
 
 				UeSchedInfo* ueInfo = flow->m_ueSchedInfo;
-				NS_LOG_UNCOND("Consider UE " << ueInfo->m_rnti << " with ul flow " << flow->m_isUplink << " symAvail " << symAvail);
+				NS_LOG_INFO("Consider UE " << ueInfo->m_rnti << " with ul flow " << flow->m_isUplink << " symAvail " << symAvail);
 				if (flow->m_isUplink && symAvail > 0)
 				{
 					std::map <uint16_t, struct UlCqiMapElem>::iterator itCqi = m_ueUlCqi.find (ueInfo->m_rnti);
@@ -1088,7 +1088,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 						cqi = 1;
 						mcs = 0;
 					}
-					NS_LOG_UNCOND("Alloc for rnti " << ueInfo->m_rnti << " cqi " << mcs);
+					NS_LOG_INFO("Alloc for rnti " << ueInfo->m_rnti << " cqi " << mcs);
 					if (cqi != 0)
 					{
 						flowFound = true;
@@ -1141,7 +1141,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 						}
 						if(ueInfo->m_rnti == 2)
 						{
-							NS_LOG_UNCOND ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_ulSymbols <<
+							NS_LOG_INFO ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_ulSymbols <<
 												              " UL symbols at MCS " << (unsigned)ueInfo->m_ulMcs << " (remaining == " << symAvail << ")");
 						}
 						uint32_t sduSize = pduSize - (m_rlcHdrSize + m_subHdrSize);

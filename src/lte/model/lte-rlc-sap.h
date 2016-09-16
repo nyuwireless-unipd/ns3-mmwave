@@ -107,7 +107,6 @@ LteRlcSpecificLteRlcSapProvider<C>::LteRlcSpecificLteRlcSapProvider ()
 template <class C>
 void LteRlcSpecificLteRlcSapProvider<C>::TransmitPdcpPdu (TransmitPdcpPduParameters params)
 {
-  NS_LOG_UNCOND("Call RLC!");
   m_rlc->DoTransmitPdcpPdu (params.pdcpPdu);
 }
 

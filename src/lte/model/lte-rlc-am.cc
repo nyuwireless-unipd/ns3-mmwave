@@ -200,7 +200,7 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
     tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
     p->AddPacketTag (tag);
 
-    NS_LOG_UNCOND ("Txon Buffer: New packet added");
+    NS_LOG_INFO ("Txon Buffer: New packet added");
     m_txonBuffer.push_back (p);
     m_txonBufferSize += p->GetSize ();
     NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
@@ -1790,7 +1790,7 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
 															 " size= " << rlcAmHeader.GetLastOffset()-rlcAmHeader.GetSegmentOffset());
               	LteRlcAmHeader lastSegHdr;
               	it->second.m_byteSegments.back ()->PeekHeader (lastSegHdr);
-              	if(rlcAmHeader.GetSegmentOffset() == lastSegHdr.GetLastOffset ())
+                if(rlcAmHeader.GetSegmentOffset() == lastSegHdr.GetLastOffset () || rlcAmHeader.GetSegmentOffset() + 32768 == lastSegHdr.GetLastOffset ()) 
               	{
               		// segment is next in sequence
               		it->second.m_byteSegments.push_back (p);
@@ -1825,18 +1825,21 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
             }
           else
             {
-              NS_LOG_LOGIC ("Place PDU in the reception buffer ( SN = " << seqNumber << " )");
-              m_rxonBuffer[ seqNumber.GetValue () ].m_byteSegments.push_back (p);
-              if(rlcAmHeader.GetResegmentationFlag () == LteRlcAmHeader::SEGMENT)
+              if(rlcAmHeader.GetSegmentOffset() == 0)
               {
-              	NS_LOG_INFO ("RLC AM PDU segment received, offset= " << rlcAmHeader.GetSegmentOffset() <<
-              																 " size= " << rlcAmHeader.GetLastOffset()-rlcAmHeader.GetSegmentOffset());
-              	// received segment
-              	m_rxonBuffer[ seqNumber.GetValue () ].m_pduComplete = false;
-              }
-              else
-              {
-              	m_rxonBuffer[ seqNumber.GetValue () ].m_pduComplete = true;
+                NS_LOG_LOGIC ("Place PDU in the reception buffer ( SN = " << seqNumber << " )");
+                m_rxonBuffer[ seqNumber.GetValue () ].m_byteSegments.push_back (p);
+                if(rlcAmHeader.GetResegmentationFlag () == LteRlcAmHeader::SEGMENT)
+                {
+                	NS_LOG_INFO ("RLC AM PDU segment received, offset= " << rlcAmHeader.GetSegmentOffset() <<
+                																 " size= " << rlcAmHeader.GetLastOffset()-rlcAmHeader.GetSegmentOffset());
+                	// received segment
+                	m_rxonBuffer[ seqNumber.GetValue () ].m_pduComplete = false;
+                }
+                else
+                {
+                	m_rxonBuffer[ seqNumber.GetValue () ].m_pduComplete = true;
+                }
               }
             }
         }
@@ -2592,7 +2595,7 @@ LteRlcAm::DoReportBufferStatus (void)
 
   if ( r.txQueueSize != 0 || r.retxQueueSize != 0 || r.statusPduSize != 0 )
     {
-      NS_LOG_UNCOND ("Send ReportBufferStatus: " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " 
+      NS_LOG_INFO ("Send ReportBufferStatus: " << r.txQueueSize << ", " << r.txQueueHolDelay << ", " 
                                                << r.retxQueueSize << ", " << r.retxQueueHolDelay << ", " 
                                                << r.statusPduSize << ", " << r.txPacketSizes.size());
       m_macSapProvider->ReportBufferStatus (r);
@@ -2611,11 +2614,11 @@ LteRlcAm::ExpireReorderingTimer (void)
   NS_LOG_LOGIC ("Reordering Timer has expired");
 
   // clear the RLC segment buffer
-  for (unsigned i = 0; i < m_retxSegBuffer.size(); i++)
-  {
-  	m_retxSegBuffer.at (i).m_pdu = 0;
-  	m_retxSegBuffer.at (i).m_lastSegSent = false;
-  }
+  // for (unsigned i = 0; i < m_retxSegBuffer.size(); i++)
+  // {
+  // 	m_retxSegBuffer.at (i).m_pdu = 0;
+  // 	m_retxSegBuffer.at (i).m_lastSegSent = false;
+  // }
 
   // 5.1.3.2.4 Actions when t-Reordering expires
   // When t-Reordering expires, the receiving side of an AM RLC entity shall:

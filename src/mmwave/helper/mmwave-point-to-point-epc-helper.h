@@ -20,8 +20,8 @@
  *         Manuel Requena <manuel.requena@cttc.es>
  */
 
-#ifndef POINT_TO_POINT_EPC_HELPER_H
-#define POINT_TO_POINT_EPC_HELPER_H
+#ifndef MMWAVE_POINT_TO_POINT_EPC_HELPER_H
+#define MMWAVE_POINT_TO_POINT_EPC_HELPER_H
 
 #include <ns3/object.h>
 #include <ns3/ipv4-address-helper.h>
@@ -219,4 +219,4 @@ private:
 
 } // namespace ns3
 
-#endif // POINT_TO_POINT_EPC_HELPER_H
+#endif // MMWAVE_POINT_TO_POINT_EPC_HELPER_H

@@ -164,7 +164,7 @@ void
 McEnbPdcp::SetLteRlcSapProvider (LteRlcSapProvider * s)
 {
   NS_LOG_FUNCTION (this << s);
-  NS_LOG_UNCOND("Change LteRlcSapProvider");
+  NS_LOG_INFO("Change LteRlcSapProvider");
   m_rlcSapProvider = s;
 }
 
@@ -233,9 +233,9 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
     // m_txPdu (m_rnti, m_lcid, p->GetSize ());
     params.pdcpPdu = p;
 
-    NS_LOG_UNCOND("Params.rnti " << params.rnti);
-    NS_LOG_UNCOND("Params.m_lcid " << params.lcid);
-    NS_LOG_UNCOND("Params.pdcpPdu " << params.pdcpPdu);
+    NS_LOG_LOGIC("Params.rnti " << params.rnti);
+    NS_LOG_LOGIC("Params.m_lcid " << params.lcid);
+    NS_LOG_LOGIC("Params.pdcpPdu " << params.pdcpPdu);
 
     m_rlcSapProvider->TransmitPdcpPdu (params);
   } 

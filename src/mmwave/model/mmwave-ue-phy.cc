@@ -233,14 +233,14 @@ MmWaveUePhy::UpdateSinrEstimate(uint16_t cellId, double sinr)
 			if(m_consecutiveSinrBelowThreshold > m_n310)
 			{
 				// TODO raise a call to upper layers
-				NS_LOG_UNCOND("Phy layer detects SNR below threshold for " << m_n310 << " times");
+				NS_LOG_DEBUG("Phy layer detects SNR below threshold for " << m_n310 << " times");
 			}
 		}
 		else
 		{
 			m_consecutiveSinrBelowThreshold = 0;
 		}	
-		NS_LOG_UNCOND("Phy layers: update sinr value for cell " << m_cellId << " to " << currentCellSinr << " m_consecutiveSinrBelowThreshold " << (uint16_t)m_consecutiveSinrBelowThreshold << " at time " << Simulator::Now());
+		NS_LOG_DEBUG("Phy layers: update sinr value for cell " << m_cellId << " to " << currentCellSinr << " m_consecutiveSinrBelowThreshold " << (uint16_t)m_consecutiveSinrBelowThreshold << " at time " << Simulator::Now());
 	}
 }
 

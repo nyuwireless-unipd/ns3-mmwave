@@ -1826,7 +1826,7 @@ MmWaveFlexTtiMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSap
     {
       if ((*it).m_rnti == params.m_rnti)
         {
-          NS_LOG_UNCOND (this << " Erase RNTI " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity);
+          NS_LOG_INFO (this << " Erase RNTI " << (*it).m_rnti << " LC " << (uint16_t)(*it).m_logicalChannelIdentity);
           it = m_rlcBufferReq.erase (it);
         }
       else

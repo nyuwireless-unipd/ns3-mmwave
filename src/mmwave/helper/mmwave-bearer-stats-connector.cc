@@ -191,6 +191,10 @@ MmWaveBearerStatsConnector::~MmWaveBearerStatsConnector ()
   {
     m_mmWaveSinrOutFile.close();
   }
+  if(m_lteSinrOutFile.is_open())
+  {
+    m_lteSinrOutFile.close();
+  }
 }
 
 TypeId
@@ -215,6 +219,11 @@ MmWaveBearerStatsConnector::GetTypeId (void)
                "Name of the file where the mmWave eNB sinr will be saved.",
                StringValue ("MmWaveSinrTime.txt"),
                MakeStringAccessor (&MmWaveBearerStatsConnector::SetMmWaveSinrOutputFilename),
+               MakeStringChecker ())
+    .AddAttribute ("LteSinrOutputFilename",
+               "Name of the file where the LTE eNB sinr will be saved.",
+               StringValue ("LteSinrTime.txt"),
+               MakeStringAccessor (&MmWaveBearerStatsConnector::SetLteSinrOutputFilename),
                MakeStringChecker ())
     .AddAttribute ("UeHandoverStartOutputFilename",
                    "Name of the file where the UE handover start events will be saved.",
@@ -294,8 +303,11 @@ MmWaveBearerStatsConnector::EnsureConnected ()
           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/SwitchToMmWave",
            MakeBoundCallback (&MmWaveBearerStatsConnector::NotifySwitchToMmWaveUe, this));
+      // mmWave SINR from RT, LTE SINR from the PHY callbacks
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/NotifyMmWaveSinr",
           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyMmWaveSinr, this));
+      Config::Connect ("/NodeList/*/DeviceList/*/LteUePhy/ReportCurrentCellRsrpSinr",
+                   MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyLteSinr, this));
       m_connected = true;
     }
 }
@@ -387,6 +399,23 @@ MmWaveBearerStatsConnector::PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, lon
   m_mmWaveSinrOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << cellId << " " << sinr << std::endl;
 }
 
+void 
+MmWaveBearerStatsConnector::NotifyLteSinr (MmWaveBearerStatsConnector* c, std::string context, uint16_t cellId, uint16_t rnti, double rsrp, double sinr)
+{
+  c->PrintLteSinr (rnti, cellId, sinr);
+}
+
+void
+MmWaveBearerStatsConnector::PrintLteSinr (uint16_t rnti, uint16_t cellId, double sinr)
+{
+  NS_LOG_FUNCTION(this << " PrintLteSinr " << Simulator::Now().GetSeconds());
+  if(!m_lteSinrOutFile.is_open ())
+  {
+    m_lteSinrOutFile.open(GetLteSinrOutputFilename() .c_str());
+  }
+  m_lteSinrOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << rnti << " " << cellId << " " << sinr << std::endl;
+}
+
 std::string 
 MmWaveBearerStatsConnector::GetEnbHandoverStartOutputFilename (void)
 {
@@ -403,6 +432,12 @@ std::string
 MmWaveBearerStatsConnector::GetMmWaveSinrOutputFilename (void)
 {
   return m_mmWaveSinrOutputFilename;
+}
+
+std::string 
+MmWaveBearerStatsConnector::GetLteSinrOutputFilename (void)
+{
+  return m_lteSinrOutputFilename;
 }
 
 std::string 
@@ -455,6 +490,12 @@ void
 MmWaveBearerStatsConnector::SetMmWaveSinrOutputFilename (std::string outputFilename)
 {
   m_mmWaveSinrOutputFilename = outputFilename;
+}
+
+void
+MmWaveBearerStatsConnector::SetLteSinrOutputFilename (std::string outputFilename)
+{
+  m_lteSinrOutputFilename = outputFilename;
 }
 
 void 

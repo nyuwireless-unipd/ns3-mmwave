@@ -967,7 +967,7 @@ UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTei
 
       if(!mcLteToMmWaveForwarding)
       {
-        NS_LOG_UNCOND("Forward to target cell in HO");
+        NS_LOG_INFO("Forward to target cell in HO");
         m_rrc->m_x2SapProvider->SendUeData (params);
         NS_LOG_LOGIC ("sourceCellId = " << params.sourceCellId);
         NS_LOG_LOGIC ("targetCellId = " << params.targetCellId);
@@ -979,7 +979,7 @@ UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTei
       // LTE eNB PDCP, which will forward them to the MmWave RLC entity. 
       // Thus this method must be called after the switch to MmWave is done!
       {
-        NS_LOG_UNCOND("Forward to mmWave cell in switch");
+        NS_LOG_INFO("Forward to mmWave cell in switch");
         NS_ASSERT(mcPdcp != 0);
         NS_ASSERT(mcPdcp->GetUseMmWaveConnection());
         LtePdcpSapProvider::TransmitPdcpSduParameters pdcpParams;
@@ -1703,7 +1703,7 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
         // then the switch message is sent and the RLC buffers are fed back to the pdpc
         if(!m_rrc->m_ismmWave && useMmWaveConnection) // 
         {
-          NS_LOG_UNCOND("UeManager: forward LTE RLC buffers to mmWave");
+          NS_LOG_INFO("UeManager: forward LTE RLC buffers to mmWave");
           ForwardRlcBuffers(it->second->m_rlc, it->second->m_pdcp, it->second->m_gtpTeid, 1, it->first);
           // TODO consider if it is the case to create a new rlc!
 
@@ -1722,7 +1722,7 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
 
           it->second->m_rlc = rlc;
 
-          NS_LOG_UNCOND("Reset RLC in LTE eNB after switch, new rlc " << rlc);
+          NS_LOG_INFO("Reset RLC in LTE eNB after switch, new rlc " << rlc);
 
           rlc->SetLcId (lcid);
 
@@ -1766,7 +1766,7 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
   }
   msg.drbidList = drbidVector;
   msg.useMmWaveConnection = useMmWaveConnection;
-  NS_LOG_UNCOND("SendRrcConnectionSwitch to " << m_rnti << " with useMmWaveConnection " << msg.useMmWaveConnection << " at time " << Simulator::Now().GetSeconds());
+  NS_LOG_INFO("SendRrcConnectionSwitch to " << m_rnti << " with useMmWaveConnection " << msg.useMmWaveConnection << " at time " << Simulator::Now().GetSeconds());
   m_rrc->m_rrcSapUser->SendRrcConnectionSwitch(m_rnti, msg);  
 }
 
@@ -1775,7 +1775,7 @@ void
 UeManager::RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid)
 {
   NS_ASSERT_MSG(m_rlcMap.find(drbid) != m_rlcMap.end(), "drbid not found in m_rlcMap");
-  NS_LOG_UNCOND("RecvConnectionSwitchToMmWave on cell " << m_rrc->m_cellId << " switch " << useMmWaveConnection << " for drbid " << (uint32_t)drbid);
+  NS_LOG_INFO("RecvConnectionSwitchToMmWave on cell " << m_rrc->m_cellId << " switch " << useMmWaveConnection << " for drbid " << (uint32_t)drbid);
   if(!useMmWaveConnection)
   {
     //Ptr<RlcBearerInfo> rlcInfo = m_rlcMap.find(drbid)->second;
@@ -2521,7 +2521,7 @@ LteEnbRrc::RegisterImsiToRnti(uint64_t imsi, uint16_t rnti)
   if(m_imsiRntiMap.find(imsi) == m_imsiRntiMap.end())
   {
     m_imsiRntiMap.insert(std::pair<uint64_t, uint16_t> (imsi, rnti));
-    // NS_LOG_UNCOND("New entry in m_imsiRntiMap, for rnti " << rnti << " m_interRatHoMode " << m_interRatHoMode << " m_ismmWave " << m_ismmWave);
+    // NS_LOG_INFO("New entry in m_imsiRntiMap, for rnti " << rnti << " m_interRatHoMode " << m_interRatHoMode << " m_ismmWave " << m_ismmWave);
     if(m_interRatHoMode && m_ismmWave) // warn the UeManager that this is the first time a UE with a certain imsi
       // connects to this MmWave eNB. This will trigger a notification to the LTE RRC once RecvRrcReconfCompleted is called
     {

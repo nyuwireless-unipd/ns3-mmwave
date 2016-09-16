@@ -173,7 +173,7 @@ LteUeRrcProtocolReal::DoSendRrcConnectionReconfigurationCompleted (LteRrcSap::Rr
   transmitPdcpSduParameters.pdcpSdu = packet;
   transmitPdcpSduParameters.rnti = m_rnti;
   transmitPdcpSduParameters.lcid = 1;
-  NS_LOG_UNCOND("Tx RRC Connection reconf completed");
+  NS_LOG_INFO("Tx RRC Connection reconf completed");
   m_setupParameters.srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
 }
 
