@@ -204,6 +204,8 @@ private:
   void DoNotifyConnectionFailed ();
   void DoNotifyConnectionReleased ();
   void DoRecvData (Ptr<Packet> packet);
+  void DoNotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated rrcd);
+
 
   // internal methods
   void DoActivateEpsBearer (EpsBearer bearer, Ptr<EpcTft> tft);

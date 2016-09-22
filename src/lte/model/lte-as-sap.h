@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <ns3/ptr.h>
 #include <ns3/packet.h>
+#include <ns3/lte-rrc-sap.h>
 
 namespace ns3 {
 
@@ -97,6 +98,13 @@ public:
    */
   virtual void NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId) = 0;
 
+  /** 
+   * \brief Tell the LTE RRC in the UE that a secondary cell handover was performed,
+   * and trigger the RLC instances update
+   *
+   */
+  virtual void NotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated) = 0;
+
 };
 
 
@@ -120,6 +128,8 @@ public:
   virtual void NotifyConnectionSuccessful (uint16_t rnti) = 0;
 
   virtual void NotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId) = 0;
+
+  virtual void NotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated) = 0;
 
   /** 
    * \brief Notify the NAS that LTE RRC received an indication to connect to a MmWave eNB
@@ -171,6 +181,7 @@ public:
   virtual void SendData (Ptr<Packet> packet, uint8_t bid);
   virtual void Disconnect ();
   virtual void NotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveCellId);
+  virtual void NotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated);
 
 private:
   MemberLteAsSapProvider ();
@@ -237,6 +248,13 @@ MemberLteAsSapProvider<C>::NotifySecondaryCellConnected (uint16_t rnti, uint16_t
   m_owner->DoNotifySecondaryCellConnected (rnti, mmWaveCellId);
 }
 
+template <class C>
+void 
+MemberLteAsSapProvider<C>::NotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated)
+{
+  m_owner->DoNotifySecondaryCellHandover (oldRnti, newRnti, mmWaveCellId, radioResourceConfigDedicated);
+}
+
 
 /**
  * Template for the implementation of the LteAsSapUser as a member
@@ -256,6 +274,7 @@ public:
   virtual void NotifyConnectionFailed ();
   virtual void RecvData (Ptr<Packet> packet);
   virtual void NotifyConnectionReleased ();
+  virtual void NotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated);
 
 private:
   MemberLteAsSapUser ();
@@ -315,6 +334,13 @@ MemberLteAsSapUser<C>::NotifyConnectionReleased ()
   m_owner->DoNotifyConnectionReleased ();
 }
 
+
+template <class C>
+void 
+MemberLteAsSapUser<C>::NotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated radioResourceConfigDedicated)
+{
+  m_owner->DoNotifySecondaryCellHandoverStarted (oldRnti, newRnti, mmWaveCellId, radioResourceConfigDedicated);
+}
 
 } // namespace ns3
 

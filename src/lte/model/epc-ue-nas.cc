@@ -318,6 +318,20 @@ EpcUeNas::DoNotifyConnectToMmWave(uint16_t mmWaveCellId)
 }
 
 void
+EpcUeNas::DoNotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated rrcd)
+{
+  m_mmWaveCellId = mmWaveCellId;
+  NS_ASSERT(m_asSapProvider != 0); 
+  
+  NS_ASSERT_MSG(mmWaveCellId > 0, "Invalid CellId");
+
+  NS_LOG_INFO("Notify the LTE RRC of the secondary cell HO to " << mmWaveCellId);
+  // Notify the LTE RRC of the secondary cell HO
+  m_asSapProvider->NotifySecondaryCellHandover(oldRnti, newRnti, mmWaveCellId, rrcd);
+   
+}
+
+void
 EpcUeNas::DoNotifyConnectionFailed ()
 {
   NS_LOG_FUNCTION (this);

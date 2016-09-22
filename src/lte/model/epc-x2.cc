@@ -263,6 +263,8 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
           params.ueAggregateMaxBitRateDownlink = x2HoReqHeader.GetUeAggregateMaxBitRateDownlink ();
           params.ueAggregateMaxBitRateUplink   = x2HoReqHeader.GetUeAggregateMaxBitRateUplink ();
           params.bearers        = x2HoReqHeader.GetBearers ();
+          // RlcRequests for secondary cell HO
+          params.rlcRequests    = x2HoReqHeader.GetRlcSetupRequests();
           params.rrcContext     = packet;
           params.isMc           = x2HoReqHeader.GetIsMc ();
 
@@ -490,7 +492,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
       NS_LOG_INFO ("X2 RequestMcHandover header: " << x2mcHeader);
 
-      EpcX2SapUser::McHandoverParams params;
+      EpcX2SapUser::SecondaryHandoverParams params;
       params.targetCellId = x2mcHeader.GetTargetCellId();
       params.imsi = x2mcHeader.GetImsi();
       params.oldCellId = x2mcHeader.GetOldCellId();
@@ -506,7 +508,7 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
 
       NS_LOG_INFO ("X2 McHandover header: " << x2mcHeader);
 
-      EpcX2SapUser::McHandoverParams params;
+      EpcX2SapUser::SecondaryHandoverParams params;
       params.targetCellId = x2mcHeader.GetTargetCellId(); // the new MmWave cell to which the UE is connected
       params.imsi = x2mcHeader.GetImsi(); 
       params.oldCellId = x2mcHeader.GetOldCellId(); // actually, the LTE cell ID
@@ -528,6 +530,21 @@ EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
       params.drbid = x2mcHeader.GetDrbid();
 
       m_x2SapUser->RecvConnectionSwitchToMmWave(params);
+    }
+  else if (procedureCode == EpcX2Header::SecondaryCellHandoverCompleted)
+    {
+      NS_LOG_LOGIC ("Recv X2 message: SECONDARY CELL HANDOVER COMPLETED");
+
+      EpcX2SecondaryCellHandoverCompletedHeader x2hoHeader;
+      packet->RemoveHeader(x2hoHeader);
+
+      EpcX2SapUser::SecondaryHandoverCompletedParams params;
+      params.mmWaveRnti = x2hoHeader.GetMmWaveRnti();
+      params.imsi = x2hoHeader.GetImsi();
+      params.oldEnbUeX2apId = x2hoHeader.GetOldEnbUeX2apId();
+      params.cellId = cellsInfo->m_remoteCellId;
+
+      m_x2SapUser->RecvSecondaryCellHandoverCompleted(params);
     }
   else
     {
@@ -635,6 +652,8 @@ EpcX2::DoSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params)
   x2HoReqHeader.SetUeAggregateMaxBitRateDownlink (params.ueAggregateMaxBitRateDownlink);
   x2HoReqHeader.SetUeAggregateMaxBitRateUplink (params.ueAggregateMaxBitRateUplink);
   x2HoReqHeader.SetBearers (params.bearers);
+  // For secondary cell handover
+  x2HoReqHeader.SetRlcSetupRequests (params.rlcRequests);
   x2HoReqHeader.SetIsMc (params.isMc);
 
   EpcX2Header x2Header;
@@ -1271,7 +1290,7 @@ EpcX2::DoSendUeSinrUpdate(EpcX2Sap::UeImsiSinrParams params)
 
 
 void
-EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::McHandoverParams params)
+EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::SecondaryHandoverParams params)
 {
   NS_LOG_FUNCTION (this);
 
@@ -1318,7 +1337,7 @@ EpcX2::DoSendMcHandoverRequest (EpcX2SapProvider::McHandoverParams params)
 }
 
 void
-EpcX2::DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::McHandoverParams params)
+EpcX2::DoNotifyLteMmWaveHandoverCompleted (EpcX2SapProvider::SecondaryHandoverParams params)
 {
   NS_LOG_FUNCTION (this);
 
@@ -1412,5 +1431,55 @@ EpcX2::DoSendSwitchConnectionToMmWave(EpcX2SapProvider::SwitchConnectionParams p
   // Send the X2 message through the socket
   sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
 }
+
+void 
+EpcX2::DoSendSecondaryCellHandoverCompleted(EpcX2SapProvider::SecondaryHandoverCompletedParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_LOGIC ("MmWaveRnti = " << params.mmWaveRnti);
+  NS_LOG_LOGIC ("Imsi = " << params.imsi);
+  NS_LOG_LOGIC ("oldEnbUeX2apId = " << params.oldEnbUeX2apId);
+  NS_LOG_LOGIC ("Dst cellId = " << params.cellId);
+
+  NS_ASSERT_MSG (m_x2InterfaceSockets.find (params.cellId) != m_x2InterfaceSockets.end (),
+                 "Missing infos for cellId = " << params.cellId);
+  Ptr<X2IfaceInfo> socketInfo = m_x2InterfaceSockets [params.cellId];
+  Ptr<Socket> sourceSocket = socketInfo->m_localCtrlPlaneSocket;
+  Ipv4Address targetIpAddr = socketInfo->m_remoteIpAddr;
+
+  NS_LOG_LOGIC ("sourceSocket = " << sourceSocket);
+  NS_LOG_LOGIC ("targetIpAddr = " << targetIpAddr);
+
+  NS_LOG_INFO ("Send X2 message: SEND SECONDARY CELL HANDOVER COMPLETED MESSAGE");
+
+  // Build the X2 message
+  EpcX2SecondaryCellHandoverCompletedHeader x2hoHeader;
+  x2hoHeader.SetMmWaveRnti(params.mmWaveRnti);
+  x2hoHeader.SetImsi(params.imsi);
+  x2hoHeader.SetOldEnbUeX2apId(params.oldEnbUeX2apId);
+
+  EpcX2Header x2Header;
+  x2Header.SetMessageType (EpcX2Header::SuccessfulOutcome);
+  x2Header.SetProcedureCode (EpcX2Header::SecondaryCellHandoverCompleted);
+  x2Header.SetLengthOfIes (x2hoHeader.GetLengthOfIes ());
+  x2Header.SetNumberOfIes (x2hoHeader.GetNumberOfIes ());
+
+  NS_LOG_INFO ("X2 header: " << x2Header);
+  NS_LOG_INFO ("X2 SecondaryCellHandoverCompleted header: " << x2hoHeader);
+
+  // Build the X2 packet
+  Ptr<Packet> packet = Create <Packet> ();
+  packet->AddHeader (x2hoHeader);
+  packet->AddHeader (x2Header);
+  NS_LOG_INFO ("packetLen = " << packet->GetSize ());
+
+  EpcX2Tag tag (Simulator::Now());
+  packet->AddPacketTag (tag);
+
+  // Send the X2 message through the socket
+  sourceSocket->SendTo (packet, 0, InetSocketAddress (targetIpAddr, m_x2cUdpPort));
+}
+
 
 } // namespace ns3

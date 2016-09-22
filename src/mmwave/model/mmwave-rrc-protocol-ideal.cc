@@ -171,7 +171,7 @@ void
 mmWaveUeRrcProtocolIdeal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti ,uint16_t mmWaveCellId)
 {
    Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
-                        &LteEnbRrcSapProvider::RecvNotifySecondaryCellConnected,
+                        &LteEnbRrcSapProvider::RecvRrcSecondaryCellInitialAccessSuccessful,
                         m_enbRrcSapProvider,
                         m_rnti, 
                         mmWaveRnti,

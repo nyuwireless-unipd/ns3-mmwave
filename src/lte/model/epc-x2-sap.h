@@ -254,6 +254,8 @@ public:
     uint64_t            ueAggregateMaxBitRateUplink;
     bool                isMc;
     std::vector <ErabToBeSetupItem> bearers;
+    // list of RlcSetupRequest for secondary cell handovers (otherwise empty)
+    std::vector <RlcSetupRequest> rlcRequests;
     Ptr<Packet>         rrcContext;
   };
 
@@ -352,11 +354,19 @@ public:
     Ptr<Packet> ueData;
   };
 
-  struct McHandoverParams
+  struct SecondaryHandoverParams
   {
     uint64_t imsi;
     uint16_t oldCellId;
     uint16_t targetCellId;
+  };
+
+  struct SecondaryHandoverCompletedParams
+  {
+    uint64_t imsi;
+    uint16_t mmWaveRnti;
+    uint16_t cellId;
+    uint16_t oldEnbUeX2apId;
   };
 
   struct UeImsiSinrParams
@@ -380,7 +390,7 @@ public:
     uint16_t mmWaveCellId;
     uint8_t drbid;
     bool useMmWaveConnection;
-  };
+  }; 
 
 };
 
@@ -487,13 +497,15 @@ public:
 
   virtual void SendUeSinrUpdate (UeImsiSinrParams params) = 0;
 
-  virtual void SendMcHandoverRequest (McHandoverParams params) = 0;
+  virtual void SendMcHandoverRequest (SecondaryHandoverParams params) = 0;
 
-  virtual void NotifyLteMmWaveHandoverCompleted (McHandoverParams params) = 0;
+  virtual void NotifyLteMmWaveHandoverCompleted (SecondaryHandoverParams params) = 0;
 
   virtual void NotifyCoordinatorHandoverFailed (HandoverFailedParams params) = 0;
 
   virtual void SendSwitchConnectionToMmWave (SwitchConnectionParams params) = 0;
+
+  virtual void SendSecondaryCellHandoverCompleted (SecondaryHandoverCompletedParams params) = 0;
 
 };
 
@@ -533,11 +545,13 @@ public:
 
   virtual void RecvUeSinrUpdate(UeImsiSinrParams params) = 0;
 
-  virtual void RecvMcHandoverRequest (McHandoverParams params) = 0;
+  virtual void RecvMcHandoverRequest (SecondaryHandoverParams params) = 0;
 
-  virtual void RecvLteMmWaveHandoverCompleted (McHandoverParams params) = 0;
+  virtual void RecvLteMmWaveHandoverCompleted (SecondaryHandoverParams params) = 0;
 
   virtual void RecvConnectionSwitchToMmWave (SwitchConnectionParams params) = 0;
+
+  virtual void RecvSecondaryCellHandoverCompleted (SecondaryHandoverCompletedParams params) = 0;
 
 };
 
@@ -579,13 +593,15 @@ public:
 
   virtual void SendUeSinrUpdate (UeImsiSinrParams params);
 
-  virtual void SendMcHandoverRequest (McHandoverParams params);
+  virtual void SendMcHandoverRequest (SecondaryHandoverParams params);
 
-  virtual void NotifyLteMmWaveHandoverCompleted (McHandoverParams params);
+  virtual void NotifyLteMmWaveHandoverCompleted (SecondaryHandoverParams params);
 
   virtual void NotifyCoordinatorHandoverFailed (HandoverFailedParams params);
 
   virtual void SendSwitchConnectionToMmWave (SwitchConnectionParams params);
+
+  virtual void SendSecondaryCellHandoverCompleted (SecondaryHandoverCompletedParams params);
 
 
 private:
@@ -697,14 +713,14 @@ EpcX2SpecificEpcX2SapProvider<C>::SendUeSinrUpdate (UeImsiSinrParams params)
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapProvider<C>::SendMcHandoverRequest (McHandoverParams params)
+EpcX2SpecificEpcX2SapProvider<C>::SendMcHandoverRequest (SecondaryHandoverParams params)
 {
   m_x2->DoSendMcHandoverRequest (params);
 }
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapProvider<C>::NotifyLteMmWaveHandoverCompleted (McHandoverParams params)
+EpcX2SpecificEpcX2SapProvider<C>::NotifyLteMmWaveHandoverCompleted (SecondaryHandoverParams params)
 {
   m_x2->DoNotifyLteMmWaveHandoverCompleted(params);
 }
@@ -721,6 +737,13 @@ void
 EpcX2SpecificEpcX2SapProvider<C>::SendSwitchConnectionToMmWave (SwitchConnectionParams params)
 {
   m_x2->DoSendSwitchConnectionToMmWave(params);
+}
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapProvider<C>::SendSecondaryCellHandoverCompleted (SecondaryHandoverCompletedParams params)
+{
+  m_x2->DoSendSecondaryCellHandoverCompleted(params);
 }
 
 ///////////////////////////////////////
@@ -757,11 +780,13 @@ public:
 
   virtual void RecvUeSinrUpdate (UeImsiSinrParams params);
 
-  virtual void RecvMcHandoverRequest (McHandoverParams params);
+  virtual void RecvMcHandoverRequest (SecondaryHandoverParams params);
 
-  virtual void RecvLteMmWaveHandoverCompleted (McHandoverParams params);
+  virtual void RecvLteMmWaveHandoverCompleted (SecondaryHandoverParams params);
 
   virtual void RecvConnectionSwitchToMmWave (SwitchConnectionParams params);
+
+  virtual void RecvSecondaryCellHandoverCompleted (SecondaryHandoverCompletedParams params);
 
 
 private:
@@ -859,14 +884,14 @@ EpcX2SpecificEpcX2SapUser<C>::RecvUeSinrUpdate (UeImsiSinrParams params)
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapUser<C>::RecvMcHandoverRequest (McHandoverParams params)
+EpcX2SpecificEpcX2SapUser<C>::RecvMcHandoverRequest (SecondaryHandoverParams params)
 {
   m_rrc->DoRecvMcHandoverRequest (params);
 }
 
 template <class C>
 void
-EpcX2SpecificEpcX2SapUser<C>::RecvLteMmWaveHandoverCompleted (McHandoverParams params)
+EpcX2SpecificEpcX2SapUser<C>::RecvLteMmWaveHandoverCompleted (SecondaryHandoverParams params)
 {
   m_rrc->DoRecvLteMmWaveHandoverCompleted (params);
 }
@@ -878,6 +903,13 @@ EpcX2SpecificEpcX2SapUser<C>::RecvConnectionSwitchToMmWave (SwitchConnectionPara
   m_rrc->DoRecvConnectionSwitchToMmWave (params);
 }
 
+
+template <class C>
+void
+EpcX2SpecificEpcX2SapUser<C>::RecvSecondaryCellHandoverCompleted (SecondaryHandoverCompletedParams params)
+{
+  m_rrc->DoRecvSecondaryCellHandoverCompleted(params);
+}
 
 /////////////////////////////////////////////
 template <class C>

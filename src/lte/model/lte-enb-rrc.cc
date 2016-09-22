@@ -625,6 +625,9 @@ UeManager::PrepareHandover (uint16_t cellId)
         params.ueAggregateMaxBitRateDownlink = 200 * 1000;
         params.ueAggregateMaxBitRateUplink = 100 * 1000;
         params.bearers = GetErabList ();
+        params.rlcRequests = m_rlcRequestVector;
+        // TODO clear the vector to avoid ping-ponging, but check if this is the most appropriate moment
+        m_rlcRequestVector.clear();
 
         LteRrcSap::HandoverPreparationInfo hpi;
         hpi.asConfig.sourceUeIdentity = m_rnti;
@@ -786,12 +789,17 @@ UeManager::RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params
 
   // LL HO
   //Forward RlcTxBuffers to target eNodeb.
+  // TODO forwarding for secondary cell HO
   for ( std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator drbIt = m_drbMap.begin ();
         drbIt != m_drbMap.end ();
         ++drbIt)
   {
     ForwardRlcBuffers(drbIt->second->m_rlc, drbIt->second->m_pdcp, drbIt->second->m_gtpTeid, 0, 0);
   }
+
+  // TODO how to perform the forwarding: forward the packets as if they were from the LTE eNB..
+  // Moreover hack the X2 interface to forward the packet not to the RLC in this eNB but 
+  // to the RLC in the target eNB. Therefore setup X2 sockets and teid for the 2 mmWave eNBs involved
 }
 
 // This code from the LL HO implementation is refactored in a function
@@ -1273,12 +1281,15 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
     // callback to notify the BearerConnector that new rlcs are available
     m_secondaryRlcCreatedTrace(m_imsi, m_rrc->m_cellId, m_rnti);
 
-    // Ack the LTE BS, that will trigger the setup in the UE
-    EpcX2Sap::UeDataParams ackParams;
-    ackParams.sourceCellId = params.targetCellId;
-    ackParams.targetCellId = params.sourceCellId;
-    ackParams.gtpTeid = params.gtpTeid;  
-    m_rrc->m_x2SapProvider->SendRlcSetupCompleted(ackParams); 
+    if(m_state != HANDOVER_JOINING) // when performing a secondary cell HO do not ack the LTE eNB
+    {
+      // Ack the LTE BS, that will trigger the setup in the UE
+      EpcX2Sap::UeDataParams ackParams;
+      ackParams.sourceCellId = params.targetCellId;
+      ackParams.targetCellId = params.sourceCellId;
+      ackParams.gtpTeid = params.gtpTeid;  
+      m_rrc->m_x2SapProvider->SendRlcSetupCompleted(ackParams);
+    } 
   }
   else
   {
@@ -1376,7 +1387,7 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
       if(m_firstConnection)
       {
         m_firstConnection = false;
-        EpcX2Sap::McHandoverParams params;
+        EpcX2Sap::SecondaryHandoverParams params;
         params.oldCellId = m_rrc->m_lteCellId;
         params.targetCellId = m_rrc->m_cellId;
         params.imsi = m_imsi;
@@ -1455,7 +1466,7 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
       {
         NS_LOG_INFO("Notify the secondary cell that some bearers' RLC can be setup");
         NS_ASSERT_MSG((m_mmWaveCellId!=0) && (m_mmWaveRnti!=0), "Unkonwn secondary MmWave cell");
-        RecvNotifySecondaryCellConnected(m_mmWaveRnti, m_mmWaveCellId); 
+        RecvRrcSecondaryCellInitialAccessSuccessful(m_mmWaveRnti, m_mmWaveCellId); 
       }
       if(m_receivedLteMmWaveHandoverCompleted)
       {
@@ -1507,13 +1518,15 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
         }
         else
         {
-          NS_LOG_INFO ("Send UE CONTEXT RELEASE from target eNB to source eNB");
-          EpcX2SapProvider::UeContextReleaseParams ueCtxReleaseParams;
-          ueCtxReleaseParams.oldEnbUeX2apId = m_sourceX2apId;
-          ueCtxReleaseParams.newEnbUeX2apId = m_rnti;
-          ueCtxReleaseParams.sourceCellId = m_sourceCellId;
-          m_rrc->m_x2SapProvider->SendUeContextRelease (ueCtxReleaseParams);
-          m_rrc->m_handoverEndOkTrace (m_imsi, m_rrc->m_cellId, m_rnti);
+          // Send "path switch to the LTE eNB"
+          // The context release will be sent by the LTE eNB
+          EpcX2Sap::SecondaryHandoverCompletedParams params;
+          params.mmWaveRnti = m_rnti;
+          params.oldEnbUeX2apId = m_sourceX2apId;
+          params.imsi = m_imsi;
+          params.cellId = m_rrc->m_lteCellId; // just a placeholder to find the correct X2 socket in EpcX2
+          // Notify the LTE eNB
+          m_rrc->m_x2SapProvider->SendSecondaryCellHandoverCompleted(params);
           SwitchToState(CONNECTED_NORMALLY);
           NS_LOG_INFO("m_queuedHandoverRequestCellId " << m_queuedHandoverRequestCellId);
           if(m_queuedHandoverRequestCellId > 0)
@@ -1612,7 +1625,7 @@ UeManager::RecvMeasurementReport (LteRrcSap::MeasurementReport msg)
 } // end of UeManager::RecvMeasurementReport
 
 void
-UeManager::RecvNotifySecondaryCellConnected(uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+UeManager::RecvRrcSecondaryCellInitialAccessSuccessful(uint16_t mmWaveRnti, uint16_t mmWaveCellId)
 {
   m_mmWaveCellId = mmWaveCellId;
   m_mmWaveRnti = mmWaveRnti;
@@ -1676,6 +1689,60 @@ UeManager::RecvNotifySecondaryCellConnected(uint16_t mmWaveRnti, uint16_t mmWave
       }  
     }
   }
+}
+
+void
+UeManager::RecvSecondaryCellHandoverCompleted(EpcX2Sap::SecondaryHandoverCompletedParams params)
+{
+  uint16_t oldMmWaveCellId = m_mmWaveCellId;
+  m_mmWaveCellId = params.cellId;
+  m_mmWaveRnti = params.mmWaveRnti;
+
+  for (std::map <uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator it = m_drbMap.begin ();
+     it != m_drbMap.end ();
+     ++it)
+  {
+    if(!(it->second->m_isMc) || (it->second->m_isMc && m_rrc->m_lastMmWaveCell.find(m_imsi)->second != m_mmWaveCellId))
+    {
+      Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp> (it->second->m_pdcp); 
+      if (pdcp != 0)
+      {
+        // Updated UeDataParams in the PDCP instance
+        EpcX2Sap::UeDataParams params;
+        params.sourceCellId = m_rrc->GetCellId();
+        params.targetCellId = m_mmWaveCellId;
+        params.gtpTeid = it->second->m_gtpTeid;
+        pdcp->SetUeDataParams(params);
+        pdcp->SetMmWaveRnti(m_mmWaveRnti);
+        // Update TEIDs for receiving data eventually forwarded over X2-U 
+        LteEnbRrc::X2uTeidInfo x2uTeidInfo;
+        x2uTeidInfo.rnti = m_rnti;
+        x2uTeidInfo.drbid = it->first;
+        std::pair<std::map<uint32_t, LteEnbRrc::X2uTeidInfo>::iterator, bool> ret;
+        ret = m_rrc->m_x2uMcTeidInfoMap.insert (std::pair<uint32_t, LteEnbRrc::X2uTeidInfo> (it->second->m_gtpTeid, x2uTeidInfo));
+        // NS_ASSERT_MSG (ret.second == true, "overwriting a pre-existing entry in m_x2uMcTeidInfoMap");
+        // Setup McEpcX2PdcpUser
+        m_rrc->m_x2SapProvider->SetEpcX2PdcpUser(it->second->m_gtpTeid, pdcp->GetEpcX2PdcpUser());
+        // Remote RLC already setup
+      }
+      else
+      {
+        NS_FATAL_ERROR("Trying to update a MC device with a non MC capable PDCP");
+      }  
+    }
+    else
+    {
+      NS_LOG_INFO("No difference with the MC Bearer already defined"); // TODO consider bearer modifications
+    }  
+  }
+
+  // send ContextRelease to the old mmWave eNB
+  NS_LOG_INFO ("Send UE CONTEXT RELEASE from target eNB to source eNB");
+  EpcX2SapProvider::UeContextReleaseParams ueCtxReleaseParams;
+  ueCtxReleaseParams.oldEnbUeX2apId = params.oldEnbUeX2apId;
+  ueCtxReleaseParams.newEnbUeX2apId = m_mmWaveRnti;
+  ueCtxReleaseParams.sourceCellId = oldMmWaveCellId;
+  m_rrc->m_x2SapProvider->SendUeContextRelease (ueCtxReleaseParams); 
 }
 
 
@@ -1992,6 +2059,23 @@ UeManager::BuildRadioResourceConfigDedicated ()
       dtam.is_mc = it->second->m_isMc;
       rrcd.drbToAddModList.push_back (dtam);
     }
+
+  if(m_drbMap.size() == 0 && m_isMc && m_rrc->m_ismmWave) // UeManager on a secondary cell for a MC device
+  {
+    for (std::map <uint8_t, Ptr<RlcBearerInfo> >::iterator it = m_rlcMap.begin ();
+       it != m_rlcMap.end ();
+       ++it)
+    {
+      LteRrcSap::DrbToAddMod dtam;
+      dtam.epsBearerIdentity = Drbid2Bid(it->second->drbid);
+      dtam.drbIdentity = it->second->drbid;
+      dtam.rlcConfig = it->second->rlcConfig;
+      dtam.logicalChannelIdentity = it->second->logicalChannelIdentity;
+      dtam.logicalChannelConfig = it->second->logicalChannelConfig;
+      dtam.is_mc = true;
+      rrcd.drbToAddModList.push_back (dtam);
+    }
+  }
 
   rrcd.havePhysicalConfigDedicated = true;
   rrcd.physicalConfigDedicated = m_physicalConfigDedicated;
@@ -2921,20 +3005,21 @@ LteEnbRrc::TriggerUeAssociationUpdate()
           // this may happen when channel changes while there is an handover
           {
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " channel changed previously at time " << Simulator::Now().GetSeconds());
-            // switch to LTE to avoid data being lost
-            Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
-            bool useMmWaveConnection = false;
-            m_imsiUsingLte[imsi] = !useMmWaveConnection;
-            ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
+
+            // The new secondary cell HO procedure does not require to switch to LTE
+            //Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
+            //bool useMmWaveConnection = false;
+            //m_imsiUsingLte[imsi] = !useMmWaveConnection;
+            //ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
 
             // trigger ho via X2
-            EpcX2SapProvider::McHandoverParams params;
+            EpcX2SapProvider::SecondaryHandoverParams params;
             params.imsi = imsi;
             params.targetCellId = maxSinrCellId;
             params.oldCellId = m_lastMmWaveCell[imsi];
             m_x2SapProvider->SendMcHandoverRequest(params);
 
-            m_mmWaveCellSetupCompleted[imsi] = false;
+            m_mmWaveCellSetupCompleted[imsi] = false; // TODO check this bool
             m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
             NS_LOG_INFO("For imsi " << imsi << " the best cell is " << m_bestMmWaveCellForImsiMap[imsi] << " with SINR " << maxSinrDb);
           } 
@@ -2961,7 +3046,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
             // already using LTE connection
             NS_LOG_INFO("----- on LTE, switch to new MmWaveCell " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
             // trigger ho via X2
-            EpcX2SapProvider::McHandoverParams params;
+            EpcX2SapProvider::SecondaryHandoverParams params;
             params.imsi = imsi;
             params.targetCellId = maxSinrCellId;
             params.oldCellId = m_lastMmWaveCell[imsi];
@@ -2969,17 +3054,18 @@ LteEnbRrc::TriggerUeAssociationUpdate()
 
             m_mmWaveCellSetupCompleted[imsi] = false;
           }
-          else if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > m_sinrThresholdDifference) // not on LTE, handover between MmWave cells
+          else if (alreadyAssociatedImsi && !onHandoverImsi && m_lastMmWaveCell[imsi] != maxSinrCellId && sinrDifference > m_sinrThresholdDifference) 
+          // not on LTE, handover between MmWave cells
           {
-            // switch to LTE to avoid data being lost
+            // The new secondary cell HO procedure does not require to switch to LTE
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
-            Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
-            bool useMmWaveConnection = false;
-            m_imsiUsingLte[imsi] = !useMmWaveConnection;
-            ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
+            //Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
+            //bool useMmWaveConnection = false;
+            //m_imsiUsingLte[imsi] = !useMmWaveConnection;
+            //ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
 
             // trigger ho via X2
-            EpcX2SapProvider::McHandoverParams params;
+            EpcX2SapProvider::SecondaryHandoverParams params;
             params.imsi = imsi;
             params.targetCellId = maxSinrCellId;
             params.oldCellId = m_lastMmWaveCell[imsi];
@@ -3070,7 +3156,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
             bool useMmWaveConnection = false; 
             m_imsiUsingLte[imsi] = !useMmWaveConnection;
             // trigger ho via X2
-            EpcX2SapProvider::McHandoverParams params;
+            EpcX2SapProvider::SecondaryHandoverParams params;
             params.imsi = imsi;
             params.targetCellId = m_cellId;
             params.oldCellId = m_lastMmWaveCell[imsi];
@@ -3097,7 +3183,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
           {
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId << " channel changed previously");
             // trigger ho via X2
-            EpcX2SapProvider::McHandoverParams params;
+            EpcX2SapProvider::SecondaryHandoverParams params;
             params.imsi = imsi;
             params.targetCellId = maxSinrCellId;
             params.oldCellId = m_lastMmWaveCell[imsi];
@@ -3127,7 +3213,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
           {
             NS_LOG_INFO("----- handover from " << m_lastMmWaveCell[imsi] << " to " << maxSinrCellId);
                         // trigger ho via X2
-            EpcX2SapProvider::McHandoverParams params;
+            EpcX2SapProvider::SecondaryHandoverParams params;
             params.imsi = imsi;
             params.targetCellId = maxSinrCellId;
             params.oldCellId = m_lastMmWaveCell[imsi];
@@ -3151,7 +3237,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
 }
 
 void
-LteEnbRrc::DoRecvMcHandoverRequest(EpcX2SapUser::McHandoverParams params)
+LteEnbRrc::DoRecvMcHandoverRequest(EpcX2SapUser::SecondaryHandoverParams params)
 {
   NS_ASSERT_MSG(m_ismmWave == true, "Trying to perform HO for a secondary cell on a non secondary cell");
   // retrieve RNTI
@@ -3306,10 +3392,10 @@ LteEnbRrc::DoRecvMeasurementReport (uint16_t rnti, LteRrcSap::MeasurementReport 
 }
 
 void 
-LteEnbRrc::DoRecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+LteEnbRrc::DoRecvRrcSecondaryCellInitialAccessSuccessful (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId)
 {
   NS_LOG_FUNCTION (this << rnti);
-  GetUeManager (rnti)->RecvNotifySecondaryCellConnected (mmWaveRnti, mmWaveCellId);
+  GetUeManager (rnti)->RecvRrcSecondaryCellInitialAccessSuccessful (mmWaveRnti, mmWaveCellId);
 }
 
 void 
@@ -3386,6 +3472,14 @@ LteEnbRrc::DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
       ackParams.admittedBearers.push_back (i);
     }
 
+  // For secondary cell HO for MC devices, setup RLC instances
+  for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = req.rlcRequests.begin();
+     it != req.rlcRequests.end ();
+       ++it)
+  {
+    ueManager->RecvRlcSetupRequest(*it);
+  }
+
   LteRrcSap::RrcConnectionReconfiguration handoverCommand = ueManager->GetRrcConnectionReconfigurationForHandover ();
   handoverCommand.haveMobilityControlInfo = true;
   handoverCommand.mobilityControlInfo.targetPhysCellId = m_cellId;
@@ -3437,6 +3531,19 @@ LteEnbRrc::DoRecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams para
 }
 
 void
+LteEnbRrc::DoRecvSecondaryCellHandoverCompleted (EpcX2SapUser::SecondaryHandoverCompletedParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT_MSG(!m_ismmWave, "Only the LTE cell (coordinator) can receive a SecondaryCellHandoverCompleted message");
+  NS_LOG_LOGIC ("Recv X2 message: SECONDARY CELL HANDOVER COMPLETED");
+
+  // get the RNTI from IMSI
+  Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(params.imsi));
+  ueMan->RecvSecondaryCellHandoverCompleted(params);
+}
+
+void
 LteEnbRrc::DoRecvHandoverPreparationFailure (EpcX2SapUser::HandoverPreparationFailureParams params)
 {
   NS_LOG_FUNCTION (this);
@@ -3485,7 +3592,7 @@ LteEnbRrc::DoRecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params)
   if(m_interRatHoMode && m_ismmWave)
   {
     NS_LOG_INFO("Notify LTE eNB that the handover is completed from cell " << m_cellId << " to " << params.sourceCellId);
-    EpcX2Sap::McHandoverParams sendParams;
+    EpcX2Sap::SecondaryHandoverParams sendParams;
     sendParams.imsi = GetImsiFromRnti(rnti);
     sendParams.oldCellId = m_lteCellId;
     sendParams.targetCellId = params.sourceCellId;
@@ -3504,7 +3611,7 @@ LteEnbRrc::DoRecvUeContextRelease (EpcX2SapUser::UeContextReleaseParams params)
 }
 
 void
-LteEnbRrc::DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::McHandoverParams params)
+LteEnbRrc::DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::SecondaryHandoverParams params)
 {
   NS_LOG_FUNCTION (this);
 

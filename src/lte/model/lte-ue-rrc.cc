@@ -275,7 +275,7 @@ LteUeRrc::GetTypeId (void)
     .AddAttribute ("SecondaryRRC",
                      "True if this is the RRC in charge of the secondary cell (MmWaveCell) for a MC device",
                      BooleanValue (false),
-                     MakeBooleanAccessor (&LteUeRrc::m_isMc),
+                     MakeBooleanAccessor (&LteUeRrc::m_isSecondaryRRC),
                      MakeBooleanChecker ())
     .AddAttribute ("InterRatHoCapable",
                      "True if this RRC supports hard handover between LTE and MmWave",
@@ -664,7 +664,7 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
         SwitchToState (IDLE_CONNECTING);
         LteRrcSap::RrcConnectionRequest msg;
         msg.ueIdentity = m_imsi;
-        msg.isMc = m_isMc;
+        msg.isMc = m_isSecondaryRRC;
         m_rrcSapUser->SendRrcConnectionRequest (msg); 
         m_connectionTimeout = Simulator::Schedule (m_t300,
                                                    &LteUeRrc::ConnectionTimeout,
@@ -678,10 +678,11 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
         msg.rrcTransactionIdentifier = m_lastRrcTransactionIdentifier;
         m_rrcSapUser->SendRrcConnectionReconfigurationCompleted (msg);
 
-        if(m_isMc)
-        {
-          m_asSapUser->NotifyHandoverSuccessful (m_rnti, m_cellId); // this triggers MC reconfiguration         
-        }
+        // The following is not needed
+        //if(m_isSecondaryRRC)
+        //{
+        //  m_asSapUser->NotifyHandoverSuccessful (m_rnti, m_cellId); // this triggers MC reconfiguration         
+        //}
 
         // 3GPP TS 36.331 section 5.5.6.1 Measurements related actions upon handover
         std::map<uint8_t, LteRrcSap::MeasIdToAddMod>::iterator measIdIt;
@@ -1060,6 +1061,7 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           m_cphySapProvider->SynchronizeWithEnb (m_cellId, mci.carrierFreq.dlCarrierFreq);
           m_cphySapProvider->SetDlBandwidth ( mci.carrierBandwidth.dlBandwidth);
           m_cphySapProvider->ConfigureUplink (mci.carrierFreq.ulCarrierFreq, mci.carrierBandwidth.ulBandwidth); 
+          uint16_t oldRnti = m_rnti;
           m_rnti = msg.mobilityControlInfo.newUeIdentity;
           m_srb0->m_rlc->SetRnti (m_rnti);
           NS_ASSERT_MSG (mci.haveRachConfigDedicated, "handover is only supported with non-contention-based random access procedure");
@@ -1086,8 +1088,22 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
 
           m_drbMap.clear (); // dispose all DRBs
           m_rlcMap.clear (); // dispose all MmWave RLCs
-         
-          ApplyRadioResourceConfigDedicated (msg.radioResourceConfigDedicated);
+
+          if(!m_isSecondaryRRC)
+          {
+            ApplyRadioResourceConfigDedicated (msg.radioResourceConfigDedicated);
+          }
+          else
+          {
+            // this is the secondary mmWave RRC. When a secondary HO happens,
+            // the primary LTE RRC must be notified in order to update the RLC instances
+            // Forward this message to EpcUeNas and then to LteUeRrc for LTE RRC
+            m_asSapUser->NotifySecondaryCellHandoverStarted(oldRnti, m_rnti, m_cellId, msg.radioResourceConfigDedicated);
+            msg.radioResourceConfigDedicated.drbToAddModList.clear(); // remove the drb list, since no Data RLC must be setup in this RRC
+            // setup SRB1
+            ApplyRadioResourceConfigDedicated (msg.radioResourceConfigDedicated);
+          }
+          
 
           if (msg.haveMeasConfig)
             {
@@ -1446,6 +1462,110 @@ LteUeRrc::EvaluateCellForSelection ()
 
 } // end of void LteUeRrc::EvaluateCellForSelection ()
 
+void
+LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated rrcd)
+{
+  NS_ASSERT_MSG(oldRnti == m_mmWaveRnti, "Wrong RNTI! - unknown device");
+  NS_ASSERT_MSG(!m_isSecondaryRRC, "Trying to modify RLCs in the mmWave RRC (they are instances in the LTE RRC)");
+  m_mmWaveRnti = newRnti;
+  m_mmWaveCellId = mmWaveCellId;
+  std::list<LteRrcSap::DrbToAddMod>::const_iterator dtamIt; // iterate over the 
+  for (dtamIt = rrcd.drbToAddModList.begin ();
+       dtamIt != rrcd.drbToAddModList.end ();
+       ++dtamIt)
+    {
+      NS_LOG_INFO (this << " IMSI " << m_imsi << " modifying DRBID " << (uint32_t) dtamIt->drbIdentity << " LC " << (uint32_t) dtamIt->logicalChannelIdentity);
+      NS_ASSERT_MSG (dtamIt->logicalChannelIdentity > 2, "LCID value " << dtamIt->logicalChannelIdentity << " is reserved for SRBs");
+
+      std::map<uint8_t, Ptr<LteDataRadioBearerInfo> >::iterator drbMapIt = m_drbMap.find (dtamIt->drbIdentity);
+      NS_ASSERT_MSG (drbMapIt != m_drbMap.end(), "Trying to modify an unknown bearer");
+        
+      Ptr<LteDataRadioBearerInfo> drbInfo = drbMapIt->second;
+      NS_LOG_INFO ("Is MC " << dtamIt->is_mc);
+      if(dtamIt->is_mc == true) // we need to modify the RLC for MmWave communications
+      {
+        Ptr<McUePdcp> pdcp = DynamicCast<McUePdcp> (drbInfo->m_pdcp);
+        if(pdcp !=0)
+        {
+          // create Rlc
+          TypeId rlcTypeId;
+          if (m_useRlcSm)
+            {
+              rlcTypeId = LteRlcSm::GetTypeId ();
+              NS_LOG_INFO("SM");
+            }
+          else
+            {
+              switch (dtamIt->rlcConfig.choice)
+                {
+                case LteRrcSap::RlcConfig::AM: 
+                  rlcTypeId = LteRlcAm::GetTypeId ();
+                  NS_LOG_INFO("AM");
+                  break;
+          
+                case LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL: 
+                  rlcTypeId = LteRlcUm::GetTypeId ();
+                  NS_LOG_INFO("UM");
+                  break;
+          
+                default:
+                  NS_FATAL_ERROR ("unsupported RLC configuration");
+                  break;                
+                }
+            }
+  
+          ObjectFactory rlcObjectFactory;
+          rlcObjectFactory.SetTypeId (rlcTypeId);
+          Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
+          rlc->SetLteMacSapProvider (m_mmWaveMacSapProvider); 
+          rlc->SetRnti (m_mmWaveRnti);
+          rlc->SetLcId (dtamIt->logicalChannelIdentity);
+
+          struct LteUeCmacSapProvider::LogicalChannelConfig lcConfig;
+          lcConfig.priority = dtamIt->logicalChannelConfig.priority;
+          lcConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
+          lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
+          lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;      
+
+
+          m_mmWaveCmacSapProvider->AddLc (dtamIt->logicalChannelIdentity, 
+                                  lcConfig,
+                                  rlc->GetLteMacSapUser ());
+          if (rlcTypeId != LteRlcSm::GetTypeId ())
+          {
+            pdcp->SetMmWaveRnti (m_mmWaveRnti);
+            pdcp->SetMmWaveRlcSapProvider (rlc->GetLteRlcSapProvider ());
+            rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
+          } 
+          rlc->Initialize();
+
+          Ptr<RlcBearerInfo> rlcInfo = CreateObject<RlcBearerInfo>();
+          rlcInfo->m_rlc = rlc;
+          rlcInfo->rlcConfig.choice = dtamIt->rlcConfig.choice;
+          rlcInfo->logicalChannelIdentity = dtamIt->logicalChannelIdentity;
+          rlcInfo->mmWaveRnti = m_mmWaveRnti;
+
+          LteRrcSap::LogicalChannelConfig logicalChannelConfig;
+          logicalChannelConfig.priority = dtamIt->logicalChannelConfig.priority;
+          logicalChannelConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
+          logicalChannelConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
+          logicalChannelConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;  
+
+          rlcInfo->logicalChannelConfig = logicalChannelConfig;
+
+          m_rlcMap[dtamIt->drbIdentity] = rlcInfo;
+
+          // TODO check if other updates are needed
+          
+          NS_LOG_INFO(this << "LteUeRrc Secondary Cell Handover, created new rlc " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
+        }
+        else
+        {
+          NS_FATAL_ERROR("MC setup on a non MC-capable bearer");
+        }
+      }
+    }
+}
 
 void 
 LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedicated rrcd)

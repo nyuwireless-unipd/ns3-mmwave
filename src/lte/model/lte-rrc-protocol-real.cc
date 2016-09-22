@@ -859,7 +859,7 @@ LteEnbRrcProtocolReal::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameter
       params.pdcpSdu->RemoveHeader (rrcNotifyHeader);
       std::pair<uint16_t, uint16_t> rrcNotifyPair;
       rrcNotifyPair = rrcNotifyHeader.GetMessage ();
-      m_enbRrcSapProvider->RecvNotifySecondaryCellConnected (params.rnti, rrcNotifyPair.second, rrcNotifyPair.first);
+      m_enbRrcSapProvider->RecvRrcSecondaryCellInitialAccessSuccessful (params.rnti, rrcNotifyPair.second, rrcNotifyPair.first);
       break;
     }
 }

@@ -67,7 +67,9 @@ public:
     RequestMcHandover       = 15,
     NotifyMmWaveLteHandover = 16,
     NotifyCoordinatorHandoverFailed = 17,
-    SwitchConnection        = 18
+    SwitchConnection        = 18,
+    SecondaryCellHandoverCompleted = 19
+
   };
 
   enum TypeOfMessage_t {
@@ -119,6 +121,9 @@ public:
   std::vector <EpcX2Sap::ErabToBeSetupItem> GetBearers () const;
   void SetBearers (std::vector <EpcX2Sap::ErabToBeSetupItem> bearers);
 
+  std::vector <EpcX2Sap::RlcSetupRequest> GetRlcSetupRequests () const;
+  void SetRlcSetupRequests (std::vector <EpcX2Sap::RlcSetupRequest> rlcRequests);
+
   uint64_t GetUeAggregateMaxBitRateDownlink () const;
   void SetUeAggregateMaxBitRateDownlink (uint64_t bitRate);
 
@@ -139,6 +144,7 @@ private:
   uint64_t          m_ueAggregateMaxBitRateDownlink;
   uint64_t          m_ueAggregateMaxBitRateUplink;
   std::vector <EpcX2Sap::ErabToBeSetupItem> m_erabsToBeSetupList;
+  std::vector <EpcX2Sap::RlcSetupRequest> m_rlcRequestsList;
   bool              m_isMc;
 };
 
@@ -266,6 +272,40 @@ private:
 
   uint16_t          m_targetCellId;
   uint16_t          m_oldCellId;
+  uint64_t          m_imsi;
+};
+
+class EpcX2SecondaryCellHandoverCompletedHeader : public Header
+{
+public:
+  EpcX2SecondaryCellHandoverCompletedHeader ();
+  virtual ~EpcX2SecondaryCellHandoverCompletedHeader ();
+
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual void Print (std::ostream &os) const;
+
+  uint16_t GetMmWaveRnti () const;
+  void SetMmWaveRnti (uint16_t mmWaveRnti);
+
+  uint16_t GetOldEnbUeX2apId () const;
+  void SetOldEnbUeX2apId (uint16_t oldEnbUeX2apId);
+
+  uint64_t GetImsi () const;
+  void SetImsi (uint64_t imsi);
+
+  uint32_t GetLengthOfIes () const;
+  uint32_t GetNumberOfIes () const;
+
+private:
+  uint32_t          m_numberOfIes;
+  uint32_t          m_headerLength;
+
+  uint16_t          m_mmWaveRnti;
+  uint16_t          m_oldEnbUeX2apId;
   uint64_t          m_imsi;
 };
 

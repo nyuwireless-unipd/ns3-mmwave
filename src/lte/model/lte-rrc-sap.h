@@ -1015,7 +1015,7 @@ public:
    */
   virtual void RecvMeasurementReport (uint16_t rnti, MeasurementReport msg) = 0;
 
-  virtual void RecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId) = 0;
+  virtual void RecvRrcSecondaryCellInitialAccessSuccessful (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId) = 0;
 };
 
 
@@ -1401,7 +1401,7 @@ public:
   virtual void RecvRrcConnectionReestablishmentRequest (uint16_t rnti, RrcConnectionReestablishmentRequest msg);
   virtual void RecvRrcConnectionReestablishmentComplete (uint16_t rnti, RrcConnectionReestablishmentComplete msg);
   virtual void RecvMeasurementReport (uint16_t rnti, MeasurementReport msg);
-  virtual void RecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId);
+  virtual void RecvRrcSecondaryCellInitialAccessSuccessful (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId);
 
 private:
   MemberLteEnbRrcSapProvider ();
@@ -1470,9 +1470,9 @@ MemberLteEnbRrcSapProvider<C>::RecvMeasurementReport (uint16_t rnti, Measurement
 
 template <class C>
 void
-MemberLteEnbRrcSapProvider<C>::RecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId)
+MemberLteEnbRrcSapProvider<C>::RecvRrcSecondaryCellInitialAccessSuccessful (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId)
 {
-  Simulator::ScheduleNow (&C::DoRecvNotifySecondaryCellConnected, m_owner, rnti, mmWaveRnti, mmWaveCellId);
+  Simulator::ScheduleNow (&C::DoRecvRrcSecondaryCellInitialAccessSuccessful, m_owner, rnti, mmWaveRnti, mmWaveCellId);
 }
 
 

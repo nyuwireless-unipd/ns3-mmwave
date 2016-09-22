@@ -327,6 +327,7 @@ private:
   void DoSendData (Ptr<Packet> packet, uint8_t bid);
   void DoDisconnect ();
   void DoNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId);
+  void DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated rrcd);
 
   // CPHY SAP methods
   void DoRecvMasterInformationBlock (uint16_t cellId,
@@ -988,7 +989,7 @@ private:
    *        connection establishment procedure has failed.
    */
   void ConnectionTimeout ();
-  bool m_isMc;
+  bool m_isSecondaryRRC;
   uint16_t m_mmWaveCellId;
 
   std::map<uint16_t, bool> m_isMmWaveCellMap;

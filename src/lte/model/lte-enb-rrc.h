@@ -282,7 +282,7 @@ public:
   /// Part of the RRC protocol. Implement the LteEnbRrcSapProvider::RecvMeasurementReport interface.
   void RecvMeasurementReport (LteRrcSap::MeasurementReport msg);
   ///
-  void RecvNotifySecondaryCellConnected(uint16_t mmWaveRnti, uint16_t mmWaveCellId);
+  void RecvRrcSecondaryCellInitialAccessSuccessful(uint16_t mmWaveRnti, uint16_t mmWaveCellId);
 
 
   // METHODS FORWARDED FROM ENB CMAC SAP //////////////////////////////////////
@@ -364,6 +364,7 @@ public:
    * was completed. Then, according to the state of 
    * the UeManager, it will modify the m_mmWaveCellSetupCompleted map
    * of RRC.
+   * Used only with InterRat HO mode
    */
   void RecvNotifyLteMmWaveHandoverCompleted();
 
@@ -372,6 +373,14 @@ public:
    * If the switch is to LTE, forward RLC buffers to LTE eNB
    */
   void RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid);
+
+  /**
+   * A SecondaryCellHandoverCompleted is received by the LTE eNB when the
+   * handover between 2 mmWave eNBs is completed. The LTE eNB has to update 
+   * the information on the secondary cell and send the connection release to the
+   * source mmWave eNB.
+   */
+  void RecvSecondaryCellHandoverCompleted (EpcX2SapUser::SecondaryHandoverCompletedParams params);
 
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
@@ -1027,7 +1036,7 @@ private:
   /// Part of the RRC protocol. Forwarding LteEnbRrcSapProvider::RecvMeasurementReport interface to UeManager::RecvMeasurementReport
   void DoRecvMeasurementReport (uint16_t rnti, LteRrcSap::MeasurementReport msg);
   ///
-  void DoRecvNotifySecondaryCellConnected (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId);
+  void DoRecvRrcSecondaryCellInitialAccessSuccessful (uint16_t rnti, uint16_t mmWaveRnti, uint16_t mmWaveCellId);
   // S1 SAP methods
 
   void DoDataRadioBearerSetupRequest (EpcEnbS1SapUser::DataRadioBearerSetupRequestParameters params);
@@ -1046,9 +1055,10 @@ private:
   void DoRecvRlcSetupCompleted (EpcX2SapUser::UeDataParams params);
   void DoRecvUeData (EpcX2SapUser::UeDataParams params);
   void DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params);
-  void DoRecvMcHandoverRequest(EpcX2SapUser::McHandoverParams params);
-  void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::McHandoverParams params);
+  void DoRecvMcHandoverRequest(EpcX2SapUser::SecondaryHandoverParams params);
+  void DoRecvLteMmWaveHandoverCompleted (EpcX2SapUser::SecondaryHandoverParams params);
   void DoRecvConnectionSwitchToMmWave (EpcX2SapUser::SwitchConnectionParams params);
+  void DoRecvSecondaryCellHandoverCompleted (EpcX2SapUser::SecondaryHandoverCompletedParams params);
 
   // CMAC SAP methods
 
