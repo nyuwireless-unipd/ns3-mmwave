@@ -211,6 +211,22 @@ EpcX2::AddX2Interface (uint16_t localCellId, Ipv4Address localX2Address, uint16_
   m_x2InterfaceCellIds [localX2uSocket] = Create<X2CellInfo> (localCellId, remoteCellId);
 }
 
+void
+EpcX2::DoAddTeidToBeForwarded(uint32_t gtpTeid, uint16_t targetCellId)
+{
+  NS_LOG_FUNCTION(this << " add an entry to the map of teids to be forwarded: teid " << gtpTeid << " targetCellId " << targetCellId);
+  NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) == m_teidToBeForwardedMap.end(), "TEID already in the map");
+  m_teidToBeForwardedMap.insert(std::pair<uint32_t, uint16_t> (gtpTeid, targetCellId));
+}
+
+void 
+EpcX2::DoRemoveTeidToBeForwarded(uint32_t gtpTeid)
+{
+  NS_LOG_FUNCTION(this << " remove and entry from the map of teids to be forwarded: teid " << gtpTeid);
+  NS_ASSERT_MSG(m_teidToBeForwardedMap.find(gtpTeid) != m_teidToBeForwardedMap.end(), "TEID not in the map");
+  m_teidToBeForwardedMap.erase(m_teidToBeForwardedMap.find(gtpTeid));
+}
+
 
 void 
 EpcX2::RecvFromX2cSocket (Ptr<Socket> socket)
@@ -591,31 +607,44 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   params.gtpTeid = gtpu.GetTeid ();
   params.ueData = packet;
 
-  if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
+  NS_LOG_LOGIC("Received packet on X2 u, size " << packet->GetSize() 
+    << " source " << params.sourceCellId << " target " << params.targetCellId << " type " << gtpu.GetMessageType());
+
+  if(m_teidToBeForwardedMap.find(params.gtpTeid) == m_teidToBeForwardedMap.end())
   {
-    // add PdcpTag
-    PdcpTag pdcpTag (Simulator::Now ());
-    params.ueData->AddByteTag (pdcpTag);
-    // call rlc interface
-    EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
-    if(user != 0)
+    if(gtpu.GetMessageType() == EpcX2Header::McForwardDownlinkData)
     {
-      user -> SendMcPdcpSdu(params);
+      // add PdcpTag
+      PdcpTag pdcpTag (Simulator::Now ());
+      params.ueData->AddByteTag (pdcpTag);
+      // call rlc interface
+      EpcX2RlcUser* user = m_x2RlcUserMap.find(params.gtpTeid)->second;
+      if(user != 0)
+      {
+        user -> SendMcPdcpSdu(params);
+      }
+      else
+      {
+        NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+      }
+    } 
+    else if (gtpu.GetMessageType() == EpcX2Header::McForwardUplinkData)
+    {
+      // call pdcp interface
+      NS_LOG_INFO("Call PDCP interface");
+      m_x2PdcpUserMap[params.gtpTeid] -> ReceiveMcPdcpPdu(params);
     }
     else
     {
-      NS_LOG_INFO("Not implemented: Forward to the other cell or to LTE");
+      m_x2SapUser->RecvUeData (params);
     }
-  } 
-  else if (gtpu.GetMessageType() == EpcX2Header::McForwardUplinkData)
-  {
-    // call pdcp interface
-    NS_LOG_INFO("Call PDCP interface");
-    m_x2PdcpUserMap[params.gtpTeid] -> ReceiveMcPdcpPdu(params);
   }
-  else
+  else // the packet was received during a secondary cell HO, forward to the target cell
   {
-    m_x2SapUser->RecvUeData (params);
+    params.sourceCellId = cellsInfo->m_remoteCellId;
+    params.targetCellId = m_teidToBeForwardedMap.find(params.gtpTeid)->second;
+    NS_LOG_LOGIC("Forward from " << cellsInfo->m_localCellId << " to " << params.targetCellId);
+    DoSendMcPdcpPdu(params);
   }
 }
 

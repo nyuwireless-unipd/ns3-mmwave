@@ -181,7 +181,11 @@ protected:
   virtual void DoNotifyCoordinatorHandoverFailed(EpcX2SapProvider::HandoverFailedParams params);
   virtual void DoSendSwitchConnectionToMmWave(EpcX2SapProvider::SwitchConnectionParams params);
   virtual void DoSendSecondaryCellHandoverCompleted(EpcX2SapProvider::SecondaryHandoverCompletedParams params);
-  
+
+  // these methods are not used to send messages but to change the internal state of the EpcX2
+  virtual void DoAddTeidToBeForwarded(uint32_t teid, uint16_t targetCellId);
+  virtual void DoRemoveTeidToBeForwarded(uint32_t teid);
+
   EpcX2SapUser* m_x2SapUser;
   EpcX2SapProvider* m_x2SapProvider;
   
@@ -219,6 +223,12 @@ private:
   uint16_t m_x2uUdpPort;
 
   TracedCallback<uint16_t, uint16_t, uint32_t, uint64_t, bool> m_rxPdu;
+
+  /**
+   * Map the gtpTeid to the targetCellId to which the packet should be forwarded
+   * during a secondary cell handover
+   */
+  std::map <uint32_t, uint16_t> m_teidToBeForwardedMap;
 
 };
 

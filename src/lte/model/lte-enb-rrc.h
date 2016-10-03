@@ -394,9 +394,11 @@ private:
    * @param a bool that specifies if this operation involves a classic forwarding (to PDCP of the target eNB)
    * or a LTE to MmWave Dual Connectivity forwarding, which needs the packets to be inserted back in the LTE PDCP
    * (there is no PDCP in the MmWave eNB in DC setup)
+   * @param a bool that specifies if this operation involves the forwarding of packets from a secondary mmWave cell
+   * to another secondary mmWave cell during a secondary cell HO 
    * @param the bearer id, used only if mcLteToMmWaveForwarding is true
    */
-  void ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTeid, bool mcLteToMmWaveForwarding, uint8_t bid);
+  void ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTeid, bool mcLteToMmWaveForwarding, bool mcMmToMmWaveForwarding, uint8_t bid);
 
   
   bool m_firstConnection;
@@ -1215,6 +1217,13 @@ private:
    * 
    */
   void TriggerUeAssociationUpdate();
+
+  /**
+   * This method can be used as an alternative to TriggerUeAssociationUpdate, it implements
+   * a more refined handover criterion based on dynamic TTT. 
+   * The greater the difference in capacity between the two eNBs, the shorter the TTT
+   */
+  void DynamicTttHandover();
 
   /** 
    * method used to periodically check if HO between MmWave and LTE is needed

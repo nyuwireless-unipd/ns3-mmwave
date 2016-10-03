@@ -468,6 +468,7 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 	p->RemovePacketTag (tag);
 	MmWaveMacPduHeader macHeader;
 	p->RemoveHeader (macHeader);
+  NS_LOG_INFO("ReceivePdu for rnti " << tag.GetRnti());
 	if (tag.GetRnti () == m_rnti) // packet is for the current user
 	{
 		std::vector<MacSubheader> macSubheaders = macHeader.GetSubheaders ();
@@ -479,7 +480,7 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			{
 				continue;
 			}
-			//NS_LOG_UNCOND("It is for lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
+			NS_LOG_INFO("It is for lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
 			std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (macSubheaders[ipdu].m_lcid);
 			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
 			if(it!=m_lcInfoMap.end ())
@@ -503,7 +504,6 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 					rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
 					currPos = p->GetSize ();
 					LteRlcSpecificLteMacSapUser* user = (LteRlcSpecificLteMacSapUser*)it->second.macSapUser;
-					NS_LOG_INFO("LteMacSapUser " << user);
 					user->ReceivePdu (rlcPdu);
 				}
 			}

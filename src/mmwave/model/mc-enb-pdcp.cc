@@ -268,7 +268,7 @@ McEnbPdcp::DoReceivePdu (Ptr<Packet> p)
   m_rxPdu(m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
   p->RemoveAllByteTags();
-  NS_LOG_WARN("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
+  NS_LOG_LOGIC("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
   
   LtePdcpHeader pdcpHeader;
   p->RemoveHeader (pdcpHeader);

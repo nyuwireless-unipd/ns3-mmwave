@@ -695,6 +695,11 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
 
         SwitchToState (CONNECTED_NORMALLY);
         m_handoverEndOkTrace (m_imsi, m_cellId, m_rnti);
+        if(m_isSecondaryRRC) // an handover for secondary cells has happened. 
+        // this trace is used to keep a consistent trace of the cell to which the UE is connected
+        {
+          m_switchToMmWaveTrace(m_imsi, m_cellId, m_rnti);
+        }
       }
       break;
 

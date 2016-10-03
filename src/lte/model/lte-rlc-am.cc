@@ -225,6 +225,7 @@ void
 LteRlcAm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this);
+  NS_LOG_INFO("Send MC PDU received from " << params.sourceCellId << " in cell " << params.targetCellId);
   DoTransmitPdcpPdu(params.ueData);
 }
 
@@ -854,6 +855,8 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   rlcAmHeader.SetLastSegmentFlag (LteRlcAmHeader::LAST_PDU_SEGMENT);
   rlcAmHeader.SetSegmentOffset (0);
 
+  NS_LOG_INFO("Send m_vtS " << m_vtS << " m_vtMs " << m_vtMs << " m_vtA " << m_vtA << " time " << Simulator::Now().GetSeconds());
+
   NS_ASSERT_MSG(rlcAmHeader.GetSequenceNumber () < m_vtMs, "SN above TX window");
   NS_ASSERT_MSG(rlcAmHeader.GetSequenceNumber () >= m_vtA, "SN below TX window");
 
@@ -1125,13 +1128,11 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
       else // extensionBit == 1
         {
           lengthIndicator = rlcAmHeader.PopLengthIndicator ();
-          NS_LOG_LOGIC ("LI = " << lengthIndicator);
           NS_LOG_DEBUG ("LI = " << lengthIndicator);
 
           // Check if there is enough data in the packet
           if ( lengthIndicator >= packet->GetSize () )
             {
-              NS_LOG_LOGIC ("INTERNAL ERROR: Not enough data in the packet (" << packet->GetSize () << "). Needed LI=" << lengthIndicator);
               NS_LOG_DEBUG ("INTERNAL ERROR: Not enough data in the packet (" << packet->GetSize () << "). Needed LI=" << lengthIndicator);
               /// \todo What to do in this case? Discard packet and continue? Or Assert?
             }
@@ -1154,8 +1155,6 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
   else                                              NS_LOG_DEBUG ("Reassembling State = Unknown state");
 
   // Received framing Info
-  NS_LOG_LOGIC ("Framing Info = " << (uint16_t)framingInfo);
-  NS_LOG_LOGIC ("m_sdusAssembleBuffer = " << m_sdusAssembleBuffer.size ());
   NS_LOG_DEBUG ("Framing Info = " << (uint16_t)framingInfo);
   NS_LOG_DEBUG ("m_sdusAssembleBuffer = " << m_sdusAssembleBuffer.size ());
  // Reassemble the list of SDUs (when there is no losses)
@@ -1657,6 +1656,7 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
 
   if ( rlcAmHeader.IsDataPdu () )
     {
+      NS_LOG_INFO (this << " RLC DoReceivePdu " << m_rnti << (uint32_t) m_lcid << p->GetSize () << " time " << Simulator::Now().GetSeconds());
 
       // 5.1.3.1   Transmit operations
 

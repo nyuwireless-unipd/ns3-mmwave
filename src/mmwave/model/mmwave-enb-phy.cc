@@ -246,6 +246,7 @@ MmWaveEnbPhy::GetUlSpectrumPhy () const
 void
 MmWaveEnbPhy::UpdateUeSinrEstimate()
 {
+	// NS_LOG_UNCOND(this << " UpdateUeSinrEstimate for cell " << m_cellId << " at time " << Simulator::Now().GetMilliSeconds());
 	m_sinrMap.clear();
 	m_rxPsdMap.clear();
 	Ptr<SpectrumValue> noisePsd = MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);

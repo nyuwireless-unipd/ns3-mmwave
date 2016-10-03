@@ -583,7 +583,7 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 				currPos = p->GetSize ();
 				(*lcidIt).second->ReceivePdu (rlcPdu);
 			}
-		NS_LOG_DEBUG ("MmWave Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
+		NS_LOG_INFO ("MmWave Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<(uint32_t)macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
 	}
 }
 
@@ -749,6 +749,7 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 {
 	// TB UID passed back along with RLC data as HARQ process ID
 	uint32_t tbMapKey = ((params.rnti & 0xFFFF) << 8) | (params.harqProcessId & 0xFF);
+	NS_LOG_LOGIC("Tx RLC PDU for rnti " << params.rnti << " lcid " << (uint32_t) params.lcid);
 	std::map<uint32_t, struct MacPduInfo>::iterator it = m_macPduMap.find (tbMapKey);
 	if (it == m_macPduMap.end ())
 	{
