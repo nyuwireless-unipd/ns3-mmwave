@@ -1219,6 +1219,15 @@ private:
   void TriggerUeAssociationUpdate();
 
   /**
+   * Trigger an handover according to certain conditions on the SINR
+   * @params the iterator on m_imsiCellSinrMap
+   * @params the sinrDifference between the current and the maxSinr cell
+   * @params the CellId of the maximum SINR cell
+   * @params the value of the SINR for this cell
+   */
+  void ThresholdBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, double sinrDifference, uint16_t maxSinrCellId, double maxSinrDb);
+  
+  /**
    * This method can be used as an alternative to TriggerUeAssociationUpdate, it implements
    * a more refined handover criterion based on dynamic TTT. 
    * The greater the difference in capacity between the two eNBs, the shorter the TTT
