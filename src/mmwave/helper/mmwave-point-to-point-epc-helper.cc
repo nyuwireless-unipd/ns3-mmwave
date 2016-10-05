@@ -318,6 +318,10 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   p2ph.SetDeviceAttribute ("DataRate", DataRateValue (m_x2LinkDataRate));
   p2ph.SetDeviceAttribute ("Mtu", UintegerValue (m_x2LinkMtu));
   p2ph.SetChannelAttribute ("Delay", TimeValue (m_x2LinkDelay));
+  // in case the RLC buffer is full, the forwarding of packets from the source eNB to the target eNB during a handover
+  // or a switch may overflow the transmission queue of point to point devices. Therefore the following line increases
+  // the size of tx queue in p2p devices. The parameter should be related to the maximum size of the RLC buffer.
+  p2ph.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(999999), "MaxBytes", UintegerValue(500000000));
   NetDeviceContainer enbDevices = p2ph.Install (enb1, enb2);
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #1 after installing p2p dev: " << enb1->GetObject<Ipv4> ()->GetNInterfaces ());
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #2 after installing p2p dev: " << enb2->GetObject<Ipv4> ()->GetNInterfaces ());
@@ -378,6 +382,12 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   {
     enb1LteDev->GetRrc ()->AddX2Neighbour (enb2CellId);
   }  
+
+  // if((enb1CellId == 1 && enb2CellId == 2) || (enb1CellId == 2 && enb2CellId == 1))
+  // {
+  //   //AsciiTraceHelper ascii;
+  //   p2ph.EnablePcapAll("x2.pcap");
+  // }
 }
 
 
