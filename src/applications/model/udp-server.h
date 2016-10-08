@@ -85,6 +85,9 @@ public:
   void SetReceivedFilename(std::string name);
   std::string GetReceivedFilename() const;
 
+  void SetSnFilename(std::string name);
+  std::string GetSnFilename() const;
+
 protected:
   virtual void DoDispose (void);
 
@@ -110,6 +113,12 @@ private:
 
   std::string m_receivedFilename;
   std::ofstream m_udpReceivedFile;
+
+  std::string m_snFilename;
+  std::ofstream m_udpSnFile;
+
+  uint16_t m_snMaxSize;
+  std::vector<uint32_t> m_snVector;
 };
 
 } // namespace ns3

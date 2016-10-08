@@ -34,6 +34,7 @@
 
 #include "seq-ts-header.h"
 #include "udp-server.h"
+#include <iterator>
 
 namespace ns3 {
 
@@ -65,6 +66,16 @@ UdpServer::GetTypeId (void)
                    StringValue ("UdpReceived.txt"),
                    MakeStringAccessor (&UdpServer::SetReceivedFilename),
                    MakeStringChecker ())
+    .AddAttribute ("ReceivedSnFilename",
+                   "Name of the file where the sequence numbers of received packets will be periodically written.",
+                   StringValue ("UdpSn.txt"),
+                   MakeStringAccessor (&UdpServer::SetSnFilename),
+                   MakeStringChecker ())
+    .AddAttribute ("SnVectorMaxSize",
+               "Maximum size of the vector containing SNs. When it reaches this size, the SNs are written to file",
+               UintegerValue (1024),
+               MakeUintegerAccessor (&UdpServer::m_snMaxSize),
+               MakeUintegerChecker<uint16_t> ())
   ;
   return tid;
 }
@@ -74,6 +85,7 @@ UdpServer::UdpServer ()
 {
   NS_LOG_FUNCTION (this);
   m_received=0;
+  m_snVector.clear();
 }
 
 UdpServer::~UdpServer ()
@@ -93,6 +105,17 @@ UdpServer::GetReceivedFilename() const
   return m_receivedFilename;
 }
 
+void 
+UdpServer::SetSnFilename(std::string name)
+{
+  m_snFilename = name;
+}
+
+std::string 
+UdpServer::GetSnFilename() const
+{
+  return m_snFilename;
+}
 
 uint16_t
 UdpServer::GetPacketWindowSize () const
@@ -133,6 +156,18 @@ UdpServer::DoDispose (void)
   }
   m_udpReceivedFile << m_received << std::endl;
   m_udpReceivedFile.close();
+
+  if(m_snVector.size() > 0)
+  {
+    if(!m_udpSnFile.is_open())
+    {
+      m_udpSnFile.open(GetSnFilename().c_str(), std::ofstream::app);
+    }
+    std::ostream_iterator<uint32_t> snIterator(m_udpSnFile, "\n");
+    std::copy(m_snVector.begin(), m_snVector.end(), snIterator);
+    m_snVector.clear();
+    m_udpSnFile.close();
+  }
 
   Application::DoDispose ();
 }
@@ -213,6 +248,23 @@ UdpServer::HandleRead (Ptr<Socket> socket)
 
           m_lossCounter.NotifyReceived (currentSequenceNumber);
           m_received++;
+          m_snVector.push_back(currentSequenceNumber);
+          if(m_snVector.size() >= m_snMaxSize)
+          {
+            // write to file
+            if(!m_udpSnFile.is_open())
+            {
+              m_udpSnFile.open(GetSnFilename().c_str(), std::ofstream::app);
+            }
+            std::ostream_iterator<uint32_t> snIterator(m_udpSnFile, "\n");
+            std::copy(m_snVector.begin(), m_snVector.end(), snIterator);
+            m_snVector.clear();
+            m_udpSnFile.close();
+          }
+        }
+      else
+        {
+          NS_LOG_INFO("Packet dropped in UDP server, size = 0");
         }
     }
 }
