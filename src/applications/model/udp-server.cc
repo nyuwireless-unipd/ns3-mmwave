@@ -163,8 +163,11 @@ UdpServer::DoDispose (void)
     {
       m_udpSnFile.open(GetSnFilename().c_str(), std::ofstream::app);
     }
-    std::ostream_iterator<uint32_t> snIterator(m_udpSnFile, "\n");
-    std::copy(m_snVector.begin(), m_snVector.end(), snIterator);
+    std::vector<std::pair<uint32_t, Time> >::const_iterator snIterator;
+    for(snIterator = m_snVector.begin(); snIterator != m_snVector.end(); ++snIterator)
+    {
+      m_udpSnFile << snIterator->first << " " << snIterator->second.GetMicroSeconds() << "\n";
+    }
     m_snVector.clear();
     m_udpSnFile.close();
   }
@@ -248,7 +251,7 @@ UdpServer::HandleRead (Ptr<Socket> socket)
 
           m_lossCounter.NotifyReceived (currentSequenceNumber);
           m_received++;
-          m_snVector.push_back(currentSequenceNumber);
+          m_snVector.push_back(std::pair<uint32_t, Time> (currentSequenceNumber, Simulator::Now () - seqTs.GetTs ()));
           if(m_snVector.size() >= m_snMaxSize)
           {
             // write to file
@@ -256,8 +259,11 @@ UdpServer::HandleRead (Ptr<Socket> socket)
             {
               m_udpSnFile.open(GetSnFilename().c_str(), std::ofstream::app);
             }
-            std::ostream_iterator<uint32_t> snIterator(m_udpSnFile, "\n");
-            std::copy(m_snVector.begin(), m_snVector.end(), snIterator);
+            std::vector<std::pair<uint32_t, Time> >::const_iterator snIterator;
+            for(snIterator = m_snVector.begin(); snIterator != m_snVector.end(); ++snIterator)
+            {
+              m_udpSnFile << snIterator->first << " " << snIterator->second.GetMicroSeconds() << "\n";
+            }
             m_snVector.clear();
             m_udpSnFile.close();
           }

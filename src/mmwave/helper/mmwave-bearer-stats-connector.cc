@@ -782,7 +782,21 @@ MmWaveBearerStatsConnector::ConnectTracesEnb (std::string context, uint64_t imsi
 void 
 MmWaveBearerStatsConnector::DisconnectTracesUe (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this << context);
+  NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteUeRrc/");
+  std::string basePath = context.substr (0, context.rfind ("/"));
+  Config::MatchContainer objects = Config::LookupMatches(basePath + "/DataRadioBearerMap/*/LteRlc/");
+  NS_LOG_LOGIC("basePath " << basePath);
+
+  if(m_mcStats)
+    {
+      Ptr<McBoundCallbackArgument> arg = Create<McBoundCallbackArgument> ();
+      arg->stats = m_mcStats;
+      Config::Disconnect (basePath + "/SwitchToLte",
+          MakeBoundCallback (&SwitchToLteCallback, arg));
+      Config::Disconnect (basePath + "/SwitchToMmWave",
+          MakeBoundCallback (&SwitchToMmWaveCallback, arg));
+  }
 }
 
 

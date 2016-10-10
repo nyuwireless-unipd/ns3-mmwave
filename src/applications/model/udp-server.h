@@ -118,7 +118,7 @@ private:
   std::ofstream m_udpSnFile;
 
   uint16_t m_snMaxSize;
-  std::vector<uint32_t> m_snVector;
+  std::vector<std::pair<uint32_t, Time> > m_snVector;
 };
 
 } // namespace ns3

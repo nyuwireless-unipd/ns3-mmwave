@@ -1007,6 +1007,28 @@ public:
     (uint64_t imsi, uint16_t cellId, long double sinr);
 
   /**
+   * Different secondary cell handover modes
+   */
+  enum HandoverMode
+  {
+    FIXED_TTT = 1,
+    DYNAMIC_TTT = 2,
+    THRESHOLD = 3
+  };
+
+  struct HandoverEventInfo
+  {
+    uint16_t sourceCellId;
+    uint16_t targetCellId;
+    EventId scheduledHandoverEvent;
+  };
+  
+  /**
+   * Map with info on handover events, per imsi
+   */
+  typedef std::map<uint64_t, HandoverEventInfo> HandoverEventMap;
+
+  /**
    * This method maps Imsi to Rnti, so that the UeManager of a certain UE
    * can be retrieved also with the Imsi
    */
@@ -1225,14 +1247,27 @@ private:
    * @params the CellId of the maximum SINR cell
    * @params the value of the SINR for this cell
    */
-  void ThresholdBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, double sinrDifference, uint16_t maxSinrCellId, double maxSinrDb);
-  
-  /**
-   * This method can be used as an alternative to TriggerUeAssociationUpdate, it implements
-   * a more refined handover criterion based on dynamic TTT. 
-   * The greater the difference in capacity between the two eNBs, the shorter the TTT
+  void ThresholdBasedSecondaryCellHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, double sinrDifference, uint16_t maxSinrCellId, double maxSinrDb);
+
+    /**
+   * Trigger an handover according to certain conditions on the SINR and the TTT
+   * @params the iterator on m_imsiCellSinrMap
+   * @params the sinrDifference between the current and the maxSinr cell
+   * @params the CellId of the maximum SINR cell
+   * @params the value of the SINR for this cell
    */
-  void DynamicTttHandover();
+  void TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, double sinrDifference, uint16_t maxSinrCellId, double maxSinrDb);
+
+  /**
+   * Compute the TTT according to the sinrDifference and the dynamic handover algorithm
+   */
+  uint8_t ComputeTtt(double sinrDifference);
+
+  /**
+   * Method that can be scheduled to perform an handover
+   * @params imsi 
+   */
+  void PerformHandover(uint64_t imsi);
 
   /** 
    * method used to periodically check if HO between MmWave and LTE is needed
@@ -1240,6 +1275,14 @@ private:
    */
   void UpdateUeHandoverAssociation();
 
+  /**
+   * Trigger an handover according to certain conditions on the SINR (for single-connectivity devices)
+   * @params the iterator on m_imsiCellSinrMap
+   * @params the sinrDifference between the current and the maxSinr cell
+   * @params the CellId of the maximum SINR cell
+   * @params the value of the SINR for this cell
+   */  
+  void ThresholdBasedInterRatHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, double sinrDifference, uint16_t maxSinrCellId, double maxSinrDb);
   
   Callback <void, Ptr<Packet> > m_forwardUpCallback;
 
@@ -1478,9 +1521,20 @@ private:
   std::map<uint64_t, uint16_t> m_imsiRntiMap;
   std::map<uint16_t, uint64_t> m_rntiImsiMap;
 
+  HandoverMode m_handoverMode;
+
+  // TTT based handover management
+  HandoverEventMap m_imsiHandoverEventsMap;
+
   long double m_sinrThresholdDifference;
 
   long double m_outageThreshold;
+
+  uint8_t m_fixedTttValue;
+  uint8_t m_minDynTttValue;
+  uint8_t m_maxDynTttValue;
+  double m_minDiffTttValue;
+  double m_maxDiffTttValue;
 
   uint32_t m_x2_received_cnt;
 

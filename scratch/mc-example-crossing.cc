@@ -42,7 +42,7 @@ using namespace ns3;
  * attaches one MC UE to both and starts a flow for the UE to  and from a remote host.
  */
 
-NS_LOG_COMPONENT_DEFINE ("McFirstExample");
+NS_LOG_COMPONENT_DEFINE ("McCrossing");
 
 class MyAppTag : public Tag
 {
@@ -341,7 +341,7 @@ ChangePosition(Ptr<Node> node, Vector vector)
 {
   Ptr<MobilityModel> model = node->GetObject<MobilityModel> ();
   model->SetPosition(vector);
-  NS_LOG_UNCOND("************************--------------------Change Position-------------------------------*****************");
+  NS_LOG_UNCOND("************************--------------------Change Position-------------------------------***************** " << vector);
 }
 
 void
@@ -368,9 +368,11 @@ PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
 }
 
 static ns3::GlobalValue g_mmw1DistFromMainStreet("mmw1Dist", "Distance from the main street of the first MmWaveEnb",
-    ns3::UintegerValue(50), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(0), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmw2DistFromMainStreet("mmw2Dist", "Distance from the main street of the second MmWaveEnb",
-    ns3::UintegerValue(50), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(0), ns3::MakeUintegerChecker<uint32_t>());
+static ns3::GlobalValue g_mmw3DistFromMainStreet("mmw3Dist", "Distance from the main street of the third MmWaveEnb",
+    ns3::UintegerValue(40), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave eNB 1 and 2",
     ns3::UintegerValue(400), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
@@ -403,8 +405,8 @@ main (int argc, char *argv[])
   //LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
   //LogComponentEnable("EpcUeNas",LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_LOGIC);
+  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
+  //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("LteUeMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("LteEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
@@ -415,22 +417,23 @@ main (int argc, char *argv[])
   //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
   //LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_INFO);
   //LogComponentEnable ("mmWavePhyRxTrace", LOG_LEVEL_ALL);
-  //LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_ALL);
   //LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
-  LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_INFO);
+  //LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable("LteEnbMac", LOG_LEVEL_INFO);
-  LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
+  //LogComponentEnable("MmWaveBearerStatsConnector", LOG_LEVEL_FUNCTION);
+  //LogComponentEnable("McStatsCalculator", LOG_LEVEL_FUNCTION);
   //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
+  //LogComponentEnable("EpcX2", LOG_LEVEL_INFO);
   //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
-  LogComponentEnable("McEnbPdcp", LOG_LEVEL_INFO);
-  LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
+  //LogComponentEnable("LtePdcp", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("McEnbPdcp", LOG_LEVEL_INFO);
+  //LogComponentEnable("McUePdcp", LOG_LEVEL_INFO);
   //LogComponentEnable("LteRlcAm", LOG_LEVEL_INFO);
   //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
   //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
   //LogComponentEnable("EpcMmeApplication", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_LEVEL_INFO);
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
   //LogComponentEnable("UdpServer", LOG_LEVEL_INFO);
@@ -462,6 +465,8 @@ main (int argc, char *argv[])
   uint32_t mmw1Dist = uintegerValue.Get();
   GlobalValue::GetValueByName("mmw2Dist", uintegerValue);
   uint32_t mmw2Dist = uintegerValue.Get();
+  GlobalValue::GetValueByName("mmw3Dist", uintegerValue);
+  uint32_t mmw3Dist = uintegerValue.Get();
   GlobalValue::GetValueByName("mmWaveDist", uintegerValue);
   uint32_t mmWaveDist = uintegerValue.Get();
   uint32_t mmWaveZ = 10;
@@ -469,8 +474,8 @@ main (int argc, char *argv[])
   uint32_t minimumBuildingWidth = 10;
   uint32_t buildingZ = 15;
 
-  uint32_t ueInitialPosition = 200;
-  uint32_t ueFinalPosition = 250;
+  uint32_t ueInitialPosition = 195;
+  uint32_t ueFinalPosition = 225;
   
   GlobalValue::GetValueByName("fastSwitching", booleanValue);
   bool fastSwitching = booleanValue.Get();
@@ -490,7 +495,7 @@ main (int argc, char *argv[])
   double ueSpeed = doubleValue.Get();
 
   double simTime = ((double)ueFinalPosition - (double)ueInitialPosition)/ueSpeed;
-
+  //simTime = 3.2;
   NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " << 
       interPacketInterval << " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed);
 
@@ -520,6 +525,7 @@ main (int argc, char *argv[])
   std::string cellIdInTimeOutName = "CellIdStats";
   std::string cellIdInTimeHandoverOutName = "CellIdStatsHandover";
   std::string mmWaveSinrOutputFilename = "MmWaveSinrTime";
+  std::string lteSinrOutputFilename = "LteSinrTime";
   std::string x2statOutputFilename = "X2Stats";
   std::string udpSentFilename = "UdpSent";
   std::string udpReceivedFilename = "UdpReceived";
@@ -562,6 +568,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MicroSeconds(x2Latency)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", StringValue ("20Gbps"));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(1000)));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds(mmeLatency)));
@@ -578,12 +585,13 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::EnbHandoverEndOutputFilename", StringValue   (path + version + enbHandoverEndOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::CellIdStatsHandoverOutputFilename", StringValue(path + version + cellIdInTimeHandoverOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::MmWaveBearerStatsConnector::MmWaveSinrOutputFilename", StringValue(path + version + mmWaveSinrOutputFilename + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::MmWaveBearerStatsConnector::LteSinrOutputFilename", StringValue(path + version + lteSinrOutputFilename + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::CoreNetworkStatsCalculator::X2FileName", StringValue                  (path + version + x2statOutputFilename    + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   std::string lostFilename = path + version + "LostUdpPackets" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension;
   //Config::SetDefault ("ns3::MmWaveHelper::ChannelModel", StringValue("ns3::MmWaveChannelMatrix"))
   Config::SetDefault ("ns3::UdpServer::ReceivedPacketsFilename", StringValue(path + version + "ReceivedUdp" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::UdpServer::ReceivedSnFilename", StringValue(path + version + "ReceivedSn" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::UdpClient::SentPacketsFilename", StringValue(path + version + "SentUdp" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10.0)));
@@ -635,7 +643,7 @@ main (int argc, char *argv[])
   NodeContainer mmWaveEnbNodes;
   NodeContainer lteEnbNodes;
   NodeContainer allEnbNodes;
-  mmWaveEnbNodes.Create(2);
+  mmWaveEnbNodes.Create(3);
   lteEnbNodes.Create(1);
   ueNodes.Create(1);
   allEnbNodes.Add(lteEnbNodes);
@@ -644,6 +652,7 @@ main (int argc, char *argv[])
   // Positions
   Vector mmw1Position = Vector(5.0, mmw1Dist, mmWaveZ);
   Vector mmw2Position = Vector(5.0 + mmWaveDist, mmw2Dist, mmWaveZ);
+  Vector mmw3Position = Vector((double)mmWaveDist/2 + (double)streetWidth/2, mmw3Dist, mmWaveZ);
   double blockSize = (double)mmWaveDist/numBlocks;
   uint32_t roundedBlockSize = std::floor(blockSize);
   NS_ASSERT_MSG(roundedBlockSize > streetWidth + minimumBuildingWidth, "Too many blocks");
@@ -654,7 +663,7 @@ main (int argc, char *argv[])
   // create first building (negative coordinates)
   Ptr< Building > firstBuilding = Create<Building> ();
   firstBuilding->SetBoundaries(Box(-100, 0, 
-                              0, mmw1Dist + streetWidth, 
+                              0, 300 + mmw1Dist + streetWidth, 
                               0, buildingZ));
   buildingVector.push_back(firstBuilding);
   for(uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
@@ -662,7 +671,7 @@ main (int argc, char *argv[])
     Ptr < Building > building;
       building = Create<Building> ();
       building->SetBoundaries (Box (buildingFirstX, buildingFirstX + buildingWidth,
-                                    0, mmw1Dist + streetWidth,
+                                    0, 300 + mmw1Dist + streetWidth,
                                     0.0, buildingZ));
       buildingVector.push_back(building);
       buildingFirstX += buildingWidth + streetWidth;
@@ -670,15 +679,16 @@ main (int argc, char *argv[])
   // create last building
   Ptr< Building > lastBuilding = Create<Building> ();
   lastBuilding->SetBoundaries(Box(mmWaveDist + streetWidth, mmWaveDist + streetWidth + 20, 
-                              0, mmw2Dist + streetWidth, 
+                              0, 300 + mmw2Dist + streetWidth, 
                               0, buildingZ));
   buildingVector.push_back(lastBuilding);
 
   // Install Mobility Model
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  enbPositionAlloc->Add (Vector ((double)mmWaveDist/2 + streetWidth, mmw1Dist + 2*streetWidth, mmWaveZ));
+  enbPositionAlloc->Add (Vector ((double)mmWaveDist/2 + (double)streetWidth/2, mmw1Dist + 6*streetWidth, mmWaveZ));
   enbPositionAlloc->Add (mmw1Position);
   enbPositionAlloc->Add (mmw2Position);
+  enbPositionAlloc->Add (mmw3Position);
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator(enbPositionAlloc);
@@ -778,7 +788,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP DL app for UE " << u);
           OnOffHelper dlClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
-          dlClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1500);
+          dlClientHelper.SetConstantRate(DataRate ("500Mb/s"), 1500);
           clientApps.Add (dlClientHelper.Install (remoteHost));
           PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), dlPort));
@@ -789,7 +799,7 @@ main (int argc, char *argv[])
           //NS_LOG_LOGIC ("installing TCP UL app for UE " << u);
           OnOffHelper ulClientHelper ("ns3::TcpSocketFactory",
                                          InetSocketAddress (remoteHostAddr, ulPort));
-          ulClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1500);
+          ulClientHelper.SetConstantRate(DataRate ("500Mb/s"), 1500);
           clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
           PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
                                                InetSocketAddress (Ipv4Address::GetAny (), ulPort));
@@ -813,6 +823,7 @@ main (int argc, char *argv[])
 
           UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort);
           dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
+          dlClient.SetAttribute ("PacketSize", UintegerValue(1200));
           dlClient.SetAttribute ("MaxPackets", UintegerValue(0xFFFFFFFF));
           clientApps.Add (dlClient.Install (remoteHost));
 
@@ -832,12 +843,21 @@ main (int argc, char *argv[])
   }
 
   // Start applications
-  serverApps.Start (Seconds (0.5));
-  clientApps.Start (Seconds (0.5));
-  clientApps.Stop (Seconds (simTime - 0.5));
+  serverApps.Start (Seconds (0.1));
+  clientApps.Start (Seconds (0.1));
+  clientApps.Stop (Seconds(simTime - 1));
+  //clientApps.Stop (Seconds(simTime-1));
 
-  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(ueSpeed, 0, 0));
-  double numPrints = 0;
+
+  //Simulator::Schedule(Seconds(0.9), &ChangePosition, ueNodes.Get(0), Vector(240, -2, 0));
+  //Simulator::Schedule(Seconds(1.0), &ChangePosition, ueNodes.Get(0), Vector(215, 40, 0));
+  //Simulator::Schedule(Seconds(1.3), &ChangePosition, ueNodes.Get(0), Vector(230, -5, 0));
+  //Simulator::Schedule(Seconds(1.499), &ChangePosition, ueNodes.Get(0), Vector(100,500,0));
+  //Simulator::Schedule(Seconds(1.9), &ChangePosition, ueNodes.Get(0), Vector(100,-2,0));
+  //Simulator::Schedule(Seconds(0.9), &ChangePosition, ueNodes.Get(0), Vector(215, 0, 0));
+
+  Simulator::Schedule(Seconds(0.1), &ChangeSpeed, ueNodes.Get(0), Vector(ueSpeed, 0, 0));
+  double numPrints = 10;
   for(int i = 0; i < numPrints; i++)
   {
    Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0)); 
@@ -865,4 +885,5 @@ main (int argc, char *argv[])
   Simulator::Destroy();
   return 0;
 }
+
 

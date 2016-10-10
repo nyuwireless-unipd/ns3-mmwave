@@ -698,6 +698,7 @@ LteUeRrc::DoNotifyRandomAccessSuccessful ()
         if(m_isSecondaryRRC) // an handover for secondary cells has happened. 
         // this trace is used to keep a consistent trace of the cell to which the UE is connected
         {
+          NS_LOG_UNCOND("DoNotifyRandomAccessSuccessful at time " << Simulator::Now().GetSeconds());
           m_switchToMmWaveTrace(m_imsi, m_cellId, m_rnti);
         }
       }
