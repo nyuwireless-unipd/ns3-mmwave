@@ -1569,7 +1569,7 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 	// tricks needed for the simplified LTE-only simulations
 	//if (m_epcHelper == 0)
 	//{
-		ueDevice->GetObject<MmWaveUeNetDevice> ()->SetTargetEnb (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ());
+	ueDevice->GetObject<MmWaveUeNetDevice> ()->SetTargetEnb (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ());
 	//}
 
 }
@@ -1687,10 +1687,10 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	    }
   	}
 	
-	// Attach the MC device the Closest MmWave eNB
-	Ptr<MmWaveEnbNetDevice> enbDevice = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ();
+	// Attach the MC device the Closest LTE eNB
+	Ptr<LteEnbNetDevice> enbLteDevice = lteClosestEnbDevice->GetObject<LteEnbNetDevice> ();
 	Ptr<EpcUeNas> lteUeNas = mcDevice->GetNas ();
-	lteUeNas->Connect (enbDevice->GetCellId (), enbDevice->GetEarfcn ()); // force connection to the MmWave eNB
+	lteUeNas->Connect (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ()); // force connection to the LTE eNB
 
 	if (m_epcHelper != 0)
 	{
@@ -1698,7 +1698,8 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	  m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
 	}
 
-	Ptr<LteEnbNetDevice> enbLteDevice = lteClosestEnbDevice->GetObject<LteEnbNetDevice> ();
+	// set initial targets
+	Ptr<MmWaveEnbNetDevice> enbDevice = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ();
   	mcDevice->SetLteTargetEnb (enbLteDevice);
   	mcDevice->SetMmWaveTargetEnb (enbDevice);
 }

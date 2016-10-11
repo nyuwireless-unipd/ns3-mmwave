@@ -154,7 +154,8 @@ UeManager::UeManager (Ptr<LteEnbRrc> rrc, uint16_t rnti, State s)
     m_sourceCellId (0),
     m_needPhyMacConfiguration (false),
     m_x2forwardingBufferSize (0),
-    m_maxx2forwardingBufferSize (2*1024)
+    m_maxx2forwardingBufferSize (2*1024),
+    m_allMmWaveInOutageAtInitialAccess (false)
 { 
   NS_LOG_FUNCTION (this);
 }
@@ -1467,23 +1468,31 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
         params.imsi = m_imsi;
         m_rrc->m_x2SapProvider->NotifyLteMmWaveHandoverCompleted(params);
       }
+      else if(m_firstConnection && !m_rrc->m_ismmWave)
+      {
+        m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
+        m_rrc->m_lastMmWaveCell[m_imsi] = m_rrc->m_cellId;
+        m_rrc->m_imsiUsingLte[m_imsi] = true; // the inital connection happened on a LTE eNB
+      }
       SwitchToState (CONNECTED_NORMALLY);
       // reply to the UE with a command to connect to the best MmWave eNB
       if(m_rrc->m_bestMmWaveCellForImsiMap[m_imsi] != m_rrc->GetCellId() && !m_rrc->m_ismmWave)
       { 
         uint16_t maxSinrCellId = m_rrc->m_bestMmWaveCellForImsiMap[m_imsi];
         // get the SINR
-        double maxSinrDb = 10*std::log10(m_rrc->m_imsiCellSinrMap.find(m_imsi)->second.find(maxSinrCellId));
+        double maxSinrDb = 10*std::log10(m_rrc->m_imsiCellSinrMap.find(m_imsi)->second.find(maxSinrCellId)->second);
         if(maxSinrDb > m_rrc->m_outageThreshold)
         {
           // there is a MmWave cell to which the UE can connect
           // send the connection message, then, if capable, the UE will connect 
-          NS_LOG_INFO("Send connect to " << m_rrc->m_bestMmWaveCellForImsiMap.find(m_imsi)->second);
+          NS_LOG_INFO("Send connect to " << m_rrc->m_bestMmWaveCellForImsiMap.find(m_imsi)->second << " at least one mmWave eNB is not in outage");
           m_rrc->m_rrcSapUser->SendRrcConnectToMmWave (m_rnti, m_rrc->m_bestMmWaveCellForImsiMap.find(m_imsi)->second);   
         }
         else
         {
           //TODO
+          m_allMmWaveInOutageAtInitialAccess = true;
+          m_rrc->m_imsiUsingLte[m_imsi] = true;
         } 
       }
       m_rrc->m_connectionEstablishedTrace (m_imsi, m_rrc->m_cellId, m_rnti);
@@ -1493,6 +1502,18 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
       NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
       break;
     }
+}
+
+bool
+UeManager::GetAllMmWaveInOutageAtInitialAccess()
+{
+  return m_allMmWaveInOutageAtInitialAccess;
+}
+
+void
+UeManager::SetAllMmWaveInOutageAtInitialAccess(bool param)
+{
+  m_allMmWaveInOutageAtInitialAccess = param;
 }
 
 void
@@ -1520,6 +1541,7 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
               NS_LOG_INFO("Imsi " << m_imsi << " m_mmWaveCellSetupCompleted set to " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi] << 
                 " for cell " <<  m_rrc->m_lastMmWaveCell[m_imsi]);
               m_rrc->m_imsiUsingLte[m_imsi] = false;
+              ForwardRlcBuffers(it->second->m_rlc, pdcp, it->second->m_gtpTeid, 1, 0, it->first);
             }     
             else
             {
@@ -2732,8 +2754,8 @@ LteEnbRrc::RegisterImsiToRnti(uint64_t imsi, uint16_t rnti)
   if(m_imsiRntiMap.find(imsi) == m_imsiRntiMap.end())
   {
     m_imsiRntiMap.insert(std::pair<uint64_t, uint16_t> (imsi, rnti));
-    // NS_LOG_INFO("New entry in m_imsiRntiMap, for rnti " << rnti << " m_interRatHoMode " << m_interRatHoMode << " m_ismmWave " << m_ismmWave);
-    if(m_interRatHoMode && m_ismmWave) // warn the UeManager that this is the first time a UE with a certain imsi
+    NS_LOG_INFO("New entry in m_imsiRntiMap, for rnti " << rnti << " m_interRatHoMode " << m_interRatHoMode << " m_ismmWave " << m_ismmWave);
+    if(m_interRatHoMode) // warn the UeManager that this is the first time a UE with a certain imsi
       // connects to this MmWave eNB. This will trigger a notification to the LTE RRC once RecvRrcReconfCompleted is called
     {
       GetUeManager(rnti)->SetFirstConnection();
@@ -3096,11 +3118,17 @@ LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, 
 
   // the UE was in outage, now a mmWave eNB is available. It may be the one to which the UE is already attached or
   // another one
-  if(alreadyAssociatedImsi && !onHandoverImsi && m_imsiUsingLte[imsi])
+  if(alreadyAssociatedImsi && m_imsiUsingLte[imsi])
   {
     if(!m_interRatHoMode)
     {
-      if(m_lastMmWaveCell[imsi] == maxSinrCellId && !onHandoverImsi) 
+      if(GetUeManager(GetRntiFromImsi(imsi))->GetAllMmWaveInOutageAtInitialAccess())
+      {
+        NS_LOG_INFO("Send connect to " << maxSinrCellId << ", for the first time at least one mmWave eNB is not in outage");
+        m_rrcSapUser->SendRrcConnectToMmWave (GetRntiFromImsi(imsi), maxSinrCellId);
+        GetUeManager(GetRntiFromImsi(imsi))->SetAllMmWaveInOutageAtInitialAccess(false);
+      }
+      else if(m_lastMmWaveCell[imsi] == maxSinrCellId && !onHandoverImsi) 
       // it is on LTE, but now the last used MmWave cell is not in outage
       {
         // switch back to MmWave
@@ -3127,11 +3155,14 @@ LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, 
     }
     else
     {
-      // trigger an handover to mmWave
-      m_mmWaveCellSetupCompleted[imsi] = false;
-      m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
-      NS_LOG_INFO("---- on LTE, handover to MmWave " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
-      SendHandoverRequest(GetRntiFromImsi(imsi), maxSinrCellId);
+      if(!onHandoverImsi)
+      {
+        // trigger an handover to mmWave
+        m_mmWaveCellSetupCompleted[imsi] = false;
+        m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
+        NS_LOG_INFO("---- on LTE, handover to MmWave " << maxSinrCellId << " at time " << Simulator::Now().GetSeconds());
+        SendHandoverRequest(GetRntiFromImsi(imsi), maxSinrCellId);
+      }
     }
      
   }
@@ -3380,7 +3411,13 @@ LteEnbRrc::ThresholdBasedSecondaryCellHandover(std::map<uint64_t, CellSinrMap>::
   }
   else
   {
-    if(m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] == maxSinrCellId && alreadyAssociatedImsi && !onHandoverImsi) 
+    if(alreadyAssociatedImsi && !onHandoverImsi && m_imsiUsingLte[imsi] && GetUeManager(GetRntiFromImsi(imsi))->GetAllMmWaveInOutageAtInitialAccess())
+    {
+      // perform initial access to mmWave eNB, since for the first time one mmWave eNB is not in outage!
+      NS_LOG_INFO("Send connect to " << maxSinrCellId << ", for the first time at least one mmWave eNB is not in outage");
+      m_rrcSapUser->SendRrcConnectToMmWave (GetRntiFromImsi(imsi), maxSinrCellId);   
+    }
+    else if(alreadyAssociatedImsi && !onHandoverImsi && m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] == maxSinrCellId) 
     // it is on LTE, but now the last used MmWave cell is not in outage
     {
       // switch back to MmWave
@@ -3390,7 +3427,7 @@ LteEnbRrc::ThresholdBasedSecondaryCellHandover(std::map<uint64_t, CellSinrMap>::
       m_imsiUsingLte[imsi] = !useMmWaveConnection;
       ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
     }
-    else if (m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] != maxSinrCellId && alreadyAssociatedImsi && !onHandoverImsi)
+    else if (alreadyAssociatedImsi && !onHandoverImsi && m_imsiUsingLte[imsi] && m_lastMmWaveCell[imsi] != maxSinrCellId)
     // it is on LTE, but now a MmWave cell different from the last used is not in outage, so we need to handover
     {
       // already using LTE connection
@@ -3445,6 +3482,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       uint16_t maxSinrCellId = 0;
       bool alreadyAssociatedImsi = false;
       bool onHandoverImsi = true;
+      Ptr<UeManager> ueMan;
       // On RecvRrcConnectionRequest for a new RNTI, the Lte Enb RRC stores the imsi
       // of the UE and insert a new false entry in m_mmWaveCellSetupCompleted.
       // After the first connection to a MmWave eNB, the entry becomes true.
@@ -3481,14 +3519,14 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       long double currentSinrDb = 10*std::log10((long double)currentSinr);
       NS_LOG_INFO("MaxSinr " << maxSinrDb << " in cell " << maxSinrCellId << 
           " current cell " << m_lastMmWaveCell[imsi] << " currentSinr " << currentSinrDb << " sinrDifference " << sinrDifference);
-      if (maxSinrDb < m_outageThreshold || (m_imsiUsingLte[imsi] && maxSinrDb < m_outageThreshold + 2)) // no MmWaveCell can serve this UE
+      if ((maxSinrDb < m_outageThreshold || (m_imsiUsingLte[imsi] && maxSinrDb < m_outageThreshold + 2)) && alreadyAssociatedImsi) // no MmWaveCell can serve this UE
       {
         // outage, perform fast switching if MC device or hard handover
         NS_LOG_INFO("----- Warn: outage detected ------ at time " << Simulator::Now().GetSeconds());
         if(m_imsiUsingLte[imsi] == false) 
         {
+          ueMan = GetUeManager(GetRntiFromImsi(imsi));
           NS_LOG_INFO("Switch to LTE stack");
-          Ptr<UeManager> ueMan = GetUeManager(GetRntiFromImsi(imsi));
           bool useMmWaveConnection = false; 
           m_imsiUsingLte[imsi] = !useMmWaveConnection;
           ueMan->SendRrcConnectionSwitch(useMmWaveConnection);
@@ -3506,6 +3544,11 @@ LteEnbRrc::TriggerUeAssociationUpdate()
         else
         {
           NS_LOG_INFO("Already on LTE");
+          ueMan = GetUeManager(GetRntiFromImsi(imsi));
+          if(ueMan->GetAllMmWaveInOutageAtInitialAccess())
+          {
+            NS_LOG_INFO("The UE never connected to a mmWave eNB");
+          }
         }
       } 
       else
@@ -3523,7 +3566,6 @@ LteEnbRrc::TriggerUeAssociationUpdate()
         {
           NS_FATAL_ERROR("Unsupported HO mode");
         }
-        
       }
     }
   }
@@ -3688,6 +3730,14 @@ LteEnbRrc::UpdateUeHandoverAssociation()
           else
           {
             NS_LOG_INFO("Already performing another HO");
+          }
+
+          // delete the handover event which was scheduled for this UE (if any)
+          HandoverEventMap::iterator handoverEvent = m_imsiHandoverEventsMap.find(imsi); 
+          if(handoverEvent != m_imsiHandoverEventsMap.end())
+          {
+            handoverEvent->second.scheduledHandoverEvent.Cancel();
+            m_imsiHandoverEventsMap.erase(handoverEvent);
           }
           
         }

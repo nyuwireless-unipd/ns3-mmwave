@@ -356,8 +356,13 @@ public:
   typedef void (* ImsiCidRntiTracedCallback)
     (uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
+  // for interRatHandover mode
   void SetFirstConnection();
 
+  // for mc devices, get the m_allMmWaveInOutageAtInitialAccess variable
+  bool GetAllMmWaveInOutageAtInitialAccess();
+  void SetAllMmWaveInOutageAtInitialAccess(bool param);
+  
   /**
    * This method is called by the eNB RRC to notify the 
    * UeManager that the handover from a MmWave cell to LTE
@@ -606,6 +611,9 @@ private:
   std::vector < Ptr<Packet> > m_x2forwardingBuffer;
   uint32_t m_x2forwardingBufferSize;
   uint32_t m_maxx2forwardingBufferSize;
+
+  // this variable is set to true if on initial access, for mc devices, all the mmWave eNBs are in outage
+  bool m_allMmWaveInOutageAtInitialAccess;
 
 }; // end of `class UeManager`
 
