@@ -30,10 +30,13 @@
 //#include "ns3/gtk-config-store.h"
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
+#include <ns3/random-variable-stream.h>
 
 #include <iostream>
 #include <ctime>
 #include <stdlib.h>
+#include <list>
+
 
 using namespace ns3;
 
@@ -249,6 +252,7 @@ PrintGnuplottableBuildingListToFile (std::string filename)
       outFile << "set object " << index
               << " rect from " << box.xMin  << "," << box.yMin
               << " to "   << box.xMax  << "," << box.yMax
+              << "height " << box.zMin << "," << box.zMax
               << " front fs empty "
               << std::endl;
     }
@@ -367,6 +371,76 @@ PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
   Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, app, fileName);
 }
 
+
+bool
+AreOverlapping(Box a, Box b)
+{
+  return !((a.xMin > b.xMax) || (b.xMin > a.xMax) || (a.yMin > b.yMax) || (b.yMin > a.yMax) );
+}
+
+
+bool
+OverlapWithAnyPrevious(Box box, std::list<Box> m_previousBlocks)
+{
+  for (std::list<Box>::iterator it = m_previousBlocks.begin(); it != m_previousBlocks.end(); ++it)
+  {
+    if (AreOverlapping(*it,box))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+std::pair<Box, std::list<Box>>
+GenerateBuildingBounds(double xArea, double yArea, std::list<Box> m_previousBlocks )
+{
+
+  Ptr<UniformRandomVariable> xMinBuilding = CreateObject<UniformRandomVariable>();
+  xMinBuilding->SetAttribute("Min",DoubleValue(0));
+  xMinBuilding->SetAttribute("Max",DoubleValue(xArea));
+
+
+
+  Ptr<UniformRandomVariable> yMinBuilding = CreateObject<UniformRandomVariable>();
+  yMinBuilding->SetAttribute("Min",DoubleValue(0));
+  yMinBuilding->SetAttribute("Max",DoubleValue(yArea));
+
+
+  Box box;
+  uint32_t attempt = 0;
+  do
+  {
+    NS_ASSERT_MSG(attempt < 100, "Too many failed attempts to position non-overlapping buildings. Maybe area too small or too many buildings?");
+    box.xMin = xMinBuilding->GetValue();
+
+    Ptr<UniformRandomVariable> xMaxBuilding = CreateObject<UniformRandomVariable>();
+    xMaxBuilding->SetAttribute("Min",DoubleValue(box.xMin));
+    xMaxBuilding->SetAttribute("Max",DoubleValue(xArea));
+    box.xMax = xMaxBuilding->GetValue();
+    
+    box.yMin = yMinBuilding->GetValue();
+
+    Ptr<UniformRandomVariable> yMaxBuilding = CreateObject<UniformRandomVariable>();
+    yMaxBuilding->SetAttribute("Min",DoubleValue(box.yMin));
+    yMaxBuilding->SetAttribute("Max",DoubleValue(yArea));
+    box.yMax = yMaxBuilding->GetValue();
+
+    ++attempt;
+  }
+  while (OverlapWithAnyPrevious (box, m_previousBlocks));
+
+
+  NS_LOG_UNCOND("Building in coordinates (" << box.xMin << " , " << box.yMin << ") and ("  << box.xMax << " , " << box.yMax <<
+    ") accepted after " << attempt << " attempts");
+  m_previousBlocks.push_back(box);
+  std::pair<Box, std::list<Box>> pairReturn = std::make_pair(box,m_previousBlocks);
+  return pairReturn;
+
+}
+
+
 static ns3::GlobalValue g_mmw1DistFromMainStreet("mmw1Dist", "Distance from the main street of the first MmWaveEnb",
     ns3::UintegerValue(50), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmw2DistFromMainStreet("mmw2Dist", "Distance from the main street of the second MmWaveEnb",
@@ -374,7 +448,7 @@ static ns3::GlobalValue g_mmw2DistFromMainStreet("mmw2Dist", "Distance from the 
 static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave eNB 1 and 2",
     ns3::UintegerValue(400), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
-    ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(3), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_interPckInterval("interPckInterval", "Interarrival time of UDP packets (us)",
     ns3::UintegerValue(80), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_bufferSize("bufferSize", "RLC tx buffer size (MB)",
@@ -391,6 +465,10 @@ static ns3::GlobalValue g_rlcAmEnabled("rlcAmEnabled", "If true, use RLC AM, els
     ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
     ns3::UintegerValue(7), ns3::MakeUintegerChecker<uint32_t>());
+static ns3::GlobalValue g_maxXAxis("maxXAxis", "The maximum X coordinate for the area in which to deploy the buildings",
+    ns3::DoubleValue(400), ns3::MakeDoubleChecker<double>());
+static ns3::GlobalValue g_maxYAxis("maxYAxis", "The maximum Y coordinate for the area in which to deploy the buildings",
+    ns3::DoubleValue(100), ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -444,6 +522,8 @@ main (int argc, char *argv[])
   double sfPeriod = 100.0;
   bool tcp = false;
 
+  std::list<Box>  m_previousBlocks;
+
   
   // Command line arguments
   CommandLine cmd;
@@ -464,13 +544,23 @@ main (int argc, char *argv[])
   uint32_t mmw2Dist = uintegerValue.Get();
   GlobalValue::GetValueByName("mmWaveDist", uintegerValue);
   uint32_t mmWaveDist = uintegerValue.Get();
+  GlobalValue::GetValueByName("maxXAxis", doubleValue);
+  double maxXAxis = doubleValue.Get();
+  GlobalValue::GetValueByName("maxYAxis", doubleValue);
+  double maxYAxis = doubleValue.Get();
   uint32_t mmWaveZ = 10;
   uint32_t streetWidth = 15;
   uint32_t minimumBuildingWidth = 10;
   uint32_t buildingZ = 15;
 
-  uint32_t ueInitialPosition = 200;
-  uint32_t ueFinalPosition = 250;
+  // Uncomment for random initial position
+  // Ptr<UniformRandomVariable> userPosition = CreateObject<UniformRandomVariable>();
+  // userPosition->SetAttribute("Min",DoubleValue(0));
+  // userPosition->SetAttribute("Max",DoubleValue(400));
+  // double ueInitialPosition = userPosition->GetValue();
+  // NS_LOG_UNCOND("UE X coordinate is: " << ueInitialPosition);
+  double ueInitialPosition = 100;
+  double ueFinalPosition = 300;  
   
   GlobalValue::GetValueByName("fastSwitching", booleanValue);
   bool fastSwitching = booleanValue.Get();
@@ -642,21 +732,27 @@ main (int argc, char *argv[])
   allEnbNodes.Add(mmWaveEnbNodes);
 
   // Positions
-  Vector mmw1Position = Vector(5.0, mmw1Dist, mmWaveZ);
-  Vector mmw2Position = Vector(5.0 + mmWaveDist, mmw2Dist, mmWaveZ);
+  Vector mmw1Position = Vector(-1, mmw1Dist, mmWaveZ);
+  Vector mmw2Position = Vector(5.0 + 400, mmw2Dist, mmWaveZ); // --------------------> change
   double blockSize = (double)mmWaveDist/numBlocks;
   uint32_t roundedBlockSize = std::floor(blockSize);
   NS_ASSERT_MSG(roundedBlockSize > streetWidth + minimumBuildingWidth, "Too many blocks");
   uint32_t buildingFirstX = streetWidth;
   uint32_t buildingWidth = roundedBlockSize - streetWidth;
 
+  
+  
   std::vector<Ptr<Building> > buildingVector;
-  // create first building (negative coordinates)
+
+  // legacy code
+  /* 
+  create first building (negative coordinates)
   Ptr< Building > firstBuilding = Create<Building> ();
-  firstBuilding->SetBoundaries(Box(-100, 0, 
+  firstBuilding->SetBoundaries(Box(-100, -15, 
                               0, mmw1Dist + streetWidth, 
                               0, buildingZ));
   buildingVector.push_back(firstBuilding);
+  
   for(uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
   {
     Ptr < Building > building;
@@ -667,16 +763,56 @@ main (int argc, char *argv[])
       buildingVector.push_back(building);
       buildingFirstX += buildingWidth + streetWidth;
   }
-  // create last building
+  
+  for(uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
+  {
+    Ptr < Building > building;
+      building = Create<Building> ();
+       building->SetBoundaries (Box (99, 101.5,
+                                     0, 60,
+                                     0.0, 200));
+      buildingVector.push_back(building);
+      buildingFirstX += buildingWidth + streetWidth;
+  }
+  */
+
+  for(uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
+  {
+    Ptr < Building > building;
+      building = Create<Building> ();
+      /* returns a vecotr where:
+      * position [0]: coordinates for x min
+      * position [1]: coordinates for x max
+      * position [2]: coordinates for y min
+      * position [3]: coordinates for y max
+      */
+      std::pair<Box, std::list<Box>> pairBuildings = GenerateBuildingBounds(maxXAxis,maxYAxis, m_previousBlocks);
+      m_previousBlocks = std::get<1>(pairBuildings);
+      Box box = std::get<0>(pairBuildings);
+      Ptr<UniformRandomVariable> randomBuildingZ = CreateObject<UniformRandomVariable>();
+      randomBuildingZ->SetAttribute("Min",DoubleValue(1.6));
+      randomBuildingZ->SetAttribute("Max",DoubleValue(40));
+      double buildingHeight = randomBuildingZ->GetValue();
+
+      building->SetBoundaries (Box(box.xMin, box.xMax,
+                                    box.yMin,  box.yMax,
+                                    0.0, buildingHeight));
+      buildingVector.push_back(building);
+      buildingFirstX += buildingWidth + streetWidth;
+  }
+
+  //create last building
   Ptr< Building > lastBuilding = Create<Building> ();
   lastBuilding->SetBoundaries(Box(mmWaveDist + streetWidth, mmWaveDist + streetWidth + 20, 
                               0, mmw2Dist + streetWidth, 
                               0, buildingZ));
   buildingVector.push_back(lastBuilding);
 
+
   // Install Mobility Model
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  enbPositionAlloc->Add (Vector ((double)mmWaveDist/2 + streetWidth, mmw1Dist + 2*streetWidth, mmWaveZ));
+  //enbPositionAlloc->Add (Vector ((double)mmWaveDist/2 + streetWidth, mmw1Dist + 2*streetWidth, mmWaveZ));
+  enbPositionAlloc->Add (Vector ((double)mmWaveDist/2 + streetWidth, 105, mmWaveZ)); // LTE BS, out of area where buildings are deployed
   enbPositionAlloc->Add (mmw1Position);
   enbPositionAlloc->Add (mmw2Position);
   MobilityHelper enbmobility;
@@ -687,13 +823,15 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (ueInitialPosition, -5, 0));
+  //uePositionAlloc->Add (Vector (ueInitialPosition, -5, 0));
+  uePositionAlloc->Add (Vector (ueInitialPosition, -1, 0));
   uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
+  //ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -1, 0));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes
@@ -836,7 +974,7 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (0.5));
   clientApps.Stop (Seconds (simTime - 0.5));
 
-  Simulator::Schedule(Seconds(0.5), &ChangeSpeed, ueNodes.Get(0), Vector(ueSpeed, 0, 0));
+  Simulator::Schedule(Seconds(0.0), &ChangeSpeed, ueNodes.Get(0), Vector(ueSpeed, 0, 0));
   double numPrints = 0;
   for(int i = 0; i < numPrints; i++)
   {
@@ -858,7 +996,8 @@ main (int argc, char *argv[])
   }
   else
   {
-    Simulator::Stop(Seconds(simTime));
+    Simulator::Stop(Seconds(simTime)); //--------------------------------------------> CHANGE
+    // Simulator::Stop(Seconds(0.61)); // use this simulation time just to check the code
     Simulator::Run();    
   }
   

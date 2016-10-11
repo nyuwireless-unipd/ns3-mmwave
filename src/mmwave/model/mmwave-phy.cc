@@ -322,6 +322,12 @@ MmWavePhy::AddPropagationLossModel(Ptr<PropagationLossModel> model)
 }
 
 void 
+MmWavePhy::AddLosTracker(Ptr<MmWaveLosTracker> losTracker)
+{
+	m_losTracker = losTracker;
+}
+
+void 
 MmWavePhy::AddSpectrumPropagationLossModel(Ptr<SpectrumPropagationLossModel> model)
 {
 	m_spectrumPropagationLossModel = model;

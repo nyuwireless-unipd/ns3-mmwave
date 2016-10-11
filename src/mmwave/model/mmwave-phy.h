@@ -25,6 +25,8 @@
 #include "mmwave-phy-sap.h"
 #include <string>
 #include <map>
+#include <ns3/mmwave-los-tracker.h>
+
 
 namespace ns3 {
 
@@ -95,7 +97,7 @@ public:
 	// hacks needed to compute SINR at eNB for each UE, without pilots
 	void AddSpectrumPropagationLossModel(Ptr<SpectrumPropagationLossModel> model);
 	void AddPropagationLossModel(Ptr<PropagationLossModel> model);
-
+	void AddLosTracker(Ptr<MmWaveLosTracker>);
 
 protected:
 	Ptr<NetDevice> m_netDevice;
@@ -140,6 +142,8 @@ protected:
 	// hack to allow eNB to compute the SINR, periodically, without pilots 
 	Ptr<SpectrumPropagationLossModel> m_spectrumPropagationLossModel;
 	Ptr<PropagationLossModel> m_propagationLoss;
+	Ptr<MmWaveLosTracker> m_losTracker;
+
 
 private:
 };

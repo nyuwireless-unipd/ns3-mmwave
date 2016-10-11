@@ -1,0 +1,46 @@
+--- src/mmwave/model/mmwave-enb-phy.cc
++++ src/mmwave/model/mmwave-enb-phy.cc
+@@ -80,15 +90,20 @@ MmWaveEnbPhy::GetTypeId (void)
+ 	                                   &MmWaveEnbPhy::GetTxPower),
+ 	               MakeDoubleChecker<double> ())
+ 	.AddAttribute ("UpdateSinrEstimatePeriod",
+-	               "Period (in ms) of update of SINR estimate of all the UE",
+-	               DoubleValue (1.6), //TODO considering refactoring in MmWavePhyMacCommon
+-	               MakeDoubleAccessor (&MmWaveEnbPhy::m_updateSinrPeriod),
+-	               MakeDoubleChecker<double> ())
++	               "Period (in microseconds) of update of SINR estimate of all the UE",
++	               IntegerValue (25000), //TODO considering refactoring in MmWavePhyMacCommon
++	               MakeIntegerAccessor (&MmWaveEnbPhy::m_updateSinrPeriod),
++	               MakeIntegerChecker<int> ())
+ 	.AddAttribute ("UpdateUeSinrEstimatePeriod",
+ 	               "Period (in ms) of reporting of SINR estimate of all the UE",
+ 	               DoubleValue (25.6),
+ 	               MakeDoubleAccessor (&MmWaveEnbPhy::m_ueUpdateSinrPeriod),
+ 	               MakeDoubleChecker<double> ())
++	.AddAttribute("UpdateSinrCollectPeriod",
++				  "Period (in microseconds) in which a new SINR value is collected for a pair (UE-eNB), without forwarding to the LTE BS",
++				  IntegerValue (125),
++				  MakeIntegerAccessor (&MmWaveEnbPhy::m_updateSinrCollect),
++				  MakeIntegerChecker<int> ())
+ 	.AddAttribute ("NoiseFigure",
+ 	               "Loss (dB) in the Signal-to-Noise-Ratio due to non-idealities in the receiver."
+ 	               " According to Wikipedia (http://en.wikipedia.org/wiki/Noise_figure), this is "
+@@ -466,11 +694,16 @@ MmWaveEnbPhy::GetUlSpectrumPhy () const
+   return m_uplinkSpectrumPhy;
+ }
+ 
++
+ void
+ MmWaveEnbPhy::UpdateUeSinrEstimate()
+ {
+-	m_sinrMap.clear();
+-	m_rxPsdMap.clear();
++	if ((Now().GetMicroSeconds() % m_updateSinrPeriod) == 0 ) // time instant in which a new RT needs to be built
++	{
++		m_sinrMap.clear();
++		m_rxPsdMap.clear();
++	}
++
+ 	Ptr<SpectrumValue> noisePsd = MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
+ 	Ptr<SpectrumValue> totalReceivedPsd = Create <SpectrumValue> (SpectrumValue(noisePsd->GetSpectrumModel()));
+ 

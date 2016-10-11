@@ -200,8 +200,10 @@ MmWaveHelper::DoInitialize()
 
 		if (m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ())
 		{
+			m_losTracker = CreateObject<MmWaveLosTracker>(); // create and initialize m_losTracker
 			Ptr<BuildingsObstaclePropagationLossModel> building = m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
 			building->SetBeamforming (m_beamforming);
+			building->SetLosTracker(m_losTracker); // use m_losTracker in BuildingsObstaclePropagationLossModel
 		}
 	}
 	else
@@ -1125,6 +1127,10 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 		if( splm )
 		{
 			phy->AddPropagationLossModel (splm);
+			if (m_losTracker != 0)
+			{
+				phy->AddLosTracker(m_losTracker); // use m_losTracker in phy (and in particular in enbPhy)
+			}
 		}
 	}
 	else

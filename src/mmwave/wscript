@@ -53,7 +53,8 @@ def build(bld):
         'model/mmwave-channel-raytracing.cc',
         'model/mc-ue-net-device.cc',
         'model/mc-enb-pdcp.cc',
-        'model/mc-ue-pdcp.cc'        
+        'model/mc-ue-pdcp.cc',  
+        'model/mmwave-los-tracker.cc'        
         
         #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',
@@ -114,8 +115,7 @@ def build(bld):
         'model/antenna-array-model.h',
         'model/mmwave-channel-raytracing.h',
         'model/mc-ue-net-device.h',
-        #'model/mmwave-ue-light-rrc.h',
-        #'model/mmwave-enb-light-rrc.h',
+        'model/mmwave-los-tracker.h' ,
         'model/mc-enb-pdcp.h',
         'model/mc-ue-pdcp.h'
         #'model/mmwave-enb-cmac-sap.h',

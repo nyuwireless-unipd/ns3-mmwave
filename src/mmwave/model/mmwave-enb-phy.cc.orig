@@ -28,16 +28,6 @@
 #include <ns3/node-list.h>
 #include <ns3/node.h>
 #include <ns3/pointer.h>
-#include <math.h>
-#include <ns3/random-variable-stream.h>
-#include <complex.h>
-
-#include <iostream>
-#include <fstream>
-#include <ns3/average.h>
-#include <algorithm>
-#include <array>
-
 
 namespace ns3{
 
@@ -80,15 +70,10 @@ MmWaveEnbPhy::GetTypeId (void)
 	                                   &MmWaveEnbPhy::GetTxPower),
 	               MakeDoubleChecker<double> ())
 	.AddAttribute ("UpdateSinrEstimatePeriod",
-	               "Period (in microseconds) of update of SINR estimate of all the UE",
-	               IntegerValue (25000), //TODO considering refactoring in MmWavePhyMacCommon
-	               MakeIntegerAccessor (&MmWaveEnbPhy::m_updateSinrPeriod),
-	               MakeIntegerChecker<int> ())
-	.AddAttribute("UpdateSinrCollectPeriod",
-				  "Period (in microseconds) in which a new SINR value is collected for a pair (UE-eNB), without forwarding to the LTE BS",
-				  IntegerValue (125),
-				  MakeIntegerAccessor (&MmWaveEnbPhy::m_updateSinrCollect),
-				  MakeIntegerChecker<int> ())
+	               "Period (in ms) of update of SINR estimate of all the UE",
+	               DoubleValue (10), //TODO considering refactoring in MmWavePhyMacCommon
+	               MakeDoubleAccessor (&MmWaveEnbPhy::m_updateSinrPeriod),
+	               MakeDoubleChecker<double> ())
 	.AddAttribute ("UpdateUeSinrEstimatePeriod",
 	               "Period (in ms) of reporting of SINR estimate of all the UE",
 	               DoubleValue (25.6),
@@ -172,226 +157,13 @@ MmWaveEnbPhy::DoInitialize (void)
 		m_sfAllocInfo[i].m_slotAllocInfo.push_back (ulCtrlSlot);
 	}
 
-	Simulator::Schedule(MicroSeconds(0), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
+	Simulator::Schedule(MilliSeconds(0), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
 	MmWavePhy::DoInitialize ();
 }
 void
 MmWaveEnbPhy::DoDispose (void)
 {
 
-}
-
-
-
-//Function for average
-double 
-MmWaveEnbPhy::MakeAvg ( std::vector<double> v )
-{
-        double return_value = 0.0;
-        int n = v.size();
-       
-        for ( int i=0; i < n; i++)
-        {
-            return_value += v[i];
-        }
-       
-        return ( return_value / v.size());
-}
-//****************End of average funtion****************
-
-
-//Function for variance
-double 
-MmWaveEnbPhy::MakeVar ( std::vector<double> v , double mean )
-{
-        double sum = 0.0;
-        double temp =0.0;
-        double var =0.0;
-        int n = v.size();
-       
-        for ( int j =0; j < n; j++)
-        {
-            temp = std::pow((v[j] - mean),2);
-            sum += temp;
-        }
-       
-        return var = sum/(v.size());
-}
-//****************End of variance funtion****************
-
-std::vector<double> 
-MmWaveEnbPhy::AddGaussianNoise (std::vector<double> vectorSinr)
-{
-	double N0 = 3.98107170e-12;
-	std::vector<std::complex<double>> gaussianNoise;
-	std::vector<double> signalEnergy;
-	std::vector<double> noisyTrace;
-	for (uint64_t i = 0; i < vectorSinr.size(); ++i)
-	{
-		Ptr<NormalRandomVariable> randomVariable = CreateObject<NormalRandomVariable> ();
-		double gaussianSampleRe = randomVariable->GetValue();
-		double gaussianSampleIm = randomVariable->GetValue();
-		gaussianNoise.push_back(std::complex<double>(sqrt(0.5) * sqrt(N0) * gaussianSampleRe , sqrt(0.5) * sqrt(N0) * gaussianSampleIm));
-	}
-
-	for (uint64_t i = 0; i < vectorSinr.size(); ++i)
-	{
-		signalEnergy.push_back(vectorSinr[i]*N0);
-	}
-
-	for (uint64_t i = 0; i < vectorSinr.size(); ++i)
-	{
-		noisyTrace.push_back((std::pow(std::abs(sqrt(signalEnergy[i])+gaussianNoise[i]),2)-N0)/N0);
-	}			
-
-	return noisyTrace;
-}
-
-
-
-std::pair<uint64_t, uint64_t>
-MmWaveEnbPhy::ApplyFilter(std::vector<double> noisySinr)
-{
-	std::vector<double> noisySinrdB;
-	for (uint64_t i = 0; i < noisySinr.size(); ++i)
-	{
-		noisySinrdB.push_back(10*std::log10(noisySinr[i]));
-	}	
-
-	std::vector<double> vectorVar;
-	for (uint64_t i = 0; i < noisySinrdB.size()-1; ++i)
-	{	
-		std::vector<double> partialSamples;
-		partialSamples.push_back(noisySinrdB[i]);
-		partialSamples.push_back(noisySinrdB[i+1]);
-		double meanValue = MakeAvg(partialSamples);
-		double varValue = MakeVar(partialSamples,meanValue);
-		vectorVar.push_back(varValue);
-		partialSamples.clear();
-	}
-
-	uint64_t startFilter = 1e6;
-	uint64_t endFilter = 1e6;
-
-	bool flagStartFilter = true;
-	bool flagEndFilter = true;
-
-	for (uint64_t i = 0; i<vectorVar.size(); i++) // start filter when variance of the noisy trace is high
-	{
-		if (vectorVar[i] > 5 && noisySinrdB[i] < 10) // filter is applied only for low-SINR regimes [dB]
-		{
-			startFilter = i;
-			flagStartFilter = false; // a "start" sample has been identified
-			break;
-		}
-	}
-
-	if (flagStartFilter) // in this case, we can avoid the filtering
-	{
-		startFilter = vectorVar.size(); 
-	}
-
-	/* in this case, consider at least a window of 15 samples, after which we can consider
-	* as we are leaving the blockage phase and we start coming back to LOS PL regimes
-	*/
-	for (uint64_t i = startFilter; i<vectorVar.size()-16; i++) // must be at least after the beginnning of the blocakge
-	{
-		std::vector<double>::const_iterator first = vectorVar.begin() + i; 
-		std::vector<double>::const_iterator last = vectorVar.begin() + i + 15;
-		std::vector<double> prov (first,last); 
-
-		/* the filtering ends when the variance of the noisy trace is almost the same, so when
-		* the SINR is on sufficiently high values
-		*/
-		if ((std::all_of(prov.begin(),prov.end(), [](double j){return j < 1;})) && 
-			((std::all_of(prov.begin(),prov.end(), [](double k){return k != NaN;}))) ) 
-		{
-			endFilter = i;
-			flagEndFilter = false; // a "end" sample has been identified
-			break;
-		}
-	}
-
-	if (flagEndFilter) // in this case, filter till the end of the trace
-	{
-		endFilter = vectorVar.size();
-	}
-
-
-	std::pair< uint64_t , uint64_t > pairFiltering = std::make_pair(startFilter,endFilter);
-
-	return pairFiltering;
-}
-
-std::vector<double>
-MmWaveEnbPhy::MakeFilter (std::vector<double> noisySinr, std::vector<double> realSinr , std::pair <uint64_t , uint64_t > pairFiltering)
-{	
-	//const uint64_t lengthFiltering  = (std::get<1>(pairFiltering) - std::get<0>(pairFiltering));
-	
-	/* find best alpha parameter for the Kalman estimation */
-	int rep = 0;
-	std::array<double,100> meanError;
-	for (double alpha = 0; alpha < 1; alpha = alpha + 0.01 )
-	{
-
-		std::vector<double>  x;
-		x.push_back(0);  // initialization of array
-		int counter = 0;
-
-		for (uint64_t i = std::get<0>(pairFiltering); i < std::get<1>(pairFiltering); i++)
-		{
-			x.push_back((1-alpha)*x[counter]+alpha*(noisySinr[i]));
-			counter++;
-		}
-
-		std::vector<double> errorEstimation;
-		counter = 0;	
-		for (uint64_t i = std::get<0>(pairFiltering); i < std::get<1>(pairFiltering); i++)
-		{
-			errorEstimation.push_back(std::abs(x[counter+1] - realSinr[i]));
-			counter++;
-		}	
-
-		meanError[rep] = MakeAvg( errorEstimation );
-		rep++;
-	}
-
-	int posMinAlpha = std::distance(meanError.begin(),std::min_element(meanError.begin(),meanError.end()));
-	double minAlpha = (posMinAlpha+1)*0.01;
-		
-	std::vector<double> blockageTrace;
-	blockageTrace.push_back(0);
-	int counter = 0;
-	for (uint64_t i = std::get<0>(pairFiltering); i < std::get<1>(pairFiltering); i++)
-	{
-		blockageTrace.push_back((1-minAlpha)*blockageTrace[counter]+minAlpha*(noisySinr[i]));
-		counter++;
-	}
-
-	// std::vector<double> retFinalTrace;
-	// /* first piece */
-	// std::vector<double>::const_iterator firstPieceStart = realSinr.begin();
-	// std::vector<double>::const_iterator firstPieceEnd = realSinr.begin() +  std::get<0>(pairFiltering) - 1;
-	// std::vector<double> firstPiece(firstPieceStart,firstPieceEnd);
-
-	// /*last piece*/
-	// std::vector<double>::const_iterator lastPieceStart = realSinr.begin() + std::get<1>(pairFiltering) + 1;
-	// std::vector<double>::const_iterator lastPieceEnd = realSinr.end();
-	// std::vector<double> lastPiece(lastPieceStart,lastPieceEnd);
-
-	// /* concatenate*/
-	// firstPiece.insert(firstPiece.end(),blockageTrace.begin(),blockageTrace.end());
-	// firstPiece.insert(firstPiece.end(),lastPiece.begin(),lastPiece.end());	
-	
-
-	/* insert blockageTrace (from begin + 1, in order to AVOID THE TRANSIENT, to end) in the noisySinr trace, 
-	* after std::get<0>(pairFiltering) samples,
-	* which are the samples in which we estimate that a blockage occurs and the Kalmn filter is applied
-	*/
-	//std::copy(blockageTrace.begin(),blockageTrace.end(),noisySinr.begin()+std::get<0>(pairFiltering) );
-	std::copy(blockageTrace.begin()+1,blockageTrace.end(),noisySinr.begin()+std::get<0>(pairFiltering)+1 ); // AVOID TRANSIENT
-	
-	return noisySinr; // this noisySinr trace has already been updated with the filtered samples, where applied.
 }
 
 void
@@ -475,12 +247,8 @@ void
 MmWaveEnbPhy::UpdateUeSinrEstimate()
 {
 	// NS_LOG_UNCOND(this << " UpdateUeSinrEstimate for cell " << m_cellId << " at time " << Simulator::Now().GetMilliSeconds());
-	if ((Now().GetMicroSeconds() % m_updateSinrPeriod) == 0 ) // time instant in which a new RT needs to be built
-	{
-		m_sinrMap.clear();
-		m_rxPsdMap.clear();
-	}
-
+	m_sinrMap.clear();
+	m_rxPsdMap.clear();
 	Ptr<SpectrumValue> noisePsd = MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
 	Ptr<SpectrumValue> totalReceivedPsd = Create <SpectrumValue> (SpectrumValue(noisePsd->GetSpectrumModel()));
 
@@ -523,7 +291,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		Ptr<MobilityModel> enbMob = m_netDevice->GetNode()->GetObject<MobilityModel>(); 
 		NS_LOG_LOGIC("eNB mobility " << enbMob->GetPosition());
 		Ptr<MobilityModel> ueMob = ue->second->GetNode()->GetObject<MobilityModel>();
-		NS_LOG_UNCOND("UE mobility " << ueMob->GetPosition());
+		NS_LOG_LOGIC("UE mobility " << ueMob->GetPosition());
 		
 		// compute rx psd
 
@@ -551,10 +319,6 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		}
 		if (m_propagationLoss)
 		{
-			if (m_losTracker != 0) // if I am using the PL propagation model with Aditya's traces
-			{
-				m_losTracker->UpdateLosNlosState(ueMob,enbMob); // update the maps to keep trak of the real PL values, before computing the PL
-			}
 		  double propagationGainDb = m_propagationLoss->CalcRxPower (0, ueMob, enbMob);
 		  NS_LOG_LOGIC ("propagationGainDb = " << propagationGainDb << " dB");
 		  pathLossDb -= propagationGainDb;
@@ -615,216 +379,43 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		NS_LOG_LOGIC("interference " << interference);
 		SpectrumValue sinr = *(ue->second)/(*noisePsd + interference);
 		NS_LOG_LOGIC("sinr " << sinr);
-		double sinrAvg = Sum(sinr)/(sinr.GetSpectrumModel()->GetNumBands());
-		NS_LOG_UNCOND("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
+		double sinrAvg = Sum(sinr)/(sinr.GetSpectrumModel()->GetNumBands()); 
+		m_sinrMap[ue->first] = sinrAvg;
+		//NS_LOG_UNCOND("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
+	}
 
-		pairDevices_t pairDevices = std::make_pair(ue->first, m_cellId); // this is the current pair (UE-eNB)
-		std::map< pairDevices_t, std::vector<double> >::iterator iteratorSinr =
-							 m_sinrVector.find(pairDevices); // pair [pairDevices,Sinrvalue] 
-
-		if (iteratorSinr != m_sinrVector.end()) // this map has already been initialized, so I can add a new element for the SINR collection
+	if(m_roundFromLastUeSinrUpdate >= (m_ueUpdateSinrPeriod/m_updateSinrPeriod))
+	{
+		m_roundFromLastUeSinrUpdate = 0;
+		for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin(); ue != m_ueAttachedImsiMap.end(); ++ue)
 		{
-			m_sinrVector.at(pairDevices).push_back(sinrAvg); // push back a new SINR value
-			NS_LOG_UNCOND("At time " << Now().GetMicroSeconds() << " push back the REAL SINR " << 10*std::log10(sinrAvg) <<
-				 " for pair with CellId " << m_cellId << " and UE " << ue->first);
-			/* FOR PRINTING
-			for (uint64_t i = 0; i < m_sinrVector.at(pairDevices).size(); i++ )
+			// distinguish between MC and MmWaveNetDevice
+			Ptr<MmWaveUeNetDevice> ueNetDevice = DynamicCast<MmWaveUeNetDevice> (ue->second);
+			Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
+			Ptr<MmWaveUePhy> uePhy;
+			if(ueNetDevice != 0) 
 			{
-				std::cout << 10*std::log10(m_sinrVector.at(pairDevices)[i]) << std::endl;
+				uePhy = ueNetDevice->GetPhy();
 			}
-			*/
+			else if (mcUeDev != 0) // it may be a MC device
+			{
+				uePhy = mcUeDev->GetMmWavePhy ();
+			}
+			uePhy->UpdateSinrEstimate(m_cellId, m_sinrMap.find(ue->first)->second);
 		}
-		else
-		{
-			m_sinrVector.insert(std::pair<pairDevices_t, std::vector<double> >(pairDevices,std::vector<double>()));
-			m_sinrVector.at(pairDevices).push_back(sinrAvg); // push back a new SINR value
-			NS_LOG_UNCOND("At time " << Now().GetMicroSeconds() << " first initializazion and push back the SINR " << 10*std::log10(sinrAvg) << 
-				" for pair with CellId " << m_cellId << " and UE " << ue->first);
-		}	
+	}
+	else
+	{
+		m_roundFromLastUeSinrUpdate++;
+	}
 
 	
 
-		/* TODO
-		* We need to modify this part of the method, since we need to forward to the LteEnbRrc class
-		* NOT the real SINR value but its filtered sample.
-		* 1) select the last SINR filtered sample and put it in the m_sinrMap.
-		*/
+	LteEnbCphySapUser::UeAssociatedSinrInfo info;
+	info.ueImsiSinrMap = m_sinrMap;
+	m_enbCphySapUser->UpdateUeSinrEstimate(info);
+	Simulator::Schedule(MilliSeconds(m_updateSinrPeriod), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
 
-		/* This portion of the code must be run only when a RT needs to be forwarded to the LteEnbRrc class */
-		if ((Now().GetMicroSeconds() % m_updateSinrPeriod) == 0) // time instant in which a new RT needs to be built
-		{
-			std::map< pairDevices_t, std::vector<double> >::iterator iteratorSinrNoisy =
-							 m_sinrVectorNoisy.find(pairDevices); // pair [pairDevices,Sinrvalue] 
-			/* INITIALIZATION OF VECTORS */
-			if (iteratorSinrNoisy == m_sinrVectorNoisy.end())
-			{
-				NS_LOG_UNCOND("For pair with CellId " << m_cellId << " and UE " << ue->first << ", initialization of VECTORS for noisy trace");
-				/* if sinrVectorNoisy has not been initialized yet, then we need to initialize also the other vectors for the filtering operations */
-				m_sinrVectorNoisy.insert(std::pair<pairDevices_t,std::vector<double> > (pairDevices,std::vector<double> ())); // initialization of noisy vector
-				m_samplesFilter.insert(std::pair<pairDevices_t,std::pair<uint64_t,uint64_t> >(pairDevices,std::pair<uint64_t,uint64_t>()));
-				m_finalSinrVector.insert(std::pair<pairDevices_t,std::vector<double> > (pairDevices,std::vector<double> ()) );
-			}
-
-			
-			
-			/*
-			// START PRINTING 
-			if (m_cellId == 2)
-			{
-				
-			
-				std::ofstream outFile ("SINR_real.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-				if (outFile.is_open())
-				{
-					for (uint64_t i=0; i<m_sinrVector.at(pairDevices).size(); i++)
-					{
-						NS_LOG_UNCOND("real " << 10*std::log10(m_sinrVector.at(pairDevices)[i]));
-						outFile << m_sinrVector.at(pairDevices)[i] << '\n';
-					}
-					outFile.close();
-				}
-			}
-			//END PRINTING 
-			*/
-			
-
-				
-
-			/* generate Gaussian noise for the trace */
-			m_sinrVectorNoisy.at(pairDevices) = ( AddGaussianNoise(m_sinrVector.at(pairDevices))); 
-
-			
-			
-			/*
-			// START PRINTING
-			if (m_cellId == 2)
-			{
-				std::ofstream outFilebis ("SINR_noisy.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-				if (outFilebis.is_open())
-				{
-					for (uint64_t i=0; i<m_sinrVectorNoisy.at(pairDevices).size(); i++)
-					{
-						NS_LOG_UNCOND("noisy " << 10*std::log10(m_sinrVectorNoisy.at(pairDevices)[i]));
-						outFilebis << m_sinrVectorNoisy.at(pairDevices)[i] << '\n';
-					}
-					outFilebis.close();
-				}
-			}
-			// END PRINTING 
-			*/
-			
-
-			
-			if (Now().GetMicroSeconds() > 0) // apply filter only when I have a set of SINR samples
-			{
-				std::pair <uint64_t , uint64_t > pairFiltering = ApplyFilter(m_sinrVectorNoisy.at(pairDevices)); // find where to apply the filter
-				m_samplesFilter.at(pairDevices) = pairFiltering;
-				NS_LOG_UNCOND ("£££££££££££££££ start at sample " << std::get<0> (pairFiltering) );
-				NS_LOG_UNCOND ("£££££££££££££££ end at sample " << std::get<1> (pairFiltering) );
-		
-				/* just apply filter where the SINR is too low and we are in a blockage situation */
-				if (std::get<0> (m_samplesFilter.at(pairDevices)) == std::get<1> (m_samplesFilter.at(pairDevices)) ) // if start = end
-				{
-					m_finalSinrVector.at(pairDevices) = m_sinrVectorNoisy.at(pairDevices); // no need to apply the filter
-					NS_LOG_UNCOND("At time " << Now().GetMicroSeconds() << " there is no need to apply the Kalman filter for mmWave eNB "
-						<< m_cellId << " and UE " << ue->first);
-				}
-				else
-				{
-					std::vector<double> finalTrace = MakeFilter(m_sinrVectorNoisy.at(pairDevices), m_sinrVector.at(pairDevices), m_samplesFilter.at(pairDevices));
-					m_finalSinrVector.at(pairDevices) = finalTrace;
-				}
-			
-
-				
-				/*
-				// START PRINTING
-				if (m_cellId == 2)
-				{
-					std::ofstream outFileter ("SINR_final.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-					if (outFileter.is_open())
-					{
-						for (uint64_t i=0; i<m_finalSinrVector.at(pairDevices).size(); i++)
-						{
-							NS_LOG_UNCOND("final " << 10*std::log10(m_finalSinrVector.at(pairDevices)[i]));
-							outFileter << m_finalSinrVector.at(pairDevices)[i] << '\n';
-						}
-						outFileter.close();
-					}
-				}
-				// END PRINTING 
-				*/
-				
-			
-				/* the last sample in the filtered sequence is referred to the current time instant,
-				* referred to the uplink reference signal that is used to build the RT in the LteEnbRrc class */
-				double sampleToForward = m_finalSinrVector.at(pairDevices).back(); 
-				if (sampleToForward < 0) // this would be converted in NaN, in the log scale
-				{
-					sampleToForward = 1e-20;
-				}
-				NS_LOG_UNCOND(" mmWave eNB " << m_cellId << " reports the SINR " << 10*std::log10(sampleToForward) << " for UE " << ue->first);
-				m_sinrMap[ue->first] = sampleToForward; // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< in order to FORWARD to LteEnbRrc the value of SINR for the RT
-
-			}
-			else // at time t=0, forward the noisy sample (since no filter hab been able to be applied, since thare was no SINR sequence available)
-			{
-				double sampleToForward = m_sinrVectorNoisy.at(pairDevices).back();
-				if (sampleToForward < 0) // this would be converted in NaN, in the log scale
-				{
-					sampleToForward = 1e-20;
-				}
-				NS_LOG_UNCOND(" mmWave eNB " << m_cellId << " FIRST reports the SINR " << 10*std::log10(sampleToForward) << " for UE " << ue->first);
-				m_sinrMap[ue->first] = sampleToForward; // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< in order to FORWARD to LteEnbRrc the value of SINR for the RT
-			}
-
-			/* after the SINR sample is forwarded, I need to REFRESH all the maps, so that 
-			* a new SINR sequence can be created, to generate a new SINR sample 
-			* for the next RT
-			*/
-			m_sinrVector.erase(pairDevices);
-			m_sinrVectorNoisy.erase(pairDevices);
-			m_finalSinrVector.erase(pairDevices);
-			m_samplesFilter.erase(pairDevices);
-			NS_LOG_UNCOND("ERASE MAPS FOR RT");
-		}
-
-	}
-
-	if ((Now().GetMicroSeconds() % m_updateSinrPeriod) == 0) // time instant in which a new RT needs to be built
-	{
-
-		if(m_roundFromLastUeSinrUpdate >= (m_ueUpdateSinrPeriod/m_updateSinrPeriod))
-		{
-			m_roundFromLastUeSinrUpdate = 0;
-			for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin(); ue != m_ueAttachedImsiMap.end(); ++ue)
-			{
-				// distinguish between MC and MmWaveNetDevice
-				Ptr<MmWaveUeNetDevice> ueNetDevice = DynamicCast<MmWaveUeNetDevice> (ue->second);
-				Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
-				Ptr<MmWaveUePhy> uePhy;
-				if(ueNetDevice != 0) 
-				{
-					uePhy = ueNetDevice->GetPhy();
-				}
-				else if (mcUeDev != 0) // it may be a MC device
-				{
-					uePhy = mcUeDev->GetMmWavePhy ();
-				}
-				uePhy->UpdateSinrEstimate(m_cellId, m_sinrMap.find(ue->first)->second);
-			}
-		}
-		else
-		{
-			m_roundFromLastUeSinrUpdate++;
-		}
-
-		LteEnbCphySapUser::UeAssociatedSinrInfo info;
-		info.ueImsiSinrMap = m_sinrMap;
-		m_enbCphySapUser->UpdateUeSinrEstimate(info);
-	}
-
-	Simulator::Schedule(MicroSeconds(m_updateSinrCollect), &MmWaveEnbPhy::UpdateUeSinrEstimate, this); // recall after m_updateSinrCollect microseconds
 }
 
 void

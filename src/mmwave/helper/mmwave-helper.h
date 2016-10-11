@@ -47,6 +47,7 @@
 #include <ns3/lte-anr.h>
 #include <ns3/lte-spectrum-value-helper.h>
 #include <ns3/core-network-stats-calculator.h>
+#include <ns3/mmwave-los-tracker.h>
 
 
 namespace ns3 {
@@ -185,6 +186,7 @@ private:
 	Ptr<SpectrumChannel> m_uplinkChannel; 	/// The uplink LTE channel used in the simulation.
 
 	Ptr<MmWaveBeamforming> m_beamforming;
+	Ptr<MmWaveLosTracker> m_losTracker;
 	Ptr<MmWaveChannelMatrix> m_channelMatrix;
 	Ptr<MmWaveChannelRaytracing> m_raytracing;
 
