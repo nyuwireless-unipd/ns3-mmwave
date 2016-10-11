@@ -368,11 +368,11 @@ PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
 }
 
 static ns3::GlobalValue g_mmw1DistFromMainStreet("mmw1Dist", "Distance from the main street of the first MmWaveEnb",
-    ns3::UintegerValue(0), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmw2DistFromMainStreet("mmw2Dist", "Distance from the main street of the second MmWaveEnb",
-    ns3::UintegerValue(0), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmw3DistFromMainStreet("mmw3Dist", "Distance from the main street of the third MmWaveEnb",
-    ns3::UintegerValue(40), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(150), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave eNB 1 and 2",
     ns3::UintegerValue(400), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
@@ -474,7 +474,7 @@ main (int argc, char *argv[])
   uint32_t minimumBuildingWidth = 10;
   uint32_t buildingZ = 15;
 
-  uint32_t ueInitialPosition = 195;
+  uint32_t ueInitialPosition = 150;
   uint32_t ueFinalPosition = 225;
   
   GlobalValue::GetValueByName("fastSwitching", booleanValue);
@@ -698,12 +698,14 @@ main (int argc, char *argv[])
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
   uePositionAlloc->Add (Vector (ueInitialPosition, -5, 0));
+  //uePositionAlloc->Add (Vector (-300000, -500000, 0));
   uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
   ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
+  //ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (150, 500, 0));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes

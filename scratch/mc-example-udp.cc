@@ -390,7 +390,7 @@ static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup,
 static ns3::GlobalValue g_rlcAmEnabled("rlcAmEnabled", "If true, use RLC AM, else use RLC UM",
     ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-    ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(7), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());

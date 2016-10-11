@@ -2545,12 +2545,12 @@ LteEnbRrc::GetTypeId (void)
         MakeUintegerChecker<uint8_t>()) // TODO consider using a TimeValue    
     .AddAttribute ("MinDiffValue",
         "The minimum value of the difference in case of dynamic TTT handover [dB]",
-        DoubleValue(10),
+        DoubleValue(3),
         MakeDoubleAccessor(&LteEnbRrc::m_minDiffTttValue),
         MakeDoubleChecker<double>()) // TODO set the proper value    
     .AddAttribute ("MaxDiffValue",
         "The maximum value of the difference in case of dynamic TTT handover [dB]",
-        DoubleValue(26),
+        DoubleValue(20),
         MakeDoubleAccessor(&LteEnbRrc::m_maxDiffTttValue),
         MakeDoubleChecker<double>()) // TODO set the proper value
     // Trace sources
