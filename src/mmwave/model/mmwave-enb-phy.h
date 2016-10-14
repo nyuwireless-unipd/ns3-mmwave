@@ -94,7 +94,9 @@ public:
 
 	void UpdateUeSinrEstimate ();
 
-	std::vector<double> AddGaussianNoise(std::vector<double>);
+	void CallPathloss ();
+
+    double AddGaussianNoise(double sample);
 
 	std::pair <uint64_t,uint64_t> ApplyFilter(std::vector<double>);
 
@@ -150,7 +152,8 @@ private:
 	std::map <uint64_t, double > m_sinrMap;
 	std::map <uint64_t, Ptr<SpectrumValue> > m_rxPsdMap;
 	std::map <pairDevices_t , std::vector<double> > m_sinrVector; // array containing all SINR values for a specific pair (UE-eNB)
-	std::map <pairDevices_t , std::vector<double> > m_sinrVectorNoisy; // array containing all noisy SINR values for a specific pair (UE-eNB)
+	std::map <pairDevices_t , std::vector<double> > m_sinrVectorToFilter; // array containing the  SINR values that must be filtered
+	std::map <pairDevices_t , std::vector<double> > m_sinrVectorNoisy; // array containing the  noisy SINR values that must be filteredF
 	std::map <pairDevices_t , std::vector<double> > m_finalSinrVector; // array containing all  SINR values after the filtering for a specific pair (UE-eNB)
 	std::map <pairDevices_t, std::pair <uint64_t,uint64_t> > m_samplesFilter; // array containing all noisy SINR values for a specific pair (UE-eNB)
 
@@ -158,6 +161,8 @@ private:
 	double m_ueUpdateSinrPeriod; // the period of SINR reporting to the UEs
 	double m_updateSinrCollect; // the period of SINR collection, for a pair (UE-eNB)
 	uint16_t m_roundFromLastUeSinrUpdate; // the ratio between the two above
+	double m_transient; // after m_transient, we can start apply the filter
+	bool m_noiseAndFilter; // If true, use noisy SINR samples, filtered. If false, just use the SINR measure
 
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 	std::vector <int> m_channelChunks;

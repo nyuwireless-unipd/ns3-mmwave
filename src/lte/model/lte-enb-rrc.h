@@ -362,7 +362,7 @@ public:
   // for mc devices, get the m_allMmWaveInOutageAtInitialAccess variable
   bool GetAllMmWaveInOutageAtInitialAccess();
   void SetAllMmWaveInOutageAtInitialAccess(bool param);
-  
+
   /**
    * This method is called by the eNB RRC to notify the 
    * UeManager that the handover from a MmWave cell to LTE
@@ -1543,6 +1543,8 @@ private:
   uint8_t m_maxDynTttValue;
   double m_minDiffTttValue;
   double m_maxDiffTttValue;
+
+  int m_crtPeriod;
 
   uint32_t m_x2_received_cnt;
 

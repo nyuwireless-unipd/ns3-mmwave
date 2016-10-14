@@ -839,14 +839,14 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 				loss_inner = mmWaveLosLoss(a,b);
 				double sample_trace = g_blockage_down[nlosSamples-1];
 				loss = loss_inner - sample_trace; // 'minus' because I need to "decrement" the pathloss
-				NS_LOG_UNCOND("PL NLOS drop phase is " << loss << " and Aditya's sample is " << sample_trace);
+				NS_LOG_DEBUG("PL NLOS drop phase is " << loss << " and Aditya's sample is " << sample_trace);
 			}
 			else if (!los && nlosSamples == g_nlosSamplesTrace) // I am in NLOS but in the 'flat phase'
 			{
 				loss_inner = mmWaveLosLoss(a,b); // -----------------_> CHECK
 				double sample_trace = g_blockage_down[nlosSamples-1]; // take the last sample, as a baseline
 				loss = loss_inner - sample_trace;
-				NS_LOG_UNCOND("PL NLOS is " << loss);
+				NS_LOG_DEBUG("PL NLOS is " << loss);
 				
 			}
 			else if (los && losSamples < g_nlosSamplesTrace && nlosSamples > 0) // I am in NLOS but in the 'raise phase'
@@ -864,17 +864,17 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 				}
 				
 				loss = loss_inner - sample_trace; // 'minus' because I need to "decrement" the pathloss
-				NS_LOG_UNCOND("PL LOS raise phase is " << loss << " and Aditya's sample is " << sample_trace);	
+				NS_LOG_DEBUG("PL LOS raise phase is " << loss << " and Aditya's sample is " << sample_trace);	
 			}
 			else if (los && losSamples == g_nlosSamplesTrace) // I am in LOS, and the 'raise phase' is finally over
 			{
 				loss = mmWaveLosLoss(a,b);
-				NS_LOG_UNCOND("PL LOS  is " << loss);	
+				NS_LOG_DEBUG("PL LOS  is " << loss);	
 			}
 			else if (los && losSamples == 0 && nlosSamples == 0) // I am in the normal LOS phase
 			{
 				loss = mmWaveLosLoss(a,b);
-				NS_LOG_UNCOND("PL LOS  is " << loss);	
+				NS_LOG_DEBUG("PL LOS  is " << loss);	
 			}
 
 		}

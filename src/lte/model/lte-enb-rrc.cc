@@ -2553,6 +2553,11 @@ LteEnbRrc::GetTypeId (void)
         DoubleValue(20),
         MakeDoubleAccessor(&LteEnbRrc::m_maxDiffTttValue),
         MakeDoubleChecker<double>()) // TODO set the proper value
+    .AddAttribute ("CrtPeriod",
+        "The periodicity of a CRT (us)",
+        IntegerValue(1600),
+        MakeIntegerAccessor(&LteEnbRrc::m_crtPeriod),
+        MakeIntegerChecker<int>()) // TODO consider using a TimeValue  
     // Trace sources
     .AddTraceSource ("NewUeContext",
                      "Fired upon creation of a new UE context.",
@@ -3186,7 +3191,16 @@ LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, 
         else
         {
           // TODO consider if TTT must be updated or if it can remain as computed before
-          NS_LOG_INFO("------ Handover remains scheduled for " << maxSinrCellId);
+          // we should compute the new TTT: if Now() + TTT < scheduledTime then update!
+          uint8_t newTtt = ComputeTtt(sinrDifference);
+          uint64_t handoverHappensAtTime = handoverEvent->second.scheduledHandoverEvent.GetTs(); // in nanoseconds
+          NS_LOG_UNCOND("Scheduled for " << handoverHappensAtTime << " while now the scheduler would give " << Simulator::Now().GetMilliSeconds() + newTtt);
+          if(Simulator::Now().GetMilliSeconds() + newTtt < (double)handoverHappensAtTime/1e6)
+          {
+            handoverEvent->second.scheduledHandoverEvent.Cancel();
+            NS_LOG_INFO("------ Handover remains scheduled for " << maxSinrCellId << " but a new shorter TTT is computed");
+            handoverNeeded = true;
+          }  
         }
       }
       else
@@ -3243,7 +3257,8 @@ LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, 
     NS_LOG_DEBUG("handoverNeeded");
     // compute the TTT
     uint8_t millisecondsToHandover = ComputeTtt(sinrDifference);
-    NS_LOG_INFO("The sinrDifference is " << sinrDifference << " and the TTT computed is " << (uint32_t)millisecondsToHandover << " ms.");
+    NS_LOG_INFO("The sinrDifference is " << sinrDifference << " and the TTT computed is " << (uint32_t)millisecondsToHandover 
+      << " ms, thus the event will happen at time " << Simulator::Now().GetMilliSeconds() + millisecondsToHandover);
     if(currentSinrDb < m_outageThreshold)
     {
       millisecondsToHandover = 0;
@@ -3570,7 +3585,7 @@ LteEnbRrc::TriggerUeAssociationUpdate()
     }
   }
   
-  Simulator::Schedule(MilliSeconds(10), &LteEnbRrc::TriggerUeAssociationUpdate, this);
+  Simulator::Schedule(MicroSeconds(m_crtPeriod), &LteEnbRrc::TriggerUeAssociationUpdate, this);
 }
 
 
@@ -3764,9 +3779,7 @@ LteEnbRrc::UpdateUeHandoverAssociation()
       }
     }
   }
-
-  Simulator::Schedule(MilliSeconds(10), &LteEnbRrc::UpdateUeHandoverAssociation, this);
-
+  Simulator::Schedule(MicroSeconds(m_crtPeriod), &LteEnbRrc::UpdateUeHandoverAssociation, this);
 }
 
 void
