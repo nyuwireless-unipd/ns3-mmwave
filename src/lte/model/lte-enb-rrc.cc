@@ -1470,7 +1470,7 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
       }
       else if(m_firstConnection && !m_rrc->m_ismmWave)
       {
-        m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
+        m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = false;
         m_rrc->m_lastMmWaveCell[m_imsi] = m_rrc->m_cellId;
         m_rrc->m_imsiUsingLte[m_imsi] = true; // the inital connection happened on a LTE eNB
       }
@@ -1553,21 +1553,21 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
     case CONNECTION_RECONFIGURATION:
       StartDataRadioBearers ();
       if (m_needPhyMacConfiguration)
-        {
-          // configure MAC (and scheduler)
-          LteEnbCmacSapProvider::UeConfig req;
-          req.m_rnti = m_rnti;
-          req.m_transmissionMode = m_physicalConfigDedicated.antennaInfo.transmissionMode;
-          m_rrc->m_cmacSapProvider->UeUpdateConfigurationReq (req);
+      {
+        // configure MAC (and scheduler)
+        LteEnbCmacSapProvider::UeConfig req;
+        req.m_rnti = m_rnti;
+        req.m_transmissionMode = m_physicalConfigDedicated.antennaInfo.transmissionMode;
+        m_rrc->m_cmacSapProvider->UeUpdateConfigurationReq (req);
 
-          // configure PHY
-          m_rrc->m_cphySapProvider->SetTransmissionMode (req.m_rnti, req.m_transmissionMode);
+        // configure PHY
+        m_rrc->m_cphySapProvider->SetTransmissionMode (req.m_rnti, req.m_transmissionMode);
 
-          double paDouble = LteRrcSap::ConvertPdschConfigDedicated2Double (m_physicalConfigDedicated.pdschConfigDedicated);
-          m_rrc->m_cphySapProvider->SetPa (m_rnti, paDouble);
+        double paDouble = LteRrcSap::ConvertPdschConfigDedicated2Double (m_physicalConfigDedicated.pdschConfigDedicated);
+        m_rrc->m_cphySapProvider->SetPa (m_rnti, paDouble);
 
-          m_needPhyMacConfiguration = false;
-        }
+        m_needPhyMacConfiguration = false;
+      }
       if(m_mmWaveCellAvailableForMcSetup)
       {
         NS_LOG_INFO("Notify the secondary cell that some bearers' RLC can be setup");
@@ -1580,6 +1580,16 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
         m_rrc->m_mmWaveCellSetupCompleted.find(m_imsi)->second = true;
         m_rrc->m_imsiUsingLte.find(m_imsi)->second = true;
       }
+
+      // for IA on LTE eNB, need to wait for CONNECTION_RECONF to be completed and a bearer to be setup
+      if(m_rrc->m_interRatHoMode && m_firstConnection && !m_rrc->m_ismmWave)
+      {
+        m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = true;
+        m_rrc->m_lastMmWaveCell[m_imsi] = m_rrc->m_cellId;
+        m_rrc->m_imsiUsingLte[m_imsi] = true; // the inital connection happened on a LTE eNB
+        m_firstConnection = false;
+      }
+
       SwitchToState (CONNECTED_NORMALLY);
       NS_LOG_INFO("m_queuedHandoverRequestCellId " << m_queuedHandoverRequestCellId);
       if(m_queuedHandoverRequestCellId > 0)

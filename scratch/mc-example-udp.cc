@@ -452,7 +452,7 @@ static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave 
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
     ns3::UintegerValue(5), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_interPckInterval("interPckInterval", "Interarrival time of UDP packets (us)",
-    ns3::UintegerValue(2), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(20), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_bufferSize("bufferSize", "RLC tx buffer size (MB)",
     ns3::UintegerValue(10), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_x2Latency("x2Latency", "Latency on X2 interface (us)",
@@ -507,15 +507,16 @@ main (int argc, char *argv[])
   //LogComponentEnable ("mmWavePhyRxTrace", LOG_LEVEL_ALL);
   //LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_ALL);
   //LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
-  //LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_INFO);
+  //LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_FUNCTION);
+  //LogComponentEnable("EpcEnbApplication", LOG_LEVEL_FUNCTION);
   //LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable("LteEnbMac", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
   //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
   //LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
   //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
-  //LogComponentEnable("McEnbPdcp", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("McUePdcp", LOG_LEVEL_LOGIC);
+  LogComponentEnable("McEnbPdcp", LOG_LEVEL_LOGIC);
+  LogComponentEnable("McUePdcp", LOG_LEVEL_LOGIC);
   //LogComponentEnable("LteRlcAm", LOG_LEVEL_INFO);
   //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
   //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
@@ -523,6 +524,8 @@ main (int argc, char *argv[])
   //LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_LOGIC);
   //LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_LEVEL_INFO);
   //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
+  //LogComponentEnable("UdpServer", LOG_LEVEL_INFO);
+  //LogComponentEnable("UdpClient", LOG_LEVEL_INFO);
 
   uint16_t numberOfNodes = 1;
   //double simTime = 2.0;
@@ -1044,6 +1047,7 @@ main (int argc, char *argv[])
   }
 
   // Start applications
+  NS_LOG_UNCOND("transientDuration " << transientDuration << " simTime " << simTime);
   serverApps.Start (Seconds(transientDuration));
   clientApps.Start (Seconds(transientDuration));
   clientApps.Stop (Seconds(simTime - 1));
