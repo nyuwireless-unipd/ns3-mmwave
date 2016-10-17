@@ -446,11 +446,11 @@ static ns3::GlobalValue g_mmw1DistFromMainStreet("mmw1Dist", "Distance from the 
 static ns3::GlobalValue g_mmw2DistFromMainStreet("mmw2Dist", "Distance from the main street of the second MmWaveEnb",
     ns3::UintegerValue(50), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmw3DistFromMainStreet("mmw3Dist", "Distance from the main street of the third MmWaveEnb",
-    ns3::UintegerValue(206), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(110), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave eNB 1 and 2",
-    ns3::UintegerValue(400), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(200), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
-    ns3::UintegerValue(5), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(4), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_interPckInterval("interPckInterval", "Interarrival time of UDP packets (us)",
     ns3::UintegerValue(20), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_bufferSize("bufferSize", "RLC tx buffer size (MB)",
@@ -468,9 +468,9 @@ static ns3::GlobalValue g_rlcAmEnabled("rlcAmEnabled", "If true, use RLC AM, els
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
     ns3::UintegerValue(1), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_maxXAxis("maxXAxis", "The maximum X coordinate for the area in which to deploy the buildings",
-    ns3::DoubleValue(400), ns3::MakeDoubleChecker<double>());
-static ns3::GlobalValue g_maxYAxis("maxYAxis", "The maximum Y coordinate for the area in which to deploy the buildings",
     ns3::DoubleValue(200), ns3::MakeDoubleChecker<double>());
+static ns3::GlobalValue g_maxYAxis("maxYAxis", "The maximum Y coordinate for the area in which to deploy the buildings",
+    ns3::DoubleValue(109), ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
@@ -483,6 +483,8 @@ static ns3::GlobalValue g_reportTablePeriodicity("reportTablePeriodicity", "Peri
     ns3::UintegerValue(1600), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_udp("udp", "If true, use UDP. If false, TCP",
     ns3::BooleanValue(false), ns3::MakeBooleanChecker());
+static ns3::GlobalValue g_outageThreshold("outageTh", "Outage threshold",
+    ns3::DoubleValue(-5), ns3::MakeDoubleChecker<double>());
 
 int
 main (int argc, char *argv[])
@@ -573,8 +575,8 @@ main (int argc, char *argv[])
   // userPosition->SetAttribute("Max",DoubleValue(400));
   // double ueInitialPosition = userPosition->GetValue();
   // NS_LOG_UNCOND("UE X coordinate is: " << ueInitialPosition);
-  double ueInitialPosition = 100;
-  double ueFinalPosition = 300;
+  double ueInitialPosition = 50;
+  double ueFinalPosition = 150;
 
   // Variables for the RT 
   int windowForTransient = 150; // number of samples for the vector to use in the filter
@@ -609,7 +611,8 @@ main (int argc, char *argv[])
   uint8_t hoMode = uintegerValue.Get();
   GlobalValue::GetValueByName("udp", booleanValue);
   bool tcp = !(booleanValue.Get());
-
+  GlobalValue::GetValueByName("outageTh", doubleValue);
+  double outageTh = doubleValue.Get();
 
   GlobalValue::GetValueByName("rlcAmEnabled", booleanValue);
   bool rlcAmEnabled = booleanValue.Get();
@@ -743,6 +746,7 @@ main (int argc, char *argv[])
         break;
   }
   Config::SetDefault ("ns3::LteEnbRrc::CrtPeriod", IntegerValue (ReportTablePeriodicity));
+  Config::SetDefault ("ns3::LteEnbRrc::OutageThreshold", DoubleValue (outageTh));
   Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::MmWaveEnbPhy::Transient", IntegerValue (vectorTransient));
   Config::SetDefault ("ns3::MmWaveEnbPhy::NoiseAndFilter", BooleanValue(noiseAndFilter));
