@@ -3046,7 +3046,7 @@ LteEnbRrc::DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params)
     uint64_t imsi = imsiIter->first;
     double sinr = imsiIter->second;
 
-    m_notifyMmWaveSinrTrace(imsi, mmWaveCellId, sinr);
+    // m_notifyMmWaveSinrTrace(imsi, mmWaveCellId, sinr);
     
     NS_LOG_LOGIC("Imsi " << imsi << " sinr " << sinr);
 
