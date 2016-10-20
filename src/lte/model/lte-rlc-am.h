@@ -30,6 +30,8 @@
 
 #include <vector>
 #include <map>
+#include <fstream>
+#include <string>
 
 namespace ns3 {
 
@@ -133,6 +135,10 @@ private:
   void Reassemble (Ptr<Packet> Packet);
 
   void DoReportBufferStatus ();
+
+  std::string GetBufferSizeFilename();
+  void SetBufferSizeFilename(std::string filename);
+  void BufferSizeTrace();
 
 private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
@@ -258,6 +264,10 @@ private:
   std::map <uint8_t, uint16_t> m_harqIdToSnMap;
 
   uint32_t m_maxTxBufferSize;
+
+  std::string m_bufferSizeFilename;
+  std::ofstream m_bufferSizeFile;
+  EventId m_traceBufferSizeEvent;
 };
 
 

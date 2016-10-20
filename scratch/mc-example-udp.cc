@@ -206,31 +206,31 @@ MyApp::ScheduleTx (void)
     m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
   }
 }
-// 
-// static void
-// CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
-// {
-//   *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
-// }
+
+static void
+CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
+{
+  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
+}
 
 
-// static void
-// RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
-// {
-//   *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
-// }
+static void
+RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
+{
+  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
+}
 
 
 
-// static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
-// {
-//   *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
-// }
+static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+{
+  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
+}
 
-/*static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint32_t newSstresh)
+static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint32_t newSstresh)
 {
   *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSstresh << "\t" << newSstresh << std::endl;
-}*/
+}
 
 
 
@@ -454,7 +454,7 @@ static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of b
 static ns3::GlobalValue g_interPckInterval("interPckInterval", "Interarrival time of UDP packets (us)",
     ns3::UintegerValue(20), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_bufferSize("bufferSize", "RLC tx buffer size (MB)",
-    ns3::UintegerValue(10), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(100), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_x2Latency("x2Latency", "Latency on X2 interface (us)",
     ns3::DoubleValue(1000), ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_mmeLatency("mmeLatency", "Latency on MME interface (us)",
@@ -475,14 +475,14 @@ static ns3::GlobalValue g_outPath("outPath",
     "The path of output log files",
     ns3::StringValue("./"), ns3::MakeStringChecker());
 static ns3::GlobalValue g_noiseAndFilter("noiseAndFilter", "If true, use noisy SINR samples, filtered. If false, just use the SINR measure",
-    ns3::BooleanValue(true), ns3::MakeBooleanChecker());
+    ns3::BooleanValue(false), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_handoverMode("handoverMode",
     "Handover mode",
     ns3::UintegerValue(3), ns3::MakeUintegerChecker<uint8_t>());
 static ns3::GlobalValue g_reportTablePeriodicity("reportTablePeriodicity", "Periodicity of RTs",
     ns3::UintegerValue(1600), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_udp("udp", "If true, use UDP. If false, TCP",
-    ns3::BooleanValue(false), ns3::MakeBooleanChecker());
+    ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_outageThreshold("outageTh", "Outage threshold",
     ns3::DoubleValue(-5), ns3::MakeDoubleChecker<double>());
 
@@ -517,8 +517,8 @@ main (int argc, char *argv[])
   //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
   //LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
   //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
-  LogComponentEnable("McEnbPdcp", LOG_LEVEL_LOGIC);
-  LogComponentEnable("McUePdcp", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("McEnbPdcp", LOG_LEVEL_LOGIC);
+  //LogComponentEnable("McUePdcp", LOG_LEVEL_LOGIC);
   //LogComponentEnable("LteRlcAm", LOG_LEVEL_INFO);
   //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
   //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
@@ -723,14 +723,12 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::UdpServer::ReceivedPacketsFilename", StringValue(path + version + "ReceivedUdp" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::UdpClient::SentPacketsFilename", StringValue(path + version + "SentUdp" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
   Config::SetDefault ("ns3::UdpServer::ReceivedSnFilename", StringValue(path + version + "ReceivedSn" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
+  Config::SetDefault ("ns3::LteRlcAm::BufferSizeFilename", StringValue(path + version + "RlcAmBufferSize" +  "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
 
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10.0)));
   Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
-
-  //TCP
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpBic"));
 
    // handover and RT related params
   switch(hoMode)
@@ -750,6 +748,12 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::MmWaveEnbPhy::Transient", IntegerValue (vectorTransient));
   Config::SetDefault ("ns3::MmWaveEnbPhy::NoiseAndFilter", BooleanValue(noiseAndFilter));
+
+  // TCP settings
+  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
+  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   //mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
@@ -973,53 +977,53 @@ main (int argc, char *argv[])
   if(tcp)
   {
     // Install and start applications on UEs and remote host
-    // Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPort));
-    // PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-    // serverApps.Add(packetSinkHelper.Install (ueNodes.Get (0)));
+    Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), dlPort));
+    PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+    serverApps.Add(packetSinkHelper.Install (ueNodes.Get (0)));
 
-    // Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
-    // Ptr<MyApp> app = CreateObject<MyApp> ();
-    // app->Setup (ns3TcpSocket, sinkAddress, 1400, 50000000, DataRate ("1000Mb/s"));
-    // clientApps.Add(app);
+    Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHost, TcpSocketFactory::GetTypeId ());
+    Ptr<MyApp> app = CreateObject<MyApp> ();
+    app->Setup (ns3TcpSocket, sinkAddress, 1000, 50000000, DataRate ("1000Mb/s"));
+    clientApps.Add(app);
+	remoteHost->AddApplication (app);
+    
+    AsciiTraceHelper asciiTraceHelper;
+    Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-window-newreno.txt");
+    ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
 
-    // remoteHostContainer.Get (0)->AddApplication (app);
-    // AsciiTraceHelper asciiTraceHelper;
-    // Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-window-newreno.txt");
-    // ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
+    Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-rtt-newreno.txt");
+    ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream4));
 
-    // Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-rtt-newreno.txt");
-    // ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream4));
+    Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data-newreno.txt");
+    serverApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
 
-    // Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data-newreno.txt");
-    // serverApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream2));
-
-    for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
-    {
-      if (dl)
-        {
-          //NS_LOG_LOGIC ("installing TCP DL app for UE " << u);
-          OnOffHelper dlClientHelper ("ns3::TcpSocketFactory",
-                                         InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
-          dlClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
-          clientApps.Add (dlClientHelper.Install (remoteHost));
-          PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
-                                               InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-          serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
-        }
-      if (ul)
-        {
-          //NS_LOG_LOGIC ("installing TCP UL app for UE " << u);
-          OnOffHelper ulClientHelper ("ns3::TcpSocketFactory",
-                                         InetSocketAddress (remoteHostAddr, ulPort));
-          ulClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
-          clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
-          PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
-                                               InetSocketAddress (Ipv4Address::GetAny (), ulPort));
-          serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
-        }
-    }
-    //Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
-    //ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
+    // for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
+    // {
+    //   if (dl)
+    //     {
+    //       //NS_LOG_LOGIC ("installing TCP DL app for UE " << u);
+    //       OnOffHelper dlClientHelper ("ns3::TcpSocketFactory",
+    //                                      InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
+    //       dlClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
+    //       clientApps.Add (dlClientHelper.Install (remoteHost));
+    //       PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
+    //                                            InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+    //       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
+    //     }
+    //   if (ul)
+    //     {
+    //       //NS_LOG_LOGIC ("installing TCP UL app for UE " << u);
+    //       OnOffHelper ulClientHelper ("ns3::TcpSocketFactory",
+    //                                      InetSocketAddress (remoteHostAddr, ulPort));
+    //       ulClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
+    //       clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
+    //       PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
+    //                                            InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+    //       serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
+    //     }
+    // }
+    Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
+    ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
   }
   else // use UDP
   {

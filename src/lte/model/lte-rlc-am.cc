@@ -21,6 +21,7 @@
 
 #include "ns3/simulator.h"
 #include "ns3/log.h"
+#include "ns3/string.h"
 
 #include "ns3/lte-rlc-am-header.h"
 #include "ns3/lte-rlc-am.h"
@@ -92,6 +93,35 @@ LteRlcAm::LteRlcAm ()
 
   m_epcX2RlcUser = new EpcX2RlcSpecificUser<LteRlcAm> (this);
   m_epcX2RlcProvider = 0;
+
+  m_traceBufferSizeEvent = Simulator::Schedule(MilliSeconds(2), &LteRlcAm::BufferSizeTrace, this);
+}
+
+void
+LteRlcAm::BufferSizeTrace()
+{
+  NS_LOG_UNCOND("BufferSizeTrace " << Simulator::Now().GetSeconds() << " " << m_rnti << " " << m_lcid << " " << m_txonBufferSize);
+  // write to file
+  if(!m_bufferSizeFile.is_open())
+  {
+    m_bufferSizeFile.open(GetBufferSizeFilename().c_str(), std::ofstream::app);
+    NS_LOG_UNCOND("File opened");
+  }
+  m_bufferSizeFile << Simulator::Now().GetSeconds() << " " << m_rnti << " " << (uint16_t) m_lcid << " " << m_txonBufferSize << std::endl;
+
+  m_traceBufferSizeEvent = Simulator::Schedule(MilliSeconds(10), &LteRlcAm::BufferSizeTrace, this);
+}
+
+std::string
+LteRlcAm::GetBufferSizeFilename()
+{
+  return m_bufferSizeFilename;
+}
+
+void
+LteRlcAm::SetBufferSizeFilename(std::string filename)
+{
+  m_bufferSizeFilename = filename;
 }
 
 LteRlcAm::~LteRlcAm ()
@@ -139,7 +169,11 @@ LteRlcAm::GetTypeId (void)
 									UintegerValue (1024 * 1024),
 									MakeUintegerAccessor (&LteRlcAm::m_maxTxBufferSize),
 									MakeUintegerChecker<uint32_t> ())
-
+   .AddAttribute ("BufferSizeFilename",
+                   "Name of the file where the buffer size will be periodically written.",
+                   StringValue ("RlcAmBufferSize.txt"),
+                   MakeStringAccessor (&LteRlcAm::SetBufferSizeFilename),
+                   MakeStringChecker ())
     ;
   return tid;
 }
@@ -173,6 +207,9 @@ LteRlcAm::DoDispose ()
   is_fragmented = 0;
   m_txedRlcSduBuffer.clear ();
   m_txedRlcSduBufferSize = 0;
+
+  m_traceBufferSizeEvent.Cancel();
+  m_bufferSizeFile.close();
 
   LteRlc::DoDispose ();
 }
