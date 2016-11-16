@@ -1819,11 +1819,11 @@ MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::stri
 {
 	std::stringstream ss (value);
 
-	if (paramName.compare("CentreFreq") == 0)
+	if (paramName.compare("CenterFreq") == 0)
 	{
 		double cf;
 		ss >> cf;
-		m_phyMacCommon->SetAttribute ("CentreFreq", DoubleValue(cf));
+		m_phyMacCommon->SetAttribute ("CenterFreq", DoubleValue(cf));
 	}
 	else if (paramName.compare("SymbolPerSlot") == 0)
 	{
