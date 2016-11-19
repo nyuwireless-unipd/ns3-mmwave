@@ -555,7 +555,8 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	else
 	{
 		// enb to enb or ue to ue transmission, set to 0. Do no consider such scenarios.
-		return 0;
+		*rxPsd = (*rxPsd)*0;
+		return rxPsd;
 	}
 
 	Ptr<BeamformingParams> bfParams = it->second;
