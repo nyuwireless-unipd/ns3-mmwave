@@ -428,9 +428,9 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 //              		return;
 									// According to 5.2.1, the data field is left as is, but we rebuild the header
 									LteRlcAmHeader firstSegHdr;
-									if(bytes<firstSegHdr.GetSerializedSize ()​)​
+									if (bytes < firstSegHdr.GetSerializedSize ())
 									{
-									  return;
+										return;
 									}
 									packet->RemoveHeader (firstSegHdr);
 									NS_LOG_LOGIC ("old AM RLC header: " << firstSegHdr);
