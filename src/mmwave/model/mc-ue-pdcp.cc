@@ -97,6 +97,11 @@ McUePdcp::GetTypeId (void)
                      "PDU received.",
                      MakeTraceSourceAccessor (&McUePdcp::m_rxPdu),
                      "ns3::McUePdcp::PduRxTracedCallback")
+    .AddAttribute ("LteUplink",
+                    "Use LTE for uplink",
+                    BooleanValue (false),
+                    MakeBooleanAccessor (&McUePdcp::m_alwaysLteUplink),
+                    MakeBooleanChecker ())
     ;
   return tid;
 }
@@ -213,7 +218,8 @@ McUePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   params.lcid = m_lcid;
   params.pdcpPdu = p;
 
-  if(m_mmWaveRlcSapProvider == 0 || (!m_useMmWaveConnection))
+  // WARN TODO hack: always use LTE for uplink (i.e. TCP acks)
+  if(m_mmWaveRlcSapProvider == 0 || (!m_useMmWaveConnection) || m_alwaysLteUplink)
   {
     NS_LOG_INFO(this << " McUePdcp: Tx packet to uplink LTE stack");
     m_rlcSapProvider->TransmitPdcpPdu (params);

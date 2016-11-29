@@ -2466,7 +2466,7 @@ LteEnbRrc::GetTypeId (void)
                    "SNR threshold for outage events [dB]",
                    DoubleValue (-5.0),
                    MakeDoubleAccessor (&LteEnbRrc::m_outageThreshold),
-                   MakeDoubleChecker<long double> (-70.0, 10.0))
+                   MakeDoubleChecker<long double> (-10000.0, 10.0))
 
     // Cell selection related attribute
     .AddAttribute ("QRxLevMin",
@@ -3046,7 +3046,7 @@ LteEnbRrc::DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params)
     uint64_t imsi = imsiIter->first;
     double sinr = imsiIter->second;
 
-    // m_notifyMmWaveSinrTrace(imsi, mmWaveCellId, sinr);
+    m_notifyMmWaveSinrTrace(imsi, mmWaveCellId, sinr);
     
     NS_LOG_LOGIC("Imsi " << imsi << " sinr " << sinr);
 

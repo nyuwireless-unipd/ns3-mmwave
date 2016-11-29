@@ -203,6 +203,7 @@ private:
   static const uint16_t m_maxPdcpSn = 4095;
 
   bool m_useMmWaveConnection;
+  bool m_alwaysLteUplink;
 
 };
 
