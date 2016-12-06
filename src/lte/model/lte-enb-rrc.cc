@@ -2357,6 +2357,7 @@ LteEnbRrc::LteEnbRrc ()
   m_imsiCellSinrMap.clear();
   m_x2_received_cnt = 0;
   m_switchEnabled = true;
+  m_lteCellId = 0;
 }
 
 
@@ -3017,12 +3018,17 @@ LteEnbRrc::DoUpdateUeSinrEstimate(LteEnbCphySapUser::UeAssociatedSinrInfo info)
   m_ueImsiSinrMap.insert(info.ueImsiSinrMap.begin(), info.ueImsiSinrMap.end());
   NS_LOG_LOGIC("number of SINR reported " << m_ueImsiSinrMap.size());
   // TODO report immediately or with some filtering 
-  EpcX2SapProvider::UeImsiSinrParams params;
-  params.targetCellId = m_lteCellId;
-  params.sourceCellId = m_cellId;
-  params.ueImsiSinrMap = m_ueImsiSinrMap;
-  m_x2SapProvider->SendUeSinrUpdate (params); 
-}
+  if(m_lteCellId > 0) // i.e., only if a LTE eNB was actually registered in the scenario 
+                      // (this is done when an X2 interface among mmWave eNBs and LTE eNB is added)
+  {
+    EpcX2SapProvider::UeImsiSinrParams params;
+    params.targetCellId = m_lteCellId;
+    params.sourceCellId = m_cellId;
+    params.ueImsiSinrMap = m_ueImsiSinrMap;
+    m_x2SapProvider->SendUeSinrUpdate (params); 
+  }
+
+  }
 
 void 
 LteEnbRrc::DoRecvUeSinrUpdate(EpcX2SapUser::UeImsiSinrParams params)

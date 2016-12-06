@@ -571,7 +571,8 @@ def configure(conf):
     add_gcc_flag('-Wno-error=deprecated-declarations')
     add_gcc_flag('-fstrict-aliasing')
     add_gcc_flag('-Wstrict-aliasing')
-
+    add_gcc_flag('-Wno-error=maybe-uninitialized')
+    
     try:
         conf.find_program('doxygen', var='DOXYGEN')
     except WafError:

@@ -1464,11 +1464,6 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 {
 	NS_LOG_FUNCTION(this);
 
-	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
-	{
-		AttachToClosestEnb(*i, enbDevices);
-	}
-
 	if(m_channelModelType == "ns3::MmWaveBeamforming")
 	{
 		m_beamforming->Initial(ueDevices,enbDevices);
@@ -1481,6 +1476,12 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 	{
 		m_raytracing->Initial(ueDevices,enbDevices);
 	}
+
+	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+	{
+		AttachToClosestEnb(*i, enbDevices);
+	}
+
 }
 
 // for MC devices
@@ -1554,6 +1555,23 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 	}
 	NS_ASSERT (closestEnbDevice != 0);
 
+	Ptr<MmWaveUeNetDevice> mmWaveUe = ueDevice->GetObject<MmWaveUeNetDevice> ();
+
+
+
+	// Necessary operation to connect MmWave UE to eNB at lower layers
+  	for(NetDeviceContainer::Iterator i = enbDevices.Begin (); i != enbDevices.End(); ++i)
+  	{
+  		Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> (); 
+		uint16_t mmWaveCellId = mmWaveEnb->GetCellId ();
+		Ptr<MmWavePhyMacCommon> configParams = mmWaveEnb->GetPhy()->GetConfigurationParameters();
+		mmWaveEnb->GetPhy ()->AddUePhy (mmWaveUe->GetImsi (), ueDevice);
+		// register MmWave eNBs informations in the MmWaveUePhy
+		mmWaveUe->GetPhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
+		//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
+		NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+  	}
+	
 	uint16_t cellId = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId ();
 	Ptr<MmWavePhyMacCommon> configParams = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy()->GetConfigurationParameters();
 
