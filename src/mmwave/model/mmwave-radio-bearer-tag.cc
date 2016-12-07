@@ -1,5 +1,4 @@
-/*******************************************************************************
- * /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+ /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
