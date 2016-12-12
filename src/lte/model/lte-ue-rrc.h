@@ -33,6 +33,9 @@
 #include <ns3/lte-radio-bearer-info.h>
 #include <map>
 #include <set>
+#include <ns3/lte-rlc.h>
+#include <ns3/lte-pdcp.h>
+#include <ns3/lte-rlc-am.h>
 
 namespace ns3 {
 
@@ -541,6 +544,18 @@ private:
    */
   void SwitchToState (State s);
 
+  /**
+   * Transfer the content of the buffers of RLC back into the PDCP, so
+   * that if a new RLC is available then the buffer content is not lost
+   * @params rlc the old RLC layer instance
+   * @params pdcp the PDCP instance connected to the new RLC instance
+   * @params lcid
+   */
+  void CopyRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint16_t lcid);
+  //Lossless HO: merge 2 buffers into 1 with increment order.
+  std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
+
+
   std::map<uint8_t, uint8_t> m_bid2DrbidMap;
 
   LteUeCphySapUser* m_cphySapUser;
@@ -996,6 +1011,10 @@ private:
   bool m_interRatHoCapable;
   LteRrcSap::RachConfigDedicated m_rachConfigDedicated;
   bool m_ncRaStarted;
+
+  // lossless HO
+  std::vector < Ptr<Packet> > m_rlcBufferToBeForwarded;
+  uint32_t m_rlcBufferToBeForwardedSize;
 
 }; // end of class LteUeRrc
 
