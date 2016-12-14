@@ -110,7 +110,7 @@ MmWaveChannelRaytracing::GetConfigurationParameters (void) const
 void
 MmWaveChannelRaytracing::LoadTraces()
 {
-	std::string filename = "src/mmwave/model/Raytracing/traces10cm.txt";
+	std::string filename = "src/mmwave/model/Raytracing/Quadriga.txt";
 	NS_LOG_FUNCTION (this << "Loading Raytracing file " << filename);
 	std::ifstream singlefile;
 	singlefile.open (filename.c_str (), std::ifstream::in);
@@ -267,6 +267,7 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 		rxAntennaNum[0] = sqrt (rxEnb->GetAntennaNum ());
 		rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
 
+
 		txAntennaArray = DynamicCast<AntennaArrayModel> (
 					txUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
@@ -282,17 +283,24 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 	key_t key = std::make_pair(txDevice,rxDevice);
 
 	double time = Simulator::Now().GetSeconds();
-	uint16_t traceIndex = (m_startDistance+time*m_speed)*100;
+	/*uint16_t traceIndex = (m_startDistance+time*m_speed)*100;
 	static uint16_t currentIndex = m_startDistance*100;
 	if(traceIndex > 26050)
 	{
 		NS_FATAL_ERROR ("The maximum trace index is 26050");
+	}*/
+	uint16_t traceIndex = (m_startDistance+time*m_speed)*6;
+	static uint16_t currentIndex = m_startDistance;
+	if(traceIndex > g_path.size())
+	{
+		NS_FATAL_ERROR ("The maximum trace index is reached");
 	}
 	if(traceIndex != currentIndex)
 	{
 		currentIndex = traceIndex;
 		m_channelMatrixMap.clear();
 	}
+	//NS_LOG_UNCOND (traceIndex);
 
 	std::map< key_t, Ptr<TraceParams> >::iterator it = m_channelMatrixMap.find (key);
 	if (it == m_channelMatrixMap.end ())
@@ -345,9 +353,6 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 	}
 
 	//	calculate antenna weights, better method should be implemented
-	bfParams->m_txW = txAntennaArray->GetBeamformingVector();
-	bfParams->m_rxW = rxAntennaArray->GetBeamformingVector();
-
 
 	std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
 	if(it1 != m_connectedPair.end ())
@@ -356,6 +361,11 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 		bfParams->m_rxW = CalcBeamformingVector(bfParams->m_channelParams->m_rxSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
 		txAntennaArray->SetBeamformingVector(bfParams->m_txW,rxDevice);
 		rxAntennaArray->SetBeamformingVector(bfParams->m_rxW,txDevice);
+	}
+	else
+	{
+		bfParams->m_txW = txAntennaArray->GetBeamformingVector();
+		bfParams->m_rxW = rxAntennaArray->GetBeamformingVector();
 	}
 
 	/*Vector rxSpeed = b->GetVelocity();
@@ -376,12 +386,12 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 		bfit++;
 		rxit++;
 		subChannel++;
-	}*/
-	//NS_LOG_UNCOND("Gain("<<10*log10(value/72)<<"dB)");
+	}
+	NS_LOG_UNCOND("Gain("<<10*log10(value/72)<<"dB)");*/
 
 	//NS_LOG_UNCOND ("TxAngle("<<txAngles.phi*180/M_PI<<") RxAngle("<<rxAngles.phi*180/M_PI
 	//		<<") Speed["<<relativeSpeed<<"]");
-	//NS_LOG_UNCOND ("Gain("<<10*Log10((*bfPsd)/(*txPsd))<<"dB)");
+	//NS_LOG_UNCOND ("Gain("<<10*Log10((*bfPsd))<<"dB)");
 	return bfPsd;
 
 
