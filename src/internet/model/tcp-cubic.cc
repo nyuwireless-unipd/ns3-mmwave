@@ -62,7 +62,6 @@ TcpCubic::TcpCubic (void)
   : m_retxThresh(3),
     m_inFastRec (false),
 	m_limitedTx (false), // mute valgrind, actual value set by the attribute system
-    m_cubeFactor((1ull << (10+3*BICTCP_HZ)) / 410),
     m_beta(717),
     m_bicScale(41),     // Based on Linux 3.11 implementation
     m_delayedAck( 2 << ACK_RATIO_SHIFT),
@@ -84,6 +83,9 @@ TcpCubic::TcpCubic (void)
 
   // Setup the cube_rtt_scale
   m_cubeRttScale = (m_bicScale * 10);
+
+  m_cubeFactor = (1ull << (10+3*BICTCP_HZ)) / (m_bicScale*10);
+
 }
 
 /**
@@ -138,12 +140,24 @@ TcpCubic::NewAck (const SequenceNumber32& seq)
                 " ssthresh " << m_ssThresh);
   /*From NewReno*/
   // Check for exit condition of fast recovery
-  /*if (m_inFastRec && seq < m_recover)
+  if (m_inFastRec && seq < m_recover)
     { // Partial ACK, partial window deflation (RFC2582 sec.3 bullet #5 paragraph 3)
 
-      m_cWnd += m_segmentSize - (seq - m_txBuffer->HeadSequence ());
+	  int tempCW = m_cWnd.Get();
+	  tempCW += m_segmentSize - (seq - m_txBuffer->HeadSequence ());
+	  if (tempCW > 0)
+	  {
+		  m_cWnd = tempCW;
+	  }
+	  else
+	  {
+		  m_cWnd = 0;
+	  }
+
       NS_LOG_INFO ("Partial ACK for seq " << seq << " in fast recovery: cwnd set to " << m_cWnd);
       m_txBuffer->DiscardUpTo(seq);  //Bug 1850:  retransmit before newack
+      DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
+      m_txBuffer->DiscardUpTo(seq+m_segmentSize);  //transmit twice ZML
       DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
       TcpSocketBase::NewAck (seq); // update m_nextTxSequence and send new data if allowed by window
       return;
@@ -153,18 +167,17 @@ TcpCubic::NewAck (const SequenceNumber32& seq)
       m_cWnd = std::min (m_ssThresh.Get (), BytesInFlight () + m_segmentSize);
       m_inFastRec = false;
       NS_LOG_INFO ("Received full ACK for seq " << seq <<". Leaving fast recovery with cwnd set to " << m_cWnd);
-    }*/
+    }
 
   //From Reno
   // Check for exit condition of fast recovery
-  if (m_inFastRec)
+  /*if (m_inFastRec)
     { // RFC2001, sec.4; RFC2581, sec.3.2
       // First new ACK after fast recovery: reset cwnd
-      //m_cWnd = m_ssThresh;
       m_cWnd = std::min (m_ssThresh.Get (), BytesInFlight () + m_segmentSize);
       m_inFastRec = false;
       NS_LOG_INFO ("Reset cwnd to " << m_cWnd);
-    };
+    };*/
 
   NS_LOG_DEBUG( "SegmentSize = " << m_segmentSize );
   // Check if the current cwnd < ssthresh, if so normal cwnd increase
