@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Michele Polese <michele.polese@gmail.com> 
+ *          Support for real S1AP link
  */
 
 #include "ns3/log.h"
