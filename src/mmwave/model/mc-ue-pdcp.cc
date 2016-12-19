@@ -221,12 +221,12 @@ McUePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   // WARN TODO hack: always use LTE for uplink (i.e. TCP acks)
   if(m_mmWaveRlcSapProvider == 0 || (!m_useMmWaveConnection) || m_alwaysLteUplink)
   {
-    NS_LOG_INFO(this << " McUePdcp: Tx packet to uplink LTE stack");
+    NS_LOG_INFO(this << " McUePdcp: Tx packet to uplink primary stack");
     m_rlcSapProvider->TransmitPdcpPdu (params);
   }
   else if (m_useMmWaveConnection)
   {
-    NS_LOG_INFO(this << " McUePdcp: Tx packet to uplink MmWave stack");
+    NS_LOG_INFO(this << " McUePdcp: Tx packet to uplink secondary stack");
     m_mmWaveRlcSapProvider->TransmitPdcpPdu (params);
   }
   else

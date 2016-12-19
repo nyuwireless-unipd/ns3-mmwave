@@ -225,7 +225,7 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
 
   if(m_epcX2PdcpProvider == 0 || (!m_useMmWaveConnection)) 
   {
-    NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink LTE stack");
+    NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink local stack");
 
     // Sender timestamp. We will use this to measure the delay on top of RLC
     PdcpTag pdcpTag (Simulator::Now ());

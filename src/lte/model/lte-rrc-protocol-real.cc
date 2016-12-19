@@ -582,9 +582,11 @@ LteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformation msg
     {
       Ptr<Node> node = *i;
       int nDevs = node->GetNDevices ();
+      NS_LOG_LOGIC("Consider UE with nDevs " << nDevs);
+
       for (int j = 0; j < nDevs; ++j)
         {
-          Ptr<LteUeNetDevice> ueDev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
+          Ptr<MmWaveUeNetDevice> ueDev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
           if (ueDev != 0)
           {
             ueRrc = ueDev->GetRrc ();              
@@ -624,6 +626,25 @@ LteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformation msg
                                      mcUeDev->GetMmWaveRrc()->GetLteUeRrcSapProvider (), 
                                      msg); 
               }          
+            }
+            else
+            {
+              // it may be a LTE device
+              Ptr<LteUeNetDevice> ueDev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
+              if (ueDev != 0)
+              {
+                ueRrc = ueDev->GetRrc ();              
+                NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+                if (ueRrc->GetCellId () == m_cellId)
+                {       
+                  NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
+                  ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+                  Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+                                       &LteUeRrcSapProvider::RecvSystemInformation,
+                                       ueRrc->GetLteUeRrcSapProvider (), 
+                                       msg);          
+                }             
+              }
             }
           }
         }
