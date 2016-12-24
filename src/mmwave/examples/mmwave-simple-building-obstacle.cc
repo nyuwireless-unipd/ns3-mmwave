@@ -43,6 +43,9 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.Parse (argc, argv);
 
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
+	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
+
   LogComponentEnable("LteRlcAm", LOG_LEVEL_LOGIC);
 
   /* Information regarding the traces generated:
