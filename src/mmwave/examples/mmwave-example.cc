@@ -66,14 +66,6 @@ main (int argc, char *argv[])
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
-  /* Information regarding the traces generated:
-   *
-   * 1. UE_1_SINR.txt : Gives the SINR for each sub-band
-   * 	Subframe no.  | Slot No. | Sub-band  | SINR (db)
-   *
-   * 2. UE_1_Tb_size.txt : Allocated transport block size
-   * 	Time (micro-sec)  |  Tb-size in bytes
-   * */
 
   Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
 
