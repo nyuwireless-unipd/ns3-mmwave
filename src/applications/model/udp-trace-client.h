@@ -35,7 +35,7 @@ class Packet;
 
 /**
  * \ingroup udpclientserver
- * \class UdpTraceClient
+ *
  * \brief A trace based streamer
  *
  * Sends UDP packets based on a trace file of an MPEG4 stream
@@ -78,22 +78,15 @@ public:
 
   /**
    * \brief set the remote address and port
-   * \param ip remote IPv4 address
-   * \param port remote port
-   */
-  void SetRemote (Ipv4Address ip, uint16_t port);
-  /**
-   * \brief set the remote address and port
-   * \param ip remote IPv6 address
-   * \param port remote port
-   */
-  void SetRemote (Ipv6Address ip, uint16_t port);
-  /**
-   * \brief set the remote address and port
    * \param ip remote IP address
    * \param port remote port
    */
   void SetRemote (Address ip, uint16_t port);
+  /**
+   * \brief set the remote address
+   * \param addr remote address
+   */
+  void SetRemote (Address addr);
 
   /**
    * \brief Set the trace file to be used by the application

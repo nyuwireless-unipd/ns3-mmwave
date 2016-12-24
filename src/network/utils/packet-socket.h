@@ -74,7 +74,22 @@ class PacketSocketAddress;
  * - Accept: not allowed
  *
  * - Listen: returns -1 (OPNOTSUPP)
+ *
+ * Socket data that is read from this socket using the methods returning
+ * an ns3::Packet object (i.e., Recv (), RecvMsg (), RecvFrom ()) will
+ * return Packet objects with three PacketTag objects attached.
+ * Applications may wish to read the extra out-of-band data provided in
+ * these tags, and may safely remove the tags from the Packet.
+ *
+ * - PacketSocketTag: contains destination address (type PacketSocketAddress)
+ *   and packet type of the received packet
+ *
+ * - DeviceNameTag:  contains the TypeId string of the relevant NetDevice
+ *
+ * \see class PacketSocketTag
+ * \see class DeviceNameTag
  */
+
 class PacketSocket : public Socket
 {
 public:
@@ -133,6 +148,7 @@ public:
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags,
                                 Address &fromAddress);
   virtual int GetSockName (Address &address) const; 
+  virtual int GetPeerName (Address &address) const;
   virtual bool SetAllowBroadcast (bool allowBroadcast);
   virtual bool GetAllowBroadcast () const;
 
@@ -177,7 +193,7 @@ private:
   };
 
   Ptr<Node> m_node;         //!< the associated node
-  enum SocketErrno m_errno; //!< Socket error code
+  mutable enum SocketErrno m_errno; //!< Socket error code
   bool m_shutdownSend;      //!< Send no longer allowed
   bool m_shutdownRecv;      //!< Receive no longer allowed
   enum State m_state;       //!< Socket state
@@ -186,7 +202,7 @@ private:
   uint32_t m_device;        //!< index of the bound NetDevice
   Address m_destAddr;       //!< Default destination address
 
-  std::queue<Ptr<Packet> > m_deliveryQueue; //!< Rx queue
+  std::queue<std::pair<Ptr<Packet>, Address> > m_deliveryQueue; //!< Rx queue
   uint32_t m_rxAvailable; //!< Rx queue size [Bytes]
 
   /// Traced callback: dropped packets

@@ -55,7 +55,7 @@
 #include "ns3/core-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/csma-module.h"
-#include "ns3/applications-module.h"
+#include "ns3/internet-apps-module.h"
 #include "ns3/ipv6-static-routing-helper.h"
 #include "ns3/ipv6-routing-table-entry.h"
 
@@ -162,6 +162,8 @@ int main (int argc, char **argv)
 
   Ipv6ListRoutingHelper listRH;
   listRH.Add (ripNgRouting, 0);
+  Ipv6StaticRoutingHelper staticRh;
+  listRH.Add (staticRh, 5);
 
   InternetStackHelper internetv6;
   internetv6.SetIpv4StackInstall (false);

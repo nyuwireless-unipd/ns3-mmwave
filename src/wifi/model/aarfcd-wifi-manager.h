@@ -35,6 +35,10 @@ struct AarfcdWifiRemoteStation;
  * The implementation available here was done by Federico Maguolo for a very early development
  * version of ns-3. Federico died before merging this work in ns-3 itself so his code was ported
  * to ns-3 later without his supervision.
+ *
+ * This RAA does not support HT or VHT modes and will error exit
+ * if the user tries to configure this RAA with a Wi-Fi MAC that
+ * has VhtSupported or HtSupported set.
  */
 class AarfcdWifiManager : public WifiRemoteStationManager
 {
@@ -42,6 +46,10 @@ public:
   static TypeId GetTypeId (void);
   AarfcdWifiManager ();
   virtual ~AarfcdWifiManager ();
+
+  // Inherited from WifiRemoteStationManager
+  virtual void SetHtSupported (bool enable);
+  virtual void SetVhtSupported (bool enable);
 
 private:
   // overriden from base class
@@ -68,7 +76,7 @@ private:
                                double ackSnr, WifiMode ackMode, double dataSnr);
   virtual void DoReportFinalRtsFailed (WifiRemoteStation *station);
   virtual void DoReportFinalDataFailed (WifiRemoteStation *station);
-  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint32_t size);
+  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
   virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
   virtual bool DoNeedRts (WifiRemoteStation *station,
                           Ptr<const Packet> packet, bool normally);

@@ -34,7 +34,8 @@ namespace ns3
 {
 
 /**
- * \class Ipv6InterfaceContainer
+ * \ingroup ipv6
+ *
  * \brief Keep track of a set of IPv6 interfaces.
  */
 class Ipv6InterfaceContainer
@@ -156,7 +157,7 @@ public:
    * \brief Fusion with another Ipv6InterfaceContainer.
    * \param c container
    */
-  void Add (Ipv6InterfaceContainer& c);
+  void Add (const Ipv6InterfaceContainer& c);
 
   /**
    * \brief Add a couple of name/interface.

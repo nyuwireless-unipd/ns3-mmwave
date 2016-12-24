@@ -33,6 +33,7 @@ Dcf::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Dcf")
     .SetParent<Object> ()
+    .SetGroupName ("Wifi")
     .AddAttribute ("MinCw", "The minimum value of the contention window.",
                    UintegerValue (15),
                    MakeUintegerAccessor (&Dcf::SetMinCw,
@@ -48,6 +49,11 @@ Dcf::GetTypeId (void)
                    MakeUintegerAccessor (&Dcf::SetAifsn,
                                          &Dcf::GetAifsn),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("TxopLimit", "The TXOP limit: the default value conforms to simple DCA.",
+                   TimeValue (MilliSeconds (0)),
+                   MakeTimeAccessor (&Dcf::SetTxopLimit,
+                                     &Dcf::GetTxopLimit),
+                   MakeTimeChecker ())
   ;
   return tid;
 }

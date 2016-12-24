@@ -19,6 +19,7 @@
  */
 #include <ns3/log.h>
 #include <ns3/test.h>
+#include <ns3/command-line.h>
 #include <ns3/packet.h>
 #include <ns3/lr-wpan-phy.h>
 #include <ns3/lr-wpan-mac.h>
@@ -41,7 +42,7 @@ ReceivePdDataIndication (uint32_t psduLength,
 {
   NS_LOG_UNCOND ("At: " << Simulator::Now ()
                         << " Received frame size: " << psduLength << " LQI: " <<
-                 lqi);
+                 (uint16_t) lqi);
 }
 
 void SendOnePacket (Ptr<LrWpanPhy> sender, Ptr<LrWpanPhy> receiver)
@@ -54,6 +55,9 @@ void SendOnePacket (Ptr<LrWpanPhy> sender, Ptr<LrWpanPhy> receiver)
 
 int main (int argc, char *argv[])
 {
+  CommandLine cmd;
+  cmd.Parse (argc, argv);
+  
   LogComponentEnableAll (LOG_PREFIX_FUNC);
   LogComponentEnable ("LrWpanPhy", LOG_LEVEL_ALL);
   LogComponentEnable ("SingleModelSpectrumChannel", LOG_LEVEL_ALL);
@@ -71,7 +75,7 @@ int main (int argc, char *argv[])
   Ptr<ConstantPositionMobilityModel> senderMobility = CreateObject<ConstantPositionMobilityModel> ();
   sender->SetMobility (senderMobility);
   Ptr<ConstantPositionMobilityModel> receiverMobility = CreateObject<ConstantPositionMobilityModel> ();
-  receiver->SetMobility (senderMobility);
+  receiver->SetMobility (receiverMobility);
 
 
   sender->SetPlmeSetTRXStateConfirmCallback (MakeCallback (&GetSetTRXStateConfirm));

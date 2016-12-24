@@ -439,11 +439,21 @@ bool SixLowPanNetDevice::DoSend (Ptr<Packet> packet,
 
   if (m_useIphc)
     {
+      NS_LOG_LOGIC ("Compressing packet using IPHC");
       origHdrSize += CompressLowPanIphc (packet, m_netDevice->GetAddress (), dest);
     }
   else
     {
+      NS_LOG_LOGIC ("Compressing packet using HC1");
       origHdrSize += CompressLowPanHc1 (packet, m_netDevice->GetAddress (), dest);
+    }
+
+  if (packet->GetSize () < m_compressionThreshold)
+    {
+      NS_LOG_LOGIC ("Compressed packet too short, using uncompressed one");
+      packet = origPacket;
+      SixLowPanIpv6 ipv6UncompressedHdr;
+      packet->AddHeader (ipv6UncompressedHdr);
     }
 
   if ( packet->GetSize () > m_netDevice->GetMtu () )
@@ -471,14 +481,6 @@ bool SixLowPanNetDevice::DoSend (Ptr<Packet> packet,
     }
   else
     {
-      if (packet->GetSize () < m_compressionThreshold)
-        {
-          NS_LOG_LOGIC ("Compressed packet too short, using uncompressed one");
-          packet = origPacket;
-          SixLowPanIpv6 ipv6UncompressedHdr;
-          packet->AddHeader (ipv6UncompressedHdr);
-        }
-
       m_txTrace (packet, m_node->GetObject<SixLowPanNetDevice> (), GetIfIndex ());
       if (doSendFrom)
         {
@@ -1406,7 +1408,7 @@ SixLowPanNetDevice::DecompressLowPanNhc (Ptr<Packet> packet, Address const &src,
 
   uint32_t blobSize;
   uint8_t blobData[260];
-  blobSize = encoding.CopyBlob (blobData + 2, 260);
+  blobSize = encoding.CopyBlob (blobData + 2, 260-2);
   uint8_t paddingSize = 0;
 
   uint8_t actualEncodedHeaderType = encoding.GetEid ();
@@ -1525,6 +1527,10 @@ SixLowPanNetDevice::DecompressLowPanNhc (Ptr<Packet> packet, Address const &src,
           blobData [0] = encoding.GetNextHeader ();
         }
       blobData [1] = 0;
+
+      blob.AddAtStart (blobSize + 2);
+      blob.Begin ().Write (blobData, blobSize + 2);
+
       fragHeader.Deserialize (blob.Begin ());
       packet->AddHeader (fragHeader);
       break;

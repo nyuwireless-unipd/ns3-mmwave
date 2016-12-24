@@ -879,7 +879,7 @@ PrintAttributeImplementations (std::ostream & os)
       { "Box",            "Box",            true,  "box.h"              },
       { "DataRate",       "DataRate",       true,  "data-rate.h"        },
       { "HtCapabilities", "HtCapabilities", true,  "ht-capabilities.h"  },
-      { "IeMeshId",       "IeMeshId",       true,  "id-dot11s-id.h"     },
+      { "IeMeshId",       "IeMeshId",       true,  "ie-dot11s-id.h"     },
       { "Ipv4Address",    "Ipv4Address",    true,  "ipv4-address.h"     },
       { "Ipv4Mask",       "Ipv4Mask",       true,  "ipv4-address.h"     },
       { "Ipv6Address",    "Ipv6Address",    true,  "ipv6-address.h"     },
@@ -908,7 +908,7 @@ PrintAttributeImplementations (std::ostream & os)
       { "Enum",           "int",            false, "enum.h"             },
       { "Integer",        "int64_t",        false, "integer.h"          },
       { "Pointer",        "Pointer",        false, "pointer.h"          },
-      { "RandomVariable", "RandomVariable", true,  "random-variable.h"  },
+      { "RandomVariable", "RandomVariable", true,  "random-variable-stream.h"  },
       { "String",         "std::string",    false, "string.h"           },
       { "Time",           "Time",           true,  "nstime.h"           },
       { "Uinteger",       "uint64_t",       false, "uinteger.h"         },
@@ -1262,7 +1262,6 @@ GetTypicalAggregations ()
   info.RecordAggregationInfo ("ns3::Node", "ns3::TcpSocketFactory");
   info.RecordAggregationInfo ("ns3::Node", "ns3::UdpSocketFactory");
   info.RecordAggregationInfo ("ns3::Node", "ns3::PacketSocketFactory");
-  info.RecordAggregationInfo ("ns3::Node", "ns3::olsr::RoutingProtocol");
   info.RecordAggregationInfo ("ns3::Node", "ns3::MobilityModel");
   info.RecordAggregationInfo ("ns3::Node", "ns3::Ipv4L3Protocol");
   info.RecordAggregationInfo ("ns3::Node", "ns3::Ipv4NixVectorRouting");

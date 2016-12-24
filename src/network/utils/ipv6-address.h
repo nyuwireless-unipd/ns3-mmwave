@@ -29,6 +29,7 @@
 #include "ns3/attribute-helper.h"
 #include "ns3/address.h"
 #include "ns3/ipv4-address.h"
+#include "ns3/deprecated.h"
 
 namespace ns3 { 
 
@@ -223,8 +224,12 @@ public:
 
   /**
    * \brief If the IPv6 address is "all hosts multicast" (ff02::3/8).
+   *
+   * \deprecated This function is deprecated because the address has been removed from RFCs.
+   *
    * \return true if "all hosts multicast", false otherwise
    */
+  NS_DEPRECATED
   bool IsAllHostsMulticast () const;
 
   /**
@@ -354,27 +359,27 @@ private:
   /**
    * \brief Equal to operator.
    *
-   * \param a the first operand
-   * \param b the first operand
-   * \returns true if the operands are equal
+   * \param a the first operand.
+   * \param b the first operand.
+   * \returns true if the operands are equal.
    */
   friend bool operator == (Ipv6Address const &a, Ipv6Address const &b);
 
   /**
    * \brief Not equal to operator.
    *
-   * \param a the first operand
-   * \param b the first operand
-   * \returns true if the operands are not equal
+   * \param a the first operand.
+   * \param b the first operand.
+   * \returns true if the operands are not equal.
    */
   friend bool operator != (Ipv6Address const &a, Ipv6Address const &b);
 
   /**
    * \brief Less than to operator.
    *
-   * \param a the first operand
-   * \param b the first operand
-   * \returns true if the first operand is less than the second
+   * \param a the first operand.
+   * \param b the first operand.
+   * \returns true if the first operand is less than the second.
    */
   friend bool operator < (Ipv6Address const &a, Ipv6Address const &b);
 };

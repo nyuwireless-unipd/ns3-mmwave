@@ -421,12 +421,9 @@ uint8_t Ipv6ExtensionFragment::Process (Ptr<Packet>& packet,
   return 0;
 }
 
-void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, uint32_t maxFragmentSize, std::list<Ptr<Packet> >& listFragments)
+void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, Ipv6Header ipv6Header, uint32_t maxFragmentSize, std::list<Ipv6PayloadHeaderPair>& listFragments)
 {
   Ptr<Packet> p = packet->Copy ();
-
-  Ipv6Header ipv6Header;
-  p->RemoveHeader (ipv6Header);
 
   uint8_t nextHeader = ipv6Header.GetNextHeader ();
   uint8_t ipv6HeaderSize = ipv6Header.GetSerializedSize ();
@@ -579,11 +576,12 @@ void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, uint32_t maxFragme
         }
 
       ipv6Header.SetPayloadLength (fragment->GetSize ());
-      fragment->AddHeader (ipv6Header);
 
       std::ostringstream oss;
+      oss << ipv6Header;
       fragment->Print (oss);
-      listFragments.push_back (fragment);
+
+      listFragments.push_back (Ipv6PayloadHeaderPair (fragment, ipv6Header));
     }
   while (moreFragment);
 
@@ -834,7 +832,7 @@ TypeId Ipv6ExtensionRoutingDemux::GetTypeId ()
   static TypeId tid = TypeId ("ns3::Ipv6ExtensionRoutingDemux")
     .SetParent<Object> ()
     .SetGroupName ("Internet")
-    .AddAttribute ("Routing Extensions", "The set of IPv6 Routing extensions registered with this demux.",
+    .AddAttribute ("RoutingExtensions", "The set of IPv6 Routing extensions registered with this demux.",
                    ObjectVectorValue (),
                    MakeObjectVectorAccessor (&Ipv6ExtensionRoutingDemux::m_extensionsRouting),
                    MakeObjectVectorChecker<Ipv6ExtensionRouting> ())
@@ -1020,7 +1018,6 @@ uint8_t Ipv6ExtensionLooseRouting::Process (Ptr<Packet>& packet,
       return routingHeader.GetSerializedSize ();
     }
 
-  routingHeader.SetLength (88);
   ipv6header.SetHopLimit (hopLimit - 1);
   p->AddHeader (routingHeader);
 

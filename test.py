@@ -54,7 +54,7 @@ interesting_config_items = [
     "ENABLE_TESTS",
     "EXAMPLE_DIRECTORIES",
     "ENABLE_PYTHON_BINDINGS",
-    "ENABLE_CLICK",
+    "NSCLICK",
     "ENABLE_BRITE",
     "ENABLE_OPENFLOW",
     "APPNAME",
@@ -69,7 +69,7 @@ ENABLE_REAL_TIME = False
 ENABLE_THREADING = False
 ENABLE_EXAMPLES = True
 ENABLE_TESTS = True
-ENABLE_CLICK = False
+NSCLICK = False
 ENABLE_BRITE = False
 ENABLE_OPENFLOW = False
 EXAMPLE_DIRECTORIES = []
@@ -767,6 +767,18 @@ def run_job_synchronously(shell_command, directory, valgrind, is_python, build_p
     elapsed_time = time.time() - start_time
 
     retval = proc.returncode
+    try:
+        stdout_results = stdout_results.decode()
+    except UnicodeDecodeError:
+        print("Non-decodable character in stdout output of %s" % cmd)
+        print(stdout_results)
+        retval = 1
+    try:
+        stderr_results = stderr_results.decode()
+    except UnicodeDecodeError:
+        print("Non-decodable character in stderr output of %s" % cmd)
+        print(stderr_results)
+        retval = 1
 
     #
     # valgrind sometimes has its own idea about what kind of memory management
@@ -1250,6 +1262,10 @@ def run_tests():
     # We can also use the --constrain option to provide an ordering of test 
     # execution quite easily.
     #
+
+    # Flag indicating a specific suite was explicitly requested
+    single_suite = False
+    
     if len(options.suite):
         # See if this is a valid test suite.
         path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list")
@@ -1258,6 +1274,7 @@ def run_tests():
             suites = suites.decode()
         if options.suite in suites.split('\n'):
             suites = options.suite + "\n"
+            single_suite = True
         else:
             print('The test suite was not run because an unknown test suite name was requested.', file=sys.stderr)
             sys.exit(2)
@@ -1277,7 +1294,7 @@ def run_tests():
     # indicated she wants to run or a list of test suites provided by
     # the test-runner possibly according to user provided constraints.
     # We go through the trouble of setting up the parallel execution 
-    # even in the case of a single suite to avoid having two process the
+    # even in the case of a single suite to avoid having to process the
     # results in two different places.
     #
     if isinstance(suites, bytes):
@@ -1287,8 +1304,9 @@ def run_tests():
     #
     # Performance tests should only be run when they are requested,
     # i.e. they are not run by default in test.py.
-    #
-    if options.constrain != 'performance':
+    # If a specific suite was requested we run it, even if
+    # it is a performance test.
+    if not single_suite and options.constrain != 'performance':
 
         # Get a list of all of the performance tests.
         path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --test-type=%s" % "performance")
@@ -1324,6 +1342,8 @@ def run_tests():
         else:
             proc = subprocess.Popen("sysctl -n hw.ncpu", shell = True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout_results, stderr_results = proc.communicate()
+            stdout_results = stdout_results.decode()
+            stderr_results = stderr_results.decode()
             if len(stderr_results) == 0:
                 processors = int(stdout_results)
 

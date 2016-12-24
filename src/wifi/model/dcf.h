@@ -22,6 +22,7 @@
 #define DCF_H
 
 #include "ns3/object.h"
+#include "ns3/nstime.h"
 
 namespace ns3 {
 
@@ -35,15 +36,15 @@ public:
   static TypeId GetTypeId (void);
 
   /**
-   * Set the minimum congestion window size.
+   * Set the minimum contention window size.
    *
-   * \param minCw the minimum congestion window size
+   * \param minCw the minimum contention window size
    */
   virtual void SetMinCw (uint32_t minCw) = 0;
   /**
-   * Set the maximum congestion window size.
+   * Set the maximum contention window size.
    *
-   * \param maxCw the maximum congestion window size
+   * \param maxCw the maximum contention window size
    */
   virtual void SetMaxCw (uint32_t maxCw) = 0;
   /**
@@ -53,16 +54,23 @@ public:
    * Calling this method after DcfManager::Add has been called is not recommended.
    */
   virtual void SetAifsn (uint32_t aifsn) = 0;
-  /**
-   * Return the minimum congestion window size.
+  /*
+   * Set the TXOP limit.
    *
-   * \return the minimum congestion window size
+   * \param txopLimit the TXOP limit.
+   * Value zero corresponds to default DCF.
+   */
+  virtual void SetTxopLimit (Time txopLimit) = 0;
+  /**
+   * Return the minimum contention window size.
+   *
+   * \return the minimum contention window size
    */
   virtual uint32_t GetMinCw (void) const = 0;
   /**
-   * Return the maximum congestion window size.
+   * Return the maximum contention window size.
    *
-   * \return the maximum congestion window size
+   * \return the maximum contention window size
    */
   virtual uint32_t GetMaxCw (void) const = 0;
   /**
@@ -71,6 +79,12 @@ public:
    * \return the number of slots that make up an AIFS
    */
   virtual uint32_t GetAifsn (void) const = 0;
+  /**
+   * Return the TXOP limit.
+   *
+   * \return the TXOP limit
+   */
+  virtual Time GetTxopLimit (void) const = 0;
 };
 
 } //namespace ns3

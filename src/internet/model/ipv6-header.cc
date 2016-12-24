@@ -32,8 +32,7 @@ NS_LOG_COMPONENT_DEFINE ("Ipv6Header");
 NS_OBJECT_ENSURE_REGISTERED (Ipv6Header);
 
 Ipv6Header::Ipv6Header ()
-  : m_version (6),
-    m_trafficClass (0),
+  : m_trafficClass (0),
     m_flowLabel (1),
     m_payloadLength (0),
     m_nextHeader (0),
@@ -130,9 +129,9 @@ TypeId Ipv6Header::GetInstanceTypeId (void) const
 
 void Ipv6Header::Print (std::ostream& os) const
 {
-  os << "("
-  "Version " << m_version << " "
+  os << "(Version 6 "
      << "Traffic class 0x" << std::hex << m_trafficClass << std::dec << " "
+     << "DSCP " << DscpTypeToString (GetDscp ()) << " "
      << "Flow Label 0x" << std::hex << m_flowLabel << std::dec << " "
      << "Payload Length " << m_payloadLength << " "
      << "Next Header " << std::dec << (uint32_t) m_nextHeader << " "
@@ -151,7 +150,7 @@ void Ipv6Header::Serialize (Buffer::Iterator start) const
   Buffer::Iterator i = start;
   uint32_t vTcFl = 0; /* version, Traffic Class and Flow Label fields */
 
-  vTcFl= (6 << 28) | (m_trafficClass << 20) | (m_flowLabel);
+  vTcFl = (6 << 28) | (m_trafficClass << 20) | (m_flowLabel);
 
   i.WriteHtonU32 (vTcFl);
   i.WriteHtonU16 (m_payloadLength);
@@ -168,9 +167,11 @@ uint32_t Ipv6Header::Deserialize (Buffer::Iterator start)
   uint32_t vTcFl = 0;
 
   vTcFl = i.ReadNtohU32 ();
-  m_version = vTcFl >> 28;
-
-  NS_ASSERT ((m_version) == 6);
+  if ((vTcFl >> 28) != 6)
+    {
+      NS_LOG_WARN ("Trying to decode a non-IPv6 header, refusing to do it.");
+      return 0;
+    }
 
   m_trafficClass = (uint8_t)((vTcFl >> 20) & 0x000000ff);
   m_flowLabel = vTcFl & 0xfff00000;
@@ -183,6 +184,73 @@ uint32_t Ipv6Header::Deserialize (Buffer::Iterator start)
 
   return GetSerializedSize ();
 }
+
+void Ipv6Header::SetDscp (DscpType dscp)
+{
+  NS_LOG_FUNCTION (this << dscp);
+  m_trafficClass &= 0x3; // Clear out the DSCP part, retain 2 bits of ECN
+  m_trafficClass |= (dscp << 2);
+}
+
+Ipv6Header::DscpType Ipv6Header::GetDscp (void) const
+{
+  NS_LOG_FUNCTION (this);
+  // Extract only first 6 bits of TOS byte, i.e 0xFC
+  return DscpType ((m_trafficClass & 0xFC) >> 2);
+}
+
+std::string Ipv6Header::DscpTypeToString (DscpType dscp) const
+{
+  NS_LOG_FUNCTION (this << dscp);
+  switch (dscp)
+    {
+      case DscpDefault:
+        return "Default";
+      case DSCP_CS1:
+        return "CS1";
+      case DSCP_AF11:
+        return "AF11";
+      case DSCP_AF12:
+        return "AF12";
+      case DSCP_AF13:
+        return "AF13";
+      case DSCP_CS2:
+        return "CS2";
+      case DSCP_AF21:
+        return "AF21";
+      case DSCP_AF22:
+        return "AF22";
+      case DSCP_AF23:
+        return "AF23";
+      case DSCP_CS3:
+        return "CS3";
+      case DSCP_AF31:
+        return "AF31";
+      case DSCP_AF32:
+        return "AF32";
+      case DSCP_AF33:
+        return "AF33";
+      case DSCP_CS4:
+        return "CS4";
+      case DSCP_AF41:
+        return "AF41";
+      case DSCP_AF42:
+        return "AF42";
+      case DSCP_AF43:
+        return "AF43";
+      case DSCP_CS5:
+        return "CS5";
+      case DSCP_EF:
+        return "EF";
+      case DSCP_CS6:
+        return "CS6";
+      case DSCP_CS7:
+        return "CS7";
+      default:
+        return "Unrecognized DSCP";
+    };
+}
+
 
 } /* namespace ns3 */
 

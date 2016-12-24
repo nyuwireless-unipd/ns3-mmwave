@@ -119,7 +119,7 @@ NscTcpSocketImpl::NscTcpSocketImpl(const NscTcpSocketImpl& sock)
     m_initialSsThresh (sock.m_initialSsThresh),
     m_lastMeasuredRtt (Seconds (0.0)),
     m_cnTimeout (sock.m_cnTimeout),
-    m_cnCount (sock.m_cnCount),
+    m_synRetries (sock.m_synRetries),
     m_rxAvailable (0),
     m_nscTcpSocket (0),
     m_sndBufSize (sock.m_sndBufSize)
@@ -461,14 +461,7 @@ NscTcpSocketImpl::RecvFrom (uint32_t maxSize, uint32_t flags,
 {
   NS_LOG_FUNCTION (this << maxSize << flags);
   Ptr<Packet> packet = Recv (maxSize, flags);
-  if (packet != 0)
-    {
-      SocketAddressTag tag;
-      bool found;
-      found = packet->PeekPacketTag (tag);
-      NS_ASSERT (found);
-      fromAddress = tag.GetAddress ();
-    }
+  GetPeerName (fromAddress);
   return packet;
 }
 
@@ -477,6 +470,21 @@ NscTcpSocketImpl::GetSockName (Address &address) const
 {
   NS_LOG_FUNCTION_NOARGS ();
   address = InetSocketAddress (m_localAddress, m_localPort);
+  return 0;
+}
+
+int
+NscTcpSocketImpl::GetPeerName (Address &address) const
+{
+  NS_LOG_FUNCTION (this << address);
+
+  if (!m_endPoint)
+    {
+      m_errno = ERROR_NOTCONN;
+      return -1;
+    }
+  address = InetSocketAddress (m_endPoint->GetPeerAddress (),
+                               m_endPoint->GetPeerPort ());
   return 0;
 }
 
@@ -615,10 +623,6 @@ bool NscTcpSocketImpl::ReadPendingData (void)
 
   Ptr<Packet> p =  Create<Packet> (buffer, len);
 
-  SocketAddressTag tag;
-
-  tag.SetAddress (m_peerAddress);
-  p->AddPacketTag (tag);
   m_deliveryQueue.push (p);
   m_rxAvailable += p->GetSize ();
 
@@ -778,21 +782,35 @@ NscTcpSocketImpl::GetConnTimeout (void) const
 }
 
 void 
-NscTcpSocketImpl::SetConnCount (uint32_t count)
+NscTcpSocketImpl::SetSynRetries (uint32_t count)
 {
-  m_cnCount = count;
+  m_synRetries = count;
 }
 
 uint32_t 
-NscTcpSocketImpl::GetConnCount (void) const
+NscTcpSocketImpl::GetSynRetries (void) const
 {
-  return m_cnCount;
+  return m_synRetries;
 }
 
 void 
 NscTcpSocketImpl::SetDelAckTimeout (Time timeout)
 {
   m_delAckTimeout = timeout;
+}
+
+void
+NscTcpSocketImpl::SetDataRetries (uint32_t retries)
+{
+  NS_LOG_FUNCTION (this << retries);
+  m_dataRetries = retries;
+}
+
+uint32_t
+NscTcpSocketImpl::GetDataRetries (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_dataRetries;
 }
 
 Time

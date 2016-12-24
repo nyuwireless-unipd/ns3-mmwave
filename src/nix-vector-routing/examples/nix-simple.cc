@@ -45,6 +45,9 @@ NS_LOG_COMPONENT_DEFINE ("NixSimpleExample");
 int
 main (int argc, char *argv[])
 {
+  CommandLine cmd;
+  cmd.Parse (argc, argv);
+  
   LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
@@ -68,14 +71,8 @@ main (int argc, char *argv[])
   // NixHelper to install nix-vector routing
   // on all nodes
   Ipv4NixVectorHelper nixRouting;
-  Ipv4StaticRoutingHelper staticRouting;
-
-  Ipv4ListRoutingHelper list;
-  list.Add (staticRouting, 0);
-  list.Add (nixRouting, 10);
-
   InternetStackHelper stack;
-  stack.SetRoutingHelper (list); // has effect on the next Install ()
+  stack.SetRoutingHelper (nixRouting); // has effect on the next Install ()
   stack.Install (allNodes);
 
   NetDeviceContainer devices12;

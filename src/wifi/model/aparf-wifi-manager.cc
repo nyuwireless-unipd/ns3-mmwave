@@ -62,12 +62,12 @@ AparfWifiManager::GetTypeId (void)
     .SetParent<WifiRemoteStationManager> ()
     .SetGroupName ("Wifi")
     .AddConstructor<AparfWifiManager> ()
-    .AddAttribute ("SuccessThreshold 1",
+    .AddAttribute ("SuccessThreshold1",
                    "The minimum number of successful transmissions in \"High\" state to try a new power or rate.",
                    UintegerValue (3),
                    MakeUintegerAccessor (&AparfWifiManager::m_succesMax1),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("SuccessThreshold 2",
+    .AddAttribute ("SuccessThreshold2",
                    "The minimum number of successful transmissions in \"Low\" state to try a new power or rate.",
                    UintegerValue (10),
                    MakeUintegerAccessor (&AparfWifiManager::m_succesMax2),
@@ -82,22 +82,22 @@ AparfWifiManager::GetTypeId (void)
                    UintegerValue (10),
                    MakeUintegerAccessor (&AparfWifiManager::m_powerMax),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("Power decrement step",
+    .AddAttribute ("PowerDecrementStep",
                    "Step size for decrement the power.",
                    UintegerValue (1),
                    MakeUintegerAccessor (&AparfWifiManager::m_powerDec),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("Power increment step",
+    .AddAttribute ("PowerIncrementStep",
                    "Step size for increment the power.",
                    UintegerValue (1),
                    MakeUintegerAccessor (&AparfWifiManager::m_powerInc),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("Rate decrement step",
+    .AddAttribute ("RateDecrementStep",
                    "Step size for decrement the rate.",
                    UintegerValue (1),
                    MakeUintegerAccessor (&AparfWifiManager::m_rateDec),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("Rate increment step",
+    .AddAttribute ("RateIncrementStep",
                    "Step size for increment the rate.",
                    UintegerValue (1),
                    MakeUintegerAccessor (&AparfWifiManager::m_rateInc),
@@ -318,9 +318,9 @@ AparfWifiManager::DoReportFinalDataFailed (WifiRemoteStation *station)
 }
 
 WifiTxVector
-AparfWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint32_t size)
+AparfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
-  NS_LOG_FUNCTION (this << st << size);
+  NS_LOG_FUNCTION (this << st);
   AparfWifiRemoteStation *station = (AparfWifiRemoteStation *) st;
   uint32_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
@@ -345,7 +345,16 @@ AparfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
-  return WifiTxVector (GetSupported (station, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
+  WifiTxVector rtsTxVector;
+  if (GetUseNonErpProtection () == false)
+    {
+      rtsTxVector = WifiTxVector (GetSupported (station, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
+    }
+  else
+    {
+      rtsTxVector = WifiTxVector (GetNonErpSupported (station, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
+    }
+  return rtsTxVector;
 }
 
 bool
@@ -353,6 +362,26 @@ AparfWifiManager::IsLowLatency (void) const
 {
   NS_LOG_FUNCTION (this);
   return true;
+}
+
+void
+AparfWifiManager::SetHtSupported (bool enable)
+{
+  //HT is not supported by this algorithm.
+  if (enable)
+    {
+      NS_FATAL_ERROR ("WifiRemoteStationManager selected does not support HT rates");
+    }
+}
+
+void
+AparfWifiManager::SetVhtSupported (bool enable)
+{
+  //VHT is not supported by this algorithm.
+  if (enable)
+    {
+      NS_FATAL_ERROR ("WifiRemoteStationManager selected does not support VHT rates");
+    }
 }
 
 } //namespace ns3

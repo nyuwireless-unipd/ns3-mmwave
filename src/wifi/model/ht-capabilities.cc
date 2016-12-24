@@ -175,9 +175,21 @@ HtCapabilities::SetTxMcsSetDefined (uint8_t txmcssetdefined)
 }
 
 void
+HtCapabilities::SetTxRxMcsSetUnequal (uint8_t txrxmcssetunequal)
+{
+  m_txRxMcsSetUnequal = txrxmcssetunequal;
+}
+
+void
 HtCapabilities::SetTxMaxNSpatialStreams (uint8_t maxtxspatialstreams)
 {
   m_txMaxNSpatialStreams = maxtxspatialstreams;
+}
+
+void
+HtCapabilities::SetTxUnequalModulation (uint8_t txunequalmodulation)
+{
+  m_txUnequalModulation = txunequalmodulation;
 }
 
 uint8_t
@@ -237,13 +249,29 @@ HtCapabilities::GetRxMcsBitmask ()
 }
 
 bool
-HtCapabilities::IsSupportedMcs (uint8_t mcs)
+HtCapabilities::IsSupportedMcs (uint8_t mcs) const
 {
   if (m_rxMcsBitmask[mcs] == 1)
     {
       return true;
     }
   return false;
+}
+
+uint8_t
+HtCapabilities::GetRxHighestSupportedAntennas (void) const
+{
+  for (uint8_t nRx = 2; nRx <= 4; nRx++)
+  {
+    for (uint8_t mcs = (nRx - 1) * 8; mcs <= ((7 * nRx) + (nRx - 1)); mcs++)
+    {
+      if (IsSupportedMcs (mcs) == false)
+        {
+          return (nRx - 1);
+        }
+    }
+  }
+  return 4;
 }
 
 uint16_t
@@ -259,9 +287,22 @@ HtCapabilities::GetTxMcsSetDefined (void) const
 }
 
 uint8_t
+HtCapabilities::GetTxRxMcsSetUnequal (void) const
+{
+  return m_txRxMcsSetUnequal;
+}
+
+
+uint8_t
 HtCapabilities::GetTxMaxNSpatialStreams (void) const
 {
   return m_txMaxNSpatialStreams;
+}
+
+uint8_t
+HtCapabilities::GetTxUnequalModulation (void) const
+{
+  return m_txUnequalModulation;
 }
 
 uint8_t

@@ -21,6 +21,7 @@
 #include "wifi-mac.h"
 #include "dcf.h"
 #include "ns3/uinteger.h"
+#include "ns3/boolean.h"
 #include "ns3/trace-source-accessor.h"
 
 namespace ns3 {
@@ -351,10 +352,9 @@ WifiMac::Configure80211g (void)
 {
   SetSifs (MicroSeconds (10));
   // Slot time defaults to the "long slot time" of 20 us in the standard
-  // according to mixed 802.11b/g deployments.  Short slot time is supported
-  // if the user sets the slot to 9 us *after* calling Configure80211g().
-  // The other parameters below should also be adjusted accordingly as they
-  // depend on slot time.
+  // according to mixed 802.11b/g deployments.  Short slot time is enabled
+  // if the user sets the ShortSlotTimeSupported flag to true and when the BSS
+  // consists of only ERP STAs capable of supporting this option.
   SetSlot (MicroSeconds (20));
   SetEifsNoDifs (MicroSeconds (10 + 304));
   SetPifs (MicroSeconds (10 + 20));
@@ -390,7 +390,7 @@ WifiMac::Configure80211n_2_4Ghz (void)
   Configure80211g ();
   SetRifs (MicroSeconds (2));
   SetBasicBlockAckTimeout (GetSifs () + GetSlot () + GetDefaultBasicBlockAckDelay () + GetDefaultMaxPropagationDelay () * 2);
-  SetCompressedBlockAckTimeout (GetSifs () + GetSlot () + GetDefaultCompressedBlockAckDelay () + GetDefaultMaxPropagationDelay () * 2);
+  SetCompressedBlockAckTimeout (GetSifs () + GetSlot () + MicroSeconds (448) + GetDefaultMaxPropagationDelay () * 2);
 }
 void
 WifiMac::Configure80211n_5Ghz (void)
@@ -408,7 +408,7 @@ WifiMac::Configure80211ac (void)
 }
 
 void
-WifiMac::ConfigureDcf (Ptr<Dcf> dcf, uint32_t cwmin, uint32_t cwmax, enum AcIndex ac)
+WifiMac::ConfigureDcf (Ptr<Dcf> dcf, uint32_t cwmin, uint32_t cwmax, bool isDsss, enum AcIndex ac)
 {
   /* see IEE802.11 section 7.3.2.29 */
   switch (ac)
@@ -417,26 +417,45 @@ WifiMac::ConfigureDcf (Ptr<Dcf> dcf, uint32_t cwmin, uint32_t cwmax, enum AcInde
       dcf->SetMinCw ((cwmin + 1) / 4 - 1);
       dcf->SetMaxCw ((cwmin + 1) / 2 - 1);
       dcf->SetAifsn (2);
+      if (isDsss)
+        {
+          dcf->SetTxopLimit (MicroSeconds (3264));
+        }
+      else
+        {
+          dcf->SetTxopLimit (MicroSeconds (1504));
+        }
       break;
     case AC_VI:
       dcf->SetMinCw ((cwmin + 1) / 2 - 1);
       dcf->SetMaxCw (cwmin);
       dcf->SetAifsn (2);
+      if (isDsss)
+        {
+          dcf->SetTxopLimit (MicroSeconds (6016));
+        }
+      else
+        {
+          dcf->SetTxopLimit (MicroSeconds (3008));
+        }
       break;
     case AC_BE:
       dcf->SetMinCw (cwmin);
       dcf->SetMaxCw (cwmax);
       dcf->SetAifsn (3);
+      dcf->SetTxopLimit (MicroSeconds (0));
       break;
     case AC_BK:
       dcf->SetMinCw (cwmin);
       dcf->SetMaxCw (cwmax);
       dcf->SetAifsn (7);
+      dcf->SetTxopLimit (MicroSeconds (0));
       break;
     case AC_BE_NQOS:
       dcf->SetMinCw (cwmin);
       dcf->SetMaxCw (cwmax);
       dcf->SetAifsn (2);
+      dcf->SetTxopLimit (MicroSeconds (0));
       break;
     case AC_UNDEF:
       NS_FATAL_ERROR ("I don't know what to do with this");

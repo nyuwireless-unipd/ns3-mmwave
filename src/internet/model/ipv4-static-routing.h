@@ -44,11 +44,7 @@ class Ipv4MulticastRoutingTableEntry;
 class Node;
 
 /**
- * \ingroup internet
- * \defgroup ipv4StaticRouting Ipv4StaticRouting
- */
-/**
- * \ingroup ipv4StaticRouting
+ * \ingroup ipv4Routing
  * 
  * \brief Static routing protocol for IP version 4 stacks.
  *
@@ -416,14 +412,6 @@ private:
    */
   Ptr<Ipv4MulticastRoute> LookupStatic (Ipv4Address origin, Ipv4Address group,
                                         uint32_t interface);
-
-  /**
-   * \brief Choose the source address to use with destination address.
-   * \param interface interface index
-   * \param dest IPv4 destination address
-   * \return IPv4 source address to use
-   */
-  Ipv4Address SourceAddressSelection (uint32_t interface, Ipv4Address dest);
 
   /**
    * \brief the forwarding table for network.

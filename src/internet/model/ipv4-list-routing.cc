@@ -74,15 +74,15 @@ Ipv4ListRouting::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 {
   NS_LOG_FUNCTION (this << stream);
   *stream->GetStream () << "Node: " << m_ipv4->GetObject<Node> ()->GetId () 
-                        << " Time: " << Simulator::Now ().GetSeconds () << "s "
-                        << "Ipv4ListRouting table" << std::endl;
+                        << ", Time: " << Now().As (Time::S)
+                        << ", Local time: " << GetObject<Node> ()->GetLocalTime ().As (Time::S)
+                        << ", Ipv4ListRouting table" << std::endl;
   for (Ipv4RoutingProtocolList::const_iterator i = m_routingProtocols.begin ();
        i != m_routingProtocols.end (); i++)
     {
       *stream->GetStream () << "  Priority: " << (*i).first << " Protocol: " << (*i).second->GetInstanceTypeId () << std::endl;
       (*i).second->PrintRoutingTable (stream);
     }
-  *stream->GetStream () << std::endl;
 }
 
 void
@@ -161,7 +161,7 @@ Ipv4ListRouting::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<
     {
       NS_LOG_LOGIC ("Forwarding disabled for this interface");
       ecb (p, header, Socket::ERROR_NOROUTETOHOST);
-      return false;
+      return true;
     }
   // Next, try to find a route
   // If we have already delivered a packet locally (e.g. multicast)

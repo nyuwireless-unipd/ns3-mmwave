@@ -162,6 +162,14 @@ InterferenceHelper::Add (uint32_t size, WifiTxVector txVector,
   return event;
 }
 
+void
+InterferenceHelper::AddForeignSignal (Time duration, double rxPowerW)
+{
+  // Parameters other than duration and rxPowerW are unused for this type
+  // of signal, so we provide dummy versions
+  WifiTxVector fakeTxVector;
+  Add (0, fakeTxVector, WIFI_PREAMBLE_NONE, duration, rxPowerW);
+}
 
 void
 InterferenceHelper::SetNoiseFigure (double value)
@@ -273,7 +281,7 @@ InterferenceHelper::CalculateChunkSuccessRate (double snir, Time duration, WifiM
     {
       return 1.0;
     }
-  uint32_t rate = mode.GetPhyRate (txVector.GetChannelWidth (), txVector.IsShortGuardInterval (), 1);
+  uint32_t rate = mode.GetPhyRate (txVector);
   uint64_t nbits = (uint64_t)(rate * duration.GetSeconds ());
   double csr = m_errorRateModel->GetChunkSuccessRate (mode, txVector, snir, (uint32_t)nbits);
   return csr;

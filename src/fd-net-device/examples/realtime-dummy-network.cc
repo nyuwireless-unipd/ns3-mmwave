@@ -26,7 +26,7 @@
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/fd-net-device-module.h"
-#include "ns3/applications-module.h"
+#include "ns3/internet-apps-module.h"
 
 using namespace ns3;
 
@@ -35,6 +35,8 @@ NS_LOG_COMPONENT_DEFINE ("RealtimeDummyNetworkExample");
 int
 main (int argc, char *argv[])
 {
+  CommandLine cmd;
+  cmd.Parse (argc, argv);
 
   GlobalValue::Bind ("SimulatorImplementationType", StringValue ("ns3::RealtimeSimulatorImpl"));
   GlobalValue::Bind ("ChecksumEnabled", BooleanValue (true));

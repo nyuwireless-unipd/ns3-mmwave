@@ -37,7 +37,6 @@
 #include "ns3/pcap-file.h"
 #include "ns3/aodv-helper.h"
 #include "ns3/v4ping-helper.h"
-#include "ns3/nqos-wifi-mac-helper.h"
 #include "ns3/config.h"
 #include "ns3/inet-socket-address.h"
 #include "ns3/data-rate.h"
@@ -57,7 +56,9 @@ Bug772ChainTest::Bug772ChainTest (const char * const prefix, const char * const 
   m_time (t),
   m_size (size),
   m_step (120),
-  m_port (9){
+  m_port (9),
+  m_receivedPackets (0)
+{
 }
 
 Bug772ChainTest::~Bug772ChainTest ()
@@ -71,9 +72,15 @@ Bug772ChainTest::SendData (Ptr<Socket> socket)
   if (Simulator::Now () < m_time)
     {
       socket->Send (Create<Packet> (1000));
-      Simulator::ScheduleWithContext (socket->GetNode ()->GetId (), Seconds (0.125),
+      Simulator::ScheduleWithContext (socket->GetNode ()->GetId (), Seconds (0.25),
                                       &Bug772ChainTest::SendData, this, socket);
     }
+}
+
+void
+Bug772ChainTest::HandleRead (Ptr<Socket> socket)
+{
+  m_receivedPackets++;
 }
 
 void
@@ -82,10 +89,13 @@ Bug772ChainTest::DoRun ()
   RngSeedManager::SetSeed (12345);
   RngSeedManager::SetRun (7);
 
+  // Default of 3 will cause packet loss 
+  Config::SetDefault ("ns3::ArpCache::PendingQueueSize", UintegerValue (10));  
+
   CreateNodes ();
   CreateDevices ();
 
-  Simulator::Stop (m_time);
+  Simulator::Stop (m_time + Seconds (1));  // Allow buffered packets to clear
   Simulator::Run ();
   Simulator::Destroy ();
 
@@ -116,7 +126,7 @@ Bug772ChainTest::CreateDevices ()
 {
   int64_t streamsUsed = 0;
   // 1. Setup WiFi
-  NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
+  WifiMacHelper wifiMac;
   wifiMac.SetType ("ns3::AdhocWifiMac");
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
   // This test suite output was originally based on YansErrorRateModel
@@ -124,7 +134,7 @@ Bug772ChainTest::CreateDevices ()
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
   Ptr<YansWifiChannel> chan = wifiChannel.Create ();
   wifiPhy.SetChannel (chan);
-  WifiHelper wifi = WifiHelper::Default ();
+  WifiHelper wifi;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"), "RtsCtsThreshold", StringValue ("2200"));
   NetDeviceContainer devices = wifi.Install (wifiPhy, wifiMac, *m_nodes); 
 
@@ -163,17 +173,14 @@ Bug772ChainTest::CreateDevices ()
   m_recvSocket->Bind (InetSocketAddress (Ipv4Address::GetAny (), m_port));
   m_recvSocket->Listen ();
   m_recvSocket->ShutdownSend ();
+  m_recvSocket->SetRecvCallback (MakeCallback (&Bug772ChainTest::HandleRead, this));
 
-  // 4. write PCAP on the first and last nodes only
-  wifiPhy.EnablePcap (CreateTempDirFilename (m_prefix), devices.Get (0));
-  wifiPhy.EnablePcap (CreateTempDirFilename (m_prefix), devices.Get (m_size-1));
 }
 
 void
 Bug772ChainTest::CheckResults ()
 {
-  for (uint32_t i = 0; i < m_size; i += (m_size - 1) /*first and last nodes only*/)
-    {
-      NS_PCAP_TEST_EXPECT_EQ(m_prefix << "-" << i << "-0.pcap");
-    }
+  // We should have sent 8 packets (every 0.25 seconds from time 1 to time 3)
+  // Check that the received packet count is 8
+  NS_TEST_EXPECT_MSG_EQ (m_receivedPackets, 8, "Did not receive expected 8 packets");
 }

@@ -37,6 +37,7 @@ class Packet;
 
 /**
  * \ingroup socket
+ * \ingroup tcp
  *
  * \brief (abstract) base class of all TcpSockets
  *
@@ -171,13 +172,25 @@ private:
    * \brief Set the number of connection retries before giving up.
    * \param count the number of connection retries
    */
-  virtual void SetConnCount (uint32_t count) = 0;
+  virtual void SetSynRetries (uint32_t count) = 0;
 
   /**
    * \brief Get the number of connection retries before giving up.
    * \returns the number of connection retries
    */
-  virtual uint32_t GetConnCount (void) const = 0;
+  virtual uint32_t GetSynRetries (void) const = 0;
+
+  /**
+   * \brief Set the number of data transmission retries before giving up.
+   * \param retries the number of data transmission retries
+   */
+  virtual void SetDataRetries (uint32_t retries) = 0;
+
+  /**
+   * \brief Get the number of data transmission retries before giving up.
+   * \returns the number of data transmission retries
+   */
+  virtual uint32_t GetDataRetries (void) const = 0;
 
   /**
    * \brief Set the time to delay an ACK.

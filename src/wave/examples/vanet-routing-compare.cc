@@ -662,18 +662,15 @@ RoutingHelper::SetupRoutingMessages (NodeContainer & c,
 }
 
 static inline std::string
-PrintReceivedRoutingPacket (Ptr<Socket> socket, Ptr<Packet> packet)
+PrintReceivedRoutingPacket (Ptr<Socket> socket, Ptr<Packet> packet, Address srcAddress)
 {
-  SocketAddressTag tag;
-  bool found;
-  found = packet->PeekPacketTag (tag);
   std::ostringstream oss;
 
   oss << Simulator::Now ().GetSeconds () << " " << socket->GetNode ()->GetId ();
 
-  if (found)
+  if (InetSocketAddress::IsMatchingType (srcAddress))
     {
-      InetSocketAddress addr = InetSocketAddress::ConvertFrom (tag.GetAddress ());
+      InetSocketAddress addr = InetSocketAddress::ConvertFrom (srcAddress);
       oss << " received one packet from " << addr.GetIpv4 ();
     }
   else
@@ -687,7 +684,8 @@ void
 RoutingHelper::ReceiveRoutingPacket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet;
-  while ((packet = socket->Recv ()))
+  Address srcAddress;
+  while ((packet = socket->RecvFrom (srcAddress)))
     {
       // application data, for goodput
       uint32_t RxRoutingBytes = packet->GetSize ();
@@ -695,7 +693,7 @@ RoutingHelper::ReceiveRoutingPacket (Ptr<Socket> socket)
       GetRoutingStats ().IncRxPkts ();
       if (m_log != 0)
         {
-          NS_LOG_UNCOND (m_protocolName + " " + PrintReceivedRoutingPacket (socket, packet));
+          NS_LOG_UNCOND (m_protocolName + " " + PrintReceivedRoutingPacket (socket, packet, srcAddress));
         }
     }
 }
@@ -1326,7 +1324,7 @@ VanetRoutingExperiment::VanetRoutingExperiment ()
     // 1=802.11p
     m_80211mode (1),
     m_traceFile (""),
-    m_logFile ("low_ct-unterstrass-1day.filt.5.adj.log"),
+    m_logFile ("low99-ct-unterstrass-1day.filt.7.adj.log"),
     m_mobility (1),
     m_nNodes (156),
     m_TotalSimTime (300.01),
@@ -1529,11 +1527,11 @@ static ns3::GlobalValue g_phyMode ("VRCphyMode",
                                    ns3::MakeStringChecker ());
 static ns3::GlobalValue g_traceFile ("VRCtraceFile",
                                      "Mobility trace filename",
-                                     ns3::StringValue ("./src/wave/examples/low_ct-unterstrass-1day.filt.5.adj.mob"),
+                                     ns3::StringValue ("./src/wave/examples/low99-ct-unterstrass-1day.filt.7.adj.mob"),
                                      ns3::MakeStringChecker ());
 static ns3::GlobalValue g_logFile ("VRClogFile",
                                    "Log filename",
-                                   ns3::StringValue ("low_ct-unterstrass-1day.filt.5.adj.log"),
+                                   ns3::StringValue ("low99-ct-unterstrass-1day.filt.7.adj.log"),
                                    ns3::MakeStringChecker ());
 static ns3::GlobalValue g_rate ("VRCrate",
                                 "Data rate",
@@ -2280,8 +2278,8 @@ VanetRoutingExperiment::SetupAdhocDevices ()
   wavePhy.Set ("TxPowerStart",DoubleValue (m_txp));
   wavePhy.Set ("TxPowerEnd", DoubleValue (m_txp));
 
-  // Add a non-QoS upper mac, and disable rate control
-  NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
+  // Add an upper mac and disable rate control
+  WifiMacHelper wifiMac;
   wifiMac.SetType ("ns3::AdhocWifiMac");
   QosWaveMacHelper waveMac = QosWaveMacHelper::Default ();
 

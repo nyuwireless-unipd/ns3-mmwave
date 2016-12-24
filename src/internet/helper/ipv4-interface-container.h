@@ -29,6 +29,8 @@
 namespace ns3 {
 
 /**
+ * \ingroup ipv4
+ *
  * \brief holds a vector of std::pair of Ptr<Ipv4> and interface index.
  *
  * Typically ns-3 Ipv4Interfaces are installed on devices using an Ipv4 address
@@ -66,7 +68,7 @@ public:
    * Concatenate the entries in the other container with ours.
    * \param other container
    */
-  void Add (Ipv4InterfaceContainer other);
+  void Add (const Ipv4InterfaceContainer& other);
 
   /**
    * \brief Get an iterator which refers to the first pair in the 

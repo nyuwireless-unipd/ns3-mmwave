@@ -25,6 +25,7 @@
 #include "ns3/object.h"
 #include "ns3/mac48-address.h"
 #include "ns3/packet.h"
+#include "ns3/traced-value.h"
 #include "wifi-mode.h"
 #include "wifi-mac-header.h"
 #include "wifi-remote-station-manager.h"
@@ -34,6 +35,8 @@
 #include "block-ack-manager.h"
 #include <map>
 #include <list>
+
+class AmpduAggregationTest;
 
 namespace ns3 {
 
@@ -47,6 +50,7 @@ class WifiMacQueue;
 class RandomStream;
 class QosBlockedDestinations;
 class MsduAggregator;
+class MpduAggregator;
 class MgtAddBaResponseHeader;
 class BlockAckManager;
 class MgtDelBaHeader;
@@ -82,6 +86,9 @@ enum TypeOfStation
 class EdcaTxopN : public Dcf
 {
 public:
+  // Allow test cases to access private members
+  friend class ::AmpduAggregationTest;
+
   /**
    * typedef for a callback to invoke when a
    * packet transmission was completed successfully.
@@ -92,6 +99,8 @@ public:
    * packet transmission was failed.
    */
   typedef Callback <void, const WifiMacHeader&> TxFailed;
+  
+  std::map<Mac48Address, bool> m_aMpduEnabled;
 
   static TypeId GetTypeId (void);
   EdcaTxopN ();
@@ -149,9 +158,11 @@ public:
   virtual void SetMinCw (uint32_t minCw);
   virtual void SetMaxCw (uint32_t maxCw);
   virtual void SetAifsn (uint32_t aifsn);
+  virtual void SetTxopLimit (Time txopLimit);
   virtual uint32_t GetMinCw (void) const;
   virtual uint32_t GetMaxCw (void) const;
   virtual uint32_t GetAifsn (void) const;
+  virtual Time GetTxopLimit (void) const;
 
   /**
    * Return the MacLow associated with this EdcaTxopN.
@@ -161,6 +172,8 @@ public:
   Ptr<MacLow> Low (void);
 
   Ptr<MsduAggregator> GetMsduAggregator (void) const;
+  Ptr<MpduAggregator> GetMpduAggregator (void) const;
+
   /**
    * \param recipient address of the peer station
    * \param tid traffic ID.
@@ -169,7 +182,7 @@ public:
    * Checks if a block ack agreement exists with station addressed by
    * <i>recipient</i> for tid <i>tid</i>.
    */
-  bool GetBaAgreementExists (Mac48Address address, uint8_t tid);
+  bool GetBaAgreementExists (Mac48Address address, uint8_t tid) const;
   /**
    * \param recipient address of peer station involved in block ack mechanism.
    * \param tid traffic ID.
@@ -252,22 +265,28 @@ public:
    *
    * \param blockAck
    * \param recipient
+   * \param rxSnr SNR of the block ack itself
    * \param txMode
+   * \param dataSnr reported data SNR from the peer
    */
-  void GotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address recipient, WifiMode txMode);
+  void GotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address recipient, double rxSnr, WifiMode txMode, double dataSnr);
   /**
    * Event handler when a Block ACK timeout has occurred.
    */
-  void MissedBlockAck (void);
+  void MissedBlockAck (uint32_t nMpdus);
   void GotAddBaResponse (const MgtAddBaResponseHeader *respHdr, Mac48Address recipient);
   void GotDelBaFrame (const MgtDelBaHeader *delBaHdr, Mac48Address recipient);
   /**
-   * Event handler when an ACK is received.
+   * Event handler when an ACK is missed.
    */
   void MissedAck (void);
   /**
    * Start transmission for the next fragment.
    * This is called for fragment only.
+   */
+  void StartNextFragment (void);
+  /**
+   * Start transmission for the next packet if allowed by the TxopLimit.
    */
   void StartNext (void);
   /**
@@ -288,26 +307,23 @@ public:
    */
   void StartAccessIfNeeded (void);
   /**
-   * Check if the current packet should be sent with a RTS protection.
-   *
-   * \return true if RTS protection should be used,
-   *         false otherwise
-   */
-  bool NeedRts (void);
-  /**
    * Check if RTS should be re-transmitted if CTS was missed.
    *
+   * \param packet current packet being transmitted
+   * \param hdr current header being transmitted
    * \return true if RTS should be re-transmitted,
    *         false otherwise
    */
-  bool NeedRtsRetransmission (void);
+  bool NeedRtsRetransmission (Ptr<const Packet> packet, const WifiMacHeader &hdr);
   /**
    * Check if DATA should be re-transmitted if ACK was missed.
    *
+   * \param packet current packet being transmitted
+   * \param hdr current header being transmitted
    * \return true if DATA should be re-transmitted,
    *         false otherwise
    */
-  bool NeedDataRetransmission (void);
+  bool NeedDataRetransmission (Ptr<const Packet> packet, const WifiMacHeader &hdr);
   /**
    * Check if Block ACK Request should be re-transmitted.
    *
@@ -379,6 +395,7 @@ public:
   void Queue (Ptr<const Packet> packet, const WifiMacHeader &hdr);
 
   void SetMsduAggregator (Ptr<MsduAggregator> aggr);
+  void SetMpduAggregator (Ptr<MpduAggregator> aggr);
 
   /**
    * \param packet packet to send
@@ -411,8 +428,8 @@ public:
   void SetBlockAckInactivityTimeout (uint16_t timeout);
   void SendDelbaFrame (Mac48Address addr, uint8_t tid, bool byOriginator);
   void CompleteMpduTx (Ptr<const Packet> packet, WifiMacHeader hdr, Time tstamp);
-  bool GetAmpduExist (void);
-  void SetAmpduExist (bool ampdu);
+  bool GetAmpduExist (Mac48Address dest) const;
+  void SetAmpduExist (Mac48Address dest, bool enableAmpdu);
 
   /**
    * Return the next sequence number for the given header.
@@ -517,6 +534,23 @@ private:
    * if an established block ack agreement exists with the receiver.
    */
   void VerifyBlockAck (void);
+  /**
+   * Get Traffic ID of the current packet.
+   */
+  uint8_t GetCurrentTid () const;
+  /*
+   * Return the remaining duration in the current TXOP.
+   *
+   * \return the remaining duration in the current TXOP
+   */
+  Time GetTxopRemaining (void);
+  /*
+   * Check if the station has TXOP granted for the next MPDU.
+   *
+   * \return true if the station has TXOP granted for the next MPDU,
+   *         false otherwise
+   */
+  bool HasTxop (void);
 
   AcIndex m_ac;
   class Dcf;
@@ -543,7 +577,8 @@ private:
   Ptr<const Packet> m_currentPacket;
 
   WifiMacHeader m_currentHdr;
-  Ptr<MsduAggregator> m_aggregator;
+  Ptr<MsduAggregator> m_msduAggregator;
+  Ptr<MpduAggregator> m_mpduAggregator;
   TypeOfStation m_typeOfStation;
   QosBlockedDestinations *m_qosBlockedDestinations;
   BlockAckManager *m_baManager;
@@ -555,7 +590,10 @@ private:
   Time m_currentPacketTimestamp;
   uint16_t m_blockAckInactivityTimeout;
   struct Bar m_currentBar;
-  bool m_ampduExist;
+  Time m_startTxop;
+  bool m_isAccessRequestedForRts;
+  TracedValue<uint32_t> m_backoffTrace;
+  TracedValue<uint32_t> m_cwTrace;
 };
 
 } //namespace ns3

@@ -28,6 +28,7 @@
 #include "ns3/traced-callback.h"
 #include "supported-rates.h"
 #include "amsdu-subframe-header.h"
+#include "capability-information.h"
 
 namespace ns3  {
 
@@ -171,17 +172,21 @@ private:
    */
   void SetState (enum MacState value);
   /**
-   * Return the HT capability of the current AP.
+   * Set the EDCA parameters.
    *
-   * \return the HT capability that we support
+   * \param ac the access class
+   * \param cwMin the minimum contention window size
+   * \param cwMax the maximum contention window size
+   * \param aifsn the number of slots that make up an AIFS
+   * \param txopLimit the TXOP limit
    */
-  HtCapabilities GetHtCapabilities (void) const;
+  void SetEdcaParameters (AcIndex ac, uint8_t cwMin, uint8_t cwMax, uint8_t aifsn, Time txopLimit);
   /**
-   * Return the VHT capability of the current AP.
+   * Return the Capability information of the current STA.
    *
-   * \return the VHT capability that we support
+   * \return the Capability information that we support
    */
-  VhtCapabilities GetVhtCapabilities (void) const;
+  CapabilityInformation GetCapabilities (void) const;
 
   enum MacState m_state;
   Time m_probeRequestTimeout;
