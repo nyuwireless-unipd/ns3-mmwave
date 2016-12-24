@@ -36,6 +36,10 @@ struct RraaWifiRemoteStation;
  * "Robust rate adaptation for 802.11 wireless networks"
  * by "Starsky H. Y. Wong", "Hao Yang", "Songwu Lu", and,
  * "Vaduvur Bharghavan" published in Mobicom 06.
+ *
+ * This RAA does not support HT or VHT modes and will error exit
+ * if the user tries to configure this RAA with a Wi-Fi MAC that
+ * has VhtSupported or HtSupported set.
  */
 class RraaWifiManager : public WifiRemoteStationManager
 {
@@ -45,6 +49,9 @@ public:
   RraaWifiManager ();
   virtual ~RraaWifiManager ();
 
+  // Inherited from WifiRemoteStationManager
+  virtual void SetHtSupported (bool enable);
+  virtual void SetVhtSupported (bool enable);
 
 private:
   struct ThresholdsItem
@@ -67,7 +74,7 @@ private:
                                double ackSnr, WifiMode ackMode, double dataSnr);
   virtual void DoReportFinalRtsFailed (WifiRemoteStation *station);
   virtual void DoReportFinalDataFailed (WifiRemoteStation *station);
-  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint32_t size);
+  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
   virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
   virtual bool DoNeedRts (WifiRemoteStation *st,
                           Ptr<const Packet> packet, bool normally);

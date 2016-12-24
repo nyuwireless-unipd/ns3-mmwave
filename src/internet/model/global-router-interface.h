@@ -40,6 +40,8 @@ class GlobalRouter;
 class Ipv4GlobalRouting;
 
 /**
+ * \ingroup globalrouting
+ *
  * @brief A single link record for a link state advertisement.
  *
  * The GlobalRoutingLinkRecord is modeled after the OSPF link record field of
@@ -766,24 +768,21 @@ private:
    * connecting to the channel becomes the designated router for the link.
    *
    * \param ndLocal local NetDevice to scan
-   * \param allowRecursion Recursively look for routers down bridge port
    * \returns the IP address of the designated router
    */
-  Ipv4Address FindDesignatedRouterForLink (Ptr<NetDevice> ndLocal, bool allowRecursion) const;
+  Ipv4Address FindDesignatedRouterForLink (Ptr<NetDevice> ndLocal) const;
 
   /**
    * \brief Checks for the presence of another router on the NetDevice
    *
    * Given a node and an attached net device, take a look off in the channel to
    * which the net device is attached and look for a node on the other side
-   * that has a GlobalRouter interface aggregated.  Life gets more complicated
-   * when there is a bridged net device on the other side.
+   * that has a GlobalRouter interface aggregated.  
    *
    * \param nd NetDevice to scan
-   * \param allowRecursion Recursively look for routers down bridge port
    * \returns true if a router is found
    */
-  bool AnotherRouterOnLink (Ptr<NetDevice> nd, bool allowRecursion) const;
+  bool AnotherRouterOnLink (Ptr<NetDevice> nd) const;
 
   /**
    * \brief Process a generic broadcast link
@@ -829,6 +828,21 @@ private:
   void BuildNetworkLSAs (NetDeviceContainer c);
 
   /**
+   * \brief Return a container of all non-bridged NetDevices on a link
+   *
+   * This method will recursively find all of the 'edge' devices in an
+   * L2 broadcast domain.  If there are no bridged devices, then the
+   * container returned is simply the set of devices on the channel
+   * passed in as an argument.  If the link has bridges on it 
+   * (and therefore multiple ns3::Channel objects interconnected by 
+   * bridges), the method will find all of the non-bridged devices
+   * in the L2 broadcast domain.
+   *
+   * \param ch a channel from the link
+   */
+  NetDeviceContainer FindAllNonBridgedDevicesOnLink (Ptr<Channel> ch) const;
+
+  /**
    * \brief Decide whether or not a given net device is being bridged by a BridgeNetDevice.
    *
    * \param nd the NetDevice
@@ -847,6 +861,32 @@ private:
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator InjectedRoutesCI; //!< Const Iterator to container of Ipv4RoutingTableEntry
   typedef std::list<Ipv4RoutingTableEntry *>::iterator InjectedRoutesI; //!< Iterator to container of Ipv4RoutingTableEntry
   InjectedRoutes m_injectedRoutes; //!< Routes we are exporting
+
+  // Declared mutable so that const member functions can clear it
+  // (supporting the logical constness of the search methods of this class) 
+  /**
+   * Container of bridges visited.
+   */
+  mutable std::vector<Ptr<BridgeNetDevice> > m_bridgesVisited;
+  /**
+   * Clear the list of bridges visited on the link 
+   */
+  void ClearBridgesVisited (void) const;
+  /**
+   * When recursively checking for devices on the link, check whether a
+   * given device has already been visited.
+   *
+   * \param device the bridge device to check
+   * \return true if bridge has already been visited 
+   */
+  bool BridgeHasAlreadyBeenVisited (Ptr<BridgeNetDevice> device) const;
+  /**
+   * When recursively checking for devices on the link, mark a given device 
+   * as having been visited.
+   *
+   * \param device the bridge device to mark
+   */
+  void MarkBridgeAsVisited (Ptr<BridgeNetDevice> device) const;
 
   // inherited from Object
   virtual void DoDispose (void);

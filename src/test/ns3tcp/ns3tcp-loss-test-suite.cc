@@ -44,7 +44,17 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("Ns3TcpLossTest");
 
+// The below boolean constants should only be changed to 'true'
+// during test debugging (i.e. do not commit the value 'true')
+
+// set to 'true' to have the test suite overwrite the response vectors
+// stored in the test directory.  This should only be done if you are
+// convinced through other means (e.g. pcap tracing or logging) that the
+// revised vectors are the correct ones.  In other words, don't simply
+// enable this to true to clear a failing test without looking at the
+// results closely.
 const bool WRITE_VECTORS = false;            // set to true to write response vectors
+const bool WRITE_PCAP = false;              // set to true to write out pcap
 const bool WRITE_LOGGING = false;            // set to true to write logging
 const uint32_t PCAP_LINK_TYPE = 1187373557; // Some large random number -- we use to verify data was written by this program
 const uint32_t PCAP_SNAPLEN   = 64;         // Don't bother to save much data
@@ -93,7 +103,7 @@ Ns3TcpLossTestCase::Ns3TcpLossTestCase ()
     m_totalTxBytes (200000),
     m_currentTxBytes (0),
     m_writeVectors (WRITE_VECTORS),
-    m_writeResults (false),
+    m_writeResults (WRITE_PCAP),
     m_writeLogging (WRITE_LOGGING),
     m_needToClose (true),
     m_tcpModel ("ns3::TcpWestwood")
@@ -106,7 +116,7 @@ Ns3TcpLossTestCase::Ns3TcpLossTestCase (std::string tcpModel, uint32_t testCase)
     m_totalTxBytes (200000),
     m_currentTxBytes (0),
     m_writeVectors (WRITE_VECTORS),
-    m_writeResults (false),
+    m_writeResults (WRITE_PCAP),
     m_writeLogging (WRITE_LOGGING),
     m_needToClose (true),
     m_tcpModel (tcpModel)
@@ -308,9 +318,7 @@ Ns3TcpLossTestCase::DoRun (void)
       LogComponentEnable ("Ns3TcpLossTest", LOG_LEVEL_ALL);
       LogComponentEnable ("ErrorModel", LOG_LEVEL_DEBUG);
       LogComponentEnable ("TcpWestwood", LOG_LEVEL_ALL);
-      LogComponentEnable ("TcpNewReno", LOG_LEVEL_INFO);
-      LogComponentEnable ("TcpReno", LOG_LEVEL_INFO);
-      LogComponentEnable ("TcpTahoe", LOG_LEVEL_INFO);
+      LogComponentEnable ("TcpCongestionOps", LOG_LEVEL_INFO);
       LogComponentEnable ("TcpSocketBase", LOG_LEVEL_INFO);
     }
 
@@ -458,18 +466,6 @@ Ns3TcpLossTestSuite::Ns3TcpLossTestSuite ()
   // We can't use NS_TEST_SOURCEDIR variable here because we use subdirectories
   SetDataDir ("src/test/ns3tcp/response-vectors");
   Packet::EnablePrinting ();  // Enable packet metadata for all test cases
-
-  AddTestCase (new Ns3TcpLossTestCase ("Tahoe", 0), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Tahoe", 1), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Tahoe", 2), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Tahoe", 3), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Tahoe", 4), TestCase::QUICK);
-
-  AddTestCase (new Ns3TcpLossTestCase ("Reno", 0), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Reno", 1), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Reno", 2), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Reno", 3), TestCase::QUICK);
-  AddTestCase (new Ns3TcpLossTestCase ("Reno", 4), TestCase::QUICK);
 
   AddTestCase (new Ns3TcpLossTestCase ("NewReno", 0), TestCase::QUICK);
   AddTestCase (new Ns3TcpLossTestCase ("NewReno", 1), TestCase::QUICK);

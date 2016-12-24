@@ -143,7 +143,7 @@ Ipv4NixVectorRouting::GetNixVector (Ptr<Node> source, Ipv4Address dest, Ptr<NetD
   /// Do not process packets to self (see \bugid{1308})
   if (source == destNode)
     {
-      NS_LOG_DEBUG ("Do not processs packets to self");
+      NS_LOG_DEBUG ("Do not process packets to self");
       return 0;
     }
   else
@@ -619,6 +619,31 @@ Ipv4NixVectorRouting::RouteInput (Ptr<const Packet> p, const Ipv4Header &header,
 
   CheckCacheStateAndFlush ();
 
+  NS_ASSERT (m_ipv4 != 0);
+  // Check if input device supports IP
+  NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
+  uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
+
+  // Local delivery
+  if (m_ipv4->IsDestinationAddress (header.GetDestination (), iif))
+    {
+      if (!lcb.IsNull ())
+        {
+          NS_LOG_LOGIC ("Local delivery to " << header.GetDestination ());
+          lcb (p, header, iif);
+          return true;
+        }
+      else
+        {
+          // The local delivery callback is null.  This may be a multicast
+          // or broadcast packet, so return false so that another
+          // multicast routing protocol can handle it.  It should be possible
+          // to extend this to explicitly check whether it is a unicast
+          // packet, and invoke the error callback if so
+          return false;
+        }
+    }
+
   Ptr<Ipv4Route> rtentry;
 
   // Get the nix-vector from the packet
@@ -677,6 +702,12 @@ Ipv4NixVectorRouting::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
   CheckCacheStateAndFlush ();
 
   std::ostream* os = stream->GetStream ();
+
+  *os << "Node: " << m_ipv4->GetObject<Node> ()->GetId ()
+      << ", Time: " << Now().As (Time::S)
+      << ", Local time: " << GetObject<Node> ()->GetLocalTime ().As (Time::S)
+      << ", Nix Routing" << std::endl;
+
   *os << "NixCache:" << std::endl;
   if (m_nixCache.size () > 0)
     {
@@ -714,6 +745,7 @@ Ipv4NixVectorRouting::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
           *os << std::endl;
         }
     }
+  *os << std::endl;
 }
 
 // virtual functions from Ipv4RoutingProtocol 

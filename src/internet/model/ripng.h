@@ -34,6 +34,7 @@
 namespace ns3 {
 
 /**
+ * \ingroup ipv6Routing
  * \defgroup ripng RIPng
  *
  * The RIPng protocol (\RFC{2080}) is a unicast-only IPv6 IGP (Interior Gateway Protocol).
@@ -407,6 +408,7 @@ private:
   SplitHorizonType_e m_splitHorizonStrategy; //!< Split Horizon strategy
 
   bool m_initialized; //!< flag to allow socket's late-creation.
+  uint8_t m_linkDown; //!< Link down value.
 };
 
 } // namespace ns3

@@ -152,6 +152,15 @@ public:
    * corresponding block ack bitmap.
    */
   Ptr<const Packet> GetNextPacket (WifiMacHeader &hdr);
+  /**
+   * \param hdr 802.11 header of returned packet (if exists).
+   *
+   * \return the packet
+   *
+   * This methods returns a packet (if exists) indicated as not received in
+   * corresponding block ack bitmap. This method doesn't remove the packet from this queue.
+   */
+  Ptr<const Packet> PeekNextPacket (WifiMacHeader &hdr);
   bool HasBar (struct Bar &bar);
   /**
    * Returns true if there are packets that need of retransmission or at least a
@@ -164,14 +173,16 @@ public:
   /**
    * \param blockAck The received block ack frame.
    * \param recipient Sender of block ack frame.
+   * \param rxSnr received SNR of the block ack frame itself
    * \param txMode mode of block ack frame.
+   * \param dataSnr data SNR reported by remote station
    *
    * Invoked upon receipt of a block ack frame. Typically, this function, is called
    * by ns3::EdcaTxopN object. Performs a check on which MPDUs, previously sent
    * with ack policy set to Block Ack, were correctly received by the recipient.
    * An acknowledged MPDU is removed from the buffer, retransmitted otherwise.
    */
-  void NotifyGotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address recipient, WifiMode txMode);
+  void NotifyGotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address recipient, double rxSnr, WifiMode txMode, double dataSnr);
   /**
    * \param recipient Address of peer station involved in block ack mechanism.
    * \param tid Traffic ID.
@@ -318,9 +329,11 @@ public:
    */
   bool RemovePacket (uint8_t tid, Mac48Address recipient, uint16_t seqnumber);
   /*
-   * Peek in retransmit queue and get the next packet without removing it from the queue
+   * Peek in retransmit queue and get the next packet having address indicated
+   * by <i>type</i> equals to <i>addr</i>, and tid equals to <i>tid</i>.
+   * This method doesn't remove the packet from this queue.
    */
-  Ptr<const Packet> PeekNextPacket (WifiMacHeader &hdr, Mac48Address recipient, uint8_t tid, Time *timestamp);
+  Ptr<const Packet> PeekNextPacketByTidAndAddress (WifiMacHeader &hdr, Mac48Address recipient, uint8_t tid, Time *timestamp);
   /**
    * This function returns true if the lifetime of the packets a BAR refers to didn't expire yet else it returns false.
    * If it return false then the BAR will be discarded (i.e. will not be re-transmitted)

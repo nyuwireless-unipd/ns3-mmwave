@@ -1,8 +1,7 @@
 EPSTOPDF = epstopdf
 DIA = dia
 DOT = dot
-CONVERT = convert -density 250
-
+CONVERT = convert -density 120
 
 SOURCE = source
 FIGURES = $(SOURCE)/figures
@@ -17,7 +16,9 @@ IMAGES_DIA = \
 
 IMAGES_EPS = \
 	$(FIGURES)/snir.eps \
-	$(FIGURES)/WifiArchitecture.eps
+	$(FIGURES)/WifiArchitecture.eps \
+        $(FIGURES)/clear-channel.eps \
+        $(FIGURES)/nist-frame-success-rate.eps
 
 # rescale pdf figures as necessary
 $(FIGURES)/snir.pdf_width = 3in

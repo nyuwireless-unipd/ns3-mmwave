@@ -22,7 +22,7 @@
 #include <fstream>
 #include "ns3/core-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/applications-module.h"
+#include "ns3/internet-apps-module.h"
 #include "ns3/ipv6-static-routing-helper.h"
 #include "ns3/mobility-module.h"
 #include "ns3/spectrum-module.h"
@@ -38,6 +38,9 @@ using namespace ns3;
 
 int main (int argc, char** argv)
 {
+  CommandLine cmd;
+  cmd.Parse (argc, argv);
+  
 #if 0
   LogComponentEnable ("Ping6Application", LOG_LEVEL_ALL);
   LogComponentEnable ("LrWpanMac",LOG_LEVEL_ALL);

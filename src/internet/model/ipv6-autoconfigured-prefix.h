@@ -34,7 +34,8 @@ namespace ns3
 {
 
 /**
- * \class Ipv6AutoconfiguredPrefix
+ * \ingroup ipv6
+ *
  * \brief Router prefix information.
  */
 class Ipv6AutoconfiguredPrefix : public Object
@@ -219,7 +220,7 @@ private:
   Ptr<Node> m_node;
 
   /**
-   * \brief The prefix IP6 address.
+   * \brief The prefix IPv6 address.
    */
   Ipv6Address m_prefix;
 

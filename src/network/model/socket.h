@@ -109,6 +109,39 @@ public:
   };
 
   /**
+   * \enum SocketPriority
+   * \brief Enumeration of the possible socket priorities.
+   *
+   * Names and corresponding values are derived from
+   * the Linux TC_PRIO_* macros
+   */
+  enum SocketPriority {
+    NS3_PRIO_BESTEFFORT = 0,
+    NS3_PRIO_FILLER = 1,
+    NS3_PRIO_BULK = 2,
+    NS3_PRIO_INTERACTIVE_BULK = 4,
+    NS3_PRIO_INTERACTIVE = 6,
+    NS3_PRIO_CONTROL = 7
+  };
+
+  /**
+   * \enum Ipv6MulticastFilterMode
+   * \brief Enumeration of the possible filter of a socket.
+   *
+   * A socket can have filters on specific sources to include only
+   * packets incoming from them, or to exclude packets incoming
+   * from specific sources.
+   * Moreover, inclusion and exclusion also works as a leave,
+   * since "joining" a group without allowed sources is equivalent
+   * to leaving it.
+   */
+  enum Ipv6MulticastFilterMode
+  {
+    INCLUDE=1,
+    EXCLUDE
+  };
+
+  /**
    * This method wraps the creation of sockets that is performed
    * on a given node by a SocketFactory specified by TypeId.
    * 
@@ -561,6 +594,13 @@ public:
   virtual int GetSockName (Address &address) const = 0; 
 
   /**
+   * \brief Get the peer address of a connected socket.
+   * \param address the address this socket is connected to.
+   * \returns 0 if success, -1 otherwise
+   */
+  virtual int GetPeerName (Address &address) const = 0;
+
+  /**
    * \brief Bind a socket to specific device.
    *
    * This method corresponds to using setsockopt() SO_BINDTODEVICE
@@ -641,13 +681,110 @@ public:
   bool IsRecvPktInfo () const;
 
   /**
+   * \brief Manually set the socket priority
+   *
+   * This method corresponds to using setsockopt () SO_PRIORITY of
+   * real network or BSD sockets.
+   *
+   * \param priority The socket priority (in the range 0..6)
+   */
+  void SetPriority (uint8_t priority);
+
+  /**
+   * \brief Query the priority value of this socket
+   *
+   * This method corresponds to using getsockopt () SO_PRIORITY of real network
+   * or BSD sockets.
+   *
+   * \return The priority value
+   */
+  uint8_t GetPriority (void) const;
+
+  /**
+   * \brief Return the priority corresponding to a given TOS value
+   *
+   * This function is implemented after the Linux rt_tos2priority
+   * function. The usage of the TOS byte has been originally defined by
+   * RFC 1349 (http://www.ietf.org/rfc/rfc1349.txt):
+   *
+   *               0     1     2     3     4     5     6     7
+   *           +-----+-----+-----+-----+-----+-----+-----+-----+
+   *           |   PRECEDENCE    |          TOS          | MBZ |
+   *           +-----+-----+-----+-----+-----+-----+-----+-----+
+   *
+   * where MBZ stands for 'must be zero'.
+   *
+   * The Linux rt_tos2priority function ignores the precedence bits and
+   * maps each of the 16 values coded in bits 3-6 as follows:
+   *
+   * Bits 3-6 | Means                   | Linux Priority
+   * ---------|-------------------------|----------------
+   *     0    |  Normal Service         | Best Effort (0)
+   *     1    |  Minimize Monetary Cost | Best Effort (0)
+   *     2    |  Maximize Reliability   | Best Effort (0)
+   *     3    |  mmc+mr                 | Best Effort (0)
+   *     4    |  Maximize Throughput    | Bulk (2)
+   *     5    |  mmc+mt                 | Bulk (2)
+   *     6    |  mr+mt                  | Bulk (2)
+   *     7    |  mmc+mr+mt              | Bulk (2)
+   *     8    |  Minimize Delay         | Interactive (6)
+   *     9    |  mmc+md                 | Interactive (6)
+   *    10    |  mr+md                  | Interactive (6)
+   *    11    |  mmc+mr+md              | Interactive (6)
+   *    12    |  mt+md                  | Int. Bulk (4)
+   *    13    |  mmc+mt+md              | Int. Bulk (4)
+   *    14    |  mr+mt+md               | Int. Bulk (4)
+   *    15    |  mmc+mr+mt+md           | Int. Bulk (4)
+   *
+   * RFC 2474 (http://www.ietf.org/rfc/rfc2474.txt) redefines the TOS byte:
+   *
+   *               0     1     2     3     4     5     6     7
+   *           +-----+-----+-----+-----+-----+-----+-----+-----+
+   *           |              DSCP                 |     CU    |
+   *           +-----+-----+-----+-----+-----+-----+-----+-----+
+   *
+   * where DSCP is the Differentiated Services Code Point and CU stands for
+   * 'currently unused' (actually, RFC 3168 proposes to use these two bits for
+   * ECN purposes). The table above allows to determine how the Linux
+   * rt_tos2priority function maps each DSCP value to a priority value. Such a
+   * mapping is shown below.
+   *
+   * DSCP | Hex  | TOS (binary) | bits 3-6 | Linux Priority
+   * -----|------|--------------|----------|----------------
+   * EF   | 0x2E |   101110xx   |  12-13   |  Int. Bulk (4)
+   * AF11 | 0x0A |   001010xx   |   4-5    |  Bulk (2)
+   * AF21 | 0x12 |   010010xx   |   4-5    |  Bulk (2)
+   * AF31 | 0x1A |   011010xx   |   4-5    |  Bulk (2)
+   * AF41 | 0x22 |   100010xx   |   4-5    |  Bulk (2)
+   * AF12 | 0x0C |   001100xx   |   8-9    |  Interactive (6)
+   * AF22 | 0x14 |   010100xx   |   8-9    |  Interactive (6)
+   * AF32 | 0x1C |   011100xx   |   8-9    |  Interactive (6)
+   * AF42 | 0x24 |   100100xx   |   8-9    |  Interactive (6)
+   * AF13 | 0x0E |   001110xx   |  12-13   |  Int. Bulk (4)
+   * AF23 | 0x16 |   010110xx   |  12-13   |  Int. Bulk (4)
+   * AF33 | 0x1E |   011110xx   |  12-13   |  Int. Bulk (4)
+   * AF43 | 0x26 |   100110xx   |  12-13   |  Int. Bulk (4)
+   * CS0  | 0x00 |   000000xx   |   0-1    |  Best Effort (0)
+   * CS1  | 0x08 |   001000xx   |   0-1    |  Best Effort (0)
+   * CS2  | 0x10 |   010000xx   |   0-1    |  Best Effort (0)
+   * CS3  | 0x18 |   011000xx   |   0-1    |  Best Effort (0)
+   * CS4  | 0x20 |   100000xx   |   0-1    |  Best Effort (0)
+   * CS5  | 0x28 |   101000xx   |   0-1    |  Best Effort (0)
+   * CS6  | 0x30 |   110000xx   |   0-1    |  Best Effort (0)
+   * CS7  | 0x38 |   111000xx   |   0-1    |  Best Effort (0)
+   *
+   * \param ipTos the TOS value (in the range 0..255)
+   * \return The priority value corresponding to the given TOS value
+   */
+  static uint8_t IpTos2Priority (uint8_t ipTos);
+
+  /**
    * \brief Manually set IP Type of Service field
    * 
    * This method corresponds to using setsockopt () IP_TOS of
    * real network or BSD sockets. This option is for IPv4 only.
-   * Setting the IP TOS should also change the socket queueing
-   * priority as stated in the man page. However, socket priority
-   * is not yet supported.
+   * Setting the IP TOS also changes the socket priority as
+   * stated in the man page.
    *
    * \param ipTos The desired TOS value for IP headers
    */
@@ -817,6 +954,35 @@ public:
    */
   bool IsIpv6RecvHopLimit (void) const;
  
+  /**
+   * \brief Joins a IPv6 multicast group.
+   *
+   * Based on the filter mode and source addresses this can be interpreted as a
+   * join, leave, or modification to source filtering on a multicast group.
+   *
+   * Mind that a socket can join only one multicast group. Any attempt to join another group will remove the old one.
+   *
+   *
+   * \param address Requested multicast address.
+   * \param filterMode Socket filtering mode (INCLUDE | EXCLUDE).
+   * \param sourceAddresses All the source addresses on which socket is interested or not interested.
+   */
+  virtual void Ipv6JoinGroup (Ipv6Address address, Ipv6MulticastFilterMode filterMode, std::vector<Ipv6Address> sourceAddresses);
+
+  /**
+   * \brief Joins a IPv6 multicast group without filters.
+   *
+   * A socket can join only one multicast group. Any attempt to join another group will remove the old one.
+   *
+   * \param address Group address on which socket wants to join.
+   */
+  virtual void Ipv6JoinGroup (Ipv6Address address);
+
+  /**
+   * \brief Leaves IPv6 multicast group this socket is joined to.
+   */
+  virtual void Ipv6LeaveGroup (void);
+
 protected:
   /**
    * \brief Notify through the callback (if set) that the connection has been
@@ -884,13 +1050,6 @@ protected:
   virtual void DoDispose (void);
 
   /**
-   * \brief Checks if the socket has a specific IPv4 ToS set
-   *
-   * \returns true if the socket has a IPv4 ToS set, false otherwise.
-   */
-  bool IsManualIpTos (void) const;
-
-  /**
    * \brief Checks if the socket has a specific IPv6 Tclass set
    *
    * \returns true if the socket has a IPv6 Tclass set, false otherwise.
@@ -913,6 +1072,7 @@ protected:
 
   Ptr<NetDevice> m_boundnetdevice; //!< the device this socket is bound to (might be null).
   bool m_recvPktInfo; //!< if the socket should add packet info tags to the packet forwarded to L4.
+  Ipv6Address m_ipv6MulticastGroupAddress; //!< IPv6 multicast group address.
 
 private:
   Callback<void, Ptr<Socket> >                   m_connectionSucceeded;  //!< connection succeeded callback
@@ -925,8 +1085,9 @@ private:
   Callback<void, Ptr<Socket>, uint32_t >         m_sendCb;               //!< packet sent callback
   Callback<void, Ptr<Socket> >                   m_receivedData;         //!< data received callback
 
+  uint8_t m_priority; //!< the socket priority
+
   //IPv4 options
-  bool m_manualIpTos; //!< socket has IPv4 TOS set
   bool m_manualIpTtl; //!< socket has IPv4 TTL set
   bool m_ipRecvTos;   //!< socket forwards IPv4 TOS tag to L4
   bool m_ipRecvTtl;   //!< socket forwards IPv4 TTL tag to L4
@@ -942,54 +1103,6 @@ private:
 
   uint8_t m_ipv6Tclass;     //!< the socket IPv6 Tclass
   uint8_t m_ipv6HopLimit;   //!< the socket IPv6 Hop Limit
-};
-
-/**
- * \brief This class implements a tag that carries an address
- * of a packet across the socket interface.
- */
-class SocketAddressTag : public Tag
-{
-public:
-  SocketAddressTag ();
-
-  /**
-   * \brief Set the tag's address
-   *
-   * \param addr the address
-   */
-  void SetAddress (Address addr);
-
-  /**
-   * \brief Get the tag's address
-   *
-   * \returns the address
-   */
-  Address GetAddress (void) const;
-
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
-
-  // inherited function, no need to doc.
-  virtual TypeId GetInstanceTypeId (void) const;
-
-  // inherited function, no need to doc.
-  virtual uint32_t GetSerializedSize (void) const;
-
-  // inherited function, no need to doc.
-  virtual void Serialize (TagBuffer i) const;
-
-  // inherited function, no need to doc.
-  virtual void Deserialize (TagBuffer i);
-
-  // inherited function, no need to doc.
-  virtual void Print (std::ostream &os) const;
-
-private:
-  Address m_address; //!< the address carried by the tag
 };
 
 /**
@@ -1183,6 +1296,52 @@ public:
   virtual void Print (std::ostream &os) const;
 private:
   uint8_t m_ipTos;  //!< the TOS carried by the tag
+};
+
+/**
+ * \brief indicates whether the socket has a priority set.
+ */
+class SocketPriorityTag : public Tag
+{
+public:
+  SocketPriorityTag ();
+
+  /**
+   * \brief Set the tag's priority
+   *
+   * \param priority the priority
+   */
+  void SetPriority (uint8_t priority);
+
+  /**
+   * \brief Get the tag's priority
+   *
+   * \returns the priority
+   */
+  uint8_t GetPriority (void) const;
+
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
+  static TypeId GetTypeId (void);
+
+  // inherited function, no need to doc.
+  virtual TypeId GetInstanceTypeId (void) const;
+
+  // inherited function, no need to doc.
+  virtual uint32_t GetSerializedSize (void) const;
+
+  // inherited function, no need to doc.
+  virtual void Serialize (TagBuffer i) const;
+
+  // inherited function, no need to doc.
+  virtual void Deserialize (TagBuffer i);
+
+  // inherited function, no need to doc.
+  virtual void Print (std::ostream &os) const;
+private:
+  uint8_t m_priority;  //!< the priority carried by the tag
 };
 
 /**

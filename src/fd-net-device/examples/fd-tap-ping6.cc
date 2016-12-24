@@ -50,7 +50,7 @@
 #include "ns3/core-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/csma-module.h"
-#include "ns3/applications-module.h"
+#include "ns3/internet-apps-module.h"
 #include "ns3/fd-net-device-module.h"
 
 using namespace ns3;
@@ -60,6 +60,9 @@ NS_LOG_COMPONENT_DEFINE ("TAPPing6Example");
 int
 main (int argc, char *argv[])
 {
+  CommandLine cmd;
+  cmd.Parse (argc, argv);
+  
   NS_LOG_INFO ("Ping6 Emulation Example with TAP");
 
   //

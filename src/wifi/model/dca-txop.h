@@ -129,9 +129,11 @@ public:
   virtual void SetMinCw (uint32_t minCw);
   virtual void SetMaxCw (uint32_t maxCw);
   virtual void SetAifsn (uint32_t aifsn);
+  virtual void SetTxopLimit (Time txopLimit);
   virtual uint32_t GetMinCw (void) const;
   virtual uint32_t GetMaxCw (void) const;
   virtual uint32_t GetAifsn (void) const;
+  virtual Time GetTxopLimit (void) const;
 
   /**
    * \param packet packet to send
@@ -228,14 +230,14 @@ private:
    */
   void GotAck (double snr, WifiMode txMode);
   /**
-   * Event handler when an ACK is received.
+   * Event handler when an ACK is missed.
    */
   void MissedAck (void);
   /**
    * Start transmission for the next fragment.
    * This is called for fragment only.
    */
-  void StartNext (void);
+  void StartNextFragment (void);
   /**
    * Cancel the transmission.
    */
@@ -255,16 +257,6 @@ private:
    */
   void StartAccessIfNeeded (void);
 
-  /**
-   * Check if the current packet should be sent with a RTS protection.
-   *
-   * \param packet
-   * \param header
-   *
-   * \return true if RTS protection should be used,
-   *         false otherwise
-   */
-  bool NeedRts (Ptr<const Packet> packet, const WifiMacHeader *header);
   /**
    * Check if RTS should be re-transmitted if CTS was missed.
    *

@@ -34,7 +34,7 @@ tests_enabled    = False
 
 # Bug 1868:  be conservative about -Wstrict-overflow for optimized builds
 # on older compilers; it can generate spurious warnings.  
-cc_version_warn_strict_overflow = ('4', '8', '2')
+gcc_version_warn_strict_overflow = ('4', '8', '2')
 
 # Bug 2181:  clang warnings about unused local typedefs and potentially
 # evaluated expressions affecting darwin clang/LLVM version 7.0.0 (Xcode 7)
@@ -55,11 +55,11 @@ finally:
     sys.path.pop(0)
 
 cflags.profiles = {
-	# profile name: [optimization_level, warnings_level, debug_level]
-	'debug':     [0, 2, 3],
-	'optimized': [3, 2, 1],
-	'release':   [3, 2, 0],
-	}
+    # profile name: [optimization_level, warnings_level, debug_level]
+    'debug':     [0, 2, 3],
+    'optimized': [3, 2, 1],
+    'release':   [3, 2, 0],
+    }
 cflags.default_profile = 'debug'
 
 Configure.autoconfig = 0
@@ -146,6 +146,11 @@ def options(opt):
     opt.load('cflags')
     opt.load('gnu_dirs')
 
+    opt.add_option('--check-config',
+                   help=('Print the current configuration.'),
+                   action="store_true", default=False,
+                   dest="check_config")
+    
     opt.add_option('--cwd',
                    help=('Set the working directory for a program.'),
                    action="store", type="string", default=None,
@@ -232,6 +237,10 @@ def options(opt):
                          'but do not wait for ns-3 to finish the full build.'),
                    action="store_true", default=False,
                    dest='doxygen_no_build')
+    opt.add_option('--enable-des-metrics',
+                   help=('Log all events in a json file with the name of the executable (which must call CommandLine::Parse(argc, argv)'),
+                   action="store_true", default=False,
+                   dest='enable_desmetrics')
 
     # options provided in subdirectories
     opt.recurse('src')
@@ -304,6 +313,29 @@ def _check_nonfatal(conf, *args, **kwargs):
     except conf.errors.ConfigurationError:
         return None
 
+# Write a summary of optional features status
+def print_config(env, phase='configure'):
+    if phase == 'configure':
+        profile = get_build_profile(env)
+    else:
+        profile = get_build_profile()
+        
+    print("---- Summary of optional NS-3 features:")
+    print("%-30s: %s%s%s" % ("Build profile", Logs.colors('GREEN'),
+                             profile, Logs.colors('NORMAL')))
+    bld = wutils.bld
+    print("%-30s: %s%s%s" % ("Build directory", Logs.colors('GREEN'),
+                             Options.options.out, Logs.colors('NORMAL')))
+    
+    
+    for (name, caption, was_enabled, reason_not_enabled) in sorted(env['NS3_OPTIONAL_FEATURES'], key=lambda s : s[1]):
+        if was_enabled:
+            status = 'enabled'
+            color = 'GREEN'
+        else:
+            status = 'not enabled (%s)' % reason_not_enabled
+            color = 'RED'
+        print("%-30s: %s%s%s" % (caption, Logs.colors(color), status, Logs.colors('NORMAL')))
 
 def configure(conf):
     conf.load('relocation', tooldir=['waf-tools'])
@@ -363,8 +395,8 @@ def configure(conf):
             if conf.check_compilation_flag('-march=native'):
                 env.append_value('CXXFLAGS', '-march=native') 
             env.append_value('CXXFLAGS', '-fstrict-overflow')
-            if conf.env['CC_VERSION'] == cc_version_warn_strict_overflow:
-                env.append_value('CXXFLAGS', '-Wstrict-overflow=5')
+            if conf.env['CC_VERSION'] >= gcc_version_warn_strict_overflow:
+                env.append_value('CXXFLAGS', '-Wstrict-overflow=2')
 
         if sys.platform == 'win32':
             env.append_value("LINKFLAGS", "-Wl,--enable-runtime-pseudo-reloc")
@@ -412,6 +444,9 @@ def configure(conf):
             else:
                 conf.report_optional_feature("static", "Static build", False,
                                              "Link flag -Wl,--whole-archive,-Bstatic does not work")
+
+    # Enable C++-11 support
+    env.append_value('CXXFLAGS', '-std=c++11')
 
     # Set this so that the lists won't be printed at the end of this
     # configure command.
@@ -492,7 +527,7 @@ def configure(conf):
         else:
             why_not_tests = "defaults to disabled"
 
-    conf.report_optional_feature("ENABLE_TESTS", "Build tests", env['ENABLE_TESTS'], why_not_tests)
+    conf.report_optional_feature("ENABLE_TESTS", "Tests", env['ENABLE_TESTS'], why_not_tests)
 
     # Decide if examples will be built or not.
     if Options.options.enable_examples:
@@ -513,7 +548,7 @@ def configure(conf):
         else:
             why_not_examples = "defaults to disabled"
 
-    conf.report_optional_feature("ENABLE_EXAMPLES", "Build examples", env['ENABLE_EXAMPLES'], 
+    conf.report_optional_feature("ENABLE_EXAMPLES", "Examples", env['ENABLE_EXAMPLES'], 
                                  why_not_examples)
     try:
         for dir in os.listdir('examples'):
@@ -546,6 +581,21 @@ def configure(conf):
                                  conf.env['ENABLE_GSL'],
                                  "GSL not found")
 
+    conf.find_program('libgcrypt-config', var='LIBGCRYPT_CONFIG', msg="python-config", mandatory=False)
+    if env.LIBGCRYPT_CONFIG:
+        conf.check_cfg(path=env.LIBGCRYPT_CONFIG, msg="Checking for libgcrypt", args='--cflags --libs', package='',
+                                     define_name="HAVE_CRYPTO", global_define=True, uselib_store='GCRYPT', mandatory=False)
+    conf.report_optional_feature("libgcrypt", "Gcrypt library",
+                                 conf.env.HAVE_GCRYPT, "libgcrypt not found: you can use libgcrypt-config to find its location.")
+
+    why_not_desmetrics = "defaults to disabled"
+    if Options.options.enable_desmetrics:
+        conf.env['ENABLE_DES_METRICS'] = True
+        env.append_value('DEFINES', 'ENABLE_DES_METRICS')
+        why_not_desmetrics = "option --enable-des-metrics selected"
+    conf.report_optional_feature("DES Metrics", "DES Metrics event collection", conf.env['ENABLE_DES_METRICS'], why_not_desmetrics)
+
+
     # for compiling C code, copy over the CXX* flags
     conf.env.append_value('CCFLAGS', conf.env['CXXFLAGS'])
 
@@ -575,24 +625,8 @@ def configure(conf):
             value = shlex.split(os.environ[envvar])
             conf.env.append_value(confvar, value)
 
-    # Write a summary of optional features status
-    print("---- Summary of optional NS-3 features:")
-    print("%-30s: %s%s%s" % ("Build profile", Logs.colors('GREEN'),
-                             Options.options.build_profile, Logs.colors('NORMAL')))
-    bld = wutils.bld
-    print("%-30s: %s%s%s" % ("Build directory", Logs.colors('GREEN'),
-                             Options.options.out, Logs.colors('NORMAL')))
+    print_config(env)
     
-    
-    for (name, caption, was_enabled, reason_not_enabled) in conf.env['NS3_OPTIONAL_FEATURES']:
-        if was_enabled:
-            status = 'enabled'
-            color = 'GREEN'
-        else:
-            status = 'not enabled (%s)' % reason_not_enabled
-            color = 'RED'
-        print("%-30s: %s%s%s" % (caption, Logs.colors(color), status, Logs.colors('NORMAL')))
-
 
 class SuidBuild_task(Task.Task):
     """task that makes a binary Suid
@@ -736,9 +770,37 @@ def _find_ns3_module(self, name):
             return obj
     raise KeyError(name)
 
+# Parse the waf lockfile generated by latest 'configure' operation
+def get_build_profile(env=None):
+    if env == None:
+        lockfile = os.environ.get('WAFLOCK', '.lock-waf_%s_build' % sys.platform)
+        profile = "not found"
+        with open(lockfile, "r") as f:
+            for line in f:
+                if line.startswith("options ="):
+                    key, val = line.split('=')
+                    arr = val.split(',')
+                    for x in arr:
+                        optkey,optval = x.split(':')
+                        if (optkey.lstrip() == '\'build_profile\''):
+                            profile = str(optval.lstrip()).replace("'","")
+    else:
+        profile = Options.options.build_profile
+    return profile
 
 def build(bld):
     env = bld.env
+
+    if Options.options.check_config:
+        print_config(env, 'build')
+    else:
+        if Options.options.check_profile:
+            profile = get_build_profile()
+            print("Build profile: %s" % profile)
+        
+    if Options.options.check_profile or Options.options.check_config:
+        raise SystemExit(0)
+        return
 
     # If --enabled-modules option was given, then print a warning
     # message and exit this function.

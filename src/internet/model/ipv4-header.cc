@@ -90,7 +90,7 @@ Ipv4Header::SetDscp (DscpType dscp)
 {
   NS_LOG_FUNCTION (this << dscp);
   m_tos &= 0x3; // Clear out the DSCP part, retain 2 bits of ECN
-  m_tos |= dscp;
+  m_tos |= (dscp << 2);
 }
 
 void
@@ -106,7 +106,7 @@ Ipv4Header::GetDscp (void) const
 {
   NS_LOG_FUNCTION (this);
   // Extract only first 6 bits of TOS byte, i.e 0xFC
-  return DscpType (m_tos & 0xFC);
+  return DscpType ((m_tos & 0xFC) >> 2);
 }
 
 std::string 
@@ -341,8 +341,8 @@ Ipv4Header::Print (std::ostream &os) const
     {
       flags = "none";
     }
-  else if (m_flags & MORE_FRAGMENTS &&
-           m_flags & DONT_FRAGMENT)
+  else if ((m_flags & MORE_FRAGMENTS) &&
+           (m_flags & DONT_FRAGMENT))
     {
       flags = "MF|DF";
     }
@@ -424,10 +424,17 @@ Ipv4Header::Deserialize (Buffer::Iterator start)
 {
   NS_LOG_FUNCTION (this << &start);
   Buffer::Iterator i = start;
+
   uint8_t verIhl = i.ReadU8 ();
   uint8_t ihl = verIhl & 0x0f; 
   uint16_t headerSize = ihl * 4;
-  NS_ASSERT ((verIhl >> 4) == 4);
+
+  if ((verIhl >> 4) != 4)
+    {
+      NS_LOG_WARN ("Trying to decode a non-IPv4 header, refusing to do it.");
+      return 0;
+    }
+
   m_tos = i.ReadU8 ();
   uint16_t size = i.ReadNtohU16 ();
   m_payloadSize = size - headerSize;

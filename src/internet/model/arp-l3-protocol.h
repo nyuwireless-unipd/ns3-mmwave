@@ -21,7 +21,7 @@
 #define ARP_L3_PROTOCOL_H
 
 #include <list>
-#include "ns3/ipv4-address.h"
+#include "ns3/ipv4-header.h"
 #include "ns3/net-device.h"
 #include "ns3/address.h"
 #include "ns3/ptr.h"
@@ -37,14 +37,17 @@ class Packet;
 class Ipv4Interface;
 
 /**
- * \ingroup internet
- * \defgroup arp Arp
+ * \ingroup ipv4
+ * \defgroup arp ARP protocol.
  *
- * This is an overview of Arp capabilities (write me).
+ * The ARP protocol and its associated tables are responsible
+ * for the IPv4 - MAC address translation.
+ * Each NetDevice has its own ARP table.
  */
+
 /**
  * \ingroup arp
- * \brief An implementation of the ARP protocol
+ * \brief An implementation of the ARP protocol.
  */
 class ArpL3Protocol : public Object
 {
@@ -87,13 +90,14 @@ public:
   /**
    * \brief Perform an ARP lookup
    * \param p the packet
+   * \param ipHeader the IPv4 header
    * \param destination destination IP address
    * \param device outgoing device
    * \param cache ARP cache
    * \param hardwareDestination filled with the destination MAC address (if the entry exists)
    * \return true if there is a matching ARP Entry
    */
-  bool Lookup (Ptr<Packet> p, Ipv4Address destination, 
+  bool Lookup (Ptr<Packet> p, const Ipv4Header & ipHeader, Ipv4Address destination,
                Ptr<NetDevice> device,
                Ptr<ArpCache> cache,
                Address *hardwareDestination);

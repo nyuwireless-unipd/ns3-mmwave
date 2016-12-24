@@ -131,6 +131,21 @@ Ipv4RawSocketImpl::GetSockName (Address &address) const
   address = InetSocketAddress (m_src, 0);
   return 0;
 }
+int
+Ipv4RawSocketImpl::GetPeerName (Address &address) const
+{
+  NS_LOG_FUNCTION (this << address);
+
+  if (m_dst == Ipv4Address::GetAny ())
+    {
+      m_err = ERROR_NOTCONN;
+      return -1;
+    }
+
+  address = InetSocketAddress (m_dst, 0);
+
+  return 0;
+}
 int 
 Ipv4RawSocketImpl::Close (void)
 {
@@ -167,6 +182,8 @@ Ipv4RawSocketImpl::Connect (const Address &address)
     }
   InetSocketAddress ad = InetSocketAddress::ConvertFrom (address);
   m_dst = ad.GetIpv4 ();
+  SetIpTos (ad.GetTos ());
+
   return 0;
 }
 int 
@@ -187,6 +204,7 @@ Ipv4RawSocketImpl::Send (Ptr<Packet> p, uint32_t flags)
 {
   NS_LOG_FUNCTION (this << p << flags);
   InetSocketAddress to = InetSocketAddress (m_dst, m_protocol);
+  to.SetTos (GetIpTos ());
   return SendTo (p, flags, to);
 }
 int 
@@ -203,10 +221,36 @@ Ipv4RawSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags,
     {
       return 0;
     }
+
   InetSocketAddress ad = InetSocketAddress::ConvertFrom (toAddress);
   Ptr<Ipv4> ipv4 = m_node->GetObject<Ipv4> ();
   Ipv4Address dst = ad.GetIpv4 ();
   Ipv4Address src = m_src;
+  uint8_t tos = ad.GetTos ();
+
+  uint8_t priority = GetPriority ();
+  if (tos)
+    {
+      SocketIpTosTag ipTosTag;
+      ipTosTag.SetTos (tos);
+      // This packet may already have a SocketIpTosTag (see BUG 2440)
+      p->ReplacePacketTag (ipTosTag);
+      priority = IpTos2Priority (tos);
+    }
+  if (priority)
+    {
+      SocketPriorityTag priorityTag;
+      priorityTag.SetPriority (priority);
+      p->ReplacePacketTag (priorityTag);
+    }
+
+  if (IsManualIpTtl () && GetIpTtl () != 0 && !dst.IsMulticast () && !dst.IsBroadcast ())
+    {
+      SocketIpTtlTag tag;
+      tag.SetTtl (GetIpTtl ());
+      p->AddPacketTag (tag);
+    }
+
   if (ipv4->GetRoutingProtocol ())
     {
       Ipv4Header header;
@@ -237,17 +281,19 @@ Ipv4RawSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags,
       if (route != 0)
         {
           NS_LOG_LOGIC ("Route exists");
+          uint32_t pktSize = p->GetSize ();
           if (!m_iphdrincl)
             {
               ipv4->Send (p, route->GetSource (), dst, m_protocol, route);
             }
           else
             {
+              pktSize += header.GetSerializedSize ();
               ipv4->SendWithHeader (p, header, route);
             }
-          NotifyDataSent (p->GetSize ());
+          NotifyDataSent (pktSize);
           NotifySend (GetTxAvailable ());
-          return p->GetSize ();
+          return pktSize;
         }
       else
         {
@@ -340,7 +386,23 @@ Ipv4RawSocketImpl::ForwardUp (Ptr<const Packet> p, Ipv4Header ipHeader, Ptr<Ipv4
           tag.SetRecvIf (incomingInterface->GetDevice ()->GetIfIndex ());
           copy->AddPacketTag (tag);
         }
-      if (m_protocol == 1)
+
+      //Check only version 4 options
+      if (IsIpRecvTos ())
+        {
+          SocketIpTosTag ipTosTag;
+          ipTosTag.SetTos (ipHeader.GetTos ());
+          copy->AddPacketTag (ipTosTag);
+        }
+
+      if (IsIpRecvTtl ())
+        {
+          SocketIpTtlTag ipTtlTag;
+          ipTtlTag.SetTtl (ipHeader.GetTtl ());
+          copy->AddPacketTag (ipTtlTag);
+        }
+
+     if (m_protocol == 1)
         {
           Icmpv4Header icmpHeader;
           copy->PeekHeader (icmpHeader);

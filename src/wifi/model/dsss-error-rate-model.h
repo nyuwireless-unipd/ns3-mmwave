@@ -22,7 +22,7 @@
 #define DSS_ERROR_RATE_MODEL_H
 
 #include <stdint.h>
-#ifdef ENABLE_GSL
+#ifdef HAVE_GSL
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_cdf.h>
@@ -31,7 +31,7 @@
 
 namespace ns3 {
 
-#ifdef ENABLE_GSL
+#ifdef HAVE_GSL
 typedef struct FunctionParameterType
 {
   double beta;
@@ -78,7 +78,7 @@ public:
   /**
    * Return the chunk success rate of the differential BPSK.
    *
-   * \param sinr the SINR of the chunk
+   * \param sinr the SINR ratio (not dB) of the chunk
    * \param nbits the size of the chunk
    *
    * \return the chunk success rate of the differential BPSK
@@ -87,7 +87,7 @@ public:
   /**
    * Return the chunk success rate of the differential encoded QPSK.
    *
-   * \param sinr the SINR of the chunk
+   * \param sinr the SINR ratio (not dB) of the chunk
    * \param nbits the size of the chunk
    *
    * \return the chunk success rate of the differential encoded QPSK.
@@ -97,7 +97,7 @@ public:
    * Return the chunk success rate of the differential encoded QPSK for
    * 5.5Mbps data rate.
    *
-   * \param sinr the SINR of the chunk
+   * \param sinr the SINR ratio (not dB) of the chunk
    * \param nbits the size of the chunk
    *
    * \return the chunk success rate of the differential encoded QPSK for
@@ -107,13 +107,13 @@ public:
    * Return the chunk success rate of the differential encoded QPSK for
    * 11Mbps data rate.
    *
-   * \param sinr the SINR of the chunk
+   * \param sinr the SINR ratio (not dB) of the chunk
    * \param nbits the size of the chunk
    *
    * \return the chunk success rate of the differential encoded QPSK for
    */
   static double GetDsssDqpskCck11SuccessRate (double sinr,uint32_t nbits);
-#ifdef ENABLE_GSL
+#ifdef HAVE_GSL
   static double SymbolErrorProb16Cck (double e2); /// equation (18) in Pursley's paper
   static double SymbolErrorProb256Cck (double e1); /// equation (17) in Pursley's paper
 #else

@@ -26,7 +26,6 @@
 #include "ns3/string.h"
 #include "ns3/boolean.h"
 #include "ns3/trace-source-accessor.h"
-#include "qos-tag.h"
 #include "mac-low.h"
 #include "dcf-manager.h"
 #include "mac-rx-middle.h"
@@ -86,6 +85,15 @@ AdhocWifiMac::Enqueue (Ptr<const Packet> packet, Mac48Address to)
     {
       //In ad hoc mode, we assume that every destination supports all
       //the rates we support.
+      if (m_htSupported || m_vhtSupported)
+        {
+          m_stationManager->AddAllSupportedMcs (to);
+          m_stationManager->AddStationHtCapabilities (to, GetHtCapabilities());
+        }
+      if (m_vhtSupported)
+        {
+          m_stationManager->AddStationVhtCapabilities (to, GetVhtCapabilities());
+        }
       m_stationManager->AddAllSupportedModes (to);
       m_stationManager->RecordDisassociated (to);
     }
@@ -128,6 +136,10 @@ AdhocWifiMac::Enqueue (Ptr<const Packet> packet, Mac48Address to)
       hdr.SetTypeData ();
     }
 
+  if (m_htSupported || m_vhtSupported)
+    {
+      hdr.SetNoOrder ();
+    }
   hdr.SetAddr1 (to);
   hdr.SetAddr2 (m_low->GetAddress ());
   hdr.SetAddr3 (GetBssid ());
@@ -165,6 +177,22 @@ AdhocWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
   NS_ASSERT (!hdr->IsCtl ());
   Mac48Address from = hdr->GetAddr2 ();
   Mac48Address to = hdr->GetAddr1 ();
+  if (m_stationManager->IsBrandNew (from))
+    {
+      //In ad hoc mode, we assume that every destination supports all
+      //the rates we support.
+      if (m_htSupported || m_vhtSupported)
+        {
+          m_stationManager->AddAllSupportedMcs (from);
+          m_stationManager->AddStationHtCapabilities (from, GetHtCapabilities());
+        }
+      if (m_vhtSupported)
+        {
+          m_stationManager->AddStationVhtCapabilities (from, GetVhtCapabilities());
+        }
+      m_stationManager->AddAllSupportedModes (from);
+      m_stationManager->RecordDisassociated (from);
+    }
   if (hdr->IsData ())
     {
       if (hdr->IsQosData () && hdr->IsQosAmsdu ())

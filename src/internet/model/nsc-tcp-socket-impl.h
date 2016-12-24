@@ -85,6 +85,7 @@ public:
 
   virtual enum SocketErrno GetErrno (void) const;
   virtual enum SocketType GetSocketType (void) const;
+  virtual int GetPeerName (Address &address) const;
   virtual Ptr<Node> GetNode (void) const;
   virtual int Bind (void);
   virtual int Bind6 (void);
@@ -193,8 +194,10 @@ private:
   virtual uint32_t GetInitialCwnd (void) const;
   virtual void SetConnTimeout (Time timeout);
   virtual Time GetConnTimeout (void) const;
-  virtual void SetConnCount (uint32_t count);
-  virtual uint32_t GetConnCount (void) const;
+  virtual uint32_t GetSynRetries (void) const;
+  virtual void SetSynRetries (uint32_t count);
+  virtual void SetDataRetries (uint32_t retries);
+  virtual uint32_t GetDataRetries (void) const;
   virtual void SetDelAckTimeout (Time timeout);
   virtual Time GetDelAckTimeout (void) const;
   virtual void SetDelAckMaxCount (uint32_t count);
@@ -223,7 +226,7 @@ private:
   Ipv4Address m_localAddress;   //!< local address
   uint16_t m_localPort;         //!< local port
   InetSocketAddress m_peerAddress; //!< peer IP and port
-  enum SocketErrno m_errno;     //!< last error number
+  mutable enum SocketErrno m_errno; //!< last error number
   bool m_shutdownSend;          //!< Send no longer allowed
   bool m_shutdownRecv;          //!< Receive no longer allowed
   bool m_connected;             //!< Connection established
@@ -250,7 +253,8 @@ private:
 
   // Timer-related members
   Time              m_cnTimeout;       //!< Timeout for connection retry
-  uint32_t          m_cnCount;         //!< Count of remaining connection retries
+  uint32_t          m_synRetries;      //!< Count of remaining connection retries
+  uint32_t          m_dataRetries;     //!< Count of remaining data retransmission attempts
   Time              m_persistTimeout;  //!< Time between sending 1-byte probes
 
   // Temporary queue for delivering data to application

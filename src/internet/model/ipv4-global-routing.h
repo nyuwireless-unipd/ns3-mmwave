@@ -42,7 +42,9 @@ class Node;
 
 
 /**
- * \brief Global routing protocol for IP version 4 stacks.
+ * \ingroup ipv4
+ *
+ * \brief Global routing protocol for IPv4 stacks.
  *
  * In ns-3 we have the concept of a pluggable routing protocol.  Routing
  * protocols are added to a list maintained by the Ipv4L3Protocol.  Every 
@@ -258,6 +260,12 @@ private:
   /// iterator of container of Ipv4RoutingTableEntry (routes to external AS)
   typedef std::list<Ipv4RoutingTableEntry *>::iterator ASExternalRoutesI;
 
+  /**
+   * \brief Lookup in the forwarding table for destination.
+   * \param dest destination address
+   * \param oif output interface if any (put 0 otherwise)
+   * \return Ipv4Route to route the packet to reach dest address
+   */
   Ptr<Ipv4Route> LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif = 0);
 
   HostRoutes m_hostRoutes;             //!< Routes to hosts
