@@ -24,6 +24,7 @@
 #include <ns3/event-id.h>
 #include <ns3/lte-rlc-sequence-number.h>
 #include <ns3/lte-rlc.h>
+#include "ns3/codel-queue-disc.h"
 
 #include <vector>
 #include <map>
@@ -82,6 +83,7 @@ private:
 
 private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
+    Ptr<CoDelQueueDisc> m_txonQueue; //the packets comming from PDCP first stored in this queue and move to m_txonBuffer during transmission.
 
     struct RetxPdu
     {
@@ -192,6 +194,7 @@ private:
   std::map <uint8_t, uint16_t> m_harqIdToSnMap;
 
   uint32_t m_maxTxBufferSize;
+  bool m_enableAqm;
 };
 
 
