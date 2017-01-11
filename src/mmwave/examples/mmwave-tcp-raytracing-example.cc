@@ -207,8 +207,6 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
 	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
 	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));

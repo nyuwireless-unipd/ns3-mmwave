@@ -172,8 +172,6 @@ main (int argc, char *argv[])
 	//LogComponentEnable ("TcpSocketBase", LOG_LEVEL_INFO);
 	//LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
 	Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue(1));
-	Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(72));
 	double stopTime = 5.9;
 	double simStopTime = 7.00;
 	Ipv4Address remoteHostAddr;

@@ -89,7 +89,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("ChunkPerRB",
 						   "Number of chunks comprising a resource block",
-						   UintegerValue (9),
+						   UintegerValue (72),
 						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_chunksPerRb),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("ChunkWidth",
@@ -99,7 +99,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 						   MakeDoubleChecker<double> ())
 			.AddAttribute ("ResourceBlockNum",
 						   "Number of resource blocks the entire bandwidth is split into",
-						   UintegerValue (8),
+						   UintegerValue (1),
 						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_numRb),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("NumReferenceSymbols",
