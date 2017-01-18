@@ -130,13 +130,13 @@ MmWavePhyMacCommon::GetTypeId (void)
 			.AddAttribute ("WbCqiPeriod",
 							 "Microseconds between wideband DL-CQI reports",
 							 DoubleValue (500.0),
-							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_wbCqiPeriodUs),
-							 MakeUintegerChecker<double> ())
+							 MakeDoubleAccessor (&MmWavePhyMacCommon::m_wbCqiPeriodUs),
+							 MakeDoubleChecker<double> ())
 		 .AddAttribute ("GuardPeriod",
 							 "Guard period for UL to DL slot transition in microseconds",
 							 DoubleValue (4.16),
-							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_guardPeriod),
-							 MakeUintegerChecker<double> ())
+							 MakeDoubleAccessor (&MmWavePhyMacCommon::m_guardPeriod),
+							 MakeDoubleChecker<double> ())
 		 .AddAttribute ("NumHarqProcess",
 							 "Number of concurrent stop-and-wait Hybrid ARQ processes per user",
 							 UintegerValue (20),
