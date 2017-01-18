@@ -129,9 +129,9 @@ MmWavePhyMacCommon::GetTypeId (void)
 							 MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("WbCqiPeriod",
 							 "Microseconds between wideband DL-CQI reports",
-							 DoubleValue (500.0),
-							 MakeDoubleAccessor (&MmWavePhyMacCommon::m_wbCqiPeriodUs),
-							 MakeDoubleChecker<double> ())
+							 UintegerValue (500),
+							 MakeUintegerAccessor (&MmWavePhyMacCommon::m_wbCqiPeriodUs),
+							 MakeUintegerChecker<uint32_t> ())
 		 .AddAttribute ("GuardPeriod",
 							 "Guard period for UL to DL slot transition in microseconds",
 							 DoubleValue (4.16),
