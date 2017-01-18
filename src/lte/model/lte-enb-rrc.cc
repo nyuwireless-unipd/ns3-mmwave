@@ -1130,7 +1130,7 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
         NS_LOG_LOGIC("SEQ SEQ HANDOVERLEAVING STATE LTE ENB RRC.");
         //m_x2forwardingBuffer is empty, forward incomming pkts to target eNB.
         if (m_x2forwardingBuffer.empty()){
-          NS_LOG_INFO ("forwarding incomming pkts to target eNB over X2-U");
+          NS_LOG_INFO ("forwarding incoming pkts to target eNB over X2-U");
           NS_LOG_LOGIC ("forwarding data to target eNB over X2-U");
           uint8_t drbid = Bid2Drbid (bid);        
           EpcX2Sap::UeDataParams params;
