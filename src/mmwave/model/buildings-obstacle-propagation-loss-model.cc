@@ -144,13 +144,11 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 		if(los)
 		{
 			//NS_LOG_UNCOND ("LOS");
-			//m_beamforming->UpdateMatrices(false);
 			loss = mmWaveLosLoss (a,b);
 		}
 		else
 		{
 			//NS_LOG_UNCOND ("NLOS");
-			//m_beamforming->UpdateMatrices(true);
 			loss = mmWaveNlosLoss (a,b);
 		}
 	}
@@ -163,12 +161,10 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 	/*double t = Simulator::Now ().GetSeconds();
 	if (t > 5 && t < 5.5)
 	{
-		m_beamforming->UpdateMatrices(false);
 		loss = loss + 50;
 	}
 	else if (t > 8 && t < 8.5)
 	{
-		m_beamforming->UpdateMatrices(false);
 		loss = loss + 50;
 	}*/
 	NS_LOG_DEBUG (loss);
@@ -232,11 +228,7 @@ BuildingsObstaclePropagationLossModel::mmWaveNlosLoss (Ptr<MobilityModel> a, Ptr
 	return lossDb;
 }
 
-void
-BuildingsObstaclePropagationLossModel::SetBeamforming (Ptr<MmWaveBeamforming> beamforming)
-{
-	m_beamforming = beamforming;
-}
+
 
 
 
