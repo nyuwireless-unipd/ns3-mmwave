@@ -41,198 +41,11 @@
 using namespace ns3;
 
 /**
- * Sample simulation script for MC device. It instantiates a LTE and a MmWave eNodeB,
- * attaches one MC UE to both and starts a flow for the UE to  and from a remote host.
+ * Sample simulation script for MC device. It instantiates a LTE and two MmWave eNodeB,
+ * attaches one MC UE to both and starts a flow for the UE to and from a remote host.
  */
 
-NS_LOG_COMPONENT_DEFINE ("McFirstExample");
-
-class MyAppTag : public Tag
-{
-public:
-  MyAppTag ()
-  {
-  }
-
-  MyAppTag (Time sendTs) : m_sendTs (sendTs)
-  {
-  }
-
-  static TypeId GetTypeId (void)
-  {
-    static TypeId tid = TypeId ("ns3::MyAppTag")
-      .SetParent<Tag> ()
-      .AddConstructor<MyAppTag> ();
-    return tid;
-  }
-
-  virtual TypeId  GetInstanceTypeId (void) const
-  {
-    return GetTypeId ();
-  }
-
-  virtual void  Serialize (TagBuffer i) const
-  {
-    i.WriteU64 (m_sendTs.GetNanoSeconds());
-  }
-
-  virtual void  Deserialize (TagBuffer i)
-  {
-    m_sendTs = NanoSeconds (i.ReadU64 ());
-  }
-
-  virtual uint32_t  GetSerializedSize () const
-  {
-    return sizeof (m_sendTs);
-  }
-
-  virtual void Print (std::ostream &os) const
-  {
-    std::cout << m_sendTs;
-  }
-
-  Time m_sendTs;
-};
-
-
-class MyApp : public Application
-{
-public:
-
-  MyApp ();
-  virtual ~MyApp();
-  void ChangeDataRate (DataRate rate);
-  void Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate);
-
-
-
-private:
-  virtual void StartApplication (void);
-  virtual void StopApplication (void);
-
-  void ScheduleTx (void);
-  void SendPacket (void);
-
-  Ptr<Socket>     m_socket;
-  Address         m_peer;
-  uint32_t        m_packetSize;
-  uint32_t        m_nPackets;
-  DataRate        m_dataRate;
-  EventId         m_sendEvent;
-  bool            m_running;
-  uint32_t        m_packetsSent;
-};
-
-MyApp::MyApp ()
-  : m_socket (0),
-    m_peer (),
-    m_packetSize (0),
-    m_nPackets (0),
-    m_dataRate (0),
-    m_sendEvent (),
-    m_running (false),
-    m_packetsSent (0)
-{
-}
-
-MyApp::~MyApp()
-{
-  m_socket = 0;
-}
-
-void
-MyApp::Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate)
-{
-  m_socket = socket;
-  m_peer = address;
-  m_packetSize = packetSize;
-  m_nPackets = nPackets;
-  m_dataRate = dataRate;
-}
-
-void
-MyApp::ChangeDataRate (DataRate rate)
-{
-  m_dataRate = rate;
-}
-
-void
-MyApp::StartApplication (void)
-{
-  m_running = true;
-  m_packetsSent = 0;
-  m_socket->Bind ();
-  m_socket->Connect (m_peer);
-  SendPacket ();
-}
-
-void
-MyApp::StopApplication (void)
-{
-  m_running = false;
-
-  if (m_sendEvent.IsRunning ())
-    {
-      Simulator::Cancel (m_sendEvent);
-    }
-
-  if (m_socket)
-    {
-      m_socket->Close ();
-    }
-}
-
-void
-MyApp::SendPacket (void)
-{
-  Ptr<Packet> packet = Create<Packet> (m_packetSize);
-  MyAppTag tag (Simulator::Now ());
-
-  m_socket->Send (packet);
-    if (++m_packetsSent < m_nPackets)
-  {
-      ScheduleTx ();
-  }
-}
-
-
-
-void
-MyApp::ScheduleTx (void)
-{
-  if (m_running)
-  {
-    Time tNext (Seconds (m_packetSize * 8 / static_cast<double> (m_dataRate.GetBitRate ())));
-    m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
-  }
-}
-
-static void
-CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
-{
-  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldCwnd << "\t" << newCwnd << std::endl;
-}
-
-
-static void
-RttChange (Ptr<OutputStreamWrapper> stream, Time oldRtt, Time newRtt)
-{
-  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldRtt.GetSeconds () << "\t" << newRtt.GetSeconds () << std::endl;
-}
-
-
-
-static void Rx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
-{
-  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
-}
-
-static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint32_t newSstresh)
-{
-  *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << oldSstresh << "\t" << newSstresh << std::endl;
-}
-
-
+NS_LOG_COMPONENT_DEFINE ("McTwoEnbs");
 
 void 
 PrintGnuplottableBuildingListToFile (std::string filename)
@@ -489,7 +302,6 @@ static ns3::GlobalValue g_lteUplink("lteUplink", "If true, always use LTE for up
 int
 main (int argc, char *argv[])
 {
-  uint16_t numberOfNodes = 1;
   bool harqEnabled = true;
   bool fixedTti = false;
   unsigned symPerSf = 24;
@@ -897,7 +709,8 @@ main (int argc, char *argv[])
 
   mmwaveHelper->EnableTraces ();
 
-  bool print = true;
+  // set to true if you want to print the map of buildings, ues and enbs
+  bool print = false;
   if(print)
   {
     PrintGnuplottableBuildingListToFile("buildings.txt");
