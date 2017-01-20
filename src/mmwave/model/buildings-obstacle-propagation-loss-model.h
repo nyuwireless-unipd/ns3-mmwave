@@ -45,14 +45,12 @@ public:
 	  // inherited from PropagationLossModel
 	virtual double DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 	void SetFrequency (double freq);
-	void SetBeamforming (Ptr<MmWaveBeamforming> beamforming);
 
 private:
 	double mmWaveLosLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 	double mmWaveNlosLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 	double m_frequency;
 	double m_lambda;
-	Ptr<MmWaveBeamforming> m_beamforming;
 
 };
 
