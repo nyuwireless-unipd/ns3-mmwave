@@ -586,7 +586,6 @@ MmWaveSpectrumPhy::EndRxData ()
 
 				RxPacketTraceParams traceParams;
 				traceParams.m_tbSize = itTb->second.size;
-				traceParams.m_cellId = 0;
 				traceParams.m_frameNum = pduTag.GetSfn ().m_frameNum;
 				traceParams.m_sfNum = pduTag.GetSfn ().m_sfNum;
 				traceParams.m_slotNum = pduTag.GetSfn ().m_slotNum;
@@ -602,10 +601,12 @@ MmWaveSpectrumPhy::EndRxData ()
 
 				if (enbRx)
 				{
+					traceParams.m_cellId = enbRx->GetCellId();
 					m_rxPacketTraceEnb (traceParams);
 				}
 				else if (ueRx)
 				{
+					traceParams.m_cellId = ueRx->GetTargetEnb()->GetCellId();
 					m_rxPacketTraceUe (traceParams);
 				}
 
