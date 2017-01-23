@@ -279,7 +279,7 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 		for(int i = 0; i < clusterNum; i++)
 		{
 			double u = m_uniformRv->GetValue (0,1);
-			double z = normalRv->GetValue(0,16);
+			double z = normalRv->GetValue()*4;
 			//double p = std::pow(u,1.8)*std::pow(10,(-0.1)*z); this is the correct formula, but the result is not convincing
 			double p = std::pow(u,1.8)*std::pow(10,(0.1)*z)/cluster.at (i);
 			clusterPowerFraction.push_back (p);
