@@ -642,14 +642,25 @@ MmWaveSpectrumPhy::EndRxData ()
 
 				if (enbRx)
 				{
+					traceParams.m_cellId = enbRx->GetCellId();
 					m_rxPacketTraceEnb (traceParams);
 				}
 				else if (ueRx)
 				{
+					traceParams.m_cellId = ueRx->GetTargetEnb()->GetCellId();
 					m_rxPacketTraceUe (traceParams);
 				}
 				else if (rxMcUe)
 				{
+					Ptr<McUeNetDevice> mcUe = DynamicCast<McUeNetDevice>(ueRx);
+					if(mcUe != 0)
+					{
+						Ptr<MmWaveEnbNetDevice> mmWaveEnb = mcUe->GetMmWaveTargetEnb();
+						if (mmWaveEnb != 0)
+						{
+							traceParams.m_cellId = mmWaveEnb->GetCellId();	
+						} 
+					}
 					m_rxPacketTraceUe (traceParams); // TODO consider a different trace for MC UE
 				}
 
