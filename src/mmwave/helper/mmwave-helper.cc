@@ -171,11 +171,6 @@ MmWaveHelper::DoInitialize()
 			m_channel->AddPropagationLossModel (splm);
 		}
 
-		if (m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ())
-		{
-			Ptr<BuildingsObstaclePropagationLossModel> building = m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
-			building->SetBeamforming (m_beamforming);
-		}
 	}
 	else
 	{
