@@ -62,7 +62,7 @@
 #include <ns3/mmwave-bearer-stats-connector.h>
 #include <ns3/propagation-loss-model.h>
 #include <ns3/mmwave-channel-raytracing.h>
-
+#include <ns3/mmwave-3gpp-channel.h>
 namespace ns3 {
 
 /* ... */
@@ -128,6 +128,7 @@ private:
 	Ptr<MmWaveBeamforming> m_beamforming;
 	Ptr<MmWaveChannelMatrix> m_channelMatrix;
 	Ptr<MmWaveChannelRaytracing> m_raytracing;
+	Ptr<MmWave3gppChannel> m_3gppChannel;
 
 	Ptr<Object> m_pathlossModel;
 	std::string m_pathlossModelType;

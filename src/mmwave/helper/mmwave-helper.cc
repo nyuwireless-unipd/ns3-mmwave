@@ -141,26 +141,6 @@ MmWaveHelper::DoInitialize()
 	m_channel = m_channelFactory.Create<SpectrumChannel> ();
 	m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
 
-
-	if(m_channelModelType == "ns3::MmWaveBeamforming")
-	{
-		m_beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
-		m_channel->AddSpectrumPropagationLossModel (m_beamforming);
-		m_beamforming->SetCofigurationParameters (m_phyMacCommon);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
-	{
-		m_channelMatrix = CreateObject<MmWaveChannelMatrix> ();
-		m_channel->AddSpectrumPropagationLossModel (m_channelMatrix);
-		m_channelMatrix->SetCofigurationParameters (m_phyMacCommon);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
-	{
-		m_raytracing = CreateObject<MmWaveChannelRaytracing> ();
-		m_channel->AddSpectrumPropagationLossModel (m_raytracing);
-		m_raytracing->SetCofigurationParameters (m_phyMacCommon);
-	}
-
 	if (!m_pathlossModelType.empty ())
 	{
 		m_pathlossModel = m_pathlossModelFactory.Create ();
@@ -170,11 +150,48 @@ MmWaveHelper::DoInitialize()
 			NS_LOG_LOGIC (this << " using a PropagationLossModel");
 			m_channel->AddPropagationLossModel (splm);
 		}
-
 	}
 	else
 	{
-		NS_LOG_UNCOND (this << " No PropagationLossModel!");
+		NS_LOG_UNCOND ("MmWaveHelper: No PropagationLossModel!");
+	}
+
+	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	{
+		m_beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+		m_channel->AddSpectrumPropagationLossModel (m_beamforming);
+		m_beamforming->SetConfigurationParameters (m_phyMacCommon);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+	{
+		m_channelMatrix = CreateObject<MmWaveChannelMatrix> ();
+		m_channel->AddSpectrumPropagationLossModel (m_channelMatrix);
+		m_channelMatrix->SetConfigurationParameters (m_phyMacCommon);
+	}
+	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+	{
+		m_raytracing = CreateObject<MmWaveChannelRaytracing> ();
+		m_channel->AddSpectrumPropagationLossModel (m_raytracing);
+		m_raytracing->SetConfigurationParameters (m_phyMacCommon);
+	}
+	else if(m_channelModelType == "ns3::MmWave3gppChannel")
+	{
+		m_3gppChannel = CreateObject<MmWave3gppChannel> ();
+		m_channel->AddSpectrumPropagationLossModel (m_3gppChannel);
+		m_3gppChannel->SetConfigurationParameters (m_phyMacCommon);
+		if (m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel" || m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel" )
+		{
+			Ptr<PropagationLossModel> pl = m_pathlossModel->GetObject<PropagationLossModel> ();
+			m_3gppChannel->SetPathlossModel(pl);
+		}
+<<<<<<< Updated upstream
+
+=======
+		else
+		{
+			NS_FATAL_ERROR("The 3GPP channel and propagation loss should be enabled at the same time");
+		}
+>>>>>>> Stashed changes
 	}
 
 
@@ -303,7 +320,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	phy->SetHarqPhyModule (harq);
 
 	/* Do not do this here. Do it during registration with the BS
-	 * phy->SetCofigurationParameters(m_phyMacCommon);*/
+	 * phy->SetConfigurationParameters(m_phyMacCommon);*/
 
 	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
 	pData->AddCallback (MakeCallback (&MmWaveUePhy::GenerateDlCqiReport, phy));
@@ -370,8 +387,8 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
 	uint64_t imsi = ++m_imsiCounter;
 
-	phy->SetCofigurationParameters (m_phyMacCommon);
-	mac->SetCofigurationParameters (m_phyMacCommon);
+	phy->SetConfigurationParameters (m_phyMacCommon);
+	mac->SetConfigurationParameters (m_phyMacCommon);
 
 	phy->SetPhySapUser (mac->GetPhySapUser());
 	mac->SetPhySapProvider (phy->GetPhySapProvider());
@@ -428,7 +445,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	}
 	dlPhy->AddDataSinrChunkProcessor (pData);
 
-	phy->SetCofigurationParameters(m_phyMacCommon);
+	phy->SetConfigurationParameters(m_phyMacCommon);
 
 	ulPhy->SetChannel (m_channel);
 	dlPhy->SetChannel (m_channel);
@@ -445,7 +462,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	ulPhy->SetAntenna (antenna);
 
 	Ptr<MmWaveEnbMac> mac = CreateObject<MmWaveEnbMac> ();
-	mac->SetCofigurationParameters (m_phyMacCommon);
+	mac->SetConfigurationParameters (m_phyMacCommon);
 	Ptr<MmWaveMacScheduler> sched = m_schedulerFactory.Create<MmWaveMacScheduler> ();
 
 	/*to use the dummy ffrAlgorithm, I changed the bandwidth to 25 in EnbNetDevice
@@ -593,6 +610,10 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
 	{
 		m_raytracing->Initial(ueDevices,enbDevices);
+	}
+	else if(m_channelModelType == "ns3::MmWave3gppChannel")
+	{
+		m_3gppChannel->Initial(ueDevices,enbDevices);
 	}
 }
 

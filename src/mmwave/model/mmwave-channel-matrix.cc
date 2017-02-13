@@ -91,7 +91,7 @@ MmWaveChannelMatrix::DoDispose ()
 }
 
 void
-MmWaveChannelMatrix::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveChannelMatrix::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 }

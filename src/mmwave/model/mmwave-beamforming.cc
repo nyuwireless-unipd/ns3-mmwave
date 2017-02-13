@@ -122,7 +122,7 @@ MmWaveBeamforming::DoDispose ()
 }
 
 void
-MmWaveBeamforming::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveBeamforming::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 }

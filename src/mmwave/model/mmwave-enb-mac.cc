@@ -333,7 +333,7 @@ MmWaveEnbMac::DoDispose (void)
 }
 
 void
-MmWaveEnbMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveEnbMac::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 }

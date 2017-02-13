@@ -84,7 +84,7 @@ public:
 	void ConnectDevices (Ptr<NetDevice> dev1, Ptr<NetDevice> dev2);
 	void Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbDevices);
 
-	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 
