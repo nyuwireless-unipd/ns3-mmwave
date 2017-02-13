@@ -9,3 +9,4 @@
 waf-tools
 
 *.txt
+.DS_Store
