@@ -99,12 +99,12 @@ main (int argc, char *argv[])
     //LogComponentEnable ("MmWave3gppChannel", LOG_LEVEL_ALL);
     LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
     LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
-    LogComponentEnable ("LtePdcp", LOG_LEVEL_INFO);
+    //LogComponentEnable ("LtePdcp", LOG_LEVEL_INFO);
 
   }
 
   // set simulation time and mobility
-  double simTime = 20; // s
+  double simTime = 1; // s
   double speed = 1; // 1 m/s for walking UT.
 
   // parse the command line options
