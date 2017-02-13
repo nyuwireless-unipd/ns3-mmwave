@@ -184,14 +184,10 @@ MmWaveHelper::DoInitialize()
 			Ptr<PropagationLossModel> pl = m_pathlossModel->GetObject<PropagationLossModel> ();
 			m_3gppChannel->SetPathlossModel(pl);
 		}
-<<<<<<< Updated upstream
-
-=======
 		else
 		{
 			NS_FATAL_ERROR("The 3GPP channel and propagation loss should be enabled at the same time");
 		}
->>>>>>> Stashed changes
 	}
 
 
@@ -858,8 +854,8 @@ void
 MmWaveHelper::EnableDlPhyTrace (void)
 {
 	//NS_LOG_FUNCTION_NOARGS ();
-	//Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
-	//		MakeBoundCallback (&MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
+	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
+			MakeBoundCallback (&MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
 
 	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
 			MakeBoundCallback (&MmWavePhyRxTrace::RxPacketTraceUeCallback, m_phyStats));

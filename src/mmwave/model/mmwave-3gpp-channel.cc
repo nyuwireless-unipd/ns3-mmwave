@@ -192,7 +192,7 @@ MmWave3gppChannel::GetTypeId (void)
 				MakeIntegerAccessor (&MmWave3gppChannel::m_numNonSelfBloking),
 				MakeIntegerChecker<uint8_t> ())
 	.AddAttribute ("BlockerSpeed",
-				"The speed of moving blockers",
+				"The speed of moving blockers, the unit is m/s",
 				DoubleValue (1),
 				MakeDoubleAccessor (&MmWave3gppChannel::m_blockerSpeed),
 				MakeDoubleChecker<double> ())
