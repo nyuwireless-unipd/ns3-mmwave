@@ -92,7 +92,7 @@ public:
 
 	static TypeId GetTypeId (void);
 	void DoDispose();
-	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	void LoadFile();

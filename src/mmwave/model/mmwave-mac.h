@@ -84,7 +84,7 @@ public:
 	~MmWaveMac ();
 
 
-	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	bool QueueData (Ptr<Packet> packet);

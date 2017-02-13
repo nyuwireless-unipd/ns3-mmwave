@@ -54,7 +54,11 @@ def build(bld):
         #'model/mmwave-mac-sap.cc',
         #'model/mmwave-rrc-sap.cc',
         #'model/mmwave-rlc.cc',
-        #'model/mmwave-rlc-sap.cc'
+        #'model/mmwave-rlc-sap.cc',
+        'model/mmwave-3gpp-propagation-loss-model.cc',
+        'model/mmwave-3gpp-channel.cc', 
+        'model/mmwave-3gpp-buildings-propagation-loss-model.cc',
+         
         ]
 
     module_test = bld.create_ns3_module_test_library('mmwave')
@@ -110,7 +114,11 @@ def build(bld):
         #'model/mmwave-mac-sap.h',
         #'model/mmwave-rrc-sap.h',
         #'model/mmwave-rlc.h',
-        #'model/mmwave-rlc-sap.h'
+        #'model/mmwave-rlc-sap.h',
+        'model/mmwave-3gpp-propagation-loss-model.h',
+        'model/mmwave-3gpp-channel.h',
+        'model/mmwave-3gpp-buildings-propagation-loss-model.h',
+        
         ]
 
     if bld.env.ENABLE_EXAMPLES:

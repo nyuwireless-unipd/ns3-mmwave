@@ -22,5 +22,9 @@ def build(bld):
     obj = bld.create_ns3_program('mmwave-epc-amc-test', ['mmwave'])
     obj.source = 'mmwave-epc-amc-test.cc'    
     obj = bld.create_ns3_program('mmwave-tcp-raytracing-example', ['mmwave'])
-    obj.source = 'mmwave-tcp-raytracing-example.cc' 
+    obj.source = 'mmwave-tcp-raytracing-example.cc'
+    obj = bld.create_ns3_program('mmwave-3gpp-channel-example', ['mmwave'])
+    obj.source = 'mmwave-3gpp-channel-example.cc'
+    obj = bld.create_ns3_program('mmwave-3gpp-channel-test', ['mmwave'])
+    obj.source = 'mmwave-3gpp-channel-test.cc'
     
