@@ -74,8 +74,8 @@ main (int argc, char *argv[])
 	std::string scenario = "RMa";
 	//'l' for LOS only, 'n' for NLOS only, 'a' for all conditions determined by probability driven model.
 	std::string condition = "a";
-	double startDistance = 0; //the start 2D distance in meters.
-	double stopDistance = 1000; //the stop 2D distance in meters.
+	//double startDistance = 0; //the start 2D distance in meters.
+	//double stopDistance = 1000; //the stop 2D distance in meters.
 
 	bool optionNlos = false; //enable the optional NLOS propagation loss model.
 	bool enableBuildings = false;
