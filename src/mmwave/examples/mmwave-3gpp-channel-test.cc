@@ -213,7 +213,7 @@ main (int argc, char *argv[])
   }
 
 
-  Simulator::Stop (Seconds (30));
+  Simulator::Stop (Seconds (10));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
