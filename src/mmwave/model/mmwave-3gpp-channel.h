@@ -331,19 +331,20 @@ private:
 	void DeleteChannel(Ptr<const MobilityModel> a,
 			Ptr<const MobilityModel> b) const;
 	/*
-	 * Returns the cluster power after applying blockage model
+	 * Returns the attenuation of each cluster in dB after applying blockage model
 	 * @params the channel realizationin as a Params3gpp object
-	 * @params cluster power without blockage
 	 * @params cluster azimuth angle of arrival
 	 * @params cluster zenith angle of arrival
 	 */
-	doubleVector_t ApplyBlockageModel(Ptr<Params3gpp> params, doubleVector_t clusterPower,
+	doubleVector_t CalAttenuationOfBlockage(Ptr<Params3gpp> params,
 			doubleVector_t clusterAOA, doubleVector_t clusterZOA) const;
 
 	mutable std::map< key_t, int > m_connectedPair;
 	mutable std::map< key_t, Ptr<Params3gpp> > m_channelMap;
 
 	Ptr<UniformRandomVariable> m_uniformRv;
+	Ptr<UniformRandomVariable> m_uniformRvBlockage;
+
 	Ptr<NormalRandomVariable> m_normalRv; //there is a bug in the NormalRandomVariable::GetValue() function.
 	Ptr<ExponentialRandomVariable> m_expRv;
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
@@ -352,7 +353,7 @@ private:
 	Time m_updatePeriod;
 	bool m_cellScan;
 	bool m_blockage;
-	uint8_t m_numNonSelfBloking; //number of non-self-blocking regions.
+	uint16_t m_numNonSelfBloking; //number of non-self-blocking regions.
 	bool m_portraitMode; //true (portrait mode); false (landscape mode).
 	std::string m_scenario;
 	double m_blockerSpeed;
