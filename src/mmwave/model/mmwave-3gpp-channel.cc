@@ -160,6 +160,7 @@ static const double sqrtC_office_NLOS[6][6] = {
 MmWave3gppChannel::MmWave3gppChannel ()
 {
 	m_uniformRv = CreateObject<UniformRandomVariable> ();
+	m_uniformRvBlockage = CreateObject<UniformRandomVariable> ();
 	m_expRv = CreateObject<ExponentialRandomVariable> ();
 	m_normalRv = CreateObject<NormalRandomVariable> ();
 	m_normalRv->SetAttribute ("Mean", DoubleValue (0));
@@ -190,7 +191,7 @@ MmWave3gppChannel::GetTypeId (void)
 				"number of non-self-blocking regions",
 				IntegerValue (4),
 				MakeIntegerAccessor (&MmWave3gppChannel::m_numNonSelfBloking),
-				MakeIntegerChecker<uint8_t> ())
+				MakeIntegerChecker<uint16_t> ())
 	.AddAttribute ("BlockerSpeed",
 				"The speed of moving blockers, the unit is m/s",
 				DoubleValue (1),
@@ -1117,6 +1118,13 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 		clusterPower.push_back(power);
 	}
 	double powerMax = 0;
+
+	for (uint8_t cIndex = 0; cIndex < numOfCluster; cIndex++)
+	{
+		clusterPower.at(cIndex) = clusterPower.at(cIndex)/powerSum; //(7.5-6)
+	}
+
+	doubleVector_t clusterPowerForAngles; // this power is only for equation (7.5-9) and (7.5-14), not for (7.5-22)
 	if(los)
 	{
 		double K_linear = pow(10,K_factor/10);
@@ -1125,15 +1133,15 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 		{
 			if(cIndex == 0)
 			{
-				clusterPower.at(cIndex) = clusterPower.at(cIndex)/(1+K_linear)/powerSum+K_linear/(1+K_linear); //(7.5-8)
+				clusterPowerForAngles.push_back (clusterPower.at(cIndex)/(1+K_linear)+K_linear/(1+K_linear)); //(7.5-8)
 			}
 			else
 			{
-				clusterPower.at(cIndex) = clusterPower.at(cIndex)/(1+K_linear)/powerSum; //(7.5-8)
+				clusterPowerForAngles.push_back (clusterPower.at(cIndex)/(1+K_linear)); //(7.5-8)
 			}
-			if(powerMax < clusterPower.at(cIndex))
+			if(powerMax < clusterPowerForAngles.at(cIndex))
 			{
-				powerMax = clusterPower.at(cIndex);
+				powerMax = clusterPowerForAngles.at(cIndex);
 			}
 		}
 	}
@@ -1141,10 +1149,10 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 	{
 		for (uint8_t cIndex = 0; cIndex < numOfCluster; cIndex++)
 		{
-			clusterPower.at(cIndex) = clusterPower.at(cIndex)/powerSum; //(7.5-6)
-			if(powerMax < clusterPower.at(cIndex))
+			clusterPowerForAngles.push_back (clusterPower.at(cIndex)); //(7.5-6)
+			if(powerMax < clusterPowerForAngles.at(cIndex))
 			{
-				powerMax = clusterPower.at(cIndex);
+				powerMax = clusterPowerForAngles.at(cIndex);
 			}
 		}
 	}
@@ -1154,8 +1162,9 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 	double thresh = 0.0032;
 	for (uint8_t cIndex = numOfCluster; cIndex > 0; cIndex--)
 	{
-		if(clusterPower.at (cIndex-1) < thresh*powerMax )
+		if(clusterPowerForAngles.at (cIndex-1) < thresh*powerMax )
 		{
+			clusterPowerForAngles.erase(clusterPowerForAngles.begin()+cIndex-1);
 			clusterPower.erase(clusterPower.begin()+cIndex-1);
 			clusterDelay.erase(clusterDelay.begin()+cIndex-1);
 		}
@@ -1172,6 +1181,12 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 			clusterDelay.at(cIndex) = clusterDelay.at(cIndex)/C_tau; //(7.5-4)
 		}
 	}
+
+	/*for (uint8_t i = 0; i < clusterPowerForAngles.size(); i++)
+	{
+		std::cout <<clusterPowerForAngles.at(i)<<"s\t";
+	}
+	std::cout << "\n";*/
 
 	/*std::cout << "Delay:";
 	for (uint8_t i = 0; i < numReducedCluster; i++)
@@ -1259,13 +1274,13 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 	double angle;
 	for (uint8_t cIndex = 0; cIndex < numReducedCluster; cIndex++)
 	{
-		angle = 2*ASA*sqrt(-1*log(clusterPower.at(cIndex)/powerMax))/1.4/C_phi; //(7.5-9)
+		angle = 2*ASA*sqrt(-1*log(clusterPowerForAngles.at(cIndex)/powerMax))/1.4/C_phi; //(7.5-9)
 		clusterAoa.push_back(angle);
-		angle = 2*ASD*sqrt(-1*log(clusterPower.at(cIndex)/powerMax))/1.4/C_phi; //(7.5-9)
+		angle = 2*ASD*sqrt(-1*log(clusterPowerForAngles.at(cIndex)/powerMax))/1.4/C_phi; //(7.5-9)
 		clusterAod.push_back(angle);
-		angle = -1*ZSA*log(clusterPower.at(cIndex)/powerMax)/C_theta; //(7.5-14)
+		angle = -1*ZSA*log(clusterPowerForAngles.at(cIndex)/powerMax)/C_theta; //(7.5-14)
 		clusterZoa.push_back(angle);
-		angle = -1*ZSD*log(clusterPower.at(cIndex)/powerMax)/C_theta;
+		angle = -1*ZSD*log(clusterPowerForAngles.at(cIndex)/powerMax)/C_theta;
 		clusterZod.push_back(angle);
 	}
 
@@ -1437,9 +1452,18 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 		}
 	}
 
+	doubleVector_t attenuation_dB;
 	if(m_blockage)
 	{
-		clusterPower = ApplyBlockageModel (channelParams, clusterPower, clusterAoa, clusterZoa);
+		 attenuation_dB = CalAttenuationOfBlockage (channelParams, clusterAoa, clusterZoa);
+		 for (uint8_t cInd = 0; cInd < numReducedCluster; cInd++)
+		 {
+			 clusterPower.at (cInd) = clusterPower.at (cInd)/pow(10,attenuation_dB.at (cInd)/10);
+		 }
+	}
+	else
+	{
+		attenuation_dB.push_back(0);
 	}
 
 	/*std::cout << "BlockedPower:";
@@ -1688,12 +1712,12 @@ MmWave3gppChannel::GetNewChannel(Ptr<ParamsTable>  table3gpp, Vector locUT, bool
 						//*exp(std::complex<double>(0, doppler));
 
 				double K_linear = pow(10,K_factor/10);
-
-				H_usn.at(uIndex).at(sIndex).at(0) = sqrt(1/(K_linear+1))*H_usn.at(uIndex).at(sIndex).at(0)+sqrt(K_linear/(1+K_linear))*ray;
+				// the LOS path should be attenuated if blockage is enabled.
+				H_usn.at(uIndex).at(sIndex).at(0) = sqrt(1/(K_linear+1))*H_usn.at(uIndex).at(sIndex).at(0)+sqrt(K_linear/(1+K_linear))*ray/pow(10,attenuation_dB.at (0)/10);  //(7.5-30) for tau = tau1
 				double tempSize = H_usn.at(uIndex).at(sIndex).size();
 				for(uint8_t nIndex = 1; nIndex < tempSize; nIndex++)
 				{
-					H_usn.at(uIndex).at(sIndex).at(nIndex) *= sqrt(1/(K_linear+1));
+					H_usn.at(uIndex).at(sIndex).at(nIndex) *= sqrt(1/(K_linear+1)); //(7.5-30) for tau = tau2...taunN
 				}
 
 			}
@@ -1831,51 +1855,12 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 		powerSum +=power;
 		clusterPower.push_back(power);
 	}
-	double powerMax = 0;
-	if(params->m_los)
-	{
-		double K_linear = pow(10,K_factor/10);
 
-		for (uint8_t cIndex = 0; cIndex < params->m_numCluster; cIndex++)
-		{
-			if(cIndex == 0)
-			{
-				clusterPower.at(cIndex) = clusterPower.at(cIndex)/(1+K_linear)/powerSum+K_linear/(1+K_linear); //(7.5-8)
-			}
-			else
-			{
-				clusterPower.at(cIndex) = clusterPower.at(cIndex)/(1+K_linear)/powerSum; //(7.5-8)
-			}
-			if(powerMax < clusterPower.at(cIndex))
-			{
-				powerMax = clusterPower.at(cIndex);
-			}
-		}
-	}
-	else
+	// we do not need to compute the cluster power of LOS case, since it is used for generating angles.
+	for (uint8_t cIndex = 0; cIndex < params->m_numCluster; cIndex++)
 	{
-		for (uint8_t cIndex = 0; cIndex < params->m_numCluster; cIndex++)
-		{
-			clusterPower.at(cIndex) = clusterPower.at(cIndex)/powerSum; //(7.5-6)
-			if(powerMax < clusterPower.at(cIndex))
-			{
-				powerMax = clusterPower.at(cIndex);
-			}
-		}
+		clusterPower.at(cIndex) = clusterPower.at(cIndex)/powerSum; //(7.5-6)
 	}
-
-	//Should we remove the small cluster like the initial channel generation?
-	//double thresh = pow(10,-2.5);
-	/*double thresh = 0.0032;
-	for (uint8_t cIndex = params->m_numCluster; cIndex > 0; cIndex--)
-	{
-		if(clusterPower.at (cIndex-1) < thresh*powerMax )
-		{
-			clusterPower.erase(clusterPower.begin()+cIndex-1);
-			clusterDelay.erase(clusterDelay.begin()+cIndex-1);
-		}
-	}
-	params->m_numCluster = clusterPower.size();*/
 
 	// Resume step 5 to compute the delay for LoS condition.
 	if(params->m_los)
@@ -2097,11 +2082,20 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 			NS_FATAL_ERROR("Programming Error");
 		}
 	}
-
+	doubleVector_t attenuation_dB;
 	if(m_blockage)
 	{
-		clusterPower = ApplyBlockageModel (params, clusterPower, clusterAoa, clusterZoa);
+		 attenuation_dB = CalAttenuationOfBlockage (params, clusterAoa, clusterZoa);
+		 for (uint8_t cInd = 0; cInd < params->m_numCluster; cInd++)
+		 {
+			 clusterPower.at (cInd) = clusterPower.at (cInd)/pow(10,attenuation_dB.at (cInd)/10);
+		 }
 	}
+	else
+	{
+		attenuation_dB.push_back(0);
+	}
+
 	/*std::cout << "BlockedPower:";
 	for (uint8_t i = 0; i < params->m_numCluster; i++)
 	{
@@ -2342,11 +2336,11 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 
 				double K_linear = pow(10,K_factor/10);
 
-				H_usn.at(uIndex).at(sIndex).at(0) = sqrt(1/(K_linear+1))*H_usn.at(uIndex).at(sIndex).at(0)+sqrt(K_linear/(1+K_linear))*ray;
+				H_usn.at(uIndex).at(sIndex).at(0) = sqrt(1/(K_linear+1))*H_usn.at(uIndex).at(sIndex).at(0)+sqrt(K_linear/(1+K_linear))*ray/pow(10,attenuation_dB.at (0)/10);  //(7.5-30) for tau = tau1
 				double tempSize = H_usn.at(uIndex).at(sIndex).size();
 				for(uint8_t nIndex = 1; nIndex < tempSize; nIndex++)
 				{
-					H_usn.at(uIndex).at(sIndex).at(nIndex) *= sqrt(1/(K_linear+1));
+					H_usn.at(uIndex).at(sIndex).at(nIndex) *= sqrt(1/(K_linear+1)); //(7.5-30) for tau = tau2...taunN
 				}
 
 			}
@@ -2447,12 +2441,15 @@ MmWave3gppChannel::CellScan (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> par
 }
 
 doubleVector_t
-MmWave3gppChannel::ApplyBlockageModel (Ptr<Params3gpp> params, doubleVector_t clusterPower,
+MmWave3gppChannel::CalAttenuationOfBlockage (Ptr<Params3gpp> params,
 		doubleVector_t clusterAOA, doubleVector_t clusterZOA) const
 {
-	doubleVector_t blockedPower;
-	blockedPower = clusterPower;
-	uint8_t clusterNum = blockedPower.size ();
+	doubleVector_t powerAttenuation;
+	uint8_t clusterNum = clusterAOA.size ();
+	for(uint8_t cInd = 0; cInd < clusterNum; cInd++)
+	{
+		powerAttenuation.push_back(0); //Initial power attenuation for all clusters to be 0 dB;
+	}
 	//step a: the number of non-self blocking blockers is stored in m_numNonSelfBloking.
 
 	//step b:Generate the size and location of each blocker
@@ -2477,21 +2474,21 @@ MmWave3gppChannel::ApplyBlockageModel (Ptr<Params3gpp> params, doubleVector_t cl
 	//generate or update non-self blocking
 	if(params->m_nonSelfBlocking.size ()==0)//generate new blocking regions
 	{
-		for(uint8_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
+		for(uint16_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
 		{
 			//draw value from table 7.6.4.1-2 Blocking region parameters
 			doubleVector_t table;
-			table.push_back (m_uniformRv->GetValue(0, 360));
+			table.push_back (m_uniformRvBlockage->GetValue(0, 360));
 			if(m_scenario == "InH-OfficeMixed" || m_scenario == "InH-OfficeOpen")
 			{
-				table.push_back (m_uniformRv->GetValue(15, 45));
+				table.push_back (m_uniformRvBlockage->GetValue(15, 45));
 				table.push_back (90);
-				table.push_back (m_uniformRv->GetValue(5, 15));
+				table.push_back (m_uniformRvBlockage->GetValue(5, 15));
 				table.push_back (2);
 			}
 			else
 			{
-				table.push_back (m_uniformRv->GetValue(5, 15));
+				table.push_back (m_uniformRvBlockage->GetValue(5, 15));
 				table.push_back (90);
 				table.push_back (5);
 				table.push_back (10);
@@ -2539,10 +2536,10 @@ MmWave3gppChannel::ApplyBlockageModel (Ptr<Params3gpp> params, doubleVector_t cl
 					<<" Time difference:"<<Now().GetSeconds()-params->m_generatedTime.GetSeconds()
 					<<" correlation:"<<R);
 
-			for(uint8_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
+			for(uint16_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
 			{
 				params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) =
-						R*params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) + sqrt(1-R*R)*m_uniformRv->GetValue(-180, 180);
+						R*params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) + sqrt(1-R*R)*m_uniformRvBlockage->GetValue(-180, 180);
 
 				while(params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) > 360)
 				{
@@ -2570,14 +2567,14 @@ MmWave3gppChannel::ApplyBlockageModel (Ptr<Params3gpp> params, doubleVector_t cl
 		NS_LOG_INFO ("ZOA="<<clusterZOA.at (cInd) << " Block Region[" << theta_sb - y_sb/2<< ","<<theta_sb + y_sb/2<<"]");
 		if( std::abs(clusterAOA.at (cInd)-phi_sb)<(x_sb/2) && std::abs(clusterZOA.at (cInd)-theta_sb)<(y_sb/2))
 		{
-			blockedPower.at (cInd) *= 1e-3; //anttenuate by 30 dB.
+			powerAttenuation.at (cInd) += 30; //anttenuate by 30 dB.
 			NS_LOG_INFO ("Cluster["<<(int)cInd<<"] is blocked by self blocking region and reduce 30 dB power,"
-					"the remaining power is ["<<blockedPower.at (cInd)<<"]");
+					"the attenuation is ["<<powerAttenuation.at (cInd)<<" dB]");
 		}
 
 		//check non-self blocking
 		double phiK, xK, thetaK, yK;
-		for(uint8_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
+		for(uint16_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
 		{
 			phiK = params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX);
 			xK = params->m_nonSelfBlocking.at(blockInd).at(X_INDEX);
@@ -2638,14 +2635,14 @@ MmWave3gppChannel::ApplyBlockageModel (Ptr<Params3gpp> params, doubleVector_t cl
 				double F_Z2 = atan(signZ2*M_PI/2*sqrt(M_PI/lambda*
 						params->m_nonSelfBlocking.at(blockInd).at(R_INDEX)*(1/cos(Z2*M_PI/180)-1)))/M_PI;
 				double L_dB = -20*log10(1-(F_A1+F_A2)*(F_Z1+F_Z2)); //(7.6-22)
-				blockedPower.at(cInd) = blockedPower.at(cInd)/pow(10,L_dB/10);
+				powerAttenuation.at(cInd) += L_dB;
 				NS_LOG_INFO ("Cluster["<<(int)cInd<<"] is blocked by no-self blocking, "
-						"the loss is ["<<L_dB<<"]"<<" dB and only["<<blockedPower.at(cInd)<<"] left");
+						"the loss is ["<<L_dB<<"]"<<" dB");
 
 			}
 		}
 	}
-	return blockedPower;
+	return powerAttenuation;
 }
 
 
