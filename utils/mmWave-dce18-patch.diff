@@ -1,0 +1,49 @@
+--- kernel-socket-fd-factory.cc	2017-01-17 12:31:21.119271000 +0100
++++ kernel-socket-fd-factory.cc	2016-11-21 11:13:15.887385158 +0100
+@@ -92,6 +92,7 @@
+     m_logFile (0)
+ {
+   TypeId::LookupByNameFailSafe ("ns3::LteUeNetDevice", &m_lteUeTid);
++  TypeId::LookupByNameFailSafe ("ns3::MmWaveUeNetDevice", &m_mmWaveUeTid);
+   m_variable = CreateObject<UniformRandomVariable> ();
+ }
+ 
+@@ -428,6 +429,7 @@
+                                     uint16_t protocol, const Address & from,
+                                     const Address &to, NetDevice::PacketType type)
+ {
++  NS_LOG_FUNCTION("Received packet");
+   struct SimDevice *dev = DevToDev (device);
+   if (dev == 0)
+     {
+@@ -442,7 +444,7 @@
+     unsigned char   h_source[6];
+     uint16_t        h_proto;
+   } *hdr = (struct ethhdr *)packet.buffer;
+-  if (device->GetInstanceTypeId () != m_lteUeTid)
++  if (device->GetInstanceTypeId () != m_lteUeTid && device->GetInstanceTypeId () != m_mmWaveUeTid)
+     {
+       Mac48Address realFrom = Mac48Address::ConvertFrom (from);
+       realFrom.CopyTo (hdr->h_source);
+@@ -544,6 +546,11 @@
+     {
+       node->RegisterProtocolHandler (MakeCallback (&KernelSocketFdFactory::RxFromDevice, this),
+                                      0, device, false);
++    }
++  else if (device->GetInstanceTypeId () == m_mmWaveUeTid)
++    {
++      node->RegisterProtocolHandler (MakeCallback (&KernelSocketFdFactory::RxFromDevice, this),
++                                     0, device, false);
+     }
+   else
+     {
+--- kernel-socket-fd-factory.h	2017-01-17 12:31:33.571378000 +0100
++++ kernel-socket-fd-factory.h	2016-11-21 11:13:15.887385158 +0100
+@@ -149,6 +149,7 @@
+   Ptr<RandomVariableStream> m_ranvar;
+   uint16_t m_pid;
+   TypeId m_lteUeTid;
++  TypeId m_mmWaveUeTid;
+ };
+ 
+ } // namespace ns3
