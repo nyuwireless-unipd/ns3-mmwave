@@ -27,4 +27,7 @@ def build(bld):
     obj.source = 'mmwave-3gpp-channel-example.cc'
     obj = bld.create_ns3_program('mmwave-3gpp-channel-test', ['mmwave'])
     obj.source = 'mmwave-3gpp-channel-test.cc'
-    
+    obj = bld.create_ns3_program('mmwave-tcp-multiflow', ['mmwave'])
+    obj.source = 'mmwave-tcp-multiflow.cc'
+    obj = bld.create_ns3_program('mmwave-tcp-multi-ue', ['mmwave'])
+    obj.source = 'mmwave-tcp-multi-ue.cc'
