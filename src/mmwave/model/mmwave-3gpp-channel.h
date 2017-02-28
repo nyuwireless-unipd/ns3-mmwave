@@ -82,7 +82,7 @@ struct Params3gpp : public SimpleRefCount<Params3gpp>
 	/*The following parameters are stored for spatial consistent updating*/
 	Vector m_preLocUT; // location of UT when generating the previous channel
 	Vector m_locUT; // location of UT
-	double2DVector_t m_ranAngles; //stores the random angles angle[cluster][id] generated for equation (7.6-11)-(7.6-14), where id = 0(aoa),1(zoa),2(aod),3(zod)
+	double2DVector_t m_norRvAngles; //stores the normal variable for random angles angle[cluster][id] generated for equation (7.6-11)-(7.6-14), where id = 0(aoa),1(zoa),2(aod),3(zod)
 	Time m_generatedTime;
 	double m_DS; // delay spread
 	double m_K; //K factor
@@ -346,6 +346,9 @@ private:
 	Ptr<UniformRandomVariable> m_uniformRvBlockage;
 
 	Ptr<NormalRandomVariable> m_normalRv; //there is a bug in the NormalRandomVariable::GetValue() function.
+	Ptr<NormalRandomVariable> m_normalRvBlockage;
+
+
 	Ptr<ExponentialRandomVariable> m_expRv;
 	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 	Ptr<PropagationLossModel> m_3gppPathloss;
