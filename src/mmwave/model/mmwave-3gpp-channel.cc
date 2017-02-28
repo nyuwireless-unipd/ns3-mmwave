@@ -165,6 +165,9 @@ MmWave3gppChannel::MmWave3gppChannel ()
 	m_normalRv = CreateObject<NormalRandomVariable> ();
 	m_normalRv->SetAttribute ("Mean", DoubleValue (0));
 	m_normalRv->SetAttribute ("Variance", DoubleValue (1));
+	m_normalRvBlockage = CreateObject<NormalRandomVariable> ();
+	m_normalRvBlockage->SetAttribute ("Mean", DoubleValue (0));
+	m_normalRvBlockage->SetAttribute ("Variance", DoubleValue (1));
 }
 
 TypeId
@@ -1902,7 +1905,7 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 	double v = sqrt(params->m_speed.x*params->m_speed.x + params->m_speed.y*params->m_speed.y);
 	if(v > 1e-6)//Update the angles only when the speed is not 0.
 	{
-		if(params->m_ranAngles.size () ==0)
+		if(params->m_norRvAngles.size () ==0)
 		{
 			//initial case
 			for (uint8_t cInd = 0; cInd < params->m_numCluster; cInd++)
@@ -1912,7 +1915,7 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 				temp.push_back(0); //initial random angle for ZOA
 				temp.push_back(0); //initial random angle for AOD
 				temp.push_back(0); //initial random angle for ZOD
-				params->m_ranAngles.push_back(temp);
+				params->m_norRvAngles.push_back(temp);
 			}
 		}
 		for (uint8_t cInd = 0; cInd < params->m_numCluster; cInd++)
@@ -1932,14 +1935,33 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 				double R_phi = exp(-1*deltaX/50); // 50 m is the correlation distance as specified in TR 38.900 Sec 7.6.3.2
 				double R_theta = exp(-1*deltaX/100); // 100 m is the correlation distance as specified in TR 38.900 Sec 7.6.3.2
 
-				params->m_ranAngles.at(cInd).at(AOD_INDEX) = R_phi*params->m_ranAngles.at(cInd).at(AOD_INDEX)+sqrt(1-R_phi*R_phi)*m_uniformRv->GetValue(-180, 180);
-				params->m_ranAngles.at(cInd).at(ZOD_INDEX) = R_theta*params->m_ranAngles.at(cInd).at(ZOD_INDEX)+sqrt(1-R_theta*R_theta)*m_uniformRv->GetValue(-90, 90);
-				params->m_ranAngles.at(cInd).at(AOA_INDEX) = R_phi*params->m_ranAngles.at(cInd).at(AOA_INDEX)+sqrt(1-R_phi*R_phi)*m_uniformRv->GetValue(-180, 180);
-				params->m_ranAngles.at(cInd).at(ZOA_INDEX) = R_theta*params->m_ranAngles.at(cInd).at(ZOA_INDEX)+sqrt(1-R_theta*R_theta)*m_uniformRv->GetValue(-90, 90);
-				ranPhiAOD = params->m_ranAngles.at(cInd).at(ZOA_INDEX);
-				ranThetaZOD = params->m_ranAngles.at(cInd).at(ZOD_INDEX);
-				ranPhiAOA = params->m_ranAngles.at(cInd).at(AOA_INDEX);
-				ranThetaZOA = params->m_ranAngles.at(cInd).at(ZOA_INDEX);
+				//In order to generate correlated uniform random variables, we first generate correlated normal random variables and map the normal RV to uniform RV.
+				//Notice the correlation will change if the RV is transformed from normal to uniform.
+				//To compensate the distortion, the correlation of the normal RV is computed
+				//such that the uniform RV would have the desired correlation when transformed from normal RV.
+
+				//The following formula was obtained from MATLAB numerical simulation.
+
+				if(R_phi*R_phi*(-0.069)+R_phi*1.074-0.002 < 1)//When the correlation for normal RV is close to 1, no need to transform.
+				{
+					R_phi = R_phi*R_phi*(-0.069)+R_phi*1.074-0.002;
+				}
+				if(R_theta*R_theta*(-0.069)+R_theta*1.074-0.002 < 1)
+				{
+					R_theta = R_theta*R_theta*(-0.069)+R_theta*1.074-0.002;
+				}
+
+				//We can generate a new correlated normal RV with the following formula
+				params->m_norRvAngles.at(cInd).at(AOD_INDEX) = R_phi*params->m_norRvAngles.at(cInd).at(AOD_INDEX)+sqrt(1-R_phi*R_phi)*m_normalRv->GetValue();
+				params->m_norRvAngles.at(cInd).at(ZOD_INDEX) = R_theta*params->m_norRvAngles.at(cInd).at(ZOD_INDEX)+sqrt(1-R_theta*R_theta)*m_normalRv->GetValue();
+				params->m_norRvAngles.at(cInd).at(AOA_INDEX) = R_phi*params->m_norRvAngles.at(cInd).at(AOA_INDEX)+sqrt(1-R_phi*R_phi)*m_normalRv->GetValue();
+				params->m_norRvAngles.at(cInd).at(ZOA_INDEX) = R_theta*params->m_norRvAngles.at(cInd).at(ZOA_INDEX)+sqrt(1-R_theta*R_theta)*m_normalRv->GetValue();
+
+				//The normal RV is transformed to uniform RV with the desired correlation.
+				ranPhiAOD = (0.5*erfc(-1*params->m_norRvAngles.at(cInd).at(AOD_INDEX)/sqrt(2)))*2*M_PI-M_PI;
+				ranThetaZOD = (0.5*erfc(-1*params->m_norRvAngles.at(cInd).at(ZOD_INDEX)/sqrt(2)))*M_PI-0.5*M_PI;
+				ranPhiAOA = (0.5*erfc(-1*params->m_norRvAngles.at(cInd).at(AOA_INDEX)/sqrt(2)))*2*M_PI-M_PI;
+				ranThetaZOA = (0.5*erfc(-1*params->m_norRvAngles.at(cInd).at(ZOA_INDEX)/sqrt(2)))*M_PI-0.5*M_PI;
 			}
 			clusterAod.at(cInd) += v*timeDiff*
 					sin(atan(params->m_speed.y/params->m_speed.x)-clusterAod.at(cInd)*M_PI/180+ranPhiAOD)*180/(M_PI*params->m_dis2D);
@@ -1951,7 +1973,6 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 					cos(atan(params->m_speed.y/params->m_speed.x)-clusterAoa.at(cInd)*M_PI/180+ranThetaZOA)*180/(M_PI*params->m_dis3D);
 		}
 	}
-
 
 
 	double rayAoa_radian[params->m_numCluster][raysPerCluster]; //rayAoa_radian[n][m], where n is cluster index, m is ray index
@@ -2478,20 +2499,20 @@ MmWave3gppChannel::CalAttenuationOfBlockage (Ptr<Params3gpp> params,
 		{
 			//draw value from table 7.6.4.1-2 Blocking region parameters
 			doubleVector_t table;
-			table.push_back (m_uniformRvBlockage->GetValue(0, 360));
+			table.push_back (m_normalRvBlockage->GetValue()); //phi_k: store the normal RV that will be mapped to uniform (0,360) later.
 			if(m_scenario == "InH-OfficeMixed" || m_scenario == "InH-OfficeOpen")
 			{
-				table.push_back (m_uniformRvBlockage->GetValue(15, 45));
-				table.push_back (90);
-				table.push_back (m_uniformRvBlockage->GetValue(5, 15));
-				table.push_back (2);
+				table.push_back (m_uniformRvBlockage->GetValue(15, 45)); //x_k
+				table.push_back (90); //Theta_k
+				table.push_back (m_uniformRvBlockage->GetValue(5, 15)); //y_k
+				table.push_back (2); //r
 			}
 			else
 			{
-				table.push_back (m_uniformRvBlockage->GetValue(5, 15));
-				table.push_back (90);
-				table.push_back (5);
-				table.push_back (10);
+				table.push_back (m_uniformRvBlockage->GetValue(5, 15)); //x_k
+				table.push_back (90); //Theta_k
+				table.push_back (5); //y_k
+				table.push_back (10); //r
 			}
 			params->m_nonSelfBlocking.push_back(table);
 		}
@@ -2521,7 +2542,7 @@ MmWave3gppChannel::CalAttenuationOfBlockage (Ptr<Params3gpp> params,
 				}
 			}
 			double R;
-			if(m_blockerSpeed > 1e-6) // speed no equal to 0
+			if(m_blockerSpeed > 1e-6) // speed not equal to 0
 			{
 				double corrT = corrDis/m_blockerSpeed;
 				R = exp(-1*(deltaX/corrDis+(Now().GetSeconds()-params->m_generatedTime.GetSeconds())/corrT));
@@ -2529,28 +2550,29 @@ MmWave3gppChannel::CalAttenuationOfBlockage (Ptr<Params3gpp> params,
 			else
 			{
 				R = exp(-1*(deltaX/corrDis));
-
 			}
 
 			NS_LOG_INFO ("Distance change:"<<deltaX<<" Speed:"<<m_blockerSpeed
 					<<" Time difference:"<<Now().GetSeconds()-params->m_generatedTime.GetSeconds()
 					<<" correlation:"<<R);
 
+			//In order to generate correlated uniform random variables, we first generate correlated normal random variables and map the normal RV to uniform RV.
+			//Notice the correlation will change if the RV is transformed from normal to uniform.
+			//To compensate the distortion, the correlation of the normal RV is computed
+			//such that the uniform RV would have the desired correlation when transformed from normal RV.
+
+			//The following formula was obtained from MATLAB numerical simulation.
+
+			if(R*R*(-0.069)+R*1.074-0.002 < 1)//transform only when the correlation of normal RV is smaller than 1
+			{
+				R = R*R*(-0.069)+R*1.074-0.002;
+			}
 			for(uint16_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
 			{
+
+				//Generate a new correlated normal RV with the following formula
 				params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) =
-						R*params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) + sqrt(1-R*R)*m_uniformRvBlockage->GetValue(-180, 180);
-
-				while(params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) > 360)
-				{
-					params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) -= 360;
-				}
-
-				while (params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) < 0)
-				{
-					params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) += 360;
-				}
-
+						R*params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX) + sqrt(1-R*R)*m_normalRvBlockage->GetValue ();
 			}
 		}
 
@@ -2576,7 +2598,18 @@ MmWave3gppChannel::CalAttenuationOfBlockage (Ptr<Params3gpp> params,
 		double phiK, xK, thetaK, yK;
 		for(uint16_t blockInd=0; blockInd<m_numNonSelfBloking; blockInd++)
 		{
-			phiK = params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX);
+			//The normal RV is transformed to uniform RV with the desired correlation.
+			phiK = (0.5*erfc(-1*params->m_nonSelfBlocking.at(blockInd).at(PHI_INDEX)/sqrt(2)))*360;
+			while(phiK > 360)
+			{
+				phiK -= 360;
+			}
+
+			while (phiK < 0)
+			{
+				phiK += 360;
+			}
+
 			xK = params->m_nonSelfBlocking.at(blockInd).at(X_INDEX);
 			thetaK = params->m_nonSelfBlocking.at(blockInd).at(THETA_INDEX);
 			yK = params->m_nonSelfBlocking.at(blockInd).at(Y_INDEX);
