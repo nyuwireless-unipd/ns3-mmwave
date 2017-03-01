@@ -392,13 +392,11 @@ AntennaArrayModel::GetAntennaLocation(uint8_t index, uint8_t* antennaNum)
 }
 
 void
-AntennaArrayModel::SetSector (uint8_t sector, uint8_t *antennaNum)
+AntennaArrayModel::SetSector (uint8_t sector, uint8_t *antennaNum, double elevation)
 {
-
 	complexVector_t tempVector;
 	double hAngle_radian = M_PI*(double)sector/(double)antennaNum[1]-0.5*M_PI;
-	//double hAngle_radian = 0;
-	double vAngle_radian = 90*M_PI/180;
+	double vAngle_radian = elevation*M_PI/180;
 	uint16_t size = antennaNum[0]*antennaNum[1];
 	double power = 1/sqrt(size);
 	for(int ind=0; ind<size; ind++)
