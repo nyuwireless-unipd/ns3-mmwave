@@ -2431,32 +2431,40 @@ void
 MmWave3gppChannel::CellScan (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
 		Ptr<AntennaArrayModel> rxAntenna, uint8_t *txAntennaNum, uint8_t *rxAntennaNum) const
 {
-	double max = 0, maxTx = 0, maxRx =0;
-	for(uint16_t tx=0; tx<txAntennaNum[1]; tx++)
+	double max = 0, maxTx = 0, maxRx =0, maxTxTheta, maxRxTheta;
+	for (uint16_t txTheta = 60; txTheta < 121; txTheta=txTheta+10)
 	{
-		for(uint16_t rx=0; rx<rxAntennaNum[1]; rx++)
+		for(uint16_t tx=0; tx<txAntennaNum[1]; tx++)
 		{
-			txAntenna->SetSector(tx, txAntennaNum);
-			rxAntenna->SetSector(rx, rxAntennaNum);
-			params->m_txW = txAntenna->GetBeamformingVector();
-			params->m_rxW = rxAntenna->GetBeamformingVector();
-			CalLongTerm(params);
-			Ptr<SpectrumValue> bfPsd = CalBeamformingGain(txPsd, params, Vector(0,0,0));
-
-			SpectrumValue bfGain = (*bfPsd)/(*txPsd);
-			uint8_t nbands = bfGain.GetSpectrumModel ()->GetNumBands ();
-			double power = Sum (bfGain)/nbands;
-
-			if (max < power)
+			for (uint16_t rxTheta = 60; rxTheta < 121; rxTheta=rxTheta+10)
 			{
-				max = power;
-				maxTx = tx;
-				maxRx = rx;
+				for(uint16_t rx=0; rx<rxAntennaNum[1]; rx++)
+				{
+					txAntenna->SetSector(tx, txAntennaNum, txTheta);
+					rxAntenna->SetSector(rx, rxAntennaNum, rxTheta);
+					params->m_txW = txAntenna->GetBeamformingVector();
+					params->m_rxW = rxAntenna->GetBeamformingVector();
+					CalLongTerm(params);
+					Ptr<SpectrumValue> bfPsd = CalBeamformingGain(txPsd, params, Vector(0,0,0));
+
+					SpectrumValue bfGain = (*bfPsd)/(*txPsd);
+					uint8_t nbands = bfGain.GetSpectrumModel ()->GetNumBands ();
+					double power = Sum (bfGain)/nbands;
+
+					if (max < power)
+					{
+						max = power;
+						maxTx = tx;
+						maxRx = rx;
+						maxTxTheta = txTheta;
+						maxRxTheta = rxTheta;
+					}
+				}
 			}
 		}
 	}
-	txAntenna->SetSector(maxTx, txAntennaNum);
-	rxAntenna->SetSector(maxRx, rxAntennaNum);
+	txAntenna->SetSector(maxTx, txAntennaNum, maxTxTheta);
+	rxAntenna->SetSector(maxRx, rxAntennaNum, maxRxTheta);
 	params->m_txW = txAntenna->GetBeamformingVector();
 	params->m_rxW = rxAntenna->GetBeamformingVector();
 }
