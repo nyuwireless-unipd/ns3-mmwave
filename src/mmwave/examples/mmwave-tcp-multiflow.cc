@@ -168,15 +168,16 @@ main (int argc, char *argv[])
 
 	//Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (65535));
 	int PacketSize = 60000;
-	//Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (200)));
+	Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (200)));
 
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (PacketSize));
 	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 	//Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue (MilliSeconds (10)));
 
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*180*4));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*180*2));
 
+	Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
 
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
 	Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue(harqEnabled));
@@ -188,7 +189,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 *1024 * 1024));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1000 *1000 *10));
 
     Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (100*1000));
 
@@ -199,8 +200,8 @@ main (int argc, char *argv[])
     //Config::SetDefault ("ns3::CoDelQueue::Target", StringValue ("50ms"));
 
 
-	//Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
+	//Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 
 	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 
@@ -273,7 +274,7 @@ main (int argc, char *argv[])
 
 
 	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (150, 0, 1));
-	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 1, 0));
+	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0.01, 0));
 
 	BuildingsHelper::Install (ueNodes);
 

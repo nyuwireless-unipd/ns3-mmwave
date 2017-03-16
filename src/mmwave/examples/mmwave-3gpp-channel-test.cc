@@ -99,6 +99,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWave3gppChannel::Blockage", BooleanValue(false)); // use blockage or not
   Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue(true)); // use blockage model with UT in portrait mode
   Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
+  Config::SetDefault ("ns3::MmWave3gppChannel::BlockerSpeed", DoubleValue(0)); // speed of non-self blocking obstacles
 
 	double hBS = 0; //base station antenna height in meters;
 	double hUT = 0; //user antenna height in meters;
