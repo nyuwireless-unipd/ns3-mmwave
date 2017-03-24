@@ -275,7 +275,7 @@ private:
 	 * The vector is stored in the Params3gpp object passed as parameter
 	 * @params the channel realizationin as a Params3gpp object
 	 */
-	void LongTermCovarianceBeamforming (Ptr<Params3gpp> params) const;
+	void LongTermCovMatrixBeamforming (Ptr<Params3gpp> params) const;
 	
 	/**
 	 * Scan all sectors with predefined code book and select the one returns maximum gain.
