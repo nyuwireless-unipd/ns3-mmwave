@@ -461,10 +461,6 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 //              		return;
 									// According to 5.2.1, the data field is left as is, but we rebuild the header
 									LteRlcAmHeader firstSegHdr;
-									if (bytes < firstSegHdr.GetSerializedSize ())
-									{
-										return;
-									}
 									packet->RemoveHeader (firstSegHdr);
 									NS_LOG_LOGIC ("old AM RLC header: " << firstSegHdr);
 
@@ -504,11 +500,6 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 										}
 									}
 
-								  // segment packet
-								  uint16_t firstPduSegSize = bytes - firstSegHdr.GetSerializedSize ();
-								  uint16_t nextPduSegSize = packet->GetSize ()-firstPduSegSize;
-								  Ptr<Packet> firstSeg = packet->CreateFragment (0, firstPduSegSize);
-								  Ptr<Packet> nextSeg = packet->CreateFragment (firstPduSegSize, nextPduSegSize);
 
 								  // set flags
 								  firstSegHdr.SetResegmentationFlag (LteRlcAmHeader::SEGMENT);
@@ -526,6 +517,17 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 								  {
 								  	firstSegHdr.SetSegmentOffset (0);
 								  }
+
+									if (bytes < firstSegHdr.GetSerializedSize ())
+									{
+										return;
+									}
+
+								  // segment packet
+								  uint16_t firstPduSegSize = bytes - firstSegHdr.GetSerializedSize ();
+								  uint16_t nextPduSegSize = packet->GetSize ()-firstPduSegSize;
+								  Ptr<Packet> firstSeg = packet->CreateFragment (0, firstPduSegSize);
+								  Ptr<Packet> nextSeg = packet->CreateFragment (firstPduSegSize, nextPduSegSize);
 
 								  nextSegHdr.SetSegmentOffset (firstSegHdr.GetSegmentOffset () + firstPduSegSize);
 
