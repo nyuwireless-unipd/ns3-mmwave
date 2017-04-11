@@ -183,7 +183,7 @@ MmWave3gppChannel::GetTypeId (void)
 				MakeTimeAccessor (&MmWave3gppChannel::m_updatePeriod),
 				MakeTimeChecker ())
 	.AddAttribute ("CellScan",
-				"Use cell scanning method to determine beamforming vector, the default is power method",
+				"Use beam search method to determine beamforming vector, the default is long-term covariance matrix method",
 				BooleanValue (false),
 				MakeBooleanAccessor (&MmWave3gppChannel::m_cellScan),
 				MakeBooleanChecker ())
@@ -532,11 +532,11 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		{
 			if(m_cellScan)
 			{
-				CellScan (rxPsd, channelParams,txAntennaArray,rxAntennaArray, txAntennaNum, rxAntennaNum);
+				BeamSearchBeamforming (rxPsd, channelParams,txAntennaArray,rxAntennaArray, txAntennaNum, rxAntennaNum);
 			}
 			else
 			{
-				PowerMethodBeamforming (channelParams);
+				LongTermCovMatrixBeamforming (channelParams);
 			}
 			txAntennaArray->SetBeamformingVector (channelParams->m_txW, rxDevice);
 			rxAntennaArray->SetBeamformingVector (channelParams->m_rxW, txDevice);
@@ -584,7 +584,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 }
 
 void
-MmWave3gppChannel::PowerMethodBeamforming(Ptr<Params3gpp> params) const
+MmWave3gppChannel::LongTermCovMatrixBeamforming(Ptr<Params3gpp> params) const
 {
 	//generate transmitter side spatial correlation matrix
 	uint8_t txSize = params->m_channel.at(0).size();
@@ -2475,18 +2475,23 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 }
 
 void
-MmWave3gppChannel::CellScan (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
+MmWave3gppChannel::BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
 		Ptr<AntennaArrayModel> rxAntenna, uint8_t *txAntennaNum, uint8_t *rxAntennaNum) const
 {
 	double max = 0, maxTx = 0, maxRx =0, maxTxTheta, maxRxTheta;
+	NS_LOG_LOGIC("BeamSearchBeamforming method at time " << Simulator::Now().GetSeconds());
 	for (uint16_t txTheta = 60; txTheta < 121; txTheta=txTheta+10)
 	{
-		for(uint16_t tx=0; tx<txAntennaNum[1]; tx++)
+		for(uint16_t tx=0; tx<=txAntennaNum[1]; tx++)
 		{
 			for (uint16_t rxTheta = 60; rxTheta < 121; rxTheta=rxTheta+10)
 			{
-				for(uint16_t rx=0; rx<rxAntennaNum[1]; rx++)
+				for(uint16_t rx=0; rx<=rxAntennaNum[1]; rx++)
 				{
+					NS_LOG_LOGIC("txTheta " << txTheta << " rxTheta " << rxTheta << " tx sector " << 
+						(M_PI*(double)tx/(double)txAntennaNum[1]-0.5*M_PI)/(M_PI)*180 << " rx sector " << 
+						(M_PI*(double)rx/(double)rxAntennaNum[1]-0.5*M_PI)/(M_PI)*180);
+
 					txAntenna->SetSector(tx, txAntennaNum, txTheta);
 					rxAntenna->SetSector(rx, rxAntennaNum, rxTheta);
 					params->m_txW = txAntenna->GetBeamformingVector();
@@ -2498,6 +2503,7 @@ MmWave3gppChannel::CellScan (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> par
 					uint8_t nbands = bfGain.GetSpectrumModel ()->GetNumBands ();
 					double power = Sum (bfGain)/nbands;
 
+					NS_LOG_LOGIC("gain " << power);
 					if (max < power)
 					{
 						max = power;
@@ -2510,6 +2516,8 @@ MmWave3gppChannel::CellScan (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> par
 			}
 		}
 	}
+	NS_LOG_LOGIC("maxTx " << maxTx << " txAntennaNum[1] " << (uint16_t)txAntennaNum[1]);
+	NS_LOG_LOGIC("max gain " << max << " maxTx " << (M_PI*(double)maxTx/(double)txAntennaNum[1]-0.5*M_PI)/(M_PI)*180 << " maxRx " << (M_PI*(double)maxRx/(double)rxAntennaNum[1]-0.5*M_PI)/(M_PI)*180 << " maxTxTheta " << maxTxTheta << " maxRxTheta " << maxRxTheta);
 	txAntenna->SetSector(maxTx, txAntennaNum, maxTxTheta);
 	rxAntenna->SetSector(maxRx, rxAntennaNum, maxRxTheta);
 	params->m_txW = txAntenna->GetBeamformingVector();

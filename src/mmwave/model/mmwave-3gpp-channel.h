@@ -275,14 +275,14 @@ private:
 	 * The vector is stored in the Params3gpp object passed as parameter
 	 * @params the channel realizationin as a Params3gpp object
 	 */
-	void PowerMethodBeamforming (Ptr<Params3gpp> params) const;
+	void LongTermCovMatrixBeamforming (Ptr<Params3gpp> params) const;
 	
 	/**
 	 * Scan all sectors with predefined code book and select the one returns maximum gain.
 	 * The BF vector is stored in the Params3gpp object passed as parameter
 	 * @params the channel realizationin as a Params3gpp object
 	 */
-	void CellScan (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
+	void BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
 			Ptr<AntennaArrayModel> rxAntenna, uint8_t *txAntennaNum, uint8_t *rxAntennaNum) const;
 
 
