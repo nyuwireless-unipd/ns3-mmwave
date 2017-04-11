@@ -39,6 +39,8 @@
 #include <random>       // std::default_random_engine
 #include <ns3/boolean.h>
 #include <ns3/integer.h>
+#include "mmwave-spectrum-value-helper.h"
+
 
 namespace ns3{
 
@@ -275,12 +277,43 @@ MmWave3gppChannel::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 	{
 		Ptr<MmWaveUeNetDevice> UeDev =
 						DynamicCast<MmWaveUeNetDevice> (*i);
-		if (UeDev->GetTargetEnb ())
+		if (UeDev->GetTargetEnb ()) 
 		{
 			Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
 			ConnectDevices (*i, targetBs);
 			ConnectDevices (targetBs, *i);
 			SetBeamformingVector(*i,targetBs);
+
+			// get the mobility objects
+			Ptr<const MobilityModel> a = targetBs->GetNode()->GetObject<MobilityModel> ();
+			Ptr<const MobilityModel> b = UeDev->GetNode()->GetObject<MobilityModel> ();
+			NS_LOG_INFO("a " << a << " b " << b);
+
+			// initialize the pathloss and channel condition
+			if (DynamicCast<MmWave3gppPropagationLossModel> (m_3gppPathloss)!=0)
+			{
+				m_3gppPathloss->GetObject<MmWave3gppPropagationLossModel> ()
+						->GetLoss(a->GetObject<MobilityModel>(),b->GetObject<MobilityModel>());
+			}			// the GetObject trick is a trick against the const keyword
+			else if (DynamicCast<MmWave3gppBuildingsPropagationLossModel> (m_3gppPathloss)!=0)
+			{
+				m_3gppPathloss->GetObject<MmWave3gppBuildingsPropagationLossModel> ()
+						->GetLoss(a->GetObject<MobilityModel>(),b->GetObject<MobilityModel>());
+			}
+			else
+			{
+				NS_FATAL_ERROR("unkonw pathloss model");
+			}
+
+
+			std::vector<int> listOfSubchannels;
+			for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk(); i++)
+			{
+				listOfSubchannels.push_back(i);
+			}
+			Ptr<const SpectrumValue> fakePsd = 
+				MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (m_phyMacConfig, 0, listOfSubchannels);
+			DoCalcRxPowerSpectralDensity(fakePsd, a, b);
 		}
 	}
 
@@ -312,7 +345,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	Vector locUT;
 	if(txEnb!=0 && rxUe!=0)
 	{
-		NS_LOG_INFO ("this is downlink case");
+		NS_LOG_INFO ("this is downlink case, a tx " << a->GetPosition() << " b rx " << b->GetPosition());
 		txAntennaNum[0] = sqrt (txEnb->GetAntennaNum ());
 		txAntennaNum[1] = sqrt (txEnb->GetAntennaNum ());
 		rxAntennaNum[0] = sqrt (rxUe->GetAntennaNum ());
@@ -327,7 +360,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	}
 	else if (txEnb==0 && rxUe==0 )
 	{
-		NS_LOG_INFO ("this is uplink case");
+		NS_LOG_INFO ("this is uplink case, a tx " << a->GetPosition() << " b rx " << b->GetPosition());
 
 		Ptr<MmWaveUeNetDevice> txUe =
 						DynamicCast<MmWaveUeNetDevice> (txDevice);
@@ -348,7 +381,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	}
 	else
 	{
-		NS_LOG_INFO ("enb to enb or ue to ue transmission, skip beamforming");
+		NS_LOG_INFO ("enb to enb or ue to ue transmission, skip beamforming a tx " << a->GetPosition() << " b rx " << b->GetPosition());
 		return rxPsd;
 	}
 
@@ -422,6 +455,12 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			(it != m_channelMap.end () && it->second->m_channel.size() == 0)||
 			(it != m_channelMap.end () && it->second->m_los != los))
 	{
+		NS_LOG_INFO("Update or create the forward channel");
+		NS_LOG_LOGIC("it == m_channelMap.end () " << (it == m_channelMap.end ()));
+		NS_LOG_LOGIC("itReverse == m_channelMap.end () " << (itReverse == m_channelMap.end ()));
+		NS_LOG_LOGIC("it->second->m_channel.size() == 0 " << (it->second->m_channel.size() == 0));
+		NS_LOG_LOGIC("it->second->m_los != los" << (it->second->m_los != los));
+		
 		//Step 1: The parameters are configured in the example code.
 		/*make sure txAngle rxAngle exist, i.e., the position of tx and rx cannot be the same*/
 		Angles txAngle (b->GetPosition (), a->GetPosition ());
@@ -458,6 +497,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			//The m_updatePeriod can be configured to be relatively large in order to disable updates.
 			if(m_updatePeriod.GetMilliSeconds() > 0)
 			{
+				NS_LOG_INFO("Time " << Simulator::Now().GetSeconds() << " schedule delete for a " << a->GetPosition() << " b " << b->GetPosition());
 				Simulator::Schedule (m_updatePeriod, &MmWave3gppChannel::DeleteChannel,this,a,b);
 			}
 		}
@@ -483,7 +523,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		else
 		{
 			//if the channel map is empty, we create a new channel.
-
+			NS_LOG_INFO("Create new channel");
 			channelParams = GetNewChannel(table3gpp, locUT, los, o2i, txAntennaArray, rxAntennaArray,
 					txAntennaNum, rxAntennaNum, rxAngle, txAngle, relativeSpeed, distance2D, distance3D);
 		}
@@ -503,17 +543,20 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		}
 		else
 		{
+			NS_LOG_INFO("Not a connected pair");
 			channelParams->m_txW = txAntennaArray->GetBeamformingVector();
 			channelParams->m_rxW = rxAntennaArray->GetBeamformingVector();
 			if(channelParams->m_txW.size() == 0 || channelParams->m_rxW.size() == 0)
 			{
+				NS_LOG_INFO("channelParams->m_txW.size() == 0 " << (channelParams->m_txW.size() == 0));
+				NS_LOG_INFO("channelParams->m_rxW.size() == 0 " << (channelParams->m_rxW.size() == 0));
+				m_channelMap[key] = channelParams;
 				return rxPsd;
 			}
 		}
 
 		CalLongTerm (channelParams);
 		m_channelMap[key] = channelParams;
-
 	}
 	else if (itReverse == m_channelMap.end ()) //Find channel matrix in the forward link
 	{
@@ -994,7 +1037,11 @@ MmWave3gppChannel::DeleteChannel(Ptr<const MobilityModel> a, Ptr<const MobilityM
 {
 	Ptr<NetDevice> dev1 = a->GetObject<Node> ()->GetDevice (0);
 	Ptr<NetDevice> dev2 = b->GetObject<Node> ()->GetDevice (0);
+	NS_LOG_INFO("a position " << a->GetPosition() << " b " << b->GetPosition());
 	Ptr<Params3gpp> params = m_channelMap.find(std::make_pair(dev1,dev2))->second;
+	NS_LOG_INFO("params " << params);
+	NS_LOG_INFO("params m_channel size" << params->m_channel.size());
+	NS_ASSERT_MSG(m_channelMap.find(std::make_pair(dev1,dev2)) != m_channelMap.end(), "Channel not found");
 	params->m_channel.clear();
 	m_channelMap[std::make_pair(dev1,dev2)] = params;
 }
