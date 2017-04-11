@@ -31,8 +31,6 @@
 #include <ns3/simulator.h>
 #include <fstream>
 
-
-
 namespace ns3 {
 
 
@@ -66,7 +64,7 @@ private:
 	Ptr<MmWave3gppPropagationLossModel> m_3gppNlos;
 	mutable channelConditionMap_t m_conditionMap;
 	bool m_updateCondition;
-
+	mutable Time m_prevTime;
 };
 
 }

@@ -52,7 +52,18 @@ MmWave3gppBuildingsPropagationLossModel::MmWave3gppBuildingsPropagationLossModel
 
 	m_3gppNlos = CreateObject<MmWave3gppPropagationLossModel> ();
 	m_3gppNlos->SetAttribute("ChannelCondition", StringValue ("n"));
+	m_prevTime = Time(0);
 
+	if(!m_enbUeLocTrace.is_open())
+	{
+		m_enbUeLocTrace.open("ENB-UE.txt");
+		if (!m_enbUeLocTrace.is_open ())
+		{
+		  NS_FATAL_ERROR ("Can't open file ENB-UE.txt");
+		  return;
+		}
+	}
+	m_enbUeLocTrace.close();
 }
 
 MmWave3gppBuildingsPropagationLossModel::~MmWave3gppBuildingsPropagationLossModel ()
@@ -269,19 +280,24 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
 		NS_FATAL_ERROR("Programming error");
 	}
 	// Log ENB and UE location.
-	if(Simulator::Now ().GetMicroSeconds() % 50000 == 0)
+	if(Now().GetSeconds()-m_prevTime.GetSeconds()>3)
+	{
+		m_prevTime = Now();
+	}
+
+	if (Now().GetSeconds() - m_prevTime.GetSeconds()<0.00009)
 	{
 		Vector ueLoc, enbLoc;
 		if(DynamicCast<MmWaveUeNetDevice> (a->GetObject<Node> ()->GetDevice (0)) !=0)
 		{
-			if(DynamicCast<MmWaveEnbNetDevice> (b->GetObject<Node> ()->GetDevice (0)) !=0)
+			/*if(DynamicCast<MmWaveEnbNetDevice> (b->GetObject<Node> ()->GetDevice (0)) !=0)
 			{
 				NS_LOG_INFO("UE->ENB Link");
 				ueLoc = a->GetPosition();
 				enbLoc = b->GetPosition();
 				LocationTrace(enbLoc, ueLoc, (*it).second.m_channelCondition == 'l');
 
-			}
+			}*/
 		}
 		else
 		{
@@ -295,6 +311,7 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
 		}
 
 	}
+
 
 	return loss;
 }
@@ -356,7 +373,7 @@ MmWave3gppBuildingsPropagationLossModel::LocationTrace (Vector enbLoc, Vector ue
 {
 	if(!m_enbUeLocTrace.is_open())
 	{
-		m_enbUeLocTrace.open("ENB-UE.txt");
+		m_enbUeLocTrace.open("ENB-UE.txt",std::ofstream::app);
 		if (!m_enbUeLocTrace.is_open ())
 		{
 		  NS_FATAL_ERROR ("Can't open file ENB-UE.txt");
@@ -371,6 +388,7 @@ MmWave3gppBuildingsPropagationLossModel::LocationTrace (Vector enbLoc, Vector ue
 	m_enbUeLocTrace << ueLoc.y<< "\t";
 	m_enbUeLocTrace << ueLoc.z << "\t";
 	m_enbUeLocTrace << los << "\n";
+	m_enbUeLocTrace.close();
 }
 
 std::string
