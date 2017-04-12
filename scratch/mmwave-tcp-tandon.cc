@@ -130,50 +130,12 @@ TraceBuildingLoc()
 int
 main (int argc, char *argv[])
 {
-	LogComponentEnable ("MmWave3gppChannel", LOG_LEVEL_INFO);
 
-	LogComponentEnable ("LteUeRrc", LOG_LEVEL_INFO);
-  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
-  //LogComponentEnable ("LteRlcTm", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("MmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
-  LogComponentEnable("EpcUeNas",LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
-  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-  //LogComponentEnable ("LteUeMac", LOG_LEVEL_INFO);
-  //LogComponentEnable ("LteEnbMac", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-  //LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-  //LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
-  //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-  //LogComponentEnable("LteRrcProtocolIdeal", LOG_LEVEL_INFO);
-  //LogComponentEnable ("mmWavePhyRxTrace", LOG_LEVEL_ALL);
-  //LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_ALL);
-  //LogComponentEnable("McUeNetDevice", LOG_LEVEL_INFO);
-  //LogComponentEnable("EpcSgwPgwApplication", LOG_LEVEL_FUNCTION);
-  //LogComponentEnable("EpcEnbApplication", LOG_LEVEL_FUNCTION);
-  //LogComponentEnable("MmWaveEnbMac", LOG_LEVEL_INFO);
-  //LogComponentEnable("LteEnbMac", LOG_LEVEL_INFO);
-  //LogComponentEnable("MmWavePointToPointEpcHelper", LOG_LEVEL_INFO);
-  //LogComponentEnable("MmWaveHelper", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("EpcX2", LOG_LEVEL_ALL);
-  //LogComponentEnable("EpcX2Header", LOG_LEVEL_ALL);
-  //LogComponentEnable("LteRlcAm", LOG_LEVEL_INFO);
-  //LogComponentEnable("LteRlcUmLowLat", LOG_LEVEL_INFO);
-  //LogComponentEnable("EpcS1ap", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("EpcMmeApplication", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("LteRrcProtocolReal", LOG_LEVEL_LOGIC);
-  //LogComponentEnable("MmWaveFlexTtiMacScheduler", LOG_LEVEL_INFO);
-  //LogComponentEnable("AntennaArrayModel", LOG_LEVEL_ALL);
-  LogComponentEnable("UdpServer", LOG_LEVEL_INFO);
-  LogComponentEnable("UdpClient", LOG_LEVEL_INFO);
   // LogComponentEnable("TcpCongestionOps", LOG_LEVEL_INFO);
   // LogComponentEnable("TcpSocketBase", LOG_LEVEL_INFO);
 
 	uint16_t nodeNum = 2;
-	double simStopTime = 10;
+	double simStopTime = 50;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
 
@@ -199,8 +161,8 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (PacketSize));
 	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 
-	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*180*4));
-	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*180*2));
+	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*200));
+	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*200));
 
 
 	Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue(rlcAmEnabled));
@@ -208,12 +170,11 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
-	Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
 	Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(2.0)));
 	Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
 	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
-	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1000 *1000 * 1.5));
+	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1000 *1000 * 6));
 
     Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (100*1000));
 
@@ -318,120 +279,121 @@ main (int argc, char *argv[])
 
 
 	Ptr < Building > building1a;
-	building1a = Create<Building> ();
-	building1a->SetBoundaries (Box (0.0,67.0,
-								0.0, 100,
-								0.0, 12));
+		building1a = Create<Building> ();
+		building1a->SetBoundaries (Box (0.0,67.0,
+									0.0, 100,
+									0.0, 12));
 
-	Ptr < Building > building1b;
-	building1b = Create<Building> ();
-	building1b->SetBoundaries (Box (10.0,57.0,
-								20.0, 90,
-								12.0, 95));
+		Ptr < Building > building1b;
+		building1b = Create<Building> ();
+		building1b->SetBoundaries (Box (10.0,57.0,
+									20.0, 90,
+									12.0, 95));
 
-	Ptr < Building > building2;
-	building2 = Create<Building> ();
-	building2->SetBoundaries (Box (86.0,156.0,
-								18.0, 100,
-								0.0, 40));
-	/*Ptr < Building > building3;
-	building3 = Create<Building> ();
-	building3->SetBoundaries (Box (178.0,240.0,
-								18.0, 100,
-								0.0, 40));*/
+		Ptr < Building > building2;
+		building2 = Create<Building> ();
+		building2->SetBoundaries (Box (86.0,156.0,
+									18.0, 100,
+									0.0, 40));
+		/*Ptr < Building > building3;
+		building3 = Create<Building> ();
+		building3->SetBoundaries (Box (178.0,240.0,
+									18.0, 100,
+									0.0, 40));*/
 
-	Ptr < Building > building4a;
-	building4a = Create<Building> ();
-	building4a->SetBoundaries (Box (21.0,67.0,
-								119.0, 149,
-								0.0, 32));
-	Ptr < Building > building4b;
-	building4b = Create<Building> ();
-	building4b->SetBoundaries (Box (38.0,67.0,
-								149.0, 199,
-								0.0, 32));
-	Ptr < Building > building4c;
-	building4c = Create<Building> ();
-	building4c->SetBoundaries (Box (14.0,38.0,
-								149.0, 164,
-								0.0, 30));
-	Ptr < Building > building4d;
-	building4d = Create<Building> ();
-	building4d->SetBoundaries (Box (0.0,14.0,
-								149.0, 185,
-								0.0, 32));
+		Ptr < Building > building4a;
+		building4a = Create<Building> ();
+		building4a->SetBoundaries (Box (21.0,67.0,
+									119.0, 149,
+									0.0, 32));
+		Ptr < Building > building4b;
+		building4b = Create<Building> ();
+		building4b->SetBoundaries (Box (38.0,67.0,
+									149.0, 199,
+									0.0, 32));
+		Ptr < Building > building4c;
+		building4c = Create<Building> ();
+		building4c->SetBoundaries (Box (14.0,38.0,
+									149.0, 164,
+									0.0, 30));
+		Ptr < Building > building4d;
+		building4d = Create<Building> ();
+		building4d->SetBoundaries (Box (0.0,14.0,
+									149.0, 185,
+									0.0, 32));
 
-	/*Ptr < Building > building5a;
-	building5a = Create<Building> ();
-	building5a->SetBoundaries (Box (178.0,278.0,
-								119.0, 163,
-								0.0, 80));
-	Ptr < Building > building5b;
-	building5b = Create<Building> ();
-	building5b->SetBoundaries (Box (203.0,258.0,
-								163.0, 184,
-								0.0, 30));
-	Ptr < Building > building5c;
-	building5c = Create<Building> ();
-	building5c->SetBoundaries (Box (178.0,238.0,
-								184.0, 226,
-								0.0, 30));*/
+		/*Ptr < Building > building5a;
+		building5a = Create<Building> ();
+		building5a->SetBoundaries (Box (178.0,278.0,
+									119.0, 163,
+									0.0, 80));
+		Ptr < Building > building5b;
+		building5b = Create<Building> ();
+		building5b->SetBoundaries (Box (203.0,258.0,
+									163.0, 184,
+									0.0, 30));
+		Ptr < Building > building5c;
+		building5c = Create<Building> ();
+		building5c->SetBoundaries (Box (178.0,238.0,
+									184.0, 226,
+									0.0, 30));*/
 
-	Ptr < Building > building6;
-	building6 = Create<Building> ();
-	building6->SetBoundaries (Box (91.0,156.0,
-								184.0, 221,
-								0.0, 17));
+		Ptr < Building > building6;
+		building6 = Create<Building> ();
+		building6->SetBoundaries (Box (91.0,156.0,
+									184.0, 221,
+									0.0, 17));
 
-	/*Ptr < Building > building4;
-	building4 = Create<Building> ();
-	building4->SetBoundaries (Box (30.0,70.0,
-								60.0, 80,
-								0.0, 20));*/
+		/*Ptr < Building > building4;
+		building4 = Create<Building> ();
+		building4->SetBoundaries (Box (30.0,70.0,
+									60.0, 80,
+									0.0, 20));*/
 
 
-	Ptr < Building > tree1;
-	tree1 = Create<Building> ();
-	tree1->SetBoundaries (Box (100.0,100.50,
-								120.0, 120.50,
-								0.0, 9));
+		Ptr < Building > tree1;
+		tree1 = Create<Building> ();
+		tree1->SetBoundaries (Box (100.0,100.50,
+									120.0, 120.50,
+									0.0, 3));
 
-	Ptr < Building > tree1a;
-	tree1a = Create<Building> ();
-	tree1a->SetBoundaries (Box (95.0,105.50,
-								115.0, 125.50,
-								9, 20));
-	Ptr < Building > tree2;
-	tree2 = Create<Building> ();
-	tree2->SetBoundaries (Box (130.0,130.50,
-								140.0, 140.50,
-								0.0, 8));
+		Ptr < Building > tree1a;
+		tree1a = Create<Building> ();
+		tree1a->SetBoundaries (Box (95.0,105.50,
+									115.0, 125.50,
+									3, 12));
+		Ptr < Building > tree2;
+		tree2 = Create<Building> ();
+		tree2->SetBoundaries (Box (140.0,140.50,
+									120.0, 120.50,
+									0.0, 2.5));
 
-	Ptr < Building > tree2a;
-	tree2a = Create<Building> ();
-	tree2a->SetBoundaries (Box (124.0,136.50,
-								134.0, 146.50,
-								8, 30));
-	Ptr < Building > tree3;
-	tree3 = Create<Building> ();
-	tree3->SetBoundaries (Box (150.0,150.50,
-								132.0, 132.5,
-								0.0, 11));
-	Ptr < Building > tree3a;
-	tree3a = Create<Building> ();
-	tree3a->SetBoundaries (Box (145.0,155.50,
-								127.0, 137.5,
-								11, 33));
-	Ptr < Building > tree4;
-	tree4 = Create<Building> ();
-	tree4->SetBoundaries (Box (110.0,110.50,
-								160.0, 160.5,
-								0.0, 10));
-	Ptr < Building > tree4a;
-	tree4a = Create<Building> ();
-	tree4a->SetBoundaries (Box (105,115.50,
-								155.0, 165.5,
-								10, 30));
+		Ptr < Building > tree2a;
+		tree2a = Create<Building> ();
+		tree2a->SetBoundaries (Box (134.0,146.50,
+									114.0, 126.50,
+									2.5, 15));
+		Ptr < Building > tree3;
+		tree3 = Create<Building> ();
+		tree3->SetBoundaries (Box (135.0,135.50,
+									132.0, 132.5,
+									0.0, 2));
+		Ptr < Building > tree3a;
+		tree3a = Create<Building> ();
+		tree3a->SetBoundaries (Box (130.0,140.50,
+									127.0, 137.5,
+									2, 13));
+		Ptr < Building > tree4;
+		tree4 = Create<Building> ();
+		tree4->SetBoundaries (Box (110.0,110.50,
+									160.0, 160.5,
+									0.0, 3));
+		Ptr < Building > tree4a;
+		tree4a = Create<Building> ();
+		tree4a->SetBoundaries (Box (105,115.50,
+									155.0, 165.5,
+									3, 20));
+
 
 
 	NodeContainer ueNodes;
@@ -440,7 +402,7 @@ main (int argc, char *argv[])
 	ueNodes.Create(nodeNum);
 
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-	enbPositionAlloc->Add (Vector (0.0, 120.0, hBS));
+	enbPositionAlloc->Add (Vector (70.0, 180.0, hBS));
 	enbPositionAlloc->Add (Vector (160.0, 180.0, hBS));	MobilityHelper enbmobility;
 	enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	enbmobility.SetPositionAllocator(enbPositionAlloc);
@@ -451,11 +413,11 @@ main (int argc, char *argv[])
 	uemobility.Install (ueNodes);
 	BuildingsHelper::Install (ueNodes);
 
-	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (40, 110, hUT));
-	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
+	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (76, 170, hUT));
+	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, -1, 0));
 
-	ueNodes.Get (1)->GetObject<MobilityModel> ()->SetPosition (Vector (140, 180, hUT));
-	ueNodes.Get (1)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0,0, 0));
+	ueNodes.Get (1)->GetObject<MobilityModel> ()->SetPosition (Vector (120, 110, hUT));
+	ueNodes.Get (1)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (-1, 0, 0));
 
 
 
@@ -470,7 +432,7 @@ main (int argc, char *argv[])
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueDevs));
 
 	mmwaveHelper->AttachToClosestEnb (ueDevs, enbDevs);
-	mmwaveHelper->EnableTraces ();
+	//mmwaveHelper->EnableTraces ();
 
 	ApplicationContainer sourceApps;
 	ApplicationContainer sinkApps;
@@ -505,7 +467,8 @@ main (int argc, char *argv[])
 		sinkApps.Get(i)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream));
 	    sourceApps.Get(i)->SetStartTime(Seconds (0.1+1.5*i));
 	    Simulator::Schedule (Seconds (0.1001+1.5*i), &Traces, i);
-	    sourceApps.Get(i)->SetStopTime (Seconds (10-1.5*i));
+	    //sourceApps.Get(i)->SetStopTime (Seconds (10-1.5*i));
+	    sourceApps.Get(i)->SetStopTime (Seconds (simStopTime));
 
 		sinkPort++;
 
