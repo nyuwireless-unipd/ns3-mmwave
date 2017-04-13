@@ -157,7 +157,7 @@ main (int argc, char *argv[])
 	//Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (65535));
 	int PacketSize = 60000;
 	Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (200)));
-
+	Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (PacketSize));
 	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 
