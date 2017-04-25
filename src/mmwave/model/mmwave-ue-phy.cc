@@ -321,6 +321,7 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	{
 		DynamicCast<McUeNetDevice>(m_netDevice)->SetMmWaveTargetEnb(enbNetDevice);
 	}
+	NS_LOG_UNCOND("UE register to enb " << enbNetDevice->GetCellId());
 	// call antennaarrya to change the bf vector
 	Ptr<AntennaArrayModel> txAntennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
 	if(txAntennaArray != 0)

@@ -46,14 +46,21 @@ public:
 	void ChangeToOmniTx ();
 	complexVector_t GetBeamformingVector ();
 	complexVector_t GetBeamformingVector (Ptr<NetDevice> device);
-	void SetSector (uint32_t sector, uint32_t antennaNum);
+	void SetToSector (uint32_t sector, uint32_t antennaNum);
 	bool IsOmniTx ();
+	double GetRadiationPattern (double vangle, double hangle = 0);
+	Vector GetAntennaLocation (uint8_t index, uint8_t* antennaNum) ;
+	void SetSector (uint8_t sector, uint8_t *antennaNum, double elevation = 90);
+
 private:
 	bool m_omniTx;
 	double m_minAngle;
 	double m_maxAngle;
 	complexVector_t m_beamformingVector;
 	std::map<Ptr<NetDevice>, complexVector_t> m_beamformingVectorMap;
+
+	double m_disV; //antenna spacing in the vertical direction in terms of wave length.
+	double m_disH; //antenna spacing in the horizontal direction in terms of wave length.
 
 };
 

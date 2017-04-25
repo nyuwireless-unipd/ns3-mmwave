@@ -54,8 +54,10 @@ def build(bld):
         'model/mc-ue-net-device.cc',
         'model/mc-enb-pdcp.cc',
         'model/mc-ue-pdcp.cc',  
-        'model/mmwave-los-tracker.cc'        
-        
+        'model/mmwave-los-tracker.cc',        
+        'model/mmwave-3gpp-propagation-loss-model.cc',
+        'model/mmwave-3gpp-channel.cc', 
+        'model/mmwave-3gpp-buildings-propagation-loss-model.cc',        
         #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',
         #'model/mmwave-mac-sap.cc',
@@ -117,7 +119,10 @@ def build(bld):
         'model/mc-ue-net-device.h',
         'model/mmwave-los-tracker.h' ,
         'model/mc-enb-pdcp.h',
-        'model/mc-ue-pdcp.h'
+        'model/mc-ue-pdcp.h',
+        'model/mmwave-3gpp-propagation-loss-model.h',
+        'model/mmwave-3gpp-channel.h',
+        'model/mmwave-3gpp-buildings-propagation-loss-model.h',
         #'model/mmwave-enb-cmac-sap.h',
         #'model/mmwave-enb-rrc.h',
         #'model/mmwave-mac-sap.h',

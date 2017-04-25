@@ -1,7 +1,6 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
  *  
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -21,9 +20,6 @@
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
  *        	 Menglei Zhang <menglei@nyu.edu>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *			Dual Connectivity and Handover functionalities
  */
 
 
@@ -32,6 +28,7 @@
 #include <ns3/log.h>
 #include <ns3/math.h>
 #include <ns3/simulator.h>
+#include "ns3/double.h"
 
 
 NS_LOG_COMPONENT_DEFINE ("AntennaArrayModel");
@@ -101,6 +98,16 @@ AntennaArrayModel::GetTypeId ()
 	static TypeId tid = TypeId ("ns3::AntennaArrayModel")
 	.SetParent<Object> ()
 	.AddConstructor<AntennaArrayModel> ()
+	.AddAttribute ("AntennaHorizontalSpacing",
+			"Horizontal spacing between antenna elements, in multiples of lambda",
+			DoubleValue (0.5),
+			MakeDoubleAccessor (&AntennaArrayModel::m_disH),
+		    MakeDoubleChecker<double> ())
+	.AddAttribute ("AntennaVerticalSpacing",
+			"Vertical spacing between antenna elements, in multiples of lambda",
+			DoubleValue (0.5),
+			MakeDoubleAccessor (&AntennaArrayModel::m_disV),
+		    MakeDoubleChecker<double> ())
 	;
 	return tid;
 }
@@ -108,7 +115,7 @@ AntennaArrayModel::GetTypeId ()
 double
 AntennaArrayModel::GetGainDb (Angles a)
 {
-	NS_ASSERT (m_minAngle<=m_maxAngle);
+	/*NS_ASSERT (m_minAngle<=m_maxAngle);
 	double gain;
 	if (m_maxAngle <= M_PI)
 	{
@@ -125,7 +132,7 @@ AntennaArrayModel::GetGainDb (Angles a)
 	else
 	{
 		double maxAngle = m_maxAngle - 2*M_PI;
-		if(a.phi < m_minAngle && a.phi > maxAngle)
+		if(a.phi < m_minAngle || a.phi > maxAngle)
 		{
 			gain = -500;
 			//NS_LOG_UNCOND ("++++++++++++++++++++++blocked");
@@ -137,7 +144,8 @@ AntennaArrayModel::GetGainDb (Angles a)
 
 	}
 
-	return gain;
+	return gain;*/
+	return 0;
 }
 void
 AntennaArrayModel::SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device)
@@ -149,7 +157,7 @@ AntennaArrayModel::SetBeamformingVectorWithDelay (complexVector_t antennaWeights
 void
 AntennaArrayModel::SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device)
 {
-
+	m_omniTx = false;
 	if (device != 0)
 	{
 		std::map< Ptr<NetDevice>, complexVector_t >::iterator iter = m_beamformingVectorMap.find (device);
@@ -214,8 +222,9 @@ AntennaArrayModel::GetBeamformingVector (Ptr<NetDevice> device)
 }
 
 void
-AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
+AntennaArrayModel::SetToSector (uint32_t sector, uint32_t antennaNum)
 {
+	m_omniTx = false;
 	complexVector_t cmplxVector;
 	switch(antennaNum)
 	{
@@ -301,7 +310,7 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 		{
 			if(sector == 0)
 			{
-				m_minAngle = M_PI;
+				m_minAngle = 0;
 				m_maxAngle = 0.5*M_PI;
 			}
 			else if(sector == 1)
@@ -352,6 +361,55 @@ AntennaArrayModel::SetSector (uint32_t sector, uint32_t antennaNum)
 	}
 	m_beamformingVector = cmplxVector;
 }
+
+double
+AntennaArrayModel::GetRadiationPattern (double vAngle, double hAngle)
+{
+	NS_ASSERT_MSG(vAngle>=0&&vAngle<=180, "the vertical angle should be the range of [0,180]");
+	NS_ASSERT_MSG(hAngle>=-180&&vAngle<=180, "the vertical angle should be the range of [0,180]");
+	return 1; //for testing
+	/*double A_EV = -1*std::min(12*pow((vAngle-90)/65,2),30.0);
+	if(hAngle != 0)
+	{
+		double A_EH = -1*std::min(12*pow(hAngle/65,2),30.0);
+		double A = -1*std::min(-1*A_EV-1*A_EH,30.0);
+		return pow(10,A/10); //convert to linear;
+	}
+	else
+	{
+		return pow(10,A_EV/10); //convert to linear;
+	}*/
+}
+Vector
+AntennaArrayModel::GetAntennaLocation(uint8_t index, uint8_t* antennaNum)
+{
+	//assume the left bottom corner is (0,0,0), and the rectangular antenna array is on the y-z plane.
+	Vector loc;
+	loc.x = 0;
+	loc.y = m_disH* (index % antennaNum[0]);
+	loc.z = m_disV* (index / antennaNum[1]);
+	return loc;
+}
+
+void
+AntennaArrayModel::SetSector (uint8_t sector, uint8_t *antennaNum, double elevation)
+{
+	complexVector_t tempVector;
+	double hAngle_radian = M_PI*(double)sector/(double)antennaNum[1]-0.5*M_PI;
+	double vAngle_radian = elevation*M_PI/180;
+	uint16_t size = antennaNum[0]*antennaNum[1];
+	double power = 1/sqrt(size);
+	for(int ind=0; ind<size; ind++)
+	{
+		Vector loc = GetAntennaLocation(ind, antennaNum);
+		double phase = -2*M_PI*(sin(vAngle_radian)*cos(hAngle_radian)*loc.x
+							+ sin(vAngle_radian)*sin(hAngle_radian)*loc.y
+							+ cos(vAngle_radian)*loc.z);
+		tempVector.push_back(exp(std::complex<double>(0, phase))*power);
+	}
+	m_beamformingVector = tempVector;
+}
+
 
 
 } /* namespace ns3 */

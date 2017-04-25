@@ -52,6 +52,7 @@
 #include "mmwave-beamforming.h"
 #include "mmwave-channel-matrix.h"
 #include "mmwave-channel-raytracing.h"
+#include "mmwave-3gpp-channel.h"
 
 #include <ns3/node-list.h>
 #include <ns3/node.h>
@@ -819,6 +820,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		//beamforming->SetBeamformingVector(ue->second, m_netDevice);
 		Ptr<MmWaveChannelMatrix> channelMatrix = DynamicCast<MmWaveChannelMatrix> (m_spectrumPropagationLossModel);
 		Ptr<MmWaveChannelRaytracing> rayTracing = DynamicCast<MmWaveChannelRaytracing> (m_spectrumPropagationLossModel);
+		Ptr<MmWave3gppChannel> mmWave3gpp = DynamicCast<MmWave3gppChannel> (m_spectrumPropagationLossModel);
 		if (beamforming != 0)
 		{
 			rxPsd = beamforming->CalcRxPowerSpectralDensity(rxPsd, ueMob, enbMob);
@@ -834,6 +836,11 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 			rxPsd = rayTracing->CalcRxPowerSpectralDensity(rxPsd, ueMob, enbMob);
 			NS_LOG_LOGIC("RxPsd " << *rxPsd);
 		}
+		else if (mmWave3gpp != 0)
+		{
+			rxPsd = mmWave3gpp->CalcRxPowerSpectralDensity(rxPsd, ueMob, enbMob);
+			NS_LOG_LOGIC("RxPsd " << *rxPsd);
+		}	
 		m_rxPsdMap[ue->first] = rxPsd;
 		*totalReceivedPsd += *rxPsd;
 

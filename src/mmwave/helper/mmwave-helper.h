@@ -49,7 +49,6 @@
 #include <ns3/mmwave-ue-phy.h>
 #include <ns3/mmwave-enb-phy.h>
 #include <ns3/mmwave-spectrum-value-helper.h>
-#include <ns3/mmwave-beamforming.h>
 #include <ns3/mmwave-phy-mac-common.h>
 #include <ns3/antenna-array-model.h>
 #include <ns3/mmwave-rrc-protocol-ideal.h>
@@ -80,6 +79,8 @@
 #include <ns3/core-network-stats-calculator.h>
 #include <ns3/mmwave-los-tracker.h>
 
+#include <ns3/buildings-obstacle-propagation-loss-model.h>
+#include <ns3/mmwave-3gpp-channel.h>
 
 namespace ns3 {
 
@@ -90,7 +91,7 @@ class SpectrumChannel;
 class SpectrumpropagationLossModel;
 class MmWaveSpectrumValueHelper;
 class PropagationLossModel;
-
+//class MmWave3gppChannel;
 
 class MmWaveHelper : public Object
 {
@@ -220,6 +221,7 @@ private:
 	Ptr<MmWaveLosTracker> m_losTracker;
 	Ptr<MmWaveChannelMatrix> m_channelMatrix;
 	Ptr<MmWaveChannelRaytracing> m_raytracing;
+	Ptr<MmWave3gppChannel> m_3gppChannel;
 
 	Ptr<Object> m_pathlossModel;
 	std::string m_pathlossModelType;

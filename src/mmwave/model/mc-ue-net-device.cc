@@ -110,7 +110,7 @@ TypeId McUeNetDevice::GetTypeId (void)
 					PointerValue (),
 					MakePointerAccessor (&McUeNetDevice::m_mmWaveMac),
 					MakePointerChecker <MmWaveUeMac> ())
-	.AddAttribute ("AntennaNum of the mmWave stack of this NetDevice",
+	.AddAttribute ("AntennaNum",
 				   "Antenna number of the device",
 				   UintegerValue (16),
 				   MakeUintegerAccessor (&McUeNetDevice::SetAntennaNum,

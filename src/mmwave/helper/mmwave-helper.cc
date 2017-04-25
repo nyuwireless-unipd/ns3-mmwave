@@ -40,23 +40,19 @@
 #include <sstream>
 #include "mmwave-helper.h"
 #include <ns3/abort.h>
-#include <ns3/buildings-propagation-loss-model.h>
 #include <ns3/multi-model-spectrum-channel.h>
 #include <ns3/uinteger.h>
 #include <ns3/double.h>
 #include <ns3/ipv4.h>
-#include <ns3/mmwave-rrc-protocol-ideal.h>
 #include <ns3/lte-rrc-protocol-real.h>
 #include <ns3/epc-enb-application.h>
 #include <ns3/epc-x2.h>
-#include <ns3/buildings-obstacle-propagation-loss-model.h>
 
 #include <ns3/friis-spectrum-propagation-loss.h>
 #include <ns3/lte-rrc-protocol-ideal.h>
 #include <ns3/lte-spectrum-phy.h>
 #include <ns3/lte-chunk-processor.h>
 #include <ns3/isotropic-antenna-model.h>
-
 
 namespace ns3 {
 
@@ -210,7 +206,7 @@ MmWaveHelper::DoInitialize()
 			m_channel->AddPropagationLossModel (splm);
 		}
 
-		if (m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ())
+		if (m_pathlossModelType == "ns3::BuildingsObstaclePropagationLossModel")
 		{
 			m_losTracker = CreateObject<MmWaveLosTracker>(); // create and initialize m_losTracker
 			Ptr<BuildingsObstaclePropagationLossModel> building = m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
@@ -240,6 +236,21 @@ MmWaveHelper::DoInitialize()
 		m_raytracing = CreateObject<MmWaveChannelRaytracing> ();
 		m_channel->AddSpectrumPropagationLossModel (m_raytracing);
 		m_raytracing->SetConfigurationParameters (m_phyMacCommon);
+	}
+	else if(m_channelModelType == "ns3::MmWave3gppChannel")
+	{
+		m_3gppChannel = CreateObject<MmWave3gppChannel> ();
+		m_channel->AddSpectrumPropagationLossModel (m_3gppChannel);
+		m_3gppChannel->SetConfigurationParameters (m_phyMacCommon);
+		if (m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel" || m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel" )
+		{
+			Ptr<PropagationLossModel> pl = m_pathlossModel->GetObject<PropagationLossModel> ();
+			m_3gppChannel->SetPathlossModel(pl);
+		}
+		else
+		{
+			NS_FATAL_ERROR("The 3GPP channel and propagation loss should be enabled at the same time");
+		}
 	}
 
 	m_phyStats = CreateObject<MmWavePhyRxTrace> ();
@@ -1152,6 +1163,10 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	{
 		phy->AddSpectrumPropagationLossModel(m_raytracing);
 	}
+	else if(m_channelModelType == "ns3::MmWave3gppChannel")
+	{
+		phy->AddSpectrumPropagationLossModel(m_3gppChannel);
+	}
 	if (!m_pathlossModelType.empty ())
 	{
 		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
@@ -1507,6 +1522,10 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 	{
 		m_raytracing->Initial(ueDevices,enbDevices);
 	}
+	else if(m_channelModelType == "ns3::MmWave3gppChannel")
+	{
+		m_3gppChannel->Initial(ueDevices,enbDevices);
+	}
 
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
@@ -1538,6 +1557,10 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 	{
 		m_raytracing->Initial(ueDevices,mmWaveEnbDevices);
 	}
+	else if(m_channelModelType == "ns3::MmWave3gppChannel")
+	{
+		m_3gppChannel->Initial(ueDevices,mmWaveEnbDevices);
+	}
 }
 
 // for InterRatHoCapable devices
@@ -1558,6 +1581,10 @@ MmWaveHelper::AttachIrToClosestEnb (NetDeviceContainer ueDevices, NetDeviceConta
 	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
 	{
 		m_raytracing->Initial(ueDevices,mmWaveEnbDevices);
+	}
+	else if(m_channelModelType == "ns3::MmWave3gppChannel")
+	{
+		m_3gppChannel->Initial(ueDevices,mmWaveEnbDevices);
 	}
 
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)

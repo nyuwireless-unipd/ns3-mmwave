@@ -23,7 +23,6 @@
 #define MMWAVE_LOS_TRACKER_H
 
 #include <ns3/buildings-propagation-loss-model.h>
-#include "mmwave-beamforming.h"
 #include <ns3/simulator.h>
 
 namespace ns3 {
