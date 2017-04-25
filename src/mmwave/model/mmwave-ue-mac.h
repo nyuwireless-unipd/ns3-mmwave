@@ -61,7 +61,7 @@ public:
 	LteUeCmacSapProvider*  GetUeCmacSapProvider (void);
 	LteMacSapProvider*  GetUeMacSapProvider (void);
 
-	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	void DoSubframeIndication (SfnSf sfn);

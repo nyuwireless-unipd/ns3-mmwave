@@ -53,7 +53,7 @@ MmWaveMac::~MmWaveMac ()
 
 
 void
-MmWaveMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveMac::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 }

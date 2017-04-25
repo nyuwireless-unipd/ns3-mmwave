@@ -106,7 +106,7 @@ public:
   };
 */
 
-	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	void SetCellId(uint16_t cellId);

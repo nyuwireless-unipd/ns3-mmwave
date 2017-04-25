@@ -108,7 +108,7 @@ public:
 //	virtual Ptr<PacketBurst> GetPacketBurst (void);
 	virtual Ptr<PacketBurst> GetPacketBurst (SfnSf);
 
-	void SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 	MmWavePhySapProvider* GetPhySapProvider ();

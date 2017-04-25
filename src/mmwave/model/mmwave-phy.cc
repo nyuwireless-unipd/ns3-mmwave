@@ -297,7 +297,7 @@ MmWavePhy::GetControlMessages (void)
 }
 
 void
-MmWavePhy::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWavePhy::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 }

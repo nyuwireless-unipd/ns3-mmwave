@@ -191,7 +191,7 @@ MacUeMemberPhySapUser::SubframeIndication (SfnSf sfn)
 void
 MacUeMemberPhySapUser::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> params)
 {
-	m_mac->SetCofigurationParameters(params);
+	m_mac->SetConfigurationParameters(params);
 }
 
 //void
@@ -255,7 +255,7 @@ MmWaveUeMac::DoDispose ()
 }
 
 void
-MmWaveUeMac::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveUeMac::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 

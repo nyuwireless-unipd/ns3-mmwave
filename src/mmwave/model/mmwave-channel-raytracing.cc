@@ -101,7 +101,7 @@ MmWaveChannelRaytracing::DoDispose ()
 }
 
 void
-MmWaveChannelRaytracing::SetCofigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveChannelRaytracing::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
 	m_phyMacConfig = ptrConfig;
 }
