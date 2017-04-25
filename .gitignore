@@ -1,5 +1,6 @@
-
-
-
+.lock-waf_linux2_build
+/waf-tools/*.pyc
+build/*
 /utils.pyc
 /wutils.pyc
+.waf*
