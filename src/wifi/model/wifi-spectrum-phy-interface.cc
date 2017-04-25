@@ -42,7 +42,8 @@ TypeId
 WifiSpectrumPhyInterface::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::WifiSpectrumPhyInterface")
-    .SetParent<SpectrumPhy> ();
+    .SetParent<SpectrumPhy> ()
+    .SetGroupName ("Wifi");
   return tid;
 }
 
@@ -56,6 +57,8 @@ WifiSpectrumPhyInterface::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   m_spectrumWifiPhy = 0;
+  m_netDevice = 0;
+  m_channel = 0;
 }
 
 void WifiSpectrumPhyInterface::SetSpectrumWifiPhy (Ptr<SpectrumWifiPhy> spectrumWifiPhy)

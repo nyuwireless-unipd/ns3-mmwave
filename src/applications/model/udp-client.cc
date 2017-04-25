@@ -30,7 +30,6 @@
 #include "ns3/uinteger.h"
 #include "udp-client.h"
 #include "seq-ts-header.h"
-#include "ns3/string.h"
 #include <cstdlib>
 #include <cstdio>
 
@@ -70,11 +69,6 @@ UdpClient::GetTypeId (void)
                    UintegerValue (1024),
                    MakeUintegerAccessor (&UdpClient::m_size),
                    MakeUintegerChecker<uint32_t> (12,1500))
-    .AddAttribute ("SentPacketsFilename",
-                   "Name of the file where the number of sent packets will be saved.",
-                   StringValue ("UdpSent.txt"),
-                   MakeStringAccessor (&UdpClient::SetSentFilename),
-                   MakeStringChecker ())
   ;
   return tid;
 }
@@ -93,35 +87,6 @@ UdpClient::~UdpClient ()
 }
 
 void
-UdpClient::SetSentFilename(std::string name)
-{
-  m_sentFilename = name;
-}
-
-std::string
-UdpClient::GetSentFilename() const
-{
-  return m_sentFilename;
-}
-
-
-void
-UdpClient::SetRemote (Ipv4Address ip, uint16_t port)
-{
-  NS_LOG_FUNCTION (this << ip << port);
-  m_peerAddress = Address(ip);
-  m_peerPort = port;
-}
-
-void
-UdpClient::SetRemote (Ipv6Address ip, uint16_t port)
-{
-  NS_LOG_FUNCTION (this << ip << port);
-  m_peerAddress = Address(ip);
-  m_peerPort = port;
-}
-
-void
 UdpClient::SetRemote (Address ip, uint16_t port)
 {
   NS_LOG_FUNCTION (this << ip << port);
@@ -130,17 +95,16 @@ UdpClient::SetRemote (Address ip, uint16_t port)
 }
 
 void
+UdpClient::SetRemote (Address addr)
+{
+  NS_LOG_FUNCTION (this << addr);
+  m_peerAddress = addr;
+}
+
+void
 UdpClient::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-
-  if(!m_udpSentFile.is_open())
-  {
-    m_udpSentFile.open(GetSentFilename().c_str());
-  }
-  m_udpSentFile << m_sent << std::endl;
-  m_udpSentFile.close();
-
   Application::DoDispose ();
 }
 
@@ -162,6 +126,20 @@ UdpClient::StartApplication (void)
         {
           m_socket->Bind6 ();
           m_socket->Connect (Inet6SocketAddress (Ipv6Address::ConvertFrom(m_peerAddress), m_peerPort));
+        }
+      else if (InetSocketAddress::IsMatchingType (m_peerAddress) == true)
+        {
+          m_socket->Bind ();
+          m_socket->Connect (m_peerAddress);
+        }
+      else if (Inet6SocketAddress::IsMatchingType (m_peerAddress) == true)
+        {
+          m_socket->Bind6 ();
+          m_socket->Connect (m_peerAddress);
+        }
+      else
+        {
+          NS_ASSERT_MSG (false, "Incompatible address type: " << m_peerAddress);
         }
     }
 

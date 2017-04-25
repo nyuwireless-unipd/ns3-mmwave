@@ -29,6 +29,7 @@
 #include "ns3/bridge-net-device.h"
 #include "ipv4-global-routing.h"
 #include "global-router-interface.h"
+#include "loopback-net-device.h"
 #include <vector>
 
 namespace ns3 {
@@ -639,6 +640,11 @@ GlobalRouter::DiscoverLSAs ()
     {
       Ptr<NetDevice> ndLocal = node->GetDevice (i);
 
+      if (DynamicCast <LoopbackNetDevice> (ndLocal))
+        {
+          continue;
+        }
+
       //
       // There is an assumption that bridge ports must never have an IP address 
       // associated with them.  This turns out to be a very convenient place to
@@ -1152,6 +1158,7 @@ GlobalRouter::BuildNetworkLSAs (NetDeviceContainer c)
   NS_LOG_FUNCTION (this << &c);
 
   uint32_t nDesignatedRouters = c.GetN ();
+  NS_LOG_DEBUG ("Number of designated routers: " << nDesignatedRouters);
 
   for (uint32_t i = 0; i < nDesignatedRouters; ++i)
     {
@@ -1191,23 +1198,32 @@ GlobalRouter::BuildNetworkLSAs (NetDeviceContainer c)
       // and, if we find a node with a GlobalRouter interface and an IPv4 
       // interface associated with that device, we call it an attached router.
       //
+      ClearBridgesVisited ();
       Ptr<Channel> ch = ndLocal->GetChannel ();
       uint32_t nDevices = ch->GetNDevices ();
       NS_ASSERT (nDevices);
+      NetDeviceContainer deviceList = FindAllNonBridgedDevicesOnLink (ch);
+      NS_LOG_LOGIC ("Found " << deviceList.GetN () << " non-bridged devices on channel");
 
-      for (uint32_t i = 0; i < nDevices; i++)
+      for (uint32_t i = 0; i < deviceList.GetN (); i++)
         {
-          Ptr<NetDevice> tempNd = ch->GetDevice (i);
+          Ptr<NetDevice> tempNd = deviceList.Get (i);
           NS_ASSERT (tempNd);
+          if (tempNd == ndLocal)
+            {
+              NS_LOG_LOGIC ("Adding " << addrLocal << " to Network LSA");
+              pLSA->AddAttachedRouter (addrLocal);
+              continue;
+            }
           Ptr<Node> tempNode = tempNd->GetNode ();
 
-          //
           // Does the node in question have a GlobalRouter interface?  If not it can
           // hardly be considered an attached router.
           //
           Ptr<GlobalRouter> rtr = tempNode->GetObject<GlobalRouter> ();
           if (rtr == 0)
             { 
+              NS_LOG_LOGIC ("Node " << tempNode->GetId () << " does not have GlobalRouter interface--skipping");
               continue;
             }
 
@@ -1231,13 +1247,59 @@ GlobalRouter::BuildNetworkLSAs (NetDeviceContainer c)
                       NS_LOG_WARN ("Warning, interface has multiple IP addresses; using only the primary one");
                     }
                   Ipv4Address tempAddr = tempIpv4->GetAddress (tempInterface, 0).GetLocal ();
+                  NS_LOG_LOGIC ("Adding " << tempAddr << " to Network LSA");
                   pLSA->AddAttachedRouter (tempAddr);
                 }
             }
+          else
+            {
+              NS_LOG_LOGIC ("Node " << tempNode->GetId () << " device " << tempNd << " does not have IPv4 interface; skipping");
+            }
         }
       m_LSAs.push_back (pLSA);
+      NS_LOG_LOGIC ("========== LSA for node " << node->GetId () << " ==========");
+      NS_LOG_LOGIC (*pLSA);
       pLSA = 0;
     }
+}
+
+NetDeviceContainer
+GlobalRouter::FindAllNonBridgedDevicesOnLink (Ptr<Channel> ch) const
+{
+  NS_LOG_FUNCTION (this << ch);
+  NetDeviceContainer c;
+
+  for (uint32_t i = 0; i < ch->GetNDevices (); i++)
+    {
+      Ptr<NetDevice> nd = ch->GetDevice (i);
+      NS_LOG_LOGIC ("checking to see if the device " << nd << " is bridged");
+      Ptr<BridgeNetDevice> bnd = NetDeviceIsBridged (nd);
+      if (bnd && BridgeHasAlreadyBeenVisited (bnd) == false)
+        {
+          NS_LOG_LOGIC ("Device is bridged by BridgeNetDevice " << bnd << " with " << bnd->GetNBridgePorts () << " ports");
+          MarkBridgeAsVisited (bnd);
+          // Find all channels bridged together, and recursively call
+          // on all other channels
+          for (uint32_t j = 0; j < bnd->GetNBridgePorts (); j++)
+            {
+              Ptr<NetDevice> bridgedDevice = bnd->GetBridgePort (j);
+              if (bridgedDevice->GetChannel () == ch)
+                {
+                  NS_LOG_LOGIC ("Skipping my own device/channel");
+                  continue;
+                }
+              NS_LOG_LOGIC ("Calling on channel " << bridgedDevice->GetChannel ());
+              c.Add (FindAllNonBridgedDevicesOnLink (bridgedDevice->GetChannel ()));
+            }
+        }
+      else
+        {
+          NS_LOG_LOGIC ("Device is not bridged; adding");
+          c.Add (nd);
+        }
+    }
+  NS_LOG_LOGIC ("Found " << c.GetN () << " devices");
+  return c;
 }
 
 //
@@ -1753,6 +1815,7 @@ GlobalRouter::BridgeHasAlreadyBeenVisited (Ptr<BridgeNetDevice> bridgeNetDevice)
     {
       if (bridgeNetDevice == *iter)
         {
+          NS_LOG_LOGIC ("Bridge " << bridgeNetDevice << " has been visited.");
           return true;
         }
     }
@@ -1765,6 +1828,7 @@ GlobalRouter::BridgeHasAlreadyBeenVisited (Ptr<BridgeNetDevice> bridgeNetDevice)
 void 
 GlobalRouter::MarkBridgeAsVisited (Ptr<BridgeNetDevice> bridgeNetDevice) const
 {
+  NS_LOG_FUNCTION (this << bridgeNetDevice);
   m_bridgesVisited.push_back (bridgeNetDevice);
 }
 

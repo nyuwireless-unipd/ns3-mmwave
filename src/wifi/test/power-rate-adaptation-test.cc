@@ -330,11 +330,7 @@ PowerRateAdaptationTest::TestParf ()
   NS_TEST_ASSERT_MSG_EQ (mode.GetDataRate (txVector.GetChannelWidth (), txVector.IsShortGuardInterval (), 1), 54000000, "PARF: Incorrect vale of data rate");
   NS_TEST_ASSERT_MSG_EQ (power, 17, "PARF: Incorrect value of power level");
 
-  Simulator::Stop (Seconds (10.0));
-
-  Simulator::Run ();
   Simulator::Destroy ();
-
 }
 
 void
@@ -348,8 +344,8 @@ PowerRateAdaptationTest::TestAparf ()
   /*
    * Configure thresholds for rate and power control.
    */
-  manager->SetAttribute ("SuccessThreshold 1",UintegerValue (3));
-  manager->SetAttribute ("SuccessThreshold 2",UintegerValue (10));
+  manager->SetAttribute ("SuccessThreshold1",UintegerValue (3));
+  manager->SetAttribute ("SuccessThreshold2",UintegerValue (10));
   manager->SetAttribute ("FailThreshold",UintegerValue (1));
   manager->SetAttribute ("PowerThreshold",UintegerValue (10));
 
@@ -570,11 +566,7 @@ PowerRateAdaptationTest::TestAparf ()
   NS_TEST_ASSERT_MSG_EQ (mode.GetDataRate (txVector.GetChannelWidth (), txVector.IsShortGuardInterval (), 1), 54000000, "APARF: Incorrect vale of data rate");
   NS_TEST_ASSERT_MSG_EQ (power, 17, "APARF: Incorrect value of power level");
 
-  Simulator::Stop (Seconds (10.0));
-
-  Simulator::Run ();
   Simulator::Destroy ();
-
 }
 
 void

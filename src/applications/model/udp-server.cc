@@ -29,12 +29,10 @@
 #include "ns3/socket-factory.h"
 #include "ns3/packet.h"
 #include "ns3/uinteger.h"
-#include "ns3/string.h"
 #include "packet-loss-counter.h"
 
 #include "seq-ts-header.h"
 #include "udp-server.h"
-#include <iterator>
 
 namespace ns3 {
 
@@ -61,21 +59,6 @@ UdpServer::GetTypeId (void)
                    MakeUintegerAccessor (&UdpServer::GetPacketWindowSize,
                                          &UdpServer::SetPacketWindowSize),
                    MakeUintegerChecker<uint16_t> (8,256))
-    .AddAttribute ("ReceivedPacketsFilename",
-                   "Name of the file where the number of received packets will be saved.",
-                   StringValue ("UdpReceived.txt"),
-                   MakeStringAccessor (&UdpServer::SetReceivedFilename),
-                   MakeStringChecker ())
-    .AddAttribute ("ReceivedSnFilename",
-                   "Name of the file where the sequence numbers of received packets will be periodically written.",
-                   StringValue ("UdpSn.txt"),
-                   MakeStringAccessor (&UdpServer::SetSnFilename),
-                   MakeStringChecker ())
-    .AddAttribute ("SnVectorMaxSize",
-               "Maximum size of the vector containing SNs. When it reaches this size, the SNs are written to file",
-               UintegerValue (1024),
-               MakeUintegerAccessor (&UdpServer::m_snMaxSize),
-               MakeUintegerChecker<uint16_t> ())
   ;
   return tid;
 }
@@ -85,36 +68,11 @@ UdpServer::UdpServer ()
 {
   NS_LOG_FUNCTION (this);
   m_received=0;
-  m_snVector.clear();
 }
 
 UdpServer::~UdpServer ()
 {
   NS_LOG_FUNCTION (this);
-}
-
-void 
-UdpServer::SetReceivedFilename(std::string name)
-{
-  m_receivedFilename = name;
-}
-
-std::string 
-UdpServer::GetReceivedFilename() const
-{
-  return m_receivedFilename;
-}
-
-void 
-UdpServer::SetSnFilename(std::string name)
-{
-  m_snFilename = name;
-}
-
-std::string 
-UdpServer::GetSnFilename() const
-{
-  return m_snFilename;
 }
 
 uint16_t
@@ -138,7 +96,7 @@ UdpServer::GetLost (void) const
   return m_lossCounter.GetLost ();
 }
 
-uint32_t
+uint64_t
 UdpServer::GetReceived (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -149,29 +107,6 @@ void
 UdpServer::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-
-  if(!m_udpReceivedFile.is_open())
-  {
-    m_udpReceivedFile.open(GetReceivedFilename().c_str());
-  }
-  m_udpReceivedFile << m_received << std::endl;
-  m_udpReceivedFile.close();
-
-  if(m_snVector.size() > 0)
-  {
-    if(!m_udpSnFile.is_open())
-    {
-      m_udpSnFile.open(GetSnFilename().c_str(), std::ofstream::app);
-    }
-    std::vector<std::pair<uint32_t, Time> >::const_iterator snIterator;
-    for(snIterator = m_snVector.begin(); snIterator != m_snVector.end(); ++snIterator)
-    {
-      m_udpSnFile << snIterator->first << " " << snIterator->second.GetMicroSeconds() << "\n";
-    }
-    m_snVector.clear();
-    m_udpSnFile.close();
-  }
-
   Application::DoDispose ();
 }
 
@@ -251,26 +186,6 @@ UdpServer::HandleRead (Ptr<Socket> socket)
 
           m_lossCounter.NotifyReceived (currentSequenceNumber);
           m_received++;
-          m_snVector.push_back(std::pair<uint32_t, Time> (currentSequenceNumber, Simulator::Now () - seqTs.GetTs ()));
-          if(m_snVector.size() >= m_snMaxSize)
-          {
-            // write to file
-            if(!m_udpSnFile.is_open())
-            {
-              m_udpSnFile.open(GetSnFilename().c_str(), std::ofstream::app);
-            }
-            std::vector<std::pair<uint32_t, Time> >::const_iterator snIterator;
-            for(snIterator = m_snVector.begin(); snIterator != m_snVector.end(); ++snIterator)
-            {
-              m_udpSnFile << snIterator->first << " " << snIterator->second.GetMicroSeconds() << "\n";
-            }
-            m_snVector.clear();
-            m_udpSnFile.close();
-          }
-        }
-      else
-        {
-          NS_LOG_INFO("Packet dropped in UDP server, size = 0");
         }
     }
 }

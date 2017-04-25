@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "ns3/command-line.h"
 #include "ns3/simulator.h"
 #include "ns3/realtime-simulator-impl.h"
 #include "ns3/nstime.h"
@@ -145,6 +146,9 @@ test (void)
 int
 main (int argc, char *argv[])
 {
+  CommandLine cmd;
+  cmd.Parse (argc, argv);
+  
   while (true)
     {
       test ();

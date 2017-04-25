@@ -314,7 +314,7 @@ EdcaTxopN::DoDispose (void)
 }
 
 bool
-EdcaTxopN::GetBaAgreementExists (Mac48Address address, uint8_t tid)
+EdcaTxopN::GetBaAgreementExists (Mac48Address address, uint8_t tid) const
 {
   return m_baManager->ExistsAgreement (address, tid);
 }
@@ -656,28 +656,46 @@ void EdcaTxopN::NotifyInternalCollision (void)
 {
   NS_LOG_FUNCTION (this);
   bool resetDcf = false;
-  if (m_isAccessRequestedForRts)
+  // If an internal collision is experienced, the frame involved may still
+  // be sitting in the queue, and m_currentPacket may still be null.
+  Ptr<const Packet> packet;
+  WifiMacHeader header;
+  if (m_currentPacket == 0)
     {
-      if (!NeedRtsRetransmission ())
-      {
-        resetDcf = true;
-        m_stationManager->ReportFinalRtsFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
-      }
-      else
-      {
-        m_stationManager->ReportRtsFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
-      }
+      packet = m_queue->Peek (&header);
+      NS_ASSERT_MSG (packet, "Internal collision but no packet in queue");
     }
   else
     {
-      if (!NeedDataRetransmission ())
+      packet = m_currentPacket;
+      header = m_currentHdr;
+    }
+  if (m_isAccessRequestedForRts)
+    {
+      if (!NeedRtsRetransmission (packet, header))
       {
         resetDcf = true;
-        m_stationManager->ReportFinalDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
+        m_stationManager->ReportFinalRtsFailed (header.GetAddr1 (), &header);
       }
       else
       {
-        m_stationManager->ReportDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
+        m_stationManager->ReportRtsFailed (header.GetAddr1 (), &header);
+      }
+    }
+  else if (header.GetAddr1 () == Mac48Address::GetBroadcast ())
+    {
+      resetDcf = false;
+    }
+  else
+    {
+      if (!NeedDataRetransmission (packet, header))
+      {
+        resetDcf = true;
+        m_stationManager->ReportFinalDataFailed (header.GetAddr1 (), &header);
+      }
+      else
+      {
+        m_stationManager->ReportDataFailed (header.GetAddr1 (), &header);
       }
     }
   if (resetDcf)
@@ -685,10 +703,19 @@ void EdcaTxopN::NotifyInternalCollision (void)
       NS_LOG_DEBUG ("reset DCF");
       if (!m_txFailedCallback.IsNull ())
         {
-          m_txFailedCallback (m_currentHdr);
+          m_txFailedCallback (header);
         }
       //to reset the dcf.
-      m_currentPacket = 0;
+      if (m_currentPacket)
+        {
+          NS_LOG_DEBUG ("Discarding m_currentPacket");
+          m_currentPacket = 0;
+        }
+      else
+        {
+          NS_LOG_DEBUG ("Dequeueing and discarding head of queue");
+          packet = m_queue->Peek (&header);
+        }
       m_dcf->ResetCw ();
     }
   else
@@ -717,7 +744,7 @@ EdcaTxopN::GotCts (double snr, WifiMode txMode)
 }
 
 uint8_t
-EdcaTxopN::GetCurrentTid ()
+EdcaTxopN::GetCurrentTid () const
 {
   NS_LOG_FUNCTION (this);
   if (m_currentHdr.IsQosData ())
@@ -786,7 +813,7 @@ EdcaTxopN::MissedCts (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("missed cts");
-  if (!NeedRtsRetransmission ())
+  if (!NeedRtsRetransmission (m_currentPacket, m_currentHdr))
     {
       NS_LOG_DEBUG ("Cts Fail");
       bool resetCurrentPacket = true;
@@ -795,7 +822,7 @@ EdcaTxopN::MissedCts (void)
         {
           m_txFailedCallback (m_currentHdr);
         }
-      if (GetAmpduExist (m_currentHdr.GetAddr1 ()))
+      if (GetAmpduExist (m_currentHdr.GetAddr1 ()) || m_currentHdr.IsQosData ())
         {
           m_low->FlushAggregateQueue ();
           uint8_t tid = GetCurrentTid ();
@@ -874,7 +901,6 @@ void
 EdcaTxopN::Queue (Ptr<const Packet> packet, const WifiMacHeader &hdr)
 {
   NS_LOG_FUNCTION (this << packet << &hdr);
-  WifiMacTrailer fcs;
   m_stationManager->PrepareForQueue (hdr.GetAddr1 (), &hdr, packet);
   m_queue->Enqueue (packet, hdr);
   StartAccessIfNeeded ();
@@ -935,7 +961,7 @@ EdcaTxopN::MissedAck (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("missed ack");
-  if (!NeedDataRetransmission ())
+  if (!NeedDataRetransmission (m_currentPacket, m_currentHdr))
     {
       NS_LOG_DEBUG ("Ack Fail");
       m_stationManager->ReportFinalDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
@@ -944,7 +970,7 @@ EdcaTxopN::MissedAck (void)
         {
           m_txFailedCallback (m_currentHdr);
         }
-      if (GetAmpduExist (m_currentHdr.GetAddr1 ()))
+      if (GetAmpduExist (m_currentHdr.GetAddr1 ()) || m_currentHdr.IsQosData ())
         {
           uint8_t tid = GetCurrentTid ();
 
@@ -1153,19 +1179,17 @@ EdcaTxopN::StartAccessIfNeeded (void)
 }
 
 bool
-EdcaTxopN::NeedRtsRetransmission (void)
+EdcaTxopN::NeedRtsRetransmission (Ptr<const Packet> packet, const WifiMacHeader &hdr)
 {
   NS_LOG_FUNCTION (this);
-  return m_stationManager->NeedRtsRetransmission (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                                  m_currentPacket);
+  return m_stationManager->NeedRtsRetransmission (hdr.GetAddr1 (), &hdr, packet);
 }
 
 bool
-EdcaTxopN::NeedDataRetransmission (void)
+EdcaTxopN::NeedDataRetransmission (Ptr<const Packet> packet, const WifiMacHeader &hdr)
 {
   NS_LOG_FUNCTION (this);
-  return m_stationManager->NeedDataRetransmission (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                                   m_currentPacket);
+  return m_stationManager->NeedDataRetransmission (hdr.GetAddr1 (), &hdr, packet);
 }
 
 bool
@@ -1357,6 +1381,17 @@ bool
 EdcaTxopN::NeedFragmentation (void) const
 {
   NS_LOG_FUNCTION (this);
+  if (m_stationManager->HasVhtSupported ()
+      || GetAmpduExist (m_currentHdr.GetAddr1 ())
+      || (m_stationManager->HasHtSupported ()
+      && m_currentHdr.IsQosData ()
+      && GetBaAgreementExists (m_currentHdr.GetAddr1 (), GetCurrentTid ())
+      && GetMpduAggregator ()->GetMaxAmpduSize () >= m_currentPacket->GetSize ()))
+    {
+      //MSDU is not fragmented when it is transmitted using an HT-immediate or
+      //HT-delayed Block Ack agreement or when it is carried in an A-MPDU.
+      return false;
+    }
   return m_stationManager->NeedFragmentation (m_currentHdr.GetAddr1 (), &m_currentHdr,
                                               m_currentPacket);
 }
@@ -1543,7 +1578,7 @@ EdcaTxopN::VerifyBlockAck (void)
     }
 }
 
-bool EdcaTxopN::GetAmpduExist (Mac48Address dest)
+bool EdcaTxopN::GetAmpduExist (Mac48Address dest) const
 {
   NS_LOG_FUNCTION (this << dest);
   if (m_aMpduEnabled.find (dest) != m_aMpduEnabled.end ())

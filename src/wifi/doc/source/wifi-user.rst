@@ -164,7 +164,9 @@ Furthermore, 802.11n provides an optional mode (GreenField mode) to reduce pream
 
  wifiPhyHelper.Set ("GreenfieldEnabled",BooleanValue(true));
 
-802.11n PHY layer can support both 20 (default) or 40 MHz channel width, and 802.11ac PHY layer can use either 20, 40, 80 (default) or 160 MHz channel width. Since the channel width value is overwritten by ``WifiHelper::SetStandard``, this should be done post-install using ``Config::Set``::
+802.11n PHY layer can support both 20 (default) or 40 MHz channel width, and 802.11ac PHY layer can use either 20, 40, 80 (default) or 160 MHz channel width.  See below for further documentation on setting the frequency, channel width, and channel number.
+
+::
 
   WifiHelper wifi;
   wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
@@ -186,9 +188,6 @@ Furthermore, 802.11n provides an optional mode (GreenField mode) to reduce pream
 
   NetDeviceContainer apDevice;
   apDevice = wifi.Install (phy, mac, wifiApNode);
-
-  //Once install is done, we overwrite the channel width value
-  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (160));
 
 Channel, frequency, and channel width configuration
 ===================================================
@@ -525,30 +524,12 @@ The following code shows how to create an AP with QoS enabled::
                          "BeaconGeneration", BooleanValue (true),
                          "BeaconInterval", TimeValue (Seconds (2.5)));
 
+To create ad-hoc MAC instances, simply use ``ns3::AdhocWifiMac`` instead of ``ns3::StaWifiMac`` or ``ns3::ApWifiMac``.
+
 With QoS-enabled MAC models it is possible to work with traffic belonging to
 four different Access Categories (ACs): **AC_VO** for voice traffic,
 **AC_VI** for video traffic, **AC_BE** for best-effort
-traffic and **AC_BK** for background traffic.  The MAC determines
-the appropriate AC for an MSDU based on the DS field of the packet
-(ToS field in case of IPv4, Traffic Class field in case of IPv6).
-In particular, the user priority (UP) of an MSDU is set to the three most significant
-bits of the DS field. The Access Category is then determined according to the
-following table:
-
-===  ===============
-UP   Access Category
-===  ===============
- 7     AC_VO
- 6     AC_VO
- 5     AC_VI
- 4     AC_VI
- 3     AC_BE
- 0     AC_BE
- 2     AC_BK
- 1     AC_BK
-===  ===============
-
-To create ad-hoc MAC instances, simply use ``ns3::AdhocWifiMac`` instead of ``ns3::StaWifiMac`` or ``ns3::ApWifiMac``.
+traffic and **AC_BK** for background traffic.
 
 When selecting **802.11n** as the desired wifi standard, both 802.11e/WMM-style QoS and 802.11n-style High throughput (HT) support gets enabled.
 Similarly, When selecting **802.11ac** as the desired wifi standard, 802.11e/WMM-style QoS, 802.11n-style High throughput (HT) and 802.11ac-style Very High throughput (VHT) support gets enabled.
@@ -574,7 +555,7 @@ For MAC instances that have 802.11n-style High throughput (HT) and/or 802.11ac-s
 * MSDU aggregation parameters for a particular Access Category (AC) in order to use 802.11n/ac A-MSDU feature;
 * MPDU aggregation parameters for a particular Access Category (AC) in order to use 802.11n/ac A-MPDU feature.
 
-By defaut, MSDU aggration feature is disabled for all ACs and MPDU aggregation is enabled for AC_VI and AC_BE, with a maximum aggregation size of 65535 bytes.
+By defaut, MSDU aggregation feature is disabled for all ACs and MPDU aggregation is enabled for AC_VI and AC_BE, with a maximum aggregation size of 65535 bytes.
 
 For example the following user code configures a MAC that will be a non-AP STA with HT and QoS enabled, MPDU aggregation enabled for AC_VO with a maximum aggregation size of 65535 bytes, and MSDU aggregation enabled for AC_BE with a maximum aggregation size of 7935 bytes,
 in an infrastructure network where the AP has SSID ``ns-3-ssid``::
@@ -589,6 +570,56 @@ in an infrastructure network where the AP has SSID ``ns-3-ssid``::
                           "VO_MaxAmpduSize", UintegerValue (65535),
                           "BE_MaxAmsduSize", UintegerValue (7935),
                           "ActiveProbing", BooleanValue (false));
+
+Selection of the Access Category (AC)
++++++++++++++++++++++++++++++++++++++
+
+Since ns-3.26, the QosTag is no longer used to assign a user priority to an MSDU.
+Instead, the selection of the Access Category (AC) for an MSDU is based on the
+value of the DS field in the IP header of the packet (ToS field in case of IPv4,
+Traffic Class field in case of IPv6). Details on how to set the ToS field of IPv4
+packets are given in the :ref:`Type-of-service` section of the documentation. In
+summary, users can create an address of type :cpp:class:`ns3::InetSocketAddress`
+with the desired type of service value and pass it to the application helpers::
+
+    InetSocketAddress destAddress (ipv4Address, udpPort);
+    destAddress.SetTos (tos);
+    OnOffHelper onoff ("ns3::UdpSocketFactory", destAddress);
+
+Mapping the values of the DS field onto user priorities is performed similarly to the
+Linux mac80211 subsystem. Basically, the :cpp:func:`ns3::WifiNetDevice::SelectQueue()`
+method sets the user priority (UP) of an MSDU to the three most significant
+bits of the DS field. The Access Category is then determined based on the user priority
+according to the following table:
+
+===  ===============
+UP   Access Category
+===  ===============
+ 7     AC_VO
+ 6     AC_VO
+ 5     AC_VI
+ 4     AC_VI
+ 3     AC_BE
+ 0     AC_BE
+ 2     AC_BK
+ 1     AC_BK
+===  ===============
+
+Readers can refer to the doxygen documentation of the
+:cpp:func:`ns3::WifiNetDevice::SelectQueue()` method for more information,
+including how DSCP values map onto user priorities and access categories.
+Also, the ns3-wifi-ac-mapping test suite (defined in 
+src/test/ns3wifi/wifi-ac-mapping-test-suite.cc) can provide additional
+useful information.
+
+Note that :cpp:func:`ns3::WifiNetDevice::SelectQueue()` also sets the packet
+priority to the user priority, thus overwriting the value determined by the
+socket priority (users can read :ref:`Socket-options` for details on how to
+set the packet priority). Also, given that the Traffic Control layer calls
+:cpp:func:`ns3::WifiNetDevice::SelectQueue()` before enqueuing the packet
+into a queue disc, it turns out that queuing disciplines (such as the default
+PfifoFastQueueDisc) that classifies packets based on their priority will
+use the user priority instead of the socket priority.
 
 WifiHelper
 ==========

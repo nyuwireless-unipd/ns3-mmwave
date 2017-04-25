@@ -178,6 +178,8 @@ def register_types(module):
     module.add_class('TypeId', import_from_module='ns.core')
     ## type-id.h (module 'core'): ns3::TypeId::AttributeFlag [enumeration]
     module.add_enum('AttributeFlag', ['ATTR_GET', 'ATTR_SET', 'ATTR_CONSTRUCT', 'ATTR_SGC'], outer_class=root_module['ns3::TypeId'], import_from_module='ns.core')
+    ## type-id.h (module 'core'): ns3::TypeId::SupportLevel [enumeration]
+    module.add_enum('SupportLevel', ['SUPPORTED', 'DEPRECATED', 'OBSOLETE'], outer_class=root_module['ns3::TypeId'], import_from_module='ns.core')
     ## type-id.h (module 'core'): ns3::TypeId::AttributeInformation [struct]
     module.add_class('AttributeInformation', import_from_module='ns.core', outer_class=root_module['ns3::TypeId'])
     ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation [struct]
@@ -212,22 +214,24 @@ def register_types(module):
     module.add_class('Queue', parent=root_module['ns3::Object'])
     ## queue.h (module 'network'): ns3::Queue::QueueMode [enumeration]
     module.add_enum('QueueMode', ['QUEUE_MODE_PACKETS', 'QUEUE_MODE_BYTES'], outer_class=root_module['ns3::Queue'])
+    ## queue-limits.h (module 'network'): ns3::QueueLimits [class]
+    module.add_class('QueueLimits', parent=root_module['ns3::Object'])
     ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [class]
     module.add_class('RadiotapHeader', parent=root_module['ns3::Header'])
-    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [enumeration]
-    module.add_enum('', ['FRAME_FLAG_NONE', 'FRAME_FLAG_CFP', 'FRAME_FLAG_SHORT_PREAMBLE', 'FRAME_FLAG_WEP', 'FRAME_FLAG_FRAGMENTED', 'FRAME_FLAG_FCS_INCLUDED', 'FRAME_FLAG_DATA_PADDING', 'FRAME_FLAG_BAD_FCS', 'FRAME_FLAG_SHORT_GUARD'], outer_class=root_module['ns3::RadiotapHeader'])
-    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [enumeration]
-    module.add_enum('', ['CHANNEL_FLAG_NONE', 'CHANNEL_FLAG_TURBO', 'CHANNEL_FLAG_CCK', 'CHANNEL_FLAG_OFDM', 'CHANNEL_FLAG_SPECTRUM_2GHZ', 'CHANNEL_FLAG_SPECTRUM_5GHZ', 'CHANNEL_FLAG_PASSIVE', 'CHANNEL_FLAG_DYNAMIC', 'CHANNEL_FLAG_GFSK'], outer_class=root_module['ns3::RadiotapHeader'])
-    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [enumeration]
-    module.add_enum('', ['MCS_KNOWN_NONE', 'MCS_KNOWN_BANDWIDTH', 'MCS_KNOWN_INDEX', 'MCS_KNOWN_GUARD_INTERVAL', 'MCS_KNOWN_HT_FORMAT', 'MCS_KNOWN_FEC_TYPE', 'MCS_KNOWN_STBC', 'MCS_KNOWN_NESS', 'MCS_KNOWN_NESS_BIT_1'], outer_class=root_module['ns3::RadiotapHeader'])
-    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [enumeration]
-    module.add_enum('', ['MCS_FLAGS_NONE', 'MCS_FLAGS_BANDWIDTH_40', 'MCS_FLAGS_BANDWIDTH_20L', 'MCS_FLAGS_BANDWIDTH_20U', 'MCS_FLAGS_GUARD_INTERVAL', 'MCS_FLAGS_HT_GREENFIELD', 'MCS_FLAGS_FEC_TYPE', 'MCS_FLAGS_STBC_STREAMS', 'MCS_FLAGS_NESS_BIT_0'], outer_class=root_module['ns3::RadiotapHeader'])
-    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [enumeration]
-    module.add_enum('', ['A_MPDU_STATUS_NONE', 'A_MPDU_STATUS_REPORT_ZERO_LENGTH', 'A_MPDU_STATUS_IS_ZERO_LENGTH', 'A_MPDU_STATUS_LAST_KNOWN', 'A_MPDU_STATUS_LAST', 'A_MPDU_STATUS_DELIMITER_CRC_ERROR', 'A_MPDU_STATUS_DELIMITER_CRC_KNOWN'], outer_class=root_module['ns3::RadiotapHeader'])
-    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [enumeration]
-    module.add_enum('', ['VHT_KNOWN_NONE', 'VHT_KNOWN_STBC', 'VHT_KNOWN_TXOP_PS_NOT_ALLOWED', 'VHT_KNOWN_GUARD_INTERVAL', 'VHT_KNOWN_SHORT_GI_NSYM_DISAMBIGUATION', 'VHT_KNOWN_LDPC_EXTRA_OFDM_SYMBOL', 'VHT_KNOWN_BEAMFORMED', 'VHT_KNOWN_BANDWIDTH', 'VHT_KNOWN_GROUP_ID', 'VHT_KNOWN_PARTIAL_AID'], outer_class=root_module['ns3::RadiotapHeader'])
-    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader [enumeration]
-    module.add_enum('', ['VHT_FLAGS_NONE', 'VHT_FLAGS_STBC', 'VHT_FLAGS_TXOP_PS_NOT_ALLOWED', 'VHT_FLAGS_GUARD_INTERVAL', 'VHT_FLAGS_SHORT_GI_NSYM_DISAMBIGUATION', 'VHT_FLAGS__LDPC_EXTRA_OFDM_SYMBOL', 'VHT_FLAGS_BEAMFORMED'], outer_class=root_module['ns3::RadiotapHeader'])
+    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader::FrameFlag [enumeration]
+    module.add_enum('FrameFlag', ['FRAME_FLAG_NONE', 'FRAME_FLAG_CFP', 'FRAME_FLAG_SHORT_PREAMBLE', 'FRAME_FLAG_WEP', 'FRAME_FLAG_FRAGMENTED', 'FRAME_FLAG_FCS_INCLUDED', 'FRAME_FLAG_DATA_PADDING', 'FRAME_FLAG_BAD_FCS', 'FRAME_FLAG_SHORT_GUARD'], outer_class=root_module['ns3::RadiotapHeader'])
+    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader::ChannelFlags [enumeration]
+    module.add_enum('ChannelFlags', ['CHANNEL_FLAG_NONE', 'CHANNEL_FLAG_TURBO', 'CHANNEL_FLAG_CCK', 'CHANNEL_FLAG_OFDM', 'CHANNEL_FLAG_SPECTRUM_2GHZ', 'CHANNEL_FLAG_SPECTRUM_5GHZ', 'CHANNEL_FLAG_PASSIVE', 'CHANNEL_FLAG_DYNAMIC', 'CHANNEL_FLAG_GFSK'], outer_class=root_module['ns3::RadiotapHeader'])
+    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader::McsKnown [enumeration]
+    module.add_enum('McsKnown', ['MCS_KNOWN_NONE', 'MCS_KNOWN_BANDWIDTH', 'MCS_KNOWN_INDEX', 'MCS_KNOWN_GUARD_INTERVAL', 'MCS_KNOWN_HT_FORMAT', 'MCS_KNOWN_FEC_TYPE', 'MCS_KNOWN_STBC', 'MCS_KNOWN_NESS', 'MCS_KNOWN_NESS_BIT_1'], outer_class=root_module['ns3::RadiotapHeader'])
+    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader::McsFlags [enumeration]
+    module.add_enum('McsFlags', ['MCS_FLAGS_NONE', 'MCS_FLAGS_BANDWIDTH_40', 'MCS_FLAGS_BANDWIDTH_20L', 'MCS_FLAGS_BANDWIDTH_20U', 'MCS_FLAGS_GUARD_INTERVAL', 'MCS_FLAGS_HT_GREENFIELD', 'MCS_FLAGS_FEC_TYPE', 'MCS_FLAGS_STBC_STREAMS', 'MCS_FLAGS_NESS_BIT_0'], outer_class=root_module['ns3::RadiotapHeader'])
+    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader::AmpduFlags [enumeration]
+    module.add_enum('AmpduFlags', ['A_MPDU_STATUS_NONE', 'A_MPDU_STATUS_REPORT_ZERO_LENGTH', 'A_MPDU_STATUS_IS_ZERO_LENGTH', 'A_MPDU_STATUS_LAST_KNOWN', 'A_MPDU_STATUS_LAST', 'A_MPDU_STATUS_DELIMITER_CRC_ERROR', 'A_MPDU_STATUS_DELIMITER_CRC_KNOWN'], outer_class=root_module['ns3::RadiotapHeader'])
+    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader::VhtKnown [enumeration]
+    module.add_enum('VhtKnown', ['VHT_KNOWN_NONE', 'VHT_KNOWN_STBC', 'VHT_KNOWN_TXOP_PS_NOT_ALLOWED', 'VHT_KNOWN_GUARD_INTERVAL', 'VHT_KNOWN_SHORT_GI_NSYM_DISAMBIGUATION', 'VHT_KNOWN_LDPC_EXTRA_OFDM_SYMBOL', 'VHT_KNOWN_BEAMFORMED', 'VHT_KNOWN_BANDWIDTH', 'VHT_KNOWN_GROUP_ID', 'VHT_KNOWN_PARTIAL_AID'], outer_class=root_module['ns3::RadiotapHeader'])
+    ## radiotap-header.h (module 'network'): ns3::RadiotapHeader::VhtFlags [enumeration]
+    module.add_enum('VhtFlags', ['VHT_FLAGS_NONE', 'VHT_FLAGS_STBC', 'VHT_FLAGS_TXOP_PS_NOT_ALLOWED', 'VHT_FLAGS_GUARD_INTERVAL', 'VHT_FLAGS_SHORT_GI_NSYM_DISAMBIGUATION', 'VHT_FLAGS_LDPC_EXTRA_OFDM_SYMBOL', 'VHT_FLAGS_BEAMFORMED'], outer_class=root_module['ns3::RadiotapHeader'])
     ## random-variable-stream.h (module 'core'): ns3::RandomVariableStream [class]
     module.add_class('RandomVariableStream', import_from_module='ns.core', parent=root_module['ns3::Object'])
     ## random-variable-stream.h (module 'core'): ns3::SequentialRandomVariable [class]
@@ -350,8 +354,14 @@ def register_types(module):
     module.add_class('DoubleValue', import_from_module='ns.core', parent=root_module['ns3::AttributeValue'])
     ## drop-tail-queue.h (module 'network'): ns3::DropTailQueue [class]
     module.add_class('DropTailQueue', parent=root_module['ns3::Queue'])
+    ## dynamic-queue-limits.h (module 'network'): ns3::DynamicQueueLimits [class]
+    module.add_class('DynamicQueueLimits', parent=root_module['ns3::QueueLimits'])
     ## random-variable-stream.h (module 'core'): ns3::EmpiricalRandomVariable [class]
     module.add_class('EmpiricalRandomVariable', import_from_module='ns.core', parent=root_module['ns3::RandomVariableStream'])
+    ## attribute.h (module 'core'): ns3::EmptyAttributeAccessor [class]
+    module.add_class('EmptyAttributeAccessor', import_from_module='ns.core', parent=root_module['ns3::AttributeAccessor'])
+    ## attribute.h (module 'core'): ns3::EmptyAttributeChecker [class]
+    module.add_class('EmptyAttributeChecker', import_from_module='ns.core', parent=root_module['ns3::AttributeChecker'])
     ## attribute.h (module 'core'): ns3::EmptyAttributeValue [class]
     module.add_class('EmptyAttributeValue', import_from_module='ns.core', parent=root_module['ns3::AttributeValue'])
     ## enum.h (module 'core'): ns3::EnumChecker [class]
@@ -499,6 +509,9 @@ def register_types(module):
     module.add_container('std::list< ns3::Ptr< ns3::Packet > >', 'ns3::Ptr< ns3::Packet >', container_type=u'list')
     module.add_container('std::vector< ns3::Ipv6Address >', 'ns3::Ipv6Address', container_type=u'vector')
     module.add_container('std::list< unsigned int >', 'unsigned int', container_type=u'list')
+    typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', u'ns3::GenericPhyTxEndCallback')
+    typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >*', u'ns3::GenericPhyTxEndCallback*')
+    typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >&', u'ns3::GenericPhyTxEndCallback&')
     typehandlers.add_type_alias(u'ns3::SequenceNumber< unsigned short, short >', u'ns3::SequenceNumber16')
     typehandlers.add_type_alias(u'ns3::SequenceNumber< unsigned short, short >*', u'ns3::SequenceNumber16*')
     typehandlers.add_type_alias(u'ns3::SequenceNumber< unsigned short, short >&', u'ns3::SequenceNumber16&')
@@ -517,9 +530,6 @@ def register_types(module):
     typehandlers.add_type_alias(u'ns3::Callback< bool, ns3::Ptr< ns3::Packet >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', u'ns3::GenericPhyTxStartCallback')
     typehandlers.add_type_alias(u'ns3::Callback< bool, ns3::Ptr< ns3::Packet >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >*', u'ns3::GenericPhyTxStartCallback*')
     typehandlers.add_type_alias(u'ns3::Callback< bool, ns3::Ptr< ns3::Packet >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >&', u'ns3::GenericPhyTxStartCallback&')
-    typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', u'ns3::GenericPhyTxEndCallback')
-    typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >*', u'ns3::GenericPhyTxEndCallback*')
-    typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet const >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >&', u'ns3::GenericPhyTxEndCallback&')
     typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >', u'ns3::GenericPhyRxEndOkCallback')
     typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >*', u'ns3::GenericPhyRxEndOkCallback*')
     typehandlers.add_type_alias(u'ns3::Callback< void, ns3::Ptr< ns3::Packet >, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty >&', u'ns3::GenericPhyRxEndOkCallback&')
@@ -621,6 +631,9 @@ def register_types_ns3_TracedValueCallback(module):
     typehandlers.add_type_alias(u'void ( * ) ( ns3::Time, ns3::Time ) *', u'ns3::TracedValueCallback::Time')
     typehandlers.add_type_alias(u'void ( * ) ( ns3::Time, ns3::Time ) **', u'ns3::TracedValueCallback::Time*')
     typehandlers.add_type_alias(u'void ( * ) ( ns3::Time, ns3::Time ) *&', u'ns3::TracedValueCallback::Time&')
+    typehandlers.add_type_alias(u'void ( * ) (  ) *', u'ns3::TracedValueCallback::Void')
+    typehandlers.add_type_alias(u'void ( * ) (  ) **', u'ns3::TracedValueCallback::Void*')
+    typehandlers.add_type_alias(u'void ( * ) (  ) *&', u'ns3::TracedValueCallback::Void&')
 
 def register_types_ns3_addressUtils(module):
     root_module = module.get_root()
@@ -709,6 +722,7 @@ def register_methods(root_module):
     register_Ns3PacketSocketTag_methods(root_module, root_module['ns3::PacketSocketTag'])
     register_Ns3PcapFileWrapper_methods(root_module, root_module['ns3::PcapFileWrapper'])
     register_Ns3Queue_methods(root_module, root_module['ns3::Queue'])
+    register_Ns3QueueLimits_methods(root_module, root_module['ns3::QueueLimits'])
     register_Ns3RadiotapHeader_methods(root_module, root_module['ns3::RadiotapHeader'])
     register_Ns3RandomVariableStream_methods(root_module, root_module['ns3::RandomVariableStream'])
     register_Ns3SequentialRandomVariable_methods(root_module, root_module['ns3::SequentialRandomVariable'])
@@ -764,7 +778,10 @@ def register_methods(root_module):
     register_Ns3DeterministicRandomVariable_methods(root_module, root_module['ns3::DeterministicRandomVariable'])
     register_Ns3DoubleValue_methods(root_module, root_module['ns3::DoubleValue'])
     register_Ns3DropTailQueue_methods(root_module, root_module['ns3::DropTailQueue'])
+    register_Ns3DynamicQueueLimits_methods(root_module, root_module['ns3::DynamicQueueLimits'])
     register_Ns3EmpiricalRandomVariable_methods(root_module, root_module['ns3::EmpiricalRandomVariable'])
+    register_Ns3EmptyAttributeAccessor_methods(root_module, root_module['ns3::EmptyAttributeAccessor'])
+    register_Ns3EmptyAttributeChecker_methods(root_module, root_module['ns3::EmptyAttributeChecker'])
     register_Ns3EmptyAttributeValue_methods(root_module, root_module['ns3::EmptyAttributeValue'])
     register_Ns3EnumChecker_methods(root_module, root_module['ns3::EnumChecker'])
     register_Ns3EnumValue_methods(root_module, root_module['ns3::EnumValue'])
@@ -1249,6 +1266,11 @@ def register_Ns3BufferIterator_methods(root_module, cls):
     cls.add_method('GetDistanceFrom', 
                    'uint32_t', 
                    [param('ns3::Buffer::Iterator const &', 'o')], 
+                   is_const=True)
+    ## buffer.h (module 'network'): uint32_t ns3::Buffer::Iterator::GetRemainingSize() const [member function]
+    cls.add_method('GetRemainingSize', 
+                   'uint32_t', 
+                   [], 
                    is_const=True)
     ## buffer.h (module 'network'): uint32_t ns3::Buffer::Iterator::GetSize() const [member function]
     cls.add_method('GetSize', 
@@ -3688,23 +3710,23 @@ def register_Ns3TypeId_methods(root_module, cls):
     cls.add_constructor([])
     ## type-id.h (module 'core'): ns3::TypeId::TypeId(ns3::TypeId const & o) [copy constructor]
     cls.add_constructor([param('ns3::TypeId const &', 'o')])
-    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddAttribute(std::string name, std::string help, ns3::AttributeValue const & initialValue, ns3::Ptr<ns3::AttributeAccessor const> accessor, ns3::Ptr<ns3::AttributeChecker const> checker) [member function]
+    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddAttribute(std::string name, std::string help, ns3::AttributeValue const & initialValue, ns3::Ptr<ns3::AttributeAccessor const> accessor, ns3::Ptr<ns3::AttributeChecker const> checker, ns3::TypeId::SupportLevel supportLevel=::ns3::TypeId::SUPPORTED, std::string const & supportMsg="") [member function]
     cls.add_method('AddAttribute', 
                    'ns3::TypeId', 
-                   [param('std::string', 'name'), param('std::string', 'help'), param('ns3::AttributeValue const &', 'initialValue'), param('ns3::Ptr< ns3::AttributeAccessor const >', 'accessor'), param('ns3::Ptr< ns3::AttributeChecker const >', 'checker')])
-    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddAttribute(std::string name, std::string help, uint32_t flags, ns3::AttributeValue const & initialValue, ns3::Ptr<ns3::AttributeAccessor const> accessor, ns3::Ptr<ns3::AttributeChecker const> checker) [member function]
+                   [param('std::string', 'name'), param('std::string', 'help'), param('ns3::AttributeValue const &', 'initialValue'), param('ns3::Ptr< ns3::AttributeAccessor const >', 'accessor'), param('ns3::Ptr< ns3::AttributeChecker const >', 'checker'), param('ns3::TypeId::SupportLevel', 'supportLevel', default_value='::ns3::TypeId::SUPPORTED'), param('std::string const &', 'supportMsg', default_value='""')])
+    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddAttribute(std::string name, std::string help, uint32_t flags, ns3::AttributeValue const & initialValue, ns3::Ptr<ns3::AttributeAccessor const> accessor, ns3::Ptr<ns3::AttributeChecker const> checker, ns3::TypeId::SupportLevel supportLevel=::ns3::TypeId::SUPPORTED, std::string const & supportMsg="") [member function]
     cls.add_method('AddAttribute', 
                    'ns3::TypeId', 
-                   [param('std::string', 'name'), param('std::string', 'help'), param('uint32_t', 'flags'), param('ns3::AttributeValue const &', 'initialValue'), param('ns3::Ptr< ns3::AttributeAccessor const >', 'accessor'), param('ns3::Ptr< ns3::AttributeChecker const >', 'checker')])
+                   [param('std::string', 'name'), param('std::string', 'help'), param('uint32_t', 'flags'), param('ns3::AttributeValue const &', 'initialValue'), param('ns3::Ptr< ns3::AttributeAccessor const >', 'accessor'), param('ns3::Ptr< ns3::AttributeChecker const >', 'checker'), param('ns3::TypeId::SupportLevel', 'supportLevel', default_value='::ns3::TypeId::SUPPORTED'), param('std::string const &', 'supportMsg', default_value='""')])
     ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddTraceSource(std::string name, std::string help, ns3::Ptr<ns3::TraceSourceAccessor const> accessor) [member function]
     cls.add_method('AddTraceSource', 
                    'ns3::TypeId', 
                    [param('std::string', 'name'), param('std::string', 'help'), param('ns3::Ptr< ns3::TraceSourceAccessor const >', 'accessor')], 
                    deprecated=True)
-    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddTraceSource(std::string name, std::string help, ns3::Ptr<ns3::TraceSourceAccessor const> accessor, std::string callback) [member function]
+    ## type-id.h (module 'core'): ns3::TypeId ns3::TypeId::AddTraceSource(std::string name, std::string help, ns3::Ptr<ns3::TraceSourceAccessor const> accessor, std::string callback, ns3::TypeId::SupportLevel supportLevel=::ns3::TypeId::SUPPORTED, std::string const & supportMsg="") [member function]
     cls.add_method('AddTraceSource', 
                    'ns3::TypeId', 
-                   [param('std::string', 'name'), param('std::string', 'help'), param('ns3::Ptr< ns3::TraceSourceAccessor const >', 'accessor'), param('std::string', 'callback')])
+                   [param('std::string', 'name'), param('std::string', 'help'), param('ns3::Ptr< ns3::TraceSourceAccessor const >', 'accessor'), param('std::string', 'callback'), param('ns3::TypeId::SupportLevel', 'supportLevel', default_value='::ns3::TypeId::SUPPORTED'), param('std::string const &', 'supportMsg', default_value='""')])
     ## type-id.h (module 'core'): ns3::TypeId::AttributeInformation ns3::TypeId::GetAttribute(uint32_t i) const [member function]
     cls.add_method('GetAttribute', 
                    'ns3::TypeId::AttributeInformation', 
@@ -3819,6 +3841,11 @@ def register_Ns3TypeId_methods(root_module, cls):
                    'ns3::Ptr< ns3::TraceSourceAccessor const >', 
                    [param('std::string', 'name')], 
                    is_const=True)
+    ## type-id.h (module 'core'): ns3::Ptr<ns3::TraceSourceAccessor const> ns3::TypeId::LookupTraceSourceByName(std::string name, ns3::TypeId::TraceSourceInformation * info) const [member function]
+    cls.add_method('LookupTraceSourceByName', 
+                   'ns3::Ptr< ns3::TraceSourceAccessor const >', 
+                   [param('std::string', 'name'), param('ns3::TypeId::TraceSourceInformation *', 'info')], 
+                   is_const=True)
     ## type-id.h (module 'core'): bool ns3::TypeId::MustHideFromDocumentation() const [member function]
     cls.add_method('MustHideFromDocumentation', 
                    'bool', 
@@ -3845,10 +3872,10 @@ def register_Ns3TypeId_methods(root_module, cls):
     cls.add_method('SetSize', 
                    'ns3::TypeId', 
                    [param('std::size_t', 'size')])
-    ## type-id.h (module 'core'): void ns3::TypeId::SetUid(uint16_t tid) [member function]
+    ## type-id.h (module 'core'): void ns3::TypeId::SetUid(uint16_t uid) [member function]
     cls.add_method('SetUid', 
                    'void', 
-                   [param('uint16_t', 'tid')])
+                   [param('uint16_t', 'uid')])
     return
 
 def register_Ns3TypeIdAttributeInformation_methods(root_module, cls):
@@ -3870,6 +3897,10 @@ def register_Ns3TypeIdAttributeInformation_methods(root_module, cls):
     cls.add_instance_attribute('name', 'std::string', is_const=False)
     ## type-id.h (module 'core'): ns3::TypeId::AttributeInformation::originalInitialValue [variable]
     cls.add_instance_attribute('originalInitialValue', 'ns3::Ptr< ns3::AttributeValue const >', is_const=False)
+    ## type-id.h (module 'core'): ns3::TypeId::AttributeInformation::supportLevel [variable]
+    cls.add_instance_attribute('supportLevel', 'ns3::TypeId::SupportLevel', is_const=False)
+    ## type-id.h (module 'core'): ns3::TypeId::AttributeInformation::supportMsg [variable]
+    cls.add_instance_attribute('supportMsg', 'std::string', is_const=False)
     return
 
 def register_Ns3TypeIdTraceSourceInformation_methods(root_module, cls):
@@ -3885,6 +3916,10 @@ def register_Ns3TypeIdTraceSourceInformation_methods(root_module, cls):
     cls.add_instance_attribute('help', 'std::string', is_const=False)
     ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation::name [variable]
     cls.add_instance_attribute('name', 'std::string', is_const=False)
+    ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation::supportLevel [variable]
+    cls.add_instance_attribute('supportLevel', 'ns3::TypeId::SupportLevel', is_const=False)
+    ## type-id.h (module 'core'): ns3::TypeId::TraceSourceInformation::supportMsg [variable]
+    cls.add_instance_attribute('supportMsg', 'std::string', is_const=False)
     return
 
 def register_Ns3Empty_methods(root_module, cls):
@@ -4544,6 +4579,38 @@ def register_Ns3Queue_methods(root_module, cls):
                    'ns3::Ptr< ns3::QueueItem >', 
                    [], 
                    is_pure_virtual=True, visibility='private', is_virtual=True)
+    return
+
+def register_Ns3QueueLimits_methods(root_module, cls):
+    ## queue-limits.h (module 'network'): ns3::QueueLimits::QueueLimits() [constructor]
+    cls.add_constructor([])
+    ## queue-limits.h (module 'network'): ns3::QueueLimits::QueueLimits(ns3::QueueLimits const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::QueueLimits const &', 'arg0')])
+    ## queue-limits.h (module 'network'): int32_t ns3::QueueLimits::Available() const [member function]
+    cls.add_method('Available', 
+                   'int32_t', 
+                   [], 
+                   is_pure_virtual=True, is_const=True, is_virtual=True)
+    ## queue-limits.h (module 'network'): void ns3::QueueLimits::Completed(uint32_t count) [member function]
+    cls.add_method('Completed', 
+                   'void', 
+                   [param('uint32_t', 'count')], 
+                   is_pure_virtual=True, is_virtual=True)
+    ## queue-limits.h (module 'network'): static ns3::TypeId ns3::QueueLimits::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## queue-limits.h (module 'network'): void ns3::QueueLimits::Queued(uint32_t count) [member function]
+    cls.add_method('Queued', 
+                   'void', 
+                   [param('uint32_t', 'count')], 
+                   is_pure_virtual=True, is_virtual=True)
+    ## queue-limits.h (module 'network'): void ns3::QueueLimits::Reset() [member function]
+    cls.add_method('Reset', 
+                   'void', 
+                   [], 
+                   is_pure_virtual=True, is_virtual=True)
     return
 
 def register_Ns3RadiotapHeader_methods(root_module, cls):
@@ -6724,6 +6791,38 @@ def register_Ns3DropTailQueue_methods(root_module, cls):
                    visibility='private', is_virtual=True)
     return
 
+def register_Ns3DynamicQueueLimits_methods(root_module, cls):
+    ## dynamic-queue-limits.h (module 'network'): ns3::DynamicQueueLimits::DynamicQueueLimits(ns3::DynamicQueueLimits const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::DynamicQueueLimits const &', 'arg0')])
+    ## dynamic-queue-limits.h (module 'network'): ns3::DynamicQueueLimits::DynamicQueueLimits() [constructor]
+    cls.add_constructor([])
+    ## dynamic-queue-limits.h (module 'network'): int32_t ns3::DynamicQueueLimits::Available() const [member function]
+    cls.add_method('Available', 
+                   'int32_t', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## dynamic-queue-limits.h (module 'network'): void ns3::DynamicQueueLimits::Completed(uint32_t count) [member function]
+    cls.add_method('Completed', 
+                   'void', 
+                   [param('uint32_t', 'count')], 
+                   is_virtual=True)
+    ## dynamic-queue-limits.h (module 'network'): static ns3::TypeId ns3::DynamicQueueLimits::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## dynamic-queue-limits.h (module 'network'): void ns3::DynamicQueueLimits::Queued(uint32_t count) [member function]
+    cls.add_method('Queued', 
+                   'void', 
+                   [param('uint32_t', 'count')], 
+                   is_virtual=True)
+    ## dynamic-queue-limits.h (module 'network'): void ns3::DynamicQueueLimits::Reset() [member function]
+    cls.add_method('Reset', 
+                   'void', 
+                   [], 
+                   is_virtual=True)
+    return
+
 def register_Ns3EmpiricalRandomVariable_methods(root_module, cls):
     ## random-variable-stream.h (module 'core'): ns3::EmpiricalRandomVariable::EmpiricalRandomVariable() [constructor]
     cls.add_constructor([])
@@ -6756,6 +6855,70 @@ def register_Ns3EmpiricalRandomVariable_methods(root_module, cls):
                    'void', 
                    [], 
                    visibility='private', is_virtual=True)
+    return
+
+def register_Ns3EmptyAttributeAccessor_methods(root_module, cls):
+    ## attribute.h (module 'core'): ns3::EmptyAttributeAccessor::EmptyAttributeAccessor(ns3::EmptyAttributeAccessor const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::EmptyAttributeAccessor const &', 'arg0')])
+    ## attribute.h (module 'core'): ns3::EmptyAttributeAccessor::EmptyAttributeAccessor() [constructor]
+    cls.add_constructor([])
+    ## attribute.h (module 'core'): bool ns3::EmptyAttributeAccessor::Get(ns3::ObjectBase const * object, ns3::AttributeValue & attribute) const [member function]
+    cls.add_method('Get', 
+                   'bool', 
+                   [param('ns3::ObjectBase const *', 'object'), param('ns3::AttributeValue &', 'attribute')], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): bool ns3::EmptyAttributeAccessor::HasGetter() const [member function]
+    cls.add_method('HasGetter', 
+                   'bool', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): bool ns3::EmptyAttributeAccessor::HasSetter() const [member function]
+    cls.add_method('HasSetter', 
+                   'bool', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): bool ns3::EmptyAttributeAccessor::Set(ns3::ObjectBase * object, ns3::AttributeValue const & value) const [member function]
+    cls.add_method('Set', 
+                   'bool', 
+                   [param('ns3::ObjectBase *', 'object'), param('ns3::AttributeValue const &', 'value')], 
+                   is_const=True, is_virtual=True)
+    return
+
+def register_Ns3EmptyAttributeChecker_methods(root_module, cls):
+    ## attribute.h (module 'core'): ns3::EmptyAttributeChecker::EmptyAttributeChecker(ns3::EmptyAttributeChecker const & arg0) [copy constructor]
+    cls.add_constructor([param('ns3::EmptyAttributeChecker const &', 'arg0')])
+    ## attribute.h (module 'core'): ns3::EmptyAttributeChecker::EmptyAttributeChecker() [constructor]
+    cls.add_constructor([])
+    ## attribute.h (module 'core'): bool ns3::EmptyAttributeChecker::Check(ns3::AttributeValue const & value) const [member function]
+    cls.add_method('Check', 
+                   'bool', 
+                   [param('ns3::AttributeValue const &', 'value')], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): bool ns3::EmptyAttributeChecker::Copy(ns3::AttributeValue const & source, ns3::AttributeValue & destination) const [member function]
+    cls.add_method('Copy', 
+                   'bool', 
+                   [param('ns3::AttributeValue const &', 'source'), param('ns3::AttributeValue &', 'destination')], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): ns3::Ptr<ns3::AttributeValue> ns3::EmptyAttributeChecker::Create() const [member function]
+    cls.add_method('Create', 
+                   'ns3::Ptr< ns3::AttributeValue >', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): std::string ns3::EmptyAttributeChecker::GetUnderlyingTypeInformation() const [member function]
+    cls.add_method('GetUnderlyingTypeInformation', 
+                   'std::string', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): std::string ns3::EmptyAttributeChecker::GetValueTypeName() const [member function]
+    cls.add_method('GetValueTypeName', 
+                   'std::string', 
+                   [], 
+                   is_const=True, is_virtual=True)
+    ## attribute.h (module 'core'): bool ns3::EmptyAttributeChecker::HasUnderlyingTypeInformation() const [member function]
+    cls.add_method('HasUnderlyingTypeInformation', 
+                   'bool', 
+                   [], 
+                   is_const=True, is_virtual=True)
     return
 
 def register_Ns3EmptyAttributeValue_methods(root_module, cls):
@@ -7776,11 +7939,31 @@ def register_Ns3NetDeviceQueue_methods(root_module, cls):
     cls.add_constructor([param('ns3::NetDeviceQueue const &', 'arg0')])
     ## net-device.h (module 'network'): ns3::NetDeviceQueue::NetDeviceQueue() [constructor]
     cls.add_constructor([])
+    ## net-device.h (module 'network'): ns3::Ptr<ns3::QueueLimits> ns3::NetDeviceQueue::GetQueueLimits() [member function]
+    cls.add_method('GetQueueLimits', 
+                   'ns3::Ptr< ns3::QueueLimits >', 
+                   [])
     ## net-device.h (module 'network'): bool ns3::NetDeviceQueue::IsStopped() const [member function]
     cls.add_method('IsStopped', 
                    'bool', 
                    [], 
                    is_const=True)
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::NotifyQueuedBytes(uint32_t bytes) [member function]
+    cls.add_method('NotifyQueuedBytes', 
+                   'void', 
+                   [param('uint32_t', 'bytes')])
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::NotifyTransmittedBytes(uint32_t bytes) [member function]
+    cls.add_method('NotifyTransmittedBytes', 
+                   'void', 
+                   [param('uint32_t', 'bytes')])
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::ResetQueueLimits() [member function]
+    cls.add_method('ResetQueueLimits', 
+                   'void', 
+                   [])
+    ## net-device.h (module 'network'): void ns3::NetDeviceQueue::SetQueueLimits(ns3::Ptr<ns3::QueueLimits> ql) [member function]
+    cls.add_method('SetQueueLimits', 
+                   'void', 
+                   [param('ns3::Ptr< ns3::QueueLimits >', 'ql')])
     ## net-device.h (module 'network'): void ns3::NetDeviceQueue::SetWakeCallback(ns3::Callback<void, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty, ns3::empty> cb) [member function]
     cls.add_method('SetWakeCallback', 
                    'void', 

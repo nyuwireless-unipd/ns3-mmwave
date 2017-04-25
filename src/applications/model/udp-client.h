@@ -27,8 +27,6 @@
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
 #include "ns3/ipv4-address.h"
-#include <fstream>
-#include <string>
 
 namespace ns3 {
 
@@ -37,7 +35,7 @@ class Packet;
 
 /**
  * \ingroup udpclientserver
- * \class UdpClient
+ *
  * \brief A Udp client. Sends UDP packet carrying sequence number and time stamp
  *  in their payloads
  *
@@ -57,25 +55,15 @@ public:
 
   /**
    * \brief set the remote address and port
-   * \param ip remote IPv4 address
-   * \param port remote port
-   */
-  void SetRemote (Ipv4Address ip, uint16_t port);
-  /**
-   * \brief set the remote address and port
-   * \param ip remote IPv6 address
-   * \param port remote port
-   */
-  void SetRemote (Ipv6Address ip, uint16_t port);
-  /**
-   * \brief set the remote address and port
    * \param ip remote IP address
    * \param port remote port
    */
   void SetRemote (Address ip, uint16_t port);
-
-  void SetSentFilename(std::string name);
-  std::string GetSentFilename() const;
+  /**
+   * \brief set the remote address
+   * \param addr remote address
+   */
+  void SetRemote (Address addr);
 
 protected:
   virtual void DoDispose (void);
@@ -94,14 +82,11 @@ private:
   Time m_interval; //!< Packet inter-send time
   uint32_t m_size; //!< Size of the sent packet (including the SeqTsHeader)
 
-  uint64_t m_sent; //!< Counter for sent packets
+  uint32_t m_sent; //!< Counter for sent packets
   Ptr<Socket> m_socket; //!< Socket
   Address m_peerAddress; //!< Remote peer address
   uint16_t m_peerPort; //!< Remote peer port
   EventId m_sendEvent; //!< Event to send the next packet
-
-  std::string m_sentFilename;
-  std::ofstream m_udpSentFile;
 
 };
 

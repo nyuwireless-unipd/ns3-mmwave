@@ -28,9 +28,6 @@
 #include "ns3/ptr.h"
 #include "ns3/address.h"
 #include "packet-loss-counter.h"
- #include <fstream>
-#include <string>
- 
 namespace ns3 {
 /**
  * \ingroup applications
@@ -39,7 +36,7 @@ namespace ns3 {
 
 /**
  * \ingroup udpclientserver
- * \class UdpServer
+ *
  * \brief A UDP server, receives UDP packets from a remote host.
  *
  * UDP packets carry a 32bits sequence number followed by a 64bits time
@@ -66,7 +63,7 @@ public:
    * \brief Returns the number of received packets
    * \return the number of received packets
    */
-  uint32_t GetReceived (void) const;
+  uint64_t GetReceived (void) const;
 
   /**
    * \brief Returns the size of the window used for checking loss.
@@ -81,13 +78,6 @@ public:
    *  be a multiple of 8
    */
   void SetPacketWindowSize (uint16_t size);
-
-  void SetReceivedFilename(std::string name);
-  std::string GetReceivedFilename() const;
-
-  void SetSnFilename(std::string name);
-  std::string GetSnFilename() const;
-
 protected:
   virtual void DoDispose (void);
 
@@ -110,15 +100,6 @@ private:
   Ptr<Socket> m_socket6; //!< IPv6 Socket
   uint64_t m_received; //!< Number of received packets
   PacketLossCounter m_lossCounter; //!< Lost packet counter
-
-  std::string m_receivedFilename;
-  std::ofstream m_udpReceivedFile;
-
-  std::string m_snFilename;
-  std::ofstream m_udpSnFile;
-
-  uint16_t m_snMaxSize;
-  std::vector<std::pair<uint32_t, Time> > m_snVector;
 };
 
 } // namespace ns3
