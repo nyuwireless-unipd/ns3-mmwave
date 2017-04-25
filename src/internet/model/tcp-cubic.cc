@@ -397,7 +397,8 @@ TcpCubic::GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight)
   /* Wmax and fast convergence */
   if (segCwnd < m_lastMaxCwnd && m_fastConvergence)
     {
-      m_lastMaxCwnd = m_beta * segCwnd;
+      //m_lastMaxCwnd = m_beta * segCwnd;
+	  m_lastMaxCwnd = (1+m_beta) * segCwnd/2; //by zml
     }
   else
     {
