@@ -407,7 +407,7 @@ MmWaveBearerStatsConnector::PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, lon
   {
     m_mmWaveSinrOutFile.open(GetMmWaveSinrOutputFilename() .c_str());
   }
-  m_mmWaveSinrOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << cellId << " " << sinr << std::endl;
+  m_mmWaveSinrOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << cellId << " " << 10*std::log10(sinr) << std::endl;
 }
 
 void 

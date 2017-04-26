@@ -35,6 +35,8 @@
 #include <fstream>
 #include <string>
 
+#include "ns3/codel-queue-disc.h" 
+
 namespace ns3 {
 
 /**
@@ -164,6 +166,8 @@ private:
   std::vector <RetxPdu> m_retxBuffer;  ///< Buffer for PDUs considered for retransmission
   std::vector <RetxSegPdu> m_retxSegBuffer;  // buffer for AM PDU segments
 
+  Ptr<CoDelQueueDisc> m_txonQueue;
+
   ///< LL HO: stores RLC SDUs that is not acked 
   ///< and forwarded to target eNB during lossless handover.
   std::vector < Ptr<Packet> > m_transmittingRlcSdus;
@@ -270,6 +274,8 @@ private:
   std::string m_bufferSizeFilename;
   std::ofstream m_bufferSizeFile;
   EventId m_traceBufferSizeEvent;
+
+  bool m_enableAqm;
 };
 
 

@@ -31,7 +31,8 @@
 #include "ns3/lte-rlc-am.h"
 #include "ns3/lte-rlc-sdu-status-tag.h"
 #include "ns3/lte-rlc-tag.h"
-
+#include "ns3/ipv4-queue-disc-item.h"
+#include "ns3/ipv4-packet-filter.h"
 
 namespace ns3 {
 
@@ -97,6 +98,9 @@ LteRlcAm::LteRlcAm ()
 
   m_epcX2RlcUser = new EpcX2RlcSpecificUser<LteRlcAm> (this);
   m_epcX2RlcProvider = 0;
+
+  m_txonQueue = CreateObject<CoDelQueueDisc> ();
+  m_txonQueue->Initialize ();
 
   m_traceBufferSizeEvent = Simulator::Schedule(MilliSeconds(2), &LteRlcAm::BufferSizeTrace, this);
 }
@@ -173,6 +177,11 @@ LteRlcAm::GetTypeId (void)
 									UintegerValue (1024 * 1024),
 									MakeUintegerAccessor (&LteRlcAm::m_maxTxBufferSize),
 									MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("EnableAQM",
+                  "Enable active queue management (CoDel)",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&LteRlcAm::m_enableAqm),
+                   MakeBooleanChecker ())
    .AddAttribute ("BufferSizeFilename",
                    "Name of the file where the buffer size will be periodically written.",
                    StringValue ("RlcAmBufferSize.txt"),
@@ -228,33 +237,57 @@ LteRlcAm::DoTransmitPdcpPdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
-  if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
+  if(m_enableAqm == false)
   {
-    /** Store arrival time */
+    if (m_txonBufferSize + p->GetSize () <= m_maxTxBufferSize)
+    {
+      /** Store arrival time */
+      Time now = Simulator::Now ();
+      RlcTag timeTag (now);
+      p->AddPacketTag (timeTag);
+
+      /** Store PDCP PDU */
+
+      LteRlcSduStatusTag tag;
+      tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
+      p->AddPacketTag (tag);
+
+      NS_LOG_INFO ("Txon Buffer: New packet added");
+      m_txonBuffer.push_back (p);
+      m_txonBufferSize += p->GetSize ();
+      NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
+      NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+    }
+    else
+    {
+      // Discard full RLC SDU
+      NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
+      NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
+      NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);
+      NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
+    }  
+  }
+  else // Use CoDel queue
+  {
+    //Store arrival time
     Time now = Simulator::Now ();
     RlcTag timeTag (now);
     p->AddPacketTag (timeTag);
 
-    /** Store PDCP PDU */
+    //Store PDCP PDU
 
     LteRlcSduStatusTag tag;
     tag.SetStatus (LteRlcSduStatusTag::FULL_SDU);
     p->AddPacketTag (tag);
 
-    NS_LOG_INFO ("Txon Buffer: New packet added");
-    m_txonBuffer.push_back (p);
-    m_txonBufferSize += p->GetSize ();
-    NS_LOG_LOGIC ("NumOfBuffers = " << m_txonBuffer.size() );
-    NS_LOG_LOGIC ("txonBufferSize = " << m_txonBufferSize);
+    NS_LOG_LOGIC ("Txon Buffer: New packet added");
+    Ptr<Ipv4QueueDiscItem> item;
+    Ipv4Header ipv4Header;
+    Address dest;
+    item = Create<Ipv4QueueDiscItem> (p, dest, 0, ipv4Header);
+    m_txonQueue->Enqueue (item);
   }
-  else
-  {
-    // Discard full RLC SDU
-    NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
-    NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
-    NS_LOG_LOGIC ("txonBufferSize    = " << m_txonBufferSize);
-    NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
-  }
+  
 
   /** Report Buffer Status */
   DoReportBufferStatus ();
@@ -426,7 +459,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
                   NS_LOG_LOGIC ("polling conditions: m_txonBuffer.empty=" << m_txonBuffer.empty () 
                                 << " retxBufferSize="  << m_retxBufferSize
                                 << " packet->GetSize ()=" << packet->GetSize ());
-                  if (((m_txonBuffer.empty ()) && (m_retxBufferSize == packet->GetSize () + rlcAmHeader.GetSerializedSize ())) 
+                  if (((m_txonBuffer.empty ()) && (m_txonQueue->GetNPackets ()==0) && (m_retxBufferSize == packet->GetSize () + rlcAmHeader.GetSerializedSize ()))
                       || (m_vtS >= m_vtMs)
                       || m_pollRetransmitTimerJustExpired)
                     {
@@ -517,9 +550,9 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 									NS_LOG_LOGIC ("polling conditions: m_txonBuffer.empty=" << m_txonBuffer.empty ()
 																<< " retxBufferSize="  << m_retxBufferSize
 																<< " packet->GetSize ()=" << packet->GetSize ());
-									if (((m_txonBuffer.empty ()) && (m_retxBufferSize == packet->GetSize () + firstSegHdr.GetSerializedSize ()))
-											|| (m_vtS >= m_vtMs)
-											|| m_pollRetransmitTimerJustExpired)
+									if (((m_txonBuffer.empty ()) && (m_txonQueue->GetNPackets () == 0) && (m_retxBufferSize == packet->GetSize () + firstSegHdr.GetSerializedSize ()))
+                      || (m_vtS >= m_vtMs)
+                      || m_pollRetransmitTimerJustExpired)
 									{
 										m_pollRetransmitTimerJustExpired = false;
 										firstSegHdr.SetPollingBit (LteRlcAmHeader::STATUS_REPORT_IS_REQUESTED);
@@ -628,7 +661,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
         }
       NS_ASSERT_MSG (found, "m_retxBufferSize > 0, but no PDU considered for retx found");
     }
-  else if ( m_txonBufferSize > 0 )
+  else if ( m_txonBufferSize + m_txonQueue->GetNBytes() > 0 )
     {
       if (bytes < 7)
       {
@@ -683,7 +716,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
   // Remove the first packet from the transmission buffer.
   // If only a segment of the packet is taken, then the remaining is given back later
-  if ( m_txonBuffer.size () == 0 )
+  if ( m_txonBuffer.size () + m_txonQueue->GetNBytes() == 0 )
     {
       NS_LOG_LOGIC ("No data pending");
       return;
@@ -694,6 +727,14 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   NS_LOG_LOGIC ("First SDU size    = " << (*(m_txonBuffer.begin()))->GetSize ());
   NS_LOG_LOGIC ("Next segment size = " << nextSegmentSize);
   NS_LOG_LOGIC ("Remove SDU from TxBuffer");
+
+  if (m_txonBuffer.empty())
+  {
+    Ptr<Packet> tempP = m_txonQueue->Dequeue()->GetPacket();
+    m_txonBuffer.push_back (tempP);
+    m_txonBufferSize += tempP->GetSize ();
+  }
+
   Ptr<Packet> firstSegment = (*(m_txonBuffer.begin ()))->Copy ();
   
   // LL HO
@@ -763,7 +804,17 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
               //LL HO Mark the first SDU is txonBuffer is fragmented. This maybe not needed.
               is_fragmented = 1;
 
-              m_txonBuffer.insert (m_txonBuffer.begin (), firstSegment);
+              // m_txonBuffer.insert (m_txonBuffer.begin (), firstSegment);
+              
+              if(m_txonBuffer.empty())
+              {
+                m_txonBuffer.push_back(firstSegment);
+              }
+              else
+              {
+                m_txonBuffer.insert (m_txonBuffer.begin (), firstSegment);
+              }
+
               m_txonBufferSize += (*(m_txonBuffer.begin()))->GetSize ();
 
               NS_LOG_LOGIC ("    Txon buffer: Give back the remaining segment");
@@ -809,7 +860,8 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
           // (NO more segments) ? exit
           // break;
         }
-      else if ( (nextSegmentSize - firstSegment->GetSize () <= 2) || (m_txonBuffer.size () == 0) )
+      else if ( (nextSegmentSize - firstSegment->GetSize () <= 2) 
+        || (m_txonBuffer.size () + m_txonQueue->GetNPackets() == 0) )
         {
           NS_LOG_LOGIC ("    IF nextSegmentSize - firstSegment->GetSize () <= 2 || txonBuffer.size == 0");
 
@@ -828,7 +880,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
           nextSegmentId++;
 
           NS_LOG_LOGIC ("        SDUs in TxBuffer  = " << m_txonBuffer.size ());
-          if (m_txonBuffer.size () > 0)
+          if (m_txonBuffer.size () + m_txonQueue->GetNPackets() > 0)
             {
               NS_LOG_LOGIC ("        First SDU buffer  = " << *(m_txonBuffer.begin()));
               NS_LOG_LOGIC ("        First SDU size    = " << (*(m_txonBuffer.begin()))->GetSize ());
@@ -858,7 +910,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
           nextSegmentId++;
 
           NS_LOG_LOGIC ("        SDUs in TxBuffer  = " << m_txonBuffer.size ());
-          if (m_txonBuffer.size () > 0)
+          if (m_txonBuffer.size () + m_txonQueue->GetNPackets() > 0)
             {
               NS_LOG_LOGIC ("        First SDU buffer  = " << *(m_txonBuffer.begin()));
               NS_LOG_LOGIC ("        First SDU size    = " << (*(m_txonBuffer.begin()))->GetSize ());
@@ -867,6 +919,14 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
           NS_LOG_LOGIC ("        Remove SDU from TxBuffer");
 
           // (more segments)
+
+          if(m_txonBuffer.empty())
+          {
+            Ptr<Packet> tempP = m_txonQueue->Dequeue()->GetPacket();
+            m_txonBuffer.push_back (tempP);
+            m_txonBufferSize += tempP->GetSize ();
+          }
+
           firstSegment = (*(m_txonBuffer.begin ()))->Copy ();
           
           // LL HO
@@ -967,11 +1027,16 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   m_byteWithoutPoll += packet->GetSize ();
   NS_LOG_LOGIC ("BYTE_WITHOUT_POLL = " << m_byteWithoutPoll);
 
+  // if ( (m_pduWithoutPoll >= m_pollPdu) || (m_byteWithoutPoll >= m_pollByte) ||
+  //      ( (m_txonBuffer.empty ()) && (m_retxBufferSize == 0) ) ||
+  //      (m_vtS >= m_vtMs)
+  //      || m_pollRetransmitTimerJustExpired
+  //    )
   if ( (m_pduWithoutPoll >= m_pollPdu) || (m_byteWithoutPoll >= m_pollByte) ||
-       ( (m_txonBuffer.empty ()) && (m_retxBufferSize == 0) ) ||
+       ( (m_txonBuffer.empty ()) && (m_txonQueue->GetNPackets () == 0) && (m_retxBufferSize == 0) ) ||
        (m_vtS >= m_vtMs)
        || m_pollRetransmitTimerJustExpired
-     )
+     )  
     {
       m_pollRetransmitTimerJustExpired = false;
       rlcAmHeader.SetPollingBit (LteRlcAmHeader::STATUS_REPORT_IS_REQUESTED);
@@ -1030,14 +1095,24 @@ std::vector < Ptr<Packet> >
 LteRlcAm::GetTxBuffer()
 {
   std::vector < Ptr<Packet> > toBeReturned;
-  toBeReturned.insert(toBeReturned.begin(), m_txonBuffer.begin(), m_txonBuffer.end());
-  m_txonBuffer.clear();
-  m_txonBufferSize = 0;
+  if(!m_enableAqm)
+  {
+    toBeReturned.insert(toBeReturned.begin(), m_txonBuffer.begin(), m_txonBuffer.end());
+    m_txonBuffer.clear();
+    m_txonBufferSize = 0;
+  }
+  else
+  {
+    while(m_txonQueue->GetNBytes() > 0)
+    {
+      toBeReturned.push_back(m_txonQueue->Dequeue()->GetPacket());
+    }
+  }
   return toBeReturned;
 }
 uint32_t LteRlcAm::GetTxBufferSize()
 {
-  return m_txonBufferSize;
+  return m_txonBufferSize + m_txonQueue->GetNBytes();
 }
 
 std::vector < LteRlcAm::RetxPdu > 
@@ -2617,7 +2692,7 @@ LteRlcAm::DoReportBufferStatus (void)
   LteMacSapProvider::ReportBufferStatusParameters r;
   r.rnti = m_rnti;
   r.lcid = m_lcid;
-  r.txQueueSize = m_txonBufferSize;
+  r.txQueueSize = m_txonBufferSize + m_txonQueue->GetNBytes();
   r.txQueueHolDelay = txonQueueHolDelay.GetMilliSeconds ();
   r.retxQueueSize = m_retxBufferSize;// + m_txedBufferSize;
   r.retxQueueHolDelay = retxQueueHolDelay.GetMilliSeconds ();
@@ -2725,7 +2800,7 @@ LteRlcAm::ExpirePollRetransmitTimer (void)
   // note the difference between Rel 8 and Rel 11 specs; we follow Rel 11 here
   NS_ASSERT (m_vtS <= m_vtMs);
   //if ((m_txonBufferSize == 0 && m_retxBufferSize == 0)
-  if ((m_txonBufferSize == 0 && m_retxBufferSize == 0)
+  if ((m_txonBufferSize + m_txonQueue->GetNBytes() == 0 && m_retxBufferSize == 0)
       || (m_vtS == m_vtMs))
     {
       NS_LOG_INFO ("txonBuffer and retxBuffer empty. Move PDUs up to = " << m_vtS.GetValue () - 1 << " to retxBuffer");
@@ -2804,7 +2879,7 @@ LteRlcAm::ExpireRbsTimer (void)
 {
   NS_LOG_LOGIC ("RBS Timer expires");
 
-  if (m_txonBufferSize + m_txedBufferSize + m_retxBufferSize > 0)
+  if (m_txonBufferSize + m_txonQueue->GetNBytes() + m_txedBufferSize + m_retxBufferSize > 0)
     {
       DoReportBufferStatus ();
       m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcAm::ExpireRbsTimer, this);

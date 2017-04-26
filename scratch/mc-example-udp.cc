@@ -371,6 +371,20 @@ PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
   Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, app, fileName);
 }
 
+static void 
+Sinr (Ptr<OutputStreamWrapper> stream, long unsigned value, SpectrumValue& sinr, SpectrumValue& power)
+{
+ Values::iterator it = sinr.ValuesBegin();
+ while(it!=sinr.ValuesEnd())
+ {
+    
+   *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << 10*log10(*it) <<  std::endl;
+    
+   it++;
+ }
+  
+}
+
 
 bool
 AreOverlapping(Box a, Box b)
@@ -450,11 +464,11 @@ static ns3::GlobalValue g_mmw3DistFromMainStreet("mmw3Dist", "Distance from the 
 static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave eNB 1 and 2",
     ns3::UintegerValue(200), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
-    ns3::UintegerValue(3), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(4), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_interPckInterval("interPckInterval", "Interarrival time of UDP packets (us)",
-    ns3::UintegerValue(160), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(320), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_bufferSize("bufferSize", "RLC tx buffer size (MB)",
-    ns3::UintegerValue(100), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(10), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_x2Latency("x2Latency", "Latency on X2 interface (us)",
     ns3::DoubleValue(1000), ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_mmeLatency("mmeLatency", "Latency on MME interface (us)",
@@ -735,7 +749,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(10.0)));
   Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
-
+  Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue(false));
    // handover and RT related params
   switch(hoMode)
   {
@@ -761,6 +775,13 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*40));
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+
+  // CoDel queue settings
+  Config::SetDefault ("ns3::Queue::MaxPackets", UintegerValue (100*1000));
+  Config::SetDefault ("ns3::CoDelQueueDisc::Mode", StringValue ("QUEUE_MODE_PACKETS"));
+  Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
+  Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
+    
 
   // settings for the channel
   Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue("a"));
@@ -1092,6 +1113,10 @@ main (int argc, char *argv[])
         }
     }
   }
+
+  AsciiTraceHelper asciiTraceHelper;
+  Ptr<OutputStreamWrapper> stream5 = asciiTraceHelper.CreateFileStream ("sinrFromMmWaveUePhy.txt");
+  Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr", MakeBoundCallback (&Sinr, stream5));
 
   // Start applications
   NS_LOG_UNCOND("transientDuration " << transientDuration << " simTime " << simTime);
