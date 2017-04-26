@@ -290,7 +290,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
 			}
 			else
 			{
-				NS_FATAL_ERROR ("Unknown channel condition");
+				NS_FATAL_ERROR ("Unknown scenario");
 			}
 
 			if (PRef <= probLos)

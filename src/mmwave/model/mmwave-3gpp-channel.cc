@@ -596,10 +596,11 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
 		double distance3D = a->GetDistanceFrom(b);
 
+		bool channelUpdate = false;
 		if(it != m_channelMap.end () && it->second->m_channel.size() == 0)
 		{
 			//if the channel map is not empty, we only update the channel.
-			NS_LOG_DEBUG ("Update forward channel consistently");
+			NS_LOG_DEBUG ("Update forward channel consistently between device " << a << " " << b);
 			it->second->m_locUT = locUT;
 			it->second->m_los = los;
 			it->second->m_o2i = o2i;
@@ -610,7 +611,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			it->second->m_speed = relativeSpeed;
 			it->second->m_generatedTime = Now();
 			it->second->m_preLocUT = locUT;
-
+			channelUpdate = true;
 		}
 		else
 		{
@@ -661,8 +662,12 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		}
 
 		//std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
-		if(connectedPair || m_forceInitialBfComputation) //it1 != m_connectedPair.end ())
+		if(connectedPair || m_forceInitialBfComputation || channelUpdate)
+		// this is true for connected devices at each transmission,
+		// and for non-connected devices at each channel update or at the beginning of the simulation
 		{
+			NS_LOG_DEBUG("connectedPair " << connectedPair << " m_forceInitialBfComputation " << m_forceInitialBfComputation << 
+				" channelUpdate " << channelUpdate);
 			if(m_cellScan)
 			{
 				BeamSearchBeamforming (rxPsd, channelParams,txAntennaArray,rxAntennaArray, txAntennaNum, rxAntennaNum);
