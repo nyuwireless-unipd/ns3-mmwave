@@ -31,6 +31,7 @@
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
 #include <ns3/random-variable-stream.h>
+#include <ns3/lte-ue-net-device.h>
 
 #include <iostream>
 #include <ctime>
