@@ -19,7 +19,6 @@
  *          Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
-#include <cmath>
 #include "yans-error-rate-model.h"
 #include "wifi-phy.h"
 #include "ns3/log.h"
@@ -52,7 +51,7 @@ YansErrorRateModel::Log2 (double val) const
 }
 
 double
-YansErrorRateModel::GetBpskBer (double snr, uint32_t signalSpread, uint32_t phyRate) const
+YansErrorRateModel::GetBpskBer (double snr, uint32_t signalSpread, uint64_t phyRate) const
 {
   NS_LOG_FUNCTION (this << snr << signalSpread << phyRate);
   double EbNo = snr * signalSpread / phyRate;
@@ -63,7 +62,7 @@ YansErrorRateModel::GetBpskBer (double snr, uint32_t signalSpread, uint32_t phyR
 }
 
 double
-YansErrorRateModel::GetQamBer (double snr, unsigned int m, uint32_t signalSpread, uint32_t phyRate) const
+YansErrorRateModel::GetQamBer (double snr, unsigned int m, uint32_t signalSpread, uint64_t phyRate) const
 {
   NS_LOG_FUNCTION (this << snr << m << signalSpread << phyRate);
   double EbNo = snr * signalSpread / phyRate;
@@ -144,7 +143,7 @@ YansErrorRateModel::CalculatePd (double ber, unsigned int d) const
 
 double
 YansErrorRateModel::GetFecBpskBer (double snr, double nbits,
-                                   uint32_t signalSpread, uint32_t phyRate,
+                                   uint32_t signalSpread, uint64_t phyRate,
                                    uint32_t dFree, uint32_t adFree) const
 {
   NS_LOG_FUNCTION (this << snr << nbits << signalSpread << phyRate << dFree << adFree);
@@ -163,7 +162,7 @@ YansErrorRateModel::GetFecBpskBer (double snr, double nbits,
 double
 YansErrorRateModel::GetFecQamBer (double snr, uint32_t nbits,
                                   uint32_t signalSpread,
-                                  uint32_t phyRate,
+                                  uint64_t phyRate,
                                   uint32_t m, uint32_t dFree,
                                   uint32_t adFree, uint32_t adFreePlusOne) const
 {
@@ -191,7 +190,8 @@ YansErrorRateModel::GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, d
   if (mode.GetModulationClass () == WIFI_MOD_CLASS_ERP_OFDM
       || mode.GetModulationClass () == WIFI_MOD_CLASS_OFDM
       || mode.GetModulationClass () == WIFI_MOD_CLASS_HT
-      || mode.GetModulationClass () == WIFI_MOD_CLASS_VHT)
+      || mode.GetModulationClass () == WIFI_MOD_CLASS_VHT
+      || mode.GetModulationClass () == WIFI_MOD_CLASS_HE)
     {
       if (mode.GetConstellationSize () == 2)
         {
@@ -328,10 +328,37 @@ YansErrorRateModel::GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, d
                                    );
             }
         }
+      else if (mode.GetConstellationSize () == 1024)
+        {
+          if (mode.GetCodeRate () == WIFI_CODE_RATE_5_6)
+            {
+              return GetFecQamBer (snr,
+                                   nbits,
+                                   txVector.GetChannelWidth () * 1000000, // signal spread
+                                   mode.GetPhyRate (txVector), //phy rate
+                                   1024, // m
+                                   4,  // dFree
+                                   14,  // adFree
+                                   69  // adFreePlusOne
+                                   );
+            }
+          else
+            {
+              return GetFecQamBer (snr,
+                                   nbits,
+                                   txVector.GetChannelWidth () * 1000000, // signal spread
+                                   mode.GetPhyRate (txVector), //phy rate
+                                   1024, // m
+                                   5,  // dFree
+                                   8,  // adFree
+                                   31  // adFreePlusOne
+                                   );
+            }
+        }
     }
   else if (mode.GetModulationClass () == WIFI_MOD_CLASS_DSSS || mode.GetModulationClass () == WIFI_MOD_CLASS_HR_DSSS)
     {
-      switch (mode.GetDataRate (20, 0, 1))
+      switch (mode.GetDataRate (20))
         {
         case 1000000:
           return DsssErrorRateModel::GetDsssDbpskSuccessRate (snr, nbits);

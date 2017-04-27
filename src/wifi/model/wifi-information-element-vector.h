@@ -22,9 +22,7 @@
 #ifndef WIFI_INFORMATION_ELEMENT_VECTOR_H
 #define WIFI_INFORMATION_ELEMENT_VECTOR_H
 
-#include "ns3/header.h"
-#include "ns3/simple-ref-count.h"
-#include "ns3/wifi-information-element.h"
+#include "wifi-information-element.h"
 
 namespace ns3 {
 
@@ -44,6 +42,10 @@ public:
   WifiInformationElementVector ();
   virtual ~WifiInformationElementVector ();
 
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId ();
   TypeId GetInstanceTypeId () const;
   virtual uint32_t GetSerializedSize () const;
@@ -52,7 +54,8 @@ public:
    * \attention When you use RemoveHeader, WifiInformationElementVector supposes, that
    * all buffer consists of information elements
    *
-   * \param start
+   * \param start the iterator
+   * \returns distance
    */
   virtual uint32_t Deserialize (Buffer::Iterator start);
   virtual void Print (std::ostream &os) const;

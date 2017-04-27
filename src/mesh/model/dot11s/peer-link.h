@@ -59,6 +59,10 @@ public:
     ESTAB,
     HOLDING,
   };
+  /**
+   * \brief Literal names of Mesh Peer Management states for use in log messages
+   */
+  static const char* const PeerStateNames[6];
   /// Process beacon received from peer
   void SetBeaconInformation (Time lastBeacon, Time BeaconInterval);
   /**
@@ -199,7 +203,9 @@ private:
   void BeaconLoss ();
 private:
 
+  /// assignment operator
   PeerLink& operator= (const PeerLink &);
+  /// type conversion operator
   PeerLink (const PeerLink &);
 
   /// The number of interface I am associated with

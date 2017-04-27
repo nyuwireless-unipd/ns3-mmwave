@@ -32,6 +32,7 @@
 #include "codel-queue-disc.h"
 #include "ns3/object-factory.h"
 #include "ns3/drop-tail-queue.h"
+#include "ns3/net-device-queue-interface.h"
 
 namespace ns3 {
 
@@ -154,10 +155,10 @@ TypeId CoDelQueueDisc::GetTypeId (void)
     .AddConstructor<CoDelQueueDisc> ()
     .AddAttribute ("Mode",
                    "Whether to use Bytes (see MaxBytes) or Packets (see MaxPackets) as the maximum queue size metric.",
-                   EnumValue (Queue::QUEUE_MODE_BYTES),
+                   EnumValue (QUEUE_DISC_MODE_BYTES),
                    MakeEnumAccessor (&CoDelQueueDisc::SetMode),
-                   MakeEnumChecker (Queue::QUEUE_MODE_BYTES, "QUEUE_MODE_BYTES",
-                                    Queue::QUEUE_MODE_PACKETS, "QUEUE_MODE_PACKETS"))
+                   MakeEnumChecker (QUEUE_DISC_MODE_BYTES, "QUEUE_DISC_MODE_BYTES",
+                                    QUEUE_DISC_MODE_PACKETS, "QUEUE_DISC_MODE_PACKETS"))
     .AddAttribute ("MaxPackets",
                    "The maximum number of packets accepted by this CoDelQueueDisc.",
                    UintegerValue (DEFAULT_CODEL_LIMIT),
@@ -258,13 +259,13 @@ CoDelQueueDisc::ControlLaw (uint32_t t)
 }
 
 void
-CoDelQueueDisc::SetMode (Queue::QueueMode mode)
+CoDelQueueDisc::SetMode (QueueDiscMode mode)
 {
   NS_LOG_FUNCTION (mode);
   m_mode = mode;
 }
 
-Queue::QueueMode
+CoDelQueueDisc::QueueDiscMode
 CoDelQueueDisc::GetMode (void)
 {
   NS_LOG_FUNCTION (this);
@@ -277,7 +278,7 @@ CoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
   NS_LOG_FUNCTION (this << item);
   Ptr<Packet> p = item->GetPacket ();
 
-  if (m_mode == Queue::QUEUE_MODE_PACKETS && (GetInternalQueue (0)->GetNPackets () + 1 > m_maxPackets))
+  if (m_mode == QUEUE_DISC_MODE_PACKETS && (GetInternalQueue (0)->GetNPackets () + 1 > m_maxPackets))
     {
       NS_LOG_LOGIC ("Queue full (at max packets) -- droppping pkt");
       Drop (item);
@@ -285,7 +286,7 @@ CoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
       return false;
     }
 
-  if (m_mode == Queue::QUEUE_MODE_BYTES && (GetInternalQueue (0)->GetNBytes () + item->GetPacketSize () > m_maxBytes))
+  if (m_mode == QUEUE_DISC_MODE_BYTES && (GetInternalQueue (0)->GetNBytes () + item->GetSize () > m_maxBytes))
     {
       NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- droppping pkt");
       Drop (item);
@@ -309,13 +310,19 @@ CoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
 }
 
 bool
-CoDelQueueDisc::OkToDrop (Ptr<Packet> p, uint32_t now)
+CoDelQueueDisc::OkToDrop (Ptr<QueueDiscItem> item, uint32_t now)
 {
   NS_LOG_FUNCTION (this);
   CoDelTimestampTag tag;
   bool okToDrop;
 
-  bool found = p->RemovePacketTag (tag);
+  if (!item)
+    {
+      m_firstAboveTime = 0;
+      return false;
+    }
+
+  bool found = item->GetPacket ()->RemovePacketTag (tag);
   NS_ASSERT_MSG (found, "found a packet without an input timestamp tag");
   NS_UNUSED (found);    //silence compiler warning
   Time delta = Simulator::Now () - tag.GetTxTime ();
@@ -340,8 +347,7 @@ CoDelQueueDisc::OkToDrop (Ptr<Packet> p, uint32_t now)
       NS_LOG_LOGIC ("Sojourn time has just gone above target from below, need to stay above for at least q->interval before packet can be dropped. ");
       m_firstAboveTime = now + Time2CoDel (m_interval);
     }
-  else
-  if (CoDelTimeAfter (now, m_firstAboveTime))
+  else if (CoDelTimeAfter (now, m_firstAboveTime))
     {
       NS_LOG_LOGIC ("Sojourn time has been above target for at least q->interval; it's OK to (possibly) drop packet.");
       okToDrop = true;
@@ -355,24 +361,22 @@ CoDelQueueDisc::DoDequeue (void)
 {
   NS_LOG_FUNCTION (this);
 
-  if (GetInternalQueue (0)->IsEmpty ())
+  Ptr<QueueDiscItem> item = GetInternalQueue (0)->Dequeue ();
+  if (!item)
     {
       // Leave dropping state when queue is empty
       m_dropping = false;
-      m_firstAboveTime = 0;
       NS_LOG_LOGIC ("Queue empty");
       return 0;
     }
   uint32_t now = CoDelGetTime ();
-  Ptr<QueueDiscItem> item = StaticCast<QueueDiscItem> (GetInternalQueue (0)->Dequeue ());
-  Ptr<Packet> p = item->GetPacket ();
 
   NS_LOG_LOGIC ("Popped " << item);
   NS_LOG_LOGIC ("Number packets remaining " << GetInternalQueue (0)->GetNPackets ());
   NS_LOG_LOGIC ("Number bytes remaining " << GetInternalQueue (0)->GetNBytes ());
 
-  // Determine if p should be dropped
-  bool okToDrop = OkToDrop (p, now);
+  // Determine if item should be dropped
+  bool okToDrop = OkToDrop (item, now);
 
   if (m_dropping)
     { // In the dropping state (sojourn time has gone above target and hasn't come down yet)
@@ -384,8 +388,7 @@ CoDelQueueDisc::DoDequeue (void)
           NS_LOG_LOGIC ("Sojourn time goes below target, it's OK to leave dropping state.");
           m_dropping = false;
         }
-      else
-      if (CoDelTimeAfterEq (now, m_dropNext))
+      else if (CoDelTimeAfterEq (now, m_dropNext))
         {
           m_state2++;
           while (m_dropping && CoDelTimeAfterEq (now, m_dropNext))
@@ -396,27 +399,22 @@ CoDelQueueDisc::DoDequeue (void)
               // A large amount of packets in queue might result in drop
               // rates so high that the next drop should happen now,
               // hence the while loop.
-              NS_LOG_LOGIC ("Sojourn time is still above target and it's time for next drop; dropping " << p);
+              NS_LOG_LOGIC ("Sojourn time is still above target and it's time for next drop; dropping " << item);
               Drop (item);
 
               ++m_dropCount;
               ++m_count;
               NewtonStep ();
-              if (GetInternalQueue (0)->IsEmpty ())
+              item = GetInternalQueue (0)->Dequeue ();
+
+              if (item)
                 {
-                  m_dropping = false;
-                  NS_LOG_LOGIC ("Queue empty");
-                  ++m_states;
-                  return 0;
+                  NS_LOG_LOGIC ("Popped " << item);
+                  NS_LOG_LOGIC ("Number packets remaining " << GetInternalQueue (0)->GetNPackets ());
+                  NS_LOG_LOGIC ("Number bytes remaining " << GetInternalQueue (0)->GetNBytes ());
                 }
-              item = StaticCast<QueueDiscItem> (GetInternalQueue (0)->Dequeue ());
-              p = item ->GetPacket ();
 
-              NS_LOG_LOGIC ("Popped " << item);
-              NS_LOG_LOGIC ("Number packets remaining " << GetInternalQueue (0)->GetNPackets ());
-              NS_LOG_LOGIC ("Number bytes remaining " << GetInternalQueue (0)->GetNBytes ());
-
-              if (!OkToDrop (p, now))
+              if (!OkToDrop (item, now))
                 {
                   /* leave dropping state */
                   NS_LOG_LOGIC ("Leaving dropping state");
@@ -440,29 +438,21 @@ CoDelQueueDisc::DoDequeue (void)
       if (okToDrop)
         {
           // Drop the first packet and enter dropping state unless the queue is empty
-          NS_LOG_LOGIC ("Sojourn time goes above target, dropping the first packet " << p << " and entering the dropping state");
+          NS_LOG_LOGIC ("Sojourn time goes above target, dropping the first packet " << item << " and entering the dropping state");
           ++m_dropCount;
           Drop (item);
 
-          if (GetInternalQueue (0)->IsEmpty ())
-            {
-              m_dropping = false;
-              okToDrop = false;
-              NS_LOG_LOGIC ("Queue empty");
-              ++m_states;
-            }
-          else
-            {
-              item = StaticCast<QueueDiscItem> (GetInternalQueue (0)->Dequeue ());
-              p = item->GetPacket ();
+          item = GetInternalQueue (0)->Dequeue ();
 
+          if (item)
+            {
               NS_LOG_LOGIC ("Popped " << item);
               NS_LOG_LOGIC ("Number packets remaining " << GetInternalQueue (0)->GetNPackets ());
               NS_LOG_LOGIC ("Number bytes remaining " << GetInternalQueue (0)->GetNBytes ());
-
-              okToDrop = OkToDrop (p, now);
-              m_dropping = true;
             }
+
+          OkToDrop (item, now);
+          m_dropping = true;
           ++m_state3;
           /*
            * if min went above target close to when we last went below it
@@ -494,11 +484,11 @@ uint32_t
 CoDelQueueDisc::GetQueueSize (void)
 {
   NS_LOG_FUNCTION (this);
-  if (GetMode () == Queue::QUEUE_MODE_BYTES)
+  if (GetMode () == QUEUE_DISC_MODE_BYTES)
     {
       return GetInternalQueue (0)->GetNBytes ();
     }
-  else if (GetMode () == Queue::QUEUE_MODE_PACKETS)
+  else if (GetMode () == QUEUE_DISC_MODE_PACKETS)
     {
       return GetInternalQueue (0)->GetNPackets ();
     }
@@ -549,7 +539,7 @@ CoDelQueueDisc::DoPeek (void) const
       return 0;
     }
 
-  Ptr<const QueueDiscItem> item = StaticCast<const QueueDiscItem> (GetInternalQueue (0)->Peek ());
+  Ptr<const QueueDiscItem> item = GetInternalQueue (0)->Peek ();
 
   NS_LOG_LOGIC ("Number packets " << GetInternalQueue (0)->GetNPackets ());
   NS_LOG_LOGIC ("Number bytes " << GetInternalQueue (0)->GetNBytes ());
@@ -606,8 +596,8 @@ CoDelQueueDisc::CheckConfig (void)
   if (GetNInternalQueues () == 0)
     {
       // create a DropTail queue
-      Ptr<Queue> queue = CreateObjectWithAttributes<DropTailQueue> ("Mode", EnumValue (m_mode));
-      if (m_mode == Queue::QUEUE_MODE_PACKETS)
+      Ptr<InternalQueue> queue = CreateObjectWithAttributes<DropTailQueue<QueueDiscItem> > ("Mode", EnumValue (m_mode));
+      if (m_mode == QUEUE_DISC_MODE_PACKETS)
         {
           queue->SetMaxPackets (m_maxPackets);
         }
@@ -624,14 +614,15 @@ CoDelQueueDisc::CheckConfig (void)
       return false;
     }
 
-  if (GetInternalQueue (0)->GetMode () != m_mode)
+  if ((GetInternalQueue (0)->GetMode () == QueueBase::QUEUE_MODE_PACKETS && m_mode == QUEUE_DISC_MODE_BYTES) ||
+      (GetInternalQueue (0)->GetMode () == QueueBase::QUEUE_MODE_BYTES && m_mode == QUEUE_DISC_MODE_PACKETS))
     {
       NS_LOG_ERROR ("The mode of the provided queue does not match the mode set on the CoDelQueueDisc");
       return false;
     }
 
-  if ((m_mode ==  Queue::QUEUE_MODE_PACKETS && GetInternalQueue (0)->GetMaxPackets () < m_maxPackets) ||
-      (m_mode ==  Queue::QUEUE_MODE_BYTES && GetInternalQueue (0)->GetMaxBytes () < m_maxBytes))
+  if ((m_mode ==  QUEUE_DISC_MODE_PACKETS && GetInternalQueue (0)->GetMaxPackets () < m_maxPackets) ||
+      (m_mode ==  QUEUE_DISC_MODE_BYTES && GetInternalQueue (0)->GetMaxBytes () < m_maxBytes))
     {
       NS_LOG_ERROR ("The size of the internal queue is less than the queue disc limit");
       return false;

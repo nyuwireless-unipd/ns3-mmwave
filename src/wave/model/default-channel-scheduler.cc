@@ -18,6 +18,7 @@
 #include "default-channel-scheduler.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
+#include "ns3/wifi-phy.h"
 
 namespace ns3 {
 
@@ -25,9 +26,18 @@ NS_LOG_COMPONENT_DEFINE ("DefaultChannelScheduler");
 
 NS_OBJECT_ENSURE_REGISTERED (DefaultChannelScheduler);
 
+/**
+ * \ingroup wave
+ * \brief CoordinationListener class
+ */
 class CoordinationListener : public ChannelCoordinationListener
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param scheduler channel scheduler
+   */
   CoordinationListener (DefaultChannelScheduler * scheduler)
     : m_scheduler (scheduler)
   {
@@ -48,7 +58,7 @@ public:
     m_scheduler->NotifyGuardSlotStart (duration, cchi);
   }
 private:
-  DefaultChannelScheduler * m_scheduler;
+  DefaultChannelScheduler * m_scheduler; ///< the scheduler
 };
 
 TypeId

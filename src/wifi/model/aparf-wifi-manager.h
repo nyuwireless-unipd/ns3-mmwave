@@ -38,9 +38,9 @@ struct AparfWifiRemoteStation;
  * Networks, Springer, 2005, 12, 123-145.
  * http://www.cs.mun.ca/~yzchen/papers/papers/rate_adaptation/80211_dynamic_rate_power_adjustment_chevillat_j2005.pdf
  *
- * This RAA does not support HT or VHT modes and will error exit
- * if the user tries to configure this RAA with a Wi-Fi MAC that
- * has VhtSupported or HtSupported set.
+ * This RAA does not support HT, VHT nor HE modes and will error
+ * exit if the user tries to configure this RAA with a Wi-Fi MAC
+ * that has VhtSupported, HtSupported or HeSupported set.
  */
 class AparfWifiManager : public WifiRemoteStationManager
 {
@@ -54,9 +54,10 @@ public:
   virtual ~AparfWifiManager ();
 
   // Inherited from WifiRemoteStationManager
-  virtual void SetupPhy (Ptr<WifiPhy> phy);
-  virtual void SetHtSupported (bool enable);
-  virtual void SetVhtSupported (bool enable);
+  void SetupPhy (Ptr<WifiPhy> phy);
+  void SetHtSupported (bool enable);
+  void SetVhtSupported (bool enable);
+  void SetHeSupported (bool enable);
 
   /**
    * Enumeration of the possible states of the channel.
@@ -68,22 +69,23 @@ public:
     Spread
   };
 
+
 private:
   //overriden from base class
-  virtual WifiRemoteStation * DoCreateStation (void) const;
-  virtual void DoReportRxOk (WifiRemoteStation *station,
-                             double rxSnr, WifiMode txMode);
-  virtual void DoReportRtsFailed (WifiRemoteStation *station);
-  virtual void DoReportDataFailed (WifiRemoteStation *station);
-  virtual void DoReportRtsOk (WifiRemoteStation *station,
-                              double ctsSnr, WifiMode ctsMode, double rtsSnr);
-  virtual void DoReportDataOk (WifiRemoteStation *station,
-                               double ackSnr, WifiMode ackMode, double dataSnr);
-  virtual void DoReportFinalRtsFailed (WifiRemoteStation *station);
-  virtual void DoReportFinalDataFailed (WifiRemoteStation *station);
-  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
-  virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
-  virtual bool IsLowLatency (void) const;
+  WifiRemoteStation * DoCreateStation (void) const;
+  void DoReportRxOk (WifiRemoteStation *station,
+                     double rxSnr, WifiMode txMode);
+  void DoReportRtsFailed (WifiRemoteStation *station);
+  void DoReportDataFailed (WifiRemoteStation *station);
+  void DoReportRtsOk (WifiRemoteStation *station,
+                      double ctsSnr, WifiMode ctsMode, double rtsSnr);
+  void DoReportDataOk (WifiRemoteStation *station,
+                       double ackSnr, WifiMode ackMode, double dataSnr);
+  void DoReportFinalRtsFailed (WifiRemoteStation *station);
+  void DoReportFinalDataFailed (WifiRemoteStation *station);
+  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
+  WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
+  bool IsLowLatency (void) const;
 
   /** Check for initializations.
    *
@@ -105,7 +107,7 @@ private:
    * Differently form rate, power levels do not depend on the remote station.
    * The levels depend only on the physical layer of the device.
    */
-  uint32_t m_minPower;  
+  uint32_t m_minPower;
 
   /**
    * Maximal power level.
@@ -113,14 +115,13 @@ private:
   uint32_t m_maxPower;
 
   /**
-   * The trace source fired when the transmission power change
+   * The trace source fired when the transmission power changes.
    */
-  TracedCallback<uint8_t, Mac48Address> m_powerChange;
+  TracedCallback<double, double, Mac48Address> m_powerChange;
   /**
-   * The trace source fired when the transmission rate change
+   * The trace source fired when the transmission rate changes.
    */
-  TracedCallback<uint32_t, Mac48Address> m_rateChange;
-
+  TracedCallback<DataRate, DataRate, Mac48Address> m_rateChange;
 };
 
 } //namespace ns3

@@ -20,7 +20,6 @@
 
 #include "ns3/log.h"
 #include "ns3/uinteger.h"
-#include "amsdu-subframe-header.h"
 #include "msdu-standard-aggregator.h"
 
 namespace ns3 {
@@ -66,7 +65,7 @@ MsduStandardAggregator::GetMaxAmsduSize (void) const
 
 bool
 MsduStandardAggregator::Aggregate (Ptr<const Packet> packet, Ptr<Packet> aggregatedPacket,
-                                   Mac48Address src, Mac48Address dest)
+                                   Mac48Address src, Mac48Address dest) const
 {
   NS_LOG_FUNCTION (this);
   Ptr<Packet> currentPacket;
@@ -95,7 +94,7 @@ MsduStandardAggregator::Aggregate (Ptr<const Packet> packet, Ptr<Packet> aggrega
 }
 
 uint32_t
-MsduStandardAggregator::CalculatePadding (Ptr<const Packet> packet)
+MsduStandardAggregator::CalculatePadding (Ptr<const Packet> packet) const
 {
   return (4 - (packet->GetSize () % 4 )) % 4;
 }

@@ -21,7 +21,6 @@
  */
 
 #include "ns3/simulator.h"
-#include "ns3/drop-tail-queue.h"
 #include "ns3/node.h"
 #include "ss-net-device.h"
 #include "wimax-phy.h"
@@ -1264,12 +1263,12 @@ SubscriberStationNetDevice::IsRegistered (void) const
 }
 
 Time
-SubscriberStationNetDevice::GetTimeToAllocation (Time defferTime)
+SubscriberStationNetDevice::GetTimeToAllocation (Time deferTime)
 {
   Time timeAlreadyElapsed = Simulator::Now () - m_frameStartTime;
   Time timeToUlSubframe = Seconds (m_allocationStartTime * GetPhy ()->GetPsDuration ().GetSeconds ())
     - timeAlreadyElapsed;
-  return timeToUlSubframe + defferTime;
+  return timeToUlSubframe + deferTime;
 }
 
 void

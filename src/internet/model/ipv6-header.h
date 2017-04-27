@@ -145,6 +145,36 @@ public:
   std::string DscpTypeToString (DscpType dscp) const;
 
   /**
+   * \enum EcnType
+   * \brief ECN field bits
+   */
+  enum EcnType
+   {
+     // Prefixed with "ECN" to avoid name clash
+     ECN_NotECT = 0x00,
+     ECN_ECT1 = 0x01,
+     ECN_ECT0 = 0x02,
+     ECN_CE = 0x03
+   };
+
+  /**
+   * \brief Set ECN field bits
+   * \param ecn ECN field bits
+   */
+  void SetEcn (EcnType ecn);
+
+  /**
+   * \return the ECN field bits of this packet.
+   */
+  EcnType GetEcn (void) const;
+
+  /**
+   * \param ecn the ECNType
+   * \return std::string of ECNType
+   */
+  std::string EcnTypeToString (EcnType ecn) const;
+
+  /**
    * \brief Set the "Flow label" field.
    * \param flow the 20-bit value
    */

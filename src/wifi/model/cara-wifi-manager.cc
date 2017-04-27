@@ -19,17 +19,14 @@
  */
 
 #include "cara-wifi-manager.h"
-#include "ns3/assert.h"
 #include "ns3/log.h"
-#include "ns3/double.h"
 #include "ns3/uinteger.h"
-#include "ns3/simulator.h"
 
 #define Min(a,b) ((a < b) ? a : b)
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("Cara");
+NS_LOG_COMPONENT_DEFINE ("CaraWifiManager");
 
 /**
  * \brief hold per-remote-station state for CARA Wifi manager.
@@ -39,10 +36,10 @@ NS_LOG_COMPONENT_DEFINE ("Cara");
  */
 struct CaraWifiRemoteStation : public WifiRemoteStation
 {
-  uint32_t m_timer;
-  uint32_t m_success;
-  uint32_t m_failed;
-  uint32_t m_rate;
+  uint32_t m_timer; ///< timer count
+  uint32_t m_success; ///< success count
+  uint32_t m_failed; ///< failed count
+  uint32_t m_rate; ///< rate
 };
 
 NS_OBJECT_ENSURE_REGISTERED (CaraWifiManager);
@@ -74,12 +71,17 @@ CaraWifiManager::GetTypeId (void)
                    UintegerValue (15),
                    MakeUintegerAccessor (&CaraWifiManager::m_timerTimeout),
                    MakeUintegerChecker<uint32_t> ())
+    .AddTraceSource ("Rate",
+                     "Traced value for rate changes (b/s)",
+                     MakeTraceSourceAccessor (&CaraWifiManager::m_currentRate),
+                     "ns3::TracedValueCallback::Uint64")
   ;
   return tid;
 }
 
 CaraWifiManager::CaraWifiManager ()
-  : WifiRemoteStationManager ()
+  : WifiRemoteStationManager (),
+    m_currentRate (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -188,7 +190,13 @@ CaraWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
-  return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
+  WifiMode mode = GetSupported (station, station->m_rate);
+  if (m_currentRate != mode.GetDataRate (channelWidth))
+    {
+      NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
+      m_currentRate = mode.GetDataRate (channelWidth);
+    }
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
@@ -205,14 +213,16 @@ CaraWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
       channelWidth = 20;
     }
   WifiTxVector rtsTxVector;
+  WifiMode mode;
   if (GetUseNonErpProtection () == false)
     {
-      rtsTxVector = WifiTxVector (GetSupported (station, 0), GetDefaultTxPowerLevel (), GetLongRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
+      mode = GetSupported (station, 0);
     }
   else
     {
-      rtsTxVector = WifiTxVector (GetNonErpSupported (station, 0), GetDefaultTxPowerLevel (), GetLongRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
+      mode = GetNonErpSupported (station, 0);
     }
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
 }
 
@@ -249,6 +259,16 @@ CaraWifiManager::SetVhtSupported (bool enable)
   if (enable)
     {
       NS_FATAL_ERROR ("WifiRemoteStationManager selected does not support VHT rates");
+    }
+}
+
+void
+CaraWifiManager::SetHeSupported (bool enable)
+{
+  //HE is not supported by this algorithm.
+  if (enable)
+    {
+      NS_FATAL_ERROR ("WifiRemoteStationManager selected does not support HE rates");
     }
 }
 

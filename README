@@ -44,7 +44,7 @@ use of these ns-3 libraries.
 
 To build the set of default libraries and the example
 programs included in this package, you need to use the
-tool 'waf'. Detailed information on how use waf is 
+tool 'waf'. Detailed information on how to use waf is
 included in the file doc/build.txt
 
 However, the real quick and dirty way to get started is to
@@ -80,7 +80,7 @@ The program source can be found in the examples/routing directory.
 -------------------------------------------
 
 Once you have verified that your build of ns-3 works by running
-the simple-point-to-point example as outlined in 4) above, it is
+the simple-point-to-point example as outlined in 3) above, it is
 quite likely that you will want to get started on reading
 some ns-3 documentation. 
 

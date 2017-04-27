@@ -23,15 +23,9 @@
 #ifndef WIFI_HELPER_H
 #define WIFI_HELPER_H
 
-#include <string>
-#include "ns3/attribute.h"
-#include "ns3/object-factory.h"
-#include "ns3/node-container.h"
-#include "ns3/net-device-container.h"
-#include "ns3/wifi-phy-standard.h"
 #include "ns3/trace-helper.h"
-#include "ns3/wifi-mac-helper.h"
 #include "ns3/wifi-phy.h"
+#include "wifi-mac-helper.h"
 
 namespace ns3 {
 
@@ -66,7 +60,7 @@ public:
    * by other Wifi device variants such as WaveNetDevice.
    */
   virtual Ptr<WifiPhy> Create (Ptr<Node> node, Ptr<NetDevice> device) const = 0;
-  
+
   /**
    * \param name the name of the attribute to set
    * \param v the value of the attribute
@@ -104,7 +98,7 @@ public:
                           std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
                           std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
                           std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
-  
+
   /**
    * An enumeration of the pcap data link types (DLTs) which this helper
    * supports.  See http://wiki.wireshark.org/Development/LibpcapFileFormat
@@ -142,9 +136,6 @@ protected:
    * \param file the pcap file wrapper
    * \param packet the packet
    * \param channelFreqMhz the channel frequency
-   * \param channelNumber the channel number
-   * \param rate the PHY bitrate
-   * \param preamble the preamble type
    * \param txVector the TXVECTOR
    * \param aMpdu the A-MPDU information
    *
@@ -153,18 +144,12 @@ protected:
   static void PcapSniffTxEvent (Ptr<PcapFileWrapper> file,
                                 Ptr<const Packet> packet,
                                 uint16_t channelFreqMhz,
-                                uint16_t channelNumber,
-                                uint32_t rate,
-                                WifiPreamble preamble,
                                 WifiTxVector txVector,
-                                struct mpduInfo aMpdu);
+                                MpduInfo aMpdu);
   /**
    * \param file the pcap file wrapper
    * \param packet the packet
    * \param channelFreqMhz the channel frequency
-   * \param channelNumber the channel number
-   * \param rate the PHY bitrate
-   * \param preamble the preamble type
    * \param txVector the TXVECTOR
    * \param aMpdu the A-MPDU information
    * \param signalNoise the rx signal and noise information
@@ -174,16 +159,13 @@ protected:
   static void PcapSniffRxEvent (Ptr<PcapFileWrapper> file,
                                 Ptr<const Packet> packet,
                                 uint16_t channelFreqMhz,
-                                uint16_t channelNumber,
-                                uint32_t rate,
-                                WifiPreamble preamble,
                                 WifiTxVector txVector,
-                                struct mpduInfo aMpdu,
-                                struct signalNoiseDbm signalNoise);
-    
-  ObjectFactory m_phy;
-  ObjectFactory m_errorRateModel;
-    
+                                MpduInfo aMpdu,
+                                SignalNoiseDbm signalNoise);
+
+  ObjectFactory m_phy; ///< PHY object
+  ObjectFactory m_errorRateModel; ///< error rate model
+
 private:
   /**
    * @brief Enable pcap output the indicated net device.
@@ -216,8 +198,8 @@ private:
                                     std::string prefix,
                                     Ptr<NetDevice> nd,
                                     bool explicitFilename);
-    
-  PcapHelper::DataLinkType m_pcapDlt;
+
+  PcapHelper::DataLinkType m_pcapDlt; ///< PCAP data link type
 };
 
 
@@ -238,7 +220,7 @@ public:
    * must be set before calling ns3::WifiHelper::Install
    *
    * The default state is defined as being an Adhoc MAC layer with an ARF rate control algorithm
-   * and both objects using their default attribute values. 
+   * and both objects using their default attribute values.
    * By default, configure MAC and PHY for 802.11a.
    */
   WifiHelper ();
@@ -287,6 +269,18 @@ public:
                                 std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
                                 std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
                                 std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
+  /**
+   * \param phy the PHY helper to create PHY objects
+   * \param mac the MAC helper to create MAC objects
+   * \param first lower bound on the set of nodes on which a wifi device must be created
+   * \param last upper bound on the set of nodes on which a wifi device must be created
+   * \returns a device container which contains all the devices created by this method.
+   */
+  NetDeviceContainer
+  virtual Install (const WifiPhyHelper &phyHelper,
+                       const WifiMacHelper &macHelper,
+                       NodeContainer::Iterator first,
+                       NodeContainer::Iterator last) const;
   /**
    * \param phy the PHY helper to create PHY objects
    * \param mac the MAC helper to create MAC objects
@@ -360,8 +354,8 @@ public:
 
 
 protected:
-  ObjectFactory m_stationManager;
-  enum WifiPhyStandard m_standard;
+  ObjectFactory m_stationManager; ///< station manager
+  enum WifiPhyStandard m_standard; ///< wifi standard
 };
 
 } //namespace ns3

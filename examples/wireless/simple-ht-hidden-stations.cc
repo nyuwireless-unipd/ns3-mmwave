@@ -19,11 +19,9 @@
  */
 
 #include "ns3/core-module.h"
-#include "ns3/network-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
-#include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/internet-module.h"
 
 // This example considers two hidden stations in an 802.11n network which supports MPDU aggregation.
@@ -52,13 +50,18 @@ int main (int argc, char *argv[])
   uint32_t payloadSize = 1472; //bytes
   uint64_t simulationTime = 10; //seconds
   uint32_t nMpdus = 1;
+  uint32_t maxAmpduSize = 0;
   bool enableRts = 0;
+  double minExpectedThroughput = 0;
+  double maxExpectedThroughput = 0;
 
   CommandLine cmd;
   cmd.AddValue ("nMpdus", "Number of aggregated MPDUs", nMpdus);
   cmd.AddValue ("payloadSize", "Payload size in bytes", payloadSize);
-  cmd.AddValue ("enableRts", "Enable RTS/CTS", enableRts); // 1: RTS/CTS enabled; 0: RTS/CTS disabled
+  cmd.AddValue ("enableRts", "Enable RTS/CTS", enableRts);
   cmd.AddValue ("simulationTime", "Simulation time in seconds", simulationTime);
+  cmd.AddValue ("minExpectedThroughput", "if set, simulation fails if the lowest throughput is below this value", minExpectedThroughput);
+  cmd.AddValue ("maxExpectedThroughput", "if set, simulation fails if the highest throughput is above this value", maxExpectedThroughput);
   cmd.Parse (argc, argv);
 
   if (!enableRts)
@@ -70,7 +73,8 @@ int main (int argc, char *argv[])
       Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("0"));
     }
 
-  Config::SetDefault ("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("990000"));
+  //Set the maximum size for A-MPDU with regards to the payload size
+  maxAmpduSize = nMpdus * (payloadSize + 200);
 
   // Set the maximum wireless range to 5 meters in order to reproduce a hidden nodes scenario, i.e. the distance between hidden stations is larger than 5 meters
   Config::SetDefault ("ns3::RangePropagationLossModel::MaxRange", DoubleValue (5));
@@ -87,41 +91,23 @@ int main (int argc, char *argv[])
   phy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
   phy.SetChannel (channel.Create ());
 
-  WifiHelper wifi = WifiHelper::Default ();
+  WifiHelper wifi;
   wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HtMcs7"), "ControlMode", StringValue ("HtMcs0"));
-  HtWifiMacHelper mac = HtWifiMacHelper::Default ();
+  WifiMacHelper mac;
 
   Ssid ssid = Ssid ("simple-mpdu-aggregation");
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (ssid),
-               "ActiveProbing", BooleanValue (false));
-
-  if (nMpdus > 1)
-    {
-      mac.SetBlockAckThresholdForAc (AC_BE, 2);             //enable Block ACK when A-MPDU is enabled
-
-    }
-  mac.SetMpduAggregatorForAc (AC_BE,"ns3::MpduStandardAggregator",
-                              "MaxAmpduSize", UintegerValue (nMpdus * (payloadSize + 100))); //enable MPDU aggregation for AC_BE with a maximum aggregated size of nMpdus*(payloadSize+100) bytes,
-                                                                                             //i.e. nMpdus aggregated packets in an A-MPDU
+               "BE_MaxAmpduSize", UintegerValue (maxAmpduSize));
 
   NetDeviceContainer staDevices;
   staDevices = wifi.Install (phy, mac, wifiStaNodes);
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
-               "BeaconInterval", TimeValue (MicroSeconds (102400)),
-               "BeaconGeneration", BooleanValue (true));
-
-  if (nMpdus > 1)
-    {
-      mac.SetBlockAckThresholdForAc (AC_BE, 2);             //enable Block ACK when A-MPDU is enabled
-
-    }
-  mac.SetMpduAggregatorForAc (AC_BE,"ns3::MpduStandardAggregator",
-                              "MaxAmpduSize", UintegerValue (nMpdus * (payloadSize + 100))); //enable MPDU aggregation for AC_BE with a maximum aggregated size of nMpdus*(payloadSize+100) bytes,
-                                                                                             //i.e. nMpdus aggregated packets in an A-MPDU
+               "BeaconGeneration", BooleanValue (true),
+               "BE_MaxAmpduSize", UintegerValue (maxAmpduSize));
 
   NetDeviceContainer apDevice;
   apDevice = wifi.Install (phy, mac, wifiApNode);
@@ -149,7 +135,6 @@ int main (int argc, char *argv[])
   stack.Install (wifiStaNodes);
 
   Ipv4AddressHelper address;
-
   address.SetBase ("192.168.1.0", "255.255.255.0");
   Ipv4InterfaceContainer StaInterface;
   StaInterface = address.Assign (staDevices);
@@ -157,18 +142,19 @@ int main (int argc, char *argv[])
   ApInterface = address.Assign (apDevice);
 
   // Setting applications
-  UdpServerHelper myServer (9);
-  ApplicationContainer serverApp = myServer.Install (wifiApNode);
+  uint16_t port = 9;
+  UdpServerHelper server (port);
+  ApplicationContainer serverApp = server.Install (wifiApNode);
   serverApp.Start (Seconds (0.0));
   serverApp.Stop (Seconds (simulationTime + 1));
 
-  UdpClientHelper myClient (ApInterface.GetAddress (0), 9);
-  myClient.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  myClient.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
-  myClient.SetAttribute ("PacketSize", UintegerValue (payloadSize));
+  UdpClientHelper client (ApInterface.GetAddress (0), port);
+  client.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
+  client.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  client.SetAttribute ("PacketSize", UintegerValue (payloadSize));
 
   // Saturated UDP traffic from stations to AP
-  ApplicationContainer clientApp1 = myClient.Install (wifiStaNodes);
+  ApplicationContainer clientApp1 = client.Install (wifiStaNodes);
   clientApp1.Start (Seconds (1.0));
   clientApp1.Stop (Seconds (simulationTime + 1));
 
@@ -184,6 +170,10 @@ int main (int argc, char *argv[])
   uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
   double throughput = totalPacketsThrough * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput: " << throughput << " Mbit/s" << '\n';
-
+  if (throughput < minExpectedThroughput || (maxExpectedThroughput > 0 && throughput > maxExpectedThroughput))
+    {
+      NS_LOG_ERROR ("Obtained throughput " << throughput << " is not in the expected boundaries!");
+      exit (1);
+    }
   return 0;
 }

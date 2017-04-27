@@ -18,7 +18,7 @@
 
 // This example is used to validate NIST and YANS error rate models for VHT rates.
 //
-// It ouputs plots of the Frame Success Rate versus the Signal-to-noise ratio for
+// It outputs plots of the Frame Success Rate versus the Signal-to-noise ratio for
 // both NIST and YANS error rate models and for every VHT MCS value (MCS 9 is not
 // included since it is forbidden for 20 MHz channels).
 
@@ -27,17 +27,13 @@
 #include "ns3/nist-error-rate-model.h"
 #include "ns3/gnuplot.h"
 
-#include <fstream>
-#include <vector>
-#include <cmath>
-
 using namespace ns3;
 
 int main (int argc, char *argv[])
 {
-  uint32_t FrameSize = 2000; //bytes
-  std::ofstream yansfile ("yans-frame-success-rate-n.plt");
-  std::ofstream nistfile ("nist-frame-success-rate-n.plt");
+  uint32_t FrameSize = 1500; //bytes
+  std::ofstream yansfile ("yans-frame-success-rate-ac.plt");
+  std::ofstream nistfile ("nist-frame-success-rate-ac.plt");
   std::vector <std::string> modes;
 
   modes.push_back ("VhtMcs0");
@@ -51,11 +47,11 @@ int main (int argc, char *argv[])
   modes.push_back ("VhtMcs8");
 
   CommandLine cmd;
-  cmd.AddValue ("FrameSize", "The frame size", FrameSize);
+  cmd.AddValue ("FrameSize", "The frame size in bytes", FrameSize);
   cmd.Parse (argc, argv);
 
-  Gnuplot yansplot = Gnuplot ("yans-frame-success-rate-n.eps");
-  Gnuplot nistplot = Gnuplot ("nist-frame-success-rate-n.eps");
+  Gnuplot yansplot = Gnuplot ("yans-frame-success-rate-ac.eps");
+  Gnuplot nistplot = Gnuplot ("nist-frame-success-rate-ac.eps");
 
   Ptr <YansErrorRateModel> yans = CreateObject<YansErrorRateModel> ();
   Ptr <NistErrorRateModel> nist = CreateObject<NistErrorRateModel> ();

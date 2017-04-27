@@ -20,12 +20,8 @@
 
 #include "mac-rx-middle.h"
 #include "wifi-mac-header.h"
-#include "ns3/assert.h"
 #include "ns3/log.h"
-#include "ns3/packet.h"
-#include "ns3/simulator.h"
 #include "ns3/sequence-number.h"
-#include <list>
 
 namespace ns3 {
 
@@ -47,9 +43,9 @@ private:
    */
   typedef std::list<Ptr<const Packet> >::const_iterator FragmentsCI;
 
-  bool m_defragmenting;
-  uint16_t m_lastSequenceControl;
-  Fragments m_fragments;
+  bool m_defragmenting; ///< flag to indicate whether we are defragmenting
+  uint16_t m_lastSequenceControl; ///< last sequence control
+  Fragments m_fragments; ///< fragments
 
 
 public:
@@ -69,7 +65,7 @@ public:
    * \return true if we are de-fragmenting packets,
    *         false otherwise
    */
-  bool IsDeFragmenting (void)
+  bool IsDeFragmenting (void) const
   {
     return m_defragmenting;
   }
@@ -128,7 +124,7 @@ public:
    * \return true if the sequence control is in order,
    *         false otherwise
    */
-  bool IsNextFragment (uint16_t sequenceControl)
+  bool IsNextFragment (uint16_t sequenceControl) const
   {
     if ((sequenceControl >> 4) == (m_lastSequenceControl >> 4)
         && (sequenceControl & 0x0f) == ((m_lastSequenceControl & 0x0f) + 1))
@@ -145,7 +141,7 @@ public:
    *
    * \return the last sequence control
    */
-  uint16_t GetLastSequenceControl (void)
+  uint16_t GetLastSequenceControl (void) const
   {
     return m_lastSequenceControl;
   }

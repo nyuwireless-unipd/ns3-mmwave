@@ -45,6 +45,10 @@ class WaveNetDevice;
 class WaveMacLow : public MacLow
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
   WaveMacLow ();
   virtual ~WaveMacLow ();
@@ -58,7 +62,7 @@ public:
    * \param packet packet to send
    * \param hdr 802.11 header for packet to send
    * \param parameters the transmission parameters to use for this packet.
-   * \param listener listen to transmission events.
+   * \param dca pointer to the calling DcaTxop.
    *
    * Start the transmission of the input packet and notify the listener
    * of transmission events.
@@ -66,7 +70,7 @@ public:
   virtual void StartTransmission (Ptr<const Packet> packet,
                                   const WifiMacHeader* hdr,
                                   MacLowTransmissionParameters parameters,
-                                  MacLowTransmissionListener *listener);
+                                  Ptr<DcaTxop> dca);
 private:
   /**
    * Return a TXVECTOR for the DATA frame given the destination.
@@ -79,8 +83,8 @@ private:
    */
   virtual WifiTxVector GetDataTxVector (Ptr<const Packet> packet, const WifiMacHeader *hdr) const;
 
-  Ptr<ChannelScheduler> m_scheduler;
-  Ptr<ChannelCoordinator> m_coordinator;
+  Ptr<ChannelScheduler> m_scheduler; ///< the channel scheduler
+  Ptr<ChannelCoordinator> m_coordinator; ///< the channel coordinator
 };
 
 } // namespace ns3

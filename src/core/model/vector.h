@@ -62,10 +62,14 @@ public:
    * z coordinate of vector
    */
   double z;
-  
+
+  double GetLength () const;
   friend double CalculateDistance (const Vector3D &a, const Vector3D &b);
   friend std::ostream &operator << (std::ostream &os, const Vector3D &vector);
   friend std::istream &operator >> (std::istream &is, Vector3D &vector);
+  friend bool operator < (const Vector3D &a, const Vector3D &b);
+  friend Vector3D operator + (const Vector3D &a, const Vector3D &b);
+  friend Vector3D operator - (const Vector3D &a, const Vector3D &b);
 };
 
 /**
@@ -95,9 +99,13 @@ public:
    */
   double y;
 
+  double GetLength () const;
   friend double CalculateDistance (const Vector2D &a, const Vector2D &b);
   friend std::ostream &operator << (std::ostream &os, const Vector2D &vector);
   friend std::istream &operator >> (std::istream &is, Vector2D &vector);
+  friend bool operator < (const Vector2D &a, const Vector2D &b);
+  friend Vector2D operator + (const Vector2D &a, const Vector2D &b);
+  friend Vector2D operator - (const Vector2D &a, const Vector2D &b);
 };
 
 /**
@@ -164,19 +172,19 @@ std::istream &operator >> (std::istream &is, Vector2D &vector);
  * Vector alias typedef for compatibility with mobility models
  */
 typedef Vector3D Vector;
-/** 
+/**
  * \ingroup attribute_Vector3D
  * Vector alias typedef for compatibility with mobility models
  */
 typedef Vector3DValue VectorValue;
-/** 
+/**
  * \ingroup attribute_Vector3D
  * Vector alias typedef for compatibility with mobility models
  */
 typedef Vector3DChecker VectorChecker;
 
 
-// Document these by hand so they go in group attribute_Vector3D  
+// Document these by hand so they go in group attribute_Vector3D
 /**
  * \ingroup attribute_Vector3D
  * \fn ns3::Ptr<const ns3::AttributeAccessor> ns3::MakeVectorAccessor (T1 a1)
@@ -197,7 +205,7 @@ ATTRIBUTE_ACCESSOR_DEFINE (Vector);
  * \returns The AttributeChecker.
  * \see AttributeChecker
  */
-Ptr<const AttributeChecker> MakeVectorChecker (void);  
+Ptr<const AttributeChecker> MakeVectorChecker (void);
 
 } // namespace ns3
 

@@ -31,13 +31,14 @@ Ipv4QueueDiscItem::Ipv4QueueDiscItem (Ptr<Packet> p, const Address& addr,
 {
 }
 
-Ipv4QueueDiscItem::~Ipv4QueueDiscItem()
+Ipv4QueueDiscItem::~Ipv4QueueDiscItem ()
 {
   NS_LOG_FUNCTION (this);
 }
 
-uint32_t Ipv4QueueDiscItem::GetPacketSize(void) const
+uint32_t Ipv4QueueDiscItem::GetSize (void) const
 {
+  NS_LOG_FUNCTION (this);
   Ptr<Packet> p = GetPacket ();
   NS_ASSERT (p != 0);
   uint32_t ret = p->GetSize ();
@@ -54,7 +55,7 @@ Ipv4QueueDiscItem::GetHeader (void) const
   return m_header;
 }
 
-void Ipv4QueueDiscItem::AddHeader(void)
+void Ipv4QueueDiscItem::AddHeader (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -78,6 +79,19 @@ Ipv4QueueDiscItem::Print (std::ostream& os) const
      << "txq " << (uint8_t) GetTxQueueIndex ()
   ;
 }
+
+bool
+Ipv4QueueDiscItem::Mark (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (!m_headerAdded && (m_header.GetEcn () == Ipv4Header::ECN_ECT1 || m_header.GetEcn () == Ipv4Header::ECN_ECT0))
+    {
+      m_header.SetEcn (Ipv4Header::ECN_CE);
+      return true;
+    }
+  return false;
+}
+
 
 bool
 Ipv4QueueDiscItem::GetUint8Value (QueueItem::Uint8Values field, uint8_t& value) const

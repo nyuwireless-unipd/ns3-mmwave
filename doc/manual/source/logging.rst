@@ -342,6 +342,34 @@ Adding logging to your code is very simple:
 
 2. Add logging statements (macro calls) to your functions and function bodies.
 
+Controlling timestamp precision
+*******************************
+
+Timestamps are printed out in units of seconds.  When used with the default
+|ns3| time resolution of nanoseconds, the default timestamp precision is 9 
+digits, with fixed format, to allow for 9 digits to be consistently printed 
+to the right of the decimal point.  Example:
+
+::
+
+  +0.000123456s RandomVariableStream:SetAntithetic(0x805040, 0)
+
+When the |ns3| simulation uses higher time resolution such as picoseconds
+or femtoseconds, the precision is expanded accordingly; e.g. for picosecond:
+
+::
+
+  +0.000123456789s RandomVariableStream:SetAntithetic(0x805040, 0)
+
+When the |ns3| simulation uses a time resolution lower than microseconds,
+the default C++ precision is used.
+ 
+An example program at ``src\core\examples\sample-log-time-format.cc``
+demonstrates how to change the timestamp formatting.
+
+The maximum useful precision is 20 decimal digits, since Time is signed 64 
+bits.
+
 Logging Macros
 ==============
 
@@ -424,6 +452,11 @@ Guidelines
   Run some example programs with all log components turned on (e.g. 
   ``NS_LOG="***"``).
 
+* Use an explicit cast for any variable of type uint8_t or int8_t, 
+  e.g., ``NS_LOG_LOGIC ("Variable i is " << static_cast<int> (i));``.
+  Without the cast, the integer is interpreted as a char, and the result
+  will be most likely not in line with the expectations.
+  This is a well documented C++ 'feature'.
 
 
 

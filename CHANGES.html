@@ -51,6 +51,113 @@ to this file based on your experience, please contribute a patch or drop
 us a note on ns-developers mailing list.</p>
 
 <hr>
+<h1>Changes from ns-3.26 to ns-3.27</h1>
+<h2>New API:</h2>
+<ul>
+<li>Added <code>Vector{2,3}D.GetLength ()</code>.</li>
+<li>Overloaded <code>operator+</code> and <code>operator-</code> for <code>Vector{2,3}D</code>.</li>
+<li>Added iterator version of WifiHelper::Install() to install Wi-Fi devices on range of nodes.</li>
+<li>Added a new attribute in TcpSocketBase to track the advertised window.</li>
+<li>Included the model of <b>TCP Ledbat</b>.</li>
+<li>Included the TCP SACK-based loss recovery algorithm outlined in RFC 6675.</li>
+<li>Added <b>TCP SACK</b> and the <b>SACK emulation</b>. Added an Attribute to TcpSocketBase class,
+    called "Sack", to enable or disable the SACK option usage.</li>
+<li>In 'src/wifi', several changes were made to enable partial <b>802.11ax</b> High Effiency (HE) support:
+    <ul>
+      <li>A new standard value has been added that enables the new 11ax data rates.</li>
+      <li>A new 11ax preamble has been added.</li>
+      <li>A new attribute was added to configure the guard interval duration for High Efficiency (HE) PHY entities. This attribute can be set using the YansWifiPhyHelper.</li>
+      <li>A new information element has been added:  HeCapabilities. This information element is added to the MAC frame header if the node is a HE node. This HeCapabilites information element is used to advertise the HE capabilites of the node to other nodes in the network.</li>
+    </ul>
+</li>
+<li> A new class were added for the RRPAA WiFi rate control mechanism.</li>
+<li>Included carrier aggregation feature in LTE module</li>
+    <ul>
+      <li>LTE model is extended to support carrier aggregation feature according to 3GPP Release 10, for up to 5 component 
+      carriers. </li>
+      <li>InstallSingleEnbDevice and InstalSingeUeDevice functions of LteHelper are now constructing LteEnbDevice and LteUeDevice 
+      according to CA architecture. Each device, UE and eNodeB contains an instance of component carrier manager, and may 
+      have several component carrier instances.</li>
+      <li>SAP interfaces are extended to include CA message exchange funtionality.</li>
+      <li>RRC connection procedure is extended to allow RRC connection reconfiguration for the configuration of the secondary carriers.</li>
+      <li>RRC measurement reporting is extended to allow measurement reporting from the secondary carriers.</li>
+      <li>LTE traces are extended to include component carrier id.</li>
+    </ul>
+</li>
+<li>Function <b>PrintRoutingTable</b> has been extended to add an optional Time::Units
+    parameter to specify the time units used on the report.  The new parameter is
+    optional and if not specified defaults to the previous behavior (Time::S).
+</li>
+<li><b>TxopTrace</b>: new trace source exported by EdcaTxopN.</li>
+<li>A <b>GetDscpCounts</b> method is added to <b>Ipv4FlowClassifier</b> and <b>Ipv6FlowClassifier</b>
+    which returns a vector of pairs (dscp,count), each of which indicates how many packets with the
+    associated dscp value have been classified for a given flow.
+</li>
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+<li><b>ParetoRandomVariable</b> "Mean" attribute has been deprecated, 
+    the "Scale" Attribute have to be used instead.
+    Changing the Mean attribute has no more an effect on the distribution.
+    See the documentation for the relationship between Mean, Scale and Shape. 
+</li>
+<li>The default logging timestamp precision has been changed from 6 digits
+    to 9 digits, with a fixed format to ensure that 9 digits to the right of
+    the decimal point are always printed.  Previously, default C++ iostream
+    precision and formatting was used.
+</li>
+<li>Abstract base class <b>WifiChannel</b> has been removed. As a result, a Channel type instead of a WifiChannel type
+is now exported by WifiNetDevice.</li>
+<li> The <b>GetPacketSize</b> method of <b>QueueItem</b> has been renamed <b>GetSize</b>
+</li>
+<li> The <b>DequeueAll</b> method of <b>Queue</b> has been renamed <b>Flush</b>
+</li>
+<li>The attributes <b>WifiPhy::TxAntennas</b> and <b>WifiPhy::RxAntennas</b>,
+    and the related accessor methods, were replaced by <b>WifiPhy::MaxSupportedTxSpatialStreams</b>
+    and <b>WifiPhy::MaxSupportedRxSpatialStreams</b>. A new attribute <b>WifiPhy::Antennas</b>
+    was added to allow users to define the number of physical antennas on the device.
+</li>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+<li> Modules can now be located in the 'contrib/' directory in addition to 'src/'
+</li>
+<li> Behavior for running Python programs was aligned with that of C++ programs; the list of modules built is no longer printed out.
+</li>
+</ul>
+<h2>Changed behavior:</h2>
+<ul>
+<li><b>MultiModelSpectrumChannel</b> does not call StartRx for receivers that
+    operate on subbands orthogonal to transmitter subbands. Models that depend
+    on receiving signals with zero power spectral density from orthogonal bands
+    may change their behavior.
+    See <a href=https://www.nsnam.org/bugzilla/show_bug.cgi?id=2467>bug 2467</a>
+    for discussion.
+</li>
+<li><b>Packet Tag objects</b> are no longer constrained to fit within 21 
+    bytes; a maximum size is no longer enforced.
+</li>
+  <li> The default value of the <b>TxGain</b> and <b>RxGain</b> attributes in WifiPhy was changed from 1 dB to 0 dB.
+  </li>
+<li><b>Queue</b> has been redesigned as a template class object, where the type parameter
+    specifies the type of items to be stored in the queue. As a consequence:
+    <ul>
+      <li>Being a subclass of Queue, <b>DropTailQueue</b> is a template class as well.
+      <li>Network devices such as SimpleNetDevice, PointToPointNetDevice and CsmaNetDevice
+      use a queue of type Queue&lt;Packet&gt; to store the packets to transmit. The SetQueue
+      method of their helpers, however, can still be invoked as, e.g.,
+      SetQueue ("ns3::DropTailQueue") instead of, e.g., SetQueue
+      ("ns3::DropTailQueue&lt;Packet&gt;").</li>
+      <li>The attributes <b>Mode</b>, <b>MaxPackets</b> and <b>MaxBytes</b> are now
+      defined by the QueueBase class (which Queue is derived from).</li>
+    </ul>
+</li>
+<li>Queue discs that can operate both in packet mode and byte mode (Red, CoDel, Pie) define their own
+    enum QueueDiscMode instead of using QueueBase::QueueMode.
+</li>
+</ul>
+
+<hr>
 <h1>Changes from ns-3.25 to ns-3.26</h1>
 <h2>New API:</h2>
 <ul>
@@ -73,40 +180,90 @@ us a note on ns-developers mailing list.</p>
     See the pfifo_fast queue disc section of the Traffic Control Layer model
     for more information.
 </li>
-<li> A new class <b>SpectrumWifiPhy</b> has been introduced that makes use of the Spectrum module.  Its functionality and API is currently very similar to that of the YansWifiPhy, especially because it reuses the same InterferenceHelper and ErrorModel classes (for this release).  Some example programs in the 'examples/wireless/' directory, such as 'wifi-spectrum-per-example.cc', illustrate how the SpectrumWifiPhy class can be substituted for the default YansWifiPhy PHY model.
+<li>A new class <b>SpectrumWifiPhy</b> has been introduced that makes use of the 
+    Spectrum module.  Its functionality and API is currently very similar to that 
+    of the YansWifiPhy, especially because it reuses the same InterferenceHelper 
+    and ErrorModel classes (for this release).  Some example programs in the 
+    'examples/wireless/' directory, such as 'wifi-spectrum-per-example.cc', 
+    illustrate how the SpectrumWifiPhy class can be substituted for the default 
+    YansWifiPhy PHY model.
+</li>
+<li>We have added support for generating traces for the
+    <a href="https://wilseypa.github.io/desMetrics">DES Metrics</a> project.
+    These can be enabled by adding <tt>--enable-des-metrics</tt> at configuration;
+    you must also use <tt>CommandLine</tt> in your script.  See the API docs
+    for class <b>DesMetrics</b> for more details.
+</li>
+<li> The traffic control module now includes the <b>FQ-CoDel</b> and <b>PIE</b> queue disc 
+    models, and behavior corresponding to Linux <b>Byte Queue Limits (BQL)</b>.
+</li>
+<li> Several new TCP congestion control variants were introduced, including
+    <b>TCP Vegas, Scalable, Veno, Illinois, Bic, YeAH, and H-TCP</b> 
+    congestion control algorithms.
 </li>
 </ul>
 <h2>Changes to existing API:</h2>
 <ul>
-<li>SocketAddressTag was a long-standing API glitch. It was used to replicate 
-    the RecvFrom effect (i.e., to know the source address of packet) without 
-    calling RecvFrom.
-    This option is more harmful than useful, because in case of tunnels the 
-    new tag needs to replace the old one. Moreover, there is no real need 
-    to create a new API when there is a perfectly working one (i.e., RecvFrom).
+<li><b>SocketAddressTag</b> was a long-standing approach to approximate the POSIX
+    socket recvfrom behavior (i.e., to know the source address of a packet) 
+    without actually calling RecvFrom.  Experience with this revealed that
+    this option was difficult to use with tunnels (the new tag has to 
+    replace the old one).  Moreover, there is no real need 
+    to create a new API when there is a an existing one (i.e., RecvFrom).
     As a consequence, SocketAddressTag has been completely removed from ns-3.
     Users can use RecvFrom (for UDP), GetPeerName (for TCP), or similar. 
 </li>
-<li>InetSockAddress can now store a ToS value, which can be set through its
+<li><b>InetSockAddress</b> can now store a ToS value, which can be set through its
     SetTos method. The Bind and Connect methods of UDP (UdpSocketImpl) and
     TCP (TcpSocketBase) sockets set the socket ToS value to the value provided
     through the address input parameter (of type InetSockAddress). See the
     Socket options section of the Network model for more information.
 </li>
-<li>The QosTag is removed as it has been superseded by the SocketPriorityTag.</li>
-<li>The Ipv4L3Protocol::DefaultTos attribute is removed.</li>
-<li>The attributes YansWifiPhy::Frequency, YansWifiPhy::ChannelNumber, and YansWifiPhy::ChannelWidth, and the related accessor methods, were moved to base class WifiPhy.  YansWifiPhy::GetChannelFrequencyMhz() was deleted.  A new method WifiPhy::DefineChannelNumber () was added to allow users to define relationships between channel number, standard, frequency, and channel width.
+<li>The <b>QosTag</b> is removed as it has been superseded by the SocketPriorityTag.</li>
+<li>The <b>Ipv4L3Protocol::DefaultTos</b> attribute is removed.</li>
+<li>The attributes <b>YansWifiPhy::Frequency, YansWifiPhy::ChannelNumber, and 
+    YansWifiPhy::ChannelWidth</b>, and the related accessor methods, were moved to 
+    base class WifiPhy.  YansWifiPhy::GetChannelFrequencyMhz() was deleted.  
+    A new method WifiPhy::DefineChannelNumber () was added to allow users to 
+    define relationships between channel number, standard, frequency, and channel width.
 </li>
-<li> The class <b>WifiSpectrumValueHelper</b> has been refactored; previously it was an abstract base class supporting the WifiSpectrumValue5MhzFactory spectrum model.  It now contains various static member methods supporting the creation of power spectral densities with the granularity of a Wi-Fi OFDM subcarrier bandwidth.  The class WifiSpectrumValue5MhzFactory and its API remain but it is not subclassed.</li>
-<li> A new method InterferenceHelper::AddForeignSignal has been introduced to support use of the SpectrumWifiPhy (so that non-Wi-Fi signals may be handled as noise power).</li>
+<li>The class <b>WifiSpectrumValueHelper</b> has been refactored; previously it 
+    was an abstract base class supporting the WifiSpectrumValue5MhzFactory spectrum 
+    model.  It now contains various static member methods supporting the creation 
+    of power spectral densities with the granularity of a Wi-Fi OFDM subcarrier 
+    bandwidth.  The class <b>WifiSpectrumValue5MhzFactory</b> and its API remain but 
+    it is not subclassed.
+ </li>
+<li>A new Wifi method <b>InterferenceHelper::AddForeignSignal</b> has been introduced to 
+    support use of the SpectrumWifiPhy (so that non-Wi-Fi signals may be handled 
+    as noise power).
+</li>
+<li>A new Wifi attribute <b>Dcf::TxopLimit</b> has been introduced to add support for 802.11e TXOP.
+</li>
 </ul>
 <h2>Changes to build system:</h2>
 <ul>
+  <li> A new waf build option, <tt>--check-config</tt>, was added to allow users to print the current configuration summary, as appears at the end of ./waf configure.  See bug 2459 for discussion.</li>
+  <li> The <tt>configure</tt> summary is now sorted, to make it easier to check the status of optional features.</li>
 </ul>
 <h2>Changed behavior:</h2>
 This section is for behavioral changes to the models that were not due to a bug fix.
 <ul>
-  <li> (wifi) The relationship between channel number, frequency, channel width, and Wi-Fi standard has been revised (see bug 2412).  Previously, ChannelNumber and Frequency were attributes of class YansWifiPhy, and the frequency was defined as the start of the band.  Now, Frequency has been redefined to be the center frequency of the channel, and the underlying device relies on the pair of frequency and channel width to control behavior; the channel number and Wi-Fi standard are used as attributes to configure frequency and channel width.  The wifi module documentation discusses this change and the new behavior.
+  <li>The relationship between Wi-Fi channel number, frequency, channel width, 
+      and Wi-Fi standard has been revised (see bug 2412).  Previously, ChannelNumber 
+      and Frequency were attributes of class YansWifiPhy, and the frequency was 
+      defined as the start of the band.  Now, Frequency has been redefined to be 
+      the center frequency of the channel, and the underlying device relies on 
+      the pair of frequency and channel width to control behavior; the channel 
+      number and Wi-Fi standard are used as attributes to configure frequency 
+      and channel width.  The wifi module documentation discusses this change 
+      and the new behavior.
+  </li>
+  <li>AODV now honors the TTL in RREQ/RREP and it uses a method 
+      compliant with <a href="http://www.ietf.org/rfc/rfc3561.txt">RFC 3561</a>.      The node search radius is increased progressively. This could increase 
+      slightly the node search time, but it also decreases the network 
+      congestion.
+  </li>
 </ul>
 
 <hr>
@@ -639,8 +796,8 @@ failure.  </li>
       tutorial has been extended to illustrate basic functionality. </li>
   <li>In 'src/wifi', several changes were made to enable partial 802.11n support:
     <ul>
-      <li>A new helper (HtWifiMacHelper) was added to set up a high throughput (HT) MAC entity</li>
-      <li>New attributes were added to help the user setup a high throughpt (HT) PHY entity. These attributes can be set using the YansWifiPhyHelper</li>
+      <li>A new helper (HtWifiMacHelper) was added to set up a High Throughput (HT) MAC entity</li>
+      <li>New attributes were added to help the user setup a High Throughput (HT) PHY entity. These attributes can be set using the YansWifiPhyHelper</li>
       <li>A new standard value has been added that enables the new 11n data rates.</li>
       <li>New 11n preambles has been added (Mixed format and greenfield). To be able to change Tx duration according to the preamble used, a new class TxVector has been added to carry the transmission parameters (mode, preamble, stbc,..).  Several functions have been updated to allow the passage of TxVector instead of WifiMode in MacLow, WifiRemoteStationManager, WifiPhy, YansWifiPhy,.. </li>
       <li>A new information element has been added:  HTCapabilities. This information element is added to the MAC frame header if the node is an HT node. This HTCapabilites information element is used to advertise the HT capabilites of the node to other nodes in the network</li>

@@ -85,13 +85,15 @@ WaveMacLow::GetDataTxVector (Ptr<const Packet> packet, const WifiMacHeader *hdr)
   txAdapter.SetChannelWidth (10);
   // the DataRate set by higher layer is the minimum data rate
   // which is the lower bound for the actual data rate.
-  if (txHigher.GetMode ().GetDataRate (txHigher.GetChannelWidth (), txHigher.IsShortGuardInterval (), 1) > txMac.GetMode ().GetDataRate (txMac.GetChannelWidth (), txMac.IsShortGuardInterval (), 1))
+  if (txHigher.GetMode ().GetDataRate (txHigher.GetChannelWidth ()) > txMac.GetMode ().GetDataRate (txMac.GetChannelWidth ()))
     {
       txAdapter.SetMode (txHigher.GetMode ());
+      txAdapter.SetPreambleType (txHigher.GetPreambleType ());
     }
   else
     {
       txAdapter.SetMode (txMac.GetMode ());
+      txAdapter.SetPreambleType (txMac.GetPreambleType ());
     }
   // the TxPwr_Level set by higher layer is the maximum transmit
   // power which is the upper bound for the actual transmit power;
@@ -104,15 +106,15 @@ void
 WaveMacLow::StartTransmission (Ptr<const Packet> packet,
                                const WifiMacHeader* hdr,
                                MacLowTransmissionParameters params,
-                               MacLowTransmissionListener *listener)
+                               Ptr<DcaTxop> dca)
 {
-  NS_LOG_FUNCTION (this << packet << hdr << params << listener);
+  NS_LOG_FUNCTION (this << packet << hdr << params << dca);
   Ptr<WifiPhy> phy = MacLow::GetPhy ();
   uint32_t curChannel = phy->GetChannelNumber ();
   // if current channel access is not AlternatingAccess, just do as MacLow.
   if (!m_scheduler->IsAlternatingAccessAssigned (curChannel))
     {
-      MacLow::StartTransmission (packet, hdr, params, listener);
+      MacLow::StartTransmission (packet, hdr, params, dca);
       return;
     }
 
@@ -129,7 +131,7 @@ WaveMacLow::StartTransmission (Ptr<const Packet> packet,
     }
   else
     {
-      MacLow::StartTransmission (packet, hdr, params, listener);
+      MacLow::StartTransmission (packet, hdr, params, dca);
     }
 }
 

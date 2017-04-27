@@ -16,20 +16,62 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-#include "tcp-rto-test.h"
 #include "tcp-error-model.h"
 
 #include "ns3/node.h"
 #include "ns3/log.h"
 #include "ns3/tcp-westwood.h"
-
-namespace ns3 {
+#include "ns3/simple-channel.h"
+#include "tcp-general-test.h"
+#include "tcp-error-model.h"
 
 NS_LOG_COMPONENT_DEFINE ("TcpRtoTest");
 
+using namespace ns3;
+
+/**
+ * \ingroup internet-test
+ * \ingroup tests
+ *
+ * \brief Testing the moments after an RTO expiration
+ *
+ * The scope of this test is to be sure that, after an RTO expiration,
+ * the TCP implementation set the correct state in the ACK state machine,
+ * and marks the lost segment as lost; then, after the retransmission, the
+ * state is fully recovered. This is the base check, where only one segment
+ * (the first) is lost and retransmitted.
+ *
+ */
+class TcpRtoTest : public TcpGeneralTest
+{
+public:
+  /**
+   * \brief Constructor.
+   * \param congControl Congestion control type.
+   * \param msg Test description.
+   */
+  TcpRtoTest (TypeId &congControl, const std::string &msg);
+
+protected:
+
+  virtual Ptr<TcpSocketMsgBase> CreateSenderSocket (Ptr<Node> node);
+  virtual void AfterRTOExpired (const Ptr<const TcpSocketState> tcb, SocketWho who);
+  virtual void RcvAck      (const Ptr<const TcpSocketState> tcb,
+                            const TcpHeader& h, SocketWho who);
+  virtual void ProcessedAck (const Ptr<const TcpSocketState> tcb,
+                             const TcpHeader& h, SocketWho who);
+  virtual void FinalChecks ();
+  virtual void ConfigureProperties ();
+  virtual void ConfigureEnvironment ();
+
+private:
+  bool m_afterRTOExpired;      //!< True if RTO is expired.
+  bool m_segmentReceived; //!< True if segments have been received.
+};
+
 TcpRtoTest::TcpRtoTest (TypeId &congControl, const std::string &desc)
   : TcpGeneralTest (desc),
-    m_rtoExpired (false),
+    m_afterRTOExpired (false),
     m_segmentReceived (false)
 {
   m_congControlTypeId = congControl;
@@ -61,17 +103,17 @@ TcpRtoTest::CreateSenderSocket (Ptr<Node> node)
 }
 
 void
-TcpRtoTest::RTOExpired (const Ptr<const TcpSocketState> tcb, SocketWho who)
+TcpRtoTest::AfterRTOExpired (const Ptr<const TcpSocketState> tcb, SocketWho who)
 {
   // In this test, the RTO fires for the first segment (and no more).
   // This function is called after the management of the RTO expiration,
   // and because of this we must check all the involved variables.
-  NS_TEST_ASSERT_MSG_EQ (m_rtoExpired, false,
+  NS_TEST_ASSERT_MSG_EQ (m_afterRTOExpired, false,
                          "Second RTO expired");
   NS_TEST_ASSERT_MSG_EQ (GetCongStateFrom (tcb), TcpSocketState::CA_LOSS,
                          "Ack state machine not in LOSS state after a loss");
 
-  m_rtoExpired = true;
+  m_afterRTOExpired = true;
 }
 
 void
@@ -80,11 +122,11 @@ TcpRtoTest::RcvAck (const Ptr<const TcpSocketState> tcb, const TcpHeader& h,
 {
   // Called after the first ack is received (the lost segment has been
   // successfully retransmitted. We must check on the sender that variables
-  // are in the same state as they where after RTOExpired if it is the first
+  // are in the same state as they where after AfterRTOExpired if it is the first
   // ACK after the loss; in every other case, all must be OPEN and the counter
   // set to 0.
 
-  if (m_rtoExpired && who == SENDER)
+  if (m_afterRTOExpired && who == SENDER)
     {
       NS_TEST_ASSERT_MSG_EQ (GetCongStateFrom (tcb), TcpSocketState::CA_LOSS,
                              "Ack state machine not in LOSS state after a loss");
@@ -110,7 +152,7 @@ TcpRtoTest::ProcessedAck (const Ptr<const TcpSocketState> tcb, const TcpHeader &
 
   if (who == SENDER)
     {
-      m_rtoExpired = false;
+      m_afterRTOExpired = false;
       m_segmentReceived = true;
     }
 }
@@ -125,7 +167,49 @@ TcpRtoTest::FinalChecks ()
                          "Retransmission has not been done");
 }
 
-// TcpTimeRtoTest
+
+/**
+ * \ingroup internet-test
+ * \ingroup tests
+ *
+ * \brief Testing the timing of RTO
+ *
+ * Checking if RTO is doubled ONLY after a retransmission.
+ */
+class TcpTimeRtoTest : public TcpGeneralTest
+{
+public:
+  /**
+   * \brief Constructor.
+   * \param congControl Congestion control type.
+   * \param msg Test description.
+   */
+  TcpTimeRtoTest (TypeId &congControl, const std::string &msg);
+
+protected:
+  virtual Ptr<TcpSocketMsgBase> CreateSenderSocket (Ptr<Node> node);
+  virtual Ptr<ErrorModel> CreateReceiverErrorModel ();
+  virtual void ErrorClose  (SocketWho who);
+  virtual void AfterRTOExpired (const Ptr<const TcpSocketState> tcb, SocketWho who);
+  virtual void Tx (const Ptr<const Packet> p, const TcpHeader&h, SocketWho who);
+  virtual void FinalChecks ();
+
+  virtual void ConfigureEnvironment ();
+
+  /**
+   * \brief Called when a packet has been dropped.
+   * \param ipH IPv4 header.
+   * \param tcpH TCP header.
+   * \param p The packet.
+   */
+  void PktDropped (const Ipv4Header &ipH, const TcpHeader& tcpH, Ptr<const Packet> p);
+
+private:
+  uint32_t m_senderSentSegments;  //!< Number of segments sent.
+  Time m_previousRTO;             //!< Previous RTO.
+  bool m_closed;                  //!< True if the connection is closed.
+};
+
 
 TcpTimeRtoTest::TcpTimeRtoTest (TypeId &congControl, const std::string &desc)
   :   TcpGeneralTest (desc),
@@ -244,7 +328,7 @@ TcpTimeRtoTest::ErrorClose  (SocketWho who)
 }
 
 void
-TcpTimeRtoTest::RTOExpired (const Ptr<const TcpSocketState> tcb, SocketWho who)
+TcpTimeRtoTest::AfterRTOExpired (const Ptr<const TcpSocketState> tcb, SocketWho who)
 {
   NS_TEST_ASSERT_MSG_EQ (who, SENDER, "RTO in Receiver. That's unexpected");
 
@@ -277,9 +361,14 @@ TcpTimeRtoTest::FinalChecks ()
                          "Socket has not been closed after retrying data retransmissions");
 }
 
-//-----------------------------------------------------------------------------
 
-static class TcpRtoTestSuite : public TestSuite
+/**
+ * \ingroup internet-test
+ * \ingroup tests
+ *
+ * \brief TCP RTO TestSuite
+ */
+class TcpRtoTestSuite : public TestSuite
 {
 public:
   TcpRtoTestSuite () : TestSuite ("tcp-rto-test", UNIT)
@@ -294,6 +383,8 @@ public:
         AddTestCase (new TcpTimeRtoTest ((*it), "RTO timing testing"), TestCase::QUICK);
       }
   }
-} g_TcpRtoTestSuite;
+};
 
-} // namespace ns3
+static TcpRtoTestSuite g_TcpRtoTestSuite; //!< Static variable for test initialization
+
+

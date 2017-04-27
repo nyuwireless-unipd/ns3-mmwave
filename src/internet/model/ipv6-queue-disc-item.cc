@@ -31,13 +31,14 @@ Ipv6QueueDiscItem::Ipv6QueueDiscItem (Ptr<Packet> p, const Address& addr,
 {
 }
 
-Ipv6QueueDiscItem::~Ipv6QueueDiscItem()
+Ipv6QueueDiscItem::~Ipv6QueueDiscItem ()
 {
   NS_LOG_FUNCTION (this);
 }
 
-uint32_t Ipv6QueueDiscItem::GetPacketSize(void) const
+uint32_t Ipv6QueueDiscItem::GetSize (void) const
 {
+  NS_LOG_FUNCTION (this);
   Ptr<Packet> p = GetPacket ();
   NS_ASSERT (p != 0);
   uint32_t ret = p->GetSize ();
@@ -54,7 +55,7 @@ Ipv6QueueDiscItem::GetHeader (void) const
   return m_header;
 }
 
-void Ipv6QueueDiscItem::AddHeader(void)
+void Ipv6QueueDiscItem::AddHeader (void)
 {
   NS_LOG_FUNCTION (this);
 
@@ -77,6 +78,18 @@ Ipv6QueueDiscItem::Print (std::ostream& os) const
      << "proto " << (uint16_t) GetProtocol () << " "
      << "txq " << (uint8_t) GetTxQueueIndex ()
   ;
+}
+
+bool
+Ipv6QueueDiscItem::Mark (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (!m_headerAdded && (m_header.GetEcn () == Ipv6Header::ECN_ECT1 || m_header.GetEcn () == Ipv6Header::ECN_ECT0))
+    {
+      m_header.SetEcn (Ipv6Header::ECN_CE);
+      return true;
+    }
+  return false;
 }
 
 bool

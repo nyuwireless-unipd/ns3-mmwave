@@ -14,7 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-//
 // Default network topology includes some number of AP nodes specified by
 // the variable nWifis (defaults to two).  Off of each AP node, there are some
 // number of STA nodes specified by the variable nStas (defaults to two).
@@ -22,7 +21,7 @@
 // on each AP node that bridge the whole thing into one network.
 //
 //      +-----+      +-----+            +-----+      +-----+
-//      | STA |      | STA |            | STA |      | STA | 
+//      | STA |      | STA |            | STA |      | STA |
 //      +-----+      +-----+            +-----+      +-----+
 //    192.168.0.2  192.168.0.3        192.168.0.5  192.168.0.6
 //      --------     --------           --------     --------
@@ -32,16 +31,15 @@
 //                                |
 //              ((*))             |             ((*))
 //             -------                         -------
-//             WIFI AP   CSMA ========= CSMA   WIFI AP 
+//             WIFI AP   CSMA ========= CSMA   WIFI AP
 //             -------   ----           ----   -------
 //             ##############           ##############
 //                 BRIDGE                   BRIDGE
-//             ##############           ############## 
+//             ##############           ##############
 //               192.168.0.1              192.168.0.4
 //               +---------+              +---------+
 //               | AP Node |              | AP Node |
 //               +---------+              +---------+
-//
 
 #include "ns3/core-module.h"
 #include "ns3/mobility-module.h"
@@ -51,10 +49,6 @@
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/bridge-helper.h"
-#include <vector>
-#include <stdint.h>
-#include <sstream>
-#include <fstream>
 
 using namespace ns3;
 
@@ -94,7 +88,7 @@ int main (int argc, char *argv[])
   double wifiX = 0.0;
 
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
-  wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO); 
+  wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
 
   for (uint32_t i = 0; i < nWifis; ++i)
     {
@@ -110,8 +104,8 @@ int main (int argc, char *argv[])
       Ipv4InterfaceContainer apInterface;
       MobilityHelper mobility;
       BridgeHelper bridge;
-      WifiHelper wifi = WifiHelper::Default ();
-      NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
+      WifiHelper wifi;
+      WifiMacHelper wifiMac;
       YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
       wifiPhy.SetChannel (wifiChannel.Create ());
 
@@ -123,7 +117,6 @@ int main (int argc, char *argv[])
                                      "DeltaY", DoubleValue (5.0),
                                      "GridWidth", UintegerValue (1),
                                      "LayoutType", StringValue ("RowFirst"));
-
 
       // setup the AP.
       mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -144,11 +137,10 @@ int main (int argc, char *argv[])
                                  "Mode", StringValue ("Time"),
                                  "Time", StringValue ("2s"),
                                  "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"),
-                                 "Bounds", RectangleValue (Rectangle (wifiX, wifiX+5.0,0.0, (nStas+1)*5.0)));
+                                 "Bounds", RectangleValue (Rectangle (wifiX, wifiX + 5.0,0.0, (nStas + 1) * 5.0)));
       mobility.Install (sta);
       wifiMac.SetType ("ns3::StaWifiMac",
-                       "Ssid", SsidValue (ssid),
-                       "ActiveProbing", BooleanValue (false));
+                       "Ssid", SsidValue (ssid));
       staDev = wifi.Install (wifiPhy, wifiMac, sta);
       staInterface = ip.Assign (staDev);
 

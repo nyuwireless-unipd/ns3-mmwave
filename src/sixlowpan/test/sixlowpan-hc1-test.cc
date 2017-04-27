@@ -24,7 +24,6 @@
 #include "ns3/simulator.h"
 #include "ns3/simple-channel.h"
 #include "ns3/simple-net-device.h"
-#include "ns3/drop-tail-queue.h"
 #include "ns3/socket.h"
 #include "ns3/boolean.h"
 
@@ -40,17 +39,49 @@
 
 using namespace ns3;
 
+/**
+ * \ingroup sixlowpan-test
+ * \ingroup tests
+ *
+ * \brief 6LoWPAN HC1 Test
+ */
 class SixlowpanHc1ImplTest : public TestCase
 {
-  Ptr<Packet> m_receivedPacket;
+  Ptr<Packet> m_receivedPacket; //!< received packet
+
+  /**
+   * Send data function.
+   *
+   * \param socket The sending socket.
+   * \param to The destination.
+   */
   void DoSendData (Ptr<Socket> socket, std::string to);
+
+  /**
+   * Send data function.
+   *
+   * \param socket The sending socket.
+   * \param to The destination.
+   */
   void SendData (Ptr<Socket> socket, std::string to);
 
 public:
   virtual void DoRun (void);
   SixlowpanHc1ImplTest ();
 
+  /**
+   * Packet receive function.
+   *
+   * \param socket The receiving socket.
+   * \param packet The received packet.
+   * \param from The sender.
+   */
   void ReceivePacket (Ptr<Socket> socket, Ptr<Packet> packet, const Address &from);
+  /**
+   * Packet receive function.
+   *
+   * \param socket The receiving socket.
+   */
   void ReceivePkt (Ptr<Socket> socket);
 };
 
@@ -179,12 +210,23 @@ SixlowpanHc1ImplTest::DoRun (void)
 }
 
 
-//-----------------------------------------------------------------------------
+/**
+ * \ingroup sixlowpan-test
+ * \ingroup tests
+ *
+ * \brief 6LoWPAN HC1 TestSuite
+ */
 class SixlowpanHc1TestSuite : public TestSuite
 {
 public:
-  SixlowpanHc1TestSuite () : TestSuite ("sixlowpan-hc1", UNIT)
-  {
-    AddTestCase (new SixlowpanHc1ImplTest, TestCase::QUICK);
-  }
-} g_sixlowpanHc1TestSuite;
+  SixlowpanHc1TestSuite ();
+private:
+};
+
+SixlowpanHc1TestSuite::SixlowpanHc1TestSuite ()
+  : TestSuite ("sixlowpan-hc1", UNIT)
+{
+  AddTestCase (new SixlowpanHc1ImplTest (), TestCase::QUICK);
+}
+
+static SixlowpanHc1TestSuite g_sixlowpanHc1TestSuite; //!< Static variable for test initialization

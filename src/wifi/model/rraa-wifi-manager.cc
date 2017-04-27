@@ -19,7 +19,7 @@
  */
 
 #include "rraa-wifi-manager.h"
-#include "ns3/assert.h"
+#include "wifi-mac.h"
 #include "ns3/log.h"
 #include "ns3/boolean.h"
 #include "ns3/double.h"
@@ -40,16 +40,20 @@ NS_LOG_COMPONENT_DEFINE ("RraaWifiManager");
  */
 struct RraaWifiRemoteStation : public WifiRemoteStation
 {
-  uint32_t m_counter;
-  uint32_t m_failed;
-  uint32_t m_rtsWnd;
-  uint32_t m_rtsCounter;
-  Time m_lastReset;
-  bool m_rtsOn;
-  bool m_lastFrameFail;
-  bool m_initialized;
+  uint32_t m_counter;            //!< Counter for transmission attempts.
+  uint32_t m_nFailed;            //!< Number of failed transmission attempts.
+  uint32_t m_adaptiveRtsWnd;     //!< Window size for the Adaptive RTS mechanism.
+  uint32_t m_rtsCounter;         //!< Counter for RTS transmission attempts.
+  Time m_lastReset;              //!< Time of the last reset.
+  bool m_adaptiveRtsOn;          //!< Check if Adaptive RTS mechanism is on.
+  bool m_lastFrameFail;          //!< Flag if the last frame sent has failed.
+  bool m_initialized;            //!< For initializing variables.
 
-  uint32_t m_rate;
+  uint32_t m_nRate;              //!< Number of supported rates.
+
+  uint32_t m_rateIndex;          //!< Current rate index.
+
+  RraaThresholdsTable m_thresholds; //!< RRAA thresholds for this station.
 };
 
 NS_OBJECT_ENSURE_REGISTERED (RraaWifiManager);
@@ -67,126 +71,47 @@ RraaWifiManager::GetTypeId (void)
                    MakeBooleanAccessor (&RraaWifiManager::m_basic),
                    MakeBooleanChecker ())
     .AddAttribute ("Timeout",
-                   "Timeout for the RRAA BASIC loss estimaton block (s)",
+                   "Timeout for the RRAA BASIC loss estimation block (s)",
                    TimeValue (Seconds (0.05)),
                    MakeTimeAccessor (&RraaWifiManager::m_timeout),
                    MakeTimeChecker ())
-    .AddAttribute ("ewndFor54mbps",
-                   "ewnd parameter for 54 Mbs data mode",
-                   UintegerValue (40),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor54),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("ewndFor48mbps",
-                   "ewnd parameter for 48 Mbs data mode",
-                   UintegerValue (40),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor48),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("ewndFor36mbps",
-                   "ewnd parameter for 36 Mbs data mode",
-                   UintegerValue (40),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor36),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("ewndFor24mbps",
-                   "ewnd parameter for 24 Mbs data mode",
-                   UintegerValue (40),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor24),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("ewndFor18mbps",
-                   "ewnd parameter for 18 Mbs data mode",
-                   UintegerValue (20),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor18),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("ewndFor12mbps",
-                   "ewnd parameter for 12 Mbs data mode",
-                   UintegerValue (20),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor12),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("ewndFor9mbps",
-                   "ewnd parameter for 9 Mbs data mode",
-                   UintegerValue (10),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor9),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("ewndFor6mbps",
-                   "ewnd parameter for 6 Mbs data mode",
-                   UintegerValue (6),
-                   MakeUintegerAccessor (&RraaWifiManager::m_ewndfor6),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("poriFor48mbps",
-                   "Pori parameter for 48 Mbs data mode",
-                   DoubleValue (0.047),
-                   MakeDoubleAccessor (&RraaWifiManager::m_porifor48),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("poriFor36mbps",
-                   "Pori parameter for 36 Mbs data mode",
-                   DoubleValue (0.115),
-                   MakeDoubleAccessor (&RraaWifiManager::m_porifor36),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("poriFor24mbps",
-                   "Pori parameter for 24 Mbs data mode",
-                   DoubleValue (0.1681),
-                   MakeDoubleAccessor (&RraaWifiManager::m_porifor24),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("poriFor18mbps",
-                   "Pori parameter for 18 Mbs data mode",
-                   DoubleValue (0.1325),
-                   MakeDoubleAccessor (&RraaWifiManager::m_porifor18),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("poriFor12mbps",
-                   "Pori parameter for 12 Mbs data mode",
-                   DoubleValue (0.1861),
-                   MakeDoubleAccessor (&RraaWifiManager::m_porifor12),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("poriFor9mbps",
-                   "Pori parameter for 9 Mbs data mode",
-                   DoubleValue (0.1434),
-                   MakeDoubleAccessor (&RraaWifiManager::m_porifor9),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("poriFor6mbps",
-                   "Pori parameter for 6 Mbs data mode",
-                   DoubleValue (0.5),
-                   MakeDoubleAccessor (&RraaWifiManager::m_porifor6),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("pmtlFor54mbps",
-                   "Pmtl parameter for 54 Mbs data mode",
-                   DoubleValue (0.094),
-                   MakeDoubleAccessor (&RraaWifiManager::m_pmtlfor54),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("pmtlFor48mbps",
-                   "Pmtl parameter for 48 Mbs data mode",
-                   DoubleValue (0.23),
-                   MakeDoubleAccessor (&RraaWifiManager::m_pmtlfor48),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("pmtlFor36mbps",
-                   "Pmtl parameter for 36 Mbs data mode",
-                   DoubleValue (0.3363),
-                   MakeDoubleAccessor (&RraaWifiManager::m_pmtlfor36),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("pmtlFor24mbps",
-                   "Pmtl parameter for 24 Mbs data mode",
-                   DoubleValue (0.265),
-                   MakeDoubleAccessor (&RraaWifiManager::m_pmtlfor24),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("pmtlFor18mbps",
-                   "Pmtl parameter for 18 Mbs data mode",
-                   DoubleValue (0.3722),
-                   MakeDoubleAccessor (&RraaWifiManager::m_pmtlfor18),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("pmtlFor12mbps",
-                   "Pmtl parameter for 12 Mbs data mode",
-                   DoubleValue (0.2868),
-                   MakeDoubleAccessor (&RraaWifiManager::m_pmtlfor12),
-                   MakeDoubleChecker<double> ())
-    .AddAttribute ("pmtlFor9mbps",
-                   "Pmtl parameter for 9 Mbs data mode",
-                   DoubleValue (0.3932),
-                   MakeDoubleAccessor (&RraaWifiManager::m_pmtlfor9),
-                   MakeDoubleChecker<double> ())
+    .AddAttribute ("FrameLength",
+                   "The data frame length (in bytes) used for calculating mode TxTime.",
+                   UintegerValue (1420),
+                   MakeUintegerAccessor (&RraaWifiManager::m_frameLength),
+                   MakeUintegerChecker <uint32_t> ())
+    .AddAttribute ("AckFrameLength",
+                   "The ACK frame length (in bytes) used for calculating mode TxTime.",
+                   UintegerValue (14),
+                   MakeUintegerAccessor (&RraaWifiManager::m_ackLength),
+                   MakeUintegerChecker <uint32_t> ())
+    .AddAttribute ("Alpha",
+                   "Constant for calculating the MTL threshold.",
+                   DoubleValue (1.25),
+                   MakeDoubleAccessor (&RraaWifiManager::m_alpha),
+                   MakeDoubleChecker<double> (1))
+    .AddAttribute ("Beta",
+                   "Constant for calculating the ORI threshold.",
+                   DoubleValue (2),
+                   MakeDoubleAccessor (&RraaWifiManager::m_beta),
+                   MakeDoubleChecker<double> (1))
+    .AddAttribute ("Tau",
+                   "Constant for calculating the EWND size.",
+                   DoubleValue (0.012),
+                   MakeDoubleAccessor (&RraaWifiManager::m_tau),
+                   MakeDoubleChecker<double> (0))
+    .AddTraceSource ("Rate",
+                     "Traced value for rate changes (b/s)",
+                     MakeTraceSourceAccessor (&RraaWifiManager::m_currentRate),
+                     "ns3::TracedValueCallback::Uint64")
   ;
   return tid;
 }
 
 
 RraaWifiManager::RraaWifiManager ()
+  : WifiRemoteStationManager (),
+    m_currentRate (0)
 {
 }
 
@@ -194,35 +119,159 @@ RraaWifiManager::~RraaWifiManager ()
 {
 }
 
+void
+RraaWifiManager::SetupPhy (Ptr<WifiPhy> phy)
+{
+  NS_LOG_FUNCTION (this);
+  uint32_t nModes = phy->GetNModes ();
+  for (uint32_t i = 0; i < nModes; i++)
+    {
+      WifiMode mode = phy->GetMode (i);
+      WifiTxVector txVector;
+      txVector.SetMode (mode);
+      txVector.SetPreambleType (WIFI_PREAMBLE_LONG);
+      /* Calculate the TX Time of the data and the corresponding ACK*/
+      Time dataTxTime = phy->CalculateTxDuration (m_frameLength, txVector, phy->GetFrequency ());
+      Time ackTxTime = phy->CalculateTxDuration (m_ackLength, txVector, phy->GetFrequency ());
+      NS_LOG_DEBUG ("Calculating TX times: Mode= " << mode << " DataTxTime= " << dataTxTime << " AckTxTime= " << ackTxTime);
+      AddCalcTxTime (mode, dataTxTime + ackTxTime);
+    }
+  WifiRemoteStationManager::SetupPhy (phy);
+}
+
+void
+RraaWifiManager::SetupMac (Ptr<WifiMac> mac)
+{
+  NS_LOG_FUNCTION (this);
+  m_sifs = mac->GetSifs ();
+  m_difs = m_sifs + 2 * mac->GetSlot ();
+  WifiRemoteStationManager::SetupMac (mac);
+}
+
+Time
+RraaWifiManager::GetCalcTxTime (WifiMode mode) const
+{
+  NS_LOG_FUNCTION (this << mode);
+  for (TxTime::const_iterator i = m_calcTxTime.begin (); i != m_calcTxTime.end (); i++)
+    {
+      if (mode == i->second)
+        {
+          return i->first;
+        }
+    }
+  NS_ASSERT (false);
+  return Seconds (0);
+}
+
+void
+RraaWifiManager::AddCalcTxTime (WifiMode mode, Time t)
+{
+  NS_LOG_FUNCTION (this << mode << t);
+  m_calcTxTime.push_back (std::make_pair (t, mode));
+}
+
+WifiRraaThresholds
+RraaWifiManager::GetThresholds (RraaWifiRemoteStation *station, WifiMode mode) const
+{
+  NS_LOG_FUNCTION (this << station << mode);
+  struct WifiRraaThresholds threshold;
+  for (RraaThresholdsTable::const_iterator i = station->m_thresholds.begin (); i != station->m_thresholds.end (); i++)
+    {
+      if (mode == i->second)
+        {
+          return i->first;
+        }
+    }
+  NS_ABORT_MSG ("No thresholds for mode " << mode << " found");
+  return threshold; // Silence compiler warning
+}
+
 WifiRemoteStation *
 RraaWifiManager::DoCreateStation (void) const
 {
   RraaWifiRemoteStation *station = new RraaWifiRemoteStation ();
   station->m_initialized = false;
-  station->m_rtsWnd = 0;
+  station->m_adaptiveRtsWnd = 0;
   station->m_rtsCounter = 0;
-  station->m_rtsOn = false;
+  station->m_adaptiveRtsOn = false;
   station->m_lastFrameFail = false;
   return station;
 }
 
 void
-RraaWifiManager::ResetCountersBasic (RraaWifiRemoteStation *station)
+RraaWifiManager::CheckInit (RraaWifiRemoteStation *station)
 {
+  NS_LOG_FUNCTION (this << station);
   if (!station->m_initialized)
     {
-      station->m_rate = GetMaxRate (station);
+      //Note: we appear to be doing late initialization of the table
+      //to make sure that the set of supported rates has been initialized
+      //before we perform our own initialization.
+      station->m_nRate = GetNSupported (station);
+      //Initialize at maximal rate
+      station->m_rateIndex = GetMaxRate (station);
+
       station->m_initialized = true;
+
+      station->m_thresholds = RraaThresholdsTable (station->m_nRate);
+      InitThresholds (station);
+      ResetCountersBasic (station);
     }
-  station->m_failed = 0;
-  station->m_counter = GetThresholds (station, station->m_rate).ewnd;
+}
+
+void
+RraaWifiManager::InitThresholds (RraaWifiRemoteStation *station)
+{
+  NS_LOG_FUNCTION (this << station);
+  NS_LOG_DEBUG ("InitThresholds = " << station);
+
+  double nextCritical = 0;
+  double nextMtl = 0;
+  double mtl = 0;
+  double ori = 0;
+  for (uint32_t i = 0; i < station->m_nRate; i++)
+    {
+      WifiMode mode = GetSupported (station, i);
+      Time totalTxTime = GetCalcTxTime (mode) + m_sifs + m_difs;
+      if (i == GetMaxRate (station))
+        {
+          ori = 0;
+        }
+      else
+        {
+          WifiMode nextMode = GetSupported (station, i + 1);
+          Time nextTotalTxTime = GetCalcTxTime (nextMode) + m_sifs + m_difs;
+          nextCritical = 1 - (nextTotalTxTime.GetSeconds () / totalTxTime.GetSeconds ());
+          nextMtl = m_alpha * nextCritical;
+          ori = nextMtl / m_beta;
+        }
+      if (i == GetMinRate (station))
+        {
+          mtl = 1;
+        }
+      WifiRraaThresholds th;
+      th.m_ewnd = ceil (m_tau / totalTxTime.GetSeconds ());
+      th.m_ori = ori;
+      th.m_mtl = mtl;
+      station->m_thresholds.push_back (std::make_pair (th, mode));
+      mtl = nextMtl;
+      NS_LOG_DEBUG (mode << " " << th.m_ewnd << " " << th.m_mtl << " " << th.m_ori);
+    }
+}
+
+void
+RraaWifiManager::ResetCountersBasic (RraaWifiRemoteStation *station)
+{
+  NS_LOG_FUNCTION (this << station);
+  station->m_nFailed = 0;
+  station->m_counter = GetThresholds (station, station->m_rateIndex).m_ewnd;
   station->m_lastReset = Simulator::Now ();
 }
 
 uint32_t
 RraaWifiManager::GetMaxRate (RraaWifiRemoteStation *station)
 {
-  return GetNSupported (station) - 1;
+  return station->m_nRate - 1;
 }
 
 uint32_t
@@ -234,16 +283,18 @@ RraaWifiManager::GetMinRate (RraaWifiRemoteStation *station)
 void
 RraaWifiManager::DoReportRtsFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
 }
 
 void
 RraaWifiManager::DoReportDataFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
   station->m_lastFrameFail = true;
   CheckTimeout (station);
   station->m_counter--;
-  station->m_failed++;
+  station->m_nFailed++;
   RunBasicAlgorithm (station);
 }
 
@@ -251,12 +302,14 @@ void
 RraaWifiManager::DoReportRxOk (WifiRemoteStation *st,
                                double rxSnr, WifiMode txMode)
 {
+  NS_LOG_FUNCTION (this << st << rxSnr << txMode);
 }
 
 void
 RraaWifiManager::DoReportRtsOk (WifiRemoteStation *st,
                                 double ctsSnr, WifiMode ctsMode, double rtsSnr)
 {
+  NS_LOG_FUNCTION (this << st << ctsSnr << ctsMode << rtsSnr);
   NS_LOG_DEBUG ("self=" << st << " rts ok");
 }
 
@@ -264,6 +317,7 @@ void
 RraaWifiManager::DoReportDataOk (WifiRemoteStation *st,
                                  double ackSnr, WifiMode ackMode, double dataSnr)
 {
+  NS_LOG_FUNCTION (this << st << ackSnr << ackMode << dataSnr);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
   station->m_lastFrameFail = false;
   CheckTimeout (station);
@@ -274,16 +328,19 @@ RraaWifiManager::DoReportDataOk (WifiRemoteStation *st,
 void
 RraaWifiManager::DoReportFinalRtsFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
 }
 
 void
 RraaWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
 }
 
 WifiTxVector
 RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
   uint32_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
@@ -291,16 +348,20 @@ RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
-  if (!station->m_initialized)
+  CheckInit (station);
+  WifiMode mode = GetSupported (station, station->m_rateIndex);
+  if (m_currentRate != mode.GetDataRate (channelWidth))
     {
-      ResetCountersBasic (station);
+      NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
+      m_currentRate = mode.GetDataRate (channelWidth);
     }
-  return WifiTxVector (GetSupported (station, station->m_rate), GetDefaultTxPowerLevel (), GetLongRetryCount (station), false, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
 RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
   uint32_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
@@ -309,14 +370,16 @@ RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
       channelWidth = 20;
     }
   WifiTxVector rtsTxVector;
+  WifiMode mode;
   if (GetUseNonErpProtection () == false)
     {
-      rtsTxVector = WifiTxVector (GetSupported (st, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (st), false, 1, 0, channelWidth, GetAggregation (station), false);
+      mode = GetSupported (station, 0);
     }
   else
     {
-      rtsTxVector = WifiTxVector (GetNonErpSupported (st, 0), GetDefaultTxPowerLevel (), GetShortRetryCount (st), false, 1, 0, channelWidth, GetAggregation (station), false);
+      mode = GetNonErpSupported (station, 0);
     }
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetShortRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
 }
 
@@ -324,18 +387,21 @@ bool
 RraaWifiManager::DoNeedRts (WifiRemoteStation *st,
                             Ptr<const Packet> packet, bool normally)
 {
+  NS_LOG_FUNCTION (this << st << packet << normally);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
+  CheckInit (station);
   if (m_basic)
     {
       return normally;
     }
   ARts (station);
-  return station->m_rtsOn;
+  return station->m_adaptiveRtsOn;
 }
 
 void
 RraaWifiManager::CheckTimeout (RraaWifiRemoteStation *station)
 {
+  NS_LOG_FUNCTION (this << station);
   Time d = Simulator::Now () - station->m_lastReset;
   if (station->m_counter == 0 || d > m_timeout)
     {
@@ -346,20 +412,21 @@ RraaWifiManager::CheckTimeout (RraaWifiRemoteStation *station)
 void
 RraaWifiManager::RunBasicAlgorithm (RraaWifiRemoteStation *station)
 {
-  ThresholdsItem thresholds = GetThresholds (station, station->m_rate);
-  double ploss = (double) station->m_failed / (double) thresholds.ewnd;
+  NS_LOG_FUNCTION (this << station);
+  WifiRraaThresholds thresholds = GetThresholds (station, station->m_rateIndex);
+  double ploss = (double) station->m_nFailed / (double) thresholds.m_ewnd;
   if (station->m_counter == 0
-      || ploss > thresholds.pmtl)
+      || ploss > thresholds.m_mtl)
     {
-      if (station->m_rate > GetMinRate (station)
-          && ploss > thresholds.pmtl)
+      if (station->m_rateIndex > GetMinRate (station)
+          && ploss > thresholds.m_mtl)
         {
-          station->m_rate--;
+          station->m_rateIndex--;
         }
-      else if (station->m_rate < GetMaxRate (station)
-               && ploss < thresholds.pori)
+      else if (station->m_rateIndex < GetMaxRate (station)
+               && ploss < thresholds.m_ori)
         {
-          station->m_rate++;
+          station->m_rateIndex++;
         }
       ResetCountersBasic (station);
     }
@@ -368,126 +435,36 @@ RraaWifiManager::RunBasicAlgorithm (RraaWifiRemoteStation *station)
 void
 RraaWifiManager::ARts (RraaWifiRemoteStation *station)
 {
-  if (!station->m_rtsOn
+  if (!station->m_adaptiveRtsOn
       && station->m_lastFrameFail)
     {
-      station->m_rtsWnd++;
-      station->m_rtsCounter = station->m_rtsWnd;
+      station->m_adaptiveRtsWnd++;
+      station->m_rtsCounter = station->m_adaptiveRtsWnd;
     }
-  else if ((station->m_rtsOn && station->m_lastFrameFail)
-           || (!station->m_rtsOn && !station->m_lastFrameFail))
+  else if ((station->m_adaptiveRtsOn && station->m_lastFrameFail)
+           || (!station->m_adaptiveRtsOn && !station->m_lastFrameFail))
     {
-      station->m_rtsWnd = station->m_rtsWnd / 2;
-      station->m_rtsCounter = station->m_rtsWnd;
+      station->m_adaptiveRtsWnd = station->m_adaptiveRtsWnd / 2;
+      station->m_rtsCounter = station->m_adaptiveRtsWnd;
     }
   if (station->m_rtsCounter > 0)
     {
-      station->m_rtsOn = true;
+      station->m_adaptiveRtsOn = true;
       station->m_rtsCounter--;
     }
   else
     {
-      station->m_rtsOn = false;
+      station->m_adaptiveRtsOn = false;
     }
 }
 
-struct RraaWifiManager::ThresholdsItem
+WifiRraaThresholds
 RraaWifiManager::GetThresholds (RraaWifiRemoteStation *station,
                                 uint32_t rate) const
 {
+  NS_LOG_FUNCTION (this << station << rate);
   WifiMode mode = GetSupported (station, rate);
-  return GetThresholds (mode, station);
-}
-
-struct RraaWifiManager::ThresholdsItem
-RraaWifiManager::GetThresholds (WifiMode mode, RraaWifiRemoteStation *station) const
-{
-  uint8_t nss = 1;  // This RAA only supports 1 spatial stream
-  switch (mode.GetDataRate (GetChannelWidth (station), GetShortGuardInterval (station), nss) / 1000000)
-    {
-    case 54:
-      {
-        ThresholdsItem mode54 = {
-          54000000,
-          0.0,
-          m_pmtlfor54,
-          m_ewndfor54
-        };
-        return mode54;
-      } break;
-    case 48:
-      {
-        ThresholdsItem mode48 = {
-          48000000,
-          m_porifor48,
-          m_pmtlfor48,
-          m_ewndfor48
-        };
-        return mode48;
-      } break;
-    case 36:
-      {
-        ThresholdsItem mode36 = {
-          36000000,
-          m_porifor36,
-          m_pmtlfor36,
-          m_ewndfor36
-        };
-        return mode36;
-      } break;
-    case 24:
-      {
-        ThresholdsItem mode24 = {
-          24000000,
-          m_porifor24,
-          m_pmtlfor24,
-          m_ewndfor24
-        };
-        return mode24;
-      } break;
-    case 18:
-      {
-        ThresholdsItem mode18 = {
-          18000000,
-          m_porifor18,
-          m_pmtlfor18,
-          m_ewndfor18
-        };
-        return mode18;
-      } break;
-    case 12:
-      {
-        ThresholdsItem mode12 = {
-          12000000,
-          m_porifor12,
-          m_pmtlfor12,
-          m_ewndfor12
-        };
-        return mode12;
-      } break;
-    case 9:
-      {
-        ThresholdsItem mode9 =  {
-          9000000,
-          m_porifor9,
-          m_pmtlfor9,
-          m_ewndfor9
-        };
-        return mode9;
-      } break;
-    case 6:
-      {
-        ThresholdsItem mode6 =  {
-          6000000,
-          m_porifor6,
-          1.0,
-          m_ewndfor6
-        };
-        return mode6;
-      } break;
-    }
-  NS_ASSERT_MSG (false, "Thresholds for an unknown mode are asked (" << mode << ")");
-  return ThresholdsItem ();
+  return GetThresholds (station, mode);
 }
 
 bool
@@ -513,6 +490,16 @@ RraaWifiManager::SetVhtSupported (bool enable)
   if (enable)
     {
       NS_FATAL_ERROR ("WifiRemoteStationManager selected does not support VHT rates");
+    }
+}
+
+void
+RraaWifiManager::SetHeSupported (bool enable)
+{
+  //HE is not supported by this algorithm.
+  if (enable)
+    {
+      NS_FATAL_ERROR ("WifiRemoteStationManager selected does not support HE rates");
     }
 }
 

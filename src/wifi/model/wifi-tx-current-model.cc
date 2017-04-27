@@ -20,17 +20,12 @@
 
 #include "wifi-tx-current-model.h"
 #include "ns3/log.h"
-#include "ns3/boolean.h"
 #include "ns3/double.h"
-#include "ns3/string.h"
-#include "ns3/pointer.h"
-#include <cmath>
+#include "wifi-utils.h"
 
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("WifiTxCurrentModel");
-
-// ------------------------------------------------------------------------- //
 
 NS_OBJECT_ENSURE_REGISTERED (WifiTxCurrentModel);
 
@@ -51,15 +46,6 @@ WifiTxCurrentModel::WifiTxCurrentModel()
 WifiTxCurrentModel::~WifiTxCurrentModel()
 {
 }
-
-double
-WifiTxCurrentModel::DbmToW (double dbm)
-{
-  double mW = std::pow (10.0, dbm / 10.0);
-  return mW / 1000.0;
-}
-
-// ------------------------------------------------------------------------- //
 
 NS_OBJECT_ENSURE_REGISTERED (LinearWifiTxCurrentModel);
 
@@ -91,27 +77,32 @@ LinearWifiTxCurrentModel::GetTypeId (void)
 
 LinearWifiTxCurrentModel::LinearWifiTxCurrentModel ()
 {
+  NS_LOG_FUNCTION (this);
 }
 
 LinearWifiTxCurrentModel::~LinearWifiTxCurrentModel()
 {
+  NS_LOG_FUNCTION (this);
 }
 
 void
 LinearWifiTxCurrentModel::SetEta (double eta)
 {
+  NS_LOG_FUNCTION (this << eta);
   m_eta = eta;
 }
 
 void
 LinearWifiTxCurrentModel::SetVoltage (double voltage)
 {
+  NS_LOG_FUNCTION (this << voltage);
   m_voltage = voltage;
 }
 
 void
 LinearWifiTxCurrentModel::SetIdleCurrent (double idleCurrent)
 {
+  NS_LOG_FUNCTION (this << idleCurrent);
   m_idleCurrent = idleCurrent;
 }
 
@@ -136,9 +127,8 @@ LinearWifiTxCurrentModel::GetIdleCurrent (void) const
 double
 LinearWifiTxCurrentModel::CalcTxCurrent (double txPowerDbm) const
 {
+  NS_LOG_FUNCTION (this << txPowerDbm);
   return DbmToW (txPowerDbm) / (m_voltage * m_eta) + m_idleCurrent;
 }
-
-// ------------------------------------------------------------------------- //
 
 } // namespace ns3

@@ -21,8 +21,6 @@
 #ifndef RANDOM_STREAM_H
 #define RANDOM_STREAM_H
 
-#include <stdint.h>
-#include <list>
 #include "ns3/random-variable-stream.h"
 
 namespace ns3 {
@@ -58,6 +56,9 @@ public:
 };
 
 
+/**
+ * RealRandomStream class
+ */
 class RealRandomStream : public RandomStream
 {
 public:
@@ -82,6 +83,9 @@ private:
 };
 
 
+/**
+ * TestRandomStream class
+ */
 class TestRandomStream : public RandomStream
 {
 public:
@@ -106,7 +110,7 @@ public:
 
 
 private:
-  std::list<uint32_t> m_nexts;
+  std::list<uint32_t> m_nexts; ///< nexts
 };
 
 } //namespace ns3

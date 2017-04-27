@@ -22,6 +22,7 @@
 #include "log.h"
 #include <cmath>
 #include <sstream>
+#include <tuple>
 
 /**
  * \file
@@ -35,7 +36,7 @@ NS_LOG_COMPONENT_DEFINE ("Vector");
 
 ATTRIBUTE_HELPER_CPP (Vector3D);
 ATTRIBUTE_HELPER_CPP (Vector2D);
-  
+
 // compatibility for mobility code
 Ptr<const AttributeChecker> MakeVectorChecker (void)
 {
@@ -75,23 +76,29 @@ Vector2D::Vector2D ()
 }
 
 double
+Vector3D::GetLength () const
+{
+  NS_LOG_FUNCTION (this);
+  return std::sqrt (x * x + y * y + z * z);
+}
+double
+Vector2D::GetLength () const
+{
+  NS_LOG_FUNCTION (this);
+  return std::sqrt (x * x + y * y);
+}
+
+double
 CalculateDistance (const Vector3D &a, const Vector3D &b)
 {
   NS_LOG_FUNCTION (a << b);
-  double dx = b.x - a.x;
-  double dy = b.y - a.y;
-  double dz = b.z - a.z;
-  double distance = std::sqrt (dx * dx + dy * dy + dz * dz);
-  return distance;
+  return (b - a).GetLength ();
 }
-double 
+double
 CalculateDistance (const Vector2D &a, const Vector2D &b)
 {
   NS_LOG_FUNCTION (a << b);
-  double dx = b.x - a.x;
-  double dy = b.y - a.y;
-  double distance = std::sqrt (dx * dx + dy * dy);
-  return distance;
+  return (b - a).GetLength ();
 }
 
 std::ostream &operator << (std::ostream &os, const Vector3D &vector)
@@ -110,6 +117,21 @@ std::istream &operator >> (std::istream &is, Vector3D &vector)
     }
   return is;
 }
+bool operator < (const Vector3D &a, const Vector3D &b)
+{
+  return std::tie (a.x, a.y, a.z) <
+         std::tie (b.x, b.y, b.z);
+}
+Vector3D
+operator + (const Vector3D &a, const Vector3D &b)
+{
+  return Vector3D (a.x + b.x, a.y + b.y, a.z + b.z);
+}
+Vector3D
+operator - (const Vector3D &a, const Vector3D &b)
+{
+  return Vector3D (a.x - b.x, a.y - b.y, a.z - b.z);
+}
 std::ostream &operator << (std::ostream &os, const Vector2D &vector)
 {
   os << vector.x << ":" << vector.y;
@@ -124,6 +146,21 @@ std::istream &operator >> (std::istream &is, Vector2D &vector)
       is.setstate (std::ios_base::failbit);
     }
   return is;
+}
+bool operator < (const Vector2D &a, const Vector2D &b)
+{
+  return std::tie (a.x, a.y) <
+         std::tie (b.x, b.y);
+}
+Vector2D
+operator + (const Vector2D &a, const Vector2D &b)
+{
+  return Vector2D (a.x + b.x, a.y + b.y);
+}
+Vector2D
+operator - (const Vector2D &a, const Vector2D &b)
+{
+  return Vector2D (a.x - b.x, a.y - b.y);
 }
 
 } // namespace ns3

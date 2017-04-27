@@ -64,6 +64,7 @@
 #include "ns3/abort.h"
 #include "red-queue-disc.h"
 #include "ns3/drop-tail-queue.h"
+#include "ns3/net-device-queue-interface.h"
 
 namespace ns3 {
 
@@ -79,10 +80,10 @@ TypeId RedQueueDisc::GetTypeId (void)
     .AddConstructor<RedQueueDisc> ()
     .AddAttribute ("Mode",
                    "Determines unit for QueueLimit",
-                   EnumValue (Queue::QUEUE_MODE_PACKETS),
+                   EnumValue (QUEUE_DISC_MODE_PACKETS),
                    MakeEnumAccessor (&RedQueueDisc::SetMode),
-                   MakeEnumChecker (Queue::QUEUE_MODE_BYTES, "QUEUE_MODE_BYTES",
-                                    Queue::QUEUE_MODE_PACKETS, "QUEUE_MODE_PACKETS"))
+                   MakeEnumChecker (QUEUE_DISC_MODE_BYTES, "QUEUE_DISC_MODE_BYTES",
+                                    QUEUE_DISC_MODE_PACKETS, "QUEUE_DISC_MODE_PACKETS"))
     .AddAttribute ("MeanPktSize",
                    "Average of packet size",
                    UintegerValue (500),
@@ -193,6 +194,16 @@ TypeId RedQueueDisc::GetTypeId (void)
                    TimeValue (MilliSeconds (20)),
                    MakeTimeAccessor (&RedQueueDisc::m_linkDelay),
                    MakeTimeChecker ())
+    .AddAttribute ("UseEcn",
+                   "True to use ECN (packets are marked instead of being dropped)",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&RedQueueDisc::m_useEcn),
+                   MakeBooleanChecker ())
+    .AddAttribute ("UseHardDrop",
+                   "True to always drop packets above max threshold",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&RedQueueDisc::m_useHardDrop),
+                   MakeBooleanChecker ())
   ;
 
   return tid;
@@ -219,13 +230,13 @@ RedQueueDisc::DoDispose (void)
 }
 
 void
-RedQueueDisc::SetMode (Queue::QueueMode mode)
+RedQueueDisc::SetMode (QueueDiscMode mode)
 {
   NS_LOG_FUNCTION (this << mode);
   m_mode = mode;
 }
 
-Queue::QueueMode
+RedQueueDisc::QueueDiscMode
 RedQueueDisc::GetMode (void)
 {
   NS_LOG_FUNCTION (this);
@@ -308,12 +319,12 @@ RedQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
 
   uint32_t nQueued = 0;
 
-  if (GetMode () == Queue::QUEUE_MODE_BYTES)
+  if (GetMode () == QUEUE_DISC_MODE_BYTES)
     {
       NS_LOG_DEBUG ("Enqueue in bytes mode");
       nQueued = GetInternalQueue (0)->GetNBytes ();
     }
-  else if (GetMode () == Queue::QUEUE_MODE_PACKETS)
+  else if (GetMode () == QUEUE_DISC_MODE_PACKETS)
     {
       NS_LOG_DEBUG ("Enqueue in packets mode");
       nQueued = GetInternalQueue (0)->GetNPackets ();
@@ -346,7 +357,7 @@ RedQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
   NS_LOG_DEBUG ("\t packetsInQueue  " << GetInternalQueue (0)->GetNPackets () << "\tQavg " << m_qAvg);
 
   m_count++;
-  m_countBytes += item->GetPacketSize ();
+  m_countBytes += item->GetSize ();
 
   uint32_t dropType = DTYPE_NONE;
   if (m_qAvg >= m_minTh && nQueued > 1)
@@ -366,7 +377,7 @@ RedQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
            * above "minthresh" with a nonempty queue.
            */
           m_count = 1;
-          m_countBytes = item->GetPacketSize ();
+          m_countBytes = item->GetSize ();
           m_old = 1;
         }
       else if (DropEarly (item, nQueued))
@@ -382,35 +393,42 @@ RedQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
       m_old = 0;
     }
 
-  if ((GetMode () == Queue::QUEUE_MODE_PACKETS && nQueued >= m_queueLimit) ||
-      (GetMode () == Queue::QUEUE_MODE_BYTES && nQueued + item->GetPacketSize() > m_queueLimit))
-    {
-      NS_LOG_DEBUG ("\t Dropping due to Queue Full " << nQueued);
-      dropType = DTYPE_FORCED;
-      m_stats.qLimDrop++;
-    }
-
   if (dropType == DTYPE_UNFORCED)
     {
-      NS_LOG_DEBUG ("\t Dropping due to Prob Mark " << m_qAvg);
-      m_stats.unforcedDrop++;
-      Drop (item);
-      return false;
+      if (!m_useEcn || !item->Mark ())
+        {
+          NS_LOG_DEBUG ("\t Dropping due to Prob Mark " << m_qAvg);
+          m_stats.unforcedDrop++;
+          Drop (item);
+          return false;
+        }
+      NS_LOG_DEBUG ("\t Marking due to Prob Mark " << m_qAvg);
+      m_stats.unforcedMark++;
     }
   else if (dropType == DTYPE_FORCED)
     {
-      NS_LOG_DEBUG ("\t Dropping due to Hard Mark " << m_qAvg);
-      m_stats.forcedDrop++;
-      Drop (item);
-      if (m_isNs1Compat)
+      if (m_useHardDrop || !m_useEcn || !item->Mark ())
         {
-          m_count = 0;
-          m_countBytes = 0;
+          NS_LOG_DEBUG ("\t Dropping due to Hard Mark " << m_qAvg);
+          m_stats.forcedDrop++;
+          Drop (item);
+          if (m_isNs1Compat)
+            {
+              m_count = 0;
+              m_countBytes = 0;
+            }
+          return false;
         }
-      return false;
+      NS_LOG_DEBUG ("\t Marking due to Hard Mark " << m_qAvg);
+      m_stats.forcedMark++;
     }
 
   bool retval = GetInternalQueue (0)->Enqueue (item);
+
+  if (!retval)
+    {
+      m_stats.qLimDrop++;
+    }
 
   // If Queue::Enqueue fails, QueueDisc::Drop is called by the internal queue
   // because QueueDisc::AddInternalQueue sets the drop callback
@@ -458,7 +476,7 @@ RedQueueDisc::InitializeParams (void)
         {
           m_minTh = targetqueue / 2.0;
         }
-      if (GetMode () == Queue::QUEUE_MODE_BYTES)
+      if (GetMode () == QUEUE_DISC_MODE_BYTES)
         {
           m_minTh = m_minTh * m_meanPktSize;
         }
@@ -471,6 +489,8 @@ RedQueueDisc::InitializeParams (void)
   m_stats.forcedDrop = 0;
   m_stats.unforcedDrop = 0;
   m_stats.qLimDrop = 0;
+  m_stats.forcedMark = 0;
+  m_stats.unforcedMark = 0;
 
   m_qAvg = 0.0;
   m_count = 0;
@@ -550,8 +570,11 @@ RedQueueDisc::InitializeParams (void)
 
 // Update m_curMaxP to keep the average queue length within the target range.
 void
-RedQueueDisc::UpdateMaxP (double newAve, Time now)
+RedQueueDisc::UpdateMaxP (double newAve)
 {
+  NS_LOG_FUNCTION (this << newAve);
+
+  Time now = Simulator::Now ();
   double m_part = 0.4 * (m_maxTh - m_minTh);
   // AIMD rule to keep target Q~1/2(m_minTh + m_maxTh)
   if (newAve < m_minTh + m_part && m_curMaxP > m_bottom)
@@ -582,10 +605,10 @@ RedQueueDisc::Estimator (uint32_t nQueued, uint32_t m, double qAvg, double qW)
   double newAve = qAvg * pow(1.0-qW, m);
   newAve += qW * nQueued;
 
-  Time now = Simulator::Now();
+  Time now = Simulator::Now ();
   if (m_isAdaptMaxP && now > m_lastSet + m_interval)
     {
-      UpdateMaxP(newAve, now);
+      UpdateMaxP(newAve);
     }
 
   return newAve;
@@ -597,7 +620,7 @@ RedQueueDisc::DropEarly (Ptr<QueueDiscItem> item, uint32_t qSize)
 {
   NS_LOG_FUNCTION (this << item << qSize);
   m_vProb1 = CalculatePNew (m_qAvg, m_maxTh, m_isGentle, m_vA, m_vB, m_vC, m_vD, m_curMaxP);
-  m_vProb = ModifyP (m_vProb1, m_count, m_countBytes, m_meanPktSize, m_isWait, item->GetPacketSize ());
+  m_vProb = ModifyP (m_vProb1, m_count, m_countBytes, m_meanPktSize, m_isWait, item->GetSize ());
 
   // Drop probability is computed, pick random number and act
   if (m_cautious == 1)
@@ -701,7 +724,7 @@ RedQueueDisc::ModifyP (double p, uint32_t count, uint32_t countBytes,
   NS_LOG_FUNCTION (this << p << count << countBytes << meanPktSize << isWait << size);
   double count1 = (double) count;
 
-  if (GetMode () == Queue::QUEUE_MODE_BYTES)
+  if (GetMode () == QUEUE_DISC_MODE_BYTES)
     {
       count1 = (double) (countBytes / meanPktSize);
     }
@@ -733,7 +756,7 @@ RedQueueDisc::ModifyP (double p, uint32_t count, uint32_t countBytes,
         }
     }
 
-  if ((GetMode () == Queue::QUEUE_MODE_BYTES) && (p < 1.0))
+  if ((GetMode () == QUEUE_DISC_MODE_BYTES) && (p < 1.0))
     {
       p = (p * size) / meanPktSize;
     }
@@ -750,11 +773,11 @@ uint32_t
 RedQueueDisc::GetQueueSize (void)
 {
   NS_LOG_FUNCTION (this);
-  if (GetMode () == Queue::QUEUE_MODE_BYTES)
+  if (GetMode () == QUEUE_DISC_MODE_BYTES)
     {
       return GetInternalQueue (0)->GetNBytes ();
     }
-  else if (GetMode () == Queue::QUEUE_MODE_PACKETS)
+  else if (GetMode () == QUEUE_DISC_MODE_PACKETS)
     {
       return GetInternalQueue (0)->GetNPackets ();
     }
@@ -780,7 +803,7 @@ RedQueueDisc::DoDequeue (void)
   else
     {
       m_idle = 0;
-      Ptr<QueueDiscItem> item = StaticCast<QueueDiscItem> (GetInternalQueue (0)->Dequeue ());
+      Ptr<QueueDiscItem> item = GetInternalQueue (0)->Dequeue ();
 
       NS_LOG_LOGIC ("Popped " << item);
 
@@ -801,7 +824,7 @@ RedQueueDisc::DoPeek (void) const
       return 0;
     }
 
-  Ptr<const QueueDiscItem> item = StaticCast<const QueueDiscItem> (GetInternalQueue (0)->Peek ());
+  Ptr<const QueueDiscItem> item = GetInternalQueue (0)->Peek ();
 
   NS_LOG_LOGIC ("Number packets " << GetInternalQueue (0)->GetNPackets ());
   NS_LOG_LOGIC ("Number bytes " << GetInternalQueue (0)->GetNBytes ());
@@ -828,8 +851,8 @@ RedQueueDisc::CheckConfig (void)
   if (GetNInternalQueues () == 0)
     {
       // create a DropTail queue
-      Ptr<Queue> queue = CreateObjectWithAttributes<DropTailQueue> ("Mode", EnumValue (m_mode));
-      if (m_mode == Queue::QUEUE_MODE_PACKETS)
+      Ptr<InternalQueue> queue = CreateObjectWithAttributes<DropTailQueue<QueueDiscItem> > ("Mode", EnumValue (m_mode));
+      if (m_mode == QUEUE_DISC_MODE_PACKETS)
         {
           queue->SetMaxPackets (m_queueLimit);
         }
@@ -846,14 +869,15 @@ RedQueueDisc::CheckConfig (void)
       return false;
     }
 
-  if (GetInternalQueue (0)->GetMode () != m_mode)
+  if ((GetInternalQueue (0)->GetMode () == QueueBase::QUEUE_MODE_PACKETS && m_mode == QUEUE_DISC_MODE_BYTES) ||
+      (GetInternalQueue (0)->GetMode () == QueueBase::QUEUE_MODE_BYTES && m_mode == QUEUE_DISC_MODE_PACKETS))
     {
       NS_LOG_ERROR ("The mode of the provided queue does not match the mode set on the RedQueueDisc");
       return false;
     }
 
-  if ((m_mode ==  Queue::QUEUE_MODE_PACKETS && GetInternalQueue (0)->GetMaxPackets () < m_queueLimit) ||
-      (m_mode ==  Queue::QUEUE_MODE_BYTES && GetInternalQueue (0)->GetMaxBytes () < m_queueLimit))
+  if ((m_mode ==  QUEUE_DISC_MODE_PACKETS && GetInternalQueue (0)->GetMaxPackets () < m_queueLimit) ||
+      (m_mode ==  QUEUE_DISC_MODE_BYTES && GetInternalQueue (0)->GetMaxBytes () < m_queueLimit))
     {
       NS_LOG_ERROR ("The size of the internal queue is less than the queue disc limit");
       return false;

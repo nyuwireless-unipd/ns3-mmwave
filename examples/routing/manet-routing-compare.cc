@@ -120,18 +120,15 @@ RoutingExperiment::RoutingExperiment ()
 }
 
 static inline std::string
-PrintReceivedPacket (Ptr<Socket> socket, Ptr<Packet> packet)
+PrintReceivedPacket (Ptr<Socket> socket, Ptr<Packet> packet, Address senderAddress)
 {
-  SocketAddressTag tag;
-  bool found;
-  found = packet->PeekPacketTag (tag);
   std::ostringstream oss;
 
   oss << Simulator::Now ().GetSeconds () << " " << socket->GetNode ()->GetId ();
 
-  if (found)
+  if (InetSocketAddress::IsMatchingType (senderAddress))
     {
-      InetSocketAddress addr = InetSocketAddress::ConvertFrom (tag.GetAddress ());
+      InetSocketAddress addr = InetSocketAddress::ConvertFrom (senderAddress);
       oss << " received one packet from " << addr.GetIpv4 ();
     }
   else
@@ -145,11 +142,12 @@ void
 RoutingExperiment::ReceivePacket (Ptr<Socket> socket)
 {
   Ptr<Packet> packet;
-  while ((packet = socket->Recv ()))
+  Address senderAddress;
+  while ((packet = socket->RecvFrom (senderAddress)))
     {
       bytesTotal += packet->GetSize ();
       packetsReceived += 1;
-      NS_LOG_UNCOND (PrintReceivedPacket (socket, packet));
+      NS_LOG_UNCOND (PrintReceivedPacket (socket, packet, senderAddress));
     }
 }
 
@@ -257,8 +255,8 @@ RoutingExperiment::Run (int nSinks, double txp, std::string CSVfileName)
   wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
   wifiPhy.SetChannel (wifiChannel.Create ());
 
-  // Add a non-QoS upper mac, and disable rate control
-  NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
+  // Add a mac and disable rate control
+  WifiMacHelper wifiMac;
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode",StringValue (phyMode),
                                 "ControlMode",StringValue (phyMode));
@@ -291,6 +289,7 @@ RoutingExperiment::Run (int nSinks, double txp, std::string CSVfileName)
   mobilityAdhoc.SetPositionAllocator (taPositionAlloc);
   mobilityAdhoc.Install (adhocNodes);
   streamIndex += mobilityAdhoc.AssignStreams (adhocNodes, streamIndex);
+  NS_UNUSED (streamIndex); // From this point, streamIndex is unused
 
   AodvHelper aodv;
   OlsrHelper olsr;

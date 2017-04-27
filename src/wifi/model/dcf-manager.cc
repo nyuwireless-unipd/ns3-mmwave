@@ -18,250 +18,13 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
-#include "ns3/assert.h"
 #include "ns3/log.h"
-#include "ns3/simulator.h"
-#include <cmath>
 #include "dcf-manager.h"
-#include "wifi-phy.h"
-#include "wifi-mac.h"
-#include "mac-low.h"
-
-#define MY_DEBUG(x) \
-  NS_LOG_DEBUG (Simulator::Now () << " " << this << " " << x)
+#include "dcf-state.h"
 
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("DcfManager");
-
-/****************************************************************
- *      Implement the DCF state holder
- ****************************************************************/
-
-DcfState::DcfState ()
-  : m_backoffSlots (0),
-    m_backoffStart (Seconds (0.0)),
-    m_cwMin (0),
-    m_cwMax (0),
-    m_cw (0),
-    m_accessRequested (false)
-{
-}
-
-DcfState::~DcfState ()
-{
-}
-
-void
-DcfState::SetAifsn (uint32_t aifsn)
-{
-  m_aifsn = aifsn;
-}
-
-void
-DcfState::SetTxopLimit (Time txopLimit)
-{
-  NS_ASSERT_MSG ((txopLimit.GetMicroSeconds () % 32 == 0), "The TXOP limit must be expressed in multiple of 32 microseconds!");
-  m_txopLimit = txopLimit;
-}
-
-void
-DcfState::SetCwMin (uint32_t minCw)
-{
-  bool changed = (m_cwMin != minCw);
-  m_cwMin = minCw;
-  if (changed == true)
-    {
-      ResetCw ();
-    }
-}
-
-void
-DcfState::SetCwMax (uint32_t maxCw)
-{
-  bool changed = (m_cwMax != maxCw);
-  m_cwMax = maxCw;
-  if (changed == true)
-    {
-      ResetCw ();
-    }
-}
-
-uint32_t
-DcfState::GetAifsn (void) const
-{
-  return m_aifsn;
-}
-
-Time
-DcfState::GetTxopLimit (void) const
-{
-  return m_txopLimit;
-}
-
-uint32_t
-DcfState::GetCwMin (void) const
-{
-  return m_cwMin;
-}
-
-uint32_t
-DcfState::GetCwMax (void) const
-{
-  return m_cwMax;
-}
-
-void
-DcfState::ResetCw (void)
-{
-  m_cw = m_cwMin;
-}
-
-void
-DcfState::UpdateFailedCw (void)
-{
-  //see 802.11-2012, section 9.19.2.5
-  m_cw = std::min ( 2 * (m_cw + 1) - 1, m_cwMax);
-}
-
-void
-DcfState::UpdateBackoffSlotsNow (uint32_t nSlots, Time backoffUpdateBound)
-{
-  m_backoffSlots -= nSlots;
-  m_backoffStart = backoffUpdateBound;
-  MY_DEBUG ("update slots=" << nSlots << " slots, backoff=" << m_backoffSlots);
-}
-
-void
-DcfState::StartBackoffNow (uint32_t nSlots)
-{
-  if (m_backoffSlots != 0)
-    {
-      MY_DEBUG ("reset backoff from " << m_backoffSlots << " to " << nSlots << " slots");
-    }
-  else
-    {
-      MY_DEBUG ("start backoff=" << nSlots << " slots");
-    }
-  m_backoffSlots = nSlots;
-  m_backoffStart = Simulator::Now ();
-}
-
-uint32_t
-DcfState::GetCw (void) const
-{
-  return m_cw;
-}
-
-uint32_t
-DcfState::GetBackoffSlots (void) const
-{
-  return m_backoffSlots;
-}
-
-Time
-DcfState::GetBackoffStart (void) const
-{
-  return m_backoffStart;
-}
-
-bool
-DcfState::IsAccessRequested (void) const
-{
-  return m_accessRequested;
-}
-void
-DcfState::NotifyAccessRequested (void)
-{
-  m_accessRequested = true;
-}
-
-void
-DcfState::NotifyAccessGranted (void)
-{
-  NS_ASSERT (m_accessRequested);
-  m_accessRequested = false;
-  DoNotifyAccessGranted ();
-}
-
-void
-DcfState::NotifyCollision (void)
-{
-  DoNotifyCollision ();
-}
-
-void
-DcfState::NotifyInternalCollision (void)
-{
-  DoNotifyInternalCollision ();
-}
-
-void
-DcfState::NotifyChannelSwitching (void)
-{
-  DoNotifyChannelSwitching ();
-}
-
-void
-DcfState::NotifySleep (void)
-{
-  DoNotifySleep ();
-}
-
-void
-DcfState::NotifyWakeUp (void)
-{
-  DoNotifyWakeUp ();
-}
-
-
-/**
- * Listener for NAV events. Forwards to DcfManager
- */
-class LowDcfListener : public ns3::MacLowDcfListener
-{
-public:
-  /**
-   * Create a LowDcfListener for the given DcfManager.
-   *
-   * \param dcf
-   */
-  LowDcfListener (ns3::DcfManager *dcf)
-    : m_dcf (dcf)
-  {
-  }
-  virtual ~LowDcfListener ()
-  {
-  }
-  virtual void NavStart (Time duration)
-  {
-    m_dcf->NotifyNavStartNow (duration);
-  }
-  virtual void NavReset (Time duration)
-  {
-    m_dcf->NotifyNavResetNow (duration);
-  }
-  virtual void AckTimeoutStart (Time duration)
-  {
-    m_dcf->NotifyAckTimeoutStartNow (duration);
-  }
-  virtual void AckTimeoutReset ()
-  {
-    m_dcf->NotifyAckTimeoutResetNow ();
-  }
-  virtual void CtsTimeoutStart (Time duration)
-  {
-    m_dcf->NotifyCtsTimeoutStartNow (duration);
-  }
-  virtual void CtsTimeoutReset ()
-  {
-    m_dcf->NotifyCtsTimeoutResetNow ();
-  }
-
-private:
-  ns3::DcfManager *m_dcf;  //!< DcfManager to forward events to
-};
-
 
 /**
  * Listener for PHY events. Forwards to DcfManager
@@ -281,35 +44,35 @@ public:
   virtual ~PhyListener ()
   {
   }
-  virtual void NotifyRxStart (Time duration)
+  void NotifyRxStart (Time duration)
   {
     m_dcf->NotifyRxStartNow (duration);
   }
-  virtual void NotifyRxEndOk (void)
+  void NotifyRxEndOk (void)
   {
     m_dcf->NotifyRxEndOkNow ();
   }
-  virtual void NotifyRxEndError (void)
+  void NotifyRxEndError (void)
   {
     m_dcf->NotifyRxEndErrorNow ();
   }
-  virtual void NotifyTxStart (Time duration, double txPowerDbm)
+  void NotifyTxStart (Time duration, double txPowerDbm)
   {
     m_dcf->NotifyTxStartNow (duration);
   }
-  virtual void NotifyMaybeCcaBusyStart (Time duration)
+  void NotifyMaybeCcaBusyStart (Time duration)
   {
     m_dcf->NotifyMaybeCcaBusyStartNow (duration);
   }
-  virtual void NotifySwitchingStart (Time duration)
+  void NotifySwitchingStart (Time duration)
   {
     m_dcf->NotifySwitchingStartNow (duration);
   }
-  virtual void NotifySleep (void)
+  void NotifySleep (void)
   {
     m_dcf->NotifySleepNow ();
   }
-  virtual void NotifyWakeup (void)
+  void NotifyWakeup (void)
   {
     m_dcf->NotifyWakeupNow ();
   }
@@ -342,8 +105,7 @@ DcfManager::DcfManager ()
     m_sleeping (false),
     m_slotTimeUs (0),
     m_sifs (Seconds (0.0)),
-    m_phyListener (0),
-    m_lowListener (0)
+    m_phyListener (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -351,9 +113,7 @@ DcfManager::DcfManager ()
 DcfManager::~DcfManager ()
 {
   delete m_phyListener;
-  delete m_lowListener;
   m_phyListener = 0;
-  m_lowListener = 0;
 }
 
 void
@@ -381,15 +141,10 @@ DcfManager::RemovePhyListener (Ptr<WifiPhy> phy)
 }
 
 void
-DcfManager::SetupLowListener (Ptr<MacLow> low)
+DcfManager::SetupLow (Ptr<MacLow> low)
 {
   NS_LOG_FUNCTION (this << low);
-  if (m_lowListener != 0)
-    {
-      delete m_lowListener;
-    }
-  m_lowListener = new LowDcfListener (this);
-  low->RegisterDcfListener (m_lowListener);
+  low->RegisterDcf (this);
 }
 
 void
@@ -552,7 +307,7 @@ DcfManager::RequestAccess (DcfState *state)
     {
       if (IsBusy ())
         {
-          MY_DEBUG ("medium is busy: collision");
+          NS_LOG_DEBUG ("medium is busy: collision");
           // someone else has accessed the medium; generate a backoff.
           state->NotifyCollision ();
           DoRestartAccessTimeoutIfNeeded ();
@@ -560,7 +315,7 @@ DcfManager::RequestAccess (DcfState *state)
         }
       else if (IsWithinAifs (state))
         {
-          MY_DEBUG ("busy within AIFS");
+          NS_LOG_DEBUG ("busy within AIFS");
           state->NotifyCollision ();
           DoRestartAccessTimeoutIfNeeded ();
           return;
@@ -585,7 +340,7 @@ DcfManager::DoGrantAccess (void)
            * This is the first dcf we find with an expired backoff and which
            * needs access to the medium. i.e., it has data to send.
            */
-          MY_DEBUG ("dcf " << k << " needs access. backoff expired. access granted. slots=" << state->GetBackoffSlots ());
+          NS_LOG_DEBUG ("dcf " << k << " needs access. backoff expired. access granted. slots=" << state->GetBackoffSlots ());
           i++; //go to the next item in the list.
           k++;
           std::vector<DcfState *> internalCollisionStates;
@@ -595,8 +350,8 @@ DcfManager::DoGrantAccess (void)
               if (otherState->IsAccessRequested ()
                   && GetBackoffEndFor (otherState) <= Simulator::Now ())
                 {
-                  MY_DEBUG ("dcf " << k << " needs access. backoff expired. internal collision. slots=" <<
-                            otherState->GetBackoffSlots ());
+                  NS_LOG_DEBUG ("dcf " << k << " needs access. backoff expired. internal collision. slots=" <<
+                                otherState->GetBackoffSlots ());
                   /**
                    * all other dcfs with a lower priority whose backoff
                    * has expired and which needed access to the medium
@@ -688,8 +443,8 @@ DcfManager::GetBackoffEndFor (DcfState *state)
 {
   NS_LOG_FUNCTION (this << state);
   NS_LOG_DEBUG ("Backoff start: " << GetBackoffStartFor (state).As (Time::US) <<
-    " end: " << (GetBackoffStartFor (state) + 
-    MicroSeconds (state->GetBackoffSlots () * m_slotTimeUs)).As (Time::US)); 
+                " end: " << (GetBackoffStartFor (state) +
+                             MicroSeconds (state->GetBackoffSlots () * m_slotTimeUs)).As (Time::US));
   return GetBackoffStartFor (state) + MicroSeconds (state->GetBackoffSlots () * m_slotTimeUs);
 }
 
@@ -723,7 +478,7 @@ DcfManager::UpdateBackoff (void)
               nIntSlots++;
             }
           uint32_t n = std::min (nIntSlots, state->GetBackoffSlots ());
-          MY_DEBUG ("dcf " << k << " dec backoff slots=" << n);
+          NS_LOG_DEBUG ("dcf " << k << " dec backoff slots=" << n);
           Time backoffUpdateBound = backoffStart + MicroSeconds (n * m_slotTimeUs);
           state->UpdateBackoffSlotsNow (n, backoffUpdateBound);
         }
@@ -756,7 +511,7 @@ DcfManager::DoRestartAccessTimeoutIfNeeded (void)
   NS_LOG_DEBUG ("Access timeout needed: " << accessTimeoutNeeded);
   if (accessTimeoutNeeded)
     {
-      MY_DEBUG ("expected backoff end=" << expectedBackoffEnd);
+      NS_LOG_DEBUG ("expected backoff end=" << expectedBackoffEnd);
       Time expectedBackoffDelay = expectedBackoffEnd - Simulator::Now ();
       if (m_accessTimeout.IsRunning ()
           && Simulator::GetDelayLeft (m_accessTimeout) > expectedBackoffDelay)
@@ -775,7 +530,7 @@ void
 DcfManager::NotifyRxStartNow (Time duration)
 {
   NS_LOG_FUNCTION (this << duration);
-  MY_DEBUG ("rx start for=" << duration);
+  NS_LOG_DEBUG ("rx start for=" << duration);
   UpdateBackoff ();
   m_lastRxStart = Simulator::Now ();
   m_lastRxDuration = duration;
@@ -786,7 +541,7 @@ void
 DcfManager::NotifyRxEndOkNow (void)
 {
   NS_LOG_FUNCTION (this);
-  MY_DEBUG ("rx end ok");
+  NS_LOG_DEBUG ("rx end ok");
   m_lastRxEnd = Simulator::Now ();
   m_lastRxReceivedOk = true;
   m_rxing = false;
@@ -796,7 +551,7 @@ void
 DcfManager::NotifyRxEndErrorNow (void)
 {
   NS_LOG_FUNCTION (this);
-  MY_DEBUG ("rx end error");
+  NS_LOG_DEBUG ("rx end error");
   m_lastRxEnd = Simulator::Now ();
   m_lastRxReceivedOk = false;
   m_rxing = false;
@@ -808,29 +563,15 @@ DcfManager::NotifyTxStartNow (Time duration)
   NS_LOG_FUNCTION (this << duration);
   if (m_rxing)
     {
-      if (Simulator::Now () - m_lastRxStart <= m_sifs)
-        {
-          //this may be caused if PHY has started to receive a packet
-          //inside SIFS, so, we check that lastRxStart was within a SIFS ago
-          m_lastRxEnd = Simulator::Now ();
-          m_lastRxDuration = m_lastRxEnd - m_lastRxStart;
-          m_lastRxReceivedOk = true;
-          m_rxing = false;
-        }
-      else
-        {
-          // Bug 2477:  It is possible for the DCF to fall out of 
-          //            sync with the PHY state if there are problems
-          //            receiving A-MPDUs.  PHY will cancel the reception
-          //            and start to transmit
-          NS_LOG_DEBUG ("Phy is transmitting despite DCF being in receive state");
-          m_lastRxEnd = Simulator::Now ();
-          m_lastRxDuration = m_lastRxEnd - m_lastRxStart;
-          m_lastRxReceivedOk = false;
-          m_rxing = false;
-        }
+      //this may be caused only if PHY has started to receive a packet
+      //inside SIFS, so, we check that lastRxStart was maximum a SIFS ago
+      NS_ASSERT (Simulator::Now () - m_lastRxStart <= m_sifs);
+      m_lastRxEnd = Simulator::Now ();
+      m_lastRxDuration = m_lastRxEnd - m_lastRxStart;
+      m_lastRxReceivedOk = true;
+      m_rxing = false;
     }
-  MY_DEBUG ("tx start for " << duration);
+  NS_LOG_DEBUG ("tx start for " << duration);
   UpdateBackoff ();
   m_lastTxStart = Simulator::Now ();
   m_lastTxDuration = duration;
@@ -840,7 +581,7 @@ void
 DcfManager::NotifyMaybeCcaBusyStartNow (Time duration)
 {
   NS_LOG_FUNCTION (this << duration);
-  MY_DEBUG ("busy start for " << duration);
+  NS_LOG_DEBUG ("busy start for " << duration);
   UpdateBackoff ();
   m_lastBusyStart = Simulator::Now ();
   m_lastBusyDuration = duration;
@@ -900,7 +641,7 @@ DcfManager::NotifySwitchingStartNow (Time duration)
       state->NotifyChannelSwitching ();
     }
 
-  MY_DEBUG ("switching start for " << duration);
+  NS_LOG_DEBUG ("switching start for " << duration);
   m_lastSwitchingStart = Simulator::Now ();
   m_lastSwitchingDuration = duration;
 
@@ -949,7 +690,7 @@ void
 DcfManager::NotifyNavResetNow (Time duration)
 {
   NS_LOG_FUNCTION (this << duration);
-  MY_DEBUG ("nav reset for=" << duration);
+  NS_LOG_DEBUG ("nav reset for=" << duration);
   UpdateBackoff ();
   m_lastNavStart = Simulator::Now ();
   m_lastNavDuration = duration;
@@ -967,7 +708,7 @@ DcfManager::NotifyNavStartNow (Time duration)
 {
   NS_LOG_FUNCTION (this << duration);
   NS_ASSERT (m_lastNavStart <= Simulator::Now ());
-  MY_DEBUG ("nav start for=" << duration);
+  NS_LOG_DEBUG ("nav start for=" << duration);
   UpdateBackoff ();
   Time newNavEnd = Simulator::Now () + duration;
   Time lastNavEnd = m_lastNavStart + m_lastNavDuration;
@@ -1008,4 +749,5 @@ DcfManager::NotifyCtsTimeoutResetNow ()
   m_lastCtsTimeoutEnd = Simulator::Now ();
   DoRestartAccessTimeoutIfNeeded ();
 }
+
 } //namespace ns3

@@ -33,48 +33,69 @@ bool g_debug = false;
 
 std::string g_me;
 #define LOG(x)   std::cout << x << std::endl
-#define LOGME(x) LOG (g_me << x)
-#define DEB(x) if (g_debug) { LOGME (x) ; }
+    #define LOGME(x) LOG (g_me << x)
+    #define DEB(x) if (g_debug) { LOGME (x); }
 
 // Output field width
 int g_fwidth = 6;
 
-class Bench 
+/// Bench class
+class Bench
 {
 public:
+  /**
+   * constructor
+   * \param population the population
+   * \param total the total
+   */
   Bench (const uint32_t population, const uint32_t total)
-  : m_population (population),
-    m_total (total),
-    m_count (0)
-  { };
-  
+    : m_population (population),
+      m_total (total),
+      m_count (0)
+  {
+  }
+
+  /**
+   * Set random stream
+   * \param stream the random variable stream
+   */
   void SetRandomStream (Ptr<RandomVariableStream> stream)
   {
     m_rand = stream;
   }
-    
+
+  /**
+   * Set population function
+   * \param population the population
+   */
   void SetPopulation (const uint32_t population)
   {
     m_population = population;
   }
-    
+
+  /**
+   * Set total function
+   * \param total
+   */
   void SetTotal (const uint32_t total)
   {
     m_total = total;
   }
-    
+
+  /// Run function
   void RunBench (void);
 private:
+  /// callback function
   void Cb (void);
-  
-  Ptr<RandomVariableStream> m_rand;
-  uint32_t m_population;
-  uint32_t m_total;
-  uint32_t m_count;
+
+  Ptr<RandomVariableStream> m_rand; ///< random variable
+  uint32_t m_population; ///< population
+  uint32_t m_total; ///< total
+  uint32_t m_count; ///< count 
 };
 
 void
-Bench::RunBench (void) 
+Bench::RunBench (void)
 {
   SystemWallClockMs time;
   double init, simu;
@@ -112,7 +133,7 @@ Bench::RunBench (void)
 void
 Bench::Cb (void)
 {
-  if (m_count >= m_total) 
+  if (m_count >= m_total)
     {
       return;
     }
@@ -128,7 +149,7 @@ Ptr<RandomVariableStream>
 GetRandomStream (std::string filename)
 {
   Ptr<RandomVariableStream> stream = 0;
-  
+
   if (filename == "")
     {
       LOGME ("using default exponential distribution");
@@ -138,13 +159,13 @@ GetRandomStream (std::string filename)
     }
   else
     {
-      std::istream *input; 
+      std::istream *input;
 
-      if (filename == "-") 
+      if (filename == "-")
         {
           LOGME ("using event distribution from stdin");
           input = &std::cin;
-        } 
+        }
       else
         {
           LOGME ("using event distribution from " << filename);
@@ -153,15 +174,15 @@ GetRandomStream (std::string filename)
 
       double value;
       std::vector<double> nsValues;
-      
-      while (!input->eof ()) 
+
+      while (!input->eof ())
         {
-          if (*input >> value) 
+          if (*input >> value)
             {
               uint64_t ns = (uint64_t) (value * 1000000000);
               nsValues.push_back (ns);
-            } 
-          else 
+            }
+          else
             {
               input->clear ();
               std::string line;
@@ -173,7 +194,7 @@ GetRandomStream (std::string filename)
       drv->SetValueArray (&nsValues[0], nsValues.size ());
       stream = drv;
     }
-  
+
   return stream;
 }
 
@@ -191,7 +212,7 @@ int main (int argc, char *argv[])
   uint32_t total = 1000000;
   uint32_t runs  =       1;
   std::string filename = "";
-  
+
   CommandLine cmd;
   cmd.Usage ("Benchmark the simulator scheduler.\n"
              "\n"
@@ -216,9 +237,18 @@ int main (int argc, char *argv[])
   g_fwidth += 6;  // 5 extra chars in '2.000002e+07 ': . e+0 _
 
   ObjectFactory factory ("ns3::MapScheduler");
-  if (schedCal)  { factory.SetTypeId ("ns3::CalendarScheduler"); }
-  if (schedHeap) { factory.SetTypeId ("ns3::HeapScheduler");     }
-  if (schedList) { factory.SetTypeId ("ns3::ListScheduler");     }  
+  if (schedCal)
+    {
+      factory.SetTypeId ("ns3::CalendarScheduler");
+    }
+  if (schedHeap)
+    {
+      factory.SetTypeId ("ns3::HeapScheduler");
+    }
+  if (schedList)
+    {
+      factory.SetTypeId ("ns3::ListScheduler");
+    }
   Simulator::SetScheduler (factory);
 
   LOGME (std::setprecision (g_fwidth - 6));
@@ -228,7 +258,7 @@ int main (int argc, char *argv[])
   LOGME ("population: " << pop);
   LOGME ("total events: " << total);
   LOGME ("runs: " << runs);
-  
+
   Bench *bench = new Bench (pop, total);
   bench->SetRandomStream (GetRandomStream (filename));
 
@@ -246,15 +276,15 @@ int main (int argc, char *argv[])
        std::left << std::setw (g_fwidth) << "Per (s/ev)" );
   LOG (std::setfill ('-') <<
        std::right << std::setw (g_fwidth) << " " <<
-       std::right << std::setw (g_fwidth) << " " <<       
-       std::right << std::setw (g_fwidth) << " " <<       
-       std::right << std::setw (g_fwidth) << " " <<       
-       std::right << std::setw (g_fwidth) << " " <<       
-       std::right << std::setw (g_fwidth) << " " <<       
+       std::right << std::setw (g_fwidth) << " " <<
+       std::right << std::setw (g_fwidth) << " " <<
+       std::right << std::setw (g_fwidth) << " " <<
+       std::right << std::setw (g_fwidth) << " " <<
+       std::right << std::setw (g_fwidth) << " " <<
        std::right << std::setw (g_fwidth) << " " <<
        std::setfill (' ')
        );
-       
+
   // prime
   DEB ("priming");
   std::cout << std::left << std::setw (g_fwidth) << "(prime)";
@@ -265,13 +295,12 @@ int main (int argc, char *argv[])
   for (uint32_t i = 0; i < runs; i++)
     {
       std::cout << std::setw (g_fwidth) << i;
-      
+
       bench->RunBench ();
     }
 
   LOG ("");
-  return 0;
-
   Simulator::Destroy ();
-
+  delete bench;
+  return 0;
 }

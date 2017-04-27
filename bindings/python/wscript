@@ -14,7 +14,7 @@ from waflib.Errors import WafError
 # after = TaskGen.after
 
 # https://github.com/gjcarneiro/pybindgen
-REQUIRED_PYBINDGEN_VERSION = '0.17.0.post41+ngd10fa60'
+REQUIRED_PYBINDGEN_VERSION = '0.17.0.post58+ngcf00cc0'
 REQUIRED_PYGCCXML_VERSION = (0, 9, 5)
 
 RUN_ME=-3
@@ -65,6 +65,11 @@ def options(opt):
                    help=("Don't scan for the 32-bit variant of the bindings on 64-bit platforms."),
                    action="store_true", default=False,
                    dest='no32bit_scan')
+
+
+def split_version(version):
+    ver = re.split('[.+]', version)[:4]
+    return (int(ver[0]), int(ver[1]), int(ver[2]), int(ver[3].split('post')[1]))
 
 
 def configure(conf):
@@ -183,7 +188,7 @@ def configure(conf):
                                 stdout=subprocess.PIPE).communicate()[0]
         pybindgen_version = maybe_decode(out.strip())
         conf.msg('Checking for pybindgen version', pybindgen_version)
-        if not (pybindgen_version == REQUIRED_PYBINDGEN_VERSION):
+        if not (split_version(pybindgen_version) >= split_version(REQUIRED_PYBINDGEN_VERSION)):
             Logs.warn("pybindgen (found %r), (need %r)" %
                       (pybindgen_version, REQUIRED_PYBINDGEN_VERSION))
             conf.report_optional_feature("python", "Python Bindings", False,

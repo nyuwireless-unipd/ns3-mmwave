@@ -496,6 +496,8 @@ Ns3TcpCwndTestCase2::DoRun (void)
   // Create the socket for n0
   Address sinkAddress (InetSocketAddress (ipInterfs.GetAddress (1), servPort));
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ());
+  // Disable SACK because this test is testing NewReno behavior
+  ns3TcpSocket->SetAttribute ("Sack", BooleanValue (false));
   ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeCallback (&Ns3TcpCwndTestCase2::CwndChange, this));
 
   // Create and start the app for n0
@@ -608,8 +610,11 @@ public:
 Ns3TcpCwndTestSuite::Ns3TcpCwndTestSuite ()
   : TestSuite ("ns3-tcp-cwnd", SYSTEM)
 {
+#if 0
+  // Re-enable when bug 2649 is fixed
   AddTestCase (new Ns3TcpCwndTestCase1, TestCase::QUICK);
   AddTestCase (new Ns3TcpCwndTestCase2, TestCase::QUICK);
+#endif
 }
 
 Ns3TcpCwndTestSuite ns3TcpCwndTestSuite;

@@ -1,6 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2010 Adrian Sai-wah Tam
+ * Copyright (c) 2010-2015 Adrian Sai-wah Tam
+ * Copyright (c) 2016 Natale Patriciello <natale.patriciello@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,18 +16,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Adrian Sai-wah Tam <adrian.sw.tam@gmail.com>
+ * Original author: Adrian Sai-wah Tam <adrian.sw.tam@gmail.com>
  */
 
 #ifndef TCP_TX_BUFFER_H
 #define TCP_TX_BUFFER_H
 
-#include <list>
-#include "ns3/traced-value.h"
-#include "ns3/trace-source-accessor.h"
 #include "ns3/object.h"
+#include "ns3/traced-value.h"
 #include "ns3/sequence-number.h"
-#include "ns3/ptr.h"
+#include "ns3/nstime.h"
+#include "ns3/tcp-option-sack.h"
 
 namespace ns3 {
 class Packet;
@@ -34,8 +34,94 @@ class Packet;
 /**
  * \ingroup tcp
  *
- * \brief class for keeping the data sent by the application to the TCP socket, i.e.
- *        the sending buffer.
+ * \brief Item that encloses the application packet and some flags for it
+ */
+class TcpTxItem
+{
+public:
+  /**
+   * \brief Constructor
+   */
+  TcpTxItem ();
+
+  /**
+   * \brief Copy-constructor
+   * \param other TcpTxTag to copy values from
+   */
+  TcpTxItem (const TcpTxItem &other);
+
+  /**
+   * \brief Print the time
+   * \param os ostream
+   */
+  void Print (std::ostream &os) const;
+
+  Ptr<Packet> m_packet; //!< Application packet
+  bool m_lost;          //!< Indicates if the segment has been lost (RTO)
+  bool m_retrans;       //!< Indicates if the segment is retransmitted
+  Time m_lastSent;      //!< Timestamp of the time at which the segment has
+                        //   been sent last time
+  bool m_sacked;        //!< Indicates if the segment has been SACKed
+};
+
+/**
+ * \ingroup tcp
+ *
+ * \brief Tcp sender buffer
+ *
+ * The class keeps track of all data that the application wishes to transmit to
+ * the other end. When the data is acknowledged, it is removed from the buffer.
+ * The buffer has a maximum size, and data is not saved if the amount exceeds
+ * the limit. Packets can be added to the class through the method Add(). An
+ * important thing to remember is that all the data managed is strictly
+ * sequential. It can be divided into blocks, but all the data follow a strict
+ * ordering. That order is managed through SequenceNumber.
+ *
+ * In other words, this buffer contains numbered bytes (e.g., 1,2,3), and the
+ * class is allowed to return only ordered (using "<" as operator) subsets
+ * (e.g. 1,2 or 2,3 or 1,2,3).
+ *
+ * The data structure underlying this is composed by two distinct packet lists.
+ * The first (SentList) is initially empty, and it contains the packets
+ * returned by the method CopyFromSequence. The second (AppList) is initially
+ * empty, and it contains the packets coming from the applications, but that
+ * are not transmitted yet as segments. To discover how the chunks are managed
+ * and retrieved from these lists, check CopyFromSequence documentation.
+ *
+ * The head of the data is represented by m_firstByteSeq, and it is returned by
+ * HeadSequence(). The last byte is returned by TailSequence(). In this class,
+ * we also store the size (in bytes) of the packets inside the SentList in the
+ * variable m_sentSize.
+ *
+ * SACK management
+ * ---------------
+ *
+ * The SACK information is usually saved in a data structure referred as
+ * scoreboard. In this implementation, the scoreboard is developed on top of
+ * the existing classes. In particular, instead of keeping raw pointers to
+ * packets in TcpTxBuffer we added the capability to store some flags
+ * associated with every segment sent. This is done through the use of the
+ * class TcpTxItem: instead of storing a list of packets, we store a list of
+ * TcpTxItem. Each item has different flags (check the corresponding
+ * documentation) and maintaining the scoreboard is a matter of travelling the
+ * list and set the SACK flag on the corresponding segment sent.
+ *
+ * Inefficiencies
+ * --------------
+ *
+ * The algorithms outlined in RFC 6675 are full of inefficiencies. In
+ * particular, traveling all the sent list each time it is needed to compute
+ * the bytes in flight is expensive. We try to overcome the issue by
+ * maintaining a pointer to the highest sequence SACKed; in this way, we can
+ * avoid traveling all the list in some cases. Another option could be keeping
+ * a count of each critical value (e.g., the number of packets sacked).
+ * However, this would be different from the algorithms in RFC. There are some
+ * other possible improvements; if you wish, take a look and try  to add some
+ * earlier exit conditions in the loops.
+ *
+ * \see Size
+ * \see SizeFromSequence
+ * \see CopyFromSequence
  */
 class TcpTxBuffer : public Object
 {
@@ -55,43 +141,43 @@ public:
   // Accessors
 
   /**
-   * Returns the first byte's sequence number
+   * \brief Get the sequence number of the buffer head
    * \returns the first byte's sequence number
    */
   SequenceNumber32 HeadSequence (void) const;
 
   /**
-   * Returns the last byte's sequence number + 1
+   * \brief Get the sequence number of the buffer tail (plus one)
    * \returns the last byte's sequence number + 1
    */
   SequenceNumber32 TailSequence (void) const;
 
   /**
-   * Returns total number of bytes in this Tx buffer
+   * \brief Returns total number of bytes in this buffer
    * \returns total number of bytes in this Tx buffer
    */
   uint32_t Size (void) const;
 
   /**
-   * Returns the Tx window size
+   * \brief Get the maximum buffer size
    * \returns the Tx window size (in bytes)
    */
   uint32_t MaxBufferSize (void) const;
 
   /**
-   * Set the Tx window size
+   * \brief Set the maximum buffer size
    * \param n Tx window size (in bytes)
    */
   void SetMaxBufferSize (uint32_t n);
 
   /**
-   * Returns the available capacity in this Tx window
+   * \brief Returns the available capacity of this buffer
    * \returns available capacity in this Tx window
    */
   uint32_t Available (void) const;
 
   /**
-   * Append a data packet to the end of the buffer
+   * \brief Append a data packet to the end of the buffer
    *
    * \param p The packet to be appended to the Tx buffer
    * \return Boolean to indicate success
@@ -99,14 +185,28 @@ public:
   bool Add (Ptr<Packet> p);
 
   /**
-   * Returns the number of bytes from the buffer in the range [seq, tailSequence)
+   * \brief Returns the number of bytes from the buffer in the range [seq, tailSequence)
+   *
    * \param seq initial sequence number
    * \returns the number of bytes from the buffer in the range
    */
   uint32_t SizeFromSequence (const SequenceNumber32& seq) const;
 
   /**
-   * Copy data of size numBytes into a packet, data from the range [seq, seq+numBytes)
+   * \brief Copy data from the range [seq, seq+numBytes) into a packet
+   *
+   * In the following, we refer to the block [seq, seq+numBytes) simply as "block".
+   * We check the boundary of the block, and divide the possibilities in three
+   * cases:
+   *
+   * - the block have already been transmitted (managed in GetTransmittedSegment)
+   * - the block have not been transmitted yet (managed in GetNewSegment)
+   *
+   * The last case is when the block is partially transmitted and partially
+   * not transmitted. We trick this case by requesting the portion not transmitted
+   * from GetNewSegment, and then calling GetTransmittedSegment with the full
+   * block range.
+   *
    * \param numBytes number of bytes to copy
    * \param seq start sequence number to extract
    * \returns a packet
@@ -114,28 +214,279 @@ public:
   Ptr<Packet> CopyFromSequence (uint32_t numBytes, const SequenceNumber32& seq);
 
   /**
-   * Set the m_firstByteSeq to seq. Supposed to be called only when the
+   * \brief Set the head sequence of the buffer
+   *
+   * Set the head (m_firstByteSeq) to seq. Supposed to be called only when the
    * connection is just set up and we did not send any data out yet.
    * \param seq The sequence number of the head byte
    */
   void SetHeadSequence (const SequenceNumber32& seq);
 
   /**
-   * Discard data up to but not including this sequence number.
+   * \brief Discard data up to but not including this sequence number.
    *
-   * \param seq The sequence number of the head byte
+   * \param seq The first sequence number to maintain after discarding all the
+   * previous sequences.
    */
   void DiscardUpTo (const SequenceNumber32& seq);
 
+  /**
+   * \brief Update the scoreboard
+   * \param list list of SACKed blocks
+   * \returns true in case of an update
+   */
+  bool Update (const TcpOptionSack::SackList &list);
+
+  /**
+   * \brief Check if a segment is lost per RFC 6675
+   * \param seq sequence to check
+   * \param dupThresh dupAck threshold
+   * \param segmentSize segment size
+   * \return true if the sequence is supposed to be lost, false otherwise
+   */
+  bool IsLost (const SequenceNumber32 &seq, uint32_t dupThresh, uint32_t segmentSize) const;
+
+  /**
+   * \brief Get the next sequence number to transmit, according to RFC 6675
+   *
+   * \param seq Next sequence number to transmit, based on the scoreboard information
+   * \param dupThresh dupAck threshold
+   * \param segmentSize segment size
+   * \param isRecovery true if the socket congestion state is in recovery mode
+   * \return true is seq is updated, false otherwise
+   */
+  bool NextSeg (SequenceNumber32 *seq, uint32_t dupThresh, uint32_t segmentSize,
+                bool isRecovery) const;
+
+  /**
+   * \brief Return total bytes in flight
+   *
+   * The routine follows the "SetPipe" function in RFC 6675
+   *
+   * \param dupThresh duplicate ACK threshold
+   * \param segmentSize segment size
+   * \returns total bytes in flight
+   */
+  uint32_t BytesInFlight (uint32_t dupThresh, uint32_t segmentSize) const;
+
+  /**
+   * \brief Set the entire sent list as lost (typically after an RTO)
+   *
+   * Used to set all the sent list as lost, so the bytes in flight is not counting
+   * them as in flight, but we will continue to use SACK informations for
+   * recovering the timeout.
+   */
+  void SetSentListLost ();
+
+  /**
+   * \brief Reset the Scoreboard from all SACK informations
+   */
+  void ResetScoreboard ();
+
+  /**
+   * \brief Check if the head is retransmitted
+   *
+   * \return true if the head is retransmitted, false in all other cases
+   * (including no segment sent)
+   */
+  bool IsHeadRetransmitted () const;
+
+  /**
+   * \brief Reset the sent list
+   *
+   * Move all the packets (except the HEAD) from the sent list to the appList.
+   * The head is then marked as un-sacked, un-retransmitted, and lost.
+   */
+  void ResetSentList ();
+
+  /**
+   * \brief Take the last segment sent and put it back into the un-sent list
+   * (at the beginning)
+   */
+  void ResetLastSegmentSent ();
+
+  /**
+   * \brief Craft a SACK block. Used in case the other end does not support
+   * SACK
+   *
+   * \param seq Look to usable block starting from this sequence number (seq will
+   * not be included in the block)
+   * \param available Space left in the header for that SACK option
+   * \return a SACK option that SACK the first un-SACKed segment in our sentList.
+   */
+  Ptr<const TcpOptionSack> CraftSackOption (const SequenceNumber32 &seq, uint8_t available) const;
+
 private:
-  /// container for data stored in the buffer
-  typedef std::list<Ptr<Packet> >::iterator BufIterator;
+  friend std::ostream & operator<< (std::ostream & os, TcpTxBuffer const & tcpTxBuf);
+
+  typedef std::list<TcpTxItem*> PacketList; //!< container for data stored in the buffer
+
+  /**
+   * \brief Check if a segment is lost per RFC 6675
+   * \param seq sequence to check
+   * \param segment Iterator pointing at seq
+   * \param dupThresh dupAck threshold
+   * \param segmentSize segment size
+   * \return true if the sequence is supposed to be lost, false otherwise
+   */
+  bool IsLost (const SequenceNumber32 &seq, const PacketList::const_iterator &segment, uint32_t dupThresh,
+               uint32_t segmentSize) const;
+
+  /**
+   * \brief Get a block of data not transmitted yet and move it into SentList
+   *
+   * If the block is not yet transmitted, hopefully, seq is exactly the sequence
+   * number of the first byte of the first packet inside AppList. We extract
+   * the block from AppList and move it into the SentList, before returning the
+   * block itself. We manage possible fragmentation (or merges) inside AppList
+   * through GetPacketFromList.
+   *
+   * \see GetPacketFromList
+   * \param numBytes number of bytes to copy
+   *
+   * \return the item that contains the right packet
+   */
+  TcpTxItem* GetNewSegment (uint32_t numBytes);
+
+  /**
+   * \brief Get a block of data previously transmitted
+   *
+   * This is clearly a retransmission, and if everything is going well,
+   * the block requested is matching perfectly with another one requested
+   * in the past. If not, fragmentation or merge are required. We manage
+   * both inside GetPacketFromList.
+   *
+   * \see GetPacketFromList
+   *
+   * \param numBytes number of bytes to copy
+   * \param seq sequence requested
+   * \returns the item that contains the right packet
+   */
+  TcpTxItem* GetTransmittedSegment (uint32_t numBytes, const SequenceNumber32 &seq);
+
+  /**
+   * \brief Get a block (which is returned as Packet) from a list
+   *
+   * This function extract a block [requestedSeq,numBytes) from the list, which
+   * starts at startingSeq.
+   *
+   * The cases we need to manage are two, and they are depicted in the following
+   * image:
+   *
+   *\verbatim
+                       |------|     |----|     |----|
+                list = |      | --> |    | --> |    |
+                       |------|     |----|     |----|
+
+                       ^      ^
+                       | ^ ^  |         (1)
+                     seq | |  seq + numBytes
+                         | |
+                         | |
+                      seq   seq + numBytes     (2)
+   \endverbatim
+   *
+   * The case 1 is easy to manage: the requested block is exactly a packet
+   * already stored. If one value (seq or seq + numBytes) does not align
+   * to a packet boundary, or when both values does not align (case 2), it is
+   * a bit more complex.
+   *
+   * Basically, we have two possible operations:
+   *
+   *  - fragment : split an existing packet in two
+   *  - merge    : merge two existing packets in one
+   *
+   * and we reduce case (2) to case (1) through sequentially applying fragment
+   * or merge. For instance:
+   *
+   *\verbatim
+      |------|
+      |      |
+      |------|
+
+      ^ ^  ^ ^
+      | |  | |
+  start |  | |
+        |  | end
+       seq |
+           seq + numBytes
+   \endverbatim
+   *
+   * To reduce to case (1), we need to perform two fragment operations:
+   *
+   * - fragment (start, seq)
+   * - fragment (seq + numBytes, end)
+   *
+   * After these operations, the requested block is exactly the resulting packet.
+   * Merge operation is required when the requested block span over two (or more)
+   * existing packets.
+   *
+   * While this could be extremely slow in the worst possible scenario (one big
+   * packet which is split in small packets for transmission, and merged for
+   * re-transmission) that scenario is unlikely during a TCP transmission (since
+   * MSS can change, but it is stable, and retransmissions do not happen for
+   * each segment).
+   *
+   * \param list List to extract block from
+   * \param startingSeq Starting sequence of the list
+   * \param numBytes Bytes to extract, starting from requestedSeq
+   * \param requestedSeq Requested sequence
+   * \param listEdited output parameter which indicates if the list has been edited
+   * \return the item that contains the right packet
+   */
+  TcpTxItem* GetPacketFromList (PacketList &list, const SequenceNumber32 &startingSeq,
+                                uint32_t numBytes, const SequenceNumber32 &requestedSeq,
+                                bool *listEdited) const;
+
+  /**
+   * \brief Merge two TcpTxItem
+   *
+   * Merge t2 in t1. It consists in copying the lastSent field if t2 is more
+   * recent than t1. Retransmitted field is copied only if it set in t2 but not
+   * in t1. Sacked is copied only if it is true in both items.
+   *
+   * \param t1 first item
+   * \param t2 second item
+   */
+  void MergeItems (TcpTxItem &t1, TcpTxItem &t2) const;
+
+  /**
+   * \brief Split one TcpTxItem
+   *
+   * Move "size" bytes from t2 into t1, copying all the fields.
+   *
+   * \param t1 first item
+   * \param t2 second item
+   * \param size Size to split
+   */
+  void SplitItems (TcpTxItem &t1, TcpTxItem &t2, uint32_t size) const;
+
+  /**
+   * \brief Find the highest SACK byte
+   * \return a pair with the highest byte and an iterator inside m_sentList
+   */
+  std::pair <TcpTxBuffer::PacketList::const_iterator, SequenceNumber32>
+  GetHighestSacked () const;
+
+  PacketList m_appList;  //!< Buffer for application data
+  PacketList m_sentList; //!< Buffer for sent (but not acked) data
+  uint32_t m_maxBuffer;  //!< Max number of data bytes in buffer (SND.WND)
+  uint32_t m_size;       //!< Size of all data in this buffer
+  uint32_t m_sentSize;   //!< Size of sent (and not discarded) segments
 
   TracedValue<SequenceNumber32> m_firstByteSeq; //!< Sequence number of the first byte in data (SND.UNA)
-  uint32_t m_size;                              //!< Number of data bytes
-  uint32_t m_maxBuffer;                         //!< Max number of data bytes in buffer (SND.WND)
-  std::list<Ptr<Packet> > m_data;               //!< Corresponding data (may be null)
+
+  std::pair <PacketList::const_iterator, SequenceNumber32> m_highestSack; //!< Highest SACK byte
+
 };
+
+/**
+ * \brief Output operator.
+ * \param os The output stream.
+ * \param tcpTxBuf the TcpTxBuffer to print.
+ * \returns The output stream.
+ */
+std::ostream & operator<< (std::ostream & os, TcpTxBuffer const & tcpTxBuf);
 
 } // namepsace ns3
 

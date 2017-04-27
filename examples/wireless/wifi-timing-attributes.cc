@@ -3,7 +3,7 @@
  * Copyright (c) 2015 SEBASTIEN DERONNE
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as 
+ * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
  *
  * This program is distributed in the hope that it will be useful,
@@ -17,12 +17,11 @@
  *
  * Authors: Sebastien Deronne <sebastien.deronne@gmail.com>
  */
+
 #include "ns3/core-module.h"
-#include "ns3/network-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
-#include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/internet-module.h"
 
 // This example shows how to set Wi-Fi timing parameters through WifiMac attributes.
@@ -32,14 +31,13 @@
 //          ./waf --run "wifi-timing-attributes --slot=20"
 //
 // Network topology:
-// 
+//
 //  Wifi 192.168.1.0
-// 
+//
 //       AP
 //  *    *
 //  |    |
 //  n1   n2
-//
 
 using namespace ns3;
 
@@ -66,34 +64,33 @@ int main (int argc, char *argv[])
   cmd.AddValue ("compressedBlockAckTimeoutTimeout", "Compressed Block ACK timeout duration in microseconds", compressedBlockAckTimeout);
   cmd.AddValue ("simulationTime", "Simulation time in seconds", simulationTime);
   cmd.Parse (argc,argv);
-                
+
   //Since default reference loss is defined for 5 GHz, it needs to be changed when operating at 2.4 GHz
   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40.046));
- 
+
   //Create nodes
   NodeContainer wifiStaNode;
   wifiStaNode.Create (1);
   NodeContainer wifiApNode;
   wifiApNode.Create (1);
-                
+
   //Create wireless channel
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
   phy.SetChannel (channel.Create ());
 
   //Default IEEE 802.11n (2.4 GHz)
-  WifiHelper wifi = WifiHelper::Default ();
+  WifiHelper wifi;
   wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-                                "DataMode", StringValue("OfdmRate65MbpsBW20MHz"),
-                                "ControlMode", StringValue("OfdmRate6_5MbpsBW20MHz"));
-  HtWifiMacHelper mac = HtWifiMacHelper::Default ();
+                                "DataMode", StringValue ("OfdmRate65MbpsBW20MHz"),
+                                "ControlMode", StringValue ("OfdmRate6_5MbpsBW20MHz"));
+  WifiMacHelper mac;
 
   //Install PHY and MAC
   Ssid ssid = Ssid ("ns3-wifi");
   mac.SetType ("ns3::StaWifiMac",
-               "Ssid", SsidValue (ssid),
-               "ActiveProbing", BooleanValue (false));
+               "Ssid", SsidValue (ssid));
 
   NetDeviceContainer staDevice;
   staDevice = wifi.Install (phy, mac, wifiStaNode);
@@ -112,17 +109,17 @@ int main (int argc, char *argv[])
   Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/Rifs", TimeValue (MicroSeconds (rifs)));
   Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/BasicBlockAckTimeout", TimeValue (MicroSeconds (basicBlockAckTimeout)));
   Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/CompressedBlockAckTimeout", TimeValue (MicroSeconds (compressedBlockAckTimeout)));
-              
+
   //Mobility
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
-      
+
   positionAlloc->Add (Vector (0.0, 0.0, 0.0));
   positionAlloc->Add (Vector (1.0, 0.0, 0.0));
   mobility.SetPositionAllocator (positionAlloc);
-      
+
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-      
+
   mobility.Install (wifiApNode);
   mobility.Install (wifiStaNode);
 
@@ -139,22 +136,23 @@ int main (int argc, char *argv[])
 
   staNodeInterface = address.Assign (staDevice);
   apNodeInterface = address.Assign (apDevice);
-      
+
   //Setting applications
-  UdpServerHelper myServer (9);
-  ApplicationContainer serverApp = myServer.Install (wifiStaNode.Get (0));
+  uint16_t port = 9;
+  UdpServerHelper server (port);
+  ApplicationContainer serverApp = server.Install (wifiStaNode.Get (0));
   serverApp.Start (Seconds (0.0));
   serverApp.Stop (Seconds (simulationTime));
 
-  UdpClientHelper client (staNodeInterface.GetAddress (0), 9);
+  UdpClientHelper client (staNodeInterface.GetAddress (0), port);
   client.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
   client.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
   client.SetAttribute ("PacketSize", UintegerValue (1472)); //bytes
- 
+
   ApplicationContainer clientApp = client.Install (wifiApNode.Get (0));
   clientApp.Start (Seconds (1.0));
   clientApp.Stop (Seconds (simulationTime));
-                
+
   //Populate routing table
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
@@ -164,9 +162,9 @@ int main (int argc, char *argv[])
   Simulator::Destroy ();
 
   //Get and print results
-  uint32_t totalPacketsThrough = DynamicCast<UdpServer>(serverApp.Get (0))->GetReceived ();
-  double throughput = totalPacketsThrough * 1472 * 8/((simulationTime-1) * 1000000.0); //Mbit/s
+  uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
+  double throughput = totalPacketsThrough * 1472 * 8 / ((simulationTime - 1) * 1000000.0); //Mbit/s
   std::cout << "Throughput: " << throughput << " Mbit/s" << std::endl;
-    
+
   return 0;
-} 
+}

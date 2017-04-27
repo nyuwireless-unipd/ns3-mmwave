@@ -24,9 +24,7 @@
 #include "ns3/ipv6-raw-socket-factory.h"
 #include "ns3/udp-socket-factory.h"
 #include "ns3/simulator.h"
-#include "error-channel-sixlow.h"
 #include "ns3/simple-net-device.h"
-#include "ns3/drop-tail-queue.h"
 #include "ns3/socket.h"
 #include "ns3/udp-socket.h"
 
@@ -38,6 +36,7 @@
 #include "ns3/sixlowpan-net-device.h"
 #include "ns3/internet-stack-helper.h"
 #include "ns3/icmpv6-l4-protocol.h"
+#include "ns3/error-channel.h"
 
 #include <string>
 #include <limits>
@@ -45,19 +44,25 @@
 
 using namespace ns3;
 
+/**
+ * \ingroup sixlowpan-test
+ * \ingroup tests
+ *
+ * \brief 6LoWPAN Fragmentation Test
+ */
 class SixlowpanFragmentationTest : public TestCase
 {
-  Ptr<Packet> m_sentPacketClient;
-  Ptr<Packet> m_receivedPacketClient;
-  Ptr<Packet> m_receivedPacketServer;
+  Ptr<Packet> m_sentPacketClient;     //!< Packet sent by client.
+  Ptr<Packet> m_receivedPacketClient; //!< Packet received by the client.
+  Ptr<Packet> m_receivedPacketServer; //!< packet received by the server.
 
-  Ptr<Socket> m_socketServer;
-  Ptr<Socket> m_socketClient;
-  uint32_t m_dataSize;
-  uint8_t *m_data;
-  uint32_t m_size;
-  uint8_t m_icmpType;
-  uint8_t m_icmpCode;
+  Ptr<Socket> m_socketServer; //!< Socket on the server.
+  Ptr<Socket> m_socketClient; //!< Socket on the client.
+  uint32_t m_dataSize;  //!< Size of the data (if any).
+  uint8_t *m_data;      //!< Data to be carried in the packet
+  uint32_t m_size;      //!< Size of the packet if no data has been provided.
+  uint8_t m_icmpType;   //!< ICMP type.
+  uint8_t m_icmpCode;   //!< ICMP code.
 
 public:
   virtual void DoRun (void);
@@ -65,16 +70,51 @@ public:
   ~SixlowpanFragmentationTest ();
 
   // server part
-  void StartServer (Ptr<Node> ServerNode);
+
+  /**
+   * Start the server node.
+   * \param serverNode The server node.
+   */
+  void StartServer (Ptr<Node> serverNode);
+  /**
+   * Handles incoming packets in the server.
+   * \param socket The receiving socket.
+   */
   void HandleReadServer (Ptr<Socket> socket);
 
   // client part
-  void StartClient (Ptr<Node> ClientNode);
-  void HandleReadClient (Ptr<Socket> socket);
-  void HandleReadIcmpClient (Ipv6Address icmpSource, uint8_t icmpTtl, uint8_t icmpType,
-                             uint8_t icmpCode,uint32_t icmpInfo);
 
+  /**
+   * Start the client node.
+   * \param clientNode The client node.
+   */
+  void StartClient (Ptr<Node> clientNode);
+  /**
+   * Handles incoming packets in the client.
+   * \param socket The receiving socket.
+   */
+  void HandleReadClient (Ptr<Socket> socket);
+  /**
+   * Handles incoming ICMP packets in the client.
+   * \param icmpSource ICMP sender address.
+   * \param icmpTtl ICMP TTL.
+   * \param icmpType ICMP type.
+   * \param icmpCode ICMP code.
+   * \param icmpInfo ICMP info.
+   */
+  void HandleReadIcmpClient (Ipv6Address icmpSource, uint8_t icmpTtl, uint8_t icmpType,
+                             uint8_t icmpCode, uint32_t icmpInfo);
+  /**
+   * Set the packet optional content.
+   * \param fill Pointer to an array of data.
+   * \param fillSize Size of the array of data.
+   * \param dataSize Size of the packet - if fillSize is less than dataSize, the data is repeated.
+   */
   void SetFill (uint8_t *fill, uint32_t fillSize, uint32_t dataSize);
+  /**
+   * Send a packet to the server.
+   * \returns The packet sent.
+   */
   Ptr<Packet> SendClient (void);
 
 };
@@ -103,13 +143,13 @@ SixlowpanFragmentationTest::~SixlowpanFragmentationTest ()
 
 
 void
-SixlowpanFragmentationTest::StartServer (Ptr<Node> ServerNode)
+SixlowpanFragmentationTest::StartServer (Ptr<Node> serverNode)
 {
 
   if (m_socketServer == 0)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
-      m_socketServer = Socket::CreateSocket (ServerNode, tid);
+      m_socketServer = Socket::CreateSocket (serverNode, tid);
       Inet6SocketAddress local = Inet6SocketAddress (Ipv6Address ("2001:0100::1"), 9);
       m_socketServer->Bind (local);
       Ptr<UdpSocket> udpSocket = DynamicCast<UdpSocket> (m_socketServer);
@@ -136,13 +176,13 @@ SixlowpanFragmentationTest::HandleReadServer (Ptr<Socket> socket)
 }
 
 void
-SixlowpanFragmentationTest::StartClient (Ptr<Node> ClientNode)
+SixlowpanFragmentationTest::StartClient (Ptr<Node> clientNode)
 {
 
   if (m_socketClient == 0)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
-      m_socketClient = Socket::CreateSocket (ClientNode, tid);
+      m_socketClient = Socket::CreateSocket (clientNode, tid);
       m_socketClient->Bind (Inet6SocketAddress (Ipv6Address::GetAny (), 9));
       m_socketClient->Connect (Inet6SocketAddress (Ipv6Address ("2001:0100::1"), 9));
       CallbackValue cbValue = MakeCallback (&SixlowpanFragmentationTest::HandleReadIcmpClient, this);
@@ -231,7 +271,7 @@ SixlowpanFragmentationTest::DoRun (void)
   Ptr<Node> serverNode = CreateObject<Node> ();
   internet.Install (serverNode);
   Ptr<SimpleNetDevice> serverDev;
-  Ptr<BinaryErrorSixlowModel> serverDevErrorModel = CreateObject<BinaryErrorSixlowModel> ();
+  Ptr<BinaryErrorModel> serverDevErrorModel = CreateObject<BinaryErrorModel> ();
   {
     Ptr<Icmpv6L4Protocol> icmpv6l4 = serverNode->GetObject<Icmpv6L4Protocol> ();
     icmpv6l4->SetAttribute ("DAD", BooleanValue (false));
@@ -262,7 +302,7 @@ SixlowpanFragmentationTest::DoRun (void)
   Ptr<Node> clientNode = CreateObject<Node> ();
   internet.Install (clientNode);
   Ptr<SimpleNetDevice> clientDev;
-  Ptr<BinaryErrorSixlowModel> clientDevErrorModel = CreateObject<BinaryErrorSixlowModel> ();
+  Ptr<BinaryErrorModel> clientDevErrorModel = CreateObject<BinaryErrorModel> ();
   {
     Ptr<Icmpv6L4Protocol> icmpv6l4 = clientNode->GetObject<Icmpv6L4Protocol> ();
     icmpv6l4->SetAttribute ("DAD", BooleanValue (false));
@@ -289,7 +329,7 @@ SixlowpanFragmentationTest::DoRun (void)
   StartClient (clientNode);
 
   // link the two nodes
-  Ptr<ErrorChannelSixlow> channel = CreateObject<ErrorChannelSixlow> ();
+  Ptr<ErrorChannel> channel = CreateObject<ErrorChannel> ();
   serverDev->SetChannel (channel);
   clientDev->SetChannel (channel);
 
@@ -417,16 +457,27 @@ SixlowpanFragmentationTest::DoRun (void)
       // Note that a 6LoWPAN fragment timeout does NOT send any ICMPv6.
     }
 
-
-
   Simulator::Destroy ();
 }
-//-----------------------------------------------------------------------------
+
+
+/**
+ * \ingroup sixlowpan-test
+ * \ingroup tests
+ *
+ * \brief 6LoWPAN Fragmentation TestSuite
+ */
 class SixlowpanFragmentationTestSuite : public TestSuite
 {
 public:
-  SixlowpanFragmentationTestSuite () : TestSuite ("sixlowpan-fragmentation", UNIT)
-  {
-    AddTestCase (new SixlowpanFragmentationTest, TestCase::QUICK);
-  }
-} g_sixlowpanFragmentationTestSuite;
+  SixlowpanFragmentationTestSuite ();
+private:
+};
+
+SixlowpanFragmentationTestSuite::SixlowpanFragmentationTestSuite ()
+  : TestSuite ("sixlowpan-fragmentation", UNIT)
+{
+  AddTestCase (new SixlowpanFragmentationTest (), TestCase::QUICK);
+}
+
+static SixlowpanFragmentationTestSuite g_sixlowpanFragmentationTestSuite; //!< Static variable for test initialization

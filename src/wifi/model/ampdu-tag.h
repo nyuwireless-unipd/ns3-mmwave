@@ -22,12 +22,10 @@
 #ifndef AMPDU_TAG_H
 #define AMPDU_TAG_H
 
-#include "ns3/packet.h"
 #include "ns3/nstime.h"
+#include "ns3/tag.h"
 
 namespace ns3 {
-
-class Tag;
 
 /**
  * \ingroup wifi
@@ -38,8 +36,12 @@ class Tag;
 class AmpduTag : public Tag
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
-  virtual TypeId GetInstanceTypeId (void) const;
+  TypeId GetInstanceTypeId (void) const;
 
   /**
    * Create a AmpduTag with the default =0 no Ampdu
@@ -62,10 +64,10 @@ public:
    */
   void SetRemainingAmpduDuration (Time duration);
 
-  virtual void Serialize (TagBuffer i) const;
-  virtual void Deserialize (TagBuffer i);
-  virtual uint32_t GetSerializedSize () const;
-  virtual void Print (std::ostream &os) const;
+  void Serialize (TagBuffer i) const;
+  void Deserialize (TagBuffer i);
+  uint32_t GetSerializedSize () const;
+  void Print (std::ostream &os) const;
 
   /**
    * \return true if it is an A-MPDU,
@@ -96,4 +98,3 @@ private:
 } //namespace ns3
 
 #endif /* AMPDU_TAG_H */
-

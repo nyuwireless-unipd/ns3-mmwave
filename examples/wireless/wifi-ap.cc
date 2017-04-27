@@ -23,11 +23,7 @@
 #include "ns3/network-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/mobility-module.h"
-#include "ns3/config-store-module.h"
 #include "ns3/wifi-module.h"
-#include "ns3/athstats-helper.h"
-
-#include <iostream>
 
 using namespace ns3;
 
@@ -96,12 +92,12 @@ GetPosition (Ptr<Node> node)
   return mobility->GetPosition ();
 }
 
-static void 
-AdvancePosition (Ptr<Node> node) 
+static void
+AdvancePosition (Ptr<Node> node)
 {
   Vector pos = GetPosition (node);
   pos.x += 5.0;
-  if (pos.x >= 210.0) 
+  if (pos.x >= 210.0)
     {
       return;
     }
@@ -128,7 +124,7 @@ int main (int argc, char *argv[])
   // disable fragmentation
   Config::SetDefault ("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2200"));
 
-  WifiHelper wifi = WifiHelper::Default ();
+  WifiHelper wifi;
   MobilityHelper mobility;
   NodeContainer stas;
   NodeContainer ap;
@@ -142,7 +138,7 @@ int main (int argc, char *argv[])
   packetSocket.Install (stas);
   packetSocket.Install (ap);
 
-  NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
+  WifiMacHelper wifiMac;
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
   wifiPhy.SetChannel (wifiChannel.Create ());
@@ -150,8 +146,7 @@ int main (int argc, char *argv[])
   wifi.SetRemoteStationManager ("ns3::ArfWifiManager");
   // setup stas.
   wifiMac.SetType ("ns3::StaWifiMac",
-                   "Ssid", SsidValue (ssid),
-                   "ActiveProbing", BooleanValue (false));
+                   "Ssid", SsidValue (ssid));
   staDevs = wifi.Install (wifiPhy, wifiMac, stas);
   // setup ap.
   wifiMac.SetType ("ns3::ApWifiMac",

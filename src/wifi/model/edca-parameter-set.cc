@@ -19,13 +19,9 @@
  */
 
 #include "edca-parameter-set.h"
-#include "ns3/assert.h"
-#include "ns3/log.h"
 #include <cmath>
 
 namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("EdcaParameterSet");
 
 EdcaParameterSet::EdcaParameterSet ()
   : m_qosInfo (0),
@@ -48,6 +44,12 @@ void
 EdcaParameterSet::SetQosSupported (uint8_t qosSupported)
 {
   m_qosSupported = qosSupported;
+}
+
+uint8_t
+EdcaParameterSet::IsQosSupported (void) const
+{
+  return ((m_acBE != 0) || (m_acBK != 0) || (m_acVI != 0) || (m_acVO != 0));
 }
 
 void
@@ -420,13 +422,30 @@ EdcaParameterSet::DeserializeInformationField (Buffer::Iterator start, uint8_t l
   return length;
 }
 
+/// EdcaParameterSet
 ATTRIBUTE_HELPER_CPP (EdcaParameterSet);
 
+/**
+ * output operator
+ *
+ * \param os output stream
+ * \param edcaParameterSet
+ *
+ * \return output stream
+ */
 std::ostream & operator << (std::ostream &os, const EdcaParameterSet &edcaParameterSet)
 {
   return os;
 }
 
+/**
+ * input operator
+ *
+ * \param is input stream
+ * \param edcaParameterSet
+ *
+ * \return output stream
+ */
 std::istream &operator >> (std::istream &is, EdcaParameterSet &edcaParameterSet)
 {
   return is;

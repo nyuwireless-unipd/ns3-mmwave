@@ -19,12 +19,8 @@
  */
 
 #include "erp-information.h"
-#include "ns3/assert.h"
-#include "ns3/log.h"
 
 namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("ErpInformation");
 
 ErpInformation::ErpInformation ()
   : m_erpInformation (0),
@@ -127,6 +123,14 @@ ErpInformation::DeserializeInformationField (Buffer::Iterator start,
 
 ATTRIBUTE_HELPER_CPP (ErpInformation);
 
+/**
+ * output stream output operator
+ *
+ * \param os output stream
+ * \param erpinformation
+ *
+ * \returns output stream
+ */
 std::ostream &
 operator << (std::ostream &os, const ErpInformation &erpinformation)
 {
@@ -137,6 +141,14 @@ operator << (std::ostream &os, const ErpInformation &erpinformation)
   return os;
 }
 
+/**
+ * input stream input operator
+ *
+ * \param is input stream
+ * \param erpinformation
+ *
+ * \returns input stream
+ */
 std::istream &operator >> (std::istream &is, ErpInformation &erpinformation)
 {
   bool c1, c2, c3;

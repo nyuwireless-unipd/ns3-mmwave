@@ -19,15 +19,12 @@
  * Authors: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  *          Mirko Banchi <mk.banchi@gmail.com>
  */
+
 #ifndef STA_WIFI_MAC_H
 #define STA_WIFI_MAC_H
 
 #include "regular-wifi-mac.h"
-#include "ns3/event-id.h"
-#include "ns3/packet.h"
-#include "ns3/traced-callback.h"
 #include "supported-rates.h"
-#include "amsdu-subframe-header.h"
 #include "capability-information.h"
 
 namespace ns3  {
@@ -42,6 +39,10 @@ class MgtAddBaRequestHeader;
 class StaWifiMac : public RegularWifiMac
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   StaWifiMac ();
@@ -55,7 +56,7 @@ public:
    * dequeued as soon as the channel access function determines that
    * access is granted to this MAC.
    */
-  virtual void Enqueue (Ptr<const Packet> packet, Mac48Address to);
+  void Enqueue (Ptr<const Packet> packet, Mac48Address to);
 
   /**
    * \param missed the number of beacons which must be missed
@@ -109,7 +110,7 @@ private:
    */
   bool GetActiveProbing (void) const;
 
-  virtual void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
+  void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
 
   /**
    * Forward a probe request packet to the DCF. The standard is not clear on the correct
@@ -170,7 +171,7 @@ private:
    *
    * \param value the new state
    */
-  void SetState (enum MacState value);
+  void SetState (MacState value);
   /**
    * Set the EDCA parameters.
    *
@@ -188,18 +189,18 @@ private:
    */
   CapabilityInformation GetCapabilities (void) const;
 
-  enum MacState m_state;
-  Time m_probeRequestTimeout;
-  Time m_assocRequestTimeout;
-  EventId m_probeRequestEvent;
-  EventId m_assocRequestEvent;
-  EventId m_beaconWatchdog;
-  Time m_beaconWatchdogEnd;
-  uint32_t m_maxMissedBeacons;
-  bool m_activeProbing;
+  MacState m_state;            ///< MAC state
+  Time m_probeRequestTimeout;  ///< probe request timeout
+  Time m_assocRequestTimeout;  ///< assoc request timeout
+  EventId m_probeRequestEvent; ///< probe request event
+  EventId m_assocRequestEvent; ///< assoc request event
+  EventId m_beaconWatchdog;    ///< beacon watchdog
+  Time m_beaconWatchdogEnd;    ///< beacon watchdog end
+  uint32_t m_maxMissedBeacons; ///< maximum missed beacons
+  bool m_activeProbing;        ///< active probing
 
-  TracedCallback<Mac48Address> m_assocLogger;
-  TracedCallback<Mac48Address> m_deAssocLogger;
+  TracedCallback<Mac48Address> m_assocLogger;   ///< assoc logger
+  TracedCallback<Mac48Address> m_deAssocLogger; ///< deassoc logger
 };
 
 } //namespace ns3

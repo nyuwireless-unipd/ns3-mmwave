@@ -16,14 +16,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
- *         Mirko Banchi <mk.banchi@gmail.com>
+ * Authors: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
+ *          Mirko Banchi <mk.banchi@gmail.com>
  */
 
 #ifndef MAC_TX_MIDDLE_H
 #define MAC_TX_MIDDLE_H
 
-#include <stdint.h>
 #include <map>
 #include "ns3/mac48-address.h"
 
@@ -48,7 +47,7 @@ public:
    * \param hdr Wi-Fi header
    * \return the next sequence number
    */
-  uint16_t GetNextSequenceNumberfor (const WifiMacHeader *hdr);
+  uint16_t GetNextSequenceNumberFor (const WifiMacHeader *hdr);
   /**
    * Return the next sequence number for the Traffic ID and destination, but do not pick it (i.e. the current sequence number remains unchanged).
    * This functions is used for A-MPDU aggregation.
@@ -56,7 +55,7 @@ public:
    * \param hdr Wi-Fi header
    * \return the next sequence number
    */
-  uint16_t PeekNextSequenceNumberfor (const WifiMacHeader *hdr);
+  uint16_t PeekNextSequenceNumberFor (const WifiMacHeader *hdr);
   /**
    * Return the next sequence number for the Traffic ID and destination.
    *
@@ -68,8 +67,8 @@ public:
 
 
 private:
-  std::map <Mac48Address,uint16_t*> m_qosSequences;
-  uint16_t m_sequence;
+  std::map <Mac48Address,uint16_t*> m_qosSequences; ///< QOS sequences
+  uint16_t m_sequence; ///< current sequence number
 };
 
 } //namespace ns3

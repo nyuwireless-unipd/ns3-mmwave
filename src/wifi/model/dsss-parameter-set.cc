@@ -19,13 +19,8 @@
  */
 
 #include "dsss-parameter-set.h"
-#include "ns3/assert.h"
-#include "ns3/log.h"
-#include <cmath>
 
 namespace ns3 {
-
-NS_LOG_COMPONENT_DEFINE ("DsssParameterSet");
 
 DsssParameterSet::DsssParameterSet ()
   : m_currentChannel (0),
@@ -36,7 +31,7 @@ DsssParameterSet::DsssParameterSet ()
 WifiInformationElementId
 DsssParameterSet::ElementId () const
 {
-  return IE_DS_PARAMETER_SET;
+  return IE_DSSS_PARAMETER_SET;
 }
 
 void
@@ -101,13 +96,30 @@ DsssParameterSet::DeserializeInformationField (Buffer::Iterator start, uint8_t l
   return length;
 }
 
+/// DsssParameterSet
 ATTRIBUTE_HELPER_CPP (DsssParameterSet);
 
+/**
+ * output operator
+ *
+ * \param os output stream
+ * \param DsssParameterSet
+ *
+ * \return output stream
+ */
 std::ostream & operator << (std::ostream &os, const DsssParameterSet &DsssParameterSet)
 {
   return os;
 }
 
+/**
+ * input operator
+ *
+ * \param is input stream
+ * \param DsssParameterSet
+ *
+ * \return output stream
+ */
 std::istream &operator >> (std::istream &is, DsssParameterSet &DsssParameterSet)
 {
   return is;

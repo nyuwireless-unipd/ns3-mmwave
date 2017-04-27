@@ -21,7 +21,6 @@
 #ifndef DSS_ERROR_RATE_MODEL_H
 #define DSS_ERROR_RATE_MODEL_H
 
-#include <stdint.h>
 #ifdef HAVE_GSL
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_integration.h>
@@ -120,7 +119,9 @@ public:
 
 
 protected:
+  /// WLAN perfect
   static const double WLAN_SIR_PERFECT;
+  /// WLAN impossible
   static const double WLAN_SIR_IMPOSSIBLE;
 #endif
 };
@@ -128,4 +129,3 @@ protected:
 } //namespace ns3
 
 #endif /* DSSS_ERROR_RATE_MODEL_H */
-

@@ -22,12 +22,8 @@
 #ifndef WIFI_MODE_H
 #define WIFI_MODE_H
 
-#include <stdint.h>
-#include <string>
 #include <vector>
-#include <ostream>
 #include "ns3/attribute-helper.h"
-#include "ns3/wifi-phy-standard.h"
 
 namespace ns3 {
 
@@ -61,7 +57,9 @@ enum WifiModulationClass
   /** HT PHY (Clause 20) */
   WIFI_MOD_CLASS_HT,
   /** VHT PHY (Clause 22) */
-  WIFI_MOD_CLASS_VHT
+  WIFI_MOD_CLASS_VHT,
+  /** HE PHY (Clause 26) */
+  WIFI_MOD_CLASS_HE
 };
 
 /**
@@ -100,9 +98,16 @@ class WifiMode
 {
 public:
   /**
+   * \returns true if this <MCS, channel width, NSS> combination is allowed, false otherwise.
    *
    * \param channelWidth the considered channel width in MHz
-   * \param isShortGuardInterval whether short guard interval is considered or not
+   * \param nss the considered number of streams
+   */
+  bool IsAllowed (uint8_t channelWidth, uint8_t nss) const;
+  /**
+   *
+   * \param channelWidth the considered channel width in MHz
+   * \param guardInterval the considered guard interval duration in nanoseconds
    * \param nss the considered number of streams
    *
    * \returns the physical bit rate of this signal.
@@ -110,7 +115,7 @@ public:
    * If a transmission mode uses 1/2 FEC, and if its
    * data rate is 3.25Mbps, the phy rate is 6.5Mbps
    */
-  uint64_t GetPhyRate (uint32_t channelWidth, bool isShortGuardInterval, uint8_t nss) const;
+  uint64_t GetPhyRate (uint8_t channelWidth, uint16_t guardInterval, uint8_t nss) const;
   /**
    * \param txVector the WifiTxVector of the signal
    *
@@ -123,12 +128,12 @@ public:
   /**
    *
    * \param channelWidth the considered channel width in MHz
-   * \param isShortGuardInterval whether short guard interval is considered or not
+   * \param guardInterval the considered guard interval duration in nanoseconds
    * \param nss the considered number of streams
    *
    * \returns the data bit rate of this signal.
    */
-  uint64_t GetDataRate (uint32_t channelWidth, bool isShortGuardInterval, uint8_t nss) const;
+  uint64_t GetDataRate (uint8_t channelWidth, uint16_t guardInterval, uint8_t nss) const;
   /**
    * \param txVector the WifiTxVector of the signal
    *
@@ -136,9 +141,16 @@ public:
    */
   uint64_t GetDataRate (WifiTxVector txVector) const;
   /**
+   * \param channelWidth the considered channel width in MHz
+   *
+   * \returns the data bit rate of this non-HT or non-VHT signal.
+  */
+  uint64_t GetDataRate (uint8_t channelWidth) const;
+
+  /**
    * \returns the coding rate of this transmission mode
    */
-  enum WifiCodeRate GetCodeRate (void) const;
+  WifiCodeRate GetCodeRate (void) const;
   /**
    * \returns the size of the modulation constellation.
    */
@@ -170,7 +182,7 @@ public:
    * \returns the Modulation Class (Section 9.7.8 "Modulation classes"; IEEE 802.11-2012)
    * to which this WifiMode belongs.
    */
-  enum WifiModulationClass GetModulationClass () const;  
+  WifiModulationClass GetModulationClass () const;
   /**
    * \returns the rate (in bps) of the non-HT Reference Rate
    * which corresponds to the HT MCS of this WifiMode.
@@ -181,11 +193,13 @@ public:
    */
   uint64_t GetNonHtReferenceRate (void) const;
   /**
+   * \param mode wifi mode
    * \returns true if this WifiMode has a
    * a code rate strictly higher than mode.
    */
   bool IsHigherCodeRate (WifiMode mode) const;
   /**
+   * \param mode wifi mode
    * \returns true if this WifiMode has a
    * a rate strictly higher than mode.
    */
@@ -216,9 +230,10 @@ private:
    * \param uid unique ID
    */
   WifiMode (uint32_t uid);
-  uint32_t m_uid;
+  uint32_t m_uid; ///< UID
 };
 
+/// equality operator
 bool operator == (const WifiMode &a, const WifiMode &b);
 std::ostream & operator << (std::ostream & os, const WifiMode &mode);
 std::istream & operator >> (std::istream &is, WifiMode &mode);
@@ -263,9 +278,9 @@ public:
    * Create a WifiMode (not used for HT or VHT).
    */
   static WifiMode CreateWifiMode (std::string uniqueName,
-                                  enum WifiModulationClass modClass,
+                                  WifiModulationClass modClass,
                                   bool isMandatory,
-                                  enum WifiCodeRate codingRate,
+                                  WifiCodeRate codingRate,
                                   uint16_t constellationSize);
 
   /**
@@ -280,7 +295,7 @@ public:
    */
   static WifiMode CreateWifiMcs (std::string uniqueName,
                                  uint8_t mcsValue,
-                                 enum WifiModulationClass modClass);
+                                 WifiModulationClass modClass);
 
 
 private:
@@ -302,12 +317,12 @@ private:
    */
   struct WifiModeItem
   {
-    std::string uniqueUid;
-    enum WifiModulationClass modClass;
-    uint16_t constellationSize;
-    enum WifiCodeRate codingRate;
-    bool isMandatory;
-    uint8_t mcsValue;
+    std::string uniqueUid; ///< unique UID
+    WifiModulationClass modClass; ///< modulation class
+    uint16_t constellationSize; ///< constellation size
+    WifiCodeRate codingRate; ///< coding rate
+    bool isMandatory; ///< flag to indicate whether this mode is mandatory
+    uint8_t mcsValue; ///< MCS value
   };
 
   /**
@@ -317,7 +332,7 @@ private:
    *
    * \return WifiMode
    */
-  WifiMode Search (std::string name);
+  WifiMode Search (std::string name) const;
   /**
    * Allocate a WifiModeItem from a given uniqueUid.
    *
@@ -338,8 +353,8 @@ private:
   /**
    * typedef for a vector of WifiModeItem.
    */
-  typedef std::vector<struct WifiModeItem> WifiModeItemList;
-  WifiModeItemList m_itemList;
+  typedef std::vector<WifiModeItem> WifiModeItemList;
+  WifiModeItemList m_itemList; ///< item list
 };
 
 } //namespace ns3

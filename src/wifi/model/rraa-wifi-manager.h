@@ -22,11 +22,25 @@
 #define RRAA_WIFI_MANAGER_H
 
 #include "ns3/nstime.h"
+#include "ns3/traced-value.h"
 #include "wifi-remote-station-manager.h"
 
 namespace ns3 {
 
 struct RraaWifiRemoteStation;
+
+/// WifiRraaThresholds structure
+struct WifiRraaThresholds
+  {
+    double m_ori; ///< Opportunistic Rate Increase threshold
+    double m_mtl; ///< Maximum Tolerable Loss threshold
+    uint32_t m_ewnd; ///< Evaluation Window
+  };
+
+/**
+ * List of thresholds for each mode.
+ */
+typedef std::vector<std::pair<WifiRraaThresholds, WifiMode> > RraaThresholdsTable;
 
 /**
  * \brief Robust Rate Adaptation Algorithm
@@ -37,49 +51,54 @@ struct RraaWifiRemoteStation;
  * by "Starsky H. Y. Wong", "Hao Yang", "Songwu Lu", and,
  * "Vaduvur Bharghavan" published in Mobicom 06.
  *
- * This RAA does not support HT or VHT modes and will error exit
- * if the user tries to configure this RAA with a Wi-Fi MAC that
- * has VhtSupported or HtSupported set.
+ * This RAA does not support HT, VHT nor HE modes and will error
+ * exit if the user tries to configure this RAA with a Wi-Fi MAC
+ * that has VhtSupported, HtSupported or HeSupported set.
  */
 class RraaWifiManager : public WifiRemoteStationManager
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   RraaWifiManager ();
   virtual ~RraaWifiManager ();
 
   // Inherited from WifiRemoteStationManager
-  virtual void SetHtSupported (bool enable);
-  virtual void SetVhtSupported (bool enable);
+  virtual void SetupPhy (Ptr<WifiPhy> phy);
+  virtual void SetupMac (Ptr<WifiMac> mac);
+  void SetHtSupported (bool enable);
+  void SetVhtSupported (bool enable);
+  void SetHeSupported (bool enable);
+
 
 private:
-  struct ThresholdsItem
-  {
-    uint32_t datarate;
-    double pori;
-    double pmtl;
-    uint32_t ewnd;
-  };
-
   //overriden from base class
-  virtual WifiRemoteStation * DoCreateStation (void) const;
-  virtual void DoReportRxOk (WifiRemoteStation *station,
-                             double rxSnr, WifiMode txMode);
-  virtual void DoReportRtsFailed (WifiRemoteStation *station);
-  virtual void DoReportDataFailed (WifiRemoteStation *station);
-  virtual void DoReportRtsOk (WifiRemoteStation *station,
-                              double ctsSnr, WifiMode ctsMode, double rtsSnr);
-  virtual void DoReportDataOk (WifiRemoteStation *station,
-                               double ackSnr, WifiMode ackMode, double dataSnr);
-  virtual void DoReportFinalRtsFailed (WifiRemoteStation *station);
-  virtual void DoReportFinalDataFailed (WifiRemoteStation *station);
-  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
-  virtual WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
-  virtual bool DoNeedRts (WifiRemoteStation *st,
-                          Ptr<const Packet> packet, bool normally);
-  virtual bool IsLowLatency (void) const;
+  WifiRemoteStation * DoCreateStation (void) const;
+  void DoReportRxOk (WifiRemoteStation *station,
+                     double rxSnr, WifiMode txMode);
+  void DoReportRtsFailed (WifiRemoteStation *station);
+  void DoReportDataFailed (WifiRemoteStation *station);
+  void DoReportRtsOk (WifiRemoteStation *station,
+                      double ctsSnr, WifiMode ctsMode, double rtsSnr);
+  void DoReportDataOk (WifiRemoteStation *station,
+                       double ackSnr, WifiMode ackMode, double dataSnr);
+  void DoReportFinalRtsFailed (WifiRemoteStation *station);
+  void DoReportFinalDataFailed (WifiRemoteStation *station);
+  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
+  WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
+  bool DoNeedRts (WifiRemoteStation *st,
+                  Ptr<const Packet> packet, bool normally);
+  bool IsLowLatency (void) const;
 
+  /**
+   * Check for initializations.
+   * \param station The remote station.
+   */
+  void CheckInit (RraaWifiRemoteStation *station);
   /**
    * Return the index for the maximum transmission rate for
    * the given station.
@@ -124,48 +143,65 @@ private:
    */
   void ResetCountersBasic (RraaWifiRemoteStation *station);
   /**
-   * Get a threshold for the given mode.
+   * Initialize the thresholds internal list for the given station.
    *
-   * \param mode
    * \param station
+   */
+  void InitThresholds (RraaWifiRemoteStation *station);
+  /**
+   * Get the thresholds for the given station and mode.
+   *
+   * \param station
+   * \param mode
    *
    * \return threshold
    */
-  struct ThresholdsItem GetThresholds (WifiMode mode, RraaWifiRemoteStation *station) const;
+  WifiRraaThresholds GetThresholds (RraaWifiRemoteStation *station, WifiMode mode) const;
   /**
-   * Get a threshold for the given station and mode index.
+   * Get the thresholds for the given station and mode index.
    *
    * \param station
    * \param rate
    *
    * \return threshold
    */
-  struct ThresholdsItem GetThresholds (RraaWifiRemoteStation *station, uint32_t rate) const;
+  WifiRraaThresholds GetThresholds (RraaWifiRemoteStation *station, uint32_t rate) const;
+  /**
+   * Get the estimated TxTime of a packet with a given mode.
+   *
+   * \param mode
+   *
+   * \return time
+   */
+  Time GetCalcTxTime (WifiMode mode) const;
+  /**
+   * Add transmission time for the given mode to an internal list.
+   *
+   * \param mode Wi-Fi mode
+   * \param t transmission time
+   */
+  void AddCalcTxTime (WifiMode mode, Time t);
+  /**
+   * typedef for a vector of a pair of Time, WifiMode.
+   * Essentially a list for WifiMode and its corresponding transmission time
+   * to transmit a reference packet.
+   */
+  typedef std::vector<std::pair<Time,WifiMode> > TxTime;
 
-  bool m_basic;
-  Time m_timeout;
-  uint32_t m_ewndfor54;
-  uint32_t m_ewndfor48;
-  uint32_t m_ewndfor36;
-  uint32_t m_ewndfor24;
-  uint32_t m_ewndfor18;
-  uint32_t m_ewndfor12;
-  uint32_t m_ewndfor9;
-  uint32_t m_ewndfor6;
-  double m_porifor48;
-  double m_porifor36;
-  double m_porifor24;
-  double m_porifor18;
-  double m_porifor12;
-  double m_porifor9;
-  double m_porifor6;
-  double m_pmtlfor54;
-  double m_pmtlfor48;
-  double m_pmtlfor36;
-  double m_pmtlfor24;
-  double m_pmtlfor18;
-  double m_pmtlfor12;
-  double m_pmtlfor9;
+  TxTime m_calcTxTime;     //!< To hold all the calculated TxTime for all modes.
+  Time m_sifs;             //!< Value of SIFS configured in the device.
+  Time m_difs;             //!< Value of DIFS configured in the device.
+
+  uint32_t m_frameLength;  //!< Data frame length used for calculate mode TxTime.
+  uint32_t m_ackLength;    //!< Ack frame length used for calculate mode TxTime.
+
+  bool m_basic;    ///< basic
+  Time m_timeout;  ///< timeout
+  double m_alpha;  //!< Alpha value for RRAA (value for calculating MTL threshold)
+  double m_beta;   //!< Beta value for RRAA (value for calculating ORI threshold).
+  double m_tau;    //!< Tau value for RRAA (value for calculating EWND size).
+
+  TracedValue<uint64_t> m_currentRate; //!< Trace rate changes
 };
 
 } //namespace ns3

@@ -33,6 +33,7 @@
 #include "log.h"
 #include "rng-stream.h"
 #include "rng-seed-manager.h"
+#include "unused.h"
 #include <cmath>
 #include <iostream>
 
@@ -455,9 +456,15 @@ ParetoRandomVariable::GetTypeId (void)
     .SetGroupName ("Core")
     .AddConstructor<ParetoRandomVariable> ()
     .AddAttribute("Mean", "The mean parameter for the Pareto distribution returned by this RNG stream.",
-		  DoubleValue(1.0),
-		  MakeDoubleAccessor(&ParetoRandomVariable::m_mean),
-		  MakeDoubleChecker<double>())
+      DoubleValue(0.0),
+      MakeDoubleAccessor(&ParetoRandomVariable::m_mean),
+      MakeDoubleChecker<double>(),
+      TypeId::DEPRECATED,
+      "Not anymore used. Use 'Scale' instead - changing this attribute has no effect.")
+    .AddAttribute("Scale", "The scale parameter for the Pareto distribution returned by this RNG stream.",
+      DoubleValue(1.0),
+      MakeDoubleAccessor(&ParetoRandomVariable::m_scale),
+      MakeDoubleChecker<double>())
     .AddAttribute("Shape", "The shape parameter for the Pareto distribution returned by this RNG stream.",
 		  DoubleValue(2.0),
 		  MakeDoubleAccessor(&ParetoRandomVariable::m_shape),
@@ -471,23 +478,41 @@ ParetoRandomVariable::GetTypeId (void)
 }
 ParetoRandomVariable::ParetoRandomVariable ()
 {
-  // m_mean, m_shape, and m_bound are initialized after constructor
+  // m_shape, m_shape, and m_bound are initialized after constructor
   // by attributes
   NS_LOG_FUNCTION (this);
+  NS_UNUSED (m_mean);
 }
 
 double 
 ParetoRandomVariable::GetMean (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_mean;
+
+  double mean = std::numeric_limits<double>::infinity();
+
+  if (m_shape > 1)
+    {
+      mean = m_shape * m_scale / (m_shape -1);
+    }
+
+  return mean;
 }
+
 double 
+ParetoRandomVariable::GetScale (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_scale;
+}
+
+double
 ParetoRandomVariable::GetShape (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_shape;
 }
+
 double 
 ParetoRandomVariable::GetBound (void) const
 {
@@ -496,11 +521,10 @@ ParetoRandomVariable::GetBound (void) const
 }
 
 double 
-ParetoRandomVariable::GetValue (double mean, double shape, double bound)
+ParetoRandomVariable::GetValue (double scale, double shape, double bound)
 {
   // Calculate the scale parameter.
-  NS_LOG_FUNCTION (this << mean << shape << bound);
-  double scale = mean * (shape - 1.0) / shape;
+  NS_LOG_FUNCTION (this << scale << shape << bound);
 
   while (1)
     {
@@ -522,23 +546,23 @@ ParetoRandomVariable::GetValue (double mean, double shape, double bound)
     }
 }
 uint32_t 
-ParetoRandomVariable::GetInteger (uint32_t mean, uint32_t shape, uint32_t bound)
+ParetoRandomVariable::GetInteger (uint32_t scale, uint32_t shape, uint32_t bound)
 {
-  NS_LOG_FUNCTION (this << mean << shape << bound);
-  return static_cast<uint32_t> ( GetValue (mean, shape, bound) );
+  NS_LOG_FUNCTION (this << scale << shape << bound);
+  return static_cast<uint32_t> ( GetValue (scale, shape, bound) );
 }
 
 double 
 ParetoRandomVariable::GetValue (void)
 {
   NS_LOG_FUNCTION (this);
-  return GetValue (m_mean, m_shape, m_bound);
+  return GetValue (m_scale, m_shape, m_bound);
 }
 uint32_t 
 ParetoRandomVariable::GetInteger (void)
 {
   NS_LOG_FUNCTION (this);
-  return (uint32_t)GetValue (m_mean, m_shape, m_bound);
+  return (uint32_t)GetValue (m_scale, m_shape, m_bound);
 }
 
 NS_OBJECT_ENSURE_REGISTERED(WeibullRandomVariable);
@@ -1520,6 +1544,7 @@ EmpiricalRandomVariable::ValueCDF::ValueCDF (double v, double c)
     cdf (c)
 {
   NS_LOG_FUNCTION (this << v << c);
+  NS_ASSERT (c >= 0.0 && c <= 1.0);
 }
 EmpiricalRandomVariable::ValueCDF::ValueCDF (const ValueCDF& c)
   : value (c.value),
@@ -1540,7 +1565,7 @@ EmpiricalRandomVariable::GetTypeId (void)
 }
 EmpiricalRandomVariable::EmpiricalRandomVariable ()
   :
-  validated (false)
+  m_validated (false)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -1551,13 +1576,9 @@ EmpiricalRandomVariable::GetValue (void)
   NS_LOG_FUNCTION (this);
   // Return a value from the empirical distribution
   // This code based (loosely) on code by Bruce Mah (Thanks Bruce!)
-  if (emp.size () == 0)
+  if (!m_validated)
     {
-      return 0.0; // HuH? No empirical data
-    }
-  if (!validated)
-    {
-      Validate ();      // Insure in non-decreasing
+      Validate ();
     }
 
   // Get a uniform random variable in [0,1].
@@ -1567,28 +1588,28 @@ EmpiricalRandomVariable::GetValue (void)
       r = (1 - r);
     }
 
-  if (r <= emp.front ().cdf)
+  if (r <= m_emp.front ().cdf)
     {
-      return emp.front ().value; // Less than first
+      return m_emp.front ().value; // Less than first
     }
-  if (r >= emp.back ().cdf)
+  if (r >= m_emp.back ().cdf)
     {
-      return emp.back ().value;  // Greater than last
+      return m_emp.back ().value;  // Greater than last
     }
   // Binary search
   std::vector<ValueCDF>::size_type bottom = 0;
-  std::vector<ValueCDF>::size_type top = emp.size () - 1;
+  std::vector<ValueCDF>::size_type top = m_emp.size () - 1;
   while (1)
     {
       std::vector<ValueCDF>::size_type c = (top + bottom) / 2;
-      if (r >= emp[c].cdf && r < emp[c + 1].cdf)
+      if (r >= m_emp[c].cdf && r < m_emp[c + 1].cdf)
         { // Found it
-          return Interpolate (emp[c].cdf, emp[c + 1].cdf,
-                              emp[c].value, emp[c + 1].value,
+          return Interpolate (m_emp[c].cdf, m_emp[c + 1].cdf,
+                              m_emp[c].value, m_emp[c + 1].value,
                               r);
         }
       // Not here, adjust bounds
-      if (r < emp[c].cdf)
+      if (r < m_emp[c].cdf)
         {
           top    = c - 1;
         }
@@ -1610,16 +1631,20 @@ void EmpiricalRandomVariable::CDF (double v, double c)
 { // Add a new empirical datapoint to the empirical cdf
   // NOTE.   These MUST be inserted in non-decreasing order
   NS_LOG_FUNCTION (this << v << c);
-  emp.push_back (ValueCDF (v, c));
+  m_emp.push_back (ValueCDF (v, c));
 }
 
 void EmpiricalRandomVariable::Validate ()
 {
   NS_LOG_FUNCTION (this);
-  ValueCDF prior = emp[0];
-  for (std::vector<ValueCDF>::size_type i = 0; i < emp.size (); ++i)
+  if (m_emp.empty ())
     {
-      ValueCDF& current = emp[i];
+      NS_FATAL_ERROR ("CDF is not initialized");
+    }
+  ValueCDF prior = m_emp[0];
+  for (std::vector<ValueCDF>::size_type i = 0; i < m_emp.size (); ++i)
+    {
+      ValueCDF& current = m_emp[i];
       if (current.value < prior.value || current.cdf < prior.cdf)
         { // Error
           std::cerr << "Empirical Dist error,"
@@ -1631,7 +1656,11 @@ void EmpiricalRandomVariable::Validate ()
         }
       prior = current;
     }
-  validated = true;
+  if (prior.cdf != 1.0)
+    {
+      NS_FATAL_ERROR ("CDF does not cover the whole distribution");
+    }
+  m_validated = true;
 }
 
 double EmpiricalRandomVariable::Interpolate (double c1, double c2,

@@ -38,9 +38,11 @@ ns-3 TCP
 
 In brief, the native |ns3| TCP model supports a full bidirectional TCP with
 connection setup and close logic.  Several congestion control algorithms
-are supported, with NewReno the default, and Westwood, Hybla, and HighSpeed
-also supported.  Multipath-TCP and TCP Selective Acknowledgements (SACK)
-are not yet supported in the |ns3| releases.
+are supported, with NewReno the default, and Westwood, Hybla, HighSpeed,
+Vegas, Scalable, Veno, Binary Increase Congestion Control (BIC), Yet Another
+HighSpeed TCP (YeAH), Illinois, H-TCP and Low Extra Delay Background Transport
+(LEDBAT) also supported. The model also supports Selective Acknowledgements
+(SACK). Multipath-TCP is not yet supported in the |ns3| releases.
 
 Model history
 +++++++++++++
@@ -669,6 +671,68 @@ More information (paper):  http://www.hamilton.ie/net/htcp3.pdf
 
 More information (Internet Draft):  https://tools.ietf.org/html/draft-leith-tcp-htcp-06
 
+LEDBAT
+^^^^^^
+
+Low Extra Delay Background Transport (LEDBAT) is an experimental delay-based 
+congestion control algorithm that seeks to utilize the available bandwidth on
+an end-to-end path while limiting the consequent increase in queueing delay 
+on that path. LEDBAT uses changes in one-way delay measurements to limit 
+congestion that the flow itself induces in the network.
+
+As a first approximation, the LEDBAT sender operates as shown below:
+
+on receipt of an ACK:
+
+.. math::
+       currentdelay = acknowledgement.delay
+       basedelay = min (basedelay, currentdelay)
+       queuingdelay = currentdelay - basedelay
+       offtarget = (TARGET - queuingdelay) / TARGET
+       cWnd += GAIN * offtarget * bytesnewlyacked * MSS / cWnd
+
+``TARGET`` is the maximum queueing delay that LEDBAT itself may introduce in the
+network, and ``GAIN`` determines the rate at which the cwnd responds to changes in 
+queueing delay;  ``offtarget`` is a normalized value representing the difference between
+the measured current queueing delay and the predetermined TARGET delay. offtarget can 
+be positive or negative; consequently, cwnd increases or decreases in proportion to 
+offtarget.
+
+Following the recommendation of RFC 6817, the default values of the parameters are:
+
+* TargetDelay = 100
+* baseHistoryLen = 10
+* noiseFilterLen = 4
+* Gain = 1
+
+To enable LEDBAT on all TCP sockets, the following configuration can be used:
+
+::
+
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpLedbat::GetTypeId ()));
+
+To enable LEDBAT on a chosen TCP socket, the following configuration can be used:
+
+::
+
+  Config::Set ("$ns3::NodeListPriv/NodeList/1/$ns3::TcpL4Protocol/SocketType", TypeIdValue (TcpLedbat::GetTypeId ()));
+
+The following unit tests have been written to validate the implementation of LEDBAT:
+
+* LEDBAT should operate same as NewReno during slow start
+* LEDBAT should operate same as NewReno if timestamps are disabled
+* Test to validate cwnd increment in LEDBAT
+* Test to validate cwnd decrement in LEDBAT
+
+In comparison to RFC 6817, the scope and limitations of the current LEDBAT
+implementation are:
+
+* It assumes that the clocks on the sender side and receiver side are synchronised
+* In line with Linux implementation, the one-way delay is calculated at the sender side by using the timestamps option in TCP header
+* Only the MIN function is used for noise filtering 
+
+More information about LEDBAT is available in RFC 6817: https://tools.ietf.org/html/rfc6817
+
 Validation
 ++++++++++
 
@@ -694,6 +758,7 @@ section below on :ref:`Writing-tcp-tests`.
 * **tcp-bic-test:** Unit tests on the BIC congestion control
 * **tcp-yeah-test:** Unit tests on the YeAH congestion control
 * **tcp-illinois-test:** Unit tests on the Illinois congestion control
+* **tcp-ledbat-test:** Unit tests on the LEDBAT congestion control
 * **tcp-option:** Unit tests on TCP options
 * **tcp-pkts-acked-test:** Unit test the number of time that PktsAcked is called
 * **tcp-rto-test:** Unit test behavior after a RTO timeout occurs
@@ -752,10 +817,46 @@ are then asked to lower such value, and to return it.
 PktsAcked is used in case the algorithm needs timing information (such as
 RTT), and it is called each time an ACK is received.
 
+TCP SACK and non-SACK
++++++++++++++++++++++
+To avoid code duplication and the effort of maintaining two different versions
+of the TCP core, namely RFC 6675 (TCP-SACK) and RFC 5681 (TCP congestion
+control), we have merged RFC 6675 in the current code base. If the receiver
+supports the option, the sender bases its retransmissions over the received
+SACK information. However, in the absence of that option, the best it can do is
+to follow the RFC 5681 specification (on Fast Retransmit/Recovery) and
+employing NewReno modifications in case of partial ACKs.
+
+The merge work consisted in implementing an emulation of fake SACK options in
+the sender (when the receiver does not support SACK) following RFC 5681 rules.
+The generation is straightforward: each duplicate ACK (following the definition
+of RFC 5681) carries a new SACK option, that indicates (in increasing order)
+the blocks transmitted after the SND.UNA, not including the block starting from
+SND.UNA itself.
+
+With this emulated SACK information, the sender behaviour is unified in these
+two cases. By carefully generating these SACK block, we are able to employ all
+the algorithms outlined in RFC 6675 (e.g. Update(), NextSeg(), IsLost()) during
+non-SACK transfers. Of course, in the case of RTO expiration, no guess about
+SACK block could be made, and so they are not generated (consequently, the
+implementation will re-send all segments starting from SND.UNA, even the ones
+correctly received). Please note that the generated SACK option (in the case of
+a non-SACK receiver) by the sender never leave the sender node itself; they are
+created locally by the TCP implementation and then consumed.
+
+A similar concept is used in Linux with the function tcp_add_reno_sack. Our
+implementation resides in the TcpTxBuffer class that implements a scoreboard
+through two different lists of segments. TcpSocketBase actively uses the API
+provided by TcpTxBuffer to query the scoreboard; please refer to the Doxygen
+documentation (and to in-code comments) if you want to learn more about this
+implementation.
+
+When SACK attribute is enabled for the receiver socket, the sender will not
+craft any SACK option, relying only on what it receives from the network.
+
 Current limitations
 +++++++++++++++++++
 
-* SACK is not supported
 * TcpCongestionOps interface does not contain every possible Linux operation
 * Fast retransmit / fast recovery are bound with TcpSocketBase, thereby preventing easy simulation of TCP Tahoe
 

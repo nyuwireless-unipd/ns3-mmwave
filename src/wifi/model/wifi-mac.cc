@@ -19,15 +19,13 @@
  */
 
 #include "wifi-mac.h"
-#include "dcf.h"
-#include "ns3/uinteger.h"
-#include "ns3/boolean.h"
-#include "ns3/trace-source-accessor.h"
+#include "ns3/log.h"
 
 namespace ns3 {
 
-NS_OBJECT_ENSURE_REGISTERED (WifiMac);
+NS_LOG_COMPONENT_DEFINE ("WifiMac");
 
+NS_OBJECT_ENSURE_REGISTERED (WifiMac);
 
 Time
 WifiMac::GetDefaultMaxPropagationDelay (void)
@@ -211,7 +209,7 @@ WifiMac::GetTypeId (void)
                      MakeTraceSourceAccessor (&WifiMac::m_macTxTrace),
                      "ns3::Packet::TracedCallback")
     .AddTraceSource ("MacTxDrop",
-                     "A packet has been dropped in the MAC layer before being queued for transmission.",
+                     "A packet has been dropped in the MAC layer before transmission.",
                      MakeTraceSourceAccessor (&WifiMac::m_macTxDropTrace),
                      "ns3::Packet::TracedCallback")
     .AddTraceSource ("MacPromiscRx",
@@ -241,6 +239,7 @@ WifiMac::GetTypeId (void)
 void
 WifiMac::SetMaxPropagationDelay (Time delay)
 {
+  NS_LOG_FUNCTION (this << delay);
   m_maxPropagationDelay = delay;
 }
 
@@ -287,8 +286,9 @@ WifiMac::NotifyRxDrop (Ptr<const Packet> packet)
 }
 
 void
-WifiMac::ConfigureStandard (enum WifiPhyStandard standard)
+WifiMac::ConfigureStandard (WifiPhyStandard standard)
 {
+  NS_LOG_FUNCTION (this << standard);
   switch (standard)
     {
     case WIFI_PHY_STANDARD_80211a:
@@ -318,8 +318,15 @@ WifiMac::ConfigureStandard (enum WifiPhyStandard standard)
     case WIFI_PHY_STANDARD_80211ac:
       Configure80211ac ();
       break;
+    case WIFI_PHY_STANDARD_80211ax_2_4GHZ:
+      Configure80211ax_2_4Ghz ();
+      break;
+    case WIFI_PHY_STANDARD_80211ax_5GHZ:
+      Configure80211ax_5Ghz ();
+      break;
+    case WIFI_PHY_STANDARD_UNSPECIFIED:
     default:
-      NS_ASSERT (false);
+      NS_FATAL_ERROR ("Wifi standard not found");
       break;
     }
   FinishConfigureStandard (standard);
@@ -328,6 +335,7 @@ WifiMac::ConfigureStandard (enum WifiPhyStandard standard)
 void
 WifiMac::Configure80211a (void)
 {
+  NS_LOG_FUNCTION (this);
   SetSifs (MicroSeconds (16));
   SetSlot (MicroSeconds (9));
   SetEifsNoDifs (MicroSeconds (16 + 44));
@@ -339,6 +347,7 @@ WifiMac::Configure80211a (void)
 void
 WifiMac::Configure80211b (void)
 {
+  NS_LOG_FUNCTION (this);
   SetSifs (MicroSeconds (10));
   SetSlot (MicroSeconds (20));
   SetEifsNoDifs (MicroSeconds (10 + 304));
@@ -350,6 +359,7 @@ WifiMac::Configure80211b (void)
 void
 WifiMac::Configure80211g (void)
 {
+  NS_LOG_FUNCTION (this);
   SetSifs (MicroSeconds (10));
   // Slot time defaults to the "long slot time" of 20 us in the standard
   // according to mixed 802.11b/g deployments.  Short slot time is enabled
@@ -365,6 +375,7 @@ WifiMac::Configure80211g (void)
 void
 WifiMac::Configure80211_10Mhz (void)
 {
+  NS_LOG_FUNCTION (this);
   SetSifs (MicroSeconds (32));
   SetSlot (MicroSeconds (13));
   SetEifsNoDifs (MicroSeconds (32 + 88));
@@ -376,6 +387,7 @@ WifiMac::Configure80211_10Mhz (void)
 void
 WifiMac::Configure80211_5Mhz (void)
 {
+  NS_LOG_FUNCTION (this);
   SetSifs (MicroSeconds (64));
   SetSlot (MicroSeconds (21));
   SetEifsNoDifs (MicroSeconds (64 + 176));
@@ -387,6 +399,7 @@ WifiMac::Configure80211_5Mhz (void)
 void
 WifiMac::Configure80211n_2_4Ghz (void)
 {
+  NS_LOG_FUNCTION (this);
   Configure80211g ();
   SetRifs (MicroSeconds (2));
   SetBasicBlockAckTimeout (GetSifs () + GetSlot () + GetDefaultBasicBlockAckDelay () + GetDefaultMaxPropagationDelay () * 2);
@@ -395,6 +408,7 @@ WifiMac::Configure80211n_2_4Ghz (void)
 void
 WifiMac::Configure80211n_5Ghz (void)
 {
+  NS_LOG_FUNCTION (this);
   Configure80211a ();
   SetRifs (MicroSeconds (2));
   SetBasicBlockAckTimeout (GetSifs () + GetSlot () + GetDefaultBasicBlockAckDelay () + GetDefaultMaxPropagationDelay () * 2);
@@ -404,12 +418,28 @@ WifiMac::Configure80211n_5Ghz (void)
 void
 WifiMac::Configure80211ac (void)
 {
+  NS_LOG_FUNCTION (this);
   Configure80211n_5Ghz ();
 }
 
 void
-WifiMac::ConfigureDcf (Ptr<Dcf> dcf, uint32_t cwmin, uint32_t cwmax, bool isDsss, enum AcIndex ac)
+WifiMac::Configure80211ax_2_4Ghz (void)
 {
+  NS_LOG_FUNCTION (this);
+  Configure80211n_2_4Ghz ();
+}
+
+void
+WifiMac::Configure80211ax_5Ghz (void)
+{
+  NS_LOG_FUNCTION (this);
+  Configure80211ac ();
+}
+
+void
+WifiMac::ConfigureDcf (Ptr<DcaTxop> dcf, uint32_t cwmin, uint32_t cwmax, bool isDsss, AcIndex ac)
+{
+  NS_LOG_FUNCTION (this << dcf << cwmin << cwmax << isDsss << ac);
   /* see IEE802.11 section 7.3.2.29 */
   switch (ac)
     {

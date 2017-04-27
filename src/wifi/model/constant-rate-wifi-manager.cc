@@ -19,8 +19,8 @@
  */
 
 #include "constant-rate-wifi-manager.h"
+#include "wifi-utils.h"
 #include "ns3/string.h"
-#include "ns3/assert.h"
 #include "ns3/log.h"
 
 #define Min(a,b) ((a < b) ? a : b)
@@ -117,14 +117,14 @@ WifiTxVector
 ConstantRateWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  return WifiTxVector (m_dataMode, GetDefaultTxPowerLevel (), GetLongRetryCount (st), GetShortGuardInterval (st), Min(GetNumberOfTransmitAntennas (), GetNumberOfSupportedRxAntennas (st)), 0, GetChannelWidth (st), GetAggregation (st), false);
+  return WifiTxVector (m_dataMode, GetDefaultTxPowerLevel (), GetLongRetryCount (st), GetPreambleForTransmission (m_dataMode, GetAddress (st)), ConvertGuardIntervalToNanoSeconds (m_dataMode, GetShortGuardInterval (st), NanoSeconds (GetGuardInterval (st))), GetNumberOfAntennas (), Min (GetMaxNumberOfTransmitStreams (), GetNumberOfSupportedStreams (st)), 0, GetChannelWidth (st), GetAggregation (st), false);
 }
 
 WifiTxVector
 ConstantRateWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  return WifiTxVector (m_ctlMode, GetDefaultTxPowerLevel (), GetShortRetryCount (st), GetShortGuardInterval (st), 1, 0, GetChannelWidth (st), GetAggregation (st), false);
+  return WifiTxVector (m_ctlMode, GetDefaultTxPowerLevel (), GetShortRetryCount (st), GetPreambleForTransmission (m_ctlMode, GetAddress (st)), ConvertGuardIntervalToNanoSeconds (m_ctlMode, GetShortGuardInterval (st), NanoSeconds (GetGuardInterval (st))), 1, 1, 0, GetChannelWidth (st), GetAggregation (st), false);
 }
 
 bool

@@ -16,9 +16,9 @@
  * Author: Junling Bu <linlinjavaer@gmail.com>
  */
 #include "ns3/log.h"
-#include "ns3/assert.h"
 #include "ns3/simulator.h"
 #include "ns3/socket.h"
+#include "ns3/wifi-phy.h"
 #include "vsa-manager.h"
 #include "higher-tx-tag.h"
 #include "wave-net-device.h"
@@ -29,7 +29,9 @@ NS_LOG_COMPONENT_DEFINE ("VsaManager");
 
 NS_OBJECT_ENSURE_REGISTERED (VsaManager);
 
+/// OI bytes for use in organization identifier
 const static uint8_t oi_bytes_1609[5] = {0x00, 0x50, 0xC2, 0x4A, 0x40};
+/// OI for IEEE standard 1609
 const static OrganizationIdentifier oi_1609 = OrganizationIdentifier (oi_bytes_1609, 5);
 
 TypeId
@@ -178,6 +180,7 @@ VsaManager::DoSendVsa (enum VsaTransmitInterval  interval, uint32_t channel,
   txVector.SetChannelWidth (10);
   txVector.SetTxPowerLevel (manager->GetManagementPowerLevel (channel));
   txVector.SetMode (manager->GetManagementDataRate (channel));
+  txVector.SetPreambleType (manager->GetManagementPreamble (channel));
   HigherLayerTxVectorTag tag = HigherLayerTxVectorTag (txVector, manager->GetManagementAdaptable (channel));
   vsc->AddPacketTag (tag);
 

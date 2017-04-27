@@ -25,8 +25,6 @@
 #include "ns3/stats-module.h"
 #include "ns3/wifi-module.h"
 
-#include <iostream>
-
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("Main");
@@ -37,7 +35,7 @@ public:
   Experiment ();
   Experiment (std::string name);
   Gnuplot2dDataset Run (const WifiHelper &wifi, const YansWifiPhyHelper &wifiPhy,
-                        const NqosWifiMacHelper &wifiMac, const YansWifiChannelHelper &wifiChannel);
+                        const WifiMacHelper &wifiMac, const YansWifiChannelHelper &wifiChannel);
 private:
   void ReceivePacket (Ptr<Socket> socket);
   void SetPosition (Ptr<Node> node, Vector position);
@@ -73,15 +71,15 @@ Experiment::GetPosition (Ptr<Node> node)
   return mobility->GetPosition ();
 }
 
-void 
-Experiment::AdvancePosition (Ptr<Node> node) 
+void
+Experiment::AdvancePosition (Ptr<Node> node)
 {
   Vector pos = GetPosition (node);
   double mbs = ((m_bytesTotal * 8.0) / 1000000);
   m_bytesTotal = 0;
   m_output.Add (pos.x, mbs);
   pos.x += 1.0;
-  if (pos.x >= 210.0) 
+  if (pos.x >= 210.0)
     {
       return;
     }
@@ -112,7 +110,7 @@ Experiment::SetupPacketReceive (Ptr<Node> node)
 
 Gnuplot2dDataset
 Experiment::Run (const WifiHelper &wifi, const YansWifiPhyHelper &wifiPhy,
-                 const NqosWifiMacHelper &wifiMac, const YansWifiChannelHelper &wifiChannel)
+                 const WifiMacHelper &wifiMac, const YansWifiChannelHelper &wifiChannel)
 {
   m_bytesTotal = 0;
 
@@ -125,7 +123,7 @@ Experiment::Run (const WifiHelper &wifi, const YansWifiPhyHelper &wifiPhy,
   YansWifiPhyHelper phy = wifiPhy;
   phy.SetChannel (wifiChannel.Create ());
 
-  NqosWifiMacHelper mac = wifiMac;
+  WifiMacHelper mac = wifiMac;
   NetDeviceContainer devices = wifi.Install (phy, mac, c);
 
   MobilityHelper mobility;
@@ -172,9 +170,9 @@ int main (int argc, char *argv[])
   Gnuplot gnuplot = Gnuplot ("reference-rates.png");
 
   Experiment experiment;
-  WifiHelper wifi = WifiHelper::Default ();
+  WifiHelper wifi;
   wifi.SetStandard (WIFI_PHY_STANDARD_80211a);
-  NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
+  WifiMacHelper wifiMac;
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
   Gnuplot2dDataset dataset;
@@ -239,10 +237,8 @@ int main (int argc, char *argv[])
 
   gnuplot.GenerateOutput (std::cout);
 
-
   gnuplot = Gnuplot ("rate-control.png");
   wifi.SetStandard (WIFI_PHY_STANDARD_holland);
-
 
   NS_LOG_DEBUG ("arf");
   experiment = Experiment ("arf");

@@ -20,7 +20,7 @@ constituent objects, and bind them together appropriately (the WifiNetDevice is
 very modular in this regard, for future extensibility). At the low-level API,
 this can be done with about 20 lines of code (see ``ns3::WifiHelper::Install``,
 and ``ns3::YansWifiPhyHelper::Create``). They also must create, at some point, a
-WifiChannel, which also contains a number of constituent objects (see
+Channel, which also contains a number of constituent objects (see
 ``ns3::YansWifiChannelHelper::Create``).
 
 However, a few helpers are available for users to add these devices and channels
@@ -29,24 +29,25 @@ helpers provide additional API to allow the passing of attribute values to
 change default values.  Commonly used attribute values are listed in the
 Attributes section.  The scripts in ``examples/wireless`` can be browsed to
 see how this is done.  Next, we describe the common steps to create a WifiNetDevice
-from the bottom layer (WifiChannel) up to the device layer (WifiNetDevice).
+from the bottom layer (Channel) up to the device layer (WifiNetDevice).
 
 To create a WifiNetDevice, users need to follow these steps:
 
 * Decide on which physical layer framework, the ``SpectrumWifiPhy`` or 
   ``YansWifiPhy``, to use.  This will affect which Channel and Phy type to use. 
-* Configure the WifiChannel: WifiChannel takes care of getting signal
+* Configure the Channel: Channel takes care of getting signal
   from one device to other devices on the same wifi channel.
   The main configurations of WifiChannel are propagation loss model and propagation delay model.
 * Configure the WifiPhy: WifiPhy takes care of actually sending and receiving wireless
-  signal from WifiChannel.  Here, WifiPhy decides whether each frame will be successfully
+  signal from Channel.  Here, WifiPhy decides whether each frame will be successfully
   decoded or not depending on the received signal strength and noise.  Thus, the main
   configuration of WifiPhy is the error rate model, which is the one that actually 
   calculates the probability of successfully decoding the frame based on the signal.
 * Configure WifiMac: this step is more on related to the architecture and device level.
-  The users configure the wifi architecture (i.e. ad-hoc or ap-sta) and whether QoS (802.11e), HT (802.11n) and/or VHT (802.11ac) features are supported or not.
+  The users configure the wifi architecture (i.e. ad-hoc or ap-sta) and whether QoS (802.11e),
+  HT (802.11n) and/or VHT (802.11ac) and/or HE (802.11ax) features are supported or not.
 * Create WifiDevice: at this step, users configure the desired wifi standard
-  (e.g. **802.11b**, **802.11g**, **802.11a**, **802.11n** or **802.11ac**) and rate control algorithm
+  (e.g. **802.11b**, **802.11g**, **802.11a**, **802.11n**, **802.11ac** or **802.11ax**) and rate control algorithm
 * Configure mobility: finally, mobility model is (usually) required before WifiNetDevice
   can be used.
 
@@ -91,13 +92,13 @@ YansWifiChannelHelper
 The YansWifiChannelHelper has an unusual name. Readers may wonder why it is
 named this way. The reference is to the `yans simulator
 <http://cutebugs.net/files/wns2-yans.pdf>`_ from which this model is taken. The
-helper can be used to create a WifiChannel with a default PropagationLoss and
+helper can be used to create a YansWifiChannel with a default PropagationLoss and
 PropagationDelay model.
 
 Users will typically type code such as::
 
   YansWifiChannelHelper wifiChannelHelper = YansWifiChannelHelper::Default ();
-  Ptr<WifiChannel> wifiChannel = wifiChannelHelper.Create ();
+  Ptr<Channel> wifiChannel = wifiChannelHelper.Create ();
 
 to get the defaults.  Specifically, the default is a channel model with a
 propagation delay equal to a constant, the speed of light (``ns3::ConstantSpeedPropagationDelayModel``),
@@ -105,7 +106,7 @@ and a propagation loss based on a default log distance model (``ns3::LogDistance
 Please note that the default log distance model is configured with a reference
 loss of 46.6777 dB at reference distance of 1m.  The reference loss of 46.6777 dB
 was calculated using Friis propagation loss model at 5.15 GHz.  The reference loss
-must be changed if **802.11b**, **802.11g** or **802.11n** (at 2.4 GHz) are used since they operate at 2.4 Ghz.
+must be changed if **802.11b**, **802.11g**, **802.11n** (at 2.4 GHz) or **802.11ax** (at 2.4 GHz) are used since they operate at 2.4 Ghz.
 
 Note the distinction above in creating a helper object vs. an actual simulation
 object.  In |ns3|, helper objects (used at the helper API only) are created on
@@ -123,7 +124,7 @@ The following two methods are useful when configuring YansWifiChannelHelper:
 YansWifiPhyHelper
 =================
 
-Physical devices (base class ``ns3::WifiPhy``) connect to ``ns3::WifiChannel`` models in
+Physical devices (base class ``ns3::WifiPhy``) connect to ``ns3::YansWifiChannel`` models in
 |ns3|.  We need to create WifiPhy objects appropriate for the YansWifiChannel; here
 the ``YansWifiPhyHelper`` will do the work.
 
@@ -154,17 +155,29 @@ The Phy objects are created in the next step.
 
  wifiPhyHelper.Set ("ShortGuardEnabled", BooleanValue(true));
 
-In order to enable 802.11n/ac MIMO, the number of Rx antennas as well as the number of Tx antennas need to be configured.
-For example, this code enables 2x2 MIMO::
+802.11ax PHY layer can use either either 3200 ns, 1600 ns or 800 ns OFDM guard intervals. To configure this parameter, the following line of code could be used (in this example, it enables the support of 1600 ns guard interval)::
 
- wifiPhyHelper.Set ("TxAntennas", UintegerValue (2));
- wifiPhyHelper.Set ("RxAntennas", UintegerValue (2));
+ wifiPhyHelper.Set ("GuardInterval", TimeValue(NanoSeconds (1600)));
+
+In order to enable 802.11n/ac/ax MIMO, the number of antennas as well as the number of supported spatial streams need to be configured.
+For example, this code enables MIMO with 2 antennas and 2 spatial streams::
+
+ wifiPhyHelper.Set ("Antennas", UintegerValue (2));
+ wifiPhyHelper.Set ("MaxSupportedTxSpatialStreams", UintegerValue (2));
+ wifiPhyHelper.Set ("MaxSupportedRxSpatialStreams", UintegerValue (2));
+
+It is also possible to configure less streams than the number of antennas in order to benefit from diversity gain, and to define different MIMO capabilities for downlink and uplink.
+For example, this code configures a node with 3 antennas that supports 2 spatial streams in downstream and 1 spatial stream in upstream::
+
+ wifiPhyHelper.Set ("Antennas", UintegerValue (3));
+ wifiPhyHelper.Set ("MaxSupportedTxSpatialStreams", UintegerValue (2));
+ wifiPhyHelper.Set ("MaxSupportedRxSpatialStreams", UintegerValue (1));
 
 Furthermore, 802.11n provides an optional mode (GreenField mode) to reduce preamble durations and which is only compatible with 802.11n devices. This mode is enabled as follows::
 
  wifiPhyHelper.Set ("GreenfieldEnabled",BooleanValue(true));
 
-802.11n PHY layer can support both 20 (default) or 40 MHz channel width, and 802.11ac PHY layer can use either 20, 40, 80 (default) or 160 MHz channel width.  See below for further documentation on setting the frequency, channel width, and channel number.
+802.11n PHY layer can support both 20 (default) or 40 MHz channel width, and 802.11ac/ax PHY layer can use either 20, 40, 80 (default) or 160 MHz channel width.  See below for further documentation on setting the frequency, channel width, and channel number.
 
 ::
 
@@ -266,7 +279,11 @@ The following values for WifiPhyStandard are defined in
   /** HT OFDM PHY for the 5 GHz band (clause 20) */
   WIFI_PHY_STANDARD_80211n_5GHZ,
   /** VHT OFDM PHY (clause 22) */
-  WIFI_PHY_STANDARD_80211ac
+  WIFI_PHY_STANDARD_80211ac,
+  /** HE PHY for the 2.4 GHz band (clause 26) */
+  WIFI_PHY_STANDARD_80211ax_2_4GHZ,
+  /** HE PHY for the 5 GHz band (clause 26) */
+  WIFI_PHY_STANDARD_80211ax_5GHZ
 
 In addition, a value WIFI_PHY_STANDARD_UNSPECIFIED is defined to indicate
 that the user has not set a standard.
@@ -281,7 +298,7 @@ If user has not already separately configured Frequency or ChannelNumber
 when SetStandard is called, the user obtains default values, in addition
 (e.g. channel 1 for 802.11b/g, or channel 36 for a/n), in addition to
 an appropriate ChannelWidth value for the standard (typically, 20 MHz, but
-80 MHz for 802.11ac).
+80 MHz for 802.11ac/ax).
 
 WifiPhy attribute interactions
 ++++++++++++++++++++++++++++++
@@ -494,20 +511,21 @@ SpectrumWifiPhyHelper
 
 The API for this helper closely tracks the API of the YansWifiPhyHelper,
 with the exception that a channel of type ``ns3::SpectrumChannel`` instead
-of type ``ns3::WifiChannel`` must be used with it.
+of type ``ns3::YansWifiChannel`` must be used with it.
 
 WifiMacHelper
 =============
 
 The next step is to configure the MAC model. We use WifiMacHelper to accomplish this.
 WifiMacHelper takes care of both the MAC low model and MAC high model, and configures an object factory to create instances of a ``ns3::WifiMac``.
-It is used to configure MAC parameters like type of MAC, and to select whether 802.11/WMM-style QoS and/or 802.11n-style High throughput (HT) and/or 802.11ac-style Very High throughput (VHT) support are/is required.
+It is used to configure MAC parameters like type of MAC, and to select whether 802.11/WMM-style QoS and/or 802.11n-style High Throughput (HT)
+and/or 802.11ac-style Very High Throughput (VHT) support and/or 802.11ax-style High Efficiency (HE) support are/is required.
 
-By default, it creates an ad-hoc MAC instance that does not have 802.11e/WMM-style QoS nor 802.11n-style High throughput (HT) nor 802.11ac-style Very High throughput (VHT) support enabled.
+By default, it creates an ad-hoc MAC instance that does not have 802.11e/WMM-style QoS nor 802.11n-style High Throughput (HT)
+nor 802.11ac-style Very High Throughput (VHT) nor 802.11ax-style High Efficiency (HE) support enabled.
 
-For example the following user code configures a non-QoS and non-(V)HT MAC that
-will be a non-AP STA in an infrastructure network where the AP has
-SSID ``ns-3-ssid``::
+For example the following user code configures a non-QoS and non-HT/non-VHT/non-HE MAC that
+will be a non-AP STA in an infrastructure network where the AP has SSID ``ns-3-ssid``::
 
     WifiMacHelper wifiMacHelper;
     Ssid ssid = Ssid ("ns-3-ssid");
@@ -531,8 +549,10 @@ four different Access Categories (ACs): **AC_VO** for voice traffic,
 **AC_VI** for video traffic, **AC_BE** for best-effort
 traffic and **AC_BK** for background traffic.
 
-When selecting **802.11n** as the desired wifi standard, both 802.11e/WMM-style QoS and 802.11n-style High throughput (HT) support gets enabled.
-Similarly, When selecting **802.11ac** as the desired wifi standard, 802.11e/WMM-style QoS, 802.11n-style High throughput (HT) and 802.11ac-style Very High throughput (VHT) support gets enabled.
+When selecting **802.11n** as the desired wifi standard, both 802.11e/WMM-style QoS and 802.11n-style High Throughput (HT) support gets enabled.
+Similarly when selecting **802.11ac** as the desired wifi standard, 802.11e/WMM-style QoS, 802.11n-style High Throughput (HT) and 802.11ac-style Very High Throughput (VHT)
+support gets enabled. And when selecting **802.11ax** as the desired wifi standard, 802.11e/WMM-style QoS, 802.11n-style High Throughput (HT),
+802.11ac-style Very High Throughput (VHT) and 802.11ax-style High Efficiency (HE) support gets enabled.
 
 For MAC instances that have QoS support enabled, the ``ns3::WifiMacHelper`` can be also used to set:
 
@@ -550,7 +570,8 @@ in an infrastructure network where the AP has SSID ``ns-3-ssid``::
                           "BE_BlockAckThreshold", UintegerValue (2),
                           "ActiveProbing", BooleanValue (false));
 
-For MAC instances that have 802.11n-style High throughput (HT) and/or 802.11ac-style Very High throughput (VHT) support enabled, the ``ns3::WifiMacHelper`` can be also used to set:
+For MAC instances that have 802.11n-style High Throughput (HT) and/or 802.11ac-style Very High Throughput (VHT) and/or 802.11ax-style High Efficiency (HE) support enabled,
+the ``ns3::WifiMacHelper`` can be also used to set:
 
 * MSDU aggregation parameters for a particular Access Category (AC) in order to use 802.11n/ac A-MSDU feature;
 * MPDU aggregation parameters for a particular Access Category (AC) in order to use 802.11n/ac A-MPDU feature.
@@ -605,9 +626,40 @@ UP   Access Category
  1     AC_BK
 ===  ===============
 
-Readers can refer to the doxygen documentation of the
-:cpp:func:`ns3::WifiNetDevice::SelectQueue()` method for more information,
-including how DSCP values map onto user priorities and access categories.
+TOS and DSCP values map onto user priorities and access categories according
+to the following table.  
+
+============  ============  ==  ===============
+DiffServ PHB  TOS (binary)  UP  Access Category
+============  ============  ==  ===============
+EF            101110xx      5   AC_VI
+AF11          001010xx      1   AC_BK
+AF21          010010xx      2   AC_BK
+AF31          011010xx      3   AC_BE
+AF41          100010xx      4   AC_VI
+AF12          001100xx      1   AC_BK
+AF22          010100xx      2   AC_BK
+AF32          011100xx      3   AC_BE
+AF42          100100xx      4   AC_VI
+AF13          001110xx      1   AC_BK
+AF23          010110xx      2   AC_BK
+AF33          011110xx      3   AC_BE
+AF43          100110xx      4   AC_VI
+CS0           000000xx      0   AC_BE
+CS1           001000xx      1   AC_BK
+CS2           010000xx      2   AC_BK
+CS3           011000xx      3   AC_BE
+CS4           100000xx      4   AC_VI
+CS5           101000xx      5   AC_VI
+CS6           110000xx      6   AC_VO
+CS7           111000xx      7   AC_VO
+============  ============  ==  ===============
+
+So, for example,::
+
+    destAddress.SetTos (0xc0);
+
+will map to CS6, User Priority 6, and Access Category AC_VO.
 Also, the ns3-wifi-ac-mapping test suite (defined in 
 src/test/ns3wifi/wifi-ac-mapping-test-suite.cc) can provide additional
 useful information.
@@ -640,7 +692,7 @@ on a set of nodes in a NodeContainer "c"::
   NetDeviceContainer wifiContainer = WifiHelper::Install (wifiPhyHelper, wifiMacHelper, c);
 
 This creates the WifiNetDevice which includes also a WifiRemoteStationManager, a
-WifiMac, and a WifiPhy (connected to the matching WifiChannel).
+WifiMac, and a WifiPhy (connected to the matching Channel).
 
 The ``WifiHelper::SetStandard`` method set various default timing parameters as defined in the selected standard version, overwriting values that may exist or have been previously configured.
 In order to change parameters that are overwritten by ``WifiHelper::SetStandard``, this should be done post-install using ``Config::Set``::

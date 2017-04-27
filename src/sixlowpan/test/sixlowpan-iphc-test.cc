@@ -24,7 +24,6 @@
 #include "ns3/simulator.h"
 #include "ns3/simple-channel.h"
 #include "ns3/simple-net-device.h"
-#include "ns3/drop-tail-queue.h"
 #include "ns3/socket.h"
 #include "ns3/boolean.h"
 
@@ -40,17 +39,55 @@
 
 using namespace ns3;
 
+/**
+ * \ingroup sixlowpan
+ * \defgroup sixlowpan-test 6LoWPAN module tests
+ */
+
+
+/**
+ * \ingroup sixlowpan-test
+ * \ingroup tests
+ *
+ * \brief 6LoWPAN IPHC Test
+ */
 class SixlowpanIphcImplTest : public TestCase
 {
-  Ptr<Packet> m_receivedPacket;
+  Ptr<Packet> m_receivedPacket; //!< received packet
+
+  /**
+   * Send data function.
+   *
+   * \param socket The sending socket.
+   * \param to The destination.
+   */
   void DoSendData (Ptr<Socket> socket, std::string to);
+
+  /**
+   * Send data function.
+   *
+   * \param socket The sending socket.
+   * \param to The destination.
+   */
   void SendData (Ptr<Socket> socket, std::string to);
 
 public:
   virtual void DoRun (void);
   SixlowpanIphcImplTest ();
 
+  /**
+   * Packet receive function.
+   *
+   * \param socket The receiving socket.
+   * \param packet The received packet.
+   * \param from The sender.
+   */
   void ReceivePacket (Ptr<Socket> socket, Ptr<Packet> packet, const Address &from);
+  /**
+   * Packet receive function.
+   *
+   * \param socket The receiving socket.
+   */
   void ReceivePkt (Ptr<Socket> socket);
 };
 
@@ -177,12 +214,23 @@ SixlowpanIphcImplTest::DoRun (void)
 }
 
 
-//-----------------------------------------------------------------------------
+/**
+ * \ingroup sixlowpan-test
+ * \ingroup tests
+ *
+ * \brief 6LoWPAN IPHC TestSuite
+ */
 class SixlowpanIphcTestSuite : public TestSuite
 {
 public:
-  SixlowpanIphcTestSuite () : TestSuite ("sixlowpan-iphc", UNIT)
-  {
-    AddTestCase (new SixlowpanIphcImplTest, TestCase::QUICK);
-  }
-} g_sixlowpanIphcTestSuite;
+  SixlowpanIphcTestSuite ();
+private:
+};
+
+SixlowpanIphcTestSuite::SixlowpanIphcTestSuite ()
+  : TestSuite ("sixlowpan-iphc", UNIT)
+{
+  AddTestCase (new SixlowpanIphcImplTest (), TestCase::QUICK);
+}
+
+static SixlowpanIphcTestSuite g_sixlowpanIphcTestSuite; //!< Static variable for test initialization

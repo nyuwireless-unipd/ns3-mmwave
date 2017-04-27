@@ -50,53 +50,50 @@
 //
 
 #include "ns3/core-module.h"
-#include "ns3/wifi-net-device.h"
 #include "ns3/yans-wifi-channel.h"
-#include "ns3/yans-wifi-phy.h"
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
-#include "ns3/error-rate-model.h"
-#include "ns3/yans-error-rate-model.h"
-#include "ns3/ptr.h"
-#include "ns3/mobility-model.h"
+#include "ns3/nist-error-rate-model.h"
 #include "ns3/constant-position-mobility-model.h"
-#include "ns3/vector.h"
-#include "ns3/packet.h"
-#include "ns3/simulator.h"
-#include "ns3/nstime.h"
-#include "ns3/command-line.h"
-#include "ns3/wifi-tx-vector.h"
 
 using namespace ns3;
 
+/// InterferenceExperiment
 class InterferenceExperiment
 {
 public:
+  /// Input atructure
   struct Input
   {
     Input ();
-    Time interval;
-    double xA;
-    double xB;
-    std::string txModeA;
-    std::string txModeB;
-    uint32_t txPowerLevelA;
-    uint32_t txPowerLevelB;
-    uint32_t packetSizeA;
-    uint32_t packetSizeB;
-    enum WifiPhyStandard standard;
-    enum WifiPreamble preamble;
+    Time interval; ///< interval
+    double xA; ///< x A
+    double xB; ///< x B
+    std::string txModeA; ///< transmit mode A
+    std::string txModeB; ///< transmit mode B
+    uint32_t txPowerLevelA; ///< transmit power level A
+    uint32_t txPowerLevelB; ///< transmit power level B
+    uint32_t packetSizeA; ///< packet size A
+    uint32_t packetSizeB; ///< packet size B
+    WifiPhyStandard standard; ///< standard
+    WifiPreamble preamble; ///< preamble
   };
 
   InterferenceExperiment ();
+  /**
+   * Run function
+   * \param input the interference experiment data
+   */
   void Run (struct InterferenceExperiment::Input input);
 
 private:
+  /// Send A function
   void SendA (void) const;
+  /// Send B function
   void SendB (void) const;
-  Ptr<YansWifiPhy> m_txA;
-  Ptr<YansWifiPhy> m_txB;
-  struct Input m_input;
+  Ptr<YansWifiPhy> m_txA; ///< transmit A function
+  Ptr<YansWifiPhy> m_txB; ///< transmit B function
+  struct Input m_input; ///< input
 };
 
 void
@@ -106,7 +103,8 @@ InterferenceExperiment::SendA (void) const
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevelA);
   txVector.SetMode (WifiMode (m_input.txModeA));
-  m_txA->SendPacket (p, txVector, m_input.preamble);
+  txVector.SetPreambleType (m_input.preamble);
+  m_txA->SendPacket (p, txVector);
 }
 
 void
@@ -116,7 +114,8 @@ InterferenceExperiment::SendB (void) const
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevelB);
   txVector.SetMode (WifiMode (m_input.txModeB));
-  m_txB->SendPacket (p, txVector, m_input.preamble);
+  txVector.SetPreambleType (m_input.preamble);
+  m_txB->SendPacket (p, txVector);
 }
 
 InterferenceExperiment::InterferenceExperiment ()
@@ -161,7 +160,7 @@ InterferenceExperiment::Run (struct InterferenceExperiment::Input input)
   m_txB = CreateObject<YansWifiPhy> ();
   Ptr<YansWifiPhy> rx = CreateObject<YansWifiPhy> ();
 
-  Ptr<ErrorRateModel> error = CreateObject<YansErrorRateModel> ();
+  Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_txA->SetErrorRateModel (error);
   m_txB->SetErrorRateModel (error);
   rx->SetErrorRateModel (error);

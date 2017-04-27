@@ -61,12 +61,10 @@
 #ifndef RED_QUEUE_DISC_H
 #define RED_QUEUE_DISC_H
 
-#include "ns3/packet.h"
 #include "ns3/queue-disc.h"
 #include "ns3/nstime.h"
 #include "ns3/boolean.h"
 #include "ns3/data-rate.h"
-#include "ns3/nstime.h"
 #include "ns3/random-variable-stream.h"
 
 namespace ns3 {
@@ -108,6 +106,8 @@ public:
     uint32_t unforcedDrop;  //!< Early probability drops
     uint32_t forcedDrop;    //!< Forced drops, qavg > max threshold
     uint32_t qLimDrop;      //!< Drops due to queue limits
+    uint32_t unforcedMark;  //!< Early probability marks
+    uint32_t forcedMark;    //!< Forced marks, qavg > max threshold
   } Stats;
 
   /** 
@@ -121,20 +121,28 @@ public:
   };
 
   /**
-   * \brief Set the operating mode of this queue.
-   *  Set operating mode
+   * \brief Enumeration of the modes supported in the class.
    *
-   * \param mode The operating mode of this queue.
    */
-  void SetMode (Queue::QueueMode mode);
+  enum QueueDiscMode
+  {
+    QUEUE_DISC_MODE_PACKETS,     /**< Use number of packets for maximum queue disc size */
+    QUEUE_DISC_MODE_BYTES,       /**< Use number of bytes for maximum queue disc size */
+  };
 
   /**
-   * \brief Get the encapsulation mode of this queue.
-   * Get the encapsulation mode of this queue
+   * \brief Set the operating mode of this queue disc.
    *
-   * \returns The encapsulation mode of this queue.
+   * \param mode The operating mode of this queue disc.
    */
-  Queue::QueueMode GetMode (void);
+  void SetMode (QueueDiscMode mode);
+
+  /**
+   * \brief Get the operating mode of this queue disc.
+   *
+   * \returns The operating mode of this queue disc.
+   */
+  QueueDiscMode GetMode (void);
 
   /**
    * \brief Get the current value of the queue in bytes or packets.
@@ -236,9 +244,8 @@ private:
    /**
     * \brief Update m_curMaxP
     * \param newAve new average queue length
-    * \param now Current Time
     */
-  void UpdateMaxP (double newAve, Time now);
+  void UpdateMaxP (double newAve);
   /**
    * \brief Check if a packet needs to be dropped due to probability mark
    * \param item queue item
@@ -276,7 +283,7 @@ private:
   Stats m_stats; //!< RED statistics
 
   // ** Variables supplied by user
-  Queue::QueueMode m_mode;  //!< Mode (Bytes or packets)
+  QueueDiscMode m_mode;     //!< Mode (Bytes or packets)
   uint32_t m_meanPktSize;   //!< Avg pkt size
   uint32_t m_idlePktSize;   //!< Avg pkt size used during idle times
   bool m_isWait;            //!< True for waiting between dropped packets
@@ -298,6 +305,8 @@ private:
   bool m_isNs1Compat;       //!< Ns-1 compatibility
   DataRate m_linkBandwidth; //!< Link bandwidth
   Time m_linkDelay;         //!< Link delay
+  bool m_useEcn;            //!< True if ECN is used (packets are marked instead of being dropped)
+  bool m_useHardDrop;       //!< True if packets are always dropped above max threshold
 
   // ** Variables maintained by RED
   double m_vProb1;          //!< Prob. of packet drop before "count"
@@ -316,8 +325,8 @@ private:
   uint32_t m_count;         //!< Number of packets since last random number generation
   /**
    * 0 for default RED
-   * 1 experimental (see red-queue.cc)
-   * 2 experimental (see red-queue.cc)
+   * 1 experimental (see red-queue-disc.cc)
+   * 2 experimental (see red-queue-disc.cc)
    * 3 use Idle packet size in the ptc
    */
   uint32_t m_cautious;

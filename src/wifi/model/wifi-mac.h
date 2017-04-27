@@ -21,16 +21,13 @@
 #ifndef WIFI_MAC_H
 #define WIFI_MAC_H
 
-#include "ns3/packet.h"
-#include "ns3/mac48-address.h"
-#include "wifi-phy.h"
+#include "wifi-phy-standard.h"
 #include "wifi-remote-station-manager.h"
+#include "dca-txop.h"
 #include "ssid.h"
 #include "qos-utils.h"
 
 namespace ns3 {
-
-class Dcf;
 
 /**
  * \brief base class for all MAC-level wifi objects.
@@ -44,6 +41,10 @@ class Dcf;
 class WifiMac : public Object
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   /**
@@ -161,6 +162,10 @@ public:
    * \return whether the device supports short slot time capability.
    */
   virtual bool GetShortSlotTimeSupported (void) const = 0;
+  /**
+   * \return whether the device supports RIFS capability.
+   */
+  virtual bool GetRifsSupported (void) const = 0;
 
   /**
    * \param packet the packet to send.
@@ -299,8 +304,10 @@ public:
    * \sa WifiMac::Configure80211n_2_4Ghz
    * \sa WifiMac::Configure80211n_5Ghz
    * \sa WifiMac::Configure80211ac
+   * \sa WifiMac::Configure80211ax_2_4Ghz
+   * \sa WifiMac::Configure80211ax_5Ghz
    */
-  void ConfigureStandard (enum WifiPhyStandard standard);
+  void ConfigureStandard (WifiPhyStandard standard);
 
 
 protected:
@@ -313,7 +320,7 @@ protected:
    *
    * Configure the DCF with appropriate values depending on the given access category.
    */
-  void ConfigureDcf (Ptr<Dcf> dcf, uint32_t cwmin, uint32_t cwmax, bool isDsss, enum AcIndex ac);
+  void ConfigureDcf (Ptr<DcaTxop> dcf, uint32_t cwmin, uint32_t cwmax, bool isDsss, AcIndex ac);
 
 
 private:
@@ -399,9 +406,9 @@ private:
    * implement this method to configure their dcf queues according to the
    * requested standard.
    */
-  virtual void FinishConfigureStandard (enum WifiPhyStandard standard) = 0;
+  virtual void FinishConfigureStandard (WifiPhyStandard standard) = 0;
 
-  Time m_maxPropagationDelay;
+  Time m_maxPropagationDelay; ///< maximum propagation delay
 
   /**
    * This method sets 802.11a standards-compliant defaults for following attributes:
@@ -445,6 +452,17 @@ private:
   * Sifs, Slot, EifsNoDifs, Pifs, CtsTimeout, and AckTimeout.
   */
   void Configure80211ac (void);
+  /**
+   * This method sets 802.11ax 2.4 GHz standards-compliant defaults for following attributes:
+   * Sifs, Slot, EifsNoDifs, Pifs, CtsTimeout, and AckTimeout.
+   * There is no support for short slot time.
+   */
+  void Configure80211ax_2_4Ghz (void);
+  /**
+   * This method sets 802.11ax 5 GHz standards-compliant defaults for following attributes:
+   * Sifs, Slot, EifsNoDifs, Pifs, CtsTimeout, and AckTimeout.
+   */
+  void Configure80211ax_5Ghz (void);
 
   /**
    * The trace source fired when packets come into the "top" of the device

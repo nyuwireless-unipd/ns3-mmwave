@@ -113,8 +113,7 @@ PacketTagIterator::Item::GetTag (Tag &tag) const
 {
   NS_ASSERT (tag.GetInstanceTypeId () == m_data->tid);
   tag.Deserialize (TagBuffer ((uint8_t*)m_data->data,
-                              (uint8_t*)m_data->data
-                              + PacketTagList::TagData::MAX_SIZE));
+                              (uint8_t*)m_data->data + m_data->size));
 }
 
 
@@ -654,8 +653,7 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
       size += metaSize;
 
       // serialize the metadata
-      uint32_t serialized = 
-        m_metadata.Serialize (reinterpret_cast<uint8_t *> (p), metaSize); 
+      uint32_t serialized = m_metadata.Serialize (reinterpret_cast<uint8_t *> (p), metaSize);
       if (serialized)
         {
           // increment p by metaSize bytes
@@ -680,18 +678,10 @@ Packet::Serialize (uint8_t* buffer, uint32_t maxSize) const
       // buffer. this includes 4-bytes for total 
       // length itself
       *p++ = bufSize + 4;
-      size += bufSize;
 
       // serialize the buffer
-      uint32_t serialized = 
-        m_buffer.Serialize (reinterpret_cast<uint8_t *> (p), bufSize);
-      if (serialized)
-        {
-          // increment p by bufSize bytes
-          // ensuring 4-byte boundary
-          p += ((bufSize+3) & (~3)) / 4;
-        }
-      else 
+      uint32_t serialized = m_buffer.Serialize (reinterpret_cast<uint8_t *> (p), bufSize);
+      if (!serialized)
         {
           return 0;
         }

@@ -21,8 +21,6 @@
 #ifndef STATUS_CODE_H
 #define STATUS_CODE_H
 
-#include <stdint.h>
-#include <ostream>
 #include "ns3/buffer.h"
 
 namespace ns3 {
@@ -81,7 +79,7 @@ public:
 
 
 private:
-  uint16_t m_code;
+  uint16_t m_code; ///< status code
 };
 
 std::ostream &operator << (std::ostream &os, const StatusCode &code);
