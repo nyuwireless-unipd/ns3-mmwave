@@ -2535,7 +2535,7 @@ LteEnbRrc::GetTypeId (void)
              MakeDoubleChecker<double> ())
     .AddAttribute ("SecondaryCellHandoverMode",
         "Select the secondary cell handover mode",
-         EnumValue (THRESHOLD),
+         EnumValue (DYNAMIC_TTT),
          MakeEnumAccessor (&LteEnbRrc::m_handoverMode),
          MakeEnumChecker (FIXED_TTT, "FixedTtt",
                   DYNAMIC_TTT, "DynamicTtt",

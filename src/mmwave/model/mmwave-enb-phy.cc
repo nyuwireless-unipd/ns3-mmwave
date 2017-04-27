@@ -110,7 +110,7 @@ MmWaveEnbPhy::GetTypeId (void)
 	               MakeDoubleChecker<double> ())
 	.AddAttribute ("NoiseAndFilter",
 	               "If true, use noisy SINR samples, filtered. If false, just use the SINR measure",
-	               BooleanValue (true),
+	               BooleanValue (false),
 	               MakeBooleanAccessor (&MmWaveEnbPhy::m_noiseAndFilter),
 	               MakeBooleanChecker())
 	.AddAttribute ("UpdateSinrEstimatePeriod",
