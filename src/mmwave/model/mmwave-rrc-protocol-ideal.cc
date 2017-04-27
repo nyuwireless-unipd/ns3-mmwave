@@ -53,21 +53,21 @@ namespace ns3 {
 
 static const Time RRC_IDEAL_MSG_DELAY = MicroSeconds (500);
 
-NS_OBJECT_ENSURE_REGISTERED (mmWaveUeRrcProtocolIdeal);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveUeRrcProtocolIdeal);
 
-mmWaveUeRrcProtocolIdeal::mmWaveUeRrcProtocolIdeal ()
+MmWaveUeRrcProtocolIdeal::MmWaveUeRrcProtocolIdeal ()
   :  m_ueRrcSapProvider (0),
      m_enbRrcSapProvider (0)
 {
-  m_ueRrcSapUser = new MemberLteUeRrcSapUser<mmWaveUeRrcProtocolIdeal> (this);
+  m_ueRrcSapUser = new MemberLteUeRrcSapUser<MmWaveUeRrcProtocolIdeal> (this);
 }
 
-mmWaveUeRrcProtocolIdeal::~mmWaveUeRrcProtocolIdeal ()
+MmWaveUeRrcProtocolIdeal::~MmWaveUeRrcProtocolIdeal ()
 {
 }
 
 void
-mmWaveUeRrcProtocolIdeal::DoDispose ()
+MmWaveUeRrcProtocolIdeal::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
   delete m_ueRrcSapUser;
@@ -75,42 +75,42 @@ mmWaveUeRrcProtocolIdeal::DoDispose ()
 }
 
 TypeId
-mmWaveUeRrcProtocolIdeal::GetTypeId (void)
+MmWaveUeRrcProtocolIdeal::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::mmWaveUeRrcProtocolIdeal")
+  static TypeId tid = TypeId ("ns3::MmWaveUeRrcProtocolIdeal")
     .SetParent<Object> ()
-    .AddConstructor<mmWaveUeRrcProtocolIdeal> ()
+    .AddConstructor<MmWaveUeRrcProtocolIdeal> ()
     ;
   return tid;
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::SetLteUeRrcSapProvider (LteUeRrcSapProvider* p)
+MmWaveUeRrcProtocolIdeal::SetLteUeRrcSapProvider (LteUeRrcSapProvider* p)
 {
   m_ueRrcSapProvider = p;
 }
 
 LteUeRrcSapUser* 
-mmWaveUeRrcProtocolIdeal::GetLteUeRrcSapUser ()
+MmWaveUeRrcProtocolIdeal::GetLteUeRrcSapUser ()
 {
   return m_ueRrcSapUser;
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::SetUeRrc (Ptr<LteUeRrc> rrc)
+MmWaveUeRrcProtocolIdeal::SetUeRrc (Ptr<LteUeRrc> rrc)
 {
   m_rrc = rrc;
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSetup (LteUeRrcSapUser::SetupParameters params)
+MmWaveUeRrcProtocolIdeal::DoSetup (LteUeRrcSapUser::SetupParameters params)
 {
   NS_LOG_FUNCTION (this);
   // We don't care about SRB0/SRB1 since we use ideal RRC messages.
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg)
+MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg)
 {
   // initialize the RNTI and get the EnbLteRrcSapProvider for the
   // eNB we are currently attached to
@@ -125,7 +125,7 @@ mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionRequest (LteRrcSap::RrcConnectionRe
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupCompleted msg)
+MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupCompleted msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteEnbRrcSapProvider::RecvRrcConnectionSetupCompleted,
@@ -135,7 +135,7 @@ mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionSetupCompleted (LteRrcSap::RrcConne
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionReconfigurationCompleted msg)
+MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionReconfigurationCompleted msg)
 {
   // re-initialize the RNTI and get the EnbLteRrcSapProvider for the
   // eNB we are currently attached to
@@ -150,7 +150,7 @@ mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReconfigurationCompleted (LteRrcSap
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::RrcConnectionReestablishmentRequest msg)
+MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::RrcConnectionReestablishmentRequest msg)
 {
    Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentRequest,
@@ -160,7 +160,7 @@ mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionReestablishmentComplete msg)
+MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionReestablishmentComplete msg)
 {
    Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
 		       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentComplete,
@@ -170,7 +170,7 @@ msg);
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSendMeasurementReport (LteRrcSap::MeasurementReport msg)
+MmWaveUeRrcProtocolIdeal::DoSendMeasurementReport (LteRrcSap::MeasurementReport msg)
 {
    Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
                         &LteEnbRrcSapProvider::RecvMeasurementReport,
@@ -180,7 +180,7 @@ mmWaveUeRrcProtocolIdeal::DoSendMeasurementReport (LteRrcSap::MeasurementReport 
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti ,uint16_t mmWaveCellId)
+MmWaveUeRrcProtocolIdeal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti ,uint16_t mmWaveCellId)
 {
    Simulator::Schedule (RRC_IDEAL_MSG_DELAY, 
                         &LteEnbRrcSapProvider::RecvRrcSecondaryCellInitialAccessSuccessful,
@@ -191,7 +191,7 @@ mmWaveUeRrcProtocolIdeal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnt
 }
 
 void 
-mmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
+MmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
 {
   uint16_t cellId = m_rrc->GetCellId ();  
 

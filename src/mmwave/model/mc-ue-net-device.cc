@@ -28,6 +28,8 @@
 #include "ns3/node.h"
 #include "ns3/packet.h"
 #include <ns3/ipv4-l3-protocol.h>
+#include "ns3/mmwave-enb-net-device.h"
+#include "ns3/lte-enb-net-device.h"
 
 namespace ns3 {
 

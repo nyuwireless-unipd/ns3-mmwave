@@ -44,12 +44,12 @@
 #include <ns3/uinteger.h>
 #include <ns3/double.h>
 #include <ns3/ipv4.h>
-#include <ns3/lte-rrc-protocol-real.h>
+#include <ns3/mmwave-lte-rrc-protocol-real.h>
 #include <ns3/epc-enb-application.h>
 #include <ns3/epc-x2.h>
 
 #include <ns3/friis-spectrum-propagation-loss.h>
-#include <ns3/lte-rrc-protocol-ideal.h>
+#include <ns3/mmwave-rrc-protocol-ideal.h>
 #include <ns3/lte-spectrum-phy.h>
 #include <ns3/lte-chunk-processor.h>
 #include <ns3/isotropic-antenna-model.h>
@@ -624,7 +624,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	mmWaveRrc->SetAttribute("SecondaryRRC", BooleanValue(true));
 	if (m_useIdealRrc)
 	{
-		Ptr<LteUeRrcProtocolIdeal> rrcProtocol = CreateObject<LteUeRrcProtocolIdeal> ();
+		Ptr<MmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveUeRrcProtocolIdeal> ();
 		rrcProtocol->SetUeRrc (mmWaveRrc);
 		mmWaveRrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (mmWaveRrc->GetLteUeRrcSapProvider ());
@@ -632,7 +632,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	}
 	else
 	{
-		Ptr<LteUeRrcProtocolReal> rrcProtocol = CreateObject<LteUeRrcProtocolReal> ();
+		Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteUeRrcProtocolReal> ();
 		rrcProtocol->SetUeRrc (mmWaveRrc);
 		mmWaveRrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (mmWaveRrc->GetLteUeRrcSapProvider ());
@@ -680,7 +680,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 
 	if (m_useIdealRrc)
 	{
-		Ptr<LteUeRrcProtocolIdeal> rrcProtocol = CreateObject<LteUeRrcProtocolIdeal> ();
+		Ptr<MmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveUeRrcProtocolIdeal> ();
 		rrcProtocol->SetUeRrc (lteRrc);
 		lteRrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (lteRrc->GetLteUeRrcSapProvider ());
@@ -688,7 +688,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	}
 	else
 	{
-		Ptr<LteUeRrcProtocolReal> rrcProtocol = CreateObject<LteUeRrcProtocolReal> ();
+		Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteUeRrcProtocolReal> ();
 		rrcProtocol->SetUeRrc (lteRrc);
 		lteRrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (lteRrc->GetLteUeRrcSapProvider ());
@@ -898,7 +898,7 @@ MmWaveHelper::InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n)
 
 	if (m_useIdealRrc)
 	{
-		Ptr<LteUeRrcProtocolIdeal> rrcProtocol = CreateObject<LteUeRrcProtocolIdeal> ();
+		Ptr<MmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveUeRrcProtocolIdeal> ();
 		rrcProtocol->SetUeRrc (rrc);
 		rrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (rrc->GetLteUeRrcSapProvider ());
@@ -906,7 +906,7 @@ MmWaveHelper::InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n)
 	}
 	else
 	{
-		Ptr<LteUeRrcProtocolReal> rrcProtocol = CreateObject<LteUeRrcProtocolReal> ();
+		Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteUeRrcProtocolReal> ();
 		rrcProtocol->SetUeRrc (rrc);
 		rrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (rrc->GetLteUeRrcSapProvider ());
@@ -1044,7 +1044,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	Ptr<LteUeRrc> rrc = CreateObject<LteUeRrc> ();
 	if (m_useIdealRrc)
 	{
-		Ptr<LteUeRrcProtocolIdeal> rrcProtocol = CreateObject<LteUeRrcProtocolIdeal> ();
+		Ptr<MmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveUeRrcProtocolIdeal> ();
 		rrcProtocol->SetUeRrc (rrc);
 		rrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (rrc->GetLteUeRrcSapProvider ());
@@ -1052,7 +1052,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 	}
 	else
 	{
-		Ptr<LteUeRrcProtocolReal> rrcProtocol = CreateObject<LteUeRrcProtocolReal> ();
+		Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteUeRrcProtocolReal> ();
 		rrcProtocol->SetUeRrc (rrc);
 		rrc->AggregateObject (rrcProtocol);
 		rrcProtocol->SetLteUeRrcSapProvider (rrc->GetLteUeRrcSapProvider ());
@@ -1211,7 +1211,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	if (m_useIdealRrc)
 	{
-		Ptr<LteEnbRrcProtocolIdeal> rrcProtocol = CreateObject<LteEnbRrcProtocolIdeal> ();
+		Ptr<MmWaveEnbRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveEnbRrcProtocolIdeal> ();
 		rrcProtocol->SetLteEnbRrcSapProvider (rrc->GetLteEnbRrcSapProvider ());
 		rrc->SetLteEnbRrcSapUser (rrcProtocol->GetLteEnbRrcSapUser ());
 		rrc->AggregateObject (rrcProtocol);
@@ -1219,7 +1219,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	}
 	else
 	{
-		Ptr<LteEnbRrcProtocolReal> rrcProtocol = CreateObject<LteEnbRrcProtocolReal> ();
+		Ptr<MmWaveLteEnbRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteEnbRrcProtocolReal> ();
 		rrcProtocol->SetLteEnbRrcSapProvider (rrc->GetLteEnbRrcSapProvider ());
 		rrc->SetLteEnbRrcSapUser (rrcProtocol->GetLteEnbRrcSapUser ());
 		rrc->AggregateObject (rrcProtocol);
@@ -1371,7 +1371,7 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 
 	if (m_useIdealRrc)
 	{
-	  Ptr<LteEnbRrcProtocolIdeal> rrcProtocol = CreateObject<LteEnbRrcProtocolIdeal> ();
+	  Ptr<MmWaveEnbRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveEnbRrcProtocolIdeal> ();
 	  rrcProtocol->SetLteEnbRrcSapProvider (rrc->GetLteEnbRrcSapProvider ());
 	  rrc->SetLteEnbRrcSapUser (rrcProtocol->GetLteEnbRrcSapUser ());
 	  rrc->AggregateObject (rrcProtocol);
@@ -1379,7 +1379,7 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 	}
 	else
 	{
-	  Ptr<LteEnbRrcProtocolReal> rrcProtocol = CreateObject<LteEnbRrcProtocolReal> ();
+	  Ptr<MmWaveLteEnbRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteEnbRrcProtocolReal> ();
 	  rrcProtocol->SetLteEnbRrcSapProvider (rrc->GetLteEnbRrcSapProvider ());
 	  rrc->SetLteEnbRrcSapUser (rrcProtocol->GetLteEnbRrcSapUser ());
 	  rrc->AggregateObject (rrcProtocol);

@@ -31,6 +31,7 @@
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
 #include <ns3/random-variable-stream.h>
+#include <ns3/lte-ue-net-device.h>
 
 #include <iostream>
 #include <ctime>
@@ -464,9 +465,9 @@ static ns3::GlobalValue g_mmw3DistFromMainStreet("mmw3Dist", "Distance from the 
 static ns3::GlobalValue g_mmWaveDistance("mmWaveDist", "Distance between MmWave eNB 1 and 2",
     ns3::UintegerValue(200), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_numBuildingsBetweenMmWaveEnb("numBlocks", "Number of buildings between MmWave eNB 1 and 2",
-    ns3::UintegerValue(4), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(5), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_interPckInterval("interPckInterval", "Interarrival time of UDP packets (us)",
-    ns3::UintegerValue(320), ns3::MakeUintegerChecker<uint32_t>());
+    ns3::UintegerValue(1000), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_bufferSize("bufferSize", "RLC tx buffer size (MB)",
     ns3::UintegerValue(10), ns3::MakeUintegerChecker<uint32_t>());
 static ns3::GlobalValue g_x2Latency("x2Latency", "Latency on X2 interface (us)",
@@ -648,6 +649,7 @@ main (int argc, char *argv[])
 
   double transientDuration = double(vectorTransient)/1000000; 
   double simTime = transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition)/ueSpeed + 1;
+  //simTime = 1;
 
   NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " << 
       interPacketInterval << " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed);
@@ -969,8 +971,8 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  //uePositionAlloc->Add (Vector (ueInitialPosition, -5, 0));
   uePositionAlloc->Add (Vector (ueInitialPosition, -1, ueZ));
+  uePositionAlloc->Add (Vector (maxXAxis + 10, -1, ueZ));
   uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.SetPositionAllocator(uePositionAlloc);
   uemobility.Install (ueNodes);
@@ -979,6 +981,8 @@ main (int argc, char *argv[])
   //ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
   ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -1, ueZ));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
+  // ueNodes.Get (1)->GetObject<MobilityModel> ()->SetPosition (Vector (maxXAxis + 10, -1, ueZ));
+  // ueNodes.Get (1)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes
   NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
@@ -1127,6 +1131,8 @@ main (int argc, char *argv[])
 
   Simulator::Schedule(Seconds(transientDuration), &ChangeSpeed, ueNodes.Get(0), Vector(ueSpeed, 0, 0)); // start UE movement after Seconds(0.5)
   Simulator::Schedule(Seconds(simTime - 1), &ChangeSpeed, ueNodes.Get(0), Vector(0, 0, 0)); // start UE movement after Seconds(0.5)
+  //Simulator::Schedule(Seconds(transientDuration), &ChangeSpeed, ueNodes.Get(1), Vector(0, ueSpeed, 0)); // start UE movement after Seconds(0.5)
+  //Simulator::Schedule(Seconds(simTime - 1), &ChangeSpeed, ueNodes.Get(1), Vector(0, 0, 0)); // start UE movement after Seconds(0.5)
 
   double numPrints = 0;
   for(int i = 0; i < numPrints; i++)

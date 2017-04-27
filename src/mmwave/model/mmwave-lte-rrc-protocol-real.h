@@ -1,38 +1,31 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+ * Copyright (c) 2012 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab
  *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation;
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
+ * Authors: Nicola Baldo <nbaldo@cttc.es>
+ *          Lluis Parcerisa <lparcerisa@cttc.cat>
  *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
- *                 Dual Connectivity and Handover functionalities
+ * Modified by: Michele Polese <michele.polese@gmail.com>
+ *          Dual Connectivity functionalities
  */
 
 
-#ifndef MMWAVE_RRC_PROTOCOL_IDEAL_H
-#define MMWAVE_RRC_PROTOCOL_IDEAL_H
-
+#ifndef MMWAVE_LTE_RRC_PROTOCOL_REAL_H
+#define MMWAVE_LTE_RRC_PROTOCOL_REAL_H
 
 #include <stdint.h>
 #include <map>
@@ -40,6 +33,9 @@
 #include <ns3/ptr.h>
 #include <ns3/object.h>
 #include <ns3/lte-rrc-sap.h>
+#include <ns3/lte-pdcp-sap.h>
+#include <ns3/lte-rlc-sap.h>
+#include <ns3/lte-rrc-header.h>
 
 namespace ns3 {
 
@@ -51,18 +47,20 @@ class LteUeRrc;
 
 /**
  * Models the transmission of RRC messages from the UE to the eNB in
- * an ideal fashion, without errors and without consuming any radio
- * resources. 
+ * a real fashion, by creating real RRC PDUs and transmitting them
+ * over Signaling Radio Bearers using radio resources allocated by the
+ * LTE MAC scheduler.
  * 
  */
-class MmWaveUeRrcProtocolIdeal : public Object
+class MmWaveLteUeRrcProtocolReal : public Object
 {
-  friend class MemberLteUeRrcSapUser<MmWaveUeRrcProtocolIdeal>;
+  friend class MemberLteUeRrcSapUser<MmWaveLteUeRrcProtocolReal>;
+  friend class LteRlcSpecificLteRlcSapUser<MmWaveLteUeRrcProtocolReal>;
+  friend class LtePdcpSpecificLtePdcpSapUser<MmWaveLteUeRrcProtocolReal>;
 
 public:
-
-  MmWaveUeRrcProtocolIdeal ();
-  virtual ~MmWaveUeRrcProtocolIdeal ();
+  MmWaveLteUeRrcProtocolReal ();
+  virtual ~MmWaveLteUeRrcProtocolReal ();
 
   // inherited from Object
   virtual void DoDispose (void);
@@ -70,12 +68,11 @@ public:
 
   void SetLteUeRrcSapProvider (LteUeRrcSapProvider* p);
   LteUeRrcSapUser* GetLteUeRrcSapUser ();
-  
+
   void SetUeRrc (Ptr<LteUeRrc> rrc);
-  
+
 
 private:
-
   // methods forwarded from LteUeRrcSapUser
   void DoSetup (LteUeRrcSapUser::SetupParameters params);
   void DoSendRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg);
@@ -87,30 +84,38 @@ private:
   void DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId);
 
   void SetEnbRrcSapProvider ();
+  void DoReceivePdcpPdu (Ptr<Packet> p);
+  void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);
 
   Ptr<LteUeRrc> m_rrc;
   uint16_t m_rnti;
   LteUeRrcSapProvider* m_ueRrcSapProvider;
   LteUeRrcSapUser* m_ueRrcSapUser;
   LteEnbRrcSapProvider* m_enbRrcSapProvider;
-  
+
+  LteUeRrcSapUser::SetupParameters m_setupParameters;
+  LteUeRrcSapProvider::CompleteSetupParameters m_completeSetupParameters;
+
 };
 
 
 /**
  * Models the transmission of RRC messages from the UE to the eNB in
- * an ideal fashion, without errors and without consuming any radio
- * resources. 
- * 
+ * a real fashion, by creating real RRC PDUs and transmitting them
+ * over Signaling Radio Bearers using radio resources allocated by the
+ * LTE MAC scheduler.
+ *
  */
-class MmWaveEnbRrcProtocolIdeal : public Object
+class MmWaveLteEnbRrcProtocolReal : public Object
 {
-  friend class MemberLteEnbRrcSapUser<MmWaveEnbRrcProtocolIdeal>;
+  friend class MemberLteEnbRrcSapUser<MmWaveLteEnbRrcProtocolReal>;
+  friend class LtePdcpSpecificLtePdcpSapUser<MmWaveLteEnbRrcProtocolReal>;
+  friend class LteRlcSpecificLteRlcSapUser<MmWaveLteEnbRrcProtocolReal>;
+  friend class MmWaveRealProtocolRlcSapUser;
 
 public:
-
-  MmWaveEnbRrcProtocolIdeal ();
-  virtual ~MmWaveEnbRrcProtocolIdeal ();
+  MmWaveLteEnbRrcProtocolReal ();
+  virtual ~MmWaveLteEnbRrcProtocolReal ();
 
   // inherited from Object
   virtual void DoDispose (void);
@@ -125,7 +130,6 @@ public:
   void SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvider* p);
 
 private:
-
   // methods forwarded from LteEnbRrcSapUser
   void DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params);
   void DoRemoveUe (uint16_t rnti);
@@ -144,19 +148,37 @@ private:
   Ptr<Packet> DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReconfiguration msg);
   LteRrcSap::RrcConnectionReconfiguration DoDecodeHandoverCommand (Ptr<Packet> p);
 
+  void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);
+  void DoReceivePdcpPdu (uint16_t rnti, Ptr<Packet> p);
 
   uint16_t m_rnti;
   uint16_t m_cellId;
   LteEnbRrcSapProvider* m_enbRrcSapProvider;
   LteEnbRrcSapUser* m_enbRrcSapUser;
   std::map<uint16_t, LteUeRrcSapProvider*> m_enbRrcSapProviderMap;
-  
+  std::map<uint16_t, LteEnbRrcSapUser::SetupUeParameters> m_setupUeParametersMap;
+  std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters> m_completeSetupUeParametersMap;
+
 };
 
+///////////////////////////////////////
+
+class MmWaveRealProtocolRlcSapUser : public LteRlcSapUser
+{
+public:
+  MmWaveRealProtocolRlcSapUser (MmWaveLteEnbRrcProtocolReal* pdcp, uint16_t rnti);
+
+  // Interface implemented from LteRlcSapUser
+  virtual void ReceivePdcpPdu (Ptr<Packet> p);
+
+private:
+  MmWaveRealProtocolRlcSapUser ();
+  MmWaveLteEnbRrcProtocolReal* m_pdcp;
+  uint16_t m_rnti;
+};
 
 
 }
 
 
-#endif
-// MMWAVE_RRC_PROTOCOL_IDEAL_H
+#endif // MMWAVE_LTE_RRC_PROTOCOL_REAL_H
