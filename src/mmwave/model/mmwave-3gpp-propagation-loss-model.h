@@ -55,6 +55,7 @@ struct channelCondition
 	  double m_shadowing;
 	  Vector m_position;
 	  double m_hE; //the effective environment height mentioned in Table 7.4.1-1 Note 1.
+	  double m_carPenetrationLoss; //car penetration loss in dB.
 };
 
 // map store the path loss scenario(LOS,NLOS,OUTAGE) of each propapgation channel
@@ -116,6 +117,7 @@ private:
   Ptr<NormalRandomVariable> m_norVar;
   Ptr<UniformRandomVariable> m_uniformVar;
   bool m_shadowingEnabled;
+  bool m_inCar;
 
 };
 
