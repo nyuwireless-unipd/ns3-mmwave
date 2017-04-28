@@ -82,6 +82,11 @@ MmWave3gppPropagationLossModel::GetTypeId (void)
 				BooleanValue (true),
 				MakeBooleanAccessor (&MmWave3gppPropagationLossModel::m_shadowingEnabled),
 				MakeBooleanChecker ())
+	.AddAttribute ("InCar",
+				"If inside a vehicle, car penetration loss should be added to propagation loss",
+				BooleanValue (false),
+				MakeBooleanAccessor (&MmWave3gppPropagationLossModel::m_inCar),
+				MakeBooleanChecker ())
   ;
   return tid;
 }
@@ -312,6 +317,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
 		// assign a large negative value to identify initial transmission.
 		condition.m_shadowing = -1e6;
 		condition.m_hE = 0;
+		condition.m_carPenetrationLoss = 9+m_norVar->GetValue()*5;
 		std::pair<channelConditionMap_t::const_iterator, bool> ret;
 		ret = m_channelConditionMap.insert (std::make_pair(std::make_pair (a,b), condition));
 		m_channelConditionMap.insert (std::make_pair(std::make_pair (b,a), condition));
@@ -646,6 +652,12 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
 	  free(fname);
 
 	  fname = 0;*/
+
+	if(m_inCar)
+	{
+		lossDb += (*it).second.m_carPenetrationLoss;
+	}
+
 	return std::max (lossDb, m_minLoss);
 }
 
