@@ -2411,7 +2411,7 @@ LteEnbRrc::GetTypeId (void)
                                     RLC_UM_LOWLAT_ALWAYS, "MmwRlcUmAlways"))
     .AddAttribute ("SystemInformationPeriodicity",
                    "The interval for sending system information (Time value)",
-                   TimeValue (MilliSeconds (80)),
+                   TimeValue (MilliSeconds (5)),
                    MakeTimeAccessor (&LteEnbRrc::m_systemInformationPeriodicity),
                    MakeTimeChecker ())
 
@@ -2520,7 +2520,7 @@ LteEnbRrc::GetTypeId (void)
     .AddAttribute ("FirstSibTime",
                    "Time in ms of initial SIB message",
                    // i.e. the variable k in 3GPP TS 36.331 section 5.5.3.2
-                   UintegerValue (16),
+                   UintegerValue (2),
                    MakeUintegerAccessor (&LteEnbRrc::m_firstSibTime),
                    MakeUintegerChecker<uint32_t> (0)) 
     .AddAttribute ("InterRatHoMode",

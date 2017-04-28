@@ -178,17 +178,17 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
                    MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("X2LinkDataRate",
                    "The data rate to be used for the next X2 link to be created",
-                   DataRateValue (DataRate ("10Gb/s")),
+                   DataRateValue (DataRate ("100Gb/s")),
                    MakeDataRateAccessor (&MmWavePointToPointEpcHelper::m_x2LinkDataRate),
                    MakeDataRateChecker ())
     .AddAttribute ("X2LinkDelay",
                    "The delay to be used for the next X2 link to be created",
-                   TimeValue (Seconds (0.0001)),
+                   TimeValue (Seconds (0.001)),
                    MakeTimeAccessor (&MmWavePointToPointEpcHelper::m_x2LinkDelay),
                    MakeTimeChecker ())
     .AddAttribute ("X2LinkMtu",
                    "The MTU of the next X2 link to be created. Note that, because of some big X2 messages, you need a big MTU.",
-                   UintegerValue (3000),
+                   UintegerValue (10000),
                    MakeUintegerAccessor (&MmWavePointToPointEpcHelper::m_x2LinkMtu),
                    MakeUintegerChecker<uint16_t> ())
   ;
