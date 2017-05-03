@@ -4,3 +4,5 @@ build/*
 /utils.pyc
 /wutils.pyc
 .waf*
+
+*.txt

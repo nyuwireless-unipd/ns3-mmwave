@@ -122,6 +122,12 @@ MmWaveSpectrumPhy::GetTypeId(void)
 						 BooleanValue (true),
 						 MakeBooleanAccessor (&MmWaveSpectrumPhy::m_dataErrorModelEnabled),
 						 MakeBooleanChecker ())
+
+		.AddAttribute ("FileName",
+						"file name",
+						 StringValue ("no"),
+						 MakeStringAccessor (&MmWaveSpectrumPhy::m_fileName),
+						 MakeStringChecker ())
 		;
 
 	return tid;
@@ -644,9 +650,31 @@ MmWaveSpectrumPhy::EndRxData ()
 				{
 					traceParams.m_cellId = enbRx->GetCellId();
 					m_rxPacketTraceEnb (traceParams);
+					 FILE* log_file;
+
+					char* fname = (char*)malloc(sizeof(char) * 255);
+
+					memset(fname, 0, sizeof(char) * 255);
+
+					sprintf(fname, "%s-sinr-%llu.txt", m_fileName.c_str(), traceParams.m_cellId);
+
+					log_file = fopen(fname, "a");
+
+					fprintf(log_file, "%lld \t  %f\n", Now().GetMicroSeconds (), 10*log10(traceParams.m_sinr));
+
+					fflush(log_file);
+
+					fclose(log_file);
+
+					if(fname)
+
+					free(fname);
+
+					fname = 0;
 				}
 				else if (ueRx)
 				{
+
 					traceParams.m_cellId = ueRx->GetTargetEnb()->GetCellId();
 					m_rxPacketTraceUe (traceParams);
 				}

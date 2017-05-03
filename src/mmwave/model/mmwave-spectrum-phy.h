@@ -204,7 +204,7 @@ private:
 	EventId m_endTxEvent;
 	EventId m_endRxDataEvent;
   	EventId m_endRxDlCtrlEvent;
-
+  	std::string m_fileName;
 
 };
 
