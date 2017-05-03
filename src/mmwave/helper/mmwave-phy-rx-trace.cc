@@ -72,36 +72,12 @@ MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phySt
 																uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power)
 {
 	NS_LOG_INFO ("UE"<<imsi<<"->Generate RsrpSinrTrace");
-	phyStats->ReportInterferenceTrace (imsi, sinr);
-	//phyStats->ReportPowerTrace (imsi, power);
-}
-
-void
-MmWavePhyRxTrace::UlSinrTraceCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
-																uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power)
-{
-	NS_LOG_INFO ("UE"<<imsi<<"->Generate UlSinrTrace");
-	uint64_t slot_count = Now().GetMicroSeconds ()/125;
-	uint32_t rb_count = 1;
-	FILE* log_file;
-	char fname[255];
-	sprintf(fname, "UE_%llu_UL_SINR_dB.txt", imsi);
-	log_file = fopen(fname, "a");
-	Values::iterator it = sinr.ValuesBegin();
-	while(it!=sinr.ValuesEnd())
-	{
-		//fprintf(log_file, "%d\t%d\t%f\t \n", slot_count/2, rb_count, 10*log10(*it));
-		fprintf(log_file, "%llu\t%llu\t%d\t%f\t \n",slot_count/8+1, slot_count%8+1, rb_count, 10*log10(*it));
-		rb_count++;
-		it++;
-	}
-	fflush(log_file);
-	fclose(log_file);
 	//phyStats->ReportInterferenceTrace (imsi, sinr);
-	//phyStats->ReportPowerTrace (imsi, power);
 }
 
-void
+
+
+/*void
 MmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 {
 	uint64_t slot_count = Now().GetMicroSeconds ()/125;
@@ -120,51 +96,32 @@ MmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 	}
 	fflush(log_file);
 	fclose(log_file);
-}
+}*/
 
-void
-MmWavePhyRxTrace::ReportPowerTrace (uint64_t imsi, SpectrumValue& power)
-{
 
-	uint32_t slot_count = Now().GetMicroSeconds ()/125;
-	uint32_t rb_count = 1;
-	FILE* log_file;
-	char fname[255];
-	printf (fname, "UE_%llu_ReceivedPower_dB.txt", (long long unsigned) imsi);
-	log_file = fopen(fname, "a");
-	Values::iterator it = power.ValuesBegin();
-	while(it!=power.ValuesEnd())
-	{
-		fprintf(log_file, "%llu\t%llu\t%d\t%f\t \n",(long long unsigned) slot_count/8+1,(long long unsigned) slot_count%8+1, rb_count, 10*log10(*it));
-		rb_count++;
-		it++;
-	}
-	fflush(log_file);
-	fclose(log_file);
-}
 
 void
 MmWavePhyRxTrace::ReportPacketCountUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 			UePhyPacketCountParameter param)
 {
-	phyStats->ReportPacketCountUe (param);
+	//phyStats->ReportPacketCountUe (param);
 }
 void
 MmWavePhyRxTrace::ReportPacketCountEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 		EnbPhyPacketCountParameter param)
 {
-	phyStats->ReportPacketCountEnb (param);
+	//phyStats->ReportPacketCountEnb (param);
 }
 
 void
 MmWavePhyRxTrace::ReportDownLinkTBSize (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
 		uint64_t imsi, uint64_t tbSize)
 {
-	phyStats->ReportDLTbSize (imsi, tbSize);
+	//phyStats->ReportDLTbSize (imsi, tbSize);
 }
 
 
-
+/*
 void
 MmWavePhyRxTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
 {
@@ -219,7 +176,7 @@ MmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
 	fflush(log_file);
 	fclose(log_file);
 }
-
+*/
 void
 MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams params)
 {

@@ -650,7 +650,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				{
 					traceParams.m_cellId = enbRx->GetCellId();
 					m_rxPacketTraceEnb (traceParams);
-					 FILE* log_file;
+					 /*FILE* log_file;
 
 					char* fname = (char*)malloc(sizeof(char) * 255);
 
@@ -670,7 +670,7 @@ MmWaveSpectrumPhy::EndRxData ()
 
 					free(fname);
 
-					fname = 0;
+					fname = 0;*/
 				}
 				else if (ueRx)
 				{
