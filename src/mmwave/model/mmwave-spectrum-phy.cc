@@ -842,7 +842,7 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
 		NS_ASSERT(m_txPsd);
 
 		m_state = TX;
-		Ptr<MmwaveSpectrumSignalParametersDataFrame> txParams = new MmwaveSpectrumSignalParametersDataFrame ();
+		Ptr<MmwaveSpectrumSignalParametersDataFrame> txParams = Create<MmwaveSpectrumSignalParametersDataFrame> ();
 		txParams->duration = duration;
 		txParams->txPhy = this->GetObject<SpectrumPhy> ();
 		txParams->psd = m_txPsd;
