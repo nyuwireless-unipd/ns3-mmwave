@@ -244,7 +244,19 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.004)));
+		if (i==0)
+		{
+			p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.009)));
+		}
+		else if(i==1)
+		{
+			p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.004)));
+		}
+		else
+		{
+			p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.0015)));
+
+		}
 
 		//p2ph.SetChannelAttribute ("Delay", TimeValue (Seconds (0.010+i*0.0025)));
 
