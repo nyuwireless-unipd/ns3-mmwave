@@ -85,7 +85,8 @@ static const double EffectiveCodingRate[29] = {
 };
 
 MmWaveSpectrumPhy::MmWaveSpectrumPhy()
-	:m_state(IDLE)
+	:m_cellId(0),
+	 m_state(IDLE)
 {
 	m_interferenceData = CreateObject<mmWaveInterference> ();
 	m_random = CreateObject<UniformRandomVariable> ();
