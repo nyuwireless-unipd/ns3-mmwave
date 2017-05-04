@@ -845,7 +845,7 @@ TcpTxBuffer::NextSeg (SequenceNumber32 *seq, uint32_t dupThresh,
   bool isSeqPerRule3Valid = false;
   SequenceNumber32 beginOfCurrentPkt = m_firstByteSeq;
 
-  for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
+  /*for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
     {
       item = *it;
 
@@ -866,7 +866,54 @@ TcpTxBuffer::NextSeg (SequenceNumber32 *seq, uint32_t dupThresh,
 
       // Nothing found, iterate
       beginOfCurrentPkt += item->m_packet->GetSize ();
+    }*/
+
+  bool detectLoss = true;
+  for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
+    {
+      item = *it;
+
+      // Condition 1.a , 1.b , and 1.c
+      if (item->m_retrans == false && item->m_sacked == false)
+        {
+    	  if (detectLoss)
+    	  {
+			  if (IsLost (beginOfCurrentPkt, it, dupThresh, segmentSize))
+				{
+				  *seq = beginOfCurrentPkt;
+				  return true;
+				}
+			  else
+			  {
+				  detectLoss = false;
+				  if (seqPerRule3.GetValue () == 0 && isRecovery)
+				  {
+					isSeqPerRule3Valid = true;
+					seqPerRule3 = beginOfCurrentPkt;
+				  }
+
+			  }
+    	  }
+    	  else
+    	  {
+    		  if(item->m_lost)
+    		  {
+				  *seq = beginOfCurrentPkt;
+				  return true;
+    		  }
+              else if (seqPerRule3.GetValue () == 0 && isRecovery)
+                {
+                  isSeqPerRule3Valid = true;
+                  seqPerRule3 = beginOfCurrentPkt;
+                }
+    	  }
+
+        }
+
+      // Nothing found, iterate
+      beginOfCurrentPkt += item->m_packet->GetSize ();
     }
+
 
   /* (2) If no sequence number 'S2' per rule (1) exists but there
    *     exists available unsent data and the receiver's advertised
