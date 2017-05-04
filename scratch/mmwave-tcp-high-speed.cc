@@ -137,7 +137,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (200)));
 	Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packetSize));
-	//Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
+	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 
 	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*400));
 	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*400));
