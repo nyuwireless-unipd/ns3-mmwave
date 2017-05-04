@@ -654,6 +654,7 @@ MmWaveUePhy::StartSlot ()
 	NS_LOG_INFO ("MmWave UE " << m_rnti << " frame " << m_frameNum << " subframe " << (uint16_t) m_sfNum << " slot " << (uint16_t) m_slotNum);
 
 	Time slotPeriod;
+	m_receptionEnabled = false;
 
 	if (m_slotNum == 0)  // reserved DL control
 	{
@@ -664,7 +665,6 @@ MmWaveUePhy::StartSlot ()
 	}
 	else if (m_slotNum == m_currSfAllocInfo.m_slotAllocInfo.size()-1) // reserved UL control
 	{
-		m_receptionEnabled = false;
 		SetSubChannelsForTransmission (m_channelChunks);
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetUlCtrlSymbols ());
 		std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
@@ -687,7 +687,6 @@ MmWaveUePhy::StartSlot ()
 	}
 	else if (currSlot.m_dci.m_format == DciInfoElementTdma::UL) // scheduled UL data slot
 	{
-		m_receptionEnabled = false;
 		SetSubChannelsForTransmission (m_channelChunks);
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * currSlot.m_dci.m_numSym);
 		Ptr<PacketBurst> pktBurst = GetPacketBurst (SfnSf(m_frameNum, m_sfNum, currSlot.m_dci.m_symStart));
