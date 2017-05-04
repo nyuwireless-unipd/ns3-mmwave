@@ -918,7 +918,7 @@ TcpTxBuffer::BytesInFlight (uint32_t dupThresh, uint32_t segmentSize) const
   // After initializing pipe to zero, the following steps are taken for each
   // octet 'S1' in the sequence space between HighACK and HighData that has not
   // been SACKed:
-  for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
+  /*for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
     {
       item = *it;
       if (!item->m_sacked)
@@ -935,6 +935,38 @@ TcpTxBuffer::BytesInFlight (uint32_t dupThresh, uint32_t segmentSize) const
             {
               size += item->m_packet->GetSize ();
             }
+        }
+      beginOfCurrentPkt += item->m_packet->GetSize ();
+    }*/
+  bool noLoss = false;
+  for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
+    {
+      item = *it;
+      if (!item->m_sacked)
+        {
+    	  if(noLoss == false)
+    	  {
+          // (a) If IsLost (S1) returns false: Pipe is incremented by 1 octet.
+          if (!IsLost (beginOfCurrentPkt, it, dupThresh, segmentSize))
+            {
+        	  noLoss = true;
+              size += item->m_packet->GetSize ();
+            }
+          // (b) If S1 <= HighRxt: Pipe is incremented by 1 octet.
+          // (NOTE: we use the m_retrans flag instead of keeping and updating
+          // another variable). Only if the item is not marked as lost
+          else if (item->m_retrans && !item->m_lost)
+            {
+              size += item->m_packet->GetSize ();
+            }
+    	  }
+    	  else
+    	  {
+              if (!item->m_lost)
+                {
+                  size += item->m_packet->GetSize ();
+                }
+    	  }
         }
       beginOfCurrentPkt += item->m_packet->GetSize ();
     }
