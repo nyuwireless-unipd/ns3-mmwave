@@ -390,10 +390,8 @@ MmWaveUeMac::SendReportBufferStatus (void)
       NS_LOG_INFO ("No BSR report to transmit");
       return;
     }
-  MacCeElement bsr;
-  bsr.m_rnti = m_rnti;
-  bsr.m_macCeType = MacCeElement::BSR;
-
+  MacCeElement bsr{m_rnti, MacCeElement::BSR};
+  
   bool send = true;
 
   // BSR is reported for each LCG

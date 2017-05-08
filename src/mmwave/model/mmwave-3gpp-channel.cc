@@ -2616,7 +2616,7 @@ void
 MmWave3gppChannel::BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
 		Ptr<AntennaArrayModel> rxAntenna, uint8_t *txAntennaNum, uint8_t *rxAntennaNum) const
 {
-	double max = 0, maxTx = 0, maxRx =0, maxTxTheta, maxRxTheta;
+	double max = 0, maxTx = 0, maxRx =0, maxTxTheta=0, maxRxTheta=0;
 	NS_LOG_LOGIC("BeamSearchBeamforming method at time " << Simulator::Now().GetSeconds());
 	for (uint16_t txTheta = 60; txTheta < 121; txTheta=txTheta+10)
 	{
