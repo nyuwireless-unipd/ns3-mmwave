@@ -259,6 +259,7 @@ private:
   ReassemblingState_t m_reassemblingState;
   ReassemblingState_t m_assemblingState; //state of the RlcPduToRlcSdu assembling used for handover.
   Ptr<Packet> m_keepS0;
+  Ptr<Packet> m_keepS0Reassemble;
 
   /**
    * Expected Sequence Number

@@ -209,6 +209,7 @@ LteRlcAm::DoDispose ()
   m_rxonBuffer.clear ();
   m_sdusBuffer.clear ();
   m_keepS0 = 0;
+  m_keepS0Reassemble = 0;
   m_controlPduBuffer = 0;
 
   // LL HO
@@ -1333,7 +1334,8 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               * Keep S0. Keep the last incomplete SDU in the sduBuffer
                               * to wait for its ending portion.
                               */
-                              m_keepS0 = m_sdusAssembleBuffer.front ();
+                              m_keepS0Reassemble = m_sdusAssembleBuffer.front ();
+
                               m_sdusAssembleBuffer.pop_front ();
                       break;
                       //This could not happen because in this state, PDU should presents complete 
@@ -1362,11 +1364,11 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               */
                               //Received an ending flag, if the state is waiting for the ending, 
                               //then switch to complete (S0_full)
-                              m_keepS0->AddAtEnd (m_sdusAssembleBuffer.front ());
+                              m_keepS0Reassemble->AddAtEnd (m_sdusAssembleBuffer.front ());
                               m_sdusAssembleBuffer.pop_front ();
-                              NS_LOG_DEBUG ("Received Pdu Size = " << m_keepS0->GetSize ());
-                              m_transmittingRlcSdus.push_back (m_keepS0);
-                              m_transmittingRlcSduBufferSize += m_keepS0->GetSize ();
+                              NS_LOG_DEBUG ("Received Pdu Size = " << m_keepS0Reassemble->GetSize ());
+                              m_transmittingRlcSdus.push_back (m_keepS0Reassemble);
+                              m_transmittingRlcSduBufferSize += m_keepS0Reassemble->GetSize ();
 
                               /**
                                 * Deliver zero, one or multiple PDUs
@@ -1391,7 +1393,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               */
                               if ( m_sdusAssembleBuffer.size () == 1 )
                                 {
-                                  m_keepS0->AddAtEnd (m_sdusAssembleBuffer.front ());
+                                  m_keepS0Reassemble->AddAtEnd (m_sdusAssembleBuffer.front ());
                                   m_sdusAssembleBuffer.pop_front ();
                                 }
                               else // m_sdusAssembleBuffer.size () > 1
@@ -1399,11 +1401,11 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                                   /**
                                   * Deliver (Kept)S0 + SN
                                   */
-                                  m_keepS0->AddAtEnd (m_sdusAssembleBuffer.front ());
+                                  m_keepS0Reassemble->AddAtEnd (m_sdusAssembleBuffer.front ());
                                   m_sdusAssembleBuffer.pop_front ();
-                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_keepS0->GetSize ());
-                                  m_transmittingRlcSdus.push_back (m_keepS0);
-                                  m_transmittingRlcSduBufferSize += m_keepS0->GetSize ();
+                                  NS_LOG_DEBUG ("Received Pdu Size = " << m_keepS0Reassemble->GetSize ());
+                                  m_transmittingRlcSdus.push_back (m_keepS0Reassemble);
+                                  m_transmittingRlcSduBufferSize += m_keepS0Reassemble->GetSize ();
 
                                   /**
                                   * Deliver zero, one or multiple PDUs
@@ -1419,7 +1421,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                                   /**
                                   * Keep S0
                                   */
-                                  m_keepS0 = m_sdusAssembleBuffer.front ();
+                                  m_keepS0Reassemble = m_sdusAssembleBuffer.front ();
                                   m_sdusAssembleBuffer.pop_front ();
                                 }
                       break;
@@ -1482,7 +1484,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               /**
                                * Keep S0
                                */
-                              m_keepS0 = m_sdusAssembleBuffer.front ();
+                              m_keepS0Reassemble = m_sdusAssembleBuffer.front ();
                               m_sdusAssembleBuffer.pop_front ();
                       break;
 
@@ -1538,7 +1540,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                                   /**
                                   * Keep S0
                                   */
-                                  m_keepS0 = m_sdusAssembleBuffer.front ();
+                                  m_keepS0Reassemble = m_sdusAssembleBuffer.front ();
                                   m_sdusAssembleBuffer.pop_front ();
                                 }
                       break;
@@ -1563,7 +1565,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               /**
                                * Discard S0
                                */
-                              m_keepS0 = 0;
+                              m_keepS0Reassemble = 0;
 
                               /**
                                * Deliver one or multiple PDUs
@@ -1584,7 +1586,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               /**
                                * Discard S0
                                */
-                              m_keepS0 = 0;
+                              m_keepS0Reassemble = 0;
 
                               /**
                                * Deliver zero, one or multiple PDUs
@@ -1600,7 +1602,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               /**
                                * Keep S0
                                */
-                              m_keepS0 = m_sdusAssembleBuffer.front ();
+                              m_keepS0Reassemble = m_sdusAssembleBuffer.front ();
                               m_sdusAssembleBuffer.pop_front ();
 
                       break;
@@ -1612,7 +1614,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               /**
                                * Discard S0
                                */
-                              m_keepS0 = 0;
+                              m_keepS0Reassemble = 0;
 
                               /**
                                * Discard SI or SN
@@ -1647,7 +1649,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                               /**
                                * Discard S0
                                */
-                              m_keepS0 = 0;
+                              m_keepS0Reassemble = 0;
 
                               /**
                                * Discard SI or SN
@@ -1670,7 +1672,7 @@ LteRlcAm::Reassemble (Ptr<Packet> packet)
                                   /**
                                    * Keep S0
                                    */
-                                  m_keepS0 = m_sdusAssembleBuffer.front ();
+                                  m_keepS0Reassemble = m_sdusAssembleBuffer.front ();
                                   m_sdusAssembleBuffer.pop_front ();
                                 }
                       break;
