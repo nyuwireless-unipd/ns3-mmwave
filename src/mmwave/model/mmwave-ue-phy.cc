@@ -809,7 +809,7 @@ MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
 	if(!m_phyReset) 
 	{
-		m_forwardToMacEvent.push_back(Simulator::Schedule(MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()), &MmWaveUePhy::DelayPhyDataPacketReceived, this, p));
+		Simulator::Schedule(MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()), &MmWaveUePhy::DelayPhyDataPacketReceived, this, p);
 	}
     //Simulator::ScheduleWithContext (m_netDevice->GetNode()->GetId(),
     //                              MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()),
@@ -990,10 +990,7 @@ MmWaveUePhy::DoReset ()
 	m_downlinkSpectrumPhy->Reset ();
   	// clear DCI 
   	m_phyReset = true;
-  	for(std::vector<EventId>::iterator it = m_forwardToMacEvent.begin(); it != m_forwardToMacEvent.end(); ++it)
-  	{
-  		(*it).Cancel();
-  	}
+
 	//m_currSfAllocInfo.m_slotAllocInfo.clear();
 	//m_currSfAllocInfo.m_slotAllocInfo.clear();
 }

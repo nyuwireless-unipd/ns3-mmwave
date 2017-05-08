@@ -202,7 +202,6 @@ private:
 
 	EventId m_sendDataChannelEvent;
 	EventId m_sendDlHarqFeedbackEvent;
-	std::vector<EventId> m_forwardToMacEvent;
 	bool m_phyReset;
 
 	std::map<uint16_t, double> m_cellSinrMap;
