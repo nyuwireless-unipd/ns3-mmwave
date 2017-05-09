@@ -46,7 +46,8 @@ LteRlcUmLowLat::LteRlcUmLowLat ()
     m_expectedSeqNumber (0),
 		m_currTotalPacketSize (0),
 		//m_lastArrivalTime (0),
-		m_arrivalRate (0.0)
+		m_arrivalRate (0.0),
+		m_bsrReported(false)
 		//m_forgetFactor (0.1)
 {
   NS_LOG_FUNCTION (this);
@@ -147,6 +148,7 @@ LteRlcUmLowLat::DoTransmitPdcpPdu (Ptr<Packet> p)
 
   /** Report Buffer Status */
   DoReportBufferStatus ();
+  m_bsrReported = true;
   m_rbsTimer.Cancel ();
   m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
 }
@@ -167,6 +169,12 @@ LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t ha
       NS_LOG_LOGIC ("TX opportunity too small = " << bytes);
       return;
     }
+
+  if (bytes > m_txBufferSize)
+  {
+	  NS_LOG_DEBUG("LteRlcUmLowLat rnti " << m_rnti << " lcid " << m_lcid << " allocated " << bytes << " bufsize " << m_txBufferSize);
+  }
+
 
   Ptr<Packet> packet = Create<Packet> ();
   LteRlcHeader rlcHeader;
@@ -418,12 +426,13 @@ LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t ha
 
   m_macSapProvider->TransmitPdu (params);
 
-/*  if (! m_txBuffer.empty ())
+  if (! m_txBuffer.empty ())
     {
       m_rbsTimer.Cancel ();
       m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
-    }*/
+    }
 
+  m_bsrReported = false;
   DoReportBufferStatus ();
 }
 
@@ -1146,44 +1155,47 @@ LteRlcUmLowLat::ReassembleSnInterval (SequenceNumber10 lowSeqNumber, SequenceNum
 void
 LteRlcUmLowLat::DoReportBufferStatus (void)
 {
-  Time holDelay (0);
-  uint32_t queueSize = 0;
+	if (!m_bsrReported)
+	{
+		Time holDelay (0);
+		uint32_t queueSize = 0;
 
-  if (! m_txBuffer.empty ())
-    {
-      RlcTag holTimeTag;
-      m_txBuffer.front ()->PeekPacketTag (holTimeTag);
-      holDelay = Simulator::Now () - holTimeTag.GetSenderTimestamp ();
+		if (! m_txBuffer.empty ())
+		{
+			RlcTag holTimeTag;
+			m_txBuffer.front ()->PeekPacketTag (holTimeTag);
+			holDelay = Simulator::Now () - holTimeTag.GetSenderTimestamp ();
 
-      queueSize = m_txBufferSize + 2 * m_txBuffer.size (); // Data in tx queue + estimated headers size
-    }
+			queueSize = m_txBufferSize + 2 * m_txBuffer.size (); // Data in tx queue + estimated headers size
+		}
 
-  LteMacSapProvider::ReportBufferStatusParameters r;
-  r.rnti = m_rnti;
-  r.lcid = m_lcid;
-  r.txQueueSize = queueSize;
-  r.txQueueHolDelay = holDelay.GetMicroSeconds () ;
-  r.retxQueueSize = 0;
-  r.retxQueueHolDelay = 0;
-  r.statusPduSize = 0;
+		LteMacSapProvider::ReportBufferStatusParameters r;
+		r.rnti = m_rnti;
+		r.lcid = m_lcid;
+		r.txQueueSize = queueSize;
+		r.txQueueHolDelay = holDelay.GetMicroSeconds () ;
+		r.retxQueueSize = 0;
+		r.retxQueueHolDelay = 0;
+		r.statusPduSize = 0;
 
-  for (unsigned i = 0; i < m_txBuffer.size(); i++)
-  {
-  	if (i == 20)  // only include up to the first 20 packets
-  	{
-  		break;
-  	}
-  	r.txPacketSizes.push_back (m_txBuffer[i]->GetSize ());
-  	RlcTag holTimeTag;
-  	m_txBuffer[i]->PeekPacketTag (holTimeTag);
-  	holDelay = Simulator::Now () - holTimeTag.GetSenderTimestamp ();
-  	r.txPacketDelays.push_back (holDelay.GetMicroSeconds ());
-  }
+		for (unsigned i = 0; i < m_txBuffer.size(); i++)
+		{
+			if (i == 20)  // only include up to the first 20 packets
+			{
+				break;
+			}
+			r.txPacketSizes.push_back (m_txBuffer[i]->GetSize ());
+			RlcTag holTimeTag;
+			m_txBuffer[i]->PeekPacketTag (holTimeTag);
+			holDelay = Simulator::Now () - holTimeTag.GetSenderTimestamp ();
+			r.txPacketDelays.push_back (holDelay.GetMicroSeconds ());
+		}
 
-  r.arrivalRate = m_arrivalRate;
+		r.arrivalRate = m_arrivalRate;
 
-  NS_LOG_LOGIC ("Send ReportBufferStatus = " << r.txQueueSize << ", " << r.txQueueHolDelay );
-  m_macSapProvider->ReportBufferStatus (r);
+		NS_LOG_LOGIC ("Send ReportBufferStatus = " << r.txQueueSize << ", " << r.txQueueHolDelay );
+		m_macSapProvider->ReportBufferStatus (r);
+	}
 }
 
 
