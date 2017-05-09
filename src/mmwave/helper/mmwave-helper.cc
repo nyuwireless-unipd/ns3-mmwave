@@ -174,6 +174,11 @@ MmWaveHelper::GetTypeId (void)
 	                   BooleanValue (true),
 	                   MakeBooleanAccessor (&MmWaveHelper::m_isAnrEnabled),
 	                   MakeBooleanChecker ())
+		.AddAttribute ("UseIdealRrc",
+	                   "Use Ideal or Real RRC",
+	                   BooleanValue (false),
+	                   MakeBooleanAccessor (&MmWaveHelper::m_useIdealRrc),
+	                   MakeBooleanChecker ())
    	;
 
 	return tid;
@@ -291,6 +296,8 @@ MmWaveHelper::DoInitialize()
 	// TODO consider if adding LTE fading
 	// TODO add mac & phy LTE stats
 	m_cnStats = 0;
+
+	NS_LOG_UNCOND("---- mmh UseIdealRrc " << m_useIdealRrc);
 	Object::DoInitialize();
 }
 
