@@ -5,8 +5,8 @@
  *      Author: sourjya
  */
 
-#ifndef SRC_MMWAVE_MODEL_MMWAVE_PF_MAC_SCHEDULER_H_
-#define SRC_MMWAVE_MODEL_MMWAVE_PF_MAC_SCHEDULER_H_
+#ifndef SRC_MMWAVE_MODEL_MMWAVE_MAXRATE_MAC_SCHEDULER_H_
+#define SRC_MMWAVE_MODEL_MMWAVE_MAXRATE_MAC_SCHEDULER_H_
 
 
 #include "mmwave-mac-sched-sap.h"
@@ -21,7 +21,7 @@
 
 namespace ns3 {
 
-class MmWaveFlexTtiPfMacScheduler : public MmWaveMacScheduler
+class MmWaveFlexTtiMaxRateMacScheduler : public MmWaveMacScheduler
 {
 public:
 	typedef std::vector < uint8_t > DlHarqProcessesStatus_t;
@@ -35,9 +35,9 @@ public:
 	typedef std::vector < uint8_t > UlHarqProcessesStatus_t;
 
 
-	MmWaveFlexTtiPfMacScheduler ();
+	MmWaveFlexTtiMaxRateMacScheduler ();
 
-	virtual ~MmWaveFlexTtiPfMacScheduler ();
+	virtual ~MmWaveFlexTtiMaxRateMacScheduler ();
 	virtual void DoDispose (void);
 	static TypeId GetTypeId (void);
 
@@ -57,8 +57,8 @@ public:
 	void UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size);
 	void UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size);
 
-	friend class MmWaveFlexTtiPfMacSchedSapProvider;
-	friend class MmWaveFlexTtiPfMacCschedSapProvider;
+	friend class MmWaveFlexTtiMaxRateMacSchedSapProvider;
+	friend class MmWaveFlexTtiMaxRateMacCschedSapProvider;
 
 private:
 
@@ -170,10 +170,10 @@ private:
 
 		};
 
-	static bool CompareUeWeightsPf(UeSchedInfo* lue, UeSchedInfo* rue)
+	static bool CompareUeWeightsMaxRate(UeSchedInfo* lue, UeSchedInfo* rue)
 	{
-		double lPfMetric = std::max(lue->m_currTputDl,lue->m_currTputUl) / std::max(1E-9,(lue->m_avgTputDl + lue->m_avgTputDl));
-		double rPfMetric = std::max(rue->m_currTputDl,rue->m_currTputUl) / std::max(1E-9,(rue->m_avgTputDl + rue->m_avgTputDl));
+		double lPfMetric = std::max(lue->m_currTputDl,lue->m_currTputUl);
+		double rPfMetric = std::max(rue->m_currTputDl,rue->m_currTputUl);
 		return (lPfMetric > rPfMetric);
 	}
 
@@ -401,4 +401,4 @@ private:
 }
 
 
-#endif /* SRC_MMWAVE_MODEL_MMWAVE_PF_MAC_SCHEDULER_H_ */
+#endif /* SRC_MMWAVE_MODEL_MMWAVE_MAXRATE_MAC_SCHEDULER_H_ */

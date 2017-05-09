@@ -7,7 +7,7 @@
 
 #include <ns3/log.h>
 #include <ns3/abort.h>
-#include "mmwave-flex-tti-maxweight-mac-scheduler.h"
+#include "mmwave-flex-tti-maxrate-mac-scheduler.h"
 #include <ns3/lte-common.h>
 #include <ns3/boolean.h>
 #include <stdlib.h>     /* abs */
@@ -20,14 +20,14 @@
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiMaxWeightMacScheduler");
+NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiMaxRateMacScheduler");
 
-NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiMaxWeightMacScheduler);
+NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiMaxRateMacScheduler);
 
-class MmWaveFlexTtiMaxWeightMacCschedSapProvider : public MmWaveMacCschedSapProvider
+class MmWaveFlexTtiMaxRateMacCschedSapProvider : public MmWaveMacCschedSapProvider
 {
 public:
-  MmWaveFlexTtiMaxWeightMacCschedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* scheduler);
+  MmWaveFlexTtiMaxRateMacCschedSapProvider (MmWaveFlexTtiMaxRateMacScheduler* scheduler);
 
   // inherited from MmWaveMacCschedSapProvider
   virtual void CschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params);
@@ -37,54 +37,54 @@ public:
   virtual void CschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params);
 
 private:
-  MmWaveFlexTtiMaxWeightMacCschedSapProvider ();
-  MmWaveFlexTtiMaxWeightMacScheduler* m_scheduler;
+  MmWaveFlexTtiMaxRateMacCschedSapProvider ();
+  MmWaveFlexTtiMaxRateMacScheduler* m_scheduler;
 };
 
-MmWaveFlexTtiMaxWeightMacCschedSapProvider::MmWaveFlexTtiMaxWeightMacCschedSapProvider ()
+MmWaveFlexTtiMaxRateMacCschedSapProvider::MmWaveFlexTtiMaxRateMacCschedSapProvider ()
 {
 }
 
-MmWaveFlexTtiMaxWeightMacCschedSapProvider::MmWaveFlexTtiMaxWeightMacCschedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* scheduler)
+MmWaveFlexTtiMaxRateMacCschedSapProvider::MmWaveFlexTtiMaxRateMacCschedSapProvider (MmWaveFlexTtiMaxRateMacScheduler* scheduler)
 	: m_scheduler (scheduler)
 {
 }
 
 void
-MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
+MmWaveFlexTtiMaxRateMacCschedSapProvider::CschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
 {
   m_scheduler->DoCschedCellConfigReq (params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
+MmWaveFlexTtiMaxRateMacCschedSapProvider::CschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
 {
   m_scheduler->DoCschedUeConfigReq (params);
 }
 
 
 void
-MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
+MmWaveFlexTtiMaxRateMacCschedSapProvider::CschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
 {
   m_scheduler->DoCschedLcConfigReq (params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
+MmWaveFlexTtiMaxRateMacCschedSapProvider::CschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
 {
   m_scheduler->DoCschedLcReleaseReq (params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacCschedSapProvider::CschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
+MmWaveFlexTtiMaxRateMacCschedSapProvider::CschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
 {
   m_scheduler->DoCschedUeReleaseReq (params);
 }
 
-class MmWaveFlexTtiMaxWeightMacSchedSapProvider : public MmWaveMacSchedSapProvider
+class MmWaveFlexTtiMaxRateMacSchedSapProvider : public MmWaveMacSchedSapProvider
 {
 public:
-	MmWaveFlexTtiMaxWeightMacSchedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* sched);
+	MmWaveFlexTtiMaxRateMacSchedSapProvider (MmWaveFlexTtiMaxRateMacScheduler* sched);
 
 	virtual void SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params);
 	virtual void SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params);
@@ -93,78 +93,79 @@ public:
 	virtual void SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params);
 	virtual void SchedSetMcs (int mcs);
 private:
-  MmWaveFlexTtiMaxWeightMacSchedSapProvider ();
-	MmWaveFlexTtiMaxWeightMacScheduler* m_scheduler;
+  MmWaveFlexTtiMaxRateMacSchedSapProvider ();
+	MmWaveFlexTtiMaxRateMacScheduler* m_scheduler;
 };
 
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::MmWaveFlexTtiMaxWeightMacSchedSapProvider ()
+MmWaveFlexTtiMaxRateMacSchedSapProvider::MmWaveFlexTtiMaxRateMacSchedSapProvider ()
 {
 }
 
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::MmWaveFlexTtiMaxWeightMacSchedSapProvider (MmWaveFlexTtiMaxWeightMacScheduler* sched)
+MmWaveFlexTtiMaxRateMacSchedSapProvider::MmWaveFlexTtiMaxRateMacSchedSapProvider (MmWaveFlexTtiMaxRateMacScheduler* sched)
 	:m_scheduler(sched)
 {
 }
 
 void
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
+MmWaveFlexTtiMaxRateMacSchedSapProvider::SchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
 {
   m_scheduler->DoSchedDlRlcBufferReq (params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
+MmWaveFlexTtiMaxRateMacSchedSapProvider::SchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
 {
 	m_scheduler->DoSchedTriggerReq(params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxRateMacSchedSapProvider::SchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
 {
 	m_scheduler->DoSchedDlCqiInfoReq (params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxRateMacSchedSapProvider::SchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
 {
   m_scheduler->DoSchedUlCqiInfoReq (params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
+MmWaveFlexTtiMaxRateMacSchedSapProvider::SchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
 {
   m_scheduler->DoSchedUlMacCtrlInfoReq (params);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacSchedSapProvider::SchedSetMcs (int mcs)
+MmWaveFlexTtiMaxRateMacSchedSapProvider::SchedSetMcs (int mcs)
 {
 	m_scheduler->DoSchedSetMcs (mcs);
 }
-const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_macHdrSize = 0;
-const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_subHdrSize = 4;
-const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_rlcHdrSize = 3;
+const unsigned MmWaveFlexTtiMaxRateMacScheduler::m_macHdrSize = 0;
+const unsigned MmWaveFlexTtiMaxRateMacScheduler::m_subHdrSize = 4;
+const unsigned MmWaveFlexTtiMaxRateMacScheduler::m_rlcHdrSize = 3;
 
 
-MmWaveFlexTtiMaxWeightMacScheduler::MmWaveFlexTtiMaxWeightMacScheduler ()
+MmWaveFlexTtiMaxRateMacScheduler::MmWaveFlexTtiMaxRateMacScheduler ()
 : m_nextRnti (0),
   m_subframeNo (0),
   m_tbUid (0),
   m_macSchedSapUser (0),
-	m_macCschedSapUser (0)
+	m_macCschedSapUser (0),
+	m_timeWindow(99.0)
 {
 	NS_LOG_FUNCTION (this);
-	m_macSchedSapProvider = new MmWaveFlexTtiMaxWeightMacSchedSapProvider (this);
-	m_macCschedSapProvider = new MmWaveFlexTtiMaxWeightMacCschedSapProvider (this);
+	m_macSchedSapProvider = new MmWaveFlexTtiMaxRateMacSchedSapProvider (this);
+	m_macCschedSapProvider = new MmWaveFlexTtiMaxRateMacCschedSapProvider (this);
 }
 
-MmWaveFlexTtiMaxWeightMacScheduler::~MmWaveFlexTtiMaxWeightMacScheduler ()
+MmWaveFlexTtiMaxRateMacScheduler::~MmWaveFlexTtiMaxRateMacScheduler ()
 {
 	NS_LOG_FUNCTION (this);
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoDispose (void)
+MmWaveFlexTtiMaxRateMacScheduler::DoDispose (void)
 {
 	NS_LOG_FUNCTION (this);
 	m_wbCqiRxed.clear();
@@ -181,66 +182,60 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoDispose (void)
 }
 
 TypeId
-MmWaveFlexTtiMaxWeightMacScheduler::GetTypeId (void)
+MmWaveFlexTtiMaxRateMacScheduler::GetTypeId (void)
 {
-	static TypeId tid = TypeId ("ns3::MmWaveFlexTtiMaxWeightMacScheduler")
+	static TypeId tid = TypeId ("ns3::MmWaveFlexTtiMaxRateMacScheduler")
 	    .SetParent<MmWaveMacScheduler> ()
-		.AddConstructor<MmWaveFlexTtiMaxWeightMacScheduler> ()
+		.AddConstructor<MmWaveFlexTtiMaxRateMacScheduler> ()
     .AddAttribute ("CqiTimerThreshold",
                    "The number of TTIs a CQI is valid (default 1000 - 1 sec.)",
                    UintegerValue (100),
-                   MakeUintegerAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_cqiTimersThreshold),
+                   MakeUintegerAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_cqiTimersThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
                    "Activate/Deactivate the HARQ [by default is active].",
                    BooleanValue (false),
-                   MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_harqOn),
+                   MakeBooleanAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_harqOn),
                    MakeBooleanChecker ())
 	 .AddAttribute ("FixedMcsDl",
 									"Fix MCS to value set in McsDlDefault",
 									BooleanValue (false),
-									MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_fixedMcsDl),
+									MakeBooleanAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_fixedMcsDl),
 									MakeBooleanChecker ())
 	.AddAttribute ("McsDefaultDl",
 								 "Fixed DL MCS",
 								 UintegerValue (1),
-								 MakeUintegerAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_mcsDefaultDl),
+								 MakeUintegerAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_mcsDefaultDl),
 								 MakeUintegerChecker<uint8_t> ())
 	 .AddAttribute ("FixedMcsUl",
 									"Fix MCS to value set in McsUlDefault (for testing)",
 									BooleanValue (false),
-									MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_fixedMcsUl),
+									MakeBooleanAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_fixedMcsUl),
 									MakeBooleanChecker ())
 	.AddAttribute ("McsDefaultUl",
 								 "Fixed UL MCS (for testing)",
 								 UintegerValue (1),
-								 MakeUintegerAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_mcsDefaultUl),
+								 MakeUintegerAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_mcsDefaultUl),
 								 MakeUintegerChecker<uint8_t> ())
 	 .AddAttribute ("DlSchedOnly",
 									"Only schedule downlink traffic (for testing)",
 									BooleanValue (false),
-									MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_dlOnly),
+									MakeBooleanAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_dlOnly),
 									MakeBooleanChecker ())
 	 .AddAttribute ("UlSchedOnly",
 									"Only schedule uplink traffic (for testing)",
 									BooleanValue (false),
-									MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_ulOnly),
+									MakeBooleanAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_ulOnly),
 									MakeBooleanChecker ())
-	 .AddAttribute ("Algorithm",
-									"Max weight algorithm. Determines order of FlowStats element in priorty queue.",
-									EnumValue (MmWaveFlexTtiMaxWeightMacScheduler::EDF),
-									MakeEnumAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_algorithm),
-									MakeEnumChecker (MmWaveFlexTtiMaxWeightMacScheduler::DELIVERY_DEBT, "DeliveryDebt",
-																	 MmWaveFlexTtiMaxWeightMacScheduler::EDF, "EDF"))
 	 .AddAttribute ("FixedTti",
 									"Fix slot size",
 									BooleanValue (false),
-									MakeBooleanAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_fixedTti),
+									MakeBooleanAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_fixedTti),
 									MakeBooleanChecker ())
 	.AddAttribute ("SymPerSlot",
 								 "Number of symbols per slot in Fixed TTI mode",
 								 UintegerValue (6),
-								 MakeUintegerAccessor (&MmWaveFlexTtiMaxWeightMacScheduler::m_symPerSlot),
+								 MakeUintegerAccessor (&MmWaveFlexTtiMaxRateMacScheduler::m_symPerSlot),
 								 MakeUintegerChecker<uint8_t> ())
 		;
 
@@ -248,32 +243,32 @@ MmWaveFlexTtiMaxWeightMacScheduler::GetTypeId (void)
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::SetMacSchedSapUser (MmWaveMacSchedSapUser* sap)
+MmWaveFlexTtiMaxRateMacScheduler::SetMacSchedSapUser (MmWaveMacSchedSapUser* sap)
 {
 	m_macSchedSapUser = sap;
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::SetMacCschedSapUser (MmWaveMacCschedSapUser* sap)
+MmWaveFlexTtiMaxRateMacScheduler::SetMacCschedSapUser (MmWaveMacCschedSapUser* sap)
 {
 	m_macCschedSapUser = sap;
 }
 
 
 MmWaveMacSchedSapProvider*
-MmWaveFlexTtiMaxWeightMacScheduler::GetMacSchedSapProvider ()
+MmWaveFlexTtiMaxRateMacScheduler::GetMacSchedSapProvider ()
 {
 	return m_macSchedSapProvider;
 }
 
 MmWaveMacCschedSapProvider*
-MmWaveFlexTtiMaxWeightMacScheduler::GetMacCschedSapProvider ()
+MmWaveFlexTtiMaxRateMacScheduler::GetMacCschedSapProvider ()
 {
 	return m_macCschedSapProvider;
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
+MmWaveFlexTtiMaxRateMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
 {
 	m_phyMacConfig = config;
 	m_amc = CreateObject <MmWaveAmc> (m_phyMacConfig);
@@ -292,7 +287,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacC
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters& params)
 {
   NS_LOG_FUNCTION (this << params.m_rnti << (uint32_t) params.m_logicalChannelIdentity);
   std::map <uint16_t, struct UeSchedInfo>::iterator itUe = m_ueSchedInfoMap.find (params.m_rnti);
@@ -335,8 +330,10 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMa
   						itUe->second.m_flowStatsDl[lcid].m_totalBufSize += diff;
   					}*/
 
+  		  			itUe->second.m_flowStatsDl[lcid].m_totalBufSize = params.m_rlcTransmissionQueueSize;
 					itUe->second.m_flowStatsDl[lcid].m_txPacketSizes.push_back (*itSize);
   					itUe->second.m_flowStatsDl[lcid].m_txPacketDelays.push_back (*itDelay);
+  					//itUe->second.m_totBufDl += *itSize;
   					if (*itDelay > maxDelay)
   					{
   						maxDelay = *itDelay;
@@ -347,13 +344,17 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMa
   			}
   			itUe->second.m_flowStatsDl[lcid].m_txQueueHolDelay = maxDelay;
   		}
+  		else if (params.m_rlcTransmissionQueueSize > 0)  // case for RlcSm
+  		{
+  			itUe->second.m_flowStatsDl[lcid].m_totalBufSize = params.m_rlcTransmissionQueueSize;
+  		}
   	}
   }
 }
 
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlMacCtrlInfoReqParameters& params)
 {
 	NS_LOG_FUNCTION (this);
 
@@ -410,7 +411,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoSchedDlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedDlCqiInfoReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
 
@@ -454,7 +455,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlCqiInfoReq (const struct MmWaveMacS
 
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
 
@@ -532,7 +533,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacS
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoSchedSetMcs (int mcs)
+MmWaveFlexTtiMaxRateMacScheduler::DoSchedSetMcs (int mcs)
 {
 	if (mcs >= 0 && mcs <= 28)
 	{
@@ -542,7 +543,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedSetMcs (int mcs)
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::RefreshHarqProcesses ()
+MmWaveFlexTtiMaxRateMacScheduler::RefreshHarqProcesses ()
 {
 	NS_LOG_FUNCTION (this);
 
@@ -595,7 +596,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::RefreshHarqProcesses ()
 }
 
 uint8_t
-MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
+MmWaveFlexTtiMaxRateMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
 {
 	NS_LOG_FUNCTION (this << rnti);
 
@@ -651,7 +652,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
 }
 
 uint8_t
-MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
+MmWaveFlexTtiMaxRateMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 {
 	NS_LOG_FUNCTION (this << rnti);
 
@@ -703,7 +704,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 //	return ((*it).second);
 }
 
-unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize)
+unsigned MmWaveFlexTtiMaxRateMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize)
 {
 	// bisection line search to find minimum number of slots needed to encode entire buffer
 	MmWaveMacPduHeader dummyMacHeader;
@@ -748,7 +749,7 @@ unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, 
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
 {
 	uint16_t frameNum = params.m_snfSf.m_frameNum;
 	uint8_t	sfNum = params.m_snfSf.m_sfNum;
@@ -757,11 +758,11 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 	MmWaveMacSchedSapUser::SchedConfigIndParameters ret;
 	ret.m_sfnSf = params.m_snfSf;
 	ret.m_sfAllocInfo.m_sfnSf = ret.m_sfnSf;
-//	if (!m_ulSfAllocInfo.empty ())
-//	{
-//		ret.m_dlSfAllocInfo = m_ulSfAllocInfo.front ();  // get SfAllocInfo from previous call to scheduler for UL allocations
-//		m_ulSfAllocInfo.pop_front ();
-//	}
+	//	if (!m_ulSfAllocInfo.empty ())
+	//	{
+	//		ret.m_dlSfAllocInfo = m_ulSfAllocInfo.front ();  // get SfAllocInfo from previous call to scheduler for UL allocations
+	//		m_ulSfAllocInfo.pop_front ();
+	//	}
 	SfnSf ulSfn = ret.m_sfnSf;
 	if (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay () >=  m_phyMacConfig->GetSubframesPerFrame ())
 	{
@@ -769,7 +770,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 	}
 	ulSfn.m_sfNum = (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
 	NS_LOG_DEBUG ("Scheduling DL frame "<< (unsigned)frameNum << " subframe " << (unsigned)sfNum
-	              << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
+								<< " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
 	//ret.m_ulSfAllocInfo = SfAllocInfo (ulSfn);
 
 	// add slot for DL control
@@ -891,8 +892,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 					SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
 					slotInfo.m_dci = dciInfoReTx;
 					NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
-							             " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
-							             " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
+												" tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
+												" rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
 					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
 					if (itRlcList == m_dlHarqProcessesRlcPduMap.end ())
 					{
@@ -981,8 +982,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 					SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
 					slotInfo.m_dci = dciInfoReTx;
 					NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
-											 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum <<
-											 " RETX");
+												" tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum <<
+												" RETX");
 					ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
 					ret.m_sfAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
 
@@ -1027,235 +1028,180 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 
 	// ********************* END OF HARQ SECTION, START OF NEW DATA SCHEDULING ********************* //
 
-	if (m_algorithm == EDF) 		// Earliest Deadline First algorithm
+	// compute achievable rates in current subframe
+	std::vector< std::map<uint16_t,UeSchedInfo*> > ueMcsList; // keep track of UEs at each MCS
+	for (unsigned imcs = 0; imcs <=29; imcs++)
 	{
-		// first allocate symbols in DL and UL subframes to flows based on deadlines, then assign symbol indices
-		std::vector<FlowStats*>::iterator flowIt;
-		while (symAvail > 0)
+		ueMcsList.push_back( std::map<uint16_t,UeSchedInfo*>() );
+	}
+
+	for (std::map<uint16_t, UeSchedInfo>::iterator ueIt = m_ueSchedInfoMap.begin(); ueIt != m_ueSchedInfoMap.end(); ueIt++)
+	{
+		UeSchedInfo* ueInfo = &ueIt->second;
+
+		// get DL-CQI and compute DL rate per symbol
+		bool dlAdded = false;
+		std::map <uint16_t,uint8_t>::iterator itCqiDl = m_wbCqiRxed.find (ueInfo->m_rnti);
+		uint8_t cqi = 0;
+		if (itCqiDl != m_wbCqiRxed.end ())
 		{
-			std::sort(m_flowHeap.begin(), m_flowHeap.end (),
-								MmWaveFlexTtiMaxWeightMacScheduler::CompareFlowWeightsEdf);		// Sort flow heap by relative deadline
-			flowIt = m_flowHeap.begin();
-			bool flowFound = false;
-			while (!flowFound && flowIt != m_flowHeap.end () && symAvail > 0)		// find flow with CQI in range (not in outage)
+			cqi = itCqiDl->second;
+		}
+		else // no CQI available
+		{
+			NS_LOG_INFO (this << " UE " << ueInfo->m_rnti << " does not have DL-CQI");
+			cqi = 1; // lowest value for trying a transmission
+		}
+		if (cqi != 0)
+		{
+			ueInfo->m_dlMcs = m_amc->GetMcsFromCqi (cqi);  // update MCS
+			std::map<uint16_t,UeSchedInfo*>::iterator itUeMcsMap = ueMcsList[ueInfo->m_dlMcs].find(ueInfo->m_rnti);
+			if (itUeMcsMap == ueMcsList[ueInfo->m_dlMcs].end ())
 			{
-				FlowStats* flow = *flowIt;		// get Earliest Deadline flow
-				if (flow->m_txPacketSizes.empty ())
+				ueMcsList[ueInfo->m_dlMcs].insert(std::pair<uint16_t,UeSchedInfo*> (ueInfo->m_rnti, ueInfo));
+			}
+			// compute total DL and UL bytes buffered
+			for (unsigned iflow = 0; iflow < ueInfo->m_flowStatsDl.size(); iflow++)
+			{
+				if (ueInfo->m_flowStatsDl[iflow].m_totalBufSize > 0)
 				{
-					flowIt++;
-					continue;
+					ueInfo->m_totBufDl += ueInfo->m_flowStatsDl[iflow].m_totalBufSize;
+					RlcPduInfo newRlcEl;
+					newRlcEl.m_lcid = ueInfo->m_flowStatsDl[iflow].m_lcid;
+					newRlcEl.m_size = ueInfo->m_flowStatsDl[iflow].m_totalBufSize;
+					ueInfo->m_rlcPduInfo.push_back (newRlcEl);
+				}
+			}
+			if (ueInfo->m_totBufDl > 0)
+			{
+				uint32_t tbSizeMax = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, 1);
+				ueInfo->m_currTputDl = std::min(ueInfo->m_totBufDl,tbSizeMax) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+				m_ueStatHeap.push_back(ueInfo);
+				itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
+				if (itUeAllocMap == ueAllocMap.end())
+				{
+					ueAllocMap.insert (std::pair<uint16_t, UeSchedInfo*> (ueInfo->m_rnti, ueInfo));
 				}
 
-				UeSchedInfo* ueInfo = flow->m_ueSchedInfo;
-				if (!flow->m_isUplink && symAvail > 0)
-				{
-					std::map <uint16_t,uint8_t>::iterator itCqi = m_wbCqiRxed.find (ueInfo->m_rnti);
-					uint8_t cqi = 0;
-					if (itCqi != m_wbCqiRxed.end ())
-					{
-						cqi = itCqi->second;
-					}
-					else // no CQI available
-					{
-						NS_LOG_INFO (this << " UE " << ueInfo->m_rnti << " does not have DL-CQI");
-						cqi = 1; // lowest value for trying a transmission
-					}
-					if (cqi != 0)
-					{
-						flowFound = true;
-						itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
-						if (itUeAllocMap == ueAllocMap.end ())
-						{
-							itUeAllocMap = ueAllocMap.insert(std::pair <uint16_t, struct UeSchedInfo*> (ueInfo->m_rnti, ueInfo)).first;
-						}
-						ueInfo->m_dlMcs = m_amc->GetMcsFromCqi (cqi);  // get MCS
-						// compute total TB size if we send whole RLC PDU
-						uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
-						// get required symbols to send whole RLC PDU
-						// (could be zero additional symbols if enough resources already allocated)
-						uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_dlTbSize + pduSize)*8, ueInfo->m_dlMcs) - ueInfo->m_dlSymbols;
-						if (numSymReq <= (unsigned)symAvail)	// sufficient symbols to TX whole RLC PDU at this MCS
-						{
-							flow->m_txPacketSizes.pop_front ();
-							// fixed TTI: slot must be multiple of m_symPerSlot symbols
-							// (for last slot, can be less due to control period)
-							if (m_fixedTti)
-							{
-								uint32_t numSymFixed = m_symPerSlot * ceil((double)numSymReq/(double)m_symPerSlot);
-								if (numSymFixed > (unsigned)symAvail)
-								{
-									numSymFixed = symAvail;
-								}
-								if (numSymFixed > numSymReq)
-								{
-									numSymReq = numSymFixed;
-									// recalculate TB size in case numSymReq increased
-									pduSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + numSymReq) / 8 - ueInfo->m_dlTbSize;
-								}
-							}
-							ueInfo->m_dlSymbols += numSymReq;		// add to total symbols/bits for UE
-							ueInfo->m_dlTbSize += pduSize;
-							symAvail -= numSymReq;
-							flow->m_txPacketDelays.pop_front ();
-							if (flow->m_txPacketDelays.size () > 0)
-							{
-								// add the difference in delays/arrival times between the old and new HOL packet to the deadline
-								// assume all packets have the same initial deadline
-								flow->m_txQueueHolDelay = flow->m_txPacketDelays.front ();
-								//flow->m_deadlineUs += oldHolDelay - flow->m_txQueueHolDelay;
-							}
-						}
-						else	// insufficient symbols, allocate remaining symbols (must segment RLC PDU)
-						{
-							// get maximum TB size from MCS and available symbols
-							uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + symAvail);
-							pduSize = ceil(tbSizeBits/8.0) - ueInfo->m_dlTbSize - (m_rlcHdrSize + m_subHdrSize);
-							//NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
-							flow->m_txPacketSizes.front () -= pduSize;		// subtract from HOL packet
-							ueInfo->m_dlSymbols += symAvail;
-							ueInfo->m_dlTbSize += pduSize;
-							symAvail = 0;
-						}
-						NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_dlSymbols <<
-						              " DL symbols at MCS " << (unsigned)ueInfo->m_dlMcs << " (remaining == " << symAvail << ")");
-						RlcPduInfo rlcInfo (flow->m_lcid, pduSize);
-						ueInfo->m_rlcPduInfo.push_back (rlcInfo);
-						uint32_t sduSize = pduSize - (m_rlcHdrSize + m_subHdrSize);
-						//flow->m_totalSchedSize += sduSize;
-						flow->m_totalBufSize -= sduSize;
-						/*flow->m_schedPacketSizes.push_front (sduSize);
-						if (flow->m_schedPacketSizes.size () > m_phyMacConfig->GetL1L2CtrlLatency ())
-						{
-							flow->m_totalSchedSize -= flow->m_schedPacketSizes.back ();
-							flow->m_schedPacketSizes.pop_back ();
-						}*/
-					}
-					else
-					{
-						// out of range (SINR too low)
-						NS_LOG_INFO ("*** RNTI " << ueInfo->m_rnti << " DL-CQI out of range, skipping allocation in UL");
-						flowIt++; // try next flow
-					}
-				}
-				else if (flow->m_isUplink && symAvail > 0)
-				{
-					std::map <uint16_t, struct UlCqiMapElem>::iterator itCqi = m_ueUlCqi.find (ueInfo->m_rnti);
-					int cqi = 0;
-					int mcs = 0;
-					if (itCqi != m_ueUlCqi.end ()) // no cqi info for this UE
-					{
-						// translate vector of doubles to SpectrumValue's
-						SpectrumValue specVals (MmWaveSpectrumValueHelper::GetSpectrumModel (m_phyMacConfig));
-						Values::iterator specIt = specVals.ValuesBegin();
-						for (unsigned ichunk = 0; ichunk < m_phyMacConfig->GetTotalNumChunk (); ichunk++)
-						{
-							NS_ASSERT (specIt != specVals.ValuesEnd());
-							*specIt = itCqi->second.m_ueUlCqi.at (ichunk); //sinrLin;
-							specIt++;
-						}
-						// for UL CQI, we need to know the TB size previously allocated to accurately compute CQI/MCS
-						cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, itCqi->second.m_numSym, itCqi->second.m_tbSize, mcs);
-					}
-					else
-					{
-						NS_LOG_INFO (this << " UE " << ueInfo->m_rnti << " does not have UL-CQI");
-						cqi = 1;
-						mcs = 0;
-					}
-					if (cqi != 0)
-					{
-						flowFound = true;
-						itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
-						if (itUeAllocMap == ueAllocMap.end ())
-						{
-							itUeAllocMap = ueAllocMap.insert(std::pair <uint16_t, struct UeSchedInfo*> (ueInfo->m_rnti, ueInfo)).first;
-						}
-						ueInfo->m_ulMcs = mcs;
-						uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
-						// get required additional symbols to send whole RLC PDU given current TB size (new total - prev. allocation)
-						uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_ulTbSize + pduSize)*8, ueInfo->m_ulMcs) - ueInfo->m_ulSymbols;
-						if (numSymReq <= (unsigned)symAvail)	// sufficient symbols to TX whole RLC PDU at this MCS
-						{
-							flow->m_txPacketSizes.pop_front ();
-							if (m_fixedTti)
-							{
-								uint32_t numSymFixed = m_symPerSlot * ceil((double)numSymReq/(double)m_symPerSlot);
-								if (numSymFixed > (unsigned)symAvail)
-								{
-									numSymFixed = symAvail;
-								}
-								if (numSymFixed > numSymReq)
-								{
-									numSymReq = numSymFixed;
-									// recalculate TB size in case numSymReq increased
-									pduSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols + numSymReq) / 8 - ueInfo->m_ulTbSize;
-								}
-							}
-							ueInfo->m_ulSymbols += numSymReq;		// add to total symbols/bits for UE
-							ueInfo->m_ulTbSize += pduSize;
-							symAvail -= numSymReq;
-							flow->m_txPacketDelays.pop_front ();
-							if (flow->m_txPacketDelays.size () > 0)
-							{
-								flow->m_txQueueHolDelay = flow->m_txPacketDelays.front ();
-								//flow->m_deadlineUs += oldHolDelay - flow->m_txQueueHolDelay;
-							}
-						}
-						else	// insufficient symbols, allocate remaining symbols (must segment RLC PDU)
-						{
-							// get maximum TB size from MCS and available symbols
-							uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols + symAvail);
-							pduSize = ceil(tbSizeBits/8.0) - ueInfo->m_ulTbSize - (m_rlcHdrSize + m_subHdrSize);
-							NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
-							flow->m_txPacketSizes.front () -= pduSize;		// subtract from HOL packet
-							ueInfo->m_ulSymbols += symAvail;
-							ueInfo->m_ulTbSize += pduSize;
-							symAvail = 0;
-						}
-						NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " LCID " << (unsigned)flow->m_lcid << " assigned " << (unsigned)ueInfo->m_ulSymbols <<
-												              " UL symbols at MCS " << (unsigned)ueInfo->m_ulMcs << " (remaining == " << symAvail << ")");
-						uint32_t sduSize = pduSize - (m_rlcHdrSize + m_subHdrSize);
-						//flow->m_totalSchedSize += sduSize;
-						flow->m_totalBufSize -= sduSize;
-						flow->m_schedPacketSizes.push_front (sduSize);
-						if (1 || flow->m_schedPacketSizes.size () > m_phyMacConfig->GetUlSchedDelay ())
-						{
-							//flow->m_totalSchedSize -= flow->m_schedPacketSizes.back ();
-							flow->m_schedPacketSizes.pop_back ();
-						}
-					}
-					else
-					{
-						// out of range (SINR too low)
-						NS_LOG_INFO ("*** RNTI " << ueInfo->m_rnti << " UL-CQI out of range, skipping allocation in UL");
-						flowIt++; // try next flow
-					}
-				}
-				else
-				{
-					flowIt++;
-				}
-			} // end while
-			if (!flowFound)	// no active flows found
-			{
-				break;
+				dlAdded = true;
 			}
-		} //end while
+		}
 
-		// update delays and relative deadlines
-		for (flowIt = m_flowHeap.begin (); flowIt != m_flowHeap.end(); flowIt++)
+		// get UL-CQI and compute UL rate per symbol
+		std::map <uint16_t, struct UlCqiMapElem>::iterator itCqiUl = m_ueUlCqi.find (ueInfo->m_rnti);
+		int mcs = 0;
+		if (itCqiUl != m_ueUlCqi.end ()) // no cqi info for this UE
 		{
-			// since any remaining packets in buffer will not be scheduled this subframe,
-			// add 1 SF of additional delay
-			for (std::list<double>::iterator delayIt = (*flowIt)->m_txPacketDelays.begin ();
-					delayIt != (*flowIt)->m_txPacketDelays.end (); delayIt++)
+			// translate vector of doubles to SpectrumValue's
+			SpectrumValue specVals (MmWaveSpectrumValueHelper::GetSpectrumModel (m_phyMacConfig));
+			Values::iterator specIt = specVals.ValuesBegin();
+			for (unsigned ichunk = 0; ichunk < m_phyMacConfig->GetTotalNumChunk (); ichunk++)
 			{
-				*delayIt += m_phyMacConfig->GetSubframePeriod();
+				NS_ASSERT (specIt != specVals.ValuesEnd());
+				*specIt = itCqiUl->second.m_ueUlCqi.at (ichunk); //sinrLin;
+				specIt++;
 			}
-			if ((*flowIt)->m_txPacketDelays.size () > 0)
+			// for UL CQI, we need to know the TB size previously allocated to accurately compute CQI/MCS
+			cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, itCqiUl->second.m_numSym, itCqiUl->second.m_tbSize, mcs);
+		}
+		else
+		{
+			NS_LOG_INFO (this << " UE " << ueInfo->m_rnti << " does not have UL-CQI");
+			cqi = 1;
+			mcs = 0;
+		}
+		if (cqi != 0)
+		{
+			ueInfo->m_ulMcs = mcs;
+			std::map<uint16_t,UeSchedInfo*>::iterator itUeMcsMap = ueMcsList[ueInfo->m_ulMcs].find(ueInfo->m_rnti);
+			if (itUeMcsMap == ueMcsList[ueInfo->m_ulMcs].end ())
 			{
-				(*flowIt)->m_txQueueHolDelay = (*flowIt)->m_txPacketDelays.front ();
-				//(*flowIt)->m_deadlineUs -= m_phyMacConfig->GetSubframePeriod();
+				ueMcsList[ueInfo->m_ulMcs].insert(std::pair<uint16_t,UeSchedInfo*> (ueInfo->m_rnti, ueInfo));
+			}
+			for (unsigned iflow = 0; iflow < ueInfo->m_flowStatsUl.size(); iflow++)
+			{
+				ueInfo->m_totBufUl += ueInfo->m_flowStatsUl[iflow].m_totalBufSize;
+			}
+			if (ueInfo->m_totBufUl > 0)
+			{
+				uint32_t tbSizeMax = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, 1);
+				ueInfo->m_currTputUl = std::min(ueInfo->m_totBufUl,tbSizeMax) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+				if (!dlAdded)
+				{
+					m_ueStatHeap.push_back(ueInfo);
+					itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
+					if (itUeAllocMap == ueAllocMap.end())
+					{
+						ueAllocMap.insert (std::pair<uint16_t, UeSchedInfo*> (ueInfo->m_rnti, ueInfo));
+					}
+				}
+			}
+		}
+	}
+
+	for (int imcs = 28; imcs >= 0; imcs--)
+	{
+		if (ueMcsList[imcs].size() > 0)
+		{
+			std::map<uint16_t, UeSchedInfo*>::iterator itUeMcs;
+			bool ueAlloc = true;
+			while (symAvail > 0 && ueAlloc)
+			{
+				itUeMcs = ueMcsList[imcs].begin();
+				ueAlloc = false;
+				while (itUeMcs != ueMcsList[imcs].end () && symAvail > 0)
+				{
+					UeSchedInfo* ueInfo = itUeMcs->second;
+
+					if (ueInfo->m_totBufDl == 0)
+					{
+						ueInfo->m_dlAllocDone = true;
+					}
+					if (ueInfo->m_totBufUl == 0)
+					{
+						ueInfo->m_ulAllocDone = true;
+					}
+
+					if ((ueInfo->m_allocUlLast || ueInfo->m_dlAllocDone) && !ueInfo->m_ulAllocDone)
+					{
+						ueInfo->m_ulSymbols++;
+						symAvail--;
+						ueInfo->m_ulTbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols) / 8;
+						if (ueInfo->m_ulTbSize >= ueInfo->m_totBufUl)
+						{
+							ueInfo->m_ulAllocDone = true;
+							ueInfo->m_lastAvgTputUl = ueInfo->m_avgTputUl;
+						}
+						ueInfo->m_allocUlLast = true;
+
+						uint32_t tbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols);
+						ueInfo->m_currTputUl = std::min(ueInfo->m_totBufUl,tbSize) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+						ueInfo->m_avgTputUl = ((1.0 - (1.0 / m_timeWindow)) * ueInfo->m_lastAvgTputUl) +
+								((1.0 / m_timeWindow) * ((double)ueInfo->m_ulTbSize / (m_phyMacConfig->GetSubframePeriod () * 1E-6)));
+						ueAlloc = true;
+
+					}
+					else if (!ueInfo->m_dlAllocDone)
+					{
+						ueInfo->m_dlSymbols++;
+						symAvail--;
+						ueInfo->m_dlTbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols) / 8;
+						if (ueInfo->m_dlTbSize >= ueInfo->m_totBufDl)
+						{
+							ueInfo->m_dlAllocDone = true;
+							ueInfo->m_lastAvgTputDl = ueInfo->m_avgTputDl;
+						}
+						ueInfo->m_allocUlLast = false;
+
+						uint32_t tbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols);
+						ueInfo->m_currTputDl = std::min(ueInfo->m_totBufDl,tbSize) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+						ueInfo->m_avgTputDl = ((1.0 - (1.0 / m_timeWindow)) * ueInfo->m_lastAvgTputDl) +
+								((1.0 / m_timeWindow) * ((double)ueInfo->m_dlTbSize / (m_phyMacConfig->GetSubframePeriod () * 1E-6)));
+						ueAlloc = true;
+					}
+
+					itUeMcs++;
+				}
 			}
 		}
 	}
@@ -1281,11 +1227,24 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			itUeAllocMap->second->m_ulTbSize = 0;
 			itUeAllocMap->second->m_dlSymbolsRetx = 0;
 			itUeAllocMap->second->m_ulSymbolsRetx = 0;
+			itUeAllocMap->second->m_currTputDl = 0;
+			itUeAllocMap->second->m_currTputUl = 0;
+			itUeAllocMap->second->m_avgTputDl = 0;
+			itUeAllocMap->second->m_avgTputUl = 0;
+			itUeAllocMap->second->m_totBufDl = 0;
+			itUeAllocMap->second->m_totBufUl = 0;
+			itUeAllocMap->second->m_dlAllocDone = false;
+			itUeAllocMap->second->m_ulAllocDone = false;
 			itUeAllocMap->second->m_rlcPduInfo.clear ();
 		}
-
 		return;
 	}
+
+//	itUeAllocMap = ueAllocMap.find (10);
+//	if (itUeAllocMap != ueAllocMap.end())
+//	{
+//		std::cout << frameNum << " " << sfNum << " " << itUeAllocMap->second->m_rlcPduInfo.size () << std::endl;
+//	}
 
 	// iterate through map of allocated UEs, assign TDMA symbol indices and create DCIs
 	//unsigned numSymAllocPrev = ret.m_dlSfAllocInfo.m_numSymAlloc; // allocated in prev sched request
@@ -1305,6 +1264,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			dci.m_rv = 0;
 			dci.m_ndi = 1;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			//ueInfo->m_totBufDl -= std::min(dci.m_tbSize,ueInfo->m_totBufDl);
 			dci.m_harqProcess = UpdateDlHarqProcessId (ueInfo->m_rnti);
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
 			//NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
@@ -1330,21 +1290,63 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 				(*itHarqTimer).second.at (dci.m_harqProcess) = 0;
 			}
 
-			unsigned totalBytesAlloc = 0;
+			// distribute bytes between active RLC queues
+			unsigned numLc = ueInfo->m_rlcPduInfo.size ();
+			unsigned bytesRem = dci.m_tbSize;
+			unsigned numFulfilled = 0;
+			uint16_t avgPduSize = bytesRem / numLc;
+			// first for loop computes extra to add to average if some flows are less than average
 			for (unsigned i = 0; i < ueInfo->m_rlcPduInfo.size (); i++)
 			{
-				totalBytesAlloc += ueInfo->m_rlcPduInfo[i].m_size;
+				if (ueInfo->m_rlcPduInfo[i].m_size < avgPduSize)
+				{
+					bytesRem -= ueInfo->m_rlcPduInfo[i].m_size;
+					numFulfilled++;
+				}
 			}
+
+			if (numFulfilled < ueInfo->m_rlcPduInfo.size ())
+			{
+				avgPduSize = bytesRem / (ueInfo->m_rlcPduInfo.size () - numFulfilled);
+			}
+
+			for (unsigned i = 0; i < ueInfo->m_rlcPduInfo.size (); i++)
+			{
+				if (ueInfo->m_rlcPduInfo[i].m_size > avgPduSize)
+				{
+					ueInfo->m_rlcPduInfo[i].m_size = avgPduSize;
+				}
+				// else tbSize equals RLC queue size
+				NS_ASSERT(ueInfo->m_rlcPduInfo[i].m_size > 0);
+				/*for (itRlcBuf = m_rlcBufferReq.begin (); itRlcBuf != m_rlcBufferReq.end (); itRlcBuf++)
+								{
+									if(itRlcBuf->m_rnti == itUeInfo->first)
+									{
+										if(itRlcBuf->m_rlcTransmissionQueueSize == 0)
+										{
+											NS_FATAL_ERROR ("LC is scheduled but RLC buffer == 0");
+										}
+									}
+								}*/
+				// update RLC buffer info with expected queue size after scheduling
+				UpdateDlRlcBufferInfo (ueInfo->m_rnti, ueInfo->m_rlcPduInfo[i].m_lcid, ueInfo->m_rlcPduInfo[i].m_size-m_subHdrSize);
+				//schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (itRlcInfo->second[i]);
+				slotInfo.m_rlcPduInfo.push_back (ueInfo->m_rlcPduInfo[i]);
+				if (m_harqOn == true)
+				{
+					// store RLC PDU list for HARQ
+					std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcPdu =  m_dlHarqProcessesRlcPduMap.find (dci.m_rnti);
+					if (itRlcPdu == m_dlHarqProcessesRlcPduMap.end ())
+					{
+						NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << dci.m_rnti);
+					}
+					(*itRlcPdu).second.at (dci.m_harqProcess).push_back (ueInfo->m_rlcPduInfo[i]);
+				}
+			}
+
 			for (unsigned i = 0; i < ueInfo->m_rlcPduInfo.size (); i++)
 			{
 				// update RLC buffer info with expected queue size after scheduling
-				//UpdateDlRlcBufferInfo (ueInfo->m_rnti, ueInfo->m_rlcPduInfo[i].m_lcid, ueInfo->m_rlcPduInfo[i].m_size-m_subHdrSize);
-				//schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (itRlcInfo->second[i]);
-				// give remaining bytes to default bearer
-				if (ueInfo->m_rlcPduInfo[i].m_lcid == 3 && totalBytesAlloc < dci.m_tbSize)
-				{
-					ueInfo->m_rlcPduInfo[i].m_size += dci.m_tbSize-totalBytesAlloc;
-				}
 				slotInfo.m_rlcPduInfo.push_back (ueInfo->m_rlcPduInfo[i]);
 				if (m_harqOn == true)
 				{
@@ -1357,6 +1359,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 					itRlcPdu->second.at (dci.m_harqProcess).push_back (ueInfo->m_rlcPduInfo[i]);
 				}
 			}
+
 			if (m_harqOn == true)
 			{
 				// reorder/reindex slots to maintain DL before UL slot order
@@ -1412,13 +1415,14 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 			dci.m_mcs = ueInfo->m_ulMcs;
 			dci.m_ndi = 1;
 			dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+			//ueInfo->m_totBufUl -= std::min(dci.m_tbSize,ueInfo->m_totBufUl);
 			dci.m_harqProcess = UpdateUlHarqProcessId (ueInfo->m_rnti);
 			//NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
 			NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
 			SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, ueInfo->m_rnti);
 			slotInfo.m_dci = dci;
 			NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
-			              " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
+										" tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
 			//UpdateUlRlcBufferInfo (ueInfo->m_rnti, dci.m_tbSize - m_subHdrSize);
 			ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
 			ret.m_sfAllocInfo.m_numSymAlloc += dci.m_numSym;
@@ -1465,6 +1469,14 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 		itUeAllocMap->second->m_ulTbSize = 0;
 		itUeAllocMap->second->m_dlSymbolsRetx = 0;
 		itUeAllocMap->second->m_ulSymbolsRetx = 0;
+		itUeAllocMap->second->m_currTputDl = 0;
+		itUeAllocMap->second->m_currTputUl = 0;
+		itUeAllocMap->second->m_avgTputDl = 0;
+		itUeAllocMap->second->m_avgTputUl = 0;
+		itUeAllocMap->second->m_totBufDl = 0;
+		itUeAllocMap->second->m_totBufUl = 0;
+		itUeAllocMap->second->m_dlAllocDone = false;
+		itUeAllocMap->second->m_ulAllocDone = false;
 		itUeAllocMap->second->m_rlcPduInfo.clear ();
 	}
 
@@ -1482,14 +1494,14 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 }
 
 bool
-MmWaveFlexTtiMaxWeightMacScheduler::SortRlcBufferReq (MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters i, MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters j)
+MmWaveFlexTtiMaxRateMacScheduler::SortRlcBufferReq (MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters i, MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters j)
 {
   return (i.m_rnti < j.m_rnti);
 }
 
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::RefreshDlCqiMaps (void)
+MmWaveFlexTtiMaxRateMacScheduler::RefreshDlCqiMaps (void)
 {
   NS_LOG_FUNCTION (this << m_wbCqiTimers.size ());
   // refresh DL CQI P01 Map
@@ -1520,7 +1532,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::RefreshDlCqiMaps (void)
 
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::RefreshUlCqiMaps (void)
+MmWaveFlexTtiMaxRateMacScheduler::RefreshUlCqiMaps (void)
 {
   // refresh UL CQI  Map
   std::map <uint16_t,uint32_t>::iterator itUl = m_ueCqiTimers.begin ();
@@ -1550,7 +1562,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::RefreshUlCqiMaps (void)
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size)
+MmWaveFlexTtiMaxRateMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t size)
 {
   NS_LOG_FUNCTION (this);
   std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
@@ -1601,7 +1613,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size)
+MmWaveFlexTtiMaxRateMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16_t size)
 {
 
   size = size - 2; // remove the minimum RLC overhead
@@ -1627,7 +1639,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlRlcBufferInfo (uint16_t rnti, uint16
 
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoCschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoCschedCellConfigReq (const struct MmWaveMacCschedSapProvider::CschedCellConfigReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
   // Read the subset of parameters used
@@ -1640,7 +1652,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedCellConfigReq (const struct MmWaveMa
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacCschedSapProvider::CschedUeConfigReqParameters& params)
 {
   NS_LOG_FUNCTION (this << " RNTI " << params.m_rnti << " txMode " << (uint16_t)params.m_transmissionMode);
 
@@ -1688,7 +1700,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeConfigReq (const struct MmWaveMacC
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters& params)
 {
 	NS_LOG_FUNCTION (this);
   std::map <uint16_t, struct UeSchedInfo>::iterator itUe = m_ueSchedInfoMap.find (params.m_rnti);
@@ -1761,7 +1773,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacC
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCschedSapProvider::CschedLcReleaseReqParameters& params)
 {
   NS_LOG_FUNCTION (this);
     for (uint16_t i = 0; i < params.m_logicalChannelIdentity.size (); i++)
@@ -1783,7 +1795,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMac
 }
 
 void
-MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
+MmWaveFlexTtiMaxRateMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSapProvider::CschedUeReleaseReqParameters& params)
 {
   NS_LOG_FUNCTION (this << " Release RNTI " << params.m_rnti);
 
