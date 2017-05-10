@@ -1,7 +1,8 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab
+ * Copyright (c) 2017, NYU WIRELESS, Tandon School of Engineering, New York University
+ * Copyright (c) 2017, University of Padova, Dep. of Information Engineering, SIGNET lab
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -18,8 +19,10 @@
  *
  * Author: Manuel Requena <manuel.requena@cttc.es>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *          Dual Connectivity functionalities
+ * Modified by:  Russell Ford
+ *                  Low lat
+ *               Michele Polese <michele.polese@gmail.com>
+ *                  Dual Connectivity functionalities
  */
 
 #ifndef LTE_RLC_UM_LOWLAT_H
@@ -135,6 +138,8 @@ private:
   static uint32_t m_numArrivalsToAvg;				// average last N arrivals
   //double	m_forgetFactor;
   Time m_reorderingTimeExpires;
+
+  bool m_bsrReported;
 
 };
 
