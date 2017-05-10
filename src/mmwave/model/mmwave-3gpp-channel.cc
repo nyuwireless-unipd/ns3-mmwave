@@ -2419,6 +2419,11 @@ MmWave3gppChannel::UpdateChannel(Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  t
 	{
 		clusterDelay.push_back(clusterDelay.at(cluster2nd)+1.28*table3gpp->m_cDS);
 		clusterDelay.push_back(clusterDelay.at(cluster2nd)+2.56*table3gpp->m_cDS);
+
+		clusterAoa.push_back(clusterAoa.at(cluster2nd));
+		clusterAoa.push_back(clusterAoa.at(cluster2nd));
+		clusterZoa.push_back(clusterZoa.at(cluster2nd));
+		clusterZoa.push_back(clusterZoa.at(cluster2nd));
 	}
 	else
 	{
