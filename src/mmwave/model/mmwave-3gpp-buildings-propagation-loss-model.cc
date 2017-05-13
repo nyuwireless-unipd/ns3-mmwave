@@ -154,7 +154,9 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
 		}
 		else if(a1->IsIndoor () && b1->IsIndoor ())
 		{
-			NS_FATAL_ERROR("indoor propagation loss not implemented yet");
+			//NS_FATAL_ERROR("indoor propagation loss not implemented yet");
+			return	m_3gppLos->GetLoss (a,b);
+
 		}
 		else //outdoor to indoor case
 		{
