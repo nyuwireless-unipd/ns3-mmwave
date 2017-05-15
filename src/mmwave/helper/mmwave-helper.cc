@@ -179,6 +179,16 @@ MmWaveHelper::GetTypeId (void)
 	                   BooleanValue (false),
 	                   MakeBooleanAccessor (&MmWaveHelper::m_useIdealRrc),
 	                   MakeBooleanChecker ())
+		.AddAttribute ("BasicCellId",
+                   "The next value will be the first cellId",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&MmWaveHelper::m_cellIdCounter),
+                   MakeUintegerChecker<uint16_t> ())
+	    .AddAttribute ("BasicImsi",
+                   "The next value will be the first  imsi",
+                   UintegerValue (0),
+                   MakeUintegerAccessor (&MmWaveHelper::m_imsiCounter),
+                   MakeUintegerChecker<uint16_t> ())
    	;
 
 	return tid;
