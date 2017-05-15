@@ -56,7 +56,7 @@ namespace ns3 {
   const uint16_t MI_16QAM_BLER_MAX_ID = 22;
   const uint16_t MI_64QAM_BLER_MAX_ID = 37;
 
-struct TbStats_t
+struct MmWaveTbStats_t
 {
   double tbler;
   double mi;
@@ -349,7 +349,7 @@ public:
    * \param mcs the MCS of the TB
    * \return the TB error rate and MI
    */
-  static TbStats_t GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, MmWaveHarqProcessInfoList_t miHistory);
+  static MmWaveTbStats_t GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, MmWaveHarqProcessInfoList_t miHistory);
 
 
 //private:

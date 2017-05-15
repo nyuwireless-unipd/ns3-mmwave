@@ -583,7 +583,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				}
 			}
 
-			TbStats_t tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
+			MmWaveTbStats_t tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (m_sinrPerceived,
 					itTb->second.rbBitmap, itTb->second.size, itTb->second.mcs, harqInfoList);
 			itTb->second.tbler = tbStats.tbler;
 			itTb->second.mi = tbStats.miTotal;
