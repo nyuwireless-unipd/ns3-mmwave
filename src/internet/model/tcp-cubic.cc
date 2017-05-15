@@ -45,7 +45,7 @@ TcpCubic::GetTypeId (void)
                    MakeDoubleAccessor (&TcpCubic::m_beta),
                    MakeDoubleChecker <double> (0.0))
     .AddAttribute ("HyStart", "Enable (true) or disable (false) hybrid slow start algorithm",
-                   BooleanValue (false),
+                   BooleanValue (true),
                    MakeBooleanAccessor (&TcpCubic::m_hystart),
                    MakeBooleanChecker ())
     .AddAttribute ("HyStartLowWindow", "Lower bound cWnd for hybrid slow start (segments)",
