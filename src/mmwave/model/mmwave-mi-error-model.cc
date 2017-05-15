@@ -62,10 +62,10 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
   for (uint32_t i = 0; i < map.size (); i++)
     {
       double sinrLin = sinrCopy[map.at (i)];
-      if (mcs <= MI_QPSK_MAX_ID) // QPSK
+      if (mcs <= MMWAVE_MI_QPSK_MAX_ID) // QPSK
         {
 
-          if (sinrLin > MI_map_qpsk_axis[MI_MAP_QPSK_SIZE-1])
+          if (sinrLin > MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE-1])
             {
               MI = 1;
             }
@@ -76,18 +76,18 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
               // the scaling coefficient is always the same, so we use a static const
               // to speed up the calculation
               static const double scalingCoeffQpsk = 
-                (MI_MAP_QPSK_SIZE - 1) / (MI_map_qpsk_axis[MI_MAP_QPSK_SIZE-1] - MI_map_qpsk_axis[0]);
+                (MMWAVE_MI_MAP_QPSK_SIZE - 1) / (MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE-1] - MI_map_qpsk_axis[0]);
               double sinrIndexDouble = (sinrLin -  MI_map_qpsk_axis[0]) * scalingCoeffQpsk + 1;
               uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
-              NS_ASSERT_MSG (sinrIndex < MI_MAP_QPSK_SIZE, "MI map out of data");
+              NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_QPSK_SIZE, "MI map out of data");
               MI = MI_map_qpsk[sinrIndex];
             }
         }
       else
         {
-          if (mcs > MI_QPSK_MAX_ID && mcs <= MI_16QAM_MAX_ID )	// 16-QAM
+          if (mcs > MMWAVE_MI_QPSK_MAX_ID && mcs <= MMWAVE_MI_16QAM_MAX_ID )	// 16-QAM
             {
-              if (sinrLin > MI_map_16qam_axis[MI_MAP_16QAM_SIZE-1])
+              if (sinrLin > MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE-1])
                 {
                   MI = 1;
                 }
@@ -98,16 +98,16 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                   // the scaling coefficient is always the same, so we use a static const
                   // to speed up the calculation
                   static const double scalingCoeff16qam = 
-                    (MI_MAP_16QAM_SIZE - 1) / (MI_map_16qam_axis[MI_MAP_16QAM_SIZE-1] - MI_map_16qam_axis[0]);
+                    (MMWAVE_MI_MAP_16QAM_SIZE - 1) / (MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE-1] - MI_map_16qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_16qam_axis[0]) * scalingCoeff16qam + 1;
                   uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
-                  NS_ASSERT_MSG (sinrIndex < MI_MAP_16QAM_SIZE, "MI map out of data");
+                  NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_16QAM_SIZE, "MI map out of data");
                   MI = MI_map_16qam[sinrIndex];
                 }
             }
           else // 64-QAM
             {
-              if (sinrLin > MI_map_64qam_axis[MI_MAP_64QAM_SIZE-1])
+              if (sinrLin > MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE-1])
                 {
                   MI = 1;
                 }
@@ -118,10 +118,10 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                   // the scaling coefficient is always the same, so we use a static const
                   // to speed up the calculation
                   static const double scalingCoeff64qam = 
-                    (MI_MAP_64QAM_SIZE - 1) / (MI_map_64qam_axis[MI_MAP_64QAM_SIZE-1] - MI_map_64qam_axis[0]);
+                    (MMWAVE_MI_MAP_64QAM_SIZE - 1) / (MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE-1] - MI_map_64qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_64qam_axis[0]) * scalingCoeff64qam + 1;
                   uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
-                  NS_ASSERT_MSG (sinrIndex < MI_MAP_64QAM_SIZE, "MI map out of data");
+                  NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_64QAM_SIZE, "MI map out of data");
                   MI = MI_map_64qam[sinrIndex];
                 }
             }
@@ -142,7 +142,7 @@ MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize)
   double b = 0;
   double c = 0;
 
-  NS_ASSERT_MSG (ecrId <= MI_64QAM_BLER_MAX_ID, "ECR out of range [0..37]: " << (uint16_t) ecrId);
+  NS_ASSERT_MSG (ecrId <= MMWAVE_MI_64QAM_BLER_MAX_ID, "ECR out of range [0..37]: " << (uint16_t) ecrId);
   int cbIndex = 1;
   while ((cbIndex < 9)&&(cbMiSizeTable[cbIndex]<= cbSize))
     {
@@ -313,21 +313,21 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
     {
       NS_LOG_DEBUG ("HARQ block no. " << miHistory.size ());
       // harq retx -> get closest ECR to Reff from available ones
-      if (mcs <= MI_QPSK_MAX_ID)
+      if (mcs <= MMWAVE_MI_QPSK_MAX_ID)
         {
           // Modulation order 2
-          uint8_t i = MI_QPSK_MAX_ID;
+          uint8_t i = MMWAVE_MI_QPSK_MAX_ID;
           while ((BlerCurvesEcrMap[i]>Reff)&&(i>0))
             {
               i--;
             }
           ecrId = i;
         }
-      else if (mcs <= MI_16QAM_MAX_ID)
+      else if (mcs <= MMWAVE_MI_16QAM_MAX_ID)
         {
           // Modulation order 4
-          uint8_t i = MI_16QAM_MAX_ID;
-          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MI_QPSK_MAX_ID + 1))
+          uint8_t i = MMWAVE_MI_16QAM_MAX_ID;
+          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_QPSK_MAX_ID + 1))
             {
               i--;
             }
@@ -336,8 +336,8 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       else
         {
           // Modulation order 6
-          uint8_t i = MI_64QAM_MAX_ID;
-          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MI_16QAM_MAX_ID + 1))
+          uint8_t i = MMWAVE_MI_64QAM_MAX_ID;
+          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_16QAM_MAX_ID + 1))
             {
               i--;
             }
