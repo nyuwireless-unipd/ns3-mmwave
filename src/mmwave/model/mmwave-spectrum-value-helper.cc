@@ -50,13 +50,13 @@ Ptr<SpectrumModel> MmWaveSpectrumValueHelper::m_model = 0;
 Ptr<SpectrumModel>
 MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
-  NS_LOG_FUNCTION (ptrConfig->GetCentreFrequency() << (uint32_t) ptrConfig->GetTotalNumChunk());
+  NS_LOG_FUNCTION (ptrConfig->GetCenterFrequency() << (uint32_t) ptrConfig->GetTotalNumChunk());
   if (m_model != 0 && m_model->GetNumBands () != 0)
   {
   	return m_model;
   }
 
-  double fc = ptrConfig->GetCentreFrequency ();
+  double fc = ptrConfig->GetCenterFrequency ();
   double f = 0.00;
 
   NS_ASSERT_MSG (fc != 0 , "The carrier frequency cannot be set to 0");

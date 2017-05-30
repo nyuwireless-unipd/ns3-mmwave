@@ -83,11 +83,11 @@ MmWave3gppBuildingsPropagationLossModel::GetTypeId (void)
 	static TypeId tid = TypeId ("ns3::MmWave3gppBuildingsPropagationLossModel")
 		.SetParent<BuildingsPropagationLossModel> ()
 		.AddConstructor<MmWave3gppBuildingsPropagationLossModel> ()
-		.AddAttribute ("Frequency",
-					   "The Frequency  (default is 28 GHz).",
-					   DoubleValue (28e9),
-					   MakeDoubleAccessor (&MmWave3gppBuildingsPropagationLossModel::SetFrequency),
-					   MakeDoubleChecker<double> ())
+		// .AddAttribute ("Frequency",
+		// 			   "The Frequency  (default is 28 GHz).",
+		// 			   DoubleValue (28e9),
+		// 			   MakeDoubleAccessor (&MmWave3gppBuildingsPropagationLossModel::SetFrequency),
+		// 			   MakeDoubleChecker<double> ())
 		.AddAttribute ("UpdateCondition",
 					"Update los/nlos condition while UE moves",
 					BooleanValue (true),
@@ -99,13 +99,13 @@ MmWave3gppBuildingsPropagationLossModel::GetTypeId (void)
 
 
 
-void
-MmWave3gppBuildingsPropagationLossModel::SetFrequency (double freq)
-{
-	m_frequency = freq;
-	static const double C = 299792458.0; // speed of light in vacuum
-	m_lambda = C / freq;
-}
+// void
+// MmWave3gppBuildingsPropagationLossModel::SetFrequency (double freq)
+// {
+// 	m_frequency = freq;
+// 	static const double C = 299792458.0; // speed of light in vacuum
+// 	m_lambda = C / freq;
+// }
 
 double
 MmWave3gppBuildingsPropagationLossModel::DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const
@@ -416,5 +416,18 @@ MmWave3gppBuildingsPropagationLossModel::GetChannelCondition(Ptr<MobilityModel> 
 
 }
 
+void
+MmWave3gppBuildingsPropagationLossModel::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
+{
+	m_phyMacConfig = ptrConfig;
+	m_frequency = m_phyMacConfig->GetCenterFrequency();
+    static const double C = 299792458.0; // speed of light in vacuum
+    m_lambda = C / m_frequency;
+
+	NS_LOG_INFO("Frequency " << m_frequency);
+
+    m_3gppNlos->SetConfigurationParameters(ptrConfig);
+    m_3gppLos->SetConfigurationParameters(ptrConfig);
+}
 
 } // namespace ns3

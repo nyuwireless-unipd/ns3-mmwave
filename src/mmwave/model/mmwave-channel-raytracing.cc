@@ -577,7 +577,7 @@ MmWaveChannelRaytracing::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmW
 		std::complex<double> subsbandGain (0.0,0.0);
 		if ((*vit) != 0.00)
 		{
-			double fsb = m_phyMacConfig->GetCentreFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband ;
+			double fsb = m_phyMacConfig->GetCenterFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband ;
 			for (unsigned int pathIndex = 0; pathIndex < pathNum; pathIndex++)
 			{
 				//need to convert ns to s
@@ -591,7 +591,7 @@ MmWaveChannelRaytracing::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmW
 				}
 				else
 				{
-					double f_d = speed*m_phyMacConfig->GetCentreFrequency ()/3e8;
+					double f_d = speed*m_phyMacConfig->GetCenterFrequency ()/3e8;
 					double temp_Doppler = 2*M_PI*t*f_d*bfParams->m_channelParams->m_doppler.at (pathIndex);
 					doppler = std::complex<double> (cos (temp_Doppler), sin (temp_Doppler));
 				}

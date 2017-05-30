@@ -32,6 +32,7 @@
 #include <ns3/buildings-propagation-loss-model.h>
 #include "mmwave-los-tracker.h"
 #include <ns3/simulator.h>
+#include "mmwave-phy-mac-common.h"
 
 
 
@@ -50,7 +51,14 @@ public:
 	virtual double GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 	  // inherited from PropagationLossModel
 	virtual double DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
-	void SetFrequency (double freq);
+	// void SetFrequency (double freq);
+
+	/**
+	* Set the configuration parameters which are common in the whole simulation
+	* \param a pointer to the MmWavePhyMacCommon object
+	*/
+	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
+
 	void SetBeamforming (Ptr<MmWaveBeamforming> beamforming);
 	void SetLosTracker (Ptr<MmWaveLosTracker> losTracker);
 
@@ -61,6 +69,7 @@ private:
 	double m_lambda;
 	Ptr<MmWaveBeamforming> m_beamforming;
 	Ptr<MmWaveLosTracker> m_losTracker;
+	Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 };
 
 }

@@ -585,7 +585,7 @@ public:
 	}
 
 	inline double
-	GetCentreFrequency (void)
+	GetCenterFrequency (void)
 	{
 		return m_centerFrequency;
 	}
