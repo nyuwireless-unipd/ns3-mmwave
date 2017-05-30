@@ -1409,7 +1409,7 @@ UeManager::RecvRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg)
             m_imsi = msg.ueIdentity;
             m_rrc->RegisterImsiToRnti(m_imsi, m_rnti);
             m_rrc->m_mmWaveCellSetupCompleted[m_imsi] = false;
-            NS_LOG_UNCOND("For imsi " << m_imsi << " m_rrc->m_mmWaveCellSetupCompleted[m_imsi] " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi]);
+            NS_LOG_DEBUG("For imsi " << m_imsi << " m_rrc->m_mmWaveCellSetupCompleted[m_imsi] " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi]);
             if (!m_isMc && m_rrc->m_s1SapProvider != 0)
               {
                 m_rrc->m_s1SapProvider->InitialUeMessage (m_imsi, m_rnti);
@@ -2311,7 +2311,7 @@ UeManager::RecvNotifyLteMmWaveHandoverCompleted()
   {
     case CONNECTED_NORMALLY:
       m_rrc->m_mmWaveCellSetupCompleted.find(m_imsi)->second = true;
-      NS_LOG_UNCOND("RecvNotifyLteMmWaveHandoverCompleted imsi " << m_imsi << " m_rrc->m_mmWaveCellSetupCompleted[m_imsi] " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi]);
+      NS_LOG_DEBUG("RecvNotifyLteMmWaveHandoverCompleted imsi " << m_imsi << " m_rrc->m_mmWaveCellSetupCompleted[m_imsi] " << m_rrc->m_mmWaveCellSetupCompleted[m_imsi]);
       m_rrc->m_imsiUsingLte.find(m_imsi)->second = true;
       break;
     default:
@@ -3135,7 +3135,7 @@ LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, 
   if(alreadyAssociatedImsi && m_lastMmWaveCell.find(imsi) != m_lastMmWaveCell.end())
   {
     currentSinrDb = 10*std::log10(m_imsiCellSinrMap.find(imsi)->second[m_lastMmWaveCell[imsi]]);
-    NS_LOG_UNCOND("Current SINR " << currentSinrDb);
+    NS_LOG_DEBUG("Current SINR " << currentSinrDb);
   }
 
   // the UE was in outage, now a mmWave eNB is available. It may be the one to which the UE is already attached or
@@ -3211,7 +3211,7 @@ LteEnbRrc::TttBasedHandover(std::map<uint64_t, CellSinrMap>::iterator imsiIter, 
           // we should compute the new TTT: if Now() + TTT < scheduledTime then update!
           uint8_t newTtt = ComputeTtt(sinrDifference);
           uint64_t handoverHappensAtTime = handoverEvent->second.scheduledHandoverEvent.GetTs(); // in nanoseconds
-          NS_LOG_UNCOND("Scheduled for " << handoverHappensAtTime << " while now the scheduler would give " << Simulator::Now().GetMilliSeconds() + newTtt);
+          NS_LOG_INFO("Scheduled for " << handoverHappensAtTime << " while now the scheduler would give " << Simulator::Now().GetMilliSeconds() + newTtt);
           if(Simulator::Now().GetMilliSeconds() + newTtt < (double)handoverHappensAtTime/1e6)
           {
             handoverEvent->second.scheduledHandoverEvent.Cancel();
