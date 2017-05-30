@@ -64,7 +64,7 @@ operator < (const MmWaveBearerStatsConnector::CellIdRnti& a, const MmWaveBearerS
  * and provides calculators with cellId and IMSI,
  * because most trace sources do not provide it.
  */
-struct BoundCallbackArgument : public SimpleRefCount<BoundCallbackArgument>
+struct MmWaveBoundCallbackArgument : public SimpleRefCount<MmWaveBoundCallbackArgument>
 {
 public:
   Ptr<MmWaveBearerStatsCalculator> stats;  //!< statistics calculator
@@ -72,7 +72,7 @@ public:
   uint16_t cellId; //!< cellId
 };
 
-struct McBoundCallbackArgument : public SimpleRefCount<McBoundCallbackArgument>
+struct McMmWaveBoundCallbackArgument : public SimpleRefCount<McMmWaveBoundCallbackArgument>
 {
 public:
   Ptr<McStatsCalculator> stats;
@@ -87,7 +87,7 @@ public:
  * /param packetSize
  */
 void
-DlTxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
+DlTxPduCallback (Ptr<MmWaveBoundCallbackArgument> arg, std::string path,
                  uint16_t rnti, uint8_t lcid, uint32_t packetSize)
 {
   NS_LOG_FUNCTION (path << rnti << (uint16_t)lcid << packetSize);
@@ -104,7 +104,7 @@ DlTxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
  * /param delay
  */
 void
-DlRxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
+DlRxPduCallback (Ptr<MmWaveBoundCallbackArgument> arg, std::string path,
                  uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint64_t delay)
 {
   NS_LOG_FUNCTION (path << rnti << (uint16_t)lcid << packetSize << delay);
@@ -120,7 +120,7 @@ DlRxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
  * /param packetSize
  */
 void
-UlTxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
+UlTxPduCallback (Ptr<MmWaveBoundCallbackArgument> arg, std::string path,
                  uint16_t rnti, uint8_t lcid, uint32_t packetSize)
 {
   NS_LOG_FUNCTION (path << rnti << (uint16_t)lcid << packetSize);
@@ -138,7 +138,7 @@ UlTxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
  * /param delay
  */
 void
-UlRxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
+UlRxPduCallback (Ptr<MmWaveBoundCallbackArgument> arg, std::string path,
                  uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint64_t delay)
 {
   NS_LOG_FUNCTION (path << rnti << (uint16_t)lcid << packetSize << delay);
@@ -147,7 +147,7 @@ UlRxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
 }
 
 void
-SwitchToLteCallback (Ptr<McBoundCallbackArgument> arg, std::string path, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+SwitchToLteCallback (Ptr<McMmWaveBoundCallbackArgument> arg, std::string path, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
   NS_LOG_FUNCTION (path << rnti << cellId << imsi);
  
@@ -155,7 +155,7 @@ SwitchToLteCallback (Ptr<McBoundCallbackArgument> arg, std::string path, uint64_
 }
 
 void
-SwitchToMmWaveCallback (Ptr<McBoundCallbackArgument> arg, std::string path, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+SwitchToMmWaveCallback (Ptr<McMmWaveBoundCallbackArgument> arg, std::string path, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
   NS_LOG_FUNCTION (path << rnti << cellId << imsi);
  
@@ -587,7 +587,7 @@ MmWaveBearerStatsConnector::ConnectSrb0Traces (std::string context, uint64_t ims
 
   if (m_rlcStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_rlcStats;
@@ -624,7 +624,7 @@ MmWaveBearerStatsConnector::ConnectSrb0Traces (std::string context, uint64_t ims
     }
   if (m_pdcpStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_pdcpStats;
@@ -643,7 +643,7 @@ MmWaveBearerStatsConnector::ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t
   NS_LOG_FUNCTION (this << imsi << cellId << rnti);
    if (m_rlcStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_rlcStats;
@@ -654,7 +654,7 @@ MmWaveBearerStatsConnector::ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t
     }
   if (m_pdcpStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_pdcpStats;
@@ -698,7 +698,7 @@ MmWaveBearerStatsConnector::ConnectTracesUe (std::string context, uint64_t imsi,
 
   if (m_rlcStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_rlcStats;
@@ -723,7 +723,7 @@ MmWaveBearerStatsConnector::ConnectTracesUe (std::string context, uint64_t imsi,
     }
   if (m_pdcpStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_pdcpStats;
@@ -738,7 +738,7 @@ MmWaveBearerStatsConnector::ConnectTracesUe (std::string context, uint64_t imsi,
     }
   if(m_mcStats)
     {
-      Ptr<McBoundCallbackArgument> arg = Create<McBoundCallbackArgument> ();
+      Ptr<McMmWaveBoundCallbackArgument> arg = Create<McMmWaveBoundCallbackArgument> ();
       arg->stats = m_mcStats;
       Config::Connect (basePath + "/SwitchToLte",
             MakeBoundCallback (&SwitchToLteCallback, arg));
@@ -756,7 +756,7 @@ MmWaveBearerStatsConnector::ConnectTracesEnb (std::string context, uint64_t imsi
   basePath <<  context.substr (0, context.rfind ("/")) << "/UeMap/" << (uint32_t) rnti;
   if (m_rlcStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_rlcStats;
@@ -775,7 +775,7 @@ MmWaveBearerStatsConnector::ConnectTracesEnb (std::string context, uint64_t imsi
     }
   if (m_pdcpStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_pdcpStats;
@@ -801,7 +801,7 @@ MmWaveBearerStatsConnector::DisconnectTracesUe (std::string context, uint64_t im
 
   if(m_mcStats)
     {
-      Ptr<McBoundCallbackArgument> arg = Create<McBoundCallbackArgument> ();
+      Ptr<McMmWaveBoundCallbackArgument> arg = Create<McMmWaveBoundCallbackArgument> ();
       arg->stats = m_mcStats;
       Config::Disconnect (basePath + "/SwitchToLte",
           MakeBoundCallback (&SwitchToLteCallback, arg));
@@ -829,7 +829,7 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesUe (std::string context, uint6
 
   if (m_rlcStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_rlcStats;
@@ -853,7 +853,7 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesEnb (std::string context, uint
 
   if (m_rlcStats)
     {
-      Ptr<BoundCallbackArgument> arg = Create<BoundCallbackArgument> ();
+      Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId; 
       arg->stats = m_rlcStats;
