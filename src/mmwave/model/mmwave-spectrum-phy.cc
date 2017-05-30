@@ -518,7 +518,7 @@ MmWaveSpectrumPhy::EndRxData ()
 	{
 		if ((m_dataErrorModelEnabled)&&(m_rxPacketBurstList.size ()>0))
 		{
-			HarqProcessInfoList_t harqInfoList;
+			MmWaveHarqProcessInfoList_t harqInfoList;
 			uint8_t rv = 0;
 			if (itTb->second.ndi == 0)
 			{

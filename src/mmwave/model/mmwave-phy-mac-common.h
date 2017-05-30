@@ -327,6 +327,10 @@ struct UlCqiInfo
 
 struct MacCeValue
 {
+	MacCeValue() : 
+	m_phr(0), m_crnti(0)
+	{
+	}
   uint8_t   m_phr;
   uint8_t   m_crnti;
   std::vector <uint8_t> m_bufferStatus;
@@ -337,6 +341,10 @@ struct MacCeValue
  */
 struct MacCeElement
 {
+	MacCeElement() : 
+	m_rnti(0)
+	{
+	}
   uint16_t  m_rnti;
   enum MacCeType
   {

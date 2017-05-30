@@ -402,7 +402,7 @@ static uint32_t g_handoverPreparationInfoMsgIdCounter = 0;
  * private since it should not be used outside this file.
  * 
  */
-class IdealHandoverPreparationInfoHeader : public Header
+class MmWaveIdealHandoverPreparationInfoHeader : public Header
 {
 public:
   uint32_t GetMsgId ();
@@ -419,50 +419,50 @@ private:
 };
 
 uint32_t 
-IdealHandoverPreparationInfoHeader::GetMsgId ()
+MmWaveIdealHandoverPreparationInfoHeader::GetMsgId ()
 {
   return m_msgId;
 }  
 
 void 
-IdealHandoverPreparationInfoHeader::SetMsgId (uint32_t id)
+MmWaveIdealHandoverPreparationInfoHeader::SetMsgId (uint32_t id)
 {
   m_msgId = id;
 }  
 
 
 TypeId
-IdealHandoverPreparationInfoHeader::GetTypeId (void)
+MmWaveIdealHandoverPreparationInfoHeader::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::IdealHandoverPreparationInfoHeader")
+  static TypeId tid = TypeId ("ns3::MmWaveIdealHandoverPreparationInfoHeader")
     .SetParent<Header> ()
-    .AddConstructor<IdealHandoverPreparationInfoHeader> ()
+    .AddConstructor<MmWaveIdealHandoverPreparationInfoHeader> ()
   ;
   return tid;
 }
 
 TypeId
-IdealHandoverPreparationInfoHeader::GetInstanceTypeId (void) const
+MmWaveIdealHandoverPreparationInfoHeader::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
-void IdealHandoverPreparationInfoHeader::Print (std::ostream &os)  const
+void MmWaveIdealHandoverPreparationInfoHeader::Print (std::ostream &os)  const
 {
   os << " msgId=" << m_msgId;
 }
 
-uint32_t IdealHandoverPreparationInfoHeader::GetSerializedSize (void) const
+uint32_t MmWaveIdealHandoverPreparationInfoHeader::GetSerializedSize (void) const
 {
   return 4;
 }
 
-void IdealHandoverPreparationInfoHeader::Serialize (Buffer::Iterator start) const
+void MmWaveIdealHandoverPreparationInfoHeader::Serialize (Buffer::Iterator start) const
 {  
   start.WriteU32 (m_msgId);
 }
 
-uint32_t IdealHandoverPreparationInfoHeader::Deserialize (Buffer::Iterator start)
+uint32_t MmWaveIdealHandoverPreparationInfoHeader::Deserialize (Buffer::Iterator start)
 {
   m_msgId = start.ReadU32 ();
   return GetSerializedSize ();
@@ -477,7 +477,7 @@ MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverPreparationInformation (LteRrcSap::Ha
   NS_ASSERT_MSG (g_handoverPreparationInfoMsgMap.find (msgId) == g_handoverPreparationInfoMsgMap.end (), "msgId " << msgId << " already in use");
   NS_LOG_INFO (" encoding msgId = " << msgId);
   g_handoverPreparationInfoMsgMap.insert (std::pair<uint32_t, LteRrcSap::HandoverPreparationInfo> (msgId, msg));
-  IdealHandoverPreparationInfoHeader h;
+  MmWaveIdealHandoverPreparationInfoHeader h;
   h.SetMsgId (msgId);
   Ptr<Packet> p = Create<Packet> ();
   p->AddHeader (h);
@@ -487,7 +487,7 @@ MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverPreparationInformation (LteRrcSap::Ha
 LteRrcSap::HandoverPreparationInfo 
 MmWaveEnbRrcProtocolIdeal::DoDecodeHandoverPreparationInformation (Ptr<Packet> p)
 {
-  IdealHandoverPreparationInfoHeader h;
+  MmWaveIdealHandoverPreparationInfoHeader h;
   p->RemoveHeader (h);
   uint32_t msgId = h.GetMsgId ();
   NS_LOG_INFO (" decoding msgId = " << msgId);
@@ -508,7 +508,7 @@ static uint32_t g_handoverCommandMsgIdCounter = 0;
  * private since it should not be used outside this file.
  * 
  */
-class IdealHandoverCommandHeader : public Header
+class MmWaveIdealHandoverCommandHeader : public Header
 {
 public:
   uint32_t GetMsgId ();
@@ -525,50 +525,50 @@ private:
 };
 
 uint32_t 
-IdealHandoverCommandHeader::GetMsgId ()
+MmWaveIdealHandoverCommandHeader::GetMsgId ()
 {
   return m_msgId;
 }  
 
 void 
-IdealHandoverCommandHeader::SetMsgId (uint32_t id)
+MmWaveIdealHandoverCommandHeader::SetMsgId (uint32_t id)
 {
   m_msgId = id;
 }  
 
 
 TypeId
-IdealHandoverCommandHeader::GetTypeId (void)
+MmWaveIdealHandoverCommandHeader::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::IdealHandoverCommandHeader")
+  static TypeId tid = TypeId ("ns3::MmWaveIdealHandoverCommandHeader")
     .SetParent<Header> ()
-    .AddConstructor<IdealHandoverCommandHeader> ()
+    .AddConstructor<MmWaveIdealHandoverCommandHeader> ()
   ;
   return tid;
 }
 
 TypeId
-IdealHandoverCommandHeader::GetInstanceTypeId (void) const
+MmWaveIdealHandoverCommandHeader::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
-void IdealHandoverCommandHeader::Print (std::ostream &os)  const
+void MmWaveIdealHandoverCommandHeader::Print (std::ostream &os)  const
 {
   os << " msgId=" << m_msgId;
 }
 
-uint32_t IdealHandoverCommandHeader::GetSerializedSize (void) const
+uint32_t MmWaveIdealHandoverCommandHeader::GetSerializedSize (void) const
 {
   return 4;
 }
 
-void IdealHandoverCommandHeader::Serialize (Buffer::Iterator start) const
+void MmWaveIdealHandoverCommandHeader::Serialize (Buffer::Iterator start) const
 {  
   start.WriteU32 (m_msgId);
 }
 
-uint32_t IdealHandoverCommandHeader::Deserialize (Buffer::Iterator start)
+uint32_t MmWaveIdealHandoverCommandHeader::Deserialize (Buffer::Iterator start)
 {
   m_msgId = start.ReadU32 ();
   return GetSerializedSize ();
@@ -583,7 +583,7 @@ MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReco
   NS_ASSERT_MSG (g_handoverCommandMsgMap.find (msgId) == g_handoverCommandMsgMap.end (), "msgId " << msgId << " already in use");
   NS_LOG_INFO (" encoding msgId = " << msgId);
   g_handoverCommandMsgMap.insert (std::pair<uint32_t, LteRrcSap::RrcConnectionReconfiguration> (msgId, msg));
-  IdealHandoverCommandHeader h;
+  MmWaveIdealHandoverCommandHeader h;
   h.SetMsgId (msgId);
   Ptr<Packet> p = Create<Packet> ();
   p->AddHeader (h);
@@ -593,7 +593,7 @@ MmWaveEnbRrcProtocolIdeal::DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReco
 LteRrcSap::RrcConnectionReconfiguration
 MmWaveEnbRrcProtocolIdeal::DoDecodeHandoverCommand (Ptr<Packet> p)
 {
-  IdealHandoverCommandHeader h;
+  MmWaveIdealHandoverCommandHeader h;
   p->RemoveHeader (h);
   uint32_t msgId = h.GetMsgId ();
   NS_LOG_INFO (" decoding msgId = " << msgId);

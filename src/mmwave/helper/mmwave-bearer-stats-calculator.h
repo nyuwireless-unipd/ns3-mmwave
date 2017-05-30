@@ -26,8 +26,8 @@
  */
 
 
-#ifndef RADIO_BEARER_STATS_CALCULATOR_H_
-#define RADIO_BEARER_STATS_CALCULATOR_H_
+#ifndef MMWAVE_RADIO_BEARER_STATS_CALCULATOR_H_
+#define MMWAVE_RADIO_BEARER_STATS_CALCULATOR_H_
 
 #include "ns3/lte-stats-calculator.h"
 #include "ns3/lte-common.h"
@@ -460,4 +460,4 @@ private:
 
 } // namespace ns3
 
-#endif /* RADIO_BEARER_STATS_CALCULATOR_H_ */
+#endif /* MMWAVE_RADIO_BEARER_STATS_CALCULATOR_H_ */

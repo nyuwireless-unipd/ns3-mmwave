@@ -753,11 +753,11 @@ MmWaveHelper::SetEpcHelper (Ptr<EpcHelper> epcHelper)
 	m_epcHelper = epcHelper;
 }
 
-class DrbActivator : public SimpleRefCount<DrbActivator>
+class MmWaveDrbActivator : public SimpleRefCount<MmWaveDrbActivator>
 {
 public:
-  DrbActivator (Ptr<NetDevice> ueDevice, EpsBearer bearer);
-  static void ActivateCallback (Ptr<DrbActivator> a, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
+  MmWaveDrbActivator (Ptr<NetDevice> ueDevice, EpsBearer bearer);
+  static void ActivateCallback (Ptr<MmWaveDrbActivator> a, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti);
   void ActivateDrb (uint64_t imsi, uint16_t cellId, uint16_t rnti);
 private:
   bool m_active;
@@ -766,7 +766,7 @@ private:
   uint64_t m_imsi;
 };
 
-DrbActivator::DrbActivator (Ptr<NetDevice> ueDevice, EpsBearer bearer)
+MmWaveDrbActivator::MmWaveDrbActivator (Ptr<NetDevice> ueDevice, EpsBearer bearer)
   : m_active (false),
     m_ueDevice (ueDevice),
     m_bearer (bearer),
@@ -775,14 +775,14 @@ DrbActivator::DrbActivator (Ptr<NetDevice> ueDevice, EpsBearer bearer)
 }
 
 void
-DrbActivator::ActivateCallback (Ptr<DrbActivator> a, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+MmWaveDrbActivator::ActivateCallback (Ptr<MmWaveDrbActivator> a, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
   NS_LOG_FUNCTION (a << context << imsi << cellId << rnti);
   a->ActivateDrb (imsi, cellId, rnti);
 }
 
 void
-DrbActivator::ActivateDrb (uint64_t imsi, uint16_t cellId, uint16_t rnti)
+MmWaveDrbActivator::ActivateDrb (uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << imsi << cellId << rnti << m_active);
   if ((!m_active) && (imsi == m_imsi))
@@ -833,8 +833,8 @@ MmWaveHelper::ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer
   path << "/NodeList/" << enbmmWaveDevice->GetNode ()->GetId ()
        << "/DeviceList/" << enbmmWaveDevice->GetIfIndex ()
        << "/LteEnbRrc/ConnectionEstablished";
-  Ptr<DrbActivator> arg = Create<DrbActivator> (ueDevice, bearer);
-  Config::Connect (path.str (), MakeBoundCallback (&DrbActivator::ActivateCallback, arg));
+  Ptr<MmWaveDrbActivator> arg = Create<MmWaveDrbActivator> (ueDevice, bearer);
+  Config::Connect (path.str (), MakeBoundCallback (&MmWaveDrbActivator::ActivateCallback, arg));
 }
 
 

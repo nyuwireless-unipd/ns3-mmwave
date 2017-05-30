@@ -38,18 +38,18 @@
 
 namespace std {
 
-ostream&
-operator << (ostream& os, const vector<int>& v)
-{
-  vector<int>::const_iterator it = v.begin ();
-  while (it != v.end ())
-    {
-      os << *it << " ";
-      ++it;
-    }
-  os << endl;
-  return os;
-}
+// ostream&
+// operator << (ostream& os, const vector<int>& v)
+// {
+//   vector<int>::const_iterator it = v.begin ();
+//   while (it != v.end ())
+//     {
+//       os << *it << " ";
+//       ++it;
+//     }
+//   os << endl;
+//   return os;
+// }
 
 }
 namespace ns3 {
