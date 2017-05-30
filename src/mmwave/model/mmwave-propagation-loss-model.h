@@ -52,14 +52,7 @@ class MmWavePropagationLossModel : public PropagationLossModel
 public:
   static TypeId GetTypeId (void);
   MmWavePropagationLossModel ();
-  /**
-   * \param frequency (Hz)
-   *
-   * Set the carrier frequency used in the mmWave model
-   * calculation.
-   */
-  // void SetFrequency (double frequency);
-
+  
   /**
    * Set the configuration parameters which are common in the whole simulation
    * \param a pointer to the MmWavePhyMacCommon object

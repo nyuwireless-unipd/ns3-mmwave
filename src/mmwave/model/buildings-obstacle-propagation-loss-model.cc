@@ -757,24 +757,10 @@ BuildingsObstaclePropagationLossModel::GetTypeId (void)
 	static TypeId tid = TypeId ("ns3::BuildingsObstaclePropagationLossModel")
 		.SetParent<BuildingsPropagationLossModel> ()
 		.AddConstructor<BuildingsObstaclePropagationLossModel> ()
-		// .AddAttribute ("Frequency",
-		// 			   "The Frequency  (default is 28 GHz).",
-		// 			   DoubleValue (28e9),
-		// 			   MakeDoubleAccessor (&BuildingsObstaclePropagationLossModel::SetFrequency),
-		// 			   MakeDoubleChecker<double> ())
 	;
 	return tid;
 }
 
-
-
-// void
-// BuildingsObstaclePropagationLossModel::SetFrequency (double freq)
-// 	{
-// 	m_frequency = freq;
-// 	static const double C = 299792458.0; // speed of light in vacuum
-// 	m_lambda = C / freq;
-// }
 
 double
 BuildingsObstaclePropagationLossModel::DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const

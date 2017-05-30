@@ -66,13 +66,6 @@ class MmWave3gppPropagationLossModel : public PropagationLossModel
 public:
   static TypeId GetTypeId (void);
   MmWave3gppPropagationLossModel ();
-  /**
-   * \param frequency (Hz)
-   *
-   * Set the carrier frequency used in the mmWave model
-   * calculation.
-   */
-  // void SetFrequency (double frequency);
 
   void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 

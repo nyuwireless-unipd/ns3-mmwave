@@ -50,12 +50,6 @@ MmWave3gppPropagationLossModel::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MmWave3gppPropagationLossModel")
     .SetParent<PropagationLossModel> ()
     .AddConstructor<MmWave3gppPropagationLossModel> ()
-    // .AddAttribute ("Frequency",
-    //                "The carrier frequency (in Hz) at which propagation occurs  (default is 28 GHz).",
-    //                DoubleValue (28e9),
-    //                MakeDoubleAccessor (&MmWave3gppPropagationLossModel::SetFrequency,
-    //                                    &MmWave3gppPropagationLossModel::GetFrequency),
-    //                MakeDoubleChecker<double> ())
     .AddAttribute ("MinLoss",
                    "The minimum value (dB) of the total loss, used at short ranges.",
                    DoubleValue (0.0),
@@ -114,14 +108,6 @@ MmWave3gppPropagationLossModel::GetMinLoss (void) const
 {
   return m_minLoss;
 }
-
-// void
-// MmWave3gppPropagationLossModel::SetFrequency (double frequency)
-// {
-//   m_frequency = frequency;
-//   static const double C = 299792458.0; // speed of light in vacuum
-//   m_lambda = C / frequency;
-// }
 
 double
 MmWave3gppPropagationLossModel::GetFrequency (void) const

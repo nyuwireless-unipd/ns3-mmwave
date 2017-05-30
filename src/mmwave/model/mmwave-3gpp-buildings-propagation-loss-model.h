@@ -43,7 +43,6 @@ public:
 	virtual double GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
 	  // inherited from PropagationLossModel
 	virtual double DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
-	// void SetFrequency (double freq);
 
 	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	std::string GetScenario();

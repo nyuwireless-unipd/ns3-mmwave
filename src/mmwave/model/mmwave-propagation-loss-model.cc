@@ -54,12 +54,6 @@ MmWavePropagationLossModel::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MmWavePropagationLossModel")
     .SetParent<PropagationLossModel> ()
     .AddConstructor<MmWavePropagationLossModel> ()
-    // .AddAttribute ("Frequency",
-    //                "The carrier frequency (in Hz) at which propagation occurs  (default is 28 GHz).",
-    //                DoubleValue (60e9),
-    //                MakeDoubleAccessor (&MmWavePropagationLossModel::SetFrequency,
-    //                                    &MmWavePropagationLossModel::GetFrequency),
-    //                MakeDoubleChecker<double> ())
     .AddAttribute ("MinLoss",
                    "The minimum value (dB) of the total loss, used at short ranges. Note: ",
                    DoubleValue (0.0),
@@ -100,15 +94,6 @@ MmWavePropagationLossModel::GetMinLoss (void) const
 {
   return m_minLoss;
 }
-
-// void
-// MmWavePropagationLossModel::SetFrequency (double frequency)
-// {
-//   //NS_ASSERT (m_frequency = frequency);
-//   m_frequency = frequency;
-//   static const double C = 299792458.0; // speed of light in vacuum
-//   m_lambda = C / frequency;
-// }
 
 double
 MmWavePropagationLossModel::GetFrequency (void) const
