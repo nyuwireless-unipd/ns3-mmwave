@@ -35,7 +35,7 @@
 #include "ns3/random-variable-stream.h"
 #include <ns3/vector.h>
 #include <map>
-
+#include "mmwave-phy-mac-common.h"
 /*
  * This 3GPP channel model is implemented base on the 3GPP TR 38.900 v14.1.0 (2016-09).
  *
@@ -66,13 +66,8 @@ class MmWave3gppPropagationLossModel : public PropagationLossModel
 public:
   static TypeId GetTypeId (void);
   MmWave3gppPropagationLossModel ();
-  /**
-   * \param frequency (Hz)
-   *
-   * Set the carrier frequency used in the mmWave model
-   * calculation.
-   */
-  void SetFrequency (double frequency);
+
+  void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 
   /**
    * \param minLoss the minimum loss (dB)
@@ -118,7 +113,7 @@ private:
   Ptr<UniformRandomVariable> m_uniformVar;
   bool m_shadowingEnabled;
   bool m_inCar;
-
+  Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 };
 
 #endif

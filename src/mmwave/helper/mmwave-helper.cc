@@ -53,6 +53,8 @@
 #include <ns3/lte-spectrum-phy.h>
 #include <ns3/lte-chunk-processor.h>
 #include <ns3/isotropic-antenna-model.h>
+#include <ns3/mmwave-propagation-loss-model.h>
+#include <ns3/mmwave-3gpp-buildings-propagation-loss-model.h>
 
 namespace ns3 {
 
@@ -225,8 +227,21 @@ MmWaveHelper::DoInitialize()
 		{
 			m_losTracker = CreateObject<MmWaveLosTracker>(); // create and initialize m_losTracker
 			Ptr<BuildingsObstaclePropagationLossModel> building = m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
+			building->SetConfigurationParameters(m_phyMacCommon);
 			building->SetBeamforming (m_beamforming);
 			building->SetLosTracker(m_losTracker); // use m_losTracker in BuildingsObstaclePropagationLossModel
+		}
+		else if(m_pathlossModelType == "ns3::MmWavePropagationLossModel")
+		{
+			m_pathlossModel->GetObject<MmWavePropagationLossModel>()->SetConfigurationParameters(m_phyMacCommon);
+		}
+		else if(m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel")
+		{
+			m_pathlossModel->GetObject<MmWave3gppPropagationLossModel>()->SetConfigurationParameters(m_phyMacCommon);
+		}
+		else if(m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel")
+		{
+			m_pathlossModel->GetObject<MmWave3gppBuildingsPropagationLossModel>()->SetConfigurationParameters(m_phyMacCommon);
 		}
 	}
 	else
@@ -1299,7 +1314,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	rrc->SetAttribute("mmWaveDevice", BooleanValue(true));
 
 	NS_LOG_LOGIC ("set the propagation model frequencies");
-	double freq = m_phyMacCommon->GetCentreFrequency ();
+	double freq = m_phyMacCommon->GetCenterFrequency ();
 	NS_LOG_LOGIC ("Channel Frequency: " << freq);
 	if (!m_pathlossModelType.empty ())
 	{

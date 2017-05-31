@@ -31,6 +31,7 @@
 
 
 #include <ns3/propagation-loss-model.h>
+#include <ns3/mmwave-phy-mac-common.h>
 #include "ns3/object.h"
 #include "ns3/random-variable-stream.h"
 #include <map>
@@ -51,13 +52,12 @@ class MmWavePropagationLossModel : public PropagationLossModel
 public:
   static TypeId GetTypeId (void);
   MmWavePropagationLossModel ();
+  
   /**
-   * \param frequency (Hz)
-   *
-   * Set the carrier frequency used in the mmWave model
-   * calculation.
+   * Set the configuration parameters which are common in the whole simulation
+   * \param a pointer to the MmWavePhyMacCommon object
    */
-  void SetFrequency (double frequency);
+  void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 
   /**
    * \param minLoss the minimum loss (dB)
@@ -95,6 +95,7 @@ private:
   std::string m_channelStates;
   double m_lossFixedDb;
   bool	m_fixedLossTst;
+  Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 };
 
 #endif

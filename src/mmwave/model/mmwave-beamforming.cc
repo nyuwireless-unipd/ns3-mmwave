@@ -504,7 +504,7 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 		std::complex<double> subsbandGain (0.0,0.0);
 		if ((*vit) != 0.00)
 		{
-			double fsb = m_phyMacConfig->GetCentreFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband ;
+			double fsb = m_phyMacConfig->GetCenterFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband ;
 			for (unsigned int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
 			{
 				double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
@@ -517,7 +517,7 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 				}
 				else
 				{
-					double f_d = speed*m_phyMacConfig->GetCentreFrequency ()/3e8;
+					double f_d = speed*m_phyMacConfig->GetCenterFrequency ()/3e8;
 					double temp_Doppler = 2*M_PI*t*f_d*DopplerShift[pathIndex];
 
 					doppler = std::complex<double> (cos (temp_Doppler), sin (temp_Doppler));
