@@ -362,6 +362,7 @@ private:
   double m_rho; //!< value of the radius of the disc
   double m_x;  //!< x coordinate of center of disc
   double m_y;  //!< y coordinate of center of disc
+  double m_z; // height at which the node will be located
 };
 
 } // namespace ns3

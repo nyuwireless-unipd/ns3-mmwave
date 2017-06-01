@@ -450,6 +450,11 @@ UniformDiscPositionAllocator::GetTypeId (void)
                    DoubleValue (0.0),
                    MakeDoubleAccessor (&UniformDiscPositionAllocator::m_y),
                    MakeDoubleChecker<double> ())
+    .AddAttribute ("Z",
+                   "The height of each node.",
+                   DoubleValue (0.0),
+                   MakeDoubleAccessor (&UniformDiscPositionAllocator::m_z),
+                   MakeDoubleChecker<double> ())
   ;
   return tid;
 }
@@ -491,7 +496,7 @@ UniformDiscPositionAllocator::GetNext (void) const
   x += m_x;
   y += m_y;
   NS_LOG_DEBUG ("Disc position x=" << x << ", y=" << y);
-  return Vector (x, y, 0.0);
+  return Vector (x, y, m_z);
 }
 
 int64_t
