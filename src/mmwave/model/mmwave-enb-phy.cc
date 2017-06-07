@@ -208,7 +208,10 @@ MmWaveEnbPhy::DoInitialize (void)
 
 	NS_LOG_DEBUG("In mmWaveEnbPhy, the RT periodicity is: " << m_updateSinrPeriod << " microseconds");
 	NS_LOG_DEBUG("In mmWaveEnbPhy, the transient duration is: " << m_transient << " microseconds");
-	NS_ASSERT_MSG((double)m_transient/m_updateSinrPeriod >= 16, "Window too small to compute the variance according to the ApplyFilter method");
+	if(m_noiseAndFilter)
+	{
+		NS_ASSERT_MSG((double)m_transient/m_updateSinrPeriod >= 16, "Window too small to compute the variance according to the ApplyFilter method");
+	}
 	Simulator::Schedule(MicroSeconds(0), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
 	Simulator::Schedule(MicroSeconds(0), &MmWaveEnbPhy::CallPathloss, this);
 	MmWavePhy::DoInitialize ();
@@ -870,7 +873,8 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 	{
 		SpectrumValue interference = *totalReceivedPsd - *(ue->second);
 		NS_LOG_LOGIC("interference " << interference);
-		SpectrumValue sinr = *(ue->second)/(*noisePsd + interference);
+		SpectrumValue sinr = *(ue->second)/(*noisePsd); // + interference); 
+		// we consider the SNR only!
 		NS_LOG_LOGIC("sinr " << sinr);
 		double sinrAvg = Sum(sinr)/(sinr.GetSpectrumModel()->GetNumBands());
 		NS_LOG_DEBUG("Time " << Simulator::Now().GetSeconds() << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10(sinrAvg));
