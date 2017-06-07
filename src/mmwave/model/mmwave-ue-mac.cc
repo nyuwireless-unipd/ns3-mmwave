@@ -937,7 +937,7 @@ MmWaveUeMac::AddLc (uint8_t lcId,  LteUeCmacSapProvider::LogicalChannelConfig lc
 {
 	NS_LOG_FUNCTION (this << " lcId" << (uint32_t) lcId);
 	//NS_ASSERT_MSG (m_lcInfoMap.find (lcId) == m_lcInfoMap.end (), "cannot add channel because LCID " << lcId << " is already present");
-NS_LOG_DEBUG("Add LC in " << m_rnti << " lcid " << (uint32_t)lcId);
+	NS_LOG_DEBUG("Add LC in " << m_rnti << " lcid " << (uint32_t)lcId);
 	LcInfo lcInfo;
 	lcInfo.lcConfig = lcConfig;
 	lcInfo.macSapUser = msu;
@@ -947,7 +947,7 @@ NS_LOG_DEBUG("Add LC in " << m_rnti << " lcid " << (uint32_t)lcId);
 void
 MmWaveUeMac::DoRemoveLc (uint8_t lcId)
 {
-	NS_LOG_FUNCTION (this << " lcId" << lcId);
+  NS_LOG_FUNCTION (this << " lcId" << lcId);
   NS_LOG_DEBUG("Remove LC in " << m_rnti << " lcid " << (uint32_t)lcId);
   if(m_lcInfoMap.find (lcId) != m_lcInfoMap.end ())
   {
@@ -989,6 +989,9 @@ MmWaveUeMac::DoReset ()
 	m_freshUlBsr = false;
 	m_ulBsrReceived.clear ();
 	m_macPduMap.clear();
+
+	// set things to their initial state
+	SetConfigurationParameters(m_phyMacConfig);
 
 }
 
