@@ -316,7 +316,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       if (mcs <= MMWAVE_MI_QPSK_MAX_ID)
         {
           // Modulation order 2
-          uint8_t i = MMWAVE_MI_QPSK_MAX_ID;
+          uint8_t i = MMWAVE_MI_QPSK_BLER_MAX_ID;
           while ((BlerCurvesEcrMap[i]>Reff)&&(i>0))
             {
               i--;
@@ -326,8 +326,8 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       else if (mcs <= MMWAVE_MI_16QAM_MAX_ID)
         {
           // Modulation order 4
-          uint8_t i = MMWAVE_MI_16QAM_MAX_ID;
-          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_QPSK_MAX_ID + 1))
+          uint8_t i = MMWAVE_MI_16QAM_BLER_MAX_ID;
+          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_QPSK_BLER_MAX_ID + 1))
             {
               i--;
             }
@@ -336,8 +336,8 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       else
         {
           // Modulation order 6
-          uint8_t i = MMWAVE_MI_64QAM_MAX_ID;
-          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_16QAM_MAX_ID + 1))
+          uint8_t i = MMWAVE_MI_64QAM_BLER_MAX_ID;
+          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_16QAM_BLER_MAX_ID + 1))
             {
               i--;
             }
