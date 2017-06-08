@@ -128,6 +128,7 @@ def build(bld):
         'model/epc-s1ap-header.cc',
         'model/mc-enb-pdcp.cc',
         'model/mc-ue-pdcp.cc', 
+        'helper/retx-stats-calculator.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('lte')
@@ -310,6 +311,7 @@ def build(bld):
         'model/epc-s1ap-header.h',
         'model/mc-enb-pdcp.h',
         'model/mc-ue-pdcp.h',     
+        'helper/retx-stats-calculator.h'
         ]
 
     if (bld.env['ENABLE_EMU']):

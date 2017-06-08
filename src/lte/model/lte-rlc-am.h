@@ -87,6 +87,7 @@ public:
   std::vector < Ptr<Packet> > GetTxedRlcSduBuffer (){
     return m_txedRlcSduBuffer;
   }
+
 private:
   //whether the last SDU in the txonBuffer is a complete SDU.
   bool is_fragmented;
@@ -148,11 +149,11 @@ private:
     std::vector < Ptr<Packet> > m_txonBuffer;       // Transmission buffer
 
     struct RetxSegPdu
-		{
-			Ptr<Packet> m_pdu;
-			uint16_t    m_retxCount;
-			bool			m_lastSegSent;		// all segments sent, waiting for ACK
-		};
+    {
+      Ptr<Packet> m_pdu;
+      uint16_t    m_retxCount;
+      bool      m_lastSegSent;    // all segments sent, waiting for ACK
+    };
 
   // LL HO: store a complete version of the incomplete RLC SDU at the 
   // edge of the m_txonBuffer during the segmentation process.
@@ -277,8 +278,8 @@ private:
   EventId m_traceBufferSizeEvent;
 
   bool m_enableAqm;
-};
 
+};
 
 } // namespace ns3
 

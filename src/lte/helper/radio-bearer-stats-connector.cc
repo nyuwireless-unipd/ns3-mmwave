@@ -56,6 +56,14 @@ public:
   uint16_t cellId; //!< cellId
 };
 
+struct BoundCallbackArgumentRetx : public SimpleRefCount<BoundCallbackArgumentRetx>
+{
+public:
+  Ptr<RetxStatsCalculator> stats;  //!< statistics calculator
+  uint64_t imsi; //!< imsi
+  uint16_t cellId; //!< cellId
+};
+
 /**
  * Callback function for DL TX statistics for both RLC and PDCP
  * /param arg
@@ -124,11 +132,27 @@ UlRxPduCallback (Ptr<BoundCallbackArgument> arg, std::string path,
   arg->stats->UlRxPdu (arg->cellId, arg->imsi, rnti, lcid, packetSize, delay);
 }
 
+void
+DlRetxCallback (Ptr<BoundCallbackArgumentRetx> arg, std::string path,
+                 uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
+{
+  NS_LOG_FUNCTION(path << arg->stats << arg->imsi);
+  arg->stats->RegisterRetxDl(arg->imsi, arg->cellId, rnti, lcid, packetSize, numRetx);
+}
+
+void
+UlRetxCallback (Ptr<BoundCallbackArgumentRetx> arg, std::string path,
+                 uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
+{
+  NS_LOG_FUNCTION(path << arg->stats << arg->imsi);
+  arg->stats->RegisterRetxUl(arg->imsi, arg->cellId, rnti, lcid, packetSize, numRetx);
+}
 
 
 RadioBearerStatsConnector::RadioBearerStatsConnector ()
   : m_connected (false)
 {
+  m_retxStats = CreateObject<RetxStatsCalculator> ();
 }
 
 void 
@@ -144,6 +168,17 @@ RadioBearerStatsConnector::EnablePdcpStats (Ptr<RadioBearerStatsCalculator> pdcp
   m_pdcpStats = pdcpStats;
   EnsureConnected ();
 }
+
+// TypeId
+// RadioBearerStatsConnector::GetTypeId (void)
+// {
+//   static TypeId tid =
+//     TypeId ("ns3::RadioBearerStatsConnector") 
+//     .SetParent<Object> ()
+//     .AddConstructor<RadioBearerStatsConnector> ()
+//     .SetGroupName("Lte");
+//   return tid; 
+// }
 
 void 
 RadioBearerStatsConnector::EnsureConnected ()
@@ -386,6 +421,15 @@ RadioBearerStatsConnector::ConnectTracesUe (std::string context, uint64_t imsi, 
       Config::Connect (basePath + "/Srb1/LtePdcp/TxPDU",
 		       MakeBoundCallback (&UlTxPduCallback, arg));
     }
+  if (m_retxStats) // TODO set condition
+    {
+      Ptr<BoundCallbackArgumentRetx> arg = Create<BoundCallbackArgumentRetx> ();
+      arg->imsi = imsi;
+      arg->cellId = cellId; 
+      arg->stats = m_retxStats;
+      Config::Connect (basePath + "/DataRadioBearerMap/*/LteRlc/TxCompletedCallback",
+         MakeBoundCallback (&UlRetxCallback, arg));
+    }
 }
 
 void 
@@ -428,6 +472,15 @@ RadioBearerStatsConnector::ConnectTracesEnb (std::string context, uint64_t imsi,
 		       MakeBoundCallback (&DlTxPduCallback, arg));
       Config::Connect (basePath.str () + "/Srb1/LtePdcp/RxPDU",
 		       MakeBoundCallback (&UlRxPduCallback, arg));
+    }
+  if (m_retxStats) 
+    {
+      Ptr<BoundCallbackArgumentRetx> arg = Create<BoundCallbackArgumentRetx> ();
+      arg->imsi = imsi;
+      arg->cellId = cellId; 
+      arg->stats = m_retxStats;
+      Config::Connect (basePath.str () + "/DataRadioBearerMap/*/LteRlc/TxCompletedCallback",
+         MakeBoundCallback (&DlRetxCallback, arg));
     }
 }
 

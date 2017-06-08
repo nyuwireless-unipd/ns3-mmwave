@@ -109,6 +109,10 @@ TypeId LteRlc::GetTypeId (void)
                      "PDU received.",
                      MakeTraceSourceAccessor (&LteRlc::m_rxPdu),
                      "ns3::LteRlc::ReceiveTracedCallback")
+   .AddTraceSource ("TxCompletedCallback",
+                     "PDU acked.",
+                     MakeTraceSourceAccessor (&LteRlc::m_txCompletedCallback),
+                     "ns3::LteRlc::RetransmissionCountCallback")
     ;
   return tid;
 }

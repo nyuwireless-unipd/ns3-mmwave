@@ -165,6 +165,18 @@ public:
   typedef void (* ReceiveTracedCallback)
     (uint16_t rnti, uint8_t lcid, uint32_t bytes, uint64_t delay);
 
+  /**
+   * TracedCallback signature for
+   *
+   * \param [in] rnti C-RNTI scheduled.
+   * \param [in] lcid The logical channel id corresponding to
+   *             the sending RLC instance.
+   * \param [in] bytes The packet size.
+   * \param [in] the number of RLC AM retransmissions for that packet
+   */
+  typedef void (* RetransmissionCountCallback)
+    (uint16_t rnti, uint8_t lcid, uint32_t bytes, uint32_t numRetx);
+
   /// \todo MRE What is the sense to duplicate all the interfaces here???
   // NB to avoid the use of multiple inheritance
   
@@ -197,6 +209,8 @@ protected:
    * Used to inform of a PDU reception from the MAC SAP user
    */
   TracedCallback<uint16_t, uint8_t, uint32_t, uint64_t> m_rxPdu;
+
+  TracedCallback<uint16_t, uint8_t, uint32_t, uint32_t> m_txCompletedCallback; // callback used to broadcast the number of retx for each RLC packet
 
   // MC functionalities
   // UeDataParams needed to forward data to MmWave

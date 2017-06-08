@@ -28,9 +28,12 @@
 #include <ns3/config.h>
 #include <ns3/simple-ref-count.h>
 #include <ns3/ptr.h>
-
+#include <ns3/object.h>
+#include <fstream>
 #include <set>
 #include <map>
+#include "retx-stats-calculator.h"
+
 
 namespace ns3 {
 
@@ -262,6 +265,7 @@ private:
 
   Ptr<RadioBearerStatsCalculator> m_rlcStats; //!< Calculator for RLC Statistics
   Ptr<RadioBearerStatsCalculator> m_pdcpStats; //!< Calculator for PDCP Statistics
+  Ptr<RetxStatsCalculator> m_retxStats;
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUe; //!< stores all UEs for which RLC and PDCP traces were connected
