@@ -350,7 +350,11 @@ MmWaveEnbMac::GetTypeId (void)
                    UintegerValue (3),
                    MakeUintegerAccessor (&MmWaveEnbMac::m_raResponseWindowSize),
                    MakeUintegerChecker<uint8_t> (2, 10))
-		;
+	        .AddTraceSource ("DlMacTxCallback",
+					"MAC transmission with tb size and number of retx.",
+					MakeTraceSourceAccessor (&MmWaveEnbMac::m_macDlTxSizeRetx),
+					"ns3::LteRlc::RetransmissionCountCallback")
+	;
 	return tid;
 }
 
@@ -808,6 +812,9 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 		if (slotAllocInfo.m_slotType != SlotAllocInfo::CTRL && slotAllocInfo.m_tddMode == SlotAllocInfo::DL)
 		{
 			uint16_t rnti = slotAllocInfo.m_dci.m_rnti;
+			// here log all the packets sent in downlink 
+			m_macDlTxSizeRetx(rnti, m_cellId, slotAllocInfo.m_dci.m_tbSize, slotAllocInfo.m_dci.m_rv);
+
 			std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
 			if (rntiIt == m_rlcAttached.end())
 			{
@@ -885,7 +892,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 				{
 					NS_LOG_INFO ("DL retransmission");
 					if (dciElem.m_tbSize > 0)
-					{
+					{						
 						// HARQ retransmission -> retrieve TB from HARQ buffer
 						std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
 						NS_ASSERT(it!=m_miDlHarqProcessesPackets.end());

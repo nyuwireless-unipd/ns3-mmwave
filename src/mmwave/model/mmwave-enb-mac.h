@@ -156,6 +156,17 @@ public:
 	void DoCschedUeConfigUpdateInd (MmWaveMacCschedSapUser::CschedUeConfigUpdateIndParameters params);
 	void DoCschedCellConfigUpdateInd (MmWaveMacCschedSapUser::CschedCellConfigUpdateIndParameters params);
 
+   /**
+    * TracedCallback signature for
+    *
+    * \param [in] rnti C-RNTI scheduled.
+    * \param [in] the cellId
+    * \param [in] the allocated transport block size
+    * \param [in] the number of HARQ retransmissions for that packet
+    */
+  	typedef void (* HarqRetxCallback)
+    	(uint16_t rnti, uint16_t cellId, uint32_t tbSize, uint8_t numRetx);
+
 private:
 	// forwarded from LteEnbCmacSapProvider
 	void DoConfigureMac (uint8_t ulBandwidth, uint8_t dlBandwidth);
@@ -231,6 +242,8 @@ private:
 	std::map<uint8_t, NcRaPreambleInfo> m_allocatedNcRaPreambleMap;
 
 	uint16_t m_cellId;
+
+	TracedCallback<uint16_t, uint16_t, uint32_t, uint8_t> m_macDlTxSizeRetx;
 
 };
 

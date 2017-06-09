@@ -21,8 +21,8 @@
  * Modified by: Michele Polese <michele.polese@gmail.com>
  */
 
-#ifndef RETX_STATS_CALCULATOR_H_
-#define RETX_STATS_CALCULATOR_H_
+#ifndef MAC_TX_STATS_CALCULATOR_H_
+#define MAC_TX_STATS_CALCULATOR_H_
 
 #include "ns3/lte-common.h"
 #include "ns3/uinteger.h"
@@ -36,19 +36,19 @@
 namespace ns3
 {
 
-class RetxStatsCalculator : public Object
+class MacTxStatsCalculator : public Object
 {
 public:
   /**
    * Class constructor
    */
-  RetxStatsCalculator ();
+  MacTxStatsCalculator ();
 
   /**
    * Class destructor
    */
   virtual
-  ~RetxStatsCalculator ();
+  ~MacTxStatsCalculator ();
 
   // Inherited from ns3::Object
   /**
@@ -58,8 +58,8 @@ public:
   static TypeId GetTypeId (void);
   void DoDispose ();
 
-  void RegisterRetxDl(uint64_t imsi, uint16_t cellId, uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx);
-  void RegisterRetxUl(uint64_t imsi, uint16_t cellId, uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx);
+  void RegisterMacTxDl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx);
+  void RegisterMacTxUl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx);
 
   std::ofstream m_retxDlFile;
   std::string m_retxDlFilename;
@@ -70,4 +70,4 @@ public:
 
 }
 
-#endif /* RETX_STATS_CALCULATOR_H_ */
+#endif /* MAC_TX_STATS_CALCULATOR_H_ */

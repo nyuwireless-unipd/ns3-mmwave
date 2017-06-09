@@ -64,6 +64,12 @@ public:
   uint16_t cellId; //!< cellId
 };
 
+struct BoundCallbackArgumentMacTx : public SimpleRefCount<BoundCallbackArgumentMacTx>
+{
+public:
+  Ptr<MacTxStatsCalculator> stats;  //!< statistics calculator
+};
+
 /**
  * Callback function for DL TX statistics for both RLC and PDCP
  * /param arg
@@ -148,11 +154,19 @@ UlRetxCallback (Ptr<BoundCallbackArgumentRetx> arg, std::string path,
   arg->stats->RegisterRetxUl(arg->imsi, arg->cellId, rnti, lcid, packetSize, numRetx);
 }
 
+void
+NotifyDlMacTx (Ptr<BoundCallbackArgumentMacTx> arg, std::string path, uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx)
+{
+  NS_LOG_UNCOND(path << rnti << cellId << packetSize << (uint32_t)numRetx);
+  arg->stats->RegisterMacTxDl(rnti, cellId, packetSize, numRetx);
+}
+
 
 RadioBearerStatsConnector::RadioBearerStatsConnector ()
   : m_connected (false)
 {
   m_retxStats = CreateObject<RetxStatsCalculator> ();
+  m_macTxStats = CreateObject<MacTxStatsCalculator> ();
 }
 
 void 
@@ -202,6 +216,14 @@ RadioBearerStatsConnector::EnsureConnected ()
 		       MakeBoundCallback (&RadioBearerStatsConnector::NotifyHandoverEndOkEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndOk",
 		       MakeBoundCallback (&RadioBearerStatsConnector::NotifyHandoverEndOkUe, this));
+      // MAC related callback
+      if(m_macTxStats)
+      {
+        Ptr<BoundCallbackArgumentMacTx> arg = Create<BoundCallbackArgumentMacTx>();
+        arg->stats = m_macTxStats;
+        Config::Connect ("/NodeList/*/DeviceList/*/MmWaveEnbMac/DlMacTxCallback",
+           MakeBoundCallback (&NotifyDlMacTx, arg));
+      }
       m_connected = true;
     }
 }
