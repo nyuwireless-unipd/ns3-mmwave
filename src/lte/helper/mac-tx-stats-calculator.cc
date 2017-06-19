@@ -80,7 +80,7 @@ MacTxStatsCalculator::RegisterMacTxDl(uint16_t rnti, uint16_t cellId, uint32_t p
 	    m_retxDlFile.open(m_retxDlFilename.c_str());
 	    NS_LOG_LOGIC("File opened");
 	}
-  NS_LOG_UNCOND(rnti << cellId << packetSize << numRetx);
+  NS_LOG_LOGIC(rnti << cellId << packetSize << numRetx);
 	m_retxDlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << rnti << " "  << packetSize << " " << (uint32_t)numRetx << std::endl;
 }
 

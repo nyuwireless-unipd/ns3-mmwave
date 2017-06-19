@@ -157,7 +157,7 @@ UlRetxCallback (Ptr<BoundCallbackArgumentRetx> arg, std::string path,
 void
 NotifyDlMacTx (Ptr<BoundCallbackArgumentMacTx> arg, std::string path, uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx)
 {
-  NS_LOG_UNCOND(path << rnti << cellId << packetSize << (uint32_t)numRetx);
+  NS_LOG_FUNCTION(path << rnti << cellId << packetSize << (uint32_t)numRetx);
   arg->stats->RegisterMacTxDl(rnti, cellId, packetSize, numRetx);
 }
 
