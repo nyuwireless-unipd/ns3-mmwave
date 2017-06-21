@@ -2148,7 +2148,7 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
                 {
                   NS_LOG_INFO ("ACKed SN = " << seqNumberValue << " from txedBuffer");
                   //               NS_LOG_INFO ("m_txedBuffer( " << m_vtA << " )->GetSize = " << m_txedBuffer.at (m_vtA.GetValue ())->GetSize ());
-                  NS_LOG_UNCOND("m_txCompletedCallback " << m_rnti);
+                  NS_LOG_LOGIC("m_txCompletedCallback " << m_rnti);
                   m_txCompletedCallback(m_rnti, m_lcid, m_txedBuffer.at (seqNumberValue).m_pdu->GetSize (), 0); // 0 retransmissions at the RLC layer
 
                   m_txedBufferSize -= m_txedBuffer.at (seqNumberValue).m_pdu->GetSize ();
@@ -2160,7 +2160,7 @@ LteRlcAm::DoReceivePdu (Ptr<Packet> p)
                 {
                   NS_LOG_INFO ("ACKed SN = " << seqNumberValue << " from retxBuffer");
                   m_retxBufferSize -= m_retxBuffer.at (seqNumberValue).m_pdu->GetSize ();
-                  NS_LOG_UNCOND("m_txCompletedCallback " << m_rnti);
+                  NS_LOG_LOGIC("m_txCompletedCallback " << m_rnti);
 
                   m_txCompletedCallback(m_rnti, m_lcid, m_retxBuffer.at (seqNumberValue).m_pdu->GetSize (), m_retxBuffer.at (seqNumberValue).m_retxCount);
 
