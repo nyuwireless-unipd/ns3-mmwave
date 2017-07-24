@@ -633,7 +633,7 @@ MmWaveEnbMac::DoDlHarqFeedback (DlHarqInfo params)
 {
   NS_LOG_FUNCTION (this);
   // Update HARQ buffer
-  std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator it =  m_miDlHarqProcessesPackets.find (params.m_rnti);
+  std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator it =  m_miDlHarqProcessesPackets.find (params.m_rnti);
   NS_ASSERT (it!=m_miDlHarqProcessesPackets.end ());
 
   if (params.m_harqStatus == DlHarqInfo::ACK)
@@ -758,7 +758,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					}
 
 					// new data -> force emptying correspondent harq pkt buffer
-					std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator harqIt = m_miDlHarqProcessesPackets.find (rnti);
+					std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator harqIt = m_miDlHarqProcessesPackets.find (rnti);
 					NS_ASSERT(harqIt!=m_miDlHarqProcessesPackets.end());
 					Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
 					harqIt->second.at (tbUid).m_pktBurst = pb;
@@ -807,7 +807,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					if (dciElem.m_tbSize > 0)
 					{
 						// HARQ retransmission -> retrieve TB from HARQ buffer
-						std::map <uint16_t, DlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
+						std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
 						NS_ASSERT(it!=m_miDlHarqProcessesPackets.end());
 						Ptr<PacketBurst> pb = it->second.at (tbUid).m_pktBurst;
 						for (std::list<Ptr<Packet> >::const_iterator j = pb->Begin (); j != pb->End (); ++j)
@@ -870,7 +870,7 @@ MmWaveEnbMac::DoAddUe (uint16_t rnti)
 	m_macCschedSapProvider->CschedUeConfigReq (params);
 
 	// Create DL transmission HARQ buffers
-	DlHarqProcessesBuffer_t buf;
+	MmWaveDlHarqProcessesBuffer_t buf;
 	uint16_t harqNum = m_phyMacConfig->GetNumHarqProcess ();
 	buf.resize (harqNum);
 	for (uint8_t i = 0; i < harqNum; i++)
@@ -878,7 +878,7 @@ MmWaveEnbMac::DoAddUe (uint16_t rnti)
 		Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
 		buf.at (i).m_pktBurst = pb;
 	}
-	m_miDlHarqProcessesPackets.insert (std::pair <uint16_t, DlHarqProcessesBuffer_t> (rnti, buf));
+	m_miDlHarqProcessesPackets.insert (std::pair <uint16_t, MmWaveDlHarqProcessesBuffer_t> (rnti, buf));
 
 }
 
