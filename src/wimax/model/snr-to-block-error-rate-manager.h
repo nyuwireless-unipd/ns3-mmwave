@@ -97,15 +97,14 @@ public:
   void ReLoadTraces (void);
   /**
    * \brief If activate loss is called with false, all the returned BlcER will be 0 (no losses)
+   * \param loss true to activates losses
    */
   void ActivateLoss (bool loss);
 private:
   /// Clear records function
   void ClearRecords (void);
   uint8_t m_activateLoss; ///< activate loss
-  /// trace file path size
-  static const unsigned int TRACE_FILE_PATH_SIZE = 1024;
-  char m_traceFilePath[TRACE_FILE_PATH_SIZE]; ///< trace file path
+  std::string m_traceFilePath; ///< trace file path
 
   std::vector<SNRToBlockErrorRateRecord *> * m_recordModulation[7]; ///< record modulation
 

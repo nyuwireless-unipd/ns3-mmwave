@@ -28,7 +28,8 @@
 /**
  * \file
  * \ingroup object
- * ns3::ObjectBase class declaration and NS_OBJECT_ENSURE_REGISTERED() definition.
+ * ns3::ObjectBase declaration and
+ * NS_OBJECT_ENSURE_REGISTERED() madro definition.
  */
 
 /**
@@ -120,6 +121,7 @@ class ObjectBase
 public:
   /**
    * Get the type ID.
+   * \return The object TypeId.
    */
   static TypeId GetTypeId (void);
 
@@ -158,7 +160,7 @@ public:
   /**
    * Set a single attribute without raising errors.
    *
-   * If the atttribute could not be set this will return \c false,
+   * If the attribute could not be set this will return \c false,
    * but not raise any errors.
    *
    * \param [in] name The name of the attribute to set.

@@ -1,7 +1,6 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,16 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Manuel Requena <manuel.requena@cttc.es>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *          Dual Connectivity functionalities
  */
 
 #ifndef LTE_RLC_SAP_H
 #define LTE_RLC_SAP_H
 
 #include "ns3/packet.h"
-#include "ns3/log.h"
 
 namespace ns3 {
 
@@ -56,6 +51,7 @@ public:
    * Send a PDCP PDU to the RLC for transmission
    * This method is to be called
    * when upper PDCP entity has a PDCP PDU ready to send
+   * \param params the TransmitPdcpPduParameters
    */
   virtual void TransmitPdcpPdu (TransmitPdcpPduParameters params) = 0;
 };
@@ -66,7 +62,7 @@ public:
  * See 3GPP 36.322 Radio Link Control (RLC) protocol specification
  *
  * This is the RLC SAP User
- * (i.e. the part of the SAP that contains the PDCP methos called by the RLC)
+ * (i.e. the part of the SAP that contains the PDCP methods called by the RLC)
  */
 class LteRlcSapUser
 {
@@ -81,20 +77,28 @@ public:
   virtual void ReceivePdcpPdu (Ptr<Packet> p) = 0;
 };
 
-///////////////////////////////////////
 
+/// LteRlcSpecificLteRlcSapProvider
 template <class C>
 class LteRlcSpecificLteRlcSapProvider : public LteRlcSapProvider
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param rlc the RLC
+   */
   LteRlcSpecificLteRlcSapProvider (C* rlc);
 
-  // Interface implemented from LteRlcSapProvider
+  /**
+   * Interface implemented from LteRlcSapProvider
+   * \param params the TransmitPdcpPduParameters
+   */
   virtual void TransmitPdcpPdu (TransmitPdcpPduParameters params);
 
 private:
   LteRlcSpecificLteRlcSapProvider ();
-  C* m_rlc;
+  C* m_rlc; ///< the RLC
 };
 
 template <class C>
@@ -114,12 +118,17 @@ void LteRlcSpecificLteRlcSapProvider<C>::TransmitPdcpPdu (TransmitPdcpPduParamet
   m_rlc->DoTransmitPdcpPdu (params.pdcpPdu);
 }
 
-///////////////////////////////////////
 
+/// LteRlcSpecificLteRlcSapUser class
 template <class C>
 class LteRlcSpecificLteRlcSapUser : public LteRlcSapUser
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param pdcp the PDCP
+   */
   LteRlcSpecificLteRlcSapUser (C* pdcp);
 
   // Interface implemented from LteRlcSapUser
@@ -127,7 +136,7 @@ public:
 
 private:
   LteRlcSpecificLteRlcSapUser ();
-  C* m_pdcp;
+  C* m_pdcp; ///< the PDCP
 };
 
 template <class C>

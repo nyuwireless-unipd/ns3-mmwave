@@ -27,8 +27,7 @@
 /**
  * \file
  * \ingroup config
- * Implementation of class ns3::Names, and declaration of classes
- * ns3::NamesNode and ns3::NamePriv.
+ * ns3::Names, ns3::NamesNode and ns3::NamePriv implementations.
  */
 
 namespace ns3 {
@@ -125,52 +124,129 @@ public:
   NamesPriv ();
   /** Destructor. */
   ~NamesPriv ();
-
+  
+  // Doxygen \copydoc bug: won't copy these docs, so we repeat them.
+  
   /**
-   * \copydoc Names::Add(std::string,Ptr<Object>object)
+   * Internal implementation for Names::Add(std::string,Ptr<Object>)
+   *
+   * \param [in] name The name of the object you want to associate;
+   *             which may be prepended with a path to that object.
+   * \param [in] object A smart pointer to the object itself.
    * \return \c true if the object was named successfully.
    */
   bool Add (std::string name, Ptr<Object> object);
   /**
-   * \copydoc Names::Add(std::string,std::string,Ptr<Object>)
+   * Internal implementation for Names::Add(std::string,std::string,Ptr<Object>)
+   *
+   * \param [in] path A path name describing a previously named object
+   *             under which you want this new name to be defined.
+   * \param [in] name The name of the object you want to associate.
+   * \param [in] object A smart pointer to the object itself.
    * \return \c true if the object was named successfully.
    */
   bool Add (std::string path, std::string name, Ptr<Object> object);
   /**
-   * \copydoc Names::Add(Ptr<Object>,std::string,Ptr<Object>)
+   * Internal implementation for Names::Add(Ptr<Object>,std::string,Ptr<Object>)
+   *
+   * \param [in] context A smart pointer to an object that is used
+   *             in place of the path under which you want this new
+   *             name to be defined.
+   * \param [in] name The name of the object you want to associate.
+   * \param [in] object A smart pointer to the object itself.
    * \return \c true if the object was named successfully.
    */
   bool Add (Ptr<Object> context, std::string name, Ptr<Object> object);
 
   /**
-   * \copydoc Names::Rename(std::string,std::string)
+   * Internal implementation for Names::Rename(std::string,std::string)
+   *
+   * \param [in] oldpath The current path name to the object you want
+   *             to change.
+   * \param [in] newname The new name of the object you want to change.
    * \return \c true if the object was renamed successfully.
    */
   bool Rename (std::string oldpath, std::string newname);
   /**
-   * \copydoc Names::Rename(std::string,std::string,std::string)
+   * Internal implementation for
+   * Names::Rename(std::string,std::string,std::string)
+   *
+   * \param [in] path A path name describing a previously named object
+   *             under which you want this name change to occur
+   *             (cf. directory).
+   * \param [in] oldname The currently defined name of the object.
+   * \param [in] newname The new name you want the object to have.
    * \return \c true if the object was renamed successfully.
    */
   bool Rename (std::string path, std::string oldname, std::string newname);
   /**
-   * \copydoc Names::Rename(Ptr<Object>,std::string,std::string)
+   * Internal implementation for
+   * Names::Rename(Ptr<Object>,std::string,std::string)
+   *
+   * \param [in] context A smart pointer to an object that is used
+   *             in place of the path under which you want this
+   *             new name to be defined.
+   * \param [in] oldname The current shortname of the object you want
+   *             to change.
+   * \param [in] newname The new shortname of the object you want
+   *             to change.
    * \return \c true if the object was renamed successfully.
    */
   bool Rename (Ptr<Object> context, std::string oldname, std::string newname);
 
-  /** \copydoc Names::FindName() */
+  /**
+   * Internal implementation for Names::FindName()
+   *
+   * \param [in] object A smart pointer to an object for which you want
+   *             to find its name.
+   * \returns A string containing the name of the object if found,
+   *          otherwise the empty string.
+   */
   std::string FindName (Ptr<Object> object);
-  /** \copydoc Names::FindPath() */
+  /**
+   * Internal implementation of Names::FindPath()
+   *
+   * \param [in] object A smart pointer to an object for which you
+   *             want to find its fullname.
+   * \returns A string containing the name path of the object,
+   *          otherwise the empty string.
+   */
   std::string FindPath (Ptr<Object> object);
 
-  /** \copydoc Names::Clear() */
+  /**
+   * Internal implementation for Names::Clear()
+   */
   void Clear (void);
 
-  /** \copydoc Names::Find(std::string) */
+  /**
+   * Internal implementation for ns3::Names::Find(std::string)
+   *
+   * \param [in] path A string containing a name space path used
+   *             to locate the object.
+   * \returns A smart pointer to the named object converted to
+   *          the requested type.
+   */
   Ptr<Object> Find (std::string path);
-  /** \copydoc Names::Find(std::string,std::string) */
+  /**
+   * Internal implementation for ns3::Names::Find(std::string,std::string)
+   *
+   * \param [in] path A path name describing a previously named object
+   *             under which you want to look for the specified name.
+   * \param [in] name A string containing a name to search for.
+   * \returns A smart pointer to the named object converted to
+   *          the requested type.
+   */
   Ptr<Object> Find (std::string path, std::string name);
-  /** \copydoc Names::Find(Ptr<Object>,std::string) */
+  /**
+   * Internal implementation for ns3::Names::Find(Ptr<Object>,std::string)
+   *
+   * \param [in] context A smart pointer to an object that is used
+   *             in place of the path under which you want this
+   *             new name to be defined.
+   * \param [in] name A string containing a name to search for.
+   * \returns A smart pointer to the named object converted to
+   *          the requested type.
+   */
   Ptr<Object> Find (Ptr<Object> context, std::string name);
 
 private:
@@ -254,7 +330,7 @@ NamesPriv::Add (std::string name, Ptr<Object> object)
   //
   // If we are given a name that begins with "/Names/" we assume that this is a
   // fully qualified path name to the object we want to create.  We split the name
-  // into a path string and and a final segment (name) and then call the "Real" Add.
+  // into a path string and a final segment (name) and then call the "Real" Add.
   //
   std::string namespaceName = "/Names";
   std::string::size_type offset = name.find (namespaceName);
@@ -363,7 +439,7 @@ NamesPriv::Rename (std::string oldpath, std::string newname)
   //
   // If we are given a name that begins with "/Names/" we assume that this is a
   // fully qualified path to the object we want to change.  We split the path into 
-  // path string (cf directory) and and a final segment (cf filename) and then call
+  // path string (cf directory) and a final segment (cf filename) and then call
   // the "Real" Rename.
   //
   std::string namespaceName = "/Names";
@@ -454,7 +530,7 @@ NamesPriv::Rename (Ptr<Object> context, std::string oldname, std::string newname
 
       //
       // The rename process consists of:
-      // 1.  Geting the pointer to the name node from the map and remembering it;
+      // 1.  Getting the pointer to the name node from the map and remembering it;
       // 2.  Removing the map entry corresponding to oldname from the map;
       // 3.  Changing the name string in the name node;
       // 4.  Adding the name node back in the map under the newname.
@@ -522,7 +598,7 @@ NamesPriv::Find (std::string path)
   //
   // If we are provided a path that doesn't begin with "/Names", we assume 
   // that the caller has simply given us a path starting with a name that
-  // is in the root namespace.  This allows peole to omit the "/Names" prefix.
+  // is in the root namespace.  This allows people to omit the "/Names" prefix.
   // and simply do a Find ("Client/eth0") instead of having to always do a
   // Find ("/Names/Client/eth0");
   //

@@ -36,6 +36,10 @@ class Tag;
 class RlcTag : public Tag
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId  GetTypeId (void);
   virtual TypeId  GetInstanceTypeId (void) const;
 
@@ -44,7 +48,8 @@ public:
    */
   RlcTag ();
   /**
-   * Create an RLC tag with the given senderTimestamp
+   * Create an RLC tag with the given senderTimestamp 
+   * \param senderTimestamp the time
    */
   RlcTag (Time senderTimestamp);
 
@@ -72,7 +77,7 @@ public:
   }
 
 private:
-  Time m_senderTimestamp;
+  Time m_senderTimestamp; ///< sender timestamp
 
 };
 

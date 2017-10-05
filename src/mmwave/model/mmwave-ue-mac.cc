@@ -618,7 +618,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 		Ptr<MmWaveTdmaDciMessage> dciMsg = DynamicCast <MmWaveTdmaDciMessage> (msg);
 		DciInfoElementTdma dciInfoElem = dciMsg->GetDciInfoElement ();
 
-		if (dciInfoElem.m_format == DciInfoElementTdma::UL)
+		if (dciInfoElem.m_format == DciInfoElementTdma::UL_dci)
 		{
 			if (dciInfoElem.m_ndi == 1)
 			{

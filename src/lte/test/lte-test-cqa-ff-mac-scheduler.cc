@@ -160,13 +160,18 @@ LenaTestCqaFfMacSchedulerSuite::LenaTestCqaFfMacSchedulerSuite ()
   AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,10000,129166,67000,200,1,errorModel), TestCase::EXTENSIVE);
   //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,10000,64583,32667,200,1,errorModel));// simulation time = 1.5, otherwise, ul test will fail
 
+
+  // DOWNLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  // UPLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,100000,0,0,200,1,errorModel), TestCase::QUICK);
+
   // Test Case 2: homogeneous flow test in CQA (different distance)
   // Traffic1 info
   //   UDP traffic: payload size = 100 bytes, interval = 1 ms
   //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 132000 byte/rate 
   // Maximum throughput = 4 / ( 1/2196000 + 1/1191000 + 1/1383000 + 1/775000 ) = 1209046 byte/s
   // 132000 * 4 = 528000 < 1209046 -> estimated throughput in downlink = 132000 byte/sec
-  std::vector<uint16_t> dist1;
+  std::vector<double> dist1;
   dist1.push_back (0);       // User 0 distance --> MCS 28
   dist1.push_back (4800);    // User 1 distance --> MCS 22
   dist1.push_back (6000);    // User 2 distance --> MCS 20
@@ -188,7 +193,7 @@ LenaTestCqaFfMacSchedulerSuite::LenaTestCqaFfMacSchedulerSuite ()
   //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
   // Maximum throughput = 4 / ( 1/2196000 + 1/1191000 + 1/1383000 + 1/775000 ) = 1209046 byte/s
   // 232000 * 4 = 928000 < 1209046 -> estimated throughput in downlink = 928000 / 4 = 230000 byte/sec
-  std::vector<uint16_t> dist2;
+  std::vector<double> dist2;
   dist2.push_back (0);       // User 0 distance --> MCS 28
   dist2.push_back (4800);    // User 1 distance --> MCS 22
   dist2.push_back (6000);    // User 2 distance --> MCS 20
@@ -210,7 +215,7 @@ LenaTestCqaFfMacSchedulerSuite::LenaTestCqaFfMacSchedulerSuite ()
   //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> [132000, 232000, 332000] byte/rate
   // Maximum throughput = 3 / ( 1/2196000 + 1/1191000 + 1/1383000) = 1486569 byte/s
   // 132000 + 232000 + 332000 = 696000 < 1486569 -> estimated throughput in downlink = [132000, 232000, 332000] byte/sec
-  std::vector<uint16_t> dist3;
+  std::vector<double> dist3;
   dist3.push_back (0);    // User 0 distance --> MCS 28
   dist3.push_back (4800);    // User 1 distance --> MCS 22
   dist3.push_back (6000);    // User 2 distance --> MCS 20
@@ -232,7 +237,7 @@ static LenaTestCqaFfMacSchedulerSuite lenaTestCqaFfMacSchedulerSuite;
 
 
 std::string 
-LenaCqaFfMacSchedulerTestCase1::BuildNameString (uint16_t nUser, uint16_t dist)
+LenaCqaFfMacSchedulerTestCase1::BuildNameString (uint16_t nUser, double dist)
 {
   std::ostringstream oss;
   oss << nUser << " UEs, distance " << dist << " m";
@@ -240,7 +245,7 @@ LenaCqaFfMacSchedulerTestCase1::BuildNameString (uint16_t nUser, uint16_t dist)
 }
 
 
-LenaCqaFfMacSchedulerTestCase1::LenaCqaFfMacSchedulerTestCase1 (uint16_t nUser, uint16_t dist, double thrRefDl, double thrRefUl, uint16_t packetSize, uint16_t interval,bool errorModelEnabled)
+LenaCqaFfMacSchedulerTestCase1::LenaCqaFfMacSchedulerTestCase1 (uint16_t nUser, double dist, double thrRefDl, double thrRefUl, uint16_t packetSize, uint16_t interval,bool errorModelEnabled)
   : TestCase (BuildNameString (nUser, dist)),
     m_nUser (nUser),
     m_dist (dist),
@@ -308,7 +313,7 @@ LenaCqaFfMacSchedulerTestCase1::DoRun (void)
   //Config::SetDefault ("ns3::LteEnbRrc::EpsBearerToRlcMapping", EnumValue (LteHelper::RLC_UM_ALWAYS));
 
 //   LogComponentDisableAll (LOG_LEVEL_ALL);
-  //LogComponentEnable ("LenaTestCqaFfMacCheduler", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LenaTestCqaFfMacScheduler", LOG_LEVEL_ALL);
    
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
 
@@ -381,18 +386,18 @@ LenaCqaFfMacSchedulerTestCase1::DoRun (void)
       lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());  
     }
 
-  // Install downlind and uplink applications
+  // Install downlink and uplink applications
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
   PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
   PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
+  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
-      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
 
       UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator
       dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
@@ -411,8 +416,8 @@ LenaCqaFfMacSchedulerTestCase1::DoRun (void)
   serverApps.Start (Seconds (0.030));
   clientApps.Start (Seconds (0.030));
 
-  double statsStartTime = 0.04; // need to allow for RRC connection establishment + SRS
-  double statsDuration = 0.5;
+  double statsStartTime = 0.300; // need to allow for RRC connection establishment + SRS
+  double statsDuration = 0.6;
   double tolerance = 0.1;
   Simulator::Stop (Seconds (statsStartTime + statsDuration - 0.0001));
 
@@ -424,9 +429,6 @@ LenaCqaFfMacSchedulerTestCase1::DoRun (void)
 
   Simulator::Run ();
 
-  /**
-   * Check that the downlink assignation is done in a "token bank fair queue" manner
-   */
 
   NS_LOG_INFO ("DL - Test with " << m_nUser << " user(s) at distance " << m_dist);
   std::vector <uint64_t> dlDataRxed;
@@ -476,11 +478,11 @@ LenaCqaFfMacSchedulerTestCase1::DoRun (void)
 
 
 std::string 
-LenaCqaFfMacSchedulerTestCase2::BuildNameString (uint16_t nUser, std::vector<uint16_t> dist)
+LenaCqaFfMacSchedulerTestCase2::BuildNameString (uint16_t nUser, std::vector<double> dist)
 {
   std::ostringstream oss;
   oss << "distances (m) = [ " ;
-  for (std::vector<uint16_t>::iterator it = dist.begin (); it != dist.end (); ++it)
+  for (std::vector<double>::iterator it = dist.begin (); it != dist.end (); ++it)
     {
       oss << *it << " ";
     }
@@ -489,7 +491,7 @@ LenaCqaFfMacSchedulerTestCase2::BuildNameString (uint16_t nUser, std::vector<uin
 }
 
 
-LenaCqaFfMacSchedulerTestCase2::LenaCqaFfMacSchedulerTestCase2 (std::vector<uint16_t> dist, std::vector<uint32_t> estThrCqaDl, std::vector<uint16_t> packetSize, uint16_t interval,bool errorModelEnabled)
+LenaCqaFfMacSchedulerTestCase2::LenaCqaFfMacSchedulerTestCase2 (std::vector<double> dist, std::vector<uint32_t> estThrCqaDl, std::vector<uint16_t> packetSize, uint16_t interval,bool errorModelEnabled)
   : TestCase (BuildNameString (dist.size (), dist)),
     m_nUser (dist.size ()),
     m_dist (dist),
@@ -548,7 +550,7 @@ LenaCqaFfMacSchedulerTestCase2::DoRun (void)
 
 
 //   LogComponentDisableAll (LOG_LEVEL_ALL);
-  //LogComponentEnable ("LenaTestCqaFfMacCheduler", LOG_LEVEL_ALL);
+  //LogComponentEnable ("LenaTestCqaFfMacScheduler", LOG_LEVEL_ALL);
    
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
 
@@ -622,18 +624,18 @@ LenaCqaFfMacSchedulerTestCase2::DoRun (void)
     }
 
 
-  // Install downlind and uplink applications
+  // Install downlink and uplink applications
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
   PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
   PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
+  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
-      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
 
       UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator
       dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
@@ -666,7 +668,7 @@ LenaCqaFfMacSchedulerTestCase2::DoRun (void)
   Simulator::Run ();
 
   /**
-   * Check that the downlink assignation is done in a "token bank fair queue" manner
+   * Check that the downlink resource assignment is done according to CQA algorithm among users with different SINRs
    */
 
   NS_LOG_INFO ("DL - Test with " << m_nUser << " user(s)");

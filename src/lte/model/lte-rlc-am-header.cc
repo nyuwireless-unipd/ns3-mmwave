@@ -141,16 +141,8 @@ LteRlcAmHeader::PopExtensionBit (void)
 uint16_t
 LteRlcAmHeader::PopLengthIndicator (void)
 {
-	uint16_t lengthIndicator;
-	if (!m_lengthIndicators.empty ())
-	{
-		lengthIndicator = m_lengthIndicators.front ();
-	  m_lengthIndicators.pop_front ();
-	}
-	else
-	{
-		lengthIndicator = 0;
-	}
+  uint16_t lengthIndicator = m_lengthIndicators.front ();
+  m_lengthIndicators.pop_front ();
 
   return lengthIndicator;
 }
@@ -533,7 +525,7 @@ uint32_t LteRlcAmHeader::Deserialize (Buffer::Iterator start)
       m_sequenceNumber     = ((byte_1 & 0x03) << 8) | byte_2;
 
       m_lastSegmentFlag    = (byte_3 & 0x80) >> 7;
-      m_segmentOffset      = ((byte_3 & 0x7F) << 8) | byte_4;
+      m_segmentOffset      = (byte_3 & 0x7F) | byte_4;
 
       extensionBit = (byte_1 & 0x04) >> 2;
       m_extensionBits.push_back (extensionBit);

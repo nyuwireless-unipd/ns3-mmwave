@@ -36,6 +36,7 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("RrFfMacScheduler");
 
+/// Type 0 allocation RBG
 static const int Type0AllocationRbg[4] = {
   10,       // RGB size 1
   26,       // RGB size 2
@@ -49,172 +50,6 @@ static const int Type0AllocationRbg[4] = {
 NS_OBJECT_ENSURE_REGISTERED (RrFfMacScheduler);
 
 
-class RrSchedulerMemberCschedSapProvider : public FfMacCschedSapProvider
-{
-public:
-  RrSchedulerMemberCschedSapProvider (RrFfMacScheduler* scheduler);
-
-  // inherited from FfMacCschedSapProvider
-  virtual void CschedCellConfigReq (const struct CschedCellConfigReqParameters& params);
-  virtual void CschedUeConfigReq (const struct CschedUeConfigReqParameters& params);
-  virtual void CschedLcConfigReq (const struct CschedLcConfigReqParameters& params);
-  virtual void CschedLcReleaseReq (const struct CschedLcReleaseReqParameters& params);
-  virtual void CschedUeReleaseReq (const struct CschedUeReleaseReqParameters& params);
-
-private:
-  RrSchedulerMemberCschedSapProvider ();
-  RrFfMacScheduler* m_scheduler;
-};
-
-RrSchedulerMemberCschedSapProvider::RrSchedulerMemberCschedSapProvider ()
-{
-}
-
-RrSchedulerMemberCschedSapProvider::RrSchedulerMemberCschedSapProvider (RrFfMacScheduler* scheduler) : m_scheduler (scheduler)
-{
-}
-
-
-void
-RrSchedulerMemberCschedSapProvider::CschedCellConfigReq (const struct CschedCellConfigReqParameters& params)
-{
-  m_scheduler->DoCschedCellConfigReq (params);
-}
-
-void
-RrSchedulerMemberCschedSapProvider::CschedUeConfigReq (const struct CschedUeConfigReqParameters& params)
-{
-  m_scheduler->DoCschedUeConfigReq (params);
-}
-
-
-void
-RrSchedulerMemberCschedSapProvider::CschedLcConfigReq (const struct CschedLcConfigReqParameters& params)
-{
-  m_scheduler->DoCschedLcConfigReq (params);
-}
-
-void
-RrSchedulerMemberCschedSapProvider::CschedLcReleaseReq (const struct CschedLcReleaseReqParameters& params)
-{
-  m_scheduler->DoCschedLcReleaseReq (params);
-}
-
-void
-RrSchedulerMemberCschedSapProvider::CschedUeReleaseReq (const struct CschedUeReleaseReqParameters& params)
-{
-  m_scheduler->DoCschedUeReleaseReq (params);
-}
-
-
-
-
-class RrSchedulerMemberSchedSapProvider : public FfMacSchedSapProvider
-{
-public:
-  RrSchedulerMemberSchedSapProvider (RrFfMacScheduler* scheduler);
-
-  // inherited from FfMacSchedSapProvider
-  virtual void SchedDlRlcBufferReq (const struct SchedDlRlcBufferReqParameters& params);
-  virtual void SchedDlPagingBufferReq (const struct SchedDlPagingBufferReqParameters& params);
-  virtual void SchedDlMacBufferReq (const struct SchedDlMacBufferReqParameters& params);
-  virtual void SchedDlTriggerReq (const struct SchedDlTriggerReqParameters& params);
-  virtual void SchedDlRachInfoReq (const struct SchedDlRachInfoReqParameters& params);
-  virtual void SchedDlCqiInfoReq (const struct SchedDlCqiInfoReqParameters& params);
-  virtual void SchedUlTriggerReq (const struct SchedUlTriggerReqParameters& params);
-  virtual void SchedUlNoiseInterferenceReq (const struct SchedUlNoiseInterferenceReqParameters& params);
-  virtual void SchedUlSrInfoReq (const struct SchedUlSrInfoReqParameters& params);
-  virtual void SchedUlMacCtrlInfoReq (const struct SchedUlMacCtrlInfoReqParameters& params);
-  virtual void SchedUlCqiInfoReq (const struct SchedUlCqiInfoReqParameters& params);
-
-
-private:
-  RrSchedulerMemberSchedSapProvider ();
-  RrFfMacScheduler* m_scheduler;
-};
-
-
-
-RrSchedulerMemberSchedSapProvider::RrSchedulerMemberSchedSapProvider ()
-{
-}
-
-
-RrSchedulerMemberSchedSapProvider::RrSchedulerMemberSchedSapProvider (RrFfMacScheduler* scheduler)
-  : m_scheduler (scheduler)
-{
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedDlRlcBufferReq (const struct SchedDlRlcBufferReqParameters& params)
-{
-  m_scheduler->DoSchedDlRlcBufferReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedDlPagingBufferReq (const struct SchedDlPagingBufferReqParameters& params)
-{
-  m_scheduler->DoSchedDlPagingBufferReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedDlMacBufferReq (const struct SchedDlMacBufferReqParameters& params)
-{
-  m_scheduler->DoSchedDlMacBufferReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedDlTriggerReq (const struct SchedDlTriggerReqParameters& params)
-{
-  m_scheduler->DoSchedDlTriggerReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedDlRachInfoReq (const struct SchedDlRachInfoReqParameters& params)
-{
-  m_scheduler->DoSchedDlRachInfoReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedDlCqiInfoReq (const struct SchedDlCqiInfoReqParameters& params)
-{
-  m_scheduler->DoSchedDlCqiInfoReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedUlTriggerReq (const struct SchedUlTriggerReqParameters& params)
-{
-  m_scheduler->DoSchedUlTriggerReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedUlNoiseInterferenceReq (const struct SchedUlNoiseInterferenceReqParameters& params)
-{
-  m_scheduler->DoSchedUlNoiseInterferenceReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedUlSrInfoReq (const struct SchedUlSrInfoReqParameters& params)
-{
-  m_scheduler->DoSchedUlSrInfoReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedUlMacCtrlInfoReq (const struct SchedUlMacCtrlInfoReqParameters& params)
-{
-  m_scheduler->DoSchedUlMacCtrlInfoReq (params);
-}
-
-void
-RrSchedulerMemberSchedSapProvider::SchedUlCqiInfoReq (const struct SchedUlCqiInfoReqParameters& params)
-{
-  m_scheduler->DoSchedUlCqiInfoReq (params);
-}
-
-
-
-
-
 RrFfMacScheduler::RrFfMacScheduler ()
   :   m_cschedSapUser (0),
     m_schedSapUser (0),
@@ -222,8 +57,8 @@ RrFfMacScheduler::RrFfMacScheduler ()
     m_nextRntiUl (0)
 {
   m_amc = CreateObject <LteAmc> ();
-  m_cschedSapProvider = new RrSchedulerMemberCschedSapProvider (this);
-  m_schedSapProvider = new RrSchedulerMemberSchedSapProvider (this);
+  m_cschedSapProvider = new MemberCschedSapProvider<RrFfMacScheduler> (this);
+  m_schedSapProvider = new MemberSchedSapProvider<RrFfMacScheduler> (this);
 }
 
 RrFfMacScheduler::~RrFfMacScheduler ()
@@ -931,8 +766,17 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
                     {
                       if (j < dci.m_ndi.size ())
                         {
+                          NS_LOG_INFO (" layer " << (uint16_t)j << " tb size " << dci.m_tbsSize.at (j));
                           rlcPduListPerLc.push_back ((*itRlcPdu).second.at (j).at (dci.m_harqProcess).at (k));
                         }
+                    }
+                  else
+                    { // if no retx needed on layer j, push an RlcPduListElement_s object with m_size=0 to keep the size of rlcPduListPerLc vector = 2 in case of MIMO
+                      NS_LOG_INFO (" layer " << (uint16_t)j << " tb size "<<dci.m_tbsSize.at (j));
+                      RlcPduListElement_s emptyElement;
+                      emptyElement.m_logicalChannelIdentity = (*itRlcPdu).second.at (j).at (dci.m_harqProcess).at (k).m_logicalChannelIdentity;
+                      emptyElement.m_size = 0;
+                      rlcPduListPerLc.push_back (emptyElement);
                     }
                 }
 
@@ -1059,10 +903,18 @@ RrFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sched
   // served last scheduling trigger event
   if (m_nextRntiDl != 0)
     {
+      NS_LOG_DEBUG ("Start from the successive of " << (uint16_t) m_nextRntiDl);
       for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
         {
           if ((*it).m_rnti == m_nextRntiDl)
             {
+              // select the next RNTI to starting
+              it++;
+              if (it == m_rlcBufferReq.end ())
+              {
+                it = m_rlcBufferReq.begin ();
+              }
+              m_nextRntiDl = (*it).m_rnti;
               break;
             }
         }

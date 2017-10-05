@@ -255,7 +255,7 @@ public:
    * \param [in] sinr
    */
   typedef void (* RsrpSinrTracedCallback)
-    (uint16_t cellId, uint16_t rnti, double rsrp, double sinr);
+    (uint16_t cellId, uint16_t rnti, double rsrp, double sinr, uint8_t ccId);
 
   /**
    * TracedCallback signature for cell RSRP and RSRQ.
@@ -444,7 +444,7 @@ private:
    * RSRP and average SINR (see TS 36.214). Exporting cell ID, RNTI, RSRP, and
    * SINR.
    */
-  TracedCallback<uint16_t, uint16_t, double, double> m_reportCurrentCellRsrpSinrTrace;
+  TracedCallback<uint16_t, uint16_t, double, double, uint8_t> m_reportCurrentCellRsrpSinrTrace;
   /**
    * The `RsrpSinrSamplePeriod` attribute. The sampling period for reporting
    * RSRP-SINR stats.

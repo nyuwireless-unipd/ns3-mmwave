@@ -38,9 +38,16 @@ class DcaTxop;
  * DcfState::SetAifsn and DcfState::SetCwBounds allow the user to
  * control the relative QoS differentiation.
  */
-class DcfState
+class DcfState : public Object
 {
 public:
+
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
+  static TypeId GetTypeId (void);
+
   /**
    * Constructor
    *
@@ -137,7 +144,11 @@ public:
 
 
 protected:
+  /// DcfManager associated class
   friend class DcfManager;
+
+  // Inherited from ns3::Object
+  void DoDispose (void);
 
   /**
    * Return the current number of backoff slots.

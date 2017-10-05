@@ -34,8 +34,8 @@
 /**
  * \file
  * \ingroup testing
- * \brief Definition of the testing macros and declaration of
- * the testing classes.
+ * \brief ns3::TestCase, ns3::TestSuite, ns3::TestRunner declarations,
+ * and \c NS_TEST_ASSERT macro definitions.
  */
 
 /**
@@ -53,6 +53,13 @@
  * \brief Internal implementation of the Testing system.
  */
 
+namespace ns3 {
+
+  /** Namespace for test files, TestCases and TestSuites. */
+  namespace tests {
+
+  }  // namespace tests
+                  
 // 
 // Note on below macros:
 //
@@ -214,7 +221,7 @@
  * numbers (float or double) as it is unlikely to do what you expect.
  * Use NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL_TOL instead.
  *
- * This function returns a boolean value.
+ * This function returns a Boolean value.
  *
  */
 #define NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL(actual, limit, msg) \
@@ -336,7 +343,7 @@
  * because of floating point rounding errors.  We provide a floating
  * point comparison function ns3::TestDoubleIsEqual() but you will
  * probably quickly find that is not what you want either.  It may
- * turn out to be the case that when you measured an snr that printed
+ * turn out to be the case that when you measured an SNR that printed
  * as 1128.93, what was actually measured was something more like
  * 1128.9287653857625442 for example.  Given that the double epsilon
  * is on the order of 0.0000000000000009, you would need to provide
@@ -426,7 +433,7 @@
  * because of floating point rounding errors.  We provide a floating
  * point comparison function ns3::TestDoubleIsEqual() but you will
  * probably quickly find that is not what you want either.  It may
- * turn out to be the case that when you measured an snr that printed
+ * turn out to be the case that when you measured an SNR that printed
  * as 1128.93, what was actually measured was something more like
  * 1128.9287653857625442 for example.  Given that the double epsilon
  * is on the order of 0.0000000000000009, you would need to provide
@@ -460,7 +467,7 @@
  * \param [in] tol Tolerance of the test.
  * \param [in] msg Message that is output if the test does not pass.
  *
- * This function returns a boolean value.
+ * This function returns a Boolean value.
  *
  */
 #define NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL(actual, limit, tol, msg)  \
@@ -521,7 +528,7 @@
  * because of floating point rounding errors.  We provide a floating
  * point comparison function ns3::TestDoubleIsEqual() but you will
  * probably quickly find that is not what you want either.  It may
- * turn out to be the case that when you measured an snr that printed
+ * turn out to be the case that when you measured an SNR that printed
  * as 1128.93, what was actually measured was something more like
  * 1128.9287653857625442 for example.  Given that the double epsilon
  * is on the order of 0.0000000000000009, you would need to provide
@@ -669,7 +676,7 @@
  * \warning Do not use this macro if you are comparing floating point
  * numbers (float or double).  Use NS_TEST_ASSERT_MSG_FLNE instead.
  *
- * This function returns a boolean value.
+ * This function returns a Boolean value.
  *
  */
 #define NS_TEST_ASSERT_MSG_NE_RETURNS_BOOL(actual, limit, msg) \
@@ -1104,7 +1111,6 @@
 #define NS_TEST_EXPECT_MSG_GT_OR_EQ(actual, limit, msg) \
   NS_TEST_EXPECT_MSG_GT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
 
-namespace ns3 {
 
 /**
  * \ingroup testing
@@ -1143,6 +1149,8 @@ class TestRunnerImpl;
  * To allow a new test to be run within the ns-3 test framework, users
  * need to create subclasses of this base class, override the DoRun
  * method, and use the NS_TEST_* macros within DoRun.
+ *
+ * \see sample-test-suite.cc
  */
 class TestCase : private NonCopyable
 {
@@ -1176,9 +1184,10 @@ protected:
    * \brief Add an individual child TestCase to this test suite.
    *
    * \param [in] testCase Pointer to the TestCase object to be added.
-   * \param [in] duration Amount of time this test takes to execute.
+   * \param [in] duration Amount of time this test takes to execute
+   *             (defaults to QUICK).
    */
-  void AddTestCase (TestCase *testCase, enum TestDuration duration);
+  void AddTestCase (TestCase *testCase, TestDuration duration = QUICK);
 
   /**
    * \brief Set the data directory where reference trace files can be
@@ -1305,9 +1314,7 @@ private:
    * \param [in] runner The test runner implementation.
    */
   void Run (TestRunnerImpl *runner);
-  /**
-   * \copydoc IsStatusFailure()
-   */
+  /** \copydoc IsStatusFailure() */
   bool IsFailed (void) const;
 
   /**
@@ -1329,6 +1336,8 @@ private:
  * \ingroup testing
  *
  * \brief A suite of tests to run.
+ *
+ * \see sample-test-suite.cc
  */
 class TestSuite : public TestCase
 {

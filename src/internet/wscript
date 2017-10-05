@@ -153,6 +153,7 @@ def build(bld):
         'model/tcp-scalable.cc', 
         'model/tcp-veno.cc',
         'model/tcp-bic.cc',
+        'model/tcp-cubic.cc',
         'model/tcp-yeah.cc',
         'model/tcp-ledbat.cc',
         'model/tcp-illinois.cc',
@@ -222,8 +223,6 @@ def build(bld):
         'model/rip.cc',
         'model/rip-header.cc',
         'helper/rip-helper.cc',
-        'model/tcp-cubic.cc',
-        
         ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -381,6 +380,7 @@ def build(bld):
         'model/tcp-scalable.h',
         'model/tcp-veno.h',
         'model/tcp-bic.h',
+        'model/tcp-cubic.h',
         'model/tcp-yeah.h',
         'model/tcp-illinois.h',
         'model/tcp-htcp.h',
@@ -398,8 +398,6 @@ def build(bld):
         'model/rip.h',
         'model/rip-header.h',
         'helper/rip-helper.h',
-        'model/tcp-cubic.h',
-        
        ]
 
     if bld.env['NSC_ENABLED']:

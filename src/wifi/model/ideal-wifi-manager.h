@@ -52,9 +52,7 @@ public:
   IdealWifiManager ();
   virtual ~IdealWifiManager ();
 
-  void SetupPhy (Ptr<WifiPhy> phy);
-
-  void SetHeSupported (bool enable); //HE rates not yet supported
+  void SetupPhy (const Ptr<WifiPhy> phy);
 
 
 private:

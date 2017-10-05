@@ -42,33 +42,30 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("LteCqiGenerationTest");
 
 void
-LteTestDlSchedulingCallback (LteCqiGenerationTestCase *testcase, std::string path,
-                             uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                             uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
+LteTestDlSchedulingCallback (LteCqiGenerationTestCase *testcase, std::string path, DlSchedulingCallbackInfo dlInfo)
 {
-  testcase->DlScheduling (frameNo, subframeNo, rnti, mcsTb1, sizeTb1, mcsTb2, sizeTb2);
+  testcase->DlScheduling (dlInfo);
 }
 
 void
 LteTestUlSchedulingCallback (LteCqiGenerationTestCase *testcase, std::string path,
                              uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                             uint8_t mcs, uint16_t sizeTb)
+                             uint8_t mcs, uint16_t sizeTb, uint8_t ccId)
 {
   testcase->UlScheduling (frameNo, subframeNo, rnti, mcs, sizeTb);
 }
 
 void
 LteTestDlSchedulingCallback2 (LteCqiGenerationDlPowerControlTestCase *testcase, std::string path,
-                              uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                              uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
+		                      DlSchedulingCallbackInfo dlInfo)
 {
-  testcase->DlScheduling (frameNo, subframeNo, rnti, mcsTb1, sizeTb1, mcsTb2, sizeTb2);
+  testcase->DlScheduling (dlInfo);
 }
 
 void
 LteTestUlSchedulingCallback2 (LteCqiGenerationDlPowerControlTestCase *testcase, std::string path,
                               uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                              uint8_t mcs, uint16_t sizeTb)
+                              uint8_t mcs, uint16_t sizeTb, uint8_t componentCarrierId)
 {
   testcase->UlScheduling (frameNo, subframeNo, rnti, mcs, sizeTb);
 }
@@ -113,7 +110,7 @@ LteCqiGenerationTestCase::LteCqiGenerationTestCase (std::string name, bool usePd
     m_dlMcs (dlMcs),
     m_ulMcs (ulMcs)
 {
-  m_usePdcchForCqiGeneration = usePdcchForCqiGeneration;
+  m_usePdschForCqiGeneration = usePdcchForCqiGeneration;
   NS_LOG_INFO ("Creating LteCqiGenerationTestCase");
 }
 
@@ -122,14 +119,13 @@ LteCqiGenerationTestCase::~LteCqiGenerationTestCase ()
 }
 
 void
-LteCqiGenerationTestCase::DlScheduling (uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                                        uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
+LteCqiGenerationTestCase::DlScheduling (DlSchedulingCallbackInfo dlInfo)
 {
   // need to allow for RRC connection establishment + CQI feedback reception
   if (Simulator::Now () > MilliSeconds (35))
     {
 //	  NS_LOG_UNCOND("DL MSC: " << (uint32_t)mcsTb1 << " expected DL MCS: " << (uint32_t)m_dlMcs);
-      NS_TEST_ASSERT_MSG_EQ ((uint32_t)mcsTb1, (uint32_t)m_dlMcs, "Wrong DL MCS ");
+      NS_TEST_ASSERT_MSG_EQ ((uint32_t)dlInfo.mcsTb1, (uint32_t)m_dlMcs, "Wrong DL MCS ");
     }
 }
 
@@ -152,7 +148,7 @@ LteCqiGenerationTestCase::DoRun (void)
 
   Config::Reset ();
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
-  Config::SetDefault ("ns3::LteHelper::UsePdschForCqiGeneration", BooleanValue (m_usePdcchForCqiGeneration));
+  Config::SetDefault ("ns3::LteHelper::UsePdschForCqiGeneration", BooleanValue (m_usePdschForCqiGeneration));
 
   Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (true));
   Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (true));
@@ -256,14 +252,13 @@ LteCqiGenerationDlPowerControlTestCase::~LteCqiGenerationDlPowerControlTestCase 
 }
 
 void
-LteCqiGenerationDlPowerControlTestCase::DlScheduling (uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                                                      uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
+LteCqiGenerationDlPowerControlTestCase::DlScheduling (DlSchedulingCallbackInfo dlInfo)
 {
   // need to allow for RRC connection establishment + CQI feedback reception
   if (Simulator::Now () > MilliSeconds (500))
     {
 //	  NS_LOG_UNCOND("DL MSC: " << (uint32_t)mcsTb1 << " expected DL MCS: " << (uint32_t)m_dlMcs);
-      NS_TEST_ASSERT_MSG_EQ ((uint32_t)mcsTb1, (uint32_t)m_dlMcs, "Wrong DL MCS ");
+      NS_TEST_ASSERT_MSG_EQ ((uint32_t)dlInfo.mcsTb1, (uint32_t)m_dlMcs, "Wrong DL MCS ");
     }
 }
 
@@ -300,17 +295,18 @@ LteCqiGenerationDlPowerControlTestCase::DoRun (void)
   NodeContainer ueNodes2;
   enbNodes.Create (2);
   ueNodes1.Create (1);
-  ueNodes2.Create (1);
+  ueNodes2.Create (2);
   NodeContainer allNodes = NodeContainer ( enbNodes, ueNodes1, ueNodes2);
 
   /*
    * The topology is the following:
    *
-   *  eNB1                        UE1 UE2                        eNB2
-   *    |                            |                            |
-   *    x -------------------------- x -------------------------- x
-   *                  500 m                       500 m
+   *  eNB1                        UE1 UE2                        eNB2 UE3
+   *    |                            |                            |    |
+   *    x -------------------------- x -------------------------- x----x
+   *                  500 m                       500 m             50m
    *
+   * see https://www.nsnam.org/bugzilla/show_bug.cgi?id=2048#c4 for why we need UE3
    */
 
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
@@ -318,6 +314,7 @@ LteCqiGenerationDlPowerControlTestCase::DoRun (void)
   positionAlloc->Add (Vector (1000, 0.0, 0.0)); // eNB2
   positionAlloc->Add (Vector (500.0, 0.0, 0.0));  // UE1
   positionAlloc->Add (Vector (500, 0.0, 0.0));  // UE2
+  positionAlloc->Add (Vector (1050, 0.0, 0.0));  // UE3
   MobilityHelper mobility;
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.SetPositionAllocator (positionAlloc);

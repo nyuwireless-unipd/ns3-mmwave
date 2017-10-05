@@ -54,19 +54,18 @@ public:
    * \return The TypeId.
    */
   static TypeId GetTypeId (void);
-  
+
   virtual double CalcPer (Ptr<Packet> pkt, double sinrDb, UanTxMode mode);
 private:
-  
   double m_thresh;  //!< SINR threshold.
 
 };  // class UanPhyPerGenDefault
 
-  
+
 /**
  * \ingroup uan
  *
- * Packet error rate calculation assuming WHOI Micromodem-like PHY.
+ * Packet error rate calculation assuming WHOI Micromodem-like PHY (FH-FSK)
  *
  * Calculates PER assuming rate 1/2 convolutional code with
  * constraint length 9 with soft decision viterbi decoding and
@@ -119,6 +118,45 @@ private:
 /**
  * \ingroup uan
  *
+ * Packet error rate calculation for common tx modes based on UanPhyPerUmodem
+ *
+ * Calculates PER for common UanTxMode modulations, by deriving
+ * PER from the BER taken from well known literature's formulas.
+ */
+class UanPhyPerCommonModes : public UanPhyPer
+{
+public:
+  /** Constructor */
+  UanPhyPerCommonModes ();
+  /** Destructor */
+  virtual ~UanPhyPerCommonModes ();
+
+  /**
+   * Register this type.
+   * \return The TypeId.
+   */
+  static TypeId GetTypeId (void);
+
+  /**
+   * Calculate the Packet ERror probability based on
+   * SINR at the receiver and a tx mode.
+   *
+   * This implementation calculates PER for common UanTxMode modulations,
+   * by deriving PER from the BER taken from literature's formulas.
+   *
+   * \param pkt Packet which is under consideration.
+   * \param sinrDb SINR at receiver.
+   * \param mode TX mode used to transmit packet.
+   * \return Probability of packet error.
+   */
+  virtual double CalcPer (Ptr<Packet> pkt, double sinrDb, UanTxMode mode);
+
+};  // class UanPhyPerCommonModes
+
+
+/**
+ * \ingroup uan
+ *
  * Default SINR calculator for UanPhyGen.
  *
  * The default ignores mode data and assumes that all rxpower transmitted is
@@ -133,13 +171,13 @@ public:
   UanPhyCalcSinrDefault ();
   /** Destructor */
   virtual ~UanPhyCalcSinrDefault ();
-  
+
   /**
    * Register this type.
    * \return The TypeId.
    */
   static TypeId GetTypeId (void);
-  
+
   /**
    * Calculate the SINR value for a packet.
    *
@@ -177,6 +215,14 @@ public:
  * clearing time between symbols transmitted on the same frequency.
  * This clearing time combats ISI from channel delay spread and also has
  * a byproduct of possibly reducing interference from other transmitted packets.
+ * 
+ * Thanks to Randall Plate for the latest model revision based on the following 
+ * papers:
+ * <ul> 
+ * <li>Parrish, "System Design Considerations for Undersea Networks: Link and Multiple Access Protocols"
+ * <li>Siderius, "Effects of Ocean Thermocline Variability on Noncoherent Underwater Acoustic Communications"
+ * <li>Rao, "Channel Coding Techniques for Wireless Communications", ch 2
+ * </ul>
  */
 class UanPhyCalcSinrFhFsk : public UanPhyCalcSinr
 {
@@ -186,7 +232,7 @@ public:
   UanPhyCalcSinrFhFsk ();
   /** Destructor */
   virtual ~UanPhyCalcSinrFhFsk ();
-  
+
   /**
    * Register this type.
    * \return The TypeId.
@@ -231,7 +277,6 @@ public:
    */
   static UanModesList GetDefaultModes (void);
 
-  
   /**
    * Register this type.
    * \return The TypeId.
@@ -253,11 +298,9 @@ public:
   virtual bool IsStateRx (void);
   virtual bool IsStateTx (void);
   virtual bool IsStateCcaBusy (void);
-  virtual void SetRxGainDb (double gain);
   virtual void SetTxPowerDb (double txpwr);
   virtual void SetRxThresholdDb (double thresh);
   virtual void SetCcaThresholdDb (double thresh);
-  virtual double GetRxGainDb (void);
   virtual double GetTxPowerDb (void);
   virtual double GetRxThresholdDb (void);
   virtual double GetCcaThresholdDb (void);
@@ -294,7 +337,6 @@ private:
   Ptr<UanPhyPer> m_per;             //!< Error model.
   Ptr<UanPhyCalcSinr> m_sinr;       //!< SINR calculator.
 
-  double m_rxGainDb;                //!< Receive gain.
   double m_txPwrDb;                 //!< Transmit power.
   double m_rxThreshDb;              //!< Receive SINR threshold.
   double m_ccaThreshDb;             //!< CCA busy threshold.
@@ -304,11 +346,11 @@ private:
   double m_minRxSinrDb;             //!< Minimum receive SINR during packet reception.
   double m_rxRecvPwrDb;             //!< Receiver power.
   Time m_pktRxArrTime;              //!< Packet arrival time.
-  UanPdp m_pktRxPdp;                //!< Power delay profile of pakket.
+  UanPdp m_pktRxPdp;                //!< Power delay profile of packet.
   UanTxMode m_pktRxMode;            //!< Packet transmission mode at receiver.
 
   bool m_cleared;                   //!< Flag when we've been cleared.
-  
+
   EventId m_txEndEvent;             //!< Tx event
   EventId m_rxEndEvent;             //!< Rx event
 
@@ -385,7 +427,7 @@ private:
 
 
   /** Call UanListener::NotifyRxStart on all listeners. */
-  void NotifyListenersRxStart (void);  
+  void NotifyListenersRxStart (void);
   /** Call UanListener::NotifyRxEndOk on all listeners. */
   void NotifyListenersRxGood (void);
   /** Call UanListener::NotifyRxEndError on all listeners. */

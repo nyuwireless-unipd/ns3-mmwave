@@ -31,7 +31,7 @@
 /**
  * \file
  * \ingroup simulator
- * Declaration of class ns3::SimulatorImpl.
+ * ns3::SimulatorImpl declaration.
  */
 
 namespace ns3 {
@@ -91,7 +91,7 @@ public:
    * \param [in] schedulerFactory A new event scheduler factory.
    *
    * The event scheduler can be set at any time: the events scheduled
-   * in the previous scheduler will be transfered to the new scheduler
+   * in the previous scheduler will be transferred to the new scheduler
    * before we start to use it.
    */
   virtual void SetScheduler (ObjectFactory schedulerFactory) = 0;

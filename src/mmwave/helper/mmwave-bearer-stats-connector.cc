@@ -411,7 +411,7 @@ MmWaveBearerStatsConnector::PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, lon
 }
 
 void 
-MmWaveBearerStatsConnector::NotifyLteSinr (MmWaveBearerStatsConnector* c, std::string context, uint16_t cellId, uint16_t rnti, double rsrp, double sinr)
+MmWaveBearerStatsConnector::NotifyLteSinr (MmWaveBearerStatsConnector* c, std::string context, uint16_t cellId, uint16_t rnti, double rsrp, double sinr, uint8_t cc)
 {
   c->PrintLteSinr (rnti, cellId, sinr);
 }

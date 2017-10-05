@@ -143,13 +143,13 @@ MmWaveEnbPhy::DoInitialize (void)
 		SlotAllocInfo dlCtrlSlot;
 		dlCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
 		dlCtrlSlot.m_numCtrlSym = 1;
-		dlCtrlSlot.m_tddMode = SlotAllocInfo::DL;
+		dlCtrlSlot.m_tddMode = SlotAllocInfo::DL_slotAllocInfo;
 		dlCtrlSlot.m_dci.m_numSym = 1;
 		dlCtrlSlot.m_dci.m_symStart = 0;
 		SlotAllocInfo ulCtrlSlot;
 		ulCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
 		ulCtrlSlot.m_numCtrlSym = 1;
-		ulCtrlSlot.m_tddMode = SlotAllocInfo::UL;
+		ulCtrlSlot.m_tddMode = SlotAllocInfo::UL_slotAllocInfo;
 		ulCtrlSlot.m_slotIdx = 0xFF;
 		ulCtrlSlot.m_dci.m_numSym = 1;
 		ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe()-1;
@@ -508,10 +508,10 @@ MmWaveEnbPhy::StartSlot (void)
 		for (unsigned islot = 0; islot < m_currSfAllocInfo.m_slotAllocInfo.size (); islot++)
 		{
 			if (m_currSfAllocInfo.m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL &&
-					m_currSfAllocInfo.m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::DL)
+					m_currSfAllocInfo.m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
 			{
 				DciInfoElementTdma &dciElem = m_currSfAllocInfo.m_slotAllocInfo[islot].m_dci;
-				NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL);
+				NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL_dci);
 				if (dciElem.m_tbSize > 0)
 				{
 					Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
@@ -527,10 +527,10 @@ MmWaveEnbPhy::StartSlot (void)
 		for (unsigned islot = 0; islot < m_sfAllocInfo[ulSfNum].m_slotAllocInfo.size (); islot++)
 		{
 			if (m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL
-					&& m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::UL)
+					&& m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::UL_slotAllocInfo)
 			{
 				DciInfoElementTdma &dciElem = m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_dci;
-				NS_ASSERT (dciElem.m_format == DciInfoElementTdma::UL);
+				NS_ASSERT (dciElem.m_format == DciInfoElementTdma::UL_dci);
 				if (dciElem.m_tbSize > 0)
 				{
 					Ptr<MmWaveTdmaDciMessage> dciMsg = Create<MmWaveTdmaDciMessage> ();
@@ -556,12 +556,12 @@ MmWaveEnbPhy::StartSlot (void)
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 							    << "\t start " << Simulator::Now() << " end " << Simulator::Now() + slotPeriod);
 	}
-	else if (currSlot.m_tddMode == SlotAllocInfo::DL) 	  // transmit DL slot
+	else if (currSlot.m_tddMode == SlotAllocInfo::DL_slotAllocInfo) 	  // transmit DL slot
 	{
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod() * currSlot.m_dci.m_numSym);
-		NS_ASSERT (currSlot.m_tddMode == SlotAllocInfo::DL);
+		NS_ASSERT (currSlot.m_tddMode == SlotAllocInfo::DL_slotAllocInfo);
 		//NS_LOG_DEBUG ("Slot " << m_slotNum << " scheduled for Downlink");
-		//			if (m_prevSlotDir == SlotAllocInfo::UL)  // if curr slot == DL and prev slot == UL
+		//			if (m_prevSlotDir == SlotAllocInfo::UL_slotAllocInfo)  // if curr slot == DL and prev slot == UL
 		//			{
 		//				guardPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetGuardPeriod ());
 		//			}
@@ -594,7 +594,7 @@ MmWaveEnbPhy::StartSlot (void)
 		              << "\t start " << Simulator::Now()+NanoSeconds(1.0) << " end " << Simulator::Now() + slotPeriod-NanoSeconds (2.0));
 		Simulator::Schedule (NanoSeconds(1.0), &MmWaveEnbPhy::SendDataChannels, this, pktBurst, slotPeriod-NanoSeconds (2.0), currSlot);
 	}
-	else if (currSlot.m_tddMode == SlotAllocInfo::UL)  // receive UL slot
+	else if (currSlot.m_tddMode == SlotAllocInfo::UL_slotAllocInfo)  // receive UL slot
 	{
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod() * currSlot.m_dci.m_numSym);
 		//NS_LOG_DEBUG ("Slot " << (uint8_t)m_slotNum << " scheduled for Uplink");

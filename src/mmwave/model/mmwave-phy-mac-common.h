@@ -131,7 +131,7 @@ struct DlDciInfoElementTdma
 
 struct DciInfoElementTdma
 {
-	enum DciFormat { DL = 0, UL = 1 };
+	enum DciFormat { DL_dci = 0, UL_dci = 1 };
 
 	DciInfoElementTdma () :
 			m_rnti (0), m_format (0), m_symStart (0), m_numSym (0), m_mcs (0),
@@ -203,8 +203,8 @@ struct SlotAllocInfo
 	enum TddMode
 	{
 		NA = 0,
-		DL = 1,
-		UL = 2,
+		DL_slotAllocInfo = 1,
+		UL_slotAllocInfo = 2,
 	};
 
 	enum TddSlotType

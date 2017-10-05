@@ -809,7 +809,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 	for (unsigned islot = 0; islot < ind.m_sfAllocInfo.m_slotAllocInfo.size (); islot++)
 	{
 		SlotAllocInfo &slotAllocInfo = ind.m_sfAllocInfo.m_slotAllocInfo[islot];
-		if (slotAllocInfo.m_slotType != SlotAllocInfo::CTRL && slotAllocInfo.m_tddMode == SlotAllocInfo::DL)
+		if (slotAllocInfo.m_slotType != SlotAllocInfo::CTRL && slotAllocInfo.m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
 		{
 			uint16_t rnti = slotAllocInfo.m_dci.m_rnti;
 			// here log all the packets sent in downlink 
@@ -829,7 +829,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 				// update Harq Processes
 				if (dciElem.m_ndi == 1)
 				{
-					NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL);
+					NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL_dci);
 					std::vector<RlcPduInfo> &rlcPduInfo = slotAllocInfo.m_rlcPduInfo;
 					NS_ASSERT (rlcPduInfo.size () > 0);
 					SfnSf pduSfn = ind.m_sfnSf;

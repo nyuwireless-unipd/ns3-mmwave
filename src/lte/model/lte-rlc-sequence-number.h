@@ -21,6 +21,8 @@
 #ifndef LTE_RLC_SEQUENCE_NUMBER_H
 #define LTE_RLC_SEQUENCE_NUMBER_H
 
+#include <ns3/assert.h>
+
 #include <limits>
 #include <iostream>
 #include <stdint.h>
@@ -30,6 +32,7 @@
 namespace ns3 {
 
 
+/// SequenceNumber10 class
 class SequenceNumber10
 {
 public:
@@ -38,16 +41,32 @@ public:
       m_modulusBase (0)
   {}
 
+  /**
+   * Constructor
+   * 
+   * \param value the value
+   */
   explicit SequenceNumber10 (uint16_t value)
     : m_value (value % 1024),
       m_modulusBase (0)
   {}
 
+  /**
+   * Constructor
+   * 
+   * \param value the value
+   */
   SequenceNumber10 (SequenceNumber10 const &value)
     : m_value (value.m_value),
       m_modulusBase (value.m_modulusBase)
   {}
 
+  /**
+   * Assignment operator 
+   * 
+   * \param value the value
+   * \returns SequenceNumber10
+   */
   SequenceNumber10& operator= (uint16_t value)
   {
     m_value = value % 1024;
@@ -64,17 +83,28 @@ public:
     return m_value;
   }
 
+  /**
+   * \brief Set modulus base
+   * \param modulusBase the modulus
+   */
   void SetModulusBase (SequenceNumber10 modulusBase)
   {
     m_modulusBase = modulusBase.m_value;
   }
 
+  /**
+   * \brief Set modulus base
+   * \param modulusBase the modulus
+   */
   void SetModulusBase (uint16_t modulusBase)
   {
     m_modulusBase = modulusBase;
   }
 
-   // postfix ++
+  /**
+   * postfix ++ operator
+   * \returns SequenceNumber10
+   */
   SequenceNumber10 operator++ (int)
   {
     SequenceNumber10 retval (m_value);
@@ -83,6 +113,11 @@ public:
     return retval;
   }
 
+  /**
+   * addition operator
+   * \param delta the amount to add
+   * \returns SequenceNumber10
+   */
   SequenceNumber10 operator + (uint16_t delta) const
   {
     SequenceNumber10 ret ((m_value + delta) % 1024);
@@ -90,6 +125,11 @@ public:
     return ret;
   }
 
+  /**
+   * subtraction operator
+   * \param delta the amount to subtract
+   * \returns SequenceNumber10
+   */
   SequenceNumber10 operator - (uint16_t delta) const
   {
     SequenceNumber10 ret ((m_value - delta) % 1024);
@@ -97,39 +137,75 @@ public:
     return ret;
   }
 
+  /**
+   * subtraction operator
+   * \param other the amount to subtract
+   * \returns SequenceNumber10
+   */
   uint16_t operator - (const SequenceNumber10 &other) const
   {
     uint16_t diff = m_value - other.m_value;
     return (diff);
   }
 
+  /**
+   * greater than operator
+   * \param other the object to compare
+   * \returns true if greater than
+   */
   bool operator > (const SequenceNumber10 &other) const
   {
+    NS_ASSERT (m_modulusBase == other.m_modulusBase);
     SequenceNumber10 v1 ((m_value - m_modulusBase) % 1024);
     SequenceNumber10 v2 ((other.m_value - other.m_modulusBase) % 1024);
     return ( v1.GetValue () > v2.GetValue () );
   }
 
+  /**
+   * equality operator
+   * \param other the object to compare
+   * \returns true if equal
+   */
   bool operator == (const SequenceNumber10 &other) const
   {
     return (m_value == other.m_value);
   }
 
+  /**
+   * inequality operator
+   * \param other the object to compare
+   * \returns true if not equal
+   */
   bool operator != (const SequenceNumber10 &other) const
   {
     return (m_value != other.m_value);
   }
 
+  /**
+   * less than or equal operator
+   * \param other the object to compare
+   * \returns true if less than or equal
+   */
   bool operator <= (const SequenceNumber10 &other) const
   {
     return (!this->operator> (other));
   }
 
+  /**
+   * greater than or equal operator
+   * \param other the object to compare
+   * \returns true if greater than or equal
+   */
   bool operator >= (const SequenceNumber10 &other) const
   {
     return (this->operator> (other) || this->operator== (other));
   }
 
+  /**
+   * less than operator
+   * \param other the object to compare
+   * \returns true if less than
+   */
   bool operator < (const SequenceNumber10 &other) const
   {
     return !this->operator> (other) && m_value != other.m_value;
@@ -139,8 +215,8 @@ public:
   friend std::ostream & operator<< (std::ostream& os, const SequenceNumber10 &val);
 
 private:
-  uint16_t m_value;
-  uint16_t m_modulusBase;
+  uint16_t m_value; ///< the value
+  uint16_t m_modulusBase; ///< the modulus base
 };
 
 

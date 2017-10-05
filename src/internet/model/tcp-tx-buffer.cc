@@ -193,7 +193,7 @@ TcpTxBuffer::Add (Ptr<Packet> p)
       if (p->GetSize () > 0)
         {
           TcpTxItem *item = new TcpTxItem ();
-          item->m_packet = p;
+          item->m_packet = p->Copy ();
           m_appList.insert (m_appList.end (), item);
           m_size += p->GetSize ();
 
@@ -226,7 +226,7 @@ TcpTxBuffer::SizeFromSequence (const SequenceNumber32& seq) const
 Ptr<Packet>
 TcpTxBuffer::CopyFromSequence (uint32_t numBytes, const SequenceNumber32& seq)
 {
-  NS_LOG_FUNCTION (*this << numBytes << seq);
+  NS_LOG_FUNCTION (this << numBytes << seq);
 
   if (m_firstByteSeq > seq)
     {
@@ -845,7 +845,7 @@ TcpTxBuffer::NextSeg (SequenceNumber32 *seq, uint32_t dupThresh,
   bool isSeqPerRule3Valid = false;
   SequenceNumber32 beginOfCurrentPkt = m_firstByteSeq;
 
-  /*for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
+  for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
     {
       item = *it;
 
@@ -866,54 +866,7 @@ TcpTxBuffer::NextSeg (SequenceNumber32 *seq, uint32_t dupThresh,
 
       // Nothing found, iterate
       beginOfCurrentPkt += item->m_packet->GetSize ();
-    }*/
-
-  bool detectLoss = true;
-  for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
-    {
-      item = *it;
-
-      // Condition 1.a , 1.b , and 1.c
-      if (item->m_retrans == false && item->m_sacked == false)
-        {
-    	  if (detectLoss)
-    	  {
-			  if (IsLost (beginOfCurrentPkt, it, dupThresh, segmentSize))
-				{
-				  *seq = beginOfCurrentPkt;
-				  return true;
-				}
-			  else
-			  {
-				  detectLoss = false;
-				  if (seqPerRule3.GetValue () == 0 && isRecovery)
-				  {
-					isSeqPerRule3Valid = true;
-					seqPerRule3 = beginOfCurrentPkt;
-				  }
-
-			  }
-    	  }
-    	  else
-    	  {
-    		  if(item->m_lost)
-    		  {
-				  *seq = beginOfCurrentPkt;
-				  return true;
-    		  }
-              else if (seqPerRule3.GetValue () == 0 && isRecovery)
-                {
-                  isSeqPerRule3Valid = true;
-                  seqPerRule3 = beginOfCurrentPkt;
-                }
-    	  }
-
-        }
-
-      // Nothing found, iterate
-      beginOfCurrentPkt += item->m_packet->GetSize ();
     }
-
 
   /* (2) If no sequence number 'S2' per rule (1) exists but there
    *     exists available unsent data and the receiver's advertised
@@ -955,6 +908,24 @@ TcpTxBuffer::NextSeg (SequenceNumber32 *seq, uint32_t dupThresh,
 }
 
 uint32_t
+TcpTxBuffer::GetRetransmitsCount (void) const
+{
+  NS_LOG_FUNCTION (this);
+  PacketList::const_iterator it;
+  TcpTxItem *item;
+  uint32_t count = 0;
+  for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
+    {
+      item = *it;
+      if (item->m_retrans)
+        {
+          count++;
+        }
+    }
+  return count;
+}
+
+uint32_t
 TcpTxBuffer::BytesInFlight (uint32_t dupThresh, uint32_t segmentSize) const
 {
   PacketList::const_iterator it;
@@ -965,38 +936,14 @@ TcpTxBuffer::BytesInFlight (uint32_t dupThresh, uint32_t segmentSize) const
   // After initializing pipe to zero, the following steps are taken for each
   // octet 'S1' in the sequence space between HighACK and HighData that has not
   // been SACKed:
-  /*for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
-    {
-      item = *it;
-      if (!item->m_sacked)
-        {
-          // (a) If IsLost (S1) returns false: Pipe is incremented by 1 octet.
-          if (!IsLost (beginOfCurrentPkt, it, dupThresh, segmentSize))
-            {
-              size += item->m_packet->GetSize ();
-            }
-          // (b) If S1 <= HighRxt: Pipe is incremented by 1 octet.
-          // (NOTE: we use the m_retrans flag instead of keeping and updating
-          // another variable). Only if the item is not marked as lost
-          else if (item->m_retrans && !item->m_lost)
-            {
-              size += item->m_packet->GetSize ();
-            }
-        }
-      beginOfCurrentPkt += item->m_packet->GetSize ();
-    }*/
-  bool noLoss = false;
   for (it = m_sentList.begin (); it != m_sentList.end (); ++it)
     {
       item = *it;
       if (!item->m_sacked)
         {
-    	  if(noLoss == false)
-    	  {
           // (a) If IsLost (S1) returns false: Pipe is incremented by 1 octet.
           if (!IsLost (beginOfCurrentPkt, it, dupThresh, segmentSize))
             {
-        	  noLoss = true;
               size += item->m_packet->GetSize ();
             }
           // (b) If S1 <= HighRxt: Pipe is incremented by 1 octet.
@@ -1006,14 +953,6 @@ TcpTxBuffer::BytesInFlight (uint32_t dupThresh, uint32_t segmentSize) const
             {
               size += item->m_packet->GetSize ();
             }
-    	  }
-    	  else
-    	  {
-              if (!item->m_lost)
-                {
-                  size += item->m_packet->GetSize ();
-                }
-    	  }
         }
       beginOfCurrentPkt += item->m_packet->GetSize ();
     }
@@ -1039,13 +978,13 @@ TcpTxBuffer::ResetScoreboard ()
 }
 
 void
-TcpTxBuffer::ResetSentList ()
+TcpTxBuffer::ResetSentList (uint32_t keepItems)
 {
   NS_LOG_FUNCTION (this);
   TcpTxItem *item;
 
-  // Keep the head; it will then marked as retransmitted.
-  while (m_sentList.size () > 1)
+  // Keep the head items; they will then marked as lost
+  while (m_sentList.size () > keepItems)
     {
       item = m_sentList.back ();
       item->m_retrans = item->m_sacked = false;

@@ -35,6 +35,18 @@ in ns-3 contains implementation of both the features, and is a port of Sally
 Floyd's ns-2 ARED model. Note that the user is allowed to choose and explicitly
 configure the simulation by selecting feature (i) or feature (ii), or both.
 
+Feng's Adaptive RED
+===================
+Feng's Adaptive RED is a variant of RED that adapts the maximum drop
+probability. The model in ns-3 contains implementation of this feature, and is a
+port of ns-2 Feng's Adaptive RED model.
+
+Nonlinear Random Early Detection (NLRED)
+========================================
+NLRED is a variant of RED in which the linear packet dropping function of
+RED is replaced by a nonlinear quadratic function. This approach makes packet
+dropping gentler for light traffic load and aggressive for heavy traffic load.
+
 Explicit Congestion Notification (ECN)
 ======================================
 This RED model supports an ECN mode of operation to notify endpoints of
@@ -57,11 +69,18 @@ the ``Mark ()`` method.
 References
 ==========
 
-The RED queue aims to be close to the results cited in:
+The RED queue disc aims to be close to the results cited in:
 S.Floyd, K.Fall http://icir.org/floyd/papers/redsims.ps
 
 ARED queue implementation is based on the algorithm provided in:
 S. Floyd et al, http://www.icir.org/floyd/papers/adaptiveRed.pdf
+
+Feng's Adaptive RED queue implementation is based on the algorithm
+provided in:
+W. C. Feng et al, http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=752150
+
+NLRED queue implementation is based on the algorithm provided in:
+Kaiyu Zhou et al, http://www.sciencedirect.com/science/article/pii/S1389128606000879
 
 The addition of explicit congestion notification (ECN) to IP:
 K. K. Ramakrishnan et al, https://tools.ietf.org/html/rfc3168
@@ -99,6 +118,18 @@ In addition to RED attributes, ARED queue requires following attributes:
 * Beta (decrement parameter for m_curMaxP)
 * RTT
 
+In addition to RED attributes, Feng's Adaptive RED queue requires following
+attributes:
+
+* FengAdaptive  (Boolean attribute, Default: false)
+* Status        (status of current queue length, Default: Above)
+* FengAlpha     (increment parameter for m_curMaxP, Default: 3)
+* FengBeta      (decrement parameter for m_curMaxP, Default: 2)
+
+The following attribute should be turned on to simulate NLRED queue disc:
+
+* NLRED (Boolean attribute. Default: false)
+
 Consult the ns-3 documentation for explanation of these attributes.
 
 Simulating ARED
@@ -133,6 +164,26 @@ To configure (ii); AdaptMaxP must be set to true, as done in
 
   Config::SetDefault ("ns3::RedQueueDisc::AdaptMaxP", BooleanValue (true));
 
+Simulating Feng's Adaptive RED
+==============================
+
+To switch on Feng's Adaptive RED algorithm, the attribute FengAdaptive must be
+set to true, as done in ``examples/traffic-control/red-vs-fengadaptive.cc``:
+
+.. sourcecode:: cpp
+
+  Config::SetDefault ("ns3::RedQueueDisc::FengAdaptive", BooleanValue (true));
+
+Simulating NLRED
+================
+
+To switch on NLRED algorithm, the attribute NLRED must be set to true,
+as shown below:
+
+.. sourcecode:: cpp
+
+  Config::SetDefault ("ns3::RedQueueDisc::NLRED", BooleanValue (true));
+
 Examples
 ========
 
@@ -141,6 +192,12 @@ The RED queue example is found at ``src/traffic-control/examples/red-tests.cc``.
 ARED queue examples can be found at:
 ``src/traffic-control/examples/adaptive-red-tests.cc`` and 
 ``src/traffic-control/examples/red-vs-ared.cc``
+
+Feng's Adaptive RED example can be found at:
+``examples/traffic-control/red-vs-fengadaptive.cc``
+
+NLRED queue example can be found at:
+``examples/traffic-control/red-vs-nlred.cc``
 
 Validation
 **********

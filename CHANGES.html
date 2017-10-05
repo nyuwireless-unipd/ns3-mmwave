@@ -93,6 +93,42 @@ us a note on ns-developers mailing list.</p>
     which returns a vector of pairs (dscp,count), each of which indicates how many packets with the
     associated dscp value have been classified for a given flow.
 </li>
+<li>MqQueueDisc, a multi-queue aware queue disc modelled after the mq qdisc in Linux, has been introduced.
+</li>
+<li>Two new methods, <b>QueueDisc::DropBeforeEnqueue()</b> and <b>QueueDisc::DropAfterDequeue()</b> have
+    been introduced to replace <b>QueueDisc::Drop()</b>. These new methods require the caller to specify the
+    reason why a packet was dropped. Correspondingly, two new trace sources ("DropBeforeEnqueue" and
+    "DropAfterDequeue") have been added to the QueueDisc class, providing both the items that were dropped
+    and the reason why they were dropped. 
+</li>
+<li>Added <b>QueueDisc::GetStats()</b> which returns detailed statistics about the operations of
+    a queue disc. Statistics can be accessed through the member variables of the returned object and
+    by calling the <b>GetNDroppedPackets()</b>, <b>GetNDroppedBytes()</b>, <b>GetNMarkedPackets()</b> and <b>GetNMarkedBytes()</b> methods on the returned object. Such methods return the number of packets/bytes
+    dropped/marked for the specified reason (passed as argument). Consequently:
+    <ul>
+      <li>A number of methods of the QueueDisc class have been removed: <b>GetTotalReceivedPackets()</b>,
+      <b>GetTotalReceivedBytes()</b>, <b>GetTotalDroppedPackets()</b>, <b>GetTotalDroppedBytes()</b>,
+      <b>GetTotalRequeuedPackets()</b>, <b>GetTotalRequeuedBytes()</b>.</li>
+      <li>The <b>Stats</b> struct and the <b>GetStats()</b> method of <b>RedQueueDisc</b> and <b>PieQueueDisc</b> have been removed and replaced by those of the QueueDisc base class.</li>
+      <li>The <b>GetDropOverLimit</b> and <b>GetDropCount</b> methods of <b>CoDelQueueDisc</b> have been removed.
+      The values they returned can be obtained by calling, respectively,
+      GetStats ().GetNDroppedPackets (CoDelQueueDisc::OVERLIMIT_DROP) and
+      GetStats ().GetNDroppedPackets (CoDelQueueDisc::TARGET_EXCEEDED_DROP). The "DropCount" trace of
+      <b>CoDelQueueDisc</b> has been removed as well. Packets dropped because the target is exceeded can
+      be obtained through the new "DropAfterDequeue" trace of the QueueDisc class.</li>
+    </ul>
+</li>
+<li> The new <b>QueueDisc::Mark()</b> method has been introduced to allow subclasses to request to mark a packet.
+     The  caller must specify the reason why the packet must be marked. Correspondingly, a new trace source ("Mark")
+     has been added to the QueueDisc class, providing both the items that were marked and the reason why they
+     were marked.
+</li>
+<li>A new trace source, <b>SojournTime</b>, is exported by the QueueDisc base class to provide the
+    sojourn time of every packet dequeued from a queue disc. This has been made possible by adding a
+    timestamp to QueueDiscItem objects, which can be set/get through the new <b>GetTimeStamp()</b> and
+    <b>SetTimeStamp()</b> methods of the QueueDiscItem class. The <b>CoDel</b> queue disc now makes use of such feature of the base class, hence its Sojourn trace source and the CoDelTimestampTag class
+    have been removed.
+</li>
 </ul>
 <h2>Changes to existing API:</h2>
 <ul>
@@ -117,9 +153,27 @@ is now exported by WifiNetDevice.</li>
     and <b>WifiPhy::MaxSupportedRxSpatialStreams</b>. A new attribute <b>WifiPhy::Antennas</b>
     was added to allow users to define the number of physical antennas on the device.
 </li>
+<li>Sockets do not receive anymore broadcast packets, unless they are bound to an "Any" address (0.0.0.0)
+    or to a subnet-directed broadcast packet (e.g., x.y.z.0 for a /24 noterok).
+    As in Linux, the following rules are now enforced:
+    <ul>
+    <li> A socket bound to 0.0.0.0 will receive everything.</li>
+    <li> A socket bound to x.y.z.0/24 will receive subnet-directed broadcast (x.y.z.255) and unicast packets.</li>
+    <li> A socket bound to x.y.z.w will only receive unicast packets.</li>
+    </ul> 
+    <b>Previously, a socket bound to an unicast address received also subnet-directed broadcast packets. 
+    This is not anymore possible</b>.
+</li>
+<li>You can now Bind as many socket as you want to an address/port, provided that they are bound to different NetDevices.
+    Moreover, BindToNetDevice does not anymore call Bind. In other terms, Bind and BindToNetDevice can be called
+    in any order.
+    However, it is suggested to use BindToNetDevice <i>before</i> Bind in order to avoid conflicts.
+</li>
 </ul>
 <h2>Changes to build system:</h2>
 <ul>
+<li> The API scanning process for Python bindings now relies on CastXML, and only 64-bit scans are presently supported (Linux 64-bit systems).  Generation of 32-bit scans is documented in the Python chapter of the ns-3 manual.
+</li>
 <li> Modules can now be located in the 'contrib/' directory in addition to 'src/'
 </li>
 <li> Behavior for running Python programs was aligned with that of C++ programs; the list of modules built is no longer printed out.
@@ -139,6 +193,8 @@ is now exported by WifiNetDevice.</li>
 </li>
   <li> The default value of the <b>TxGain</b> and <b>RxGain</b> attributes in WifiPhy was changed from 1 dB to 0 dB.
   </li>
+  <li> The reported SNR by WifiPhy::MonitorSnifferRx did not include the RxNoiseFigure, but now does; see <a href=https://www.nsnam.org/bugzilla/show_bug.cgi?id=2783>bug 2783</a> for discussion.
+  </li>
 <li><b>Queue</b> has been redesigned as a template class object, where the type parameter
     specifies the type of items to be stored in the queue. As a consequence:
     <ul>
@@ -155,6 +211,13 @@ is now exported by WifiNetDevice.</li>
 <li>Queue discs that can operate both in packet mode and byte mode (Red, CoDel, Pie) define their own
     enum QueueDiscMode instead of using QueueBase::QueueMode.
 </li>
+<li>The CoDel, PIE and RED queue discs require that the size of the internal queue is the same as
+    the queue disc limit (previously, it was allowed to be greater than or equal).
+</li>
+  <li> The default value of the <b>EnableBeaconJitter</b> attribute in ApWifiMac was changed from false to true.
+  </li>
+  <li> The NormalClose() callback of a TcpSocket object used to fire upon leaving TIME_WAIT state (2*MSL after FINs have been exchanged).  It now fires upon entering TIME_WAIT state.  Timing of the callback for the other path to state CLOSED (through LAST_ACK) has not been changed.
+  </li>
 </ul>
 
 <hr>

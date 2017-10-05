@@ -63,7 +63,7 @@ public:
    *
    * \param channel the SpectrumChannel this SpectrumWifiPhy is to be connected to
    */
-  void SetChannel (Ptr<SpectrumChannel> channel);
+  void SetChannel (const Ptr<SpectrumChannel> channel);
   /**
    * Add a channel number to the list of operational channels.  This method
    * is used to support scanning for strongest base station.
@@ -124,7 +124,7 @@ public:
    * Note:  this method may be split into separate SetTx and SetRx
    * methods in the future if the modelling need for this arises
    */
-  void SetAntenna (Ptr<AntennaModel> antenna);
+  void SetAntenna (const Ptr<AntennaModel> antenna);
   /**
    * Get the antenna model used for reception
    *
@@ -160,6 +160,16 @@ public:
 
   Ptr<Channel> GetChannel (void) const;
 
+  // The following four methods call to the base WifiPhy class method
+  // but also generate a new SpectrumModel if called during runtime
+
+  virtual void SetChannelNumber (uint8_t id);
+
+  virtual void SetFrequency (uint16_t freq);
+
+  virtual void SetChannelWidth (uint8_t channelwidth);
+
+  virtual void ConfigureStandard (WifiPhyStandard standard);
 
 protected:
   // Inherited
@@ -179,6 +189,11 @@ private:
    * to the standard in use.
    */
   Ptr<SpectrumValue> GetTxPowerSpectralDensity (uint16_t centerFrequency, uint8_t channelWidth, double txPowerW, WifiModulationClass modulationClass) const;
+
+  /**
+   * Perform run-time spectrum model change
+   */
+  void ResetSpectrumModel (void);
 
   Ptr<SpectrumChannel> m_channel;        //!< SpectrumChannel that this SpectrumWifiPhy is connected to
   std::vector<uint8_t> m_operationalChannelList; //!< List of possible channels

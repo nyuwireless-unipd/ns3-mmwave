@@ -44,6 +44,10 @@ class LteAmc : public Object
 {
 
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
   
   LteAmc ();
@@ -100,7 +104,7 @@ public:
                                                   uint8_t rbgSize = 0);
 
   /**
-   * \brief Get a proper CQI for the spectrale efficiency value.
+   * \brief Get a proper CQI for the spectral efficiency value.
    * In order to assure a fewer block error rate, the AMC chooses the lower CQI value
    * for a given spectral efficiency
    * \param s the spectral efficiency

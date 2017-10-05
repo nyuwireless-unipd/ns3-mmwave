@@ -211,7 +211,7 @@ public:
 
   static void NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, long double sinr);
   void PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, long double sinr);
-  static void NotifyLteSinr (MmWaveBearerStatsConnector* c, std::string context, uint16_t cellId, uint16_t rnti, double rsrp, double sinr);
+  static void NotifyLteSinr (MmWaveBearerStatsConnector* c, std::string context, uint16_t cellId, uint16_t rnti, double rsrp, double sinr, uint8_t cc);
   void PrintLteSinr (uint16_t rnti, uint16_t cellId, double sinr);
 
   std::string GetEnbHandoverStartOutputFilename (void);

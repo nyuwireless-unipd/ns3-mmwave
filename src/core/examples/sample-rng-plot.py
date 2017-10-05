@@ -14,15 +14,23 @@
 #  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #  */
 
-# Demonstrate use of ns-3 as a random number generator integrated with
-# plotting tools; adapted from Gustavo Carneiro's ns-3 tutorial
+## @file
+#  @ingroup core-examples
+#  @ingroup randomvariable
+#  Demonstrate use of ns-3 as a random number generator integrated with
+#  plotting tools.
+#  
+#  This is adapted from Gustavo Carneiro's ns-3 tutorial
+
 
 import numpy as np
 import matplotlib.pyplot as plt
 import ns.core
 
 # mu, var = 100, 225
-rng = ns.core.NormalVariable(100.0, 225.0)
+rng = ns.core.NormalRandomVariable()
+rng.SetAttribute("Mean", ns.core.DoubleValue(100.0))
+rng.SetAttribute("Variance", ns.core.DoubleValue(225.0))
 x = [rng.GetValue() for t in range(10000)]
 
 # the histogram of the data

@@ -35,6 +35,7 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("TdBetFfMacScheduler");
 
+/// TDBET type 0 allocation RBG
 static const int TdBetType0AllocationRbg[4] = {
   10,       // RGB size 1
   26,       // RGB size 2
@@ -47,172 +48,6 @@ NS_OBJECT_ENSURE_REGISTERED (TdBetFfMacScheduler);
 
 
 
-class TdBetSchedulerMemberCschedSapProvider : public FfMacCschedSapProvider
-{
-public:
-  TdBetSchedulerMemberCschedSapProvider (TdBetFfMacScheduler* scheduler);
-
-  // inherited from FfMacCschedSapProvider
-  virtual void CschedCellConfigReq (const struct CschedCellConfigReqParameters& params);
-  virtual void CschedUeConfigReq (const struct CschedUeConfigReqParameters& params);
-  virtual void CschedLcConfigReq (const struct CschedLcConfigReqParameters& params);
-  virtual void CschedLcReleaseReq (const struct CschedLcReleaseReqParameters& params);
-  virtual void CschedUeReleaseReq (const struct CschedUeReleaseReqParameters& params);
-
-private:
-  TdBetSchedulerMemberCschedSapProvider ();
-  TdBetFfMacScheduler* m_scheduler;
-};
-
-TdBetSchedulerMemberCschedSapProvider::TdBetSchedulerMemberCschedSapProvider ()
-{
-}
-
-TdBetSchedulerMemberCschedSapProvider::TdBetSchedulerMemberCschedSapProvider (TdBetFfMacScheduler* scheduler) : m_scheduler (scheduler)
-{
-}
-
-
-void
-TdBetSchedulerMemberCschedSapProvider::CschedCellConfigReq (const struct CschedCellConfigReqParameters& params)
-{
-  m_scheduler->DoCschedCellConfigReq (params);
-}
-
-void
-TdBetSchedulerMemberCschedSapProvider::CschedUeConfigReq (const struct CschedUeConfigReqParameters& params)
-{
-  m_scheduler->DoCschedUeConfigReq (params);
-}
-
-
-void
-TdBetSchedulerMemberCschedSapProvider::CschedLcConfigReq (const struct CschedLcConfigReqParameters& params)
-{
-  m_scheduler->DoCschedLcConfigReq (params);
-}
-
-void
-TdBetSchedulerMemberCschedSapProvider::CschedLcReleaseReq (const struct CschedLcReleaseReqParameters& params)
-{
-  m_scheduler->DoCschedLcReleaseReq (params);
-}
-
-void
-TdBetSchedulerMemberCschedSapProvider::CschedUeReleaseReq (const struct CschedUeReleaseReqParameters& params)
-{
-  m_scheduler->DoCschedUeReleaseReq (params);
-}
-
-
-
-
-class TdBetSchedulerMemberSchedSapProvider : public FfMacSchedSapProvider
-{
-public:
-  TdBetSchedulerMemberSchedSapProvider (TdBetFfMacScheduler* scheduler);
-
-  // inherited from FfMacSchedSapProvider
-  virtual void SchedDlRlcBufferReq (const struct SchedDlRlcBufferReqParameters& params);
-  virtual void SchedDlPagingBufferReq (const struct SchedDlPagingBufferReqParameters& params);
-  virtual void SchedDlMacBufferReq (const struct SchedDlMacBufferReqParameters& params);
-  virtual void SchedDlTriggerReq (const struct SchedDlTriggerReqParameters& params);
-  virtual void SchedDlRachInfoReq (const struct SchedDlRachInfoReqParameters& params);
-  virtual void SchedDlCqiInfoReq (const struct SchedDlCqiInfoReqParameters& params);
-  virtual void SchedUlTriggerReq (const struct SchedUlTriggerReqParameters& params);
-  virtual void SchedUlNoiseInterferenceReq (const struct SchedUlNoiseInterferenceReqParameters& params);
-  virtual void SchedUlSrInfoReq (const struct SchedUlSrInfoReqParameters& params);
-  virtual void SchedUlMacCtrlInfoReq (const struct SchedUlMacCtrlInfoReqParameters& params);
-  virtual void SchedUlCqiInfoReq (const struct SchedUlCqiInfoReqParameters& params);
-
-
-private:
-  TdBetSchedulerMemberSchedSapProvider ();
-  TdBetFfMacScheduler* m_scheduler;
-};
-
-
-
-TdBetSchedulerMemberSchedSapProvider::TdBetSchedulerMemberSchedSapProvider ()
-{
-}
-
-
-TdBetSchedulerMemberSchedSapProvider::TdBetSchedulerMemberSchedSapProvider (TdBetFfMacScheduler* scheduler)
-  : m_scheduler (scheduler)
-{
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedDlRlcBufferReq (const struct SchedDlRlcBufferReqParameters& params)
-{
-  m_scheduler->DoSchedDlRlcBufferReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedDlPagingBufferReq (const struct SchedDlPagingBufferReqParameters& params)
-{
-  m_scheduler->DoSchedDlPagingBufferReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedDlMacBufferReq (const struct SchedDlMacBufferReqParameters& params)
-{
-  m_scheduler->DoSchedDlMacBufferReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedDlTriggerReq (const struct SchedDlTriggerReqParameters& params)
-{
-  m_scheduler->DoSchedDlTriggerReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedDlRachInfoReq (const struct SchedDlRachInfoReqParameters& params)
-{
-  m_scheduler->DoSchedDlRachInfoReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedDlCqiInfoReq (const struct SchedDlCqiInfoReqParameters& params)
-{
-  m_scheduler->DoSchedDlCqiInfoReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedUlTriggerReq (const struct SchedUlTriggerReqParameters& params)
-{
-  m_scheduler->DoSchedUlTriggerReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedUlNoiseInterferenceReq (const struct SchedUlNoiseInterferenceReqParameters& params)
-{
-  m_scheduler->DoSchedUlNoiseInterferenceReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedUlSrInfoReq (const struct SchedUlSrInfoReqParameters& params)
-{
-  m_scheduler->DoSchedUlSrInfoReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedUlMacCtrlInfoReq (const struct SchedUlMacCtrlInfoReqParameters& params)
-{
-  m_scheduler->DoSchedUlMacCtrlInfoReq (params);
-}
-
-void
-TdBetSchedulerMemberSchedSapProvider::SchedUlCqiInfoReq (const struct SchedUlCqiInfoReqParameters& params)
-{
-  m_scheduler->DoSchedUlCqiInfoReq (params);
-}
-
-
-
-
-
 TdBetFfMacScheduler::TdBetFfMacScheduler ()
   :   m_cschedSapUser (0),
     m_schedSapUser (0),
@@ -220,8 +55,8 @@ TdBetFfMacScheduler::TdBetFfMacScheduler ()
     m_nextRntiUl (0)
 {
   m_amc = CreateObject <LteAmc> ();
-  m_cschedSapProvider = new TdBetSchedulerMemberCschedSapProvider (this);
-  m_schedSapProvider = new TdBetSchedulerMemberSchedSapProvider (this);
+  m_cschedSapProvider = new MemberCschedSapProvider<TdBetFfMacScheduler> (this);
+  m_schedSapProvider = new MemberSchedSapProvider<TdBetFfMacScheduler> (this);
 }
 
 TdBetFfMacScheduler::~TdBetFfMacScheduler ()
@@ -511,11 +346,11 @@ TdBetFfMacScheduler::GetRbgSize (int dlbandwidth)
 }
 
 
-int
+unsigned int
 TdBetFfMacScheduler::LcActivePerFlow (uint16_t rnti)
 {
   std::map <LteFlowId_t, FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it;
-  int lcActive = 0;
+  unsigned int lcActive = 0;
   for (it = m_rlcBufferReq.begin (); it != m_rlcBufferReq.end (); it++)
     {
       if (((*it).first.m_rnti == rnti) && (((*it).second.m_rlcTransmissionQueueSize > 0)
@@ -963,8 +798,17 @@ TdBetFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sc
                     {
                       if (j < dci.m_ndi.size ())
                         {
+                          NS_LOG_INFO (" layer " << (uint16_t)j << " tb size " << dci.m_tbsSize.at (j));
                           rlcPduListPerLc.push_back ((*itRlcPdu).second.at (j).at (dci.m_harqProcess).at (k));
                         }
+                    }
+                  else
+                    { // if no retx needed on layer j, push an RlcPduListElement_s object with m_size=0 to keep the size of rlcPduListPerLc vector = 2 in case of MIMO
+                      NS_LOG_INFO (" layer " << (uint16_t)j << " tb size "<<dci.m_tbsSize.at (j));
+                      RlcPduListElement_s emptyElement;
+                      emptyElement.m_logicalChannelIdentity = (*itRlcPdu).second.at (j).at (dci.m_harqProcess).at (k).m_logicalChannelIdentity;
+                      emptyElement.m_size = 0;
+                      rlcPduListPerLc.push_back (emptyElement);
                     }
                 }
 
@@ -1026,6 +870,36 @@ TdBetFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sc
   double metricMax = 0.0;
   for (it = m_flowStatsDl.begin (); it != m_flowStatsDl.end (); it++)
     {
+
+      // check first what are channel conditions for this UE, if CQI!=0
+      std::map <uint16_t,uint8_t>::iterator itCqi;
+      itCqi = m_p10CqiRxed.find ((*it).first);
+      std::map <uint16_t,uint8_t>::iterator itTxMode;
+      itTxMode = m_uesTxMode.find ((*it).first);
+      if (itTxMode == m_uesTxMode.end ())
+        {
+          NS_FATAL_ERROR ("No Transmission Mode info on user " << (*it).first);
+        }
+      int nLayer = TransmissionModesLayers::TxMode2LayerNum ((*itTxMode).second);
+
+      uint8_t cqiSum = 0;
+      for (uint8_t j = 0; j < nLayer; j++)
+        {
+          if (itCqi == m_p10CqiRxed.end ())
+            {
+              cqiSum += 1;  // no info on this user -> lowest MCS
+            }
+          else
+            {
+              cqiSum = (*itCqi).second;
+            }
+        }
+      if (cqiSum == 0)
+        {
+          NS_LOG_INFO ("Skip this flow, CQI==0, rnti:"<<(*it).first);
+          continue;
+        }
+
       std::set <uint16_t>::iterator itRnti = rntiAllocated.find ((*it).first);
       if ((itRnti != rntiAllocated.end ())||(!HarqProcessAvailability ((*it).first)))
         {
@@ -1323,7 +1197,7 @@ TdBetFfMacScheduler::EstimateUlSinr (uint16_t rnti, uint16_t rb)
     {
       // take the average SINR value among the available
       double sinrSum = 0;
-      int sinrNum = 0;
+      unsigned int sinrNum = 0;
       for (uint32_t i = 0; i < m_cschedCellConfig.m_ulBandwidth; i++)
         {
           double sinr = (*itCqi).second.at (i);
@@ -1605,9 +1479,9 @@ TdBetFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sc
                 {
                   sinr = EstimateUlSinr ((*it).first, i);
                 }
-              if ((*itCqi).second.at (i) < minSinr)
+              if (sinr < minSinr)
                 {
-                  minSinr = (*itCqi).second.at (i);
+                  minSinr = sinr;
                 }
             }
 

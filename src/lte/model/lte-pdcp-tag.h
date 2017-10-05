@@ -37,6 +37,10 @@ class Tag;
 class PdcpTag : public Tag
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId  GetTypeId (void);
   virtual TypeId  GetInstanceTypeId (void) const;
 
@@ -46,6 +50,7 @@ public:
   PdcpTag ();
   /**
    * Create an PDCP tag with the given senderTimestamp
+   * \param senderTimestamp the time stamp
    */
   PdcpTag (Time senderTimestamp);
 
@@ -67,7 +72,7 @@ public:
   void  SetSenderTimestamp (Time senderTimestamp);
 
 private:
-  Time m_senderTimestamp;
+  Time m_senderTimestamp; ///< sender timestamp
 
 };
 

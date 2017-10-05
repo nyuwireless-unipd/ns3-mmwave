@@ -33,7 +33,7 @@
 using namespace ns3;
 
 /**
- * \ingroup netanim-test
+ * \ingroup netanim
  * \defgroup netanim-test animation module tests
  */
 
@@ -49,6 +49,7 @@ class AbstractAnimationInterfaceTestCase : public TestCase
 public:
   /**
    * \brief Constructor.
+   * \param name testcase name
    */
   AbstractAnimationInterfaceTestCase (std::string name);
   /**
@@ -70,7 +71,7 @@ protected:
 
 private:
 
-  /// Prepare nework function
+  /// Prepare network function
   virtual void PrepareNetwork () = 0;
 
   /// Check logic function

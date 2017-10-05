@@ -544,7 +544,7 @@ LteUePhy::GenerateCqiRsrpRsrq (const SpectrumValue& sinr)
       double avSinr = (rbNum > 0) ? (sum / rbNum) : DBL_MAX;
       NS_LOG_INFO (this << " cellId " << m_cellId << " rnti " << m_rnti << " RSRP " << rsrp << " SINR " << avSinr);
 
-      m_reportCurrentCellRsrpSinrTrace (m_cellId, m_rnti, rsrp, avSinr);
+      m_reportCurrentCellRsrpSinrTrace (m_cellId, m_rnti, rsrp, avSinr, 0);
       m_rsrpSinrSampleCounter = 0;
     }
 

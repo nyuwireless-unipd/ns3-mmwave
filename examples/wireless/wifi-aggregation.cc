@@ -109,7 +109,7 @@ int main (int argc, char *argv[])
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
-               "BeaconGeneration", BooleanValue (true));
+               "EnableBeaconJitter", BooleanValue (false));
   apDeviceA = wifi.Install (phy, mac, wifiApNodes.Get (0));
 
   //Network B
@@ -123,7 +123,7 @@ int main (int argc, char *argv[])
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
-               "BeaconGeneration", BooleanValue (true));
+               "EnableBeaconJitter", BooleanValue (false));
   apDeviceB = wifi.Install (phy, mac, wifiApNodes.Get (1));
 
   //Network C
@@ -138,7 +138,7 @@ int main (int argc, char *argv[])
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
-               "BeaconGeneration", BooleanValue (true));
+               "EnableBeaconJitter", BooleanValue (false));
   apDeviceC = wifi.Install (phy, mac, wifiApNodes.Get (2));
 
   //Network D
@@ -153,7 +153,7 @@ int main (int argc, char *argv[])
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
-               "BeaconGeneration", BooleanValue (true));
+               "EnableBeaconJitter", BooleanValue (false));
   apDeviceD = wifi.Install (phy, mac, wifiApNodes.Get (3));
 
   /* Setting mobility model */
@@ -284,7 +284,7 @@ int main (int argc, char *argv[])
   uint64_t totalPacketsThrough = DynamicCast<UdpServer> (serverAppA.Get (0))->GetReceived ();
   double throughput = totalPacketsThrough * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput with default configuration (A-MPDU aggregation enabled, 65kB): " << throughput << " Mbit/s" << '\n';
-  if (verifyResults && (throughput < 59.5 || throughput > 60.5))
+  if (verifyResults && (throughput < 59 || throughput > 60))
     {
       NS_LOG_ERROR ("Obtained throughput " << throughput << " is not in the expected boundaries!");
       exit (1);

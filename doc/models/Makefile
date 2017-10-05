@@ -58,6 +58,7 @@ SOURCES = \
 	$(SRC)/network/doc/simple.rst \
 	$(SRC)/network/doc/queue.rst \
 	$(SRC)/network/doc/queue-limits.rst \
+	$(SRC)/nix-vector-routing/doc/nix-vector-routing.rst \
 	$(SRC)/internet/doc/internet-stack.rst \
 	$(SRC)/internet/doc/ipv4.rst \
 	$(SRC)/internet/doc/ipv6.rst \
@@ -83,6 +84,7 @@ SOURCES = \
 	$(SRC)/traffic-control/doc/codel.rst \
 	$(SRC)/traffic-control/doc/fq-codel.rst \
 	$(SRC)/traffic-control/doc/pie.rst \
+	$(SRC)/traffic-control/doc/mq.rst \
 	$(SRC)/spectrum/doc/spectrum.rst \
 	$(SRC)/stats/doc/adaptor.rst \
 	$(SRC)/stats/doc/aggregator.rst \

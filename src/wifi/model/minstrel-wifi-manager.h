@@ -163,8 +163,8 @@ public:
   virtual ~MinstrelWifiManager ();
 
   // Inherited from WifiRemoteStationManager
-  void SetupPhy (Ptr<WifiPhy> phy);
-  void SetupMac (Ptr<WifiMac> mac);
+  void SetupPhy (const Ptr<WifiPhy> phy);
+  void SetupMac (const Ptr<WifiMac> mac);
   void SetHtSupported (bool enable);
   void SetVhtSupported (bool enable);
   void SetHeSupported (bool enable);
@@ -275,7 +275,12 @@ private:
 
   bool IsLowLatency (void) const;
 
-  /// for estimating the TxTime of a packet with a given mode
+  /**
+   * for estimating the TxTime of a packet with a given mode
+   *
+   * \param mode Wi-Fi mode
+   * \returns the transmission time
+   */
   Time GetCalcTxTime (WifiMode mode) const;
   /**
    * Add transmission time for the given mode to an internal list.

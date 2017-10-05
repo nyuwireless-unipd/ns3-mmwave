@@ -1015,7 +1015,8 @@ LteEnbPhy::CreateSrsReport (uint16_t rnti, double srs)
   (*it).second++;
   if ((*it).second == m_srsSamplePeriod)
     {
-      m_reportUeSinr (m_cellId, rnti, srs);
+      uint8_t cc = 0;
+      m_reportUeSinr (m_cellId, rnti, srs, cc);
       (*it).second = 0;
     }
 }

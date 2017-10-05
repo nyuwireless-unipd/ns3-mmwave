@@ -110,7 +110,7 @@ public:
    * has the highest priority, the second DcfState added, has the second
    * highest priority, etc.
    */
-  void Add (DcfState *dcf);
+  void Add (Ptr<DcfState> dcf);
 
   /**
    * \param state a DcfState
@@ -120,7 +120,7 @@ public:
    * timer and, invoking DcfState::DoNotifyAccessGranted when the access
    * is granted if it ever gets granted.
    */
-  void RequestAccess (DcfState *state);
+  void RequestAccess (Ptr<DcfState> state);
 
   /**
    * \param duration expected duration of reception
@@ -202,6 +202,9 @@ public:
    */
   void NotifyCtsTimeoutResetNow ();
 
+protected:
+  // Inherited from ns3::Object
+  void DoDispose (void);
 
 private:
   /**
@@ -280,7 +283,7 @@ private:
    *
    * \return the time when the backoff procedure started
    */
-  Time GetBackoffStartFor (DcfState *state);
+  Time GetBackoffStartFor (Ptr<DcfState> state);
   /**
    * Return the time when the backoff procedure
    * ended (or will ended) for the given DcfState.
@@ -289,7 +292,7 @@ private:
    *
    * \return the time when the backoff procedure ended (or will ended)
    */
-  Time GetBackoffEndFor (DcfState *state);
+  Time GetBackoffEndFor (Ptr<DcfState> state);
 
   void DoRestartAccessTimeoutIfNeeded (void);
 
@@ -317,18 +320,18 @@ private:
    * \return true if the device is within AIFS,
    *         false otherwise
    */
-  bool IsWithinAifs (DcfState* state) const;
+  bool IsWithinAifs (Ptr<DcfState> state) const;
 
   /**
    * typedef for a vector of DcfStates
    */
-  typedef std::vector<DcfState *> States;
+  typedef std::vector<Ptr<DcfState> > States;
 
   States m_states;              //!< the DCF states
-  Time m_lastAckTimeoutEnd;     //!< the last ack timeout end time
+  Time m_lastAckTimeoutEnd;     //!< the last ACK timeout end time
   Time m_lastCtsTimeoutEnd;     //!< the last CTS timeout end time
-  Time m_lastNavStart;          //!< the last nav start time
-  Time m_lastNavDuration;       //!< the last nav direction time
+  Time m_lastNavStart;          //!< the last NAV start time
+  Time m_lastNavDuration;       //!< the last NAV duration time
   Time m_lastRxStart;           //!< the last receive start time
   Time m_lastRxDuration;        //!< the last receive duration time
   bool m_lastRxReceivedOk;      //!< the last receive OK
@@ -336,7 +339,7 @@ private:
   Time m_lastTxStart;           //!< the last transmit start time
   Time m_lastTxDuration;        //!< the last transmit duration time
   Time m_lastBusyStart;         //!< the last busy start time
-  Time m_lastBusyDuration;      //!< the last busy duraation time
+  Time m_lastBusyDuration;      //!< the last busy duration time
   Time m_lastSwitchingStart;    //!< the last switching start time
   Time m_lastSwitchingDuration; //!< the last switching duration time
   bool m_rxing;                 //!< flag whether it is in receiving state

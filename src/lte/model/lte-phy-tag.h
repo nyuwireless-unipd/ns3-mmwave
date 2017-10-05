@@ -31,6 +31,10 @@ namespace ns3 {
 class LtePhyTag : public Tag
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;
 
@@ -41,6 +45,7 @@ public:
 
   /**
    * Create a LtePhyTag with the given RNTI and LC id
+   * \param cellId the cell ID
    */
   LtePhyTag (uint16_t cellId);
 
@@ -52,10 +57,15 @@ public:
   virtual uint32_t GetSerializedSize () const;
   virtual void Print (std::ostream &os) const;
 
+  /**
+   * Get cell ID
+   *
+   * \returns cell ID
+   */
   uint16_t GetCellId () const;
 
 private:
-  uint16_t m_cellId;
+  uint16_t m_cellId; ///< the cell ID
 
 };
 
