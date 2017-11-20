@@ -46,27 +46,15 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("EpcTestS1uDownlink");
 
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Custom structure for testing UE downlink data
- */
 struct UeDlTestData
 {
-  /**
-   * Constructor
-   *
-   * \param n number of packets
-   * \param s packet size
-   */
   UeDlTestData (uint32_t n, uint32_t s);
 
-  uint32_t numPkts; ///< number of packets
-  uint32_t pktSize; ///< packet size
+  uint32_t numPkts;
+  uint32_t pktSize;
  
-  Ptr<PacketSink> serverApp; ///< Server application
-  Ptr<Application> clientApp; ///< Client application
+  Ptr<PacketSink> serverApp;
+  Ptr<Application> clientApp;
 };
 
 UeDlTestData::UeDlTestData (uint32_t n, uint32_t s)
@@ -75,41 +63,22 @@ UeDlTestData::UeDlTestData (uint32_t n, uint32_t s)
 {
 }
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Custom structure for testing eNodeB downlink data, contains 
- * the list of data structures for UEs
- */
 struct EnbDlTestData
 {
-  std::vector<UeDlTestData> ues; ///< list of data structure for different UEs
+  std::vector<UeDlTestData> ues;
 };
 
 
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief EpcS1uDlTestCase class
- */
 class EpcS1uDlTestCase : public TestCase
 {
 public:
-  /**
-   * Constructor
-   *
-   * \param name the name of the test case instance
-   * \param v list of eNodeB downlink test data information
-   */
   EpcS1uDlTestCase (std::string name, std::vector<EnbDlTestData> v);
   virtual ~EpcS1uDlTestCase ();
 
 private:
   virtual void DoRun (void);
-  std::vector<EnbDlTestData> m_enbDlTestData; ///< ENB DL test data
+  std::vector<EnbDlTestData> m_enbDlTestData;
 };
 
 
@@ -122,6 +91,7 @@ EpcS1uDlTestCase::EpcS1uDlTestCase (std::string name, std::vector<EnbDlTestData>
 EpcS1uDlTestCase::~EpcS1uDlTestCase ()
 {
 }
+
 void 
 EpcS1uDlTestCase::DoRun ()
 {
@@ -338,4 +308,3 @@ EpcS1uDlTestSuite::EpcS1uDlTestSuite ()
   v8.push_back (e8);
   AddTestCase (new EpcS1uDlTestCase ("1 eNB, 100 pkts 15000 bytes each", v8), TestCase::QUICK);
 }
-

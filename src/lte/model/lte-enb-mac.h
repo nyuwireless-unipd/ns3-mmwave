@@ -252,14 +252,13 @@ private:
    * Frame number, Subframe number, RNTI, MCS of TB1, size of TB1,
    * MCS of TB2 (0 if not present), size of TB2 (0 if not present)
    */
-  TracedCallback<uint32_t, uint32_t, uint16_t,
-                 uint8_t, uint16_t, uint8_t, uint16_t> m_dlScheduling;
+  TracedCallback<DlSchedulingCallbackInfo> m_dlScheduling;
   /**
    * Trace information regarding UL scheduling
    * Frame number, Subframe number, RNTI, MCS of TB, size of TB
    */
   TracedCallback<uint32_t, uint32_t, uint16_t,
-                 uint8_t, uint16_t> m_ulScheduling;
+                 uint8_t, uint16_t, uint8_t> m_ulScheduling;
   
   uint8_t m_macChTtiDelay; // delay of MAC, PHY and channel in terms of TTIs
 

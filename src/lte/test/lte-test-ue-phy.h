@@ -27,14 +27,6 @@
 
 namespace ns3 {
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Defines a simplified LtePhy class that is used for testing purposes
- * of downlink and uplink SINR generation. Used in LteDownlinkDataSinrTestCase
- * and LteUplinkDataSinrTestCase as simplified LTE PHY.
- */
 class LteTestUePhy : public LtePhy
 {
 public:
@@ -52,10 +44,6 @@ public:
   virtual ~LteTestUePhy ();
 
   virtual void DoDispose ();
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
   static TypeId GetTypeId (void);
 
   /**
@@ -78,20 +66,12 @@ public:
 
   virtual void ReportRsReceivedPower (const SpectrumValue& power);
 
-  /**
-   * \brief Reeive LTE Control Message
-   * \param msg the control message
-   */
   virtual void ReceiveLteControlMessage (Ptr<LteControlMessage> msg);
 
-  /**
-   * \brief Get the SINR
-   * \return the SINR
-   */
   SpectrumValue GetSinr ();
 
 private:
-  SpectrumValue m_sinr; ///< the SINR
+  SpectrumValue m_sinr;
 };
 
 

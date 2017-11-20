@@ -547,13 +547,13 @@ LteUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 {
   LteRadioBearerTag tag;
   p->RemovePacketTag (tag);
+  NS_LOG_INFO("LteUeMac ReceivePhyPdu");
   if (tag.GetRnti () == m_rnti)
     {
       // packet is for the current user
       std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (tag.GetLcid ());
       if (it != m_lcInfoMap.end ())
         {
-          NS_LOG_INFO("LteUeMac ReceivePhyPdu");
           it->second.macSapUser->ReceivePdu (p);
         }
       else
@@ -561,6 +561,10 @@ LteUeMac::DoReceivePhyPdu (Ptr<Packet> p)
           NS_LOG_WARN ("received packet with unknown lcid " << (uint32_t) tag.GetLcid ());
         }
     }
+  else
+  {
+    NS_LOG_WARN("received packet with unknown rnti " << (uint32_t) tag.GetRnti ());
+  }
 }
 
 

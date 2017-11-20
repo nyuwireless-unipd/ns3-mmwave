@@ -193,6 +193,9 @@ LenaHarqTestCase::DoRun (void)
   lena->SetSchedulerType ("ns3::RrFfMacScheduler");
   lena->SetSchedulerAttribute ("UlCqiFilter", EnumValue (FfMacScheduler::PUSCH_UL_CQI));
 
+  // set DL bandwidth. 
+  lena->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+
   enbDevs = lena->InstallEnbDevice (enbNodes);
   ueDevs = lena->InstallUeDevice (ueNodes);
 

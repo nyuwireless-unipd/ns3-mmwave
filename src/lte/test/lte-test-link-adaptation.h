@@ -28,10 +28,7 @@ using namespace ns3;
 
 
 /**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Test 1.3 Link adaptation
+ * Test 1.3 Link adaptation
  */
 class LteLinkAdaptationTestSuite : public TestSuite
 {
@@ -40,39 +37,22 @@ public:
 };
 
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Test that LTE link adaptation works according to the theoretical model.
- */
 class LteLinkAdaptationTestCase : public TestCase
 {
 public:
-  /**
-   * Constructor
-   *
-   * \param name the reference name
-   * \param snrDb the SNR in dB
-   * \param loss the loss
-   * \param mcsIndex the DL se
-   */
   LteLinkAdaptationTestCase (std::string name, double snrDb, double loss, uint16_t mcsIndex);
   LteLinkAdaptationTestCase ();
   virtual ~LteLinkAdaptationTestCase ();
 
-  /**
-   * \brief DL scheduling function
-   * \param dlInfo the DL info
-   */
-  void DlScheduling (DlSchedulingCallbackInfo dlInfo);
+  void DlScheduling (uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
+                     uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2);
 
 private:
   virtual void DoRun (void);
 
-  double m_snrDb; ///< the SNR in dB
-  double m_loss; ///< the loss
-  uint16_t m_mcsIndex; ///< the MCS index
+  double m_snrDb;
+  double m_loss;
+  uint16_t m_mcsIndex;
 };
 
 #endif /* LTE_TEST_LINK_ADAPTATION_H */

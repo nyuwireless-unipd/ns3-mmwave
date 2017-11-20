@@ -46,15 +46,16 @@ NS_LOG_COMPONENT_DEFINE ("LteInterferenceTest");
 
 void
 LteTestDlSchedulingCallback (LteInterferenceTestCase *testcase, std::string path,
-		                     DlSchedulingCallbackInfo dlInfo)
+                             uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
+                             uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
 {
-  testcase->DlScheduling (dlInfo);
+  testcase->DlScheduling (frameNo, subframeNo, rnti, mcsTb1, sizeTb1, mcsTb2, sizeTb2);
 }
 
 void
 LteTestUlSchedulingCallback (LteInterferenceTestCase *testcase, std::string path,
                              uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                             uint8_t mcs, uint16_t sizeTb, uint8_t ccId)
+                             uint8_t mcs, uint16_t sizeTb)
 {
   testcase->UlScheduling (frameNo, subframeNo, rnti, mcs, sizeTb);
 }
@@ -159,6 +160,11 @@ LteInterferenceTestCase::DoRun (void)
   NetDeviceContainer ueDevs2;
   lteHelper->SetSchedulerType ("ns3::RrFfMacScheduler");
   lteHelper->SetSchedulerAttribute ("UlCqiFilter", EnumValue (FfMacScheduler::PUSCH_UL_CQI));
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
+
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs1 = lteHelper->InstallUeDevice (ueNodes1);
   ueDevs2 = lteHelper->InstallUeDevice (ueNodes2);
@@ -242,13 +248,14 @@ LteInterferenceTestCase::DoRun (void)
 
 
 void
-LteInterferenceTestCase::DlScheduling (DlSchedulingCallbackInfo dlInfo)
+LteInterferenceTestCase::DlScheduling (uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
+                                       uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
 {
-  NS_LOG_FUNCTION (dlInfo.frameNo << dlInfo.subframeNo << dlInfo.rnti << (uint32_t) dlInfo.mcsTb1 << dlInfo.sizeTb1 << (uint32_t) dlInfo.mcsTb2 << dlInfo.sizeTb2);
+  NS_LOG_FUNCTION (frameNo << subframeNo << rnti << (uint32_t) mcsTb1 << sizeTb1 << (uint32_t) mcsTb2 << sizeTb2);
   // need to allow for RRC connection establishment + CQI feedback reception + persistent data transmission
   if (Simulator::Now () > MilliSeconds (65))
     {
-      NS_TEST_ASSERT_MSG_EQ ((uint32_t)dlInfo.mcsTb1, (uint32_t)m_dlMcs, "Wrong DL MCS ");
+      NS_TEST_ASSERT_MSG_EQ ((uint32_t)mcsTb1, (uint32_t)m_dlMcs, "Wrong DL MCS ");
     }
 }
 

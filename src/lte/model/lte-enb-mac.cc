@@ -1037,22 +1037,30 @@ LteEnbMac::DoSchedDlConfigInd (FfMacSchedSapUser::SchedDlConfigIndParameters ind
       // Only one TB used
       if (ind.m_buildDataList.at (i).m_dci.m_tbsSize.size () == 1)
         {
-          m_dlScheduling (m_frameNo, m_subframeNo, ind.m_buildDataList.at (i).m_dci.m_rnti,
-                          ind.m_buildDataList.at (i).m_dci.m_mcs.at (0),
-                          ind.m_buildDataList.at (i).m_dci.m_tbsSize.at (0),
-                          0, 0
-                          );
-
+          DlSchedulingCallbackInfo dlSchedulingCallbackInfo;
+          dlSchedulingCallbackInfo.frameNo = m_frameNo;
+          dlSchedulingCallbackInfo.subframeNo = m_subframeNo;
+          dlSchedulingCallbackInfo.rnti = ind.m_buildDataList.at (i).m_dci.m_rnti;
+          dlSchedulingCallbackInfo.mcsTb1=ind.m_buildDataList.at (i).m_dci.m_mcs.at (0);
+          dlSchedulingCallbackInfo.sizeTb1 = ind.m_buildDataList.at (i).m_dci.m_tbsSize.at (0);
+          dlSchedulingCallbackInfo.mcsTb2 = 0;
+          dlSchedulingCallbackInfo.sizeTb2 = 0;
+          dlSchedulingCallbackInfo.componentCarrierId = 0;
+          m_dlScheduling(dlSchedulingCallbackInfo);
         }
       // Two TBs used
       else if (ind.m_buildDataList.at (i).m_dci.m_tbsSize.size () == 2)
         {
-          m_dlScheduling (m_frameNo, m_subframeNo, ind.m_buildDataList.at (i).m_dci.m_rnti,
-                          ind.m_buildDataList.at (i).m_dci.m_mcs.at (0),
-                          ind.m_buildDataList.at (i).m_dci.m_tbsSize.at (0),
-                          ind.m_buildDataList.at (i).m_dci.m_mcs.at (1),
-                          ind.m_buildDataList.at (i).m_dci.m_tbsSize.at (1)
-                          );
+          DlSchedulingCallbackInfo dlSchedulingCallbackInfo;
+          dlSchedulingCallbackInfo.frameNo = m_frameNo;
+          dlSchedulingCallbackInfo.subframeNo = m_subframeNo;
+          dlSchedulingCallbackInfo.rnti = ind.m_buildDataList.at (i).m_dci.m_rnti;
+          dlSchedulingCallbackInfo.mcsTb1=ind.m_buildDataList.at (i).m_dci.m_mcs.at (0);
+          dlSchedulingCallbackInfo.sizeTb1 = ind.m_buildDataList.at (i).m_dci.m_tbsSize.at (0);
+          dlSchedulingCallbackInfo.mcsTb2 = ind.m_buildDataList.at (i).m_dci.m_mcs.at (1);
+          dlSchedulingCallbackInfo.sizeTb2 = ind.m_buildDataList.at (i).m_dci.m_tbsSize.at (1);
+          dlSchedulingCallbackInfo.componentCarrierId = 0;
+          m_dlScheduling(dlSchedulingCallbackInfo);
         }
       else
         {
@@ -1112,7 +1120,7 @@ LteEnbMac::DoSchedUlConfigInd (FfMacSchedSapUser::SchedUlConfigIndParameters ind
   for (  uint32_t i  = 0; i < ind.m_dciList.size (); i++ )
     {
       m_ulScheduling (m_frameNo, m_subframeNo, ind.m_dciList.at (i).m_rnti,
-                      ind.m_dciList.at (i).m_mcs, ind.m_dciList.at (i).m_tbSize);
+                      ind.m_dciList.at (i).m_mcs, ind.m_dciList.at (i).m_tbSize, 0);
     }
 
 

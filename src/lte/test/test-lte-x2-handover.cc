@@ -161,7 +161,11 @@ LteX2HandoverTestCase::DoRun ()
   m_lteHelper->SetSchedulerType (m_schedulerType);
   m_lteHelper->SetHandoverAlgorithmType ("ns3::NoOpHandoverAlgorithm"); // disable automatic handover
   m_lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (m_useIdealRrc));
-  
+
+  // set DL and UL bandwidth. 
+  m_lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  m_lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
+
 
   NodeContainer enbNodes;
   enbNodes.Create (2);

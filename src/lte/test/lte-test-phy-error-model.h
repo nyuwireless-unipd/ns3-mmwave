@@ -30,10 +30,7 @@ using namespace ns3;
 
 
 /**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief This system test program creates different test cases with a single eNB and 
+ * This system test program creates different test cases with a single eNB and 
  * several UEs, all having the same Radio Bearer specification. In each test 
  * case, the UEs see the same SINR from the eNB; different test cases are 
  * implemented obtained by using different SINR values and different numbers of 
@@ -42,16 +39,6 @@ using namespace ns3;
 class LenaDataPhyErrorModelTestCase : public TestCase
 {
 public:
-  /**
-   * Constructor
-   *
-   * \param nUser the number of UE nodes
-   * \param dist the distance between nodes
-   * \param blerRef expected BLER
-   * \param toleranceRxPackets receive packet loss tolerance
-   * \param statsStartTime the start time for collecting statistics
-   * \param rngRun rng run
-   */
   LenaDataPhyErrorModelTestCase (uint16_t nUser, uint16_t dist,
                                  double blerRef, uint16_t toleranceRxPackets,
                                  Time statsStartTime, uint32_t rngRun);
@@ -59,44 +46,21 @@ public:
 
 private:
   virtual void DoRun (void);
-  /**
-   * Builds the test name string based on provided parameter values
-   * \param nUser the number of UE nodes
-   * \param dist the distance between nodes
-   * \param rngRun the rng run
-   * \returns the name string
-   */
   static std::string BuildNameString (uint16_t nUser, uint16_t dist, uint32_t rngRun);
-  uint16_t m_nUser; ///< number of UE nodes
-  double m_dist; ///< the distance between nodes
-  double m_blerRef; ///< the expected BLER
-  uint16_t m_toleranceRxPackets; ///< receive packet tolerance loss
+  uint16_t m_nUser;
+  uint16_t m_dist;
+  double m_blerRef;
+  uint16_t m_toleranceRxPackets;
   Time m_statsStartTime; ///< Extra time in the beginning of simulation to allow RRC connection establishment + SRS
-  uint32_t m_rngRun; ///< the rng run
+  uint32_t m_rngRun;
 
 };
 
 
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Lena Dl Ctrl Phy Error Model Test Case
- */
 class LenaDlCtrlPhyErrorModelTestCase : public TestCase
 {
 public:
-  /**
-   * Constructor
-   *
-   * \param nEnb the number of ENB nodes
-   * \param dist the distance between nodes
-   * \param blerRef expected BLER
-   * \param toleranceRxPackets receive packet loss tolerance
-   * \param statsStartTime the start time for collecting statistics
-   * \param rngRun rng number
-   */
   LenaDlCtrlPhyErrorModelTestCase (uint16_t nEnb, uint16_t dist,
                                    double blerRef, uint16_t toleranceRxPackets,
                                    Time statsStartTime, uint32_t rngRun);
@@ -104,31 +68,18 @@ public:
 
 private:
   virtual void DoRun (void);
-  /**
-   * Build name string
-   * \param nUser the number of UE nodes
-   * \param dist the distnace between nodes
-   * \param rngRun the rng run
-   * \returns the name string
-   */
   static std::string BuildNameString (uint16_t nUser, uint16_t dist, uint32_t rngRun);
-  uint16_t m_nEnb; ///< the number of ENB nodes
-  double m_dist; ///< the distance between nodes
-  double m_blerRef; ///< the expected BLER
-  uint16_t m_toleranceRxPackets; ///< receive packet tolerance loss
+  uint16_t m_nEnb;
+  uint16_t m_dist;
+  double m_blerRef;
+  uint16_t m_toleranceRxPackets;
   Time m_statsStartTime; ///< Extra time in the beginning of simulation to allow RRC connection establishment + SRS
-  uint32_t m_rngRun; ///< the rng run number
+  uint32_t m_rngRun;
 
 };
 
 
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Lena Test Phy Error Model Suite
- */
 class LenaTestPhyErrorModelSuite : public TestSuite
 {
 public:

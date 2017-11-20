@@ -298,6 +298,11 @@ LteHardFrTestCase::DoRun (void)
   NetDeviceContainer enbDevs;
   NetDeviceContainer ueDevs;
   lteHelper->SetSchedulerType (m_schedulerType);
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
+
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
 
@@ -407,6 +412,11 @@ LteStrictFrTestCase::DoRun (void)
   NetDeviceContainer enbDevs;
   NetDeviceContainer ueDevs;
   lteHelper->SetSchedulerType (m_schedulerType);
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
+
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
 
@@ -669,6 +679,10 @@ LteStrictFrAreaTestCase::DoRun (void)
   NetDeviceContainer ueDevs2;
   lteHelper->SetSchedulerType (m_schedulerType);
 
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
+
   lteHelper->SetFfrAlgorithmType ("ns3::LteFrStrictAlgorithm");
   lteHelper->SetFfrAlgorithmAttribute ("RsrqThreshold", UintegerValue (25));
   lteHelper->SetFfrAlgorithmAttribute ("CenterPowerOffset",
@@ -845,6 +859,10 @@ LteSoftFrAreaTestCase::DoRun (void)
   NetDeviceContainer ueDevs1;
   NetDeviceContainer ueDevs2;
   lteHelper->SetSchedulerType (m_schedulerType);
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
   lteHelper->SetFfrAlgorithmType ("ns3::LteFrSoftAlgorithm");
   lteHelper->SetFfrAlgorithmAttribute ("AllowCenterUeUseEdgeSubBand", BooleanValue (false));
@@ -1028,6 +1046,10 @@ LteSoftFfrAreaTestCase::DoRun (void)
   NetDeviceContainer ueDevs1;
   NetDeviceContainer ueDevs2;
   lteHelper->SetSchedulerType (m_schedulerType);
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
   lteHelper->SetFfrAlgorithmType ("ns3::LteFfrSoftAlgorithm");
   lteHelper->SetFfrAlgorithmAttribute ("CenterRsrqThreshold", UintegerValue (28));

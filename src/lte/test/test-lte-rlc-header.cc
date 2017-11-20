@@ -35,20 +35,10 @@ NS_LOG_COMPONENT_DEFINE ("TestLteRlcHeader");
 
 namespace ns3 {
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Test Utils
- */
 class TestUtils
 {
 public:
-  /**
-   * Function to convert packet contents in hex format
-   * \param pkt the packet
-   * \returns a text string
-   */
+  // Function to convert packet contents in hex format
   static std::string sprintPacketContentsHex (Ptr<Packet> pkt)
   {
     uint32_t psize = pkt->GetSize ();
@@ -62,11 +52,7 @@ public:
     return oss.str ();
   }
 
-  /**
-   * Function to convert packet contents in binary format
-   * \param pkt the packet
-   * \returns a text string
-   */
+  // Function to convert packet contents in binary format
   static std::string sprintPacketContentsBin (Ptr<Packet> pkt)
   {
     uint32_t psize = pkt->GetSize ();
@@ -80,10 +66,7 @@ public:
     return std::string (oss.str () + "\n");
   }
 
-  /**
-   * Function to log packet contents
-   * \param pkt the packet
-   */
+  // Function to log packet contents
   static void LogPacketContents (Ptr<Packet> pkt)
   {
     NS_LOG_DEBUG ("---- SERIALIZED PACKET CONTENTS (HEX): -------");
@@ -91,11 +74,6 @@ public:
     NS_LOG_DEBUG ("Bin: " << TestUtils::sprintPacketContentsBin (pkt));
   }
 
-  /**
-   * Log packet infor function
-   * \param source T
-   * \param s text string to log
-   */
   template <class T>
   static void LogPacketInfo (T source,std::string s)
   {
@@ -107,22 +85,9 @@ public:
 };
 
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Rlc Am Status Pdu Test Case
- */
 class RlcAmStatusPduTestCase : public TestCase
 {
 public:
-  /**
-   * Constructor
-   *
-   * \param ackSn the sequence number
-   * \param nackSnList list of nack sequence numbers
-   * \param hex string
-   */
   RlcAmStatusPduTestCase (SequenceNumber10 ackSn, 
 			  std::list<SequenceNumber10> nackSnList,
 			  std::string hex);
@@ -130,9 +95,9 @@ public:
 protected:  
   virtual void DoRun (void);
   
-  SequenceNumber10 m_ackSn; ///< ack sequence number  
-  std::list<SequenceNumber10> m_nackSnList; ///< list of nack sequence numbers
-  std::string m_hex; ///< hex string
+  SequenceNumber10 m_ackSn;  
+  std::list<SequenceNumber10> m_nackSnList;
+  std::string m_hex;
   
 };
 
@@ -188,17 +153,11 @@ RlcAmStatusPduTestCase::DoRun ()
 }
 
 
-/**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief Lte Rlc Header Test Suite
- */
 class LteRlcHeaderTestSuite : public TestSuite
 {
 public:
   LteRlcHeaderTestSuite ();
-} staticLteRlcHeaderTestSuiteInstance ; ///< the test suite
+} staticLteRlcHeaderTestSuiteInstance ;
 
 LteRlcHeaderTestSuite::LteRlcHeaderTestSuite ()
   : TestSuite ("lte-rlc-header", UNIT)

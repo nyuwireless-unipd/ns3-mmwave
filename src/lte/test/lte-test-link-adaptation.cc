@@ -46,9 +46,10 @@ NS_LOG_COMPONENT_DEFINE ("LteLinkAdaptationTest");
 
 void
 LteTestDlSchedulingCallback (LteLinkAdaptationTestCase *testcase, std::string path,
-                             DlSchedulingCallbackInfo dlInfo)
+                             uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
+                             uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
 {
-  testcase->DlScheduling (dlInfo);
+  testcase->DlScheduling (frameNo, subframeNo, rnti, mcsTb1, sizeTb1, mcsTb2, sizeTb2);
 }
 
 /**
@@ -176,6 +177,9 @@ LteLinkAdaptationTestCase::DoRun (void)
   NS_LOG_INFO ("SNR = " << m_snrDb << "  LOSS = " << m_loss);
   lteHelper->SetPathlossModelAttribute ("Loss", DoubleValue (m_loss));
 
+  // set DL bandwidth. 
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+
   // Create Nodes: eNodeB and UE
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -224,7 +228,8 @@ LteLinkAdaptationTestCase::DoRun (void)
 
 
 void
-LteLinkAdaptationTestCase::DlScheduling (DlSchedulingCallbackInfo dlInfo)
+LteLinkAdaptationTestCase::DlScheduling (uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
+                                         uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2) 
 {
   static bool firstTime = true;
 
@@ -242,8 +247,8 @@ LteLinkAdaptationTestCase::DlScheduling (DlSchedulingCallbackInfo dlInfo)
    */
   if (Simulator::Now ().GetSeconds () > 0.030)
     {
-      NS_LOG_INFO (m_snrDb << "\t" << m_mcsIndex << "\t" << (uint16_t)dlInfo.mcsTb1);
+      NS_LOG_INFO (m_snrDb << "\t" << m_mcsIndex << "\t" << (uint16_t)mcsTb1);
 
-      NS_TEST_ASSERT_MSG_EQ ((uint16_t)dlInfo.mcsTb1, m_mcsIndex, "Wrong MCS index");
+      NS_TEST_ASSERT_MSG_EQ ((uint16_t)mcsTb1, m_mcsIndex, "Wrong MCS index");
     }
 }

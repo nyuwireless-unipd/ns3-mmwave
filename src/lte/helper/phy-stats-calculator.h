@@ -118,8 +118,9 @@ public:
    * @param rnti C-RNTI scheduled
    * @param rsrp Reference Signal Received Power
    * @param sinr SINR averaged among RBs
+   * @param ccId component carrier Id
    */
-  void ReportCurrentCellRsrpSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti, double rsrp, double sinr);
+  void ReportCurrentCellRsrpSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti, double rsrp, double sinr, uint8_t ccId);
 
   /**
    * Notifies the stats calculator that an UE SINR report has occurred.
@@ -128,7 +129,7 @@ public:
    * @param rnti C-RNTI scheduled
    * @param sinrLinear measured and reported SINR value in linear
    */
-  void ReportUeSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti, double sinrLinear);
+  void ReportUeSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti, double sinrLinear, uint8_t ccId);
 
   /**
    * Notifies the stats calculator that an interference report has occurred.
@@ -146,10 +147,11 @@ public:
    * \param rnti 
    * \param rsrp 
    * \param sinr 
+   * \param ccId
    */
   static void ReportCurrentCellRsrpSinrCallback (Ptr<PhyStatsCalculator> phyStats,
                                           std::string path, uint16_t cellId, uint16_t rnti,
-                                          double rsrp, double sinr);
+                                          double rsrp, double sinr, uint8_t ccId);
   
   /** 
    * trace sink
@@ -161,7 +163,7 @@ public:
    * \param sinrLinear 
    */
   static void ReportUeSinr (Ptr<PhyStatsCalculator> phyStats, std::string path,
-                     uint16_t cellId, uint16_t rnti, double sinrLinear);
+                     uint16_t cellId, uint16_t rnti, double sinrLinear, uint8_t ccId);
 
   /** 
    * trace sink

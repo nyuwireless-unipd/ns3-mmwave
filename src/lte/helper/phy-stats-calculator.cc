@@ -109,7 +109,7 @@ PhyStatsCalculator::GetInterferenceFilename (void)
 
 void
 PhyStatsCalculator::ReportCurrentCellRsrpSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti,
-                                               double rsrp, double sinr)
+                                               double rsrp, double sinr, uint8_t ccId)
 {
   NS_LOG_FUNCTION (this << cellId <<  imsi << rnti  << rsrp << sinr);
   NS_LOG_INFO ("Write RSRP/SINR Phy Stats in " << GetCurrentCellRsrpSinrFilename ().c_str ());
@@ -147,7 +147,7 @@ PhyStatsCalculator::ReportCurrentCellRsrpSinr (uint16_t cellId, uint64_t imsi, u
 }
 
 void
-PhyStatsCalculator::ReportUeSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti,  double sinrLinear)
+PhyStatsCalculator::ReportUeSinr (uint16_t cellId, uint64_t imsi, uint16_t rnti,  double sinrLinear, uint8_t ccId)
 {
   NS_LOG_FUNCTION (this << cellId <<  imsi << rnti  << sinrLinear);
   NS_LOG_INFO ("Write SINR Linear Phy Stats in " << GetUeSinrFilename ().c_str ());
@@ -222,7 +222,7 @@ PhyStatsCalculator::ReportInterference (uint16_t cellId, Ptr<SpectrumValue> inte
 void
 PhyStatsCalculator::ReportCurrentCellRsrpSinrCallback (Ptr<PhyStatsCalculator> phyStats,
                       std::string path, uint16_t cellId, uint16_t rnti,
-                      double rsrp, double sinr)
+                      double rsrp, double sinr, uint8_t ccId)
 {
   NS_LOG_FUNCTION (phyStats << path);
   uint64_t imsi = 0;
@@ -237,12 +237,12 @@ PhyStatsCalculator::ReportCurrentCellRsrpSinrCallback (Ptr<PhyStatsCalculator> p
       phyStats->SetImsiPath (pathUePhy, imsi);
     }
 
-  phyStats->ReportCurrentCellRsrpSinr (cellId, imsi, rnti, rsrp,sinr);
+  phyStats->ReportCurrentCellRsrpSinr (cellId, imsi, rnti, rsrp,sinr, ccId);
 }
 
 void
 PhyStatsCalculator::ReportUeSinr (Ptr<PhyStatsCalculator> phyStats, std::string path,
-              uint16_t cellId, uint16_t rnti, double sinrLinear)
+              uint16_t cellId, uint16_t rnti, double sinrLinear, uint8_t ccId)
 {
   NS_LOG_FUNCTION (phyStats << path);
 
@@ -261,7 +261,7 @@ PhyStatsCalculator::ReportUeSinr (Ptr<PhyStatsCalculator> phyStats, std::string 
       phyStats->SetImsiPath (pathAndRnti.str (), imsi);
     }
 
-  phyStats->ReportUeSinr (cellId, imsi, rnti, sinrLinear);
+  phyStats->ReportUeSinr (cellId, imsi, rnti, sinrLinear, ccId);
 }
 
 void

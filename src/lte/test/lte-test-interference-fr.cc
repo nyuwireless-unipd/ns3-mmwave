@@ -84,7 +84,8 @@ LteInterferenceHardFrTestCase::LteInterferenceHardFrTestCase (std::string name, 
   : TestCase ("Test: " + name),
     m_d1 (d1),
     m_d2 (d2),
-    m_expectedDlSinrDb (10 * std::log10 (dlSinr))
+    m_expectedDlSinrDb (10 * std::log10 (dlSinr)),
+    m_expectedUlSinrDb (10 * std::log10 (ulSinr))
 {
   NS_LOG_INFO ("Creating LteInterferenceFrTestCase");
 }
@@ -111,6 +112,10 @@ LteInterferenceHardFrTestCase::DoRun (void)
   lteHelper->SetFfrAlgorithmType ("ns3::LteFrHardAlgorithm");
 
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
   // Create Nodes: eNodeB and UE
   NodeContainer enbNodes;
@@ -245,7 +250,9 @@ LteInterferenceStrictFrTestCase::LteInterferenceStrictFrTestCase (std::string na
     m_d1 (d1),
     m_d2 (d2),
     m_commonDlSinrDb (10 * std::log10 (commonDlSinr)),
+    m_commonUlSinrDb (10 * std::log10 (commonUlSinr)),
     m_edgeDlSinrDb (10 * std::log10 (edgeDlSinr)),
+    m_edgeUlSinrDb (10 * std::log10 (edgeUlSinr)),
     m_rspqThreshold (rspqThreshold)
 {
   NS_LOG_INFO ("Creating LteInterferenceFrTestCase");
@@ -279,6 +286,10 @@ LteInterferenceStrictFrTestCase::DoRun (void)
 
 
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
   // Create Nodes: eNodeB and UE
   NodeContainer enbNodes;
@@ -318,6 +329,10 @@ LteInterferenceStrictFrTestCase::DoRun (void)
   NetDeviceContainer ueDevs2;
   lteHelper->SetSchedulerType ("ns3::PfFfMacScheduler");
   lteHelper->SetSchedulerAttribute ("UlCqiFilter", EnumValue (FfMacScheduler::PUSCH_UL_CQI));
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
 
   lteHelper->SetFfrAlgorithmAttribute ("DlCommonSubBandwidth", UintegerValue (12));
