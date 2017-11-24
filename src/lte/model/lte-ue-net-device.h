@@ -17,6 +17,9 @@
  *
  * Author: Giuseppe Piro  <g.piro@poliba.it>
  *         Nicola Baldo <nbaldo@cttc.es>
+ * Modified by:
+ *          Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015)
+ *          Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation)
  */
 
 #ifndef LTE_UE_NET_DEVICE_H
@@ -29,7 +32,9 @@
 #include "ns3/nstime.h"
 #include "ns3/lte-phy.h"
 #include "ns3/eps-bearer.h"
-
+#include "ns3/component-carrier-ue.h"
+#include <vector>
+#include <map>
 
 namespace ns3 {
 
@@ -43,6 +48,7 @@ class LteUeMac;
 class LteUeRrc;
 class EpcUeNas;
 class EpcTft;
+class LteUeComponentCarrierManager;
 
 /**
  * \ingroup lte
@@ -52,6 +58,10 @@ class LteUeNetDevice : public LteNetDevice
 {
 
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   LteUeNetDevice (void);
@@ -62,15 +72,40 @@ public:
   // inherited from NetDevice
   virtual bool Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
 
-
+  /**
+   * \brief Get the MAC.
+   * \return the LTE UE MAC
+   */
   Ptr<LteUeMac> GetMac (void) const;
 
+  /**
+   * \brief Get the RRC.
+   * \return the LTE UE RRC
+   */
   Ptr<LteUeRrc> GetRrc () const;
 
+  /**
+   * \brief Get the Phy.
+   * \return the LTE UE Phy
+   */
   Ptr<LteUePhy> GetPhy (void) const;
 
+  /**
+   * \brief Get the NAS.
+   * \return the LTE UE NAS
+   */
   Ptr<EpcUeNas> GetNas (void) const;
+  
+  /**
+   * \brief Get the componentn carrier manager.
+   * \return the LTE UE component carrier manager
+   */
+  Ptr<LteUeComponentCarrierManager> GetComponentCarrierManager (void) const;
 
+  /**
+   * \brief Get the IMSI.
+   * \return the IMSI
+   */
   uint64_t GetImsi () const;
 
   /**
@@ -79,7 +114,7 @@ public:
    * Note that real-life handset typically supports more than one EARFCN, but
    * the sake of simplicity we assume only one EARFCN is supported.
    */
-  uint16_t GetDlEarfcn () const;
+  uint32_t GetDlEarfcn () const;
 
   /**
    * \param earfcn the downlink carrier frequency (EARFCN)
@@ -87,7 +122,7 @@ public:
    * Note that real-life handset typically supports more than one EARFCN, but
    * the sake of simplicity we assume only one EARFCN is supported.
    */
-  void SetDlEarfcn (uint16_t earfcn);
+  void SetDlEarfcn (uint32_t earfcn);
 
   /**
    * \brief Returns the CSG ID the UE is currently a member of.
@@ -120,6 +155,19 @@ public:
    */
   Ptr<LteEnbNetDevice> GetTargetEnb (void);
 
+  /**
+   * \brief Set the ComponentCarrier Map for the UE
+   * \param ccm the map of ComponentCarrierUe
+   */
+  void SetCcMap (std::map< uint8_t, Ptr<ComponentCarrierUe> > ccm);
+
+  /**
+   * \brief Get the ComponentCarrier Map for the UE
+   * \returns the map of ComponentCarrierUe
+   */
+  std::map< uint8_t, Ptr<ComponentCarrierUe> >  GetCcMap (void);
+
+
 
 protected:
   // inherited from Object
@@ -127,7 +175,7 @@ protected:
 
 
 private:
-  bool m_isConstructed;
+  bool m_isConstructed; ///< is constructed?
 
   /**
    * \brief Propagate attributes and configuration to sub-modules.
@@ -140,18 +188,19 @@ private:
    */
   void UpdateConfig ();
 
-  Ptr<LteEnbNetDevice> m_targetEnb;
+  Ptr<LteEnbNetDevice> m_targetEnb; ///< target ENB
 
-  Ptr<LteUeMac> m_mac;
-  Ptr<LteUePhy> m_phy;
-  Ptr<LteUeRrc> m_rrc;
-  Ptr<EpcUeNas> m_nas;
+  Ptr<LteUeRrc> m_rrc; ///< the RRC
+  Ptr<EpcUeNas> m_nas; ///< the NAS
+  Ptr<LteUeComponentCarrierManager> m_componentCarrierManager; ///< the component carrier manager
 
-  uint64_t m_imsi;
+  uint64_t m_imsi; ///< the IMSI
 
-  uint16_t m_dlEarfcn; /**< downlink carrier frequency */
+  uint32_t m_dlEarfcn; /**< downlink carrier frequency */
 
-  uint32_t m_csgId;
+  uint32_t m_csgId; ///< the CSG ID
+
+  std::map < uint8_t, Ptr<ComponentCarrierUe> > m_ccMap; ///< CC map
 
 }; // end of class LteUeNetDevice
 

@@ -16,6 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Jaume Nin <jnin@cttc.es>
+ * Modified by: Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015)
+ *              Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation) 
  */
 
 #ifndef MAC_STATS_CALCULATOR_H_
@@ -89,7 +91,7 @@ public:
    */
   std::string GetDlOutputFilename (void);
 
-   /**
+  /**
    * Notifies the stats calculator that an downlink scheduling has occurred.
    * @param cellId Cell ID of the attached Enb
    * @param imsi IMSI of the scheduled UE
@@ -121,7 +123,7 @@ public:
                      uint16_t rnti, uint8_t mcsTb, uint16_t sizeTb, uint8_t componentCarrierId);
 
   
-   /** 
+  /** 
    * Trace sink for the ns3::LteEnbMac::DlScheduling trace source
    * 
    * \param macStats 

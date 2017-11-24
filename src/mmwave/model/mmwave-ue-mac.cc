@@ -2,30 +2,30 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
  */
 
@@ -305,7 +305,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		}
 		else
 		{
-			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU	
+			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
 
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
@@ -358,7 +358,7 @@ MmWaveUeMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParamete
       {
         NS_LOG_INFO("Update entry");
       }
-      
+
       // update entry
       (*it).second = params;
     }
@@ -391,7 +391,7 @@ MmWaveUeMac::SendReportBufferStatus (void)
       return;
     }
   MacCeElement bsr{m_rnti, MacCeElement::BSR};
-  
+
   bool send = true;
 
   // BSR is reported for each LCG
@@ -526,14 +526,16 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 					              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
 					rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
 					currPos += (uint32_t)macSubheaders[ipdu].m_size;
-					it->second.macSapUser->ReceivePdu (rlcPdu);
+					//it->second.macSapUser->ReceivePdu (rlcPdu);
+          //CA
+          it->second.macSapUser->ReceivePdu (rlcPdu, tag.GetRnti(), macSubheaders[ipdu].m_lcid);
 				}
 				else
 				{
 					rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
 					currPos = p->GetSize ();
 					LteRlcSpecificLteMacSapUser* user = (LteRlcSpecificLteMacSapUser*)it->second.macSapUser;
-					user->ReceivePdu (rlcPdu);
+					user->ReceivePdu (rlcPdu, tag.GetRnti(), macSubheaders[ipdu].m_lcid);
 				}
 			}
 		}
@@ -562,7 +564,7 @@ MmWaveUeMac::RecvRaResponse (BuildRarListElement_s raResponse)
   NS_LOG_INFO ("got RAR for RAPID " << (uint32_t) m_raPreambleId << ", setting T-C-RNTI = " << raResponse.m_rnti);
   m_rnti = raResponse.m_rnti;
   m_cmacSapUser->SetTemporaryCellRnti (m_rnti);
-  
+
   m_cmacSapUser->NotifyRandomAccessSuccessful ();
   // trigger tx opportunity for Message 3 over LC 0
   // this is needed since Message 3's UL GRANT is in the RAR, not in UL-DCIs
@@ -574,10 +576,10 @@ MmWaveUeMac::RecvRaResponse (BuildRarListElement_s raResponse)
   // if ((lc0BsrIt != m_ulBsrReceived.end ())
   //     && (lc0BsrIt->second.txQueueSize > 0))
   //   {
-  //     NS_ASSERT_MSG (raResponse.m_grant.m_tbSize > lc0BsrIt->second.txQueueSize, 
-  //                    "segmentation of Message 3 is not allowed raResponse.m_grant.m_tbSize " << raResponse.m_grant.m_tbSize 
+  //     NS_ASSERT_MSG (raResponse.m_grant.m_tbSize > lc0BsrIt->second.txQueueSize,
+  //                    "segmentation of Message 3 is not allowed raResponse.m_grant.m_tbSize " << raResponse.m_grant.m_tbSize
   //                    << " lc0BsrIt->second.txQueueSize " << lc0BsrIt->second.txQueueSize);
-  //     lc0InfoIt->second.macSapUser->NotifyTxOpportunity (raResponse.m_grant.m_tbSize, 0, 0); 
+  //     lc0InfoIt->second.macSapUser->NotifyTxOpportunity (raResponse.m_grant.m_tbSize, 0, 0);
   //     lc0BsrIt->second.txQueueSize = 0;
   //   }
 }
@@ -903,7 +905,7 @@ MmWaveUeMac::SendRaPreamble(bool contention)
 		m_raPreambleId = g_raPreambleId++;
 	}
 	// else m_raPreambleId was already set
-	
+
 	/*raRnti should be subframeNo -1 */
 	m_raRnti = 1;
 	m_waitingForRaResponse = true;
@@ -922,7 +924,7 @@ MmWaveUeMac::DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint
   	bool contention = false;
   	if(!m_interRatHoCapable) // we assume that the LTE eNB can send directionality info, thus the UE has not to wait to collect updated info
   	{
-	  	SendRaPreamble (contention);  		
+	  	SendRaPreamble (contention);
   	}
   	else // instead in a single connectivity framework, the UE must wait for the periodic update with the channel estimate
   	{
@@ -951,7 +953,7 @@ MmWaveUeMac::DoRemoveLc (uint8_t lcId)
   NS_LOG_DEBUG("Remove LC in " << m_rnti << " lcid " << (uint32_t)lcId);
   if(m_lcInfoMap.find (lcId) != m_lcInfoMap.end ())
   {
-    m_lcInfoMap.erase(m_lcInfoMap.find(lcId));  
+    m_lcInfoMap.erase(m_lcInfoMap.find(lcId));
   }
 }
 
@@ -970,7 +972,7 @@ MmWaveUeMac::DoReset ()
 	{
 	  // don't delete CCCH)
 	  if (it->first == 0)
-	    {          
+	    {
 	      ++it;
 	    }
 	  else

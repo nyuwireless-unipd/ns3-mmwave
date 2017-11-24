@@ -58,6 +58,12 @@ public:
   LteUeCmacSapProvider*  GetLteUeCmacSapProvider (void);
 
   /**
+  * \brief Set the component carried ID
+  * \param index the component carrier ID
+  */
+  void SetComponentCarrierId (uint8_t index);
+
+  /**
   * \brief Get the PHY SAP user
   * \return a pointer to the SAP user of the PHY
   */
@@ -68,7 +74,7 @@ public:
   * \param s a pointer to the PHY SAP Provider
   */
   void SetLteUePhySapProvider (LteUePhySapProvider* s);
-  
+
   /**
   * \brief Forwarded from LteUePhySapUser: trigger the start from a new frame
   *
@@ -95,6 +101,13 @@ private:
   // forwarded from UE CMAC SAP
   void DoConfigureRach (LteUeCmacSapProvider::RachConfig rc);
   void DoStartContentionBasedRandomAccessProcedure ();
+
+  /**
+   * Set RNTI
+   *
+   * \param rnti the RNTI
+   */
+   void DoSetRnti (uint16_t rnti);
   void DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t rapId, uint8_t prachMask);
   void DoAddLc (uint8_t lcId, LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
   void DoRemoveLc (uint8_t lcId);
@@ -103,7 +116,7 @@ private:
   // forwarded from PHY SAP
   void DoReceivePhyPdu (Ptr<Packet> p);
   void DoReceiveLteControlMessage (Ptr<LteControlMessage> msg);
-  
+
   // internal methods
   void RandomlySelectAndSendRaPreamble ();
   void SendRaPreamble (bool contention);
@@ -113,6 +126,8 @@ private:
   void SendReportBufferStatus (void);
   void RefreshHarqProcessesPacketBuffer (void);
 
+  /// component carrier Id --> used to address sap
+  uint8_t m_componentCarrierId;
 private:
 
   struct LcInfo
@@ -130,13 +145,13 @@ private:
 
   LteUePhySapProvider* m_uePhySapProvider;
   LteUePhySapUser* m_uePhySapUser;
-  
+
   std::map <uint8_t, LteMacSapProvider::ReportBufferStatusParameters> m_ulBsrReceived; // BSR received from RLC (the last one)
-  
-  
+
+
   Time m_bsrPeriodicity;
   Time m_bsrLast;
-  
+
   bool m_freshUlBsr; // true when a BSR has been received in the last TTI
 
   uint8_t m_harqProcessId;

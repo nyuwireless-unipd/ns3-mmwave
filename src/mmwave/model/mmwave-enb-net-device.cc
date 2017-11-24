@@ -2,23 +2,23 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
@@ -44,6 +44,7 @@
 #include <ns3/ipv4-l3-protocol.h>
 #include <ns3/abort.h>
 #include <ns3/log.h>
+#include <ns3/lte-enb-component-carrier-manager.h>
 
 namespace ns3{
 
@@ -222,7 +223,23 @@ MmWaveEnbNetDevice::UpdateConfig (void)
 		{
 			NS_LOG_LOGIC (this << " Configure cell " << m_cellId);
 			// we have to make sure that this function is called only once
-			m_rrc->ConfigureCell (m_Bandwidth, m_Bandwidth, m_Earfcn, m_Earfcn, m_cellId);
+			//m_rrc->ConfigureCell (m_Bandwidth, m_Bandwidth, m_Earfcn, m_Earfcn, m_cellId);
+
+			//the new ConfigureCell method signature is:
+			//void ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf);
+			//Create the ccMap
+			std::map<uint8_t,Ptr<ComponentCarrierEnb> > ccMap;
+			//only the primary carrier is active (CA not already implemented)
+			Ptr <ComponentCarrierEnb> cc =  CreateObject<ComponentCarrierEnb> ();
+      cc->SetUlBandwidth(m_Bandwidth);
+      cc->SetDlBandwidth(m_Bandwidth);
+      cc->SetDlEarfcn(m_Earfcn);
+      cc->SetUlEarfcn(m_Earfcn);
+      cc->SetAsPrimary(true);
+			cc->SetCellId (m_cellId);
+      ccMap.insert(std::pair<uint8_t,Ptr<ComponentCarrierEnb>>(0,cc));
+			m_rrc -> ConfigureCell(ccMap);
+
 			m_isConfigured = true;
 		}
 
@@ -238,5 +255,3 @@ MmWaveEnbNetDevice::UpdateConfig (void)
 	}
 
 }
-
-

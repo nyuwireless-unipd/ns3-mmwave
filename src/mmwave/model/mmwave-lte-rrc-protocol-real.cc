@@ -42,7 +42,7 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveLteRrcProtocolReal");
 
-const Time RRC_REAL_MSG_DELAY = MicroSeconds (500); 
+const Time RRC_REAL_MSG_DELAY = MicroSeconds (500);
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveLteUeRrcProtocolReal);
 
@@ -52,7 +52,7 @@ MmWaveLteUeRrcProtocolReal::MmWaveLteUeRrcProtocolReal ()
 {
   m_ueRrcSapUser = new MemberLteUeRrcSapUser<MmWaveLteUeRrcProtocolReal> (this);
   m_completeSetupParameters.srb0SapUser = new LteRlcSpecificLteRlcSapUser<MmWaveLteUeRrcProtocolReal> (this);
-  m_completeSetupParameters.srb1SapUser = new LtePdcpSpecificLtePdcpSapUser<MmWaveLteUeRrcProtocolReal> (this);    
+  m_completeSetupParameters.srb1SapUser = new LtePdcpSpecificLtePdcpSapUser<MmWaveLteUeRrcProtocolReal> (this);
 }
 
 MmWaveLteUeRrcProtocolReal::~MmWaveLteUeRrcProtocolReal ()
@@ -80,35 +80,35 @@ MmWaveLteUeRrcProtocolReal::GetTypeId (void)
   return tid;
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::SetLteUeRrcSapProvider (LteUeRrcSapProvider* p)
 {
   m_ueRrcSapProvider = p;
 }
 
-LteUeRrcSapUser* 
+LteUeRrcSapUser*
 MmWaveLteUeRrcProtocolReal::GetLteUeRrcSapUser ()
 {
   return m_ueRrcSapUser;
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::SetUeRrc (Ptr<LteUeRrc> rrc)
 {
   m_rrc = rrc;
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSetup (LteUeRrcSapUser::SetupParameters params)
 {
   NS_LOG_FUNCTION (this);
 
   m_setupParameters.srb0SapProvider = params.srb0SapProvider;
-  m_setupParameters.srb1SapProvider = params.srb1SapProvider; 
+  m_setupParameters.srb1SapProvider = params.srb1SapProvider;
   m_ueRrcSapProvider->CompleteSetup (m_completeSetupParameters);
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg)
 {
   // initialize the RNTI and get the EnbLteRrcSapProvider for the
@@ -116,10 +116,10 @@ MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionRequest (LteRrcSap::RrcConnection
   m_rnti = m_rrc->GetRnti ();
   SetEnbRrcSapProvider ();
 
-  Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+  Simulator::Schedule (RRC_REAL_MSG_DELAY,
                        &LteEnbRrcSapProvider::RecvRrcConnectionRequest,
                        m_enbRrcSapProvider,
-                       m_rnti, 
+                       m_rnti,
                        msg);
 
   // real RRC code
@@ -138,7 +138,7 @@ MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionRequest (LteRrcSap::RrcConnection
   // m_setupParameters.srb0SapProvider->TransmitPdcpPdu (transmitPdcpPduParameters);
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupCompleted msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -159,7 +159,7 @@ MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionSetupCompleted (LteRrcSap::RrcCon
     }
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionReconfigurationCompleted msg)
 {
   // re-initialize the RNTI and get the EnbLteRrcSapProvider for the
@@ -182,7 +182,7 @@ MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionReconfigurationCompleted (LteRrcS
   m_setupParameters.srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSendMeasurementReport (LteRrcSap::MeasurementReport msg)
 {
   // re-initialize the RNTI and get the EnbLteRrcSapProvider for the
@@ -205,7 +205,7 @@ MmWaveLteUeRrcProtocolReal::DoSendMeasurementReport (LteRrcSap::MeasurementRepor
   m_setupParameters.srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti, uint16_t mmWaveCellId)
 {
   m_rnti = m_rrc->GetRnti ();
@@ -227,7 +227,7 @@ MmWaveLteUeRrcProtocolReal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveR
 }
 
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::RrcConnectionReestablishmentRequest msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -245,7 +245,7 @@ MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap
   m_setupParameters.srb0SapProvider->TransmitPdcpPdu (transmitPdcpPduParameters);
 }
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionReestablishmentComplete msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -264,7 +264,7 @@ MmWaveLteUeRrcProtocolReal::DoSendRrcConnectionReestablishmentComplete (LteRrcSa
 }
 
 
-void 
+void
 MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
 {
   uint16_t cellId = m_rrc->GetCellId ();
@@ -274,13 +274,13 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
   Ptr<MmWaveEnbNetDevice> mmWaveEnbDev;
   NodeList::Iterator listEnd = NodeList::End ();
   bool found = false;
-  for (NodeList::Iterator i = NodeList::Begin (); 
-       (i != listEnd) && (!found); 
+  for (NodeList::Iterator i = NodeList::Begin ();
+       (i != listEnd) && (!found);
        ++i)
     {
       Ptr<Node> node = *i;
       int nDevs = node->GetNDevices ();
-      for (int j = 0; 
+      for (int j = 0;
            (j < nDevs) && (!found);
            j++)
         {
@@ -291,22 +291,22 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
               mmWaveEnbDev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice>();
               if(mmWaveEnbDev == 0)
               {
-                 continue;                
-              }  
-              else 
+                 continue;
+              }
+              else
               {
                 if (mmWaveEnbDev->GetCellId () == cellId)
                 {
-                  found = true;          
+                  found = true;
                   break;
-                }   
+                }
               }
             }
           else
             {
               if (enbDev->GetCellId () == cellId)
                 {
-                  found = true;          
+                  found = true;
                   break;
                 }
             }
@@ -315,13 +315,13 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
   NS_ASSERT_MSG (found, " Unable to find eNB with CellId =" << cellId);
   if(enbDev != 0)
   {
-    m_enbRrcSapProvider = enbDev->GetRrc ()->GetLteEnbRrcSapProvider ();  
+    m_enbRrcSapProvider = enbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
     Ptr<MmWaveLteEnbRrcProtocolReal> enbRrcProtocolReal = enbDev->GetRrc ()->GetObject<MmWaveLteEnbRrcProtocolReal> ();
     enbRrcProtocolReal->SetUeRrcSapProvider (m_rnti, m_ueRrcSapProvider);
   }
   else if (mmWaveEnbDev != 0)
   {
-    m_enbRrcSapProvider = mmWaveEnbDev->GetRrc ()->GetLteEnbRrcSapProvider ();  
+    m_enbRrcSapProvider = mmWaveEnbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
     Ptr<MmWaveLteEnbRrcProtocolReal> enbRrcProtocolReal = mmWaveEnbDev->GetRrc ()->GetObject<MmWaveLteEnbRrcProtocolReal> ();
     enbRrcProtocolReal->SetUeRrcSapProvider (m_rnti, m_ueRrcSapProvider);
   }
@@ -443,11 +443,11 @@ MmWaveLteEnbRrcProtocolReal::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
   delete m_enbRrcSapUser;
-  for (std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters>::iterator 
+  for (std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters>::iterator
          it = m_completeSetupUeParametersMap.begin ();
        it != m_completeSetupUeParametersMap.end ();
        ++it)
-    {     
+    {
       delete it->second.srb0SapUser;
       delete it->second.srb1SapUser;
     }
@@ -465,25 +465,25 @@ MmWaveLteEnbRrcProtocolReal::GetTypeId (void)
   return tid;
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::SetLteEnbRrcSapProvider (LteEnbRrcSapProvider* p)
 {
   m_enbRrcSapProvider = p;
 }
 
-LteEnbRrcSapUser* 
+LteEnbRrcSapUser*
 MmWaveLteEnbRrcProtocolReal::GetLteEnbRrcSapUser ()
 {
   return m_enbRrcSapUser;
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::SetCellId (uint16_t cellId)
 {
   m_cellId = cellId;
 }
 
-LteUeRrcSapProvider* 
+LteUeRrcSapProvider*
 MmWaveLteEnbRrcProtocolReal::GetUeRrcSapProvider (uint16_t rnti)
 {
   std::map<uint16_t, LteUeRrcSapProvider*>::const_iterator it;
@@ -492,7 +492,7 @@ MmWaveLteEnbRrcProtocolReal::GetUeRrcSapProvider (uint16_t rnti)
   return it->second;
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvider* p)
 {
   std::map<uint16_t, LteUeRrcSapProvider*>::iterator it;
@@ -501,7 +501,7 @@ MmWaveLteEnbRrcProtocolReal::SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProv
   it->second = p;
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params)
 {
   NS_LOG_FUNCTION (this << rnti);
@@ -537,14 +537,14 @@ MmWaveLteEnbRrcProtocolReal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUe
 
   // just create empty entry, the UeRrcSapProvider will be set by the
   // ue upon connection request or connection reconfiguration
-  // completed 
+  // completed
   m_enbRrcSapProviderMap[rnti] = 0;
 
   // Store SetupUeParameters
   m_setupUeParametersMap[rnti] = params;
 
   LteEnbRrcSapProvider::CompleteSetupUeParameters completeSetupUeParameters;
-  std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters>::iterator 
+  std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters>::iterator
     csupIt = m_completeSetupUeParametersMap.find (rnti);
   if (csupIt == m_completeSetupUeParametersMap.end ())
     {
@@ -554,7 +554,7 @@ MmWaveLteEnbRrcProtocolReal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUe
       completeSetupUeParameters.srb0SapUser = srb0SapUser;
       completeSetupUeParameters.srb1SapUser = srb1SapUser;
       // Store LteRlcSapUser, LtePdcpSapUser
-      m_completeSetupUeParametersMap[rnti] = completeSetupUeParameters;      
+      m_completeSetupUeParametersMap[rnti] = completeSetupUeParameters;
     }
   else
     {
@@ -563,11 +563,11 @@ MmWaveLteEnbRrcProtocolReal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUe
   m_enbRrcSapProvider->CompleteSetupUe (rnti, completeSetupUeParameters);
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoRemoveUe (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << rnti);
-  std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters>::iterator 
+  std::map<uint16_t, LteEnbRrcSapProvider::CompleteSetupUeParameters>::iterator
     it = m_completeSetupUeParametersMap.find (rnti);
   NS_ASSERT (it != m_completeSetupUeParametersMap.end ());
   delete it->second.srb0SapUser;
@@ -577,8 +577,8 @@ MmWaveLteEnbRrcProtocolReal::DoRemoveUe (uint16_t rnti)
   m_setupUeParametersMap.erase (rnti);
 }
 
-void 
-MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformation msg)
+void
+MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg)
 {
   NS_LOG_FUNCTION (this << m_cellId);
   // walk list of all nodes to get UEs with this cellId
@@ -594,17 +594,17 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformati
           Ptr<MmWaveUeNetDevice> ueDev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
           if (ueDev != 0)
           {
-            ueRrc = ueDev->GetRrc ();              
+            ueRrc = ueDev->GetRrc ();
             NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
             if (ueRrc->GetCellId () == m_cellId)
-            {       
+            {
               NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
               ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-              Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+              Simulator::Schedule (RRC_REAL_MSG_DELAY,
                                    &LteUeRrcSapProvider::RecvSystemInformation,
-                                   ueRrc->GetLteUeRrcSapProvider (), 
-                                   msg);          
-            }             
+                                   ueRrc->GetLteUeRrcSapProvider (),
+                                   msg);
+            }
           }
           else
           {
@@ -612,25 +612,25 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformati
             Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
             if (mcUeDev != 0)
             {
-              ueRrc = mcUeDev->GetLteRrc ();              
+              ueRrc = mcUeDev->GetLteRrc ();
               NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
               if (ueRrc->GetCellId () == m_cellId)
-              {       
+              {
                 NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
                 ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-                Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+                Simulator::Schedule (RRC_REAL_MSG_DELAY,
                                      &LteUeRrcSapProvider::RecvSystemInformation,
-                                     ueRrc->GetLteUeRrcSapProvider (), 
-                                     msg);          
+                                     ueRrc->GetLteUeRrcSapProvider (),
+                                     msg);
               }   //if the first condition is false, the second is not executed
               else if(mcUeDev->GetMmWaveRrc() != 0 && mcUeDev->GetMmWaveRrc()->GetCellId() == m_cellId)
               {
                 NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
-                Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+                Simulator::Schedule (RRC_REAL_MSG_DELAY,
                                      &LteUeRrcSapProvider::RecvSystemInformation,
-                                     mcUeDev->GetMmWaveRrc()->GetLteUeRrcSapProvider (), 
-                                     msg); 
-              }          
+                                     mcUeDev->GetMmWaveRrc()->GetLteUeRrcSapProvider (),
+                                     msg);
+              }
             }
             else
             {
@@ -638,25 +638,25 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (LteRrcSap::SystemInformati
               Ptr<LteUeNetDevice> ueDev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
               if (ueDev != 0)
               {
-                ueRrc = ueDev->GetRrc ();              
+                ueRrc = ueDev->GetRrc ();
                 NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
                 if (ueRrc->GetCellId () == m_cellId)
-                {       
+                {
                   NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
                   ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-                  Simulator::Schedule (RRC_REAL_MSG_DELAY, 
+                  Simulator::Schedule (RRC_REAL_MSG_DELAY,
                                        &LteUeRrcSapProvider::RecvSystemInformation,
-                                       ueRrc->GetLteUeRrcSapProvider (), 
-                                       msg);          
-                }             
+                                       ueRrc->GetLteUeRrcSapProvider (),
+                                       msg);
+                }
               }
             }
           }
         }
-    } 
+    }
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -682,7 +682,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap:
     }
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::RrcConnectionReject msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -701,7 +701,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap
 }
 
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionSwitch (uint16_t rnti, LteRrcSap::RrcConnectionSwitch msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -719,7 +719,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionSwitch (uint16_t rnti, LteRrcSap
   m_setupUeParametersMap[rnti].srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveId)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -737,7 +737,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t m
   m_setupUeParametersMap[rnti].srb0SapProvider->TransmitPdcpPdu (transmitPdcpPduParameters);
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -755,7 +755,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReconfiguration (uint16_t rnti, 
   m_setupUeParametersMap[rnti].srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -773,7 +773,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReestablishment (uint16_t rnti, 
   m_setupUeParametersMap[rnti].srb0SapProvider->TransmitPdcpPdu (transmitPdcpPduParameters);
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReestablishmentReject (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentReject msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -791,7 +791,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReestablishmentReject (uint16_t 
   m_setupUeParametersMap[rnti].srb0SapProvider->TransmitPdcpPdu (transmitPdcpPduParameters);
 }
 
-void 
+void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::RrcConnectionRelease msg)
 {
   Ptr<Packet> packet = Create<Packet> ();
@@ -890,7 +890,7 @@ MmWaveLteEnbRrcProtocolReal::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduPar
     }
 }
 
-Ptr<Packet> 
+Ptr<Packet>
 MmWaveLteEnbRrcProtocolReal::DoEncodeHandoverPreparationInformation (LteRrcSap::HandoverPreparationInfo msg)
 {
   HandoverPreparationInfoHeader h;
@@ -901,7 +901,7 @@ MmWaveLteEnbRrcProtocolReal::DoEncodeHandoverPreparationInformation (LteRrcSap::
   return p;
 }
 
-LteRrcSap::HandoverPreparationInfo 
+LteRrcSap::HandoverPreparationInfo
 MmWaveLteEnbRrcProtocolReal::DoDecodeHandoverPreparationInformation (Ptr<Packet> p)
 {
   HandoverPreparationInfoHeader h;
@@ -910,7 +910,7 @@ MmWaveLteEnbRrcProtocolReal::DoDecodeHandoverPreparationInformation (Ptr<Packet>
   return msg;
 }
 
-Ptr<Packet> 
+Ptr<Packet>
 MmWaveLteEnbRrcProtocolReal::DoEncodeHandoverCommand (LteRrcSap::RrcConnectionReconfiguration msg)
 {
   RrcConnectionReconfigurationHeader h;

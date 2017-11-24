@@ -2,7 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -25,7 +25,7 @@
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
  */
 
@@ -52,8 +52,8 @@ class LteUeRrc;
 /**
  * Models the transmission of RRC messages from the UE to the eNB in
  * an ideal fashion, without errors and without consuming any radio
- * resources. 
- * 
+ * resources.
+ *
  */
 class MmWaveUeRrcProtocolIdeal : public Object
 {
@@ -70,9 +70,9 @@ public:
 
   void SetLteUeRrcSapProvider (LteUeRrcSapProvider* p);
   LteUeRrcSapUser* GetLteUeRrcSapUser ();
-  
+
   void SetUeRrc (Ptr<LteUeRrc> rrc);
-  
+
 
 private:
 
@@ -93,15 +93,15 @@ private:
   LteUeRrcSapProvider* m_ueRrcSapProvider;
   LteUeRrcSapUser* m_ueRrcSapUser;
   LteEnbRrcSapProvider* m_enbRrcSapProvider;
-  
+
 };
 
 
 /**
  * Models the transmission of RRC messages from the UE to the eNB in
  * an ideal fashion, without errors and without consuming any radio
- * resources. 
- * 
+ * resources.
+ *
  */
 class MmWaveEnbRrcProtocolIdeal : public Object
 {
@@ -129,8 +129,8 @@ private:
   // methods forwarded from LteEnbRrcSapUser
   void DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params);
   void DoRemoveUe (uint16_t rnti);
-  void DoSendSystemInformation (LteRrcSap::SystemInformation msg);
-  void SendSystemInformation (LteRrcSap::SystemInformation msg);
+  void DoSendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg);
+  void SendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg);
   void DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg);
   void DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg);
   void DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg);
@@ -150,7 +150,7 @@ private:
   LteEnbRrcSapProvider* m_enbRrcSapProvider;
   LteEnbRrcSapUser* m_enbRrcSapUser;
   std::map<uint16_t, LteUeRrcSapProvider*> m_enbRrcSapProviderMap;
-  
+
 };
 
 

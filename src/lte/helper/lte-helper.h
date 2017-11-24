@@ -16,6 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Nicola Baldo <nbaldo@cttc.es>
+ * Modified by: Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015)
+ *              Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation) 
  */
 
 #ifndef LTE_HELPER_H
@@ -37,6 +39,9 @@
 #include <ns3/radio-bearer-stats-connector.h>
 #include <ns3/epc-tft.h>
 #include <ns3/mobility-model.h>
+#include <ns3/component-carrier-enb.h>
+#include <ns3/cc-helper.h>
+#include <map>
 
 namespace ns3 {
 
@@ -76,6 +81,7 @@ class SpectrumPropagationLossModel;
  *     * Handover algorithm
  *     * FFR (frequency reuse) algorithm
  *     * ANR (automatic neighbour relation)
+ *     * CCM (Carrier Component Manager) 
  *   + EPC related models (EPC application, Internet stack, X2 interface)
  * - UE node(s)
  *   + Mobility model
@@ -128,7 +134,7 @@ public:
    *             inheriting from ns3::PropagationLossModel, for example:
    *             "ns3::FriisPropagationLossModel"
    */
-  void SetPathlossModelType (std::string type);
+  void SetPathlossModelType (TypeId type);
 
   /**
    * Set an attribute for the path loss models to be created.
@@ -263,7 +269,15 @@ public:
    */
   void SetUeAntennaModelAttribute (std::string n, const AttributeValue &v);
 
-  /** 
+  /**
+   * This method is used to send the ComponentCarrier map created with CcHelper
+   * to the helper, the structure will be used within InstallSingleEnbDevice
+   *
+   * \param ccmap the component carrier map
+   */
+   void SetCcPhyParams (std::map< uint8_t, ComponentCarrier> ccmap);
+
+  /**
    * Set the type of spectrum channel to be used in both DL and UL.
    *
    * \param type type of spectrum channel model, must be a type name of any
@@ -279,6 +293,51 @@ public:
    * \param v the value of the attribute
    */
   void SetSpectrumChannelAttribute (std::string n, const AttributeValue &v);
+
+  /**
+   * Set the type of carrier component algorithm to be used by eNodeB devices.
+   *
+   * \param type type of carrier component manager
+   *
+   */
+  void SetEnbComponentCarrierManagerType (std::string type);
+
+  /**
+   *
+   * \return the carrier enb component carrier manager type
+   */
+  std::string GetEnbComponentCarrierManagerType () const;
+
+  /**
+   * Set an attribute for the enb component carrier manager to be created.
+   *
+   * \param n the name of the attribute
+   * \param v the value of the attribute
+   */
+  void SetEnbComponentCarrierManagerAttribute (std::string n, const AttributeValue &v);
+
+  /**
+   * Set the type of Component Carrier Manager to be used by Ue devices.
+   *
+   * \param type type of UE Component Carrier Manager
+   *
+   */
+  void SetUeComponentCarrierManagerType (std::string type);
+
+
+  /**
+   *
+   * \return the carrier ue component carrier manager type
+   */
+  std::string GetUeComponentCarrierManagerType () const;
+
+  /**
+   * Set an attribute for the ue component carrier manager to be created.
+   *
+   * \param n the name of the attribute
+   * \param v the value of the attribute
+   */
+  void SetUeComponentCarrierManagerAttribute (std::string n, const AttributeValue &v);
 
   /**
    * Create a set of eNodeB devices.
@@ -401,6 +460,7 @@ public:
    * \param ueDevices the set of UE devices
    * \param bearer the characteristics of the bearer to be activated
    * \param tft the Traffic Flow Template that identifies the traffic to go on this bearer
+   * \returns bearer ID
    */
   uint8_t ActivateDedicatedEpsBearer (NetDeviceContainer ueDevices, EpsBearer bearer, Ptr<EpcTft> tft);
 
@@ -410,6 +470,7 @@ public:
    * \param ueDevice the UE device
    * \param bearer the characteristics of the bearer to be activated
    * \param tft the Traffic Flow Template that identifies the traffic to go on this bearer.
+   * \returns bearer ID
    */
   uint8_t ActivateDedicatedEpsBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer, Ptr<EpcTft> tft);
 
@@ -454,6 +515,21 @@ public:
   void HandoverRequest (Time hoTime, Ptr<NetDevice> ueDev,
                         Ptr<NetDevice> sourceEnbDev, Ptr<NetDevice> targetEnbDev);
 
+
+  /**
+   * Manually trigger an X2-based handover.
+   *
+   * \param hoTime when the handover shall be initiated
+   * \param ueDev the UE that hands off, must be of the type LteUeNetDevice
+   * \param sourceEnbDev source eNB, must be of the type LteEnbNetDevice
+   *                     (originally the UE is attached to this eNB)
+   * \param targetCellId target CellId (the UE primary component carrier will
+   *                     be connected to this cell after the handover)
+   *
+   * \warning Requires the use of EPC mode. See SetEpcHelper() method
+   */
+  void HandoverRequest (Time hoTime, Ptr<NetDevice> ueDev,
+                        Ptr<NetDevice> sourceEnbDev, uint16_t targetCellId);
 
   /** 
    * Activate a Data Radio Bearer on a given UE devices (for LTE-only simulation).
@@ -590,11 +666,33 @@ public:
   */
   int64_t AssignStreams (NetDeviceContainer c, int64_t stream);
 
+  /** 
+   * \return a pointer to the SpectrumChannel instance used for the uplink
+   */
+  Ptr<SpectrumChannel> GetUplinkSpectrumChannel (void) const;
+
+
+  /** 
+   * \return a pointer to the SpectrumChannel instance used for the downlink
+   */
+  Ptr<SpectrumChannel> GetDownlinkSpectrumChannel (void) const;
+
+
 protected:
   // inherited from Object
   virtual void DoInitialize (void);
 
 private:
+
+  /**
+   * A private function used for component carrier configuration.
+   *
+   * \param ulEarfcn uplink EARFCN - not control on the validity at this point
+   * \param dlEarfcn downlink EARFCN - not control on the validity at this point	
+   * \param ulbw uplink bandwidth for the current CC
+   * \param dlbw downlink bandwidth for the current CC
+   */
+  void DoComponentCarrierConfigure (uint32_t ulEarfcn, uint32_t dlEarfcn, uint8_t ulbw, uint8_t dlbw);
   /**
    * Create an eNodeB device (LteEnbNetDevice) on the given node.
    * \param n the node where the device is to be installed
@@ -614,16 +712,15 @@ private:
    * \param ueDev the UE that hands off, must be of the type LteUeNetDevice
    * \param sourceEnbDev source eNB, must be of the type LteEnbNetDevice
    *                     (originally the UE is attached to this eNB)
-   * \param targetEnbDev target eNB, must be of the type LteEnbNetDevice
-   *                     (the UE would be connected to this eNB after the
-   *                     handover)
+   * \param targetCellId target CellId (the UE primary component carrier will
+   *                     be connected to this cell after the handover)
    *
    * This method is normally scheduled by HandoverRequest() to run at a specific
    * time where a manual handover is desired by the simulation user.
    */
   void DoHandoverRequest (Ptr<NetDevice> ueDev,
                           Ptr<NetDevice> sourceEnbDev,
-                          Ptr<NetDevice> targetEnbDev);
+                          uint16_t targetCellId);
 
 
   /**
@@ -637,13 +734,19 @@ private:
    */
   void DoDeActivateDedicatedEpsBearer (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice, uint8_t bearerId);
 
+  /// Function that performs a channel model initialization of all component carriers
+  void ChannelModelInitialization (void);
+
+  /**
+   * \brief This function create the component carrier based on provided configuration parameters
+   */
 
   /// The downlink LTE channel used in the simulation.
   Ptr<SpectrumChannel> m_downlinkChannel;
   /// The uplink LTE channel used in the simulation.
   Ptr<SpectrumChannel> m_uplinkChannel;
   /// The path loss model used in the downlink channel.
-  Ptr<Object> m_downlinkPathlossModel;
+  Ptr<Object>  m_downlinkPathlossModel;
   /// The path loss model used in the uplink channel.
   Ptr<Object> m_uplinkPathlossModel;
 
@@ -653,6 +756,10 @@ private:
   ObjectFactory m_ffrAlgorithmFactory;
   /// Factory of handover algorithm object.
   ObjectFactory m_handoverAlgorithmFactory;
+  /// Factory of enb component carrier manager object.
+  ObjectFactory m_enbComponentCarrierManagerFactory;
+  /// Factory of ue component carrier manager object.
+  ObjectFactory m_ueComponentCarrierManagerFactory;
   /// Factory of LteEnbNetDevice objects.
   ObjectFactory m_enbNetDeviceFactory;
   /// Factory of antenna object for eNodeB.
@@ -661,10 +768,8 @@ private:
   ObjectFactory m_ueNetDeviceFactory;
   /// Factory of antenna object for UE.
   ObjectFactory m_ueAntennaModelFactory;
-  /// Factory of path loss model object for the downlink channel.
-  ObjectFactory m_dlPathlossModelFactory;
-  /// Factory of path loss model object for the uplink channel.
-  ObjectFactory m_ulPathlossModelFactory;
+  /// Factory of path loss model object.
+  ObjectFactory m_pathlossModelFactory;
   /// Factory of both the downlink and uplink LTE channels.
   ObjectFactory m_channelFactory;
 
@@ -732,7 +837,25 @@ private:
    */
   bool m_usePdschForCqiGeneration;
 
-}; // end of `class LteHelper`
+  /**
+   * The `UseCa` attribute. If true, Carrier Aggregation is enabled.
+   * Hence, the helper will expect a valid component carrier map
+   * If it is false, the component carrier will be created within the LteHelper
+   * this is to maintain the backwards compatibility with user script
+   */
+  bool m_useCa;
+
+  /**
+   * This contains all the information about each component carrier
+   */
+  std::map< uint8_t, ComponentCarrier > m_componentCarrierPhyParams;
+
+  /**
+   * Number of component carriers that will be installed by default at eNodeB and UE devices.
+   */
+  uint16_t m_noOfCcs;
+
+};   // end of `class LteHelper`
 
 
 } // namespace ns3
