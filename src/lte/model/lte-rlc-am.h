@@ -35,7 +35,7 @@
 #include <fstream>
 #include <string>
 
-#include "ns3/codel-queue-disc.h" 
+#include "ns3/codel-queue-disc.h"
 
 namespace ns3 {
 
@@ -69,7 +69,7 @@ public:
   // LL HO
   std::vector < Ptr<Packet> > GetTxBuffer();
   uint32_t GetTxBufferSize();
-  
+
   std::vector < RetxPdu > GetTxedBuffer();
   uint32_t GetTxedBufferSize();
 
@@ -80,10 +80,10 @@ public:
   uint32_t GetTransmittingRlcSduBufferSize();
 
   Ptr<Packet> GetSegmentedRlcsdu();
-  ///< translate a vector of Rlc PDUs to Rlc SDUs 
+  ///< translate a vector of Rlc PDUs to Rlc SDUs
   ///< and put the Rlc SDUs into m_transmittingRlcSdus.
   void  RlcPdusToRlcSdus (std::vector < RetxPdu >  Pdus);
-  
+
   std::vector < Ptr<Packet> > GetTxedRlcSduBuffer (){
     return m_txedRlcSduBuffer;
   }
@@ -95,16 +95,16 @@ private:
   //
   std::vector < Ptr <Packet> > m_txedRlcSduBuffer;
   uint32_t m_txedRlcSduBufferSize;
-  
+
 public:
   /**
    * MAC SAP
    */
-  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
+  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
   virtual void DoNotifyHarqDeliveryFailure ();
   virtual void DoNotifyDlHarqDeliveryFailure (uint8_t harqId);
   virtual void DoNotifyUlHarqDeliveryFailure (uint8_t harqId);
-  virtual void DoReceivePdu (Ptr<Packet> p);
+  virtual void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
 
 private:
   /**
@@ -116,9 +116,9 @@ private:
   void ExpirePollRetransmitTimer (void);
   void ExpireRbsTimer (void);
 
-  /** 
+  /**
    * method called when the T_status_prohibit timer expires
-   * 
+   *
    */
   void ExpireStatusProhibitTimer (void);
 
@@ -130,10 +130,10 @@ private:
   //The buffer is ascending ordered on sequence number.
   void CreateRlcSduBuffer ();
 
-// 
+//
 //   void ReassembleOutsideWindow (void);
 //   void ReassembleSnLessThan (uint16_t seqNumber);
-// 
+//
   void ReassembleAndDeliver (Ptr<Packet> packet);
   void TriggerReceivePdcpPdu(Ptr<Packet> p);
 
@@ -155,21 +155,21 @@ private:
       bool      m_lastSegSent;    // all segments sent, waiting for ACK
     };
 
-  // LL HO: store a complete version of the incomplete RLC SDU at the 
+  // LL HO: store a complete version of the incomplete RLC SDU at the
   // edge of the m_txonBuffer during the segmentation process.
   // This SDU will be forwarded to target eNB in lossless HO
   // to assure no packet is lost.
   Ptr<Packet> m_segmented_rlcsdu;
 
-  std::vector <RetxPdu> m_txedBuffer;  ///< Buffer for transmitted and retransmitted PDUs 
-                                       ///< that have not been acked but are not considered 
-                                       ///< for retransmission 
+  std::vector <RetxPdu> m_txedBuffer;  ///< Buffer for transmitted and retransmitted PDUs
+                                       ///< that have not been acked but are not considered
+                                       ///< for retransmission
   std::vector <RetxPdu> m_retxBuffer;  ///< Buffer for PDUs considered for retransmission
   std::vector <RetxSegPdu> m_retxSegBuffer;  // buffer for AM PDU segments
 
   Ptr<CoDelQueueDisc> m_txonQueue;
 
-  ///< LL HO: stores RLC SDUs that is not acked 
+  ///< LL HO: stores RLC SDUs that is not acked
   ///< and forwarded to target eNB during lossless handover.
   std::vector < Ptr<Packet> > m_transmittingRlcSdus;
   uint32_t m_transmittingRlcSduBufferSize;
@@ -198,7 +198,7 @@ private:
 
     // SDU reassembly
 //   std::vector < Ptr<Packet> > m_reasBuffer;     // Reassembling buffer
-// 
+//
     std::list < Ptr<Packet> > m_sdusBuffer;       // List of SDUs in a packet (PDU)
     std::list < Ptr<Packet> > m_sdusAssembleBuffer;
 
@@ -247,7 +247,7 @@ private:
   uint16_t m_maxRetxThreshold;  /// \todo How these parameters are configured???
   uint16_t m_pollPdu;
   uint16_t m_pollByte;
-  
+
   bool m_txOpportunityForRetxAlwaysBigEnough;
   bool m_pollRetransmitTimerJustExpired;
 
