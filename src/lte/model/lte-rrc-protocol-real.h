@@ -50,7 +50,7 @@ class LteUeRrc;
  * a real fashion, by creating real RRC PDUs and transmitting them
  * over Signaling Radio Bearers using radio resources allocated by the
  * LTE MAC scheduler.
- * 
+ *
  */
 class LteUeRrcProtocolReal : public Object
 {
@@ -133,8 +133,8 @@ private:
   // methods forwarded from LteEnbRrcSapUser
   void DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params);
   void DoRemoveUe (uint16_t rnti);
-  void DoSendSystemInformation (LteRrcSap::SystemInformation msg);
-  void SendSystemInformation (LteRrcSap::SystemInformation msg);
+  void DoSendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg);
+  void SendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg);
   void DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg);
   void DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg);
   void DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg);

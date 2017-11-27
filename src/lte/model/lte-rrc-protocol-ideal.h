@@ -44,8 +44,8 @@ class LteUeRrc;
 /**
  * Models the transmission of RRC messages from the UE to the eNB in
  * an ideal fashion, without errors and without consuming any radio
- * resources. 
- * 
+ * resources.
+ *
  */
 class LteUeRrcProtocolIdeal : public Object
 {
@@ -62,9 +62,9 @@ public:
 
   void SetLteUeRrcSapProvider (LteUeRrcSapProvider* p);
   LteUeRrcSapUser* GetLteUeRrcSapUser ();
-  
+
   void SetUeRrc (Ptr<LteUeRrc> rrc);
-  
+
 
 private:
 
@@ -84,15 +84,15 @@ private:
   LteUeRrcSapProvider* m_ueRrcSapProvider;
   LteUeRrcSapUser* m_ueRrcSapUser;
   LteEnbRrcSapProvider* m_enbRrcSapProvider;
-  
+
 };
 
 
 /**
  * Models the transmission of RRC messages from the UE to the eNB in
  * an ideal fashion, without errors and without consuming any radio
- * resources. 
- * 
+ * resources.
+ *
  */
 class LteEnbRrcProtocolIdeal : public Object
 {
@@ -120,7 +120,7 @@ private:
   // methods forwarded from LteEnbRrcSapUser
   void DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params);
   void DoRemoveUe (uint16_t rnti);
-  void DoSendSystemInformation (LteRrcSap::SystemInformation msg);
+  void DoSendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg);
   void SendSystemInformation (LteRrcSap::SystemInformation msg);
   void DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg);
   void DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg);
@@ -141,7 +141,7 @@ private:
   LteEnbRrcSapProvider* m_enbRrcSapProvider;
   LteEnbRrcSapUser* m_enbRrcSapUser;
   std::map<uint16_t, LteUeRrcSapProvider*> m_enbRrcSapProviderMap;
-  
+
 };
 
 
