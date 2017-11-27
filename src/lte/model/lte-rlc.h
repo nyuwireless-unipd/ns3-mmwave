@@ -47,6 +47,7 @@ namespace ns3 {
 // class LteMacSapProvider;
 // class LteMacSapUser;
 
+
 class LteRlc;
 
 class LteRlcSpecificLteMacSapUser : public LteMacSapUser
@@ -59,7 +60,7 @@ public:
   virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
   virtual void NotifyHarqDeliveryFailure ();
   virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
-  virtual void ReceivePdu (Ptr<Packet> p);
+  virtual void ReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
 
 private:
   LteRlcSpecificLteMacSapUser ();
