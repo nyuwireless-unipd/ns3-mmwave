@@ -43,7 +43,7 @@ namespace ns3 {
 
 // class LteRlcSapProvider;
 // class LteRlcSapUser;
-// 
+//
 // class LteMacSapProvider;
 // class LteMacSapUser;
 
@@ -72,7 +72,7 @@ private:
  * (LTE_RLC) in LTE, see 3GPP TS 36.322
  *
  */
-class LteRlc : public Object 
+class LteRlc : public Object
 {
   friend class LteRlcSpecificLteMacSapUser;
   friend class EpcX2RlcSpecificUser<LteRlc>;
@@ -179,7 +179,7 @@ public:
 
   /// \todo MRE What is the sense to duplicate all the interfaces here???
   // NB to avoid the use of multiple inheritance
-  
+
 protected:
   // Interface forwarded by LteRlcSapProvider
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p) = 0;
@@ -188,10 +188,17 @@ protected:
   LteRlcSapProvider* m_rlcSapProvider;
 
   // Interface forwarded by LteMacSapUser
-  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId) = 0;
+  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid) = 0;
   virtual void DoNotifyHarqDeliveryFailure () = 0;
   virtual void DoNotifyHarqDeliveryFailure (uint8_t harqId);
-  virtual void DoReceivePdu (Ptr<Packet> p) = 0;
+  /**
+   * Receive PDU function
+   *
+   * \param p the packet
+   * \param rnti the RNTI
+   * \param lcid the LCID
+   */
+  virtual void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid) = 0;
 
   virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params) = 0;
 
@@ -241,9 +248,9 @@ public:
   virtual void DoDispose ();
 
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p);
-  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
+  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
   virtual void DoNotifyHarqDeliveryFailure ();
-  virtual void DoReceivePdu (Ptr<Packet> p);
+  virtual void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
   virtual void DoSendMcPdcpSdu (EpcX2Sap::UeDataParams params);
 
 
