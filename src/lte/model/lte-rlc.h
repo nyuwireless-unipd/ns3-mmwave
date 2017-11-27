@@ -57,7 +57,7 @@ public:
   LteRlcSpecificLteMacSapUser (LteRlc* rlc);
 
   // Interface implemented from LteMacSapUser
-  virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
+  virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
   virtual void NotifyHarqDeliveryFailure ();
   virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
   virtual void ReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);

@@ -36,17 +36,19 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteRlc");
 
-
 ///////////////////////////////////////
 /// LteRlcSpecificLteMacSapUser class
+/*
 class LteRlcSpecificLteMacSapUser : public LteMacSapUser
 {
 public:
+*/
   /**
    * Constructor
    *
    * \param rlc the RLC
    */
+   /*
   LteRlcSpecificLteMacSapUser (LteRlc* rlc);
 
   // Interface implemented from LteMacSapUser
@@ -58,6 +60,7 @@ private:
   LteRlcSpecificLteMacSapUser ();
   LteRlc* m_rlc; ///< the RLC
 };
+*/
 
 LteRlcSpecificLteMacSapUser::LteRlcSpecificLteMacSapUser (LteRlc* rlc)
   : m_rlc (rlc)
@@ -91,7 +94,6 @@ LteRlcSpecificLteMacSapUser::ReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t l
 {
   m_rlc->DoReceivePdu (p, rnti, lcid);
 }
-
 
 ///////////////////////////////////////
 
