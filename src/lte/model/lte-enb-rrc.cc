@@ -1382,7 +1382,8 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
     lcinfo.mbrDl = params.lcinfo.mbrDl;
     lcinfo.gbrUl = params.lcinfo.gbrUl;
     lcinfo.gbrDl = params.lcinfo.gbrDl;
-    m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
+    //TODO needs to be corrected
+    m_rrc->m_cmacSapProvider.at(0)->AddLc (lcinfo, rlc->GetLteMacSapUser ());
     rlcInfo->lcinfo = lcinfo;
 
     rlcInfo->logicalChannelIdentity = lcid;
@@ -1948,7 +1949,8 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
           // reset RLC and LC
           it->second->m_rlc = 0;
           uint8_t lcid = it->second->m_logicalChannelIdentity;
-          m_rrc->m_cmacSapProvider->ReleaseLc(m_rnti, lcid);
+          //TODO needs to be corrected
+          m_rrc->m_cmacSapProvider.at(0)->ReleaseLc(m_rnti, lcid);
 
           TypeId rlcTypeId = m_rrc->GetRlcType (it->second->m_epsBearer);
 
@@ -1982,7 +1984,8 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
           lcinfo.mbrDl = it->second->m_epsBearer.gbrQosInfo.mbrDl;
           lcinfo.gbrUl = it->second->m_epsBearer.gbrQosInfo.gbrUl;
           lcinfo.gbrDl = it->second->m_epsBearer.gbrQosInfo.gbrDl;
-          m_rrc->m_cmacSapProvider->AddLc (lcinfo, rlc->GetLteMacSapUser ());
+          //TODO needs to be corrected
+          m_rrc->m_cmacSapProvider.at(0)->AddLc (lcinfo, rlc->GetLteMacSapUser ());
         }
         else if(!m_rrc->m_ismmWave && !useMmWaveConnection)
         {
@@ -2023,7 +2026,8 @@ UeManager::RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid
     m_rlcMap.find(drbid)->second->m_rlc = 0;
 
     uint8_t lcid = m_rlcMap.find(drbid)->second->logicalChannelIdentity;
-    m_rrc->m_cmacSapProvider->ReleaseLc(m_rnti, lcid);
+    //TODO needs to be corrected
+    m_rrc->m_cmacSapProvider.at(0)->ReleaseLc(m_rnti, lcid);
 
     EpsBearer bearer;
     TypeId rlcTypeId = m_rrc->GetRlcType (bearer); // actually, this doesn't depend on bearer
@@ -2049,8 +2053,8 @@ UeManager::RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid
       rlc->SetUeDataParams(ueParams);
       m_rrc->m_x2SapProvider->SetEpcX2RlcUser (m_rlcMap.find(drbid)->second->gtpTeid, rlc->GetEpcX2RlcUser());
     }
-
-    m_rrc->m_cmacSapProvider->AddLc (m_rlcMap.find(drbid)->second->lcinfo, rlc->GetLteMacSapUser ());
+    //TODO needs to be corrected
+    m_rrc->m_cmacSapProvider.at(0)->AddLc (m_rlcMap.find(drbid)->second->lcinfo, rlc->GetLteMacSapUser ());
   }
 }
 
