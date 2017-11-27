@@ -2,30 +2,30 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
  */
 
@@ -544,7 +544,7 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
 	}
 }
 
-void 
+void
 MmWaveEnbMac::SetCellId (uint16_t cellId)
 {
 	m_cellId = cellId;
@@ -604,13 +604,13 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
 				              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
 				rlcPdu = p->CreateFragment (currPos, macSubheaders[ipdu].m_size);
 				currPos += macSubheaders[ipdu].m_size;
-				(*lcidIt).second->ReceivePdu (rlcPdu);
+				(*lcidIt).second->ReceivePdu (rlcPdu, rnti, macSubheaders[ipdu].m_lcid);
 			}
 			else
 			{
 				rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
 				currPos = p->GetSize ();
-				(*lcidIt).second->ReceivePdu (rlcPdu);
+				(*lcidIt).second->ReceivePdu (rlcPdu, rnti, macSubheaders[ipdu].m_lcid);
 			}
 		NS_LOG_INFO ("MmWave Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<(uint32_t)macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
 	}
@@ -812,7 +812,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 		if (slotAllocInfo.m_slotType != SlotAllocInfo::CTRL && slotAllocInfo.m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
 		{
 			uint16_t rnti = slotAllocInfo.m_dci.m_rnti;
-			// here log all the packets sent in downlink 
+			// here log all the packets sent in downlink
 			m_macDlTxSizeRetx(rnti, m_cellId, slotAllocInfo.m_dci.m_tbSize, slotAllocInfo.m_dci.m_rv);
 
 			std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
@@ -860,7 +860,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 						NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduInfo[ipdu].m_lcid);
 						NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int) rlcPduInfo[ipdu].m_size);
 						MacSubheader subheader (rlcPduInfo[ipdu].m_lcid, rlcPduInfo[ipdu].m_size);
-						(*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size)-subheader.GetSize (), 0, tbUid);
+						(*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size)-subheader.GetSize (), 0, tbUid, 0, rnti, rlcPduInfo[ipdu].m_lcid);
 						harqIt->second.at (tbUid).m_lcidList.push_back (rlcPduInfo[ipdu].m_lcid);
 					}
 
@@ -892,7 +892,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 				{
 					NS_LOG_INFO ("DL retransmission");
 					if (dciElem.m_tbSize > 0)
-					{						
+					{
 						// HARQ retransmission -> retrieve TB from HARQ buffer
 						std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
 						NS_ASSERT(it!=m_miDlHarqProcessesPackets.end());
@@ -1091,8 +1091,8 @@ MmWaveEnbMac::DoAllocateNcRaPreamble (uint16_t rnti)
 	    {
 	      found = true;
 	      NcRaPreambleInfo preambleInfo;
-	      uint32_t expiryIntervalMs = (uint32_t) m_preambleTransMax * ((uint32_t) m_raResponseWindowSize + 5); 
-	      
+	      uint32_t expiryIntervalMs = (uint32_t) m_preambleTransMax * ((uint32_t) m_raResponseWindowSize + 5);
+
 	      preambleInfo.expiryTime = Simulator::Now () + MilliSeconds (expiryIntervalMs);
 	      preambleInfo.rnti = rnti;
 	      NS_LOG_INFO ("allocated preamble for NC based RA: preamble " << (uint16_t)preambleId << ", RNTI " << preambleInfo.rnti << ", exiryTime " << preambleInfo.expiryTime);
