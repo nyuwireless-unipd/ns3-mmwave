@@ -520,7 +520,7 @@ UeManager::SetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint32_t gt
   req.gtpTeid = drbInfo->m_gtpTeid;
   req.lteRnti = m_rnti;
   req.drbid = drbid;
-  req.lcinfo = lcinfo;
+  //req.lcinfo = lcinfo;
   req.logicalChannelConfig = drbInfo->m_logicalChannelConfig;
   req.rlcConfig = drbInfo->m_rlcConfig;
   req.targetCellId = 0;
