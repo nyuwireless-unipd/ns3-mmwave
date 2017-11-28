@@ -181,13 +181,18 @@ public:
    */
   LteUeCphySapUser* GetLteUeCphySapUser (uint8_t index);
 
+  void SetMmWaveUeCmacSapProvider (LteUeCmacSapProvider * s);
+
+  void SetMmWaveUeCmacSapProvider (LteUeCmacSapProvider * s, uint8_t index);
+
+
   /**
    * set the CMAC SAP this RRC should interact with
    * \brief This function is overloaded to maintain backward compatibility
    * \param s the CMAC SAP Provider to be used by this RRC
    */
   void SetLteUeCmacSapProvider (LteUeCmacSapProvider * s);
-  void SetMmWaveUeCmacSapProvider (LteUeCmacSapProvider * s);
+
   /**
    * set the CMAC SAP this RRC should interact with
    * \brief This function is overloaded to maintain backward compatibility

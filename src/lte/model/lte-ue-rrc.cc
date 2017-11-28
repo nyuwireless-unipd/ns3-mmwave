@@ -517,26 +517,26 @@ LteUeRrc::SwitchLowerLayerProviders (uint16_t cellId)
     if(m_isMmWaveCellMap.find(cellId)->second)
     {
       NS_LOG_INFO("Switch SAP to MmWave");
-      NS_LOG_LOGIC("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      //NS_LOG_LOGIC("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       m_cphySapProvider = m_mmWaveCphySapProvider;
       m_cmacSapProvider = m_mmWaveCmacSapProvider;
       m_macSapProvider = m_mmWaveMacSapProvider;
 
       m_hasReceivedSib2 = false;
-      NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      //NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       return true;
     }
     else
     {
       NS_LOG_INFO("Switch SAP to LTE");
-      NS_LOG_LOGIC("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      //NS_LOG_LOGIC("Before switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       m_cphySapProvider = m_lteCphySapProvider;
       m_cmacSapProvider = m_lteCmacSapProvider;
       m_macSapProvider = m_lteMacSapProvider;
 
       m_hasReceivedSib2 = false;
 
-      NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
+      //NS_LOG_LOGIC("After switch " << m_cphySapProvider << m_cmacSapProvider << m_macSapProvider);
       return true;
     }
   }
@@ -628,12 +628,14 @@ LteUeRrc::DoInitialize (void)
   if(m_interRatHoCapable)
   {
     //TODO iterare per il numero di component carriers
-    m_mmWaveCmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
-    m_lteCmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+    //temporary fix
+    m_mmWaveCmacSapProvider.at(0)->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+    m_lteCmacSapProvider.at(0)->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
   }
   else
   {
-    m_cmacSapProvider->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+    //temporary fix
+    m_cmacSapProvider.at(0)->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
   }
 }
 
