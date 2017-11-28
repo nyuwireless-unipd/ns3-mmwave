@@ -90,6 +90,8 @@ def build(bld):
         'model/epc-x2-sap.cc',
         'model/epc-x2-header.cc',
         'model/epc-x2.cc',
+        'model/epc-x2-tag.cc',
+
         'model/epc-tft.cc',
         'model/epc-tft-classifier.cc',
         'model/lte-mi-error-model.cc',
@@ -97,6 +99,8 @@ def build(bld):
         'model/epc-enb-s1-sap.cc',
         'model/epc-s1ap-sap.cc',
         'model/epc-s11-sap.cc',
+        'model/epc-s1ap.cc',
+
         'model/lte-as-sap.cc',
         'model/epc-ue-nas.cc',
         'model/lte-harq-phy.cc',
@@ -131,7 +135,14 @@ def build(bld):
         'model/component-carrier.cc',
         'helper/cc-helper.cc',
         'model/component-carrier-ue.cc',
-        'model/component-carrier-enb.cc'
+        'model/component-carrier-enb.cc',
+        'model/lte-rlc-um-lowlat.cc',
+        'model/epc-mme-application.cc',
+        'model/epc-s1ap-header.cc',
+        'model/mc-enb-pdcp.cc',
+        'model/mc-ue-pdcp.cc',
+        'helper/retx-stats-calculator.cc',
+        'helper/mac-tx-stats-calculator.cc'
         ]
 
     module_test = bld.create_ns3_module_test_library('lte')
