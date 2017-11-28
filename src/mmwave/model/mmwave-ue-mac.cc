@@ -57,6 +57,7 @@ public:
   virtual void ConfigureRach (RachConfig rc);
   virtual void StartContentionBasedRandomAccessProcedure ();
   virtual void StartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t preambleId, uint8_t prachMask);
+  virtual void SetRnti (uint16_t rnti);
   virtual void AddLc (uint8_t lcId, LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
   virtual void RemoveLc (uint8_t lcId);
   virtual void Reset ();
@@ -87,6 +88,12 @@ UeMemberMmWaveUeCmacSapProvider::StartContentionBasedRandomAccessProcedure ()
 UeMemberMmWaveUeCmacSapProvider::StartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t preambleId, uint8_t prachMask)
 {
   m_mac->DoStartNonContentionBasedRandomAccessProcedure (rnti, preambleId, prachMask);
+}
+
+void
+UeMemberMmWaveUeCmacSapProvider::SetRnti (uint16_t rnti)
+{
+  m_mac->DoSetRnti (rnti);
 }
 
 
@@ -884,6 +891,13 @@ MmWaveUeMac::DoStartContentionBasedRandomAccessProcedure ()
 {
   NS_LOG_FUNCTION (this);
   RandomlySelectAndSendRaPreamble ();
+}
+
+void
+MmWaveUeMac::DoSetRnti (uint16_t rnti)
+{
+  NS_LOG_FUNCTION (this);
+  m_rnti = rnti;
 }
 
 void

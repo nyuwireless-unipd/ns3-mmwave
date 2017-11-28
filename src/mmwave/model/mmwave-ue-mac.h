@@ -94,6 +94,7 @@ private:
 	// forwarded from UE CMAC SAP
 	void DoConfigureRach (LteUeCmacSapProvider::RachConfig rc);
 	void DoStartContentionBasedRandomAccessProcedure ();
+	void DoSetRnti (uint16_t rnti);
 	void DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t rapId, uint8_t prachMask);
 	void AddLc (uint8_t lcId, LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
 	void DoRemoveLc (uint8_t lcId);
