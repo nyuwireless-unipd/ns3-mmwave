@@ -48,23 +48,23 @@ public:
     uint8_t preambleTransMax;
     uint8_t raResponseWindowSize;
   };
-  
+
   virtual void ConfigureRach (RachConfig rc) = 0;
 
-  /** 
+  /**
    * tell the MAC to start a contention-based random access procedure,
-   * e.g., to perform RRC connection establishment 
-   * 
+   * e.g., to perform RRC connection establishment
+   *
    */
   virtual void StartContentionBasedRandomAccessProcedure () = 0;
 
-  /** 
+  /**
    * tell the MAC to start a non-contention-based random access
    * procedure, e.g., as a consequence of handover
-   * 
+   *
    * \param rnti
    * \param rapId Random Access Preamble Identifier
-   * \param prachMask 
+   * \param prachMask
    */
   virtual void StartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t rapId, uint8_t prachMask) = 0;
 
@@ -76,29 +76,35 @@ public:
     uint16_t bucketSizeDurationMs;
     uint8_t logicalChannelGroup;
   };
-  
-  /** 
-   * add a new Logical Channel (LC) 
-   * 
+
+  /**
+   * add a new Logical Channel (LC)
+   *
    * \param lcId the ID of the LC
    * \param lcConfig the LC configuration provided by the RRC
    * \param msu the corresponding LteMacSapUser
    */
   virtual void AddLc (uint8_t lcId, LogicalChannelConfig lcConfig, LteMacSapUser* msu) = 0;
 
-  /** 
+  /**
    * remove an existing LC
-   * 
-   * \param lcId 
+   *
+   * \param lcId
    */
   virtual void RemoveLc (uint8_t lcId) = 0;
 
-  /** 
+  /**
    * reset the MAC
-   * 
+   *
    */
   virtual void Reset () = 0;
-  
+
+  /**
+   *
+   * \param rnti the cell-specific UE identifier
+   */
+  virtual void SetRnti (uint16_t rnti) = 0;
+
 };
 
 
@@ -114,22 +120,22 @@ public:
 
   virtual ~LteUeCmacSapUser ();
 
-  /** 
-   * 
-   * 
+  /**
+   *
+   *
    * \param rnti the T-C-RNTI, which will eventually become the C-RNTI after contention resolution
    */
   virtual void SetTemporaryCellRnti (uint16_t rnti) = 0;
 
-  /** 
+  /**
    * Notify the RRC that the MAC Random Access procedure completed successfully
-   * 
+   *
    */
   virtual void NotifyRandomAccessSuccessful () = 0;
 
-  /** 
+  /**
    * Notify the RRC that the MAC Random Access procedure failed
-   * 
+   *
    */
   virtual void NotifyRandomAccessFailed () = 0;
 };

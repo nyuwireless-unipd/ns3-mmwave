@@ -46,14 +46,14 @@ class LteUeCphySapProvider
 {
 public:
 
-  /** 
+  /**
    * destructor
    */
   virtual ~LteUeCphySapProvider ();
 
-  /** 
+  /**
    * reset the PHY
-   * 
+   *
    */
   virtual void Reset () = 0;
 
@@ -70,7 +70,7 @@ public:
    * and periodically returning measurement reports to RRC via
    * LteUeCphySapUser::ReportUeMeasurements function.
    */
-  virtual void StartCellSearch (uint16_t dlEarfcn) = 0;
+   virtual void StartCellSearch (uint32_t dlEarfcn) = 0;
 
   /**
    * \brief Tell the PHY entity to synchronize with a given eNodeB over the
@@ -105,20 +105,20 @@ public:
    * LteUeCphySapProvider::SetDlBandwidth can be called afterwards to increase
    * the bandwidth.
    */
-  virtual void SynchronizeWithEnb (uint16_t cellId, uint16_t dlEarfcn) = 0;
+  virtual void SynchronizeWithEnb (uint16_t cellId, uint32_t dlEarfcn) = 0;
 
   /**
    * \param dlBandwidth the DL bandwidth in number of PRBs
    */
   virtual void SetDlBandwidth (uint8_t dlBandwidth) = 0;
 
-  /** 
+  /**
    * \brief Configure uplink (normally done after reception of SIB2)
-   * 
+   *
    * \param ulEarfcn the uplink carrier frequency (EARFCN)
    * \param ulBandwidth the UL bandwidth in number of PRBs
    */
-  virtual void ConfigureUplink (uint16_t ulEarfcn, uint8_t ulBandwidth) = 0;
+  virtual void ConfigureUplink (uint32_t ulEarfcn, uint8_t ulBandwidth) = 0;
 
   /**
    * \brief Configure referenceSignalPower
@@ -127,8 +127,8 @@ public:
    */
   virtual void ConfigureReferenceSignalPower (int8_t referenceSignalPower) = 0;
 
-  /** 
-   * 
+  /**
+   *
    * \param rnti the cell-specific UE identifier
    */
   virtual void SetRnti (uint16_t rnti) = 0;
@@ -161,7 +161,7 @@ class LteUeCphySapUser
 {
 public:
 
-  /** 
+  /**
    * destructor
    */
   virtual ~LteUeCphySapUser ();
@@ -181,6 +181,7 @@ public:
   struct UeMeasurementsParameters
   {
     std::vector <struct UeMeasurementsElement> m_ueMeasurementsList;
+    uint8_t m_componentCarrierId; ///< component carrier ID
   };
 
 
@@ -188,7 +189,7 @@ public:
    * \brief Relay an MIB message from the PHY entity to the RRC layer.
    * \param cellId the ID of the eNodeB where the message originates from
    * \param mib the Master Information Block message
-   * 
+   *
    * This function is typically called after PHY receives an MIB message over
    * the BCH.
    */
@@ -223,7 +224,7 @@ public:
 /**
  * Template for the implementation of the LteUeCphySapProvider as a member
  * of an owner class of type C to which all methods are forwarded
- * 
+ *
  */
 template <class C>
 class MemberLteUeCphySapProvider : public LteUeCphySapProvider
@@ -233,11 +234,11 @@ public:
 
   // inherited from LteUeCphySapProvider
   virtual void Reset ();
-  virtual void StartCellSearch (uint16_t dlEarfcn);
+  virtual void StartCellSearch (uint32_t dlEarfcn);
   virtual void SynchronizeWithEnb (uint16_t cellId);
-  virtual void SynchronizeWithEnb (uint16_t cellId, uint16_t dlEarfcn);
+  virtual void SynchronizeWithEnb (uint16_t cellId, uint32_t dlEarfcn);
   virtual void SetDlBandwidth (uint8_t dlBandwidth);
-  virtual void ConfigureUplink (uint16_t ulEarfcn, uint8_t ulBandwidth);
+  virtual void ConfigureUplink (uint32_t ulEarfcn, uint8_t ulBandwidth);
   virtual void ConfigureReferenceSignalPower (int8_t referenceSignalPower);
   virtual void SetRnti (uint16_t rnti);
   virtual void SetTransmissionMode (uint8_t txMode);
@@ -261,7 +262,7 @@ MemberLteUeCphySapProvider<C>::MemberLteUeCphySapProvider ()
 }
 
 template <class C>
-void 
+void
 MemberLteUeCphySapProvider<C>::Reset ()
 {
   m_owner->DoReset ();
@@ -269,7 +270,7 @@ MemberLteUeCphySapProvider<C>::Reset ()
 
 template <class C>
 void
-MemberLteUeCphySapProvider<C>::StartCellSearch (uint16_t dlEarfcn)
+MemberLteUeCphySapProvider<C>::StartCellSearch (uint32_t dlEarfcn)
 {
   m_owner->DoStartCellSearch (dlEarfcn);
 }
@@ -283,7 +284,7 @@ MemberLteUeCphySapProvider<C>::SynchronizeWithEnb (uint16_t cellId)
 
 template <class C>
 void
-MemberLteUeCphySapProvider<C>::SynchronizeWithEnb (uint16_t cellId, uint16_t dlEarfcn)
+MemberLteUeCphySapProvider<C>::SynchronizeWithEnb (uint16_t cellId, uint32_t dlEarfcn)
 {
   m_owner->DoSynchronizeWithEnb (cellId, dlEarfcn);
 }
@@ -296,14 +297,14 @@ MemberLteUeCphySapProvider<C>::SetDlBandwidth (uint8_t dlBandwidth)
 }
 
 template <class C>
-void 
-MemberLteUeCphySapProvider<C>::ConfigureUplink (uint16_t ulEarfcn, uint8_t ulBandwidth)
+void
+MemberLteUeCphySapProvider<C>::ConfigureUplink (uint32_t ulEarfcn, uint8_t ulBandwidth)
 {
   m_owner->DoConfigureUplink (ulEarfcn, ulBandwidth);
 }
 
 template <class C>
-void 
+void
 MemberLteUeCphySapProvider<C>::ConfigureReferenceSignalPower (int8_t referenceSignalPower)
 {
   m_owner->DoConfigureReferenceSignalPower (referenceSignalPower);
@@ -317,14 +318,14 @@ MemberLteUeCphySapProvider<C>::SetRnti (uint16_t rnti)
 }
 
 template <class C>
-void 
+void
 MemberLteUeCphySapProvider<C>::SetTransmissionMode (uint8_t txMode)
 {
   m_owner->DoSetTransmissionMode (txMode);
 }
 
 template <class C>
-void 
+void
 MemberLteUeCphySapProvider<C>::SetSrsConfigurationIndex (uint16_t srcCi)
 {
   m_owner->DoSetSrsConfigurationIndex (srcCi);
@@ -341,7 +342,7 @@ MemberLteUeCphySapProvider<C>::SetPa (double pa)
 /**
  * Template for the implementation of the LteUeCphySapUser as a member
  * of an owner class of type C to which all methods are forwarded
- * 
+ *
  */
 template <class C>
 class MemberLteUeCphySapUser : public LteUeCphySapUser
@@ -374,8 +375,8 @@ MemberLteUeCphySapUser<C>::MemberLteUeCphySapUser ()
 {
 }
 
-template <class C> 
-void 
+template <class C>
+void
 MemberLteUeCphySapUser<C>::RecvMasterInformationBlock (uint16_t cellId,
                                                        LteRrcSap::MasterInformationBlock mib)
 {

@@ -1118,7 +1118,7 @@ LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
             {
               m_ncRaStarted = true;
               NS_LOG_INFO("StartNonContentionBasedRandomAccessProcedure after SIB2 received at time " << Simulator::Now());
-              m_cmacSapProvider->StartNonContentionBasedRandomAccessProcedure (m_rnti, m_rachConfigDedicated.raPreambleIndex, m_rachConfigDedicated.raPrachMaskIndex);
+              m_cmacSapProvider.at(0)->StartNonContentionBasedRandomAccessProcedure (m_rnti, m_rachConfigDedicated.raPreambleIndex, m_rachConfigDedicated.raPrachMaskIndex);
             }
           break;
 
@@ -1185,6 +1185,7 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           m_cphySapProvider.at(0)->SynchronizeWithEnb (m_cellId, mci.carrierFreq.dlCarrierFreq);
           m_cphySapProvider.at(0)->SetDlBandwidth ( mci.carrierBandwidth.dlBandwidth);
           m_cphySapProvider.at(0)->ConfigureUplink (mci.carrierFreq.ulCarrierFreq, mci.carrierBandwidth.ulBandwidth);
+          uint16_t oldRnti = m_rnti;
           m_rnti = msg.mobilityControlInfo.newUeIdentity;
           m_srb0->m_rlc->SetRnti (m_rnti);
           NS_ASSERT_MSG (mci.haveRachConfigDedicated, "handover is only supported with non-contention-based random access procedure");
@@ -1333,6 +1334,7 @@ LteUeRrc::DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg)
 void
 LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
 {
+  /*
   NS_LOG_INFO("Recv RRC Connection Switch on rnti " << m_rnti << " of cell " << m_cellId << " m_mmWaveCellId " << m_mmWaveCellId << " in state " << ToString(m_state));
   std::vector<uint8_t> drbidList = msg.drbidList;
   for(std::vector<uint8_t>::iterator iter = drbidList.begin(); iter != drbidList.end(); ++iter)
@@ -1494,6 +1496,7 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
       }
     }
   }
+  */
 }
 
 
@@ -1872,6 +1875,7 @@ LteUeRrc::EvaluateCellForSelection ()
 void
 LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated rrcd)
 {
+  /*
   NS_ASSERT_MSG(oldRnti == m_mmWaveRnti, "Wrong RNTI! - unknown device");
   NS_ASSERT_MSG(!m_isSecondaryRRC, "Trying to modify RLCs in the mmWave RRC (they are instances in the LTE RRC)");
   m_mmWaveRnti = newRnti;
@@ -1976,6 +1980,7 @@ LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uin
         }
       }
     }
+    */
 }
 
 
@@ -2192,8 +2197,11 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
         }
       else
         {
+          //Temporary fix
+
           NS_LOG_INFO ("request to modify existing DRBID");
           Ptr<LteDataRadioBearerInfo> drbInfo = drbMapIt->second;
+          /*
           NS_LOG_INFO ("Is MC " << dtamIt->is_mc);
           if(dtamIt->is_mc == true) // we need to setup the RLC for MmWave communications
           {
@@ -2369,6 +2377,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
             //                           rlc->GetLteMacSapUser ());
 
           }
+          */
         }
     }
 
