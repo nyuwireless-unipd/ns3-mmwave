@@ -20,7 +20,7 @@
  * Author: Manuel Requena <manuel.requena@cttc.es>
  *
  * Modified by:  Russell Ford
- *                  Low lat 
+ *                  Low lat
  *               Michele Polese <michele.polese@gmail.com>
  *                  Dual Connectivity functionalities
  */
@@ -163,7 +163,7 @@ LteRlcUmLowLat::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
 }
 
-void 
+void
 LteRlcUmLowLat::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this);
@@ -175,7 +175,7 @@ LteRlcUmLowLat::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
  */
 
 void
-LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
+LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
 
@@ -458,14 +458,14 @@ LteRlcUmLowLat::DoNotifyHarqDeliveryFailure ()
   NS_LOG_FUNCTION (this);
 }
 
-std::vector < Ptr<Packet> > 
+std::vector < Ptr<Packet> >
 LteRlcUmLowLat::GetTxBuffer()
 {
   return m_txBuffer;
 }
 
 void
-LteRlcUmLowLat::DoReceivePdu (Ptr<Packet> p)
+LteRlcUmLowLat::DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
@@ -1168,7 +1168,7 @@ LteRlcUmLowLat::ReassembleSnInterval (SequenceNumber10 lowSeqNumber, SequenceNum
 
           m_rxBuffer.erase (it);
         }
-        
+
       reassembleSn++;
     }
 }
@@ -1276,7 +1276,7 @@ LteRlcUmLowLat::ExpireRbsTimer (void)
 void
 LteRlcUmLowLat::TriggerReceivePdcpPdu(Ptr<Packet> p)
 {
-  if(!isMc) 
+  if(!isMc)
   {
     NS_LOG_INFO(this << " RlcUmLowLat forwards packet to PDCP (either from MmWave or LTE stack)");
     m_rlcSapUser->ReceivePdcpPdu(p);

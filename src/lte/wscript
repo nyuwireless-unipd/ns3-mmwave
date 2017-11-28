@@ -91,7 +91,6 @@ def build(bld):
         'model/epc-x2-header.cc',
         'model/epc-x2.cc',
         'model/epc-x2-tag.cc',
-
         'model/epc-tft.cc',
         'model/epc-tft-classifier.cc',
         'model/lte-mi-error-model.cc',
@@ -100,7 +99,6 @@ def build(bld):
         'model/epc-s1ap-sap.cc',
         'model/epc-s11-sap.cc',
         'model/epc-s1ap.cc',
-
         'model/lte-as-sap.cc',
         'model/epc-ue-nas.cc',
         'model/lte-harq-phy.cc',
