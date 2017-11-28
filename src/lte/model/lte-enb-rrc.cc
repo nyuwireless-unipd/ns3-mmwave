@@ -2815,6 +2815,32 @@ LteEnbRrc::GetEpcX2SapUser ()
 }
 
 void
+LteEnbRrc::SetEpcX2PdcpProvider (EpcX2PdcpProvider * s)
+{
+  NS_LOG_FUNCTION (this << s);
+  m_x2PdcpProvider = s;
+}
+
+void
+LteEnbRrc::SetEpcX2RlcProvider (EpcX2RlcProvider * s)
+{
+  NS_LOG_FUNCTION (this << s);
+  m_x2RlcProvider = s;
+}
+
+EpcX2PdcpProvider*
+LteEnbRrc::GetEpcX2PdcpProvider () const
+{
+  return m_x2PdcpProvider;
+}
+
+EpcX2RlcProvider*
+LteEnbRrc::GetEpcX2RlcProvider () const
+{
+  return m_x2RlcProvider;
+}
+
+void
 LteEnbRrc::SetLteEnbCmacSapProvider (LteEnbCmacSapProvider * s)
 {
   NS_LOG_FUNCTION (this << s);
