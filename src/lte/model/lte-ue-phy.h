@@ -86,7 +86,7 @@ public:
 
   /**
    * \brief Get the PHY SAP provider
-   * \return a pointer to the SAP Provider 
+   * \return a pointer to the SAP Provider
    */
   LteUePhySapProvider* GetLteUePhySapProvider ();
 
@@ -196,7 +196,7 @@ public:
   virtual void ReportRsReceivedPower (const SpectrumValue& power);
 
   // callbacks for LteSpectrumPhy
-  virtual void ReceiveLteControlMessageList (std::list<Ptr<LteControlMessage> >);
+  virtual void ReceiveLteControlMessageList (std::list<Ptr<LteControlMessage> > msgList);
   virtual void ReceivePss (uint16_t cellId, Ptr<SpectrumValue> p);
 
 
@@ -255,7 +255,8 @@ public:
    * \param [in] sinr
    */
   typedef void (* RsrpSinrTracedCallback)
-    (uint16_t cellId, uint16_t rnti, double rsrp, double sinr, uint8_t ccId);
+    (uint16_t cellId, uint16_t rnti,
+      double rsrp, double sinr, uint8_t componentCarrierId);
 
   /**
    * TracedCallback signature for cell RSRP and RSRQ.
@@ -265,10 +266,11 @@ public:
    * \param [in] rsrp
    * \param [in] rsrq
    * \param [in] isServingCell
+   * \param [in] componentCarrierId
    */
   typedef void (* RsrpRsrqTracedCallback)
     (uint16_t rnti, uint16_t cellId, double rsrp, double rsrq,
-     bool isServingCell);
+     bool isServingCell, uint8_t componentCarrierId);
 
 private:
 
@@ -284,11 +286,11 @@ private:
   void QueueSubChannelsForTransmission (std::vector <int> rbMap);
 
 
-  /** 
+  /**
    * internal method that takes care of generating CQI reports,
    * calculating the RSRP and RSRQ metrics, and generating RSRP+SINR traces
-   * 
-   * \param sinr 
+   *
+   * \param sinr
    */
   void GenerateCqiRsrpRsrq (const SpectrumValue& sinr);
 
@@ -310,18 +312,18 @@ private:
 
   // UE CPHY SAP methods
   void DoReset ();
-  void DoStartCellSearch (uint16_t dlEarfcn);
+  void DoStartCellSearch (uint32_t dlEarfcn);
   void DoSynchronizeWithEnb (uint16_t cellId);
-  void DoSynchronizeWithEnb (uint16_t cellId, uint16_t dlEarfcn);
-  void DoSetDlBandwidth (uint8_t ulBandwidth);
-  void DoConfigureUplink (uint16_t ulEarfcn, uint8_t ulBandwidth);
+  void DoSynchronizeWithEnb (uint16_t cellId, uint32_t dlEarfcn);
+  void DoSetDlBandwidth (uint8_t dlBandwidth);
+  void DoConfigureUplink (uint32_t ulEarfcn, uint8_t ulBandwidth);
   void DoConfigureReferenceSignalPower (int8_t referenceSignalPower);
   void DoSetRnti (uint16_t rnti);
   void DoSetTransmissionMode (uint8_t txMode);
   void DoSetSrsConfigurationIndex (uint16_t srcCi);
   void DoSetPa (double pa);
 
-  // UE PHY SAP methods 
+  // UE PHY SAP methods
   virtual void DoSendMacPdu (Ptr<Packet> p);
   virtual void DoSendLteControlMessage (Ptr<LteControlMessage> msg);
   virtual void DoSendRachPreamble (uint32_t prachId, uint32_t raRnti);
@@ -363,7 +365,7 @@ private:
   LteUeCphySapUser* m_ueCphySapUser;
 
   uint16_t  m_rnti;
- 
+
   uint8_t m_transmissionMode;
   std::vector <double> m_txModeGain;
 
@@ -458,7 +460,7 @@ private:
    * Exporting RNTI, the ID of the measured cell, RSRP (in dBm), RSRQ (in dB),
    * and whether the cell is the serving cell.
    */
-  TracedCallback<uint16_t, uint16_t, double, double, bool> m_reportUeMeasurements;
+  TracedCallback<uint16_t, uint16_t, double, double, bool, uint8_t> m_reportUeMeasurements;
 
   EventId m_sendSrsEvent;
 
@@ -469,9 +471,9 @@ private:
    */
   TracedCallback<PhyTransmissionStatParameters> m_ulPhyTransmission;
 
-  
+
   Ptr<SpectrumValue> m_noisePsd; ///< Noise power spectral density for
-                                 ///the configured bandwidth 
+                                 ///the configured bandwidth
 
 }; // end of `class LteUePhy`
 
