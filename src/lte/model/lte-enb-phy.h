@@ -142,7 +142,7 @@ public:
 
   /**
    * \brief set the resource blocks (a.k.a. sub channels) to be used in the downlink for transmission
-   * 
+   *
    * \param mask a vector of integers, if the i-th value is j it means
    * that the j-th resource block is used for transmission in the
    * downlink. If there is no i such that the value of the i-th
@@ -161,7 +161,7 @@ public:
    */
   void SetDownlinkSubChannelsWithPowerAllocation (std::vector<int> mask);
   /**
-   * 
+   *
    * \return  a vector of integers, if the i-th value is j it means
    * that the j-th resource block is used for transmission in the
    * downlink. If there is no i such that the value of the i-th
@@ -308,7 +308,7 @@ private:
 
   // LteEnbCphySapProvider forwarded methods
   void DoSetBandwidth (uint8_t ulBandwidth, uint8_t dlBandwidth);
-  void DoSetEarfcn (uint16_t dlEarfcn, uint16_t ulEarfcn);
+  void DoSetEarfcn (uint32_t dlEarfcn, uint32_t ulEarfcn);
   void DoAddUe (uint16_t rnti);
   void DoRemoveUe (uint16_t rnti);
   void DoSetPa (uint16_t rnti, double pa);

@@ -167,7 +167,7 @@ LteEnbPhy::GetTypeId (void)
     .AddAttribute ("TxPower",
                    "Transmission power in dBm",
                    DoubleValue (30.0),
-                   MakeDoubleAccessor (&LteEnbPhy::SetTxPower, 
+                   MakeDoubleAccessor (&LteEnbPhy::SetTxPower,
                                        &LteEnbPhy::GetTxPower),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("NoiseFigure",
@@ -181,7 +181,7 @@ LteEnbPhy::GetTypeId (void)
                    "are connected to sources at the standard noise "
                    "temperature T0.\"  In this model, we consider T0 = 290K.",
                    DoubleValue (5.0),
-                   MakeDoubleAccessor (&LteEnbPhy::SetNoiseFigure, 
+                   MakeDoubleAccessor (&LteEnbPhy::SetNoiseFigure,
                                        &LteEnbPhy::GetNoiseFigure),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("MacToChannelDelay",
@@ -191,7 +191,7 @@ LteEnbPhy::GetTypeId (void)
                    "intended to be used to model the latency of real PHY "
                    "and MAC implementations.",
                    UintegerValue (2),
-                   MakeUintegerAccessor (&LteEnbPhy::SetMacChDelay, 
+                   MakeUintegerAccessor (&LteEnbPhy::SetMacChDelay,
                                          &LteEnbPhy::GetMacChDelay),
                    MakeUintegerChecker<uint8_t> ())
     .AddTraceSource ("ReportUeSinr",
@@ -620,7 +620,7 @@ LteEnbPhy::StartSubFrame (void)
     }
 
   if (m_srsPeriodicity>0)
-    { 
+    {
       // might be 0 in case the eNB has no UEs attached
       NS_ASSERT_MSG (m_nrFrames >= 1, "the SRS index check code assumes that frameNo starts at 1");
       NS_ASSERT_MSG (m_nrSubFrames > 0 && m_nrSubFrames <= 10, "the SRS index check code assumes that subframeNo starts at 1");
@@ -644,7 +644,7 @@ LteEnbPhy::StartSubFrame (void)
         }
       else
         {
-          // send info of TB to LteSpectrumPhy 
+          // send info of TB to LteSpectrumPhy
           // translate to allocation map
           std::vector <int> rbMap;
           for (int i = (*dciIt).GetDci ().m_rbStart; i < (*dciIt).GetDci ().m_rbStart + (*dciIt).GetDci ().m_rbLen; i++)
@@ -707,6 +707,7 @@ LteEnbPhy::StartSubFrame (void)
                   params.m_size = dci->GetDci ().m_tbsSize.at (i);
                   params.m_rv = dci->GetDci ().m_rv.at (i);
                   params.m_ndi = dci->GetDci ().m_ndi.at (i);
+                  params.m_ccId = m_componentCarrierId;
                   m_dlPhyTransmission (params);
                 }
 
@@ -824,7 +825,7 @@ LteEnbPhy::EndFrame (void)
 }
 
 
-void 
+void
 LteEnbPhy::GenerateCtrlCqiReport (const SpectrumValue& sinr)
 {
   NS_LOG_FUNCTION (this << sinr << Simulator::Now () << m_srsStartTime);
@@ -883,7 +884,7 @@ LteEnbPhy::CreatePuschCqiReport (const SpectrumValue& sinr)
       i++;
     }
   return (ulcqi);
-	
+
 }
 
 
@@ -910,8 +911,8 @@ LteEnbPhy::DoSetBandwidth (uint8_t ulBandwidth, uint8_t dlBandwidth)
     }
 }
 
-void 
-LteEnbPhy::DoSetEarfcn (uint16_t ulEarfcn, uint16_t dlEarfcn)
+void
+LteEnbPhy::DoSetEarfcn (uint32_t ulEarfcn, uint32_t dlEarfcn)
 {
   NS_LOG_FUNCTION (this << ulEarfcn << dlEarfcn);
   m_ulEarfcn = ulEarfcn;
@@ -919,11 +920,11 @@ LteEnbPhy::DoSetEarfcn (uint16_t ulEarfcn, uint16_t dlEarfcn)
 }
 
 
-void 
+void
 LteEnbPhy::DoAddUe (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << rnti);
- 
+
   bool success = AddUePhy (rnti);
   NS_ASSERT_MSG (success, "AddUePhy() failed");
 
@@ -931,11 +932,11 @@ LteEnbPhy::DoAddUe (uint16_t rnti)
   DoSetPa (rnti, 0);
 }
 
-void 
+void
 LteEnbPhy::DoRemoveUe (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this << rnti);
- 
+
   bool success = DeleteUePhy (rnti);
   NS_ASSERT_MSG (success, "DeleteUePhy() failed");
 
@@ -1015,8 +1016,8 @@ LteEnbPhy::CreateSrsReport (uint16_t rnti, double srs)
   (*it).second++;
   if ((*it).second == m_srsSamplePeriod)
     {
-      uint8_t cc = 0;
-      m_reportUeSinr (m_cellId, rnti, srs, cc);
+      std::cout << srs;
+      m_reportUeSinr (m_cellId, rnti, srs, (uint16_t) m_componentCarrierId);
       (*it).second = 0;
     }
 }
@@ -1090,7 +1091,7 @@ LteEnbPhy::DoSetSrsConfigurationIndex (uint16_t  rnti, uint16_t srcCi)
 }
 
 
-void 
+void
 LteEnbPhy::DoSetMasterInformationBlock (LteRrcSap::MasterInformationBlock mib)
 {
   NS_LOG_FUNCTION (this);
