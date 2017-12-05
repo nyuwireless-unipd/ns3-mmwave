@@ -1016,7 +1016,6 @@ LteEnbPhy::CreateSrsReport (uint16_t rnti, double srs)
   (*it).second++;
   if ((*it).second == m_srsSamplePeriod)
     {
-      std::cout << srs;
       m_reportUeSinr (m_cellId, rnti, srs, (uint16_t) m_componentCarrierId);
       (*it).second = 0;
     }
