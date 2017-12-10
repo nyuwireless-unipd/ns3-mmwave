@@ -40,12 +40,12 @@ class EpcUeNas : public Object
   friend class MemberLteAsSapUser<EpcUeNas>;
 public:
 
-  /** 
+  /**
    * Constructor
    */
   EpcUeNas ();
 
-  /** 
+  /**
    * Destructor
    */
   virtual ~EpcUeNas ();
@@ -55,15 +55,15 @@ public:
   static TypeId GetTypeId (void);
 
 
-  /** 
-   * 
+  /**
+   *
    * \param dev the UE NetDevice
    */
   void SetDevice (Ptr<NetDevice> dev);
 
-  /** 
-   * 
-   * 
+  /**
+   *
+   *
    * \param imsi the unique UE identifier
    */
   void SetImsi (uint64_t imsi);
@@ -113,11 +113,11 @@ public:
    *
    * \param dlEarfcn the DL frequency of the eNB
    */
-  void StartCellSelection (uint16_t dlEarfcn);
+  void StartCellSelection (uint32_t dlEarfcn);
 
   /**
    * \brief Causes NAS to tell AS to go to ACTIVE state.
-   * 
+   *
    * The end result is equivalent with EMM Registered + ECM Connected states.
    */
   void Connect ();
@@ -132,11 +132,11 @@ public:
    * Since RRC Idle Mode cell selection is not supported yet, we force the UE
    * RRC to be camped on a specific eNB.
    */
-  void Connect (uint16_t cellId, uint16_t dlEarfcn);
+  void Connect (uint16_t cellId, uint32_t dlEarfcn);
 
   /**
    * \brief Causes NAS to tell AS to camp to a specific cell and go to ACTIVE
-   *        state. It also specify which is the cellId for the MmWave BS to which 
+   *        state. It also specify which is the cellId for the MmWave BS to which
    *        the UE will connect later on
    * \param cellId the id of the eNB to camp on
    * \param dlEarfcn the DL frequency of the eNB
@@ -144,27 +144,27 @@ public:
    *
    */
   void ConnectMc (uint16_t cellId, uint16_t dlEarfcn, uint16_t mmWaveCellId);
- 
-  /** 
+
+  /**
    * instruct the NAS to disconnect
-   * 
+   *
    */
   void Disconnect ();
 
 
-  /** 
+  /**
    * Activate an EPS bearer
-   * 
+   *
    * \param bearer the characteristics of the bearer to be created
    * \param tft the TFT identifying the traffic that will go on this bearer
    */
   void ActivateEpsBearer (EpsBearer bearer, Ptr<EpcTft> tft);
 
-  /** 
+  /**
    * Enqueue an IP packet on the proper bearer for uplink transmission
-   * 
+   *
    * \param p the packet
-   * 
+   *
    * \return true if successful, false if an error occurred
    */
   bool Send (Ptr<Packet> p);
@@ -173,9 +173,9 @@ public:
   /**
    * Definition of NAS states as per "LTE - From theory to practice",
    * Section 3.2.3.2 "Connection Establishment and Release"
-   * 
+   *
    */
-  enum State 
+  enum State
   {
     OFF = 0,
     ATTACHING,
@@ -198,7 +198,7 @@ public:
    */
   typedef void (* StateTracedCallback)
     (const State oldState, const State newState);
- 
+
 private:
 
   // LTE AS SAP methods
