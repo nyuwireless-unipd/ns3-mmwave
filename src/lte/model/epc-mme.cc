@@ -65,25 +65,25 @@ EpcMme::GetTypeId (void)
   return tid;
 }
 
-EpcS1apSapMme* 
+EpcS1apSapMme*
 EpcMme::GetS1apSapMme ()
 {
   return m_s1apSapMme;
 }
 
-void 
+void
 EpcMme::SetS11SapSgw (EpcS11SapSgw * s)
 {
   m_s11SapSgw = s;
 }
 
-EpcS11SapMme* 
+EpcS11SapMme*
 EpcMme::GetS11SapMme ()
 {
   return m_s11SapMme;
 }
 
-void 
+void
 EpcMme::AddEnb (uint16_t gci, Ipv4Address enbS1uAddr, EpcS1apSapEnb* enbS1apSap)
 {
   NS_LOG_FUNCTION (this << gci << enbS1uAddr);
@@ -94,7 +94,7 @@ EpcMme::AddEnb (uint16_t gci, Ipv4Address enbS1uAddr, EpcS1apSapEnb* enbS1apSap)
   m_enbInfoMap[gci] = enbInfo;
 }
 
-void 
+void
 EpcMme::AddUe (uint64_t imsi)
 {
   NS_LOG_FUNCTION (this << imsi);
@@ -115,7 +115,7 @@ EpcMme::AddBearer (uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
   BearerInfo bearerInfo;
   bearerInfo.bearerId = ++(it->second->bearerCounter);
   bearerInfo.tft = tft;
-  bearerInfo.bearer = bearer;  
+  bearerInfo.bearer = bearer;
   it->second->bearersToBeActivated.push_back (bearerInfo);
   return bearerInfo.bearerId;
 }
@@ -123,7 +123,7 @@ EpcMme::AddBearer (uint64_t imsi, Ptr<EpcTft> tft, EpsBearer bearer)
 
 // S1-AP SAP MME forwarded methods
 
-void 
+void
 EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t imsi, uint16_t gci)
 {
   NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << imsi << gci);
@@ -132,33 +132,34 @@ EpcMme::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, uint64_t ims
   it->second->cellId = gci;
   EpcS11SapSgw::CreateSessionRequestMessage msg;
   msg.imsi = imsi;
-  msg. uli.gci = gci;
+  msg.uli.gci = gci;
+  msg.teid = 0;
   for (std::list<BearerInfo>::iterator bit = it->second->bearersToBeActivated.begin ();
        bit != it->second->bearersToBeActivated.end ();
        ++bit)
     {
       EpcS11SapSgw::BearerContextToBeCreated bearerContext;
-      bearerContext.epsBearerId =  bit->bearerId; 
-      bearerContext.bearerLevelQos = bit->bearer; 
+      bearerContext.epsBearerId =  bit->bearerId;
+      bearerContext.bearerLevelQos = bit->bearer;
       bearerContext.tft = bit->tft;
       msg.bearerContextsToBeCreated.push_back (bearerContext);
     }
   m_s11SapSgw->CreateSessionRequest (msg);
 }
 
-void 
+void
 EpcMme::DoInitialContextSetupResponse (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, std::list<EpcS1apSapMme::ErabSetupItem> erabSetupList)
 {
   NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id);
   NS_FATAL_ERROR ("unimplemented");
 }
 
-void 
+void
 EpcMme::DoPathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t gci, std::list<EpcS1apSapMme::ErabSwitchedInDownlinkItem> erabToBeSwitchedInDownlinkList)
 {
   NS_LOG_FUNCTION (this << mmeUeS1Id << enbUeS1Id << gci);
 
-  uint64_t imsi = mmeUeS1Id; 
+  uint64_t imsi = mmeUeS1Id;
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
   NS_LOG_INFO ("IMSI " << imsi << " old eNB: " << it->second->cellId << ", new eNB: " << gci);
@@ -175,7 +176,7 @@ EpcMme::DoPathSwitchRequest (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t gc
 
 // S11 SAP MME forwarded methods
 
-void 
+void
 EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
 {
   NS_LOG_FUNCTION (this << msg.teid);
@@ -189,7 +190,7 @@ EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
       erab.erabId = bit->epsBearerId;
       erab.erabLevelQosParameters = bit->bearerLevelQos;
       erab.transportLayerAddress = bit->sgwFteid.address;
-      erab.sgwTeid = bit->sgwFteid.teid;      
+      erab.sgwTeid = bit->sgwFteid.teid;
       erabToBeSetupList.push_back (erab);
     }
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
@@ -203,7 +204,7 @@ EpcMme::DoCreateSessionResponse (EpcS11SapMme::CreateSessionResponseMessage msg)
 }
 
 
-void 
+void
 EpcMme::DoModifyBearerResponse (EpcS11SapMme::ModifyBearerResponseMessage msg)
 {
   NS_LOG_FUNCTION (this << msg.teid);

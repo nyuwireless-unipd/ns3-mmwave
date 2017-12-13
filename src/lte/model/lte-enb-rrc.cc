@@ -1506,7 +1506,7 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
     {
     case CONNECTION_SETUP:
       m_connectionSetupTimeout.Cancel ();
-      StartDataRadioBearers ();
+      //StartDataRadioBearers ();
       NS_LOG_INFO("m_firstConnection " << m_firstConnection);
       if ( m_caSupportConfigured == false && m_rrc->m_numberOfComponentCarriers > 1)
         {
