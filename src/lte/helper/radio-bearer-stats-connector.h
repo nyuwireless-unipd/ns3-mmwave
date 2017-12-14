@@ -197,15 +197,6 @@ private:
   void ConnectSrb0Traces (std::string ueRrcPath, uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
   /**
-   * Connects Srb1 trace sources at UE to RLC and PDCP calculators
-   * \param ueRrcPath
-   * \param imsi
-   * \param cellId
-   * \param rnti
-   */
-  void ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t imsi, uint16_t cellId, uint16_t rnti);
-
-  /**
    * Connects all trace sources at UE to RLC and PDCP calculators.
    * This function can connect traces only once for UE.
    * \param context
@@ -226,16 +217,16 @@ private:
   void ConnectTracesEnbIfFirstTime (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
-   * Connects SRB1 trace sources at UE to RLC and PDCP calculators.
-   * \param context
+   * Connects SRB1 trace sources at UE to RLC and PDCP calculators
+   * \param ueRrcPath
    * \param imsi
-   * \param cellid
+   * \param cellId
    * \param rnti
    */
-  //void ConnectTracesUeSrb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+  void ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
   /**
-   * Connects drbs trace sources at UE to RLC and PDCP calculators.
+   * Connects DRBs trace sources at UE to RLC and PDCP calculators.
    * \param context
    * \param imsi
    * \param cellid
@@ -264,7 +255,7 @@ private:
   void ConnectSrb1TracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
-   * Connects drbs trace sources at eNB to RLC and PDCP calculators
+   * Connects DRBs trace sources at eNB to RLC and PDCP calculators
    * \param context
    * \param imsi
    * \param cellid

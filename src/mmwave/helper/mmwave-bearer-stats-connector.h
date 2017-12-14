@@ -250,15 +250,6 @@ private:
   void ConnectSrb0Traces (std::string ueRrcPath, uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
   /**
-   * Connects Srb1 trace sources at UE to RLC and PDCP calculators
-   * \param ueRrcPath
-   * \param imsi
-   * \param cellId
-   * \param rnti
-   */
-  void ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t imsi, uint16_t cellId, uint16_t rnti);
-
-  /**
    * Connects all trace sources at UE to RLC and PDCP calculators.
    * This function can connect traces only once for UE.
    * \param context
@@ -277,15 +268,24 @@ private:
    * \param rnti
    */
   void ConnectTracesEnbIfFirstTime (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
-
+  
   /**
-   * Connects all trace sources at UE to RLC and PDCP calculators.
+   * Connects DRBs trace sources at UE to RLC and PDCP calculators.
    * \param context
    * \param imsi
    * \param cellid
    * \param rnti
    */
-  void ConnectTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+  void ConnectDrbTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
+  /**
+   * Connects SRB1 trace sources at UE to RLC and PDCP calculators
+   * \param ueRrcPath
+   * \param imsi
+   * \param cellId
+   * \param rnti
+   */
+  void ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t imsi, uint16_t cellId, uint16_t rnti);
 
   /**
    * Disconnects all trace sources at UE to RLC and PDCP calculators.
@@ -298,13 +298,22 @@ private:
   void DisconnectTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
-   * Connects all trace sources at eNB to RLC and PDCP calculators
+   * Connects SRB1 trace sources at eNB to RLC and PDCP calculators
    * \param context
    * \param imsi
    * \param cellid
    * \param rnti
    */
-  void ConnectTracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+  void ConnectSrb1TracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
+  /**
+   * Connects DRBs trace sources at eNB to RLC and PDCP calculators
+   * \param context
+   * \param imsi
+   * \param cellid
+   * \param rnti
+   */
+  void ConnectDrbTracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
    * Disconnects all trace sources at eNB to RLC and PDCP calculators.
@@ -330,9 +339,11 @@ private:
   Ptr<McStatsCalculator> m_mcStats;
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
-  std::set<uint64_t> m_imsiSeenUe; //!< stores all UEs for which RLC and PDCP traces were connected
-  std::set<uint64_t> m_imsiSeenEnb; //!< stores all eNBs for which RLC and PDCP traces were connected
-  
+  std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
+  std::set<uint64_t> m_imsiSeenEnbSrb; //!< stores all eNBs for which RLC and PDCP traces and SRB1 were connected
+  std::set<uint64_t> m_imsiSeenUeDrb; //!< stores all UEs for which RLC and PDCP traces for DRBs were connected
+  std::set<uint64_t> m_imsiSeenEnbDrb; //!< stores all eNBs for which RLC and PDCP traces for DRBs were connected
+ 
   /**
    * Struct used as key in m_ueManagerPathByCellIdRnti map
    */
