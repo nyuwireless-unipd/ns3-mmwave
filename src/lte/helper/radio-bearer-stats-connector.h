@@ -44,9 +44,9 @@ class RadioBearerStatsCalculator;
  * \ingroup lte
  *
  * This class is very useful when user needs to collect
- * statistics from PDCD and RLC. It automatically connects
+ * statistics from PDCP and RLC. It automatically connects
  * RadioBearerStatsCalculator to appropriate trace sinks.
- * Usually user do not use this class. All he/she needs to
+ * Usually user does not use this class. All he/she needs
  * to do is to call: LteHelper::EnablePdcpTraces() and/or
  * LteHelper::EnableRlcTraces().
  */
@@ -226,13 +226,23 @@ private:
   void ConnectTracesEnbIfFirstTime (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
-   * Connects all trace sources at UE to RLC and PDCP calculators.
+   * Connects SRB1 trace sources at UE to RLC and PDCP calculators.
    * \param context
    * \param imsi
    * \param cellid
    * \param rnti
    */
-  void ConnectTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+  //void ConnectTracesUeSrb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
+  /**
+   * Connects drbs trace sources at UE to RLC and PDCP calculators.
+   * \param context
+   * \param imsi
+   * \param cellid
+   * \param rnti
+   */
+  void ConnectDrbTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
 
   /**
    * Disconnects all trace sources at UE to RLC and PDCP calculators.
@@ -245,13 +255,23 @@ private:
   void DisconnectTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
-   * Connects all trace sources at eNB to RLC and PDCP calculators
+   * Connects SRB1 trace sources at eNB to RLC and PDCP calculators
    * \param context
    * \param imsi
    * \param cellid
    * \param rnti
    */
-  void ConnectTracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+  void ConnectSrb1TracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
+  /**
+   * Connects drbs trace sources at eNB to RLC and PDCP calculators
+   * \param context
+   * \param imsi
+   * \param cellid
+   * \param rnti
+   */
+  void ConnectDrbTracesEnb (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
 
   /**
    * Disconnects all trace sources at eNB to RLC and PDCP calculators.
@@ -267,13 +287,15 @@ private:
   Ptr<RadioBearerStatsCalculator> m_rlcStats; //!< Calculator for RLC Statistics
   Ptr<RadioBearerStatsCalculator> m_pdcpStats; //!< Calculator for PDCP Statistics
   Ptr<RetxStatsCalculator> m_retxStats;
-  Ptr<MacTxStatsCalculator> m_macTxStats;        
+  Ptr<MacTxStatsCalculator> m_macTxStats;
 
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
-  std::set<uint64_t> m_imsiSeenUe; //!< stores all UEs for which RLC and PDCP traces were connected
-  std::set<uint64_t> m_imsiSeenEnb; //!< stores all eNBs for which RLC and PDCP traces were connected
-  
+  std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
+  std::set<uint64_t> m_imsiSeenEnbSrb; //!< stores all eNBs for which RLC and PDCP traces and SRB1 were connected
+  std::set<uint64_t> m_imsiSeenUeDrb; //!< stores all eNBs for which RLC and PDCP traces for drbs were connected
+  std::set<uint64_t> m_imsiSeenEnbDrb; //!< stores all eNBs for which RLC and PDCP traces for drbs were connected
+
   /**
    * Struct used as key in m_ueManagerPathByCellIdRnti map
    */
