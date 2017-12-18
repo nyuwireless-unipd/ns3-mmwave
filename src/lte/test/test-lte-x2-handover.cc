@@ -204,6 +204,8 @@ LteX2HandoverTestCase::DoRun ()
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));
 
+  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
+
   int64_t stream = 1;
   
   m_lteHelper = CreateObject<LteHelper> ();
