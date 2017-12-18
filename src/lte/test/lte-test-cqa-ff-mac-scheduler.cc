@@ -517,6 +517,7 @@ LenaCqaFfMacSchedulerTestCase2::DoRun (void)
     }
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
+  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
 
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();

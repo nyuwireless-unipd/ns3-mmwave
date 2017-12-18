@@ -159,7 +159,7 @@ PointToPointEpcHelper::GetTypeId (void)
                    MakeDataRateChecker ())
     .AddAttribute ("S1apLinkDelay", 
                    "The delay to be used for the S1-AP link to be created",
-                   TimeValue (Seconds (0.2)),
+                   TimeValue (Seconds (0.01)),
                    MakeTimeAccessor (&PointToPointEpcHelper::m_s1apLinkDelay),
                    MakeTimeChecker ())
     .AddAttribute ("S1apLinkMtu", 

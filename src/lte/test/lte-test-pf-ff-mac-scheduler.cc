@@ -450,7 +450,7 @@ LenaPfFfMacSchedulerTestCase2::DoRun (void)
       uePhy->SetAttribute ("NoiseFigure", DoubleValue (9.0));
     }
 
-  double statsStartTime = 0.300; // need to allow for RRC connection establishment + SRS
+  double statsStartTime = 0.600; // need to allow for RRC connection establishment + SRS
   double statsDuration = 0.4;
   double tolerance = 0.1;
   Simulator::Stop (Seconds (statsStartTime + statsDuration - 0.000001));

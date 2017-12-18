@@ -267,6 +267,7 @@ LenaFdTbfqFfMacSchedulerTestCase1::DoRun (void)
       Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
       Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
     }
+  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 
@@ -514,6 +515,7 @@ LenaFdTbfqFfMacSchedulerTestCase2::DoRun (void)
       Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
       Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
     }
+  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 

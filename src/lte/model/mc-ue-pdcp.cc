@@ -213,7 +213,7 @@ McUePdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   // Sender timestamp
   PdcpTag pdcpTag (Simulator::Now ());
   p->AddByteTag (pdcpTag);
-  //m_txPdu (m_rnti, m_lcid, p->GetSize ());
+  m_txPdu (m_rnti, m_lcid, p->GetSize ());
 
   LteRlcSapProvider::TransmitPdcpPduParameters params;
   params.rnti = m_rnti;
