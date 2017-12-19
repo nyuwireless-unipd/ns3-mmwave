@@ -285,6 +285,7 @@ private:
   std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
   std::set<uint64_t> m_imsiSeenEnbSrb; //!< stores all eNBs for which RLC and PDCP traces and SRB1 were connected
   std::set<uint64_t> m_imsiSeenUeDrb; //!< stores all eNBs for which RLC and PDCP traces for drbs were connected
+  uint16_t m_numOfConnectDrbTracesUe; //!< number of calls to ConnectDrbTracesUe
   std::set<uint64_t> m_imsiSeenEnbDrb; //!< stores all eNBs for which RLC and PDCP traces for drbs were connected
 
   /**

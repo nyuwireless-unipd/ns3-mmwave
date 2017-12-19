@@ -225,6 +225,7 @@ RadioBearerStatsConnector::EnsureConnected ()
            MakeBoundCallback (&NotifyDlMacTx, arg));
       }
       m_connected = true;
+      m_numOfConnectDrbTracesUe = 0;
     }
 }
 
@@ -372,15 +373,35 @@ RadioBearerStatsConnector::ConnectTracesUeIfFirstTime (std::string context, uint
   }
 
   std::string basePath = context.substr (0, context.rfind ("/"));
-  Config::MatchContainer rlc_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LteRlc/");
+  Config::MatchContainer rlc_container = Config::LookupMatches("/NodeList/*/DeviceList/*/LteUeRrc/DataRadioBearerMap/*/LteRlc/");
+  NS_LOG_DEBUG("basePath: " + basePath);
 
   //Connect PDCP and RLC for data radio bearers
   //Look for the RLCs
-  if (m_imsiSeenUeDrb.find (imsi) == m_imsiSeenUeDrb.end () && rlc_container.GetN() > 0)
+  if (m_imsiSeenUeDrb.find (imsi) == m_imsiSeenUeDrb.end () && m_numOfConnectDrbTracesUe < rlc_container.GetN() )
     {
-      //it is executed only if there exist at least one rlc layer
+      //If it is the first time for this imsi
+      NS_LOG_DEBUG("Number of calls " + std::to_string(m_numOfConnectDrbTracesUe) + " Number of RLC " + std::to_string(rlc_container.GetN()));
+      NS_LOG_DEBUG("Insert imsi " + std::to_string(imsi));
       m_imsiSeenUeDrb.insert (imsi);
+      m_numOfConnectDrbTracesUe ++; //TODO Check if there could be more than one RLC to connect
       ConnectDrbTracesUe (context, imsi, cellId, rnti);
+    }
+  else
+    {
+      NS_LOG_DEBUG("Number of calls " + std::to_string(m_numOfConnectDrbTracesUe) + " Number of RLC" + std::to_string(rlc_container.GetN()));
+      if(m_numOfConnectDrbTracesUe < rlc_container.GetN())
+      {
+        //If this imsi has already been connected but a new DRB is established
+        NS_LOG_DEBUG("There is a new RLC. Call ConnectDrbTracesUe to connect the traces.");
+        m_numOfConnectDrbTracesUe ++; //TODO Check if there could be more than one RLC to connect
+        ConnectDrbTracesUe (context, imsi, cellId, rnti);
+      }
+      else
+      {
+        m_numOfConnectDrbTracesUe = rlc_container.GetN(); //One or more DRBs could have been removed
+        NS_LOG_DEBUG("All RLCs traces are already connected. No need for a call to ConnectDrbTracesUe.");
+      }
     }
 }
 
