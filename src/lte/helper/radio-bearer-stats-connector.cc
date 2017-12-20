@@ -225,7 +225,6 @@ RadioBearerStatsConnector::EnsureConnected ()
            MakeBoundCallback (&NotifyDlMacTx, arg));
       }
       m_connected = true;
-      m_numOfConnectDrbTracesUe = 0;
     }
 }
 
@@ -372,36 +371,40 @@ RadioBearerStatsConnector::ConnectTracesUeIfFirstTime (std::string context, uint
       ConnectSrb1TracesUe (context, imsi, cellId, rnti);
   }
 
+  //Look for the RLCs
   std::string basePath = context.substr (0, context.rfind ("/"));
-  Config::MatchContainer rlc_container = Config::LookupMatches("/NodeList/*/DeviceList/*/LteUeRrc/DataRadioBearerMap/*/LteRlc/");
-  NS_LOG_DEBUG("basePath: " + basePath);
+  Config::MatchContainer rlc_container = Config::LookupMatches( basePath + "/DataRadioBearerMap/*/LteRlc/");
+  uint16_t numberOfRlc = rlc_container.GetN();
 
   //Connect PDCP and RLC for data radio bearers
-  //Look for the RLCs
-  if (m_imsiSeenUeDrb.find (imsi) == m_imsiSeenUeDrb.end () && m_numOfConnectDrbTracesUe < rlc_container.GetN() )
+  std::map<uint64_t,uint16_t>::iterator it = m_imsiSeenUeDrb.find(imsi);
+  if (it == m_imsiSeenUeDrb.end () && numberOfRlc > 0)
     {
       //If it is the first time for this imsi
-      NS_LOG_DEBUG("Number of calls " + std::to_string(m_numOfConnectDrbTracesUe) + " Number of RLC " + std::to_string(rlc_container.GetN()));
       NS_LOG_DEBUG("Insert imsi " + std::to_string(imsi));
-      m_imsiSeenUeDrb.insert (imsi);
-      m_numOfConnectDrbTracesUe ++; //TODO Check if there could be more than one RLC to connect
+      m_imsiSeenUeDrb.insert (m_imsiSeenUeDrb.end(), std::pair<uint64_t,uint16_t>(imsi, 1));
       ConnectDrbTracesUe (context, imsi, cellId, rnti);
     }
   else
     {
-      NS_LOG_DEBUG("Number of calls " + std::to_string(m_numOfConnectDrbTracesUe) + " Number of RLC" + std::to_string(rlc_container.GetN()));
-      if(m_numOfConnectDrbTracesUe < rlc_container.GetN())
+      if(it->second < numberOfRlc)
       {
         //If this imsi has already been connected but a new DRB is established
         NS_LOG_DEBUG("There is a new RLC. Call ConnectDrbTracesUe to connect the traces.");
-        m_numOfConnectDrbTracesUe ++; //TODO Check if there could be more than one RLC to connect
+        it->second ++; //TODO Check if there could be more than one RLC to connect
         ConnectDrbTracesUe (context, imsi, cellId, rnti);
       }
       else
       {
-        m_numOfConnectDrbTracesUe = rlc_container.GetN(); //One or more DRBs could have been removed
+        it->second = numberOfRlc; //One or more DRBs could have been removed
         NS_LOG_DEBUG("All RLCs traces are already connected. No need for a call to ConnectDrbTracesUe.");
       }
+    }
+
+    //Debug: print map
+    for( std::map<uint64_t,uint16_t>::const_iterator it2 = m_imsiSeenUeDrb.begin(); it2!=m_imsiSeenUeDrb.end(); ++it2 )
+    {
+      std::cout << "imsi " << std::to_string(it2->first) << "\tnum of rlc " << std::to_string(it2->second) << std::endl;
     }
 }
 
