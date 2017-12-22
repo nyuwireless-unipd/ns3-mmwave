@@ -499,12 +499,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, 
 
                   packet->AddHeader (rlcAmHeader);
                   NS_LOG_LOGIC ("new AM RLC header: " << rlcAmHeader);
-
-                  // Sender timestamp
-                  RlcTag rlcTag (Simulator::Now ());
-                  NS_ASSERT_MSG (packet->PeekPacketTag (rlcTag), "RlcTag is missing");
-                  packet->ReplacePacketTag (rlcTag);
-                  m_txPdu (m_rnti, m_lcid, packet->GetSize ());
+                  
                   // Send RLC PDU to MAC layer
                   LteMacSapProvider::TransmitPduParameters params;
                   params.pdu = packet;

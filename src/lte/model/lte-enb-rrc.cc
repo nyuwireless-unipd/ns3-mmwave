@@ -4281,8 +4281,6 @@ LteEnbRrc::DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
   NS_LOG_LOGIC ("mmeUeS1apId = " << req.mmeUeS1apId);
   NS_LOG_INFO ("isMc = " << req.isMc);
 
-  NS_ASSERT (req.targetCellId == m_cellId);
-
   if (m_admitHandoverRequest == false)
     {
       NS_LOG_INFO ("rejecting handover request from cellId " << req.sourceCellId);
