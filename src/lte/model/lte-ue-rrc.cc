@@ -622,7 +622,6 @@ LteUeRrc::DoInitialize (void)
   lcConfig.prioritizedBitRateKbps = 65535; // maximum
   lcConfig.bucketSizeDurationMs = 65535; // maximum
   lcConfig.logicalChannelGroup = 0; // all SRBs mapped to LCG 0
-  m_cmacSapProvider.at(0)->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
 
 
   if(m_interRatHoCapable)
