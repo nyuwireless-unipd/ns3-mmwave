@@ -205,7 +205,7 @@ uint16_t cellId = m_rrc->GetCellId ();
             }
           else
             {
-              if (enbDev->GetCellId () == cellId)
+              if (enbDev->HasCellId (cellId))
                 {
                   found = true;
                   break;
