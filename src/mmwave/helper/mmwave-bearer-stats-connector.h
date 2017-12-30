@@ -2,7 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -25,7 +25,7 @@
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
  */
 
@@ -221,7 +221,7 @@ public:
   std::string GetCellIdStatsOutputFilename (void);
   std::string GetMmWaveSinrOutputFilename (void);
   std::string GetLteSinrOutputFilename (void);
-  
+
   void SetEnbHandoverStartOutputFilename (std::string outputFilename);
   void  SetUeHandoverStartOutputFilename (std::string outputFilename);
   void SetEnbHandoverEndOutputFilename (std::string outputFilename);
@@ -268,7 +268,7 @@ private:
    * \param rnti
    */
   void ConnectTracesEnbIfFirstTime (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
-  
+
   /**
    * Connects DRBs trace sources at UE to RLC and PDCP calculators.
    * \param context
@@ -341,9 +341,9 @@ private:
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
   std::set<uint64_t> m_imsiSeenEnbSrb; //!< stores all eNBs for which RLC and PDCP traces and SRB1 were connected
-  std::set<uint64_t> m_imsiSeenUeDrb; //!< stores all UEs for which RLC and PDCP traces for DRBs were connected
+  std::map<uint64_t,uint16_t> m_imsiSeenUeDrb; //!< stores all UEs for which RLC and PDCP traces for DRBs were connected
   std::set<uint64_t> m_imsiSeenEnbDrb; //!< stores all eNBs for which RLC and PDCP traces for DRBs were connected
- 
+
   /**
    * Struct used as key in m_ueManagerPathByCellIdRnti map
    */

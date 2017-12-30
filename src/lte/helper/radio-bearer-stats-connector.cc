@@ -404,7 +404,7 @@ RadioBearerStatsConnector::ConnectTracesUeIfFirstTime (std::string context, uint
     //Debug: print map
     for( std::map<uint64_t,uint16_t>::const_iterator it2 = m_imsiSeenUeDrb.begin(); it2!=m_imsiSeenUeDrb.end(); ++it2 )
     {
-      std::cout << "imsi " << std::to_string(it2->first) << "\tnum of rlc " << std::to_string(it2->second) << std::endl;
+      NS_LOG_DEBUG("imsi " + std::to_string(it2->first) + "\tnum of rlc " + std::to_string(it2->second));
     }
 }
 
