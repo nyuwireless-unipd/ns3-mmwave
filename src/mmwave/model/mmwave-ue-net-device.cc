@@ -2,23 +2,23 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
@@ -61,41 +61,40 @@ MmWaveUeNetDevice::GetTypeId (void)
 	    .SetParent<MmWaveNetDevice> ()
 	    .AddConstructor<MmWaveUeNetDevice> ()
 		.AddAttribute ("EpcUeNas",
-		                   "The NAS associated to this UeNetDevice",
-		                   PointerValue (),
-		                   MakePointerAccessor (&MmWaveUeNetDevice::m_nas),
-		                   MakePointerChecker <EpcUeNas> ())
+                   "The NAS associated to this UeNetDevice",
+                   PointerValue (),
+                   MakePointerAccessor (&MmWaveUeNetDevice::m_nas),
+                   MakePointerChecker <EpcUeNas> ())
 		.AddAttribute ("mmWaveUeRrc",
-		                   "The RRC associated to this UeNetDevice",
-		                   PointerValue (),
-		                   MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),
-		                   MakePointerChecker <LteUeRrc> ())
-		.AddAttribute ("MmWaveUePhy",
-						"The PHY associated to this UeNetDevice",
-						PointerValue (),
-						MakePointerAccessor (&MmWaveUeNetDevice::m_phy),
-						MakePointerChecker <MmWaveUePhy> ())
-		.AddAttribute ("MmWaveUeMac",
-						"The MAC associated to this UeNetDevice",
-						PointerValue (),
-						MakePointerAccessor (&MmWaveUeNetDevice::m_mac),
-						MakePointerChecker <MmWaveUeMac> ())
+                   "The RRC associated to this UeNetDevice",
+                   PointerValue (),
+                   MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),
+                   MakePointerChecker <LteUeRrc> ())
+		 .AddAttribute ("mmWaveUeComponentCarrierManager",
+	                  "The ComponentCarrierManager associated to this UeNetDevice",
+	                  PointerValue (),
+	                  MakePointerAccessor (&MmWaveUeNetDevice::m_componentCarrierManager),
+	                  MakePointerChecker <LteUeComponentCarrierManager> ())
+	   .AddAttribute ("ComponentCarrierMapUe", "List of all component Carrier.",
+	                  ObjectMapValue (),
+	                  MakeObjectMapAccessor (&MmWaveUeNetDevice::m_ccMap),
+	                  MakeObjectMapChecker<ComponentCarrierUe> ())
 		.AddAttribute ("Imsi",
-			 "International Mobile Subscriber Identity assigned to this UE",
-			 UintegerValue (0),
-			 MakeUintegerAccessor (&MmWaveUeNetDevice::m_imsi),
-			 MakeUintegerChecker<uint64_t> ())
+									 "International Mobile Subscriber Identity assigned to this UE",
+									 UintegerValue (0),
+									 MakeUintegerAccessor (&MmWaveUeNetDevice::m_imsi),
+									 MakeUintegerChecker<uint64_t> ())
 		.AddAttribute ("AntennaNum",
-					   "Antenna number of the device",
-					   UintegerValue (16),
-					   MakeUintegerAccessor (&MmWaveUeNetDevice::SetAntennaNum,
-											 &MmWaveUeNetDevice::GetAntennaNum),
-					   MakeUintegerChecker<uint8_t> ())
+								   "Antenna number of the device",
+								   UintegerValue (16),
+								   MakeUintegerAccessor (&MmWaveUeNetDevice::SetAntennaNum,
+														 &MmWaveUeNetDevice::GetAntennaNum),
+								   MakeUintegerChecker<uint8_t> ())
 		.AddAttribute ("LteUeRrc",
-						"The RRC layer associated with the ENB",
-						PointerValue (),
-						MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),
-						MakePointerChecker <LteUeRrc> ())
+										"The RRC layer associated with the ENB",
+										PointerValue (),
+										MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),
+										MakePointerChecker <LteUeRrc> ())
 	;
 	return tid;
 }
@@ -115,16 +114,36 @@ MmWaveUeNetDevice::~MmWaveUeNetDevice (void)
 void
 MmWaveUeNetDevice::DoInitialize (void)
 {
+	NS_LOG_FUNCTION (this);
 	m_isConstructed = true;
 	UpdateConfig ();
-	m_phy->DoInitialize ();
+
+	std::map< uint8_t, Ptr<ComponentCarrierUe> >::iterator it;
+	for (it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
+		{
+			it->second->GetPhy ()->Initialize ();
+			it->second->GetMac ()->Initialize ();
+		}
 	m_rrc->Initialize ();
 
 }
 void
 MmWaveUeNetDevice::DoDispose ()
 {
+	NS_LOG_FUNCTION (this);
+  m_targetEnb = 0;
+
 	m_rrc->Dispose ();
+	m_rrc = 0;
+
+	m_nas->Dispose ();
+	m_nas = 0;
+
+	for (uint32_t i = 0; i < m_ccMap.size (); i++)
+		{
+			m_ccMap.at (i)->Dispose ();
+		}
+	m_componentCarrierManager->Dispose ();
 }
 
 uint32_t
@@ -180,13 +199,22 @@ MmWaveUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t pro
 Ptr<MmWaveUePhy>
 MmWaveUeNetDevice::GetPhy (void) const
 {
-	return m_phy; //Inherited from mmwaveNetDevice
+	NS_LOG_FUNCTION (this);
+  return m_ccMap.at (0)->GetPhy ();
+}
+
+Ptr<LteUeComponentCarrierManager>
+MmWaveUeNetDevice::GetComponentCarrierManager (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_componentCarrierManager;
 }
 
 Ptr<MmWaveUeMac>
 MmWaveUeNetDevice::GetMac (void) const
 {
-	return m_mac;
+	NS_LOG_FUNCTION (this);
+	return m_ccMap.at (0)->GetMac ();
 }
 
 Ptr<EpcUeNas>
@@ -207,42 +235,62 @@ MmWaveUeNetDevice::GetRrc (void) const
 uint64_t
 MmWaveUeNetDevice::GetImsi () const
 {
+	NS_LOG_FUNCTION (this);
 	return m_imsi;
 }
 
 uint16_t
 MmWaveUeNetDevice::GetEarfcn () const
 {
+	NS_LOG_FUNCTION (this);
 	return m_earfcn;
 }
 
 void
 MmWaveUeNetDevice::SetEarfcn (uint16_t earfcn)
 {
+	NS_LOG_FUNCTION (this << earfcn);
 	m_earfcn = earfcn;
 }
 
 void
 MmWaveUeNetDevice::SetTargetEnb (Ptr<MmWaveEnbNetDevice> enb)
 {
+	NS_LOG_FUNCTION (this << enb);
 	m_targetEnb = enb;
 }
 
 Ptr<MmWaveEnbNetDevice>
 MmWaveUeNetDevice::GetTargetEnb (void)
 {
+	NS_LOG_FUNCTION (this);
 	return m_targetEnb;
 }
+
+std::map < uint8_t, Ptr<ComponentCarrierUe> >
+MmWaveUeNetDevice::GetCcMap ()
+{
+  return m_ccMap;
+}
+
+void
+MmWaveUeNetDevice::SetCcMap (std::map< uint8_t, Ptr<ComponentCarrierUe> > ccm)
+{
+  m_ccMap = ccm;
+}
+
 
 uint8_t
 MmWaveUeNetDevice::GetAntennaNum () const
 {
+	NS_LOG_FUNCTION (this);
 	return m_antennaNum;
 }
 
 void
 MmWaveUeNetDevice::SetAntennaNum (uint8_t antennaNum)
 {
+	NS_LOG_FUNCTION (this << antennaNum);
 	m_antennaNum = antennaNum;
 }
 

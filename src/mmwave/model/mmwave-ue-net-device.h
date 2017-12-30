@@ -2,23 +2,23 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
@@ -95,21 +95,24 @@ protected:
   virtual void DoInitialize (void);
 
 private:
+	bool m_isConstructed;
 
   Ptr<MmWaveEnbNetDevice> m_targetEnb;
-  Ptr<MmWaveUePhy> m_phy;
-  Ptr<MmWaveUeMac> m_mac;
 
   Ptr<LteUeRrc> m_rrc;
   Ptr<EpcUeNas> m_nas;
+	Ptr<LteUeComponentCarrierManager> m_componentCarrierManager; ///< the component carrier manager
+
 
   uint64_t m_imsi;
 
   uint16_t m_earfcn;
 
-   uint32_t m_csgId;
-   bool m_isConstructed;
-   uint8_t m_antennaNum;
+ 	uint32_t m_csgId;
+
+ 	std::map < uint8_t, Ptr<ComponentCarrierUe> > m_ccMap; ///< CC map
+
+ 	uint8_t m_antennaNum;
 
 
 };
