@@ -45,6 +45,9 @@
 #include "mmwave-ue-phy.h"
 #include <ns3/ipv4-l3-protocol.h>
 #include <ns3/log.h>
+#include <ns3/lte-ue-component-carrier-manager.h>
+#include <ns3/object-map.h>
+
 
 namespace ns3{
 

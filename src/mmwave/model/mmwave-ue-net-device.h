@@ -40,6 +40,8 @@
 #include "mmwave-ue-mac.h"
 #include <ns3/lte-ue-rrc.h>
 #include <ns3/epc-ue-nas.h>
+#include "ns3/component-carrier-ue.h"
+#include <map>
 
 namespace ns3{
 
@@ -50,6 +52,7 @@ class Node;
 class MmWaveUePhy;
 class MmWaveUeMac;
 class MmWaveEnbNetDevice;
+class LteUeComponentCarrierManager;
 
 class MmWaveUeNetDevice : public MmWaveNetDevice
 {
