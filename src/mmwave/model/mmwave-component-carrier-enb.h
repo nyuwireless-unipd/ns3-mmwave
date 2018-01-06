@@ -120,7 +120,7 @@ private:
   uint16_t m_cellId; ///< Cell identifer
   Ptr<MmWaveEnbPhy> m_phy; ///< the Phy instance of this eNodeB component carrier
   Ptr<MmWaveEnbMac> m_mac; ///< the MAC instance of this eNodeB component carrier
-  //Ptr<FfMacScheduler> m_scheduler; ///< the scheduler instance of this eNodeB component carrier
+  Ptr<MmWaveMacScheduler> m_scheduler; ///< the scheduler instance of this eNodeB component carrier
   //Ptr<LteFfrAlgorithm> m_ffrAlgorithm; ///< the FFR algorithm instance of this eNodeB component carrier
 
 

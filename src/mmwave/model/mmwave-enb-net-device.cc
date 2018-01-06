@@ -113,8 +113,6 @@ MmWaveEnbNetDevice::DoInitialize(void)
 	NS_LOG_FUNCTION(this);
 	m_isConstructed = true;
 	UpdateConfig ();
-	m_phy->Initialize ();
-
 	std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> >::iterator it;
   for (it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
     {
@@ -265,7 +263,7 @@ MmWaveEnbNetDevice::UpdateConfig (void)
 			// we have to make sure that this function is called only once
 			//m_rrc->ConfigureCell (m_Bandwidth, m_Bandwidth, m_Earfcn, m_Earfcn, m_cellId);
   		NS_ASSERT (!m_ccMap.empty ());
-			m_rrc -> ConfigureCell(ccMap);
+			m_rrc -> ConfigureCell(m_ccMap);
 			m_isConfigured = true;
 		}
 

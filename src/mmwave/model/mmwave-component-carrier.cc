@@ -43,8 +43,8 @@ TypeId MmWaveComponentCarrier::GetTypeId (void)
     .AddAttribute ("Bandwidth",
                    "Transmission Bandwidth Configuration in number of Resource Blocks",
                    UintegerValue (25),
-                   MakeUintegerAccessor (&MmWaveComponentCarrier::SetUlBandwidth,
-                                         &MmWaveComponentCarrier::GetUlBandwidth),
+                   MakeUintegerAccessor (&MmWaveComponentCarrier::SetBandwidth,
+                                         &MmWaveComponentCarrier::GetBandwidth),
                    MakeUintegerChecker<uint8_t> ())
     .AddAttribute ("Earfcn",
                    "E-UTRA Absolute Radio Frequency Channel Number (EARFCN) "

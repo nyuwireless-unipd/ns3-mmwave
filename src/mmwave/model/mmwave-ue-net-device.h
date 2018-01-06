@@ -81,6 +81,8 @@ public:
 
 	Ptr<EpcUeNas> GetNas (void) const;
 
+	Ptr<LteUeComponentCarrierManager> GetComponentCarrierManager (void) const;
+
 	Ptr<LteUeRrc> GetRrc () const;
 
 	void SetEarfcn (uint16_t earfcn);
@@ -89,9 +91,13 @@ public:
 
 	Ptr<MmWaveEnbNetDevice> GetTargetEnb (void);
 
-    void SetAntennaNum (uint8_t antennaNum);
+  void SetAntennaNum (uint8_t antennaNum);
 
-    uint8_t GetAntennaNum () const;
+  uint8_t GetAntennaNum () const;
+
+	std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > GetCcMap ();
+
+	void SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > ccm);
 
 protected:
   // inherited from Object
