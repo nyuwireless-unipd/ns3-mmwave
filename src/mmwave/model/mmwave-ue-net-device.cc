@@ -81,7 +81,7 @@ MmWaveUeNetDevice::GetTypeId (void)
 	   .AddAttribute ("ComponentCarrierMapUe", "List of all component Carrier.",
 	                  ObjectMapValue (),
 	                  MakeObjectMapAccessor (&MmWaveUeNetDevice::m_ccMap),
-	                  MakeObjectMapChecker<ComponentCarrierUe> ())
+	                  MakeObjectMapChecker<MmWaveComponentCarrierUe> ())
 		.AddAttribute ("Imsi",
 									 "International Mobile Subscriber Identity assigned to this UE",
 									 UintegerValue (0),
@@ -121,7 +121,7 @@ MmWaveUeNetDevice::DoInitialize (void)
 	m_isConstructed = true;
 	UpdateConfig ();
 
-	std::map< uint8_t, Ptr<ComponentCarrierUe> >::iterator it;
+	std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator it;
 	for (it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
 		{
 			it->second->GetPhy ()->Initialize ();
@@ -270,14 +270,14 @@ MmWaveUeNetDevice::GetTargetEnb (void)
 	return m_targetEnb;
 }
 
-std::map < uint8_t, Ptr<ComponentCarrierUe> >
+std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> >
 MmWaveUeNetDevice::GetCcMap ()
 {
   return m_ccMap;
 }
 
 void
-MmWaveUeNetDevice::SetCcMap (std::map< uint8_t, Ptr<ComponentCarrierUe> > ccm)
+MmWaveUeNetDevice::SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > ccm)
 {
   m_ccMap = ccm;
 }

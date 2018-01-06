@@ -40,7 +40,7 @@
 #include "mmwave-ue-mac.h"
 #include <ns3/lte-ue-rrc.h>
 #include <ns3/epc-ue-nas.h>
-#include "ns3/component-carrier-ue.h"
+#include "ns3/mmwave-component-carrier-ue.h"
 #include <map>
 
 namespace ns3{
@@ -113,7 +113,7 @@ private:
 
  	uint32_t m_csgId;
 
- 	std::map < uint8_t, Ptr<ComponentCarrierUe> > m_ccMap; ///< CC map
+ 	std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > m_ccMap; ///< CC map
 
  	uint8_t m_antennaNum;
 

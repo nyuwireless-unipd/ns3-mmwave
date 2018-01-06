@@ -69,7 +69,7 @@ TypeId MmWaveEnbNetDevice::GetTypeId()
 	    .AddAttribute ("ComponentCarrierMap", "List of component carriers.",
 	                   ObjectMapValue (),
 	                   MakeObjectMapAccessor (&MmWaveEnbNetDevice::m_ccMap),
-	                   MakeObjectMapChecker<ComponentCarrierEnb> ())
+	                   MakeObjectMapChecker<MmWaveComponentCarrierEnb> ())
 			.AddAttribute ("LteEnbRrc",
 										"The RRC layer associated with the ENB",
 										PointerValue (),
@@ -115,7 +115,7 @@ MmWaveEnbNetDevice::DoInitialize(void)
 	UpdateConfig ();
 	m_phy->Initialize ();
 
-	std::map< uint8_t, Ptr<ComponentCarrierEnb> >::iterator it;
+	std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> >::iterator it;
   for (it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
     {
        it->second->Initialize ();
@@ -134,7 +134,7 @@ MmWaveEnbNetDevice::DoDispose()
 
 	m_componentCarrierManager->Dispose();
   m_componentCarrierManager = 0;
-	// ComponentCarrierEnb::DoDispose() will call DoDispose
+	// MmWaveComponentCarrierEnb::DoDispose() will call DoDispose
 	// of its PHY, MAC, FFR and scheduler instance
 	for (uint32_t i = 0; i < m_ccMap.size (); i++)
     {

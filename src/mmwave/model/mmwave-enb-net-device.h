@@ -40,7 +40,7 @@
 #include "mmwave-enb-phy.h"
 #include "mmwave-enb-mac.h"
 #include "mmwave-mac-scheduler.h"
-#include "ns3/component-carrier-enb.h"
+#include "ns3/mmwave-component-carrier-enb.h"
 #include <vector>
 #include <map>
 #include <ns3/lte-enb-rrc.h>
@@ -114,7 +114,7 @@ private:
 
 	uint8_t m_antennaNum;
 
-	std::map < uint8_t, Ptr<ComponentCarrierEnb> > m_ccMap; /**< ComponentCarrier map */
+	std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> > m_ccMap; /**< ComponentCarrier map */
 
   Ptr<LteEnbComponentCarrierManager> m_componentCarrierManager; ///< the component carrier manager of this eNb
 
