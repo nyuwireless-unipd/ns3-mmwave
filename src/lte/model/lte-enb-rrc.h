@@ -56,6 +56,8 @@
 #include <ns3/component-carrier-enb.h>
 #include <vector>
 
+#include <ns3/mmwave-component-carrier-enb.h>
+
 #define MIN_NO_CC 1
 #define MAX_NO_CC 5 // this is the maximum number of carrier components allowed by 3GPP up to R13
 
@@ -993,6 +995,31 @@ public:
    * \param ccPhyConf the component carrier configuration
    */
   void ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf);
+
+  /**
+   * \brief Configure cell-specific parameters.
+   * \param cellId the ID of the cell
+   *
+   * Configure cell-specific parameters and propagate them to lower layers.
+   * The parameters include bandwidth, EARFCN (E-UTRA Absolute Radio Frequency
+   * Channel Number), and cell ID.
+   *
+   * In addition to parameter configuration, this function also performs several
+   * other tasks:
+   *  - Initializing UE measurement (i.e. measurement object and quantity
+   *    configuration), which is expected to be further configured through
+   *    `LteEnbRrc::AddUeMeasReportConfig`;
+   *  - Enabling MIB (Master Information Block) broadcast transmission
+   *  - Enabling SIB (System Information Block) broadcast transmission
+   *
+   * Typically runs when the eNodeB NetDevice is installed, for instance by
+   * `LteHelper::InstallEnbDevice` (i.e. before the simulation starts).
+   *
+   * \warning Raises an error when executed more than once.
+   *
+   * \param ccPhyConf the component carrier configuration
+   */
+  void ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf);
 
   /**
    * \brief Configure carriers.

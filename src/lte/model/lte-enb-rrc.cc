@@ -3248,6 +3248,91 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf)
 }
 
 void
+LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf)
+{
+  auto it = ccPhyConf.begin ();
+  NS_ASSERT (it != ccPhyConf.end ());
+  uint8_t bandwidth = it->second->GetBandwidth ();
+  uint32_t earfcn = it->second->GetEarfcn ();
+  NS_LOG_FUNCTION (this << (uint16_t) bandwidth << earfcn);
+  NS_ASSERT (!m_configured);
+
+  m_dlEarfcn = earfcn;
+  m_ulEarfcn = earfcn;
+  m_dlBandwidth = bandwidth;
+  m_ulBandwidth = bandwidth;
+
+  for (const auto &it: ccPhyConf)
+    {
+      bandwidth = it.second->GetBandwidth ();
+      m_cphySapProvider.at (it.first)->SetBandwidth (bandwidth, bandwidth);
+      earfcn = it.second->GetEarfcn ();
+      m_cphySapProvider.at (it.first)->SetEarfcn (earfcn, earfcn);
+      m_cphySapProvider.at (it.first)->SetCellId (it.second->GetCellId ());
+      m_cmacSapProvider.at (it.first)->ConfigureMac (bandwidth, bandwidth);
+      //m_ffrRrcSapProvider.at (it.first)->SetCellId (it.second->GetCellId ());
+      //m_ffrRrcSapProvider.at (it.first)->SetBandwidth (bandwidth, bandwidth);
+    }
+
+  /*
+   * Initializing the list of UE measurement configuration (m_ueMeasConfig).
+   * Only intra-frequency measurements are supported, so only one measurement
+   * object is created.
+   */
+
+  LteRrcSap::MeasObjectToAddMod measObject;
+  measObject.measObjectId = 1;
+  measObject.measObjectEutra.carrierFreq = m_dlEarfcn;
+  measObject.measObjectEutra.allowedMeasBandwidth = m_dlBandwidth;
+  measObject.measObjectEutra.presenceAntennaPort1 = false;
+  measObject.measObjectEutra.neighCellConfig = 0;
+  measObject.measObjectEutra.offsetFreq = 0;
+  measObject.measObjectEutra.haveCellForWhichToReportCGI = false;
+
+  m_ueMeasConfig.measObjectToAddModList.push_back (measObject);
+  m_ueMeasConfig.haveQuantityConfig = true;
+  m_ueMeasConfig.quantityConfig.filterCoefficientRSRP = m_rsrpFilterCoefficient;
+  m_ueMeasConfig.quantityConfig.filterCoefficientRSRQ = m_rsrqFilterCoefficient;
+  m_ueMeasConfig.haveMeasGapConfig = false;
+  m_ueMeasConfig.haveSmeasure = false;
+  m_ueMeasConfig.haveSpeedStatePars = false;
+
+  m_sib1.clear ();
+  m_sib1.reserve (ccPhyConf.size ());
+  for (const auto &it: ccPhyConf)
+    {
+      // Enabling MIB transmission
+      LteRrcSap::MasterInformationBlock mib;
+      mib.dlBandwidth = it.second->GetBandwidth ();
+      mib.systemFrameNumber = 0;
+      m_cphySapProvider.at (it.first)->SetMasterInformationBlock (mib);
+
+      // Enabling SIB1 transmission with default values
+      LteRrcSap::SystemInformationBlockType1 sib1;
+      sib1.cellAccessRelatedInfo.cellIdentity = it.second->GetCellId ();
+      sib1.cellAccessRelatedInfo.csgIndication = false;
+      sib1.cellAccessRelatedInfo.csgIdentity = 0;
+      sib1.cellAccessRelatedInfo.plmnIdentityInfo.plmnIdentity = 0; // not used
+      sib1.cellSelectionInfo.qQualMin = -34; // not used, set as minimum value
+      sib1.cellSelectionInfo.qRxLevMin = m_qRxLevMin; // set as minimum value
+      m_sib1.push_back (sib1);
+      m_cphySapProvider.at (it.first)->SetSystemInformationBlockType1 (sib1);
+    }
+  /*
+   * Enabling transmission of other SIB. The first time System Information is
+   * transmitted is arbitrarily assumed to be at +0.016s, and then it will be
+   * regularly transmitted every 80 ms by default (set the
+   * SystemInformationPeriodicity attribute to configure this).
+   */
+   // mmWave module: Changed scheduling of initial system information to +2ms
+  Simulator::Schedule (MilliSeconds (m_firstSibTime), &LteEnbRrc::SendSystemInformation, this);
+  m_imsiCellSinrMap.clear();
+  m_firstReport = true;
+  m_configured = true;
+
+}
+
+void
 LteEnbRrc::SetInterRatHoMode(void)
 {
   m_interRatHoMode = true;
