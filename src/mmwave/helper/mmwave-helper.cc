@@ -56,6 +56,9 @@
 #include <ns3/mmwave-propagation-loss-model.h>
 #include <ns3/mmwave-3gpp-buildings-propagation-loss-model.h>
 
+#include <ns3/lte-enb-component-carrier-manager.h>
+#include <ns3/lte-ue-component-carrier-manager.h>
+
 namespace ns3 {
 
 /* ... */
@@ -237,6 +240,24 @@ MmWaveHelper::DoInitialize()
 {
 	NS_LOG_FUNCTION (this);
 
+	MmWaveChannelModelInitialization();
+
+	m_phyStats = CreateObject<MmWavePhyRxTrace> ();
+	m_radioBearerStatsConnector = CreateObject<MmWaveBearerStatsConnector> ();
+
+	LteChannelModelInitialization();
+
+	m_cnStats = 0; //core network stats calculator
+
+	NS_LOG_UNCOND("---- mmh UseIdealRrc " << m_useIdealRrc);
+	Object::DoInitialize();
+}
+
+void
+MmWaveHelper::MmWaveChannelModelInitialization (void)
+{
+	NS_LOG_FUNCTION(this);
+
 	// setup of mmWave channel & related
 	m_channel = m_channelFactory.Create<SpectrumChannel> ();
 	m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
@@ -310,10 +331,12 @@ MmWaveHelper::DoInitialize()
 			NS_FATAL_ERROR("The 3GPP channel and propagation loss should be enabled at the same time");
 		}
 	}
+}
 
-	m_phyStats = CreateObject<MmWavePhyRxTrace> ();
-	m_radioBearerStatsConnector = CreateObject<MmWaveBearerStatsConnector> ();
-
+void
+MmWaveHelper::LteChannelModelInitialization (void)
+{
+	NS_LOG_FUNCTION (this);
 	// setup of LTE channels & related
 	m_downlinkChannel = m_lteChannelFactory.Create<SpectrumChannel> ();
 	m_uplinkChannel = m_lteChannelFactory.Create<SpectrumChannel> ();
@@ -348,10 +371,6 @@ MmWaveHelper::DoInitialize()
 	}
 	// TODO consider if adding LTE fading
 	// TODO add mac & phy LTE stats
-	m_cnStats = 0;
-
-	NS_LOG_UNCOND("---- mmh UseIdealRrc " << m_useIdealRrc);
-	Object::DoInitialize();
 }
 
 void
@@ -1178,96 +1197,136 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 Ptr<NetDevice>
 MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 {
-	NS_ABORT_MSG_IF (m_cellIdCounter == 65535, "max num eNBs exceeded");
-	uint16_t cellId = ++m_cellIdCounter;
+	//NS_ABORT_MSG_IF (m_cellIdCounter == 65535, "max num eNBs exceeded");
+	uint16_t cellId = m_cellIdCounter; //TODO remove, eNB has no cellId
 
-	Ptr<MmWaveSpectrumPhy> ulPhy = CreateObject<MmWaveSpectrumPhy> ();
-	Ptr<MmWaveSpectrumPhy> dlPhy = CreateObject<MmWaveSpectrumPhy> ();
+	//Before calling InstallEnbDevice:
+	//1) create a std::map where the key is index of
+	//component carrier starting from 0, where 0 refers to PCC. The value is
+	//an instance of MmWaveComponentCarrier which contains the attribute members for the
+	//configuration of the phy paramenters
+	//2) call SetCcPhyParams
+	NS_ASSERT_MSG(m_componentCarrierPhyParams.size()!=0, "Cannot create enb ccm map.");
 
-	Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
-	NS_LOG_UNCOND("eNB " << cellId << " MmWaveSpectrumPhy " << dlPhy);
-
-	Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
-	dlPhy->SetHarqPhyModule (harq);
-//	ulPhy->SetHarqPhyModule (harq);
-	phy->SetHarqPhyModule (harq);
-
-	Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
-	if(!m_snrTest)
-	{
-		pData->AddCallback (MakeCallback (&MmWaveEnbPhy::GenerateDataCqiReport, phy));
-		pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
-	}
-	dlPhy->AddDataSinrChunkProcessor (pData);
-
-	phy->SetConfigurationParameters(m_phyMacCommon);
-
-	ulPhy->SetChannel (m_channel);
-	dlPhy->SetChannel (m_channel);
-
-	Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
-	NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling MmWaveHelper::InstallEnbDevice ()");
-	ulPhy->SetMobility (mm);
-	dlPhy->SetMobility (mm);
-
-	// hack to allow periodic computation of SINR at the eNB, without pilots
-	if(m_channelModelType == "ns3::MmWaveBeamforming")
-	{
-		phy->AddSpectrumPropagationLossModel(m_beamforming);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
-	{
-		phy->AddSpectrumPropagationLossModel(m_channelMatrix);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
-	{
-		phy->AddSpectrumPropagationLossModel(m_raytracing);
-	}
-	else if(m_channelModelType == "ns3::MmWave3gppChannel")
-	{
-		phy->AddSpectrumPropagationLossModel(m_3gppChannel);
-	}
-	if (!m_pathlossModelType.empty ())
-	{
-		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
-		if( splm )
+	// create component carrier map for this eNb device
+	std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> > ccMap;
+	for (std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 		{
-			phy->AddPropagationLossModel (splm);
-			if (m_losTracker != 0)
-			{
-				phy->AddLosTracker(m_losTracker); // use m_losTracker in phy (and in particular in enbPhy)
-			}
+			Ptr <MmWaveComponentCarrierEnb> cc =  CreateObject<MmWaveComponentCarrierEnb> ();
+			cc->SetBandwidth(it->second.GetBandwidth());
+			cc->SetEarfcn(it->second.GetEarfcn());
+			cc->SetAsPrimary(it->second.IsPrimary());
+			NS_ABORT_MSG_IF (m_cellIdCounter == 65535, "max num cells exceeded");
+			cc->SetCellId (m_cellIdCounter++);
+			ccMap [it->first] =  cc;
 		}
-	}
-	else
-	{
-		NS_LOG_UNCOND (this << " No PropagationLossModel!");
-	}
+	NS_ABORT_MSG_IF (m_useCa && ccMap.size()<2, "You have to either specify carriers or disable carrier aggregation");
+	NS_ASSERT (ccMap.size () == m_noOfCcs);
 
-	/* Antenna model */
-	Ptr<AntennaModel> antenna = (m_enbAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
-	NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
-	dlPhy->SetAntenna (antenna);
-	ulPhy->SetAntenna (antenna);
+	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
+		{
+			NS_LOG_DEBUG (this << "component carrier map size " << (uint16_t) ccMap.size ());
+			Ptr<MmWaveSpectrumPhy> ulPhy = CreateObject<MmWaveSpectrumPhy> ();
+			Ptr<MmWaveSpectrumPhy> dlPhy = CreateObject<MmWaveSpectrumPhy> ();
 
-	Ptr<MmWaveEnbMac> mac = CreateObject<MmWaveEnbMac> ();
-	mac->SetConfigurationParameters (m_phyMacCommon);
-	Ptr<MmWaveMacScheduler> sched = m_schedulerFactory.Create<MmWaveMacScheduler> ();
+			Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
+			NS_LOG_UNCOND("CC " << cellId << " MmWaveSpectrumPhy " << dlPhy);
 
-	/*to use the dummy ffrAlgorithm, I changed the bandwidth to 25 in EnbNetDevice
-	m_ffrAlgorithmFactory = ObjectFactory ();
-	m_ffrAlgorithmFactory.SetTypeId ("ns3::LteFrNoOpAlgorithm");
-	Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
-	*/
-	sched->ConfigureCommonParameters (m_phyMacCommon);
-	mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
-	sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
-	mac->SetMmWaveMacCschedSapProvider(sched->GetMacCschedSapProvider());
-	sched->SetMacCschedSapUser (mac->GetMmWaveMacCschedSapUser());
+			Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
+			dlPhy->SetHarqPhyModule (harq);
+		//	ulPhy->SetHarqPhyModule (harq);
+			phy->SetHarqPhyModule (harq);
 
-	phy->SetPhySapUser (mac->GetPhySapUser());
-	mac->SetPhySapProvider (phy->GetPhySapProvider());
+			Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
+			if(!m_snrTest)
+			{
+				pData->AddCallback (MakeCallback (&MmWaveEnbPhy::GenerateDataCqiReport, phy));
+				pData->AddCallback (MakeCallback (&MmWaveSpectrumPhy::UpdateSinrPerceived, dlPhy));
+			}
+			dlPhy->AddDataSinrChunkProcessor (pData);
+
+			phy->SetConfigurationParameters(m_phyMacCommon);
+
+			ulPhy->SetChannel (m_channel);
+			dlPhy->SetChannel (m_channel);
+
+			Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
+			NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling MmWaveHelper::InstallEnbDevice ()");
+			ulPhy->SetMobility (mm);
+			dlPhy->SetMobility (mm);
+
+			// hack to allow periodic computation of SINR at the eNB, without pilots
+			if(m_channelModelType == "ns3::MmWaveBeamforming")
+			{
+				phy->AddSpectrumPropagationLossModel(m_beamforming);
+			}
+			else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+			{
+				phy->AddSpectrumPropagationLossModel(m_channelMatrix);
+			}
+			else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+			{
+				phy->AddSpectrumPropagationLossModel(m_raytracing);
+			}
+			else if(m_channelModelType == "ns3::MmWave3gppChannel")
+			{
+				phy->AddSpectrumPropagationLossModel(m_3gppChannel);
+			}
+			if (!m_pathlossModelType.empty ())
+			{
+				Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+				if( splm )
+				{
+					phy->AddPropagationLossModel (splm);
+					if (m_losTracker != 0)
+					{
+						phy->AddLosTracker(m_losTracker); // use m_losTracker in phy (and in particular in enbPhy)
+					}
+				}
+			}
+			else
+			{
+				NS_LOG_UNCOND (this << " No PropagationLossModel!");
+			}
+
+			/* Antenna model */
+			Ptr<AntennaModel> antenna = (m_enbAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
+			NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
+			dlPhy->SetAntenna (antenna);
+			ulPhy->SetAntenna (antenna);
+
+			Ptr<MmWaveEnbMac> mac = CreateObject<MmWaveEnbMac> ();
+			mac->SetConfigurationParameters (m_phyMacCommon);
+			Ptr<MmWaveMacScheduler> sched = m_schedulerFactory.Create<MmWaveMacScheduler> ();
+
+			/*to use the dummy ffrAlgorithm, I changed the bandwidth to 25 in EnbNetDevice
+			m_ffrAlgorithmFactory = ObjectFactory ();
+			m_ffrAlgorithmFactory.SetTypeId ("ns3::LteFrNoOpAlgorithm");
+			Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
+			*/
+			sched->ConfigureCommonParameters (m_phyMacCommon);
+
+			/**********************************************************
+			//To do later?
+			mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
+			sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
+			mac->SetMmWaveMacCschedSapProvider(sched->GetMacCschedSapProvider());
+			sched->SetMacCschedSapUser (mac->GetMmWaveMacCschedSapUser());
+
+			phy->SetPhySapUser (mac->GetPhySapUser());
+			mac->SetPhySapProvider (phy->GetPhySapProvider());
+			*************************************************************/
+
+			it->second->SetMac (mac);
+			it->second->SetMacScheduler(sched);
+
+			it->second->SetPhy(phy);
+		}
+
 	Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
+	Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_enbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
+	rrc->ConfigureMmWaveCarriers (ccMap); //TODO check if this is correct
+
 
 	if (m_useIdealRrc)
 	{

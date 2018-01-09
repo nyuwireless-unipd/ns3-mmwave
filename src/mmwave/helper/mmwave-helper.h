@@ -222,6 +222,9 @@ protected:
 	virtual void DoInitialize();
 
 private:
+	void MmWaveChannelModelInitialization ();
+	void LteChannelModelInitialization ();
+
 	Ptr<NetDevice> InstallSingleUeDevice (Ptr<Node> n);
 	Ptr<NetDevice> InstallSingleMcUeDevice (Ptr<Node> n);
 	Ptr<NetDevice> InstallSingleEnbDevice (Ptr<Node> n);
@@ -330,7 +333,7 @@ private:
 	/**
    * This contains all the information about each component carrier
    */
-  std::map< uint8_t, ComponentCarrier > m_componentCarrierPhyParams;
+  std::map< uint8_t, MmWaveComponentCarrier > m_componentCarrierPhyParams;
 
   /**
    * Number of component carriers that will be installed by default at eNodeB and UE devices.

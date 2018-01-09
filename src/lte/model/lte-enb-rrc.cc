@@ -2539,6 +2539,29 @@ LteEnbRrc::ConfigureCarriers (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyC
   Object::DoInitialize ();
 }
 
+void
+LteEnbRrc::ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf)
+{
+  //TODO do we need to duplicate all the CC paramenters to support mmwave carriers?
+  NS_ASSERT_MSG (!m_carriersConfigured, "Secondary carriers can be configured only once.");
+  m_mmWaveComponentCarrierPhyConf = ccPhyConf;
+  m_numberOfComponentCarriers = ccPhyConf.size ();
+
+  NS_ASSERT (m_numberOfComponentCarriers >= MIN_NO_CC && m_numberOfComponentCarriers <= MAX_NO_CC);
+
+  for (uint8_t i = 1; i < m_numberOfComponentCarriers; i++)
+    {
+      m_cphySapUser.push_back (new MemberLteEnbCphySapUser<LteEnbRrc> (this));
+      m_cmacSapUser.push_back (new EnbRrcMemberLteEnbCmacSapUser (this, i));
+      //m_ffrRrcSapUser.push_back (new MemberLteFfrRrcSapUser<LteEnbRrc> (this));
+      m_cphySapProvider.push_back (0);
+      m_cmacSapProvider.push_back (0);
+      //m_ffrRrcSapProvider.push_back (0);
+    }
+  m_carriersConfigured = true;
+  Object::DoInitialize ();
+}
+
 LteEnbRrc::~LteEnbRrc ()
 {
   NS_LOG_FUNCTION (this);

@@ -1022,10 +1022,16 @@ public:
   void ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf);
 
   /**
-   * \brief Configure carriers.
+   * \brief Configure LTE carriers.
    * \param ccPhyConf the component carrier configuration
    */
   void ConfigureCarriers (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf);
+
+  /**
+   * \brief Configure mmWave carriers.
+   * \param ccPhyConf the component carrier configuration
+   */
+  void ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf);
 
   /**
    * set the cell id of this eNB
@@ -1913,6 +1919,7 @@ private:
   bool m_carriersConfigured; ///< are carriers configured
 
   std::map<uint8_t, Ptr<ComponentCarrierEnb>> m_componentCarrierPhyConf; ///< component carrier phy configuration
+  std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> m_mmWaveComponentCarrierPhyConf; ///< mmWave component carrier phy configuration
 
 }; // end of `class LteEnbRrc`
 
