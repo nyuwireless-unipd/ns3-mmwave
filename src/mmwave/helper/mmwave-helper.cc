@@ -1206,7 +1206,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	//an instance of MmWaveComponentCarrier which contains the attribute members for the
 	//configuration of the phy paramenters
 	//2) call SetCcPhyParams
-	NS_ASSERT_MSG(m_componentCarrierPhyParams.size()!=0, "Cannot create enb ccm map.");
+	NS_ASSERT_MSG(m_componentCarrierPhyParams.size()!=0, "Cannot create enb ccm map. Call SetCcPhyParams first.");
 
 	// create component carrier map for this eNb device
 	std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> > ccMap;
@@ -1308,13 +1308,13 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 			/**********************************************************
 			//To do later?
-			mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
-			sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
-			mac->SetMmWaveMacCschedSapProvider(sched->GetMacCschedSapProvider());
-			sched->SetMacCschedSapUser (mac->GetMmWaveMacCschedSapUser());
+			*mac->SetMmWaveMacSchedSapProvider(sched->GetMacSchedSapProvider());
+			*sched->SetMacSchedSapUser (mac->GetMmWaveMacSchedSapUser());
+			*mac->SetMmWaveMacCschedSapProvider(sched->GetMacCschedSapProvider());
+			*sched->SetMacCschedSapUser (mac->GetMmWaveMacCschedSapUser());
 
-			phy->SetPhySapUser (mac->GetPhySapUser());
-			mac->SetPhySapProvider (phy->GetPhySapProvider());
+			*phy->SetPhySapUser (mac->GetPhySapUser());
+			*mac->SetPhySapProvider (phy->GetPhySapProvider());
 			*************************************************************/
 
 			it->second->SetMac (mac);
@@ -1364,16 +1364,59 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	}
 
 	rrc->SetAttribute ("mmWaveDevice", BooleanValue(true));
-	rrc->SetLteEnbCmacSapProvider (mac->GetEnbCmacSapProvider ());
-	mac->SetEnbCmacSapUser (rrc->GetLteEnbCmacSapUser ());
 
-	rrc->SetLteMacSapProvider (mac->GetUeMacSapProvider ());
-	phy->SetMmWaveEnbCphySapUser (rrc->GetLteEnbCphySapUser ());
-	rrc->SetLteEnbCphySapProvider (phy->GetMmWaveEnbCphySapProvider ());
+	// This RRC attribute is used to connect each new RLC instance with the MAC layer
+  // (for function such as TransmitPdu, ReportBufferStatusReport).
+  // Since in this new architecture, the component carrier manager acts a proxy, it
+  // will have its own LteMacSapProvider interface, RLC will see it as through original MAC
+  // interface LteMacSapProvider, but the function call will go now through LteEnbComponentCarrierManager
+  // instance that needs to implement functions of this interface, and its task will be to
+  // forward these calls to the specific MAC of some of the instances of component carriers. This
+  // decision will depend on the specific implementation of the component carrier manager.
+  rrc->SetLteMacSapProvider (ccmEnbManager->GetLteMacSapProvider ());
 
-	//FFR SAP
-	//rrc->SetLteFfrRrcSapProvider (ffrAlgorithm->GetLteFfrRrcSapProvider ());
-	//ffrAlgorithm->SetLteFfrRrcSapUser (rrc->GetLteFfrRrcSapUser ());
+	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
+    {
+      it->second->GetPhy ()->SetMmWaveEnbCphySapUser (rrc->GetLteEnbCphySapUser (it->first));
+      rrc->SetLteEnbCphySapProvider (it->second->GetPhy ()->GetMmWaveEnbCphySapProvider (), it->first);
+
+      rrc->SetLteEnbCmacSapProvider (it->second->GetMac ()->GetEnbCmacSapProvider (),it->first );
+      it->second->GetMac ()->SetEnbCmacSapUser (rrc->GetLteEnbCmacSapUser (it->first));
+
+      it->second->GetPhy ()->SetComponentCarrierId (it->first);
+      it->second->GetMac ()->SetComponentCarrierId (it->first);
+      //FFR SAP
+			/*
+      it->second->GetFfMacScheduler ()->SetLteFfrSapProvider (it->second->GetFfrAlgorithm ()->GetLteFfrSapProvider ());
+      it->second->GetFfrAlgorithm ()->SetLteFfrSapUser (it->second->GetFfMacScheduler ()->GetLteFfrSapUser ());
+      rrc->SetLteFfrRrcSapProvider (it->second->GetFfrAlgorithm ()->GetLteFfrRrcSapProvider (), it->first);
+      it->second->GetFfrAlgorithm ()->SetLteFfrRrcSapUser (rrc->GetLteFfrRrcSapUser (it->first));
+      //FFR SAP END*/
+
+      // PHY <--> MAC SAP
+      it->second->GetPhy ()->SetPhySapUser (it->second->GetMac ()->GetPhySapUser ());
+      it->second->GetMac ()->SetPhySapProvider (it->second->GetPhy ()->GetPhySapProvider ());
+      // PHY <--> MAC SAP END
+
+      //Scheduler SAP
+      it->second->GetMac ()->SetMmWaveMacSchedSapProvider (it->second->GetMacScheduler ()->GetMacSchedSapProvider ());
+      it->second->GetMac ()->SetMmWaveMacCschedSapProvider (it->second->GetMacScheduler ()->GetMacCschedSapProvider ());
+
+      it->second->GetMacScheduler ()->SetMacSchedSapUser (it->second->GetMac ()->GetMmWaveMacSchedSapUser ());
+      it->second->GetMacScheduler ()->SetMacCschedSapUser (it->second->GetMac ()->GetMmWaveMacCschedSapUser ());
+      // Scheduler SAP END
+
+      it->second->GetMac ()->SetLteCcmMacSapUser (ccmEnbManager->GetLteCcmMacSapUser ());
+      ccmEnbManager->SetCcmMacSapProviders (it->first, it->second->GetMac ()->GetLteCcmMacSapProvider ());
+
+      // insert the pointer to the LteMacSapProvider interface of the MAC layer of the specific component carrier
+      ccmTest = ccmEnbManager->SetMacSapProvider (it->first, it->second->GetMac ()->GetUeMacSapProvider());
+
+      if (ccmTest == false)
+        {
+          NS_FATAL_ERROR ("Error in SetComponentCarrierMacSapProviders");
+        }
+    }
 
 
 	Ptr<MmWaveEnbNetDevice> device = m_enbNetDeviceFactory.Create<MmWaveEnbNetDevice> ();
@@ -1384,22 +1427,48 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	device->SetAttribute ("mmWaveScheduler", PointerValue(sched));
 	device->SetAttribute ("LteEnbRrc", PointerValue (rrc));
 
-
-	phy->SetDevice (device);
-	dlPhy->SetDevice (device);
+  /*to do for each cc
+	*phy->SetDevice (device);
+	*dlPhy->SetDevice (device);
 	dlPhy->SetCellId (cellId);
-	ulPhy->SetDevice (device);
-	n->AddDevice (device);
+	*ulPhy->SetDevice (device);
+	*n->AddDevice (device);
 
 	mac->SetCellId(cellId);
-	dlPhy->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, phy));
-	dlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, phy));
-  	dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));
+	*dlPhy->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, phy));
+	*dlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, phy));
+  *	dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));
+*/
+
+	for (it = ccMap.begin (); it != ccMap.end (); ++it)
+		{
+			Ptr<LteEnbPhy> ccPhy = it->second->GetPhy ();
+			ccPhy->SetDevice (device);
+			ccPhy->GetUlSpectrumPhy ()->SetDevice (device);
+			ccPhy->GetDlSpectrumPhy ()->SetDevice (device);
+			ccPhy->GetUlSpectrumPhy ()->SetLtePhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, ccPhy));
+			ccPhy->GetUlSpectrumPhy ()->SetLtePhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, ccPhy));
+			ccPhy->GetUlSpectrumPhy ()->SetLtePhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, ccPhy));
+			NS_LOG_LOGIC ("set the propagation model frequencies");
+			//double freq = LteSpectrumValueHelper::GetCarrierFrequency (it->second->m_dlEarfcn);
+			double freq = m_phyMacCommon->GetCenterFrequency (); //TODO do we need a new method GetCarrierFrequency(index)?
+
+			NS_LOG_LOGIC ("Channel Frequency: " << freq);
+			if (!m_pathlossModelType.empty ())
+			{
+				bool freqOk = m_pathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (freq));
+				if (!freqOk)
+				{
+					NS_LOG_WARN ("Propagation model does not have a Frequency attribute");
+				}
+			}
+		}  //end for
 
 	//mac->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
 	rrc->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
 	rrc->SetAttribute("mmWaveDevice", BooleanValue(true));
 
+	/* to do for each cc (see for above)
 	NS_LOG_LOGIC ("set the propagation model frequencies");
 	double freq = m_phyMacCommon->GetCenterFrequency ();
 	NS_LOG_LOGIC ("Channel Frequency: " << freq);
@@ -1410,11 +1479,15 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 		{
 			NS_LOG_WARN ("Propagation model does not have a Frequency attribute");
 		}
-	}
+	}*/
 
 	device->Initialize ();
 
-	m_channel->AddRx (dlPhy);
+	for (it = ccMap.begin (); it != ccMap.end (); ++it)
+    {
+			//m_channel->AddRx (dlPhy); substitute
+      m_channel->AddRx (it->second->GetPhy ()->GetDlSpectrumPhy ()); //TODO check if Dl and Ul are the same
+    }
 
 
 	if (m_epcHelper != 0)

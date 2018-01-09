@@ -370,6 +370,8 @@ MmWaveEnbMac::MmWaveEnbMac (void) :
 	m_phySapUser = new MmWaveMacEnbMemberPhySapUser (this);
 	m_macSchedSapUser = new MmWaveMacMemberMacSchedSapUser (this);
 	m_macCschedSapUser = new MmWaveMacMemberMacCschedSapUser (this);
+
+  m_ccmMacSapProvider = new MemberLteCcmMacSapProvider<MmWaveEnbMac> (this);
 	Initialize();
 }
 
@@ -620,6 +622,18 @@ MmWaveEnbPhySapUser*
 MmWaveEnbMac::GetPhySapUser ()
 {
 	return m_phySapUser;
+}
+
+void
+MmWaveEnbMac::SetLteCcmMacSapUser (LteCcmMacSapUser* s)
+{
+  m_ccmMacSapUser = s;
+}
+
+LteCcmMacSapProvider*
+MmWaveEnbMac::GetLteCcmMacSapProvider ()
+{
+  return m_ccmMacSapProvider;
 }
 
 void
