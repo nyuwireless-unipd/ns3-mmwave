@@ -2,30 +2,30 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
  */
 
@@ -125,6 +125,20 @@ public:
 	void AddPropagationLossModel(Ptr<PropagationLossModel> model);
 	void AddLosTracker(Ptr<MmWaveLosTracker>);
 
+	/**
+  * Set the component carrier ID
+  *
+  * \param index the component carrier ID index
+  */
+  void SetComponentCarrierId (uint8_t index);
+
+  /**
+  * Get the component carrier ID
+  *
+  * \returns the component carrier ID index
+  */
+  uint8_t GetComponentCarrierId ();
+
 protected:
 	Ptr<NetDevice> m_netDevice;
 
@@ -165,10 +179,13 @@ protected:
 
 	bool m_sfAllocInfoUpdated;
 
-	// hack to allow eNB to compute the SINR, periodically, without pilots 
+	// hack to allow eNB to compute the SINR, periodically, without pilots
 	Ptr<SpectrumPropagationLossModel> m_spectrumPropagationLossModel;
 	Ptr<PropagationLossModel> m_propagationLoss;
 	Ptr<MmWaveLosTracker> m_losTracker;
+
+	/// component carrier Id used to address sap
+  uint8_t m_componentCarrierId;
 
 
 private:
