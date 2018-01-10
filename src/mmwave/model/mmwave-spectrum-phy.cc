@@ -2,30 +2,30 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
  */
 
@@ -91,7 +91,8 @@ static const double EffectiveCodingRate[29] = {
 
 MmWaveSpectrumPhy::MmWaveSpectrumPhy()
 	:m_cellId(0),
-	 m_state(IDLE)
+	 m_state(IDLE),
+   m_componentCarrierId (0)
 {
 	m_interferenceData = CreateObject<mmWaveInterference> ();
 	m_random = CreateObject<UniformRandomVariable> ();
@@ -139,7 +140,7 @@ MmWaveSpectrumPhy::DoDispose()
 
 }
 
-void 
+void
 MmWaveSpectrumPhy::Reset ()
 {
   NS_LOG_FUNCTION (this);
@@ -343,7 +344,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 		if ((ueRx!=0) && (ueRx->GetPhy ()->IsReceptionEnabled () == false))
 		{	// if the first cast is 0 (the device is MC) then this if will not be executed
 			isAllocated = false;
-		} 
+		}
 		else if ((rxMcUe != 0) && (rxMcUe->GetMmWavePhy()->IsReceptionEnabled() == false))
 		{	// this is executed if the device is MC and is transmitting
 			isAllocated = false;
@@ -502,7 +503,7 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
 					Ptr<MmWaveUeNetDevice> ueRx =
 									DynamicCast<MmWaveUeNetDevice> (GetDevice ());
 					Ptr<McUeNetDevice> rxMcUe =
-									DynamicCast<McUeNetDevice> (GetDevice ());				
+									DynamicCast<McUeNetDevice> (GetDevice ());
 					if (ueRx || rxMcUe)
 					{
 						NS_FATAL_ERROR ("UE already receiving control data from serving cell");
@@ -633,7 +634,7 @@ MmWaveSpectrumPhy::EndRxData ()
 
 				RxPacketTraceParams traceParams;
 				traceParams.m_tbSize = itTb->second.size;
-				traceParams.m_cellId = 0;
+				traceParams.m_cellId = m_cellId;
 				traceParams.m_frameNum = pduTag.GetSfn ().m_frameNum;
 				traceParams.m_sfNum = pduTag.GetSfn ().m_sfNum;
 				traceParams.m_slotNum = pduTag.GetSfn ().m_slotNum;
@@ -646,10 +647,12 @@ MmWaveSpectrumPhy::EndRxData ()
 				traceParams.m_corrupt = itTb->second.corrupt;
 				traceParams.m_symStart = itTb->second.symStart;
 				traceParams.m_numSym = itTb->second.numSym;
+        traceParams.m_ccId = m_componentCarrierId;
 
 				if (enbRx)
 				{
-					traceParams.m_cellId = enbRx->GetCellId();
+          //TODO check if this is correct
+					//traceParams.m_cellId = enbRx->GetCellId(); //now m_cellId is set correctly
 					m_rxPacketTraceEnb (traceParams);
 					 /*FILE* log_file;
 
@@ -676,7 +679,7 @@ MmWaveSpectrumPhy::EndRxData ()
 				else if (ueRx)
 				{
 
-					traceParams.m_cellId = ueRx->GetTargetEnb()->GetCellId();
+					//traceParams.m_cellId = ueRx->GetTargetEnb()->GetCellId(); //now m_cellId is set correctly
 					m_rxPacketTraceUe (traceParams);
 				}
 				else if (rxMcUe)
@@ -687,8 +690,8 @@ MmWaveSpectrumPhy::EndRxData ()
 						Ptr<MmWaveEnbNetDevice> mmWaveEnb = mcUe->GetMmWaveTargetEnb();
 						if (mmWaveEnb != 0)
 						{
-							traceParams.m_cellId = mmWaveEnb->GetCellId();	
-						} 
+							//traceParams.m_cellId = mmWaveEnb->GetCellId(); //now m_cellId is set correctly
+						}
 					}
 					m_rxPacketTraceUe (traceParams); // TODO consider a different trace for MC UE
 				}
@@ -944,6 +947,12 @@ void
 MmWaveSpectrumPhy::SetCellId (uint16_t cellId)
 {
 	m_cellId = cellId;
+}
+
+void
+MmWaveSpectrumPhy::SetComponentCarrierId (uint8_t componentCarrierId)
+{
+  m_componentCarrierId = componentCarrierId;
 }
 
 
