@@ -1375,6 +1375,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
   // decision will depend on the specific implementation of the component carrier manager.
   rrc->SetLteMacSapProvider (ccmEnbManager->GetLteMacSapProvider ());
 
+	bool ccmTest;
 	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
     {
       it->second->GetPhy ()->SetMmWaveEnbCphySapUser (rrc->GetLteEnbCphySapUser (it->first));
@@ -1386,7 +1387,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       it->second->GetPhy ()->SetComponentCarrierId (it->first);
       it->second->GetMac ()->SetComponentCarrierId (it->first);
       //FFR SAP
-			/*
+			/* not used in mmwave
       it->second->GetFfMacScheduler ()->SetLteFfrSapProvider (it->second->GetFfrAlgorithm ()->GetLteFfrSapProvider ());
       it->second->GetFfrAlgorithm ()->SetLteFfrSapUser (it->second->GetFfMacScheduler ()->GetLteFfrSapUser ());
       rrc->SetLteFfrRrcSapProvider (it->second->GetFfrAlgorithm ()->GetLteFfrRrcSapProvider (), it->first);
@@ -1422,9 +1423,12 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	Ptr<MmWaveEnbNetDevice> device = m_enbNetDeviceFactory.Create<MmWaveEnbNetDevice> ();
 	device->SetNode (n);
 	device->SetAttribute ("CellId", UintegerValue (cellId));
-	device->SetAttribute ("MmWaveEnbPhy", PointerValue (phy));
-	device->SetAttribute ("MmWaveEnbMac", PointerValue (mac));
-	device->SetAttribute ("mmWaveScheduler", PointerValue(sched));
+	dev->SetAttribute ("LteEnbComponentCarrierManager", PointerValue (ccmEnbManager));
+	dev->SetCcMap (ccMap);
+
+	//device->SetAttribute ("MmWaveEnbPhy", PointerValue (phy));
+	//device->SetAttribute ("MmWaveEnbMac", PointerValue (mac));
+	//device->SetAttribute ("mmWaveScheduler", PointerValue(sched));
 	device->SetAttribute ("LteEnbRrc", PointerValue (rrc));
 
   /*to do for each cc
