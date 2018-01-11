@@ -61,7 +61,7 @@ TypeId MmWaveEnbNetDevice::GetTypeId()
 	    .SetParent<MmWaveNetDevice> ()
 	    .AddConstructor<MmWaveEnbNetDevice> ()
 
-			.AddAttribute ("MmWaveEnbComponentCarrierManager",
+			.AddAttribute ("LteEnbComponentCarrierManager",
 	                   "The ComponentCarrierManager associated to this EnbNetDevice",
 	                   PointerValue (),
 	                   MakePointerAccessor (&MmWaveEnbNetDevice::m_componentCarrierManager),
@@ -92,10 +92,10 @@ TypeId MmWaveEnbNetDevice::GetTypeId()
 }
 
 MmWaveEnbNetDevice::MmWaveEnbNetDevice()
-	:m_cellId(0),
-	 m_Bandwidth (72),
-	 m_Earfcn(1),
-	 m_componentCarrierManager(0),
+	//:m_cellId(0),
+	// m_Bandwidth (72),
+	// m_Earfcn(1),
+	 :m_componentCarrierManager(0),
 	 m_isConstructed (false),
 	 m_isConfigured (false)
 {
@@ -277,5 +277,18 @@ MmWaveEnbNetDevice::UpdateConfig (void)
 			*/
 		}
 	}
+
+std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> >
+MmWaveEnbNetDevice::GetCcMap ()
+{
+  return m_ccMap;
+}
+
+void
+MmWaveEnbNetDevice::SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> > ccm)
+{
+  NS_ASSERT_MSG (!m_isConfigured, "attempt to set CC map after configuration");
+  m_ccMap = ccm;
+}
 
 }

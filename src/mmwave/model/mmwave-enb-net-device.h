@@ -95,6 +95,10 @@ public:
 
     uint8_t GetAntennaNum () const;
 
+		std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> > GetCcMap ();
+
+		void SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> > ccm);
+
 protected:
 
     virtual void DoInitialize(void);
