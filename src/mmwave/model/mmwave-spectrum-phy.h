@@ -184,9 +184,9 @@ private:
 
 	uint16_t m_cellId;
 
-  uint8_t m_componentCarrierId; ///< the component carrier ID
-
 	State m_state;
+
+  uint8_t m_componentCarrierId; ///< the component carrier ID
 
 	MmWavePhyRxCtrlEndOkCallback    m_phyRxCtrlEndOkCallback;
 	MmWavePhyRxDataEndOkCallback 		m_phyRxDataEndOkCallback;
