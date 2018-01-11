@@ -350,6 +350,11 @@ MmWaveEnbMac::GetTypeId (void)
                    UintegerValue (3),
                    MakeUintegerAccessor (&MmWaveEnbMac::m_raResponseWindowSize),
                    MakeUintegerChecker<uint8_t> (2, 10))
+         .AddAttribute ("ComponentCarrierId",
+                        "ComponentCarrier Id, needed to reply on the appropriate sap.",
+                        UintegerValue (0),
+                        MakeUintegerAccessor (&MmWaveEnbMac::m_componentCarrierId),
+                        MakeUintegerChecker<uint8_t> (0,4))
 	        .AddTraceSource ("DlMacTxCallback",
 					"MAC transmission with tb size and number of retx.",
 					MakeTraceSourceAccessor (&MmWaveEnbMac::m_macDlTxSizeRetx),
@@ -359,6 +364,7 @@ MmWaveEnbMac::GetTypeId (void)
 }
 
 MmWaveEnbMac::MmWaveEnbMac (void) :
+   m_ccmMacSapUser (0),
 	 m_frameNum (0),
 	 m_sfNum (0),
 	 m_slotNum (0),
@@ -395,6 +401,13 @@ MmWaveEnbMac::DoDispose (void)
 	delete m_macSchedSapUser;
 	//  delete m_macCschedSapUser;
 	delete m_phySapUser;
+  delete m_ccmMacSapProvider;
+}
+
+void
+MmWaveEnbMac::SetComponentCarrierId (uint8_t index)
+{
+  m_componentCarrierId = index;
 }
 
 void
@@ -702,7 +715,21 @@ MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 		case (MmWaveControlMessage::BSR):
 		{
 			Ptr<MmWaveBsrMessage> bsr = DynamicCast<MmWaveBsrMessage> (msg);
-		  	m_ulCeReceived.push_back (bsr->GetBsr ());
+      MacCeElement macCeElement = bsr->GetBsr();
+
+      //Conversion from MacCeElement to MacCeListElement_s needed to use the lte CCM-MAC SAP
+      MacCeValue_u macCeValue;
+      macCeValue.m_phr = macCeElement.m_macCeValue.m_phr;
+      macCeValue.m_crnti = macCeElement.m_macCeValue.m_crnti;
+      macCeValue.m_bufferStatus = macCeElement.m_macCeValue.m_bufferStatus;
+
+      MacCeListElement_s macCeListElement;
+      macCeListElement.m_rnti = macCeElement.m_rnti;
+      macCeListElement.m_macCeType = BSR;
+      macCeListElement.m_macCeValue = macCeValue;
+
+      m_ccmMacSapUser->UlReceiveMacCe (macCeListElement, m_componentCarrierId);
+
 			break;
 		}
 		case (MmWaveControlMessage::DL_HARQ):
@@ -715,6 +742,16 @@ MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 			NS_LOG_INFO ("Control message not supported/expected");
 	}
 
+}
+
+void
+MmWaveEnbMac::DoReportMacCeToScheduler (MacCeListElement_s bsr)
+{
+  NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG (this << " bsr Size " << (uint16_t) m_ulCeReceived.size ());
+  //send to LteCcmMacSapUser
+  m_ulCeReceived.push_back (bsr); // this to called when LteUlCcmSapProvider::ReportMacCeToScheduler is called
+  NS_LOG_DEBUG (this << " bsr Size after push_back " << (uint16_t) m_ulCeReceived.size ());
 }
 
 void
