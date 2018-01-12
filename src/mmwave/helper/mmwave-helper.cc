@@ -1423,8 +1423,8 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	Ptr<MmWaveEnbNetDevice> device = m_enbNetDeviceFactory.Create<MmWaveEnbNetDevice> ();
 	device->SetNode (n);
 	device->SetAttribute ("CellId", UintegerValue (cellId));
-	dev->SetAttribute ("LteEnbComponentCarrierManager", PointerValue (ccmEnbManager));
-	dev->SetCcMap (ccMap);
+	device->SetAttribute ("LteEnbComponentCarrierManager", PointerValue (ccmEnbManager));
+	device->SetCcMap (ccMap);
 
 	//device->SetAttribute ("MmWaveEnbPhy", PointerValue (phy));
 	//device->SetAttribute ("MmWaveEnbMac", PointerValue (mac));
@@ -1443,16 +1443,16 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	*dlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, phy));
   *	dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));
 */
-
+	std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin ();
 	for (it = ccMap.begin (); it != ccMap.end (); ++it)
 		{
-			Ptr<LteEnbPhy> ccPhy = it->second->GetPhy ();
+			Ptr<MmWaveEnbPhy> ccPhy = it->second->GetPhy ();
 			ccPhy->SetDevice (device);
 			ccPhy->GetUlSpectrumPhy ()->SetDevice (device);
 			ccPhy->GetDlSpectrumPhy ()->SetDevice (device);
-			ccPhy->GetUlSpectrumPhy ()->SetLtePhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, ccPhy));
-			ccPhy->GetUlSpectrumPhy ()->SetLtePhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, ccPhy));
-			ccPhy->GetUlSpectrumPhy ()->SetLtePhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, ccPhy));
+			ccPhy->GetUlSpectrumPhy ()->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, ccPhy));
+			ccPhy->GetUlSpectrumPhy ()->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, ccPhy));
+			ccPhy->GetUlSpectrumPhy ()->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, ccPhy));
 			NS_LOG_LOGIC ("set the propagation model frequencies");
 			//double freq = LteSpectrumValueHelper::GetCarrierFrequency (it->second->m_dlEarfcn);
 			double freq = m_phyMacCommon->GetCenterFrequency (); //TODO do we need a new method GetCarrierFrequency(index)?
