@@ -725,7 +725,7 @@ MmWaveEnbMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 
       MacCeListElement_s macCeListElement;
       macCeListElement.m_rnti = macCeElement.m_rnti;
-      macCeListElement.m_macCeType = BSR;
+      macCeListElement.m_macCeType = MacCeListElement_s::BSR;
       macCeListElement.m_macCeValue = macCeValue;
 
       m_ccmMacSapUser->UlReceiveMacCe (macCeListElement, m_componentCarrierId);
@@ -749,8 +749,20 @@ MmWaveEnbMac::DoReportMacCeToScheduler (MacCeListElement_s bsr)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG (this << " bsr Size " << (uint16_t) m_ulCeReceived.size ());
+
+  //Conversion from MacCeListElement_s to MacCeElement
+  MacCeElement macCeElement;
+  macCeElement.m_rnti = bsr.m_rnti;
+  macCeElement.m_macCeType = MacCeElement::BSR;
+
+  MacCeValue macCeValue;
+  macCeValue.m_phr = bsr.m_macCeValue.m_phr;
+  macCeValue.m_crnti = bsr.m_macCeValue.m_crnti;
+  macCeValue.m_bufferStatus = bsr.m_macCeValue.m_bufferStatus;
+  macCeElement.m_macCeValue = macCeValue;
+
   //send to LteCcmMacSapUser
-  m_ulCeReceived.push_back (bsr); // this to called when LteUlCcmSapProvider::ReportMacCeToScheduler is called
+  m_ulCeReceived.push_back (macCeElement); // this to called when LteUlCcmSapProvider::ReportMacCeToScheduler is called
   NS_LOG_DEBUG (this << " bsr Size after push_back " << (uint16_t) m_ulCeReceived.size ());
 }
 
