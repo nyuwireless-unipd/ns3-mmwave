@@ -923,7 +923,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 						NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduInfo[ipdu].m_lcid);
 						NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int) rlcPduInfo[ipdu].m_size);
 						MacSubheader subheader (rlcPduInfo[ipdu].m_lcid, rlcPduInfo[ipdu].m_size);
-						(*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size)-subheader.GetSize (), 0, tbUid, 0, rnti, rlcPduInfo[ipdu].m_lcid);
+						(*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size)-subheader.GetSize (), 0, tbUid, m_componentCarrierId, rnti, rlcPduInfo[ipdu].m_lcid);
 						harqIt->second.at (tbUid).m_lcidList.push_back (rlcPduInfo[ipdu].m_lcid);
 					}
 
