@@ -1443,8 +1443,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	*dlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, phy));
   *	dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));
 */
-	std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin ();
-	for (it = ccMap.begin (); it != ccMap.end (); ++it)
+	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
 		{
 			Ptr<MmWaveEnbPhy> ccPhy = it->second->GetPhy ();
 			ccPhy->SetDevice (device);
@@ -1470,7 +1469,6 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	//mac->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
 	rrc->SetForwardUpCallback (MakeCallback (&MmWaveEnbNetDevice::Receive, device));
-	rrc->SetAttribute("mmWaveDevice", BooleanValue(true));
 
 	/* to do for each cc (see for above)
 	NS_LOG_LOGIC ("set the propagation model frequencies");
@@ -1486,8 +1484,9 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	}*/
 
 	device->Initialize ();
+	n->AddDevice (device);
 
-	for (it = ccMap.begin (); it != ccMap.end (); ++it)
+	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
     {
 			//m_channel->AddRx (dlPhy); substitute
       m_channel->AddRx (it->second->GetPhy ()->GetDlSpectrumPhy ()); //TODO check if Dl and Ul are the same
