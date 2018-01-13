@@ -1213,8 +1213,9 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	for (std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 		{
 			Ptr <MmWaveComponentCarrierEnb> cc =  CreateObject<MmWaveComponentCarrierEnb> ();
-			cc->SetBandwidth(it->second.GetBandwidth());
-			cc->SetEarfcn(it->second.GetEarfcn());
+			//cc->SetBandwidth(it->second.GetBandwidth());
+			//cc->SetEarfcn(it->second.GetEarfcn());
+			cc->SetConfigurationParameters(it->second.GetConfigurationParameters());
 			cc->SetAsPrimary(it->second.IsPrimary());
 			NS_ABORT_MSG_IF (m_cellIdCounter == 65535, "max num cells exceeded");
 			cc->SetCellId (m_cellIdCounter++);
@@ -1245,7 +1246,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			}
 			dlPhy->AddDataSinrChunkProcessor (pData);
 
-			phy->SetConfigurationParameters(m_phyMacCommon);
+			phy->SetConfigurationParameters(it->second->GetConfigurationParameters());
 
 			ulPhy->SetChannel (m_channel);
 			dlPhy->SetChannel (m_channel);
@@ -1296,7 +1297,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			ulPhy->SetAntenna (antenna);
 
 			Ptr<MmWaveEnbMac> mac = CreateObject<MmWaveEnbMac> ();
-			mac->SetConfigurationParameters (m_phyMacCommon);
+			mac->SetConfigurationParameters (it->second->GetConfigurationParameters());
 			Ptr<MmWaveMacScheduler> sched = m_schedulerFactory.Create<MmWaveMacScheduler> ();
 
 			/*to use the dummy ffrAlgorithm, I changed the bandwidth to 25 in EnbNetDevice
@@ -1304,7 +1305,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			m_ffrAlgorithmFactory.SetTypeId ("ns3::LteFrNoOpAlgorithm");
 			Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
 			*/
-			sched->ConfigureCommonParameters (m_phyMacCommon);
+			sched->ConfigureCommonParameters (it->second->GetConfigurationParameters());
 
 			/**********************************************************
 			//To do later?
@@ -1454,7 +1455,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			ccPhy->GetUlSpectrumPhy ()->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, ccPhy));
 			NS_LOG_LOGIC ("set the propagation model frequencies");
 			//double freq = LteSpectrumValueHelper::GetCarrierFrequency (it->second->m_dlEarfcn);
-			double freq = m_phyMacCommon->GetCenterFrequency (); //TODO do we need a new method GetCarrierFrequency(index)?
+			double freq = it->second->GetCenterFrequency ();
 
 			NS_LOG_LOGIC ("Channel Frequency: " << freq);
 			if (!m_pathlossModelType.empty ())
