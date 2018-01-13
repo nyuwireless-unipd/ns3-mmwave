@@ -40,18 +40,6 @@ TypeId MmWaveComponentCarrier::GetTypeId (void)
     TypeId ("ns3::MmWaveComponentCarrier")
     .SetParent<Object> ()
     .AddConstructor<MmWaveComponentCarrier> ()
-    .AddAttribute ("Bandwidth",
-                   "Transmission Bandwidth Configuration in number of Resource Blocks",
-                   UintegerValue (25),
-                   MakeUintegerAccessor (&MmWaveComponentCarrier::SetBandwidth,
-                                         &MmWaveComponentCarrier::GetBandwidth),
-                   MakeUintegerChecker<uint8_t> ())
-    .AddAttribute ("Earfcn",
-                   "E-UTRA Absolute Radio Frequency Channel Number (EARFCN) "
-                   "as per 3GPP 36.101 Section 5.7.3. ",
-                   UintegerValue (100),
-                   MakeUintegerAccessor (&MmWaveComponentCarrier::m_Earfcn),
-                   MakeUintegerChecker<uint32_t> (0, 262143))
     .AddAttribute ("CsgId",
                    "The Closed Subscriber Group (CSG) identity that this eNodeB belongs to",
                    UintegerValue (0),
@@ -94,44 +82,16 @@ MmWaveComponentCarrier::DoDispose ()
   Object::DoDispose ();
 }
 
-uint8_t
+uint32_t
 MmWaveComponentCarrier::GetBandwidth () const
 {
-  return m_Bandwidth;
+  return m_phyMacConfig->GetNumRb();
 }
 
-void
-MmWaveComponentCarrier::SetBandwidth (uint8_t bw)
+double
+MmWaveComponentCarrier::GetCenterFrequency () const
 {
-  NS_LOG_FUNCTION (this << uint16_t (bw));
-  switch (bw)
-    {
-    case 6:
-    case 15:
-    case 25:
-    case 50:
-    case 75:
-    case 100:
-      m_Bandwidth = bw;
-      break;
-
-    default:
-      NS_FATAL_ERROR ("Invalid bandwidth value " << (uint16_t) bw);
-      break;
-    }
-}
-
-uint32_t
-MmWaveComponentCarrier::GetEarfcn () const
-{
-  return m_Earfcn;
-}
-
-void
-MmWaveComponentCarrier::SetEarfcn (uint32_t earfcn)
-{
-  NS_LOG_FUNCTION (this << earfcn);
-  m_Earfcn = earfcn;
+  return m_phyMacConfig->GetCenterFrequency();
 }
 
 uint32_t
@@ -178,6 +138,20 @@ MmWaveComponentCarrier::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
   m_isConstructed = true;
+}
+
+void
+MmWaveComponentCarrier::SetConfigurationParameters(Ptr<MmWavePhyMacCommon> ptrConfig)
+{
+  NS_LOG_FUNCTION(this);
+  m_phyMacConfig = ptrConfig;
+}
+
+Ptr<MmWavePhyMacCommon>
+MmWaveComponentCarrier::GetConfigurationParameters(void) const
+{
+  NS_LOG_FUNCTION(this);
+  return m_phyMacConfig;
 }
 
 } // namespace ns3

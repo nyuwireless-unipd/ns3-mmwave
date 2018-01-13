@@ -59,22 +59,12 @@ public:
   /**
    * \return the bandwidth in RBs
    */
-  uint8_t GetBandwidth () const;
+  uint32_t GetBandwidth () const;
 
   /**
-   * \param bw the bandwidth in RBs
+   * \return the carrier frequency in Hz
    */
-  void SetBandwidth (uint8_t bw);
-
-  /**
-   * \return the downlink carrier frequency (EARFCN)
-   */
-  uint32_t GetEarfcn () const;
-
-  /**
-   * \param earfcn the downlink carrier frequency (EARFCN)
-   */
-  void SetEarfcn (uint32_t earfcn);
+  double GetCenterFrequency () const;
 
   /**
    * \brief Returns the CSG ID of the eNodeB.
@@ -134,9 +124,9 @@ public:
   bool IsPrimary () const;
 
 
-  uint8_t m_Bandwidth;   /**< bandwidth in RBs */
+  void SetConfigurationParameters(Ptr<MmWavePhyMacCommon> ptrConfig);
 
-  uint32_t m_Earfcn;    /**< carrier frequency */
+  Ptr<MmWavePhyMacCommon> GetConfigurationParameters(void) const;
 
 protected:
   // inherited from Object
@@ -147,6 +137,7 @@ protected:
   bool m_primaryCarrier; ///< whether the carrier is primary
   bool m_isConstructed; ///< whether the instance is constructed
 //    bool m_isConfigured;
+  Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
 };
 
