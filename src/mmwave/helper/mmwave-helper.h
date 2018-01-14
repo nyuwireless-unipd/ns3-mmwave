@@ -114,6 +114,8 @@ public:
 	void SetPathlossModelType (std::string type);
 	void SetChannelModelType (std::string type);
 	void SetLtePathlossModelType (std::string type);
+
+	void SetCcPhyParams ( std::map< uint8_t, MmWaveComponentCarrier> ccMapParams);
 	/**
 	 * Attach mmWave-only ueDevices to the closest enbDevice
 	 */

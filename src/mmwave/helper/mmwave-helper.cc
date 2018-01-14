@@ -497,6 +497,13 @@ MmWaveHelper::GetSnrTest ()
 	return m_snrTest;
 }
 
+void
+MmWaveHelper::SetCcPhyParams ( std::map< uint8_t, MmWaveComponentCarrier> ccMapParams)
+{
+  NS_LOG_FUNCTION (this);
+  m_componentCarrierPhyParams = ccMapParams;
+}
+
 NetDeviceContainer
 MmWaveHelper::InstallUeDevice (NodeContainer c)
 {
