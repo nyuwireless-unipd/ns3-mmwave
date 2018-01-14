@@ -2576,7 +2576,14 @@ LteEnbRrc::DoDispose ()
     {
       delete m_cphySapUser[i];
       delete m_cmacSapUser[i];
-      delete m_ffrRrcSapUser[i];
+
+      //If this LteEnbRrc is part of a mmwave enb device, m_ffrRrcSapUser
+      //contains one (dummy) element only, the one associated to the PCC which is
+      //instantiated in the constructor.
+      if( !(m_ismmWave == true && i > 0) )
+      {
+        delete m_ffrRrcSapUser[i];
+      }
     }
   //delete m_cphySapUser;
   m_cphySapUser.erase (m_cphySapUser.begin (),m_cphySapUser.end ());
