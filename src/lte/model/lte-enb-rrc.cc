@@ -3276,12 +3276,12 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPh
   auto it = ccPhyConf.begin ();
   NS_ASSERT (it != ccPhyConf.end ());
   uint8_t bandwidth = it->second->GetBandwidth ();
-  uint32_t earfcn = it->second->GetEarfcn ();
-  NS_LOG_FUNCTION (this << (uint16_t) bandwidth << earfcn);
+  //uint32_t earfcn = it->second->GetEarfcn ();
+  //NS_LOG_FUNCTION (this << (uint16_t) bandwidth << earfcn);
   NS_ASSERT (!m_configured);
 
-  m_dlEarfcn = earfcn;
-  m_ulEarfcn = earfcn;
+  //m_dlEarfcn = earfcn;
+  //m_ulEarfcn = earfcn;
   m_dlBandwidth = bandwidth;
   m_ulBandwidth = bandwidth;
 
@@ -3289,8 +3289,8 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPh
     {
       bandwidth = it.second->GetBandwidth ();
       m_cphySapProvider.at (it.first)->SetBandwidth (bandwidth, bandwidth);
-      earfcn = it.second->GetEarfcn ();
-      m_cphySapProvider.at (it.first)->SetEarfcn (earfcn, earfcn);
+      //earfcn = it.second->GetEarfcn ();
+      //m_cphySapProvider.at (it.first)->SetEarfcn (earfcn, earfcn);
       m_cphySapProvider.at (it.first)->SetCellId (it.second->GetCellId ());
       m_cmacSapProvider.at (it.first)->ConfigureMac (bandwidth, bandwidth);
       //m_ffrRrcSapProvider.at (it.first)->SetCellId (it.second->GetCellId ());
