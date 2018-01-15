@@ -68,7 +68,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveHelper);
 
 MmWaveHelper::MmWaveHelper(void)
 	:m_imsiCounter (0),
-	 m_cellIdCounter (0),
+	 m_cellIdCounter (1),
 	 m_noTxAntenna (64),
 	 m_noRxAntenna (16),
 	 m_harqEnabled (false),
@@ -186,7 +186,7 @@ MmWaveHelper::GetTypeId (void)
 	                   MakeBooleanChecker ())
 		.AddAttribute ("BasicCellId",
                    "The next value will be the first cellId",
-                   UintegerValue (0),
+                   UintegerValue (1),
                    MakeUintegerAccessor (&MmWaveHelper::m_cellIdCounter),
                    MakeUintegerChecker<uint16_t> ())
 	    .AddAttribute ("BasicImsi",
@@ -1142,6 +1142,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
       dlPhy->AddDataSinrChunkProcessor (pData);
 			if(m_harqEnabled)
 			{
+				//In lte-helper this is done in the last for cycle
 				dlPhy->SetPhyDlHarqFeedbackCallback (MakeCallback (&MmWaveUePhy::ReceiveLteDlHarqFeedback, phy));
 			}
 
@@ -1264,7 +1265,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
       ccPhy->GetDlSpectrumPhy ()->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveUePhy::PhyDataPacketReceived, ccPhy));
       ccPhy->GetDlSpectrumPhy ()->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveUePhy::ReceiveControlMessageList, ccPhy));
       //ccPhy->GetDlSpectrumPhy ()->SetLtePhyRxPssCallback (MakeCallback (&LteUePhy::ReceivePss, ccPhy));
-      //ccPhy->GetDlSpectrumPhy ()->SetLtePhyDlHarqFeedbackCallback (MakeCallback (&LteUePhy::ReceiveLteDlHarqFeedback, ccPhy));
+      //ccPhy->GetDlSpectrumPhy ()->SetLtePhyDlHarqFeedbackCallback (MakeCallback (&LteUePhy::ReceiveLteDlHarqFeedback, ccPhy)); this is done before
     }
 
   nas->SetDevice (device);
@@ -1320,7 +1321,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			Ptr<MmWaveSpectrumPhy> dlPhy = CreateObject<MmWaveSpectrumPhy> ();
 
 			Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
-			NS_LOG_UNCOND("CC " << cellId << " MmWaveSpectrumPhy " << dlPhy);
+			//NS_LOG_UNCOND("CC " << cellId << " MmWaveSpectrumPhy " << dlPhy);
 
 			Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
 			dlPhy->SetHarqPhyModule (harq);
