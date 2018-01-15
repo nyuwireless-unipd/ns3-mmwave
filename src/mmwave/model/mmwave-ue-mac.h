@@ -71,6 +71,8 @@ public:
 
 	void RecvRaResponse (BuildRarListElement_s raResponse);
 
+	void SetComponentCarrierId (uint8_t index);
+
 	/**
 	* Assign a fixed random variable stream number to the random variables
 	* used by this model.  Return the number of streams (possibly zero) that

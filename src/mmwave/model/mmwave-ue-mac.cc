@@ -243,6 +243,7 @@ MmWaveUeMac::MmWaveUeMac (void)
 	m_phySapUser = new MacUeMemberPhySapUser (this);
 	m_raPreambleUniformVariable = CreateObject<UniformRandomVariable> ();
 	m_randomAccessProcedureDelay = CreateObject<UniformRandomVariable> ();
+  m_componentCarrierId = 0;
 }
 
 MmWaveUeMac::~MmWaveUeMac (void)
@@ -259,6 +260,12 @@ MmWaveUeMac::DoDispose ()
   delete m_cmacSapProvider;
   delete m_phySapUser;
   Object::DoDispose ();
+}
+
+void
+MmWaveUeMac::SetComponentCarrierId (uint8_t index)
+{
+  m_componentCarrierId = index;
 }
 
 void
