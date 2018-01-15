@@ -73,7 +73,7 @@ MmWaveUeNetDevice::GetTypeId (void)
                    PointerValue (),
                    MakePointerAccessor (&MmWaveUeNetDevice::m_rrc),
                    MakePointerChecker <LteUeRrc> ())
-		 .AddAttribute ("mmWaveUeComponentCarrierManager",
+		 .AddAttribute ("LteUeComponentCarrierManager",
 	                  "The ComponentCarrierManager associated to this UeNetDevice",
 	                  PointerValue (),
 	                  MakePointerAccessor (&MmWaveUeNetDevice::m_componentCarrierManager),
