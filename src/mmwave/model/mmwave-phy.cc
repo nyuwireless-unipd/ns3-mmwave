@@ -188,6 +188,8 @@ MmWavePhy::DoSetCellId (uint16_t cellId)
 
 	NS_LOG_FUNCTION (this);
 	m_cellId = cellId;
+	m_downlinkSpectrumPhy->SetCellId (cellId);
+  m_uplinkSpectrumPhy->SetCellId (cellId);
 }
 
 
