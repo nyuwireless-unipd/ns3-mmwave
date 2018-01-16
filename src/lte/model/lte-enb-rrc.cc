@@ -2542,6 +2542,7 @@ LteEnbRrc::ConfigureCarriers (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyC
 void
 LteEnbRrc::ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf)
 {
+  NS_LOG_FUNCTION(this);
   //TODO do we need to duplicate all the CC paramenters to support mmwave carriers?
   NS_ASSERT_MSG (!m_carriersConfigured, "Secondary carriers can be configured only once.");
   m_mmWaveComponentCarrierPhyConf = ccPhyConf;
@@ -3280,6 +3281,7 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf)
 void
 LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf)
 {
+  NS_LOG_FUNCTION(this);
   auto it = ccPhyConf.begin ();
   NS_ASSERT (it != ccPhyConf.end ());
   uint8_t bandwidth = it->second->GetBandwidth ();
@@ -5090,28 +5092,54 @@ LteEnbRrc::GetLogicalChannelPriority (EpsBearer bearer)
 void
 LteEnbRrc::SendSystemInformation ()
 {
-  // NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this);
 
-  for (auto &it: m_componentCarrierPhyConf)
-    {
-      uint8_t ccId = it.first;
+  if(!m_ismmWave)
+  {
+    for (auto &it: m_componentCarrierPhyConf)
+      {
+        uint8_t ccId = it.first;
 
-      LteRrcSap::SystemInformation si;
-      si.haveSib2 = true;
-      si.sib2.freqInfo.ulCarrierFreq = it.second->GetUlEarfcn ();
-      si.sib2.freqInfo.ulBandwidth = it.second->GetUlBandwidth ();
-      si.sib2.radioResourceConfigCommon.pdschConfigCommon.referenceSignalPower = m_cphySapProvider.at (ccId)->GetReferenceSignalPower ();
-      si.sib2.radioResourceConfigCommon.pdschConfigCommon.pb = 0;
+        LteRrcSap::SystemInformation si;
+        si.haveSib2 = true;
+        si.sib2.freqInfo.ulCarrierFreq = it.second->GetUlEarfcn ();
+        si.sib2.freqInfo.ulBandwidth = it.second->GetUlBandwidth ();
+        si.sib2.radioResourceConfigCommon.pdschConfigCommon.referenceSignalPower = m_cphySapProvider.at (ccId)->GetReferenceSignalPower ();
+        si.sib2.radioResourceConfigCommon.pdschConfigCommon.pb = 0;
 
-      LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider.at (ccId)->GetRachConfig ();
-      LteRrcSap::RachConfigCommon rachConfigCommon;
-      rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
-      rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
-      rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
-      si.sib2.radioResourceConfigCommon.rachConfigCommon = rachConfigCommon;
+        LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider.at (ccId)->GetRachConfig ();
+        LteRrcSap::RachConfigCommon rachConfigCommon;
+        rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
+        rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
+        rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
+        si.sib2.radioResourceConfigCommon.rachConfigCommon = rachConfigCommon;
 
-      m_rrcSapUser->SendSystemInformation (it.second->GetCellId (), si);
-    }
+        m_rrcSapUser->SendSystemInformation (it.second->GetCellId (), si);
+      }
+  }
+  else
+  {
+    for (auto &it: m_mmWaveComponentCarrierPhyConf)
+      {
+        uint8_t ccId = it.first;
+
+        LteRrcSap::SystemInformation si;
+        si.haveSib2 = true;
+        //si.sib2.freqInfo.ulCarrierFreq = it.second->GetUlEarfcn ();
+        si.sib2.freqInfo.ulBandwidth = it.second->GetBandwidth ();
+        si.sib2.radioResourceConfigCommon.pdschConfigCommon.referenceSignalPower = m_cphySapProvider.at (ccId)->GetReferenceSignalPower ();
+        si.sib2.radioResourceConfigCommon.pdschConfigCommon.pb = 0;
+
+        LteEnbCmacSapProvider::RachConfig rc = m_cmacSapProvider.at (ccId)->GetRachConfig ();
+        LteRrcSap::RachConfigCommon rachConfigCommon;
+        rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
+        rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
+        rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
+        si.sib2.radioResourceConfigCommon.rachConfigCommon = rachConfigCommon;
+
+        m_rrcSapUser->SendSystemInformation (it.second->GetCellId (), si);
+      }
+  }
 
   /*
    * For simplicity, we use the same periodicity for all SIBs. Note that in real
