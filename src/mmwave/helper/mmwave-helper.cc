@@ -260,7 +260,8 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 
 	// setup of mmWave channel & related
 	m_channel = m_channelFactory.Create<SpectrumChannel> ();
-	m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
+	//m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
+	m_phyMacCommon = m_componentCarrierPhyParams.at(0).GetConfigurationParameters();
 
 	if (!m_pathlossModelType.empty ())
 	{
@@ -1323,7 +1324,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
 			//NS_LOG_UNCOND("CC " << cellId << " MmWaveSpectrumPhy " << dlPhy);
 
-			Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (m_phyMacCommon->GetNumHarqProcess ());
+			Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (it->second->GetConfigurationParameters()->GetNumHarqProcess ());
 			dlPhy->SetHarqPhyModule (harq);
 		//	ulPhy->SetHarqPhyModule (harq);
 			phy->SetHarqPhyModule (harq);
@@ -1900,8 +1901,6 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 	NS_ASSERT (closestEnbDevice != 0);
 
 	Ptr<MmWaveUeNetDevice> mmWaveUe = ueDevice->GetObject<MmWaveUeNetDevice> ();
-
-
 
 	// Necessary operation to connect MmWave UE to eNB at lower layers
   	for(NetDeviceContainer::Iterator i = enbDevices.Begin (); i != enbDevices.End(); ++i)
