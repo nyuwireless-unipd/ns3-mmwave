@@ -295,7 +295,7 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
               }
               else
               {
-                if (mmWaveEnbDev->GetCellId () == cellId)
+                if (mmWaveEnbDev->HasCellId (cellId))
                 {
                   found = true;
                   break;
@@ -580,7 +580,7 @@ MmWaveLteEnbRrcProtocolReal::DoRemoveUe (uint16_t rnti)
 void
 MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg)
 {
-  NS_LOG_FUNCTION (this << m_cellId);
+  NS_LOG_FUNCTION (this << cellId);
   // walk list of all nodes to get UEs with this cellId
   Ptr<LteUeRrc> ueRrc;
   for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); ++i)
@@ -596,7 +596,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
           {
             ueRrc = ueDev->GetRrc ();
             NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-            if (ueRrc->GetCellId () == m_cellId)
+            if (ueRrc->GetCellId () == cellId)
             {
               NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
               ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
