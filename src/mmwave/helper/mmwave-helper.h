@@ -249,17 +249,17 @@ private:
 	void EnableMcTraces (void);
 	Ptr<McStatsCalculator> GetMcStats (void);
 
-	Ptr<SpectrumChannel> m_channel; // mmWave TDD channel
+	std::map< uint8_t, Ptr<SpectrumChannel> > m_channel; // mmWave TDD channel
 	Ptr<SpectrumChannel> m_downlinkChannel; /// The downlink LTE channel used in the simulation.
 	Ptr<SpectrumChannel> m_uplinkChannel; 	/// The uplink LTE channel used in the simulation.
 
-	Ptr<MmWaveBeamforming> m_beamforming;
-	Ptr<MmWaveLosTracker> m_losTracker;
-	Ptr<MmWaveChannelMatrix> m_channelMatrix;
-	Ptr<MmWaveChannelRaytracing> m_raytracing;
-	Ptr<MmWave3gppChannel> m_3gppChannel;
+	std::map< uint8_t, Ptr<MmWaveBeamforming> > m_beamforming;
+	std::map< uint8_t, Ptr<MmWaveLosTracker> > m_losTracker;
+	std::map< uint8_t, Ptr<MmWaveChannelMatrix> > m_channelMatrix;
+	std::map< uint8_t, Ptr<MmWaveChannelRaytracing> > m_raytracing;
+	std::map< uint8_t, Ptr<MmWave3gppChannel> > m_3gppChannel;
 
-	Ptr<Object> m_pathlossModel;
+	std::map< uint8_t, Ptr<Object> > m_pathlossModel;
 	std::string m_pathlossModelType;
 	Ptr<Object> m_downlinkPathlossModel; 	  /// The path loss model used in the LTE downlink channel.
 	Ptr<Object> m_uplinkPathlossModel;   /// The path loss model used in the LTE uplink channel.

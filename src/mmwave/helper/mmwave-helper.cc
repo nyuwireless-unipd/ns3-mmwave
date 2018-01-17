@@ -257,81 +257,96 @@ void
 MmWaveHelper::MmWaveChannelModelInitialization (void)
 {
 	NS_LOG_FUNCTION(this);
-
 	// setup of mmWave channel & related
-	m_channel = m_channelFactory.Create<SpectrumChannel> ();
-	//m_phyMacCommon = CreateObject <MmWavePhyMacCommon> () ;
-	m_phyMacCommon = m_componentCarrierPhyParams.at(0).GetConfigurationParameters();
 
-	if (!m_pathlossModelType.empty ())
+	for(std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 	{
-		m_pathlossModel = m_pathlossModelFactory.Create ();
-		Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
-		if( splm )
-		{
-			NS_LOG_LOGIC (this << " using a PropagationLossModel");
-			m_channel->AddPropagationLossModel (splm);
-		}
+		channel = m_channelFactory.Create<SpectrumChannel> ();
+		phyMacCommon = m_componentCarrierPhyParams.at(it->first).GetConfigurationParameters();
 
-		if (m_pathlossModelType == "ns3::BuildingsObstaclePropagationLossModel")
+		if (!m_pathlossModelType.empty ())
 		{
-			m_losTracker = CreateObject<MmWaveLosTracker>(); // create and initialize m_losTracker
-			Ptr<BuildingsObstaclePropagationLossModel> building = m_pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
-			building->SetConfigurationParameters(m_phyMacCommon);
-			building->SetBeamforming (m_beamforming);
-			building->SetLosTracker(m_losTracker); // use m_losTracker in BuildingsObstaclePropagationLossModel
-		}
-		else if(m_pathlossModelType == "ns3::MmWavePropagationLossModel")
-		{
-			m_pathlossModel->GetObject<MmWavePropagationLossModel>()->SetConfigurationParameters(m_phyMacCommon);
-		}
-		else if(m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel")
-		{
-			m_pathlossModel->GetObject<MmWave3gppPropagationLossModel>()->SetConfigurationParameters(m_phyMacCommon);
-		}
-		else if(m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel")
-		{
-			m_pathlossModel->GetObject<MmWave3gppBuildingsPropagationLossModel>()->SetConfigurationParameters(m_phyMacCommon);
-		}
-	}
-	else
-	{
-		NS_LOG_UNCOND (this << " No PropagationLossModel!");
-	}
+			pathlossModel = m_pathlossModelFactory.Create ();
+			Ptr<PropagationLossModel> splm = pathlossModel->GetObject<PropagationLossModel> ();
+			if( splm )
+			{
+				NS_LOG_LOGIC (this << " using a PropagationLossModel");
+				channel->AddPropagationLossModel (splm);
+			}
 
-	if(m_channelModelType == "ns3::MmWaveBeamforming")
-	{
-		m_beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
-		m_channel->AddSpectrumPropagationLossModel (m_beamforming);
-		m_beamforming->SetConfigurationParameters (m_phyMacCommon);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
-	{
-		m_channelMatrix = CreateObject<MmWaveChannelMatrix> ();
-		m_channel->AddSpectrumPropagationLossModel (m_channelMatrix);
-		m_channelMatrix->SetConfigurationParameters (m_phyMacCommon);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
-	{
-		m_raytracing = CreateObject<MmWaveChannelRaytracing> ();
-		m_channel->AddSpectrumPropagationLossModel (m_raytracing);
-		m_raytracing->SetConfigurationParameters (m_phyMacCommon);
-	}
-	else if(m_channelModelType == "ns3::MmWave3gppChannel")
-	{
-		m_3gppChannel = CreateObject<MmWave3gppChannel> ();
-		m_channel->AddSpectrumPropagationLossModel (m_3gppChannel);
-		m_3gppChannel->SetConfigurationParameters (m_phyMacCommon);
-		if (m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel" || m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel" )
-		{
-			Ptr<PropagationLossModel> pl = m_pathlossModel->GetObject<PropagationLossModel> ();
-			m_3gppChannel->SetPathlossModel(pl);
+			if (m_pathlossModelType == "ns3::BuildingsObstaclePropagationLossModel")
+			{
+				losTracker = CreateObject<MmWaveLosTracker>(); // create and initialize m_losTracker
+				Ptr<BuildingsObstaclePropagationLossModel> building = pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
+				building->SetConfigurationParameters(phyMacCommon);
+				//building->SetBeamforming (m_beamforming); //dove viene creato m_beamforming??
+				building->SetLosTracker(losTracker); // use m_losTracker in BuildingsObstaclePropagationLossModel
+
+				m_losTracker [it->first] = losTracker;
+			}
+			else if(m_pathlossModelType == "ns3::MmWavePropagationLossModel")
+			{
+				pathlossModel->GetObject<MmWavePropagationLossModel>()->SetConfigurationParameters(phyMacCommon);
+			}
+			else if(m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel")
+			{
+				pathlossModel->GetObject<MmWave3gppPropagationLossModel>()->SetConfigurationParameters(phyMacCommon);
+			}
+			else if(m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel")
+			{
+				pathlossModel->GetObject<MmWave3gppBuildingsPropagationLossModel>()->SetConfigurationParameters(phyMacCommon);
+			}
+
+			m_pathlossModel [it->first] = pathlossModel;
 		}
 		else
 		{
-			NS_FATAL_ERROR("The 3GPP channel and propagation loss should be enabled at the same time");
+			NS_LOG_UNCOND (this << " No PropagationLossModel!");
 		}
-	}
+
+		if(m_channelModelType == "ns3::MmWaveBeamforming")
+		{
+			beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+			channel->AddSpectrumPropagationLossModel (beamforming);
+			beamforming->SetConfigurationParameters (phyMacCommon);
+
+			m_beamforming [it->first] = beamforming;
+		}
+		else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+		{
+			channelMatrix = CreateObject<MmWaveChannelMatrix> ();
+			channel->AddSpectrumPropagationLossModel (channelMatrix);
+			channelMatrix->SetConfigurationParameters (phyMacCommon);
+
+			m_channelMatrix [it->first] = channelMatrix;
+		}
+		else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+		{
+			raytracing = CreateObject<MmWaveChannelRaytracing> ();
+			channel->AddSpectrumPropagationLossModel (raytracing);
+			raytracing->SetConfigurationParameters (phyMacCommon);
+
+			m_raytracing [it->first] = raytracing;
+		}
+		else if(m_channelModelType == "ns3::MmWave3gppChannel")
+		{
+			gppChannel = CreateObject<MmWave3gppChannel> ();
+			channel->AddSpectrumPropagationLossModel (gppChannel);
+			gppChannel->SetConfigurationParameters (phyMacCommon);
+			if (m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel" || m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel" )
+			{
+				Ptr<PropagationLossModel> pl = pathlossModel->GetObject<PropagationLossModel> ();
+				gppChannel->SetPathlossModel(pl);
+			}
+			else
+			{
+				NS_FATAL_ERROR("The 3GPP channel and propagation loss should be enabled at the same time");
+			}
+
+			m_3gppChannel [it->first] = gppChannel;
+		}
+		m_channel [it->first] = channel;
+	}//end for
 }
 
 void
