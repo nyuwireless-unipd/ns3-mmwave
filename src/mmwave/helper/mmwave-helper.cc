@@ -2363,11 +2363,11 @@ MmWaveHelper::ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer
 void
 MmWaveHelper::EnableTraces (void)
 {
-	//EnableDlPhyTrace ();
-	//EnableUlPhyTrace ();
-	//EnableEnbPacketCountTrace ();
-	//EnableUePacketCountTrace ();
-	//EnableTransportBlockTrace ();
+	EnableDlPhyTrace ();
+	EnableUlPhyTrace ();
+	//EnableEnbPacketCountTrace (); //the trace source does not exist
+	//EnableUePacketCountTrace (); //the trace source does not exist
+	//EnableTransportBlockTrace (); //the callback does nothing
 	EnableRlcTraces ();
 	EnablePdcpTraces ();
 	EnableMcTraces ();
@@ -2382,7 +2382,7 @@ MmWaveHelper::EnableDlPhyTrace (void)
 	//Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
 	//		MakeBoundCallback (&MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
 
-	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
+	Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
 			MakeBoundCallback (&MmWavePhyRxTrace::RxPacketTraceUeCallback, m_phyStats));
 }
 
@@ -2390,7 +2390,7 @@ void
 MmWaveHelper::EnableUlPhyTrace (void)
 {
 	NS_LOG_FUNCTION_NOARGS ();
-	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
+	Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
 			MakeBoundCallback (&MmWavePhyRxTrace::RxPacketTraceEnbCallback, m_phyStats));
 }
 
@@ -2398,7 +2398,7 @@ void
 MmWaveHelper::EnableEnbPacketCountTrace ()
 {
 	NS_LOG_FUNCTION_NOARGS ();
-	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveEnbPhy/DlSpectrumPhy/ReportEnbTxRxPacketCount",
+	Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/ReportEnbTxRxPacketCount",
 			MakeBoundCallback (&MmWavePhyRxTrace::ReportPacketCountEnbCallback, m_phyStats));
 
 }
@@ -2407,7 +2407,7 @@ void
 MmWaveHelper::EnableUePacketCountTrace ()
 {
 	NS_LOG_FUNCTION_NOARGS ();
-	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/DlSpectrumPhy/ReportUeTxRxPacketCount",
+	Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/DlSpectrumPhy/ReportUeTxRxPacketCount",
 			MakeBoundCallback (&MmWavePhyRxTrace::ReportPacketCountUeCallback, m_phyStats));
 
 }
@@ -2416,7 +2416,7 @@ void
 MmWaveHelper::EnableTransportBlockTrace ()
 {
 	NS_LOG_FUNCTION_NOARGS ();
-	Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportDownlinkTbSize",
+	Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/ReportDownlinkTbSize",
 				MakeBoundCallback (&MmWavePhyRxTrace::ReportDownLinkTBSize, m_phyStats));
 }
 
