@@ -4202,11 +4202,24 @@ uint8_t
 LteEnbRrc::CellToComponentCarrierId (uint16_t cellId)
 {
   NS_LOG_FUNCTION (this << cellId);
-  for (auto &it: m_componentCarrierPhyConf)
+  if(!m_ismmWave)
+  {
+    for (auto &it: m_componentCarrierPhyConf)
+      {
+        if (it.second->GetCellId () == cellId)
+          {
+            return it.first;
+          }
+      }
+    }
+    else
     {
-      if (it.second->GetCellId () == cellId)
+      for (auto &it: m_mmWaveComponentCarrierPhyConf)
         {
-          return it.first;
+          if (it.second->GetCellId () == cellId)
+            {
+              return it.first;
+            }
         }
     }
   NS_FATAL_ERROR ("Cell " << cellId << " not found in CC map");
