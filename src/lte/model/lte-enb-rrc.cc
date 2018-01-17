@@ -2404,65 +2404,131 @@ UeManager::BuildNonCriticalExtentionConfigurationCa ()
 
   // sCellToReleaseList is always empty since no Scc is released
 
-  for (auto &it: m_rrc->m_componentCarrierPhyConf)
-    {
-      uint8_t ccId = it.first;
+  if(!m_rrc->m_ismmWave)
+  {
+    for (auto &it: m_rrc->m_componentCarrierPhyConf)
+      {
+        uint8_t ccId = it.first;
 
-      if (ccId == m_componentCarrierId)
-        {
-          // Skip primary CC.
-          continue;
-        }
-      else if (ccId < m_componentCarrierId)
-        {
-          // Shift all IDs below PCC forward so PCC can use CC ID 1.
-          ccId++;
-        }
+        if (ccId == m_componentCarrierId)
+          {
+            // Skip primary CC.
+            continue;
+          }
+        else if (ccId < m_componentCarrierId)
+          {
+            // Shift all IDs below PCC forward so PCC can use CC ID 1.
+            ccId++;
+          }
 
-      Ptr<ComponentCarrierEnb> eNbCcm = it.second;
-      LteRrcSap::SCellToAddMod component;
-      component.sCellIndex = ccId;
-      component.cellIdentification.physCellId = eNbCcm->GetCellId ();
-      component.cellIdentification.dlCarrierFreq = eNbCcm->GetDlEarfcn ();
-      component.radioResourceConfigCommonSCell.haveNonUlConfiguration = true;
-      component.radioResourceConfigCommonSCell.nonUlConfiguration.dlBandwidth = eNbCcm->GetDlBandwidth ();
-      component.radioResourceConfigCommonSCell.nonUlConfiguration.antennaInfoCommon.antennaPortsCount = 0;
-      component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.referenceSignalPower = m_rrc->m_cphySapProvider.at (0)->GetReferenceSignalPower ();
-      component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.pb = 0;
-      component.radioResourceConfigCommonSCell.haveUlConfiguration = true;
-      component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulCarrierFreq = eNbCcm->GetUlEarfcn ();
-      component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulBandwidth = eNbCcm->GetUlBandwidth ();
-      component.radioResourceConfigCommonSCell.ulConfiguration.ulPowerControlCommonSCell.alpha = 0;
-      //component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.type = LteRrcSap::SoundingRsUlConfigDedicated::SETUP;
-      component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.srsBandwidthConfig = 0;
-      component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.srsSubframeConfig = 0;
-      component.radioResourceConfigCommonSCell.ulConfiguration.prachConfigSCell.index = 0;
+        Ptr<ComponentCarrierEnb> eNbCcm = it.second;
+        LteRrcSap::SCellToAddMod component;
+        component.sCellIndex = ccId;
+        component.cellIdentification.physCellId = eNbCcm->GetCellId ();
+        component.cellIdentification.dlCarrierFreq = eNbCcm->GetDlEarfcn ();
+        component.radioResourceConfigCommonSCell.haveNonUlConfiguration = true;
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.dlBandwidth = eNbCcm->GetDlBandwidth ();
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.antennaInfoCommon.antennaPortsCount = 0;
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.referenceSignalPower = m_rrc->m_cphySapProvider.at (0)->GetReferenceSignalPower ();
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.pb = 0;
+        component.radioResourceConfigCommonSCell.haveUlConfiguration = true;
+        component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulCarrierFreq = eNbCcm->GetUlEarfcn ();
+        component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulBandwidth = eNbCcm->GetUlBandwidth ();
+        component.radioResourceConfigCommonSCell.ulConfiguration.ulPowerControlCommonSCell.alpha = 0;
+        //component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.type = LteRrcSap::SoundingRsUlConfigDedicated::SETUP;
+        component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.srsBandwidthConfig = 0;
+        component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.srsSubframeConfig = 0;
+        component.radioResourceConfigCommonSCell.ulConfiguration.prachConfigSCell.index = 0;
 
-      if (true)
-        {
-          component.haveRadioResourceConfigDedicatedSCell = true;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveNonUlConfiguration = true;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveAntennaInfoDedicated = true;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.antennaInfo.transmissionMode = m_rrc->m_defaultTransmissionMode;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.crossCarrierSchedulingConfig = false;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.havePdschConfigDedicated = true;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.pdschConfigDedicated.pa = LteRrcSap::PdschConfigDedicated::dB0;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveUlConfiguration = true;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveAntennaInfoUlDedicated = true;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.antennaInfoUl.transmissionMode = m_rrc->m_defaultTransmissionMode;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.pushConfigDedicatedSCell.nPuschIdentity = 0;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.ulPowerControlDedicatedSCell.pSrsOffset = 0;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveSoundingRsUlConfigDedicated = true;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.srsConfigIndex = GetSrsConfigurationIndex();
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.type = LteRrcSap::SoundingRsUlConfigDedicated::SETUP;
-          component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.srsBandwidth = 0;
-        }
-      else
-        {
-          component.haveRadioResourceConfigDedicatedSCell = false;
-        }
-      SccCon.push_back (component);
-    }
+        if (true)
+          {
+            component.haveRadioResourceConfigDedicatedSCell = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveNonUlConfiguration = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveAntennaInfoDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.antennaInfo.transmissionMode = m_rrc->m_defaultTransmissionMode;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.crossCarrierSchedulingConfig = false;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.havePdschConfigDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.pdschConfigDedicated.pa = LteRrcSap::PdschConfigDedicated::dB0;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveUlConfiguration = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveAntennaInfoUlDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.antennaInfoUl.transmissionMode = m_rrc->m_defaultTransmissionMode;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.pushConfigDedicatedSCell.nPuschIdentity = 0;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.ulPowerControlDedicatedSCell.pSrsOffset = 0;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveSoundingRsUlConfigDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.srsConfigIndex = GetSrsConfigurationIndex();
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.type = LteRrcSap::SoundingRsUlConfigDedicated::SETUP;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.srsBandwidth = 0;
+          }
+        else
+          {
+            component.haveRadioResourceConfigDedicatedSCell = false;
+          }
+        SccCon.push_back (component);
+      }
+  }
+  else
+  {
+    for (auto &it: m_rrc->m_mmWaveComponentCarrierPhyConf)
+      {
+        uint8_t ccId = it.first;
+
+        if (ccId == m_componentCarrierId)
+          {
+            // Skip primary CC.
+            continue;
+          }
+        else if (ccId < m_componentCarrierId)
+          {
+            // Shift all IDs below PCC forward so PCC can use CC ID 1.
+            ccId++;
+          }
+
+        Ptr<MmWaveComponentCarrierEnb> eNbCcm = it.second;
+        LteRrcSap::SCellToAddMod component;
+        component.sCellIndex = ccId;
+        component.cellIdentification.physCellId = eNbCcm->GetCellId ();
+        //component.cellIdentification.dlCarrierFreq = eNbCcm->GetDlEarfcn ();
+        component.radioResourceConfigCommonSCell.haveNonUlConfiguration = true;
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.dlBandwidth = eNbCcm->GetBandwidth ();
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.antennaInfoCommon.antennaPortsCount = 0;
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.referenceSignalPower = m_rrc->m_cphySapProvider.at (0)->GetReferenceSignalPower ();
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.pb = 0;
+        component.radioResourceConfigCommonSCell.haveUlConfiguration = true;
+        //component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulCarrierFreq = eNbCcm->GetUlEarfcn ();
+        component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulBandwidth = eNbCcm->GetBandwidth ();
+        component.radioResourceConfigCommonSCell.ulConfiguration.ulPowerControlCommonSCell.alpha = 0;
+        //component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.type = LteRrcSap::SoundingRsUlConfigDedicated::SETUP;
+        component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.srsBandwidthConfig = 0;
+        component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.srsSubframeConfig = 0;
+        component.radioResourceConfigCommonSCell.ulConfiguration.prachConfigSCell.index = 0;
+
+        if (true)
+          {
+            component.haveRadioResourceConfigDedicatedSCell = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveNonUlConfiguration = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveAntennaInfoDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.antennaInfo.transmissionMode = m_rrc->m_defaultTransmissionMode;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.crossCarrierSchedulingConfig = false;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.havePdschConfigDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.pdschConfigDedicated.pa = LteRrcSap::PdschConfigDedicated::dB0;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveUlConfiguration = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveAntennaInfoUlDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.antennaInfoUl.transmissionMode = m_rrc->m_defaultTransmissionMode;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.pushConfigDedicatedSCell.nPuschIdentity = 0;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.ulPowerControlDedicatedSCell.pSrsOffset = 0;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.haveSoundingRsUlConfigDedicated = true;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.srsConfigIndex = GetSrsConfigurationIndex();
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.type = LteRrcSap::SoundingRsUlConfigDedicated::SETUP;
+            component.radioResourceConfigDedicateSCell.physicalConfigDedicatedSCell.soundingRsUlConfigDedicated.srsBandwidth = 0;
+          }
+        else
+          {
+            component.haveRadioResourceConfigDedicatedSCell = false;
+          }
+        SccCon.push_back (component);
+      }
+  }
+
   ncec.sCellsToAddModList = SccCon;
 
   return ncec;
