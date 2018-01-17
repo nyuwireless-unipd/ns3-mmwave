@@ -4216,7 +4216,16 @@ uint16_t
 LteEnbRrc::ComponentCarrierToCellId (uint8_t componentCarrierId)
 {
   NS_LOG_FUNCTION (this << +componentCarrierId);
-  return m_componentCarrierPhyConf.at (componentCarrierId)->GetCellId ();
+  uint16_t cellId;
+  if(!m_ismmWave)
+  {
+    cellId = m_componentCarrierPhyConf.at (componentCarrierId)->GetCellId ();
+  }
+  else
+  {
+    cellId = m_mmWaveComponentCarrierPhyConf.at (componentCarrierId)->GetCellId ();
+  }
+  return cellId;
 }
 
 bool
