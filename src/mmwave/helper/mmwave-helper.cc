@@ -1419,6 +1419,11 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_enbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
 	rrc->ConfigureMmWaveCarriers (ccMap); //TODO check if this is correct
 
+	//ComponentCarrierManager SAP
+	rrc->SetLteCcmRrcSapProvider (ccmEnbManager->GetLteCcmRrcSapProvider ());
+	ccmEnbManager->SetLteCcmRrcSapUser (rrc->GetLteCcmRrcSapUser ());
+	ccmEnbManager->SetNumberOfComponentCarriers (m_noOfCcs);
+	ccmEnbManager->SetRrc(rrc);
 
 	if (m_useIdealRrc)
 	{
@@ -1541,9 +1546,9 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			ccPhy->SetDevice (device);
 			ccPhy->GetUlSpectrumPhy ()->SetDevice (device);
 			ccPhy->GetDlSpectrumPhy ()->SetDevice (device);
-			ccPhy->GetUlSpectrumPhy ()->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, ccPhy));
-			ccPhy->GetUlSpectrumPhy ()->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, ccPhy));
-			ccPhy->GetUlSpectrumPhy ()->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, ccPhy));
+			ccPhy->GetDlSpectrumPhy ()->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, ccPhy));
+			ccPhy->GetDlSpectrumPhy ()->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, ccPhy));
+			ccPhy->GetDlSpectrumPhy ()->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, ccPhy));
 			NS_LOG_LOGIC ("set the propagation model frequencies");
 			//double freq = LteSpectrumValueHelper::GetCarrierFrequency (it->second->m_dlEarfcn);
 			double freq = it->second->GetCenterFrequency ();
