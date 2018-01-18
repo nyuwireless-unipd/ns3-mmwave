@@ -1390,7 +1390,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 				if( splm )
 				{
 					phy->AddPropagationLossModel (splm);
-					if (m_losTracker.at(it->first) != 0)
+					if (m_losTracker.find(it->first) != m_losTracker.end())
 					{
 						phy->AddLosTracker(m_losTracker.at(it->first)); // use m_losTracker in phy (and in particular in enbPhy)
 					}
