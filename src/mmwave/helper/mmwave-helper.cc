@@ -1937,14 +1937,28 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 	// Necessary operation to connect MmWave UE to eNB at lower layers
   	for(NetDeviceContainer::Iterator i = enbDevices.Begin (); i != enbDevices.End(); ++i)
   	{
-  		Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> ();
-		uint16_t mmWaveCellId = mmWaveEnb->GetCellId ();
-		Ptr<MmWavePhyMacCommon> configParams = mmWaveEnb->GetPhy()->GetConfigurationParameters();
-		mmWaveEnb->GetPhy ()->AddUePhy (mmWaveUe->GetImsi (), ueDevice);
-		// register MmWave eNBs informations in the MmWaveUePhy
-		mmWaveUe->GetPhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
-		//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
-		NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+			Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> ();
+
+			std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb> > enbCcMap = mmWaveEnb->GetCcMap ();
+			for(std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb> >::iterator itEnb = enbCcMap.begin() ; itEnb != enbCcMap.end() ; ++itEnb)
+			{
+				uint16_t mmWaveCellId = itEnb->second->GetCellId ();
+				std::cout << "cellid " << mmWaveCellId << std::endl;
+				Ptr<MmWavePhyMacCommon> configParams = itEnb->second->GetPhy()->GetConfigurationParameters();
+				std::cout << "got phy params" << std::endl;
+				itEnb->second->GetPhy ()->AddUePhy (mmWaveUe->GetImsi (), ueDevice);
+				std::cout << "added ue phy " << std::endl;
+				// register MmWave eNBs informations in the MmWaveUePhy
+
+				std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> > ueCcMap = mmWaveUe->GetCcMap ();
+				for(std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator itUe = ueCcMap.begin() ; itUe != ueCcMap.end() ; ++itUe)
+				{
+					itUe->second->GetPhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
+				}
+				std::cout << "registered enb" << std::endl;
+				//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
+				NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+			}
   	}
 
 	uint16_t cellId = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId ();
