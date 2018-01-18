@@ -184,6 +184,7 @@ MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::
 	{
 		m_rxPacketTraceFilename = "RxPacketTrace.txt";
 		m_rxPacketTraceFile.open(m_rxPacketTraceFilename.c_str ());
+		m_rxPacketTraceFile << "\tframe\tsubF\t1stSym\tsymbol#\tcellId\trnti\tccId\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
 		if (!m_rxPacketTraceFile.is_open())
 		{
 			NS_FATAL_ERROR ("Could not open tracefile");
