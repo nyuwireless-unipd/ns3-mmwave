@@ -231,7 +231,8 @@ void
 MmWaveHelper::DoDispose (void)
 {
 	NS_LOG_FUNCTION (this);
-	m_channel = 0;
+	m_channel.clear();
+	m_componentCarrierPhyParams.clear();
 	Object::DoDispose ();
 }
 
@@ -258,15 +259,15 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 {
 	NS_LOG_FUNCTION(this);
 	// setup of mmWave channel & related
-
+	//create a channel for each CC
 	for(std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 	{
-		channel = m_channelFactory.Create<SpectrumChannel> ();
-		phyMacCommon = m_componentCarrierPhyParams.at(it->first).GetConfigurationParameters();
+		Ptr<SpectrumChannel> channel = m_channelFactory.Create<SpectrumChannel> ();
+		Ptr<MmWavePhyMacCommon> phyMacCommon = m_componentCarrierPhyParams.at(it->first).GetConfigurationParameters();
 
 		if (!m_pathlossModelType.empty ())
 		{
-			pathlossModel = m_pathlossModelFactory.Create ();
+			Ptr<Object> pathlossModel = m_pathlossModelFactory.Create ();
 			Ptr<PropagationLossModel> splm = pathlossModel->GetObject<PropagationLossModel> ();
 			if( splm )
 			{
@@ -276,7 +277,7 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 
 			if (m_pathlossModelType == "ns3::BuildingsObstaclePropagationLossModel")
 			{
-				losTracker = CreateObject<MmWaveLosTracker>(); // create and initialize m_losTracker
+				Ptr<MmWaveLosTracker> losTracker = CreateObject<MmWaveLosTracker>(); // create and initialize m_losTracker
 				Ptr<BuildingsObstaclePropagationLossModel> building = pathlossModel->GetObject<BuildingsObstaclePropagationLossModel> ();
 				building->SetConfigurationParameters(phyMacCommon);
 				//building->SetBeamforming (m_beamforming); //dove viene creato m_beamforming??
@@ -306,7 +307,7 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 
 		if(m_channelModelType == "ns3::MmWaveBeamforming")
 		{
-			beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
+			Ptr<MmWaveBeamforming> beamforming = CreateObject<MmWaveBeamforming> (m_noTxAntenna, m_noRxAntenna);
 			channel->AddSpectrumPropagationLossModel (beamforming);
 			beamforming->SetConfigurationParameters (phyMacCommon);
 
@@ -314,7 +315,7 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 		}
 		else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
 		{
-			channelMatrix = CreateObject<MmWaveChannelMatrix> ();
+			Ptr<MmWaveChannelMatrix> channelMatrix = CreateObject<MmWaveChannelMatrix> ();
 			channel->AddSpectrumPropagationLossModel (channelMatrix);
 			channelMatrix->SetConfigurationParameters (phyMacCommon);
 
@@ -322,7 +323,7 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 		}
 		else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
 		{
-			raytracing = CreateObject<MmWaveChannelRaytracing> ();
+			Ptr<MmWaveChannelRaytracing> raytracing = CreateObject<MmWaveChannelRaytracing> ();
 			channel->AddSpectrumPropagationLossModel (raytracing);
 			raytracing->SetConfigurationParameters (phyMacCommon);
 
@@ -330,12 +331,12 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 		}
 		else if(m_channelModelType == "ns3::MmWave3gppChannel")
 		{
-			gppChannel = CreateObject<MmWave3gppChannel> ();
+			Ptr<MmWave3gppChannel> gppChannel = CreateObject<MmWave3gppChannel> ();
 			channel->AddSpectrumPropagationLossModel (gppChannel);
 			gppChannel->SetConfigurationParameters (phyMacCommon);
 			if (m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel" || m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel" )
 			{
-				Ptr<PropagationLossModel> pl = pathlossModel->GetObject<PropagationLossModel> ();
+				Ptr<PropagationLossModel> pl = m_pathlossModel.at(it->first)->GetObject<PropagationLossModel> ();
 				gppChannel->SetPathlossModel(pl);
 			}
 			else
@@ -419,9 +420,9 @@ MmWaveHelper::SetPathlossModelType (std::string type)
 }
 
 Ptr<PropagationLossModel>
-MmWaveHelper::GetPathLossModel ()
+MmWaveHelper::GetPathLossModel (uint8_t index)
 {
-	return m_pathlossModel->GetObject<PropagationLossModel> ();
+	return m_pathlossModel.at(index)->GetObject<PropagationLossModel> ();
 }
 
 void
@@ -606,6 +607,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 
 	Ptr<McUeNetDevice> device = m_mcUeNetDeviceFactory.Create<McUeNetDevice> ();
 	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
+	/*
 	uint64_t imsi = ++m_imsiCounter;
 
 	// Phy part of MmWave
@@ -847,6 +849,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 
 	n->AddDevice(device);
 	device->Initialize();
+	*/
 
 	return device;
 }
@@ -859,6 +862,7 @@ MmWaveHelper::InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n)
 	// Use a McUeNetDevice but install a single RRC
 	Ptr<McUeNetDevice> device = m_mcUeNetDeviceFactory.Create<McUeNetDevice> ();
 	NS_ABORT_MSG_IF (m_imsiCounter >= 0xFFFFFFFF, "max num UEs exceeded");
+	/*
 	uint64_t imsi = ++m_imsiCounter;
 
 	// Phy part of MmWave
@@ -1070,6 +1074,7 @@ MmWaveHelper::InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n)
 
 	n->AddDevice(device);
 	device->Initialize();
+	*/
 
 	return device;
 }
@@ -1115,19 +1120,19 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
 			if(m_channelModelType == "ns3::MmWaveBeamforming")
 			{
-				phy->AddSpectrumPropagationLossModel(m_beamforming);
+				phy->AddSpectrumPropagationLossModel(m_beamforming.at(it->first));
 			}
 			else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
 			{
-				phy->AddSpectrumPropagationLossModel(m_channelMatrix);
+				phy->AddSpectrumPropagationLossModel(m_channelMatrix.at(it->first));
 			}
 			else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
 			{
-				phy->AddSpectrumPropagationLossModel(m_raytracing);
+				phy->AddSpectrumPropagationLossModel(m_raytracing.at(it->first));
 			}
 			if (!m_pathlossModelType.empty ())
 			{
-				Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+				Ptr<PropagationLossModel> splm = m_pathlossModel.at(it->first)->GetObject<PropagationLossModel> ();
 				if( splm )
 				{
 					phy->AddPropagationLossModel (splm);
@@ -1177,8 +1182,8 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
           pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
         }*/
 
-			ulPhy->SetChannel(m_channel);
-			dlPhy->SetChannel(m_channel);
+			ulPhy->SetChannel(m_channel.at(it->first));
+			dlPhy->SetChannel(m_channel.at(it->first));
 
       Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
       NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling LteHelper::InstallUeDevice ()");
@@ -1354,8 +1359,8 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 			phy->SetConfigurationParameters(it->second->GetConfigurationParameters());
 
-			ulPhy->SetChannel (m_channel);
-			dlPhy->SetChannel (m_channel);
+			ulPhy->SetChannel (m_channel.at(it->first));
+			dlPhy->SetChannel (m_channel.at(it->first));
 
 			Ptr<MobilityModel> mm = n->GetObject<MobilityModel> ();
 			NS_ASSERT_MSG (mm, "MobilityModel needs to be set on node before calling MmWaveHelper::InstallEnbDevice ()");
@@ -1365,29 +1370,29 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			// hack to allow periodic computation of SINR at the eNB, without pilots
 			if(m_channelModelType == "ns3::MmWaveBeamforming")
 			{
-				phy->AddSpectrumPropagationLossModel(m_beamforming);
+				phy->AddSpectrumPropagationLossModel(m_beamforming.at(it->first));
 			}
 			else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
 			{
-				phy->AddSpectrumPropagationLossModel(m_channelMatrix);
+				phy->AddSpectrumPropagationLossModel(m_channelMatrix.at(it->first));
 			}
 			else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
 			{
-				phy->AddSpectrumPropagationLossModel(m_raytracing);
+				phy->AddSpectrumPropagationLossModel(m_raytracing.at(it->first));
 			}
 			else if(m_channelModelType == "ns3::MmWave3gppChannel")
 			{
-				phy->AddSpectrumPropagationLossModel(m_3gppChannel);
+				phy->AddSpectrumPropagationLossModel(m_3gppChannel.at(it->first));
 			}
 			if (!m_pathlossModelType.empty ())
 			{
-				Ptr<PropagationLossModel> splm = m_pathlossModel->GetObject<PropagationLossModel> ();
+				Ptr<PropagationLossModel> splm = m_pathlossModel.at(it->first)->GetObject<PropagationLossModel> ();
 				if( splm )
 				{
 					phy->AddPropagationLossModel (splm);
-					if (m_losTracker != 0)
+					if (m_losTracker.at(it->first) != 0)
 					{
-						phy->AddLosTracker(m_losTracker); // use m_losTracker in phy (and in particular in enbPhy)
+						phy->AddLosTracker(m_losTracker.at(it->first)); // use m_losTracker in phy (and in particular in enbPhy)
 					}
 				}
 			}
@@ -1571,7 +1576,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 			NS_LOG_LOGIC ("Channel Frequency: " << freq);
 			if (!m_pathlossModelType.empty ())
 			{
-				bool freqOk = m_pathlossModel->SetAttributeFailSafe ("Frequency", DoubleValue (freq));
+				bool freqOk = m_pathlossModel.at(it->first)->SetAttributeFailSafe ("Frequency", DoubleValue (freq));
 				if (!freqOk)
 				{
 					NS_LOG_WARN ("Propagation model does not have a Frequency attribute");
@@ -1601,7 +1606,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
     {
 			//m_channel->AddRx (dlPhy); substitute
-      m_channel->AddRx (it->second->GetPhy ()->GetDlSpectrumPhy ()); //TODO check if Dl and Ul are the same
+      m_channel.at(it->first)->AddRx (it->second->GetPhy ()->GetDlSpectrumPhy ()); //TODO check if Dl and Ul are the same
     }
 
 
@@ -1817,21 +1822,24 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 {
 	NS_LOG_FUNCTION(this);
 
-	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	for(std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 	{
-		m_beamforming->Initial(ueDevices,enbDevices);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
-	{
-		m_channelMatrix->Initial(ueDevices,enbDevices);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
-	{
-		m_raytracing->Initial(ueDevices,enbDevices);
-	}
-	else if(m_channelModelType == "ns3::MmWave3gppChannel")
-	{
-		m_3gppChannel->Initial(ueDevices,enbDevices);
+		if(m_channelModelType == "ns3::MmWaveBeamforming")
+		{
+			m_beamforming.at(it->first)->Initial(ueDevices,enbDevices);
+		}
+		else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+		{
+			m_channelMatrix.at(it->first)->Initial(ueDevices,enbDevices);
+		}
+		else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+		{
+			m_raytracing.at(it->first)->Initial(ueDevices,enbDevices);
+		}
+		else if(m_channelModelType == "ns3::MmWave3gppChannel")
+		{
+			m_3gppChannel.at(it->first)->Initial(ueDevices,enbDevices);
+		}
 	}
 
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
@@ -1847,6 +1855,7 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 {
 	NS_LOG_FUNCTION (this);
 
+	/*
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
 		AttachMcToClosestEnb(*i, mmWaveEnbDevices, lteEnbDevices);
@@ -1868,6 +1877,7 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 	{
 		m_3gppChannel->Initial(ueDevices,mmWaveEnbDevices);
 	}
+	*/
 }
 
 // for InterRatHoCapable devices
@@ -1876,6 +1886,7 @@ MmWaveHelper::AttachIrToClosestEnb (NetDeviceContainer ueDevices, NetDeviceConta
 {
 	NS_LOG_FUNCTION (this);
 
+	/*
 	// set initial conditions on beamforming before attaching the UE to the eNBs
 	if(m_channelModelType == "ns3::MmWaveBeamforming")
 	{
@@ -1898,6 +1909,7 @@ MmWaveHelper::AttachIrToClosestEnb (NetDeviceContainer ueDevices, NetDeviceConta
 	{
 		AttachIrToClosestEnb(*i, mmWaveEnbDevices, lteEnbDevices);
 	}
+	*/
 }
 
 void
@@ -2195,6 +2207,7 @@ MmWaveHelper::GetPhyMacConfigurable (void)
 	return (m_phyMacCommon);
 }
 
+/*
 void
 MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::string value)
 {
@@ -2275,6 +2288,7 @@ MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::stri
 		NS_LOG_ERROR ("Unknown parameter name "<<paramName);
 	}
 }
+*/
 
 void
 MmWaveHelper::SetEpcHelper (Ptr<EpcHelper> epcHelper)

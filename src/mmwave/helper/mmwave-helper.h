@@ -142,7 +142,7 @@ public:
 	std::string GetLteSchedulerType () const;
 
 
-	void SetPhyMacConfigurationParameters (std::string paramName, std::string value);
+	//void SetPhyMacConfigurationParameters (std::string paramName, std::string value);
     Ptr<MmWavePhyMacCommon> GetPhyMacConfigurable (void);
 	void ActivateDataRadioBearer (NetDeviceContainer ueDevices, EpsBearer bearer);
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
@@ -152,7 +152,7 @@ public:
 	bool GetHarqEnabled ();
 	void SetSnrTest (bool snrTest);
 	bool GetSnrTest ();
-	Ptr<PropagationLossModel> GetPathLossModel (void);
+	Ptr<PropagationLossModel> GetPathLossModel (uint8_t index);
 
 	/**
 	* Set the type of FFR algorithm to be used by LTE eNodeB devices.
