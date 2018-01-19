@@ -2,30 +2,30 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
  */
 
@@ -181,7 +181,7 @@ MmWaveUePhy::GetUeCphySapProvider ()
   return (m_ueCphySapProvider);
 }
 
-void 
+void
 MmWaveUePhy::SetImsi (uint64_t imsi)
 {
 	m_imsi = imsi;
@@ -264,7 +264,7 @@ MmWaveUePhy::UpdateSinrEstimate(uint16_t cellId, double sinr)
 		else
 		{
 			m_consecutiveSinrBelowThreshold = 0;
-		}	
+		}
 		NS_LOG_DEBUG("Phy layers: update sinr value for cell " << m_cellId << " to " << currentCellSinr << " m_consecutiveSinrBelowThreshold " << (uint16_t)m_consecutiveSinrBelowThreshold << " at time " << Simulator::Now());
 	}
 }
@@ -321,7 +321,7 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	{
 		DynamicCast<McUeNetDevice>(m_netDevice)->SetMmWaveTargetEnb(enbNetDevice);
 	}
-	NS_LOG_UNCOND("UE register to enb " << enbNetDevice->GetCellId());
+	NS_LOG_UNCOND("UE register to enb " << m_cellId);
 	// call antennaarrya to change the bf vector
 	Ptr<AntennaArrayModel> txAntennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
 	if(txAntennaArray != 0)
@@ -331,7 +331,7 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	else
 	{
 		NS_FATAL_ERROR("UE is not using an AntennaArrayModel");
-	}	
+	}
 
 	if(m_frameNum != 0)
 	{
@@ -382,13 +382,13 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	m_downlinkSpectrumPhy->ResetSpectrumModel();
 	Ptr<SpectrumValue> noisePsd =
 			MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
-	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);	
+	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
 	m_downlinkSpectrumPhy->GetSpectrumChannel()->AddRx(m_downlinkSpectrumPhy);
 	m_downlinkSpectrumPhy->SetCellId(m_cellId);
 	NS_LOG_INFO("Registered to eNB with CellId " << m_cellId);
 }
 
-void 
+void
 MmWaveUePhy::RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config, Ptr<MmWaveEnbNetDevice> enbNetDevice)
 {
 	NS_ASSERT_MSG(m_registeredEnb.find(cellId) == m_registeredEnb.end(), "Enb already registered");
@@ -585,7 +585,7 @@ MmWaveUePhy::SubframeIndication (uint16_t frameNum, uint8_t sfNum)
 	m_sfAllocInfo[m_sfNum].m_slotAllocInfo.push_back (ulCtrlSlot);
 
 	// else
-	// {		
+	// {
 	// 	m_currSfAllocInfo = SfAllocInfo (SfnSf (m_frameNum, m_sfNum, 0));
 	// 	NS_ASSERT ((m_currSfAllocInfo.m_sfnSf.m_frameNum == m_frameNum) &&
 	// 	           (m_currSfAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
@@ -807,7 +807,7 @@ MmWaveUePhy::GetSubframeNumber (void)
 void
 MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
-	if(!m_phyReset) 
+	if(!m_phyReset)
 	{
 		Simulator::Schedule(MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()), &MmWaveUePhy::DelayPhyDataPacketReceived, this, p);
 	}
@@ -818,7 +818,7 @@ MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
     //                              p);
 }
 
-void 
+void
 MmWaveUePhy::DelayPhyDataPacketReceived (Ptr<Packet> p)
 {
 	m_phySapUser->ReceivePhyPdu (p);
@@ -988,7 +988,7 @@ MmWaveUePhy::DoReset ()
 	m_sendDataChannelEvent.Cancel();
 	m_sendDlHarqFeedbackEvent.Cancel();
 	m_downlinkSpectrumPhy->Reset ();
-  	// clear DCI 
+  	// clear DCI
   	m_phyReset = true;
 
 	//m_currSfAllocInfo.m_slotAllocInfo.clear();
@@ -1088,5 +1088,3 @@ MmWaveUePhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
 }
 
 }
-
-

@@ -525,8 +525,13 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			}
 			NS_LOG_INFO("It is for lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
 			std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (macSubheaders[ipdu].m_lcid);
-			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
-			if(it!=m_lcInfoMap.end ())
+      //NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
+      if(it == m_lcInfoMap.end ())
+      {
+        NS_LOG_WARN ("received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
+      }
+
+      if(it!=m_lcInfoMap.end ())
 			{
 				Ptr<Packet> rlcPdu;
 				if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
