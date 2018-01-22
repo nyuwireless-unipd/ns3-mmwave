@@ -810,6 +810,18 @@ public:
 		m_maxTbSizeBytes = bytes;
 	}
 
+	void
+	SetCcId (uint8_t ccId)
+	{
+		m_componentCarrierId = ccId;
+	}
+
+	uint8_t
+	GetCcId (void)
+	{
+		return m_componentCarrierId;
+	}
+
 private:
 	uint32_t m_symbolsPerSlot;
 	double   m_symbolPeriod; // in micro seconds
@@ -844,6 +856,8 @@ private:
 	uint32_t m_maxTbSizeBytes;
 
 	std::string m_staticTddPattern;
+
+	uint8_t m_componentCarrierId;
 };
 
 }
