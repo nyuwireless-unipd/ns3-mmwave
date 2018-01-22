@@ -1,21 +1,21 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- *  
+ *
+ *
  *   Author: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
@@ -257,13 +257,15 @@ MmWave3gppChannel::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
 	Ptr<MmWaveUeNetDevice> UeDev =
 				DynamicCast<MmWaveUeNetDevice> (ueDevice);
+
+	uint8_t ccId = m_phyMacConfig->GetCcId();
 	if(UeDev != 0)
 	{
 		NS_LOG_UNCOND("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
 		Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
-				UeDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+				UeDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
-				EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+				EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		complexVector_t dummy;
 		ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
 		enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
@@ -278,7 +280,7 @@ MmWave3gppChannel::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 			Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
 					UeDev->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 			Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
-					EnbDev->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 			complexVector_t dummy;
 			ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
 			enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
@@ -335,7 +337,7 @@ MmWave3gppChannel::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 				listOfSubchannels.push_back(subChannelIndex);
 			}
 
-			Ptr<const SpectrumValue> fakePsd = 
+			Ptr<const SpectrumValue> fakePsd =
 				MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (m_phyMacConfig, 0, listOfSubchannels);
 			DoCalcRxPowerSpectralDensity(fakePsd, a, b);
 
@@ -345,23 +347,23 @@ MmWave3gppChannel::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 			// if (UeDev != 0)
 			// {
 
-			// }	
+			// }
 			// else
 			// {
 			// 	Ptr<McUeNetDevice> UeDev = DynamicCast<MmWaveUeNetDevice> (*i);
 			// 	if (UeDev !=0)
-			// }		
-			// if (UeDev->GetTargetEnb ()) 
+			// }
+			// if (UeDev->GetTargetEnb ())
 			// {
 			// 	Ptr<NetDevice> targetBs = UeDev->GetTargetEnb ();
 			// 	ConnectDevices (*i, targetBs);
 			// 	ConnectDevices (targetBs, *i);
 
-				
-			// }	
+
+			// }
 		}
 
-		
+
 	}
 
 	m_forceInitialBfComputation = false;
@@ -377,6 +379,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 {
 	NS_LOG_FUNCTION (this);
 	Ptr<SpectrumValue> rxPsd = Copy (txPsd);
+
+	uint8_t ccId = m_phyMacConfig->GetCcId();
 
 	Ptr<NetDevice> txDevice = a->GetObject<Node> ()->GetDevice (0);
 	Ptr<NetDevice> rxDevice = b->GetObject<Node> ()->GetDevice (0);
@@ -411,9 +415,9 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		rxAntennaNum[1] = sqrt (rxUe->GetAntennaNum ());
 
 		txAntennaArray = DynamicCast<AntennaArrayModel> (
-					txEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					txEnb->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
-					rxUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					rxUe->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		locUT = b->GetPosition();
 
 	}
@@ -427,10 +431,10 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		rxAntennaNum[1] = sqrt (rxMcUe->GetAntennaNum ());
 
 		txAntennaArray = DynamicCast<AntennaArrayModel> (
-					txEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					txEnb->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
 					rxMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
-		locUT = b->GetPosition();		
+		locUT = b->GetPosition();
 	}
 	else if (txEnb==0 && rxUe==0 && txMcUe==0 && rxMcUe==0)
 	{
@@ -447,9 +451,9 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
 
 		txAntennaArray = DynamicCast<AntennaArrayModel> (
-					txUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					txUe->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
-					rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					rxEnb->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		locUT = a->GetPosition();
 
 	}
@@ -468,7 +472,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		txAntennaArray = DynamicCast<AntennaArrayModel> (
 					txMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
-					rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					rxEnb->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		locUT = a->GetPosition();
 	}
 	else
@@ -552,7 +556,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		NS_LOG_LOGIC("itReverse == m_channelMap.end () " << (itReverse == m_channelMap.end ()));
 		NS_LOG_LOGIC("it->second->m_channel.size() == 0 " << (it->second->m_channel.size() == 0));
 		NS_LOG_LOGIC("it->second->m_los != los" << (it->second->m_los != los));
-		
+
 		//Step 1: The parameters are configured in the example code.
 		/*make sure txAngle rxAngle exist, i.e., the position of tx and rx cannot be the same*/
 		Angles txAngle (b->GetPosition (), a->GetPosition ());
@@ -631,7 +635,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			if(enbTx == ueRx->GetTargetEnb())
 			{
 				connectedPair = true;
-			}	
+			}
 		}
 		else if(downlinkMc)
 		{
@@ -640,7 +644,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			if(enbTx == ueRx->GetMmWaveTargetEnb())
 			{
 				connectedPair = true;
-			}	
+			}
 		}
 		else if(uplink)
 		{
@@ -649,7 +653,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			if(enbRx == ueTx->GetTargetEnb())
 			{
 				connectedPair = true;
-			}	
+			}
 		}
 		else if(uplinkMc)
 		{
@@ -658,7 +662,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 			if(enbRx == ueTx->GetMmWaveTargetEnb())
 			{
 				connectedPair = true;
-			}	
+			}
 		}
 
 		//std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
@@ -666,7 +670,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		// this is true for connected devices at each transmission,
 		// and for non-connected devices at each channel update or at the beginning of the simulation
 		{
-			NS_LOG_DEBUG("connectedPair " << connectedPair << " m_forceInitialBfComputation " << m_forceInitialBfComputation << 
+			NS_LOG_DEBUG("connectedPair " << connectedPair << " m_forceInitialBfComputation " << m_forceInitialBfComputation <<
 				" channelUpdate " << channelUpdate);
 			if(m_cellScan)
 			{
@@ -2631,8 +2635,8 @@ MmWave3gppChannel::BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Pa
 			{
 				for(uint16_t rx=0; rx<=rxAntennaNum[1]; rx++)
 				{
-					NS_LOG_LOGIC("txTheta " << txTheta << " rxTheta " << rxTheta << " tx sector " << 
-						(M_PI*(double)tx/(double)txAntennaNum[1]-0.5*M_PI)/(M_PI)*180 << " rx sector " << 
+					NS_LOG_LOGIC("txTheta " << txTheta << " rxTheta " << rxTheta << " tx sector " <<
+						(M_PI*(double)tx/(double)txAntennaNum[1]-0.5*M_PI)/(M_PI)*180 << " rx sector " <<
 						(M_PI*(double)rx/(double)rxAntennaNum[1]-0.5*M_PI)/(M_PI)*180);
 
 					txAntenna->SetSector(tx, txAntennaNum, txTheta);
