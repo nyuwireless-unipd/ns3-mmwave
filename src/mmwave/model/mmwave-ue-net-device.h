@@ -73,6 +73,8 @@ public:
 
 	Ptr<MmWaveUePhy> GetPhy (void) const;
 
+	Ptr<MmWaveUePhy> GetPhy (uint8_t index) const;
+
 	Ptr<MmWaveUeMac> GetMac (void) const;
 
 	uint64_t GetImsi () const;

@@ -206,6 +206,13 @@ MmWaveUeNetDevice::GetPhy (void) const
   return m_ccMap.at (0)->GetPhy ();
 }
 
+Ptr<MmWaveUePhy>
+MmWaveUeNetDevice::GetPhy (uint8_t index) const
+{
+	NS_LOG_FUNCTION (this);
+  return m_ccMap.at (index)->GetPhy ();
+}
+
 Ptr<LteUeComponentCarrierManager>
 MmWaveUeNetDevice::GetComponentCarrierManager (void) const
 {
