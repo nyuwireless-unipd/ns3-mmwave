@@ -496,7 +496,10 @@ MmWaveUeMac::DoSubframeIndication (SfnSf sfn)
 	RefreshHarqProcessesPacketBuffer ();
 	if ((Simulator::Now () >= m_bsrLast + m_bsrPeriodicity) && (m_freshUlBsr==true))
 	{
-		SendReportBufferStatus ();
+    if(m_componentCarrierId == 0) // only the Primary CC sends BSRs
+    {
+		  SendReportBufferStatus ();
+    }
 		m_bsrLast = Simulator::Now ();
 		m_freshUlBsr = false;
 		//m_harqProcessId = (m_harqProcessId + 1) % m_phyMacConfig->GetHarqTimeout();
@@ -639,6 +642,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 
 		if (dciInfoElem.m_format == DciInfoElementTdma::UL_dci)
 		{
+      NS_LOG_DEBUG("UE MAC "<< (uint32_t)m_componentCarrierId << " received UL_DCI");
 			if (dciInfoElem.m_ndi == 1)
 			{
 				// New transmission -> empty pkt buffer queue (for deleting eventual pkts not acked )
@@ -653,15 +657,19 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 				{
 					if (((*itBsr).second.statusPduSize > 0) || ((*itBsr).second.retxQueueSize > 0) || ((*itBsr).second.txQueueSize > 0))
 					{
-						activeLcs++;
-						if (((*itBsr).second.statusPduSize!=0)&&((*itBsr).second.statusPduSize < statusPduMinSize))
-						{
-							statusPduMinSize = (*itBsr).second.statusPduSize;
-						}
-						if (((*itBsr).second.statusPduSize!=0)&&(statusPduMinSize == 0))
-						{
-							statusPduMinSize = (*itBsr).second.statusPduSize;
-						}
+            // check if this LC is active in this MmWaveUeMac instance
+            if(m_lcInfoMap.find(itBsr->first) != m_lcInfoMap.end())
+            {
+  			      activeLcs++;
+  						if (((*itBsr).second.statusPduSize!=0)&&((*itBsr).second.statusPduSize < statusPduMinSize))
+  						{
+  							statusPduMinSize = (*itBsr).second.statusPduSize;
+  						}
+  						if (((*itBsr).second.statusPduSize!=0)&&(statusPduMinSize == 0))
+  						{
+  							statusPduMinSize = (*itBsr).second.statusPduSize;
+  						}
+            }
 					}
 				}
 

@@ -30,14 +30,14 @@
 using namespace ns3;
 
 int main (int argc, char *argv[])
-{	
+{
   //whether to use carrier aggregation
-  bool useCa = false;
+  bool useCa = true;
 
   CommandLine cmd;
   cmd.AddValue("useCa", "Whether to use carrier aggregation.", useCa);
   cmd.Parse (argc, argv);
-	
+
   // to save a template default attribute file run it like this:
   // ./waf --command-template="%s --ns3::ConfigStore::Filename=input-defaults.txt --ns3::ConfigStore::Mode=Save --ns3::ConfigStore::FileFormat=RawText" --run src/lte/examples/lena-first-sim
   //
@@ -59,6 +59,7 @@ int main (int argc, char *argv[])
    }
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
+  Config::SetDefault("ns3::LteHelper::UseIdealRrc", BooleanValue(false));
 
   // Uncomment to enable logging
 //  lteHelper->EnableLogComponents ();
@@ -96,7 +97,7 @@ int main (int argc, char *argv[])
   lteHelper->ActivateDataRadioBearer (ueDevs, bearer);
   lteHelper->EnableTraces ();
 
-  Simulator::Stop (Seconds (1.05));
+  Simulator::Stop (Seconds (0.5));
 
   Simulator::Run ();
 

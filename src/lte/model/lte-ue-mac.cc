@@ -819,12 +819,15 @@ LteUeMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo)
   RefreshHarqProcessesPacketBuffer ();
   if ((Simulator::Now () >= m_bsrLast + m_bsrPeriodicity) && (m_freshUlBsr == true))
     {
-      SendReportBufferStatus ();
+      if(m_componentCarrierId == 0) // only the Primary CC sends BSRs
+      {
+        SendReportBufferStatus ();
+      }
       m_bsrLast = Simulator::Now ();
       m_freshUlBsr = false;
     }
   m_harqProcessId = (m_harqProcessId + 1) % HARQ_PERIOD;
-  
+
 }
 
 int64_t
