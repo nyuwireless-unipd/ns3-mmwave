@@ -29,7 +29,7 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("NoOpComponentCarrierManager");
 NS_OBJECT_ENSURE_REGISTERED (NoOpComponentCarrierManager);
-  
+
 NoOpComponentCarrierManager::NoOpComponentCarrierManager ()
 {
   NS_LOG_FUNCTION (this);
@@ -83,7 +83,7 @@ NoOpComponentCarrierManager::DoTransmitPdu (LteMacSapProvider::TransmitPduParame
 {
   NS_LOG_FUNCTION (this);
   std::map <uint8_t, LteMacSapProvider*>::iterator it =  m_macSapProvidersMap.find (params.componentCarrierId);
-  NS_ASSERT_MSG (it != m_macSapProvidersMap.end (), "could not find Sap for ComponentCarrier " << params.componentCarrierId);
+  NS_ASSERT_MSG (it != m_macSapProvidersMap.end (), "could not find Sap for ComponentCarrier " << (uint32_t)params.componentCarrierId);
   // with this algorithm all traffic is on Primary Carrier
   it->second->TransmitPdu (params);
 }
