@@ -216,15 +216,20 @@ MmWaveUeMac::GetTypeId (void)
 			.SetParent<MmWaveMac> ()
 			.AddConstructor<MmWaveUeMac> ()
 			.AddAttribute ("UpdateUeSinrEstimatePeriod",
-               "Period (in ms) of reporting of SINR estimate of all the UE",
-               DoubleValue (25.6),
-               MakeDoubleAccessor (&MmWaveUeMac::m_ueUpdateSinrPeriod),
-               MakeDoubleChecker<double> ())
-		    .AddAttribute ("InterRatHoCapable",
-                 "True if this UE supports hard handover between LTE and MmWave",
-                 BooleanValue (false),
-                 MakeBooleanAccessor (&MmWaveUeMac::m_interRatHoCapable),
-                 MakeBooleanChecker ())
+                     "Period (in ms) of reporting of SINR estimate of all the UE",
+                     DoubleValue (25.6),
+                     MakeDoubleAccessor (&MmWaveUeMac::m_ueUpdateSinrPeriod),
+                     MakeDoubleChecker<double> ())
+		  .AddAttribute ("InterRatHoCapable",
+                     "True if this UE supports hard handover between LTE and MmWave",
+                     BooleanValue (false),
+                     MakeBooleanAccessor (&MmWaveUeMac::m_interRatHoCapable),
+                     MakeBooleanChecker ())
+      .AddTraceSource("TxMacPacketTraceUe",
+                      "Packets transmitted by UeMac",
+                      MakeTraceSourceAccessor (&MmWaveUeMac::m_txMacPacketTraceUe),
+  			              "ns3::UeTxRxPacketCount::TracedCallback")
+
 	;
 	return tid;
 }
@@ -348,6 +353,17 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 			m_miUlHarqProcessesPacket.at (params.harqProcessId).m_pktBurst->AddPacket (it->second.m_pdu);
 			m_miUlHarqProcessesPacketTimer.at (params.harqProcessId) = m_phyMacConfig->GetHarqTimeout ();
 			//m_harqProcessId = (m_harqProcessId + 1) % m_phyMacConfig->GetHarqTimeout();
+
+      //Fire TxMacPacketTraceUes
+      RxPacketTraceParams traceParams;
+      traceParams.m_ccId = m_componentCarrierId;
+      traceParams.m_rnti = params.rnti;
+      traceParams.m_frameNum = m_frameNum;
+      traceParams.m_sfNum = m_sfNum;
+      traceParams.m_slotNum = m_slotNum;
+      traceParams.m_tbSize = it->second.m_pdu->GetSize (); //TODO check if it is correct
+      m_txMacPacketTraceUe(traceParams);
+
 			m_phySapProvider->SendMacPdu (it->second.m_pdu);
 			m_macPduMap.erase (it);  // delete map entry
 		}

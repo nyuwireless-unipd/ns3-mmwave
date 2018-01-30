@@ -168,6 +168,8 @@ private:
 	double m_ueUpdateSinrPeriod;
 	bool m_interRatHoCapable;
 
+	TracedCallback<RxPacketTraceParams> m_txMacPacketTraceUe;
+
 };
 
 }
