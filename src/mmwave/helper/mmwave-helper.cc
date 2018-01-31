@@ -59,6 +59,9 @@
 #include <ns3/lte-enb-component-carrier-manager.h>
 #include <ns3/lte-ue-component-carrier-manager.h>
 
+#include <ns3/object-map.h>
+
+
 namespace ns3 {
 
 /* ... */
@@ -89,6 +92,8 @@ MmWaveHelper::MmWaveHelper(void)
 
 	m_lteUeAntennaModelFactory.SetTypeId (IsotropicAntennaModel::GetTypeId ());
 	m_lteEnbAntennaModelFactory.SetTypeId (IsotropicAntennaModel::GetTypeId ());
+
+	m_3gppBlockage [0] = false;
 	// TODO add Set methods for LTE antenna
 }
 
@@ -255,6 +260,12 @@ MmWaveHelper::DoInitialize()
 }
 
 void
+MmWaveHelper::SetBlockageMap (std::map<uint8_t, bool> blockageMap)
+{
+	m_3gppBlockage = blockageMap;
+}
+
+void
 MmWaveHelper::MmWaveChannelModelInitialization (void)
 {
 	NS_LOG_FUNCTION(this);
@@ -334,6 +345,8 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
 			Ptr<MmWave3gppChannel> gppChannel = CreateObject<MmWave3gppChannel> ();
 			channel->AddSpectrumPropagationLossModel (gppChannel);
 			gppChannel->SetConfigurationParameters (phyMacCommon);
+			gppChannel->SetAttribute ("Blockage", BooleanValue (m_3gppBlockage [it->first]));
+
 			if (m_pathlossModelType == "ns3::MmWave3gppBuildingsPropagationLossModel" || m_pathlossModelType == "ns3::MmWave3gppPropagationLossModel" )
 			{
 				Ptr<PropagationLossModel> pl = m_pathlossModel.at(it->first)->GetObject<PropagationLossModel> ();
@@ -2413,7 +2426,7 @@ MmWaveHelper::EnableTraces (void)
 	//EnableTransportBlockTrace (); //the callback does nothing
 	EnableRlcTraces ();
 	EnablePdcpTraces ();
-	EnableMcTraces ();
+	//EnableMcTraces ();
 }
 
 

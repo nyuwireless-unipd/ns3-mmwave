@@ -220,6 +220,14 @@ public:
    */
   std::string GetUeComponentCarrierManagerType () const;
 
+	/**
+	 * Set the blockage attribute of each channel if MmWave3gppChannel is used.
+	 *
+	 * \parmam map (CC ID, blockage attribute value)
+	 *
+	 */
+	void SetBlockageMap (std::map<uint8_t, bool> blockageMap);
+
 protected:
 	virtual void DoInitialize();
 
@@ -341,6 +349,12 @@ private:
    * Number of component carriers that will be installed by default at eNodeB and UE devices.
    */
   uint16_t m_noOfCcs;
+
+	/**
+	 * This map is used to set the Blockage attribute of each channel if MmWave3gppChannel
+	 * is used
+	**/
+	std::map< uint8_t, bool > m_3gppBlockage;
 
 };
 
