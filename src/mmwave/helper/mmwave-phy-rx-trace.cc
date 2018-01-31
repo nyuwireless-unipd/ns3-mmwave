@@ -63,8 +63,20 @@ MmWavePhyRxTrace::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MmWavePhyRxTrace")
     .SetParent<Object> ()
     .AddConstructor<MmWavePhyRxTrace> ()
+		.AddAttribute ("RxPacketTraceFilename",
+                   "Name of the file where the uplink results will be saved.",
+                   StringValue ("RxPacketTrace.txt"),
+                   MakeStringAccessor (&MmWavePhyRxTrace::SetOutputFilename),
+                   MakeStringChecker ())
   ;
   return tid;
+}
+
+void
+MmWavePhyRxTrace::SetOutputFilename( std::string fileName)
+{
+	NS_LOG_INFO ("Filename: " << fileName);
+	m_rxPacketTraceFilename = fileName;
 }
 
 void
@@ -182,7 +194,6 @@ MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::
 {
 	if (!m_rxPacketTraceFile.is_open())
 	{
-		m_rxPacketTraceFilename = "RxPacketTrace.txt";
 		m_rxPacketTraceFile.open(m_rxPacketTraceFilename.c_str ());
 		m_rxPacketTraceFile << "\tframe\tsubF\t1stSym\tsymbol#\tcellId\trnti\tccId\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
 		if (!m_rxPacketTraceFile.is_open())
@@ -208,7 +219,6 @@ MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std:
 {
 	if (!m_rxPacketTraceFile.is_open())
 	{
-		m_rxPacketTraceFilename = "RxPacketTrace.txt";
 		m_rxPacketTraceFile.open(m_rxPacketTraceFilename.c_str ());
 		m_rxPacketTraceFile << "\tframe\tsubF\t1stSym\tsymbol#\tcellId\trnti\tccId\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
 		if (!m_rxPacketTraceFile.is_open())
