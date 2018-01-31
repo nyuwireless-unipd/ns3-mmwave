@@ -63,7 +63,7 @@ MmWavePhyRxTrace::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MmWavePhyRxTrace")
     .SetParent<Object> ()
     .AddConstructor<MmWavePhyRxTrace> ()
-		.AddAttribute ("RxPacketTraceFilename",
+		.AddAttribute ("OutputFilename",
                    "Name of the file where the uplink results will be saved.",
                    StringValue ("RxPacketTrace.txt"),
                    MakeStringAccessor (&MmWavePhyRxTrace::SetOutputFilename),
