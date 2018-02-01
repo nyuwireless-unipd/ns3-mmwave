@@ -46,6 +46,7 @@ main (int argc, char *argv[])
 {
  bool useCa = true;
  bool blockage0 = false;
+ bool blockage1 = false;
  double chunkWidth = 13.889e6;
  uint32_t chunkPerRb0 = 72;
  uint32_t chunkPerRb1 = 72;
@@ -58,6 +59,7 @@ main (int argc, char *argv[])
  CommandLine cmd;
  cmd.AddValue("useCa", "If enabled use 2 CC", useCa);
  cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
+ cmd.AddValue("blockage1", "If enabled, SCC blockage = true", blockage1);
  cmd.AddValue("chunkPerRb0", "Number of chunks per RB CC 0", chunkPerRb0);
  cmd.AddValue("chunkPerRb1", "Number of chunks per RB CC 1", chunkPerRb1);
  cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
@@ -132,7 +134,7 @@ main (int argc, char *argv[])
   blockageMap [0] = blockage0;
   if(useCa)
   {
-    blockageMap [1] = !blockage0;
+    blockageMap [1] = blockage1;
   }
 
   for(uint8_t i = 0; i < ccMap.size(); i++)
