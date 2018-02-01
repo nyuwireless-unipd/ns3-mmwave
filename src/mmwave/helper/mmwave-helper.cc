@@ -1956,11 +1956,8 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 			for(std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb> >::iterator itEnb = enbCcMap.begin() ; itEnb != enbCcMap.end() ; ++itEnb)
 			{
 				uint16_t mmWaveCellId = itEnb->second->GetCellId ();
-				std::cout << "cellid " << mmWaveCellId << std::endl;
 				Ptr<MmWavePhyMacCommon> configParams = itEnb->second->GetPhy()->GetConfigurationParameters();
-				std::cout << "got phy params" << std::endl;
 				itEnb->second->GetPhy ()->AddUePhy (mmWaveUe->GetImsi (), ueDevice);
-				std::cout << "added ue phy " << std::endl;
 				// register MmWave eNBs informations in the MmWaveUePhy
 
 				std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> > ueCcMap = mmWaveUe->GetCcMap ();
@@ -1968,7 +1965,6 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 				{
 					itUe->second->GetPhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
 				}
-				std::cout << "registered enb" << std::endl;
 				//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
 				NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
 			}

@@ -44,31 +44,33 @@ using namespace ns3;
 int
 main (int argc, char *argv[])
 {
+ bool useCa = true;
+ bool blockage0 = false;
+ double chunkWidth = 13.889e6;
  uint32_t chunkPerRb0 = 72;
  uint32_t chunkPerRb1 = 72;
  double frequency0 = 28e9;
  double frequency1 = 73e9;
  double simTime = 5;
+ uint8_t runSet = 1;
  std::string filePath;
 
  CommandLine cmd;
+ cmd.AddValue("useCa", "If enabled use 2 CC", useCa);
+ cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
  cmd.AddValue("chunkPerRb0", "Number of chunks per RB CC 0", chunkPerRb0);
  cmd.AddValue("chunkPerRb1", "Number of chunks per RB CC 1", chunkPerRb1);
  cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
  cmd.AddValue("frequency1", "CC 1 central frequency", frequency1);
  cmd.AddValue("simTime", "Simulation time", simTime);
  cmd.AddValue("filePath", "Where to put the output files", filePath);
+ cmd.AddValue("runSet", "Run number", runSet);
  cmd.Parse (argc, argv);
 
- //set names of trace files
- std::string freq0str = std::to_string(frequency0/1e9);
- freq0str.resize(4);
- std::string freq1str = std::to_string(frequency1/1e9);
- freq1str.resize(4);
- std::string chunk0str = std::to_string(chunkPerRb0);
- std::string chunk1str = std::to_string(chunkPerRb1);
-
- //std::string filePath = "F0" + freq0str + "F1" + freq1str + "CN0" + chunk0str + "CN1" + chunk1str;
+ // RNG
+ uint32_t seedSet = 1;
+ RngSeedManager::SetSeed (seedSet);
+ RngSeedManager::SetRun (runSet);
 
  std::cout << "File path: " << filePath << std::endl;
  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue(filePath + "DlRlcStats.txt"));
@@ -78,47 +80,85 @@ main (int argc, char *argv[])
  Config::SetDefault("ns3::MmWavePhyRxTrace::OutputFilename", StringValue(filePath + "RxPacketTrace.txt"));
  Config::SetDefault("ns3::LteRlcAm::BufferSizeFilename", StringValue(filePath + "RlcAmBufferSize.txt"));
 
- //create MmWavePhyMacCommon objects
+ //create MmWavePhyMacCommon object
  Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb0));
- Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
- double bandwidth1 = phyMacConfig1->GetNumRb() * phyMacConfig1->GetChunkWidth() * phyMacConfig1->GetNumChunkPerRb();
+ if(useCa)
+ {
+   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
+ }
+ else
+ {
+   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth));
+ }
+ Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
+ double bandwidth0 = phyMacConfig0->GetNumRb() * phyMacConfig0->GetChunkWidth() * phyMacConfig0->GetNumChunkPerRb();
 
- Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency1));
- Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
- Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb1));
- Ptr<MmWavePhyMacCommon> phyMacConfig2 = CreateObject<MmWavePhyMacCommon> ();
- double bandwidth2 = phyMacConfig2->GetNumRb() * phyMacConfig2->GetChunkWidth() * phyMacConfig2->GetNumChunkPerRb();
+ //create the primary carrier
+ Ptr<MmWaveComponentCarrier> cc0 = CreateObject<MmWaveComponentCarrier> ();
+ cc0->SetConfigurationParameters(phyMacConfig0);
+ cc0->SetAsPrimary(true);
 
- //create the carriers
- Ptr<MmWaveComponentCarrier> cc1 = CreateObject<MmWaveComponentCarrier> ();
- cc1->SetConfigurationParameters(phyMacConfig1);
- cc1->SetAsPrimary(true);
+ Ptr<MmWaveComponentCarrier> cc1;
+ if(useCa)
+ {
+   //create MmWavePhyMacCommon object
+   Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency1));
+   Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
+   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb1));
+   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
 
- Ptr<MmWaveComponentCarrier> cc2 = CreateObject<MmWaveComponentCarrier> ();
- cc2->SetConfigurationParameters(phyMacConfig2);
- cc2->SetAsPrimary(false);
+   Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
+   //double bandwidth1 = phyMacConfig1->GetNumRb() * phyMacConfig1->GetChunkWidth() * phyMacConfig1->GetNumChunkPerRb();
 
- std::cout << "Component Carrier " << std::to_string(phyMacConfig1->GetCcId ()) << " frequency : " << cc1->GetCenterFrequency() << " bandwidth : " << bandwidth1/1e6 << " MHz" <<std::endl;
- std::cout << "Component Carrier " << std::to_string(phyMacConfig2->GetCcId ()) << " frequency : " << cc2->GetCenterFrequency() << " bandwidth : " << bandwidth2/1e6 << " MHz" <<  std::endl;
+   //create the secondary carrier
+   cc1 = CreateObject<MmWaveComponentCarrier> ();
+   cc1->SetConfigurationParameters(phyMacConfig1);
+   cc1->SetAsPrimary(false);
 
- //create the ccMap
- std::map<uint8_t, MmWaveComponentCarrier > ccMap;
- ccMap [0] = *cc1;
- ccMap [1] = *cc2;
+  }
+
+  //create the ccMap
+  std::map<uint8_t, MmWaveComponentCarrier> ccMap;
+  ccMap [0] = *cc0;
+  if(useCa)
+  {
+    ccMap [1] = *cc1;
+  }
+
+  //set the blockageMap
+  std::map <uint8_t, bool> blockageMap;
+  blockageMap [0] = blockage0;
+  if(useCa)
+  {
+    blockageMap [1] = !blockage0;
+  }
+
+  for(uint8_t i = 0; i < ccMap.size(); i++)
+  {
+    std::cout << "Component Carrier " << (uint32_t)(ccMap[i].GetConfigurationParameters()->GetCcId ())
+              << " frequency : " << ccMap[i].GetConfigurationParameters()->GetCenterFrequency()/1e9 << " GHz,"
+              << " bandwidth : " << bandwidth0/1e6 << " MHz,"
+              << " blockage : " << blockageMap[i]
+              << std::endl;
+  }
+
 
  //create and set the helper
  //first set UseCa = true, then NumberOfComponentCarriers
- std::string scenario = "UMa";
- std::string condition = "n";
-
- Config::SetDefault("ns3::MmWaveHelper::UseCa",BooleanValue(true));
- Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers",UintegerValue(2));
- Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
+ Config::SetDefault("ns3::MmWaveHelper::UseCa",BooleanValue(useCa));
+ if(useCa)
+ {
+   Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers",UintegerValue(2));
+   Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
+ }
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
 
+ //The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
+ std::string scenario = "UMa";
+ std::string condition = "n"; // n = NLOS, l = LOS
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
@@ -133,11 +173,6 @@ main (int argc, char *argv[])
 
  Ptr<MmWaveHelper> helper = CreateObject<MmWaveHelper> ();
  helper->SetCcPhyParams(ccMap);
-
- //set the blockageMap
- std::map <uint8_t, bool> blockageMap;
- blockageMap [0] = false;
- blockageMap [1] = true;
  helper->SetBlockageMap(blockageMap);
 
 
