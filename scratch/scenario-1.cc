@@ -48,6 +48,7 @@ main (int argc, char *argv[])
  double ueDist = 50;
  bool blockage0 = false;
  bool blockage1 = false;
+ int numRefSc = 864;
  //double chunkWidth = 13.889e6;
  uint32_t chunkPerRb0 = 72;
  uint32_t chunkPerRb1 = 72;
@@ -62,14 +63,22 @@ main (int argc, char *argv[])
  cmd.AddValue("ueDist", "Distance between Enb and Ue [m]", ueDist);
  cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
  cmd.AddValue("blockage1", "If enabled, SCC blockage = true", blockage1);
- cmd.AddValue("chunkPerRb0", "Number of chunks per RB CC 0", chunkPerRb0);
- cmd.AddValue("chunkPerRb1", "Number of chunks per RB CC 1", chunkPerRb1);
+ //cmd.AddValue("chunkPerRb0", "Number of chunks per RB CC 0", chunkPerRb0);
+ //cmd.AddValue("chunkPerRb1", "Number of chunks per RB CC 1", chunkPerRb1);
  cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
  cmd.AddValue("frequency1", "CC 1 central frequency", frequency1);
  cmd.AddValue("simTime", "Simulation time", simTime);
  cmd.AddValue("filePath", "Where to put the output files", filePath);
  cmd.AddValue("runSet", "Run number", runSet);
  cmd.Parse (argc, argv);
+
+ if(useCa)
+ {
+   // use half BW per carrier
+   chunkPerRb0 = chunkPerRb0/2;
+   chunkPerRb1 = chunkPerRb1/2;
+   numRefSc = numRefSc/2;
+ }
 
  // RNG
  uint32_t seedSet = 1;
@@ -99,6 +108,7 @@ main (int argc, char *argv[])
  }
  */
  Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
+ phyMacConfig0->SetNumRefScPerSym( numRefSc );
  double bandwidth0 = phyMacConfig0->GetNumRb() * phyMacConfig0->GetChunkWidth() * phyMacConfig0->GetNumChunkPerRb();
 
  //create the primary carrier
@@ -116,7 +126,7 @@ main (int argc, char *argv[])
    //Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
 
    Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
-   //double bandwidth1 = phyMacConfig1->GetNumRb() * phyMacConfig1->GetChunkWidth() * phyMacConfig1->GetNumChunkPerRb();
+   phyMacConfig1->SetNumRefScPerSym( numRefSc );
 
    //create the secondary carrier
    cc1 = CreateObject<MmWaveComponentCarrier> ();
