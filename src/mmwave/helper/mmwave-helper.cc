@@ -1458,6 +1458,18 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 	ccmEnbManager->SetNumberOfComponentCarriers (m_noOfCcs);
 	ccmEnbManager->SetRrc(rrc);
 
+	std::map<uint8_t, double> bandwidthMap;
+	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
+	{
+		Ptr<MmWavePhyMacCommon> phyMacConfig = it->second->GetConfigurationParameters ();
+		bandwidthMap[it->first] = phyMacConfig->GetNumRb () * phyMacConfig->GetChunkWidth () * phyMacConfig->GetNumChunkPerRb ();
+		NS_LOG_UNCOND("bandwidth " << (uint32_t)it->first << " = " << bandwidthMap[it->first]);
+	}
+
+	ccmEnbManager->SetBandwidthMap (bandwidthMap);
+
+
+
 	if (m_useIdealRrc)
 	{
 		Ptr<MmWaveEnbRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveEnbRrcProtocolIdeal> ();

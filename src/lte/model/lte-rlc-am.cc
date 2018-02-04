@@ -110,13 +110,13 @@ LteRlcAm::BufferSizeTrace()
 {
   NS_LOG_LOGIC("BufferSizeTrace " << Simulator::Now().GetSeconds() << " " << m_rnti << " " << m_lcid << " " << m_txonBufferSize);
   // write to file
-  if(!m_bufferSizeFile.is_open())
+  /*if(!m_bufferSizeFile.is_open())
   {
     m_bufferSizeFile.open(GetBufferSizeFilename().c_str(), std::ofstream::app);
     NS_LOG_LOGIC("File opened");
   }
   m_bufferSizeFile << Simulator::Now().GetSeconds() << " " << m_rnti << " " << (uint16_t) m_lcid << " " << m_txonBufferSize << std::endl;
-
+  */
   m_traceBufferSizeEvent = Simulator::Schedule(MilliSeconds(10), &LteRlcAm::BufferSizeTrace, this);
 }
 
@@ -499,7 +499,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, 
 
                   packet->AddHeader (rlcAmHeader);
                   NS_LOG_LOGIC ("new AM RLC header: " << rlcAmHeader);
-                  
+
                   // Send RLC PDU to MAC layer
                   LteMacSapProvider::TransmitPduParameters params;
                   params.pdu = packet;

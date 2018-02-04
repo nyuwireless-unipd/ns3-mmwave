@@ -45,10 +45,11 @@ int
 main (int argc, char *argv[])
 {
  bool useCa = true;
- double ueDist = 50;
+ uint32_t bandDiv = 2; // if useCa=true, CC0 get (1-1/bandDiv)*totalBandwidth, CC1 get (1/bandDiv)*totalBandwidth
  bool blockage0 = false;
  bool blockage1 = false;
- int numRefSc = 864;
+ int numRefSc0 = 864;
+ int numRefSc1 = 864;
  //double chunkWidth = 13.889e6;
  uint32_t chunkPerRb0 = 72;
  uint32_t chunkPerRb1 = 72;
@@ -60,11 +61,9 @@ main (int argc, char *argv[])
 
  CommandLine cmd;
  cmd.AddValue("useCa", "If enabled use 2 CC", useCa);
- cmd.AddValue("ueDist", "Distance between Enb and Ue [m]", ueDist);
+ cmd.AddValue("bandDiv", "Bandwidth divisor", bandDiv);
  cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
  cmd.AddValue("blockage1", "If enabled, SCC blockage = true", blockage1);
- //cmd.AddValue("chunkPerRb0", "Number of chunks per RB CC 0", chunkPerRb0);
- //cmd.AddValue("chunkPerRb1", "Number of chunks per RB CC 1", chunkPerRb1);
  cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
  cmd.AddValue("frequency1", "CC 1 central frequency", frequency1);
  cmd.AddValue("simTime", "Simulation time", simTime);
@@ -74,10 +73,10 @@ main (int argc, char *argv[])
 
  if(useCa)
  {
-   // use half BW per carrier
-   chunkPerRb0 = chunkPerRb0/2;
-   chunkPerRb1 = chunkPerRb1/2;
-   numRefSc = numRefSc/2;
+   chunkPerRb0 = chunkPerRb0*(bandDiv-1)/bandDiv;
+   chunkPerRb1 = chunkPerRb1/bandDiv;
+   numRefSc0 = numRefSc0*(bandDiv-1)/bandDiv;
+   numRefSc1 = numRefSc1/bandDiv;
  }
 
  // RNG
@@ -108,8 +107,7 @@ main (int argc, char *argv[])
  }
  */
  Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
- phyMacConfig0->SetNumRefScPerSym( numRefSc );
- double bandwidth0 = phyMacConfig0->GetNumRb() * phyMacConfig0->GetChunkWidth() * phyMacConfig0->GetNumChunkPerRb();
+ phyMacConfig0->SetNumRefScPerSym( numRefSc0 );
 
  //create the primary carrier
  Ptr<MmWaveComponentCarrier> cc0 = CreateObject<MmWaveComponentCarrier> ();
@@ -126,13 +124,12 @@ main (int argc, char *argv[])
    //Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
 
    Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
-   phyMacConfig1->SetNumRefScPerSym( numRefSc );
+   phyMacConfig1->SetNumRefScPerSym( numRefSc1 );
 
    //create the secondary carrier
    cc1 = CreateObject<MmWaveComponentCarrier> ();
    cc1->SetConfigurationParameters(phyMacConfig1);
    cc1->SetAsPrimary(false);
-
   }
 
   //create the ccMap
@@ -153,10 +150,13 @@ main (int argc, char *argv[])
 
   for(uint8_t i = 0; i < ccMap.size(); i++)
   {
-    std::cout << "Component Carrier " << (uint32_t)(ccMap[i].GetConfigurationParameters()->GetCcId ())
-              << " frequency : " << ccMap[i].GetConfigurationParameters()->GetCenterFrequency()/1e9 << " GHz,"
-              << " bandwidth : " << bandwidth0/1e6 << " MHz,"
+    Ptr<MmWavePhyMacCommon> phyMacConfig = ccMap[i].GetConfigurationParameters();
+    std::cout << "Component Carrier " << (uint32_t)(phyMacConfig->GetCcId ())
+              << " frequency : " << phyMacConfig->GetCenterFrequency()/1e9 << " GHz,"
+              << " bandwidth : " << (phyMacConfig->GetNumRb() * phyMacConfig->GetChunkWidth() * phyMacConfig->GetNumChunkPerRb())/1e6 << " MHz,"
               << " blockage : " << blockageMap[i]
+              << ", numRefSc: " << (uint32_t)phyMacConfig->GetNumRefScPerSym()
+              << ", ChunkPerRB: " << phyMacConfig->GetNumChunkPerRb()
               << std::endl;
   }
 
@@ -167,14 +167,14 @@ main (int argc, char *argv[])
  if(useCa)
  {
    Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers",UintegerValue(2));
-   Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
+   Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveComponentCarrierManager"));
  }
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
 
  //The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
  std::string scenario = "UMa";
- std::string condition = "n"; // n = NLOS, l = LOS
+ std::string condition = "l"; // n = NLOS, l = LOS
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
@@ -215,11 +215,12 @@ main (int argc, char *argv[])
  ueNodes.Create(1);
 
  //set mobility
- std::cout << "Distance : " << (uint32_t)ueDist << " m" << std::endl;
+ //set mobility
  MobilityHelper uemobility;
- uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
- Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
- uePositionAlloc->Add (Vector (ueDist, 0.0, 1.6));
+ uemobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                              "Bounds", RectangleValue (Rectangle (-200, 200, -200, 200)));
+ Config::SetDefault ("ns3::UniformDiscPositionAllocator::rho", DoubleValue(150));
+ Ptr<UniformDiscPositionAllocator> uePositionAlloc = CreateObject<UniformDiscPositionAllocator> ();
  uemobility.SetPositionAllocator(uePositionAlloc);
  uemobility.Install (ueNodes.Get (0));
  BuildingsHelper::Install (ueNodes);

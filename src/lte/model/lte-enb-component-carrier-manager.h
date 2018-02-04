@@ -108,7 +108,7 @@ public:
    * received, or to notify CCM about PRB occupancy, and similar. Functions that are
    * specific for the communication between MAC and CCM.
    *
-   * \returns LteCcmMacSapUser* 
+   * \returns LteCcmMacSapUser*
    */
   virtual LteCcmMacSapUser* GetLteCcmMacSapUser ();
 
@@ -120,7 +120,7 @@ public:
    * component carriers based on the logic implemented in the
    * specific component carrier manager.
    *
-   * \returns LteMacSapProvider* 
+   * \returns LteMacSapProvider*
    */
   virtual LteMacSapProvider* GetLteMacSapProvider ();
 
@@ -156,6 +156,8 @@ public:
    * \param rrc the RRC
    */
   virtual void SetRrc (const Ptr<LteEnbRrc> rrc);
+
+  virtual void SetBandwidthMap (std::map<uint8_t, double> bandwidthMap);
 
 protected:
 
@@ -207,6 +209,7 @@ protected:
   LteCcmRrcSapUser* m_ccmRrcSapUser; //!< A pointer to SAP interface of RRC instance, i.e. to configure measurements reporting for CCM.
   LteCcmRrcSapProvider* m_ccmRrcSapProvider; //!< A pointer to the SAP interface of the CCM instance to receive API calls from the eNodeB RRC instance.
 
+  std::map<uint8_t, double> m_bandwidthMap;
 }; // end of class LteEnbComponentCarrierManager
 
 

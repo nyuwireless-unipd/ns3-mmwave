@@ -86,7 +86,7 @@ protected:
    * \param lcid the LCID
    * \param lcGroup the LC group
    * \param msu the MSU
-   * \returns std::vector<LteCcmRrcSapProvider::LcsConfig> 
+   * \returns std::vector<LteCcmRrcSapProvider::LcsConfig>
    */
   virtual std::vector<LteCcmRrcSapProvider::LcsConfig> DoSetupDataRadioBearer (EpsBearer bearer, uint8_t bearerId, uint16_t rnti, uint8_t lcid, uint8_t lcGroup, LteMacSapUser* msu);
   /**
@@ -167,6 +167,29 @@ public:
 
   RrComponentCarrierManager ();
   virtual ~RrComponentCarrierManager ();
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
+  static TypeId GetTypeId ();
+
+protected:
+
+  // Inherited methods
+  virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
+  virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
+
+}; // end of class RrComponentCarrierManager
+
+/*
+ * \brief Component carrier manager implementation.
+ */
+class MmWaveComponentCarrierManager : public NoOpComponentCarrierManager
+{
+public:
+
+  MmWaveComponentCarrierManager ();
+  virtual ~MmWaveComponentCarrierManager ();
   /**
    * \brief Get the type ID.
    * \return the object TypeId
