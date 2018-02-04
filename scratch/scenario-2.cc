@@ -174,7 +174,7 @@ main (int argc, char *argv[])
 
  //The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
  std::string scenario = "UMa";
- std::string condition = "l"; // n = NLOS, l = LOS
+ std::string condition = "n"; // n = NLOS, l = LOS
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
@@ -224,6 +224,7 @@ main (int argc, char *argv[])
  uemobility.SetPositionAllocator(uePositionAlloc);
  uemobility.Install (ueNodes.Get (0));
  BuildingsHelper::Install (ueNodes);
+ NS_LOG_UNCOND("ue pos :" << ueNodes.Get(0)->GetObject<MobilityModel>()->GetPosition());
 
  //install ue device
  NetDeviceContainer ueNetDevices = helper->InstallUeDevice(ueNodes);

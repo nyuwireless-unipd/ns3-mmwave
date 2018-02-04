@@ -64,7 +64,8 @@ public:
   static Ptr<SpectrumValue> CreateNoisePowerSpectralDensity (double noiseFigure, Ptr<SpectrumModel> spectrumModel);
 
 private:
-  static Ptr<SpectrumModel> m_model;
+  //static Ptr<SpectrumModel> m_model;
+  static std::map<uint8_t, Ptr<SpectrumModel>> m_model;
 };
 
 

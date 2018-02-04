@@ -45,15 +45,20 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumValueHelper");
 
-Ptr<SpectrumModel> MmWaveSpectrumValueHelper::m_model = 0;
+std::map<uint8_t,Ptr<SpectrumModel>> MmWaveSpectrumValueHelper::m_model;
 
 Ptr<SpectrumModel>
 MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
   NS_LOG_FUNCTION (ptrConfig->GetCenterFrequency() << (uint32_t) ptrConfig->GetTotalNumChunk());
-  if (m_model != 0 && m_model->GetNumBands () != 0)
+  uint8_t ccId = ptrConfig->GetCcId();
+  if (m_model.find(ccId) != m_model.end() )
   {
-  	return m_model;
+    if (m_model[ccId]->GetNumBands () != 0)
+    {
+      NS_LOG_DEBUG("CC " << (uint32_t)ptrConfig->GetCcId() << " NumBands " << (uint32_t)m_model[ccId]->GetNumBands() );
+    	return m_model[ccId];
+    }
   }
 
   double fc = ptrConfig->GetCenterFrequency ();
@@ -75,11 +80,12 @@ MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 
 	  rbs.push_back (rb);
   }
-  m_model = Create<SpectrumModel> (rbs);
-  return m_model;
+  NS_LOG_DEBUG("CC " << (uint32_t)ptrConfig->GetCcId() << " rbs size " << (uint32_t)rbs.size() );
+  m_model[ccId] = Create<SpectrumModel> (rbs);
+  return m_model[ccId];
 }
 
-Ptr<SpectrumValue> 
+Ptr<SpectrumValue>
 MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig, double powerTx, std::vector <int> activeRbs)
 {
     Ptr<SpectrumModel> model = GetSpectrumModel (ptrConfig);
@@ -96,7 +102,6 @@ MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon>
         (*txPsd)[rbId] = txPowerDensity;
     }
 
-    NS_LOG_LOGIC (*txPsd);
 
     return txPsd;
 
