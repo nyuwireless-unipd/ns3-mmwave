@@ -46,6 +46,7 @@ main (int argc, char *argv[])
 {
  bool useCa = true;
  uint32_t bandDiv = 2; // if useCa=true, CC0 get (1-1/bandDiv)*totalBandwidth, CC1 get (1/bandDiv)*totalBandwidth
+ bool useRR = false;
  bool blockage0 = false;
  bool blockage1 = false;
  int numRefSc0 = 864;
@@ -62,6 +63,7 @@ main (int argc, char *argv[])
  CommandLine cmd;
  cmd.AddValue("useCa", "If enabled use 2 CC", useCa);
  cmd.AddValue("bandDiv", "Bandwidth divisor", bandDiv);
+ cmd.AddValue("useRR", "Use RR CCM?", useRR);
  cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
  cmd.AddValue("blockage1", "If enabled, SCC blockage = true", blockage1);
  cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
@@ -167,7 +169,14 @@ main (int argc, char *argv[])
  if(useCa)
  {
    Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers",UintegerValue(2));
-   Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveComponentCarrierManager"));
+   if(useRR)
+   {
+     Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
+   }
+   else
+   {
+     Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveComponentCarrierManager"));
+   }
  }
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
