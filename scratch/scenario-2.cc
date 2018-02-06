@@ -37,9 +37,29 @@
 #include "ns3/internet-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/log.h"
+#include "ns3/mmwave-point-to-point-epc-helper.h"
+#include "ns3/point-to-point-helper.h"
 #include <map>
 
 using namespace ns3;
+
+void
+TxMacPacketTraceUe (Ptr<OutputStreamWrapper> stream, RxPacketTraceParams params)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << (uint32_t)params.m_ccId << '\t' << params.m_tbSize << std::endl;
+}
+
+void
+Traces(std::string filePath)
+{
+	std::string path = "/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUeMac/TxMacPacketTraceUe";
+	filePath = filePath + "TxMacPacketTraceUe.txt";
+	AsciiTraceHelper asciiTraceHelper;
+	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (filePath);
+	*stream1->GetStream () << "Time" << "\t" << "CC" << '\t' << "Packet size" << std::endl;
+	Config::ConnectWithoutContext (path, MakeBoundCallback(&TxMacPacketTraceUe, stream1));
+}
+
 
 int
 main (int argc, char *argv[])
@@ -47,6 +67,7 @@ main (int argc, char *argv[])
  bool useCa = true;
  uint32_t bandDiv = 2; // if useCa=true, CC0 get (1-1/bandDiv)*totalBandwidth, CC1 get (1/bandDiv)*totalBandwidth
  bool useRR = false;
+ bool useEpc = false;
  bool blockage0 = false;
  bool blockage1 = false;
  int numRefSc0 = 864;
@@ -64,6 +85,7 @@ main (int argc, char *argv[])
  cmd.AddValue("useCa", "If enabled use 2 CC", useCa);
  cmd.AddValue("bandDiv", "Bandwidth divisor", bandDiv);
  cmd.AddValue("useRR", "Use RR CCM?", useRR);
+ cmd.AddValue("useEpc", "Use  EPC?", useEpc);
  cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
  cmd.AddValue("blockage1", "If enabled, SCC blockage = true", blockage1);
  cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
@@ -200,6 +222,45 @@ main (int argc, char *argv[])
  helper->SetCcPhyParams(ccMap);
  helper->SetBlockageMap(blockageMap);
 
+ Ipv4Address remoteHostAddr;
+ Ptr<Node> remoteHost;
+ InternetStackHelper internet;
+ Ptr<MmWavePointToPointEpcHelper> epcHelper;
+ Ipv4StaticRoutingHelper ipv4RoutingHelper;
+ if(useEpc)
+ {
+   epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+   helper->SetEpcHelper (epcHelper);
+
+   // Create the Internet by connecting remoteHost to pgw. Setup routing too
+   Ptr<Node> pgw = epcHelper->GetPgwNode ();
+
+   // Create remotehost
+   NodeContainer remoteHostContainer;
+   remoteHostContainer.Create (1);
+   internet.Install (remoteHostContainer);
+   Ipv4StaticRoutingHelper ipv4RoutingHelper;
+   Ipv4InterfaceContainer internetIpIfaces;
+
+   remoteHost = remoteHostContainer.Get (0);
+   // Create the Internet
+   PointToPointHelper p2ph;
+   p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
+   p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
+   p2ph.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (0.01)));
+
+   NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
+
+   Ipv4AddressHelper ipv4h;
+   ipv4h.SetBase ("1.0.0.0", "255.255.0.0");
+   internetIpIfaces = ipv4h.Assign (internetDevices);
+   // interface 0 is localhost, 1 is the p2p device
+   remoteHostAddr = internetIpIfaces.GetAddress (1);
+
+   Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
+   remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.255.0.0"), 1);
+ }
+
 
  //create the enb node
  NodeContainer enbNodes;
@@ -239,13 +300,58 @@ main (int argc, char *argv[])
  NetDeviceContainer ueNetDevices = helper->InstallUeDevice(ueNodes);
  std::cout<< "ue dev installed" << std::endl;
 
- helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);
- helper->EnableTraces();
+ if(useEpc)
+ {
+   // Install the IP stack on the UEs
+   internet.Install (ueNodes);
+   Ipv4InterfaceContainer ueIpIface;
+   ueIpIface = epcHelper->AssignUeIpv4Address (ueNetDevices);
+   // Assign IP address to UEs, and install applications
+   // Set the default gateway for the UE
+   Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNodes.Get (0)->GetObject<Ipv4> ());
+   ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
- // Activate a data radio bearer
- enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
- EpsBearer bearer (q);
- helper->ActivateDataRadioBearer (ueNetDevices, bearer);
+   helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);
+
+   // Install and start applications on UEs and remote host
+   uint16_t dlPort = 1234;
+   uint16_t ulPort = 2000;
+   ApplicationContainer clientApps;
+   ApplicationContainer serverApps;
+
+   uint16_t interPacketInterval = 100;
+
+   PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+   PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+   serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(0)));
+   serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
+
+   UdpClientHelper dlClient (ueIpIface.GetAddress (0), dlPort);
+   dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+   dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+
+   UdpClientHelper ulClient (remoteHostAddr, ulPort);
+   ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+   ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+
+   clientApps.Add (dlClient.Install (remoteHost));
+   clientApps.Add (ulClient.Install (ueNodes.Get(0)));
+
+   serverApps.Start (Seconds (0.01));
+   clientApps.Start (Seconds (0.01));
+ }
+ else
+ {
+   helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);
+
+   // Activate a data radio bearer
+   enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
+   EpsBearer bearer (q);
+   helper->ActivateDataRadioBearer (ueNetDevices, bearer);
+ }
+
+ helper->EnableTraces();
+ Traces(filePath); //Mac Traces
 
  BuildingsHelper::MakeMobilityModelConsistent ();
 

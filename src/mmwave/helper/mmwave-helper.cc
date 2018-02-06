@@ -2433,7 +2433,7 @@ MmWaveHelper::EnableTraces (void)
 	//EnableUePacketCountTrace (); //the trace source does not exist
 	//EnableTransportBlockTrace (); //the callback does nothing
 	EnableRlcTraces ();
-	//EnablePdcpTraces ();
+	EnablePdcpTraces ();
 	//EnableMcTraces ();
 }
 
