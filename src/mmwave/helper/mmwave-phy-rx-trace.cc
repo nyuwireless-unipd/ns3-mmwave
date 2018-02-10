@@ -27,7 +27,11 @@
  *
  * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *							Integration of Carrier Aggregation for the mmWave module
  */
+
 
 
 

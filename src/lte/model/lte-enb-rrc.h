@@ -22,8 +22,12 @@
  * Modified by:
  *          Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015)
  *          Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation)
+ *
  * Modified by: Michele Polese <michele.polese@gmail.com>
  *          Dual Connectivity functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *						  Integration of Carrier Aggregation for the mmWave module
  */
 
 #ifndef LTE_ENB_RRC_H

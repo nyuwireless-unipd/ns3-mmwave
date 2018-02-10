@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2015 Danilo Abrignani
  * Copyright (c) 2016 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -18,6 +19,9 @@
  *
  * Authors: Danilo Abrignani <danilo.abrignani@unibo.it>
  *          Biljana Bojovic <biljana.bojovic@cttc.es>
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *								 Integration of Carrier Aggregation for the mmWave module
  */
 
 #ifndef MMWAVE_NO_OP_COMPONENT_CARRIER_MANAGER_H

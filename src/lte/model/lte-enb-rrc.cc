@@ -21,8 +21,12 @@
  *          Manuel Requena <manuel.requena@cttc.es>
  * Modified by:  Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015),
  *               Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation)
+ *
  * Modified by Michele Polese <michele.polese@gmail.com> for DC functionalities
  * Lossless HO code from https://github.com/binhqnguyen/lena
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *							Integration of Carrier Aggregation for the mmWave module
  */
 
 #include "lte-enb-rrc.h"
