@@ -203,7 +203,7 @@ MmWaveHelper::GetTypeId (void)
                     "The type of Component Carrier Manager to be used for eNBs. "
                     "The allowed values for this attributes are the type names "
                     "of any class inheriting ns3::LteEnbComponentCarrierManager.",
-                    StringValue ("ns3::NoOpComponentCarrierManager"),
+                    StringValue ("ns3::MmWaveNoOpComponentCarrierManager"),
                     MakeStringAccessor (&MmWaveHelper::SetEnbComponentCarrierManagerType,
                                         &MmWaveHelper::GetEnbComponentCarrierManagerType),
                     MakeStringChecker ())

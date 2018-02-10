@@ -20,8 +20,8 @@
  *          Biljana Bojovic <biljana.bojovic@cttc.es>
  */
 
-#ifndef NO_OP_COMPONENT_CARRIER_MANAGER_H
-#define NO_OP_COMPONENT_CARRIER_MANAGER_H
+#ifndef MMWAVE_NO_OP_COMPONENT_CARRIER_MANAGER_H
+#define MMWAVE_NO_OP_COMPONENT_CARRIER_MANAGER_H
 
 #include <ns3/lte-enb-component-carrier-manager.h>
 #include <ns3/lte-ccm-rrc-sap.h>
@@ -37,24 +37,24 @@ class LteCcmRrcSapProvider;
  * \brief The default component carrier manager that forwards all traffic, the uplink and the downlink,
  *  over the primary carrier, and will not use secondary carriers. To enable carrier aggregation
  *  feature, select another component carrier manager class, i.e., some of child classes of
- *  LteEnbComponentCarrierManager of NoOpComponentCarrierManager.
+ *  LteEnbComponentCarrierManager of MmWaveNoOpComponentCarrierManager.
  */
 
-class NoOpComponentCarrierManager : public LteEnbComponentCarrierManager
+class MmWaveNoOpComponentCarrierManager : public LteEnbComponentCarrierManager
 {
-  /// allow EnbMacMemberLteMacSapProvider<NoOpComponentCarrierManager> class friend access
-  friend class EnbMacMemberLteMacSapProvider<NoOpComponentCarrierManager>;
-  /// allow MemberLteCcmRrcSapProvider<NoOpComponentCarrierManager> class friend access
-  friend class MemberLteCcmRrcSapProvider<NoOpComponentCarrierManager>;
-  /// allow MemberLteCcmRrcSapUser<NoOpComponentCarrierManager> class friend access
-  friend class MemberLteCcmRrcSapUser<NoOpComponentCarrierManager>;
-  /// allow MemberLteCcmMacSapUser<NoOpComponentCarrierManager> class friend access
-  friend class MemberLteCcmMacSapUser<NoOpComponentCarrierManager>;
+  /// allow EnbMacMemberLteMacSapProvider<MmWaveNoOpComponentCarrierManager> class friend access
+  friend class EnbMacMemberLteMacSapProvider<MmWaveNoOpComponentCarrierManager>;
+  /// allow MemberLteCcmRrcSapProvider<MmWaveNoOpComponentCarrierManager> class friend access
+  friend class MemberLteCcmRrcSapProvider<MmWaveNoOpComponentCarrierManager>;
+  /// allow MemberLteCcmRrcSapUser<MmWaveNoOpComponentCarrierManager> class friend access
+  friend class MemberLteCcmRrcSapUser<MmWaveNoOpComponentCarrierManager>;
+  /// allow MemberLteCcmMacSapUser<MmWaveNoOpComponentCarrierManager> class friend access
+  friend class MemberLteCcmMacSapUser<MmWaveNoOpComponentCarrierManager>;
 
 public:
 
-  NoOpComponentCarrierManager ();
-  virtual ~NoOpComponentCarrierManager ();
+  MmWaveNoOpComponentCarrierManager ();
+  virtual ~MmWaveNoOpComponentCarrierManager ();
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -155,18 +155,18 @@ protected:
 
   std::map <uint8_t, double > m_ccPrbOccupancy;//!< The physical resource block occupancy per carrier.
 
-}; // end of class NoOpComponentCarrierManager
+}; // end of class MmWaveNoOpComponentCarrierManager
 
 
 /*
  * \brief Component carrier manager implementation that splits traffic equally among carriers.
  */
-class RrComponentCarrierManager : public NoOpComponentCarrierManager
+class MmWaveRrComponentCarrierManager : public MmWaveNoOpComponentCarrierManager
 {
 public:
 
-  RrComponentCarrierManager ();
-  virtual ~RrComponentCarrierManager ();
+  MmWaveRrComponentCarrierManager ();
+  virtual ~MmWaveRrComponentCarrierManager ();
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -179,9 +179,33 @@ protected:
   virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
   virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
 
-}; // end of class RrComponentCarrierManager
+}; // end of class MmWaveRrComponentCarrierManager
+
+/*
+ * \brief Component carrier manager implementation. The MmWaveBaRrComponentCarrierManager
+ *        divides the BSR according to the bandwidth ratio across the carriers.
+ */
+class MmWaveBaRrComponentCarrierManager : public MmWaveNoOpComponentCarrierManager
+{
+public:
+
+  MmWaveBaRrComponentCarrierManager ();
+  virtual ~MmWaveBaRrComponentCarrierManager ();
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
+  static TypeId GetTypeId ();
+
+protected:
+
+  // Inherited methods
+  virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
+  virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
+
+}; // end of class MmWaveBaRrComponentCarrierManager
 
 } // end of namespace ns3
 
 
-#endif /* NO_OP_COMPONENT_CARRIER_MANAGER_H */
+#endif /* MMWAVE_NO_OP_COMPONENT_CARRIER_MANAGER_H */
