@@ -1,30 +1,4 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
-/*
-*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
-*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
-*
-*   This program is free software; you can redistribute it and/or modify
-*   it under the terms of the GNU General Public License version 2 as
-*   published by the Free Software Foundation;
-*
-*   This program is distributed in the hope that it will be useful,
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*   GNU General Public License for more details.
-*
-*   You should have received a copy of the GNU General Public License
-*   along with this program; if not, write to the Free Software
-*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-*   Author: Marco Miozzo <marco.miozzo@cttc.es>
-*           Nicola Baldo  <nbaldo@cttc.es>
-*
-*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
-*        	 	  Sourjya Dutta <sdutta@nyu.edu>
-*        	 	  Russell Ford <russell.ford@nyu.edu>
-*        		  Menglei Zhang <menglei@nyu.edu>
-*/
-
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -41,6 +15,12 @@
 
 using namespace ns3;
 
+/* In this example a single UE is connected with a single MmWave BS. The UE is
+ * placed at distance ueDist from the BS and it does not move. The system
+ * bandwidth is fixed at 1GHz. If CA is enabled, 2 CCs are used and each of them
+ * uses half of the total bandwidth.
+ */
+
 int
 main (int argc, char *argv[])
 {
@@ -49,7 +29,6 @@ main (int argc, char *argv[])
  bool blockage0 = false;
  bool blockage1 = false;
  int numRefSc = 864;
- //double chunkWidth = 13.889e6;
  uint32_t chunkPerRb0 = 72;
  uint32_t chunkPerRb1 = 72;
  double frequency0 = 28e9;
@@ -63,8 +42,6 @@ main (int argc, char *argv[])
  cmd.AddValue("ueDist", "Distance between Enb and Ue [m]", ueDist);
  cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
  cmd.AddValue("blockage1", "If enabled, SCC blockage = true", blockage1);
- //cmd.AddValue("chunkPerRb0", "Number of chunks per RB CC 0", chunkPerRb0);
- //cmd.AddValue("chunkPerRb1", "Number of chunks per RB CC 1", chunkPerRb1);
  cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
  cmd.AddValue("frequency1", "CC 1 central frequency", frequency1);
  cmd.AddValue("simTime", "Simulation time", simTime);
@@ -85,6 +62,7 @@ main (int argc, char *argv[])
  RngSeedManager::SetSeed (seedSet);
  RngSeedManager::SetRun (runSet);
 
+ // set output file names
  std::cout << "File path: " << filePath << std::endl;
  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue(filePath + "DlRlcStats.txt"));
  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue(filePath + "UlRlcStats.txt"));
@@ -93,49 +71,39 @@ main (int argc, char *argv[])
  Config::SetDefault("ns3::MmWavePhyRxTrace::OutputFilename", StringValue(filePath + "RxPacketTrace.txt"));
  Config::SetDefault("ns3::LteRlcAm::BufferSizeFilename", StringValue(filePath + "RlcAmBufferSize.txt"));
 
- //create MmWavePhyMacCommon object
+ // CC 0
+ // 1. create MmWavePhyMacCommon object
  Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb0));
- /*
- if(useCa)
- {
-   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
- }
- else
- {
-   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth));
- }
- */
  Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
  phyMacConfig0->SetNumRefScPerSym( numRefSc );
  double bandwidth0 = phyMacConfig0->GetNumRb() * phyMacConfig0->GetChunkWidth() * phyMacConfig0->GetNumChunkPerRb();
 
- //create the primary carrier
+ // 2. create the MmWaveComponentCarrier object
  Ptr<MmWaveComponentCarrier> cc0 = CreateObject<MmWaveComponentCarrier> ();
  cc0->SetConfigurationParameters(phyMacConfig0);
  cc0->SetAsPrimary(true);
 
+ // CC 1
  Ptr<MmWaveComponentCarrier> cc1;
  if(useCa)
  {
-   //create MmWavePhyMacCommon object
+   // 1. create MmWavePhyMacCommon object
    Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency1));
    Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
    Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb1));
-   //Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
-
    Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
    phyMacConfig1->SetNumRefScPerSym( numRefSc );
 
-   //create the secondary carrier
+   // 2. create the MmWaveComponentCarrier object
    cc1 = CreateObject<MmWaveComponentCarrier> ();
    cc1->SetConfigurationParameters(phyMacConfig1);
    cc1->SetAsPrimary(false);
 
   }
 
-  //create the ccMap
+  // create the CC map
   std::map<uint8_t, MmWaveComponentCarrier> ccMap;
   ccMap [0] = *cc0;
   if(useCa)
@@ -143,7 +111,7 @@ main (int argc, char *argv[])
     ccMap [1] = *cc1;
   }
 
-  //set the blockageMap
+  // set the blockageMap
   std::map <uint8_t, bool> blockageMap;
   blockageMap [0] = blockage0;
   if(useCa)
@@ -151,6 +119,7 @@ main (int argc, char *argv[])
     blockageMap [1] = blockage1;
   }
 
+  // print CC parameters
   for(uint8_t i = 0; i < ccMap.size(); i++)
   {
     std::cout << "Component Carrier " << (uint32_t)(ccMap[i].GetConfigurationParameters()->GetCcId ())
@@ -161,8 +130,8 @@ main (int argc, char *argv[])
   }
 
 
- //create and set the helper
- //first set UseCa = true, then NumberOfComponentCarriers
+ // create and set the helper
+ // first set UseCa = true, then NumberOfComponentCarriers
  Config::SetDefault("ns3::MmWaveHelper::UseCa",BooleanValue(useCa));
  if(useCa)
  {
@@ -172,7 +141,7 @@ main (int argc, char *argv[])
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
 
- //The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
+ // The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
  std::string scenario = "UMa";
  std::string condition = "n"; // n = NLOS, l = LOS
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
@@ -192,11 +161,11 @@ main (int argc, char *argv[])
  helper->SetBlockageMap(blockageMap);
 
 
- //create the enb node
+ // create the enb node
  NodeContainer enbNodes;
  enbNodes.Create(1);
 
- //set mobility
+ // set mobility
  Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
  enbPositionAlloc->Add (Vector (0.0, 0.0, 15.0));
 
@@ -206,15 +175,15 @@ main (int argc, char *argv[])
  enbmobility.Install (enbNodes);
  BuildingsHelper::Install (enbNodes);
 
- //install enb device
+ // install enb device
  NetDeviceContainer enbNetDevices = helper->InstallEnbDevice (enbNodes);
- std::cout<< "enb dev installed" << std::endl;
+ std::cout<< "eNB device installed" << std::endl;
 
- //create ue node
+ // create ue node
  NodeContainer ueNodes;
  ueNodes.Create(1);
 
- //set mobility
+ // set mobility
  std::cout << "Distance : " << (uint32_t)ueDist << " m" << std::endl;
  MobilityHelper uemobility;
  uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -224,14 +193,14 @@ main (int argc, char *argv[])
  uemobility.Install (ueNodes.Get (0));
  BuildingsHelper::Install (ueNodes);
 
- //install ue device
+ // install ue device
  NetDeviceContainer ueNetDevices = helper->InstallUeDevice(ueNodes);
- std::cout<< "ue dev installed" << std::endl;
+ std::cout<< "UE device installed" << std::endl;
 
  helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);
  helper->EnableTraces();
 
- // Activate a data radio bearer
+ // activate a data radio bearer
  enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
  EpsBearer bearer (q);
  helper->ActivateDataRadioBearer (ueNetDevices, bearer);
