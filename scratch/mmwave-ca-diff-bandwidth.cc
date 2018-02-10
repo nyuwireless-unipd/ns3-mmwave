@@ -1,30 +1,4 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
-/*
-*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
-*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
-*
-*   This program is free software; you can redistribute it and/or modify
-*   it under the terms of the GNU General Public License version 2 as
-*   published by the Free Software Foundation;
-*
-*   This program is distributed in the hope that it will be useful,
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*   GNU General Public License for more details.
-*
-*   You should have received a copy of the GNU General Public License
-*   along with this program; if not, write to the Free Software
-*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-*
-*   Author: Marco Miozzo <marco.miozzo@cttc.es>
-*           Nicola Baldo  <nbaldo@cttc.es>
-*
-*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
-*        	 	  Sourjya Dutta <sdutta@nyu.edu>
-*        	 	  Russell Ford <russell.ford@nyu.edu>
-*        		  Menglei Zhang <menglei@nyu.edu>
-*/
-
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -42,6 +16,15 @@
 #include <map>
 
 using namespace ns3;
+
+/* In this example, a single UE is connected with a single MmWave BS. The
+ * UE is randomly placed inside a circle with radius of 150m and it moves with
+ * random velocity between 2m/s and 4m/s. The BS is placed in the center with
+ * height 15m. The system bandwidth is fixed at 1GHz. If CA is enabled, 2 CCs
+ * are used and the total bandwidth is divided among the two according to
+ * the bandDiv parameter, which is equal to the ratio between the badwidth
+ * allocated to CC0 and the bandwidth allocated to CC1.
+ */
 
 void
 TxMacPacketTraceUe (Ptr<OutputStreamWrapper> stream, RxPacketTraceParams params)
@@ -72,7 +55,6 @@ main (int argc, char *argv[])
  bool blockage1 = false;
  int numRefSc0 = 864;
  int numRefSc1 = 864;
- //double chunkWidth = 13.889e6;
  uint32_t chunkPerRb0 = 72;
  uint32_t chunkPerRb1 = 72;
  double frequency0 = 28e9;
@@ -83,13 +65,13 @@ main (int argc, char *argv[])
 
  CommandLine cmd;
  cmd.AddValue("useCa", "If enabled use 2 CC", useCa);
- cmd.AddValue("bandDiv", "Bandwidth divisor", bandDiv);
- cmd.AddValue("useRR", "Use RR CCM?", useRR);
- cmd.AddValue("useEpc", "Use  EPC?", useEpc);
- cmd.AddValue("blockage0", "If enabled, PCC blockage = true", blockage0);
- cmd.AddValue("blockage1", "If enabled, SCC blockage = true", blockage1);
- cmd.AddValue("frequency0", "CC 0 central frequency", frequency0);
- cmd.AddValue("frequency1", "CC 1 central frequency", frequency1);
+ cmd.AddValue("bandDiv", "Bandwidth division factor (B1=B0/bandDiv)", bandDiv);
+ cmd.AddValue("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
+ cmd.AddValue("useEpc", "If enabled use EPC, else use RLC saturation mode", useEpc);
+ cmd.AddValue("blockage0", "If enabled CC0 blockage = true", blockage0);
+ cmd.AddValue("blockage1", "If enabled CC1 blockage = true", blockage1);
+ cmd.AddValue("frequency0", "CC0 central frequency", frequency0);
+ cmd.AddValue("frequency1", "CC1 central frequency", frequency1);
  cmd.AddValue("simTime", "Simulation time", simTime);
  cmd.AddValue("filePath", "Where to put the output files", filePath);
  cmd.AddValue("runSet", "Run number", runSet);
@@ -108,6 +90,7 @@ main (int argc, char *argv[])
  RngSeedManager::SetSeed (seedSet);
  RngSeedManager::SetRun (runSet);
 
+ // set output file names
  std::cout << "File path: " << filePath << std::endl;
  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue(filePath + "DlRlcStats.txt"));
  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue(filePath + "UlRlcStats.txt"));
@@ -116,47 +99,37 @@ main (int argc, char *argv[])
  Config::SetDefault("ns3::MmWavePhyRxTrace::OutputFilename", StringValue(filePath + "RxPacketTrace.txt"));
  Config::SetDefault("ns3::LteRlcAm::BufferSizeFilename", StringValue(filePath + "RlcAmBufferSize.txt"));
 
- //create MmWavePhyMacCommon object
+ // CC 0
+ // 1. create MmWavePhyMacCommon object
  Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb0));
- /*
- if(useCa)
- {
-   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
- }
- else
- {
-   Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth));
- }
- */
  Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
  phyMacConfig0->SetNumRefScPerSym( numRefSc0 );
 
- //create the primary carrier
+ // 2. create the MmWaveComponentCarrier object
  Ptr<MmWaveComponentCarrier> cc0 = CreateObject<MmWaveComponentCarrier> ();
  cc0->SetConfigurationParameters(phyMacConfig0);
  cc0->SetAsPrimary(true);
 
+ // CC 1
  Ptr<MmWaveComponentCarrier> cc1;
  if(useCa)
  {
-   //create MmWavePhyMacCommon object
+   // 1. create MmWavePhyMacCommon object
    Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency1));
    Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
    Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb1));
-   //Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue(chunkWidth/2));
-
    Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
    phyMacConfig1->SetNumRefScPerSym( numRefSc1 );
 
-   //create the secondary carrier
+   // 2. create the MmWaveComponentCarrier object
    cc1 = CreateObject<MmWaveComponentCarrier> ();
    cc1->SetConfigurationParameters(phyMacConfig1);
    cc1->SetAsPrimary(false);
   }
 
-  //create the ccMap
+  // create the CC map
   std::map<uint8_t, MmWaveComponentCarrier> ccMap;
   ccMap [0] = *cc0;
   if(useCa)
@@ -164,7 +137,7 @@ main (int argc, char *argv[])
     ccMap [1] = *cc1;
   }
 
-  //set the blockageMap
+  // set the blockage map
   std::map <uint8_t, bool> blockageMap;
   blockageMap [0] = blockage0;
   if(useCa)
@@ -172,6 +145,7 @@ main (int argc, char *argv[])
     blockageMap [1] = blockage1;
   }
 
+	// print CC parameters
   for(uint8_t i = 0; i < ccMap.size(); i++)
   {
     Ptr<MmWavePhyMacCommon> phyMacConfig = ccMap[i].GetConfigurationParameters();
@@ -185,8 +159,8 @@ main (int argc, char *argv[])
   }
 
 
- //create and set the helper
- //first set UseCa = true, then NumberOfComponentCarriers
+ // create and set the helper
+ // first set UseCa = true, then NumberOfComponentCarriers
  Config::SetDefault("ns3::MmWaveHelper::UseCa",BooleanValue(useCa));
  if(useCa)
  {
@@ -203,7 +177,7 @@ main (int argc, char *argv[])
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
 
- //The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
+ // The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
  std::string scenario = "UMa";
  std::string condition = "n"; // n = NLOS, l = LOS
  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
@@ -222,6 +196,7 @@ main (int argc, char *argv[])
  helper->SetCcPhyParams(ccMap);
  helper->SetBlockageMap(blockageMap);
 
+ // create the EPC
  Ipv4Address remoteHostAddr;
  Ptr<Node> remoteHost;
  InternetStackHelper internet;
@@ -232,10 +207,10 @@ main (int argc, char *argv[])
    epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
    helper->SetEpcHelper (epcHelper);
 
-   // Create the Internet by connecting remoteHost to pgw. Setup routing too
+   // create the Internet by connecting remoteHost to pgw. Setup routing too
    Ptr<Node> pgw = epcHelper->GetPgwNode ();
 
-   // Create remotehost
+   // create remotehost
    NodeContainer remoteHostContainer;
    remoteHostContainer.Create (1);
    internet.Install (remoteHostContainer);
@@ -243,7 +218,7 @@ main (int argc, char *argv[])
    Ipv4InterfaceContainer internetIpIfaces;
 
    remoteHost = remoteHostContainer.Get (0);
-   // Create the Internet
+   // create the Internet
    PointToPointHelper p2ph;
    p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
    p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
@@ -262,11 +237,11 @@ main (int argc, char *argv[])
  }
 
 
- //create the enb node
+ // create the enb node
  NodeContainer enbNodes;
  enbNodes.Create(1);
 
- //set mobility
+ // set mobility
  Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
  enbPositionAlloc->Add (Vector (0.0, 0.0, 15.0));
 
@@ -276,16 +251,15 @@ main (int argc, char *argv[])
  enbmobility.Install (enbNodes);
  BuildingsHelper::Install (enbNodes);
 
- //install enb device
+ // install enb device
  NetDeviceContainer enbNetDevices = helper->InstallEnbDevice (enbNodes);
- std::cout<< "enb dev installed" << std::endl;
+ std::cout<< "eNB device installed" << std::endl;
 
- //create ue node
+ // create ue node
  NodeContainer ueNodes;
  ueNodes.Create(1);
 
- //set mobility
- //set mobility
+ // set mobility
  MobilityHelper uemobility;
  uemobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
                               "Bounds", RectangleValue (Rectangle (-200, 200, -200, 200)));
@@ -294,26 +268,26 @@ main (int argc, char *argv[])
  uemobility.SetPositionAllocator(uePositionAlloc);
  uemobility.Install (ueNodes.Get (0));
  BuildingsHelper::Install (ueNodes);
- NS_LOG_UNCOND("ue pos :" << ueNodes.Get(0)->GetObject<MobilityModel>()->GetPosition());
+ std::cout << "UE initial position :" << ueNodes.Get(0)->GetObject<MobilityModel>()->GetPosition() << std::endl;
 
- //install ue device
+ // install ue device
  NetDeviceContainer ueNetDevices = helper->InstallUeDevice(ueNodes);
- std::cout<< "ue dev installed" << std::endl;
+ std::cout<< "UE device installed" << std::endl;
 
  if(useEpc)
  {
-   // Install the IP stack on the UEs
+   // install the IP stack on the UEs
    internet.Install (ueNodes);
    Ipv4InterfaceContainer ueIpIface;
    ueIpIface = epcHelper->AssignUeIpv4Address (ueNetDevices);
-   // Assign IP address to UEs, and install applications
-   // Set the default gateway for the UE
+   // assign IP address to UEs, and install applications
+   // set the default gateway for the UE
    Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNodes.Get (0)->GetObject<Ipv4> ());
    ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
    helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);
 
-   // Install and start applications on UEs and remote host
+   // install and start applications on UEs and remote host
    uint16_t dlPort = 1234;
    uint16_t ulPort = 2000;
    ApplicationContainer clientApps;
@@ -344,14 +318,14 @@ main (int argc, char *argv[])
  {
    helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);
 
-   // Activate a data radio bearer
+   // activate a data radio bearer
    enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
    EpsBearer bearer (q);
    helper->ActivateDataRadioBearer (ueNetDevices, bearer);
  }
 
  helper->EnableTraces();
- Traces(filePath); //Mac Traces
+ //Traces(filePath); // enable UL MAC traces
 
  BuildingsHelper::MakeMobilityModelConsistent ();
 
