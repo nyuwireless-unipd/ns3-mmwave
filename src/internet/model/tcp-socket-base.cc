@@ -1760,9 +1760,9 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
       if (ackNumber < m_recover && m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
         {
           m_txBuffer->DiscardUpTo (ackNumber);
-          DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
           if (!m_sackEnabled)
             {
+              DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
               m_tcb->m_cWnd = SafeSubtraction (m_tcb->m_cWnd, bytesAcked);
               if (segsAcked >= 1)
                 {
