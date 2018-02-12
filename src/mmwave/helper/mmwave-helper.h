@@ -118,7 +118,24 @@ public:
 	void SetChannelModelType (std::string type);
 	void SetLtePathlossModelType (std::string type);
 
+	/**
+	 * This method is used to set the MmWaveComponentCarrier map.
+	 * The structure will be used within InstallSingleEnbDevice,
+	 * InstallSingleUeNetDevice and InstallSingleMcUeDevice.
+	 *
+	 * \param ccmap the component carrier map
+	 */
 	void SetCcPhyParams ( std::map< uint8_t, MmWaveComponentCarrier> ccMapParams);
+
+	/**
+	 * This method is used to set the ComponentCarrier map.
+	 * The structure will be used within InstallSingleLteEnbDevice,
+	 * and InstallSingleMcUeDevice.
+	 *
+	 * \param ccmap the component carrier map
+	 */
+	void SetLteCcPhyParams ( std::map< uint8_t, ComponentCarrier> ccMapParams);
+
 	/**
 	 * Attach mmWave-only ueDevices to the closest enbDevice
 	 */
@@ -196,7 +213,7 @@ public:
 	void AddX2Interface (Ptr<Node> enbNode1, Ptr<Node> enbNode2);
 
 	/**
-   * Set the type of carrier component algorithm to be used by eNodeB devices.
+   * Set the type of carrier component algorithm to be used by gNodeB devices.
    *
    * \param type type of carrier component manager
    *
@@ -205,9 +222,23 @@ public:
 
   /**
    *
-   * \return the carrier enb component carrier manager type
+   * \return the carrier gnb component carrier manager type
    */
   std::string GetEnbComponentCarrierManagerType () const;
+
+	/**
+   * Set the type of carrier component algorithm to be used by eNodeB devices.
+   *
+   * \param type type of carrier component manager
+   *
+   */
+  void SetLteEnbComponentCarrierManagerType (std::string type);
+
+  /**
+   *
+   * \return the carrier enb component carrier manager type
+   */
+  std::string GetLteEnbComponentCarrierManagerType () const;
 
 	/**
    * Set the type of Component Carrier Manager to be used by Ue devices.
@@ -298,6 +329,8 @@ private:
 	ObjectFactory m_enbComponentCarrierManagerFactory;	/// Factory of enb component carrier manager object.
 	ObjectFactory m_ueComponentCarrierManagerFactory;   /// Factory of ue component carrier manager object.
 
+	ObjectFactory m_lteEnbComponentCarrierManagerFactory;	/// Factory of enb component carrier manager object.
+
 	uint64_t m_imsiCounter;
 	uint16_t m_cellIdCounter;
 
@@ -336,20 +369,36 @@ private:
 	Ptr<CoreNetworkStatsCalculator> m_cnStats;
 
 	/**
-   * The `UseCa` attribute. If true, Carrier Aggregation is enabled.
-   * Hence, the helper will expect a valid component carrier map
-   * If it is false, the component carrier will be created within the MmWaveHelper
-   * this is to maintain the backwards compatibility with user script
+   * The `LteUseCa` attribute. If true, Carrier Aggregation is enabled in the
+	 * LTE stack.
+   */
+  bool m_lteUseCa;
+
+	/**
+   * The `UseCa` attribute. If true, Carrier Aggregation is enabled in the MmWave
+	 * stack.
    */
   bool m_useCa;
 
 	/**
-   * This contains all the information about each component carrier
+   * This contains all the informations about each LTE component carrier
+   */
+  std::map< uint8_t, ComponentCarrier > m_lteComponentCarrierPhyParams;
+
+	/**
+   * This contains all the informations about each mmWave component carrier
    */
   std::map< uint8_t, MmWaveComponentCarrier > m_componentCarrierPhyParams;
 
   /**
-   * Number of component carriers that will be installed by default at eNodeB and UE devices.
+   * Number of LTE component carriers that will be installed by default at LTE
+	 * eNodeB and MC-UE devices.
+   */
+  uint16_t m_noOfLteCcs;
+
+	/**
+   * Number of component carriers that will be installed by default at gNodeB
+	 * and UE devices.
    */
   uint16_t m_noOfCcs;
 
