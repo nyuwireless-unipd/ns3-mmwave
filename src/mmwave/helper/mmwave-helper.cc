@@ -2118,29 +2118,30 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 {
 	NS_LOG_FUNCTION (this);
 
-	/*
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
 		AttachMcToClosestEnb(*i, mmWaveEnbDevices, lteEnbDevices);
 	}
 
-	if(m_channelModelType == "ns3::MmWaveBeamforming")
+	for(std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 	{
-		m_beamforming->Initial(ueDevices,mmWaveEnbDevices);
+		if(m_channelModelType == "ns3::MmWaveBeamforming")
+		{
+			m_beamforming.at(it->first)->Initial(ueDevices,mmWaveEnbDevices);
+		}
+		else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
+		{
+			m_channelMatrix.at(it->first)->Initial(ueDevices,mmWaveEnbDevices);
+		}
+		else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
+		{
+			m_raytracing.at(it->first)->Initial(ueDevices,mmWaveEnbDevices);
+		}
+		else if(m_channelModelType == "ns3::MmWave3gppChannel")
+		{
+			m_3gppChannel.at(it->first)->Initial(ueDevices,mmWaveEnbDevices);
+		}
 	}
-	else if(m_channelModelType == "ns3::MmWaveChannelMatrix")
-	{
-		m_channelMatrix->Initial(ueDevices,mmWaveEnbDevices);
-	}
-	else if(m_channelModelType == "ns3::MmWaveChannelRaytracing")
-	{
-		m_raytracing->Initial(ueDevices,mmWaveEnbDevices);
-	}
-	else if(m_channelModelType == "ns3::MmWave3gppChannel")
-	{
-		m_3gppChannel->Initial(ueDevices,mmWaveEnbDevices);
-	}
-	*/
 }
 
 // for InterRatHoCapable devices
@@ -2275,13 +2276,23 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
   	for(NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End(); ++i)
   	{
   		Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> ();
-		uint16_t mmWaveCellId = mmWaveEnb->GetCellId ();
-		Ptr<MmWavePhyMacCommon> configParams = mmWaveEnb->GetPhy()->GetConfigurationParameters();
-		mmWaveEnb->GetPhy ()->AddUePhy (mcDevice->GetImsi (), ueDevice);
-		// register MmWave eNBs informations in the MmWaveUePhy
-		mcDevice->GetMmWavePhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
-		//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
-		NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+			std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb> > mmWaveEnbCcMap = mmWaveEnb->GetCcMap ();
+
+			for(std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb> >::iterator itEnb = mmWaveEnbCcMap.begin() ; itEnb != mmWaveEnbCcMap.end() ; ++itEnb)
+			{
+				uint16_t mmWaveCellId = itEnb->second->GetCellId ();
+				Ptr<MmWavePhyMacCommon> configParams = itEnb->second->GetPhy()->GetConfigurationParameters();
+				itEnb->second->GetPhy ()->AddUePhy (mcDevice->GetImsi (), ueDevice);
+				// register MmWave eNBs informations in the MmWaveUePhy
+
+				std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> > ueCcMap = mcDevice->GetMmWaveCcMap ();
+				for(std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator itUe = ueCcMap.begin() ; itUe != ueCcMap.end() ; ++itUe)
+				{
+					itUe->second->GetPhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
+				}
+				//closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
+				NS_LOG_INFO("mmWaveCellId " << mmWaveCellId);
+			}
   	}
 
 	// Attach the MC device the LTE eNB, the best MmWave eNB will be selected automatically
@@ -2672,7 +2683,7 @@ MmWaveHelper::EnableTraces (void)
 	//EnableTransportBlockTrace (); //the callback does nothing
 	EnableRlcTraces ();
 	EnablePdcpTraces ();
-	//EnableMcTraces ();
+	EnableMcTraces ();
 }
 
 
