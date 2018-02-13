@@ -169,6 +169,8 @@ LteUeRrc::LteUeRrc ()
   m_cmacSapUser.push_back (new UeMemberLteUeCmacSapUser (this));
   m_cphySapProvider.push_back(0);
   m_cmacSapProvider.push_back(0);
+  m_lteCmacSapProvider.push_back(0);
+  m_mmWaveCmacSapProvider.push_back(0);
   m_rrcSapProvider = new MemberLteUeRrcSapProvider<LteUeRrc> (this);
   m_drbPdcpSapUser = new LtePdcpSpecificLtePdcpSapUser<LteUeRrc> (this);
   m_asSapProvider = new MemberLteAsSapProvider<LteUeRrc> (this);
@@ -361,7 +363,7 @@ LteUeRrc::SetLteUeCmacSapProvider (LteUeCmacSapProvider * s)
 {
   NS_LOG_FUNCTION (this << s);
   m_cmacSapProvider.at (0) = s;
-  m_lteCmacSapProvider.at(0) = s;
+  m_lteCmacSapProvider.at (0) = s;
 }
 
 void
@@ -369,6 +371,7 @@ LteUeRrc::SetLteUeCmacSapProvider (LteUeCmacSapProvider * s, uint8_t index)
 {
   NS_LOG_FUNCTION (this << s);
   m_cmacSapProvider.at (index) = s;
+  m_lteCmacSapProvider.at (index) = s;
 }
 
 void
@@ -656,8 +659,17 @@ LteUeRrc::InitializeSap (void)
           m_cmacSapUser.push_back(new UeMemberLteUeCmacSapUser (this));
           m_cphySapProvider.push_back(0);
           m_cmacSapProvider.push_back(0);
+          m_lteCmacSapProvider.push_back(0);
         }
     }
+
+    if (m_numberOfMmWaveComponentCarriers > MIN_NO_CC )
+      {
+        for ( uint16_t i = 1; i < m_numberOfMmWaveComponentCarriers; i++)
+          {
+            m_mmWaveCmacSapProvider.push_back(0);
+          }
+      }
 }
 
 

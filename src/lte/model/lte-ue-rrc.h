@@ -1245,6 +1245,11 @@ public:
    */
   uint16_t m_numberOfComponentCarriers;
 
+  /**
+   * The number of mmWave component carriers. This is used in McUeDevs.
+   */
+  uint16_t m_numberOfMmWaveComponentCarriers;
+
 }; // end of class LteUeRrc
 
 
