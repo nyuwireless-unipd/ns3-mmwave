@@ -281,7 +281,7 @@ MmWave3gppChannel::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 		{
 			NS_LOG_UNCOND("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
 			Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
-					UeDev->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					UeDev->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 			Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 					EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 			complexVector_t dummy;
@@ -436,7 +436,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		txAntennaArray = DynamicCast<AntennaArrayModel> (
 					txEnb->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
-					rxMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					rxMcUe->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		locUT = b->GetPosition();
 	}
 	else if (txEnb==0 && rxUe==0 && txMcUe==0 && rxMcUe==0)
@@ -473,7 +473,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
 
 		txAntennaArray = DynamicCast<AntennaArrayModel> (
-					txMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+					txMcUe->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		rxAntennaArray = DynamicCast<AntennaArrayModel> (
 					rxEnb->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		locUT = a->GetPosition();
