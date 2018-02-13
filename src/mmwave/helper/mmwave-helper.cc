@@ -885,6 +885,7 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 			mmWaveRrc->SetUseRlcSm (true);
 		}
 
+	// mmWave SAPs
 	for (std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator it = mmWaveUeCcMap.begin (); it != mmWaveUeCcMap.end (); ++it)
 		{
 			mmWaveRrc->SetLteUeCmacSapProvider (it->second->GetMac ()->GetUeCmacSapProvider (), it->first);
@@ -915,13 +916,14 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 	//device->SetAttribute ("MmWaveUePhy", PointerValue(phy));
 	//device->SetAttribute ("MmWaveUeMac", PointerValue(mac));
 	device->SetMmWaveCcMap(mmWaveUeCcMap);
-	device->SetAttribute ("mmWaveUeRrc", PointerValue (mmWaveRrc));
+	device->SetAttribute ("MmWaveUeRrc", PointerValue (mmWaveRrc));
 	device->SetAttribute ("MmWaveUeComponentCarrierManager", PointerValue (mmWaveCcmUe));
 
 	for (std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator it = mmWaveUeCcMap.begin (); it != mmWaveUeCcMap.end (); ++it)
 		{
 			Ptr<MmWaveUePhy> ccPhy = it->second->GetPhy ();
 			ccPhy->SetDevice (device);
+			ccPhy->SetImsi (imsi);
 			ccPhy->GetUlSpectrumPhy ()->SetDevice (device);
 			ccPhy->GetDlSpectrumPhy ()->SetDevice (device);
 			ccPhy->GetDlSpectrumPhy ()->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveUePhy::PhyDataPacketReceived, ccPhy));
@@ -937,9 +939,12 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 
 	Ptr<LteUeRrc> lteRrc = CreateObject<LteUeRrc> ();
 	lteRrc->m_numberOfComponentCarriers = m_noOfLteCcs;
+	lteRrc->m_numberOfMmWaveComponentCarriers = m_noOfCcs;
 	// run intializeSap to create the proper number of sap provider/users
 	lteRrc->InitializeSap();
 	lteRrc->SetLteMacSapProvider (lteCcmUe->GetLteMacSapProvider ());
+	lteRrc->SetMmWaveMacSapProvider (mmWaveCcmUe->GetLteMacSapProvider());
+
 	// setting ComponentCarrierManager SAP
 	lteRrc->SetLteCcmRrcSapProvider (lteCcmUe->GetLteCcmRrcSapProvider ());
 	lteCcmUe->SetLteCcmRrcSapUser (lteRrc->GetLteCcmRrcSapUser ());
@@ -970,11 +975,13 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
 
   lteNas->SetAsSapProvider (lteRrc->GetAsSapProvider ());
   lteRrc->SetAsSapUser (lteNas->GetAsSapUser ());
+	lteNas->SetMmWaveAsSapProvider (mmWaveRrc->GetAsSapProvider());
+	mmWaveRrc->SetAsSapUser (lteNas->GetAsSapUser ());
 
   for (std::map<uint8_t, Ptr<ComponentCarrierUe> >::iterator it = lteUeCcMap.begin (); it != lteUeCcMap.end (); ++it)
     {
       lteRrc->SetLteUeCmacSapProvider (it->second->GetMac ()->GetLteUeCmacSapProvider (), it->first);
-      it->second->GetMac ()->SetLteUeCmacSapUser (lteRrc->GetLteUeCmacSapUser (it->first));
+			it->second->GetMac ()->SetLteUeCmacSapUser (lteRrc->GetLteUeCmacSapUser (it->first));
       it->second->GetMac ()->SetComponentCarrierId (it->first);
 
       it->second->GetPhy ()->SetLteUeCphySapUser (lteRrc->GetLteUeCphySapUser (it->first));
@@ -992,10 +999,16 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
         }
     }
 
+	for (std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator it = mmWaveUeCcMap.begin (); it != mmWaveUeCcMap.end (); ++it)
+	{
+		lteRrc->SetMmWaveUeCmacSapProvider (it->second->GetMac ()->GetUeCmacSapProvider(), it->first);
+	}
+
   device->SetLteCcMap (lteUeCcMap);
   device->SetAttribute ("LteUeRrc", PointerValue (lteRrc));
   device->SetAttribute ("EpcUeNas", PointerValue (lteNas));
   device->SetAttribute ("LteUeComponentCarrierManager", PointerValue (lteCcmUe));
+	device->SetAttribute ("Imsi", UintegerValue(imsi));
 
   for (std::map<uint8_t, Ptr<ComponentCarrierUe> >::iterator it = lteUeCcMap.begin (); it != lteUeCcMap.end (); ++it)
     {
@@ -1021,82 +1034,6 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
     }
 
   device->Initialize ();
-/*
-
-
-	// ----------------------- LTE stack ----------------------
-	Ptr<LteUeMac> lteMac = CreateObject<LteUeMac> ();
-	Ptr<LteUeRrc> lteRrc = CreateObject<LteUeRrc> ();
-
-	if (m_useIdealRrc)
-	{
-		Ptr<MmWaveUeRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveUeRrcProtocolIdeal> ();
-		rrcProtocol->SetUeRrc (lteRrc);
-		lteRrc->AggregateObject (rrcProtocol);
-		rrcProtocol->SetLteUeRrcSapProvider (lteRrc->GetLteUeRrcSapProvider ());
-		lteRrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
-	}
-	else
-	{
-		Ptr<MmWaveLteUeRrcProtocolReal> rrcProtocol = CreateObject<MmWaveLteUeRrcProtocolReal> ();
-		rrcProtocol->SetUeRrc (lteRrc);
-		lteRrc->AggregateObject (rrcProtocol);
-		rrcProtocol->SetLteUeRrcSapProvider (lteRrc->GetLteUeRrcSapProvider ());
-		lteRrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
-	}
-
-	if (m_epcHelper != 0)
-	{
-		lteRrc->SetUseRlcSm (false);
-	}
-
-	Ptr<EpcUeNas> lteNas = CreateObject<EpcUeNas> ();
-
-	lteNas->SetAsSapProvider (lteRrc->GetAsSapProvider ());
-	lteNas->SetMmWaveAsSapProvider (mmWaveRrc->GetAsSapProvider());
-	lteRrc->SetAsSapUser (lteNas->GetAsSapUser ());
-	mmWaveRrc->SetAsSapUser (lteNas->GetAsSapUser ());
-
-	lteRrc->SetLteUeCmacSapProvider (lteMac->GetLteUeCmacSapProvider ());
-	lteMac->SetLteUeCmacSapUser (lteRrc->GetLteUeCmacSapUser ());
-	lteRrc->SetLteMacSapProvider (lteMac->GetLteMacSapProvider ());
-
-	// connect lteRrc (which will setup bearers) also to the MmWave Mac
-	lteRrc->SetMmWaveUeCmacSapProvider (mmWaveMac->GetUeCmacSapProvider());
-	lteRrc->SetMmWaveMacSapProvider (mmWaveMac->GetUeMacSapProvider());
-
-	ltePhy->SetLteUePhySapUser (lteMac->GetLteUePhySapUser ());
-	lteMac->SetLteUePhySapProvider (ltePhy->GetLteUePhySapProvider ());
-
-	ltePhy->SetLteUeCphySapUser (lteRrc->GetLteUeCphySapUser ());
-	lteRrc->SetLteUeCphySapProvider (ltePhy->GetLteUeCphySapProvider ());
-
-	device->SetAttribute ("LteUePhy", PointerValue (ltePhy));
-	device->SetAttribute ("LteUeMac", PointerValue (lteMac));
-	device->SetAttribute ("LteUeRrc", PointerValue (lteRrc));
-	device->SetAttribute ("EpcUeNas", PointerValue (lteNas));
-	device->SetAttribute ("Imsi", UintegerValue(imsi));
-
-	ltePhy->SetDevice (device);
-	lteDlPhy->SetDevice (device);
-	lteUlPhy->SetDevice (device);
-	lteNas->SetDevice (device);
-
-	lteDlPhy->SetLtePhyRxDataEndOkCallback (MakeCallback (&LteUePhy::PhyPduReceived, ltePhy));
-	lteDlPhy->SetLtePhyRxCtrlEndOkCallback (MakeCallback (&LteUePhy::ReceiveLteControlMessageList, ltePhy));
-	lteDlPhy->SetLtePhyRxPssCallback (MakeCallback (&LteUePhy::ReceivePss, ltePhy));
-	lteDlPhy->SetLtePhyDlHarqFeedbackCallback (MakeCallback (&LteUePhy::ReceiveLteDlHarqFeedback, ltePhy));
-	lteNas->SetForwardUpCallback (MakeCallback (&McUeNetDevice::Receive, device));
-
-	if (m_epcHelper != 0)
-	{
-		m_epcHelper->AddUe (device, device->GetImsi ());
-	}
-
-	n->AddDevice(device);
-	device->Initialize();
-	*/
-
 	return device;
 }
 
@@ -1920,8 +1857,8 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
       cc->SetCellId (m_cellIdCounter++);
       ccMap [it->first] =  cc;
     }
-  NS_ABORT_MSG_IF (m_useCa && ccMap.size()<2, "You have to either specify carriers or disable carrier aggregation");
-  NS_ASSERT (ccMap.size () == m_noOfCcs);
+  NS_ABORT_MSG_IF (m_lteUseCa && ccMap.size()<2, "You have to either specify carriers or disable carrier aggregation");
+  NS_ASSERT (ccMap.size () == m_noOfLteCcs);
 
   for (std::map<uint8_t,Ptr<ComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
     {
@@ -1956,14 +1893,14 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
       dlPhy->SetMobility (mm);
       ulPhy->SetMobility (mm);
 
-      Ptr<AntennaModel> antenna = (m_enbAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
+      Ptr<AntennaModel> antenna = (m_lteEnbAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
       dlPhy->SetAntenna (antenna);
       ulPhy->SetAntenna (antenna);
 
       Ptr<LteEnbMac> mac = CreateObject<LteEnbMac> ();
-      Ptr<FfMacScheduler> sched = m_schedulerFactory.Create<FfMacScheduler> ();
-      Ptr<LteFfrAlgorithm> ffrAlgorithm = m_ffrAlgorithmFactory.Create<LteFfrAlgorithm> ();
+      Ptr<FfMacScheduler> sched = m_lteSchedulerFactory.Create<FfMacScheduler> ();
+      Ptr<LteFfrAlgorithm> ffrAlgorithm = m_lteFfrAlgorithmFactory.Create<LteFfrAlgorithm> ();
       it->second->SetMac (mac);
       it->second->SetFfMacScheduler (sched);
       it->second->SetFfrAlgorithm (ffrAlgorithm);
@@ -1973,13 +1910,13 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
     }
 
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
-  Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_enbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
+  Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_lteEnbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
   rrc->ConfigureCarriers (ccMap);
 
   //ComponentCarrierManager SAP
   rrc->SetLteCcmRrcSapProvider (ccmEnbManager->GetLteCcmRrcSapProvider ());
   ccmEnbManager->SetLteCcmRrcSapUser (rrc->GetLteCcmRrcSapUser ());
-  ccmEnbManager->SetNumberOfComponentCarriers (m_noOfCcs);
+  ccmEnbManager->SetNumberOfComponentCarriers (m_noOfLteCcs);
   ccmEnbManager->SetRrc(rrc);
 
 	if (m_useIdealRrc)
@@ -2136,6 +2073,7 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
       Ptr<EpcX2> x2 = n->GetObject<EpcX2> ();
       x2->SetEpcX2SapUser (rrc->GetEpcX2SapUser ());
       rrc->SetEpcX2SapProvider (x2->GetEpcX2SapProvider ());
+			rrc->SetEpcX2PdcpProvider (x2->GetEpcX2PdcpProvider ());
     }
 
   return dev;
