@@ -617,7 +617,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
             {
               ueRrc = mcUeDev->GetLteRrc ();
               NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-              if (ueRrc->GetCellId () == m_cellId)
+              if (ueRrc->GetCellId () == cellId)
               {
                 NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
                 ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
@@ -643,7 +643,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
               {
                 ueRrc = ueDev->GetRrc ();
                 NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-                if (ueRrc->GetCellId () == m_cellId)
+                if (ueRrc->GetCellId () == cellId)
                 {
                   NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
                   ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
