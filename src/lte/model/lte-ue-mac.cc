@@ -606,6 +606,8 @@ LteUeMac::DoReceiveLteControlMessage (Ptr<LteControlMessage> msg)
     {
       Ptr<UlDciLteControlMessage> msg2 = DynamicCast<UlDciLteControlMessage> (msg);
       UlDciListElement_s dci = msg2->GetDci ();
+      NS_LOG_INFO("LTE UE MAC " << (uint32_t)m_componentCarrierId << " received UL-DCI size " << (uint32_t)dci.m_tbSize);
+
       if (dci.m_ndi == 1)
         {
           // New transmission -> emtpy pkt buffer queue (for deleting eventual pkts not acked )
@@ -619,15 +621,19 @@ LteUeMac::DoReceiveLteControlMessage (Ptr<LteControlMessage> msg)
             {
               if (((*itBsr).second.statusPduSize > 0) || ((*itBsr).second.retxQueueSize > 0) || ((*itBsr).second.txQueueSize > 0))
                 {
-                  activeLcs++;
-                  if (((*itBsr).second.statusPduSize != 0)&&((*itBsr).second.statusPduSize < statusPduMinSize))
-                    {
-                      statusPduMinSize = (*itBsr).second.statusPduSize;
-                    }
-                  if (((*itBsr).second.statusPduSize != 0)&&(statusPduMinSize == 0))
-                    {
-                      statusPduMinSize = (*itBsr).second.statusPduSize;
-                    }
+                  // check if this LC is active in this LteUeMac instance
+                  if(m_lcInfoMap.find(itBsr->first) != m_lcInfoMap.end())
+                  {
+                    activeLcs++;
+                    if (((*itBsr).second.statusPduSize != 0)&&((*itBsr).second.statusPduSize < statusPduMinSize))
+                      {
+                        statusPduMinSize = (*itBsr).second.statusPduSize;
+                      }
+                    if (((*itBsr).second.statusPduSize != 0)&&(statusPduMinSize == 0))
+                      {
+                        statusPduMinSize = (*itBsr).second.statusPduSize;
+                      }
+                  }
                 }
             }
           if (activeLcs == 0)
