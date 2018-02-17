@@ -345,6 +345,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
         }
         else
         {
+          NS_LOG_UNCOND("-----------This implementation is wrong. Use MmWaveRrcProtocolReal.");
           // it may be a McUeNetDevice
           Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
           if (mcUeDev != 0)
@@ -353,6 +354,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
             if(ueRrc != 0) // actually is using 2 connections
             {
               NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+              NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
               if (ueRrc->GetCellId () == m_cellId)
               {
                 NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
@@ -369,6 +371,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
               if(ueRrc != 0)
               {
                 NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+                NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
                 if (ueRrc->GetCellId () == m_cellId)
                 {
                   NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());

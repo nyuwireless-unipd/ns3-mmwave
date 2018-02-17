@@ -1936,16 +1936,27 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 	  rrcProtocol->SetCellId (cellId);
 	}
 
-  if (m_epcHelper != 0)
-    {
-      EnumValue epsBearerToRlcMapping;
-      rrc->GetAttribute ("EpsBearerToRlcMapping", epsBearerToRlcMapping);
-      // it does not make sense to use RLC/SM when also using the EPC
-      if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
-        {
-          rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
-        }
-    }
+	if (m_epcHelper != 0)
+	{
+	  EnumValue epsBearerToRlcMapping;
+	  rrc->GetAttribute ("EpsBearerToRlcMapping", epsBearerToRlcMapping);
+	  // it does not make sense to use RLC/SM when also using the EPC
+
+// ***************** RDF EDIT 6/9/2016 ***************** //
+//	  if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
+//	    {
+//	      rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
+//	    }
+
+    if (m_rlcAmEnabled)
+      {
+        rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_AM_ALWAYS));
+      }
+      else
+      {
+        rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_LOWLAT_ALWAYS));
+      }
+	}
 
   rrc->SetLteHandoverManagementSapProvider (handoverAlgorithm->GetLteHandoverManagementSapProvider ());
   handoverAlgorithm->SetLteHandoverManagementSapUser (rrc->GetLteHandoverManagementSapUser ());
@@ -2271,6 +2282,7 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 	    }
 	}
 	NS_ASSERT (lteClosestEnbDevice != 0);
+	NS_ASSERT (lteClosestEnbDevice->GetObject<LteEnbNetDevice> () != 0); // stop if it is not an LTE eNB
 
   	// Necessary operation to connect MmWave UE to eNB at lower layers
   	for(NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End(); ++i)
