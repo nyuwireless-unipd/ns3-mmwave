@@ -626,7 +626,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
                                      ueRrc->GetLteUeRrcSapProvider (),
                                      msg);
               }   //if the first condition is false, the second is not executed
-              else if(mcUeDev->GetMmWaveRrc() != 0 && mcUeDev->GetMmWaveRrc()->GetCellId() == m_cellId)
+              else if(mcUeDev->GetMmWaveRrc() != 0 && mcUeDev->GetMmWaveRrc()->GetCellId() == cellId)
               {
                 NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
                 Simulator::Schedule (RRC_REAL_MSG_DELAY,

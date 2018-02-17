@@ -3271,7 +3271,9 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf)
   uint8_t dlBandwidth = it->second->GetDlBandwidth ();
   uint32_t ulEarfcn = it->second->GetUlEarfcn ();
   uint32_t dlEarfcn = it->second->GetDlEarfcn ();
-  NS_LOG_FUNCTION (this << (uint16_t) ulBandwidth << (uint16_t) dlBandwidth
+  uint16_t cellId = it->second->GetCellId ();
+  NS_LOG_FUNCTION (this << cellId
+                        << (uint16_t) ulBandwidth << (uint16_t) dlBandwidth
                         << ulEarfcn << dlEarfcn);
   NS_ASSERT (!m_configured);
 
@@ -3289,6 +3291,7 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf)
   m_ulEarfcn = ulEarfcn;
   m_dlBandwidth = dlBandwidth;
   m_ulBandwidth = ulBandwidth;
+  m_cellId = cellId; // RRC cellId is equal to the cellId of the primary carrier
 
 
   /*
@@ -3356,6 +3359,7 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPh
   NS_ASSERT (it != ccPhyConf.end ());
   uint8_t bandwidth = it->second->GetBandwidth ();
   //uint32_t earfcn = it->second->GetEarfcn ();
+  uint16_t cellId = it->second->GetCellId ();
   //NS_LOG_FUNCTION (this << (uint16_t) bandwidth << earfcn);
   NS_ASSERT (!m_configured);
 
@@ -3363,6 +3367,7 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPh
   //m_ulEarfcn = earfcn;
   m_dlBandwidth = bandwidth;
   m_ulBandwidth = bandwidth;
+  m_cellId = cellId; // RRC cellId is equal to the cellId of the primary carrier
 
   for (const auto &it: ccPhyConf)
     {
@@ -4298,7 +4303,7 @@ LteEnbRrc::CellToComponentCarrierId (uint16_t cellId)
 uint16_t
 LteEnbRrc::ComponentCarrierToCellId (uint8_t componentCarrierId)
 {
-  NS_LOG_FUNCTION (this << +componentCarrierId);
+  NS_LOG_FUNCTION (this << (uint32_t)componentCarrierId);
   uint16_t cellId;
   if(!m_ismmWave)
   {
