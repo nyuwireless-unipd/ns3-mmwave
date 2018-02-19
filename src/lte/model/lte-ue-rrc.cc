@@ -1169,6 +1169,7 @@ LteUeRrc::DoRecvRrcConnectionSetup (LteRrcSap::RrcConnectionSetup msg)
 void
 LteUeRrc::DoRecvRrcConnectToMmWave (uint16_t mmWaveCellId)
 {
+  NS_LOG_FUNCTION(this << "cellId "<< mmWaveCellId);
   m_asSapUser->NotifyConnectToMmWave(mmWaveCellId);
 }
 
@@ -2207,11 +2208,8 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
         }
       else
         {
-          //Temporary fix
-
           NS_LOG_INFO ("request to modify existing DRBID");
           Ptr<LteDataRadioBearerInfo> drbInfo = drbMapIt->second;
-          /*
           NS_LOG_INFO ("Is MC " << dtamIt->is_mc);
           if(dtamIt->is_mc == true) // we need to setup the RLC for MmWave communications
           {
@@ -2258,10 +2256,13 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
               lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
               lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
 
-
-              m_mmWaveCmacSapProvider->AddLc (dtamIt->logicalChannelIdentity,
-                                      lcConfig,
-                                      rlc->GetLteMacSapUser ());
+              //This is executed only if this is a secondary (mmWave) rrc
+              for (uint32_t i = 0; i < m_numberOfMmWaveComponentCarriers; i++)
+              {
+                m_mmWaveCmacSapProvider.at (i)->AddLc (dtamIt->logicalChannelIdentity,
+                                        lcConfig,
+                                        rlc->GetLteMacSapUser ());
+              }
               if (rlcTypeId != LteRlcSm::GetTypeId ())
               {
                 pdcp->SetMmWaveRnti (m_mmWaveRnti);
@@ -2387,7 +2388,6 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
             //                           rlc->GetLteMacSapUser ());
 
           }
-          */
         }
     }
 
