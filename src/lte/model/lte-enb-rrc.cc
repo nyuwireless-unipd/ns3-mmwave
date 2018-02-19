@@ -2348,6 +2348,30 @@ UeManager::SwitchToState (State newState)
 
     case CONNECTED_NORMALLY:
       {
+        if (m_caSupportConfigured)
+        {
+          NS_LOG_INFO("Send connect to mmwave");
+          // reply to the UE with a command to connect to the best MmWave eNB
+          if(m_rrc->m_bestMmWaveCellForImsiMap[m_imsi] != m_rrc->GetCellId() && !m_rrc->m_ismmWave)
+          {
+            uint16_t maxSinrCellId = m_rrc->m_bestMmWaveCellForImsiMap[m_imsi];
+            // get the SINR
+            double maxSinrDb = 10*std::log10(m_rrc->m_imsiCellSinrMap.find(m_imsi)->second.find(maxSinrCellId)->second);
+            if(maxSinrDb > m_rrc->m_outageThreshold)
+            {
+              // there is a MmWave cell to which the UE can connect
+              // send the connection message, then, if capable, the UE will connect
+              NS_LOG_INFO("Send connect to " << m_rrc->m_bestMmWaveCellForImsiMap.find(m_imsi)->second << " at least one mmWave eNB is not in outage");
+              m_rrc->m_rrcSapUser->SendRrcConnectToMmWave (m_rnti, m_rrc->m_bestMmWaveCellForImsiMap.find(m_imsi)->second);
+            }
+            else
+            {
+              //TODO
+              m_allMmWaveInOutageAtInitialAccess = true;
+              m_rrc->m_imsiUsingLte[m_imsi] = true;
+            }
+          }
+        }
         if (m_pendingRrcConnectionReconfiguration == true)
           {
             ScheduleRrcConnectionReconfiguration ();

@@ -337,9 +337,12 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
 void
 MmWaveLteUeRrcProtocolReal::DoReceivePdcpPdu (Ptr<Packet> p)
 {
+  NS_LOG_FUNCTION (this);
   // Get type of message received
   RrcDlCcchMessage rrcDlCcchMessage;
   p->PeekHeader (rrcDlCcchMessage);
+  NS_LOG_INFO (rrcDlCcchMessage);
+
 
   // Declare possible headers to receive
   RrcConnectionReestablishmentHeader rrcConnectionReestablishmentHeader;
@@ -385,6 +388,7 @@ MmWaveLteUeRrcProtocolReal::DoReceivePdcpPdu (Ptr<Packet> p)
       // RrcConnectToMmWave
       p->RemoveHeader (rrcConnectToMmWaveHeader);
       uint16_t mmWaveCellId = rrcConnectToMmWaveHeader.GetMessage ();
+      NS_LOG_INFO ("Recv RRC connect to MmWave cellId " << mmWaveCellId);
       m_ueRrcSapProvider->RecvRrcConnectToMmWave(mmWaveCellId);
       break;
     }
@@ -725,12 +729,15 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionSwitch (uint16_t rnti, LteRrcSap
 void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveId)
 {
+  NS_LOG_FUNCTION(this << " rnti " << rnti << " mmWave cellId " << mmWaveId);
   Ptr<Packet> packet = Create<Packet> ();
 
   RrcConnectToMmWaveHeader connectToMmWaveHeader;
   connectToMmWaveHeader.SetMessage(mmWaveId);
 
   packet->AddHeader (connectToMmWaveHeader);
+
+  NS_LOG_INFO (connectToMmWaveHeader);
 
   LteRlcSapProvider::TransmitPdcpPduParameters transmitPdcpPduParameters;
   transmitPdcpPduParameters.pdcpPdu = packet;
@@ -761,6 +768,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReconfiguration (uint16_t rnti, 
 void
 MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
 {
+  NS_LOG_FUNCTION (this << " rnti " << rnti);
   Ptr<Packet> packet = Create<Packet> ();
 
   RrcConnectionReestablishmentHeader rrcConnectionReestablishmentHeader;
