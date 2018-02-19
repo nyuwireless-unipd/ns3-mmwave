@@ -7327,7 +7327,7 @@ RrcUlCcchMessage::DeserializeUlCcchMessage (Buffer::Iterator bIterator)
   else if (n == 0)
     {
       // Deserialize c1
-      bIterator = DeserializeChoice (2,false,&m_messageType,bIterator);
+      bIterator = DeserializeChoice (3,false,&m_messageType,bIterator);
     }
 
   return bIterator;
@@ -7340,7 +7340,7 @@ RrcUlCcchMessage::SerializeUlCcchMessage (int messageType) const
   // Choose c1
   SerializeChoice (2,0,false);
   // Choose message type
-  SerializeChoice (2,messageType,false);
+  SerializeChoice (3,messageType,false);
 }
 
 ///////////////////  RrcDlCcchMessage //////////////////////////////////
@@ -7388,9 +7388,8 @@ RrcDlCcchMessage::DeserializeDlCcchMessage (Buffer::Iterator bIterator)
   else if (n == 0)
     {
       // Deserialize c1
-      bIterator = DeserializeChoice (4,false,&m_messageType,bIterator);
+      bIterator = DeserializeChoice (5,false,&m_messageType,bIterator);
     }
-
   return bIterator;
 }
 
@@ -7401,7 +7400,7 @@ RrcDlCcchMessage::SerializeDlCcchMessage (int messageType) const
   // Choose c1
   SerializeChoice (2,0,false);
   // Choose message type
-  SerializeChoice (4,messageType,false);
+  SerializeChoice (5,messageType,false);
 }
 
 } // namespace ns3
