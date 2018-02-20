@@ -1349,6 +1349,7 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
     rlcInfo->logicalChannelConfig = params.logicalChannelConfig;
 
     uint8_t lcid = Drbid2Lcid(params.drbid);
+    uint8_t bid = Drbid2Bid (params.drbid);
 
     EpsBearer bearer;
     TypeId rlcTypeId = m_rrc->GetRlcType (bearer); // actually, this doesn't depend on bearer
@@ -1376,24 +1377,35 @@ UeManager::RecvRlcSetupRequest (EpcX2SapUser::RlcSetupRequest params) // TODO on
       m_rrc->m_x2SapProvider->SetEpcX2RlcUser (params.gtpTeid, rlc->GetEpcX2RlcUser());
     }
 
-    LteEnbCmacSapProvider::LcInfo lcinfo;
-    lcinfo.rnti = m_rnti;
-    lcinfo.lcId = lcid;
-    lcinfo.lcGroup = m_rrc->GetLogicalChannelGroup (params.lcinfo.isGbr);
-    lcinfo.qci = params.lcinfo.qci;
-    lcinfo.isGbr = params.lcinfo.isGbr;
-    lcinfo.mbrUl = params.lcinfo.mbrUl;
-    lcinfo.mbrDl = params.lcinfo.mbrDl;
-    lcinfo.gbrUl = params.lcinfo.gbrUl;
-    lcinfo.gbrDl = params.lcinfo.gbrDl;
-    //TODO needs to be corrected
-    m_rrc->m_cmacSapProvider.at(0)->AddLc (lcinfo, rlc->GetLteMacSapUser ());
-    rlcInfo->lcinfo = lcinfo;
+    std::vector<LteCcmRrcSapProvider::LcsConfig> lcOnCcMapping = m_rrc->m_ccmRrcSapProvider->SetupDataRadioBearer (bearer, bid, m_rnti, lcid, m_rrc->GetLogicalChannelGroup (bearer), rlc->GetLteMacSapUser ());
+    // LteEnbCmacSapProvider::LcInfo lcinfo;
+    // lcinfo.rnti = m_rnti;
+    // lcinfo.lcId = lcid;
+    // lcinfo.lcGroup = m_rrc->GetLogicalChannelGroup (params.lcinfo.isGbr);
+    // lcinfo.qci = params.lcinfo.qci;
+    // lcinfo.isGbr = params.lcinfo.isGbr;
+    // lcinfo.mbrUl = params.lcinfo.mbrUl;
+    // lcinfo.mbrDl = params.lcinfo.mbrDl;
+    // lcinfo.gbrUl = params.lcinfo.gbrUl;
+    // lcinfo.gbrDl = params.lcinfo.gbrDl;
+    std::vector<LteCcmRrcSapProvider::LcsConfig>::iterator itLcOnCcMapping = lcOnCcMapping.begin ();
+    NS_ASSERT_MSG (itLcOnCcMapping != lcOnCcMapping.end (), "Problem");
+    for (itLcOnCcMapping = lcOnCcMapping.begin (); itLcOnCcMapping != lcOnCcMapping.end (); ++itLcOnCcMapping)
+      {
+        NS_LOG_DEBUG (this << " RNTI " << itLcOnCcMapping->lc.rnti << "Lcid " << (uint16_t) itLcOnCcMapping->lc.lcId << " lcGroup " << (uint16_t) itLcOnCcMapping->lc.lcGroup << " ComponentCarrierId " << itLcOnCcMapping->componentCarrierId);
+        uint8_t index = itLcOnCcMapping->componentCarrierId;
+        LteEnbCmacSapProvider::LcInfo lcinfo = itLcOnCcMapping->lc;
+        LteMacSapUser *msu = itLcOnCcMapping->msu;
+        m_rrc->m_cmacSapProvider.at (index)->AddLc (lcinfo, msu);
+        m_rrc->m_ccmRrcSapProvider->AddLc (lcinfo, msu);
+      }
+
+    //rlcInfo->lcinfo = lcinfo;
 
     rlcInfo->logicalChannelIdentity = lcid;
-    rlcInfo->logicalChannelConfig.priority = params.logicalChannelConfig.priority;
-    rlcInfo->logicalChannelConfig.logicalChannelGroup = lcinfo.lcGroup;
-    if (params.lcinfo.isGbr)
+    rlcInfo->logicalChannelConfig.priority = m_rrc->GetLogicalChannelPriority (bearer);
+    rlcInfo->logicalChannelConfig.logicalChannelGroup = m_rrc->GetLogicalChannelGroup (bearer);
+    if (bearer.IsGbr ())
       {
         rlcInfo->logicalChannelConfig.prioritizedBitRateKbps = params.logicalChannelConfig.prioritizedBitRateKbps;
       }
@@ -1428,7 +1440,7 @@ void
 UeManager::RecvRlcSetupCompleted(uint8_t drbid)
 {
   NS_ASSERT_MSG(m_drbMap.find(drbid) != m_drbMap.end(), "The drbid does not match");
-  NS_LOG_INFO("Setup completed for split DataRadioBearer " << drbid);
+  NS_LOG_INFO("Setup completed for split DataRadioBearer " << (uint16_t)drbid);
   m_drbMap.find(drbid)->second->m_isMc = true;
   SwitchToState(PREPARE_MC_CONNECTION_RECONFIGURATION);
   ScheduleRrcConnectionReconfiguration();
