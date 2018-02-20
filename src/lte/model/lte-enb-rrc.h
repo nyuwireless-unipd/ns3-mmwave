@@ -618,6 +618,11 @@ private:
 
   bool m_pendingRrcConnectionReconfiguration; ///< pending RRC connection reconfiguration
 
+  bool m_pendingConnectToMmWave; ///< this attribute is set to true when RecvRrcConnectionSetupCompleted
+                                   // is executed. At the end of the CA configuration procedure, the
+                                   // LTE eNB will select the best mmWaveCell and will send the
+                                   // ConnectToMmWave command to the UE
+
   /**
    * The `StateTransition` trace source. Fired upon every UE state transition
    * seen by the UeManager at the eNB RRC. Exporting IMSI, cell ID, RNTI, old

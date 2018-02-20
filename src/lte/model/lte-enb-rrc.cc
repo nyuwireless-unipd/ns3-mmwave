@@ -165,6 +165,7 @@ UeManager::UeManager (Ptr<LteEnbRrc> rrc, uint16_t rnti, State s, uint8_t compon
     m_rrc (rrc),
     m_state (s),
     m_pendingRrcConnectionReconfiguration (false),
+    m_pendingConnectToMmWave (false),
     m_sourceX2apId (0),
     m_sourceCellId (0),
     m_needPhyMacConfiguration (false),
@@ -1524,6 +1525,15 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
       m_connectionSetupTimeout.Cancel ();
       //StartDataRadioBearers ();
       NS_LOG_INFO("m_firstConnection " << m_firstConnection);
+
+      if (!m_rrc->m_ismmWave)
+      {
+        // the UE is connected to the LTE eNB, now we have to select the best
+        // mmWave eNB. We do it after the CA configuration.
+        m_pendingConnectToMmWave = true; // the UE
+        NS_LOG_INFO ("m_pendingConnectToMmWave " << m_pendingConnectToMmWave);
+      }
+
       if ( m_caSupportConfigured == false && m_rrc->m_numberOfComponentCarriers > 1)
         {
           m_pendingRrcConnectionReconfiguration = true; // Force Reconfiguration
@@ -2360,8 +2370,12 @@ UeManager::SwitchToState (State newState)
 
     case CONNECTED_NORMALLY:
       {
-        if (m_caSupportConfigured)
+        if (m_caSupportConfigured == true && m_pendingConnectToMmWave == true)
         {
+          // the CA setup is completed. Now we have to connect the UE to the
+          // best mmWave eNB
+          
+          m_pendingConnectToMmWave = false;
           NS_LOG_INFO("Send connect to mmwave");
           // reply to the UE with a command to connect to the best MmWave eNB
           if(m_rrc->m_bestMmWaveCellForImsiMap[m_imsi] != m_rrc->GetCellId() && !m_rrc->m_ismmWave)
