@@ -1886,7 +1886,6 @@ LteUeRrc::EvaluateCellForSelection ()
 void
 LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated rrcd)
 {
-  /*
   NS_ASSERT_MSG(oldRnti == m_mmWaveRnti, "Wrong RNTI! - unknown device");
   NS_ASSERT_MSG(!m_isSecondaryRRC, "Trying to modify RLCs in the mmWave RRC (they are instances in the LTE RRC)");
   m_mmWaveRnti = newRnti;
@@ -1949,10 +1948,13 @@ LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uin
           lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
           lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
 
-
-          m_mmWaveCmacSapProvider->AddLc (dtamIt->logicalChannelIdentity,
-                                  lcConfig,
-                                  rlc->GetLteMacSapUser ());
+          //This is executed only if this is a secondary (mmWave) rrc
+          for (uint32_t i = 0; i < m_numberOfMmWaveComponentCarriers; i++)
+          {
+            m_mmWaveCmacSapProvider.at (i)->AddLc (dtamIt->logicalChannelIdentity,
+                                    lcConfig,
+                                    rlc->GetLteMacSapUser ());
+          }
           if (rlcTypeId != LteRlcSm::GetTypeId ())
           {
             pdcp->SetMmWaveRnti (m_mmWaveRnti);
@@ -1991,7 +1993,6 @@ LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uin
         }
       }
     }
-    */
 }
 
 
