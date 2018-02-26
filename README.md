@@ -1,3 +1,6 @@
+## Warning: work in progress branch
+We are actively developing this branch and pushing new features, please use the new-handover branch until further notice.
+
 # mmWave ns-3 module #
 
 This is an [ns-3](https://www.nsnam.org "ns-3 Website") mmWave module for the simulation
