@@ -357,15 +357,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 			m_miUlHarqProcessesPacketTimer.at (params.harqProcessId) = m_phyMacConfig->GetHarqTimeout ();
 			//m_harqProcessId = (m_harqProcessId + 1) % m_phyMacConfig->GetHarqTimeout();
 
-      //Fire TxMacPacketTraceUes
-      RxPacketTraceParams traceParams;
-      traceParams.m_ccId = m_componentCarrierId;
-      traceParams.m_rnti = params.rnti;
-      traceParams.m_frameNum = m_frameNum;
-      traceParams.m_sfNum = m_sfNum;
-      traceParams.m_slotNum = m_slotNum;
-      traceParams.m_tbSize = it->second.m_pdu->GetSize (); //TODO check if it is correct
-      m_txMacPacketTraceUe(traceParams);
+      m_txMacPacketTraceUe(params.rnti, m_componentCarrierId, it->second.m_pdu->GetSize ());
 
 			m_phySapProvider->SendMacPdu (it->second.m_pdu);
 			m_macPduMap.erase (it);  // delete map entry
@@ -483,7 +475,7 @@ MmWaveUeMac::GetUeCmacSapProvider (void)
 void
 MmWaveUeMac::RefreshHarqProcessesPacketBuffer (void)
 {
-  NS_LOG_FUNCTION (this);
+  //NS_LOG_FUNCTION (this);
 
   for (uint16_t i = 0; i < m_miUlHarqProcessesPacketTimer.size (); i++)
     {
@@ -508,7 +500,7 @@ MmWaveUeMac::RefreshHarqProcessesPacketBuffer (void)
 void
 MmWaveUeMac::DoSubframeIndication (SfnSf sfn)
 {
-	NS_LOG_FUNCTION (this);
+	//NS_LOG_FUNCTION (this);
 	m_frameNum = sfn.m_frameNum;
 	m_sfNum = sfn.m_sfNum;
 	m_slotNum = sfn.m_slotNum;

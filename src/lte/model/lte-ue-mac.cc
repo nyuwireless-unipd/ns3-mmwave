@@ -797,7 +797,7 @@ LteUeMac::DoReceiveLteControlMessage (Ptr<LteControlMessage> msg)
 void
 LteUeMac::RefreshHarqProcessesPacketBuffer (void)
 {
-  NS_LOG_FUNCTION (this);
+  //NS_LOG_FUNCTION (this);
 
   for (uint16_t i = 0; i < m_miUlHarqProcessesPacketTimer.size (); i++)
     {
@@ -822,7 +822,7 @@ LteUeMac::RefreshHarqProcessesPacketBuffer (void)
 void
 LteUeMac::DoSubframeIndication (uint32_t frameNo, uint32_t subframeNo)
 {
-  NS_LOG_FUNCTION (this);
+  //NS_LOG_FUNCTION (this);
   m_frameNo = frameNo;
   m_subframeNo = subframeNo;
   RefreshHarqProcessesPacketBuffer ();

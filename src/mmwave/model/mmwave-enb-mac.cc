@@ -339,29 +339,33 @@ MmWaveEnbMac::GetTypeId (void)
 			.SetParent<MmWaveMac> ()
 			.AddConstructor<MmWaveEnbMac> ()
 			.AddAttribute ("NumberOfRaPreambles",
-		           "how many random access preambles are available for the contention based RACH process",
-		           UintegerValue (50),
-		           MakeUintegerAccessor (&MmWaveEnbMac::m_numberOfRaPreambles),
-		           MakeUintegerChecker<uint8_t> (4, 64))
-		    .AddAttribute ("PreambleTransMax",
-                   "Maximum number of random access preamble transmissions",
-                   UintegerValue (50),
-                   MakeUintegerAccessor (&MmWaveEnbMac::m_preambleTransMax),
-                   MakeUintegerChecker<uint8_t> (3, 200))
-		    .AddAttribute ("RaResponseWindowSize",
-                   "length of the window (in TTIs) for the reception of the random access response (RAR); the resulting RAR timeout is this value + 3 ms",
-                   UintegerValue (3),
-                   MakeUintegerAccessor (&MmWaveEnbMac::m_raResponseWindowSize),
-                   MakeUintegerChecker<uint8_t> (2, 10))
-         .AddAttribute ("ComponentCarrierId",
-                        "ComponentCarrier Id, needed to reply on the appropriate sap.",
-                        UintegerValue (0),
-                        MakeUintegerAccessor (&MmWaveEnbMac::m_componentCarrierId),
-                        MakeUintegerChecker<uint8_t> (0,4))
-	        .AddTraceSource ("DlMacTxCallback",
-					"MAC transmission with tb size and number of retx.",
-					MakeTraceSourceAccessor (&MmWaveEnbMac::m_macDlTxSizeRetx),
-					"ns3::LteRlc::RetransmissionCountCallback")
+      		           "how many random access preambles are available for the contention based RACH process",
+      		           UintegerValue (50),
+      		           MakeUintegerAccessor (&MmWaveEnbMac::m_numberOfRaPreambles),
+      		           MakeUintegerChecker<uint8_t> (4, 64))
+	    .AddAttribute ("PreambleTransMax",
+                     "Maximum number of random access preamble transmissions",
+                     UintegerValue (50),
+                     MakeUintegerAccessor (&MmWaveEnbMac::m_preambleTransMax),
+                     MakeUintegerChecker<uint8_t> (3, 200))
+	    .AddAttribute ("RaResponseWindowSize",
+                     "length of the window (in TTIs) for the reception of the random access response (RAR); the resulting RAR timeout is this value + 3 ms",
+                     UintegerValue (3),
+                     MakeUintegerAccessor (&MmWaveEnbMac::m_raResponseWindowSize),
+                     MakeUintegerChecker<uint8_t> (2, 10))
+      .AddAttribute ("ComponentCarrierId",
+                     "ComponentCarrier Id, needed to reply on the appropriate sap.",
+                     UintegerValue (0),
+                     MakeUintegerAccessor (&MmWaveEnbMac::m_componentCarrierId),
+                     MakeUintegerChecker<uint8_t> (0,4))
+      .AddTraceSource ("DlMacTxCallback",
+                  		 "MAC transmission with tb size and number of retx.",
+                  		 MakeTraceSourceAccessor (&MmWaveEnbMac::m_macDlTxSizeRetx),
+            					 "ns3::LteRlc::RetransmissionCountCallback")
+      .AddTraceSource ("TxMacPacketTraceEnb",
+                       "Packets transmitted by EnbMac",
+                       MakeTraceSourceAccessor (&MmWaveEnbMac::m_txMacPacketTraceEnb),
+  			               "ns3::EnbTxRxPacketCount::TracedCallback")
 	;
 	return tid;
 }
@@ -951,6 +955,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 					NS_LOG_DEBUG ("Total MAC PDU size " << pduMapIt->second.m_pdu->GetSize());
 					harqIt->second.at (tbUid).m_pktBurst->AddPacket (pduMapIt->second.m_pdu);
 
+          m_txMacPacketTraceEnb(rnti, m_componentCarrierId, pduMapIt->second.m_pdu->GetSize ());
 					m_phySapProvider->SendMacPdu (pduMapIt->second.m_pdu);
 					m_macPduMap.erase (pduMapIt);  // delete map entry
 				}

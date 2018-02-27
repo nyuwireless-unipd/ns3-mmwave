@@ -144,7 +144,7 @@ LteRlcUm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 void
 LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid)
 {
-  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
+  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes << (uint32_t)componentCarrierId);
 
   if (bytes <= 2)
     {

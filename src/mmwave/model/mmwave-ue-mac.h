@@ -171,7 +171,7 @@ private:
 	double m_ueUpdateSinrPeriod;
 	bool m_interRatHoCapable;
 
-	TracedCallback<RxPacketTraceParams> m_txMacPacketTraceUe;
+	TracedCallback<uint16_t, uint8_t, uint32_t> m_txMacPacketTraceUe;
 
 };
 

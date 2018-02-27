@@ -262,6 +262,8 @@ private:
 
 	TracedCallback<uint16_t, uint16_t, uint32_t, uint8_t> m_macDlTxSizeRetx;
 
+	TracedCallback<uint16_t, uint8_t, uint32_t> m_txMacPacketTraceEnb;
+
 };
 
 }
