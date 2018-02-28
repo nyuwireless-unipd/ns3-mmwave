@@ -327,7 +327,7 @@ LteRlcAm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, 
       return;
     }
 
-  if ( m_statusPduRequested && ! m_statusProhibitTimer.IsRunning () )
+  if ( m_statusPduRequested && ! m_statusProhibitTimer.IsRunning () && componentCarrierId == 0) // only the PCC can send STATUS PDUs
     {
       if (bytes < m_statusPduBufferSize)
         {

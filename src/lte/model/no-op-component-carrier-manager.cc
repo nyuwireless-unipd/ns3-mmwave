@@ -460,7 +460,17 @@ RrComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::ReportBuffer
       for ( uint16_t i = 0;  i < numberOfCarriersForUe ; i++)
         {
           NS_ASSERT_MSG (m_macSapProvidersMap.find(i)!=m_macSapProvidersMap.end(), "Mac sap provider does not exist.");
-          m_macSapProvidersMap.find(i)->second->ReportBufferStatus(params);
+          if ( i==0 )
+          {
+            // only the PCC sends STATUS PDUs
+            m_macSapProvidersMap.find(i)->second->ReportBufferStatus(params);
+          }
+          else
+          {
+            LteMacSapProvider::ReportBufferStatusParameters newParams = params;
+            newParams.statusPduSize = 0;
+            m_macSapProvidersMap.find(i)->second->ReportBufferStatus(newParams);
+          }
         }
     }
 }

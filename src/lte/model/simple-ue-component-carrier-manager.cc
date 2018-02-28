@@ -225,7 +225,18 @@ SimpleUeComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::Report
   NS_LOG_FUNCTION (this);
   for(std::map <uint8_t, LteMacSapProvider*>::iterator it = m_macSapProvidersMap.begin(); it != m_macSapProvidersMap.end(); it++)
   {
-    it->second->ReportBufferStatus (params);
+    if (it->first == 0)
+    {
+      // report the BSR to the primary CC
+      it->second->ReportBufferStatus (params);
+    }
+    else
+    {
+      // report the BSR to other CCs. Only the PCC sends status PDUs.
+      LteMacSapProvider::ReportBufferStatusParameters newParams = params;
+      newParams.statusPduSize = 0;
+      it->second->ReportBufferStatus (newParams);
+    }
   }
 }
 
