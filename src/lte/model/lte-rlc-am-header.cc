@@ -532,6 +532,7 @@ uint32_t LteRlcAmHeader::Deserialize (Buffer::Iterator start)
 
       if (m_resegmentationFlag == SEGMENT)
         {
+          // initialize m_lastOffset
           m_lastOffset = m_segmentOffset + start.GetSize () - m_headerLength;
         }
 
@@ -572,6 +573,11 @@ uint32_t LteRlcAmHeader::Deserialize (Buffer::Iterator start)
             }
         }
 
+      if (m_resegmentationFlag == SEGMENT)
+        {
+          // update m_lastOffset
+          m_lastOffset = m_segmentOffset + start.GetSize () - m_headerLength;
+        }
     }
   else // if ( m_dataControlBit == CONTROL_PDU )
     {
