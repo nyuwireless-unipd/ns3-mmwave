@@ -525,7 +525,7 @@ uint32_t LteRlcAmHeader::Deserialize (Buffer::Iterator start)
       m_sequenceNumber     = ((byte_1 & 0x03) << 8) | byte_2;
 
       m_lastSegmentFlag    = (byte_3 & 0x80) >> 7;
-      m_segmentOffset      = (byte_3 & 0x7F) | byte_4;
+      m_segmentOffset      = (byte_3 & 0x7F) << 8 | byte_4;
 
       extensionBit = (byte_1 & 0x04) >> 2;
       m_extensionBits.push_back (extensionBit);
