@@ -1976,7 +1976,14 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
           it->second->m_rlc = 0;
           uint8_t lcid = it->second->m_logicalChannelIdentity;
           //TODO needs to be corrected
-          m_rrc->m_cmacSapProvider.at(0)->ReleaseLc(m_rnti, lcid);
+          //m_rrc->m_cmacSapProvider.at(0)->ReleaseLc(m_rnti, lcid);
+          std::vector<uint8_t> ccToRelease = m_rrc->m_ccmRrcSapProvider->ReleaseDataRadioBearer (m_rnti, lcid);
+          std::vector<uint8_t>::iterator itCcToRelease = ccToRelease.begin ();
+          NS_ASSERT_MSG (itCcToRelease != ccToRelease.end (), "request to remove radio bearer with unknown drbid (ComponentCarrierManager)");
+          for (itCcToRelease = ccToRelease.begin (); itCcToRelease != ccToRelease.end (); ++itCcToRelease)
+            {
+              m_rrc->m_cmacSapProvider.at (*itCcToRelease)->ReleaseLc (m_rnti, lcid);
+            }
 
           TypeId rlcTypeId = m_rrc->GetRlcType (it->second->m_epsBearer);
 
@@ -2000,18 +2007,33 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
             rlc->SetLteRlcSapUser (DynamicCast<McEnbPdcp>(it->second->m_pdcp)->GetLteRlcSapUser ());
           }
 
-          LteEnbCmacSapProvider::LcInfo lcinfo;
-          lcinfo.rnti = m_rnti;
-          lcinfo.lcId = lcid;
-          lcinfo.lcGroup = m_rrc->GetLogicalChannelGroup (it->second->m_epsBearer);
-          lcinfo.qci =   it->second->m_epsBearer.qci;
-          lcinfo.isGbr = it->second->m_epsBearer.IsGbr ();
-          lcinfo.mbrUl = it->second->m_epsBearer.gbrQosInfo.mbrUl;
-          lcinfo.mbrDl = it->second->m_epsBearer.gbrQosInfo.mbrDl;
-          lcinfo.gbrUl = it->second->m_epsBearer.gbrQosInfo.gbrUl;
-          lcinfo.gbrDl = it->second->m_epsBearer.gbrQosInfo.gbrDl;
+          uint8_t drbid = it->first;
+          uint8_t bid = Drbid2Bid (drbid);
+
+          std::vector<LteCcmRrcSapProvider::LcsConfig> lcOnCcMapping = m_rrc->m_ccmRrcSapProvider->SetupDataRadioBearer (it->second->m_epsBearer, bid, m_rnti, lcid, m_rrc->GetLogicalChannelGroup (it->second->m_epsBearer), rlc->GetLteMacSapUser ());
+          //LteEnbCmacSapProvider::LcInfo lcinfo;
+          //lcinfo.rnti = m_rnti;
+          //lcinfo.lcId = lcid;
+          //lcinfo.lcGroup = m_rrc->GetLogicalChannelGroup (it->second->m_epsBearer);
+          //lcinfo.qci =   it->second->m_epsBearer.qci;
+          //lcinfo.isGbr = it->second->m_epsBearer.IsGbr ();
+          //lcinfo.mbrUl = it->second->m_epsBearer.gbrQosInfo.mbrUl;
+          //lcinfo.mbrDl = it->second->m_epsBearer.gbrQosInfo.mbrDl;
+          //lcinfo.gbrUl = it->second->m_epsBearer.gbrQosInfo.gbrUl;
+          //lcinfo.gbrDl = it->second->m_epsBearer.gbrQosInfo.gbrDl;
           //TODO needs to be corrected
-          m_rrc->m_cmacSapProvider.at(0)->AddLc (lcinfo, rlc->GetLteMacSapUser ());
+          //m_rrc->m_cmacSapProvider.at(0)->AddLc (lcinfo, rlc->GetLteMacSapUser ());
+          std::vector<LteCcmRrcSapProvider::LcsConfig>::iterator itLcOnCcMapping = lcOnCcMapping.begin ();
+          NS_ASSERT_MSG (itLcOnCcMapping != lcOnCcMapping.end (), "Problem");
+          for (itLcOnCcMapping = lcOnCcMapping.begin (); itLcOnCcMapping != lcOnCcMapping.end (); ++itLcOnCcMapping)
+            {
+              NS_LOG_DEBUG (this << " RNTI " << itLcOnCcMapping->lc.rnti << "Lcid " << (uint16_t) itLcOnCcMapping->lc.lcId << " lcGroup " << (uint16_t) itLcOnCcMapping->lc.lcGroup << " ComponentCarrierId " << itLcOnCcMapping->componentCarrierId);
+              uint8_t index = itLcOnCcMapping->componentCarrierId;
+              LteEnbCmacSapProvider::LcInfo lcinfo = itLcOnCcMapping->lc;
+              LteMacSapUser *msu = itLcOnCcMapping->msu;
+              m_rrc->m_cmacSapProvider.at (index)->AddLc (lcinfo, msu);
+              m_rrc->m_ccmRrcSapProvider->AddLc (lcinfo, msu);
+            }
         }
         else if(!m_rrc->m_ismmWave && !useMmWaveConnection)
         {
@@ -2053,7 +2075,14 @@ UeManager::RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid
 
     uint8_t lcid = m_rlcMap.find(drbid)->second->logicalChannelIdentity;
     //TODO needs to be corrected
-    m_rrc->m_cmacSapProvider.at(0)->ReleaseLc(m_rnti, lcid);
+    //m_rrc->m_cmacSapProvider.at(0)->ReleaseLc(m_rnti, lcid);
+    std::vector<uint8_t> ccToRelease = m_rrc->m_ccmRrcSapProvider->ReleaseDataRadioBearer (m_rnti, lcid);
+    std::vector<uint8_t>::iterator itCcToRelease = ccToRelease.begin ();
+    NS_ASSERT_MSG (itCcToRelease != ccToRelease.end (), "request to remove radio bearer with unknown drbid (ComponentCarrierManager)");
+    for (itCcToRelease = ccToRelease.begin (); itCcToRelease != ccToRelease.end (); ++itCcToRelease)
+      {
+        m_rrc->m_cmacSapProvider.at (*itCcToRelease)->ReleaseLc (m_rnti, lcid);
+      }
 
     EpsBearer bearer;
     TypeId rlcTypeId = m_rrc->GetRlcType (bearer); // actually, this doesn't depend on bearer
@@ -2080,7 +2109,21 @@ UeManager::RecvConnectionSwitchToMmWave (bool useMmWaveConnection, uint8_t drbid
       m_rrc->m_x2SapProvider->SetEpcX2RlcUser (m_rlcMap.find(drbid)->second->gtpTeid, rlc->GetEpcX2RlcUser());
     }
     //TODO needs to be corrected
-    m_rrc->m_cmacSapProvider.at(0)->AddLc (m_rlcMap.find(drbid)->second->lcinfo, rlc->GetLteMacSapUser ());
+    //m_rrc->m_cmacSapProvider.at(0)->AddLc (m_rlcMap.find(drbid)->second->lcinfo, rlc->GetLteMacSapUser ());
+
+    std::vector<LteCcmRrcSapProvider::LcsConfig> lcOnCcMapping = m_rrc->m_ccmRrcSapProvider->SetupDataRadioBearer (bearer, Drbid2Bid (drbid), m_rnti, lcid, m_rrc->GetLogicalChannelGroup (bearer), rlc->GetLteMacSapUser ());
+
+    std::vector<LteCcmRrcSapProvider::LcsConfig>::iterator itLcOnCcMapping = lcOnCcMapping.begin ();
+    NS_ASSERT_MSG (itLcOnCcMapping != lcOnCcMapping.end (), "Problem");
+    for (itLcOnCcMapping = lcOnCcMapping.begin (); itLcOnCcMapping != lcOnCcMapping.end (); ++itLcOnCcMapping)
+      {
+        NS_LOG_DEBUG (this << " RNTI " << itLcOnCcMapping->lc.rnti << "Lcid " << (uint16_t) itLcOnCcMapping->lc.lcId << " lcGroup " << (uint16_t) itLcOnCcMapping->lc.lcGroup << " ComponentCarrierId " << itLcOnCcMapping->componentCarrierId);
+        uint8_t index = itLcOnCcMapping->componentCarrierId;
+        LteEnbCmacSapProvider::LcInfo lcinfo = itLcOnCcMapping->lc;
+        LteMacSapUser *msu = itLcOnCcMapping->msu;
+        m_rrc->m_cmacSapProvider.at (index)->AddLc (lcinfo, msu);
+        m_rrc->m_ccmRrcSapProvider->AddLc (lcinfo, msu);
+      }
   }
 }
 
@@ -2374,7 +2417,7 @@ UeManager::SwitchToState (State newState)
         {
           // the CA setup is completed. Now we have to connect the UE to the
           // best mmWave eNB
-          
+
           m_pendingConnectToMmWave = false;
           NS_LOG_INFO("Send connect to mmwave");
           // reply to the UE with a command to connect to the best MmWave eNB

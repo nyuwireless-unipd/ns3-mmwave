@@ -1345,7 +1345,6 @@ LteUeRrc::DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg)
 void
 LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
 {
-  /*
   NS_LOG_INFO("Recv RRC Connection Switch on rnti " << m_rnti << " of cell " << m_cellId << " m_mmWaveCellId " << m_mmWaveCellId << " in state " << ToString(m_state));
   std::vector<uint8_t> drbidList = msg.drbidList;
   for(std::vector<uint8_t>::iterator iter = drbidList.begin(); iter != drbidList.end(); ++iter)
@@ -1360,7 +1359,12 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
         if(msg.useMmWaveConnection) // I was on LTE, now I switch to mmWave
         {
           uint8_t lcid = m_drbMap.find(*iter)->second->m_logicalChannelIdentity;
-          m_cmacSapProvider->RemoveLc (lcid);
+          //m_cmacSapProvider->RemoveLc (lcid);
+          //Remove LCID
+          for (uint32_t i = 0; i < m_numberOfComponentCarriers; i++)
+           {
+             m_cmacSapProvider.at (i)->RemoveLc (lcid);
+           }
 
           // before resetting the RLC, forward the content of the LTE RLC to the mmWave RLC
           // check if this rlc is already in the map
@@ -1418,15 +1422,26 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
           lcConfig.bucketSizeDurationMs =   m_drbMap.find(*iter)->second->m_logicalChannelConfig.bucketSizeDurationMs;
           lcConfig.logicalChannelGroup =    m_drbMap.find(*iter)->second->m_logicalChannelConfig.logicalChannelGroup;
 
-          m_cmacSapProvider->AddLc (lcid,
+          //m_cmacSapProvider->AddLc (lcid,
+          //                          lcConfig,
+          //                          rlc->GetLteMacSapUser ());
+          for (uint32_t i = 0; i < m_numberOfComponentCarriers; i++)
+          {
+            m_cmacSapProvider.at (i)->AddLc (lcid,
                                     lcConfig,
                                     rlc->GetLteMacSapUser ());
+          }
           rlc->Initialize ();
 
         }
         else // I was on mmWave, and I switch to LTE
         {
-          m_mmWaveCmacSapProvider->RemoveLc(m_rlcMap.find(*iter)->second->logicalChannelIdentity);
+          //m_mmWaveCmacSapProvider->RemoveLc(m_rlcMap.find(*iter)->second->logicalChannelIdentity);
+          //Remove LCID
+          for (uint32_t i = 0; i < m_numberOfMmWaveComponentCarriers; i++)
+           {
+             m_mmWaveCmacSapProvider.at (i)->RemoveLc (m_rlcMap.find(*iter)->second->logicalChannelIdentity);
+           }
 
           // before resetting, forward the content of the RLC in m_rlcMap to the RLC in m_drbMap
           if(m_rlcMap.find(*iter) != m_rlcMap.end())
@@ -1475,9 +1490,16 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
           lcConfig.bucketSizeDurationMs =   m_rlcMap.find(*iter)->second->logicalChannelConfig.bucketSizeDurationMs;
           lcConfig.logicalChannelGroup =    m_rlcMap.find(*iter)->second->logicalChannelConfig.logicalChannelGroup;
 
-          m_mmWaveCmacSapProvider->AddLc (m_rlcMap.find(*iter)->second->logicalChannelIdentity,
-                                  lcConfig,
-                                  rlc->GetLteMacSapUser ());
+          //m_mmWaveCmacSapProvider->AddLc (m_rlcMap.find(*iter)->second->logicalChannelIdentity,
+          //                        lcConfig,
+          //                        rlc->GetLteMacSapUser ());
+
+          for (uint32_t i = 0; i < m_numberOfComponentCarriers; i++)
+          {
+            m_mmWaveCmacSapProvider.at (i)->AddLc (m_rlcMap.find(*iter)->second->logicalChannelIdentity,
+                                    lcConfig,
+                                    rlc->GetLteMacSapUser ());
+          }
 
           if (rlcTypeId != LteRlcSm::GetTypeId ())
           {
@@ -1507,7 +1529,6 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
       }
     }
   }
-  */
 }
 
 
