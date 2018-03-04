@@ -1230,6 +1230,11 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           }
           else
           {
+            if (msg.haveNonCriticalExtension)
+              {
+                ApplyRadioResourceConfigDedicatedSecondaryCarrier (msg.nonCriticalExtension);
+                NS_LOG_DEBUG ( this << "RNTI " << m_rnti << " Configured for CA" );
+              }
             // this is the secondary mmWave RRC. When a secondary HO happens,
             // the primary LTE RRC must be notified in order to update the RLC instances
             // Forward this message to EpcUeNas and then to LteUeRrc for LTE RRC
