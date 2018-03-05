@@ -36,31 +36,136 @@
 
 using namespace ns3;
 
+int packetSinkDlRxCounter = 0;
+int packetSinkUlRxCounter = 0;
+
 void
 DlSchedTrace (Ptr<OutputStreamWrapper> stream, DlSchedulingCallbackInfo params)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << (uint32_t)params.componentCarrierId << '\t' << params.sizeTb1 << std::endl;
 }
 
+static void
+DlRx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
+	packetSinkDlRxCounter++;
+}
+
+static void
+UlRx (Ptr<OutputStreamWrapper> stream, Ptr<const Packet> packet, const Address &from)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << packet->GetSize()<< std::endl;
+	packetSinkUlRxCounter++;
+}
+
+void
+TxMacPacketTrace (Ptr<OutputStreamWrapper> stream, uint16_t rnti, uint8_t componentCarrierId, uint32_t size)
+{
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t"
+												<< (uint32_t)rnti << '\t'
+												<< (uint32_t)componentCarrierId << '\t'
+												<< size
+												<< std::endl;
+}
+
+void
+PositionTrace(Ptr<Node> n)
+{
+	Vector pos = n->GetObject<MobilityModel>()->GetPosition();
+	std::cout << "UE position at " << Simulator::Now().GetSeconds() << "\t" << pos << std::endl;
+	Simulator::Schedule (Seconds(1), &PositionTrace, n);
+}
+
+void
+ChangeSpeed (Ptr<Node> n, Vector speed)
+{
+	n->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(speed);
+}
+
 void
 Traces(void)
 {
-	std::string path = "/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbMac/DlScheduling";
-	std::string filePath = "DlSchedTrace.txt";
+	//std::string path = "/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbMac/DlScheduling";
+	/*std::string filePath = "DlSchedTrace.txt";
 	AsciiTraceHelper asciiTraceHelper;
-	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (filePath);
-	*stream1->GetStream () << "Time" << "\t" << "CC" << '\t' << "sizeTb1" << std::endl;
-	Config::ConnectWithoutContext (path, MakeBoundCallback(&DlSchedTrace, stream1));
+	Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (filePath);
+	*stream->GetStream () << "Time" << "\t" << "CC" << '\t' << "sizeTb1" << std::endl;
+	Config::ConnectWithoutContext (path, MakeBoundCallback(&DlSchedTrace, stream));*/
+
+	std::string dlTxMacPath = "/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbMac/TxMacPacketTraceEnb";
+	std::string dlTxMacFilePath = "DlTxMac.txt";
+	AsciiTraceHelper dlTxMacAsciiTraceHelper;
+	Ptr<OutputStreamWrapper> dlTxMacStream = dlTxMacAsciiTraceHelper.CreateFileStream (dlTxMacFilePath);
+	//*stream->GetStream () << "Time" << "\t" << "CC" << '\t' << "sizeTb1" << std::endl;
+	Config::ConnectWithoutContext (dlTxMacPath, MakeBoundCallback(&TxMacPacketTrace, dlTxMacStream));
+
+	std::string ulTxMacPath = "/NodeList/*/DeviceList/*/MmWaveComponentCarrierMapUe/*/MmWaveUeMac/TxMacPacketTraceUe";
+	std::string ulTxMacFilePath = "UlTxMac.txt";
+	AsciiTraceHelper ulTxMacAsciiTraceHelper;
+	Ptr<OutputStreamWrapper> ulTxMacStream = ulTxMacAsciiTraceHelper.CreateFileStream (ulTxMacFilePath);
+	//*stream->GetStream () << "Time" << "\t" << "CC" << '\t' << "sizeTb1" << std::endl;
+	Config::ConnectWithoutContext (ulTxMacPath, MakeBoundCallback(&TxMacPacketTrace, ulTxMacStream));
+
+
 }
 
 
-
-void Print ( ComponentCarrier cc);
-
 int main (int argc, char *argv[])
 {
-  CommandLine cmd;
+	bool useRR = false;
+	double mmWaveCc0Freq = 28e9;
+	double mmWaveCc1Freq = 73e9;
+	double mmWaveCc0Bw = 1; // in GHz
+	double mmWaveCc1Bw = 1; // in GHz
+	double simTime;
+	std::string filePath;
+	uint8_t runSet = 1;
+	double speed = 3;
+	bool reportAllUeMeas = false;
+	bool useOneMmWaveCc = false;
+	uint8_t interPacketInterval = 1;
+
+	CommandLine cmd;
+  cmd.AddValue("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
+  cmd.AddValue("mmWaveCc0Freq", "CC0 central frequency [Hz]", mmWaveCc0Freq);
+	cmd.AddValue("mmWaveCc1Freq", "CC1 central frequency [Hz]", mmWaveCc1Freq);
+	cmd.AddValue("mmWaveCc0Bw", "CC0 bandwidth (in GHz)", mmWaveCc0Bw);
+	cmd.AddValue("mmWaveCc1Bw", "CC1 bandwidth (in GHz)", mmWaveCc1Bw);
+  //cmd.AddValue("simTime", "Simulation time", simTime);
+  cmd.AddValue("filePath", "Where to put the output files", filePath);
+  cmd.AddValue("runSet", "Run number", runSet);
+	cmd.AddValue("speed", "Speed in the x direction [m/s]",speed);
+	cmd.AddValue("reportAllUeMeas", "Report the measures from all the CCs or only the max values", reportAllUeMeas);
+	cmd.AddValue("useOneMmWaveCc", "Use one CC for mmWave", useOneMmWaveCc);
+	cmd.AddValue("interPacketInterval", "inter-packet interval [ms]", interPacketInterval);
   cmd.Parse (argc, argv);
+
+	// RNG
+  uint32_t seedSet = 1;
+  RngSeedManager::SetSeed (seedSet);
+  RngSeedManager::SetRun (runSet);
+
+	// Set the correct file path
+	std::cout << "File path: " << filePath << std::endl;
+  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue(filePath + "DlRlcStats.txt"));
+  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue(filePath + "UlRlcStats.txt"));
+  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::DlPdcpOutputFilename", StringValue(filePath + "DlPdcpStats.txt"));
+  Config::SetDefault("ns3::MmWaveBearerStatsCalculator::UlPdcpOutputFilename", StringValue(filePath + "UlPdcpStats.txt"));
+	Config::SetDefault("ns3::MmWaveBearerStatsConnector::EnbHandoverStartOutputFilename", StringValue(filePath + "EnbHandoverStartStats.txt"));
+	Config::SetDefault("ns3::MmWaveBearerStatsConnector::EnbHandoverEndOutputFilename", StringValue(filePath + "EnbHandoverEndStats.txt"));
+	Config::SetDefault("ns3::MmWaveBearerStatsConnector::MmWaveSinrOutputFilename", StringValue(filePath + "MmWaveSinrTime.txt"));
+	Config::SetDefault("ns3::MmWaveBearerStatsConnector::LteSinrOutputFilename", StringValue(filePath + "LteSinrTime.txt"));
+	Config::SetDefault("ns3::MmWaveBearerStatsConnector::UeHandoverStartOutputFilename", StringValue(filePath + "UeHandoverStartStats.txt"));
+	Config::SetDefault("ns3::MmWaveBearerStatsConnector::UeHandoverEndOutputFilename", StringValue(filePath + "UeHandoverEndStats.txt"));
+	Config::SetDefault("ns3::MmWaveBearerStatsConnector::CellIdStatsHandoverOutputFilename", StringValue(filePath + "CellIdStatsHandover.txt"));
+  Config::SetDefault("ns3::MmWavePhyRxTrace::OutputFilename", StringValue(filePath + "RxPacketTrace.txt"));
+  Config::SetDefault("ns3::LteRlcAm::BufferSizeFilename", StringValue(filePath + "RlcAmBufferSize.txt"));
+	Config::SetDefault("ns3::McStatsCalculator::LteOutputFilename", StringValue(filePath + "LteSwitchStats.txt"));
+	Config::SetDefault("ns3::McStatsCalculator::MmWaveOutputFilename", StringValue(filePath + "MmWaveSwitchStats.txt"));
+	Config::SetDefault("ns3::McStatsCalculator::CellIdInTimeOutputFilename", StringValue(filePath + "CellIdStats.txt"));
+	Config::SetDefault("ns3::CoreNetworkStatsCalculator::X2FileName", StringValue(filePath + "X2Stats.txt"));
+	Config::SetDefault("ns3::CoreNetworkStatsCalculator::S1MmeFileName", StringValue(filePath + "MmeStats.txt"));
 
   // create the map of LTE component carriers
   Ptr<CcHelper> lteCcHelper = CreateObject<CcHelper> ();
@@ -87,27 +192,38 @@ int main (int argc, char *argv[])
 
   // create the map of mmWave component carriers
   //create MmWavePhyMacCommon objects
-	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(28e9));
+	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(mmWaveCc0Freq));
 	Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(0));
-	Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
+	Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
+	uint32_t chunkPerRb0 = phyMacConfig0->GetNumChunkPerRb () * mmWaveCc0Bw;
+	phyMacConfig0->SetNumChunkPerRB (chunkPerRb0);
+	uint32_t numRefSc0 = phyMacConfig0->GetNumRefScPerSym () * mmWaveCc0Bw;
+	phyMacConfig0->SetNumRefScPerSym (numRefSc0);
 
-	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(73e9));
+	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(mmWaveCc1Freq));
 	Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
-	Ptr<MmWavePhyMacCommon> phyMacConfig2 = CreateObject<MmWavePhyMacCommon> ();
+	Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
+	uint32_t chunkPerRb1 = phyMacConfig1->GetNumChunkPerRb () * mmWaveCc1Bw;
+	phyMacConfig1->SetNumChunkPerRB (chunkPerRb1);
+	uint32_t numRefSc1 = phyMacConfig1->GetNumRefScPerSym () * mmWaveCc1Bw;
+	phyMacConfig1->SetNumRefScPerSym (numRefSc1);
 
 	//create the carriers
+	Ptr<MmWaveComponentCarrier> mmWaveCc0 = CreateObject<MmWaveComponentCarrier> ();
+	mmWaveCc0->SetConfigurationParameters(phyMacConfig0);
+	mmWaveCc0->SetAsPrimary(true);
+
 	Ptr<MmWaveComponentCarrier> mmWaveCc1 = CreateObject<MmWaveComponentCarrier> ();
 	mmWaveCc1->SetConfigurationParameters(phyMacConfig1);
-	mmWaveCc1->SetAsPrimary(true);
-
-	Ptr<MmWaveComponentCarrier> mmWaveCc2 = CreateObject<MmWaveComponentCarrier> ();
-	mmWaveCc2->SetConfigurationParameters(phyMacConfig2);
-	mmWaveCc2->SetAsPrimary(false);
+	mmWaveCc1->SetAsPrimary(false);
 
 	//create the ccMap
 	std::map<uint8_t, MmWaveComponentCarrier > mmWaveCcMap;
-	mmWaveCcMap [0] = *mmWaveCc1;
-	//mmWaveCcMap [1] = *mmWaveCc2;
+	mmWaveCcMap [0] = *mmWaveCc0;
+	if(useOneMmWaveCc == false)
+	{
+		mmWaveCcMap [1] = *mmWaveCc1;
+	}
 
   // print mmWave CC parameters
   std::cout << " mmWaveCcMap size " << mmWaveCcMap.size () << std::endl;
@@ -132,6 +248,27 @@ int main (int argc, char *argv[])
   Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveBaRrComponentCarrierManager"));
 	Config::SetDefault("ns3::MmWaveHelper::LteEnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
   //Config::SetDefault("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
+	Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
+  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
+	Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(true));
+	Config::SetDefault("ns3::MmWaveHelper::HarqEnabled",BooleanValue(true));
+	Config::SetDefault("ns3::LteEnbRrc::ReportAllUeMeas",BooleanValue(reportAllUeMeas));
+
+	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
+  std::string scenario = "UMa";
+  std::string condition = "n"; // n = NLOS, l = LOS
+  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue(condition));
+  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
+  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
+  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Shadowing", BooleanValue(false)); // enable or disable the shadowing effect
+  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar", BooleanValue(false)); // enable or disable the shadowing effect
+
+  Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue (MilliSeconds (100))); // Set channel update period, 0 stands for no update.
+  Config::SetDefault ("ns3::MmWave3gppChannel::CellScan", BooleanValue(false)); // Set true to use cell scanning method, false to use the default power method.
+  Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue(true)); // use blockage model with UT in portrait mode
+  Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
+  Config::SetDefault ("ns3::MmWave3gppChannel::BlockerSpeed", DoubleValue(1)); // speed of non-self blocking obstacles
+
   // create the helper
   Ptr<MmWaveHelper> mmWaveHelper = CreateObject<MmWaveHelper> ();
   mmWaveHelper->SetLteCcPhyParams (lteCcMap);
@@ -171,37 +308,59 @@ int main (int argc, char *argv[])
 
   // create the nodes
   NodeContainer enbNodes;
+	NodeContainer lteEnbNodes;
+	NodeContainer mmWaveEnbNodes;
   NodeContainer mcUeNodes;
-  enbNodes.Create (2);
+  enbNodes.Create (3);
+	lteEnbNodes.Add(enbNodes.Get(0));
+	mmWaveEnbNodes.Add (enbNodes.Get (1));
+	mmWaveEnbNodes.Add (enbNodes.Get (2));
   mcUeNodes.Create (1);
 
+ // MOBILITY
+	Vector mcUeInitialPos = Vector (-150.0, -35, 1.6);
+	double mmWaveEnbDist = 400;
+	Vector mcUeVelocity = Vector (speed, 0, 0);
+
   // set enb mobility
+	// mmW eNB 1 ------------------- LTE eNB ------------------- mmW eNB2
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   enbPositionAlloc->Add (Vector (0.0, 0.0, 30.0));
+	enbPositionAlloc->Add (Vector (-mmWaveEnbDist/2, 25.0, 15.0));
+	enbPositionAlloc->Add (Vector (+mmWaveEnbDist/2, 25.0, 15.0));
+
 
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator(enbPositionAlloc);
   enbmobility.Install (enbNodes);
   BuildingsHelper::Install (enbNodes);
+	std::cout << "Lte eNB position " << lteEnbNodes.Get(0)->GetObject<MobilityModel>()->GetPosition() << std::endl;
+	std::cout << "mmWave eNB position " << mmWaveEnbNodes.Get(0)->GetObject<MobilityModel>()->GetPosition() << std::endl;
+	std::cout << "mmWave eNB position " << mmWaveEnbNodes.Get(1)->GetObject<MobilityModel>()->GetPosition() << std::endl;
+
 
   // set mc-ue mobility
 	MobilityHelper mcUeMobility;
   Ptr<ListPositionAllocator> mcUePositionAlloc = CreateObject<ListPositionAllocator> ();
-  mcUePositionAlloc->Add (Vector (80.0, 0.0, 5.0)); // with distance = 15km txOpportunity is 903 bytes, so CC1 is used too.
+  mcUePositionAlloc->Add (mcUeInitialPos); // with distance = 15km txOpportunity is 903 bytes, so LTE CC1 is used too.
 
-  mcUeMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mcUeMobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   mcUeMobility.SetPositionAllocator(mcUePositionAlloc);
   mcUeMobility.Install (mcUeNodes);
   BuildingsHelper::Install (mcUeNodes);
 
+	mcUeNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (mcUeVelocity);
+	std::cout << "UE speed " << mcUeVelocity << std::endl;
+	//Simulator::Schedule(Seconds(1),&ChangeSpeed, mcUeNodes.Get(0),Vector (-10, 0, 0));
+
 	// Create Devices and install them in the Nodes
 	NetDeviceContainer lteEnbDevs;
-	lteEnbDevs = mmWaveHelper->InstallLteEnbDevice (enbNodes.Get(0));
+	lteEnbDevs = mmWaveHelper->InstallLteEnbDevice (lteEnbNodes);
 	std::cout << "LTE eNB device installed" << std::endl;
 
   NetDeviceContainer mmWaveEnbDevs;
-  mmWaveEnbDevs = mmWaveHelper->InstallEnbDevice (enbNodes.Get(1));
+  mmWaveEnbDevs = mmWaveHelper->InstallEnbDevice (mmWaveEnbNodes);
   std::cout << "mmWave eNB device installed" << std::endl;
 
   NetDeviceContainer mcUeDevs;
@@ -217,10 +376,6 @@ int main (int argc, char *argv[])
   Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (mcUeNodes.Get (0)->GetObject<Ipv4> ());
   ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
-  NodeContainer lteEnbNodes;
-  lteEnbNodes.Add(enbNodes.Get(0));
-  NodeContainer mmWaveEnbNodes;
-  mmWaveEnbNodes.Add(enbNodes.Get(1));
   mmWaveHelper->AddX2Interface (lteEnbNodes, mmWaveEnbNodes);
 
   mmWaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
@@ -231,8 +386,6 @@ int main (int argc, char *argv[])
   uint16_t ulPort = 2000;
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-
-  uint16_t interPacketInterval = 1;
 
   PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
   PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
@@ -250,14 +403,43 @@ int main (int argc, char *argv[])
   clientApps.Add (dlClient.Install (remoteHost));
   clientApps.Add (ulClient.Install (mcUeNodes.Get(0)));
 
-  serverApps.Start (Seconds (0.01));
-  clientApps.Start (Seconds (0.01));
+	double appStartTime = 0.01;
+  serverApps.Start (Seconds (appStartTime));
+  clientApps.Start (Seconds (appStartTime));
 
 
-  mmWaveHelper->EnableTraces ();
-  Traces(); //Mac Traces
+  //mmWaveHelper->EnableTraces (); // enable all the Traces
+	mmWaveHelper->EnableMcTraces();
+	mmWaveHelper->EnablePdcpTraces();
+	//mmWaveHelper->EnableDlPhyTrace ();
+	//mmWaveHelper->EnableUlPhyTrace ();
+  //Traces(); // mac tx traces
 
-  Simulator::Stop (Seconds (0.5));
+	// -------------------APPLICATION LAYER TRACES -------------------------------
+	// 1. packets sent by the remoteHost and received by the UE
+	std::string packetSinkDlFilePath = filePath + "PacketSinkDlRx.txt";
+	AsciiTraceHelper asciiTraceHelper;
+	Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (packetSinkDlFilePath);
+	//*stream->GetStream () << "Packets sent by the remoteHost and received by the UE\n"
+	//										  << "Time" << "\t" << "Size" << std::endl;
+	serverApps.Get(0)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&DlRx, stream));
+
+	// 2. packets sent by the UE and received by the remoteHost
+	std::string packetSinkUlFilePath = filePath + "PacketSinkUlRx.txt";
+	Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (packetSinkUlFilePath);
+	//*stream1->GetStream () << "Packets sent by the UE and received by the remoteHost\n"
+	//											 << "Time" << "\t" << "Size" << std::endl;
+	serverApps.Get(1)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&UlRx, stream1));
+	//----------------------------------------------------------------------------
+
+	// position
+	Simulator::Schedule (Seconds(0.1), &PositionTrace, mcUeNodes.Get(0));
+	std::cout << "MmWaveEnb1 " << mmWaveEnbNodes.Get(0)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
+	std::cout << "MmWaveEnb2 " << mmWaveEnbNodes.Get(1)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
+
+	simTime = ceil(300/speed);
+	std::cout << "Simulation time " << simTime << std::endl;
+  Simulator::Stop (Seconds (simTime));
 
   Simulator::Run ();
 
@@ -265,5 +447,10 @@ int main (int argc, char *argv[])
   // config.ConfigureAttributes ();
 
   Simulator::Destroy ();
+
+	std::cout << "Number of sent packets " << (simTime-appStartTime)/interPacketInterval*1000 << std::endl;
+	std::cout << "Remote Host received " << packetSinkUlRxCounter << " packets" << std::endl;
+	std::cout << "UE received " << packetSinkDlRxCounter << " packets" << std::endl;
+
   return 0;
 }
