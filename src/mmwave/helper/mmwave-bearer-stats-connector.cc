@@ -678,7 +678,7 @@ MmWaveBearerStatsConnector::ConnectTracesUeIfFirstTime (std::string context, uin
       }
       else
       {
-        it->second = numberOfRlc; //One or more DRBs could have been removed
+        //it->second = numberOfRlc; //One or more DRBs could have been removed
         NS_LOG_DEBUG("All RLCs traces are already connected. No need for a call to ConnectDrbTracesUe.");
       }
     }
@@ -731,6 +731,7 @@ MmWaveBearerStatsConnector::ConnectDrbTracesUe (std::string context, uint64_t im
     }
   if (m_pdcpStats)
     {
+      NS_LOG_UNCOND ("connect pdcp traces");
       Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId;

@@ -262,6 +262,12 @@ public:
 	 */
 	void SetBlockageMap (std::map<uint8_t, bool> blockageMap);
 
+	void EnablePdcpTraces (void);
+	void EnableMcTraces (void);
+	void EnableRlcTraces (void);
+	void EnableDlPhyTrace ();
+	void EnableUlPhyTrace ();
+
 protected:
 	virtual void DoInitialize();
 
@@ -279,16 +285,16 @@ private:
 	void AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
 	void AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
 
-	void EnableDlPhyTrace ();
-	void EnableUlPhyTrace ();
+	//void EnableDlPhyTrace ();
+	//void EnableUlPhyTrace ();
 	void EnableEnbPacketCountTrace ();
 	void EnableUePacketCountTrace ();
 	void EnableTransportBlockTrace ();
-	void EnableRlcTraces (void);
+	//void EnableRlcTraces (void);
 	Ptr<MmWaveBearerStatsCalculator> GetRlcStats (void);
-	void EnablePdcpTraces (void);
+	//void EnablePdcpTraces (void);
 	Ptr<MmWaveBearerStatsCalculator> GetPdcpStats (void);
-	void EnableMcTraces (void);
+	//void EnableMcTraces (void);
 	Ptr<McStatsCalculator> GetMcStats (void);
 
 	std::map< uint8_t, Ptr<SpectrumChannel> > m_channel; // mmWave TDD channel
