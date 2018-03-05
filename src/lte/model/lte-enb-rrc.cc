@@ -2961,6 +2961,11 @@ LteEnbRrc::GetTypeId (void)
        IntegerValue(1600),
        MakeIntegerAccessor(&LteEnbRrc::m_crtPeriod),
        MakeIntegerChecker<int>()) // TODO consider using a TimeValue
+   .AddAttribute ("ReportAllUeMeas",
+            "If true, the MmWave eNB sends to the LTE coordinator all the received UE measures (one per CC). If false, it sends only the maximum measures",
+            BooleanValue (true),
+            MakeBooleanAccessor (&LteEnbRrc::m_reportAllUeMeas),
+            MakeBooleanChecker ())
     // Trace sources
     .AddTraceSource ("NewUeContext",
                      "Fired upon creation of a new UE context.",
@@ -3573,17 +3578,56 @@ LteEnbRrc::DoUpdateUeSinrEstimate(LteEnbCphySapUser::UeAssociatedSinrInfo info)
 {
   NS_LOG_FUNCTION(this);
 
-  m_ueImsiSinrMap.clear();
-  m_ueImsiSinrMap.insert(info.ueImsiSinrMap.begin(), info.ueImsiSinrMap.end());
-  NS_LOG_LOGIC("number of SINR reported " << m_ueImsiSinrMap.size());
+  NS_LOG_INFO ("CC " << (uint16_t)info.componentCarrierId << " reports the ueImsiSinrMap");
+  m_ueImsiSinrMap[info.componentCarrierId]=info.ueImsiSinrMap; // store the received report in m_ueImsiSinrMap
+
   // TODO report immediately or with some filtering
   if(m_lteCellId > 0) // i.e., only if a LTE eNB was actually registered in the scenario
                       // (this is done when an X2 interface among mmWave eNBs and LTE eNB is added)
   {
+    // send the report to the LTE coordinator
     EpcX2SapProvider::UeImsiSinrParams params;
     params.targetCellId = m_lteCellId;
     params.sourceCellId = m_cellId;
-    params.ueImsiSinrMap = m_ueImsiSinrMap;
+
+    //if (m_reportAllUeMeas == true)
+    if(false)
+    {
+      params.ueImsiSinrMap = info.ueImsiSinrMap;
+      m_ueImsiSinrMap.clear(); // delete the reports
+    }
+    else
+    {
+      if (m_ueImsiSinrMap.size() == m_numberOfComponentCarriers) // if we received the ueImsiSinrMap report from all the CCs
+      {
+        // Build the ueImsiSinrMapToSend containing, for each UE, the max SINR among all the CCs
+        NS_LOG_DEBUG ("Number of ueImsiSinrMaps in m_ueImsiSinrMap " << (uint16_t)m_ueImsiSinrMap.size() );
+
+        std::map<uint64_t, double> ueImsiSinrMapToSend; // map which contains the max SINR for each UE among the CCs
+        ueImsiSinrMapToSend = m_ueImsiSinrMap.at(0); // initialization
+
+        for(uint8_t cc = 1; cc < m_numberOfComponentCarriers; cc++)
+        {
+          NS_ASSERT_MSG (m_ueImsiSinrMap.find(cc) != m_ueImsiSinrMap.end(), "CC " << (uint16_t)cc << " didn't report the ueImsiSinrMap");
+
+          for (std::map<uint64_t, double>::iterator ue = ueImsiSinrMapToSend.begin(); ue != ueImsiSinrMapToSend.end(); ue++)
+          {
+            NS_ASSERT_MSG (m_ueImsiSinrMap.at(cc).find(ue->first) != m_ueImsiSinrMap.at(cc).end(), "CC " << (uint16_t)cc << " didn't report SINR for UE "<< ue->first );
+
+            NS_LOG_DEBUG ("UE " << ue->first << " current SINR " << ue->second << " is higher than " << m_ueImsiSinrMap.at(cc).at(ue->first) << " ?");
+            if (ue->second < m_ueImsiSinrMap.at(cc).at(ue->first))
+            {
+              NS_LOG_DEBUG ("No, update SINR to " << m_ueImsiSinrMap.at(cc).at(ue->first));
+              ue->second = m_ueImsiSinrMap.at(cc).at(ue->first); // insert the max SINR for this UE among all the CCs
+            }
+          }
+        }
+        params.ueImsiSinrMap = ueImsiSinrMapToSend;
+        m_ueImsiSinrMap.clear(); // delete the reports
+      }
+    }
+
+    NS_LOG_INFO("number of SINR reported " << params.ueImsiSinrMap.size());
     m_x2SapProvider->SendUeSinrUpdate (params);
   }
 

@@ -1890,7 +1890,8 @@ private:
   uint32_t m_firstSibTime;		// time in ms of initial SIB
 
   // for MmWave eNBs
-  ImsiSinrMap m_ueImsiSinrMap;
+  std::map<uint8_t, ImsiSinrMap> m_ueImsiSinrMap; // this map contains the ueImsiSinrMap reports sent by the CCs
+  bool m_reportAllUeMeas; // if true, the MmWave eNB reports to the coordinator all the received UE measures, i.e. one per CC
 
   // for LTE eNBs
   std::map<uint16_t, ImsiSinrMap> m_cellSinrMap;

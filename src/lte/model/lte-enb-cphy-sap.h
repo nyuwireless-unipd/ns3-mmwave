@@ -141,6 +141,7 @@ public:
 
   struct UeAssociatedSinrInfo
   {
+    uint8_t componentCarrierId;
     std::map<uint64_t, double> ueImsiSinrMap;
   };
 
