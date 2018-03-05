@@ -387,7 +387,7 @@ AntennaArrayModel::GetAntennaLocation(uint8_t index, uint8_t* antennaNum)
 	Vector loc;
 	loc.x = 0;
 	loc.y = m_disH* (index % antennaNum[0]);
-	loc.z = m_disV* (index / antennaNum[1]);
+	loc.z = m_disV* floor(index / antennaNum[0]);
 	return loc;
 }
 
