@@ -124,7 +124,7 @@ int main (int argc, char *argv[])
 	double speed = 3;
 	bool reportAllUeMeas = false;
 	bool useOneMmWaveCc = false;
-	uint8_t interPacketInterval = 1;
+	double interPacketInterval = 1000;
 
 	CommandLine cmd;
   cmd.AddValue("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
@@ -138,7 +138,7 @@ int main (int argc, char *argv[])
 	cmd.AddValue("speed", "Speed in the x direction [m/s]",speed);
 	cmd.AddValue("reportAllUeMeas", "Report the measures from all the CCs or only the max values", reportAllUeMeas);
 	cmd.AddValue("useOneMmWaveCc", "Use one CC for mmWave", useOneMmWaveCc);
-	cmd.AddValue("interPacketInterval", "inter-packet interval [ms]", interPacketInterval);
+	cmd.AddValue("interPacketInterval", "inter-packet interval [us]", interPacketInterval);
   cmd.Parse (argc, argv);
 
 	// RNG
@@ -252,7 +252,14 @@ int main (int argc, char *argv[])
   Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
 	Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(true));
 	Config::SetDefault("ns3::MmWaveHelper::HarqEnabled",BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault("ns3::LteEnbRrc::ReportAllUeMeas",BooleanValue(reportAllUeMeas));
+
+	Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue(false));
+  Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(2.0)));
+  Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
+  Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
+  Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
   std::string scenario = "UMa";
@@ -268,6 +275,14 @@ int main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue(true)); // use blockage model with UT in portrait mode
   Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
   Config::SetDefault ("ns3::MmWave3gppChannel::BlockerSpeed", DoubleValue(1)); // speed of non-self blocking obstacles
+
+	// core network
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MilliSeconds(1)));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue(DataRate ("1000Gb/s")));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue(10000));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds(1000)));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MilliSeconds(10))); // MME latency
+
 
   // create the helper
   Ptr<MmWaveHelper> mmWaveHelper = CreateObject<MmWaveHelper> ();
@@ -318,16 +333,16 @@ int main (int argc, char *argv[])
   mcUeNodes.Create (1);
 
  // MOBILITY
-	Vector mcUeInitialPos = Vector (-150.0, -35, 1.6);
-	double mmWaveEnbDist = 400;
+	Vector mcUeInitialPos = Vector (-120.0, -30, 1.6);
+	double mmWaveEnbDist = 150;
 	Vector mcUeVelocity = Vector (speed, 0, 0);
 
   // set enb mobility
 	// mmW eNB 1 ------------------- LTE eNB ------------------- mmW eNB2
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  enbPositionAlloc->Add (Vector (0.0, 0.0, 30.0));
-	enbPositionAlloc->Add (Vector (-mmWaveEnbDist/2, 25.0, 15.0));
-	enbPositionAlloc->Add (Vector (+mmWaveEnbDist/2, 25.0, 15.0));
+  enbPositionAlloc->Add (Vector (0, 0, 30.0));
+	enbPositionAlloc->Add (Vector (0, 0, 15.0));
+	enbPositionAlloc->Add (Vector (-mmWaveEnbDist, 0, 15.0));
 
 
   MobilityHelper enbmobility;
@@ -393,17 +408,17 @@ int main (int argc, char *argv[])
   serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
 
   UdpClientHelper dlClient (ueIpIface.GetAddress (0), dlPort);
-  dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+  dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval/1000)));
   dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
   UdpClientHelper ulClient (remoteHostAddr, ulPort);
-  ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval)));
+  ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval/1000)));
   ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
   clientApps.Add (dlClient.Install (remoteHost));
   clientApps.Add (ulClient.Install (mcUeNodes.Get(0)));
 
-	double appStartTime = 0.01;
+	double appStartTime = 0.1;
   serverApps.Start (Seconds (appStartTime));
   clientApps.Start (Seconds (appStartTime));
 
@@ -437,7 +452,7 @@ int main (int argc, char *argv[])
 	std::cout << "MmWaveEnb1 " << mmWaveEnbNodes.Get(0)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
 	std::cout << "MmWaveEnb2 " << mmWaveEnbNodes.Get(1)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
 
-	simTime = ceil(300/speed);
+	simTime = ceil(200/speed);
 	std::cout << "Simulation time " << simTime << std::endl;
   Simulator::Stop (Seconds (simTime));
 
@@ -448,7 +463,7 @@ int main (int argc, char *argv[])
 
   Simulator::Destroy ();
 
-	std::cout << "Number of sent packets " << (simTime-appStartTime)/interPacketInterval*1000 << std::endl;
+	std::cout << "Number of sent packets " << (simTime-appStartTime)/interPacketInterval*1e6 << std::endl;
 	std::cout << "Remote Host received " << packetSinkUlRxCounter << " packets" << std::endl;
 	std::cout << "UE received " << packetSinkDlRxCounter << " packets" << std::endl;
 
