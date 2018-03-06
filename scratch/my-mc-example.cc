@@ -408,11 +408,11 @@ int main (int argc, char *argv[])
   serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
 
   UdpClientHelper dlClient (ueIpIface.GetAddress (0), dlPort);
-  dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval/1000)));
+  dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
   dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
   UdpClientHelper ulClient (remoteHostAddr, ulPort);
-  ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds(interPacketInterval/1000)));
+  ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
   ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
 
   clientApps.Add (dlClient.Install (remoteHost));
@@ -426,9 +426,9 @@ int main (int argc, char *argv[])
   //mmWaveHelper->EnableTraces (); // enable all the Traces
 	mmWaveHelper->EnableMcTraces();
 	mmWaveHelper->EnablePdcpTraces();
-	//mmWaveHelper->EnableDlPhyTrace ();
-	//mmWaveHelper->EnableUlPhyTrace ();
-  //Traces(); // mac tx traces
+	mmWaveHelper->EnableDlPhyTrace ();
+	mmWaveHelper->EnableUlPhyTrace ();
+  Traces(); // mac tx traces
 
 	// -------------------APPLICATION LAYER TRACES -------------------------------
 	// 1. packets sent by the remoteHost and received by the UE
@@ -452,7 +452,7 @@ int main (int argc, char *argv[])
 	std::cout << "MmWaveEnb1 " << mmWaveEnbNodes.Get(0)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
 	std::cout << "MmWaveEnb2 " << mmWaveEnbNodes.Get(1)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
 
-	simTime = ceil(200/speed);
+	simTime = ceil(100/speed);
 	std::cout << "Simulation time " << simTime << std::endl;
   Simulator::Stop (Seconds (simTime));
 

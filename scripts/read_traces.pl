@@ -13,7 +13,7 @@ use feature "switch";
 
 use Data::Dumper qw(Dumper); # to parse arguments from the CommandLine
 
-use Statistics::Descriptive; # to compute mean and variance
+# use Statistics::Descriptive; # to compute mean and variance
                              # http://search.cpan.org/~shlomif/Statistics-Descriptive-3.0612/lib/Statistics/Descriptive.pm
 
 # use Scalar::Util qw(looks_like_number); # this is useful to check wheater a
