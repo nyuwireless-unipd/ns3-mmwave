@@ -84,7 +84,7 @@ ChangeSpeed (Ptr<Node> n, Vector speed)
 }
 
 void
-Traces(void)
+Traces(std::string outPath)
 {
 	//std::string path = "/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbMac/DlScheduling";
 	/*std::string filePath = "DlSchedTrace.txt";
@@ -94,14 +94,14 @@ Traces(void)
 	Config::ConnectWithoutContext (path, MakeBoundCallback(&DlSchedTrace, stream));*/
 
 	std::string dlTxMacPath = "/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbMac/TxMacPacketTraceEnb";
-	std::string dlTxMacFilePath = "DlTxMac.txt";
+	std::string dlTxMacFilePath = outPath + "/DlTxMac.txt";
 	AsciiTraceHelper dlTxMacAsciiTraceHelper;
 	Ptr<OutputStreamWrapper> dlTxMacStream = dlTxMacAsciiTraceHelper.CreateFileStream (dlTxMacFilePath);
 	//*stream->GetStream () << "Time" << "\t" << "CC" << '\t' << "sizeTb1" << std::endl;
 	Config::ConnectWithoutContext (dlTxMacPath, MakeBoundCallback(&TxMacPacketTrace, dlTxMacStream));
 
 	std::string ulTxMacPath = "/NodeList/*/DeviceList/*/MmWaveComponentCarrierMapUe/*/MmWaveUeMac/TxMacPacketTraceUe";
-	std::string ulTxMacFilePath = "UlTxMac.txt";
+	std::string ulTxMacFilePath = outPath + "UlTxMac.txt";
 	AsciiTraceHelper ulTxMacAsciiTraceHelper;
 	Ptr<OutputStreamWrapper> ulTxMacStream = ulTxMacAsciiTraceHelper.CreateFileStream (ulTxMacFilePath);
 	//*stream->GetStream () << "Time" << "\t" << "CC" << '\t' << "sizeTb1" << std::endl;
@@ -428,7 +428,7 @@ int main (int argc, char *argv[])
 	mmWaveHelper->EnablePdcpTraces();
 	mmWaveHelper->EnableDlPhyTrace ();
 	mmWaveHelper->EnableUlPhyTrace ();
-  Traces(); // mac tx traces
+  Traces(filePath); // mac tx traces
 
 	// -------------------APPLICATION LAYER TRACES -------------------------------
 	// 1. packets sent by the remoteHost and received by the UE
