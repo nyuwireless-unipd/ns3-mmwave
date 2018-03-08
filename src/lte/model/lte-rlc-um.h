@@ -60,9 +60,9 @@ public:
   /**
    * MAC SAP
    */
-  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
+  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
   virtual void DoNotifyHarqDeliveryFailure ();
-  virtual void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
+  virtual void DoReceivePdu (Ptr<Packet> p);
 
   std::vector < Ptr<Packet> > GetTxBuffer();
   uint32_t GetTxBufferSize()
@@ -126,6 +126,9 @@ private:
    * Expected Sequence Number
    */
   SequenceNumber10 m_expectedSeqNumber;
+
+  Time m_rbsTimerValue;
+  Time m_reorderingTimerValue;
 };
 
 
