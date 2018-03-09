@@ -118,13 +118,18 @@ int main (int argc, char *argv[])
 	double mmWaveCc1Freq = 73e9;
 	double mmWaveCc0Bw = 1; // in GHz
 	double mmWaveCc1Bw = 1; // in GHz
-	double simTime;
+	double simTime = 0;
 	std::string filePath;
 	uint8_t runSet = 1;
-	double speed = 3;
+	double speed = 3.0;
 	bool reportAllUeMeas = false;
 	bool useOneMmWaveCc = false;
 	double interPacketInterval = 1000;
+	bool useRlcUm = false;
+	uint8_t hoMode = 3;
+	double bsrTimer = 2.0;
+	double reorderingTimer = 1.0;
+	bool useHarq = true;
 
 	CommandLine cmd;
   cmd.AddValue("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
@@ -132,13 +137,18 @@ int main (int argc, char *argv[])
 	cmd.AddValue("mmWaveCc1Freq", "CC1 central frequency [Hz]", mmWaveCc1Freq);
 	cmd.AddValue("mmWaveCc0Bw", "CC0 bandwidth (in GHz)", mmWaveCc0Bw);
 	cmd.AddValue("mmWaveCc1Bw", "CC1 bandwidth (in GHz)", mmWaveCc1Bw);
-  //cmd.AddValue("simTime", "Simulation time", simTime);
+  cmd.AddValue("simTime", "Simulation time", simTime);
   cmd.AddValue("filePath", "Where to put the output files", filePath);
   cmd.AddValue("runSet", "Run number", runSet);
 	cmd.AddValue("speed", "Speed in the x direction [m/s]",speed);
 	cmd.AddValue("reportAllUeMeas", "Report the measures from all the CCs or only the max values", reportAllUeMeas);
 	cmd.AddValue("useOneMmWaveCc", "Use one CC for mmWave", useOneMmWaveCc);
 	cmd.AddValue("interPacketInterval", "inter-packet interval [us]", interPacketInterval);
+	cmd.AddValue("useRlcUm", "Use rlc um", useRlcUm);
+	cmd.AddValue("hoMode", "1.Threshold, 2.FixedTtt, 3.DynamicTtt", hoMode);
+	cmd.AddValue("bsrTimer", "BSR timer RlcAm [ms]", bsrTimer);
+	cmd.AddValue("reorderingTimer", "reordering timer [ms]", reorderingTimer);
+	cmd.AddValue("useHarq", "use HARQ", useHarq);
   cmd.Parse (argc, argv);
 
 	// RNG
@@ -167,16 +177,33 @@ int main (int argc, char *argv[])
 	Config::SetDefault("ns3::CoreNetworkStatsCalculator::X2FileName", StringValue(filePath + "X2Stats.txt"));
 	Config::SetDefault("ns3::CoreNetworkStatsCalculator::S1MmeFileName", StringValue(filePath + "MmeStats.txt"));
 
-	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(useHarq));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue(200.0));
 	Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue(100));
+
 	Config::SetDefault("ns3::LteEnbRrc::ReportAllUeMeas",BooleanValue(reportAllUeMeas));
+	switch(hoMode)
+	{
+	case 1:
+			Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(LteEnbRrc::THRESHOLD));
+			break;
+	case 2:
+			Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(LteEnbRrc::FIXED_TTT));
+			break;
+	case 3:
+			Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(LteEnbRrc::DYNAMIC_TTT));
+			break;
+	}
+	Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 
 	Config::SetDefault ("ns3::LteRlcAm::EnableAQM", BooleanValue(false));
 	Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(2.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
+	Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(reorderingTimer)));
 	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
+	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(bsrTimer)));
+	Config::SetDefault ("ns3::LteRlcUm::ReorderingTimer", TimeValue(MilliSeconds(reorderingTimer)));
+	Config::SetDefault ("ns3::LteRlcUm::ReportBufferStatusTimer", TimeValue(MilliSeconds(bsrTimer)));
+
 
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
@@ -278,13 +305,35 @@ int main (int argc, char *argv[])
 	Config::SetDefault("ns3::MmWaveHelper::LteUseCa",BooleanValue(lteCcMap.size()>1));
 	Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers",UintegerValue(mmWaveCcMap.size()));
 	Config::SetDefault("ns3::MmWaveHelper::NumberOfLteComponentCarriers",UintegerValue(lteCcMap.size()));
-	Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveBaRrComponentCarrierManager"));
-	Config::SetDefault("ns3::MmWaveHelper::LteEnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
+	if (mmWaveCcMap.size()>1)
+	{
+		if(useRR)
+		{
+			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveRrComponentCarrierManager"));
+		}
+		else
+		{
+			Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveBaRrComponentCarrierManager"));
+		}
+	}
+	else
+	{
+		Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveNoOpComponentCarrierManager"));
+	}
+
+	if (lteCcMap.size()>1)
+	{
+		Config::SetDefault("ns3::MmWaveHelper::LteEnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
+	}
+	else
+	{
+		Config::SetDefault("ns3::MmWaveHelper::LteEnbComponentCarrierManager",StringValue ("ns3::NoOpComponentCarrierManager"));
+	}
 	//Config::SetDefault("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 	Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
 	Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
-	Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(true));
-	Config::SetDefault("ns3::MmWaveHelper::HarqEnabled",BooleanValue(true));
+	Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(!useRlcUm));
+	Config::SetDefault("ns3::MmWaveHelper::HarqEnabled",BooleanValue(useHarq));
 
   // create the helper
   Ptr<MmWaveHelper> mmWaveHelper = CreateObject<MmWaveHelper> ();
@@ -430,6 +479,7 @@ int main (int argc, char *argv[])
 	mmWaveHelper->EnablePdcpTraces();
 	mmWaveHelper->EnableDlPhyTrace ();
 	mmWaveHelper->EnableUlPhyTrace ();
+	//mmWaveHelper->EnableRlcTraces ();
   Traces(filePath); // mac tx traces
 
 	// -------------------APPLICATION LAYER TRACES -------------------------------
@@ -454,7 +504,10 @@ int main (int argc, char *argv[])
 	std::cout << "MmWaveEnb1 " << mmWaveEnbNodes.Get(0)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
 	std::cout << "MmWaveEnb2 " << mmWaveEnbNodes.Get(1)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
 
-	simTime = ceil(100/speed);
+	if (simTime == 0)
+	{
+		simTime = ceil(100/speed);
+	}
 	std::cout << "Simulation time " << simTime << std::endl;
   Simulator::Stop (Seconds (simTime));
 
