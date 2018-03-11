@@ -344,11 +344,11 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 		Ptr<McUeNetDevice> rxMcUe = 0;
 		rxMcUe = DynamicCast<McUeNetDevice> (GetDevice ());
 
-		if ((ueRx!=0) && (ueRx->GetPhy ()->IsReceptionEnabled () == false))
+		if ((ueRx!=0) && (ueRx->GetPhy (m_componentCarrierId)->IsReceptionEnabled () == false))
 		{	// if the first cast is 0 (the device is MC) then this if will not be executed
 			isAllocated = false;
 		}
-		else if ((rxMcUe != 0) && (rxMcUe->GetMmWavePhy()->IsReceptionEnabled() == false))
+		else if ((rxMcUe != 0) && (rxMcUe->GetMmWavePhy(m_componentCarrierId)->IsReceptionEnabled() == false))
 		{	// this is executed if the device is MC and is transmitting
 			isAllocated = false;
 		}
