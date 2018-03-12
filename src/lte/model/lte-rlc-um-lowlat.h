@@ -141,6 +141,7 @@ private:
 
   bool m_bsrReported;
 
+  bool m_sendBsrWhenPacketTx;
 };
 
 

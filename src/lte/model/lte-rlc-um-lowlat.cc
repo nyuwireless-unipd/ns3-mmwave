@@ -96,6 +96,11 @@ LteRlcUmLowLat::GetTypeId (void)
 									TimeValue (MilliSeconds (100.0)),
 									MakeTimeAccessor (&LteRlcUmLowLat::m_reorderingTimeExpires),
 									MakeTimeChecker ())
+    .AddAttribute ("SendBsrWhenPacketTx",
+ 									"Call DoReportBufferStatus at the end of DoNotifyTxOpportunity",
+                  BooleanValue (false),
+        					MakeBooleanAccessor (&LteRlcUmLowLat::m_sendBsrWhenPacketTx),
+        					MakeBooleanChecker ())
     ;
   return tid;
 }
@@ -451,9 +456,11 @@ LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t ha
       m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
     }
 
-  m_bsrReported = false;
-
-  DoReportBufferStatus ();
+  m_bsrReported = false; // buffer size has changed
+  if (m_sendBsrWhenPacketTx)
+  {
+    DoReportBufferStatus ();
+  }
 }
 
 void
