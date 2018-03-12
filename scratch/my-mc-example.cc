@@ -38,6 +38,7 @@ using namespace ns3;
 
 int packetSinkDlRxCounter = 0;
 int packetSinkUlRxCounter = 0;
+int numOfTxPackets = 0;
 
 void
 DlSchedTrace (Ptr<OutputStreamWrapper> stream, DlSchedulingCallbackInfo params)
@@ -110,6 +111,18 @@ Traces(std::string outPath)
 
 }
 
+void
+LossRateTrace (std::string outPath)
+{
+	std::string lossRateFilePath = outPath + "/LossRate.txt";
+	AsciiTraceHelper lossRateAsciiTraceHelper;
+	Ptr<OutputStreamWrapper> lossRateStream = lossRateAsciiTraceHelper.CreateFileStream (lossRateFilePath);
+
+	double dlLossRate = 1-std::min(numOfTxPackets, packetSinkDlRxCounter)/(double)numOfTxPackets;
+	double ulLossRate = 1-std::min(numOfTxPackets, packetSinkUlRxCounter)/(double)numOfTxPackets;
+	*lossRateStream->GetStream () << dlLossRate << "\t" << ulLossRate << std::endl;
+}
+
 
 int main (int argc, char *argv[])
 {
@@ -130,6 +143,7 @@ int main (int argc, char *argv[])
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0;
 	bool useHarq = true;
+	bool sendBsrWhenPacketTx = false;
 
 	CommandLine cmd;
   cmd.AddValue("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
@@ -146,9 +160,10 @@ int main (int argc, char *argv[])
 	cmd.AddValue("interPacketInterval", "inter-packet interval [us]", interPacketInterval);
 	cmd.AddValue("useRlcUm", "Use rlc um", useRlcUm);
 	cmd.AddValue("hoMode", "1.Threshold, 2.FixedTtt, 3.DynamicTtt", hoMode);
-	cmd.AddValue("bsrTimer", "BSR timer RlcAm [ms]", bsrTimer);
+	cmd.AddValue("bsrTimer", "BSR timer [ms]", bsrTimer);
 	cmd.AddValue("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue("useHarq", "use HARQ", useHarq);
+	cmd.AddValue("sendBsrWhenPacketTx", "send BSR at each tx (LteRlcUmLowLat)", sendBsrWhenPacketTx);
   cmd.Parse (argc, argv);
 
 	// RNG
@@ -203,7 +218,7 @@ int main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(bsrTimer)));
 	Config::SetDefault ("ns3::LteRlcUm::ReorderingTimer", TimeValue(MilliSeconds(reorderingTimer)));
 	Config::SetDefault ("ns3::LteRlcUm::ReportBufferStatusTimer", TimeValue(MilliSeconds(bsrTimer)));
-
+	Config::SetDefault ("ns3::LteRlcUmLowLat::SendBsrWhenPacketTx", BooleanValue(sendBsrWhenPacketTx));
 
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
@@ -280,10 +295,13 @@ int main (int argc, char *argv[])
 
 	//create the ccMap
 	std::map<uint8_t, MmWaveComponentCarrier > mmWaveCcMap;
+	std::map<uint8_t, bool> mmWaveBlockageMap;
 	mmWaveCcMap [0] = *mmWaveCc0;
+	mmWaveBlockageMap[0] = false;
 	if(useOneMmWaveCc == false)
 	{
 		mmWaveCcMap [1] = *mmWaveCc1;
+		mmWaveBlockageMap[1] = false;
 	}
 
   // print mmWave CC parameters
@@ -339,6 +357,7 @@ int main (int argc, char *argv[])
   Ptr<MmWaveHelper> mmWaveHelper = CreateObject<MmWaveHelper> ();
   mmWaveHelper->SetLteCcPhyParams (lteCcMap);
   mmWaveHelper->SetCcPhyParams (mmWaveCcMap);
+	mmWaveHelper->SetBlockageMap (mmWaveBlockageMap);
 
   Ptr<MmWavePointToPointEpcHelper> epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
   mmWaveHelper->SetEpcHelper (epcHelper);
@@ -469,9 +488,19 @@ int main (int argc, char *argv[])
   clientApps.Add (dlClient.Install (remoteHost));
   clientApps.Add (ulClient.Install (mcUeNodes.Get(0)));
 
+	if (simTime == 0)
+	{
+		simTime = ceil(100/speed);
+	}
 	double appStartTime = 0.1;
+	double appEndTime = simTime-0.1;
+	std::cout << "Simulation time " << simTime << std::endl;
+	std::cout << "ServerApps start at " << appStartTime << " and end at " << appEndTime <<  std::endl;
+	std::cout << "ClientApps start at " << appStartTime << " and end at " << simTime << std::endl;
+
   serverApps.Start (Seconds (appStartTime));
   clientApps.Start (Seconds (appStartTime));
+	clientApps.Stop (Seconds (appEndTime));
 
 
   //mmWaveHelper->EnableTraces (); // enable all the Traces
@@ -501,14 +530,7 @@ int main (int argc, char *argv[])
 
 	// position
 	Simulator::Schedule (Seconds(0.1), &PositionTrace, mcUeNodes.Get(0));
-	std::cout << "MmWaveEnb1 " << mmWaveEnbNodes.Get(0)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
-	std::cout << "MmWaveEnb2 " << mmWaveEnbNodes.Get(1)->GetObject<MobilityModel>()->GetPosition()<<std::endl;
 
-	if (simTime == 0)
-	{
-		simTime = ceil(100/speed);
-	}
-	std::cout << "Simulation time " << simTime << std::endl;
   Simulator::Stop (Seconds (simTime));
 
   Simulator::Run ();
@@ -518,7 +540,11 @@ int main (int argc, char *argv[])
 
   Simulator::Destroy ();
 
-	std::cout << "Number of sent packets " << (simTime-appStartTime)/interPacketInterval*1e6 << std::endl;
+	numOfTxPackets = std::floor((appEndTime-appStartTime)/interPacketInterval*1e6);
+
+	LossRateTrace (filePath);
+
+	std::cout << "Number of sent packets " << numOfTxPackets << std::endl;
 	std::cout << "Remote Host received " << packetSinkUlRxCounter << " packets" << std::endl;
 	std::cout << "UE received " << packetSinkDlRxCounter << " packets" << std::endl;
 
