@@ -21,7 +21,6 @@
 
 #include "ns3/core-module.h"
 #include "ns3/config-store.h"
-#include <ns3/buildings-helper.h>
 #include "ns3/component-carrier.h"
 #include "ns3/cc-helper.h"
 #include "ns3/mmwave-helper.h"
@@ -33,8 +32,17 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/log.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
+#include "ns3/lte-ue-net-device.h"
+#include "ns3/mmwave-ue-net-device.h"
+#include "ns3/mc-ue-net-device.h"
+#include <ns3/buildings-helper.h>
+#include <ns3/buildings-module.h>
+#include "ns3/network-module.h"
+
 
 using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("MyMcExample");
 
 int packetSinkDlRxCounter = 0;
 int packetSinkUlRxCounter = 0;
@@ -79,9 +87,115 @@ PositionTrace(Ptr<Node> n)
 }
 
 void
-ChangeSpeed (Ptr<Node> n, Vector speed)
+PrintGnuplottableBuildingListToFile (std::string filename)
 {
-	n->GetObject<ConstantVelocityMobilityModel>()->SetVelocity(speed);
+  std::ofstream outFile;
+  outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::trunc);
+  if (!outFile.is_open ())
+    {
+      NS_LOG_ERROR ("Can't open file " << filename);
+      return;
+    }
+
+	outFile << "set xrange [-200:200]" << std::endl;
+	outFile << "set yrange [-200:200]" << std::endl;
+	outFile << "unset key" << std::endl;
+	outFile << "set grid" << std::endl;
+
+  uint32_t index = 0;
+  for (BuildingList::Iterator it = BuildingList::Begin (); it != BuildingList::End (); ++it)
+    {
+      ++index;
+      Box box = (*it)->GetBoundaries ();
+      outFile << "set object " << index
+              << " rect from " << box.xMin  << "," << box.yMin
+              << " to "   << box.xMax  << "," << box.yMax
+              //<< " height " << box.zMin << "," << box.zMax
+              << " front fs empty "
+              << std::endl;
+    }
+}
+
+void
+PrintGnuplottableEnbListToFile (std::string filename)
+{
+  std::ofstream outFile;
+  outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::app);
+  if (!outFile.is_open ())
+    {
+      NS_LOG_ERROR ("Can't open file " << filename);
+      return;
+    }
+  for (NodeList::Iterator it = NodeList::Begin (); it != NodeList::End (); ++it)
+    {
+      Ptr<Node> node = *it;
+      int nDevs = node->GetNDevices ();
+      for (int j = 0; j < nDevs; j++)
+        {
+          Ptr<LteEnbNetDevice> enbdev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
+          Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+          if (enbdev)
+            {
+              Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+              outFile << "set label \"" << enbdev->GetCellId ()
+                      << "\" at "<< pos.x << "," << pos.y
+                      << " left font \"Helvetica,8\" textcolor rgb \"blue\" front  point pt 7 ps 0.5 lc rgb \"blue\" offset 0,0"
+                      << std::endl;
+            }
+          else if (mmdev)
+            {
+              Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+              outFile << "set label \"" << mmdev->GetCellId ()
+                      << "\" at "<< pos.x << "," << pos.y
+                      << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 7 ps 0.5 lc rgb \"red\" offset 0,0"
+                      << std::endl;
+            }
+        }
+    }
+}
+
+void
+PrintGnuplottableUeListToFile (std::string filename)
+{
+  std::ofstream outFile;
+  outFile.open (filename.c_str (), std::ios_base::out | std::ios_base::app);
+  if (!outFile.is_open ())
+    {
+      NS_LOG_ERROR ("Can't open file " << filename);
+      return;
+    }
+  for (NodeList::Iterator it = NodeList::Begin (); it != NodeList::End (); ++it)
+    {
+      Ptr<Node> node = *it;
+      int nDevs = node->GetNDevices ();
+      for (int j = 0; j < nDevs; j++)
+        {
+          Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
+          Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
+          if (uedev)
+            {
+              Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+              outFile << "set label \"" << uedev->GetImsi ()
+                      << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
+                      << std::endl;
+            }
+          else if (mmuedev)
+           {
+              Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+              outFile << "set label \"" << mmuedev->GetImsi ()
+                      << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
+                      << std::endl;
+            }
+          else if (mcuedev)
+           {
+              Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
+              outFile << "set label \"" << mcuedev->GetImsi ()
+                      << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
+                      << std::endl;
+            }
+        }
+    }
 }
 
 void
@@ -123,6 +237,73 @@ LossRateTrace (std::string outPath)
 	*lossRateStream->GetStream () << dlLossRate << "\t" << ulLossRate << std::endl;
 }
 
+bool
+AreOverlapping(Box a, Box b)
+{
+  return !((a.xMin > b.xMax) || (b.xMin > a.xMax) || (a.yMin > b.yMax) || (b.yMin > a.yMax) );
+}
+
+bool
+OverlapWithAnyPrevious(Box box, std::list<Box> m_previousBlocks)
+{
+  for (std::list<Box>::iterator it = m_previousBlocks.begin(); it != m_previousBlocks.end(); ++it)
+  {
+    if (AreOverlapping(*it,box))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::pair<Box, std::list<Box>>
+GenerateBuildingBounds(double xMin, double xMax, double yMin, double yMax, double maxBuildSize, std::list<Box> m_previousBlocks )
+{
+
+  Ptr<UniformRandomVariable> xMinBuilding = CreateObject<UniformRandomVariable>();
+  xMinBuilding->SetAttribute("Min",DoubleValue(xMin));
+  xMinBuilding->SetAttribute("Max",DoubleValue(xMax-1)); // 1 m is the minimum size
+
+  NS_LOG_UNCOND("min " << xMin << " max " << xMax);
+
+  Ptr<UniformRandomVariable> yMinBuilding = CreateObject<UniformRandomVariable>();
+  yMinBuilding->SetAttribute("Min",DoubleValue(yMin));
+  yMinBuilding->SetAttribute("Max",DoubleValue(yMax-1)); // 1 m is the minimum size
+
+  NS_LOG_UNCOND("min " << yMin << " max " << yMax);
+
+  Box box;
+  uint32_t attempt = 0;
+  do
+  {
+    NS_ASSERT_MSG(attempt < 100, "Too many failed attempts to position non-overlapping buildings. Maybe area too small or too many buildings?");
+    box.xMin = xMinBuilding->GetValue();
+
+    Ptr<UniformRandomVariable> xMaxBuilding = CreateObject<UniformRandomVariable>();
+    xMaxBuilding->SetAttribute("Min",DoubleValue(box.xMin + 1)); // 1 m is the minimum size
+    xMaxBuilding->SetAttribute("Max",DoubleValue(box.xMin + maxBuildSize));
+    box.xMax = xMaxBuilding->GetValue();
+
+    box.yMin = yMinBuilding->GetValue();
+
+    Ptr<UniformRandomVariable> yMaxBuilding = CreateObject<UniformRandomVariable>();
+    yMaxBuilding->SetAttribute("Min",DoubleValue(box.yMin + 1)); // 1 m is the minimum size
+    yMaxBuilding->SetAttribute("Max",DoubleValue(box.yMin + maxBuildSize));
+    box.yMax = yMaxBuilding->GetValue();
+
+    ++attempt;
+  }
+  while (OverlapWithAnyPrevious (box, m_previousBlocks));
+
+
+  NS_LOG_UNCOND("Building in coordinates (" << box.xMin << " , " << box.yMin << ") and ("  << box.xMax << " , " << box.yMax <<
+    ") accepted after " << attempt << " attempts");
+  m_previousBlocks.push_back(box);
+  std::pair<Box, std::list<Box>> pairReturn = std::make_pair(box,m_previousBlocks);
+  return pairReturn;
+
+}
+
 
 int main (int argc, char *argv[])
 {
@@ -133,7 +314,7 @@ int main (int argc, char *argv[])
 	double mmWaveCc1Bw = 1; // in GHz
 	double simTime = 0;
 	std::string filePath;
-	uint8_t runSet = 1;
+	int runSet = 1;
 	double speed = 3.0;
 	bool reportAllUeMeas = false;
 	bool useOneMmWaveCc = false;
@@ -143,7 +324,8 @@ int main (int argc, char *argv[])
 	double bsrTimer = 2.0;
 	double reorderingTimer = 1.0;
 	bool useHarq = true;
-	bool sendBsrWhenPacketTx = false;
+	bool sendBsrWhenPacketTx = true;
+	bool useBuilding = true;
 
 	CommandLine cmd;
   cmd.AddValue("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
@@ -164,6 +346,7 @@ int main (int argc, char *argv[])
 	cmd.AddValue("reorderingTimer", "reordering timer [ms]", reorderingTimer);
 	cmd.AddValue("useHarq", "use HARQ", useHarq);
 	cmd.AddValue("sendBsrWhenPacketTx", "send BSR at each tx (LteRlcUmLowLat)", sendBsrWhenPacketTx);
+	cmd.AddValue("useBuilding", "use the building module", useBuilding);
   cmd.Parse (argc, argv);
 
 	// RNG
@@ -229,6 +412,9 @@ int main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
   Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Shadowing", BooleanValue(false)); // enable or disable the shadowing effect
   Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar", BooleanValue(false)); // enable or disable the shadowing effect
+
+	Config::SetDefault ("ns3::MmWave3gppBuildingsPropagationLossModel::UpdateCondition", BooleanValue(true)); // enable or disable the LOS/NLOS update when the UE moves
+
 
   Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue (MilliSeconds (100))); // Set channel update period, 0 stands for no update.
   Config::SetDefault ("ns3::MmWave3gppChannel::CellScan", BooleanValue(false)); // Set true to use cell scanning method, false to use the default power method.
@@ -349,7 +535,14 @@ int main (int argc, char *argv[])
 	}
 	//Config::SetDefault("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 	Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
-	Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
+	if(useBuilding)
+	{
+		Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppBuildingsPropagationLossModel"));
+	}
+	else
+	{
+		Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
+	}
 	Config::SetDefault("ns3::MmWaveHelper::RlcAmEnabled",BooleanValue(!useRlcUm));
 	Config::SetDefault("ns3::MmWaveHelper::HarqEnabled",BooleanValue(useHarq));
 
@@ -402,17 +595,61 @@ int main (int argc, char *argv[])
 	mmWaveEnbNodes.Add (enbNodes.Get (2));
   mcUeNodes.Create (1);
 
+	/* Create the building */
+	 double streetWidth = 0;
+	 double blockSize = 20;
+	 double maxObstacleSize = blockSize - streetWidth;
+
+
+	 double maxXAxis = 100;
+	 double maxYAxis = 50;
+	 uint32_t numBlocks = 7;
+
+	 std::vector<Ptr<Building> > buildingVector;
+	 std::list<Box>  m_previousBlocks;
+
+	 for(uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
+	 {
+		 Ptr < Building > building;
+		 building = Create<Building> ();
+		 /* returns a vecotr where:
+		 * position [0]: coordinates for x min
+		 * position [1]: coordinates for x max
+		 * position [2]: coordinates for y min
+		 * position [3]: coordinates for y max
+		 */
+
+		 std::pair<Box, std::list<Box>> pairBuildings = GenerateBuildingBounds(0, maxXAxis-maxObstacleSize, 0, maxYAxis-maxObstacleSize, maxObstacleSize, m_previousBlocks);
+		 m_previousBlocks = std::get<1>(pairBuildings);
+	 	 Box box = std::get<0>(pairBuildings);
+
+		 Ptr<UniformRandomVariable> randomBuildingZ = CreateObject<UniformRandomVariable>();
+		 randomBuildingZ->SetAttribute("Min",DoubleValue(1.6));
+		 randomBuildingZ->SetAttribute("Max",DoubleValue(50));
+		 double buildingHeight = randomBuildingZ->GetValue();
+
+		 building->SetBoundaries (Box(box.xMin, box.xMax,
+																	 box.yMin,  box.yMax,
+																	 0.0, buildingHeight));
+
+		 building->SetNRoomsX(1);
+		 building->SetNRoomsY(1);
+		 building->SetNFloors(1);
+		 buildingVector.push_back(building);
+	 }
+		/* END Create the building */
+
+
  // MOBILITY
-	Vector mcUeInitialPos = Vector (-120.0, -30, 1.6);
-	double mmWaveEnbDist = 150;
+	Vector mcUeInitialPos = Vector (30, -5, 1.6);
 	Vector mcUeVelocity = Vector (speed, 0, 0);
 
   // set enb mobility
 	// mmW eNB 1 ------------------- LTE eNB ------------------- mmW eNB2
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  enbPositionAlloc->Add (Vector (0, 0, 30.0));
-	enbPositionAlloc->Add (Vector (0, 0, 15.0));
-	enbPositionAlloc->Add (Vector (-mmWaveEnbDist, 0, 15.0));
+  enbPositionAlloc->Add (Vector (maxXAxis, maxYAxis, 30.0));
+	enbPositionAlloc->Add (Vector (maxXAxis, maxYAxis, 15.0));
+	enbPositionAlloc->Add (Vector (0, maxYAxis, 15.0));
 
 
   MobilityHelper enbmobility;
@@ -488,10 +725,12 @@ int main (int argc, char *argv[])
   clientApps.Add (dlClient.Install (remoteHost));
   clientApps.Add (ulClient.Install (mcUeNodes.Get(0)));
 
+	double mcUeFinalPosition = 70;
 	if (simTime == 0)
 	{
-		simTime = ceil(100/speed);
+		simTime = ceil(mcUeFinalPosition/speed);
 	}
+	std::cout << "-------------------final ue position " << mcUeFinalPosition << std::endl;
 	double appStartTime = 0.1;
 	double appEndTime = simTime-0.1;
 	std::cout << "Simulation time " << simTime << std::endl;
@@ -528,7 +767,18 @@ int main (int argc, char *argv[])
 	serverApps.Get(1)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&UlRx, stream1));
 	//----------------------------------------------------------------------------
 
-	// position
+	BuildingsHelper::MakeMobilityModelConsistent ();
+	// Export the gnuplot script to plot the scenario
+  // To plot the scenario, execute with gnuplot:
+  // 1. load 'plot-file.txt'
+  // 2. plot 1/0
+  std::string buildingFileName;
+  buildingFileName = filePath + "building-file.txt";
+  PrintGnuplottableBuildingListToFile(buildingFileName);
+  PrintGnuplottableEnbListToFile(buildingFileName);
+  PrintGnuplottableUeListToFile(buildingFileName);
+
+
 	Simulator::Schedule (Seconds(0.1), &PositionTrace, mcUeNodes.Get(0));
 
   Simulator::Stop (Seconds (simTime));
