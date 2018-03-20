@@ -867,6 +867,8 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 					}
 					tag.SetSfn (SfnSf (frameNum, sfNum, dciInfoElem.m_symStart));
 					pkt->AddPacketTag (tag);
+
+          m_txMacPacketTraceUe(m_rnti, m_componentCarrierId, pkt->GetSize ());
 					m_phySapProvider->SendMacPdu (pkt);
 				}
 				m_miUlHarqProcessesPacketTimer.at (dciInfoElem.m_harqProcess) = m_phyMacConfig->GetHarqTimeout();

@@ -980,6 +980,8 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 							tag.SetSymStart(dciElem.m_symStart);
 							tag.SetNumSym(dciElem.m_numSym);
 							pkt->AddPacketTag (tag);
+
+              m_txMacPacketTraceEnb(rnti, m_componentCarrierId, pkt->GetSize ());
 							m_phySapProvider->SendMacPdu (pkt);
 						}
 					}
