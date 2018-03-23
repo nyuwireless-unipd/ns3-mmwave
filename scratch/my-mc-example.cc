@@ -716,11 +716,11 @@ int main (int argc, char *argv[])
 
   UdpClientHelper dlClient (ueIpIface.GetAddress (0), dlPort);
   dlClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-  dlClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+  dlClient.SetAttribute ("MaxPackets", UintegerValue(10000000));
 
   UdpClientHelper ulClient (remoteHostAddr, ulPort);
   ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds(interPacketInterval)));
-  ulClient.SetAttribute ("MaxPackets", UintegerValue(1000000));
+  ulClient.SetAttribute ("MaxPackets", UintegerValue(10000000));
 
   clientApps.Add (dlClient.Install (remoteHost));
   clientApps.Add (ulClient.Install (mcUeNodes.Get(0)));
