@@ -119,6 +119,12 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
 	Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
 
+	// the applications on this example start very early. 
+	// Use the IDEAL mode in RRC (no radio messages are exchanged for RRC control ops)
+	// and set to the minimum the latency on the S1-AP link to speed up the link and bearers setup
+	Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
+	Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
+
 	RngSeedManager::SetSeed (1234);
 	RngSeedManager::SetRun (run);
 
