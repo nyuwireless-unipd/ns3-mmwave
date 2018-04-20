@@ -250,7 +250,8 @@ TcpSocketState::TcpSocketState (void)
     // Change m_nextTxSequence for non-zero initial sequence number
     m_nextTxSequence (0),
     m_rcvTimestampValue (0),
-    m_rcvTimestampEchoReply (0)
+    m_rcvTimestampEchoReply (0),
+    m_pacing_rate (0.0) // For pacing
 {
 }
 
@@ -266,7 +267,8 @@ TcpSocketState::TcpSocketState (const TcpSocketState &other)
     m_highTxMark (other.m_highTxMark),
     m_nextTxSequence (other.m_nextTxSequence),
     m_rcvTimestampValue (other.m_rcvTimestampValue),
-    m_rcvTimestampEchoReply (other.m_rcvTimestampEchoReply)
+    m_rcvTimestampEchoReply (other.m_rcvTimestampEchoReply),
+    m_pacing_rate (other.m_pacing_rate) // For pacing
 {
 }
 
@@ -278,6 +280,8 @@ TcpSocketState::TcpCongStateName[TcpSocketState::CA_LAST_STATE] =
 
 TcpSocketBase::TcpSocketBase (void)
   : TcpSocket (),
+    m_pacing_event (),   // For pacing
+    m_pacing_packets (), // For pacing
     m_retxEvent (),
     m_lastAckEvent (),
     m_delAckEvent (),
@@ -335,6 +339,12 @@ TcpSocketBase::TcpSocketBase (void)
     m_isFirstPartialAck (true)
 {
   NS_LOG_FUNCTION (this);
+
+  if (PACING_CONFIG == TCP_PACING) 
+    NS_LOG_INFO ("PACING_IN_TCP - Pacing in TCP is enabled.");
+  else
+    NS_LOG_INFO ("APP_PACING/NO_PACING - Pacing in TCP is *not* enabled.");
+
   m_rxBuffer = CreateObject<TcpRxBuffer> ();
   m_txBuffer = CreateObject<TcpTxBuffer> ();
   m_tcb      = CreateObject<TcpSocketState> ();
@@ -364,6 +374,8 @@ TcpSocketBase::TcpSocketBase (void)
 
 TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
   : TcpSocket (sock),
+    m_pacing_event (sock.m_pacing_event),     // For pacing
+    m_pacing_packets (sock.m_pacing_packets), // For pacing
     //copy object::m_tid and socket::callbacks
     m_dupAckCount (sock.m_dupAckCount),
     m_delAckCount (0),
@@ -1666,6 +1678,7 @@ void
 TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpdated)
 {
   NS_LOG_FUNCTION (this << ackNumber << scoreboardUpdated);
+
   // RFC 6675, Section 5, 2nd paragraph:
   // If the incoming ACK is a cumulative acknowledgment, the TCP MUST
   // reset DupAcks to zero.
@@ -2647,8 +2660,99 @@ TcpSocketBase::ConnectionSucceeded ()
 
 /* Extract at most maxSize bytes from the TxBuffer at sequence seq, add the
     TCP header, and send to TcpL4Protocol */
+// If pacing, queue until time to send else send now.
 uint32_t
 TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
+{
+  NS_LOG_FUNCTION (this << seq << maxSize << withAck);
+
+  // If not TCP pacing, go ahead and send normally.
+  if (PACING_CONFIG == NO_PACING || PACING_CONFIG == APP_PACING)
+    return SendDataPacketReal(seq, maxSize, withAck);
+
+  // Pacing, so queue until time to send else send now.
+  // pacing_rate: pacing rate for flow, controls inter-packet spacing.
+  double pacing_rate = m_tcb -> GetPacingRate();
+  if (pacing_rate == 0.0) {
+    NS_LOG_LOGIC (this << " Pacing rate is 0");
+    return SendDataPacketReal(seq, maxSize, withAck);
+  } else {
+    NS_LOG_LOGIC (this << " Pacing rate: " << pacing_rate);
+
+    // Store packet.
+    tcp_pacing_struct packet{seq, maxSize, withAck};
+    m_pacing_packets.push(packet);
+
+    NS_LOG_LOGIC (this << " Storing: " <<
+                 packet.seq << " " << 
+                 packet.maxSize << " " <<
+                 packet.withAck);
+                 
+    // If no pending event, immediately schedule.
+    if (m_pacing_event.IsExpired()) {
+      m_pacing_event = Simulator::ScheduleNow(&TcpSocketBase::PacePackets, this);
+      NS_LOG_LOGIC (this << " Previous event expired. Scheduling immediately. event_id: " << m_pacing_event.GetUid() << "  timestamp: " << m_pacing_event.GetTs()/1000000000.0);
+    }
+
+    // Return size that would have been sent so app knows it's scheduled.
+    Ptr<Packet> p = m_txBuffer->CopyFromSequence(maxSize, seq);
+    uint32_t sz = p->GetSize(); // Size of packet
+    return sz;
+  }
+}
+
+// Send next packet in queue and set timer for subsequent send.
+void TcpSocketBase::PacePackets () {
+  double size;
+  NS_LOG_FUNCTION (this);
+
+  // If pacing queue empty, app hasn't provided more data.
+  NS_LOG_INFO (this << " Pacing packets: " << m_pacing_packets.size());
+  if (m_pacing_packets.empty()) {
+    NS_LOG_LOGIC (this << " Pacing list empty.");
+    size = 1000; // Temporary packet bytes for computing pacing interval.
+  } else {
+
+    // Get next packet to send.
+    tcp_pacing_struct packet = m_pacing_packets.front();
+    m_pacing_packets.pop();
+
+    NS_LOG_LOGIC (this << " Sending real: " <<
+                 packet.seq << " " << 
+                 packet.maxSize << " " <<
+                 packet.withAck);
+
+    // Send it.
+    SendDataPacketReal(packet.seq, packet.maxSize, packet.withAck);
+
+    // Get size for computing pacing interval.
+    size = packet.maxSize;
+  }
+
+  // Schedule next send event.
+  double pacing_rate = m_tcb -> GetPacingRate();
+  if (pacing_rate > 0) {
+    size *= 8 / 1000000.0;  // Convert to Mbits.
+    double delta = size / pacing_rate; // Convert to seconds.
+    delta *= 1000000000;  // Convert to nanoseconds.
+    m_pacing_event.Cancel();  // Cancel any pending events. Needed?
+    m_pacing_event = Simulator::Schedule(Time(delta),
+                                         &TcpSocketBase::PacePackets, this);
+    NS_LOG_LOGIC (this <<
+                 " event_id: " << m_pacing_event.GetUid() <<
+                 "  size: " << size/8*1000000 <<
+                 "  rate: " << pacing_rate <<
+                 "  delta: " << delta/1000000000 <<
+                 "  @time: " << Time(Simulator::Now()+delta).GetSeconds());
+  } else
+    NS_LOG_LOGIC (this << " rate: " << pacing_rate << " (no pacing)");  
+}
+  
+/* Really send the data packet.
+   Extract at most maxSize bytes from the TxBuffer at sequence seq, add the
+   TCP header, and send to TcpL4Protocol */
+uint32_t
+TcpSocketBase::SendDataPacketReal (SequenceNumber32 seq, uint32_t maxSize, bool withAck)
 {
   NS_LOG_FUNCTION (this << seq << maxSize << withAck);
 
@@ -2657,6 +2761,12 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
     {
       isRetransmission = true;
     }
+
+  ////////////////////////////////////////////////////////
+  // Hook for congestion control-specific Send() method.
+  // (Added for BBR' support.)
+  m_congestionControl->Send(this, m_tcb, seq, isRetransmission); 
+  ////////////////////////////////////////////////////////
 
   Ptr<Packet> p = m_txBuffer->CopyFromSequence (maxSize, seq);
   uint32_t sz = p->GetSize (); // Size of packet
@@ -2781,6 +2891,7 @@ TcpSocketBase::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool with
     }
   // Update highTxMark
   m_tcb->m_highTxMark = std::max (seq + sz, m_tcb->m_highTxMark.Get ());
+
   return sz;
 }
 
@@ -2980,6 +3091,17 @@ TcpSocketBase::BytesInFlight () const
     }
 
   NS_LOG_DEBUG ("Returning calculated bytesInFlight: " << bytesInFlight);
+
+  // Compute adjusted queue: inflight - pacing queue
+  auto pacing_bytes = pacingQueueBytes();
+  int adj_bytes = bytesInFlight - pacing_bytes;
+
+  NS_LOG_INFO(this <<
+              " DATA Pacing queue pkts: " << m_pacing_packets.size() << 
+              "  bytes: " << pacing_bytes << 
+              "  inflight: " << bytesInFlight << 
+              "  inflight adjusted: " << adj_bytes);
+
   return bytesInFlight;
 }
 
@@ -3287,6 +3409,12 @@ TcpSocketBase::ReTxTimeout ()
   m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_LOSS);
   m_tcb->m_congState = TcpSocketState::CA_LOSS;
 
+  // Clear any remaining packets in pacing queue.
+  NS_LOG_DEBUG("RTO. Clearing pacing queue, packet count: "
+               << m_pacing_packets.size());
+  while (!m_pacing_packets.empty())
+    m_pacing_packets.pop();
+  
   NS_LOG_DEBUG ("RTO. Reset cwnd to " <<  m_tcb->m_cWnd << ", ssthresh to " <<
                 m_tcb->m_ssThresh << ", restart from seqnum " <<
                 m_txBuffer->HeadSequence () << " doubled rto to " <<
@@ -3946,5 +4074,45 @@ RttHistory::RttHistory (const RttHistory& h)
     retx (h.retx)
 {
 }
+
+///////////////////////////////////////////////////////////////////
+// ADDITIONS FOR PACING: START
+
+// Get pacing rate.
+double TcpSocketState::GetPacingRate() const {
+  return m_pacing_rate;
+}    
+
+// Set pacing rate.
+void TcpSocketState::SetPacingRate(double pacing_rate) {
+  m_pacing_rate = pacing_rate;
+}
+
+// Get pacing rate (in tcp socket state).
+double TcpSocketBase::GetPacingRate() const {
+  NS_LOG_FUNCTION (this);
+  return m_tcb -> GetPacingRate();
+}    
+
+// Set pacing rate (in tcp socket state).
+void TcpSocketBase::SetPacingRate (double pacing_rate) {
+  NS_LOG_FUNCTION (this << pacing_rate);
+  m_tcb -> SetPacingRate(pacing_rate);
+}
+ 
+// Compute total bytes in pacing packet queue.
+int TcpSocketBase::pacingQueueBytes (void) const {
+  int pacing_bytes = 0;
+  std::queue<tcp_pacing_struct> temp_q = m_pacing_packets;
+  while (!temp_q.empty()) {
+    tcp_pacing_struct packet = m_pacing_packets.front();
+    pacing_bytes += packet.maxSize;
+    temp_q.pop();
+  }
+  return pacing_bytes;
+}
+
+// ADDITIONS FOR PACING: END
+///////////////////////////////////////////////////////////////////
 
 } // namespace ns3

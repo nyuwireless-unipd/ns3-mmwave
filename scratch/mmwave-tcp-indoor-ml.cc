@@ -69,19 +69,19 @@ Traces(uint16_t nodeNum, std::string protocol)
 	AsciiTraceHelper asciiTraceHelper;
 
 	std::ostringstream pathCW;
-	pathCW<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow";
+	pathCW<<"/NodeList/"<<nodeNum/3+2<<"/$ns3::TcpL4Protocol/SocketList/"<<nodeNum%3<<"/CongestionWindow";
 
 	std::ostringstream fileCW;
 	fileCW<<protocol<<"-"<<nodeNum+1<<"-TCP-CWND.txt";
 
 	std::ostringstream pathRTT;
-	pathRTT<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RTT";
+	pathRTT<<"/NodeList/"<<nodeNum/3+2<<"/$ns3::TcpL4Protocol/SocketList/"<<nodeNum%3<<"/RTT";
 
 	std::ostringstream fileRTT;
 	fileRTT<<protocol<<"-"<<nodeNum+1<<"-TCP-RTT.txt";
 
 	std::ostringstream pathRCWnd;
-	pathRCWnd<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RWND";
+	pathRCWnd<<"/NodeList/"<<nodeNum/3+2<<"/$ns3::TcpL4Protocol/SocketList/"<<nodeNum%3<<"/RWND";
 
 	std::ostringstream fileRCWnd;
 	fileRCWnd<<protocol<<"-"<<nodeNum+1<<"-TCP-RCWND.txt";
@@ -433,7 +433,7 @@ main (int argc, char *argv[])
 
 	for (uint16_t i = 0; i < ueNodes.GetN (); i++)
 	{
-		for(uint16_t flow = 0; flow < 1; flow++)
+		for(uint16_t flow = 0; flow < 3; flow++)
 		{
 					// Set the default gateway for the UE
 			Ptr<Node> ueNode = ueNodes.Get (i);
@@ -449,14 +449,14 @@ main (int argc, char *argv[])
 			sourceApps.Add (ftp.Install (remoteHostContainer.Get (i)));
 
 		    std::ostringstream fileName;
-		    fileName<<protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay)<<"-"<<i*1+flow+1<<"-TCP-DATA.txt";
+		    fileName<<protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay)<<"-"<<i*3+flow+1<<"-TCP-DATA.txt";
 
 			AsciiTraceHelper asciiTraceHelper;
 
 			Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
-			sinkApps.Get(i*1+flow)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream));
-		    sourceApps.Get(i*1+flow)->SetStartTime(Seconds (0.1+0.01*i+0.3*flow));
-		    Simulator::Schedule (Seconds (0.1001+0.01*i+0.3*flow), &Traces, i*1+flow, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
+			sinkApps.Get(i*3+flow)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream));
+		    sourceApps.Get(i*3+flow)->SetStartTime(Seconds (0.1+0.01*i+0.3*flow));
+		    Simulator::Schedule (Seconds (0.1001+0.01*i+0.3*flow), &Traces, i*3+flow, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
 		    //sourceApps.Get(i)->SetStopTime (Seconds (10-1.5*i));
 		    sourceApps.Get(i)->SetStopTime (Seconds (simStopTime));
 

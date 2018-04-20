@@ -122,6 +122,13 @@ public:
   {
   }
 
+  // Enable congestion control-specific Send() functionality
+  // (invoked in TcpSocketBase::SendDataPacketReal()).
+  virtual void Send(Ptr<TcpSocketBase> tsb, Ptr<TcpSocketState> tcb,
+                    SequenceNumber32 seq, bool isRetrans)
+  {
+  }
+
   /**
    * \brief Trigger events/calculations specific to a congestion state
    *

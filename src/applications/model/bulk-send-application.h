@@ -137,6 +137,22 @@ private:
    * \brief Send more data as soon as some has been transmitted.
    */
   void DataSend (Ptr<Socket>, uint32_t); // for socket's SetSendCallback
+
+////////////////////////////////////////////////////////
+// ADDED TO SUPPORT PACING - Start
+private:
+  // Get pacing rate from TCP socket base.
+  double GetPacingRate() const;
+
+  // Send packet and set timer for subsequent send.
+  void PaceSend();
+
+  int          m_to_send;          // Number of packets needing to be sent.
+  EventId      m_pacing_event;     // Pacing event.
+
+// ADDED TO SUPPORT PACING - End
+////////////////////////////////////////////////////////
+
 };
 
 } // namespace ns3

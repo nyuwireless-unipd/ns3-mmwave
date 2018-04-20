@@ -30,6 +30,7 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/tcp-socket-factory.h"
 #include "bulk-send-application.h"
+#include "ns3/tcp-socket-base.h" // For pacing configuration.
 
 namespace ns3 {
 
@@ -75,9 +76,16 @@ BulkSendApplication::GetTypeId (void)
 BulkSendApplication::BulkSendApplication ()
   : m_socket (0),
     m_connected (false),
-    m_totBytes (0)
+    m_totBytes (0),
+    m_to_send (0),              // For pacing
+    m_pacing_event ()           // For pacing
 {
   NS_LOG_FUNCTION (this);
+
+  if (PACING_CONFIG == APP_PACING)
+    NS_LOG_INFO ("APP_PACING. No pacing in TCP. This app *will do* pacing.");
+  else
+    NS_LOG_INFO ("This application will *not* do pacing.");
 }
 
 BulkSendApplication::~BulkSendApplication ()
@@ -182,6 +190,29 @@ void BulkSendApplication::SendData (void)
   while (m_maxBytes == 0 || m_totBytes < m_maxBytes)
     { // Time to send more
 
+      // IF APPLICATION PACING
+      if (PACING_CONFIG == APP_PACING) {
+
+        // If no pacing rate set, normal (non-paced) code will handle.
+        if (GetPacingRate() == 0.0) { 
+
+          NS_LOG_INFO (this << " Pacing rate is 0 - not pacing send.");
+
+        } else {
+
+          m_to_send += 1;
+
+          // If previous timer expired, send immediately.
+          if (m_pacing_event.IsExpired()) {
+            NS_LOG_INFO (this << " Timer expired.  Send now.");
+            PaceSend();
+          }
+
+          return;
+        }
+
+      } 
+      
       // uint64_t to allow the comparison later.
       // the result is in a uint32_t range anyway, because
       // m_sendSize is uint32_t.
@@ -207,7 +238,9 @@ void BulkSendApplication::SendData (void)
         {
           break;
         }
-    }
+ 
+    } // End of while() time to send more.
+
   // Check if time to close (all sent)
   if (m_totBytes == m_maxBytes && m_connected)
     {
@@ -215,7 +248,7 @@ void BulkSendApplication::SendData (void)
       m_connected = false;
     }
 }
-
+  
 void BulkSendApplication::ConnectionSucceeded (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this << socket);
@@ -241,5 +274,91 @@ void BulkSendApplication::DataSend (Ptr<Socket>, uint32_t)
 }
 
 
+////////////////////////////////////////////////////////
+// ADDED TO SUPPORT PACING - Start
 
+// Send packet and set timer for subsequent send.
+void BulkSendApplication::PaceSend() {
+  NS_LOG_FUNCTION (this);
+
+  // If not connected, cannot send.
+  if (!m_connected) {
+    NS_LOG_WARN (this << "  BulkSendApplication is not connected!");
+    return;
+  }
+
+  // If pacing timer expired, but device wasn't ready,
+  // there may be nothing to send.
+  if (m_to_send == 0) {
+    NS_LOG_INFO (this << "  No packets to send");
+    return;
+  } else
+    NS_LOG_INFO (this << "  packets to send: " << m_to_send);
+
+  // Prepare to send packet.
+  NS_LOG_INFO (this << "  Sending packet at " << Simulator::Now());
+  uint64_t size = m_sendSize;
+
+  // Make sure we don't send too many bytes.
+  if (m_maxBytes > 0)
+    size = std::min(size, m_maxBytes - m_totBytes);
+
+  NS_LOG_INFO (this <<
+               "  m_sendSize: " << m_sendSize <<
+               "  m_maxBytes: " << m_maxBytes <<
+               "  m_totBytes: " << m_totBytes <<
+               "  size: " << size);
+
+  // Create packet.
+  Ptr<Packet> packet = Create<Packet>(size);
+
+  // Send packet.
+  int actual = m_socket->Send(packet);
+  m_to_send -= 1;
+  
+  // Record stats.
+  if (actual > 0) {
+    m_totBytes += actual;
+    m_txTrace(packet);
+  }
+
+  // If all sent --> close connection.
+  if (m_totBytes == m_maxBytes && m_connected) {
+    m_socket->Close();
+    m_connected = false;
+  }
+
+  // Schedule next send event based on pacing rate.
+  double pacing_rate = GetPacingRate();
+  if (pacing_rate > 0) {
+    double sz = size * 8 / 1000000.0;  // Convert to Mbits.
+    double delta = sz / pacing_rate;   // Convert to seconds.
+    delta *= 1000000000;               // Convert to nanoseconds.
+    m_pacing_event.Cancel();           // Cancel any pending events.
+    m_pacing_event = Simulator::Schedule(Time(delta),
+                                         &BulkSendApplication::PaceSend, this);
+    NS_LOG_INFO (this <<
+                 "  sz: " << sz/8*1000000 <<
+                 "  rate: " << pacing_rate <<
+                 "  delta: " << delta/1000000000 <<
+                 "  @time: " << Time(Simulator::Now()+delta).GetSeconds());
+  } else
+    NS_LOG_INFO (this << " rate: " << pacing_rate << " (not pacing)");  
+  
+}
+
+// Get pacing rate from TCP socket base.
+double BulkSendApplication::GetPacingRate() const {
+  
+  // Since must be NS3_SOCK_STREAM (TCP), get the TCP socket base.
+  TcpSocketBase *p_temp = dynamic_cast <TcpSocketBase *>(GetPointer(m_socket));
+  NS_ASSERT(p_temp != NULL);
+  Ptr<TcpSocketBase> tcp_socket_base = p_temp;
+
+  return  tcp_socket_base -> GetPacingRate();
+}
+  
+// ADDED TO SUPPORT PACING - End
+////////////////////////////////////////////////////////
+  
 } // Namespace ns3

@@ -21,6 +21,25 @@
 #ifndef TCP_SOCKET_BASE_H
 #define TCP_SOCKET_BASE_H
 
+///////////////////////////////////////////////////////////////////
+// ADDITIONS FOR PACING: START
+
+// Configuration options (to support BBR' and any paced protocols):
+// TCP_PACING - Packet pacing is done in TCP (in socket-base.cc).
+// APP_PACING - Packet pacing is NOT done in TCP, only in the application.
+// NO_PACING - No packet pacing is done (BBR' adjusts accordingly).
+enum enum_pacing_config {TCP_PACING, APP_PACING, NO_PACING};
+
+// Actual configuration option.
+const enum_pacing_config PACING_CONFIG = TCP_PACING;
+//const enum_pacing_config PACING_CONFIG = NO_PACING;
+//const enum_pacing_config PACING_CONFIG = APP_PACING;
+
+const float PACING_VERSION = 1.1;  // See changelog.txt.
+
+// ADDITIONS FOR PACING: END
+///////////////////////////////////////////////////////////////////
+
 #include <stdint.h>
 #include <queue>
 #include "ns3/callback.h"
@@ -186,7 +205,26 @@ public:
   {
     return m_ssThresh / m_segmentSize;
   }
+
+  //////////////////////////////
+  // ADDITIONS FOR PACING: START
+
+  void SetPacingRate (double pacing_rate);
+  double GetPacingRate () const;
+protected:
+  double            m_pacing_rate;                 // Pacing rate (in Mb/s).
+
 };
+
+// Structure for tracking packets to send for pacing in TCP.
+struct tcp_pacing_struct {
+  SequenceNumber32 seq;    // Seq location in TCP buffer.
+  uint32_t maxSize;        // Bytes to extract.
+  bool withAck;            // Include ack or not.
+};
+  
+// ADDITIONS FOR PACING: END
+//////////////////////////////
 
 /**
  * \ingroup socket
@@ -654,6 +692,7 @@ protected:
    * \returns the number of bytes sent
    */
   uint32_t SendDataPacket (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
+  uint32_t SendDataPacketReal (SequenceNumber32 seq, uint32_t maxSize, bool withAck);
 
   /**
    * \brief Send a empty packet that carries a flag, e.g., ACK
@@ -812,6 +851,7 @@ protected:
    */
   virtual uint32_t UnAckDataCount (void) const;
 
+public: // Change status for BBR' support.
   /**
    * \brief Return total bytes in flight
    *
@@ -821,6 +861,7 @@ protected:
    */
   virtual uint32_t BytesInFlight (void) const;
 
+protected:
   /**
    * \brief Return the max possible number of unacked bytes
    * \returns the max possible number of unacked bytes
@@ -1071,6 +1112,21 @@ protected:
    */
   static uint32_t SafeSubtraction (uint32_t a, uint32_t b);
 
+  //////////////////////////////
+  // ADDITIONS FOR PACING: START
+public:  
+  void SetPacingRate (double pacing_rate);
+  double GetPacingRate () const;
+  virtual int pacingQueueBytes (void) const;
+
+protected:
+  EventId           m_pacing_event;                // Pacing event.
+  std::queue<tcp_pacing_struct> m_pacing_packets;  // Pacing packets.
+private:
+  void PacePackets();
+  // ADDITIONS FOR PACING: END
+  //////////////////////////////
+  
 protected:
   // Counters and events
   EventId           m_retxEvent;       //!< Retransmission event
