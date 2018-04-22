@@ -49,9 +49,8 @@ public:
    *
    * \param p packet
    * \param addr address
-   * \param protocol protocol
    */
-  AredQueueDiscTestItem (Ptr<Packet> p, const Address & addr, uint16_t protocol);
+  AredQueueDiscTestItem (Ptr<Packet> p, const Address & addr);
   virtual ~AredQueueDiscTestItem ();
   virtual void AddHeader (void);
   virtual bool Mark(void);
@@ -71,8 +70,8 @@ private:
   AredQueueDiscTestItem &operator = (const AredQueueDiscTestItem &);
 };
 
-AredQueueDiscTestItem::AredQueueDiscTestItem (Ptr<Packet> p, const Address & addr, uint16_t protocol)
-  : QueueDiscItem (p, addr, protocol)
+AredQueueDiscTestItem::AredQueueDiscTestItem (Ptr<Packet> p, const Address & addr)
+  : QueueDiscItem (p, addr, 0)
 {
 }
 
@@ -121,7 +120,7 @@ private:
    * Run ARED queue disc test function
    * \param mode the test mode
    */
-  void RunAredDiscTest (StringValue mode);
+  void RunAredDiscTest (QueueSizeUnit mode);
 };
 
 AredQueueDiscTestCase::AredQueueDiscTestCase ()
@@ -130,7 +129,7 @@ AredQueueDiscTestCase::AredQueueDiscTestCase ()
 }
 
 void
-AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
+AredQueueDiscTestCase::RunAredDiscTest (QueueSizeUnit mode)
 {
   uint32_t pktSize = 0;
   uint32_t modeSize = 1;  // 1 for packets; pktSize for bytes
@@ -141,10 +140,8 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 1: Verify automatic setting of QW. [QW = 0.0 with default LinkBandwidth]
   Ptr<RedQueueDisc> queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
 
-  if (queue->GetMode () == RedQueueDisc::QUEUE_DISC_MODE_BYTES)
+  if (mode == QueueSizeUnit::BYTES)
     {
       pktSize = 500;
       modeSize = pktSize;
@@ -157,8 +154,8 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (maxTh)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QW", DoubleValue (0.0)), true,
                          "Verify that we can actually set the attribute QW");
   queue->Initialize ();
@@ -170,14 +167,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 2: Verify automatic setting of QW. [QW = 0.0 with lesser LinkBandwidth]
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (minTh)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (maxTh)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QW", DoubleValue (0.0)), true,
                          "Verify that we can actually set the attribute QW");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("LinkBandwidth", DataRateValue (DataRate ("0.015Mbps"))), true,
@@ -191,14 +186,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 3: Verify automatic setting of QW. [QW = -1.0 with default LinkBandwidth]
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (minTh)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (maxTh)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QW", DoubleValue (-1.0)), true,
                          "Verify that we can actually set the attribute QW");
   queue->Initialize ();
@@ -210,14 +203,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 4: Verify automatic setting of QW. [QW = -1.0 with lesser LinkBandwidth]
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (minTh)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (maxTh)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QW", DoubleValue (-1.0)), true,
                          "Verify that we can actually set the attribute QW");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("LinkBandwidth", DataRateValue (DataRate ("0.015Mbps"))), true,
@@ -231,14 +222,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 5: Verify automatic setting of QW. [QW = -2.0 with default LinkBandwidth]
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (minTh)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (maxTh)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QW", DoubleValue (-2.0)), true,
                          "Verify that we can actually set the attribute QW");
   queue->Initialize ();
@@ -250,14 +239,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 6: Verify automatic setting of QW. [QW = -2.0 with lesser LinkBandwidth]
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (minTh)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (maxTh)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QW", DoubleValue (-2.0)), true,
                          "Verify that we can actually set the attribute QW");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("LinkBandwidth", DataRateValue (DataRate ("0.015Mbps"))), true,
@@ -271,14 +258,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 7: Verify automatic setting of minTh and maxTh. [minTh = maxTh = 0.0, with default LinkBandwidth]
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (0.0)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (0.0)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   queue->Initialize ();
   Enqueue (queue, pktSize, 300);
   st = queue->GetStats ();
@@ -288,14 +273,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 8: Verify automatic setting of minTh and maxTh. [minTh = maxTh = 0.0, with higher LinkBandwidth]
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (0.0)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (0.0)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("LinkBandwidth", DataRateValue (DataRate ("150Mbps"))), true,
                          "Verify that we can actually set the attribute LinkBandwidth");
   queue->Initialize ();
@@ -309,14 +292,12 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
   queue = CreateObject<RedQueueDisc> ();
   minTh = 5 * modeSize;
   maxTh = 15 * modeSize;
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MinTh", DoubleValue (minTh)), true,
                          "Verify that we can actually set the attribute MinTh");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxTh", DoubleValue (maxTh)), true,
                          "Verify that we can actually set the attribute MaxTh");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QW", DoubleValue (0.002)), true,
                          "Verify that we can actually set the attribute QW");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("LInterm", DoubleValue (2)), true,
@@ -333,10 +314,8 @@ AredQueueDiscTestCase::RunAredDiscTest (StringValue mode)
 
   // test 10: Adaptive RED (automatic and adaptive settings enabled)
   queue = CreateObject<RedQueueDisc> ();
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("Mode", mode), true,
-                         "Verify that we can actually set the attribute Mode");
-  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("QueueLimit", UintegerValue (qSize)), true,
-                         "Verify that we can actually set the attribute QueueLimit");
+  NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("MaxSize", QueueSizeValue (QueueSize (mode, qSize))),
+                         true, "Verify that we can actually set the attribute MaxSize");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("LInterm", DoubleValue (2)), true,
                          "Verify that we can actually set the attribute LInterm");
   NS_TEST_EXPECT_MSG_EQ (queue->SetAttributeFailSafe ("ARED", BooleanValue (true)), true,
@@ -356,7 +335,7 @@ AredQueueDiscTestCase::Enqueue (Ptr<RedQueueDisc> queue, uint32_t size, uint32_t
   Address dest;
   for (uint32_t i = 0; i < nPkt; i++)
     {
-      queue->Enqueue (Create<AredQueueDiscTestItem> (Create<Packet> (size), dest, 0));
+      queue->Enqueue (Create<AredQueueDiscTestItem> (Create<Packet> (size), dest));
     }
 }
 
@@ -374,8 +353,8 @@ AredQueueDiscTestCase::EnqueueWithDelay (Ptr<RedQueueDisc> queue, uint32_t size,
 void
 AredQueueDiscTestCase::DoRun (void)
 {
-  RunAredDiscTest (StringValue ("QUEUE_DISC_MODE_PACKETS"));
-  RunAredDiscTest (StringValue ("QUEUE_DISC_MODE_BYTES"));
+  RunAredDiscTest (QueueSizeUnit::PACKETS);
+  RunAredDiscTest (QueueSizeUnit::BYTES);
   Simulator::Destroy ();
 }
 

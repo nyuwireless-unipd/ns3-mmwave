@@ -63,7 +63,6 @@ EnergySource::SetNode (Ptr<Node> node)
 Ptr<Node>
 EnergySource::GetNode (void) const
 {
-  NS_LOG_FUNCTION (this);
   return m_node;
 }
 
@@ -210,6 +209,18 @@ EnergySource::NotifyEnergyRecharged (void)
   for (i = m_models.Begin (); i != m_models.End (); i++)
     {
       (*i)->HandleEnergyRecharged ();
+    }
+}
+
+void
+EnergySource::NotifyEnergyChanged (void)
+{
+  NS_LOG_FUNCTION (this);
+  // notify all device energy models installed on node
+  DeviceEnergyModelContainer::Iterator i;
+  for (i = m_models.Begin (); i != m_models.End (); i++)
+    {
+      (*i)->HandleEnergyChanged ();
     }
 }
 

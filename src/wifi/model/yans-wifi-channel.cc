@@ -18,12 +18,17 @@
  * Author: Mathieu Lacage, <mathieu.lacage@sophia.inria.fr>
  */
 
+#include "ns3/packet.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 #include "ns3/pointer.h"
-#include "yans-wifi-channel.h"
+#include "ns3/net-device.h"
+#include "ns3/node.h"
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
+#include "ns3/mobility-model.h"
+#include "yans-wifi-channel.h"
+#include "yans-wifi-phy.h"
 #include "wifi-utils.h"
 
 namespace ns3 {
@@ -65,12 +70,14 @@ YansWifiChannel::~YansWifiChannel ()
 void
 YansWifiChannel::SetPropagationLossModel (const Ptr<PropagationLossModel> loss)
 {
+  NS_LOG_FUNCTION (this << loss);
   m_loss = loss;
 }
 
 void
 YansWifiChannel::SetPropagationDelayModel (const Ptr<PropagationDelayModel> delay)
 {
+  NS_LOG_FUNCTION (this << delay);
   m_delay = delay;
 }
 
@@ -136,6 +143,7 @@ YansWifiChannel::GetDevice (uint32_t i) const
 void
 YansWifiChannel::Add (Ptr<YansWifiPhy> phy)
 {
+  NS_LOG_FUNCTION (this << phy);
   m_phyList.push_back (phy);
 }
 

@@ -21,19 +21,22 @@
 #ifndef BLOCK_ACK_MANAGER_H
 #define BLOCK_ACK_MANAGER_H
 
+#include <map>
+#include "ns3/nstime.h"
 #include "wifi-mac-header.h"
 #include "originator-block-ack-agreement.h"
-#include "ctrl-headers.h"
-#include "qos-utils.h"
-#include "wifi-remote-station-manager.h"
-#include <map>
+#include "block-ack-type.h"
 
 namespace ns3 {
 
+class WifiRemoteStationManager;
 class MgtAddBaResponseHeader;
 class MgtAddBaRequestHeader;
+class CtrlBAckResponseHeader;
 class MacTxMiddle;
 class WifiMacQueue;
+class WifiMode;
+class Packet;
 
 /**
  * \ingroup wifi
@@ -152,22 +155,14 @@ public:
   void StorePacket (Ptr<const Packet> packet, const WifiMacHeader &hdr, Time tStamp);
   /**
    * \param hdr 802.11 header of returned packet (if exists).
+   * \param removePacket flag to indicate whether the packet should be removed from the queue.
    *
    * \return the packet
    *
    * This methods returns a packet (if exists) indicated as not received in
    * corresponding block ack bitmap.
    */
-  Ptr<const Packet> GetNextPacket (WifiMacHeader &hdr);
-  /**
-   * \param hdr 802.11 header of returned packet (if exists).
-   *
-   * \return the packet
-   *
-   * This methods returns a packet (if exists) indicated as not received in
-   * corresponding block ack bitmap. This method doesn't remove the packet from this queue.
-   */
-  Ptr<const Packet> PeekNextPacket (WifiMacHeader &hdr);
+  Ptr<const Packet> GetNextPacket (WifiMacHeader &hdr, bool removePacket);
   /**
    * Returns true if the BAR is scheduled. Returns false otherwise.
    *
@@ -277,30 +272,6 @@ public:
    * See ctrl-headers.h for more details.
    */
   void SetBlockAckType (BlockAckType bAckType);
-  /**
-   * \param recipient Address of station involved in block ack mechanism.
-   * \param tid Traffic ID.
-   *
-   * This method is invoked by EdcaTxopN object upon receipt of a DELBA frame
-   * from recipient. The relative block ack agreement is destroyed.
-   */
-  void TearDownBlockAck (Mac48Address recipient, uint8_t tid);
-  /**
-   * \param sequenceNumber Sequence number of the packet which fragment is
-   * part of.
-   * \return true if another fragment with the given sequence number is scheduled
-   * for retransmission.
-   *
-   * Returns true if another fragment with sequence number <i>sequenceNumber</i> is scheduled
-   * for retransmission.
-   */
-  bool HasOtherFragments (uint16_t sequenceNumber) const;
-  /**
-   * \return the size of the next packet that needs retransmission
-   *
-   * Returns size of the next packet that needs retransmission.
-   */
-  uint32_t GetNextPacketSize (void) const;
   /**
    * \param maxDelay Max delay for a buffered packet.
    *
@@ -474,7 +445,6 @@ private:
    */
   struct Item
   {
-    Item ();
     /**
      * Constructor
      *

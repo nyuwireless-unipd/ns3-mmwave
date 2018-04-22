@@ -16,7 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-#include "tcp-error-model.h"
 
 #include "ns3/node.h"
 #include "ns3/log.h"
@@ -184,6 +183,8 @@ public:
   /**
    * \brief Constructor.
    * \param congControl Congestion control type.
+   * \param seqToDrop sequence number to drop
+   * \param minRto minimum RTO
    * \param msg Test description.
    */
   TcpSsThreshRtoTest (TypeId &congControl, uint32_t seqToDrop, Time minRto, const std::string &msg);
@@ -210,9 +211,9 @@ protected:
 private:
   uint32_t m_bytesInFlight; //!< Store the number of bytes in flight
   uint32_t m_bytesInFlightBeforeRto; //!< Store the number of bytes in flight before the RTO expiration
-  uint32_t m_ssThreshSocket; //<! the ssThresh as computed by the socket
-  uint32_t m_seqToDrop;
-  Time m_minRtoTime;
+  uint32_t m_ssThreshSocket; //!< the ssThresh as computed by the socket
+  uint32_t m_seqToDrop; //!< the sequence number to drop
+  Time m_minRtoTime; //!< the minimum RTO time
 };
 
 TcpSsThreshRtoTest::TcpSsThreshRtoTest (TypeId &congControl, uint32_t seqToDrop, Time minRto, const std::string &desc)

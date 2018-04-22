@@ -22,8 +22,8 @@
 #define REGULAR_WIFI_MAC_H
 
 #include "wifi-mac.h"
-#include "dca-txop.h"
 #include "edca-txop-n.h"
+#include "ssid.h"
 
 namespace ns3 {
 
@@ -31,6 +31,7 @@ class MacLow;
 class MacRxMiddle;
 class MacTxMiddle;
 class DcfManager;
+class ExtendedCapabilities;
 
 /**
  * \brief base class for all MAC-level wifi objects.
@@ -118,14 +119,6 @@ public:
    *               false otherwise
    */
   void SetCtsToSelfSupported (bool enable);
-  /**
-   * Return whether the device supports CTS-to-self
-   * capability.
-   *
-   * \return true if CTS-to-self is supported,
-   *         false otherwise.
-   */
-  bool GetCtsToSelfSupported () const;
 
   /**
    * Enable or disable short slot time feature.
@@ -216,7 +209,7 @@ public:
   /**
    * \param phy the physical layer attached to this MAC.
    */
-  void SetWifiPhy (const Ptr<WifiPhy> phy);
+  virtual void SetWifiPhy (const Ptr<WifiPhy> phy);
   /**
    * \return the physical layer attached to this MAC.
    */
@@ -234,21 +227,27 @@ public:
    */
   Ptr<WifiRemoteStationManager> GetWifiRemoteStationManager (void) const;
   /**
-   * Return the HT capability of the device.
+   * Return the extended capabilities of the device.
    *
-   * \return the HT capability that we support
+   * \return the extended capabilities that we support
+   */
+  ExtendedCapabilities GetExtendedCapabilities (void) const;
+  /**
+   * Return the HT capabilities of the device.
+   *
+   * \return the HT capabilities that we support
    */
   HtCapabilities GetHtCapabilities (void) const;
   /**
-   * Return the VHT capability of the device.
+   * Return the VHT capabilities of the device.
    *
-   * \return the VHT capability that we support
+   * \return the VHT capabilities that we support
    */
   VhtCapabilities GetVhtCapabilities (void) const;
   /**
-   * Return the HE capability of the device.
+   * Return the HE capabilities of the device.
    *
-   * \return the HE capability that we support
+   * \return the HE capabilities that we support
    */
   HeCapabilities GetHeCapabilities (void) const;
 
@@ -590,50 +589,50 @@ private:
    *
    * \param size the maximum A-MSDU size for AC_VO.
    */
-  void SetVoMaxAmsduSize (uint32_t size);
+  void SetVoMaxAmsduSize (uint16_t size);
   /**
    * Set the maximum A-MSDU size for AC_VI.
    *
    * \param size the maximum A-MSDU size for AC_VI.
    */
-  void SetViMaxAmsduSize (uint32_t size);
+  void SetViMaxAmsduSize (uint16_t size);
   /**
    * Set the maximum A-MSDU size for AC_BE.
    *
    * \param size the maximum A-MSDU size for AC_BE.
    */
-  void SetBeMaxAmsduSize (uint32_t size);
+  void SetBeMaxAmsduSize (uint16_t size);
   /**
    * Set the maximum A-MSDU size for AC_BK.
    *
    * \param size the maximum A-MSDU size for AC_BK.
    */
-  void SetBkMaxAmsduSize (uint32_t size);
+  void SetBkMaxAmsduSize (uint16_t size);
 
   /**
    * Set the maximum A-MPDU size for AC_VO.
    *
    * \param size the maximum A-MPDU size for AC_VO.
    */
-  void SetVoMaxAmpduSize (uint32_t size);
+  void SetVoMaxAmpduSize (uint16_t size);
   /**
    * Set the maximum A-MPDU size for AC_VI.
    *
    * \param size the maximum A-MPDU size for AC_VI.
    */
-  void SetViMaxAmpduSize (uint32_t size);
+  void SetViMaxAmpduSize (uint16_t size);
   /**
    * Set the maximum A-MPDU size for AC_BE.
    *
    * \param size the maximum A-MPDU size for AC_BE.
    */
-  void SetBeMaxAmpduSize (uint32_t size);
+  void SetBeMaxAmpduSize (uint16_t size);
   /**
    * Set the maximum A-MPDU size for AC_BK.
    *
    * \param size the maximum A-MPDU size for AC_BK.
    */
-  void SetBkMaxAmpduSize (uint32_t size);
+  void SetBkMaxAmpduSize (uint16_t size);
 
   /**
    * Set the Block ACK threshold for AC_VO.
@@ -692,15 +691,15 @@ private:
   /// Disable aggregation function
   void DisableAggregation (void);
 
-  uint32_t m_voMaxAmsduSize; ///< maximum A-MSDU size for AC_VO
-  uint32_t m_viMaxAmsduSize; ///< maximum A-MSDU size for AC_VI
-  uint32_t m_beMaxAmsduSize; ///< maximum A-MSDU size for AC_BE
-  uint32_t m_bkMaxAmsduSize; ///< maximum A-MSDU size for AC_BK
+  uint16_t m_voMaxAmsduSize; ///< maximum A-MSDU size for AC_VO
+  uint16_t m_viMaxAmsduSize; ///< maximum A-MSDU size for AC_VI
+  uint16_t m_beMaxAmsduSize; ///< maximum A-MSDU size for AC_BE
+  uint16_t m_bkMaxAmsduSize; ///< maximum A-MSDU size for AC_BK
 
-  uint32_t m_voMaxAmpduSize; ///< maximum A-MPDU size for AC_VO
-  uint32_t m_viMaxAmpduSize; ///< maximum A-MPDU size for AC_VI
-  uint32_t m_beMaxAmpduSize; ///< maximum A-MPDU size for AC_BE
-  uint32_t m_bkMaxAmpduSize; ///< maximum A-MPDU size for AC_BK
+  uint16_t m_voMaxAmpduSize; ///< maximum A-MPDU size for AC_VO
+  uint16_t m_viMaxAmpduSize; ///< maximum A-MPDU size for AC_VI
+  uint16_t m_beMaxAmpduSize; ///< maximum A-MPDU size for AC_BE
+  uint16_t m_bkMaxAmpduSize; ///< maximum A-MPDU size for AC_BK
 
   TracedCallback<const WifiMacHeader &> m_txOkCallback; ///< transmit OK callback
   TracedCallback<const WifiMacHeader &> m_txErrCallback; ///< transmit error callback

@@ -24,10 +24,11 @@
 
 #include "ns3/traced-value.h"
 #include "wifi-remote-station-manager.h"
-#include "ns3/random-variable-stream.h"
 #include <fstream>
 
 namespace ns3 {
+
+class UniformRandomVariable;
 
 /**
  * A struct to contain all information related to a data rate
@@ -88,11 +89,12 @@ struct MinstrelWifiRemoteStation : public WifiRemoteStation
    * then we wrap back to the row 1 col 1.
    * note: there are many other ways to do this.
    */
-  uint32_t m_col, m_index;       ///< index
+  uint8_t m_col;                 ///< vector index
+  uint8_t m_index;               ///< vector index
   uint32_t m_maxTpRate;          ///< the current throughput rate
   uint32_t m_maxTpRate2;         ///< second highest throughput rate
   uint32_t m_maxProbRate;        ///< rate with highest prob of success
-  uint32_t m_nModes;             ///< number of modes supported
+  uint8_t m_nModes;              ///< number of modes supported
   int m_totalPacketsCount;       ///< total number of packets as of now
   int m_samplePacketsCount;      ///< how many packets we have sample so far
   int m_numSamplesDeferred;      ///< number samles deferred
@@ -355,7 +357,8 @@ private:
   double m_ewmaLevel;       ///< exponential weighted moving average
   uint32_t m_sampleCol;     ///< number of sample columns
   uint32_t m_pktLen;        ///< packet length used for calculate mode TxTime
-  bool m_printStats;        ///< If statistics table should be printed.
+  bool m_printStats;        ///< whether statistics table should be printed.
+  bool m_printSamples;      ///< whether samples table should be printed.
 
   /// Provides uniform random variables.
   Ptr<UniformRandomVariable> m_uniformRandomVariable;

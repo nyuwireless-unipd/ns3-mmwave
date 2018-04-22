@@ -21,6 +21,11 @@
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/config.h"
+#include "ns3/wifi-mode.h"
+#include "ns3/wifi-preamble.h"
+#include "ns3/wifi-phy-state.h"
+#include "ns3/net-device-container.h"
+#include "ns3/node-container.h"
 #include "athstats-helper.h"
 #include <iomanip>
 #include <fstream>
@@ -206,9 +211,9 @@ AthstatsWifiTraceSink::TxFinalDataFailedTrace (std::string context, Mac48Address
 }
 
 void
-AthstatsWifiTraceSink::PhyRxOkTrace (std::string context, Ptr<const Packet> packet, double snr, WifiMode mode, enum WifiPreamble preamble)
+AthstatsWifiTraceSink::PhyRxOkTrace (std::string context, Ptr<const Packet> packet, double snr, WifiMode mode, WifiPreamble preamble)
 {
-  NS_LOG_FUNCTION (this << context << packet << " mode=" << mode << " snr=" << snr );
+  NS_LOG_FUNCTION (this << context << packet << " mode=" << mode << " snr=" << snr << "preamble=" << preamble);
   ++m_phyRxOkCount;
 }
 
@@ -222,15 +227,14 @@ AthstatsWifiTraceSink::PhyRxErrorTrace (std::string context, Ptr<const Packet> p
 void
 AthstatsWifiTraceSink::PhyTxTrace (std::string context, Ptr<const Packet> packet, WifiMode mode, WifiPreamble preamble, uint8_t txPower)
 {
-  NS_LOG_FUNCTION (this << context << packet << "PHYTX mode=" << mode );
+  NS_LOG_FUNCTION (this << context << packet << "PHYTX mode=" << mode << "Preamble=" << preamble << "Power=" << txPower);
   ++m_phyTxCount;
 }
 
 void
-AthstatsWifiTraceSink::PhyStateTrace (std::string context, Time start, Time duration, enum WifiPhy::State state)
+AthstatsWifiTraceSink::PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState state)
 {
   NS_LOG_FUNCTION (this << context << start << duration << state);
-
 }
 
 void

@@ -18,19 +18,11 @@
  * Author: Stefano Avallone <stavallo@unina.it>
  */
 
-#include "ns3/test.h"
-#include "ns3/simulator.h"
-#include "ns3/log.h"
-#include "ns3/uinteger.h"
-#include "ns3/boolean.h"
 #include "ns3/string.h"
-#include "ns3/double.h"
+#include "ns3/test.h"
 #include "ns3/pointer.h"
 #include "ns3/ssid.h"
-#include "ns3/data-rate.h"
-#include "ns3/inet-socket-address.h"
 #include "ns3/packet-sink.h"
-#include "ns3/wifi-helper.h"
 #include "ns3/wifi-net-device.h"
 #include "ns3/wifi-mac.h"
 #include "ns3/wifi-mac-queue.h"
@@ -214,19 +206,19 @@ WifiAcMappingTest::DoRun (void)
   // Get the four wifi mac queues and connect their Enqueue trace to the PacketEnqueuedInWifiMacQueue
   // method, which counts how many packets with the given ToS value have been enqueued
   apMac->GetAttribute ("BE_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  ptr.Get<EdcaTxopN> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount));
 
   apMac->GetAttribute ("BK_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  ptr.Get<EdcaTxopN> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount+1));
 
   apMac->GetAttribute ("VI_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  ptr.Get<EdcaTxopN> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount+2));
 
   apMac->GetAttribute ("VO_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  ptr.Get<EdcaTxopN> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount+3));
 
   Simulator::Run ();

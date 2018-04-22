@@ -67,7 +67,10 @@ int main (int argc, char *argv[])
   const std::string attrClass = "ns3::RandomVariableStream";
   const std::string attrName  = "Antithetic";
   const std::string attrPath  = attrClass + "::" + attrName;
- 
+  // Non-option arguments
+  int         nonOpt1 = 1;
+  int         nonOpt2 = 1;
+   
   // Cache the initial values.  Normally one wouldn't do this,
   // but we want to demonstrate that CommandLine has changed them.
   const int intDef = intArg;
@@ -82,6 +85,8 @@ int main (int argc, char *argv[])
     tid.LookupAttributeByName (attrName, &info);
     attrDef = info.originalInitialValue->SerializeToString (info.checker);
   }
+  const int nonOpt1Def = nonOpt1;
+  const int nonOpt2Def = nonOpt2;
   
   
   CommandLine cmd;
@@ -93,6 +98,8 @@ int main (int argc, char *argv[])
   cmd.AddValue ("strArg",  "a string argument",     strArg);
   cmd.AddValue ("anti",    attrPath);
   cmd.AddValue ("cbArg",   "a string via callback", MakeCallback (SetCbArg));
+  cmd.AddNonOption ("nonOpt1", "first non-option", nonOpt1);
+  cmd.AddNonOption ("nonOpt2", "first non-option", nonOpt2);
   cmd.Parse (argc, argv);
 
   // Show initial values:
@@ -101,20 +108,26 @@ int main (int argc, char *argv[])
   std::cout << "Initial values:" << std::endl;
   
   std::cout << std::left << std::setw (10) << "intArg:"
-            <<                    intDef
+            <<                   intDef
             << std::endl;
   std::cout << std::setw (10)              << "boolArg:"
-            << std::boolalpha  << boolDef  << std::noboolalpha
+            << std::boolalpha << boolDef   << std::noboolalpha
             << std::endl;
   
   std::cout << std::setw (10)              << "strArg:"
-            << "\""            << strDef   << "\""
+            << "\""           << strDef    << "\""
             << std::endl;
   std::cout << std::setw (10)              << "anti:"
-            << "\""            << attrDef  << "\""
+            << "\""           << attrDef   << "\""
             << std::endl;
   std::cout << std::setw (10)              << "cbArg:"
-            << "\""            << cbDef    << "\""
+            << "\""           << cbDef     << "\""
+            << std::endl;
+  std::cout << std::left << std::setw (10) << "nonOpt1:"
+            <<                   nonOpt1Def
+            << std::endl;
+  std::cout << std::left << std::setw (10) << "nonOpt2:"
+            <<                   nonOpt2Def
             << std::endl;
   std::cout << std::endl;
 
@@ -122,15 +135,14 @@ int main (int argc, char *argv[])
   // Show final values
   std::cout << "Final values:" << std::endl;
   std::cout << std::left << std::setw (10) << "intArg:"
-            <<                    intArg
+            <<                   intArg
             << std::endl;
   std::cout << std::setw (10)              << "boolArg:"
-            << std::boolalpha  << boolArg
-            << std::noboolalpha
+            << std::boolalpha << boolArg   << std::noboolalpha
             << std::endl;
   
   std::cout << std::setw (10)              << "strArg:"
-            << "\""            << strArg   << "\""
+            << "\""           << strArg    << "\""
             << std::endl;
 
   // Look up new default value for attribute
@@ -145,8 +157,25 @@ int main (int argc, char *argv[])
               << std::endl;
   }
   std::cout << std::setw (10)              << "cbArg:"
-            << "\""            << g_cbArg  << "\""
+            << "\""           << g_cbArg   << "\""
             << std::endl;
+  std::cout << std::left << std::setw (10) << "nonOpt1:"
+            <<                   nonOpt1
+            << std::endl;
+  std::cout << std::left << std::setw (10) << "nonOpt2:"
+            <<                   nonOpt2
+            << std::endl;
+  std::cout << std::left << "Number of extra non-option arguments:"
+            <<                   cmd.GetNExtraNonOptions ()
+            << std::endl;
+
+  for (std::size_t i = 0; i < cmd.GetNExtraNonOptions (); ++i)
+    {
+      std::cout << std::left << std::setw (10) << "extra:"
+                << "\""       << cmd.GetExtraNonOption (i) << "\""
+                << std::endl;
+    }
+
 
   return 0;
 }

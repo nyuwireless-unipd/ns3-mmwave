@@ -22,9 +22,6 @@
  */
 
 #include "ns3/simulator.h"
-#include "ns3/uinteger.h"
-#include "ns3/enum.h"
-#include "ns3/assert.h"
 #include "wifi-mac-queue.h"
 #include "qos-blocked-destinations.h"
 
@@ -32,61 +29,6 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("WifiMacQueue");
 
-WifiMacQueueItem::WifiMacQueueItem (Ptr<const Packet> p, const WifiMacHeader & header)
-  : m_packet (p),
-    m_header (header),
-    m_tstamp (Simulator::Now ())
-{
-}
-
-WifiMacQueueItem::~WifiMacQueueItem ()
-{
-}
-
-Ptr<const Packet>
-WifiMacQueueItem::GetPacket (void) const
-{
-  return m_packet;
-}
-
-const WifiMacHeader&
-WifiMacQueueItem::GetHeader (void) const
-{
-  return m_header;
-}
-
-Mac48Address
-WifiMacQueueItem::GetAddress (enum WifiMacHeader::AddressType type) const
-{
-  if (type == WifiMacHeader::ADDR1)
-    {
-      return m_header.GetAddr1 ();
-    }
-  if (type == WifiMacHeader::ADDR2)
-    {
-      return m_header.GetAddr2 ();
-    }
-  if (type == WifiMacHeader::ADDR3)
-    {
-      return m_header.GetAddr3 ();
-    }
-  return 0;
-}
-
-Time
-WifiMacQueueItem::GetTimeStamp (void) const
-{
-  return m_tstamp;
-}
-
-uint32_t
-WifiMacQueueItem::GetSize (void) const
-{
-  return m_packet->GetSize () + m_header.GetSerializedSize ();
-}
-
-
-NS_OBJECT_TEMPLATE_CLASS_DEFINE (Queue,WifiMacQueueItem);
 NS_OBJECT_ENSURE_REGISTERED (WifiMacQueue);
 
 TypeId
@@ -97,8 +39,8 @@ WifiMacQueue::GetTypeId (void)
     .SetGroupName ("Wifi")
     .AddConstructor<WifiMacQueue> ()
     .AddAttribute ("MaxDelay", "If a packet stays longer than this delay in the queue, it is dropped.",
-                   TimeValue (MilliSeconds (500.0)),
-                   MakeTimeAccessor (&WifiMacQueue::m_maxDelay),
+                   TimeValue (MilliSeconds (500)),
+                   MakeTimeAccessor (&WifiMacQueue::SetMaxDelay),
                    MakeTimeChecker ())
     .AddAttribute ("DropPolicy", "Upon enqueue with full queue, drop oldest (DropOldest) or newest (DropNewest) packet",
                    EnumValue (DROP_NEWEST),
@@ -123,15 +65,12 @@ void
 WifiMacQueue::SetMaxDelay (Time delay)
 {
   NS_LOG_FUNCTION (this << delay);
-
   m_maxDelay = delay;
 }
 
 Time
 WifiMacQueue::GetMaxDelay (void) const
 {
-  NS_LOG_FUNCTION (this);
-
   return m_maxDelay;
 }
 
@@ -155,7 +94,6 @@ bool
 WifiMacQueue::Enqueue (Ptr<WifiMacQueueItem> item)
 {
   NS_LOG_FUNCTION (this << item);
-
   NS_ASSERT_MSG (GetMode () == QueueBase::QUEUE_MODE_PACKETS, "WifiMacQueues must be in packet mode");
 
   // if the queue is full, remove the first stale packet (if any) encountered
@@ -182,7 +120,6 @@ bool
 WifiMacQueue::PushFront (Ptr<WifiMacQueueItem> item)
 {
   NS_LOG_FUNCTION (this << item);
-
   NS_ASSERT_MSG (GetMode () == QueueBase::QUEUE_MODE_PACKETS, "WifiMacQueues must be in packet mode");
 
   // if the queue is full, remove the first stale packet (if any) encountered
@@ -209,7 +146,6 @@ Ptr<WifiMacQueueItem>
 WifiMacQueue::Dequeue (void)
 {
   NS_LOG_FUNCTION (this);
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
@@ -226,13 +162,12 @@ WifiMacQueue::DequeueByTidAndAddress (uint8_t tid,
                                       WifiMacHeader::AddressType type, Mac48Address dest)
 {
   NS_LOG_FUNCTION (this << dest);
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
         {
-          if ((*it)->GetHeader ().IsQosData () && (*it)->GetAddress (type) == dest &&
-              (*it)->GetHeader ().GetQosTid () == tid)
+          if ((*it)->GetHeader ().IsQosData () && (*it)->GetDestinationAddress () == dest
+              && (*it)->GetHeader ().GetQosTid () == tid)
             {
               return DoDequeue (it);
             }
@@ -248,7 +183,6 @@ Ptr<WifiMacQueueItem>
 WifiMacQueue::DequeueFirstAvailable (const Ptr<QosBlockedDestinations> blockedPackets)
 {
   NS_LOG_FUNCTION (this);
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
@@ -270,7 +204,6 @@ Ptr<const WifiMacQueueItem>
 WifiMacQueue::Peek (void) const
 {
   NS_LOG_FUNCTION (this);
-
   for (auto it = Head (); it != Tail (); it++)
     {
       // skip packets that stayed in the queue for too long. They will be
@@ -289,13 +222,12 @@ WifiMacQueue::PeekByTidAndAddress (uint8_t tid,
                                    WifiMacHeader::AddressType type, Mac48Address dest)
 {
   NS_LOG_FUNCTION (this << dest);
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
         {
-          if ((*it)->GetHeader ().IsQosData () && (*it)->GetAddress (type) == dest &&
-              (*it)->GetHeader ().GetQosTid () == tid)
+          if ((*it)->GetHeader ().IsQosData () && (*it)->GetDestinationAddress () == dest
+              && (*it)->GetHeader ().GetQosTid () == tid)
             {
               return DoPeek (it);
             }
@@ -311,7 +243,6 @@ Ptr<const WifiMacQueueItem>
 WifiMacQueue::PeekFirstAvailable (const Ptr<QosBlockedDestinations> blockedPackets)
 {
   NS_LOG_FUNCTION (this);
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
@@ -349,7 +280,6 @@ bool
 WifiMacQueue::Remove (Ptr<const Packet> packet)
 {
   NS_LOG_FUNCTION (this << packet);
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
@@ -369,18 +299,16 @@ WifiMacQueue::Remove (Ptr<const Packet> packet)
 
 uint32_t
 WifiMacQueue::GetNPacketsByTidAndAddress (uint8_t tid, WifiMacHeader::AddressType type,
-                                          Mac48Address addr)
+                                          Mac48Address dest)
 {
-  NS_LOG_FUNCTION (this << addr);
-
+  NS_LOG_FUNCTION (this << dest);
   uint32_t nPackets = 0;
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
         {
-          if ((*it)->GetHeader ().IsQosData () && (*it)->GetAddress (type) == addr &&
-              (*it)->GetHeader ().GetQosTid () == tid)
+          if ((*it)->GetHeader ().IsQosData () && (*it)->GetDestinationAddress () == dest
+              && (*it)->GetHeader ().GetQosTid () == tid)
             {
               nPackets++;
             }
@@ -396,7 +324,6 @@ bool
 WifiMacQueue::IsEmpty (void)
 {
   NS_LOG_FUNCTION (this);
-
   for (auto it = Head (); it != Tail (); )
     {
       if (!TtlExceeded (it))
@@ -413,7 +340,6 @@ uint32_t
 WifiMacQueue::GetNPackets (void)
 {
   NS_LOG_FUNCTION (this);
-
   // remove packets that stayed in the queue for too long
   for (auto it = Head (); it != Tail (); )
     {
@@ -429,7 +355,6 @@ uint32_t
 WifiMacQueue::GetNBytes (void)
 {
   NS_LOG_FUNCTION (this);
-
   // remove packets that stayed in the queue for too long
   for (auto it = Head (); it != Tail (); )
     {

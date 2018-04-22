@@ -40,9 +40,10 @@ In brief, the native |ns3| TCP model supports a full bidirectional TCP with
 connection setup and close logic.  Several congestion control algorithms
 are supported, with NewReno the default, and Westwood, Hybla, HighSpeed,
 Vegas, Scalable, Veno, Binary Increase Congestion Control (BIC), Yet Another
-HighSpeed TCP (YeAH), Illinois, H-TCP and Low Extra Delay Background Transport
-(LEDBAT) also supported. The model also supports Selective Acknowledgements
-(SACK). Multipath-TCP is not yet supported in the |ns3| releases.
+HighSpeed TCP (YeAH), Illinois, H-TCP, Low Extra Delay Background Transport
+(LEDBAT), TCP Low Priority (TCP-LP) and TCP BBR also supported. The model also supports
+Selective Acknowledgements (SACK). Multipath-TCP is not yet supported in the |ns3|
+releases.
 
 Model history
 +++++++++++++
@@ -393,7 +394,7 @@ to such value.
 .. math::   cWnd = (1-b(cWnd)) \cdot cWnd
 
 The lookup table for the function b() is taken from the same RFC.
-More informations at: http://dl.acm.org/citation.cfm?id=2756518
+More information at: http://dl.acm.org/citation.cfm?id=2756518
 
 Hybla
 ^^^^^
@@ -407,7 +408,7 @@ This coefficient is used to calculate both the slow start threshold
 and the congestion window when in slow start and in congestion avoidance,
 respectively.
 
-More informations at: http://dl.acm.org/citation.cfm?id=2756518
+More information at: http://dl.acm.org/citation.cfm?id=2756518
 
 Westwood
 ^^^^^^^^
@@ -418,7 +419,7 @@ bandwidth and use the estimated value to adjust the cwnd.·
 While Westwood performs the bandwidth sampling every ACK reception,·
 Westwood+ samples the bandwidth every RTT.
 
-More informations at: http://dl.acm.org/citation.cfm?id=381704 and
+More information at: http://dl.acm.org/citation.cfm?id=381704 and
 http://dl.acm.org/citation.cfm?id=2512757
 
 Vegas
@@ -445,7 +446,7 @@ Following the implementation of Vegas in Linux, we use 2, 4, and 1 as the
 default values of alpha, beta, and gamma, respectively, but they can be
 modified through the Attribute system.
 
-More informations at: http://dx.doi.org/10.1109/49.464716
+More information at: http://dx.doi.org/10.1109/49.464716
 
 Scalable
 ^^^^^^^^
@@ -464,7 +465,7 @@ the following equation:
 
 .. math::  cwnd = cwnd - ceil(0.125 \cdot cwnd)
 
-More informations at: http://dl.acm.org/citation.cfm?id=956989
+More information at: http://dl.acm.org/citation.cfm?id=956989
 
 Veno
 ^^^^
@@ -502,7 +503,7 @@ because the loss encountered is more likely a corruption-based loss than a
 congestion-based.  Only when N is greater than beta, Veno halves its sending
 rate as in Reno.
 
-More informations at: http://dx.doi.org/10.1109/JSAC.2002.807336
+More information at: http://dx.doi.org/10.1109/JSAC.2002.807336
 
 Bic
 ^^^
@@ -525,7 +526,7 @@ If a loss occur in either these phases, the current window (before the loss)
 can be treated as the new maximum, and the reduced (with a multiplicative
 decrease factor Beta) window size can be used as the new minimum.
 
-More informations at: http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=1354672
+More information at: http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=1354672
 
 YeAH
 ^^^^
@@ -722,7 +723,6 @@ The following unit tests have been written to validate the implementation of LED
 * LEDBAT should operate same as NewReno during slow start
 * LEDBAT should operate same as NewReno if timestamps are disabled
 * Test to validate cwnd increment in LEDBAT
-* Test to validate cwnd decrement in LEDBAT
 
 In comparison to RFC 6817, the scope and limitations of the current LEDBAT
 implementation are:
@@ -732,6 +732,101 @@ implementation are:
 * Only the MIN function is used for noise filtering 
 
 More information about LEDBAT is available in RFC 6817: https://tools.ietf.org/html/rfc6817
+
+TCP-LP
+^^^^^^
+
+TCP-Low priority is a delay based congestion control protocol in which the low
+priority data utilizes only the excess bandwidth available on an end-to-end path.
+TCP-LP uses one way delay measurements as an indicator of congestion as it does
+not influence cross-traffic in the reverse direction.
+
+On acknowledgement:
+
+.. math::
+
+  One way delay = Receiver timestamp - Receiver timestamp echo reply
+  Smoothed one way delay = 7/8 * Old Smoothed one way delay + 1/8 * one way delay
+  If smoothed one way delay > owdMin + 15 * (owdMax - owdMin) / 100
+    if LP_WITHIN_INF
+      cwnd = 1
+    else
+      cwnd = cwnd / 2
+    Inference timer is set
+
+where owdMin and owdMax are the minimum and maximum one way delays experienced
+throughout the connection, LP_WITHIN_INF indicates if TCP-LP is in inference
+phase or not
+
+More information (paper): http://cs.northwestern.edu/~akuzma/rice/doc/TCP-LP.pdf
+
+TCP-BBR
+^^^^^^^
+
+TCP-BBR is a congestion based congestion control algorithm. It seeks to operate at
+optimal point where sender experiences maximum delivery rate with minimum RTT.
+To do so, it creates a network model comprises of maximum delivery rate with minimum RTT
+observed so far. With the help of this model, BBR estimates BDP (max. bandwidth * minimum RTT)
+and controls the speed of sending data and the maximum amount of data can be inflight.
+
+It uses two factors:
+
+1. pacing_gain: controls the rate of sending data
+
+2. cwnd_gain: controls the amount of data to send
+
+Following is the highlevel BBR algorithm:
+
+On receipt of acknowledgement:
+    OnAckReceive ():
+        1. rtt = now - packet.sent_time
+        2. update_minimum_rtt (rtt)
+        3. delivery_rate = estimate_delivery_rate (packet)
+        4. update_maximum_bandwidth (delivery_rate)
+
+On data send:
+    Send ():
+        1. bdp = max_bandwidth * min_rtt
+        2. if cwnd * bdp < inflight
+                    return
+        3. if now > nextSendTime
+            transmit (packet)
+
+            nextSendTime = now + packet.size / (pacing_gain * max_bandwidth)
+           else
+            return
+
+        4. Schedule (nextSendTime, Send)
+
+To enable BBR on all TCP sockets, the following configuration can be used:
+
+::
+
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
+
+To enable BBR on a chosen TCP socket, the following configuration can be used:
+
+::
+
+  Config::Set ("$ns3::NodeListPriv/NodeList/1/$ns3::TcpL4Protocol/SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
+
+The following unit tests have been written to validate the implementation of BBR:
+
+* BBR should enable (if not already done) TCP pacing feature.
+* Test to validate the value pacing_gain and cwnd_gain in their respective state.
+
+The implementation of BBR in ns-3 is done by taking its Internet-Draft as a reference.
+In comparison to the internet draft, the scope and limitations of the current BBR
+implementation are:
+
+* It assumes that TCP socket is pacing featured.
+* It uses delivery rate estimation provided by TCP Socket.
+* SendQuantum is not yet supported.
+* BBR paper discusses traffic policing which can be a possible enhancement.
+
+More information (BBR Internet Draft): https://tools.ietf.org/html/draft-cardwell-iccrg-bbr-congestion-control-00
+
+More information (Delivery Rate Estimation): https://tools.ietf.org/html/draft-cheng-iccrg-delivery-rate-estimation-00
 
 Validation
 ++++++++++
@@ -759,6 +854,8 @@ section below on :ref:`Writing-tcp-tests`.
 * **tcp-yeah-test:** Unit tests on the YeAH congestion control
 * **tcp-illinois-test:** Unit tests on the Illinois congestion control
 * **tcp-ledbat-test:** Unit tests on the LEDBAT congestion control
+* **tcp-lp-test:** Unit tests on the TCP-LP congestion control
+* **tcp-bbr-test:** Unit tests on the BBR congestion control
 * **tcp-option:** Unit tests on TCP options
 * **tcp-pkts-acked-test:** Unit test the number of time that PktsAcked is called
 * **tcp-rto-test:** Unit test behavior after a RTO timeout occurs
@@ -767,6 +864,7 @@ section below on :ref:`Writing-tcp-tests`.
 * **tcp-timestamp:** Unit test on the timestamp option
 * **tcp-wscaling:** Unit test on the window scaling option
 * **tcp-zero-window-test:** Unit test persist behavior for zero window conditions
+* **tcp-close-test:** Unit test on the socket closing: both receiver and sender have to close their socket when all bytes are transferred
 
 Several tests have dependencies outside of the ``internet`` module, so they
 are located in a system test directory called ``src/test/ns3tcp``.  Three
@@ -803,6 +901,7 @@ Linux, and the following operations are defined:
   virtual void IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
   virtual void PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked,const Time& rtt);
   virtual Ptr<TcpCongestionOps> Fork ();
+  virtual void CwndEvent (Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCaEvent_t event);
 
 The most interesting methods to write are GetSsThresh and IncreaseWindow.
 The latter is called when TcpSocketBase decides that it is time to increase
@@ -817,42 +916,52 @@ are then asked to lower such value, and to return it.
 PktsAcked is used in case the algorithm needs timing information (such as
 RTT), and it is called each time an ACK is received.
 
+CwndEvent is used in case the algorithm needs the state of socket during different
+congestion window event.
+
 TCP SACK and non-SACK
 +++++++++++++++++++++
 To avoid code duplication and the effort of maintaining two different versions
-of the TCP core, namely RFC 6675 (TCP-SACK) and RFC 5681 (TCP congestion
-control), we have merged RFC 6675 in the current code base. If the receiver
-supports the option, the sender bases its retransmissions over the received
-SACK information. However, in the absence of that option, the best it can do is
-to follow the RFC 5681 specification (on Fast Retransmit/Recovery) and
-employing NewReno modifications in case of partial ACKs.
+of the TCP core, namely RFC 6675 (TCP-SACK) and RFC 5681 (TCP congestion control),
+we have merged RFC 6675 in the current code base. If the receiver supports the
+option, the sender bases its retransmissions over the received SACK information.
+However, in the absence of that option, the best it can do is to follow the RFC
+5681 specification (on Fast Retransmit/Recovery) and employing NewReno
+modifications in case of partial ACKs.
 
-The merge work consisted in implementing an emulation of fake SACK options in
-the sender (when the receiver does not support SACK) following RFC 5681 rules.
-The generation is straightforward: each duplicate ACK (following the definition
-of RFC 5681) carries a new SACK option, that indicates (in increasing order)
-the blocks transmitted after the SND.UNA, not including the block starting from
-SND.UNA itself.
-
-With this emulated SACK information, the sender behaviour is unified in these
-two cases. By carefully generating these SACK block, we are able to employ all
-the algorithms outlined in RFC 6675 (e.g. Update(), NextSeg(), IsLost()) during
-non-SACK transfers. Of course, in the case of RTO expiration, no guess about
-SACK block could be made, and so they are not generated (consequently, the
-implementation will re-send all segments starting from SND.UNA, even the ones
-correctly received). Please note that the generated SACK option (in the case of
-a non-SACK receiver) by the sender never leave the sender node itself; they are
-created locally by the TCP implementation and then consumed.
-
-A similar concept is used in Linux with the function tcp_add_reno_sack. Our
-implementation resides in the TcpTxBuffer class that implements a scoreboard
+A similar concept is used in Linux with the function tcp_add_reno_sack.
+Our implementation resides in the TcpTxBuffer class that implements a scoreboard
 through two different lists of segments. TcpSocketBase actively uses the API
 provided by TcpTxBuffer to query the scoreboard; please refer to the Doxygen
 documentation (and to in-code comments) if you want to learn more about this
 implementation.
 
-When SACK attribute is enabled for the receiver socket, the sender will not
-craft any SACK option, relying only on what it receives from the network.
+Delivery Rate Estimation
+++++++++++++++++++++++++
+Current TCP implementation measures the approximate value of the delivery rate of
+inflight data based on Delivery Rate Estimation.
+
+High level idea:
+The algorithm keeps track of 2 variables:
+
+1. `delivered`: Total amount of data delivered so far.
+
+2. `deliveredStamp`: Last time `delivered` was updated.
+
+When a packet is transmitted, the value of `delivered (d0)` and `deliveredStamp (t0)`
+is stored in its respective TcpTxItem using `UpdatePacketSent ()`.
+
+When an acknowledgement comes for this packet, the value of `delivered` and `deliveredStamp`
+is updated to `d1` and `t1` using `UpdateRateSample ()`.
+
+After processing the acknowledgement, the rate sample is calculated using `GenerateRateSample ()`,
+
+.. math:: delivery_rate = (d1 - d0)/(t1 - t0)
+
+
+The implementation to estimate delivery rate is available under TcpTxBuffer.
+
+More information (Delivery Rate Estimation): https://tools.ietf.org/html/draft-cheng-iccrg-delivery-rate-estimation-00
 
 Current limitations
 +++++++++++++++++++

@@ -43,6 +43,7 @@
 #include "ns3/stats-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/propagation-module.h"
+#include "ns3/rng-seed-manager.h"
 
 using namespace ns3;
 
@@ -102,7 +103,7 @@ struct StandardInfo
    * \param xMax x maximum
    * \param yMax y maximum
    */
-  StandardInfo (std::string name, enum WifiPhyStandard standard, uint16_t width, double snrLow, double snrHigh, double xMin, double xMax, double yMax)
+  StandardInfo (std::string name, WifiPhyStandard standard, uint8_t width, double snrLow, double snrHigh, double xMin, double xMax, double yMax)
     : m_name (name),
       m_standard (standard),
       m_width (width),
@@ -114,8 +115,8 @@ struct StandardInfo
   {
   }
   std::string m_name; ///< name
-  enum WifiPhyStandard m_standard; ///< standard
-  uint16_t m_width; ///< channel width
+  WifiPhyStandard m_standard; ///< standard
+  uint8_t m_width; ///< channel width
   double m_snrLow; ///< lowest SNR
   double m_snrHigh; ///< highest SNR
   double m_xMin;  ///< X minimum
@@ -164,8 +165,12 @@ int main (int argc, char *argv[])
   StandardInfo serverSelectedStandard;
   StandardInfo clientSelectedStandard;
   bool infrastructure = false;
+  uint32_t maxSlrc = 7;
+  uint32_t maxSsrc = 7;
 
   CommandLine cmd;
+  cmd.AddValue ("maxSsrc", "The maximum number of retransmission attempts for a RTS packet", maxSsrc);
+  cmd.AddValue ("maxSlrc", "The maximum number of retransmission attempts for a DATA packet", maxSlrc);
   cmd.AddValue ("rtsThreshold", "RTS threshold", rtsThreshold);
   cmd.AddValue ("maxAmpduSize", "Max A-MPDU size", maxAmpduSize);
   cmd.AddValue ("stepSize", "Power between steps (dBm)", stepSize);
@@ -187,7 +192,7 @@ int main (int argc, char *argv[])
   std::cout << "Wi-Fi rate controls on different station configurations," << std::endl;
   std::cout << "by stepping down the received signal strength across a wide range" << std::endl;
   std::cout << "and observing the adjustment of the rate." << std::endl;
-  std::cout << "Run 'wifi-manager-example --PrintHelp' to show program options."<< std::endl << std::endl;
+  std::cout << "Run 'wifi-manager-example --PrintHelp' to show program options." << std::endl << std::endl;
 
   if (infrastructure == false)
     {
@@ -238,11 +243,11 @@ int main (int argc, char *argv[])
   dataName += "-";
   plotName += standard;
   dataName += standard;
-  if (standard == "802.11n-5GHz" ||
-      standard == "802.11n-2.4GHz" ||
-      standard == "802.11ac" ||
-      standard == "802.11ax-5GHz" ||
-      standard == "802.11ax-2.4GHz")
+  if (standard == "802.11n-5GHz"
+      || standard == "802.11n-2.4GHz"
+      || standard == "802.11ac"
+      || standard == "802.11ax-5GHz"
+      || standard == "802.11ax-2.4GHz")
     {
       plotName += "-server=";
       dataName += "-server=";
@@ -252,7 +257,7 @@ int main (int argc, char *argv[])
       dataName += oss.str ();
       plotName += "-client=";
       dataName += "-client=";
-      oss.str("");
+      oss.str ("");
       oss << clientChannelWidth << "MHz_" << clientShortGuardInterval << "ns_" << clientNss << "SS";
       plotName += oss.str ();
       dataName += oss.str ();
@@ -312,10 +317,16 @@ int main (int argc, char *argv[])
   NS_ABORT_IF (clientSelectedStandard.m_name == "none");
   std::cout << "Testing " << serverSelectedStandard.m_name << " with " << wifiManager << " ..." << std::endl;
   NS_ABORT_MSG_IF (clientSelectedStandard.m_snrLow >= clientSelectedStandard.m_snrHigh, "SNR values in wrong order");
-  steps = std::abs ((int) (clientSelectedStandard.m_snrHigh - clientSelectedStandard.m_snrLow ) / stepSize) + 1;
+  steps = static_cast<uint32_t> (std::abs<double> ((clientSelectedStandard.m_snrHigh - clientSelectedStandard.m_snrLow ) / stepSize) + 1);
   NS_LOG_DEBUG ("Using " << steps << " steps for SNR range " << clientSelectedStandard.m_snrLow << ":" << clientSelectedStandard.m_snrHigh);
   Ptr<Node> clientNode = CreateObject<Node> ();
   Ptr<Node> serverNode = CreateObject<Node> ();
+
+  Config::SetDefault ("ns3::WifiRemoteStationManager::MaxSlrc", UintegerValue (maxSlrc));
+  Config::SetDefault ("ns3::WifiRemoteStationManager::MaxSsrc", UintegerValue (maxSsrc));
+  Config::SetDefault ("ns3::MinstrelWifiManager::PrintStats", BooleanValue (true));
+  Config::SetDefault ("ns3::MinstrelWifiManager::PrintSamples", BooleanValue (true));
+  Config::SetDefault ("ns3::MinstrelHtWifiManager::PrintStats", BooleanValue (true));
 
   WifiHelper wifi;
   wifi.SetStandard (serverSelectedStandard.m_standard);
@@ -356,6 +367,11 @@ int main (int argc, char *argv[])
       serverDevice = wifi.Install (wifiPhy, wifiMac, serverNode);
       clientDevice = wifi.Install (wifiPhy, wifiMac, clientNode);
     }
+
+  RngSeedManager::SetSeed (1);
+  RngSeedManager::SetRun (2);
+  wifi.AssignStreams (serverDevice, 100);
+  wifi.AssignStreams (clientDevice, 100);
 
   if (wifiManager == "MinstrelHt")
     {

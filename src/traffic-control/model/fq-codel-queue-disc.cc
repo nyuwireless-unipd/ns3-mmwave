@@ -111,8 +111,17 @@ TypeId FqCoDelQueueDisc::GetTypeId (void)
     .AddAttribute ("PacketLimit",
                    "The hard limit on the real queue size, measured in packets",
                    UintegerValue (10 * 1024),
-                   MakeUintegerAccessor (&FqCoDelQueueDisc::m_limit),
-                   MakeUintegerChecker<uint32_t> ())
+                   MakeUintegerAccessor (&FqCoDelQueueDisc::SetLimit,
+                                         &FqCoDelQueueDisc::GetLimit),
+                   MakeUintegerChecker<uint32_t> (),
+                   TypeId::DEPRECATED,
+                   "Use the MaxSize attribute instead")
+    .AddAttribute ("MaxSize",
+                   "The maximum number of packets accepted by this queue disc",
+                   QueueSizeValue (QueueSize ("0p")),
+                   MakeQueueSizeAccessor (&QueueDisc::SetMaxSize,
+                                          &QueueDisc::GetMaxSize),
+                   MakeQueueSizeChecker ())
     .AddAttribute ("Flows",
                    "The number of queues into which the incoming packets are classified",
                    UintegerValue (1024),
@@ -128,7 +137,8 @@ TypeId FqCoDelQueueDisc::GetTypeId (void)
 }
 
 FqCoDelQueueDisc::FqCoDelQueueDisc ()
-  : m_quantum (0)
+  : QueueDisc (QueueDiscSizePolicy::MULTIPLE_QUEUES, QueueSizeUnit::PACKETS),
+    m_quantum (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -195,7 +205,7 @@ FqCoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
 
   NS_LOG_DEBUG ("Packet enqueued into flow " << h << "; flow index " << m_flowsIndices[h]);
 
-  if (GetNPackets () > m_limit)
+  if (GetCurrentSize () > GetMaxSize ())
     {
       FqCoDelDrop ();
     }
@@ -279,35 +289,31 @@ FqCoDelQueueDisc::DoDequeue (void)
         }
     } while (item == 0);
 
-  flow->IncreaseDeficit (-item->GetSize ());
+  flow->IncreaseDeficit (item->GetSize () * -1);
 
   return item;
 }
 
 Ptr<const QueueDiscItem>
-FqCoDelQueueDisc::DoPeek (void) const
+FqCoDelQueueDisc::DoPeek (void)
 {
   NS_LOG_FUNCTION (this);
 
-  Ptr<FqCoDelFlow> flow;
+  return PeekDequeued ();
+}
 
-  if (!m_newFlows.empty ())
-    {
-      flow = m_newFlows.front ();
-    }
-  else
-    {
-      if (!m_oldFlows.empty ())
-        {
-          flow = m_oldFlows.front ();
-        }
-      else
-        {
-          return 0;
-        }
-    }
+void
+FqCoDelQueueDisc::SetLimit (uint32_t limit)
+{
+  NS_LOG_FUNCTION (this << limit);
+  SetMaxSize (QueueSize (QueueSizeUnit::PACKETS, limit));
+}
 
-  return flow->GetQueueDisc ()->Peek ();
+uint32_t
+FqCoDelQueueDisc::GetLimit (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return GetMaxSize ().GetValue ();
 }
 
 bool
@@ -353,8 +359,7 @@ FqCoDelQueueDisc::InitializeParams (void)
   m_flowFactory.SetTypeId ("ns3::FqCoDelFlow");
 
   m_queueDiscFactory.SetTypeId ("ns3::CoDelQueueDisc");
-  m_queueDiscFactory.Set ("Mode", EnumValue (CoDelQueueDisc::QUEUE_DISC_MODE_PACKETS));
-  m_queueDiscFactory.Set ("MaxPackets", UintegerValue (m_limit + 1));
+  m_queueDiscFactory.Set ("MaxSize", QueueSizeValue (GetMaxSize ()));
   m_queueDiscFactory.Set ("Interval", StringValue (m_interval));
   m_queueDiscFactory.Set ("Target", StringValue (m_target));
 }

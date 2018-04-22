@@ -21,17 +21,21 @@
 #ifndef DCA_TXOP_H
 #define DCA_TXOP_H
 
-#include "mac-low.h"
+#include "mac-low-transmission-parameters.h"
 #include "wifi-mac-header.h"
-#include "wifi-remote-station-manager.h"
 
 namespace ns3 {
 
-class DcfState;
+class Packet;
 class DcfManager;
 class MacTxMiddle;
+class MacLow;
+class WifiMode;
+class WifiMacQueue;
+class WifiMacQueueItem;
 class UniformRandomVariable;
 class CtrlBAckResponseHeader;
+class WifiRemoteStationManager;
 
 /**
  * \brief handle packet fragmentation and retransmissions.
@@ -100,13 +104,13 @@ public:
    *
    * \param low MacLow.
    */
-  void SetLow (const Ptr<MacLow> low);
+  void SetMacLow (const Ptr<MacLow> low);
   /**
    * Set DcfManager this DcaTxop is associated to.
    *
    * \param manager DcfManager.
    */
-  void SetManager (const Ptr<DcfManager> manager);
+  void SetDcfManager (const Ptr<DcfManager> manager);
   /**
    * Set WifiRemoteStationsManager this DcaTxop is associated to.
    *
@@ -148,7 +152,7 @@ public:
    *
    * \return WifiMacQueue
    */
-  Ptr<WifiMacQueue > GetQueue () const;
+  Ptr<WifiMacQueue > GetWifiMacQueue () const;
 
   /**
    * Set the minimum contention window size.
@@ -210,9 +214,17 @@ public:
    */
   virtual void NotifySleep (void);
   /**
+   * When off operation occurs, the queue gets cleaned up.
+   */
+  virtual void NotifyOff (void);
+  /**
    * When wake up operation occurs, channel access will be restarted.
    */
   virtual void NotifyWakeUp (void);
+  /**
+   * When on operation occurs, channel access will be started.
+   */
+  virtual void NotifyOn (void);
 
   /* Event handlers */
   /**
@@ -291,23 +303,32 @@ public:
    */
   int64_t AssignStreams (int64_t stream);
 
+  /**
+   * \returns true if access has been requested for this function and
+   *          has not been granted already, false otherwise.
+   */
+  virtual bool IsAccessRequested (void) const;
+
+  /**
+   * \param nSlots the number of slots of the backoff.
+   *
+   * Start a backoff by initializing the backoff counter to the number of
+   * slots specified.
+   */
+  void StartBackoffNow (uint32_t nSlots);
 
 protected:
-  ///< DcfState associated class
-  friend class DcfState;
+  ///< DcfManager associated class
+  friend class DcfManager;
 
   virtual void DoDispose (void);
   virtual void DoInitialize (void);
 
   /* dcf notifications forwarded here */
   /**
-   * Check if the DCF requires access.
-   *
-   * \return true if the DCF requires access,
-   *         false otherwise
+   * Notify that access request has been received.
    */
-  virtual bool NeedsAccess (void) const;
-
+  virtual void NotifyAccessRequested (void);
   /**
    * Notify the DCF that access has been granted.
    */
@@ -329,6 +350,44 @@ protected:
    * Request access from DCF manager if needed.
    */
   virtual void StartAccessIfNeeded (void);
+
+  /**
+   * \returns the current value of the CW variable. The initial value is
+   * minCW.
+   */
+  uint32_t GetCw (void) const;
+  /**
+   * Update the value of the CW variable to take into account
+   * a transmission success or a transmission abort (stop transmission
+   * of a packet after the maximum number of retransmissions has been
+   * reached). By default, this resets the CW variable to minCW.
+   */
+  void ResetCw (void);
+  /**
+   * Update the value of the CW variable to take into account
+   * a transmission failure. By default, this triggers a doubling
+   * of CW (capped by maxCW).
+   */
+  void UpdateFailedCw (void);
+  /**
+   * Return the current number of backoff slots.
+   *
+   * \return the current number of backoff slots
+   */
+  uint32_t GetBackoffSlots (void) const;
+  /**
+   * Return the time when the backoff procedure started.
+   *
+   * \return the time when the backoff procedure started
+   */
+  Time GetBackoffStart (void) const;
+  /**
+   * Update backoff slots that nSlots has passed.
+   *
+   * \param nSlots
+   * \param backoffUpdateBound
+   */
+  void UpdateBackoffSlotsNow (uint32_t nSlots, Time backoffUpdateBound);
 
   /**
    * Check if RTS should be re-transmitted if CTS was missed.
@@ -405,8 +464,7 @@ protected:
    */
   void TxDroppedPacket (Ptr<const WifiMacQueueItem> item);
 
-  Ptr<DcfState> m_dcf; //!< the DCF state
-  Ptr<DcfManager> m_manager; //!< the DCF manager
+  Ptr<DcfManager> m_dcfManager; //!< the DCF manager
   TxOk m_txOkCallback; //!< the transmit OK callback
   TxFailed m_txFailedCallback; //!< the transmit failed callback
   TxDropped m_txDroppedCallback; //!< the packet dropped callback
@@ -415,6 +473,21 @@ protected:
   Ptr <MacLow> m_low; //!< the MacLow
   Ptr<WifiRemoteStationManager> m_stationManager; //!< the wifi remote station manager
   Ptr<UniformRandomVariable> m_rng; //!<  the random stream
+
+  uint32_t m_cwMin;       //!< the CW minimum
+  uint32_t m_cwMax;       //!< the CW maximum
+  uint32_t m_cw;          //!< the current CW
+  bool m_accessRequested; //!< flag whether channel access is already requested
+  uint32_t m_backoffSlots; //!< the backoff slots
+  /**
+   * the backoffStart variable is used to keep track of the
+   * time at which a backoff was started or the time at which
+   * the backoff counter was last updated.
+   */
+  Time m_backoffStart;
+
+  uint32_t m_aifsn;        //!< the AIFSN
+  Time m_txopLimit;       //!< the txop limit time
 
   Ptr<const Packet> m_currentPacket; //!< the current packet
   WifiMacHeader m_currentHdr; //!< the current header

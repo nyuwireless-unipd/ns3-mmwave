@@ -635,7 +635,7 @@ TracedCallbackTypedefTestCase::DoRun (void)
          empty, empty, empty);
 
   CHECK (UanNetDevice::RxTxTracedCallback,
-         Ptr<const Packet>, UanAddress,
+         Ptr<const Packet>, Mac8Address,
          empty, empty, empty);
 
   CHECK (UanPhy::TracedCallback,
@@ -658,7 +658,7 @@ TracedCallbackTypedefTestCase::DoRun (void)
          empty);
 
   CHECK (WifiPhyStateHelper::StateTracedCallback,
-         Time, Time, WifiPhy::State,
+         Time, Time, WifiPhyState,
          empty, empty);
 
   CHECK (WifiPhyStateHelper::TxTracedCallback,

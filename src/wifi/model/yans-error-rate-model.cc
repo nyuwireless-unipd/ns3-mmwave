@@ -19,10 +19,11 @@
  *          Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
+#include "ns3/log.h"
 #include "yans-error-rate-model.h"
+#include "dsss-error-rate-model.h"
 #include "wifi-utils.h"
 #include "wifi-phy.h"
-#include "ns3/log.h"
 
 namespace ns3 {
 
@@ -137,7 +138,7 @@ YansErrorRateModel::CalculatePd (double ber, unsigned int d) const
 }
 
 double
-YansErrorRateModel::GetFecBpskBer (double snr, double nbits,
+YansErrorRateModel::GetFecBpskBer (double snr, uint64_t nbits,
                                    uint32_t signalSpread, uint64_t phyRate,
                                    uint32_t dFree, uint32_t adFree) const
 {
@@ -155,7 +156,7 @@ YansErrorRateModel::GetFecBpskBer (double snr, double nbits,
 }
 
 double
-YansErrorRateModel::GetFecQamBer (double snr, uint32_t nbits,
+YansErrorRateModel::GetFecQamBer (double snr, uint64_t nbits,
                                   uint32_t signalSpread,
                                   uint64_t phyRate,
                                   uint32_t m, uint32_t dFree,
@@ -174,12 +175,12 @@ YansErrorRateModel::GetFecQamBer (double snr, uint32_t nbits,
   pd = CalculatePd (ber, dFree + 1);
   pmu += adFreePlusOne * pd;
   pmu = std::min (pmu, 1.0);
-  double pms = std::pow (1 - pmu, static_cast<double> (nbits));
+  double pms = std::pow (1 - pmu, nbits);
   return pms;
 }
 
 double
-YansErrorRateModel::GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, double snr, uint32_t nbits) const
+YansErrorRateModel::GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, double snr, uint64_t nbits) const
 {
   NS_LOG_FUNCTION (this << mode << txVector.GetMode () << snr << nbits);
   if (mode.GetModulationClass () == WIFI_MOD_CLASS_ERP_OFDM

@@ -18,13 +18,14 @@
  * Author: Matías Richart <mrichart@fing.edu.uy>
  */
 
+#include "ns3/node.h"
 #include "ns3/wifi-net-device.h"
 #include "ns3/yans-wifi-channel.h"
+#include "ns3/yans-wifi-phy.h"
 #include "ns3/adhoc-wifi-mac.h"
 #include "ns3/constant-position-mobility-model.h"
 #include "ns3/simulator.h"
 #include "ns3/test.h"
-#include "ns3/double.h"
 
 using namespace ns3;
 
@@ -134,7 +135,7 @@ PowerRateAdaptationTest::TestParf ()
    */
   Mac48Address remoteAddress = Mac48Address::Allocate ();
   WifiMacHeader packetHeader;
-  packetHeader.SetTypeData ();
+  packetHeader.SetType (WIFI_MAC_DATA);
   packetHeader.SetQosTid (0);
   Ptr<Packet> packet = Create<Packet> (10);
   WifiMode ackMode;
@@ -354,7 +355,7 @@ PowerRateAdaptationTest::TestAparf ()
    */
   Mac48Address remoteAddress = Mac48Address::Allocate ();
   WifiMacHeader packetHeader;
-  packetHeader.SetTypeData ();
+  packetHeader.SetType (WIFI_MAC_DATA);
   packetHeader.SetQosTid (0);
   Ptr<Packet> packet = Create<Packet> (10);
   WifiMode ackMode;
@@ -596,7 +597,7 @@ PowerRateAdaptationTest::TestRrpaa ()
    */
   Mac48Address remoteAddress = Mac48Address::Allocate ();
   WifiMacHeader packetHeader;
-  packetHeader.SetTypeData ();
+  packetHeader.SetType (WIFI_MAC_DATA);
   packetHeader.SetQosTid (0);
   Ptr<Packet> packet = Create<Packet> (10);
   WifiMode ackMode;
@@ -978,12 +979,12 @@ PowerRateAdaptationTest::TestRrpaa ()
 
   for (int i = 0; i < 16; i++)
     {
-      for (int i = 0; i < 25; i++)
+      for (int j = 0; j < 25; j++)
         {
           manager->ReportDataOk (remoteAddress, &packetHeader, 0, ackMode, 0);
         }
 
-      for (int i = 0; i < 5; i++)
+      for (int j = 0; j < 5; j++)
         {
           manager->ReportDataFailed (remoteAddress,&packetHeader);
         }
