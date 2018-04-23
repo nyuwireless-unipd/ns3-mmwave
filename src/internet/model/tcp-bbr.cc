@@ -426,7 +426,8 @@ TcpBbr::ModulateCwndForRecovery (Ptr<TcpSocketState> tcb, const struct RateSampl
   NS_LOG_FUNCTION (this << tcb << rs);
   if ( rs->m_packetLoss > 0)
     {
-      tcb->m_cWnd = std::max (tcb->m_cWnd.Get () - rs->m_packetLoss, tcb->m_segmentSize);
+      //tcb->m_cWnd = std::max (tcb->m_cWnd.Get () - rs->m_packetLoss, tcb->m_segmentSize);
+      tcb->m_cWnd = std::max ((int)tcb->m_cWnd.Get () - (int)rs->m_packetLoss, (int)tcb->m_segmentSize);
     }
 
   if (m_packetConservation)
