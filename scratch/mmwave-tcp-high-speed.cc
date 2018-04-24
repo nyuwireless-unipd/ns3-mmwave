@@ -109,9 +109,9 @@ main (int argc, char *argv[])
 	double simStopTime = 60;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
-	std::string protocol = "TcpCubic";
+	std::string protocol = "TcpBbr";
 	//int bufferSize = 1000 *1000 * 3.5 * 0.4;
-	int bufferSize = 1000 *1000 * 1.5;
+	int bufferSize = 1000 *1000 * 150;
 	int packetSize = 1400;
 	int p2pDelay = 18;
 	// This 3GPP channel model example only demonstrate the pathloss model. The fast fading model is still in developing.
@@ -209,6 +209,11 @@ main (int argc, char *argv[])
     else if (protocol == "TcpYeah")
     {
     	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpYeah::GetTypeId ()));
+
+    }
+    else if (protocol == "TcpBbr")
+    {
+    	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
 
     }
     else
@@ -406,9 +411,9 @@ main (int argc, char *argv[])
 		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
 		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
-		// Install and start applications on UEs and remote host
-		//PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
-		//sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (i)));
+		//Install and start applications on UEs and remote host
+		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
+		sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (i)));
 
 
   			/*UdpServerHelper server (sinkPort);
@@ -421,7 +426,7 @@ main (int argc, char *argv[])
 		  client.SetAttribute ("PacketSize", UintegerValue (1400));
   		client.SetAttribute ("MaxPackets", UintegerValue (maxPacketCount));
 		  sourceApps.Add(client.Install (ueNodes.Get (i)));*/
-      PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
+      /*PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
       sinkApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(0)));
       UdpClientHelper dlClient (ueIpIface.GetAddress (i), sinkPort);
 
@@ -431,12 +436,12 @@ main (int argc, char *argv[])
 
       dlClient.SetAttribute ("Interval", TimeValue (interPacketInterval));
       dlClient.SetAttribute ("MaxPackets", UintegerValue(maxPacketCount));
-      sourceApps.Add (dlClient.Install (remoteHostContainer.Get (i)));
+      sourceApps.Add (dlClient.Install (remoteHostContainer.Get (i)));*/
 
 
-		//BulkSendHelper ftp ("ns3::TcpSocketFactory",
-		//                         InetSocketAddress (ueIpIface.GetAddress (i), sinkPort));
-		//sourceApps.Add (ftp.Install (remoteHostContainer.Get (i)));
+		BulkSendHelper ftp ("ns3::TcpSocketFactory",
+		                         InetSocketAddress (ueIpIface.GetAddress (i), sinkPort));
+		sourceApps.Add (ftp.Install (remoteHostContainer.Get (i)));
 
 	    std::ostringstream fileName;
 	    fileName<<protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay)<<"-"<<i+1<<"-TCP-DATA.txt";

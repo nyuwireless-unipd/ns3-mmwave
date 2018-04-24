@@ -3053,9 +3053,8 @@ TcpSocketBase::AdvertisedWindowSize (bool scale) const
     }
   else
     {
-      uint32_t max = m_rxBuffer->MaxRxSequence ().GetValue ();
-      uint32_t next = m_rxBuffer->NextRxSequence ().GetValue ();
-      w = ( max > next ) ? max - next : 0;
+      w = (m_rxBuffer->MaxRxSequence () > m_rxBuffer->NextRxSequence ()) ?
+    m_rxBuffer->MaxRxSequence () - m_rxBuffer->NextRxSequence () : 0;
     }
 
   // Ugly, but we are not modifying the state, that variable
