@@ -481,7 +481,7 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
       // it does not make sense to use RLC/SM when also using the EPC
       if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
         {
-          rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
+          rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_AM_ALWAYS));
         }
     }
 
