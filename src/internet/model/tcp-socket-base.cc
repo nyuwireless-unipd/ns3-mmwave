@@ -1197,6 +1197,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
   TcpHeader tcpHeader;
   uint32_t bytesRemoved = packet->RemoveHeader (tcpHeader);
   SequenceNumber32 seq = tcpHeader.GetSequenceNumber ();
+
   if (bytesRemoved == 0 || bytesRemoved > 60)
     {
       NS_LOG_ERROR ("Bytes removed: " << bytesRemoved << " invalid");
@@ -1533,7 +1534,7 @@ TcpSocketBase::EnterRecovery ()
                " calculated in flight: " << bytesInFlight);
 
   // (4.3) Retransmit the first data segment presumed dropped
-  DoRetransmit ();
+  //DoRetransmit ();
   // (4.4) Run SetPipe ()
   // (4.5) Proceed to step (C)
   // these steps are done after the ProcessAck function (SendPendingData)
@@ -1797,7 +1798,7 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
               // probably is better to retransmit it
               m_txBuffer->DeleteRetransmittedFlagFromHead ();
             }
-          DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
+          //DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
           m_cWndInfl = SafeSubtraction (m_cWndInfl, bytesAcked);
           if (segsAcked >= 1)
             {
@@ -2477,6 +2478,28 @@ TcpSocketBase::SendEmptyPacket (uint8_t flags)
 
   if (flags & TcpHeader::ACK)
     { // If sending an ACK, cancel the delay ACK as well
+
+    FILE* log_file;
+
+    char* fname = (char*)malloc(sizeof(char) * 255);
+
+    memset(fname, 0, sizeof(char) * 255);
+    std::string temp;
+    temp = "ack.txt";
+
+    log_file = fopen(temp.c_str(), "a");
+
+    fprintf(log_file, "%f \t  %u\n", Now().GetSeconds(), header.GetAckNumber ().GetValue());
+
+    fflush(log_file);
+
+    fclose(log_file);
+
+    if(fname)
+
+    free(fname);
+
+    fname = 0;
       m_delAckEvent.Cancel ();
       m_delAckCount = 0;
       if (m_highTxAck < header.GetAckNumber ())
