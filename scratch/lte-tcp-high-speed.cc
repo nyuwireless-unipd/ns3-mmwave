@@ -420,44 +420,6 @@ main (int argc, char *argv[])
 
 	}
 
-		for (uint16_t i = 0; i < ueNodes.GetN (); i++)
-	{
-		// Set the default gateway for the UE
-		Ptr<Node> ueNode = ueNodes.Get (i);
-		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
-		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
-
-		// Install and start applications on UEs and remote host
-		PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
-      sinkApps.Add (dlPacketSinkHelper.Install (remoteHostContainer.Get(0)));
-      UdpClientHelper dlClient (internetIpIfaces.GetAddress (i), sinkPort);
-
-      Time interPacketInterval = Seconds (0.001);
-		uint32_t maxPacketCount = 3200000000;
-	  dlClient.SetAttribute ("PacketSize", UintegerValue (1400));
-
-      dlClient.SetAttribute ("Interval", TimeValue (interPacketInterval));
-      dlClient.SetAttribute ("MaxPackets", UintegerValue(maxPacketCount));
-      sourceApps.Add (dlClient.Install (ueNodes.Get (i)));
-
-
-	    std::ostringstream fileName;
-	    fileName<<protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay)<<"-"<<i+1<<"-UDP-DATA.txt";
-
-		AsciiTraceHelper asciiTraceHelper;
-
-		Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
-		sinkApps.Get(i)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream));
-	    sourceApps.Get(i)->SetStartTime(Seconds (0.1+0.01*i));
-	    Simulator::Schedule (Seconds (0.1001+0.01*i), &Traces, i, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
-	    //sourceApps.Get(i)->SetStopTime (Seconds (10-1.5*i));
-	    sourceApps.Get(i)->SetStopTime (Seconds (simStopTime));
-
-		sinkPort++;
-
-	}
-
-
 
   	lteHelper->AddX2Interface (allEnbNodes);
 	sinkApps.Start (Seconds (0.));
