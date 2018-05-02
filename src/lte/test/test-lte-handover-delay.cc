@@ -144,6 +144,7 @@ LteHandoverDelayTestCase::DoRun ()
    */
   auto epcHelper = CreateObject<PointToPointEpcHelper> ();
   epcHelper -> SetAttribute("S1apLinkDelay",TimeValue(Seconds(0)));
+  epcHelper -> SetAttribute("S1apLinkDataRate", DataRateValue(DataRate("1Gb/s")));
 
   auto lteHelper = CreateObject<LteHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
