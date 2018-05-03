@@ -1447,7 +1447,7 @@ TcpTxBuffer::UpdatePacketSent (SequenceNumber32 seq, uint32_t sz)
       return;
     }
 
-  if (m_tcb->m_bytesInFlight.Get () == 0)
+  //if (m_tcb->m_bytesInFlight.Get () == 0)
     {
       m_tcb->m_firstSentTime = Simulator::Now ();
       m_tcb->m_deliveredTime = Simulator::Now ();
