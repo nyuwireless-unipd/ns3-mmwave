@@ -48,10 +48,8 @@ struct RraaWifiRemoteStation : public WifiRemoteStation
   bool m_adaptiveRtsOn;          //!< Check if Adaptive RTS mechanism is on.
   bool m_lastFrameFail;          //!< Flag if the last frame sent has failed.
   bool m_initialized;            //!< For initializing variables.
-
-  uint32_t m_nRate;              //!< Number of supported rates.
-
-  uint32_t m_rateIndex;          //!< Current rate index.
+  uint8_t m_nRate;              //!< Number of supported rates.
+  uint8_t m_rateIndex;          //!< Current rate index.
 
   RraaThresholdsTable m_thresholds; //!< RRAA thresholds for this station.
 };
@@ -113,18 +111,20 @@ RraaWifiManager::RraaWifiManager ()
   : WifiRemoteStationManager (),
     m_currentRate (0)
 {
+  NS_LOG_FUNCTION (this);
 }
 
 RraaWifiManager::~RraaWifiManager ()
 {
+  NS_LOG_FUNCTION (this);
 }
 
 void
 RraaWifiManager::SetupPhy (const Ptr<WifiPhy> phy)
 {
-  NS_LOG_FUNCTION (this);
-  uint32_t nModes = phy->GetNModes ();
-  for (uint32_t i = 0; i < nModes; i++)
+  NS_LOG_FUNCTION (this << phy);
+  uint8_t nModes = phy->GetNModes ();
+  for (uint8_t i = 0; i < nModes; i++)
     {
       WifiMode mode = phy->GetMode (i);
       WifiTxVector txVector;
@@ -229,7 +229,7 @@ RraaWifiManager::InitThresholds (RraaWifiRemoteStation *station)
   double nextMtl = 0;
   double mtl = 0;
   double ori = 0;
-  for (uint32_t i = 0; i < station->m_nRate; i++)
+  for (uint8_t i = 0; i < station->m_nRate; i++)
     {
       WifiMode mode = GetSupported (station, i);
       Time totalTxTime = GetCalcTxTime (mode) + m_sifs + m_difs;
@@ -245,7 +245,7 @@ RraaWifiManager::InitThresholds (RraaWifiRemoteStation *station)
           nextMtl = m_alpha * nextCritical;
           ori = nextMtl / m_beta;
         }
-      if (i == GetMinRate (station))
+      if (i == 0)
         {
           mtl = 1;
         }
@@ -268,16 +268,10 @@ RraaWifiManager::ResetCountersBasic (RraaWifiRemoteStation *station)
   station->m_lastReset = Simulator::Now ();
 }
 
-uint32_t
-RraaWifiManager::GetMaxRate (RraaWifiRemoteStation *station)
+uint8_t
+RraaWifiManager::GetMaxRate (RraaWifiRemoteStation *station) const
 {
   return station->m_nRate - 1;
-}
-
-uint32_t
-RraaWifiManager::GetMinRate (RraaWifiRemoteStation *station)
-{
-  return 0;
 }
 
 void
@@ -310,7 +304,6 @@ RraaWifiManager::DoReportRtsOk (WifiRemoteStation *st,
                                 double ctsSnr, WifiMode ctsMode, double rtsSnr)
 {
   NS_LOG_FUNCTION (this << st << ctsSnr << ctsMode << rtsSnr);
-  NS_LOG_DEBUG ("self=" << st << " rts ok");
 }
 
 void
@@ -342,7 +335,7 @@ RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint8_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -355,7 +348,7 @@ RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
       m_currentRate = mode.GetDataRate (channelWidth);
     }
-  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
@@ -363,7 +356,7 @@ RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint8_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -379,7 +372,7 @@ RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetShortRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
 }
 
@@ -414,12 +407,11 @@ RraaWifiManager::RunBasicAlgorithm (RraaWifiRemoteStation *station)
 {
   NS_LOG_FUNCTION (this << station);
   WifiRraaThresholds thresholds = GetThresholds (station, station->m_rateIndex);
-  double ploss = (double) station->m_nFailed / (double) thresholds.m_ewnd;
+  double ploss = (static_cast<double> (station->m_nFailed) / thresholds.m_ewnd);
   if (station->m_counter == 0
       || ploss > thresholds.m_mtl)
     {
-      if (station->m_rateIndex > GetMinRate (station)
-          && ploss > thresholds.m_mtl)
+      if (ploss > thresholds.m_mtl)
         {
           station->m_rateIndex--;
         }
@@ -459,10 +451,9 @@ RraaWifiManager::ARts (RraaWifiRemoteStation *station)
 }
 
 WifiRraaThresholds
-RraaWifiManager::GetThresholds (RraaWifiRemoteStation *station,
-                                uint32_t rate) const
+RraaWifiManager::GetThresholds (RraaWifiRemoteStation *station, uint8_t rate) const
 {
-  NS_LOG_FUNCTION (this << station << rate);
+  NS_LOG_FUNCTION (this << station << +rate);
   WifiMode mode = GetSupported (station, rate);
   return GetThresholds (station, mode);
 }

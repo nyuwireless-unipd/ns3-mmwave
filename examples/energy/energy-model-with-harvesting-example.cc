@@ -26,7 +26,7 @@
  *
  * The example considers a simple communication link between a source and a
  * destination node, where the source node sends a packet to the destination
- * every 1 second. Each node is powered by a BasiEnergySource, which is recharged
+ * every 1 second. Each node is powered by a BasicEnergySource, which is recharged
  * by a BasicEnergyHarvester, and the WiFi radio consumes energy for the transmission/
  * reception of the packets.
  *
@@ -126,51 +126,42 @@ GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize, Ptr<Node> n,
 void
 RemainingEnergy (double oldValue, double remainingEnergy)
 {
-  std::cout << Simulator::Now ().GetSeconds ()
-            << "s Current remaining energy = " << remainingEnergy << "J" << std::endl;
+  NS_LOG_UNCOND (Simulator::Now ().GetSeconds ()
+                 << "s Current remaining energy = " << remainingEnergy << "J");
 }
 
 /// Trace function for total energy consumption at node.
 void
 TotalEnergy (double oldValue, double totalEnergy)
 {
-  std::cout << Simulator::Now ().GetSeconds ()
-            << "s Total energy consumed by radio = " << totalEnergy << "J" << std::endl;
+  NS_LOG_UNCOND (Simulator::Now ().GetSeconds ()
+                 << "s Total energy consumed by radio = " << totalEnergy << "J");
 }
 
 /// Trace function for the power harvested by the energy harvester.
 void
 HarvestedPower (double oldValue, double harvestedPower)
 {
-  std::cout << Simulator::Now ().GetSeconds ()
-            << "s Current harvested power = " << harvestedPower << " W" << std::endl;
+  NS_LOG_UNCOND (Simulator::Now ().GetSeconds ()
+                 << "s Current harvested power = " << harvestedPower << " W");
 }
 
 /// Trace function for the total energy harvested by the node.
 void
 TotalEnergyHarvested (double oldValue, double TotalEnergyHarvested)
 {
-  std::cout << Simulator::Now ().GetSeconds ()
-            << "s Total energy harvested by harvester = "
-            << TotalEnergyHarvested << " J" << std::endl;
+  NS_LOG_UNCOND (Simulator::Now ().GetSeconds ()
+                 << "s Total energy harvested by harvester = "
+                 << TotalEnergyHarvested << " J");
 }
 
 
 int
 main (int argc, char *argv[])
 {
-  /*
-  LogComponentEnable ("EnergySource", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("BasicEnergySource", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("DeviceEnergyModel", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("WifiRadioEnergyModel", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("EnergyHarvester", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("BasicEnergyHarvester", LOG_LEVEL_DEBUG);
-  */
-
   std::string phyMode ("DsssRate1Mbps");
   double Prss = -80;            // dBm
-  uint32_t PpacketSize = 200;   // bytes
+  uint32_t PacketSize = 200;   // bytes
   bool verbose = false;
 
   // simulation parameters
@@ -190,7 +181,7 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
   cmd.AddValue ("Prss", "Intended primary RSS (dBm)", Prss);
-  cmd.AddValue ("PpacketSize", "size of application packet sent", PpacketSize);
+  cmd.AddValue ("PacketSize", "size of application packet sent", PacketSize);
   cmd.AddValue ("numPackets", "Total number of packets to send", numPackets);
   cmd.AddValue ("startTime", "Simulation start time", startTime);
   cmd.AddValue ("distanceToRx", "X-Axis distance between nodes", distanceToRx);
@@ -326,11 +317,20 @@ main (int argc, char *argv[])
 
   /** simulation setup **/
   // start traffic
-  Simulator::Schedule (Seconds (startTime), &GenerateTraffic, source, PpacketSize,
+  Simulator::Schedule (Seconds (startTime), &GenerateTraffic, source, PacketSize,
                        networkNodes.Get (0), numPackets, interPacketInterval);
 
   Simulator::Stop (Seconds (10.0));
   Simulator::Run ();
+
+  for (DeviceEnergyModelContainer::Iterator iter = deviceModels.Begin (); iter != deviceModels.End (); iter ++)
+    {
+      double energyConsumed = (*iter)->GetTotalEnergyConsumption ();
+      NS_LOG_UNCOND ("End of simulation (" << Simulator::Now ().GetSeconds ()
+                     << "s) Total energy consumed by radio = " << energyConsumed << "J");
+      NS_ASSERT (energyConsumed <= 1.0);
+    }
+
   Simulator::Destroy ();
 
   return 0;

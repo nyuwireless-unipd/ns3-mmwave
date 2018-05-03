@@ -23,7 +23,6 @@
 #define WIFI_PHY_H
 
 #include <map>
-#include "ns3/callback.h"
 #include "ns3/event-id.h"
 #include "ns3/mobility-model.h"
 #include "ns3/random-variable-stream.h"
@@ -32,6 +31,7 @@
 #include "interference-helper.h"
 #include "ns3/node.h"
 #include "ns3/string.h"
+#include "wifi-phy-state-helper.h"
 
 namespace ns3 {
 
@@ -48,6 +48,11 @@ class WifiPhyStateHelper;
  * FrameCaptureModel class
  */
 class FrameCaptureModel;
+
+/**
+ * WifiRadioEnergyModel class
+ */
+class WifiRadioEnergyModel;
 
 /**
  * This enumeration defines the type of an MPDU.
@@ -74,87 +79,8 @@ struct SignalNoiseDbm
 struct MpduInfo
 {
   MpduType type; ///< type
-  uint64_t mpduRefNumber; ///< MPDU ref number
+  uint32_t mpduRefNumber; ///< MPDU ref number
 };
-
-/**
- * \brief receive notifications about phy events.
- */
-class WifiPhyListener
-{
-public:
-  virtual ~WifiPhyListener ();
-
-  /**
-   * \param duration the expected duration of the packet reception.
-   *
-   * We have received the first bit of a packet. We decided
-   * that we could synchronize on this packet. It does not mean
-   * we will be able to successfully receive completely the
-   * whole packet. It means that we will report a BUSY status until
-   * one of the following happens:
-   *   - NotifyRxEndOk
-   *   - NotifyRxEndError
-   *   - NotifyTxStart
-   */
-  virtual void NotifyRxStart (Time duration) = 0;
-  /**
-   * We have received the last bit of a packet for which
-   * NotifyRxStart was invoked first and, the packet has
-   * been successfully received.
-   */
-  virtual void NotifyRxEndOk (void) = 0;
-  /**
-   * We have received the last bit of a packet for which
-   * NotifyRxStart was invoked first and, the packet has
-   * _not_ been successfully received.
-   */
-  virtual void NotifyRxEndError (void) = 0;
-  /**
-   * \param duration the expected transmission duration.
-   * \param txPowerDbm the nominal tx power in dBm
-   *
-   * We are about to send the first bit of the packet.
-   * We do not send any event to notify the end of
-   * transmission. Listeners should assume that the
-   * channel implicitely reverts to the idle state
-   * unless they have received a cca busy report.
-   */
-  virtual void NotifyTxStart (Time duration, double txPowerDbm) = 0;
-  /**
-   * \param duration the expected busy duration.
-   *
-   * This method does not really report a real state
-   * change as opposed to the other methods in this class.
-   * It merely reports that, unless the medium is reported
-   * busy through NotifyTxStart or NotifyRxStart/End,
-   * it will be busy as defined by the currently selected
-   * CCA mode.
-   *
-   * Typical client code which wants to have a clear picture
-   * of the CCA state will need to keep track of the time at
-   * which the last NotifyCcaBusyStart method is called and
-   * what duration it reported.
-   */
-  virtual void NotifyMaybeCcaBusyStart (Time duration) = 0;
-  /**
-   * \param duration the expected channel switching duration.
-   *
-   * We do not send any event to notify the end of
-   * channel switching. Listeners should assume that the
-   * channel implicitely reverts to the idle or busy states.
-   */
-  virtual void NotifySwitchingStart (Time duration) = 0;
-  /**
-   * Notify listeners that we went to sleep
-   */
-  virtual void NotifySleep (void) = 0;
-  /**
-   * Notify listeners that we woke up
-   */
-  virtual void NotifyWakeup (void) = 0;
-};
-
 
 /**
  * \brief 802.11 PHY layer model
@@ -164,51 +90,6 @@ public:
 class WifiPhy : public Object
 {
 public:
-  /**
-   * The state of the PHY layer.
-   */
-  /// State enumeration
-  enum State
-  {
-    /**
-     * The PHY layer is IDLE.
-     */
-    IDLE,
-    /**
-     * The PHY layer has sense the medium busy through the CCA mechanism
-     */
-    CCA_BUSY,
-    /**
-     * The PHY layer is sending a packet.
-     */
-    TX,
-    /**
-     * The PHY layer is receiving a packet.
-     */
-    RX,
-    /**
-     * The PHY layer is switching to other channel.
-     */
-    SWITCHING,
-    /**
-     * The PHY layer is sleeping.
-     */
-    SLEEP
-  };
-
-  /**
-   * arg1: packet received successfully
-   * arg2: snr of packet
-   * arg3: TXVECTOR of packet
-   * arg4: type of preamble used for packet.
-   */
-  typedef Callback<void, Ptr<Packet>, double, WifiTxVector> RxOkCallback;
-  /**
-   * arg1: packet received unsuccessfully
-   * arg2: snr of packet
-   */
-  typedef Callback<void, Ptr<Packet>, double> RxErrorCallback;
-
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -243,6 +124,11 @@ public:
    * PHY-level events.
    */
   void UnregisterListener (WifiPhyListener *listener);
+
+  /**
+   * \param callback the callback to invoke when PHY capabilities have changed.
+   */
+  void SetCapabilitiesChangedCallback (Callback<void> callback);
 
   /**
    * Starting receiving the plcp of a packet (i.e. the first bit of the preamble has arrived).
@@ -304,39 +190,44 @@ public:
    * Resume from sleep mode.
    */
   void ResumeFromSleep (void);
+  /**
+   * Put in off mode.
+   */
+  void SetOffMode (void);
+  /**
+   * Resume from off mode.
+   */
+  void ResumeFromOff (void);
 
   /**
    * \return true of the current state of the PHY layer is WifiPhy::IDLE, false otherwise.
    */
-  bool IsStateIdle (void);
+  bool IsStateIdle (void) const;
   /**
    * \return true of the current state of the PHY layer is WifiPhy::CCA_BUSY, false otherwise.
    */
-  bool IsStateCcaBusy (void);
-  /**
-   * \return true of the current state of the PHY layer is not WifiPhy::IDLE, false otherwise.
-   */
-  bool IsStateBusy (void);
+  bool IsStateCcaBusy (void) const;
   /**
    * \return true of the current state of the PHY layer is WifiPhy::RX, false otherwise.
    */
-  bool IsStateRx (void);
+  bool IsStateRx (void) const;
   /**
    * \return true of the current state of the PHY layer is WifiPhy::TX, false otherwise.
    */
-  bool IsStateTx (void);
+  bool IsStateTx (void) const;
   /**
    * \return true of the current state of the PHY layer is WifiPhy::SWITCHING, false otherwise.
    */
-  bool IsStateSwitching (void);
+  bool IsStateSwitching (void) const;
   /**
    * \return true if the current state of the PHY layer is WifiPhy::SLEEP, false otherwise.
    */
-  bool IsStateSleep (void);
+  bool IsStateSleep (void) const;
   /**
-   * \return the amount of time since the current state has started.
+   * \return true if the current state of the PHY layer is WifiPhy::OFF, false otherwise.
    */
-  Time GetStateDuration (void);
+  bool IsStateOff (void) const;
+
   /**
    * \return the predicted delay until this PHY can become WifiPhy::IDLE.
    *
@@ -475,7 +366,7 @@ public:
    *
    * \sa WifiPhy::GetMode()
    */
-  uint32_t GetNModes (void) const;
+  uint8_t GetNModes (void) const;
   /**
    * The WifiPhy::GetNModes() and WifiPhy::GetMode() methods are used
    * (e.g., by a WifiRemoteStationManager) to determine the set of
@@ -495,7 +386,7 @@ public:
    *
    * \sa WifiPhy::GetNModes()
    */
-  WifiMode GetMode (uint32_t mode) const;
+  WifiMode GetMode (uint8_t mode) const;
   /**
    * Check if the given WifiMode is supported by the PHY.
    *
@@ -533,7 +424,7 @@ public:
   *
   * \return the memebership selector whose index is specified.
   */
-  uint32_t GetNBssMembershipSelectors (void) const;
+  uint8_t GetNBssMembershipSelectors (void) const;
   /**
   * The WifiPhy::BssMembershipSelector() method is used
   * (e.g., by a WifiRemoteStationManager) to determine the set of
@@ -545,7 +436,7 @@ public:
   *
   * \return the memebership selector whose index is specified.
   */
-  uint32_t GetBssMembershipSelector (uint32_t selector) const;
+  uint8_t GetBssMembershipSelector (uint8_t selector) const;
   /**
    * The WifiPhy::GetMembershipSelectorModes() method is used
    * (e.g., by a WifiRemoteStationManager) to determine the set of
@@ -1199,16 +1090,6 @@ public:
   static WifiMode GetHeMcs11 ();
 
   /**
-   * The standard disallows certain combinations of WifiMode, number of
-   * spatial streams, and channel widths.  This method can be used to
-   * check whether this WifiTxVector contains an invalid combination.
-   *
-   * \param txVector the WifiTxVector to inspect
-   * \return true if the WifiTxVector parameters are allowed by the standard
-   */
-  static bool IsValidTxVector (WifiTxVector txVector);
-
-  /**
    * Public method used to fire a PhyTxBegin trace.
    * Implemented for encapsulation purposes.
    *
@@ -1419,13 +1300,13 @@ public:
    *
    * \param n the number of available levels
    */
-  void SetNTxPower (uint32_t n);
+  void SetNTxPower (uint8_t n);
   /**
    * Return the number of available transmission power levels.
    *
    * \return the number of available transmission power levels
    */
-  uint32_t GetNTxPower (void) const;
+  uint8_t GetNTxPower (void) const;
   /**
    * Sets the transmission gain (dB).
    *
@@ -1518,16 +1399,6 @@ public:
    */
   uint8_t GetMaxSupportedRxSpatialStreams (void) const;
   /**
-   * \param frequency the frequency to check
-   * \return whether frequency is in the 2.4 GHz band
-   */
-  static bool Is2_4Ghz (double frequency);
-  /**
-   * \param frequency the frequency to check
-   * \return whether frequency is in the 5 GHz band
-   */
-  static bool Is5Ghz (double frequency);
-  /**
    * Enable or disable support for HT/VHT short guard interval.
    *
    * \param shortGuardInterval Enable or disable support for short guard interval
@@ -1611,15 +1482,22 @@ public:
   /**
    * Sets the frame capture model.
    *
-   * \param rate the frame capture model
+   * \param frameCaptureModel the frame capture model
    */
-  void SetFrameCaptureModel (const Ptr<FrameCaptureModel> rate);
+  void SetFrameCaptureModel (const Ptr<FrameCaptureModel> frameCaptureModel);
   /**
    * Return the frame capture model this PHY is using.
    *
    * \return the frame capture model this PHY is using
    */
   Ptr<FrameCaptureModel> GetFrameCaptureModel (void) const;
+
+  /**
+   * Sets the wifi radio energy model.
+   *
+   * \param wifiRadioEnergyModel the wifi radio energy model
+   */
+  void SetWifiRadioEnergyModel (const Ptr<WifiRadioEnergyModel> wifiRadioEnergyModel);
 
   /**
    * \return the channel width
@@ -1689,8 +1567,8 @@ protected:
 
   uint16_t m_mpdusNum;                 //!< carries the number of expected mpdus that are part of an A-MPDU
   bool m_plcpSuccess;                  //!< Flag if the PLCP of the packet or the first MPDU in an A-MPDU has been received
-  uint64_t m_txMpduReferenceNumber;    //!< A-MPDU reference number to identify all transmitted subframes belonging to the same received A-MPDU
-  uint64_t m_rxMpduReferenceNumber;    //!< A-MPDU reference number to identify all received subframes belonging to the same received A-MPDU
+  uint32_t m_txMpduReferenceNumber;    //!< A-MPDU reference number to identify all transmitted subframes belonging to the same received A-MPDU
+  uint32_t m_rxMpduReferenceNumber;    //!< A-MPDU reference number to identify all received subframes belonging to the same received A-MPDU
 
   EventId m_endRxEvent;                //!< the end reeive event
   EventId m_endPlcpRxEvent;            //!< the end PLCP receive event
@@ -1789,7 +1667,7 @@ private:
    * \return the FrequencyWidthPair found
    */
   FrequencyWidthPair GetFrequencyWidthForChannelNumberStandard (uint8_t channelNumber, WifiPhyStandard standard) const;
-  
+
   /**
    * Due to newly arrived signal, the current reception cannot be continued and has to be aborted
    *
@@ -1800,7 +1678,7 @@ private:
    * Eventually switch to CCA busy
    */
   void MaybeCcaBusyDuration (void);
-  
+
   /**
    * Starting receiving the packet after having detected the medium is idle or after a reception switch.
    *
@@ -1932,7 +1810,7 @@ private:
   WifiModeList m_deviceRateSet;
   WifiModeList m_deviceMcsSet; //!< the device MCS set
 
-  std::vector<uint32_t> m_bssMembershipSelectorSet; //!< the BSS membership selector set
+  std::vector<uint8_t> m_bssMembershipSelectorSet; //!< the BSS membership selector set
 
   WifiPhyStandard m_standard;     //!< WifiPhyStandard
   bool m_isConstructed;                //!< true when ready to set frequency
@@ -1947,7 +1825,7 @@ private:
   double   m_rxGainDb;            //!< Reception gain (dB)
   double   m_txPowerBaseDbm;      //!< Minimum transmission power (dBm)
   double   m_txPowerEndDbm;       //!< Maximum transmission power (dBm)
-  uint32_t m_nTxPower;            //!< Number of available transmission power levels
+  uint8_t  m_nTxPower;            //!< Number of available transmission power levels
 
   bool     m_ldpc;                  //!< Flag if LDPC is used
   bool     m_stbc;                  //!< Flag if STBC is used
@@ -1956,9 +1834,6 @@ private:
   bool     m_shortPreamble;         //!< Flag if short PLCP preamble is supported
 
   Time m_guardInterval; //!< Supported HE guard interval
-
-  uint8_t m_numberOfTransmitters; //!< Number of transmitters (DEPRECATED)
-  uint8_t m_numberOfReceivers;    //!< Number of receivers (DEPRECATED)
 
   uint8_t m_numberOfAntennas;  //!< Number of transmitters
   uint8_t m_txSpatialStreams;  //!< Number of supported TX spatial streams
@@ -1980,6 +1855,9 @@ private:
 
   Ptr<InterferenceHelper::Event> m_currentEvent; //!< Hold the current event
   Ptr<FrameCaptureModel> m_frameCaptureModel; //!< Frame capture model
+  Ptr<WifiRadioEnergyModel> m_wifiRadioEnergyModel; //!< Wifi radio energy model
+
+  Callback<void> m_capabilitiesChangedCallback; //!< Callback when PHY capabilities changed
 };
 
 /**
@@ -1987,7 +1865,7 @@ private:
  * \param state       wifi state to stringify
  * \return output stream
  */
-std::ostream& operator<< (std::ostream& os, WifiPhy::State state);
+std::ostream& operator<< (std::ostream& os, WifiPhyState state);
 
 } //namespace ns3
 

@@ -166,9 +166,17 @@ public:
    */
   void NotifySleepNow (void);
   /**
+   * Notify the DCF that the device has been put in off mode.
+   */
+  void NotifyOffNow (void);
+  /**
    * Notify the DCF that the device has been resumed from sleep mode.
    */
   void NotifyWakeupNow (void);
+  /**
+   * Notify the DCF that the device has been resumed from off mode.
+   */
+  void NotifyOnNow (void);
   /**
    * \param duration the value of the received NAV.
    *
@@ -344,6 +352,7 @@ private:
   Time m_lastSwitchingDuration; //!< the last switching duration time
   bool m_rxing;                 //!< flag whether it is in receiving state
   bool m_sleeping;              //!< flag whether it is in sleeping state
+  bool m_off;                   //!< flag whether it is in off state
   Time m_eifsNoDifs;            //!< EIFS no DIFS time
   EventId m_accessTimeout;      //!< the access timeout ID
   uint32_t m_slotTimeUs;        //!< the slot time in microseconds

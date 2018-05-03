@@ -72,9 +72,17 @@ public:
   {
     m_dcf->NotifySleepNow ();
   }
+  void NotifyOff (void)
+  {
+    m_dcf->NotifyOffNow ();
+  }
   void NotifyWakeup (void)
   {
     m_dcf->NotifyWakeupNow ();
+  }
+  void NotifyOn (void)
+  {
+    m_dcf->NotifyOnNow ();
   }
 
 private:
@@ -103,6 +111,7 @@ DcfManager::DcfManager ()
     m_lastSwitchingDuration (MicroSeconds (0)),
     m_rxing (false),
     m_sleeping (false),
+    m_off (false),
     m_slotTimeUs (0),
     m_sifs (Seconds (0.0)),
     m_phyListener (0)
@@ -112,6 +121,7 @@ DcfManager::DcfManager ()
 
 DcfManager::~DcfManager ()
 {
+  NS_LOG_FUNCTION (this);
   delete m_phyListener;
   m_phyListener = 0;
 }
@@ -124,7 +134,7 @@ DcfManager::DoDispose (void)
     {
       i->Dispose ();
       i = 0;
-    } 
+    }
 }
 
 void
@@ -292,8 +302,8 @@ void
 DcfManager::RequestAccess (Ptr<DcfState> state)
 {
   NS_LOG_FUNCTION (this << state);
-  //Deny access if in sleep mode
-  if (m_sleeping)
+  //Deny access if in sleep mode or off
+  if (m_sleeping || m_off)
     {
       return;
     }
@@ -678,6 +688,25 @@ DcfManager::NotifySleepNow (void)
 }
 
 void
+DcfManager::NotifyOffNow (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_off = true;
+  //Cancel timeout
+  if (m_accessTimeout.IsRunning ())
+    {
+      m_accessTimeout.Cancel ();
+    }
+
+  //Reset backoffs
+  for (States::iterator i = m_states.begin (); i != m_states.end (); i++)
+    {
+      Ptr<DcfState> state = *i;
+      state->NotifyOff ();
+    }
+}
+
+void
 DcfManager::NotifyWakeupNow (void)
 {
   NS_LOG_FUNCTION (this);
@@ -694,6 +723,26 @@ DcfManager::NotifyWakeupNow (void)
       state->ResetCw ();
       state->m_accessRequested = false;
       state->NotifyWakeUp ();
+    }
+}
+
+void
+DcfManager::NotifyOnNow (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_off = false;
+  for (States::iterator i = m_states.begin (); i != m_states.end (); i++)
+    {
+      Ptr<DcfState> state = *i;
+      uint32_t remainingSlots = state->GetBackoffSlots ();
+      if (remainingSlots > 0)
+        {
+          state->UpdateBackoffSlotsNow (remainingSlots, Simulator::Now ());
+          NS_ASSERT (state->GetBackoffSlots () == 0);
+        }
+      state->ResetCw ();
+      state->m_accessRequested = false;
+      state->NotifyOn ();
     }
 }
 

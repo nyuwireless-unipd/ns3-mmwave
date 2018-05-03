@@ -30,6 +30,7 @@
 #include "ns3/address.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/deprecated.h"
+#include "mac8-address.h"
 
 namespace ns3 { 
 
@@ -141,6 +142,9 @@ public:
 
   /**
    * \brief Make the autoconfigured IPv6 address with Mac16Address.
+   *
+   * The EUI-64 scheme used is based on the \RFC{4944}.
+   *
    * \param addr the MAC address (16 bits).
    * \param prefix the IPv6 prefix
    * \return autoconfigured IPv6 address
@@ -149,6 +153,9 @@ public:
 
   /**
    * \brief Make the autoconfigured IPv6 address with Mac48Address.
+   *
+   * The EUI-64 scheme used is based on \RFC{2464}.
+   *
    * \param addr the MAC address (48 bits).
    * \param prefix the IPv6 prefix
    * \return autoconfigured IPv6 address
@@ -156,7 +163,7 @@ public:
   static Ipv6Address MakeAutoconfiguredAddress (Mac48Address addr, Ipv6Address prefix);
 
   /**
-   * \brief Make the autoconfigured IPv6 address with Mac48Address.
+   * \brief Make the autoconfigured IPv6 address with Mac64Address.
    * \param addr the MAC address (64 bits).
    * \param prefix the IPv6 prefix
    * \return autoconfigured IPv6 address
@@ -164,7 +171,21 @@ public:
   static Ipv6Address MakeAutoconfiguredAddress (Mac64Address addr, Ipv6Address prefix);
 
   /**
+   * \brief Make the autoconfigured IPv6 address with Mac8Address.
+   *
+   * The EUI-64 scheme used is loosely based on the \RFC{2464}.
+   *
+   * \param addr the Mac8Address address (8 bits).
+   * \param prefix the IPv6 prefix
+   * \return autoconfigured IPv6 address
+   */
+  static Ipv6Address MakeAutoconfiguredAddress (Mac8Address addr, Ipv6Address prefix);
+
+  /**
    * \brief Make the autoconfigured link-local IPv6 address with Mac16Address.
+   *
+   * The EUI-64 scheme used is based on the \RFC{4944}.
+   *
    * \param mac the MAC address (16 bits).
    * \return autoconfigured link-local IPv6 address
    */
@@ -172,17 +193,30 @@ public:
 
   /**
    * \brief Make the autoconfigured link-local IPv6 address with Mac48Address.
+   *
+   * The EUI-64 scheme used is based on \RFC{2464}.
+   *
    * \param mac the MAC address (48 bits).
    * \return autoconfigured link-local IPv6 address
    */
   static Ipv6Address MakeAutoconfiguredLinkLocalAddress (Mac48Address mac);
 
   /**
-   * \brief Make the autoconfigured link-local IPv6 address with Mac48Address.
+   * \brief Make the autoconfigured link-local IPv6 address with Mac64Address.
    * \param mac the MAC address (64 bits).
    * \return autoconfigured link-local IPv6 address
    */
   static Ipv6Address MakeAutoconfiguredLinkLocalAddress (Mac64Address mac);
+
+  /**
+   * \brief Make the autoconfigured link-local IPv6 address with Mac8Address.
+   *
+   * The EUI-64 scheme used is loosely based on the \RFC{2464}.
+   *
+   * \param mac the MAC address (8 bits).
+   * \return autoconfigured link-local IPv6 address
+   */
+  static Ipv6Address MakeAutoconfiguredLinkLocalAddress (Mac8Address mac);
 
   /**
    * \brief Print this address to the given output stream.

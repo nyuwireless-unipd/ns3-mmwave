@@ -23,19 +23,18 @@
 
 #include <stdint.h>
 #include <queue>
-#include "ns3/callback.h"
 #include "ns3/traced-value.h"
 #include "ns3/tcp-socket.h"
-#include "ns3/ptr.h"
-#include "ns3/ipv4-address.h"
 #include "ns3/ipv4-header.h"
-#include "ns3/ipv4-interface.h"
 #include "ns3/ipv6-header.h"
-#include "ns3/ipv6-interface.h"
-#include "ns3/event-id.h"
-#include "tcp-tx-buffer.h"
+#include "ns3/timer.h"
+#include "ns3/sequence-number.h"
+#include "ns3/data-rate.h"
+#include "ns3/node.h"
 #include "tcp-rx-buffer.h"
+#include "tcp-tx-buffer.h"
 #include "rtt-estimator.h"
+#include "tcp-l4-protocol.h"
 
 namespace ns3 {
 
@@ -46,6 +45,12 @@ class Packet;
 class TcpL4Protocol;
 class TcpHeader;
 class TcpCongestionOps;
+class RttEstimator;
+class TcpRxBuffer;
+class TcpTxBuffer;
+class TcpOption;
+class Ipv4Interface;
+class Ipv6Interface;
 
 /**
  * \ingroup tcp
@@ -74,9 +79,6 @@ public:
   bool            retx;   //!< True if this has been retransmitted
 };
 
-/// Container for RttHistory objects
-typedef std::deque<RttHistory> RttHistory_t;
-
 /**
  * \brief Data structure that records the congestion state of a connection
  *
@@ -99,7 +101,10 @@ public:
    */
   static TypeId GetTypeId (void);
 
-  TcpSocketState ();
+  /**
+   * \brief TcpSocketState Constructor
+   */
+  TcpSocketState () : Object () { }
 
   /**
    * \brief Copy constructor.
@@ -135,6 +140,19 @@ public:
     CA_LAST_STATE /**< Used only in debug messages */
   } TcpCongState_t;
 
+  // Note: "not triggered" events are currently not triggered by the code.
+  typedef enum
+  {
+    CA_EVENT_TX_START,     /**< first transmit when no packets in flight */
+    CA_EVENT_CWND_RESTART, /**< congestion window restart. Not triggered */
+    CA_EVENT_COMPLETE_CWR, /**< end of congestion recovery */
+    CA_EVENT_LOSS,         /**< loss timeout */
+    CA_EVENT_ECN_NO_CE,    /**< ECT set, but not CE marked. Not triggered */
+    CA_EVENT_ECN_IS_CE,    /**< received CE marked IP packet. Not triggered */
+    CA_EVENT_DELAYED_ACK,  /**< Delayed ack is sent */
+    CA_EVENT_NON_DELAYED_ACK, /**< Non-delayed ack is sent */
+  } TcpCAEvent_t;
+
   /**
    * \ingroup tcp
    * TracedValue Callback signature for TcpCongState_t
@@ -151,21 +169,29 @@ public:
   static const char* const TcpCongStateName[TcpSocketState::CA_LAST_STATE];
 
   // Congestion control
-  TracedValue<uint32_t>  m_cWnd;            //!< Congestion window
-  TracedValue<uint32_t>  m_ssThresh;        //!< Slow start threshold
-  uint32_t               m_initialCWnd;     //!< Initial cWnd value
-  uint32_t               m_initialSsThresh; //!< Initial Slow Start Threshold value
+  TracedValue<uint32_t>  m_cWnd             {0}; //!< Congestion window
+  TracedValue<uint32_t>  m_ssThresh         {0}; //!< Slow start threshold
+  uint32_t               m_initialCWnd      {0}; //!< Initial cWnd value
+  uint32_t               m_initialSsThresh  {0}; //!< Initial Slow Start Threshold value
 
   // Segment
-  uint32_t               m_segmentSize;     //!< Segment size
-  SequenceNumber32       m_lastAckedSeq;    //!< Last sequence ACKed
+  uint32_t               m_segmentSize   {0}; //!< Segment size
+  SequenceNumber32       m_lastAckedSeq  {0}; //!< Last sequence ACKed
 
-  TracedValue<TcpCongState_t> m_congState;    //!< State in the Congestion state machine
-  TracedValue<SequenceNumber32> m_highTxMark; //!< Highest seqno ever sent, regardless of ReTx
-  TracedValue<SequenceNumber32> m_nextTxSequence; //!< Next seqnum to be sent (SND.NXT), ReTx pushes it back
+  TracedValue<TcpCongState_t> m_congState {CA_OPEN}; //!< State in the Congestion state machine
 
-  uint32_t               m_rcvTimestampValue;     //!< Receiver Timestamp value 
-  uint32_t               m_rcvTimestampEchoReply; //!< Sender Timestamp echoed by the receiver
+  TracedValue<SequenceNumber32> m_highTxMark     {0}; //!< Highest seqno ever sent, regardless of ReTx
+  TracedValue<SequenceNumber32> m_nextTxSequence {0}; //!< Next seqnum to be sent (SND.NXT), ReTx pushes it back
+
+  uint32_t               m_rcvTimestampValue     {0}; //!< Receiver Timestamp value
+  uint32_t               m_rcvTimestampEchoReply {0}; //!< Sender Timestamp echoed by the receiver
+
+  // Pacing related variables
+  bool                   m_pacing            {false}; //!< Pacing status
+  DataRate               m_maxPacingRate     {0};    //!< Max Pacing rate
+  DataRate               m_currentPacingRate {0};    //!< Current Pacing rate
+
+  Time                   m_minRtt  {Time::Max ()};   //!< Minimum RTT observed throughout the connection
 
   /**
    * \brief Get cwnd in segments rather than bytes
@@ -250,36 +276,54 @@ public:
  * Fast retransmit
  * ----------------
  *
- * The fast retransmit enhancement is introduced in RFC 2581 and updated in
- * RFC 5681. It reduces the time a sender waits before retransmitting
- * a lost segment, through the assumption that if it receives a certain number
- * of duplicate ACKs, a segment has been lost and it can be retransmitted.
- * Usually, it is coupled with the Limited Transmit algorithm, defined in
- * RFC 3042.
+ * The fast retransmit enhancement is introduced in RFC 2581 and updated in RFC
+ * 5681. It reduces the time a sender waits before retransmitting a lost segment,
+ * through the assumption that if it receives a certain number of duplicate ACKs,
+ * a segment has been lost and it can be retransmitted. Usually, it is coupled
+ * with the Limited Transmit algorithm, defined in RFC 3042. These algorithms
+ * are included in this class, and they are implemented inside the ProcessAck
+ * method. With the SACK option enabled, the LimitedTransmit algorithm will be
+ * always on, as a consequence of how the information in the received SACK block
+ * is managed.
  *
- * In ns-3, these algorithms are included in this class, and it is implemented inside
- * the ProcessAck method. The attribute which manages the number of dup ACKs
- * necessary to start the fast retransmit algorithm is named "ReTxThreshold",
- * and its default value is 3, while the Limited Transmit one can be enabled
- * by setting the attribute "LimitedTransmit" to true. Before entering the
- * recovery phase, the method EnterRecovery is called.
+ * The attribute which manages the number of dup ACKs necessary to start the
+ * fast retransmit algorithm is named "ReTxThreshold", and by default is 3.
+ * The parameter is also used in TcpTxBuffer to determine if a packet is lost
+ * (please take a look at TcpTxBuffer documentation to see details) but,
+ * right now, it is assumed to be fixed. In future releases this parameter can
+ * be made dynamic, to reflect the reordering degree of the network. With SACK,
+ * the next sequence to transmit is given by the RFC 6675 algorithm. Without
+ * SACK option, the implementation adds "hints" to TcpTxBuffer to make sure it
+ * returns, as next transmittable sequence, the first lost (or presumed lost)
+ * segment.
  *
  * Fast recovery
  * -------------
  *
- * The fast recovery algorithm is introduced RFC 2001, and it
- * avoids to reset cWnd to 1 segment after sensing a loss on the channel. Instead,
- * the slow start threshold is halved, and the cWnd is set equal to such value,
- * plus segments for the cWnd inflation.
- *
- * The algorithm is implemented in the ProcessAck method.
+ * The fast recovery algorithm is introduced RFC 2001, and it avoids to reset
+ * cWnd to 1 segment after sensing a loss on the channel. Instead, a new slow
+ * start threshold value is asked to the congestion control (for instance,
+ * with NewReno the returned amount is half of the previous), and the cWnd is
+ * set equal to such value. Ns-3 does not implement any inflation/deflation to
+ * the congestion window since it uses an evolved method (borrowed from Linux
+ * operating system) to calculate the number of bytes in flight. The fundamental
+ * idea is to subtract from the total bytes in flight the lost/sacked amount
+ * (the segments that have left the network) and to add the retransmitted count.
+ * In this way, congestion window represents the exact number of bytes that
+ * should be in flight. The implementation then decides what to transmit, it
+ * there is space, between new or already transmitted data portion. If a value
+ * of the congestion window with inflation and deflation is needed, there is a
+ * traced source named "CongestionWindowInflated". However, the variable behind
+ * it is not used in the code, but maintained for backward compatibility.
  *
  * RTO expiration
  * --------------
  *
- * When the Retransmission Time Out expires, the TCP faces a big performance
- * drop. The expiration event is managed in ReTxTimeout method, that basically
- * set the cWnd to 1 segment and start "from scratch" again.
+ * When the Retransmission Time Out expires, the TCP faces a significant
+ * performance drop. The expiration event is managed in the ReTxTimeout method,
+ * which set the cWnd to 1 segment and starts "from scratch" again. The list
+ * of sent packet is set as lost entirely, and the transmission is re-started
+ * from the SND.UNA sequence number.
  *
  * Options management
  * ------------------
@@ -295,8 +339,13 @@ public:
  * ----
  *
  * The SACK generation/management is delegated to the buffer classes, namely
- * TcpTxBuffer and TcpRxBuffer. Please take a look on their documentation if
- * you need more informations.
+ * TcpTxBuffer and TcpRxBuffer. In TcpRxBuffer it is managed the creation
+ * of the SACK option from the receiver point of view. It must provide an
+ * accurate (and efficient) representation of the status of the receiver buffer.
+ * On the other side, inside TcpTxBuffer the received options (that contain
+ * the SACK block) are processed and a particular data structure, called Scoreboard,
+ * is filled. Please take a look at TcpTxBuffer and TcpRxBuffer documentation if
+ * you need more information.
  *
  */
 class TcpSocketBase : public TcpSocket
@@ -389,6 +438,18 @@ public:
    * \return a pointer to the rx buffer
    */
   Ptr<TcpRxBuffer> GetRxBuffer (void) const;
+
+  /**
+   * \brief Set the retransmission threshold (dup ack threshold for a fast retransmit)
+   * \param retxThresh the threshold
+   */
+  void SetRetxThresh (uint32_t retxThresh);
+
+  /**
+   * \brief Get the retransmission threshold (dup ack threshold for a fast retransmit)
+   * \return the threshold
+   */
+  uint32_t GetRetxThresh (void) const { return m_retxThresh; }
 
   /**
    * \brief Callback pointer for cWnd trace chaining
@@ -875,9 +936,11 @@ protected:
    * \brief Process a received ack
    * \param ackNumber ack number
    * \param scoreboardUpdated if true indicates that the scoreboard has been
+   * \param oldHeadSequence value of HeadSequence before ack
    * updated with SACK information
    */
-  virtual void ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpdated);
+  virtual void ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpdated,
+                           const SequenceNumber32 &oldHeadSequence);
 
   /**
    * \brief Recv of a data, put into buffer, call L7 to get it if necessary
@@ -916,11 +979,6 @@ protected:
   void DupAck ();
 
   /**
-   * \brief Limited transmit algorithm
-   */
-  void LimitedTransmit ();
-
-  /**
    * \brief Enter the CA_RECOVERY, and retransmit the head
    */
   void EnterRecovery ();
@@ -946,9 +1004,10 @@ protected:
   virtual void PersistTimeout (void);
 
   /**
-   * \brief Retransmit the oldest packet
+   * \brief Retransmit the first segment marked as lost, without considering
+   * available window nor pacing.
    */
-  virtual void DoRetransmit (void);
+  void DoRetransmit (void);
 
   /** \brief Add options to TcpHeader
    *
@@ -1071,86 +1130,106 @@ protected:
    */
   static uint32_t SafeSubtraction (uint32_t a, uint32_t b);
 
+  /**
+   * \brief Notify Pacing
+   */
+  void NotifyPacingPerformed (void);
+
+  /**
+   * \brief Add Tags for the Socket
+   * \param p Packet
+   */
+  void AddSocketTags (const Ptr<Packet> &p) const;
+
 protected:
   // Counters and events
-  EventId           m_retxEvent;       //!< Retransmission event
-  EventId           m_lastAckEvent;    //!< Last ACK timeout event
-  EventId           m_delAckEvent;     //!< Delayed ACK timeout event
-  EventId           m_persistEvent;    //!< Persist event: Send 1 byte to probe for a non-zero Rx window
-  EventId           m_timewaitEvent;   //!< TIME_WAIT expiration event: Move this socket to CLOSED state
-  uint32_t          m_dupAckCount;     //!< Dupack counter
-  uint32_t          m_delAckCount;     //!< Delayed ACK counter
-  uint32_t          m_delAckMaxCount;  //!< Number of packet to fire an ACK before delay timeout
-  bool              m_noDelay;         //!< Set to true to disable Nagle's algorithm
-  uint32_t          m_synCount;        //!< Count of remaining connection retries
-  uint32_t          m_synRetries;      //!< Number of connection attempts
-  uint32_t          m_dataRetrCount;   //!< Count of remaining data retransmission attempts
-  uint32_t          m_dataRetries;     //!< Number of data retransmission attempts
-  TracedValue<Time> m_rto;             //!< Retransmit timeout
-  Time              m_minRto;          //!< minimum value of the Retransmit timeout
-  Time              m_clockGranularity; //!< Clock Granularity used in RTO calcs
-  TracedValue<Time> m_lastRtt;         //!< Last RTT sample collected
-  Time              m_delAckTimeout;   //!< Time to delay an ACK
-  Time              m_persistTimeout;  //!< Time between sending 1-byte probes
-  Time              m_cnTimeout;       //!< Timeout for connection retry
-  RttHistory_t      m_history;         //!< List of sent packet
+  EventId           m_retxEvent     {}; //!< Retransmission event
+  EventId           m_lastAckEvent  {}; //!< Last ACK timeout event
+  EventId           m_delAckEvent   {}; //!< Delayed ACK timeout event
+  EventId           m_persistEvent  {}; //!< Persist event: Send 1 byte to probe for a non-zero Rx window
+  EventId           m_timewaitEvent {}; //!< TIME_WAIT expiration event: Move this socket to CLOSED state
+
+  // ACK management
+  uint32_t          m_dupAckCount {0};     //!< Dupack counter
+  uint32_t          m_delAckCount {0};     //!< Delayed ACK counter
+  uint32_t          m_delAckMaxCount {0};  //!< Number of packet to fire an ACK before delay timeout
+
+  // Nagle algorithm
+  bool              m_noDelay {false};     //!< Set to true to disable Nagle's algorithm
+
+  // Retries
+  uint32_t          m_synCount     {0}; //!< Count of remaining connection retries
+  uint32_t          m_synRetries   {0}; //!< Number of connection attempts
+  uint32_t          m_dataRetrCount {0}; //!< Count of remaining data retransmission attempts
+  uint32_t          m_dataRetries  {0}; //!< Number of data retransmission attempts
+
+  // Timeouts
+  TracedValue<Time> m_rto     {Seconds (0.0)}; //!< Retransmit timeout
+  Time              m_minRto  {Time::Max ()};   //!< minimum value of the Retransmit timeout
+  TracedValue<Time> m_lastRtt {Seconds (0.0)}; //!< Last RTT sample collected
+  Time              m_clockGranularity {Seconds (0.001)}; //!< Clock Granularity used in RTO calcs
+  Time              m_delAckTimeout    {Seconds (0.0)};   //!< Time to delay an ACK
+  Time              m_persistTimeout   {Seconds (0.0)};   //!< Time between sending 1-byte probes
+  Time              m_cnTimeout        {Seconds (0.0)};   //!< Timeout for connection retry
+
+  // History of RTT
+  std::deque<RttHistory>      m_history;         //!< List of sent packet
 
   // Connections to other layers of TCP/IP
-  Ipv4EndPoint*       m_endPoint;   //!< the IPv4 endpoint
-  Ipv6EndPoint*       m_endPoint6;  //!< the IPv6 endpoint
-  Ptr<Node>           m_node;       //!< the associated node
-  Ptr<TcpL4Protocol>  m_tcp;        //!< the associated TCP L4 protocol
+  Ipv4EndPoint*       m_endPoint  {nullptr}; //!< the IPv4 endpoint
+  Ipv6EndPoint*       m_endPoint6 {nullptr}; //!< the IPv6 endpoint
+  Ptr<Node>           m_node      {nullptr}; //!< the associated node
+  Ptr<TcpL4Protocol>  m_tcp       {nullptr}; //!< the associated TCP L4 protocol
   Callback<void, Ipv4Address,uint8_t,uint8_t,uint8_t,uint32_t> m_icmpCallback;  //!< ICMP callback
   Callback<void, Ipv6Address,uint8_t,uint8_t,uint8_t,uint32_t> m_icmpCallback6; //!< ICMPv6 callback
 
-  Ptr<RttEstimator> m_rtt; //!< Round trip time estimator
+  Ptr<RttEstimator> m_rtt {nullptr}; //!< Round trip time estimator
 
   // Rx and Tx buffer management
-  Ptr<TcpRxBuffer>              m_rxBuffer;       //!< Rx buffer (reordering buffer)
-  Ptr<TcpTxBuffer>              m_txBuffer;       //!< Tx buffer
+  Ptr<TcpRxBuffer> m_rxBuffer {nullptr}; //!< Rx buffer (reordering buffer)
+  Ptr<TcpTxBuffer> m_txBuffer {nullptr}; //!< Tx buffer
 
   // State-related attributes
-  TracedValue<TcpStates_t> m_state;         //!< TCP state
-  mutable enum SocketErrno m_errno;         //!< Socket error code
-  bool                     m_closeNotified; //!< Told app to close socket
-  bool                     m_closeOnEmpty;  //!< Close socket upon tx buffer emptied
-  bool                     m_shutdownSend;  //!< Send no longer allowed
-  bool                     m_shutdownRecv;  //!< Receive no longer allowed
-  bool                     m_connected;     //!< Connection established
-  double                   m_msl;           //!< Max segment lifetime
+  TracedValue<TcpStates_t> m_state {CLOSED};         //!< TCP state
+  mutable enum SocketErrno m_errno {ERROR_NOTERROR}; //!< Socket error code
+  bool                     m_closeNotified {false};  //!< Told app to close socket
+  bool                     m_closeOnEmpty  {false};  //!< Close socket upon tx buffer emptied
+  bool                     m_shutdownSend  {false};  //!< Send no longer allowed
+  bool                     m_shutdownRecv  {false};  //!< Receive no longer allowed
+  bool                     m_connected     {false};  //!< Connection established
+  double                   m_msl           {0.0};    //!< Max segment lifetime
 
   // Window management
-  uint16_t              m_maxWinSize;  //!< Maximum window size to advertise
-  TracedValue<uint32_t> m_rWnd;        //!< Receiver window (RCV.WND in RFC793)
-  TracedValue<uint32_t> m_advWnd;      //!< Advertised Window size
-  TracedValue<SequenceNumber32> m_highRxMark;     //!< Highest seqno received
-  SequenceNumber32 m_highTxAck;                   //!< Highest ack sent
-  TracedValue<SequenceNumber32> m_highRxAckMark;  //!< Highest ack received
-  uint32_t                      m_bytesAckedNotProcessed;  //!< Bytes acked, but not processed
-  TracedValue<uint32_t>         m_bytesInFlight; //!< Bytes in flight
+  uint16_t         m_maxWinSize              {0};  //!< Maximum window size to advertise
+  uint32_t         m_bytesAckedNotProcessed  {0};  //!< Bytes acked, but not processed
+  SequenceNumber32 m_highTxAck               {0};  //!< Highest ack sent
+  TracedValue<uint32_t> m_rWnd               {0};  //!< Receiver window (RCV.WND in RFC793)
+  TracedValue<uint32_t> m_advWnd             {0};  //!< Advertised Window size
+  TracedValue<SequenceNumber32> m_highRxMark {0};  //!< Highest seqno received
+  TracedValue<SequenceNumber32> m_highRxAckMark {0}; //!< Highest ack received
+  TracedValue<uint32_t>         m_bytesInFlight {0}; //!< Bytes in flight
 
   // Options
-  bool    m_sackEnabled;       //!< RFC SACK option enabled
-  bool    m_winScalingEnabled; //!< Window Scale option enabled (RFC 7323)
-  uint8_t m_rcvWindShift;      //!< Window shift to apply to outgoing segments
-  uint8_t m_sndWindShift;      //!< Window shift to apply to incoming segments
+  bool    m_sackEnabled       {true}; //!< RFC SACK option enabled
+  bool    m_winScalingEnabled {true}; //!< Window Scale option enabled (RFC 7323)
+  uint8_t m_rcvWindShift      {0};    //!< Window shift to apply to outgoing segments
+  uint8_t m_sndWindShift      {0};    //!< Window shift to apply to incoming segments
+  bool     m_timestampEnabled {true}; //!< Timestamp option enabled
+  uint32_t m_timestampToEcho  {0};    //!< Timestamp to echo
 
-  bool     m_timestampEnabled;    //!< Timestamp option enabled
-  uint32_t m_timestampToEcho;     //!< Timestamp to echo
-
-  EventId m_sendPendingDataEvent; //!< micro-delay event to send pending data
+  EventId m_sendPendingDataEvent {}; //!< micro-delay event to send pending data
 
   // Fast Retransmit and Recovery
-  SequenceNumber32       m_recover;      //!< Previous highest Tx seqnum for fast recovery
-  uint32_t               m_retxThresh;   //!< Fast Retransmit threshold
-  bool                   m_limitedTx;    //!< perform limited transmit
+  SequenceNumber32       m_recover    {0};   //!< Previous highest Tx seqnum for fast recovery (set it to initial seq number)
+  uint32_t               m_retxThresh {3};   //!< Fast Retransmit threshold
+  bool                   m_limitedTx  {true}; //!< perform limited transmit
 
   // Transmission Control Block
-  Ptr<TcpSocketState>    m_tcb;               //!< Congestion control informations
-  Ptr<TcpCongestionOps>  m_congestionControl; //!< Congestion control
+  Ptr<TcpSocketState>    m_tcb {nullptr};               //!< Congestion control informations
+  Ptr<TcpCongestionOps>  m_congestionControl {nullptr}; //!< Congestion control
 
   // Guesses over the other connection end
-  bool m_isFirstPartialAck; //!< First partial ACK during RECOVERY
+  bool m_isFirstPartialAck {true}; //!< First partial ACK during RECOVERY
 
   // The following two traces pass a packet with a TCP header
   TracedCallback<Ptr<const Packet>, const TcpHeader&,
@@ -1158,6 +1237,14 @@ protected:
 
   TracedCallback<Ptr<const Packet>, const TcpHeader&,
                  Ptr<const TcpSocketBase> > m_rxTrace; //!< Trace of received packets
+
+  // Pacing related variable
+  Timer m_pacingTimer {Timer::REMOVE_ON_DESTROY}; //!< Pacing Event
+
+  /**
+   * \brief Inflated congestion window trace (not used in the real code, deprecated)
+   */
+  TracedValue<uint32_t> m_cWndInfl {0};
 };
 
 /**

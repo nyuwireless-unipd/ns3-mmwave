@@ -86,9 +86,9 @@ HtCapabilities::HtCapabilities ()
     m_reservedASel (0),
     m_htSupported (0)
 {
-  for (uint32_t k = 0; k < MAX_SUPPORTED_MCS; k++)
+  for (uint8_t i = 0; i < MAX_SUPPORTED_MCS; i++)
     {
-      m_rxMcsBitmask[k] = 0;
+      m_rxMcsBitmask[i] = 0;
     }
 }
 
@@ -598,7 +598,7 @@ ATTRIBUTE_HELPER_CPP (HtCapabilities);
  * output stream output operator
  *
  * \param os output stream
- * \param htcapabilities
+ * \param htcapabilities the HT capabilities
  *
  * \returns output stream
  */
@@ -609,9 +609,9 @@ operator << (std::ostream &os, const HtCapabilities &htcapabilities)
      << "|" << bool (htcapabilities.GetSupportedChannelWidth ())
      << "|" << bool (htcapabilities.GetGreenfield ())
      << "|" << bool (htcapabilities.GetShortGuardInterval20 ()) << "|";
-  for (uint32_t k = 0; k < MAX_SUPPORTED_MCS; k++)
+  for (uint8_t i = 0; i < MAX_SUPPORTED_MCS; i++)
     {
-      os << htcapabilities.IsSupportedMcs (k) << " ";
+      os << htcapabilities.IsSupportedMcs (i) << " ";
     }
   return os;
 }
@@ -620,7 +620,7 @@ operator << (std::ostream &os, const HtCapabilities &htcapabilities)
  * input stream input operator
  *
  * \param is input stream
- * \param htcapabilities
+ * \param htcapabilities the HT capabilities
  *
  * \returns input stream
  */

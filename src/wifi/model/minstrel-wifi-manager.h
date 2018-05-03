@@ -88,11 +88,12 @@ struct MinstrelWifiRemoteStation : public WifiRemoteStation
    * then we wrap back to the row 1 col 1.
    * note: there are many other ways to do this.
    */
-  uint32_t m_col, m_index;       ///< index
+  uint8_t m_col;                 ///< vector index
+  uint8_t m_index;               ///< vector index
   uint32_t m_maxTpRate;          ///< the current throughput rate
   uint32_t m_maxTpRate2;         ///< second highest throughput rate
   uint32_t m_maxProbRate;        ///< rate with highest prob of success
-  uint32_t m_nModes;             ///< number of modes supported
+  uint8_t m_nModes;              ///< number of modes supported
   int m_totalPacketsCount;       ///< total number of packets as of now
   int m_samplePacketsCount;      ///< how many packets we have sample so far
   int m_numSamplesDeferred;      ///< number samles deferred

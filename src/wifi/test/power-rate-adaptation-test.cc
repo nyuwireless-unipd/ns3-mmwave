@@ -134,7 +134,7 @@ PowerRateAdaptationTest::TestParf ()
    */
   Mac48Address remoteAddress = Mac48Address::Allocate ();
   WifiMacHeader packetHeader;
-  packetHeader.SetTypeData ();
+  packetHeader.SetType (WIFI_MAC_DATA);
   packetHeader.SetQosTid (0);
   Ptr<Packet> packet = Create<Packet> (10);
   WifiMode ackMode;
@@ -354,7 +354,7 @@ PowerRateAdaptationTest::TestAparf ()
    */
   Mac48Address remoteAddress = Mac48Address::Allocate ();
   WifiMacHeader packetHeader;
-  packetHeader.SetTypeData ();
+  packetHeader.SetType (WIFI_MAC_DATA);
   packetHeader.SetQosTid (0);
   Ptr<Packet> packet = Create<Packet> (10);
   WifiMode ackMode;
@@ -596,7 +596,7 @@ PowerRateAdaptationTest::TestRrpaa ()
    */
   Mac48Address remoteAddress = Mac48Address::Allocate ();
   WifiMacHeader packetHeader;
-  packetHeader.SetTypeData ();
+  packetHeader.SetType (WIFI_MAC_DATA);
   packetHeader.SetQosTid (0);
   Ptr<Packet> packet = Create<Packet> (10);
   WifiMode ackMode;
@@ -978,12 +978,12 @@ PowerRateAdaptationTest::TestRrpaa ()
 
   for (int i = 0; i < 16; i++)
     {
-      for (int i = 0; i < 25; i++)
+      for (int j = 0; j < 25; j++)
         {
           manager->ReportDataOk (remoteAddress, &packetHeader, 0, ackMode, 0);
         }
 
-      for (int i = 0; i < 5; i++)
+      for (int j = 0; j < 5; j++)
         {
           manager->ReportDataFailed (remoteAddress,&packetHeader);
         }

@@ -32,7 +32,7 @@ NS_LOG_COMPONENT_DEFINE ("PositionAllocator");
 
 NS_OBJECT_ENSURE_REGISTERED (PositionAllocator);
 
-TypeId
+TypeId 
 PositionAllocator::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PositionAllocator")
@@ -95,7 +95,7 @@ ListPositionAllocator::GetSize (void) const
 
 NS_OBJECT_ENSURE_REGISTERED (GridPositionAllocator);
 
-TypeId
+TypeId 
 GridPositionAllocator::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::GridPositionAllocator")
@@ -491,7 +491,7 @@ UniformDiscPositionAllocator::GetNext (void) const
   x += m_x;
   y += m_y;
   NS_LOG_DEBUG ("Disc position x=" << x << ", y=" << y);
-  return Vector (x, y, 1.6);
+  return Vector (x, y, 0.0);
 }
 
 int64_t
@@ -502,4 +502,4 @@ UniformDiscPositionAllocator::AssignStreams (int64_t stream)
 }
 
 
-} // namespace ns3
+} // namespace ns3 

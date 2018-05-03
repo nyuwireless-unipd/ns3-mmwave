@@ -39,6 +39,7 @@ TypeId MqQueueDisc::GetTypeId (void)
 }
 
 MqQueueDisc::MqQueueDisc ()
+  : QueueDisc (QueueDiscSizePolicy::NO_LIMITS)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -67,7 +68,7 @@ MqQueueDisc::DoDequeue (void)
 }
 
 Ptr<const QueueDiscItem>
-MqQueueDisc::DoPeek (void) const
+MqQueueDisc::DoPeek (void)
 {
   NS_FATAL_ERROR ("MqQueueDisc: DoPeek should never be called");
 }

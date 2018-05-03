@@ -43,11 +43,11 @@ struct ParfWifiRemoteStation : public WifiRemoteStation
   bool m_usingRecoveryRate;  //!< If using recovery rate.
   bool m_usingRecoveryPower; //!< If using recovery power.
   uint32_t m_nRetry;         //!< Number of transmission retries.
-  uint32_t m_prevRateIndex;             //!< Rate index of the previous transmission.
-  uint32_t m_rateIndex;      //!< Current rate index used by the remote station.
-  uint8_t m_prevPowerLevel;             //!< Power level of the previous transmission.
+  uint8_t m_prevRateIndex;   //!< Rate index of the previous transmission.
+  uint8_t m_rateIndex;       //!< Current rate index used by the remote station.
+  uint8_t m_prevPowerLevel;  //!< Power level of the previous transmission.
   uint8_t m_powerLevel;      //!< Current power level used by the remote station.
-  uint32_t m_nSupported;     //!< Number of supported rates by the remote station.
+  uint8_t m_nSupported;      //!< Number of supported rates by the remote station.
   bool m_initialized;        //!< For initializing variables.
 };
 
@@ -95,6 +95,7 @@ ParfWifiManager::~ParfWifiManager ()
 void
 ParfWifiManager::SetupPhy (const Ptr<WifiPhy> phy)
 {
+  NS_LOG_FUNCTION (this << phy);
   m_minPower = phy->GetTxPowerStart ();
   m_maxPower = phy->GetTxPowerEnd ();
   WifiRemoteStationManager::SetupPhy (phy);
@@ -115,7 +116,7 @@ ParfWifiManager::DoCreateStation (void) const
   station->m_nAttempt = 0;
 
   NS_LOG_DEBUG ("create station=" << station << ", timer=" << station->m_nAttempt
-                                  << ", rate=" << station->m_rateIndex << ", power=" << (int)station->m_powerLevel);
+                                  << ", rate=" << +station->m_rateIndex << ", power=" << +station->m_powerLevel);
 
   return station;
 }
@@ -167,7 +168,7 @@ ParfWifiManager::DoReportDataFailed (WifiRemoteStation *st)
   station->m_nSuccess = 0;
 
   NS_LOG_DEBUG ("station=" << station << " data fail retry=" << station->m_nRetry << ", timer=" << station->m_nAttempt
-                           << ", rate=" << station->m_rateIndex << ", power=" << (int)station->m_powerLevel);
+                           << ", rate=" << +station->m_rateIndex << ", power=" << +station->m_powerLevel);
   if (station->m_usingRecoveryRate)
     {
       NS_ASSERT (station->m_nRetry >= 1);
@@ -236,7 +237,6 @@ void ParfWifiManager::DoReportRtsOk (WifiRemoteStation *station,
                                      double ctsSnr, WifiMode ctsMode, double rtsSnr)
 {
   NS_LOG_FUNCTION (this << station << ctsSnr << ctsMode << rtsSnr);
-  NS_LOG_DEBUG ("station=" << station << " rts ok");
 }
 
 void ParfWifiManager::DoReportDataOk (WifiRemoteStation *st,
@@ -251,7 +251,7 @@ void ParfWifiManager::DoReportDataOk (WifiRemoteStation *st,
   station->m_usingRecoveryRate = false;
   station->m_usingRecoveryPower = false;
   station->m_nRetry = 0;
-  NS_LOG_DEBUG ("station=" << station << " data ok success=" << station->m_nSuccess << ", timer=" << station->m_nAttempt << ", rate=" << station->m_rateIndex << ", power=" << (int)station->m_powerLevel);
+  NS_LOG_DEBUG ("station=" << station << " data ok success=" << station->m_nSuccess << ", timer=" << station->m_nAttempt << ", rate=" << +station->m_rateIndex << ", power=" << +station->m_powerLevel);
   if ((station->m_nSuccess == m_successThreshold
        || station->m_nAttempt == m_attemptThreshold)
       && (station->m_rateIndex < (station->m_state->m_operationalRateSet.size () - 1)))
@@ -293,7 +293,7 @@ ParfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   ParfWifiRemoteStation *station = (ParfWifiRemoteStation *) st;
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint8_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -315,7 +315,7 @@ ParfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       m_rateChange (prevRate, rate, station->m_state->m_address);
       station->m_prevRateIndex = station->m_rateIndex;
     }
-  return WifiTxVector (mode, station->m_powerLevel, GetLongRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, station->m_powerLevel, GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
@@ -325,7 +325,7 @@ ParfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
   /// \todo we could/should implement the Arf algorithm for
   /// RTS only by picking a single rate within the BasicRateSet.
   ParfWifiRemoteStation *station = (ParfWifiRemoteStation *) st;
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint8_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -341,14 +341,13 @@ ParfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetShortRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
 }
 
 bool
 ParfWifiManager::IsLowLatency (void) const
 {
-  NS_LOG_FUNCTION (this);
   return true;
 }
 

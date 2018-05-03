@@ -24,8 +24,7 @@
 namespace ns3 {
 
 WifiTxVector::WifiTxVector ()
-  : m_retries (0),
-    m_preamble (WIFI_PREAMBLE_NONE),
+  : m_preamble (WIFI_PREAMBLE_NONE),
     m_channelWidth (20),
     m_guardInterval (800),
     m_nTx (1),
@@ -40,7 +39,6 @@ WifiTxVector::WifiTxVector ()
 
 WifiTxVector::WifiTxVector (WifiMode mode,
                             uint8_t powerLevel,
-                            uint8_t retries,
                             WifiPreamble preamble,
                             uint16_t guardInterval,
                             uint8_t nTx,
@@ -51,7 +49,6 @@ WifiTxVector::WifiTxVector (WifiMode mode,
                             bool stbc)
   : m_mode (mode),
     m_txPowerLevel (powerLevel),
-    m_retries (retries),
     m_preamble (preamble),
     m_channelWidth (channelWidth),
     m_guardInterval (guardInterval),
@@ -83,12 +80,6 @@ WifiTxVector::GetTxPowerLevel (void) const
       NS_FATAL_ERROR ("WifiTxVector txPowerLevel must be set before using");
     }
   return m_txPowerLevel;
-}
-
-uint8_t
-WifiTxVector::GetRetries (void) const
-{
-  return m_retries;
 }
 
 WifiPreamble
@@ -154,12 +145,6 @@ WifiTxVector::SetTxPowerLevel (uint8_t powerlevel)
 }
 
 void
-WifiTxVector::SetRetries (uint8_t retries)
-{
-  m_retries = retries;
-}
-
-void
 WifiTxVector::SetPreambleType (WifiPreamble preamble)
 {
   m_preamble = preamble;
@@ -207,17 +192,48 @@ WifiTxVector::SetStbc (bool stbc)
   m_stbc = stbc;
 }
 
+bool
+WifiTxVector::IsValid (void) const
+{
+  std::string modeName = m_mode.GetUniqueName ();
+  if (m_channelWidth == 20)
+    {
+      if (m_nss != 3 && m_nss != 6)
+        {
+          return (modeName != "VhtMcs9");
+        }
+    }
+  else if (m_channelWidth == 80)
+    {
+      if (m_nss == 3 || m_nss == 7)
+        {
+          return (modeName != "VhtMcs6");
+        }
+      else if (m_nss == 6)
+        {
+          return (modeName != "VhtMcs9");
+        }
+    }
+  else if (m_channelWidth == 160)
+    {
+      if (m_nss == 3)
+        {
+          return (modeName != "VhtMcs9");
+        }
+    }
+  return true;
+}
+
 std::ostream & operator << ( std::ostream &os, const WifiTxVector &v)
 {
   os << "mode: " << v.GetMode () <<
-    " txpwrlvl: " << (uint16_t)v.GetTxPowerLevel () <<
-    " retries: " << (uint16_t)v.GetRetries () <<
+    " txpwrlvl: " << +v.GetTxPowerLevel () <<
     " preamble: " << v.GetPreambleType () <<
-    " channel width: " << (uint16_t)v.GetChannelWidth () <<
+    " channel width: " << +v.GetChannelWidth () <<
     " GI: " << v.GetGuardInterval () <<
-    " NTx: " << (uint16_t)v.GetNTx () <<
-    " Nss: " << (uint16_t)v.GetNss () <<
-    " Ness: " << (uint16_t)v.GetNess () <<
+    " NTx: " << +v.GetNTx () <<
+    " Nss: " << +v.GetNss () <<
+    " Ness: " << +v.GetNess () <<
     " MPDU aggregation: " << v.IsAggregation () <<
     " STBC: " << v.IsStbc ();
   return os;

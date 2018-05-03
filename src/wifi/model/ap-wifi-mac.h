@@ -25,7 +25,6 @@
 
 #include "regular-wifi-mac.h"
 #include "capability-information.h"
-#include "ht-operation.h"
 #include "supported-rates.h"
 #include "dsss-parameter-set.h"
 #include "erp-information.h"
@@ -100,10 +99,6 @@ public:
    * \return the interval between two beacon transmissions.
    */
   Time GetBeaconInterval (void) const;
-  /**
-   * Start beacon transmission immediately.
-   */
-  void StartBeaconing (void);
   /**
    * Determine whether short slot time should be enabled or not in the BSS.
    * Typically, true is returned only when there is no non-erp stations associated
@@ -204,13 +199,15 @@ private:
    */
   void SendProbeResp (Mac48Address to);
   /**
-   * Forward an association response packet to the DCF. The standard is not clear on the correct
-   * queue for management frames if QoS is supported. We always use the DCF.
+   * Forward an association or a reassociation response packet to the DCF.
+   * The standard is not clear on the correct queue for management frames if QoS is supported.
+   * We always use the DCF.
    *
    * \param to the address of the STA we are sending an association response to
    * \param success indicates whether the association was successful or not
+   * \param isReassoc indicates whether it is a reassociation response
    */
-  void SendAssocResp (Mac48Address to, bool success);
+  void SendAssocResp (Mac48Address to, bool success, bool isReassoc);
   /**
    * Forward a beacon packet to the beacon special DCF.
    */
@@ -245,6 +242,12 @@ private:
    * \return the VHT operation that we support
    */
   VhtOperation GetVhtOperation (void) const;
+  /**
+   * Return the HE operation of the current AP.
+   *
+   * \return the HE operation that we support
+   */
+  HeOperation GetHeOperation (void) const;
   /**
    * Return an instance of SupportedRates that contains all rates that we support
    * including HT rates.
@@ -288,13 +291,18 @@ private:
   void DoDispose (void);
   void DoInitialize (void);
 
+  /**
+   * \return the next Association ID to be allocated by the AP
+   */
+  uint16_t GetNextAssociationId (void);
+
   Ptr<DcaTxop> m_beaconDca;                  //!< Dedicated DcaTxop for beacons
   Time m_beaconInterval;                     //!< Interval between beacons
   bool m_enableBeaconGeneration;             //!< Flag whether beacons are being generated
   EventId m_beaconEvent;                     //!< Event to generate one beacon
   Ptr<UniformRandomVariable> m_beaconJitter; //!< UniformRandomVariable used to randomize the time of the first beacon
   bool m_enableBeaconJitter;                 //!< Flag whether the first beacon should be generated at random time
-  std::list<Mac48Address> m_staList;         //!< List of all stations currently associated to the AP
+  std::map<uint16_t, Mac48Address> m_staList; //!< Map of all stations currently associated to the AP with their association ID
   std::list<Mac48Address> m_nonErpStations;  //!< List of all non-ERP stations currently associated to the AP
   std::list<Mac48Address> m_nonHtStations;   //!< List of all non-HT stations currently associated to the AP
   bool m_enableNonErpProtection;             //!< Flag whether protection mechanism is used or not when non-ERP STAs are present within the BSS

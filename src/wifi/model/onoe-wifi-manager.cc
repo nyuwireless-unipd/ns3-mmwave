@@ -44,7 +44,7 @@ struct OnoeWifiRemoteStation : public WifiRemoteStation
   uint32_t m_tx_err; ///< transmit error
   uint32_t m_tx_retr; ///< transmit retr
   uint32_t m_tx_upper; ///< transmit upper
-  uint32_t m_txrate; ///< transmit rate
+  uint8_t m_txrate; ///< transmit rate
 };
 
 NS_OBJECT_ENSURE_REGISTERED (OnoeWifiManager);
@@ -81,15 +81,18 @@ OnoeWifiManager::OnoeWifiManager ()
   : WifiRemoteStationManager (),
     m_currentRate (0)
 {
+  NS_LOG_FUNCTION (this);
 }
 
 OnoeWifiManager::~OnoeWifiManager ()
 {
+  NS_LOG_FUNCTION (this);
 }
 
 WifiRemoteStation *
 OnoeWifiManager::DoCreateStation (void) const
 {
+  NS_LOG_FUNCTION (this);
   OnoeWifiRemoteStation *station = new OnoeWifiRemoteStation ();
   station->m_nextModeUpdate = Simulator::Now () + m_updatePeriod;
   station->m_shortRetry = 0;
@@ -103,14 +106,15 @@ OnoeWifiManager::DoCreateStation (void) const
 }
 
 void
-OnoeWifiManager::DoReportRxOk (WifiRemoteStation *station,
-                               double rxSnr, WifiMode txMode)
+OnoeWifiManager::DoReportRxOk (WifiRemoteStation *station, double rxSnr, WifiMode txMode)
 {
+  NS_LOG_FUNCTION (this << station << rxSnr << txMode);
 }
 
 void
 OnoeWifiManager::DoReportRtsFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
   station->m_shortRetry++;
 }
@@ -118,20 +122,21 @@ OnoeWifiManager::DoReportRtsFailed (WifiRemoteStation *st)
 void
 OnoeWifiManager::DoReportDataFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
   station->m_longRetry++;
 }
 
 void
-OnoeWifiManager::DoReportRtsOk (WifiRemoteStation *station,
-                                double ctsSnr, WifiMode ctsMode, double rtsSnr)
+OnoeWifiManager::DoReportRtsOk (WifiRemoteStation *station, double ctsSnr, WifiMode ctsMode, double rtsSnr)
 {
+  NS_LOG_FUNCTION (this << station<< ctsSnr << ctsMode << rtsSnr);
 }
 
 void
-OnoeWifiManager::DoReportDataOk (WifiRemoteStation *st,
-                                 double ackSnr, WifiMode ackMode, double dataSnr)
+OnoeWifiManager::DoReportDataOk (WifiRemoteStation *st, double ackSnr, WifiMode ackMode, double dataSnr)
 {
+  NS_LOG_FUNCTION (this << st << ackSnr << ackMode << dataSnr);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
   UpdateRetry (station);
   station->m_tx_ok++;
@@ -140,6 +145,7 @@ OnoeWifiManager::DoReportDataOk (WifiRemoteStation *st,
 void
 OnoeWifiManager::DoReportFinalRtsFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
   UpdateRetry (station);
   station->m_tx_err++;
@@ -148,6 +154,7 @@ OnoeWifiManager::DoReportFinalRtsFailed (WifiRemoteStation *st)
 void
 OnoeWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
   UpdateRetry (station);
   station->m_tx_err++;
@@ -156,6 +163,7 @@ OnoeWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 void
 OnoeWifiManager::UpdateRetry (OnoeWifiRemoteStation *station)
 {
+  NS_LOG_FUNCTION (this << station);
   station->m_tx_retr += station->m_shortRetry + station->m_longRetry;
   station->m_shortRetry = 0;
   station->m_longRetry = 0;
@@ -164,6 +172,7 @@ OnoeWifiManager::UpdateRetry (OnoeWifiRemoteStation *station)
 void
 OnoeWifiManager::UpdateMode (OnoeWifiRemoteStation *station)
 {
+  NS_LOG_FUNCTION (this << station);
   if (Simulator::Now () < station->m_nextModeUpdate)
     {
       return;
@@ -175,7 +184,7 @@ OnoeWifiManager::UpdateMode (OnoeWifiRemoteStation *station)
    */
 
   int dir = 0, enough;
-  uint32_t nrate;
+  uint8_t nrate;
   enough = (station->m_tx_ok + station->m_tx_err >= 10);
 
   /* no packet reached -> down */
@@ -246,10 +255,11 @@ OnoeWifiManager::UpdateMode (OnoeWifiRemoteStation *station)
 WifiTxVector
 OnoeWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
   UpdateMode (station);
   NS_ASSERT (station->m_txrate < GetNSupported (station));
-  uint32_t rateIndex;
+  uint8_t rateIndex;
   if (station->m_longRetry < 4)
     {
       rateIndex = station->m_txrate;
@@ -287,7 +297,7 @@ OnoeWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
           rateIndex = station->m_txrate;
         }
     }
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint8_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -299,14 +309,15 @@ OnoeWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
       m_currentRate = mode.GetDataRate (channelWidth);
     }
-  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetPreambleForTransmission (mode, GetAddress (st)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (st)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
 OnoeWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
+  NS_LOG_FUNCTION (this << st);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint8_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -323,7 +334,7 @@ OnoeWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetShortRetryCount (station), GetPreambleForTransmission (mode, GetAddress (st)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (st)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
 }
 

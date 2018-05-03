@@ -41,7 +41,6 @@ class DcaTxop;
 class DcfState : public Object
 {
 public:
-
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -69,15 +68,15 @@ public:
    */
   void SetAifsn (uint32_t aifsn);
   /**
-   * Set the minimum congestion window size.
+   * Set the minimum contention window size.
    *
-   * \param minCw the minimum congestion window size
+   * \param minCw the minimum contention window size
    */
   void SetCwMin (uint32_t minCw);
   /**
-   * Set the maximum congestion window size.
+   * Set the maximum contention window size.
    *
-   * \param maxCw the maximum congestion window size
+   * \param maxCw the maximum contention window size
    */
   void SetCwMax (uint32_t maxCw);
   /**
@@ -93,15 +92,15 @@ public:
    */
   uint32_t GetAifsn (void) const;
   /**
-   * Return the minimum congestion window size.
+   * Return the minimum contention window size.
    *
-   * \return the minimum congestion window size
+   * \return the minimum contention window size
    */
   uint32_t GetCwMin (void) const;
   /**
-   * Return the maximum congestion window size.
+   * Return the maximum contention window size.
    *
-   * \return the maximum congestion window size
+   * \return the maximum contention window size
    */
   uint32_t GetCwMax (void) const;
   /**
@@ -194,9 +193,17 @@ protected:
    */
   void NotifySleep (void);
   /**
+   * Notify that the device has started to switch off.
+   */
+  void NotifyOff (void);
+  /**
    * Notify that the device has started to wake up
    */
   void NotifyWakeUp (void);
+  /**
+   * Notify that the device has started to switch on.
+   */
+  void NotifyOn (void);
 
   uint32_t m_aifsn;        //!< the AIFSN
   uint32_t m_backoffSlots; //!< the backoff slots

@@ -22,19 +22,23 @@
 #define WIFI_UTILS_H
 
 #include "wifi-mode.h"
+#include "ctrl-headers.h"
+#include "wifi-mac-header.h"
+#include "wifi-mac-trailer.h"
 #include "ns3/nstime.h"
 #include "ns3/uinteger.h"
+#include "ns3/packet.h"
 
 namespace ns3 {
 
- /**
-  * Return the logarithm of the given value to base 2.
-  *
-  * \param val
-  *
-  * \return the logarithm of val to base 2.
-  */
-  double Log2 (double val);
+/**
+ * Return the logarithm of the given value to base 2.
+ *
+ * \param val
+ *
+ * \return the logarithm of val to base 2.
+ */
+double Log2 (double val);
 /**
  * Convert from dBm to Watts.
  *
@@ -68,6 +72,16 @@ double WToDbm (double w);
  */
 double RatioToDb (double ratio);
 /**
+ * \param frequency the frequency to check
+ * \return whether frequency is in the 2.4 GHz band
+ */
+bool Is2_4Ghz (double frequency);
+/**
+ * \param frequency the frequency to check
+ * \return whether frequency is in the 5 GHz band
+ */
+bool Is5Ghz (double frequency);
+/**
  * Convert the guard interval to nanoseconds based on the wifimode.
  *
  * \param mode the wifimode
@@ -77,6 +91,56 @@ double RatioToDb (double ratio);
  * \return the guard interval duration in nanoseconds
  */
 uint16_t ConvertGuardIntervalToNanoSeconds (WifiMode mode, bool htShortGuardInterval, Time heGuardInterval);
+/**
+ * Return the total ACK size (including FCS trailer).
+ *
+ * \return the total ACK size
+ */
+uint32_t GetAckSize (void);
+/**
+ * Return the total Block ACK size (including FCS trailer).
+ *
+ * \param type the Block ACK type
+ * \return the total Block ACK size
+ */
+uint32_t GetBlockAckSize (BlockAckType type);
+/**
+ * Return the total RTS size (including FCS trailer).
+ *
+ * \return the total RTS size
+ */
+uint32_t GetRtsSize (void);
+/**
+ * Return the total CTS size (including FCS trailer).
+ *
+ * \return the total CTS size
+ */
+uint32_t GetCtsSize (void);
+/**
+ * \param seq MPDU sequence number
+ * \param winstart sequence number window start
+ * \param winsize the size of the sequence number window (currently default is 64)
+ * \returns true if in the window
+ *
+ * This method checks if the MPDU's sequence number is inside the scoreboard boundaries or not
+ */
+bool IsInWindow (uint16_t seq, uint16_t winstart, uint16_t winsize);
+/**
+ * Add FCS trailer to a packet.
+ *
+ * \param packet
+ */
+void AddWifiMacTrailer (Ptr<Packet> packet);
+/**
+ * Return the total size of the packet after WifiMacHeader and FCS trailer
+ * have been added.
+ *
+ * \param packet the packet to be encapsulated with WifiMacHeader and FCS trailer
+ * \param hdr the WifiMacHeader
+ * \param isAmpdu whether packet is part of an A-MPDU
+ * \return the total packet size
+ */
+uint32_t GetSize (Ptr<const Packet> packet, const WifiMacHeader *hdr, bool isAmpdu);
 
 } // namespace ns3
 

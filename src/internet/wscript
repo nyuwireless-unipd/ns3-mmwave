@@ -66,7 +66,7 @@ def configure(conf):
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
                                      "NSC not found (see option --with-nsc)")
         return
-    
+
     if Options.platform in ['linux', 'freebsd']:
         arch = os.uname()[4]
     else:
@@ -78,7 +78,7 @@ def configure(conf):
         conf.check_nonfatal(mandatory=True, lib='dl', define_name='HAVE_DL', uselib_store='DL')
         ok = True
     conf.msg('Checking for NSC supported architecture ' + (arch or ''), ok)
-    
+
     if not ok:
         conf.env['NSC_ENABLED'] = False
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
@@ -150,7 +150,7 @@ def build(bld):
         'model/tcp-vegas.cc',
         'model/tcp-congestion-ops.cc',
         'model/tcp-westwood.cc',
-        'model/tcp-scalable.cc', 
+        'model/tcp-scalable.cc',
         'model/tcp-veno.cc',
         'model/tcp-bic.cc',
         'model/tcp-cubic.cc',
@@ -158,6 +158,7 @@ def build(bld):
         'model/tcp-ledbat.cc',
         'model/tcp-illinois.cc',
         'model/tcp-htcp.cc',
+        'model/tcp-lp.cc',
         'model/tcp-rx-buffer.cc',
         'model/tcp-tx-buffer.cc',
         'model/tcp-option.cc',
@@ -265,6 +266,7 @@ def build(bld):
         'test/tcp-yeah-test.cc',
         'test/tcp-illinois-test.cc',
         'test/tcp-htcp-test.cc',
+        'test/tcp-lp-test.cc',
         'test/tcp-ledbat-test.cc',
         'test/tcp-zero-window-test.cc',
         'test/tcp-pkts-acked-test.cc',
@@ -284,7 +286,7 @@ def build(bld):
         'test/tcp-endpoint-bug2211.cc',
         'test/tcp-datasentcb-test.cc',
         'test/ipv4-rip-test.cc',
-        
+        'test/tcp-close-test.cc',
         ]
     privateheaders = bld(features='ns3privateheader')
     privateheaders.module = 'internet'
@@ -384,6 +386,7 @@ def build(bld):
         'model/tcp-yeah.h',
         'model/tcp-illinois.h',
         'model/tcp-htcp.h',
+        'model/tcp-lp.h',
         'model/tcp-ledbat.h',
         'model/tcp-socket-base.h',
         'model/tcp-tx-buffer.h',
@@ -413,4 +416,3 @@ def build(bld):
         bld.recurse('examples')
 
     bld.ns3_python_bindings()
-

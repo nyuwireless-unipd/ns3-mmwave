@@ -235,10 +235,24 @@ DcfState::NotifySleep (void)
 }
 
 void
+DcfState::NotifyOff (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_txop->NotifyOff ();
+}
+
+void
 DcfState::NotifyWakeUp (void)
 {
   NS_LOG_FUNCTION (this);
   m_txop->NotifyWakeUp ();
+}
+
+void
+DcfState::NotifyOn (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_txop->NotifyOn ();
 }
 
 bool

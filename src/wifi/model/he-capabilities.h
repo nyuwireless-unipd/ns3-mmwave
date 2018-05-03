@@ -143,10 +143,9 @@ public:
   /**
    * Get highest MCS supported.
    *
-   * \param mcs the MCS
    * \returns the highest MCS is supported
    */
-  uint8_t GetHighestMcsSupported (uint8_t mcs) const;
+  uint8_t GetHighestMcsSupported (void) const;
   /**
    * Get highest NSS supported.
    *
@@ -193,7 +192,7 @@ public:
 
   /*
    * This information element is a bit special in that it is only
-   * included if the STA is an VHT STA. To support this we
+   * included if the STA is an HE STA. To support this we
    * override the Serialize and GetSerializedSize methods of
    * WifiInformationElement.
    */

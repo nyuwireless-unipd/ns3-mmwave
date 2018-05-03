@@ -77,14 +77,14 @@ EdcaParameterSet::SetBeAci (uint8_t aci)
 }
 
 void
-EdcaParameterSet::SetBeCWmin (uint8_t cwMin)
+EdcaParameterSet::SetBeCWmin (uint32_t cwMin)
 {
   uint8_t ECWmin = log2 (cwMin + 1);
   m_acBE |= (ECWmin & 0x0f) << 8;
 }
 
 void
-EdcaParameterSet::SetBeCWmax (uint8_t cwMax)
+EdcaParameterSet::SetBeCWmax (uint32_t cwMax)
 {
   uint8_t ECWmax = log2 (cwMax + 1);
   m_acBE |= (ECWmax & 0x0f) << 12;
@@ -115,14 +115,14 @@ EdcaParameterSet::SetBkAci (uint8_t aci)
 }
 
 void
-EdcaParameterSet::SetBkCWmin (uint8_t cwMin)
+EdcaParameterSet::SetBkCWmin (uint32_t cwMin)
 {
   uint8_t ECWmin = log2 (cwMin + 1);
   m_acBK |= (ECWmin & 0x0f) << 8;
 }
 
 void
-EdcaParameterSet::SetBkCWmax (uint8_t cwMax)
+EdcaParameterSet::SetBkCWmax (uint32_t cwMax)
 {
   uint8_t ECWmax = log2 (cwMax + 1);
   m_acBK |= (ECWmax & 0x0f) << 12;
@@ -153,14 +153,14 @@ EdcaParameterSet::SetViAci (uint8_t aci)
 }
 
 void
-EdcaParameterSet::SetViCWmin (uint8_t cwMin)
+EdcaParameterSet::SetViCWmin (uint32_t cwMin)
 {
   uint8_t ECWmin = log2 (cwMin + 1);
   m_acVI |= (ECWmin & 0x0f) << 8;
 }
 
 void
-EdcaParameterSet::SetViCWmax (uint8_t cwMax)
+EdcaParameterSet::SetViCWmax (uint32_t cwMax)
 {
   uint8_t ECWmax = log2 (cwMax + 1);
   m_acVI |= (ECWmax & 0x0f) << 12;
@@ -191,14 +191,14 @@ EdcaParameterSet::SetVoAci (uint8_t aci)
 }
 
 void
-EdcaParameterSet::SetVoCWmin (uint8_t cwMin)
+EdcaParameterSet::SetVoCWmin (uint32_t cwMin)
 {
   uint8_t ECWmin = log2 (cwMin + 1);
   m_acVO |= (ECWmin & 0x0f) << 8;
 }
 
 void
-EdcaParameterSet::SetVoCWmax (uint8_t cwMax)
+EdcaParameterSet::SetVoCWmax (uint32_t cwMax)
 {
   uint8_t ECWmax = log2 (cwMax + 1);
   m_acVO |= (ECWmax & 0x0f) << 12;
@@ -234,14 +234,14 @@ EdcaParameterSet::GetBeAci (void) const
   return ((m_acBE >> 5) & 0x03);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetBeCWmin (void) const
 {
   uint8_t ECWmin = ((m_acBE >> 8) & 0x0f);
   return (exp2 (ECWmin) - 1);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetBeCWmax (void) const
 {
   uint8_t ECWmax = ((m_acBE >> 12) & 0x0f);
@@ -272,14 +272,14 @@ EdcaParameterSet::GetBkAci (void) const
   return ((m_acBK >> 5) & 0x03);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetBkCWmin (void) const
 {
   uint8_t ECWmin = ((m_acBK >> 8) & 0x0f);
   return (exp2 (ECWmin) - 1);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetBkCWmax (void) const
 {
   uint8_t ECWmax = ((m_acBK >> 12) & 0x0f);
@@ -310,14 +310,14 @@ EdcaParameterSet::GetViAci (void) const
   return ((m_acVI >> 5) & 0x03);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetViCWmin (void) const
 {
   uint8_t ECWmin = ((m_acVI >> 8) & 0x0f);
   return (exp2 (ECWmin) - 1);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetViCWmax (void) const
 {
   uint8_t ECWmax = ((m_acVI >> 12) & 0x0f);
@@ -348,14 +348,14 @@ EdcaParameterSet::GetVoAci (void) const
   return ((m_acVO >> 5) & 0x03);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetVoCWmin (void) const
 {
   uint8_t ECWmin = ((m_acVO >> 8) & 0x0f);
   return (exp2 (ECWmin) - 1);
 }
 
-uint8_t
+uint32_t
 EdcaParameterSet::GetVoCWmax (void) const
 {
   uint8_t ECWmax = ((m_acVO >> 12) & 0x0f);
@@ -371,14 +371,14 @@ EdcaParameterSet::GetVoTXOPLimit (void) const
 uint8_t
 EdcaParameterSet::GetInformationFieldSize () const
 {
-  NS_ASSERT (m_qosSupported > 0);
+  NS_ASSERT (m_qosSupported);
   return 18;
 }
 
 Buffer::Iterator
 EdcaParameterSet::Serialize (Buffer::Iterator i) const
 {
-  if (m_qosSupported < 1)
+  if (!m_qosSupported)
     {
       return i;
     }
@@ -388,7 +388,7 @@ EdcaParameterSet::Serialize (Buffer::Iterator i) const
 uint16_t
 EdcaParameterSet::GetSerializedSize () const
 {
-  if (m_qosSupported < 1)
+  if (!m_qosSupported)
     {
       return 0;
     }
@@ -398,7 +398,7 @@ EdcaParameterSet::GetSerializedSize () const
 void
 EdcaParameterSet::SerializeInformationField (Buffer::Iterator start) const
 {
-  if (m_qosSupported == 1)
+  if (m_qosSupported)
     {
       start.WriteU8 (m_qosInfo);
       start.WriteU8 (m_reserved);
@@ -420,35 +420,6 @@ EdcaParameterSet::DeserializeInformationField (Buffer::Iterator start, uint8_t l
   m_acVI = i.ReadU32 ();
   m_acVO = i.ReadU32 ();
   return length;
-}
-
-/// EdcaParameterSet
-ATTRIBUTE_HELPER_CPP (EdcaParameterSet);
-
-/**
- * output operator
- *
- * \param os output stream
- * \param edcaParameterSet
- *
- * \return output stream
- */
-std::ostream & operator << (std::ostream &os, const EdcaParameterSet &edcaParameterSet)
-{
-  return os;
-}
-
-/**
- * input operator
- *
- * \param is input stream
- * \param edcaParameterSet
- *
- * \return output stream
- */
-std::istream &operator >> (std::istream &is, EdcaParameterSet &edcaParameterSet)
-{
-  return is;
 }
 
 } //namespace ns3

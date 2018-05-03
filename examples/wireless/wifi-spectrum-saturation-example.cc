@@ -198,8 +198,8 @@ int main (int argc, char *argv[])
           //Bug 2460: CcaMode1Threshold default should be set to -62 dBm when using Spectrum
           Config::SetDefault ("ns3::WifiPhy::CcaMode1Threshold", DoubleValue (-62.0));
 
-          Ptr<SingleModelSpectrumChannel> spectrumChannel
-            = CreateObject<SingleModelSpectrumChannel> ();
+          Ptr<MultiModelSpectrumChannel> spectrumChannel
+            = CreateObject<MultiModelSpectrumChannel> ();
           Ptr<FriisPropagationLossModel> lossModel
             = CreateObject<FriisPropagationLossModel> ();
           spectrumChannel->AddPropagationLossModel (lossModel);
@@ -614,8 +614,7 @@ int main (int argc, char *argv[])
       if (wifiType == "ns3::YansWifiPhy")
         {
           mac.SetType ("ns3::StaWifiMac",
-                       "Ssid", SsidValue (ssid),
-                       "ActiveProbing", BooleanValue (false));
+                       "Ssid", SsidValue (ssid));
           staDevice = wifi.Install (phy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));
@@ -625,8 +624,7 @@ int main (int argc, char *argv[])
       else if (wifiType == "ns3::SpectrumWifiPhy")
         {
           mac.SetType ("ns3::StaWifiMac",
-                       "Ssid", SsidValue (ssid),
-                       "ActiveProbing", BooleanValue (false));
+                       "Ssid", SsidValue (ssid));
           staDevice = wifi.Install (spectrumPhy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));

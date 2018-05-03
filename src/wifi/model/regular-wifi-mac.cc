@@ -25,8 +25,9 @@
 #include "mac-tx-middle.h"
 #include "mac-low.h"
 #include "dcf-manager.h"
-#include "msdu-standard-aggregator.h"
-#include "mpdu-standard-aggregator.h"
+#include "msdu-aggregator.h"
+#include "mpdu-aggregator.h"
+#include "wifi-utils.h"
 
 namespace ns3 {
 
@@ -138,6 +139,26 @@ RegularWifiMac::GetWifiRemoteStationManager () const
   return m_stationManager;
 }
 
+ExtendedCapabilities
+RegularWifiMac::GetExtendedCapabilities (void) const
+{
+  NS_LOG_FUNCTION (this);
+  ExtendedCapabilities capabilities;
+  if (m_htSupported || m_vhtSupported)
+    {
+      if (m_htSupported)
+        {
+          capabilities.SetHtSupported (1);
+        }
+      if (m_vhtSupported)
+        {
+          capabilities.SetVhtSupported (1);
+        }
+    }
+  //TODO: to be completed
+  return capabilities;
+}
+
 HtCapabilities
 RegularWifiMac::GetHtCapabilities (void) const
 {
@@ -145,7 +166,6 @@ RegularWifiMac::GetHtCapabilities (void) const
   HtCapabilities capabilities;
   if (m_htSupported)
     {
-      capabilities.SetHtSupported (1);
       capabilities.SetHtSupported (1);
       capabilities.SetLdpc (m_phy->GetLdpc ());
       capabilities.SetSupportedChannelWidth (m_phy->GetChannelWidth () >= 40);
@@ -183,6 +203,9 @@ RegularWifiMac::GetHtCapabilities (void) const
       capabilities.SetRxHighestSupportedDataRate (maxSupportedRate / 1e6); //in Mbit/s
       capabilities.SetTxMcsSetDefined (m_phy->GetNMcs () > 0);
       capabilities.SetTxMaxNSpatialStreams (m_phy->GetMaxSupportedTxSpatialStreams ());
+      //we do not support unequal modulations
+      capabilities.SetTxRxMcsSetUnequal (0);
+      capabilities.SetTxUnequalModulation (0);
     }
   return capabilities;
 }
@@ -208,11 +231,7 @@ RegularWifiMac::GetVhtCapabilities (void) const
       capabilities.SetRxLdpc (m_phy->GetLdpc ());
       capabilities.SetShortGuardIntervalFor80Mhz ((m_phy->GetChannelWidth () == 80) && m_phy->GetShortGuardInterval ());
       capabilities.SetShortGuardIntervalFor160Mhz ((m_phy->GetChannelWidth () == 160) && m_phy->GetShortGuardInterval ());
-      double maxAmpduLengthExponent = std::max (std::ceil ((std::log (std::max (std::max (m_beMaxAmpduSize, m_bkMaxAmpduSize), std::max (m_voMaxAmpduSize, m_viMaxAmpduSize))
-                                                                      + 1.0)
-                                                            / std::log (2.0))
-                                                           - 13.0),
-                                                0.0);
+      double maxAmpduLengthExponent = std::max (std::ceil ((std::log (std::max (std::max (m_beMaxAmpduSize, m_bkMaxAmpduSize), std::max (m_voMaxAmpduSize, m_viMaxAmpduSize)) + 1.0) / std::log (2.0)) - 13.0), 0.0);
       NS_ASSERT (maxAmpduLengthExponent >= 0 && maxAmpduLengthExponent <= 255);
       capabilities.SetMaxAmpduLengthExponent (std::max<uint8_t> (7, static_cast<uint8_t> (maxAmpduLengthExponent))); //0 to 7 for VHT
       uint8_t maxMcs = 0;
@@ -249,6 +268,10 @@ RegularWifiMac::GetVhtCapabilities (void) const
             }
         }
       capabilities.SetRxHighestSupportedLgiDataRate (maxSupportedRateLGI / 1e6); //in Mbit/s
+      capabilities.SetTxHighestSupportedLgiDataRate (maxSupportedRateLGI / 1e6); //in Mbit/s
+      //To be filled in once supported
+      capabilities.SetRxStbc (0);
+      capabilities.SetTxStbc (0);
     }
   return capabilities;
 }
@@ -262,15 +285,15 @@ RegularWifiMac::GetHeCapabilities (void) const
     {
       capabilities.SetHeSupported (1);
       uint8_t channelWidthSet = 0;
-      if (m_phy->GetChannelWidth () >= 40 && m_phy->Is2_4Ghz (m_phy->GetFrequency ()))
+      if (m_phy->GetChannelWidth () >= 40 && Is2_4Ghz (m_phy->GetFrequency ()))
         {
           channelWidthSet |= 0x01;
         }
-      if (m_phy->GetChannelWidth () >= 80 && m_phy->Is5Ghz (m_phy->GetFrequency ()))
+      if (m_phy->GetChannelWidth () >= 80 && Is5Ghz (m_phy->GetFrequency ()))
         {
           channelWidthSet |= 0x02;
         }
-      if (m_phy->GetChannelWidth () >= 160 && m_phy->Is5Ghz (m_phy->GetFrequency ()))
+      if (m_phy->GetChannelWidth () >= 160 && Is5Ghz (m_phy->GetFrequency ()))
         {
           channelWidthSet |= 0x04;
         }
@@ -310,7 +333,7 @@ RegularWifiMac::GetHeCapabilities (void) const
 }
 
 void
-RegularWifiMac::SetVoMaxAmsduSize (uint32_t size)
+RegularWifiMac::SetVoMaxAmsduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_voMaxAmsduSize = size;
@@ -318,7 +341,7 @@ RegularWifiMac::SetVoMaxAmsduSize (uint32_t size)
 }
 
 void
-RegularWifiMac::SetViMaxAmsduSize (uint32_t size)
+RegularWifiMac::SetViMaxAmsduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_viMaxAmsduSize = size;
@@ -326,7 +349,7 @@ RegularWifiMac::SetViMaxAmsduSize (uint32_t size)
 }
 
 void
-RegularWifiMac::SetBeMaxAmsduSize (uint32_t size)
+RegularWifiMac::SetBeMaxAmsduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_beMaxAmsduSize = size;
@@ -334,7 +357,7 @@ RegularWifiMac::SetBeMaxAmsduSize (uint32_t size)
 }
 
 void
-RegularWifiMac::SetBkMaxAmsduSize (uint32_t size)
+RegularWifiMac::SetBkMaxAmsduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_bkMaxAmsduSize = size;
@@ -342,7 +365,7 @@ RegularWifiMac::SetBkMaxAmsduSize (uint32_t size)
 }
 
 void
-RegularWifiMac::SetVoMaxAmpduSize (uint32_t size)
+RegularWifiMac::SetVoMaxAmpduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_voMaxAmpduSize = size;
@@ -350,7 +373,7 @@ RegularWifiMac::SetVoMaxAmpduSize (uint32_t size)
 }
 
 void
-RegularWifiMac::SetViMaxAmpduSize (uint32_t size)
+RegularWifiMac::SetViMaxAmpduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_viMaxAmpduSize = size;
@@ -358,7 +381,7 @@ RegularWifiMac::SetViMaxAmpduSize (uint32_t size)
 }
 
 void
-RegularWifiMac::SetBeMaxAmpduSize (uint32_t size)
+RegularWifiMac::SetBeMaxAmpduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_beMaxAmpduSize = size;
@@ -366,7 +389,7 @@ RegularWifiMac::SetBeMaxAmpduSize (uint32_t size)
 }
 
 void
-RegularWifiMac::SetBkMaxAmpduSize (uint32_t size)
+RegularWifiMac::SetBkMaxAmpduSize (uint16_t size)
 {
   NS_LOG_FUNCTION (this << size);
   m_bkMaxAmpduSize = size;
@@ -376,28 +399,28 @@ RegularWifiMac::SetBkMaxAmpduSize (uint32_t size)
 void
 RegularWifiMac::SetVoBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << (uint16_t) threshold);
+  NS_LOG_FUNCTION (this << +threshold);
   GetVOQueue ()->SetBlockAckThreshold (threshold);
 }
 
 void
 RegularWifiMac::SetViBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << (uint16_t) threshold);
+  NS_LOG_FUNCTION (this << +threshold);
   GetVIQueue ()->SetBlockAckThreshold (threshold);
 }
 
 void
 RegularWifiMac::SetBeBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << (uint16_t) threshold);
+  NS_LOG_FUNCTION (this << +threshold);
   GetBEQueue ()->SetBlockAckThreshold (threshold);
 }
 
 void
 RegularWifiMac::SetBkBlockAckThreshold (uint8_t threshold)
 {
-  NS_LOG_FUNCTION (this << (uint16_t) threshold);
+  NS_LOG_FUNCTION (this << +threshold);
   GetBKQueue ()->SetBlockAckThreshold (threshold);
 }
 
@@ -982,12 +1005,10 @@ RegularWifiMac::Receive (Ptr<Packet> packet, const WifiMacHeader *hdr)
 }
 
 void
-RegularWifiMac::DeaggregateAmsduAndForward (Ptr<Packet> aggregatedPacket,
-                                            const WifiMacHeader *hdr)
+RegularWifiMac::DeaggregateAmsduAndForward (Ptr<Packet> aggregatedPacket, const WifiMacHeader *hdr)
 {
-  MsduAggregator::DeaggregatedMsdus packets =
-    MsduAggregator::Deaggregate (aggregatedPacket);
-
+  NS_LOG_FUNCTION (this << aggregatedPacket << hdr);
+  MsduAggregator::DeaggregatedMsdus packets = MsduAggregator::Deaggregate (aggregatedPacket);
   for (MsduAggregator::DeaggregatedMsdusCI i = packets.begin ();
        i != packets.end (); ++i)
     {
@@ -1002,7 +1023,7 @@ RegularWifiMac::SendAddBaResponse (const MgtAddBaRequestHeader *reqHdr,
 {
   NS_LOG_FUNCTION (this);
   WifiMacHeader hdr;
-  hdr.SetAction ();
+  hdr.SetType (WIFI_MAC_MGT_ACTION);
   hdr.SetAddr1 (originator);
   hdr.SetAddr2 (GetAddress ());
   hdr.SetAddr3 (GetAddress ());
@@ -1095,49 +1116,49 @@ RegularWifiMac::GetTypeId (void)
                    "Value 0 means A-MSDU is disabled for that AC.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&RegularWifiMac::SetVoMaxAmsduSize),
-                   MakeUintegerChecker<uint32_t> (0, 11426))
+                   MakeUintegerChecker<uint16_t> (0, 11426))
     .AddAttribute ("VI_MaxAmsduSize",
                    "Maximum length in bytes of an A-MSDU for AC_VI access class."
                    "Value 0 means A-MSDU is disabled for that AC.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&RegularWifiMac::SetViMaxAmsduSize),
-                   MakeUintegerChecker<uint32_t> (0, 11426))
+                   MakeUintegerChecker<uint16_t> (0, 11426))
     .AddAttribute ("BE_MaxAmsduSize",
                    "Maximum length in bytes of an A-MSDU for AC_BE access class."
                    "Value 0 means A-MSDU is disabled for that AC.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&RegularWifiMac::SetBeMaxAmsduSize),
-                   MakeUintegerChecker<uint32_t> (0, 11426))
+                   MakeUintegerChecker<uint16_t> (0, 11426))
     .AddAttribute ("BK_MaxAmsduSize",
                    "Maximum length in bytes of an A-MSDU for AC_BK access class."
                    "Value 0 means A-MSDU is disabled for that AC.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&RegularWifiMac::SetBkMaxAmsduSize),
-                   MakeUintegerChecker<uint32_t> (0, 11426))
+                   MakeUintegerChecker<uint16_t> (0, 11426))
     .AddAttribute ("VO_MaxAmpduSize",
                    "Maximum length in bytes of an A-MPDU for AC_VO access class."
                    "Value 0 means A-MPDU is disabled for that AC.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&RegularWifiMac::SetVoMaxAmpduSize),
-                   MakeUintegerChecker<uint32_t> (0, 65535))
+                   MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("VI_MaxAmpduSize",
                    "Maximum length in bytes of an A-MPDU for AC_VI access class."
                    "Value 0 means A-MPDU is disabled for that AC.",
                    UintegerValue (65535),
                    MakeUintegerAccessor (&RegularWifiMac::SetViMaxAmpduSize),
-                   MakeUintegerChecker<uint32_t> (0, 65535))
+                   MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("BE_MaxAmpduSize",
                    "Maximum length in bytes of an A-MPDU for AC_BE access class."
                    "Value 0 means A-MPDU is disabled for that AC.",
                    UintegerValue (65535),
                    MakeUintegerAccessor (&RegularWifiMac::SetBeMaxAmpduSize),
-                   MakeUintegerChecker<uint32_t> (0, 65535))
+                   MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("BK_MaxAmpduSize",
                    "Maximum length in bytes of an A-MPDU for AC_BK access class."
                    "Value 0 means A-MPDU is disabled for that AC.",
                    UintegerValue (0),
                    MakeUintegerAccessor (&RegularWifiMac::SetBkMaxAmpduSize),
-                   MakeUintegerChecker<uint32_t> (0, 65535))
+                   MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("VO_BlockAckThreshold",
                    "If number of packets in VO queue reaches this value, "
                    "block ack mechanism is used. If this value is 0, block ack is never used."
@@ -1364,12 +1385,12 @@ RegularWifiMac::EnableAggregation (void)
     {
       if (i->second->GetMsduAggregator () == 0)
         {
-          Ptr<MsduStandardAggregator> msduAggregator = CreateObject<MsduStandardAggregator> ();
+          Ptr<MsduAggregator> msduAggregator = CreateObject<MsduAggregator> ();
           i->second->SetMsduAggregator (msduAggregator);
         }
       if (i->second->GetMpduAggregator () == 0)
         {
-          Ptr<MpduStandardAggregator> mpduAggregator = CreateObject<MpduStandardAggregator> ();
+          Ptr<MpduAggregator> mpduAggregator = CreateObject<MpduAggregator> ();
           i->second->SetMpduAggregator (mpduAggregator);
         }
     }

@@ -104,7 +104,7 @@ def main(argv):
     # disable fragmentation
     ns.core.Config.SetDefault("ns3::WifiRemoteStationManager::FragmentationThreshold", ns.core.StringValue("2200"))
 
-    wifi = ns.wifi.WifiHelper.Default()
+    wifi = ns.wifi.WifiHelper()
     mobility = ns.mobility.MobilityHelper()
     stas = ns.network.NodeContainer()
     ap = ns.network.NodeContainer()
@@ -128,13 +128,11 @@ def main(argv):
 
     # setup stas.
     wifiMac.SetType("ns3::StaWifiMac",
-                    "Ssid", ns.wifi.SsidValue(ssid),
-                    "ActiveProbing", ns.core.BooleanValue(False))
+                    "Ssid", ns.wifi.SsidValue(ssid))
     staDevs = wifi.Install(wifiPhy, wifiMac, stas)
     # setup ap.
     wifiMac.SetType("ns3::ApWifiMac",
                     "Ssid", ns.wifi.SsidValue(ssid),
-                    "BeaconGeneration", ns.core.BooleanValue(True),
                     "BeaconInterval", ns.core.TimeValue(ns.core.Seconds(2.5)))
     wifi.Install(wifiPhy, wifiMac, ap)
 

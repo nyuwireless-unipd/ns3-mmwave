@@ -67,6 +67,24 @@ public:
 
 private:
   /**
+   * \brief Set the limit of this queue disc.
+   *
+   * \param limit The limit of this queue disc.
+   * \deprecated This method will go away in future versions of ns-3.
+   * See instead SetMaxSize()
+   */
+  void SetLimit (uint32_t limit);
+
+  /**
+   * \brief Get the limit of this queue disc.
+   *
+   * \returns The limit of this queue disc.
+   * \deprecated This method will go away in future versions of ns-3.
+   * See instead GetMaxSize()
+   */
+  uint32_t GetLimit (void) const;
+
+  /**
    * Priority to band map. Values are taken from the prio2band array used by
    * the Linux pfifo_fast queue disc.
    */
@@ -74,11 +92,9 @@ private:
 
   virtual bool DoEnqueue (Ptr<QueueDiscItem> item);
   virtual Ptr<QueueDiscItem> DoDequeue (void);
-  virtual Ptr<const QueueDiscItem> DoPeek (void) const;
+  virtual Ptr<const QueueDiscItem> DoPeek (void);
   virtual bool CheckConfig (void);
   virtual void InitializeParams (void);
-
-  uint32_t m_limit;    //!< Maximum number of packets that can be stored
 };
 
 } // namespace ns3
