@@ -5,7 +5,9 @@ Traffic Control Layer
 
    traffic-control-layer
    queue-discs
+   fifo
    pfifo-fast
+   tbf
    red
    codel
    fq-codel
