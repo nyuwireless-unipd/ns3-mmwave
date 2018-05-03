@@ -267,7 +267,6 @@ LenaTdTbfqFfMacSchedulerTestCase1::DoRun (void)
       Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
       Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
     }
-  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 
@@ -380,20 +379,21 @@ LenaTdTbfqFfMacSchedulerTestCase1::DoRun (void)
       
       enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
       EpsBearer bearer (q, qos);
-      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());  
+      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());
     }
 
   // Install downlink and uplink applications
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
   PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-  PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
+
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
+      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
 
       UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator
@@ -515,7 +515,6 @@ LenaTdTbfqFfMacSchedulerTestCase2::DoRun (void)
       Config::SetDefault ("ns3::LteSpectrumPhy::CtrlErrorModelEnabled", BooleanValue (false));
       Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
     }
-  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 
@@ -628,7 +627,7 @@ LenaTdTbfqFfMacSchedulerTestCase2::DoRun (void)
   
       enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
       EpsBearer bearer (q, qos);
-      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());  
+      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());
     }
 
 
@@ -636,13 +635,14 @@ LenaTdTbfqFfMacSchedulerTestCase2::DoRun (void)
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
   PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-  PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
+
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
+      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
 
       UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator

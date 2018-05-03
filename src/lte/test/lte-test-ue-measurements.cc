@@ -62,7 +62,7 @@ NS_LOG_COMPONENT_DEFINE ("LteUeMeasurementsTest");
 void
 ReportUeMeasurementsCallback (LteUeMeasurementsTestCase *testcase,
                               std::string path, uint16_t rnti, uint16_t cellId,
-                              double rsrp, double rsrq, bool servingCell)
+                              double rsrp, double rsrq, bool servingCell, uint8_t componentCarrierId)
 {
   testcase->ReportUeMeasurements (rnti, cellId, rsrp, rsrq, servingCell);
 }
@@ -553,10 +553,6 @@ LteUeMeasurementsPiecewiseTestCase1::DoRun ()
   lteHelper->SetAttribute ("PathlossModel",
                            StringValue ("ns3::FriisSpectrumPropagationLossModel"));
   lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
-
-  // set DL and UL bandwidth. 
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));
@@ -1143,10 +1139,6 @@ LteUeMeasurementsPiecewiseTestCase2::DoRun ()
                            StringValue ("ns3::FriisSpectrumPropagationLossModel"));
   lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
 
-  // set DL and UL bandwidth. 
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
-
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));
 
@@ -1699,10 +1691,6 @@ LteUeMeasurementsHandoverTestCase::DoRun ()
   lteHelper->SetAttribute ("PathlossModel",
                            StringValue ("ns3::FriisSpectrumPropagationLossModel"));
   lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (true));
-
-  // set DL and UL bandwidth
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));

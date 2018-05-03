@@ -161,10 +161,6 @@ LteEnbAntennaTestCase::DoRun (void)
   lteHelper->SetEnbAntennaModelAttribute ("Beamwidth",   DoubleValue (m_beamwidthDegrees));
   lteHelper->SetEnbAntennaModelAttribute ("MaxGain",     DoubleValue (0.0));
 
-  // set DL and UL bandwidth. 
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
-
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
 
@@ -224,7 +220,6 @@ LteEnbAntennaTestCase::DoRun (void)
         }      
       // remember that propagation loss is 0dB
       double calculatedAntennaGainDbDl = - (enbTxPowerDbm - calculatedSinrDbDl - noisePowerDbm - ueNoiseFigureDb);      
-      NS_LOG_INFO("expected " << m_antennaGainDb << " actual " << calculatedAntennaGainDbDl << " tol " << tolerance);
       NS_TEST_ASSERT_MSG_EQ_TOL (calculatedAntennaGainDbDl, m_antennaGainDb, tolerance, "Wrong DL antenna gain!");
     }
   double expectedSinrUl = ueTxPowerDbm + m_antennaGainDb - noisePowerDbm + enbNoiseFigureDb;

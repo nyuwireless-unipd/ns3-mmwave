@@ -17,7 +17,7 @@
  *
  * Author:  Biljana Bojovic<bbojovic@cttc.es>
  *          Dizhi Zhou <dizhi.zhou@gmail.com>
- *      Marco Miozzo <marco.miozzo@cttc.es>,
+ * 			Marco Miozzo <marco.miozzo@cttc.es>,
  *          Nicola Baldo <nbaldo@cttc.es>
  *
  */
@@ -93,77 +93,77 @@ LenaTestCqaFfMacSchedulerSuite::LenaTestCqaFfMacSchedulerSuite ()
   // 3 users -> 8 PRB at Itbs 26 -> 749 -> 749000 > 232000 -> throughput = 232000 bytes/sec 
   // 6 users -> 4 PRB at Itbs 26 -> 373 -> 373000 > 232000 -> throughput = 232000 bytes/sec
   // 12 users -> 2 PRB at Itbs 26 -> 185 -> 185000 < 232000 -> throughput = 185000 bytes/sec
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,0,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,0,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,0,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,0,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,0,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,0,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
 
-  // //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,0,183000,185000,200,1,errorModel));// simulation time = 1.5, otherwise, ul test will fail
+  //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,0,183000,185000,200,1,errorModel));// simulation time = 1.5, otherwise, ul test will fail
 
-  // // DOWNLINK - DISTANCE 4800 -> MCS 22 -> Itbs 20 (from table 7.1.7.2.1-1 of 36.213)
-  // // Traffic info
-  // //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
-  // // Totol bandwidth: 24 PRB at Itbs 20 -> 1383 -> 1383000 byte/sec
-  // // 1 user -> 903000 * 1 = 232000 < 1383000 -> throughput = 232000 byte/sec
-  // // 3 user -> 232000 * 3 = 696000 < 1383000 -> througphut = 232000 byte/sec
-  // // 6 user -> 232000 * 6 = 139200 > 1383000 -> throughput = 1383000 / 6 = 230500 byte/sec
-  // // 12 user -> 232000 * 12 = 2784000 > 1383000 -> throughput =  1383000 / 12 = 115250 byte/sec
-  // // UPLINK - DISTANCE 4800 -> MCS 14 -> Itbs 13 (from table 7.1.7.2.1-1 of 36.213)
-  // // 1 user -> 25 PRB at Itbs 13 -> 807 -> 807000 > 232000 -> throughput = 232000 bytes/sec
-  // // 3 users -> 8 PRB at Itbs 13 -> 253 -> 253000 > 232000 -> throughput = 232000 bytes/sec
-  // // 6 users -> 4 PRB at Itbs 13 -> 125 -> 125000 < 232000 -> throughput = 125000 bytes/sec
-  // // after the patch enforcing min 3 PRBs per UE:
-  // // 12 users -> 3 PRB at Itbs 13 -> 93  bytes * 8/12 UE/TTI  -> 62000 < 232000 -> throughput = 62000  bytes/sec
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,4800,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,4800,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,4800,230500,125000,200,1,errorModel), TestCase::EXTENSIVE);
-  // //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,4800,115250,62000,200,1,errorModel)); // simulation time = 1.5, otherwise, ul test will fail
+  // DOWNLINK - DISTANCE 4800 -> MCS 22 -> Itbs 20 (from table 7.1.7.2.1-1 of 36.213)
+  // Traffic info
+  //   UDP traffic: payload size = 200 bytes, interval = 1 ms
+  //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  // Totol bandwidth: 24 PRB at Itbs 20 -> 1383 -> 1383000 byte/sec
+  // 1 user -> 903000 * 1 = 232000 < 1383000 -> throughput = 232000 byte/sec
+  // 3 user -> 232000 * 3 = 696000 < 1383000 -> througphut = 232000 byte/sec
+  // 6 user -> 232000 * 6 = 139200 > 1383000 -> throughput = 1383000 / 6 = 230500 byte/sec
+  // 12 user -> 232000 * 12 = 2784000 > 1383000 -> throughput =  1383000 / 12 = 115250 byte/sec
+  // UPLINK - DISTANCE 4800 -> MCS 14 -> Itbs 13 (from table 7.1.7.2.1-1 of 36.213)
+  // 1 user -> 25 PRB at Itbs 13 -> 807 -> 807000 > 232000 -> throughput = 232000 bytes/sec
+  // 3 users -> 8 PRB at Itbs 13 -> 253 -> 253000 > 232000 -> throughput = 232000 bytes/sec
+  // 6 users -> 4 PRB at Itbs 13 -> 125 -> 125000 < 232000 -> throughput = 125000 bytes/sec
+  // after the patch enforcing min 3 PRBs per UE:
+  // 12 users -> 3 PRB at Itbs 13 -> 93  bytes * 8/12 UE/TTI  -> 62000 < 232000 -> throughput = 62000  bytes/sec
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,4800,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,4800,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,4800,230500,125000,200,1,errorModel), TestCase::EXTENSIVE);
+  //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,4800,115250,62000,200,1,errorModel)); // simulation time = 1.5, otherwise, ul test will fail
 
-  // // DOWNLINK - DISTANCE 6000 -> MCS 20 -> Itbs 18 (from table 7.1.7.2.1-1 of 36.213)
-  // // Traffic info
-  // //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
-  // // Totol bandwidth: 24 PRB at Itbs 18 -> 1191 -> 1191000 byte/sec
-  // // 1 user -> 903000 * 1 = 232000 < 1191000 -> throughput = 232000 byte/sec
-  // // 3 user -> 232000 * 3 = 696000 < 1191000 -> througphut = 232000 byte/sec
-  // // 6 user -> 232000 * 6 = 1392000 > 1191000 -> throughput = 1191000 / 6 = 198500 byte/sec
-  // // 12 user -> 232000 * 12 = 2784000 > 1191000 -> throughput =  1191000 / 12 = 99250 byte/sec
+  // DOWNLINK - DISTANCE 6000 -> MCS 20 -> Itbs 18 (from table 7.1.7.2.1-1 of 36.213)
+  // Traffic info
+  //   UDP traffic: payload size = 200 bytes, interval = 1 ms
+  //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  // Totol bandwidth: 24 PRB at Itbs 18 -> 1191 -> 1191000 byte/sec
+  // 1 user -> 903000 * 1 = 232000 < 1191000 -> throughput = 232000 byte/sec
+  // 3 user -> 232000 * 3 = 696000 < 1191000 -> througphut = 232000 byte/sec
+  // 6 user -> 232000 * 6 = 1392000 > 1191000 -> throughput = 1191000 / 6 = 198500 byte/sec
+  // 12 user -> 232000 * 12 = 2784000 > 1191000 -> throughput =  1191000 / 12 = 99250 byte/sec
 
-  // // UPLINK - DISTANCE 6000 -> MCS 12 -> Itbs 11 (from table 7.1.7.2.1-1 of 36.213)
-  // // 1 user -> 25 PRB at Itbs 11 -> 621 -> 621000 > 232000 -> throughput = 232000 bytes/sec
-  // // 3 users -> 8 PRB at Itbs 11 -> 201 -> 201000 < 232000 -> throughput = 201000  bytes/sec
-  // // 6 users -> 4 PRB at Itbs 11 -> 97 -> 97000 < 232000 -> throughput = 97000 bytes/sec
-  // // after the patch enforcing min 3 PRBs per UE:
-  // // 12 users -> 3 PRB at Itbs 11 -> 73 bytes * 8/12 UE/TTI -> 48667 < 232000 -> throughput = 48667 bytes/sec
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,6000,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,6000,232000,201000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,6000,198500,97000,200,1,errorModel), TestCase::EXTENSIVE);
-  // //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,6000,99250,48667,200,1, errorModel)); // simulation time = 1.5, otherwise, ul test will fail
+  // UPLINK - DISTANCE 6000 -> MCS 12 -> Itbs 11 (from table 7.1.7.2.1-1 of 36.213)
+  // 1 user -> 25 PRB at Itbs 11 -> 621 -> 621000 > 232000 -> throughput = 232000 bytes/sec
+  // 3 users -> 8 PRB at Itbs 11 -> 201 -> 201000 < 232000 -> throughput = 201000  bytes/sec
+  // 6 users -> 4 PRB at Itbs 11 -> 97 -> 97000 < 232000 -> throughput = 97000 bytes/sec
+  // after the patch enforcing min 3 PRBs per UE:
+  // 12 users -> 3 PRB at Itbs 11 -> 73 bytes * 8/12 UE/TTI -> 48667 < 232000 -> throughput = 48667 bytes/sec
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,6000,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,6000,232000,201000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,6000,198500,97000,200,1,errorModel), TestCase::EXTENSIVE);
+  //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,6000,99250,48667,200,1, errorModel)); // simulation time = 1.5, otherwise, ul test will fail
 
-  // // DOWNLINK - DISTANCE 10000 -> MCS 14 -> Itbs 13 (from table 7.1.7.2.1-1 of 36.213)
-  // // Traffic info
-  // //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
-  // // Totol bandwidth: 24 PRB at Itbs 13 -> 775 -> 775000 byte/sec
-  // // 1 user -> 903000 * 1 = 232000 < 775000 -> throughput = 232000 byte/sec
-  // // 3 user -> 232000 * 3 = 696000 > 775000 -> througphut = 232000 byte/sec
-  // // 6 user -> 232000 * 6 = 139200 > 775000 -> throughput = 775000 / 6 = 129166 byte/sec
-  // // 12 user -> 232000 * 12 = 2784000 > 775000 -> throughput =  775000 / 12 = 64583 byte/sec
-  // // UPLINK - DISTANCE 10000 -> MCS 8 -> Itbs 8 (from table 7.1.7.2.1-1 of 36.213)
-  // // 1 user -> 24 PRB at Itbs 8 -> 437 -> 437000 > 232000 -> throughput = 232000 bytes/sec
-  // // 3 users -> 8 PRB at Itbs 8 -> 137 -> 137000 < 232000 -> throughput = 137000 bytes/sec
-  // // 6 users -> 4 PRB at Itbs 8 -> 67 -> 67000 < 232000 -> throughput = 67000 bytes/sec
-  // // after the patch enforcing min 3 PRBs per UE:
-  // // 12 users -> 3 PRB at Itbs 8 -> 49 bytes * 8/12 UE/TTI -> 32667 < 232000 -> throughput = 32667  bytes/sec
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,10000,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,10000,232000,137000,200,1,errorModel), TestCase::EXTENSIVE);
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,10000,129166,67000,200,1,errorModel), TestCase::EXTENSIVE);
-  // //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,10000,64583,32667,200,1,errorModel));// simulation time = 1.5, otherwise, ul test will fail
+  // DOWNLINK - DISTANCE 10000 -> MCS 14 -> Itbs 13 (from table 7.1.7.2.1-1 of 36.213)
+  // Traffic info
+  //   UDP traffic: payload size = 200 bytes, interval = 1 ms
+  //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  // Totol bandwidth: 24 PRB at Itbs 13 -> 775 -> 775000 byte/sec
+  // 1 user -> 903000 * 1 = 232000 < 775000 -> throughput = 232000 byte/sec
+  // 3 user -> 232000 * 3 = 696000 > 775000 -> througphut = 232000 byte/sec
+  // 6 user -> 232000 * 6 = 139200 > 775000 -> throughput = 775000 / 6 = 129166 byte/sec
+  // 12 user -> 232000 * 12 = 2784000 > 775000 -> throughput =  775000 / 12 = 64583 byte/sec
+  // UPLINK - DISTANCE 10000 -> MCS 8 -> Itbs 8 (from table 7.1.7.2.1-1 of 36.213)
+  // 1 user -> 24 PRB at Itbs 8 -> 437 -> 437000 > 232000 -> throughput = 232000 bytes/sec
+  // 3 users -> 8 PRB at Itbs 8 -> 137 -> 137000 < 232000 -> throughput = 137000 bytes/sec
+  // 6 users -> 4 PRB at Itbs 8 -> 67 -> 67000 < 232000 -> throughput = 67000 bytes/sec
+  // after the patch enforcing min 3 PRBs per UE:
+  // 12 users -> 3 PRB at Itbs 8 -> 49 bytes * 8/12 UE/TTI -> 32667 < 232000 -> throughput = 32667  bytes/sec
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,10000,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (3,10000,232000,137000,200,1,errorModel), TestCase::EXTENSIVE);
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (6,10000,129166,67000,200,1,errorModel), TestCase::EXTENSIVE);
+  //AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (12,10000,64583,32667,200,1,errorModel));// simulation time = 1.5, otherwise, ul test will fail
 
 
-  // // DOWNLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
-  // // UPLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
-  // AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,100000,0,0,200,1,errorModel), TestCase::QUICK);
+  // DOWNLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  // UPLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  AddTestCase (new LenaCqaFfMacSchedulerTestCase1 (1,100000,0,0,200,1,errorModel), TestCase::QUICK);
 
   // Test Case 2: homogeneous flow test in CQA (different distance)
   // Traffic1 info
@@ -389,22 +389,23 @@ LenaCqaFfMacSchedulerTestCase1::DoRun (void)
   // Install downlink and uplink applications
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
-  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-  PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
+  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
+      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
 
-      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator
+      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // downlink packets generator
       dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       dlClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       dlClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize));
 
-      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // downlink packets generator
+      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // uplink packets generator
       ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       ulClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize));
@@ -438,7 +439,7 @@ LenaCqaFfMacSchedulerTestCase1::DoRun (void)
       uint64_t imsi = ueDevs.Get (i)->GetObject<LteUeNetDevice> ()->GetImsi ();
       // get the lcId
       uint8_t lcId = 4;
-      uint64_t data = rlcStats->GetUlRxData (imsi, lcId);
+      uint64_t data = rlcStats->GetDlRxData (imsi, lcId);
       dlDataRxed.push_back (data);
       NS_LOG_INFO ("\tUser " << i << " imsi " << imsi << " bytes rxed " << (double)dlDataRxed.at (i) << "  thr " << (double)dlDataRxed.at (i) / statsDuration << " ref " << m_thrRefDl);
     }
@@ -517,7 +518,6 @@ LenaCqaFfMacSchedulerTestCase2::DoRun (void)
     }
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
-  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
 
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
@@ -628,22 +628,23 @@ LenaCqaFfMacSchedulerTestCase2::DoRun (void)
   // Install downlink and uplink applications
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
-  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-  PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
+  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
+      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
 
-      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator
+      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // downlink packets generator
       dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       dlClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       dlClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize.at (u)));
 
-      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // downlink packets generator
+      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // uplink packets generator
       ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       ulClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize.at (u)));
@@ -661,7 +662,6 @@ LenaCqaFfMacSchedulerTestCase2::DoRun (void)
   Simulator::Stop (Seconds (statsStartTime + statsDuration - 0.0001));
 
   lteHelper->EnableRlcTraces ();
-  lteHelper->EnableMacTraces ();
   Ptr<RadioBearerStatsCalculator> rlcStats = lteHelper->GetRlcStats ();
   rlcStats->SetAttribute ("StartTime", TimeValue (Seconds (statsStartTime)));
   rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (statsDuration)));

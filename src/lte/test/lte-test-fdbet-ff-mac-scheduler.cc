@@ -239,11 +239,6 @@ LenaFdBetFfMacSchedulerTestCase1::DoRun (void)
   NetDeviceContainer enbDevs;
   NetDeviceContainer ueDevs;
   lteHelper->SetSchedulerType ("ns3::FdBetFfMacScheduler");
-
-  // set DL and UL bandwidth
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
-
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
 
@@ -408,11 +403,6 @@ LenaFdBetFfMacSchedulerTestCase2::DoRun (void)
   NetDeviceContainer enbDevs;
   NetDeviceContainer ueDevs;
   lteHelper->SetSchedulerType ("ns3::FdBetFfMacScheduler");
-
-  // set DL and UL bandwidth
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
-  
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
 

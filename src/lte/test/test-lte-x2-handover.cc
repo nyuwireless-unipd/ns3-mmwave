@@ -204,8 +204,6 @@ LteX2HandoverTestCase::DoRun ()
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));
 
-  Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
-
   int64_t stream = 1;
   
   m_lteHelper = CreateObject<LteHelper> ();
@@ -213,11 +211,7 @@ LteX2HandoverTestCase::DoRun ()
   m_lteHelper->SetSchedulerType (m_schedulerType);
   m_lteHelper->SetHandoverAlgorithmType ("ns3::NoOpHandoverAlgorithm"); // disable automatic handover
   m_lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (m_useIdealRrc));
-
-  // set DL and UL bandwidth. 
-  m_lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  m_lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
-
+  
 
   NodeContainer enbNodes;
   enbNodes.Create (2);
@@ -507,7 +501,6 @@ LteX2HandoverTestCase::CheckConnected (Ptr<NetDevice> ueDevice, Ptr<NetDevice> e
   NS_TEST_ASSERT_MSG_NE (ueManager, 0, "RNTI " << rnti << " not found in eNB");
 
   UeManager::State ueManagerState = ueManager->GetState ();
-  NS_LOG_UNCOND("ueManagerState " << ueManagerState);
   NS_TEST_ASSERT_MSG_EQ (ueManagerState, UeManager::CONNECTED_NORMALLY, "Wrong UeManager state!");
   NS_ASSERT_MSG (ueManagerState == UeManager::CONNECTED_NORMALLY, "Wrong UeManager state!");
 

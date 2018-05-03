@@ -19,15 +19,10 @@
  */
 
 #include "ns3/simulator.h"
-
 #include "ns3/log.h"
-
 #include "ns3/spectrum-test.h"
-
 #include "ns3/lte-phy-tag.h"
 #include "ns3/lte-chunk-processor.h"
-
-
 #include <ns3/hybrid-buildings-propagation-loss-model.h>
 #include <ns3/node-container.h>
 #include <ns3/mobility-helper.h>
@@ -43,10 +38,8 @@
 #include <ns3/lte-ue-net-device.h>
 #include <ns3/lte-enb-net-device.h>
 #include <ns3/lte-ue-rrc.h>
-#include <ns3/lte-helper.h>
 #include <ns3/lte-enb-phy.h>
 #include <ns3/lte-ue-phy.h>
-
 #include "lte-test-ue-phy.h"
 #include "lte-test-pathloss-model.h"
 
@@ -66,10 +59,9 @@ NS_LOG_COMPONENT_DEFINE ("LtePathlossModelTest");
 
 void
 LteTestPathlossDlSchedCallback (LtePathlossModelSystemTestCase *testcase, std::string path,
-                             uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                             uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2)
+		                        DlSchedulingCallbackInfo dlInfo)
 {
-  testcase->DlScheduling (frameNo, subframeNo, rnti, mcsTb1, sizeTb1, mcsTb2, sizeTb2);
+  testcase->DlScheduling (dlInfo);
 }
 
 
@@ -215,9 +207,8 @@ LtePathlossModelSystemTestCase::DoRun (void)
 
   // set frequency. This is important because it changes the behavior of the path loss model
   lteHelper->SetEnbDeviceAttribute ("DlEarfcn", UintegerValue (200));
+  lteHelper->SetEnbDeviceAttribute ("UlEarfcn", UintegerValue (18200));
   lteHelper->SetUeDeviceAttribute ("DlEarfcn", UintegerValue (200));
-  // set DL bandwidth. This is important because it changes the value of the noise power in the SINR
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
 
   // remove shadowing component
   lteHelper->SetPathlossModelAttribute ("ShadowSigmaOutdoor", DoubleValue (0.0));
@@ -291,8 +282,7 @@ LtePathlossModelSystemTestCase::DoRun (void)
 
 
 void
-LtePathlossModelSystemTestCase::DlScheduling (uint32_t frameNo, uint32_t subframeNo, uint16_t rnti,
-                                         uint8_t mcsTb1, uint16_t sizeTb1, uint8_t mcsTb2, uint16_t sizeTb2) 
+LtePathlossModelSystemTestCase::DlScheduling (DlSchedulingCallbackInfo dlInfo)
 {
   static bool firstTime = true;
   
@@ -306,8 +296,8 @@ LtePathlossModelSystemTestCase::DlScheduling (uint32_t frameNo, uint32_t subfram
   // need to allow for RRC connection establishment + SRS transmission
   if (Simulator::Now () > MilliSeconds (21))
   {
-    NS_LOG_INFO (m_snrDb << "\t" << m_mcsIndex << "\t" << (uint16_t)mcsTb1);
+    NS_LOG_INFO (m_snrDb << "\t" << m_mcsIndex << "\t" << (uint16_t)dlInfo.mcsTb1);
     
-    NS_TEST_ASSERT_MSG_EQ ((uint16_t)mcsTb1, m_mcsIndex, "Wrong MCS index");
+    NS_TEST_ASSERT_MSG_EQ ((uint16_t)dlInfo.mcsTb1, m_mcsIndex, "Wrong MCS index");
   }
 }

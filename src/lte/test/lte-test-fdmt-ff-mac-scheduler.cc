@@ -23,7 +23,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-
 #include <ns3/object.h>
 #include <ns3/spectrum-interference.h>
 #include <ns3/spectrum-error-model.h>
@@ -49,9 +48,6 @@
 #include <ns3/lte-ue-phy.h>
 #include <ns3/boolean.h>
 #include <ns3/enum.h>
-
-
-#include "lte-test-fdmt-ff-mac-scheduler.h"
 
 using namespace ns3;
 
@@ -148,6 +144,10 @@ LenaTestFdMtFfMacSchedulerSuite::LenaTestFdMtFfMacSchedulerSuite ()
   AddTestCase (new LenaFdMtFfMacSchedulerTestCase (3,20000,421000,41000,errorModel), TestCase::EXTENSIVE);
   AddTestCase (new LenaFdMtFfMacSchedulerTestCase (6,20000,421000,22000,errorModel), TestCase::EXTENSIVE);
   AddTestCase (new LenaFdMtFfMacSchedulerTestCase (12,20000,421000,12000,errorModel), TestCase::EXTENSIVE);
+
+  // DOWNLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  // UPLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  AddTestCase (new LenaFdMtFfMacSchedulerTestCase (1,100000,0,0,errorModel), TestCase::QUICK);
 }
 
 static LenaTestFdMtFfMacSchedulerSuite lenaTestFdMtFfMacSchedulerSuite;
@@ -156,14 +156,14 @@ static LenaTestFdMtFfMacSchedulerSuite lenaTestFdMtFfMacSchedulerSuite;
 // --------------- T E S T - C A S E ------------------------------
 
 std::string 
-LenaFdMtFfMacSchedulerTestCase::BuildNameString (uint16_t nUser, uint16_t dist)
+LenaFdMtFfMacSchedulerTestCase::BuildNameString (uint16_t nUser, double dist)
 {
   std::ostringstream oss;
   oss << nUser << " UEs, distance " << dist << " m";
   return oss.str ();
 }
 
-LenaFdMtFfMacSchedulerTestCase::LenaFdMtFfMacSchedulerTestCase (uint16_t nUser, uint16_t dist, double thrRefDl, double thrRefUl, bool errorModelEnabled)
+LenaFdMtFfMacSchedulerTestCase::LenaFdMtFfMacSchedulerTestCase (uint16_t nUser, double dist, double thrRefDl, double thrRefUl, bool errorModelEnabled)
   : TestCase (BuildNameString (nUser, dist)),
     m_nUser (nUser),
     m_dist (dist),
@@ -219,11 +219,6 @@ LenaFdMtFfMacSchedulerTestCase::DoRun (void)
   NetDeviceContainer enbDevs;
   NetDeviceContainer ueDevs;
   lteHelper->SetSchedulerType ("ns3::FdMtFfMacScheduler");
-
-  // set DL and UL bandwidth
-  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
-  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
-  
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
 
