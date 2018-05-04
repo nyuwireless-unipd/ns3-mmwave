@@ -27,7 +27,6 @@
 
 #include "ns3/lte-net-device.h"
 #include "ns3/event-id.h"
-#include "ns3/mac48-address.h"
 #include "ns3/traced-callback.h"
 #include "ns3/nstime.h"
 #include "ns3/lte-phy.h"
@@ -95,7 +94,7 @@ public:
    * \return the LTE UE NAS
    */
   Ptr<EpcUeNas> GetNas (void) const;
-  
+
   /**
    * \brief Get the componentn carrier manager.
    * \return the LTE UE component carrier manager

@@ -120,7 +120,7 @@ typedef std::map<HOL_group,std::set<LteFlowId_t> >::iterator t_it_HOLgroupToUEs;
  * \param key1 the first item
  * \param key2 the second item
  * \returns true if the first item > the second item
- */  
+ */
 bool CqaKeyDescComparator (uint16_t key1, uint16_t key2)
 {
   return key1>key2;
@@ -383,7 +383,7 @@ CqaFfMacScheduler::DoCschedLcReleaseReq (const struct FfMacCschedSapProvider::Cs
           NS_FATAL_ERROR ("Logical channels cannot be released because it can not be found in the list of active LCs");
         }
     }
-	
+
   for (uint16_t i = 0; i < params.m_logicalChannelIdentity.size (); i++)
     {
       std::map<LteFlowId_t, FfMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
@@ -733,7 +733,7 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
   std::vector <struct RachListElement_s>::iterator itRach;
   for (itRach = m_rachList.begin (); itRach != m_rachList.end (); itRach++)
     {
-      NS_ASSERT_MSG (m_amc->GetTbSizeFromMcs (m_ulGrantMcs, m_cschedCellConfig.m_ulBandwidth) > (*itRach).m_estimatedSize, " Default UL Grant MCS does not allow to send RACH messages");
+      NS_ASSERT_MSG (m_amc->GetUlTbSizeFromMcs (m_ulGrantMcs, m_cschedCellConfig.m_ulBandwidth) > (*itRach).m_estimatedSize, " Default UL Grant MCS does not allow to send RACH messages");
       BuildRarListElement_s newRar;
       newRar.m_rnti = (*itRach).m_rnti;
       // DL-RACH Allocation
@@ -747,7 +747,7 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
       while ((tbSizeBits < (*itRach).m_estimatedSize) && (rbStart + rbLen < (ffrRbStartOffset + maxContinuousUlBandwidth)))
         {
           rbLen++;
-          tbSizeBits = m_amc->GetTbSizeFromMcs (m_ulGrantMcs, rbLen);
+          tbSizeBits = m_amc->GetUlTbSizeFromMcs (m_ulGrantMcs, rbLen);
         }
       if (tbSizeBits < (*itRach).m_estimatedSize)
         {
@@ -766,7 +766,7 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
         {
           m_rachAllocationMap.at (i) = (*itRach).m_rnti;
         }
-      
+
       if (m_harqOn == true)
         {
           // generate UL-DCI for HARQ retransmissions
@@ -804,7 +804,7 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
             }
           (*itDci).second.at (harqId) = uldci;
         }
-      
+
       rbStart = rbStart + rbLen;
       ret.m_buildRarList.push_back (newRar);
     }
@@ -1087,7 +1087,7 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
     }
 
   std::map <LteFlowId_t,struct LogicalChannelConfigListElement_s>::iterator itLogicalChannels;
-	
+
   for (itLogicalChannels = m_ueLogicalChannelsConfigList.begin (); itLogicalChannels != m_ueLogicalChannelsConfigList.end (); itLogicalChannels++)
     {
       std::set <uint16_t>::iterator itRnti = rntiAllocated.find (itLogicalChannels->first.m_rnti);
@@ -1203,7 +1203,7 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
           NS_LOG_INFO ("Skip this flow, CQI==0, rnti:"<<(*itrbr).first.m_rnti);
           continue;
         }
-      
+
       // map: UE, to the amount of traffic they have to transfer
       int amountOfDataToTransfer =  8*((int)m_rlcBufferReq.find (flowId)->second.m_rlcRetransmissionQueueSize +
                                        (int)m_rlcBufferReq.find (flowId)->second.m_rlcTransmissionQueueSize);
@@ -1399,13 +1399,13 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
                 }
 
               int mcsForThisUser = m_amc->GetMcsFromCqi (worstCQIAmongRBGsAllocatedForThisUser);
-              int tbSize = m_amc->GetTbSizeFromMcs (mcsForThisUser, (numberOfRBGAllocatedForThisUser+1) * rbgSize)/8;                           // similar to calculation of TB size (size of TB in bytes according to table 7.1.7.2.1-1 of 36.213)
+              int tbSize = m_amc->GetDlTbSizeFromMcs (mcsForThisUser, (numberOfRBGAllocatedForThisUser+1) * rbgSize)/8;                           // similar to calculation of TB size (size of TB in bytes according to table 7.1.7.2.1-1 of 36.213)
 
 
-              double achievableRate = (( m_amc->GetTbSizeFromMcs (mcsForThisUser, rbgSize)/ 8) / 0.001);
+              double achievableRate = (( m_amc->GetDlTbSizeFromMcs (mcsForThisUser, rbgSize)/ 8) / 0.001);
               double pf_weight = achievableRate / (*itStats).second.secondLastAveragedThroughput;
 
-              UeToAmountOfAssignedResources.find (flowId)->second = tbSize;
+              UeToAmountOfAssignedResources.find (flowId)->second = 8*tbSize;
               FfMacSchedSapProvider::SchedDlRlcBufferReqParameters lcBufferInfo = m_rlcBufferReq.find (flowId)->second;
 
               if (UeToAmountOfDataToTransfer.find (flowId)->second - UeToAmountOfAssignedResources.find (flowId)->second < 0)
@@ -1543,7 +1543,7 @@ CqaFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sche
         }
 
       newDci.m_mcs.push_back (m_amc->GetMcsFromCqi (worstCqi));
-      int tbSize = (m_amc->GetTbSizeFromMcs (newDci.m_mcs.at (0), RgbPerRnti * rbgSize) / 8);           // (size of TB in bytes according to table 7.1.7.2.1-1 of 36.213)
+      int tbSize = (m_amc->GetDlTbSizeFromMcs (newDci.m_mcs.at (0), RgbPerRnti * rbgSize) / 8);           // (size of TB in bytes according to table 7.1.7.2.1-1 of 36.213)
       newDci.m_tbsSize.push_back (tbSize);
       newDci.m_resAlloc = 0;            // only allocation type 0 at this stage
       newDci.m_rbBitmap = 0;    // TBD (32 bit bitmap see 7.1.6 of 36.213)
@@ -2093,7 +2093,7 @@ CqaFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sche
           uldci.m_mcs = m_amc->GetMcsFromCqi (cqi);
         }
 
-      uldci.m_tbSize = (m_amc->GetTbSizeFromMcs (uldci.m_mcs, rbPerFlow) / 8);
+      uldci.m_tbSize = (m_amc->GetUlTbSizeFromMcs (uldci.m_mcs, rbPerFlow) / 8);
       UpdateUlRlcBufferInfo (uldci.m_rnti, uldci.m_tbSize);
       uldci.m_ndi = 1;
       uldci.m_cceIndex = 0;
@@ -2498,7 +2498,7 @@ CqaFfMacScheduler::UpdateDlRlcBufferInfo (uint16_t rnti, uint8_t lcid, uint16_t 
               // for SRB1 (using RLC AM) it's better to
               // overestimate RLC overhead rather than
               // underestimate it and risk unneeded
-              // segmentation which increases delay 
+              // segmentation which increases delay
               rlcOverhead = 4;
             }
           else

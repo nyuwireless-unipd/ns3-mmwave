@@ -103,6 +103,8 @@ EpsBearer::GetPriority () const
       return 7;
     case NGBR_VIDEO_TCP_PREMIUM:
       return 8;
+    case NGBR_VIDEO_TCP_DEFAULT:
+      return 9;
     case GBR_ULTRA_LOW_LAT:
       return 1;
     default:

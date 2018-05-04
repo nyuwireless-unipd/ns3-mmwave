@@ -19,7 +19,7 @@
  * Author: Jaume Nin <jnin@cttc.cat>
  *         Nicola Baldo <nbaldo@cttc.cat>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *          Support for real S1AP link
  */
 
@@ -64,68 +64,77 @@ protected:
   void DoDispose (void);
 
 public:
-  
-  
 
-  /** 
+
+
+  /**
    * Constructor
-   * 
-   * \param lteSocket the socket to be used to send/receive packets to/from the LTE radio interface
+   *
+   * \param lteSocket the socket to be used to send/receive IPv4 packets to/from the LTE radio interface
+   * \param lteSocket the socket to be used to send/receive IPv6 packets to/from the LTE radio interface
    * \param s1uSocket the socket to be used to send/receive packets
-   * to/from the S1-U interface connected with the SGW 
+   * to/from the S1-U interface connected with the SGW
    * \param enbS1uAddress the IPv4 address of the S1-U interface of this eNB
    * \param sgwS1uAddress the IPv4 address at which this eNB will be able to reach its SGW for S1-U communications
    * \param cellId the identifier of the enb
    */
-  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId);
+  EpcEnbApplication (Ptr<Socket> lteSocket, Ptr<Socket> lteSocket6, Ptr<Socket> s1uSocket, Ipv4Address enbS1uAddress, Ipv4Address sgwS1uAddress, uint16_t cellId);
 
   /**
    * Destructor
-   * 
+   *
    */
   virtual ~EpcEnbApplication (void);
 
 
-  /** 
+  /**
    * Set the S1 SAP User
-   * 
+   *
    * \param s the S1 SAP User
    */
   void SetS1SapUser (EpcEnbS1SapUser * s);
 
-  /** 
-   * 
+  /**
+   *
    * \return the S1 SAP Provider
    */
   EpcEnbS1SapProvider* GetS1SapProvider ();
 
-  /** 
-   * Set the S1AP provider for the S1AP eNB endpoint 
-   * 
+  /**
+   * Set the S1AP provider for the S1AP eNB endpoint
+   *
    * \param s the S1AP provider
    */
   void SetS1apSapMme (EpcS1apSapEnbProvider * s);
 
-  /** 
-   * 
-   * \return the ENB side of the S1-AP SAP 
+  /**
+   *
+   * \return the ENB side of the S1-AP SAP
    */
   EpcS1apSapEnb* GetS1apSapEnb ();
- 
-  /** 
+
+  /**
    * Method to be assigned to the recv callback of the LTE socket. It is called when the eNB receives a data packet from the radio interface that is to be forwarded to the SGW.
-   * 
+   *
    * \param socket pointer to the LTE socket
    */
   void RecvFromLteSocket (Ptr<Socket> socket);
 
 
-  /** 
+  /**
    * Method to be assigned to the recv callback of the S1-U socket. It is called when the eNB receives a data packet from the SGW that is to be forwarded to the UE.
-   * 
+   *
    * \param socket pointer to the S1-U socket
    */
   void RecvFromS1uSocket (Ptr<Socket> socket);
+
+  /**
+   * TracedCallback signature for data Packet reception event.
+   *
+   * \param [in] packet The data packet sent from the internet.
+   */
+  typedef void (* RxTracedCallback)
+    (Ptr<Packet> packet);
 
 
   struct EpsFlowId_t
@@ -148,12 +157,12 @@ private:
   void DoInitialUeMessage (uint64_t imsi, uint16_t rnti);
   void DoPathSwitchRequest (EpcEnbS1SapProvider::PathSwitchRequestParameters params);
   void DoUeContextRelease (uint16_t rnti);
-  
+
   // S1-AP SAP ENB methods
   void DoInitialContextSetupRequest (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, std::list<EpcS1apSapEnb::ErabToBeSetupItem> erabToBeSetupList);
   void DoPathSwitchRequestAcknowledge (uint64_t enbUeS1Id, uint64_t mmeUeS1Id, uint16_t cgi, std::list<EpcS1apSapEnb::ErabSwitchedInUplinkItem> erabToBeSwitchedInUplinkList);
 
-  /** 
+  /**
    * \brief This function accepts bearer id corresponding to a particular UE and schedules indication of bearer release towards MME
    * \param imsi maps to mmeUeS1Id
    * \param rnti maps to enbUeS1Id
@@ -164,29 +173,29 @@ private:
 
   /**
    * Send a packet to the UE via the LTE radio interface of the eNB
-   * 
+   *
    * \param packet t
    * \param bid the EPS Bearer IDentifier
    */
   void SendToLteSocket (Ptr<Packet> packet, uint16_t rnti, uint8_t bid);
 
 
-  /** 
+  /**
    * Send a packet to the SGW via the S1-U interface
-   * 
+   *
    * \param packet packet to be sent
    * \param teid the Tunnel Enpoint IDentifier
    */
   void SendToS1uSocket (Ptr<Packet> packet, uint32_t teid);
 
 
-  
-  /** 
+
+  /**
    * internal method used for the actual setup of the S1 Bearer
-   * 
-   * \param teid 
-   * \param rnti 
-   * \param bid 
+   *
+   * \param teid
+   * \param rnti
+   * \param bid
    */
   void SetupS1Bearer (uint32_t teid, uint16_t rnti, uint8_t bid);
 
@@ -194,6 +203,12 @@ private:
    * raw packet socket to send and receive the packets to and from the LTE radio interface
    */
   Ptr<Socket> m_lteSocket;
+
+  /**
+   * raw packet socket to send and receive the packets to and from the LTE radio interface
+   */
+  Ptr<Socket> m_lteSocket6;
+
 
   /**
    * UDP socket to send and receive GTP-U the packets to and from the S1-U interface
@@ -212,54 +227,62 @@ private:
 
   /**
    * map of maps telling for each RNTI and BID the corresponding  S1-U TEID
-   * 
+   *
    */
-  std::map<uint16_t, std::map<uint8_t, uint32_t> > m_rbidTeidMap;  
+  std::map<uint16_t, std::map<uint8_t, uint32_t> > m_rbidTeidMap;
 
   /**
    * map telling for each S1-U TEID the corresponding RNTI,BID
-   * 
+   *
    */
   std::map<uint32_t, EpsFlowId_t> m_teidRbidMap;
- 
+
   /**
    * UDP port to be used for GTP
    */
   uint16_t m_gtpuUdpPort;
 
   /**
-   * Provider for the S1 SAP 
+   * Provider for the S1 SAP
    */
   EpcEnbS1SapProvider* m_s1SapProvider;
 
   /**
-   * User for the S1 SAP 
+   * User for the S1 SAP
    */
   EpcEnbS1SapUser* m_s1SapUser;
 
   /**
    * Provider for the methods of S1AP eNB endpoint
-   * 
+   *
    */
   EpcS1apSapEnbProvider* m_s1apSapEnbProvider;
 
   /**
    * ENB side of the S1-AP SAP eNB endpoint
-   * 
+   *
    */
   EpcS1apSapEnb* m_s1apSapEnb;
 
   /**
    * UE context info
-   * 
+   *
    */
   std::map<uint64_t, uint16_t> m_imsiRntiMap;
 
   uint16_t m_cellId;
 
+  /**
+   * \brief Callback to trace RX (reception) data packets from LTE Socket.
+   */
+  TracedCallback<Ptr<Packet> > m_rxLteSocketPktTrace;
+
+  /**
+   * \brief Callback to trace RX (reception) data packets from S1-U Socket.
+   */
+  TracedCallback<Ptr<Packet> > m_rxS1uSocketPktTrace;
 };
 
 } //namespace ns3
 
 #endif /* EPC_ENB_APPLICATION_H */
-

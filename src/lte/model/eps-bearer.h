@@ -27,17 +27,17 @@
 #define EPS_BEARER
 
 #include <ns3/uinteger.h>
- 
+
 namespace ns3 {
 
 /**
- * 3GPP TS 36.143 9.2.1.18 GBR QoS Information
+ * 3GPP TS 36.413 9.2.1.18 GBR QoS Information
  *
  */
 struct GbrQosInformation
 {
-  /** 
-   * Default constructor, inizializes member variables to zero or equivalent
+  /**
+   * Default constructor, initializes member variables to zero or equivalent
    */
   GbrQosInformation ();
 
@@ -54,13 +54,13 @@ struct GbrQosInformation
  */
 struct AllocationRetentionPriority
 {
-  /** 
-   * Default constructor, inizializes member variables to zero or equivalent
+  /**
+   * Default constructor, initializes member variables to zero or equivalent
    */
   AllocationRetentionPriority ();
-  uint8_t priorityLevel;     // /< 1-15; 1 = highest
-  bool preemptionCapability; // /< true if bearer can preempt others
-  bool preemptionVulnerability; // true if bearer can be preempted by others
+  uint8_t priorityLevel;     ///< 1-15; 1 = highest
+  bool preemptionCapability; ///< true if bearer can preempt others
+  bool preemptionVulnerability; ///< true if bearer can be preempted by others
 };
 
 /**
@@ -90,14 +90,14 @@ struct EpsBearer
     NGBR_VIDEO_TCP_PREMIUM  = 8,
     NGBR_VIDEO_TCP_DEFAULT  = 9,
 		GBR_ULTRA_LOW_LAT				= 99,
-  } qci;
+  } qci; ///< Qos class indicator
 
-  GbrQosInformation gbrQosInfo;
-  AllocationRetentionPriority arp;
+  GbrQosInformation gbrQosInfo; ///< GBR QOS information
+  AllocationRetentionPriority arp; ///< allocation retention priority
 
   /**
-   * Deault constructor. QCI will be initialized to NGBR_VIDEO_TCP_DEFAULT
-   * 
+   * Default constructor. QCI will be initialized to NGBR_VIDEO_TCP_DEFAULT
+   *
    */
   EpsBearer ();
 
@@ -108,6 +108,12 @@ struct EpsBearer
    */
   EpsBearer (Qci x);
 
+  /**
+   *
+   * @param x the QoS Class Indicator
+   * @param y the GbrQosInformation
+   *
+   */
   EpsBearer (Qci x, GbrQosInformation y);
 
   /**
