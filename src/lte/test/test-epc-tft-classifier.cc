@@ -41,8 +41,8 @@ NS_LOG_COMPONENT_DEFINE ("TestEpcTftClassifier");
  * \ingroup lte-test
  * \ingroup tests
  *
- * \brief Test case to check the functionality of the Tft Classifier. Test 
- * consist of defining different TFT configurations, i.e. direction, ports, 
+ * \brief Test case to check the functionality of the Tft Classifier. Test
+ * consist of defining different TFT configurations, i.e. direction, ports,
  * address, and it is checking if the clasiffication of UDP packets is
  * done correctly.
  */
@@ -63,8 +63,8 @@ public:
    */
   EpcTftClassifierTestCase (Ptr<EpcTftClassifier> c,
                             EpcTft::Direction d,
-                            Ipv4Address sa, 
-                            Ipv4Address da, 
+                            Ipv4Address sa,
+                            Ipv4Address da,
                             uint16_t sp,
                             uint16_t dp,
                             uint8_t tos,
@@ -72,7 +72,7 @@ public:
   virtual ~EpcTftClassifierTestCase ();
 
 private:
-  
+
   Ptr<EpcTftClassifier> m_c; ///< the EPC TFT classifier
   EpcTft::Direction m_d; ///< the EPC TFT direction
   uint8_t m_tftId; ///< the TFT ID
@@ -94,8 +94,8 @@ private:
    */
   static std::string BuildNameString (Ptr<EpcTftClassifier> c,
                                       EpcTft::Direction d,
-                                      Ipv4Address sa, 
-                                      Ipv4Address da, 
+                                      Ipv4Address sa,
+                                      Ipv4Address da,
                                       uint16_t sp,
                                       uint16_t dp,
                                       uint8_t tos,
@@ -105,15 +105,15 @@ private:
 
 EpcTftClassifierTestCase::EpcTftClassifierTestCase (Ptr<EpcTftClassifier> c,
                                                     EpcTft::Direction d,
-                                                    Ipv4Address sa, 
-                                                    Ipv4Address da, 
+                                                    Ipv4Address sa,
+                                                    Ipv4Address da,
                                                     uint16_t sp,
                                                     uint16_t dp,
                                                     uint8_t tos,
                                                     uint32_t tftId)
   : TestCase (BuildNameString (c, d, sa, da, sp, dp, tos, tftId)),
     m_c (c),
-    m_d (d),    
+    m_d (d),
     m_tftId (tftId)
 {
   NS_LOG_FUNCTION (this << c << d << sa << da << sp << dp << tos << tftId);
@@ -134,8 +134,8 @@ EpcTftClassifierTestCase::~EpcTftClassifierTestCase ()
 std::string
 EpcTftClassifierTestCase::BuildNameString (Ptr<EpcTftClassifier> c,
                                            EpcTft::Direction d,
-                                           Ipv4Address sa, 
-                                           Ipv4Address da, 
+                                           Ipv4Address sa,
+                                           Ipv4Address da,
                                            uint16_t sp,
                                            uint16_t dp,
                                            uint8_t tos,
@@ -149,11 +149,11 @@ EpcTftClassifierTestCase::BuildNameString (Ptr<EpcTftClassifier> c,
       << ", sp = " << sp
       << ", dp = " << dp
       << ", tos = 0x" << std::hex << (int) tos
-      << " --> tftId = " << tftId;  
+      << " --> tftId = " << tftId;
   return oss.str ();
 }
 
-void 
+void
 EpcTftClassifierTestCase::DoRun (void)
 {
   ns3::PacketMetadata::Enable ();
@@ -194,9 +194,9 @@ EpcTftClassifierTestSuite::EpcTftClassifierTestSuite ()
   // check some TFT matches
   ///////////////////////////
 
-  
+
   Ptr<EpcTftClassifier> c1 = Create<EpcTftClassifier> ();
-  
+
 
   Ptr<EpcTft> tft1_1 = Create<EpcTft> ();
 
@@ -278,7 +278,7 @@ EpcTftClassifierTestSuite::EpcTftClassifierTestSuite ()
 
 
   ///////////////////////////
-  // check default TFT 
+  // check default TFT
   ///////////////////////////
 
   Ptr<EpcTftClassifier> c2 = Create<EpcTftClassifier> ();
@@ -311,7 +311,7 @@ EpcTftClassifierTestSuite::EpcTftClassifierTestSuite ()
   AddTestCase (new EpcTftClassifierTestCase (c2, EpcTft::DOWNLINK, Ipv4Address ("9.1.1.1"), Ipv4Address ("8.1.1.1"),  3461,     3461,     0,    1), TestCase::QUICK);
   AddTestCase (new EpcTftClassifierTestCase (c2, EpcTft::DOWNLINK, Ipv4Address ("9.1.1.1"), Ipv4Address ("8.1.1.1"),     9,     3489,     0,    1), TestCase::QUICK);
 
-  
+
 
   ///////////////////////////////////////////
   // check default TFT plus dedicated ones
@@ -357,7 +357,7 @@ EpcTftClassifierTestSuite::EpcTftClassifierTestSuite ()
 
   Ptr<EpcTftClassifier> c4 = Create<EpcTftClassifier> ();
   Ptr<EpcTft> tft4_1 = Create<EpcTft> ();
-  tft4_1->Add (pf1_2_3);  
+  tft4_1->Add (pf1_2_3);
   c4->Add (tft4_1, 1);
   Ptr<EpcTft> tft4_2 = Create<EpcTft> ();
   tft4_2->Add (pf1_2_4);

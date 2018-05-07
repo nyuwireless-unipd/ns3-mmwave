@@ -41,7 +41,7 @@ LteFfrSimple::LteFfrSimple ()
     m_changePdschConfigDedicated (false),
     m_tpc (1),
     m_tpcNum (0),
-    m_accumulatedMode (false)
+    m_acculumatedMode (false)
 {
   NS_LOG_FUNCTION (this);
   m_ffrSapProvider = new MemberLteFfrSapProvider<LteFfrSimple> (this);
@@ -172,7 +172,7 @@ LteFfrSimple::SetTpc (uint32_t tpc, uint32_t num, bool acculumatedMode)
 {
   m_tpc = tpc;
   m_tpcNum = num;
-  m_accumulatedMode = acculumatedMode;
+  m_acculumatedMode = acculumatedMode;
 }
 
 std::vector <bool>
@@ -250,7 +250,7 @@ LteFfrSimple::DoGetTpc (uint16_t rnti)
 {
   NS_LOG_FUNCTION (this);
 
-  if (m_accumulatedMode)
+  if (m_acculumatedMode)
     {
       if (m_tpcNum > 0)
         {

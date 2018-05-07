@@ -53,7 +53,7 @@ NS_LOG_COMPONENT_DEFINE("LteHandoverDelayTest");
  * \ingroup lte-test
  * \ingroup tests
  *
- * \brief Verifying that the time needed for handover is under a 
+ * \brief Verifying that the time needed for handover is under a
  * specified threshold.
  */
 
@@ -143,6 +143,8 @@ LteHandoverDelayTestCase::DoRun ()
    * Helpers.
    */
   auto epcHelper = CreateObject<PointToPointEpcHelper> ();
+  epcHelper -> SetAttribute("S1apLinkDelay",TimeValue(Seconds(0)));
+  epcHelper -> SetAttribute("S1apLinkDataRate", DataRateValue(DataRate("1Gb/s")));
 
   auto lteHelper = CreateObject<LteHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
@@ -301,7 +303,7 @@ public:
       {
         // arguments: useIdealRrc, handoverTime, delayThreshold, simulationDuration
         AddTestCase (
-            new LteHandoverDelayTestCase (1, false, handoverTime, Seconds (0.020),
+          new LteHandoverDelayTestCase (1, false, handoverTime, Seconds (0.020),
                 Seconds (0.200)), TestCase::QUICK);
       }
   }

@@ -321,8 +321,13 @@ void Asn1Header::SerializeChoice (int numOptions, int selectedOption, bool isExt
 
 void Asn1Header::SerializeInteger (int n, int nmin, int nmax) const
 {
-  NS_ASSERT_MSG (nmin <= n && n <= nmax,
-                 "Integer " << n << " is outside range [" << nmin << ", " << nmax << "]");
+  // Misusage check: Ensure nmax>nmin ...
+  if (nmin > nmax)
+    {
+      int aux = nmin;
+      nmin = nmax;
+      nmax = aux;
+    }
 
   // Clause 11.5.3 ITU-T X.691
   int range = nmax - nmin + 1;

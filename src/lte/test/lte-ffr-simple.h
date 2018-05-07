@@ -34,9 +34,6 @@ namespace ns3 {
 
 
 /**
- * \ingroup lte-test
- * \ingroup tests
- *
  * \brief Simple Frequency Reuse algorithm implementation which uses only 1 sub-band.
  *                Used to test Downlink Power Allocation. When Simple FR receives UE measurements
  *                it immediately call functions to change PdschConfigDedicated (i.e. P_A) value for
@@ -52,29 +49,12 @@ public:
 
   virtual ~LteFfrSimple ();
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
+  // inherited from Object
   static TypeId GetTypeId ();
 
-  /**
-   * \brief Callback function that is used to be connected to trace ChangePdschConfigDedicated
-   * \param change trace fired upon change of PdschConfigDedicated if true
-   */
   void ChangePdschConfigDedicated (bool change);
-  /**
-   * \brief Set PDSCH config dedicated function
-   * \param pdschConfigDedicated LteRrcSap::PdschConfigDedicated object
-   */
   void SetPdschConfigDedicated (LteRrcSap::PdschConfigDedicated pdschConfigDedicated);
 
-  /**
-   * \brief Set transmission power control
-   * \param tpc TPC
-   * \param num number of TPC configurations in the test case
-   * \param acculumatedMode whether TPC accumulated mode is used
-   */
   void SetTpc (uint32_t tpc, uint32_t num, bool acculumatedMode);
 
   // inherited from LteFfrAlgorithm
@@ -84,9 +64,8 @@ public:
   virtual void SetLteFfrRrcSapUser (LteFfrRrcSapUser* s);
   virtual LteFfrRrcSapProvider* GetLteFfrRrcSapProvider ();
 
-  /// let the forwarder class access the protected and private members
+  // let the forwarder class access the protected and private members
   friend class MemberLteFfrSapProvider<LteFfrSimple>;
-  /// let the forwarder class access the protected and private members
   friend class MemberLteFfrRrcSapProvider<LteFfrSimple>;
 
   /**
@@ -121,42 +100,41 @@ protected:
 
 private:
 
-  /// Update PDSCH config dedicated function
   void UpdatePdschConfigDedicated ();
 
   // FFR SAP
-  LteFfrSapUser* m_ffrSapUser; ///< FFR SAP user
-  LteFfrSapProvider* m_ffrSapProvider; ///< FFR SAP provider
+  LteFfrSapUser* m_ffrSapUser;
+  LteFfrSapProvider* m_ffrSapProvider;
 
   // FFR RRF SAP
-  LteFfrRrcSapUser* m_ffrRrcSapUser; ///< FFR RRC SAP user
-  LteFfrRrcSapProvider* m_ffrRrcSapProvider; ///< FFR RRC SAP provider
+  LteFfrRrcSapUser* m_ffrRrcSapUser;
+  LteFfrRrcSapProvider* m_ffrRrcSapProvider;
 
-  uint8_t m_dlOffset; ///< DL offset
-  uint8_t m_dlSubBand; ///< DL subband
+  uint8_t m_dlOffset;
+  uint8_t m_dlSubBand;
 
-  uint8_t m_ulOffset; ///< UL offset
-  uint8_t m_ulSubBand; ///< UL subband
+  uint8_t m_ulOffset;
+  uint8_t m_ulSubBand;
 
-  std::vector <bool> m_dlRbgMap; ///< DL RBG map
-  std::vector <bool> m_ulRbgMap; ///< UL RBG map
+  std::vector <bool> m_dlRbgMap;
+  std::vector <bool> m_ulRbgMap;
 
-  std::map <uint16_t, LteRrcSap::PdschConfigDedicated> m_ues; ///< UEs
+  std::map <uint16_t, LteRrcSap::PdschConfigDedicated> m_ues;
 
   // The expected measurement identity
-  uint8_t m_measId; ///< measure ID
+  uint8_t m_measId;
 
-  bool m_changePdschConfigDedicated; ///< PDSCH config dedicate changed?
+  bool m_changePdschConfigDedicated;
 
-  LteRrcSap::PdschConfigDedicated m_pdschConfigDedicated; ///< PDSCH config dedicated
+  LteRrcSap::PdschConfigDedicated m_pdschConfigDedicated;
 
-  TracedCallback<uint16_t, uint8_t> m_changePdschConfigDedicatedTrace; ///< PDSCH config dedicated change trace callback
+  TracedCallback<uint16_t, uint8_t> m_changePdschConfigDedicatedTrace;
 
 
-  // Uplink Power Control
-  uint32_t m_tpc; ///< transmission power control to be used
-  uint32_t m_tpcNum; ///< number of TPC configurations
-  bool m_accumulatedMode; ///< whether to use the TPC accumulated mode
+  //Uplink Power Control
+  uint32_t m_tpc;
+  uint32_t m_tpcNum;
+  bool m_acculumatedMode;
 
 }; // end of class LteFfrSimple
 

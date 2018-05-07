@@ -46,7 +46,7 @@ NS_LOG_COMPONENT_DEFINE ("LteInterferenceTest");
 
 void
 LteTestDlSchedulingCallback (LteInterferenceTestCase *testcase, std::string path,
-		                     DlSchedulingCallbackInfo dlInfo)
+                         DlSchedulingCallbackInfo dlInfo)
 {
   testcase->DlScheduling (dlInfo);
 }
@@ -159,6 +159,11 @@ LteInterferenceTestCase::DoRun (void)
   NetDeviceContainer ueDevs2;
   lteHelper->SetSchedulerType ("ns3::RrFfMacScheduler");
   lteHelper->SetSchedulerAttribute ("UlCqiFilter", EnumValue (FfMacScheduler::PUSCH_UL_CQI));
+
+  // set DL and UL bandwidth
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+  lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
+
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs1 = lteHelper->InstallUeDevice (ueNodes1);
   ueDevs2 = lteHelper->InstallUeDevice (ueNodes2);

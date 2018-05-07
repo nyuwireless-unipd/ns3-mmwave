@@ -37,12 +37,7 @@ class LteTestRrc;
 class LteTestMac;
 
 /**
- * \ingroup lte-test
- * \ingroup tests
- *
- * \brief A simplified version of LteHelper, that 
- * is used for creation and configuration of LTE entities for testing purposes 
- * when just a limited LteHelper functionality is wanted.
+ * Creation and configuration of LTE entities
  *
  */
 class LteSimpleHelper : public Object
@@ -51,10 +46,6 @@ public:
   LteSimpleHelper (void);
   virtual ~LteSimpleHelper (void);
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
   static TypeId GetTypeId (void);
   virtual void DoDispose (void);
 
@@ -121,50 +112,38 @@ public:
    */
   void EnableUlPdcpTraces (void);
 
+
 protected:
   // inherited from Object
   virtual void DoInitialize (void);
 
 private:
-  /**
-   * Install single ENB device 
-   *
-   * \param n the node
-   * \returns the device
-   */
   Ptr<NetDevice> InstallSingleEnbDevice (Ptr<Node> n);
-  /**
-   * Install single UE device
-   *
-   * \param n the node
-   * \returns the device
-   */
   Ptr<NetDevice> InstallSingleUeDevice (Ptr<Node> n);
 
-  Ptr<SimpleChannel> m_phyChannel; ///< the physical channel
+  Ptr<SimpleChannel> m_phyChannel;
 
 public:
 
-  Ptr<LteTestRrc> m_enbRrc; ///< ENB RRC
-  Ptr<LteTestRrc> m_ueRrc; ///< UE RRC
+  Ptr<LteTestRrc> m_enbRrc;
+  Ptr<LteTestRrc> m_ueRrc;
 
-  Ptr<LteTestMac> m_enbMac; ///< ENB MAC
-  Ptr<LteTestMac> m_ueMac; ///< UE MAC
+  Ptr<LteTestMac> m_enbMac;
+  Ptr<LteTestMac> m_ueMac;
 
 private:
 
-  Ptr<LtePdcp>    m_enbPdcp; ///< ENB PDCP
-  Ptr<LteRlc>     m_enbRlc; ///< ENB RLC
+  Ptr<LtePdcp>    m_enbPdcp;
+  Ptr<LteRlc>     m_enbRlc;
 
-  Ptr<LtePdcp>    m_uePdcp; ///< UE PDCP
-  Ptr<LteRlc>     m_ueRlc; ///< UE RLC
+  Ptr<LtePdcp>    m_uePdcp;
+  Ptr<LteRlc>     m_ueRlc;
 
-  ObjectFactory   m_enbDeviceFactory; ///< ENB device factory
-  ObjectFactory   m_ueDeviceFactory; ///< UE device factory
+  ObjectFactory   m_enbDeviceFactory;
+  ObjectFactory   m_ueDeviceFactory;
 
-  /// LteRlcEntityType_t enumeration
   enum LteRlcEntityType_t {RLC_UM = 1,
-                           RLC_AM = 2 } m_lteRlcEntityType; ///< RLC entity type
+                           RLC_AM = 2 } m_lteRlcEntityType;
 
 };
 

@@ -203,14 +203,14 @@ LteTestRrc::Start ()
   p.rnti = 1111;
   p.lcid = 222;
   p.pdcpSdu = Create<Packet> (m_pduSize);
-  
+
   bool haveContext = false;
   Ptr<Node> node;
   if (m_device != 0)
     {
       node = m_device->GetNode ();
       if (node != 0)
-        {                    
+        {
           haveContext = true;
         }
     }
@@ -480,7 +480,7 @@ LteTestMac::SendTxOpportunity (Time time, uint32_t bytes)
     {
       node = m_device->GetNode ();
       if (node != 0)
-        {                    
+        {
           haveContext = true;
         }
     }
@@ -492,7 +492,7 @@ LteTestMac::SendTxOpportunity (Time time, uint32_t bytes)
     {
       Simulator::Schedule (time, &LteMacSapUser::NotifyTxOpportunity, m_macSapUser, bytes, 0, 0, 0, 0, 0);
     }
-    
+
   if (m_txOpportunityMode == RANDOM_MODE)
   {
     if (m_txOppTime != Seconds (0))
@@ -615,7 +615,7 @@ LteTestMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameter
       for (std::list<EventId>::iterator it = m_nextTxOppList.begin ();
            it != m_nextTxOppList.end ();
            ++it)
-        {          
+        {
           it->Cancel ();
         }
       m_nextTxOppList.clear ();
@@ -624,7 +624,7 @@ LteTestMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameter
       Time time = m_txOppTime;
       while (size > 0)
         {
-          EventId e = Simulator::Schedule (time, 
+          EventId e = Simulator::Schedule (time,
                                            &LteMacSapUser::NotifyTxOpportunity,
                                            m_macSapUser, m_txOppSize, 0, 0, 0, params.rnti, params.lcid);
           m_nextTxOppList.push_back (e);
@@ -688,26 +688,26 @@ EpcTestRrc::GetTypeId (void)
   ;
   return tid;
 }
-void 
+void
 EpcTestRrc::SetS1SapProvider (EpcEnbS1SapProvider * s)
 {
   m_s1SapProvider = s;
 }
 
-  
-EpcEnbS1SapUser* 
+
+EpcEnbS1SapUser*
 EpcTestRrc::GetS1SapUser ()
 {
   return m_s1SapUser;
 }
 
-void 
+void
 EpcTestRrc::DoDataRadioBearerSetupRequest (EpcEnbS1SapUser::DataRadioBearerSetupRequestParameters request)
 {
 
 }
-  
-void 
+
+void
 EpcTestRrc::DoPathSwitchRequestAcknowledge (EpcEnbS1SapUser::PathSwitchRequestAcknowledgeParameters params)
 {
 
@@ -715,4 +715,3 @@ EpcTestRrc::DoPathSwitchRequestAcknowledge (EpcEnbS1SapUser::PathSwitchRequestAc
 
 
 } // namespace ns3
-

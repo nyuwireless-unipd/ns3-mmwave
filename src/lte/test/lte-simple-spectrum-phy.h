@@ -51,12 +51,8 @@ public:
   LteSimpleSpectrumPhy ();
   virtual ~LteSimpleSpectrumPhy ();
 
-  /**
-   * \brief Get the type ID.
-   * \return the object TypeId
-   */
-  static TypeId GetTypeId (void);
   // inherited from Object
+  static TypeId GetTypeId (void);
   virtual void DoDispose ();
 
   // inherited from SpectrumPhy
@@ -69,28 +65,20 @@ public:
   Ptr<AntennaModel> GetRxAntenna ();
   void StartRx (Ptr<SpectrumSignalParameters> params);
 
-  /**
-   * \brief Set receive spectrum model.
-   * \param model the spectrum model
-   */
   void SetRxSpectrumModel (Ptr<const SpectrumModel> model);
 
-  /**
-   * \brief Set cell ID.
-   * \param cellId the cell ID
-   */
   void SetCellId (uint16_t cellId);
 
 private:
-  Ptr<MobilityModel> m_mobility; ///< the mobility model
-  Ptr<AntennaModel> m_antenna; ///< the antenna model
-  Ptr<NetDevice> m_device; ///< the device
-  Ptr<SpectrumChannel> m_channel; ///< the channel
-  Ptr<const SpectrumModel> m_rxSpectrumModel; ///< the spectrum model
+  Ptr<MobilityModel> m_mobility;
+  Ptr<AntennaModel> m_antenna;
+  Ptr<NetDevice> m_device;
+  Ptr<SpectrumChannel> m_channel;
+  Ptr<const SpectrumModel> m_rxSpectrumModel;
 
-  uint16_t m_cellId; ///< the cell ID
+  uint16_t m_cellId;
 
-  TracedCallback< Ptr<const SpectrumValue> > m_rxStart; ///< receive start trace callback function
+  TracedCallback< Ptr<const SpectrumValue> > m_rxStart;
 };
 
 

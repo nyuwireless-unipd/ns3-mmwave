@@ -176,6 +176,9 @@ LteLinkAdaptationTestCase::DoRun (void)
   NS_LOG_INFO ("SNR = " << m_snrDb << "  LOSS = " << m_loss);
   lteHelper->SetPathlossModelAttribute ("Loss", DoubleValue (m_loss));
 
+  // set DL bandwidth. 
+  lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
+
   // Create Nodes: eNodeB and UE
   NodeContainer enbNodes;
   NodeContainer ueNodes;

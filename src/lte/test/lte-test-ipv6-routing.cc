@@ -219,6 +219,7 @@ LteIpv6RoutingTestCase::DoRun (void)
   inputConfig.ConfigureDefaults ();
 
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
+  epcHelper->SetAttribute ("S1apLinkDelay", TimeValue(Seconds(0)));
 
   // Create a single RemoteHost
   NodeContainer remoteHostContainer;
