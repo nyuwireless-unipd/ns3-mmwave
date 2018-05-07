@@ -102,10 +102,10 @@ main (int argc, char *argv[])
 
   uint32_t maxBytes = 0;
   int packetSize = 1400;
-  std::string protocol = "TcpCubic";
+  std::string protocol = "TcpBbr";
   double simStopTime = 60;
   int bufferSize = 1000;
-  int p2pDelay = 0;
+  int p2pDelay = 18;
 
   //
 // Allow the user to override any of the defaults at
@@ -173,7 +173,11 @@ main (int argc, char *argv[])
       Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpYeah::GetTypeId ()));
 
     }
-    else
+    else if (protocol == "TcpBbr")
+    {
+      Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
+
+    }    else
     {
     std::cout<<protocol<<" Unkown protocol.\n";
     return 1;

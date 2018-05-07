@@ -111,8 +111,8 @@ main (int argc, char *argv[])
 	bool rlcAmEnabled = true;
 	std::string protocol = "TcpBbr";
 	//int bufferSize = 1000 *1000 * 3.5 * 0.4;
-	int bufferSize = 1000 *1000 * 15;
-	int packetSize = 14000;
+	int bufferSize = 1000 *10* 15;
+	int packetSize = 1400;
 	int p2pDelay = 18;
 	// This 3GPP channel model example only demonstrate the pathloss model. The fast fading model is still in developing.
 

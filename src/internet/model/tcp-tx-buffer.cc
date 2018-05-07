@@ -1447,7 +1447,7 @@ TcpTxBuffer::UpdatePacketSent (SequenceNumber32 seq, uint32_t sz)
       return;
     }
 
-  //if (m_tcb->m_bytesInFlight.Get () == 0)
+  if (m_tcb->m_bytesInFlight.Get () == 0)
     {
       m_tcb->m_firstSentTime = Simulator::Now ();
       m_tcb->m_deliveredTime = Simulator::Now ();
@@ -1473,7 +1473,7 @@ TcpTxBuffer::UpdateRateSample (TcpTxItem *item)
   m_tcb->m_delivered         += item->m_packet->GetSize ();;
   m_tcb->m_deliveredTime      = Simulator::Now ();
 
-  if (item->m_delivered > m_rs.m_priorDelivered)
+  if (item->m_delivered >= m_rs.m_priorDelivered)
     {
       m_rs.m_priorDelivered   = item->m_delivered;
       m_rs.m_priorTime        = item->m_deliveredTime;
@@ -1509,6 +1509,10 @@ TcpTxBuffer::GenerateRateSample ()
 
   m_rs.m_interval = std::max (m_rs.m_sendElapsed, m_rs.m_ackElapsed);
 
+  if(m_rs.m_sendElapsed < m_tcb->m_minRtt || m_rs.m_ackElapsed < m_tcb->m_minRtt)
+  {
+    return false;
+  }
   m_rs.m_delivered = m_tcb->m_delivered - m_rs.m_priorDelivered;
 
   if (m_rs.m_interval < m_tcb->m_minRtt)
