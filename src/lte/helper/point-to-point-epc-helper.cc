@@ -120,12 +120,14 @@ PointToPointEpcHelper::PointToPointEpcHelper ()
   // the TUN device is on the same subnet as the UEs, so when a packet
   // addressed to an UE arrives at the intenet to the WAN interface of
   // the PGW it will be forwarded to the TUN device.
-  Ipv4InterfaceContainer tunDeviceIpv4IfContainer = m_ueAddressHelper.AssignUeIpv4Address (tunDeviceContainer);
+  Ipv4InterfaceContainer tunDeviceIpv4IfContainer = AssignUeIpv4Address (tunDeviceContainer);
+
 
   // the TUN device for IPv6 address is on the different subnet as the
   // UEs, it will forward the UE packets as we have inserted the route
   // for all UEs at the time of assigning UE addresses
   Ipv6InterfaceContainer tunDeviceIpv6IfContainer = AssignUeIpv6Address (tunDeviceContainer);
+
 
   //Set Forwarding of the IPv6 interface
   tunDeviceIpv6IfContainer.SetForwarding (0,true);
@@ -336,9 +338,22 @@ PointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, ui
   retval = enbLteSocket->Connect (enbLteSocketConnectAddress);
   NS_ASSERT (retval == 0);
 
+  // create LTE socket for the ENB
+  Ptr<Socket> enbLteSocket6 = Socket::CreateSocket (enb, TypeId::LookupByName ("ns3::PacketSocketFactory"));
+  PacketSocketAddress enbLteSocketBindAddress6;
+  enbLteSocketBindAddress6.SetSingleDevice (lteEnbNetDevice->GetIfIndex ());
+  enbLteSocketBindAddress6.SetProtocol (Ipv6L3Protocol::PROT_NUMBER);
+  retval = enbLteSocket6->Bind (enbLteSocketBindAddress6);
+  NS_ASSERT (retval == 0);
+  PacketSocketAddress enbLteSocketConnectAddress6;
+  enbLteSocketConnectAddress6.SetPhysicalAddress (Mac48Address::GetBroadcast ());
+  enbLteSocketConnectAddress6.SetSingleDevice (lteEnbNetDevice->GetIfIndex ());
+  enbLteSocketConnectAddress6.SetProtocol (Ipv6L3Protocol::PROT_NUMBER);
+  retval = enbLteSocket6->Connect (enbLteSocketConnectAddress6);
+  NS_ASSERT (retval == 0);
 
   NS_LOG_INFO ("create EpcEnbApplication");
-  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbS1uSocket, enbAddress, sgwAddress, cellId);
+  Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbLteSocket6, enbS1uSocket, enbAddress, sgwAddress, cellId);
   enb->AddApplication (enbApp);
   NS_ASSERT (enb->GetNApplications () == 1);
   NS_ASSERT_MSG (enb->GetApplication (0)->GetObject<EpcEnbApplication> () != 0, "cannot retrieve EpcEnbApplication");
