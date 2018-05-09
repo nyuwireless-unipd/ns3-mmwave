@@ -145,8 +145,8 @@ LteUePhy::LteUePhy ()
 
 LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   : LtePhy (dlPhy, ulPhy),
-    m_p10CqiPeriocity (MilliSeconds (1)),  // ideal behavior
-    m_a30CqiPeriocity (MilliSeconds (1)),  // ideal behavior
+    m_p10CqiPeriodicity (MilliSeconds (1)),  // ideal behavior
+    m_a30CqiPeriodicity (MilliSeconds (1)),  // ideal behavior
     m_uePhySapUser (0),
     m_ueCphySapUser (0),
     m_state (CELL_SEARCH),
@@ -491,7 +491,7 @@ LteUePhy::GenerateCqiRsrpRsrq (const SpectrumValue& sinr)
   if (m_dlConfigured && m_ulConfigured && (m_rnti > 0))
     {
       // check periodic wideband CQI
-      if (Simulator::Now () > m_p10CqiLast + m_p10CqiPeriocity)
+      if (Simulator::Now () > m_p10CqiLast + m_p10CqiPeriodicity)
         {
           //Ptr<LteUeNetDevice> thisDevice = GetDevice ()->GetObject<LteUeNetDevice> ();
           Ptr<DlCqiLteControlMessage> msg = CreateDlCqiFeedbackMessage (sinr);
@@ -502,7 +502,7 @@ LteUePhy::GenerateCqiRsrpRsrq (const SpectrumValue& sinr)
           m_p10CqiLast = Simulator::Now ();
         }
       // check aperiodic high-layer configured subband CQI
-      if  (Simulator::Now () > m_a30CqiLast + m_a30CqiPeriocity)
+      if  (Simulator::Now () > m_a30CqiLast + m_a30CqiPeriodicity)
         {
           //Ptr<LteUeNetDevice> thisDevice = GetDevice ()->GetObject<LteUeNetDevice> ();
           Ptr<DlCqiLteControlMessage> msg = CreateDlCqiFeedbackMessage (sinr);
@@ -714,7 +714,7 @@ LteUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
   Ptr<DlCqiLteControlMessage> msg = Create<DlCqiLteControlMessage> ();
   CqiListElement_s dlcqi;
   std::vector<int> cqi;
-  if (Simulator::Now () > m_p10CqiLast + m_p10CqiPeriocity)
+  if (Simulator::Now () > m_p10CqiLast + m_p10CqiPeriodicity)
     {
       cqi = m_amc->CreateCqiFeedbacks (newSinr, m_dlBandwidth);
 
@@ -730,7 +730,7 @@ LteUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
               cqiSum += cqi.at (i);
               activeSubChannels++;
             }
-          NS_LOG_DEBUG (this << " subch " << i << " cqi " <<  cqi.at (i));
+          //NS_LOG_DEBUG (this << " subch " << i << " cqi " <<  cqi.at (i));
         }
       dlcqi.m_rnti = m_rnti;
       dlcqi.m_ri = 1; // not yet used
@@ -753,7 +753,7 @@ LteUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
       dlcqi.m_wbPmi = 0; // not yet used
       // dl.cqi.m_sbMeasResult others CQI report modes: not yet implemented
     }
-  else if (Simulator::Now () > m_a30CqiLast + m_a30CqiPeriocity)
+  else if (Simulator::Now () > m_a30CqiLast + m_a30CqiPeriodicity)
     {
       cqi = m_amc->CreateCqiFeedbacks (newSinr, GetRbgSize ());
       int nLayer = TransmissionModesLayers::TxMode2LayerNum (m_transmissionMode);
@@ -913,7 +913,7 @@ LteUePhy::ReceiveLteControlMessageList (std::list<Ptr<LteControlMessage> > msgLi
 
 
           // send TB info to LteSpectrumPhy
-          NS_LOG_DEBUG (this << " UE " << m_rnti << " DL-DCI " << dci.m_rnti << " bitmap "  << dci.m_rbBitmap);
+          //NS_LOG_DEBUG (this << " UE " << m_rnti << " DL-DCI " << dci.m_rnti << " bitmap "  << dci.m_rbBitmap);
           for (uint8_t i = 0; i < dci.m_tbsSize.size (); i++)
             {
               m_downlinkSpectrumPhy->AddExpectedTb (dci.m_rnti, dci.m_ndi.at (i), dci.m_tbsSize.at (i), dci.m_mcs.at (i), dlRb, i, dci.m_harqProcess, dci.m_rv.at (i), true /* DL */);
@@ -1346,7 +1346,7 @@ LteUePhy::DoSetSrsConfigurationIndex (uint16_t srcCi)
   // a guard time is needed for the case where the SRS periodicity is changed dynamically at run time
   // if we use a static one, we can have a 0ms guard time
   m_srsStartTime = Simulator::Now () + MilliSeconds (0);
-  NS_LOG_DEBUG (this << " UE SRS P " << m_srsPeriodicity << " RNTI " << m_rnti << " offset " << m_srsSubframeOffset << " cellId " << m_cellId << " CI " << srcCi);
+  //NS_LOG_DEBUG (this << " UE SRS P " << m_srsPeriodicity << " RNTI " << m_rnti << " offset " << m_srsSubframeOffset << " cellId " << m_cellId << " CI " << srcCi);
 }
 
 void

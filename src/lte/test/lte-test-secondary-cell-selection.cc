@@ -93,6 +93,8 @@ LteSecondaryCellSelectionTestCase::DoRun ()
   NS_LOG_FUNCTION (this << GetName ());
 
   Config::SetGlobal ("RngRun", IntegerValue (m_rngRun));
+  Config::SetDefault ("ns3::LteEnbNetDevice::UlBandwidth", UintegerValue (25));
+  Config::SetDefault ("ns3::LteEnbNetDevice::DlBandwidth", UintegerValue (25));
 
   // Create helpers.
   auto lteHelper = CreateObject<LteHelper> ();
