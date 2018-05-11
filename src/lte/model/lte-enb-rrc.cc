@@ -3457,7 +3457,7 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPh
   NS_LOG_FUNCTION(this);
   auto it = ccPhyConf.begin ();
   NS_ASSERT (it != ccPhyConf.end ());
-  uint8_t bandwidth = it->second->GetBandwidth ();
+  uint8_t bandwidth = it->second->GetBandwidth (); // this information is not used
   //uint32_t earfcn = it->second->GetEarfcn ();
   uint16_t cellId = it->second->GetCellId ();
   //NS_LOG_FUNCTION (this << (uint16_t) bandwidth << earfcn);
@@ -3465,8 +3465,11 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPh
 
   //m_dlEarfcn = earfcn;
   //m_ulEarfcn = earfcn;
-  m_dlBandwidth = bandwidth;
-  m_ulBandwidth = bandwidth;
+  //m_dlBandwidth = bandwidth;
+  //m_ulBandwidth = bandwidth;
+
+  m_dlBandwidth = 6; //this information is not used in case of mmwave dev, we set it to the default value
+  m_ulBandwidth = 6; //this information is not used in case of mmwave dev, we set it to the default value
   m_cellId = cellId; // RRC cellId is equal to the cellId of the primary carrier
 
   for (const auto &it: ccPhyConf)

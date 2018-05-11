@@ -638,7 +638,7 @@ MmWaveHelper::InstallLteEnbDevice (NodeContainer c)
 	  {
 	    Ptr<Node> node = *i;
 	    Ptr<NetDevice> device = InstallSingleLteEnbDevice (node);
-	    device->SetAddress (Mac48Address::Allocate ());
+	    device->SetAddress (Mac64Address::Allocate ());
 	    devices.Add (device);
 	  }
 	return devices;

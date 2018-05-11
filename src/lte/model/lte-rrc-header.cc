@@ -875,7 +875,7 @@ RrcAsn1Header::SerializeRachConfigCommon (LteRrcSap::RachConfigCommon rachConfig
       SerializeEnum (16,15);
       break;
     default:
-      NS_FATAL_ERROR ("Wrong numberOfRA-Preambles value");
+      SerializeEnum (16,0);
     }
 
   SerializeSequence (std::bitset<0> (0),false); // powerRampingParameters
