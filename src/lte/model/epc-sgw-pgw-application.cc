@@ -142,7 +142,6 @@ EpcSgwPgwApplication::DoDispose ()
 }
 
 
-
 EpcSgwPgwApplication::EpcSgwPgwApplication (const Ptr<VirtualNetDevice> tunDevice, const Ptr<Socket> s1uSocket)
   : m_s1uSocket (s1uSocket),
     m_tunDevice (tunDevice),
@@ -176,12 +175,10 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
   // get IP address of UE
   if (ipType == 0x04)
     {
-      Ptr<Packet> pCopy = packet->Copy ();
       Ipv4Header ipv4Header;
       pCopy->RemoveHeader (ipv4Header);
       Ipv4Address ueAddr =  ipv4Header.GetDestination ();
       NS_LOG_LOGIC ("packet addressed to UE " << ueAddr);
-
       // find corresponding UeInfo address
       std::map<Ipv4Address, Ptr<UeInfo> >::iterator it = m_ueInfoByAddrMap.find (ueAddr);
       if (it == m_ueInfoByAddrMap.end ())
@@ -232,6 +229,7 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
       {
         NS_ABORT_MSG ("EpcSgwPgwApplication::RecvFromTunDevice - Unknown IP type...");
       }
+
   // there is no reason why we should notify the TUN
   // VirtualNetDevice that he failed to send the packet: if we receive
   // any bogus packet, it will just be silently discarded.

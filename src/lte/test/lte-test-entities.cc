@@ -675,7 +675,7 @@ void
 EpcTestRrc::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
-  delete m_s1SapUser;
+  //delete m_s1SapUser; // m_s1SapUser is deleted before the call to DataRadioBearerSetupRequest()
 }
 
 TypeId
