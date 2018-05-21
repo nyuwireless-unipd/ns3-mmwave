@@ -327,6 +327,7 @@ private:
   virtual void DoRun (void);
   void InitialMsg (Ptr<EpcEnbApplication> epcApp, uint64_t imsi);
   std::vector<EnbUlTestData> m_enbUlTestData; ///< ENB UL test data
+  std::vector<Ptr<EpcTestRrc>> rrcVector;
 };
 
 
@@ -420,6 +421,7 @@ EpcS1uUlTestCase::DoRun ()
       Ptr<EpcEnbApplication> enbApp = enb->GetApplication (0)->GetObject<EpcEnbApplication> ();
       NS_ASSERT_MSG (enbApp != 0, "cannot retrieve EpcEnbApplication");
       Ptr<EpcTestRrc> rrc = CreateObject<EpcTestRrc> ();
+      rrcVector.push_back(rrc);
       rrc->SetS1SapProvider (enbApp->GetS1SapProvider ());
       enbApp->SetS1SapUser (rrc->GetS1SapUser ());
 
