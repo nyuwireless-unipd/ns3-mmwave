@@ -17,7 +17,7 @@
  *
  * Author:  Biljana Bojovic<bbojovic@cttc.es>
  *          Dizhi Zhou <dizhi.zhou@gmail.com>
- *      Marco Miozzo <marco.miozzo@cttc.es>,
+ * 			Marco Miozzo <marco.miozzo@cttc.es>,
  *          Nicola Baldo <nbaldo@cttc.es>
  *
  */
@@ -81,7 +81,7 @@ private:
  * \ingroup tests
  *
  * \brief This is a system test program. The test is based on a scenario with single eNB and several UEs.
- *  The goal of the test is validating if the obtained throughput performance is consistent with the definition of 
+ *  The goal of the test is validating if the obtained throughput performance is consistent with the definition of
 *   CQA scheduler when the UEs with different SINRs.
 */
 

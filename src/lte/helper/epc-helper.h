@@ -152,7 +152,7 @@ public:
 
   /**
    *
-   * \return the address of the Default Gateway to be used by UEs to reach the internet
+   * \return the IPv4 address of the Default Gateway to be used by UEs to reach the internet
    */
   virtual Ipv4Address GetUeDefaultGatewayAddress () = 0;
 

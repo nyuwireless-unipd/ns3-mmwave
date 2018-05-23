@@ -173,14 +173,15 @@ public:
    */
   struct UeMeasurementsElement
   {
-    uint16_t m_cellId;
-    double m_rsrp;  // [dBm]
-    double m_rsrq;  // [dB]
+    uint16_t m_cellId; ///< cell ID
+    double m_rsrp;  ///< [dBm]
+    double m_rsrq;  ///< [dB]
   };
 
+  /// UeMeasurementsParameters structure
   struct UeMeasurementsParameters
   {
-    std::vector <struct UeMeasurementsElement> m_ueMeasurementsList;
+    std::vector <struct UeMeasurementsElement> m_ueMeasurementsList; ///< UE measurement list
     uint8_t m_componentCarrierId; ///< component carrier ID
   };
 
@@ -230,6 +231,11 @@ template <class C>
 class MemberLteUeCphySapProvider : public LteUeCphySapProvider
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param owner the owner class
+   */
   MemberLteUeCphySapProvider (C* owner);
 
   // inherited from LteUeCphySapProvider
@@ -247,7 +253,7 @@ public:
 
 private:
   MemberLteUeCphySapProvider ();
-  C* m_owner;
+  C* m_owner; ///< the owner class
 };
 
 template <class C>
@@ -348,6 +354,11 @@ template <class C>
 class MemberLteUeCphySapUser : public LteUeCphySapUser
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param owner the owner class
+   */
   MemberLteUeCphySapUser (C* owner);
 
   // methods inherited from LteUeCphySapUser go here
@@ -361,7 +372,7 @@ public:
 
 private:
   MemberLteUeCphySapUser ();
-  C* m_owner;
+  C* m_owner; ///< the owner class
 };
 
 template <class C>
