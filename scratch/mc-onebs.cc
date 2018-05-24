@@ -235,7 +235,7 @@ static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint3
 
 
 
-void 
+void
 PrintGnuplottableBuildingListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -258,7 +258,7 @@ PrintGnuplottableBuildingListToFile (std::string filename)
     }
 }
 
-void 
+void
 PrintGnuplottableUeListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -275,7 +275,7 @@ PrintGnuplottableUeListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
-          Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
           Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
           if (uedev)
             {
@@ -297,12 +297,12 @@ PrintGnuplottableUeListToFile (std::string filename)
               outFile << "set label \"" << mcuedev->GetImsi ()
                       << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
 
-void 
+void
 PrintGnuplottableEnbListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -335,7 +335,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
                       << "\" at "<< pos.x << "," << pos.y
                       << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
@@ -362,7 +362,7 @@ PrintPosition(Ptr<Node> node)
   NS_LOG_UNCOND("Position +****************************** " << model->GetPosition() << " at time " << Simulator::Now().GetSeconds());
 }
 
-void 
+void
 PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
 {
   std::ofstream logFile(fileName.c_str(), std::ofstream::app);
@@ -420,7 +420,7 @@ GenerateBuildingBounds(double xArea, double yArea, double maxBuildSize, std::lis
     xMaxBuilding->SetAttribute("Min",DoubleValue(box.xMin));
     xMaxBuilding->SetAttribute("Max",DoubleValue(box.xMin + maxBuildSize));
     box.xMax = xMaxBuilding->GetValue();
-    
+
     box.yMin = yMinBuilding->GetValue();
 
     Ptr<UniformRandomVariable> yMaxBuilding = CreateObject<UniformRandomVariable>();
@@ -581,7 +581,7 @@ main (int argc, char *argv[])
   double ueInitialPosition = 0;
   double ueFinalPosition = 40;
 
-  // Variables for the RT 
+  // Variables for the RT
   int windowForTransient = 150; // number of samples for the vector to use in the filter
   GlobalValue::GetValueByName("reportTablePeriodicity", uintegerValue);
   int ReportTablePeriodicity = (int)uintegerValue.Get(); // in microseconds
@@ -630,10 +630,10 @@ main (int argc, char *argv[])
   GlobalValue::GetValueByName("mobileSpeed", doubleValue);
   double ueSpeed = doubleValue.Get();
 
-  double transientDuration = double(vectorTransient)/1000000; 
+  double transientDuration = double(vectorTransient)/1000000;
   double simTime = transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition)/ueSpeed + 1;
 
-  NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " << 
+  NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " <<
       interPacketInterval << " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed);
 
   // rng things
@@ -641,7 +641,7 @@ main (int argc, char *argv[])
   uint32_t runSet = uintegerValue.Get();
   uint32_t seedSet = 5;
   RngSeedManager::SetSeed (seedSet);
-  RngSeedManager::SetRun (runSet); 
+  RngSeedManager::SetRun (runSet);
   char seedSetStr[21];
   char runSetStr[21];
   sprintf(seedSetStr, "%d", seedSet);
@@ -747,7 +747,7 @@ main (int argc, char *argv[])
         Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(LteEnbRrc::DYNAMIC_TTT));
         break;
   }
-  
+
   Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
   Config::SetDefault ("ns3::LteEnbRrc::CrtPeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::LteEnbRrc::OutageThreshold", DoubleValue (outageTh));
@@ -780,7 +780,7 @@ main (int argc, char *argv[])
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
 
-   // Get SGW/PGW and create a single RemoteHost 
+   // Get SGW/PGW and create a single RemoteHost
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
   NodeContainer remoteHostContainer;
   remoteHostContainer.Create (1);
@@ -877,7 +877,7 @@ main (int argc, char *argv[])
   if(fastSwitching)
   {
     mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
-  } 
+  }
   else if(hardHandover)
   {
     mcUeDevs = mmwaveHelper->InstallInterRatHoCapableUeDevice (ueNodes);
@@ -906,13 +906,13 @@ main (int argc, char *argv[])
   // Manual attachment
   if(fastSwitching)
   {
-    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  
+    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
   }
   else if(hardHandover)
   {
     mmwaveHelper->AttachIrToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
   }
-  
+
 
   // Install and start applications on UEs and remote host
   uint16_t dlPort = 1234;
@@ -934,9 +934,9 @@ main (int argc, char *argv[])
     app->Setup (ns3TcpSocket, sinkAddress, 1000, 50000000, DataRate ("1000Mb/s"));
     clientApps.Add(app);
 	remoteHost->AddApplication (app);
-    
+
     AsciiTraceHelper asciiTraceHelper;
-     
+
     Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (path + version + "mmWave-tcp-window-newreno" + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension);
     ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
     Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream (path + version + "mmWave-tcp-rtt-newreno" + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension);
@@ -953,7 +953,7 @@ main (int argc, char *argv[])
     //                                      InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
     //       dlClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
     //       clientApps.Add (dlClientHelper.Install (remoteHost));
-    //       PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
+    //       PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory",
     //                                            InetSocketAddress (Ipv4Address::GetAny (), dlPort));
     //       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
     //     }
@@ -964,7 +964,7 @@ main (int argc, char *argv[])
     //                                      InetSocketAddress (remoteHostAddr, ulPort));
     //       ulClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
     //       clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
-    //       PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
+    //       PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory",
     //                                            InetSocketAddress (Ipv4Address::GetAny (), ulPort));
     //       serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
     //     }
@@ -1017,7 +1017,7 @@ main (int argc, char *argv[])
   double numPrints = 0;
   for(int i = 0; i < numPrints; i++)
   {
-   Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0)); 
+   Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0));
   }
 
   // Uncomment to enable PCAP tracing
@@ -1037,10 +1037,9 @@ main (int argc, char *argv[])
   {
     Simulator::Stop(Seconds(simTime)); //--------------------------------------------> CHANGE
     //Simulator::Stop(Seconds(5)); // use this simulation time just to check the code
-    Simulator::Run();    
+    Simulator::Run();
   }
-  
+
   Simulator::Destroy();
   return 0;
 }
-

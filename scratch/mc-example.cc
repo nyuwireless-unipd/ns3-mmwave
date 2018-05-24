@@ -204,7 +204,7 @@ MyApp::ScheduleTx (void)
     m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
   }
 }
-// 
+//
 // static void
 // CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
 // {
@@ -232,7 +232,7 @@ MyApp::ScheduleTx (void)
 
 
 
-void 
+void
 PrintGnuplottableBuildingListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -255,7 +255,7 @@ PrintGnuplottableBuildingListToFile (std::string filename)
     }
 }
 
-void 
+void
 PrintGnuplottableUeListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -272,7 +272,7 @@ PrintGnuplottableUeListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
-          Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
           Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
           if (uedev)
             {
@@ -294,12 +294,12 @@ PrintGnuplottableUeListToFile (std::string filename)
               outFile << "set label \"" << mcuedev->GetImsi ()
                       << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
 
-void 
+void
 PrintGnuplottableEnbListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -332,7 +332,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
                       << "\" at "<< pos.x << "," << pos.y
                       << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
@@ -423,7 +423,7 @@ main (int argc, char *argv[])
   double sfPeriod = 100.0;
   bool tcp = true;
 
-  
+
   // Command line arguments
   CommandLine cmd;
   cmd.AddValue("numberOfNodes", "Number of eNodeBs + UE pairs", numberOfNodes);
@@ -446,7 +446,7 @@ main (int argc, char *argv[])
   uint32_t streetWidth = 15;
   uint32_t minimumBuildingWidth = 10;
   uint32_t buildingZ = 15;
-  
+
   GlobalValue::GetValueByName("fastSwitching", booleanValue);
   bool fastSwitching = booleanValue.Get();
   bool hardHandover = !fastSwitching;
@@ -456,7 +456,7 @@ main (int argc, char *argv[])
   uint32_t runSet = uintegerValue.Get();
   uint32_t seedSet = 5;
   RngSeedManager::SetSeed (seedSet);
-  RngSeedManager::SetRun (runSet); 
+  RngSeedManager::SetRun (runSet);
   char seedSetStr[21];
   char runSetStr[21];
   sprintf(seedSetStr, "%d", seedSet);
@@ -555,7 +555,7 @@ main (int argc, char *argv[])
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
 
-   // Get SGW/PGW and create a single RemoteHost 
+   // Get SGW/PGW and create a single RemoteHost
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
   NodeContainer remoteHostContainer;
   remoteHostContainer.Create (1);
@@ -601,8 +601,8 @@ main (int argc, char *argv[])
   std::vector<Ptr<Building> > buildingVector;
   // create first building (negative coordinates)
   Ptr< Building > firstBuilding = Create<Building> ();
-  firstBuilding->SetBoundaries(Box(-100, 0, 
-                              0, mmw1Dist + streetWidth, 
+  firstBuilding->SetBoundaries(Box(-100, 0,
+                              0, mmw1Dist + streetWidth,
                               0, buildingZ));
   buildingVector.push_back(firstBuilding);
   for(uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
@@ -617,8 +617,8 @@ main (int argc, char *argv[])
   }
   // create last building
   Ptr< Building > lastBuilding = Create<Building> ();
-  lastBuilding->SetBoundaries(Box(mmWaveDist + streetWidth, mmWaveDist + streetWidth + 20, 
-                              0, mmw2Dist + streetWidth, 
+  lastBuilding->SetBoundaries(Box(mmWaveDist + streetWidth, mmWaveDist + streetWidth + 20,
+                              0, mmw2Dist + streetWidth,
                               0, buildingZ));
   buildingVector.push_back(lastBuilding);
 
@@ -651,7 +651,7 @@ main (int argc, char *argv[])
   if(fastSwitching)
   {
     mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
-  } 
+  }
   else if(hardHandover)
   {
     mcUeDevs = mmwaveHelper->InstallInterRatHoCapableUeDevice (ueNodes);
@@ -680,13 +680,13 @@ main (int argc, char *argv[])
   // Manual attachment
   if(fastSwitching)
   {
-    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  
+    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
   }
   else if(hardHandover)
   {
     mmwaveHelper->AttachIrToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
   }
-  
+
 
   // Install and start applications on UEs and remote host
   uint16_t dlPort = 1234;
@@ -728,7 +728,7 @@ main (int argc, char *argv[])
                                          InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
           dlClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1500);
           clientApps.Add (dlClientHelper.Install (remoteHost));
-          PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
+          PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory",
                                                InetSocketAddress (Ipv4Address::GetAny (), dlPort));
           serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
         }
@@ -739,7 +739,7 @@ main (int argc, char *argv[])
                                          InetSocketAddress (remoteHostAddr, ulPort));
           ulClientHelper.SetConstantRate(DataRate ("100Mb/s"), 1500);
           clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
-          PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
+          PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory",
                                                InetSocketAddress (Ipv4Address::GetAny (), ulPort));
           serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
         }
@@ -783,7 +783,7 @@ main (int argc, char *argv[])
   double numPrints = 100;
   for(int i = 0; i < numPrints; i++)
   {
-   Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0)); 
+   Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0));
   }
 
   // Uncomment to enable PCAP tracing
@@ -802,10 +802,9 @@ main (int argc, char *argv[])
   else
   {
     Simulator::Stop(Seconds(simTime));
-    Simulator::Run();    
+    Simulator::Run();
   }
-  
+
   Simulator::Destroy();
   return 0;
 }
-

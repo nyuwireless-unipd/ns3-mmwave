@@ -87,7 +87,7 @@ MmWaveHelper::MmWaveHelper(void)
 	m_lteChannelFactory.SetTypeId (MultiModelSpectrumChannel::GetTypeId ());
 	m_enbNetDeviceFactory.SetTypeId (MmWaveEnbNetDevice::GetTypeId ());
 	m_lteEnbNetDeviceFactory.SetTypeId (LteEnbNetDevice::GetTypeId ());
-	m_ueNetDeviceFactory.SetTypeId (MmWaveUeNetDevice::GetTypeId ());
+	m_ueNetDeviceFactory.SetTypeId (mmwave::MmWaveUeNetDevice::GetTypeId ());
 
 	m_mcUeNetDeviceFactory.SetTypeId (McUeNetDevice::GetTypeId ());
 	m_enbAntennaModelFactory.SetTypeId (AntennaArrayModel::GetTypeId ());
@@ -1269,7 +1269,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
   NS_ABORT_MSG_IF (m_componentCarrierPhyParams.size() == 0 && m_useCa, "If CA is enabled, before call this method you need to install Enbs --> InstallEnbDevice()");
 
-	Ptr<MmWaveUeNetDevice> device = m_ueNetDeviceFactory.Create<MmWaveUeNetDevice> ();
+	Ptr<mmwave::MmWaveUeNetDevice> device = m_ueNetDeviceFactory.Create<mmwave::MmWaveUeNetDevice> ();
   std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> > ueCcMap;
 
   for (std::map< uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin() ; it != m_componentCarrierPhyParams.end(); ++it)
@@ -1476,7 +1476,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
   n->AddDevice (device);
 
-  nas->SetForwardUpCallback (MakeCallback (&MmWaveUeNetDevice::Receive, device));
+  nas->SetForwardUpCallback (MakeCallback (&mmwave::MmWaveUeNetDevice::Receive, device));
 
   if (m_epcHelper != 0)
     {
@@ -2207,7 +2207,7 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 	}
 	NS_ASSERT (closestEnbDevice != 0);
 
-	Ptr<MmWaveUeNetDevice> mmWaveUe = ueDevice->GetObject<MmWaveUeNetDevice> ();
+	Ptr<mmwave::MmWaveUeNetDevice> mmWaveUe = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ();
 
 	// Necessary operation to connect MmWave UE to eNB at lower layers
   	for(NetDeviceContainer::Iterator i = enbDevices.Begin (); i != enbDevices.End(); ++i)
@@ -2235,25 +2235,25 @@ MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer en
 	uint16_t cellId = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId ();
 	Ptr<MmWavePhyMacCommon> configParams = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy()->GetConfigurationParameters();
 
-	closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy ()->AddUePhy (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), ueDevice);
-	ueDevice->GetObject<MmWaveUeNetDevice> ()->GetPhy ()->RegisterToEnb (cellId, configParams);
-	closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetMac ()->AssociateUeMAC (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi ());
+	closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy ()->AddUePhy (ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetImsi (), ueDevice);
+	ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetPhy ()->RegisterToEnb (cellId, configParams);
+	closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetMac ()->AssociateUeMAC (ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetImsi ());
 
 	// connect to the closest one
-	Ptr<EpcUeNas> ueNas = ueDevice->GetObject<MmWaveUeNetDevice> ()->GetNas ();
+	Ptr<EpcUeNas> ueNas = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetNas ();
 	ueNas->Connect (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId (),
 					closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetEarfcn ());
 
 	if (m_epcHelper != 0)
 	{
 		// activate default EPS bearer
-		m_epcHelper->ActivateEpsBearer (ueDevice, ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
+		m_epcHelper->ActivateEpsBearer (ueDevice, ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
 	}
 
 	// tricks needed for the simplified LTE-only simulations
 	//if (m_epcHelper == 0)
 	//{
-	ueDevice->GetObject<MmWaveUeNetDevice> ()->SetTargetEnb (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ());
+	ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->SetTargetEnb (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ());
 	//}
 
 }
@@ -2610,9 +2610,9 @@ MmWaveDrbActivator::MmWaveDrbActivator (Ptr<NetDevice> ueDevice, EpsBearer beare
     m_ueDevice (ueDevice),
     m_bearer (bearer)
 {
-	if(m_ueDevice->GetObject< MmWaveUeNetDevice> ())
+	if(m_ueDevice->GetObject< mmwave::MmWaveUeNetDevice> ())
 	{	// mmWave
-		m_imsi = m_ueDevice->GetObject< MmWaveUeNetDevice> ()->GetImsi ();
+		m_imsi = m_ueDevice->GetObject< mmwave::MmWaveUeNetDevice> ()->GetImsi ();
 	}
 	else if (m_ueDevice->GetObject< McUeNetDevice> ())
 	{
@@ -2633,10 +2633,10 @@ MmWaveDrbActivator::ActivateDrb (uint64_t imsi, uint16_t cellId, uint16_t rnti)
   NS_LOG_FUNCTION (this << imsi << cellId << rnti << m_active);
   if ((!m_active) && (imsi == m_imsi))
     {
-      Ptr<LteUeRrc> ueRrc = m_ueDevice->GetObject<MmWaveUeNetDevice> ()->GetRrc ();
+      Ptr<LteUeRrc> ueRrc = m_ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetRrc ();
       NS_ASSERT (ueRrc->GetState () == LteUeRrc::CONNECTED_NORMALLY);
       uint16_t rnti = ueRrc->GetRnti ();
-      Ptr<MmWaveEnbNetDevice> enbLteDevice = m_ueDevice->GetObject<MmWaveUeNetDevice> ()->GetTargetEnb ();
+      Ptr<MmWaveEnbNetDevice> enbLteDevice = m_ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetTargetEnb ();
       Ptr<LteEnbRrc> enbRrc = enbLteDevice->GetObject<MmWaveEnbNetDevice> ()->GetRrc ();
       NS_ASSERT (ueRrc->GetCellId () == enbLteDevice->GetCellId ());
       Ptr<UeManager> ueManager = enbRrc->GetUeManager (rnti);
@@ -2674,7 +2674,7 @@ MmWaveHelper::ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer
   // to the Enb RRC Connection Established trace source
 
 
-  Ptr<MmWaveEnbNetDevice> enbmmWaveDevice = ueDevice->GetObject<MmWaveUeNetDevice> ()->GetTargetEnb ();
+  Ptr<MmWaveEnbNetDevice> enbmmWaveDevice = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ()->GetTargetEnb ();
 
   std::ostringstream path;
   path << "/NodeList/" << enbmmWaveDevice->GetNode ()->GetId ()

@@ -588,7 +588,7 @@ MmWaveEnbPhy::CallPathloss()
 	for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin(); ue != m_ueAttachedImsiMap.end(); ++ue)
 	{
 		// distinguish between MC and MmWaveNetDevice
-		Ptr<MmWaveUeNetDevice> ueNetDevice = DynamicCast<MmWaveUeNetDevice> (ue->second);
+		Ptr<mmwave::MmWaveUeNetDevice> ueNetDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ue->second);
 		Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
 		Ptr<MmWaveUePhy> uePhy;
 		// get tx power
@@ -741,7 +741,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 	for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin(); ue != m_ueAttachedImsiMap.end(); ++ue)
 	{
 		// distinguish between MC and MmWaveNetDevice
-		Ptr<MmWaveUeNetDevice> ueNetDevice = DynamicCast<MmWaveUeNetDevice> (ue->second);
+		Ptr<mmwave::MmWaveUeNetDevice> ueNetDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ue->second);
 		Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
 		Ptr<MmWaveUePhy> uePhy;
 		// get tx power
@@ -1089,7 +1089,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate()
 		for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin(); ue != m_ueAttachedImsiMap.end(); ++ue)
 		{
 			// distinguish between MC and MmWaveNetDevice
-			Ptr<MmWaveUeNetDevice> ueNetDevice = DynamicCast<MmWaveUeNetDevice> (ue->second);
+			Ptr<mmwave::MmWaveUeNetDevice> ueNetDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ue->second);
 			Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
 			Ptr<MmWaveUePhy> uePhy;
 			if(ueNetDevice != 0)
@@ -1303,7 +1303,7 @@ MmWaveEnbPhy::StartSlot (void)
 
 		for (uint8_t i = 0; i < m_deviceMap.size (); i++)
 		{
-			Ptr<MmWaveUeNetDevice> ueDev = DynamicCast<MmWaveUeNetDevice> (m_deviceMap.at (i));
+			Ptr<mmwave::MmWaveUeNetDevice> ueDev = DynamicCast<mmwave::MmWaveUeNetDevice> (m_deviceMap.at (i));
 			Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (m_deviceMap.at (i));
 			uint64_t ueRnti = (ueDev != 0) ? (ueDev->GetPhy ()->GetRnti ()) : (mcUeDev->GetMmWavePhy()->GetRnti ());
 			//NS_LOG_DEBUG ("Scheduled rnti:"<<rnti <<" ue rnti:"<< ueRnti);
@@ -1412,7 +1412,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
 		for (uint8_t i = 0; i < m_deviceMap.size (); i++)
 		{
 			uint64_t ueRnti = 0;
-			Ptr<MmWaveUeNetDevice> ueDev = m_deviceMap.at(i)->GetObject<MmWaveUeNetDevice> ();
+			Ptr<mmwave::MmWaveUeNetDevice> ueDev = m_deviceMap.at(i)->GetObject<mmwave::MmWaveUeNetDevice> ();
 			if (ueDev != 0)
 			{
 				ueRnti = ueDev->GetPhy ()-> GetRnti ();

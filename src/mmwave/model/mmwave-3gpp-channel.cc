@@ -258,8 +258,8 @@ MmWave3gppChannel::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 	key_t key = std::make_pair(ueDevice,enbDevice);
 	Ptr<MmWaveEnbNetDevice> EnbDev =
 				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
-	Ptr<MmWaveUeNetDevice> UeDev =
-				DynamicCast<MmWaveUeNetDevice> (ueDevice);
+	Ptr<mmwave::MmWaveUeNetDevice> UeDev =
+				DynamicCast<mmwave::MmWaveUeNetDevice> (ueDevice);
 
 	uint8_t ccId = m_phyMacConfig->GetCcId();
 	if(UeDev != 0)
@@ -393,8 +393,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 					DynamicCast<McUeNetDevice> (rxDevice);
 	Ptr<McUeNetDevice> txMcUe =
 					DynamicCast<McUeNetDevice> (txDevice);
-	Ptr<MmWaveUeNetDevice> rxUe =
-					DynamicCast<MmWaveUeNetDevice> (rxDevice);
+	Ptr<mmwave::MmWaveUeNetDevice> rxUe =
+					DynamicCast<mmwave::MmWaveUeNetDevice> (rxDevice);
 
 	bool downlink = false;
 	bool downlinkMc = false;
@@ -443,8 +443,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	{
 		NS_LOG_INFO ("this is uplink case, a tx " << a->GetPosition() << " b rx " << b->GetPosition());
 		uplink = true;
-		Ptr<MmWaveUeNetDevice> txUe =
-						DynamicCast<MmWaveUeNetDevice> (txDevice);
+		Ptr<mmwave::MmWaveUeNetDevice> txUe =
+						DynamicCast<mmwave::MmWaveUeNetDevice> (txDevice);
 		Ptr<MmWaveEnbNetDevice> rxEnb =
 						DynamicCast<MmWaveEnbNetDevice> (rxDevice);
 
@@ -634,7 +634,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		if(downlink)
 		{
 			Ptr<MmWaveEnbNetDevice> enbTx = DynamicCast<MmWaveEnbNetDevice>(txDevice);
-			Ptr<MmWaveUeNetDevice> ueRx = DynamicCast<MmWaveUeNetDevice>(rxDevice);
+			Ptr<mmwave::MmWaveUeNetDevice> ueRx = DynamicCast<mmwave::MmWaveUeNetDevice>(rxDevice);
 			if(enbTx == ueRx->GetTargetEnb())
 			{
 				connectedPair = true;
@@ -651,7 +651,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 		}
 		else if(uplink)
 		{
-			Ptr<MmWaveUeNetDevice> ueTx = DynamicCast<MmWaveUeNetDevice>(txDevice);
+			Ptr<mmwave::MmWaveUeNetDevice> ueTx = DynamicCast<mmwave::MmWaveUeNetDevice>(txDevice);
 			Ptr<MmWaveEnbNetDevice> enbRx = DynamicCast<MmWaveEnbNetDevice>(rxDevice);
 			if(enbRx == ueTx->GetTargetEnb())
 			{

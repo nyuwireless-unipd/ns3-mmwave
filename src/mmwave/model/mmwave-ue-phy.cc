@@ -316,9 +316,9 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	m_phySapUser->SetConfigurationParameters(config);
 
 	Ptr<MmWaveEnbNetDevice> enbNetDevice = m_registeredEnb.find(cellId)->second.second;
-	if(DynamicCast<MmWaveUeNetDevice>(m_netDevice))
+	if(DynamicCast<mmwave::MmWaveUeNetDevice>(m_netDevice))
 	{
-		DynamicCast<MmWaveUeNetDevice>(m_netDevice)->SetTargetEnb(enbNetDevice);
+		DynamicCast<mmwave::MmWaveUeNetDevice>(m_netDevice)->SetTargetEnb(enbNetDevice);
 	}
 	else if(DynamicCast<McUeNetDevice>(m_netDevice))
 	{

@@ -57,7 +57,10 @@ namespace ns3{
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveUeNetDevice");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveUeNetDevice);
+
 
 TypeId
 MmWaveUeNetDevice::GetTypeId (void)
@@ -308,4 +311,4 @@ MmWaveUeNetDevice::SetAntennaNum (uint8_t antennaNum)
 	m_antennaNum = antennaNum;
 }
 
-}
+}}

@@ -430,7 +430,7 @@ MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_
   NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
 
   uint8_t bearerId = m_mmeApp->AddBearer (imsi, tft, bearer);
-  Ptr<MmWaveUeNetDevice> ueLteDevice = ueDevice->GetObject<MmWaveUeNetDevice> ();
+  Ptr<mmwave::MmWaveUeNetDevice> ueLteDevice = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ();
   if (ueLteDevice)
   {
     ueLteDevice->GetNas ()->ActivateEpsBearer (bearer, tft);

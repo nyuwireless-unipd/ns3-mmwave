@@ -1,22 +1,22 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- *  
+ *
+ *
  *   Author: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
@@ -155,8 +155,8 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 	Ptr<NetDevice> rxDevice = b->GetObject<Node> ()->GetDevice (0);
 	Ptr<MmWaveEnbNetDevice> txEnb =
 					DynamicCast<MmWaveEnbNetDevice> (txDevice);
-	Ptr<MmWaveUeNetDevice> rxUe =
-					DynamicCast<MmWaveUeNetDevice> (rxDevice);
+	Ptr<mmwave::MmWaveUeNetDevice> rxUe =
+					DynamicCast<mmwave::MmWaveUeNetDevice> (rxDevice);
 
 	uint8_t txAntennaNum[2];
 	uint8_t rxAntennaNum[2];
@@ -177,7 +177,7 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 	else if (txEnb!=0 && rxUe == 0)
 	{
 		Ptr<McUeNetDevice> mcRxUe = DynamicCast<McUeNetDevice> (rxDevice);
-		if (mcRxUe != 0) 
+		if (mcRxUe != 0)
 		{
 			NS_LOG_INFO ("this is downlink case for MC device");
 			txAntennaNum[0] = sqrt (txEnb->GetAntennaNum ());
@@ -193,8 +193,8 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 	}
 	else if (txEnb==0 && rxUe==0 )
 	{
-		Ptr<MmWaveUeNetDevice> txUe =
-						DynamicCast<MmWaveUeNetDevice> (txDevice);
+		Ptr<mmwave::MmWaveUeNetDevice> txUe =
+						DynamicCast<mmwave::MmWaveUeNetDevice> (txDevice);
 		Ptr<MmWaveEnbNetDevice> rxEnb =
 						DynamicCast<MmWaveEnbNetDevice> (rxDevice);
 		if (txUe != 0)
@@ -209,7 +209,7 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 						txUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 			rxAntennaArray = DynamicCast<AntennaArrayModel> (
 						rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
-		} 
+		}
 		else
 		{
 			Ptr<McUeNetDevice> mcTxUe = DynamicCast<McUeNetDevice> (txDevice);
@@ -227,7 +227,7 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 				rxAntennaArray = DynamicCast<AntennaArrayModel> (
 							rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 			}
-		} 
+		}
 	}
 	else
 	{
@@ -622,7 +622,7 @@ MmWaveChannelMatrix::GetSystemBandwidth () const
 }
 
 
-Ptr<SpectrumValue> 
+Ptr<SpectrumValue>
 MmWaveChannelMatrix::CalcRxPowerSpectralDensity(Ptr<const SpectrumValue> txPsd,
 	                                                   Ptr<const MobilityModel> a,
 	                                                   Ptr<const MobilityModel> b) const

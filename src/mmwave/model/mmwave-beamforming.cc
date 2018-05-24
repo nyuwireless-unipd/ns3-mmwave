@@ -1,22 +1,22 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- *  
+ *
+ *
  *   Author: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
@@ -380,7 +380,7 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 
 	// 		}
 	// 	} else { // It is a McUeNetDevice
-	// 		Ptr<McUeNetDevice> mcUeDev = (*i)->GetObject<McUeNetDevice> (); 
+	// 		Ptr<McUeNetDevice> mcUeDev = (*i)->GetObject<McUeNetDevice> ();
 	// 		if (mcUeDev->GetMmWaveTargetEnb())
 	// 		{
 	// 			Ptr<NetDevice> targetBs = mcUeDev->GetMmWaveTargetEnb();
@@ -653,17 +653,17 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 //		}
 //		std::cout << std::endl;
 	Ptr<MmWaveUePhy> uePhy;
-	Ptr<MmWaveUeNetDevice> ueMmw = ueDevice->GetObject<MmWaveUeNetDevice> ();
+	Ptr<mmwave::MmWaveUeNetDevice> ueMmw = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ();
 	Ptr<McUeNetDevice> ueMc = ueDevice->GetObject<McUeNetDevice> ();
-	if (ueMmw != 0) 
+	if (ueMmw != 0)
 	{
 		uePhy = ueMmw->GetPhy ();
-	} 
+	}
 	else if (ueMc != 0)
 	{
 		uePhy = ueMc -> GetMmWavePhy ();
 	}
-	
+
 	if (downlink)
 	{
 		NS_LOG_INFO ("****** DL BF gain (RNTI " << uePhy->GetRnti() << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum(*rxPsd)/nbands); // print avg bf gain
@@ -693,14 +693,14 @@ MmWaveBeamforming::GetUeEnbAntennaPair(Ptr<NetDevice> ueDevice, Ptr<NetDevice> e
 {
 	Ptr<MmWaveEnbNetDevice> EnbDev =
 				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
-	Ptr<MmWaveUeNetDevice> UeDev = ueDevice->GetObject<MmWaveUeNetDevice> ();
+	Ptr<mmwave::MmWaveUeNetDevice> UeDev = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ();
 						// DynamicCast<MmWaveUeNetDevice> (*i);
 	Ptr<MmWaveUePhy> uePhy;
 	Ptr<MmWaveEnbPhy> enbPhy = EnbDev->GetPhy();
 	if (UeDev != 0) { // It actually is a MmWaveUeNetDevice
-		uePhy = UeDev->GetPhy();	
+		uePhy = UeDev->GetPhy();
 	} else { // It is a McUeNetDevice
-		Ptr<McUeNetDevice> mcUeDev = ueDevice->GetObject<McUeNetDevice> (); 
+		Ptr<McUeNetDevice> mcUeDev = ueDevice->GetObject<McUeNetDevice> ();
 		uePhy = mcUeDev->GetMmWavePhy();
 	}
 

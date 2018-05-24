@@ -92,7 +92,7 @@ static ns3::GlobalValue g_outageThreshold("outageTh", "Outage threshold",
     ns3::DoubleValue(-5), ns3::MakeDoubleChecker<double>());
 
 
-void 
+void
 PrintGnuplottableBuildingListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -116,7 +116,7 @@ PrintGnuplottableBuildingListToFile (std::string filename)
     }
 }
 
-void 
+void
 PrintGnuplottableUeListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -133,7 +133,7 @@ PrintGnuplottableUeListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
-          Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
           Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
           if (uedev)
             {
@@ -155,12 +155,12 @@ PrintGnuplottableUeListToFile (std::string filename)
               outFile << "set label \"" << mcuedev->GetImsi ()
                       << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
 
-void 
+void
 PrintGnuplottableEnbListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -193,7 +193,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
                       << "\" at "<< pos.x << "," << pos.y
                       << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
@@ -319,7 +319,7 @@ GenerateBuildingBounds(double xMin, double xMax, double yMin, double yMax, doubl
     xMaxBuilding->SetAttribute("Min",DoubleValue(box.xMin + 1)); // 1 m is the minimum size
     xMaxBuilding->SetAttribute("Max",DoubleValue(box.xMin + maxBuildSize));
     box.xMax = xMaxBuilding->GetValue();
-    
+
     box.yMin = yMinBuilding->GetValue();
 
     Ptr<UniformRandomVariable> yMaxBuilding = CreateObject<UniformRandomVariable>();
@@ -391,7 +391,7 @@ main (int argc, char *argv[])
 	bool hardHandover = !fastSwitching;
   	GlobalValue::GetValueByName("noMob", booleanValue);
 	bool noMob = booleanValue.Get();
-	
+
 
 	GlobalValue::GetValueByName("handoverMode", uintegerValue);
 	uint8_t hoMode = uintegerValue.Get();
@@ -419,7 +419,7 @@ main (int argc, char *argv[])
 
 	double simTime = ((double)ueFinalPosition - (double)ueInitialPosition)/ueSpeed + 1;
 
-	NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize 
+	NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize
 		<< " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed << " tcp " << tcp);
 
 
@@ -428,7 +428,7 @@ main (int argc, char *argv[])
 	uint32_t runSet = uintegerValue.Get();
 	uint32_t seedSet = 1;
 	RngSeedManager::SetSeed (seedSet);
-	RngSeedManager::SetRun (runSet); 
+	RngSeedManager::SetRun (runSet);
 	char seedSetStr[21];
 	char runSetStr[21];
 	sprintf(seedSetStr, "%d", seedSet);
@@ -489,7 +489,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWave3gppBuildingsPropagationLossModel::UpdateCondition", BooleanValue(true)); // enable or disable the LOS/NLOS update when the UE moves
 	Config::SetDefault ("ns3::AntennaArrayModel::AntennaHorizontalSpacing", DoubleValue(0.5));
 	Config::SetDefault ("ns3::AntennaArrayModel::AntennaVerticalSpacing", DoubleValue(0.5));
-	Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue(MilliSeconds(50))); // interval after which the channel for a moving user is updated, 
+	Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue(MilliSeconds(50))); // interval after which the channel for a moving user is updated,
 	                                                                                   // with spatial consistency procedure. If 0, spatial consistency is not used
 	Config::SetDefault ("ns3::MmWave3gppChannel::CellScan", BooleanValue(false)); // Set true to use cell scanning method, false to use the default power method.
 	Config::SetDefault ("ns3::MmWave3gppChannel::Blockage", BooleanValue(true)); // use blockage or not
@@ -549,7 +549,7 @@ else
 Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	Config::SetDefault ("ns3::LteEnbRrc::CrtPeriod", IntegerValue (ReportTablePeriodicity));
 	Config::SetDefault ("ns3::LteEnbRrc::OutageThreshold", DoubleValue (-10000));
-	Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod", IntegerValue (ReportTablePeriodicity));	
+	Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod", IntegerValue (ReportTablePeriodicity));
 }
 
 
@@ -589,7 +589,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 	Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*400));
 	Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*400));
-	
+
 	std::string protocol = "TcpHighSpeed";
 	if(protocol == "TcpNewReno")
     {
@@ -658,8 +658,8 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	// CoDel queue settings
 	Config::SetDefault ("ns3::CoDelQueueDisc::Mode", EnumValue (ns3::CoDelQueueDisc::QueueDiscMode::QUEUE_DISC_MODE_PACKETS));
 	Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
-	
-	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> (); 
+
+	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 	if(true)
 	{
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::MmWave3gppBuildingsPropagationLossModel"));
@@ -720,7 +720,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	// Positions
 	Vector mmw1Position = Vector(-1, mmw1Dist, mmWaveZ);
 	//Vector mmw2Position = Vector(5.0 + 200, mmw2Dist, mmWaveZ); // --------------------> change
-	Vector mmw2Position = Vector(1 + mmWaveDist, mmw2Dist, mmWaveZ); 
+	Vector mmw2Position = Vector(1 + mmWaveDist, mmw2Dist, mmWaveZ);
 	Vector mmw3Position = Vector(double(mmWaveDist)/2, mmw3Dist, mmWaveZ);
 
 	double blockSize = (double)mmWaveDist/4;
@@ -793,7 +793,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	if(fastSwitching)
 	{
 		mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
-	} 
+	}
 	else if(hardHandover)
 	{
 		mcUeDevs = mmwaveHelper->InstallInterRatHoCapableUeDevice (ueNodes);
@@ -814,7 +814,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	// Manual attachment
 	if(fastSwitching)
 	{
-		mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  
+		mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
 	}
 	else if(hardHandover)
 	{
@@ -853,7 +853,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 		Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
 		sinkApps.Get(i)->TraceConnectWithoutContext("Rx", MakeBoundCallback (&Rx, stream));
 	    sourceApps.Get(i)->SetStartTime(Seconds (0.1+0.01*i));
-	    Simulator::Schedule (Seconds (0.1001+0.01*i), &Traces, serverId, ueId, 
+	    Simulator::Schedule (Seconds (0.1001+0.01*i), &Traces, serverId, ueId,
 	    	path + version, seedSetStr + std::string("_") + runSetStr + "_" + time_str + extension);
 	    //sourceApps.Get(i)->SetStopTime (Seconds (10-1.5*i));
 	    sourceApps.Get(i)->SetStopTime (Seconds (simTime - 1));
@@ -873,7 +873,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	double numPrints = 0;
 	for(int i = 0; i < numPrints; i++)
 	{
-		Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0)); 
+		Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0));
 	}
 
 	// Uncomment to enable PCAP tracing
@@ -885,7 +885,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	// lteHelper->EnableRlcTraces();
 	mmwaveHelper->EnableTraces ();
 
-	
+
 	// print buildings and UEs positions
 	std::ostringstream fileName;
 	fileName << path << seedSetStr << "_" << runSetStr << "_" << time_str + "buildings" << extension;
@@ -902,8 +902,8 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	PrintGnuplottableUeListToFile(fileName.str());
 
 	Simulator::Stop(Seconds(simTime));
-	Simulator::Run();    
-	
+	Simulator::Run();
+
 	Simulator::Destroy();
 	return 0;
 }

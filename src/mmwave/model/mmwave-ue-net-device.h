@@ -57,6 +57,8 @@ class MmWaveUeMac;
 class MmWaveEnbNetDevice;
 class LteUeComponentCarrierManager;
 
+namespace mmwave {
+
 class MmWaveUeNetDevice : public MmWaveNetDevice
 {
 public:
@@ -131,5 +133,5 @@ private:
 
 };
 
-}
+}}
 #endif /* SRC_MMWAVE_MODEL_MMWAVE_UE_NET_DEVICE_H_ */

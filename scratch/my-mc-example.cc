@@ -171,7 +171,7 @@ PrintGnuplottableUeListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
-          Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
           Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
           if (uedev)
             {

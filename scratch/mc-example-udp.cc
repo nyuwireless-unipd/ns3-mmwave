@@ -235,7 +235,7 @@ static void Sstresh (Ptr<OutputStreamWrapper> stream, uint32_t oldSstresh, uint3
 
 
 
-void 
+void
 PrintGnuplottableBuildingListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -259,7 +259,7 @@ PrintGnuplottableBuildingListToFile (std::string filename)
     }
 }
 
-void 
+void
 PrintGnuplottableUeListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -276,7 +276,7 @@ PrintGnuplottableUeListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
-          Ptr<MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
           Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
           if (uedev)
             {
@@ -298,12 +298,12 @@ PrintGnuplottableUeListToFile (std::string filename)
               outFile << "set label \"" << mcuedev->GetImsi ()
                       << "\" at "<< pos.x << "," << pos.y << " left font \"Helvetica,8\" textcolor rgb \"black\" front point pt 1 ps 0.3 lc rgb \"black\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
 
-void 
+void
 PrintGnuplottableEnbListToFile (std::string filename)
 {
   std::ofstream outFile;
@@ -336,7 +336,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
                       << "\" at "<< pos.x << "," << pos.y
                       << " left font \"Helvetica,8\" textcolor rgb \"red\" front  point pt 4 ps 0.3 lc rgb \"red\" offset 0,0"
                       << std::endl;
-            } 
+            }
         }
     }
 }
@@ -363,7 +363,7 @@ PrintPosition(Ptr<Node> node)
   NS_LOG_UNCOND("Position +****************************** " << model->GetPosition() << " at time " << Simulator::Now().GetSeconds());
 }
 
-void 
+void
 PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
 {
   std::ofstream logFile(fileName.c_str(), std::ofstream::app);
@@ -372,18 +372,18 @@ PrintLostUdpPackets(Ptr<UdpServer> app, std::string fileName)
   Simulator::Schedule(MilliSeconds(20), &PrintLostUdpPackets, app, fileName);
 }
 
-static void 
+static void
 Sinr (Ptr<OutputStreamWrapper> stream, long unsigned value, SpectrumValue& sinr, SpectrumValue& power)
 {
  Values::iterator it = sinr.ValuesBegin();
  while(it!=sinr.ValuesEnd())
  {
-    
+
    *stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << 10*log10(*it) <<  std::endl;
-    
+
    it++;
  }
-  
+
 }
 
 
@@ -434,7 +434,7 @@ GenerateBuildingBounds(double xArea, double yArea, std::list<Box> m_previousBloc
     xMaxBuilding->SetAttribute("Min",DoubleValue(box.xMin));
     xMaxBuilding->SetAttribute("Max",DoubleValue(xArea));
     box.xMax = xMaxBuilding->GetValue();
-    
+
     box.yMin = yMinBuilding->GetValue();
 
     Ptr<UniformRandomVariable> yMaxBuilding = CreateObject<UniformRandomVariable>();
@@ -598,7 +598,7 @@ main (int argc, char *argv[])
   double ueInitialPosition = 50;
   double ueFinalPosition = 150;
 
-  // Variables for the RT 
+  // Variables for the RT
   int windowForTransient = 150; // number of samples for the vector to use in the filter
   GlobalValue::GetValueByName("reportTablePeriodicity", uintegerValue);
   int ReportTablePeriodicity = (int)uintegerValue.Get(); // in microseconds
@@ -647,11 +647,11 @@ main (int argc, char *argv[])
   GlobalValue::GetValueByName("mobileSpeed", doubleValue);
   double ueSpeed = doubleValue.Get();
 
-  double transientDuration = double(vectorTransient)/1000000; 
+  double transientDuration = double(vectorTransient)/1000000;
   double simTime = transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition)/ueSpeed + 1;
   //simTime = 1;
 
-  NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " << 
+  NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " <<
       interPacketInterval << " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed);
 
   // rng things
@@ -659,7 +659,7 @@ main (int argc, char *argv[])
   uint32_t runSet = uintegerValue.Get();
   uint32_t seedSet = 5;
   RngSeedManager::SetSeed (seedSet);
-  RngSeedManager::SetRun (runSet); 
+  RngSeedManager::SetRun (runSet);
   char seedSetStr[21];
   char runSetStr[21];
   sprintf(seedSetStr, "%d", seedSet);
@@ -765,7 +765,7 @@ main (int argc, char *argv[])
         Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(LteEnbRrc::DYNAMIC_TTT));
         break;
   }
-  
+
   Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
   Config::SetDefault ("ns3::LteEnbRrc::CrtPeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::LteEnbRrc::OutageThreshold", DoubleValue (outageTh));
@@ -782,7 +782,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::CoDelQueueDisc::Mode", EnumValue (ns3::CoDelQueueDisc::QueueDiscMode::QUEUE_DISC_MODE_PACKETS));
   Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
   Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
-    
+
 
   // settings for the channel
   Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue("a"));
@@ -792,14 +792,14 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWave3gppBuildingsPropagationLossModel::UpdateCondition", BooleanValue(true)); // enable or disable the LOS/NLOS update when the UE moves
   Config::SetDefault ("ns3::AntennaArrayModel::AntennaHorizontalSpacing", DoubleValue(0.5));
   Config::SetDefault ("ns3::AntennaArrayModel::AntennaVerticalSpacing", DoubleValue(0.5));
-  Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue(MilliSeconds(100))); // interval after which the channel for a moving user is updated, 
+  Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue(MilliSeconds(100))); // interval after which the channel for a moving user is updated,
                                                                                        // with spatial consistency procedure. If 0, spatial consistency is not used
   Config::SetDefault ("ns3::MmWave3gppChannel::CellScan", BooleanValue(false)); // Set true to use cell scanning method, false to use the default power method.
   Config::SetDefault ("ns3::MmWave3gppChannel::Blockage", BooleanValue(true)); // use blockage or not
   Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue(true)); // use blockage model with UT in portrait mode
   Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
 
-  Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> (); 
+  Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   if(true)
   {
     mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::MmWave3gppBuildingsPropagationLossModel"));
@@ -824,7 +824,7 @@ main (int argc, char *argv[])
   // parse again so you can override default values from the command line
   cmd.Parse(argc, argv);
 
-   // Get SGW/PGW and create a single RemoteHost 
+   // Get SGW/PGW and create a single RemoteHost
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
   NodeContainer remoteHostContainer;
   remoteHostContainer.Create (1);
@@ -861,7 +861,7 @@ main (int argc, char *argv[])
   // Positions
   Vector mmw1Position = Vector(-1, mmw1Dist, mmWaveZ);
   //Vector mmw2Position = Vector(5.0 + 200, mmw2Dist, mmWaveZ); // --------------------> change
-  Vector mmw2Position = Vector(1 + mmWaveDist, mmw2Dist, mmWaveZ); 
+  Vector mmw2Position = Vector(1 + mmWaveDist, mmw2Dist, mmWaveZ);
   Vector mmw3Position = Vector(double(mmWaveDist)/2, mmw3Dist, mmWaveZ);
 
   double blockSize = (double)mmWaveDist/numBlocks;
@@ -872,14 +872,14 @@ main (int argc, char *argv[])
 
   std::vector<Ptr<Building> > buildingVector;
 
-  
+
   // create first building (negative coordinates)
   // Ptr< Building > firstBuilding = Create<Building> ();
-  // firstBuilding->SetBoundaries(Box(-100, -15, 
-  //                             0, mmw1Dist + streetWidth, 
+  // firstBuilding->SetBoundaries(Box(-100, -15,
+  //                             0, mmw1Dist + streetWidth,
   //                             0, buildingZ));
   // buildingVector.push_back(firstBuilding);
-  
+
 
   /*
   for(uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
@@ -934,21 +934,21 @@ main (int argc, char *argv[])
 
   //create last building
   // Ptr< Building > lastBuilding = Create<Building> ();
-  // lastBuilding->SetBoundaries(Box(mmWaveDist + streetWidth, mmWaveDist + streetWidth + 20, 
-  //                             0, mmw2Dist + streetWidth, 
+  // lastBuilding->SetBoundaries(Box(mmWaveDist + streetWidth, mmWaveDist + streetWidth + 20,
+  //                             0, mmw2Dist + streetWidth,
   //                             0, buildingZ));
   // buildingVector.push_back(lastBuilding);
 
 
   // Ptr< Building > lastBuilding = Create<Building> ();
-  // lastBuilding->SetBoundaries(Box(99,101.5, 
-  //                             0, 60, 
+  // lastBuilding->SetBoundaries(Box(99,101.5,
+  //                             0, 60,
   //                             0, buildingZ));
   // buildingVector.push_back(lastBuilding);
 
   // Ptr< Building > lastBuildingbis = Create<Building> ();
-  // lastBuildingbis->SetBoundaries(Box(110,115, 
-  //                             0, 1, 
+  // lastBuildingbis->SetBoundaries(Box(110,115,
+  //                             0, 1,
   //                             0, buildingZ));
   // buildingVector.push_back(lastBuildingbis);
 
@@ -990,7 +990,7 @@ main (int argc, char *argv[])
   if(fastSwitching)
   {
     mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
-  } 
+  }
   else if(hardHandover)
   {
     mcUeDevs = mmwaveHelper->InstallInterRatHoCapableUeDevice (ueNodes);
@@ -1019,13 +1019,13 @@ main (int argc, char *argv[])
   // Manual attachment
   if(fastSwitching)
   {
-    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  
+    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
   }
   else if(hardHandover)
   {
     mmwaveHelper->AttachIrToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
   }
-  
+
 
   // Install and start applications on UEs and remote host
   uint16_t dlPort = 1234;
@@ -1047,9 +1047,9 @@ main (int argc, char *argv[])
     app->Setup (ns3TcpSocket, sinkAddress, 1000, 50000000, DataRate ("1000Mb/s"));
     clientApps.Add(app);
 	remoteHost->AddApplication (app);
-    
+
     AsciiTraceHelper asciiTraceHelper;
-     
+
     Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (path + version + "mmWave-tcp-window-newreno" + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension);
     ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
     Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream (path + version + "mmWave-tcp-rtt-newreno" + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension);
@@ -1066,7 +1066,7 @@ main (int argc, char *argv[])
     //                                      InetSocketAddress (ueIpIface.GetAddress (u), dlPort));
     //       dlClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
     //       clientApps.Add (dlClientHelper.Install (remoteHost));
-    //       PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
+    //       PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory",
     //                                            InetSocketAddress (Ipv4Address::GetAny (), dlPort));
     //       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(u)));
     //     }
@@ -1077,7 +1077,7 @@ main (int argc, char *argv[])
     //                                      InetSocketAddress (remoteHostAddr, ulPort));
     //       ulClientHelper.SetConstantRate(DataRate ("1000Mb/s"), 1500);
     //       clientApps.Add (ulClientHelper.Install (ueNodes.Get(u)));
-    //       PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
+    //       PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory",
     //                                            InetSocketAddress (Ipv4Address::GetAny (), ulPort));
     //       serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
     //     }
@@ -1136,7 +1136,7 @@ main (int argc, char *argv[])
   double numPrints = 0;
   for(int i = 0; i < numPrints; i++)
   {
-   Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0)); 
+   Simulator::Schedule(Seconds(i*simTime/numPrints), &PrintPosition, ueNodes.Get(0));
   }
 
   // Uncomment to enable PCAP tracing
@@ -1156,10 +1156,9 @@ main (int argc, char *argv[])
   {
     Simulator::Stop(Seconds(simTime)); //--------------------------------------------> CHANGE
     //Simulator::Stop(Seconds(5)); // use this simulation time just to check the code
-    Simulator::Run();    
+    Simulator::Run();
   }
-  
+
   Simulator::Destroy();
   return 0;
 }
-

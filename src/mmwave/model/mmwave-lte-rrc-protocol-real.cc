@@ -598,7 +598,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
 
       for (int j = 0; j < nDevs; ++j)
         {
-          Ptr<MmWaveUeNetDevice> ueDev = node->GetDevice (j)->GetObject <MmWaveUeNetDevice> ();
+          Ptr<mmwave::MmWaveUeNetDevice> ueDev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
           if (ueDev != 0)
           {
             ueRrc = ueDev->GetRrc ();
