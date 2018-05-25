@@ -58,6 +58,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumPhy");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveSpectrumPhy);
 
 static const double EffectiveCodingRate[29] = {
@@ -984,5 +986,7 @@ MmWaveSpectrumPhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
   m_harqPhyModule = harq;
 }
 
+
+}
 
 }

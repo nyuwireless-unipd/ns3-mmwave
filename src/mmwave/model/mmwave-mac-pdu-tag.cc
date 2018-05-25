@@ -33,6 +33,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveMacPduTag);
 
 MmWaveMacPduTag::MmWaveMacPduTag () : m_sfnSf (SfnSf()), m_symStart(0), m_numSym(0), m_tagSize (6)
@@ -97,5 +99,6 @@ MmWaveMacPduTag::Print (std::ostream &os) const
   os << m_sfnSf.m_sfNum << " " << m_sfnSf.m_slotNum;
 }
 
-} // namespace ns3
+} // namespace mmwave
 
+} // namespace ns3

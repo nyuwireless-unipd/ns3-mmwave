@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -29,6 +29,8 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("CoreNetworkStatsCalculator");
+
+namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED (CoreNetworkStatsCalculator);
 
@@ -118,5 +120,7 @@ CoreNetworkStatsCalculator::SetMmeOutputFilename (std::string outputFilename)
 {
   m_mmeOutFileName = outputFilename;
 }
+
+} // namespace mmwave 
 
 } // namespace ns3

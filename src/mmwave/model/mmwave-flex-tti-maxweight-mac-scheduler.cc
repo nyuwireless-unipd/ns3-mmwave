@@ -22,6 +22,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiMaxWeightMacScheduler");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiMaxWeightMacScheduler);
 
 class MmWaveFlexTtiMaxWeightMacCschedSapProvider : public MmWaveMacCschedSapProvider
@@ -1826,4 +1828,4 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMac
 
 }
 
-
+}

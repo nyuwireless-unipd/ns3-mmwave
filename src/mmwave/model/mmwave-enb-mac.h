@@ -43,8 +43,9 @@
 #include "mmwave-phy-mac-common.h"
 #include <ns3/lte-ccm-mac-sap.h>
 
-namespace ns3
-{
+namespace ns3 {
+
+namespace mmwave {
 
 	struct MmWaveDlHarqProcessInfo
 	{
@@ -266,7 +267,9 @@ private:
 
 };
 
-}
+} // namespace mmwave
+
+} // namespace ns3
 
 
 

@@ -43,8 +43,10 @@
 #include <ns3/lte-radio-bearer-tag.h>
 
 
-namespace ns3
-{
+namespace ns3 {
+
+namespace mmwave {
+
 class MmWaveControlMessage;
 
 class MmWaveUeMac : public Object
@@ -174,6 +176,8 @@ private:
 	TracedCallback<uint16_t, uint8_t, uint32_t> m_txMacPacketTraceUe;
 
 };
+
+}
 
 }
 

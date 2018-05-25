@@ -43,9 +43,11 @@
 #include <ns3/double.h>
 #include <algorithm>
 
-namespace ns3{
+namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveChannelMatrix");
+
+namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveChannelMatrix);
 
@@ -630,5 +632,6 @@ MmWaveChannelMatrix::CalcRxPowerSpectralDensity(Ptr<const SpectrumValue> txPsd,
 	return DoCalcRxPowerSpectralDensity(txPsd, a, b);
 }
 
+} // namespace mmwave
 
-}// namespace ns3
+} // namespace ns3

@@ -36,8 +36,10 @@
 #include <ns3/mmwave-ue-net-device.h>
 #include <ns3/mc-ue-net-device.h>
 #include <ns3/node.h>
-using namespace ns3;
 
+namespace ns3 {
+
+namespace mmwave {
 
 // ------------------------------------------------------------------------- //
 NS_LOG_COMPONENT_DEFINE ("MmWave3gppPropagationLossModel");
@@ -691,3 +693,7 @@ MmWave3gppPropagationLossModel::SetConfigurationParameters (Ptr<MmWavePhyMacComm
 
     NS_LOG_INFO("Frequency " << m_frequency);
 }
+
+} // namespace mmwave
+
+} // namespace ns3

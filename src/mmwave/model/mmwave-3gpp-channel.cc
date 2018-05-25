@@ -45,7 +45,9 @@
 #include <ns3/integer.h>
 #include "mmwave-spectrum-value-helper.h"
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWave3gppChannel");
 
@@ -2892,6 +2894,6 @@ MmWave3gppChannel::CalAttenuationOfBlockage (Ptr<Params3gpp> params,
 }
 
 
+} // namespace mmwave
 
-
-}// namespace ns3
+} // namespace ns3

@@ -58,6 +58,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWavePointToPointEpcHelper");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWavePointToPointEpcHelper);
 
 
@@ -489,5 +491,6 @@ MmWavePointToPointEpcHelper::GetUeDefaultGatewayAddress ()
   return m_sgwPgw->GetObject<Ipv4> ()->GetAddress (1, 0).GetLocal ();
 }
 
+} // namespace mmwave 
 
 } // namespace ns3

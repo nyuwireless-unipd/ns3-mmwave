@@ -35,6 +35,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 /**
  * \ingroup lte
  *
@@ -145,7 +147,7 @@ protected:
 
 };
 
-
+} // namespace mmwave
 
 } // namespace ns3
 

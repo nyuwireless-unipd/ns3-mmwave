@@ -59,6 +59,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveNetDevice;
 class MmWaveControlMessage;
 
@@ -193,6 +195,8 @@ protected:
 
 private:
 };
+
+}
 
 }
 

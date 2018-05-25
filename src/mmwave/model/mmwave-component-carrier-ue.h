@@ -35,6 +35,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveUeMac;
 /**
  * \ingroup lte
@@ -89,7 +91,7 @@ private:
 
 };
 
-
+} // namespace mmwave
 
 } // namespace ns3
 

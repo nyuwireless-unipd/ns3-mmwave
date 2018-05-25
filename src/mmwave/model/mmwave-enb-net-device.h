@@ -55,10 +55,12 @@ namespace ns3{
 class Packet;
 class PacketBurst;
 class Node;
+class LteEnbComponentCarrierManager;
+
+namespace mmwave {
 //class MmWavePhy;
 class MmWaveEnbPhy;
 class MmWaveEnbMac;
-class LteEnbComponentCarrierManager;
 
 class MmWaveEnbNetDevice : public MmWaveNetDevice
 {
@@ -130,6 +132,7 @@ private:
 	bool m_isConfigured;
 
 };
+}
 }
 
 

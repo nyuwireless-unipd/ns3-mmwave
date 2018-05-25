@@ -58,7 +58,9 @@
 #include "mmwave-control-messages.h"
 #include "mmwave-harq-phy.h"
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 struct ExpectedTbInfo_t
 {
@@ -219,6 +221,8 @@ private:
   	std::string m_fileName;
 
 };
+
+}
 
 }
 

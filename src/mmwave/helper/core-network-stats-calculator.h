@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -20,7 +20,7 @@
 
 
 #ifndef CORE_NETWORK_STATS_CALCULATOR_H_
-#define CORE_NETWORK_STATS_CALCULATOR_H_ 
+#define CORE_NETWORK_STATS_CALCULATOR_H_
 
 #include "ns3/lte-common.h"
 #include "ns3/uinteger.h"
@@ -33,7 +33,9 @@
 
 namespace ns3 {
 
-class CoreNetworkStatsCalculator : public Object 
+namespace mmwave {
+
+class CoreNetworkStatsCalculator : public Object
 {
 public:
   CoreNetworkStatsCalculator();
@@ -59,6 +61,8 @@ private:
   std::ofstream m_mmeOutFile;
 
 };
+
+} // namespace mmwave 
 
 } // namespace ns3
 

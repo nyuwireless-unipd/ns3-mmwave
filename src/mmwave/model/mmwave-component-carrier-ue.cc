@@ -34,6 +34,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveComponentCarrierUe");
 
 NS_OBJECT_ENSURE_REGISTERED ( MmWaveComponentCarrierUe);
@@ -117,5 +119,7 @@ MmWaveComponentCarrierUe::GetMac () const
   NS_LOG_FUNCTION (this);
   return m_mac;
 }
+
+} // namespace mmwave
 
 } // namespace ns3

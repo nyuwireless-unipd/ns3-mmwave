@@ -50,6 +50,9 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveBearerStatsConnector");
+
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveBearerStatsConnector);
 
 /**
@@ -924,5 +927,7 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesEnb (std::string context, uint
            MakeBoundCallback (&DlTxPduCallback, arg));
     }
 }
+
+} // namespace mmwave 
 
 } // namespace ns3

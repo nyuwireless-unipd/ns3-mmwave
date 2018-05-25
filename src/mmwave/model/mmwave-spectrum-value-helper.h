@@ -40,6 +40,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 
 /**
  * \ingroup mmwave
@@ -72,6 +74,7 @@ private:
   static std::map<uint8_t, Ptr<SpectrumModel>> m_model;
 };
 
+} // namespace mmwave 
 
 } // namespace ns3
 

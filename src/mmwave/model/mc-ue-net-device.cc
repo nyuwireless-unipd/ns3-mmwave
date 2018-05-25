@@ -36,9 +36,11 @@
 
 namespace ns3 {
 
-NS_OBJECT_ENSURE_REGISTERED (McUeNetDevice);
-
 NS_LOG_COMPONENT_DEFINE ("McUeNetDevice");
+
+namespace mmwave {
+
+NS_OBJECT_ENSURE_REGISTERED (McUeNetDevice);
 
 ////////////////////////////////
 // McUeNetDevice
@@ -663,4 +665,5 @@ McUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protoco
   return m_nas->Send(packet);
 }
 
+}
 }

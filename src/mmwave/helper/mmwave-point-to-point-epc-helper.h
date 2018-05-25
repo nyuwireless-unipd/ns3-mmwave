@@ -2,7 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -25,7 +25,7 @@
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- *  Modified by: Michele Polese <michele.polese@gmail.com> 
+ *  Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
  */
 
@@ -52,6 +52,8 @@ class EpcUeNas;
 class EpcMmeApplication;
 class EpcS1apEnb;
 class EpcS1apMme;
+
+namespace mmwave {
 /**
  * \ingroup lte
  * \brief Create an EPC network with PointToPoint links
@@ -59,22 +61,22 @@ class EpcS1apMme;
  * This Helper will create an EPC network topology comprising of a
  * single node that implements both the SGW and PGW functionality, and
  * an MME node. The S1-U, S1-AP, X2-U and X2-C interfaces are realized over
- * PointToPoint links. 
+ * PointToPoint links.
  */
 class MmWavePointToPointEpcHelper : public EpcHelper
 {
 public:
-  
-  /** 
+
+  /**
    * Constructor
    */
   MmWavePointToPointEpcHelper ();
 
-  /** 
+  /**
    * Destructor
-   */  
+   */
   virtual ~MmWavePointToPointEpcHelper ();
-  
+
   // inherited from Object
   /**
    *  Register this type.
@@ -98,15 +100,15 @@ public:
 
 private:
 
-  /** 
+  /**
    * helper to assign addresses to UE devices as well as to the TUN device of the SGW/PGW
    */
-  Ipv4AddressHelper m_ueAddressHelper; 
-  
+  Ipv4AddressHelper m_ueAddressHelper;
+
   /**
    * SGW-PGW network element
    */
-  Ptr<Node> m_sgwPgw; 
+  Ptr<Node> m_sgwPgw;
 
   /**
    * SGW-PGW application
@@ -132,10 +134,10 @@ private:
    * S1-U interfaces
    */
 
-  /** 
-   * helper to assign addresses to S1-U NetDevices 
+  /**
+   * helper to assign addresses to S1-U NetDevices
    */
-  Ipv4AddressHelper m_s1uIpv4AddressHelper; 
+  Ipv4AddressHelper m_s1uIpv4AddressHelper;
 
   /**
    * The data rate to be used for the next S1-U link to be created
@@ -164,15 +166,15 @@ private:
    * Map storing for each IMSI the corresponding eNB NetDevice
    */
   std::map<uint64_t, Ptr<NetDevice> > m_imsiEnbDeviceMap;
-  
+
   /**
    * S1-AP interfaces
    */
 
-  /** 
-   * helper to assign addresses to S1-AP NetDevices 
+  /**
+   * helper to assign addresses to S1-AP NetDevices
    */
-  Ipv4AddressHelper m_s1apIpv4AddressHelper; 
+  Ipv4AddressHelper m_s1apIpv4AddressHelper;
 
   /**
    * The data rate to be used for the next S1-AP link to be created
@@ -185,12 +187,12 @@ private:
   Time     m_s1apLinkDelay;
 
   /**
-   * The MTU of the next S1-AP link to be created. 
+   * The MTU of the next S1-AP link to be created.
    */
   uint16_t m_s1apLinkMtu;
 
   /**
-   * UDP port where the UDP Socket is bound, fixed by the standard as 
+   * UDP port where the UDP Socket is bound, fixed by the standard as
    * 36412 (it should be sctp, but it is not supported in ns-3)
    */
   uint16_t m_s1apUdpPort;
@@ -200,10 +202,10 @@ private:
    */
   std::map<uint16_t, Ptr<NetDevice> > m_cellIdMmeDeviceMap;
 
-  /** 
-   * helper to assign addresses to X2 NetDevices 
+  /**
+   * helper to assign addresses to X2 NetDevices
    */
-  Ipv4AddressHelper m_x2Ipv4AddressHelper;   
+  Ipv4AddressHelper m_x2Ipv4AddressHelper;
 
   /**
    * The data rate to be used for the next X2 link to be created
@@ -224,7 +226,7 @@ private:
 };
 
 
-
+} // namespace mmwave 
 
 } // namespace ns3
 

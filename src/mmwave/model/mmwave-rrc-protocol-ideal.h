@@ -48,6 +48,7 @@ class LteUeRrcSapUser;
 class LteEnbRrcSapProvider;
 class LteUeRrc;
 
+namespace mmwave {
 
 /**
  * Models the transmission of RRC messages from the UE to the eNB in
@@ -154,6 +155,8 @@ private:
 };
 
 
+
+}
 
 }
 

@@ -20,6 +20,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiMaxRateMacScheduler");
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiMaxRateMacScheduler);
@@ -1836,6 +1838,6 @@ MmWaveFlexTtiMaxRateMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCs
 }
 
 
-}
+} // namespace mmwave
 
-
+} // namespace ns3

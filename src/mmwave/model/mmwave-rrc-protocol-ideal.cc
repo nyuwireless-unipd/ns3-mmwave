@@ -53,6 +53,8 @@ NS_LOG_COMPONENT_DEFINE ("mmWaveRrcProtocolIdeal");
 
 namespace ns3 {
 
+namespace mmwave {
+
 
 static const Time RRC_IDEAL_MSG_DELAY = MicroSeconds (500);
 
@@ -683,6 +685,6 @@ MmWaveEnbRrcProtocolIdeal::DoDecodeHandoverCommand (Ptr<Packet> p)
 
 
 
-
+} // namespace mmwave 
 
 } // namespace ns3

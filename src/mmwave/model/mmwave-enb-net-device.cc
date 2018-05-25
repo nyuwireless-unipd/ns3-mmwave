@@ -55,6 +55,8 @@ namespace ns3{
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveEnbNetDevice");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED ( MmWaveEnbNetDevice);
 
 TypeId MmWaveEnbNetDevice::GetTypeId()
@@ -295,4 +297,5 @@ MmWaveEnbNetDevice::SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> 
   m_ccMap = ccm;
 }
 
+}
 }

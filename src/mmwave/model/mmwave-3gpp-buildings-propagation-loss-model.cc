@@ -43,6 +43,8 @@ NS_LOG_COMPONENT_DEFINE ("MmWave3gppBuildingsPropagationLossModel");
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWave3gppBuildingsPropagationLossModel);
 
 std::ofstream MmWave3gppBuildingsPropagationLossModel::m_enbUeLocTrace;
@@ -416,4 +418,5 @@ MmWave3gppBuildingsPropagationLossModel::SetConfigurationParameters (Ptr<MmWaveP
     m_3gppLos->SetConfigurationParameters(ptrConfig);
 }
 
+} //namespace mmwave
 } // namespace ns3

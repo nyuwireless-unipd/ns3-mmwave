@@ -46,7 +46,9 @@
 #include <ns3/pointer.h>
 #include <ns3/node.h>
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveUePhy");
 
@@ -1088,6 +1090,8 @@ void
 MmWaveUePhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
 {
   m_harqPhyModule = harq;
+}
+
 }
 
 }

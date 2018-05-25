@@ -46,17 +46,17 @@ main (int argc, char *argv[])
 {
  //create MmWavePhyMacCommon objects
  Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(28e9));
- Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
+ Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig1 = CreateObject<mmwave::MmWavePhyMacCommon> ();
 
  //create the carrier
- Ptr<MmWaveComponentCarrier> cc1 = CreateObject<MmWaveComponentCarrier> ();
+ Ptr<mmwave::MmWaveComponentCarrier> cc1 = CreateObject<mmwave::MmWaveComponentCarrier> ();
  cc1->SetConfigurationParameters(phyMacConfig1);
  cc1->SetAsPrimary(true);
 
  std::cout << "PCC frequency 1: " << cc1->GetCenterFrequency() << std::endl;
 
  //create the ccMap
- std::map<uint8_t, MmWaveComponentCarrier > ccMap;
+ std::map<uint8_t, mmwave::MmWaveComponentCarrier > ccMap;
  ccMap [0] = *cc1;
 
  //create and set the helper
@@ -65,7 +65,7 @@ main (int argc, char *argv[])
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
  Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
 
- Ptr<MmWaveHelper> helper = CreateObject<MmWaveHelper> ();
+ Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper> ();
  helper->SetCcPhyParams(ccMap);
 
  //create the enb node

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -28,6 +28,8 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("McStatsCalculator");
+
+namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED ( McStatsCalculator);
 
@@ -60,7 +62,7 @@ TypeId
 McStatsCalculator::GetTypeId (void)
 {
   static TypeId tid =
-    TypeId ("ns3::McStatsCalculator") 
+    TypeId ("ns3::McStatsCalculator")
     .SetParent<Object> ()
     .AddConstructor<McStatsCalculator> ()
     .SetGroupName("Lte")
@@ -89,7 +91,7 @@ McStatsCalculator::DoDispose ()
   NS_LOG_FUNCTION (this);
 }
 
-void 
+void
 McStatsCalculator::SetLteOutputFilename (std::string outputFilename)
 {
   m_lteOutputFilename = outputFilename;
@@ -103,13 +105,13 @@ McStatsCalculator::SetMmWaveOutputFilename (std::string outputFilename)
 }
 
 std::string
-McStatsCalculator::GetLteOutputFilename() 
+McStatsCalculator::GetLteOutputFilename()
 {
   return m_lteOutputFilename;
 }
 
 std::string
-McStatsCalculator::GetMmWaveOutputFilename () 
+McStatsCalculator::GetMmWaveOutputFilename ()
 {
   return m_mmWaveOutputFilename;
 }
@@ -121,7 +123,7 @@ McStatsCalculator::SetCellIdInTimeOutputFilename (std::string outputFilename)
 }
 
 std::string
-McStatsCalculator::GetCellIdInTimeOutputFilename() 
+McStatsCalculator::GetCellIdInTimeOutputFilename()
 {
   return m_cellInTimeFilename;
 }
@@ -163,5 +165,7 @@ McStatsCalculator::SwitchToMmWave (uint64_t imsi, uint16_t cellId, uint16_t rnti
   }
   m_cellInTimeOutFile << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << imsi << " " << cellId << " " << rnti << " " << std::endl;
 }
+
+} // namespace mmwave
 
 } // namespace ns3

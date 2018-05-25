@@ -68,7 +68,9 @@
 #include <array>
 
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveEnbPhy");
 
@@ -1693,4 +1695,6 @@ MmWaveEnbPhy::ReceiveUlHarqFeedback (UlHarqInfo mes)
   }
 }
 
-}
+} // namespace mmwave
+
+} // namespace ns3

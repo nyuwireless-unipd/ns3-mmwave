@@ -70,6 +70,8 @@ namespace ns3 {
 /* ... */
 NS_LOG_COMPONENT_DEFINE ("MmWaveHelper");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveHelper);
 
 MmWaveHelper::MmWaveHelper(void)
@@ -2835,5 +2837,5 @@ MmWaveHelper::SetUeComponentCarrierManagerType (std::string type)
   m_ueComponentCarrierManagerFactory.SetTypeId (type);
 }
 
-
+}
 }

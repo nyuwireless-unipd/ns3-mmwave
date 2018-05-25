@@ -2582,7 +2582,7 @@ UeManager::BuildNonCriticalExtentionConfigurationCa ()
             ccId++;
           }
 
-        Ptr<MmWaveComponentCarrierEnb> eNbCcm = it.second;
+        Ptr<mmwave::MmWaveComponentCarrierEnb> eNbCcm = it.second;
         LteRrcSap::SCellToAddMod component;
         component.sCellIndex = ccId;
         component.cellIdentification.physCellId = eNbCcm->GetCellId ();
@@ -2705,7 +2705,7 @@ LteEnbRrc::ConfigureCarriers (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyC
 }
 
 void
-LteEnbRrc::ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf)
+LteEnbRrc::ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb>> ccPhyConf)
 {
   NS_LOG_FUNCTION(this);
   //TODO do we need to duplicate all the CC paramenters to support mmwave carriers?
@@ -3452,7 +3452,7 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf)
 }
 
 void
-LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<MmWaveComponentCarrierEnb>> ccPhyConf)
+LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb>> ccPhyConf)
 {
   NS_LOG_FUNCTION(this);
   auto it = ccPhyConf.begin ();

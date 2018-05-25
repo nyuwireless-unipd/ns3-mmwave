@@ -22,6 +22,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiPfMacScheduler");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiPfMacScheduler);
 
 class MmWaveFlexTtiPfMacCschedSapProvider : public MmWaveMacCschedSapProvider
@@ -1835,4 +1837,4 @@ MmWaveFlexTtiPfMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedS
 
 }
 
-
+}

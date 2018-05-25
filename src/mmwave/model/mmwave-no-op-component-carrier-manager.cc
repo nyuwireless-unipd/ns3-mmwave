@@ -31,6 +31,9 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveNoOpComponentCarrierManager");
+
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveNoOpComponentCarrierManager);
 
 MmWaveNoOpComponentCarrierManager::MmWaveNoOpComponentCarrierManager ()
@@ -663,5 +666,7 @@ MmWaveBaRrComponentCarrierManager::DoUlReceiveMacCe (MacCeListElement_s bsr, uin
       m_ccmMacSapProviderMap.at (ueManager->GetComponentCarrierId ())->ReportMacCeToScheduler (bsr);
     }
 }
+
+} // end of namespace mmwave 
 
 } // end of namespace ns3

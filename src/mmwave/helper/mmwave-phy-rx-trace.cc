@@ -44,6 +44,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWavePhyRxTrace");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWavePhyRxTrace);
 
 std::ofstream MmWavePhyRxTrace::m_rxPacketTraceFile;
@@ -243,5 +245,7 @@ MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std:
 					<< 10*std::log10(params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt << "\t" << params.m_sinrMin);
 		}
 }
+
+} // namespace mmwave 
 
 } /* namespace ns3 */

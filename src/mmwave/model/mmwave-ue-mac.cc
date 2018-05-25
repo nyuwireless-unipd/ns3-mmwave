@@ -38,9 +38,11 @@
 #include <ns3/lte-rlc.h>
 #include <ns3/log.h>
 
-namespace ns3
-{
+namespace ns3 {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveUeMac");
+
+namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveUeMac);
 
@@ -1052,5 +1054,7 @@ MmWaveUeMac::AssignStreams (int64_t stream)
 
 //////////////////////////////////////////////
 
+
+}
 
 }

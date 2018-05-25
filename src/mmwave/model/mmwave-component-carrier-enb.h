@@ -38,6 +38,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveEnbMac;
 /**
  * \ingroup mmwave
@@ -129,6 +131,8 @@ private:
 
 
 };
+
+} // namespace mmwave
 
 } // namespace ns3
 

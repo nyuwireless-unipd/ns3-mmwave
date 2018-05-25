@@ -269,7 +269,7 @@ main (int argc, char *argv[])
 	}
 
 
-	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+	Ptr<mmwave::MmWaveHelper> mmwaveHelper = CreateObject<mmwave::MmWaveHelper> ();
 
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::MmWave3gppBuildingsPropagationLossModel"));
 	mmwaveHelper->SetAttribute ("ChannelModel", StringValue ("ns3::MmWave3gppChannel"));
@@ -277,7 +277,7 @@ main (int argc, char *argv[])
 	mmwaveHelper->Initialize();
 	mmwaveHelper->SetHarqEnabled(true);
 
-	Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+	Ptr<mmwave::MmWavePointToPointEpcHelper>  epcHelper = CreateObject<mmwave::MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 
 	Ptr<Node> pgw = epcHelper->GetPgwNode ();

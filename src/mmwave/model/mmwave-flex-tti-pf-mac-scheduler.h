@@ -21,6 +21,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveFlexTtiPfMacScheduler : public MmWaveMacScheduler
 {
 public:
@@ -397,6 +399,8 @@ private:
 	std::vector <FlowStats*> m_flowHeap;
 	std::vector <UeSchedInfo*> m_ueStatHeap;
 };
+
+}
 
 }
 

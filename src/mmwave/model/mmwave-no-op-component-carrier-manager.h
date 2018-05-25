@@ -37,6 +37,8 @@ namespace ns3 {
 class UeManager;
 class LteCcmRrcSapProvider;
 
+namespace mmwave {
+
 /**
  * \brief The default component carrier manager that forwards all traffic, the uplink and the downlink,
  *  over the primary carrier, and will not use secondary carriers. To enable carrier aggregation
@@ -208,6 +210,8 @@ protected:
   virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
 
 }; // end of class MmWaveBaRrComponentCarrierManager
+
+} // end of namespace mmwave 
 
 } // end of namespace ns3
 

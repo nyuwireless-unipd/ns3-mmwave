@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -30,8 +30,9 @@
 #include <map>
 #include <fstream>
 
-namespace ns3
-{
+namespace ns3 {
+
+namespace mmwave {
 
 class McStatsCalculator : public Object
 {
@@ -58,7 +59,7 @@ public:
   std::string GetLteOutputFilename (void);
   std::string GetMmWaveOutputFilename (void);
   std::string GetCellIdInTimeOutputFilename (void);
-  
+
   void SetLteOutputFilename (std::string outputFilename);
   void SetMmWaveOutputFilename (std::string outputFilename);
   void SetCellIdInTimeOutputFilename (std::string outputFilename);
@@ -86,6 +87,8 @@ private:
   std::ofstream m_mmWaveOutFile;
   std::ofstream m_cellInTimeOutFile;
 };
+
+} // namespace mmwave
 
 } // namespace ns3
 

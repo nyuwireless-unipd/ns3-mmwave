@@ -273,7 +273,7 @@ PrintGnuplottableUeListToFile (std::string filename)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
           Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
-          Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
+          Ptr<mmwave::McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <mmwave::McUeNetDevice> ();
           if (uedev)
             {
               Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
@@ -316,7 +316,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteEnbNetDevice> enbdev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
-          Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+          Ptr<mmwave::MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <mmwave::MmWaveEnbNetDevice> ();
           if (enbdev)
             {
               Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
@@ -603,9 +603,9 @@ main (int argc, char *argv[])
 
   Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue(LteEnbRrc::DYNAMIC_TTT));
 
-  Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+  Ptr<mmwave::MmWaveHelper> mmwaveHelper = CreateObject<mmwave::MmWaveHelper> ();
   //mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
-  Ptr<MmWavePointToPointEpcHelper> epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+  Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper = CreateObject<mmwave::MmWavePointToPointEpcHelper> ();
   mmwaveHelper->SetEpcHelper (epcHelper);
   mmwaveHelper->SetHarqEnabled (harqEnabled);
   mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));

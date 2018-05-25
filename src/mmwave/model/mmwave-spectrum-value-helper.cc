@@ -48,6 +48,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveSpectrumValueHelper");
 
+namespace mmwave {
+
 std::map<uint8_t,Ptr<SpectrumModel>> MmWaveSpectrumValueHelper::m_model;
 
 Ptr<SpectrumModel>
@@ -140,5 +142,7 @@ MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (double noiseFigureDb
   (*noisePsd) = noisePowerSpectralDensity;
   return noisePsd;
 }
+
+} // namespace mmwave
 
 } // namespace ns3

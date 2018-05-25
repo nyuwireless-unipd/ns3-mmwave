@@ -45,7 +45,9 @@
 #include <fstream>
 
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveChannelRaytracing");
 
@@ -644,5 +646,6 @@ MmWaveChannelRaytracing::CalcRxPowerSpectralDensity(Ptr<const SpectrumValue> txP
 	return DoCalcRxPowerSpectralDensity(txPsd, a, b);
 }
 
+} // namespace mmwave
 
-}// namespace ns3
+} // namespace ns3

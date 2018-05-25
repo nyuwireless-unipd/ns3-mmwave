@@ -50,6 +50,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 struct SfnSf
 {
 	SfnSf (): m_frameNum (0), m_sfNum (0), m_slotNum (0)
@@ -865,5 +867,6 @@ private:
 
 }
 
+}
 
 #endif /* SRC_MMWAVE_MODEL_MMWAVE_PHY_MAC_COMMON_H_ */

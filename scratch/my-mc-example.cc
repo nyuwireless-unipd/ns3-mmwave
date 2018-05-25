@@ -133,7 +133,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteEnbNetDevice> enbdev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
-          Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+          Ptr<mmwave::MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <mmwave::MmWaveEnbNetDevice> ();
           if (enbdev)
             {
               Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
@@ -172,7 +172,7 @@ PrintGnuplottableUeListToFile (std::string filename)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
           Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
-          Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
+          Ptr<mmwave::McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <mmwave::McUeNetDevice> ();
           if (uedev)
             {
               Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
@@ -456,7 +456,7 @@ int main (int argc, char *argv[])
   //create MmWavePhyMacCommon objects
 	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(mmWaveCc0Freq));
 	Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(0));
-	Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
+	Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig0 = CreateObject<mmwave::MmWavePhyMacCommon> ();
 	uint32_t chunkPerRb0 = phyMacConfig0->GetNumChunkPerRb () * mmWaveCc0Bw;
 	phyMacConfig0->SetNumChunkPerRB (chunkPerRb0);
 	uint32_t numRefSc0 = phyMacConfig0->GetNumRefScPerSym () * mmWaveCc0Bw;
@@ -464,23 +464,23 @@ int main (int argc, char *argv[])
 
 	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(mmWaveCc1Freq));
 	Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
-	Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
+	Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig1 = CreateObject<mmwave::MmWavePhyMacCommon> ();
 	uint32_t chunkPerRb1 = phyMacConfig1->GetNumChunkPerRb () * mmWaveCc1Bw;
 	phyMacConfig1->SetNumChunkPerRB (chunkPerRb1);
 	uint32_t numRefSc1 = phyMacConfig1->GetNumRefScPerSym () * mmWaveCc1Bw;
 	phyMacConfig1->SetNumRefScPerSym (numRefSc1);
 
 	//create the carriers
-	Ptr<MmWaveComponentCarrier> mmWaveCc0 = CreateObject<MmWaveComponentCarrier> ();
+	Ptr<mmwave::MmWaveComponentCarrier> mmWaveCc0 = CreateObject<mmwave::MmWaveComponentCarrier> ();
 	mmWaveCc0->SetConfigurationParameters(phyMacConfig0);
 	mmWaveCc0->SetAsPrimary(true);
 
-	Ptr<MmWaveComponentCarrier> mmWaveCc1 = CreateObject<MmWaveComponentCarrier> ();
+	Ptr<mmwave::MmWaveComponentCarrier> mmWaveCc1 = CreateObject<mmwave::MmWaveComponentCarrier> ();
 	mmWaveCc1->SetConfigurationParameters(phyMacConfig1);
 	mmWaveCc1->SetAsPrimary(false);
 
 	//create the ccMap
-	std::map<uint8_t, MmWaveComponentCarrier > mmWaveCcMap;
+	std::map<uint8_t, mmwave::MmWaveComponentCarrier > mmWaveCcMap;
 	std::map<uint8_t, bool> mmWaveBlockageMap;
 	mmWaveCcMap [0] = *mmWaveCc0;
 	mmWaveBlockageMap[0] = false;
@@ -494,7 +494,7 @@ int main (int argc, char *argv[])
   std::cout << " mmWaveCcMap size " << mmWaveCcMap.size () << std::endl;
   for(uint8_t i = 0; i < mmWaveCcMap.size(); i++)
   {
-    Ptr<MmWavePhyMacCommon> phyMacConfig = mmWaveCcMap[i].GetConfigurationParameters();
+    Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig = mmWaveCcMap[i].GetConfigurationParameters();
     std::cout << "Component Carrier " << (uint32_t)(phyMacConfig->GetCcId ())
               << " frequency : " << phyMacConfig->GetCenterFrequency()/1e9 << " GHz,"
               << " bandwidth : " << (phyMacConfig->GetNumRb() * phyMacConfig->GetChunkWidth() * phyMacConfig->GetNumChunkPerRb())/1e6 << " MHz,"
@@ -547,12 +547,12 @@ int main (int argc, char *argv[])
 	Config::SetDefault("ns3::MmWaveHelper::HarqEnabled",BooleanValue(useHarq));
 
   // create the helper
-  Ptr<MmWaveHelper> mmWaveHelper = CreateObject<MmWaveHelper> ();
+  Ptr<mmwave::MmWaveHelper> mmWaveHelper = CreateObject<mmwave::MmWaveHelper> ();
   mmWaveHelper->SetLteCcPhyParams (lteCcMap);
   mmWaveHelper->SetCcPhyParams (mmWaveCcMap);
 	mmWaveHelper->SetBlockageMap (mmWaveBlockageMap);
 
-  Ptr<MmWavePointToPointEpcHelper> epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+  Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper = CreateObject<mmwave::MmWavePointToPointEpcHelper> ();
   mmWaveHelper->SetEpcHelper (epcHelper);
 
   // Create the Internet by connecting remoteHost to pgw. Setup routing too

@@ -51,8 +51,12 @@ class Packet;
 class PacketBurst;
 class Node;
 class LteEnbNetDevice;
-class MmWaveEnbNetDevice;
 class LteUeComponentCarrierManager;
+
+namespace mmwave{
+
+class MmWaveEnbNetDevice;
+
 
 
 
@@ -268,6 +272,8 @@ private:
 	Ptr<UniformRandomVariable> m_random;
 
 };
+
+} //namespace mmwave
 
 } // namespace ns3
 

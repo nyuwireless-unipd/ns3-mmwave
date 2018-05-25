@@ -43,8 +43,10 @@
 #include <ns3/lte-enb-cmac-sap.h>
 #include <ns3/log.h>
 
-namespace ns3
-{
+namespace ns3 {
+
+namespace mmwave {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveEnbMac");
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveEnbMac);
@@ -1243,4 +1245,6 @@ MmWaveEnbMac::DoCschedCellConfigUpdateInd (MmWaveMacCschedSapUser::CschedCellCon
   NS_LOG_FUNCTION (this);
 }
 
-}
+} // namespace mmwave
+
+} // namespace ns3

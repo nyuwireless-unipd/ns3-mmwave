@@ -43,6 +43,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveLteRrcProtocolReal");
 
 const Time RRC_REAL_MSG_DELAY = MicroSeconds (500);
@@ -957,5 +959,7 @@ MmWaveRealProtocolRlcSapUser::ReceivePdcpPdu (Ptr<Packet> p)
 {
   m_pdcp->DoReceivePdcpPdu (m_rnti, p);
 }
+
+} // namespace mmwave 
 
 } // namespace ns3

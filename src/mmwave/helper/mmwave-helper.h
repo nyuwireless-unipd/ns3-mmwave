@@ -90,13 +90,16 @@
 
 namespace ns3 {
 
+class SpectrumChannel;
+class SpectrumpropagationLossModel;
+class PropagationLossModel;
+
+namespace mmwave {
+
 /* ... */
 class MmWaveUePhy;
 class MmWaveEnbPhy;
-class SpectrumChannel;
-class SpectrumpropagationLossModel;
 class MmWaveSpectrumValueHelper;
-class PropagationLossModel;
 //class MmWave3gppChannel;
 
 class MmWaveHelper : public Object
@@ -415,6 +418,8 @@ private:
 	std::map< uint8_t, bool > m_3gppBlockage;
 
 };
+
+}
 
 }
 

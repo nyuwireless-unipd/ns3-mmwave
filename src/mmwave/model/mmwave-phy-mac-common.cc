@@ -41,8 +41,9 @@
 #include <ns3/attribute-accessor-helper.h>
 #include <ns3/simulator.h>
 
-namespace ns3
-{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWavePhyMacCommon");
 
@@ -200,6 +201,8 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
 	m_componentCarrierId(0)
 {
 	NS_LOG_INFO ("Initialized MmWavePhyMacCommon");
+}
+
 }
 
 }

@@ -47,18 +47,18 @@ main (int argc, char *argv[])
 	//create MmWavePhyMacCommon objects
 	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(28e9));
 	Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(0));
-	Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
+	Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig1 = CreateObject<mmwave::MmWavePhyMacCommon> ();
 
 	Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(73e9));
 	Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
-	Ptr<MmWavePhyMacCommon> phyMacConfig2 = CreateObject<MmWavePhyMacCommon> ();
+	Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig2 = CreateObject<mmwave::MmWavePhyMacCommon> ();
 
 	//create the carriers
-	Ptr<MmWaveComponentCarrier> cc1 = CreateObject<MmWaveComponentCarrier> ();
+	Ptr<mmwave::MmWaveComponentCarrier> cc1 = CreateObject<mmwave::MmWaveComponentCarrier> ();
 	cc1->SetConfigurationParameters(phyMacConfig1);
 	cc1->SetAsPrimary(true);
 
-	Ptr<MmWaveComponentCarrier> cc2 = CreateObject<MmWaveComponentCarrier> ();
+	Ptr<mmwave::MmWaveComponentCarrier> cc2 = CreateObject<mmwave::MmWaveComponentCarrier> ();
 	cc2->SetConfigurationParameters(phyMacConfig2);
 	cc2->SetAsPrimary(false);
 
@@ -66,7 +66,7 @@ main (int argc, char *argv[])
 	std::cout << "Component Carrier " << std::to_string(phyMacConfig2->GetCcId ()) << " frequency : " << cc2->GetCenterFrequency() << std::endl;
 
 	//create the ccMap
-	std::map<uint8_t, MmWaveComponentCarrier > ccMap;
+	std::map<uint8_t, mmwave::MmWaveComponentCarrier > ccMap;
 	ccMap [0] = *cc1;
 	ccMap [1] = *cc2;
 
@@ -77,7 +77,7 @@ main (int argc, char *argv[])
 	Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
 	Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
 	Config::SetDefault("ns3::MmWaveHelper::PathlossModel",StringValue("ns3::MmWave3gppPropagationLossModel"));
-	Ptr<MmWaveHelper> helper = CreateObject<MmWaveHelper> ();
+	Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper> ();
 	helper->SetCcPhyParams(ccMap);
 
 	//create the enb node
@@ -118,11 +118,11 @@ main (int argc, char *argv[])
 
 	//test
 	Ptr<NetDevice> enbDev = enbNodes.Get(0)->GetDevice(0);
-	Ptr<MmWaveEnbNetDevice> mmWaveEnbDev = DynamicCast<MmWaveEnbNetDevice>(enbDev);
-	std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> > enbCcMap = mmWaveEnbDev->GetCcMap();
-	Ptr<MmWaveComponentCarrierEnb> enbCC1 = enbCcMap.at(0);
+	Ptr<mmwave::MmWaveEnbNetDevice> mmWaveEnbDev = DynamicCast<mmwave::MmWaveEnbNetDevice>(enbDev);
+	std::map < uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb> > enbCcMap = mmWaveEnbDev->GetCcMap();
+	Ptr<mmwave::MmWaveComponentCarrierEnb> enbCC1 = enbCcMap.at(0);
 	Ptr<AntennaModel> enbCC1Antenna = enbCC1->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ();
-	Ptr<AntennaArrayModel> enbCC1AntennaArray = DynamicCast<AntennaArrayModel> (enbCC1Antenna);
+	Ptr<mmwave::AntennaArrayModel> enbCC1AntennaArray = DynamicCast<mmwave::AntennaArrayModel> (enbCC1Antenna);
 	std::cout << "Enb CC 1 " << enbCC1 << "has antenna " << enbCC1Antenna << std::endl;
 
 	helper->AttachToClosestEnb (ueNetDevices, enbNetDevices);

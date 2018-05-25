@@ -41,6 +41,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWavePhyRxTrace : public Object
 {
 public:
@@ -68,6 +70,8 @@ private:
 	static std::ofstream m_rxPacketTraceFile;
 	static std::string m_rxPacketTraceFilename;
 };
+
+} // namespace mmwave 
 
 } /* namespace ns3 */
 

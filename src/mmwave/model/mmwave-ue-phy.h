@@ -2,31 +2,31 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software:100cento
 
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- *	Modified by: Michele Polese <michele.polese@gmail.com> 
+ *	Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
  */
 
@@ -46,9 +46,12 @@
 
 
 
-namespace ns3{
+namespace ns3 {
 
 class PacketBurst;
+
+namespace mmwave {
+
 class mmwEnbPhy;
 
 class MmWaveUePhy : public MmWavePhy
@@ -111,11 +114,11 @@ public:
 	void SendDataChannels (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time duration, uint8_t slotInd);
 
 	void SendCtrlChannels (std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time prd);
-    
+
 	uint32_t GetAbsoluteSubframeNo (); // Used for tracing purposes
-    
+
 	Ptr<MmWaveDlCqiMessage> CreateDlCqiFeedbackMessage (const SpectrumValue& sinr);
-    
+
 	void GenerateDlCqiReport (const SpectrumValue& sinr);
 
 	void SetImsi (uint64_t imsi);
@@ -191,7 +194,7 @@ private:
 	bool m_receptionEnabled;
 	uint16_t m_rnti;
 	uint64_t m_imsi;
-	
+
 	Ptr<MmWaveHarqPhy> m_harqPhyModule;
 
 	std::vector<int> m_channelChunks;
@@ -212,6 +215,8 @@ private:
 
 };
 
+
+}
 
 }
 

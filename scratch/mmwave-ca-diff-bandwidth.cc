@@ -27,7 +27,7 @@ using namespace ns3;
  */
 
 void
-TxMacPacketTraceUe (Ptr<OutputStreamWrapper> stream, RxPacketTraceParams params)
+TxMacPacketTraceUe (Ptr<OutputStreamWrapper> stream, mmwave::RxPacketTraceParams params)
 {
 	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << (uint32_t)params.m_ccId << '\t' << params.m_tbSize << std::endl;
 }
@@ -104,33 +104,33 @@ main (int argc, char *argv[])
  Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(0));
  Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb0));
- Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
+ Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig0 = CreateObject<mmwave::MmWavePhyMacCommon> ();
  phyMacConfig0->SetNumRefScPerSym( numRefSc0 );
 
  // 2. create the MmWaveComponentCarrier object
- Ptr<MmWaveComponentCarrier> cc0 = CreateObject<MmWaveComponentCarrier> ();
+ Ptr<mmwave::MmWaveComponentCarrier> cc0 = CreateObject<mmwave::MmWaveComponentCarrier> ();
  cc0->SetConfigurationParameters(phyMacConfig0);
  cc0->SetAsPrimary(true);
 
  // CC 1
- Ptr<MmWaveComponentCarrier> cc1;
+ Ptr<mmwave::MmWaveComponentCarrier> cc1;
  if(useCa)
  {
    // 1. create MmWavePhyMacCommon object
    Config::SetDefault("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue(frequency1));
    Config::SetDefault("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue(1));
    Config::SetDefault("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue(chunkPerRb1));
-   Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
+   Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig1 = CreateObject<mmwave::MmWavePhyMacCommon> ();
    phyMacConfig1->SetNumRefScPerSym( numRefSc1 );
 
    // 2. create the MmWaveComponentCarrier object
-   cc1 = CreateObject<MmWaveComponentCarrier> ();
+   cc1 = CreateObject<mmwave::MmWaveComponentCarrier> ();
    cc1->SetConfigurationParameters(phyMacConfig1);
    cc1->SetAsPrimary(false);
   }
 
   // create the CC map
-  std::map<uint8_t, MmWaveComponentCarrier> ccMap;
+  std::map<uint8_t, mmwave::MmWaveComponentCarrier> ccMap;
   ccMap [0] = *cc0;
   if(useCa)
   {
@@ -148,7 +148,7 @@ main (int argc, char *argv[])
 	// print CC parameters
   for(uint8_t i = 0; i < ccMap.size(); i++)
   {
-    Ptr<MmWavePhyMacCommon> phyMacConfig = ccMap[i].GetConfigurationParameters();
+    Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig = ccMap[i].GetConfigurationParameters();
     std::cout << "Component Carrier " << (uint32_t)(phyMacConfig->GetCcId ())
               << " frequency : " << phyMacConfig->GetCenterFrequency()/1e9 << " GHz,"
               << " bandwidth : " << (phyMacConfig->GetNumRb() * phyMacConfig->GetChunkWidth() * phyMacConfig->GetNumChunkPerRb())/1e6 << " MHz,"
@@ -192,7 +192,7 @@ main (int argc, char *argv[])
  Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
  Config::SetDefault ("ns3::MmWave3gppChannel::BlockerSpeed", DoubleValue(1)); // speed of non-self blocking obstacles
 
- Ptr<MmWaveHelper> helper = CreateObject<MmWaveHelper> ();
+ Ptr<mmwave::MmWaveHelper> helper = CreateObject<mmwave::MmWaveHelper> ();
  helper->SetCcPhyParams(ccMap);
  helper->SetBlockageMap(blockageMap);
 
@@ -200,11 +200,11 @@ main (int argc, char *argv[])
  Ipv4Address remoteHostAddr;
  Ptr<Node> remoteHost;
  InternetStackHelper internet;
- Ptr<MmWavePointToPointEpcHelper> epcHelper;
+ Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper;
  Ipv4StaticRoutingHelper ipv4RoutingHelper;
  if(useEpc)
  {
-   epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+   epcHelper = CreateObject<mmwave::MmWavePointToPointEpcHelper> ();
    helper->SetEpcHelper (epcHelper);
 
    // create the Internet by connecting remoteHost to pgw. Setup routing too

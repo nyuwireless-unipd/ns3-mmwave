@@ -30,6 +30,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 MmWaveMacCschedSapProvider::~MmWaveMacCschedSapProvider ()
 {
 }
@@ -37,5 +39,7 @@ MmWaveMacCschedSapProvider::~MmWaveMacCschedSapProvider ()
 MmWaveMacCschedSapUser::~MmWaveMacCschedSapUser ()
 {
 }
+
+} // namespace mmwave
 
 } // namespace ns3

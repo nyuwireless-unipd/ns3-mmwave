@@ -51,6 +51,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveBearerStatsCalculator;
 //class McStatsCalculator;
 
@@ -383,7 +385,7 @@ private:
   std::ofstream m_lteSinrOutFile;
 };
 
-
+} // namespace mmwave 
 
 } // namespace ns3
 

@@ -43,7 +43,9 @@
 #include <ns3/double.h>
 #include <ns3/boolean.h>
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveBeamforming");
 
@@ -712,5 +714,6 @@ MmWaveBeamforming::GetUeEnbAntennaPair(Ptr<NetDevice> ueDevice, Ptr<NetDevice> e
 	return antennaPair(ueAntennaArray, enbAntennaArray);
 }
 
+} // namespace mmwave
 
-}// namespace ns3
+} // namespace ns3

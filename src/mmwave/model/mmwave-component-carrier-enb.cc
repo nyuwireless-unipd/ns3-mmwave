@@ -36,6 +36,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveComponentCarrierEnb");
 NS_OBJECT_ENSURE_REGISTERED (MmWaveComponentCarrierEnb);
 
@@ -192,5 +194,7 @@ MmWaveComponentCarrierEnb::SetMacScheduler (Ptr<MmWaveMacScheduler> s)
   NS_LOG_FUNCTION (this);
   m_scheduler = s;
 }
+
+} // namespace mmwave
 
 } // namespace ns3

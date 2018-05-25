@@ -45,9 +45,11 @@
 #include <sstream>
 #include <vector>
 
-namespace ns3{
+namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWavePhy");
+
+namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED ( MmWavePhy);
 
@@ -376,6 +378,8 @@ uint8_t
 MmWavePhy::GetComponentCarrierId ()
 {
   return m_componentCarrierId;
+}
+
 }
 
 }

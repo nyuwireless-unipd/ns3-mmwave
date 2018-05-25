@@ -134,7 +134,7 @@ PrintGnuplottableUeListToFile (std::string filename)
         {
           Ptr<LteUeNetDevice> uedev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
           Ptr<mmwave::MmWaveUeNetDevice> mmuedev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
-          Ptr<McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
+          Ptr<mmwave::McUeNetDevice> mcuedev = node->GetDevice (j)->GetObject <mmwave::McUeNetDevice> ();
           if (uedev)
             {
               Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
@@ -177,7 +177,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
       for (int j = 0; j < nDevs; j++)
         {
           Ptr<LteEnbNetDevice> enbdev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
-          Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+          Ptr<mmwave::MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <mmwave::MmWaveEnbNetDevice> ();
           if (enbdev)
             {
               Vector pos = node->GetObject<MobilityModel> ()->GetPosition ();
@@ -659,7 +659,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	Config::SetDefault ("ns3::CoDelQueueDisc::Mode", EnumValue (ns3::CoDelQueueDisc::QueueDiscMode::QUEUE_DISC_MODE_PACKETS));
 	Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
 
-	Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
+	Ptr<mmwave::MmWaveHelper> mmwaveHelper = CreateObject<mmwave::MmWaveHelper> ();
 	if(true)
 	{
 	mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::MmWave3gppBuildingsPropagationLossModel"));
@@ -670,7 +670,7 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 	}
 	mmwaveHelper->SetAttribute ("ChannelModel", StringValue ("ns3::MmWave3gppChannel"));
 
-	Ptr<MmWavePointToPointEpcHelper> epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
+	Ptr<mmwave::MmWavePointToPointEpcHelper> epcHelper = CreateObject<mmwave::MmWavePointToPointEpcHelper> ();
 	mmwaveHelper->SetEpcHelper (epcHelper);
 	mmwaveHelper->SetHarqEnabled (harqEnabled);
 	mmwaveHelper->Initialize();
