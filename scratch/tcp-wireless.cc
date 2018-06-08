@@ -106,11 +106,11 @@ main (int argc, char *argv[])
   // LogComponentEnable("TcpSocketBase", LOG_LEVEL_INFO);
 
 	uint16_t nodeNum = 1;
-	double simStopTime = 5;
+	double simStopTime = 60;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
-	std::string protocol = "TcpCubic";
-	int bufferSize = 1000 *1000 * 3.5 * 0.4;
+	std::string protocol = "TcpBbr";
+	int bufferSize = 1000 *1000 * 1;
 	//int bufferSize = 85*1000*1.1;
 	int packetSize = 14000;
 	int p2pDelay = 9;
@@ -212,6 +212,11 @@ main (int argc, char *argv[])
     	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpYeah::GetTypeId ()));
 
     }
+    else if (protocol == "TcpBbr")
+    {
+    	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
+
+    }
     else
     {
 		std::cout<<protocol<<" Unkown protocol.\n";
@@ -232,7 +237,7 @@ main (int argc, char *argv[])
 
 	Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue (MilliSeconds (100))); // Set channel update period, 0 stands for no update.
 	Config::SetDefault ("ns3::MmWave3gppChannel::CellScan", BooleanValue(false)); // Set true to use cell scanning method, false to use the default power method.
-	Config::SetDefault ("ns3::MmWave3gppChannel::Blockage", BooleanValue(true)); // use blockage or not
+	Config::SetDefault ("ns3::MmWave3gppChannel::Blockage", BooleanValue(false)); // use blockage or not
 	Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue(true)); // use blockage model with UT in portrait mode
 	Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
 	Config::SetDefault ("ns3::MmWave3gppChannel::BlockerSpeed", DoubleValue(1)); // speed of non-self blocking obstacles
@@ -316,48 +321,79 @@ main (int argc, char *argv[])
 
 	/*Ptr < Building > building1;
 	building1 = Create<Building> ();
-	building1->SetBoundaries (Box (1100,1140.0,
-								12, 20.0,
+	building1->SetBoundaries (Box (11,12.0,
+								99.5, 99.8,
 								0.0, 40));
 
 
 	Ptr < Building > building2;
 	building2 = Create<Building> ();
-	building2->SetBoundaries (Box (620,700.0,
-								0, 5.0,
+	building2->SetBoundaries (Box (14,14.5,
+								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building3;
 	building3 = Create<Building> ();
-	building3->SetBoundaries (Box (565,575.0,
-								1.0, 5.0,
+	building3->SetBoundaries (Box (16.6,17.0,
+								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building4;
 	building4 = Create<Building> ();
-	building4->SetBoundaries (Box (1220,1260.0,
-								11.0, 11.5,
+	building4->SetBoundaries (Box (20,24.0,
+								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building5;
 	building5 = Create<Building> ();
-	building5->SetBoundaries (Box (1330,1360.0,
-								11.0, 11.5,
-								0.0, 40));*/
+	building5->SetBoundaries (Box (35,35.5,
+								99.5, 99.8,
+								0.0, 40));
 
+
+		Ptr < Building > building11;
+	building11 = Create<Building> ();
+	building11->SetBoundaries (Box (36,36.4,
+								99.5, 99.8,
+								0.0, 40));
+
+
+	Ptr < Building > building12;
+	building12 = Create<Building> ();
+	building12->SetBoundaries (Box (39,40.2,
+								99.5, 99.8,
+								0.0, 40));
+
+	Ptr < Building > building13;
+	building13 = Create<Building> ();
+	building13->SetBoundaries (Box (45,50.0,
+								99.5, 99.8,
+								0.0, 40));
+
+	Ptr < Building > building14;
+	building14 = Create<Building> ();
+	building14->SetBoundaries (Box (51.6,52.0,
+								99.5, 99.8,
+								0.0, 40));
+
+	Ptr < Building > building15;
+	building15 = Create<Building> ();
+	building15->SetBoundaries (Box (53,53.2,
+								99.5, 99.8,
+								0.0, 40));
+*/
 
 
 
 
 	  NodeContainer ueNodes;
 	  NodeContainer mmWaveEnbNodes;
-	  mmWaveEnbNodes.Create(2);
-	  ueNodes.Create(10);
+	  mmWaveEnbNodes.Create(1);
+	  ueNodes.Create(1);
 
 
 
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-	enbPositionAlloc->Add (Vector (0.0, 160.0, hBS));
 	enbPositionAlloc->Add (Vector (0.0, 0.0, hBS));
 
 	MobilityHelper enbmobility;
@@ -374,21 +410,17 @@ main (int argc, char *argv[])
      //                        "Bounds", RectangleValue (Rectangle (-10.0, 10.0, 170.0, 180.0)));
 
 
-	uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	//uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+	//uemobility.Install (ueNodes);
+	//BuildingsHelper::Install (ueNodes);
+
+	uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
 	uemobility.Install (ueNodes);
 	BuildingsHelper::Install (ueNodes);
 
-	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 175, hUT));
-	ueNodes.Get (1)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 175, hUT));
-	ueNodes.Get (2)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 175, hUT));
-	ueNodes.Get (3)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 175, hUT));
-	ueNodes.Get (4)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 175, hUT));
+	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 100, hUT));
+	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (1, 0, 0));
 
-	ueNodes.Get (5)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 15, hUT));
-	ueNodes.Get (6)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 15, hUT));
-	ueNodes.Get (7)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 15, hUT));
-	ueNodes.Get (8)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 15, hUT));
-	ueNodes.Get (9)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 15, hUT));
 
 	//ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (1, 0, 0));
 
@@ -409,7 +441,7 @@ main (int argc, char *argv[])
 
 	mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs);  	//mmwaveHelper->EnableTraces ();
 
-	//mmwaveHelper->EnableTraces();
+	mmwaveHelper->EnableTraces();
 	ApplicationContainer sourceApps;
 	ApplicationContainer sinkApps;
 	uint16_t sinkPort = 20000;
@@ -424,11 +456,11 @@ main (int argc, char *argv[])
 		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
 		 //Install and start applications on UEs and remote host
-		//PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
-		//sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (i)));
+		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
+		sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (i)));
 
 
-  			UdpServerHelper server (sinkPort);
+ /* 			UdpServerHelper server (sinkPort);
 			sinkApps.Add (server.Install (remoteHostContainer.Get (0)));
 
 		  Time interPacketInterval = Seconds (0.000004);
@@ -437,14 +469,14 @@ main (int argc, char *argv[])
 		  client.SetAttribute ("Interval", TimeValue (interPacketInterval));
 		  client.SetAttribute ("PacketSize", UintegerValue (1400));
   		client.SetAttribute ("MaxPackets", UintegerValue (maxPacketCount));
-		  sourceApps.Add(client.Install (ueNodes.Get (i)));
+		  sourceApps.Add(client.Install (ueNodes.Get (i)));*/
 
 
 
 
-		//BulkSendHelper ftp ("ns3::TcpSocketFactory",
-		 //                        InetSocketAddress (ueIpIface.GetAddress (i), sinkPort));
-		//sourceApps.Add (ftp.Install (remoteHostContainer.Get (0)));
+		BulkSendHelper ftp ("ns3::TcpSocketFactory",
+		                         InetSocketAddress (ueIpIface.GetAddress (i), sinkPort));
+		sourceApps.Add (ftp.Install (remoteHostContainer.Get (0)));
 
 	    std::ostringstream fileName;
 	    fileName<<protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay)<<"-"<<i+1<<"-TCP-DATA.txt";

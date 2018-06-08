@@ -93,7 +93,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("ChunkPerRB",
 						   "Number of chunks comprising a resource block",
-						   UintegerValue (72),
+						   UintegerValue (30),
 						   MakeUintegerAccessor (&MmWavePhyMacCommon::m_chunksPerRb),
 						   MakeUintegerChecker<uint32_t> ())
 			.AddAttribute ("ChunkWidth",
@@ -174,9 +174,9 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
   m_numRefSymbols (6),
 	m_numRbPerRbg (1),
   m_numSubCarriersPerChunk (48),
-  m_chunksPerRb (72),
+  m_chunksPerRb (30),
   m_numRefScPerRb (6),
-  m_numRefScPerSym (864),
+  m_numRefScPerSym (360),
   m_chunkWidth (14e6),
   m_numRb (1),
   m_numHarqProcess (20),

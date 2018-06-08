@@ -101,11 +101,11 @@ main (int argc, char *argv[])
 {
 
   uint32_t maxBytes = 0;
-  int packetSize = 1400;
+  int packetSize = 14000;
   std::string protocol = "TcpBbr";
   double simStopTime = 60;
   int bufferSize = 1000;
-  int p2pDelay = 18;
+  int p2pDelay = 9;
 
   //
 // Allow the user to override any of the defaults at
@@ -121,8 +121,8 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (packetSize));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
 
-  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*10));
-  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*10));
+  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*400));
+  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*400));
 
 
   if(protocol == "TcpNewReno")
@@ -197,17 +197,17 @@ main (int argc, char *argv[])
   // First make and configure the helper, so that it will put the appropriate
   // attributes on the network interfaces and channels we are about to install.
   PointToPointHelper p2p1;
-  p2p1.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (100000000)));
-  p2p1.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (10)));
+  p2p1.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (10000000000)));
+  p2p1.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (9)));
   p2p1.SetDeviceAttribute ("Mtu", UintegerValue (1500));
 
   PointToPointHelper p2p2;
-  p2p2.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (50000000)));
-  p2p2.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (10)));
+  p2p2.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (1120000000)));
+  p2p2.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (1)));
   p2p2.SetDeviceAttribute ("Mtu", UintegerValue (1500));
 
-  p2p1.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(1000), "MaxBytes", UintegerValue(1000*1460));
-  p2p2.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(1000), "MaxBytes", UintegerValue(1000*1460));
+  //p2p1.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(1000), "MaxBytes", UintegerValue(1000*1460));
+  //p2p2.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(1000), "MaxBytes", UintegerValue(1000*1460));
 
   // And then install devices and channels connecting our topology.
   NetDeviceContainer dev0 = p2p1.Install (n0n1);
