@@ -46,7 +46,7 @@ QueueBase::GetTypeId (void)
                    "Use the MaxSize attribute instead")
     .AddAttribute ("MaxPackets",
                    "The maximum number of packets accepted by this queue.",
-                   UintegerValue (100),
+                   UintegerValue (10000),
                    MakeUintegerAccessor (&QueueBase::SetMaxPackets,
                                          &QueueBase::GetMaxPackets),
                    MakeUintegerChecker<uint32_t> (),

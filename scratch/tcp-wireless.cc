@@ -110,7 +110,7 @@ main (int argc, char *argv[])
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
 	std::string protocol = "TcpBbr";
-	int bufferSize = 1000 *1000 * 1;
+	int bufferSize = 1000 *1000 * 20;
 	//int bufferSize = 85*1000*1.1;
 	int packetSize = 14000;
 	int p2pDelay = 9;
@@ -319,7 +319,20 @@ main (int argc, char *argv[])
 
 	}
 
-	/*Ptr < Building > building1;
+	Ptr < Building > buildingxx;
+	buildingxx = Create<Building> ();
+	buildingxx->SetBoundaries (Box (6.2,6.5,
+								99.5, 99.8,
+								0.0, 40));
+
+	Ptr < Building > buildingxx1;
+	buildingxx1 = Create<Building> ();
+	buildingxx1->SetBoundaries (Box (7.2,10.1.0,
+								99.5, 99.8,
+								0.0, 40));
+
+
+	Ptr < Building > building1;
 	building1 = Create<Building> ();
 	building1->SetBoundaries (Box (11,12.0,
 								99.5, 99.8,
@@ -340,7 +353,7 @@ main (int argc, char *argv[])
 
 	Ptr < Building > building4;
 	building4 = Create<Building> ();
-	building4->SetBoundaries (Box (20,24.0,
+	building4->SetBoundaries (Box (20,28.1,
 								99.5, 99.8,
 								0.0, 40));
 
@@ -381,7 +394,7 @@ main (int argc, char *argv[])
 	building15->SetBoundaries (Box (53,53.2,
 								99.5, 99.8,
 								0.0, 40));
-*/
+
 
 
 
@@ -394,7 +407,7 @@ main (int argc, char *argv[])
 
 
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-	enbPositionAlloc->Add (Vector (0.0, 0.0, hBS));
+	enbPositionAlloc->Add (Vector (0.0, -80.0, hBS));
 
 	MobilityHelper enbmobility;
 	enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
@@ -455,21 +468,21 @@ main (int argc, char *argv[])
 		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
 		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
-		 //Install and start applications on UEs and remote host
+		//Install and start applications on UEs and remote host
 		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
 		sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (i)));
 
+      /*PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
+      sinkApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(0)));
+      UdpClientHelper dlClient (ueIpIface.GetAddress (i), sinkPort);
 
- /* 			UdpServerHelper server (sinkPort);
-			sinkApps.Add (server.Install (remoteHostContainer.Get (0)));
+      Time interPacketInterval = Seconds (0.000003);
+		uint32_t maxPacketCount = 3200000000;
+	  dlClient.SetAttribute ("PacketSize", UintegerValue (1400));
 
-		  Time interPacketInterval = Seconds (0.000004);
-		    uint32_t maxPacketCount = 3200000000;
-		  UdpClientHelper client (internetIpIfaces.GetAddress (0), sinkPort);
-		  client.SetAttribute ("Interval", TimeValue (interPacketInterval));
-		  client.SetAttribute ("PacketSize", UintegerValue (1400));
-  		client.SetAttribute ("MaxPackets", UintegerValue (maxPacketCount));
-		  sourceApps.Add(client.Install (ueNodes.Get (i)));*/
+      dlClient.SetAttribute ("Interval", TimeValue (interPacketInterval));
+      dlClient.SetAttribute ("MaxPackets", UintegerValue(maxPacketCount));
+      sourceApps.Add (dlClient.Install (remoteHostContainer.Get (i)));*/
 
 
 
@@ -485,8 +498,8 @@ main (int argc, char *argv[])
 
 		Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
 		sinkApps.Get(i)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream));
-	    sourceApps.Get(i)->SetStartTime(Seconds (0.1+0.01*i));
-	    Simulator::Schedule (Seconds (0.1001+0.01*i), &Traces, i, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
+	    sourceApps.Get(i)->SetStartTime(Seconds (0.1+2.005*i));
+	    Simulator::Schedule (Seconds (0.1001+2.005*i), &Traces, i, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
 	    //sourceApps.Get(i)->SetStopTime (Seconds (10-1.5*i));
 	    sourceApps.Get(i)->SetStopTime (Seconds (simStopTime));
 

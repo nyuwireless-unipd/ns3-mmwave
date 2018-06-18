@@ -67,19 +67,19 @@ Traces(uint16_t nodeNum, std::string protocol)
   AsciiTraceHelper asciiTraceHelper;
 
   std::ostringstream pathCW;
-  pathCW<<"/NodeList/"<<0<<"/$ns3::TcpL4Protocol/SocketList/"<<nodeNum<<"/CongestionWindow";
+  pathCW<<"/NodeList/"<<0+nodeNum*2<<"/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow";
 
   std::ostringstream fileCW;
   fileCW<<protocol<<"-"<<nodeNum+1<<"-TCP-CWND.txt";
 
   std::ostringstream pathRTT;
-  pathRTT<<"/NodeList/"<<0<<"/$ns3::TcpL4Protocol/SocketList/"<<nodeNum<<"/RTT";
+  pathRTT<<"/NodeList/"<<0+nodeNum*2<<"/$ns3::TcpL4Protocol/SocketList/0/RTT";
 
   std::ostringstream fileRTT;
   fileRTT<<protocol<<"-"<<nodeNum+1<<"-TCP-RTT.txt";
 
   std::ostringstream pathRCWnd;
-  pathRCWnd<<"/NodeList/"<<0<<"/$ns3::TcpL4Protocol/SocketList/"<<nodeNum<<"/RWND";
+  pathRCWnd<<"/NodeList/"<<0+nodeNum*2<<"/$ns3::TcpL4Protocol/SocketList/0/RWND";
 
   std::ostringstream fileRCWnd;
   fileRCWnd<<protocol<<"-"<<nodeNum+1<<"-TCP-RCWND.txt";
@@ -189,9 +189,17 @@ main (int argc, char *argv[])
   NodeContainer n0n1;
   n0n1.Create (2);
 
+  NodeContainer n3n1;
+  n3n1.Create (1);
+  n3n1.Add (n0n1.Get (1));
+  
   NodeContainer n1n2;
   n1n2.Add (n0n1.Get (1));
   n1n2.Create (1);
+
+  NodeContainer n4n1;
+  n4n1.Create (1);
+  n4n1.Add (n0n1.Get (1));
 
   // We create the channels first without any IP addressing information
   // First make and configure the helper, so that it will put the appropriate
@@ -201,10 +209,21 @@ main (int argc, char *argv[])
   p2p1.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (9)));
   p2p1.SetDeviceAttribute ("Mtu", UintegerValue (1500));
 
+
   PointToPointHelper p2p2;
   p2p2.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (1120000000)));
   p2p2.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (1)));
   p2p2.SetDeviceAttribute ("Mtu", UintegerValue (1500));
+
+  PointToPointHelper p2p3;
+  p2p3.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (10000000000)));
+  p2p3.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (19)));
+  p2p3.SetDeviceAttribute ("Mtu", UintegerValue (1500));
+
+  PointToPointHelper p2p4;
+  p2p4.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (10000000000)));
+  p2p4.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (39)));
+  p2p4.SetDeviceAttribute ("Mtu", UintegerValue (1500));
 
   //p2p1.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(1000), "MaxBytes", UintegerValue(1000*1460));
   //p2p2.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(1000), "MaxBytes", UintegerValue(1000*1460));
@@ -212,6 +231,9 @@ main (int argc, char *argv[])
   // And then install devices and channels connecting our topology.
   NetDeviceContainer dev0 = p2p1.Install (n0n1);
   NetDeviceContainer dev1 = p2p2.Install (n1n2);
+  NetDeviceContainer dev2 = p2p3.Install (n3n1);
+  NetDeviceContainer dev3 = p2p4.Install (n4n1);
+
 
   // Now add ip/tcp stack to all nodes.
   InternetStackHelper internet;
@@ -224,19 +246,38 @@ main (int argc, char *argv[])
   ipv4.SetBase ("10.1.2.0", "255.255.255.0");
   Ipv4InterfaceContainer ipInterfs = ipv4.Assign (dev1);
 
+  ipv4.SetBase ("10.1.4.0", "255.255.255.0");
+  ipv4.Assign (dev2);
+
+  ipv4.SetBase ("10.1.5.0", "255.255.255.0");
+  ipv4.Assign (dev3);
+
   // and setup ip routing tables to get total ip-level connectivity.
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   uint16_t port = 9;  // well-known echo port number
 
-for (int fl = 0; fl < 6; fl++)
+for (int fl = 0; fl < 3; fl++)
 {
   BulkSendHelper source ("ns3::TcpSocketFactory",
                          InetSocketAddress (ipInterfs.GetAddress (1), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
   source.SetAttribute ("MaxBytes", UintegerValue (maxBytes));
-  ApplicationContainer sourceApps = source.Install (n0n1.Get (0));
-  sourceApps.Start (Seconds (0.0+2.005*fl));
+  ApplicationContainer sourceApps;
+  if(fl ==0)
+  {
+   sourceApps= source.Install (n0n1.Get (0));
+  }
+  else if (fl ==1)
+  {
+   sourceApps = source.Install (n3n1.Get (0));
+
+  }
+  else
+  {
+       sourceApps = source.Install (n4n1.Get (0));
+  }
+  sourceApps.Start (Seconds (0.0+2*fl));
   sourceApps.Stop (Seconds (simStopTime));
 
 
@@ -256,7 +297,7 @@ for (int fl = 0; fl < 6; fl++)
 
     Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (fileName.str ().c_str ());
     sinkApps.Get(0)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream));
-    Simulator::Schedule (Seconds (0.001+2.005*fl), &Traces, fl, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
+    Simulator::Schedule (Seconds (0.001+2*fl), &Traces, fl, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
 
 
   //dev1.Get(0)->GetObject<PointToPointNetDevice>()->GetQueue()->SetMaxPackets(300);
