@@ -23318,6 +23318,8 @@ def register_Ns3MmwaveMacPduInfo_methods(root_module, cls):
 def register_Ns3MmwaveMacSubheader_methods(root_module, cls):
     ## mmwave-mac-pdu-header.h (module 'mmwave'): ns3::mmwave::MacSubheader::MacSubheader(ns3::mmwave::MacSubheader const & arg0) [constructor]
     cls.add_constructor([param('ns3::mmwave::MacSubheader const &', 'arg0')])
+    ## mmwave-mac-pdu-header.h (module 'mmwave'): ns3::mmwave::MacSubheader::MacSubheader() [constructor]
+    cls.add_constructor([])
     ## mmwave-mac-pdu-header.h (module 'mmwave'): ns3::mmwave::MacSubheader::MacSubheader(uint8_t lcid, uint16_t size) [constructor]
     cls.add_constructor([param('uint8_t', 'lcid'), param('uint16_t', 'size')])
     ## mmwave-mac-pdu-header.h (module 'mmwave'): uint32_t ns3::mmwave::MacSubheader::GetSize() [member function]
@@ -23656,8 +23658,6 @@ def register_Ns3MmwaveMcUeNetDevice_methods(root_module, cls):
                    'uint8_t', 
                    [], 
                    is_const=True)
-    ## mc-ue-net-device.h (module 'mmwave'): ns3::mmwave::McUeNetDevice::McUeNetDevice(ns3::mmwave::McUeNetDevice const & arg0) [constructor]
-    cls.add_constructor([param('ns3::mmwave::McUeNetDevice const &', 'arg0')])
     ## mc-ue-net-device.h (module 'mmwave'): void ns3::mmwave::McUeNetDevice::DoInitialize() [member function]
     cls.add_method('DoInitialize', 
                    'void', 
@@ -26655,8 +26655,6 @@ def register_Ns3MmwaveMmWavePointToPointEpcHelper_methods(root_module, cls):
                    'ns3::Ipv4Address', 
                    [], 
                    is_virtual=True)
-    ## mmwave-point-to-point-epc-helper.h (module 'mmwave'): ns3::mmwave::MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper(ns3::mmwave::MmWavePointToPointEpcHelper const & arg0) [constructor]
-    cls.add_constructor([param('ns3::mmwave::MmWavePointToPointEpcHelper const &', 'arg0')])
     return
 
 def register_Ns3MmwaveMmWavePropagationLossModel_methods(root_module, cls):
@@ -27280,8 +27278,6 @@ def register_Ns3MmwaveMmWaveUeNetDevice_methods(root_module, cls):
     cls.add_method('SetCcMap', 
                    'void', 
                    [param('std::map< unsigned char, ns3::Ptr< ns3::mmwave::MmWaveComponentCarrierUe > >', 'ccm')])
-    ## mmwave-ue-net-device.h (module 'mmwave'): ns3::mmwave::MmWaveUeNetDevice::MmWaveUeNetDevice(ns3::mmwave::MmWaveUeNetDevice const & arg0) [constructor]
-    cls.add_constructor([param('ns3::mmwave::MmWaveUeNetDevice const &', 'arg0')])
     ## mmwave-ue-net-device.h (module 'mmwave'): void ns3::mmwave::MmWaveUeNetDevice::DoInitialize() [member function]
     cls.add_method('DoInitialize', 
                    'void', 

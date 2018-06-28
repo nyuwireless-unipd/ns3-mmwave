@@ -100,6 +100,7 @@ public:
 
 private:
 
+  MmWavePointToPointEpcHelper (const MmWavePointToPointEpcHelper &);
   /**
    * helper to assign addresses to UE devices as well as to the TUN device of the SGW/PGW
    */
@@ -226,7 +227,7 @@ private:
 };
 
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3
 

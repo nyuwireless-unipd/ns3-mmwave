@@ -40,6 +40,12 @@ namespace mmwave {
 
 struct MacSubheader
 {
+	MacSubheader () :
+		m_lcid (0), m_size (0)
+	{
+
+	}
+	
 	MacSubheader (uint8_t lcid, uint16_t size) :
 		m_lcid (lcid), m_size (size)
 	{

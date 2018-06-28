@@ -111,6 +111,8 @@ protected:
   virtual void DoInitialize (void);
 
 private:
+	MmWaveUeNetDevice (const MmWaveUeNetDevice &);
+
 	bool m_isConstructed;
 
   Ptr<MmWaveEnbNetDevice> m_targetEnb;
