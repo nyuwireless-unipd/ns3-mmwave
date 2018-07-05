@@ -361,7 +361,6 @@ private:
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
-  std::set<uint64_t> m_imsiSeenEnbSrb; //!< stores all eNBs for which RLC and PDCP traces and SRB1 were connected
   std::map<uint64_t,uint16_t> m_imsiSeenUeDrb; //!< stores all UEs for which RLC and PDCP traces for DRBs were connected
   std::set<uint64_t> m_imsiSeenEnbDrb; //!< stores all eNBs for which RLC and PDCP traces for DRBs were connected
 
