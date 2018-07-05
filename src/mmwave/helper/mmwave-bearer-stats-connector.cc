@@ -677,6 +677,7 @@ MmWaveBearerStatsConnector::ConnectTracesUeIfFirstTime (std::string context, uin
         //If this imsi has already been connected but a new DRB is established
         NS_LOG_DEBUG("There is a new RLC. Call ConnectDrbTracesUe to connect the traces.");
         it->second ++; //TODO Check if there could be more than one RLC to connect
+        DisconnectDrbTracesUe (context, imsi, cellId, rnti);
         ConnectDrbTracesUe (context, imsi, cellId, rnti);
       }
       else
@@ -714,6 +715,7 @@ MmWaveBearerStatsConnector::ConnectTracesEnbIfFirstTime (std::string context, ui
 }
 
 
+
 void
 MmWaveBearerStatsConnector::ConnectDrbTracesUe (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
 {
@@ -726,23 +728,30 @@ MmWaveBearerStatsConnector::ConnectDrbTracesUe (std::string context, uint64_t im
       arg->imsi = imsi;
       arg->cellId = cellId;
       arg->stats = m_rlcStats;
+
+      m_rlcDrbDlRxCb = MakeBoundCallback (&DlRxPduCallback, arg);
+      m_rlcDrbUlTxCb = MakeBoundCallback (&UlTxPduCallback, arg);
+
       Config::Connect (basePath + "/DataRadioBearerMap/*/LteRlc/TxPDU",
-           MakeBoundCallback (&UlTxPduCallback, arg));
+           m_rlcDrbUlTxCb);
       Config::Connect (basePath + "/DataRadioBearerMap/*/LteRlc/RxPDU",
-           MakeBoundCallback (&DlRxPduCallback, arg));
+           m_rlcDrbDlRxCb);
 
     }
   if (m_pdcpStats)
     {
-      NS_LOG_UNCOND ("connect pdcp traces");
       Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
       arg->cellId = cellId;
       arg->stats = m_pdcpStats;
+
+      m_pdcpDrbDlRxCb = MakeBoundCallback (&DlRxPduCallback, arg);
+      m_pdcpDrbUlTxCb = MakeBoundCallback (&UlTxPduCallback, arg);
+
       Config::Connect (basePath + "/DataRadioBearerMap/*/LtePdcp/RxPDU",
-           MakeBoundCallback (&DlRxPduCallback, arg));
+           m_pdcpDrbDlRxCb);
       Config::Connect (basePath + "/DataRadioBearerMap/*/LtePdcp/TxPDU",
-           MakeBoundCallback (&UlTxPduCallback, arg));
+           m_pdcpDrbUlTxCb);
     }
 }
 
@@ -873,6 +882,33 @@ MmWaveBearerStatsConnector::DisconnectTracesUe (std::string context, uint64_t im
   }
 }
 
+void
+MmWaveBearerStatsConnector::DisconnectDrbTracesUe (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
+{
+  NS_LOG_FUNCTION (this << context);
+  NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteUeRrc/");
+  std::string basePath = context.substr (0, context.rfind ("/"));
+  NS_LOG_LOGIC ("basePath " << basePath);
+
+  if (m_rlcStats)
+    {
+      Config::MatchContainer rlc_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LteRlc/");
+      NS_LOG_LOGIC ("Number of RLC to disconnect " << rlc_container.GetN());
+
+      rlc_container.Disconnect ("RxPDU",m_rlcDrbDlRxCb);
+      rlc_container.Disconnect ("TxPDU",m_rlcDrbUlTxCb);
+    }
+
+  if (m_pdcpStats)
+    {
+      Config::MatchContainer pdcp_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LtePdcp/");
+      NS_LOG_LOGIC ("Number of PDCP to disconnect " << pdcp_container.GetN());
+
+      pdcp_container.Disconnect ("RxPDU",m_pdcpDrbDlRxCb);
+      pdcp_container.Disconnect ("TxPDU",m_pdcpDrbUlTxCb);
+    }
+}
+
 
 void
 MmWaveBearerStatsConnector::DisconnectTracesEnb (std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti)
@@ -928,6 +964,6 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesEnb (std::string context, uint
     }
 }
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3

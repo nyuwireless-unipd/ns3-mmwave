@@ -303,6 +303,16 @@ private:
   void DisconnectTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
+   * Disconnects DRB trace sources at UE to RLC and PDCP calculators.
+   * Function is not implemented.
+   * \param context
+   * \param imsi
+   * \param cellid
+   * \param rnti
+   */
+  void DisconnectDrbTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
+  /**
    * Connects SRB1 trace sources at eNB to RLC and PDCP calculators
    * \param context
    * \param imsi
@@ -341,7 +351,13 @@ private:
 
   Ptr<MmWaveBearerStatsCalculator> m_rlcStats; //!< Calculator for RLC Statistics
   Ptr<MmWaveBearerStatsCalculator> m_pdcpStats; //!< Calculator for PDCP Statistics
-  Ptr<McStatsCalculator> m_mcStats;
+  Ptr<McStatsCalculator> m_mcStats; //!< Calculator for multi-connectivity Statistics
+
+  CallbackBase m_rlcDrbDlRxCb; //!< Sink for the received DL RLC data packets
+  CallbackBase m_rlcDrbUlTxCb; //!< Sink for the sent DL RLC data packets
+
+  CallbackBase m_pdcpDrbDlRxCb; //!< Sink for the received DL PDCP data packets
+  CallbackBase m_pdcpDrbUlTxCb; //!< Sink for the sent DL PDCP data packets
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
@@ -385,7 +401,7 @@ private:
   std::ofstream m_lteSinrOutFile;
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3
 
