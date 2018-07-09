@@ -95,12 +95,12 @@ private:
 		{
 		}
 
-		uint8_t		m_dlMcs;
-		uint8_t		m_ulMcs;
-		uint32_t	m_maxDlBufSize;
-		uint32_t	m_maxUlBufSize;
-		uint8_t		m_maxDlSymbols;
-		uint8_t		m_maxUlSymbols;
+		uint8_t		m_dlMcs; // DL MCS
+		uint8_t		m_ulMcs; // UL MCS
+		uint32_t	m_maxDlBufSize; // DL TB size needed to encode the DL buffer (this parameter is also used to temporarily store the DL buffer size)
+		uint32_t	m_maxUlBufSize; // UL TB size needed to encode the UL buffer (this parameter is also used to temporarily store the UL buffer size)
+		uint8_t		m_maxDlSymbols; // Number of symbols needed to encode the DL buffer given the DL MCS
+		uint8_t		m_maxUlSymbols; // Number of symbols needed to encode the UL buffer given the UL MCS
 		uint8_t		m_dlSymbols;
 		uint8_t		m_ulSymbols;
 		uint8_t		m_dlSymbolsRetx;
