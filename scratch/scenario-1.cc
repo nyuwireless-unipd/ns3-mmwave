@@ -17,7 +17,7 @@ main (int argc, char *argv[])
 	std::string filePath = ""; // where to save the traces
 	double simTime = 0.5; 		 // simulation time
 	double centerFreq = 28e9;  // center frequency
-	double bw = 1; 						 // total bandwidth
+	double bw = 1e9; 						 // total bandwidth
 	double noCc = 1;  				 // number of CCs
 	bool useBuilding = true;	 // choose the propagation loss model
 	int runSet = 1;
@@ -73,7 +73,7 @@ main (int argc, char *argv[])
 
  // Create and set the helper
  // First set UseCa = true, then NumberOfComponentCarriers
- Config::SetDefault("ns3::MmWaveHelper::UseCa",BooleanValue(noCc>0));
+ Config::SetDefault("ns3::MmWaveHelper::UseCa",BooleanValue(noCc>1));
  Config::SetDefault("ns3::MmWaveHelper::NumberOfComponentCarriers", UintegerValue(noCc));
  Config::SetDefault("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::RrComponentCarrierManager"));
  Config::SetDefault("ns3::MmWaveHelper::ChannelModel",StringValue("ns3::MmWave3gppChannel"));
