@@ -196,7 +196,7 @@ namespace ns3{
   		 randomBuildingZ->SetAttribute("Min",DoubleValue(1.6));
   		 randomBuildingZ->SetAttribute("Max",DoubleValue(50));
   		 double buildingHeight = randomBuildingZ->GetValue();
-       NS_LOG_INFO ("Building height " << buildingHeight);
+       NS_LOG_INFO ("Building height " << buildingHeight << "\n");
 
   		 building->SetBoundaries (Box(box.xMin, box.xMax,
   																	 box.yMin,  box.yMax,
