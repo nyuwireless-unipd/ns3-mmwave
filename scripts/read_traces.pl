@@ -21,12 +21,14 @@ use Data::Dumper qw(Dumper); # to parse arguments from the CommandLine
                                           # number
 
 
-my @sampleTrace = (0, 0, 0, 0, 0, 0); # if sampleTrace[0] the script samples PacketSinkDlRx.txt
-                             # if sampleTrace[1] the script samples PacketSinkUlRx.txt
-                             # if sampleTrace[2] the script samples DlPdcpStats.txt
-                             # if sampleTrace[3] the script samples UlPdcpStats.txt
-                             # if sampleTrace[4] the script samples DlTxMac.txt
-                             # if sampleTrace[5] the script samples UlTxMac.txt
+my @sampleTrace = (0, # if sampleTrace[0] the script samples PacketSinkDlRx.txt
+                   0, # if sampleTrace[1] the script samples PacketSinkUlRx.txt
+                   0, # if sampleTrace[2] the script samples DlPdcpStats.txt
+                   0, # if sampleTrace[3] the script samples UlPdcpStats.txt
+                   0, # if sampleTrace[4] the script samples DlTxMac.txt
+                   0, # if sampleTrace[5] the script samples UlTxMac.txt
+                   0, # if sampleTrace[6] the script samples DlRlcStats.txt
+                   0); # if sampleTrace[7] the script samples UlRlcStats.txt
 
 
 my $inputFilePath = "";
@@ -62,6 +64,14 @@ for(my $i=0; $i<scalar(@ARGV); $i++)
   elsif ($arg eq "-UlTxMac")
   {
     $sampleTrace[5] = 1;
+  }
+  elsif ($arg eq "-DlRlcStats")
+  {
+    $sampleTrace[6] = 1;
+  }
+  elsif ($arg eq "-UlRlcStats")
+  {
+    $sampleTrace[7] = 1;
   }
   elsif ($arg eq "-numOfCc")
   {
@@ -733,6 +743,208 @@ if ($sampleTrace[5]) # 2. UlTxMac: packets sent by the UE
         print $fh "$dataRx[$cc][$timeCounter]\t$instantThroughput[$cc][$timeCounter]\t";
       }
       print $fh "\n";
+    }
+    close $fh;
+  }
+} # END 2
+
+###############################################################################
+#
+#                              RLC TRACES
+#
+###############################################################################
+
+if ($sampleTrace[6]) # 1. DlRlcStats: packets sent by the eNB and received by the UE
+{
+  my $filename = $inputFilePath . 'DlRlcStats.txt';
+  open(my $fh, '<:encoding(UTF-8)', $filename)
+    or die "Could not open file '$filename' $!";
+
+  my @dataRx; # array containing the the rx data for each time instant
+  $dataRx[0]=0;
+  my $timeCounter=0;
+  my @timeAxis; # array containing the time instants
+  $timeAxis[0]=$timeCounter*$samplingTime;
+  my @instantThroughput; # array containing the instantaneous throughput for
+                         # each time instant
+  my $averageDelay=0; # average delay in nanoseconds
+
+  my $row; # find the first received data packet
+  my($mode, $time, $cellId, $rnti, $lcid, $size, $delay);
+  do
+  {
+    $row=<$fh>;
+    chomp $row; # this removes the EOL character
+    ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+  }
+  while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
+                                              # or if there are no more packets
+
+  my $numOfRxpackets=0; # this counts the total number of packets
+
+  while ($row)
+  {
+    #if ($. > 2) # to start from the third line
+
+    #  print "$time\t$size\n"; # this is for debug purposes
+      if ($time > $timeCounter*$samplingTime) # this packet belongs to the next time
+      {                                       # instant
+        $instantThroughput[$timeCounter]=$dataRx[$timeCounter]*8/$samplingTime; # compute the instantaneous
+                                                                                # throughput for this time
+                                                                                # instant
+        $timeCounter++; # consider the next time instant
+        $timeAxis[$timeCounter]=$timeCounter*$samplingTime; # add the time instat
+                                                            # into the time axis
+        $dataRx[$timeCounter]=0; # initialize the entry in the rx-data array
+      }
+      else # this packet belongs to this time instant
+      {
+        $dataRx[$timeCounter]=$dataRx[$timeCounter]+$size; # add the packet size
+        $averageDelay+=$delay;
+        $numOfRxpackets++;
+        # find the next received packet
+        do
+        {
+          $row = <$fh>; # this returns false if there are no more rows
+          if ($row) # this is used to avoid the warning at the last iteration
+          {
+            chomp $row;
+            ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+                                                                                       # this returns a warning at the last
+                                                                                       # iteration because we are splitting an
+                                                                                       # undef value
+          }
+        }
+        while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
+                                                    # or if there are no more packets
+      }
+  }
+  close $fh;
+
+  $instantThroughput[$timeCounter]=$dataRx[$timeCounter]*8/$samplingTime; # compute the instantaneous
+                                                                          # throughput for the last
+                                                                          # time instant
+  # compute the average delay
+  $averageDelay/=$numOfRxpackets;
+
+  # compute the average throughput
+  my $averageThroughput = 0; # this is used to compute the average Throughput
+  for($timeCounter=0; $timeCounter<scalar(@timeAxis); $timeCounter++)
+  {
+    $averageThroughput+=$instantThroughput[$timeCounter];
+  }
+  $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
+                                             # first time instant 0
+  say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
+
+  if($saveSampledTrace)
+  {
+    # Now save the results
+    $filename = $inputFilePath . 'DlRlcStats_sampled.txt';
+    open($fh, '>:encoding(UTF-8)', $filename)
+      or die "Could not open file '$filename' $!";
+
+    for($timeCounter=0; $timeCounter<scalar(@timeAxis); $timeCounter++)
+    {
+      say $fh "$timeAxis[$timeCounter]\t$dataRx[$timeCounter]\t$instantThroughput[$timeCounter]";
+    }
+    close $fh;
+  }
+} # END 1
+
+if ($sampleTrace[7]) # 2. UlRlcStats: packets sent by the UE and received by the eNB
+{
+  my $filename = $inputFilePath . 'UlRlcStats.txt';
+  open(my $fh, '<:encoding(UTF-8)', $filename)
+    or die "Could not open file '$filename' $!";
+
+  my @dataRx; # array containing the the rx data for each time instant
+  $dataRx[0]=0;
+  my $timeCounter=0;
+  my @timeAxis; # array containing the time instants
+  $timeAxis[0]=$timeCounter*$samplingTime;
+  my @instantThroughput; # array containing the instantaneous throughput for
+                         # each time instant
+  my $averageDelay=0; # average delay in nanoseconds
+
+  my $row; # find the first received data packet
+  my($mode, $time, $cellId, $rnti, $lcid, $size, $delay);
+  do
+  {
+    $row=<$fh>;
+    chomp $row; # this removes the EOL character
+    ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+  }
+  while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
+                                              # or if there are no more packets
+
+  my $numOfRxpackets=0; # this counts the total number of packets
+
+  while ($row)
+  {
+    #if ($. > 2) # to start from the third line
+
+    #  print "$time\t$size\n"; # this is for debug purposes
+      if ($time > $timeCounter*$samplingTime) # this packet belongs to the next time
+      {                                       # instant
+        $instantThroughput[$timeCounter]=$dataRx[$timeCounter]*8/$samplingTime; # compute the instantaneous
+                                                                                # throughput for this time
+                                                                                # instant
+        $timeCounter++; # consider the next time instant
+        $timeAxis[$timeCounter]=$timeCounter*$samplingTime; # add the time instat
+                                                            # into the time axis
+        $dataRx[$timeCounter]=0; # initialize the entry in the rx-data array
+      }
+      else # this packet belongs to this time instant
+      {
+        $dataRx[$timeCounter]=$dataRx[$timeCounter]+$size; # add the packet size
+        $averageDelay+=$delay;
+        $numOfRxpackets++;
+        # find the next received packet
+        do
+        {
+          $row = <$fh>; # this returns false if there are no more rows
+          if ($row) # this is used to avoid the warning at the last iteration
+          {
+            chomp $row;
+            ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+                                                                                       # this returns a warning at the last
+                                                                                       # iteration because we are splitting an
+                                                                                       # undef value
+          }
+        }
+        while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
+                                                    # or if there are no more packets
+      }
+  }
+  close $fh;
+
+  $instantThroughput[$timeCounter]=$dataRx[$timeCounter]*8/$samplingTime; # compute the instantaneous
+                                                                          # throughput for the last
+                                                                          # time instant
+  # compute the average delay
+  $averageDelay/=$numOfRxpackets;
+
+  # compute the average throughput
+  my $averageThroughput = 0; # this is used to compute the average Throughput
+  for($timeCounter=0; $timeCounter<scalar(@timeAxis); $timeCounter++)
+  {
+    $averageThroughput+=$instantThroughput[$timeCounter];
+  }
+  $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
+                                             # first time instant 0
+  say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
+
+  if($saveSampledTrace)
+  {
+    # Now save the results
+    $filename = $inputFilePath . 'UlRlcStats_sampled.txt';
+    open($fh, '>:encoding(UTF-8)', $filename)
+      or die "Could not open file '$filename' $!";
+
+    for($timeCounter=0; $timeCounter<scalar(@timeAxis); $timeCounter++)
+    {
+      say $fh "$timeAxis[$timeCounter]\t$dataRx[$timeCounter]\t$instantThroughput[$timeCounter]";
     }
     close $fh;
   }
