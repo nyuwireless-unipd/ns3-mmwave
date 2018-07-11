@@ -2713,7 +2713,7 @@ LteEnbRrc::ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<mmwave::MmWaveComponen
   m_mmWaveComponentCarrierPhyConf = ccPhyConf;
   m_numberOfComponentCarriers = ccPhyConf.size ();
 
-  NS_ASSERT (m_numberOfComponentCarriers >= MIN_NO_CC && m_numberOfComponentCarriers <= MAX_NO_CC);
+  NS_ASSERT (m_numberOfComponentCarriers >= MIN_NO_MMW_CC && m_numberOfComponentCarriers <= MAX_NO_MMW_CC);
 
   for (uint8_t i = 1; i < m_numberOfComponentCarriers; i++)
     {

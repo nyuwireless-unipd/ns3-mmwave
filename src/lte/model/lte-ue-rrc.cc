@@ -647,14 +647,6 @@ LteUeRrc::DoInitialize (void)
 void
 LteUeRrc::InitializeSap (void)
 {
-  if (m_numberOfComponentCarriers < MIN_NO_CC || m_numberOfComponentCarriers > MAX_NO_CC)
-    {
-      // this check is neede in order to maintain backward compatibility with scripts and tests
-      // if case lte-helper is not used (like in several tests) the m_numberOfComponentCarriers
-      // is not set and then an error is rised
-      // In this case m_numberOfComponentCarriers is set to 1
-      m_numberOfComponentCarriers = MIN_NO_CC;
-    }
   if (m_numberOfComponentCarriers > MIN_NO_CC )
     {
       for ( uint16_t i = 1; i < m_numberOfComponentCarriers; i++)
@@ -667,13 +659,14 @@ LteUeRrc::InitializeSap (void)
         }
     }
 
-    if (m_numberOfMmWaveComponentCarriers > MIN_NO_CC )
-      {
-        for ( uint16_t i = 1; i < m_numberOfMmWaveComponentCarriers; i++)
-          {
-            m_mmWaveCmacSapProvider.push_back(0);
-          }
-      }
+  // this is executed if the UE is MC
+  if (m_numberOfMmWaveComponentCarriers > MIN_NO_MMW_CC )
+    {
+      for ( uint16_t i = 1; i < m_numberOfMmWaveComponentCarriers; i++)
+        {
+          m_mmWaveCmacSapProvider.push_back(0);
+        }
+    }
 }
 
 

@@ -245,7 +245,7 @@ MmWaveHelper::GetTypeId (void)
                     "If it is more than one and m_useCa is false, it will raise an error ",
                     UintegerValue (1),
                     MakeUintegerAccessor (&MmWaveHelper::m_noOfCcs),
-                    MakeUintegerChecker<uint16_t> (MIN_NO_CC, MAX_NO_CC))
+                    MakeUintegerChecker<uint16_t> (MIN_NO_MMW_CC, MAX_NO_MMW_CC))
 			.AddAttribute ("NumberOfLteComponentCarriers",
 	                   "Set the number of LTE Component Carriers to use "
 	                   "If it is more than one and m_lteUseCa is false, it will raise an error ",
@@ -1382,6 +1382,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
       it->second->SetPhy(phy);
     }
+
   Ptr<LteUeComponentCarrierManager> ccmUe = m_ueComponentCarrierManagerFactory.Create<LteUeComponentCarrierManager> ();
   ccmUe->SetNumberOfComponentCarriers (m_noOfCcs);
 
@@ -1390,6 +1391,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
   // run intializeSap to create the proper number of sap provider/users
   rrc->InitializeSap();
+
   rrc->SetLteMacSapProvider (ccmUe->GetLteMacSapProvider ());
   // setting ComponentCarrierManager SAP
   rrc->SetLteCcmRrcSapProvider (ccmUe->GetLteCcmRrcSapProvider ());

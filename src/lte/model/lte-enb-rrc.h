@@ -64,6 +64,8 @@
 
 #define MIN_NO_CC 1
 #define MAX_NO_CC 5 // this is the maximum number of carrier components allowed by 3GPP up to R13
+#define MIN_NO_MMW_CC 1
+#define MAX_NO_MMW_CC 16 // from TR 38.802
 
 namespace ns3 {
 
