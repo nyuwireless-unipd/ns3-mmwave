@@ -74,7 +74,7 @@ MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
   f = fc - (ptrConfig->GetTotalNumChunk() * ptrConfig->GetChunkWidth() / 2.0);
 
   Bands rbs; // A vector representing each resource block
-  for (uint8_t numrb = 0; numrb < ptrConfig->GetTotalNumChunk(); ++numrb)
+  for (uint32_t numrb = 0; numrb < ptrConfig->GetTotalNumChunk(); ++numrb)
   {
 	  BandInfo rb;
 	  rb.fl = f;
