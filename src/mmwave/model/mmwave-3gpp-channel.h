@@ -97,6 +97,8 @@ struct Params3gpp : public SimpleRefCount<Params3gpp>
 	Vector m_speed;
 	double m_dis2D;
 	double m_dis3D;
+
+	std::map<Ptr<NetDevice>, complexVector_t> m_allLongTermMap;
 };
 
 /**
@@ -221,6 +223,15 @@ public:
 	 */
 	void SetPathlossModel (Ptr<PropagationLossModel> pathloss);
 
+	/**
+	 * Set MmWave3gppChannel in interference/data or reference signal mode.
+	 * With the first, the beamforming pairs are associated to the data transmission
+	 * ongoing, and correctly handle the interference
+	 * With the second, on each link MmWave3gppChannel uses the BF vectors associated to the link
+	 *@param boolean flag (true = interference/data mode)
+	 */
+	void SetInterferenceOrDataMode(bool flag);
+
 private:
 
 	/**
@@ -290,21 +301,25 @@ private:
 
 
 	/**
-	 * Compute and store the long term fading params in order to decrease the computational load
+	 * Compute and return the long term fading params in order to decrease the computational load
 	 * @params the channel realizationin as a Params3gpp object
+	 * @return the complexVector_t with the BF applied to the channel
 	 */
-	void CalLongTerm (Ptr<Params3gpp> params) const;
+	complexVector_t CalLongTerm (Ptr<Params3gpp> params) const;
 
 	/**
 	 * Compute the BF gain, apply frequency selectivity by phase-shifting with the cluster delays
 	 * and scale the txPsd to get the rxPsd
 	 * @params the tx PSD
 	 * @params the channel realizationin as a Params3gpp object
+	 * @params the longTerm component (i.e., with the BF vectors already applied)
 	 * @params the relative speed between UE and eNB
 	 * @returns the rx PSD
 	 */
 	Ptr<SpectrumValue> CalBeamformingGain (Ptr<const SpectrumValue> txPsd,
-												Ptr<Params3gpp> params, Vector speed) const;
+												Ptr<Params3gpp> params,
+												complexVector_t longTerm,
+												Vector speed) const;
 
 	/**
 	 * Returns the bandwidth used in a scenario
@@ -357,13 +372,18 @@ private:
 	Ptr<PropagationLossModel> m_3gppPathloss;
 	Ptr<ParamsTable> m_table3gpp;
 	Time m_updatePeriod;
-	bool m_cellScan;
+	// bool m_cellScan;
+	bool m_directBeam;
 	bool m_blockage;
 	uint16_t m_numNonSelfBloking; //number of non-self-blocking regions.
 	bool m_portraitMode; //true (portrait mode); false (landscape mode).
 	std::string m_scenario;
 	double m_blockerSpeed;
 	bool m_forceInitialBfComputation;
+	bool m_interferenceOrDataMode;
+
+	NetDeviceContainer m_enbNetDeviceContainer;
+	NetDeviceContainer m_ueNetDeviceContainer;
 
 };
 

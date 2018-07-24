@@ -28,6 +28,9 @@
 #include <complex>
 #include <ns3/net-device.h>
 #include <map>
+#include <ns3/nstime.h>
+#include <ns3/node.h>
+#include <ns3/mobility-model.h>
 
 namespace ns3 {
 
@@ -42,31 +45,60 @@ public:
 	static TypeId GetTypeId ();
 	virtual double GetGainDb (Angles a);
 	void SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
+	// to store dummy info
+	void SetBeamformingVectorPanel (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
 	void SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
+
+	void SetBeamformingVectorPanel (Ptr<NetDevice> thisDevice = 0, Ptr<NetDevice> otherDevice = 0);
+	void ChangeBeamformingVectorPanel (Ptr<NetDevice> device);
+	complexVector_t GetBeamformingVectorPanel ();
+	complexVector_t GetBeamformingVectorPanel (Ptr<NetDevice> device);
 
 	void ChangeBeamformingVector (Ptr<NetDevice> device);
 	void ChangeToOmniTx ();
 	complexVector_t GetBeamformingVector ();
 	complexVector_t GetBeamformingVector (Ptr<NetDevice> device);
-	void SetToSector (uint32_t sector, uint32_t antennaNum);
 	bool IsOmniTx ();
 	double GetRadiationPattern (double vangle, double hangle = 0);
 	Vector GetAntennaLocation (uint8_t index, uint8_t* antennaNum) ;
 	void SetSector (uint8_t sector, uint8_t *antennaNum, double elevation = 90);
 
+	void SetPlanesNumber(double planesNumber);
+	double GetPlanesId (void);
+	void SetDeviceType(bool isUe);
+	void SetTotNoArrayElements (double arrayElements);
+	double GetOffset ();
+
+	Ptr<NetDevice> GetCurrentDevice();
+	Time GetLastUpdate(Ptr<NetDevice> device);
+
 private:
 	bool m_omniTx;
-	double m_minAngle;
-	double m_maxAngle;
+	// double m_minAngle;
+	// double m_maxAngle;
 	complexVector_t m_beamformingVector;
+	int m_currentPanelId;
 	std::map<Ptr<NetDevice>, complexVector_t> m_beamformingVectorMap;
+	std::map<Ptr<NetDevice>, std::pair<complexVector_t,int> > m_beamformingVectorPanelMap;
 
 	double m_disV; //antenna spacing in the vertical direction in terms of wave length.
 	double m_disH; //antenna spacing in the horizontal direction in terms of wave length.
 
+	double m_noPlane;
+	bool m_isUe;
+	double m_totNoArrayElements;
+	double m_hpbw;
+	double m_gMax;
+
+	Ptr<NetDevice> m_currentDev;
+
+	std::map<Ptr<NetDevice>, Time> m_lastUpdateMap;
+	std::map<Ptr<NetDevice>, Time> m_lastUpdatePairMap;
+
+	bool m_isotropicElement;
 };
 
-} // namespace mmwave 
+} /* namespace mmwave */
 
 } /* namespace ns3 */
 

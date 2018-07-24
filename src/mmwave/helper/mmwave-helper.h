@@ -346,6 +346,8 @@ private:
 	uint16_t m_noTxAntenna;
 	uint16_t m_noRxAntenna;
 
+	uint16_t m_noEnbPanels;
+	uint16_t m_noUePanels;
 	Ptr<MmWavePhyRxTrace> m_phyStats;
 
 	Ptr<MmWavePhyMacCommon> m_phyMacCommon;

@@ -331,7 +331,7 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	Ptr<AntennaArrayModel> txAntennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
 	if(txAntennaArray != 0)
 	{
-		txAntennaArray->ChangeBeamformingVector(enbNetDevice);
+		txAntennaArray->ChangeBeamformingVectorPanel(enbNetDevice);
 	}
 	else
 	{
@@ -626,7 +626,7 @@ MmWaveUePhy::StartSlot ()
 	{
 		if(txAntennaArray != 0)
 		{
-			txAntennaArray->ChangeBeamformingVector(m_registeredEnb.find(m_cellId)->second.second);
+			txAntennaArray->ChangeBeamformingVectorPanel(m_registeredEnb.find(m_cellId)->second.second);
 		}
 		else
 		{
@@ -664,7 +664,7 @@ MmWaveUePhy::StartSlot ()
 	if (m_slotNum == 0)  // reserved DL control
 	{
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetDlCtrlSymbols ());
-		NS_LOG_DEBUG ("UE" << m_rnti << " RXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " RXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 				              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
 	}
@@ -673,7 +673,7 @@ MmWaveUePhy::StartSlot ()
 		SetSubChannelsForTransmission (m_channelChunks);
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetUlCtrlSymbols ());
 		std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
-		NS_LOG_DEBUG ("UE" << m_rnti << " TXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 			              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod-NanoSeconds(1.0)));
 		SendCtrlChannels (ctrlMsg, slotPeriod-NanoSeconds(1.0));
@@ -686,7 +686,7 @@ MmWaveUePhy::StartSlot ()
 		                                      m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, true,
 		                                      currSlot.m_dci.m_symStart, currSlot.m_dci.m_numSym);
 		m_reportDlTbSize (m_imsi, currSlot.m_dci.m_tbSize);
-		NS_LOG_DEBUG ("UE" << m_rnti << " RXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " RXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 		              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
 	}
@@ -725,7 +725,7 @@ MmWaveUePhy::StartSlot ()
 			// pktBurst->AddPacket (emptyPdu);
 		}
 		m_reportUlTbSize (m_imsi, currSlot.m_dci.m_tbSize);
-		NS_LOG_DEBUG ("UE" << m_rnti << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
 		if(pktBurst != 0)
@@ -762,7 +762,7 @@ MmWaveUePhy::EndSlot ()
 			sfNum = m_sfNum + 1;
 		}
 		m_slotNum = 0;
-		NS_LOG_DEBUG ("MmWaveUePhy: Next subframe scheduled for " << m_lastSfStart + m_sfPeriod - Simulator::Now() << " first if");
+		NS_LOG_INFO ("MmWaveUePhy: Next subframe scheduled for " << m_lastSfStart + m_sfPeriod - Simulator::Now() << " first if");
 		Simulator::Schedule (m_lastSfStart + m_sfPeriod - Simulator::Now(), &MmWaveUePhy::SubframeIndication, this, frameNum, sfNum);
 	}
 	else
@@ -789,10 +789,10 @@ MmWaveUePhy::EndSlot ()
 		m_slotNum++;
 		nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
 						                             m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
-		NS_LOG_DEBUG ("m_slotNum " << (uint16_t)m_slotNum);
-		NS_LOG_DEBUG ("m_phyMacConfig->GetSymbolPeriod () " << m_phyMacConfig->GetSymbolPeriod () << " other part " << (uint16_t) m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
-		NS_LOG_DEBUG ("nextSlotStart " << nextSlotStart << " m_lastSfStart " << m_lastSfStart << " now " << Simulator::Now());
-		NS_LOG_DEBUG ("MmWaveUePhy: Next subframe scheduled for " << nextSlotStart + m_lastSfStart - Simulator::Now() << " in else");
+		NS_LOG_INFO ("m_slotNum " << (uint16_t)m_slotNum);
+		NS_LOG_INFO ("m_phyMacConfig->GetSymbolPeriod () " << m_phyMacConfig->GetSymbolPeriod () << " other part " << (uint16_t) m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
+		NS_LOG_INFO ("nextSlotStart " << nextSlotStart << " m_lastSfStart " << m_lastSfStart << " now " << Simulator::Now());
+		NS_LOG_INFO ("MmWaveUePhy: Next subframe scheduled for " << nextSlotStart + m_lastSfStart - Simulator::Now() << " in else");
 		Simulator::Schedule (nextSlotStart+m_lastSfStart-Simulator::Now(), &MmWaveUePhy::StartSlot, this);
 	}
 

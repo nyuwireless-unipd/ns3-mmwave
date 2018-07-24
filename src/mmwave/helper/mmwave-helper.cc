@@ -77,8 +77,10 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveHelper);
 MmWaveHelper::MmWaveHelper(void)
 	:m_imsiCounter (0),
 	 m_cellIdCounter (1),
-	 m_noTxAntenna (64),
+	 m_noTxAntenna (64), // TODO fix # antennas and # panels attributes
 	 m_noRxAntenna (16),
+	 m_noEnbPanels (3),
+	 m_noUePanels (2),
 	 m_harqEnabled (false),
 	 m_rlcAmEnabled (false),
 	 m_snrTest (false),
@@ -204,6 +206,16 @@ MmWaveHelper::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&MmWaveHelper::m_imsiCounter),
                    MakeUintegerChecker<uint16_t> ())
+		 .AddAttribute ("NumUePanels",
+	                "Number of panels for the UE",
+	                UintegerValue (2),
+	                MakeUintegerAccessor (&MmWaveHelper::m_noUePanels),
+	                MakeUintegerChecker<uint16_t> ())
+	    .AddAttribute ("NumEnbPanels",
+	                "Number of panels for the eNB",
+	                UintegerValue (3),
+	                MakeUintegerAccessor (&MmWaveHelper::m_noEnbPanels),
+	                MakeUintegerChecker<uint16_t> ())
 		 .AddAttribute ("EnbComponentCarrierManager",
                     "The type of Component Carrier Manager to be used for gNBs. "
                     "The allowed values for this attributes are the type names "
@@ -763,7 +775,10 @@ MmWaveHelper::InstallSingleMcUeDevice(Ptr<Node> n)
       ulPhy->SetMobility (mm);
 
       Ptr<AntennaModel> antenna = (m_ueAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
-      NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
+			DynamicCast<AntennaArrayModel> (antenna)->SetPlanesNumber(m_noUePanels);
+			DynamicCast<AntennaArrayModel> (antenna)->SetDeviceType(true);
+			DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements(m_noRxAntenna);
+			NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
       dlPhy->SetAntenna (antenna);
       ulPhy->SetAntenna (antenna);
 
@@ -1153,6 +1168,9 @@ MmWaveHelper::InstallSingleInterRatHoCapableUeDevice(Ptr<Node> n)
 
 	// Antenna model for mmWave and for LTE
 	Ptr<AntennaModel> antenna = (m_ueAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
+	DynamicCast<AntennaArrayModel> (antenna)->SetPlanesNumber(m_noUePanels);
+	DynamicCast<AntennaArrayModel> (antenna)->SetDeviceType(true);
+	DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements(m_noRxAntenna);
 	NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
 	mmWaveUlPhy->SetAntenna (antenna);
 	mmWaveDlPhy->SetAntenna (antenna);
@@ -1376,7 +1394,10 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
       ulPhy->SetMobility (mm);
 
       Ptr<AntennaModel> antenna = (m_ueAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
-      NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
+			DynamicCast<AntennaArrayModel> (antenna)->SetPlanesNumber(m_noUePanels);
+			DynamicCast<AntennaArrayModel> (antenna)->SetDeviceType(true);
+			DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements(m_noRxAntenna);
+			NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
       dlPhy->SetAntenna (antenna);
       ulPhy->SetAntenna (antenna);
 
@@ -1590,6 +1611,9 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 			/* Antenna model */
 			Ptr<AntennaModel> antenna = (m_enbAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
+			DynamicCast<AntennaArrayModel> (antenna)->SetPlanesNumber(m_noEnbPanels);
+			DynamicCast<AntennaArrayModel> (antenna)->SetDeviceType(false);
+			DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements(m_noTxAntenna);
 			NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
 			dlPhy->SetAntenna (antenna);
 			ulPhy->SetAntenna (antenna);
@@ -2102,6 +2126,20 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 
 	for(std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 	{
+
+		for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+		{
+			for(NetDeviceContainer::Iterator enbIter = enbDevices.Begin();
+				enbIter != enbDevices.End(); ++enbIter)
+			{
+				Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
+					(DynamicCast<MmWaveUeNetDevice>(*i))->GetPhy (it->first)->GetDlSpectrumPhy ()->GetRxAntenna ());
+				complexVector_t dummy;
+				ueAntennaArray->SetBeamformingVectorPanel (dummy,*enbIter);
+			}
+			AttachToClosestEnb(*i, enbDevices);
+		}
+
 		if(m_channelModelType == "ns3::MmWaveBeamforming")
 		{
 			m_beamforming.at(it->first)->Initial(ueDevices,enbDevices);
@@ -2119,12 +2157,6 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 			m_3gppChannel.at(it->first)->Initial(ueDevices,enbDevices);
 		}
 	}
-
-	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
-	{
-		AttachToClosestEnb(*i, enbDevices);
-	}
-
 }
 
 // for MC devices
