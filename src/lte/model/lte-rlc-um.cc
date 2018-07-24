@@ -71,7 +71,7 @@ LteRlcUm::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("ReportBufferStatusTimer",
                    "How much to wait to issue a new Report Buffer Status since the last time "
-                   "a new SDU was received",     
+                   "a new SDU was received",
                    TimeValue (MilliSeconds (10)),
                    MakeTimeAccessor (&LteRlcUm::m_rbsTimerValue),
                    MakeTimeChecker ())
@@ -141,7 +141,7 @@ LteRlcUm::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer.Cancel ();
 }
 
-void 
+void
 LteRlcUm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this);
@@ -449,7 +449,10 @@ LteRlcUm::DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid)
   // Receiver timestamp
   RlcTag rlcTag;
   Time delay;
-  NS_ASSERT_MSG (p->PeekPacketTag (rlcTag), "RlcTag is missing");
+  if (p->FindFirstMatchingByteTag (rlcTag))
+  {
+    delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
+  }
   p->RemovePacketTag (rlcTag);
   delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
   m_rxPdu (m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
@@ -1095,7 +1098,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
 void
 LteRlcUm::TriggerReceivePdcpPdu(Ptr<Packet> p)
 {
-  if(!isMc) 
+  if(!isMc)
   {
     NS_LOG_INFO(this << " RlcUm forwards packet to PDCP (either from MmWave or LTE stack)");
     m_rlcSapUser->ReceivePdcpPdu(p);
@@ -1160,7 +1163,7 @@ LteRlcUm::ReassembleSnInterval (SequenceNumber10 lowSeqNumber, SequenceNumber10 
 
           m_rxBuffer.erase (it);
         }
-        
+
       reassembleSn++;
     }
 }
