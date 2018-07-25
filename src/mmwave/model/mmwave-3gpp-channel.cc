@@ -189,10 +189,6 @@ MmWave3gppChannel::GetTypeId (void)
 				TimeValue (MilliSeconds (1)),
 				MakeTimeAccessor (&MmWave3gppChannel::m_updatePeriod),
 				MakeTimeChecker ())
-	// .AddAttribute ("CellScan",
-	//			"Use beam search method to determine beamforming vector, the default is long-term covariance matrix method",
-	//			BooleanValue (false),
-	//			MakeBooleanAccessor (&MmWave3gppChannel::m_cellScan),
 	.AddAttribute ("DirectBeam",
 				"By default creates aligned beams between transmitter and receiver",
 				BooleanValue (true),

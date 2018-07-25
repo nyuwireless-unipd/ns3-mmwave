@@ -372,7 +372,6 @@ private:
 	Ptr<PropagationLossModel> m_3gppPathloss;
 	Ptr<ParamsTable> m_table3gpp;
 	Time m_updatePeriod;
-	// bool m_cellScan;
 	bool m_directBeam;
 	bool m_blockage;
 	uint16_t m_numNonSelfBloking; //number of non-self-blocking regions.
