@@ -2273,6 +2273,7 @@ def register_types_ns3_mmwave(module):
     module.add_container('std::list< ns3::Ptr< ns3::mmwave::MmWaveControlMessage > >', 'ns3::Ptr< ns3::mmwave::MmWaveControlMessage >', container_type=u'list')
     module.add_container('ns3::mmwave::complex3DVector_t', 'std::vector< std::vector< std::complex< double > > >', container_type=u'vector')
     module.add_container('ns3::mmwave::double2DVector_t', 'std::vector< double >', container_type=u'vector')
+    module.add_container('std::map< ns3::Ptr< ns3::NetDevice >, std::vector< std::complex< double > > >', ('ns3::Ptr< ns3::NetDevice >', 'std::vector< std::complex< double > >'), container_type=u'map')
     module.add_container('std::vector< ns3::mmwave::RlcPduInfo >', 'ns3::mmwave::RlcPduInfo', container_type=u'vector')
     module.add_container('std::map< unsigned char, std::vector< ns3::mmwave::RlcPduInfo > >', ('unsigned char', 'std::vector< ns3::mmwave::RlcPduInfo >'), container_type=u'map')
     module.add_container('std::deque< ns3::mmwave::SlotAllocInfo >', 'ns3::mmwave::SlotAllocInfo', container_type=u'dequeue')
@@ -14527,6 +14528,31 @@ def register_Ns3CallbackImplBase_methods(root_module, cls):
     cls.add_method('GetCppTypeid', 
                    'std::string', 
                    [], 
+                   is_static=True, visibility='protected', template_parameters=[u'ns3::Ptr<ns3::NetDevice> '])
+    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
+    cls.add_method('GetCppTypeid', 
+                   'std::string', 
+                   [], 
+                   is_static=True, visibility='protected', template_parameters=[u'ns3::Ptr<ns3::Packet const> '])
+    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
+    cls.add_method('GetCppTypeid', 
+                   'std::string', 
+                   [], 
+                   is_static=True, visibility='protected', template_parameters=[u'unsigned short'])
+    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
+    cls.add_method('GetCppTypeid', 
+                   'std::string', 
+                   [], 
+                   is_static=True, visibility='protected', template_parameters=[u'ns3::Address const&'])
+    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
+    cls.add_method('GetCppTypeid', 
+                   'std::string', 
+                   [], 
+                   is_static=True, visibility='protected', template_parameters=[u'ns3::NetDevice::PacketType'])
+    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
+    cls.add_method('GetCppTypeid', 
+                   'std::string', 
+                   [], 
                    is_static=True, visibility='protected', template_parameters=[u'ns3::Ptr<ns3::MobilityModel const> '])
     ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
     cls.add_method('GetCppTypeid', 
@@ -14537,17 +14563,7 @@ def register_Ns3CallbackImplBase_methods(root_module, cls):
     cls.add_method('GetCppTypeid', 
                    'std::string', 
                    [], 
-                   is_static=True, visibility='protected', template_parameters=[u'ns3::Ptr<ns3::Packet const> '])
-    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
-    cls.add_method('GetCppTypeid', 
-                   'std::string', 
-                   [], 
                    is_static=True, visibility='protected', template_parameters=[u'ns3::PhyReceptionStatParameters'])
-    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
-    cls.add_method('GetCppTypeid', 
-                   'std::string', 
-                   [], 
-                   is_static=True, visibility='protected', template_parameters=[u'unsigned short'])
     ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
     cls.add_method('GetCppTypeid', 
                    'std::string', 
@@ -14627,16 +14643,6 @@ def register_Ns3CallbackImplBase_methods(root_module, cls):
     cls.add_method('GetCppTypeid', 
                    'std::string', 
                    [], 
-                   is_static=True, visibility='protected', template_parameters=[u'ns3::Ptr<ns3::NetDevice> '])
-    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
-    cls.add_method('GetCppTypeid', 
-                   'std::string', 
-                   [], 
-                   is_static=True, visibility='protected', template_parameters=[u'ns3::Address const&'])
-    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
-    cls.add_method('GetCppTypeid', 
-                   'std::string', 
-                   [], 
                    is_static=True, visibility='protected', template_parameters=[u'ns3::SpectrumValue&'])
     ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
     cls.add_method('GetCppTypeid', 
@@ -14653,11 +14659,6 @@ def register_Ns3CallbackImplBase_methods(root_module, cls):
                    'std::string', 
                    [], 
                    is_static=True, visibility='protected', template_parameters=[u'long double'])
-    ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
-    cls.add_method('GetCppTypeid', 
-                   'std::string', 
-                   [], 
-                   is_static=True, visibility='protected', template_parameters=[u'ns3::NetDevice::PacketType'])
     ## callback.h (module 'core'): static std::string ns3::CallbackImplBase::GetCppTypeid() [member function]
     cls.add_method('GetCppTypeid', 
                    'std::string', 
@@ -22968,6 +22969,10 @@ def register_Ns3MmwaveAntennaArrayModel_methods(root_module, cls):
     cls.add_method('ChangeBeamformingVector', 
                    'void', 
                    [param('ns3::Ptr< ns3::NetDevice >', 'device')])
+    ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::ChangeBeamformingVectorPanel(ns3::Ptr<ns3::NetDevice> device) [member function]
+    cls.add_method('ChangeBeamformingVectorPanel', 
+                   'void', 
+                   [param('ns3::Ptr< ns3::NetDevice >', 'device')])
     ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::ChangeToOmniTx() [member function]
     cls.add_method('ChangeToOmniTx', 
                    'void', 
@@ -22984,11 +22989,35 @@ def register_Ns3MmwaveAntennaArrayModel_methods(root_module, cls):
     cls.add_method('GetBeamformingVector', 
                    'ns3::mmwave::complexVector_t', 
                    [param('ns3::Ptr< ns3::NetDevice >', 'device')])
+    ## antenna-array-model.h (module 'mmwave'): ns3::mmwave::complexVector_t ns3::mmwave::AntennaArrayModel::GetBeamformingVectorPanel() [member function]
+    cls.add_method('GetBeamformingVectorPanel', 
+                   'ns3::mmwave::complexVector_t', 
+                   [])
+    ## antenna-array-model.h (module 'mmwave'): ns3::mmwave::complexVector_t ns3::mmwave::AntennaArrayModel::GetBeamformingVectorPanel(ns3::Ptr<ns3::NetDevice> device) [member function]
+    cls.add_method('GetBeamformingVectorPanel', 
+                   'ns3::mmwave::complexVector_t', 
+                   [param('ns3::Ptr< ns3::NetDevice >', 'device')])
+    ## antenna-array-model.h (module 'mmwave'): ns3::Ptr<ns3::NetDevice> ns3::mmwave::AntennaArrayModel::GetCurrentDevice() [member function]
+    cls.add_method('GetCurrentDevice', 
+                   'ns3::Ptr< ns3::NetDevice >', 
+                   [])
     ## antenna-array-model.h (module 'mmwave'): double ns3::mmwave::AntennaArrayModel::GetGainDb(ns3::Angles a) [member function]
     cls.add_method('GetGainDb', 
                    'double', 
                    [param('ns3::Angles', 'a')], 
                    is_virtual=True)
+    ## antenna-array-model.h (module 'mmwave'): ns3::Time ns3::mmwave::AntennaArrayModel::GetLastUpdate(ns3::Ptr<ns3::NetDevice> device) [member function]
+    cls.add_method('GetLastUpdate', 
+                   'ns3::Time', 
+                   [param('ns3::Ptr< ns3::NetDevice >', 'device')])
+    ## antenna-array-model.h (module 'mmwave'): double ns3::mmwave::AntennaArrayModel::GetOffset() [member function]
+    cls.add_method('GetOffset', 
+                   'double', 
+                   [])
+    ## antenna-array-model.h (module 'mmwave'): double ns3::mmwave::AntennaArrayModel::GetPlanesId() [member function]
+    cls.add_method('GetPlanesId', 
+                   'double', 
+                   [])
     ## antenna-array-model.h (module 'mmwave'): double ns3::mmwave::AntennaArrayModel::GetRadiationPattern(double vangle, double hangle=0) [member function]
     cls.add_method('GetRadiationPattern', 
                    'double', 
@@ -23006,18 +23035,34 @@ def register_Ns3MmwaveAntennaArrayModel_methods(root_module, cls):
     cls.add_method('SetBeamformingVector', 
                    'void', 
                    [param('std::vector< std::complex< double > >', 'antennaWeights'), param('ns3::Ptr< ns3::NetDevice >', 'device', default_value='0')])
+    ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetBeamformingVectorPanel(ns3::mmwave::complexVector_t antennaWeights, ns3::Ptr<ns3::NetDevice> device=0) [member function]
+    cls.add_method('SetBeamformingVectorPanel', 
+                   'void', 
+                   [param('std::vector< std::complex< double > >', 'antennaWeights'), param('ns3::Ptr< ns3::NetDevice >', 'device', default_value='0')])
+    ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetBeamformingVectorPanel(ns3::Ptr<ns3::NetDevice> thisDevice=0, ns3::Ptr<ns3::NetDevice> otherDevice=0) [member function]
+    cls.add_method('SetBeamformingVectorPanel', 
+                   'void', 
+                   [param('ns3::Ptr< ns3::NetDevice >', 'thisDevice', default_value='0'), param('ns3::Ptr< ns3::NetDevice >', 'otherDevice', default_value='0')])
     ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetBeamformingVectorWithDelay(ns3::mmwave::complexVector_t antennaWeights, ns3::Ptr<ns3::NetDevice> device=0) [member function]
     cls.add_method('SetBeamformingVectorWithDelay', 
                    'void', 
                    [param('std::vector< std::complex< double > >', 'antennaWeights'), param('ns3::Ptr< ns3::NetDevice >', 'device', default_value='0')])
+    ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetDeviceType(bool isUe) [member function]
+    cls.add_method('SetDeviceType', 
+                   'void', 
+                   [param('bool', 'isUe')])
+    ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetPlanesNumber(double planesNumber) [member function]
+    cls.add_method('SetPlanesNumber', 
+                   'void', 
+                   [param('double', 'planesNumber')])
     ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetSector(uint8_t sector, uint8_t * antennaNum, double elevation=90) [member function]
     cls.add_method('SetSector', 
                    'void', 
                    [param('uint8_t', 'sector'), param('uint8_t *', 'antennaNum'), param('double', 'elevation', default_value='90')])
-    ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetToSector(uint32_t sector, uint32_t antennaNum) [member function]
-    cls.add_method('SetToSector', 
+    ## antenna-array-model.h (module 'mmwave'): void ns3::mmwave::AntennaArrayModel::SetTotNoArrayElements(double arrayElements) [member function]
+    cls.add_method('SetTotNoArrayElements', 
                    'void', 
-                   [param('uint32_t', 'sector'), param('uint32_t', 'antennaNum')])
+                   [param('double', 'arrayElements')])
     return
 
 def register_Ns3MmwaveBeamformingParams_methods(root_module, cls):
@@ -23733,6 +23778,10 @@ def register_Ns3MmwaveMmWave3gppChannel_methods(root_module, cls):
     cls.add_method('SetConfigurationParameters', 
                    'void', 
                    [param('ns3::Ptr< ns3::mmwave::MmWavePhyMacCommon >', 'ptrConfig')])
+    ## mmwave-3gpp-channel.h (module 'mmwave'): void ns3::mmwave::MmWave3gppChannel::SetInterferenceOrDataMode(bool flag) [member function]
+    cls.add_method('SetInterferenceOrDataMode', 
+                   'void', 
+                   [param('bool', 'flag')])
     ## mmwave-3gpp-channel.h (module 'mmwave'): void ns3::mmwave::MmWave3gppChannel::SetPathlossModel(ns3::Ptr<ns3::PropagationLossModel> pathloss) [member function]
     cls.add_method('SetPathlossModel', 
                    'void', 
@@ -27556,6 +27605,8 @@ def register_Ns3MmwaveParams3gpp_methods(root_module, cls):
     cls.add_instance_attribute('m_DS', 'double', is_const=False)
     ## mmwave-3gpp-channel.h (module 'mmwave'): ns3::mmwave::Params3gpp::m_K [variable]
     cls.add_instance_attribute('m_K', 'double', is_const=False)
+    ## mmwave-3gpp-channel.h (module 'mmwave'): ns3::mmwave::Params3gpp::m_allLongTermMap [variable]
+    cls.add_instance_attribute('m_allLongTermMap', 'std::map< ns3::Ptr< ns3::NetDevice >, std::vector< std::complex< double > > >', is_const=False)
     ## mmwave-3gpp-channel.h (module 'mmwave'): ns3::mmwave::Params3gpp::m_angle [variable]
     cls.add_instance_attribute('m_angle', 'ns3::mmwave::double2DVector_t', is_const=False)
     ## mmwave-3gpp-channel.h (module 'mmwave'): ns3::mmwave::Params3gpp::m_channel [variable]
