@@ -2127,6 +2127,7 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 	for(std::map<uint8_t, MmWaveComponentCarrier >::iterator it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
 	{
 
+		// initialize the beamforming vectors
 		for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 		{
 			for(NetDeviceContainer::Iterator enbIter = enbDevices.Begin();
@@ -2137,7 +2138,6 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 				complexVector_t dummy;
 				ueAntennaArray->SetBeamformingVectorPanel (dummy,*enbIter);
 			}
-			AttachToClosestEnb(*i, enbDevices);
 		}
 
 		if(m_channelModelType == "ns3::MmWaveBeamforming")
@@ -2156,6 +2156,11 @@ MmWaveHelper::AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContain
 		{
 			m_3gppChannel.at(it->first)->Initial(ueDevices,enbDevices);
 		}
+	}
+
+	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+	{
+		AttachToClosestEnb(*i, enbDevices);
 	}
 }
 
