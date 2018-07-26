@@ -50,7 +50,6 @@
 #include <ns3/mmwave-lte-rrc-protocol-real.h>
 #include <ns3/epc-enb-application.h>
 #include <ns3/epc-x2.h>
-
 #include <ns3/friis-spectrum-propagation-loss.h>
 #include <ns3/mmwave-rrc-protocol-ideal.h>
 #include <ns3/lte-spectrum-phy.h>
@@ -58,10 +57,9 @@
 #include <ns3/isotropic-antenna-model.h>
 #include <ns3/mmwave-propagation-loss-model.h>
 #include <ns3/mmwave-3gpp-buildings-propagation-loss-model.h>
-
 #include <ns3/lte-enb-component-carrier-manager.h>
 #include <ns3/lte-ue-component-carrier-manager.h>
-
+#include <ns3/cc-helper.h>
 #include <ns3/object-map.h>
 
 
@@ -284,16 +282,48 @@ MmWaveHelper::DoInitialize()
 {
 	NS_LOG_FUNCTION (this);
 
-	MmWaveChannelModelInitialization();
+	// cc initialization
+	// if useCa=false and SetCcPhyParams() has not been called, setup a default CC.
+	if (!m_useCa && m_componentCarrierPhyParams.size()==0)
+	{
+		NS_LOG_INFO ("useCa=false and empty CC map. Create the default CC.");
+		Ptr<mmwave::MmWavePhyMacCommon> phyMacConfig = CreateObject<mmwave::MmWavePhyMacCommon> ();
+		Ptr<mmwave::MmWaveComponentCarrier> cc = CreateObject<mmwave::MmWaveComponentCarrier> ();
+		cc->SetConfigurationParameters(phyMacConfig);
+		cc->SetAsPrimary(true);
+
+		//create the ccMap
+		std::map<uint8_t, mmwave::MmWaveComponentCarrier > map;
+		map [0] = *cc;
+
+		this->SetCcPhyParams(map);
+	}
+
+	MmWaveChannelModelInitialization(); // channel initialization
 
 	m_phyStats = CreateObject<MmWavePhyRxTrace> ();
 	m_radioBearerStatsConnector = CreateObject<MmWaveBearerStatsConnector> ();
 
-	LteChannelModelInitialization();
+	// lte cc initialization
+	// if m_lteUseCa=false and SetLteCcPhyParams() has not been called, setup a default LTE CC
+	if (!m_lteUseCa && m_lteComponentCarrierPhyParams.size() == 0)
+	{
+		// create the map of LTE component carriers
+	  Ptr<CcHelper> lteCcHelper = CreateObject<CcHelper> ();
+	  lteCcHelper->SetNumberOfComponentCarriers (1);
+	  lteCcHelper->SetUlEarfcn (18100);
+	  lteCcHelper->SetDlEarfcn (100);
+	  lteCcHelper->SetDlBandwidth (100);
+	  lteCcHelper->SetUlBandwidth (100);
+	  std::map< uint8_t, ComponentCarrier > lteCcMap = lteCcHelper->EquallySpacedCcs ();
+	  lteCcMap.at(0).SetAsPrimary(true);
+		this->SetLteCcPhyParams (lteCcMap);
+	}
+
+	LteChannelModelInitialization(); // lte channel initialization
 
 	m_cnStats = 0; //core network stats calculator
 
-	NS_LOG_UNCOND("---- mmh UseIdealRrc " << m_useIdealRrc);
 	Object::DoInitialize();
 }
 
@@ -1287,7 +1317,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 {
   NS_LOG_FUNCTION (this);
 
-  NS_ABORT_MSG_IF (m_componentCarrierPhyParams.size() == 0 && m_useCa, "If CA is enabled, before call this method you need to install Enbs --> InstallEnbDevice()");
+  NS_ABORT_MSG_IF (m_componentCarrierPhyParams.size() == 0, "Before call this method you need to install Enbs --> InstallEnbDevice()");
 
 	Ptr<mmwave::MmWaveUeNetDevice> device = m_ueNetDeviceFactory.Create<mmwave::MmWaveUeNetDevice> ();
   std::map<uint8_t, Ptr<MmWaveComponentCarrierUe> > ueCcMap;
@@ -1666,8 +1696,6 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	ccmEnbManager->SetBandwidthMap (bandwidthMap);
 
-
-
 	if (m_useIdealRrc)
 	{
 		Ptr<MmWaveEnbRrcProtocolIdeal> rrcProtocol = CreateObject<MmWaveEnbRrcProtocolIdeal> ();
@@ -1863,12 +1891,6 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 
   Ptr<LteEnbNetDevice> dev = m_lteEnbNetDeviceFactory.Create<LteEnbNetDevice> ();
   Ptr<LteHandoverAlgorithm> handoverAlgorithm = m_lteHandoverAlgorithmFactory.Create<LteHandoverAlgorithm> ();
-
-	/* use the method SetLteCcPhyParams
-  if (m_lteComponentCarrierPhyParams.size() == 0)
-    {
-      DoComponentCarrierConfigure (dev->GetUlEarfcn (), dev->GetDlEarfcn (), dev->GetUlBandwidth (), dev->GetDlBandwidth ());
-    }*/
 
   NS_ASSERT_MSG(m_lteComponentCarrierPhyParams.size()!=0, "Cannot create enb ccm map.");
   // create component carrier map for this eNb device
