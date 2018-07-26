@@ -314,7 +314,15 @@ UeManager::DoInitialize ()
       NS_FATAL_ERROR ("unexpected state " << ToString (m_state));
       break;
     }
-  m_caSupportConfigured =  false;
+
+  if (m_rrc->m_numberOfComponentCarriers > 1)
+  {
+    m_caSupportConfigured =  false; // if CA is used do CA configuration
+  }
+  else
+  {
+    m_caSupportConfigured = true; // if CA is not used we do not need to configure it
+  }
   m_firstConnection = false;
   m_mmWaveCellId = 0;
   m_mmWaveRnti = 0;
