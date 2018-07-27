@@ -40,6 +40,7 @@
 //#include "ns3/gtk-config-store.h"
 
 using namespace ns3;
+using namespace mmwave;
 
 /**
  * Sample simulation script for LTE+EPC. It instantiates several eNodeB,

@@ -39,6 +39,7 @@
 #include "ns3/log.h"
 
 using namespace ns3;
+using namespace mmwave;
 
 double distUpdateInterval = 100.0;  // in ms
 double distInc = 0.5; // increment by 10 meters

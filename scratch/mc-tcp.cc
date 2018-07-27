@@ -40,6 +40,7 @@
 #include <list>
 
 using namespace ns3;
+using namespace mmwave;
 
 NS_LOG_COMPONENT_DEFINE ("McTcp");
 

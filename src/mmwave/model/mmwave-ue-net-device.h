@@ -51,13 +51,13 @@ namespace ns3{
 class Packet;
 class PacketBurst;
 class Node;
+class LteUeComponentCarrierManager;
 //class MmWavePhy;
+
+namespace mmwave {
 class MmWaveUePhy;
 class MmWaveUeMac;
 class MmWaveEnbNetDevice;
-class LteUeComponentCarrierManager;
-
-namespace mmwave {
 
 class MmWaveUeNetDevice : public MmWaveNetDevice
 {

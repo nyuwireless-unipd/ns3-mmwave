@@ -43,6 +43,7 @@
 
 
 using namespace ns3;
+using namespace mmwave;
 
 /**
  * A script to simulate the DOWNLINK TCP data over mmWave links

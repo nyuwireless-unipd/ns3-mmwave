@@ -16,6 +16,7 @@
 #include <map>
 
 using namespace ns3;
+using namespace mmwave;
 
 /* In this example, a single UE is connected with a single MmWave BS. The
  * UE is randomly placed inside a circle with radius of 150m and it moves with

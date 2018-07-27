@@ -60,8 +60,8 @@ def build(bld):
         'model/mmwave-3gpp-channel.cc',
         'model/mmwave-3gpp-buildings-propagation-loss-model.cc',
         'model/mmwave-component-carrier.cc',
-        'model/mmwave-component-carrier-enb.cc',
         'model/mmwave-component-carrier-ue.cc',
+        'model/mmwave-component-carrier-enb.cc',
         'model/mmwave-no-op-component-carrier-manager.cc'
         #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',

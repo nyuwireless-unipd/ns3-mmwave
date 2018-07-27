@@ -14,6 +14,7 @@
 #include <map>
 
 using namespace ns3;
+using namespace mmwave;
 
 /* In this example a single UE is connected with a single MmWave BS. The UE is
  * placed at distance ueDist from the BS and it does not move. The system

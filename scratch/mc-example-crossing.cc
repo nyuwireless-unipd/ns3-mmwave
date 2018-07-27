@@ -37,6 +37,7 @@
 #include <stdlib.h>
 
 using namespace ns3;
+using namespace mmwave;
 
 /**
  * Sample simulation script for MC device. It instantiates a LTE and a MmWave eNodeB,

@@ -75,11 +75,11 @@ public:
 
     Ptr<MmWaveEnbPhy> GetPhy (void) const;
 
-		Ptr<MmWaveEnbPhy> GetPhy(uint8_t index);
+	Ptr<MmWaveEnbPhy> GetPhy(uint8_t index);
 
     uint16_t GetCellId () const;
 
-		bool HasCellId (uint16_t cellId) const;
+	bool HasCellId (uint16_t cellId) const;
 
     uint8_t GetBandwidth () const;
 

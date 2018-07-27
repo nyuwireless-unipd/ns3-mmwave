@@ -40,6 +40,7 @@
 #include "ns3/mmwave-propagation-loss-model.h"
 
 using namespace ns3;
+using namespace mmwave;
 
 double updateInterval = 2000.0;  // in ms
 double increment = 0.5; // increment by x dB
@@ -150,7 +151,8 @@ main (int argc, char *argv[])
 
   mmwHelper->Initialize();
   mmwHelper->SetHarqEnabled (harqEnabled);
-  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel ()->GetObject<MmWavePropagationLossModel> ();
+  // get the loss model for the default CC
+  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel (0)->GetObject<MmWavePropagationLossModel> ();
 
   /* A configuration example.
    * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */

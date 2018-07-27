@@ -66,7 +66,6 @@ TypeId MmWaveEnbNetDevice::GetTypeId()
 	    TypeId ("ns3::MmWaveEnbNetDevice")
 	    .SetParent<MmWaveNetDevice> ()
 	    .AddConstructor<MmWaveEnbNetDevice> ()
-
 			.AddAttribute ("LteEnbComponentCarrierManager",
 	                   "The ComponentCarrierManager associated to this EnbNetDevice",
 	                   PointerValue (),

@@ -41,6 +41,7 @@
 #include "ns3/mmwave-propagation-loss-model.h"
 
 using namespace ns3;
+using namespace mmwave;
 
 double snrUpdateIntervalMs = 100.0;  // in ms
 double snrIncDb = 0.1; // increment by 10 meters

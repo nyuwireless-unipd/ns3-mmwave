@@ -40,6 +40,7 @@
 
 
 using namespace ns3;
+using namespace mmwave;
 
 /**
  * Sample simulation script for MC device. It instantiates a LTE and two MmWave eNodeB,
@@ -131,6 +132,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
       int nDevs = node->GetNDevices ();
       for (int j = 0; j < nDevs; j++)
         {
+          Ptr<MmWaveEnbNetDevice> mm2 = CreateObject<MmWaveEnbNetDevice> ();
           Ptr<LteEnbNetDevice> enbdev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
           Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
           if (enbdev)
@@ -743,8 +745,8 @@ main (int argc, char *argv[])
   if(print)
   {
     PrintGnuplottableBuildingListToFile("buildings.txt");
-    PrintGnuplottableEnbListToFile("enbs.txt");
     PrintGnuplottableUeListToFile("ues.txt");
+    PrintGnuplottableEnbListToFile("enbs.txt");
   }
   else
   {
