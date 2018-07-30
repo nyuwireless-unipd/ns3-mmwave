@@ -2590,19 +2590,19 @@ UeManager::BuildNonCriticalExtentionConfigurationCa ()
             ccId++;
           }
 
-        Ptr<mmwave::MmWaveComponentCarrierEnb> eNbCcm = it.second;
+        LteEnbRrc::MmWaveComponentCarrierConf eNbCcm = it.second;
         LteRrcSap::SCellToAddMod component;
         component.sCellIndex = ccId;
-        component.cellIdentification.physCellId = eNbCcm->GetCellId ();
+        component.cellIdentification.physCellId = eNbCcm.m_cellId;
         //component.cellIdentification.dlCarrierFreq = eNbCcm->GetDlEarfcn ();
         component.radioResourceConfigCommonSCell.haveNonUlConfiguration = true;
-        component.radioResourceConfigCommonSCell.nonUlConfiguration.dlBandwidth = eNbCcm->GetBandwidth ();
+        component.radioResourceConfigCommonSCell.nonUlConfiguration.dlBandwidth = eNbCcm.m_bandwidth;
         component.radioResourceConfigCommonSCell.nonUlConfiguration.antennaInfoCommon.antennaPortsCount = 0;
         component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.referenceSignalPower = m_rrc->m_cphySapProvider.at (0)->GetReferenceSignalPower ();
         component.radioResourceConfigCommonSCell.nonUlConfiguration.pdschConfigCommon.pb = 0;
         component.radioResourceConfigCommonSCell.haveUlConfiguration = true;
         //component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulCarrierFreq = eNbCcm->GetUlEarfcn ();
-        component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulBandwidth = eNbCcm->GetBandwidth ();
+        component.radioResourceConfigCommonSCell.ulConfiguration.ulFreqInfo.ulBandwidth = eNbCcm.m_bandwidth;
         component.radioResourceConfigCommonSCell.ulConfiguration.ulPowerControlCommonSCell.alpha = 0;
         //component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.type = LteRrcSap::SoundingRsUlConfigDedicated::SETUP;
         component.radioResourceConfigCommonSCell.ulConfiguration.soundingRsUlConfigCommon.srsBandwidthConfig = 0;
@@ -2713,7 +2713,7 @@ LteEnbRrc::ConfigureCarriers (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyC
 }
 
 void
-LteEnbRrc::ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb>> ccPhyConf)
+LteEnbRrc::ConfigureMmWaveCarriers (std::map<uint8_t, LteEnbRrc::MmWaveComponentCarrierConf> ccPhyConf)
 {
   NS_LOG_FUNCTION(this);
   //TODO do we need to duplicate all the CC paramenters to support mmwave carriers?
@@ -3460,14 +3460,14 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyConf)
 }
 
 void
-LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb>> ccPhyConf)
+LteEnbRrc::ConfigureCell (std::map<uint8_t, MmWaveComponentCarrierConf> ccPhyConf)
 {
   NS_LOG_FUNCTION(this);
   auto it = ccPhyConf.begin ();
   NS_ASSERT (it != ccPhyConf.end ());
-  uint8_t bandwidth = it->second->GetBandwidth (); // this information is not used
+  uint8_t bandwidth = it->second.m_bandwidth; // this information is not used
   //uint32_t earfcn = it->second->GetEarfcn ();
-  uint16_t cellId = it->second->GetCellId ();
+  uint16_t cellId = it->second.m_cellId;
   //NS_LOG_FUNCTION (this << (uint16_t) bandwidth << earfcn);
   NS_ASSERT (!m_configured);
 
@@ -3482,11 +3482,11 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEn
 
   for (const auto &it: ccPhyConf)
     {
-      bandwidth = it.second->GetBandwidth ();
+      bandwidth = it.second.m_bandwidth;
       m_cphySapProvider.at (it.first)->SetBandwidth (bandwidth, bandwidth);
       //earfcn = it.second->GetEarfcn ();
       //m_cphySapProvider.at (it.first)->SetEarfcn (earfcn, earfcn);
-      m_cphySapProvider.at (it.first)->SetCellId (it.second->GetCellId ());
+      m_cphySapProvider.at (it.first)->SetCellId (it.second.m_cellId);
       m_cmacSapProvider.at (it.first)->ConfigureMac (bandwidth, bandwidth);
       //m_ffrRrcSapProvider.at (it.first)->SetCellId (it.second->GetCellId ());
       //m_ffrRrcSapProvider.at (it.first)->SetBandwidth (bandwidth, bandwidth);
@@ -3521,13 +3521,13 @@ LteEnbRrc::ConfigureCell (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEn
     {
       // Enabling MIB transmission
       LteRrcSap::MasterInformationBlock mib;
-      mib.dlBandwidth = it.second->GetBandwidth ();
+      mib.dlBandwidth = it.second.m_bandwidth;
       mib.systemFrameNumber = 0;
       m_cphySapProvider.at (it.first)->SetMasterInformationBlock (mib);
 
       // Enabling SIB1 transmission with default values
       LteRrcSap::SystemInformationBlockType1 sib1;
-      sib1.cellAccessRelatedInfo.cellIdentity = it.second->GetCellId ();
+      sib1.cellAccessRelatedInfo.cellIdentity = it.second.m_cellId;
       sib1.cellAccessRelatedInfo.csgIndication = false;
       sib1.cellAccessRelatedInfo.csgIdentity = 0;
       sib1.cellAccessRelatedInfo.plmnIdentityInfo.plmnIdentity = 0; // not used
@@ -4441,7 +4441,7 @@ LteEnbRrc::CellToComponentCarrierId (uint16_t cellId)
     {
       for (auto &it: m_mmWaveComponentCarrierPhyConf)
         {
-          if (it.second->GetCellId () == cellId)
+          if (it.second.m_cellId == cellId)
             {
               return it.first;
             }
@@ -4461,7 +4461,7 @@ LteEnbRrc::ComponentCarrierToCellId (uint8_t componentCarrierId)
   }
   else
   {
-    cellId = m_mmWaveComponentCarrierPhyConf.at (componentCarrierId)->GetCellId ();
+    cellId = m_mmWaveComponentCarrierPhyConf.at (componentCarrierId).m_cellId;
   }
   return cellId;
 }
@@ -5373,7 +5373,7 @@ LteEnbRrc::SendSystemInformation ()
         LteRrcSap::SystemInformation si;
         si.haveSib2 = true;
         //si.sib2.freqInfo.ulCarrierFreq = it.second->GetUlEarfcn ();
-        si.sib2.freqInfo.ulBandwidth = it.second->GetBandwidth ();
+        si.sib2.freqInfo.ulBandwidth = it.second.m_bandwidth;
         si.sib2.radioResourceConfigCommon.pdschConfigCommon.referenceSignalPower = m_cphySapProvider.at (ccId)->GetReferenceSignalPower ();
         si.sib2.radioResourceConfigCommon.pdschConfigCommon.pb = 0;
 
@@ -5384,7 +5384,7 @@ LteEnbRrc::SendSystemInformation ()
         rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
         si.sib2.radioResourceConfigCommon.rachConfigCommon = rachConfigCommon;
 
-        m_rrcSapUser->SendSystemInformation (it.second->GetCellId (), si);
+        m_rrcSapUser->SendSystemInformation (it.second.m_cellId, si);
       }
   }
 

@@ -60,8 +60,6 @@
 #include <ns3/component-carrier-enb.h>
 #include <vector>
 
-#include <ns3/mmwave-component-carrier-enb.h>
-
 #define MIN_NO_CC 1
 #define MAX_NO_CC 5 // this is the maximum number of carrier components allowed by 3GPP up to R13
 #define MIN_NO_MMW_CC 1
@@ -742,6 +740,16 @@ public:
    */
   virtual ~LteEnbRrc ();
 
+  /**
+   * This struct contains the mmWave component carrier parameters used for the
+   * RRC configuration
+   */
+  struct MmWaveComponentCarrierConf
+  {
+    uint8_t m_ccId;       ///< mmWave component carrier ID
+    uint16_t m_cellId;    ///< cell ID
+    uint32_t m_bandwidth; ///< bandwidth
+  };
 
   // inherited from Object
 protected:
@@ -1028,9 +1036,9 @@ public:
    *
    * \warning Raises an error when executed more than once.
    *
-   * \param ccPhyConf the component carrier configuration
+   * \param ccPhyConf the component carrier configuration map
    */
-  void ConfigureCell (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb>> ccPhyConf);
+  void ConfigureCell (std::map<uint8_t, MmWaveComponentCarrierConf> ccPhyConf);
 
   /**
    * \brief Configure LTE carriers.
@@ -1042,7 +1050,7 @@ public:
    * \brief Configure mmWave carriers.
    * \param ccPhyConf the component carrier configuration
    */
-  void ConfigureMmWaveCarriers (std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb>> ccPhyConf);
+  void ConfigureMmWaveCarriers (std::map<uint8_t, MmWaveComponentCarrierConf> ccPhyConf);
 
   /**
    * set the cell id of this eNB
@@ -1931,7 +1939,8 @@ private:
   bool m_carriersConfigured; ///< are carriers configured
 
   std::map<uint8_t, Ptr<ComponentCarrierEnb>> m_componentCarrierPhyConf; ///< component carrier phy configuration
-  std::map<uint8_t, Ptr<mmwave::MmWaveComponentCarrierEnb>> m_mmWaveComponentCarrierPhyConf; ///< mmWave component carrier phy configuration
+
+  std::map<uint8_t, MmWaveComponentCarrierConf> m_mmWaveComponentCarrierPhyConf; ///< mmWave component carrier phy configuration
 
 }; // end of `class LteEnbRrc`
 

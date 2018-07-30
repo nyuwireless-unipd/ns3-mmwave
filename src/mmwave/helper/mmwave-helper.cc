@@ -1678,7 +1678,19 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
 	Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
 	Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_enbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
-	rrc->ConfigureMmWaveCarriers (ccMap); //TODO check if this is correct
+
+	// create the MmWaveComponentCarrierConf map used for the RRC setup
+	std::map<uint8_t, LteEnbRrc::MmWaveComponentCarrierConf> ccConfMap;
+	for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
+	{
+		LteEnbRrc::MmWaveComponentCarrierConf ccConf;
+		ccConf.m_ccId = it->second->GetConfigurationParameters ()->GetCcId ();
+		ccConf.m_cellId = it->second->GetCellId ();
+		ccConf.m_bandwidth = it->second->GetBandwidth ();
+
+		ccConfMap[it->first] = ccConf;
+	}
+	rrc->ConfigureMmWaveCarriers (ccConfMap);
 
 	//ComponentCarrierManager SAP
 	rrc->SetLteCcmRrcSapProvider (ccmEnbManager->GetLteCcmRrcSapProvider ());

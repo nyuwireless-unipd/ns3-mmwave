@@ -268,7 +268,20 @@ MmWaveEnbNetDevice::UpdateConfig (void)
 			// we have to make sure that this function is called only once
 			//m_rrc->ConfigureCell (m_Bandwidth, m_Bandwidth, m_Earfcn, m_Earfcn, m_cellId);
   		NS_ASSERT (!m_ccMap.empty ());
-			m_rrc -> ConfigureCell(m_ccMap);
+
+			// create the MmWaveComponentCarrierConf map used for the RRC setup
+			std::map<uint8_t, LteEnbRrc::MmWaveComponentCarrierConf> ccConfMap;
+			for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
+			{
+				LteEnbRrc::MmWaveComponentCarrierConf ccConf;
+				ccConf.m_ccId = it->second->GetConfigurationParameters ()->GetCcId ();
+				ccConf.m_cellId = it->second->GetCellId ();
+				ccConf.m_bandwidth = it->second->GetBandwidth ();
+
+				ccConfMap[it->first] = ccConf;
+			}
+
+			m_rrc -> ConfigureCell(ccConfMap);
 			m_isConfigured = true;
 		}
 
