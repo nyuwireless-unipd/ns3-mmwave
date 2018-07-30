@@ -741,8 +741,11 @@ public:
   virtual ~LteEnbRrc ();
 
   /**
-   * This struct contains the mmWave component carrier parameters used for the
-   * RRC configuration
+   * Each instance of this struct is associated to a mmWave CC and contains the
+   * parameters needed by the RRC.
+   * When LteEnbRrc::ConfigureMmWaveCarriers () is called, a map of
+   * MmWaveComponentCarrierConf objects is stored in the
+   * m_mmWaveComponentCarrierPhyConf variable.
    */
   struct MmWaveComponentCarrierConf
   {
