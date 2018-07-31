@@ -1196,6 +1196,8 @@ def register_types(module):
     module.add_enum('HandoverMode', ['FIXED_TTT', 'DYNAMIC_TTT', 'THRESHOLD'], outer_class=root_module['ns3::LteEnbRrc'], import_from_module='ns.lte')
     ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::HandoverEventInfo [struct]
     module.add_class('HandoverEventInfo', import_from_module='ns.lte', outer_class=root_module['ns3::LteEnbRrc'])
+    ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::MmWaveComponentCarrierConf [struct]
+    module.add_class('MmWaveComponentCarrierConf', import_from_module='ns.lte', outer_class=root_module['ns3::LteEnbRrc'])
     typehandlers.add_type_alias(u'void ( * ) ( uint16_t const, uint16_t const )', u'ns3::LteEnbRrc::NewUeContextTracedCallback')
     typehandlers.add_type_alias(u'void ( * ) ( uint16_t const, uint16_t const )*', u'ns3::LteEnbRrc::NewUeContextTracedCallback*')
     typehandlers.add_type_alias(u'void ( * ) ( uint16_t const, uint16_t const )&', u'ns3::LteEnbRrc::NewUeContextTracedCallback&')
@@ -1648,7 +1650,7 @@ def register_types(module):
     module.add_container('std::map< unsigned int, unsigned int >', ('unsigned int', 'unsigned int'), container_type=u'map')
     module.add_container('std::map< unsigned char, double >', ('unsigned char', 'double'), container_type=u'map')
     module.add_container('std::map< unsigned char, ns3::Ptr< ns3::ComponentCarrierEnb > >', ('unsigned char', 'ns3::Ptr< ns3::ComponentCarrierEnb >'), container_type=u'map')
-    module.add_container('std::map< unsigned char, ns3::Ptr< ns3::mmwave::MmWaveComponentCarrierEnb > >', ('unsigned char', 'ns3::Ptr< ns3::mmwave::MmWaveComponentCarrierEnb >'), container_type=u'map')
+    module.add_container('std::map< unsigned char, ns3::LteEnbRrc::MmWaveComponentCarrierConf >', ('unsigned char', 'ns3::LteEnbRrc::MmWaveComponentCarrierConf'), container_type=u'map')
     module.add_container('std::map< unsigned long, ns3::LteEnbRrc::HandoverEventInfo >', ('long unsigned int', 'ns3::LteEnbRrc::HandoverEventInfo'), container_type=u'map')
     module.add_container('ns3::HarqProcessInfoList_t', 'ns3::HarqProcessInfoElement_t', container_type=u'vector')
     module.add_container('std::list< ns3::Ptr< ns3::LteControlMessage > >', 'ns3::Ptr< ns3::LteControlMessage >', container_type=u'list')
@@ -2278,6 +2280,7 @@ def register_types_ns3_mmwave(module):
     module.add_container('std::map< unsigned char, std::vector< ns3::mmwave::RlcPduInfo > >', ('unsigned char', 'std::vector< ns3::mmwave::RlcPduInfo >'), container_type=u'map')
     module.add_container('std::deque< ns3::mmwave::SlotAllocInfo >', 'ns3::mmwave::SlotAllocInfo', container_type=u'dequeue')
     module.add_container('std::vector< unsigned int >', 'unsigned int', container_type=u'vector')
+    module.add_container('std::map< unsigned char, ns3::Ptr< ns3::mmwave::MmWaveComponentCarrierEnb > >', ('unsigned char', 'ns3::Ptr< ns3::mmwave::MmWaveComponentCarrierEnb >'), container_type=u'map')
     module.add_container('std::vector< ns3::mmwave::DciInfoElementTdma >', 'ns3::mmwave::DciInfoElementTdma', container_type=u'vector')
     module.add_container('std::vector< std::vector< ns3::mmwave::RlcPduInfo > >', 'std::vector< ns3::mmwave::RlcPduInfo >', container_type=u'vector')
     typehandlers.add_type_alias(u'std::vector< std::complex< double > >', u'ns3::mmwave::complexVector_t')
@@ -2838,6 +2841,7 @@ def register_methods(root_module):
     register_Ns3LteEnbMac_methods(root_module, root_module['ns3::LteEnbMac'])
     register_Ns3LteEnbRrc_methods(root_module, root_module['ns3::LteEnbRrc'])
     register_Ns3LteEnbRrcHandoverEventInfo_methods(root_module, root_module['ns3::LteEnbRrc::HandoverEventInfo'])
+    register_Ns3LteEnbRrcMmWaveComponentCarrierConf_methods(root_module, root_module['ns3::LteEnbRrc::MmWaveComponentCarrierConf'])
     register_Ns3LteFfrAlgorithm_methods(root_module, root_module['ns3::LteFfrAlgorithm'])
     register_Ns3LteHandoverAlgorithm_methods(root_module, root_module['ns3::LteHandoverAlgorithm'])
     register_Ns3LteHarqPhy_methods(root_module, root_module['ns3::LteHarqPhy'])
@@ -16902,14 +16906,14 @@ def register_Ns3LteEnbRrc_methods(root_module, cls):
     cls.add_method('ConfigureCell', 
                    'void', 
                    [param('std::map< unsigned char, ns3::Ptr< ns3::ComponentCarrierEnb > >', 'ccPhyConf')])
-    ## lte-enb-rrc.h (module 'lte'): void ns3::LteEnbRrc::ConfigureCell(std::map<unsigned char, ns3::Ptr<ns3::mmwave::MmWaveComponentCarrierEnb>, std::less<unsigned char>, std::allocator<std::pair<const unsigned char, ns3::Ptr<ns3::mmwave::MmWaveComponentCarrierEnb> > > > ccPhyConf) [member function]
+    ## lte-enb-rrc.h (module 'lte'): void ns3::LteEnbRrc::ConfigureCell(std::map<unsigned char, ns3::LteEnbRrc::MmWaveComponentCarrierConf, std::less<unsigned char>, std::allocator<std::pair<const unsigned char, ns3::LteEnbRrc::MmWaveComponentCarrierConf> > > ccPhyConf) [member function]
     cls.add_method('ConfigureCell', 
                    'void', 
-                   [param('std::map< unsigned char, ns3::Ptr< ns3::mmwave::MmWaveComponentCarrierEnb > >', 'ccPhyConf')])
-    ## lte-enb-rrc.h (module 'lte'): void ns3::LteEnbRrc::ConfigureMmWaveCarriers(std::map<unsigned char, ns3::Ptr<ns3::mmwave::MmWaveComponentCarrierEnb>, std::less<unsigned char>, std::allocator<std::pair<const unsigned char, ns3::Ptr<ns3::mmwave::MmWaveComponentCarrierEnb> > > > ccPhyConf) [member function]
+                   [param('std::map< unsigned char, ns3::LteEnbRrc::MmWaveComponentCarrierConf >', 'ccPhyConf')])
+    ## lte-enb-rrc.h (module 'lte'): void ns3::LteEnbRrc::ConfigureMmWaveCarriers(std::map<unsigned char, ns3::LteEnbRrc::MmWaveComponentCarrierConf, std::less<unsigned char>, std::allocator<std::pair<const unsigned char, ns3::LteEnbRrc::MmWaveComponentCarrierConf> > > ccPhyConf) [member function]
     cls.add_method('ConfigureMmWaveCarriers', 
                    'void', 
-                   [param('std::map< unsigned char, ns3::Ptr< ns3::mmwave::MmWaveComponentCarrierEnb > >', 'ccPhyConf')])
+                   [param('std::map< unsigned char, ns3::LteEnbRrc::MmWaveComponentCarrierConf >', 'ccPhyConf')])
     ## lte-enb-rrc.h (module 'lte'): void ns3::LteEnbRrc::ConnectionRejectedTimeout(uint16_t rnti) [member function]
     cls.add_method('ConnectionRejectedTimeout', 
                    'void', 
@@ -17146,6 +17150,19 @@ def register_Ns3LteEnbRrcHandoverEventInfo_methods(root_module, cls):
     cls.add_instance_attribute('sourceCellId', 'uint16_t', is_const=False)
     ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::HandoverEventInfo::targetCellId [variable]
     cls.add_instance_attribute('targetCellId', 'uint16_t', is_const=False)
+    return
+
+def register_Ns3LteEnbRrcMmWaveComponentCarrierConf_methods(root_module, cls):
+    ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::MmWaveComponentCarrierConf::MmWaveComponentCarrierConf() [constructor]
+    cls.add_constructor([])
+    ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::MmWaveComponentCarrierConf::MmWaveComponentCarrierConf(ns3::LteEnbRrc::MmWaveComponentCarrierConf const & arg0) [constructor]
+    cls.add_constructor([param('ns3::LteEnbRrc::MmWaveComponentCarrierConf const &', 'arg0')])
+    ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::MmWaveComponentCarrierConf::m_bandwidth [variable]
+    cls.add_instance_attribute('m_bandwidth', 'uint32_t', is_const=False)
+    ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::MmWaveComponentCarrierConf::m_ccId [variable]
+    cls.add_instance_attribute('m_ccId', 'uint8_t', is_const=False)
+    ## lte-enb-rrc.h (module 'lte'): ns3::LteEnbRrc::MmWaveComponentCarrierConf::m_cellId [variable]
+    cls.add_instance_attribute('m_cellId', 'uint16_t', is_const=False)
     return
 
 def register_Ns3LteFfrAlgorithm_methods(root_module, cls):
