@@ -268,6 +268,7 @@ LenaFdTbfqFfMacSchedulerTestCase1::DoRun (void)
       Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
     }
 
+  Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue(40));
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();

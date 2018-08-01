@@ -285,6 +285,8 @@ CarrierAggregationTestCase::DoRun (void)
   Config::SetDefault ("ns3::LteSpectrumPhy::DataErrorModelEnabled", BooleanValue (false));
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 
+  Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (40));
+
   /**
    * Initialize Simulation Scenario: 1 eNB and m_nUser UEs
    */
