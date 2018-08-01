@@ -270,7 +270,7 @@ HtOperation::GetPhase (void) const
 }
 
 bool
-HtOperation::IsSupportedMcs (uint8_t mcs)
+HtOperation::IsSupportedMcs (uint8_t mcs) const
 {
   if (m_rxMcsBitmask[mcs] == 1)
     {
@@ -357,7 +357,7 @@ HtOperation::GetInformationSubset2 (void) const
   val |= (m_nonGfHtStasPresent & 0x01) << 2;
   val |= (m_reservedInformationSubset2_1 & 0x01) << 3;
   val |= (m_obssNonHtStasPresent & 0x01) << 4;
-  val |= (m_reservedInformationSubset2_1 & 0x07ff) << 5;
+  val |= (m_reservedInformationSubset2_2 & 0x07ff) << 5;
   return val;
 }
 
@@ -368,7 +368,7 @@ HtOperation::SetInformationSubset2 (uint16_t ctrl)
   m_nonGfHtStasPresent = (ctrl >> 2) & 0x01;
   m_reservedInformationSubset2_1 = (ctrl >> 3) & 0x01;
   m_obssNonHtStasPresent = (ctrl >> 4) & 0x01;
-  m_reservedInformationSubset2_1 = static_cast<uint8_t>((ctrl >> 5) & 0x07ff);
+  m_reservedInformationSubset2_2 = static_cast<uint8_t> ((ctrl >> 5) & 0x07ff);
 }
 
 uint16_t
@@ -489,9 +489,6 @@ HtOperation::DeserializeInformationField (Buffer::Iterator start,
   return length;
 }
 
-/// HtOperation
-ATTRIBUTE_HELPER_CPP (HtOperation);
-
 /**
  * output stream output operator
  *
@@ -503,30 +500,29 @@ ATTRIBUTE_HELPER_CPP (HtOperation);
 std::ostream &
 operator << (std::ostream &os, const HtOperation &htOperation)
 {
-  os <<  bool (htOperation.GetStaChannelWidth ())
+  os << bool (htOperation.GetPrimaryChannel ())
+     << "|" << +htOperation.GetSecondaryChannelOffset ()
+     << "|" << bool (htOperation.GetStaChannelWidth ())
      << "|" << bool (htOperation.GetRifsMode ())
-     << "|" << bool (htOperation.GetDualCtsProtection ());
-
+     << "|" << +htOperation.GetHtProtection ()
+     << "|" << bool (htOperation.GetNonGfHtStasPresent ())
+     << "|" << bool (htOperation.GetObssNonHtStasPresent ())
+     << "|" << bool (htOperation.GetDualBeacon ())
+     << "|" << bool (htOperation.GetDualCtsProtection ())
+     << "|" << bool (htOperation.GetStbcBeacon ())
+     << "|" << bool (htOperation.GetLSigTxopProtectionFullSupport ())
+     << "|" << bool (htOperation.GetPcoActive ())
+     << "|" << bool (htOperation.GetPhase ())
+     << "|" << htOperation.GetRxHighestSupportedDataRate ()
+     << "|" << bool (htOperation.GetTxMcsSetDefined ())
+     << "|" << bool (htOperation.GetTxRxMcsSetUnequal ())
+     << "|" << +htOperation.GetTxMaxNSpatialStreams ()
+     << "|" << bool (htOperation.GetTxUnequalModulation ()) << "|";
+  for (uint8_t i = 0; i < MAX_SUPPORTED_MCS; i++)
+    {
+      os << htOperation.IsSupportedMcs (i) << " ";
+    }
   return os;
-}
-
-/**
- * input stream input operator
- *
- * \param is input stream
- * \param htOperation the HT operation
- *
- * \returns input stream
- */
-std::istream &operator >> (std::istream &is, HtOperation &htOperation)
-{
-  bool c1, c2, c3;
-  is >> c1 >> c2 >> c3;
-  htOperation.SetStaChannelWidth (c1);
-  htOperation.SetRifsMode (c2);
-  htOperation.SetDualCtsProtection (c3);
-
-  return is;
 }
 
 } //namespace ns3

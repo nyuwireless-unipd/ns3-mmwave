@@ -223,6 +223,7 @@ int main (int argc, char *argv[])
   bool pcap = false;
   bool sack = true;
   std::string queue_disc_type = "ns3::PfifoFastQueueDisc";
+  std::string recovery = "ns3::TcpClassicRecovery";
 
 
   CommandLine cmd;
@@ -246,6 +247,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("pcap_tracing", "Enable or disable PCAP tracing", pcap);
   cmd.AddValue ("queue_disc_type", "Queue disc type for gateway (e.g. ns3::CoDelQueueDisc)", queue_disc_type);
   cmd.AddValue ("sack", "Enable or disable SACK option", sack);
+  cmd.AddValue ("recovery", "Recovery algorithm type to use (e.g., ns3::TcpPrrRecovery", recovery);
   cmd.Parse (argc, argv);
 
   transport_prot = std::string ("ns3::") + transport_prot;
@@ -279,6 +281,8 @@ int main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (1 << 21));
   Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue (sack));
 
+  Config::SetDefault ("ns3::TcpL4Protocol::RecoveryType",
+                      TypeIdValue (TypeId::LookupByName (recovery)));
   // Select TCP variant
   if (transport_prot.compare ("ns3::TcpWestwoodPlus") == 0)
     { 
@@ -342,13 +346,13 @@ int main (int argc, char *argv[])
   Time access_d (access_delay);
   Time bottle_d (delay);
 
-  Config::SetDefault ("ns3::CoDelQueueDisc::Mode", EnumValue (CoDelQueueDisc::QUEUE_DISC_MODE_BYTES));
-
   uint32_t size = static_cast<uint32_t>((std::min (access_b, bottle_b).GetBitRate () / 8) *
     ((access_d + bottle_d) * 2).GetSeconds ());
 
-  Config::SetDefault ("ns3::PfifoFastQueueDisc::Limit", UintegerValue (size / mtu_bytes));
-  Config::SetDefault ("ns3::CoDelQueueDisc::MaxBytes", UintegerValue (size));
+  Config::SetDefault ("ns3::PfifoFastQueueDisc::MaxSize",
+                      QueueSizeValue (QueueSize (QueueSizeUnit::PACKETS, size / mtu_bytes)));
+  Config::SetDefault ("ns3::CoDelQueueDisc::MaxSize",
+                      QueueSizeValue (QueueSize (QueueSizeUnit::BYTES, size)));
 
   for (uint32_t i = 0; i < num_flows; i++)
     {

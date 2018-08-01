@@ -657,8 +657,8 @@ Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
 
 
 	// CoDel queue settings
-	Config::SetDefault ("ns3::CoDelQueueDisc::Mode", EnumValue (ns3::CoDelQueueDisc::QueueDiscMode::QUEUE_DISC_MODE_PACKETS));
-	Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
+  Config::SetDefault ("ns3::CoDelQueueDisc::MaxSize", UintegerValue (50000*1500));
+
 
 	Ptr<mmwave::MmWaveHelper> mmwaveHelper = CreateObject<mmwave::MmWaveHelper> ();
 	if(true)

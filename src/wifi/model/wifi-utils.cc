@@ -18,9 +18,13 @@
  * Author: Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
+#include "ns3/packet.h"
+#include "ns3/nstime.h"
 #include "wifi-utils.h"
+#include "ctrl-headers.h"
 #include "wifi-mac-header.h"
-#include <cmath>
+#include "wifi-mac-trailer.h"
+#include "wifi-mode.h"
 
 namespace ns3 {
 
@@ -83,7 +87,7 @@ ConvertGuardIntervalToNanoSeconds (WifiMode mode, bool htShortGuardInterval, Tim
   uint16_t gi;
   if (mode.GetModulationClass () == WIFI_MOD_CLASS_HE)
     {
-      gi = heGuardInterval.GetNanoSeconds ();
+      gi = static_cast<uint16_t> (heGuardInterval.GetNanoSeconds ());
     }
   else if (mode.GetModulationClass () == WIFI_MOD_CLASS_HT || mode.GetModulationClass () == WIFI_MOD_CLASS_VHT)
     {

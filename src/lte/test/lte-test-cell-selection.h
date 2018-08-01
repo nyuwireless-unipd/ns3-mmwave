@@ -74,11 +74,11 @@ public:
     uint16_t expectedCellId1; ///< The cell ID that the UE is expected to attach to (0 means that the UE should not attach to any cell).
     uint16_t expectedCellId2; ///< An alternative cell ID that the UE is expected to attach to (0 means that this no alternative cell is expected).
     /**
-     * \brief UE test setup funtion.
+     * \brief UE test setup function.
      * \param relPosX relative position to the inter site distance in X
      * \param relPosY relative position to the inter site distance in Y
      * \param isCsgMember if true, simulation is allowed access to CSG cell
-     * \param checkPoint the tiem int he simulation when the UE is verified
+     * \param checkPoint the time in the simulation when the UE is verified
      * \param expectedCellId1 ///< The cell ID that the UE is expected to attach to (0 means that the UE should not attach to any cell).
      * \param expectedCellId2 ///< An alternative cell ID that the UE is expected to attach to (0 means that this no alternative cell is expected).
      */
@@ -100,7 +100,7 @@ public:
   LteCellSelectionTestCase (std::string name, bool isEpcMode, bool isIdealRrc,
                             double interSiteDistance,
                             std::vector<UeSetup_t> ueSetupList,
-                            int64_t rngRun);
+                            uint64_t rngRun);
 
   virtual ~LteCellSelectionTestCase ();
 
@@ -163,7 +163,7 @@ private:
   bool m_isIdealRrc; ///< whether the LTE is configured to use ideal RRC
   double m_interSiteDistance; ///< inter site distance
   std::vector<UeSetup_t> m_ueSetupList; ///< UE setup list
-  int64_t m_rngRun; ///< rng run
+  uint64_t m_rngRun; ///< rng run
 
   /// The current UE RRC state.
   std::vector<LteUeRrc::State> m_lastState;

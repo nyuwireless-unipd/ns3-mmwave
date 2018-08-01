@@ -22,6 +22,7 @@
 #include "ns3/log.h"
 #include "tcp-error-model.h"
 #include "ns3/random-variable-stream.h"
+#include "ns3/tcp-rx-buffer.h"
 
 using namespace ns3;
 
@@ -263,7 +264,7 @@ TcpDropRatioErrorModel::ShouldDrop (const Ipv4Header &ipHeader, const TcpHeader 
  *
  *   m_rxBuffer->MaxRxSequence () - m_rxBuffer->NextRxSequence ()
  * 
- * instead ofthe previous
+ * instead of the previous
  *
  *   m_rxBuffer->MaxBufferSize ()
  * 

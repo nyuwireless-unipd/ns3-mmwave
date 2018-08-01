@@ -23,11 +23,12 @@
 
 #include "wifi-phy-standard.h"
 #include "wifi-remote-station-manager.h"
-#include "dca-txop.h"
-#include "ssid.h"
 #include "qos-utils.h"
 
 namespace ns3 {
+
+class Ssid;
+class Txop;
 
 /**
  * \brief base class for all MAC-level wifi objects.
@@ -131,18 +132,6 @@ public:
    */
   virtual Time GetAckTimeout (void) const = 0;
   /**
-   * \return the maximum lifetime of an MSDU.
-   *
-   * Unused for now.
-   */
-  Time GetMsduLifetime (void) const;
-  /**
-   * \return the maximum propagation delay.
-   *
-   * Unused for now.
-   */
-  Time GetMaxPropagationDelay (void) const;
-  /**
    * \return the MAC address associated to this MAC layer.
    */
   virtual Mac48Address GetAddress (void) const = 0;
@@ -238,21 +227,21 @@ public:
    *
    * Sets the timeout for basic block ACK.
    */
-  virtual void SetBasicBlockAckTimeout (Time blockAckTimeout);
+  virtual void SetBasicBlockAckTimeout (Time blockAckTimeout) = 0;
   /**
    * \return the current basic block ACK timeout duration.
    */
-  virtual Time GetBasicBlockAckTimeout (void) const;
+  virtual Time GetBasicBlockAckTimeout (void) const = 0;
   /**
    * \param blockAckTimeout
    *
    * Sets the timeout for compressed block ACK.
    */
-  virtual void SetCompressedBlockAckTimeout (Time blockAckTimeout);
+  virtual void SetCompressedBlockAckTimeout (Time blockAckTimeout) = 0;
   /**
    * \return the current compressed block ACK timeout duration.
    */
-  virtual Time GetCompressedBlockAckTimeout (void) const;
+  virtual Time GetCompressedBlockAckTimeout (void) const = 0;
 
   /**
    * \param packet the packet being enqueued
@@ -320,7 +309,7 @@ protected:
    *
    * Configure the DCF with appropriate values depending on the given access category.
    */
-  void ConfigureDcf (Ptr<DcaTxop> dcf, uint32_t cwmin, uint32_t cwmax, bool isDsss, AcIndex ac);
+  void ConfigureDcf (Ptr<Txop> dcf, uint32_t cwmin, uint32_t cwmax, bool isDsss, AcIndex ac);
 
 
 private:

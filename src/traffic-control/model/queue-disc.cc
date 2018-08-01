@@ -317,7 +317,7 @@ TypeId QueueDisc::GetTypeId (void)
     .AddTraceSource ("SojournTime",
                      "Sojourn time of the last packet dequeued from the queue disc",
                      MakeTraceSourceAccessor (&QueueDisc::m_sojourn),
-                     "ns3::TracedValueCallback::Time")
+                     "ns3::Time::TracedCallback")
   ;
   return tid;
 }
@@ -325,9 +325,9 @@ TypeId QueueDisc::GetTypeId (void)
 QueueDisc::QueueDisc (QueueDiscSizePolicy policy)
   :  m_nPackets (0),
      m_nBytes (0),
-     m_sojourn (0),
      m_maxSize (QueueSize ("1p")),         // to avoid that setting the mode at construction time is ignored
      m_running (false),
+     m_peeked (false),
      m_sizePolicy (policy),
      m_prohibitChangeMode (false)
 {
@@ -584,16 +584,16 @@ QueueDisc::AddInternalQueue (Ptr<InternalQueue> queue)
 }
 
 Ptr<QueueDisc::InternalQueue>
-QueueDisc::GetInternalQueue (uint32_t i) const
+QueueDisc::GetInternalQueue (std::size_t i) const
 {
   NS_ASSERT (i < m_queues.size ());
   return m_queues[i];
 }
 
-uint32_t
+std::size_t
 QueueDisc::GetNInternalQueues (void) const
 {
-  return static_cast<uint32_t>(m_queues.size ());
+  return m_queues.size ();
 }
 
 void
@@ -604,16 +604,16 @@ QueueDisc::AddPacketFilter (Ptr<PacketFilter> filter)
 }
 
 Ptr<PacketFilter>
-QueueDisc::GetPacketFilter (uint32_t i) const
+QueueDisc::GetPacketFilter (std::size_t i) const
 {
   NS_ASSERT (i < m_filters.size ());
   return m_filters[i];
 }
 
-uint32_t
+std::size_t
 QueueDisc::GetNPacketFilters (void) const
 {
-  return static_cast<uint32_t>(m_filters.size ());
+  return m_filters.size ();
 }
 
 void
@@ -642,16 +642,16 @@ QueueDisc::AddQueueDiscClass (Ptr<QueueDiscClass> qdClass)
 }
 
 Ptr<QueueDiscClass>
-QueueDisc::GetQueueDiscClass (uint32_t i) const
+QueueDisc::GetQueueDiscClass (std::size_t i) const
 {
   NS_ASSERT (i < m_classes.size ());
   return m_classes[i];
 }
 
-uint32_t
+std::size_t
 QueueDisc::GetNQueueDiscClasses (void) const
 {
-  return static_cast<uint32_t>(m_classes.size ());
+  return m_classes.size ();
 }
 
 int32_t
@@ -689,15 +689,23 @@ QueueDisc::PacketEnqueued (Ptr<const QueueDiscItem> item)
 void
 QueueDisc::PacketDequeued (Ptr<const QueueDiscItem> item)
 {
-  m_nPackets--;
-  m_nBytes -= item->GetSize ();
-  m_stats.nTotalDequeuedPackets++;
-  m_stats.nTotalDequeuedBytes += item->GetSize ();
+  // If the queue disc asked the internal queue or the child queue disc to
+  // dequeue a packet because a peek operation was requested, the packet is
+  // still held by the queue disc, hence we do not need to update statistics
+  // and fire the dequeue trace. This function will be explicitly called when
+  // the packet will be actually dequeued.
+  if (!m_peeked)
+    {
+      m_nPackets--;
+      m_nBytes -= item->GetSize ();
+      m_stats.nTotalDequeuedPackets++;
+      m_stats.nTotalDequeuedBytes += item->GetSize ();
 
-  m_sojourn = Simulator::Now () - item->GetTimeStamp ();
+      m_sojourn (Simulator::Now () - item->GetTimeStamp ());
 
-  NS_LOG_LOGIC ("m_traceDequeue (p)");
-  m_traceDequeue (item);
+      NS_LOG_LOGIC ("m_traceDequeue (p)");
+      m_traceDequeue (item);
+    }
 }
 
 void
@@ -768,6 +776,17 @@ QueueDisc::DropAfterDequeue (Ptr<const QueueDiscItem> item, const char* reason)
   else
     {
       m_stats.nDroppedBytesAfterDequeue[reason] = item->GetSize ();
+    }
+
+  // if in the context of a peek request a dequeued packet is dropped, we need
+  // to update the statistics and fire the dequeue trace before firing the drop
+  // after dequeue trace
+  if (m_peeked)
+    {
+      // temporarily set m_peeked to false, otherwise PacketDequeued does nothing
+      m_peeked = false;
+      PacketDequeued (item);
+      m_peeked = true;
     }
 
   NS_LOG_DEBUG ("Total packets/bytes dropped after dequeue: "
@@ -861,7 +880,28 @@ QueueDisc::Dequeue (void)
 {
   NS_LOG_FUNCTION (this);
 
-  Ptr<QueueDiscItem> item = DoDequeue ();
+  // The QueueDisc::DoPeek method dequeues a packet and keeps it as a requeued
+  // packet. Thus, first check whether a peeked packet exists. Otherwise, call
+  // the private DoDequeue method.
+  Ptr<QueueDiscItem> item = m_requeued;
+
+  if (item)
+    {
+      m_requeued = 0;
+      if (m_peeked)
+        {
+          // If the packet was requeued because a peek operation was requested
+          // (which is the case here because DequeuePacket calls Dequeue only
+          // when m_requeued is null), we need to explicitly call PacketDequeued
+          // to update statistics about dequeued packets and fire the dequeue trace.
+          m_peeked = false;
+          PacketDequeued (item);
+        }
+    }
+  else
+    {
+      item = DoDequeue ();
+    }
 
   NS_ASSERT (m_nPackets == m_stats.nTotalEnqueuedPackets - m_stats.nTotalDequeuedPackets);
   NS_ASSERT (m_nBytes == m_stats.nTotalEnqueuedBytes - m_stats.nTotalDequeuedBytes);
@@ -877,34 +917,21 @@ QueueDisc::Peek (void)
 }
 
 Ptr<const QueueDiscItem>
-QueueDisc::PeekDequeued (void)
+QueueDisc::DoPeek (void)
 {
   NS_LOG_FUNCTION (this);
 
   if (!m_requeued)
     {
+      m_peeked = true;
       m_requeued = Dequeue ();
+      // if no packet is returned, reset the m_peeked flag
+      if (!m_requeued)
+        {
+          m_peeked = false;
+        }
     }
   return m_requeued;
-}
-
-Ptr<QueueDiscItem>
-QueueDisc::DequeuePeeked (void)
-{
-  NS_LOG_FUNCTION (this);
-
-  Ptr<QueueDiscItem> item = m_requeued;
-
-  if (item)
-    {
-      m_requeued = 0;
-    }
-  else
-    {
-      item = Dequeue ();
-    }
-
-  return item;
 }
 
 void
@@ -979,6 +1006,14 @@ QueueDisc::DequeuePacket ()
           {
             item = m_requeued;
             m_requeued = 0;
+            if (m_peeked)
+              {
+                // If the packet was requeued because a peek operation was requested
+                // we need to explicitly call PacketDequeued to update statistics
+                // about dequeued packets and fire the dequeue trace.
+                m_peeked = false;
+                PacketDequeued (item);
+              }
           }
     }
   else

@@ -54,22 +54,23 @@ public:
    */
   typedef void (* TracedValueCallback)(const ValueClassTest oldValue,
                                        const ValueClassTest newValue);
-
-private:
-  int m_v;
 };
 
 
 bool operator != (const ValueClassTest &a, const ValueClassTest &b)
 {
+  NS_UNUSED (a);
+  NS_UNUSED (b);
   return true;
 }
 std::ostream & operator << (std::ostream &os, ValueClassTest v)
 {
+  NS_UNUSED (v);
   return os;
 }
 std::istream & operator >> (std::istream &is, ValueClassTest &v)
 {
+  NS_UNUSED (v);
   return is;
 }
 
@@ -259,8 +260,8 @@ private:
   bool DoGetTestB (void) const { return m_boolTestA; }
   int16_t DoGetInt16 (void) const { return m_int16SetGet; }
   void DoSetInt16 (int16_t v) { m_int16SetGet = v; }
-  uint32_t DoGetVectorN (void) const { return m_vector2.size (); }
-  Ptr<Derived> DoGetVector (uint32_t i) const { return m_vector2[i]; }
+  std::size_t DoGetVectorN (void) const { return m_vector2.size (); }
+  Ptr<Derived> DoGetVector (std::size_t i) const { return m_vector2[i]; }
   bool DoSetIntSrc (int8_t v) { m_intSrc2 = v; return true; }
   int8_t DoGetIntSrc (void) const { return m_intSrc2; }
   bool DoSetEnum (Test_e v) { m_enumSetGet = v; return true; }
@@ -1069,7 +1070,11 @@ public:
 private:
   virtual void DoRun (void);
 
-  void NotifySource1 (int8_t old, int8_t n) { m_got1 = n; }
+  void NotifySource1 (int8_t old, int8_t n) 
+  { 
+    NS_UNUSED (old); 
+    m_got1 = n; 
+  }
   int64_t m_got1;
 };
 
@@ -1088,7 +1093,7 @@ IntegerTraceSourceTestCase::DoRun (void)
   NS_TEST_ASSERT_MSG_NE (p, 0, "Unable to CreateObject");
 
   //
-  // Check to make sure changing an Attibute value triggers a trace callback
+  // Check to make sure changing an Attribute value triggers a trace callback
   // that sets a member variable.
   //
   m_got1 = 1234;
@@ -1141,7 +1146,12 @@ public:
 private:
   virtual void DoRun (void);
 
-  void NotifySource2 (double a, int b, float c) { m_got2 = a; }
+  void NotifySource2 (double a, int b, float c) 
+  { 
+    NS_UNUSED (b); 
+    NS_UNUSED (c); 
+    m_got2 = a; 
+  }
 
   double m_got2;
 };
@@ -1215,7 +1225,12 @@ public:
 private:
   virtual void DoRun (void);
 
-  void NotifySource2 (double a, int b, float c) { m_got2 = a; }
+  void NotifySource2 (double a, int b, float c) 
+  { 
+    NS_UNUSED (b);
+    NS_UNUSED (c);
+    m_got2 = a; 
+  }
 
   double m_got2;
 };
@@ -1258,7 +1273,7 @@ PointerAttributeTestCase::DoRun (void)
   //
   p->GetAttribute ("Pointer", ptr);
   Ptr<Derived> stored = ptr.Get<Derived> ();
-  NS_TEST_ASSERT_MSG_EQ (stored, derived, "Retreived Attribute does not match stored PointerValue");
+  NS_TEST_ASSERT_MSG_EQ (stored, derived, "Retrieved Attribute does not match stored PointerValue");
 
   //
   // We should be able to use the Attribute Get() just like GetObject<type>,
@@ -1268,7 +1283,7 @@ PointerAttributeTestCase::DoRun (void)
   //
   p->GetAttribute ("Pointer", ptr);
   Ptr<Object> storedBase = ptr.Get<Object> ();
-  NS_TEST_ASSERT_MSG_EQ (storedBase, stored, "Retreived Ptr<Object> does not match stored Ptr<Derived>");
+  NS_TEST_ASSERT_MSG_EQ (storedBase, stored, "Retrieved Ptr<Object> does not match stored Ptr<Derived>");
 
   //
   // If we try to Get() something that is unrelated to what we stored, we should
@@ -1276,7 +1291,7 @@ PointerAttributeTestCase::DoRun (void)
   //
   p->GetAttribute ("Pointer", ptr);
   Ptr<AttributeObjectTest> x = ptr.Get<AttributeObjectTest> ();
-  NS_TEST_ASSERT_MSG_EQ (x, 0, "Unexpectedly retreived unrelated Ptr<type> from stored Ptr<Derived>");
+  NS_TEST_ASSERT_MSG_EQ (x, 0, "Unexpectedly retrieved unrelated Ptr<type> from stored Ptr<Derived>");
 
   //
   // Test whether the initialized pointers from two different objects
@@ -1356,7 +1371,7 @@ CallbackValueTestCase::DoRun (void)
 
   //
   // The member variable m_cbValue is declared as a Callback<void, int8_t>.  The
-  // Attibute named "Callback" also points to m_cbValue and allows us to set the
+  // Attribute named "Callback" also points to m_cbValue and allows us to set the
   // callback using that Attribute.
   //
   // NotifyCallbackValue is going to be the target of the callback and will just set

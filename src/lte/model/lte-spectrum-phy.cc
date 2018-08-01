@@ -225,7 +225,7 @@ LteSpectrumPhy::GetTypeId (void)
                      MakeTraceSourceAccessor (&LteSpectrumPhy::m_phyTxStartTrace),
                      "ns3::PacketBurst::TracedCallback")
     .AddTraceSource ("TxEnd",
-                     "Trace fired when a previosuly started transmission is finished",
+                     "Trace fired when a previously started transmission is finished",
                      MakeTraceSourceAccessor (&LteSpectrumPhy::m_phyTxEndTrace),
                      "ns3::PacketBurst::TracedCallback")
     .AddTraceSource ("RxStart",
@@ -233,11 +233,11 @@ LteSpectrumPhy::GetTypeId (void)
                      MakeTraceSourceAccessor (&LteSpectrumPhy::m_phyRxStartTrace),
                      "ns3::PacketBurst::TracedCallback")
     .AddTraceSource ("RxEndOk",
-                     "Trace fired when a previosuly started RX terminates successfully",
+                     "Trace fired when a previously started RX terminates successfully",
                      MakeTraceSourceAccessor (&LteSpectrumPhy::m_phyRxEndOkTrace),
                      "ns3::Packet::TracedCallback")
     .AddTraceSource ("RxEndError",
-                     "Trace fired when a previosuly started RX terminates with an error",
+                     "Trace fired when a previously started RX terminates with an error",
                      MakeTraceSourceAccessor (&LteSpectrumPhy::m_phyRxEndErrorTrace),
                      "ns3::Packet::TracedCallback")
     .AddAttribute ("DataErrorModelEnabled",
@@ -459,7 +459,7 @@ LteSpectrumPhy::StartTxDataFrame (Ptr<PacketBurst> pb, std::list<Ptr<LteControlM
     case RX_DATA:
     case RX_DL_CTRL:
     case RX_UL_SRS:
-      NS_FATAL_ERROR ("cannot TX while RX: according to FDD channel acces, the physical layer for transmission cannot be used for reception");
+      NS_FATAL_ERROR ("cannot TX while RX: according to FDD channel access, the physical layer for transmission cannot be used for reception");
       break;
 
     case TX_DATA:
@@ -471,7 +471,7 @@ LteSpectrumPhy::StartTxDataFrame (Ptr<PacketBurst> pb, std::list<Ptr<LteControlM
     case IDLE:
     {
       /*
-      m_txPsd must be setted by the device, according to
+      m_txPsd must be set by the device, according to
       (i) the available subchannel for transmission
       (ii) the power transmission
       */
@@ -516,7 +516,7 @@ LteSpectrumPhy::StartTxDlCtrlFrame (std::list<Ptr<LteControlMessage> > ctrlMsgLi
     case RX_DATA:
     case RX_DL_CTRL:
     case RX_UL_SRS:
-      NS_FATAL_ERROR ("cannot TX while RX: according to FDD channel acces, the physical layer for transmission cannot be used for reception");
+      NS_FATAL_ERROR ("cannot TX while RX: according to FDD channel access, the physical layer for transmission cannot be used for reception");
       break;
 
     case TX_DATA:
@@ -528,7 +528,7 @@ LteSpectrumPhy::StartTxDlCtrlFrame (std::list<Ptr<LteControlMessage> > ctrlMsgLi
     case IDLE:
     {
       /*
-      m_txPsd must be setted by the device, according to
+      m_txPsd must be set by the device, according to
       (i) the available subchannel for transmission
       (ii) the power transmission
       */
@@ -574,7 +574,7 @@ LteSpectrumPhy::StartTxUlSrsFrame ()
     case RX_DATA:
     case RX_DL_CTRL:
     case RX_UL_SRS:
-      NS_FATAL_ERROR ("cannot TX while RX: according to FDD channel acces, the physical layer for transmission cannot be used for reception");
+      NS_FATAL_ERROR ("cannot TX while RX: according to FDD channel access, the physical layer for transmission cannot be used for reception");
       break;
 
     case TX_DL_CTRL:
@@ -586,7 +586,7 @@ LteSpectrumPhy::StartTxUlSrsFrame ()
     case IDLE:
     {
       /*
-      m_txPsd must be setted by the device, according to
+      m_txPsd must be set by the device, according to
       (i) the available subchannel for transmission
       (ii) the power transmission
       */

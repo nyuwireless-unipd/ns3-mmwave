@@ -106,7 +106,7 @@ public:
    * @param [in] schedulerFactory The configured ObjectFactory.
    *
    * The event scheduler can be set at any time: the events scheduled
-   * in the previous scheduler will be transfered to the new scheduler
+   * in the previous scheduler will be transferred to the new scheduler
    * before we start to use it.
    */
   static void SetScheduler (ObjectFactory schedulerFactory);
@@ -184,8 +184,14 @@ public:
    */
   static uint32_t GetContext (void);
 
-  /** Context enum values. */
-  enum {
+  /**
+   * Context enum values.
+   *
+   * \internal
+   * This enum type is fixed to match the representation size
+   * of simulation context.
+   */
+  enum : uint32_t {
     /**
      * Flag for events not associated with any particular context.
      */

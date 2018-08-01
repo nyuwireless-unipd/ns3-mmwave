@@ -49,14 +49,19 @@
 // logs associated to the chosen scenario.
 //
 
-#include "ns3/core-module.h"
+#include "ns3/log.h"
+#include "ns3/packet.h"
+#include "ns3/config.h"
+#include "ns3/double.h"
+#include "ns3/simulator.h"
+#include "ns3/command-line.h"
 #include "ns3/yans-wifi-channel.h"
+#include "ns3/yans-wifi-phy.h"
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
 #include "ns3/nist-error-rate-model.h"
 #include "ns3/constant-position-mobility-model.h"
 #include "ns3/simple-frame-capture-model.h"
-#include "ns3/log.h"
 
 using namespace ns3;
 
@@ -101,7 +106,7 @@ private:
    * Function triggered when a packet is dropped
    * \param packet the packet that was dropped
    */
-  void PacketDropped(Ptr<const Packet> packet);
+  void PacketDropped (Ptr<const Packet> packet);
   /// Send A function
   void SendA (void) const;
   /// Send B function
@@ -136,17 +141,17 @@ InterferenceExperiment::SendB (void) const
 }
 
 void
-InterferenceExperiment::PacketDropped(Ptr<const Packet> packet)
+InterferenceExperiment::PacketDropped (Ptr<const Packet> packet)
 {
-    if (packet->GetUid () == 0)
+  if (packet->GetUid () == 0)
     {
       m_droppedA = true;
     }
-    else if (packet->GetUid () == 1)
+  else if (packet->GetUid () == 1)
     {
       m_droppedB = true;
     }
-    else
+  else
     {
       NS_LOG_ERROR ("Unknown packet!");
       exit (1);
@@ -225,7 +230,7 @@ InterferenceExperiment::Run (struct InterferenceExperiment::Input input)
   m_txB->ConfigureStandard (input.standard);
   rx->ConfigureStandard (input.standard);
 
-  rx->TraceConnectWithoutContext("PhyRxDrop", MakeCallback(&InterferenceExperiment::PacketDropped, this));
+  rx->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback (&InterferenceExperiment::PacketDropped, this));
 
   Simulator::Schedule (Seconds (0), &InterferenceExperiment::SendA, this);
   Simulator::Schedule (Seconds (0) + input.interval, &InterferenceExperiment::SendB, this);
@@ -236,11 +241,11 @@ InterferenceExperiment::Run (struct InterferenceExperiment::Input input)
   m_txA->Dispose ();
   rx->Dispose ();
 
-  if(checkResults && (m_droppedA == expectRxASuccessfull || m_droppedB == expectRxBSuccessfull))
-  {
-    NS_LOG_ERROR ("Results are not expected!");
-    exit (1);
-  }
+  if (checkResults && (m_droppedA == expectRxASuccessfull || m_droppedB == expectRxBSuccessfull))
+    {
+      NS_LOG_ERROR ("Results are not expected!");
+      exit (1);
+    }
 }
 
 int main (int argc, char *argv[])

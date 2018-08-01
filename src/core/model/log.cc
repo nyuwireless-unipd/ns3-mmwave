@@ -339,7 +339,7 @@ LogComponent::GetLevelLabel(const enum LogLevel level)
     }
   else if (level == LOG_WARN)
     {
-      // whitespace left at the end for aligment
+      // whitespace left at the end for alignment
       return "WARN ";
     }
   else if (level == LOG_DEBUG)
@@ -348,7 +348,7 @@ LogComponent::GetLevelLabel(const enum LogLevel level)
     }
   else if (level == LOG_INFO)
     {
-      // whitespace left at the end for aligment
+      // whitespace left at the end for alignment
       return "INFO ";
     }
   else if (level == LOG_FUNCTION)
@@ -677,6 +677,38 @@ ParameterLogger&
 ParameterLogger::operator<< <const char *>(const char * param)
 {
   (*this) << std::string (param);
+  return *this;
+}
+
+template<>
+ParameterLogger&
+ParameterLogger::operator<< <int8_t>(const int8_t param)
+{
+  if (m_first)
+  {
+    m_os << static_cast<int16_t> (param);
+    m_first = false;
+  }
+  else
+  {
+    m_os << ", " << static_cast<int16_t> (param);
+  }
+  return *this;
+}
+
+template<>
+ParameterLogger&
+ParameterLogger::operator<< <uint8_t>(const uint8_t param)
+{
+  if (m_first)
+  {
+    m_os << static_cast<uint16_t> (param);
+    m_first = false;
+  }
+  else
+  {
+    m_os << ", " << static_cast<uint16_t> (param);
+  }
   return *this;
 }
 

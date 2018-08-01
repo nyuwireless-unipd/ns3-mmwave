@@ -19,9 +19,10 @@
  *          Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
-#include "nist-error-rate-model.h"
-#include "wifi-phy.h"
 #include "ns3/log.h"
+#include "nist-error-rate-model.h"
+#include "dsss-error-rate-model.h"
+#include "wifi-phy.h"
 
 namespace ns3 {
 

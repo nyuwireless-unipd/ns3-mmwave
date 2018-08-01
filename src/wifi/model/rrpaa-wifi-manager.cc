@@ -18,17 +18,16 @@
  * Author: Matías Richart <mrichart@fing.edu.uy>
  */
 
-#include "rrpaa-wifi-manager.h"
-#include "yans-wifi-phy.h"
-#include "wifi-phy.h"
-#include "wifi-mac.h"
-#include "ns3/assert.h"
+#include "ns3/packet.h"
 #include "ns3/log.h"
 #include "ns3/boolean.h"
 #include "ns3/double.h"
 #include "ns3/uinteger.h"
 #include "ns3/simulator.h"
-#include <cmath>
+#include "ns3/data-rate.h"
+#include "rrpaa-wifi-manager.h"
+#include "wifi-phy.h"
+#include "wifi-mac.h"
 
 NS_LOG_COMPONENT_DEFINE ("RrpaaWifiManager");
 
@@ -244,7 +243,7 @@ RrpaaWifiManager::CheckInit (RrpaaWifiRemoteStation *station)
       station->m_prevPowerLevel = m_maxPowerLevel;
       station->m_powerLevel = m_maxPowerLevel;
       WifiMode mode = GetSupported (station, 0);
-      uint8_t channelWidth = GetChannelWidth (station);
+      uint16_t channelWidth = GetChannelWidth (station);
       DataRate rate = DataRate (mode.GetDataRate (channelWidth));
       double power = GetPhy ()->GetPowerDbm (station->m_powerLevel);
       m_rateChange (rate, rate, station->m_state->m_address);
@@ -297,7 +296,7 @@ RrpaaWifiManager::InitThresholds (RrpaaWifiRemoteStation *station)
           mtl = nextMtl;
         }
       WifiRrpaaThresholds th;
-      th.m_ewnd = ceil (m_tau / totalTxTime.GetSeconds ());
+      th.m_ewnd = static_cast<uint32_t> (ceil (m_tau / totalTxTime.GetSeconds ()));
       th.m_ori = ori;
       th.m_mtl = mtl;
       station->m_thresholds.push_back (std::make_pair (th, mode));
@@ -376,7 +375,7 @@ RrpaaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   RrpaaWifiRemoteStation *station = (RrpaaWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -405,7 +404,7 @@ RrpaaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   RrpaaWifiRemoteStation *station = (RrpaaWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac

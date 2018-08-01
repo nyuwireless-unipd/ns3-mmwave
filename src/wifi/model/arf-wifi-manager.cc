@@ -18,9 +18,9 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
-#include "arf-wifi-manager.h"
 #include "ns3/log.h"
-#include "ns3/uinteger.h"
+#include "arf-wifi-manager.h"
+#include "wifi-tx-vector.h"
 
 #define Min(a,b) ((a < b) ? a : b)
 
@@ -60,7 +60,7 @@ ArfWifiManager::GetTypeId (void)
                    MakeUintegerAccessor (&ArfWifiManager::m_timerThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("SuccessThreshold",
-                   "The minimum number of sucessfull transmissions to try a new rate.",
+                   "The minimum number of successful transmissions to try a new rate.",
                    UintegerValue (10),
                    MakeUintegerAccessor (&ArfWifiManager::m_successThreshold),
                    MakeUintegerChecker<uint32_t> ())
@@ -214,7 +214,7 @@ ArfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   ArfWifiRemoteStation *station = (ArfWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -236,7 +236,7 @@ ArfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
   /// \todo we could/should implement the Arf algorithm for
   /// RTS only by picking a single rate within the BasicRateSet.
   ArfWifiRemoteStation *station = (ArfWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac

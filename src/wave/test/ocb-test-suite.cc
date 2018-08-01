@@ -17,13 +17,14 @@
  *
  * Author: Junling Bu <linlinjavaer@gmail.com>
  */
+
+#include <iostream>
 #include "ns3/test.h"
 #include "ns3/rng-seed-manager.h"
 #include "ns3/config.h"
 #include "ns3/data-rate.h"
 #include "ns3/vector.h"
 #include "ns3/string.h"
-#include "ns3/ssid.h"
 #include "ns3/packet-socket-address.h"
 #include "ns3/mobility-model.h"
 #include "ns3/yans-wifi-helper.h"
@@ -33,8 +34,6 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/packet-socket-server.h"
 #include "ns3/packet-socket-client.h"
-#include <iostream>
-
 #include "ns3/ocb-wifi-mac.h"
 #include "ns3/wifi-80211p-helper.h"
 #include "ns3/wave-mac-helper.h"
@@ -50,25 +49,25 @@ AssignWifiRandomStreams (Ptr<WifiMac> mac, int64_t stream)
   if (rmac)
     {
       PointerValue ptr;
-      rmac->GetAttribute ("DcaTxop", ptr);
-      Ptr<DcaTxop> dcaTxop = ptr.Get<DcaTxop> ();
-      currentStream += dcaTxop->AssignStreams (currentStream);
+      rmac->GetAttribute ("Txop", ptr);
+      Ptr<Txop> txop = ptr.Get<Txop> ();
+      currentStream += txop->AssignStreams (currentStream);
 
-      rmac->GetAttribute ("VO_EdcaTxopN", ptr);
-      Ptr<EdcaTxopN> vo_edcaTxopN = ptr.Get<EdcaTxopN> ();
-      currentStream += vo_edcaTxopN->AssignStreams (currentStream);
+      rmac->GetAttribute ("VO_Txop", ptr);
+      Ptr<QosTxop> vo_txop = ptr.Get<QosTxop> ();
+      currentStream += vo_txop->AssignStreams (currentStream);
 
-      rmac->GetAttribute ("VI_EdcaTxopN", ptr);
-      Ptr<EdcaTxopN> vi_edcaTxopN = ptr.Get<EdcaTxopN> ();
-      currentStream += vi_edcaTxopN->AssignStreams (currentStream);
+      rmac->GetAttribute ("VI_Txop", ptr);
+      Ptr<QosTxop> vi_txop = ptr.Get<QosTxop> ();
+      currentStream += vi_txop->AssignStreams (currentStream);
 
-      rmac->GetAttribute ("BE_EdcaTxopN", ptr);
-      Ptr<EdcaTxopN> be_edcaTxopN = ptr.Get<EdcaTxopN> ();
-      currentStream += be_edcaTxopN->AssignStreams (currentStream);
+      rmac->GetAttribute ("BE_Txop", ptr);
+      Ptr<QosTxop> be_txop = ptr.Get<QosTxop> ();
+      currentStream += be_txop->AssignStreams (currentStream);
 
-      rmac->GetAttribute ("BK_EdcaTxopN", ptr);
-      Ptr<EdcaTxopN> bk_edcaTxopN = ptr.Get<EdcaTxopN> ();
-      currentStream += bk_edcaTxopN->AssignStreams (currentStream);
+      rmac->GetAttribute ("BK_Txop", ptr);
+      Ptr<QosTxop> bk_txop = ptr.Get<QosTxop> ();
+      currentStream += bk_txop->AssignStreams (currentStream);
     }
 }
 
@@ -311,9 +310,9 @@ OcbWifiMacTestCase::PostDeviceConfiguration (Ptr<Node> static_node, Ptr<Node> mo
   Ptr<WifiNetDevice> mobile_device = DynamicCast<WifiNetDevice> (mobile_node->GetDevice (0));
 
   // Fix the stream assignment to the Dcf Txop objects (backoffs)
-  // The below stream assignment will result in the DcaTxop object
+  // The below stream assignment will result in the Txop object
   // using a backoff value of zero for this test when the
-  // DcaTxop::EndTxNoAck() calls to StartBackoffNow()
+  // Txop::EndTxNoAck() calls to StartBackoffNow()
   AssignWifiRandomStreams (static_device->GetMac (), 21);
   AssignWifiRandomStreams (mobile_device->GetMac (), 22);
 

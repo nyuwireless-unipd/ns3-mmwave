@@ -18,13 +18,12 @@
  * Author: Federico Maguolo <maguolof@dei.unipd.it>
  */
 
-#include "rraa-wifi-manager.h"
-#include "wifi-mac.h"
 #include "ns3/log.h"
-#include "ns3/boolean.h"
-#include "ns3/double.h"
-#include "ns3/uinteger.h"
+#include "ns3/packet.h"
 #include "ns3/simulator.h"
+#include "rraa-wifi-manager.h"
+#include "wifi-phy.h"
+#include "wifi-mac.h"
 
 #define Min(a,b) ((a < b) ? a : b)
 
@@ -64,7 +63,7 @@ RraaWifiManager::GetTypeId (void)
     .SetGroupName ("Wifi")
     .AddConstructor<RraaWifiManager> ()
     .AddAttribute ("Basic",
-                   "If true the RRAA-BASIC algorithm will be used, otherwise the RRAA wil be used",
+                   "If true the RRAA-BASIC algorithm will be used, otherwise the RRAA will be used",
                    BooleanValue (false),
                    MakeBooleanAccessor (&RraaWifiManager::m_basic),
                    MakeBooleanChecker ())
@@ -250,7 +249,7 @@ RraaWifiManager::InitThresholds (RraaWifiRemoteStation *station)
           mtl = 1;
         }
       WifiRraaThresholds th;
-      th.m_ewnd = ceil (m_tau / totalTxTime.GetSeconds ());
+      th.m_ewnd = static_cast<uint32_t> (ceil (m_tau / totalTxTime.GetSeconds ()));
       th.m_ori = ori;
       th.m_mtl = mtl;
       station->m_thresholds.push_back (std::make_pair (th, mode));
@@ -335,7 +334,7 @@ RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -356,7 +355,7 @@ RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   RraaWifiRemoteStation *station = (RraaWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -407,7 +406,7 @@ RraaWifiManager::RunBasicAlgorithm (RraaWifiRemoteStation *station)
 {
   NS_LOG_FUNCTION (this << station);
   WifiRraaThresholds thresholds = GetThresholds (station, station->m_rateIndex);
-  double ploss = (static_cast<double> (station->m_nFailed) / thresholds.m_ewnd);
+  double ploss = (station->m_nFailed / thresholds.m_ewnd);
   if (station->m_counter == 0
       || ploss > thresholds.m_mtl)
     {

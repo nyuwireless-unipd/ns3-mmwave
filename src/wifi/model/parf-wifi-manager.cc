@@ -18,10 +18,11 @@
  * Author: Matias Richart <mrichart@fing.edu.uy>
  */
 
-#include "parf-wifi-manager.h"
-#include "wifi-phy.h"
 #include "ns3/log.h"
 #include "ns3/uinteger.h"
+#include "ns3/data-rate.h"
+#include "parf-wifi-manager.h"
+#include "wifi-phy.h"
 
 #define Min(a,b) ((a < b) ? a : b)
 
@@ -96,8 +97,8 @@ void
 ParfWifiManager::SetupPhy (const Ptr<WifiPhy> phy)
 {
   NS_LOG_FUNCTION (this << phy);
-  m_minPower = phy->GetTxPowerStart ();
-  m_maxPower = phy->GetTxPowerEnd ();
+  m_minPower = 0;
+  m_maxPower = phy->GetNTxPower () - 1;
   WifiRemoteStationManager::SetupPhy (phy);
 }
 
@@ -132,7 +133,7 @@ ParfWifiManager::CheckInit (ParfWifiRemoteStation *station)
       station->m_powerLevel = m_maxPower;
       station->m_prevPowerLevel = m_maxPower;
       WifiMode mode = GetSupported (station, station->m_rateIndex);
-      uint8_t channelWidth = GetChannelWidth (station);
+      uint16_t channelWidth = GetChannelWidth (station);
       DataRate rate = DataRate (mode.GetDataRate (channelWidth));
       double power = GetPhy ()->GetPowerDbm (m_maxPower);
       m_powerChange (power, power, station->m_state->m_address);
@@ -293,7 +294,7 @@ ParfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   ParfWifiRemoteStation *station = (ParfWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -325,7 +326,7 @@ ParfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
   /// \todo we could/should implement the Arf algorithm for
   /// RTS only by picking a single rate within the BasicRateSet.
   ParfWifiRemoteStation *station = (ParfWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac

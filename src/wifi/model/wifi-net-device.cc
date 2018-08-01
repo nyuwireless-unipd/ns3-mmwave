@@ -18,15 +18,17 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
+#include "ns3/llc-snap-header.h"
+#include "ns3/channel.h"
+#include "ns3/socket.h"
+#include "ns3/pointer.h"
+#include "ns3/log.h"
+#include "ns3/node.h"
+#include "ns3/net-device-queue-interface.h"
 #include "wifi-net-device.h"
 #include "wifi-phy.h"
 #include "regular-wifi-mac.h"
 #include "wifi-mac-queue.h"
-#include "ns3/llc-snap-header.h"
-#include "ns3/socket.h"
-#include "ns3/pointer.h"
-#include "ns3/log.h"
-#include "ns3/net-device-queue-interface.h"
 
 namespace ns3 {
 
@@ -171,28 +173,28 @@ WifiNetDevice::FlowControlConfig (void)
       m_queueInterface->SetTxQueuesN (4);
       m_queueInterface->CreateTxQueues ();
 
-      mac->GetAttributeFailSafe ("BE_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("BE_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 0);
 
-      mac->GetAttributeFailSafe ("BK_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("BK_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 1);
 
-      mac->GetAttributeFailSafe ("VI_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("VI_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 2);
 
-      mac->GetAttributeFailSafe ("VO_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("VO_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 3);
     }
   else
     {
       m_queueInterface->CreateTxQueues ();
 
-      mac->GetAttributeFailSafe ("DcaTxop", ptr);
-      wmq = ptr.Get<DcaTxop> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("Txop", ptr);
+      wmq = ptr.Get<Txop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 0);
     }
 }
@@ -496,7 +498,7 @@ WifiNetDevice::SelectQueue (Ptr<QueueItem> item) const
   // if the admission control were implemented, here we should check whether
   // the access category assigned to the packet should be downgraded
 
-  return QosUtilsMapTidToAc (priority);
+  return static_cast<uint8_t> (QosUtilsMapTidToAc (priority));
 }
 
 } //namespace ns3

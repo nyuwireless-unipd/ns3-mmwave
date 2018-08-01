@@ -82,6 +82,7 @@ SOURCES = \
 	$(SRC)/traffic-control/doc/queue-discs.rst \
 	$(SRC)/traffic-control/doc/pfifo-fast.rst \
 	$(SRC)/traffic-control/doc/fifo.rst \
+	$(SRC)/traffic-control/doc/prio.rst \
 	$(SRC)/traffic-control/doc/tbf.rst \
 	$(SRC)/traffic-control/doc/red.rst \
 	$(SRC)/traffic-control/doc/codel.rst \
@@ -105,6 +106,11 @@ SOURCEFIGS = \
 	figures/testbed.dia \
 	figures/emulated-channel.dia \
 	$(SRC)/antenna/doc/source/figures/antenna-coordinate-system.dia	\
+	$(SRC)/applications/doc/http-embedded-object-size.png \
+	$(SRC)/applications/doc/http-main-object-size.png \
+	$(SRC)/applications/doc/http-num-of-embedded-objects.png \
+	$(SRC)/applications/doc/http-parsing-time.png \
+	$(SRC)/applications/doc/http-reading-time.png \
 	$(SRC)/network/doc/packet.dia \
 	$(SRC)/network/doc/node.dia \
 	$(SRC)/network/doc/buffer.dia \

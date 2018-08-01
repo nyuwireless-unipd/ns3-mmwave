@@ -19,18 +19,18 @@
  *          Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
-#include "wifi-phy.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
-#include "ns3/boolean.h"
-#include "ns3/double.h"
-#include "ns3/uinteger.h"
 #include "ns3/pointer.h"
+#include "ns3/mobility-model.h"
+#include "ns3/random-variable-stream.h"
+#include "wifi-phy.h"
 #include "wifi-phy-tag.h"
 #include "ampdu-tag.h"
 #include "wifi-utils.h"
 #include "frame-capture-model.h"
 #include "wifi-radio-energy-model.h"
+#include "error-rate-model.h"
 
 namespace ns3 {
 
@@ -109,6 +109,10 @@ WifiPhy::ChannelToFrequencyWidthMap WifiPhy::m_channelToFrequencyWidth =
   { std::make_pair (157, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5785, 20) },
   { std::make_pair (161, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5805, 20) },
   { std::make_pair (165, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5825, 20) },
+  { std::make_pair (169, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5845, 20) },
+  { std::make_pair (173, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5865, 20) },
+  { std::make_pair (177, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5885, 20) },
+  { std::make_pair (181, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5905, 20) },
   // 40 MHz channels
   { std::make_pair (38, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5190, 40) },
   { std::make_pair (46, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5230, 40) },
@@ -122,6 +126,8 @@ WifiPhy::ChannelToFrequencyWidthMap WifiPhy::m_channelToFrequencyWidth =
   { std::make_pair (142, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5710, 40) },
   { std::make_pair (151, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5755, 40) },
   { std::make_pair (159, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5795, 40) },
+  { std::make_pair (167, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5835, 40) },
+  { std::make_pair (175, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5875, 40) },
   // 80 MHz channels
   { std::make_pair (42, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5210, 80) },
   { std::make_pair (58, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5290, 80) },
@@ -129,9 +135,11 @@ WifiPhy::ChannelToFrequencyWidthMap WifiPhy::m_channelToFrequencyWidth =
   { std::make_pair (122, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5610, 80) },
   { std::make_pair (138, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5690, 80) },
   { std::make_pair (155, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5775, 80) },
+  { std::make_pair (171, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5855, 80) },
   // 160 MHz channels
   { std::make_pair (50, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5250, 160) },
   { std::make_pair (114, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5570, 160) },
+  { std::make_pair (163, WIFI_PHY_STANDARD_UNSPECIFIED), std::make_pair (5815, 160) },
 
   // 802.11p (10 MHz channels at the 5.855-5.925 band
   { std::make_pair (172, WIFI_PHY_STANDARD_80211_10MHZ), std::make_pair (5860, 10) },
@@ -160,7 +168,7 @@ WifiPhy::GetTypeId (void)
                    UintegerValue (20),
                    MakeUintegerAccessor (&WifiPhy::GetChannelWidth,
                                          &WifiPhy::SetChannelWidth),
-                   MakeUintegerChecker<uint8_t> (5, 160))
+                   MakeUintegerChecker<uint16_t> (5, 160))
     .AddAttribute ("ChannelNumber",
                    "If set to non-zero defined value, will control Frequency and ChannelWidth assignment",
                    UintegerValue (0),
@@ -171,8 +179,7 @@ WifiPhy::GetTypeId (void)
                    "The energy of a received signal should be higher than "
                    "this threshold (dbm) to allow the PHY layer to detect the signal.",
                    DoubleValue (-96.0),
-                   MakeDoubleAccessor (&WifiPhy::SetEdThreshold,
-                                       &WifiPhy::GetEdThreshold),
+                   MakeDoubleAccessor (&WifiPhy::SetEdThreshold),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("CcaMode1Threshold",
                    "The energy of a received signal should be higher than "
@@ -219,8 +226,7 @@ WifiPhy::GetTypeId (void)
                    " ideal receiver with the same overall gain and bandwidth when the receivers "
                    " are connected to sources at the standard noise temperature T0 (usually 290 K)\".",
                    DoubleValue (7),
-                   MakeDoubleAccessor (&WifiPhy::SetRxNoiseFigure,
-                                       &WifiPhy::GetRxNoiseFigure),
+                   MakeDoubleAccessor (&WifiPhy::SetRxNoiseFigure),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("State",
                    "The state of the PHY layer.",
@@ -295,9 +301,8 @@ WifiPhy::GetTypeId (void)
                    MakeBooleanChecker ())
     .AddAttribute ("FrameCaptureModel",
                    "Ptr to an object that implements the frame capture model",
-                   PointerValue (0), //StringValue ("ns3::SimpleFrameCaptureModel"),
-                   MakePointerAccessor (&WifiPhy::GetFrameCaptureModel,
-                                        &WifiPhy::SetFrameCaptureModel),
+                   PointerValue (),
+                   MakePointerAccessor (&WifiPhy::m_frameCaptureModel),
                    MakePointerChecker <FrameCaptureModel> ())
     .AddTraceSource ("PhyTxBegin",
                      "Trace source indicating a packet "
@@ -360,6 +365,9 @@ WifiPhy::WifiPhy ()
     m_channelCenterFrequency (0),
     m_initialFrequency (0),
     m_frequencyChannelNumberInitialized (false),
+    m_channelWidth (0),
+    m_txSpatialStreams (0),
+    m_rxSpatialStreams (0),
     m_channelNumber (0),
     m_initialChannelNumber (0),
     m_totalAmpduSize (0),
@@ -468,12 +476,6 @@ WifiPhy::SetEdThreshold (double threshold)
 }
 
 double
-WifiPhy::GetEdThresholdW (void) const
-{
-  return m_edThresholdW;
-}
-
-double
 WifiPhy::GetEdThreshold (void) const
 {
   return WToDbm (m_edThresholdW);
@@ -498,12 +500,6 @@ WifiPhy::SetRxNoiseFigure (double noiseFigureDb)
   NS_LOG_FUNCTION (this << noiseFigureDb);
   m_interference.SetNoiseFigure (DbToRatio (noiseFigureDb));
   m_interference.SetNumberOfReceiveAntennas (GetNumberOfAntennas ());
-}
-
-double
-WifiPhy::GetRxNoiseFigure (void) const
-{
-  return RatioToDb (m_interference.GetNoiseFigure ());
 }
 
 void
@@ -688,22 +684,10 @@ WifiPhy::SetErrorRateModel (const Ptr<ErrorRateModel> rate)
   m_interference.SetNumberOfReceiveAntennas (GetNumberOfAntennas ());
 }
 
-Ptr<ErrorRateModel>
-WifiPhy::GetErrorRateModel (void) const
-{
-  return m_interference.GetErrorRateModel ();
-}
-
 void
 WifiPhy::SetFrameCaptureModel (const Ptr<FrameCaptureModel> model)
 {
   m_frameCaptureModel = model;
-}
-
-Ptr<FrameCaptureModel>
-WifiPhy::GetFrameCaptureModel (void) const
-{
-  return m_frameCaptureModel;
 }
 
 void
@@ -815,10 +799,8 @@ WifiPhy::ConfigureDefaultsForStandard (WifiPhyStandard standard)
       NS_ASSERT (GetChannelNumber () == 42);
       break;
     case WIFI_PHY_STANDARD_UNSPECIFIED:
-      NS_LOG_WARN ("Configuring unspecified standard; performing no action");
-      break;
     default:
-      NS_ASSERT (false);
+      NS_LOG_WARN ("Configuring unspecified standard; performing no action");
       break;
     }
 }
@@ -924,7 +906,7 @@ WifiPhy::ConfigureHtDeviceMcsSet (void)
   if (htFound)
     {
       // erase all HtMcs modes from deviceMcsSet
-      size_t index = m_deviceMcsSet.size () - 1;
+      std::size_t index = m_deviceMcsSet.size () - 1;
       for (std::vector<WifiMode>::reverse_iterator rit = m_deviceMcsSet.rbegin (); rit != m_deviceMcsSet.rend (); ++rit, --index)
         {
           if (m_deviceMcsSet[index].GetModulationClass () == WIFI_MOD_CLASS_HT)
@@ -1039,9 +1021,9 @@ WifiPhy::Configure80211ax (void)
 }
 
 bool
-WifiPhy::DefineChannelNumber (uint8_t channelNumber, WifiPhyStandard standard, uint16_t frequency, uint8_t channelWidth)
+WifiPhy::DefineChannelNumber (uint8_t channelNumber, WifiPhyStandard standard, uint16_t frequency, uint16_t channelWidth)
 {
-  NS_LOG_FUNCTION (this << +channelNumber << standard << frequency << +channelWidth);
+  NS_LOG_FUNCTION (this << +channelNumber << standard << frequency << channelWidth);
   ChannelNumberStandardPair p = std::make_pair (channelNumber, standard);
   ChannelToFrequencyWidthMap::const_iterator it;
   it = m_channelToFrequencyWidth.find (p);
@@ -1056,9 +1038,9 @@ WifiPhy::DefineChannelNumber (uint8_t channelNumber, WifiPhyStandard standard, u
 }
 
 uint8_t
-WifiPhy::FindChannelNumberForFrequencyWidth (uint16_t frequency, uint8_t width) const
+WifiPhy::FindChannelNumberForFrequencyWidth (uint16_t frequency, uint16_t width) const
 {
-  NS_LOG_FUNCTION (this << frequency << +width);
+  NS_LOG_FUNCTION (this << frequency << width);
   bool found = false;
   FrequencyWidthPair f = std::make_pair (frequency, width);
   ChannelToFrequencyWidthMap::const_iterator it = m_channelToFrequencyWidth.begin ();
@@ -1187,6 +1169,7 @@ WifiPhy::ConfigureStandard (WifiPhyStandard standard)
     case WIFI_PHY_STANDARD_80211ax_5GHZ:
       Configure80211ax ();
       break;
+    case WIFI_PHY_STANDARD_UNSPECIFIED:
     default:
       NS_ASSERT (false);
       break;
@@ -1263,9 +1246,9 @@ WifiPhy::GetFrequency (void) const
 }
 
 void
-WifiPhy::SetChannelWidth (uint8_t channelwidth)
+WifiPhy::SetChannelWidth (uint16_t channelwidth)
 {
-  NS_LOG_FUNCTION (this << +channelwidth);
+  NS_LOG_FUNCTION (this << channelwidth);
   NS_ASSERT_MSG (channelwidth == 5 || channelwidth == 10 || channelwidth == 20 || channelwidth == 22 || channelwidth == 40 || channelwidth == 80 || channelwidth == 160, "wrong channel width value");
   bool changed = (m_channelWidth == channelwidth);
   m_channelWidth = channelwidth;
@@ -1276,7 +1259,7 @@ WifiPhy::SetChannelWidth (uint8_t channelwidth)
     }
 }
 
-uint8_t
+uint16_t
 WifiPhy::GetChannelWidth (void) const
 {
   return m_channelWidth;
@@ -1336,7 +1319,7 @@ WifiPhy::GetMaxSupportedRxSpatialStreams (void) const
 uint8_t
 WifiPhy::GetNBssMembershipSelectors (void) const
 {
-  return m_bssMembershipSelectorSet.size ();
+  return static_cast<uint8_t> (m_bssMembershipSelectorSet.size ());
 }
 
 uint8_t
@@ -1345,60 +1328,10 @@ WifiPhy::GetBssMembershipSelector (uint8_t selector) const
   return m_bssMembershipSelectorSet[selector];
 }
 
-WifiModeList
-WifiPhy::GetMembershipSelectorModes (uint32_t selector)
-{
-  uint32_t id = GetBssMembershipSelector (selector);
-  WifiModeList supportedmodes;
-  if (id == HT_PHY || id == VHT_PHY || id == HE_PHY)
-    {
-      //mandatory MCS 0 to 7
-      supportedmodes.push_back (WifiPhy::GetHtMcs0 ());
-      supportedmodes.push_back (WifiPhy::GetHtMcs1 ());
-      supportedmodes.push_back (WifiPhy::GetHtMcs2 ());
-      supportedmodes.push_back (WifiPhy::GetHtMcs3 ());
-      supportedmodes.push_back (WifiPhy::GetHtMcs4 ());
-      supportedmodes.push_back (WifiPhy::GetHtMcs5 ());
-      supportedmodes.push_back (WifiPhy::GetHtMcs6 ());
-      supportedmodes.push_back (WifiPhy::GetHtMcs7 ());
-    }
-  if (id == VHT_PHY || id == HE_PHY)
-    {
-      //mandatory MCS 0 to 9
-      supportedmodes.push_back (WifiPhy::GetVhtMcs0 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs1 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs2 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs3 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs4 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs5 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs6 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs7 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs8 ());
-      supportedmodes.push_back (WifiPhy::GetVhtMcs9 ());
-    }
-  if (id == HE_PHY)
-    {
-      //mandatory MCS 0 to 11
-      supportedmodes.push_back (WifiPhy::GetHeMcs0 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs1 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs2 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs3 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs4 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs5 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs6 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs7 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs8 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs9 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs10 ());
-      supportedmodes.push_back (WifiPhy::GetHeMcs11 ());
-    }
-  return supportedmodes;
-}
-
 void
-WifiPhy::AddSupportedChannelWidth (uint8_t width)
+WifiPhy::AddSupportedChannelWidth (uint16_t width)
 {
-  NS_LOG_FUNCTION (this << +width);
+  NS_LOG_FUNCTION (this << width);
   for (std::vector<uint32_t>::size_type i = 0; i != m_supportedChannelWidthSet.size (); i++)
     {
       if (m_supportedChannelWidthSet[i] == width)
@@ -1406,11 +1339,11 @@ WifiPhy::AddSupportedChannelWidth (uint8_t width)
           return;
         }
     }
-  NS_LOG_FUNCTION ("Adding " << +width << " to supported channel width set");
+  NS_LOG_FUNCTION ("Adding " << width << " to supported channel width set");
   m_supportedChannelWidthSet.push_back (width);
 }
 
-std::vector<uint8_t>
+std::vector<uint16_t>
 WifiPhy::GetSupportedChannelWidthSet (void) const
 {
   return m_supportedChannelWidthSet;
@@ -1474,7 +1407,7 @@ WifiPhy::SetChannelNumber (uint8_t nch)
     }
   else
     {
-      NS_FATAL_ERROR ("Frequency not found for channel number " << nch);
+      NS_FATAL_ERROR ("Frequency not found for channel number " << +nch);
     }
 }
 
@@ -2232,11 +2165,11 @@ WifiPhy::GetPayloadDuration (uint32_t size, WifiTxVector txVector, uint16_t freq
         //Add signal extension for ERP PHY
         if (payloadMode.GetModulationClass () == WIFI_MOD_CLASS_ERP_OFDM)
           {
-            return FemtoSeconds (numSymbols * symbolDuration.GetFemtoSeconds ()) + MicroSeconds (6);
+            return FemtoSeconds (static_cast<uint64_t> (numSymbols * symbolDuration.GetFemtoSeconds ())) + MicroSeconds (6);
           }
         else
           {
-            return FemtoSeconds (numSymbols * symbolDuration.GetFemtoSeconds ());
+            return FemtoSeconds (static_cast<uint64_t> (numSymbols * symbolDuration.GetFemtoSeconds ()));
           }
       }
     case WIFI_MOD_CLASS_HT:
@@ -2246,11 +2179,11 @@ WifiPhy::GetPayloadDuration (uint32_t size, WifiTxVector txVector, uint16_t freq
             && ((mpdutype == NORMAL_MPDU && preamble != WIFI_PREAMBLE_NONE)
                 || (mpdutype == LAST_MPDU_IN_AGGREGATE && preamble == WIFI_PREAMBLE_NONE))) //at 2.4 GHz
           {
-            return FemtoSeconds (numSymbols * symbolDuration.GetFemtoSeconds ()) + MicroSeconds (6);
+            return FemtoSeconds (static_cast<uint64_t> (numSymbols * symbolDuration.GetFemtoSeconds ())) + MicroSeconds (6);
           }
         else //at 5 GHz
           {
-            return FemtoSeconds (numSymbols * symbolDuration.GetFemtoSeconds ());
+            return FemtoSeconds (static_cast<uint64_t> (numSymbols * symbolDuration.GetFemtoSeconds ()));
           }
       }
     case WIFI_MOD_CLASS_HE:
@@ -2259,11 +2192,11 @@ WifiPhy::GetPayloadDuration (uint32_t size, WifiTxVector txVector, uint16_t freq
             && ((mpdutype == NORMAL_MPDU && preamble != WIFI_PREAMBLE_NONE)
                 || (mpdutype == LAST_MPDU_IN_AGGREGATE && preamble == WIFI_PREAMBLE_NONE))) //at 2.4 GHz
           {
-            return FemtoSeconds (numSymbols * symbolDuration.GetFemtoSeconds ()) + MicroSeconds (6);
+            return FemtoSeconds (static_cast<uint64_t> (numSymbols * symbolDuration.GetFemtoSeconds ())) + MicroSeconds (6);
           }
         else //at 5 GHz
           {
-            return FemtoSeconds (numSymbols * symbolDuration.GetFemtoSeconds ());
+            return FemtoSeconds (static_cast<uint64_t> (numSymbols * symbolDuration.GetFemtoSeconds ()));
           }
       }
     case WIFI_MOD_CLASS_DSSS:
@@ -2360,7 +2293,7 @@ WifiPhy::SendPacket (Ptr<const Packet> packet, WifiTxVector txVector, MpduType m
                         << +txVector.GetTxPowerLevel ()
                         << +mpdutype);
   /* Transmission can happen if:
-   *  - we are syncing on a packet. It is the responsability of the
+   *  - we are syncing on a packet. It is the responsibility of the
    *    MAC layer to avoid doing this but the PHY does nothing to
    *    prevent it.
    *  - we are idle
@@ -2431,7 +2364,7 @@ WifiPhy::StartReceivePreambleAndHeader (Ptr<Packet> packet, double rxPowerW, Tim
     }
 
   WifiTxVector txVector = tag.GetWifiTxVector ();
-  Ptr<InterferenceHelper::Event> event;
+  Ptr<Event> event;
   event = m_interference.Add (packet,
                               txVector,
                               rxDuration,
@@ -2568,7 +2501,7 @@ void
 WifiPhy::StartReceivePacket (Ptr<Packet> packet,
                              WifiTxVector txVector,
                              MpduType mpdutype,
-                             Ptr<InterferenceHelper::Event> event)
+                             Ptr<Event> event)
 {
   NS_LOG_FUNCTION (this << packet << txVector.GetMode () << txVector.GetPreambleType () << +mpdutype);
   NS_ASSERT (IsStateRx ());
@@ -2603,7 +2536,7 @@ WifiPhy::StartReceivePacket (Ptr<Packet> packet,
 }
 
 void
-WifiPhy::EndReceive (Ptr<Packet> packet, WifiPreamble preamble, MpduType mpdutype, Ptr<InterferenceHelper::Event> event)
+WifiPhy::EndReceive (Ptr<Packet> packet, WifiPreamble preamble, MpduType mpdutype, Ptr<Event> event)
 {
   NS_LOG_FUNCTION (this << packet << event);
   NS_ASSERT (IsStateRx ());
@@ -3569,7 +3502,7 @@ WifiPhy::IsMcsSupported (WifiMode mcs) const
 uint8_t
 WifiPhy::GetNModes (void) const
 {
-  return m_deviceRateSet.size ();
+  return static_cast<uint8_t> (m_deviceRateSet.size ());
 }
 
 WifiMode
@@ -3581,7 +3514,7 @@ WifiPhy::GetMode (uint8_t mode) const
 uint8_t
 WifiPhy::GetNMcs (void) const
 {
-  return m_deviceMcsSet.size ();
+  return static_cast<uint8_t> (m_deviceMcsSet.size ());
 }
 
 WifiMode
@@ -3680,10 +3613,10 @@ WifiPhy::AbortCurrentReception ()
 }
 
 void
-WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, double rxPowerW, Time rxDuration, Ptr<InterferenceHelper::Event> event)
+WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, double rxPowerW, Time rxDuration, Ptr<Event> event)
 {
   NS_LOG_FUNCTION (this << packet << txVector << +mpdutype << rxPowerW << rxDuration);
-  if (rxPowerW > GetEdThresholdW ()) //checked here, no need to check in the payload reception (current implementation assumes constant rx power over the packet duration)
+  if (rxPowerW > DbmToW (GetEdThreshold ())) //checked here, no need to check in the payload reception (current implementation assumes constant rx power over the packet duration)
     {
       AmpduTag ampduTag;
       WifiPreamble preamble = txVector.GetPreambleType ();
@@ -3748,7 +3681,7 @@ WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, 
   else
     {
       NS_LOG_DEBUG ("drop packet because signal power too Small (" <<
-                    rxPowerW << "<" << GetEdThresholdW () << ")");
+                    rxPowerW << "<" << DbmToW (GetEdThreshold ()) << ")");
       NotifyRxDrop (packet);
       m_plcpSuccess = false;
       MaybeCcaBusyDuration ();

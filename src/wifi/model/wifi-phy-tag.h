@@ -21,8 +21,9 @@
 #ifndef WIFI_PHY_TAG_H
 #define WIFI_PHY_TAG_H
 
-#include <ns3/tag.h>
-#include "wifi-phy.h"
+#include "ns3/tag.h"
+#include "wifi-mpdu-type.h"
+#include "wifi-tx-vector.h"
 
 namespace ns3 {
 
@@ -63,10 +64,10 @@ public:
    * \return mpduType the mpduType
    */
   MpduType GetMpduType (void) const;
-    /**
-     * Getter for frameComplete parameter
-     * \return the frameComplete parameter, i.e. 0 if the frame is not complete, 1 otherwise.
-     */
+  /**
+   * Getter for frameComplete parameter
+   * \return the frameComplete parameter, i.e. 0 if the frame is not complete, 1 otherwise.
+   */
   uint8_t GetFrameComplete (void) const;
 
   // From class Tag

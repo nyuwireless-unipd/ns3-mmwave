@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "ns3/spectrum-phy.h"
 #include "ns3/test.h"
 #include "ns3/spectrum-wifi-helper.h"
 #include "ns3/wifi-spectrum-value-helper.h"
@@ -25,6 +26,7 @@
 #include "ns3/wifi-mac-trailer.h"
 #include "ns3/wifi-phy-tag.h"
 #include "ns3/wifi-spectrum-signal-parameters.h"
+#include "ns3/wifi-phy-listener.h"
 #include "ns3/log.h"
 
 using namespace ns3;
@@ -33,8 +35,8 @@ NS_LOG_COMPONENT_DEFINE ("SpectrumWifiPhyBasicTest");
 
 static const uint8_t CHANNEL_NUMBER = 36;
 static const uint32_t FREQUENCY = 5180; // MHz
-static const uint8_t CHANNEL_WIDTH = 20; // MHz
-static const uint8_t GUARD_WIDTH = CHANNEL_WIDTH; // MHz (expanded to channel width to model spectrum mask)
+static const uint16_t CHANNEL_WIDTH = 20; // MHz
+static const uint16_t GUARD_WIDTH = CHANNEL_WIDTH; // MHz (expanded to channel width to model spectrum mask)
 
 /**
  * \ingroup wifi-test

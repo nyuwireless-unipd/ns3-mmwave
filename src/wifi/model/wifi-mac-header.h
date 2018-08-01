@@ -25,9 +25,10 @@
 
 #include "ns3/header.h"
 #include "ns3/mac48-address.h"
-#include "ns3/nstime.h"
 
 namespace ns3 {
+
+class Time;
 
 /**
  * Combination of valid MAC header type/subtype.
@@ -40,6 +41,8 @@ enum WifiMacType
   WIFI_MAC_CTL_ACK,
   WIFI_MAC_CTL_BACKREQ,
   WIFI_MAC_CTL_BACKRESP,
+  WIFI_MAC_CTL_END,
+  WIFI_MAC_CTL_END_ACK,
 
   WIFI_MAC_MGT_BEACON,
   WIFI_MAC_MGT_ASSOCIATION_REQUEST,
@@ -161,8 +164,16 @@ public:
    * on the given type.
    *
    * \param type the WifiMacType for the header
+   * \param resetToDsFromDs whether the ToDs and FromDs flags
+   *        should be reset.
    */
-  void SetType (WifiMacType type);
+  void SetType (WifiMacType type, bool resetToDsFromDs = true);
+  /**
+   * Set the Duration/ID field with the given raw uint16_t value.
+   *
+   * \param duration the raw duration in uint16_t
+   */
+  void SetRawDuration (uint16_t duration);
   /**
    * Set the Duration/ID field with the given duration (Time object).
    * The method converts the given time to microseconds.
@@ -309,6 +320,13 @@ public:
    */
   bool IsQosData (void) const;
   /**
+   * Return true if the header type is DATA and is not DATA_NULL.
+   *
+   * \return true if the header type is DATA and is not DATA_NULL,
+   *         false otherwise
+   */
+  bool HasData (void) const;
+  /**
    * Return true if the Type is Control.
    *
    * \return true if Type is Control, false otherwise
@@ -325,7 +343,19 @@ public:
    *
    * \return true if the Type/Subtype is one of the possible CF-Poll headers, false otherwise
    */
-  bool IsCfpoll (void) const;
+  bool IsCfPoll (void) const;
+  /**
+   * Return true if the header is a CF-ACK header.
+   *
+   * \return true if the header is a CF_ACK header, false otherwise
+   */
+  bool IsCfAck (void) const;
+  /**
+   * Return true if the header is a CF-END header.
+   *
+   * \return true if the header is a CF_END header, false otherwise
+   */
+  bool IsCfEnd (void) const;
   /**
    * Return true if the header is a RTS header.
    *
@@ -430,6 +460,12 @@ public:
    */
   bool IsMultihopAction () const;
   /**
+   * Return the raw duration from the Duration/ID field.
+   *
+   * \return the raw duration from the Duration/ID field
+   */
+  uint16_t GetRawDuration (void) const;
+  /**
    * Return the duration from the Duration/ID field (Time object).
    *
    * \return the duration from the Duration/ID field (Time object)
@@ -503,12 +539,6 @@ public:
    */
   uint8_t GetQosTid (void) const;
   /**
-   * Return the TXOP limit.
-   *
-   * \return the TXOP limit
-   */
-  uint8_t GetQosTxopLimit (void) const;
-  /**
    * Return the size of the WifiMacHeader in octets.
    * GetSerializedSize calls this function.
    *
@@ -576,7 +606,7 @@ private:
   uint8_t m_ctrlRetry; ///< control retry
   uint8_t m_ctrlMoreData; ///< control more data
   uint8_t m_ctrlWep; ///< control WEP
-  uint8_t m_ctrlOrder; ///< control order
+  uint8_t m_ctrlOrder; ///< control order (set to 1 for QoS Data and Management frames to signify that HT/VHT/HE control field is present, knowing that the latter are not implemented yet)
   uint16_t m_duration; ///< duration
   Mac48Address m_addr1; ///< address 1
   Mac48Address m_addr2; ///< address 2

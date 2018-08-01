@@ -52,9 +52,9 @@ public:
   void SetHtSupported (uint8_t htsupported);
 
   /**
-   * Set the HT Capabilties Info field in the HT Capabilities information element.
+   * Set the HT Capabilities Info field in the HT Capabilities information element.
    *
-   * \param ctrl the HT Capabilties Info field in the HT Capabilities information element
+   * \param ctrl the HT Capabilities Info field in the HT Capabilities information element
    */
   void SetHtCapabilitiesInfo (uint16_t ctrl);
   /**
@@ -71,21 +71,21 @@ public:
    */
   void SetSupportedMcsSet (uint64_t ctrl1, uint64_t ctrl2);
   /**
-   * Set the Extended HT Capabilties field in the HT Capabilities information element.
+   * Set the Extended HT Capabilities field in the HT Capabilities information element.
    *
-   * \param ctrl the Extended HT Capabilties field in the HT Capabilities information element
+   * \param ctrl the Extended HT Capabilities field in the HT Capabilities information element
    */
   void SetExtendedHtCapabilities (uint16_t ctrl);
   /**
-   * Set the Transmit Beamforming (TxBF) Capabilties field in the HT Capabilities information element.
+   * Set the Transmit Beamforming (TxBF) Capabilities field in the HT Capabilities information element.
    *
-   * \param ctrl the Transmit Beamforming (TxBF) Capabilties field in the HT Capabilities information element
+   * \param ctrl the Transmit Beamforming (TxBF) Capabilities field in the HT Capabilities information element
    */
   void SetTxBfCapabilities (uint32_t ctrl);
   /**
-   * Set the the Antenna Selection (ASEL) Capabilties field in the HT Capabilities information element.
+   * Set the the Antenna Selection (ASEL) Capabilities field in the HT Capabilities information element.
    *
-   * \param ctrl the Antenna Selection (ASEL) Capabilties field in the HT Capabilities information element
+   * \param ctrl the Antenna Selection (ASEL) Capabilities field in the HT Capabilities information element
    */
   void SetAntennaSelectionCapabilities (uint8_t ctrl);
 
@@ -177,9 +177,9 @@ public:
   void SetTxUnequalModulation (uint8_t txunequalmodulation);
 
   /**
-   * Return the HT Capabilties Info field in the HT Capabilities information element.
+   * Return the HT Capabilities Info field in the HT Capabilities information element.
    *
-   * \return the HT Capabilties Info field in the HT Capabilities information element
+   * \return the HT Capabilities Info field in the HT Capabilities information element
    */
   uint16_t GetHtCapabilitiesInfo (void) const;
   /**
@@ -201,21 +201,21 @@ public:
    */
   uint64_t GetSupportedMcsSet2 (void) const;
   /**
-   * Return the Extended HT Capabilties field in the HT Capabilities information element.
+   * Return the Extended HT Capabilities field in the HT Capabilities information element.
    *
-   * \return the Extended HT Capabilties field in the HT Capabilities information element
+   * \return the Extended HT Capabilities field in the HT Capabilities information element
    */
   uint16_t GetExtendedHtCapabilities (void) const;
   /**
-   * Return the Transmit Beamforming (TxBF) Capabilties field in the HT Capabilities information element.
+   * Return the Transmit Beamforming (TxBF) Capabilities field in the HT Capabilities information element.
    *
-   * \return the Transmit Beamforming (TxBF) Capabilties field in the HT Capabilities information element
+   * \return the Transmit Beamforming (TxBF) Capabilities field in the HT Capabilities information element
    */
   uint32_t GetTxBfCapabilities (void) const;
   /**
-   * Return the Antenna Selection (ASEL) Capabilties field in the HT Capabilities information element.
+   * Return the Antenna Selection (ASEL) Capabilities field in the HT Capabilities information element.
    *
-   * \return the Antenna Selection (ASEL) Capabilties field in the HT Capabilities information element
+   * \return the Antenna Selection (ASEL) Capabilities field in the HT Capabilities information element
    */
   uint8_t GetAntennaSelectionCapabilities (void) const;
 
@@ -228,7 +228,7 @@ public:
   /**
    * Return the supported channel width.
    *
-   * \return the supported chanel width
+   * \return the supported channel width
    */
   uint8_t GetSupportedChannelWidth (void) const;
   /**
@@ -244,44 +244,6 @@ public:
    */
   uint8_t GetShortGuardInterval20 (void) const;
   /**
-   * Return the short guard interval 40 value.
-   *
-   * \return the short guard interval 40 value
-   */
-  uint8_t GetShortGuardInterval40 (void) const;
-  /**
-   * Return the maximum AMSDU length.
-   *
-   * \return the maximum AMSDU length
-   */
-  uint8_t GetMaxAmsduLength (void) const;
-  /**
-   * Return the LSIG protection support.
-   *
-   * \return the LSIG protection support
-   */
-  uint8_t GetLSigProtectionSupport (void) const;
-
-  /**
-   * Return the maximum AMPDU length.
-   *
-   * \return the maximum AMPDU length
-   */
-  uint8_t GetMaxAmpduLength (void) const;
-  /**
-   * Return the minimum MPDU start space.
-   *
-   * \return the minimum MPDU start space
-   */
-  uint8_t GetMinMpduStartSpace (void) const;
-
-  /**
-   * Return the receive MCS bitmask.
-   *
-   * \return the receive MCS bitmask
-   */
-  uint8_t* GetRxMcsBitmask ();
-  /**
    * Return the is MCS supported flag.
    *
    * \param mcs is MCS supported flag
@@ -295,36 +257,6 @@ public:
    * \return the receive highest supported antennas
    */
   uint8_t GetRxHighestSupportedAntennas (void) const;
-  /**
-   * Return the receive highest supported data rate.
-   *
-   * \return the receive highest supported data rate
-   */
-  uint16_t GetRxHighestSupportedDataRate (void) const;
-  /**
-   * Return the transmit MCS set defined.
-   *
-   * \return the transmit MCS set defined
-   */
-  uint8_t GetTxMcsSetDefined (void) const;
-  /**
-   * Return the transmit / receive MCS set unequal.
-   *
-   * \return the transmit / receive MCS set unequal
-   */
-  uint8_t GetTxRxMcsSetUnequal (void) const;
-  /**
-   * Return the transmit maximum spatial streams.
-   *
-   * \return the transmit maximum spatial streams
-   */
-  uint8_t GetTxMaxNSpatialStreams (void) const;
-  /**
-   * Return the transmit unequal modulation.
-   *
-   * \return the transmit unequal modulation
-   */
-  uint8_t GetTxUnequalModulation (void) const;
 
   /**
    * Return the element ID.
@@ -375,7 +307,7 @@ public:
 
 
 private:
-  //HT Capabilties Info field
+  //HT Capabilities Info field
   uint8_t m_ldpc; ///< LDPC
   uint8_t m_supportedChannelWidth; ///< supported channel width
   uint8_t m_smPowerSave; ///< SM power save
@@ -407,7 +339,7 @@ private:
   uint32_t m_reservedMcsSet3; ///< reserved MCS set 3
   uint8_t m_rxMcsBitmask[MAX_SUPPORTED_MCS]; ///< receive MCS bitmask
 
-  //HT Extended Capabilties field
+  //HT Extended Capabilities field
   uint8_t m_pco; ///< PCO
   uint8_t m_pcoTransitionTime; ///< PCO trnsition time
   uint8_t m_reservedExtendedCapabilities; ///< reserved extended capabilities
@@ -453,9 +385,6 @@ private:
 };
 
 std::ostream &operator << (std::ostream &os, const HtCapabilities &htcapabilities);
-std::istream &operator >> (std::istream &is, HtCapabilities &htcapabilities);
-
-ATTRIBUTE_HELPER_HEADER (HtCapabilities);
 
 } //namespace ns3
 

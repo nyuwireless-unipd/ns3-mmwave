@@ -103,7 +103,7 @@ public:
    * \param channelWidth the considered channel width in MHz
    * \param nss the considered number of streams
    */
-  bool IsAllowed (uint8_t channelWidth, uint8_t nss) const;
+  bool IsAllowed (uint16_t channelWidth, uint8_t nss) const;
   /**
    *
    * \param channelWidth the considered channel width in MHz
@@ -115,7 +115,7 @@ public:
    * If a transmission mode uses 1/2 FEC, and if its
    * data rate is 3.25Mbps, the phy rate is 6.5Mbps
    */
-  uint64_t GetPhyRate (uint8_t channelWidth, uint16_t guardInterval, uint8_t nss) const;
+  uint64_t GetPhyRate (uint16_t channelWidth, uint16_t guardInterval, uint8_t nss) const;
   /**
    * \param txVector the WifiTxVector of the signal
    *
@@ -133,7 +133,7 @@ public:
    *
    * \returns the data bit rate of this signal.
    */
-  uint64_t GetDataRate (uint8_t channelWidth, uint16_t guardInterval, uint8_t nss) const;
+  uint64_t GetDataRate (uint16_t channelWidth, uint16_t guardInterval, uint8_t nss) const;
   /**
    * \param txVector the WifiTxVector of the signal
    *
@@ -145,7 +145,7 @@ public:
    *
    * \returns the data bit rate of this non-HT or non-VHT signal.
   */
-  uint64_t GetDataRate (uint8_t channelWidth) const;
+  uint64_t GetDataRate (uint16_t channelWidth) const;
 
   /**
    * \returns the coding rate of this transmission mode
@@ -237,6 +237,7 @@ private:
 
 /// equality operator
 bool operator == (const WifiMode &a, const WifiMode &b);
+bool operator < (const WifiMode &a, const WifiMode &b);
 std::ostream & operator << (std::ostream & os, const WifiMode &mode);
 std::istream & operator >> (std::istream &is, WifiMode &mode);
 
@@ -265,7 +266,7 @@ class WifiModeFactory
 public:
   /**
    * \param uniqueName the name of the associated WifiMode. This name
-   *        must be unique accross _all_ instances.
+   *        must be unique across _all_ instances.
    * \param modClass the class of modulation
    * \param isMandatory true if this WifiMode is mandatory, false otherwise.
    * \param codingRate if convolutional coding is used for this rate
@@ -287,7 +288,7 @@ public:
 
   /**
    * \param uniqueName the name of the associated WifiMode. This name
-   *        must be unique accross _all_ instances.
+   *        must be unique across _all_ instances.
    * \param mcsValue the mcs value
    * \param modClass the class of modulation
    *

@@ -131,27 +131,8 @@ public:
   static constexpr const char* OVERLIMIT_DROP = "Overlimit drop";        //!< Overlimit dropped packets
 
 private:
-  /**
-   * \brief Set the limit of this queue disc.
-   *
-   * \param limit The limit of this queue disc.
-   * \deprecated This method will go away in future versions of ns-3.
-   * See instead SetMaxSize()
-   */
-  void SetLimit (uint32_t limit);
-
-  /**
-   * \brief Get the limit of this queue disc.
-   *
-   * \returns The limit of this queue disc.
-   * \deprecated This method will go away in future versions of ns-3.
-   * See instead GetMaxSize()
-   */
-  uint32_t GetLimit (void) const;
-
   virtual bool DoEnqueue (Ptr<QueueDiscItem> item);
   virtual Ptr<QueueDiscItem> DoDequeue (void);
-  virtual Ptr<const QueueDiscItem> DoPeek (void);
   virtual bool CheckConfig (void);
   virtual void InitializeParams (void);
 
@@ -166,6 +147,7 @@ private:
   uint32_t m_quantum;        //!< Deficit assigned to flows at each round
   uint32_t m_flows;          //!< Number of flow queues
   uint32_t m_dropBatchSize;  //!< Max number of packets dropped from the fat flow
+  uint32_t m_perturbation;   //!< hash perturbation value
 
   std::list<Ptr<FqCoDelFlow> > m_newFlows;    //!< The list of new flows
   std::list<Ptr<FqCoDelFlow> > m_oldFlows;    //!< The list of old flows

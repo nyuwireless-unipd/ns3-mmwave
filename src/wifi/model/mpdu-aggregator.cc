@@ -19,8 +19,9 @@
  */
 
 #include "ns3/log.h"
-#include "ns3/uinteger.h"
+#include "ns3/packet.h"
 #include "mpdu-aggregator.h"
+#include "ampdu-subframe-header.h"
 
 NS_LOG_COMPONENT_DEFINE ("MpduAggregator");
 
@@ -69,16 +70,14 @@ MpduAggregator::Aggregate (Ptr<const Packet> packet, Ptr<Packet> aggregatedPacke
   uint8_t padding = CalculatePadding (aggregatedPacket);
   uint32_t actualSize = aggregatedPacket->GetSize ();
 
-  if ((4 + packet->GetSize () + actualSize + padding) <= m_maxAmpduLength)
+  if ((4 + packet->GetSize () + actualSize + padding) <= GetMaxAmpduSize ())
     {
       if (padding)
         {
           Ptr<Packet> pad = Create<Packet> (padding);
           aggregatedPacket->AddAtEnd (pad);
         }
-      currentHdr.SetCrc (1);
-      currentHdr.SetSig ();
-      currentHdr.SetLength (packet->GetSize ());
+      currentHdr.SetLength (static_cast<uint16_t> (packet->GetSize ()));
       currentPacket = packet->Copy ();
 
       currentPacket->AddHeader (currentHdr);
@@ -103,9 +102,7 @@ MpduAggregator::AggregateSingleMpdu (Ptr<const Packet> packet, Ptr<Packet> aggre
     }
 
   currentHdr.SetEof (1);
-  currentHdr.SetCrc (1);
-  currentHdr.SetSig ();
-  currentHdr.SetLength (packet->GetSize ());
+  currentHdr.SetLength (static_cast<uint16_t> (packet->GetSize ()));
   currentPacket = packet->Copy ();
 
   currentPacket->AddHeader (currentHdr);
@@ -120,9 +117,7 @@ MpduAggregator::AddHeaderAndPad (Ptr<Packet> packet, bool last, bool isSingleMpd
 
   //This is called to prepare packets from the aggregate queue to be sent so no need to check total size since it has already been
   //done before when deciding how many packets to add to the queue
-  currentHdr.SetCrc (1);
-  currentHdr.SetSig ();
-  currentHdr.SetLength (packet->GetSize ());
+  currentHdr.SetLength (static_cast<uint16_t> (packet->GetSize ()));
   if (isSingleMpdu)
     {
       currentHdr.SetEof (1);
@@ -147,7 +142,7 @@ MpduAggregator::CanBeAggregated (uint32_t packetSize, Ptr<Packet> aggregatedPack
     {
       blockAckSize = blockAckSize + 4 + padding;
     }
-  if ((4 + packetSize + actualSize + padding + blockAckSize) <= m_maxAmpduLength)
+  if ((4 + packetSize + actualSize + padding + blockAckSize) <= GetMaxAmpduSize ())
     {
       return true;
     }

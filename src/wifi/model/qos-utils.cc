@@ -19,8 +19,11 @@
  *          Cecchi Niccolò <insa@igeek.it>
  */
 
-#include "qos-utils.h"
 #include "ns3/socket.h"
+#include "qos-utils.h"
+#include "wifi-mac-header.h"
+#include "mgt-headers.h"
+#include "ctrl-headers.h"
 
 namespace ns3 {
 

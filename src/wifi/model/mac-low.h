@@ -23,26 +23,33 @@
 #ifndef MAC_LOW_H
 #define MAC_LOW_H
 
-#include "wifi-phy.h"
-#include "dcf-manager.h"
-#include "wifi-remote-station-manager.h"
-#include "block-ack-agreement.h"
-#include "qos-utils.h"
+#include <map>
+#include "ns3/object.h"
+#include "ns3/nstime.h"
+#include "channel-access-manager.h"
 #include "block-ack-cache.h"
-#include "mpdu-aggregator.h"
-#include "msdu-aggregator.h"
 #include "mac-low-transmission-parameters.h"
+#include "qos-utils.h"
+#include "wifi-mac-header.h"
+#include "wifi-tx-vector.h"
+#include "block-ack-type.h"
+#include "wifi-mpdu-type.h"
 
 class TwoLevelAggregationTest;
 class AmpduAggregationTest;
 
 namespace ns3 {
 
-class DcaTxop;
-class EdcaTxopN;
-class DcfManager;
+class WifiPhy;
+class Txop;
+class QosTxop;
 class WifiMacQueueItem;
 class WifiMacQueue;
+class BlockAckAgreement;
+class MgtAddBaResponseHeader;
+class WifiRemoteStationManager;
+class CtrlBAckRequestHeader;
+class CtrlBAckResponseHeader;
 
 /**
  * \ingroup wifi
@@ -150,6 +157,14 @@ public:
    */
   void SetPifs (Time pifs);
   /**
+   * \param interval the expected interval between two beacon transmissions.
+   */
+  void SetBeaconInterval (Time interval);
+  /**
+   * \param duration the maximum duration for the CF period.
+   */
+  void SetCfpMaxDuration (Time duration);
+  /**
    * Set the Basic Service Set Identification.
    *
    * \param ad the BSSID
@@ -220,6 +235,18 @@ public:
    */
   Time GetRifs (void) const;
   /**
+   * \return the expected interval between two beacon transmissions.
+   */
+  Time GetBeaconInterval (void) const;
+  /**
+   * \return the maximum duration for the CF period.
+   */
+  Time GetCfpMaxDuration (void) const;
+  /**
+   * \return the remaining duration for the CF period.
+   */
+  Time GetRemainingCfpDuration (void) const;
+  /**
    * Return the Basic Service Set Identification.
    *
    * \return BSSID
@@ -243,7 +270,7 @@ public:
   /**
    * \param dcf listen to NAV events for every incoming and outgoing packet.
    */
-  void RegisterDcf (Ptr<DcfManager> dcf);
+  void RegisterDcf (Ptr<ChannelAccessManager> dcf);
 
   /**
    * \param packet to send (does not include the 802.11 MAC header and checksum)
@@ -277,7 +304,7 @@ public:
    * \param packet packet to send
    * \param hdr 802.11 header for packet to send
    * \param parameters the transmission parameters to use for this packet.
-   * \param dca pointer to the calling DcaTxop.
+   * \param txop pointer to the calling Txop.
    *
    * Start the transmission of the input packet and notify the listener
    * of transmission events.
@@ -285,7 +312,7 @@ public:
   virtual void StartTransmission (Ptr<const Packet> packet,
                                   const WifiMacHeader* hdr,
                                   MacLowTransmissionParameters parameters,
-                                  Ptr<DcaTxop> dca);
+                                  Ptr<Txop> txop);
 
   /**
    * \param packet packet received
@@ -309,7 +336,7 @@ public:
    * \param duration switching delay duration.
    *
    * This method is typically invoked by the PhyMacLowListener to notify
-   * the MAC layer that a channel switching occured. When a channel switching
+   * the MAC layer that a channel switching occurred. When a channel switching
    * occurs, pending MAC transmissions (RTS, CTS, DATA and ACK) are cancelled.
    */
   void NotifySwitchingStartNow (Time duration);
@@ -354,16 +381,16 @@ public:
   void DestroyBlockAckAgreement (Mac48Address originator, uint8_t tid);
   /**
    * \param ac Access class managed by the queue.
-   * \param edca the EdcaTxopN for the queue.
+   * \param edca the QosTxop for the queue.
    *
-   * The lifetime of the registered EdcaTxopN is typically equal to the lifetime of the queue
+   * The lifetime of the registered QosTxop is typically equal to the lifetime of the queue
    * associated to this AC.
    */
-  void RegisterEdcaForAc (AcIndex ac, Ptr<EdcaTxopN> edca);
+  void RegisterEdcaForAc (AcIndex ac, Ptr<QosTxop> edca);
   /**
-   * \param packet the packet to be aggregated. If the aggregation is succesfull, it corresponds either to the first data packet that will be aggregated or to the BAR that will be piggybacked at the end of the A-MPDU.
+   * \param packet the packet to be aggregated. If the aggregation is successful, it corresponds either to the first data packet that will be aggregated or to the BAR that will be piggybacked at the end of the A-MPDU.
    * \param hdr the WifiMacHeader for the packet.
-   * \return the A-MPDU packet if aggregation is successfull, the input packet otherwise
+   * \return the A-MPDU packet if aggregation is successful, the input packet otherwise
    *
    * This function adds the packets that will be added to an A-MPDU to an aggregate queue
    *
@@ -382,13 +409,13 @@ public:
    * \param peekedPacket the packet to be aggregated
    * \param peekedHdr the WifiMacHeader for the packet.
    * \param aggregatedPacket the current A-MPDU
-   * \param size the size of a piggybacked block ack request
+   * \param blockAckSize the size of a piggybacked block ack request
    * \return false if the given packet can be added to an A-MPDU, true otherwise
    *
    * This function decides if a given packet can be added to an A-MPDU or not
    *
    */
-  bool StopMpduAggregation (Ptr<const Packet> peekedPacket, WifiMacHeader peekedHdr, Ptr<Packet> aggregatedPacket, uint16_t size) const;
+  bool StopMpduAggregation (Ptr<const Packet> peekedPacket, WifiMacHeader peekedHdr, Ptr<Packet> aggregatedPacket, uint8_t blockAckSize) const;
   /**
    *
    * This function is called to flush the aggregate queue, which is used for A-MPDU
@@ -407,6 +434,21 @@ public:
    * \return TXVECTOR for the given packet
    */
   virtual WifiTxVector GetDataTxVector (Ptr<const Packet> packet, const WifiMacHeader *hdr) const;
+  /**
+   * Start NAV with the given duration.
+   *
+   * \param duration the duration
+   * \return true if NAV is reset
+   */
+  bool DoNavStartNow (Time duration);
+  /**
+   * This function indicates whether it is the CF period.
+   */
+  virtual bool IsCfPeriod (void) const;
+  /**
+   * This function decides if a CF frame can be transmitted in the current CFP.
+   */
+  bool CanTransmitNextCfFrame (void) const;
 
 
 private:
@@ -415,6 +457,12 @@ private:
    * or switching channel.
    */
   void CancelAllEvents (void);
+  /**
+   * Return the total CF-END size (including FCS trailer).
+   *
+   * \return the total CF-END size
+   */
+  uint32_t GetCfEndSize (void) const;
   /**
    * Forward the packet down to WifiPhy for transmission. This is called for the entire A-MPDu when MPDU aggregation is used.
    *
@@ -566,13 +614,6 @@ private:
    */
   void DoNavResetNow (Time duration);
   /**
-   * Start NAV with the given duration.
-   *
-   * \param duration the duration
-   * \return true if NAV is resetted
-   */
-  bool DoNavStartNow (Time duration);
-  /**
    * Check if NAV is zero.
    *
    * \return true if NAV is zero,
@@ -580,28 +621,28 @@ private:
    */
   bool IsNavZero (void) const;
   /**
-   * Notify DcfManager that ACK timer should be started for the given duration.
+   * Notify ChannelAccessManager that ACK timer should be started for the given duration.
    *
    * \param duration the duration
    */
   void NotifyAckTimeoutStartNow (Time duration);
   /**
-   * Notify DcfManager that ACK timer should be resetted.
+   * Notify ChannelAccessManager that ACK timer should be reset.
    */
   void NotifyAckTimeoutResetNow ();
   /**
-   * Notify DcfManagerthat CTS timer should be started for the given duration.
+   * Notify ChannelAccessManager that CTS timer should be started for the given duration.
    *
    * \param duration
    */
   void NotifyCtsTimeoutStartNow (Time duration);
   /**
-   * Notify DcfManager that CTS timer should be resetted.
+   * Notify ChannelAccessManager that CTS timer should be reset.
    */
   void NotifyCtsTimeoutResetNow ();
   /**
    * Reset NAV after CTS was missed when the NAV was
-   * setted with RTS.
+   * set with RTS.
    *
    * \param rtsEndRxTime
    */
@@ -612,18 +653,6 @@ private:
    */
   void NormalAckTimeout (void);
   /**
-   * Event handler when fast ACK timeout occurs (idle).
-   */
-  void FastAckTimeout (void);
-  /**
-   * Event handler when super fast ACK timeout occurs.
-   */
-  void SuperFastAckTimeout (void);
-  /**
-   * Event handler when fast ACK timeout occurs (busy).
-   */
-  void FastAckFailedTimeout (void);
-  /**
    * Event handler when block ACK timeout occurs.
    */
   void BlockAckTimeout (void);
@@ -631,6 +660,10 @@ private:
    * Event handler when CTS timeout occurs.
    */
   void CtsTimeout (void);
+  /**
+   * Event handler when CF-POLL timeout occurs.
+   */
+  void CfPollTimeout (void);
   /**
    * Send CTS for a CTS-to-self mechanism.
    */
@@ -824,7 +857,7 @@ private:
    *
    * \return the aggregate if MSDU aggregation succeeded, 0 otherwise
    */
-  Ptr<Packet> PerformMsduAggregation (Ptr<const Packet> packet, WifiMacHeader *hdr, Time *tstamp, Ptr<Packet> currentAmpduPacket, uint16_t blockAckSize);
+  Ptr<Packet> PerformMsduAggregation (Ptr<const Packet> packet, WifiMacHeader *hdr, Time *tstamp, Ptr<Packet> currentAmpduPacket, uint8_t blockAckSize);
 
   Ptr<WifiPhy> m_phy; //!< Pointer to WifiPhy (actually send/receives frames)
   Ptr<WifiRemoteStationManager> m_stationManager; //!< Pointer to WifiRemoteStationManager (rate control)
@@ -841,19 +874,26 @@ private:
   }; //!< item structure
 
   /**
-   * typedef for an iterator for a list of DcfManager.
+   * A struct that holds information about ACK piggybacking (CF-ACK).
    */
-  typedef std::vector<Ptr<DcfManager> >::const_iterator DcfManagersCI;
+  struct CfAckInfo
+  {
+    bool appendCfAck; //!< Flag used for PCF to indicate whether a CF-ACK should be appended
+    bool expectCfAck; //!< Flag used for PCF to indicate whether a CF-ACK should be expected
+    Mac48Address address; //!< Address of the station to be acknowledged
+  };
+
   /**
-   * typedef for a list of DcfManager.
+   * typedef for an iterator for a list of ChannelAccessManager.
    */
-  typedef std::vector<Ptr<DcfManager> > DcfManagers;
-  DcfManagers m_dcfManagers; //!< List of DcfManager
+  typedef std::vector<Ptr<ChannelAccessManager> >::const_iterator ChannelAccessManagersCI;
+  /**
+   * typedef for a list of ChannelAccessManager.
+   */
+  typedef std::vector<Ptr<ChannelAccessManager> > ChannelAccessManagers;
+  ChannelAccessManagers m_channelAccessManagers; //!< List of ChannelAccessManager
 
   EventId m_normalAckTimeoutEvent;      //!< Normal ACK timeout event
-  EventId m_fastAckTimeoutEvent;        //!< Fast ACK timeout event
-  EventId m_superFastAckTimeoutEvent;   //!< Super fast ACK timeout event
-  EventId m_fastAckFailedTimeoutEvent;  //!< Fast ACK failed timeout event
   EventId m_blockAckTimeoutEvent;       //!< Block ACK timeout event
   EventId m_ctsTimeoutEvent;            //!< CTS timeout event
   EventId m_sendCtsEvent;               //!< Event to send CTS
@@ -865,8 +905,7 @@ private:
 
   Ptr<Packet> m_currentPacket;              //!< Current packet transmitted/to be transmitted
   WifiMacHeader m_currentHdr;               //!< Header of the current transmitted packet
-  Ptr<DcaTxop> m_currentDca;                //!< Current DCA
-  WifiMacHeader m_lastReceivedHdr;          //!< Header of the last received packet
+  Ptr<Txop> m_currentTxop;                  //!< Current TXOP
   MacLowTransmissionParameters m_txParams;  //!< Transmission parameters of the current packet
   Mac48Address m_self;                      //!< Address of this MacLow (Mac48Address)
   Mac48Address m_bssid;                     //!< BSSID address (Mac48Address)
@@ -879,8 +918,15 @@ private:
   Time m_pifs;                              //!< PCF Interframe Space (PIFS) duration
   Time m_rifs;                              //!< Reduced Interframe Space (RIFS) duration
 
+  Time m_beaconInterval;   //!< Expected interval between two beacon transmissions
+  Time m_cfpMaxDuration;   //!< CFP max duration
+
   Time m_lastNavStart;     //!< The time when the latest NAV started
   Time m_lastNavDuration;  //!< The duration of the latest NAV
+
+  Time m_cfpStart;          //!< The time when the latest CF period started
+  Time m_lastBeacon;        //!< The time when the last beacon frame transmission started
+  Time m_cfpForeshortening; //!< The delay the current CF period should be foreshortened
 
   bool m_promisc;  //!< Flag if the device is operating in promiscuous mode
   bool m_ampdu;    //!< Flag if the current transmission involves an A-MPDU
@@ -905,13 +951,15 @@ private:
   Agreements m_bAckAgreements; //!< block ack agreements
   BlockAckCaches m_bAckCaches; //!< block ack caches
 
-  typedef std::map<AcIndex, Ptr<EdcaTxopN> > QueueEdcas; //!< EDCA queues typedef
+  typedef std::map<AcIndex, Ptr<QosTxop> > QueueEdcas; //!< EDCA queues typedef
   QueueEdcas m_edca; //!< EDCA queues
 
   bool m_ctsToSelfSupported;             //!< Flag whether CTS-to-self is supported
   Ptr<WifiMacQueue> m_aggregateQueue[8]; //!< Queues per TID used for MPDU aggregation
   std::vector<Item> m_txPackets[8];      //!< Contain temporary items to be sent with the next A-MPDU transmission for a given TID, once RTS/CTS exchange has succeeded.
   WifiTxVector m_currentTxVector;        //!< TXVECTOR used for the current packet transmission
+
+  CfAckInfo m_cfAckInfo; //!< Info about piggyback ACKs used in PCF
 };
 
 } //namespace ns3

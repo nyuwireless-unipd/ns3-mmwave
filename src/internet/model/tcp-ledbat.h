@@ -24,6 +24,7 @@
 
 #include <vector>
 #include "ns3/tcp-congestion-ops.h"
+#include "ns3/tcp-recovery-ops.h"
 
 namespace ns3 {
 
@@ -191,6 +192,7 @@ private:
   OwdCircBuf m_baseHistory;   //!< Buffer to store the base delay
   OwdCircBuf m_noiseFilter;   //!< Buffer to store the current delay
   uint32_t m_flag;                   //!< LEDBAT Flag
+  uint32_t m_minCwnd;                //!< Minimum cWnd value mentioned in RFC 6817
 };
 
 } // namespace ns3

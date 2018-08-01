@@ -37,13 +37,23 @@
 // --broadcast instead of unicast (default is unicast)
 // --rtsThreshold (by default, value of 99999 disables it)
 
-#include "ns3/core-module.h"
-#include "ns3/network-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/stats-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/propagation-module.h"
+#include "ns3/log.h"
+#include "ns3/config.h"
+#include "ns3/uinteger.h"
+#include "ns3/boolean.h"
+#include "ns3/double.h"
+#include "ns3/gnuplot.h"
+#include "ns3/command-line.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/propagation-loss-model.h"
+#include "ns3/propagation-delay-model.h"
 #include "ns3/rng-seed-manager.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/wifi-net-device.h"
+#include "ns3/packet-socket-helper.h"
+#include "ns3/packet-socket-client.h"
+#include "ns3/packet-socket-server.h"
 
 using namespace ns3;
 
@@ -67,13 +77,6 @@ void
 RateChange (uint64_t oldVal, uint64_t newVal)
 {
   NS_LOG_DEBUG ("Change from " << oldVal << " to " << newVal);
-  g_intervalRate = newVal;
-}
-
-void
-RateChangeMinstrelHt (uint64_t newVal, Mac48Address dest)
-{
-  NS_LOG_DEBUG ("Change to " << newVal);
   g_intervalRate = newVal;
 }
 
@@ -103,7 +106,7 @@ struct StandardInfo
    * \param xMax x maximum
    * \param yMax y maximum
    */
-  StandardInfo (std::string name, WifiPhyStandard standard, uint8_t width, double snrLow, double snrHigh, double xMin, double xMax, double yMax)
+  StandardInfo (std::string name, WifiPhyStandard standard, uint16_t width, double snrLow, double snrHigh, double xMin, double xMax, double yMax)
     : m_name (name),
       m_standard (standard),
       m_width (width),
@@ -116,7 +119,7 @@ struct StandardInfo
   }
   std::string m_name; ///< name
   WifiPhyStandard m_standard; ///< standard
-  uint8_t m_width; ///< channel width
+  uint16_t m_width; ///< channel width
   double m_snrLow; ///< lowest SNR
   double m_snrHigh; ///< highest SNR
   double m_xMin;  ///< X minimum
@@ -192,7 +195,7 @@ int main (int argc, char *argv[])
   std::cout << "Wi-Fi rate controls on different station configurations," << std::endl;
   std::cout << "by stepping down the received signal strength across a wide range" << std::endl;
   std::cout << "and observing the adjustment of the rate." << std::endl;
-  std::cout << "Run 'wifi-manager-example --PrintHelp' to show program options."<< std::endl << std::endl;
+  std::cout << "Run 'wifi-manager-example --PrintHelp' to show program options." << std::endl << std::endl;
 
   if (infrastructure == false)
     {
@@ -243,11 +246,11 @@ int main (int argc, char *argv[])
   dataName += "-";
   plotName += standard;
   dataName += standard;
-  if (standard == "802.11n-5GHz" ||
-      standard == "802.11n-2.4GHz" ||
-      standard == "802.11ac" ||
-      standard == "802.11ax-5GHz" ||
-      standard == "802.11ax-2.4GHz")
+  if (standard == "802.11n-5GHz"
+      || standard == "802.11n-2.4GHz"
+      || standard == "802.11ac"
+      || standard == "802.11ax-5GHz"
+      || standard == "802.11ax-2.4GHz")
     {
       plotName += "-server=";
       dataName += "-server=";
@@ -257,7 +260,7 @@ int main (int argc, char *argv[])
       dataName += oss.str ();
       plotName += "-client=";
       dataName += "-client=";
-      oss.str("");
+      oss.str ("");
       oss << clientChannelWidth << "MHz_" << clientShortGuardInterval << "ns_" << clientNss << "SS";
       plotName += oss.str ();
       dataName += oss.str ();
@@ -317,13 +320,16 @@ int main (int argc, char *argv[])
   NS_ABORT_IF (clientSelectedStandard.m_name == "none");
   std::cout << "Testing " << serverSelectedStandard.m_name << " with " << wifiManager << " ..." << std::endl;
   NS_ABORT_MSG_IF (clientSelectedStandard.m_snrLow >= clientSelectedStandard.m_snrHigh, "SNR values in wrong order");
-  steps = static_cast<uint32_t>(std::abs<double> ((clientSelectedStandard.m_snrHigh - clientSelectedStandard.m_snrLow ) / stepSize) + 1);
+  steps = static_cast<uint32_t> (std::abs (static_cast<double> (clientSelectedStandard.m_snrHigh - clientSelectedStandard.m_snrLow ) / stepSize) + 1);
   NS_LOG_DEBUG ("Using " << steps << " steps for SNR range " << clientSelectedStandard.m_snrLow << ":" << clientSelectedStandard.m_snrHigh);
   Ptr<Node> clientNode = CreateObject<Node> ();
   Ptr<Node> serverNode = CreateObject<Node> ();
 
   Config::SetDefault ("ns3::WifiRemoteStationManager::MaxSlrc", UintegerValue (maxSlrc));
   Config::SetDefault ("ns3::WifiRemoteStationManager::MaxSsrc", UintegerValue (maxSsrc));
+  Config::SetDefault ("ns3::MinstrelWifiManager::PrintStats", BooleanValue (true));
+  Config::SetDefault ("ns3::MinstrelWifiManager::PrintSamples", BooleanValue (true));
+  Config::SetDefault ("ns3::MinstrelHtWifiManager::PrintStats", BooleanValue (true));
 
   WifiHelper wifi;
   wifi.SetStandard (serverSelectedStandard.m_standard);
@@ -350,11 +356,11 @@ int main (int argc, char *argv[])
       Ssid ssid = Ssid ("ns-3-ssid");
       wifiMac.SetType ("ns3::StaWifiMac",
                        "Ssid", SsidValue (ssid),
-                       "ActiveProbing", BooleanValue (false));
+                       "BE_MaxAmpduSize", UintegerValue (maxAmpduSize));
       serverDevice = wifi.Install (wifiPhy, wifiMac, serverNode);
       wifiMac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid),
-                       "BeaconGeneration", BooleanValue (true));
+                       "BE_MaxAmpduSize", UintegerValue (maxAmpduSize));
       clientDevice = wifi.Install (wifiPhy, wifiMac, clientNode);
     }
   else
@@ -367,17 +373,11 @@ int main (int argc, char *argv[])
 
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun (2);
-  wifi.AssignStreams(serverDevice, 100);
-  wifi.AssignStreams(clientDevice, 100);
+  wifi.AssignStreams (serverDevice, 100);
+  wifi.AssignStreams (clientDevice, 100);
 
-  if (wifiManager == "MinstrelHt")
-    {
-      Config::ConnectWithoutContext ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/RemoteStationManager/$ns3::MinstrelHtWifiManager/RateChange", MakeCallback (&RateChangeMinstrelHt));
-    }
-  else
-    {
-      Config::ConnectWithoutContext ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/RemoteStationManager/$ns3::" + wifiManager + "WifiManager/Rate", MakeCallback (&RateChange));
-    }
+  Config::ConnectWithoutContext ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/RemoteStationManager/$ns3::" + wifiManager + "WifiManager/Rate", MakeCallback (&RateChange));
+
   // Configure the mobility.
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
@@ -406,12 +406,14 @@ int main (int argc, char *argv[])
   Ptr<WifiNetDevice> wndServer = ndServer->GetObject<WifiNetDevice> ();
   Ptr<WifiPhy> wifiPhyPtrClient = wndClient->GetPhy ();
   Ptr<WifiPhy> wifiPhyPtrServer = wndServer->GetPhy ();
-  wifiPhyPtrClient->SetNumberOfAntennas (clientNss);
-  wifiPhyPtrClient->SetMaxSupportedTxSpatialStreams (clientNss);
-  wifiPhyPtrClient->SetMaxSupportedRxSpatialStreams (clientNss);
-  wifiPhyPtrServer->SetNumberOfAntennas (serverNss);
-  wifiPhyPtrServer->SetMaxSupportedTxSpatialStreams (serverNss);
-  wifiPhyPtrServer->SetMaxSupportedRxSpatialStreams (serverNss);
+  uint8_t t_clientNss = static_cast<uint8_t> (clientNss);
+  uint8_t t_serverNss = static_cast<uint8_t> (serverNss);
+  wifiPhyPtrClient->SetNumberOfAntennas (t_clientNss);
+  wifiPhyPtrClient->SetMaxSupportedTxSpatialStreams (t_clientNss);
+  wifiPhyPtrClient->SetMaxSupportedRxSpatialStreams (t_clientNss);
+  wifiPhyPtrServer->SetNumberOfAntennas (t_serverNss);
+  wifiPhyPtrServer->SetMaxSupportedTxSpatialStreams (t_serverNss);
+  wifiPhyPtrServer->SetMaxSupportedRxSpatialStreams (t_serverNss);
   // Only set the channel width and guard interval for HT and VHT modes
   if (serverSelectedStandard.m_name == "802.11n-5GHz"
       || serverSelectedStandard.m_name == "802.11n-2.4GHz"

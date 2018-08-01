@@ -24,6 +24,7 @@
 #ifndef WIFI_MAC_QUEUE_ITEM_H
 #define WIFI_MAC_QUEUE_ITEM_H
 
+#include "ns3/nstime.h"
 #include "ns3/queue.h"
 #include "wifi-mac-header.h"
 
@@ -62,11 +63,10 @@ public:
   const WifiMacHeader & GetHeader (void) const;
 
   /**
-   * \brief Return the requested address present in the header
-   * \param type the type of the address to return
-   * \return the address
+   * \brief Return the destination address present in the header
+   * \return the destination address
    */
-  Mac48Address GetAddress (enum WifiMacHeader::AddressType type) const;
+  Mac48Address GetDestinationAddress (void) const;
 
   /**
    * \brief Get the timestamp included in this item

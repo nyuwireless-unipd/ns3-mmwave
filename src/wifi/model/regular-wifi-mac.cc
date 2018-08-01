@@ -18,16 +18,19 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
-#include "regular-wifi-mac.h"
 #include "ns3/log.h"
 #include "ns3/pointer.h"
+#include "ns3/packet.h"
+#include "regular-wifi-mac.h"
+#include "wifi-phy.h"
 #include "mac-rx-middle.h"
 #include "mac-tx-middle.h"
 #include "mac-low.h"
-#include "dcf-manager.h"
 #include "msdu-aggregator.h"
 #include "mpdu-aggregator.h"
 #include "wifi-utils.h"
+#include "mgt-headers.h"
+#include "amsdu-subframe-header.h"
 
 namespace ns3 {
 
@@ -36,7 +39,8 @@ NS_LOG_COMPONENT_DEFINE ("RegularWifiMac");
 NS_OBJECT_ENSURE_REGISTERED (RegularWifiMac);
 
 RegularWifiMac::RegularWifiMac ()
-  : m_htSupported (0),
+  : m_qosSupported (0),
+    m_htSupported (0),
     m_vhtSupported (0),
     m_erpSupported (0),
     m_dsssSupported (0),
@@ -51,16 +55,16 @@ RegularWifiMac::RegularWifiMac ()
   m_low = CreateObject<MacLow> ();
   m_low->SetRxCallback (MakeCallback (&MacRxMiddle::Receive, m_rxMiddle));
 
-  m_dcfManager = CreateObject<DcfManager> ();
-  m_dcfManager->SetupLow (m_low);
+  m_channelAccessManager = CreateObject<ChannelAccessManager> ();
+  m_channelAccessManager->SetupLow (m_low);
 
-  m_dca = CreateObject<DcaTxop> ();
-  m_dca->SetLow (m_low);
-  m_dca->SetManager (m_dcfManager);
-  m_dca->SetTxMiddle (m_txMiddle);
-  m_dca->SetTxOkCallback (MakeCallback (&RegularWifiMac::TxOk, this));
-  m_dca->SetTxFailedCallback (MakeCallback (&RegularWifiMac::TxFailed, this));
-  m_dca->SetTxDroppedCallback (MakeCallback (&RegularWifiMac::NotifyTxDrop, this));
+  m_txop = CreateObject<Txop> ();
+  m_txop->SetMacLow (m_low);
+  m_txop->SetChannelAccessManager (m_channelAccessManager);
+  m_txop->SetTxMiddle (m_txMiddle);
+  m_txop->SetTxOkCallback (MakeCallback (&RegularWifiMac::TxOk, this));
+  m_txop->SetTxFailedCallback (MakeCallback (&RegularWifiMac::TxFailed, this));
+  m_txop->SetTxDroppedCallback (MakeCallback (&RegularWifiMac::NotifyTxDrop, this));
 
   //Construct the EDCAFs. The ordering is important - highest
   //priority (Table 9-1 UP-to-AC mapping; IEEE 802.11-2012) must be created
@@ -80,7 +84,7 @@ void
 RegularWifiMac::DoInitialize ()
 {
   NS_LOG_FUNCTION (this);
-  m_dca->Initialize ();
+  m_txop->Initialize ();
 
   for (EdcaQueues::const_iterator i = m_edca.begin (); i != m_edca.end (); ++i)
     {
@@ -102,8 +106,8 @@ RegularWifiMac::DoDispose ()
   m_phy = 0;
   m_stationManager = 0;
 
-  m_dca->Dispose ();
-  m_dca = 0;
+  m_txop->Dispose ();
+  m_txop = 0;
 
   for (EdcaQueues::iterator i = m_edca.begin (); i != m_edca.end (); ++i)
     {
@@ -111,8 +115,8 @@ RegularWifiMac::DoDispose ()
       i->second = 0;
     }
 
-  m_dcfManager->Dispose ();
-  m_dcfManager = 0;
+  m_channelAccessManager->Dispose ();
+  m_channelAccessManager = 0;
 }
 
 void
@@ -125,7 +129,7 @@ RegularWifiMac::SetWifiRemoteStationManager (const Ptr<WifiRemoteStationManager>
   m_stationManager->SetHeSupported (GetHeSupported ());
   m_low->SetWifiRemoteStationManager (stationManager);
 
-  m_dca->SetWifiRemoteStationManager (stationManager);
+  m_txop->SetWifiRemoteStationManager (stationManager);
 
   for (EdcaQueues::const_iterator i = m_edca.begin (); i != m_edca.end (); ++i)
     {
@@ -200,7 +204,7 @@ RegularWifiMac::GetHtCapabilities (void) const
               NS_LOG_DEBUG ("Updating maxSupportedRate to " << maxSupportedRate);
             }
         }
-      capabilities.SetRxHighestSupportedDataRate (maxSupportedRate / 1e6); //in Mbit/s
+      capabilities.SetRxHighestSupportedDataRate (static_cast<uint16_t> (maxSupportedRate / 1e6)); //in Mbit/s
       capabilities.SetTxMcsSetDefined (m_phy->GetNMcs () > 0);
       capabilities.SetTxMaxNSpatialStreams (m_phy->GetMaxSupportedTxSpatialStreams ());
       //we do not support unequal modulations
@@ -267,8 +271,8 @@ RegularWifiMac::GetVhtCapabilities (void) const
               NS_LOG_DEBUG ("Updating maxSupportedRateLGI to " << maxSupportedRateLGI);
             }
         }
-      capabilities.SetRxHighestSupportedLgiDataRate (maxSupportedRateLGI / 1e6); //in Mbit/s
-      capabilities.SetTxHighestSupportedLgiDataRate (maxSupportedRateLGI / 1e6); //in Mbit/s
+      capabilities.SetRxHighestSupportedLgiDataRate (static_cast<uint16_t> (maxSupportedRateLGI / 1e6)); //in Mbit/s
+      capabilities.SetTxHighestSupportedLgiDataRate (static_cast<uint16_t> (maxSupportedRateLGI / 1e6)); //in Mbit/s
       //To be filled in once supported
       capabilities.SetRxStbc (0);
       capabilities.SetTxStbc (0);
@@ -461,9 +465,9 @@ RegularWifiMac::SetupEdcaQueue (AcIndex ac)
   //already configured.
   NS_ASSERT (m_edca.find (ac) == m_edca.end ());
 
-  Ptr<EdcaTxopN> edca = CreateObject<EdcaTxopN> ();
-  edca->SetLow (m_low);
-  edca->SetManager (m_dcfManager);
+  Ptr<QosTxop> edca = CreateObject<QosTxop> ();
+  edca->SetMacLow (m_low);
+  edca->SetChannelAccessManager (m_channelAccessManager);
   edca->SetTxMiddle (m_txMiddle);
   edca->SetTxOkCallback (MakeCallback (&RegularWifiMac::TxOk, this));
   edca->SetTxFailedCallback (MakeCallback (&RegularWifiMac::TxFailed, this));
@@ -484,31 +488,31 @@ RegularWifiMac::SetTypeOfStation (TypeOfStation type)
     }
 }
 
-Ptr<DcaTxop>
-RegularWifiMac::GetDcaTxop () const
+Ptr<Txop>
+RegularWifiMac::GetTxop () const
 {
-  return m_dca;
+  return m_txop;
 }
 
-Ptr<EdcaTxopN>
+Ptr<QosTxop>
 RegularWifiMac::GetVOQueue () const
 {
   return m_edca.find (AC_VO)->second;
 }
 
-Ptr<EdcaTxopN>
+Ptr<QosTxop>
 RegularWifiMac::GetVIQueue () const
 {
   return m_edca.find (AC_VI)->second;
 }
 
-Ptr<EdcaTxopN>
+Ptr<QosTxop>
 RegularWifiMac::GetBEQueue () const
 {
   return m_edca.find (AC_BE)->second;
 }
 
-Ptr<EdcaTxopN>
+Ptr<QosTxop>
 RegularWifiMac::GetBKQueue () const
 {
   return m_edca.find (AC_BK)->second;
@@ -519,7 +523,7 @@ RegularWifiMac::SetWifiPhy (const Ptr<WifiPhy> phy)
 {
   NS_LOG_FUNCTION (this << phy);
   m_phy = phy;
-  m_dcfManager->SetupPhyListener (phy);
+  m_channelAccessManager->SetupPhyListener (phy);
   m_low->SetPhy (phy);
 }
 
@@ -535,7 +539,7 @@ RegularWifiMac::ResetWifiPhy (void)
 {
   NS_LOG_FUNCTION (this);
   m_low->ResetPhy ();
-  m_dcfManager->RemovePhyListener (m_phy);
+  m_channelAccessManager->RemovePhyListener (m_phy);
   m_phy = 0;
 }
 
@@ -685,17 +689,11 @@ RegularWifiMac::SetCtsToSelfSupported (bool enable)
   m_low->SetCtsToSelfSupported (enable);
 }
 
-bool
-RegularWifiMac::GetCtsToSelfSupported () const
-{
-  return m_low->GetCtsToSelfSupported ();
-}
-
 void
 RegularWifiMac::SetSlot (Time slotTime)
 {
   NS_LOG_FUNCTION (this << slotTime);
-  m_dcfManager->SetSlot (slotTime);
+  m_channelAccessManager->SetSlot (slotTime);
   m_low->SetSlotTime (slotTime);
 }
 
@@ -709,7 +707,7 @@ void
 RegularWifiMac::SetSifs (Time sifs)
 {
   NS_LOG_FUNCTION (this << sifs);
-  m_dcfManager->SetSifs (sifs);
+  m_channelAccessManager->SetSifs (sifs);
   m_low->SetSifs (sifs);
 }
 
@@ -723,13 +721,13 @@ void
 RegularWifiMac::SetEifsNoDifs (Time eifsNoDifs)
 {
   NS_LOG_FUNCTION (this << eifsNoDifs);
-  m_dcfManager->SetEifsNoDifs (eifsNoDifs);
+  m_channelAccessManager->SetEifsNoDifs (eifsNoDifs);
 }
 
 Time
 RegularWifiMac::GetEifsNoDifs (void) const
 {
-  return m_dcfManager->GetEifsNoDifs ();
+  return m_channelAccessManager->GetEifsNoDifs ();
 }
 
 void
@@ -1108,8 +1106,7 @@ RegularWifiMac::GetTypeId (void)
     .AddAttribute ("CtsToSelfSupported",
                    "Use CTS to Self when using a rate that is not in the basic rate set.",
                    BooleanValue (false),
-                   MakeBooleanAccessor (&RegularWifiMac::SetCtsToSelfSupported,
-                                        &RegularWifiMac::GetCtsToSelfSupported),
+                   MakeBooleanAccessor (&RegularWifiMac::SetCtsToSelfSupported),
                    MakeBooleanChecker ())
     .AddAttribute ("VO_MaxAmsduSize",
                    "Maximum length in bytes of an A-MSDU for AC_VO access class. "
@@ -1222,40 +1219,40 @@ RegularWifiMac::GetTypeId (void)
     .AddAttribute ("ShortSlotTimeSupported",
                    "Whether or not short slot time is supported (only used by ERP APs or STAs).",
                    BooleanValue (true),
-                   MakeBooleanAccessor (&RegularWifiMac::GetShortSlotTimeSupported,
-                                        &RegularWifiMac::SetShortSlotTimeSupported),
+                   MakeBooleanAccessor (&RegularWifiMac::SetShortSlotTimeSupported,
+                                        &RegularWifiMac::GetShortSlotTimeSupported),
                    MakeBooleanChecker ())
     .AddAttribute ("RifsSupported",
                    "Whether or not RIFS is supported (only used by HT APs or STAs).",
                    BooleanValue (false),
-                   MakeBooleanAccessor (&RegularWifiMac::GetRifsSupported,
-                                        &RegularWifiMac::SetRifsSupported),
+                   MakeBooleanAccessor (&RegularWifiMac::SetRifsSupported,
+                                        &RegularWifiMac::GetRifsSupported),
                    MakeBooleanChecker ())
-    .AddAttribute ("DcaTxop",
-                   "The DcaTxop object.",
+    .AddAttribute ("Txop",
+                   "The Txop object.",
                    PointerValue (),
-                   MakePointerAccessor (&RegularWifiMac::GetDcaTxop),
-                   MakePointerChecker<DcaTxop> ())
-    .AddAttribute ("VO_EdcaTxopN",
+                   MakePointerAccessor (&RegularWifiMac::GetTxop),
+                   MakePointerChecker<Txop> ())
+    .AddAttribute ("VO_Txop",
                    "Queue that manages packets belonging to AC_VO access class.",
                    PointerValue (),
                    MakePointerAccessor (&RegularWifiMac::GetVOQueue),
-                   MakePointerChecker<EdcaTxopN> ())
-    .AddAttribute ("VI_EdcaTxopN",
+                   MakePointerChecker<QosTxop> ())
+    .AddAttribute ("VI_Txop",
                    "Queue that manages packets belonging to AC_VI access class.",
                    PointerValue (),
                    MakePointerAccessor (&RegularWifiMac::GetVIQueue),
-                   MakePointerChecker<EdcaTxopN> ())
-    .AddAttribute ("BE_EdcaTxopN",
+                   MakePointerChecker<QosTxop> ())
+    .AddAttribute ("BE_Txop",
                    "Queue that manages packets belonging to AC_BE access class.",
                    PointerValue (),
                    MakePointerAccessor (&RegularWifiMac::GetBEQueue),
-                   MakePointerChecker<EdcaTxopN> ())
-    .AddAttribute ("BK_EdcaTxopN",
+                   MakePointerChecker<QosTxop> ())
+    .AddAttribute ("BK_Txop",
                    "Queue that manages packets belonging to AC_BK access class.",
                    PointerValue (),
                    MakePointerAccessor (&RegularWifiMac::GetBKQueue),
-                   MakePointerChecker<EdcaTxopN> ())
+                   MakePointerChecker<QosTxop> ())
     .AddTraceSource ("TxOkHeader",
                      "The header of successfully transmitted packet.",
                      MakeTraceSourceAccessor (&RegularWifiMac::m_txOkCallback),
@@ -1316,7 +1313,7 @@ RegularWifiMac::ConfigureContentionWindow (uint32_t cwMin, uint32_t cwMax)
   bool isDsssOnly = m_dsssSupported && !m_erpSupported;
   //The special value of AC_BE_NQOS which exists in the Access
   //Category enumeration allows us to configure plain old DCF.
-  ConfigureDcf (m_dca, cwMin, cwMax, isDsssOnly, AC_BE_NQOS);
+  ConfigureDcf (m_txop, cwMin, cwMax, isDsssOnly, AC_BE_NQOS);
 
   //Now we configure the EDCA functions
   for (EdcaQueues::const_iterator i = m_edca.begin (); i != m_edca.end (); ++i)

@@ -610,7 +610,7 @@ LteUeMac::DoReceiveLteControlMessage (Ptr<LteControlMessage> msg)
 
       if (dci.m_ndi == 1)
         {
-          // New transmission -> emtpy pkt buffer queue (for deleting eventual pkts not acked )
+          // New transmission -> empty pkt buffer queue (for deleting eventual pkts not acked )
           Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
           m_miUlHarqProcessesPacket.at (m_harqProcessId) = pb;
           // Retrieve data from RLC

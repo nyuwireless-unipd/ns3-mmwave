@@ -21,8 +21,8 @@
  *          Stefano Avallone <stavallo@unina.it>
  */
 
-#include "wifi-mac-queue-item.h"
 #include "ns3/simulator.h"
+#include "wifi-mac-queue-item.h"
 
 namespace ns3 {
 
@@ -52,21 +52,9 @@ WifiMacQueueItem::GetHeader (void) const
 }
 
 Mac48Address
-WifiMacQueueItem::GetAddress (WifiMacHeader::AddressType type) const
+WifiMacQueueItem::GetDestinationAddress (void) const
 {
-  if (type == WifiMacHeader::ADDR1)
-    {
-      return m_header.GetAddr1 ();
-    }
-  if (type == WifiMacHeader::ADDR2)
-    {
-      return m_header.GetAddr2 ();
-    }
-  if (type == WifiMacHeader::ADDR3)
-    {
-      return m_header.GetAddr3 ();
-    }
-  return 0;
+  return m_header.GetAddr1 ();
 }
 
 Time

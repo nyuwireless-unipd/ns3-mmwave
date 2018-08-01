@@ -22,7 +22,6 @@
 #define WIFI_NET_DEVICE_H
 
 #include "ns3/net-device.h"
-#include "ns3/queue-item.h"
 #include "ns3/traced-callback.h"
 
 namespace ns3 {
@@ -31,6 +30,10 @@ class WifiRemoteStationManager;
 class WifiPhy;
 class WifiMac;
 class NetDeviceQueueInterface;
+class QueueItem;
+
+/// This value conforms to the 802.11 specification
+static const uint16_t MAX_MSDU_SIZE = 2304;
 
 /**
  * \defgroup wifi Wifi Models
@@ -143,9 +146,6 @@ private:
    * Defined and unimplemented to avoid misuse
    */
   WifiNetDevice &operator = (const WifiNetDevice &o);
-
-  /// This value conforms to the 802.11 specification
-  static const uint16_t MAX_MSDU_SIZE = 2304;
 
   /**
    * Set that the link is up. A link is always up in ad-hoc mode.

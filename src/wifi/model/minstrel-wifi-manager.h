@@ -24,10 +24,12 @@
 
 #include "ns3/traced-value.h"
 #include "wifi-remote-station-manager.h"
-#include "ns3/random-variable-stream.h"
 #include <fstream>
+#include <map>
 
 namespace ns3 {
+
+class UniformRandomVariable;
 
 /**
  * A struct to contain all information related to a data rate
@@ -68,9 +70,9 @@ struct RateInfo
 typedef std::vector<RateInfo> MinstrelRate;
 /**
  * Data structure for a Sample Rate table
- * A vector of a vector uint32_t
+ * A vector of a vector uint8_t
  */
-typedef std::vector<std::vector<uint32_t> > SampleRate;
+typedef std::vector<std::vector<uint8_t> > SampleRate;
 
 /**
  * \brief hold per-remote-station state for Minstrel Wifi manager.
@@ -90,20 +92,20 @@ struct MinstrelWifiRemoteStation : public WifiRemoteStation
    */
   uint8_t m_col;                 ///< vector index
   uint8_t m_index;               ///< vector index
-  uint32_t m_maxTpRate;          ///< the current throughput rate
-  uint32_t m_maxTpRate2;         ///< second highest throughput rate
-  uint32_t m_maxProbRate;        ///< rate with highest prob of success
+  uint16_t m_maxTpRate;          ///< the current throughput rate
+  uint16_t m_maxTpRate2;         ///< second highest throughput rate
+  uint16_t m_maxProbRate;        ///< rate with highest prob of success
   uint8_t m_nModes;              ///< number of modes supported
   int m_totalPacketsCount;       ///< total number of packets as of now
   int m_samplePacketsCount;      ///< how many packets we have sample so far
   int m_numSamplesDeferred;      ///< number samles deferred
   bool m_isSampling;             ///< a flag to indicate we are currently sampling
-  uint32_t m_sampleRate;         ///< current sample rate
-  bool  m_sampleDeferred;        ///< a flag to indicate sample rate is on the second stage
+  uint16_t m_sampleRate;         ///< current sample rate
+  bool m_sampleDeferred;         ///< a flag to indicate sample rate is on the second stage
   uint32_t m_shortRetry;         ///< short retries such as control packts
   uint32_t m_longRetry;          ///< long retries such as data packets
   uint32_t m_retry;              ///< total retries short + long
-  uint32_t m_txrate;             ///< current transmit rate
+  uint16_t m_txrate;             ///< current transmit rate
   bool m_initialized;            ///< for initializing tables
   MinstrelRate m_minstrelTable;  ///< minstrel table
   SampleRate m_sampleTable;      ///< sample table
@@ -137,9 +139,9 @@ struct MinstrelWifiRemoteStation : public WifiRemoteStation
  * to changes.
  *
  * Related to the previous, the logic for deciding when to sample random
- * rates is as follows.  When a sample rate is deffered to the second MRR
+ * rates is as follows.  When a sample rate is deferred to the second MRR
  * chain stage, a new parameter (numSamplesDeferred) is increased. This
- * paramters is used (jointly with sampleCount) to compare current
+ * parameters is used (jointly with sampleCount) to compare current
  * sample count with the lookaround rate.
  *
  * Also related with sampling, another parameter sampleLimit is added.
@@ -201,7 +203,7 @@ public:
    * \param station the station object
    * \returns the rate
    */
-  uint32_t FindRate (MinstrelWifiRemoteStation *station);
+  uint16_t FindRate (MinstrelWifiRemoteStation *station);
 
   /**
    * Get data transmit vector
@@ -256,7 +258,7 @@ public:
   void InitSampleTable (MinstrelWifiRemoteStation *station);
 
 private:
-  //overriden from base class
+  //overridden from base class
   WifiRemoteStation * DoCreateStation (void) const;
   void DoReportRxOk (WifiRemoteStation *station,
                      double rxSnr, WifiMode txMode);
@@ -271,7 +273,7 @@ private:
   WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
   WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
 
-  bool DoNeedDataRetransmission (WifiRemoteStation *st,
+  bool DoNeedRetransmission (WifiRemoteStation *st,
                                  Ptr<const Packet> packet, bool normally);
 
   bool IsLowLatency (void) const;
@@ -304,7 +306,7 @@ private:
    * \param station the station object
    * \returns the next sample
    */
-  uint32_t GetNextSample (MinstrelWifiRemoteStation *station);
+  uint16_t GetNextSample (MinstrelWifiRemoteStation *station);
 
   /**
    * Estimate the time to transmit the given packet with the given number of retries.
@@ -345,18 +347,19 @@ private:
 
   /**
    * typedef for a vector of a pair of Time, WifiMode.
-   * (Essentially a list for WifiMode and its corresponding transmission time
+   * Essentially a map from WifiMode to its corresponding transmission time
    * to transmit a reference packet.
    */
-  typedef std::vector<std::pair<Time,WifiMode> > TxTime;
+  typedef std::map<WifiMode,Time> TxTime;
 
   TxTime m_calcTxTime;      ///< to hold all the calculated TxTime for all modes
   Time m_updateStats;       ///< how frequent do we calculate the stats (1/10 seconds)
-  double m_lookAroundRate;  ///< the % to try other rates than our current rate
-  double m_ewmaLevel;       ///< exponential weighted moving average
-  uint32_t m_sampleCol;     ///< number of sample columns
+  uint8_t m_lookAroundRate; ///< the % to try other rates than our current rate
+  uint8_t m_ewmaLevel;      ///< exponential weighted moving average
+  uint8_t m_sampleCol;      ///< number of sample columns
   uint32_t m_pktLen;        ///< packet length used for calculate mode TxTime
-  bool m_printStats;        ///< If statistics table should be printed.
+  bool m_printStats;        ///< whether statistics table should be printed.
+  bool m_printSamples;      ///< whether samples table should be printed.
 
   /// Provides uniform random variables.
   Ptr<UniformRandomVariable> m_uniformRandomVariable;

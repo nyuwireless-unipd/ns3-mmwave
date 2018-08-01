@@ -18,9 +18,9 @@
  * Author: Federico Maguolo <maguolof@dei.unipd.it>
  */
 
-#include "cara-wifi-manager.h"
 #include "ns3/log.h"
-#include "ns3/uinteger.h"
+#include "cara-wifi-manager.h"
+#include "wifi-tx-vector.h"
 
 #define Min(a,b) ((a < b) ? a : b)
 
@@ -62,7 +62,7 @@ CaraWifiManager::GetTypeId (void)
                    MakeUintegerAccessor (&CaraWifiManager::m_failureThreshold),
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("SuccessThreshold",
-                   "The minimum number of sucessfull transmissions to try a new rate.",
+                   "The minimum number of successful transmissions to try a new rate.",
                    UintegerValue (10),
                    MakeUintegerAccessor (&CaraWifiManager::m_successThreshold),
                    MakeUintegerChecker<uint32_t> ())
@@ -183,7 +183,7 @@ CaraWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   CaraWifiRemoteStation *station = (CaraWifiRemoteStation *) st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -205,7 +205,7 @@ CaraWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
   CaraWifiRemoteStation *station = (CaraWifiRemoteStation *) st;
   /// \todo we could/should implement the Arf algorithm for
   /// RTS only by picking a single rate within the BasicRateSet.
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac

@@ -47,7 +47,7 @@ void
 WifiPhyTag::Serialize (TagBuffer i) const
 {
   i.Write ((uint8_t *)&m_wifiTxVector, sizeof (WifiTxVector));
-  i.WriteU16 (m_mpduType);
+  i.WriteU16 (static_cast<uint16_t> (m_mpduType));
   i.WriteU8 (m_frameComplete);
 }
 
@@ -58,6 +58,7 @@ WifiPhyTag::Deserialize (TagBuffer i)
   m_mpduType = static_cast<MpduType> (i.ReadU16 ());
   m_frameComplete = i.ReadU8 ();
 }
+
 void
 WifiPhyTag::Print (std::ostream &os) const
 {
@@ -92,5 +93,5 @@ WifiPhyTag::GetFrameComplete (void) const
 {
   return m_frameComplete;
 }
-    
+
 } // namespace ns3

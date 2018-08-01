@@ -107,7 +107,7 @@ EmuFdNetDeviceHelper::SetFileDescriptor (Ptr<FdNetDevice> device) const
   //
   struct ifreq ifr;
   bzero (&ifr, sizeof(ifr));
-  strncpy ((char *)ifr.ifr_name, m_deviceName.c_str (), IFNAMSIZ);
+  strncpy ((char *)ifr.ifr_name, m_deviceName.c_str (), IFNAMSIZ - 1);
 
   NS_LOG_LOGIC ("Getting interface index");
   int32_t rc = ioctl (fd, SIOCGIFINDEX, &ifr);
@@ -186,7 +186,7 @@ EmuFdNetDeviceHelper::SetFileDescriptor (Ptr<FdNetDevice> device) const
     }
  
   close (mtufd);
-  device->SetMtu (ifr.ifr_mtu);
+  device->SetMtu (ifr2.ifr_mtu);
 }
 
 int
@@ -248,7 +248,7 @@ EmuFdNetDeviceHelper::CreateFileDescriptor (void) const
   // we wait for the child (the socket creator) to complete and read the
   // socket it created using the ancillary data mechanism.
   //
-  // Tom Goff reports the possiblility of a deadlock when trying to acquire the
+  // Tom Goff reports the possibility of a deadlock when trying to acquire the
   // python GIL here.  He says that this might be due to trying to access Python
   // objects after fork() without calling PyOS_AfterFork() to properly reset
   // Python state (including the GIL).  There is no code to cause the problem

@@ -779,9 +779,8 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*40));
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
 
-  // CoDel queue settings
-  Config::SetDefault ("ns3::CoDelQueueDisc::Mode", EnumValue (ns3::CoDelQueueDisc::QueueDiscMode::QUEUE_DISC_MODE_PACKETS));
-  Config::SetDefault ("ns3::CoDelQueueDisc::MaxPackets", UintegerValue (50000));
+  // CoDel and IP settings
+  Config::SetDefault ("ns3::CoDelQueueDisc::MaxSize", UintegerValue (50000*1500));
   Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (1)));
 
 

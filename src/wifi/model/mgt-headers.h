@@ -23,6 +23,7 @@
 #ifndef MGT_HEADERS_H
 #define MGT_HEADERS_H
 
+#include "ns3/mac48-address.h"
 #include "status-code.h"
 #include "capability-information.h"
 #include "supported-rates.h"
@@ -37,7 +38,7 @@
 #include "edca-parameter-set.h"
 #include "he-capabilities.h"
 #include "he-operation.h"
-#include "ns3/address-utils.h"
+#include "cf-parameter-set.h"
 
 namespace ns3 {
 
@@ -699,6 +700,12 @@ public:
    */
   EdcaParameterSet GetEdcaParameterSet (void) const;
   /**
+   * Return the CF parameter set.
+   *
+   * \return CF parameter set
+   */
+  CfParameterSet GetCfParameterSet (void) const;
+  /**
    * Set the Capability information.
    *
    * \param capabilities Capability information
@@ -783,6 +790,12 @@ public:
    */
   void SetEdcaParameterSet (EdcaParameterSet edcaParameterSet);
   /**
+   * Set the CF parameter set.
+   *
+   * \param cfparameterset CF parameter set
+   */
+  void SetCfParameterSet (CfParameterSet cfparameterset);
+  /**
    * Return the time stamp.
    *
    * \return time stamp
@@ -817,6 +830,7 @@ private:
   HeOperation m_heOperation;         //!< HE operation
   ErpInformation m_erpInformation;     //!< ERP information
   EdcaParameterSet m_edcaParameterSet; //!< EDCA Parameter Set
+  CfParameterSet m_cfParameterSet;     //!< CF parameter set
 };
 
 
@@ -1251,9 +1265,9 @@ public:
   uint32_t Deserialize (Buffer::Iterator start);
 
   /**
-   * Check if the initiator bit in the DELBA is setted.
+   * Check if the initiator bit in the DELBA is set.
    *
-   * \return true if the initiator bit in the DELBA is setted,
+   * \return true if the initiator bit in the DELBA is set,
    *         false otherwise
    */
   bool IsByOriginator (void) const;

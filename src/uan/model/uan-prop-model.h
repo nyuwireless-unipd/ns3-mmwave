@@ -127,7 +127,7 @@ public:
    * Set the arrival value for a tap.
    *
    * The delay time is the index multiplied by the resolution.
-   * The tap vector will be expanded to accomadate the requested
+   * The tap vector will be expanded to accommodate the requested
    * index.
    *
    * \param arrival Complex arrival value.
@@ -233,7 +233,12 @@ public:
    * \return Coherent sum of arrivals after max in given window.
    */
   std::complex<double> SumTapsFromMaxC (Time delay, Time duration) const;
-
+   /**
+   * Creates a new UanPdp normalized to its non coherent sum.
+   * \see SumTapsNc
+   * \returns the new PDP
+   */
+  UanPdp NormalizeToSumNc (void) const;
   /**
    * Get a unit impulse PDP at time 0.
    *

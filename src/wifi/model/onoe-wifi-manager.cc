@@ -18,10 +18,10 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
-#include "onoe-wifi-manager.h"
-#include "ns3/simulator.h"
 #include "ns3/log.h"
-#include "ns3/uinteger.h"
+#include "ns3/simulator.h"
+#include "onoe-wifi-manager.h"
+#include "wifi-tx-vector.h"
 
 #define Min(a,b) ((a < b) ? a : b)
 
@@ -130,7 +130,7 @@ OnoeWifiManager::DoReportDataFailed (WifiRemoteStation *st)
 void
 OnoeWifiManager::DoReportRtsOk (WifiRemoteStation *station, double ctsSnr, WifiMode ctsMode, double rtsSnr)
 {
-  NS_LOG_FUNCTION (this << station<< ctsSnr << ctsMode << rtsSnr);
+  NS_LOG_FUNCTION (this << station << ctsSnr << ctsMode << rtsSnr);
 }
 
 void
@@ -297,7 +297,7 @@ OnoeWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
           rateIndex = station->m_txrate;
         }
     }
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -317,7 +317,7 @@ OnoeWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   OnoeWifiRemoteStation *station = (OnoeWifiRemoteStation *)st;
-  uint8_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac

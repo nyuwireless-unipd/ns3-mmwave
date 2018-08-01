@@ -183,7 +183,9 @@ Furthermore, 802.11n provides an optional mode (GreenField mode) to reduce pream
 
   WifiHelper wifi;
   wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
-  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue("VhtMcs9"), "ControlMode", StringValue("VhtMcs0"));
+  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", 
+                                "DataMode", StringValue ("VhtMcs9"), 
+                                "ControlMode", StringValue ("VhtMcs0"));
 
   //Install PHY and MAC
   Ssid ssid = Ssid ("ns3-wifi");
@@ -240,7 +242,8 @@ in a number of ways:
 
 ::
 
-  Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::WifiPhy/ChannelNumber", UintegerValue (3));
+  Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::WifiPhy/ChannelNumber",
+               UintegerValue (3));
 
 This section provides guidance on how to configure these settings in
 a coherent manner, and what happens if non-standard values are chosen.
@@ -348,7 +351,7 @@ is, by default, set to the value 0.  The value 0 indicates that no
 channel number has been set by the user.
 
 In |ns3|, a ChannelNumber may be defined or unknown.  These terms
-are not found in the code; they are just used to describe behavoir herein.
+are not found in the code; they are just used to describe behavior herein.
 
 If a ChannelNumber is defined, it means that WifiPhy has stored a
 map of ChannelNumber to the center frequency and channel width commonly
@@ -544,6 +547,23 @@ The following code shows how to create an AP with QoS enabled::
 
 To create ad-hoc MAC instances, simply use ``ns3::AdhocWifiMac`` instead of ``ns3::StaWifiMac`` or ``ns3::ApWifiMac``.
 
+In infrastructure mode without QoS enabled, it is also possible to enable PCF support.
+The following code shows how to create a CF-pollable station::
+
+  WifiMacHelper wifiMacHelper;
+  wifiMacHelper.SetType ("ns3::StaWifiMac",
+                         "Ssid", SsidValue (ssid),
+                         "PcfSupported", BooleanValue (true));
+
+PCF also supports an option to change the maximum duration of the contention-free period (which must be a multiple of 1024 microseconds).
+The following code shows how to create an AP with a custom PCF configuration::
+
+  WifiMacHelper wifiMacHelper;
+  wifiMacHelper.SetType ("ns3::ApWifiMac",
+                         "Ssid", SsidValue (ssid),
+                         "PcfSupported", BooleanValue (true),
+                         "CfpMaxDuration", TimeValue (MicroSeconds (20480)));
+
 With QoS-enabled MAC models it is possible to work with traffic belonging to
 four different Access Categories (ACs): **AC_VO** for voice traffic,
 **AC_VI** for video traffic, **AC_BE** for best-effort
@@ -576,7 +596,7 @@ the ``ns3::WifiMacHelper`` can be also used to set:
 * MSDU aggregation parameters for a particular Access Category (AC) in order to use 802.11n/ac A-MSDU feature;
 * MPDU aggregation parameters for a particular Access Category (AC) in order to use 802.11n/ac A-MPDU feature.
 
-By defaut, MSDU aggregation feature is disabled for all ACs and MPDU aggregation is enabled for AC_VI and AC_BE, with a maximum aggregation size of 65535 bytes.
+By default, MSDU aggregation feature is disabled for all ACs and MPDU aggregation is enabled for AC_VI and AC_BE, with a maximum aggregation size of 65535 bytes.
 
 For example the following user code configures a MAC that will be a non-AP STA with HT and QoS enabled, MPDU aggregation enabled for AC_VO with a maximum aggregation size of 65535 bytes, and MSDU aggregation enabled for AC_BE with a maximum aggregation size of 7935 bytes,
 in an infrastructure network where the AP has SSID ``ns-3-ssid``::
