@@ -420,9 +420,9 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 
 	//	calculate antenna weights, better method should be implemented
 	bfParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
-	NS_LOG_UNCOND("TX size " << bfParams->m_txW.size());
+	NS_LOG_LOGIC("TX size " << bfParams->m_txW.size());
 	bfParams->m_rxW = rxAntennaArray->GetBeamformingVectorPanel();
-	NS_LOG_UNCOND("RX size " << bfParams->m_rxW.size());
+	NS_LOG_LOGIC("RX size " << bfParams->m_rxW.size());
 
 	std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
 	if(it1 != m_connectedPair.end ())
@@ -473,7 +473,7 @@ MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetD
 	uint8_t ccId = m_phyMacConfig->GetCcId();
 	if(UeDev != 0)
 	{
-		NS_LOG_UNCOND("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
+		NS_LOG_LOGIC("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
 		Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
 				UeDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
@@ -490,7 +490,7 @@ MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetD
 				DynamicCast<McUeNetDevice> (ueDevice);
 		if(UeDev != 0)
 		{
-			NS_LOG_UNCOND("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
+			NS_LOG_LOGIC("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
 			Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
 					UeDev->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 			Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
@@ -515,7 +515,7 @@ MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetD
 complexVector_t
 MmWaveChannelRaytracing::CalcBeamformingVector(complex2DVector_t spatialMatrix, doubleVector_t powerFraction) const
 {
-	NS_LOG_UNCOND("CalcBeamformingVector for " << spatialMatrix.at (0).size ());
+	NS_LOG_LOGIC("CalcBeamformingVector for " << spatialMatrix.at (0).size ());
 	complexVector_t antennaWeights;
 	uint16_t antennaNum = spatialMatrix.at (0).size ();
 	for (int i = 0; i< antennaNum; i++)
