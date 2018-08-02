@@ -211,6 +211,14 @@ MmWaveChannelRaytracing::Initial(NetDeviceContainer ueDevices, NetDeviceContaine
 
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
+		for (NetDeviceContainer::Iterator j = enbDevices.Begin(); j != enbDevices.End(); j++)
+		{
+			SetBeamformingVector(*i,*j);
+		}
+	}
+
+	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+	{
 		Ptr<mmwave::MmWaveUeNetDevice> UeDev =
 						DynamicCast<mmwave::MmWaveUeNetDevice> (*i);
 		if (UeDev != 0)
@@ -411,17 +419,18 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 	}
 
 	//	calculate antenna weights, better method should be implemented
-	bfParams->m_txW = txAntennaArray->GetBeamformingVector();
-	bfParams->m_rxW = rxAntennaArray->GetBeamformingVector();
-
+	bfParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
+	NS_LOG_UNCOND("TX size " << bfParams->m_txW.size());
+	bfParams->m_rxW = rxAntennaArray->GetBeamformingVectorPanel();
+	NS_LOG_UNCOND("RX size " << bfParams->m_rxW.size());
 
 	std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
 	if(it1 != m_connectedPair.end ())
 	{
 		bfParams->m_txW = CalcBeamformingVector(bfParams->m_channelParams->m_txSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
 		bfParams->m_rxW = CalcBeamformingVector(bfParams->m_channelParams->m_rxSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
-		txAntennaArray->SetBeamformingVector(bfParams->m_txW,rxDevice);
-		rxAntennaArray->SetBeamformingVector(bfParams->m_rxW,txDevice);
+		txAntennaArray->SetBeamformingVectorPanel(bfParams->m_txW,rxDevice);
+		rxAntennaArray->SetBeamformingVectorPanel(bfParams->m_rxW,txDevice);
 	}
 
 	/*Vector rxSpeed = b->GetVelocity();
@@ -453,10 +462,60 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 
 }
 
+void
+MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
+{
+	Ptr<MmWaveEnbNetDevice> EnbDev =
+				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
+	Ptr<mmwave::MmWaveUeNetDevice> UeDev =
+				DynamicCast<mmwave::MmWaveUeNetDevice> (ueDevice);
+
+	uint8_t ccId = m_phyMacConfig->GetCcId();
+	if(UeDev != 0)
+	{
+		NS_LOG_UNCOND("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
+		Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
+				UeDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+		Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
+				EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+		complexVector_t dummy;
+		ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
+		enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
+		ueAntennaArray->SetBeamformingVectorPanel (ueDevice,enbDevice);
+		enbAntennaArray->SetBeamformingVectorPanel (enbDevice,ueDevice);
+	}
+	else
+	{
+		Ptr<McUeNetDevice> UeDev =
+				DynamicCast<McUeNetDevice> (ueDevice);
+		if(UeDev != 0)
+		{
+			NS_LOG_UNCOND("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
+			Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
+					UeDev->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+			Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
+					EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+			complexVector_t dummy;
+			ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
+			enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
+			ueAntennaArray->SetBeamformingVectorPanel (ueDevice,enbDevice);
+			enbAntennaArray->SetBeamformingVectorPanel (enbDevice,ueDevice);
+		}
+		else
+		{
+			NS_FATAL_ERROR("Unrecognized pair of devices");
+		}
+	}
+
+
+
+}
+
 
 complexVector_t
 MmWaveChannelRaytracing::CalcBeamformingVector(complex2DVector_t spatialMatrix, doubleVector_t powerFraction) const
 {
+	NS_LOG_UNCOND("CalcBeamformingVector for " << spatialMatrix.at (0).size ());
 	complexVector_t antennaWeights;
 	uint16_t antennaNum = spatialMatrix.at (0).size ();
 	for (int i = 0; i< antennaNum; i++)

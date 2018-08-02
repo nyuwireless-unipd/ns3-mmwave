@@ -109,6 +109,7 @@ private:
 	complexVector_t CalcBeamformingVector (complex2DVector_t SpatialMatrix, doubleVector_t powerFraction) const;
 	Ptr<SpectrumValue> GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmWaveBeamFormingTraces> bfParams, double speed) const;
 	double GetSystemBandwidth () const;
+	void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
 
 	mutable std::map< key_t, int > m_connectedPair;
 	mutable std::map< key_t, Ptr<TraceParams> > m_channelMatrixMap;
