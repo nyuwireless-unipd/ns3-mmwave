@@ -42,7 +42,7 @@
 #include <ns3/packet-socket-address.h>
 #include <ns3/epc-enb-application.h>
 #include <ns3/epc-sgw-pgw-application.h>
-
+#include <ns3/queue-size.h>
 #include <ns3/lte-enb-rrc.h>
 #include <ns3/epc-x2.h>
 #include <ns3/epc-s1ap.h>
@@ -333,7 +333,7 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   // in case the RLC buffer is full, the forwarding of packets from the source eNB to the target eNB during a handover
   // or a switch may overflow the transmission queue of point to point devices. Therefore the following line increases
   // the size of tx queue in p2p devices. The parameter should be related to the maximum size of the RLC buffer.
-  p2ph.SetQueue ("ns3::DropTailQueue", "MaxPackets", UintegerValue(4294967295), "MaxBytes", UintegerValue(4294967295));
+  p2ph.SetQueue ("ns3::DropTailQueue", "MaxSize", QueueSizeValue(QueueSize("4294967295p")));
   NetDeviceContainer enbDevices = p2ph.Install (enb1, enb2);
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #1 after installing p2p dev: " << enb1->GetObject<Ipv4> ()->GetNInterfaces ());
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #2 after installing p2p dev: " << enb2->GetObject<Ipv4> ()->GetNInterfaces ());

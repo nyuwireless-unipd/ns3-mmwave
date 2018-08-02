@@ -265,6 +265,7 @@ main (int argc, char *argv[])
  uemobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
                               "Bounds", RectangleValue (Rectangle (-200, 200, -200, 200)));
  Config::SetDefault ("ns3::UniformDiscPositionAllocator::rho", DoubleValue(150));
+ Config::SetDefault ("ns3::UniformDiscPositionAllocator::Z", DoubleValue(1.6));
  Ptr<UniformDiscPositionAllocator> uePositionAlloc = CreateObject<UniformDiscPositionAllocator> ();
  uemobility.SetPositionAllocator(uePositionAlloc);
  uemobility.Install (ueNodes.Get (0));
