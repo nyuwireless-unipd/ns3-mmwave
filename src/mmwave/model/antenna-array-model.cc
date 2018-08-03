@@ -122,7 +122,7 @@ AntennaArrayModel::GetGainDb (Angles a)
 void
 AntennaArrayModel::SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device)
 {
-	Simulator::Schedule (MilliSeconds(8), &AntennaArrayModel::SetBeamformingVector,this,antennaWeights,device);
+	Simulator::Schedule (MilliSeconds(8), &AntennaArrayModel::SetBeamformingVectorPanel,this,antennaWeights,device);
 }
 
 void
@@ -169,7 +169,7 @@ AntennaArrayModel::GetOffset ()
 }
 
 void
-AntennaArrayModel::SetBeamformingVectorPanel (Ptr<NetDevice> thisDevice, Ptr<NetDevice> otherDevice)
+AntennaArrayModel::SetBeamformingVectorPanelDevices (Ptr<NetDevice> thisDevice, Ptr<NetDevice> otherDevice)
 {
 	NS_LOG_FUNCTION(this << otherDevice << Simulator::Now());
 	m_omniTx = false;
@@ -197,7 +197,7 @@ AntennaArrayModel::SetBeamformingVectorPanel (Ptr<NetDevice> thisDevice, Ptr<Net
 		// else
 		// 	phiAngle=0; // cast BF vectors fixed to zero [DEBUG PROCEDURE TEST LINE]
 
-		panelId = floor(fmod(phiAngle+M_PI/m_noPlane,2*M_PI)*m_noPlane/(2*M_PI)); // panel id in the interval [0,N-1]
+		panelId = floor(fmod(phiAngle+M_PI/m_noPlane,2*M_PI)*m_noPlane/(2*M_PI)); // panel id into the interval [0,N-1]
 
 		double hAngleRadian = fmod((phiAngle+(M_PI/m_noPlane)),2*M_PI/m_noPlane) - (M_PI/m_noPlane);
 		double vAngleRadian = completeAngle.theta;
@@ -259,33 +259,9 @@ AntennaArrayModel::SetBeamformingVectorPanel (complexVector_t antennaWeights, Pt
 			NS_LOG_INFO("m_lastUpdatePairMap.size " << m_lastUpdatePairMap.size());
 		}
 	}
+	// following lines are commented to store dummy info; call ChangeBeamformingVectorPanel (device) to set the antennaWeights
 	// m_beamformingVector = antennaWeights;
 	// m_currentDev = device;
-}
-
-void
-AntennaArrayModel::SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device)
-{
-	NS_LOG_FUNCTION(this << device << Simulator::Now());
-	m_omniTx = false;
-	if (device != 0)
-	{
-		std::map< Ptr<NetDevice>, complexVector_t >::iterator iter = m_beamformingVectorMap.find (device);
-		if (iter != m_beamformingVectorMap.end ())
-		{
-			(*iter).second = antennaWeights;
-			m_lastUpdateMap[device] = Simulator::Now();
-		}
-		else
-		{
-			m_beamformingVectorMap.insert (std::make_pair (device, antennaWeights) );
-			m_lastUpdateMap.insert(std::make_pair (device, Simulator::Now()));
-
-			NS_LOG_INFO("m_lastUpdateMap.size " << m_lastUpdateMap.size());
-		}
-	}
-	m_beamformingVector = antennaWeights;
-	m_currentDev = device;
 }
 
 void
@@ -299,28 +275,6 @@ AntennaArrayModel::ChangeBeamformingVectorPanel (Ptr<NetDevice> device)
 	m_beamformingVector = it->second.first;
 	m_currentPanelId = it->second.second;
 	m_currentDev = device;
-}
-
-void
-AntennaArrayModel::ChangeBeamformingVector (Ptr<NetDevice> device)
-{
-	NS_LOG_FUNCTION(this << device << Simulator::Now());
-	m_omniTx = false;
-	std::map< Ptr<NetDevice>, complexVector_t >::iterator it = m_beamformingVectorMap.find (device);
-	NS_ASSERT_MSG (it != m_beamformingVectorMap.end (), "could not find");
-	m_beamformingVector = it->second;
-	m_currentDev = device;
-}
-
-complexVector_t
-AntennaArrayModel::GetBeamformingVector ()
-{
-	NS_LOG_FUNCTION(this << Simulator::Now());
-	if(m_omniTx)
-	{
-		NS_FATAL_ERROR ("Omni transmission do not need beamforming vector");
-	}
-	return m_beamformingVector;
 }
 
 complexVector_t
@@ -344,23 +298,6 @@ bool
 AntennaArrayModel::IsOmniTx ()
 {
 	return m_omniTx;
-}
-
-complexVector_t
-AntennaArrayModel::GetBeamformingVector (Ptr<NetDevice> device)
-{
-	NS_LOG_FUNCTION(this << device << Simulator::Now());
-	complexVector_t weights;
-	std::map< Ptr<NetDevice>, complexVector_t >::iterator it = m_beamformingVectorMap.find (device);
-	if (it != m_beamformingVectorMap.end ())
-	{
-		weights = it->second;
-	}
-	else
-	{
-		weights = m_beamformingVector;
-	}
-	return weights;
 }
 
 complexVector_t

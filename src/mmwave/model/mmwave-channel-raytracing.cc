@@ -430,7 +430,9 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 		bfParams->m_txW = CalcBeamformingVector(bfParams->m_channelParams->m_txSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
 		bfParams->m_rxW = CalcBeamformingVector(bfParams->m_channelParams->m_rxSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
 		txAntennaArray->SetBeamformingVectorPanel(bfParams->m_txW,rxDevice);
+		txAntennaArray->ChangeBeamformingVectorPanel(rxDevice);
 		rxAntennaArray->SetBeamformingVectorPanel(bfParams->m_rxW,txDevice);
+		rxAntennaArray->ChangeBeamformingVectorPanel(txDevice);
 	}
 
 	/*Vector rxSpeed = b->GetVelocity();
@@ -479,10 +481,10 @@ MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetD
 		Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 				EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		complexVector_t dummy;
-		ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
-		enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
-		ueAntennaArray->SetBeamformingVectorPanel (ueDevice,enbDevice);
-		enbAntennaArray->SetBeamformingVectorPanel (enbDevice,ueDevice);
+		ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
+		enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
+		ueAntennaArray->SetBeamformingVectorPanelDevices (ueDevice,enbDevice);
+		enbAntennaArray->SetBeamformingVectorPanelDevices (enbDevice,ueDevice);
 	}
 	else
 	{
@@ -496,10 +498,10 @@ MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetD
 			Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 					EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 			complexVector_t dummy;
-			ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
-			enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
-			ueAntennaArray->SetBeamformingVectorPanel (ueDevice,enbDevice);
-			enbAntennaArray->SetBeamformingVectorPanel (enbDevice,ueDevice);
+			ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
+			enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
+			ueAntennaArray->SetBeamformingVectorPanelDevices (ueDevice,enbDevice);
+			enbAntennaArray->SetBeamformingVectorPanelDevices (enbDevice,ueDevice);
 		}
 		else
 		{

@@ -378,7 +378,7 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 	// 		if (UeDev->GetTargetEnb ())
 	// 		{
 	// 			Ptr<NetDevice> targetBs = UeDev->GetTargetEnb();
-	// 			SetBeamformingVectorPanel(*i,targetBs);
+	// 			SetBeamformingVectorPanelDevices(*i,targetBs);
 
 	// 		}
 	// 	} else { // It is a McUeNetDevice
@@ -386,7 +386,7 @@ MmWaveBeamforming::Initial(NetDeviceContainer ueDevices, NetDeviceContainer enbD
 	// 		if (mcUeDev->GetMmWaveTargetEnb())
 	// 		{
 	// 			Ptr<NetDevice> targetBs = mcUeDev->GetMmWaveTargetEnb();
-	// 			SetBeamformingVectorPanel(*i, targetBs);
+	// 			SetBeamformingVectorPanelDevices(*i, targetBs);
 	// 		}
 	// 	}
 	// }
@@ -442,14 +442,16 @@ MmWaveBeamforming::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 	/*double variable = m_uniformRV->GetValue (0, 1);
 	if(m_update && variable<0.08)
 	{
-		ueAntennaArray->SetBeamformingVectorPanelWithDelay (bfParams->m_ueW);
-		enbAntennaArray->SetBeamformingVectorPanelWithDelay (bfParams->m_enbW, ueDevice);
+		ueAntennaArray->SetBeamformingVectorWithDelay (bfParams->m_ueW);
+		enbAntennaArray->SetBeamformingVectorWithDelay (bfParams->m_enbW, ueDevice);
 
 	}
 	else
 	{*/
 	ueAntennaArray->SetBeamformingVectorPanel (bfParams->m_ueW, enbDevice);
+	ueAntennaArray->ChangeBeamformingVectorPanel (enbDevice);
 	enbAntennaArray->SetBeamformingVectorPanel (bfParams->m_enbW, ueDevice);
+	enbAntennaArray->ChangeBeamformingVectorPanel (ueDevice);
 
 	//}
 }
@@ -602,8 +604,8 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 	}
 	else
 	{
-		complexVector_t ueW = ueAntennaArray->GetBeamformingVector();
-		complexVector_t enbW = enbAntennaArray->GetBeamformingVector();
+		complexVector_t ueW = ueAntennaArray->GetBeamformingVectorPanel();
+		complexVector_t enbW = enbAntennaArray->GetBeamformingVectorPanel();
 
 		if (!ueW.empty() && !enbW.empty())
 		{

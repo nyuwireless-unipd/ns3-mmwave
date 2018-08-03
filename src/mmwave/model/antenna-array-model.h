@@ -44,20 +44,17 @@ public:
 	virtual ~AntennaArrayModel();
 	static TypeId GetTypeId ();
 	virtual double GetGainDb (Angles a);
-	void SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
+
 	// to store dummy info
 	void SetBeamformingVectorPanel (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
 	void SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device = 0);
 
-	void SetBeamformingVectorPanel (Ptr<NetDevice> thisDevice = 0, Ptr<NetDevice> otherDevice = 0);
+	void SetBeamformingVectorPanelDevices (Ptr<NetDevice> thisDevice = 0, Ptr<NetDevice> otherDevice = 0);
 	void ChangeBeamformingVectorPanel (Ptr<NetDevice> device);
 	complexVector_t GetBeamformingVectorPanel ();
 	complexVector_t GetBeamformingVectorPanel (Ptr<NetDevice> device);
 
-	void ChangeBeamformingVector (Ptr<NetDevice> device);
 	void ChangeToOmniTx ();
-	complexVector_t GetBeamformingVector ();
-	complexVector_t GetBeamformingVector (Ptr<NetDevice> device);
 	bool IsOmniTx ();
 	double GetRadiationPattern (double vangle, double hangle = 0);
 	Vector GetAntennaLocation (uint8_t index, uint8_t* antennaNum) ;

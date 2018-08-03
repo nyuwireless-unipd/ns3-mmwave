@@ -273,10 +273,10 @@ MmWave3gppChannel::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 		Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 				EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 		complexVector_t dummy;
-		ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
-		enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
-		ueAntennaArray->SetBeamformingVectorPanel (ueDevice,enbDevice);
-		enbAntennaArray->SetBeamformingVectorPanel (enbDevice,ueDevice);
+		ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
+		enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
+		ueAntennaArray->SetBeamformingVectorPanelDevices (ueDevice,enbDevice);
+		enbAntennaArray->SetBeamformingVectorPanelDevices (enbDevice,ueDevice);
 	}
 	else
 	{
@@ -290,10 +290,10 @@ MmWave3gppChannel::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice>
 			Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
 					EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
 			complexVector_t dummy;
-			ueAntennaArray->SetBeamformingVector (dummy,enbDevice);
-			enbAntennaArray->SetBeamformingVector (dummy,ueDevice);
-			ueAntennaArray->SetBeamformingVectorPanel (ueDevice,enbDevice);
-			enbAntennaArray->SetBeamformingVectorPanel (enbDevice,ueDevice);
+			ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
+			enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
+			ueAntennaArray->SetBeamformingVectorPanelDevices (ueDevice,enbDevice);
+			enbAntennaArray->SetBeamformingVectorPanelDevices (enbDevice,ueDevice);
 		}
 		else
 		{
@@ -697,8 +697,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 							// the beamforming vector towards the UE in *ueDevIter and the UE
 							// using the beamforming vector toward the eNB to which is associated
 							// (i.e., this eNB or another one)
-							rxAntennaArray->SetBeamformingVectorPanel(rxDevice,enbConnectedToUeOfThisLink); // always consider rxDevice and the eNB to which it is actually connected
-							txAntennaArray->SetBeamformingVectorPanel(txDevice, *ueDevIter);
+							rxAntennaArray->SetBeamformingVectorPanelDevices(rxDevice,enbConnectedToUeOfThisLink); // always consider rxDevice and the eNB to which it is actually connected
+							txAntennaArray->SetBeamformingVectorPanelDevices(txDevice, *ueDevIter);
 
 							// for now, store these BF vectors so that CalLongTerm can use them
 							channelParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
@@ -729,8 +729,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 						// is associated to the channel between a and b, with the eNB using
 						// the beamforming vector towards the UE in *ueDevIter and the UE
 						// using the beamforming vector toward this eNB
-						rxAntennaArray->SetBeamformingVectorPanel(rxDevice,txDevice); // always consider rxDevice and the eNB to which it is actually connected
-						txAntennaArray->SetBeamformingVectorPanel(txDevice,rxDevice);
+						rxAntennaArray->SetBeamformingVectorPanelDevices(rxDevice,txDevice); // always consider rxDevice and the eNB to which it is actually connected
+						txAntennaArray->SetBeamformingVectorPanelDevices(txDevice,rxDevice);
 
 						// for now, store these BF vectors so that CalLongTerm can use them
 						channelParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
@@ -741,7 +741,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 						channelParams->m_longTerm = longTerm; // store the longTerm with the matching pair of BF vectors
 
 						// update the UE the point towards the correct eNB
-						rxAntennaArray->SetBeamformingVectorPanel(rxDevice,enbConnectedToUeOfThisLink); // always consider rxDevice and the eNB to which it is actually connected
+						rxAntennaArray->SetBeamformingVectorPanelDevices(rxDevice,enbConnectedToUeOfThisLink); // always consider rxDevice and the eNB to which it is actually connected
 					}
 					else // uplink
 					{
@@ -758,8 +758,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 							// the beamforming vector towards the UE in *ueDevIter and the UE
 							// using the beamforming vector toward the eNB to which is associated
 							// (i.e., this eNB or another one)
-							txAntennaArray->SetBeamformingVectorPanel(txDevice,enbConnectedToUeOfThisLink); // TODO always consider txDevice and txAntenna
-							rxAntennaArray->SetBeamformingVectorPanel(rxDevice,*ueDevIter);
+							txAntennaArray->SetBeamformingVectorPanelDevices(txDevice,enbConnectedToUeOfThisLink); // TODO always consider txDevice and txAntenna
+							rxAntennaArray->SetBeamformingVectorPanelDevices(rxDevice,*ueDevIter);
 
 							// for now, store these BF vectors so that CalLongTerm can use them
 							channelParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
@@ -790,8 +790,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 						// is associated to the channel between a and b, with the eNB using
 						// the beamforming vector towards the UE in *ueDevIter and the UE
 						// using the beamforming vector toward this eNB
-						txAntennaArray->SetBeamformingVectorPanel(txDevice,rxDevice);
-						rxAntennaArray->SetBeamformingVectorPanel(rxDevice,txDevice); // always consider rxDevice and the eNB to which it is actually connected
+						txAntennaArray->SetBeamformingVectorPanelDevices(txDevice,rxDevice);
+						rxAntennaArray->SetBeamformingVectorPanelDevices(rxDevice,txDevice); // always consider rxDevice and the eNB to which it is actually connected
 
 						// for now, store these BF vectors so that CalLongTerm can use them
 						channelParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
@@ -801,22 +801,24 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 						auto longTerm = CalLongTerm(channelParams);
 						channelParams->m_longTerm = longTerm; // store the longTerm with the matching pair of BF vectors
 
-						txAntennaArray->SetBeamformingVectorPanel(txDevice,enbConnectedToUeOfThisLink); // TODO always consider txDevice and txAntenna
+						txAntennaArray->SetBeamformingVectorPanelDevices(txDevice,enbConnectedToUeOfThisLink); // TODO always consider txDevice and txAntenna
 					}
 				}
 				else
 				{
 					// compute the optimal BF vector for this channel
 					LongTermCovMatrixBeamforming (channelParams);
-			 		txAntennaArray->SetBeamformingVector (channelParams->m_txW, rxDevice);
-					rxAntennaArray->SetBeamformingVector (channelParams->m_rxW, txDevice);
+			 		txAntennaArray->SetBeamformingVectorPanel (channelParams->m_txW, rxDevice);
+			 		txAntennaArray->ChangeBeamformingVectorPanel (rxDevice);
+					rxAntennaArray->SetBeamformingVectorPanel (channelParams->m_rxW, txDevice);
+					rxAntennaArray->ChangeBeamformingVectorPanel (txDevice);
 
 					auto longTerm = CalLongTerm(channelParams);
 					channelParams->m_longTerm = longTerm;
 
 					if(downlink || downlinkMc)
 					{
-						auto ueBfVector = rxAntennaArray->GetBeamformingVector(enbConnectedToUeOfThisLink);
+						auto ueBfVector = rxAntennaArray->GetBeamformingVectorPanel(enbConnectedToUeOfThisLink);
 
 						for(auto ueDevIter = m_ueNetDeviceContainer.Begin(); ueDevIter != m_ueNetDeviceContainer.End(); ++ueDevIter)
 						{
@@ -827,7 +829,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 							// the beamforming vector towards the UE in *ueDevIter and the UE
 							// using the beamforming vector toward the eNB to which is associated
 							// (i.e., this eNB or another one)
-							auto enbBfVector = txAntennaArray->GetBeamformingVector(*ueDevIter);
+							auto enbBfVector = txAntennaArray->GetBeamformingVectorPanel(*ueDevIter);
 
 							// for now, store these BF vectors so that CalLongTerm can use them
 							channelParams->m_txW = enbBfVector;
@@ -854,7 +856,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 					}
 					else
 					{
-						auto ueBfVector = txAntennaArray->GetBeamformingVector(enbConnectedToUeOfThisLink);
+						auto ueBfVector = txAntennaArray->GetBeamformingVectorPanel(enbConnectedToUeOfThisLink);
 
 						for(auto ueDevIter = m_ueNetDeviceContainer.Begin(); ueDevIter != m_ueNetDeviceContainer.End(); ++ueDevIter)
 						{
@@ -865,7 +867,7 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 							// the beamforming vector towards the UE in *ueDevIter and the UE
 							// using the beamforming vector toward the eNB to which is associated
 							// (i.e., this eNB or another one)
-							auto enbBfVector = rxAntennaArray->GetBeamformingVector(*ueDevIter);
+							auto enbBfVector = rxAntennaArray->GetBeamformingVectorPanel(*ueDevIter);
 
 							// for now, store these BF vectors so that CalLongTerm can use them
 							channelParams->m_txW = ueBfVector;
@@ -2943,8 +2945,8 @@ MmWave3gppChannel::BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Pa
 
 					txAntenna->SetSector(tx, txAntennaNum, txTheta);
 					rxAntenna->SetSector(rx, rxAntennaNum, rxTheta);
-					params->m_txW = txAntenna->GetBeamformingVector();
-					params->m_rxW = rxAntenna->GetBeamformingVector();
+					params->m_txW = txAntenna->GetBeamformingVectorPanel();
+					params->m_rxW = rxAntenna->GetBeamformingVectorPanel();
 					params->m_longTerm = CalLongTerm(params);
 					Ptr<SpectrumValue> bfPsd = CalBeamformingGain(txPsd, params, params->m_longTerm, Vector(0,0,0));
 
@@ -2969,8 +2971,8 @@ MmWave3gppChannel::BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Pa
 	NS_LOG_LOGIC("max gain " << max << " maxTx " << (M_PI*(double)maxTx/(double)txAntennaNum[1]-0.5*M_PI)/(M_PI)*180 << " maxRx " << (M_PI*(double)maxRx/(double)rxAntennaNum[1]-0.5*M_PI)/(M_PI)*180 << " maxTxTheta " << maxTxTheta << " maxRxTheta " << maxRxTheta);
 	txAntenna->SetSector(maxTx, txAntennaNum, maxTxTheta);
 	rxAntenna->SetSector(maxRx, rxAntennaNum, maxRxTheta);
-	params->m_txW = txAntenna->GetBeamformingVector();
-	params->m_rxW = rxAntenna->GetBeamformingVector();
+	params->m_txW = txAntenna->GetBeamformingVectorPanel();
+	params->m_rxW = rxAntenna->GetBeamformingVectorPanel();
 }
 
 doubleVector_t

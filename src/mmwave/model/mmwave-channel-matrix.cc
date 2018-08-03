@@ -391,8 +391,8 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
 		bfParams->m_channelParams = (*it).second;
 	}
 	//	calculate antenna weights, better method should be implemented
-	bfParams->m_txW = txAntennaArray->GetBeamformingVector();
-	bfParams->m_rxW = rxAntennaArray->GetBeamformingVector();
+	bfParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
+	bfParams->m_rxW = rxAntennaArray->GetBeamformingVectorPanel();
 
 	/*
 	std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
