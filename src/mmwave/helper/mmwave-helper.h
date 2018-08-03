@@ -131,6 +131,13 @@ public:
 	void SetCcPhyParams ( std::map< uint8_t, MmWaveComponentCarrier> ccMapParams);
 
 	/**
+	 * This method is used to get the MmWaveComponentCarrier map.
+	 *
+	 * \return ccmap the component carrier map
+	 */
+	std::map< uint8_t, MmWaveComponentCarrier> GetCcPhyParams ();
+
+	/**
 	 * This method is used to set the ComponentCarrier map.
 	 * The structure will be used within InstallSingleLteEnbDevice,
 	 * and InstallSingleMcUeDevice.
@@ -164,9 +171,6 @@ public:
 	void SetLteSchedulerType (std::string type);
 	std::string GetLteSchedulerType () const;
 
-
-	//void SetPhyMacConfigurationParameters (std::string paramName, std::string value);
-    Ptr<MmWavePhyMacCommon> GetPhyMacConfigurable (void);
 	void ActivateDataRadioBearer (NetDeviceContainer ueDevices, EpsBearer bearer);
 	void ActivateDataRadioBearer (Ptr<NetDevice> ueDevice, EpsBearer bearer);
 	void SetEpcHelper (Ptr<EpcHelper> epcHelper);
@@ -330,7 +334,6 @@ private:
 	ObjectFactory m_lteFfrAlgorithmFactory;
 	ObjectFactory m_lteHandoverAlgorithmFactory;
 
-	ObjectFactory m_phyMacCommonFactory;
 	ObjectFactory m_lteChannelFactory; 	/// Factory of both the downlink and uplink LTE channels.
 	ObjectFactory m_dlPathlossModelFactory; 	/// Factory of path loss model object for the downlink channel.
 	ObjectFactory m_ulPathlossModelFactory; 	/// Factory of path loss model object for the uplink channel.
@@ -349,8 +352,6 @@ private:
 	uint16_t m_noEnbPanels;
 	uint16_t m_noUePanels;
 	Ptr<MmWavePhyRxTrace> m_phyStats;
-
-	Ptr<MmWavePhyMacCommon> m_phyMacCommon;
 
  	ObjectFactory m_enbAntennaModelFactory;
 	ObjectFactory m_ueAntennaModelFactory;	// Factory of antenna object for mmWave UE

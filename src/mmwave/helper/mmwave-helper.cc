@@ -602,6 +602,13 @@ MmWaveHelper::SetCcPhyParams ( std::map< uint8_t, MmWaveComponentCarrier> ccMapP
   m_componentCarrierPhyParams = ccMapParams;
 }
 
+std::map< uint8_t, MmWaveComponentCarrier>
+MmWaveHelper::GetCcPhyParams ()
+{
+  NS_LOG_FUNCTION (this);
+  return m_componentCarrierPhyParams;
+}
+
 void
 MmWaveHelper::SetLteCcPhyParams ( std::map< uint8_t, ComponentCarrier> ccMapParams)
 {
@@ -2569,97 +2576,6 @@ MmWaveHelper::AddX2Interface (NodeContainer lteEnbNodes, NodeContainer mmWaveEnb
   	Config::Connect ("/NodeList/*/$ns3::EpcX2/RxPDU",
     	MakeCallback (&CoreNetworkStatsCalculator::LogX2Packet, m_cnStats));
 }
-
-/* Call this from a script to configure the MAC PHY common parameters
- * using "SetAttribute" */
-Ptr<MmWavePhyMacCommon>
-MmWaveHelper::GetPhyMacConfigurable (void)
-{
-	return (m_phyMacCommon);
-}
-
-/*
-void
-MmWaveHelper::SetPhyMacConfigurationParameters (std::string paramName, std::string value)
-{
-	std::stringstream ss (value);
-
-	if (paramName.compare("CenterFreq") == 0)
-	{
-		double cf;
-		ss >> cf;
-		m_phyMacCommon->SetAttribute ("CenterFreq", DoubleValue(cf));
-	}
-	else if (paramName.compare("SymbolPerSlot") == 0)
-	{
-		uint32_t symNum;
-		std::stringstream ss (value);
-		ss >> symNum;
-		m_phyMacCommon->SetAttribute ("SymbolPerSlot", UintegerValue(symNum));
-	}
-	else if (paramName.compare("SymbolLength") == 0)
-	{
-		double prd;
-		ss >> prd;
-		m_phyMacCommon->SetAttribute ("SymbolPeriod", DoubleValue(prd));
-	}
-	else if (paramName.compare("SlotsPerSubframe") == 0)
-	{
-		uint32_t slt;
-		ss >> slt;
-		m_phyMacCommon->SetAttribute ("SlotsPerSubframe", UintegerValue(slt));
-	}
-	else if (paramName.compare("SubframePerFrame") == 0)
-	{
-		uint32_t sf;
-		ss >> sf;
-		m_phyMacCommon->SetAttribute ("SubframePerFrame", UintegerValue(sf));
-	}
-	else if (paramName.compare("SubcarriersPerSubband") == 0)
-	{
-		uint32_t sc;
-		ss >> sc;
-		m_phyMacCommon->SetAttribute ("SubcarriersPerChunk", UintegerValue(sc));
-	}
-	else if (paramName.compare("SubbandPerRB") == 0)
-	{
-		uint32_t sb;
-		ss >> sb;
-		m_phyMacCommon->SetAttribute ("ChunkPerRB", UintegerValue(sb));
-		m_channelMatrix->SetAttribute ("NumSubbandPerRB", UintegerValue(sb));
-	}
-	else if (paramName.compare("SubbandWidth") == 0)
-	{
-		double w;
-		ss >> w;
-		m_phyMacCommon->SetAttribute ("ChunkWidth", DoubleValue(w));
-		m_channelMatrix->SetAttribute ("ChunkWidth", DoubleValue(w));
-	}
-	else if (paramName.compare("NumResourceBlock") == 0)
-	{
-		uint32_t rb;
-		ss >> rb;
-		m_phyMacCommon->SetAttribute ("ResourceBlockNum", UintegerValue(rb));
-		m_channelMatrix->SetAttribute ("NumResourceBlocks", UintegerValue(rb));
-	}
-	else if (paramName.compare("NumReferenceSymbols") == 0)
-	{
-		uint32_t ref;
-		ss >> ref;
-		m_phyMacCommon->SetAttribute ("NumReferenceSymbols", UintegerValue(ref));
-
-	}
-	else if (paramName.compare("TDDControlDataPattern") == 0)
-	{
-		m_phyMacCommon->SetAttribute ("TDDPattern", StringValue (value));
-
-	}
-	else
-	{
-		NS_LOG_ERROR ("Unknown parameter name "<<paramName);
-	}
-}
-*/
 
 void
 MmWaveHelper::SetEpcHelper (Ptr<EpcHelper> epcHelper)

@@ -61,7 +61,7 @@ void updateLoss (double loss, Ptr<MmWavePropagationLossModel> model)
 	Simulator::Schedule (MilliSeconds(updateInterval), &updateLoss, loss+increment, model);
 }
 
-int 
+int
 main (int argc, char *argv[])
 {
   /* Information regarding the traces generated:
@@ -155,7 +155,7 @@ main (int argc, char *argv[])
   Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel (0)->GetObject<MmWavePropagationLossModel> ();
 
   /* A configuration example.
-   * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
+   * mmwHelper->GetCcPhyParams ().at (0).GetConfigurationParameters ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -199,5 +199,3 @@ main (int argc, char *argv[])
   Simulator::Destroy ();
   return 0;
 }
-
-

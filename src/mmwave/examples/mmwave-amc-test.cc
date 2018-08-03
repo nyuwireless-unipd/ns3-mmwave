@@ -102,7 +102,7 @@ void updateSnr (double snrInit, Ptr<MmWaveEnbNetDevice> enbDev, Ptr<SpectrumMode
 	Simulator::Schedule (MilliSeconds(snrUpdateIntervalMs), &updateSnr, snrInit+0.1, enbDev, model, amc);
 }
 
-int 
+int
 main (int argc, char *argv[])
 {
   /* Information regarding the traces generated:
@@ -217,11 +217,11 @@ main (int argc, char *argv[])
   Ptr<MmWaveEnbNetDevice> enbMmwDev = enbNetDev.Get(0)->GetObject<MmWaveEnbNetDevice> ();
 
 
-	Ptr<MmWaveAmc> amc = CreateObject <MmWaveAmc> (mmwHelper->GetPhyMacConfigurable ());
+	Ptr<MmWaveAmc> amc = CreateObject <MmWaveAmc> (mmwHelper->GetCcPhyParams ().at (0).GetConfigurationParameters ());
 
   Simulator::Schedule (MilliSeconds(0), &updateSnr, snrMinDb,
 											 enbMmwDev,
-											 MmWaveSpectrumValueHelper::GetSpectrumModel (mmwHelper->GetPhyMacConfigurable ()),
+											 MmWaveSpectrumValueHelper::GetSpectrumModel (mmwHelper->GetCcPhyParams ().at (0).GetConfigurationParameters ()),
 											 amc);
 
   Simulator::Stop (Seconds (simTime));
@@ -230,5 +230,3 @@ main (int argc, char *argv[])
   Simulator::Destroy ();
   return 0;
 }
-
-

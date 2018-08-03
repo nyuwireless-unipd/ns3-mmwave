@@ -52,7 +52,7 @@ void updateDistance (double dist, Ptr<Node> ue)
 	Simulator::Schedule (MilliSeconds(distUpdateInterval), &updateDistance, dist+distInc, ue);
 }
 
-int 
+int
 main (int argc, char *argv[])
 {
   /* Information regarding the traces generated:
@@ -128,7 +128,7 @@ main (int argc, char *argv[])
   mmwHelper->SetHarqEnabled (harqEnabled);
 
   /* A configuration example.
-   * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
+   * mmwHelper->GetCcPhyParams ().at (0).GetConfigurationParameters ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -172,5 +172,3 @@ main (int argc, char *argv[])
   Simulator::Destroy ();
   return 0;
 }
-
-
