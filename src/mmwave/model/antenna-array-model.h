@@ -75,7 +75,7 @@ private:
 	// double m_maxAngle;
 	complexVector_t m_beamformingVector;
 	int m_currentPanelId;
-	std::map<Ptr<NetDevice>, complexVector_t> m_beamformingVectorMap;
+	// std::map<Ptr<NetDevice>, complexVector_t> m_beamformingVectorMap;
 	std::map<Ptr<NetDevice>, std::pair<complexVector_t,int> > m_beamformingVectorPanelMap;
 
 	double m_disV; //antenna spacing in the vertical direction in terms of wave length.
