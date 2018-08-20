@@ -28,9 +28,9 @@ using namespace mmwave;
  */
 
 void
-TxMacPacketTraceUe (Ptr<OutputStreamWrapper> stream, RxPacketTraceParams params)
+TxMacPacketTraceUe (Ptr<OutputStreamWrapper> stream, uint16_t rnti, uint8_t ccId, uint32_t size)
 {
-	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << (uint32_t)params.m_ccId << '\t' << params.m_tbSize << std::endl;
+	*stream->GetStream () << Simulator::Now ().GetSeconds () << "\t" << (uint32_t)ccId << '\t' << size << std::endl;
 }
 
 void
@@ -327,7 +327,7 @@ main (int argc, char *argv[])
  }
 
  helper->EnableTraces();
- //Traces(filePath); // enable UL MAC traces
+ Traces(filePath); // enable UL MAC traces
 
  BuildingsHelper::MakeMobilityModelConsistent ();
 
