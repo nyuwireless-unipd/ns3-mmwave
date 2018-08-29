@@ -34,6 +34,7 @@
 
 #include <ns3/object.h>
 #include <ns3/ipv4-address-helper.h>
+#include <ns3/ipv6-address-helper.h>
 #include <ns3/data-rate.h>
 #include <ns3/epc-tft.h>
 #include <ns3/eps-bearer.h>
@@ -94,7 +95,9 @@ public:
   virtual Ptr<Node> GetPgwNode ();
   virtual Ptr<Node> GetMmeNode ();
   virtual Ipv4InterfaceContainer AssignUeIpv4Address (NetDeviceContainer ueDevices);
+  virtual Ipv6InterfaceContainer AssignUeIpv6Address (NetDeviceContainer ueDevices);
   virtual Ipv4Address GetUeDefaultGatewayAddress ();
+  virtual Ipv6Address GetUeDefaultGatewayAddress6 ();
 
 
 
@@ -105,6 +108,11 @@ private:
    * helper to assign addresses to UE devices as well as to the TUN device of the SGW/PGW
    */
   Ipv4AddressHelper m_ueAddressHelper;
+
+  /**
+   * helper to assign IPv6 addresses to UE devices as well as to the TUN device of the SGW/PGW
+   */
+  Ipv6AddressHelper m_ueAddressHelper6;
 
   /**
    * SGW-PGW network element

@@ -52,6 +52,7 @@
 #include <ns3/epc-mme-application.h>
 #include <ns3/epc-ue-nas.h>
 #include <ns3/config.h>
+#include <ns3/icmpv6-l4-protocol.h>
 
 
 namespace ns3 {
@@ -482,7 +483,18 @@ MmWavePointToPointEpcHelper::AssignUeIpv4Address (NetDeviceContainer ueDevices)
   return m_ueAddressHelper.Assign (ueDevices);
 }
 
-
+Ipv6InterfaceContainer
+MmWavePointToPointEpcHelper::AssignUeIpv6Address (NetDeviceContainer ueDevices)
+{
+  for (NetDeviceContainer::Iterator iter = ueDevices.Begin ();
+      iter != ueDevices.End ();
+      iter ++)
+    {
+      Ptr<Icmpv6L4Protocol> icmpv6 = (*iter)->GetNode ()->GetObject<Icmpv6L4Protocol> ();
+      icmpv6->SetAttribute ("DAD", BooleanValue (false));
+    }
+  return m_ueAddressHelper6.Assign (ueDevices);
+}
 
 Ipv4Address
 MmWavePointToPointEpcHelper::GetUeDefaultGatewayAddress ()
@@ -491,6 +503,13 @@ MmWavePointToPointEpcHelper::GetUeDefaultGatewayAddress ()
   return m_sgwPgw->GetObject<Ipv4> ()->GetAddress (1, 0).GetLocal ();
 }
 
-} // namespace mmwave 
+Ipv6Address
+MmWavePointToPointEpcHelper::GetUeDefaultGatewayAddress6 ()
+{
+  // return the address of the tun device
+  return m_sgwPgw->GetObject<Ipv6> ()->GetAddress (1, 1).GetAddress ();
+}
+
+} // namespace mmwave
 
 } // namespace ns3
