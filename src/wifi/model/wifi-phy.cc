@@ -1593,7 +1593,7 @@ WifiPhy::ResumeFromSleep (void)
     case WifiPhyState::SLEEP:
       {
         NS_LOG_DEBUG ("resuming from sleep mode");
-        Time delayUntilCcaEnd = m_interference.GetEnergyDuration (DbmToW (GetCcaMode1Threshold ()));
+        Time delayUntilCcaEnd = m_interference.GetEnergyDuration (m_ccaMode1ThresholdW);
         m_state->SwitchFromSleep (delayUntilCcaEnd);
         break;
       }
@@ -1956,13 +1956,13 @@ WifiPhy::GetPayloadDuration (uint32_t size, WifiTxVector txVector, uint16_t freq
   double Nes = 1;
   //todo: improve logic to reduce the number of if cases
   //todo: extend to NSS > 4 for VHT rates
-  if (payloadMode.GetUniqueName () == "HtMcs21"
-      || payloadMode.GetUniqueName () == "HtMcs22"
-      || payloadMode.GetUniqueName () == "HtMcs23"
-      || payloadMode.GetUniqueName () == "HtMcs28"
-      || payloadMode.GetUniqueName () == "HtMcs29"
-      || payloadMode.GetUniqueName () == "HtMcs30"
-      || payloadMode.GetUniqueName () == "HtMcs31")
+  if (payloadMode == GetHtMcs21()
+      || payloadMode == GetHtMcs22 ()
+      || payloadMode == GetHtMcs23 ()
+      || payloadMode == GetHtMcs28 ()
+      || payloadMode == GetHtMcs29 ()
+      || payloadMode == GetHtMcs30 ()
+      || payloadMode == GetHtMcs31 ())
     {
       Nes = 2;
     }
@@ -2150,6 +2150,8 @@ WifiPhy::GetPayloadDuration (uint32_t size, WifiTxVector txVector, uint16_t freq
   else if (mpdutype == NORMAL_MPDU && preamble != WIFI_PREAMBLE_NONE)
     {
       //Not an A-MPDU
+      // The number of OFDM symbols in the data field when BCC encoding 
+      // is used is given in equation 19-32 of the IEEE 802.11-2016 standard.
       numSymbols = lrint (stbc * ceil ((16 + size * 8.0 + 6.0 * Nes) / (stbc * numDataBitsPerSymbol)));
     }
   else
@@ -2556,8 +2558,8 @@ WifiPhy::EndReceive (Ptr<Packet> packet, WifiPreamble preamble, MpduType mpdutyp
         {
           NotifyRxEnd (packet);
           SignalNoiseDbm signalNoise;
-          signalNoise.signal = RatioToDb (event->GetRxPowerW ()) + 30;
-          signalNoise.noise = RatioToDb (event->GetRxPowerW () / snrPer.snr) + 30;
+          signalNoise.signal = WToDbm (event->GetRxPowerW ());
+          signalNoise.noise = WToDbm (event->GetRxPowerW () / snrPer.snr);
           MpduInfo aMpdu;
           aMpdu.type = mpdutype;
           aMpdu.mpduRefNumber = m_rxMpduReferenceNumber;
@@ -3616,7 +3618,7 @@ void
 WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, double rxPowerW, Time rxDuration, Ptr<Event> event)
 {
   NS_LOG_FUNCTION (this << packet << txVector << +mpdutype << rxPowerW << rxDuration);
-  if (rxPowerW > DbmToW (GetEdThreshold ())) //checked here, no need to check in the payload reception (current implementation assumes constant rx power over the packet duration)
+  if (rxPowerW > m_edThresholdW) //checked here, no need to check in the payload reception (current implementation assumes constant rx power over the packet duration)
     {
       AmpduTag ampduTag;
       WifiPreamble preamble = txVector.GetPreambleType ();
@@ -3681,7 +3683,7 @@ WifiPhy::StartRx (Ptr<Packet> packet, WifiTxVector txVector, MpduType mpdutype, 
   else
     {
       NS_LOG_DEBUG ("drop packet because signal power too Small (" <<
-                    rxPowerW << "<" << DbmToW (GetEdThreshold ()) << ")");
+                    rxPowerW << "<" << m_edThresholdW << ")");
       NotifyRxDrop (packet);
       m_plcpSuccess = false;
       MaybeCcaBusyDuration ();
