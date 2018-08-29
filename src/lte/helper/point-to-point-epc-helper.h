@@ -89,9 +89,9 @@ public:
   virtual Ptr<Node> GetPgwNode ();
   virtual Ptr<Node> GetMmeNode ();
   virtual Ipv4InterfaceContainer AssignUeIpv4Address (NetDeviceContainer ueDevices);
-  Ipv6InterfaceContainer AssignUeIpv6Address (NetDeviceContainer ueDevices);
+  virtual Ipv6InterfaceContainer AssignUeIpv6Address (NetDeviceContainer ueDevices);
   virtual Ipv4Address GetUeDefaultGatewayAddress ();
-  Ipv6Address GetUeDefaultGatewayAddress6 ();
+  virtual Ipv6Address GetUeDefaultGatewayAddress6 ();
 
 
 
