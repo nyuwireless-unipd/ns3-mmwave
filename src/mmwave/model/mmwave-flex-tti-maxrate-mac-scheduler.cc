@@ -1719,9 +1719,9 @@ MmWaveFlexTtiMaxRateMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCsc
     			itUe->second.m_flowStatsDl.push_back (FlowStats (false, &(itUe->second), j));
     		}
   			itUe->second.m_flowStatsDl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
-  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::GBR_ULTRA_LOW_LAT)
+  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::NGBR_LOW_LAT_EMBB_AR)
   			{
-  				EpsBearer lowLatBearer (EpsBearer::GBR_ULTRA_LOW_LAT);
+  				EpsBearer lowLatBearer (EpsBearer::NGBR_LOW_LAT_EMBB_AR);
   				itUe->second.m_flowStatsDl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
   			m_flowHeap.push_back ( &(itUe->second.m_flowStatsDl[lcid]) );
@@ -1736,9 +1736,9 @@ MmWaveFlexTtiMaxRateMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCsc
     		}
   			itUe->second.m_flowStatsUl[lcid].m_isUplink = true;
   			itUe->second.m_flowStatsUl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
-  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::GBR_ULTRA_LOW_LAT)
+  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::NGBR_LOW_LAT_EMBB_AR)
   			{
-  				EpsBearer lowLatBearer (EpsBearer::GBR_ULTRA_LOW_LAT);
+  				EpsBearer lowLatBearer (EpsBearer::NGBR_LOW_LAT_EMBB_AR);
   				itUe->second.m_flowStatsUl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
   			m_flowHeap.push_back ( &(itUe->second.m_flowStatsUl[lcid]) );
@@ -1755,9 +1755,9 @@ MmWaveFlexTtiMaxRateMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCsc
   			itUe->second.m_flowStatsDl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
   			itUe->second.m_flowStatsUl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
 
-  			if (1 || params.m_logicalChannelConfigList[i].m_qci == EpsBearer::GBR_ULTRA_LOW_LAT)
+  			if (1 || params.m_logicalChannelConfigList[i].m_qci == EpsBearer::NGBR_LOW_LAT_EMBB_AR)
   			{
-  				EpsBearer lowLatBearer (EpsBearer::GBR_ULTRA_LOW_LAT);
+  				EpsBearer lowLatBearer (EpsBearer::NGBR_LOW_LAT_EMBB_AR);
   				itUe->second.m_flowStatsDl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   				itUe->second.m_flowStatsUl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
