@@ -190,8 +190,8 @@ MmWave3gppChannel::GetTypeId (void)
 				MakeTimeAccessor (&MmWave3gppChannel::m_updatePeriod),
 				MakeTimeChecker ())
 	.AddAttribute ("DirectBeam",
-				"By default creates aligned beams between transmitter and receiver",
-				BooleanValue (true),
+				"If true, creates aligned beams between transmitter and receiver. If false, use optimal beamforming vector computation",
+				BooleanValue (false),
 				MakeBooleanAccessor (&MmWave3gppChannel::m_directBeam),
 				MakeBooleanChecker ())
 	.AddAttribute ("Blockage",

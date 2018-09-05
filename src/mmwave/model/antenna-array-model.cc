@@ -77,7 +77,7 @@ AntennaArrayModel::GetTypeId ()
 		    MakeDoubleChecker<double> ())
 	.AddAttribute ("IsotropicAntennaElements",
 			"If true, the antenna elements are isotropic. If false, they follow the 3GPP spec on element radiation pattern",
-			BooleanValue (false),
+			BooleanValue (true),
 			MakeBooleanAccessor (&AntennaArrayModel::m_isotropicElement),
 			MakeBooleanChecker ())
 	;

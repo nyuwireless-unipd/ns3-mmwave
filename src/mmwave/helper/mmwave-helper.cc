@@ -206,12 +206,12 @@ MmWaveHelper::GetTypeId (void)
                    MakeUintegerChecker<uint16_t> ())
 		 .AddAttribute ("NumUePanels",
 	                "Number of panels for the UE",
-	                UintegerValue (2),
+	                UintegerValue (1),
 	                MakeUintegerAccessor (&MmWaveHelper::m_noUePanels),
 	                MakeUintegerChecker<uint16_t> ())
 	    .AddAttribute ("NumEnbPanels",
 	                "Number of panels for the eNB",
-	                UintegerValue (3),
+	                UintegerValue (1),
 	                MakeUintegerAccessor (&MmWaveHelper::m_noEnbPanels),
 	                MakeUintegerChecker<uint16_t> ())
 		 .AddAttribute ("EnbComponentCarrierManager",
