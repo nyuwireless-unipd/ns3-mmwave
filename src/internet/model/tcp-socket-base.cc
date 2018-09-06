@@ -1823,23 +1823,15 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
       // the CA_RECOVERY phase. Just process this partial ack (RFC 5681)
       if (ackNumber < m_recover && m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
         {
+          m_txBuffer->DiscardUpTo (ackNumber);
           if (!m_sackEnabled)
             {
-              // Manually set the head as lost, it will be retransmitted.
-              NS_LOG_INFO ("Partial ACK. Manually setting head as lost");
-              m_txBuffer->MarkHeadAsLost ();
-            }
-          else
-            {
-              // We received a partial ACK, if we retransmitted this segment
-              // probably is better to retransmit it
-              m_txBuffer->DeleteRetransmittedFlagFromHead ();
-            }
-          DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
-          m_tcb->m_cWndInfl = SafeSubtraction (m_tcb->m_cWndInfl, bytesAcked);
-          if (segsAcked >= 1)
-            {
-              m_recoveryOps->DoRecovery (m_tcb, bytesAcked, m_txBuffer->GetSacked ());
+              DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
+              m_tcb->m_cWnd = SafeSubtraction (m_tcb->m_cWnd, bytesAcked);
+              if (segsAcked >= 1)
+                {
+                  m_tcb->m_cWnd += m_tcb->m_segmentSize;
+                }
             }
 
           // This partial ACK acknowledge the fact that one segment has been

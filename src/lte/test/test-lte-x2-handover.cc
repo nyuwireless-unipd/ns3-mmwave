@@ -50,9 +50,9 @@ struct HandoverEvent
  * \ingroup lte-test
  * \ingroup tests
  *
- * \brief Test X2 Handover. In this test is used NoOpHandoverAlgorithm and 
+ * \brief Test X2 Handover. In this test is used NoOpHandoverAlgorithm and
  * the request for handover is generated manually, and it is not based on measurements.
- */ 
+ */
 class LteX2HandoverTestCase : public TestCase
 {
 public:
