@@ -42,23 +42,44 @@ NS_LOG_COMPONENT_DEFINE ("Ipv6AddressHelper");
 Ipv6AddressHelper::Ipv6AddressHelper ()
 {
   NS_LOG_FUNCTION (this);
-  Ipv6AddressGenerator::Init (Ipv6Address ("2001:db8::"), Ipv6Prefix (64));
+  m_network = Ipv6Address ("2001:db8::");
+  m_prefix = 64;
+  m_address = Ipv6Address ("::1");
+  m_base = m_address;
 }
 
 Ipv6AddressHelper::Ipv6AddressHelper (Ipv6Address network, Ipv6Prefix prefix,
                                       Ipv6Address base)
 {
   NS_LOG_FUNCTION (this << network << prefix << base);
-  Ipv6AddressGenerator::Init (network, prefix, base);
+
+  m_network = network;
+  m_prefix = prefix;
+  m_address = base;
+  m_base = base;
+
+  NS_ASSERT_MSG (m_network == network.CombinePrefix (prefix),
+                 "Ipv6AddressHelper: network address and prefix mismatch: " << m_network << " " << m_prefix);
+
+  NS_ASSERT_MSG (base.CombinePrefix (prefix) == Ipv6Address::GetZero (),
+                 "Ipv6AddressHelper: base address and prefix mismatch: " << base << " " << m_prefix);
 }
 
 void Ipv6AddressHelper::SetBase (Ipv6Address network, Ipv6Prefix prefix,
-                            Ipv6Address base)
+                                 Ipv6Address base)
 {
   NS_LOG_FUNCTION (this << network << prefix << base);
-  /// \todo for now we do not enforce the prefix because the underlying
-  /// Ipv6AddressGenerator does not handle prefixes well that are not 64 bits
-  Ipv6AddressGenerator::Init (network, Ipv6Prefix (64), base);
+
+  m_network = network;
+  m_prefix = prefix;
+  m_address = base;
+  m_base = base;
+
+  NS_ASSERT_MSG (m_network == network.CombinePrefix (prefix),
+                 "Ipv6AddressHelper::SetBase(): network address and prefix mismatch: " << m_network << " " << m_prefix);
+
+  NS_ASSERT_MSG (base.CombinePrefix (prefix) == Ipv6Address::GetZero (),
+                 "Ipv6AddressHelper::SetBase(): base address and prefix mismatch: " << base << " " << m_prefix);
 }
 
 
@@ -67,28 +88,31 @@ Ipv6Address Ipv6AddressHelper::NewAddress (Address addr)
   NS_LOG_FUNCTION (this << addr);
   if (Mac64Address::IsMatchingType (addr))
     {
-      Ipv6Address network = Ipv6AddressGenerator::GetNetwork (Ipv6Prefix (64));
-      Ipv6Address address = Ipv6Address::MakeAutoconfiguredAddress (Mac64Address::ConvertFrom (addr), network);
+      Ipv6Address address = Ipv6Address::MakeAutoconfiguredAddress (Mac64Address::ConvertFrom (addr), m_network);
       Ipv6AddressGenerator::AddAllocated (address);
       return address;
     }
   else if (Mac48Address::IsMatchingType (addr))
     {
-      Ipv6Address network = Ipv6AddressGenerator::GetNetwork (Ipv6Prefix (64));
-      Ipv6Address address = Ipv6Address::MakeAutoconfiguredAddress (Mac48Address::ConvertFrom (addr), network);
+      Ipv6Address address = Ipv6Address::MakeAutoconfiguredAddress (Mac48Address::ConvertFrom (addr), m_network);
       Ipv6AddressGenerator::AddAllocated (address);
       return address;
     }
   else if (Mac16Address::IsMatchingType (addr))
     {
-      Ipv6Address network = Ipv6AddressGenerator::GetNetwork (Ipv6Prefix (64));
-      Ipv6Address address = Ipv6Address::MakeAutoconfiguredAddress (Mac16Address::ConvertFrom (addr), network);
+      Ipv6Address address = Ipv6Address::MakeAutoconfiguredAddress (Mac16Address::ConvertFrom (addr), m_network);
+      Ipv6AddressGenerator::AddAllocated (address);
+      return address;
+    }
+  else if (Mac8Address::IsMatchingType (addr))
+    {
+      Ipv6Address address = Ipv6Address::MakeAutoconfiguredAddress (Mac8Address::ConvertFrom (addr), m_network);
       Ipv6AddressGenerator::AddAllocated (address);
       return address;
     }
   else
     {
-      NS_FATAL_ERROR ("Did not pass in a valid Mac Address (16, 48 or 64 bits)");
+      NS_FATAL_ERROR ("Did not pass in a valid Mac Address (8, 16, 48 or 64 bits)");
     }
   /* never reached */
   return Ipv6Address ("::");
@@ -103,14 +127,83 @@ Ipv6Address Ipv6AddressHelper::NewAddress (void)
 // get new addresses on a given subnet.  The client will expect that the first
 // address she gets back is the one she used to initialize the generator with.
 // This implies that this operation is a post-increment.
-//
-  return Ipv6AddressGenerator::NextAddress (Ipv6Prefix (64));
+
+  uint8_t netBuf[16];
+  uint8_t hostBuf[16];
+  uint8_t addrBuf[16];
+  m_network.GetBytes (netBuf);
+  m_address.GetBytes (hostBuf);
+
+  NS_ASSERT_MSG (m_address.CombinePrefix (m_prefix) == Ipv6Address::GetZero (),
+                 "Ipv6AddressHelper::NewAddress(): Too many hosts in the network: " << m_address << " " << m_prefix);
+
+  for (uint8_t i=0; i<16; i++)
+    {
+      addrBuf[i] = netBuf[i] | hostBuf[i];
+    }
+
+  Ipv6Address addr = Ipv6Address (addrBuf);
+
+  // Remember: hostBuf[15] is the Least Significant Byte.
+  uint16_t sum;
+  sum = static_cast<uint16_t> (hostBuf[15]) + 1;
+  hostBuf[15] += 1;
+  for (uint8_t index=0; index<15; index++)
+    {
+      if (sum > hostBuf[15-index])
+        {
+          sum = static_cast<uint16_t> (hostBuf[14-index]) + 1;
+          hostBuf[14-index] += 1;
+        }
+      else
+        {
+          break;
+        }
+    }
+  m_address = Ipv6Address (hostBuf);
+
+  Ipv6AddressGenerator::AddAllocated (addr);
+  return addr;
 }
 
 void Ipv6AddressHelper::NewNetwork (void)
 {
   NS_LOG_FUNCTION (this);
-  Ipv6AddressGenerator::NextNetwork (Ipv6Prefix (64));
+
+  uint8_t netBuf[16];
+  uint8_t addBuf[16];
+  m_network.GetBytes (netBuf);
+
+  uint8_t prefixIndex = (m_prefix.GetPrefixLength ()-1)/8;
+  uint8_t prefixPosition = (8-(m_prefix.GetPrefixLength ()%8))%8;
+
+  for (uint8_t index=0; index<16; index++)
+    {
+      addBuf[index] = 0;
+      if (index==prefixIndex)
+        {
+          addBuf[index] = (1<<prefixPosition);
+        }
+    }
+
+  uint16_t sum[16];
+  for (uint8_t index=0; index<16; index++)
+    {
+      sum[index] = static_cast<uint16_t> (netBuf[index]) + static_cast<uint16_t> (addBuf[index]);
+      netBuf[index] += addBuf[index];
+    }
+
+  for (uint8_t index=0; index<15; index++)
+    {
+      if (sum[15-index] > netBuf[15-index])
+        {
+          sum[14-index] = static_cast<uint16_t> (netBuf[14-index]) + 1;
+          netBuf[14-index] += 1;
+        }
+    }
+
+  m_network = Ipv6Address (netBuf);
+  m_address = m_base;
 }
 
 Ipv6InterfaceContainer Ipv6AddressHelper::Assign (const NetDeviceContainer &c)

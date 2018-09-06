@@ -373,7 +373,7 @@ RealtimeSimulatorImpl::ProcessOneEvent (void)
             tsJitter = m_currentTs - tsFinal;
           }
 
-        if (tsJitter > static_cast<uint64_t>(m_hardLimit.GetTimeStep ()))
+        if (tsJitter > static_cast<uint64_t> (m_hardLimit.GetTimeStep ()))
           {
             NS_FATAL_ERROR ("RealtimeSimulatorImpl::ProcessOneEvent (): "
                             "Hard real-time limit exceeded (jitter = " << tsJitter << ")");
@@ -433,7 +433,7 @@ RealtimeSimulatorImpl::Run (void)
   m_synchronizer->SetOrigin (m_currentTs);
 
   // Sleep until signalled
-  uint64_t tsNow;
+  uint64_t tsNow = 0;
   uint64_t tsDelay = 1000000000; // wait time of 1 second (in nanoseconds)
  
   while (!m_stop) 
@@ -523,8 +523,7 @@ RealtimeSimulatorImpl::Schedule (Time const &delay, EventImpl *impl)
     // here since we are running in a CriticalSection.
     //
     Time tAbsolute = Simulator::Now () + delay;
-    NS_ASSERT_MSG (tAbsolute.IsPositive (), "RealtimeSimulatorImpl::Schedule(): Negative time");
-    NS_ASSERT_MSG (tAbsolute >= TimeStep (m_currentTs), "RealtimeSimulatorImpl::Schedule(): time < m_currentTs");
+    NS_ASSERT_MSG (delay.IsPositive (), "RealtimeSimulatorImpl::Schedule(): Negative delay");
     ev.impl = impl;
     ev.key.m_ts = (uint64_t) tAbsolute.GetTimeStep ();
     ev.key.m_context = GetContext ();

@@ -40,6 +40,7 @@
 #include "ns3/mmwave-propagation-loss-model.h"
 
 using namespace ns3;
+using namespace mmwave;
 
 double updateInterval = 2000.0;  // in ms
 double increment = 0.5; // increment by x dB
@@ -60,7 +61,7 @@ void updateLoss (double loss, Ptr<MmWavePropagationLossModel> model)
 	Simulator::Schedule (MilliSeconds(updateInterval), &updateLoss, loss+increment, model);
 }
 
-int 
+int
 main (int argc, char *argv[])
 {
   /* Information regarding the traces generated:
@@ -150,10 +151,11 @@ main (int argc, char *argv[])
 
   mmwHelper->Initialize();
   mmwHelper->SetHarqEnabled (harqEnabled);
-  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel ()->GetObject<MmWavePropagationLossModel> ();
+  // get the loss model for the default CC
+  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel (0)->GetObject<MmWavePropagationLossModel> ();
 
   /* A configuration example.
-   * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
+   * mmwHelper->GetCcPhyParams ().at (0).GetConfigurationParameters ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -197,5 +199,3 @@ main (int argc, char *argv[])
   Simulator::Destroy ();
   return 0;
 }
-
-

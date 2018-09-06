@@ -1,22 +1,22 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- *  
+ *
+ *
  *   Author: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
@@ -45,7 +45,9 @@
 #include <fstream>
 
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveChannelRaytracing");
 
@@ -209,9 +211,17 @@ MmWaveChannelRaytracing::Initial(NetDeviceContainer ueDevices, NetDeviceContaine
 
 	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
 	{
-		Ptr<MmWaveUeNetDevice> UeDev =
-						DynamicCast<MmWaveUeNetDevice> (*i);
-		if (UeDev != 0) 
+		for (NetDeviceContainer::Iterator j = enbDevices.Begin(); j != enbDevices.End(); j++)
+		{
+			SetBeamformingVector(*i,*j);
+		}
+	}
+
+	for (NetDeviceContainer::Iterator i = ueDevices.Begin(); i != ueDevices.End(); i++)
+	{
+		Ptr<mmwave::MmWaveUeNetDevice> UeDev =
+						DynamicCast<mmwave::MmWaveUeNetDevice> (*i);
+		if (UeDev != 0)
 		{
 			if (UeDev->GetTargetEnb ())
 			{
@@ -224,7 +234,7 @@ MmWaveChannelRaytracing::Initial(NetDeviceContainer ueDevices, NetDeviceContaine
 		{	// it may be a McUeNetDevice
 			Ptr<McUeNetDevice> mcUeDev =
 						DynamicCast<McUeNetDevice> (*i);
-			if (mcUeDev != 0) 
+			if (mcUeDev != 0)
 			{
 				if (mcUeDev->GetMmWaveTargetEnb ())
 				{
@@ -251,8 +261,8 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 	Ptr<NetDevice> rxDevice = b->GetObject<Node> ()->GetDevice (0);
 	Ptr<MmWaveEnbNetDevice> txEnb =
 					DynamicCast<MmWaveEnbNetDevice> (txDevice);
-	Ptr<MmWaveUeNetDevice> rxUe =
-					DynamicCast<MmWaveUeNetDevice> (rxDevice);
+	Ptr<mmwave::MmWaveUeNetDevice> rxUe =
+					DynamicCast<mmwave::MmWaveUeNetDevice> (rxDevice);
 
 	uint8_t txAntennaNum[2];
 	uint8_t rxAntennaNum[2];
@@ -291,20 +301,20 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 			rxAntennaArray = DynamicCast<AntennaArrayModel> (
 						rxMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 		}
-	} 
+	}
 	else if (txEnb==0 && rxUe==0 )
 	{
 		NS_LOG_INFO ("this is uplink case");
 
 		dl = false;
-		Ptr<MmWaveUeNetDevice> txUe =
-						DynamicCast<MmWaveUeNetDevice> (txDevice);
+		Ptr<mmwave::MmWaveUeNetDevice> txUe =
+						DynamicCast<mmwave::MmWaveUeNetDevice> (txDevice);
 		Ptr<MmWaveEnbNetDevice> rxEnb =
 						DynamicCast<MmWaveEnbNetDevice> (rxDevice);
 
 		if(txUe != 0)
 		{
-			NS_LOG_INFO ("this is uplink case");	
+			NS_LOG_INFO ("this is uplink case");
 			txAntennaNum[0] = sqrt (txUe->GetAntennaNum ());
 			txAntennaNum[1] = sqrt (txUe->GetAntennaNum ());
 			rxAntennaNum[0] = sqrt (rxEnb->GetAntennaNum ());
@@ -321,7 +331,7 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 
 			if(txMcUe != 0)
 			{
-				NS_LOG_INFO ("this is uplink case for MC device");	
+				NS_LOG_INFO ("this is uplink case for MC device");
 
 				txAntennaNum[0] = sqrt (txMcUe->GetAntennaNum ());
 				txAntennaNum[1] = sqrt (txMcUe->GetAntennaNum ());
@@ -409,17 +419,20 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 	}
 
 	//	calculate antenna weights, better method should be implemented
-	bfParams->m_txW = txAntennaArray->GetBeamformingVector();
-	bfParams->m_rxW = rxAntennaArray->GetBeamformingVector();
-
+	bfParams->m_txW = txAntennaArray->GetBeamformingVectorPanel();
+	NS_LOG_LOGIC("TX size " << bfParams->m_txW.size());
+	bfParams->m_rxW = rxAntennaArray->GetBeamformingVectorPanel();
+	NS_LOG_LOGIC("RX size " << bfParams->m_rxW.size());
 
 	std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
 	if(it1 != m_connectedPair.end ())
 	{
 		bfParams->m_txW = CalcBeamformingVector(bfParams->m_channelParams->m_txSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
 		bfParams->m_rxW = CalcBeamformingVector(bfParams->m_channelParams->m_rxSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
-		txAntennaArray->SetBeamformingVector(bfParams->m_txW,rxDevice);
-		rxAntennaArray->SetBeamformingVector(bfParams->m_rxW,txDevice);
+		txAntennaArray->SetBeamformingVectorPanel(bfParams->m_txW,rxDevice);
+		txAntennaArray->ChangeBeamformingVectorPanel(rxDevice);
+		rxAntennaArray->SetBeamformingVectorPanel(bfParams->m_rxW,txDevice);
+		rxAntennaArray->ChangeBeamformingVectorPanel(txDevice);
 	}
 
 	/*Vector rxSpeed = b->GetVelocity();
@@ -451,10 +464,60 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 
 }
 
+void
+MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
+{
+	Ptr<MmWaveEnbNetDevice> EnbDev =
+				DynamicCast<MmWaveEnbNetDevice> (enbDevice);
+	Ptr<mmwave::MmWaveUeNetDevice> UeDev =
+				DynamicCast<mmwave::MmWaveUeNetDevice> (ueDevice);
+
+	uint8_t ccId = m_phyMacConfig->GetCcId();
+	if(UeDev != 0)
+	{
+		NS_LOG_LOGIC("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
+		Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
+				UeDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+		Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
+				EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+		complexVector_t dummy;
+		ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
+		enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
+		ueAntennaArray->SetBeamformingVectorPanelDevices (ueDevice,enbDevice);
+		enbAntennaArray->SetBeamformingVectorPanelDevices (enbDevice,ueDevice);
+	}
+	else
+	{
+		Ptr<McUeNetDevice> UeDev =
+				DynamicCast<McUeNetDevice> (ueDevice);
+		if(UeDev != 0)
+		{
+			NS_LOG_LOGIC("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
+			Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
+					UeDev->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+			Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
+					EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+			complexVector_t dummy;
+			ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
+			enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
+			ueAntennaArray->SetBeamformingVectorPanelDevices (ueDevice,enbDevice);
+			enbAntennaArray->SetBeamformingVectorPanelDevices (enbDevice,ueDevice);
+		}
+		else
+		{
+			NS_FATAL_ERROR("Unrecognized pair of devices");
+		}
+	}
+
+
+
+}
+
 
 complexVector_t
 MmWaveChannelRaytracing::CalcBeamformingVector(complex2DVector_t spatialMatrix, doubleVector_t powerFraction) const
 {
+	NS_LOG_LOGIC("CalcBeamformingVector for " << spatialMatrix.at (0).size ());
 	complexVector_t antennaWeights;
 	uint16_t antennaNum = spatialMatrix.at (0).size ();
 	for (int i = 0; i< antennaNum; i++)
@@ -636,7 +699,7 @@ MmWaveChannelRaytracing::GetSystemBandwidth () const
 }
 
 
-Ptr<SpectrumValue> 
+Ptr<SpectrumValue>
 MmWaveChannelRaytracing::CalcRxPowerSpectralDensity(Ptr<const SpectrumValue> txPsd,
 	                                                   Ptr<const MobilityModel> a,
 	                                                   Ptr<const MobilityModel> b) const
@@ -644,5 +707,6 @@ MmWaveChannelRaytracing::CalcRxPowerSpectralDensity(Ptr<const SpectrumValue> txP
 	return DoCalcRxPowerSpectralDensity(txPsd, a, b);
 }
 
+} // namespace mmwave
 
-}// namespace ns3
+} // namespace ns3

@@ -309,7 +309,7 @@ void Asn1Header::SerializeChoice (int numOptions, int selectedOption, bool isExt
     // Never extended attributes
     SerializeBoolean(false);
   }
-  
+
   // Clause 23.4 ITU-T X.691
   if (numOptions < 2)
     {
@@ -331,7 +331,7 @@ void Asn1Header::SerializeInteger (int n, int nmin, int nmax) const
 
   // Clause 11.5.3 ITU-T X.691
   int range = nmax - nmin + 1;
-  // Substract nmin to n
+  // Subtract nmin to n
   n -= nmin;
 
   // Clause 11.5.4 ITU-T X.691
@@ -582,15 +582,15 @@ Buffer::Iterator Asn1Header::DeserializeInteger (int *n, int nmin, int nmax, Buf
       bIterator = DeserializeBitset<1> (&bitsRead1,bIterator);
       *n = (int)bitsRead1.to_ulong ();
       break;
-    case 2: 
+    case 2:
       bIterator = DeserializeBitset<2> (&bitsRead2,bIterator);
       *n = (int)bitsRead2.to_ulong ();
       break;
-    case 3: 
+    case 3:
       bIterator = DeserializeBitset<3> (&bitsRead3,bIterator);
       *n = (int)bitsRead3.to_ulong ();
       break;
-    case 4: 
+    case 4:
       bIterator = DeserializeBitset<4> (&bitsRead4,bIterator);
       *n = (int)bitsRead4.to_ulong ();
       break;

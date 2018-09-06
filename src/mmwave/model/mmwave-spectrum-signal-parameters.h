@@ -35,6 +35,9 @@
 namespace ns3 {
 
 class PacketBurst;
+
+namespace mmwave {
+
 class MmWaveControlMessage;
 
 /**
@@ -66,24 +69,24 @@ struct mmwaveSpectrumSignalParameters : public SpectrumSignalParameters
 
 struct MmwaveSpectrumSignalParametersDataFrame : public SpectrumSignalParameters
 {
-  
+
   // inherited from SpectrumSignalParameters
   virtual Ptr<SpectrumSignalParameters> Copy ();
-  
+
   /**
   * default constructor
   */
   MmwaveSpectrumSignalParametersDataFrame ();
-  
+
   /**
   * copy constructor
   */
   MmwaveSpectrumSignalParametersDataFrame (const MmwaveSpectrumSignalParametersDataFrame& p);
-  
+
   Ptr<PacketBurst> packetBurst;
 
   std::list<Ptr<MmWaveControlMessage> > ctrlMsgList;
-  
+
   uint16_t cellId;
 
   uint8_t slotInd;
@@ -92,20 +95,20 @@ struct MmwaveSpectrumSignalParametersDataFrame : public SpectrumSignalParameters
 
 struct MmWaveSpectrumSignalParametersDlCtrlFrame : public SpectrumSignalParameters
 {
-  
+
   // inherited from SpectrumSignalParameters
   virtual Ptr<SpectrumSignalParameters> Copy ();
-  
+
   /**
   * default constructor
   */
   MmWaveSpectrumSignalParametersDlCtrlFrame ();
-  
+
   /**
   * copy constructor
   */
   MmWaveSpectrumSignalParametersDlCtrlFrame (const MmWaveSpectrumSignalParametersDlCtrlFrame& p);
-  
+
 
   std::list<Ptr<MmWaveControlMessage> > ctrlMsgList;
 
@@ -113,6 +116,7 @@ struct MmWaveSpectrumSignalParametersDlCtrlFrame : public SpectrumSignalParamete
   uint16_t cellId;
 };
 
+} // namespace mmwave 
 
 }  // namespace ns3
 

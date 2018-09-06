@@ -682,7 +682,7 @@ GlobalRouter::DiscoverLSAs ()
         }
 
       //
-      // We have a net device that we need to check out.  If it suports 
+      // We have a net device that we need to check out.  If it supports 
       // broadcast and is not a point-point link, then it will be either a stub 
       // network or a transit network depending on the number of routers on
       // the segment.  We add the appropriate link record to the LSA.
@@ -838,7 +838,8 @@ GlobalRouter::ProcessSingleBroadcastLink (Ptr<NetDevice> nd, GlobalRoutingLSA *p
       // case.
       //
       ClearBridgesVisited ();
-      Ipv4Address desigRtr = FindDesignatedRouterForLink (nd);
+      Ipv4Address desigRtr;
+      desigRtr = FindDesignatedRouterForLink (nd);
 
       //
       // Let's double-check that any designated router we find out on our
@@ -848,10 +849,10 @@ GlobalRouter::ProcessSingleBroadcastLink (Ptr<NetDevice> nd, GlobalRoutingLSA *p
         {
           Ipv4Address networkHere = addrLocal.CombineMask (maskLocal);
           Ipv4Address networkThere = desigRtr.CombineMask (maskLocal);
-          NS_ABORT_MSG_UNLESS (networkHere == networkThere, 
+          NS_ABORT_MSG_UNLESS (networkHere == networkThere,
                                "GlobalRouter::ProcessSingleBroadcastLink(): Network number confusion");
         }
-      if (desigRtr == addrLocal) 
+      if (desigRtr == addrLocal)
         {
           c.Add (nd);
           NS_LOG_LOGIC ("Node " << node->GetId () << " elected a designated router");
@@ -1200,7 +1201,7 @@ GlobalRouter::BuildNetworkLSAs (NetDeviceContainer c)
       //
       ClearBridgesVisited ();
       Ptr<Channel> ch = ndLocal->GetChannel ();
-      uint32_t nDevices = ch->GetNDevices ();
+      std::size_t nDevices = ch->GetNDevices ();
       NS_ASSERT (nDevices);
       NetDeviceContainer deviceList = FindAllNonBridgedDevicesOnLink (ch);
       NS_LOG_LOGIC ("Found " << deviceList.GetN () << " non-bridged devices on channel");
@@ -1269,7 +1270,7 @@ GlobalRouter::FindAllNonBridgedDevicesOnLink (Ptr<Channel> ch) const
   NS_LOG_FUNCTION (this << ch);
   NetDeviceContainer c;
 
-  for (uint32_t i = 0; i < ch->GetNDevices (); i++)
+  for (std::size_t i = 0; i < ch->GetNDevices (); i++)
     {
       Ptr<NetDevice> nd = ch->GetDevice (i);
       NS_LOG_LOGIC ("checking to see if the device " << nd << " is bridged");

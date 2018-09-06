@@ -78,37 +78,6 @@ public:
   virtual ~CoDelQueueDisc ();
 
   /**
-   * \brief Enumeration of the modes supported in the class.
-   *
-   */
-  enum QueueDiscMode
-  {
-    QUEUE_DISC_MODE_PACKETS,     /**< Use number of packets for maximum queue disc size */
-    QUEUE_DISC_MODE_BYTES,       /**< Use number of bytes for maximum queue disc size */
-  };
-
-  /**
-   * \brief Set the operating mode of this queue disc.
-   *
-   * \param mode The operating mode of this queue disc.
-   */
-  void SetMode (QueueDiscMode mode);
-
-  /**
-   * \brief Get the operating mode of this queue disc.
-   *
-   * \returns The operating mode of this queue disc.
-   */
-  QueueDiscMode GetMode (void);
-
-  /**
-   * \brief Get the current value of the queue in bytes or packets.
-   *
-   * \returns The queue size in bytes or packets.
-   */
-  uint32_t GetQueueSize (void);
-
-  /**
    * \brief Get the target queue delay
    *
    * \returns The target queue delay
@@ -155,7 +124,6 @@ private:
    */
   virtual Ptr<QueueDiscItem> DoDequeue (void);
 
-  virtual Ptr<const QueueDiscItem> DoPeek (void) const;
   virtual bool CheckConfig (void);
 
   /**
@@ -225,8 +193,6 @@ private:
 
   virtual void InitializeParams (void);
 
-  uint32_t m_maxPackets;                  //!< Max # of packets accepted by the queue
-  uint32_t m_maxBytes;                    //!< Max # of bytes accepted by the queue
   uint32_t m_minBytes;                    //!< Minimum bytes in queue to allow a packet drop
   Time m_interval;                        //!< 100 ms sliding minimum time window width
   Time m_target;                          //!< 5 ms target queue delay
@@ -240,7 +206,6 @@ private:
   uint32_t m_state2;                      //!< Number of times we perform next drop while in dropping state
   uint32_t m_state3;                      //!< Number of times we enter drop state and drop the fist packet
   uint32_t m_states;                      //!< Total number of times we are in state 1, state 2, or state 3
-  QueueDiscMode m_mode;                   //!< The operating mode (Bytes or packets)
 };
 
 } // namespace ns3

@@ -39,12 +39,12 @@ class Node;
 
 /**
  * The X2 SAP defines the service between the X2 entity and the RRC entity.
- * 
+ *
  * The X2 SAP follows the specification 3GPP TS 36.423: "X2 application protocol (X2AP)"
- * 
- * The service primitives corresponds to the X2AP procedures and messages and 
+ *
+ * The service primitives corresponds to the X2AP procedures and messages and
  * the service parameters corresponds to the Information Elements
- * 
+ *
  * Note: Any reference in this file refers to the 3GPP TS 36.423 specification
  */
 
@@ -55,7 +55,7 @@ class EpcX2Sap
 {
 public:
   virtual ~EpcX2Sap ();
-  
+
   /**
    * E-RABs to be setup item as
    * it is used in the HANDOVER REQUEST message.
@@ -63,11 +63,11 @@ public:
    */
   struct ErabToBeSetupItem
   {
-    uint16_t    erabId;
-    EpsBearer   erabLevelQosParameters;
-    bool        dlForwarding;
-    Ipv4Address transportLayerAddress;
-    uint32_t    gtpTeid;
+    uint16_t    erabId; ///< E-RAB ID
+    EpsBearer   erabLevelQosParameters; ///< E-RAB level QOS parameters
+    bool        dlForwarding; ///< DL forwarding
+    Ipv4Address transportLayerAddress; ///< transport layer address
+    uint32_t    gtpTeid; ///< TEID
 
     ErabToBeSetupItem ();
   };
@@ -79,9 +79,9 @@ public:
    */
   struct ErabAdmittedItem
   {
-    uint16_t    erabId;
-    uint32_t    ulGtpTeid;
-    uint32_t    dlGtpTeid;
+    uint16_t    erabId; ///< E-RAB ID
+    uint32_t    ulGtpTeid; ///< uplink GTP TEID
+    uint32_t    dlGtpTeid; ///< downlink GTP TEID
   };
 
   /**
@@ -91,8 +91,8 @@ public:
    */
   struct ErabNotAdmittedItem
   {
-    uint16_t    erabId;
-    uint16_t    cause;
+    uint16_t    erabId; ///< E-RAB ID
+    uint16_t    cause; ///< cause
   };
 
   /**
@@ -101,14 +101,16 @@ public:
    * See section 9.1.1.4 for further info about the parameters
    */
   static const uint16_t m_maxPdcpSn = 4096;
+
+  /// ErabsSubjectToStatusTransferItem structure
   struct ErabsSubjectToStatusTransferItem
   {
-    uint16_t            erabId;
-    std::bitset<m_maxPdcpSn> receiveStatusOfUlPdcpSdus;
-    uint16_t            ulPdcpSn;
-    uint32_t            ulHfn;
-    uint16_t            dlPdcpSn;
-    uint32_t            dlHfn;
+    uint16_t            erabId; ///< ERAB ID
+    std::bitset<m_maxPdcpSn> receiveStatusOfUlPdcpSdus; ///< receive status of UL PDCP SDUs
+    uint16_t            ulPdcpSn; ///< UL PDCP SN
+    uint32_t            ulHfn; ///< UL HFN
+    uint16_t            dlPdcpSn; ///< DL PDCP SN
+    uint32_t            dlHfn; ///< DL HFN
   };
 
   /**
@@ -130,25 +132,25 @@ public:
    */
   struct UlHighInterferenceInformationItem
   {
-    uint16_t    targetCellId;
-    std::vector <bool> ulHighInterferenceIndicationList;
+    uint16_t    targetCellId; ///< target cell ID
+    std::vector <bool> ulHighInterferenceIndicationList; ///< UL high interference indication list
   };
 
   /**
    * Relative Narrowband Tx Power (RNTP) as
    * it is used in the LOAD INFORMATION message.
    * See section 9.2.19 for further info about the parameters
-   * 
+   *
    * Note: You can use INT16_MIN value for -infinite value
    *       in the rntpThreshold field
    */
   struct RelativeNarrowbandTxBand
   {
-    std::vector <bool> rntpPerPrbList;
-    int16_t     rntpThreshold;
-    uint16_t    antennaPorts;
-    uint16_t    pB;
-    uint16_t    pdcchInterferenceImpact;
+    std::vector <bool> rntpPerPrbList; ///< RNTP per prb list
+    int16_t     rntpThreshold; ///< RNTP threshold
+    uint16_t    antennaPorts; ///< antenna ports
+    uint16_t    pB; ///< PB
+    uint16_t    pdcchInterferenceImpact; ///< PDC channel interference list
   };
 
   /**
@@ -158,10 +160,10 @@ public:
    */
   struct CellInformationItem
   {
-    uint16_t    sourceCellId;
-    std::vector <UlInterferenceOverloadIndicationItem> ulInterferenceOverloadIndicationList;
-    std::vector <UlHighInterferenceInformationItem> ulHighInterferenceInformationList;
-    RelativeNarrowbandTxBand relativeNarrowbandTxBand;
+    uint16_t    sourceCellId; ///< source cell ID
+    std::vector <UlInterferenceOverloadIndicationItem> ulInterferenceOverloadIndicationList; ///< UL interference overload indication list
+    std::vector <UlHighInterferenceInformationItem> ulHighInterferenceInformationList; ///< UL high interference information list
+    RelativeNarrowbandTxBand relativeNarrowbandTxBand; ///< relative narrow transmit band
   };
 
   /**
@@ -184,8 +186,8 @@ public:
    */
   struct CompositeAvailCapacity
   {
-    uint16_t    cellCapacityClassValue;
-    uint16_t    capacityValue;
+    uint16_t    cellCapacityClassValue; ///< cell capacity class value
+    uint16_t    capacityValue; ///< capacity value
   };
 
   /**
@@ -195,26 +197,27 @@ public:
    */
   struct CellMeasurementResultItem
   {
-    uint16_t        sourceCellId;
+    uint16_t        sourceCellId; ///< source cell id
 
-    LoadIndicator   dlHardwareLoadIndicator;
-    LoadIndicator   ulHardwareLoadIndicator;
+    LoadIndicator   dlHardwareLoadIndicator; ///< DL hardware load indicator
+    LoadIndicator   ulHardwareLoadIndicator; ///< UL hardware load indicator
 
-    LoadIndicator   dlS1TnlLoadIndicator;
-    LoadIndicator   ulS1TnlLoadIndicator;
+    LoadIndicator   dlS1TnlLoadIndicator; ///< DL S1 TNL load indicator
+    LoadIndicator   ulS1TnlLoadIndicator; ///< UL S1 TNL load indicator
 
-    uint16_t        dlGbrPrbUsage;
-    uint16_t        ulGbrPrbUsage;
-    uint16_t        dlNonGbrPrbUsage;
-    uint16_t        ulNonGbrPrbUsage;
-    uint16_t        dlTotalPrbUsage;
-    uint16_t        ulTotalPrbUsage;
+    uint16_t        dlGbrPrbUsage; ///< DL GBR PRB usage
+    uint16_t        ulGbrPrbUsage; ///< UL GBR PRB usage
+    uint16_t        dlNonGbrPrbUsage; ///< DL Non GBR PRB usage
+    uint16_t        ulNonGbrPrbUsage; ///< UL Non GBR PRB usage
+    uint16_t        dlTotalPrbUsage; ///< DL Total PRB usage
+    uint16_t        ulTotalPrbUsage; ///< UL Total PRB usage
 
-    CompositeAvailCapacity  dlCompositeAvailableCapacity;
-    CompositeAvailCapacity  ulCompositeAvailableCapacity;
+    CompositeAvailCapacity  dlCompositeAvailableCapacity; ///< DL composite available capacity
+    CompositeAvailCapacity  ulCompositeAvailableCapacity; ///< UL composite available capacity
   };
 
 
+  /// Cause ID enumeration
   enum IdCause
   {
     HandoverDesirableForRadioReason,
@@ -249,18 +252,18 @@ public:
    */
   struct HandoverRequestParams
   {
-    uint16_t            oldEnbUeX2apId;
-    uint16_t            cause;
-    uint16_t            sourceCellId;
-    uint16_t            targetCellId;
-    uint32_t            mmeUeS1apId;
-    uint64_t            ueAggregateMaxBitRateDownlink;
-    uint64_t            ueAggregateMaxBitRateUplink;
+    uint16_t            oldEnbUeX2apId;  ///< old ENB UE X2 AP ID
+    uint16_t            cause;  ///< cause
+    uint16_t            sourceCellId; ///< source cell ID
+    uint16_t            targetCellId;  ///< target cell ID
+    uint32_t            mmeUeS1apId;  ///< MME UE S1 AP ID
+    uint64_t            ueAggregateMaxBitRateDownlink; ///< UE aggregrate max bit rate downlink
+    uint64_t            ueAggregateMaxBitRateUplink; ///< UE aggregrate max bit rate uplink
     bool                isMc;
-    std::vector <ErabToBeSetupItem> bearers;
+    std::vector <ErabToBeSetupItem> bearers; ///< bearers
     // list of RlcSetupRequest for secondary cell handovers (otherwise empty)
     std::vector <RlcSetupRequest> rlcRequests;
-    Ptr<Packet>         rrcContext;
+    Ptr<Packet>         rrcContext; ///< RRC context
   };
 
   /**
@@ -270,13 +273,13 @@ public:
    */
   struct HandoverRequestAckParams
   {
-    uint16_t            oldEnbUeX2apId;
-    uint16_t            newEnbUeX2apId;
-    uint16_t            sourceCellId;
-    uint16_t            targetCellId;
-    std::vector <ErabAdmittedItem> admittedBearers;
-    std::vector <ErabNotAdmittedItem> notAdmittedBearers;
-    Ptr<Packet>         rrcContext;
+    uint16_t            oldEnbUeX2apId; ///< old ENB UE X2 AP ID
+    uint16_t            newEnbUeX2apId; ///< new ENB UE X2 AP ID
+    uint16_t            sourceCellId; ///< source cell ID
+    uint16_t            targetCellId; ///< target cell ID
+    std::vector <ErabAdmittedItem> admittedBearers; ///< admitted bearers
+    std::vector <ErabNotAdmittedItem> notAdmittedBearers; ///< not admitted bearers
+    Ptr<Packet>         rrcContext; ///< RRC context
   };
 
   /**
@@ -286,11 +289,11 @@ public:
    */
   struct HandoverPreparationFailureParams
   {
-    uint16_t            oldEnbUeX2apId;
-    uint16_t            sourceCellId;
-    uint16_t            targetCellId;
-    uint16_t            cause;
-    uint16_t            criticalityDiagnostics;
+    uint16_t            oldEnbUeX2apId; ///< old ENB UE X2 AP ID
+    uint16_t            sourceCellId; ///< source cell ID
+    uint16_t            targetCellId; ///< target cell ID
+    uint16_t            cause; ///< cause
+    uint16_t            criticalityDiagnostics; ///< criticality diagnostics
   };
 
   /**
@@ -300,11 +303,11 @@ public:
    */
   struct SnStatusTransferParams
   {
-    uint16_t            oldEnbUeX2apId;
-    uint16_t            newEnbUeX2apId;
-    uint16_t            sourceCellId;
-    uint16_t            targetCellId;
-    std::vector <ErabsSubjectToStatusTransferItem> erabsSubjectToStatusTransferList;
+    uint16_t            oldEnbUeX2apId; ///< old ENB UE X2 AP ID
+    uint16_t            newEnbUeX2apId; ///< new ENB UE X2 AP ID
+    uint16_t            sourceCellId; ///< source cell ID
+    uint16_t            targetCellId; ///< target cell ID
+    std::vector <ErabsSubjectToStatusTransferItem> erabsSubjectToStatusTransferList; ///< ERABs subject to status transfer list
   };
 
   /**
@@ -314,10 +317,10 @@ public:
    */
   struct UeContextReleaseParams
   {
-    uint16_t            oldEnbUeX2apId;
-    uint16_t            newEnbUeX2apId;
-    uint16_t            sourceCellId;
-    uint16_t            targetCellId;
+    uint16_t            oldEnbUeX2apId; ///< old ENB UE X2 AP ID
+    uint16_t            newEnbUeX2apId; ///< new ENB UE X2 AP ID
+    uint16_t            sourceCellId; ///< source cell ID
+    uint16_t            targetCellId; ///< target cell ID
   };
 
   /**
@@ -327,8 +330,8 @@ public:
    */
   struct LoadInformationParams
   {
-    uint16_t            targetCellId;
-    std::vector <CellInformationItem> cellInformationList;
+    uint16_t            targetCellId; ///< target cell ID
+    std::vector <CellInformationItem> cellInformationList; ///< cell information list
   };
 
   /**
@@ -338,10 +341,10 @@ public:
    */
   struct ResourceStatusUpdateParams
   {
-    uint16_t            targetCellId;
-    uint16_t            enb1MeasurementId;
-    uint16_t            enb2MeasurementId;
-    std::vector <CellMeasurementResultItem> cellMeasurementResultList;
+    uint16_t            targetCellId; ///< target cell ID
+    uint16_t            enb1MeasurementId; ///< ENB1 measurement ID
+    uint16_t            enb2MeasurementId; ///< ENB2 measurement ID
+    std::vector <CellMeasurementResultItem> cellMeasurementResultList; ///< cell measurement result list
   };
 
   /**
@@ -352,10 +355,10 @@ public:
    */
   struct UeDataParams
   {
-    uint16_t    sourceCellId;
-    uint16_t    targetCellId;
-    uint32_t    gtpTeid;
-    Ptr<Packet> ueData;
+    uint16_t    sourceCellId; ///< source cell ID
+    uint16_t    targetCellId; ///< target cell ID
+    uint32_t    gtpTeid; ///< GTP TEID
+    Ptr<Packet> ueData; ///< UE data
   };
 
   struct SecondaryHandoverParams
@@ -377,7 +380,7 @@ public:
   {
     uint16_t    sourceCellId;
     uint16_t    targetCellId;
-    std::map<uint64_t, double> ueImsiSinrMap; 
+    std::map<uint64_t, double> ueImsiSinrMap;
   };
 
   struct HandoverFailedParams
@@ -394,7 +397,7 @@ public:
     uint16_t mmWaveCellId;
     uint8_t drbid;
     bool useMmWaveConnection;
-  }; 
+  };
 
 };
 
@@ -532,28 +535,60 @@ class EpcX2SapUser : public EpcX2Sap
 public:
   virtual ~EpcX2SapUser ();
 
-  /**
+  /*
    * Service primitives
    */
 
+  /**
+   * Receive handover request function
+   * \param params the handover request parameters
+   */
   virtual void RecvHandoverRequest (HandoverRequestParams params) = 0;
 
+  /**
+   * Receive handover request ack function
+   * \param params the handover request ack parameters
+   */
   virtual void RecvHandoverRequestAck (HandoverRequestAckParams params) = 0;
 
+  /**
+   * Receive handover preparation failure function
+   * \param params the handover preparation failure parameters
+   */
   virtual void RecvHandoverPreparationFailure (HandoverPreparationFailureParams params) = 0;
 
+  /**
+   * Receive SN status transfer function
+   * \param params the SN status transfer parameters
+   */
   virtual void RecvSnStatusTransfer (SnStatusTransferParams params) = 0;
 
+  /**
+   * Receive UE context release function
+   * \param params the receive UE context release parameters
+   */
   virtual void RecvUeContextRelease (UeContextReleaseParams params) = 0;
 
+  /**
+   * Receive load information function
+   * \param params the load information parameters
+   */
   virtual void RecvLoadInformation (LoadInformationParams params) = 0;
-  
+
+  /**
+   * Receive resource status update function
+   * \param params the resource status update parameters
+   */
   virtual void RecvResourceStatusUpdate (ResourceStatusUpdateParams params) = 0;
 
   virtual void RecvRlcSetupRequest (RlcSetupRequest params) = 0;
 
   virtual void RecvRlcSetupCompleted (UeDataParams params) = 0;
 
+  /**
+   * Receive UE data function
+   * \param params UE data parameters
+   */
   virtual void RecvUeData (UeDataParams params) = 0;
 
   virtual void RecvUeSinrUpdate(UeImsiSinrParams params) = 0;
@@ -570,30 +605,70 @@ public:
 
 ///////////////////////////////////////
 
+/**
+ * EpcX2SpecificEpcX2SapProvider
+ */
 template <class C>
 class EpcX2SpecificEpcX2SapProvider : public EpcX2SapProvider
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param x2 the owner class
+   */
   EpcX2SpecificEpcX2SapProvider (C* x2);
 
   //
   // Interface implemented from EpcX2SapProvider
   //
 
+  /**
+   * Send handover request function
+   * \param params the hadnover request parameters
+   */
   virtual void SendHandoverRequest (HandoverRequestParams params);
 
+  /**
+   * Send handover request ack function
+   * \param params the handover request ack pararameters
+   */
   virtual void SendHandoverRequestAck (HandoverRequestAckParams params);
 
+  /**
+   * Send handover preparation failure function
+   * \param params the handover preparation failure parameters
+   */
   virtual void SendHandoverPreparationFailure (HandoverPreparationFailureParams params);
 
+  /**
+   * Send SN status transfer function
+   * \param params the SN status transfer parameters
+   */
   virtual void SendSnStatusTransfer (SnStatusTransferParams params);
 
+  /**
+   * Send UE context release function
+   * \param params the UE context release parameters
+   */
   virtual void SendUeContextRelease (UeContextReleaseParams params);
 
+  /**
+   * Send load information function
+   * \param params the load information parameters
+   */
   virtual void SendLoadInformation (LoadInformationParams params);
 
+  /**
+   * Send resource status update function
+   * \param params the resource status update parameters
+   */
   virtual void SendResourceStatusUpdate (ResourceStatusUpdateParams params);
 
+  /**
+   * Send UE data function
+   * \param params the UE data parameters
+   */
   virtual void SendUeData (UeDataParams params);
 
   virtual void SetEpcX2PdcpUser (uint32_t teid, EpcX2PdcpUser * s);
@@ -617,14 +692,14 @@ public:
   virtual void SendSecondaryCellHandoverCompleted (SecondaryHandoverCompletedParams params);
 
   virtual void AddTeidToBeForwarded (uint32_t gtpTeid, uint16_t targetCellId);
-  
+
   virtual void RemoveTeidToBeForwarded (uint32_t gtpTeid);
 
   virtual void ForwardRlcPdu (UeDataParams params);
 
 private:
   EpcX2SpecificEpcX2SapProvider ();
-  C* m_x2;
+  C* m_x2; ///< owner class
 };
 
 template <class C>
@@ -694,6 +769,9 @@ EpcX2SpecificEpcX2SapProvider<C>::SendUeData (UeDataParams params)
   m_x2->DoSendUeData (params);
 }
 
+/**
+ * EpcX2SpecificEpcX2SapUser
+ */
 template <class C>
 void
 EpcX2SpecificEpcX2SapProvider<C>::SetEpcX2RlcUser (uint32_t teid, EpcX2RlcUser * s)
@@ -791,30 +869,67 @@ template <class C>
 class EpcX2SpecificEpcX2SapUser : public EpcX2SapUser
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param rrc RRC
+   */
   EpcX2SpecificEpcX2SapUser (C* rrc);
 
   //
   // Interface implemented from EpcX2SapUser
   //
 
+  /**
+   * Receive handover request function
+   * \param params the receive handover request parameters
+   */
   virtual void RecvHandoverRequest (HandoverRequestParams params);
 
+  /**
+   * Receive handover request ack function
+   * \param params the receive handover request ack parameters
+   */
   virtual void RecvHandoverRequestAck (HandoverRequestAckParams params);
 
+  /**
+   * Receive handover preparation failure function
+   * \param params the receive handover preparation failure parameters
+   */
   virtual void RecvHandoverPreparationFailure (HandoverPreparationFailureParams params);
 
+  /**
+   * Receive SN status transfer function
+   * \param params the SN status transfer parameters
+   */
   virtual void RecvSnStatusTransfer (SnStatusTransferParams params);
 
+  /**
+   * Receive UE context release function
+   * \param params the UE context release parameters
+   */
   virtual void RecvUeContextRelease (UeContextReleaseParams params);
 
+  /**
+   * Receive load information function
+   * \param params the load information parameters
+   */
   virtual void RecvLoadInformation (LoadInformationParams params);
 
+  /**
+   * Receive resource status update function
+   * \param params the receive resource status update
+   */
   virtual void RecvResourceStatusUpdate (ResourceStatusUpdateParams params);
 
   virtual void RecvRlcSetupRequest (RlcSetupRequest params);
 
   virtual void RecvRlcSetupCompleted (UeDataParams params);
 
+  /**
+   * Receive UE data function
+   * \param params the UE data parameters
+   */
   virtual void RecvUeData (UeDataParams params);
 
   virtual void RecvUeSinrUpdate (UeImsiSinrParams params);
@@ -830,7 +945,7 @@ public:
 
 private:
   EpcX2SpecificEpcX2SapUser ();
-  C* m_rrc;
+  C* m_rrc; ///< owner class
 };
 
 template <class C>

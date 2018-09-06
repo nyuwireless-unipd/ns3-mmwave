@@ -47,22 +47,16 @@ DsssParameterSet::SetCurrentChannel (uint8_t currentChannel)
 }
 
 uint8_t
-DsssParameterSet::GetCurrentChannel (void) const
-{
-  return m_currentChannel;
-}
-
-uint8_t
 DsssParameterSet::GetInformationFieldSize () const
 {
-  NS_ASSERT (m_dsssSupported > 0);
+  NS_ASSERT (m_dsssSupported);
   return 1;
 }
 
 Buffer::Iterator
 DsssParameterSet::Serialize (Buffer::Iterator i) const
 {
-  if (m_dsssSupported < 1)
+  if (!m_dsssSupported)
     {
       return i;
     }
@@ -72,7 +66,7 @@ DsssParameterSet::Serialize (Buffer::Iterator i) const
 uint16_t
 DsssParameterSet::GetSerializedSize () const
 {
-  if (m_dsssSupported < 1)
+  if (!m_dsssSupported)
     {
       return 0;
     }
@@ -82,7 +76,7 @@ DsssParameterSet::GetSerializedSize () const
 void
 DsssParameterSet::SerializeInformationField (Buffer::Iterator start) const
 {
-  if (m_dsssSupported == 1)
+  if (m_dsssSupported)
     {
       start.WriteU8 (m_currentChannel);
     }
@@ -94,35 +88,6 @@ DsssParameterSet::DeserializeInformationField (Buffer::Iterator start, uint8_t l
   Buffer::Iterator i = start;
   m_currentChannel = i.ReadU8 ();
   return length;
-}
-
-/// DsssParameterSet
-ATTRIBUTE_HELPER_CPP (DsssParameterSet);
-
-/**
- * output operator
- *
- * \param os output stream
- * \param DsssParameterSet
- *
- * \return output stream
- */
-std::ostream & operator << (std::ostream &os, const DsssParameterSet &DsssParameterSet)
-{
-  return os;
-}
-
-/**
- * input operator
- *
- * \param is input stream
- * \param DsssParameterSet
- *
- * \return output stream
- */
-std::istream &operator >> (std::istream &is, DsssParameterSet &DsssParameterSet)
-{
-  return is;
 }
 
 } //namespace ns3

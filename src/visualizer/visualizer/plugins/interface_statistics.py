@@ -1,4 +1,4 @@
-import gtk
+from gi.repository import Gtk
 import ns.core
 import ns.network
 from visualizer.base import InformationWindow
@@ -18,7 +18,7 @@ class StatisticsCollector(object):
 
     ## NetDevStats class
     class NetDevStats(object):
-        ## @var __slots__ 
+        ## @var __slots__
         #  class members
         __slots__ = ['rxPackets', 'rxBytes', 'txPackets', 'txBytes',
                      'rxPacketRate', 'rxBitRate', 'txPacketRate', 'txBitRate']
@@ -61,7 +61,7 @@ class StatisticsCollector(object):
             raw_stats_list = self.node_statistics[nodeId]
         except KeyError:
             return []
-        
+
         if len(raw_stats_list) < NODE_STATISTICS_MEMORY:
             return []
         assert len(raw_stats_list) == NODE_STATISTICS_MEMORY
@@ -84,7 +84,7 @@ class StatisticsCollector(object):
             outStat.txBytes = stats.transmittedBytes
             outStat.rxPackets = stats.receivedPackets
             outStat.rxBytes = stats.receivedBytes
-            
+
             outStat.txPacketRate = (stats.transmittedPackets - tx_packets1[iface])/k
             outStat.rxPacketRate = (stats.receivedPackets - rx_packets1[iface])/k
             outStat.txBitRate = (stats.transmittedBytes - tx_bytes1[iface])*8/k
@@ -131,26 +131,26 @@ class ShowInterfaceStatistics(InformationWindow):
         @param statistics_collector statistics collector class
         """
         InformationWindow.__init__(self)
-        self.win = gtk.Dialog(parent=visualizer.window,
-                              flags=gtk.DIALOG_DESTROY_WITH_PARENT|gtk.DIALOG_NO_SEPARATOR,
-                              buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_CLOSE))
+        self.win = Gtk.Dialog(parent=visualizer.window,
+                              flags=Gtk.DialogFlags.DESTROY_WITH_PARENT,
+                              buttons=(Gtk.STOCK_CLOSE, Gtk.ResponseType.CLOSE))
         self.win.connect("response", self._response_cb)
-        self.win.set_title("Statistics for node %i" % node_index) 
+        self.win.set_title("Statistics for node %i" % node_index)
         self.visualizer = visualizer
         self.statistics_collector = statistics_collector
         self.node_index = node_index
         self.viz_node = visualizer.get_node(node_index)
 
-        self.table_model = gtk.ListStore(*([str]*13))
+        self.table_model = Gtk.ListStore(*([str]*13))
 
-        treeview = gtk.TreeView(self.table_model)
+        treeview = Gtk.TreeView(self.table_model)
         treeview.show()
         self.win.vbox.add(treeview)
-        
+
         def add_column(descr, colid):
-            column = gtk.TreeViewColumn(descr, gtk.CellRendererText(), text=colid)
+            column = Gtk.TreeViewColumn(descr, Gtk.CellRendererText(), text=colid)
             treeview.append_column(column)
-            
+
         add_column("Interface", self.COLUMN_INTERFACE)
 
         add_column("Tx Packets", self.COLUMN_TX_PACKETS)
@@ -176,7 +176,7 @@ class ShowInterfaceStatistics(InformationWindow):
         """
         self.win.destroy()
         self.visualizer.remove_information_window(self)
-    
+
     def update(self):
         """!
         Update function.
@@ -199,7 +199,7 @@ class ShowInterfaceStatistics(InformationWindow):
                                  self.COLUMN_TX_BYTES, str(stats.txBytes),
                                  self.COLUMN_TX_PACKET_RATE, str(stats.txPacketRate),
                                  self.COLUMN_TX_BIT_RATE, str(stats.txBitRate),
-                                 
+
                                  self.COLUMN_RX_PACKETS, str(stats.rxPackets),
                                  self.COLUMN_RX_BYTES, str(stats.rxBytes),
                                  self.COLUMN_RX_PACKET_RATE, str(stats.rxPacketRate),
@@ -208,8 +208,8 @@ class ShowInterfaceStatistics(InformationWindow):
 
 
 def populate_node_menu(viz, node, menu, statistics_collector):
-    
-    menu_item = gtk.MenuItem("Show Interface Statistics")
+
+    menu_item = Gtk.MenuItem("Show Interface Statistics")
     menu_item.show()
 
     def _show_it(dummy_menu_item):

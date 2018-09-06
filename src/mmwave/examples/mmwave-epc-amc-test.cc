@@ -42,6 +42,7 @@
 #include "ns3/mmwave-point-to-point-epc-helper.h"
 
 using namespace ns3;
+using namespace mmwave;
 
 double updateInterval = 100.0;  // in ms
 double increment = 5.0; // increment by x dB
@@ -146,7 +147,8 @@ main (int argc, char *argv[])
   Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
 
   mmwHelper->Initialize();
-  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel ()->GetObject<MmWavePropagationLossModel> ();
+  // get the pathloss model for the default CC
+  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel (0)->GetObject<MmWavePropagationLossModel> ();
   Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
   mmwHelper->SetEpcHelper (epcHelper);
 

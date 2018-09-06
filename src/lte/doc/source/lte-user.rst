@@ -1,4 +1,4 @@
-.. include:: replace.txt
+﻿.. include:: replace.txt
 
 
 ++++++++++++++++++
@@ -452,7 +452,7 @@ It has to be noted that the ns-3 LTE module is able to work with any fading trac
 Fading Traces Usage
 *******************
 
-When using a fading trace, it is of paramount importance to specify correctly the trace parameters in the simulation, so that the fading model can load and use it correcly.
+When using a fading trace, it is of paramount importance to specify correctly the trace parameters in the simulation, so that the fading model can load and use it correctly.
 The parameters to be configured are:
 
  * ``TraceFilename`` : the name of the trace to be loaded (absolute path, or relative path w.r.t. the path from where the simulation program is executed);
@@ -755,7 +755,10 @@ location of UEs, eNBs and buildings on top of the REM::
 AMC Model and CQI Calculation
 -----------------------------
 
-The simulator provides two possible schemes for what concerns the selection of the MCSs and correspondly the generation of the CQIs. The first one is based on the GSoC module [Piro2011]_ and works per RB basis. This model can be activated with the ns3 attribute system, as presented in the following::
+The simulator provides two possible schemes for what concerns the selection of the MCSs and 
+correspondingly the generation of the CQIs. The first one is based on the GSoC module [Piro2011]_ 
+and works per RB basis. This model can be activated with the ns3 attribute system, as presented in 
+the following::
 
   Config::SetDefault ("ns3::LteAmc::AmcModel", EnumValue (LteAmc::PiroEW2010));
 
@@ -776,9 +779,9 @@ Evolved Packet Core (EPC)
 
 We now explain how to write a simulation program that allows to
 simulate the EPC in addition to the LTE radio access network. The use
-of EPC allows to use IPv4 networking with LTE devices. In other words,
+of EPC allows to use IPv4 and IPv6 networking with LTE devices. In other words,
 you will be able to use the regular ns-3 applications and sockets over
-IPv4 over LTE, and also to connect an LTE network to any other IPv4
+IPv4 and IPv6 over LTE, and also to connect an LTE network to any other IPv4 and IPv6
 network you might have in your simulation.
 
 First of all, in addition to ``LteHelper`` that we already introduced
@@ -799,7 +802,7 @@ Then, you need to tell the LTE helper that the EPC will be used::
   lteHelper->SetEpcHelper (epcHelper);
 
 the above step is necessary so that the LTE helper will trigger the
-appropriate EPC configuration in correspondance with some important
+appropriate EPC configuration in correspondence with some important
 configuration, such as when a new eNB or UE is added to the
 simulation, or an EPS bearer is created. The EPC helper will
 automatically take care of the necessary setup, such as S1 link
@@ -817,9 +820,9 @@ It is to be noted that the ``EpcHelper`` will also automatically
 create the PGW node and configure it so that it can properly handle
 traffic from/to the LTE radio access network.  Still,
 you need to add some explicit code to connect the PGW to other
-IPv4 networks (e.g., the internet). Here is a very simple example about
-how to connect a single remote host to the PGW via a point-to-point
-link::
+IPv4/IPv6 networks (e.g., the internet, another EPC). Here is a very
+simple example about how to connect a single remote host (IPv4 type)
+to the PGW via a point-to-point link::
 
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
 
@@ -841,16 +844,11 @@ link::
   Ipv4InterfaceContainer internetIpIfaces = ipv4h.Assign (internetDevices);
   // interface 0 is localhost, 1 is the p2p device
   Ipv4Address remoteHostAddr = internetIpIfaces.GetAddress (1);
-  
 
-It's important to specify routes so that the remote host can reach LTE
-UEs. One way of doing this is by exploiting the fact that the
-``PointToPointEpcHelper`` will by default assign to LTE UEs an IP address in the
-7.0.0.0 network. With this in mind, it suffices to do::
 
   Ipv4StaticRoutingHelper ipv4RoutingHelper;
   Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
-  remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
+  remoteHostStaticRouting->AddNetworkRouteTo (epcHelper->GetEpcIpv4NetworkAddress (), Ipv4Mask ("255.255.0.0"), 1);
 
 Now, you should go on and create LTE eNBs and UEs as explained in the
 previous sections. You can of course configure other LTE aspects such
@@ -1043,7 +1041,7 @@ It is typically invoked before the simulation begins::
 
 ``LteHelper::InstallEnbDevice`` and ``LteHelper::InstallUeDevice`` functions
 must have been called before attaching. In an EPC-enabled simulation, it is also
-required to have IPv4 properly pre-installed in the UE.
+required to have IPv4/IPv6 properly pre-installed in the UE.
 
 This method is very simple, but requires you to know exactly which UE belongs to
 to which eNodeB before the simulation begins. This can be difficult when the UE
@@ -1942,7 +1940,7 @@ compare the effect of each built-in handover algorithm of the LTE module.
 
 The campaign will use the ``lena-dual-stripe`` example program. First, we have
 to modify the example program to produce the output that we need. In this
-occassion, we want to produce the number of handovers, user average throughput,
+occasion, we want to produce the number of handovers, user average throughput,
 and average SINR.
 
 The number of handovers can be obtained by counting the number of times the
@@ -2234,8 +2232,8 @@ located UEs. FR algorithm is installed in eNBs and each eNB has different FrCell
 what means each eNB uses different FR configuration. User can run ``lena-frequency-reuse`` 
 with 6 different FR algorithms: NoOp, Hard FR, Strict FR, Soft FR, Soft FFR and Enhanced FFR.
 To run scenario with Distributed FFR algorithm, user should use ``lena-distributed-ffr``. 
-These two examples are very similar, but they were splitted because Distributed FFR requires 
-EPC to be used, and other algorihtms do not. 
+These two examples are very similar, but they were split because Distributed FFR requires 
+EPC to be used, and other algorithms do not. 
 
 To run ``lena-frequency-reuse`` with different Frequency Reuse algorithms, user needs to specify 
 FR algorithm by overriding the default attribute ``ns3::LteHelper::FfrAlgorithm``.
@@ -2342,27 +2340,95 @@ below. These RB were selected because each one is used by different FR cell type
    REM for RB 20 obtained from ``lena-dual-stripe`` simulation with Hard FR algorithm enabled
 
 
+Carrier aggregation examples
+------------------------------------------
+The carrier aggregation feature is not enabled by default. The user can enable it by setting the boolean attribute 
+``ns3::LteHelper::UseCa`` to true. The number of component carriers to be used in carrier aggregation can 
+be configured by setting the attribute ``ns3::LteHelper::NumberOfComponentCarriers``. Currently the 
+maximum number is 5. Additionally, the component carrier manager needs to be configured. By default 
+the ``NoOpComponentCarrierManager`` is selected, which means that only the primary carrier is enabled. The Component 
+carrier manager (CCM) implementation that uses all the available carriers is ``RrComponentCarrierManager``.
+The CCM can be configured by using the attribute ``LteHelper::EnbComponentCarrierManager``.
+
+An example configuration is presented below::
+
+  Config::SetDefault ("ns3::LteHelper::UseCa", BooleanValue (useCa));
+  Config::SetDefault ("ns3::LteHelper::NumberOfComponentCarriers", UintegerValue (2));
+  Config::SetDefault ("ns3::LteHelper::EnbComponentCarrierManager", StringValue ("ns3::RrComponentCarrierManager"));
+
+As an example, the user can take a look and run the ``lena-simple`` and ``lena-simple-epc`` programs and enable LTE traces 
+to check the performance. A new column is added to PHY and MAC traces to indicate the component carrier.
+
+The test suite ``lte-carrier-aggregation`` is also a test program that can be used as an example as it can be run in a mode to write results 
+to output files by setting the ``s_writeResults`` boolean static variable to true. The test can be run by using a `test-runner`:
+
+   ./waf --run 'test-runner --suite=lte-carrier-aggregation'
+
+To plot the test results, a file has to be created in the root folder of the ns-3 repository, and added to it with the following content :
+
+    set terminal png
+    set xlabel "Number of users"
+    set ylabel "Throughput per UE [Mbps]"
+    set key top right
+
+    downlink_results="carrier_aggregation_results_dl.txt"
+    uplink_results="carrier_aggregation_results_ul.txt"
+
+    set output "ca-test-example-dl.png"
+    set title "Downlink performance"
+
+    plot downlink_results using 1:($2==1 ? $3/1000000 : 1/0) w lp t 'NO SDL', \
+        downlink_results using 1:($2==2 ? $3/1000000 : 1/0) w lp t 'RR SDL 1', \
+        downlink_results using 1:($2==3 ? $3/1000000 : 1/0) w lp t 'RR SDL 2'
+
+    set output "ca-test-example-ul.png"
+    set title "Uplink performance"
+
+    plot uplink_results using 1:($2==1 ? $3/1000000 : 1/0) w lp t 'NO SDL', \
+        uplink_results using 1:($2==2 ? $3/1000000 : 1/0) w lp t 'RR SDL 1', \
+        uplink_results using 1:($2==3 ? $3/1000000 : 1/0) w lp t 'RR SDL 2'
+
+``gnuplot`` can be run by providing the file name, so that in the ns-3 root directory 
+figures are generated. An example to run this test suite is shown in figures: 
+`fig-ca-test-example-ul` and `fig-ca-test-example-dl`.
+
+.. _fig-ca-test-example-ul:
+
+.. figure:: figures/ca-test-example-ul.png
+   :scale: 60 %
+   :align: center
+   
+   Example of CA test performance in the uplink
+
+
+.. _fig-ca-test-example-dl:
+
+.. figure:: figures/ca-test-example-dl.png
+   :scale: 60 %
+   :align: center
+   
+   Example of CA test performance in the downlink 
+
 
 
 Troubleshooting and debugging tips
-----------------------------------
+---------------------------------------------------
 
-Many users post on the ns-3-users mailing list asking, for example,
-why they don't get any traffic in their simulation, or maybe only
-uplink but no downlink traffic, etc. In most of the cases, it's a bug
-in the user simulation program. Here are some tips to debug the
-program and find out the cause of the problem.
+Many users post on the ns-3-users mailing list asking, for example, 
+why they do not get any traffic in their simulation, or maybe only 
+uplink but no downlink traffic is generated, etc. In most of the cases, 
+this is a bug in the user simulation program. Here the reader can find some 
+tips to debug the program and find out the cause of the problem.
 
-The general approach is to selectively and incrementally enable the
-logging of relevant LTE module components, veryfing upon each
-activation that the output is as expected. In detail:
+The general approach is to selectively and incrementally enable the logging 
+of relevant LTE module components, verifying upon each activation that the 
+output is as expected. In detail:
 
- * first check the control plane, in particular the RRC connection
-   establishment procedure, by enabling the log components LteUeRrc
-   and LteEnbRrc 
+ * first check the control plane, in particular the RRC connection 
+   establishment procedure, by enabling the log components LteUeRrc and LteEnbRrc 
 
  * then check packet transmissions on the data plane, starting by
-   enabling the log componbents LteUeNetDevice and the
+   enabling the log components LteUeNetDevice and the
    EpcSgwPgwApplication, then EpcEnbApplication, then moving down the
    LTE radio stack (PDCP, RLC, MAC, and finally PHY). All this until
    you find where packets stop being processed / forwarded. 

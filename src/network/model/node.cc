@@ -18,6 +18,7 @@
  * Authors: George F. Riley<riley@ece.gatech.edu>
  *          Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+ 
 #include "node.h"
 #include "node-list.h"
 #include "net-device.h"
@@ -30,7 +31,6 @@
 #include "ns3/assert.h"
 #include "ns3/global-value.h"
 #include "ns3/boolean.h"
-#include "ns3/simulator.h"
 
 namespace ns3 {
 
@@ -304,7 +304,7 @@ Node::ReceiveFromDevice (Ptr<NetDevice> device, Ptr<const Packet> packet, uint16
   NS_LOG_FUNCTION (this << device << packet << protocol << &from << &to << packetType << promiscuous);
   NS_ASSERT_MSG (Simulator::GetContext () == GetId (), "Received packet with erroneous context ; " <<
                  "make sure the channels in use are correctly updating events context " <<
-                 "when transfering events from one node to another.");
+                 "when transferring events from one node to another.");
   NS_LOG_DEBUG ("Node " << GetId () << " ReceiveFromDevice:  dev "
                         << device->GetIfIndex () << " (type=" << device->GetInstanceTypeId ().GetName ()
                         << ") Packet UID " << packet->GetUid ());

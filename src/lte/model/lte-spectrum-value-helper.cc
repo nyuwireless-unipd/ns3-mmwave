@@ -56,15 +56,15 @@ NS_LOG_COMPONENT_DEFINE ("LteSpectrumValueHelper");
  */
 static const struct EutraChannelNumbers
 {
-  uint8_t band;
-  double fDlLow;
-  uint16_t nOffsDl; 
-  uint16_t rangeNdl1;
-  uint16_t rangeNdl2;
-  double fUlLow;
-  uint16_t nOffsUl; 
-  uint16_t rangeNul1;
-  uint16_t rangeNul2;
+  uint8_t band; ///< band
+  double fDlLow; ///<  DL low
+  uint32_t nOffsDl; ///< number offset DL
+  uint32_t rangeNdl1; ///< range DL 1
+  uint32_t rangeNdl2; ///< range DL 2
+  double fUlLow; ///< UL low
+  uint32_t nOffsUl;  ///< number offset UL
+  uint32_t rangeNul1; ///< range UL 1
+  uint32_t rangeNul2; ///< range UL 2
 } g_eutraChannelNumbers[] = {
   { 1, 2110, 0, 0, 599, 1920, 18000, 18000, 18599},
   { 2, 1930, 600, 600, 1199, 1850, 18600, 18600, 19199},
@@ -93,12 +93,13 @@ static const struct EutraChannelNumbers
   { 38, 2570, 37750, 37750, 38249, 2570, 37750, 37750, 38249},
   { 39, 1880, 38250, 38250, 38649, 1880, 38250, 38250, 38649},
   { 40, 2300, 38650, 38650, 39649, 2300, 38650, 38650, 39649}
-};
+}; ///< eutra channel numbers
 
+/// number of EUTRA bands
 #define NUM_EUTRA_BANDS (sizeof (g_eutraChannelNumbers) / sizeof (EutraChannelNumbers))
 
 double 
-LteSpectrumValueHelper::GetCarrierFrequency (uint16_t earfcn)
+LteSpectrumValueHelper::GetCarrierFrequency (uint32_t earfcn)
 {
   NS_LOG_FUNCTION (earfcn);
   if (earfcn < 7000)
@@ -113,38 +114,62 @@ LteSpectrumValueHelper::GetCarrierFrequency (uint16_t earfcn)
     }
 }
 
-double 
-LteSpectrumValueHelper::GetDownlinkCarrierFrequency (uint16_t nDl)
+uint16_t
+LteSpectrumValueHelper::GetDownlinkCarrierBand (uint32_t nDl)
 {
   NS_LOG_FUNCTION (nDl);
   for (uint16_t i = 0; i < NUM_EUTRA_BANDS; ++i)
     {
-      if ((g_eutraChannelNumbers[i].rangeNdl1 <= nDl)
-          && (g_eutraChannelNumbers[i].rangeNdl2 >= nDl))
+      if (g_eutraChannelNumbers[i].rangeNdl1 <= nDl &&
+          g_eutraChannelNumbers[i].rangeNdl2 >= nDl)
         {
           NS_LOG_LOGIC ("entry " << i << " fDlLow=" << g_eutraChannelNumbers[i].fDlLow);
-          return 1.0e6 * (g_eutraChannelNumbers[i].fDlLow + 0.1 * (nDl - g_eutraChannelNumbers[i].nOffsDl));
+          return i;
         }
     }
   NS_LOG_ERROR ("invalid EARFCN " << nDl);
-  return 0.0;
+  return NUM_EUTRA_BANDS;
 }
 
-double 
-LteSpectrumValueHelper::GetUplinkCarrierFrequency (uint16_t nUl)
+uint16_t
+LteSpectrumValueHelper::GetUplinkCarrierBand (uint32_t nUl)
 {
   NS_LOG_FUNCTION (nUl);
   for (uint16_t i = 0; i < NUM_EUTRA_BANDS; ++i)
     {
-      if ((g_eutraChannelNumbers[i].rangeNul1 <= nUl)
-          && (g_eutraChannelNumbers[i].rangeNul2 >= nUl))
+      if (g_eutraChannelNumbers[i].rangeNul1 <= nUl &&
+          g_eutraChannelNumbers[i].rangeNul2 >= nUl)
         {
           NS_LOG_LOGIC ("entry " << i << " fUlLow=" << g_eutraChannelNumbers[i].fUlLow);
-          return 1.0e6 * (g_eutraChannelNumbers[i].fUlLow + 0.1 * (nUl - g_eutraChannelNumbers[i].nOffsUl));
+          return i;
         }
     }
   NS_LOG_ERROR ("invalid EARFCN " << nUl);
-  return 0.0;
+  return NUM_EUTRA_BANDS;
+}
+
+double
+LteSpectrumValueHelper::GetDownlinkCarrierFrequency (uint32_t nDl)
+{
+  NS_LOG_FUNCTION (nDl);
+  uint16_t i = GetDownlinkCarrierBand (nDl);
+  if (i == NUM_EUTRA_BANDS)
+    {
+      return 0.0;
+    }
+  return 1.0e6 * (g_eutraChannelNumbers[i].fDlLow + 0.1 * (nDl - g_eutraChannelNumbers[i].nOffsDl));
+}
+
+double
+LteSpectrumValueHelper::GetUplinkCarrierFrequency (uint32_t nUl)
+{
+  NS_LOG_FUNCTION (nUl);
+  uint16_t i = GetUplinkCarrierBand (nUl);
+  if (i == NUM_EUTRA_BANDS)
+    {
+      return 0.0;
+    }
+  return 1.0e6 * (g_eutraChannelNumbers[i].fUlLow + 0.1 * (nUl - g_eutraChannelNumbers[i].nOffsUl));
 }
 
 double 
@@ -173,19 +198,33 @@ LteSpectrumValueHelper::GetChannelBandwidth (uint8_t transmissionBandwidth)
 
 
 
+/// LteSpectrumModelId structure
 struct LteSpectrumModelId
 {
-  LteSpectrumModelId (uint16_t f, uint8_t b);
-  uint16_t earfcn;
-  uint8_t  bandwidth;
+  /**
+   * Constructor
+   *
+   * \param f earfcn
+   * \param b bandwidth
+   */
+  LteSpectrumModelId (uint32_t f, uint8_t b);
+  uint32_t earfcn; ///< EARFCN
+  uint8_t  bandwidth; ///< bandwidth
 };
 
-LteSpectrumModelId::LteSpectrumModelId (uint16_t f, uint8_t b)
+LteSpectrumModelId::LteSpectrumModelId (uint32_t f, uint8_t b)
   : earfcn (f), 
     bandwidth (b)
 {
 }
 
+/**
+ * Constructor
+ *
+ * \param a lhs
+ * \param b rhs
+ * \returns true if earfcn less than of if earfcn equal and bandwidth less than
+ */
 bool
 operator < (const LteSpectrumModelId& a, const LteSpectrumModelId& b)
 {
@@ -193,11 +232,11 @@ operator < (const LteSpectrumModelId& a, const LteSpectrumModelId& b)
 }
  
 
-static std::map<LteSpectrumModelId, Ptr<SpectrumModel> > g_lteSpectrumModelMap;
+static std::map<LteSpectrumModelId, Ptr<SpectrumModel> > g_lteSpectrumModelMap; ///< LTE spectrum model map
 
 
 Ptr<SpectrumModel>
-LteSpectrumValueHelper::GetSpectrumModel (uint16_t earfcn, uint8_t txBandwidthConfiguration)
+LteSpectrumValueHelper::GetSpectrumModel (uint32_t earfcn, uint8_t txBandwidthConfiguration)
 {
   NS_LOG_FUNCTION (earfcn << (uint16_t) txBandwidthConfiguration);
   Ptr<SpectrumModel> ret;
@@ -232,7 +271,7 @@ LteSpectrumValueHelper::GetSpectrumModel (uint16_t earfcn, uint8_t txBandwidthCo
 }
 
 Ptr<SpectrumValue> 
-LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint16_t earfcn, uint8_t txBandwidthConfiguration, double powerTx, std::vector <int> activeRbs)
+LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint32_t earfcn, uint8_t txBandwidthConfiguration, double powerTx, std::vector <int> activeRbs)
 {
   NS_LOG_FUNCTION (earfcn << (uint16_t) txBandwidthConfiguration << powerTx << activeRbs);
 
@@ -256,7 +295,7 @@ LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint16_t earfcn, uint8_t t
 }
 
 Ptr<SpectrumValue>
-LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint16_t earfcn, uint8_t txBandwidthConfiguration, double powerTx, std::map<int, double> powerTxMap, std::vector <int> activeRbs)
+LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint32_t earfcn, uint8_t txBandwidthConfiguration, double powerTx, std::map<int, double> powerTxMap, std::vector <int> activeRbs)
 {
   NS_LOG_FUNCTION (earfcn << (uint16_t) txBandwidthConfiguration << activeRbs);
 
@@ -264,10 +303,8 @@ LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint16_t earfcn, uint8_t t
   Ptr<SpectrumValue> txPsd = Create <SpectrumValue> (model);
 
   // powerTx is expressed in dBm. We must convert it into natural unit.
-  double powerTxW = std::pow (10., (powerTx - 30) / 10);
   double basicPowerTxW = std::pow (10., (powerTx - 30) / 10);
 
-  double txPowerDensity = (powerTxW / (txBandwidthConfiguration * 180000));
 
   for (std::vector <int>::iterator it = activeRbs.begin (); it != activeRbs.end (); it++)
     {
@@ -275,9 +312,11 @@ LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint16_t earfcn, uint8_t t
 
       std::map<int, double>::iterator powerIt = powerTxMap.find (rbId);
 
+      double txPowerDensity;
+
       if (powerIt != powerTxMap.end ())
         {
-          powerTxW = std::pow (10., (powerIt->second - 30) / 10);
+          double powerTxW = std::pow (10., (powerIt->second - 30) / 10);
           txPowerDensity = (powerTxW / (txBandwidthConfiguration * 180000));
         }
       else
@@ -296,7 +335,7 @@ LteSpectrumValueHelper::CreateTxPowerSpectralDensity (uint16_t earfcn, uint8_t t
 
 
 Ptr<SpectrumValue>
-LteSpectrumValueHelper::CreateNoisePowerSpectralDensity (uint16_t earfcn, uint8_t txBandwidthConfiguration, double noiseFigure)
+LteSpectrumValueHelper::CreateNoisePowerSpectralDensity (uint32_t earfcn, uint8_t txBandwidthConfiguration, double noiseFigure)
 {
   NS_LOG_FUNCTION (earfcn << (uint16_t) txBandwidthConfiguration << noiseFigure);
   Ptr<SpectrumModel> model = GetSpectrumModel (earfcn, txBandwidthConfiguration);

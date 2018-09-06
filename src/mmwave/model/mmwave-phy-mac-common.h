@@ -2,31 +2,34 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *								 Integration of Carrier Aggregation
  */
 
 
@@ -46,6 +49,8 @@
 //#include "mmwave-mac-pdu-tag.h"
 
 namespace ns3 {
+
+namespace mmwave {
 
 struct SfnSf
 {
@@ -394,6 +399,7 @@ struct EnbPhyPacketCountParameter
 struct RxPacketTraceParams
 {
 	uint64_t m_cellId;
+	uint8_t m_ccId;
 	uint16_t m_rnti;
 	uint32_t m_frameNum;
 	uint8_t  m_sfNum;
@@ -809,6 +815,18 @@ public:
 		m_maxTbSizeBytes = bytes;
 	}
 
+	void
+	SetCcId (uint8_t ccId)
+	{
+		m_componentCarrierId = ccId;
+	}
+
+	uint8_t
+	GetCcId (void)
+	{
+		return m_componentCarrierId;
+	}
+
 private:
 	uint32_t m_symbolsPerSlot;
 	double   m_symbolPeriod; // in micro seconds
@@ -843,9 +861,12 @@ private:
 	uint32_t m_maxTbSizeBytes;
 
 	std::string m_staticTddPattern;
+
+	uint8_t m_componentCarrierId;
 };
 
 }
 
+}
 
 #endif /* SRC_MMWAVE_MODEL_MMWAVE_PHY_MAC_COMMON_H_ */

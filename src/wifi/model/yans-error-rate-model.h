@@ -22,7 +22,6 @@
 #define YANS_ERROR_RATE_MODEL_H
 
 #include "error-rate-model.h"
-#include "dsss-error-rate-model.h"
 
 namespace ns3 {
 
@@ -40,7 +39,7 @@ namespace ns3 {
  *
  * The 802.11b modulations:
  *    - 1 Mbps mode is based on DBPSK. BER is from equation 5.2-69 from John G. Proakis
- *      Digitial Communications, 2001 edition
+ *      Digital Communications, 2001 edition
  *    - 2 Mbps model is based on DQPSK. Equation 8 from "Tight bounds and accurate
  *      approximations for dqpsk transmission bit error rate", G. Ferrari and G.E. Corazza
  *      ELECTRONICS LETTERS, 40(20):1284-1285, September 2004
@@ -62,7 +61,7 @@ public:
 
   YansErrorRateModel ();
 
-  virtual double GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, double snr, uint32_t nbits) const;
+  virtual double GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, double snr, uint64_t nbits) const;
 
 
 private:
@@ -136,7 +135,7 @@ private:
    *
    * \return double
    */
-  double GetFecBpskBer (double snr, double nbits,
+  double GetFecBpskBer (double snr, uint64_t nbits,
                         uint32_t signalSpread, uint64_t phyRate,
                         uint32_t dFree, uint32_t adFree) const;
   /**
@@ -151,7 +150,7 @@ private:
    *
    * \return double
    */
-  double GetFecQamBer (double snr, uint32_t nbits,
+  double GetFecQamBer (double snr, uint64_t nbits,
                        uint32_t signalSpread,
                        uint64_t phyRate,
                        uint32_t m, uint32_t dfree,

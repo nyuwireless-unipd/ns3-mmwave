@@ -36,6 +36,7 @@
 
 
 using namespace ns3;
+using namespace mmwave;
 
 int 
 main (int argc, char *argv[])

@@ -1,21 +1,21 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- *  
+ *
+ *
  *   Author: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
@@ -29,62 +29,29 @@
 #include <ns3/math.h>
 #include <ns3/simulator.h>
 #include "ns3/double.h"
+#include "ns3/boolean.h"
 
 
 NS_LOG_COMPONENT_DEFINE ("AntennaArrayModel");
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (AntennaArrayModel);
 
-static const double Enb22DegreeBFVectorReal[8][64] = {
-		{1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,},
-		{1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,},
-		{1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,},
-		{1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,},
-		{1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,1.000000,0.817987,0.338204,-0.264694,-0.771236,-0.997028,-0.859874,-0.409703,},
-		{1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,1.000000,-0.173694,-0.939661,0.500120,0.765926,-0.766193,-0.499760,0.939803,},
-		{1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,1.000000,-0.863083,0.489825,0.017564,-0.520144,0.880290,-0.999383,0.844811,},
-		{1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,1.000000,-0.998179,0.992721,-0.983647,0.970990,-0.954796,0.935123,-0.912045,},
-};
-static const double Enb22DegreeBFVectorImag[8][64] = {
-		{-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,-0.000000,-0.060328,0.120437,-0.180106,0.239120,-0.297262,0.354322,-0.410091,},
-		{-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,-0.000000,-0.505062,0.871821,-0.999846,0.854079,-0.474436,-0.035123,0.535065,},
-		{-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,-0.000000,-0.984800,0.342107,0.865956,-0.642929,-0.642611,0.866164,0.341717,},
-		{-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,-0.000000,-0.575237,-0.941073,-0.964332,-0.636549,-0.077045,0.510506,0.912219,},
-		{0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,-0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,-0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,-0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,-0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,-0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,-0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,-0.000000,0.575237,0.941073,0.964332,0.636549,0.077045,-0.510506,-0.912219,},
-		{0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,-0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,-0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,-0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,-0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,-0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,-0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,-0.000000,0.984800,-0.342107,-0.865956,0.642929,0.642611,-0.866164,-0.341717,},
-		{0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,-0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,-0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,-0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,-0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,-0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,-0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,-0.000000,0.505062,-0.871821,0.999846,-0.854079,0.474436,0.035123,-0.535065,},
-		{0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,-0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,-0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,-0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,-0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,-0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,-0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,-0.000000,0.060328,-0.120437,0.180106,-0.239120,0.297262,-0.354322,0.410091,},
-};
-
-static const double Ue45DegreeBFVectorReal[4][16] = {
-		{1.000000,-0.971542,0.887788,-0.753505,1.000000,-0.971542,0.887788,-0.753505,1.000000,-0.971542,0.887788,-0.753505,1.000000,-0.971542,0.887788,-0.753505,},
-		{1.000000,0.360273,-0.740406,-0.893771,1.000000,0.360273,-0.740406,-0.893771,1.000000,0.360273,-0.740406,-0.893771,1.000000,0.360273,-0.740406,-0.893771,},
-		{1.000000,0.360273,-0.740406,-0.893771,1.000000,0.360273,-0.740406,-0.893771,1.000000,0.360273,-0.740406,-0.893771,1.000000,0.360273,-0.740406,-0.893771,},
-		{1.000000,-0.971542,0.887788,-0.753505,1.000000,-0.971542,0.887788,-0.753505,1.000000,-0.971542,0.887788,-0.753505,1.000000,-0.971542,0.887788,-0.753505,},
-};
-static const double Ue45DegreeBFVectorImag[4][16] = {
-		{-0.000000,-0.236867,0.460252,-0.657442,-0.000000,-0.236867,0.460252,-0.657442,-0.000000,-0.236867,0.460252,-0.657442,-0.000000,-0.236867,0.460252,-0.657442,},
-		{-0.000000,-0.932847,-0.672160,0.448524,-0.000000,-0.932847,-0.672160,0.448524,-0.000000,-0.932847,-0.672160,0.448524,-0.000000,-0.932847,-0.672160,0.448524,},
-		{0.000000,0.932847,0.672160,-0.448524,-0.000000,0.932847,0.672160,-0.448524,-0.000000,0.932847,0.672160,-0.448524,-0.000000,0.932847,0.672160,-0.448524,},
-		{0.000000,0.236867,-0.460252,0.657442,-0.000000,0.236867,-0.460252,0.657442,-0.000000,0.236867,-0.460252,0.657442,-0.000000,0.236867,-0.460252,0.657442,},
-};
-
-static const double All90DegreeBFVectorReal[2][4] = {
-		{1.000000,-0.605700,1.000000,-0.605700,},
-		{1.000000,-0.605700,1.000000,-0.605700,},
-};
-static const double All90DegreeBFVectorImag[2][4] = {
-		{-0.000000,-0.795693,-0.000000,-0.795693,},
-		{0.000000,0.795693,-0.000000,0.795693,},
-};
-
-
 AntennaArrayModel::AntennaArrayModel()
-	:m_minAngle (0),m_maxAngle(2*M_PI)
+	// :m_minAngle (0),m_maxAngle(2*M_PI)
 {
 	m_omniTx = false;
+	m_lastUpdateMap.clear();
+	m_lastUpdatePairMap.clear();
+
+	m_hpbw = 0; //HPBW value of each antenna element
+	m_gMax = 0; //directivity value expressed in dBi and valid only for TRP (see table A.1.6-3 in 38.802)
+	m_noPlane = 0;
+	m_isUe = false;
+	m_totNoArrayElements = 0;
 }
 
 AntennaArrayModel::~AntennaArrayModel()
@@ -108,6 +75,11 @@ AntennaArrayModel::GetTypeId ()
 			DoubleValue (0.5),
 			MakeDoubleAccessor (&AntennaArrayModel::m_disV),
 		    MakeDoubleChecker<double> ())
+	.AddAttribute ("IsotropicAntennaElements",
+			"If true, the antenna elements are isotropic. If false, they follow the 3GPP spec on element radiation pattern",
+			BooleanValue (true),
+			MakeBooleanAccessor (&AntennaArrayModel::m_isotropicElement),
+			MakeBooleanChecker ())
 	;
 	return tid;
 }
@@ -150,44 +122,168 @@ AntennaArrayModel::GetGainDb (Angles a)
 void
 AntennaArrayModel::SetBeamformingVectorWithDelay (complexVector_t antennaWeights, Ptr<NetDevice> device)
 {
-	Simulator::Schedule (MilliSeconds(8), &AntennaArrayModel::SetBeamformingVector,this,antennaWeights,device);
+	Simulator::Schedule (MilliSeconds(8), &AntennaArrayModel::SetBeamformingVectorPanel,this,antennaWeights,device);
+}
+
+void
+AntennaArrayModel::SetPlanesNumber (double planesNumber)
+{
+	m_noPlane = planesNumber;
+}
+
+double
+AntennaArrayModel::GetPlanesId (void)
+{
+	return m_currentPanelId;
 }
 
 
 void
-AntennaArrayModel::SetBeamformingVector (complexVector_t antennaWeights, Ptr<NetDevice> device)
+AntennaArrayModel::SetTotNoArrayElements (double arrayElements)
 {
-	m_omniTx = false;
-	if (device != 0)
+	m_totNoArrayElements = arrayElements;
+}
+
+void
+AntennaArrayModel::SetDeviceType (bool isUe)
+{
+	m_isUe = isUe;
+	if (isUe)
 	{
-		std::map< Ptr<NetDevice>, complexVector_t >::iterator iter = m_beamformingVectorMap.find (device);
-		if (iter != m_beamformingVectorMap.end ())
+		m_hpbw = 90; //HPBW value of each antenna element
+		m_gMax = 5; //directivity value expressed in dBi and valid only for TRP (see table A.1.6-3 in 38.802
+		}
+	else
+	{
+		m_hpbw = 65; //HPBW value of each antenna element
+		m_gMax = 8; //directivity value expressed in dBi and valid only for TRP (see table A.1.6-3 in 38.802
+	}
+}
+
+double
+AntennaArrayModel::GetOffset ()
+{
+	NS_LOG_DEBUG("GetOffset " << m_currentPanelId);
+	NS_LOG_DEBUG("Offset " << m_currentPanelId*2*M_PI/m_noPlane);
+	return m_currentPanelId*2*M_PI/m_noPlane;
+}
+
+void
+AntennaArrayModel::SetBeamformingVectorPanelDevices (Ptr<NetDevice> thisDevice, Ptr<NetDevice> otherDevice)
+{
+	NS_LOG_FUNCTION(this << otherDevice << Simulator::Now());
+	m_omniTx = false;
+	complexVector_t antennaWeights;
+	int panelId = 0; // initialize all the variables
+	if (thisDevice != 0 && otherDevice != 0)
+	{
+		Vector aPos = thisDevice->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+		NS_LOG_INFO("aPos: " << aPos);
+		Vector bPos = otherDevice->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+		NS_LOG_INFO("bPos: " << bPos);
+
+		Angles completeAngle (bPos,aPos);
+
+		double posX = bPos.x-aPos.x;
+		double phiAngle = atan((bPos.y-aPos.y)/posX); //horizontal angle only
+
+		if (posX < 0)
+			phiAngle = phiAngle + M_PI;
+		if (phiAngle < 0)
+			phiAngle = phiAngle + 2*M_PI;
+
+		// if (m_isUe)
+		// 	phiAngle = M_PI;
+		// else
+		// 	phiAngle=0; // cast BF vectors fixed to zero [DEBUG PROCEDURE TEST LINE]
+
+		panelId = floor(fmod(phiAngle+M_PI/m_noPlane,2*M_PI)*m_noPlane/(2*M_PI)); // panel id into the interval [0,N-1]
+
+		double hAngleRadian = fmod((phiAngle+(M_PI/m_noPlane)),2*M_PI/m_noPlane) - (M_PI/m_noPlane);
+		double vAngleRadian = completeAngle.theta;
+		double power = 1/sqrt(m_totNoArrayElements);
+		uint8_t antennaNum [2];
+		antennaNum[0] = sqrt(m_totNoArrayElements);
+		antennaNum[1] = sqrt(m_totNoArrayElements);
+		NS_LOG_INFO("hAngleRadian: " << hAngleRadian);
+
+		for(int ind=0; ind<m_totNoArrayElements; ind++)
 		{
-			(*iter).second = antennaWeights;
+			Vector loc = GetAntennaLocation(ind, antennaNum);
+			double phase = -2*M_PI*(sin(vAngleRadian)*cos(hAngleRadian)*loc.x
+								+ sin(vAngleRadian)*sin(hAngleRadian)*loc.y
+								+ cos(vAngleRadian)*loc.z);
+			antennaWeights.push_back(exp(std::complex<double>(0, phase))*power);
+		}
+
+		std::map< Ptr<NetDevice>, std::pair<complexVector_t,int> >::iterator iter = m_beamformingVectorPanelMap.find (otherDevice);
+		if (iter != m_beamformingVectorPanelMap.end ())
+		{
+			(*iter).second = std::make_pair (antennaWeights, panelId);
+			m_lastUpdatePairMap[otherDevice] = Simulator::Now();
 		}
 		else
 		{
-			m_beamformingVectorMap.insert (std::make_pair (device, antennaWeights) );
+			m_beamformingVectorPanelMap.insert (std::make_pair (otherDevice, std::make_pair(antennaWeights, panelId) ));
+			m_lastUpdatePairMap.insert(std::make_pair (otherDevice, Simulator::Now()));
+
+			NS_LOG_INFO("m_lastUpdatePairMap.size " << m_lastUpdatePairMap.size());
 		}
 	}
 	m_beamformingVector = antennaWeights;
+	m_currentPanelId = panelId;
+	m_currentDev = otherDevice;
+	NS_LOG_INFO("panelId: " << panelId);
+	NS_LOG_INFO("otherDevice: " << otherDevice);
+}
+
+// to store dummy info
+void
+AntennaArrayModel::SetBeamformingVectorPanel (complexVector_t antennaWeights, Ptr<NetDevice> device)
+{
+	NS_LOG_FUNCTION(this << device << Simulator::Now());
+	m_omniTx = false;
+	if (device != 0)
+	{
+		auto iter = m_beamformingVectorPanelMap.find (device);
+		if (iter != m_beamformingVectorPanelMap.end ())
+		{
+			(*iter).second = std::make_pair(antennaWeights, 0);
+			m_lastUpdatePairMap[device] = Simulator::Now();
+		}
+		else
+		{
+			m_beamformingVectorPanelMap.insert (std::make_pair (device, std::make_pair(antennaWeights, 0)) );
+			m_lastUpdatePairMap.insert(std::make_pair (device, Simulator::Now()));
+
+			NS_LOG_INFO("m_lastUpdatePairMap.size " << m_lastUpdatePairMap.size());
+		}
+	}
+	// following lines are commented to store dummy info; call ChangeBeamformingVectorPanel (device) to set the antennaWeights
+	// m_beamformingVector = antennaWeights;
+	// m_currentDev = device;
 }
 
 void
-AntennaArrayModel::ChangeBeamformingVector (Ptr<NetDevice> device)
+AntennaArrayModel::ChangeBeamformingVectorPanel (Ptr<NetDevice> device)
 {
+	NS_LOG_FUNCTION(this << device << Simulator::Now());
 	m_omniTx = false;
-	std::map< Ptr<NetDevice>, complexVector_t >::iterator it = m_beamformingVectorMap.find (device);
-	NS_ASSERT_MSG (it != m_beamformingVectorMap.end (), "could not find");
-	m_beamformingVector = it->second;
+	std::map< Ptr<NetDevice>, std::pair<complexVector_t,int> >::iterator it = m_beamformingVectorPanelMap.find (device);
+	NS_ASSERT_MSG (it != m_beamformingVectorPanelMap.end (), "could not find");
+	NS_LOG_DEBUG("ChangeBeamformingVectorPanel towards dev " << device << " prev panel " << m_currentPanelId << " updated to " << it->second.second);
+	m_beamformingVector = it->second.first;
+	m_currentPanelId = it->second.second;
+	m_currentDev = device;
 }
 
 complexVector_t
-AntennaArrayModel::GetBeamformingVector ()
+AntennaArrayModel::GetBeamformingVectorPanel ()
 {
+	NS_LOG_FUNCTION(this << Simulator::Now());
 	if(m_omniTx)
 	{
-		NS_FATAL_ERROR ("omi transmission do not need beamforming vector");
+		NS_FATAL_ERROR ("Omni transmission do not need beamforming vector");
 	}
 	return m_beamformingVector;
 }
@@ -204,15 +300,15 @@ AntennaArrayModel::IsOmniTx ()
 	return m_omniTx;
 }
 
-
 complexVector_t
-AntennaArrayModel::GetBeamformingVector (Ptr<NetDevice> device)
+AntennaArrayModel::GetBeamformingVectorPanel (Ptr<NetDevice> device)
 {
+	NS_LOG_FUNCTION(this << device << Simulator::Now());
 	complexVector_t weights;
-	std::map< Ptr<NetDevice>, complexVector_t >::iterator it = m_beamformingVectorMap.find (device);
-	if (it != m_beamformingVectorMap.end ())
+	std::map< Ptr<NetDevice>, std::pair<complexVector_t,int> >::iterator it = m_beamformingVectorPanelMap.find (device);
+	if (it != m_beamformingVectorPanelMap.end ())
 	{
-		weights = it->second;
+		weights = it->second.first;
 	}
 	else
 	{
@@ -221,165 +317,42 @@ AntennaArrayModel::GetBeamformingVector (Ptr<NetDevice> device)
 	return weights;
 }
 
-void
-AntennaArrayModel::SetToSector (uint32_t sector, uint32_t antennaNum)
+Ptr<NetDevice>
+AntennaArrayModel::GetCurrentDevice()
 {
-	m_omniTx = false;
-	complexVector_t cmplxVector;
-	switch(antennaNum)
-	{
-		case 64:
-		{
-			if(sector == 0 || sector == 1 || sector == 14 || sector == 15)
-			{
-				m_minAngle = -0.5*M_PI;
-				m_maxAngle = 0.5*M_PI;
-			}
-			else if(sector == 2 || sector == 3 || sector == 4 || sector == 5)
-			{
-				m_minAngle = 0;
-				m_maxAngle = M_PI;
-			}
-			else if(sector == 6 || sector == 7 || sector == 8 || sector == 9)
-			{
-				m_minAngle = 0.5*M_PI;
-				m_maxAngle = 1.5*M_PI;
-			}
-
-			else if(sector == 10 || sector == 11 || sector == 12 || sector == 13)
-			{
-				m_minAngle = -1*M_PI;
-				m_maxAngle = 0;
-			}
-			else
-			{
-				NS_FATAL_ERROR ("64 antenna only need 16 sectors");
-
-			}
-
-			if(sector > 7)
-			{
-				sector = 15-sector;
-			}
-			for(unsigned int i = 0; i< antennaNum; i++)
-			{
-				std::complex<double> cmplx (Enb22DegreeBFVectorReal[sector][i],Enb22DegreeBFVectorImag[sector][i]);
-				cmplxVector.push_back(cmplx);
-			}
-			break;
-		}
-		case 16:
-		{
-			if(sector == 0 || sector == 7)
-			{
-				m_minAngle = -0.5*M_PI;
-				m_maxAngle = 0.5*M_PI;
-			}
-			else if(sector == 1 || sector == 2)
-			{
-				m_minAngle = 0;
-				m_maxAngle = M_PI;
-			}
-			else if(sector == 3 || sector == 4)
-			{
-				m_minAngle = 0.5*M_PI;
-				m_maxAngle = 1.5*M_PI;
-			}
-			else if(sector == 5 || sector == 6)
-			{
-				m_minAngle = -1*M_PI;
-				m_maxAngle = 0;
-			}
-			else
-			{
-				NS_FATAL_ERROR ("16 antenna only need 8 sectors");
-
-			}
-			if(sector > 3)
-			{
-				sector = 7-sector;
-			}
-			for(unsigned int i = 0; i< antennaNum; i++)
-			{
-				std::complex<double> cmplx (Ue45DegreeBFVectorReal[sector][i],Ue45DegreeBFVectorImag[sector][i]);
-				cmplxVector.push_back(cmplx);
-			}
-			break;
-		}
-		case 4:
-		{
-			if(sector == 0)
-			{
-				m_minAngle = 0;
-				m_maxAngle = 0.5*M_PI;
-			}
-			else if(sector == 1)
-			{
-				m_minAngle = 0.5*M_PI;
-				m_maxAngle = M_PI;
-			}
-			else if(sector == 2)
-			{
-				m_minAngle = -1*M_PI;
-				m_maxAngle = -0.5*M_PI;
-			}
-			else if(sector == 3)
-			{
-				m_minAngle = -0.5*M_PI;
-				m_maxAngle = 0;
-			}
-			else
-			{
-				NS_FATAL_ERROR ("4 antenna only need 4 sectors");
-			}
-			if(sector > 1)
-			{
-				sector = 3-sector;
-			}
-			for(unsigned int i = 0; i< antennaNum; i++)
-			{
-				std::complex<double> cmplx (All90DegreeBFVectorReal[sector][i],All90DegreeBFVectorImag[sector][i]);
-				cmplxVector.push_back(cmplx);
-			}
-			break;
-		}
-		default:
-		{
-			NS_FATAL_ERROR ("the antenna number should only be 64 or 16");
-		}
-	}
-
-	//normalize antennaWeights;
-	double weightSum = 0;
-	for (unsigned int i = 0; i< antennaNum; i++)
-	{
-		weightSum += pow (std::abs(cmplxVector. at(i)),2);
-	}
-	for (unsigned int i = 0; i< antennaNum; i++)
-	{
-		cmplxVector. at(i) = cmplxVector. at(i)/sqrt(weightSum);
-	}
-	m_beamformingVector = cmplxVector;
+	return m_currentDev;
 }
 
 double
-AntennaArrayModel::GetRadiationPattern (double vAngle, double hAngle)
+AntennaArrayModel::GetRadiationPattern (double vAngleRadian, double hAngleRadian)
 {
-	NS_ASSERT_MSG(vAngle>=0&&vAngle<=180, "the vertical angle should be the range of [0,180]");
-	NS_ASSERT_MSG(hAngle>=-180&&vAngle<=180, "the vertical angle should be the range of [0,180]");
-	return 1; //for testing
-	/*double A_EV = -1*std::min(12*pow((vAngle-90)/65,2),30.0);
-	if(hAngle != 0)
+	if(m_isotropicElement)
 	{
-		double A_EH = -1*std::min(12*pow(hAngle/65,2),30.0);
-		double A = -1*std::min(-1*A_EV-1*A_EH,30.0);
-		return pow(10,A/10); //convert to linear;
+		return 1;
 	}
-	else
-	{
-		return pow(10,A_EV/10); //convert to linear;
-	}*/
+
+	while (hAngleRadian >= M_PI)
+		hAngleRadian -= 2*M_PI;
+	while (hAngleRadian < -M_PI)
+		hAngleRadian += 2*M_PI;
+
+	double vAngle = vAngleRadian*180/M_PI;
+	double hAngle = hAngleRadian*180/M_PI;
+	//NS_LOG_INFO(" it is " << vAngle);
+	NS_ASSERT_MSG(vAngle>=0&&vAngle<=180, "the vertical angle should be the range of [0,180]");
+	//NS_LOG_INFO(" it is " << hAngle);
+	NS_ASSERT_MSG(hAngle>=-180&&hAngle<=180, "the horizontal angle should be the range of [-180,180]");
+
+	double A_M = 30; //front-back ratio expressed in dB
+	double SLA = 30; //side-lobe level limit expressed in dB
+
+	double A_v = -1*std::min(SLA,12*pow ((vAngle-90)/m_hpbw,2)); //TODO: check position of z-axis zero
+	double A_h = -1*std::min(A_M,12*pow(hAngle/m_hpbw,2));
+	double A = m_gMax-1*std::min(A_M,-1*A_v-1*A_h);
+
+	return sqrt(pow(10,A/10)); //filed factor term converted to linear;
 }
+
 Vector
 AntennaArrayModel::GetAntennaLocation(uint8_t index, uint8_t* antennaNum)
 {
@@ -410,6 +383,16 @@ AntennaArrayModel::SetSector (uint8_t sector, uint8_t *antennaNum, double elevat
 	m_beamformingVector = tempVector;
 }
 
+Time
+AntennaArrayModel::GetLastUpdate(Ptr<NetDevice> device)
+{
+	NS_LOG_FUNCTION(this << device << Simulator::Now());
+	auto lastUpdate = m_lastUpdateMap.find(device);
+	NS_ASSERT_MSG(lastUpdate != m_lastUpdateMap.end(), "Device never updated!");
+	NS_LOG_INFO("Last update for device " << device << " at time " << lastUpdate->second.GetSeconds());
+	return lastUpdate->second;
+}
 
+} /* namespace mmwave */
 
 } /* namespace ns3 */

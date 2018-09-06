@@ -31,12 +31,24 @@
 // The user can choose whether UDP or TCP should be used and can configure
 // some 802.11n parameters (frequency, channel width and guard interval).
 
-#include "ns3/core-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/internet-module.h"
 #include "ns3/gnuplot.h"
+#include "ns3/command-line.h"
+#include "ns3/config.h"
+#include "ns3/uinteger.h"
+#include "ns3/boolean.h"
+#include "ns3/double.h"
+#include "ns3/string.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/udp-client-server-helper.h"
+#include "ns3/packet-sink-helper.h"
+#include "ns3/on-off-helper.h"
+#include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/packet-sink.h"
+#include "ns3/yans-wifi-channel.h"
 
 using namespace ns3;
 
@@ -87,6 +99,7 @@ int main (int argc, char *argv[])
 
   CommandLine cmd;
   cmd.AddValue ("step", "Granularity of the results to be plotted in meters", step);
+  cmd.AddValue ("simulationTime", "Simulation time per step (in seconds)", simulationTime);
   cmd.AddValue ("channelBonding", "Enable/disable channel bonding (channel width = 20 MHz if false, channel width = 40 MHz if true)", channelBonding);
   cmd.AddValue ("shortGuardInterval", "Enable/disable short guard interval", shortGuardInterval);
   cmd.AddValue ("frequency", "Whether working in the 2.4 or 5.0 GHz band (other values gets rejected)", frequency);
@@ -99,7 +112,7 @@ int main (int argc, char *argv[])
     {
       std::cout << modes[i] << std::endl;
       Gnuplot2dDataset dataset (modes[i]);
-      for (int d = 0; d <= 100; ) //distance
+      for (double d = 0; d <= 100; ) //distance
         {
           std::cout << "Distance = " << d << "m: " << std::endl;
           uint32_t payloadSize; //1500 byte IP packet
@@ -242,7 +255,6 @@ int main (int argc, char *argv[])
 
           Simulator::Stop (Seconds (simulationTime + 1));
           Simulator::Run ();
-          Simulator::Destroy ();
 
           double throughput = 0;
           if (udp)
@@ -260,6 +272,7 @@ int main (int argc, char *argv[])
           dataset.Add (d, throughput);
           std::cout << throughput << " Mbit/s" << std::endl;
           d += step;
+          Simulator::Destroy ();
         }
       plot.AddDataset (dataset);
     }

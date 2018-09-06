@@ -81,7 +81,7 @@ struct TestCaseFailure
    * \param [in] _actual  The actual value returned by the test.
    * \param [in] _limit   The expected value.
    * \param [in] _message The associated message.
-   * \param [in] _file    The soure file.
+   * \param [in] _file    The source file.
    * \param [in] _line    The source line.
    */
   TestCaseFailure (std::string _cond, std::string _actual, 
@@ -91,7 +91,7 @@ struct TestCaseFailure
   std::string actual;  /**< The actual value returned by the test. */
   std::string limit;   /**< The expected value. */
   std::string message; /**< The associated message. */
-  std::string file;    /**< The soure file. */
+  std::string file;    /**< The source file. */
   int32_t line;        /**< The source line. */
 };
 /**
@@ -229,7 +229,7 @@ private:
   /**
    * Generate the list of tests matching the constraints.
    *
-   * Test name and type contraints are or'ed.  The duration constraint
+   * Test name and type constraints are or'ed.  The duration constraint
    * is and'ed.
    *
    * \param [in] testName Include a specific test by name.
@@ -955,7 +955,11 @@ TestRunnerImpl::Run (int argc, char *argv[])
           fullness = arg + strlen("--fullness=");
 
           // Set the maximum test length allowed.
-          if (fullness == "EXTENSIVE")
+          if (fullness == "QUICK")
+            {
+              maximumTestDuration = TestCase::QUICK;
+            }
+          else if (fullness == "EXTENSIVE")
             {
               maximumTestDuration = TestCase::EXTENSIVE;
             }
@@ -965,7 +969,9 @@ TestRunnerImpl::Run (int argc, char *argv[])
             }
           else
             {
-              maximumTestDuration = TestCase::QUICK;
+              // Wrong fullness option
+              PrintHelp (progname);
+              return 3;
             }
         }
       else
@@ -1079,16 +1085,15 @@ TestRunnerImpl::Run (int argc, char *argv[])
         std::string testname = test->GetName ();
         std::string runner = "[" + SystemPath::Split (argv[0]).back () + "]";
 
-        int  desargc = argc + 1;
-        char ** desargv = new char * [desargc];
-        desargv[0] = const_cast<char *>(testname.c_str ());
-        desargv[1] = const_cast<char *>(runner.c_str ());
-        for (int i = 2; i < desargc; ++i)
+        std::vector<std::string> desargs;
+        desargs.push_back (testname);
+        desargs.push_back (runner);
+        for (int i = 1; i < argc; ++i)
           {
-            desargv[i] = argv[i - 1];
+            desargs.push_back (argv[i]);
           }
-        DesMetrics::Get ()->Initialize (desargc, desargv, m_tempDir);
-        delete [] desargv;
+
+        DesMetrics::Get ()->Initialize (desargs, m_tempDir);
       }
 #endif
       

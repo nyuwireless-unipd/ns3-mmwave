@@ -21,7 +21,6 @@
 #ifndef HE_CAPABILITIES_H
 #define HE_CAPABILITIES_H
 
-#include "ns3/buffer.h"
 #include "wifi-information-element.h"
 
 namespace ns3 {
@@ -46,6 +45,11 @@ public:
    */
   WifiInformationElementId ElementId () const;
   /**
+   * Get the wifi information element ID extension
+   * \returns the wifi information element ID extension
+   */
+  WifiInformationElementId ElementIdExt () const;
+  /**
    * Get information field size
    * \returns the information field size
    */
@@ -64,17 +68,17 @@ public:
   uint8_t DeserializeInformationField (Buffer::Iterator start, uint8_t length);
 
   /**
-   * Set the HE MAC Capabilties Info field in the HE Capabilities information element.
+   * Set the HE MAC Capabilities Info field in the HE Capabilities information element.
    *
-   * \param ctrl1 the HE MAC Capabilties Info field 1 in the HE Capabilities information element
-   * \param ctrl2 the HE MAC Capabilties Info field 2 in the HE Capabilities information element
+   * \param ctrl1 the HE MAC Capabilities Info field 1 in the HE Capabilities information element
+   * \param ctrl2 the HE MAC Capabilities Info field 2 in the HE Capabilities information element
    */
   void SetHeMacCapabilitiesInfo (uint32_t ctrl1, uint8_t ctrl2);
   /**
-   * Set the HE PHY Capabilties Info field in the HE Capabilities information element.
+   * Set the HE PHY Capabilities Info field in the HE Capabilities information element.
    *
-   * \param ctrl1 the HE PHY Capabilties Info field 1 in the HE Capabilities information element
-   * \param ctrl2 the HE PHY Capabilties Info field 2 in the HE Capabilities information element
+   * \param ctrl1 the HE PHY Capabilities Info field 1 in the HE Capabilities information element
+   * \param ctrl2 the HE PHY Capabilities Info field 2 in the HE Capabilities information element
    */
   void SetHePhyCapabilitiesInfo (uint64_t ctrl1, uint8_t ctrl2);
   /**
@@ -85,27 +89,27 @@ public:
   void SetSupportedMcsAndNss (uint16_t ctrl);
 
   /**
-   * Return the 4 first octets of the HE MAC Capabilties Info field in the HE Capabilities information element.
+   * Return the 4 first octets of the HE MAC Capabilities Info field in the HE Capabilities information element.
    *
-   * \return the 4 first octets of the HE MAC Capabilties Info field in the HE Capabilities information element
+   * \return the 4 first octets of the HE MAC Capabilities Info field in the HE Capabilities information element
    */
   uint32_t GetHeMacCapabilitiesInfo1 () const;
   /**
-   * Return the last octet of the HE MAC Capabilties Info field in the HE Capabilities information element.
+   * Return the last octet of the HE MAC Capabilities Info field in the HE Capabilities information element.
    *
-   * \return the last octet of the HE MAC Capabilties Info field in the HE Capabilities information element
+   * \return the last octet of the HE MAC Capabilities Info field in the HE Capabilities information element
    */
   uint8_t GetHeMacCapabilitiesInfo2 () const;
   /**
-   * Return the 8 first octets of the HE PHY Capabilties Info field in the HE Capabilities information element.
+   * Return the 8 first octets of the HE PHY Capabilities Info field in the HE Capabilities information element.
    *
-   * \return the 8 first octets of the HE PHY Capabilties Info field in the HE Capabilities information element
+   * \return the 8 first octets of the HE PHY Capabilities Info field in the HE Capabilities information element
    */
   uint64_t GetHePhyCapabilitiesInfo1 () const;
   /**
-   * Return the last octet of the HE PHY Capabilties Info field in the HE Capabilities information element.
+   * Return the last octet of the HE PHY Capabilities Info field in the HE Capabilities information element.
    *
-   * \return the last octet of the HE PHY Capabilties Info field in the HE Capabilities information element
+   * \return the last octet of the HE PHY Capabilities Info field in the HE Capabilities information element
    */
   uint8_t GetHePhyCapabilitiesInfo2 () const;
   /**
@@ -143,10 +147,9 @@ public:
   /**
    * Get highest MCS supported.
    *
-   * \param mcs the MCS
    * \returns the highest MCS is supported
    */
-  uint8_t GetHighestMcsSupported (uint8_t mcs) const;
+  uint8_t GetHighestMcsSupported (void) const;
   /**
    * Get highest NSS supported.
    *
@@ -177,14 +180,14 @@ public:
   void SetHighestNssSupported (uint8_t nss);
 
   /**
-   * Is transmit MCS supported.
+   * Is RX MCS supported.
    *
    * \param mcs the MCS
    * \returns true if MCS transmit supported
    */
   bool IsSupportedTxMcs (uint8_t mcs) const;
   /**
-   * Is reeive MCS supported.
+   * Is RX MCS supported.
    *
    * \param mcs the MCS
    * \returns true if MCS receive supported
@@ -193,7 +196,7 @@ public:
 
   /*
    * This information element is a bit special in that it is only
-   * included if the STA is an VHT STA. To support this we
+   * included if the STA is an HE STA. To support this we
    * override the Serialize and GetSerializedSize methods of
    * WifiInformationElement.
    */
@@ -230,7 +233,7 @@ private:
   uint8_t m_broadcastTwtSupport; //!< broadcast TXT support
   uint8_t m_32bitBaBitmapSupport; //!< 32bit BA bitmap support
   uint8_t m_muCascadeSupport; //!< MU cascade support
-  uint8_t m_ackEnabledMultiTidAggregationSupport; //!< ack enabled multi TID aggregation suport
+  uint8_t m_ackEnabledMultiTidAggregationSupport; //!< ack enabled multi TID aggregation support
   uint8_t m_groupAddressedMultiStaBlockAckInDlMuSupport; //!< group addressed multi STA block ack in DL support
   uint8_t m_omiAcontrolSupport; //!< OMI A control support
   uint8_t m_ofdmaRaSupport; //!< OFDM RA support
@@ -288,9 +291,6 @@ private:
 };
 
 std::ostream &operator << (std::ostream &os, const HeCapabilities &HeCapabilities);
-std::istream &operator >> (std::istream &is, HeCapabilities &HeCapabilities);
-
-ATTRIBUTE_HELPER_HEADER (HeCapabilities);
 
 } //namespace ns3
 

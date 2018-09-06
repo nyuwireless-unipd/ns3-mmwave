@@ -1,6 +1,6 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -16,8 +16,8 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *   Author: Marco Giordani <m.giordani91@gmail.com>
- * 			 Michele Polese <michele.polese@gmail.com> 
- *           
+ * 			 Michele Polese <michele.polese@gmail.com>
+ *
  */
 #include "mmwave-los-tracker.h"
 
@@ -42,7 +42,9 @@
 #include <utility>
 #include <iostream>
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveLosTracker");
 
@@ -62,7 +64,7 @@ MmWaveLosTracker::GetTypeId (void)
 	;
 
 	return tid;
-	
+
 }
 
 MmWaveLosTracker::~MmWaveLosTracker ()
@@ -133,10 +135,10 @@ MmWaveLosTracker::UpdateLosNlosState(Ptr<MobilityModel> a, Ptr<MobilityModel> b)
 	keyMob_t key_reverse = std::make_pair(b,a); // check for the MobilityModel pair (b.a), assuming 'channel reciprocity'
 
 	std::map< keyMob_t, int >::iterator iteratorNlos =
-							 m_mapNlos.find(key); // pair [key,value] for that pair of MobilityModels (a,b) 
+							 m_mapNlos.find(key); // pair [key,value] for that pair of MobilityModels (a,b)
 
 	std::map< keyMob_t, int >::iterator iteratorLos =
-							 m_mapLos.find(key); // pair [key,value] for that pair of MobilityModels (a,b) 
+							 m_mapLos.find(key); // pair [key,value] for that pair of MobilityModels (a,b)
 
 	int nlosSamples;
 	int losSamples;
@@ -150,7 +152,7 @@ MmWaveLosTracker::UpdateLosNlosState(Ptr<MobilityModel> a, Ptr<MobilityModel> b)
 		if (iteratorNlos != m_mapNlos.end())
 	 	{
 			nlosSamples = iteratorNlos->second;
-		} 
+		}
 		else
 		{
 			m_mapNlos.insert(std::pair<keyMob_t, int>(key_reverse,0));
@@ -170,7 +172,7 @@ MmWaveLosTracker::UpdateLosNlosState(Ptr<MobilityModel> a, Ptr<MobilityModel> b)
 		if (iteratorLos != m_mapLos.end())
 	 	{
 			losSamples = iteratorLos->second;
-		} 
+		}
 		else
 		{
 			m_mapLos.insert(std::pair<keyMob_t, int>(key_reverse,0));
@@ -194,7 +196,7 @@ MmWaveLosTracker::UpdateLosNlosState(Ptr<MobilityModel> a, Ptr<MobilityModel> b)
 			m_mapNlos.at(key) = nlosSamples + 1; // still in the 'drop' phase
 			m_mapNlos.at(key_reverse) = nlosSamples + 1; // still in the 'drop' phase
 			NS_LOG_LOGIC("NLOS in drop phase, at sample " <<  nlosSamples+1);
-		}	
+		}
 	}
 	else if (!los && nlosSamples == g_nlosSamplesTrace) // I am in NLOS but in the 'flat phase'
 	{
@@ -236,7 +238,7 @@ MmWaveLosTracker::GetNlosSamples (Ptr<MobilityModel> a, Ptr<MobilityModel> b) co
 	{
 		NS_LOG_LOGIC("Method GetNlosSamples is MmWaveLosTracker. For normal mobility pair: nlossamples = " << m_mapNlos.at(std::make_pair(a,b)));
 		return m_mapNlos.at(std::make_pair(a,b));
-	} 
+	}
 	else
 	{
 		if (m_mapNlos.find(std::make_pair(b,a)) != m_mapNlos.end()) // at least initialized for MobilityModel (b,a)
@@ -261,7 +263,7 @@ MmWaveLosTracker::GetLosSamples (Ptr<MobilityModel> a, Ptr<MobilityModel> b) con
 	{
 		NS_LOG_LOGIC("Method GetLosSamples is MmWaveLosTracker. For normal mobility pair: lossamples = " << m_mapLos.at(std::make_pair(a,b)));
 		return m_mapLos.at(std::make_pair(a,b));
-	} 
+	}
 	else
 	{
 		if (m_mapLos.find(std::make_pair(b,a)) != m_mapLos.end()) // at least initialized for MobilityModel (b,a)
@@ -278,6 +280,6 @@ MmWaveLosTracker::GetLosSamples (Ptr<MobilityModel> a, Ptr<MobilityModel> b) con
 }
 
 
+} // namespace mmwave
 
-
-}// namespace ns3
+} // namespace ns3

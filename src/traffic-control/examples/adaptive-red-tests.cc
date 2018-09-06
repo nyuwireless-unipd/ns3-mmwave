@@ -1,3 +1,4 @@
+
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2015 NITK Surathkal
@@ -23,14 +24,14 @@
  * NOTE: These validation tests are same as provided in ns-2 
  * (ns/tcl/test/test-suite-adaptive-red.tcl)
  *
- * In this code, tests 1, 2, 6, 7, 8, 9, 10, 12, 13, 14 and 15 refer to tests
- * named red1, red1Adapt, fastlink, fastlinkAutowq, fastlinkAutothresh,
- * fastlinkAdaptive, fastlinkAllAdapt, fastlinkAllAdapt1, longlink,
+ * In this code, tests 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14 and 15 refer to tests
+ * named red1, red1Adapt, red1ECN, fastlink, fastlinkECN, fastlinkAutowq, fastlinkAutothresh,
+ * fastlinkAdaptive, fastlinkAllAdapt, fastlinkAllAdaptECN, fastlinkAllAdapt1, longlink,
  * longlinkAdapt and longlinkAdapt1, respectively in the ns-2 file
  * mentioned above.
  */
 
-/** Network topology for tests: 1 and 2
+/** Network topology for tests: 1, 2, 3 and 4
  *
  *    10Mb/s, 2ms                            10Mb/s, 4ms
  * n0--------------|                    |---------------n4
@@ -41,7 +42,7 @@
  *
  */
 
-/** Network topology for tests: 6, 7, 8, 9, 10 and 12
+/** Network topology for tests: 6, 7, 8, 9, 10, 11 and 12
  *
  *    100Mb/s, 2ms                          100Mb/s, 4ms
  * n0--------------|                    |---------------n4
@@ -104,7 +105,7 @@ std::stringstream filePlotQueueDiscAvg;
 void
 CheckQueueDiscSize (Ptr<QueueDisc> queue)
 {
-  uint32_t qSize = StaticCast<RedQueueDisc> (queue)->GetQueueSize ();
+  uint32_t qSize = queue->GetCurrentSize ().GetValue ();
 
   avgQueueDiscSize += qSize;
   checkTimes++;
@@ -202,18 +203,18 @@ main (int argc, char *argv[])
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
   CommandLine cmd;
-  cmd.AddValue ("testNumber", "Run test 1, 2, 6, 7, 8, 9, 10, 12, 13, 14 or 15", aredTest);
+  cmd.AddValue ("testNumber", "Run test 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14 or 15", aredTest);
   cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
   cmd.AddValue ("writeForPlot", "<0/1> to write results for plot (gnuplot)", writeForPlot);
   cmd.AddValue ("writePcap", "<0/1> to write results in pcapfile", writePcap);
   cmd.AddValue ("writeFlowMonitor", "<0/1> to enable Flow Monitor and write their results", flowMonitor);
 
   cmd.Parse (argc, argv);
-  if ( (aredTest != 1) && (aredTest != 2) && (aredTest != 6) && (aredTest != 7) && (aredTest != 8) && (aredTest != 9) && (aredTest != 10) && (aredTest != 12) && (aredTest != 13) && (aredTest != 14) && (aredTest != 15) )
-    {
-      std::cout << "Invalid test number. Supported tests are 1, 2, 6, 7, 8, 9, 10, 12, 13, 14 or 15" << std::endl;
-      exit (1);
-    }
+  if ((aredTest < 1) || (aredTest == 5) || (aredTest > 15))
+     {
+      std::cout << "Invalid test number. Supported tests are 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14 or 15" << std::endl;
+       exit (1);
+     }
 
   NS_LOG_INFO ("Create nodes");
   NodeContainer c;
@@ -240,24 +241,37 @@ main (int argc, char *argv[])
 
   // RED params
   NS_LOG_INFO ("Set RED params");
-  Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_DISC_MODE_PACKETS"));
+  Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("1000p"));
   Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (meanPktSize));
   Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
   Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (0.002));
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (5));
   Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (15));
-  Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (1000));
 
   if (aredTest == 1) // test 1: red1
     {
-      Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (25));
+      Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("25p"));
     }
   else if (aredTest == 2) // test 2: red1Adapt
     {
       Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
-      Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (25));
+      Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("25p"));
+    }
+  else if (aredTest == 3) //test 3: red1ECN
+    {
+      Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("25p"));
+      Config::SetDefault ("ns3::TcpSocketBase::EcnMode", StringValue ("ClassicEcn"));
+      Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
+    }
+  else if (aredTest == 4) // test 4: red1AdaptECN
+    {
+      Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
+      Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
+      Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("25p"));
+      Config::SetDefault ("ns3::TcpSocketBase::EcnMode", StringValue ("ClassicEcn"));
+      Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
     }
   else if (aredTest == 7) // test 7: fastlinkAutowq
     {
@@ -278,6 +292,14 @@ main (int argc, char *argv[])
       Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
     }
+  else if (aredTest == 11) // test 11: fastlinkAllAdaptECN
+    {
+      Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
+      Config::SetDefault ("ns3::RedQueueDisc::UseHardDrop", BooleanValue (false));
+      Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
+      Config::SetDefault ("ns3::TcpSocketBase::EcnMode", StringValue ("ClassicEcn"));
+      Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
+    }
   else if (aredTest == 12) // test 12: fastlinkAllAdapt1
     {
       Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
@@ -286,13 +308,13 @@ main (int argc, char *argv[])
     }
   else if (aredTest == 13) // test 13: longlink
     {
-      Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (100));
+      Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("100p"));
     }
   else if (aredTest == 14) // test 14: longlinkAdapt
     {
       Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
-      Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (100));
+      Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("100p"));
     }
   else if (aredTest == 15) // test 15: longlinkAdapt1
     {
@@ -301,7 +323,7 @@ main (int argc, char *argv[])
       Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (0));
       Config::SetDefault ("ns3::RedQueueDisc::AdaptMaxP", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
-      Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (100));
+      Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("100p"));
     }
 
   NS_LOG_INFO ("Install internet stack on all nodes.");
@@ -310,7 +332,7 @@ main (int argc, char *argv[])
 
   TrafficControlHelper tchPfifo;
   uint16_t handle = tchPfifo.SetRootQueueDisc ("ns3::PfifoFastQueueDisc");
-  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxPackets", UintegerValue (1000));
+  tchPfifo.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxSize", StringValue ("1000p"));
 
   TrafficControlHelper tchRed;
   tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", StringValue (aredLinkDataRate),
@@ -327,7 +349,7 @@ main (int argc, char *argv[])
 
   QueueDiscContainer queueDiscs;
 
-  if (aredTest == 1 || aredTest == 2)
+  if (aredTest == 1 || aredTest == 2 || aredTest == 3 || aredTest == 4)
     {
       p2p.SetQueue ("ns3::DropTailQueue");
       p2p.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
@@ -393,7 +415,7 @@ main (int argc, char *argv[])
       devn3n5 = p2p.Install (n3n5);
       tchPfifo.Install (devn3n5);
     }
-  else if (aredTest == 6 || aredTest == 7 || aredTest == 8 || aredTest == 9 || aredTest == 10 || aredTest == 12)
+  else if (aredTest == 6 || aredTest == 7 || aredTest == 8 || aredTest == 9 || aredTest == 10 || aredTest == 11 || aredTest == 12)
     {
       p2p.SetQueue ("ns3::DropTailQueue");
       p2p.SetDeviceAttribute ("DataRate", StringValue ("100Mbps"));
@@ -481,13 +503,14 @@ main (int argc, char *argv[])
 
   QueueDisc::Stats st = queueDiscs.Get (0)->GetStats ();
 
-  if (st.GetNDroppedPackets (RedQueueDisc::UNFORCED_DROP) == 0)
+  if (st.GetNDroppedPackets (RedQueueDisc::UNFORCED_DROP) == 0 &&
+      st.GetNMarkedPackets (RedQueueDisc::UNFORCED_MARK) == 0)
     {
-      std::cout << "There should be some unforced drops" << std::endl;
+      std::cout << "There should be some unforced drops or marks" << std::endl;
       exit (1);
     }
 
-  if (aredTest == 1 || aredTest == 2 || aredTest == 13)
+  if (aredTest == 1 || aredTest == 2 || aredTest == 3 || aredTest == 4 || aredTest == 13)
     {
       if (st.GetNDroppedPackets (QueueDisc::INTERNAL_QUEUE_DROP) == 0)
         {

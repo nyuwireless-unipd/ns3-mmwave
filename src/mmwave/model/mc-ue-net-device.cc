@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -30,12 +30,17 @@
 #include <ns3/ipv4-l3-protocol.h>
 #include "ns3/mmwave-enb-net-device.h"
 #include "ns3/lte-enb-net-device.h"
+#include <ns3/object-map.h>
+#include <ns3/lte-ue-component-carrier-manager.h>
+
 
 namespace ns3 {
 
-NS_OBJECT_ENSURE_REGISTERED (McUeNetDevice);
-
 NS_LOG_COMPONENT_DEFINE ("McUeNetDevice");
+
+namespace mmwave {
+
+NS_OBJECT_ENSURE_REGISTERED (McUeNetDevice);
 
 ////////////////////////////////
 // McUeNetDevice
@@ -79,16 +84,15 @@ TypeId McUeNetDevice::GetTypeId (void)
                    PointerValue (),
                    MakePointerAccessor (&McUeNetDevice::m_lteRrc),
                    MakePointerChecker <LteUeRrc> ())
-    .AddAttribute ("LteUeMac",
-                   "The MAC associated to the LTE stack of this NetDevice",
-                   PointerValue (),
-                   MakePointerAccessor (&McUeNetDevice::m_lteMac),
-                   MakePointerChecker <LteUeMac> ())
-    .AddAttribute ("LteUePhy",
-                   "The PHY associated to the LTE stack of this NetDevice",
-                   PointerValue (),
-                   MakePointerAccessor (&McUeNetDevice::m_ltePhy),
-                   MakePointerChecker <LteUePhy> ())
+	  .AddAttribute ("LteUeComponentCarrierManager",
+									 "The LteComponentCarrierManager associated to this McUeNetDevice",
+									 PointerValue (),
+									 MakePointerAccessor (&McUeNetDevice::m_lteComponentCarrierManager),
+									 MakePointerChecker <LteUeComponentCarrierManager> ())
+		.AddAttribute ("LteComponentCarrierMapUe", "List of all LTE CCs.",
+ 									 ObjectMapValue (),
+ 									 MakeObjectMapAccessor (&McUeNetDevice::m_lteCcMap),
+ 									 MakeObjectMapChecker<ComponentCarrierUe> ())
     .AddAttribute ("LteDlEarfcn",
                    "Downlink E-UTRA Absolute Radio Frequency Channel Number (EARFCN) "
                    "as per 3GPP 36.101 Section 5.7.3. ",
@@ -97,27 +101,26 @@ TypeId McUeNetDevice::GetTypeId (void)
                                          &McUeNetDevice::GetLteDlEarfcn),
                    MakeUintegerChecker<uint16_t> (0, 6149))
     // mmWave stack attributes
-	.AddAttribute ("MmWaveUeRrc",
-                   "The RRC associated to the mmWave stack of this NetDevice",
-                   PointerValue (),
-                   MakePointerAccessor (&McUeNetDevice::m_mmWaveRrc),
-                   MakePointerChecker <LteUeRrc> ())
-	.AddAttribute ( "MmWaveUePhy",
-					"The PHY associated to the mmWave stack of this NetDevice",
-					PointerValue (),
-					MakePointerAccessor (&McUeNetDevice::m_mmWavePhy),
-					MakePointerChecker <MmWaveUePhy> ())
-	.AddAttribute ( "MmWaveUeMac",
-					"The MAC associated to the mmWave stack of this NetDevice",
-					PointerValue (),
-					MakePointerAccessor (&McUeNetDevice::m_mmWaveMac),
-					MakePointerChecker <MmWaveUeMac> ())
-	.AddAttribute ("AntennaNum",
-				   "Antenna number of the device",
-				   UintegerValue (16),
-				   MakeUintegerAccessor (&McUeNetDevice::SetAntennaNum,
-										 &McUeNetDevice::GetAntennaNum),
-				   MakeUintegerChecker<uint8_t> ())
+		.AddAttribute ("MmWaveUeRrc",
+	                   "The RRC associated to the mmWave stack of this NetDevice",
+	                   PointerValue (),
+	                   MakePointerAccessor (&McUeNetDevice::m_mmWaveRrc),
+	                   MakePointerChecker <LteUeRrc> ())
+		 .AddAttribute ("MmWaveUeComponentCarrierManager",
+	 									 "The MmWaveComponentCarrierManager associated to this McUeNetDevice",
+	 									 PointerValue (),
+	 									 MakePointerAccessor (&McUeNetDevice::m_mmWaveComponentCarrierManager),
+	 									 MakePointerChecker <LteUeComponentCarrierManager> ())
+ 		.AddAttribute ("MmWaveComponentCarrierMapUe", "List of all mmWave CCs.",
+  									 ObjectMapValue (),
+  									 MakeObjectMapAccessor (&McUeNetDevice::m_mmWaveCcMap),
+  									 MakeObjectMapChecker<MmWaveComponentCarrierUe> ())
+		.AddAttribute ("AntennaNum",
+								   "Antenna number of the device",
+								   UintegerValue (16),
+								   MakeUintegerAccessor (&McUeNetDevice::SetAntennaNum,
+													 &McUeNetDevice::GetAntennaNum),
+							   			 		 MakeUintegerChecker<uint8_t> ())
 	;
 	return tid;
 }
@@ -143,13 +146,26 @@ McUeNetDevice::DoInitialize (void)
 	NS_LOG_FUNCTION (this);
 	m_isConstructed = true;
 	UpdateConfig ();
-	m_mmWavePhy->DoInitialize ();
-  if(m_mmWaveRrc!=0)
+
+	std::map< uint8_t, Ptr<ComponentCarrierUe> >::iterator lteIt;
+	for (lteIt = m_lteCcMap.begin (); lteIt != m_lteCcMap.end (); ++lteIt)
+		{
+			lteIt->second->GetPhy ()->Initialize ();
+			lteIt->second->GetMac ()->Initialize ();
+		}
+
+	std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator mmWaveIt;
+	for (mmWaveIt = m_mmWaveCcMap.begin (); mmWaveIt != m_mmWaveCcMap.end (); ++mmWaveIt)
+		{
+			mmWaveIt->second->GetPhy ()->Initialize ();
+			mmWaveIt->second->GetMac ()->Initialize ();
+		}
+
+	if(m_mmWaveRrc!=0)
   {
     m_mmWaveRrc->Initialize ();
   }
-	m_ltePhy->Initialize ();
-	m_lteMac->Initialize ();
+
 	m_lteRrc->Initialize ();
 }
 
@@ -159,25 +175,29 @@ McUeNetDevice::DoDispose (void)
 {
 	NS_LOG_FUNCTION (this);
 	m_lteTargetEnb = 0;
-	m_lteMac->Dispose ();
-	m_lteMac = 0;
 	m_lteRrc->Dispose ();
 	m_lteRrc = 0;
-	m_ltePhy->Dispose ();
-	m_ltePhy = 0;
 	m_nas->Dispose ();
 	m_nas = 0;
 
+	for (uint32_t i = 0; i < m_lteCcMap.size (); i++)
+		{
+			m_lteCcMap.at (i)->Dispose ();
+		}
+	m_lteComponentCarrierManager->Dispose ();
+
 	m_mmWaveTargetEnb = 0;
-	m_mmWaveMac->Dispose ();
-	m_mmWaveMac = 0;
   if(m_mmWaveRrc != 0)
   {
     m_mmWaveRrc->Dispose ();
   }
 	m_mmWaveRrc = 0;
-	m_mmWavePhy->Dispose ();
-	m_mmWavePhy = 0;
+
+	for (uint32_t i = 0; i < m_mmWaveCcMap.size (); i++)
+		{
+			m_mmWaveCcMap.at (i)->Dispose ();
+		}
+	m_mmWaveComponentCarrierManager->Dispose ();
 
 	m_node = 0;
 	NetDevice::DoDispose();
@@ -188,7 +208,7 @@ Ptr<Channel>
 McUeNetDevice::GetChannel (void) const
 {
   NS_LOG_FUNCTION (this);
-  // we can't return a meaningful channel here, because LTE devices using FDD 
+  // we can't return a meaningful channel here, because LTE devices using FDD
   // have actually two channels + one channel for mmWave TDD.
   return 0;
 }
@@ -415,10 +435,10 @@ McUeNetDevice::UpdateConfig (void)
 		m_lteRrc->SetImsi (m_imsi);
     if(m_mmWaveRrc!=0)
     {
-      m_mmWaveRrc->SetImsi (m_imsi);  
+      m_mmWaveRrc->SetImsi (m_imsi);
     }
-		
-		m_nas->SetCsgId (m_csgId); // TODO this also handles propagation to RRC (LTE only for now) 
+
+		m_nas->SetCsgId (m_csgId); // TODO this also handles propagation to RRC (LTE only for now)
 	}
 	else
 	{
@@ -434,7 +454,14 @@ Ptr<LteUeMac>
 McUeNetDevice::GetLteMac (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_lteMac;
+  return m_lteCcMap.at (0)->GetMac ();
+}
+
+Ptr<LteUeMac>
+McUeNetDevice::GetLteMac (uint8_t index) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_lteCcMap.at (index)->GetMac ();
 }
 
 
@@ -450,7 +477,21 @@ Ptr<LteUePhy>
 McUeNetDevice::GetLtePhy (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_ltePhy;
+  return m_lteCcMap.at (0)->GetPhy ();
+}
+
+Ptr<LteUePhy>
+McUeNetDevice::GetLtePhy (uint8_t index) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_lteCcMap.at (index)->GetPhy ();
+}
+
+Ptr<LteUeComponentCarrierManager>
+McUeNetDevice::GetLteComponentCarrierManager (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_lteComponentCarrierManager;
 }
 
 Ptr<EpcUeNas>
@@ -511,18 +552,50 @@ McUeNetDevice::GetLteTargetEnb (void)
   return m_lteTargetEnb;
 }
 
+std::map < uint8_t, Ptr<ComponentCarrierUe> >
+McUeNetDevice::GetLteCcMap ()
+{
+  return m_lteCcMap;
+}
+
+void
+McUeNetDevice::SetLteCcMap (std::map< uint8_t, Ptr<ComponentCarrierUe> > ccm)
+{
+  m_lteCcMap = ccm;
+}
+
 
 Ptr<MmWaveUePhy>
 McUeNetDevice::GetMmWavePhy (void) const
 {
-	return m_mmWavePhy;
+	return m_mmWaveCcMap.at (0)->GetPhy ();
+}
+
+Ptr<MmWaveUePhy>
+McUeNetDevice::GetMmWavePhy (uint8_t index) const
+{
+	return m_mmWaveCcMap.at (index)->GetPhy ();
 }
 
 Ptr<MmWaveUeMac>
 McUeNetDevice::GetMmWaveMac (void) const
 {
-	return m_mmWaveMac;
+	return m_mmWaveCcMap.at (0)->GetMac ();
 }
+
+Ptr<MmWaveUeMac>
+McUeNetDevice::GetMmWaveMac (uint8_t index) const
+{
+	return m_mmWaveCcMap.at (index)->GetMac ();
+}
+
+Ptr<LteUeComponentCarrierManager>
+McUeNetDevice::GetMmWaveComponentCarrierManager (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_mmWaveComponentCarrierManager;
+}
+
 
 Ptr<LteUeRrc>
 McUeNetDevice::GetMmWaveRrc (void) const
@@ -555,6 +628,19 @@ McUeNetDevice::GetMmWaveTargetEnb (void)
 	return m_mmWaveTargetEnb;
 }
 
+std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> >
+McUeNetDevice::GetMmWaveCcMap ()
+{
+  return m_mmWaveCcMap;
+}
+
+void
+McUeNetDevice::SetMmWaveCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > ccm)
+{
+  m_mmWaveCcMap = ccm;
+}
+
+
 uint8_t
 McUeNetDevice::GetAntennaNum () const
 {
@@ -575,8 +661,9 @@ McUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protoco
 	{
 	  NS_LOG_INFO("unsupported protocol " << protocolNumber << ", only IPv4 is supported");
 	  return true;
-	}  
+	}
   return m_nas->Send(packet);
 }
 
+}
 }

@@ -46,7 +46,7 @@ double IntegralFunction (double x, void *params);
  *
  * The 802.11b modulations:
  *    - 1 Mbps mode is based on DBPSK. BER is from equation 5.2-69 from John G. Proakis
- *      Digitial Communications, 2001 edition
+ *      Digital Communications, 2001 edition
  *    - 2 Mbps model is based on DQPSK. Equation 8 from "Tight bounds and accurate
  *      approximations for dqpsk transmission bit error rate", G. Ferrari and G.E. Corazza
  *      ELECTRONICS LETTERS, 40(20):1284-1285, September 2004
@@ -82,7 +82,7 @@ public:
    *
    * \return the chunk success rate of the differential BPSK
    */
-  static double GetDsssDbpskSuccessRate (double sinr, uint32_t nbits);
+  static double GetDsssDbpskSuccessRate (double sinr, uint64_t nbits);
   /**
    * Return the chunk success rate of the differential encoded QPSK.
    *
@@ -91,7 +91,7 @@ public:
    *
    * \return the chunk success rate of the differential encoded QPSK.
    */
-  static double GetDsssDqpskSuccessRate (double sinr,uint32_t nbits);
+  static double GetDsssDqpskSuccessRate (double sinr,uint64_t nbits);
   /**
    * Return the chunk success rate of the differential encoded QPSK for
    * 5.5Mbps data rate.
@@ -101,7 +101,7 @@ public:
    *
    * \return the chunk success rate of the differential encoded QPSK for
    */
-  static double GetDsssDqpskCck5_5SuccessRate (double sinr,uint32_t nbits);
+  static double GetDsssDqpskCck5_5SuccessRate (double sinr,uint64_t nbits);
   /**
    * Return the chunk success rate of the differential encoded QPSK for
    * 11Mbps data rate.
@@ -111,7 +111,7 @@ public:
    *
    * \return the chunk success rate of the differential encoded QPSK for
    */
-  static double GetDsssDqpskCck11SuccessRate (double sinr,uint32_t nbits);
+  static double GetDsssDqpskCck11SuccessRate (double sinr,uint64_t nbits);
 #ifdef HAVE_GSL
   static double SymbolErrorProb16Cck (double e2); /// equation (18) in Pursley's paper
   static double SymbolErrorProb256Cck (double e1); /// equation (17) in Pursley's paper

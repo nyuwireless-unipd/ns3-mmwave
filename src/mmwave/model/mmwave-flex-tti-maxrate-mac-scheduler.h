@@ -21,6 +21,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveFlexTtiMaxRateMacScheduler : public MmWaveMacScheduler
 {
 public:
@@ -398,7 +400,9 @@ private:
 	std::vector <UeSchedInfo*> m_ueStatHeap;
 };
 
-}
+} // namespace mmwave
+
+} // namespace ns3
 
 
 #endif /* SRC_MMWAVE_MODEL_MMWAVE_MAXRATE_MAC_SCHEDULER_H_ */

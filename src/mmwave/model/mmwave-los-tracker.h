@@ -1,6 +1,6 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -16,8 +16,8 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *   Author: Marco Giordani <m.giordani91@gmail.com>
- * 			 Michele Polese <michele.polese@gmail.com> 
- *           
+ * 			 Michele Polese <michele.polese@gmail.com>
+ *
  */
 #ifndef MMWAVE_LOS_TRACKER_H
 #define MMWAVE_LOS_TRACKER_H
@@ -26,6 +26,8 @@
 #include <ns3/simulator.h>
 
 namespace ns3 {
+
+namespace mmwave {
 
 typedef std::pair<Ptr<MobilityModel>, Ptr<MobilityModel> > keyMob_t;
 
@@ -47,6 +49,8 @@ private:
 	std::map< keyMob_t, int > m_mapNlos; // map for counting number of slots in NLOS for 'drop phase'
 	std::map< keyMob_t, int > m_mapLos; // map for counting number of slots in LOS for 'raise phase'
 };
+
+}
 
 }
 

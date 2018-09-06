@@ -35,7 +35,6 @@
 #include <list>
 #include <ctime>
 #include <map>
-
 #include "ns3/ptr.h"
 #include "ns3/log.h"
 #include "ns3/assert.h"
@@ -46,7 +45,6 @@
 #include "ns3/udp-header.h"
 #include "ns3/pointer.h"
 #include "ns3/node-list.h"
-#include "ns3/uinteger.h"
 #include "ns3/object-vector.h"
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/ipv4-interface.h"
@@ -55,7 +53,6 @@
 #include "ns3/ipv4-route.h"
 #include "ns3/icmpv4-l4-protocol.h"
 #include "ns3/ip-l4-protocol.h"
-
 #include "dsr-option-header.h"
 #include "dsr-options.h"
 #include "dsr-rcache.h"
@@ -591,7 +588,7 @@ uint8_t DsrOptionRreq::Process (Ptr<Packet> packet, Ptr<Packet> dsrP, Ipv4Addres
 
   if (dupRequest)
     {
-      // We have received this same route reqeust before, not forwarding it now
+      // We have received this same route request before, not forwarding it now
       NS_LOG_LOGIC ("Duplicate request. Drop!");
       m_dropTrace (packet); // call drop trace
       return 0;

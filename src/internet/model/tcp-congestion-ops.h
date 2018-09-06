@@ -19,9 +19,7 @@
 #ifndef TCPCONGESTIONOPS_H
 #define TCPCONGESTIONOPS_H
 
-#include "ns3/object.h"
-#include "ns3/timer.h"
-#include "ns3/tcp-socket-base.h"
+#include "ns3/tcp-socket-state.h"
 
 namespace ns3 {
 
@@ -38,7 +36,7 @@ namespace ns3 {
  * \brief Congestion control abstract class
  *
  * The design is inspired on what Linux v4.0 does (but it has been
- * in place since years). The congestion control is splitted from the main
+ * in place since years). The congestion control is split from the main
  * socket code, and it is a pluggable component. An interface has been defined;
  * variables are maintained in the TcpSocketState class, while subclasses of
  * TcpCongestionOps operate over an instance of that class.
@@ -120,6 +118,9 @@ public:
   virtual void PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked,
                           const Time& rtt)
   {
+    NS_UNUSED (tcb);
+    NS_UNUSED (segmentsAcked);
+    NS_UNUSED (rtt);
   }
 
   /**
@@ -134,17 +135,31 @@ public:
   virtual void CongestionStateSet (Ptr<TcpSocketState> tcb,
                                    const TcpSocketState::TcpCongState_t newState)
   {
+    NS_UNUSED (tcb);
+    NS_UNUSED (newState);
   }
 
+  /**
+   * \brief Trigger events/calculations on occurrence congestion window event
+   *
+   * This function mimics the function cwnd_event in Linux.
+   * The function is called in case of congestion window events.
+   *
+   * \param tcb internal congestion state
+   * \param event the event which triggered this function
+   */
+  virtual void CwndEvent (Ptr<TcpSocketState> tcb,
+                          const TcpSocketState::TcpCAEvent_t event)
+  {
+    NS_UNUSED (tcb);
+    NS_UNUSED (event);
+  }
   // Present in Linux but not in ns-3 yet:
-  /* call when cwnd event occurs (optional) */
-  // void (*cwnd_event)(struct sock *sk, enum tcp_ca_event ev);
   /* call when ack arrives (optional) */
   // void (*in_ack_event)(struct sock *sk, u32 flags);
   /* new value of cwnd after loss (optional) */
   // u32  (*undo_cwnd)(struct sock *sk);
   /* hook for packet ack accounting (optional) */
-  // void (*pkts_acked)(struct sock *sk, u32 num_acked, s32 rtt_us);
 
   /**
    * \brief Copy the congestion control algorithm across socket

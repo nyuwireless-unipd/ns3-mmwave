@@ -16,6 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Jaume Nin <jnin@cttc.es>
+ * Modified by: Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015)
+ *              Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation) 
  */
 
 #include "mac-stats-calculator.h"
@@ -90,8 +92,8 @@ MacStatsCalculator::GetDlOutputFilename (void)
 void
 MacStatsCalculator::DlScheduling (uint16_t cellId, uint64_t imsi, DlSchedulingCallbackInfo dlSchedulingCallbackInfo)
 {
-   NS_LOG_FUNCTION (this << cellId << imsi << dlSchedulingCallbackInfo.frameNo << dlSchedulingCallbackInfo.subframeNo <<
-      dlSchedulingCallbackInfo.rnti << (uint32_t) dlSchedulingCallbackInfo.mcsTb1 << dlSchedulingCallbackInfo.sizeTb1 << (uint32_t) dlSchedulingCallbackInfo.mcsTb2 << dlSchedulingCallbackInfo.sizeTb2);
+  NS_LOG_FUNCTION (this << cellId << imsi << dlSchedulingCallbackInfo.frameNo << dlSchedulingCallbackInfo.subframeNo <<
+		  dlSchedulingCallbackInfo.rnti << (uint32_t) dlSchedulingCallbackInfo.mcsTb1 << dlSchedulingCallbackInfo.sizeTb1 << (uint32_t) dlSchedulingCallbackInfo.mcsTb2 << dlSchedulingCallbackInfo.sizeTb2);
   NS_LOG_INFO ("Write DL Mac Stats in " << GetDlOutputFilename ().c_str ());
 
   std::ofstream outFile;
@@ -148,7 +150,7 @@ MacStatsCalculator::UlScheduling (uint16_t cellId, uint64_t imsi, uint32_t frame
           return;
         }
       m_ulFirstWrite = false;
-      outFile << "% time\tcellId\tIMSI\tframe\tsframe\tRNTI\tmcs\tsize";
+      outFile << "% time\tcellId\tIMSI\tframe\tsframe\tRNTI\tmcs\tsize\tccId";
       outFile << std::endl;
     }
   else
@@ -168,7 +170,8 @@ MacStatsCalculator::UlScheduling (uint16_t cellId, uint64_t imsi, uint32_t frame
   outFile << subframeNo << "\t";
   outFile << rnti << "\t";
   outFile << (uint32_t) mcsTb << "\t";
-  outFile << size << std::endl;
+  outFile << size << "\t";
+  outFile << (uint32_t) componentCarrierId << std::endl;
   outFile.close ();
 }
 
@@ -178,15 +181,15 @@ MacStatsCalculator::DlSchedulingCallback (Ptr<MacStatsCalculator> macStats, std:
   NS_LOG_FUNCTION (macStats << path);
   uint64_t imsi = 0;
   std::ostringstream pathAndRnti;
-  // std::string pathEnb  = path.substr (0, path.find ("/ComponentCarrierMap"));
-  pathAndRnti << path << "/" << dlSchedulingCallbackInfo.rnti; // pathEnb << "/LteEnbRrc/UeMap/" << dlSchedulingCallbackInfo.rnti;
+  std::string pathEnb  = path.substr (0, path.find ("/ComponentCarrierMap"));
+  pathAndRnti << pathEnb << "/LteEnbRrc/UeMap/" << dlSchedulingCallbackInfo.rnti;
   if (macStats->ExistsImsiPath (pathAndRnti.str ()) == true)
     {
       imsi = macStats->GetImsiPath (pathAndRnti.str ());
     }
   else
     {
-      imsi = FindImsiFromEnbMac (path, dlSchedulingCallbackInfo.rnti);
+      imsi = FindImsiFromEnbRlcPath (pathAndRnti.str ());
       macStats->SetImsiPath (pathAndRnti.str (), imsi);
     }
   uint16_t cellId = 0;
@@ -196,7 +199,7 @@ MacStatsCalculator::DlSchedulingCallback (Ptr<MacStatsCalculator> macStats, std:
     }
   else
     {
-      cellId = FindCellIdFromEnbMac (path, dlSchedulingCallbackInfo.rnti);
+      cellId = FindCellIdFromEnbRlcPath (pathAndRnti.str ());
       macStats->SetCellIdPath (pathAndRnti.str (), cellId);
     }
 
@@ -212,15 +215,15 @@ MacStatsCalculator::UlSchedulingCallback (Ptr<MacStatsCalculator> macStats, std:
 
   uint64_t imsi = 0;
   std::ostringstream pathAndRnti;
-  // std::string pathEnb  = path.substr (0, path.find ("/ComponentCarrierMap"));
-  pathAndRnti << path << "/" << rnti; // << pathEnb << "/LteEnbRrc/UeMap/" << rnti;
+  std::string pathEnb  = path.substr (0, path.find ("/ComponentCarrierMap"));
+  pathAndRnti << pathEnb << "/LteEnbRrc/UeMap/" << rnti;
   if (macStats->ExistsImsiPath (pathAndRnti.str ()) == true)
     {
       imsi = macStats->GetImsiPath (pathAndRnti.str ());
     }
   else
     {
-      imsi = FindImsiFromEnbMac (path, rnti);
+      imsi = FindImsiFromEnbRlcPath (pathAndRnti.str ());
       macStats->SetImsiPath (pathAndRnti.str (), imsi);
     }
   uint16_t cellId = 0;
@@ -230,7 +233,7 @@ MacStatsCalculator::UlSchedulingCallback (Ptr<MacStatsCalculator> macStats, std:
     }
   else
     {
-      cellId = FindCellIdFromEnbMac (path, rnti);
+      cellId = FindCellIdFromEnbRlcPath (pathAndRnti.str ());
       macStats->SetCellIdPath (pathAndRnti.str (), cellId);
     }
 

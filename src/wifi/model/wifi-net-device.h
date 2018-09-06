@@ -22,7 +22,6 @@
 #define WIFI_NET_DEVICE_H
 
 #include "ns3/net-device.h"
-#include "ns3/queue-item.h"
 #include "ns3/traced-callback.h"
 
 namespace ns3 {
@@ -31,6 +30,10 @@ class WifiRemoteStationManager;
 class WifiPhy;
 class WifiMac;
 class NetDeviceQueueInterface;
+class QueueItem;
+
+/// This value conforms to the 802.11 specification
+static const uint16_t MAX_MSDU_SIZE = 2304;
 
 /**
  * \defgroup wifi Wifi Models
@@ -144,9 +147,6 @@ private:
    */
   WifiNetDevice &operator = (const WifiNetDevice &o);
 
-  /// This value conforms to the 802.11 specification
-  static const uint16_t MAX_MSDU_SIZE = 2304;
-
   /**
    * Set that the link is up. A link is always up in ad-hoc mode.
    * For a STA, a link is up when the STA is associated with an AP.
@@ -156,12 +156,6 @@ private:
    * Set that the link is down (i.e. STA is not associated).
    */
   void LinkDown (void);
-  /**
-   * Return the Channel this device is connected to.
-   *
-   * \return Ptr to Channel object
-   */
-  Ptr<Channel> DoGetChannel (void) const;
   /**
    * Complete the configuration of this Wi-Fi device by
    * connecting all lower components (e.g. MAC, WifiRemoteStation) together.

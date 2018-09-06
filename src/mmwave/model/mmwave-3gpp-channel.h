@@ -1,21 +1,21 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- *  
+ *
+ *
  *   Author: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
@@ -53,7 +53,9 @@
 #define Y_INDEX 3
 #define R_INDEX 4
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 //class MmWave3gppBuildingsPropagationLossModel;
 
@@ -95,6 +97,8 @@ struct Params3gpp : public SimpleRefCount<Params3gpp>
 	Vector m_speed;
 	double m_dis2D;
 	double m_dis3D;
+
+	std::map<Ptr<NetDevice>, complexVector_t> m_allLongTermMap;
 };
 
 /**
@@ -159,18 +163,18 @@ struct ParamsTable: public Object
 };
 
 /**
- * \brief This class implements the fading computation of the 3GPP TR 38.900 channel model and performs the 
+ * \brief This class implements the fading computation of the 3GPP TR 38.900 channel model and performs the
  * beamforming gain computation. It implements the SpectrumPropagationLossModel interface
  */
 class MmWave3gppChannel : public SpectrumPropagationLossModel
 {
 public:
 
-	/** 
+	/**
     * Constructor
     */
 	MmWave3gppChannel ();
-	/** 
+	/**
    	* Destructor
    	*/
 	virtual ~MmWave3gppChannel ();
@@ -219,6 +223,15 @@ public:
 	 */
 	void SetPathlossModel (Ptr<PropagationLossModel> pathloss);
 
+	/**
+	 * Set MmWave3gppChannel in interference/data or reference signal mode.
+	 * With the first, the beamforming pairs are associated to the data transmission
+	 * ongoing, and correctly handle the interference
+	 * With the second, on each link MmWave3gppChannel uses the BF vectors associated to the link
+	 *@param boolean flag (true = interference/data mode)
+	 */
+	void SetInterferenceOrDataMode(bool flag);
+
 private:
 
 	/**
@@ -255,7 +268,7 @@ private:
 			Vector speed, double dis2D, double dis3D) const;
 
 	/**
-	 * Update the channel realization with procedure A of TR 38.900 Sec 7.6.3.2 
+	 * Update the channel realization with procedure A of TR 38.900 Sec 7.6.3.2
 	 * for the spatial consistency
 	 * @params the previous channel realization in a Params3gpp object
 	 * @params the ParamsTable for the specific scenario
@@ -277,7 +290,7 @@ private:
 	 * @params the channel realizationin as a Params3gpp object
 	 */
 	void LongTermCovMatrixBeamforming (Ptr<Params3gpp> params) const;
-	
+
 	/**
 	 * Scan all sectors with predefined code book and select the one returns maximum gain.
 	 * The BF vector is stored in the Params3gpp object passed as parameter
@@ -288,22 +301,26 @@ private:
 
 
 	/**
-	 * Compute and store the long term fading params in order to decrease the computational load
+	 * Compute and return the long term fading params in order to decrease the computational load
 	 * @params the channel realizationin as a Params3gpp object
+	 * @return the complexVector_t with the BF applied to the channel
 	 */
-	void CalLongTerm (Ptr<Params3gpp> params) const;
+	complexVector_t CalLongTerm (Ptr<Params3gpp> params) const;
 
 	/**
 	 * Compute the BF gain, apply frequency selectivity by phase-shifting with the cluster delays
 	 * and scale the txPsd to get the rxPsd
 	 * @params the tx PSD
 	 * @params the channel realizationin as a Params3gpp object
+	 * @params the longTerm component (i.e., with the BF vectors already applied)
 	 * @params the relative speed between UE and eNB
 	 * @returns the rx PSD
 	 */
 	Ptr<SpectrumValue> CalBeamformingGain (Ptr<const SpectrumValue> txPsd,
-												Ptr<Params3gpp> params, Vector speed) const;
-	
+												Ptr<Params3gpp> params,
+												complexVector_t longTerm,
+												Vector speed) const;
+
 	/**
 	 * Returns the bandwidth used in a scenario
 	 * @returns a double with the bandwidth
@@ -355,19 +372,23 @@ private:
 	Ptr<PropagationLossModel> m_3gppPathloss;
 	Ptr<ParamsTable> m_table3gpp;
 	Time m_updatePeriod;
-	bool m_cellScan;
+	bool m_directBeam;
 	bool m_blockage;
 	uint16_t m_numNonSelfBloking; //number of non-self-blocking regions.
 	bool m_portraitMode; //true (portrait mode); false (landscape mode).
 	std::string m_scenario;
 	double m_blockerSpeed;
 	bool m_forceInitialBfComputation;
+	bool m_interferenceOrDataMode;
+
+	NetDeviceContainer m_enbNetDeviceContainer;
+	NetDeviceContainer m_ueNetDeviceContainer;
 
 };
 
 
-
-}  //namespace ns3
+} // namespace mmwave
+}  // namespace ns3
 
 
 #endif /* MMWAVE_3GPP_CHANNEL_H_ */

@@ -22,7 +22,6 @@
 #ifndef VHT_CAPABILITIES_H
 #define VHT_CAPABILITIES_H
 
-#include "ns3/buffer.h"
 #include "wifi-information-element.h"
 
 namespace ns3 {
@@ -71,9 +70,9 @@ public:
   uint8_t DeserializeInformationField (Buffer::Iterator start, uint8_t length);
 
   /**
-   * Set the VHT Capabilties Info field in the VHT Capabilities information element.
+   * Set the VHT Capabilities Info field in the VHT Capabilities information element.
    *
-   * \param ctrl the VHT Capabilties Info field in the VHT Capabilities information element
+   * \param ctrl the VHT Capabilities Info field in the VHT Capabilities information element
    */
   void SetVhtCapabilitiesInfo (uint32_t ctrl);
   /**
@@ -84,9 +83,9 @@ public:
   void SetSupportedMcsAndNssSet (uint64_t ctrl);
 
   /**
-   * Return the VHT Capabilties Info field in the VHT Capabilities information element.
+   * Return the VHT Capabilities Info field in the VHT Capabilities information element.
    *
-   * \return the VHT Capabilties Info field in the VHT Capabilities information element
+   * \return the VHT Capabilities Info field in the VHT Capabilities information element
    */
   uint32_t GetVhtCapabilitiesInfo () const;
   /**
@@ -147,12 +146,6 @@ public:
   void SetMaxAmpduLengthExponent (uint8_t exponent);
 
   /**
-   * Get the maximum MPDU length.
-   *
-   * \returns the maximum MPDU length
-   */
-  uint8_t GetMaxMpduLength () const;
-  /**
    * Get the supported channel width set.
    *
    * \returns the maximum MPDU length
@@ -165,18 +158,6 @@ public:
    */
   uint8_t GetRxLdpc () const;
   /**
-   * Get the short guard interval 80 MHz.
-   *
-   * \returns the short guard interval 80 MHz
-   */
-  uint8_t GetShortGuardIntervalFor80Mhz () const;
-  /**
-   * Get the short guard interval 80 MHz.
-   *
-   * \returns the short guard interval 80 MHz
-   */
-  uint8_t GetShortGuardIntervalFor160Mhz () const;
-  /**
    * Get the receive STBC.
    *
    * \returns the receive STBC
@@ -188,35 +169,12 @@ public:
    * \returns the transmit STBC
    */
   uint8_t GetTxStbc () const;
-  /**
-   * Get the maximum AMPDU length exponent.
-   *
-   * \returns the maximum AMPDU length exponent
-   */
-  uint8_t GetMaxAmpduLengthExponent () const;
 
-  // MCS and NSS field information
-  // For each value of NSS ranging from 1 to 8, we need to encode two bits.
-  // The value 0 indicates that the maximum MCS for that spatial stream is 7.
-  // The value 1 indicates that the maximum MCS for that spatial stream is 8.
-  // The value 2 indicates that the maximum MCS for that spatial stream is 9.
-  //
-  // The maps may be set all at once by passing in a 16-bit field corresponding
-  // to the above, or incrementally for each NSS separately, where the
-  // MCS value must be in the range 7-9.
-  /**
-   * \param map The 16-bit encoding of Max MCS for each of 8 spatial streams
-   */
-  void SetRxMcsMap (uint16_t map);
   /**
    * \param mcs Max MCS value (between 7 and 9)
    * \param nss Spatial stream for which the Max MCS value is being set
    */
   void SetRxMcsMap (uint8_t mcs, uint8_t nss);
-  /**
-   * \param map The 16-bit encoding of Max MCS for each of 8 spatial streams
-   */
-  void SetTxMcsMap (uint16_t map);
   /**
    * \param mcs Max MCS value (between 7 and 9)
    * \param nss Spatial stream for which the Max MCS value is being set
@@ -244,29 +202,11 @@ public:
   bool IsSupportedMcs (uint8_t mcs, uint8_t Nss) const;
 
   /**
-   * Get the receive MCS map.
-   *
-   * \returns the receive MCS map
-   */
-  uint16_t GetRxMcsMap () const;
-  /**
-   * Get the transmit MCS map.
-   *
-   * \returns the transmit MCS map
-   */
-  uint16_t GetTxMcsMap () const;
-  /**
    * Get the receive highest supported LGI data rate.
    *
    * \returns the receive highest supported LGI data rate.
    */
   uint16_t GetRxHighestSupportedLgiDataRate () const;
-  /**
-   * Get the transmit highest supported LGI data rate.
-   *
-   * \returns the transmit highest supported LGI data rate.
-   */
-  uint16_t GetTxHighestSupportedLgiDataRate () const;
 
   /**
    * Get the is transmit MCS supported.
@@ -303,8 +243,8 @@ public:
 
 private:
   //Capabilities Info fields
-  uint16_t m_maxMpduLength; ///< maximum MPDU length
-  uint16_t m_supportedChannelWidthSet; ///< supported channel width set
+  uint8_t m_maxMpduLength; ///< maximum MPDU length
+  uint8_t m_supportedChannelWidthSet; ///< supported channel width set
   uint8_t m_rxLdpc; ///< receive LDPC
   uint8_t m_shortGuardIntervalFor80Mhz; ///< short guard interval 80 MHz
   uint8_t m_shortGuardIntervalFor160Mhz;  ///< short guard interval 160 MHz
@@ -334,9 +274,6 @@ private:
 };
 
 std::ostream &operator << (std::ostream &os, const VhtCapabilities &vhtcapabilities);
-std::istream &operator >> (std::istream &is, VhtCapabilities &vhtcapabilities);
-
-ATTRIBUTE_HELPER_HEADER (VhtCapabilities);
 
 } //namespace ns3
 

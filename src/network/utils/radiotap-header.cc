@@ -49,7 +49,12 @@ RadiotapHeader::RadiotapHeader ()
     m_vhtBandwidth (0),
     m_vhtCoding (0),
     m_vhtGroupId (0),
-    m_vhtPartialAid (0)
+    m_vhtPartialAid (0),
+    m_hePad (0),
+    m_heData1 (0),
+    m_heData2 (0),
+    m_heData3 (0),
+    m_heData5 (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -256,6 +261,20 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
       start.WriteU8 (m_vhtCoding);
       start.WriteU8 (m_vhtGroupId);
       start.WriteU16 (m_vhtPartialAid);
+    }
+
+  //
+  // HE field.
+  //
+  if (m_present & RADIOTAP_HE) // bit 23
+    {
+      start.WriteU8 (0, m_hePad);
+      start.WriteU16 (m_heData1);
+      start.WriteU16 (m_heData2);
+      start.WriteU16 (m_heData3);
+      start.WriteU16 (0); //HE data4 field
+      start.WriteU16 (m_heData5);
+      start.WriteU16 (0); //HE data6 field
     }
 }
 
@@ -472,6 +491,22 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
       bytesRead += (12 + m_vhtPad);
     }
 
+  //
+  // HE field.
+  //
+  if (m_present & RADIOTAP_HE) // bit 23
+    {
+      m_hePad = ((2 - bytesRead % 2) % 2);
+      start.Next (m_hePad);
+      m_heData1 = start.ReadU16 ();
+      m_heData2 = start.ReadU16 ();
+      m_heData3 = start.ReadU16 ();
+      start.ReadU16 (); //HE data4 field
+      m_heData5 = start.ReadU16 ();
+      start.ReadU16 (); //HE data6 field
+      bytesRead += (12 + m_hePad);
+    }
+
   NS_ASSERT_MSG (m_length == bytesRead, "RadiotapHeader::Deserialize(): expected and actual lengths inconsistent");
   return bytesRead;
 }
@@ -482,15 +517,15 @@ RadiotapHeader::Print (std::ostream &os) const
   NS_LOG_FUNCTION (this << &os);
   os << " tsft=" << m_tsft
      << " flags=" << std::hex << m_flags << std::dec
-     << " rate=" << (uint16_t) m_rate
+     << " rate=" << +m_rate
      << " freq=" << m_channelFreq
-     << " chflags=" << std::hex << (uint32_t)m_channelFlags << std::dec
-     << " signal=" << (int16_t) m_antennaSignal
-     << " noise=" << (int16_t) m_antennaNoise
+     << " chflags=" << std::hex << +m_channelFlags << std::dec
+     << " signal=" << +m_antennaSignal
+     << " noise=" << +m_antennaNoise
      << " mcsKnown=" << m_mcsKnown
      << " mcsFlags=" << m_mcsFlags
      << " mcsRate=" << m_mcsRate
-     << " ampduStatusFlags=" << (int16_t) m_ampduStatusFlags
+     << " ampduStatusFlags=" << +m_ampduStatusFlags
      << " vhtKnown=" << m_vhtKnown
      << " vhtFlags=" << m_vhtFlags
      << " vhtBandwidth=" << m_vhtBandwidth
@@ -500,7 +535,11 @@ RadiotapHeader::Print (std::ostream &os) const
      << " vhtMcsNss for user 4=" << m_vhtMcsNss[3]
      << " vhtCoding=" << m_vhtCoding
      << " vhtGroupId=" << m_vhtGroupId
-     << " vhtPartialAid=" << m_vhtPartialAid;
+     << " vhtPartialAid=" << m_vhtPartialAid
+     << " heData1=" << m_heData1
+     << " heData2=" << m_heData2
+     << " heData3=" << m_heData3
+     << " heData5=" << m_heData5;
 }
 
 void
@@ -518,17 +557,10 @@ RadiotapHeader::SetTsft (uint64_t value)
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
 }
 
-uint64_t
-RadiotapHeader::GetTsft () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_tsft;
-}
-
 void
 RadiotapHeader::SetFrameFlags (uint8_t flags)
 {
-  NS_LOG_FUNCTION (this << static_cast<uint32_t> (flags));
+  NS_LOG_FUNCTION (this << +flags);
   m_flags = flags;
 
   if (!(m_present & RADIOTAP_FLAGS))
@@ -540,17 +572,10 @@ RadiotapHeader::SetFrameFlags (uint8_t flags)
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
 }
 
-uint8_t
-RadiotapHeader::GetFrameFlags (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_flags;
-}
-
 void
 RadiotapHeader::SetRate (uint8_t rate)
 {
-  NS_LOG_FUNCTION (this << static_cast<uint32_t> (rate));
+  NS_LOG_FUNCTION (this << +rate);
   m_rate = rate;
 
   if (!(m_present & RADIOTAP_RATE))
@@ -560,13 +585,6 @@ RadiotapHeader::SetRate (uint8_t rate)
     }
 
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
-}
-
-uint8_t
-RadiotapHeader::GetRate (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_rate;
 }
 
 void
@@ -584,20 +602,6 @@ RadiotapHeader::SetChannelFrequencyAndFlags (uint16_t frequency, uint16_t flags)
     }
 
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
-}
-
-uint16_t
-RadiotapHeader::GetChannelFrequency (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_channelFreq;
-}
-
-uint16_t
-RadiotapHeader::GetChannelFlags (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_channelFlags;
 }
 
 void
@@ -626,13 +630,6 @@ RadiotapHeader::SetAntennaSignalPower (double signal)
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
 }
 
-uint8_t
-RadiotapHeader::GetAntennaSignalPower (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_antennaSignal;
-}
-
 void
 RadiotapHeader::SetAntennaNoisePower (double noise)
 {
@@ -659,17 +656,10 @@ RadiotapHeader::SetAntennaNoisePower (double noise)
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
 }
 
-uint8_t
-RadiotapHeader::GetAntennaNoisePower (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_antennaNoise;
-}
-
 void
 RadiotapHeader::SetMcsFields (uint8_t known, uint8_t flags, uint8_t mcs)
 {
-  NS_LOG_FUNCTION (this << known << flags << mcs);
+  NS_LOG_FUNCTION (this << known << +flags << +mcs);
   m_mcsKnown = known;
   m_mcsFlags = flags;
   m_mcsRate = mcs;
@@ -680,27 +670,6 @@ RadiotapHeader::SetMcsFields (uint8_t known, uint8_t flags, uint8_t mcs)
     }
 
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
-}
-
-uint8_t
-RadiotapHeader::GetMcsKnown () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_mcsKnown;
-}
-
-uint8_t
-RadiotapHeader::GetMcsFlags () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_mcsFlags;
-}
-
-uint8_t
-RadiotapHeader::GetMcsRate () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_mcsRate;
 }
 
 void
@@ -720,24 +689,10 @@ RadiotapHeader::SetAmpduStatus (uint32_t referenceNumber, uint16_t flags, uint8_
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
 }
 
-uint32_t
-RadiotapHeader::GetAmpduStatusRef () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_ampduStatusRef;
-}
-
-uint16_t
-RadiotapHeader::GetAmpduStatusFlags () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_ampduStatusFlags;
-}
-
 void
 RadiotapHeader::SetVhtFields (uint16_t known, uint8_t flags, uint8_t bandwidth, uint8_t mcs_nss[4], uint8_t coding, uint8_t group_id, uint16_t partial_aid)
 {
-  NS_LOG_FUNCTION (this << known << flags << mcs_nss[0] << mcs_nss[1] << mcs_nss[2] << mcs_nss[3] << coding << group_id << partial_aid);
+  NS_LOG_FUNCTION (this << known << flags << +mcs_nss[0] << +mcs_nss[1] << +mcs_nss[2] << +mcs_nss[3] << +coding << +group_id << +partial_aid);
   m_vhtKnown = known;
   m_vhtFlags = flags;
   m_vhtBandwidth = bandwidth;
@@ -758,74 +713,22 @@ RadiotapHeader::SetVhtFields (uint16_t known, uint8_t flags, uint8_t bandwidth, 
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
 }
 
-uint16_t
-RadiotapHeader::GetVhtKnown () const
+void
+RadiotapHeader::SetHeFields (uint16_t data1, uint16_t data2, uint16_t data3, uint16_t data5)
 {
-  NS_LOG_FUNCTION (this);
-  return m_vhtKnown;
-}
+  NS_LOG_FUNCTION (this << data1 << data2 << data3 << data5);
+  m_heData1 = data1;
+  m_heData2 = data2;
+  m_heData3 = data3;
+  m_heData5 = data5;
+  if (!(m_present & RADIOTAP_HE))
+    {
+      m_hePad = ((2 - m_length % 2) % 2);
+      m_present |= RADIOTAP_HE;
+      m_length += 12;
+    }
 
-uint8_t
-RadiotapHeader::GetVhtFlags () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtFlags;
-}
-
-uint8_t
-RadiotapHeader::GetVhtBandwidth () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtBandwidth;
-}
-
-uint8_t
-RadiotapHeader::GetVhtMcsNssUser1 () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtMcsNss[0];
-}
-
-uint8_t
-RadiotapHeader::GetVhtMcsNssUser2 () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtMcsNss[1];
-}
-
-uint8_t
-RadiotapHeader::GetVhtMcsNssUser3 () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtMcsNss[2];
-}
-
-uint8_t
-RadiotapHeader::GetVhtMcsNssUser4 () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtMcsNss[3];
-}
-
-uint8_t
-RadiotapHeader::GetVhtCoding () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtCoding;
-}
-
-uint8_t
-RadiotapHeader::GetVhtGroupId () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtGroupId;
-}
-
-uint8_t
-RadiotapHeader::GetVhtPartialAid () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_vhtPartialAid;
+  NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
 }
 
 } // namespace ns3

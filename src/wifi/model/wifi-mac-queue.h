@@ -24,96 +24,11 @@
 #ifndef WIFI_MAC_QUEUE_H
 #define WIFI_MAC_QUEUE_H
 
-#include "ns3/queue.h"
-#include "wifi-mac-header.h"
+#include "wifi-mac-queue-item.h"
 
 namespace ns3 {
+
 class QosBlockedDestinations;
-
-/**
- * \ingroup wifi
- *
- * WifiMacQueueItem stores (const) packets along with their Wifi MAC headers
- * and the time when they were enqueued.
- */
-class WifiMacQueueItem : public SimpleRefCount<WifiMacQueueItem>
-{
-public:
-  /**
-   * \brief Create a Wifi MAC queue item containing a packet and a Wifi MAC header.
-   * \param p the const packet included in the created item.
-   * \param header the Wifi Mac header included in the created item.
-   */
-  WifiMacQueueItem (Ptr<const Packet> p, const WifiMacHeader & header);
-
-  virtual ~WifiMacQueueItem ();
-
-  /**
-   * \brief Get the packet stored in this item
-   * \return the packet stored in this item.
-   */
-  Ptr<const Packet> GetPacket (void) const;
-
-  /**
-   * \brief Get the header stored in this item
-   * \return the header stored in this item.
-   */
-  const WifiMacHeader & GetHeader (void) const;
-
-  /**
-   * \brief Return the requested address present in the header
-   * \param type the type of the address to return
-   * \return the address
-   */
-  Mac48Address GetAddress (enum WifiMacHeader::AddressType type) const;
-
-  /**
-   * \brief Get the timestamp included in this item
-   * \return the timestamp included in this item.
-   */
-  Time GetTimeStamp (void) const;
-
-  /**
-   * \brief Return the size of the packet included in this item
-   *
-   * \return the size of the packet included in this item.
-   */
-  uint32_t GetSize (void) const;
-
-private:
-  /**
-   * \brief Default constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  WifiMacQueueItem ();
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  WifiMacQueueItem (const WifiMacQueueItem &);
-  /**
-   * \brief Assignment operator
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  WifiMacQueueItem &operator = (const WifiMacQueueItem &);
-
-  Ptr<const Packet> m_packet;  //!< The packet contained in this queue item
-  WifiMacHeader m_header;      //!< Wifi MAC header associated with the packet
-  Time m_tstamp;               //!< timestamp when the packet arrived at the queue
-};
-
-
-// The following explicit template instantiation declaration prevents modules
-// including this header file from implicitly instantiating Queue<WifiMacQueueItem>.
-// This would cause python examples using wifi to crash at runtime with the
-// following error message: "Trying to allocate twice the same uid:
-// ns3::Queue<WifiMacQueueItem>"
-extern template class Queue<WifiMacQueueItem>;
-
 
 /**
  * \ingroup wifi
@@ -183,20 +98,29 @@ public:
   Ptr<WifiMacQueueItem> Dequeue (void);
   /**
    * Search and return, if present in the queue, the first packet having the
+   * address indicated by <i>type</i> equal to <i>addr</i>.
+   * This method removes the packet from the queue.
+   * It is typically used by ns3::Txop during the CF period.
+   *
+   * \param dest the given destination
+   *
+   * \return the packet
+   */
+  Ptr<WifiMacQueueItem> DequeueByAddress (Mac48Address dest);
+  /**
+   * Search and return, if present in the queue, the first packet having the
    * address indicated by <i>type</i> equal to <i>addr</i>, and tid
    * equal to <i>tid</i>. This method removes the packet from the queue.
-   * It is typically used by ns3::EdcaTxopN in order to perform correct MSDU
+   * It is typically used by ns3::QosTxop in order to perform correct MSDU
    * aggregation (A-MSDU).
    *
    * \param tid the given TID
-   * \param type the given address type
-   * \param addr the given destination
+   * \param dest the given destination
    *
    * \return the packet
    */
   Ptr<WifiMacQueueItem> DequeueByTidAndAddress (uint8_t tid,
-                                                WifiMacHeader::AddressType type,
-                                                Mac48Address addr);
+                                                Mac48Address dest);
   /**
    * Return first available packet for transmission. A packet could be no available
    * if it is a QoS packet with a tid and an address1 fields equal to <i>tid</i> and <i>addr</i>
@@ -219,18 +143,16 @@ public:
    * Search and return, if present in the queue, the first packet having the
    * address indicated by <i>type</i> equal to <i>addr</i>, and tid
    * equal to <i>tid</i>. This method does not remove the packet from the queue.
-   * It is typically used by ns3::EdcaTxopN in order to perform correct MSDU
+   * It is typically used by ns3::QosTxop in order to perform correct MSDU
    * aggregation (A-MSDU).
    *
    * \param tid the given TID
-   * \param type the given address type
-   * \param addr the given destination
+   * \param dest the given destination
    *
    * \return packet
    */
   Ptr<const WifiMacQueueItem> PeekByTidAndAddress (uint8_t tid,
-                                                   WifiMacHeader::AddressType type,
-                                                   Mac48Address addr);
+                                                   Mac48Address dest);
   /**
    * Return first available packet for transmission. The packet is not removed from queue.
    *
@@ -256,18 +178,24 @@ public:
    */
   bool Remove (Ptr<const Packet> packet);
   /**
-   * Return the number of QoS packets having tid equal to <i>tid</i> and address
-   * specified by <i>type</i> equal to <i>addr</i>.
+   * Return the number of packets having destination address specified by
+   * <i>dest</i>.
+   *
+   * \param dest the given destination
+   *
+   * \return the number of packets
+   */
+  uint32_t GetNPacketsByAddress (Mac48Address dest);
+  /**
+   * Return the number of QoS packets having tid equal to <i>tid</i> and
+   * destination address equal to <i>dest</i>.
    *
    * \param tid the given TID
-   * \param type the given address type
-   * \param addr the given destination
+   * \param dest the given destination
    *
    * \return the number of QoS packets
    */
-  uint32_t GetNPacketsByTidAndAddress (uint8_t tid,
-                                       WifiMacHeader::AddressType type,
-                                       Mac48Address addr);
+  uint32_t GetNPacketsByTidAndAddress (uint8_t tid, Mac48Address dest);
 
   /**
    * \return true if the queue is empty; false otherwise

@@ -2,31 +2,34 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *								 Integration of Carrier Aggregation
  */
 
 
@@ -43,7 +46,9 @@
 #include <ns3/pointer.h>
 #include <ns3/node.h>
 
-namespace ns3{
+namespace ns3 {
+
+namespace mmwave {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveUePhy");
 
@@ -181,7 +186,7 @@ MmWaveUePhy::GetUeCphySapProvider ()
   return (m_ueCphySapProvider);
 }
 
-void 
+void
 MmWaveUePhy::SetImsi (uint64_t imsi)
 {
 	m_imsi = imsi;
@@ -264,7 +269,7 @@ MmWaveUePhy::UpdateSinrEstimate(uint16_t cellId, double sinr)
 		else
 		{
 			m_consecutiveSinrBelowThreshold = 0;
-		}	
+		}
 		NS_LOG_DEBUG("Phy layers: update sinr value for cell " << m_cellId << " to " << currentCellSinr << " m_consecutiveSinrBelowThreshold " << (uint16_t)m_consecutiveSinrBelowThreshold << " at time " << Simulator::Now());
 	}
 }
@@ -313,25 +318,25 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	m_phySapUser->SetConfigurationParameters(config);
 
 	Ptr<MmWaveEnbNetDevice> enbNetDevice = m_registeredEnb.find(cellId)->second.second;
-	if(DynamicCast<MmWaveUeNetDevice>(m_netDevice))
+	if(DynamicCast<mmwave::MmWaveUeNetDevice>(m_netDevice))
 	{
-		DynamicCast<MmWaveUeNetDevice>(m_netDevice)->SetTargetEnb(enbNetDevice);
+		DynamicCast<mmwave::MmWaveUeNetDevice>(m_netDevice)->SetTargetEnb(enbNetDevice);
 	}
 	else if(DynamicCast<McUeNetDevice>(m_netDevice))
 	{
 		DynamicCast<McUeNetDevice>(m_netDevice)->SetMmWaveTargetEnb(enbNetDevice);
 	}
-	NS_LOG_UNCOND("UE register to enb " << enbNetDevice->GetCellId());
+	NS_LOG_UNCOND("UE register to enb " << m_cellId);
 	// call antennaarrya to change the bf vector
 	Ptr<AntennaArrayModel> txAntennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
 	if(txAntennaArray != 0)
 	{
-		txAntennaArray->ChangeBeamformingVector(enbNetDevice);
+		txAntennaArray->ChangeBeamformingVectorPanel(enbNetDevice);
 	}
 	else
 	{
 		NS_FATAL_ERROR("UE is not using an AntennaArrayModel");
-	}	
+	}
 
 	if(m_frameNum != 0)
 	{
@@ -382,13 +387,13 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 	m_downlinkSpectrumPhy->ResetSpectrumModel();
 	Ptr<SpectrumValue> noisePsd =
 			MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
-	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);	
+	m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
 	m_downlinkSpectrumPhy->GetSpectrumChannel()->AddRx(m_downlinkSpectrumPhy);
 	m_downlinkSpectrumPhy->SetCellId(m_cellId);
 	NS_LOG_INFO("Registered to eNB with CellId " << m_cellId);
 }
 
-void 
+void
 MmWaveUePhy::RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config, Ptr<MmWaveEnbNetDevice> enbNetDevice)
 {
 	NS_ASSERT_MSG(m_registeredEnb.find(cellId) == m_registeredEnb.end(), "Enb already registered");
@@ -585,7 +590,7 @@ MmWaveUePhy::SubframeIndication (uint16_t frameNum, uint8_t sfNum)
 	m_sfAllocInfo[m_sfNum].m_slotAllocInfo.push_back (ulCtrlSlot);
 
 	// else
-	// {		
+	// {
 	// 	m_currSfAllocInfo = SfAllocInfo (SfnSf (m_frameNum, m_sfNum, 0));
 	// 	NS_ASSERT ((m_currSfAllocInfo.m_sfnSf.m_frameNum == m_frameNum) &&
 	// 	           (m_currSfAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
@@ -621,7 +626,7 @@ MmWaveUePhy::StartSlot ()
 	{
 		if(txAntennaArray != 0)
 		{
-			txAntennaArray->ChangeBeamformingVector(m_registeredEnb.find(m_cellId)->second.second);
+			txAntennaArray->ChangeBeamformingVectorPanel(m_registeredEnb.find(m_cellId)->second.second);
 		}
 		else
 		{
@@ -659,7 +664,7 @@ MmWaveUePhy::StartSlot ()
 	if (m_slotNum == 0)  // reserved DL control
 	{
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetDlCtrlSymbols ());
-		NS_LOG_DEBUG ("UE" << m_rnti << " RXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " RXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 				              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
 	}
@@ -668,7 +673,7 @@ MmWaveUePhy::StartSlot ()
 		SetSubChannelsForTransmission (m_channelChunks);
 		slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetUlCtrlSymbols ());
 		std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
-		NS_LOG_DEBUG ("UE" << m_rnti << " TXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 			              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod-NanoSeconds(1.0)));
 		SendCtrlChannels (ctrlMsg, slotPeriod-NanoSeconds(1.0));
@@ -681,7 +686,7 @@ MmWaveUePhy::StartSlot ()
 		                                      m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, true,
 		                                      currSlot.m_dci.m_symStart, currSlot.m_dci.m_numSym);
 		m_reportDlTbSize (m_imsi, currSlot.m_dci.m_tbSize);
-		NS_LOG_DEBUG ("UE" << m_rnti << " RXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " RXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1) <<
 		              "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
 	}
@@ -720,7 +725,7 @@ MmWaveUePhy::StartSlot ()
 			// pktBurst->AddPacket (emptyPdu);
 		}
 		m_reportUlTbSize (m_imsi, currSlot.m_dci.m_tbSize);
-		NS_LOG_DEBUG ("UE" << m_rnti << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
+		NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
 		              << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
 		              << "\t start " << Simulator::Now() << " end " << (Simulator::Now()+slotPeriod));
 		if(pktBurst != 0)
@@ -757,7 +762,7 @@ MmWaveUePhy::EndSlot ()
 			sfNum = m_sfNum + 1;
 		}
 		m_slotNum = 0;
-		NS_LOG_DEBUG ("MmWaveUePhy: Next subframe scheduled for " << m_lastSfStart + m_sfPeriod - Simulator::Now() << " first if");
+		NS_LOG_INFO ("MmWaveUePhy: Next subframe scheduled for " << m_lastSfStart + m_sfPeriod - Simulator::Now() << " first if");
 		Simulator::Schedule (m_lastSfStart + m_sfPeriod - Simulator::Now(), &MmWaveUePhy::SubframeIndication, this, frameNum, sfNum);
 	}
 	else
@@ -784,10 +789,10 @@ MmWaveUePhy::EndSlot ()
 		m_slotNum++;
 		nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
 						                             m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
-		NS_LOG_DEBUG ("m_slotNum " << (uint16_t)m_slotNum);
-		NS_LOG_DEBUG ("m_phyMacConfig->GetSymbolPeriod () " << m_phyMacConfig->GetSymbolPeriod () << " other part " << (uint16_t) m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
-		NS_LOG_DEBUG ("nextSlotStart " << nextSlotStart << " m_lastSfStart " << m_lastSfStart << " now " << Simulator::Now());
-		NS_LOG_DEBUG ("MmWaveUePhy: Next subframe scheduled for " << nextSlotStart + m_lastSfStart - Simulator::Now() << " in else");
+		NS_LOG_INFO ("m_slotNum " << (uint16_t)m_slotNum);
+		NS_LOG_INFO ("m_phyMacConfig->GetSymbolPeriod () " << m_phyMacConfig->GetSymbolPeriod () << " other part " << (uint16_t) m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
+		NS_LOG_INFO ("nextSlotStart " << nextSlotStart << " m_lastSfStart " << m_lastSfStart << " now " << Simulator::Now());
+		NS_LOG_INFO ("MmWaveUePhy: Next subframe scheduled for " << nextSlotStart + m_lastSfStart - Simulator::Now() << " in else");
 		Simulator::Schedule (nextSlotStart+m_lastSfStart-Simulator::Now(), &MmWaveUePhy::StartSlot, this);
 	}
 
@@ -807,7 +812,7 @@ MmWaveUePhy::GetSubframeNumber (void)
 void
 MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
 {
-	if(!m_phyReset) 
+	if(!m_phyReset)
 	{
 		Simulator::Schedule(MicroSeconds(m_phyMacConfig->GetTbDecodeLatency()), &MmWaveUePhy::DelayPhyDataPacketReceived, this, p);
 	}
@@ -818,7 +823,7 @@ MmWaveUePhy::PhyDataPacketReceived (Ptr<Packet> p)
     //                              p);
 }
 
-void 
+void
 MmWaveUePhy::DelayPhyDataPacketReceived (Ptr<Packet> p)
 {
 	m_phySapUser->ReceivePhyPdu (p);
@@ -988,7 +993,7 @@ MmWaveUePhy::DoReset ()
 	m_sendDataChannelEvent.Cancel();
 	m_sendDlHarqFeedbackEvent.Cancel();
 	m_downlinkSpectrumPhy->Reset ();
-  	// clear DCI 
+  	// clear DCI
   	m_phyReset = true;
 
 	//m_currSfAllocInfo.m_slotAllocInfo.clear();
@@ -1089,4 +1094,4 @@ MmWaveUePhy::SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq)
 
 }
 
-
+}

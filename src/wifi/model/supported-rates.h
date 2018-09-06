@@ -21,7 +21,6 @@
 #ifndef SUPPORTED_RATES_H
 #define SUPPORTED_RATES_H
 
-#include "ns3/buffer.h"
 #include "wifi-information-element.h"
 
 namespace ns3 {
@@ -154,20 +153,20 @@ public:
    *
    * \param bs the rate to be added
    */
-  void AddSupportedRate (uint32_t bs);
+  void AddSupportedRate (uint64_t bs);
   /**
    * Set the given rate to basic rates.
    *
    * \param bs the rate to be set
    */
-  void SetBasicRate (uint32_t bs);
+  void SetBasicRate (uint64_t bs);
   /**
    * Add a special value to the supported rate set, corresponding to
    * a BSS membership selector
    *
    * \param bs the special membership selector value (not a valid rate)
    */
-  void AddBssMembershipSelectorRate (uint32_t bs);
+  void AddBssMembershipSelectorRate (uint64_t bs);
   /**
    * Check if the given rate is supported.  The rate is encoded as it is
    * serialized to the Supported Rates Information Element (i.e. as a
@@ -177,7 +176,7 @@ public:
    *
    * \return true if the rate is supported, false otherwise
    */
-  bool IsSupportedRate (uint32_t bs) const;
+  bool IsSupportedRate (uint64_t bs) const;
   /**
    * Check if the given rate is a basic rate.  The rate is encoded as it is
    * serialized to the Supported Rates Information Element (i.e. as a
@@ -187,7 +186,7 @@ public:
    *
    * \return true if the rate is a basic rate, false otherwise
    */
-  bool IsBasicRate (uint32_t bs) const;
+  bool IsBasicRate (uint64_t bs) const;
   /**
    * Check if the given rate is a BSS membership selector value.  The rate
    * is encoded as it is serialized to the Supporting Rates Information
@@ -197,7 +196,7 @@ public:
    *
    * \return true if the rate is a BSS membership selector, false otherwise
    */
-  bool IsBssMembershipSelectorRate (uint32_t bs) const;
+  bool IsBssMembershipSelectorRate (uint64_t bs) const;
   /**
    * Return the number of supported rates.
    *
@@ -248,7 +247,7 @@ public:
    * extended.
    */
   friend class ExtendedSupportedRatesIE;
-  ExtendedSupportedRatesIE extended; //!< extended suppoted rates info element
+  ExtendedSupportedRatesIE extended; //!< extended supported rates info element
 
 
 private:

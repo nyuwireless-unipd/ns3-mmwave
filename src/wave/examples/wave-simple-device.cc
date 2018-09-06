@@ -72,7 +72,7 @@ private:
    */
   bool Receive (Ptr<NetDevice> dev, Ptr<const Packet> pkt, uint16_t mode, const Address &sender);
   /**
-   * Receive VSA functon
+   * Receive VSA function
    * \param pkt the packet
    * \param address the address
    * \returns true if successful
@@ -101,7 +101,7 @@ WaveNetDeviceExample::CreateWaveNodes (void)
   YansWifiChannelHelper waveChannel = YansWifiChannelHelper::Default ();
   YansWavePhyHelper wavePhy =  YansWavePhyHelper::Default ();
   wavePhy.SetChannel (waveChannel.Create ());
-  wavePhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11);
+  wavePhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11);
   QosWaveMacHelper waveMac = QosWaveMacHelper::Default ();
   WaveHelper waveHelper = WaveHelper::Default ();
   devices = waveHelper.Install (wavePhy, waveMac, nodes);

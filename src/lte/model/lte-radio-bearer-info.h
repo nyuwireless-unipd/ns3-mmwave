@@ -39,7 +39,7 @@ class LtePdcp;
 
 /**
  * store information on active radio bearer instance
- * 
+ *
  */
 class LteRadioBearerInfo : public Object
 {
@@ -47,44 +47,56 @@ class LteRadioBearerInfo : public Object
 public:
   LteRadioBearerInfo (void);
   virtual ~LteRadioBearerInfo (void);
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
-  Ptr<LteRlc> m_rlc;
-  Ptr<LtePdcp> m_pdcp;  
+  Ptr<LteRlc> m_rlc; ///< RLC
+  Ptr<LtePdcp> m_pdcp; ///< PDCP
 };
 
 
 /**
  * store information on active signaling radio bearer instance
- * 
+ *
  */
 class LteSignalingRadioBearerInfo : public LteRadioBearerInfo
 {
 
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
-  uint8_t m_srbIdentity;   
-  LteRrcSap::LogicalChannelConfig m_logicalChannelConfig;  
+  uint8_t m_srbIdentity; ///< SRB indentity
+  LteRrcSap::LogicalChannelConfig m_logicalChannelConfig; ///< logical channel config
 };
 
 
 /**
  * store information on active data radio bearer instance
- * 
+ *
  */
 class LteDataRadioBearerInfo : public LteRadioBearerInfo
 {
 
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
-  EpsBearer m_epsBearer;
-  uint8_t m_epsBearerIdentity;
-  uint8_t m_drbIdentity;
-  LteRrcSap::RlcConfig m_rlcConfig;
-  uint8_t m_logicalChannelIdentity;
-  LteRrcSap::LogicalChannelConfig m_logicalChannelConfig;
+  EpsBearer m_epsBearer; ///< EPS bearer
+  uint8_t m_epsBearerIdentity; ///< EPS bearer identity
+  uint8_t m_drbIdentity; ///< DRB identity
+  LteRrcSap::RlcConfig m_rlcConfig; ///< RLC config
+  uint8_t m_logicalChannelIdentity; ///< logical channel identity
+  LteRrcSap::LogicalChannelConfig m_logicalChannelConfig; ///< logical channel config
   uint32_t m_gtpTeid; /**< S1-bearer GTP tunnel endpoint identifier, see 36.423 9.2.1 */
   Ipv4Address m_transportLayerAddress; /**< IP Address of the SGW, see 36.423 9.2.1 */
   EpcX2Sap::RlcSetupRequest m_rlcSetupRequest; // complete bearer with related info, for MC functionalities
@@ -97,7 +109,7 @@ public:
   RlcBearerInfo (void);
   virtual ~RlcBearerInfo (void);
   static TypeId GetTypeId (void);
-    
+
     uint16_t    sourceCellId;
     uint16_t    targetCellId;
     uint32_t    gtpTeid;

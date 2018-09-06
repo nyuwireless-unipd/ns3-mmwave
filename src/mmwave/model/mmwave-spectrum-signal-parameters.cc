@@ -38,6 +38,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("mmwaveSpectrumSignalParameters");
 
+namespace mmwave {
+
 mmwaveSpectrumSignalParameters::mmwaveSpectrumSignalParameters ()
 {
   NS_LOG_FUNCTION (this);
@@ -125,6 +127,8 @@ MmWaveSpectrumSignalParametersDlCtrlFrame::Copy ()
   // The solution below is copied from the implementation of Copy<> (Ptr<>) in ptr.h
   Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> lssp (new MmWaveSpectrumSignalParametersDlCtrlFrame (*this), false);
   return lssp;
+}
+
 }
 
 }

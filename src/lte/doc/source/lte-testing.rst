@@ -1,4 +1,4 @@
-.. include:: replace.txt
+﻿.. include:: replace.txt
 .. highlight:: bash
 
 
@@ -164,7 +164,7 @@ represented in Figure :ref:`fig-lte-mcs-index`.
 The MCS which is used by the simulator is measured by
 obtaining the tracing output produced by the scheduler after 4ms (this
 is needed to account for the initial delay in CQI reporting). The SINR
-which is calcualted by the simulator is also obtained using the
+which is calculated by the simulator is also obtained using the
 ``LteChunkProcessor`` interface. The test
 passes if both the following conditions are satisfied:
  
@@ -321,10 +321,10 @@ simulates 1 UE and 1 eNodeB. The other one is `lte-ue-measurements-piecewise-2`,
 which has 1 UE and 2 eNodeBs in the simulation.
 
 Piecewise test #1 is intended to test the event-based criteria which are not
-dependent on the existence of a neighbouring cell. These criteria include Event
+dependent on the existence of a neighboring cell. These criteria include Event
 A1 and A2. The other events are also briefly tested to verify that they are
 still working correctly (albeit not reporting anything) in the absence of any
-neighbouring cell. Table :ref:`tab-ue-meas-piecewise-1` below lists the
+neighboring cell. Table :ref:`tab-ue-meas-piecewise-1` below lists the
 scenarios tested in piecewise test #1. 
 
 .. _tab-ue-meas-piecewise-1:
@@ -415,7 +415,7 @@ Handover configuration
 ######################
 
 The purpose of the handover configuration is to verify whether UE measurement
-configuration is updated properly after a succesful handover takes place. For
+configuration is updated properly after a successful handover takes place. For
 this purpose, the simulation will construct 2 eNodeBs with different UE
 measurement configuration, and the UE will perform handover from one cell to
 another. The UE will be located on a straight line between the 2 eNodeBs, and
@@ -684,7 +684,7 @@ simulation scenario where the UEs have a different SNR (constant for the whole s
 both scheduler should give the same amount of averaged throughput to each user.
 
 Specifically, for TD-BET, let :math:`F_i` be the fraction of time allocated to user i in total simulation time, 
-:math:`R^{fb}_i` be the the full bandwidth achievable rate for user i and :math:`T_i` be the achieved throughput of 
+:math:`R^{fb}_i` be the full bandwidth achievable rate for user i and :math:`T_i` be the achieved throughput of 
 user i. Then we have:
 
 .. math::
@@ -706,7 +706,7 @@ test cases for testing three key features of TBFQ scheduler: traffic policing, f
 balance. Constant Bit Rate UDP traffic is used in both downlink and uplink in all test cases. 
 The packet interval is set to 1ms to keep the RLC buffer non-empty. Different traffic rate is 
 achieved by setting different packet size. Specifically, two classes of flows are created in the 
-testsuites:
+test suites:
 
  * Homogeneous flow: flows with the same token generation rate and packet arrival rate
  * Heterogeneous flow: flows with different packet arrival rate, but with the same token generation rate
@@ -747,10 +747,10 @@ can use the same method in TD BET to calculate the maximum throughput:
     
       T = \frac{N}{ \sum_{i=1}^{N} \frac{1}{R^{fb}_i} }
 
-Here, :math:`T` is the maximum throughput. :math:`R^{fb}_i` be the the full bandwidth achievable rate 
+Here, :math:`T` is the maximum throughput. :math:`R^{fb}_i` be the full bandwidth achievable rate 
 for user i. :math:`N` is the number of UE.
 
-When the totol traffic rate is bigger than :math:`T`, the UE throughput equals to :math:`\frac{T}{N}` . Otherwise, UE throughput
+When the total traffic rate is bigger than :math:`T`, the UE throughput equals to :math:`\frac{T}{N}` . Otherwise, UE throughput
 equals to its traffic generation rate.
 
 In test case 3, three flows with different traffic rate are created. Token generation rate for each 
@@ -805,7 +805,7 @@ maximum throughput case, PSS performs like a TD-BET. Then we have:
     
       T = \frac{N}{ \sum_{i=1}^N \frac{1}{R^{fb}_i} }
 
-Here, :math:`T` is the maximum throughput. :math:`R^{fb}_i` be the the full bandwidth achievable rate 
+Here, :math:`T` is the maximum throughput. :math:`R^{fb}_i` be the full bandwidth achievable rate 
 for user i. :math:`N` is the number of UE.
 
 Channel and QoS aware scheduler performance
@@ -829,7 +829,7 @@ simulation that uses the BuildingPathlossModel. The reference loss values are
 calculated off-line with an Octave script
 (/test/reference/lte_pathloss.m). Each test case passes if the
 reference loss value is equal to the value calculated by the simulator
-within a tolerance of :math:`0.001` dB, which accouns for numerical
+within a tolerance of :math:`0.001` dB, which accounts for numerical
 errors in the calculations. 
 
 
@@ -932,7 +932,7 @@ might be produced in quantizing the MI and the error curve.
 HARQ Model
 ----------
 
-The test suite ``lte-harq`` includes two tests for evaluating the HARQ model and the related extension in the error model. The test consists on checking whether the amount of bytes received during the simulation corresponds to the expected ones according to the values of transport block and the HARQ dynamics. In detail, the test checks whether the throughput obtained after one HARQ retransmission is the expeted one. For evaluating the expected throughput the expected TB delivering time has been evaluated according to the following formula:
+The test suite ``lte-harq`` includes two tests for evaluating the HARQ model and the related extension in the error model. The test consists on checking whether the amount of bytes received during the simulation corresponds to the expected ones according to the values of transport block and the HARQ dynamics. In detail, the test checks whether the throughput obtained after one HARQ retransmission is the expected one. For evaluating the expected throughput the expected TB delivering time has been evaluated according to the following formula:
 
 .. math::
 
@@ -1015,7 +1015,7 @@ knowledge of the input test vector and knowledge of the expected
 behavior. These test vector are specialized for UM RLC and
 AM RLC due to their different behavior. Each test case passes if the
 sequence of primitives triggered by the RLC instance being tested is
-exacly equal to the output test vector. In particular, for each PDU
+exactly equal to the output test vector. In particular, for each PDU
 transmitted by the RLC instance, both the size and the content of the
 PDU are verified to check for an exact match with the test vector.
 
@@ -1116,9 +1116,9 @@ The test variant ``LteRrcConnectionEstablishmentErrorTestCase`` is
 similar except for the presence of errors in the transmission of a
 particular RRC message of choice during the first connection
 attempt. The error is obtained by temporarily moving the UE to a far
-away location; the time of movement has been determined empyrically
+away location; the time of movement has been determined empirically
 for each instance of the test case based on the message that it was
-desidred to be in error.  the test case checks that at least one of the following
+desired to be in error.  the test case checks that at least one of the following
 conditions is false at the time right before the UE is moved back to
 the original location:
 
@@ -1308,7 +1308,7 @@ Automatic X2 handover
 The test suite ``lte-x2-handover-measures`` checks the correct functionality of the handover
 algorithm. The scenario being tested is a topology with two, three or four eNBs connected by
 an X2 interface. The eNBs are located in a straight line in the X-axes. A UE moves along the
-X-axes going from the neighbourhood of one eNB to the next eNB. Each test case is a particular
+X-axes going from the neighborhood of one eNB to the next eNB. Each test case is a particular
 instance of this scenario defined by the following parameters:
 
  - the number of eNBs in the X-axes
@@ -1370,7 +1370,7 @@ eNodeB, and target eNodeB over both RRC protocol and X2 interface. Test suite
 ``lte-handover-delay`` verifies that this procedure consistently spends the
 same amount of time.
 
-The test suite will run several handover test cases. Eact test case is an
+The test suite will run several handover test cases. Each test case is an
 individual simulation featuring a handover at a specified time in simulation.
 For example, the handover in the first test case is invoked at time +0.100s,
 while in the second test case it is at +0.101s. There are 10 test cases, each
@@ -1440,7 +1440,7 @@ To trigger a handover, the test case "shutdowns" the source cell at +0.5s
 simulation time. Figure :ref:`fig-lte-handover-target-scenario` below
 illustrates the process. This is done by setting the source cell's Tx power to
 a very low value. As a result, the handover algorithm notices that the UE
-deserves a handover and several neighbouring cells become candidates of target
+deserves a handover and several neighboring cells become candidates of target
 cell at the same time.
 
 .. _fig-lte-handover-target-scenario:
@@ -1473,8 +1473,8 @@ Power Control in three different ways:
    to ``RsPowerChunkProcessor`` list in UE DownlinkSpectrumPhy. Tx power of data 
    channel is measured in similar way, but it had to be implemented. Now 
    ``LteTestSinrChunkProcessor`` is added to ``DataPowerChunkProcessor`` list in UE 
-   DownlinkSpectrumPhy. Test vector contain a set of all avaiable P_A values. Test 
-   pass if power diffrence equals P_A value. 
+   DownlinkSpectrumPhy. Test vector contain a set of all available P_A values. Test 
+   pass if power difference equals P_A value. 
 
  * LteDownlinkPowerControlRrcConnectionReconfiguration test case check if 
    RrcConnectionReconfiguration is performed correctly. When FR entity gets UE 
@@ -1537,7 +1537,7 @@ The test suite ``lte-frequency-reuse`` contain two types of test cases.
 First type of test cases check if RBGs are used correctly according to FR algorithm 
 policy. We are testing if scheduler use only RBGs allowed by FR configuration. To 
 check which RBGs are used ``LteSimpleSpectrumPhy`` is attached to Downlink Channel. 
-It notifies when data downlink channel transmission has occured and pass signal 
+It notifies when data downlink channel transmission has occurred and pass signal 
 TxPsd spectrum value to check which RBs were used for transmission. The test vector 
 comprise a set of configuration for Hard and Strict FR algorithms (there is no point 
 to check other FR algorithms in this way because they use entire cell bandwidth). 
@@ -1550,12 +1550,12 @@ Second eNB is responsible for generating interferences in whole system bandwidth
 UE served by first eNB is changing position each few second (rather slow because time is
 needed to report new UE Measurements). To check which RBGs are used for this UE
 ``LteSimpleSpectrumPhy`` is attached to Downlink Channel. It notifies when data 
-downlink channel transmission in cell 1 has occured and pass signal TxPsd spectrum value 
+downlink channel transmission in cell 1 has occurred and pass signal TxPsd spectrum value 
 to check which RBs were used for transmission and their power level. 
 The same approach is applied in Uplink direction and second ``LteSimpleSpectrumPhy``
 is attached to Uplink Channel. Test passes if UE served by eNB with FR algorithm 
 is served in DL and UL with expected RBs and with expected power level. 
-Test vector comprise a configuration for Strict FR, Soft FR, Soft FFR, Enchanced FFR.
+Test vector comprise a configuration for Strict FR, Soft FR, Soft FFR, Enhanced FFR.
 Each FR algorithm is tested with all schedulers, which support FR (i.e. PF, PSS, CQA, 
 TD-TBFQ, FD-TBFQ). (Hard FR do not use UE measurements, so there is no point to perform 
 this type of test for Hard FR).
@@ -1567,12 +1567,12 @@ and 1 in second cell. Position of each UE is changed (rather slow because time i
 needed to report new UE Measurements), to obtain different result from calculation in 
 Distributed FFR algorithm entities. To check which RBGs are used for UE transmission
 ``LteSimpleSpectrumPhy`` is attached to Downlink Channel. It notifies when data 
-downlink channel transmission has occured and pass signal TxPsd spectrum value 
+downlink channel transmission has occurred and pass signal TxPsd spectrum value 
 to check which RBs were used for transmission and their power level. 
 The same approach is applied in Uplink direction and second ``LteSimpleSpectrumPhy``
 is attached to Uplink Channel. 
 Test passes if UE served by eNB in cell 2, is served in DL and UL with expected RBs 
-and with expected power level. Test vector compirse a configuration for Distributed FFR.
+and with expected power level. Test vector comprise a configuration for Distributed FFR.
 Test is performed with all schedulers, which support FR (i.e. PF, PSS, CQA, 
 TD-TBFQ, FD-TBFQ).
 
@@ -1589,3 +1589,40 @@ is assigned to one eNb, and second half to second eNb, interference level should
 lower compared to legacy scenario. The test vector comprise a set of configuration for 
 all available Frequency Reuse Algorithms. Test passes if calculated SINR on specific 
 RBs is equal to these obtained by Octave script.
+
+
+Carrier aggregation test 
+-------------------------
+
+The test suite ``lte-carrier-aggregation`` is a system test program that creates different test 
+cases with a single eNB and several UEs, all having the same radio bearer specification. Different 
+test cases are implemented by using different SINR values and different numbers of UEs. eNBs and UEs 
+are configured to use the secondary carrier and the component carrier manager is configured to 
+split the data uniformly between primary and secondary carrier. The test consists of checking that 
+the throughput obtained over the different carriers are equal considering a given tolerance. For more 
+details about this test, see the section Carrier aggregation usage example.
+
+
+Carrier aggregation test for eNB and UE configuration 
+------------------------------------------------------
+
+The test suite ``carrier-aggregation-config-test`` is a system test program, which verifies the
+following two cases:
+
+ * When carrier aggregation is enabled and UE carriers configuration is different than the default 
+   configuration done in LteHelper, we check that the UE(s) is configured properly once it receives
+   RRC Connection Reconfiguration message from eNB.
+
+ * A user can configure 2 or more eNBs and UEs with different configuration parameters, i.e.,
+   each eNB and UE can have different EARFCN and Bandwidths and a UE connects to an eNB with similar DL EARFCN.
+   In this test, we check with CA enabled but the end results will be the same if carrier aggregation is not 
+   enabled and we have more than one eNBs and UEs with different configurations.
+
+Since, we do not need EPC to test the configuration, this test only simulates the LTE radio access with RLC SM. 
+There are two test cases, Test 1 tests that the UE is configured properly after receiving RRC Connection Reconfiguration 
+message from the eNB, which will overwrite UE default configuration done in LteHelper for the sake of
+creating PHY and MAC instances equal to the number of component carriers. Test 2 tests that every eNB or UE in a 
+simulation scenario can be configured with different EARFCNs and Bandwidths. For both test cases, it also counts 
+the number of times the hooked trace source ``SCarrierConfigured`` get triggered. As, it reflects how many UEs 
+got attached to their respective eNB. If the count is not equal to the number of UEs in the scenario, the test fails, 
+which could be the result of improper UE configuration.

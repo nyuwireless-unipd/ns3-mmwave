@@ -24,12 +24,23 @@
  */
 
 #include <iomanip>
-#include "ns3/core-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/spectrum-module.h"
-#include "ns3/internet-module.h"
+#include "ns3/command-line.h"
+#include "ns3/config.h"
+#include "ns3/uinteger.h"
+#include "ns3/boolean.h"
+#include "ns3/double.h"
+#include "ns3/string.h"
+#include "ns3/log.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/spectrum-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/udp-client-server-helper.h"
+#include "ns3/yans-wifi-channel.h"
+#include "ns3/multi-model-spectrum-channel.h"
+#include "ns3/propagation-loss-model.h"
 
 // This is a simple example of an IEEE 802.11n Wi-Fi network.
 //
@@ -198,8 +209,8 @@ int main (int argc, char *argv[])
           //Bug 2460: CcaMode1Threshold default should be set to -62 dBm when using Spectrum
           Config::SetDefault ("ns3::WifiPhy::CcaMode1Threshold", DoubleValue (-62.0));
 
-          Ptr<SingleModelSpectrumChannel> spectrumChannel
-            = CreateObject<SingleModelSpectrumChannel> ();
+          Ptr<MultiModelSpectrumChannel> spectrumChannel
+            = CreateObject<MultiModelSpectrumChannel> ();
           Ptr<FriisPropagationLossModel> lossModel
             = CreateObject<FriisPropagationLossModel> ();
           spectrumChannel->AddPropagationLossModel (lossModel);
@@ -614,8 +625,7 @@ int main (int argc, char *argv[])
       if (wifiType == "ns3::YansWifiPhy")
         {
           mac.SetType ("ns3::StaWifiMac",
-                       "Ssid", SsidValue (ssid),
-                       "ActiveProbing", BooleanValue (false));
+                       "Ssid", SsidValue (ssid));
           staDevice = wifi.Install (phy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));
@@ -625,8 +635,7 @@ int main (int argc, char *argv[])
       else if (wifiType == "ns3::SpectrumWifiPhy")
         {
           mac.SetType ("ns3::StaWifiMac",
-                       "Ssid", SsidValue (ssid),
-                       "ActiveProbing", BooleanValue (false));
+                       "Ssid", SsidValue (ssid));
           staDevice = wifi.Install (spectrumPhy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));
@@ -689,7 +698,7 @@ int main (int argc, char *argv[])
       Simulator::Run ();
 
       double throughput;
-      uint32_t totalPacketsThrough;
+      uint64_t totalPacketsThrough;
       totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
       throughput = totalPacketsThrough * payloadSize * 8 / (simulationTime * 1000000.0); //Mbit/s
       std::cout << std::setw (5) << i <<

@@ -2,7 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -25,7 +25,7 @@
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
  */
 
@@ -47,18 +47,18 @@ NS_LOG_COMPONENT_DEFINE ("MmWaveMiErrorModel");
 
 namespace ns3 {
 
+namespace mmwave {
 
 
-
-double 
+double
 MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map, uint8_t mcs)
 {
   NS_LOG_FUNCTION (sinr << &map << (uint32_t) mcs);
-  
+
   double MI;
   double MIsum = 0.0;
   SpectrumValue sinrCopy = sinr;
-  
+
   for (uint32_t i = 0; i < map.size (); i++)
     {
       double sinrLin = sinrCopy[map.at (i)];
@@ -69,13 +69,13 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
             {
               MI = 1;
             }
-          else 
-            { 
+          else
+            {
               // since the values in MI_map_qpsk_axis are uniformly spaced, we have
               // index = ((sinrLin - value[0]) / (value[SIZE-1] - value[0])) * (SIZE-1)
               // the scaling coefficient is always the same, so we use a static const
               // to speed up the calculation
-              static const double scalingCoeffQpsk = 
+              static const double scalingCoeffQpsk =
                 (MMWAVE_MI_MAP_QPSK_SIZE - 1) / (MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE-1] - MI_map_qpsk_axis[0]);
               double sinrIndexDouble = (sinrLin -  MI_map_qpsk_axis[0]) * scalingCoeffQpsk + 1;
               uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
@@ -91,13 +91,13 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                 {
                   MI = 1;
                 }
-              else 
+              else
                 {
                   // since the values in MI_map_16QAM_axis are uniformly spaced, we have
                   // index = ((sinrLin - value[0]) / (value[SIZE-1] - value[0])) * (SIZE-1)
                   // the scaling coefficient is always the same, so we use a static const
                   // to speed up the calculation
-                  static const double scalingCoeff16qam = 
+                  static const double scalingCoeff16qam =
                     (MMWAVE_MI_MAP_16QAM_SIZE - 1) / (MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE-1] - MI_map_16qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_16qam_axis[0]) * scalingCoeff16qam + 1;
                   uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
@@ -117,7 +117,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                   // index = ((sinrLin - value[0]) / (value[SIZE-1] - value[0])) * (SIZE-1)
                   // the scaling coefficient is always the same, so we use a static const
                   // to speed up the calculation
-                  static const double scalingCoeff64qam = 
+                  static const double scalingCoeff64qam =
                     (MMWAVE_MI_MAP_64QAM_SIZE - 1) / (MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE-1] - MI_map_64qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_64qam_axis[0]) * scalingCoeff64qam + 1;
                   uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
@@ -135,7 +135,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
 }
 
 
-double 
+double
 MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize)
 {
   NS_LOG_FUNCTION (mib << (uint32_t) ecrId << (uint32_t) cbSize);
@@ -368,7 +368,6 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
 }
 
 
-
+} // namespace mmwave
 
 } // namespace ns3
-

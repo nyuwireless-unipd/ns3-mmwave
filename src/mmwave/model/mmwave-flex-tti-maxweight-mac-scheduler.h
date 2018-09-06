@@ -21,6 +21,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveFlexTtiMaxWeightMacScheduler : public MmWaveMacScheduler
 {
 public:
@@ -411,6 +413,8 @@ private:
 	bool m_fixedTti;		// one slot per TTI
 	uint8_t	m_symPerSlot; // symbols per slot
 };
+
+}
 
 }
 

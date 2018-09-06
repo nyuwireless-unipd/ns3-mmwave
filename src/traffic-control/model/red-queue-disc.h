@@ -118,37 +118,6 @@ public:
     DTYPE_UNFORCED,    //!< An "unforced" (random) drop
   };
 
-  /**
-   * \brief Enumeration of the modes supported in the class.
-   *
-   */
-  enum QueueDiscMode
-  {
-    QUEUE_DISC_MODE_PACKETS,     /**< Use number of packets for maximum queue disc size */
-    QUEUE_DISC_MODE_BYTES,       /**< Use number of bytes for maximum queue disc size */
-  };
-
-  /**
-   * \brief Set the operating mode of this queue disc.
-   *
-   * \param mode The operating mode of this queue disc.
-   */
-  void SetMode (QueueDiscMode mode);
-
-  /**
-   * \brief Get the operating mode of this queue disc.
-   *
-   * \returns The operating mode of this queue disc.
-   */
-  QueueDiscMode GetMode (void);
-
-  /**
-   * \brief Get the current value of the queue in bytes or packets.
-   *
-   * \returns The queue size in bytes or packets.
-   */
-  uint32_t GetQueueSize (void);
-
    /**
     * \brief Set the alpha value to adapt m_curMaxP.
     *
@@ -206,13 +175,6 @@ public:
    double GetFengAdaptiveB (void);
 
   /**
-   * \brief Set the limit of the queue.
-   *
-   * \param lim The limit in bytes or packets.
-   */
-  void SetQueueLimit (uint32_t lim);
-
-  /**
    * \brief Set the thresh limits of RED.
    *
    * \param minTh Minimum thresh in bytes or packets.
@@ -246,7 +208,7 @@ protected:
 private:
   virtual bool DoEnqueue (Ptr<QueueDiscItem> item);
   virtual Ptr<QueueDiscItem> DoDequeue (void);
-  virtual Ptr<const QueueDiscItem> DoPeek (void) const;
+  virtual Ptr<const QueueDiscItem> DoPeek (void);
   virtual bool CheckConfig (void);
 
   /**
@@ -298,7 +260,6 @@ private:
   double ModifyP (double p, uint32_t size);
 
   // ** Variables supplied by user
-  QueueDiscMode m_mode;     //!< Mode (Bytes or packets)
   uint32_t m_meanPktSize;   //!< Avg pkt size
   uint32_t m_idlePktSize;   //!< Avg pkt size used during idle times
   bool m_isWait;            //!< True for waiting between dropped packets
@@ -307,7 +268,6 @@ private:
   bool m_isAdaptMaxP;       //!< True to adapt m_curMaxP
   double m_minTh;           //!< Minimum threshold for m_qAvg (bytes or packets)
   double m_maxTh;           //!< Maximum threshold for m_qAvg (bytes or packets), should be >= 2 * m_minTh
-  uint32_t m_queueLimit;    //!< Queue limit in bytes / packets
   double m_qW;              //!< Queue weight given to cur queue size sample
   double m_lInterm;         //!< The max probability of dropping a packet
   Time m_targetDelay;       //!< Target average queuing delay in ARED

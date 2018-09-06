@@ -18,11 +18,24 @@
  * Author: Sebastien Deronne <sebastien.deronne@gmail.com>
  */
 
-#include "ns3/core-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/internet-module.h"
+#include "ns3/command-line.h"
+#include "ns3/config.h"
+#include "ns3/uinteger.h"
+#include "ns3/boolean.h"
+#include "ns3/double.h"
+#include "ns3/string.h"
+#include "ns3/log.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/udp-client-server-helper.h"
+#include "ns3/packet-sink-helper.h"
+#include "ns3/on-off-helper.h"
+#include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/packet-sink.h"
+#include "ns3/yans-wifi-channel.h"
 
 // This is a simple example in order to show how to configure an IEEE 802.11ac Wi-Fi network.
 //
@@ -48,6 +61,7 @@ NS_LOG_COMPONENT_DEFINE ("vht-wifi-network");
 int main (int argc, char *argv[])
 {
   bool udp = true;
+  bool useRts = false;
   double simulationTime = 10; //seconds
   double distance = 1.0; //meters
   int mcs = -1; // -1 indicates an unset value
@@ -58,10 +72,16 @@ int main (int argc, char *argv[])
   cmd.AddValue ("distance", "Distance in meters between the station and the access point", distance);
   cmd.AddValue ("simulationTime", "Simulation time in seconds", simulationTime);
   cmd.AddValue ("udp", "UDP if set to 1, TCP otherwise", udp);
+  cmd.AddValue ("useRts", "Enable/disable RTS/CTS", useRts);
   cmd.AddValue ("mcs", "if set, limit testing to a specific MCS (0-9)", mcs);
   cmd.AddValue ("minExpectedThroughput", "if set, simulation fails if the lowest throughput is below this value", minExpectedThroughput);
   cmd.AddValue ("maxExpectedThroughput", "if set, simulation fails if the highest throughput is above this value", maxExpectedThroughput);
   cmd.Parse (argc,argv);
+
+  if (useRts)
+    {
+      Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("0"));
+    }
 
   double prevThroughput [8];
   for (uint32_t l = 0; l < 8; l++)
@@ -210,7 +230,6 @@ int main (int argc, char *argv[])
 
               Simulator::Stop (Seconds (simulationTime + 1));
               Simulator::Run ();
-              Simulator::Destroy ();
 
               uint64_t rxBytes = 0;
               if (udp)
@@ -222,7 +241,11 @@ int main (int argc, char *argv[])
                   rxBytes = DynamicCast<PacketSink> (serverApp.Get (0))->GetTotalRx ();
                 }
               double throughput = (rxBytes * 8) / (simulationTime * 1000000.0); //Mbit/s
+
+              Simulator::Destroy ();
+
               std::cout << mcs << "\t\t\t" << channelWidth << " MHz\t\t\t" << sgi << "\t\t\t" << throughput << " Mbit/s" << std::endl;
+
               //test first element
               if (mcs == 0 && channelWidth == 20 && sgi == 0)
                 {

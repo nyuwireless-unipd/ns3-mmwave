@@ -19,7 +19,10 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  *         Junling Bu <linlinjavaer@gmail.com>
  */
+
 #include "ns3/log.h"
+#include "ns3/event-id.h"
+#include "ns3/wifi-phy.h"
 #include "wave-mac-low.h"
 #include "higher-tx-tag.h"
 
@@ -106,7 +109,7 @@ void
 WaveMacLow::StartTransmission (Ptr<const Packet> packet,
                                const WifiMacHeader* hdr,
                                MacLowTransmissionParameters params,
-                               Ptr<DcaTxop> dca)
+                               Ptr<Txop> dca)
 {
   NS_LOG_FUNCTION (this << packet << hdr << params << dca);
   Ptr<WifiPhy> phy = MacLow::GetPhy ();
@@ -124,7 +127,7 @@ WaveMacLow::StartTransmission (Ptr<const Packet> packet,
   if (transmissionTime > remainingTime)
     {
       // The attempt for this transmission will be canceled;
-      // and this packet will be pending for next transmission by EdcaTxopN class
+      // and this packet will be pending for next transmission by QosTxop class
       NS_LOG_DEBUG ("Because the required transmission time = " << transmissionTime.GetMilliSeconds ()
                                                                 << "ms exceeds the remainingTime = " << remainingTime.GetMilliSeconds ()
                                                                 << "ms, currently this packet will not be transmitted.");

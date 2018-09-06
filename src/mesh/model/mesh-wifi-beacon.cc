@@ -19,7 +19,8 @@
  */
 
 #include "ns3/mesh-wifi-beacon.h"
-
+#include "ns3/nstime.h"
+#include "ns3/wifi-mac-header.h"
 
 namespace ns3 {
 
@@ -29,6 +30,7 @@ MeshWifiBeacon::MeshWifiBeacon (Ssid ssid, SupportedRates rates, uint64_t us)
   m_header.SetSupportedRates (rates);
   m_header.SetBeaconIntervalUs (us);
 }
+
 void
 MeshWifiBeacon::AddInformationElement (Ptr<WifiInformationElement> ie)
 {
@@ -49,19 +51,19 @@ MeshWifiBeacon::CreatePacket ()
   packet->AddHeader (BeaconHeader ());
   return packet;
 }
+
 WifiMacHeader
 MeshWifiBeacon::CreateHeader (Mac48Address address, Mac48Address mpAddress)
 {
   WifiMacHeader hdr;
-
-  hdr.SetBeacon ();
+  hdr.SetType (WIFI_MAC_MGT_BEACON);
   hdr.SetAddr1 (Mac48Address::GetBroadcast ());
   hdr.SetAddr2 (address);
   hdr.SetAddr3 (mpAddress);
   hdr.SetDsNotFrom ();
   hdr.SetDsNotTo ();
-
   return hdr;
 }
+
 } // namespace ns3
 

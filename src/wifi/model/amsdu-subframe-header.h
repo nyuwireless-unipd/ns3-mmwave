@@ -63,7 +63,7 @@ public:
   void SetLength (uint16_t length);
   /**
    * Get destination address function
-   * \returns the desitnation MAC address
+   * \returns the destination MAC address
    */
   Mac48Address GetDestinationAddr (void) const;
   /**
@@ -79,7 +79,7 @@ public:
 
 private:
   Mac48Address m_da; ///< destination address
-  Mac48Address m_sa; ///< source addresss
+  Mac48Address m_sa; ///< source address
   uint16_t m_length; ///< length
 };
 

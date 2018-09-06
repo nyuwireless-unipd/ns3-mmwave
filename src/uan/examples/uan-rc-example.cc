@@ -22,7 +22,7 @@
  * \file uan-rc-example.cc
  * \ingroup UAN
  * This example uses UanMacRc and UanMacRcGw which combined form a system
- * using what is reffered to as RC-MAC.  Details of RC-MAC will be published
+ * using what is referred to as RC-MAC.  Details of RC-MAC will be published
  * soon.  In brief terms, RC-MAC is a dual channel protocol wherein the
  * available bandwidth is dynamically divided into two channels,
  * a reservation channel and a data channel.  The network is assumed
@@ -251,9 +251,8 @@ int
 main (int argc, char *argv[])
 {
 
-  LogComponentEnable ("UanRcExample", LOG_LEVEL_ALL);
-
   Experiment exp;
+  bool quiet = false;
 
   CommandLine cmd;
   cmd.AddValue ("TotalRate", "Total channel capacity", exp.m_totalRate);
@@ -268,9 +267,13 @@ main (int argc, char *argv[])
   cmd.AddValue ("PktSize", "Packet size in bytes", exp.m_pktSize);
   cmd.AddValue ("SimTime", "Simulation time per trial", exp.m_simTime);
   cmd.AddValue ("DoNode", "1 for do max nodes simulation (invalidates AMin and AMax values)", exp.m_doNode);
+  cmd.AddValue ("Quiet", "Run in quiet mode (disable logging)", quiet);
   cmd.Parse (argc, argv);
 
-
+  if (!quiet)
+    {
+      LogComponentEnable ("UanRcExample", LOG_LEVEL_ALL);
+    }
 
   exp.CreateDualModes (12000);
 

@@ -105,7 +105,7 @@ PhyRxStatsCalculator::DlPhyReception (PhyReceptionStatParameters params)
           return;
         }
       m_dlRxFirstWrite = false;
-      outFile << "% time\tcellId\tIMSI\tRNTI\ttxMode\tlayer\tmcs\tsize\trv\tndi\tcorrect";
+      outFile << "% time\tcellId\tIMSI\tRNTI\ttxMode\tlayer\tmcs\tsize\trv\tndi\tcorrect\tccId";
       outFile << std::endl;
     }
   else
@@ -129,7 +129,8 @@ PhyRxStatsCalculator::DlPhyReception (PhyReceptionStatParameters params)
   outFile << params.m_size << "\t";
   outFile << (uint32_t) params.m_rv << "\t";
   outFile << (uint32_t) params.m_ndi << "\t";
-  outFile << (uint32_t) params.m_correctness << std::endl;
+  outFile << (uint32_t) params.m_correctness << "\t";
+  outFile << (uint32_t) params.m_ccId << std::endl;
   outFile.close ();
 }
 
@@ -149,7 +150,7 @@ PhyRxStatsCalculator::UlPhyReception (PhyReceptionStatParameters params)
           return;
         }
       m_ulRxFirstWrite = false;
-      outFile << "% time\tcellId\tIMSI\tRNTI\tlayer\tmcs\tsize\trv\tndi\tcorrect";
+      outFile << "% time\tcellId\tIMSI\tRNTI\tlayer\tmcs\tsize\trv\tndi\tcorrect\tccId";
       outFile << std::endl;
     }
   else
@@ -172,7 +173,8 @@ PhyRxStatsCalculator::UlPhyReception (PhyReceptionStatParameters params)
   outFile << params.m_size << "\t";
   outFile << (uint32_t) params.m_rv << "\t";
   outFile << (uint32_t) params.m_ndi << "\t";
-  outFile << (uint32_t) params.m_correctness << std::endl;
+  outFile << (uint32_t) params.m_correctness << "\t";
+  outFile << (uint32_t) params.m_ccId <<std::endl;
   outFile.close ();
 }
 
@@ -184,13 +186,14 @@ PhyRxStatsCalculator::DlPhyReceptionCallback (Ptr<PhyRxStatsCalculator> phyRxSta
   uint64_t imsi = 0;
   std::ostringstream pathAndRnti;
   pathAndRnti << path << "/" << params.m_rnti;
+  std::string pathUePhy  = path.substr (0, path.find ("/ComponentCarrierMapUe"));
   if (phyRxStats->ExistsImsiPath (pathAndRnti.str ()) == true)
     {
       imsi = phyRxStats->GetImsiPath (pathAndRnti.str ());
     }
   else
     {
-      imsi = FindImsiForUe (path, params.m_rnti);
+      imsi = FindImsiFromLteNetDevice (pathUePhy);
       phyRxStats->SetImsiPath (pathAndRnti.str (), imsi);
     }
 
@@ -205,14 +208,15 @@ PhyRxStatsCalculator::UlPhyReceptionCallback (Ptr<PhyRxStatsCalculator> phyRxSta
   NS_LOG_FUNCTION (phyRxStats << path);
   uint64_t imsi = 0;
   std::ostringstream pathAndRnti;
-  pathAndRnti << path << "/" << params.m_rnti;
+  std::string pathEnb  = path.substr (0, path.find ("/ComponentCarrierMap"));
+  pathAndRnti << pathEnb << "/LteEnbRrc/UeMap/" << params.m_rnti;
   if (phyRxStats->ExistsImsiPath (pathAndRnti.str ()) == true)
     {
       imsi = phyRxStats->GetImsiPath (pathAndRnti.str ());
     }
   else
     {
-      imsi = FindImsiForEnb (path, params.m_rnti);
+      imsi = FindImsiFromEnbRlcPath (pathAndRnti.str ());
       phyRxStats->SetImsiPath (pathAndRnti.str (), imsi);
     }
 

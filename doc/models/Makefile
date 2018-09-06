@@ -64,6 +64,7 @@ SOURCES = \
 	$(SRC)/internet/doc/ipv6.rst \
 	$(SRC)/internet/doc/routing-overview.rst \
 	$(SRC)/internet/doc/tcp.rst \
+	$(SRC)/internet/doc/udp.rst \
 	$(SRC)/internet-apps/doc/internet-apps.rst \
 	$(SRC)/mobility/doc/mobility.rst \
 	$(SRC)/olsr/doc/olsr.rst \
@@ -80,20 +81,15 @@ SOURCES = \
 	$(SRC)/traffic-control/doc/traffic-control-layer.rst \
 	$(SRC)/traffic-control/doc/queue-discs.rst \
 	$(SRC)/traffic-control/doc/pfifo-fast.rst \
+	$(SRC)/traffic-control/doc/fifo.rst \
+	$(SRC)/traffic-control/doc/prio.rst \
+	$(SRC)/traffic-control/doc/tbf.rst \
 	$(SRC)/traffic-control/doc/red.rst \
 	$(SRC)/traffic-control/doc/codel.rst \
 	$(SRC)/traffic-control/doc/fq-codel.rst \
 	$(SRC)/traffic-control/doc/pie.rst \
 	$(SRC)/traffic-control/doc/mq.rst \
 	$(SRC)/spectrum/doc/spectrum.rst \
-	$(SRC)/stats/doc/adaptor.rst \
-	$(SRC)/stats/doc/aggregator.rst \
-	$(SRC)/stats/doc/collector.rst \
-	$(SRC)/stats/doc/data-collection-helpers.rst \
-	$(SRC)/stats/doc/data-collection-overview.rst \
-	$(SRC)/stats/doc/data-collection.rst \
-	$(SRC)/stats/doc/probe.rst \
-	$(SRC)/stats/doc/scope-and-limitations.rst \
 	$(SRC)/netanim/doc/animation.rst \
 	$(SRC)/flow-monitor/doc/flow-monitor.rst \
 	$(SRC)/wave/doc/wave.rst \
@@ -110,6 +106,11 @@ SOURCEFIGS = \
 	figures/testbed.dia \
 	figures/emulated-channel.dia \
 	$(SRC)/antenna/doc/source/figures/antenna-coordinate-system.dia	\
+	$(SRC)/applications/doc/http-embedded-object-size.png \
+	$(SRC)/applications/doc/http-main-object-size.png \
+	$(SRC)/applications/doc/http-num-of-embedded-objects.png \
+	$(SRC)/applications/doc/http-parsing-time.png \
+	$(SRC)/applications/doc/http-reading-time.png \
 	$(SRC)/network/doc/packet.dia \
 	$(SRC)/network/doc/node.dia \
 	$(SRC)/network/doc/buffer.dia \
@@ -270,15 +271,6 @@ SOURCEFIGS = \
 	$(SRC)/lte/doc/source/figures/lte-legacy-handover-algorithm.pdf \
 	$(SRC)/lte/doc/source/figures/lte-legacy-handover-algorithm.png \
 	$(SRC)/uan/doc/auvmobility-classes.dia \
-	$(SRC)/stats/doc/Stat-framework-arch.png \
-	$(SRC)/stats/doc/Wifi-default.png \
-	$(SRC)/stats/doc/dcf-overview.dia \
-	$(SRC)/stats/doc/dcf-overview-with-aggregation.dia \
-	$(SRC)/stats/doc/file-example.png \
-	$(SRC)/stats/doc/gnuplot-aggregator.png \
-	$(SRC)/stats/doc/gnuplot-example.png \
-	$(SRC)/stats/doc/gnuplot-helper-example.png \
-	$(SRC)/stats/doc/seventh-packet-byte-count.png \
 	$(SRC)/netanim/doc/figures/PacketStatistics.png \
 	$(SRC)/netanim/doc/figures/PacketStatistics.pdf \
 	$(SRC)/netanim/doc/figures/NetAnim_3_105.png \
@@ -325,8 +317,6 @@ IMAGES_EPS = \
 	$(FIGURES)/WifiArchitecture.eps \
 	$(FIGURES)/snir.eps \
 	$(FIGURES)/WimaxArchitecture.eps \
-	$(FIGURES)/dcf-overview.eps \
-	$(FIGURES)/dcf-overview-with-aggregation.eps \
 	$(FIGURES)/epc-ctrl-arch.eps \
 	$(FIGURES)/epc-data-flow-dl.eps \
 	$(FIGURES)/epc-data-flow-ul.eps \

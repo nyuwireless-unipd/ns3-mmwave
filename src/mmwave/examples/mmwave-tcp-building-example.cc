@@ -42,6 +42,7 @@
 #include <ns3/buildings-module.h>
 #include <ns3/packet.h>
 #include <ns3/tag.h>
+#include <ns3/queue-size.h>
 /*#include <ns3/lte-helper.h>
 #include <ns3/epc-helper.h>
 #include <ns3/point-to-point-helper.h>
@@ -50,6 +51,7 @@
 //#include "ns3/gtk-config-store.h"
 
 using namespace ns3;
+using namespace mmwave;
 
 /**
  * A script to simulate the DOWNLINK TCP data over mmWave links
@@ -527,7 +529,7 @@ main (int argc, char *argv[])
 
 	//p2ph.EnablePcapAll("mmwave-sgi-capture");
 	BuildingsHelper::MakeMobilityModelConsistent ();
-	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*1000));
+	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxSize", QueueSizeValue (QueueSize("1000000p")));
 
 	Simulator::Stop (Seconds (simStopTime));
 	Simulator::Run ();

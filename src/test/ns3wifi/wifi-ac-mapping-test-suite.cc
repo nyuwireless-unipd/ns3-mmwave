@@ -18,23 +18,15 @@
  * Author: Stefano Avallone <stavallo@unina.it>
  */
 
-#include "ns3/test.h"
-#include "ns3/simulator.h"
-#include "ns3/log.h"
-#include "ns3/uinteger.h"
-#include "ns3/boolean.h"
 #include "ns3/string.h"
-#include "ns3/double.h"
+#include "ns3/test.h"
 #include "ns3/pointer.h"
 #include "ns3/ssid.h"
-#include "ns3/data-rate.h"
-#include "ns3/inet-socket-address.h"
 #include "ns3/packet-sink.h"
-#include "ns3/wifi-helper.h"
 #include "ns3/wifi-net-device.h"
 #include "ns3/wifi-mac.h"
 #include "ns3/wifi-mac-queue.h"
-#include "ns3/edca-txop-n.h"
+#include "ns3/qos-txop.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/mobility-helper.h"
 #include "ns3/internet-stack-helper.h"
@@ -56,17 +48,17 @@ public:
   virtual void DoRun (void);
 
 private:
-  static void PacketEnqueuedInQueueDisc (uint8_t tos, uint8_t* count, Ptr<const QueueDiscItem> item);
-  static void PacketEnqueuedInWifiMacQueue (uint8_t tos, uint8_t* count, Ptr<const WifiMacQueueItem> item);
+  static void PacketEnqueuedInQueueDisc (uint8_t tos, uint16_t* count, Ptr<const QueueDiscItem> item);
+  static void PacketEnqueuedInWifiMacQueue (uint8_t tos, uint16_t* count, Ptr<const WifiMacQueueItem> item);
   uint8_t m_tos;
-  uint8_t m_expectedQueue;
-  uint8_t m_QueueDiscCount[4];
-  uint8_t m_WifiMacQueueCount[4];
+  uint16_t m_expectedQueue;
+  uint16_t m_QueueDiscCount[4];
+  uint16_t m_WifiMacQueueCount[4];
 };
 
 WifiAcMappingTest::WifiAcMappingTest (uint8_t tos, uint8_t expectedQueue)
-  : TestCase ("User priority to Access Category mapping test. Checks that packets are"
-              "enqueued in the correct child queue disc of the mq root queue disc and"
+  : TestCase ("User priority to Access Category mapping test. Checks that packets are "
+              "enqueued in the correct child queue disc of the mq root queue disc and "
               "in the correct wifi MAC queue"),
     m_tos (tos),
     m_expectedQueue (expectedQueue)
@@ -79,7 +71,7 @@ WifiAcMappingTest::WifiAcMappingTest (uint8_t tos, uint8_t expectedQueue)
 }
 
 void
-WifiAcMappingTest::PacketEnqueuedInQueueDisc (uint8_t tos, uint8_t* count, Ptr<const QueueDiscItem> item)
+WifiAcMappingTest::PacketEnqueuedInQueueDisc (uint8_t tos, uint16_t* count, Ptr<const QueueDiscItem> item)
 {
   uint8_t val;
   if (item->GetUint8Value (QueueItem::IP_DSFIELD, val) && val == tos)
@@ -89,7 +81,7 @@ WifiAcMappingTest::PacketEnqueuedInQueueDisc (uint8_t tos, uint8_t* count, Ptr<c
 }
 
 void
-WifiAcMappingTest::PacketEnqueuedInWifiMacQueue (uint8_t tos, uint8_t* count, Ptr<const WifiMacQueueItem> item)
+WifiAcMappingTest::PacketEnqueuedInWifiMacQueue (uint8_t tos, uint16_t* count, Ptr<const WifiMacQueueItem> item)
 {
   LlcSnapHeader llc;
   Ptr<Packet> packet = item->GetPacket ()->Copy ();
@@ -156,11 +148,7 @@ WifiAcMappingTest::DoRun (void)
   TrafficControlHelper tch;
   uint16_t handle = tch.SetRootQueueDisc ("ns3::MqQueueDisc");
   TrafficControlHelper::ClassIdList cls = tch.AddQueueDiscClasses (handle, 4, "ns3::QueueDiscClass");
-  TrafficControlHelper::HandleList hdl = tch.AddChildQueueDiscs (handle, cls, "ns3::FqCoDelQueueDisc");
-  for (auto h : hdl)
-    {
-      tch.AddPacketFilter (h, "ns3::FqCoDelIpv4PacketFilter");
-    }
+  tch.AddChildQueueDiscs (handle, cls, "ns3::FqCoDelQueueDisc");
   tch.Install (apDev);
   tch.Install (staDev);
 
@@ -213,20 +201,20 @@ WifiAcMappingTest::DoRun (void)
   PointerValue ptr;
   // Get the four wifi mac queues and connect their Enqueue trace to the PacketEnqueuedInWifiMacQueue
   // method, which counts how many packets with the given ToS value have been enqueued
-  apMac->GetAttribute ("BE_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  apMac->GetAttribute ("BE_Txop", ptr);
+  ptr.Get<QosTxop> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount));
 
-  apMac->GetAttribute ("BK_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  apMac->GetAttribute ("BK_Txop", ptr);
+  ptr.Get<QosTxop> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount+1));
 
-  apMac->GetAttribute ("VI_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  apMac->GetAttribute ("VI_Txop", ptr);
+  ptr.Get<QosTxop> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount+2));
 
-  apMac->GetAttribute ("VO_EdcaTxopN", ptr);
-  ptr.Get<EdcaTxopN> ()->GetQueue ()->TraceConnectWithoutContext ("Enqueue",
+  apMac->GetAttribute ("VO_Txop", ptr);
+  ptr.Get<QosTxop> ()->GetWifiMacQueue ()->TraceConnectWithoutContext ("Enqueue",
                         MakeBoundCallback (&WifiAcMappingTest::PacketEnqueuedInWifiMacQueue, m_tos, m_WifiMacQueueCount+3));
 
   Simulator::Run ();

@@ -98,7 +98,7 @@ public:
   /**
    * \return number of NS3 channels in this bundle
    */
-  int GetSize (void) const;
+  std::size_t GetSize (void) const;
 
   /**
    * \param time 
@@ -128,9 +128,9 @@ private:
   std::map < uint32_t, Ptr < Channel > > m_channels;
 
   /*
-   * Guarentee time for the incoming Channels from MPI task remote_rank.
+   * Guarantee time for the incoming Channels from MPI task remote_rank.
    * No PacketMessage will ever arrive on any incoming channel in this bundle with a
-   * ReceiveTime less than this.  Intialized to StartTime.
+   * ReceiveTime less than this.  Initialized to StartTime.
    */
   Time m_guaranteeTime;
 

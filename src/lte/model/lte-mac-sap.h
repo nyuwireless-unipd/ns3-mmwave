@@ -49,19 +49,20 @@ public:
     uint8_t     lcid; /**< the logical channel id corresponding to the sending RLC instance */
     uint8_t     layer; /**< the layer value that was passed by the MAC in the call to NotifyTxOpportunity that generated this PDU */
     uint8_t     harqProcessId; /**< the HARQ process id that was passed by the MAC in the call to NotifyTxOpportunity that generated this PDU */
+    uint8_t componentCarrierId; /**< the component carrier id corresponding to the sending Mac istance */
   };
 
   /**
    * send an RLC PDU to the MAC for transmission. This method is to be
    * called as a response to LteMacSapUser::NotifyTxOpportunity
+   *
+   * \param params TransmitPduParameters
    */
   virtual void TransmitPdu (TransmitPduParameters params) = 0;
 
 
   /**
    * Parameters for LteMacSapProvider::ReportBufferStatus
-   *
-   * \param params
    */
   struct ReportBufferStatusParameters
   {
@@ -74,17 +75,17 @@ public:
     uint16_t statusPduSize;  /**< the current size of the pending STATUS RLC  PDU message in bytes */
 
     // RDF: Added for MmWave low-latency schedulers
-		std::list<uint32_t>	txPacketSizes;
-		std::list<uint32_t>	retxPacketSizes;
-		std::list<double>	txPacketDelays;
-		std::list<double>	retxPacketDelays;
-		double arrivalRate;		// average bits per s
+    std::list<uint32_t>	txPacketSizes;
+    std::list<uint32_t>	retxPacketSizes;
+    std::list<double>	txPacketDelays;
+    std::list<double>	retxPacketDelays;
+    double arrivalRate;		// average bits per s
   };
 
   /**
    * Report the RLC buffer status to the MAC
    *
-   * \param params
+   * \param params ReportBufferStatusParameters
    */
   virtual void ReportBufferStatus (ReportBufferStatusParameters params) = 0;
 
@@ -108,8 +109,12 @@ public:
    *
    * \param bytes the number of bytes to transmit
    * \param layer the layer of transmission (MIMO)
+   * \param harqId the HARQ ID
+   * \param componentCarrierId component carrier ID
+   * \param rnti the RNTI
+   * \param lcid the LCID
    */
-  virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId) = 0;
+  virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid) = 0;
 
   /**
    * Called by the MAC to notify the RLC that an HARQ process related
@@ -126,18 +131,24 @@ public:
   /**
    * Called by the MAC to notify the RLC of the reception of a new PDU
    *
-   * \param p
+   * \param p the packet
+   * \param rnti the RNTI
+   * \param lcid the LCID
    */
-  virtual void ReceivePdu (Ptr<Packet> p) = 0;
+  virtual void ReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid) = 0;
 
 };
 
-///////////////////////////////////////
-
+/// EnbMacMemberLteMacSapProvider class
 template <class C>
 class EnbMacMemberLteMacSapProvider : public LteMacSapProvider
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param mac the MAC class
+   */
   EnbMacMemberLteMacSapProvider (C* mac);
 
   // inherited from LteMacSapProvider
@@ -145,7 +156,7 @@ public:
   virtual void ReportBufferStatus (ReportBufferStatusParameters params);
 
 private:
-  C* m_mac;
+  C* m_mac; ///< the MAC class
 };
 
 

@@ -1,6 +1,6 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2015 SEBASTIEN DERONNE
+ * Copyright (c) 2015
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,14 +15,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Authors: Sebastien Deronne <sebastien.deronne@gmail.com>
+ * Author: Sebastien Deronne <sebastien.deronne@gmail.com>
  */
 
-#include "ns3/core-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/internet-module.h"
+#include "ns3/command-line.h"
+#include "ns3/config.h"
+#include "ns3/uinteger.h"
+#include "ns3/double.h"
+#include "ns3/string.h"
+#include "ns3/log.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/yans-wifi-channel.h"
+#include "ns3/mobility-model.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/udp-client-server-helper.h"
+#include "ns3/ipv4-global-routing-helper.h"
 
 // This example shows how to set Wi-Fi timing parameters through WifiMac attributes.
 //
@@ -83,8 +93,8 @@ int main (int argc, char *argv[])
   WifiHelper wifi;
   wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
-                                "DataMode", StringValue ("OfdmRate65MbpsBW20MHz"),
-                                "ControlMode", StringValue ("OfdmRate6_5MbpsBW20MHz"));
+                                "DataMode", StringValue ("HtMcs7"),
+                                "ControlMode", StringValue ("HtMcs0"));
   WifiMacHelper mac;
 
   //Install PHY and MAC
@@ -142,7 +152,7 @@ int main (int argc, char *argv[])
   UdpServerHelper server (port);
   ApplicationContainer serverApp = server.Install (wifiStaNode.Get (0));
   serverApp.Start (Seconds (0.0));
-  serverApp.Stop (Seconds (simulationTime));
+  serverApp.Stop (Seconds (simulationTime + 1));
 
   UdpClientHelper client (staNodeInterface.GetAddress (0), port);
   client.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
@@ -151,20 +161,20 @@ int main (int argc, char *argv[])
 
   ApplicationContainer clientApp = client.Install (wifiApNode.Get (0));
   clientApp.Start (Seconds (1.0));
-  clientApp.Stop (Seconds (simulationTime));
+  clientApp.Stop (Seconds (simulationTime + 1));
 
   //Populate routing table
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   //Set simulation time and launch simulation
-  Simulator::Stop (Seconds (simulationTime));
+  Simulator::Stop (Seconds (simulationTime + 1));
   Simulator::Run ();
-  Simulator::Destroy ();
 
   //Get and print results
-  uint32_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
-  double throughput = totalPacketsThrough * 1472 * 8 / ((simulationTime - 1) * 1000000.0); //Mbit/s
+  uint64_t totalPacketsThrough = DynamicCast<UdpServer> (serverApp.Get (0))->GetReceived ();
+  double throughput = totalPacketsThrough * 1472 * 8 / (simulationTime * 1000000.0); //Mbit/s
   std::cout << "Throughput: " << throughput << " Mbit/s" << std::endl;
 
+  Simulator::Destroy ();
   return 0;
 }

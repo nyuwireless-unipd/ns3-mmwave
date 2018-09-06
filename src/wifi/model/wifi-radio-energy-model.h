@@ -24,7 +24,10 @@
 
 #include "ns3/device-energy-model.h"
 #include "ns3/traced-value.h"
-#include "wifi-phy.h"
+#include "ns3/event-id.h"
+#include "ns3/nstime.h"
+#include "wifi-phy-listener.h"
+#include "wifi-phy-state.h"
 
 namespace ns3 {
 
@@ -123,7 +126,17 @@ public:
   /**
    * Defined in ns3::WifiPhyListener
    */
+  void NotifyOff (void);
+
+  /**
+   * Defined in ns3::WifiPhyListener
+   */
   void NotifyWakeup (void);
+
+  /**
+   * Defined in ns3::WifiPhyListener
+   */
+  void NotifyOn (void);
 
 
 private:
@@ -311,7 +324,7 @@ public:
   /**
    * \returns Current state.
    */
-  WifiPhy::State GetCurrentState (void) const;
+  WifiPhyState GetCurrentState (void) const;
 
   /**
    * \param callback Callback function.
@@ -350,6 +363,13 @@ public:
   void ChangeState (int newState);
 
   /**
+   * \param state the wifi state
+   *
+   * \returns the time the radio can stay in that state based on the remaining energy.
+   */
+  Time GetMaximumTimeInState (int state) const;
+
+  /**
    * \brief Handles energy depletion.
    *
    * Implements DeviceEnergyModel::HandleEnergyDepletion
@@ -362,6 +382,13 @@ public:
    * Implements DeviceEnergyModel::HandleEnergyRecharged
    */
   void HandleEnergyRecharged (void);
+
+  /**
+   * \brief Handles energy changed.
+   *
+   * Implements DeviceEnergyModel::HandleEnergyChanged
+   */
+  void HandleEnergyChanged (void);
 
   /**
    * \returns Pointer to the PHY listener.
@@ -385,7 +412,7 @@ private:
    * Sets current state. This function is private so that only the energy model
    * can change its own state.
    */
-  void SetWifiRadioState (const WifiPhy::State state);
+  void SetWifiRadioState (const WifiPhyState state);
 
   Ptr<EnergySource> m_source; ///< energy source
 
@@ -402,11 +429,10 @@ private:
   TracedValue<double> m_totalEnergyConsumption;
 
   // State variables.
-  WifiPhy::State m_currentState;  ///< current state the radio is in
+  WifiPhyState m_currentState;  ///< current state the radio is in
   Time m_lastUpdateTime;          ///< time stamp of previous energy update
 
   uint8_t m_nPendingChangeState; ///< pending state change
-  bool m_isSupersededChangeState; ///< superseded change state
 
   /// Energy depletion callback
   WifiRadioEnergyDepletionCallback m_energyDepletionCallback;
@@ -416,6 +442,8 @@ private:
 
   /// WifiPhy listener
   WifiRadioEnergyModelPhyListener *m_listener;
+
+  EventId m_switchToOffEvent; ///< switch to off event
 };
 
 } // namespace ns3

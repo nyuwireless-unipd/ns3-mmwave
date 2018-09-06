@@ -2,7 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -25,7 +25,7 @@
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
  */
 
@@ -41,11 +41,13 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveBearerStatsCalculator");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED ( MmWaveBearerStatsCalculator);
 
 MmWaveBearerStatsCalculator::MmWaveBearerStatsCalculator ()
   : m_firstWrite (true),
-    m_pendingOutput (false), 
+    m_pendingOutput (false),
     m_protocolType ("RLC")
 {
   NS_LOG_FUNCTION (this);
@@ -71,13 +73,13 @@ MmWaveBearerStatsCalculator::GetTypeId (void)
     TypeId ("ns3::MmWaveBearerStatsCalculator")
     .SetParent<LteStatsCalculator> ().AddConstructor<MmWaveBearerStatsCalculator> ()
     .SetGroupName("Lte")
-    .AddAttribute ("StartTime", "Start time of the on going epoch.", 
+    .AddAttribute ("StartTime", "Start time of the on going epoch.",
                    TimeValue (Seconds (0.)),
                    MakeTimeAccessor (&MmWaveBearerStatsCalculator::SetStartTime,
                                      &MmWaveBearerStatsCalculator::GetStartTime),
                    MakeTimeChecker ())
-    .AddAttribute ("EpochDuration", "Epoch duration.", 
-                   TimeValue (Seconds (0.25)), 
+    .AddAttribute ("EpochDuration", "Epoch duration.",
+                   TimeValue (Seconds (0.25)),
                    MakeTimeAccessor (&MmWaveBearerStatsCalculator::GetEpoch,
                                      &MmWaveBearerStatsCalculator::SetEpoch),
                    MakeTimeChecker ())
@@ -115,30 +117,30 @@ MmWaveBearerStatsCalculator::DoDispose ()
     }
 }
 
-void 
+void
 MmWaveBearerStatsCalculator::SetStartTime (Time t)
 {
   m_startTime = t;
   //RescheduleEndEpoch ();
 }
 
-Time 
+Time
 MmWaveBearerStatsCalculator::GetStartTime () const
 {
   return m_startTime;
 }
 
-void 
+void
 MmWaveBearerStatsCalculator::SetEpoch (Time e)
 {
   m_epochDuration = e;
   //RescheduleEndEpoch ();
 }
 
-Time 
+Time
 MmWaveBearerStatsCalculator::GetEpoch () const
 {
-  return m_epochDuration;  
+  return m_epochDuration;
 }
 
 void
@@ -730,5 +732,7 @@ MmWaveBearerStatsCalculator::GetDlPdcpOutputFilename (void)
 {
   return m_dlPdcpOutputFilename;
 }
+
+} // namespace mmwave 
 
 } // namespace ns3

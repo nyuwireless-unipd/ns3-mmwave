@@ -20,10 +20,10 @@
  *          Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
+#include "ns3/log.h"
+#include "ns3/packet.h"
 #include "yans-wifi-phy.h"
 #include "yans-wifi-channel.h"
-#include "ns3/log.h"
-#include "wifi-utils.h"
 
 namespace ns3 {
 
@@ -57,6 +57,7 @@ YansWifiPhy::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   m_channel = 0;
+  WifiPhy::DoDispose ();
 }
 
 Ptr<Channel>
@@ -68,6 +69,7 @@ YansWifiPhy::GetChannel (void) const
 void
 YansWifiPhy::SetChannel (const Ptr<YansWifiChannel> channel)
 {
+  NS_LOG_FUNCTION (this << channel);
   m_channel = channel;
   m_channel->Add (this);
 }

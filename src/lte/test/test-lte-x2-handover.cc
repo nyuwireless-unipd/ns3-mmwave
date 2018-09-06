@@ -36,7 +36,7 @@ NS_LOG_COMPONENT_DEFINE ("LteX2HandoverTest");
  * \ingroup tests
  *
  * \brief HandoverEvent structure
- */ 
+ */
 struct HandoverEvent
 {
   Time startTime; ///< start time
@@ -50,37 +50,37 @@ struct HandoverEvent
  * \ingroup lte-test
  * \ingroup tests
  *
- * \brief Test X2 Handover. In this test is used NoOpHandoverAlgorithm and 
- * the request for handover is generated mannually, and it is not based on measurements.
- */ 
+ * \brief Test X2 Handover. In this test is used NoOpHandoverAlgorithm and
+ * the request for handover is generated manually, and it is not based on measurements.
+ */
 class LteX2HandoverTestCase : public TestCase
 {
 public:
 
-  /** 
-   * 
-   * 
+  /**
+   *
+   *
    * \param nUes number of UEs in the test
    * \param nDedicatedBearers number of bearers to be activated per UE
-   * \param handoverEventList 
-   * \param handoverEventListName 
+   * \param handoverEventList
+   * \param handoverEventListName
    * \param useUdp true if UDP is to be used, false if TCP is to be used
    * \param schedulerType the scheduler type
    * \param admitHo
-   * \param useIdealRrc true if the ideal RRC should be used 
+   * \param useIdealRrc true if the ideal RRC should be used
    */
   LteX2HandoverTestCase (uint32_t nUes, uint32_t nDedicatedBearers, std::list<HandoverEvent> handoverEventList, std::string handoverEventListName, bool useUdp, std::string schedulerType, bool admitHo, bool useIdealRrc);
-  
+
 private:
   /**
    * Build name string
    * \param nUes number of UEs in the test
    * \param nDedicatedBearers number of bearers to be activated per UE
-   * \param handoverEventListName 
+   * \param handoverEventListName
    * \param useUdp true if UDP is to be used, false if TCP is to be used
    * \param schedulerType the scheduler type
    * \param admitHo
-   * \param useIdealRrc true if the ideal RRC should be used 
+   * \param useIdealRrc true if the ideal RRC should be used
    * \returns the name string
    */
   static std::string BuildNameString (uint32_t nUes, uint32_t nDedicatedBearers, std::string handoverEventListName, bool useUdp, std::string schedulerType, bool admitHo, bool useIdealRrc);
@@ -103,13 +103,13 @@ private:
   bool     m_useIdealRrc; ///< whether to use the ideal RRC
   Ptr<LteHelper> m_lteHelper; ///< LTE helper
   Ptr<PointToPointEpcHelper> m_epcHelper; ///< EPC helper
-  
+
 /**
  * \ingroup lte-test
  * \ingroup tests
  *
  * \brief BearerData structure
- */ 
+ */
   struct BearerData
   {
     uint32_t bid; ///< BID
@@ -124,7 +124,7 @@ private:
  * \ingroup tests
  *
  * \brief UeData structure
- */ 
+ */
   struct UeData
   {
     uint32_t id; ///< ID
@@ -134,12 +134,12 @@ private:
 /**
  * \brief Save stats after handover function
  * \param ueIndex the index of the UE
- */ 
+ */
   void SaveStatsAfterHandover (uint32_t ueIndex);
 /**
  * \brief Check stats a while after handover function
  * \param ueIndex the index of the UE
- */ 
+ */
   void CheckStatsAWhileAfterHandover (uint32_t ueIndex);
 
   std::vector<UeData> m_ueDataVector; ///< UE data vector
@@ -155,8 +155,8 @@ private:
 std::string LteX2HandoverTestCase::BuildNameString (uint32_t nUes, uint32_t nDedicatedBearers, std::string handoverEventListName, bool useUdp, std::string schedulerType, bool admitHo, bool useIdealRrc)
 {
   std::ostringstream oss;
-  oss << " nUes=" << nUes 
-      << " nDedicatedBearers=" << nDedicatedBearers 
+  oss << " nUes=" << nUes
+      << " nDedicatedBearers=" << nDedicatedBearers
       << " udp=" << useUdp
       << " " << schedulerType
       << " admitHo=" << admitHo
@@ -168,7 +168,7 @@ std::string LteX2HandoverTestCase::BuildNameString (uint32_t nUes, uint32_t nDed
   else
     {
       oss << ", real RRC";
-    }  
+    }
   return oss.str ();
 }
 
@@ -187,7 +187,7 @@ LteX2HandoverTestCase::LteX2HandoverTestCase (uint32_t nUes, uint32_t nDedicated
     m_statsDuration (Seconds (0.1)),
     m_udpClientInterval (Seconds (0.01)),
     m_udpClientPktSize (100)
-    
+
 {
 }
 
@@ -198,23 +198,25 @@ LteX2HandoverTestCase::DoRun ()
 
   Config::Reset ();
   Config::SetDefault ("ns3::UdpClient::Interval",  TimeValue (m_udpClientInterval));
-  Config::SetDefault ("ns3::UdpClient::MaxPackets", UintegerValue (1000000));  
-  Config::SetDefault ("ns3::UdpClient::PacketSize", UintegerValue (m_udpClientPktSize));  
+  Config::SetDefault ("ns3::UdpClient::MaxPackets", UintegerValue (1000000));
+  Config::SetDefault ("ns3::UdpClient::PacketSize", UintegerValue (m_udpClientPktSize));
 
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));
 
   Config::SetDefault ("ns3::PointToPointEpcHelper::S1apLinkDelay", TimeValue(Seconds(0)));
 
+  Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (40));
+
   int64_t stream = 1;
-  
+
   m_lteHelper = CreateObject<LteHelper> ();
   m_lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
   m_lteHelper->SetSchedulerType (m_schedulerType);
   m_lteHelper->SetHandoverAlgorithmType ("ns3::NoOpHandoverAlgorithm"); // disable automatic handover
   m_lteHelper->SetAttribute ("UseIdealRrc", BooleanValue (m_useIdealRrc));
 
-  // set DL and UL bandwidth. 
+  // set DL and UL bandwidth.
   m_lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
   m_lteHelper->SetEnbDeviceAttribute ("UlBandwidth", UintegerValue (25));
 
@@ -227,7 +229,7 @@ LteX2HandoverTestCase::DoRun ()
   if (m_epc)
     {
       m_epcHelper = CreateObject<PointToPointEpcHelper> ();
-      m_lteHelper->SetEpcHelper (m_epcHelper);      
+      m_lteHelper->SetEpcHelper (m_epcHelper);
     }
 
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
@@ -240,7 +242,7 @@ LteX2HandoverTestCase::DoRun ()
   MobilityHelper mobility;
   mobility.SetPositionAllocator (positionAlloc);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility.Install (enbNodes);  
+  mobility.Install (enbNodes);
   mobility.Install (ueNodes);
 
   NetDeviceContainer enbDevices;
@@ -288,7 +290,7 @@ LteX2HandoverTestCase::DoRun ()
       Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
       remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
 
-      // Install the IP stack on the UEs      
+      // Install the IP stack on the UEs
       internet.Install (ueNodes);
       ueIpIfaces = m_epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueDevices));
     }
@@ -296,25 +298,25 @@ LteX2HandoverTestCase::DoRun ()
   // attachment (needs to be done after IP stack configuration)
   // all UEs attached to eNB 0 at the beginning
   m_lteHelper->Attach (ueDevices, enbDevices.Get (0));
-   
+
   if (m_epc)
     {
       // always true: bool epcDl = true;
       // always true: bool epcUl = true;
       // the rest of this block is copied from lena-dual-stripe
 
-    
+
       // Install and start applications on UEs and remote host
       uint16_t dlPort = 10000;
       uint16_t ulPort = 20000;
 
       // randomize a bit start times to avoid simulation artifacts
       // (e.g., buffer overflows due to packet transmissions happening
-      // exactly at the same time) 
+      // exactly at the same time)
       Ptr<UniformRandomVariable> startTimeSeconds = CreateObject<UniformRandomVariable> ();
       startTimeSeconds->SetAttribute ("Min", DoubleValue (0));
       startTimeSeconds->SetAttribute ("Max", DoubleValue (0.010));
-      startTimeSeconds->SetStream (stream++);      
+      startTimeSeconds->SetStream (stream++);
 
       for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
         {
@@ -324,7 +326,7 @@ LteX2HandoverTestCase::DoRun ()
           ueStaticRouting->SetDefaultRoute (m_epcHelper->GetUeDefaultGatewayAddress (), 1);
 
           UeData ueData;
-     
+
           for (uint32_t b = 0; b < m_nDedicatedBearers; ++b)
             {
               ++dlPort;
@@ -335,29 +337,29 @@ LteX2HandoverTestCase::DoRun ()
               BearerData bearerData;
 
               if (m_useUdp)
-                {              
+                {
                   // always true: if (epcDl)
                     {
                       UdpClientHelper dlClientHelper (ueIpIfaces.GetAddress (u), dlPort);
                       clientApps.Add (dlClientHelper.Install (remoteHost));
-                      PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", 
+                      PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory",
                                                            InetSocketAddress (Ipv4Address::GetAny (), dlPort));
                       ApplicationContainer sinkContainer = dlPacketSinkHelper.Install (ue);
                       bearerData.dlSink = sinkContainer.Get (0)->GetObject<PacketSink> ();
                       serverApps.Add (sinkContainer);
-                      
+
                     }
                   // always true: if (epcUl)
-                    {      
+                    {
                       UdpClientHelper ulClientHelper (remoteHostAddr, ulPort);
                       clientApps.Add (ulClientHelper.Install (ue));
-                      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", 
+                      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory",
                                                            InetSocketAddress (Ipv4Address::GetAny (), ulPort));
                       ApplicationContainer sinkContainer = ulPacketSinkHelper.Install (remoteHost);
                       bearerData.ulSink = sinkContainer.Get (0)->GetObject<PacketSink> ();
-                      serverApps.Add (sinkContainer);  
-                    }            
-                }                    
+                      serverApps.Add (sinkContainer);
+                    }
+                }
               else // use TCP
                 {
                   // always true: if (epcDl)
@@ -366,23 +368,23 @@ LteX2HandoverTestCase::DoRun ()
                                                      InetSocketAddress (ueIpIfaces.GetAddress (u), dlPort));
                       dlClientHelper.SetAttribute ("MaxBytes", UintegerValue (0));
                       clientApps.Add (dlClientHelper.Install (remoteHost));
-                      PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory", 
+                      PacketSinkHelper dlPacketSinkHelper ("ns3::TcpSocketFactory",
                                                            InetSocketAddress (Ipv4Address::GetAny (), dlPort));
                       ApplicationContainer sinkContainer = dlPacketSinkHelper.Install (ue);
                       bearerData.dlSink = sinkContainer.Get (0)->GetObject<PacketSink> ();
                       serverApps.Add (sinkContainer);
                     }
                   // always true: if (epcUl)
-                    {     
+                    {
                       BulkSendHelper ulClientHelper ("ns3::TcpSocketFactory",
                                                      InetSocketAddress (remoteHostAddr, ulPort));
-                      ulClientHelper.SetAttribute ("MaxBytes", UintegerValue (0));                  
+                      ulClientHelper.SetAttribute ("MaxBytes", UintegerValue (0));
                       clientApps.Add (ulClientHelper.Install (ue));
-                      PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory", 
+                      PacketSinkHelper ulPacketSinkHelper ("ns3::TcpSocketFactory",
                                                            InetSocketAddress (Ipv4Address::GetAny (), ulPort));
                       ApplicationContainer sinkContainer = ulPacketSinkHelper.Install (remoteHost);
                       bearerData.ulSink = sinkContainer.Get (0)->GetObject<PacketSink> ();
-                      serverApps.Add (sinkContainer);  
+                      serverApps.Add (sinkContainer);
                     }
                 } // end if (useUdp)
 
@@ -392,7 +394,7 @@ LteX2HandoverTestCase::DoRun ()
                   EpcTft::PacketFilter dlpf;
                   dlpf.localPortStart = dlPort;
                   dlpf.localPortEnd = dlPort;
-                  tft->Add (dlpf); 
+                  tft->Add (dlpf);
                 }
               // always true: if (epcUl)
                 {
@@ -418,7 +420,7 @@ LteX2HandoverTestCase::DoRun ()
           m_ueDataVector.push_back (ueData);
         }
 
-    } 
+    }
   else // (epc == false)
     {
       // for radio bearer activation purposes, consider together home UEs and macro UEs
@@ -441,49 +443,49 @@ LteX2HandoverTestCase::DoRun ()
   const Time maxRrcConnectionEstablishmentDuration = Seconds (0.080);
   for (NetDeviceContainer::Iterator it = ueDevices.Begin (); it != ueDevices.End (); ++it)
     {
-      Simulator::Schedule (maxRrcConnectionEstablishmentDuration, 
-                           &LteX2HandoverTestCase::CheckConnected, 
+      Simulator::Schedule (maxRrcConnectionEstablishmentDuration,
+                           &LteX2HandoverTestCase::CheckConnected,
                            this, *it, enbDevices.Get (0));
     }
-  
+
   // schedule handover events and corresponding checks
 
-  Time stopTime = Seconds (0);  
+  Time stopTime = Seconds (0);
   for (std::list<HandoverEvent>::iterator hoEventIt = m_handoverEventList.begin ();
        hoEventIt != m_handoverEventList.end ();
        ++hoEventIt)
     {
-      Simulator::Schedule (hoEventIt->startTime, 
-                           &LteX2HandoverTestCase::CheckConnected, 
-                           this, 
-                           ueDevices.Get (hoEventIt->ueDeviceIndex), 
+      Simulator::Schedule (hoEventIt->startTime,
+                           &LteX2HandoverTestCase::CheckConnected,
+                           this,
+                           ueDevices.Get (hoEventIt->ueDeviceIndex),
                            enbDevices.Get (hoEventIt->sourceEnbDeviceIndex));
-      m_lteHelper->HandoverRequest (hoEventIt->startTime, 
+      m_lteHelper->HandoverRequest (hoEventIt->startTime,
                                     ueDevices.Get (hoEventIt->ueDeviceIndex),
                                     enbDevices.Get (hoEventIt->sourceEnbDeviceIndex),
                                     enbDevices.Get (hoEventIt->targetEnbDeviceIndex));
       Time hoEndTime = hoEventIt->startTime + m_maxHoDuration;
-      Simulator::Schedule (hoEndTime, 
-                           &LteX2HandoverTestCase::CheckConnected, 
-                           this, 
-                           ueDevices.Get (hoEventIt->ueDeviceIndex), 
+      Simulator::Schedule (hoEndTime,
+                           &LteX2HandoverTestCase::CheckConnected,
+                           this,
+                           ueDevices.Get (hoEventIt->ueDeviceIndex),
                            enbDevices.Get (m_admitHo ? hoEventIt->targetEnbDeviceIndex : hoEventIt->sourceEnbDeviceIndex));
       Simulator::Schedule (hoEndTime, &LteX2HandoverTestCase::SaveStatsAfterHandover,
                            this, hoEventIt->ueDeviceIndex);
 
       Time checkStatsAfterHoTime = hoEndTime + m_statsDuration;
-      Simulator::Schedule (checkStatsAfterHoTime, &LteX2HandoverTestCase::CheckStatsAWhileAfterHandover, 
-                           this, hoEventIt->ueDeviceIndex);      
+      Simulator::Schedule (checkStatsAfterHoTime, &LteX2HandoverTestCase::CheckStatsAWhileAfterHandover,
+                           this, hoEventIt->ueDeviceIndex);
       if (stopTime <= checkStatsAfterHoTime)
         {
           stopTime = checkStatsAfterHoTime + MilliSeconds (1);
         }
     }
-  
+
   // m_lteHelper->EnableRlcTraces ();
   // m_lteHelper->EnablePdcpTraces();
 
- 
+
   Simulator::Stop (stopTime);
 
   Simulator::Run ();
@@ -492,7 +494,7 @@ LteX2HandoverTestCase::DoRun ()
 
 }
 
-void 
+void
 LteX2HandoverTestCase::CheckConnected (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
 {
   Ptr<LteUeNetDevice> ueLteDevice = ueDevice->GetObject<LteUeNetDevice> ();
@@ -503,11 +505,10 @@ LteX2HandoverTestCase::CheckConnected (Ptr<NetDevice> ueDevice, Ptr<NetDevice> e
   Ptr<LteEnbNetDevice> enbLteDevice = enbDevice->GetObject<LteEnbNetDevice> ();
   Ptr<LteEnbRrc> enbRrc = enbLteDevice->GetRrc ();
   uint16_t rnti = ueRrc->GetRnti ();
-  Ptr<UeManager> ueManager = enbRrc->GetUeManager (rnti);  
+  Ptr<UeManager> ueManager = enbRrc->GetUeManager (rnti);
   NS_TEST_ASSERT_MSG_NE (ueManager, 0, "RNTI " << rnti << " not found in eNB");
 
   UeManager::State ueManagerState = ueManager->GetState ();
-  NS_LOG_UNCOND("ueManagerState " << ueManagerState);
   NS_TEST_ASSERT_MSG_EQ (ueManagerState, UeManager::CONNECTED_NORMALLY, "Wrong UeManager state!");
   NS_ASSERT_MSG (ueManagerState == UeManager::CONNECTED_NORMALLY, "Wrong UeManager state!");
 
@@ -533,11 +534,11 @@ LteX2HandoverTestCase::CheckConnected (Ptr<NetDevice> ueDevice, Ptr<NetDevice> e
 
   ObjectMapValue enbDataRadioBearerMapValue;
   ueManager->GetAttribute ("DataRadioBearerMap", enbDataRadioBearerMapValue);
-  NS_TEST_ASSERT_MSG_EQ (enbDataRadioBearerMapValue.GetN (), m_nDedicatedBearers + 1, "wrong num bearers at eNB");  
+  NS_TEST_ASSERT_MSG_EQ (enbDataRadioBearerMapValue.GetN (), m_nDedicatedBearers + 1, "wrong num bearers at eNB");
 
   ObjectMapValue ueDataRadioBearerMapValue;
   ueRrc->GetAttribute ("DataRadioBearerMap", ueDataRadioBearerMapValue);
-  NS_TEST_ASSERT_MSG_EQ (ueDataRadioBearerMapValue.GetN (), m_nDedicatedBearers + 1, "wrong num bearers at UE"); 
+  NS_TEST_ASSERT_MSG_EQ (ueDataRadioBearerMapValue.GetN (), m_nDedicatedBearers + 1, "wrong num bearers at UE");
 
   ObjectMapValue::Iterator enbBearerIt = enbDataRadioBearerMapValue.Begin ();
   ObjectMapValue::Iterator ueBearerIt = ueDataRadioBearerMapValue.Begin ();
@@ -552,15 +553,15 @@ LteX2HandoverTestCase::CheckConnected (Ptr<NetDevice> ueDevice, Ptr<NetDevice> e
       //NS_TEST_ASSERT_MSG_EQ (enbDrbInfo->m_rlcConfig, ueDrbInfo->m_rlcConfig, "rlcConfig differs");
       NS_TEST_ASSERT_MSG_EQ ((uint32_t) enbDrbInfo->m_logicalChannelIdentity, (uint32_t) ueDrbInfo->m_logicalChannelIdentity, "logicalChannelIdentity differs");
       //NS_TEST_ASSERT_MSG_EQ (enbDrbInfo->m_logicalChannelConfig, ueDrbInfo->m_logicalChannelConfig, "logicalChannelConfig differs");
- 
+
       ++enbBearerIt;
       ++ueBearerIt;
     }
   NS_ASSERT_MSG (enbBearerIt == enbDataRadioBearerMapValue.End (), "too many bearers at eNB");
-  NS_ASSERT_MSG (ueBearerIt == ueDataRadioBearerMapValue.End (), "too many bearers at UE");  
+  NS_ASSERT_MSG (ueBearerIt == ueDataRadioBearerMapValue.End (), "too many bearers at UE");
 }
 
-void 
+void
 LteX2HandoverTestCase::SaveStatsAfterHandover (uint32_t ueIndex)
 {
   for (std::list<BearerData>::iterator it = m_ueDataVector.at (ueIndex).bearerDataList.begin ();
@@ -572,16 +573,16 @@ LteX2HandoverTestCase::SaveStatsAfterHandover (uint32_t ueIndex)
     }
 }
 
-void 
+void
 LteX2HandoverTestCase::CheckStatsAWhileAfterHandover (uint32_t ueIndex)
-{      
+{
   uint32_t b = 1;
   for (std::list<BearerData>::iterator it = m_ueDataVector.at (ueIndex).bearerDataList.begin ();
        it != m_ueDataVector.at (ueIndex).bearerDataList.end ();
        ++it)
     {
       uint32_t dlRx = it->dlSink->GetTotalRx () - it->dlOldTotalRx;
-      uint32_t ulRx = it->ulSink->GetTotalRx () - it->ulOldTotalRx;                       
+      uint32_t ulRx = it->ulSink->GetTotalRx () - it->ulOldTotalRx;
       uint32_t expectedBytes = m_udpClientPktSize * (m_statsDuration.GetSeconds () / m_udpClientInterval.GetSeconds ());
       //                           tolerance
       NS_TEST_ASSERT_MSG_GT (dlRx,   0.500 * expectedBytes, "too few RX bytes in DL, ue=" << ueIndex << ", b=" << b);
@@ -596,7 +597,7 @@ LteX2HandoverTestCase::CheckStatsAWhileAfterHandover (uint32_t ueIndex)
  * \ingroup tests
  *
  * \brief Lte X2 Handover Test Suite
- */ 
+ */
 class LteX2HandoverTestSuite : public TestSuite
 {
 public:
@@ -612,31 +613,31 @@ LteX2HandoverTestSuite::LteX2HandoverTestSuite ()
   // bwd means handover from enb 1 to enb 0
 
   HandoverEvent ue1fwd;
-  ue1fwd.startTime = MilliSeconds (100); 
+  ue1fwd.startTime = MilliSeconds (100);
   ue1fwd.ueDeviceIndex = 0;
   ue1fwd.sourceEnbDeviceIndex = 0;
   ue1fwd.targetEnbDeviceIndex = 1;
 
   HandoverEvent ue1bwd;
-  ue1bwd.startTime = MilliSeconds (300); 
+  ue1bwd.startTime = MilliSeconds (300);
   ue1bwd.ueDeviceIndex = 0;
   ue1bwd.sourceEnbDeviceIndex = 1;
   ue1bwd.targetEnbDeviceIndex = 0;
 
   HandoverEvent ue1fwdagain;
-  ue1fwdagain.startTime = MilliSeconds (500); 
+  ue1fwdagain.startTime = MilliSeconds (500);
   ue1fwdagain.ueDeviceIndex = 0;
   ue1fwdagain.sourceEnbDeviceIndex = 0;
   ue1fwdagain.targetEnbDeviceIndex = 1;
 
   HandoverEvent ue2fwd;
-  ue2fwd.startTime = MilliSeconds (110); 
+  ue2fwd.startTime = MilliSeconds (110);
   ue2fwd.ueDeviceIndex = 1;
   ue2fwd.sourceEnbDeviceIndex = 0;
   ue2fwd.targetEnbDeviceIndex = 1;
 
   HandoverEvent ue2bwd;
-  ue2bwd.startTime = MilliSeconds (250); 
+  ue2bwd.startTime = MilliSeconds (250);
   ue2bwd.ueDeviceIndex = 1;
   ue2bwd.sourceEnbDeviceIndex = 1;
   ue2bwd.targetEnbDeviceIndex = 0;

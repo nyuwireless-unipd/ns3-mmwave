@@ -32,6 +32,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveMacPduHeader);
 
 MmWaveMacPduHeader::MmWaveMacPduHeader () : m_headerSize (0)
@@ -168,5 +170,6 @@ MmWaveMacPduHeader::AddSubheader (MacSubheader macSubheader)
 	}
 }
 
-} // namespace ns3
+} // namespace mmwave 
 
+} // namespace ns3

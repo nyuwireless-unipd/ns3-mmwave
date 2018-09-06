@@ -30,15 +30,30 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("LteTestSpectrumValueHelper");
 
+/**
+ * \ingroup lte-test
+ * \ingroup tests
+ *
+ * \brief Test checks if lte spectrum model is generated properly. Different
+ * test cases are configured by defining different frequency and banwidth.
+ */
 class LteSpectrumModelTestCase : public TestCase
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param str the test reference name
+   * \param earfcn the central carrier frequency
+   * \param bw bandwidth tha bandwidth
+   * \param fcs the expected spectrum model
+   */
   LteSpectrumModelTestCase (const char* str, uint16_t earfcn, uint8_t bw, std::vector<double> fcs);
   virtual ~LteSpectrumModelTestCase ();
 
 protected:
-  Ptr<SpectrumModel> m_actual;
-  Ptr<SpectrumModel> m_expected;
+  Ptr<SpectrumModel> m_actual; ///< actual spectrum model
+  Ptr<SpectrumModel> m_expected; ///< expected spectrum model
 
 private:
   virtual void DoRun (void);
@@ -56,7 +71,7 @@ LteSpectrumModelTestCase::~LteSpectrumModelTestCase ()
 {
 }
 
-void 
+void
 LteSpectrumModelTestCase::DoRun (void)
 {
   NS_LOG_FUNCTION (this);
@@ -66,15 +81,31 @@ LteSpectrumModelTestCase::DoRun (void)
 
 
 
+/**
+ * \ingroup lte-test
+ * \ingroup tests
+ *
+ * \brief Test that the function for creation of LTE noise power spectral
+ * density is working properly.
+ */
 class LteNoisePsdTestCase : public TestCase
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param str the test reference name
+   * \param earfcn
+   * \param bw bandwidth
+   * \param noiseFigureDb noise figure in dB
+   * \param expected executed spectrum value
+   */
   LteNoisePsdTestCase (const char* str, uint16_t earfcn, uint8_t bw, double noiseFigureDb, SpectrumValue& expected);
   virtual ~LteNoisePsdTestCase ();
 
 protected:
-  Ptr<SpectrumValue> m_actual;
-  Ptr<SpectrumValue> m_expected;
+  Ptr<SpectrumValue> m_actual; ///< actual spectrum value
+  Ptr<SpectrumValue> m_expected; ///< expected spectrum value
 
 private:
   virtual void DoRun (void);
@@ -92,7 +123,7 @@ LteNoisePsdTestCase::~LteNoisePsdTestCase ()
 {
 }
 
-void 
+void
 LteNoisePsdTestCase::DoRun (void)
 {
   NS_TEST_ASSERT_MSG_EQ (m_actual->GetSpectrumModelUid (), m_expected->GetSpectrumModelUid (), "SpectrumModel UID mismatch");
@@ -103,15 +134,32 @@ LteNoisePsdTestCase::DoRun (void)
 
 
 
+/**
+ * \ingroup lte-test
+ * \ingroup tests
+ *
+ * \brief Test that the funtcion for the creation of the Lte transmission power
+ * spectral density is working as expected.
+ */
 class LteTxPsdTestCase : public TestCase
 {
 public:
+  /**
+   * Constructor
+   *
+   * \param str the reference name
+   * \param earfcn
+   * \param bw bandwidth
+   * \param txPowerDbm tranmit power in dBm
+   * \param activeRbs active RBs
+   * \param expected executed spectrum value
+   */
   LteTxPsdTestCase (const char* str, uint16_t earfcn, uint8_t bw, double txPowerDbm, std::vector<int> activeRbs, SpectrumValue& expected);
   virtual ~LteTxPsdTestCase ();
 
 protected:
-  Ptr<SpectrumValue> m_actual;
-  Ptr<SpectrumValue> m_expected;
+  Ptr<SpectrumValue> m_actual; ///< actual spectrum value
+  Ptr<SpectrumValue> m_expected; ///< expected spectrum value
 
 private:
   virtual void DoRun (void);
@@ -129,7 +177,7 @@ LteTxPsdTestCase::~LteTxPsdTestCase ()
 {
 }
 
-void 
+void
 LteTxPsdTestCase::DoRun (void)
 {
   NS_TEST_ASSERT_MSG_EQ (m_actual->GetSpectrumModelUid (), m_expected->GetSpectrumModelUid (), "SpectrumModel UID mismatch");
@@ -139,6 +187,13 @@ LteTxPsdTestCase::DoRun (void)
 
 
 
+/**
+ * \ingroup lte-test
+ * \ingroup tests
+ *
+ * \brief Test suite for LteSpectrumValueHelper. Test suite is
+ * checking different functionalities of LteSpectrumValueHelper.
+ */
 class LteSpectrumValueHelperTestSuite : public TestSuite
 {
 public:
@@ -155,7 +210,7 @@ LteSpectrumValueHelperTestSuite::LteSpectrumValueHelperTestSuite ()
 //   LogComponentEnable ("LteSpectrumValueHelperTestSuite", logLevel);
 //   LogComponentEnable ("LteSpectrumValueHelper", logLevel);
 
- 
+
   NS_LOG_INFO ("Creating LteSpectrumValueHelperTestSuite");
 
 

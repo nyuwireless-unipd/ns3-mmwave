@@ -109,7 +109,7 @@ LteRlcTm::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer.Cancel ();
 }
 
-void 
+void
 LteRlcTm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this);
@@ -121,11 +121,11 @@ LteRlcTm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
  */
 
 void
-LteRlcTm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
+LteRlcTm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes  << (uint32_t) layer << (uint32_t) harqId);
 
-  // 5.1.1.1 Transmit operations 
+  // 5.1.1.1 Transmit operations
   // 5.1.1.1.1 General
   // When submitting a new TMD PDU to lower layer, the transmitting TM RLC entity shall:
   // - submit a RLC SDU without any modification to lower layer.
@@ -147,7 +147,7 @@ LteRlcTm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
   m_txBufferSize -= (*(m_txBuffer.begin()))->GetSize ();
   m_txBuffer.erase (m_txBuffer.begin ());
- 
+
   // Sender timestamp
   RlcTag rlcTag (Simulator::Now ());
   packet->AddByteTag (rlcTag);
@@ -160,6 +160,7 @@ LteRlcTm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   params.lcid = m_lcid;
   params.layer = layer;
   params.harqProcessId = harqId;
+  params.componentCarrierId = componentCarrierId;
 
   m_macSapProvider->TransmitPdu (params);
 
@@ -177,7 +178,7 @@ LteRlcTm::DoNotifyHarqDeliveryFailure ()
 }
 
 void
-LteRlcTm::DoReceivePdu (Ptr<Packet> p)
+LteRlcTm::DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
@@ -190,7 +191,7 @@ LteRlcTm::DoReceivePdu (Ptr<Packet> p)
     }
   m_rxPdu (m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
-  // 5.1.1.2 Receive operations 
+  // 5.1.1.2 Receive operations
   // 5.1.1.2.1  General
   // When receiving a new TMD PDU from lower layer, the receiving TM RLC entity shall:
   // - deliver the TMD PDU without any modification to upper layer.

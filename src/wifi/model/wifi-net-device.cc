@@ -18,15 +18,17 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
+#include "ns3/llc-snap-header.h"
+#include "ns3/channel.h"
+#include "ns3/socket.h"
+#include "ns3/pointer.h"
+#include "ns3/log.h"
+#include "ns3/node.h"
+#include "ns3/net-device-queue-interface.h"
 #include "wifi-net-device.h"
 #include "wifi-phy.h"
 #include "regular-wifi-mac.h"
 #include "wifi-mac-queue.h"
-#include "ns3/llc-snap-header.h"
-#include "ns3/socket.h"
-#include "ns3/pointer.h"
-#include "ns3/log.h"
-#include "ns3/net-device-queue-interface.h"
 
 namespace ns3 {
 
@@ -48,7 +50,7 @@ WifiNetDevice::GetTypeId (void)
                    MakeUintegerChecker<uint16_t> (1,MAX_MSDU_SIZE - LLC_SNAP_HEADER_LENGTH))
     .AddAttribute ("Channel", "The channel attached to this device",
                    PointerValue (),
-                   MakePointerAccessor (&WifiNetDevice::DoGetChannel),
+                   MakePointerAccessor (&WifiNetDevice::GetChannel),
                    MakePointerChecker<Channel> ())
     .AddAttribute ("Phy", "The PHY layer attached to this device.",
                    PointerValue (),
@@ -98,6 +100,7 @@ WifiNetDevice::DoDispose (void)
 void
 WifiNetDevice::DoInitialize (void)
 {
+  NS_LOG_FUNCTION_NOARGS ();
   m_phy->Initialize ();
   m_mac->Initialize ();
   m_stationManager->Initialize ();
@@ -140,7 +143,7 @@ WifiNetDevice::NotifyNewAggregate (void)
           // register the select queue callback
           m_queueInterface->SetSelectQueueCallback (MakeCallback (&WifiNetDevice::SelectQueue, this));
           m_queueInterface->SetLateTxQueuesCreation (true);
-	  FlowControlConfig ();
+          FlowControlConfig ();
         }
     }
   NetDevice::NotifyNewAggregate ();
@@ -170,28 +173,28 @@ WifiNetDevice::FlowControlConfig (void)
       m_queueInterface->SetTxQueuesN (4);
       m_queueInterface->CreateTxQueues ();
 
-      mac->GetAttributeFailSafe ("BE_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("BE_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 0);
 
-      mac->GetAttributeFailSafe ("BK_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("BK_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 1);
 
-      mac->GetAttributeFailSafe ("VI_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("VI_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 2);
 
-      mac->GetAttributeFailSafe ("VO_EdcaTxopN", ptr);
-      wmq = ptr.Get<EdcaTxopN> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("VO_Txop", ptr);
+      wmq = ptr.Get<QosTxop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 3);
     }
   else
     {
       m_queueInterface->CreateTxQueues ();
 
-      mac->GetAttributeFailSafe ("DcaTxop", ptr);
-      wmq = ptr.Get<DcaTxop> ()->GetQueue ();
+      mac->GetAttributeFailSafe ("Txop", ptr);
+      wmq = ptr.Get<Txop> ()->GetWifiMacQueue ();
       m_queueInterface->ConnectQueueTraces<WifiMacQueueItem> (wmq, 0);
     }
 }
@@ -250,12 +253,6 @@ WifiNetDevice::GetIfIndex (void) const
 
 Ptr<Channel>
 WifiNetDevice::GetChannel (void) const
-{
-  return m_phy->GetChannel ();
-}
-
-Ptr<Channel>
-WifiNetDevice::DoGetChannel (void) const
 {
   return m_phy->GetChannel ();
 }
@@ -501,7 +498,7 @@ WifiNetDevice::SelectQueue (Ptr<QueueItem> item) const
   // if the admission control were implemented, here we should check whether
   // the access category assigned to the packet should be downgraded
 
-  return QosUtilsMapTidToAc (priority);
+  return static_cast<uint8_t> (QosUtilsMapTidToAc (priority));
 }
 
 } //namespace ns3

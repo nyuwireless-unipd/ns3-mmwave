@@ -86,7 +86,7 @@ LenaTestTdBetFfMacSchedulerSuite::LenaTestTdBetFfMacSchedulerSuite ()
   // 1 user -> 24 PRB at Itbs 20 -> 1383 -> 1383000 bytes/sec
   // 3 users -> 1383000 among 3 users ->461000  bytes/sec
   // 6 users -> 1383000 among 6 users ->230500  bytes/sec
-  // 12 users -> 1383000 among 12 users ->115250  bytes/sec 
+  // 12 users -> 1383000 among 12 users ->115250  bytes/sec
   // UPLINK - DISTANCE 4800 -> MCS 14 -> Itbs 13 (from table 7.1.7.2.1-1 of 36.213)
   // 1 user -> 25 PRB at Itbs 13 -> 807 -> 807000 bytes/sec
   // 3 users -> 8 PRB at Itbs 13 -> 253 -> 253000 bytes/sec
@@ -112,7 +112,7 @@ LenaTestTdBetFfMacSchedulerSuite::LenaTestTdBetFfMacSchedulerSuite ()
   AddTestCase (new LenaTdBetFfMacSchedulerTestCase1 (3,6000,397000,201000,errorModel), TestCase::EXTENSIVE);
   AddTestCase (new LenaTdBetFfMacSchedulerTestCase1 (6,6000,198500,97000,errorModel), TestCase::EXTENSIVE);
   AddTestCase (new LenaTdBetFfMacSchedulerTestCase1 (12,6000,99250,48667,errorModel), TestCase::EXTENSIVE);
-  
+
   // DOWNLINK - DISTANCE 10000 -> MCS 14 -> Itbs 13 (from table 7.1.7.2.1-1 of 36.213)
   // 1 user -> 24 PRB at Itbs 13 -> 775 -> 775000 byte/sec
   // 3 users -> 775000 among 3 users -> 258333  bytes/sec
@@ -133,7 +133,7 @@ LenaTestTdBetFfMacSchedulerSuite::LenaTestTdBetFfMacSchedulerSuite ()
   // 1 user -> 24 PRB at Itbs 8 -> 421 -> 421000 bytes/sec
   // 3 users -> 421000 among 3 users ->140333  bytes/sec
   // 6 users -> 421000 among 6 users ->70166  bytes/sec
-  // 12 users -> 421000 among 12 users ->35083  bytes/sec 
+  // 12 users -> 421000 among 12 users ->35083  bytes/sec
   // UPLINK - DISTANCE 20000 -> MCS 2 -> Itbs 2 (from table 7.1.7.2.1-1 of 36.213)
   // 1 user -> 25 PRB at Itbs 2 -> 137 -> 137000 bytes/sec
   // 3 users -> 8 PRB at Itbs 2 -> 41 -> 41000 bytes/sec
@@ -145,9 +145,13 @@ LenaTestTdBetFfMacSchedulerSuite::LenaTestTdBetFfMacSchedulerSuite ()
   AddTestCase (new LenaTdBetFfMacSchedulerTestCase1 (6,20000,70166,22000,errorModel), TestCase::EXTENSIVE);
   AddTestCase (new LenaTdBetFfMacSchedulerTestCase1 (12,20000,35083,12000,errorModel), TestCase::EXTENSIVE);
 
+  // DOWNLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  // UPLINK - DISTANCE 100000 -> CQI == 0 -> out of range -> 0 bytes/sec
+  AddTestCase (new LenaTdBetFfMacSchedulerTestCase1 (1,100000,0,0,errorModel), TestCase::QUICK);
+
   // Test Case 2: fairness check
 
-  std::vector<uint16_t> dist;
+  std::vector<double> dist;
   dist.push_back (0);       // User 0 distance --> MCS 28
   dist.push_back (4800);    // User 1 distance --> MCS 22
   dist.push_back (6000);    // User 2 distance --> MCS 14
@@ -174,15 +178,15 @@ static LenaTestTdBetFfMacSchedulerSuite lenaTestTdBetFfMacSchedulerSuite;
 // --------------- T E S T - C A S E   # 1 ------------------------------
 
 
-std::string 
-LenaTdBetFfMacSchedulerTestCase1::BuildNameString (uint16_t nUser, uint16_t dist)
+std::string
+LenaTdBetFfMacSchedulerTestCase1::BuildNameString (uint16_t nUser, double dist)
 {
   std::ostringstream oss;
   oss << nUser << " UEs, distance " << dist << " m";
   return oss.str ();
 }
 
-LenaTdBetFfMacSchedulerTestCase1::LenaTdBetFfMacSchedulerTestCase1 (uint16_t nUser, uint16_t dist, double thrRefDl, double thrRefUl, bool errorModelEnabled)
+LenaTdBetFfMacSchedulerTestCase1::LenaTdBetFfMacSchedulerTestCase1 (uint16_t nUser, double dist, double thrRefDl, double thrRefUl, bool errorModelEnabled)
   : TestCase (BuildNameString (nUser, dist)),
     m_nUser (nUser),
     m_dist (dist),
@@ -215,7 +219,7 @@ LenaTdBetFfMacSchedulerTestCase1::DoRun (void)
    */
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
-  
+
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
 
   // set DL and UL bandwidth
@@ -297,8 +301,8 @@ LenaTdBetFfMacSchedulerTestCase1::DoRun (void)
     }
   /**
   * Check that the assignation is done in a "TD blind equal throughput" manner among users
-  * with equal SINRs: the bandwidth should be distributed according to the 
-  * ratio of the estimated throughput per TTI of each user; therefore equally 
+  * with equal SINRs: the bandwidth should be distributed according to the
+  * ratio of the estimated throughput per TTI of each user; therefore equally
   * partitioning the whole bandwidth achievable from a single users in a TTI
   */
   for (int i = 0; i < m_nUser; i++)
@@ -322,8 +326,8 @@ LenaTdBetFfMacSchedulerTestCase1::DoRun (void)
     }
   /**
   * Check that the assignation is done in a "TD blind equal throughput" manner among users
-  * with equal SINRs: the bandwidht should be distributed according to the 
-  * ratio of the estimated throughput per TTI of each user; therefore equally 
+  * with equal SINRs: the bandwidth should be distributed according to the
+  * ratio of the estimated throughput per TTI of each user; therefore equally
   * partitioning the whole bandwidth achievable from a single users in a TTI
   */
   for (int i = 0; i < m_nUser; i++)
@@ -339,12 +343,12 @@ LenaTdBetFfMacSchedulerTestCase1::DoRun (void)
 // --------------- T E S T - C A S E   # 2 ------------------------------
 
 
-std::string 
-LenaTdBetFfMacSchedulerTestCase2::BuildNameString (uint16_t nUser, std::vector<uint16_t> dist)
+std::string
+LenaTdBetFfMacSchedulerTestCase2::BuildNameString (uint16_t nUser, std::vector<double> dist)
 {
   std::ostringstream oss;
   oss << "distances (m) = [ " ;
-  for (std::vector<uint16_t>::iterator it = dist.begin (); it != dist.end (); ++it)
+  for (std::vector<double>::iterator it = dist.begin (); it != dist.end (); ++it)
     {
       oss << *it << " ";
     }
@@ -353,7 +357,7 @@ LenaTdBetFfMacSchedulerTestCase2::BuildNameString (uint16_t nUser, std::vector<u
 }
 
 
-LenaTdBetFfMacSchedulerTestCase2::LenaTdBetFfMacSchedulerTestCase2 (std::vector<uint16_t> dist, std::vector<uint32_t> estAchievableRateDl, std::vector<uint32_t> estThrTdBetUl, bool errorModelEnabled)
+LenaTdBetFfMacSchedulerTestCase2::LenaTdBetFfMacSchedulerTestCase2 (std::vector<double> dist, std::vector<uint32_t> estAchievableRateDl, std::vector<uint32_t> estThrTdBetUl, bool errorModelEnabled)
   : TestCase (BuildNameString (dist.size (), dist)),
     m_nUser (dist.size ()),
     m_dist (dist),
@@ -385,7 +389,7 @@ LenaTdBetFfMacSchedulerTestCase2::DoRun (void)
   */
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
-  
+
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
 
   // set DL and UL bandwidth
@@ -466,7 +470,7 @@ LenaTdBetFfMacSchedulerTestCase2::DoRun (void)
       estTotalThr += 1 / m_achievableRateDl.at (i);
       NS_LOG_INFO ("\tUser " << i << " dist " << m_dist.at (i) << " imsi " << imsi << " bytes rxed " << (double)dlDataRxed.at (i) << "  thr " << (double)dlDataRxed.at (i) / statsDuration << " ref " << m_nUser);
     }
-    
+
   estTotalThr = m_nUser * (1 / estTotalThr);
   estUeThr = estTotalThr / m_nUser;
   /**

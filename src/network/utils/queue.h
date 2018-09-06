@@ -29,6 +29,7 @@
 #include "ns3/traced-value.h"
 #include "ns3/unused.h"
 #include "ns3/log.h"
+#include "ns3/queue-size.h"
 #include <string>
 #include <sstream>
 #include <list>
@@ -96,6 +97,12 @@ public:
   uint32_t GetNBytes (void) const;
 
   /**
+   * \return The current size of the Queue in terms of packets, if the maximum
+   *         size is specified in packets, or bytes, otherwise
+   */
+  QueueSize GetCurrentSize (void) const;
+
+  /**
    * \return The total number of bytes received by this Queue since the
    * simulation began, or since ResetStatistics was called, according to
    * whichever happened more recently
@@ -158,52 +165,18 @@ public:
   void ResetStatistics (void);
 
   /**
-   * \brief Enumeration of the modes supported in the class.
+   * \brief Set the maximum size of this queue
    *
-   */
-  enum QueueMode
-  {
-    QUEUE_MODE_PACKETS,     /**< Use number of packets for maximum queue size */
-    QUEUE_MODE_BYTES,       /**< Use number of bytes for maximum queue size */
-  };
-
-  /**
-   * Set the operating mode of this device.
+   * Trying to set a null size has no effect.
    *
-   * \param mode The operating mode of this device.
+   * \param size the maximum size
    */
-  void SetMode (QueueBase::QueueMode mode);
+  void SetMaxSize (QueueSize size);
 
   /**
-   * Get the operating mode of this device.
-   *
-   * \returns The operating mode of this device.
+   * \return the maximum size of this queue
    */
-  QueueBase::QueueMode GetMode (void) const;
-
-  /**
-   * \brief Set the maximum amount of packets that can be stored in this queue
-   *
-   * \param maxPackets amount of packets
-   */
-  void SetMaxPackets (uint32_t maxPackets);
-
-  /**
-   * \return the maximum amount of packets that can be stored in this queue
-   */
-  uint32_t GetMaxPackets (void) const;
-
-  /**
-   * \brief Set the maximum amount of bytes that can be stored in this queue
-   *
-   * \param maxBytes amount of bytes
-   */
-  void SetMaxBytes (uint32_t maxBytes);
-
-  /**
-   * \return the maximum amount of bytes that can be stored in this queue
-   */
-  uint32_t GetMaxBytes (void) const;
+  QueueSize GetMaxSize (void) const;
 
 #if 0
   // average calculation requires keeping around
@@ -241,9 +214,7 @@ private:
   uint32_t m_nTotalDroppedPacketsBeforeEnqueue; //!< Total dropped packets before enqueue
   uint32_t m_nTotalDroppedPacketsAfterDequeue;  //!< Total dropped packets after dequeue
 
-  uint32_t m_maxPackets;              //!< max packets in the queue
-  uint32_t m_maxBytes;                //!< max bytes in the queue
-  QueueMode m_mode;                   //!< queue mode (packets or bytes)
+  QueueSize m_maxSize;                //!< max queue size
 
   /// Friend class
   template <typename Item>
@@ -471,16 +442,9 @@ Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item)
 {
   NS_LOG_FUNCTION (this << item);
 
-  if (m_mode == QUEUE_MODE_PACKETS && (m_nPackets.Get () >= m_maxPackets))
+  if (GetCurrentSize () + item > GetMaxSize ())
     {
-      NS_LOG_LOGIC ("Queue full (at max packets) -- dropping pkt");
-      DropBeforeEnqueue (item);
-      return false;
-    }
-
-  if (m_mode == QUEUE_MODE_BYTES && (m_nBytes.Get () + item->GetSize () > m_maxBytes))
-    {
-      NS_LOG_LOGIC ("Queue full (packet would exceed max bytes) -- dropping pkt");
+      NS_LOG_LOGIC ("Queue full -- dropping pkt");
       DropBeforeEnqueue (item);
       return false;
     }

@@ -22,6 +22,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiPfMacScheduler");
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiPfMacScheduler);
 
 class MmWaveFlexTtiPfMacCschedSapProvider : public MmWaveMacCschedSapProvider
@@ -1714,9 +1716,9 @@ MmWaveFlexTtiPfMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCschedSa
     			itUe->second.m_flowStatsDl.push_back (FlowStats (false, &(itUe->second), j));
     		}
   			itUe->second.m_flowStatsDl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
-  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::GBR_ULTRA_LOW_LAT)
+  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::NGBR_LOW_LAT_EMBB_AR)
   			{
-  				EpsBearer lowLatBearer (EpsBearer::GBR_ULTRA_LOW_LAT);
+  				EpsBearer lowLatBearer (EpsBearer::NGBR_LOW_LAT_EMBB_AR);
   				itUe->second.m_flowStatsDl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
   			m_flowHeap.push_back ( &(itUe->second.m_flowStatsDl[lcid]) );
@@ -1731,9 +1733,9 @@ MmWaveFlexTtiPfMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCschedSa
     		}
   			itUe->second.m_flowStatsUl[lcid].m_isUplink = true;
   			itUe->second.m_flowStatsUl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
-  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::GBR_ULTRA_LOW_LAT)
+  			if (params.m_logicalChannelConfigList[i].m_qci == EpsBearer::NGBR_LOW_LAT_EMBB_AR)
   			{
-  				EpsBearer lowLatBearer (EpsBearer::GBR_ULTRA_LOW_LAT);
+  				EpsBearer lowLatBearer (EpsBearer::NGBR_LOW_LAT_EMBB_AR);
   				itUe->second.m_flowStatsUl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
   			m_flowHeap.push_back ( &(itUe->second.m_flowStatsUl[lcid]) );
@@ -1750,9 +1752,9 @@ MmWaveFlexTtiPfMacScheduler::DoCschedLcConfigReq (const struct MmWaveMacCschedSa
   			itUe->second.m_flowStatsDl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
   			itUe->second.m_flowStatsUl[lcid].m_qci = params.m_logicalChannelConfigList[i].m_qci;
 
-  			if (1 || params.m_logicalChannelConfigList[i].m_qci == EpsBearer::GBR_ULTRA_LOW_LAT)
+  			if (1 || params.m_logicalChannelConfigList[i].m_qci == EpsBearer::NGBR_LOW_LAT_EMBB_AR)
   			{
-  				EpsBearer lowLatBearer (EpsBearer::GBR_ULTRA_LOW_LAT);
+  				EpsBearer lowLatBearer (EpsBearer::NGBR_LOW_LAT_EMBB_AR);
   				itUe->second.m_flowStatsDl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   				itUe->second.m_flowStatsUl[lcid].m_deadlineUs = lowLatBearer.GetPacketDelayBudgetMs () * 1000;
   			}
@@ -1835,4 +1837,4 @@ MmWaveFlexTtiPfMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedS
 
 }
 
-
+}

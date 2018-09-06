@@ -98,7 +98,7 @@ public:
   int64_t AssignStreams (int64_t stream);
 
 private:
-  //overriden from base class
+  //overridden from base class
   virtual WifiRemoteStation * DoCreateStation (void) const;
   virtual void DoReportRxOk (WifiRemoteStation *station,
                              double rxSnr, WifiMode txMode);
@@ -123,7 +123,7 @@ private:
   void CheckInit (RrpaaWifiRemoteStation *station);
 
   /**
-   * Check if the counter should be reseted.
+   * Check if the counter should be reset.
    *
    * \param station
    */
@@ -174,7 +174,7 @@ private:
    *
    * \return threshold
    */
-  WifiRrpaaThresholds GetThresholds (RrpaaWifiRemoteStation *station, uint32_t rate) const;
+  WifiRrpaaThresholds GetThresholds (RrpaaWifiRemoteStation *station, uint8_t rate) const;
 
   /**
    * Get the estimated TxTime of a packet with a given mode.
@@ -218,9 +218,9 @@ private:
    * Differently form rate, power levels do not depend on the remote station.
    * The levels depend only on the physical layer of the device.
    */
-  uint32_t m_minPower;     //!< Minimal power level.
-  uint32_t m_maxPower;     //!< Maximal power level.
-  uint32_t m_nPower;       //!< Number of power levels.
+  uint8_t m_minPowerLevel;     //!< Minimal power level.
+  uint8_t m_maxPowerLevel;     //!< Maximal power level.
+  uint8_t m_nPowerLevels;      //!< Number of power levels.
 
   /**
    * The trace source fired when the transmission power change

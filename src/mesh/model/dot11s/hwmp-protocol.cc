@@ -27,7 +27,6 @@
 #include "ns3/packet.h"
 #include "ns3/mesh-point-device.h"
 #include "ns3/wifi-net-device.h"
-#include "ns3/mesh-point-device.h"
 #include "ns3/mesh-wifi-interface-mac.h"
 #include "ns3/random-variable-stream.h"
 #include "airtime-metric.h"
@@ -922,7 +921,7 @@ HwmpProtocol::GetPerrReceivers (std::vector<FailedDestination> failedDest)
           retval.push_back (precursors[j]);
         }
     }
-  //Check if we have dublicates in retval and precursors:
+  //Check if we have duplicates in retval and precursors:
   for (unsigned int i = 0; i < retval.size (); i++)
     {
       for (unsigned int j = i+1; j < retval.size (); j++)

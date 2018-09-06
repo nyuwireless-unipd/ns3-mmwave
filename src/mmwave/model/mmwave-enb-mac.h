@@ -2,31 +2,34 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *								 Integration of Carrier Aggregation
  */
 
 
@@ -38,9 +41,11 @@
 #include <ns3/lte-enb-cmac-sap.h>
 #include <ns3/lte-mac-sap.h>
 #include "mmwave-phy-mac-common.h"
+#include <ns3/lte-ccm-mac-sap.h>
 
-namespace ns3
-{
+namespace ns3 {
+
+namespace mmwave {
 
 	struct MmWaveDlHarqProcessInfo
 	{
@@ -105,7 +110,7 @@ public:
   	uint8_t raPrachMaskIndex; /// PRACH mask index
   };
 */
-
+	void SetComponentCarrierId (uint8_t index);
 	void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 	Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
@@ -156,6 +161,12 @@ public:
 	void DoCschedUeConfigUpdateInd (MmWaveMacCschedSapUser::CschedUeConfigUpdateIndParameters params);
 	void DoCschedCellConfigUpdateInd (MmWaveMacCschedSapUser::CschedCellConfigUpdateIndParameters params);
 
+	void SetLteCcmMacSapUser (LteCcmMacSapUser* s);
+	LteCcmMacSapProvider* GetLteCcmMacSapProvider ();
+
+	//forwarded from LteCcmMacSapProvider
+	void DoReportMacCeToScheduler (MacCeListElement_s bsr);
+
    /**
     * TracedCallback signature for
     *
@@ -189,6 +200,13 @@ private:
 	LteEnbCmacSapProvider* m_cmacSapProvider;
 	LteEnbCmacSapUser* m_cmacSapUser;
 
+	// Sap For ComponentCarrierManager 'Uplink case'
+  LteCcmMacSapProvider* m_ccmMacSapProvider; ///< CCM MAC SAP provider
+  LteCcmMacSapUser* m_ccmMacSapUser; ///< CCM MAC SAP user
+
+	/// component carrier Id used to address sap
+  uint8_t m_componentCarrierId;
+
 	uint32_t m_frameNum;
 	uint32_t m_sfNum;
 	uint32_t m_slotNum;
@@ -219,13 +237,13 @@ private:
 	std::vector <DlHarqInfo> m_dlHarqInfoReceived; // DL HARQ feedback received
 	std::vector <UlHarqInfo> m_ulHarqInfoReceived; // UL HARQ feedback received
 	std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t> m_miDlHarqProcessesPackets; // Packet under trasmission of the DL HARQ process
-	
+
 	/**
 	* info associated with a preamble allocated for non-contention based RA
-	* 
+	*
 	*/
 	struct NcRaPreambleInfo
-	{   
+	{
 		uint16_t rnti; ///< rnti previously allocated for this non-contention based RA procedure
 		Time expiryTime; ///< value the expiration time of this allocation (so that stale preambles can be reused)
 	};
@@ -237,7 +255,7 @@ private:
 	/**
 	* map storing as key the random acccess preamble IDs allocated for
 	* non-contention based access, and as value the associated info
-	* 
+	*
 	*/
 	std::map<uint8_t, NcRaPreambleInfo> m_allocatedNcRaPreambleMap;
 
@@ -245,9 +263,13 @@ private:
 
 	TracedCallback<uint16_t, uint16_t, uint32_t, uint8_t> m_macDlTxSizeRetx;
 
+	TracedCallback<uint16_t, uint8_t, uint32_t> m_txMacPacketTraceEnb;
+
 };
 
-}
+} // namespace mmwave
+
+} // namespace ns3
 
 
 

@@ -129,6 +129,23 @@ public:
   bool AddAllocated (const Ipv6Address addr);
 
   /**
+   * \brief Check the Ipv6Address allocation in the list of IPv6 entries
+   *
+   * \param addr The Ipv6Address to be checked in the list of Ipv4 entries
+   * \returns true if the network is already allocated
+   */
+  bool IsAddressAllocated (const Ipv6Address addr);
+
+  /**
+   * \brief Check if a network has already allocated addresses
+   *
+   * \param addr The Ipv6 network to be checked
+   * \param prefix The Ipv6 network prefix
+   * \returns true if the network is already allocated
+   */
+  bool IsNetworkAllocated (const Ipv6Address addr, const Ipv6Prefix prefix);
+
+  /**
    * \brief Used to turn off fatal errors and assertions, for testing
    */
   void TestMode (void);
@@ -531,7 +548,7 @@ Ipv6AddressGeneratorImpl::AddAllocated (const Ipv6Address address)
       // couldn't have been extended to include this new address since the
       // code immediately above would have been executed and that next lower
       // block extended upward.  So we know it's safe to extend the current
-      // block down to includ the new address.
+      // block down to include the new address.
       //
       for (uint32_t j = 0; j < 16; j++)
         {
@@ -557,6 +574,61 @@ Ipv6AddressGeneratorImpl::AddAllocated (const Ipv6Address address)
   m_entries.insert (i, entry);
   return true;
 }
+
+bool
+Ipv6AddressGeneratorImpl::IsAddressAllocated (const Ipv6Address address)
+{
+  NS_LOG_FUNCTION (this << address);
+
+  uint8_t addr[16];
+  address.GetBytes (addr);
+
+  std::list<Entry>::iterator i;
+
+  for (i = m_entries.begin (); i != m_entries.end (); ++i)
+    {
+      NS_LOG_LOGIC ("examine entry: " << Ipv6Address ((*i).addrLow) <<
+                    " to " << Ipv6Address ((*i).addrHigh));
+
+      if (!(Ipv6Address (addr) < Ipv6Address ((*i).addrLow))
+          && ((Ipv6Address (addr) < Ipv6Address ((*i).addrHigh))
+              || (Ipv6Address (addr) == Ipv6Address ((*i).addrHigh))))
+        {
+          NS_LOG_LOGIC ("Ipv6AddressGeneratorImpl::IsAddressAllocated(): Address Collision: " << Ipv6Address (addr));
+          return false;
+        }
+    }
+  return true;
+}
+
+bool
+Ipv6AddressGeneratorImpl::IsNetworkAllocated (const Ipv6Address address, const Ipv6Prefix prefix)
+{
+  NS_LOG_FUNCTION (this << address << prefix);
+
+  Ipv6Address addr = address;
+  NS_ABORT_MSG_UNLESS (address == addr.CombinePrefix (prefix),
+                       "Ipv6AddressGeneratorImpl::IsNetworkAllocated(): network address and mask don't match " << address << " " << prefix);
+
+  std::list<Entry>::iterator i;
+
+  for (i = m_entries.begin (); i != m_entries.end (); ++i)
+    {
+      NS_LOG_LOGIC ("examine entry: " << Ipv6Address ((*i).addrLow) << " to " << Ipv6Address ((*i).addrHigh));
+      Ipv6Address low = Ipv6Address ((*i).addrLow);
+      Ipv6Address high = Ipv6Address ((*i).addrHigh);
+
+      if (address == low.CombinePrefix (prefix) || address == high.CombinePrefix (prefix))
+        {
+          NS_LOG_LOGIC ("Ipv6AddressGeneratorImpl::IsNetworkAllocated(): Network already allocated: " <<
+                        address << " " << low << "-" << high);
+          return false;
+        }
+
+    }
+  return true;
+}
+
 
 void
 Ipv6AddressGeneratorImpl::TestMode (void)
@@ -674,6 +746,24 @@ Ipv6AddressGenerator::AddAllocated (const Ipv6Address addr)
 
   return SimulationSingleton<Ipv6AddressGeneratorImpl>::Get ()
          ->AddAllocated (addr);
+}
+
+bool
+Ipv6AddressGenerator::IsAddressAllocated (const Ipv6Address addr)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  return SimulationSingleton<Ipv6AddressGeneratorImpl>::Get ()
+         ->IsAddressAllocated (addr);
+}
+
+bool
+Ipv6AddressGenerator::IsNetworkAllocated (const Ipv6Address addr, const Ipv6Prefix prefix)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  return SimulationSingleton<Ipv6AddressGeneratorImpl>::Get ()
+         ->IsNetworkAllocated (addr, prefix);
 }
 
 void

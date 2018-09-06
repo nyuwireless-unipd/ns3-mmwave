@@ -6,10 +6,10 @@ Design Documentation
 ++++++++++++++++++++
 
 
+
 --------
 Overview
 --------
-
 
 An overview of the  LTE-EPC simulation model is depicted in
 the figure :ref:`fig-epc-topology`. There are two main components:
@@ -66,7 +66,7 @@ have been considered:
     approach, which evaluates resource allocation only at the granularity of
     call/bearer establishment.
  #. The simulator should scale up to tens of eNBs and hundreds of User
-    Equipments (UEs). This
+    Equipment (UEs). This
     rules out the use of a link level simulator, i.e., a simulator whose radio
     interface is modeled with a granularity up to the symbol level. This is because
     to have a symbol level model it is necessary to implement all the PHY
@@ -120,7 +120,7 @@ in Figure :ref:`fig-epc-topology`.
 
 The following design choices have been made for the EPC model:
 
- #. The only Packet Data Network (PDN) type supported is IPv4.
+ #. The Packet Data Network (PDN) type supported is both IPv4 and IPv6.
  #. The SGW and PGW functional entities are implemented within a single
     node, which is hence referred to as the SGW/PGW node.
  #. The scenarios with inter-SGW mobility are not of interests. Hence, a
@@ -325,7 +325,7 @@ writing, two implementations of such interface are available:
 ``SingleModelSpectrumChannel`` and ``MultiModelSpectrumChannel``, and the
 LTE module requires the use of the ``MultiModelSpectrumChannel`` in
 order to work properly. This is because of the need to support
-different frequency and bandwidth configurations. All the the
+different frequency and bandwidth configurations. All the 
 propagation models supported by ``MultiModelSpectrumChannel`` can be
 used within the LTE module.  
 
@@ -466,7 +466,7 @@ Overview
 
 The physical layer model provided in this LTE simulator is based on
 the one described in [Piro2011]_, with the following modifications.  The model now includes the 
-inter cell intereference calculation and the simulation of uplink traffic, including both packet transmission and CQI generation. 
+inter cell interference calculation and the simulation of uplink traffic, including both packet transmission and CQI generation. 
 
 
 Subframe Structure
@@ -520,13 +520,13 @@ In uplink, two types of CQIs are implemented:
  - SRS based, periodically sent by the UEs.
  - PUSCH based, calculated from the actual transmitted data.
 
-The scheduler interface include an attribute system calld ``UlCqiFilter`` for managing the filtering of the CQIs according to their nature, in detail:
+The scheduler interface include an attribute system called ``UlCqiFilter`` for managing the filtering of the CQIs according to their nature, in detail:
 
   - ``SRS_UL_CQI`` for storing only SRS based CQIs.
   - ``PUSCH_UL_CQI`` for storing only PUSCH based CQIs.
   - ``ALL_UL_CQI`` for storing all the CQIs received.
 
-It has to be noted that, the ``FfMacScheduler`` provides only the interface and it is matter of the actual scheduler implementation to include the code for managing these attibutes (see scheduler related section for more information on this matter).
+It has to be noted that, the ``FfMacScheduler`` provides only the interface and it is matter of the actual scheduler implementation to include the code for managing these attributes (see scheduler related section for more information on this matter).
 
 
 Interference Model
@@ -588,7 +588,8 @@ The specific LSM method adopted is the one based on the usage of a mutual inform
 
    MIESM computational procedure diagram
 
-The mutual information (MI) is dependent on the constellation mapping and can be calculated per transport block (TB) basis, by evaluating the MI over the symbols and the subcarrier. However, this would be too complex for a network simulator. Hence, in our implementation a flat channel response within the RB has been considered; therefore the overall MI of a TB is calculated averaging the MI evaluated per each RB used in the TB. In detail, the implemented scheme is depicted in Figure :ref:`fig-miesm-architecture`, where we see that the model starts by evaluating the MI value for each RB, represented in the figure by the SINR samples. Then the equivalent MI is evaluated per TB basis by averaging the MI values. Finally, a further step has to be done since the link level simulator returns the performance of the link in terms of block error rate (BLER) in a addive white guassian noise  (AWGN) channel, where the blocks are the code blocks (CBs) independently encoded/decoded by the turbo encoder. On this matter the standard 3GPP segmentation scheme has been used for estimating the actual CB size (described in section 5.1.2 of [TS36212]_). This scheme divides the the TB in :math:`N_{K_-}` blocks of size :math:`K_-` and :math:`N_{K+}` blocks of size :math:`K_+`. Therefore the overall TB BLER (TBLER) can be expressed as
+The mutual information (MI) is dependent on the constellation mapping and can be calculated per transport block (TB) basis, by evaluating the MI over the symbols and the subcarrier. However, this would be too complex for a network simulator. Hence, in our implementation a flat channel response within the RB has been considered; therefore the overall MI of a TB is calculated averaging the MI evaluated per each RB used in the TB. In detail, the implemented scheme is depicted in Figure :ref:`fig-miesm-architecture`, where we see that the model starts by evaluating the MI value for each RB, represented in the figure by the SINR samples. Then the equivalent MI is evaluated per TB basis by averaging the MI values. Finally, a further step has to be done since the link level simulator returns the performance of the link in terms of block error rate (BLER) in a addive white gaussian noise  (AWGN) channel, where the blocks are the code blocks (CBs) independently encoded/decoded by the turbo encoder. On this matter the 
+standard 3GPP segmentation scheme has been used for estimating the actual CB size (described in section 5.1.2 of [TS36212]_). This scheme divides the TB in :math:`N_{K_-}` blocks of size :math:`K_-` and :math:`N_{K+}` blocks of size :math:`K_+`. Therefore the overall TB BLER (TBLER) can be expressed as
 
 .. math::
 
@@ -601,7 +602,8 @@ For estimating the :math:`CBLER_i`, the MI evaluation has been implemented accor
 
   CBLER_i = \frac{1}{2}\left[1-erf\left(\frac{x-b_{ECR}}{\sqrt{2}c_{ECR}} \right) \right]
 
-where :math:`x` is the MI of the TB, :math:`b_{ECR}` represents the "transition center" and :math:`c_{ECR}` is related to the "transition width" of the Gaussian cumulative distribution for each Effective Code Rate (ECR) which is the actual transmission rate according to the channel coding and MCS. For limiting the computational complexity of the model we considered only a subset of the possible ECRs in fact we would have potentially 5076 possible ECRs (i.e., 27 MCSs and 188 CB sizes). On this respect, we will limit the CB sizes to some representative values (i.e., 40, 140, 160, 256, 512, 1024, 2048, 4032, 6144), while for the others the worst one approximating the real one will be used (i.e., the smaller CB size value available respect to the real one). This choice is aligned to the typical performance of turbo codes, where the CB size is not strongly impacting on the BLER. However, it is to be notes that for CB sizes lower than 1000 bits the effect might be relevant (i.e., till 2 dB); therefore, we adopt this unbalanced sampling interval for having more precision where it is necessary. This behaviour is confirmed by the figures presented in the Annes Section.
+where :math:`x` is the MI of the TB, :math:`b_{ECR}` represents the "transition center" and :math:`c_{ECR}` is related to the "transition width" of the Gaussian cumulative distribution for each Effective Code Rate (ECR) which is the actual transmission rate according to the channel coding and MCS. For limiting the computational complexity of the model we considered only a subset of the possible ECRs in fact we would have potentially 5076 possible ECRs (i.e., 27 MCSs and 188 CB sizes). On this respect, we will limit the CB sizes to some representative values (i.e., 40, 140, 160, 256, 512, 1024, 2048, 4032, 6144), while for the others the worst one approximating the real one will be used (i.e., the smaller CB size value available respect to the real one). This choice is aligned to the typical performance of turbo codes, where the CB size is not strongly impacting on the BLER. However, it is to be notes that for CB sizes lower than 1000 bits the effect might be relevant (i.e., till 2 dB); therefore, we adopt 
+this unbalanced sampling interval for having more precision where it is necessary. This behaviour is confirmed by the figures presented in the Annes Section.
 
 
 BLER Curves
@@ -609,7 +611,7 @@ BLER Curves
 
 On this respect, we reused part of the curves obtained within [PaduaPEM]_. In detail, we introduced the CB size dependency to the CB BLER curves with the support of the developers of [PaduaPEM]_ and of the LTE Vienna Simulator. In fact, the module released provides the link layer performance only for what concerns the MCSs (i.e, with a given fixed ECR). In detail the new error rate curves for each has been evaluated with a simulation campaign with the link layer simulator for a single link with AWGN noise and for CB size of 104, 140, 256, 512, 1024, 2048, 4032 and 6144. These curves has been mapped with the Gaussian cumulative model formula presented above for obtaining the correspondents :math:`b_{ECR}` and :math:`c_{ECR}` parameters.
 
-The BLER perfomance of all MCS obtained with the link level simulator are plotted in the following figures (blue lines) together with their correspondent mapping to the Gaussian cumulative distribution (red dashed lines).
+The BLER performance of all MCS obtained with the link level simulator are plotted in the following figures (blue lines) together with their correspondent mapping to the Gaussian cumulative distribution (red dashed lines).
 
 
 .. _fig-mcs-1-4-ber:
@@ -718,7 +720,8 @@ The simulator includes the error model for downlink control channels (PCFICH and
 PCFICH + PDCCH Error Model
 --------------------------
 
-The model adopted for the error distribution of these channels is based on an evaluation study carried out in the RAN4 of 3GPP, where different vendors investigated the demodulation performance of the PCFICH jointly with PDCCH. This is due to the fact that the PCFICH is the channel in charge of communicating to the UEs the actual dimension of the PDCCH (which spans between 1 and 3 symbols); therefore the correct decodification of the DCIs  depends on the correct interpretation of both ones. In 3GPP this problem have been evaluated for improving the cell-edge performance [FujitsuWhitePaper]_, where the interference among neighboring cells can be relatively high due to signal degradation. A similar problem has been notices in femto-cell scenario and, more in general, in HetNet scenarios the bottleneck has been detected mainly as the PCFICH channel [Bharucha2011]_, where in case of many eNBs are deployed in the same service area, this channel may collide in frequency, making impossible the correct detection of the PDCCH channel, too. 
+The model adopted for the error distribution of these channels is based on an evaluation study carried out in the RAN4 of 3GPP, where different vendors investigated the demodulation performance of the PCFICH jointly with PDCCH. This is due to the fact that the PCFICH is the channel in charge of communicating to the UEs the actual dimension of the PDCCH (which spans between 1 and 3 symbols); therefore the correct decodification of the DCIs  depends on the correct interpretation of both ones. In 3GPP this problem have been evaluated for improving the cell-edge performance [FujitsuWhitePaper]_, where the interference among neighboring cells can be relatively high due to signal degradation. A similar problem has been notices in femto-cell scenario and, more in general, in HetNet scenarios the bottleneck has been detected mainly as the PCFICH channel [Bharucha2011]_, where in case of many eNBs are deployed in the same service area, this channel may collide in frequency, making impossible the correct detection of 
+the PDCCH channel, too. 
 
 In the simulator, the SINR perceived during the reception has been estimated according to the MIESM model presented above in order to evaluate the error distribution of PCFICH and PDCCH. In detail, the SINR samples of all the RBs are included in the evaluation of the MI associated to the control frame and, according to this values, the effective SINR (eSINR) is obtained by inverting the MI evaluation process. It has to be noted that, in case of MIMO transmission, both PCFICH and the PDCCH use always the transmit diversity mode as defined by the standard. According to the eSINR perceived the decodification error probability can be estimated as function of the results presented in [R4-081920]_. In case an error occur, the DCIs discarded and therefore the UE will be not able to receive the correspondent Tbs, therefore resulting lost.
 
@@ -745,7 +748,7 @@ Therefore the PHY layer implements the MIMO model as the gain perceived by the r
 UE PHY Measurements Model
 +++++++++++++++++++++++++
 
-According to [TS36214]_, the UE has to report a set of measurements of the eNBs that the device is able to perceive: the the reference signal received power (RSRP) and the reference signal received quality (RSRQ). The former is a measure of the received power of a specific eNB, while the latter includes also channel interference and thermal noise.
+According to [TS36214]_, the UE has to report a set of measurements of the eNBs that the device is able to perceive: the reference signal received power (RSRP) and the reference signal received quality (RSRQ). The former is a measure of the received power of a specific eNB, while the latter includes also channel interference and thermal noise.
 The UE has to report the measurements jointly with the physical cell identity (PCI) of the cell. Both the RSRP and RSRQ measurements are performed during the reception of the RS, while the PCI is obtained with the Primary Synchronization Signal (PSS). The PSS is sent by the eNB each 5 subframes and in detail in the subframes 1 and 6. In real systems, only 504 distinct PCIs are available, and hence it could occur that two nearby eNBs use the same PCI; however, in the simulator we model PCIs using simulation metadata, and we allow up to 65535 distinct PCIs, thereby avoiding PCI collisions provided that less that 65535 eNBs are simulated in the same scenario.
 
 According to [TS36133]_ sections 9.1.4 and 9.1.7, RSRP is reported by PHY layer in dBm while RSRQ in dB. The values of RSRP and RSRQ are provided to higher layers through the C-PHY SAP (by means of ``UeMeasurementsParameters`` struct) every 200 ms as defined in [TS36331]_. Layer 1 filtering is performed by averaging the all the measurements collected during the last window slot. The periodicity of reporting can be adjusted for research purposes by means of the ``LteUePhy::UeMeasurementsFilterPeriod`` attribute.
@@ -799,7 +802,8 @@ The HARQ scheme implemented is based on a incremental redundancy (IR) solutions 
 
 According to the standard, the UL retransmissions are synchronous and therefore are allocated 7 ms after the original transmission. On the other hand, for the DL, they are asynchronous and therefore can be allocated in a more flexible way starting from 7 ms and it is a matter of the specific scheduler implementation. The HARQ processes behavior is depicted in Figure:ref:`fig-harq-processes-scheme`.
 
-At the MAC layer, the HARQ entity residing in the scheduler is in charge of controlling the 8 HARQ processes for generating new packets and managing the retransmissions both for the DL and the UL. The scheduler collects the HARQ feedback from eNB and UE PHY layers (respectively for UL and DL connection) by means of the FF API primitives ``SchedUlTriggerReq`` and ``SchedUlTriggerReq``. According to the HARQ feedback and the RLC buffers status, the scheduler generates a set of DCIs including both retransmissions of HARQ blocks received erroneous and new transmissions, in general, giving priority to the former. On this matter, the scheduler has to take into consideration one constraint when allocating the resource for HARQ retransmissions, it must use the same modulation order of the first transmission attempt (i.e., QPSK for MCS :math:`\in [0..9]`, 16QAM for MCS :math:`\in [10..16]` and 64QAM for MCS :math:`\in [17..28]`). This restriction comes from the specification of the rate matcher in the 3GPP standard [TS36212]_, where the algorithm fixes the modulation order for generating the different blocks of the redundancy versions.
+At the MAC layer, the HARQ entity residing in the scheduler is in charge of controlling the 8 HARQ processes for generating new packets and managing the retransmissions both for the DL and the UL. The scheduler collects the HARQ feedback from eNB and UE PHY layers (respectively for UL and DL connection) by means of the FF API primitives ``SchedUlTriggerReq`` and ``SchedUlTriggerReq``. According to the HARQ feedback and the RLC buffers status, the scheduler generates a set of DCIs including both retransmissions of HARQ blocks received erroneous and new transmissions, in general, giving priority to the former. On this matter, the scheduler has to take into consideration one constraint when allocating the resource for HARQ retransmissions, it must use the same modulation order of the first transmission attempt (i.e., QPSK for MCS :math:`\in [0..9]`, 16QAM for MCS :math:`\in [10..16]` and 64QAM for MCS :math:`\in [17..28]`). This restriction comes from the specification of the rate matcher in the 3GPP standard [
+TS36212]_, where the algorithm fixes the modulation order for generating the different blocks of the redundancy versions.
 
 
 The PHY Error Model model (i.e., the ``LteMiErrorModel`` class already presented before) has been extended for considering IR HARQ according to [wimaxEmd]_, where the parameters for the AWGN curves mapping for MIESM mapping in case of retransmissions are given by:
@@ -810,7 +814,8 @@ The PHY Error Model model (i.e., the ``LteMiErrorModel`` class already presented
 
     M_{I eff} = \frac{\sum\limits_{i=1}^q C_i M_i}{\sum\limits_{i=1}^q C_i}
 
-where :math:`X` is the number of original information bits, :math:`C_i` are number of coded bits, :math:`M_i` are the mutual informations per HARQ block received on the total number of :math:`q` retransmissions. Therefore, in order to be able to return the error probability with the error model implemented in the simulator evaluates the :math:`R_{eff}` and the :math:`MI_{I eff}` and return the value of error probability of the ECR of the same modulation with closest lower rate respect to the :math:`R_{eff}`. In order to consider the effect of HARQ retransmissions a new sets of curves have been integrated respect to the standard one used for the original MCS. The new curves are intended for covering the cases when the most conservative MCS of a modulation is used which implies the generation of :math:`R_{eff}` lower respect to the one of standard MCSs. On this matter the curves for 1, 2 and 3 retransmissions have been evaluated for 10 and 17. For MCS 0 we considered only the first retransmission since the produced code rate is already very conservative (i.e., 0.04) and returns an error rate enough robust for the reception (i.e., the downturn of the BLER is centered around -18 dB).
+where :math:`X` is the number of original information bits, :math:`C_i` are number of coded bits, :math:`M_i` are the mutual information per HARQ block received on the total number of :math:`q` retransmissions. Therefore, in order to be able to return the error probability with the error model implemented in the simulator evaluates the :math:`R_{eff}` and the :math:`MI_{I eff}` and return the value of error probability of the ECR of the same modulation with closest lower rate respect to the :math:`R_{eff}`. In order to consider the effect of HARQ retransmissions a new sets of curves have been integrated respect to the standard one used for the original MCS. The new curves are intended for covering the cases when the most conservative MCS of a modulation is used which implies the generation of :math:`R_{eff}` lower respect to the one of standard MCSs. On this matter the curves for 1, 2 and 3 retransmissions have been evaluated for 10 and 17. For MCS 0 we considered only the first retransmission since the 
+produced code rate is already very conservative (i.e., 0.04) and returns an error rate enough robust for the reception (i.e., the downturn of the BLER is centered around -18 dB).
 It is to be noted that, the size of first TB transmission has been assumed as containing all the information bits to be coded; therefore :math:`X` is equal to the size of the first TB sent of a an HARQ process. The model assumes that the eventual presence of parity bits in the codewords is already considered in the link level curves. This implies that as soon as the minimum :math:`R_{eff}` is reached the model is not including the gain due to the transmission of further parity bits.
 
 
@@ -1021,11 +1026,11 @@ For what concern the HARQ, RR implements the non adaptive version, which implies
 
    Config::SetDefault ("ns3::RrFfMacScheduler::HarqEnabled", BooleanValue (false));
 
-The scheduler implements the filtering of the uplink CQIs according to their nature with ``UlCqiFilter`` attibute, in detail:
+The scheduler implements the filtering of the uplink CQIs according to their nature with ``UlCqiFilter`` attribute, in detail:
 
   - ``SRS_UL_CQI``: only SRS based CQI are stored in the internal attributes.
   - ``PUSCH_UL_CQI``: only PUSCH based CQI are stored in the internal attributes.
-  - ``ALL_UL_CQI``: all CQIs are stored in the same internal attibute (i.e., the last CQI received is stored independently from its nature).
+  - ``ALL_UL_CQI``: all CQIs are stored in the same internal attribute (i.e., the last CQI received is stored independently from its nature).
 
 
 
@@ -1278,11 +1283,11 @@ quality UE tend towards the TBR.
 
   Config::SetDefault ("ns3::PfFfMacScheduler::HarqEnabled", BooleanValue (false));
 
-The scheduler implements the filtering of the uplink CQIs according to their nature with ``UlCqiFilter`` attibute, in detail:
+The scheduler implements the filtering of the uplink CQIs according to their nature with ``UlCqiFilter`` attribute, in detail:
 
   - ``SRS_UL_CQI``: only SRS based CQI are stored in the internal attributes.
   - ``PUSCH_UL_CQI``: only PUSCH based CQI are stored in the internal attributes.
-  - ``ALL_UL_CQI``: all CQIs are stored in the same internal attibute (i.e., the last CQI received is stored independently from its nature).
+  - ``ALL_UL_CQI``: all CQIs are stored in the same internal attribute (i.e., the last CQI received is stored independently from its nature).
 
 
 Channel and QoS Aware Scheduler
@@ -1462,8 +1467,8 @@ Overview
 
 The RLC entity is specified in the 3GPP technical specification
 [TS36322]_, and comprises three different types of RLC: Transparent
-Mode (TM), Unacknowledge Mode (UM) and Acknowledged Mode (AM). The
-simulator includes one model for each of these entitities
+Mode (TM), Unacknowledged Mode (UM) and Acknowledged Mode (AM). The
+simulator includes one model for each of these entities
 
 The RLC entities provide the RLC service interface to the upper PDCP layer and the MAC service interface
 to the lower MAC layer. The RLC entities use the PDCP service interface from the upper PDCP layer and
@@ -1536,7 +1541,7 @@ The following list specifies which service primitives are provided by the MAC se
 
     * ``MacSapUser::NotifyTxOpportunity``
 
-        * The MAC entity uses this primitive to nofify the RLC entity a transmission opportunity
+        * The MAC entity uses this primitive to notify the RLC entity a transmission opportunity
 
     * ``MacSapUser::ReceivePdu``
 
@@ -1759,7 +1764,7 @@ We do not support any of the additional primitives of RLC SAP for AM RLC entity.
 UM RLC
 ++++++
 
-In this section we describe the implemnetation of the Unacknowledge Mode (UM) RLC entity.
+In this section we describe the implementation of the Unacknowledged Mode (UM) RLC entity.
 
 Transmit operations in downlink
 -------------------------------
@@ -2251,7 +2256,7 @@ failure. In order to model RLF properly, RRC IDLE mode should be
 supported, including in particular idle mode cell (re-)selection.
 
 With the current model, an UE that experiences bad link quality and
-that does not perform handover (because of, e.g., no neighbour cells,
+that does not perform handover (because of, e.g., no neighbor cells,
 handover disabled, handover thresholds misconfigured) will 
 just stay associated with the same eNB, and the scheduler will stop
 allocating resources to it for communications. 
@@ -2280,14 +2285,10 @@ following simplifying assumptions:
 
  - `s-Measure` is not supported;
  
- - since carrier aggregation is not supported in by the LTE module, the
-   following assumptions in UE measurements hold true:
-   
-   - no notion of secondary cell (`SCell`);
-   - primary cell (`PCell`) simply means serving cell;
+ - carrier aggregation is now supported in the LTE module
    - Event A6 is not implemented;
    
- - speed dependant scaling of time-to-trigger (Section 5.5.6.2 of [TS36331]_) is
+ - speed dependent scaling of time-to-trigger (Section 5.5.6.2 of [TS36331]_) is
    not supported.
 
 Overall design
@@ -2421,7 +2422,7 @@ time-to-trigger. *Hysteresis* (:math:`Hys`) defines the distance between the
 entering and leaving conditions in dB. Similarly, *time-to-trigger* introduces
 delay to both entering and leaving conditions, but as a unit of time.
 
-The *periodical* type of reporting trigger is not supported, but its behaviour
+The *periodical* type of reporting trigger is not supported, but its behavior
 can be easily obtained by using an event-based trigger. This can be done by
 configuring the measurement in such a way that the entering condition is always
 fulfilled, for example, by setting the threshold of Event A1 to zero (the
@@ -2837,7 +2838,7 @@ the UE may use. Upon successful completion of the handover, the UE
 sends a message used to confirm the handover.* Note that the random
 access procedure in this case is non-contention based, hence in a real
 LTE system it differs slightly from the one used in RRC connection
-established. Also note that the RA Preamble ID is signalled via the
+established. Also note that the RA Preamble ID is signaled via the
 Handover Command included in the X2 Handover Request ACK message sent
 from the target eNB to the source eNB; in particular, the preamble is
 included in the RACH-ConfigDedicated IE which is part of
@@ -2907,7 +2908,7 @@ We now describe the Signaling Radio Bearer model that is used for the
      SDU sent over resources specified in the UL Grant in the RAR (not
      in UL DCIs); the reason is that C-RNTI is not known yet at this
      stage. In the simulator, this is modeled as a real RLC TM RLC PDU
-     whose UL resources are allocated by the sched upon call to
+     whose UL resources are allocated by the scheduler upon call to
      SCHED_DL_RACH_INFO_REQ. 
 
    - **RrcConnectionSetup**: in the simulator this is implemented as in
@@ -3046,7 +3047,7 @@ NAS
 
 The focus of the LTE-EPC model is on the NAS Active state, which corresponds to EMM Registered, ECM connected, and RRC connected. Because of this, the following simplifications are made:
 
- - EMM and ECM are not modeled explicitly; instead, the NAS entity at the UE will interact directy with the MME to perfom actions that are equivalent (with gross simplifications) to taking the UE to the states EMM Connected and ECM Connected; 
+ - EMM and ECM are not modeled explicitly; instead, the NAS entity at the UE will interact directly with the MME to perform actions that are equivalent (with gross simplifications) to taking the UE to the states EMM Connected and ECM Connected; 
 
  - the NAS also takes care of multiplexing uplink data packets coming from the upper layers into the appropriate EPS bearer by using the Traffic Flow Template classifier (TftClassifier). 
 
@@ -3097,9 +3098,13 @@ there are two different layers of
 IP networking. The first one is the end-to-end layer, which provides end-to-end 
 connectivity to the users; this layers involves the UEs, the PGW and
 the remote host (including eventual internet routers and hosts in
-between), but does not involve the eNB. By default, UEs are assigned a public IPv4 address in the 7.0.0.0/8
-network, and the PGW gets the address 7.0.0.1, which is used by all
-UEs as the gateway to reach the internet. 
+between), but does not involve the eNB. In this version of LTE, the EPC
+supports both IPv4 and IPv6 type users. The 3GPP unique 64 bit IPv6 prefix
+allocation process for each UE and PGW is followed here. Each EPC is assigned
+an unique 16 bit IPv4 and a 48 bit IPv6 network address from the pool of
+7.0.0.0/8 and 7777:f00d::/32 respectively. In the end-to-end IP connection
+between UE and PGW, all addresses are configured using these prefixes.
+The PGW's address is used by all UEs as the gateway to reach the internet. 
 
 The second layer of IP networking is the EPC local area network. This
 involves all eNB nodes and the SGW/PGW node. This network is
@@ -3125,17 +3130,19 @@ end-to-end flow of data packets.
 
 To begin with, we consider the case of the downlink, which is depicted
 in Figure :ref:`fig-epc-data-flow-dl`.   
-Downlink Ipv4 packets are generated from a generic remote host, and
+Downlink IPv4/IPv6 packets are generated from a generic remote host, and
 addressed to one of the UE device. Internet routing will take care of
 forwarding the packet to the generic NetDevice of the SGW/PGW node
 which is connected to the internet (this is the Gi interface according
 to 3GPP terminology). The SGW/PGW has a VirtualNetDevice which is
-assigned the gateway IP address of the UE subnet; hence, static
+assigned the base IPv4 address of the EPC network; hence, static
 routing rules will cause the incoming packet from the internet to be
-routed through this VirtualNetDevice. Such device starts the
-GTP/UDP/IP tunneling procedure, by forwarding the packet to a
-dedicated application in the SGW/PGW  node which is called
-EpcSgwPgwApplication. This application does the following operations:
+routed through this VirtualNetDevice. In case of IPv6 address as destination,
+a manual route towards the VirtualNetDevice is inserted in the routing table,
+containing the 48 bit IPv6 prefix from which all the IPv6 addresses of the UEs
+and PGW are configured. Such device starts the GTP/UDP/IP tunneling procedure,
+by forwarding the packet to a dedicated application in the SGW/PGW  node which
+is called EpcSgwPgwApplication. This application does the following operations:
 
  #. it determines the eNB node to which the UE is attached, by looking
     at the IP destination address (which is the address of the UE);
@@ -3226,7 +3233,7 @@ received by the corresponding S1-U point-to-point NetDevice of the
 SGW/PGW node, it is delivered locally (as the destination address of
 the outmost IP header matches the address of the point-to-point net
 device). The local delivery process will forward the packet to the
-EpcSgwPgwApplication via the correponding UDP socket. The
+EpcSgwPgwApplication via the corresponding UDP socket. The
 EpcSgwPgwApplication then removes the GTP header and forwards the
 packet to the VirtualNetDevice. At this point, the outmost header
 of the packet is the end-to-end IP header. Hence, if the destination
@@ -3349,7 +3356,7 @@ and it provides services to:
 
     * to send/receive RRC messages. The X2 entity sends the RRC message as a transparent container in the X2 message. This RRC message is sent to the UE. 
 
-Figure :ref:`fig-x2-entity-saps` shows the implentation model of the X2 entity and its relationship with all the other entities and services in the protocol stack.
+Figure :ref:`fig-x2-entity-saps` shows the implementation model of the X2 entity and its relationship with all the other entities and services in the protocol stack.
 
 .. _fig-x2-entity-saps:
 
@@ -3835,7 +3842,7 @@ FR-Scheduler and FR-RRC were added.
 
 Figure :ref:`fig-lte-ffr-scheduling` shows the sequence diagram of 
 scheduling process with FR algorithm. In the beginning of scheduling 
-process, scheduler asks FR entity for avaiable RBGs. According to 
+process, scheduler asks FR entity for available RBGs. According to 
 implementation FR returns all RBGs available in cell or filter them based 
 on its policy. Then when trying to assign some RBG to UE, scheduler asks FR 
 entity if this RBG is allowed for this UE. When FR returns true, scheduler 
@@ -3882,7 +3889,7 @@ The Hard Frequency Reuse algorithm provides the simplest scheme which allows to
 reduce inter-cell interference level. In this scheme whole frequency bandwidth is 
 divided into few (typically 3, 4, or 7) disjoint sub-bands. Adjacent eNBs are 
 allocated with different sub-band. Frequency reuse factor equals the number 
-of sub-bands. This scheme allows to significanlty reduce ICI at the cell edge, 
+of sub-bands. This scheme allows to significantly reduce ICI at the cell edge, 
 so the performance of cell-users is improved. But due to the fact, that each 
 eNB uses only one part of whole bandwidth, peak data rate level is also reduced 
 by the factor equal to the reuse factor.
@@ -3900,7 +3907,7 @@ power plan for Hard Frequency Reuse scheme.
 
 In our implementation, the Hard FR algorithm has only vector of RBGs available 
 for eNB and pass it to MAC Scheduler during scheduling functions. When scheduler 
-ask, if RBG is allowed for specific UE it allways return true.
+ask, if RBG is allowed for specific UE it always return true.
 
 Strict Frequency Reuse
 ----------------------
@@ -3911,7 +3918,7 @@ used in each cell interior (frequency reuse-1), while the other part of the
 bandwidth is divided among the neighboring eNBs as in hard frequency reuse 
 (frequency reuse-N, N>1), in order to create one sub-band with a low inter-cell 
 interference level in each sector. Center UEs will be granted with the fully-reused 
-frequency chunks, while cell-edge UEs with ortogonal chunks. It means that interior 
+frequency chunks, while cell-edge UEs with orthogonal chunks. It means that interior 
 UEs from one cell do not share any spectrum with edge UEs from second cell, which 
 reduces interference for both. As can be noticed, Strict FR requires a total of 
 N + 1 sub-bands, and allows to achieve RFR in the middle between 1 and 3.
@@ -4103,36 +4110,442 @@ sequence diagram of Distributed Fractional Frequency Reuse Scheme.
    Sequence diagram of Distributed Frequency Reuse Scheme
 
 
+.. only:: latex
+
+    .. raw:: latex
+      
+        \clearpage
+
+--------------------
+Carrier Aggregation
+--------------------
+
+Overview
+++++++++
+
+This section describes the ns-3 support for Carrier Aggregation.
+The references in the standard are [TS36211]_, [TS36213]_ and [TS36331]_.
+
+**Note:** Carrier Aggregation was introduced in release 3.27 and currently, only works in downlink.
+
+3GPP standardizes, in release R10, the Carrier Aggregation (CA) technology.
+
+This technology consists of the possibility, to aggregate radio resources belonging to 
+different carriers, in order to have more bandwidth available, and to achieve a higher 
+throughput. Carrier Aggregation as defined by 3GPP can be used with both TDD and FDD. 
+Since ns-3 only supports FDD LTE implementation, we will consider only this case in 
+this section. Each aggregated carrier is referred to as a component carrier, CC. 
+The component carrier can have a bandwidth of 1.4, 3, 5, 10, 15 or 20 MHz and a maximum 
+of five component carriers can be aggregated, hence the maximum aggregated bandwidth is 
+100 MHz. In FDD the number of aggregated carriers can be different in DL and UL. However, 
+the number of UL component carriers is always equal to or lower than the number of DL 
+component carriers. The individual component carriers can also be of different bandwidths. 
+When carrier aggregation is used there are a number of serving cells, one for each 
+component carrier. The coverage of the serving cells may differ, for example due to 
+that CCs on different frequency bands will experience different pathloss. The RRC 
+connection is only handled by one cell, the Primary serving cell, served by the 
+Primary component carrier (DL and UL PCC). It is also on the DL PCC that the UE 
+receives NAS information, such as security parameters. 
+
+3GPP defines three different CA bandwidth classes in releases 10 and 11 (where ATBC 
+is Aggregated Transmission Bandwidth Configuration):
+
+Class A: ATBC :math:`\leq` 100, maximum number of CC = 1
+
+Class B: ATBC :math:`\leq` 100, maximum number of CC = 2
+
+Class C: 100 :math:`\leq` ATBC :math:`\leq` 200, maximum number of CC = 2
+
+Figure :ref:`fig-lte-carrier-aggregation-impact` (from 3gpp.org) shows the main 
+impact of CA technology on the different layers of the LTE protocol stack. 
+Introduction of carrier aggregation influences mainly the MAC and new RRC messages 
+are introduced. In order to keep R8/R9 compatibility the protocol changes will be kept 
+to a minimum. Basically each component carrier is treated as an R8 carrier. However some 
+changes are required, such as new RRC messages in order to handle the secondary component 
+carrier (SCC), and MAC must be able to handle scheduling on a number of CCs. In the 
+following we describe the impact of the carrier aggregation implementation on the different 
+layers of the LTE protocol stack in ns-3. 
+
+.. _fig-lte-carrier-aggregation-impact:
+ 
+.. figure:: figures/carrier-aggregation-impact.png
+   :scale: 80 %
+   :align: center
+   
+   CA impact on different layers of LTE protocol stack (from 3gpp.org)
+
+Impact on RRC layer
+-------------------------------
+
+The main impacts on the RRC layer are related to secondary carrier configuration and 
+measurements reporting. To enable these features we have enhanced the already existing 
+procedures for the RRC Connection Reconfiguration and UE RRC Measurements Model.
+
+The carrier aggregation enabling procedure is shown in figure :ref:`fig-ca-rrc-reconf`. 
+As per 3GPP definition, the secondary cell is a cell, operating on a secondary frequency, 
+which may be configured once an RRC connection is established and which may be used to 
+provide additional radio resources. Hence, the procedure starts when the UE is in the 
+CONNECTED_NORMALLY state (see the RRC state machine description). This part of the procedure 
+is the same as in the previous architecture. In order to simplify the implementation, 
+the `UE Capability Inquiry` and `UE Capability Information` are not implemented. This 
+implies to assume that each UE can support the carrier aggregation, and any specific 
+configuration provided by the eNB to which is attached. The eNB RRC sends to the UE the 
+secondary carrier configuration parameters through the RRC Connection Reconfiguration 
+procedure. This procedure may be used for various purposes related to modifications of 
+the RRC connection, e.g. to establish, modify or release RBs, to perform handover, to 
+setup, modify or release measurements, to add, modify and release secondary cells (SCells). 
+At UE side, the RRC is extended to configure the lower layers, in such a way that the 
+SCell(s) are considered. Once the carriers are configured, the `Reconfiguration Completed` 
+message is sent back to the eNB RRC, informing the eNB RRC and CCM that the secondary 
+carriers have been properly configured. The RRC layer at both the UE and the eNB sides 
+is extended to allow measurement reporting for the secondary carriers. Finally, in order 
+to allow the procedures for configuration and measurement reporting, the RRC is enhanced 
+to support serialization and deserialization of RRC message structures that carry information 
+related to the secondary carriers, e.g., if the ``RRCConnectionReconfiguration`` message 
+includes ``sCellToAddModList`` structure, SCell addition or modification will be performed, 
+or, if it contains ``measConfig`` the measurement reporting will be configured. To allow 
+transmission of this information the following structures are implemented for the sCell: 
+``RadioResourceConfigCommonSCell``, ``RadioResourceConfigDedicatedSCell`` and 
+``PhysicalConfigDedicatedSCell`` and ``NonCriticalExtensionConfiguration``. 
+``RadioResourceConfigCommonSCell`` and ``RadioResourceConfigDedicatedSCell`` are 
+used for SCell addition and modification (see TS 36.331, 5.3.10.3b). 
+``PhysicalConfigDedicatedSCell`` is used for physical channel reconfiguration 
+(see TS 36.331, 5.3.10.6). Finally, ``NonCriticalExtensionConfiguration`` is used to 
+carry information of ``sCellToAddModeList`` and ``sCellToReleaseList``, 
+which is a modified structure comparing to TS 36.331, 6.6.2, according to which these 
+are directly in the root of RRCConnectionReconfiguration message. Measurement 
+reporting is extended with ``measResultSCell`` structure to include RSRP and RSRQ 
+measurements for each configured SCell. However, the measurement report triggering 
+event A6 (neighbour becomes offset better than SCell) is not implemented yet. 
+
+  
+.. _fig-ca-rrc-reconf:
+ 
+.. figure:: figures/ca-rrc-reconf.*
+   :scale: 50%
+   :align: center
+
+   A schematic overview of the secondary carrier enabling procedure
+
+Impact on PCDCP layer
+-------------------------------
+There is no impact on PDCP layer.
+
+Impact on RLC layer
+-------------------------------
+The impact on the RLC layer is relatively small. There is some impact on configuration of 
+the buffer and the usage of SAP interfaces between RLC and MAC. Since the capacity of the 
+lower layers increases with the carrier aggregation it is necessary to accordingly adjust 
+the size of the RLC buffer. The impact on the implementation of the RLC layer is very small 
+thanks to the design choice that allows the CCM manager to serve the different RLC instances 
+through the ``LteMacSapProvider interface``. Thanks to this design choice, the RLC is using 
+the same interface as in the earlier LTE module architecture, the ``LteMacSapProvider``, 
+but the actual SAP provider in the new architecture is the CCM (some class that inherits 
+``LteEnbComponentCarrierManager``). The CCM acts as a proxy, it receives function calls 
+that are meant for the MAC, and forwards them to the MAC of the different component 
+carriers. Additionally, it uses the information of the UEs and the logical channels for 
+its own functionalities.
+
+Impact on MAC layer
+-------------------------------
+
+The impact on the MAC layer depends on the CA scheduling scheme in use. Two different 
+scheduling schemes are proposed in R10 and are shown in 
+figure :ref:`fig-lte-carrier-aggregation-mac-impact`. 
+
+.. _fig-lte-carrier-aggregation-mac-impact:
+ 
+.. figure:: figures/carrier-aggregation-mac-impact.png
+   :scale: 90 %
+   :align: center
+   
+   CA scheduling schemes (from 3gpp.org)
+ 
+
+The CIF (Carrier Indicator Field) on PDCCH (represented by the red area) indicates 
+on which carrier the scheduled resource is located. In the following we describe both 
+the schemes: 
+
+    a) scheduling grant and resources on the same carrier. One PDCCH is supported per carrier. 
+
+    b) cross-carrier scheduling: it is used to schedule resources on the secondary carrier 
+       without PDCCH.
+
+Current implementation covers only option 1, so there is no cross-carrier scheduling. 
+The MAC layer of the eNodeB has suffered minor changes and they are mainly related to 
+addition of component carrier information in message exchange between layers. 
+
+Impact on PHY layer
+-------------------------------
+
+The impact on PHY layer is minor. There is an instance of PHY layer per each component 
+carrier and the SAP interface functions remain unchanged. As shown 
+in :ref:`fig-lte-carrier-aggregation-mac-impact` the difference is that since there are 
+multiple PHY instances, there are also multiple instances of PDCCH, HARQ, ACK/NACK and 
+CSI per carrier. So, at the eNB PHY, the changes are related to the addition of the 
+component carrier id information, while at the UE PHY the information of the Component 
+Carrier is used for some functionalities that depend on the Component Carrier to which 
+the PHY instance belongs. For example, the UE PHY is extended to allow disabling of 
+the sounding reference signal (SRS) at the secondary carriers. This is necessary 
+because there is one UE PHY instance per component carrier, but according 
+to :ref:`fig-lte-carrier-aggregation-mac-impact`, only a single carrier is used 
+and the uplink traffic is transmitted only over the primary carrier.
+
+
+Code Structure Design
++++++++++++++++++++++++++++++++
+
+This section briefly introduces the software design and implementation of the 
+carrier aggregation functionality.
+
+Both ``LteEnbNetDevice`` and ``LteUeNetDevice`` are created by the ``LteHelper`` 
+using the method ``InstallSingleEnbDevice`` and ``InstallSingleUeDevice``. These 
+functions are now extended to allow the carrier aggregation configuration. In the 
+following we explain the main differences comparing to the previous architecture.
+
+Figure :ref:`fig-lte-enb-net-device-changes` shows the attributes and associations 
+of the ``LteEnbNetDevice`` that are affected by the implementation, or are created 
+in order to support the carrier aggregation functionality. Since ``LteEnbNetDevice`` 
+may have several component carriers, the attributes that were formerly part of 
+the ``LteEnbNetDevice`` and are carrier specific are migrated to the ComponentCarrier 
+class, e.g. physical layer configuration parameters. The attributes that are 
+specific for the eNB component carrier are migrated to ``ComponentCarrierEnb``, e.g. 
+pointers to MAC, PHY, scheduler, fractional frequency reuse instances. 
+``LteEnbNetDevice`` can contain pointers to several ``ComponentCarrierEnb`` instances. 
+This architecture allows that each CC may have its own configuration for PHY, MAC, 
+scheduling algorithm and franctional frequency reuse algorithm.  These attributes are 
+currently maintained also in the ``LteEnbNetDevice`` for backward compatibility purpose. 
+By default the ``LteEnbNetDevice`` attributes are the same as the 
+primary carrier attributes. 
+
+.. _fig-lte-enb-net-device-changes:
+.. figure:: figures/ca-lte-enb-net-device-changes.*
+   :scale: 90 %
+   :align: center
+   
+   Changes in ``LteEnbNetDevice`` to support CA
+
+Figure :ref:`fig-lte-ue-net-device-changes` shows the attributes and associations 
+of ``LteUeNetDevice`` that are affected by the carrier aggregation implementation. 
+Similarly, to the changes in ``LteEnbNetDevice``, pointers that are specific to UE 
+component carrier are migrated to the ``ComponentCarrierUe`` class. 
+``LteUeNetDevice`` has maintained m_dlEarfcn for initial cell selection purposes.
+   
+.. _fig-lte-ue-net-device-changes:
+.. figure:: figures/ca-lte-ue-net-device-changes.*
+   :scale: 90 %
+   :align: center
+   
+   Changes in ``LteUeNetDevice`` to support CA
+   
+
+CA impact on data plane of eNodeB
+---------------------------------
+Figure :ref:`fig-ca-enb-data-plane` shows the class diagram of the data plane at 
+the eNB.
+
+The main impact is the insertion of the ``LteEnbComponentCarrierManager`` class 
+in the middle of the LTE protocol stack. During the design phase it was 
+decided to keep the same SAP interfaces design that existed between MAC and RLC 
+in order to avoid unnecessary changes in these parts of protocol stack.
+To achieve this the ``LteEnbComponentCarrierManager`` implements all functions 
+that were previously exposed by RLC to MAC through ``LteMacSapUser`` interface. 
+It also implements functions that were previously exposed by MAC to RLC through 
+the ``LteMacSapProvider`` interface. In this way, the carrier aggregation is 
+transparent to upper and lower layers. The only difference is that the MAC 
+instance sees now only one ``LteMacSapUser``, whereas formerly it was seeing only 
+one ``LteMacSapUser`` per RLC instance. 
+
+The ``LteEnbComponentCarrierManager`` is responsible for the forwarding messages 
+in both directions. In the current implementation, a PDCP and a RLC instances are 
+activated each time a new data radio bearer is configured. The correspondence 
+between a new  data radio bearer and a RLC instance is one to one. In order to 
+maintain the same behavior, when a new logical channel is activated, the logical 
+channel configurations is propagated to each MAC layer object in "as is" fashion. 
+ 
+.. _fig-ca-enb-data-plane:
+.. figure:: figures/ca-enb-data-plane.*   
+   :align: center
+
+   eNB Data Plane Architecture
+   
+Figure :ref:`fig-ca-downlink-bsr` shows a sequence diagram of downlink buffer status 
+reporting with a carrier aggregation implementation of only one secondary carrier. 
+Each time that an RLC instance sends a buffer status report (BSR), the 
+``LteEnbComponentCarrierManager`` propagates the BSR to the MAC instances. 
+The ``LteEnbComponentCarrierManager`` may modify a BSR before sending it to the 
+MAC instances. This modification depends on the traffic split algorithm implemented 
+in CCM class that inherits ``LteEnbComponentCarrierManager``.
+ 
+.. _fig-ca-downlink-bsr:
+.. figure:: figures/ca-downlink-bsr.*   
+   :align: center
+
+   Sequence Diagram of downlink buffer status reporting (BSR) with CA
+   
+CA impact on control plane of eNodeB
+-------------------------------------
+Figure :ref:`fig-ca-enb-ctrl-plane` shows the class diagram of the control plane 
+at the eNB. During the design phase it was decided to maintain the same hooks as in 
+the former architecture. To do so, at each component carrier the PHY and the MAC are 
+directly associated to the RRC instance. However, the RRC instance is additionally 
+connected to the ``LteEnbComponentCarrierManager``, which is responsible for enabling 
+and disabling the component carriers. When the simulation starts, the number of 
+component carrier is fixed, but only the primary carrier component is enabled. 
+Depending on the ``LteEnbComponentCarrierManager`` algorithm the other carrier 
+components could be activated or not.
+
+.. _fig-ca-enb-ctrl-plane:
+ 
+.. figure:: figures/ca-enb-ctrl-plane.*   
+   :align: center
+
+   eNB Control Plane Architecture
+   
+Figure :ref:`fig-ca-setup-radio-bearer` shows how the Radio Bearer are configured. 
+
+.. _fig-ca-setup-radio-bearer:
+ 
+.. figure:: figures/ca-setup-radio-bearer.*
+   :scale: 90 %
+   :align: center
+  
+   Sequence Diagram of Data Radio Bearer Setup
+ 
+CA impact on data plane of UE
+------------------------------
+Figure :ref:`fig-ca-ue-data-plane` shows the relation between the different classes 
+related to the UE data plane. The UE data plane architecture is similar to the eNB data 
+plane implementation. The ``LteUeComponentCarrierManager`` is responsible to (re)map 
+each ``MacSapUserProvider`` to the corresponding RLC instance or to the proper MAC 
+instance. The channel remapping depends on algorithm used as ``LteUeComponentCarrierManager``.
+A particular case is represented by the UE buffer status report (BSR) to eNB.
+Since, i) the standard does not specify how the BSR has to be reported on each component 
+carrier and ii) it is decided to map one-to-one the logical channel to each MAC layer,
+the only way to send BSRs to the eNB is through the primary carrier. 
+Figure :ref:`fig-ca-uplink-bsr` shows the sequence diagram. 
+Each time a BSR is generated, the ``LteUeComponentCarrierManager`` sends it through 
+the primary carrier component. When the primary component carrier at the eNB receives 
+the BSR, it sends it to ``LteEnbComponentCarrierManager``. The latter, according to 
+algorithm dependent policies, forwards a BSR to component carriers. The communication 
+between the ``LteEnbMac`` and  the ``LteEnbComponentCarrierManager`` is done through a 
+specific set of SAP functions which are implemented in the ``LteUlCcmRrcSapUser`` and 
+the ``LteUlCcmRrcSapProvider``.
+
+.. _fig-ca-ue-data-plane:
+ 
+.. figure:: figures/ca-ue-data-plane.*
+   :scale: 60 %
+   :align: center
+   
+   UE Data Plane Architecture   
+
+.. _fig-ca-uplink-bsr:
+ 
+.. figure:: figures/ca-uplink-bsr.png   
+   :align: center
+
+   Uplink buffer status reporting with CA
+   
+
+CA impact on control plane of UE
+---------------------------------
+Figure :ref:`fig-ca-ue-ctrl-plane` shows the relation between the different classes 
+associated to the UE control plane. The control plane implementation at the UE is basically 
+the same as the eNB control plane implementation. Each component carrier control SAP 
+(both for PHY and MAC layer objects) is linked in a one-to-one fashion directly to the RRC 
+instance. The Ue RRC instance is then connected to the ``LteUeComponentCarrierManager`` 
+in the same way as in the eNB.
+
+.. _fig-ca-ue-ctrl-plane:
+ 
+.. figure:: figures/ca-ue-ctrl-plane.*
+   :scale: 90 %
+   :align: center
+
+   UE Control Plane Architecture
+   
+   
+``CCHelper`` is the class that is implemented to help the configuration of the physical 
+layer parameters, such as uplink and downlink,bandwidth and EARFCN of each carrier.
+
+CCM RRC MAC interfaces
+-----------------------
+
+The Component carrier manager (CCM) is also developed by using the SAP interface design. 
+The following SAP interfaces are implemented for CCM and MAC: 
+        
+  * the ``LteCcmMacSapUser`` part is provided by MAC and is used by the CCM
+  * the ``LteCcmMacSapProvider`` part is provided by CCM and is used by the MAC layer
+
+ When the primary component carrier receives an uplink BSR it uses the ``LteCcmMacSapUser`` 
+ to forward it to the CCM, which should decide how to split the traffic corresponding to 
+ this BSR among carriers. Once this decision is made, the CCM uses the ``LteCcmMacSapProvider`` 
+ interface to send back an uplink BSR to some of the MAC instances. Additionally, 
+ the ``LteCcmMacSapUser`` can be used by the MAC to notify about the PRB occupancy 
+ in the downlink to the CCM. This information may be used by the CCM to decide how 
+ to split the traffic and whether to use the secondary carriers.
+
+CCM RRC SAP interfaces
+----------------------------------
+
+The following SAP interfaces are implemented for CCM and RRC: 
+
+  * the ``LteCcmRrcSapProvider`` is provided by the CCM and is used by the RRC layer
+  * the ``LteCcmRrcSapUser`` is provided by RRC and is used by the CCM
+
+By using the ``LteCcmRrcSapUser`` the CCM may request a specific measurement reporting 
+configuration to be fulfilled by the UEs attached to the eNB. When a UE measurement 
+report is received, as a result of this configuration, the eNB RRC entity shall forward 
+this report to the CCM through the ``LteCcmRrcSapProvider::ReportUeMeas`` SAP function. 
+Additionally, the ``LteCcmRrcSapProvider`` offers different functions to the RRC that can 
+be used to add and remove of UEs, setup or release of radio bearer, configuration of the 
+signalling bearer, etc.
+
+Component carrier managers
+-----------------------------------------
+Currently, there are two component carrier manager implementations available. The first one 
+is the ``NoOpComponentCarrierManager``, which  is the default CCM choice. When this CCM is 
+used the carrier aggregation feature is disabled. This CCM forwards all traffic, the uplink 
+and the downlink, over 
+the primary carrier, and does not use secondary carriers.
+Another implementation is the ``RrComponentCarrierManager``, which splits the traffic 
+equally among carriers, by diving the buffer status report among different carriers. 
+SRB0 and SRB1 flows will be forwarded only over primary carrier.
+
 -------
 Helpers
 -------
 
-Two helper objects are use to setup simulations and configure the
+Two helper objects are used to setup simulations and configure the 
 various components. These objects are:
 
 
- * ``LteHelper``, which takes care of the configuration of the LTE radio
-   access network, as well as of coordinating the setup and release of
-   EPS bearers. The ``LteHelper`` class provides both the API
-   definition and its implementation.  
- * ``EpcHelper``, which takes care of the configuration of the Evolved
-   Packet Core. The ``EpcHelper`` class is an abstract base class
-   which only provides the API definition; the implementation is delegated
-   to child classes in order to allow for different EPC network
-   models.
+ * ``LteHelper``, which takes care of the configuration of the LTE radio access network, 
+   as well as of coordinating the setup and release of EPS bearers. The ``LteHelper`` class 
+   provides both the API definition and its implementation.  
+ * ``EpcHelper``, which takes care of the configuration of the Evolved Packet Core. The 
+   ``EpcHelper`` class is an abstract base class, which only provides the API definition; 
+   the implementation is delegated to the child classes in order to allow for different 
+   EPC network models.
+ * ``CcHelper``, which takes care of the configuration of the ``LteEnbComponentCarrierMap``, 
+   basically, it creates a user specified number of ``LteEnbComponentCarrier``. 
+   ``LteUeComponentCarrierMap`` is currently created starting from the 
+   ``LteEnbComponentCarrierMap``. ``LteHelper:InstallSingleUeDevice``, 
+   in this implementation, is needed to invoke after the ``LteHelper:InstallSingleEnbDevice`` 
+   to ensure that the ``LteEnbComponentCarrierMap`` is properly initialized.
 
 It is possible to create a simple LTE-only simulations by
-using ``LteHelper`` alone, or to create complete LTE-EPC simulations by
-using both ``LteHelper`` and ``EpcHelper``. When both helpers are used, they
-interact in a master-slave fashion, with ``LteHelper`` being the Master
-that interacts directly with the user program, and ``EpcHelper`` working
-"under the hood" to configure the EPC upon explicit methods called by
-``LteHelper``. The exact interactions are displayed in the Figure :ref:`fig-helpers`.
+using the ``LteHelper`` alone, or to create complete LTE-EPC simulations by using both 
+``LteHelper`` and ``EpcHelper``. When both helpers are used, they interact in a master-slave 
+fashion, with the ``LteHelper`` being the Master that interacts directly with the user program, 
+and the ``EpcHelper`` working "under the hood" to configure the EPC upon explicit methods 
+called by the ``LteHelper``. The exact interactions are displayed in the Figure :ref:`fig-helpers`.
 
 .. _fig-helpers:
    
 .. figure:: figures/helpers.*
    :align: center
 
-   Sequence diagram of the interaction between LteHelper and EpcHelper
+   Sequence diagram of the interaction between ``LteHelper`` and ``EpcHelper``.
 

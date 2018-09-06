@@ -69,6 +69,17 @@ LteRlcUm::GetTypeId (void)
                    UintegerValue (10 * 1024),
                    MakeUintegerAccessor (&LteRlcUm::m_maxTxBufferSize),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("ReportBufferStatusTimer",
+                   "How much to wait to issue a new Report Buffer Status since the last time "
+                   "a new SDU was received",
+                   TimeValue (MilliSeconds (10)),
+                   MakeTimeAccessor (&LteRlcUm::m_rbsTimerValue),
+                   MakeTimeChecker ())
+    .AddAttribute ("ReorderingTimer",
+                   "Value of the t-Reordering timer (See section 7.3 of 3GPP TS 36.322)",
+                   TimeValue (MilliSeconds (10)),
+                   MakeTimeAccessor (&LteRlcUm::m_reorderingTimerValue),
+                   MakeTimeChecker ())
     ;
   return tid;
 }
@@ -119,10 +130,10 @@ LteRlcUm::DoTransmitPdcpPdu (Ptr<Packet> p)
   else
     {
       // Discard full RLC SDU
-      NS_LOG_LOGIC ("TxBuffer is full. RLC SDU discarded");
-      NS_LOG_LOGIC ("MaxTxBufferSize = " << m_maxTxBufferSize);
-      NS_LOG_LOGIC ("txBufferSize    = " << m_txBufferSize);
-      NS_LOG_LOGIC ("packet size     = " << p->GetSize ());
+      NS_LOG_WARN ("TxBuffer is full. RLC SDU discarded");
+      NS_LOG_WARN ("MaxTxBufferSize = " << m_maxTxBufferSize);
+      NS_LOG_WARN ("txBufferSize    = " << m_txBufferSize);
+      NS_LOG_WARN ("packet size     = " << p->GetSize ());
     }
 
   /** Report Buffer Status */
@@ -130,7 +141,7 @@ LteRlcUm::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer.Cancel ();
 }
 
-void 
+void
 LteRlcUm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this);
@@ -142,7 +153,7 @@ LteRlcUm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
  */
 
 void
-LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
+LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
 
@@ -349,7 +360,8 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
   // FIRST SEGMENT
   LteRlcSduStatusTag tag;
-  (*it)->RemovePacketTag (tag);
+  NS_ASSERT_MSG ((*it)->PeekPacketTag (tag), "LteRlcSduStatusTag is missing");
+  (*it)->PeekPacketTag (tag);
   if ( (tag.GetStatus () == LteRlcSduStatusTag::FULL_SDU) ||
         (tag.GetStatus () == LteRlcSduStatusTag::FIRST_SEGMENT) )
     {
@@ -359,19 +371,26 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
     {
       framingInfo |= LteRlcHeader::NO_FIRST_BYTE;
     }
-  (*it)->AddPacketTag (tag);
 
   while (it < dataField.end ())
     {
       NS_LOG_LOGIC ("Adding SDU/segment to packet, length = " << (*it)->GetSize ());
 
-      packet->AddAtEnd (*it);
+      NS_ASSERT_MSG ((*it)->PeekPacketTag (tag), "LteRlcSduStatusTag is missing");
+      (*it)->RemovePacketTag (tag);
+      if (packet->GetSize () > 0)
+        {
+          packet->AddAtEnd (*it);
+        }
+      else
+        {
+          packet = (*it);
+        }
       it++;
     }
 
   // LAST SEGMENT (Note: There could be only one and be the first one)
   it--;
-  (*it)->RemovePacketTag (tag);
   if ( (tag.GetStatus () == LteRlcSduStatusTag::FULL_SDU) ||
         (tag.GetStatus () == LteRlcSduStatusTag::LAST_SEGMENT) )
     {
@@ -381,7 +400,6 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
     {
       framingInfo |= LteRlcHeader::NO_LAST_BYTE;
     }
-  (*it)->AddPacketTag (tag);
 
   rlcHeader.SetFramingInfo (framingInfo);
 
@@ -390,7 +408,7 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
 
   // Sender timestamp
   RlcTag rlcTag (Simulator::Now ());
-  packet->AddByteTag (rlcTag);
+  packet->ReplacePacketTag (rlcTag);
   m_txPdu (m_rnti, m_lcid, packet->GetSize ());
 
   // Send RLC PDU to MAC layer
@@ -400,13 +418,14 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
   params.lcid = m_lcid;
   params.layer = layer;
   params.harqProcessId = harqId;
+  params.componentCarrierId = componentCarrierId;
 
   m_macSapProvider->TransmitPdu (params);
 
   if (! m_txBuffer.empty ())
     {
       m_rbsTimer.Cancel ();
-      m_rbsTimer = Simulator::Schedule (MilliSeconds (10), &LteRlcUm::ExpireRbsTimer, this);
+      m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUm::ExpireRbsTimer, this);
     }
 }
 
@@ -416,14 +435,14 @@ LteRlcUm::DoNotifyHarqDeliveryFailure ()
   NS_LOG_FUNCTION (this);
 }
 
-std::vector < Ptr<Packet> > 
+std::vector < Ptr<Packet> >
 LteRlcUm::GetTxBuffer()
 {
   return m_txBuffer;
 }
 
 void
-LteRlcUm::DoReceivePdu (Ptr<Packet> p)
+LteRlcUm::DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
@@ -431,9 +450,11 @@ LteRlcUm::DoReceivePdu (Ptr<Packet> p)
   RlcTag rlcTag;
   Time delay;
   if (p->FindFirstMatchingByteTag (rlcTag))
-    {
-      delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
-    }
+  {
+    delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
+  }
+  p->RemovePacketTag (rlcTag);
+  delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
   m_rxPdu (m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
 
   // 5.1.2.2 Receive operations
@@ -575,7 +596,7 @@ LteRlcUm::DoReceivePdu (Ptr<Packet> p)
         {
           NS_LOG_LOGIC ("VR(UH) > VR(UR)");
           NS_LOG_LOGIC ("Start reordering timer");
-          m_reorderingTimer = Simulator::Schedule (Time ("0.1s"),
+          m_reorderingTimer = Simulator::Schedule (m_reorderingTimerValue,
                                                    &LteRlcUm::ExpireReorderingTimer ,this);
           m_vrUx = m_vrUh;
           NS_LOG_LOGIC ("New VR(UX) = " << m_vrUx);
@@ -1077,7 +1098,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
 void
 LteRlcUm::TriggerReceivePdcpPdu(Ptr<Packet> p)
 {
-  if(!isMc) 
+  if(!isMc)
   {
     NS_LOG_INFO(this << " RlcUm forwards packet to PDCP (either from MmWave or LTE stack)");
     m_rlcSapUser->ReceivePdcpPdu(p);
@@ -1142,7 +1163,7 @@ LteRlcUm::ReassembleSnInterval (SequenceNumber10 lowSeqNumber, SequenceNumber10 
 
           m_rxBuffer.erase (it);
         }
-        
+
       reassembleSn++;
     }
 }
@@ -1208,7 +1229,7 @@ LteRlcUm::ExpireReorderingTimer (void)
   if ( m_vrUh > m_vrUr)
     {
       NS_LOG_LOGIC ("Start reordering timer");
-      m_reorderingTimer = Simulator::Schedule (Time ("0.1s"),
+      m_reorderingTimer = Simulator::Schedule (m_reorderingTimerValue,
                                                &LteRlcUm::ExpireReorderingTimer, this);
       m_vrUx = m_vrUh;
       NS_LOG_LOGIC ("New VR(UX) = " << m_vrUx);
@@ -1224,7 +1245,7 @@ LteRlcUm::ExpireRbsTimer (void)
   if (! m_txBuffer.empty ())
     {
       DoReportBufferStatus ();
-      m_rbsTimer = Simulator::Schedule (MilliSeconds (10), &LteRlcUm::ExpireRbsTimer, this);
+      m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUm::ExpireRbsTimer, this);
     }
 }
 

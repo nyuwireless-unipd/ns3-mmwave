@@ -2,31 +2,34 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *								 Integration of Carrier Aggregation
  */
 
 
@@ -35,9 +38,11 @@
 #include <ns3/lte-rlc.h>
 #include <ns3/log.h>
 
-namespace ns3
-{
+namespace ns3 {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveUeMac");
+
+namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveUeMac);
 
@@ -57,6 +62,7 @@ public:
   virtual void ConfigureRach (RachConfig rc);
   virtual void StartContentionBasedRandomAccessProcedure ();
   virtual void StartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t preambleId, uint8_t prachMask);
+  virtual void SetRnti (uint16_t rnti);
   virtual void AddLc (uint8_t lcId, LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
   virtual void RemoveLc (uint8_t lcId);
   virtual void Reset ();
@@ -87,6 +93,12 @@ UeMemberMmWaveUeCmacSapProvider::StartContentionBasedRandomAccessProcedure ()
 UeMemberMmWaveUeCmacSapProvider::StartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint8_t preambleId, uint8_t prachMask)
 {
   m_mac->DoStartNonContentionBasedRandomAccessProcedure (rnti, preambleId, prachMask);
+}
+
+void
+UeMemberMmWaveUeCmacSapProvider::SetRnti (uint16_t rnti)
+{
+  m_mac->DoSetRnti (rnti);
 }
 
 
@@ -209,15 +221,20 @@ MmWaveUeMac::GetTypeId (void)
 			.SetParent<MmWaveMac> ()
 			.AddConstructor<MmWaveUeMac> ()
 			.AddAttribute ("UpdateUeSinrEstimatePeriod",
-               "Period (in ms) of reporting of SINR estimate of all the UE",
-               DoubleValue (25.6),
-               MakeDoubleAccessor (&MmWaveUeMac::m_ueUpdateSinrPeriod),
-               MakeDoubleChecker<double> ())
-		    .AddAttribute ("InterRatHoCapable",
-                 "True if this UE supports hard handover between LTE and MmWave",
-                 BooleanValue (false),
-                 MakeBooleanAccessor (&MmWaveUeMac::m_interRatHoCapable),
-                 MakeBooleanChecker ())
+                     "Period (in ms) of reporting of SINR estimate of all the UE",
+                     DoubleValue (25.6),
+                     MakeDoubleAccessor (&MmWaveUeMac::m_ueUpdateSinrPeriod),
+                     MakeDoubleChecker<double> ())
+		  .AddAttribute ("InterRatHoCapable",
+                     "True if this UE supports hard handover between LTE and MmWave",
+                     BooleanValue (false),
+                     MakeBooleanAccessor (&MmWaveUeMac::m_interRatHoCapable),
+                     MakeBooleanChecker ())
+      .AddTraceSource("TxMacPacketTraceUe",
+                      "Packets transmitted by UeMac",
+                      MakeTraceSourceAccessor (&MmWaveUeMac::m_txMacPacketTraceUe),
+  			              "ns3::UeTxRxPacketCount::TracedCallback")
+
 	;
 	return tid;
 }
@@ -236,6 +253,7 @@ MmWaveUeMac::MmWaveUeMac (void)
 	m_phySapUser = new MacUeMemberPhySapUser (this);
 	m_raPreambleUniformVariable = CreateObject<UniformRandomVariable> ();
 	m_randomAccessProcedureDelay = CreateObject<UniformRandomVariable> ();
+  m_componentCarrierId = 0;
 }
 
 MmWaveUeMac::~MmWaveUeMac (void)
@@ -252,6 +270,12 @@ MmWaveUeMac::DoDispose ()
   delete m_cmacSapProvider;
   delete m_phySapUser;
   Object::DoDispose ();
+}
+
+void
+MmWaveUeMac::SetComponentCarrierId (uint8_t index)
+{
+  m_componentCarrierId = index;
 }
 
 void
@@ -305,7 +329,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 		}
 		else
 		{
-			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU	
+			it->second.m_pdu->AddAtEnd (params.pdu); // append to MAC PDU
 		}
 
 		MacSubheader subheader (params.lcid, params.pdu->GetSize ());
@@ -334,6 +358,9 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 			m_miUlHarqProcessesPacket.at (params.harqProcessId).m_pktBurst->AddPacket (it->second.m_pdu);
 			m_miUlHarqProcessesPacketTimer.at (params.harqProcessId) = m_phyMacConfig->GetHarqTimeout ();
 			//m_harqProcessId = (m_harqProcessId + 1) % m_phyMacConfig->GetHarqTimeout();
+
+      m_txMacPacketTraceUe(params.rnti, m_componentCarrierId, it->second.m_pdu->GetSize ());
+
 			m_phySapProvider->SendMacPdu (it->second.m_pdu);
 			m_macPduMap.erase (it);  // delete map entry
 		}
@@ -358,7 +385,7 @@ MmWaveUeMac::DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParamete
       {
         NS_LOG_INFO("Update entry");
       }
-      
+
       // update entry
       (*it).second = params;
     }
@@ -391,7 +418,7 @@ MmWaveUeMac::SendReportBufferStatus (void)
       return;
     }
   MacCeElement bsr{m_rnti, MacCeElement::BSR};
-  
+
   bool send = true;
 
   // BSR is reported for each LCG
@@ -450,7 +477,7 @@ MmWaveUeMac::GetUeCmacSapProvider (void)
 void
 MmWaveUeMac::RefreshHarqProcessesPacketBuffer (void)
 {
-  NS_LOG_FUNCTION (this);
+  //NS_LOG_FUNCTION (this);
 
   for (uint16_t i = 0; i < m_miUlHarqProcessesPacketTimer.size (); i++)
     {
@@ -475,14 +502,17 @@ MmWaveUeMac::RefreshHarqProcessesPacketBuffer (void)
 void
 MmWaveUeMac::DoSubframeIndication (SfnSf sfn)
 {
-	NS_LOG_FUNCTION (this);
+	//NS_LOG_FUNCTION (this);
 	m_frameNum = sfn.m_frameNum;
 	m_sfNum = sfn.m_sfNum;
 	m_slotNum = sfn.m_slotNum;
 	RefreshHarqProcessesPacketBuffer ();
 	if ((Simulator::Now () >= m_bsrLast + m_bsrPeriodicity) && (m_freshUlBsr==true))
 	{
-		SendReportBufferStatus ();
+    if(m_componentCarrierId == 0) // only the Primary CC sends BSRs
+    {
+		  SendReportBufferStatus ();
+    }
 		m_bsrLast = Simulator::Now ();
 		m_freshUlBsr = false;
 		//m_harqProcessId = (m_harqProcessId + 1) % m_phyMacConfig->GetHarqTimeout();
@@ -511,8 +541,13 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 			}
 			NS_LOG_INFO("It is for lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
 			std::map <uint8_t, LcInfo>::const_iterator it = m_lcInfoMap.find (macSubheaders[ipdu].m_lcid);
-			NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
-			if(it!=m_lcInfoMap.end ())
+      //NS_ASSERT_MSG (it != m_lcInfoMap.end (), "received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
+      if(it == m_lcInfoMap.end ())
+      {
+        NS_LOG_WARN ("received packet with unknown lcid " << (uint16_t)macSubheaders[ipdu].m_lcid);
+      }
+
+      if(it!=m_lcInfoMap.end ())
 			{
 				Ptr<Packet> rlcPdu;
 				if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
@@ -526,14 +561,14 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
 					              <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
 					rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
 					currPos += (uint32_t)macSubheaders[ipdu].m_size;
-					it->second.macSapUser->ReceivePdu (rlcPdu);
+          it->second.macSapUser->ReceivePdu (rlcPdu, m_rnti, macSubheaders[ipdu].m_lcid);
 				}
 				else
 				{
 					rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
 					currPos = p->GetSize ();
 					LteRlcSpecificLteMacSapUser* user = (LteRlcSpecificLteMacSapUser*)it->second.macSapUser;
-					user->ReceivePdu (rlcPdu);
+					user->ReceivePdu (rlcPdu, m_rnti, macSubheaders[ipdu].m_lcid);
 				}
 			}
 		}
@@ -562,7 +597,7 @@ MmWaveUeMac::RecvRaResponse (BuildRarListElement_s raResponse)
   NS_LOG_INFO ("got RAR for RAPID " << (uint32_t) m_raPreambleId << ", setting T-C-RNTI = " << raResponse.m_rnti);
   m_rnti = raResponse.m_rnti;
   m_cmacSapUser->SetTemporaryCellRnti (m_rnti);
-  
+
   m_cmacSapUser->NotifyRandomAccessSuccessful ();
   // trigger tx opportunity for Message 3 over LC 0
   // this is needed since Message 3's UL GRANT is in the RAR, not in UL-DCIs
@@ -574,10 +609,10 @@ MmWaveUeMac::RecvRaResponse (BuildRarListElement_s raResponse)
   // if ((lc0BsrIt != m_ulBsrReceived.end ())
   //     && (lc0BsrIt->second.txQueueSize > 0))
   //   {
-  //     NS_ASSERT_MSG (raResponse.m_grant.m_tbSize > lc0BsrIt->second.txQueueSize, 
-  //                    "segmentation of Message 3 is not allowed raResponse.m_grant.m_tbSize " << raResponse.m_grant.m_tbSize 
+  //     NS_ASSERT_MSG (raResponse.m_grant.m_tbSize > lc0BsrIt->second.txQueueSize,
+  //                    "segmentation of Message 3 is not allowed raResponse.m_grant.m_tbSize " << raResponse.m_grant.m_tbSize
   //                    << " lc0BsrIt->second.txQueueSize " << lc0BsrIt->second.txQueueSize);
-  //     lc0InfoIt->second.macSapUser->NotifyTxOpportunity (raResponse.m_grant.m_tbSize, 0, 0); 
+  //     lc0InfoIt->second.macSapUser->NotifyTxOpportunity (raResponse.m_grant.m_tbSize, 0, 0);
   //     lc0BsrIt->second.txQueueSize = 0;
   //   }
 }
@@ -620,6 +655,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 
 		if (dciInfoElem.m_format == DciInfoElementTdma::UL_dci)
 		{
+      NS_LOG_DEBUG("UE MAC "<< (uint32_t)m_componentCarrierId << " received UL_DCI");
 			if (dciInfoElem.m_ndi == 1)
 			{
 				// New transmission -> empty pkt buffer queue (for deleting eventual pkts not acked )
@@ -634,15 +670,19 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 				{
 					if (((*itBsr).second.statusPduSize > 0) || ((*itBsr).second.retxQueueSize > 0) || ((*itBsr).second.txQueueSize > 0))
 					{
-						activeLcs++;
-						if (((*itBsr).second.statusPduSize!=0)&&((*itBsr).second.statusPduSize < statusPduMinSize))
-						{
-							statusPduMinSize = (*itBsr).second.statusPduSize;
-						}
-						if (((*itBsr).second.statusPduSize!=0)&&(statusPduMinSize == 0))
-						{
-							statusPduMinSize = (*itBsr).second.statusPduSize;
-						}
+            // check if this LC is active in this MmWaveUeMac instance
+            if(m_lcInfoMap.find(itBsr->first) != m_lcInfoMap.end())
+            {
+  			      activeLcs++;
+  						if (((*itBsr).second.statusPduSize!=0)&&((*itBsr).second.statusPduSize < statusPduMinSize))
+  						{
+  							statusPduMinSize = (*itBsr).second.statusPduSize;
+  						}
+  						if (((*itBsr).second.statusPduSize!=0)&&(statusPduMinSize == 0))
+  						{
+  							statusPduMinSize = (*itBsr).second.statusPduSize;
+  						}
+            }
 					}
 				}
 
@@ -705,7 +745,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 						if ((statusPduPriority) && ((*itBsr).second.statusPduSize == statusPduMinSize))
 						{
 							MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
-							(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess);
+							(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first);
 							NS_LOG_LOGIC (this << "\t" << bytesPerActiveLc << " send  " << (*itBsr).second.statusPduSize << " status bytes to LC " << (uint32_t)(*lcIt).first << " statusQueue " << (*itBsr).second.statusPduSize << " retxQueue" << (*itBsr).second.retxQueueSize << " txQueue" <<  (*itBsr).second.txQueueSize);
 							(*itBsr).second.statusPduSize = 0;
 							break;
@@ -721,7 +761,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 									macPduIt->second.m_numRlcPdu++;		// send status PDU + data PDU
 								}
 								//MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
-								(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess);
+								(*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first);
 								bytesForThisLc -= (*itBsr).second.statusPduSize;
 								NS_LOG_DEBUG (this << " serve STATUS " << (*itBsr).second.statusPduSize);
 								(*itBsr).second.statusPduSize = 0;
@@ -742,7 +782,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 								{
 									NS_LOG_DEBUG (this << " serve retx DATA, bytes " << bytesForThisLc);
 									MacSubheader subheader((*lcIt).first, bytesForThisLc);
-									(*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize ()-1), 0, dciInfoElem.m_harqProcess); //zml add 1 byte overhead
+									(*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize ()-1), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first); //zml add 1 byte overhead
 									if ((*itBsr).second.retxQueueSize >= bytesForThisLc)
 									{
 										(*itBsr).second.retxQueueSize -= bytesForThisLc;
@@ -771,7 +811,7 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 									}
 									NS_LOG_DEBUG (this << " serve tx DATA, bytes " << bytesForThisLc << ", RLC overhead " << rlcOverhead);
 									MacSubheader subheader((*lcIt).first, bytesForThisLc);
-									(*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize ()-1), 0, dciInfoElem.m_harqProcess); //zml add 1 byte overhead
+									(*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize ()-1), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first); //zml add 1 byte overhead
 									if ((*itBsr).second.txQueueSize >= bytesForThisLc - rlcOverhead)
 									{
 										(*itBsr).second.txQueueSize -= bytesForThisLc - rlcOverhead;
@@ -829,6 +869,8 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
 					}
 					tag.SetSfn (SfnSf (frameNum, sfNum, dciInfoElem.m_symStart));
 					pkt->AddPacketTag (tag);
+
+          m_txMacPacketTraceUe(m_rnti, m_componentCarrierId, pkt->GetSize ());
 					m_phySapProvider->SendMacPdu (pkt);
 				}
 				m_miUlHarqProcessesPacketTimer.at (dciInfoElem.m_harqProcess) = m_phyMacConfig->GetHarqTimeout();
@@ -887,6 +929,13 @@ MmWaveUeMac::DoStartContentionBasedRandomAccessProcedure ()
 }
 
 void
+MmWaveUeMac::DoSetRnti (uint16_t rnti)
+{
+  NS_LOG_FUNCTION (this);
+  m_rnti = rnti;
+}
+
+void
 MmWaveUeMac::RandomlySelectAndSendRaPreamble ()
 {
   NS_LOG_FUNCTION (this);
@@ -903,7 +952,7 @@ MmWaveUeMac::SendRaPreamble(bool contention)
 		m_raPreambleId = g_raPreambleId++;
 	}
 	// else m_raPreambleId was already set
-	
+
 	/*raRnti should be subframeNo -1 */
 	m_raRnti = 1;
 	m_waitingForRaResponse = true;
@@ -922,7 +971,7 @@ MmWaveUeMac::DoStartNonContentionBasedRandomAccessProcedure (uint16_t rnti, uint
   	bool contention = false;
   	if(!m_interRatHoCapable) // we assume that the LTE eNB can send directionality info, thus the UE has not to wait to collect updated info
   	{
-	  	SendRaPreamble (contention);  		
+	  	SendRaPreamble (contention);
   	}
   	else // instead in a single connectivity framework, the UE must wait for the periodic update with the channel estimate
   	{
@@ -951,7 +1000,7 @@ MmWaveUeMac::DoRemoveLc (uint8_t lcId)
   NS_LOG_DEBUG("Remove LC in " << m_rnti << " lcid " << (uint32_t)lcId);
   if(m_lcInfoMap.find (lcId) != m_lcInfoMap.end ())
   {
-    m_lcInfoMap.erase(m_lcInfoMap.find(lcId));  
+    m_lcInfoMap.erase(m_lcInfoMap.find(lcId));
   }
 }
 
@@ -970,7 +1019,7 @@ MmWaveUeMac::DoReset ()
 	{
 	  // don't delete CCCH)
 	  if (it->first == 0)
-	    {          
+	    {
 	      ++it;
 	    }
 	  else
@@ -1005,5 +1054,7 @@ MmWaveUeMac::AssignStreams (int64_t stream)
 
 //////////////////////////////////////////////
 
+
+}
 
 }

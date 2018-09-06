@@ -1,6 +1,6 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /* *
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -16,10 +16,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Michele Polese <michele.polese@gmail.com>
- * 
+ *
  */
 
- 
+
 
 #ifndef MC_UE_NET_DEVICE_H
 #define MC_UE_NET_DEVICE_H
@@ -36,6 +36,9 @@
 #include "ns3/epc-ue-nas.h"
 #include "ns3/mmwave-ue-mac.h"
 #include "ns3/mmwave-ue-phy.h"
+#include "ns3/mmwave-component-carrier-ue.h"
+#include "ns3/component-carrier-ue.h"
+
 //#include "ns3/mmwave-enb-net-device.h"
 //#include "ns3/lte-enb-net-device.h"
 //#include "ns3/lte-ue-net-device.h"
@@ -48,20 +51,26 @@ class Packet;
 class PacketBurst;
 class Node;
 class LteEnbNetDevice;
+class LteUeComponentCarrierManager;
+
+namespace mmwave{
+
 class MmWaveEnbNetDevice;
+
+
 
 
 /**
   * \ingroup mmWave
   * This class represents a MC LTE + mmWave UE NetDevice, therefore
-  * it is a union of the UeNetDevice classes of those modules, 
+  * it is a union of the UeNetDevice classes of those modules,
   * up to some point
   */
 class McUeNetDevice : public NetDevice
 {
-public: 
-	// methods inherited from NetDevide. 
-	// TODO check if 2 (or more) Mac Addresses are needed or if the 
+public:
+	// methods inherited from NetDevide.
+	// TODO check if 2 (or more) Mac Addresses are needed or if the
 	// same can be used for the 2 (or more) eNB
 
 	static TypeId GetTypeId (void);
@@ -97,10 +106,10 @@ public:
     virtual bool Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
 
     Ipv4Address GetPacketDestination (Ptr<Packet> packet);
-  
-  /** 
+
+  /**
    * receive a packet from the lower layers in order to forward it to the upper layers
-   * 
+   *
    * \param p the packet
    */
     void Receive (Ptr<Packet> p);
@@ -132,12 +141,24 @@ public:
 	uint64_t GetImsi () const;
 
 
-    // -------------------------- LTE methods -------------------------
-    Ptr<LteUeMac> GetLteMac (void) const;
+  // -------------------------- LTE methods -------------------------
+  Ptr<LteUeMac> GetLteMac (void) const;
+
+  Ptr<LteUeMac> GetLteMac (uint8_t index) const;
+
 
 	Ptr<LteUeRrc> GetLteRrc () const;
 
+  Ptr<LteUeComponentCarrierManager> GetLteComponentCarrierManager (void) const;
+
 	Ptr<LteUePhy> GetLtePhy (void) const;
+
+  Ptr<LteUePhy> GetLtePhy (uint8_t index) const;
+
+  std::map < uint8_t, Ptr<ComponentCarrierUe> > GetLteCcMap ();
+
+	void SetLteCcMap (std::map< uint8_t, Ptr<ComponentCarrierUe> > ccm);
+
 
 	/**
 	* \return the downlink carrier frequency (EARFCN)
@@ -171,9 +192,19 @@ public:
 
 	Ptr<MmWaveUePhy> GetMmWavePhy (void) const;
 
+  Ptr<MmWaveUePhy> GetMmWavePhy (uint8_t index) const;
+
 	Ptr<MmWaveUeMac> GetMmWaveMac (void) const;
 
+  Ptr<MmWaveUeMac> GetMmWaveMac (uint8_t index) const;
+
+  std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > GetMmWaveCcMap ();
+
+	void SetMmWaveCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > ccm);
+
 	Ptr<LteUeRrc> GetMmWaveRrc () const;
+
+  Ptr<LteUeComponentCarrierManager> GetMmWaveComponentCarrierManager (void) const;
 
 	uint16_t GetMmWaveEarfcn () const;
 
@@ -192,7 +223,9 @@ protected:
     virtual void DoInitialize (void);
 
 private:
-	
+
+		McUeNetDevice (const McUeNetDevice &);
+
     Mac48Address m_macaddress;
     Ptr<Node> m_node;
     mutable uint16_t m_mtu;
@@ -219,30 +252,32 @@ private:
 	// LTE
 
 	Ptr<LteEnbNetDevice> m_lteTargetEnb;
-	Ptr<LteUeMac> m_lteMac;
-	Ptr<LteUePhy> m_ltePhy;
 	Ptr<LteUeRrc> m_lteRrc;
-	uint16_t m_lteDlEarfcn; /**< LTE downlink carrier frequency */
+  Ptr<LteUeComponentCarrierManager> m_lteComponentCarrierManager; ///< LTE component carrier manager
+  std::map < uint8_t, Ptr<ComponentCarrierUe> > m_lteCcMap; ///< LTE CC map
+  uint16_t m_lteDlEarfcn; /**< LTE downlink carrier frequency */
 
 	// MmWave
 	Ptr<MmWaveEnbNetDevice> m_mmWaveTargetEnb;
-	Ptr<MmWaveUePhy> m_mmWavePhy;
-	Ptr<MmWaveUeMac> m_mmWaveMac;
 	Ptr<LteUeRrc> m_mmWaveRrc; // TODO consider a lightweight RRC for the mmwave part
-	uint16_t m_mmWaveEarfcn; /**< MmWave carrier frequency */
+  Ptr<LteUeComponentCarrierManager> m_mmWaveComponentCarrierManager; ///< mmWave component carrier manager
+  std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > m_mmWaveCcMap; ///< mmWave CC map
+  uint16_t m_mmWaveEarfcn; /**< MmWave carrier frequency */
 	uint8_t m_mmWaveAntennaNum;
 
 	// Common
 	Ptr<EpcUeNas> m_nas;
-	uint64_t m_imsi; 
-	uint32_t m_csgId; 
-	
+	uint64_t m_imsi;
+	uint32_t m_csgId;
+
 	// TODO this will be useless
 	Ptr<UniformRandomVariable> m_random;
 
 };
 
+} //namespace mmwave
+
 } // namespace ns3
 
-#endif 
+#endif
 //MC_UE_NET_DEVICE_H
