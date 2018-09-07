@@ -1,30 +1,45 @@
-## Warning: work in progress branch
-We are actively developing this branch and pushing new features, please use the new-handover branch until further notice.
-
 # mmWave ns-3 module #
 
 This is an [ns-3](https://www.nsnam.org "ns-3 Website") mmWave module for the simulation
-of 5G mmWave cellular networks. A description of this module can be found on [arXiv](https://arxiv.org/abs/1705.02882 "mmwave paper").
+of 5G mmWave cellular networks. A description of this module can be found on [IEEExplore (open access)](https://ieeexplore.ieee.org/document/8344116/ "mmwave paper").
 
-The new-handover branch offers integration between LTE and mmWave and dual connectivity features.
+The mmWave module for ns-3 can be used to simulate 5G cellular networks at mmWave frequencies. 
+This module builds on top of the LTE one, and currently includes features such as:
+- Support of a wide range of channel models, including the latest 3GPP model for frequency spectrum above 6 GHz. Ray tracing and measured traces can also be modeled.
+- Custom PHY and MAC classes, inspired to the PHY and MAC of 3GPP NR. They support dynamic TDD, and are parameterized and highly customizable in order to be flexible enough for testing different designs.
+- Custom schedulers for the dynamic TDD format
+- Carrier Aggregation at the MAC layer
+- Enhancements to the RLC layer with re-segmentation of packets for retransmissions
+- Dual Connectivity with LTE base stations, with fast secondary cell handover and channel tracking
+- Simulation of core network elements (with also the MME as a real node)
 
-## Documentation and examples ##
+The following papers describe in detail the features implemented in the mmWave module:
+- [End-to-End Simulation of 5G mmWave Networks](https://ieeexplore.ieee.org/document/8344116/ "comst paper") is a comprehensive tutorial with a detailed description of the whole module. We advise the researchers interested in this module to start reading from this paper;
+- [Integration of Carrier Aggregation and Dual Connectivity for the ns-3 mmWave Module](https://arxiv.org/abs/1802.06706 "wns3 2018") describes the Carrier Aggregation implementation;
+- [ns-3 Implementation of the 3GPP MIMO Channel Model for Frequency Spectrum above 6 GHz](https://dl.acm.org/citation.cfm?id=3067678 "wns3 2017") describes the implementation of the 3GPP channel model;
+- [Multi-Sector and Multi-Panel Performance in 5G mmWave Cellular Networks](https://arxiv.org/abs/1808.04905 "globecom2018") describes the multi-sector addition to the 3GPP channel model;
+- [Performance Comparison of Dual Connectivity and Hard Handover for LTE-5G Tight Integration](https://arxiv.org/abs/1607.05425 "simutools paper") describes the Dual Connectivity feature.
 
-For a complete description and examples, refer to:
+If you use this module in your research, please cite
+M. Mezzavilla, M. Zhang, M. Polese, R. Ford, S. Dutta, S. Rangan, M. Zorzi, _"End-to-End Simulation of 5G mmWave Networks,"_ in IEEE Communications Surveys & Tutorials, vol. 20, no. 3, pp. 2237-2263, thirdquarter 2018. [bibtex available here](https://ieeexplore.ieee.org/document/8344116/)
 
-- [End-to-End Simulation of 5G mmWave Networks](https://arxiv.org/abs/1705.02882 "comst paper")
-- [A Framework for End-to-End Evaluation of 5G mmWave Cellular Networks in ns-3](https://arxiv.org/abs/1602.06932 "wns3 paper")
-- [ Performance Comparison of Dual Connectivity and Hard Handover for LTE-5G Tight Integration](https://arxiv.org/abs/1607.05425 "simutools paper")
-- [ns-3 manual](https://www.nsnam.org/docs/manual/html "ns-3 Manual")
+## Future work
+We are actively developing new features for the mmWave module, including:
+- 3GPP NR beam tracking
+- 3GPP NR Integrated Access and Backhaul feature (see [this repo](https://github.com/signetlabdei/ns3-mmwave-iab) for more details)
+
+## About
+This module is being developed by [NYU Wireless](http://wireless.engineering.nyu.edu/) and the [University of Padova](http://mmwave.dei.unipd.it/).
+This  work  was  supported  in  part by  the  U.S.  Department  of  Commerce  National  Institute  of  Standards  and Technology through the Project “An End-to-End Research Platform for Public Safety  Communications  above  6  GHz”  under  Award  70NANB17H16.
+
+
+
+<!-- The new-handover branch offers integration between LTE and mmWave and dual connectivity features.
+ -->
 
 ## Authors ##
 
- - Marco Mezzavilla <mezzavilla@nyu.edu>
- - Menglei Zhang <menglei@nyu.edu>
- - Michele Polese <michele.polese@gmail.com>
- - Sourjya Dutta <sdutta@nyu.edu>
- - Russell Ford <russell.ford@nyu.edu>
- - Marco Giordani <m.giordani91@gmail.com>
+The authors of the mmWave module are listed in [this file](https://github.com/nyuwireless-unipd/ns3-mmwave/blob/new-handover/src/mmwave/AUTHORS).
 
 ## License ##
 
