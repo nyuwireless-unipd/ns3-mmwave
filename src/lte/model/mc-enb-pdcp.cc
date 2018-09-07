@@ -28,7 +28,7 @@
 #include "ns3/lte-pdcp-sap.h"
 #include "ns3/lte-pdcp-tag.h"
 #include "ns3/epc-x2-sap.h"
-
+#include "ns3/epc-x2-tag.h"
 
 namespace ns3 {
 
@@ -80,6 +80,7 @@ McEnbPdcp::McEnbPdcp ()
   m_pdcpSapProvider = new LtePdcpSpecificLtePdcpSapProvider<McEnbPdcp> (this);
   m_rlcSapUser = new McPdcpSpecificLteRlcSapUser (this);
   m_epcX2PdcpUser = new EpcX2PdcpSpecificUser<McEnbPdcp> (this);
+  m_isCopyBuffer = false;
 }
 
 McEnbPdcp::~McEnbPdcp ()
@@ -207,6 +208,39 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
+
+  if(m_epcX2PdcpProvider == 0 || (!m_useMmWaveConnection)) 
+  {
+  NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink local stack");
+
+  if(m_isCopyBuffer == true)
+  {
+    if(p->GetSize() == 0)
+    {
+      m_isCopyBuffer = false;
+      while (!m_txBuffer.empty())
+      {
+        DoTransmitPdcpSdu(m_txBuffer.at(0));
+        m_txBuffer.erase (m_txBuffer.begin());
+      }
+      return;
+    }
+    else
+    {
+        EpcX2Tag epcX2Tag;
+        if (p->PeekPacketTag(epcX2Tag))
+        {
+          p->RemovePacketTag(epcX2Tag);
+        }
+        else
+        {
+          m_txBuffer.push_back(p);
+          return;
+        }
+    }
+
+  }
+
   LtePdcpHeader pdcpHeader;
   pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
 
@@ -225,10 +259,6 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   params.rnti = m_rnti;
   params.lcid = m_lcid;
 
-  if(m_epcX2PdcpProvider == 0 || (!m_useMmWaveConnection)) 
-  {
-    NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink local stack");
-
     // Sender timestamp. We will use this to measure the delay on top of RLC
     PdcpTag pdcpTag (Simulator::Now ());
     p->AddByteTag (pdcpTag);
@@ -245,6 +275,30 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   {
     // Do not add sender time stamp: we are not interested in adding X2 delay for MC connections
     NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink MmWave stack on remote cell " << m_ueDataParams.targetCellId);
+
+  m_isCopyBuffer = true;
+      if(p->GetSize() == 0)
+      {
+        return;
+      }
+  LtePdcpHeader pdcpHeader;
+  pdcpHeader.SetSequenceNumber (m_txSequenceNumber);
+
+  m_txSequenceNumber++;
+  if (m_txSequenceNumber > m_maxPdcpSn)
+    {
+      m_txSequenceNumber = 0;
+    }
+
+  pdcpHeader.SetDcBit (LtePdcpHeader::DATA_PDU);
+
+  NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);
+  p->AddHeader (pdcpHeader);
+
+  LteRlcSapProvider::TransmitPdcpPduParameters params;
+  params.rnti = m_rnti;
+  params.lcid = m_lcid;
+
     m_ueDataParams.ueData = p;
     m_epcX2PdcpProvider->SendMcPdcpPdu (m_ueDataParams);
   } 

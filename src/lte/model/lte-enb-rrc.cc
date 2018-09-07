@@ -1068,6 +1068,26 @@ UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTei
     m_x2forwardingBuffer.erase (m_x2forwardingBuffer.begin());
     NS_LOG_LOGIC(this << " After forwarding: buffer size = " << m_x2forwardingBufferSize );
   }
+
+      if(!mcLteToMmWaveForwarding)
+        {
+          EpcX2Sap::UeDataParams params;
+          params.sourceCellId = m_rrc->m_cellId;
+          params.targetCellId = m_targetCellId;
+          params.gtpTeid = gtpTeid;
+          Ptr<Packet> dummy = Create<Packet>();
+          params.ueData = dummy;
+          if(!mcMmToMmWaveForwarding)
+          {
+            m_rrc->m_x2SapProvider->SendUeData (params);
+
+          }
+          else
+          {
+            m_rrc->m_x2SapProvider->ForwardRlcPdu (params);
+          }
+        }
+
 }
 
 

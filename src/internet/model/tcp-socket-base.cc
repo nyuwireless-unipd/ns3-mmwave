@@ -1213,7 +1213,11 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       // Acknowledgement should be sent for all unacceptable packets (RFC793, p.69)
       if (m_state == ESTABLISHED && !(tcpHeader.GetFlags () & TcpHeader::RST))
         {
+          if(m_rxBuffer->MaxRxSequence () <= seq)
+          {
+          std::cout <<"dup\n";
           SendEmptyPacket (TcpHeader::ACK);
+          } 
         }
       return;
     }

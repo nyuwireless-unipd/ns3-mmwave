@@ -594,7 +594,7 @@ EpcX2::RecvFromX2uSocket (Ptr<Socket> socket)
   if (packet->PeekPacketTag(epcX2Tag))
     {
       delay = Simulator::Now() - epcX2Tag.GetSenderTimestamp ();
-      packet->RemovePacketTag(epcX2Tag);
+      //packet->RemovePacketTag(epcX2Tag);
     }
   m_rxPdu(cellsInfo->m_localCellId, cellsInfo->m_remoteCellId, packet->GetSize (), delay.GetNanoSeconds (), 1);
 
