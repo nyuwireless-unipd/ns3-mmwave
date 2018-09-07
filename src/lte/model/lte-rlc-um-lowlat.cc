@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  * Copyright (c) 2017, NYU WIRELESS, Tandon School of Engineering, New York University
- * Copyright (c) 2017, University of Padova, Dep. of Information Engineering, SIGNET lab
+ * Copyright (c) 2017, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -20,9 +20,12 @@
  * Author: Manuel Requena <manuel.requena@cttc.es>
  *
  * Modified by:  Russell Ford
- *                  Low lat 
+ *                  Low lat
  *               Michele Polese <michele.polese@gmail.com>
  *                  Dual Connectivity functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *								 Integration of Carrier Aggregation for the mmWave module
  */
 
 #include "lte-rlc-um-lowlat.h"
@@ -93,6 +96,11 @@ LteRlcUmLowLat::GetTypeId (void)
 									TimeValue (MilliSeconds (100.0)),
 									MakeTimeAccessor (&LteRlcUmLowLat::m_reorderingTimeExpires),
 									MakeTimeChecker ())
+    .AddAttribute ("SendBsrWhenPacketTx",
+ 									"Call DoReportBufferStatus at the end of DoNotifyTxOpportunity",
+                  BooleanValue (false),
+        					MakeBooleanAccessor (&LteRlcUmLowLat::m_sendBsrWhenPacketTx),
+        					MakeBooleanChecker ())
     ;
   return tid;
 }
@@ -163,7 +171,7 @@ LteRlcUmLowLat::DoTransmitPdcpPdu (Ptr<Packet> p)
   m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
 }
 
-void 
+void
 LteRlcUmLowLat::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
 {
   NS_LOG_FUNCTION(this);
@@ -175,9 +183,9 @@ LteRlcUmLowLat::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
  */
 
 void
-LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId)
+LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid)
 {
-  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
+  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes << (uint32_t)componentCarrierId);
 
   if (bytes <= 2)
     {
@@ -438,6 +446,7 @@ LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t ha
   params.lcid = m_lcid;
   params.layer = layer;
   params.harqProcessId = harqId;
+  params.componentCarrierId = componentCarrierId;
 
   m_macSapProvider->TransmitPdu (params);
 
@@ -447,9 +456,11 @@ LteRlcUmLowLat::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t ha
       m_rbsTimer = Simulator::Schedule (m_rbsTimerValue, &LteRlcUmLowLat::ExpireRbsTimer, this);
     }
 
-  m_bsrReported = false;
-
-  DoReportBufferStatus ();
+  m_bsrReported = false; // buffer size has changed
+  if (m_sendBsrWhenPacketTx)
+  {
+    DoReportBufferStatus ();
+  }
 }
 
 void
@@ -458,14 +469,14 @@ LteRlcUmLowLat::DoNotifyHarqDeliveryFailure ()
   NS_LOG_FUNCTION (this);
 }
 
-std::vector < Ptr<Packet> > 
+std::vector < Ptr<Packet> >
 LteRlcUmLowLat::GetTxBuffer()
 {
   return m_txBuffer;
 }
 
 void
-LteRlcUmLowLat::DoReceivePdu (Ptr<Packet> p)
+LteRlcUmLowLat::DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid)
 {
   NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
 
@@ -1168,7 +1179,7 @@ LteRlcUmLowLat::ReassembleSnInterval (SequenceNumber10 lowSeqNumber, SequenceNum
 
           m_rxBuffer.erase (it);
         }
-        
+
       reassembleSn++;
     }
 }
@@ -1276,7 +1287,7 @@ LteRlcUmLowLat::ExpireRbsTimer (void)
 void
 LteRlcUmLowLat::TriggerReceivePdcpPdu(Ptr<Packet> p)
 {
-  if(!isMc) 
+  if(!isMc)
   {
     NS_LOG_INFO(this << " RlcUmLowLat forwards packet to PDCP (either from MmWave or LTE stack)");
     m_rlcSapUser->ReceivePdcpPdu(p);

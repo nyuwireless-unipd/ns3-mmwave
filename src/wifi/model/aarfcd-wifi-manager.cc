@@ -18,11 +18,10 @@
  * Author: Federico Maguolo <maguolof@dei.unipd.it>
  */
 
-#include "aarfcd-wifi-manager.h"
 #include "ns3/log.h"
-#include "ns3/boolean.h"
-#include "ns3/double.h"
-#include "ns3/uinteger.h"
+#include "ns3/packet.h"
+#include "aarfcd-wifi-manager.h"
+#include "wifi-tx-vector.h"
 
 #define Min(a,b) ((a < b) ? a : b)
 #define Max(a,b) ((a > b) ? a : b)
@@ -47,7 +46,7 @@ struct AarfcdWifiRemoteStation : public WifiRemoteStation
   uint32_t m_retry; ///< retry
   uint32_t m_successThreshold; ///< success threshold
   uint32_t m_timerTimeout; ///< timer timeout
-  uint32_t m_rate; ///< rate
+  uint8_t m_rate; ///< rate
   bool m_rtsOn; ///< RTS on
   uint32_t m_rtsWnd; ///< RTS window
   uint32_t m_rtsCounter; ///< RTS counter
@@ -118,7 +117,6 @@ AarfcdWifiManager::GetTypeId (void)
 AarfcdWifiManager::AarfcdWifiManager ()
   : WifiRemoteStationManager (),
     m_currentRate (0)
-
 {
   NS_LOG_FUNCTION (this);
 }
@@ -307,7 +305,7 @@ AarfcdWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
   AarfcdWifiRemoteStation *station = (AarfcdWifiRemoteStation *) st;
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -319,7 +317,7 @@ AarfcdWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
       m_currentRate = mode.GetDataRate (channelWidth);
     }
-  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetLongRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
@@ -329,7 +327,7 @@ AarfcdWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
   /// \todo we could/should implement the Aarf algorithm for
   /// RTS only by picking a single rate within the BasicRateSet.
   AarfcdWifiRemoteStation *station = (AarfcdWifiRemoteStation *) st;
-  uint32_t channelWidth = GetChannelWidth (station);
+  uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
       //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
@@ -345,7 +343,7 @@ AarfcdWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetShortRetryCount (station), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
 }
 
@@ -363,7 +361,6 @@ AarfcdWifiManager::DoNeedRts (WifiRemoteStation *st,
 bool
 AarfcdWifiManager::IsLowLatency (void) const
 {
-  NS_LOG_FUNCTION (this);
   return true;
 }
 

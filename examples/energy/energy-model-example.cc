@@ -18,18 +18,18 @@
  * Author: Sidharth Nabar <snabar@uw.edu>, He Wu <mdzz@u.washington.edu>
  */
 
-#include "ns3/core-module.h"
-#include "ns3/network-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/config-store-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/energy-module.h"
-#include "ns3/internet-module.h"
-
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string>
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/config-store-module.h"
+#include "ns3/energy-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/wifi-radio-energy-model-helper.h"
 
 using namespace ns3;
 
@@ -118,6 +118,8 @@ main (int argc, char *argv[])
   LogComponentEnable ("DeviceEnergyModel", LOG_LEVEL_DEBUG);
   LogComponentEnable ("WifiRadioEnergyModel", LOG_LEVEL_DEBUG);
    */
+
+  LogComponentEnable ("EnergyExample", LogLevel (LOG_PREFIX_TIME | LOG_PREFIX_NODE | LOG_LEVEL_INFO));
 
   std::string phyMode ("DsssRate1Mbps");
   double Prss = -80;            // dBm
@@ -266,6 +268,15 @@ main (int argc, char *argv[])
 
   Simulator::Stop (Seconds (10.0));
   Simulator::Run ();
+
+  for (DeviceEnergyModelContainer::Iterator iter = deviceModels.Begin (); iter != deviceModels.End (); iter ++)
+    {
+      double energyConsumed = (*iter)->GetTotalEnergyConsumption ();
+      NS_LOG_UNCOND ("End of simulation (" << Simulator::Now ().GetSeconds ()
+                     << "s) Total energy consumed by radio = " << energyConsumed << "J");
+      NS_ASSERT (energyConsumed <= 0.1);
+    }
+
   Simulator::Destroy ();
 
   return 0;

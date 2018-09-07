@@ -39,8 +39,9 @@
 #include "ns3/log.h"
 
 using namespace ns3;
+using namespace mmwave;
 
-int 
+int
 main (int argc, char *argv[])
 {
 
@@ -80,7 +81,7 @@ main (int argc, char *argv[])
   ptr_mmWave->Initialize();
 
   /* A configuration example.
-   * ptr_mmWave->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
+   * ptr_mmWave->GetCcPhyParams ().at (0).GetConfigurationParameters ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -124,5 +125,3 @@ main (int argc, char *argv[])
   Simulator::Destroy ();
   return 0;
 }
-
-

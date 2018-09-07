@@ -94,7 +94,7 @@ the user via the Frequency attribute.
 The Friis model is valid only for propagation in free space within
 the so-called far field region, which can be considered
 approximately as the region for :math:`d > 3 \lambda`.
-The model will still return a value for :math:`d > 3 \lambda`, as
+The model will still return a value for :math:`d < 3 \lambda`, as
 doing so (rather than triggering a fatal error) is practical for
 many simulation scenarios. However, we stress that the values
 obtained in such conditions shall not be considered realistic. 
@@ -310,7 +310,7 @@ MatrixPropagationLossModel
 ==========================
 
 The propagation loss is fixed for each pair of nodes and doesn't depend on their actual positions.
-This model shoud be useful for synthetic tests. Note that by default the propagation loss is 
+This model should be useful for synthetic tests. Note that by default the propagation loss is 
 assumed to be symmetric.
 
 RangePropagationLossModel
@@ -592,7 +592,7 @@ ConstantSpeedPropagationDelayModel
 ==================================
 
 In this model, the signal travels with constant speed.
-The delay is calculated according with the trasmitter and receiver positions.
+The delay is calculated according with the transmitter and receiver positions.
 The Euclidean distance between the Tx and Rx antennas is used.
 Beware that, according to this model, the Earth is flat.
 

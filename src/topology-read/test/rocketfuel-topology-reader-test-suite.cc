@@ -24,10 +24,10 @@
 
 #include "ns3/test.h"
 #include "ns3/rocketfuel-topology-reader.h"
+#include "ns3/node-container.h"
 #include "ns3/log.h"
 #include "ns3/abort.h"
 #include "ns3/attribute.h"
-#include "ns3/object-factory.h"
 #include "ns3/object-factory.h"
 #include "ns3/simulator.h"
 

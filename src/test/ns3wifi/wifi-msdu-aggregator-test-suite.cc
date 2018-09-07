@@ -18,18 +18,13 @@
  * Author: Dean Armstrong <deanarm@gmail.com>
  */
 
+#include "ns3/string.h"
 #include "ns3/test.h"
-#include "ns3/simulator.h"
-#include "ns3/log.h"
 #include "ns3/uinteger.h"
 #include "ns3/boolean.h"
-#include "ns3/string.h"
 #include "ns3/double.h"
 #include "ns3/ssid.h"
-#include "ns3/data-rate.h"
-#include "ns3/inet-socket-address.h"
 #include "ns3/packet-sink.h"
-#include "ns3/wifi-helper.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/mobility-helper.h"
 #include "ns3/internet-stack-helper.h"
@@ -38,8 +33,6 @@
 #include "ns3/on-off-helper.h"
 
 using namespace ns3;
-
-NS_LOG_COMPONENT_DEFINE ("WifiMsduAggregatorThroughputTest");
 
 class WifiMsduAggregatorThroughputTest : public TestCase
 {
@@ -141,7 +134,7 @@ WifiMsduAggregatorThroughputTest::DoRun (void)
 
   // The packet source is an on-off application on the AP
   // device. Given that we have fixed the transmit rate at 1 Mbps
-  // above, a 1 Mbps stream at the transport layer should be sufficent
+  // above, a 1 Mbps stream at the transport layer should be sufficient
   // to determine whether aggregation is working or not.
   //
   // We configure this traffic stream to operate between 1 and 9 seconds.

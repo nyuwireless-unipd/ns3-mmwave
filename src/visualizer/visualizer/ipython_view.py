@@ -17,7 +17,7 @@ import gtk, gobject
 import re
 import sys
 import os
-import pango
+from gi.repository import Pango
 from StringIO import StringIO
 import IPython
 
@@ -252,7 +252,7 @@ class IterableIPShell:
 
   def _getHistory(self):
     """!
-    Get's the command string of the current history level.
+    Gets the command string of the current history level.
     
     @param self this object
     @return: Historic command string.
@@ -274,7 +274,7 @@ class IterableIPShell:
 
   def complete(self, line):
     """!
-    Returns an auto completed line and/or posibilities for completion.
+    Returns an auto completed line and/or possibilities for completion.
     
     @param line: Given line so far.
     @return: Line completed as for as possible, and possible further completions.
@@ -328,7 +328,7 @@ class IterableIPShell:
       input.close()
 
 ## ConsoleView class
-class ConsoleView(gtk.TextView):
+class ConsoleView(Gtk.TextView):
   ## @var ANSI_COLORS
   #  color list
   ## @var text_buffer
@@ -346,13 +346,13 @@ class ConsoleView(gtk.TextView):
   @type ANSI_COLORS: dictionary
 
   @ivar text_buffer: Widget's text buffer.
-  @type text_buffer: gtk.TextBuffer
+  @type text_buffer: Gtk.TextBuffer
   @ivar color_pat: Regex of terminal color pattern
   @type color_pat: _sre.SRE_Pattern
   @ivar mark: Scroll mark for automatic scrolling on input.
-  @type mark: gtk.TextMark
+  @type mark: Gtk.TextMark
   @ivar line_start: Start of command line mark.
-  @type line_start: gtk.TextMark
+  @type line_start: Gtk.TextMark
   """
   ANSI_COLORS =  {'0;30': 'Black',     '0;31': 'Red',
                   '0;32': 'Green',     '0;33': 'Brown',
@@ -367,8 +367,8 @@ class ConsoleView(gtk.TextView):
     """
     Initialize console view.
     """
-    gtk.TextView.__init__(self)
-    self.modify_font(pango.FontDescription('Mono'))
+    GObject.GObject.__init__(self)
+    self.modify_font(Pango.FontDescription('Mono'))
     self.set_cursor_visible(True)
     self.text_buffer = self.get_buffer()
     self.mark = self.text_buffer.create_mark('scroll_mark',
@@ -394,7 +394,7 @@ class ConsoleView(gtk.TextView):
     @param editable: If true, added text is editable.
     @return none
     """
-    gobject.idle_add(self._write, text, editable)
+    GObject.idle_add(self._write, text, editable)
 
   def _write(self, text, editable=False):
     """!
@@ -432,7 +432,7 @@ class ConsoleView(gtk.TextView):
     @param prompt: Prompt to print.
     @return none
     """
-    gobject.idle_add(self._showPrompt, prompt)
+    GObject.idle_add(self._showPrompt, prompt)
 
   def _showPrompt(self, prompt):
     """!
@@ -452,7 +452,7 @@ class ConsoleView(gtk.TextView):
     @param text: Text to use as replacement.
     @return none
     """
-    gobject.idle_add(self._changeLine, text)
+    GObject.idle_add(self._changeLine, text)
 
   def _changeLine(self, text):
     """!
@@ -484,7 +484,7 @@ class ConsoleView(gtk.TextView):
     @param text: Text to show.
     @return none
     """
-    gobject.idle_add(self._showReturned, text)
+    GObject.idle_add(self._showReturned, text)
 
   def _showReturned(self, text):
     """!
@@ -513,7 +513,7 @@ class ConsoleView(gtk.TextView):
   def onKeyPress(self, widget, event):
     """!
     Key press callback used for correcting behavior for console-like 
-    interfaces. For example 'home' should go to prompt, not to begining of
+    interfaces. For example 'home' should go to prompt, not to beginning of
     line.
     
     @param widget: Widget that key press accored in.
@@ -525,16 +525,16 @@ class ConsoleView(gtk.TextView):
     selection_mark = self.text_buffer.get_selection_bound()
     selection_iter = self.text_buffer.get_iter_at_mark(selection_mark)
     start_iter = self.text_buffer.get_iter_at_mark(self.line_start)
-    if event.keyval == gtk.keysyms.Home:
-      if event.state & gtk.gdk.CONTROL_MASK or event.state & gtk.gdk.MOD1_MASK:
+    if event.keyval == Gdk.KEY_Home:
+      if event.get_state() & Gdk.ModifierType.CONTROL_MASK or event.get_state() & Gdk.ModifierType.MOD1_MASK:
         pass
-      elif event.state & gtk.gdk.SHIFT_MASK:
+      elif event.get_state() & Gdk.ModifierType.SHIFT_MASK:
         self.text_buffer.move_mark(insert_mark, start_iter)
         return True
       else:
         self.text_buffer.place_cursor(start_iter)
         return True
-    elif event.keyval == gtk.keysyms.Left:
+    elif event.keyval == Gdk.KEY_Left:
       insert_iter.backward_cursor_position()
       if not insert_iter.editable(True):
         return True
@@ -597,9 +597,9 @@ class IPythonView(ConsoleView, IterableIPShell):
 
   def raw_input(self, prompt=''):
     """!
-    Custom raw_input() replacement. Get's current line from console buffer.
+    Custom raw_input() replacement. Gets current line from console buffer.
     
-    @param prompt: Prompt to print. Here for compatability as replacement.
+    @param prompt: Prompt to print. Here for compatibility as replacement.
     @return The current command line text.
     """
     if self.interrupt:
@@ -616,20 +616,20 @@ class IPythonView(ConsoleView, IterableIPShell):
     @return True if event should not trickle.
     """
 
-    if event.state & gtk.gdk.CONTROL_MASK and event.keyval == 99:
+    if event.get_state() & Gdk.ModifierType.CONTROL_MASK and event.keyval == 99:
       self.interrupt = True
       self._processLine()
       return True
-    elif event.keyval == gtk.keysyms.Return:
+    elif event.keyval == Gdk.KEY_Return:
       self._processLine()
       return True
-    elif event.keyval == gtk.keysyms.Up:
+    elif event.keyval == Gdk.KEY_Up:
       self.changeLine(self.historyBack())
       return True
-    elif event.keyval == gtk.keysyms.Down:
+    elif event.keyval == Gdk.KEY_Down:
       self.changeLine(self.historyForward())
       return True
-    elif event.keyval == gtk.keysyms.Tab:
+    elif event.keyval == Gdk.KEY_Tab:
       if not self.getCurrentLine().strip():
         return False
       completed, possibilities = self.complete(self.getCurrentLine())
@@ -656,10 +656,10 @@ class IPythonView(ConsoleView, IterableIPShell):
     self.cout.seek(0)
  
 if __name__ == "__main__":
-  window = gtk.Window()
+  window = Gtk.Window()
   window.set_default_size(640, 320)
-  window.connect('delete-event', lambda x, y: gtk.main_quit())
+  window.connect('delete-event', lambda x, y: Gtk.main_quit())
   window.add(IPythonView())
   window.show_all()
-  gtk.main()
+  Gtk.main()
     

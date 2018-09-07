@@ -80,7 +80,7 @@ LenaTestPssFfMacSchedulerSuite::LenaTestPssFfMacSchedulerSuite ()
   // DOWNLINK -> DISTANCE 0 -> MCS 28 -> Itbs 26 (from table 7.1.7.2.1-1 of 36.2    13)
   // Traffic info
   //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate
   // Totol bandwidth: 24 PRB at Itbs 26 -> 2196 -> 2196000 byte/sec
   // 1 user -> 232000 * 1 = 232000 < 2196000 -> throughput = 232000 byte/sec
   // 3 user -> 232000 * 3 = 696000 < 2196000 -> througphut = 232000 byte/sec
@@ -88,7 +88,7 @@ LenaTestPssFfMacSchedulerSuite::LenaTestPssFfMacSchedulerSuite ()
   // 12 user -> 232000 * 12 = 2784000 > 2196000 -> throughput = 2196000 / 12 = 183000 byte/sec
   // UPLINK -> DISTANCE 0 -> MCS 28 -> Itbs 26 (from table 7.1.7.2.1-1 of 36.2    13)
   // 1 user -> 25 PRB at Itbs 26 -> 2292 -> 2292000 > 232000 -> throughput = 232000 bytes/sec
-  // 3 users -> 8 PRB at Itbs 26 -> 749 -> 749000 > 232000 -> throughput = 232000 bytes/sec 
+  // 3 users -> 8 PRB at Itbs 26 -> 749 -> 749000 > 232000 -> throughput = 232000 bytes/sec
   // 6 users -> 4 PRB at Itbs 26 -> 373 -> 373000 > 232000 -> throughput = 232000 bytes/sec
   // 12 users -> 2 PRB at Itbs 26 -> 185 -> 185000 < 232000 -> throughput = 185000 bytes/sec
   AddTestCase (new LenaPssFfMacSchedulerTestCase1 (1,0,232000,232000,200,1,errorModel), TestCase::EXTENSIVE);
@@ -100,7 +100,7 @@ LenaTestPssFfMacSchedulerSuite::LenaTestPssFfMacSchedulerSuite ()
   // // DOWNLINK - DISTANCE 4800 -> MCS 22 -> Itbs 20 (from table 7.1.7.2.1-1 of 36.213)
   // // Traffic info
   // //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate
   // // Totol bandwidth: 24 PRB at Itbs 20 -> 1383 -> 1383000 byte/sec
   // // 1 user -> 903000 * 1 = 232000 < 1383000 -> throughput = 232000 byte/sec
   // // 3 user -> 232000 * 3 = 696000 < 1383000 -> througphut = 232000 byte/sec
@@ -120,7 +120,7 @@ LenaTestPssFfMacSchedulerSuite::LenaTestPssFfMacSchedulerSuite ()
   // // DOWNLINK - DISTANCE 6000 -> MCS 20 -> Itbs 18 (from table 7.1.7.2.1-1 of 36.213)
   // // Traffic info
   // //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate
   // // Totol bandwidth: 24 PRB at Itbs 18 -> 1191 -> 1191000 byte/sec
   // // 1 user -> 903000 * 1 = 232000 < 1191000 -> throughput = 232000 byte/sec
   // // 3 user -> 232000 * 3 = 696000 < 1191000 -> througphut = 232000 byte/sec
@@ -141,7 +141,7 @@ LenaTestPssFfMacSchedulerSuite::LenaTestPssFfMacSchedulerSuite ()
   // // DOWNLINK - DISTANCE 10000 -> MCS 14 -> Itbs 13 (from table 7.1.7.2.1-1 of 36.213)
   // // Traffic info
   // //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate
   // // Totol bandwidth: 24 PRB at Itbs 13 -> 775 -> 775000 byte/sec
   // // 1 user -> 903000 * 1 = 232000 < 775000 -> throughput = 232000 byte/sec
   // // 3 user -> 232000 * 3 = 696000 > 775000 -> througphut = 232000 byte/sec
@@ -165,7 +165,7 @@ LenaTestPssFfMacSchedulerSuite::LenaTestPssFfMacSchedulerSuite ()
   // // Test Case 2: homogeneous flow test in PSS (different distance)
   // // Traffic1 info
   // //   UDP traffic: payload size = 100 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 132000 byte/rate 
+  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 132000 byte/rate
   // // Maximum throughput = 4 / ( 1/2196000 + 1/1191000 + 1/1383000 + 1/775000 ) = 1209046 byte/s
   // // 132000 * 4 = 528000 < 1209046 -> estimated throughput in downlink = 132000 byte/sec
   std::vector<double> dist1;
@@ -187,7 +187,7 @@ LenaTestPssFfMacSchedulerSuite::LenaTestPssFfMacSchedulerSuite ()
 
   // // Traffic2 info
   // //   UDP traffic: payload size = 200 bytes, interval = 1 ms
-  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate 
+  // //   UDP rate in scheduler: (payload + RLC header + PDCP header + IP header + UDP header) * 1000 byte/sec -> 232000 byte/rate
   // // Maximum throughput = 4 / ( 1/2196000 + 1/1191000 + 1/1383000 + 1/775000 ) = 1209046 byte/s
   // // 232000 * 4 = 928000 < 1209046 -> estimated throughput in downlink = 928000 / 4 = 230000 byte/sec
   // std::vector<double> dist2;
@@ -233,7 +233,7 @@ static LenaTestPssFfMacSchedulerSuite lenaTestPssFfMacSchedulerSuite;
 // --------------- T E S T - C A S E   # 1 ------------------------------
 
 
-std::string 
+std::string
 LenaPssFfMacSchedulerTestCase1::BuildNameString (uint16_t nUser, double dist)
 {
   std::ostringstream oss;
@@ -311,7 +311,7 @@ LenaPssFfMacSchedulerTestCase1::DoRun (void)
 
 //   LogComponentDisableAll (LOG_LEVEL_ALL);
   //LogComponentEnable ("LenaTestPssFfMacScheduler", LOG_LEVEL_ALL);
-   
+
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
   // set DL and UL bandwidth
   lteHelper->SetEnbDeviceAttribute ("DlBandwidth", UintegerValue (25));
@@ -379,31 +379,32 @@ LenaPssFfMacSchedulerTestCase1::DoRun (void)
       qos.gbrUl = (m_packetSize + 32) * (1000 / m_interval) * 8;
       qos.mbrDl = 0;
       qos.mbrUl = 0;
-      
+
       enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
       EpsBearer bearer (q, qos);
-      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());  
+      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());
     }
 
   // Install downlink and uplink applications
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
-  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-  PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
+  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
+      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
 
-      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator
+      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // downlink packets generator
       dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       dlClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       dlClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize));
 
-      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // downlink packets generator
+      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // uplink packets generator
       ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       ulClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize));
@@ -479,7 +480,7 @@ LenaPssFfMacSchedulerTestCase1::DoRun (void)
 // --------------- T E S T - C A S E   # 2 ------------------------------
 
 
-std::string 
+std::string
 LenaPssFfMacSchedulerTestCase2::BuildNameString (uint16_t nUser, std::vector<double> dist)
 {
   std::ostringstream oss;
@@ -553,8 +554,7 @@ LenaPssFfMacSchedulerTestCase2::DoRun (void)
 
 
 //   LogComponentDisableAll (LOG_LEVEL_ALL);
-  LogComponentEnable ("RadioBearerStatsConnector", LOG_LEVEL_LOGIC);
-  LogComponentEnable ("LteEnbRrc", LOG_LEVEL_INFO);
+  //LogComponentEnable ("LenaTestPssFfMacScheduler", LOG_LEVEL_ALL);
 
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
     // set DL and UL bandwidth
@@ -624,32 +624,33 @@ LenaPssFfMacSchedulerTestCase2::DoRun (void)
       qos.gbrUl = (m_packetSize.at (u) + 32) * (1000 / m_interval) * 8;
       qos.mbrDl = qos.gbrDl;
       qos.mbrUl = qos.gbrUl;
-  
+
       enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
       EpsBearer bearer (q, qos);
-      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());  
+      lteHelper->ActivateDedicatedEpsBearer (ueDevice, bearer, EpcTft::Default ());
     }
 
 
   // Install downlink and uplink applications
   uint16_t dlPort = 1234;
   uint16_t ulPort = 2000;
-  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
-  PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
+  PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), dlPort));
+
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       ++ulPort;
+      PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+      serverApps.Add (ulPacketSinkHelper.Install (remoteHost));  // receive packets from UEs
       serverApps.Add (dlPacketSinkHelper.Install (ueNodes.Get (u))); // receive packets from remotehost
 
-      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // uplink packets generator
+      UdpClientHelper dlClient (ueIpIface.GetAddress (u), dlPort); // downlink packets generator
       dlClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       dlClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       dlClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize.at (u)));
 
-      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // downlink packets generator
+      UdpClientHelper ulClient (remoteHostAddr, ulPort);           // uplink packets generator
       ulClient.SetAttribute ("Interval", TimeValue (MilliSeconds (m_interval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
       ulClient.SetAttribute ("PacketSize", UintegerValue (m_packetSize.at (u)));
@@ -679,7 +680,7 @@ LenaPssFfMacSchedulerTestCase2::DoRun (void)
    * Check that the downlink assignation is done in a "token bank fair queue" manner
    */
 
-  NS_LOG_UNCOND ("DL - Test with " << m_nUser << " user(s)");
+  NS_LOG_INFO ("DL - Test with " << m_nUser << " user(s)");
   std::vector <uint64_t> dlDataRxed;
   for (int i = 0; i < m_nUser; i++)
     {
@@ -688,7 +689,7 @@ LenaPssFfMacSchedulerTestCase2::DoRun (void)
       // get the lcId
       uint8_t lcId = 4;
       dlDataRxed.push_back (rlcStats->GetDlRxData (imsi, lcId));
-      NS_LOG_UNCOND ("\tUser " << i << " dist " << m_dist.at (i) << " imsi " << imsi << " bytes rxed " << (double)dlDataRxed.at (i) << "  thr " << (double)dlDataRxed.at (i) / statsDuration << " ref " << m_estThrPssDl.at (i));
+      NS_LOG_INFO ("\tUser " << i << " dist " << m_dist.at (i) << " imsi " << imsi << " bytes rxed " << (double)dlDataRxed.at (i) << "  thr " << (double)dlDataRxed.at (i) / statsDuration << " ref " << m_estThrPssDl.at (i));
     }
 
   for (int i = 0; i < m_nUser; i++)

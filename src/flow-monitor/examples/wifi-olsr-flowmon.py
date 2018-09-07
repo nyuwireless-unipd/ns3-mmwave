@@ -16,6 +16,7 @@
 # 
 #  Authors: Gustavo Carneiro <gjc@inescporto.pt>
 
+from __future__ import print_function
 import sys
 
 import ns.applications
@@ -49,7 +50,7 @@ def main(argv):
 
     cmd.Parse(argv)
 
-    wifi = ns.wifi.WifiHelper.Default()
+    wifi = ns.wifi.WifiHelper()
     wifiMac = ns.wifi.WifiMacHelper()
     wifiPhy = ns.wifi.YansWifiPhyHelper.Default()
     wifiChannel = ns.wifi.YansWifiChannelHelper.Default()
@@ -103,7 +104,7 @@ def main(argv):
 
     for i, node in enumerate(nodes):
         destaddr = addresses[(len(addresses) - 1 - i) % len(addresses)]
-        #print i, destaddr
+        #print (i, destaddr)
         onOffHelper.SetAttribute("Remote", ns.network.AddressValue(ns.network.InetSocketAddress(destaddr, port)))
         app = onOffHelper.Install(ns.network.NodeContainer(node))
         urv = ns.core.UniformRandomVariable()
@@ -122,32 +123,32 @@ def main(argv):
     ns.core.Simulator.Run()
 
     def print_stats(os, st):
-        print >> os, "  Tx Bytes: ", st.txBytes
-        print >> os, "  Rx Bytes: ", st.rxBytes
-        print >> os, "  Tx Packets: ", st.txPackets
-        print >> os, "  Rx Packets: ", st.rxPackets
-        print >> os, "  Lost Packets: ", st.lostPackets
+        print ("  Tx Bytes: ", st.txBytes, file=os)
+        print ("  Rx Bytes: ", st.rxBytes, file=os)
+        print ("  Tx Packets: ", st.txPackets, file=os)
+        print ("  Rx Packets: ", st.rxPackets, file=os)
+        print ("  Lost Packets: ", st.lostPackets, file=os)
         if st.rxPackets > 0:
-            print >> os, "  Mean{Delay}: ", (st.delaySum.GetSeconds() / st.rxPackets)
-	    print >> os, "  Mean{Jitter}: ", (st.jitterSum.GetSeconds() / (st.rxPackets-1))
-            print >> os, "  Mean{Hop Count}: ", float(st.timesForwarded) / st.rxPackets + 1
+            print ("  Mean{Delay}: ", (st.delaySum.GetSeconds() / st.rxPackets), file=os)
+            print ("  Mean{Jitter}: ", (st.jitterSum.GetSeconds() / (st.rxPackets-1)), file=os)
+            print ("  Mean{Hop Count}: ", float(st.timesForwarded) / st.rxPackets + 1, file=os)
 
         if 0:
-            print >> os, "Delay Histogram"
+            print ("Delay Histogram", file=os)
             for i in range(st.delayHistogram.GetNBins () ):
-              print >> os, " ",i,"(", st.delayHistogram.GetBinStart (i), "-", \
-                  st.delayHistogram.GetBinEnd (i), "): ", st.delayHistogram.GetBinCount (i)
-            print >> os, "Jitter Histogram"
+              print (" ",i,"(", st.delayHistogram.GetBinStart (i), "-", \
+                  st.delayHistogram.GetBinEnd (i), "): ", st.delayHistogram.GetBinCount (i), file=os)
+            print ("Jitter Histogram", file=os)
             for i in range(st.jitterHistogram.GetNBins () ):
-              print >> os, " ",i,"(", st.jitterHistogram.GetBinStart (i), "-", \
-                  st.jitterHistogram.GetBinEnd (i), "): ", st.jitterHistogram.GetBinCount (i)
-            print >> os, "PacketSize Histogram"
+              print (" ",i,"(", st.jitterHistogram.GetBinStart (i), "-", \
+                  st.jitterHistogram.GetBinEnd (i), "): ", st.jitterHistogram.GetBinCount (i), file=os)
+            print ("PacketSize Histogram", file=os)
             for i in range(st.packetSizeHistogram.GetNBins () ):
-              print >> os, " ",i,"(", st.packetSizeHistogram.GetBinStart (i), "-", \
-                  st.packetSizeHistogram.GetBinEnd (i), "): ", st.packetSizeHistogram.GetBinCount (i)
+              print (" ",i,"(", st.packetSizeHistogram.GetBinStart (i), "-", \
+                  st.packetSizeHistogram.GetBinEnd (i), "): ", st.packetSizeHistogram.GetBinCount (i), file=os)
 
         for reason, drops in enumerate(st.packetsDropped):
-            print "  Packets dropped by reason %i: %i" % (reason, drops)
+            print ("  Packets dropped by reason %i: %i" % (reason, drops), file=os)
         #for reason, drops in enumerate(st.bytesDropped):
         #    print "Bytes dropped by reason %i: %i" % (reason, drops)
 
@@ -158,11 +159,11 @@ def main(argv):
         for flow_id, flow_stats in monitor.GetFlowStats():
             t = classifier.FindFlow(flow_id)
             proto = {6: 'TCP', 17: 'UDP'} [t.protocol]
-            print "FlowID: %i (%s %s/%s --> %s/%i)" % \
-                (flow_id, proto, t.sourceAddress, t.sourcePort, t.destinationAddress, t.destinationPort)
+            print ("FlowID: %i (%s %s/%s --> %s/%i)" % \
+                (flow_id, proto, t.sourceAddress, t.sourcePort, t.destinationAddress, t.destinationPort))
             print_stats(sys.stdout, flow_stats)
     else:
-        print monitor.SerializeToXmlFile(cmd.Results, True, True)
+        print (monitor.SerializeToXmlFile(cmd.Results, True, True))
 
 
     if cmd.Plot is not None:

@@ -64,6 +64,7 @@ SimulatorEventsTestCase::NowUs (void)
 void
 SimulatorEventsTestCase::EventA (int a)
 {
+  NS_UNUSED (a);
   m_a = false;
 }
 
@@ -85,6 +86,7 @@ SimulatorEventsTestCase::EventB (int b)
 void
 SimulatorEventsTestCase::EventC (int c)
 {
+  NS_UNUSED (c);
   m_c = false;
 }
 
@@ -248,7 +250,7 @@ static void cber5 (const int &, const int &, const int &, const int &, const int
 {}
 
 SimulatorTemplateTestCase::SimulatorTemplateTestCase ()
-  : TestCase ("Check that all templates are instanciated correctly. This is a compilation test, it cannot fail at runtime.")
+  : TestCase ("Check that all templates are instantiated correctly. This is a compilation test, it cannot fail at runtime.")
 {
 }
 void

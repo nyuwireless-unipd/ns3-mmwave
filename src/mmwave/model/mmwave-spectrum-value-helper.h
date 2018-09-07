@@ -2,6 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+ *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -23,6 +24,9 @@
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
+ *
+ *   Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *								 Integration of Carrier Aggregation
  */
 
 
@@ -35,6 +39,8 @@
 
 
 namespace ns3 {
+
+namespace mmwave {
 
 
 /**
@@ -64,9 +70,11 @@ public:
   static Ptr<SpectrumValue> CreateNoisePowerSpectralDensity (double noiseFigure, Ptr<SpectrumModel> spectrumModel);
 
 private:
-  static Ptr<SpectrumModel> m_model;
+  //static Ptr<SpectrumModel> m_model;
+  static std::map<uint8_t, Ptr<SpectrumModel>> m_model;
 };
 
+} // namespace mmwave 
 
 } // namespace ns3
 

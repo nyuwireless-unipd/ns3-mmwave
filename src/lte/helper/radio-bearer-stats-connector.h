@@ -1,6 +1,7 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2012 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+ * Copyright (c) 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -16,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Nicola Baldo <nbaldo@cttc.es>
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *							Integration of Carrier Aggregation for the mmWave module
  */
 
 
@@ -284,7 +288,7 @@ private:
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
   std::set<uint64_t> m_imsiSeenEnbSrb; //!< stores all eNBs for which RLC and PDCP traces and SRB1 were connected
-  std::set<uint64_t> m_imsiSeenUeDrb; //!< stores all eNBs for which RLC and PDCP traces for drbs were connected
+  std::map<uint64_t,uint16_t> m_imsiSeenUeDrb; //!< stores all UEs for which RLC and PDCP traces for DRBs were connected
   std::set<uint64_t> m_imsiSeenEnbDrb; //!< stores all eNBs for which RLC and PDCP traces for drbs were connected
 
   /**

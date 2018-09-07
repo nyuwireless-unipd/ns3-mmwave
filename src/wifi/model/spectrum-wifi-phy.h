@@ -27,12 +27,13 @@
 #define SPECTRUM_WIFI_PHY_H
 
 #include "ns3/antenna-model.h"
-#include "wifi-phy.h"
-#include "wifi-spectrum-phy-interface.h"
 #include "ns3/spectrum-channel.h"
-#include "ns3/spectrum-interference.h"
+#include "ns3/spectrum-model.h"
+#include "wifi-phy.h"
 
 namespace ns3 {
+
+class WifiSpectrumPhyInterface;
 
 /**
  * \brief 802.11 PHY layer model
@@ -100,6 +101,15 @@ public:
    * \param txDuration duration of the transmission.
    */
   void StartTx (Ptr<Packet> packet, WifiTxVector txVector, Time txDuration);
+  /**
+   * Get the center frequency of the channel corresponding the current TxVector rather than
+   * that of the supported channel width.
+   * Consider that this "primary channel" is on the lower part for the time being.
+   *
+   * \param txVector the TXVECTOR that has the channel width that is to be used
+   * \return the center frequency corresponding to the channel width to be used
+   */
+  uint16_t GetCenterFrequencyForChannelWidth (WifiTxVector txVector) const;
 
   /**
    * Method to encapsulate the creation of the WifiSpectrumPhyInterface
@@ -109,10 +119,6 @@ public:
    * \param device pointer to the NetDevice object including this new object
    */
   void CreateWifiSpectrumPhyInterface (Ptr<NetDevice> device);
-  /**
-   * \return pointer to WifiSpectrumPhyInterface associated with this Phy
-   */
-  Ptr<WifiSpectrumPhyInterface> GetSpectrumPhy (void) const;
   /**
    * \param antenna an AntennaModel to include in the transmitted
    * SpectrumSignalParameters (in case any objects downstream of the
@@ -144,9 +150,17 @@ public:
   double GetBandBandwidth (void) const;
 
   /**
+   * \param currentChannelWidth channel width of the current transmission (MHz)
    * \return the width of the guard band (MHz)
+   *
+   * Note: in order to properly model out of band transmissions for OFDM, the guard
+   * band has been configured so as to expand the modeled spectrum up to the
+   * outermost referenced point in "Transmit spectrum mask" sections' PSDs of
+   * each PHY specification of 802.11-2016 standard. It thus ultimately corresponds
+   * to the current channel bandwidth (which can be different from devices max
+   * channel width).
    */
-  uint32_t GetGuardBandwidth (void) const;
+  uint16_t GetGuardBandwidth (uint16_t currentChannelWidth) const;
 
   /**
    * Callback invoked when the Phy model starts to process a signal
@@ -167,7 +181,7 @@ public:
 
   virtual void SetFrequency (uint16_t freq);
 
-  virtual void SetChannelWidth (uint8_t channelwidth);
+  virtual void SetChannelWidth (uint16_t channelwidth);
 
   virtual void ConfigureStandard (WifiPhyStandard standard);
 
@@ -180,7 +194,7 @@ protected:
 private:
   /**
    * \param centerFrequency center frequency (MHz)
-   * \param channelWidth channel width (MHz) of the channel
+   * \param channelWidth channel width (MHz) of the channel for the current transmission
    * \param txPowerW power in W to spread across the bands
    * \param modulationClass the modulation class
    * \return Ptr to SpectrumValue
@@ -188,7 +202,7 @@ private:
    * This is a helper function to create the right Tx PSD corresponding
    * to the standard in use.
    */
-  Ptr<SpectrumValue> GetTxPowerSpectralDensity (uint16_t centerFrequency, uint8_t channelWidth, double txPowerW, WifiModulationClass modulationClass) const;
+  Ptr<SpectrumValue> GetTxPowerSpectralDensity (uint16_t centerFrequency, uint16_t channelWidth, double txPowerW, WifiModulationClass modulationClass) const;
 
   /**
    * Perform run-time spectrum model change

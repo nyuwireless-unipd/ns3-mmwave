@@ -187,7 +187,7 @@ UanPdp::GetEnd (void) const
 uint32_t
 UanPdp::GetNTaps (void) const
 {
-  return m_taps.size ();
+  return static_cast<uint32_t> (m_taps.size ());
 }
 
 Time
@@ -327,6 +327,25 @@ UanPdp::SumTapsC (Time begin, Time end) const
       sum += m_taps[i].GetAmp ();
     }
   return sum;
+}
+
+UanPdp
+UanPdp::NormalizeToSumNc (void) const
+{
+  double sumNc = 0.0;
+  std::vector<Tap> newTaps;
+
+  for (uint32_t i = 0; i < GetNTaps (); i++)
+    {
+      sumNc += std::abs (m_taps[i].GetAmp ());
+    }
+
+  for (uint32_t i = 0; i < GetNTaps (); i++)
+    {
+      newTaps.push_back ( Tap (m_taps[i].GetDelay (), (m_taps[i].GetAmp () / sumNc)));
+    }
+
+  return UanPdp (newTaps, m_resolution);
 }
 
 UanPdp

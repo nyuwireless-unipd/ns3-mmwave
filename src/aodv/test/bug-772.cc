@@ -19,7 +19,6 @@
  */
 
 #include "bug-772.h"
-
 #include "ns3/simulator.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/rng-seed-manager.h"
@@ -27,7 +26,6 @@
 #include "ns3/mobility-helper.h"
 #include "ns3/double.h"
 #include "ns3/uinteger.h"
-#include "ns3/string.h"
 #include "ns3/boolean.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/internet-stack-helper.h"
@@ -137,7 +135,7 @@ Bug772ChainTest::CreateDevices ()
   wifiPhy.Set ("TxGain", DoubleValue (1.0)); //this configuration should go away in future revision to the test
   wifiPhy.Set ("RxGain", DoubleValue (1.0)); //this configuration should go away in future revision to the test
   WifiHelper wifi;
-  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"), "RtsCtsThreshold", StringValue ("2200"));
+  wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("OfdmRate6Mbps"), "RtsCtsThreshold", StringValue ("2200"), "MaxSlrc", UintegerValue (7));
   NetDeviceContainer devices = wifi.Install (wifiPhy, wifiMac, *m_nodes);
 
   // Assign fixed stream numbers to wifi and channel random variables

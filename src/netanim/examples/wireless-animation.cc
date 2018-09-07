@@ -16,20 +16,19 @@
  * Author: Vikas Pushkar (Adapted from third.cc)
  */
 
-
 #include "ns3/core-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/network-module.h"
 #include "ns3/applications-module.h"
-#include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/netanim-module.h"
 #include "ns3/basic-energy-source.h"
 #include "ns3/simple-device-energy-model.h"
-
-
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/wifi-radio-energy-model.h"
 
 using namespace ns3;
 
@@ -41,7 +40,6 @@ main (int argc, char *argv[])
   uint32_t nWifi = 20;
   CommandLine cmd;
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
-  
 
   cmd.Parse (argc,argv);
   NodeContainer allNodes;
@@ -117,12 +115,11 @@ main (int argc, char *argv[])
   AnimationInterface::SetConstantPosition (csmaNodes.Get (1), 10, 33); 
 
   Ptr<BasicEnergySource> energySource = CreateObject<BasicEnergySource>();
-  Ptr<SimpleDeviceEnergyModel> energyModel = CreateObject<SimpleDeviceEnergyModel>();
+  Ptr<WifiRadioEnergyModel> energyModel = CreateObject<WifiRadioEnergyModel>();
 
   energySource->SetInitialEnergy (300);
   energyModel->SetEnergySource (energySource);
   energySource->AppendDeviceEnergyModel (energyModel);
-  energyModel->SetCurrentA (20);
 
   // aggregate energy source to node
   wifiApNode.Get (0)->AggregateObject (energySource);

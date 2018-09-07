@@ -105,7 +105,7 @@ public:
   void SetTxPowerW (double txPowerW);
 
   /**
-   * Get the recieving power.
+   * Get the receiving power.
    *
    * \return The receiving power in Watts
    */
@@ -175,16 +175,21 @@ public:
   virtual void ChangeState (int newState);
 
   /**
-   * Handles energy depletion.
+   * \brief Handles energy depletion.
    */
   virtual void HandleEnergyDepletion (void);
 
   /**
    * \brief Handles energy recharged.
+   */
+  virtual void HandleEnergyRecharged (void);
+  
+  /**
+   * \brief Handles energy changed.
    *
    * Not implemented
    */
-  virtual void HandleEnergyRecharged (void);
+  virtual void HandleEnergyChanged (void);
 
 
 private:

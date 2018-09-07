@@ -79,14 +79,14 @@ ErpInformation::GetNonErpPresent (void) const
 uint8_t
 ErpInformation::GetInformationFieldSize () const
 {
-  NS_ASSERT (m_erpSupported > 0);
+  NS_ASSERT (m_erpSupported);
   return 1;
 }
 
 Buffer::Iterator
 ErpInformation::Serialize (Buffer::Iterator i) const
 {
-  if (m_erpSupported < 1)
+  if (!m_erpSupported)
     {
       return i;
     }
@@ -96,7 +96,7 @@ ErpInformation::Serialize (Buffer::Iterator i) const
 uint16_t
 ErpInformation::GetSerializedSize () const
 {
-  if (m_erpSupported < 1)
+  if (!m_erpSupported)
     {
       return 0;
     }
@@ -106,7 +106,7 @@ ErpInformation::GetSerializedSize () const
 void
 ErpInformation::SerializeInformationField (Buffer::Iterator start) const
 {
-  if (m_erpSupported == 1)
+  if (m_erpSupported)
     {
       start.WriteU8 (m_erpInformation);
     }
@@ -120,8 +120,6 @@ ErpInformation::DeserializeInformationField (Buffer::Iterator start,
   m_erpInformation = i.ReadU8 ();
   return length;
 }
-
-ATTRIBUTE_HELPER_CPP (ErpInformation);
 
 /**
  * output stream output operator
@@ -139,25 +137,6 @@ operator << (std::ostream &os, const ErpInformation &erpinformation)
      << "|" << bool (erpinformation.GetNonErpPresent ());
 
   return os;
-}
-
-/**
- * input stream input operator
- *
- * \param is input stream
- * \param erpinformation
- *
- * \returns input stream
- */
-std::istream &operator >> (std::istream &is, ErpInformation &erpinformation)
-{
-  bool c1, c2, c3;
-  is >> c1 >> c2 >> c3;
-  erpinformation.SetBarkerPreambleMode (c1);
-  erpinformation.SetUseProtection (c2);
-  erpinformation.SetNonErpPresent (c3);
-
-  return is;
 }
 
 } //namespace ns3

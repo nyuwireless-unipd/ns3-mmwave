@@ -13,7 +13,7 @@ shellcmd.debug = debug
 
 arg_rx = re.compile(r"(?P<dollar>\$\$)|(?P<subst>\$\{(?P<var>\w+)(?P<code>.*?)\})", re.M)
 
-class command_task(Task.Task):
+class command(Task.Task):
 	color = "BLUE"
 	def __init__(self, env, generator):
 		Task.Task.__init__(self, env=env, normal=1, generator=generator)
@@ -31,7 +31,7 @@ class command_task(Task.Task):
 		pipeline = shellcmd.Pipeline()
 		pipeline.parse(self.generator.command)
 		cmd = pipeline.get_abbreviated_command()
-		return 'command (%s): %s%s%s\n' % (cmd, src_str, sep, tgt_str)
+		return 'command (%s): %s%s%s' % (cmd, src_str, sep, tgt_str)
 
 	def _subst_arg(self, arg, direction, namespace):
 		"""

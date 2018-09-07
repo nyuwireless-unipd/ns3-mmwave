@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2010 TELEMATICS LAB, DEE - Politecnico di Bari
  * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab
- *
+*
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -53,7 +53,8 @@ LtePhy::LtePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
     m_dlBandwidth (0),
     m_rbgSize (0),
     m_macChTtiDelay (0),
-    m_cellId (0)
+    m_cellId (0),
+    m_componentCarrierId(0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -104,13 +105,13 @@ LtePhy::GetDevice () const
   return m_netDevice;
 }
 
-Ptr<LteSpectrumPhy> 
+Ptr<LteSpectrumPhy>
 LtePhy::GetDownlinkSpectrumPhy ()
 {
   return m_downlinkSpectrumPhy;
 }
 
-Ptr<LteSpectrumPhy> 
+Ptr<LteSpectrumPhy>
 LtePhy::GetUplinkSpectrumPhy ()
 {
   return m_uplinkSpectrumPhy;
@@ -253,5 +254,18 @@ LtePhy::DoSetCellId (uint16_t cellId)
   m_uplinkSpectrumPhy->SetCellId (cellId);
 }
 
+void
+LtePhy::SetComponentCarrierId (uint8_t index)
+{
+  m_componentCarrierId = index;
+  m_downlinkSpectrumPhy->SetComponentCarrierId (index);
+  m_uplinkSpectrumPhy->SetComponentCarrierId (index);
+}
+
+uint8_t
+LtePhy::GetComponentCarrierId ()
+{
+  return m_componentCarrierId;
+}
 
 } // namespace ns3

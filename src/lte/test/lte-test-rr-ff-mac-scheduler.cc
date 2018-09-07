@@ -160,7 +160,7 @@ LenaRrFfMacSchedulerTestCase::BuildNameString (uint16_t nUser, uint16_t dist)
 }
 
 LenaRrFfMacSchedulerTestCase::LenaRrFfMacSchedulerTestCase (uint16_t nUser, uint16_t dist, double thrRefDl, double thrRefUl, bool errorModelEnabled)
-  : TestCase (BuildNameString (nUser, dist)),              
+  : TestCase (BuildNameString (nUser, dist)),
     m_nUser (nUser),
     m_dist (dist),
     m_thrRefDl (thrRefDl),
@@ -195,7 +195,7 @@ LenaRrFfMacSchedulerTestCase::DoRun (void)
    */
 
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
-  
+
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::FriisSpectrumPropagationLossModel"));
 
   // set DL and UL bandwidth
@@ -229,8 +229,8 @@ LenaRrFfMacSchedulerTestCase::DoRun (void)
   enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
   EpsBearer bearer (q);
   lteHelper->ActivateDataRadioBearer (ueDevs, bearer);
-  
- 
+
+
   Ptr<LteEnbNetDevice> lteEnbDev = enbDevs.Get (0)->GetObject<LteEnbNetDevice> ();
   Ptr<LteEnbPhy> enbPhy = lteEnbDev->GetPhy ();
   enbPhy->SetAttribute ("TxPower", DoubleValue (30.0));

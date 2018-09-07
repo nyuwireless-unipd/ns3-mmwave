@@ -20,8 +20,8 @@
  */
 
 #include "tcp-ledbat.h"
-#include "ns3/tcp-socket-base.h"
 #include "ns3/log.h"
+#include "ns3/simulator.h"
 
 namespace ns3 {
 
@@ -61,6 +61,11 @@ TcpLedbat::GetTypeId (void)
                    MakeEnumAccessor (&TcpLedbat::SetDoSs),
                    MakeEnumChecker (DO_SLOWSTART, "yes",
                                     DO_NOT_SLOWSTART, "no"))
+    .AddAttribute ("MinCwnd",
+                   "Minimum cWnd for Ledbat",
+                   UintegerValue (2),
+                   MakeUintegerAccessor (&TcpLedbat::m_minCwnd),
+                   MakeUintegerChecker<uint32_t> ())
   ;
   return tid;
 }
@@ -93,7 +98,8 @@ TcpLedbat::TcpLedbat (void)
   m_lastRollover = 0;
   m_sndCwndCnt = 0;
   m_flag = LEDBAT_CAN_SS;
-}
+  m_minCwnd = 2;
+};
 
 void TcpLedbat::InitCircBuf (struct OwdCircBuf &buffer)
 {
@@ -116,6 +122,7 @@ TcpLedbat::TcpLedbat (const TcpLedbat& sock)
   m_lastRollover = sock.m_lastRollover;
   m_sndCwndCnt = sock.m_sndCwndCnt;
   m_flag = sock.m_flag;
+  m_minCwnd = sock.m_minCwnd;
 }
 
 TcpLedbat::~TcpLedbat (void)
@@ -140,7 +147,7 @@ uint32_t TcpLedbat::MinCircBuf (struct OwdCircBuf &b)
   NS_LOG_FUNCTION_NOARGS ();
   if (b.buffer.size () == 0)
     {
-      return ~0;
+      return ~0U;
     }
   else
     {
@@ -158,15 +165,6 @@ uint32_t TcpLedbat::BaseDelay ()
 {
   NS_LOG_FUNCTION (this);
   return MinCircBuf (m_baseHistory);
-}
-
-uint32_t TcpLedbat::GetSsThresh (Ptr<const TcpSocketState> tcb,
-                                 uint32_t bytesInFlight)
-{
-  NS_LOG_FUNCTION (this << tcb << bytesInFlight);
-  uint32_t res;
-  res = TcpNewReno::GetSsThresh (tcb, bytesInFlight);
-  return res;
 }
 
 void TcpLedbat::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
@@ -204,22 +202,22 @@ void TcpLedbat::CongestionAvoidance (Ptr<TcpSocketState> tcb, uint32_t segmentsA
 
   if (current_delay > base_delay)
     {
-      queue_delay = current_delay - base_delay;
+      queue_delay = static_cast<int64_t> (current_delay - base_delay);
       offset = m_target.GetMilliSeconds () - queue_delay;
     }
   else
     {
-      queue_delay = base_delay - current_delay;
+      queue_delay = static_cast<int64_t> (base_delay - current_delay);
       offset = m_target.GetMilliSeconds () + queue_delay;
     }
   offset *= m_gain;
-  m_sndCwndCnt = offset * segmentsAcked * tcb->m_segmentSize;
+  m_sndCwndCnt = static_cast<int32_t> (offset * segmentsAcked * tcb->m_segmentSize);
   double inc =  (m_sndCwndCnt * 1.0) / (m_target.GetMilliSeconds () * tcb->m_cWnd.Get ());
   cwnd += (inc * tcb->m_segmentSize);
 
-  max_cwnd = (tcb->m_highTxMark.Get () - tcb->m_lastAckedSeq) + segmentsAcked * tcb->m_segmentSize;
+  max_cwnd = static_cast<uint32_t>(tcb->m_highTxMark.Get () - tcb->m_lastAckedSeq) + segmentsAcked * tcb->m_segmentSize;
   cwnd = std::min (cwnd, max_cwnd);
-  cwnd = std::max (cwnd, tcb->m_segmentSize);
+  cwnd = std::max (cwnd, m_minCwnd * tcb->m_segmentSize);
   tcb->m_cWnd = cwnd;
 
   if (tcb->m_cWnd <= tcb->m_ssThresh)
@@ -241,7 +239,7 @@ void TcpLedbat::AddDelay (struct OwdCircBuf &cb, uint32_t owd, uint32_t maxlen)
   cb.buffer.push_back (owd);
   if (cb.buffer[cb.min] > owd)
     {
-      cb.min = cb.buffer.size () - 1;
+      cb.min = static_cast<uint32_t> (cb.buffer.size () - 1);
     }
   if (cb.buffer.size () >= maxlen)
     {
@@ -267,7 +265,7 @@ void TcpLedbat::UpdateBaseDelay (uint32_t owd)
       AddDelay (m_baseHistory, owd, m_baseHistoLen);
       return;
     }
-  uint64_t timestamp = (uint64_t) Simulator::Now ().GetSeconds ();
+  uint64_t timestamp = static_cast<uint64_t> (Simulator::Now ().GetSeconds ());
 
   if (timestamp - m_lastRollover > 60)
     {
@@ -276,7 +274,7 @@ void TcpLedbat::UpdateBaseDelay (uint32_t owd)
     }
   else
     {
-      uint32_t last = m_baseHistory.buffer.size () - 1;
+      uint32_t last = static_cast<uint32_t> (m_baseHistory.buffer.size () - 1);
       if (owd < m_baseHistory.buffer[last])
         {
           m_baseHistory.buffer[last] = owd;
@@ -306,4 +304,5 @@ void TcpLedbat::PktsAcked (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked,
       UpdateBaseDelay (tcb->m_rcvTimestampValue - tcb->m_rcvTimestampEchoReply);
     }
 }
-}
+
+} // namespace ns3

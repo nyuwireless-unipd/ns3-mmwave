@@ -2,23 +2,23 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
@@ -39,6 +39,8 @@ NS_LOG_COMPONENT_DEFINE ("mmWaveInterference");
 
 namespace ns3 {
 
+namespace mmwave {
+
 
 mmWaveInterference::mmWaveInterference ()
  	 : m_receiving (false),
@@ -53,7 +55,7 @@ mmWaveInterference::~mmWaveInterference ()
 	NS_LOG_FUNCTION (this);
 }
 
-void 
+void
 mmWaveInterference::DoDispose ()
 {
 	NS_LOG_FUNCTION (this);
@@ -63,7 +65,7 @@ mmWaveInterference::DoDispose ()
 	m_allSignals = 0;
 	m_noise = 0;
 	Object::DoDispose ();
-} 
+}
 
 
 TypeId
@@ -78,7 +80,7 @@ mmWaveInterference::GetTypeId (void)
 
 void
 mmWaveInterference::StartRx (Ptr<const SpectrumValue> rxPsd)
-{ 
+{
 	NS_LOG_FUNCTION (this << *rxPsd);
 	if (m_receiving == false)
 	{
@@ -152,7 +154,7 @@ mmWaveInterference::AddSignal (Ptr<const SpectrumValue> spd, const Time duration
 
 void
 mmWaveInterference::DoAddSignal  (Ptr<const SpectrumValue> spd)
-{ 
+{
 	NS_LOG_FUNCTION (this << *spd);
 	ConditionallyEvaluateChunk ();
 	(*m_allSignals) += (*spd);
@@ -160,12 +162,12 @@ mmWaveInterference::DoAddSignal  (Ptr<const SpectrumValue> spd)
 
 void
 mmWaveInterference::DoSubtractSignal  (Ptr<const SpectrumValue> spd, uint32_t signalId)
-{ 
+{
 	NS_LOG_FUNCTION (this << *spd);
 	ConditionallyEvaluateChunk ();
 	int32_t deltaSignalId = signalId - m_lastSignalIdBeforeReset;
 	if (deltaSignalId > 0)
-    {   
+    {
 		(*m_allSignals) -= (*spd);
     }
 	else
@@ -231,7 +233,6 @@ mmWaveInterference::AddSinrChunkProcessor (Ptr<mmWaveChunkProcessor> p)
   m_sinrChunkProcessorList.push_back (p);
 }
 
+} // namespace mmwave 
 
 } // namespace ns3
-
-

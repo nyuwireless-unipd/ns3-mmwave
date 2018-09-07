@@ -1550,7 +1550,7 @@ LteDistributedFfrAreaTestCase::DoRun (void)
   ueLteDevs.Add (ueDevs1);
   ueLteDevs.Add (ueDevs2);
 
-  // Add X2 inteface
+  // Add X2 interface
   lteHelper->AddX2Interface (enbNodes);
 
   // Install the IP stack on the UEs

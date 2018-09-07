@@ -23,7 +23,6 @@
 #include "ns3/simulator.h"
 #include "ns3/nstime.h"
 #include "ns3/log.h"
-#include "ns3/mgt-headers.h"
 #include "dot11s-mac-header.h"
 #include "hwmp-protocol-mac.h"
 #include "hwmp-tag.h"
@@ -108,7 +107,9 @@ HwmpProtocolMac::ReceiveAction (Ptr<Packet> packet, const WifiMacHeader & header
       return true;
     }
   MeshInformationElementVector elements;
-  packet->RemoveHeader (elements);
+  // To determine header size here, we can rely on the knowledge that
+  // this is the last header to remove.
+  packet->RemoveHeader (elements, packet->GetSize ());
   std::vector<HwmpProtocol::FailedDestination> failedDestinations;
   for (MeshInformationElementVector::Iterator i = elements.Begin (); i != elements.End (); i++)
     {
@@ -243,7 +244,7 @@ HwmpProtocolMac::SendPreq (std::vector<IePreq> preq)
   packet->AddHeader (GetWifiActionHeader ());
   //create 802.11 header:
   WifiMacHeader hdr;
-  hdr.SetAction ();
+  hdr.SetType (WIFI_MAC_MGT_ACTION);
   hdr.SetDsNotFrom ();
   hdr.SetDsNotTo ();
   hdr.SetAddr2 (m_parent->GetAddress ());
@@ -313,7 +314,7 @@ HwmpProtocolMac::SendPrep (IePrep prep, Mac48Address receiver)
   packet->AddHeader (GetWifiActionHeader ());
   //create 802.11 header:
   WifiMacHeader hdr;
-  hdr.SetAction ();
+  hdr.SetType (WIFI_MAC_MGT_ACTION);
   hdr.SetDsNotFrom ();
   hdr.SetDsNotTo ();
   hdr.SetAddr1 (receiver);
@@ -354,7 +355,7 @@ HwmpProtocolMac::ForwardPerr (std::vector<HwmpProtocol::FailedDestination> faile
   packet->AddHeader (GetWifiActionHeader ());
   //create 802.11 header:
   WifiMacHeader hdr;
-  hdr.SetAction ();
+  hdr.SetType (WIFI_MAC_MGT_ACTION);
   hdr.SetDsNotFrom ();
   hdr.SetDsNotTo ();
   hdr.SetAddr2 (m_parent->GetAddress ());

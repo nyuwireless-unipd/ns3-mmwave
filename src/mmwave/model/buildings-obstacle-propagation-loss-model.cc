@@ -1,22 +1,22 @@
  /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
  /*
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
- *  
+ *
+ *
  *   Author: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 Sourjya Dutta <sdutta@nyu.edu>
  *        	 Russell Ford <russell.ford@nyu.edu>
@@ -49,11 +49,13 @@ NS_LOG_COMPONENT_DEFINE ("BuildingsObstaclePropagationLossModel");
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_OBJECT_ENSURE_REGISTERED (BuildingsObstaclePropagationLossModel);
 
 static const int g_nlosSamplesTrace = 340;
 
-static const double g_blockage_down[9766] = { // Aditya's trace for SINR drop due to blockage 
+static const double g_blockage_down[9766] = { // Aditya's trace for SINR drop due to blockage
 -0.143156,
 -0.305271,
 -0.445706,
@@ -764,7 +766,7 @@ BuildingsObstaclePropagationLossModel::GetTypeId (void)
 
 double
 BuildingsObstaclePropagationLossModel::DoCalcRxPower (double txPowerDbm, Ptr<MobilityModel> a, Ptr<MobilityModel> b) const
-{	
+{
 	  return txPowerDbm - GetLoss (a, b);
 
 }
@@ -844,7 +846,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 				loss = mmWaveLosLoss (a,b);
 			}
 			else
-			{		
+			{
 				loss = mmWaveNlosLoss (a,b);
 			}
 		}
@@ -863,7 +865,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 				double sample_trace = g_blockage_down[nlosSamples-1]; // take the last sample, as a baseline
 				loss = loss_inner - sample_trace;
 				NS_LOG_DEBUG("PL NLOS is " << loss);
-				
+
 			}
 			else if (los && losSamples < g_nlosSamplesTrace && nlosSamples > 0) // I am in NLOS but in the 'raise phase'
 			{
@@ -878,19 +880,19 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
 				{
 					 sample_trace = g_blockage_up[losSamples-1]; // in this case, nlosSamples = g_nlosSamplesTrace, so I could use also the if condition
 				}
-				
+
 				loss = loss_inner - sample_trace; // 'minus' because I need to "decrement" the pathloss
-				NS_LOG_DEBUG("PL LOS raise phase is " << loss << " and Aditya's sample is " << sample_trace);	
+				NS_LOG_DEBUG("PL LOS raise phase is " << loss << " and Aditya's sample is " << sample_trace);
 			}
 			else if (los && losSamples == g_nlosSamplesTrace) // I am in LOS, and the 'raise phase' is finally over
 			{
 				loss = mmWaveLosLoss(a,b);
-				NS_LOG_DEBUG("PL LOS  is " << loss);	
+				NS_LOG_DEBUG("PL LOS  is " << loss);
 			}
 			else if (los && losSamples == 0 && nlosSamples == 0) // I am in the normal LOS phase
 			{
 				loss = mmWaveLosLoss(a,b);
-				NS_LOG_DEBUG("PL LOS  is " << loss);	
+				NS_LOG_DEBUG("PL LOS  is " << loss);
 			}
 
 		}
@@ -1010,5 +1012,7 @@ BuildingsObstaclePropagationLossModel::SetConfigurationParameters (Ptr<MmWavePhy
 
 	NS_LOG_UNCOND("Frequency " << m_frequency);
 }
+
+} // namespace mmwave
 
 } // namespace ns3

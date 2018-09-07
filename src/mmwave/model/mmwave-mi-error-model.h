@@ -2,7 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -25,7 +25,7 @@
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
  */
 
@@ -45,6 +45,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
   const uint16_t MMWAVE_PDCCH_PCFICH_CURVE_SIZE = 46;
   const uint16_t MMWAVE_MI_MAP_QPSK_SIZE = 797;
   const uint16_t MMWAVE_MI_MAP_16QAM_SIZE = 994;
@@ -62,7 +64,7 @@ struct MmWaveTbStats_t
   double mi;
   double miTotal;
 };
-  
+
 // global table of the effective code rates (ECR)s that have BLER performance curves
 static const double BlerCurvesEcrMap[38] = {
   // QPSK (M=2)
@@ -324,7 +326,7 @@ class MmWaveMiErrorModel
 {
 
 public:
-  /** 
+  /**
    * \brief find the mmib (mean mutual information per bit) for different modulations of the specified TB
    * \param sinr the perceived sinrs in the whole bandwidth
    * \param map the actives RBs for the TB
@@ -332,7 +334,7 @@ public:
    * \return the mmib
    */
   static double Mib (const SpectrumValue& sinr, const std::vector<int>& map, uint8_t mcs);
-  /** 
+  /**
    * \brief map the mmib (mean mutual information per bit) for different MCS
    * \param mib mean mutual information per bit of a code-block
    * \param ecrId Effective Code Rate ID
@@ -358,6 +360,7 @@ public:
 
 };
 
+} // namespace mmwave 
 
 } // namespace ns3
 

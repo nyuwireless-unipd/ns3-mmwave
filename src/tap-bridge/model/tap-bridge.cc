@@ -339,7 +339,7 @@ TapBridge::CreateTap (void)
   NS_LOG_INFO ("Encoded Unix socket as \"" << path << "\"");
 
   //
-  // Tom Goff reports the possiblility of a deadlock when trying to acquire the
+  // Tom Goff reports the possibility of a deadlock when trying to acquire the
   // python GIL here.  He says that this might be due to trying to access Python
   // objects after fork() without calling PyOS_AfterFork() to properly reset 
   // Python state (including the GIL).  Originally these next three lines were
@@ -632,14 +632,15 @@ TapBridge::CreateTap (void)
           NS_FATAL_ERROR ("Did not get the raw socket from the socket creator");
         }
 
-      if (m_mode == USE_LOCAL || m_mode == USE_BRIDGE)
+      if (m_mode == USE_BRIDGE)
         {
           //
           // Set the ns-3 device's mac address to the overlying container's
           // mac address
           //
           struct ifreq s;
-          strncpy (s.ifr_name, m_tapDeviceName.c_str (), sizeof (s.ifr_name));
+          memset (&s, 0, sizeof(struct ifreq));
+          strncpy (s.ifr_name, m_tapDeviceName.c_str (), IFNAMSIZ - 1);
 
           NS_LOG_INFO ("Trying to get MacAddr of " << m_tapDeviceName);
           int ioctlResult = ioctl (sock, SIOCGIFHWADDR, &s);

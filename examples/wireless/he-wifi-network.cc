@@ -18,11 +18,24 @@
  * Author: Sebastien Deronne <sebastien.deronne@gmail.com>
  */
 
-#include "ns3/core-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/internet-module.h"
+#include "ns3/command-line.h"
+#include "ns3/config.h"
+#include "ns3/uinteger.h"
+#include "ns3/boolean.h"
+#include "ns3/double.h"
+#include "ns3/string.h"
+#include "ns3/log.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/udp-client-server-helper.h"
+#include "ns3/packet-sink-helper.h"
+#include "ns3/on-off-helper.h"
+#include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/packet-sink.h"
+#include "ns3/yans-wifi-channel.h"
 
 // This is a simple example in order to show how to configure an IEEE 802.11ax Wi-Fi network.
 //
@@ -48,20 +61,29 @@ NS_LOG_COMPONENT_DEFINE ("he-wifi-network");
 int main (int argc, char *argv[])
 {
   bool udp = true;
+  bool useRts = false;
   double simulationTime = 10; //seconds
   double distance = 1.0; //meters
+  double frequency = 5.0; //whether 2.4 or 5.0 GHz
   int mcs = -1; // -1 indicates an unset value
   double minExpectedThroughput = 0;
   double maxExpectedThroughput = 0;
 
   CommandLine cmd;
+  cmd.AddValue ("frequency", "Whether working in the 2.4 or 5.0 GHz band (other values gets rejected)", frequency);
   cmd.AddValue ("distance", "Distance in meters between the station and the access point", distance);
   cmd.AddValue ("simulationTime", "Simulation time in seconds", simulationTime);
   cmd.AddValue ("udp", "UDP if set to 1, TCP otherwise", udp);
+  cmd.AddValue ("useRts", "Enable/disable RTS/CTS", useRts);
   cmd.AddValue ("mcs", "if set, limit testing to a specific MCS (0-7)", mcs);
   cmd.AddValue ("minExpectedThroughput", "if set, simulation fails if the lowest throughput is below this value", minExpectedThroughput);
   cmd.AddValue ("maxExpectedThroughput", "if set, simulation fails if the highest throughput is above this value", maxExpectedThroughput);
   cmd.Parse (argc,argv);
+
+  if (useRts)
+    {
+      Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("0"));
+    }
 
   double prevThroughput [12];
   for (uint32_t l = 0; l < 12; l++)
@@ -80,7 +102,8 @@ int main (int argc, char *argv[])
     {
       uint8_t index = 0;
       double previous = 0;
-      for (int channelWidth = 20; channelWidth <= 160; ) //MHz
+      uint8_t maxChannelWidth = frequency == 2.4 ? 40 : 160;
+      for (int channelWidth = 20; channelWidth <= maxChannelWidth; ) //MHz
         {
           for (int gi = 3200; gi >= 800; ) //Nanoseconds
             {
@@ -107,9 +130,22 @@ int main (int argc, char *argv[])
               // Set guard interval
               phy.Set ("GuardInterval", TimeValue (NanoSeconds (gi)));
 
-              WifiHelper wifi;
-              wifi.SetStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
               WifiMacHelper mac;
+              WifiHelper wifi;
+              if (frequency == 5.0)
+                {
+                  wifi.SetStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+                }
+              else if (frequency == 2.4)
+                {
+                  wifi.SetStandard (WIFI_PHY_STANDARD_80211ax_2_4GHZ);
+                  Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40.046));
+                }
+              else
+                {
+                  std::cout << "Wrong frequency value!" << std::endl;
+                  return 0;
+                }
 
               std::ostringstream oss;
               oss << "HeMcs" << mcs;
@@ -205,7 +241,6 @@ int main (int argc, char *argv[])
 
               Simulator::Stop (Seconds (simulationTime + 1));
               Simulator::Run ();
-              Simulator::Destroy ();
 
               uint64_t rxBytes = 0;
               if (udp)
@@ -217,7 +252,11 @@ int main (int argc, char *argv[])
                   rxBytes = DynamicCast<PacketSink> (serverApp.Get (0))->GetTotalRx ();
                 }
               double throughput = (rxBytes * 8) / (simulationTime * 1000000.0); //Mbit/s
+
+              Simulator::Destroy ();
+
               std::cout << mcs << "\t\t\t" << channelWidth << " MHz\t\t\t" << gi << " ns\t\t\t" << throughput << " Mbit/s" << std::endl;
+
               //test first element
               if (mcs == 0 && channelWidth == 20 && gi == 3200)
                 {

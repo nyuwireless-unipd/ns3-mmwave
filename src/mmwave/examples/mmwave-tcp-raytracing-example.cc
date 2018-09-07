@@ -40,9 +40,10 @@
 #include "ns3/config-store.h"
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
-
+#include <ns3/queue-size.h>
 
 using namespace ns3;
+using namespace mmwave;
 
 /**
  * A script to simulate the DOWNLINK TCP data over mmWave links
@@ -364,7 +365,7 @@ main (int argc, char *argv[])
 	}
 
 
-	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxPackets", UintegerValue (1000*1000));
+	Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxSize", QueueSizeValue (QueueSize("1000000p")));
 
 
 	Simulator::Stop (Seconds (simStopTime));

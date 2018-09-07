@@ -40,6 +40,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_LOG_COMPONENT_DEFINE ("MmWaveFlexTtiMacScheduler");
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveFlexTtiMacScheduler);
@@ -1870,6 +1872,6 @@ MmWaveFlexTtiMacScheduler::DoCschedUeReleaseReq (const struct MmWaveMacCschedSap
 }
 
 
-}
+} // namespace mmwave
 
-
+} // namespace ns3

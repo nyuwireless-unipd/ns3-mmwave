@@ -45,12 +45,22 @@
 // two for the remaining energy on each node and two for the state transitions
 // of each node.
 
-#include "ns3/core-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/internet-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/energy-module.h"
+#include "ns3/command-line.h"
+#include "ns3/config.h"
+#include "ns3/string.h"
+#include "ns3/log.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/yans-wifi-channel.h"
+#include "ns3/mobility-model.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/on-off-helper.h"
+#include "ns3/packet-sink-helper.h"
+#include "ns3/basic-energy-source-helper.h"
+#include "ns3/wifi-radio-energy-model-helper.h"
+#include "ns3/wifi-utils.h"
+#include "ns3/wifi-net-device.h"
 
 using namespace ns3;
 
@@ -68,7 +78,7 @@ void RemainingEnergyTrace (double oldValue, double newValue)
 }
 
 template <int node>
-void PhyStateTrace (std::string context, Time start, Time duration, enum WifiPhy::State state)
+void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState state)
 {
   std::stringstream ss;
   ss << "state_" << node << ".log";
@@ -119,9 +129,9 @@ int main (int argc, char *argv[])
     }
   wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
 
-  YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
   // ns-3 supports RadioTap and Prism tracing extensions for 802.11b
-  wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
+  wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
 
   wifiPhy.Set ("TxPowerStart", DoubleValue (txPowerStart));
   wifiPhy.Set ("TxPowerEnd", DoubleValue (txPowerEnd));
@@ -218,8 +228,6 @@ int main (int argc, char *argv[])
 
   Config::Connect ("/NodeList/0/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace<0>));
   Config::Connect ("/NodeList/1/DeviceList/*/Phy/State/State", MakeCallback (&PhyStateTrace<1>));
-
-// wifiPhy.EnablePcap ("wifi-sleep", devices);
 
   Simulator::Stop (Seconds (duration + 1));
 

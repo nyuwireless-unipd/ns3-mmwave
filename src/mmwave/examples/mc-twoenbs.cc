@@ -40,6 +40,7 @@
 
 
 using namespace ns3;
+using namespace mmwave;
 
 /**
  * Sample simulation script for MC device. It instantiates a LTE and two MmWave eNodeB,
@@ -131,6 +132,7 @@ PrintGnuplottableEnbListToFile (std::string filename)
       int nDevs = node->GetNDevices ();
       for (int j = 0; j < nDevs; j++)
         {
+          Ptr<MmWaveEnbNetDevice> mm2 = CreateObject<MmWaveEnbNetDevice> ();
           Ptr<LteEnbNetDevice> enbdev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
           Ptr<MmWaveEnbNetDevice> mmdev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
           if (enbdev)
@@ -275,8 +277,6 @@ static ns3::GlobalValue g_mmeLatency("mmeLatency", "Latency on MME interface (us
     ns3::DoubleValue(10000), ns3::MakeDoubleChecker<double>());
 static ns3::GlobalValue g_mobileUeSpeed("mobileSpeed", "The speed of the UE (m/s)",
     ns3::DoubleValue(2), ns3::MakeDoubleChecker<double>());
-static ns3::GlobalValue g_fastSwitching("fastSwitching", "If true, use mc setup, else use hard handover",
-    ns3::BooleanValue(false), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_rlcAmEnabled("rlcAmEnabled", "If true, use RLC AM, else use RLC UM",
     ns3::BooleanValue(true), ns3::MakeBooleanChecker());
 static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
@@ -351,9 +351,6 @@ main (int argc, char *argv[])
   }
 
   int vectorTransient = windowForTransient*ReportTablePeriodicity;
-  GlobalValue::GetValueByName("fastSwitching", booleanValue);
-  bool fastSwitching = booleanValue.Get();
-  bool hardHandover = !fastSwitching;
 
   // params for RT, filter, HO mode
   GlobalValue::GetValueByName("noiseAndFilter", booleanValue);
@@ -379,7 +376,7 @@ main (int argc, char *argv[])
   double transientDuration = double(vectorTransient)/1000000; 
   double simTime = transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition)/ueSpeed + 1;
 
-  NS_LOG_UNCOND("fastSwitching " << fastSwitching << " rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " << 
+  NS_LOG_UNCOND("rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " << 
       interPacketInterval << " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed);
 
   // rng things
@@ -413,15 +410,9 @@ main (int argc, char *argv[])
   std::string udpReceivedFilename = "UdpReceived";
   std::string extension = ".txt";
   std::string version;
-  if(fastSwitching)
-  {
-    version = "mc";
-    Config::SetDefault ("ns3::MmWaveUeMac::UpdateUeSinrEstimatePeriod", DoubleValue (0));
-  }
-  else if(hardHandover)
-  {
-    version = "hh";
-  }
+  version = "mc";
+  Config::SetDefault ("ns3::MmWaveUeMac::UpdateUeSinrEstimatePeriod", DoubleValue (0));
+  
   //get current time
   time_t rawtime;
   struct tm * timeinfo;
@@ -516,7 +507,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::AntennaArrayModel::AntennaVerticalSpacing", DoubleValue(0.5));
   Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue(MilliSeconds(100))); // interval after which the channel for a moving user is updated, 
                                                                                        // with spatial consistency procedure. If 0, spatial consistency is not used
-  Config::SetDefault ("ns3::MmWave3gppChannel::CellScan", BooleanValue(false)); // Set true to use cell scanning method, false to use the default power method.
+  Config::SetDefault ("ns3::MmWave3gppChannel::DirectBeam", BooleanValue(true)); // Set true to perform the beam in the exact direction of receiver node.
   Config::SetDefault ("ns3::MmWave3gppChannel::Blockage", BooleanValue(true)); // use blockage or not
   Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue(true)); // use blockage model with UT in portrait mode
   Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue(4)); // number of non-self blocking obstacles
@@ -642,18 +633,7 @@ main (int argc, char *argv[])
   NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
   NetDeviceContainer mmWaveEnbDevs = mmwaveHelper->InstallEnbDevice (mmWaveEnbNodes);
   NetDeviceContainer mcUeDevs;
-  if(fastSwitching)
-  {
-    mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
-  } 
-  else if(hardHandover)
-  {
-    mcUeDevs = mmwaveHelper->InstallInterRatHoCapableUeDevice (ueNodes);
-  }
-  else
-  {
-    NS_FATAL_ERROR("Invalid option");
-  }
+  mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
 
   // Install the IP stack on the UEs
   internet.Install (ueNodes);
@@ -672,15 +652,7 @@ main (int argc, char *argv[])
   mmwaveHelper->AddX2Interface (lteEnbNodes, mmWaveEnbNodes);
 
   // Manual attachment
-  if(fastSwitching)
-  {
-    mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  
-  }
-  else if(hardHandover)
-  {
-    mmwaveHelper->AttachIrToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
-  }
-  
+  mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  
 
   // Install and start applications on UEs and remote host
   uint16_t dlPort = 1234;
@@ -743,8 +715,8 @@ main (int argc, char *argv[])
   if(print)
   {
     PrintGnuplottableBuildingListToFile("buildings.txt");
-    PrintGnuplottableEnbListToFile("enbs.txt");
     PrintGnuplottableUeListToFile("ues.txt");
+    PrintGnuplottableEnbListToFile("enbs.txt");
   }
   else
   {

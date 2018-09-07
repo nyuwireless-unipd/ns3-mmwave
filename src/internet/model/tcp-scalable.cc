@@ -28,7 +28,6 @@
  */
 
 #include "tcp-scalable.h"
-#include "ns3/tcp-socket-base.h"
 #include "ns3/log.h"
 
 namespace ns3 {
@@ -91,6 +90,8 @@ TcpScalable::CongestionAvoidance (Ptr<TcpSocketState> tcb,
   NS_LOG_FUNCTION (this << tcb << segmentsAcked);
 
   uint32_t segCwnd = tcb->GetCwndInSegments ();
+  NS_ASSERT (segCwnd >= 1);
+
   uint32_t oldCwnd = segCwnd;
   uint32_t w = std::min (segCwnd, m_aiFactor);
 
@@ -131,7 +132,7 @@ TcpScalable::GetSsThresh (Ptr<const TcpSocketState> tcb,
   uint32_t segCwnd = bytesInFlight / tcb->m_segmentSize;
 
   double b = 1.0 - m_mdFactor;
-  uint32_t ssThresh = std::max (2.0, segCwnd * b);
+  uint32_t ssThresh = static_cast<uint32_t> (std::max (2.0, segCwnd * b));
 
   NS_LOG_DEBUG ("Calculated b(w) = " << b <<
                 " resulting (in segment) ssThresh=" << ssThresh);

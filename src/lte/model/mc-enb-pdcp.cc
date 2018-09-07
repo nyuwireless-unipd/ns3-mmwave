@@ -1,7 +1,7 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011-2012 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -120,8 +120,8 @@ McEnbPdcp::SetEpcX2PdcpProvider (EpcX2PdcpProvider * s)
   m_epcX2PdcpProvider = s;
 }
 
-  
-EpcX2PdcpUser* 
+
+EpcX2PdcpUser*
 McEnbPdcp::GetEpcX2PdcpUser ()
 {
   NS_LOG_FUNCTION(this);
@@ -177,7 +177,7 @@ McEnbPdcp::GetLteRlcSapUser ()
   return m_rlcSapUser;
 }
 
-McEnbPdcp::Status 
+McEnbPdcp::Status
 McEnbPdcp::GetStatus ()
 {
   Status s;
@@ -186,14 +186,14 @@ McEnbPdcp::GetStatus ()
   return s;
 }
 
-void 
+void
 McEnbPdcp::SetStatus (Status s)
 {
   m_txSequenceNumber = s.txSn;
   m_rxSequenceNumber = s.rxSn;
 }
 
-void 
+void
 McEnbPdcp::SetUeDataParams(EpcX2Sap::UeDataParams params)
 {
   m_ueDataParams = params;
@@ -225,14 +225,14 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
   params.rnti = m_rnti;
   params.lcid = m_lcid;
 
-  if(m_epcX2PdcpProvider == 0 || (!m_useMmWaveConnection)) 
+  if(m_epcX2PdcpProvider == 0 || (!m_useMmWaveConnection))
   {
     NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink local stack");
 
     // Sender timestamp. We will use this to measure the delay on top of RLC
     PdcpTag pdcpTag (Simulator::Now ());
     p->AddByteTag (pdcpTag);
-    // m_txPdu (m_rnti, m_lcid, p->GetSize ());
+    m_txPdu (m_rnti, m_lcid, p->GetSize ());
     params.pdcpPdu = p;
 
     NS_LOG_LOGIC("Params.rnti " << params.rnti);
@@ -240,15 +240,16 @@ McEnbPdcp::DoTransmitPdcpSdu (Ptr<Packet> p)
     NS_LOG_LOGIC("Params.pdcpPdu " << params.pdcpPdu);
 
     m_rlcSapProvider->TransmitPdcpPdu (params);
-  } 
-  else if (m_useMmWaveConnection) 
+  }
+  else if (m_useMmWaveConnection)
   {
     // Do not add sender time stamp: we are not interested in adding X2 delay for MC connections
     NS_LOG_INFO(this << " McEnbPdcp: Tx packet to downlink MmWave stack on remote cell " << m_ueDataParams.targetCellId);
     m_ueDataParams.ueData = p;
+    m_txPdu (m_rnti, m_lcid, p->GetSize ());
     m_epcX2PdcpProvider->SendMcPdcpPdu (m_ueDataParams);
-  } 
-  else 
+  }
+  else
   {
     NS_FATAL_ERROR("Invalid combination");
   }
@@ -271,7 +272,7 @@ McEnbPdcp::DoReceivePdu (Ptr<Packet> p)
 
   p->RemoveAllByteTags();
   NS_LOG_LOGIC("ALL BYTE TAGS REMOVED. NetAmin and FlowMonitor won't work");
-  
+
   LtePdcpHeader pdcpHeader;
   p->RemoveHeader (pdcpHeader);
   NS_LOG_LOGIC ("PDCP header: " << pdcpHeader);

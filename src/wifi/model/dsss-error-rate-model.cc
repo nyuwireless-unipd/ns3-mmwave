@@ -40,7 +40,7 @@ DsssErrorRateModel::DqpskFunction (double x)
 }
 
 double
-DsssErrorRateModel::GetDsssDbpskSuccessRate (double sinr, uint32_t nbits)
+DsssErrorRateModel::GetDsssDbpskSuccessRate (double sinr, uint64_t nbits)
 {
   NS_LOG_FUNCTION_NOARGS ();
   double EbN0 = sinr * 22000000.0 / 1000000.0; //1 bit per symbol with 1 MSPS
@@ -49,7 +49,7 @@ DsssErrorRateModel::GetDsssDbpskSuccessRate (double sinr, uint32_t nbits)
 }
 
 double
-DsssErrorRateModel::GetDsssDqpskSuccessRate (double sinr, uint32_t nbits)
+DsssErrorRateModel::GetDsssDqpskSuccessRate (double sinr, uint64_t nbits)
 {
   NS_LOG_FUNCTION_NOARGS ();
   double EbN0 = sinr * 22000000.0 / 1000000.0 / 2.0; //2 bits per symbol, 1 MSPS
@@ -58,14 +58,14 @@ DsssErrorRateModel::GetDsssDqpskSuccessRate (double sinr, uint32_t nbits)
 }
 
 double
-DsssErrorRateModel::GetDsssDqpskCck5_5SuccessRate (double sinr, uint32_t nbits)
+DsssErrorRateModel::GetDsssDqpskCck5_5SuccessRate (double sinr, uint64_t nbits)
 {
   NS_LOG_FUNCTION_NOARGS ();
 #ifdef HAVE_GSL
   //symbol error probability
   double EbN0 = sinr * 22000000.0 / 1375000.0 / 4.0;
   double sep = SymbolErrorProb16Cck (4.0 * EbN0 / 2.0);
-  return std::pow (1.0 - sep, nbits / 4.0);
+  return std::min (1.0, std::pow (1.0 - sep, nbits / 4.0));
 #else
   NS_LOG_WARN ("Running a 802.11b CCK Matlab model less accurate than GSL model");
   //The matlab model
@@ -87,12 +87,12 @@ DsssErrorRateModel::GetDsssDqpskCck5_5SuccessRate (double sinr, uint32_t nbits)
       double a4 = 1.0288981434358866e+000;
       ber = a1 * std::exp (-std::pow ((sinr - a2) / a3, a4));
     }
-  return std::pow ((1.0 - ber), static_cast<double> (nbits));
+  return std::min (1.0, std::pow ((1.0 - ber), static_cast<double> (nbits)));
 #endif
 }
 
 double
-DsssErrorRateModel::GetDsssDqpskCck11SuccessRate (double sinr, uint32_t nbits)
+DsssErrorRateModel::GetDsssDqpskCck11SuccessRate (double sinr, uint64_t nbits)
 {
   NS_LOG_FUNCTION_NOARGS ();
 #ifdef HAVE_GSL
@@ -100,7 +100,7 @@ DsssErrorRateModel::GetDsssDqpskCck11SuccessRate (double sinr, uint32_t nbits)
   //symbol error probability
   double EbN0 = sinr * 22000000.0 / 1375000.0 / 8.0;
   double sep = SymbolErrorProb256Cck (8.0 * EbN0 / 2.0);
-  return std::pow (1.0 - sep, nbits / 8.0);
+  return std::min (1.0, std::pow (1.0 - sep, nbits / 8.0));
 #else
   NS_LOG_WARN ("Running a 802.11b CCK Matlab model less accurate than GSL model");
   //The matlab model
@@ -124,7 +124,7 @@ DsssErrorRateModel::GetDsssDqpskCck11SuccessRate (double sinr, uint32_t nbits)
       double a6 = 2.2032715128698435e+000;
       ber =  (a1 * sinr * sinr + a2 * sinr + a3) / (sinr * sinr * sinr + a4 * sinr * sinr + a5 * sinr + a6);
     }
-  return std::pow ((1.0 - ber), static_cast<double> (nbits));
+  return std::min (1.0, std::pow ((1.0 - ber), static_cast<double> (nbits)));
 #endif
 }
 

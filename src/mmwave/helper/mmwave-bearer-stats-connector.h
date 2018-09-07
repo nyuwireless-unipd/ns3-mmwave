@@ -2,7 +2,7 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
+ *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
@@ -25,8 +25,11 @@
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                Dual Connectivity and Handover functionalities
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *							Integration of Carrier Aggregation
  */
 
 
@@ -47,6 +50,8 @@
 #include <map>
 
 namespace ns3 {
+
+namespace mmwave {
 
 class MmWaveBearerStatsCalculator;
 //class McStatsCalculator;
@@ -221,7 +226,7 @@ public:
   std::string GetCellIdStatsOutputFilename (void);
   std::string GetMmWaveSinrOutputFilename (void);
   std::string GetLteSinrOutputFilename (void);
-  
+
   void SetEnbHandoverStartOutputFilename (std::string outputFilename);
   void  SetUeHandoverStartOutputFilename (std::string outputFilename);
   void SetEnbHandoverEndOutputFilename (std::string outputFilename);
@@ -268,7 +273,7 @@ private:
    * \param rnti
    */
   void ConnectTracesEnbIfFirstTime (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
-  
+
   /**
    * Connects DRBs trace sources at UE to RLC and PDCP calculators.
    * \param context
@@ -296,6 +301,16 @@ private:
    * \param rnti
    */
   void DisconnectTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
+
+  /**
+   * Disconnects DRB trace sources at UE to RLC and PDCP calculators.
+   * Function is not implemented.
+   * \param context
+   * \param imsi
+   * \param cellid
+   * \param rnti
+   */
+  void DisconnectDrbTracesUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti);
 
   /**
    * Connects SRB1 trace sources at eNB to RLC and PDCP calculators
@@ -336,14 +351,19 @@ private:
 
   Ptr<MmWaveBearerStatsCalculator> m_rlcStats; //!< Calculator for RLC Statistics
   Ptr<MmWaveBearerStatsCalculator> m_pdcpStats; //!< Calculator for PDCP Statistics
-  Ptr<McStatsCalculator> m_mcStats;
+  Ptr<McStatsCalculator> m_mcStats; //!< Calculator for multi-connectivity Statistics
+
+  CallbackBase m_rlcDrbDlRxCb; //!< Sink for the received DL RLC data packets
+  CallbackBase m_rlcDrbUlTxCb; //!< Sink for the sent DL RLC data packets
+
+  CallbackBase m_pdcpDrbDlRxCb; //!< Sink for the received DL PDCP data packets
+  CallbackBase m_pdcpDrbUlTxCb; //!< Sink for the sent DL PDCP data packets
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected
-  std::set<uint64_t> m_imsiSeenEnbSrb; //!< stores all eNBs for which RLC and PDCP traces and SRB1 were connected
-  std::set<uint64_t> m_imsiSeenUeDrb; //!< stores all UEs for which RLC and PDCP traces for DRBs were connected
+  std::map<uint64_t,uint16_t> m_imsiSeenUeDrb; //!< stores all UEs for which RLC and PDCP traces for DRBs were connected
   std::set<uint64_t> m_imsiSeenEnbDrb; //!< stores all eNBs for which RLC and PDCP traces for DRBs were connected
- 
+
   /**
    * Struct used as key in m_ueManagerPathByCellIdRnti map
    */
@@ -380,7 +400,7 @@ private:
   std::ofstream m_lteSinrOutFile;
 };
 
-
+} // namespace mmwave
 
 } // namespace ns3
 

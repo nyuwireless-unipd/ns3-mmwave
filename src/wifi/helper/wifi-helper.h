@@ -29,9 +29,9 @@
 
 namespace ns3 {
 
-class WifiPhy;
 class WifiNetDevice;
 class Node;
+class RadiotapHeader;
 
 /**
  * \brief create PHY objects
@@ -116,20 +116,21 @@ public:
    * called before EnablePcap(), so that the header of the pcap file can be
    * written correctly.
    *
-   * @see SupportedPcapDataLinkTypes
+   * \see SupportedPcapDataLinkTypes
    *
-   * @param dlt The data link type of the pcap file (and packets) to be used
+   * \param dlt The data link type of the pcap file (and packets) to be used
    */
-  void SetPcapDataLinkType (enum SupportedPcapDataLinkTypes dlt);
+  void SetPcapDataLinkType (SupportedPcapDataLinkTypes dlt);
 
   /**
    * Get the data link type of PCAP traces to be used.
    *
-   * @see SupportedPcapDataLinkTypes
+   * \see SupportedPcapDataLinkTypes
    *
-   * @returns The data link type of the pcap file (and packets) to be used
+   * \returns The data link type of the pcap file (and packets) to be used
    */
   PcapHelper::DataLinkType GetPcapDataLinkType (void) const;
+
 
 protected:
   /**
@@ -166,17 +167,33 @@ protected:
   ObjectFactory m_phy; ///< PHY object
   ObjectFactory m_errorRateModel; ///< error rate model
 
+
 private:
   /**
-   * @brief Enable pcap output the indicated net device.
+   * Get the radiotap header.
+   *
+   * \param packet the packet
+   * \param channelFreqMhz the channel frequency
+   * \param txVector the TXVECTOR
+   * \param aMpdu the A-MPDU information
+   *
+   * \returns the radiotap header
+   */
+  static RadiotapHeader GetRadiotapHeader (Ptr<Packet> packet,
+                                           uint16_t channelFreqMhz,
+                                           WifiTxVector txVector,
+                                           MpduInfo aMpdu);
+
+  /**
+   * \brief Enable pcap output the indicated net device.
    *
    * NetDevice-specific implementation mechanism for hooking the trace and
    * writing to the trace file.
    *
-   * @param prefix Filename prefix to use for pcap files.
-   * @param nd Net device for which you want to enable tracing.
-   * @param promiscuous If true capture all possible packets available at the device.
-   * @param explicitFilename Treat the prefix as an explicit filename if true
+   * \param prefix Filename prefix to use for pcap files.
+   * \param nd Net device for which you want to enable tracing.
+   * \param promiscuous If true capture all possible packets available at the device.
+   * \param explicitFilename Treat the prefix as an explicit filename if true
    */
   virtual void EnablePcapInternal (std::string prefix,
                                    Ptr<NetDevice> nd,
@@ -226,19 +243,6 @@ public:
   WifiHelper ();
 
   /**
-   * \returns a new WifiHelper in a default state
-   *
-   * The default state is defined as being an Adhoc MAC layer with an ARF rate control algorithm
-   * and both objects using their default attribute values. By default, configure MAC and PHY
-   * for 802.11a.
-   *
-   * \deprecated This method will go away in future versions of ns-3.
-   * The constructor of the class is now performing the same job, which makes this function useless.
-   */
-  NS_DEPRECATED
-  static WifiHelper Default (void);
-
-  /**
    * \param type the type of ns3::WifiRemoteStationManager to create.
    * \param n0 the name of the attribute to set
    * \param v0 the value of the attribute to set
@@ -278,9 +282,9 @@ public:
    */
   NetDeviceContainer
   virtual Install (const WifiPhyHelper &phy,
-                       const WifiMacHelper &mac,
-                       NodeContainer::Iterator first,
-                       NodeContainer::Iterator last) const;
+                   const WifiMacHelper &mac,
+                   NodeContainer::Iterator first,
+                   NodeContainer::Iterator last) const;
   /**
    * \param phy the PHY helper to create PHY objects
    * \param mac the MAC helper to create MAC objects
@@ -329,7 +333,7 @@ public:
    * \sa WifiMac::ConfigureStandard
    * \sa Config::Set
    */
-  virtual void SetStandard (enum WifiPhyStandard standard);
+  virtual void SetStandard (WifiPhyStandard standard);
 
   /**
    * Helper to enable all WifiNetDevice log components with one statement
@@ -355,7 +359,7 @@ public:
 
 protected:
   ObjectFactory m_stationManager; ///< station manager
-  enum WifiPhyStandard m_standard; ///< wifi standard
+  WifiPhyStandard m_standard; ///< wifi standard
 };
 
 } //namespace ns3

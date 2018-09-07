@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Authors: Sébastien Deronne <sebastien.deronne@gmail.com>
+ * Author: Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
 // This example is used to validate NIST and YANS error rate models for HT rates.
@@ -21,10 +21,13 @@
 // It outputs plots of the Frame Success Rate versus the Signal-to-noise ratio for
 // both NIST and YANS error rate models and for every HT MCS value.
 
-#include "ns3/core-module.h"
+#include <fstream>
+#include <cmath>
+#include "ns3/gnuplot.h"
+#include "ns3/command-line.h"
 #include "ns3/yans-error-rate-model.h"
 #include "ns3/nist-error-rate-model.h"
-#include "ns3/gnuplot.h"
+#include "ns3/wifi-tx-vector.h"
 
 using namespace ns3;
 
@@ -66,17 +69,18 @@ int main (int argc, char *argv[])
       for (double snr = -5.0; snr <= 30.0; snr += 0.1)
         {
           double ps = yans->GetChunkSuccessRate (WifiMode (modes[i]), txVector, std::pow (10.0,snr / 10.0), FrameSize * 8);
-          yansdataset.Add (snr, ps);
-          if (ps < 0 || ps > 1)
+          if (ps < 0.0 || ps > 1.0)
             {
               //error
-              return 0;
+              exit (1);
             }
+          yansdataset.Add (snr, ps);
+
           ps = nist->GetChunkSuccessRate (WifiMode (modes[i]), txVector, std::pow (10.0,snr / 10.0), FrameSize * 8);
-          if (ps < 0 || ps > 1)
+          if (ps < 0.0 || ps > 1.0)
             {
               //error
-              return 0;
+              exit (1);
             }
           nistdataset.Add (snr, ps);
         }

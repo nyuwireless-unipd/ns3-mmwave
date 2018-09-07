@@ -35,25 +35,12 @@ QueueBase::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::QueueBase")
     .SetParent<Object> ()
     .SetGroupName ("Network")
-    .AddAttribute ("Mode",
-                   "Whether to use bytes (see MaxBytes) or packets (see MaxPackets) as the maximum queue size metric.",
-                   EnumValue (QUEUE_MODE_PACKETS),
-                   MakeEnumAccessor (&QueueBase::SetMode,
-                                     &QueueBase::GetMode),
-                   MakeEnumChecker (QUEUE_MODE_BYTES, "QUEUE_MODE_BYTES",
-                                    QUEUE_MODE_PACKETS, "QUEUE_MODE_PACKETS"))
-    .AddAttribute ("MaxPackets",
-                   "The maximum number of packets accepted by this queue.",
-                   UintegerValue (100),
-                   MakeUintegerAccessor (&QueueBase::SetMaxPackets,
-                                         &QueueBase::GetMaxPackets),
-                   MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("MaxBytes",
-                   "The maximum number of bytes accepted by this queue.",
-                   UintegerValue (100 * 65535),
-                   MakeUintegerAccessor (&QueueBase::SetMaxBytes,
-                                         &QueueBase::GetMaxBytes),
-                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("MaxSize",
+                   "The max queue size",
+                   QueueSizeValue (QueueSize ("100p")),
+                   MakeQueueSizeAccessor (&QueueBase::SetMaxSize,
+                                          &QueueBase::GetMaxSize),
+                   MakeQueueSizeChecker ())
     .AddTraceSource ("PacketsInQueue",
                      "Number of packets currently stored in the queue",
                      MakeTraceSourceAccessor (&QueueBase::m_nPackets),
@@ -76,8 +63,7 @@ QueueBase::QueueBase () :
   m_nTotalDroppedBytesAfterDequeue (0),
   m_nTotalDroppedPackets (0),
   m_nTotalDroppedPacketsBeforeEnqueue (0),
-  m_nTotalDroppedPacketsAfterDequeue (0),
-  m_mode (QUEUE_MODE_PACKETS)
+  m_nTotalDroppedPacketsAfterDequeue (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -118,6 +104,22 @@ QueueBase::GetNBytes (void) const
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC (" returns " << m_nBytes);
   return m_nBytes;
+}
+
+QueueSize
+QueueBase::GetCurrentSize (void) const
+{
+  NS_LOG_FUNCTION (this);
+
+  if (m_maxSize.GetUnit () == QueueSizeUnit::PACKETS)
+    {
+      return QueueSize (QueueSizeUnit::PACKETS, m_nPackets);
+    }
+  if (m_maxSize.GetUnit () == QueueSizeUnit::BYTES)
+    {
+      return QueueSize (QueueSizeUnit::BYTES, m_nBytes);
+    }
+  NS_ABORT_MSG ("Unknown queue size unit");
 }
 
 uint32_t
@@ -199,71 +201,27 @@ QueueBase::ResetStatistics (void)
 }
 
 void
-QueueBase::SetMode (QueueBase::QueueMode mode)
+QueueBase::SetMaxSize (QueueSize size)
 {
-  NS_LOG_FUNCTION (this << mode);
+  NS_LOG_FUNCTION (this << size);
 
-  if (mode == QUEUE_MODE_BYTES && m_mode == QUEUE_MODE_PACKETS)
+  // do nothing if the size is null
+  if (!size.GetValue ())
     {
-      NS_ABORT_MSG_IF (m_nPackets.Get () != 0,
-                       "Cannot change queue mode in a queue with packets.");
-    }
-  else if (mode == QUEUE_MODE_PACKETS && m_mode == QUEUE_MODE_BYTES)
-    {
-      NS_ABORT_MSG_IF (m_nBytes.Get () != 0,
-                       "Cannot change queue mode in a queue with packets.");
+      return;
     }
 
-  m_mode = mode;
+  m_maxSize = size;
+
+  NS_ABORT_MSG_IF (size < GetCurrentSize (),
+                   "The new maximum queue size cannot be less than the current size");
 }
 
-QueueBase::QueueMode
-QueueBase::GetMode (void) const
+QueueSize
+QueueBase::GetMaxSize (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_mode;
-}
-
-void
-QueueBase::SetMaxPackets (uint32_t maxPackets)
-{
-  NS_LOG_FUNCTION (this << maxPackets);
-
-  if (m_mode == QUEUE_MODE_PACKETS)
-    {
-      NS_ABORT_MSG_IF (maxPackets < m_nPackets.Get (),
-                       "The new queue size cannot be less than the number of currently stored packets.");
-    }
-
-  m_maxPackets = maxPackets;
-}
-
-uint32_t
-QueueBase::GetMaxPackets (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_maxPackets;
-}
-
-void
-QueueBase::SetMaxBytes (uint32_t maxBytes)
-{
-  NS_LOG_FUNCTION (this << maxBytes);
-
-  if (m_mode == QUEUE_MODE_BYTES)
-    {
-      NS_ABORT_MSG_IF (maxBytes < m_nBytes.Get (),
-                       "The new queue size cannot be less than the amount of bytes of currently stored packets.");
-    }
-
-  m_maxBytes = maxBytes;
-}
-
-uint32_t
-QueueBase::GetMaxBytes (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_maxBytes;
+  return m_maxSize;
 }
 
 } // namespace ns3

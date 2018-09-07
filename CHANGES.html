@@ -51,6 +51,133 @@ to this file based on your experience, please contribute a patch or drop
 us a note on ns-developers mailing list.</p>
 
 <hr>
+<h1>Changes from ns-3.29 to ns-3.30</h1>
+<h2>New API:</h2>
+<ul>
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+</ul>
+<h2>Changed behavior:</h2>
+<ul>
+</ul>
+
+<hr>
+<h1>Changes from ns-3.28 to ns-3.29</h1>
+<h2>New API:</h2>
+<ul>
+  <li> CommandLine can now handle non-option (positional) arguments. </li>
+  <li> Added CommandLine::Parse (const std::vector<std::string>> args) </li>
+  <li> NS_LOG_FUNCTION can now log the contents of vectors </li>
+  <li> A new position allocator has been added to the buildings module, allowing
+nodes to be placed outside of buildings defined in the scenario.</li>
+  <li> The Hash() method has been added to the QueueDiscItem class to compute the
+    hash of various fields of the packet header (depending on the packet type).</li>
+  <li> Added a priority queue disc (PrioQueueDisc).</li>
+  <li> Added 3GPP HTTP model
+  <li> Added TCP PRR as recovery algorithm
+  <li> Added a new trace source in StaWifiMac for tracing beacon arrivals</li>
+  <li> Added a new helper method to ApplicationContainer to start applications with some jitter around the start time</li>
+  <li> (network) Add a method to check whether a node with a given ID is within a NodeContainer.</li>
+
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+  <li>TrafficControlHelper::Install now only includes root queue discs in the returned
+    QueueDiscContainer.</li>
+  <li>Recovery algorithms are now in a different class, instead of being tied to TcpSocketBase.
+    Take a look to TcpRecoveryOps for more information.</li>
+  <li>The Mode, MaxPackets and MaxBytes attributes of the Queue class, that had been deprecated in favor of the MaxSize attribute in ns-3.28, have now been removed and cannot be used anymore. Likewise, the methods to get/set the old attributes have been removed as well.  Commands such as:
+<pre>
+  Config::SetDefault ("ns3::QueueBase::MaxPackets", UintegerValue (4));
+</pre>
+should now be written as:
+<pre>
+  Config::SetDefault ("ns3::QueueBase::MaxSize", QueueSizeValue (QueueSize (QueueSizeUnit::PACKETS, 4)));
+</pre>
+or with a string value with 'b' (bytes) or 'p' (packets) suffix, such as:
+<pre>
+  Config::SetDefault ("ns3::QueueBase::MaxSize", StringValue ("4p"));
+</pre>
+  </li>
+  <li>The Limit attribute of the PfifoFastQueueDisc class, that had been deprecated in favor of the MaxSize attribute in ns-3.28, has now been removed and cannot be used anymore. Likewise, the methods to get/set the old Limit attribute have been removed as well. The GetMaxSize/SetMaxSize methods of the base QueueDisc class must be used instead.</li>
+  <li>The Mode, MaxPackets and MaxBytes attributes of the CoDelQueueDisc class, that had been deprecated in favor of the MaxSize attribute in ns-3.28, have now been removed and cannot be used anymore. Likewise, the methods to get/set the old attributes have been removed as well. The GetMaxSize/SetMaxSize methods of the base QueueDisc class must be used instead.</li>
+  <li>The PacketLimit attribute of the FqCoDelQueueDisc class, that had been deprecated in favor of the MaxSize attribute in ns-3.28, has now been removed and cannot be used anymore. Likewise, the methods to get/set the old PacketLimit attribute have been removed as well. The GetMaxSize/SetMaxSize methods of the base QueueDisc class must be used instead.</li>
+  <li>The Mode and QueueLimit attributes of the PieQueueDisc class, that had been deprecated in favor of the MaxSize attribute in ns-3.28, have now been removed and cannot be used anymore. Likewise, the methods to get/set the old attributes have been removed as well. The GetMaxSize/SetMaxSize methods of the base QueueDisc class must be used instead.</li>
+  <li>The Mode and QueueLimit attributes of the RedQueueDisc class, that had been deprecated in favor of the MaxSize attribute in ns-3.28, have now been removed and cannot be used anymore. Likewise, the methods to get/set the old attributes have been removed as well. The GetMaxSize/SetMaxSize methods of the base QueueDisc class must be used instead.</li>
+  <li> Several traffic generating applications have additional trace sources that export not only the transmitted or received packet but also the source and destination addresses.</li>
+  <li>The returned type of <b>GetNDevices</b> methods in <b>Channel</b> and subclasses derived from it were changed from uint32_t to std::size_t. Likewise, the input parameter type of <b>GetDevice</b> in <b>Channel</b> and its subclasses were changed from uint32_t to std::size_t.</li>
+  <li>Wifi classes <b>DcfManager</b>, <b>DcaTxop</b> and <b>EdcaTxopN</b> were renamed to <b>ChannelAccessManager</b>, <b>Txop</b> and <b>QosTxop</b>, respectively.</li>
+  <li>QueueDisc::DequeuePeeked has been merged into QueueDisc::Dequeue and hence no longer exists.</li>
+  <li>The QueueDisc base class now provides a default implementation of the DoPeek private method
+  based on the QueueDisc::PeekDequeue method, which is now no longer available.</li>
+  <li>The QueueDisc::SojournTime trace source is changed from a TracedValue to a TracedCallback; callbacks that hook this trace must provide one ns3::Time argument, not two.</li>
+  <li>To avoid the code duplication in SingleModelSpectrumChannel and MultiModelSpectrumChannel classes, the attributes MaxLossDb and PropagationLossModel, and the traces PathLoss and TxSigParams are moved to the base class SpectrumChannel. Similarly, the functions AddPropagationLossModel, AddSpectrumPropagationLossModel, SetPropagationDelayModel and GetSpectrumPropagationLossModel are now defined in SpectrumChannel class. Moreover, the TracedCallback signature of LossTracedCallback has been updated from :
+  <pre>
+   typedef void (* LossTracedCallback) (Ptr&#60;SpectrumPhy&#62 txPhy, Ptr&#60;SpectrumPhy&#62 rxPhy, double lossDb);
+  </pre>
+   To :
+  <pre>
+   typedef void (* LossTracedCallback) (Ptr&#60;const SpectrumPhy&#62 txPhy, Ptr&#60;const SpectrumPhy&#62 rxPhy, double lossDb);
+  </pre></li>
+  <li>For the sake of LTE module API consistency the IPV6 related functions AssignUeIpv6Address and GetUeDefaultGatewayAddress6 are now declared in EpcHelper base class. Thus, these functions are now declared as virtual in the child classes, i.e., EmuEpcHelper and PointToPointEpcHelper.</li>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+  <li>Waf upgraded from 1.8.19 to 2.0.9, and ns-3 build scripts aligned to the new API.</li>
+  <li>The '--no32bit-scan' argument is removed from Waf apiscan; generation of ILP32 bindings is now automated from the LP64 bindings.</li>
+  <li> When using on newer compilers, new warnings may trigger build failures.
+The --disable-werror flag can be passed to Waf at configuration time to turn
+off the Werror behavior.</li>
+  <li> GTK+3 libraries (including PyGObject, GooCanvas2) are needed for the Pyviz visualizer, replacing GTK+2 libraries.</li>
+</ul>
+<h2>Changed behavior:</h2>
+<ul>
+  <li>FqCoDelQueueDisc now computes the hash of the packet's 5-tuple to determine
+    the flow the packet belongs to, unless a packet filter has been configured.
+    The previous behavior is simply obtained by not configuring any packet filter.
+    Consequently, the FqCoDelIpv{4,6}PacketFilter classes have been removed.</li>
+  <li> ARP packets now pass through the traffic control layer, as in Linux. </li>
+  <li> The maximum size UDP packet of the UdpClient application is no longer limited to 1500 bytes.</li>
+  <li> The default values of the <b>MaxSlrc</b> and <b>FragmentationThreshold</b> attributes in WifiRemoteStationManager were changed from 7 to 4 and from 2346 to 65535, respectively.
+</ul>
+
+<hr>
+<h1>Changes from ns-3.27 to ns-3.28</h1>
+<h2>New API:</h2>
+<ul>
+  <li> When deserializing Packet contents, <b>Header::Deserialize (Buffer::Iterator start)</b> and <b>Trailer::Deserialize (Buffer::Iterator start)</b> can not successfully deserialize variable-length headers and trailers.  New variants of these methods that also include an 'end' parameter are now provided.</li>
+  <li> Ipv[4,6]AddressGenerator can now check if an address is allocated (<b>Ipv[4,6]AddressGenerator::IsAddressAllocated</b>) or a network has some allocated address (<b>Ipv[4,6]AddressGenerator::IsNetworkAllocated</b>).</li>
+  <li> LTE UEs can now use IPv6 to send and receive traffic.</li>
+  <li> UAN module now supports an IP stack.</li>
+  <li> Class <b>TcpSocketBase</b> trace source <i>CongestionWindowInflated</i> shows the values with the in-recovery inflation and the post-recovery deflation.
+  <li> Added a FIFO queue disc (FifoQueueDisc) and the Token Bucket Filter (TbfQueueDisc).</li>
+</ul>
+<h2>Changes to existing API:</h2>
+<ul>
+  <li> Class <b>LrWpanMac</b> now supports extended addressing mode. Both <b>McpsDataRequest</b> and <b>PdDataIndication</b> methods will now use extended addressing if <b>McpsDataRequestParams::m_srcAddrMode</b> or <b>McpsDataRequestParams::m_dstAddrMode</b> are set to <b>EXT_ADDR</b>.</li>
+  <li> Class <b>LteUeNetDevice</b> MAC address is now a 64-bit address and can be set during construction.</li>
+  <li> Class <b>TcpSocketBase</b> trace source <i>CongestionWindow</i> shows the values without the in-recovery inflation and the post-recovery deflation; the old behavior has been moved to the new trace source <i>CongestionWindowInflated</i>.
+  <li>The Mode, MaxPackets and MaxBytes attributes of the Queue class have been deprecated in favor of the MaxSize attribute. Old attributes can still be used, but using them will be no longer possible in one of the next releases. The methods to get/set the old attributes will be removed as well.</li>
+  <li>The attributes of the QueueDisc subclasses that separately determine the mode and the limit of the QueueDisc have been deprecated in favor of the single MaxSize attribute.</li>
+  <li>The GetQueueSize method of some QueueDisc subclasses (e.g., RED) has been removed and replaced by the GetCurrentSize method of the QueueDisc base class.</li>
+</ul>
+<h2>Changes to build system:</h2>
+<ul>
+  <li> The C++ standard used during compilation (default std=c++11) can be now be changed via the CXXFLAGS variable.</li>
+</ul>
+<h2>Changed behavior:</h2>
+<ul>
+  <li>All Wi-Fi management frames are now transmitted using the lowest basic rate.</li>
+  <li>The Wi-Fi spectrum model now takes into account adjacent channels through OFDM transmit spectrum masks.</li>
+  <li> The CsmaNetDevice::PhyTxBeginTrace will trace all attempts to transmit, even those that result in drops. Previously, eventual channel drops were excluded from this trace.</l>
+  <li>The TCP congestion window trace now does not report on window inflation during fast recovery phase because it is no longer internally maintained as an inflated value (a separate trace called CongestionWindowInflated can be used to recover the old trace behavior).</li>
+</ul>
+
+<hr>
 <h1>Changes from ns-3.26 to ns-3.27</h1>
 <h2>New API:</h2>
 <ul>
@@ -62,12 +189,12 @@ us a note on ns-developers mailing list.</p>
 <li>Included the TCP SACK-based loss recovery algorithm outlined in RFC 6675.</li>
 <li>Added <b>TCP SACK</b> and the <b>SACK emulation</b>. Added an Attribute to TcpSocketBase class,
     called "Sack", to enable or disable the SACK option usage.</li>
-<li>In 'src/wifi', several changes were made to enable partial <b>802.11ax</b> High Effiency (HE) support:
+<li>In 'src/wifi', several changes were made to enable partial <b>802.11ax</b> High Efficiency (HE) support:
     <ul>
       <li>A new standard value has been added that enables the new 11ax data rates.</li>
       <li>A new 11ax preamble has been added.</li>
       <li>A new attribute was added to configure the guard interval duration for High Efficiency (HE) PHY entities. This attribute can be set using the YansWifiPhyHelper.</li>
-      <li>A new information element has been added:  HeCapabilities. This information element is added to the MAC frame header if the node is a HE node. This HeCapabilites information element is used to advertise the HE capabilites of the node to other nodes in the network.</li>
+      <li>A new information element has been added:  HeCapabilities. This information element is added to the MAC frame header if the node is a HE node. This HeCapabilites information element is used to advertise the HE capabilities of the node to other nodes in the network.</li>
     </ul>
 </li>
 <li> A new class were added for the RRPAA WiFi rate control mechanism.</li>
@@ -78,7 +205,7 @@ us a note on ns-developers mailing list.</p>
       <li>InstallSingleEnbDevice and InstalSingeUeDevice functions of LteHelper are now constructing LteEnbDevice and LteUeDevice 
       according to CA architecture. Each device, UE and eNodeB contains an instance of component carrier manager, and may 
       have several component carrier instances.</li>
-      <li>SAP interfaces are extended to include CA message exchange funtionality.</li>
+      <li>SAP interfaces are extended to include CA message exchange functionality.</li>
       <li>RRC connection procedure is extended to allow RRC connection reconfiguration for the configuration of the secondary carriers.</li>
       <li>RRC measurement reporting is extended to allow measurement reporting from the secondary carriers.</li>
       <li>LTE traces are extended to include component carrier id.</li>
@@ -353,7 +480,7 @@ register callbacks used for flow control.</li>
       <li>Added the concept of Congestion State Machine inside TcpSocketBase.</li>
       <li>Merged Fast Recovery and Fast Retransmit inside TcpSocketBase.</li>
       <li>Some member variables have been moved from TcpSocketBase inside TcpSocketState. Attributes are not touched.</li>
-      <li>Congestion control splitted from TcpSocketBase as subclass of TcpCongestionOps.</li>
+      <li>Congestion control split from TcpSocketBase as subclass of TcpCongestionOps.</li>
       <li>Added Rx and Tx callbacks on TcpSocketBase.</li>
       <li>Added BytesInFlight trace source on TcpSocketBase. The trace is updated when the implementation requests the value.</li>
       <li>Added attributes about the number of connection and data retransmission attempts.</li>
@@ -372,7 +499,7 @@ register callbacks used for flow control.</li>
   </li>
   <li> Users of advanced queues (RED, CoDel) who have been using them directly in the NetDevice will need to adjust to the following changes:
     <ul>
-      <li> RED and CoDel are no longer specializations of the Queue classe, but are now specializations of the new QueueDisc class. This means that RED and CoDel can now be installed in the context of the new Traffic Control layer instead of as queues in (some) NetDevices. The reason for such a change is to make the ns-3 stack much more similar to that of real operating systems (Linux has been taken as a reference).  Queuing disciplines such as RED and CoDel can now be tested with all the NetDevices, including WifiNetDevices. </li>
+      <li> RED and CoDel are no longer specializations of the Queue class, but are now specializations of the new QueueDisc class. This means that RED and CoDel can now be installed in the context of the new Traffic Control layer instead of as queues in (some) NetDevices. The reason for such a change is to make the ns-3 stack much more similar to that of real operating systems (Linux has been taken as a reference).  Queuing disciplines such as RED and CoDel can now be tested with all the NetDevices, including WifiNetDevices. </li>
       <li> NetDevices still use queues to buffer packets. The only subclass of Queue currently available for this purpose is DropTailQueue. If one wants to approximate the old behavior, one needs to set the DropTailQueue MaxPackets attribute to very low values, e.g., 1.</li>
       <li> The Traffic Control layer features a mechanism by which packets dropped by the NetDevice are requeued in the queue disc (more precisely: if NetDevice::Send returns false, the packet is requeued), so that they are retransmitted later. This means that the MAC drop traces may include packets that have not been actually lost, because they have been dropped by the device, requeued by the traffic control layer and successfully retransmitted. To get the correct number of packets that have been actually lost, one has to subtract the number of packets requeued from the number of packets dropped as reported by the MAC drop trace. </li>
     </ul>
@@ -408,7 +535,7 @@ This section is for behavioral changes to the models that were not due to a bug 
       <li>A new helper (VhtWifiMacHelper) was added to set up a Very high throughput (VHT) MAC entity.</li>
       <li>A new standard value has been added that enables the new 11ac data rates.</li>
       <li>A new 11ac preamble has been added.</li>
-      <li>A new information element has been added:  VhtCapabilities. This information element is added to the MAC frame header if the node is a VHT node. This VhtCapabilites information element is used to advertise the VHT capabilites of the node to other nodes in the network.</li>
+      <li>A new information element has been added:  VhtCapabilities. This information element is added to the MAC frame header if the node is a VHT node. This VhtCapabilites information element is used to advertise the VHT capabilities of the node to other nodes in the network.</li>
     </ul>
   </li>
   <li>The ArpCache API was extended to allow the manual removal of ArpCache entries and the addition of permanent (static) entries for IPv4.
@@ -467,7 +594,7 @@ distributed geographic coordinates.
 <h2>Changed behavior:</h2>
 This section is for behavioral changes to the models that were not due to a bug fix.
 <ul>
-  <li> In Wi-Fi, HT stations (802.11n) now support two-level aggregation. The InterferenceHelper now distinguishes between the PLCP and regular payload reception, for higher fidelity modeling.  ACKs are now sent using legacy rates and preambles.  Acces points now establish BSSBasicRateSet for control frame transmissions.  PLCP header and PLCP payload reception have been decoupled to improve PHY layer modeling accuracy.  RTS/CTS with A-MPDU is now fully supported.  
+  <li> In Wi-Fi, HT stations (802.11n) now support two-level aggregation. The InterferenceHelper now distinguishes between the PLCP and regular payload reception, for higher fidelity modeling.  ACKs are now sent using legacy rates and preambles.  Access points now establish BSSBasicRateSet for control frame transmissions.  PLCP header and PLCP payload reception have been decoupled to improve PHY layer modeling accuracy.  RTS/CTS with A-MPDU is now fully supported.  
   </li>
   <li> The mesh module was made more compliant to the IEEE 802.11s-2012 standard and packet traces are now parseable by Wireshark.  
   </li>
@@ -552,7 +679,7 @@ This section is for behavioral changes to the models that were not due to a bug 
   </li>
   <li> A new TraceSource has been added to TCP sockets: SlowStartThreshold.
   </li>
-  <li> New method CommmandLine::AddValue (name, attibutePath) to provide a
+  <li> New method CommandLine::AddValue (name, attibutePath) to provide a
        shorthand argument "name" for the Attribute "path".  This also has
        the effect of including the help string for the Attribute in the
        Usage message.
@@ -604,7 +731,7 @@ This section is for behavioral changes to the models that were not due to a bug 
   </li>
   <li> all schedulers were updated to interact with FR entity via FFR-SAP. Only PF, PSS, CQA, 
        FD-TBFQ, TD-TBFQ schedulers supports Frequency Reuse functionality. In the beginning 
-       of scheduling process, schedulers ask FR entity for avaiable RBGs and then ask if UE 
+       of scheduling process, schedulers ask FR entity for available RBGs and then ask if UE 
        can be scheduled on RB</li>
   <li> eNB RRC interacts with FFR entity via RRC-FFR SAP</li>
   <li> new DL-CQI generation approach was implemented. Now DL-CQI is computed from control channel as signal
@@ -863,7 +990,7 @@ failure.  </li>
       <li>New attributes were added to help the user setup a High Throughput (HT) PHY entity. These attributes can be set using the YansWifiPhyHelper</li>
       <li>A new standard value has been added that enables the new 11n data rates.</li>
       <li>New 11n preambles has been added (Mixed format and greenfield). To be able to change Tx duration according to the preamble used, a new class TxVector has been added to carry the transmission parameters (mode, preamble, stbc,..).  Several functions have been updated to allow the passage of TxVector instead of WifiMode in MacLow, WifiRemoteStationManager, WifiPhy, YansWifiPhy,.. </li>
-      <li>A new information element has been added:  HTCapabilities. This information element is added to the MAC frame header if the node is an HT node. This HTCapabilites information element is used to advertise the HT capabilites of the node to other nodes in the network</li>
+      <li>A new information element has been added:  HTCapabilities. This information element is added to the MAC frame header if the node is an HT node. This HTCapabilites information element is used to advertise the HT capabilities of the node to other nodes in the network</li>
     </ul>
   <li>InternetStackHelper has two new functions:<tt>SetIpv4ArpJitter (bool enable)</tt>
       and <tt>SetIpv6NsRsJitter (bool enable)</tt> to enable/disable
@@ -1335,7 +1462,7 @@ instead of CXXDEFINES
 <li> In the mobility module, there is a new MobilityModel::GetRelativeSpeed() method returning the relative speed of two objects. </li>
 <li> A new Ipv6AddressGenerator class was added to generate sequential
 addresses from a provided base prefix and interfaceId.  It also will detect
-duplicate address assigments. </li> 
+duplicate address assignments. </li> 
 </ul>
 
 <h2>Changes to existing API:</h2>
@@ -1448,7 +1575,7 @@ C++ native types. It is a 64.64 integer type which means that it is a 128bit int
 64 bits of fractional precision. The existing <b>Time</b> type is now automatically convertible to
 <b>int64x64_t</b> to allow arbitrarily complex arithmetic operations on the content of <b>Time</b>
 objects. The implementation of <b>int64x64_t</b> is based on the previously-existing
-<b>HighPrecision</b> type and supercedes it.
+<b>HighPrecision</b> type and supersedes it.
 </p></li>
 </ul>
 
@@ -1496,6 +1623,8 @@ a std::map of interface IDs and TTLs for the route.
 
 <h2>Changed behavior:</h2>
 <ul>
+  <li> If the data inside the TCP buffer is less than the available window, TCP tries to ask for more data to the application, in the hope of filling the usable transmission window. In some cases, this change allows sending bigger packets than the previous versions, optimizing the transmission.</li>
+  <li> In TCP, the ACK is now processed before invoking any routine that deals with the segment sending, except in case of retransmissions.</li>
 </ul>
 
 <hr>

@@ -112,7 +112,7 @@ def main(argv):
     stopTime = int(cmd.stopTime)
 
     if (stopTime < 10):
-        print "Use a simulation stop time >= 10 seconds"
+        print ("Use a simulation stop time >= 10 seconds")
         exit(1)
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # / 
     #                                                                        # 
@@ -142,7 +142,7 @@ def main(argv):
     # 
     #  Add the IPv4 protocol stack to the nodes in our container
     # 
-    print "Enabling OLSR routing on all backbone nodes"
+    print ("Enabling OLSR routing on all backbone nodes")
     internet = ns.internet.InternetStackHelper()
     olsr = ns.olsr.OlsrHelper()
     internet.SetRoutingHelper(olsr); # has effect on the next Install ()
@@ -186,7 +186,7 @@ def main(argv):
     ipAddrs.SetBase(ns.network.Ipv4Address("172.16.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
 
     for i in range(backboneNodes):
-        print "Configuring local area network for backbone node ", i
+        print ("Configuring local area network for backbone node ", i)
         # 
         #  Create a container to manage the nodes of the LAN.  We need
         #  two containers here; one with all of the new nodes, and one
@@ -243,7 +243,7 @@ def main(argv):
     ipAddrs.SetBase(ns.network.Ipv4Address("10.0.0.0"), ns.network.Ipv4Mask("255.255.255.0"))
 
     for i in range(backboneNodes):
-        print "Configuring wireless network for backbone node ", i
+        print ("Configuring wireless network for backbone node ", i)
         # 
         #  Create a container to manage the nodes of the LAN.  We need
         #  two containers here; one with all of the new nodes, and one
@@ -257,20 +257,18 @@ def main(argv):
         #  Create another ad hoc network and devices
         # 
         ssid = ns.wifi.Ssid('wifi-infra' + str(i))
-        wifiInfra = ns.wifi.WifiHelper.Default()
+        wifiInfra = ns.wifi.WifiHelper()
         wifiPhy.SetChannel(wifiChannel.Create())
         wifiInfra.SetRemoteStationManager('ns3::ArfWifiManager')
         macInfra = ns.wifi.WifiMacHelper();
         macInfra.SetType("ns3::StaWifiMac",
-                         "Ssid", ns.wifi.SsidValue(ssid),
-                         "ActiveProbing", ns.core.BooleanValue(False))
+                         "Ssid", ns.wifi.SsidValue(ssid))
 
         # setup stas
         staDevices = wifiInfra.Install(wifiPhy, macInfra, stas)
         # setup ap.
         macInfra.SetType("ns3::ApWifiMac",
                          "Ssid", ns.wifi.SsidValue(ssid),
-                         "BeaconGeneration", ns.core.BooleanValue(True),
                          "BeaconInterval", ns.core.TimeValue(ns.core.Seconds(2.5)))
         apDevices = wifiInfra.Install(wifiPhy, macInfra, backbone.Get(i))
         # Collect all of these new devices
@@ -313,7 +311,7 @@ def main(argv):
 
     #  Create the OnOff application to send UDP datagrams of size
     #  210 bytes at a rate of 448 Kb/s, between two nodes
-    print "Create Applications."
+    print ("Create Applications.")
     port = 9   #  Discard port(RFC 863)
 
     appSource = ns.network.NodeList.GetNode(backboneNodes)
@@ -340,7 +338,7 @@ def main(argv):
     #                                                                        # 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # / 
 
-    print "Configure Tracing."
+    print ("Configure Tracing.")
     csma = ns.csma.CsmaHelper()
     # 
     #  Let's set up some ns-2-like ascii traces, using another helper class
@@ -369,7 +367,7 @@ def main(argv):
     #                                                                        # 
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
 
-    print "Run Simulation."
+    print ("Run Simulation.")
     ns.core.Simulator.Stop(ns.core.Seconds(stopTime))
     ns.core.Simulator.Run()
     ns.core.Simulator.Destroy()

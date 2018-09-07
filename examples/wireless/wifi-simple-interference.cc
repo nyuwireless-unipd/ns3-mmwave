@@ -79,10 +79,17 @@
 // that are no longer interfering:
 // ./waf --run "wifi-simple-interference --delta=30000"
 
-#include "ns3/core-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/wifi-module.h"
-#include "ns3/internet-module.h"
+#include "ns3/command-line.h"
+#include "ns3/config.h"
+#include "ns3/double.h"
+#include "ns3/string.h"
+#include "ns3/log.h"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/ssid.h"
+#include "ns3/mobility-helper.h"
+#include "ns3/yans-wifi-channel.h"
+#include "ns3/mobility-model.h"
+#include "ns3/internet-stack-helper.h"
 
 using namespace ns3;
 
@@ -127,8 +134,6 @@ static void GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize,
 
 int main (int argc, char *argv[])
 {
-//  LogComponentEnable ("InterferenceHelper", LOG_LEVEL_ALL);
-
   std::string phyMode ("DsssRate1Mbps");
   double Prss = -80;  // -dBm
   double Irss = -95;  // -dBm
@@ -146,7 +151,6 @@ int main (int argc, char *argv[])
   double offset = 91;  // This is a magic number used to set the
                        // transmit power, based on other configuration
   CommandLine cmd;
-
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
   cmd.AddValue ("Prss", "Intended primary received signal strength (dBm)", Prss);
   cmd.AddValue ("Irss", "Intended interfering received signal strength (dBm)", Irss);
@@ -154,15 +158,10 @@ int main (int argc, char *argv[])
   cmd.AddValue ("PpacketSize", "size of application packet sent", PpacketSize);
   cmd.AddValue ("IpacketSize", "size of interfering packet sent", IpacketSize);
   cmd.AddValue ("verbose", "turn on all WifiNetDevice log components", verbose);
-
   cmd.Parse (argc, argv);
   // Convert to time object
   Time interPacketInterval = Seconds (interval);
 
-  // disable fragmentation for frames below 2200 bytes
-  Config::SetDefault ("ns3::WifiRemoteStationManager::FragmentationThreshold", StringValue ("2200"));
-  // turn off RTS/CTS for frames below 2200 bytes
-  Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", StringValue ("2200"));
   // Fix non-unicast data rate to be the same as that of unicast
   Config::SetDefault ("ns3::WifiRemoteStationManager::NonUnicastMode",
                       StringValue (phyMode));
@@ -184,7 +183,7 @@ int main (int argc, char *argv[])
   wifiPhy.Set ("CcaMode1Threshold", DoubleValue (0.0) );
 
   // ns-3 supports RadioTap and Prism tracing extensions for 802.11b
-  wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
+  wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
 
   YansWifiChannelHelper wifiChannel;
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
@@ -220,11 +219,6 @@ int main (int argc, char *argv[])
 
   InternetStackHelper internet;
   internet.Install (c);
-
-  Ipv4AddressHelper ipv4;
-  NS_LOG_INFO ("Assign IP Addresses.");
-  ipv4.SetBase ("10.1.1.0", "255.255.255.0");
-  Ipv4InterfaceContainer i = ipv4.Assign (devices);
 
   TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
   Ptr<Socket> recvSink = Socket::CreateSocket (c.Get (0), tid);

@@ -62,10 +62,6 @@ def options(opt):
     opt.add_option('--with-python',
                    help=('Path to the Python interpreter to use.'),
                    default=None, dest='with_python', type="string")
-    opt.add_option('--no32bit-scan',
-                   help=("Don't scan for the 32-bit variant of the bindings on 64-bit platforms."),
-                   action="store_true", default=False,
-                   dest='no32bit_scan')
 
 
 def split_version(version):
@@ -195,6 +191,11 @@ def configure(conf):
                                 stdout=subprocess.PIPE).communicate()[0]
         pybindgen_version = maybe_decode(out.strip())
         conf.msg('Checking for pybindgen version', pybindgen_version)
+        if not pybindgen_version:
+            Logs.warn("pybindgen_version is an empty string")
+            conf.report_optional_feature("python", "Python Bindings", False,
+                                         "PyBindGen version not found")
+            return
         if not (split_version(pybindgen_version) >= split_version(REQUIRED_PYBINDGEN_VERSION)):
             Logs.warn("pybindgen (found %r), (need %r)" %
                       (pybindgen_version, REQUIRED_PYBINDGEN_VERSION))
@@ -273,10 +274,15 @@ int main ()
                                      "Missing 'pygccxml' Python module")
         return
 
-    out = subprocess.Popen([conf.env['PYTHON'][0], "-c",
-                            "import pygccxml; print pygccxml.__version__"],
-                            stdout=subprocess.PIPE).communicate()[0]
-    pygccxml_version_str = out.strip()
+    try:
+        import pygccxml as pygccxml_imported
+        pygccxml_version_str = pygccxml_imported.__version__
+    except (ImportError, AttributeError):
+        Logs.warn("pygccxml version cannot be determined")
+        conf.report_optional_feature("castxml", "Python API Scanning Support", False,
+                                     "pygccxml Python module version is unknown")
+        return
+
     # Bug 2013:  pygccxml versions > 1.0.0 prepend a 'v' to version number
     pygccxml_version_str = pygccxml_version_str.lstrip('v')
     pygccxml_version = tuple([int(x) for x in pygccxml_version_str.split('.')])
@@ -398,6 +404,13 @@ class apiscan_task(Task.Task):
             ]
         scan = subprocess.Popen(argv, stdin=subprocess.PIPE)
         retval = scan.wait()
+
+        if retval >= 0 and "LP64" in self.target:
+            self.lp64_to_ilp32(
+                os.path.join(module_path, "bindings", 'modulegen__%s.py' % (self.target)),
+                os.path.join(module_path, "bindings", 'modulegen__%s.py' % "gcc_ILP32")
+                )
+
         return retval
 
     def runnable_status(self):
@@ -406,6 +419,15 @@ class apiscan_task(Task.Task):
         # invoked by the user, particularly since --apiscan=all will require
         # invoking this task many times, once per module.
         return RUN_ME
+
+    def lp64_to_ilp32(self, lp64path, ilp32path):
+        lp64file = open(lp64path, "r")
+        lp64bindings = lp64file.read()
+        lp64file.close()
+        ilp32file = open(ilp32path, "w")
+        ilp32bindings = re.sub("unsigned long(?!( long))", "unsigned long long", lp64bindings)
+        ilp32file.write(ilp32bindings)
+        ilp32file.close()
 
 def get_modules_and_headers(bld):
     """
@@ -471,8 +493,6 @@ def build(bld):
         else:
             import struct
             if struct.calcsize('I') == 4 and struct.calcsize('L') == 8 and struct.calcsize('P') == 8:
-                if not Options.options.no32bit_scan:
-                    scan_targets.append(('gcc_ILP32', '-m32'))
                 scan_targets.append(('gcc_LP64', '-m64'))
             elif struct.calcsize('I') == 4 and struct.calcsize('L') == 4 and struct.calcsize('P') == 4:
                 scan_targets.append(('gcc_ILP32', ''))

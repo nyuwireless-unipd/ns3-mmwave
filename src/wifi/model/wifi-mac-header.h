@@ -25,9 +25,10 @@
 
 #include "ns3/header.h"
 #include "ns3/mac48-address.h"
-#include "ns3/nstime.h"
 
 namespace ns3 {
+
+class Time;
 
 /**
  * Combination of valid MAC header type/subtype.
@@ -40,6 +41,8 @@ enum WifiMacType
   WIFI_MAC_CTL_ACK,
   WIFI_MAC_CTL_BACKREQ,
   WIFI_MAC_CTL_BACKRESP,
+  WIFI_MAC_CTL_END,
+  WIFI_MAC_CTL_END_ACK,
 
   WIFI_MAC_MGT_BEACON,
   WIFI_MAC_MGT_ASSOCIATION_REQUEST,
@@ -117,47 +120,6 @@ public:
   uint32_t Deserialize (Buffer::Iterator start);
 
   /**
-   * Set Type/Subtype values for an association request header.
-   */
-  void SetAssocReq (void);
-  /**
-   * Set Type/Subtype values for an association response header.
-   */
-  void SetAssocResp (void);
-  /**
-   * Set Type/Subtype values for a probe request header.
-   */
-  void SetProbeReq (void);
-  /**
-   * Set Type/Subtype values for a probe response header.
-   */
-  void SetProbeResp (void);
-  /**
-   * Set Type/Subtype values for a beacon header.
-   */
-  void SetBeacon (void);
-  /**
-   * Set Type/Subtype values for a data packet with
-   * no subtype equal to 0.
-   */
-  void SetTypeData (void);
-  /**
-   * Set Type/Subtype values for an action header.
-   */
-  void SetAction ();
-  /**
-   * Set Type/Subtype values for a Block Ack Request header.
-   */
-  void SetBlockAckReq (void);
-  /**
-   * Set Type/Subtype values for a Block Ack header.
-   */
-  void SetBlockAck (void);
-  /**
-   * Set Type/Subtype values for a multihop action header.
-   */
-  void SetMultihopAction ();
-  /**
    * Set the From DS bit in the Frame Control field.
    */
   void SetDsFrom (void);
@@ -202,8 +164,10 @@ public:
    * on the given type.
    *
    * \param type the WifiMacType for the header
+   * \param resetToDsFromDs whether the ToDs and FromDs flags
+   *        should be reset.
    */
-  void SetType (WifiMacType type);
+  void SetType (WifiMacType type, bool resetToDsFromDs = true);
   /**
    * Set the Duration/ID field with the given raw uint16_t value.
    *
@@ -271,18 +235,6 @@ public:
    * \param policy
    */
   void SetQosAckPolicy (QosAckPolicy policy);
-  /**
-   * Set the QoS ACK policy in the QoS control field to normal ACK.
-   */
-  void SetQosNormalAck (void);
-  /**
-   * Set the QoS ACK policy in the QoS control field to block ACK.
-   */
-  void SetQosBlockAck (void);
-  /**
-   * Set the QoS ACK policy in the QoS control field to no ACK.
-   */
-  void SetQosNoAck (void);
   /**
    * Set that A-MSDU is present.
    */
@@ -368,6 +320,13 @@ public:
    */
   bool IsQosData (void) const;
   /**
+   * Return true if the header type is DATA and is not DATA_NULL.
+   *
+   * \return true if the header type is DATA and is not DATA_NULL,
+   *         false otherwise
+   */
+  bool HasData (void) const;
+  /**
    * Return true if the Type is Control.
    *
    * \return true if Type is Control, false otherwise
@@ -384,7 +343,19 @@ public:
    *
    * \return true if the Type/Subtype is one of the possible CF-Poll headers, false otherwise
    */
-  bool IsCfpoll (void) const;
+  bool IsCfPoll (void) const;
+  /**
+   * Return true if the header is a CF-ACK header.
+   *
+   * \return true if the header is a CF_ACK header, false otherwise
+   */
+  bool IsCfAck (void) const;
+  /**
+   * Return true if the header is a CF-END header.
+   *
+   * \return true if the header is a CF_END header, false otherwise
+   */
+  bool IsCfEnd (void) const;
   /**
    * Return true if the header is a RTS header.
    *
@@ -517,7 +488,7 @@ public:
    *
    * \return the fragment number of the header
    */
-  uint16_t GetFragmentNumber (void) const;
+  uint8_t GetFragmentNumber (void) const;
   /**
    * Return if the Retry bit is set.
    *
@@ -567,18 +538,6 @@ public:
    * \return the Traffic ID of a QoS header
    */
   uint8_t GetQosTid (void) const;
-  /**
-   * Return the QoS ACK Policy of a QoS header.
-   *
-   * \return the QoS ACK Policy of a QoS header
-   */
-  QosAckPolicy GetQosAckPolicy (void) const;
-  /**
-   * Return the TXOP limit.
-   *
-   * \return the TXOP limit
-   */
-  uint8_t GetQosTxopLimit (void) const;
   /**
    * Return the size of the WifiMacHeader in octets.
    * GetSerializedSize calls this function.
@@ -647,7 +606,7 @@ private:
   uint8_t m_ctrlRetry; ///< control retry
   uint8_t m_ctrlMoreData; ///< control more data
   uint8_t m_ctrlWep; ///< control WEP
-  uint8_t m_ctrlOrder; ///< control order
+  uint8_t m_ctrlOrder; ///< control order (set to 1 for QoS Data and Management frames to signify that HT/VHT/HE control field is present, knowing that the latter are not implemented yet)
   uint16_t m_duration; ///< duration
   Mac48Address m_addr1; ///< address 1
   Mac48Address m_addr2; ///< address 2
@@ -659,7 +618,7 @@ private:
   uint8_t m_qosEosp; ///< QOS EOSP
   uint8_t m_qosAckPolicy; ///< QOS ack policy
   uint8_t m_amsduPresent; ///< AMSDU present
-  uint16_t m_qosStuff; ///< QOS stuff
+  uint8_t m_qosStuff; ///< QOS stuff
 };
 
 } //namespace ns3

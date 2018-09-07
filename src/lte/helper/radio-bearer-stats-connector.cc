@@ -1,6 +1,7 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2012 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+ * Copyright (c) 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -16,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Nicola Baldo <nbaldo@cttc.es>
+ *
+ * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+ *							Integration of Carrier Aggregation for the mmWave module
  */
 
 
@@ -371,16 +375,40 @@ RadioBearerStatsConnector::ConnectTracesUeIfFirstTime (std::string context, uint
       ConnectSrb1TracesUe (context, imsi, cellId, rnti);
   }
 
+  //Look for the RLCs
   std::string basePath = context.substr (0, context.rfind ("/"));
-  Config::MatchContainer rlc_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LteRlc/");
+  Config::MatchContainer rlc_container = Config::LookupMatches( basePath + "/DataRadioBearerMap/*/LteRlc/");
+  uint16_t numberOfRlc = rlc_container.GetN();
 
   //Connect PDCP and RLC for data radio bearers
-  //Look for the RLCs
-  if (m_imsiSeenUeDrb.find (imsi) == m_imsiSeenUeDrb.end () && rlc_container.GetN() > 0)
+  std::map<uint64_t,uint16_t>::iterator it = m_imsiSeenUeDrb.find(imsi);
+  if (it == m_imsiSeenUeDrb.end () && numberOfRlc > 0)
     {
-      //it is executed only if there exist at least one rlc layer
-      m_imsiSeenUeDrb.insert (imsi);
+      //If it is the first time for this imsi
+      NS_LOG_DEBUG("Insert imsi " + std::to_string(imsi));
+      m_imsiSeenUeDrb.insert (m_imsiSeenUeDrb.end(), std::pair<uint64_t,uint16_t>(imsi, 1));
       ConnectDrbTracesUe (context, imsi, cellId, rnti);
+    }
+  else
+    {
+      if(it->second < numberOfRlc)
+      {
+        //If this imsi has already been connected but a new DRB is established
+        NS_LOG_DEBUG("There is a new RLC. Call ConnectDrbTracesUe to connect the traces.");
+        it->second ++; //TODO Check if there could be more than one RLC to connect
+        ConnectDrbTracesUe (context, imsi, cellId, rnti);
+      }
+      else
+      {
+        it->second = numberOfRlc; //One or more DRBs could have been removed
+        NS_LOG_DEBUG("All RLCs traces are already connected. No need for a call to ConnectDrbTracesUe.");
+      }
+    }
+
+    //Debug: print map
+    for( std::map<uint64_t,uint16_t>::const_iterator it2 = m_imsiSeenUeDrb.begin(); it2!=m_imsiSeenUeDrb.end(); ++it2 )
+    {
+      NS_LOG_DEBUG("imsi " + std::to_string(it2->first) + "\tnum of rlc " + std::to_string(it2->second));
     }
 }
 

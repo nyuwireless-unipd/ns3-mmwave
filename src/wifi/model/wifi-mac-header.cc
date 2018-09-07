@@ -20,6 +20,7 @@
  *          Mirko Banchi <mk.banchi@gmail.com>
  */
 
+#include "ns3/nstime.h"
 #include "ns3/address-utils.h"
 #include "wifi-mac-header.h"
 
@@ -44,13 +45,15 @@ enum
   SUBTYPE_CTL_BACKRESP = 9,
   SUBTYPE_CTL_RTS = 11,
   SUBTYPE_CTL_CTS = 12,
-  SUBTYPE_CTL_ACK = 13
+  SUBTYPE_CTL_ACK = 13,
+  SUBTYPE_CTL_END = 14,
+  SUBTYPE_CTL_END_ACK = 15
 };
 
 WifiMacHeader::WifiMacHeader ()
   : m_ctrlMoreData (0),
     m_ctrlWep (0),
-    m_ctrlOrder (1),
+    m_ctrlOrder (0),
     m_amsduPresent (0)
 {
 }
@@ -108,77 +111,7 @@ WifiMacHeader::SetAddr4 (Mac48Address address)
 }
 
 void
-WifiMacHeader::SetAssocReq (void)
-{
-  m_ctrlType = TYPE_MGT;
-  m_ctrlSubtype = 0;
-}
-
-void
-WifiMacHeader::SetAssocResp (void)
-{
-  m_ctrlType = TYPE_MGT;
-  m_ctrlSubtype = 1;
-}
-
-void
-WifiMacHeader::SetProbeReq (void)
-{
-  m_ctrlType = TYPE_MGT;
-  m_ctrlSubtype = 4;
-}
-
-void
-WifiMacHeader::SetProbeResp (void)
-{
-  m_ctrlType = TYPE_MGT;
-  m_ctrlSubtype = 5;
-}
-
-void
-WifiMacHeader::SetBeacon (void)
-{
-  m_ctrlType = TYPE_MGT;
-  m_ctrlSubtype = 8;
-}
-
-void
-WifiMacHeader::SetBlockAckReq (void)
-{
-  m_ctrlType = TYPE_CTL;
-  m_ctrlSubtype = 8;
-}
-
-void
-WifiMacHeader::SetBlockAck (void)
-{
-  m_ctrlType = TYPE_CTL;
-  m_ctrlSubtype = 9;
-}
-
-void
-WifiMacHeader::SetTypeData (void)
-{
-  m_ctrlType = TYPE_DATA;
-  m_ctrlSubtype = 0;
-}
-
-void
-WifiMacHeader::SetAction (void)
-{
-  m_ctrlType = TYPE_MGT;
-  m_ctrlSubtype = 0x0D;
-}
-
-void
-WifiMacHeader::SetMultihopAction (void)
-{
-  m_ctrlType = TYPE_MGT;
-  m_ctrlSubtype = 0x0F;
-}
-
-void
-WifiMacHeader::SetType (WifiMacType type)
+WifiMacHeader::SetType (WifiMacType type, bool resetToDsFromDs)
 {
   switch (type)
     {
@@ -205,6 +138,14 @@ WifiMacHeader::SetType (WifiMacType type)
     case WIFI_MAC_CTL_ACK:
       m_ctrlType = TYPE_CTL;
       m_ctrlSubtype = SUBTYPE_CTL_ACK;
+      break;
+    case WIFI_MAC_CTL_END:
+      m_ctrlType = TYPE_CTL;
+      m_ctrlSubtype = SUBTYPE_CTL_END;
+      break;
+    case WIFI_MAC_CTL_END_ACK:
+      m_ctrlType = TYPE_CTL;
+      m_ctrlSubtype = SUBTYPE_CTL_END_ACK;
       break;
     case WIFI_MAC_MGT_ASSOCIATION_REQUEST:
       m_ctrlType = TYPE_MGT;
@@ -319,20 +260,24 @@ WifiMacHeader::SetType (WifiMacType type)
       m_ctrlSubtype = 15;
       break;
     }
-  m_ctrlToDs = 0;
-  m_ctrlFromDs = 0;
+  if (resetToDsFromDs)
+    {
+      m_ctrlToDs = 0;
+      m_ctrlFromDs = 0;
+    }
 }
 
 void
 WifiMacHeader::SetRawDuration (uint16_t duration)
 {
+  NS_ASSERT (duration <= 32768);
   m_duration = duration;
 }
 
 void
 WifiMacHeader::SetDuration (Time duration)
 {
-  int64_t duration_us = ceil ((double)duration.GetNanoSeconds () / 1000);
+  int64_t duration_us = static_cast<int64_t> (ceil (static_cast<double> (duration.GetNanoSeconds ()) / 1000));
   NS_ASSERT (duration_us >= 0 && duration_us <= 0x7fff);
   m_duration = static_cast<uint16_t> (duration_us);
 }
@@ -414,24 +359,6 @@ void WifiMacHeader::SetQosAckPolicy (QosAckPolicy policy)
       m_qosAckPolicy = 3;
       break;
     }
-}
-
-void
-WifiMacHeader::SetQosNormalAck ()
-{
-  m_qosAckPolicy = 0;
-}
-
-void
-WifiMacHeader::SetQosBlockAck ()
-{
-  m_qosAckPolicy = 3;
-}
-
-void
-WifiMacHeader::SetQosNoAck ()
-{
-  m_qosAckPolicy = 1;
 }
 
 void WifiMacHeader::SetQosAmsdu (void)
@@ -537,6 +464,10 @@ WifiMacHeader::GetType (void) const
           return WIFI_MAC_CTL_CTS;
         case SUBTYPE_CTL_ACK:
           return WIFI_MAC_CTL_ACK;
+        case SUBTYPE_CTL_END:
+          return WIFI_MAC_CTL_END;
+        case SUBTYPE_CTL_END_ACK:
+          return WIFI_MAC_CTL_END_ACK;
         }
       break;
     case TYPE_DATA:
@@ -618,7 +549,7 @@ WifiMacHeader::IsMgt (void) const
 }
 
 bool
-WifiMacHeader::IsCfpoll (void) const
+WifiMacHeader::IsCfPoll (void) const
 {
   switch (GetType ())
     {
@@ -630,6 +561,55 @@ WifiMacHeader::IsCfpoll (void) const
     case WIFI_MAC_QOSDATA_CFACK_CFPOLL:
     case WIFI_MAC_QOSDATA_NULL_CFPOLL:
     case WIFI_MAC_QOSDATA_NULL_CFACK_CFPOLL:
+      return true;
+    default:
+      return false;
+    }
+}
+
+bool
+WifiMacHeader::IsCfEnd (void) const
+{
+  switch (GetType ())
+    {
+    case WIFI_MAC_CTL_END:
+    case WIFI_MAC_CTL_END_ACK:
+      return true;
+    default:
+      return false;
+    }
+}
+
+bool
+WifiMacHeader::IsCfAck (void) const
+{
+  switch (GetType ())
+    {
+    case WIFI_MAC_DATA_CFACK:
+    case WIFI_MAC_DATA_CFACK_CFPOLL:
+    case WIFI_MAC_DATA_NULL_CFACK:
+    case WIFI_MAC_DATA_NULL_CFACK_CFPOLL:
+    case WIFI_MAC_CTL_END_ACK:
+      return true;
+    default:
+      return false;
+      break;
+    }
+}
+
+bool
+WifiMacHeader::HasData (void) const
+{
+  switch (GetType ())
+    {
+    case WIFI_MAC_DATA:
+    case WIFI_MAC_DATA_CFACK:
+    case WIFI_MAC_DATA_CFPOLL:
+    case WIFI_MAC_DATA_CFACK_CFPOLL:
+    case WIFI_MAC_QOSDATA:
+    case WIFI_MAC_QOSDATA_CFACK:
+    case WIFI_MAC_QOSDATA_CFPOLL:
+    case WIFI_MAC_QOSDATA_CFACK_CFPOLL:
       return true;
     default:
       return false;
@@ -762,7 +742,7 @@ WifiMacHeader::GetSequenceNumber (void) const
   return m_seqSeq;
 }
 
-uint16_t
+uint8_t
 WifiMacHeader::GetFragmentNumber (void) const
 {
   return m_seqFrag;
@@ -820,32 +800,6 @@ WifiMacHeader::GetQosTid (void) const
 {
   NS_ASSERT (IsQosData ());
   return m_qosTid;
-}
-
-WifiMacHeader::QosAckPolicy
-WifiMacHeader::GetQosAckPolicy (void) const
-{
-  switch (m_qosAckPolicy)
-    {
-    case 0:
-      return NORMAL_ACK;
-    case 1:
-      return NO_ACK;
-    case 2:
-      return NO_EXPLICIT_ACK;
-    case 3:
-      return BLOCK_ACK;
-    }
-  // NOTREACHED
-  NS_ASSERT (false);
-  return (QosAckPolicy) - 1;
-}
-
-uint8_t
-WifiMacHeader::GetQosTxopLimit (void) const
-{
-  NS_ASSERT (IsQosData ());
-  return m_qosStuff;
 }
 
 uint16_t
@@ -918,15 +872,15 @@ WifiMacHeader::GetSize (void) const
       switch (m_ctrlSubtype)
         {
         case SUBTYPE_CTL_RTS:
+        case SUBTYPE_CTL_BACKREQ:
+        case SUBTYPE_CTL_BACKRESP:
+        case SUBTYPE_CTL_END:
+        case SUBTYPE_CTL_END_ACK:
           size = 2 + 2 + 6 + 6;
           break;
         case SUBTYPE_CTL_CTS:
         case SUBTYPE_CTL_ACK:
           size = 2 + 2 + 6;
-          break;
-        case SUBTYPE_CTL_BACKREQ:
-        case SUBTYPE_CTL_BACKRESP:
-          size = 2 + 2 + 6 + 6;
           break;
         case SUBTYPE_CTL_CTLWRAPPER:
           size = 2 + 2 + 6 + 2 + 4;
@@ -963,6 +917,8 @@ case WIFI_MAC_ ## x: \
       FOO (CTL_ACK);
       FOO (CTL_BACKREQ);
       FOO (CTL_BACKRESP);
+      FOO (CTL_END);
+      FOO (CTL_END_ACK);
 
       FOO (MGT_BEACON);
       FOO (MGT_ASSOCIATION_REQUEST);
@@ -997,8 +953,10 @@ case WIFI_MAC_ ## x: \
       return "ERROR";
     }
 #undef FOO
+#ifndef _WIN32
   // needed to make gcc 4.0.1 ppc darwin happy.
   return "BIG_ERROR";
+#endif
 }
 
 TypeId
@@ -1041,12 +999,6 @@ WifiMacHeader::Print (std::ostream &os) const
     case WIFI_MAC_CTL_ACK:
       os << "Duration/ID=" << m_duration << "us"
          << ", RA=" << m_addr1;
-      break;
-    case WIFI_MAC_CTL_BACKREQ:
-      break;
-    case WIFI_MAC_CTL_BACKRESP:
-      break;
-    case WIFI_MAC_CTL_CTLWRAPPER:
       break;
     case WIFI_MAC_MGT_BEACON:
     case WIFI_MAC_MGT_ASSOCIATION_REQUEST:
@@ -1102,6 +1054,11 @@ WifiMacHeader::Print (std::ostream &os) const
       os << ", FragNumber=" << std::hex << (int) m_seqFrag << std::dec
          << ", SeqNumber=" << m_seqSeq;
       break;
+    case WIFI_MAC_CTL_BACKREQ:
+    case WIFI_MAC_CTL_BACKRESP:
+    case WIFI_MAC_CTL_CTLWRAPPER:
+    case WIFI_MAC_CTL_END:
+    case WIFI_MAC_CTL_END_ACK:
     case WIFI_MAC_DATA_CFACK:
     case WIFI_MAC_DATA_CFPOLL:
     case WIFI_MAC_DATA_CFACK_CFPOLL:
@@ -1116,6 +1073,7 @@ WifiMacHeader::Print (std::ostream &os) const
     case WIFI_MAC_QOSDATA_NULL:
     case WIFI_MAC_QOSDATA_NULL_CFPOLL:
     case WIFI_MAC_QOSDATA_NULL_CFACK_CFPOLL:
+    default:
       break;
     }
 }
@@ -1143,14 +1101,14 @@ WifiMacHeader::Serialize (Buffer::Iterator i) const
       switch (m_ctrlSubtype)
         {
         case SUBTYPE_CTL_RTS:
+        case SUBTYPE_CTL_BACKREQ:
+        case SUBTYPE_CTL_BACKRESP:
+        case SUBTYPE_CTL_END:
+        case SUBTYPE_CTL_END_ACK:
           WriteTo (i, m_addr2);
           break;
         case SUBTYPE_CTL_CTS:
         case SUBTYPE_CTL_ACK:
-          break;
-        case SUBTYPE_CTL_BACKREQ:
-        case SUBTYPE_CTL_BACKRESP:
-          WriteTo (i, m_addr2);
           break;
         default:
           //NOTREACHED
@@ -1198,14 +1156,14 @@ WifiMacHeader::Deserialize (Buffer::Iterator start)
       switch (m_ctrlSubtype)
         {
         case SUBTYPE_CTL_RTS:
+        case SUBTYPE_CTL_BACKREQ:
+        case SUBTYPE_CTL_BACKRESP:
+        case SUBTYPE_CTL_END:
+        case SUBTYPE_CTL_END_ACK:
           ReadFrom (i, m_addr2);
           break;
         case SUBTYPE_CTL_CTS:
         case SUBTYPE_CTL_ACK:
-          break;
-        case SUBTYPE_CTL_BACKREQ:
-        case SUBTYPE_CTL_BACKRESP:
-          ReadFrom (i, m_addr2);
           break;
         }
       break;

@@ -2,30 +2,30 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab. 
- *  
+ *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
  *        		  Menglei Zhang <menglei@nyu.edu>
  *
- * Modified by: Michele Polese <michele.polese@gmail.com> 
+ * Modified by: Michele Polese <michele.polese@gmail.com>
  *                 Dual Connectivity and Handover functionalities
  *				Marco Giordani <m.giordani91@gmail.com>
  *					LOS-NLOS transitions, SINR measurement error and filtering
@@ -44,11 +44,14 @@
 #include <ns3/lte-enb-cphy-sap.h>
 #include <ns3/mmwave-harq-phy.h>
 
-namespace ns3{
+namespace ns3 {
 
 typedef std::pair<uint64_t, uint64_t > pairDevices_t;
 
 class PacketBurst;
+
+namespace mmwave {
+
 class MmWaveNetDevice;
 class MmWaveUePhy;
 class MmWaveEnbMac;
@@ -202,7 +205,9 @@ private:
 	TracedCallback< uint64_t, SpectrumValue&, SpectrumValue& > m_ulSinrTrace;
 };
 
-}
+} // namespace mmwave
+
+} // namespace ns3
 
 
 #endif /* SRC_MMWAVE_MODEL_MMWAVE_ENB_PHY_H_ */

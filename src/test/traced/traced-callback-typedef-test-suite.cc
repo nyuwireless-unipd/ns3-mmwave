@@ -18,9 +18,12 @@
  * Author:  Peter D. Barnes, Jr. <pdbarnes@llnl.gov>
  */
 
+#include <iostream>
+#include <sstream>
+#include <set>
+#include <string>
 #include "ns3/test.h"
 #include "ns3/core-module.h"
-
 #include "ns3/dsr-module.h"       // DsrOPtionSRHeader
 #include "ns3/internet-module.h"  // Ipv4, Ipv4L3Protocol, Ipv4PacketProbe
                                   // Ipv6L3Protocol, Ipv6PacketProbe
@@ -36,13 +39,7 @@
 #include "ns3/spectrum-module.h"  // SpectrumValue
 #include "ns3/stats-module.h"     // TimeSeriesAdapter
 #include "ns3/uan-module.h"       // UanPhy
-#include "ns3/wifi-module.h"      // WifiMacHeader, WifiPhyStateHelper
-
-
-#include <iostream>
-#include <sstream>
-#include <set>
-#include <string>
+#include "ns3/wifi-phy-state-helper.h"
 
 using namespace ns3;
 
@@ -611,7 +608,7 @@ TracedCallbackTypedefTestCase::DoRun (void)
          empty, empty);
 
   CHECK (SpectrumChannel::LossTracedCallback,
-         Ptr<SpectrumPhy>, Ptr<SpectrumPhy>, double,
+         Ptr<const SpectrumPhy>, Ptr<const SpectrumPhy>, double,
          empty, empty);
 
   CHECK (SpectrumValue::TracedCallback,
@@ -635,7 +632,7 @@ TracedCallbackTypedefTestCase::DoRun (void)
          empty, empty, empty);
 
   CHECK (UanNetDevice::RxTxTracedCallback,
-         Ptr<const Packet>, UanAddress,
+         Ptr<const Packet>, Mac8Address,
          empty, empty, empty);
 
   CHECK (UanPhy::TracedCallback,
@@ -658,7 +655,7 @@ TracedCallbackTypedefTestCase::DoRun (void)
          empty);
 
   CHECK (WifiPhyStateHelper::StateTracedCallback,
-         Time, Time, WifiPhy::State,
+         Time, Time, WifiPhyState,
          empty, empty);
 
   CHECK (WifiPhyStateHelper::TxTracedCallback,

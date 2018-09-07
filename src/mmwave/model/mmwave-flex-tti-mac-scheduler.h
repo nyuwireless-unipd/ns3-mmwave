@@ -2,23 +2,23 @@
  /*
  *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
  *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *  
+ *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 as
  *   published by the Free Software Foundation;
- *  
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
- *  
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *  
+ *
  *   Author: Marco Miozzo <marco.miozzo@cttc.es>
  *           Nicola Baldo  <nbaldo@cttc.es>
- *  
+ *
  *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
  *        	 	  Sourjya Dutta <sdutta@nyu.edu>
  *        	 	  Russell Ford <russell.ford@nyu.edu>
@@ -40,6 +40,8 @@
 #include <set>
 
 namespace ns3 {
+
+namespace mmwave {
 
 class MmWaveFlexTtiMacScheduler : public MmWaveMacScheduler
 {
@@ -93,12 +95,12 @@ private:
 		{
 		}
 
-		uint8_t		m_dlMcs;
-		uint8_t		m_ulMcs;
-		uint32_t	m_maxDlBufSize;
-		uint32_t	m_maxUlBufSize;
-		uint8_t		m_maxDlSymbols;
-		uint8_t		m_maxUlSymbols;
+		uint8_t		m_dlMcs; // DL MCS
+		uint8_t		m_ulMcs; // UL MCS
+		uint32_t	m_maxDlBufSize; // DL TB size needed to encode the DL buffer (this parameter is also used to temporarily store the DL buffer size)
+		uint32_t	m_maxUlBufSize; // UL TB size needed to encode the UL buffer (this parameter is also used to temporarily store the UL buffer size)
+		uint8_t		m_maxDlSymbols; // Number of symbols needed to encode the DL buffer given the DL MCS
+		uint8_t		m_maxUlSymbols; // Number of symbols needed to encode the UL buffer given the UL MCS
 		uint8_t		m_dlSymbols;
 		uint8_t		m_ulSymbols;
 		uint8_t		m_dlSymbolsRetx;
@@ -318,7 +320,9 @@ private:
 	uint8_t	m_symPerSlot; // symbols per slot
 };
 
-}
+} // namespace mmwave
+
+} // namespace ns3
 
 
 #endif /* SRC_MMWAVE_MODEL_MMWAVE_RR_MAC_SCHEDULER_H_ */

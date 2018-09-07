@@ -35,7 +35,6 @@
 #include "service-flow.h"
 #include "service-flow-record.h"
 #include "service-flow-manager.h"
-#include "wimax-mac-queue.h"
 
 namespace ns3 {
 
@@ -492,7 +491,6 @@ BSSchedulerRtps::BSSchedulerRTPSConnection (uint32_t &availableSymbols)
 
   Time currentTime = Simulator::Now ();
 
-  std::vector<Ptr<WimaxConnection> >::const_iterator iter;
   std::vector<Ptr<WimaxConnection> > connections;
   std::vector<ServiceFlow*>::iterator iter2;
   ServiceFlowRecord *serviceFlowRecord;

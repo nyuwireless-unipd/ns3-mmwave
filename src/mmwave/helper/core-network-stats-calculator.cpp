@@ -28,6 +28,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 NS_LOG_COMPONENT_DEFINE ("CoreNetworkStatsCalculator");
 
 NS_OBJECT_ENSURE_REGISTERED ( CoreNetworkStatsCalculator);
@@ -130,5 +132,7 @@ CoreNetworkStatsCalculator::SetMmeOutputFilename (std::string outputFilename)
 {
   m_mmeOutFileName = outputFilename;
 }
+
+} // namespace mmwave 
 
 } // namespace ns3

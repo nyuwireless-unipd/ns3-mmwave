@@ -300,6 +300,7 @@ UanPhyPerCommonModes::CalcPer (Ptr<Packet> pkt, double sinrDb, UanTxMode mode)
           NS_FATAL_ERROR ("constellation " << mode.GetConstellationSize () << " not supported");
           break;
         }
+      break;
 
     // taken from Ronell B. Sicat, "Bit Error Probability Computations for M-ary Quadrature Amplitude Modulation",
     // EE 242 Digital Communications and Codings, 2009
@@ -369,8 +370,8 @@ UanPhyPerCommonModes::CalcPer (Ptr<Packet> pkt, double sinrDb, UanTxMode mode)
 
         default:
           NS_FATAL_ERROR ("constellation " << mode.GetConstellationSize () << " not supported");
-          break;
         }
+      break;
 
     default:     // OTHER and error
       NS_FATAL_ERROR ("Mode " << mode.GetModType () << " not supported");
@@ -831,6 +832,7 @@ UanPhyGen::StartRxPacket (Ptr<Packet> pkt, double rxPowerDb, UanTxMode txMode, U
 void
 UanPhyGen::RxEndEvent (Ptr<Packet> pkt, double rxPowerDb, UanTxMode txMode)
 {
+  NS_UNUSED (rxPowerDb);
   if (pkt != m_pktRx)
     {
       return;
@@ -1040,6 +1042,7 @@ UanPhyGen::AssignStreams (int64_t stream)
 void
 UanPhyGen::NotifyTransStartTx (Ptr<Packet> packet, double txPowerDb, UanTxMode txMode)
 {
+  NS_UNUSED (txPowerDb);
   if (m_pktRx)
     {
       m_minRxSinrDb = -1e30;

@@ -24,19 +24,16 @@
 #include "ns3/packet.h"
 #include "ns3/log.h"
 #include "ns3/boolean.h"
-#include "ns3/abort.h"
-#include "ns3/simulator.h"
 #include "ns3/uinteger.h"
-#include "ns3/icmpv6-header.h"
-#include "ns3/ipv6-header.h"
+#include "ns3/simulator.h"
 #include "ns3/mac16-address.h"
 #include "ns3/mac48-address.h"
 #include "ns3/mac64-address.h"
-#include "ns3/unused.h"
 #include "ns3/ipv6-l3-protocol.h"
 #include "ns3/ipv6-extension-header.h"
 #include "ns3/udp-header.h"
 #include "ns3/udp-l4-protocol.h"
+#include "ns3/random-variable-stream.h"
 #include "sixlowpan-net-device.h"
 #include "sixlowpan-header.h"
 
@@ -2098,6 +2095,10 @@ Ipv6Address SixLowPanNetDevice::MakeLinkLocalAddressFromMac (Address const &addr
       else if (Mac16Address::IsMatchingType (addr))
         {
           ipv6Addr = Ipv6Address::MakeAutoconfiguredLinkLocalAddress (Mac16Address::ConvertFrom (addr));
+        }
+      else if (Mac8Address::IsMatchingType (addr))
+        {
+          ipv6Addr = Ipv6Address::MakeAutoconfiguredLinkLocalAddress (Mac8Address::ConvertFrom (addr));
         }
     }
   if (ipv6Addr.IsAny ())

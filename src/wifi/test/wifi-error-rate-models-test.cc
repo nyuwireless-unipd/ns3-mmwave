@@ -21,6 +21,8 @@
 #include <cmath>
 #include "ns3/test.h"
 #include "ns3/nist-error-rate-model.h"
+#include "ns3/dsss-error-rate-model.h"
+#include "ns3/wifi-tx-vector.h"
 
 using namespace ns3;
 
@@ -66,7 +68,7 @@ WifiErrorRateModelsTestCaseDsss::DoRun (void)
 {
 
   // 1024 bytes plus headers
-  uint32_t size = (1024 + 40 + 14) * 8;
+  uint64_t size = (1024 + 40 + 14) * 8;
   // Spot test some values returned from DsssErrorRateModel
   // Values taken from sample 80211b.c program used in validation paper
   double value;

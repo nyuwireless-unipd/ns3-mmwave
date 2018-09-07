@@ -22,18 +22,9 @@
 #define CTRL_HEADERS_H
 
 #include "ns3/header.h"
+#include "block-ack-type.h"
 
 namespace ns3 {
-
-/**
- * Enumeration for different block ACK policies.
- */
-enum BlockAckType
-{
-  BASIC_BLOCK_ACK,
-  COMPRESSED_BLOCK_ACK,
-  MULTI_TID_BLOCK_ACK
-};
 
 /**
  * \ingroup wifi
@@ -383,7 +374,7 @@ private:
    * to set to 1 in the compressed bitmap to indicate that packet having
    * sequence number equals to <i>seq</i> was correctly received.
    */
-  uint8_t IndexInBitmap (uint16_t seq) const;
+  uint16_t IndexInBitmap (uint16_t seq) const;
 
   /**
    * Checks if sequence number <i>seq</i> can be acknowledged in the bitmap.

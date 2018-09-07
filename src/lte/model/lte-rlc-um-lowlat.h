@@ -31,7 +31,7 @@
 #include "ns3/lte-rlc-sequence-number.h"
 #include "ns3/lte-rlc.h"
 #include <ns3/epc-x2-sap.h>
- 
+
 #include <ns3/event-id.h>
 #include <map>
 #include <deque>
@@ -62,9 +62,9 @@ public:
   /**
    * MAC SAP
    */
-  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId);
+  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
   virtual void DoNotifyHarqDeliveryFailure ();
-  virtual void DoReceivePdu (Ptr<Packet> p);
+  virtual void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
 
   std::vector < Ptr<Packet> > GetTxBuffer();
   uint32_t GetTxBufferSize()
@@ -141,6 +141,7 @@ private:
 
   bool m_bsrReported;
 
+  bool m_sendBsrWhenPacketTx;
 };
 
 

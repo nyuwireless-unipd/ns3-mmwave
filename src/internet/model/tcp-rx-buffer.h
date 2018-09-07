@@ -56,7 +56,7 @@ class Packet;
  * SACK list
  * ---------
  *
- * An interesting feature of this class is the ability to mantain an ordered
+ * An interesting feature of this class is the ability to maintain an ordered
  * SACK list, under the definition of RFC 2018. When a out-of-order segment
  * reaches this buffer, an ACK will be sent out, and the SACK list is
  * generated or updated. From RFC 2018:
@@ -175,12 +175,18 @@ public:
    */
   uint32_t GetSackListSize () const;
 
+  /**
+   * \brief Says if a FIN bit has been received
+   * \return true if we received a FIN bit
+   */
+  bool GotFin () const { return m_gotFin; }
+
 private:
   /**
    * \brief Update the sack list, with the block seq starting at the beginning
    *
    * Note: the maximum size of the block list is 4. Caller is free to
-   * drop blocks at the end to accomodate header size; from RFC 2018:
+   * drop blocks at the end to accommodate header size; from RFC 2018:
    *
    * > The data receiver SHOULD include as many distinct SACK blocks as
    * > possible in the SACK option.  Note that the maximum available
@@ -222,6 +228,6 @@ private:
   std::map<SequenceNumber32, Ptr<Packet> > m_data; //!< Corresponding data (may be null)
 };
 
-} //namepsace ns3
+} //namespace ns3
 
 #endif /* TCP_RX_BUFFER_H */

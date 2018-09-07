@@ -40,14 +40,15 @@ WifiPhyTag::GetInstanceTypeId (void) const
 uint32_t
 WifiPhyTag::GetSerializedSize (void) const
 {
-  return (sizeof (WifiTxVector) + 2);
+  return (sizeof (WifiTxVector) + 2 + 1);
 }
 
 void
 WifiPhyTag::Serialize (TagBuffer i) const
 {
   i.Write ((uint8_t *)&m_wifiTxVector, sizeof (WifiTxVector));
-  i.WriteU16 (m_mpduType);
+  i.WriteU16 (static_cast<uint16_t> (m_mpduType));
+  i.WriteU8 (m_frameComplete);
 }
 
 void
@@ -55,20 +56,23 @@ WifiPhyTag::Deserialize (TagBuffer i)
 {
   i.Read ((uint8_t *)&m_wifiTxVector, sizeof (WifiTxVector));
   m_mpduType = static_cast<MpduType> (i.ReadU16 ());
+  m_frameComplete = i.ReadU8 ();
 }
+
 void
 WifiPhyTag::Print (std::ostream &os) const
 {
-  os << m_wifiTxVector << " " << m_mpduType;
+  os << m_wifiTxVector << " " << m_mpduType << " " << m_frameComplete;
 }
 
 WifiPhyTag::WifiPhyTag ()
 {
 }
 
-WifiPhyTag::WifiPhyTag (WifiTxVector txVector, MpduType mpdutype)
+WifiPhyTag::WifiPhyTag (WifiTxVector txVector, MpduType mpdutype, uint8_t frameComplete)
   : m_wifiTxVector (txVector),
-    m_mpduType (mpdutype)
+    m_mpduType (mpdutype),
+    m_frameComplete (frameComplete)
 {
 }
 
@@ -82,6 +86,12 @@ MpduType
 WifiPhyTag::GetMpduType (void) const
 {
   return m_mpduType;
+}
+
+uint8_t
+WifiPhyTag::GetFrameComplete (void) const
+{
+  return m_frameComplete;
 }
 
 } // namespace ns3

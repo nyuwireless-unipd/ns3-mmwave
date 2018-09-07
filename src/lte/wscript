@@ -123,11 +123,22 @@ def build(bld):
         'model/lte-ffr-enhanced-algorithm.cc',
         'model/lte-ffr-distributed-algorithm.cc',
         'model/lte-ue-power-control.cc',
+        'model/lte-ccm-rrc-sap.cc',
+        'model/lte-ue-ccm-rrc-sap.cc',
+        'model/lte-ccm-mac-sap.cc',
+        'model/lte-enb-component-carrier-manager.cc',
+        'model/lte-ue-component-carrier-manager.cc',
+        'model/no-op-component-carrier-manager.cc',
+        'model/simple-ue-component-carrier-manager.cc',
+        'model/component-carrier.cc',
+        'helper/cc-helper.cc',
+        'model/component-carrier-ue.cc',
+        'model/component-carrier-enb.cc',
         'model/lte-rlc-um-lowlat.cc',
         'model/epc-mme-application.cc',
         'model/epc-s1ap-header.cc',
         'model/mc-enb-pdcp.cc',
-        'model/mc-ue-pdcp.cc', 
+        'model/mc-ue-pdcp.cc',
         'helper/retx-stats-calculator.cc',
         'helper/mac-tx-stats-calculator.cc'
         ]
@@ -176,6 +187,7 @@ def build(bld):
         'test/test-asn1-encoding.cc',
         'test/lte-test-ue-measurements.cc',
         'test/lte-test-cell-selection.cc',
+        'test/lte-test-secondary-cell-selection.cc',
         'test/test-lte-handover-delay.cc',
         'test/test-lte-handover-target.cc',
         'test/lte-test-deactivate-bearer.cc',
@@ -186,6 +198,10 @@ def build(bld):
         'test/lte-test-interference-fr.cc',
         'test/lte-test-cqi-generation.cc',
         'test/lte-simple-spectrum-phy.cc',
+        'test/lte-test-carrier-aggregation.cc',
+        'test/lte-test-aggregation-throughput-scale.cc',
+        'test/lte-test-ipv6-routing.cc',
+        'test/lte-test-carrier-aggregation-configuration.cc'
         ]
 
     headers = bld(features='ns3header')
@@ -306,14 +322,25 @@ def build(bld):
         'model/lte-fr-soft-algorithm.h',
         'model/lte-ffr-soft-algorithm.h',
         'model/lte-ffr-enhanced-algorithm.h',
-        'model/lte-ffr-distributed-algorithm.h',     
-		'model/lte-ue-power-control.h',     
-		'model/lte-rlc-um-lowlat.h', 
+        'model/lte-ffr-distributed-algorithm.h',
+        'model/lte-ue-power-control.h',
+        'model/lte-rlc-um-lowlat.h',
         'model/epc-s1ap-header.h',
         'model/mc-enb-pdcp.h',
-        'model/mc-ue-pdcp.h',     
+        'model/mc-ue-pdcp.h',
         'helper/retx-stats-calculator.h',
-        'helper/mac-tx-stats-calculator.h'
+        'helper/mac-tx-stats-calculator.h',
+        'model/lte-ccm-rrc-sap.h',
+        'model/lte-ue-ccm-rrc-sap.h',
+        'model/lte-ccm-mac-sap.h',
+        'model/lte-enb-component-carrier-manager.h',
+        'model/lte-ue-component-carrier-manager.h',
+        'model/no-op-component-carrier-manager.h',
+        'model/simple-ue-component-carrier-manager.h',
+        'helper/cc-helper.h',
+        'model/component-carrier.h',
+        'model/component-carrier-ue.h',
+        'model/component-carrier-enb.h'
         ]
 
     if (bld.env['ENABLE_EMU']):

@@ -37,33 +37,38 @@ class EpcHelper;
 
 class EpcUeNas : public Object
 {
+  /// allow MemberLteAsSapUser<EpcUeNas> class friend access
   friend class MemberLteAsSapUser<EpcUeNas>;
 public:
 
-  /** 
+  /**
    * Constructor
    */
   EpcUeNas ();
 
-  /** 
+  /**
    * Destructor
    */
   virtual ~EpcUeNas ();
 
   // inherited from Object
   virtual void DoDispose (void);
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
 
-  /** 
-   * 
+  /**
+   *
    * \param dev the UE NetDevice
    */
   void SetDevice (Ptr<NetDevice> dev);
 
-  /** 
-   * 
-   * 
+  /**
+   *
+   *
    * \param imsi the unique UE identifier
    */
   void SetImsi (uint64_t imsi);
@@ -113,11 +118,11 @@ public:
    *
    * \param dlEarfcn the DL frequency of the eNB
    */
-  void StartCellSelection (uint16_t dlEarfcn);
+  void StartCellSelection (uint32_t dlEarfcn);
 
   /**
    * \brief Causes NAS to tell AS to go to ACTIVE state.
-   * 
+   *
    * The end result is equivalent with EMM Registered + ECM Connected states.
    */
   void Connect ();
@@ -132,11 +137,11 @@ public:
    * Since RRC Idle Mode cell selection is not supported yet, we force the UE
    * RRC to be camped on a specific eNB.
    */
-  void Connect (uint16_t cellId, uint16_t dlEarfcn);
+  void Connect (uint16_t cellId, uint32_t dlEarfcn);
 
   /**
    * \brief Causes NAS to tell AS to camp to a specific cell and go to ACTIVE
-   *        state. It also specify which is the cellId for the MmWave BS to which 
+   *        state. It also specify which is the cellId for the MmWave BS to which
    *        the UE will connect later on
    * \param cellId the id of the eNB to camp on
    * \param dlEarfcn the DL frequency of the eNB
@@ -144,27 +149,27 @@ public:
    *
    */
   void ConnectMc (uint16_t cellId, uint16_t dlEarfcn, uint16_t mmWaveCellId);
- 
-  /** 
+
+  /**
    * instruct the NAS to disconnect
-   * 
+   *
    */
   void Disconnect ();
 
 
-  /** 
+  /**
    * Activate an EPS bearer
-   * 
+   *
    * \param bearer the characteristics of the bearer to be created
    * \param tft the TFT identifying the traffic that will go on this bearer
    */
   void ActivateEpsBearer (EpsBearer bearer, Ptr<EpcTft> tft);
 
-  /** 
+  /**
    * Enqueue an IP packet on the proper bearer for uplink transmission
-   * 
+   *
    * \param p the packet
-   * 
+   *
    * \return true if successful, false if an error occurred
    */
   bool Send (Ptr<Packet> p);
@@ -173,9 +178,9 @@ public:
   /**
    * Definition of NAS states as per "LTE - From theory to practice",
    * Section 3.2.3.2 "Connection Establishment and Release"
-   * 
+   *
    */
-  enum State 
+  enum State
   {
     OFF = 0,
     ATTACHING,
@@ -194,24 +199,37 @@ public:
    * TracedCallback signature for state change events.
    *
    * \param [in] oldState The old State.
-   * \pararm [in] newState the new State.
+   * \param [in] newState the new State.
    */
   typedef void (* StateTracedCallback)
     (const State oldState, const State newState);
- 
+
 private:
 
   // LTE AS SAP methods
+  /// Notify successful connection
+
   void DoNotifyConnectionSuccessful (uint16_t rnti);
   void DoNotifyHandoverSuccessful (uint16_t rnti, uint16_t mmWaveCellId);
   void DoNotifyConnectToMmWave (uint16_t mmWaveCellId);
+  /// Notify connection failed
   void DoNotifyConnectionFailed ();
+  /// Notify connection released
   void DoNotifyConnectionReleased ();
+  /**
+   * Receive data
+   * \param packet the packet
+   */
   void DoRecvData (Ptr<Packet> packet);
   void DoNotifySecondaryCellHandoverStarted (uint16_t oldRnti, uint16_t newRnti, uint16_t mmWaveCellId, LteRrcSap::RadioResourceConfigDedicated rrcd);
 
 
   // internal methods
+  /**
+   * Activate EPS Bearer
+   * \param bearer the EPS bearer
+   * \param tft the EPC TFT
+   */
   void DoActivateEpsBearer (EpsBearer bearer, Ptr<EpcTft> tft);
   /**
    * Switch the UE RRC to the given state.
@@ -238,22 +256,25 @@ private:
   /// Closed Subscriber Group identity.
   uint32_t m_csgId;
 
+  /// LTE SAP provider
   LteAsSapProvider* m_asSapProvider;
+  /// LTE SAP user
   LteAsSapUser* m_asSapUser;
   LteAsSapProvider* m_mmWaveAsSapProvider;
 
-  uint8_t m_bidCounter;
-  EpcTftClassifier m_tftClassifier;
+  uint8_t m_bidCounter; ///< bid counter
+  EpcTftClassifier m_tftClassifier; ///< tft classifier
 
-  Callback <void, Ptr<Packet> > m_forwardUpCallback;
+  Callback <void, Ptr<Packet> > m_forwardUpCallback; ///< upward callback
 
+  /// BearerToBeActivated structure
   struct BearerToBeActivated
   {
-    EpsBearer bearer;
-    Ptr<EpcTft> tft;
+    EpsBearer bearer; ///< EPS bearer
+    Ptr<EpcTft> tft; ///< TFT
   };
 
-  std::list<BearerToBeActivated> m_bearersToBeActivatedList;
+  std::list<BearerToBeActivated> m_bearersToBeActivatedList; ///< bearers to be activated list
 
   uint16_t m_mmWaveCellId;
   uint16_t m_dlEarfcn; // TODO maybe useless

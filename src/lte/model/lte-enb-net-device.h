@@ -17,6 +17,7 @@
  *
  * Author: Giuseppe Piro  <g.piro@poliba.it>
  * Author: Marco Miozzo <marco.miozzo@cttc.es> : Update to FF API Architecture
+ * Author: Danilo Abrignani <danilo.abrignani@unibo.it> : Integrated with new architecture - GSoC 2015 - Carrier Aggregation
  */
 
 #ifndef LTE_ENB_NET_DEVICE_H
@@ -28,7 +29,9 @@
 #include "ns3/traced-callback.h"
 #include "ns3/nstime.h"
 #include "ns3/lte-phy.h"
+#include "ns3/component-carrier-enb.h"
 #include <vector>
+#include <map>
 
 namespace ns3 {
 
@@ -43,6 +46,7 @@ class FfMacScheduler;
 class LteHandoverAlgorithm;
 class LteAnr;
 class LteFfrAlgorithm;
+class LteEnbComponentCarrierManager;
 
 /**
  * \ingroup lte
@@ -52,6 +56,10 @@ class LteFfrAlgorithm;
 class LteEnbNetDevice : public LteNetDevice
 {
 public:
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   LteEnbNetDevice ();
@@ -63,24 +71,47 @@ public:
   virtual bool Send (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
 
   /**
-   * \return a pointer to the MAC 
+   * \return a pointer to the MAC of the PCC.
    */
   Ptr<LteEnbMac> GetMac (void) const;
 
   /**
-   * \return a pointer to the physical layer.
+   * \param index CC index
+   * \return a pointer to the MAC of the CC addressed by index.
+   */
+  Ptr<LteEnbMac> GetMac (uint8_t index);
+
+  /**
+   * \return a pointer to the physical layer of the PCC.
    */
   Ptr<LteEnbPhy> GetPhy (void) const;
+  
+  /**
+   * \param index SCC index
+   * \return a pointer to the physical layer of the SCC addressed by index.
+   */
+  Ptr<LteEnbPhy> GetPhy (uint8_t index);
 
   /** 
    * \return a pointer to the Radio Resource Control instance of the eNB
    */
   Ptr<LteEnbRrc> GetRrc () const;
+  
+  /** 
+   * \return a pointer to the ComponentCarrierManager instance of the eNB
+   */
+  Ptr<LteEnbComponentCarrierManager> GetComponentCarrierManager () const;
 
   /** 
    * \return the Cell Identifier of this eNB
    */
   uint16_t GetCellId () const;
+
+  /**
+   * \param cellId cell ID
+   * \return true if cellId is served by this eNB
+   */
+  bool HasCellId (uint16_t cellId) const;
 
   /** 
    * \return the uplink bandwidth in RBs
@@ -105,22 +136,22 @@ public:
   /** 
    * \return the downlink carrier frequency (EARFCN)
    */
-  uint16_t GetDlEarfcn () const;
+  uint32_t GetDlEarfcn () const;
 
   /** 
    * \param earfcn the downlink carrier frequency (EARFCN)
    */
-  void SetDlEarfcn (uint16_t earfcn);
+  void SetDlEarfcn (uint32_t earfcn);
 
   /** 
    * \return the uplink carrier frequency (EARFCN)
    */
-  uint16_t GetUlEarfcn () const;
+  uint32_t GetUlEarfcn () const;
 
   /** 
    * \param earfcn the uplink carrier frequency (EARFCN)
    */
-  void SetUlEarfcn (uint16_t earfcn);
+  void SetUlEarfcn (uint32_t earfcn);
 
   /**
    * \brief Returns the CSG ID of the eNodeB.
@@ -167,14 +198,29 @@ public:
    */
   void SetCsgIndication (bool csgIndication);
 
+  /**
+   * \brief Set the ComponentCarrier Map of the Enb
+   * \param ccm the map of ComponentCarrierEnb
+   *
+   */
+
+  void SetCcMap (std::map< uint8_t, Ptr<ComponentCarrierEnb> > ccm);
+
+  /**
+   * \returns  The Component Carrier Map of the Enb.
+   *
+   */
+
+  std::map< uint8_t, Ptr<ComponentCarrierEnb> >  GetCcMap (void);
+
 protected:
   // inherited from Object
   virtual void DoInitialize (void);
 
 
 private:
-  bool m_isConstructed;
-  bool m_isConfigured;
+  bool m_isConstructed; ///< is constructed?
+  bool m_isConfigured; ///< is configured?
 
   /**
    * \brief Propagate attributes and configuration to sub-modules.
@@ -188,30 +234,28 @@ private:
    */
   void UpdateConfig ();
 
-  Ptr<LteEnbMac> m_mac;
+  Ptr<LteEnbRrc> m_rrc; ///< the RRC
 
-  Ptr<LteEnbPhy> m_phy;
+  Ptr<LteHandoverAlgorithm> m_handoverAlgorithm; ///< the handover algorithm
+ 
+  Ptr<LteAnr> m_anr; ///< ANR
 
-  Ptr<LteEnbRrc> m_rrc;
+  Ptr<LteFfrAlgorithm> m_ffrAlgorithm; /**< DEPRECATED - It is maintained for backward compatibility after adding CA feature*/
 
-  Ptr<FfMacScheduler> m_scheduler;
+  uint16_t m_cellId; /**< Cell Identifier. Part of the CGI, see TS 29.274, section 8.21.1  */
 
-  Ptr<LteHandoverAlgorithm> m_handoverAlgorithm;
+  uint8_t m_dlBandwidth; /**<DEPRECATE - It is maintained for backward compatibility after adding CA feature- downlink bandwidth in RBs */
+  uint8_t m_ulBandwidth; /**<DEPRECATE - It is maintained for backward compatibility after adding CA feature- uplink bandwidth in RBs */
 
-  Ptr<LteAnr> m_anr;
+  uint32_t m_dlEarfcn;  /**<DEPRECATE - It is maintained for backward compatibility after adding CA feature- downlink carrier frequency */
+  uint32_t m_ulEarfcn;  /**<DEPRECATE - It is maintained for backward compatibility after adding CA feature- uplink carrier frequency */
 
-  Ptr<LteFfrAlgorithm> m_ffrAlgorithm;
+  uint16_t m_csgId; ///< CSG ID
+  bool m_csgIndication; ///< CSG indication
 
-  uint16_t m_cellId; /**< Cell Identifer. Part of the CGI, see TS 29.274, section 8.21.1  */
-
-  uint8_t m_dlBandwidth; /**< downlink bandwidth in RBs */
-  uint8_t m_ulBandwidth; /**< uplink bandwidth in RBs */
-
-  uint16_t m_dlEarfcn;  /**< downlink carrier frequency */
-  uint16_t m_ulEarfcn;  /**< uplink carrier frequency */
-
-  uint16_t m_csgId;
-  bool m_csgIndication;
+  std::map < uint8_t, Ptr<ComponentCarrierEnb> > m_ccMap; /**< ComponentCarrier map */
+  
+  Ptr<LteEnbComponentCarrierManager> m_componentCarrierManager; ///< the component carrier manager of this eNb
 
 }; // end of class LteEnbNetDevice
 

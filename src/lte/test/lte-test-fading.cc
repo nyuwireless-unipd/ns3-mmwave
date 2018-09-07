@@ -19,15 +19,11 @@
 */
 
 #include "ns3/simulator.h"
-
 #include "ns3/log.h"
-
 #include "ns3/spectrum-test.h"
-
 #include "ns3/lte-phy-tag.h"
 #include "ns3/lte-test-ue-phy.h"
 #include "ns3/lte-chunk-processor.h"
-
 #include "ns3/lte-test-fading.h"
 #include <ns3/buildings-propagation-loss-model.h>
 #include <ns3/node-container.h>
@@ -67,18 +63,18 @@ NS_LOG_COMPONENT_DEFINE ("LteFadingTest");
 LteFadingTestSuite::LteFadingTestSuite ()
 : TestSuite ("lte-fading-model", SYSTEM)
 {
-  
-  
+
+
   // -------------- COMPOUND TESTS ----------------------------------
-  
+
   LogComponentEnable ("LteFadingTest", LOG_LEVEL_ALL);
-  
+
   // NS_LOG_INFO ("Creating LteDownlinkSinrTestSuite");
-  
+
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
-  
+
   lteHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsPropagationLossModel"));
-  
+
   // Create Nodes: eNodeB, home eNB, UE and home UE (UE attached to HeNB)
   NodeContainer enbNodes;
   NodeContainer henbNodes;
@@ -88,7 +84,7 @@ LteFadingTestSuite::LteFadingTestSuite ()
   henbNodes.Create (2);
   ueNodes.Create (5);
   hueNodes.Create (3);
-  
+
   // Install Mobility Model
   MobilityHelper mobility;
   mobility.SetMobilityModel ("ns3::BuildingsMobilityModel");
@@ -96,7 +92,7 @@ LteFadingTestSuite::LteFadingTestSuite ()
   mobility.Install (henbNodes);
   mobility.Install (ueNodes);
   mobility.Install (hueNodes);
-  
+
   NetDeviceContainer enbDevs;
   NetDeviceContainer henbDevs;
   NetDeviceContainer ueDevs;
@@ -105,27 +101,27 @@ LteFadingTestSuite::LteFadingTestSuite ()
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
   henbDevs = lteHelper->InstallEnbDevice (henbNodes);
   hueDevs = lteHelper->InstallUeDevice (hueNodes);
-  
-  
-  
+
+
+
   lteHelper->Attach (ueDevs, enbDevs.Get (0));
   lteHelper->Attach (hueDevs, henbDevs.Get (0));
-  
+
   // Test #1 Okumura Hata Model (150 < freq < 1500 MHz) (Macro<->UE)
-  
+
   double distance = 2000;
   double hm = 1;
   double hb = 30;
 //   double freq = 869e6; // E_UTRA BAND #5 see table 5.5-1 of 36.101
   Ptr<BuildingsMobilityModel> mm1 = enbNodes.Get (0)->GetObject<BuildingsMobilityModel> ();
   mm1->SetPosition (Vector (0.0, 0.0, hb));
-  
+
   Ptr<BuildingsMobilityModel> mm2 = ueNodes.Get (0)->GetObject<BuildingsMobilityModel> ();
   mm2->SetPosition (Vector (distance, 0.0, hm));
-  
+
   AddTestCase (new LteFadingTestCase (mm1, mm2, 137.93, "OH Urban Large city"), TestCase::QUICK);
-    
-  
+
+
 }
 
 static LteFadingTestSuite lteFadingTestSuite;
@@ -151,63 +147,63 @@ void
 LteFadingTestCase::DoRun (void)
 {
   //   LogLevel logLevel = (LogLevel)(LOG_PREFIX_FUNC | LOG_PREFIX_TIME | LOG_LEVEL_ALL);
-  
+
   //   LogComponentEnable ("LteEnbRrc", logLevel);
   //   LogComponentEnable ("LteUeRrc", logLevel);
   //   LogComponentEnable ("LteEnbMac", logLevel);
   //   LogComponentEnable ("LteUeMac", logLevel);
   //   LogComponentEnable ("LteRlc", logLevel);
   //   LogComponentEnable ("RrPacketScheduler", logLevel);
-  // 
+  //
   //   LogComponentEnable ("LtePhy", logLevel);
   //   LogComponentEnable ("LteEnbPhy", logLevel);
   //   LogComponentEnable ("LteUePhy", logLevel);
-  // 
+  //
   //   LogComponentEnable ("LteSpectrumPhy", logLevel);
   //   LogComponentEnable ("LteInterference", logLevel);
   //   LogComponentEnable ("LteChunkProcessor", logLevel);
-  // 
+  //
   //   LogComponentEnable ("LtePropagationLossModel", logLevel);
   //   LogComponentEnable ("LossModel", logLevel);
   //   LogComponentEnable ("ShadowingLossModel", logLevel);
   //   LogComponentEnable ("PenetrationLossModel", logLevel);
   //   LogComponentEnable ("MultipathLossModel", logLevel);
   //   LogComponentEnable ("PathLossModel", logLevel);
-  // 
+  //
   //   LogComponentEnable ("LteNetDevice", logLevel);
   //   LogComponentEnable ("LteUeNetDevice", logLevel);
   //   LogComponentEnable ("LteEnbNetDevice", logLevel);
-  
+
   LogComponentEnable ("TraceFadingLossModel", LOG_LEVEL_ALL);
 //   LogComponentEnable ("TraceFadingLossModel", LOG_LEVEL_ALL);
 //   LogComponentEnable ("BuildingsPropagationLossModel", LOG_LEVEL_ALL);
   NS_LOG_INFO ("Testing " << GetName());
-  
-  
+
+
   m_fadingModule = CreateObject<TraceFadingLossModel> ();
-  
+
   m_fadingModule->SetAttribute("TraceFilename", StringValue("../../../src/lte/model/fading-traces/fading_trace_EPA_3kmph.fad"));
   //m_fadingModule->SetAttribute("WindowSize", TimeValue(Seconds (0.003)));
-  
+
   m_fadingModule->CreateFadingChannelRealization (m_node1, m_node2);
-  
+
 //   Ptr<SpectrumModel> sm;
-//   
+//
 //   Bands bands;
 //   BandInfo bi;
-//   
+//
 //   bi.fl = 2.400e9;
 //   bi.fc = 2.410e9;
 //   bi.fh = 2.420e9;
 //   bands.push_back (bi);
-//   
+//
 //   bi.fl = 2.420e9;
 //   bi.fc = 2.431e9;
 //   bi.fh = 2.442e9;
 //   bands.push_back (bi);
-//   
+//
 //   sm = Create<SpectrumModel> (bands);
-//   
+//
 //   /**
 //   * TX signal #1: Power Spectral Density (W/Hz) of the signal  = [0 0] dBm and BW = [20 22] MHz
 //   */
@@ -216,7 +212,7 @@ LteFadingTestCase::DoRun (void)
 //   (*inPsd1)[1] = 1.;
 //   Ptr<SpectrumValue> outPsd1 = Create<SpectrumValue> (sm);
 //   outPsd1 = m_fadingModule->CalcRxPowerSpectralDensity (inPsd1, m_node1, m_node2);
-//   
+//
 //   NS_LOG_INFO ("A ver " << (*outPsd1)[0] << " " << (*outPsd1)[1]);
   double samplingInterval = 0.001;
   double time = 0.0;
@@ -257,7 +253,7 @@ LteFadingTestCase::DoRun (void)
       double sigma = sqrt(sumSquared.at (i)/m_fadingSamples.size () - (mean*mean));
       NS_LOG_INFO (" Mean " << mean << " sigma " << sigma);
     }
-  
+
   //   NS_TEST_ASSERT_MSG_EQ_TOL(loss, m_lossRef, 0.1, "Wrong loss !");
 }
 
@@ -266,22 +262,22 @@ void
 LteFadingTestCase::GetFadingSample ()
 {
   Ptr<SpectrumModel> sm;
-  
+
   Bands bands;
   BandInfo bi;
-  
+
   bi.fl = 2.400e9;
   bi.fc = 2.410e9;
   bi.fh = 2.420e9;
   bands.push_back (bi);
-  
+
   bi.fl = 2.420e9;
   bi.fc = 2.431e9;
   bi.fh = 2.442e9;
   bands.push_back (bi);
-  
+
   sm = Create<SpectrumModel> (bands);
-  
+
   /**
   * TX signal #1: Power Spectral Density (W/Hz) of the signal  = [0 0] dBm and BW = [20 22] MHz
   */

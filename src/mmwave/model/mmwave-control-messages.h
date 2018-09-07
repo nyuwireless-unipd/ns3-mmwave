@@ -39,6 +39,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 class MmWaveControlMessage : public SimpleRefCount<MmWaveControlMessage>
 {
 public:
@@ -340,6 +342,8 @@ private:
 
 };
 
-}
+} // namespace mmwave
+
+} // namespace ns3
 
 #endif /* SRC_MMWAVE_MODEL_MMWAVE_CONTROL_MESSAGES_H_ */

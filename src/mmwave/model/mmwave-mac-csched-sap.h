@@ -36,6 +36,8 @@
 
 namespace ns3 {
 
+namespace mmwave {
+
 /**
  * \ingroup ff-api
  * \brief Provides the CSCHED SAP
@@ -377,6 +379,8 @@ public:
 
 private:
 };
+
+} // end namespace mmwave
 
 } // end namespace ns3
 
