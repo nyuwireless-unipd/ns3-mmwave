@@ -109,11 +109,11 @@ main (int argc, char *argv[])
 	double simStopTime = 60;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
-	std::string protocol = "TcpBbr";
-	int bufferSize = 1000 *1000 * 20;
+	std::string protocol = "TcpNewReno";
+	int bufferSize = 1000 *1000 * 14* 0.76;
 	//int bufferSize = 85*1000*1.1;
 	int packetSize = 14000;
-	int p2pDelay = 9;
+	int p2pDelay = 49;
 	// This 3GPP channel model example only demonstrate the pathloss model. The fast fading model is still in developing.
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
@@ -321,80 +321,84 @@ main (int argc, char *argv[])
 
 	Ptr < Building > buildingxx;
 	buildingxx = Create<Building> ();
-	buildingxx->SetBoundaries (Box (6.2,6.5,
+	buildingxx->SetBoundaries (Box (3.89,4.29,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > buildingxx1;
 	buildingxx1 = Create<Building> ();
-	buildingxx1->SetBoundaries (Box (7.2,10.0,
+	buildingxx1->SetBoundaries (Box (7.25,7.65,
 								99.5, 99.8,
 								0.0, 40));
 
 
 	Ptr < Building > building1;
 	building1 = Create<Building> ();
-	building1->SetBoundaries (Box (11,12.0,
+	building1->SetBoundaries (Box (15.36,15.87,
 								99.5, 99.8,
 								0.0, 40));
 
 
 	Ptr < Building > building2;
 	building2 = Create<Building> ();
-	building2->SetBoundaries (Box (14,14.5,
+	building2->SetBoundaries (Box (16.79,21.37,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building3;
 	building3 = Create<Building> ();
-	building3->SetBoundaries (Box (16.6,17.0,
+	building3->SetBoundaries (Box (23.53,25.26,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building4;
 	building4 = Create<Building> ();
-	building4->SetBoundaries (Box (20,28.1,
+	building4->SetBoundaries (Box (31.72,32.05,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building5;
 	building5 = Create<Building> ();
-	building5->SetBoundaries (Box (35,35.5,
+	building5->SetBoundaries (Box (34.95,37.31,
 								99.5, 99.8,
 								0.0, 40));
 
 
 		Ptr < Building > building11;
 	building11 = Create<Building> ();
-	building11->SetBoundaries (Box (36,36.4,
+	building11->SetBoundaries (Box (40.84,41.76,
 								99.5, 99.8,
 								0.0, 40));
 
 
 	Ptr < Building > building12;
 	building12 = Create<Building> ();
-	building12->SetBoundaries (Box (39,40.2,
+	building12->SetBoundaries (Box (42.38,45.48,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building13;
 	building13 = Create<Building> ();
-	building13->SetBoundaries (Box (45,50.0,
+	building13->SetBoundaries (Box (46.9,46.93,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building14;
 	building14 = Create<Building> ();
-	building14->SetBoundaries (Box (51.6,52.0,
+	building14->SetBoundaries (Box (47.45,47.64,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building15;
-	building15 = Create<Building> ();
-	building15->SetBoundaries (Box (53,53.2,
+	building14 = Create<Building> ();
+	building14->SetBoundaries (Box (51.81,53.68,
 								99.5, 99.8,
 								0.0, 40));
-
+		Ptr < Building > building16;
+	building14 = Create<Building> ();
+	building14->SetBoundaries (Box (57.64,58.89,
+								99.5, 99.8,
+								0.0, 40));
 
 
 

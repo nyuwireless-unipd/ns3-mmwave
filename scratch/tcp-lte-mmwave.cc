@@ -109,11 +109,11 @@ main (int argc, char *argv[])
 	double simStopTime = 60;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
-	std::string protocol = "TcpBbr";
-	int bufferSize = 1000 *1000 * 20;
+	std::string protocol = "TcpNewReno";
+	int bufferSize = 1000 *1000 * 7.5*0.25;
 	//int bufferSize = 85*1000*1.1;
 	int packetSize = 14000;
-	int p2pDelay = 9;
+	int p2pDelay = 49;
 	// This 3GPP channel model example only demonstrate the pathloss model. The fast fading model is still in developing.
 
 	//The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
@@ -148,10 +148,10 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
-	Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(2.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(2.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (bufferSize));
     Config::SetDefault ("ns3::QueueBase::MaxPackets", UintegerValue (100*1000));
 
@@ -231,7 +231,7 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue(scenario));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue(false));
 	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Shadowing", BooleanValue(false)); // enable or disable the shadowing effect
-	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar", BooleanValue(false)); // enable or disable the shadowing effect
+	Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar", BooleanValue(true)); // enable or disable the shadowing effect
 
 
 
@@ -319,101 +319,111 @@ main (int argc, char *argv[])
 
 	}
 
-	Ptr < Building > buildingxx;
+	/*Ptr < Building > buildingxx;
 	buildingxx = Create<Building> ();
-	buildingxx->SetBoundaries (Box (6.2,6.5,
+	buildingxx->SetBoundaries (Box (3,3.29,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > buildingxx1;
 	buildingxx1 = Create<Building> ();
-	buildingxx1->SetBoundaries (Box (7.2,10.0,
+	buildingxx1->SetBoundaries (Box (7.25,7.65,
 								99.5, 99.8,
 								0.0, 40));
 
 
 	Ptr < Building > building1;
 	building1 = Create<Building> ();
-	building1->SetBoundaries (Box (11,12.0,
+	building1->SetBoundaries (Box (15.36,15.87,
 								99.5, 99.8,
 								0.0, 40));
 
 
 	Ptr < Building > building2;
 	building2 = Create<Building> ();
-	building2->SetBoundaries (Box (14,14.5,
+	building2->SetBoundaries (Box (16.79,21.37,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building3;
 	building3 = Create<Building> ();
-	building3->SetBoundaries (Box (16.6,17.0,
+	building3->SetBoundaries (Box (23.53,25.26,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building4;
 	building4 = Create<Building> ();
-	building4->SetBoundaries (Box (20,28.1,
+	building4->SetBoundaries (Box (31.72,32.05,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building5;
 	building5 = Create<Building> ();
-	building5->SetBoundaries (Box (35,35.5,
+	building5->SetBoundaries (Box (34.95,37.31,
 								99.5, 99.8,
 								0.0, 40));
 
 
 		Ptr < Building > building11;
 	building11 = Create<Building> ();
-	building11->SetBoundaries (Box (36,36.4,
+	building11->SetBoundaries (Box (40.84,41.76,
 								99.5, 99.8,
 								0.0, 40));
 
 
 	Ptr < Building > building12;
 	building12 = Create<Building> ();
-	building12->SetBoundaries (Box (39,40.2,
+	building12->SetBoundaries (Box (42.38,45.48,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building13;
 	building13 = Create<Building> ();
-	building13->SetBoundaries (Box (45,50.0,
+	building13->SetBoundaries (Box (46.9,46.93,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building14;
 	building14 = Create<Building> ();
-	building14->SetBoundaries (Box (51.6,52.0,
+	building14->SetBoundaries (Box (47.45,47.64,
 								99.5, 99.8,
 								0.0, 40));
 
 	Ptr < Building > building15;
-	building15 = Create<Building> ();
-	building15->SetBoundaries (Box (53,53.2,
+	building14 = Create<Building> ();
+	building14->SetBoundaries (Box (51.81,53.68,
 								99.5, 99.8,
 								0.0, 40));
-
-
+		Ptr < Building > building16;
+	building14 = Create<Building> ();
+	building14->SetBoundaries (Box (57.64,58.89,
+								99.5, 99.8,
+								0.0, 40));
+*/
 
 
 
 	  NodeContainer ueNodes;
 	  NodeContainer mmWaveEnbNodes;
+	  NodeContainer lteEnbNodes;
+	   NodeContainer allEnbNodes;
+
 	  mmWaveEnbNodes.Create(1);
 	  ueNodes.Create(1);
-
+	  lteEnbNodes.Create(1);
+	  allEnbNodes.Add(mmWaveEnbNodes);
+	  allEnbNodes.Add(lteEnbNodes);
 
 
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-	enbPositionAlloc->Add (Vector (0.0, -80.0, hBS));
+	enbPositionAlloc->Add (Vector (0.0, -900.0, hBS));
+	enbPositionAlloc->Add (Vector (0.0, -900.0, hBS));
 
 	MobilityHelper enbmobility;
 	enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 	enbmobility.SetPositionAllocator(enbPositionAlloc);
-	enbmobility.Install (mmWaveEnbNodes);
-	BuildingsHelper::Install (mmWaveEnbNodes);
+	enbmobility.Install (allEnbNodes);
+	BuildingsHelper::Install (allEnbNodes);
 	MobilityHelper uemobility;
 
 	//uemobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
@@ -439,11 +449,12 @@ main (int argc, char *argv[])
 
 
 	// Install LTE Devices to the nodes
+	  NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
 
 	  NetDeviceContainer mmWaveEnbDevs = mmwaveHelper->InstallEnbDevice (mmWaveEnbNodes);
 	  NetDeviceContainer mcUeDevs;
 
-	    mcUeDevs = mmwaveHelper->InstallUeDevice (ueNodes);
+	    mcUeDevs = mmwaveHelper->InstallMcUeDevice (ueNodes);
 
 	// Install the IP stack on the UEs
 	// Assign IP address to UEs, and install applications
@@ -451,8 +462,8 @@ main (int argc, char *argv[])
 	Ipv4InterfaceContainer ueIpIface;
 	ueIpIface = epcHelper->AssignUeIpv4Address (NetDeviceContainer (mcUeDevs));
 
-
-	mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs);  	//mmwaveHelper->EnableTraces ();
+		  mmwaveHelper->AddX2Interface (lteEnbNodes, mmWaveEnbNodes);
+	  mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);  	//mmwaveHelper->EnableTraces ();
 
 	mmwaveHelper->EnableTraces();
 	ApplicationContainer sourceApps;

@@ -105,12 +105,12 @@ main (int argc, char *argv[])
   // LogComponentEnable("TcpCongestionOps", LOG_LEVEL_INFO);
   // LogComponentEnable("TcpSocketBase", LOG_LEVEL_INFO);
 
-	uint16_t nodeNum = 1;
+	uint16_t nodeNum = 3;
 	double simStopTime = 60;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
 	std::string protocol = "TcpBbr";
-	int bufferSize = 1000 *1000 * 20;
+	int bufferSize = 1000 *1000 * 8;
 	//int bufferSize = 85*1000*1.1;
 	int packetSize = 14000;
 	int p2pDelay = 9;
@@ -304,7 +304,18 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (p2pDelay)));
+		if(i == 0)
+		{
+			p2ph.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (p2pDelay)));
+		}
+		else if(i ==1)
+		{
+			p2ph.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (19)));
+		}
+		else
+		{
+			p2ph.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (39)));
+		}
 
 		NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 
@@ -461,16 +472,16 @@ main (int argc, char *argv[])
 
 
 
-	for (uint16_t i = 0; i < ueNodes.GetN (); i++)
+	for (uint16_t i = 0; i < nodeNum; i++)
 	{
 		// Set the default gateway for the UE
-		Ptr<Node> ueNode = ueNodes.Get (i);
+		Ptr<Node> ueNode = ueNodes.Get (0);
 		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
 		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
 		//Install and start applications on UEs and remote host
 		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
-		sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (i)));
+		sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (0)));
 
       /*PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
       sinkApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(0)));
@@ -488,8 +499,8 @@ main (int argc, char *argv[])
 
 
 		BulkSendHelper ftp ("ns3::TcpSocketFactory",
-		                         InetSocketAddress (ueIpIface.GetAddress (i), sinkPort));
-		sourceApps.Add (ftp.Install (remoteHostContainer.Get (0)));
+		                         InetSocketAddress (ueIpIface.GetAddress (0), sinkPort));
+		sourceApps.Add (ftp.Install (remoteHostContainer.Get (i)));
 
 	    std::ostringstream fileName;
 	    fileName<<protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay)<<"-"<<i+1<<"-TCP-DATA.txt";
