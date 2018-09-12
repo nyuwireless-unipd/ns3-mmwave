@@ -199,6 +199,30 @@ TcpBbr::AdvanceCyclePhase ()
   m_cycleStamp = Simulator::Now ();
   m_cycleIndex = (m_cycleIndex + 1) % GAIN_CYCLE_LENGTH;
   m_pacingGain = PACING_GAIN_CYCLE [m_cycleIndex];
+
+  if(m_mode == 1)
+  { 
+  if(m_pacingGain >1)
+  {
+    if(m_sampleNum > 0)
+    {
+      m_alpha = m_queuingDelay.GetSeconds()/m_sampleNum/m_rtProp.GetSeconds()-1;
+      std::cout << this << "  " << m_queuingDelay.GetSeconds()/m_sampleNum - m_rtProp.GetSeconds()<<"  "<< m_alpha<< "  " <<m_sampleNum << "\n";
+      m_queuingDelay = Seconds(0);
+      m_sampleNum = 0;
+      m_alpha = std::min(m_alpha, 0.95);
+      m_alpha = std::max(m_alpha, 0.05);
+
+      m_pacingGain = 1+m_alpha;
+    }
+
+  }
+  else if(m_pacingGain < 1)
+  {
+    m_pacingGain = 1-m_alpha;
+  }
+}
+
 }
 
 bool
@@ -212,11 +236,34 @@ TcpBbr::IsNextCyclePhase (Ptr<TcpSocketState> tcb, const struct RateSample * rs)
     }
   else if (m_pacingGain > 1)
     {
-      return isFullLength && (rs->m_packetLoss > 0 || rs->m_priorInFlight >= InFlight (tcb, m_pacingGain));
+      if(m_mode == 0)
+      {
+          return isFullLength && (rs->m_packetLoss > 0 || rs->m_priorInFlight >= InFlight (tcb, m_pacingGain));
+      }
+      else if(m_mode == 1)
+      {
+          return ((isFullLength && rs->m_packetLoss > 0) || rs->m_priorInFlight >= InFlight (tcb, m_pacingGain)); //my fix
+      }
+      else
+      {
+        NS_FATAL_ERROR ("Wrong Mode");
+      }
+
     }
   else
     {
-      return isFullLength || rs->m_priorInFlight <= InFlight (tcb, 1);
+      if(m_mode == 0)
+      {
+        return isFullLength || rs->m_priorInFlight <= InFlight (tcb, 1);
+      }
+      else if(m_mode == 1)
+      {
+        return rs->m_priorInFlight <= InFlight (tcb, 1); //GOOGLE patch
+      }
+      else
+      {
+        NS_FATAL_ERROR ("Wrong Mode");
+      }
     }
 }
 
@@ -267,6 +314,8 @@ TcpBbr::EnterDrain ()
 void
 TcpBbr::EnterProbeBW ()
 {
+  m_queuingDelay = Seconds(0);
+  m_sampleNum = 0;
   NS_LOG_FUNCTION (this);
   SetBbrState (BbrMode_t::BBR_PROBE_BW);
   m_pacingGain = 1;
@@ -295,11 +344,44 @@ TcpBbr::UpdateRTprop (Ptr<TcpSocketState> tcb)
 {
   NS_LOG_FUNCTION (this << tcb);
   m_rtPropExpired = Simulator::Now () > (m_rtPropStamp + m_rtPropFilterLen);
+
+  if(tcb->m_lastRtt !=Time::Max ())
+  {
+    m_queuingDelay += tcb->m_lastRtt;
+    m_sampleNum +=1;
+  }
   if (tcb->m_lastRtt >= Seconds (0) && (tcb->m_lastRtt <= m_rtProp || m_rtPropExpired))
     {
       m_rtProp = tcb->m_lastRtt;
       m_rtPropStamp = Simulator::Now ();
     }
+
+    /*FILE* log_file;
+
+    char* fname = (char*)malloc(sizeof(char) * 255);
+
+    memset(fname, 0, sizeof(char) * 255);
+    std::string temp;
+
+
+    int pointer = reinterpret_cast<size_t>(this);
+
+    temp = std::to_string(pointer)+"delay.txt";
+
+    log_file = fopen(temp.c_str(), "a");
+
+    fprintf(log_file, "%f \t  %f \t  %f\n", Now().GetSeconds(), tcb->m_lastRtt.Get().GetSeconds()-m_rtProp.GetSeconds(), m_rtProp.GetSeconds());
+
+    fflush(log_file);
+
+    fclose(log_file);
+
+    if(fname)
+
+    free(fname);
+
+    fname = 0;*/
+
 }
 
 void
@@ -369,6 +451,16 @@ TcpBbr::HandleProbeRTT (Ptr<TcpSocketState> tcb)
           m_rtPropStamp = Simulator::Now ();
           RestoreCwnd (tcb);
           ExitProbeRTT ();
+        }
+
+        if(m_mode == 1)
+        {
+          if(tcb->m_lastRtt.Get()<= m_rtProp)
+          {
+            m_rtPropStamp = Simulator::Now ();
+            RestoreCwnd (tcb);
+            ExitProbeRTT ();
+          }
         }
     }
 }

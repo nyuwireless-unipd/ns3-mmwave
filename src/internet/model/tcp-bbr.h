@@ -353,6 +353,10 @@ private:
   Time        m_rtPropStamp                 {Seconds (0)};       //!< The wall clock time at which the current BBR.RTProp sample was obtained
   bool        m_isInitialized               {false};             //!< Set to true after first time initializtion variables
   Ptr<UniformRandomVariable> m_uv           {nullptr};           //!< Uniform Random Variable
+  uint32_t    m_mode                        {0};                 //0 normal BBR. 1 updated BBR
+  Time        m_queuingDelay                {Seconds (0)};      // average queuing delay;
+  uint32_t    m_sampleNum                   {0}; 
+  double      m_alpha                       {0};
 };
 
 } // namespace ns3
