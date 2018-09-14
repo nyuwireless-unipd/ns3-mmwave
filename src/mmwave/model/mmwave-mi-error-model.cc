@@ -1,33 +1,33 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
- *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *                 Dual Connectivity and Handover functionalities
- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+*   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+*
+*   This program is free software; you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License version 2 as
+*   published by the Free Software Foundation;
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program; if not, write to the Free Software
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*   Author: Marco Miozzo <marco.miozzo@cttc.es>
+*           Nicola Baldo  <nbaldo@cttc.es>
+*
+*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
+*                         Sourjya Dutta <sdutta@nyu.edu>
+*                         Russell Ford <russell.ford@nyu.edu>
+*                         Menglei Zhang <menglei@nyu.edu>
+*
+* Modified by: Michele Polese <michele.polese@gmail.com>
+*                 Dual Connectivity and Handover functionalities
+*/
 
 
 
@@ -78,14 +78,14 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
               static const double scalingCoeffQpsk =
                 (MMWAVE_MI_MAP_QPSK_SIZE - 1) / (MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE-1] - MI_map_qpsk_axis[0]);
               double sinrIndexDouble = (sinrLin -  MI_map_qpsk_axis[0]) * scalingCoeffQpsk + 1;
-              uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
+              uint32_t sinrIndex = std::max (0.0, std::floor (sinrIndexDouble));
               NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_QPSK_SIZE, "MI map out of data");
               MI = MI_map_qpsk[sinrIndex];
             }
         }
       else
         {
-          if (mcs > MMWAVE_MI_QPSK_MAX_ID && mcs <= MMWAVE_MI_16QAM_MAX_ID )	// 16-QAM
+          if (mcs > MMWAVE_MI_QPSK_MAX_ID && mcs <= MMWAVE_MI_16QAM_MAX_ID )    // 16-QAM
             {
               if (sinrLin > MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE-1])
                 {
@@ -100,7 +100,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                   static const double scalingCoeff16qam =
                     (MMWAVE_MI_MAP_16QAM_SIZE - 1) / (MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE-1] - MI_map_16qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_16qam_axis[0]) * scalingCoeff16qam + 1;
-                  uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
+                  uint32_t sinrIndex = std::max (0.0, std::floor (sinrIndexDouble));
                   NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_16QAM_SIZE, "MI map out of data");
                   MI = MI_map_16qam[sinrIndex];
                 }
@@ -120,7 +120,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                   static const double scalingCoeff64qam =
                     (MMWAVE_MI_MAP_64QAM_SIZE - 1) / (MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE-1] - MI_map_64qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_64qam_axis[0]) * scalingCoeff64qam + 1;
-                  uint32_t sinrIndex = std::max(0.0, std::floor (sinrIndexDouble));
+                  uint32_t sinrIndex = std::max (0.0, std::floor (sinrIndexDouble));
                   NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_64QAM_SIZE, "MI map out of data");
                   MI = MI_map_64qam[sinrIndex];
                 }
@@ -174,7 +174,7 @@ MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize)
         }
     }
   // see IEEE802.16m EMD formula 55 of section 4.3.2.1
-  double bler = 0.5*( 1 - erf((mib-b)/(sqrt(2)*c)) );
+  double bler = 0.5*( 1 - erf ((mib-b)/(sqrt (2)*c)) );
   NS_LOG_LOGIC ("MIB: " << mib << " BLER:" << bler << " b:" << b << " c:" << c);
   return bler;
 }
@@ -184,7 +184,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
 {
   NS_LOG_FUNCTION (sinr << &map << (uint32_t) size << (uint32_t) mcs);
 
-  double tbMi = Mib(sinr, map, mcs);
+  double tbMi = Mib (sinr, map, mcs);
   double MI = 0.0;
   double Reff = 0.0;
   NS_ASSERT (mcs < 29);
@@ -273,11 +273,11 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
               max = mid - 1;
             }
         }
-  } while ((cbSizeTable[mid]*C != B1) && (min < max));
+    } while ((cbSizeTable[mid]*C != B1) && (min < max));
   // adjust binary search to the largest integer value of K containing B1
   if (B1 > cbSizeTable[mid]*C)
     {
-      mid ++;
+      mid++;
     }
 
   uint32_t KplusId = mid;

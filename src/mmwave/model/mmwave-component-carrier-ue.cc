@@ -88,7 +88,7 @@ MmWaveComponentCarrierUe::DoInitialize (void)
   NS_LOG_FUNCTION (this);
   m_isConstructed = true;
   m_phy->Initialize ();
-  m_mac->Initialize();
+  m_mac->Initialize ();
 }
 
 void

@@ -91,13 +91,13 @@ MmWaveComponentCarrier::DoDispose ()
 uint32_t
 MmWaveComponentCarrier::GetBandwidth () const
 {
-  return m_phyMacConfig->GetNumRb();
+  return m_phyMacConfig->GetNumRb ();
 }
 
 double
 MmWaveComponentCarrier::GetCenterFrequency () const
 {
-  return m_phyMacConfig->GetCenterFrequency();
+  return m_phyMacConfig->GetCenterFrequency ();
 }
 
 uint32_t
@@ -147,16 +147,16 @@ MmWaveComponentCarrier::DoInitialize (void)
 }
 
 void
-MmWaveComponentCarrier::SetConfigurationParameters(Ptr<MmWavePhyMacCommon> ptrConfig)
+MmWaveComponentCarrier::SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
-  NS_LOG_FUNCTION(this);
+  NS_LOG_FUNCTION (this);
   m_phyMacConfig = ptrConfig;
 }
 
 Ptr<MmWavePhyMacCommon>
-MmWaveComponentCarrier::GetConfigurationParameters(void) const
+MmWaveComponentCarrier::GetConfigurationParameters (void) const
 {
-  NS_LOG_FUNCTION(this);
+  NS_LOG_FUNCTION (this);
   return m_phyMacConfig;
 }
 

@@ -142,7 +142,7 @@ protected:
    * \param msu the MSU
    * \returns updated data radio bearer list
    */
-  virtual LteMacSapUser* DoConfigureSignalBearer(LteEnbCmacSapProvider::LcInfo lcinfo,  LteMacSapUser* msu);
+  virtual LteMacSapUser* DoConfigureSignalBearer (LteEnbCmacSapProvider::LcInfo lcinfo,  LteMacSapUser* msu);
   /**
    * \brief Forwards uplink BSR to CCM, called by MAC through CCM SAP interface.
    * \param bsr the BSR

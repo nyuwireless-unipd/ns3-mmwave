@@ -1,29 +1,29 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
- *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+*
+*   This program is free software; you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License version 2 as
+*   published by the Free Software Foundation;
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program; if not, write to the Free Software
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*   Author: Marco Miozzo <marco.miozzo@cttc.es>
+*           Nicola Baldo  <nbaldo@cttc.es>
+*
+*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
+*                         Sourjya Dutta <sdutta@nyu.edu>
+*                         Russell Ford <russell.ford@nyu.edu>
+*                         Menglei Zhang <menglei@nyu.edu>
+*/
 
 
 
@@ -44,28 +44,28 @@ namespace mmwave {
 class MmWaveControlMessage : public SimpleRefCount<MmWaveControlMessage>
 {
 public:
-	enum messageType
-	{
-		DCI, // The resources allocation map from the BS to the attached UEs
-		DCI_TDMA,
-		DL_CQI,
-		MIB, // Master Information Block
-		SIB1, // System Information Block Type 1
-		RACH_PREAMBLE, // Random Access Preamble
-		RAR, // Random Access Response
-		BSR, // Buffer Status Report
-		DL_HARQ // DL HARQ feedback
-	};
+  enum messageType
+  {
+    DCI,             // The resources allocation map from the BS to the attached UEs
+    DCI_TDMA,
+    DL_CQI,
+    MIB,             // Master Information Block
+    SIB1,             // System Information Block Type 1
+    RACH_PREAMBLE,             // Random Access Preamble
+    RAR,             // Random Access Response
+    BSR,             // Buffer Status Report
+    DL_HARQ             // DL HARQ feedback
+  };
 
-	MmWaveControlMessage (void);
-	virtual ~MmWaveControlMessage (void);
+  MmWaveControlMessage (void);
+  virtual ~MmWaveControlMessage (void);
 
-	void SetMessageType (messageType type);
+  void SetMessageType (messageType type);
 
-	messageType GetMessageType (void);
+  messageType GetMessageType (void);
 
 private:
-	messageType m_messageType;
+  messageType m_messageType;
 };
 
 /************************************************************
@@ -76,57 +76,57 @@ private:
 class MmWaveDciMessage : public MmWaveControlMessage
 {
 public:
-	MmWaveDciMessage (void);
-	virtual ~MmWaveDciMessage (void);
+  MmWaveDciMessage (void);
+  virtual ~MmWaveDciMessage (void);
 
 //	void SetRbAllocationMap (SfAllocInfo allocMap);
 //	SfAllocInfo GetRbAllocationMap (void);
 
-	void SetDciInfoElement (DciInfoElement dci);
-	DciInfoElement GetDciInfoElement (void);
+  void SetDciInfoElement (DciInfoElement dci);
+  DciInfoElement GetDciInfoElement (void);
 
-	void SetSfnSf (uint32_t sfn);
-	uint32_t GetSfnSf (void);
+  void SetSfnSf (uint32_t sfn);
+  uint32_t GetSfnSf (void);
 
 private:
-	uint32_t m_sfnSf;  // frame num and sf num for debugging
+  uint32_t m_sfnSf;        // frame num and sf num for debugging
 //	SfAllocInfo m_rscAllocationMap;
-	DciInfoElement m_dciInfoElement;
+  DciInfoElement m_dciInfoElement;
 };
 
 class MmWaveTdmaDciMessage : public MmWaveControlMessage
 {
 public:
-	MmWaveTdmaDciMessage (void);
-	virtual ~MmWaveTdmaDciMessage (void);
+  MmWaveTdmaDciMessage (void);
+  virtual ~MmWaveTdmaDciMessage (void);
 
 //	void SetRbAllocationMap (SfAllocInfo allocMap);
 //	SfAllocInfo GetRbAllocationMap (void);
 
-	void SetDciInfoElement (DciInfoElementTdma dci);
-	DciInfoElementTdma GetDciInfoElement (void);
+  void SetDciInfoElement (DciInfoElementTdma dci);
+  DciInfoElementTdma GetDciInfoElement (void);
 
-	void SetSfnSf (SfnSf sfn);
-	SfnSf GetSfnSf (void);
+  void SetSfnSf (SfnSf sfn);
+  SfnSf GetSfnSf (void);
 
 private:
-	SfnSf m_sfnSf;  // frame num and sf num for debugging
-	//bool	m_ulGrant;	// is ul grant
+  SfnSf m_sfnSf;        // frame num and sf num for debugging
+  //bool	m_ulGrant;	// is ul grant
 //	SfAllocInfo m_rscAllocationMap;
-	DciInfoElementTdma m_dciInfoElement;
+  DciInfoElementTdma m_dciInfoElement;
 };
 
 class MmWaveDlCqiMessage : public MmWaveControlMessage
 {
 public:
-	MmWaveDlCqiMessage (void);
-	virtual ~MmWaveDlCqiMessage (void);
+  MmWaveDlCqiMessage (void);
+  virtual ~MmWaveDlCqiMessage (void);
 
-	void SetDlCqi (DlCqiInfo cqi);
-	DlCqiInfo GetDlCqi ();
+  void SetDlCqi (DlCqiInfo cqi);
+  DlCqiInfo GetDlCqi ();
 
 private:
-	DlCqiInfo m_cqi;
+  DlCqiInfo m_cqi;
 };
 
 
@@ -138,7 +138,7 @@ private:
 class MmWaveBsrMessage : public MmWaveControlMessage
 {
 public:
-	MmWaveBsrMessage (void);
+  MmWaveBsrMessage (void);
   virtual ~MmWaveBsrMessage (void);
 
   /**
@@ -264,7 +264,7 @@ private:
 class MmWaveRarMessage : public MmWaveControlMessage
 {
 public:
-	MmWaveRarMessage (void);
+  MmWaveRarMessage (void);
 
   /**
    *
@@ -322,7 +322,7 @@ private:
 class MmWaveDlHarqFeedbackMessage : public MmWaveControlMessage
 {
 public:
-	MmWaveDlHarqFeedbackMessage (void);
+  MmWaveDlHarqFeedbackMessage (void);
   virtual ~MmWaveDlHarqFeedbackMessage (void);
 
   /**

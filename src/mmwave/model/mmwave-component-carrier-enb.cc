@@ -121,7 +121,7 @@ MmWaveComponentCarrierEnb::DoInitialize (void)
   m_phy->Initialize ();
   m_mac->Initialize ();
   //m_ffrAlgorithm->Initialize ();
-  m_scheduler->Initialize();
+  m_scheduler->Initialize ();
 
 }
 

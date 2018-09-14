@@ -130,9 +130,9 @@ public:
   bool IsPrimary () const;
 
 
-  void SetConfigurationParameters(Ptr<MmWavePhyMacCommon> ptrConfig);
+  void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 
-  Ptr<MmWavePhyMacCommon> GetConfigurationParameters(void) const;
+  Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
 protected:
   // inherited from Object
