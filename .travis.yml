@@ -1,0 +1,19 @@
+language: cpp
+sudo: required
+os:
+  - linux
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.9
+env:
+  - COMPILER_VERSION="CC=gcc-4.9 && CXX=g++-4.9" # Use GCC version 4.9
+compiler:
+  - gcc
+before_install:
+  - eval "${COMPILER_VERSION}"
+script:
+  - ./waf configure --enable-tests --enable-examples --enable-modules=mmwave && ./waf build
+  - ./test.py
