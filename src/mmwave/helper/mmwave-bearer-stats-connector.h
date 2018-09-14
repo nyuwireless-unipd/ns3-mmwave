@@ -353,11 +353,11 @@ private:
   Ptr<MmWaveBearerStatsCalculator> m_pdcpStats; //!< Calculator for PDCP Statistics
   Ptr<McStatsCalculator> m_mcStats; //!< Calculator for multi-connectivity Statistics
 
-  CallbackBase m_rlcDrbDlRxCb; //!< Sink for the received DL RLC data packets
-  CallbackBase m_rlcDrbUlTxCb; //!< Sink for the sent DL RLC data packets
+  std::map<uint64_t, CallbackBase> m_rlcDrbDlRxCb; //!< Sinks for the received DL RLC data packets
+  std::map<uint64_t, CallbackBase> m_rlcDrbUlTxCb; //!< Sinks for the sent UL RLC data packets
 
-  CallbackBase m_pdcpDrbDlRxCb; //!< Sink for the received DL PDCP data packets
-  CallbackBase m_pdcpDrbUlTxCb; //!< Sink for the sent DL PDCP data packets
+  std::map<uint64_t, CallbackBase> m_pdcpDrbDlRxCb; //!< Sinks for the received DL PDCP data packets
+  std::map<uint64_t, CallbackBase> m_pdcpDrbUlTxCb; //!< Sinks for the sent UL PDCP data packets
 
   bool m_connected; //!< true if traces are connected to sinks, initially set to false
   std::set<uint64_t> m_imsiSeenUeSrb; //!< stores all UEs for which RLC and PDCP for SRB1 traces were connected

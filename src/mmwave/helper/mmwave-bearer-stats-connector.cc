@@ -724,13 +724,13 @@ MmWaveBearerStatsConnector::ConnectDrbTracesUe (std::string context, uint64_t im
       arg->cellId = cellId;
       arg->stats = m_rlcStats;
 
-      m_rlcDrbDlRxCb = MakeBoundCallback (&DlRxPduCallback, arg);
-      m_rlcDrbUlTxCb = MakeBoundCallback (&UlTxPduCallback, arg);
+      m_rlcDrbDlRxCb[imsi] = MakeBoundCallback (&DlRxPduCallback, arg);
+      m_rlcDrbUlTxCb[imsi] = MakeBoundCallback (&UlTxPduCallback, arg);
 
       Config::Connect (basePath + "/DataRadioBearerMap/*/LteRlc/TxPDU",
-                       m_rlcDrbUlTxCb);
+                       m_rlcDrbUlTxCb.at (imsi));
       Config::Connect (basePath + "/DataRadioBearerMap/*/LteRlc/RxPDU",
-                       m_rlcDrbDlRxCb);
+                       m_rlcDrbDlRxCb.at (imsi));
 
     }
   if (m_pdcpStats)
@@ -740,13 +740,13 @@ MmWaveBearerStatsConnector::ConnectDrbTracesUe (std::string context, uint64_t im
       arg->cellId = cellId;
       arg->stats = m_pdcpStats;
 
-      m_pdcpDrbDlRxCb = MakeBoundCallback (&DlRxPduCallback, arg);
-      m_pdcpDrbUlTxCb = MakeBoundCallback (&UlTxPduCallback, arg);
+      m_pdcpDrbDlRxCb[imsi] = MakeBoundCallback (&DlRxPduCallback, arg);
+      m_pdcpDrbUlTxCb[imsi] = MakeBoundCallback (&UlTxPduCallback, arg);
 
       Config::Connect (basePath + "/DataRadioBearerMap/*/LtePdcp/RxPDU",
-                       m_pdcpDrbDlRxCb);
+                       m_pdcpDrbDlRxCb.at (imsi));
       Config::Connect (basePath + "/DataRadioBearerMap/*/LtePdcp/TxPDU",
-                       m_pdcpDrbUlTxCb);
+                       m_pdcpDrbUlTxCb.at (imsi));
     }
 }
 
@@ -890,8 +890,8 @@ MmWaveBearerStatsConnector::DisconnectDrbTracesUe (std::string context, uint64_t
       Config::MatchContainer rlc_container = Config::LookupMatches (basePath +  "/DataRadioBearerMap/*/LteRlc/");
       NS_LOG_LOGIC ("Number of RLC to disconnect " << rlc_container.GetN ());
 
-      rlc_container.Disconnect ("RxPDU",m_rlcDrbDlRxCb);
-      rlc_container.Disconnect ("TxPDU",m_rlcDrbUlTxCb);
+      rlc_container.Disconnect ("RxPDU",m_rlcDrbDlRxCb.at (imsi));
+      rlc_container.Disconnect ("TxPDU",m_rlcDrbUlTxCb.at (imsi));
     }
 
   if (m_pdcpStats)
@@ -899,8 +899,8 @@ MmWaveBearerStatsConnector::DisconnectDrbTracesUe (std::string context, uint64_t
       Config::MatchContainer pdcp_container = Config::LookupMatches (basePath +  "/DataRadioBearerMap/*/LtePdcp/");
       NS_LOG_LOGIC ("Number of PDCP to disconnect " << pdcp_container.GetN ());
 
-      pdcp_container.Disconnect ("RxPDU",m_pdcpDrbDlRxCb);
-      pdcp_container.Disconnect ("TxPDU",m_pdcpDrbUlTxCb);
+      pdcp_container.Disconnect ("RxPDU",m_pdcpDrbDlRxCb.at (imsi));
+      pdcp_container.Disconnect ("TxPDU",m_pdcpDrbUlTxCb.at (imsi));
     }
 }
 
