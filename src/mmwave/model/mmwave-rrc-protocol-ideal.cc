@@ -1,36 +1,36 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
- *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *                 Dual Connectivity and Handover functionalities
- *
- * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *								 Integration of Carrier Aggregation
- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+*   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
+*
+*   This program is free software; you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License version 2 as
+*   published by the Free Software Foundation;
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program; if not, write to the Free Software
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*   Author: Marco Miozzo <marco.miozzo@cttc.es>
+*           Nicola Baldo  <nbaldo@cttc.es>
+*
+*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
+*                         Sourjya Dutta <sdutta@nyu.edu>
+*                         Russell Ford <russell.ford@nyu.edu>
+*                         Menglei Zhang <menglei@nyu.edu>
+*
+* Modified by: Michele Polese <michele.polese@gmail.com>
+*                 Dual Connectivity and Handover functionalities
+*
+* Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+*								 Integration of Carrier Aggregation
+*/
 
 
 #include "mmwave-rrc-protocol-ideal.h"
@@ -62,7 +62,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveUeRrcProtocolIdeal);
 
 MmWaveUeRrcProtocolIdeal::MmWaveUeRrcProtocolIdeal ()
   :  m_ueRrcSapProvider (0),
-     m_enbRrcSapProvider (0)
+  m_enbRrcSapProvider (0)
 {
   m_ueRrcSapUser = new MemberLteUeRrcSapUser<MmWaveUeRrcProtocolIdeal> (this);
 }
@@ -85,7 +85,7 @@ MmWaveUeRrcProtocolIdeal::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MmWaveUeRrcProtocolIdeal")
     .SetParent<Object> ()
     .AddConstructor<MmWaveUeRrcProtocolIdeal> ()
-    ;
+  ;
   return tid;
 }
 
@@ -133,10 +133,10 @@ void
 MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupCompleted msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteEnbRrcSapProvider::RecvRrcConnectionSetupCompleted,
+                       &LteEnbRrcSapProvider::RecvRrcConnectionSetupCompleted,
                        m_enbRrcSapProvider,
-		       m_rnti,
-		       msg);
+                       m_rnti,
+                       msg);
 }
 
 void
@@ -147,52 +147,52 @@ MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReconfigurationCompleted (LteRrcSap
   m_rnti = m_rrc->GetRnti ();
   SetEnbRrcSapProvider ();
 
-   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-                        &LteEnbRrcSapProvider::RecvRrcConnectionReconfigurationCompleted,
-                        m_enbRrcSapProvider,
-                        m_rnti,
-                        msg);
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                       &LteEnbRrcSapProvider::RecvRrcConnectionReconfigurationCompleted,
+                       m_enbRrcSapProvider,
+                       m_rnti,
+                       msg);
 }
 
 void
 MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::RrcConnectionReestablishmentRequest msg)
 {
-   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentRequest,
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentRequest,
                        m_enbRrcSapProvider,
-		       m_rnti,
-                        msg);
+                       m_rnti,
+                       msg);
 }
 
 void
 MmWaveUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionReestablishmentComplete msg)
 {
-   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentComplete,
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentComplete,
                        m_enbRrcSapProvider,
-		       m_rnti,
-msg);
+                       m_rnti,
+                       msg);
 }
 
 void
 MmWaveUeRrcProtocolIdeal::DoSendMeasurementReport (LteRrcSap::MeasurementReport msg)
 {
-   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-                        &LteEnbRrcSapProvider::RecvMeasurementReport,
-                        m_enbRrcSapProvider,
-                        m_rnti,
-                        msg);
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                       &LteEnbRrcSapProvider::RecvMeasurementReport,
+                       m_enbRrcSapProvider,
+                       m_rnti,
+                       msg);
 }
 
 void
-MmWaveUeRrcProtocolIdeal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti ,uint16_t mmWaveCellId)
+MmWaveUeRrcProtocolIdeal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti,uint16_t mmWaveCellId)
 {
-   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-                        &LteEnbRrcSapProvider::RecvRrcSecondaryCellInitialAccessSuccessful,
-                        m_enbRrcSapProvider,
-                        m_rnti,
-                        mmWaveRnti,
-                        mmWaveCellId);
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                       &LteEnbRrcSapProvider::RecvRrcSecondaryCellInitialAccessSuccessful,
+                       m_enbRrcSapProvider,
+                       m_rnti,
+                       mmWaveRnti,
+                       mmWaveCellId);
 }
 
 void
@@ -263,7 +263,7 @@ MmWaveEnbRrcProtocolIdeal::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MmWaveEnbRrcProtocolIdeal")
     .SetParent<Object> ()
     .AddConstructor<MmWaveEnbRrcProtocolIdeal> ()
-    ;
+  ;
   return tid;
 }
 
@@ -329,65 +329,65 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
       Ptr<Node> node = *i;
       int nDevs = node->GetNDevices ();
       for (int j = 0; j < nDevs; ++j)
-      {
-        Ptr<mmwave::MmWaveUeNetDevice> mmWaveUeDev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
-        if (mmWaveUeDev != 0)
         {
-          ueRrc = mmWaveUeDev->GetRrc ();
-          NS_LOG_LOGIC ("considering UE IMSI " << mmWaveUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-          if (ueRrc->GetCellId () == cellId)
-          {
-            NS_LOG_LOGIC ("sending SI to IMSI " << mmWaveUeDev->GetImsi ());
-            ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-            Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-                                 &LteUeRrcSapProvider::RecvSystemInformation,
-                                 ueRrc->GetLteUeRrcSapProvider (),
-                                 msg);
-          }
-        }
-        else
-        {
-          NS_LOG_UNCOND("-----------This implementation is wrong. Use MmWaveRrcProtocolReal.");
-          // it may be a McUeNetDevice
-          Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
-          if (mcUeDev != 0)
-          {
-            ueRrc = mcUeDev->GetMmWaveRrc ();
-            if(ueRrc != 0) // actually is using 2 connections
+          Ptr<mmwave::MmWaveUeNetDevice> mmWaveUeDev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
+          if (mmWaveUeDev != 0)
             {
-              NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-              NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
-              if (ueRrc->GetCellId () == m_cellId)
-              {
-                NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
-                ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-                Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-                                     &LteUeRrcSapProvider::RecvSystemInformation,
-                                     ueRrc->GetLteUeRrcSapProvider (),
-                                     msg);
-              }
-            }
-            else // it may have just a double stack up to MAC layer
-            {
-              ueRrc = mcUeDev->GetLteRrc ();
-              if(ueRrc != 0)
-              {
-                NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-                NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
-                if (ueRrc->GetCellId () == m_cellId)
+              ueRrc = mmWaveUeDev->GetRrc ();
+              NS_LOG_LOGIC ("considering UE IMSI " << mmWaveUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+              if (ueRrc->GetCellId () == cellId)
                 {
-                  NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                  NS_LOG_LOGIC ("sending SI to IMSI " << mmWaveUeDev->GetImsi ());
                   ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
                   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
                                        &LteUeRrcSapProvider::RecvSystemInformation,
                                        ueRrc->GetLteUeRrcSapProvider (),
                                        msg);
                 }
-              }
             }
-          }
+          else
+            {
+              NS_LOG_UNCOND ("-----------This implementation is wrong. Use MmWaveRrcProtocolReal.");
+              // it may be a McUeNetDevice
+              Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
+              if (mcUeDev != 0)
+                {
+                  ueRrc = mcUeDev->GetMmWaveRrc ();
+                  if(ueRrc != 0) // actually is using 2 connections
+                    {
+                      NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+                      NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
+                      if (ueRrc->GetCellId () == m_cellId)
+                        {
+                          NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                          ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+                          Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                                               &LteUeRrcSapProvider::RecvSystemInformation,
+                                               ueRrc->GetLteUeRrcSapProvider (),
+                                               msg);
+                        }
+                    }
+                  else // it may have just a double stack up to MAC layer
+                    {
+                      ueRrc = mcUeDev->GetLteRrc ();
+                      if(ueRrc != 0)
+                        {
+                          NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+                          NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
+                          if (ueRrc->GetCellId () == m_cellId)
+                            {
+                              NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                              ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+                              Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                                                   &LteUeRrcSapProvider::RecvSystemInformation,
+                                                   ueRrc->GetLteUeRrcSapProvider (),
+                                                   msg);
+                            }
+                        }
+                    }
+                }
+            }
         }
-      }
     }
 }
 
@@ -395,70 +395,70 @@ void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionSetup,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+                       &LteUeRrcSapProvider::RecvRrcConnectionSetup,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
 }
 
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReconfiguration,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+                       &LteUeRrcSapProvider::RecvRrcConnectionReconfiguration,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
 }
 
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReestablishment,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+                       &LteUeRrcSapProvider::RecvRrcConnectionReestablishment,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
 }
 
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishmentReject (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentReject msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReestablishmentReject,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+                       &LteUeRrcSapProvider::RecvRrcConnectionReestablishmentReject,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
 }
 
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::RrcConnectionRelease msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionRelease,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+                       &LteUeRrcSapProvider::RecvRrcConnectionRelease,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
 }
 
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::RrcConnectionReject msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReject,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+                       &LteUeRrcSapProvider::RecvRrcConnectionReject,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
 }
 
 
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionSwitch (uint16_t rnti, LteRrcSap::RrcConnectionSwitch msg)
 {
-  NS_FATAL_ERROR("A MmWave eNB should not use this primitive");
+  NS_FATAL_ERROR ("A MmWave eNB should not use this primitive");
 }
 
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-           &LteUeRrcSapProvider::RecvRrcConnectToMmWave,
-           GetUeRrcSapProvider (rnti),
-           mmWaveCellId);
+                       &LteUeRrcSapProvider::RecvRrcConnectToMmWave,
+                       GetUeRrcSapProvider (rnti),
+                       mmWaveCellId);
 }
 
 /*

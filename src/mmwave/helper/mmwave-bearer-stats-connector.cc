@@ -1,36 +1,36 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
- *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *                Dual Connectivity and Handover functionalities
- *
- * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *								 Integration of Carrier Aggregation
- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+*   Copyright (c) 2016, 2018, University of Padova, Dep. of Information Engineering, SIGNET lab.
+*
+*   This program is free software; you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License version 2 as
+*   published by the Free Software Foundation;
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program; if not, write to the Free Software
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*   Author: Marco Miozzo <marco.miozzo@cttc.es>
+*           Nicola Baldo  <nbaldo@cttc.es>
+*
+*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
+*                         Sourjya Dutta <sdutta@nyu.edu>
+*                         Russell Ford <russell.ford@nyu.edu>
+*                         Menglei Zhang <menglei@nyu.edu>
+*
+* Modified by: Michele Polese <michele.polese@gmail.com>
+*                Dual Connectivity and Handover functionalities
+*
+* Modified by: Tommaso Zugno <tommasozugno@gmail.com>
+*								 Integration of Carrier Aggregation
+*/
 
 
 #include "mmwave-bearer-stats-calculator.h"
@@ -171,11 +171,11 @@ SwitchToMmWaveCallback (Ptr<McMmWaveBoundCallbackArgument> arg, std::string path
 
 MmWaveBearerStatsConnector::MmWaveBearerStatsConnector ()
   : m_connected (false),
-    m_enbHandoverStartFilename ("EnbHandoverStartStats.txt"),
-    m_enbHandoverEndFilename ("EnbHandoverEndStats.txt"),
-    m_ueHandoverStartFilename ("UeHandoverStartStats.txt"),
-    m_ueHandoverEndFilename ("UeHandoverEndStats.txt"),
-    m_cellIdInTimeHandoverFilename ("CellIdStatsHandover.txt")
+  m_enbHandoverStartFilename ("EnbHandoverStartStats.txt"),
+  m_enbHandoverEndFilename ("EnbHandoverEndStats.txt"),
+  m_ueHandoverStartFilename ("UeHandoverStartStats.txt"),
+  m_ueHandoverEndFilename ("UeHandoverEndStats.txt"),
+  m_cellIdInTimeHandoverFilename ("CellIdStatsHandover.txt")
 {
 
 }
@@ -183,35 +183,35 @@ MmWaveBearerStatsConnector::MmWaveBearerStatsConnector ()
 MmWaveBearerStatsConnector::~MmWaveBearerStatsConnector ()
 {
   NS_LOG_FUNCTION (this);
-  if(m_enbHandoverStartOutFile.is_open())
-  {
-    m_enbHandoverStartOutFile.close();
-  }
-  if(m_ueHandoverStartOutFile.is_open())
-  {
-    m_ueHandoverStartOutFile.close();
-  }
-  if(m_enbHandoverEndOutFile.is_open())
-  {
-    m_enbHandoverEndOutFile.close();
-  }
-  if(m_ueHandoverEndOutFile.is_open())
-  {
-    m_ueHandoverEndOutFile.close();
-  }
+  if(m_enbHandoverStartOutFile.is_open ())
+    {
+      m_enbHandoverStartOutFile.close ();
+    }
+  if(m_ueHandoverStartOutFile.is_open ())
+    {
+      m_ueHandoverStartOutFile.close ();
+    }
+  if(m_enbHandoverEndOutFile.is_open ())
+    {
+      m_enbHandoverEndOutFile.close ();
+    }
+  if(m_ueHandoverEndOutFile.is_open ())
+    {
+      m_ueHandoverEndOutFile.close ();
+    }
 
-  if(m_cellIdInTimeHandoverOutFile.is_open())
-  {
-    m_cellIdInTimeHandoverOutFile.close();
-  }
-  if(m_mmWaveSinrOutFile.is_open())
-  {
-    m_mmWaveSinrOutFile.close();
-  }
-  if(m_lteSinrOutFile.is_open())
-  {
-    m_lteSinrOutFile.close();
-  }
+  if(m_cellIdInTimeHandoverOutFile.is_open ())
+    {
+      m_cellIdInTimeHandoverOutFile.close ();
+    }
+  if(m_mmWaveSinrOutFile.is_open ())
+    {
+      m_mmWaveSinrOutFile.close ();
+    }
+  if(m_lteSinrOutFile.is_open ())
+    {
+      m_lteSinrOutFile.close ();
+    }
 }
 
 TypeId
@@ -221,7 +221,7 @@ MmWaveBearerStatsConnector::GetTypeId (void)
     TypeId ("ns3::MmWaveBearerStatsConnector")
     .SetParent<Object> ()
     .AddConstructor<MmWaveBearerStatsConnector> ()
-    .SetGroupName("Lte")
+    .SetGroupName ("Lte")
     .AddAttribute ("EnbHandoverStartOutputFilename",
                    "Name of the file where the eNB handover start traces will be saved.",
                    StringValue ("EnbHandoverStartStats.txt"),
@@ -233,15 +233,15 @@ MmWaveBearerStatsConnector::GetTypeId (void)
                    MakeStringAccessor (&MmWaveBearerStatsConnector::SetEnbHandoverEndOutputFilename),
                    MakeStringChecker ())
     .AddAttribute ("MmWaveSinrOutputFilename",
-               "Name of the file where the mmWave eNB sinr will be saved.",
-               StringValue ("MmWaveSinrTime.txt"),
-               MakeStringAccessor (&MmWaveBearerStatsConnector::SetMmWaveSinrOutputFilename),
-               MakeStringChecker ())
+                   "Name of the file where the mmWave eNB sinr will be saved.",
+                   StringValue ("MmWaveSinrTime.txt"),
+                   MakeStringAccessor (&MmWaveBearerStatsConnector::SetMmWaveSinrOutputFilename),
+                   MakeStringChecker ())
     .AddAttribute ("LteSinrOutputFilename",
-               "Name of the file where the LTE eNB sinr will be saved.",
-               StringValue ("LteSinrTime.txt"),
-               MakeStringAccessor (&MmWaveBearerStatsConnector::SetLteSinrOutputFilename),
-               MakeStringChecker ())
+                   "Name of the file where the LTE eNB sinr will be saved.",
+                   StringValue ("LteSinrTime.txt"),
+                   MakeStringAccessor (&MmWaveBearerStatsConnector::SetLteSinrOutputFilename),
+                   MakeStringChecker ())
     .AddAttribute ("UeHandoverStartOutputFilename",
                    "Name of the file where the UE handover start events will be saved.",
                    StringValue ("UeHandoverStartStats.txt"),
@@ -285,7 +285,7 @@ void
 MmWaveBearerStatsConnector::EnableMcStats (Ptr<McStatsCalculator> mcStats)
 {
   m_mcStats = mcStats;
-  EnsureConnected();
+  EnsureConnected ();
 }
 
 void
@@ -295,36 +295,36 @@ MmWaveBearerStatsConnector::EnsureConnected ()
   if (!m_connected)
     {
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/NewUeContext",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyNewUeContextEnb, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyNewUeContextEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/RandomAccessSuccessful",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyRandomAccessSuccessfulUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyRandomAccessSuccessfulUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/RandomAccessSuccessful",
-           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyRandomAccessSuccessfulUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyRandomAccessSuccessfulUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionReconfiguration",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationEnb, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionReconfiguration",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/ConnectionReconfiguration",
-           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverStart",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartEnb, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverStart",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/HandoverStart",
-           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverStartUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/HandoverEndOk",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkEnb, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkEnb, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndOk",
-		       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUeRrc/HandoverEndOk",
-          MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyHandoverEndOkUe, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/SwitchToMmWave",
-           MakeBoundCallback (&MmWaveBearerStatsConnector::NotifySwitchToMmWaveUe, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifySwitchToMmWaveUe, this));
       // mmWave SINR from RT, LTE SINR from the PHY callbacks
       Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/NotifyMmWaveSinr",
-          MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyMmWaveSinr, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyMmWaveSinr, this));
       Config::Connect ("/NodeList/*/DeviceList/*/LteUePhy/ReportCurrentCellRsrpSinr",
-                   MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyLteSinr, this));
+                       MakeBoundCallback (&MmWaveBearerStatsConnector::NotifyLteSinr, this));
       m_connected = true;
     }
 }
@@ -350,7 +350,7 @@ MmWaveBearerStatsConnector::NotifyConnectionReconfigurationUe (MmWaveBearerStats
 void
 MmWaveBearerStatsConnector::NotifyHandoverStartUe (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti, uint16_t targetCellId)
 {
-  c->PrintUeStartHandover(imsi, cellId, targetCellId, rnti);
+  c->PrintUeStartHandover (imsi, cellId, targetCellId, rnti);
   c->DisconnectTracesUe (context, imsi, cellId, rnti);
 }
 
@@ -377,7 +377,7 @@ MmWaveBearerStatsConnector::NotifyConnectionReconfigurationEnb (MmWaveBearerStat
 void
 MmWaveBearerStatsConnector::NotifyHandoverStartEnb (MmWaveBearerStatsConnector* c, std::string context, uint64_t imsi, uint16_t cellId, uint16_t rnti, uint16_t targetCellId)
 {
-  c->PrintEnbStartHandover(imsi, cellId, targetCellId, rnti);
+  c->PrintEnbStartHandover (imsi, cellId, targetCellId, rnti);
   c->DisconnectTracesEnb (context, imsi, cellId, rnti);
 }
 
@@ -410,12 +410,12 @@ MmWaveBearerStatsConnector::NotifyMmWaveSinr (MmWaveBearerStatsConnector* c, std
 void
 MmWaveBearerStatsConnector::PrintMmWaveSinr (uint64_t imsi, uint16_t cellId, long double sinr)
 {
-  NS_LOG_FUNCTION(this << " PrintMmWaveSinr " << Simulator::Now().GetSeconds());
+  NS_LOG_FUNCTION (this << " PrintMmWaveSinr " << Simulator::Now ().GetSeconds ());
   if(!m_mmWaveSinrOutFile.is_open ())
-  {
-    m_mmWaveSinrOutFile.open(GetMmWaveSinrOutputFilename() .c_str());
-  }
-  m_mmWaveSinrOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << cellId << " " << 10*std::log10(sinr) << std::endl;
+    {
+      m_mmWaveSinrOutFile.open (GetMmWaveSinrOutputFilename ().c_str ());
+    }
+  m_mmWaveSinrOutFile << Simulator::Now ().GetNanoSeconds ()/1.0e9 << " " << imsi << " " << cellId << " " << 10*std::log10 (sinr) << std::endl;
 }
 
 void
@@ -427,12 +427,12 @@ MmWaveBearerStatsConnector::NotifyLteSinr (MmWaveBearerStatsConnector* c, std::s
 void
 MmWaveBearerStatsConnector::PrintLteSinr (uint16_t rnti, uint16_t cellId, double sinr)
 {
-  NS_LOG_FUNCTION(this << " PrintLteSinr " << Simulator::Now().GetSeconds());
+  NS_LOG_FUNCTION (this << " PrintLteSinr " << Simulator::Now ().GetSeconds ());
   if(!m_lteSinrOutFile.is_open ())
-  {
-    m_lteSinrOutFile.open(GetLteSinrOutputFilename() .c_str());
-  }
-  m_lteSinrOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << rnti << " " << cellId << " " << sinr << std::endl;
+    {
+      m_lteSinrOutFile.open (GetLteSinrOutputFilename ().c_str ());
+    }
+  m_lteSinrOutFile << Simulator::Now ().GetNanoSeconds ()/1.0e9 << " " << rnti << " " << cellId << " " << sinr << std::endl;
 }
 
 std::string
@@ -518,53 +518,53 @@ MmWaveBearerStatsConnector::SetLteSinrOutputFilename (std::string outputFilename
 }
 
 void
-MmWaveBearerStatsConnector::PrintEnbStartHandover(uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti)
+MmWaveBearerStatsConnector::PrintEnbStartHandover (uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti)
 {
-  NS_LOG_FUNCTION(this << " NotifyHandoverStartEnb " << Simulator::Now().GetSeconds());
+  NS_LOG_FUNCTION (this << " NotifyHandoverStartEnb " << Simulator::Now ().GetSeconds ());
   if(!m_enbHandoverStartOutFile.is_open ())
-  {
-    m_enbHandoverStartOutFile.open(GetEnbHandoverStartOutputFilename() .c_str());
-  }
-  m_enbHandoverStartOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << sourceCellid << " " << targetCellId << std::endl;
+    {
+      m_enbHandoverStartOutFile.open (GetEnbHandoverStartOutputFilename ().c_str ());
+    }
+  m_enbHandoverStartOutFile << Simulator::Now ().GetNanoSeconds ()/1.0e9 << " " << imsi << " " << rnti << " " << sourceCellid << " " << targetCellId << std::endl;
 }
 
 void
-MmWaveBearerStatsConnector::PrintEnbEndHandover(uint64_t imsi, uint16_t targetCellId, uint16_t rnti)
+MmWaveBearerStatsConnector::PrintEnbEndHandover (uint64_t imsi, uint16_t targetCellId, uint16_t rnti)
 {
-  NS_LOG_FUNCTION("NotifyHandoverOkEnb " << Simulator::Now().GetSeconds());
+  NS_LOG_FUNCTION ("NotifyHandoverOkEnb " << Simulator::Now ().GetSeconds ());
   if(!m_enbHandoverEndOutFile.is_open ())
-  {
-    m_enbHandoverEndOutFile.open(GetEnbHandoverEndOutputFilename() .c_str());
-  }
-  m_enbHandoverEndOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
+    {
+      m_enbHandoverEndOutFile.open (GetEnbHandoverEndOutputFilename ().c_str ());
+    }
+  m_enbHandoverEndOutFile << Simulator::Now ().GetNanoSeconds ()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
 }
 
 void
-MmWaveBearerStatsConnector::PrintUeStartHandover(uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti)
+MmWaveBearerStatsConnector::PrintUeStartHandover (uint64_t imsi, uint16_t sourceCellid, uint16_t targetCellId, uint16_t rnti)
 {
-  NS_LOG_FUNCTION("NotifyHandoverStartUe " << Simulator::Now().GetSeconds());
+  NS_LOG_FUNCTION ("NotifyHandoverStartUe " << Simulator::Now ().GetSeconds ());
   if(!m_ueHandoverStartOutFile.is_open ())
-  {
-    m_ueHandoverStartOutFile.open(GetUeHandoverStartOutputFilename() .c_str());
-  }
-  m_ueHandoverStartOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << sourceCellid << " " << targetCellId << std::endl;
+    {
+      m_ueHandoverStartOutFile.open (GetUeHandoverStartOutputFilename ().c_str ());
+    }
+  m_ueHandoverStartOutFile << Simulator::Now ().GetNanoSeconds ()/1.0e9 << " " << imsi << " " << rnti << " " << sourceCellid << " " << targetCellId << std::endl;
 }
 
 void
-MmWaveBearerStatsConnector::PrintUeEndHandover(uint64_t imsi, uint16_t targetCellId, uint16_t rnti)
+MmWaveBearerStatsConnector::PrintUeEndHandover (uint64_t imsi, uint16_t targetCellId, uint16_t rnti)
 {
-  NS_LOG_FUNCTION("NotifyHandoverOkUe " << Simulator::Now().GetSeconds());
+  NS_LOG_FUNCTION ("NotifyHandoverOkUe " << Simulator::Now ().GetSeconds ());
   if(!m_ueHandoverEndOutFile.is_open ())
-  {
-    m_ueHandoverEndOutFile.open(GetUeHandoverEndOutputFilename() .c_str());
-  }
-  m_ueHandoverEndOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
+    {
+      m_ueHandoverEndOutFile.open (GetUeHandoverEndOutputFilename ().c_str ());
+    }
+  m_ueHandoverEndOutFile << Simulator::Now ().GetNanoSeconds ()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
 
   if(!m_cellIdInTimeHandoverOutFile.is_open ())
-  {
-    m_cellIdInTimeHandoverOutFile.open(GetCellIdStatsOutputFilename() .c_str());
-  }
-  m_cellIdInTimeHandoverOutFile << Simulator::Now().GetNanoSeconds()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
+    {
+      m_cellIdInTimeHandoverOutFile.open (GetCellIdStatsOutputFilename ().c_str ());
+    }
+  m_cellIdInTimeHandoverOutFile << Simulator::Now ().GetNanoSeconds ()/1.0e9 << " " << imsi << " " << rnti << " " << targetCellId << std::endl;
 }
 
 void
@@ -639,9 +639,9 @@ MmWaveBearerStatsConnector::ConnectSrb0Traces (std::string context, uint64_t ims
 
       // connect SRB1 at eNB only (at UE SRB1 will be setup later)
       Config::Connect (ueManagerPath + "/Srb1/LtePdcp/RxPDU",
-		       MakeBoundCallback (&UlRxPduCallback, arg));
+                       MakeBoundCallback (&UlRxPduCallback, arg));
       Config::Connect (ueManagerPath + "/Srb1/LtePdcp/TxPDU",
-		       MakeBoundCallback (&DlTxPduCallback, arg));
+                       MakeBoundCallback (&DlTxPduCallback, arg));
     }
 }
 
@@ -652,39 +652,39 @@ MmWaveBearerStatsConnector::ConnectTracesUeIfFirstTime (std::string context, uin
 
   //Connect PDCP and RLC traces for SRB1
   if(m_imsiSeenUeSrb.find (imsi) == m_imsiSeenUeSrb.end ())
-  {
+    {
       m_imsiSeenUeSrb.insert (imsi);
       ConnectSrb1TracesUe (context, imsi, cellId, rnti);
-  }
+    }
 
   std::string basePath = context.substr (0, context.rfind ("/"));
-  Config::MatchContainer rlc_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LteRlc/");
-  uint16_t numberOfRlc = rlc_container.GetN();
+  Config::MatchContainer rlc_container = Config::LookupMatches (basePath +  "/DataRadioBearerMap/*/LteRlc/");
+  uint16_t numberOfRlc = rlc_container.GetN ();
 
   //Connect PDCP and RLC for data radio bearers
-  std::map<uint64_t,uint16_t>::iterator it = m_imsiSeenUeDrb.find(imsi);
-  if (m_imsiSeenUeDrb.find (imsi) == m_imsiSeenUeDrb.end () && rlc_container.GetN() > 0)
+  std::map<uint64_t,uint16_t>::iterator it = m_imsiSeenUeDrb.find (imsi);
+  if (m_imsiSeenUeDrb.find (imsi) == m_imsiSeenUeDrb.end () && rlc_container.GetN () > 0)
     {
       //If it is the first time for this imsi
-      NS_LOG_DEBUG("Insert imsi " + std::to_string(imsi));
-      m_imsiSeenUeDrb.insert (m_imsiSeenUeDrb.end(), std::pair<uint64_t,uint16_t>(imsi, 1));
+      NS_LOG_DEBUG ("Insert imsi " + std::to_string (imsi));
+      m_imsiSeenUeDrb.insert (m_imsiSeenUeDrb.end (), std::pair<uint64_t,uint16_t>(imsi, 1));
       ConnectDrbTracesUe (context, imsi, cellId, rnti);
     }
   else
     {
       if(it->second < numberOfRlc)
-      {
-        //If this imsi has already been connected but a new DRB is established
-        NS_LOG_DEBUG("There is a new RLC. Call ConnectDrbTracesUe to connect the traces.");
-        it->second ++; //TODO Check if there could be more than one RLC to connect
-        DisconnectDrbTracesUe (context, imsi, cellId, rnti);
-        ConnectDrbTracesUe (context, imsi, cellId, rnti);
-      }
+        {
+          //If this imsi has already been connected but a new DRB is established
+          NS_LOG_DEBUG ("There is a new RLC. Call ConnectDrbTracesUe to connect the traces.");
+          it->second++; //TODO Check if there could be more than one RLC to connect
+          DisconnectDrbTracesUe (context, imsi, cellId, rnti);
+          ConnectDrbTracesUe (context, imsi, cellId, rnti);
+        }
       else
-      {
-        //it->second = numberOfRlc; //One or more DRBs could have been removed
-        NS_LOG_DEBUG("All RLCs traces are already connected. No need for a call to ConnectDrbTracesUe.");
-      }
+        {
+          //it->second = numberOfRlc; //One or more DRBs could have been removed
+          NS_LOG_DEBUG ("All RLCs traces are already connected. No need for a call to ConnectDrbTracesUe.");
+        }
     }
 }
 
@@ -698,10 +698,10 @@ MmWaveBearerStatsConnector::ConnectTracesEnbIfFirstTime (std::string context, ui
 
   //Connect PDCP and RLC for data radio bearers
   //Look for the RLCs
-  std::string basePath = context.substr (0, context.rfind ("/")) + "/UeMap/" + std::to_string((uint32_t) rnti);
-  Config::MatchContainer rlc_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LteRlc/");
+  std::string basePath = context.substr (0, context.rfind ("/")) + "/UeMap/" + std::to_string ((uint32_t) rnti);
+  Config::MatchContainer rlc_container = Config::LookupMatches (basePath +  "/DataRadioBearerMap/*/LteRlc/");
 
-   if (m_imsiSeenEnbDrb.find (imsi) == m_imsiSeenEnbDrb.end () && rlc_container.GetN() > 0)
+  if (m_imsiSeenEnbDrb.find (imsi) == m_imsiSeenEnbDrb.end () && rlc_container.GetN () > 0)
     {
       //it is executed only if there exist at least one rlc layer
       m_imsiSeenEnbDrb.insert (imsi);
@@ -728,9 +728,9 @@ MmWaveBearerStatsConnector::ConnectDrbTracesUe (std::string context, uint64_t im
       m_rlcDrbUlTxCb = MakeBoundCallback (&UlTxPduCallback, arg);
 
       Config::Connect (basePath + "/DataRadioBearerMap/*/LteRlc/TxPDU",
-           m_rlcDrbUlTxCb);
+                       m_rlcDrbUlTxCb);
       Config::Connect (basePath + "/DataRadioBearerMap/*/LteRlc/RxPDU",
-           m_rlcDrbDlRxCb);
+                       m_rlcDrbDlRxCb);
 
     }
   if (m_pdcpStats)
@@ -744,9 +744,9 @@ MmWaveBearerStatsConnector::ConnectDrbTracesUe (std::string context, uint64_t im
       m_pdcpDrbUlTxCb = MakeBoundCallback (&UlTxPduCallback, arg);
 
       Config::Connect (basePath + "/DataRadioBearerMap/*/LtePdcp/RxPDU",
-           m_pdcpDrbDlRxCb);
+                       m_pdcpDrbDlRxCb);
       Config::Connect (basePath + "/DataRadioBearerMap/*/LtePdcp/TxPDU",
-           m_pdcpDrbUlTxCb);
+                       m_pdcpDrbUlTxCb);
     }
 }
 
@@ -757,7 +757,7 @@ MmWaveBearerStatsConnector::ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t
   NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteUeRrc/");
   std::string basePath = ueRrcPath.substr (0, ueRrcPath.rfind ("/"));
   NS_LOG_FUNCTION (this << imsi << cellId << rnti);
-   if (m_rlcStats)
+  if (m_rlcStats)
     {
       Ptr<MmWaveBoundCallbackArgument> arg = Create<MmWaveBoundCallbackArgument> ();
       arg->imsi = imsi;
@@ -775,18 +775,18 @@ MmWaveBearerStatsConnector::ConnectSrb1TracesUe (std::string ueRrcPath, uint64_t
       arg->cellId = cellId;
       arg->stats = m_pdcpStats;
       Config::Connect (basePath + "/Srb1/LtePdcp/RxPDU",
-           MakeBoundCallback (&DlRxPduCallback, arg));
+                       MakeBoundCallback (&DlRxPduCallback, arg));
       Config::Connect (basePath + "/Srb1/LtePdcp/TxPDU",
-           MakeBoundCallback (&UlTxPduCallback, arg));
+                       MakeBoundCallback (&UlTxPduCallback, arg));
     }
   if(m_mcStats)
     {
       Ptr<McMmWaveBoundCallbackArgument> arg = Create<McMmWaveBoundCallbackArgument> ();
       arg->stats = m_mcStats;
       Config::Connect (basePath + "/SwitchToLte",
-            MakeBoundCallback (&SwitchToLteCallback, arg));
+                       MakeBoundCallback (&SwitchToLteCallback, arg));
       Config::Connect (basePath + "/SwitchToMmWave",
-            MakeBoundCallback (&SwitchToMmWaveCallback, arg));
+                       MakeBoundCallback (&SwitchToMmWaveCallback, arg));
     }
 }
 
@@ -805,13 +805,13 @@ MmWaveBearerStatsConnector::ConnectSrb1TracesEnb (std::string context, uint64_t 
       arg->cellId = cellId;
       arg->stats = m_rlcStats;
       Config::Connect (basePath.str () + "/Srb0/LteRlc/RxPDU",
-           MakeBoundCallback (&UlRxPduCallback, arg));
+                       MakeBoundCallback (&UlRxPduCallback, arg));
       Config::Connect (basePath.str () + "/Srb0/LteRlc/TxPDU",
-           MakeBoundCallback (&DlTxPduCallback, arg));
+                       MakeBoundCallback (&DlTxPduCallback, arg));
       Config::Connect (basePath.str () + "/Srb1/LteRlc/RxPDU",
-           MakeBoundCallback (&UlRxPduCallback, arg));
+                       MakeBoundCallback (&UlRxPduCallback, arg));
       Config::Connect (basePath.str () + "/Srb1/LteRlc/TxPDU",
-           MakeBoundCallback (&DlTxPduCallback, arg));
+                       MakeBoundCallback (&DlTxPduCallback, arg));
     }
   if (m_pdcpStats)
     {
@@ -820,9 +820,9 @@ MmWaveBearerStatsConnector::ConnectSrb1TracesEnb (std::string context, uint64_t 
       arg->cellId = cellId;
       arg->stats = m_pdcpStats;
       Config::Connect (basePath.str () + "/Srb1/LtePdcp/TxPDU",
-           MakeBoundCallback (&DlTxPduCallback, arg));
+                       MakeBoundCallback (&DlTxPduCallback, arg));
       Config::Connect (basePath.str () + "/Srb1/LtePdcp/RxPDU",
-           MakeBoundCallback (&UlRxPduCallback, arg));
+                       MakeBoundCallback (&UlRxPduCallback, arg));
     }
 }
 
@@ -840,9 +840,9 @@ MmWaveBearerStatsConnector::ConnectDrbTracesEnb (std::string context, uint64_t i
       arg->cellId = cellId;
       arg->stats = m_rlcStats;
       Config::Connect (basePath.str () + "/DataRadioBearerMap/*/LteRlc/RxPDU",
-           MakeBoundCallback (&UlRxPduCallback, arg));
+                       MakeBoundCallback (&UlRxPduCallback, arg));
       Config::Connect (basePath.str () + "/DataRadioBearerMap/*/LteRlc/TxPDU",
-           MakeBoundCallback (&DlTxPduCallback, arg));
+                       MakeBoundCallback (&DlTxPduCallback, arg));
     }
   if (m_pdcpStats)
     {
@@ -851,9 +851,9 @@ MmWaveBearerStatsConnector::ConnectDrbTracesEnb (std::string context, uint64_t i
       arg->cellId = cellId;
       arg->stats = m_pdcpStats;
       Config::Connect (basePath.str () + "/DataRadioBearerMap/*/LtePdcp/TxPDU",
-           MakeBoundCallback (&DlTxPduCallback, arg));
+                       MakeBoundCallback (&DlTxPduCallback, arg));
       Config::Connect (basePath.str () + "/DataRadioBearerMap/*/LtePdcp/RxPDU",
-           MakeBoundCallback (&UlRxPduCallback, arg));
+                       MakeBoundCallback (&UlRxPduCallback, arg));
     }
 }
 
@@ -863,18 +863,18 @@ MmWaveBearerStatsConnector::DisconnectTracesUe (std::string context, uint64_t im
   NS_LOG_FUNCTION (this << context);
   NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteUeRrc/");
   std::string basePath = context.substr (0, context.rfind ("/"));
-  Config::MatchContainer objects = Config::LookupMatches(basePath + "/DataRadioBearerMap/*/LteRlc/");
-  NS_LOG_LOGIC("basePath " << basePath);
+  Config::MatchContainer objects = Config::LookupMatches (basePath + "/DataRadioBearerMap/*/LteRlc/");
+  NS_LOG_LOGIC ("basePath " << basePath);
 
   if(m_mcStats)
     {
       Ptr<McMmWaveBoundCallbackArgument> arg = Create<McMmWaveBoundCallbackArgument> ();
       arg->stats = m_mcStats;
       Config::Disconnect (basePath + "/SwitchToLte",
-          MakeBoundCallback (&SwitchToLteCallback, arg));
+                          MakeBoundCallback (&SwitchToLteCallback, arg));
       Config::Disconnect (basePath + "/SwitchToMmWave",
-          MakeBoundCallback (&SwitchToMmWaveCallback, arg));
-  }
+                          MakeBoundCallback (&SwitchToMmWaveCallback, arg));
+    }
 }
 
 void
@@ -887,8 +887,8 @@ MmWaveBearerStatsConnector::DisconnectDrbTracesUe (std::string context, uint64_t
 
   if (m_rlcStats)
     {
-      Config::MatchContainer rlc_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LteRlc/");
-      NS_LOG_LOGIC ("Number of RLC to disconnect " << rlc_container.GetN());
+      Config::MatchContainer rlc_container = Config::LookupMatches (basePath +  "/DataRadioBearerMap/*/LteRlc/");
+      NS_LOG_LOGIC ("Number of RLC to disconnect " << rlc_container.GetN ());
 
       rlc_container.Disconnect ("RxPDU",m_rlcDrbDlRxCb);
       rlc_container.Disconnect ("TxPDU",m_rlcDrbUlTxCb);
@@ -896,8 +896,8 @@ MmWaveBearerStatsConnector::DisconnectDrbTracesUe (std::string context, uint64_t
 
   if (m_pdcpStats)
     {
-      Config::MatchContainer pdcp_container = Config::LookupMatches(basePath +  "/DataRadioBearerMap/*/LtePdcp/");
-      NS_LOG_LOGIC ("Number of PDCP to disconnect " << pdcp_container.GetN());
+      Config::MatchContainer pdcp_container = Config::LookupMatches (basePath +  "/DataRadioBearerMap/*/LtePdcp/");
+      NS_LOG_LOGIC ("Number of PDCP to disconnect " << pdcp_container.GetN ());
 
       pdcp_container.Disconnect ("RxPDU",m_pdcpDrbDlRxCb);
       pdcp_container.Disconnect ("TxPDU",m_pdcpDrbUlTxCb);
@@ -918,8 +918,8 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesUe (std::string context, uint6
   NS_LOG_LOGIC (this << context);
   NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteUeRrc/");
   std::string basePath = context.substr (0, context.rfind ("/"));
-  Config::MatchContainer objects = Config::LookupMatches(basePath + "/DataRadioRlcMap/*");
-  NS_LOG_LOGIC("basePath " << basePath);
+  Config::MatchContainer objects = Config::LookupMatches (basePath + "/DataRadioRlcMap/*");
+  NS_LOG_LOGIC ("basePath " << basePath);
 
   if (m_rlcStats)
     {
@@ -929,9 +929,9 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesUe (std::string context, uint6
       arg->stats = m_rlcStats;
       // for MC devices
       Config::Connect (basePath + "/DataRadioRlcMap/*/TxPDU",
-           MakeBoundCallback (&UlTxPduCallback, arg));
+                       MakeBoundCallback (&UlTxPduCallback, arg));
       Config::Connect (basePath + "/DataRadioRlcMap/*/RxPDU",
-           MakeBoundCallback (&DlRxPduCallback, arg));
+                       MakeBoundCallback (&DlRxPduCallback, arg));
     }
 }
 
@@ -942,8 +942,8 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesEnb (std::string context, uint
   NS_LOG_LOGIC (this << "expected context should match /NodeList/*/DeviceList/*/LteEnbRrc/UeMap/*");
   std::ostringstream basePath;
   basePath <<  context.substr (0, context.rfind ("/"));
-  Config::MatchContainer objects = Config::LookupMatches(basePath.str() + "/DataRadioRlcMap/*/LteRlc/");
-  NS_LOG_LOGIC("basePath " << basePath.str());
+  Config::MatchContainer objects = Config::LookupMatches (basePath.str () + "/DataRadioRlcMap/*/LteRlc/");
+  NS_LOG_LOGIC ("basePath " << basePath.str ());
 
   if (m_rlcStats)
     {
@@ -952,10 +952,10 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesEnb (std::string context, uint
       arg->cellId = cellId;
       arg->stats = m_rlcStats;
       // for MC devices
-      Config::Connect (basePath.str() + "/DataRadioRlcMap/*/LteRlc/RxPDU",
-           MakeBoundCallback (&UlRxPduCallback, arg));
-      Config::Connect (basePath.str() + "/DataRadioRlcMap/*/LteRlc/TxPDU",
-           MakeBoundCallback (&DlTxPduCallback, arg));
+      Config::Connect (basePath.str () + "/DataRadioRlcMap/*/LteRlc/RxPDU",
+                       MakeBoundCallback (&UlRxPduCallback, arg));
+      Config::Connect (basePath.str () + "/DataRadioRlcMap/*/LteRlc/TxPDU",
+                       MakeBoundCallback (&DlTxPduCallback, arg));
     }
 }
 

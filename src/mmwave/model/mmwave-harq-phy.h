@@ -1,33 +1,33 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
- *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *                 Dual Connectivity and Handover functionalities
- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+*   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+*
+*   This program is free software; you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License version 2 as
+*   published by the Free Software Foundation;
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program; if not, write to the Free Software
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*   Author: Marco Miozzo <marco.miozzo@cttc.es>
+*           Nicola Baldo  <nbaldo@cttc.es>
+*
+*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
+*                         Sourjya Dutta <sdutta@nyu.edu>
+*                         Russell Ford <russell.ford@nyu.edu>
+*                         Menglei Zhang <menglei@nyu.edu>
+*
+* Modified by: Michele Polese <michele.polese@gmail.com>
+*                 Dual Connectivity and Handover functionalities
+*/
 
 
 #ifndef MMWAVE_HARQ_PHY_MODULE_H
@@ -52,10 +52,10 @@ namespace mmwave {
 
 struct MmWaveHarqProcessInfoElement_t
 {
-   double m_mi;
-   uint8_t m_rv;
-   uint32_t m_infoBits;
-   uint32_t m_codeBits;
+  double m_mi;
+  uint8_t m_rv;
+  uint32_t m_infoBits;
+  uint32_t m_codeBits;
 };
 
 typedef std::vector <MmWaveHarqProcessInfoElement_t> MmWaveHarqProcessInfoList_t;
@@ -124,7 +124,7 @@ public:
   * for DL (asynchronous)
   * \param id the HARQ proc id
   */
-  void ResetDlHarqProcessStatus(uint16_t rnti, uint8_t id);
+  void ResetDlHarqProcessStatus (uint16_t rnti, uint8_t id);
 
   /**
   * \brief Update the MI value associated to the decodification of an HARQ process
@@ -141,7 +141,7 @@ public:
   * for DL (asynchronous)
   * \param id the HARQ proc id
   */
-  void ResetUlHarqProcessStatus(uint16_t rnti, uint8_t id);
+  void ResetUlHarqProcessStatus (uint16_t rnti, uint8_t id);
 
 
 private:

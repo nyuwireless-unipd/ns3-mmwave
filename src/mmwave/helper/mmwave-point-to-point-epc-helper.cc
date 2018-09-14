@@ -1,33 +1,33 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
- *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- *
- * Modified by: Michele Polese <michele.polese@gmail.com>
- *                Dual Connectivity and Handover functionalities
- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+*   Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab.
+*
+*   This program is free software; you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License version 2 as
+*   published by the Free Software Foundation;
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program; if not, write to the Free Software
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*   Author: Marco Miozzo <marco.miozzo@cttc.es>
+*           Nicola Baldo  <nbaldo@cttc.es>
+*
+*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
+*                         Sourjya Dutta <sdutta@nyu.edu>
+*                         Russell Ford <russell.ford@nyu.edu>
+*                         Menglei Zhang <menglei@nyu.edu>
+*
+* Modified by: Michele Polese <michele.polese@gmail.com>
+*                Dual Connectivity and Handover functionalities
+*/
 
 
 #include <ns3/mmwave-point-to-point-epc-helper.h>
@@ -66,7 +66,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWavePointToPointEpcHelper);
 
 MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
   : m_gtpuUdpPort (2152),  // fixed by the standard
-    m_s1apUdpPort (36412)
+  m_s1apUdpPort (36412)
 {
   NS_LOG_FUNCTION (this);
 
@@ -123,9 +123,9 @@ MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
   // connect SgwPgwApplication and virtual net device for tunneling
   m_tunDevice->SetSendCallback (MakeCallback (&EpcSgwPgwApplication::RecvFromTunDevice, m_sgwPgwApp));
 
- // create S1apMme object and aggregate it with the m_mmeNode
+  // create S1apMme object and aggregate it with the m_mmeNode
   Ptr<EpcS1apMme> s1apMme = CreateObject<EpcS1apMme> (mmeS1apSocket, 1); // for now, only one mme!
-  m_mmeNode->AggregateObject(s1apMme);
+  m_mmeNode->AggregateObject (s1apMme);
 
   // create EpcMmeApplication and connect with SGW via S11 interface
   m_mmeApp = CreateObject<EpcMmeApplication> ();
@@ -133,8 +133,8 @@ MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
   m_mmeApp->SetS11SapSgw (m_sgwPgwApp->GetS11SapSgw ());
   m_sgwPgwApp->SetS11SapMme (m_mmeApp->GetS11SapMme ());
   // connect m_mmeApp to the s1apMme
-  m_mmeApp->SetS1apSapMmeProvider(s1apMme->GetEpcS1apSapMmeProvider());
-  s1apMme->SetEpcS1apSapMmeUser(m_mmeApp->GetS1apSapMme());
+  m_mmeApp->SetS1apSapMmeProvider (s1apMme->GetEpcS1apSapMmeProvider ());
+  s1apMme->SetEpcS1apSapMmeUser (m_mmeApp->GetS1apSapMme ());
 }
 
 MmWavePointToPointEpcHelper::~MmWavePointToPointEpcHelper ()
@@ -147,7 +147,7 @@ MmWavePointToPointEpcHelper::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::MmWavePointToPointEpcHelper")
     .SetParent<EpcHelper> ()
-    .SetGroupName("mmWave")
+    .SetGroupName ("mmWave")
     .AddConstructor<MmWavePointToPointEpcHelper> ()
     .AddAttribute ("S1uLinkDataRate",
                    "The data rate to be used for the next S1-U link to be created",
@@ -305,9 +305,9 @@ MmWavePointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevi
 
   uint16_t mmeId = 1;
   Ptr<EpcS1apEnb> s1apEnb = CreateObject<EpcS1apEnb> (enbS1apSocket, mme_enbAddress, mmeAddress, cellId, mmeId); // only one mme!
-  enb->AggregateObject(s1apEnb);
+  enb->AggregateObject (s1apEnb);
   enbApp->SetS1apSapMme (s1apEnb->GetEpcS1apSapEnbProvider ());
-  s1apEnb->SetEpcS1apSapEnbUser (enbApp->GetS1apSapEnb());
+  s1apEnb->SetEpcS1apSapEnbUser (enbApp->GetS1apSapEnb ());
   m_mmeApp->AddEnb (cellId, mme_enbAddress); // TODO consider if this can be removed
   // add the interface to the S1AP endpoint on the MME
   Ptr<EpcS1apMme> s1apMme = m_mmeNode->GetObject<EpcS1apMme> ();
@@ -334,7 +334,7 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   // in case the RLC buffer is full, the forwarding of packets from the source eNB to the target eNB during a handover
   // or a switch may overflow the transmission queue of point to point devices. Therefore the following line increases
   // the size of tx queue in p2p devices. The parameter should be related to the maximum size of the RLC buffer.
-  p2ph.SetQueue ("ns3::DropTailQueue", "MaxSize", QueueSizeValue(QueueSize("4294967295p")));
+  p2ph.SetQueue ("ns3::DropTailQueue", "MaxSize", QueueSizeValue (QueueSize ("4294967295p")));
   NetDeviceContainer enbDevices = p2ph.Install (enb1, enb2);
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #1 after installing p2p dev: " << enb1->GetObject<Ipv4> ()->GetNInterfaces ());
   NS_LOG_LOGIC ("number of Ipv4 ifaces of the eNB #2 after installing p2p dev: " << enb2->GetObject<Ipv4> ()->GetNInterfaces ());
@@ -356,15 +356,15 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   // we may have a LTE or a MmWave eNB
   uint16_t enb1CellId = 0;
   if(enb1MmWaveDev != 0)
-  {
-    enb1CellId = enb1MmWaveDev->GetCellId ();
-    NS_LOG_INFO ("MmWaveEnbNetDevice #1 = " << enb1MmWaveDev << " - CellId = " << enb1CellId);
-  }
+    {
+      enb1CellId = enb1MmWaveDev->GetCellId ();
+      NS_LOG_INFO ("MmWaveEnbNetDevice #1 = " << enb1MmWaveDev << " - CellId = " << enb1CellId);
+    }
   else if (enb1LteDev != 0)
-  {
-    enb1CellId = enb1LteDev->GetCellId ();
-    NS_LOG_INFO ("LteEnbNetDevice #1 = " << enb1LteDev << " - CellId = " << enb1CellId);
-  }
+    {
+      enb1CellId = enb1LteDev->GetCellId ();
+      NS_LOG_INFO ("LteEnbNetDevice #1 = " << enb1LteDev << " - CellId = " << enb1CellId);
+    }
 
   Ptr<EpcX2> enb2X2 = enb2->GetObject<EpcX2> ();
   Ptr<MmWaveEnbNetDevice> enb2MmWaveDev = enb2->GetDevice (0)->GetObject<MmWaveEnbNetDevice> ();
@@ -372,29 +372,29 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   // we may have a LTE or a MmWave eNB
   uint16_t enb2CellId = 0;
   if(enb2MmWaveDev != 0)
-  {
-    enb2CellId = enb2MmWaveDev->GetCellId ();
-    NS_LOG_INFO ("MmWaveEnbNetDevice #2 = " << enb2MmWaveDev << " - CellId = " << enb2CellId);
-    enb2MmWaveDev->GetRrc ()->AddX2Neighbour (enb1CellId);
-  }
+    {
+      enb2CellId = enb2MmWaveDev->GetCellId ();
+      NS_LOG_INFO ("MmWaveEnbNetDevice #2 = " << enb2MmWaveDev << " - CellId = " << enb2CellId);
+      enb2MmWaveDev->GetRrc ()->AddX2Neighbour (enb1CellId);
+    }
   else if (enb2LteDev != 0)
-  {
-    enb2CellId = enb2LteDev->GetCellId ();
-    NS_LOG_INFO ("LteEnbNetDevice #2 = " << enb2LteDev << " - CellId = " << enb2CellId);
-    enb2LteDev->GetRrc ()->AddX2Neighbour (enb1CellId);
-  }
+    {
+      enb2CellId = enb2LteDev->GetCellId ();
+      NS_LOG_INFO ("LteEnbNetDevice #2 = " << enb2LteDev << " - CellId = " << enb2CellId);
+      enb2LteDev->GetRrc ()->AddX2Neighbour (enb1CellId);
+    }
 
   enb1X2->AddX2Interface (enb1CellId, enb1X2Address, enb2CellId, enb2X2Address);
   enb2X2->AddX2Interface (enb2CellId, enb2X2Address, enb1CellId, enb1X2Address);
 
   if(enb1MmWaveDev != 0)
-  {
-    enb1MmWaveDev->GetRrc ()->AddX2Neighbour (enb2CellId);
-  }
+    {
+      enb1MmWaveDev->GetRrc ()->AddX2Neighbour (enb2CellId);
+    }
   else if(enb1LteDev != 0)
-  {
-    enb1LteDev->GetRrc ()->AddX2Neighbour (enb2CellId);
-  }
+    {
+      enb1LteDev->GetRrc ()->AddX2Neighbour (enb2CellId);
+    }
 
   // if((enb1CellId == 1 && enb2CellId == 2) || (enb1CellId == 2 && enb2CellId == 1))
   // {
@@ -435,9 +435,9 @@ MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_
   uint8_t bearerId = m_mmeApp->AddBearer (imsi, tft, bearer);
   Ptr<mmwave::MmWaveUeNetDevice> ueLteDevice = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ();
   if (ueLteDevice)
-  {
-    ueLteDevice->GetNas ()->ActivateEpsBearer (bearer, tft);
-  }
+    {
+      ueLteDevice->GetNas ()->ActivateEpsBearer (bearer, tft);
+    }
   return bearerId;
 }
 
@@ -487,8 +487,8 @@ Ipv6InterfaceContainer
 MmWavePointToPointEpcHelper::AssignUeIpv6Address (NetDeviceContainer ueDevices)
 {
   for (NetDeviceContainer::Iterator iter = ueDevices.Begin ();
-      iter != ueDevices.End ();
-      iter ++)
+       iter != ueDevices.End ();
+       iter++)
     {
       Ptr<Icmpv6L4Protocol> icmpv6 = (*iter)->GetNode ()->GetObject<Icmpv6L4Protocol> ();
       icmpv6->SetAttribute ("DAD", BooleanValue (false));

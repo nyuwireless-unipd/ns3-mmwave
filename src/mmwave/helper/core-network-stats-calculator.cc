@@ -50,7 +50,7 @@ CoreNetworkStatsCalculator::GetTypeId (void)
   static TypeId tid =
     TypeId ("ns3::CoreNetworkStatsCalculator")
     .SetParent<Object> ().AddConstructor<CoreNetworkStatsCalculator> ()
-    .SetGroupName("Lte")
+    .SetGroupName ("Lte")
     .AddAttribute ("X2FileName",
                    "Name of the file where the packet rx on X2 will be logged.",
                    StringValue ("X2Stats.txt"),
@@ -77,9 +77,9 @@ CoreNetworkStatsCalculator::LogX2Packet (std::string path, uint16_t sourceCellId
   NS_LOG_FUNCTION (this << "LogX2Packet" << sourceCellId << targetCellId << size << delay);
 
   if (!m_x2OutFile.is_open ())
-  {
-  	m_x2OutFile.open (GetX2OutputFilename ().c_str ());
-  }
+    {
+      m_x2OutFile.open (GetX2OutputFilename ().c_str ());
+    }
 
   m_x2OutFile << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << sourceCellId << " " << targetCellId << " " << size << " " << delay << " " << data << std::endl;
 }
@@ -90,9 +90,9 @@ CoreNetworkStatsCalculator::LogMmePacket (std::string path, uint16_t sourceCellI
   NS_LOG_FUNCTION (this << "LogX2Packet" << sourceCellId << targetCellId << size << delay);
 
   if (!m_mmeOutFile.is_open ())
-  {
-    m_mmeOutFile.open (GetMmeOutputFilename ().c_str ());
-  }
+    {
+      m_mmeOutFile.open (GetMmeOutputFilename ().c_str ());
+    }
 
   m_mmeOutFile << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << sourceCellId << " " << targetCellId << " " << size << " " << delay << std::endl;
 }

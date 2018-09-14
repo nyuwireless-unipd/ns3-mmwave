@@ -1,29 +1,29 @@
- /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
- /*
- *   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- *   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2 as
- *   published by the Free Software Foundation;
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *   Author: Marco Miozzo <marco.miozzo@cttc.es>
- *           Nicola Baldo  <nbaldo@cttc.es>
- *
- *   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
- *        	 	  Sourjya Dutta <sdutta@nyu.edu>
- *        	 	  Russell Ford <russell.ford@nyu.edu>
- *        		  Menglei Zhang <menglei@nyu.edu>
- */
+/* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
+/*
+*   Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
+*   Copyright (c) 2015, NYU WIRELESS, Tandon School of Engineering, New York University
+*
+*   This program is free software; you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License version 2 as
+*   published by the Free Software Foundation;
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program; if not, write to the Free Software
+*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*
+*   Author: Marco Miozzo <marco.miozzo@cttc.es>
+*           Nicola Baldo  <nbaldo@cttc.es>
+*
+*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
+*                         Sourjya Dutta <sdutta@nyu.edu>
+*                         Russell Ford <russell.ford@nyu.edu>
+*                         Menglei Zhang <menglei@nyu.edu>
+*/
 
 
 
@@ -38,118 +38,118 @@ NS_LOG_COMPONENT_DEFINE ("mmWaveControlMessage");
 
 MmWaveControlMessage::MmWaveControlMessage (void)
 {
-	NS_LOG_INFO (this);
+  NS_LOG_INFO (this);
 }
 
 MmWaveControlMessage::~MmWaveControlMessage (void)
 {
-	NS_LOG_INFO (this);
+  NS_LOG_INFO (this);
 }
 
 void
 MmWaveControlMessage::SetMessageType (messageType type)
 {
-	m_messageType = type;
+  m_messageType = type;
 }
 
 MmWaveControlMessage::messageType
 MmWaveControlMessage::GetMessageType (void)
 {
-	return m_messageType;
+  return m_messageType;
 }
 
 MmWaveTdmaDciMessage::MmWaveTdmaDciMessage (void)
 {
-	NS_LOG_INFO (this);
-	SetMessageType (MmWaveControlMessage::DCI_TDMA);
+  NS_LOG_INFO (this);
+  SetMessageType (MmWaveControlMessage::DCI_TDMA);
 }
 
 MmWaveTdmaDciMessage::~MmWaveTdmaDciMessage (void)
 {
-	NS_LOG_INFO (this);
+  NS_LOG_INFO (this);
 }
 
 
 void
 MmWaveTdmaDciMessage::SetDciInfoElement (DciInfoElementTdma dci)
 {
-	m_dciInfoElement = dci;
+  m_dciInfoElement = dci;
 }
 
 DciInfoElementTdma
 MmWaveTdmaDciMessage::GetDciInfoElement (void)
 {
-	return m_dciInfoElement;
+  return m_dciInfoElement;
 }
 
 void
 MmWaveTdmaDciMessage::SetSfnSf (SfnSf sfn)
 {
-	m_sfnSf = sfn;
+  m_sfnSf = sfn;
 }
 
 SfnSf
 MmWaveTdmaDciMessage::GetSfnSf (void)
 {
-	return m_sfnSf;
+  return m_sfnSf;
 }
 
 MmWaveDciMessage::MmWaveDciMessage (void)
 {
-	NS_LOG_INFO (this);
-	SetMessageType (MmWaveControlMessage::DCI);
+  NS_LOG_INFO (this);
+  SetMessageType (MmWaveControlMessage::DCI);
 }
 
 MmWaveDciMessage::~MmWaveDciMessage (void)
 {
-	NS_LOG_INFO (this);
+  NS_LOG_INFO (this);
 }
 
 
 void
 MmWaveDciMessage::SetDciInfoElement (DciInfoElement dci)
 {
-	m_dciInfoElement = dci;
+  m_dciInfoElement = dci;
 }
 
 DciInfoElement
 MmWaveDciMessage::GetDciInfoElement (void)
 {
-	return m_dciInfoElement;
+  return m_dciInfoElement;
 }
 
 void
 MmWaveDciMessage::SetSfnSf (uint32_t sfn)
 {
-	m_sfnSf = sfn;
+  m_sfnSf = sfn;
 }
 
 uint32_t
 MmWaveDciMessage::GetSfnSf (void)
 {
-	return m_sfnSf;
+  return m_sfnSf;
 }
 
 MmWaveDlCqiMessage::MmWaveDlCqiMessage (void)
 {
-	SetMessageType (MmWaveControlMessage::DL_CQI);
-	NS_LOG_INFO (this);
+  SetMessageType (MmWaveControlMessage::DL_CQI);
+  NS_LOG_INFO (this);
 }
 MmWaveDlCqiMessage::~MmWaveDlCqiMessage (void)
 {
-	NS_LOG_INFO (this);
+  NS_LOG_INFO (this);
 }
 
 void
 MmWaveDlCqiMessage::SetDlCqi (DlCqiInfo cqi)
 {
-	m_cqi = cqi;
+  m_cqi = cqi;
 }
 
 DlCqiInfo
 MmWaveDlCqiMessage::GetDlCqi ()
 {
-	return m_cqi;
+  return m_cqi;
 }
 
 // ----------------------------------------------------------------------------------------------------------
