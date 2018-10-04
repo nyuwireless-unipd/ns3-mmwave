@@ -37,17 +37,26 @@ namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveMacPduTag);
 
-MmWaveMacPduTag::MmWaveMacPduTag () : m_sfnSf (SfnSf ()), m_symStart (0), m_numSym (0), m_tagSize (6)
+MmWaveMacPduTag::MmWaveMacPduTag () : m_sfnSf (SfnSf ()),
+                                      m_symStart (0),
+                                      m_numSym (0),
+                                      m_tagSize (6)
 {
 }
 
 MmWaveMacPduTag::MmWaveMacPduTag (SfnSf sfn)
-  :  m_sfnSf (sfn), m_symStart (0), m_numSym (0), m_tagSize (6)
+  :  m_sfnSf (sfn),
+    m_symStart (0),
+    m_numSym (0),
+    m_tagSize (6)
 {
 }
 
 MmWaveMacPduTag::MmWaveMacPduTag (SfnSf sfn, uint8_t symStart, uint8_t numSym)
-  :  m_sfnSf (sfn), m_symStart (symStart), m_numSym (numSym), m_tagSize (6)
+  :  m_sfnSf (sfn),
+    m_symStart (symStart),
+    m_numSym (numSym),
+    m_tagSize (6)
 {
 }
 

@@ -46,8 +46,8 @@ namespace mmwave {
 class MmWavePhyRxTrace : public Object
 {
 public:
-  MmWavePhyRxTrace();
-  virtual ~MmWavePhyRxTrace();
+  MmWavePhyRxTrace ();
+  virtual ~MmWavePhyRxTrace ();
   static TypeId GetTypeId (void);
   static void ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
                                                  uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power);
@@ -71,7 +71,7 @@ private:
   static std::string m_rxPacketTraceFilename;
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } /* namespace ns3 */
 

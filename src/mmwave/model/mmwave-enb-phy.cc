@@ -84,9 +84,9 @@ MmWaveEnbPhy::MmWaveEnbPhy ()
 
 MmWaveEnbPhy::MmWaveEnbPhy (Ptr<MmWaveSpectrumPhy> dlPhy, Ptr<MmWaveSpectrumPhy> ulPhy)
   : MmWavePhy (dlPhy, ulPhy),
-  m_prevSlot (0),
-  m_prevSlotDir (SlotAllocInfo::NA),
-  m_currSymStart (0)
+    m_prevSlot (0),
+    m_prevSlotDir (SlotAllocInfo::NA),
+    m_currSymStart (0)
 {
   m_enbCphySapProvider = new MemberLteEnbCphySapProvider<MmWaveEnbPhy> (this);
   m_roundFromLastUeSinrUpdate = 0;
@@ -203,16 +203,16 @@ MmWaveEnbPhy::DoInitialize (void)
       ulCtrlSlot.m_tddMode = SlotAllocInfo::UL_slotAllocInfo;
       ulCtrlSlot.m_slotIdx = 0xFF;
       ulCtrlSlot.m_dci.m_numSym = 1;
-      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe ()-1;
+      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
       m_sfAllocInfo[i].m_slotAllocInfo.push_back (dlCtrlSlot);
       m_sfAllocInfo[i].m_slotAllocInfo.push_back (ulCtrlSlot);
     }
 
   NS_LOG_DEBUG ("In mmWaveEnbPhy, the RT periodicity is: " << m_updateSinrPeriod << " microseconds");
   NS_LOG_DEBUG ("In mmWaveEnbPhy, the transient duration is: " << m_transient << " microseconds");
-  if(m_noiseAndFilter)
+  if (m_noiseAndFilter)
     {
-      NS_ASSERT_MSG ((double)m_transient/m_updateSinrPeriod >= 16, "Window too small to compute the variance according to the ApplyFilter method");
+      NS_ASSERT_MSG ((double)m_transient / m_updateSinrPeriod >= 16, "Window too small to compute the variance according to the ApplyFilter method");
     }
   Simulator::Schedule (MicroSeconds (0), &MmWaveEnbPhy::UpdateUeSinrEstimate, this);
   Simulator::Schedule (MicroSeconds (0), &MmWaveEnbPhy::CallPathloss, this);
@@ -233,7 +233,7 @@ MmWaveEnbPhy::MakeAvg ( std::vector<double> v )
   double return_value = 0.0;
   int n = v.size ();
 
-  for ( int i=0; i < n; i++)
+  for ( int i = 0; i < n; i++)
     {
       return_value += v.at (i);
     }
@@ -248,17 +248,17 @@ double
 MmWaveEnbPhy::MakeVar ( std::vector<double> v, double mean )
 {
   double sum = 0.0;
-  double temp =0.0;
-  double var =0.0;
+  double temp = 0.0;
+  double var = 0.0;
   int n = v.size ();
 
-  for ( int j =0; j < n; j++)
+  for ( int j = 0; j < n; j++)
     {
       temp = std::pow ((v.at (j) - mean),2);
       sum += temp;
     }
 
-  return var = sum/(v.size ());
+  return var = sum / (v.size ());
 }
 //****************End of variance funtion****************
 
@@ -273,11 +273,11 @@ MmWaveEnbPhy::AddGaussianNoise (double LastSinrValue)
   Ptr<NormalRandomVariable> randomVariable = CreateObject<NormalRandomVariable> ();
   double gaussianSampleRe = randomVariable->GetValue ();
   double gaussianSampleIm = randomVariable->GetValue ();
-  gaussianNoise = std::complex<double>(sqrt (0.5) * sqrt (N0) * gaussianSampleRe, sqrt (0.5) * sqrt (N0) * gaussianSampleIm);
+  gaussianNoise = std::complex<double> (sqrt (0.5) * sqrt (N0) * gaussianSampleRe, sqrt (0.5) * sqrt (N0) * gaussianSampleIm);
 
-  signalEnergy = LastSinrValue*N0;
+  signalEnergy = LastSinrValue * N0;
 
-  noisySample = (std::pow (std::abs (sqrt (signalEnergy)+gaussianNoise),2)-N0)/N0;
+  noisySample = (std::pow (std::abs (sqrt (signalEnergy) + gaussianNoise),2) - N0) / N0;
 
   return noisySample;
 }
@@ -290,16 +290,16 @@ MmWaveEnbPhy::ApplyFilter (std::vector<double> noisySinr)
   std::vector<double> noisySinrdB;
   for (uint64_t i = 0; i < noisySinr.size (); ++i)
     {
-      noisySinrdB.push_back (10*std::log10 (noisySinr.at (i)));
+      noisySinrdB.push_back (10 * std::log10 (noisySinr.at (i)));
     }
 
   std::vector<double> vectorVar;
   NS_LOG_DEBUG ("noisySinrdBSize() " << noisySinrdB.size ());
-  for (uint64_t i = 0; i < noisySinrdB.size ()-1; ++i)
+  for (uint64_t i = 0; i < noisySinrdB.size () - 1; ++i)
     {
       std::vector<double> partialSamples;
       partialSamples.push_back (noisySinrdB.at (i));
-      partialSamples.push_back (noisySinrdB.at (i+1));
+      partialSamples.push_back (noisySinrdB.at (i + 1));
       double meanValue = MakeAvg (partialSamples);
       double varValue = MakeVar (partialSamples,meanValue);
       vectorVar.push_back (varValue);
@@ -314,7 +314,7 @@ MmWaveEnbPhy::ApplyFilter (std::vector<double> noisySinr)
 
   uint64_t noisySinrIndex = 0;
 
-  for (uint64_t varIndex = vectorVar.size ()-1; varIndex > 0; varIndex--)      // start filter when variance of the noisy trace is high
+  for (uint64_t varIndex = vectorVar.size () - 1; varIndex > 0; varIndex--)      // start filter when variance of the noisy trace is high
     {
       NS_LOG_DEBUG ("varIndex " << varIndex);
       noisySinrIndex = varIndex + 1;
@@ -356,7 +356,7 @@ MmWaveEnbPhy::ApplyFilter (std::vector<double> noisySinr)
       std::vector<double> provNoisy (lastNoisy,firstNoisy);
 
       NS_LOG_INFO ("provNoisy.size " << provNoisy.size ());
-      for(std::vector<double>::const_iterator h = provNoisy.begin (); h!=provNoisy.end (); h++)
+      for (std::vector<double>::const_iterator h = provNoisy.begin (); h != provNoisy.end (); h++)
         {
           NS_LOG_INFO ("h " << *h);
           NS_LOG_INFO ("i " << noisySinrIndex  );
@@ -368,28 +368,28 @@ MmWaveEnbPhy::ApplyFilter (std::vector<double> noisySinr)
       * the SINR is on sufficiently high values
       */
 
-      if(Simulator::Now () > Seconds (2.1) && Simulator::Now () < Seconds (2.3))
+      if (Simulator::Now () > Seconds (2.1) && Simulator::Now () < Seconds (2.3))
         {
-          NS_LOG_DEBUG ("(std::all_of(prov.begin(),prov.end(), [](double j){return j < 1;})) " << (std::all_of (prov.begin (),prov.end (), [](double j){
-            return j < 1;
-          })));
-          NS_LOG_DEBUG ("(std::all_of(prov.begin(),prov.end(), [](double j){nan;})) " << (std::all_of (prov.begin (),prov.end (), [](double k){
-            return !std::isnan (k);
-          })));
-          NS_LOG_DEBUG ("(std::all_of(provNoisy.begin(),provNoisy.end(), [](double p){return p > 10;})) " << (std::all_of (provNoisy.begin (),provNoisy.end (), [](double p){
-            return p > 10;
-          })));
+          NS_LOG_DEBUG ("(std::all_of(prov.begin(),prov.end(), [](double j){return j < 1;})) " << (std::all_of (prov.begin (),prov.end (), [] (double j){
+                                                                                                                  return j < 1;
+                                                                                                                })));
+          NS_LOG_DEBUG ("(std::all_of(prov.begin(),prov.end(), [](double j){nan;})) " << (std::all_of (prov.begin (),prov.end (), [] (double k){
+                                                                                                         return !std::isnan (k);
+                                                                                                       })));
+          NS_LOG_DEBUG ("(std::all_of(provNoisy.begin(),provNoisy.end(), [](double p){return p > 10;})) " << (std::all_of (provNoisy.begin (),provNoisy.end (), [] (double p){
+                                                                                                                             return p > 10;
+                                                                                                                           })));
         }
 
-      if (((std::all_of (prov.begin (),prov.end (), [](double j){
-          return j < 1;
-        })) &&
-           (std::all_of (prov.begin (),prov.end (), [](double k){
-          return !std::isnan (k);
-        }))) ||
-          (std::all_of (provNoisy.begin (),provNoisy.end (), [](double p){
-          return p > 10;
-        })))
+      if (((std::all_of (prov.begin (),prov.end (), [] (double j){
+                           return j < 1;
+                         }))
+           && (std::all_of (prov.begin (),prov.end (), [] (double k){
+                              return !std::isnan (k);
+                            })))
+          || (std::all_of (provNoisy.begin (),provNoisy.end (), [] (double p){
+                             return p > 10;
+                           })))
         {
           startFilter = noisySinrIndex;
           flagStartFilter = false;               // a "end" sample has been identified
@@ -438,22 +438,22 @@ MmWaveEnbPhy::MakeFilter (std::vector<double> noisySinr, std::vector<double> rea
       x.push_back (0);           // initialization of array
       int counter = 0;
 
-      for (uint64_t i = std::get<0>(pairFiltering); i < std::get<1>(pairFiltering); i++)
+      for (uint64_t i = std::get<0> (pairFiltering); i < std::get<1> (pairFiltering); i++)
         {
-          x.push_back ((1-alpha)*x.at (counter)+alpha*(noisySinr.at (i)));
+          x.push_back ((1 - alpha) * x.at (counter) + alpha * (noisySinr.at (i)));
           counter++;
         }
 
       std::vector<double> errorEstimation;
       counter = 0;
-      for (uint64_t i = std::get<0>(pairFiltering); i < std::get<1>(pairFiltering); i++)
+      for (uint64_t i = std::get<0> (pairFiltering); i < std::get<1> (pairFiltering); i++)
         {
-          errorEstimation.push_back (std::abs (x.at (counter+1) - realSinr.at (i)));
+          errorEstimation.push_back (std::abs (x.at (counter + 1) - realSinr.at (i)));
           counter++;
         }
 
       meanError.at (rep) = MakeAvg ( errorEstimation );
-      if(Simulator::Now () > Seconds (2.1) && Simulator::Now () < Seconds (2.3))
+      if (Simulator::Now () > Seconds (2.1) && Simulator::Now () < Seconds (2.3))
         {
           NS_LOG_DEBUG ("meanError " << meanError.at (rep) << " rep " << rep);
         }
@@ -461,8 +461,8 @@ MmWaveEnbPhy::MakeFilter (std::vector<double> noisySinr, std::vector<double> rea
     }
 
   int posMinAlpha = std::distance (meanError.begin (),std::min_element (meanError.begin (),meanError.end ()));
-  double minAlpha = (posMinAlpha+1)*0.01;
-  if(minAlpha > 0.5)
+  double minAlpha = (posMinAlpha + 1) * 0.01;
+  if (minAlpha > 0.5)
     {
       minAlpha = 0.2;
     }
@@ -471,10 +471,10 @@ MmWaveEnbPhy::MakeFilter (std::vector<double> noisySinr, std::vector<double> rea
   std::vector<double> blockageTrace;
   blockageTrace.push_back (0);
   int counter = 0;
-  for (uint64_t i = std::get<0>(pairFiltering); i < std::get<1>(pairFiltering); i++)
+  for (uint64_t i = std::get<0> (pairFiltering); i < std::get<1> (pairFiltering); i++)
     {
       NS_LOG_DEBUG (noisySinr.at (i));
-      blockageTrace.push_back ((1-minAlpha)*blockageTrace.at (counter)+minAlpha*(noisySinr.at (i)));
+      blockageTrace.push_back ((1 - minAlpha) * blockageTrace.at (counter) + minAlpha * (noisySinr.at (i)));
       NS_LOG_DEBUG ("fff " << blockageTrace.at (counter));
       counter++;
     }
@@ -482,24 +482,30 @@ MmWaveEnbPhy::MakeFilter (std::vector<double> noisySinr, std::vector<double> rea
   std::vector<double> retFinalTrace;
   /* first piece */
   std::vector<double>::const_iterator firstPieceStart = noisySinr.begin ();
-  std::vector<double>::const_iterator firstPieceEnd = noisySinr.begin () +  std::get<0>(pairFiltering)+1;
+  std::vector<double>::const_iterator firstPieceEnd = noisySinr.begin () +  std::get<0> (pairFiltering) + 1;
   std::vector<double> firstPiece;
   firstPiece.insert (firstPiece.begin (),firstPieceStart,firstPieceEnd);
-  for(std::vector<double>::const_iterator i = firstPiece.begin (); i!=firstPiece.end (); i++)
-    NS_LOG_DEBUG ("/ " << *i);
+  for (std::vector<double>::const_iterator i = firstPiece.begin (); i != firstPiece.end (); i++)
+    {
+      NS_LOG_DEBUG ("/ " << *i);
+    }
 
   /*last piece*/
-  std::vector<double>::const_iterator lastPieceStart = noisySinr.begin () + std::get<1>(pairFiltering)+1;
+  std::vector<double>::const_iterator lastPieceStart = noisySinr.begin () + std::get<1> (pairFiltering) + 1;
   std::vector<double>::const_iterator lastPieceEnd = noisySinr.end ();
   std::vector<double> lastPiece;
 
-  firstPiece.insert (firstPiece.end (),blockageTrace.begin ()+1,blockageTrace.end ()-1);
-  for(std::vector<double>::const_iterator i = firstPiece.begin (); i!=firstPiece.end (); i++)
-    NS_LOG_DEBUG ("// " << *i);
+  firstPiece.insert (firstPiece.end (),blockageTrace.begin () + 1,blockageTrace.end () - 1);
+  for (std::vector<double>::const_iterator i = firstPiece.begin (); i != firstPiece.end (); i++)
+    {
+      NS_LOG_DEBUG ("// " << *i);
+    }
 
   firstPiece.insert (firstPiece.end (),lastPieceStart, lastPieceEnd);
-  for(std::vector<double>::const_iterator i = firstPiece.begin (); i!=firstPiece.end (); i++)
-    NS_LOG_DEBUG ("/// " << *i);
+  for (std::vector<double>::const_iterator i = firstPiece.begin (); i != firstPiece.end (); i++)
+    {
+      NS_LOG_DEBUG ("/// " << *i);
+    }
 
 
 
@@ -599,7 +605,7 @@ MmWaveEnbPhy::CallPathloss ()
   Ptr<SpectrumValue> noisePsd = MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
   Ptr<SpectrumValue> totalReceivedPsd = Create <SpectrumValue> (SpectrumValue (noisePsd->GetSpectrumModel ()));
 
-  for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin (); ue != m_ueAttachedImsiMap.end (); ++ue)
+  for (std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin (); ue != m_ueAttachedImsiMap.end (); ++ue)
     {
       // distinguish between MC and MmWaveNetDevice
       Ptr<mmwave::MmWaveUeNetDevice> ueNetDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ue->second);
@@ -607,7 +613,7 @@ MmWaveEnbPhy::CallPathloss ()
       Ptr<MmWaveUePhy> uePhy;
       // get tx power
       double ueTxPower = 0;
-      if(ueNetDevice != 0)
+      if (ueNetDevice != 0)
         {
           uePhy = ueNetDevice->GetPhy ();
           ueTxPower = uePhy->GetTxPower ();
@@ -635,9 +641,9 @@ MmWaveEnbPhy::CallPathloss ()
       NS_LOG_LOGIC ("TxPsd " << *txPsd);
 
       // get this node and remote node mobility
-      Ptr<MobilityModel> enbMob = m_netDevice->GetNode ()->GetObject<MobilityModel>();
+      Ptr<MobilityModel> enbMob = m_netDevice->GetNode ()->GetObject<MobilityModel> ();
       NS_LOG_LOGIC ("eNB mobility " << enbMob->GetPosition ());
-      Ptr<MobilityModel> ueMob = ue->second->GetNode ()->GetObject<MobilityModel>();
+      Ptr<MobilityModel> ueMob = ue->second->GetNode ()->GetObject<MobilityModel> ();
       NS_LOG_DEBUG ("UE mobility " << ueMob->GetPosition ());
 
       // compute rx psd
@@ -702,16 +708,16 @@ MmWaveEnbPhy::CallPathloss ()
       *totalReceivedPsd += *rxPsd;
 
       // set back the bf vector to the main eNB
-      if(ueNetDevice != 0)
+      if (ueNetDevice != 0)
         {                                                                                                                       // target not set yet
-          if((ueNetDevice->GetTargetEnb () != m_netDevice) && (ueNetDevice->GetTargetEnb () != 0))
+          if ((ueNetDevice->GetTargetEnb () != m_netDevice) && (ueNetDevice->GetTargetEnb () != 0))
             {
               txAntennaArray->ChangeBeamformingVectorPanel (ueNetDevice->GetTargetEnb ());
             }
         }
       else if (mcUeDev != 0)           // it may be a MC device
         {                                                                                                                               // target not set yet
-          if((mcUeDev->GetMmWaveTargetEnb () != m_netDevice) && (mcUeDev->GetMmWaveTargetEnb () != 0))
+          if ((mcUeDev->GetMmWaveTargetEnb () != m_netDevice) && (mcUeDev->GetMmWaveTargetEnb () != 0))
             {
               txAntennaArray->ChangeBeamformingVectorPanel (mcUeDev->GetMmWaveTargetEnb ());
             }
@@ -723,14 +729,14 @@ MmWaveEnbPhy::CallPathloss ()
 
     }
 
-  for(std::map<uint64_t, Ptr<SpectrumValue> >::iterator ue = m_rxPsdMap.begin (); ue != m_rxPsdMap.end (); ++ue)
+  for (std::map<uint64_t, Ptr<SpectrumValue> >::iterator ue = m_rxPsdMap.begin (); ue != m_rxPsdMap.end (); ++ue)
     {
       SpectrumValue interference = *totalReceivedPsd - *(ue->second);
       NS_LOG_LOGIC ("interference " << interference);
-      SpectrumValue sinr = *(ue->second)/(*noisePsd + interference);
+      SpectrumValue sinr = *(ue->second) / (*noisePsd + interference);
       NS_LOG_LOGIC ("sinr " << sinr);
-      double sinrAvg = Sum (sinr)/(sinr.GetSpectrumModel ()->GetNumBands ());
-      NS_LOG_DEBUG ("Real SINR every 125 microseconds is: " << 10*std::log10 (sinrAvg));
+      double sinrAvg = Sum (sinr) / (sinr.GetSpectrumModel ()->GetNumBands ());
+      NS_LOG_DEBUG ("Real SINR every 125 microseconds is: " << 10 * std::log10 (sinrAvg));
     }
 
   Simulator::Schedule (MicroSeconds (125), &MmWaveEnbPhy::CallPathloss, this);     // since one slot every 125 microseconds
@@ -751,7 +757,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
   Ptr<SpectrumValue> noisePsd = MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
   Ptr<SpectrumValue> totalReceivedPsd = Create <SpectrumValue> (SpectrumValue (noisePsd->GetSpectrumModel ()));
 
-  for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin (); ue != m_ueAttachedImsiMap.end (); ++ue)
+  for (std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin (); ue != m_ueAttachedImsiMap.end (); ++ue)
     {
       // distinguish between MC and MmWaveNetDevice
       Ptr<mmwave::MmWaveUeNetDevice> ueNetDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ue->second);
@@ -759,7 +765,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
       Ptr<MmWaveUePhy> uePhy;
       // get tx power
       double ueTxPower = 0;
-      if(ueNetDevice != 0)
+      if (ueNetDevice != 0)
         {
           uePhy = ueNetDevice->GetPhy ();
           ueTxPower = uePhy->GetTxPower ();
@@ -787,9 +793,9 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
       NS_LOG_LOGIC ("TxPsd " << *txPsd);
 
       // get this node and remote node mobility
-      Ptr<MobilityModel> enbMob = m_netDevice->GetNode ()->GetObject<MobilityModel>();
+      Ptr<MobilityModel> enbMob = m_netDevice->GetNode ()->GetObject<MobilityModel> ();
       NS_LOG_LOGIC ("eNB mobility " << enbMob->GetPosition ());
-      Ptr<MobilityModel> ueMob = ue->second->GetNode ()->GetObject<MobilityModel>();
+      Ptr<MobilityModel> ueMob = ue->second->GetNode ()->GetObject<MobilityModel> ();
       NS_LOG_DEBUG ("UE mobility " << ueMob->GetPosition ());
 
       // compute rx psd
@@ -862,16 +868,16 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
       *totalReceivedPsd += *rxPsd;
 
       // set back the bf vector to the main eNB
-      if(ueNetDevice != 0)
+      if (ueNetDevice != 0)
         {                                                                                                                       // target not set yet
-          if((ueNetDevice->GetTargetEnb () != m_netDevice) && (ueNetDevice->GetTargetEnb () != 0))
+          if ((ueNetDevice->GetTargetEnb () != m_netDevice) && (ueNetDevice->GetTargetEnb () != 0))
             {
               txAntennaArray->ChangeBeamformingVectorPanel (ueNetDevice->GetTargetEnb ());
             }
         }
       else if (mcUeDev != 0)           // it may be a MC device
         {                                                                                                                               // target not set yet
-          if((mcUeDev->GetMmWaveTargetEnb () != m_netDevice) && (mcUeDev->GetMmWaveTargetEnb () != 0))
+          if ((mcUeDev->GetMmWaveTargetEnb () != m_netDevice) && (mcUeDev->GetMmWaveTargetEnb () != 0))
             {
               txAntennaArray->ChangeBeamformingVectorPanel (mcUeDev->GetMmWaveTargetEnb ());
             }
@@ -883,17 +889,17 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
 
     }
 
-  for(std::map<uint64_t, Ptr<SpectrumValue> >::iterator ue = m_rxPsdMap.begin (); ue != m_rxPsdMap.end (); ++ue)
+  for (std::map<uint64_t, Ptr<SpectrumValue> >::iterator ue = m_rxPsdMap.begin (); ue != m_rxPsdMap.end (); ++ue)
     {
       SpectrumValue interference = *totalReceivedPsd - *(ue->second);
       NS_LOG_LOGIC ("interference " << interference);
-      SpectrumValue sinr = *(ue->second)/(*noisePsd);           // + interference);
+      SpectrumValue sinr = *(ue->second) / (*noisePsd);           // + interference);
       // we consider the SNR only!
       NS_LOG_LOGIC ("sinr " << sinr);
-      double sinrAvg = Sum (sinr)/(sinr.GetSpectrumModel ()->GetNumBands ());
-      NS_LOG_DEBUG ("Time " << Simulator::Now ().GetSeconds () << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10*std::log10 (sinrAvg));
+      double sinrAvg = Sum (sinr) / (sinr.GetSpectrumModel ()->GetNumBands ());
+      NS_LOG_DEBUG ("Time " << Simulator::Now ().GetSeconds () << " CellId " << m_cellId << " UE " << ue->first << "Average SINR " << 10 * std::log10 (sinrAvg));
 
-      if(m_noiseAndFilter)
+      if (m_noiseAndFilter)
         {
           pairDevices_t pairDevices = std::make_pair (ue->first, m_cellId);              // this is the current pair (UE-eNB)
           std::map< pairDevices_t, std::vector<double> >::iterator iteratorSinr =
@@ -911,14 +917,14 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
                   m_sinrVector.at (pairDevices).push_back (sinrAvg);                     // before transient, so just collect SINR values
                 }
 
-              NS_LOG_DEBUG ("At time " << Now ().GetMicroSeconds () << " push back the REAL SINR " << 10*std::log10 (sinrAvg) <<
+              NS_LOG_DEBUG ("At time " << Now ().GetMicroSeconds () << " push back the REAL SINR " << 10 * std::log10 (sinrAvg) <<
                             " for pair with CellId " << m_cellId << " and UE " << ue->first);
             }
           else               // vector is not initialized, so it means that we are still in the initial transient phase, for that pair
             {
-              m_sinrVector.insert (std::pair<pairDevices_t, std::vector<double> >(pairDevices,std::vector<double>()));
+              m_sinrVector.insert (std::pair<pairDevices_t, std::vector<double> > (pairDevices,std::vector<double> ()));
               m_sinrVector.at (pairDevices).push_back (sinrAvg);                 // push back a new SINR value
-              NS_LOG_DEBUG ("At time " << Now ().GetMicroSeconds () << " first initializazion and push back the SINR " << 10*std::log10 (sinrAvg) <<
+              NS_LOG_DEBUG ("At time " << Now ().GetMicroSeconds () << " first initializazion and push back the SINR " << 10 * std::log10 (sinrAvg) <<
                             " for pair with CellId " << m_cellId << " and UE " << ue->first);
             }
 
@@ -930,7 +936,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
           /* INITIALIZATION OF VECTORS */
           if (iteratorFinalTrace == m_finalSinrVector.end ())
             {
-              m_samplesFilter.insert (std::pair<pairDevices_t,std::pair<uint64_t,uint64_t> >(pairDevices,std::pair<uint64_t,uint64_t>()));
+              m_samplesFilter.insert (std::pair<pairDevices_t,std::pair<uint64_t,uint64_t> > (pairDevices,std::pair<uint64_t,uint64_t> ()));
               m_finalSinrVector.insert (std::pair<pairDevices_t,std::vector<double> > (pairDevices,std::vector<double> ()) );
             }
 
@@ -940,8 +946,8 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
           /* INITIALIZATION OF VECTORS */
           if (iteratorSinrToFilter == m_sinrVectorToFilter.end ())
             {
-              m_sinrVectorToFilter.insert (std::pair<pairDevices_t,std::vector<double> > (pairDevices,std::vector<double>()));
-              m_sinrVectorNoisy.insert (std::pair<pairDevices_t,std::vector<double> > (pairDevices,std::vector<double>()));
+              m_sinrVectorToFilter.insert (std::pair<pairDevices_t,std::vector<double> > (pairDevices,std::vector<double> ()));
+              m_sinrVectorNoisy.insert (std::pair<pairDevices_t,std::vector<double> > (pairDevices,std::vector<double> ()));
             }
 
           /* generate Gaussian noise for the last SINR value (that is the current one) */
@@ -1019,7 +1025,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
                 {
                   sampleToForward = 1e-20;
                 }
-              NS_LOG_DEBUG (" mmWave eNB " << m_cellId << " reports the SINR " << 10*std::log10 (sampleToForward) << " for UE " << ue->first);
+              NS_LOG_DEBUG (" mmWave eNB " << m_cellId << " reports the SINR " << 10 * std::log10 (sampleToForward) << " for UE " << ue->first);
               m_sinrMap[ue->first] = sampleToForward;                   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< in order to FORWARD to LteEnbRrc the value of SINR for the RT
 
               //m_sinrVectorToFilter.at(pairDevices).erase(m_sinrVectorToFilter.at(pairDevices).begin());
@@ -1034,7 +1040,7 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
                 {
                   sampleToForward = 1e-20;
                 }
-              NS_LOG_DEBUG (" mmWave eNB " << m_cellId << " FIRST reports the SINR " << 10*std::log10 (sampleToForward) << " for UE " << ue->first);
+              NS_LOG_DEBUG (" mmWave eNB " << m_cellId << " FIRST reports the SINR " << 10 * std::log10 (sampleToForward) << " for UE " << ue->first);
               m_sinrMap[ue->first] = sampleToForward;                   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< in order to FORWARD to LteEnbRrc the value of SINR for the RT
             }
 
@@ -1097,16 +1103,16 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
     }
 
 
-  if(m_roundFromLastUeSinrUpdate >= (m_ueUpdateSinrPeriod/m_updateSinrPeriod))
+  if (m_roundFromLastUeSinrUpdate >= (m_ueUpdateSinrPeriod / m_updateSinrPeriod))
     {
       m_roundFromLastUeSinrUpdate = 0;
-      for(std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin (); ue != m_ueAttachedImsiMap.end (); ++ue)
+      for (std::map<uint64_t, Ptr<NetDevice> >::iterator ue = m_ueAttachedImsiMap.begin (); ue != m_ueAttachedImsiMap.end (); ++ue)
         {
           // distinguish between MC and MmWaveNetDevice
           Ptr<mmwave::MmWaveUeNetDevice> ueNetDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ue->second);
           Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
           Ptr<MmWaveUePhy> uePhy;
-          if(ueNetDevice != 0)
+          if (ueNetDevice != 0)
             {
               uePhy = ueNetDevice->GetPhy ();
             }
@@ -1142,8 +1148,8 @@ MmWaveEnbPhy::StartSubFrame (void)
   //m_currSfNumSlots = m_currSfAllocInfo.m_dlSlotAllocInfo.size () + m_currSfAllocInfo.m_ulSlotAllocInfo.size ();
   m_currSfNumSlots = m_currSfAllocInfo.m_slotAllocInfo.size ();
 
-  NS_ASSERT ((m_currSfAllocInfo.m_sfnSf.m_frameNum == m_frameNum) &&
-             (m_currSfAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
+  NS_ASSERT ((m_currSfAllocInfo.m_sfnSf.m_frameNum == m_frameNum)
+             && (m_currSfAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
 
   if (m_sfNum == 0)                     // send MIB at the beginning of each frame
     {
@@ -1215,7 +1221,7 @@ MmWaveEnbPhy::StartSlot (void)
   Time guardPeriod;
   Time slotPeriod;
 
-  if(m_slotNum == 0)       // DL control slot
+  if (m_slotNum == 0)       // DL control slot
     {
       // get control messages to be transmitted in DL-Control period
       std::list <Ptr<MmWaveControlMessage > > ctrlMsgs = GetControlMessages ();
@@ -1223,8 +1229,8 @@ MmWaveEnbPhy::StartSlot (void)
       // find all DL/UL DCI elements and create DCI messages to be transmitted in DL control period
       for (unsigned islot = 0; islot < m_currSfAllocInfo.m_slotAllocInfo.size (); islot++)
         {
-          if (m_currSfAllocInfo.m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL &&
-              m_currSfAllocInfo.m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
+          if (m_currSfAllocInfo.m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL
+              && m_currSfAllocInfo.m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
             {
               DciInfoElementTdma &dciElem = m_currSfAllocInfo.m_slotAllocInfo[islot].m_dci;
               NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL_dci);
@@ -1259,17 +1265,17 @@ MmWaveEnbPhy::StartSlot (void)
         }
 
       // TX control period
-      slotPeriod = NanoSeconds (1000.0*m_phyMacConfig->GetSymbolPeriod ()*m_phyMacConfig->GetDlCtrlSymbols ());
+      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetDlCtrlSymbols ());
       NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
-                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
-                           << "\t start " << Simulator::Now () << " end " << Simulator::Now () + slotPeriod-NanoSeconds (1.0));
-      SendCtrlChannels (ctrlMsgs, slotPeriod-NanoSeconds (1.0));         // -1 ns ensures control ends before data period
+                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1)
+                           << "\t start " << Simulator::Now () << " end " << Simulator::Now () + slotPeriod - NanoSeconds (1.0));
+      SendCtrlChannels (ctrlMsgs, slotPeriod - NanoSeconds (1.0));         // -1 ns ensures control ends before data period
     }
-  else if (m_slotNum == m_currSfNumSlots-1)       // UL control slot
+  else if (m_slotNum == m_currSfNumSlots - 1)       // UL control slot
     {
-      slotPeriod = NanoSeconds (1000.0*m_phyMacConfig->GetSymbolPeriod ()*m_phyMacConfig->GetUlCtrlSymbols ());
+      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetUlCtrlSymbols ());
       NS_LOG_DEBUG ("ENB " << m_cellId << " RXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
-                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
+                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + slotPeriod);
     }
   else if (currSlot.m_tddMode == SlotAllocInfo::DL_slotAllocInfo)                 // transmit DL slot
@@ -1282,7 +1288,7 @@ MmWaveEnbPhy::StartSlot (void)
       //				guardPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetGuardPeriod ());
       //			}
       Ptr<PacketBurst> pktBurst = GetPacketBurst (SfnSf (m_frameNum, m_sfNum, currSlot.m_dci.m_symStart));
-      if(pktBurst && pktBurst->GetNPackets () > 0)
+      if (pktBurst && pktBurst->GetNPackets () > 0)
         {
           std::list< Ptr<Packet> > pkts = pktBurst->GetPackets ();
           MmWaveMacPduTag macTag;
@@ -1306,9 +1312,9 @@ MmWaveEnbPhy::StartSlot (void)
           pktBurst->AddPacket (emptyPdu);
         }
       NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
-                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
-                           << "\t start " << Simulator::Now ()+NanoSeconds (1.0) << " end " << Simulator::Now () + slotPeriod-NanoSeconds (2.0));
-      Simulator::Schedule (NanoSeconds (1.0), &MmWaveEnbPhy::SendDataChannels, this, pktBurst, slotPeriod-NanoSeconds (2.0), currSlot);
+                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1)
+                           << "\t start " << Simulator::Now () + NanoSeconds (1.0) << " end " << Simulator::Now () + slotPeriod - NanoSeconds (2.0));
+      Simulator::Schedule (NanoSeconds (1.0), &MmWaveEnbPhy::SendDataChannels, this, pktBurst, slotPeriod - NanoSeconds (2.0), currSlot);
     }
   else if (currSlot.m_tddMode == SlotAllocInfo::UL_slotAllocInfo)        // receive UL slot
     {
@@ -1325,7 +1331,7 @@ MmWaveEnbPhy::StartSlot (void)
           uint64_t ueRnti = (ueDev != 0) ? (ueDev->GetPhy ()->GetRnti ()) : (mcUeDev->GetMmWavePhy ()->GetRnti ());
           Ptr<NetDevice> associatedEnb = (ueDev != 0) ? (ueDev->GetTargetEnb ()) : (mcUeDev->GetMmWaveTargetEnb ());
 
-          NS_LOG_DEBUG ("Scheduled rnti: " << currSlot.m_rnti << " ue rnti: "<< ueRnti
+          NS_LOG_DEBUG ("Scheduled rnti: " << currSlot.m_rnti << " ue rnti: " << ueRnti
                                            << " target eNB " << associatedEnb << " this eNB " << m_netDevice);
 
           if (currSlot.m_rnti == ueRnti && m_netDevice == associatedEnb)
@@ -1338,7 +1344,7 @@ MmWaveEnbPhy::StartSlot (void)
         }
 
       NS_LOG_DEBUG ("ENB " << m_cellId << " RXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
-                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart+currSlot.m_dci.m_numSym-1)
+                           << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + slotPeriod );
     }
 
@@ -1357,7 +1363,7 @@ MmWaveEnbPhy::EndSlot (void)
   //Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
   //antennaArray->ChangeToOmniTx ();
 
-  if (m_slotNum == m_currSfNumSlots-1)
+  if (m_slotNum == m_currSfNumSlots - 1)
     {
       m_slotNum = 0;
       EndSubFrame ();
@@ -1386,7 +1392,7 @@ MmWaveEnbPhy::EndSlot (void)
       m_slotNum++;
       nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
                                    m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
-      Simulator::Schedule (nextSlotStart+m_lastSfStart-Simulator::Now (), &MmWaveEnbPhy::StartSlot, this);
+      Simulator::Schedule (nextSlotStart + m_lastSfStart - Simulator::Now (), &MmWaveEnbPhy::StartSlot, this);
     }
 }
 
@@ -1397,7 +1403,7 @@ MmWaveEnbPhy::EndSubFrame (void)
 
   Time sfStart = m_lastSfStart + m_sfPeriod - Simulator::Now ();
   m_slotNum = 0;
-  if (m_sfNum == m_phyMacConfig->GetSubframesPerFrame ()-1)
+  if (m_sfNum == m_phyMacConfig->GetSubframesPerFrame () - 1)
     {
       m_sfNum = 0;
 //		if (m_frameNum == 1023)
@@ -1447,7 +1453,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
               associatedEnb = ueMcDev->GetMmWaveTargetEnb ();
             }
 
-          NS_LOG_DEBUG ("Scheduled rnti: " << slotInfo.m_dci.m_rnti << " ue rnti: "<< ueRnti
+          NS_LOG_DEBUG ("Scheduled rnti: " << slotInfo.m_dci.m_rnti << " ue rnti: " << ueRnti
                                            << " target eNB " << associatedEnb << " this eNB " << m_netDevice);
           if (slotInfo.m_dci.m_rnti == ueRnti && m_netDevice == associatedEnb)
             {
@@ -1479,14 +1485,14 @@ void
 MmWaveEnbPhy::SendCtrlChannels (std::list<Ptr<MmWaveControlMessage> > ctrlMsgs, Time slotPrd)
 {
   /* Send Ctrl messages*/
-  NS_LOG_FUNCTION (this<<"Send Ctrl");
+  NS_LOG_FUNCTION (this << "Send Ctrl");
   m_downlinkSpectrumPhy->StartTxDlControlFrames (ctrlMsgs, slotPrd);
 }
 
 bool
 MmWaveEnbPhy::AddUePhy (uint64_t imsi, Ptr<NetDevice> ueDevice)
 {
-  NS_LOG_FUNCTION (this<<imsi);
+  NS_LOG_FUNCTION (this << imsi);
   std::set <uint64_t>::iterator it;
   it = m_ueAttached.find (imsi);
 
@@ -1519,8 +1525,8 @@ void
 MmWaveEnbPhy::GenerateDataCqiReport (const SpectrumValue& sinr)
 {
   NS_LOG_LOGIC ("Sinr from DataCqiReport = " << sinr);
-  double sinrAvg = Sum (sinr)/(sinr.GetSpectrumModel ()->GetNumBands ());
-  NS_LOG_INFO ("Average SINR on DataCqiReport " << 10*std::log10 (sinrAvg));
+  double sinrAvg = Sum (sinr) / (sinr.GetSpectrumModel ()->GetNumBands ());
+  NS_LOG_INFO ("Average SINR on DataCqiReport " << 10 * std::log10 (sinrAvg));
 
   Values::const_iterator it;
   MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters ulcqi;
@@ -1590,7 +1596,7 @@ MmWaveEnbPhy::PhyCtrlMessagesReceived (std::list<Ptr<MmWaveControlMessage> > msg
 uint32_t
 MmWaveEnbPhy::GetAbsoluteSubframeNo ()
 {
-  return ((m_frameNum - 1)*(m_phyMacConfig->GetSubframesPerFrame ()*m_phyMacConfig->GetSlotsPerSubframe ()) + m_slotNum);
+  return ((m_frameNum - 1) * (m_phyMacConfig->GetSubframesPerFrame () * m_phyMacConfig->GetSlotsPerSubframe ()) + m_slotNum);
 }
 
 ////////////////////////////////////////////////////////////
@@ -1712,7 +1718,7 @@ MmWaveEnbPhy::ReceiveUlHarqFeedback (UlHarqInfo mes)
   NS_LOG_FUNCTION (this);
   // forward to scheduler
   //
-  if(m_ueAttachedRnti.find (mes.m_rnti) != m_ueAttachedRnti.end ())
+  if (m_ueAttachedRnti.find (mes.m_rnti) != m_ueAttachedRnti.end ())
     {
       m_phySapUser->UlHarqFeedback (mes);
     }

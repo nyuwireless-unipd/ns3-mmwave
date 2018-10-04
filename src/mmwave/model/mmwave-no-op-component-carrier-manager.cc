@@ -112,7 +112,7 @@ MmWaveNoOpComponentCarrierManager::DoNotifyTxOpportunity (uint32_t bytes, uint8_
   NS_ASSERT_MSG (rntiIt != m_ueAttached.end (), "could not find RNTI" << rnti);
   std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (lcid);
   NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID " << (uint16_t) lcid);
-  NS_LOG_DEBUG (this << " rnti= " << rnti << " lcid= " << (uint32_t) lcid << " layer= " << (uint32_t)layer<<" ccId="<< (uint32_t)componentCarrierId);
+  NS_LOG_DEBUG (this << " rnti= " << rnti << " lcid= " << (uint32_t) lcid << " layer= " << (uint32_t)layer << " ccId=" << (uint32_t)componentCarrierId);
   (*lcidIt).second->NotifyTxOpportunity (bytes, layer, harqId, componentCarrierId, rnti, lcid);
 
 }
@@ -317,7 +317,7 @@ MmWaveNoOpComponentCarrierManager::DoReleaseDataRadioBearer (uint16_t rnti, uint
   // here we receive directly the rnti and the lcid, instead of only drbid
   // drbid are mapped as drbid = lcid + 2
   std::map<uint16_t, uint8_t>::iterator eccIt; // m_enabledComponentCarrier iterator
-  eccIt= m_enabledComponentCarrier.find (rnti);
+  eccIt = m_enabledComponentCarrier.find (rnti);
   NS_ASSERT_MSG (eccIt != m_enabledComponentCarrier.end (), "request to Release Data Radio Bearer on Ue without Component Carrier Enabled");
   std::map <uint16_t, std::map<uint8_t, LteEnbCmacSapProvider::LcInfo> >::iterator lcsIt;
   lcsIt = m_rlcLcInstantiated.find (rnti);
@@ -368,7 +368,7 @@ void
 MmWaveNoOpComponentCarrierManager::DoNotifyPrbOccupancy (double prbOccupancy, uint8_t componentCarrierId)
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("Update PRB occupancy:"<<prbOccupancy<<" at carrier:"<< (uint32_t) componentCarrierId);
+  NS_LOG_DEBUG ("Update PRB occupancy:" << prbOccupancy << " at carrier:" << (uint32_t) componentCarrierId);
   m_ccPrbOccupancy.insert (std::pair<uint8_t, double> (componentCarrierId, prbOccupancy));
 }
 
@@ -450,7 +450,7 @@ MmWaveRrComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::Report
 {
   NS_LOG_FUNCTION (this);
 
-  NS_ASSERT_MSG ( m_enabledComponentCarrier.find (params.rnti)!=m_enabledComponentCarrier.end (), " UE with provided RNTI not found. RNTI:"<<params.rnti);
+  NS_ASSERT_MSG ( m_enabledComponentCarrier.find (params.rnti) != m_enabledComponentCarrier.end (), " UE with provided RNTI not found. RNTI:" << params.rnti);
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
   if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
@@ -465,8 +465,8 @@ MmWaveRrComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::Report
       params.txQueueSize /= numberOfCarriersForUe;
       for ( uint16_t i = 0;  i < numberOfCarriersForUe; i++)
         {
-          NS_ASSERT_MSG (m_macSapProvidersMap.find (i)!=m_macSapProvidersMap.end (), "Mac sap provider does not exist.");
-          if (i==0)
+          NS_ASSERT_MSG (m_macSapProvidersMap.find (i) != m_macSapProvidersMap.end (), "Mac sap provider does not exist.");
+          if (i == 0)
             {
               // only the PCC sends STATUS PDUs
               m_macSapProvidersMap.find (i)->second->ReportBufferStatus (params);
@@ -515,12 +515,12 @@ MmWaveRrComponentCarrierManager::DoUlReceiveMacCe (MacCeListElement_s bsr, uint8
           // after the split over all component carriers is is needed to
           // compress again the information to fit MacCeListElement_s structure
           // verify how many Component Carrier are enabled per UE
-          newBsr.m_macCeValue.m_bufferStatus.at (i) = BufferSizeLevelBsr::BufferSize2BsrId (bufferSize/numberOfCarriersForUe);
+          newBsr.m_macCeValue.m_bufferStatus.at (i) = BufferSizeLevelBsr::BufferSize2BsrId (bufferSize / numberOfCarriersForUe);
         }
       // notify MAC of each component carrier that is enabled for this UE
       for ( uint16_t i = 0;  i < numberOfCarriersForUe; i++)
         {
-          NS_ASSERT_MSG (m_ccmMacSapProviderMap.find (i)!=m_ccmMacSapProviderMap.end (), "Mac sap provider does not exist.");
+          NS_ASSERT_MSG (m_ccmMacSapProviderMap.find (i) != m_ccmMacSapProviderMap.end (), "Mac sap provider does not exist.");
           m_ccmMacSapProviderMap.find (i)->second->ReportMacCeToScheduler (newBsr);
         }
     }
@@ -564,7 +564,7 @@ MmWaveBaRrComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::Repo
 {
   NS_LOG_FUNCTION (this);
 
-  NS_ASSERT_MSG ( m_enabledComponentCarrier.find (params.rnti)!=m_enabledComponentCarrier.end (), " UE with provided RNTI not found. RNTI:"<<params.rnti);
+  NS_ASSERT_MSG ( m_enabledComponentCarrier.find (params.rnti) != m_enabledComponentCarrier.end (), " UE with provided RNTI not found. RNTI:" << params.rnti);
 
   uint32_t numberOfCarriersForUe = m_enabledComponentCarrier.find (params.rnti)->second;
   if (params.lcid == 0 || params.lcid == 1 || numberOfCarriersForUe == 1)
@@ -591,9 +591,9 @@ MmWaveBaRrComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::Repo
           params.retxQueueSize = params.retxQueueSize * m_bandwidthMap[i] / totalBandwidth;
           params.txQueueSize = params.txQueueSize * m_bandwidthMap[i] / totalBandwidth;
 
-          NS_ASSERT_MSG (m_macSapProvidersMap.find (i)!=m_macSapProvidersMap.end (), "Mac sap provider does not exist.");
+          NS_ASSERT_MSG (m_macSapProvidersMap.find (i) != m_macSapProvidersMap.end (), "Mac sap provider does not exist.");
 
-          if (i==0)
+          if (i == 0)
             {
               // only the PCC sends STATUS PDUs
               m_macSapProvidersMap.find (i)->second->ReportBufferStatus (params);
@@ -656,7 +656,7 @@ MmWaveBaRrComponentCarrierManager::DoUlReceiveMacCe (MacCeListElement_s bsr, uin
               // verify how many Component Carrier are enabled per UE
               newBsr.m_macCeValue.m_bufferStatus.at (j) = BufferSizeLevelBsr::BufferSize2BsrId (bufferSize * m_bandwidthMap[i] / totalBandwidth);
             }
-          NS_ASSERT_MSG (m_ccmMacSapProviderMap.find (i)!=m_ccmMacSapProviderMap.end (), "Mac sap provider does not exist.");
+          NS_ASSERT_MSG (m_ccmMacSapProviderMap.find (i) != m_ccmMacSapProviderMap.end (), "Mac sap provider does not exist.");
           m_ccmMacSapProviderMap.find (i)->second->ReportMacCeToScheduler (newBsr);
         }
     }
@@ -667,6 +667,6 @@ MmWaveBaRrComponentCarrierManager::DoUlReceiveMacCe (MacCeListElement_s bsr, uin
     }
 }
 
-} // end of namespace mmwave 
+} // end of namespace mmwave
 
 } // end of namespace ns3

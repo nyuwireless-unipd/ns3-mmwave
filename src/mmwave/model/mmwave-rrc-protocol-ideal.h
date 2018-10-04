@@ -61,7 +61,6 @@ class MmWaveUeRrcProtocolIdeal : public Object
   friend class MemberLteUeRrcSapUser<MmWaveUeRrcProtocolIdeal>;
 
 public:
-
   MmWaveUeRrcProtocolIdeal ();
   virtual ~MmWaveUeRrcProtocolIdeal ();
 
@@ -76,7 +75,6 @@ public:
 
 
 private:
-
   // methods forwarded from LteUeRrcSapUser
   void DoSetup (LteUeRrcSapUser::SetupParameters params);
   void DoSendRrcConnectionRequest (LteRrcSap::RrcConnectionRequest msg);
@@ -109,7 +107,6 @@ class MmWaveEnbRrcProtocolIdeal : public Object
   friend class MemberLteEnbRrcSapUser<MmWaveEnbRrcProtocolIdeal>;
 
 public:
-
   MmWaveEnbRrcProtocolIdeal ();
   virtual ~MmWaveEnbRrcProtocolIdeal ();
 
@@ -126,7 +123,6 @@ public:
   void SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvider* p);
 
 private:
-
   // methods forwarded from LteEnbRrcSapUser
   void DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParameters params);
   void DoRemoveUe (uint16_t rnti);

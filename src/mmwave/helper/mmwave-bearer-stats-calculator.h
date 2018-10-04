@@ -460,7 +460,7 @@ private:
   std::ofstream m_ulOutFile;
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3
 

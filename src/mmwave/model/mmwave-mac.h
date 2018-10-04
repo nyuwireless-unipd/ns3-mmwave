@@ -53,8 +53,10 @@ namespace mmwave {
 
 struct MacPduInfo
 {
-  MacPduInfo (SfnSf sfn, uint32_t size, uint8_t numRlcPdu) :
-    m_sfnSf (sfn), m_size (size), m_numRlcPdu (numRlcPdu)
+  MacPduInfo (SfnSf sfn, uint32_t size, uint8_t numRlcPdu)
+    : m_sfnSf (sfn),
+      m_size (size),
+      m_numRlcPdu (numRlcPdu)
   {
     m_pdu = Create<Packet> ();
     m_macHeader = MmWaveMacPduHeader ();
@@ -62,8 +64,10 @@ struct MacPduInfo
     m_pdu->AddPacketTag (tag);
   }
 
-  MacPduInfo (SfnSf sfn, uint32_t size, uint8_t numRlcPdu, DciInfoElementTdma dci) :
-    m_sfnSf (sfn), m_size (size), m_numRlcPdu (numRlcPdu)
+  MacPduInfo (SfnSf sfn, uint32_t size, uint8_t numRlcPdu, DciInfoElementTdma dci)
+    : m_sfnSf (sfn),
+      m_size (size),
+      m_numRlcPdu (numRlcPdu)
   {
     m_pdu = Create<Packet> ();
     m_macHeader = MmWaveMacPduHeader ();
@@ -93,7 +97,6 @@ public:
   Ptr<PacketBurst> GetPacketBurstFromMacQueue ();
 
 protected:
-
   Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
   Ptr<PacketBurst>  m_macQueue;

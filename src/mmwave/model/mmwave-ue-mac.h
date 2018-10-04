@@ -89,7 +89,6 @@ public:
   int64_t AssignStreams (int64_t stream);
 
 private:
-
   void DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params);
   void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
 

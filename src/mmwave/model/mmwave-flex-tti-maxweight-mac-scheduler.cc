@@ -150,10 +150,10 @@ const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_rlcHdrSize = 3;
 
 MmWaveFlexTtiMaxWeightMacScheduler::MmWaveFlexTtiMaxWeightMacScheduler ()
   : m_nextRnti (0),
-  m_subframeNo (0),
-  m_tbUid (0),
-  m_macSchedSapUser (0),
-  m_macCschedSapUser (0)
+    m_subframeNo (0),
+    m_tbUid (0),
+    m_macSchedSapUser (0),
+    m_macCschedSapUser (0)
 {
   NS_LOG_FUNCTION (this);
   m_macSchedSapProvider = new MmWaveFlexTtiMaxWeightMacSchedSapProvider (this);
@@ -305,7 +305,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMa
   else
     {
       uint8_t lcid = params.m_logicalChannelIdentity;
-      if((unsigned)lcid >= itUe->second.m_flowStatsDl.size ())
+      if ((unsigned)lcid >= itUe->second.m_flowStatsDl.size ())
         {
           NS_LOG_ERROR ("LC not registered");
         }
@@ -377,7 +377,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
           uint32_t buffer = 0;
           for (uint8_t lcg = 1; lcg <= 3; ++lcg)
             {
-              uint8_t bsrId = params.m_macCeList.at (i).m_macCeValue.m_bufferStatus.at (lcg-1);
+              uint8_t bsrId = params.m_macCeList.at (i).m_macCeValue.m_bufferStatus.at (lcg - 1);
               uint32_t bufSize = BsrId2BufferSize (bsrId);
               if (bufSize > 0)
                 {
@@ -605,7 +605,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
   if (m_harqOn == false)
     {
       uint8_t tbUid = m_tbUid;
-      m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+      m_tbUid = (m_tbUid + 1) % m_phyMacConfig->GetNumHarqProcess ();
       return tbUid;
     }
 
@@ -624,7 +624,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
   uint8_t harqId = m_phyMacConfig->GetNumHarqProcess ();
   for (unsigned i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
     {
-      if(itStat->second[i] == 0)
+      if (itStat->second[i] == 0)
         {
           itStat->second[i] = 1;
           harqId = i;
@@ -660,7 +660,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
   if (m_harqOn == false)
     {
       uint8_t tbUid = m_tbUid;
-      m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+      m_tbUid = (m_tbUid + 1) % m_phyMacConfig->GetNumHarqProcess ();
       return tbUid;
     }
 
@@ -679,7 +679,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
   uint8_t harqId = m_phyMacConfig->GetNumHarqProcess ();
   for (unsigned i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
     {
-      if(itStat->second[i] == 0)
+      if (itStat->second[i] == 0)
         {
           itStat->second[i] = 1;
           harqId = i;
@@ -717,7 +717,7 @@ unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, 
   tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);       // start with max value
   while ((unsigned)tbSize > bufSize)
     {
-      diff = abs (numSymHigh-numSymLow)/2;
+      diff = abs (numSymHigh - numSymLow) / 2;
       if (diff == 0)
         {
           tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
@@ -730,7 +730,7 @@ unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, 
         }
       while ((unsigned)tbSize < bufSize)
         {
-          diff = abs (numSymHigh-numSymLow)/2;
+          diff = abs (numSymHigh - numSymLow) / 2;
           if (diff == 0)
             {
               tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
@@ -770,8 +770,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
       ulSfn.m_frameNum++;
     }
   ulSfn.m_sfNum = (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
-  NS_LOG_DEBUG ("Scheduling DL frame "<< (unsigned)frameNum << " subframe " << (unsigned)sfNum
-                                      << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
+  NS_LOG_DEBUG ("Scheduling DL frame " << (unsigned)frameNum << " subframe " << (unsigned)sfNum
+                                       << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
   //ret.m_ulSfAllocInfo = SfAllocInfo (ulSfn);
 
   // add slot for DL control
@@ -847,7 +847,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
             {
               NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlHarqInfoList.at (i).m_rnti);
             }
-          if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK || itStat->second.at (harqId) == 0)
+          if (m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK || itStat->second.at (harqId) == 0)
             {             // acknowledgment or process timeout, reset process
               //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-ACK received");
               itStat->second.at (harqId) = 0;                      // release process ID
@@ -857,7 +857,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                 }
               continue;
             }
-          else if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::NACK)
+          else if (m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::NACK)
             {
               std::map <uint16_t, DlHarqProcessesDciInfoList_t>::iterator itHarq = m_dlHarqProcessesDciInfoMap.find (rnti);
               if (itHarq == m_dlHarqProcessesDciInfoMap.end ())
@@ -868,7 +868,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
               //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
               NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
               //NS_ASSERT(itStat->second.at (harqId) > 0);
-              NS_ASSERT (itStat->second.at (harqId)-1 == dciInfoReTx.m_rv);
+              NS_ASSERT (itStat->second.at (harqId) - 1 == dciInfoReTx.m_rv);
               if (dciInfoReTx.m_rv == 3)                   // maximum number of retx reached -> drop process
                 {
                   NS_LOG_INFO ("Max number of retransmissions reached -> drop process");
@@ -892,7 +892,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                   itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
                   SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
                   slotInfo.m_dci = dciInfoReTx;
-                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
                                 " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
                   std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
@@ -962,7 +962,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
               //NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
               NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
               NS_ASSERT (itStat->second.at (harqId) > 0);
-              NS_ASSERT (itStat->second.at (harqId)-1 == dciInfoReTx.m_rv);
+              NS_ASSERT (itStat->second.at (harqId) - 1 == dciInfoReTx.m_rv);
               if (dciInfoReTx.m_rv == 3)
                 {
                   NS_LOG_INFO ("Max number of retransmissions reached (UL)-> drop process");
@@ -982,7 +982,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                   itHarq->second.at (harqId) = dciInfoReTx;
                   SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
                   slotInfo.m_dci = dciInfoReTx;
-                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum <<
                                 " RETX");
                   ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
@@ -1012,7 +1012,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
       // add slot for UL control
       SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
       ulCtrlSlot.m_dci.m_numSym = 1;
-      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe ()-1;
+      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
       //ret.m_ulSfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       //m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
@@ -1075,7 +1075,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                       uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
                       // get required symbols to send whole RLC PDU
                       // (could be zero additional symbols if enough resources already allocated)
-                      uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_dlTbSize + pduSize)*8, ueInfo->m_dlMcs) - ueInfo->m_dlSymbols;
+                      uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_dlTbSize + pduSize) * 8, ueInfo->m_dlMcs) - ueInfo->m_dlSymbols;
                       if (numSymReq <= (unsigned)symAvail)                              // sufficient symbols to TX whole RLC PDU at this MCS
                         {
                           flow->m_txPacketSizes.pop_front ();
@@ -1083,7 +1083,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                           // (for last slot, can be less due to control period)
                           if (m_fixedTti)
                             {
-                              uint32_t numSymFixed = m_symPerSlot * ceil ((double)numSymReq/(double)m_symPerSlot);
+                              uint32_t numSymFixed = m_symPerSlot * ceil ((double)numSymReq / (double)m_symPerSlot);
                               if (numSymFixed > (unsigned)symAvail)
                                 {
                                   numSymFixed = symAvail;
@@ -1111,7 +1111,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                         {
                           // get maximum TB size from MCS and available symbols
                           uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + symAvail);
-                          pduSize = ceil (tbSizeBits/8.0) - ueInfo->m_dlTbSize - (m_rlcHdrSize + m_subHdrSize);
+                          pduSize = ceil (tbSizeBits / 8.0) - ueInfo->m_dlTbSize - (m_rlcHdrSize + m_subHdrSize);
                           //NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
                           flow->m_txPacketSizes.front () -= pduSize;                                            // subtract from HOL packet
                           ueInfo->m_dlSymbols += symAvail;
@@ -1175,13 +1175,13 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                       ueInfo->m_ulMcs = mcs;
                       uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
                       // get required additional symbols to send whole RLC PDU given current TB size (new total - prev. allocation)
-                      uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_ulTbSize + pduSize)*8, ueInfo->m_ulMcs) - ueInfo->m_ulSymbols;
+                      uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_ulTbSize + pduSize) * 8, ueInfo->m_ulMcs) - ueInfo->m_ulSymbols;
                       if (numSymReq <= (unsigned)symAvail)                              // sufficient symbols to TX whole RLC PDU at this MCS
                         {
                           flow->m_txPacketSizes.pop_front ();
                           if (m_fixedTti)
                             {
-                              uint32_t numSymFixed = m_symPerSlot * ceil ((double)numSymReq/(double)m_symPerSlot);
+                              uint32_t numSymFixed = m_symPerSlot * ceil ((double)numSymReq / (double)m_symPerSlot);
                               if (numSymFixed > (unsigned)symAvail)
                                 {
                                   numSymFixed = symAvail;
@@ -1207,7 +1207,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                         {
                           // get maximum TB size from MCS and available symbols
                           uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols + symAvail);
-                          pduSize = ceil (tbSizeBits/8.0) - ueInfo->m_ulTbSize - (m_rlcHdrSize + m_subHdrSize);
+                          pduSize = ceil (tbSizeBits / 8.0) - ueInfo->m_ulTbSize - (m_rlcHdrSize + m_subHdrSize);
                           NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
                           flow->m_txPacketSizes.front () -= pduSize;                                            // subtract from HOL packet
                           ueInfo->m_ulSymbols += symAvail;
@@ -1268,7 +1268,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
       // add slot for UL control
       SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
       ulCtrlSlot.m_dci.m_numSym = 1;
-      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe ()-1;
+      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
       //ret.m_ulSfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       //m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
@@ -1312,7 +1312,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
           SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, ueInfo->m_rnti);
           slotInfo.m_dci = dci;
-          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
+          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
 
           if (m_harqOn == true)
@@ -1325,7 +1325,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
               (*itDciInfo).second.at (dci.m_harqProcess) = dci;
               // refresh timer
               std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer =  m_dlHarqProcessesTimer.find (dci.m_rnti);
-              if (itHarqTimer== m_dlHarqProcessesTimer.end ())
+              if (itHarqTimer == m_dlHarqProcessesTimer.end ())
                 {
                   NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)dci.m_rnti);
                 }
@@ -1345,7 +1345,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
               // give remaining bytes to default bearer
               if (ueInfo->m_rlcPduInfo[i].m_lcid == 3 && totalBytesAlloc < dci.m_tbSize)
                 {
-                  ueInfo->m_rlcPduInfo[i].m_size += dci.m_tbSize-totalBytesAlloc;
+                  ueInfo->m_rlcPduInfo[i].m_size += dci.m_tbSize - totalBytesAlloc;
                 }
               slotInfo.m_rlcPduInfo.push_back (ueInfo->m_rlcPduInfo[i]);
               if (m_harqOn == true)
@@ -1371,12 +1371,12 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                       slotInfo.m_slotIdx = ret.m_sfAllocInfo.m_slotAllocInfo [islot].m_slotIdx;
                       slotInfo.m_dci.m_symStart = ret.m_sfAllocInfo.m_slotAllocInfo [islot].m_dci.m_symStart;
                       ret.m_sfAllocInfo.m_slotAllocInfo.insert (itSlot, slotInfo);
-                      for (unsigned jslot = islot+1; jslot < ret.m_sfAllocInfo.m_slotAllocInfo.size (); jslot++)
+                      for (unsigned jslot = islot + 1; jslot < ret.m_sfAllocInfo.m_slotAllocInfo.size (); jslot++)
                         {
                           ret.m_sfAllocInfo.m_slotAllocInfo[jslot].m_slotIdx++;                                 // increase indices of UL slots
                           ret.m_sfAllocInfo.m_slotAllocInfo[jslot].m_dci.m_symStart =
-                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot-1].m_dci.m_symStart +
-                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot-1].m_dci.m_numSym;
+                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot - 1].m_dci.m_symStart +
+                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot - 1].m_dci.m_numSym;
                         }
                       reordered = true;
                       break;
@@ -1419,7 +1419,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
           SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, ueInfo->m_rnti);
           slotInfo.m_dci = dci;
-          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
+          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
           //UpdateUlRlcBufferInfo (ueInfo->m_rnti, dci.m_tbSize - m_subHdrSize);
           ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
@@ -1449,7 +1449,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
               NS_ASSERT (itStat->second[dci.m_harqProcess] > 0);
               // refresh timer
               std::map <uint16_t, UlHarqProcessesTimer_t>::iterator itHarqTimer =  m_ulHarqProcessesTimer.find (dci.m_rnti);
-              if (itHarqTimer== m_ulHarqProcessesTimer.end ())
+              if (itHarqTimer == m_ulHarqProcessesTimer.end ())
                 {
                   NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)dci.m_rnti);
                 }
@@ -1473,7 +1473,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
   // add slot for UL control
   SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
   ulCtrlSlot.m_dci.m_numSym = 1;
-  ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe ()-1;
+  ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
   //ret.m_ulSfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
   ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
 
@@ -1769,7 +1769,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMac
   for (uint16_t i = 0; i < params.m_logicalChannelIdentity.size (); i++)
     {
       std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
-      while (it!=m_rlcBufferReq.end ())
+      while (it != m_rlcBufferReq.end ())
         {
           if (((*it).m_rnti == params.m_rnti)&&((*it).m_logicalChannelIdentity == params.m_logicalChannelIdentity.at (i)))
             {

@@ -127,19 +127,19 @@ MmWaveChannelRaytracing::LoadTraces ()
   std::string line;
   std::string token;
   uint16_t counter = 0;
-  while( std::getline (singlefile, line) )  //Parse each line of the file
+  while ( std::getline (singlefile, line) )  //Parse each line of the file
     {
-      if(counter == 8)
+      if (counter == 8)
         {
           counter = 0;
         }
       doubleVector_t path;
       std::istringstream stream (line);
-      while( getline (stream,token,',') )  //Parse each comma separated string in a line
+      while ( getline (stream,token,',') )  //Parse each comma separated string in a line
         {
           double sigma = 0.00;
           std::stringstream stream ( token );
-          stream>>sigma;
+          stream >> sigma;
           path.push_back (sigma);
         }
 
@@ -207,7 +207,7 @@ void
 MmWaveChannelRaytracing::Initial (NetDeviceContainer ueDevices, NetDeviceContainer enbDevices)
 {
 
-  NS_LOG_INFO (&ueDevices<<&enbDevices);
+  NS_LOG_INFO (&ueDevices << &enbDevices);
 
   for (NetDeviceContainer::Iterator i = ueDevices.Begin (); i != ueDevices.End (); i++)
     {
@@ -269,7 +269,7 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 
   bool dl = true;
 
-  if(txEnb!=0 && rxUe!=0)
+  if (txEnb != 0 && rxUe != 0)
     {
       NS_LOG_INFO ("this is downlink case");
 
@@ -279,15 +279,15 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
       rxAntennaNum[1] = sqrt (rxUe->GetAntennaNum ());
 
       txAntennaArray = DynamicCast<AntennaArrayModel> (
-        txEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+          txEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
       rxAntennaArray = DynamicCast<AntennaArrayModel> (
-        rxUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+          rxUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
     }
-  else if (txEnb !=0 && rxUe == 0)
+  else if (txEnb != 0 && rxUe == 0)
     {
       Ptr<McUeNetDevice> rxMcUe = DynamicCast<McUeNetDevice> (rxDevice);
 
-      if(rxMcUe != 0)
+      if (rxMcUe != 0)
         {
           NS_LOG_INFO ("this is downlink case for MC device");
 
@@ -297,12 +297,12 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
           rxAntennaNum[1] = sqrt (rxMcUe->GetAntennaNum ());
 
           txAntennaArray = DynamicCast<AntennaArrayModel> (
-            txEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+              txEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
           rxAntennaArray = DynamicCast<AntennaArrayModel> (
-            rxMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+              rxMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
         }
     }
-  else if (txEnb==0 && rxUe==0 )
+  else if (txEnb == 0 && rxUe == 0 )
     {
       NS_LOG_INFO ("this is uplink case");
 
@@ -312,7 +312,7 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
       Ptr<MmWaveEnbNetDevice> rxEnb =
         DynamicCast<MmWaveEnbNetDevice> (rxDevice);
 
-      if(txUe != 0)
+      if (txUe != 0)
         {
           NS_LOG_INFO ("this is uplink case");
           txAntennaNum[0] = sqrt (txUe->GetAntennaNum ());
@@ -321,15 +321,15 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
           rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
 
           txAntennaArray = DynamicCast<AntennaArrayModel> (
-            txUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+              txUe->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
           rxAntennaArray = DynamicCast<AntennaArrayModel> (
-            rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+              rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
         }
       else
         {
           Ptr<McUeNetDevice> txMcUe = DynamicCast<McUeNetDevice> (txDevice);
 
-          if(txMcUe != 0)
+          if (txMcUe != 0)
             {
               NS_LOG_INFO ("this is uplink case for MC device");
 
@@ -339,9 +339,9 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
               rxAntennaNum[1] = sqrt (rxEnb->GetAntennaNum ());
 
               txAntennaArray = DynamicCast<AntennaArrayModel> (
-                txMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+                  txMcUe->GetMmWavePhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
               rxAntennaArray = DynamicCast<AntennaArrayModel> (
-                rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
+                  rxEnb->GetPhy ()->GetDlSpectrumPhy ()->GetRxAntenna ());
 
             }
         }
@@ -356,13 +356,13 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
   key_t key = std::make_pair (txDevice,rxDevice);
 
   double time = Simulator::Now ().GetSeconds ();
-  uint16_t traceIndex = (m_startDistance+time*m_speed)*100;
-  static uint16_t currentIndex = m_startDistance*100;
-  if(traceIndex > 26050)
+  uint16_t traceIndex = (m_startDistance + time * m_speed) * 100;
+  static uint16_t currentIndex = m_startDistance * 100;
+  if (traceIndex > 26050)
     {
       NS_FATAL_ERROR ("The maximum trace index is 26050");
     }
-  if(traceIndex != currentIndex)
+  if (traceIndex != currentIndex)
     {
       currentIndex = traceIndex;
       m_channelMatrixMap.clear ();
@@ -374,7 +374,7 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
 
       complex2DVector_t txSpatialMatrix;
       complex2DVector_t rxSpatialMatrix;
-      if(dl)
+      if (dl)
         {
           txSpatialMatrix = GenSpatialMatrix (traceIndex,txAntennaNum, true);
           rxSpatialMatrix = GenSpatialMatrix (traceIndex,rxAntennaNum, false);
@@ -405,7 +405,7 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
       Ptr<TraceParams> reverseChannel = Create<TraceParams> ();
       reverseChannel->m_txSpatialMatrix = rxSpatialMatrix;
       reverseChannel->m_rxSpatialMatrix = txSpatialMatrix;
-      reverseChannel->m_powerFraction = g_pathloss.at (traceIndex);;
+      reverseChannel->m_powerFraction = g_pathloss.at (traceIndex);
       reverseChannel->m_delaySpread = g_delay.at (traceIndex);
       reverseChannel->m_doppler = dopplerShift;
 
@@ -425,7 +425,7 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
   NS_LOG_LOGIC ("RX size " << bfParams->m_rxW.size ());
 
   std::map< key_t, int >::iterator it1 = m_connectedPair.find (key);
-  if(it1 != m_connectedPair.end ())
+  if (it1 != m_connectedPair.end ())
     {
       bfParams->m_txW = CalcBeamformingVector (bfParams->m_channelParams->m_txSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
       bfParams->m_rxW = CalcBeamformingVector (bfParams->m_channelParams->m_rxSpatialMatrix, bfParams->m_channelParams->m_powerFraction);
@@ -473,13 +473,13 @@ MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetD
     DynamicCast<mmwave::MmWaveUeNetDevice> (ueDevice);
 
   uint8_t ccId = m_phyMacConfig->GetCcId ();
-  if(UeDev != 0)
+  if (UeDev != 0)
     {
       NS_LOG_LOGIC ("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
       Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
-        UeDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+          UeDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
       Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
-        EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+          EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
       complexVector_t dummy;
       ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
       enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
@@ -490,13 +490,13 @@ MmWaveChannelRaytracing::SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetD
     {
       Ptr<McUeNetDevice> UeDev =
         DynamicCast<McUeNetDevice> (ueDevice);
-      if(UeDev != 0)
+      if (UeDev != 0)
         {
           NS_LOG_LOGIC ("SetBeamformingVector between UE " << ueDevice << " and enbDevice " << enbDevice);
           Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
-            UeDev->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+              UeDev->GetMmWavePhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
           Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
-            EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
+              EnbDev->GetPhy (ccId)->GetDlSpectrumPhy ()->GetRxAntenna ());
           complexVector_t dummy;
           ueAntennaArray->SetBeamformingVectorPanel (dummy,enbDevice);
           enbAntennaArray->SetBeamformingVectorPanel (dummy,ueDevice);
@@ -520,47 +520,47 @@ MmWaveChannelRaytracing::CalcBeamformingVector (complex2DVector_t spatialMatrix,
   NS_LOG_LOGIC ("CalcBeamformingVector for " << spatialMatrix.at (0).size ());
   complexVector_t antennaWeights;
   uint16_t antennaNum = spatialMatrix.at (0).size ();
-  for (int i = 0; i< antennaNum; i++)
+  for (int i = 0; i < antennaNum; i++)
     {
-      antennaWeights.push_back (spatialMatrix.at (0).at (i)/sqrt (antennaNum));
+      antennaWeights.push_back (spatialMatrix.at (0).at (i) / sqrt (antennaNum));
     }
 
-  for(int iter = 0; iter<10; iter++)
+  for (int iter = 0; iter < 10; iter++)
     {
       complexVector_t antennaWeights_New;
 
-      for(unsigned pathIndex = 0; pathIndex<spatialMatrix.size (); pathIndex++)
+      for (unsigned pathIndex = 0; pathIndex < spatialMatrix.size (); pathIndex++)
         {
           std::complex<double> sum;
-          for (int i = 0; i< antennaNum; i++)
+          for (int i = 0; i < antennaNum; i++)
             {
-              sum += std::conj (spatialMatrix.at (pathIndex).at (i))*antennaWeights.at (i);
+              sum += std::conj (spatialMatrix.at (pathIndex).at (i)) * antennaWeights.at (i);
             }
 
-          for (int i = 0; i< antennaNum; i++)
+          for (int i = 0; i < antennaNum; i++)
             {
               double pathPowerLinear = std::pow (10.0, (powerFraction.at (pathIndex)) / 10.0);
 
 
-              if(pathIndex ==0)
+              if (pathIndex == 0)
                 {
-                  antennaWeights_New.push_back (pathPowerLinear*spatialMatrix.at (pathIndex).at (i)*sum);
+                  antennaWeights_New.push_back (pathPowerLinear * spatialMatrix.at (pathIndex).at (i) * sum);
                 }
               else
                 {
-                  antennaWeights_New.at (i) += pathPowerLinear*spatialMatrix.at (pathIndex).at (i)*sum;
+                  antennaWeights_New.at (i) += pathPowerLinear * spatialMatrix.at (pathIndex).at (i) * sum;
                 }
             }
         }
       //normalize antennaWeights;
       double weightSum = 0;
-      for (int i = 0; i< antennaNum; i++)
+      for (int i = 0; i < antennaNum; i++)
         {
           weightSum += pow (std::abs (antennaWeights_New.at (i)),2);
         }
-      for (int i = 0; i< antennaNum; i++)
+      for (int i = 0; i < antennaNum; i++)
         {
-          antennaWeights_New.at (i) = antennaWeights_New.at (i)/sqrt (weightSum);
+          antennaWeights_New.at (i) = antennaWeights_New.at (i) / sqrt (weightSum);
         }
       antennaWeights = antennaWeights_New;
     }
@@ -574,11 +574,11 @@ MmWaveChannelRaytracing::GenSpatialMatrix (uint64_t traceIndex, uint8_t* antenna
 {
   complex2DVector_t spatialMatrix;
   uint16_t pathNum = g_path.at (traceIndex);
-  for(unsigned int pathIndex = 0; pathIndex < pathNum; pathIndex++)
+  for (unsigned int pathIndex = 0; pathIndex < pathNum; pathIndex++)
     {
       double azimuthAngle;
       double verticalAngle;
-      if(bs)
+      if (bs)
         {
           azimuthAngle = g_aodAzimuth.at (traceIndex).at (pathIndex);
           verticalAngle = g_aodElevation.at (traceIndex).at (pathIndex);
@@ -589,7 +589,7 @@ MmWaveChannelRaytracing::GenSpatialMatrix (uint64_t traceIndex, uint8_t* antenna
           verticalAngle = g_aoaElevation.at (traceIndex).at (pathIndex);
         }
       complexVector_t singlePath;
-      singlePath = GenSinglePath (azimuthAngle*M_PI/180, verticalAngle*M_PI/180, antennaNum);
+      singlePath = GenSinglePath (azimuthAngle * M_PI / 180, verticalAngle * M_PI / 180, antennaNum);
       spatialMatrix.push_back (singlePath);
     }
 
@@ -607,10 +607,10 @@ MmWaveChannelRaytracing::GenSinglePath (double hAngle, double vAngle, uint8_t* a
 
   for (int vIndex = 0; vIndex < vSize; vIndex++)
     {
-      for (int hIndex =0; hIndex < hSize; hIndex++)
+      for (int hIndex = 0; hIndex < hSize; hIndex++)
         {
-          double w = (-2)*M_PI*hIndex*m_antennaSeparation*cos (hAngle)
-            + (-2)*M_PI*vIndex*m_antennaSeparation*cos (vAngle);
+          double w = (-2) * M_PI * hIndex * m_antennaSeparation * cos (hAngle)
+            + (-2) * M_PI * vIndex * m_antennaSeparation * cos (vAngle);
           singlePath.push_back (std::complex<double> (cos (w), sin (w)));
         }
     }
@@ -640,11 +640,11 @@ MmWaveChannelRaytracing::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmW
       std::complex<double> subsbandGain (0.0,0.0);
       if ((*vit) != 0.00)
         {
-          double fsb = m_phyMacConfig->GetCenterFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband;
+          double fsb = m_phyMacConfig->GetCenterFrequency () - GetSystemBandwidth () / 2 + m_phyMacConfig->GetChunkWidth () * iSubband;
           for (unsigned int pathIndex = 0; pathIndex < pathNum; pathIndex++)
             {
               //need to convert ns to s
-              double temp_delay = -1e-9*2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex);
+              double temp_delay = -1e-9 * 2*M_PI*fsb*bfParams->m_channelParams->m_delaySpread.at (pathIndex);
               std::complex<double> delay (cos (temp_delay), sin (temp_delay));
 
               std::complex<double> doppler;
@@ -654,16 +654,16 @@ MmWaveChannelRaytracing::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmW
                 }
               else
                 {
-                  double f_d = speed*m_phyMacConfig->GetCenterFrequency ()/3e8;
+                  double f_d = speed * m_phyMacConfig->GetCenterFrequency () / 3e8;
                   double temp_Doppler = 2*M_PI*t*f_d*bfParams->m_channelParams->m_doppler.at (pathIndex);
                   doppler = std::complex<double> (cos (temp_Doppler), sin (temp_Doppler));
                 }
               double pathPowerLinear = std::pow (10.0, (bfParams->m_channelParams->m_powerFraction.at (pathIndex)) / 10.0);
 
-              std::complex<double> smallScaleFading = sqrt (pathPowerLinear)*doppler*delay;
-              NS_LOG_INFO (doppler<<delay);
+              std::complex<double> smallScaleFading = sqrt (pathPowerLinear) * doppler * delay;
+              NS_LOG_INFO (doppler << delay);
 
-              if(bfParams->m_txW.empty ()||bfParams->m_rxW.empty ())
+              if (bfParams->m_txW.empty ()||bfParams->m_rxW.empty ())
                 {
                   NS_FATAL_ERROR ("antenna weights are empty");
                 }
@@ -673,16 +673,16 @@ MmWaveChannelRaytracing::GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmW
                   std::complex<double> txSum, rxSum;
                   for (unsigned i = 0; i < bfParams->m_txW.size (); i++)
                     {
-                      txSum += std::conj (bfParams->m_channelParams->m_txSpatialMatrix.at (pathIndex).at (i))*bfParams->m_txW.at (i);
+                      txSum += std::conj (bfParams->m_channelParams->m_txSpatialMatrix.at (pathIndex).at (i)) * bfParams->m_txW.at (i);
                     }
                   for (unsigned i = 0; i < bfParams->m_rxW.size (); i++)
                     {
-                      rxSum += bfParams->m_channelParams->m_rxSpatialMatrix.at (pathIndex).at (i)*std::conj (bfParams->m_rxW.at (i));
+                      rxSum += bfParams->m_channelParams->m_rxSpatialMatrix.at (pathIndex).at (i) * std::conj (bfParams->m_rxW.at (i));
                     }
-                  subsbandGain = subsbandGain + txSum*rxSum*smallScaleFading;
+                  subsbandGain = subsbandGain + txSum * rxSum * smallScaleFading;
                 }
             }
-          *vit = (*vit)*(norm (subsbandGain));
+          *vit = (*vit) * (norm (subsbandGain));
         }
       vit++;
       iSubband++;

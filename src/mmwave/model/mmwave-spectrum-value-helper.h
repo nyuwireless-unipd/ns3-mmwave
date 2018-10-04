@@ -51,7 +51,6 @@ namespace mmwave {
 class MmWaveSpectrumValueHelper
 {
 public:
-
   static Ptr<SpectrumModel> GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig);
 
   static Ptr<SpectrumValue> CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon> ptrConfig,
@@ -74,7 +73,7 @@ private:
   static std::map<uint8_t, Ptr<SpectrumModel> > m_model;
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3
 

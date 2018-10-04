@@ -53,14 +53,15 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveLosTracker);
 static const int g_nlosSamplesTrace = 340;
 
 MmWaveLosTracker::MmWaveLosTracker ()
-{}
+{
+}
 
 
 TypeId
 MmWaveLosTracker::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::MmWaveLosTracker")
-    .SetParent<Object>()
+    .SetParent<Object> ()
   ;
 
   return tid;
@@ -91,7 +92,7 @@ MmWaveLosTracker::UpdateLosNlosState (Ptr<MobilityModel> a, Ptr<MobilityModel> b
       Vector locationB = b->GetPosition ();
       Angles pathAngles (locationB, locationA);
       double angle = pathAngles.phi;
-      if (angle >= M_PI/2 || angle < -M_PI/2)
+      if (angle >= M_PI / 2 || angle < -M_PI / 2)
         {
           locationA = b->GetPosition ();
           locationB = a->GetPosition ();
@@ -99,7 +100,7 @@ MmWaveLosTracker::UpdateLosNlosState (Ptr<MobilityModel> a, Ptr<MobilityModel> b
           angle = pathAngles.phi;
         }
 
-      if (angle >=0 && angle < M_PI/2 )
+      if (angle >= 0 && angle < M_PI / 2 )
         {
           Vector loc1 (boundaries.xMax,boundaries.yMin,boundaries.zMin);
           Vector loc2 (boundaries.xMin,boundaries.yMax,boundaries.zMin);
@@ -111,7 +112,7 @@ MmWaveLosTracker::UpdateLosNlosState (Ptr<MobilityModel> a, Ptr<MobilityModel> b
               break;
             }
         }
-      else if (angle >= -M_PI/2 && angle < 0)
+      else if (angle >= -M_PI / 2 && angle < 0)
         {
           Vector loc1 (boundaries.xMin,boundaries.yMin,boundaries.zMin);
           Vector loc2 (boundaries.xMax,boundaries.yMax,boundaries.zMin);
@@ -142,7 +143,7 @@ MmWaveLosTracker::UpdateLosNlosState (Ptr<MobilityModel> a, Ptr<MobilityModel> b
 
   int nlosSamples;
   int losSamples;
-  if(iteratorNlos != m_mapNlos.end ())      // an instance of the MobilityModel pair (a,b) aready exists
+  if (iteratorNlos != m_mapNlos.end ())      // an instance of the MobilityModel pair (a,b) aready exists
     {
       nlosSamples = iteratorNlos->second;           // current counter for Nlossamples in the exerimental blockage trace
     }
@@ -155,14 +156,14 @@ MmWaveLosTracker::UpdateLosNlosState (Ptr<MobilityModel> a, Ptr<MobilityModel> b
         }
       else
         {
-          m_mapNlos.insert (std::pair<keyMob_t, int>(key_reverse,0));
-          m_mapNlos.insert (std::pair<keyMob_t, int>(key,0));
+          m_mapNlos.insert (std::pair<keyMob_t, int> (key_reverse,0));
+          m_mapNlos.insert (std::pair<keyMob_t, int> (key,0));
           nlosSamples = m_mapNlos.at (key);
         }
     }
 
 
-  if(iteratorLos != m_mapLos.end ())      // an instance of the MobilityModel pair (a,b) aready exists
+  if (iteratorLos != m_mapLos.end ())      // an instance of the MobilityModel pair (a,b) aready exists
     {
       losSamples = iteratorLos->second;           // current counter for Nlossamples in the exerimental blockage trace
     }
@@ -175,8 +176,8 @@ MmWaveLosTracker::UpdateLosNlosState (Ptr<MobilityModel> a, Ptr<MobilityModel> b
         }
       else
         {
-          m_mapLos.insert (std::pair<keyMob_t, int>(key_reverse,0));
-          m_mapLos.insert (std::pair<keyMob_t, int>(key,0));
+          m_mapLos.insert (std::pair<keyMob_t, int> (key_reverse,0));
+          m_mapLos.insert (std::pair<keyMob_t, int> (key,0));
           losSamples = m_mapLos.at (key);
         }
     }
@@ -195,20 +196,20 @@ MmWaveLosTracker::UpdateLosNlosState (Ptr<MobilityModel> a, Ptr<MobilityModel> b
         {
           m_mapNlos.at (key) = nlosSamples + 1;              // still in the 'drop' phase
           m_mapNlos.at (key_reverse) = nlosSamples + 1;              // still in the 'drop' phase
-          NS_LOG_LOGIC ("NLOS in drop phase, at sample " <<  nlosSamples+1);
+          NS_LOG_LOGIC ("NLOS in drop phase, at sample " <<  nlosSamples + 1);
         }
     }
   else if (!los && nlosSamples == g_nlosSamplesTrace)       // I am in NLOS but in the 'flat phase'
     {
       m_mapNlos.at (key) = g_nlosSamplesTrace;          // NLOS but in 'flat phase'
       m_mapNlos.at (key_reverse) = g_nlosSamplesTrace;          // NLOS but in 'flat phase'
-      NS_LOG_LOGIC ("NLOS in flat phase, at sample " << nlosSamples+1);
+      NS_LOG_LOGIC ("NLOS in flat phase, at sample " << nlosSamples + 1);
     }
   else if (los && losSamples < g_nlosSamplesTrace && nlosSamples > 0)       // I am in NLOS but in the 'raise phase'
     {
       m_mapLos.at (key) = losSamples + 1;
       m_mapLos.at (key_reverse) = losSamples + 1;
-      NS_LOG_LOGIC ("LOS in raise phase, at sample " << losSamples+1);
+      NS_LOG_LOGIC ("LOS in raise phase, at sample " << losSamples + 1);
     }
   else if (los && losSamples == g_nlosSamplesTrace)       // I am in LOS, and the 'raise phase' is finally over
     {

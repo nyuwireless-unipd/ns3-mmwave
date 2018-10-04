@@ -223,7 +223,6 @@ protected:
   virtual void DoInitialize (void);
 
 private:
-
   McUeNetDevice (const McUeNetDevice &);
 
   Mac48Address m_macaddress;

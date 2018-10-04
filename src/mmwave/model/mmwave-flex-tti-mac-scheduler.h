@@ -85,13 +85,21 @@ public:
 private:
   struct UeSchedInfo
   {
-    UeSchedInfo () :
-      m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
-      m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
-      m_dlSymbols (0), m_ulSymbols (0),
-      m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
-      m_dlTbSize (0), m_ulTbSize (0),
-      m_dlAllocDone (false), m_ulAllocDone (false)
+    UeSchedInfo ()
+      : m_dlMcs (0),
+        m_ulMcs (0),
+        m_maxDlBufSize (0),
+        m_maxUlBufSize (0),
+        m_maxDlSymbols (0),
+        m_maxUlSymbols (0),
+        m_dlSymbols (0),
+        m_ulSymbols (0),
+        m_dlSymbolsRetx (0),
+        m_ulSymbolsRetx (0),
+        m_dlTbSize (0),
+        m_ulTbSize (0),
+        m_dlAllocDone (false),
+        m_ulAllocDone (false)
     {
     }
 
@@ -219,8 +227,10 @@ private:
    */
   struct UlCqiMapElem
   {
-    UlCqiMapElem (std::vector<double> ulCqi, uint8_t nSym, uint32_t tbs) :
-      m_ueUlCqi (ulCqi), m_numSym (nSym), m_tbSize (tbs)
+    UlCqiMapElem (std::vector<double> ulCqi, uint8_t nSym, uint32_t tbs)
+      : m_ueUlCqi (ulCqi),
+        m_numSym (nSym),
+        m_tbSize (tbs)
     {
     }
     std::vector <double> m_ueUlCqi;
@@ -258,8 +268,10 @@ private:
 
   struct AllocMapElem
   {
-    AllocMapElem (std::vector<uint16_t> rntiMap, uint8_t nSym, uint32_t tbs) :
-      m_rntiPerChunk (rntiMap), m_numSym (nSym), m_tbSize (tbs)
+    AllocMapElem (std::vector<uint16_t> rntiMap, uint8_t nSym, uint32_t tbs)
+      : m_rntiPerChunk (rntiMap),
+        m_numSym (nSym),
+        m_tbSize (tbs)
     {
     }
 

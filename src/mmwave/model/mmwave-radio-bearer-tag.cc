@@ -67,23 +67,23 @@ MmWaveRadioBearerTag::GetInstanceTypeId (void) const
 
 MmWaveRadioBearerTag::MmWaveRadioBearerTag ()
   : m_rnti (0),
-  m_lcid (0),
-  m_layer (0),
-  m_size (0)
+    m_lcid (0),
+    m_layer (0),
+    m_size (0)
 {
 }
 MmWaveRadioBearerTag::MmWaveRadioBearerTag (uint16_t rnti, uint8_t lcid, uint32_t size)
   : m_rnti (rnti),
-  m_lcid (lcid),
-  m_size (size)
+    m_lcid (lcid),
+    m_size (size)
 {
 }
 
 MmWaveRadioBearerTag::MmWaveRadioBearerTag (uint16_t rnti, uint8_t lcid, uint32_t size, uint8_t layer)
   : m_rnti (rnti),
-  m_lcid (lcid),
-  m_layer (layer),
-  m_size (size)
+    m_lcid (lcid),
+    m_layer (layer),
+    m_size (size)
 {
 }
 

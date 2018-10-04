@@ -80,7 +80,6 @@ struct mmWaveBeamFormingParams : public SimpleRefCount<mmWaveBeamFormingParams>
 class MmWaveChannelMatrix : public SpectrumPropagationLossModel
 {
 public:
-
   MmWaveChannelMatrix ();
   virtual ~MmWaveChannelMatrix ();
 
@@ -98,7 +97,6 @@ public:
                                                  Ptr<const MobilityModel> b) const;
 
 private:
-
   Ptr<SpectrumValue> DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
                                                    Ptr<const MobilityModel> a,
                                                    Ptr<const MobilityModel> b) const;

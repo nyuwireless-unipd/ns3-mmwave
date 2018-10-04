@@ -118,11 +118,9 @@ public:
   //void SetFfrAlgorithm (Ptr<LteFfrAlgorithm> s);
 
 protected:
-
   virtual void DoInitialize (void);
 
 private:
-
   uint16_t m_cellId; ///< Cell identifer
   Ptr<MmWaveEnbPhy> m_phy; ///< the Phy instance of this eNodeB component carrier
   Ptr<MmWaveEnbMac> m_mac; ///< the MAC instance of this eNodeB component carrier

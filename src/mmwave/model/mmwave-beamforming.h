@@ -97,7 +97,7 @@ public:
   * \param ueAntenna antenna number of ue
   */
   MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna);
-  virtual ~MmWaveBeamforming();
+  virtual ~MmWaveBeamforming ();
 
   static TypeId GetTypeId (void);
   void DoDispose ();

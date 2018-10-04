@@ -40,31 +40,33 @@ namespace mmwave {
 
 struct MacSubheader
 {
-	MacSubheader () :
-		m_lcid (0), m_size (0)
-	{
+  MacSubheader ()
+    : m_lcid (0),
+      m_size (0)
+  {
 
-	}
-	
-	MacSubheader (uint8_t lcid, uint16_t size) :
-		m_lcid (lcid), m_size (size)
-	{
-	}
+  }
 
-	uint32_t GetSize ()
-	{
-		if (m_size > 127)
-		{
-			return 3;
-		}
-		else
-		{
-			return 2;
-		}
-	}
+  MacSubheader (uint8_t lcid, uint16_t size)
+    : m_lcid (lcid),
+      m_size (size)
+  {
+  }
+
+  uint32_t GetSize ()
+  {
+    if (m_size > 127)
+      {
+        return 3;
+      }
+    else
+      {
+        return 2;
+      }
+  }
 
   uint8_t   m_lcid;
-  uint32_t  m_size;		// 22 bits
+  uint32_t  m_size;             // 22 bits
 };
 
 class MmWaveMacPduHeader : public Header

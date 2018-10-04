@@ -53,7 +53,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveLteUeRrcProtocolReal);
 
 MmWaveLteUeRrcProtocolReal::MmWaveLteUeRrcProtocolReal ()
   :  m_ueRrcSapProvider (0),
-  m_enbRrcSapProvider (0)
+    m_enbRrcSapProvider (0)
 {
   m_ueRrcSapUser = new MemberLteUeRrcSapUser<MmWaveLteUeRrcProtocolReal> (this);
   m_completeSetupParameters.srb0SapUser = new LteRlcSpecificLteRlcSapUser<MmWaveLteUeRrcProtocolReal> (this);
@@ -293,8 +293,8 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
           if (enbDev == 0)
             {
               // check if it is a MmWave eNB
-              mmWaveEnbDev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice>();
-              if(mmWaveEnbDev == 0)
+              mmWaveEnbDev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+              if (mmWaveEnbDev == 0)
                 {
                   continue;
                 }
@@ -318,7 +318,7 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
         }
     }
   NS_ASSERT_MSG (found, " Unable to find eNB with CellId =" << cellId);
-  if(enbDev != 0)
+  if (enbDev != 0)
     {
       m_enbRrcSapProvider = enbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
       Ptr<MmWaveLteEnbRrcProtocolReal> enbRrcProtocolReal = enbDev->GetRrc ()->GetObject<MmWaveLteEnbRrcProtocolReal> ();
@@ -632,7 +632,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
                                            ueRrc->GetLteUeRrcSapProvider (),
                                            msg);
                     } //if the first condition is false, the second is not executed
-                  else if(mcUeDev->GetMmWaveRrc () != 0 && mcUeDev->GetMmWaveRrc ()->GetCellId () == cellId)
+                  else if (mcUeDev->GetMmWaveRrc () != 0 && mcUeDev->GetMmWaveRrc ()->GetCellId () == cellId)
                     {
                       NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
                       Simulator::Schedule (RRC_REAL_MSG_DELAY,
@@ -946,7 +946,7 @@ MmWaveLteEnbRrcProtocolReal::DoDecodeHandoverCommand (Ptr<Packet> p)
 
 MmWaveRealProtocolRlcSapUser::MmWaveRealProtocolRlcSapUser (MmWaveLteEnbRrcProtocolReal* pdcp, uint16_t rnti)
   : m_pdcp (pdcp),
-  m_rnti (rnti)
+    m_rnti (rnti)
 {
 }
 

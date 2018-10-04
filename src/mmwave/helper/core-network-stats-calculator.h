@@ -38,7 +38,7 @@ namespace mmwave {
 class CoreNetworkStatsCalculator : public Object
 {
 public:
-  CoreNetworkStatsCalculator();
+  CoreNetworkStatsCalculator ();
   ~CoreNetworkStatsCalculator ();
 
   static TypeId GetTypeId (void);
@@ -62,7 +62,7 @@ private:
 
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3
 

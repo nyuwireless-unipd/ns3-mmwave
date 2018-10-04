@@ -124,10 +124,10 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
    *
    */
 
-  if(!m_fixedLossTst)
+  if (!m_fixedLossTst)
     {
       double distance = a->GetDistanceFrom (b);
-      if (distance < 3*m_lambda)
+      if (distance < 3 * m_lambda)
         {
           NS_LOG_WARN ("distance not within the far field region => inaccurate propagation loss value");
         }
@@ -139,9 +139,9 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
       double aOut = 0.0334;
       double bOut = 5.2;
       double aLos = 0.0149;
-      double POut = fmax (0, 1-exp (((-1)*aOut*distance)+bOut));
-      double PLos = (1-POut)*exp ((-1)*aLos*distance);
-      double PNlos = 1-POut - PLos;
+      double POut = fmax (0, 1 - exp (((-1) * aOut * distance) + bOut));
+      double PLos = (1 - POut) * exp ((-1) * aLos * distance);
+      double PNlos = 1 - POut - PLos;
       double alpha, beta, sigma;
 
       channelScenarioMap_t::const_iterator it;
@@ -154,15 +154,15 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
           normalVariable->SetAntithetic (true);
           double PRef = uniformVariable->GetValue (0,1);
 
-          if ( m_channelStates.compare ("l")==0 || ((PRef < PLos) && m_channelStates.compare ("a")==0) )
+          if ( m_channelStates.compare ("l") == 0 || ((PRef < PLos) && m_channelStates.compare ("a") == 0) )
             {
               scenario.m_channelScenario = 'l';
               sigma = 5.8;
             }
-          else if ( m_channelStates.compare ("n")==0 || ((PRef < (1-POut)) && m_channelStates.compare ("a")==0) )
+          else if ( m_channelStates.compare ("n") == 0 || ((PRef < (1 - POut)) && m_channelStates.compare ("a") == 0) )
             {
               scenario.m_channelScenario = 'n';
-              if (m_frequency ==28e9)
+              if (m_frequency == 28e9)
                 {
                   sigma = 8.7;
                 }
@@ -180,7 +180,7 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
               scenario.m_channelScenario = 'o';
               return (txPowerDbm - 500.00);
             }
-          scenario.m_shadowing = normalVariable->GetValue (0,1)*sigma;
+          scenario.m_shadowing = normalVariable->GetValue (0,1) * sigma;
           m_channelScenarioMap.insert (std::make_pair (std::make_pair (a,b), scenario));
           m_channelScenarioMap.insert (std::make_pair (std::make_pair (b,a), scenario));
           it = m_channelScenarioMap.find (std::make_pair (a,b));
@@ -232,9 +232,9 @@ MmWavePropagationLossModel::DoCalcRxPower (double txPowerDbm,
           NS_FATAL_ERROR ("Programming Error.");
         }
 
-      NS_LOG_DEBUG ("distance=" << distance<< ", scenario=" << (*it).second.m_channelScenario<<", shadowing"<<(*it).second.m_shadowing);
+      NS_LOG_DEBUG ("distance=" << distance << ", scenario=" << (*it).second.m_channelScenario << ", shadowing" << (*it).second.m_shadowing);
       double lossDb = alpha + beta * 10 * log10 (distance) + (*it).second.m_shadowing;
-      NS_LOG_DEBUG ("time="<<Simulator::Now ().GetSeconds ()<<" POut="<<POut<<" PLos="<<PLos<<" PNlos="<<PNlos<<" lossDb="<<lossDb);
+      NS_LOG_DEBUG ("time=" << Simulator::Now ().GetSeconds () << " POut=" << POut << " PLos=" << PLos << " PNlos=" << PNlos << " lossDb=" << lossDb);
       return txPowerDbm - std::max (lossDb, m_minLoss);
     }
   else

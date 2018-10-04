@@ -100,8 +100,8 @@ typedef Callback< void, UlHarqInfo > MmWavePhyUlHarqFeedbackCallback;
 class MmWaveSpectrumPhy : public SpectrumPhy
 {
 public:
-  MmWaveSpectrumPhy();
-  virtual ~MmWaveSpectrumPhy();
+  MmWaveSpectrumPhy ();
+  virtual ~MmWaveSpectrumPhy ();
 
   enum State
   {
