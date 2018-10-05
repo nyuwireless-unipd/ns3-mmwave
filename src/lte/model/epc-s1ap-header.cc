@@ -845,7 +845,7 @@ EpcS1APPathSwitchRequestHeader::GetErabSwitchedInDownlinkItemList () const
 void 
 EpcS1APPathSwitchRequestHeader::SetErabSwitchedInDownlinkItemList (std::list<EpcS1apSap::ErabSwitchedInDownlinkItem> erabSetupList)
 {
-	m_headerLength += erabSetupList.size()*10;
+  m_headerLength += erabSetupList.size()*10;
   m_erabToBeSwitchedInDownlinkList = erabSetupList;
 }
 

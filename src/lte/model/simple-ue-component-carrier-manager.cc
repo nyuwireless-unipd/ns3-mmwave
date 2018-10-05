@@ -19,7 +19,7 @@
 * Author: Danilo Abrignani <danilo.abrignani@unibo.it>
 *
 * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
-*								 Integration of Carrier Aggregation for the mmWave module
+*                 Integration of Carrier Aggregation for the mmWave module
 */
 
 #include "simple-ue-component-carrier-manager.h"

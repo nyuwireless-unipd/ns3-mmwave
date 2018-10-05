@@ -117,10 +117,10 @@ void
 LteUeRrcProtocolIdeal::DoSendRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupCompleted msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteEnbRrcSapProvider::RecvRrcConnectionSetupCompleted,
+           &LteEnbRrcSapProvider::RecvRrcConnectionSetupCompleted,
                        m_enbRrcSapProvider,
-		       m_rnti,
-		       msg);
+           m_rnti,
+           msg);
 }
 
 void
@@ -142,9 +142,9 @@ void
 LteUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::RrcConnectionReestablishmentRequest msg)
 {
    Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentRequest,
+           &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentRequest,
                        m_enbRrcSapProvider,
-		       m_rnti,
+           m_rnti,
                         msg);
 }
 
@@ -152,9 +152,9 @@ void
 LteUeRrcProtocolIdeal::DoSendRrcConnectionReestablishmentComplete (LteRrcSap::RrcConnectionReestablishmentComplete msg)
 {
    Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentComplete,
+           &LteEnbRrcSapProvider::RecvRrcConnectionReestablishmentComplete,
                        m_enbRrcSapProvider,
-		       m_rnti,
+           m_rnti,
 msg);
 }
 
@@ -314,8 +314,8 @@ LteEnbRrcProtocolIdeal::DoSetupUe (uint16_t rnti, LteEnbRrcSapUser::SetupUeParam
   //             ueRrc = ueDev->GetRrc ();
   //             if ((ueRrc->GetRnti () == rnti) && (ueRrc->GetCellId () == m_cellId))
   //               {
-  //       	  found = true;
-  //       	  break;
+  //           found = true;
+  //           break;
   //               }
   //           }
   //       }
@@ -373,54 +373,54 @@ void
 LteEnbRrcProtocolIdeal::DoSendRrcConnectionSetup (uint16_t rnti, LteRrcSap::RrcConnectionSetup msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionSetup,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+           &LteUeRrcSapProvider::RecvRrcConnectionSetup,
+           GetUeRrcSapProvider (rnti),
+           msg);
 }
 
 void
 LteEnbRrcProtocolIdeal::DoSendRrcConnectionReconfiguration (uint16_t rnti, LteRrcSap::RrcConnectionReconfiguration msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReconfiguration,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+           &LteUeRrcSapProvider::RecvRrcConnectionReconfiguration,
+           GetUeRrcSapProvider (rnti),
+           msg);
 }
 
 void
 LteEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReestablishment,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+           &LteUeRrcSapProvider::RecvRrcConnectionReestablishment,
+           GetUeRrcSapProvider (rnti),
+           msg);
 }
 
 void
 LteEnbRrcProtocolIdeal::DoSendRrcConnectionReestablishmentReject (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentReject msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReestablishmentReject,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+           &LteUeRrcSapProvider::RecvRrcConnectionReestablishmentReject,
+           GetUeRrcSapProvider (rnti),
+           msg);
 }
 
 void
 LteEnbRrcProtocolIdeal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::RrcConnectionRelease msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionRelease,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+           &LteUeRrcSapProvider::RecvRrcConnectionRelease,
+           GetUeRrcSapProvider (rnti),
+           msg);
 }
 
 void
 LteEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::RrcConnectionReject msg)
 {
   Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-		       &LteUeRrcSapProvider::RecvRrcConnectionReject,
-		       GetUeRrcSapProvider (rnti),
-		       msg);
+           &LteUeRrcSapProvider::RecvRrcConnectionReject,
+           GetUeRrcSapProvider (rnti),
+           msg);
 }
 
 void

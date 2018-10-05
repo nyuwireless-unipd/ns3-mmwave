@@ -23,7 +23,7 @@
  *          Dual Connectivity functionalities
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *								 Integration of Carrier Aggregation for the mmWave module
+ *                 Integration of Carrier Aggregation for the mmWave module
  */
 
 #include "ns3/simulator.h"

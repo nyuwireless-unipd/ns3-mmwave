@@ -26,7 +26,7 @@
  * Lossless HO code from https://github.com/binhqnguyen/lena
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *							Integration of Carrier Aggregation for the mmWave module
+ *              Integration of Carrier Aggregation for the mmWave module
  */
 
 #include "lte-enb-rrc.h"

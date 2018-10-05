@@ -75,11 +75,11 @@ public:
     uint16_t statusPduSize;  /**< the current size of the pending STATUS RLC  PDU message in bytes */
 
     // RDF: Added for MmWave low-latency schedulers
-    std::list<uint32_t>	txPacketSizes;
-    std::list<uint32_t>	retxPacketSizes;
-    std::list<double>	txPacketDelays;
-    std::list<double>	retxPacketDelays;
-    double arrivalRate;		// average bits per s
+    std::list<uint32_t>  txPacketSizes;
+    std::list<uint32_t>  retxPacketSizes;
+    std::list<double>  txPacketDelays;
+    std::list<double>  retxPacketDelays;
+    double arrivalRate;    // average bits per s
   };
 
   /**
