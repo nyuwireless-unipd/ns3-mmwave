@@ -795,7 +795,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
           Vector locationB = b->GetPosition ();
           Angles pathAngles (locationB, locationA);
           double angle = pathAngles.phi;
-          if (angle >= M_PI/2 || angle < -M_PI/2)
+          if (angle >= M_PI / 2 || angle < -M_PI / 2)
             {
               locationA = b->GetPosition ();
               locationB = a->GetPosition ();
@@ -803,7 +803,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
               angle = pathAngles.phi;
             }
 
-          if (angle >=0 && angle < M_PI/2 )
+          if (angle >= 0 && angle < M_PI / 2 )
             {
               Vector loc1 (boundaries.xMax,boundaries.yMin,boundaries.zMin);
               Vector loc2 (boundaries.xMin,boundaries.yMax,boundaries.zMin);
@@ -815,7 +815,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
                   break;
                 }
             }
-          else if (angle >= -M_PI/2 && angle < 0)
+          else if (angle >= -M_PI / 2 && angle < 0)
             {
               Vector loc1 (boundaries.xMin,boundaries.yMin,boundaries.zMin);
               Vector loc2 (boundaries.xMax,boundaries.yMax,boundaries.zMin);
@@ -832,16 +832,16 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
       int nlosSamples = m_losTracker->GetNlosSamples (a,b);          // sample to be used in the Aditya's traces
       int losSamples = m_losTracker->GetLosSamples (a,b);          // sample to be used in the Aditya's traces
 
-      NS_LOG_LOGIC ("At time " << Now ().GetMicroSeconds ()<< " [mus], nlosSamples in BuildingsPropagationLossModel is:" << nlosSamples
+      NS_LOG_LOGIC ("At time " << Now ().GetMicroSeconds () << " [mus], nlosSamples in BuildingsPropagationLossModel is:" << nlosSamples
                                << " for mobility model " << a << " and " << b);
-      NS_LOG_LOGIC ("At time " << Now ().GetMicroSeconds ()<< " [mus], losSamples in BuildingsPropagationLossModel is:" << losSamples
+      NS_LOG_LOGIC ("At time " << Now ().GetMicroSeconds () << " [mus], losSamples in BuildingsPropagationLossModel is:" << losSamples
                                << " for mobility model " << a << " and " << b);
 
       // TODO: react when PL is LOS or NLOS, according to previoius instants
 
       if (nlosSamples == -1 || losSamples == -1)
         {
-          if(los)
+          if (los)
             {
               loss = mmWaveLosLoss (a,b);
             }
@@ -855,14 +855,14 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
           if (!los && nlosSamples < g_nlosSamplesTrace)               // I am in NLOS and in the 'drop phase'
             {
               loss_inner = mmWaveLosLoss (a,b);
-              double sample_trace = g_blockage_down[nlosSamples-1];
+              double sample_trace = g_blockage_down[nlosSamples - 1];
               loss = loss_inner - sample_trace;                   // 'minus' because I need to "decrement" the pathloss
               NS_LOG_DEBUG ("PL NLOS drop phase is " << loss << " and Aditya's sample is " << sample_trace);
             }
           else if (!los && nlosSamples == g_nlosSamplesTrace)               // I am in NLOS but in the 'flat phase'
             {
               loss_inner = mmWaveLosLoss (a,b);                  // -----------------_> CHECK
-              double sample_trace = g_blockage_down[nlosSamples-1];                   // take the last sample, as a baseline
+              double sample_trace = g_blockage_down[nlosSamples - 1];                   // take the last sample, as a baseline
               loss = loss_inner - sample_trace;
               NS_LOG_DEBUG ("PL NLOS is " << loss);
 
@@ -878,7 +878,7 @@ BuildingsObstaclePropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobili
                 }
               else                   // 'drop phase' has been completely overcome
                 {
-                  sample_trace = g_blockage_up[losSamples-1];                        // in this case, nlosSamples = g_nlosSamplesTrace, so I could use also the if condition
+                  sample_trace = g_blockage_up[losSamples - 1];                        // in this case, nlosSamples = g_nlosSamplesTrace, so I could use also the if condition
                 }
 
               loss = loss_inner - sample_trace;                   // 'minus' because I need to "decrement" the pathloss
@@ -938,7 +938,7 @@ double
 BuildingsObstaclePropagationLossModel::mmWaveLosLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const
 {
   double distance = a->GetDistanceFrom (b);
-  if (distance < 3*m_lambda)
+  if (distance < 3 * m_lambda)
     {
       NS_LOG_WARN ("distance not within the far field region => inaccurate propagation loss value");
     }

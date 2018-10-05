@@ -76,7 +76,6 @@ public:
   virtual MmWaveMacCschedSapProvider* GetMacCschedSapProvider () = 0;
 
 protected:
-
   Ptr<MmWavePhyMacCommon> m_phyMacConfig;
   uint32_t m_rbgSize;                   // RBs per RB group for res alloc type 0
   uint32_t m_numRbg;                    // Total RBGs for res alloc type 0

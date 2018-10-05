@@ -170,6 +170,6 @@ MmWaveMacPduHeader::AddSubheader (MacSubheader macSubheader)
     }
 }
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3

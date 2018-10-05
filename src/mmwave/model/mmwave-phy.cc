@@ -123,21 +123,21 @@ MmWavePhy::GetTypeId ()
   return tid;
 }
 
-MmWavePhy::MmWavePhy()
+MmWavePhy::MmWavePhy ()
 {
   NS_LOG_FUNCTION (this);
   NS_FATAL_ERROR ("This constructor should not be called");
 }
 
-MmWavePhy::MmWavePhy(Ptr<MmWaveSpectrumPhy> dlChannelPhy, Ptr<MmWaveSpectrumPhy> ulChannelPhy)
+MmWavePhy::MmWavePhy (Ptr<MmWaveSpectrumPhy> dlChannelPhy, Ptr<MmWaveSpectrumPhy> ulChannelPhy)
   : m_downlinkSpectrumPhy (dlChannelPhy),
-  m_uplinkSpectrumPhy (ulChannelPhy),
-  m_cellId (0),
-  m_frameNum (0),
-  m_sfNum (0),
-  m_slotNum (0),
-  m_sfAllocInfoUpdated (false),
-  m_componentCarrierId (0)
+    m_uplinkSpectrumPhy (ulChannelPhy),
+    m_cellId (0),
+    m_frameNum (0),
+    m_sfNum (0),
+    m_slotNum (0),
+    m_sfAllocInfoUpdated (false),
+    m_componentCarrierId (0)
 {
   NS_LOG_FUNCTION (this);
   m_phySapProvider = new MmWaveMemberPhySapProvider (this);
@@ -223,7 +223,7 @@ void
 MmWavePhy::SetMacPdu (Ptr<Packet> p)
 {
   MmWaveMacPduTag tag;
-  if(p->PeekPacketTag (tag))
+  if (p->PeekPacketTag (tag))
     {
       NS_ASSERT ((tag.GetSfn ().m_sfNum >= 0) && (tag.GetSfn ().m_sfNum < m_phyMacConfig->GetSymbolsPerSubframe ()));
       std::map<uint32_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (tag.GetSfn ().Encode ());

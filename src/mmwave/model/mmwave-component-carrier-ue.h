@@ -85,7 +85,6 @@ protected:
   virtual void DoInitialize (void);
 
 private:
-
   Ptr<MmWaveUePhy> m_phy; ///< the Phy instance of this eNodeB component carrier
   Ptr<MmWaveUeMac> m_mac; ///< the MAC instance of this eNodeB component carrier
 

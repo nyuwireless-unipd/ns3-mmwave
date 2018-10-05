@@ -72,10 +72,10 @@ static const double BlerCurvesEcrMap[38] = {
   0.08, 0.1, 0.11, 0.15, 0.19, 0.24, 0.3, 0.37, 0.44, 0.51, // ECRs of MCSs
   // 16QAM (M=4)
   0.075, 0.1, 0.15, // ECRs of MCS10 retx
-  0.3, 0.33, 0.37, 0.42, 0.48, 0.54, 0.6,// ECRs of MCSs
+  0.3, 0.33, 0.37, 0.42, 0.48, 0.54, 0.6, // ECRs of MCSs
   // 64QAM (M=6)
-  0.1075, 0.143, 0.215,// ECRs of MCS17 retx
-  0.43, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.89, 0.92// ECRs of MCSs
+  0.1075, 0.143, 0.215, // ECRs of MCS17 retx
+  0.43, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.89, 0.92 // ECRs of MCSs
 };
 
 // Table codifing standard MCSs ECR to available ECRs
@@ -86,12 +86,14 @@ static const uint8_t McsEcrBlerTableMapping[29] = {
 };
 
 // Table of ECR of the standard MCSs
-static const double McsEcrTable [29] = {0.08, 0.1, 0.11, 0.15, 0.19, 0.24, 0.3, 0.37, 0.44, 0.51, 0.3, 0.33, 0.37, 0.42, 0.48, 0.54, 0.6, 0.43, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.89, 0.92
+static const double McsEcrTable [29] = {
+  0.08, 0.1, 0.11, 0.15, 0.19, 0.24, 0.3, 0.37, 0.44, 0.51, 0.3, 0.33, 0.37, 0.42, 0.48, 0.54, 0.6, 0.43, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.89, 0.92
 };
 
 #if 0 // currently unused
 // Table with ECRs obtained with retransmissions with BLER curves
-static const double HarqRetxEcr[9] = {0.00064, 0.000512, 0.000041, 0.09, 0.027, 0.0081, 0.185, 0.079, 0.034
+static const double HarqRetxEcr[9] = {
+  0.00064, 0.000512, 0.000041, 0.09, 0.027, 0.0081, 0.185, 0.079, 0.034
 };
 #endif
 
@@ -242,7 +244,7 @@ static const double cEcrTable [9][38] = {
     -1.000, -1.000, -1.000, // 16QAM retx
     -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, // 16QAM
     -1.000, -1.000, -1.000, // 64QAM retx
-    -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000,    -1.000, -1.000// 64 QAM
+    -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000, -1.000,    -1.000, -1.000 // 64 QAM
   },
 // CB of 104 bits
   {
@@ -360,7 +362,7 @@ public:
 
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3
 

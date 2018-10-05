@@ -63,7 +63,6 @@ public:
   friend class MmWaveFlexTtiMaxRateMacCschedSapProvider;
 
 private:
-
   struct UeSchedInfo;
 
   struct FlowStats
@@ -76,11 +75,19 @@ private:
     {
     }*/
 
-    FlowStats (bool uplink, UeSchedInfo* ueSchedInfo, uint8_t lcid) :
-      m_isUplink (uplink), m_ueSchedInfo (ueSchedInfo),
-      m_lcid (lcid), m_arrivalRate (0.0), m_grantedRate (0.0),
-      m_qci (0), m_txQueueHolDelay (0), m_reTxQueueHolDelay (0), m_probErr (0.0),
-      m_deadlineUs (0), m_totalBufSize (0), m_totalSchedSize (0)
+    FlowStats (bool uplink, UeSchedInfo* ueSchedInfo, uint8_t lcid)
+      : m_isUplink (uplink),
+        m_ueSchedInfo (ueSchedInfo),
+        m_lcid (lcid),
+        m_arrivalRate (0.0),
+        m_grantedRate (0.0),
+        m_qci (0),
+        m_txQueueHolDelay (0),
+        m_reTxQueueHolDelay (0),
+        m_probErr (0.0),
+        m_deadlineUs (0),
+        m_totalBufSize (0),
+        m_totalSchedSize (0)
     {
       NS_ASSERT (ueSchedInfo != 0);
     }
@@ -112,33 +119,59 @@ private:
 
   struct UeSchedInfo
   {
-    UeSchedInfo () :
-      m_rnti (0), m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
-      m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
-      m_dlSymbols (0), m_ulSymbols (0),
-      m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
-      m_dlTbSize (0), m_ulTbSize (0),
-      m_dlAllocDone (false), m_ulAllocDone (false),
-      m_avgTputDl (0.0), m_avgTputUl (0.0),
-      m_lastAvgTputDl (0.0), m_lastAvgTputUl (0.0),
-      m_currTputDl (0.0), m_currTputUl (0.0),
-      m_totBufDl (0), m_totBufUl (0),
-      m_allocUlLast (false)
+    UeSchedInfo ()
+      : m_rnti (0),
+        m_dlMcs (0),
+        m_ulMcs (0),
+        m_maxDlBufSize (0),
+        m_maxUlBufSize (0),
+        m_maxDlSymbols (0),
+        m_maxUlSymbols (0),
+        m_dlSymbols (0),
+        m_ulSymbols (0),
+        m_dlSymbolsRetx (0),
+        m_ulSymbolsRetx (0),
+        m_dlTbSize (0),
+        m_ulTbSize (0),
+        m_dlAllocDone (false),
+        m_ulAllocDone (false),
+        m_avgTputDl (0.0),
+        m_avgTputUl (0.0),
+        m_lastAvgTputDl (0.0),
+        m_lastAvgTputUl (0.0),
+        m_currTputDl (0.0),
+        m_currTputUl (0.0),
+        m_totBufDl (0),
+        m_totBufUl (0),
+        m_allocUlLast (false)
     {
     }
 
-    UeSchedInfo (uint16_t rnti) :
-      m_rnti (rnti), m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
-      m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
-      m_dlSymbols (0), m_ulSymbols (0),
-      m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
-      m_dlTbSize (0), m_ulTbSize (0),
-      m_dlAllocDone (false), m_ulAllocDone (false),
-      m_avgTputDl (0.0), m_avgTputUl (0.0),
-      m_lastAvgTputDl (0.0), m_lastAvgTputUl (0.0),
-      m_currTputDl (0.0), m_currTputUl (0.0),
-      m_totBufDl (0), m_totBufUl (0),
-      m_allocUlLast (false)
+    UeSchedInfo (uint16_t rnti)
+      : m_rnti (rnti),
+        m_dlMcs (0),
+        m_ulMcs (0),
+        m_maxDlBufSize (0),
+        m_maxUlBufSize (0),
+        m_maxDlSymbols (0),
+        m_maxUlSymbols (0),
+        m_dlSymbols (0),
+        m_ulSymbols (0),
+        m_dlSymbolsRetx (0),
+        m_ulSymbolsRetx (0),
+        m_dlTbSize (0),
+        m_ulTbSize (0),
+        m_dlAllocDone (false),
+        m_ulAllocDone (false),
+        m_avgTputDl (0.0),
+        m_avgTputUl (0.0),
+        m_lastAvgTputDl (0.0),
+        m_lastAvgTputUl (0.0),
+        m_currTputDl (0.0),
+        m_currTputUl (0.0),
+        m_totBufDl (0),
+        m_totBufUl (0),
+        m_allocUlLast (false)
     {
     }
 
@@ -286,8 +319,10 @@ private:
    */
   struct UlCqiMapElem
   {
-    UlCqiMapElem (std::vector<double> ulCqi, uint8_t nSym, uint32_t tbs) :
-      m_ueUlCqi (ulCqi), m_numSym (nSym), m_tbSize (tbs)
+    UlCqiMapElem (std::vector<double> ulCqi, uint8_t nSym, uint32_t tbs)
+      : m_ueUlCqi (ulCqi),
+        m_numSym (nSym),
+        m_tbSize (tbs)
     {
     }
     std::vector <double> m_ueUlCqi;
@@ -325,8 +360,10 @@ private:
 
   struct AllocMapElem
   {
-    AllocMapElem (std::vector<uint16_t> rntiMap, uint8_t nSym, uint32_t tbs) :
-      m_rntiPerChunk (rntiMap), m_numSym (nSym), m_tbSize (tbs)
+    AllocMapElem (std::vector<uint16_t> rntiMap, uint8_t nSym, uint32_t tbs)
+      : m_rntiPerChunk (rntiMap),
+        m_numSym (nSym),
+        m_tbSize (tbs)
     {
     }
 

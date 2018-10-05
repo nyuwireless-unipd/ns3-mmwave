@@ -166,16 +166,16 @@ MmWaveAmc::GetTbSizeFromMcs (unsigned mcs, unsigned nprb)
   NS_LOG_FUNCTION (mcs);
   NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
   //NS_ASSERT_MSG (nprb < 5, "NPRB=" << nprb);
-  int rscElement = m_phyMacConfig->GetNumSCperChunk ()*m_phyMacConfig->GetNumChunkPerRb ()*nprb* \
+  int rscElement = m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetNumChunkPerRb () * nprb * \
     (m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetNumReferenceSymbols ());
   double s = SpectralEfficiencyForMcs[mcs];
 
-  int tbSize = rscElement*s - m_crcLen;
+  int tbSize = rscElement * s - m_crcLen;
   uint16_t cbSize = 6144;        //max size of a code-block (including m_crcLen)
   if (tbSize > cbSize)
     {
       int C = ceil ((double)tbSize / ((double)(6144)));
-      tbSize -= C*m_crcLen;   //subtract bits of m_crcLen used in code-blocks.
+      tbSize -= C * m_crcLen;   //subtract bits of m_crcLen used in code-blocks.
     }
   return tbSize;
 
@@ -187,17 +187,17 @@ MmWaveAmc::GetTbSizeFromMcsSymbols (unsigned mcs, unsigned nsymb)
   NS_LOG_FUNCTION (mcs);
   NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
   //unsigned itb = McsToItbs[mcs];
-  int rscElement = (m_phyMacConfig->GetNumSCperChunk ()*m_phyMacConfig->GetTotalNumChunk ()
-                    - m_phyMacConfig->GetNumRefScPerSym ())*nsymb;
+  int rscElement = (m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetTotalNumChunk ()
+                    - m_phyMacConfig->GetNumRefScPerSym ()) * nsymb;
   double Rcode = McsEcrTable[mcs];
   double Qm = ModulationSchemeForMcs[mcs];
 
-  int tbSize = rscElement*Qm*Rcode - m_crcLen;
+  int tbSize = rscElement * Qm * Rcode - m_crcLen;
   uint16_t cbSize = 6144;        //max size of a code-block (including m_crcLen)
   if (tbSize > cbSize)
     {
       int C = ceil ((double)tbSize / ((double)(6144)));
-      tbSize -= C*m_crcLen;           //subtract bits of m_crcLen used in code-blocks.
+      tbSize -= C * m_crcLen;           //subtract bits of m_crcLen used in code-blocks.
     }
   return tbSize;
 }
@@ -208,7 +208,7 @@ MmWaveAmc::GetNumSymbolsFromTbsMcs (unsigned tbSize, unsigned mcs)
   NS_LOG_FUNCTION (mcs);
   NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
   //unsigned itb = McsToItbs[mcs];
-  int rscElementPerSym = (m_phyMacConfig->GetNumSCperChunk ()*m_phyMacConfig->GetTotalNumChunk ()
+  int rscElementPerSym = (m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetTotalNumChunk ()
                           - m_phyMacConfig->GetNumRefScPerSym ());
   double Rcode = McsEcrTable[mcs];
   double Qm = ModulationSchemeForMcs[mcs];
@@ -216,9 +216,9 @@ MmWaveAmc::GetNumSymbolsFromTbsMcs (unsigned tbSize, unsigned mcs)
   if (tbSize > cbSize)
     {
       int C = ceil ((double)tbSize / ((double)(6144)));
-      tbSize += C*m_crcLen;           //subtract bits of m_crcLen used in code-blocks.
+      tbSize += C * m_crcLen;           //subtract bits of m_crcLen used in code-blocks.
     }
-  int reqRscElement = (tbSize+m_crcLen)/(Qm*Rcode);
+  int reqRscElement = (tbSize + m_crcLen) / (Qm * Rcode);
 
   return ceil ((double)reqRscElement / (double)rscElementPerSym);
 }
@@ -271,14 +271,14 @@ MmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
       for (it = sinr.ConstValuesBegin (); it != sinr.ConstValuesEnd (); it++)
         {
           rbgMap.push_back (rbId++);
-          if ((rbId % rbgSize == 0)||((it+1)==sinr.ConstValuesEnd ()))
+          if ((rbId % rbgSize == 0)||((it + 1) == sinr.ConstValuesEnd ()))
             {
               uint8_t mcs = 0;
               MmWaveTbStats_t tbStats;
               while (mcs <= 28)
                 {
                   MmWaveHarqProcessInfoList_t harqInfoList;
-                  tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, GetTbSizeFromMcs (mcs, rbgSize/18) / 8, mcs, harqInfoList);
+                  tbStats = MmWaveMiErrorModel::GetTbDecodificationStats (sinr, rbgMap, GetTbSizeFromMcs (mcs, rbgSize / 18) / 8, mcs, harqInfoList);
                   if (tbStats.tbler > 0.1)
                     {
                       break;
@@ -292,7 +292,7 @@ MmWaveAmc::CreateCqiFeedbacks (const SpectrumValue& sinr, uint8_t rbgSize)
                 }
               NS_LOG_DEBUG (this << "\t RBG " << rbId << " MCS " << (uint16_t)mcs << " TBLER " << tbStats.tbler);
               int rbgCqi = 0;
-              if ((tbStats.tbler > 0.1)&&(mcs==0))
+              if ((tbStats.tbler > 0.1)&&(mcs == 0))
                 {
                   rbgCqi = 0;
                 }
@@ -390,7 +390,7 @@ MmWaveAmc::CreateCqiFeedbacksTdma (const SpectrumValue& sinr, uint8_t numSym)
             }
           NS_LOG_DEBUG (this << "\t MCS " << (uint16_t)mcs << " TBLER " << tbStats.tbler);
           int chunkCqi = 0;
-          if ((tbStats.tbler > 0.1)&&(mcs==0))
+          if ((tbStats.tbler > 0.1)&&(mcs == 0))
             {
               chunkCqi = 0;
             }
@@ -422,10 +422,10 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
   // produces a single CQI/MCS value
 
   //std::vector<int> cqi;
-  uint8_t cqi=0;
-  double seAvg=0;
-  double mcsAvg=0;
-  double cqiAvg=0;
+  uint8_t cqi = 0;
+  double seAvg = 0;
+  double mcsAvg = 0;
+  double cqiAvg = 0;
 
   Values::const_iterator it;
   if (m_amcModel == PiroEW2010)
@@ -502,7 +502,7 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t numSym, u
 //		NS_LOG_UNCOND ("TBLER " << tbStatsFinal.tbler << " for chunks " << chunkMap.size () << " numSym "
 //		               << (unsigned)numSym << " tbSize " << tbSize << " mcs " << (unsigned)mcs << " sinr " << sinrAvg);
 //		NS_LOG_UNCOND (sinr);
-      if ((tbStats.tbler > 0.1)&&(mcs==0))
+      if ((tbStats.tbler > 0.1)&&(mcs == 0))
         {
           cqi = 0;
         }
@@ -544,7 +544,7 @@ MmWaveAmc::GetMcsFromSpectralEfficiency (double s)
   NS_LOG_FUNCTION (s);
   NS_ASSERT_MSG (s >= 0.0, "negative spectral efficiency = " << s);
   int mcs = 0;
-  while ((mcs < 28) && (SpectralEfficiencyForMcs[mcs+1] < s))
+  while ((mcs < 28) && (SpectralEfficiencyForMcs[mcs + 1] < s))
     {
       ++mcs;
     }

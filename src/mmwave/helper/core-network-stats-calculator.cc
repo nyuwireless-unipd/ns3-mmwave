@@ -121,6 +121,6 @@ CoreNetworkStatsCalculator::SetMmeOutputFilename (std::string outputFilename)
   m_mmeOutFileName = outputFilename;
 }
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3

@@ -372,12 +372,12 @@ MmWaveEnbMac::GetTypeId (void)
   return tid;
 }
 
-MmWaveEnbMac::MmWaveEnbMac (void) :
-  m_ccmMacSapUser (0),
-  m_frameNum (0),
-  m_sfNum (0),
-  m_slotNum (0),
-  m_tbUid (0)
+MmWaveEnbMac::MmWaveEnbMac (void)
+  : m_ccmMacSapUser (0),
+    m_frameNum (0),
+    m_sfNum (0),
+    m_slotNum (0),
+    m_tbUid (0)
 {
   NS_LOG_FUNCTION (this);
   m_cmacSapProvider = new MmWaveEnbMacMemberEnbCmacSapProvider (this);
@@ -617,26 +617,26 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
       std::map<uint8_t, LteMacSapUser*>::iterator lcidIt = rntiIt->second.find (macSubheaders[ipdu].m_lcid);
       NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << macSubheaders[ipdu].m_lcid);
       Ptr<Packet> rlcPdu;
-      if((p->GetSize ()-currPos) < (uint32_t)macSubheaders[ipdu].m_size)
+      if ((p->GetSize () - currPos) < (uint32_t)macSubheaders[ipdu].m_size)
         {
           NS_LOG_ERROR ("Packet size less than specified in MAC header (actual= " \
-                        <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+                        << p->GetSize () << " header= " << (uint32_t)macSubheaders[ipdu].m_size << ")" );
         }
-      else if ((p->GetSize ()-currPos) > (uint32_t)macSubheaders[ipdu].m_size)
+      else if ((p->GetSize () - currPos) > (uint32_t)macSubheaders[ipdu].m_size)
         {
           NS_LOG_DEBUG ("Fragmenting MAC PDU (packet size greater than specified in MAC header (actual= " \
-                        <<p->GetSize ()<<" header= "<<(uint32_t)macSubheaders[ipdu].m_size<<")" );
+                        << p->GetSize () << " header= " << (uint32_t)macSubheaders[ipdu].m_size << ")" );
           rlcPdu = p->CreateFragment (currPos, macSubheaders[ipdu].m_size);
           currPos += macSubheaders[ipdu].m_size;
           (*lcidIt).second->ReceivePdu (rlcPdu, rnti, macSubheaders[ipdu].m_lcid);
         }
       else
         {
-          rlcPdu = p->CreateFragment (currPos, p->GetSize ()-currPos);
+          rlcPdu = p->CreateFragment (currPos, p->GetSize () - currPos);
           currPos = p->GetSize ();
           (*lcidIt).second->ReceivePdu (rlcPdu, rnti, macSubheaders[ipdu].m_lcid);
         }
-      NS_LOG_INFO ("MmWave Enb Mac Rx Packet, Rnti:" <<rnti<<" lcid:"<<(uint32_t)macSubheaders[ipdu].m_lcid<<" size:"<<macSubheaders[ipdu].m_size);
+      NS_LOG_INFO ("MmWave Enb Mac Rx Packet, Rnti:" << rnti << " lcid:" << (uint32_t)macSubheaders[ipdu].m_lcid << " size:" << macSubheaders[ipdu].m_size);
     }
 }
 
@@ -788,7 +788,7 @@ MmWaveEnbMac::DoDlHarqFeedback (DlHarqInfo params)
   NS_LOG_FUNCTION (this);
   // Update HARQ buffer
   std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator it =  m_miDlHarqProcessesPackets.find (params.m_rnti);
-  NS_ASSERT (it!=m_miDlHarqProcessesPackets.end ());
+  NS_ASSERT (it != m_miDlHarqProcessesPackets.end ());
 
   if (params.m_harqStatus == DlHarqInfo::ACK)
     {
@@ -858,7 +858,7 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
     }
   else
     {
-      if(it->second.m_pdu == 0)
+      if (it->second.m_pdu == 0)
         {
           it->second.m_pdu = params.pdu;
         }
@@ -918,7 +918,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 
                   // new data -> force emptying correspondent harq pkt buffer
                   std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator harqIt = m_miDlHarqProcessesPackets.find (rnti);
-                  NS_ASSERT (harqIt!=m_miDlHarqProcessesPackets.end ());
+                  NS_ASSERT (harqIt != m_miDlHarqProcessesPackets.end ());
                   Ptr<PacketBurst> pb = CreateObject <PacketBurst> ();
                   harqIt->second.at (tbUid).m_pktBurst = pb;
                   harqIt->second.at (tbUid).m_lcidList.clear ();
@@ -932,7 +932,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
                       NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduInfo[ipdu].m_lcid);
                       NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int) rlcPduInfo[ipdu].m_size);
                       MacSubheader subheader (rlcPduInfo[ipdu].m_lcid, rlcPduInfo[ipdu].m_size);
-                      (*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size)-subheader.GetSize (), 0, tbUid, m_componentCarrierId, rnti, rlcPduInfo[ipdu].m_lcid);
+                      (*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size) - subheader.GetSize (), 0, tbUid, m_componentCarrierId, rnti, rlcPduInfo[ipdu].m_lcid);
                       harqIt->second.at (tbUid).m_lcidList.push_back (rlcPduInfo[ipdu].m_lcid);
                     }
 
@@ -968,13 +968,13 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
                     {
                       // HARQ retransmission -> retrieve TB from HARQ buffer
                       std::map <uint16_t, MmWaveDlHarqProcessesBuffer_t>::iterator it = m_miDlHarqProcessesPackets.find (rnti);
-                      NS_ASSERT (it!=m_miDlHarqProcessesPackets.end ());
+                      NS_ASSERT (it != m_miDlHarqProcessesPackets.end ());
                       Ptr<PacketBurst> pb = it->second.at (tbUid).m_pktBurst;
                       for (std::list<Ptr<Packet> >::const_iterator j = pb->Begin (); j != pb->End (); ++j)
                         {
                           Ptr<Packet> pkt = (*j)->Copy ();
                           MmWaveMacPduTag tag;                                                                          // update PDU tag for retransmission
-                          if(!pkt->RemovePacketTag (tag))
+                          if (!pkt->RemovePacketTag (tag))
                             {
                               NS_FATAL_ERROR ("No MAC PDU tag");
                             }
@@ -1089,7 +1089,7 @@ MmWaveEnbMac::DoAddLc (LteEnbCmacSapProvider::LcInfo lcinfo, LteMacSapUser* msu)
   // see FF LTE MAC Scheduler
   // Interface Specification v1.11,
   // 4.3.4 logicalChannelConfigListElement
-  if (true)//(lcinfo.lcId != 0)
+  if (true) //(lcinfo.lcId != 0)
     {
       struct MmWaveMacCschedSapProvider::CschedLcConfigReqParameters params;
       params.m_rnti = lcinfo.rnti;

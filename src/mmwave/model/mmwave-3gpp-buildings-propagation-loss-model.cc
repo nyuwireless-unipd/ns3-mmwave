@@ -59,7 +59,7 @@ MmWave3gppBuildingsPropagationLossModel::MmWave3gppBuildingsPropagationLossModel
   m_3gppNlos->SetAttribute ("ChannelCondition", StringValue ("n"));
   m_prevTime = Time (0);
 
-  if(!m_enbUeLocTrace.is_open ())
+  if (!m_enbUeLocTrace.is_open ())
     {
       m_enbUeLocTrace.open ("ENB-UE.txt");
       if (!m_enbUeLocTrace.is_open ())
@@ -128,7 +128,7 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
            * The channel condition should be NLOS if the line intersect one of the buildings, otherwise LOS.
            * */
           bool intersect = IsLineIntersectBuildings (a->GetPosition (), b->GetPosition ());
-          if(!intersect)
+          if (!intersect)
             {
               condition.m_channelCondition = 'l';
               condition.m_shadowing = 0;
@@ -140,7 +140,7 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
             }
 
         }
-      else if(a1->IsIndoor () && b1->IsIndoor ())
+      else if (a1->IsIndoor () && b1->IsIndoor ())
         {
           //NS_FATAL_ERROR("indoor propagation loss not implemented yet");
           return m_3gppLos->GetLoss (a,b);
@@ -152,31 +152,31 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
           //Here we assume the indoor nodes are all NLOS O2I.
           condition.m_channelCondition = 'i';
           //Compute the addition indoor pathloss term when this is the first transmission, or the node moves from outdoor to indoor.
-          if(it == m_conditionMap.end () || (*it).second.m_channelCondition != 'i')
+          if (it == m_conditionMap.end () || (*it).second.m_channelCondition != 'i')
             {
               double lossIndoor = 0;
               double PL_tw;
               double stdP;
-              if(m_3gppNlos->GetScenario ()== "RMa")
+              if (m_3gppNlos->GetScenario () == "RMa")
                 {
                   // only low-loss model is applied to RMa
-                  PL_tw = 5-10*log10 (0.3*pow (10,-1*(2+0.2*m_frequency*1e-9)/10)+0.7*pow (10,-1*(5+4*m_frequency*1e-9)/10));
+                  PL_tw = 5 - 10 * log10 (0.3 * pow (10,-1 * (2 + 0.2 * m_frequency * 1e-9) / 10) + 0.7 * pow (10,-1 * (5 + 4 * m_frequency * 1e-9) / 10));
                   stdP = 4.4;
                 }
               else
                 {
                   if (a1->IsIndoor () && b1->IsOutdoor ())
                     {
-                      if(a1->GetBuilding ()->GetBuildingType () == Building::Commercial || a1->GetBuilding ()->GetBuildingType () == Building::Office)
+                      if (a1->GetBuilding ()->GetBuildingType () == Building::Commercial || a1->GetBuilding ()->GetBuildingType () == Building::Office)
                         {
                           NS_LOG_DEBUG ("Commercial and office building use high-loss model for UMa and UMi, use low-loss model for RMa");
-                          PL_tw = 5-10*log10 (0.7*pow (10,-1*(23+0.3*m_frequency*1e-9)/10)+0.3*pow (10,-1*(5+4*m_frequency*1e-9)/10));
+                          PL_tw = 5 - 10 * log10 (0.7 * pow (10,-1 * (23 + 0.3 * m_frequency * 1e-9) / 10) + 0.3 * pow (10,-1 * (5 + 4 * m_frequency * 1e-9) / 10));
                           stdP = 6.5;
                         }
                       else
                         {
                           NS_LOG_DEBUG ("Residential building use low-loss model");
-                          PL_tw = 5-10*log10 (0.3*pow (10,-1*(2+0.2*m_frequency*1e-9)/10)+0.7*pow (10,-1*(5+4*m_frequency*1e-9)/10));
+                          PL_tw = 5 - 10 * log10 (0.3 * pow (10,-1 * (2 + 0.2 * m_frequency * 1e-9) / 10) + 0.7 * pow (10,-1 * (5 + 4 * m_frequency * 1e-9) / 10));
                           stdP = 4.4;
 
                         }
@@ -184,17 +184,17 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
                     }
                   else if (b1->IsIndoor () && a1->IsOutdoor ())
                     {
-                      if(b1->GetBuilding ()->GetBuildingType () == Building::Commercial || b1->GetBuilding ()->GetBuildingType () == Building::Office)
+                      if (b1->GetBuilding ()->GetBuildingType () == Building::Commercial || b1->GetBuilding ()->GetBuildingType () == Building::Office)
                         {
                           NS_LOG_DEBUG ("Commercial and office building use high-loss model for UMa and UMi, use low-loss model for RMa");
-                          PL_tw = 5-10*log10 (0.7*pow (10,-1*(23+0.3*m_frequency*1e-9)/10)+0.3*pow (10,-1*(5+4*m_frequency*1e-9)/10));
+                          PL_tw = 5 - 10 * log10 (0.7 * pow (10,-1 * (23 + 0.3 * m_frequency * 1e-9) / 10) + 0.3 * pow (10,-1 * (5 + 4 * m_frequency * 1e-9) / 10));
                           stdP = 6.5;
                         }
 
                       else
                         {
                           NS_LOG_DEBUG ("Residential building use low-loss model");
-                          PL_tw = 5-10*log10 (0.3*pow (10,-1*(2+0.2*m_frequency*1e-9)/10)+0.7*pow (10,-1*(5+4*m_frequency*1e-9)/10));
+                          PL_tw = 5 - 10 * log10 (0.3 * pow (10,-1 * (2 + 0.2 * m_frequency * 1e-9) / 10) + 0.7 * pow (10,-1 * (5 + 4 * m_frequency * 1e-9) / 10));
                           stdP = 4.4;
                         }
 
@@ -209,7 +209,7 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
               Ptr<UniformRandomVariable> uniRv1 = CreateObject<UniformRandomVariable> ();
               Ptr<UniformRandomVariable> uniRv2 = CreateObject<UniformRandomVariable> ();
               double dis_2D_in;
-              if(m_3gppNlos->GetScenario ()== "RMa")
+              if (m_3gppNlos->GetScenario () == "RMa")
                 {
                   dis_2D_in = std::min (uniRv1->GetValue (0,10), uniRv2->GetValue (0,10));
                 }
@@ -217,10 +217,10 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
                 {
                   dis_2D_in = std::min (uniRv1->GetValue (0,25), uniRv2->GetValue (0,25));
                 }
-              lossIndoor += 0.5*dis_2D_in;
+              lossIndoor += 0.5 * dis_2D_in;
               //compute indoor shadowing
               Ptr<NormalRandomVariable> norRv = CreateObject<NormalRandomVariable> ();
-              lossIndoor += stdP*norRv->GetValue ();
+              lossIndoor += stdP * norRv->GetValue ();
               //store the indoor pathloss term to the shadowing parameter.
               condition.m_shadowing = lossIndoor;
             }
@@ -250,7 +250,7 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
 
     }
 
-  if((*it).second.m_channelCondition == 'l')
+  if ((*it).second.m_channelCondition == 'l')
     {
       //LoS channel condition
       loss = m_3gppLos->GetLoss (a,b);
@@ -273,15 +273,15 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
       NS_FATAL_ERROR ("Programming error");
     }
   // Log ENB and UE location.
-  if(Now ().GetSeconds ()-m_prevTime.GetSeconds ()>3)
+  if (Now ().GetSeconds () - m_prevTime.GetSeconds () > 3)
     {
       m_prevTime = Now ();
     }
 
-  if (Now ().GetSeconds () - m_prevTime.GetSeconds ()<0.00009)
+  if (Now ().GetSeconds () - m_prevTime.GetSeconds () < 0.00009)
     {
       Vector ueLoc, enbLoc;
-      if(DynamicCast<mmwave::MmWaveUeNetDevice> (a->GetObject<Node> ()->GetDevice (0)) !=0)
+      if (DynamicCast<mmwave::MmWaveUeNetDevice> (a->GetObject<Node> ()->GetDevice (0)) != 0)
         {
           // if(DynamicCast<MmWaveEnbNetDevice> (b->GetObject<Node> ()->GetDevice (0)) !=0)
           // {
@@ -294,8 +294,8 @@ MmWave3gppBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobi
         }
       else
         {
-          if((DynamicCast<mmwave::MmWaveUeNetDevice> (b->GetObject<Node> ()->GetDevice (0)) !=0) ||
-             (DynamicCast<McUeNetDevice> (b->GetObject<Node> ()->GetDevice (0)) !=0))
+          if ((DynamicCast<mmwave::MmWaveUeNetDevice> (b->GetObject<Node> ()->GetDevice (0)) != 0)
+              || (DynamicCast<McUeNetDevice> (b->GetObject<Node> ()->GetDevice (0)) != 0))
             {
               NS_LOG_INFO ("ENB->UE Link");
               enbLoc = a->GetPosition ();
@@ -328,32 +328,50 @@ MmWave3gppBuildingsPropagationLossModel::IsLineIntersectBuildings (Vector L1, Ve
     {
       Box boundaries = (*bit)->GetBoundaries ();
 
-      Vector boxSize (0.5*(boundaries.xMax - boundaries.xMin),
-                      0.5*(boundaries.yMax - boundaries.yMin),
-                      0.5*(boundaries.zMax - boundaries.zMin));
+      Vector boxSize (0.5 * (boundaries.xMax - boundaries.xMin),
+                      0.5 * (boundaries.yMax - boundaries.yMin),
+                      0.5 * (boundaries.zMax - boundaries.zMin));
       Vector boxCenter (boundaries.xMin + boxSize.x,
                         boundaries.yMin + boxSize.y,
                         boundaries.zMin + boxSize.z);
 
       // Put line in box space
-      Vector LB1 (L1.x-boxCenter.x, L1.y-boxCenter.y, L1.z-boxCenter.z);
-      Vector LB2 (L2.x-boxCenter.x, L2.y-boxCenter.y, L2.z-boxCenter.z);
+      Vector LB1 (L1.x - boxCenter.x, L1.y - boxCenter.y, L1.z - boxCenter.z);
+      Vector LB2 (L2.x - boxCenter.x, L2.y - boxCenter.y, L2.z - boxCenter.z);
 
       // Get line midpoint and extent
-      Vector LMid (0.5*(LB1.x+LB2.x), 0.5*(LB1.y+LB2.y), 0.5*(LB1.z+LB2.z));
+      Vector LMid (0.5 * (LB1.x + LB2.x), 0.5 * (LB1.y + LB2.y), 0.5 * (LB1.z + LB2.z));
       Vector L (LB1.x - LMid.x, LB1.y - LMid.y, LB1.z - LMid.z);
       Vector LExt ( std::abs (L.x), std::abs (L.y), std::abs (L.z) );
 
       // Use Separating Axis Test
       // Separation vector from box center to line center is LMid, since the line is in box space
       // If the line did not intersect this building, jump to the next building.
-      if ( std::abs ( LMid.x ) > boxSize.x + LExt.x ) continue;
-      if ( std::abs ( LMid.y ) > boxSize.y + LExt.y ) continue;
-      if ( std::abs ( LMid.z ) > boxSize.z + LExt.z ) continue;
+      if ( std::abs ( LMid.x ) > boxSize.x + LExt.x )
+        {
+          continue;
+        }
+      if ( std::abs ( LMid.y ) > boxSize.y + LExt.y )
+        {
+          continue;
+        }
+      if ( std::abs ( LMid.z ) > boxSize.z + LExt.z )
+        {
+          continue;
+        }
       // Crossproducts of line and each axis
-      if ( std::abs ( LMid.y * L.z - LMid.z * L.y)  >  (boxSize.y * LExt.z + boxSize.z * LExt.y) ) continue;
-      if ( std::abs ( LMid.x * L.z - LMid.z * L.x)  >  (boxSize.x * LExt.z + boxSize.z * LExt.x) ) continue;
-      if ( std::abs ( LMid.x * L.y - LMid.y * L.x)  >  (boxSize.x * LExt.y + boxSize.y * LExt.x) ) continue;
+      if ( std::abs ( LMid.y * L.z - LMid.z * L.y)  >  (boxSize.y * LExt.z + boxSize.z * LExt.y) )
+        {
+          continue;
+        }
+      if ( std::abs ( LMid.x * L.z - LMid.z * L.x)  >  (boxSize.x * LExt.z + boxSize.z * LExt.x) )
+        {
+          continue;
+        }
+      if ( std::abs ( LMid.x * L.y - LMid.y * L.x)  >  (boxSize.x * LExt.y + boxSize.y * LExt.x) )
+        {
+          continue;
+        }
 
       // No separating axis, the line intersects
       // If the line intersect this building, return true.
@@ -365,7 +383,7 @@ MmWave3gppBuildingsPropagationLossModel::IsLineIntersectBuildings (Vector L1, Ve
 void
 MmWave3gppBuildingsPropagationLossModel::LocationTrace (Vector enbLoc, Vector ueLoc, bool los) const
 {
-  if(!m_enbUeLocTrace.is_open ())
+  if (!m_enbUeLocTrace.is_open ())
     {
       m_enbUeLocTrace.open ("ENB-UE.txt",std::ofstream::app);
       if (!m_enbUeLocTrace.is_open ())
@@ -375,11 +393,11 @@ MmWave3gppBuildingsPropagationLossModel::LocationTrace (Vector enbLoc, Vector ue
         }
     }
   m_enbUeLocTrace << Simulator::Now ().GetNanoSeconds () / (double) 1e9 << "\t";
-  m_enbUeLocTrace << enbLoc.x<< "\t";
-  m_enbUeLocTrace << enbLoc.y<< "\t";
-  m_enbUeLocTrace << enbLoc.z<< "\t";
-  m_enbUeLocTrace << ueLoc.x<< "\t";
-  m_enbUeLocTrace << ueLoc.y<< "\t";
+  m_enbUeLocTrace << enbLoc.x << "\t";
+  m_enbUeLocTrace << enbLoc.y << "\t";
+  m_enbUeLocTrace << enbLoc.z << "\t";
+  m_enbUeLocTrace << ueLoc.x << "\t";
+  m_enbUeLocTrace << ueLoc.y << "\t";
   m_enbUeLocTrace << ueLoc.z << "\t";
   m_enbUeLocTrace << los << "\n";
   m_enbUeLocTrace.close ();

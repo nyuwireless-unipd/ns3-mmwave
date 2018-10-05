@@ -37,13 +37,13 @@ namespace ns3 {
 
 namespace mmwave {
 
-class MmWaveAmc: public Object
+class MmWaveAmc : public Object
 {
 public:
   static TypeId GetTypeId (void);
   MmWaveAmc ();
-  MmWaveAmc(Ptr<MmWavePhyMacCommon> ConfigParams);
-  virtual ~MmWaveAmc();
+  MmWaveAmc (Ptr<MmWavePhyMacCommon> ConfigParams);
+  virtual ~MmWaveAmc ();
   enum AmcModel
   {
     PiroEW2010,
@@ -60,7 +60,7 @@ public:
   int GetCqiFromSpectralEfficiency (double s);
   int GetMcsFromSpectralEfficiency (double s);
 
-  static const unsigned int m_crcLen=24;
+  static const unsigned int m_crcLen = 24;
 
 private:
   double m_ber;

@@ -139,7 +139,6 @@ public:
 
 
 private:
-
   bool AddUePhy (uint16_t rnti);
   // LteEnbCphySapProvider forwarded methods
   void DoSetBandwidth (uint8_t ulBandwidth, uint8_t dlBandwidth);

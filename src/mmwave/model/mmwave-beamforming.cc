@@ -64,25 +64,31 @@ double2DVector_t g_smallScaleFadingInstance;    //this stores 100 instance of si
 /*
  * The delay spread and Doppler shift is not based on measurement data at this time
  */
-static const double DelaySpread[20]  = {0, 3e-9, 4e-9, 5e-9, 5e-9, 6e-9, 7e-9, 7e-9, 7e-9, 17e-9,
-                                        18e-9, 20e-9, 23e-9, 24e-9, 26e-9, 38e-9, 40e-9, 42e-9, 45e-9, 50e-9};
+static const double DelaySpread[20]  = {
+  0, 3e-9, 4e-9, 5e-9, 5e-9, 6e-9, 7e-9, 7e-9, 7e-9, 17e-9,
+  18e-9, 20e-9, 23e-9, 24e-9, 26e-9, 38e-9, 40e-9, 42e-9, 45e-9, 50e-9
+};
 
-static const double DopplerShift[20] = {0.73, 0.78, 0.68, 0.71, 0.79, 0.69, 0.66, 0.70, 0.69, 0.44,
-                                        0.48, 0.43, 0.42, 0.47,0.50, 0.53, 0.52, 0.49, 0.55, 0.52};
+static const double DopplerShift[20] = {
+  0.73, 0.78, 0.68, 0.71, 0.79, 0.69, 0.66, 0.70, 0.69, 0.44,
+  0.48, 0.43, 0.42, 0.47,0.50, 0.53, 0.52, 0.49, 0.55, 0.52
+};
 
 
 
 MmWaveBeamforming::MmWaveBeamforming (uint32_t enbAntenna, uint32_t ueAntenna)
   : m_pathNum (20),
-  m_enbAntennaSize (enbAntenna),
-  m_ueAntennaSize (ueAntenna),
-  m_smallScale (true),
-  m_fixSpeed (false),
-  m_ueSpeed (0.0),
-  m_update (true)
+    m_enbAntennaSize (enbAntenna),
+    m_ueAntennaSize (ueAntenna),
+    m_smallScale (true),
+    m_fixSpeed (false),
+    m_ueSpeed (0.0),
+    m_update (true)
 {
   if (g_smallScaleFadingInstance.empty ())
-    LoadFile ();
+    {
+      LoadFile ();
+    }
   m_uniformRV = CreateObject<UniformRandomVariable> ();
   Initialize ();
 }
@@ -149,7 +155,7 @@ MmWaveBeamforming::ParseComplex (std::string strCmplx)
   std::complex<double> out_complex;
 
   findj = strCmplx.find ("i");
-  if( findj == std::string::npos )
+  if ( findj == std::string::npos )
     {
       im = -1.00;
     }
@@ -157,30 +163,30 @@ MmWaveBeamforming::ParseComplex (std::string strCmplx)
     {
       strCmplx[findj] = '\0';
     }
-  if( ( strCmplx.find ("+",1) == std::string::npos && strCmplx.find ("-",1) == std::string::npos ) && im != -1 )
+  if ( ( strCmplx.find ("+",1) == std::string::npos && strCmplx.find ("-",1) == std::string::npos ) && im != -1 )
     {
       /* No real value */
       re = -1.00;
     }
   std::stringstream stream ( strCmplx );
-  if( re != -1.00 )
+  if ( re != -1.00 )
     {
-      stream>>re;
+      stream >> re;
     }
   else
     {
       re = 0;
     }
-  if( im != -1 )
+  if ( im != -1 )
     {
-      stream>>im;
+      stream >> im;
     }
   else
     {
       im = 0.00;
     }
   //  std::cout<<" ---  "<<re<<"  "<<im<<std::endl;
-  out_complex = std::complex<double>(re,im);
+  out_complex = std::complex<double> (re,im);
   return out_complex;
 }
 
@@ -207,20 +213,20 @@ MmWaveBeamforming::LoadSmallScaleFading ()
   NS_ASSERT_MSG (singlefile.good (), " SmallScaleFading file not found");
   std::string line;
   std::string token;
-  while( std::getline (singlefile, line) )  //Parse each line of the file
+  while ( std::getline (singlefile, line) )  //Parse each line of the file
     {
       doubleVector_t path;
       std::istringstream stream (line);
-      while( getline (stream,token,',') )  //Parse each comma separated string in a line
+      while ( getline (stream,token,',') )  //Parse each comma separated string in a line
         {
           double sigma = 0.00;
           std::stringstream stream ( token );
-          stream>>sigma;
+          stream >> sigma;
           path.push_back (sigma);
         }
       g_smallScaleFadingInstance.push_back (path);
     }
-  NS_LOG_INFO ("SmallScaleFading[instance:"<<g_smallScaleFadingInstance.size ()<<"][path:"<<g_smallScaleFadingInstance[0].size ()<<"]");
+  NS_LOG_INFO ("SmallScaleFading[instance:" << g_smallScaleFadingInstance.size () << "][path:" << g_smallScaleFadingInstance[0].size () << "]");
 }
 
 void
@@ -236,18 +242,18 @@ MmWaveBeamforming::LoadEnbAntenna ()
   NS_ASSERT_MSG (singlefile.good (), " TxAntenna file not found");
   std::string line;
   std::string token;
-  while( std::getline (singlefile, line) )  //Parse each line of the file
+  while ( std::getline (singlefile, line) )  //Parse each line of the file
     {
       complexVector_t txAntenna;
       std::istringstream stream (line);
-      while( getline (stream,token,',') )  //Parse each comma separated string in a line
+      while ( getline (stream,token,',') )  //Parse each comma separated string in a line
         {
           complexVar = ParseComplex (token);
           txAntenna.push_back (complexVar);
         }
       g_enbAntennaInstance.push_back (txAntenna);
     }
-  NS_LOG_INFO ("TxAntenna[instance:"<<g_enbAntennaInstance.size ()<<"][antennaSize:"<<g_enbAntennaInstance[0].size ()<<"]");
+  NS_LOG_INFO ("TxAntenna[instance:" << g_enbAntennaInstance.size () << "][antennaSize:" << g_enbAntennaInstance[0].size () << "]");
 }
 
 
@@ -265,18 +271,18 @@ MmWaveBeamforming::LoadUeAntenna ()
 
   std::string line;
   std::string token;
-  while( std::getline (singlefile, line) )  //Parse each line of the file
+  while ( std::getline (singlefile, line) )  //Parse each line of the file
     {
       complexVector_t rxAntenna;
       std::istringstream stream (line);
-      while( getline (stream,token,',') )          //Parse each comma separated string in a line
+      while ( getline (stream,token,',') )          //Parse each comma separated string in a line
         {
           complexVar = ParseComplex (token);
           rxAntenna.push_back (complexVar);
         }
       g_ueAntennaInstance.push_back (rxAntenna);
     }
-  NS_LOG_INFO ("RxAntenna[instance:"<<g_ueAntennaInstance.size ()<<"][antennaSize:"<<g_ueAntennaInstance[0].size ()<<"]");
+  NS_LOG_INFO ("RxAntenna[instance:" << g_ueAntennaInstance.size () << "][antennaSize:" << g_ueAntennaInstance[0].size () << "]");
 }
 
 void
@@ -295,24 +301,24 @@ MmWaveBeamforming::LoadEnbSpatialSignature ()
 
   NS_ASSERT_MSG (singlefile.good (), "TxSpatialSigniture file not found");
 
-  while( std::getline (singlefile, line) )  //Parse each line of the file
+  while ( std::getline (singlefile, line) )  //Parse each line of the file
     {
       complexVector_t txSpatialElement;
       std::istringstream stream (line);
-      while( getline (stream,token,',') )          //Parse each comma separated string in a line
+      while ( getline (stream,token,',') )          //Parse each comma separated string in a line
         {
           complexVar = ParseComplex (token);
           txSpatialElement.push_back (complexVar);
         }
       txSpatialMatrix.push_back (txSpatialElement);
-      if(counter % m_pathNum ==0 )
+      if (counter % m_pathNum == 0 )
         {
           g_enbSpatialInstance.push_back (txSpatialMatrix);
           txSpatialMatrix.clear ();
         }
       counter++;
     }
-  NS_LOG_INFO ("TxspatialSigniture[instance:"<<g_enbSpatialInstance.size ()<<"][path:"<<g_enbSpatialInstance[0].size ()<<"][antennaSize:"<<g_enbSpatialInstance[0][0].size ()<<"]");
+  NS_LOG_INFO ("TxspatialSigniture[instance:" << g_enbSpatialInstance.size () << "][path:" << g_enbSpatialInstance[0].size () << "][antennaSize:" << g_enbSpatialInstance[0][0].size () << "]");
 }
 
 void
@@ -348,7 +354,7 @@ MmWaveBeamforming::LoadUeSpatialSignature ()
         }
       counter++;
     }
-  NS_LOG_INFO ("RxspatialSigniture[instance:"<<g_ueSpatialInstance.size ()<<"][path:"<<g_ueSpatialInstance[0].size ()<<"][antennaSize:"<<g_ueSpatialInstance[0][0].size ()<<"]");
+  NS_LOG_INFO ("RxspatialSigniture[instance:" << g_ueSpatialInstance.size () << "][path:" << g_ueSpatialInstance[0].size () << "][antennaSize:" << g_ueSpatialInstance[0][0].size () << "]");
 }
 
 
@@ -361,7 +367,7 @@ MmWaveBeamforming::Initial (NetDeviceContainer ueDevices, NetDeviceContainer enb
     {
       for (NetDeviceContainer::Iterator j = enbDevices.Begin (); j != enbDevices.End (); j++)
         {
-          if(m_update)
+          if (m_update)
             {
               SetChannelMatrix (*i,*j);                   // this call is independent on the subclass of NetDevice
               SetBeamformingVector (*i,*j);                  // possible beamforming vector for all the UE eNB pairs
@@ -407,7 +413,7 @@ void
 MmWaveBeamforming::SetChannelMatrix (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice)
 {
   key_t key = std::make_pair (ueDevice,enbDevice);
-  int randomInstance = m_uniformRV->GetValue (0, g_numInstance-1);
+  int randomInstance = m_uniformRV->GetValue (0, g_numInstance - 1);
   NS_LOG_UNCOND ("************* UPDATING CHANNEL MATRIX (instance " << randomInstance << ") *************");
 
   Ptr<BeamformingParams> bfParams = Create<BeamformingParams> ();
@@ -466,7 +472,7 @@ MmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
       for (unsigned txAntennaIndex = 0; txAntennaIndex < m_enbAntennaSize; txAntennaIndex++)
         {
           txsum = txsum +
-            bfParams->m_enbW.at (txAntennaIndex)*
+            bfParams->m_enbW.at (txAntennaIndex) *
             bfParams->m_channelMatrix.m_enbSpatialMatrix.at (pathIndex).at (txAntennaIndex);
         }
 
@@ -474,11 +480,11 @@ MmWaveBeamforming::GetLongTermFading (Ptr<BeamformingParams> bfParams) const
       for (unsigned rxAntennaIndex = 0; rxAntennaIndex < m_ueAntennaSize; rxAntennaIndex++)
         {
           rxsum = rxsum +
-            bfParams->m_ueW.at (rxAntennaIndex)*
+            bfParams->m_ueW.at (rxAntennaIndex) *
             bfParams->m_channelMatrix.m_ueSpatialMatrix.at (pathIndex).at (rxAntennaIndex);
         }
-      NS_LOG_INFO ("rxsum="<<rxsum.real ()<<" "<<rxsum.imag ());
-      longTerm->push_back (txsum*rxsum);
+      NS_LOG_INFO ("rxsum=" << rxsum.real () << " " << rxsum.imag ());
+      longTerm->push_back (txsum * rxsum);
     }
   return longTerm;
 }
@@ -488,7 +494,7 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
 {
   NS_LOG_FUNCTION (this);
   Ptr<SpectrumValue> tempPsd = Copy<SpectrumValue> (txPsd);
-  if(m_fixSpeed)
+  if (m_fixSpeed)
     {
       speed = m_ueSpeed;
     }
@@ -508,11 +514,11 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
       std::complex<double> subsbandGain (0.0,0.0);
       if ((*vit) != 0.00)
         {
-          double fsb = m_phyMacConfig->GetCenterFrequency () - GetSystemBandwidth ()/2 + m_phyMacConfig->GetChunkWidth ()*iSubband;
+          double fsb = m_phyMacConfig->GetCenterFrequency () - GetSystemBandwidth () / 2 + m_phyMacConfig->GetChunkWidth () * iSubband;
           for (unsigned int pathIndex = 0; pathIndex < m_pathNum; pathIndex++)
             {
               double sigma = bfParams->m_channelMatrix.m_powerFraction.at (pathIndex);
-              double temp_delay = -2*M_PI*fsb*DelaySpread[pathIndex];
+              double temp_delay = -2 * M_PI * fsb * DelaySpread[pathIndex];
               std::complex<double> delay (cos (temp_delay), sin (temp_delay));
               std::complex<double> doppler;
               if (noSpeed)
@@ -521,16 +527,16 @@ MmWaveBeamforming::GetChannelGainVector (Ptr<const SpectrumValue> txPsd, Ptr<Bea
                 }
               else
                 {
-                  double f_d = speed*m_phyMacConfig->GetCenterFrequency ()/3e8;
-                  double temp_Doppler = 2*M_PI*t*f_d*DopplerShift[pathIndex];
+                  double f_d = speed * m_phyMacConfig->GetCenterFrequency () / 3e8;
+                  double temp_Doppler = 2 * M_PI * t * f_d * DopplerShift[pathIndex];
 
                   doppler = std::complex<double> (cos (temp_Doppler), sin (temp_Doppler));
                 }
 
-              std::complex<double> smallScaleFading = m_smallScale ? sqrt (2)*sigma*doppler*delay : sqrt (2)*sigma;
-              subsbandGain = subsbandGain + (*bfParams->m_beam).at (pathIndex)*smallScaleFading;
+              std::complex<double> smallScaleFading = m_smallScale ? sqrt (2) * sigma * doppler * delay : sqrt (2) * sigma;
+              subsbandGain = subsbandGain + (*bfParams->m_beam).at (pathIndex) * smallScaleFading;
             }
-          *vit = (*vit)*(norm (subsbandGain));
+          *vit = (*vit) * (norm (subsbandGain));
         }
       vit++;
       iSubband++;
@@ -581,7 +587,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
   else
     {
       // enb to enb or ue to ue transmission, set to 0. Do no consider such scenarios.
-      *rxPsd = (*rxPsd)*0;
+      *rxPsd = (*rxPsd) * 0;
       return rxPsd;
     }
 
@@ -596,7 +602,7 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
       return rxPsd;          //zml do not apply fading to omi
 
       complexVector_t vec;
-      for (unsigned int i=0; i<m_pathNum; i++)
+      for (unsigned int i = 0; i < m_pathNum; i++)
         {
           vec.push_back (std::complex<double> (1,0));
         }
@@ -613,27 +619,27 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
           bfParams->m_enbW = enbW;
           bfParams->m_beam = GetLongTermFading (bfParams);
         }
-      else if(ueW.empty ())
+      else if (ueW.empty ())
         {
           NS_LOG_ERROR ("UE beamforming vector is not configured, make sure this UE is registered to ENB");
-          *rxPsd = (*rxPsd)*0;
+          *rxPsd = (*rxPsd) * 0;
           return rxPsd;
         }
-      else if(enbW.empty ())
+      else if (enbW.empty ())
         {
           NS_LOG_ERROR ("ENB beamforming vector is not configured, make sure UE is registered to this ENB");
-          *rxPsd = (*rxPsd)*0;
+          *rxPsd = (*rxPsd) * 0;
           return rxPsd;
         }
     }
 
   Vector rxSpeed = b->GetVelocity ();
   Vector txSpeed = a->GetVelocity ();
-  double relativeSpeed = (rxSpeed.x-txSpeed.x)
-    +(rxSpeed.y-txSpeed.y)+(rxSpeed.z-txSpeed.z);
+  double relativeSpeed = (rxSpeed.x - txSpeed.x)
+    + (rxSpeed.y - txSpeed.y) + (rxSpeed.z - txSpeed.z);
 
   Ptr<SpectrumValue> bfPsd = GetChannelGainVector (rxPsd, bfParams,  relativeSpeed);
-  SpectrumValue bfGain = (*bfPsd)/(*rxPsd);
+  SpectrumValue bfGain = (*bfPsd) / (*rxPsd);
   int nbands = bfGain.GetSpectrumModel ()->GetNumBands ();
 //	NS_LOG_UNCOND (*bfPsd);
 //	NS_LOG_UNCOND (Sum((*bfPsd)/(*rxPsd)));
@@ -670,11 +676,11 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
   if (downlink)
     {
-      NS_LOG_INFO ("****** DL BF gain (RNTI " << uePhy->GetRnti () << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum (*rxPsd)/nbands);         // print avg bf gain
+      NS_LOG_INFO ("****** DL BF gain (RNTI " << uePhy->GetRnti () << ") == " << Sum (bfGain) / nbands << " RX PSD " << Sum (*rxPsd) / nbands);         // print avg bf gain
     }
   else
     {
-      NS_LOG_INFO ("****** UL BF gain (RNTI " << uePhy->GetRnti () << ") == " << Sum (bfGain)/nbands << " RX PSD " << Sum (*rxPsd)/nbands);
+      NS_LOG_INFO ("****** UL BF gain (RNTI " << uePhy->GetRnti () << ") == " << Sum (bfGain) / nbands << " RX PSD " << Sum (*rxPsd) / nbands);
     }
   return bfPsd;
 }
@@ -701,17 +707,20 @@ MmWaveBeamforming::GetUeEnbAntennaPair (Ptr<NetDevice> ueDevice, Ptr<NetDevice> 
   // DynamicCast<MmWaveUeNetDevice> (*i);
   Ptr<MmWaveUePhy> uePhy;
   Ptr<MmWaveEnbPhy> enbPhy = EnbDev->GetPhy ();
-  if (UeDev != 0) {       // It actually is a MmWaveUeNetDevice
+  if (UeDev != 0)         // It actually is a MmWaveUeNetDevice
+    {
       uePhy = UeDev->GetPhy ();
-    } else {     // It is a McUeNetDevice
+    }
+  else           // It is a McUeNetDevice
+    {
       Ptr<McUeNetDevice> mcUeDev = ueDevice->GetObject<McUeNetDevice> ();
       uePhy = mcUeDev->GetMmWavePhy ();
     }
 
   Ptr<AntennaArrayModel> ueAntennaArray = DynamicCast<AntennaArrayModel> (
-    uePhy->GetDlSpectrumPhy ()->GetRxAntenna ());
+      uePhy->GetDlSpectrumPhy ()->GetRxAntenna ());
   Ptr<AntennaArrayModel> enbAntennaArray = DynamicCast<AntennaArrayModel> (
-    enbPhy->GetDlSpectrumPhy ()->GetRxAntenna ());
+      enbPhy->GetDlSpectrumPhy ()->GetRxAntenna ());
 
   return antennaPair (ueAntennaArray, enbAntennaArray);
 }

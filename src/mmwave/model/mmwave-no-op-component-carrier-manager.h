@@ -58,7 +58,6 @@ class MmWaveNoOpComponentCarrierManager : public LteEnbComponentCarrierManager
   friend class MemberLteCcmMacSapUser<MmWaveNoOpComponentCarrierManager>;
 
 public:
-
   MmWaveNoOpComponentCarrierManager ();
   virtual ~MmWaveNoOpComponentCarrierManager ();
   /**
@@ -158,8 +157,7 @@ protected:
   virtual void DoNotifyPrbOccupancy (double prbOccupancy, uint8_t componentCarrierId);
 
 protected:
-
-  std::map <uint8_t, double > m_ccPrbOccupancy;//!< The physical resource block occupancy per carrier.
+  std::map <uint8_t, double > m_ccPrbOccupancy; //!< The physical resource block occupancy per carrier.
 
 }; // end of class MmWaveNoOpComponentCarrierManager
 
@@ -170,7 +168,6 @@ protected:
 class MmWaveRrComponentCarrierManager : public MmWaveNoOpComponentCarrierManager
 {
 public:
-
   MmWaveRrComponentCarrierManager ();
   virtual ~MmWaveRrComponentCarrierManager ();
   /**
@@ -180,7 +177,6 @@ public:
   static TypeId GetTypeId ();
 
 protected:
-
   // Inherited methods
   virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
   virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
@@ -194,7 +190,6 @@ protected:
 class MmWaveBaRrComponentCarrierManager : public MmWaveNoOpComponentCarrierManager
 {
 public:
-
   MmWaveBaRrComponentCarrierManager ();
   virtual ~MmWaveBaRrComponentCarrierManager ();
   /**
@@ -204,14 +199,13 @@ public:
   static TypeId GetTypeId ();
 
 protected:
-
   // Inherited methods
   virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
   virtual void DoUlReceiveMacCe (MacCeListElement_s bsr, uint8_t componentCarrierId);
 
 }; // end of class MmWaveBaRrComponentCarrierManager
 
-} // end of namespace mmwave 
+} // end of namespace mmwave
 
 } // end of namespace ns3
 

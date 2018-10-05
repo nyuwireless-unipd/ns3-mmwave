@@ -116,7 +116,7 @@ struct MmWaveSpectrumSignalParametersDlCtrlFrame : public SpectrumSignalParamete
   uint16_t cellId;
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 }  // namespace ns3
 

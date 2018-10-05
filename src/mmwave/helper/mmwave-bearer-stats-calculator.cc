@@ -47,15 +47,15 @@ NS_OBJECT_ENSURE_REGISTERED ( MmWaveBearerStatsCalculator);
 
 MmWaveBearerStatsCalculator::MmWaveBearerStatsCalculator ()
   : m_firstWrite (true),
-  m_pendingOutput (false),
-  m_protocolType ("RLC")
+    m_pendingOutput (false),
+    m_protocolType ("RLC")
 {
   NS_LOG_FUNCTION (this);
 }
 
 MmWaveBearerStatsCalculator::MmWaveBearerStatsCalculator (std::string protocolType)
   : m_firstWrite (true),
-  m_pendingOutput (false)
+    m_pendingOutput (false)
 {
   NS_LOG_FUNCTION (this);
   m_protocolType = protocolType;
@@ -162,7 +162,7 @@ MmWaveBearerStatsCalculator::UlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   //    m_ulOutFile << "P ";
   // }
 
-  m_ulOutFile << "Tx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
+  m_ulOutFile << "Tx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << cellId << " "
               << rnti << " " << (uint32_t) lcid << " " << packetSize << " " << std::endl;
 
   /*ImsiLcidPair_t p (imsi, lcid);
@@ -195,7 +195,7 @@ MmWaveBearerStatsCalculator::DlTxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   //    m_dlOutFile << "P ";
   // }
 
-  m_dlOutFile << "Tx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
+  m_dlOutFile << "Tx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << cellId << " "
               << rnti << " " << (uint32_t) lcid << " " << packetSize << " " << std::endl;
 
 
@@ -230,7 +230,7 @@ MmWaveBearerStatsCalculator::UlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   //    m_ulOutFile << "P ";
   // }
 
-  m_ulOutFile << "Rx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
+  m_ulOutFile << "Rx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << cellId << " "
               << rnti << " " << (uint32_t) lcid << " " << packetSize << " " << delay << std::endl;
 
   /*ImsiLcidPair_t p (imsi, lcid);
@@ -272,7 +272,7 @@ MmWaveBearerStatsCalculator::DlRxPdu (uint16_t cellId, uint64_t imsi, uint16_t r
   //    m_dlOutFile << "P ";
   // }
 
-  m_dlOutFile << "Rx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " "<< cellId << " "
+  m_dlOutFile << "Rx " << Simulator::Now ().GetNanoSeconds () / 1.0e9 << " " << cellId << " "
               << rnti << " " << (uint32_t) lcid << " " << packetSize << " " << delay << std::endl;
 
   /* ImsiLcidPair_t p (imsi, lcid);
@@ -733,6 +733,6 @@ MmWaveBearerStatsCalculator::GetDlPdcpOutputFilename (void)
   return m_dlPdcpOutputFilename;
 }
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3

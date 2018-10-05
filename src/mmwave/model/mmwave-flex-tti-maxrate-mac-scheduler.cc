@@ -150,11 +150,11 @@ const unsigned MmWaveFlexTtiMaxRateMacScheduler::m_rlcHdrSize = 3;
 
 MmWaveFlexTtiMaxRateMacScheduler::MmWaveFlexTtiMaxRateMacScheduler ()
   : m_nextRnti (0),
-  m_subframeNo (0),
-  m_tbUid (0),
-  m_macSchedSapUser (0),
-  m_macCschedSapUser (0),
-  m_timeWindow (99.0)
+    m_subframeNo (0),
+    m_tbUid (0),
+    m_macSchedSapUser (0),
+    m_macCschedSapUser (0),
+    m_timeWindow (99.0)
 {
   NS_LOG_FUNCTION (this);
   m_macSchedSapProvider = new MmWaveFlexTtiMaxRateMacSchedSapProvider (this);
@@ -300,7 +300,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedDlRlcBufferReq (const struct MmWaveMacS
   else
     {
       uint8_t lcid = params.m_logicalChannelIdentity;
-      if((unsigned)lcid >= itUe->second.m_flowStatsDl.size ())
+      if ((unsigned)lcid >= itUe->second.m_flowStatsDl.size ())
         {
           NS_LOG_ERROR ("LC not registered");
         }
@@ -378,7 +378,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMa
           uint32_t buffer = 0;
           for (uint8_t lcg = 1; lcg <= 3; ++lcg)
             {
-              uint8_t bsrId = params.m_macCeList.at (i).m_macCeValue.m_bufferStatus.at (lcg-1);
+              uint8_t bsrId = params.m_macCeList.at (i).m_macCeValue.m_bufferStatus.at (lcg - 1);
               uint32_t bufSize = BsrId2BufferSize (bsrId);
               if (bufSize > 0)
                 {
@@ -606,7 +606,7 @@ MmWaveFlexTtiMaxRateMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
   if (m_harqOn == false)
     {
       uint8_t tbUid = m_tbUid;
-      m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+      m_tbUid = (m_tbUid + 1) % m_phyMacConfig->GetNumHarqProcess ();
       return tbUid;
     }
 
@@ -625,7 +625,7 @@ MmWaveFlexTtiMaxRateMacScheduler::UpdateDlHarqProcessId (uint16_t rnti)
   uint8_t harqId = m_phyMacConfig->GetNumHarqProcess ();
   for (unsigned i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
     {
-      if(itStat->second[i] == 0)
+      if (itStat->second[i] == 0)
         {
           itStat->second[i] = 1;
           harqId = i;
@@ -661,7 +661,7 @@ MmWaveFlexTtiMaxRateMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
   if (m_harqOn == false)
     {
       uint8_t tbUid = m_tbUid;
-      m_tbUid = (m_tbUid+1) % m_phyMacConfig->GetNumHarqProcess ();
+      m_tbUid = (m_tbUid + 1) % m_phyMacConfig->GetNumHarqProcess ();
       return tbUid;
     }
 
@@ -680,7 +680,7 @@ MmWaveFlexTtiMaxRateMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
   uint8_t harqId = m_phyMacConfig->GetNumHarqProcess ();
   for (unsigned i = 0; i < m_phyMacConfig->GetNumHarqProcess (); i++)
     {
-      if(itStat->second[i] == 0)
+      if (itStat->second[i] == 0)
         {
           itStat->second[i] = 1;
           harqId = i;
@@ -718,7 +718,7 @@ unsigned MmWaveFlexTtiMaxRateMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, un
   tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);       // start with max value
   while ((unsigned)tbSize > bufSize)
     {
-      diff = abs (numSymHigh-numSymLow)/2;
+      diff = abs (numSymHigh - numSymLow) / 2;
       if (diff == 0)
         {
           tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
@@ -731,7 +731,7 @@ unsigned MmWaveFlexTtiMaxRateMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, un
         }
       while ((unsigned)tbSize < bufSize)
         {
-          diff = abs (numSymHigh-numSymLow)/2;
+          diff = abs (numSymHigh - numSymLow) / 2;
           if (diff == 0)
             {
               tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
@@ -771,8 +771,8 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
       ulSfn.m_frameNum++;
     }
   ulSfn.m_sfNum = (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
-  NS_LOG_DEBUG ("Scheduling DL frame "<< (unsigned)frameNum << " subframe " << (unsigned)sfNum
-                                      << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
+  NS_LOG_DEBUG ("Scheduling DL frame " << (unsigned)frameNum << " subframe " << (unsigned)sfNum
+                                       << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
   //ret.m_ulSfAllocInfo = SfAllocInfo (ulSfn);
 
   // add slot for DL control
@@ -848,7 +848,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
             {
               NS_FATAL_ERROR ("Unable to find RlcPdcList in HARQ buffer for RNTI " << m_dlHarqInfoList.at (i).m_rnti);
             }
-          if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK || itStat->second.at (harqId) == 0)
+          if (m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK || itStat->second.at (harqId) == 0)
             {             // acknowledgment or process timeout, reset process
               //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-ACK received");
               itStat->second.at (harqId) = 0;                      // release process ID
@@ -858,7 +858,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
                 }
               continue;
             }
-          else if(m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::NACK)
+          else if (m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::NACK)
             {
               std::map <uint16_t, DlHarqProcessesDciInfoList_t>::iterator itHarq = m_dlHarqProcessesDciInfoMap.find (rnti);
               if (itHarq == m_dlHarqProcessesDciInfoMap.end ())
@@ -869,7 +869,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
               //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
               NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
               //NS_ASSERT(itStat->second.at (harqId) > 0);
-              NS_ASSERT (itStat->second.at (harqId)-1 == dciInfoReTx.m_rv);
+              NS_ASSERT (itStat->second.at (harqId) - 1 == dciInfoReTx.m_rv);
               if (dciInfoReTx.m_rv == 3)                   // maximum number of retx reached -> drop process
                 {
                   NS_LOG_INFO ("Max number of retransmissions reached -> drop process");
@@ -893,7 +893,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
                   itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
                   SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
                   slotInfo.m_dci = dciInfoReTx;
-                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
                                 " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
                   std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
@@ -963,7 +963,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
               //NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
               NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
               NS_ASSERT (itStat->second.at (harqId) > 0);
-              NS_ASSERT (itStat->second.at (harqId)-1 == dciInfoReTx.m_rv);
+              NS_ASSERT (itStat->second.at (harqId) - 1 == dciInfoReTx.m_rv);
               if (dciInfoReTx.m_rv == 3)
                 {
                   NS_LOG_INFO ("Max number of retransmissions reached (UL)-> drop process");
@@ -983,7 +983,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
                   itHarq->second.at (harqId) = dciInfoReTx;
                   SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, rnti);
                   slotInfo.m_dci = dciInfoReTx;
-                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart+dciInfoReTx.m_numSym-1) <<
+                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum <<
                                 " RETX");
                   ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
@@ -1013,7 +1013,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
       // add slot for UL control
       SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
       ulCtrlSlot.m_dci.m_numSym = 1;
-      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe ()-1;
+      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
       //ret.m_ulSfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       //m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
@@ -1032,9 +1032,9 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
 
   // compute achievable rates in current subframe
   std::vector< std::map<uint16_t,UeSchedInfo*> > ueMcsList;       // keep track of UEs at each MCS
-  for (unsigned imcs = 0; imcs <=29; imcs++)
+  for (unsigned imcs = 0; imcs <= 29; imcs++)
     {
-      ueMcsList.push_back ( std::map<uint16_t,UeSchedInfo*>() );
+      ueMcsList.push_back ( std::map<uint16_t,UeSchedInfo*> () );
     }
 
   for (std::map<uint16_t, UeSchedInfo>::iterator ueIt = m_ueSchedInfoMap.begin (); ueIt != m_ueSchedInfoMap.end (); ueIt++)
@@ -1214,7 +1214,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
       // add slot for UL control
       SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
       ulCtrlSlot.m_dci.m_numSym = 1;
-      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe ()-1;
+      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
       //ret.m_ulSfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
       //m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
@@ -1272,7 +1272,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
           SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::DL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, ueInfo->m_rnti);
           slotInfo.m_dci = dci;
-          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
+          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
 
           if (m_harqOn == true)
@@ -1285,7 +1285,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
               (*itDciInfo).second.at (dci.m_harqProcess) = dci;
               // refresh timer
               std::map <uint16_t, DlHarqProcessesTimer_t>::iterator itHarqTimer =  m_dlHarqProcessesTimer.find (dci.m_rnti);
-              if (itHarqTimer== m_dlHarqProcessesTimer.end ())
+              if (itHarqTimer == m_dlHarqProcessesTimer.end ())
                 {
                   NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)dci.m_rnti);
                 }
@@ -1331,7 +1331,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
                                                       }
                                               }*/
               // update RLC buffer info with expected queue size after scheduling
-              UpdateDlRlcBufferInfo (ueInfo->m_rnti, ueInfo->m_rlcPduInfo[i].m_lcid, ueInfo->m_rlcPduInfo[i].m_size-m_subHdrSize);
+              UpdateDlRlcBufferInfo (ueInfo->m_rnti, ueInfo->m_rlcPduInfo[i].m_lcid, ueInfo->m_rlcPduInfo[i].m_size - m_subHdrSize);
               //schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (itRlcInfo->second[i]);
               slotInfo.m_rlcPduInfo.push_back (ueInfo->m_rlcPduInfo[i]);
               if (m_harqOn == true)
@@ -1374,12 +1374,12 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
                       slotInfo.m_slotIdx = ret.m_sfAllocInfo.m_slotAllocInfo [islot].m_slotIdx;
                       slotInfo.m_dci.m_symStart = ret.m_sfAllocInfo.m_slotAllocInfo [islot].m_dci.m_symStart;
                       ret.m_sfAllocInfo.m_slotAllocInfo.insert (itSlot, slotInfo);
-                      for (unsigned jslot = islot+1; jslot < ret.m_sfAllocInfo.m_slotAllocInfo.size (); jslot++)
+                      for (unsigned jslot = islot + 1; jslot < ret.m_sfAllocInfo.m_slotAllocInfo.size (); jslot++)
                         {
                           ret.m_sfAllocInfo.m_slotAllocInfo[jslot].m_slotIdx++;                                 // increase indices of UL slots
                           ret.m_sfAllocInfo.m_slotAllocInfo[jslot].m_dci.m_symStart =
-                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot-1].m_dci.m_symStart +
-                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot-1].m_dci.m_numSym;
+                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot - 1].m_dci.m_symStart +
+                            ret.m_sfAllocInfo.m_slotAllocInfo[jslot - 1].m_dci.m_numSym;
                         }
                       reordered = true;
                       break;
@@ -1423,7 +1423,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
           SlotAllocInfo slotInfo (slotIdx++, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL_DATA, SlotAllocInfo::DIGITAL, ueInfo->m_rnti);
           slotInfo.m_dci = dci;
-          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart+dci.m_numSym-1) <<
+          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
           //UpdateUlRlcBufferInfo (ueInfo->m_rnti, dci.m_tbSize - m_subHdrSize);
           ret.m_sfAllocInfo.m_slotAllocInfo.push_back (slotInfo);
@@ -1453,7 +1453,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
               NS_ASSERT (itStat->second[dci.m_harqProcess] > 0);
               // refresh timer
               std::map <uint16_t, UlHarqProcessesTimer_t>::iterator itHarqTimer =  m_ulHarqProcessesTimer.find (dci.m_rnti);
-              if (itHarqTimer== m_ulHarqProcessesTimer.end ())
+              if (itHarqTimer == m_ulHarqProcessesTimer.end ())
                 {
                   NS_FATAL_ERROR ("Unable to find HARQ timer for RNTI " << (uint16_t)dci.m_rnti);
                 }
@@ -1485,7 +1485,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSched
   // add slot for UL control
   SlotAllocInfo ulCtrlSlot (0xFF, SlotAllocInfo::UL_slotAllocInfo, SlotAllocInfo::CTRL, SlotAllocInfo::DIGITAL, 0);
   ulCtrlSlot.m_dci.m_numSym = 1;
-  ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe ()-1;
+  ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
   //ret.m_ulSfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
   ret.m_sfAllocInfo.m_slotAllocInfo.push_back (ulCtrlSlot);
 
@@ -1781,7 +1781,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoCschedLcReleaseReq (const struct MmWaveMacCs
   for (uint16_t i = 0; i < params.m_logicalChannelIdentity.size (); i++)
     {
       std::list<MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters>::iterator it = m_rlcBufferReq.begin ();
-      while (it!=m_rlcBufferReq.end ())
+      while (it != m_rlcBufferReq.end ())
         {
           if (((*it).m_rnti == params.m_rnti)&&((*it).m_logicalChannelIdentity == params.m_logicalChannelIdentity.at (i)))
             {

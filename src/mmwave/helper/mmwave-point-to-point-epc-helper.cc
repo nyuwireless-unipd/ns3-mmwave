@@ -65,8 +65,9 @@ NS_OBJECT_ENSURE_REGISTERED (MmWavePointToPointEpcHelper);
 
 
 MmWavePointToPointEpcHelper::MmWavePointToPointEpcHelper ()
-  : m_gtpuUdpPort (2152),  // fixed by the standard
-  m_s1apUdpPort (36412)
+  : m_gtpuUdpPort (2152),
+    // fixed by the standard
+    m_s1apUdpPort (36412)
 {
   NS_LOG_FUNCTION (this);
 
@@ -355,7 +356,7 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   Ptr<LteEnbNetDevice> enb1LteDev = enb1->GetDevice (0)->GetObject<LteEnbNetDevice> ();
   // we may have a LTE or a MmWave eNB
   uint16_t enb1CellId = 0;
-  if(enb1MmWaveDev != 0)
+  if (enb1MmWaveDev != 0)
     {
       enb1CellId = enb1MmWaveDev->GetCellId ();
       NS_LOG_INFO ("MmWaveEnbNetDevice #1 = " << enb1MmWaveDev << " - CellId = " << enb1CellId);
@@ -371,7 +372,7 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   Ptr<LteEnbNetDevice> enb2LteDev = enb2->GetDevice (0)->GetObject<LteEnbNetDevice> ();
   // we may have a LTE or a MmWave eNB
   uint16_t enb2CellId = 0;
-  if(enb2MmWaveDev != 0)
+  if (enb2MmWaveDev != 0)
     {
       enb2CellId = enb2MmWaveDev->GetCellId ();
       NS_LOG_INFO ("MmWaveEnbNetDevice #2 = " << enb2MmWaveDev << " - CellId = " << enb2CellId);
@@ -387,11 +388,11 @@ MmWavePointToPointEpcHelper::AddX2Interface (Ptr<Node> enb1, Ptr<Node> enb2)
   enb1X2->AddX2Interface (enb1CellId, enb1X2Address, enb2CellId, enb2X2Address);
   enb2X2->AddX2Interface (enb2CellId, enb2X2Address, enb1CellId, enb1X2Address);
 
-  if(enb1MmWaveDev != 0)
+  if (enb1MmWaveDev != 0)
     {
       enb1MmWaveDev->GetRrc ()->AddX2Neighbour (enb2CellId);
     }
-  else if(enb1LteDev != 0)
+  else if (enb1LteDev != 0)
     {
       enb1LteDev->GetRrc ()->AddX2Neighbour (enb2CellId);
     }
@@ -430,7 +431,8 @@ MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_
   NS_ASSERT (interface >= 0);
   NS_ASSERT (ueIpv4->GetNAddresses (interface) == 1);
   Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
-  NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
+  NS_LOG_LOGIC (" UE IP address: " << ueAddr);
+  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
 
   uint8_t bearerId = m_mmeApp->AddBearer (imsi, tft, bearer);
   Ptr<mmwave::MmWaveUeNetDevice> ueLteDevice = ueDevice->GetObject<mmwave::MmWaveUeNetDevice> ();
@@ -456,7 +458,8 @@ MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, Ptr<Epc
   NS_ASSERT (interface >= 0);
   NS_ASSERT (ueIpv4->GetNAddresses (interface) == 1);
   Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
-  NS_LOG_LOGIC (" UE IP address: " << ueAddr);  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
+  NS_LOG_LOGIC (" UE IP address: " << ueAddr);
+  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
 
   uint8_t bearerId = m_mmeApp->AddBearer (imsi, tft, bearer);
   ueNas->ActivateEpsBearer (bearer, tft);

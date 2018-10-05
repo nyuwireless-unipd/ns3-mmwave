@@ -63,7 +63,6 @@ public:
   friend class MmWaveFlexTtiMaxWeightMacCschedSapProvider;
 
 private:
-
   struct UeSchedInfo;
 
   struct FlowStats
@@ -76,11 +75,19 @@ private:
     {
     }*/
 
-    FlowStats (bool uplink, UeSchedInfo* ueSchedInfo, uint8_t lcid) :
-      m_isUplink (uplink), m_ueSchedInfo (ueSchedInfo),
-      m_lcid (lcid), m_arrivalRate (0.0), m_grantedRate (0.0),
-      m_qci (0), m_txQueueHolDelay (0), m_reTxQueueHolDelay (0), m_probErr (0.0),
-      m_deadlineUs (0), m_totalBufSize (0), m_totalSchedSize (0)
+    FlowStats (bool uplink, UeSchedInfo* ueSchedInfo, uint8_t lcid)
+      : m_isUplink (uplink),
+        m_ueSchedInfo (ueSchedInfo),
+        m_lcid (lcid),
+        m_arrivalRate (0.0),
+        m_grantedRate (0.0),
+        m_qci (0),
+        m_txQueueHolDelay (0),
+        m_reTxQueueHolDelay (0),
+        m_probErr (0.0),
+        m_deadlineUs (0),
+        m_totalBufSize (0),
+        m_totalSchedSize (0)
     {
       NS_ASSERT (ueSchedInfo != 0);
     }
@@ -112,21 +119,37 @@ private:
 
   struct UeSchedInfo
   {
-    UeSchedInfo () :
-      m_rnti (0), m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
-      m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
-      m_dlSymbols (0), m_ulSymbols (0),
-      m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
-      m_dlTbSize (0), m_ulTbSize (0)
+    UeSchedInfo ()
+      : m_rnti (0),
+        m_dlMcs (0),
+        m_ulMcs (0),
+        m_maxDlBufSize (0),
+        m_maxUlBufSize (0),
+        m_maxDlSymbols (0),
+        m_maxUlSymbols (0),
+        m_dlSymbols (0),
+        m_ulSymbols (0),
+        m_dlSymbolsRetx (0),
+        m_ulSymbolsRetx (0),
+        m_dlTbSize (0),
+        m_ulTbSize (0)
     {
     }
 
-    UeSchedInfo (uint16_t rnti) :
-      m_rnti (rnti), m_dlMcs (0), m_ulMcs (0), m_maxDlBufSize (0),
-      m_maxUlBufSize (0), m_maxDlSymbols (0), m_maxUlSymbols (0),
-      m_dlSymbols (0), m_ulSymbols (0),
-      m_dlSymbolsRetx (0), m_ulSymbolsRetx (0),
-      m_dlTbSize (0), m_ulTbSize (0)
+    UeSchedInfo (uint16_t rnti)
+      : m_rnti (rnti),
+        m_dlMcs (0),
+        m_ulMcs (0),
+        m_maxDlBufSize (0),
+        m_maxUlBufSize (0),
+        m_maxDlSymbols (0),
+        m_maxUlSymbols (0),
+        m_dlSymbols (0),
+        m_ulSymbols (0),
+        m_dlSymbolsRetx (0),
+        m_ulSymbolsRetx (0),
+        m_dlTbSize (0),
+        m_ulTbSize (0)
     {
     }
 
@@ -193,8 +216,8 @@ private:
 
   static bool CompareFlowWeightsDeliveryDebt (FlowStats* lflow, FlowStats* rflow)
   {
-    int lflowDebt = (lflow->m_arrivalRate/(1-lflow->m_probErr)) - lflow->m_grantedRate;
-    int rflowDebt = (rflow->m_arrivalRate/(1-rflow->m_probErr)) - rflow->m_grantedRate;
+    int lflowDebt = (lflow->m_arrivalRate / (1 - lflow->m_probErr)) - lflow->m_grantedRate;
+    int rflowDebt = (rflow->m_arrivalRate / (1 - rflow->m_probErr)) - rflow->m_grantedRate;
     return (lflowDebt > rflowDebt);
   }
 
@@ -304,8 +327,10 @@ private:
    */
   struct UlCqiMapElem
   {
-    UlCqiMapElem (std::vector<double> ulCqi, uint8_t nSym, uint32_t tbs) :
-      m_ueUlCqi (ulCqi), m_numSym (nSym), m_tbSize (tbs)
+    UlCqiMapElem (std::vector<double> ulCqi, uint8_t nSym, uint32_t tbs)
+      : m_ueUlCqi (ulCqi),
+        m_numSym (nSym),
+        m_tbSize (tbs)
     {
     }
     std::vector <double> m_ueUlCqi;
@@ -343,8 +368,10 @@ private:
 
   struct AllocMapElem
   {
-    AllocMapElem (std::vector<uint16_t> rntiMap, uint8_t nSym, uint32_t tbs) :
-      m_rntiPerChunk (rntiMap), m_numSym (nSym), m_tbSize (tbs)
+    AllocMapElem (std::vector<uint16_t> rntiMap, uint8_t nSym, uint32_t tbs)
+      : m_rntiPerChunk (rntiMap),
+        m_numSym (nSym),
+        m_tbSize (tbs)
     {
     }
 
@@ -404,7 +431,10 @@ private:
 
   std::map<uint16_t, UeSchedInfo> m_ueSchedInfoMap;
 
-  enum AlgType { EDF, DELIVERY_DEBT } m_algorithm;
+  enum AlgType
+  {
+    EDF, DELIVERY_DEBT
+  } m_algorithm;
   //typedef std::priority_queue <FlowStats, std::vector<FlowStats*>, CompareWeightDesc> flowQueue_t;
   //flowQueue_t m_flowQueue;
 

@@ -65,7 +65,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
       if (mcs <= MMWAVE_MI_QPSK_MAX_ID) // QPSK
         {
 
-          if (sinrLin > MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE-1])
+          if (sinrLin > MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE - 1])
             {
               MI = 1;
             }
@@ -76,7 +76,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
               // the scaling coefficient is always the same, so we use a static const
               // to speed up the calculation
               static const double scalingCoeffQpsk =
-                (MMWAVE_MI_MAP_QPSK_SIZE - 1) / (MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE-1] - MI_map_qpsk_axis[0]);
+                (MMWAVE_MI_MAP_QPSK_SIZE - 1) / (MI_map_qpsk_axis[MMWAVE_MI_MAP_QPSK_SIZE - 1] - MI_map_qpsk_axis[0]);
               double sinrIndexDouble = (sinrLin -  MI_map_qpsk_axis[0]) * scalingCoeffQpsk + 1;
               uint32_t sinrIndex = std::max (0.0, std::floor (sinrIndexDouble));
               NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_QPSK_SIZE, "MI map out of data");
@@ -87,7 +87,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
         {
           if (mcs > MMWAVE_MI_QPSK_MAX_ID && mcs <= MMWAVE_MI_16QAM_MAX_ID )    // 16-QAM
             {
-              if (sinrLin > MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE-1])
+              if (sinrLin > MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE - 1])
                 {
                   MI = 1;
                 }
@@ -98,7 +98,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                   // the scaling coefficient is always the same, so we use a static const
                   // to speed up the calculation
                   static const double scalingCoeff16qam =
-                    (MMWAVE_MI_MAP_16QAM_SIZE - 1) / (MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE-1] - MI_map_16qam_axis[0]);
+                    (MMWAVE_MI_MAP_16QAM_SIZE - 1) / (MI_map_16qam_axis[MMWAVE_MI_MAP_16QAM_SIZE - 1] - MI_map_16qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_16qam_axis[0]) * scalingCoeff16qam + 1;
                   uint32_t sinrIndex = std::max (0.0, std::floor (sinrIndexDouble));
                   NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_16QAM_SIZE, "MI map out of data");
@@ -107,7 +107,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
             }
           else // 64-QAM
             {
-              if (sinrLin > MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE-1])
+              if (sinrLin > MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE - 1])
                 {
                   MI = 1;
                 }
@@ -118,7 +118,7 @@ MmWaveMiErrorModel::Mib (const SpectrumValue& sinr, const std::vector<int>& map,
                   // the scaling coefficient is always the same, so we use a static const
                   // to speed up the calculation
                   static const double scalingCoeff64qam =
-                    (MMWAVE_MI_MAP_64QAM_SIZE - 1) / (MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE-1] - MI_map_64qam_axis[0]);
+                    (MMWAVE_MI_MAP_64QAM_SIZE - 1) / (MI_map_64qam_axis[MMWAVE_MI_MAP_64QAM_SIZE - 1] - MI_map_64qam_axis[0]);
                   double sinrIndexDouble = (sinrLin -  MI_map_64qam_axis[0]) * scalingCoeff64qam + 1;
                   uint32_t sinrIndex = std::max (0.0, std::floor (sinrIndexDouble));
                   NS_ASSERT_MSG (sinrIndex < MMWAVE_MI_MAP_64QAM_SIZE, "MI map out of data");
@@ -144,7 +144,7 @@ MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize)
 
   NS_ASSERT_MSG (ecrId <= MMWAVE_MI_64QAM_BLER_MAX_ID, "ECR out of range [0..37]: " << (uint16_t) ecrId);
   int cbIndex = 1;
-  while ((cbIndex < 9)&&(cbMiSizeTable[cbIndex]<= cbSize))
+  while ((cbIndex < 9)&&(cbMiSizeTable[cbIndex] <= cbSize))
     {
       cbIndex++;
     }
@@ -152,29 +152,29 @@ MmWaveMiErrorModel::MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize)
   NS_LOG_LOGIC (" ECRid " << (uint16_t)ecrId << " ECR " << BlerCurvesEcrMap[ecrId] << " CB size " << cbSize << " CB size curve " << cbMiSizeTable[cbIndex]);
 
   b = bEcrTable[cbIndex][ecrId];
-  if (b<0.0)
+  if (b < 0.0)
     {
       //take the lowest CB size including this CB for removing CB size
       //quatization errors
       int i = cbIndex;
-      while ((i<9)&&(b<0))
+      while ((i < 9)&&(b < 0))
         {
           b = bEcrTable[i++][ecrId];
         }
     }
   c = cEcrTable[cbIndex][ecrId];
-  if (c<0.0)
+  if (c < 0.0)
     {
       //take the lowest CB size including this CB for removing CB size
       //quatization errors
       int i = cbIndex;
-      while ((i<9)&&(c<0))
+      while ((i < 9)&&(c < 0))
         {
           c = cEcrTable[i++][ecrId];
         }
     }
   // see IEEE802.16m EMD formula 55 of section 4.3.2.1
-  double bler = 0.5*( 1 - erf ((mib-b)/(sqrt (2)*c)) );
+  double bler = 0.5 * ( 1 - erf ((mib - b) / (sqrt (2) * c)) );
   NS_LOG_LOGIC ("MIB: " << mib << " BLER:" << bler << " b:" << b << " c:" << c);
   return bler;
 }
@@ -188,7 +188,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
   double MI = 0.0;
   double Reff = 0.0;
   NS_ASSERT (mcs < 29);
-  if (miHistory.size ()>0)
+  if (miHistory.size () > 0)
     {
       // evaluate R_eff and MI_eff
       uint32_t codeBitsSum = 0;
@@ -197,10 +197,10 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
         {
           NS_LOG_DEBUG (" Sum MI " << miHistory.at (i).m_mi << " Ci " << miHistory.at (i).m_codeBits);
           codeBitsSum += miHistory.at (i).m_codeBits;
-          miSum += (miHistory.at (i).m_mi*miHistory.at (i).m_codeBits);
+          miSum += (miHistory.at (i).m_mi * miHistory.at (i).m_codeBits);
         }
-      codeBitsSum += (((double)size*8.0) / McsEcrTable [mcs]);
-      miSum += (tbMi*(((double)size*8.0) / McsEcrTable [mcs]));
+      codeBitsSum += (((double)size * 8.0) / McsEcrTable [mcs]);
+      miSum += (tbMi * (((double)size * 8.0) / McsEcrTable [mcs]));
       Reff = miHistory.at (0).m_infoBits / (double)codeBitsSum; // information bits are the size of the first TB
       MI = miSum / (double)codeBitsSum;
     }
@@ -231,7 +231,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
   else
     {
       L = 24;
-      C = ceil ((double)B / ((double)(Z-L)));
+      C = ceil ((double)B / ((double)(Z - L)));
       B1 = B + C * L;
     }
   // first segmentation: K+ = minimum K in table such that C * K >= B1
@@ -250,10 +250,10 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
   int mid = 0;
   do
     {
-      mid = (min+max) / 2;
-      if (B1 > cbSizeTable[mid]*C)
+      mid = (min + max) / 2;
+      if (B1 > cbSizeTable[mid] * C)
         {
-          if (B1 < cbSizeTable[mid+1]*C)
+          if (B1 < cbSizeTable[mid + 1] * C)
             {
               break;
             }
@@ -264,7 +264,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
         }
       else
         {
-          if (B1 > cbSizeTable[mid-1]*C)
+          if (B1 > cbSizeTable[mid - 1] * C)
             {
               break;
             }
@@ -273,9 +273,10 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
               max = mid - 1;
             }
         }
-    } while ((cbSizeTable[mid]*C != B1) && (min < max));
+    }
+  while ((cbSizeTable[mid] * C != B1) && (min < max));
   // adjust binary search to the largest integer value of K containing B1
-  if (B1 > cbSizeTable[mid]*C)
+  if (B1 > cbSizeTable[mid] * C)
     {
       mid++;
     }
@@ -284,7 +285,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
   Kplus = cbSizeTable[mid];
 
 
-  if (C==1)
+  if (C == 1)
     {
       Cplus = 1;
       Cminus = 0;
@@ -299,11 +300,11 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       Cminus = floor ((((double) C * Kplus) - (double)B1) / (double)deltaK);
       Cplus = C - Cminus;
     }
-  NS_LOG_INFO ("--------------------LteMiErrorModel: TB size of " << B << " needs of " << B1 << " bits reparted in " << C << " CBs as "<< Cplus << " block(s) of " << Kplus << " and " << Cminus << " of " << Kminus);
+  NS_LOG_INFO ("--------------------LteMiErrorModel: TB size of " << B << " needs of " << B1 << " bits reparted in " << C << " CBs as " << Cplus << " block(s) of " << Kplus << " and " << Cminus << " of " << Kminus);
 
   double errorRate = 1.0;
   uint8_t ecrId = 0;
-  if (miHistory.size ()==0)
+  if (miHistory.size () == 0)
     {
       // first tx -> get ECR from MCS
       ecrId = McsEcrBlerTableMapping[mcs];
@@ -317,7 +318,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
         {
           // Modulation order 2
           uint8_t i = MMWAVE_MI_QPSK_BLER_MAX_ID;
-          while ((BlerCurvesEcrMap[i]>Reff)&&(i>0))
+          while ((BlerCurvesEcrMap[i] > Reff)&&(i > 0))
             {
               i--;
             }
@@ -327,7 +328,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
         {
           // Modulation order 4
           uint8_t i = MMWAVE_MI_16QAM_BLER_MAX_ID;
-          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_QPSK_BLER_MAX_ID + 1))
+          while ((BlerCurvesEcrMap[i] > Reff)&&(i > MMWAVE_MI_QPSK_BLER_MAX_ID + 1))
             {
               i--;
             }
@@ -337,7 +338,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
         {
           // Modulation order 6
           uint8_t i = MMWAVE_MI_64QAM_BLER_MAX_ID;
-          while ((BlerCurvesEcrMap[i]>Reff)&&(i>MMWAVE_MI_16QAM_BLER_MAX_ID + 1))
+          while ((BlerCurvesEcrMap[i] > Reff)&&(i > MMWAVE_MI_16QAM_BLER_MAX_ID + 1))
             {
               i--;
             }
@@ -346,7 +347,7 @@ MmWaveMiErrorModel::GetTbDecodificationStats (const SpectrumValue& sinr, const s
       NS_LOG_DEBUG ("HARQ ECR " << (uint16_t)ecrId);
     }
 
-  if (C!=1)
+  if (C != 1)
     {
       double cbler = MappingMiBler (MI, ecrId, Kplus);
       errorRate *= pow (1.0 - cbler, Cplus);

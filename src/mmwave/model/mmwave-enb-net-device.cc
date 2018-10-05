@@ -96,18 +96,18 @@ TypeId MmWaveEnbNetDevice::GetTypeId ()
   return tid;
 }
 
-MmWaveEnbNetDevice::MmWaveEnbNetDevice()
+MmWaveEnbNetDevice::MmWaveEnbNetDevice ()
 //:m_cellId(0),
 // m_Bandwidth (72),
 // m_Earfcn(1),
   : m_componentCarrierManager (0),
-  m_isConstructed (false),
-  m_isConfigured (false)
+    m_isConstructed (false),
+    m_isConfigured (false)
 {
   NS_LOG_FUNCTION (this);
 }
 
-MmWaveEnbNetDevice::~MmWaveEnbNetDevice()
+MmWaveEnbNetDevice::~MmWaveEnbNetDevice ()
 {
   NS_LOG_FUNCTION (this);
 }
@@ -172,7 +172,7 @@ MmWaveEnbNetDevice::GetCellId () const
 bool
 MmWaveEnbNetDevice::HasCellId (uint16_t cellId) const
 {
-  for (auto &it: m_ccMap)
+  for (auto &it : m_ccMap)
     {
       if (it.second->GetCellId () == cellId)
         {

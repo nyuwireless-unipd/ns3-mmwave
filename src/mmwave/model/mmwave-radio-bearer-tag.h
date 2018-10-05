@@ -111,7 +111,7 @@ private:
   uint32_t        m_size;        // size in bytes of RLC PDU
 };
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3
 

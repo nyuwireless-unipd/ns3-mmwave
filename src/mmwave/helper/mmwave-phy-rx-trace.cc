@@ -51,11 +51,11 @@ NS_OBJECT_ENSURE_REGISTERED (MmWavePhyRxTrace);
 std::ofstream MmWavePhyRxTrace::m_rxPacketTraceFile;
 std::string MmWavePhyRxTrace::m_rxPacketTraceFilename;
 
-MmWavePhyRxTrace::MmWavePhyRxTrace()
+MmWavePhyRxTrace::MmWavePhyRxTrace ()
 {
 }
 
-MmWavePhyRxTrace::~MmWavePhyRxTrace()
+MmWavePhyRxTrace::~MmWavePhyRxTrace ()
 {
   if (m_rxPacketTraceFile.is_open ())
     {
@@ -89,7 +89,7 @@ void
 MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
                                                      uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power)
 {
-  NS_LOG_INFO ("UE"<<imsi<<"->Generate RsrpSinrTrace");
+  NS_LOG_INFO ("UE" << imsi << "->Generate RsrpSinrTrace");
   //phyStats->ReportInterferenceTrace (imsi, sinr);
 }
 
@@ -210,14 +210,14 @@ MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::
   m_rxPacketTraceFile << "DL\t" << Simulator::Now ().GetSeconds () << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
                       << "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
                       << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-                      << 10*std::log10 (params.m_sinr) << "\t" << " \t" << params.m_corrupt << "\t" <<  params.m_tbler << std::endl;
+                      << 10 * std::log10 (params.m_sinr) << "\t" << " \t" << params.m_corrupt << "\t" <<  params.m_tbler << std::endl;
 
   if (params.m_corrupt)
     {
       NS_LOG_DEBUG ("DL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
                                     << "\t" << (unsigned)params.m_numSym
                                     << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-                                    << 10*std::log10 (params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt);
+                                    << 10 * std::log10 (params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt);
     }
 }
 void
@@ -235,17 +235,17 @@ MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std:
   m_rxPacketTraceFile << "UL\t" << Simulator::Now ().GetSeconds () << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
                       << "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
                       << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-                      << 10*std::log10 (params.m_sinr) << " \t" << params.m_corrupt << "\t" << params.m_tbler << std::endl;
+                      << 10 * std::log10 (params.m_sinr) << " \t" << params.m_corrupt << "\t" << params.m_tbler << std::endl;
 
   if (params.m_corrupt)
     {
       NS_LOG_DEBUG ("UL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
                                     << "\t" << (unsigned)params.m_numSym
                                     << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-                                    << 10*std::log10 (params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt << "\t" << params.m_sinrMin);
+                                    << 10 * std::log10 (params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt << "\t" << params.m_sinrMin);
     }
 }
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } /* namespace ns3 */

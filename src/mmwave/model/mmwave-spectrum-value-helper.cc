@@ -78,9 +78,9 @@ MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
     {
       BandInfo rb;
       rb.fl = f;
-      f += ptrConfig->GetChunkWidth ()/2;
+      f += ptrConfig->GetChunkWidth () / 2;
       rb.fc = f;
-      f += ptrConfig->GetChunkWidth ()/2;
+      f += ptrConfig->GetChunkWidth () / 2;
       rb.fh = f;
 
       rbs.push_back (rb);

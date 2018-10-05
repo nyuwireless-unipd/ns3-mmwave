@@ -38,10 +38,11 @@ namespace mmwave {
 
 typedef std::vector< std::complex<double> > complexVector_t;
 
-class AntennaArrayModel: public AntennaModel {
+class AntennaArrayModel : public AntennaModel
+{
 public:
-  AntennaArrayModel();
-  virtual ~AntennaArrayModel();
+  AntennaArrayModel ();
+  virtual ~AntennaArrayModel ();
   static TypeId GetTypeId ();
   virtual double GetGainDb (Angles a);
 

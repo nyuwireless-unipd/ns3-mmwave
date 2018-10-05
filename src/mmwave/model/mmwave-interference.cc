@@ -44,8 +44,8 @@ namespace mmwave {
 
 mmWaveInterference::mmWaveInterference ()
   : m_receiving (false),
-  m_lastSignalId (0),
-  m_lastSignalIdBeforeReset (0)
+    m_lastSignalId (0),
+    m_lastSignalIdBeforeReset (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -233,6 +233,6 @@ mmWaveInterference::AddSinrChunkProcessor (Ptr<mmWaveChunkProcessor> p)
   m_sinrChunkProcessorList.push_back (p);
 }
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3

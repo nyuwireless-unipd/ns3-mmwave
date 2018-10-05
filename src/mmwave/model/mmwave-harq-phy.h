@@ -145,7 +145,6 @@ public:
 
 
 private:
-
   uint32_t m_harqNum;
   std::map <uint16_t, std::vector <MmWaveHarqProcessInfoList_t> > m_miDlHarqProcessesInfoMap;
   std::map <uint16_t, std::vector <MmWaveHarqProcessInfoList_t> > m_miUlHarqProcessesInfoMap;

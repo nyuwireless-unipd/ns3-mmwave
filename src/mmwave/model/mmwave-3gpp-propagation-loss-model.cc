@@ -130,10 +130,10 @@ double
 MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const
 {
   Ptr<MobilityModel> ueMob, enbMob;
-  if((DynamicCast<mmwave::MmWaveUeNetDevice> (a->GetObject<Node> ()->GetDevice (0)) !=0)
-     || (DynamicCast<McUeNetDevice> (a->GetObject<Node> ()->GetDevice (0)) !=0))
+  if ((DynamicCast<mmwave::MmWaveUeNetDevice> (a->GetObject<Node> ()->GetDevice (0)) != 0)
+      || (DynamicCast<McUeNetDevice> (a->GetObject<Node> ()->GetDevice (0)) != 0))
     {
-      if(DynamicCast<MmWaveEnbNetDevice> (b->GetObject<Node> ()->GetDevice (0)) !=0)
+      if (DynamicCast<MmWaveEnbNetDevice> (b->GetObject<Node> ()->GetDevice (0)) != 0)
         {
           ueMob = a;
           enbMob = b;
@@ -146,7 +146,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
     }
   else
     {
-      if(DynamicCast<MmWaveEnbNetDevice> (b->GetObject<Node> ()->GetDevice (0)) !=0)
+      if (DynamicCast<MmWaveEnbNetDevice> (b->GetObject<Node> ()->GetDevice (0)) != 0)
         {
           NS_LOG_INFO ("ENB->ENB Link, skip Pathloss computation");
           return 0;
@@ -161,15 +161,15 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
 
   Vector uePos = ueMob->GetPosition ();
   Vector enbPos = enbMob->GetPosition ();
-  double x = uePos.x-enbPos.x;
-  double y = uePos.y-enbPos.y;
-  double distance2D = sqrt (x*x +y*y);
+  double x = uePos.x - enbPos.x;
+  double y = uePos.y - enbPos.y;
+  double distance2D = sqrt (x * x + y * y);
   double hBs = enbPos.z;
   double hUt = uePos.z;
 
   double distance3D = a->GetDistanceFrom (b);
 
-  if (distance3D < 3*m_lambda)
+  if (distance3D < 3 * m_lambda)
     {
       NS_LOG_UNCOND ("distance not within the far field region => inaccurate propagation loss value");
     }
@@ -185,35 +185,35 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
     {
       channelCondition condition;
 
-      if (m_channelConditions.compare ("l")==0 )
+      if (m_channelConditions.compare ("l") == 0 )
         {
           condition.m_channelCondition = 'l';
-          NS_LOG_UNCOND (m_scenario << " scenario, channel condition is fixed to be " << condition.m_channelCondition<<", h_BS="<<hBs<<",h_UT="<<hUt);
+          NS_LOG_UNCOND (m_scenario << " scenario, channel condition is fixed to be " << condition.m_channelCondition << ", h_BS=" << hBs << ",h_UT=" << hUt);
         }
-      else if (m_channelConditions.compare ("n")==0)
+      else if (m_channelConditions.compare ("n") == 0)
         {
           condition.m_channelCondition = 'n';
-          NS_LOG_UNCOND (m_scenario << " scenario, channel condition is fixed to be " << condition.m_channelCondition<<", h_BS="<<hBs<<",h_UT="<<hUt);
+          NS_LOG_UNCOND (m_scenario << " scenario, channel condition is fixed to be " << condition.m_channelCondition << ", h_BS=" << hBs << ",h_UT=" << hUt);
         }
-      else if (m_channelConditions.compare ("a")==0)
+      else if (m_channelConditions.compare ("a") == 0)
         {
           double PRef = m_uniformVar->GetValue ();
           double probLos;
           //Note: The LOS probability is derived with assuming antenna heights of 3m for indoor, 10m for UMi, and 25m for UMa.
           if (m_scenario == "RMa")
             {
-              if(distance2D <= 10)
+              if (distance2D <= 10)
                 {
                   probLos = 1;
                 }
               else
                 {
-                  probLos = exp (-(distance2D-10)/1000);
+                  probLos = exp (-(distance2D - 10) / 1000);
                 }
             }
           else if (m_scenario == "UMa")
             {
-              if(distance2D <= 18)
+              if (distance2D <= 18)
                 {
                   probLos = 1;
                 }
@@ -224,56 +224,56 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
                     {
                       C_hUt = 0;
                     }
-                  else if(hUt <=23)
+                  else if (hUt <= 23)
                     {
-                      C_hUt = pow ((hUt-13)/10,1.5);
+                      C_hUt = pow ((hUt - 13) / 10,1.5);
                     }
                   else
                     {
                       NS_FATAL_ERROR ("From Table 7.4.2-1, UMa scenario hUT cannot be larger than 23 m");
                     }
-                  probLos = (18/distance2D+exp (-distance2D/63)*(1-18/distance2D))*(1+C_hUt*5/4*pow (distance2D/100,3)*exp (-distance2D/150));
+                  probLos = (18 / distance2D + exp (-distance2D / 63) * (1 - 18 / distance2D)) * (1 + C_hUt * 5 / 4 * pow (distance2D / 100,3) * exp (-distance2D / 150));
                 }
             }
           else if (m_scenario == "UMi-StreetCanyon")
             {
-              if(distance2D <= 18)
+              if (distance2D <= 18)
                 {
                   probLos = 1;
                 }
               else
                 {
-                  probLos = 18/distance2D+exp (-distance2D/36)*(1-18/distance2D);
+                  probLos = 18 / distance2D + exp (-distance2D / 36) * (1 - 18 / distance2D);
                 }
             }
           else if (m_scenario == "InH-OfficeMixed")
             {
-              if(distance2D <= 1.2)
+              if (distance2D <= 1.2)
                 {
                   probLos = 1;
                 }
               else if (distance2D <= 6.5)
                 {
-                  probLos = exp (-(distance2D-1.2)/4.7);
+                  probLos = exp (-(distance2D - 1.2) / 4.7);
                 }
               else
                 {
-                  probLos = exp (-(distance2D-6.5)/32.6)*0.32;
+                  probLos = exp (-(distance2D - 6.5) / 32.6) * 0.32;
                 }
             }
           else if (m_scenario == "InH-OfficeOpen")
             {
-              if(distance2D <= 5)
+              if (distance2D <= 5)
                 {
                   probLos = 1;
                 }
               else if (distance2D <= 49)
                 {
-                  probLos = exp (-(distance2D-5)/70.8);
+                  probLos = exp (-(distance2D - 5) / 70.8);
                 }
               else
                 {
-                  probLos = exp (-(distance2D-49)/211.7)*0.54;
+                  probLos = exp (-(distance2D - 49) / 211.7) * 0.54;
                 }
             }
           else if (m_scenario == "InH-ShoppingMall")
@@ -294,8 +294,8 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
             {
               condition.m_channelCondition = 'n';
             }
-          NS_LOG_UNCOND (m_scenario << " scenario, 2D distance = " << distance2D <<"m, Prob_LOS = " << probLos
-                                    << ", Prob_REF = " << PRef << ", the channel condition is " << condition.m_channelCondition<<", h_BS="<<hBs<<",h_UT="<<hUt);
+          NS_LOG_UNCOND (m_scenario << " scenario, 2D distance = " << distance2D << "m, Prob_LOS = " << probLos
+                                    << ", Prob_REF = " << PRef << ", the channel condition is " << condition.m_channelCondition << ", h_BS=" << hBs << ",h_UT=" << hUt);
 
         }
       else
@@ -318,13 +318,13 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
    * */
 
   double lossDb = 0;
-  double freqGHz = m_frequency/1e9;
+  double freqGHz = m_frequency / 1e9;
 
   double shadowingStd = 0;
   double shadowingCorDistance = 0;
   if (m_scenario == "RMa")
     {
-      if(distance2D < 10)
+      if (distance2D < 10)
         {
           NS_LOG_UNCOND ("The 2D distance is smaller than 10 meters, the 3GPP RMa model may not be accurate");
         }
@@ -345,10 +345,10 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
       double W = 20;           //average street height
       double h = 5;           //average building height
 
-      double dBP = 2*M_PI*hBs*hUt*m_frequency/3e8;           //break point distance
-      double PL1 = 20*log10 (40*M_PI*distance3D*freqGHz/3) + std::min (0.03*pow (h,1.72),10.0)*log10 (distance3D) - std::min (0.044*pow (h,1.72),14.77) + 0.002*log10 (h)*distance3D;
+      double dBP = 2 * M_PI * hBs * hUt * m_frequency / 3e8;           //break point distance
+      double PL1 = 20 * log10 (40 * M_PI * distance3D * freqGHz / 3) + std::min (0.03 * pow (h,1.72),10.0) * log10 (distance3D) - std::min (0.044 * pow (h,1.72),14.77) + 0.002 * log10 (h) * distance3D;
 
-      if(distance2D <= dBP)
+      if (distance2D <= dBP)
         {
           lossDb = PL1;
           shadowingStd = 4;
@@ -357,8 +357,8 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
       else
         {
           //PL2
-          lossDb = PL1 + 40*log10 (distance3D/dBP);
-          shadowingStd= 6;
+          lossDb = PL1 + 40 * log10 (distance3D / dBP);
+          shadowingStd = 6;
         }
 
       switch ((*it).second.m_channelCondition)
@@ -371,7 +371,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
         case 'n':
           {
             shadowingCorDistance = 120;
-            double PLNlos = 161.04-7.1*log10 (W)+7.5*log10 (h)-(24.37-3.7*pow ((h/hBs),2))*log10 (hBs)+(43.42-3.1*log10 (hBs))*(log10 (distance3D)-3)+20*log10 (freqGHz)-(3.2*pow (log10 (11.75*hUt),2)-4.97);
+            double PLNlos = 161.04 - 7.1 * log10 (W) + 7.5 * log10 (h) - (24.37 - 3.7 * pow ((h / hBs),2)) * log10 (hBs) + (43.42 - 3.1 * log10 (hBs)) * (log10 (distance3D) - 3) + 20 * log10 (freqGHz) - (3.2 * pow (log10 (11.75 * hUt),2) - 4.97);
             lossDb = std::max (PLNlos, lossDb);
             shadowingStd = 8;
             break;
@@ -383,7 +383,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
     }
   else if (m_scenario == "UMa")
     {
-      if(distance2D < 10)
+      if (distance2D < 10)
         {
           NS_LOG_UNCOND ("The 2D distance is smaller than 10 meters, the 3GPP UMa model may not be accurate");
         }
@@ -396,7 +396,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
           NS_FATAL_ERROR ("According to table 7.4.1-1, the UMa scenario need to satisfy the following condition, 1.5 m <= hUT <= 22.5 m");
         }
       //For UMa, the effective environment height should be computed follow Table7.4.1-1.
-      if((*it).second.m_hE == 0)
+      if ((*it).second.m_hE == 0)
         {
           channelCondition condition;
           condition = (*it).second;
@@ -406,32 +406,32 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
             }
           else
             {
-              double g_d2D = 1.25*pow (distance2D/100,3)*exp (-1*distance2D/150);
-              double C_d2D_hUT = pow ((hUt-13)/10,1.5)*g_d2D;
-              double prob = 1/(1+C_d2D_hUT);
+              double g_d2D = 1.25 * pow (distance2D / 100,3) * exp (-1 * distance2D / 150);
+              double C_d2D_hUT = pow ((hUt - 13) / 10,1.5) * g_d2D;
+              double prob = 1 / (1 + C_d2D_hUT);
 
-              if(m_uniformVar->GetValue () < prob)
+              if (m_uniformVar->GetValue () < prob)
                 {
                   condition.m_hE = 1;
                 }
               else
                 {
-                  int random = m_uniformVar->GetInteger (12, (int)(hUt-1.5));
-                  condition.m_hE = (double)floor (random/3)*3;
+                  int random = m_uniformVar->GetInteger (12, (int)(hUt - 1.5));
+                  condition.m_hE = (double)floor (random / 3) * 3;
                 }
             }
           UpdateConditionMap (a,b,condition);
         }
-      double dBP = 4*(hBs-(*it).second.m_hE)*(hUt-(*it).second.m_hE)*m_frequency/3e8;
-      if(distance2D <= dBP)
+      double dBP = 4 * (hBs - (*it).second.m_hE) * (hUt - (*it).second.m_hE) * m_frequency / 3e8;
+      if (distance2D <= dBP)
         {
           //PL1
-          lossDb = 32.4+20*log10 (distance3D)+20*log10 (freqGHz);
+          lossDb = 32.4 + 20 * log10 (distance3D) + 20 * log10 (freqGHz);
         }
       else
         {
           //PL2
-          lossDb = 32.4+40*log10 (distance3D)+20*log10 (freqGHz)-10*log10 (pow (dBP,2)+pow (hBs-hUt,2));
+          lossDb = 32.4 + 40 * log10 (distance3D) + 20 * log10 (freqGHz) - 10 * log10 (pow (dBP,2) + pow (hBs - hUt,2));
         }
 
 
@@ -446,15 +446,15 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
         case 'n':
           {
             shadowingCorDistance = 50;
-            if(m_optionNlosEnabled)
+            if (m_optionNlosEnabled)
               {
                 //optional propagation loss
-                lossDb = 32.4+20*log10 (freqGHz)+30*log10 (distance3D);
+                lossDb = 32.4 + 20 * log10 (freqGHz) + 30 * log10 (distance3D);
                 shadowingStd = 7.8;
               }
             else
               {
-                double PLNlos = 13.54+39.08*log10 (distance3D)+20*log10 (freqGHz)-0.6*(hUt-1.5);
+                double PLNlos = 13.54 + 39.08 * log10 (distance3D) + 20 * log10 (freqGHz) - 0.6 * (hUt - 1.5);
                 shadowingStd = 6;
                 lossDb = std::max (PLNlos, lossDb);
               }
@@ -469,7 +469,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
   else if (m_scenario == "UMi-StreetCanyon")
     {
 
-      if(distance2D < 10)
+      if (distance2D < 10)
         {
           NS_LOG_UNCOND ("The 2D distance is smaller than 10 meters, the 3GPP UMi-StreetCanyon model may not be accurate");
         }
@@ -481,16 +481,16 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
         {
           NS_FATAL_ERROR ("According to table 7.4.1-1, the UMi-StreetCanyon scenario need to satisfy the following condition, 1.5 m <= hUT <= 22.5 m");
         }
-      double dBP = 4*(hBs-1)*(hUt-1)*m_frequency/3e8;
-      if(distance2D <= dBP)
+      double dBP = 4 * (hBs - 1) * (hUt - 1) * m_frequency / 3e8;
+      if (distance2D <= dBP)
         {
           //PL1
-          lossDb = 32.4+21*log10 (distance3D)+20*log10 (freqGHz);
+          lossDb = 32.4 + 21 * log10 (distance3D) + 20 * log10 (freqGHz);
         }
       else
         {
           //PL2
-          lossDb = 32.4+40*log10 (distance3D)+20*log10 (freqGHz)-9.5*log10 (pow (dBP,2)+pow (hBs-hUt,2));
+          lossDb = 32.4 + 40 * log10 (distance3D) + 20 * log10 (freqGHz) - 9.5 * log10 (pow (dBP,2) + pow (hBs - hUt,2));
         }
 
 
@@ -505,15 +505,15 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
         case 'n':
           {
             shadowingCorDistance = 13;
-            if(m_optionNlosEnabled)
+            if (m_optionNlosEnabled)
               {
                 //optional propagation loss
-                lossDb = 32.4+20*log10 (freqGHz)+31.9*log10 (distance3D);
+                lossDb = 32.4 + 20 * log10 (freqGHz) + 31.9 * log10 (distance3D);
                 shadowingStd = 8.2;
               }
             else
               {
-                double PLNlos = 35.3*log10 (distance3D)+22.4+21.3*log10 (freqGHz)-0.3*(hUt-1.5);
+                double PLNlos = 35.3 * log10 (distance3D) + 22.4 + 21.3 * log10 (freqGHz) - 0.3 * (hUt - 1.5);
                 shadowingStd = 7.82;
                 lossDb = std::max (PLNlos, lossDb);
               }
@@ -526,12 +526,12 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
     }
   else if (m_scenario == "InH-OfficeMixed" || m_scenario == "InH-OfficeOpen")
     {
-      if(distance3D < 1 || distance3D > 100)
+      if (distance3D < 1 || distance3D > 100)
         {
           NS_LOG_UNCOND ("The pathloss might not be accurate since 3GPP InH-Office model LoS condition is accurate only within 3D distance between 1 m and 100 m");
         }
 
-      lossDb = 32.4+17.3*log10 (distance3D)+20*log10 (freqGHz);
+      lossDb = 32.4 + 17.3 * log10 (distance3D) + 20 * log10 (freqGHz);
 
 
       switch ((*it).second.m_channelCondition)
@@ -545,22 +545,22 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
         case 'n':
           {
             shadowingCorDistance = 6;
-            if(distance3D > 86)
+            if (distance3D > 86)
               {
                 NS_LOG_UNCOND ("The pathloss might not be accurate since 3GPP InH-Office model NLoS condition only supports 3D distance between 1 m and 86 m");
               }
 
-            if(m_optionNlosEnabled)
+            if (m_optionNlosEnabled)
               {
                 //optional propagation loss
-                double PLNlos = 32.4+20*log10 (freqGHz)+31.9*log10 (distance3D);
+                double PLNlos = 32.4 + 20 * log10 (freqGHz) + 31.9 * log10 (distance3D);
                 shadowingStd = 8.29;
                 lossDb = std::max (PLNlos, lossDb);
 
               }
             else
               {
-                double PLNlos = 38.3*log10 (distance3D)+17.3+24.9*log10 (freqGHz);
+                double PLNlos = 38.3 * log10 (distance3D) + 17.3 + 24.9 * log10 (freqGHz);
                 shadowingStd = 8.03;
                 lossDb = std::max (PLNlos, lossDb);
               }
@@ -575,11 +575,11 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
     {
       shadowingCorDistance = 10;           //I use the office correlation distance since shopping mall is not in the table.
 
-      if(distance3D < 1 || distance3D > 150)
+      if (distance3D < 1 || distance3D > 150)
         {
           NS_LOG_UNCOND ("The pathloss might not be accurate since 3GPP InH-Shopping mall model only supports 3D distance between 1 m and 150 m"); \
         }
-      lossDb = 32.4+17.3*log10 (distance3D)+20*log10 (freqGHz);
+      lossDb = 32.4 + 17.3 * log10 (distance3D) + 20 * log10 (freqGHz);
       shadowingStd = 2;
     }
   else
@@ -587,24 +587,24 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
       NS_FATAL_ERROR ("Unknown channel condition");
     }
 
-  if(m_shadowingEnabled)
+  if (m_shadowingEnabled)
     {
       channelCondition cond;
       cond = (*it).second;
       //The first transmission the shadowing is initialed as -1e6,
       //we perform this if check the identify first  transmission.
-      if((*it).second.m_shadowing < -1e5)
+      if ((*it).second.m_shadowing < -1e5)
         {
-          cond.m_shadowing = m_norVar->GetValue ()*shadowingStd;
+          cond.m_shadowing = m_norVar->GetValue () * shadowingStd;
         }
       else
         {
-          double deltaX = uePos.x-(*it).second.m_position.x;
-          double deltaY = uePos.y-(*it).second.m_position.y;
-          double disDiff = sqrt (deltaX*deltaX +deltaY*deltaY);
+          double deltaX = uePos.x - (*it).second.m_position.x;
+          double deltaY = uePos.y - (*it).second.m_position.y;
+          double disDiff = sqrt (deltaX * deltaX + deltaY * deltaY);
           //NS_LOG_UNCOND (shadowingStd <<"  "<<disDiff <<"  "<<shadowingCorDistance);
-          double R = exp (-1*disDiff/shadowingCorDistance);              // from equation 7.4-5.
-          cond.m_shadowing = R*(*it).second.m_shadowing + sqrt (1-R*R)*m_norVar->GetValue ()*shadowingStd;
+          double R = exp (-1 * disDiff / shadowingCorDistance);              // from equation 7.4-5.
+          cond.m_shadowing = R * (*it).second.m_shadowing + sqrt (1 - R * R) * m_norVar->GetValue () * shadowingStd;
         }
 
       lossDb += cond.m_shadowing;
@@ -642,7 +642,7 @@ MmWave3gppPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel
 
    fname = 0;*/
 
-  if(m_inCar)
+  if (m_inCar)
     {
       lossDb += (*it).second.m_carPenetrationLoss;
     }

@@ -62,7 +62,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveUeRrcProtocolIdeal);
 
 MmWaveUeRrcProtocolIdeal::MmWaveUeRrcProtocolIdeal ()
   :  m_ueRrcSapProvider (0),
-  m_enbRrcSapProvider (0)
+    m_enbRrcSapProvider (0)
 {
   m_ueRrcSapUser = new MemberLteUeRrcSapUser<MmWaveUeRrcProtocolIdeal> (this);
 }
@@ -353,7 +353,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
               if (mcUeDev != 0)
                 {
                   ueRrc = mcUeDev->GetMmWaveRrc ();
-                  if(ueRrc != 0) // actually is using 2 connections
+                  if (ueRrc != 0) // actually is using 2 connections
                     {
                       NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
                       NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
@@ -370,7 +370,7 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
                   else // it may have just a double stack up to MAC layer
                     {
                       ueRrc = mcUeDev->GetLteRrc ();
-                      if(ueRrc != 0)
+                      if (ueRrc != 0)
                         {
                           NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
                           NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
@@ -685,6 +685,6 @@ MmWaveEnbRrcProtocolIdeal::DoDecodeHandoverCommand (Ptr<Packet> p)
 
 
 
-} // namespace mmwave 
+} // namespace mmwave
 
 } // namespace ns3

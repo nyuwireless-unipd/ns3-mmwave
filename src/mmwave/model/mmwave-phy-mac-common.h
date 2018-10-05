@@ -54,12 +54,16 @@ namespace mmwave {
 
 struct SfnSf
 {
-  SfnSf () : m_frameNum (0), m_sfNum (0), m_slotNum (0)
+  SfnSf () : m_frameNum (0),
+             m_sfNum (0),
+             m_slotNum (0)
   {
   }
 
   SfnSf (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
-    : m_frameNum (frameNum), m_sfNum (sfNum), m_slotNum (slotNum)
+    : m_frameNum (frameNum),
+      m_sfNum (sfNum),
+      m_slotNum (slotNum)
   {
   }
 
@@ -96,8 +100,20 @@ struct SfnSf
 
 struct TbInfoElement
 {
-  TbInfoElement () : m_isUplink (0), m_slotIdx (0), m_rbBitmap (0), m_rbShift (0), m_rbStart (0), m_rbLen (0),
-    m_symStart (0), m_numSym (0), m_resAlloc (0), m_mcs (0), m_tbSize (0), m_ndi (0), m_rv (0), m_harqProcess (0)
+  TbInfoElement () : m_isUplink (0),
+                     m_slotIdx (0),
+                     m_rbBitmap (0),
+                     m_rbShift (0),
+                     m_rbStart (0),
+                     m_rbLen (0),
+                     m_symStart (0),
+                     m_numSym (0),
+                     m_resAlloc (0),
+                     m_mcs (0),
+                     m_tbSize (0),
+                     m_ndi (0),
+                     m_rv (0),
+                     m_harqProcess (0)
   {
   }
 
@@ -119,9 +135,14 @@ struct TbInfoElement
 
 struct DlDciInfoElementTdma
 {
-  DlDciInfoElementTdma () :
-    m_symStart (0), m_numSym (0), m_mcs (0),
-    m_tbSize (0), m_ndi (0), m_rv (0), m_harqProcess (0)
+  DlDciInfoElementTdma ()
+    : m_symStart (0),
+      m_numSym (0),
+      m_mcs (0),
+      m_tbSize (0),
+      m_ndi (0),
+      m_rv (0),
+      m_harqProcess (0)
   {
   }
 
@@ -136,18 +157,35 @@ struct DlDciInfoElementTdma
 
 struct DciInfoElementTdma
 {
-  enum DciFormat { DL_dci = 0, UL_dci = 1 };
+  enum DciFormat
+  {
+    DL_dci = 0, UL_dci = 1
+  };
 
-  DciInfoElementTdma () :
-    m_rnti (0), m_format (0), m_symStart (0), m_numSym (0), m_mcs (0),
-    m_tbSize (0), m_ndi (0), m_rv (0), m_harqProcess (0)
+  DciInfoElementTdma ()
+    : m_rnti (0),
+      m_format (0),
+      m_symStart (0),
+      m_numSym (0),
+      m_mcs (0),
+      m_tbSize (0),
+      m_ndi (0),
+      m_rv (0),
+      m_harqProcess (0)
   {
   }
 
   DciInfoElementTdma (uint16_t    rnti, uint8_t format, uint8_t symStart, uint8_t numSym, uint8_t mcs,
-                      uint32_t tbs, uint8_t ndi, uint8_t rv, uint8_t harqProc) :
-    m_rnti (rnti), m_format (format), m_symStart (symStart), m_numSym (numSym), m_mcs (mcs),
-    m_tbSize (tbs), m_ndi (ndi), m_rv (rv), m_harqProcess (harqProc)
+                      uint32_t tbs, uint8_t ndi, uint8_t rv, uint8_t harqProc)
+    : m_rnti (rnti),
+      m_format (format),
+      m_symStart (symStart),
+      m_numSym (numSym),
+      m_mcs (mcs),
+      m_tbSize (tbs),
+      m_ndi (ndi),
+      m_rv (rv),
+      m_harqProcess (harqProc)
   {
   }
 
@@ -164,8 +202,8 @@ struct DciInfoElementTdma
 
 struct TbAllocInfo
 {
-  TbAllocInfo () :
-    m_rnti (0)
+  TbAllocInfo ()
+    : m_rnti (0)
   {
 
   }
@@ -177,8 +215,11 @@ struct TbAllocInfo
 
 struct DciInfoElement
 {
-  DciInfoElement () :
-    m_rnti (0), m_cceIndex (0), m_format (0), m_tddBitmap (0)
+  DciInfoElement ()
+    : m_rnti (0),
+      m_cceIndex (0),
+      m_format (0),
+      m_tddBitmap (0)
   {
   }
 
@@ -191,12 +232,14 @@ struct DciInfoElement
 
 struct RlcPduInfo
 {
-  RlcPduInfo () : m_lcid (0), m_size (0)
+  RlcPduInfo () : m_lcid (0),
+                  m_size (0)
   {
   }
 
-  RlcPduInfo (uint8_t lcid, uint16_t size) :
-    m_lcid (lcid), m_size (size)
+  RlcPduInfo (uint8_t lcid, uint16_t size)
+    : m_lcid (lcid),
+      m_size (size)
   {
   }
   uint8_t   m_lcid;
@@ -226,14 +269,24 @@ struct SlotAllocInfo
     OMNI = 2
   };
 
-  SlotAllocInfo () : m_tddMode (NA), m_isOmni (0), m_slotType (CTRL_DATA),
-    m_numCtrlSym (0), m_slotIdx (0), m_ctrlTxMode (DIGITAL), m_rnti (0)
+  SlotAllocInfo () : m_tddMode (NA),
+                     m_isOmni (0),
+                     m_slotType (CTRL_DATA),
+                     m_numCtrlSym (0),
+                     m_slotIdx (0),
+                     m_ctrlTxMode (DIGITAL),
+                     m_rnti (0)
   {
   }
 
-  SlotAllocInfo (uint8_t slotIdx, TddMode tddMode, TddSlotType slotType, CtrlTxMode ctrlTxMode, uint16_t rnti) :
-    m_tddMode (tddMode), m_isOmni (0), m_slotType (slotType),
-    m_numCtrlSym (0), m_slotIdx (slotIdx), m_ctrlTxMode (ctrlTxMode), m_rnti (rnti)
+  SlotAllocInfo (uint8_t slotIdx, TddMode tddMode, TddSlotType slotType, CtrlTxMode ctrlTxMode, uint16_t rnti)
+    : m_tddMode (tddMode),
+      m_isOmni (0),
+      m_slotType (slotType),
+      m_numCtrlSym (0),
+      m_slotIdx (slotIdx),
+      m_ctrlTxMode (ctrlTxMode),
+      m_rnti (rnti)
   {
   }
 
@@ -274,12 +327,16 @@ struct SlotAllocInfo
 
 struct SfAllocInfo
 {
-  SfAllocInfo () : m_sfnSf (SfnSf ()),  m_numSymAlloc (0), m_ulSymStart (0)
+  SfAllocInfo () : m_sfnSf (SfnSf ()),
+                   m_numSymAlloc (0),
+                   m_ulSymStart (0)
   {
     //m_tddPattern.resize (8);
   }
 
-  SfAllocInfo (SfnSf sfn) : m_sfnSf (sfn), m_numSymAlloc (0), m_ulSymStart (0)
+  SfAllocInfo (SfnSf sfn) : m_sfnSf (sfn),
+                            m_numSymAlloc (0),
+                            m_ulSymStart (0)
   {
   }
 
@@ -361,12 +418,16 @@ struct RlcListElement
 
 struct SchedInfo
 {
-  SchedInfo () :
-    m_frameNum (0), m_sfNum (0), m_rnti (0)
+  SchedInfo ()
+    : m_frameNum (0),
+      m_sfNum (0),
+      m_rnti (0)
   {
   }
-  SchedInfo (unsigned int numSlots) :
-    m_frameNum (0), m_sfNum (0), m_rnti (0)
+  SchedInfo (unsigned int numSlots)
+    : m_frameNum (0),
+      m_sfNum (0),
+      m_rnti (0)
   {
   }
 
@@ -497,7 +558,7 @@ public:
   inline double
   GetTti (void)
   {
-    return (m_symbolsPerSlot*m_symbolPeriod*1e-6);
+    return (m_symbolsPerSlot * m_symbolPeriod * 1e-6);
   }
 
   inline uint32_t
@@ -575,19 +636,19 @@ public:
   inline double
   GetRBWidth (void)
   {
-    return (m_chunksPerRb*m_chunkWidth);
+    return (m_chunksPerRb * m_chunkWidth);
   }
 
   inline double
   GetSystemBandwidth (void)
   {
-    return (GetRBWidth ()*m_numRb);
+    return (GetRBWidth () * m_numRb);
   }
 
   inline uint32_t
   GetTotalNumChunk ()
   {
-    return (m_chunksPerRb*m_numRb);
+    return (m_chunksPerRb * m_numRb);
   }
 
   inline double

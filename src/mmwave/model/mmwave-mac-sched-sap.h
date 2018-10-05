@@ -100,7 +100,6 @@ public:
   }
 
 private:
-
 };
 
 class MmWaveMacSchedSapUser

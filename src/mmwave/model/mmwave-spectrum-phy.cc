@@ -94,17 +94,17 @@ static const double EffectiveCodingRate[29] = {
   0.92
 };
 
-MmWaveSpectrumPhy::MmWaveSpectrumPhy()
+MmWaveSpectrumPhy::MmWaveSpectrumPhy ()
   : m_cellId (0),
-  m_state (IDLE),
-  m_componentCarrierId (0)
+    m_state (IDLE),
+    m_componentCarrierId (0)
 {
   m_interferenceData = CreateObject<mmWaveInterference> ();
   m_random = CreateObject<UniformRandomVariable> ();
   m_random->SetAttribute ("Min", DoubleValue (0.0));
   m_random->SetAttribute ("Max", DoubleValue (1.0));
 }
-MmWaveSpectrumPhy::~MmWaveSpectrumPhy()
+MmWaveSpectrumPhy::~MmWaveSpectrumPhy ()
 {
 
 }
@@ -329,7 +329,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
     DynamicCast<MmWaveEnbNetDevice> (params->txPhy->GetDevice ());
   Ptr<MmWaveEnbNetDevice> enbRx =
     DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-  if((EnbTx != 0 && enbRx != 0) || (EnbTx == 0 && enbRx == 0))
+  if ((EnbTx != 0 && enbRx != 0) || (EnbTx == 0 && enbRx == 0))
     {
       NS_LOG_INFO ("BS to BS or UE to UE transmission neglected.");
       return;
@@ -338,7 +338,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
   Ptr<MmwaveSpectrumSignalParametersDataFrame> mmwaveDataRxParams =
     DynamicCast<MmwaveSpectrumSignalParametersDataFrame> (params);
 
-  if (mmwaveDataRxParams!=0)
+  if (mmwaveDataRxParams != 0)
     {
       bool isAllocated = true;
       Ptr<mmwave::MmWaveUeNetDevice> ueRx = 0;
@@ -346,7 +346,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
       Ptr<McUeNetDevice> rxMcUe = 0;
       rxMcUe = DynamicCast<McUeNetDevice> (GetDevice ());
 
-      if ((ueRx!=0) && (ueRx->GetPhy (m_componentCarrierId)->IsReceptionEnabled () == false))
+      if ((ueRx != 0) && (ueRx->GetPhy (m_componentCarrierId)->IsReceptionEnabled () == false))
         {               // if the first cast is 0 (the device is MC) then this if will not be executed
           isAllocated = false;
         }
@@ -358,7 +358,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
       if (isAllocated)
         {
           m_interferenceData->AddSignal (mmwaveDataRxParams->psd, mmwaveDataRxParams->duration);
-          if(mmwaveDataRxParams->cellId == m_cellId)
+          if (mmwaveDataRxParams->cellId == m_cellId)
             {
               //m_interferenceData->AddSignal (mmwaveDataRxParams->psd, mmwaveDataRxParams->duration);
               StartRxData (mmwaveDataRxParams);
@@ -378,7 +378,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
     {
       Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> DlCtrlRxParams =
         DynamicCast<MmWaveSpectrumSignalParametersDlCtrlFrame> (params);
-      if (DlCtrlRxParams!=0)
+      if (DlCtrlRxParams != 0)
         {
           if (DlCtrlRxParams->cellId == m_cellId)
             {
@@ -406,7 +406,7 @@ MmWaveSpectrumPhy::StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> par
   Ptr<McUeNetDevice> rxMcUe =
     DynamicCast<McUeNetDevice> (GetDevice ());
 
-  switch(m_state)
+  switch (m_state)
     {
     case TX:
       NS_LOG_INFO (this << " m_cellId");
@@ -503,7 +503,7 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<SpectrumSignalParameters> params)
         }*/
         if (cellId  == m_cellId)
           {
-            if(m_state == RX_CTRL)
+            if (m_state == RX_CTRL)
               {
                 Ptr<mmwave::MmWaveUeNetDevice> ueRx =
                   DynamicCast<mmwave::MmWaveUeNetDevice> (GetDevice ());
@@ -550,7 +550,7 @@ MmWaveSpectrumPhy::EndRxData ()
 {
   m_interferenceData->EndRx ();
 
-  double sinrAvg = Sum (m_sinrPerceived)/(m_sinrPerceived.GetSpectrumModel ()->GetNumBands ());
+  double sinrAvg = Sum (m_sinrPerceived) / (m_sinrPerceived.GetSpectrumModel ()->GetNumBands ());
   double sinrMin = 99999999999;
   for (Values::const_iterator it = m_sinrPerceived.ConstValuesBegin (); it != m_sinrPerceived.ConstValuesEnd (); it++)
     {
@@ -568,7 +568,7 @@ MmWaveSpectrumPhy::EndRxData ()
   ExpectedTbMap_t::iterator itTb = m_expectedTbs.begin ();
   while (itTb != m_expectedTbs.end ())
     {
-      if ((m_dataErrorModelEnabled)&&(m_rxPacketBurstList.size ()>0))
+      if ((m_dataErrorModelEnabled)&&(m_rxPacketBurstList.size () > 0))
         {
           MmWaveHarqProcessInfoList_t harqInfoList;
           uint8_t rv = 0;
@@ -614,13 +614,13 @@ MmWaveSpectrumPhy::EndRxData ()
             }
 
           LteRadioBearerTag bearerTag;
-          if((*j)->PeekPacketTag (bearerTag) == false)
+          if ((*j)->PeekPacketTag (bearerTag) == false)
             {
               NS_FATAL_ERROR ("No radio bearer tag found");
             }
           uint16_t rnti = bearerTag.GetRnti ();
           itTb = m_expectedTbs.find (rnti);
-          if(itTb != m_expectedTbs.end ())
+          if (itTb != m_expectedTbs.end ())
             {
               if (!itTb->second.corrupt)
                 {
@@ -632,7 +632,7 @@ MmWaveSpectrumPhy::EndRxData ()
                 }
 
               MmWaveMacPduTag pduTag;
-              if((*j)->PeekPacketTag (pduTag) == false)
+              if ((*j)->PeekPacketTag (pduTag) == false)
                 {
                   NS_FATAL_ERROR ("No radio bearer tag found");
                 }
@@ -689,8 +689,8 @@ MmWaveSpectrumPhy::EndRxData ()
                 }
               else if (rxMcUe)
                 {
-                  Ptr<McUeNetDevice> mcUe = DynamicCast<McUeNetDevice>(ueRx);
-                  if(mcUe != 0)
+                  Ptr<McUeNetDevice> mcUe = DynamicCast<McUeNetDevice> (ueRx);
+                  if (mcUe != 0)
                     {
                       Ptr<MmWaveEnbNetDevice> mmWaveEnb = mcUe->GetMmWaveTargetEnb ();
                       if (mmWaveEnb != 0)
@@ -736,7 +736,7 @@ MmWaveSpectrumPhy::EndRxData ()
                   else
                     {
                       std::map <uint16_t, DlHarqInfo>::iterator itHarq = harqDlInfoMap.find (rnti);
-                      if (itHarq==harqDlInfoMap.end ())
+                      if (itHarq == harqDlInfoMap.end ())
                         {
                           DlHarqInfo harqDlInfo;
                           harqDlInfo.m_harqStatus = DlHarqInfo::NACK;
@@ -893,7 +893,7 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
       }
       break;
     default:
-      NS_LOG_FUNCTION (this<<"Programming Error. Code should not reach this point");
+      NS_LOG_FUNCTION (this << "Programming Error. Code should not reach this point");
     }
   return true;
 }
