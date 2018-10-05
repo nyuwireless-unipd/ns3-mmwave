@@ -19,7 +19,7 @@
  * Author: Danilo Abrignani <danilo.abrignani@unibo.it>
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *								 Integration of Carrier Aggregation for the mmWave module
+ *                 Integration of Carrier Aggregation for the mmWave module
  */
 
 #ifndef LTE_ENB_COMPONENT_CARRIER_MANAGER_H

@@ -19,7 +19,7 @@
  * Author: Nicola Baldo <nbaldo@cttc.es>
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *							Integration of Carrier Aggregation for the mmWave module
+ *              Integration of Carrier Aggregation for the mmWave module
  */
 
 

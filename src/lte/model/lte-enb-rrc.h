@@ -27,7 +27,7 @@
  *          Dual Connectivity functionalities
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *						  Integration of Carrier Aggregation for the mmWave module
+ *              Integration of Carrier Aggregation for the mmWave module
  */
 
 #ifndef LTE_ENB_RRC_H
@@ -1900,7 +1900,7 @@ private:
   bool m_interRatHoMode;
   bool m_firstReport;
 
-  uint32_t m_firstSibTime;		// time in ms of initial SIB
+  uint32_t m_firstSibTime;    // time in ms of initial SIB
 
   // for MmWave eNBs
   std::map<uint8_t, ImsiSinrMap> m_ueImsiSinrMap; // this map contains the ueImsiSinrMap reports sent by the CCs

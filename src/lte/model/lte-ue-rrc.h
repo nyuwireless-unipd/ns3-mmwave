@@ -24,7 +24,7 @@
  * Modified by: Michele Polese <michele.polese@gmail.com>
  *          Dual Connectivity functionalities
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *							Integration of Carrier Aggregation for the mmWave module
+ *              Integration of Carrier Aggregation for the mmWave module
  */
 
 #ifndef LTE_UE_RRC_H

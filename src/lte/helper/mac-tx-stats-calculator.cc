@@ -75,23 +75,23 @@ MacTxStatsCalculator::DoDispose ()
 void
 MacTxStatsCalculator::RegisterMacTxDl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx)
 {
-	if(!m_retxDlFile.is_open())
-	{
-	    m_retxDlFile.open(m_retxDlFilename.c_str());
-	    NS_LOG_LOGIC("File opened");
-	}
+  if(!m_retxDlFile.is_open())
+  {
+      m_retxDlFile.open(m_retxDlFilename.c_str());
+      NS_LOG_LOGIC("File opened");
+  }
   NS_LOG_LOGIC(rnti << cellId << packetSize << numRetx);
-	m_retxDlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << rnti << " "  << packetSize << " " << (uint32_t)numRetx << std::endl;
+  m_retxDlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << rnti << " "  << packetSize << " " << (uint32_t)numRetx << std::endl;
 }
 
 void
 MacTxStatsCalculator::RegisterMacTxUl(uint16_t rnti, uint16_t cellId, uint32_t packetSize, uint8_t numRetx)
 {
-	if(!m_retxUlFile.is_open())
-	{
-	    m_retxUlFile.open(m_retxUlFilename.c_str());
-	    NS_LOG_LOGIC("File opened");
-	}
+  if(!m_retxUlFile.is_open())
+  {
+      m_retxUlFile.open(m_retxUlFilename.c_str());
+      NS_LOG_LOGIC("File opened");
+  }
   m_retxUlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << rnti << " "  << packetSize << " " << (uint32_t)numRetx << std::endl;
 }
 

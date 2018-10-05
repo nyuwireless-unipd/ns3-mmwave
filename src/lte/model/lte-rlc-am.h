@@ -21,7 +21,7 @@
  * Modified by Michele Polese <michele.polese@gmail.com> to add DC functionalities
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *							Integration of Carrier Aggregation for the mmWave module
+ *              Integration of Carrier Aggregation for the mmWave module
  */
 
 #ifndef LTE_RLC_AM_H

@@ -191,7 +191,7 @@ LteRlc::GetLteMacSapUser ()
 void
 LteRlc::DoNotifyHarqDeliveryFailure (uint8_t harqId)
 {
-	NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this);
 }
 
 void

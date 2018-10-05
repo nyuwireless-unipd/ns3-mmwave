@@ -25,7 +25,7 @@
  *                  Dual Connectivity functionalities
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
- *								 Integration of Carrier Aggregation for the mmWave module
+ *                 Integration of Carrier Aggregation for the mmWave module
  */
 
 #include "lte-rlc-um-lowlat.h"
@@ -54,11 +54,11 @@ LteRlcUmLowLat::LteRlcUmLowLat ()
     m_vrUh (0),
     m_windowSize (512),
     m_expectedSeqNumber (0),
-		m_currTotalPacketSize (0),
-		//m_lastArrivalTime (0),
-		m_arrivalRate (0.0),
+    m_currTotalPacketSize (0),
+    //m_lastArrivalTime (0),
+    m_arrivalRate (0.0),
     m_bsrReported(false)
-		//m_forgetFactor (0.1)
+    //m_forgetFactor (0.1)
 {
   NS_LOG_FUNCTION (this);
   m_reassemblingState = WAITING_S0_FULL;
@@ -84,23 +84,23 @@ LteRlcUmLowLat::GetTypeId (void)
                    UintegerValue (10 * 1024),
                    MakeUintegerAccessor (&LteRlcUmLowLat::m_maxTxBufferSize),
                    MakeUintegerChecker<uint32_t> ())
-	 .AddAttribute ("ReportBufferStatusTimer",
-									"How much to wait to issue a new Report Buffer Status since the last time "
-									"a new SDU was received",
-									TimeValue (MilliSeconds (20)),
-									MakeTimeAccessor (&LteRlcUmLowLat::m_rbsTimerValue),
-									MakeTimeChecker ())
-	 .AddAttribute ("ReorderingTimeExpires",
-									"Time to wait for out of order PDUs"
-									"a new SDU was received",
-									TimeValue (MilliSeconds (100.0)),
-									MakeTimeAccessor (&LteRlcUmLowLat::m_reorderingTimeExpires),
-									MakeTimeChecker ())
+   .AddAttribute ("ReportBufferStatusTimer",
+                  "How much to wait to issue a new Report Buffer Status since the last time "
+                  "a new SDU was received",
+                  TimeValue (MilliSeconds (20)),
+                  MakeTimeAccessor (&LteRlcUmLowLat::m_rbsTimerValue),
+                  MakeTimeChecker ())
+   .AddAttribute ("ReorderingTimeExpires",
+                  "Time to wait for out of order PDUs"
+                  "a new SDU was received",
+                  TimeValue (MilliSeconds (100.0)),
+                  MakeTimeAccessor (&LteRlcUmLowLat::m_reorderingTimeExpires),
+                  MakeTimeChecker ())
     .AddAttribute ("SendBsrWhenPacketTx",
- 									"Call DoReportBufferStatus at the end of DoNotifyTxOpportunity",
+                   "Call DoReportBufferStatus at the end of DoNotifyTxOpportunity",
                   BooleanValue (false),
-        					MakeBooleanAccessor (&LteRlcUmLowLat::m_sendBsrWhenPacketTx),
-        					MakeBooleanChecker ())
+                  MakeBooleanAccessor (&LteRlcUmLowLat::m_sendBsrWhenPacketTx),
+                  MakeBooleanChecker ())
     ;
   return tid;
 }
@@ -144,9 +144,9 @@ LteRlcUmLowLat::DoTransmitPdcpPdu (Ptr<Packet> p)
 
       if (m_recentArrivalTimes.size () == m_numArrivalsToAvg)
       {
-      	m_recentArrivalTimes.pop_front ();
-      	m_currTotalPacketSize -= m_recentPacketSizes.front ();
-      	m_recentPacketSizes.pop_front ();
+        m_recentArrivalTimes.pop_front ();
+        m_currTotalPacketSize -= m_recentPacketSizes.front ();
+        m_recentPacketSizes.pop_front ();
       }
       m_recentArrivalTimes.push_back ((uint32_t)timeTag.GetSenderTimestamp ().GetMicroSeconds ());
       m_recentPacketSizes.push_back (p->GetSize ());
