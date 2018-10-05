@@ -74,28 +74,28 @@ RetxStatsCalculator::DoDispose ()
 
 void
 RetxStatsCalculator::RegisterRetxDl(uint64_t imsi, uint16_t cellId, 
-	uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
+  uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
 {
-	if(!m_retxDlFile.is_open())
-	{
-	    m_retxDlFile.open(m_retxDlFilename.c_str());
-	    NS_LOG_LOGIC("File opened");
-  	}
-	m_retxDlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " "
-		<< rnti << " " << (uint16_t) lcid << " " << packetSize << " " << numRetx << std::endl;
+  if(!m_retxDlFile.is_open())
+  {
+      m_retxDlFile.open(m_retxDlFilename.c_str());
+      NS_LOG_LOGIC("File opened");
+    }
+  m_retxDlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " "
+    << rnti << " " << (uint16_t) lcid << " " << packetSize << " " << numRetx << std::endl;
 }
 
 void
 RetxStatsCalculator::RegisterRetxUl(uint64_t imsi, uint16_t cellId, 
-	uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
+  uint16_t rnti, uint8_t lcid, uint32_t packetSize, uint32_t numRetx)
 {
-	if(!m_retxUlFile.is_open())
-	{
-	    m_retxUlFile.open(m_retxUlFilename.c_str());
-	    NS_LOG_LOGIC("File opened");
-  	}
-	m_retxUlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " "
-		<< rnti << " " << (uint16_t) lcid << " " << packetSize << " " << numRetx << std::endl;
+  if(!m_retxUlFile.is_open())
+  {
+      m_retxUlFile.open(m_retxUlFilename.c_str());
+      NS_LOG_LOGIC("File opened");
+    }
+  m_retxUlFile << Simulator::Now().GetSeconds() << " " << cellId << " " << imsi << " "
+    << rnti << " " << (uint16_t) lcid << " " << packetSize << " " << numRetx << std::endl;
 }
 
 }
