@@ -27,6 +27,8 @@ New user-visible features
 Bugs fixed
 ----------
 
+- Bug 2992 - lte: Send method of the LteUeNetDevice doesn't use protocolNumber parameter
+
 Known issues
 ------------
 In general, known issues are tracked on the project tracker available
@@ -34,6 +36,8 @@ at http://www.nsnam.org/bugzilla/
 
 Release 3.29
 ============
+
+This release is dedicated to the memory of project co-founder George Riley.
 
 Availability
 ------------

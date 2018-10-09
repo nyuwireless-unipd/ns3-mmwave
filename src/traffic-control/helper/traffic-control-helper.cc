@@ -369,9 +369,7 @@ TrafficControlHelper::Install (Ptr<NetDevice> d)
   // Create queue discs (from leaves to root)
   for (auto i = m_queueDiscFactory.size (); i-- > 0; )
     {
-      Ptr<QueueDisc> q = m_queueDiscFactory[i].CreateQueueDisc (m_queueDiscs);
-      q->SetNetDevice (d);
-      m_queueDiscs[i] = q;
+      m_queueDiscs[i] = m_queueDiscFactory[i].CreateQueueDisc (m_queueDiscs);
     }
 
   // Set the root queue disc (if any has been created) on the device
@@ -381,16 +379,14 @@ TrafficControlHelper::Install (Ptr<NetDevice> d)
       container.Add (m_queueDiscs[0]);
     }
 
-  // SetRootQueueDiscOnDevice calls SetupDevice (if it has not been called yet),
-  // which aggregates a netdevice queue interface to the device and creates the
-  // device transmission queues. Hence, we can install a queue limits object (if
-  // required) on all the device transmission queues
+  // Queue limits objects can only be installed if a netdevice queue interface
+  // has been aggregated to the netdevice. This is normally the case if the
+  // netdevice has been created via helpers. Abort the simulation if not.
   if (m_queueLimitsFactory.GetTypeId ().GetUid ())
     {
       Ptr<NetDeviceQueueInterface> ndqi = d->GetObject<NetDeviceQueueInterface> ();
-      NS_ASSERT (ndqi);
-      NS_ABORT_MSG_IF (ndqi->GetNTxQueues () == 0, "Could not install QueueLimits"
-                       << "because the TX queues have not been created yet");
+      NS_ABORT_MSG_IF (!ndqi, "A NetDeviceQueueInterface object has not been"
+                              "aggregated to the NetDevice");
       for (uint8_t i = 0; i < ndqi->GetNTxQueues (); i++)
         {
           Ptr<QueueLimits> ql = m_queueLimitsFactory.Create<QueueLimits> ();

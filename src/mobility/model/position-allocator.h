@@ -140,10 +140,6 @@ public:
    */
   void SetMinY (double yMin);
   /**
-   * \param z   the Z coordinate of all the positions allocated 
-   */
-  void SetZ (double z);
-  /**
    * \param deltaX the x interval between two x-consecutive positions.
    */
   void SetDeltaX (double deltaX);
@@ -194,7 +190,6 @@ private:
   enum LayoutType m_layoutType;  //!< currently selected layout type
   double m_xMin; //!< minimum boundary on x positions
   double m_yMin; //!< minimum boundary on y positions
-  double m_z; //!< z coordinate of all the positions generated
   uint32_t m_n;  //!< number of positions to allocate on each row or column
   double m_deltaX; //!< x interval between two consecutive x positions
   double m_deltaY; //!< y interval between two consecutive y positions
@@ -225,17 +220,12 @@ public:
    * \param y pointer to a RandomVariableStream object
    */
   void SetY (Ptr<RandomVariableStream> y);
-  /** 
-   * \param z   the Z coordinate of all the positions allocated 
-   */
-  void SetZ (double z);
 
   virtual Vector GetNext (void) const;
   virtual int64_t AssignStreams (int64_t stream);
 private:
   Ptr<RandomVariableStream> m_x; //!< pointer to x's random variable stream
   Ptr<RandomVariableStream> m_y; //!< pointer to y's random variable stream
-  double m_z; //!< z coordinate of all the positions generated
 };
 
 /**
@@ -311,10 +301,6 @@ public:
    * \param y   the Y coordinate of the center of the disc 
    */
   void SetY (double y);
-  /** 
-   * \param z   the Z coordinate of all the positions allocated 
-   */
-  void SetZ (double z);
 
   virtual Vector GetNext (void) const;
   virtual int64_t AssignStreams (int64_t stream);
@@ -323,7 +309,6 @@ private:
   Ptr<RandomVariableStream> m_rho; //!< pointer to rho's random variable stream
   double m_x; //!< x coordinate of center of disc
   double m_y; //!< y coordinate of center of disc
-  double m_z;  //!< z coordinate of the disc
 };
 
 
@@ -332,7 +317,7 @@ private:
  * \brief Allocate the positions uniformely (with constant density) randomly within a disc.
  *
  * UniformDiscPositionAllocator allocates the positions randomly within a disc \f$ D \f$ lying on the
- * plane \f$ z\f$ and having center at coordinates \f$ (x,y,z) \f$
+ * plane \f$ z=0 \f$ and having center at coordinates \f$ (x,y,0) \f$
  * and radius \f$ \rho \f$. The random positions are chosen such that,
  * for any subset \f$ S \subset D \f$, the expected value of the
  * fraction of points which fall into \f$ S \subset D \f$ corresponds
@@ -370,11 +355,6 @@ public:
    */
   void SetY (double y);
 
-  /** 
-   * \param z   the Z coordinate of all the positions allocated 
-   */
-  void SetZ (double z);
-
   virtual Vector GetNext (void) const;
   virtual int64_t AssignStreams (int64_t stream);
 private:
@@ -382,7 +362,6 @@ private:
   double m_rho; //!< value of the radius of the disc
   double m_x;  //!< x coordinate of center of disc
   double m_y;  //!< y coordinate of center of disc
-  double m_z;  //!< z coordinate of the disc
 };
 
 } // namespace ns3
