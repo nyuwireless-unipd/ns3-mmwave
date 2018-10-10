@@ -957,7 +957,7 @@ FdBetFfMacScheduler::DoSchedDlTriggerReq (const struct FfMacSchedSapProvider::Sc
                   (*itMap).second.push_back (i);
                 }
 
-              // caculate expected throughput for current UE
+              // calculate expected throughput for current UE
               std::map <uint16_t,uint8_t>::iterator itCqi;
               itCqi = m_p10CqiRxed.find ((*itMax).first);
               std::map <uint16_t,uint8_t>::iterator itTxMode;
@@ -1545,6 +1545,7 @@ FdBetFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sc
       else
         {
           // take the lowest CQI value (worst RB)
+    	  NS_ABORT_MSG_IF ((*itCqi).second.size() == 0, "CQI of RNTI = " << (*it).first << " has expired");
           double minSinr = (*itCqi).second.at (uldci.m_rbStart);
           if (minSinr == NO_SINR)
             {
@@ -1576,7 +1577,7 @@ FdBetFfMacScheduler::DoSchedUlTriggerReq (const struct FfMacSchedSapProvider::Sc
                   // restart from the first
                   it = m_ceBsrRxed.begin ();
                 }
-              NS_LOG_DEBUG (this << " UE discared for CQI=0, RNTI " << uldci.m_rnti);
+              NS_LOG_DEBUG (this << " UE discarded for CQI = 0, RNTI " << uldci.m_rnti);
               // remove UE from allocation map
               for (uint16_t i = uldci.m_rbStart; i < uldci.m_rbStart + uldci.m_rbLen; i++)
                 {
@@ -1757,9 +1758,7 @@ FdBetFfMacScheduler::DoSchedUlCqiInfoReq (const struct FfMacSchedSapProvider::Sc
             return;
           }
       }
-    case FfMacScheduler::ALL_UL_CQI:
       break;
-
     default:
       NS_FATAL_ERROR ("Unknown UL CQI type");
     }
