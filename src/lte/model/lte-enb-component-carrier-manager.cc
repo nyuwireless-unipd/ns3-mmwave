@@ -127,8 +127,12 @@ void
 LteEnbComponentCarrierManager::SetNumberOfComponentCarriers (uint16_t noOfComponentCarriers)
 {
   NS_LOG_FUNCTION (this);
+  NS_ABORT_MSG_IF (noOfComponentCarriers < MIN_NO_CC || noOfComponentCarriers > MAX_NO_CC, "Number of component carriers should be greater than 0 and less than 6");
   m_noOfComponentCarriers = noOfComponentCarriers;
+  //Set the number of component carriers in eNB RRC
+  m_ccmRrcSapUser->SetNumberOfComponentCarriers (noOfComponentCarriers);
 }
+
 
 void
 LteEnbComponentCarrierManager::SetRrc (const Ptr<LteEnbRrc> rrc)

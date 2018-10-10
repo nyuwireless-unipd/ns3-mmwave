@@ -1802,7 +1802,12 @@ LteUeRrc::CopyRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint16_t lcid)
   }
 }
 
-
+void
+LteUeRrc::DoSetNumberOfComponentCarriers (uint16_t noOfComponentCarriers)
+{
+  NS_LOG_FUNCTION (this);
+  m_numberOfComponentCarriers = noOfComponentCarriers;
+}
 
 void
 LteUeRrc::SynchronizeToStrongestCell ()

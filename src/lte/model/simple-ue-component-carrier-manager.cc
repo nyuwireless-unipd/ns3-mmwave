@@ -132,7 +132,6 @@ SimpleUeCcmMacSapUser::NotifyHarqDeliveryFailure ()
 ///////////////////////////////////////////////////////////
 
 SimpleUeComponentCarrierManager::SimpleUeComponentCarrierManager ()
-: m_ccmRrcSapUser (0)
 {
   NS_LOG_FUNCTION (this);
   m_ccmRrcSapProvider = new MemberLteUeCcmRrcSapProvider<SimpleUeComponentCarrierManager> (this);
@@ -144,7 +143,6 @@ SimpleUeComponentCarrierManager::SimpleUeComponentCarrierManager ()
 SimpleUeComponentCarrierManager::~SimpleUeComponentCarrierManager ()
 {
   NS_LOG_FUNCTION (this);
-
 }
 
 
@@ -154,7 +152,6 @@ SimpleUeComponentCarrierManager::DoDispose ()
   NS_LOG_FUNCTION (this);
   delete m_ccmMacSapUser;
   delete m_ccmMacSapProvider;
-  delete m_ccmRrcSapProvider;
 }
 
 
@@ -174,21 +171,6 @@ SimpleUeComponentCarrierManager::GetLteMacSapProvider ()
 {
   NS_LOG_FUNCTION (this);
   return m_ccmMacSapProvider;
-}
-
-void
-SimpleUeComponentCarrierManager::SetLteCcmRrcSapUser (LteUeCcmRrcSapUser* s)
-{
-  NS_LOG_FUNCTION (this << s);
-  m_ccmRrcSapUser = s;
-}
-
-
-LteUeCcmRrcSapProvider*
-SimpleUeComponentCarrierManager::GetLteCcmRrcSapProvider ()
-{
-  NS_LOG_FUNCTION (this);
-  return m_ccmRrcSapProvider;
 }
 
 

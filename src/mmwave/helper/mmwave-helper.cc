@@ -903,18 +903,20 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
 
   // mmWave CCM and RRC
   Ptr<LteUeComponentCarrierManager> mmWaveCcmUe = m_ueComponentCarrierManagerFactory.Create<LteUeComponentCarrierManager> ();
-  mmWaveCcmUe->SetNumberOfComponentCarriers (m_noOfCcs);
 
   Ptr<LteUeRrc> mmWaveRrc = CreateObject<LteUeRrc> ();
   mmWaveRrc->SetAttribute ("SecondaryRRC", BooleanValue (true));
-  mmWaveRrc->m_numberOfComponentCarriers = m_noOfCcs;
 
-  // run intializeSap to create the proper number of sap provider/users
-  mmWaveRrc->InitializeSap ();
   mmWaveRrc->SetLteMacSapProvider (mmWaveCcmUe->GetLteMacSapProvider ());
   // setting ComponentCarrierManager SAP
   mmWaveRrc->SetLteCcmRrcSapProvider (mmWaveCcmUe->GetLteCcmRrcSapProvider ());
   mmWaveCcmUe->SetLteCcmRrcSapUser (mmWaveRrc->GetLteCcmRrcSapUser ());
+  // Set number of component carriers. Note: UE CCM would also set the
+  // number of component carriers in UE RRC
+  mmWaveCcmUe->SetNumberOfComponentCarriers (m_noOfCcs);
+
+  // run intializeSap to create the proper number of sap provider/users
+  mmWaveRrc->InitializeSap ();
 
   if (m_useIdealRrc)
     {
@@ -992,19 +994,21 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
 
   // LTE CCM and RRC
   Ptr<LteUeComponentCarrierManager> lteCcmUe = m_ueComponentCarrierManagerFactory.Create<LteUeComponentCarrierManager> ();
-  lteCcmUe->SetNumberOfComponentCarriers (m_noOfLteCcs);
 
   Ptr<LteUeRrc> lteRrc = CreateObject<LteUeRrc> ();
-  lteRrc->m_numberOfComponentCarriers = m_noOfLteCcs;
   lteRrc->m_numberOfMmWaveComponentCarriers = m_noOfCcs;
-  // run intializeSap to create the proper number of sap provider/users
-  lteRrc->InitializeSap ();
+
   lteRrc->SetLteMacSapProvider (lteCcmUe->GetLteMacSapProvider ());
   lteRrc->SetMmWaveMacSapProvider (mmWaveCcmUe->GetLteMacSapProvider ());
-
   // setting ComponentCarrierManager SAP
   lteRrc->SetLteCcmRrcSapProvider (lteCcmUe->GetLteCcmRrcSapProvider ());
   lteCcmUe->SetLteCcmRrcSapUser (lteRrc->GetLteCcmRrcSapUser ());
+  // Set number of component carriers. Note: UE CCM would also set the
+  // number of component carriers in UE RRC
+  lteCcmUe->SetNumberOfComponentCarriers (m_noOfLteCcs);
+
+  // run intializeSap to create the proper number of sap provider/users
+  lteRrc->InitializeSap ();
 
   if (m_useIdealRrc)
     {
@@ -1445,18 +1449,18 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
     }
 
   Ptr<LteUeComponentCarrierManager> ccmUe = m_ueComponentCarrierManagerFactory.Create<LteUeComponentCarrierManager> ();
-  ccmUe->SetNumberOfComponentCarriers (m_noOfCcs);
 
   Ptr<LteUeRrc> rrc = CreateObject<LteUeRrc> ();
-  rrc->m_numberOfComponentCarriers = m_noOfCcs;
-
-  // run intializeSap to create the proper number of sap provider/users
-  rrc->InitializeSap ();
-
   rrc->SetLteMacSapProvider (ccmUe->GetLteMacSapProvider ());
   // setting ComponentCarrierManager SAP
   rrc->SetLteCcmRrcSapProvider (ccmUe->GetLteCcmRrcSapProvider ());
   ccmUe->SetLteCcmRrcSapUser (rrc->GetLteCcmRrcSapUser ());
+  // Set number of component carriers. Note: UE CCM would also set the
+  // number of component carriers in UE RRC
+  ccmUe->SetNumberOfComponentCarriers (m_noOfCcs);
+
+  // run intializeSap to create the proper number of sap provider/users
+  rrc->InitializeSap ();
 
   if (m_useIdealRrc)
     {
@@ -1689,6 +1693,13 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
   Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_enbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
 
+  //ComponentCarrierManager SAP
+  rrc->SetLteCcmRrcSapProvider (ccmEnbManager->GetLteCcmRrcSapProvider ());
+  ccmEnbManager->SetLteCcmRrcSapUser (rrc->GetLteCcmRrcSapUser ());
+  // Set number of component carriers. Note: eNB CCM would also set the
+  // number of component carriers in eNB RRC
+  ccmEnbManager->SetNumberOfComponentCarriers (m_noOfCcs);
+
   // create the MmWaveComponentCarrierConf map used for the RRC setup
   std::map<uint8_t, LteEnbRrc::MmWaveComponentCarrierConf> ccConfMap;
   for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
@@ -1701,12 +1712,6 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       ccConfMap[it->first] = ccConf;
     }
   rrc->ConfigureMmWaveCarriers (ccConfMap);
-
-  //ComponentCarrierManager SAP
-  rrc->SetLteCcmRrcSapProvider (ccmEnbManager->GetLteCcmRrcSapProvider ());
-  ccmEnbManager->SetLteCcmRrcSapUser (rrc->GetLteCcmRrcSapUser ());
-  ccmEnbManager->SetNumberOfComponentCarriers (m_noOfCcs);
-  ccmEnbManager->SetRrc (rrc);
 
   std::map<uint8_t, double> bandwidthMap;
   for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = ccMap.begin (); it != ccMap.end (); ++it)
@@ -1983,13 +1988,17 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
 
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();
   Ptr<LteEnbComponentCarrierManager> ccmEnbManager = m_lteEnbComponentCarrierManagerFactory.Create<LteEnbComponentCarrierManager> ();
-  rrc->ConfigureCarriers (ccMap);
 
   //ComponentCarrierManager SAP
   rrc->SetLteCcmRrcSapProvider (ccmEnbManager->GetLteCcmRrcSapProvider ());
   ccmEnbManager->SetLteCcmRrcSapUser (rrc->GetLteCcmRrcSapUser ());
+  // Set number of component carriers. Note: eNB CCM would also set the
+  // number of component carriers in eNB RRC
   ccmEnbManager->SetNumberOfComponentCarriers (m_noOfLteCcs);
+
   ccmEnbManager->SetRrc (rrc);
+
+  rrc->ConfigureCarriers (ccMap);
 
   if (m_useIdealRrc)
     {
