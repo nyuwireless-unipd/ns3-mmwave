@@ -526,12 +526,6 @@ private:
   void DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg);
 
 
-  /**
-   * RRC CCM SAP USER Method
-   * \param res
-   */
-  void DoComponentCarrierEnabling (std::vector<uint8_t> res);
-
 
   // INTERNAL METHODS
 

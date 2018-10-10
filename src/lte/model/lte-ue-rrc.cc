@@ -654,7 +654,7 @@ LteUeRrc::InitializeSap (void)
       // is not set and then an error is raised
       // In this case m_numberOfComponentCarriers is set to 1
       m_numberOfComponentCarriers = MIN_NO_CC;
-    } 
+    }
   if (m_numberOfComponentCarriers > MIN_NO_CC )
     {
       for ( uint16_t i = 1; i < m_numberOfComponentCarriers; i++)
@@ -4034,11 +4034,6 @@ LteUeRrc::SwitchToState (State newState)
     }
 }
 
-void
-LteUeRrc::DoComponentCarrierEnabling (std::vector<uint8_t> res)
-  {
-    NS_LOG_INFO (this);
-  }
 
 void
 LteUeRrc::SaveScellUeMeasurements (uint16_t sCellId, double rsrp, double rsrq,

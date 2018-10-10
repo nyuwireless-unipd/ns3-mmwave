@@ -61,7 +61,7 @@ public:
   /// let the forwarder class access the protected and private members
   friend class MemberLteUeCcmRrcSapProvider<SimpleUeComponentCarrierManager>;
   //friend class MemberLteUeCcmRrcSapUser<SimpleUeComponentCarrierManager>;
-  
+
   /// allow SimpleUeCcmMacSapProvider class friend access
   friend class SimpleUeCcmMacSapProvider;
   /// allow SimpleUeCcmMacSapUser class friend access
@@ -125,8 +125,6 @@ protected:
    * \returns updated LC list
    */
   std::vector<uint16_t> DoRemoveLc (uint8_t lcid);
-  /// Notify connection reconfiguration message
-  void DoNotifyConnectionReconfigurationMsg ();
   /**
    * \brief Configure signal bearer function
    * \param lcId the LCID
@@ -135,9 +133,9 @@ protected:
    * \returns LteMacSapUser *
    */
   LteMacSapUser* DoConfigureSignalBearer (uint8_t lcId,  LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
-  
+
 private:
-  
+
   LteUeCcmRrcSapUser* m_ccmRrcSapUser;//!< Interface to the eNodeB RRC instance.
   LteUeCcmRrcSapProvider* m_ccmRrcSapProvider; //!< Receive API calls from the eNodeB RRC instance.
   LteMacSapUser* m_ccmMacSapUser;//!< Interface to the eNodeB RLC instance.
