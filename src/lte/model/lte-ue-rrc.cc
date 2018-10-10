@@ -1192,8 +1192,13 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
           SwitchToState (CONNECTED_HANDOVER);
           const LteRrcSap::MobilityControlInfo& mci = msg.mobilityControlInfo;
           m_handoverStartTrace (m_imsi, m_cellId, m_rnti, mci.targetPhysCellId);
-          m_cmacSapProvider.at(0)->Reset ();
-          m_cphySapProvider.at(0)->Reset ();
+          //We should reset the MACs and PHYs for all the component carriers
+          for (uint16_t i = 0; i < m_numberOfComponentCarriers; i++)
+            {
+              m_cmacSapProvider.at(i)->Reset ();
+              m_cphySapProvider.at(i)->Reset ();
+            }
+          m_ccmRrcSapProvider->Reset();
           m_cellId = mci.targetPhysCellId;
           SwitchLowerLayerProviders(m_cellId); // for InterRat HO
           NS_ASSERT (mci.haveCarrierFreq);
@@ -1228,6 +1233,12 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
 
           m_drbMap.clear (); // dispose all DRBs
           m_rlcMap.clear (); // dispose all MmWave RLCs
+          ApplyRadioResourceConfigDedicated (msg.radioResourceConfigDedicated);
+          if (msg.haveNonCriticalExtension)
+            {
+              NS_LOG_DEBUG (this << "RNTI " << m_rnti << " Handover. Configuring secondary carriers");
+              ApplyRadioResourceConfigDedicatedSecondaryCarrier (msg.nonCriticalExtension);
+            }
 
           if(!m_isSecondaryRRC)
           {
@@ -1260,11 +1271,11 @@ LteUeRrc::DoRecvRrcConnectionReconfiguration (LteRrcSap::RrcConnectionReconfigur
         }
       else
         {
-          NS_LOG_INFO ("UE " << m_rnti << " on cellId " << m_cellId << " haveMobilityControlInfo == false");
+          NS_LOG_INFO ("haveMobilityControlInfo == false");
           if (msg.haveNonCriticalExtension)
             {
               ApplyRadioResourceConfigDedicatedSecondaryCarrier (msg.nonCriticalExtension);
-              NS_LOG_FUNCTION ( this << "RNTI " << m_rnti << " Configured for CA" );
+              NS_LOG_DEBUG (this << "RNTI " << m_rnti << " Configured for CA" );
             }
           if (msg.haveRadioResourceConfigDedicated)
             {
@@ -1345,8 +1356,10 @@ LteUeRrc::DoRecvRrcConnectionReject (LteRrcSap::RrcConnectionReject msg)
 {
   NS_LOG_FUNCTION (this);
   m_connectionTimeout.Cancel ();
-
-  m_cmacSapProvider.at (0)->Reset ();       // reset the MAC
+  for (uint16_t i = 0; i < m_numberOfComponentCarriers; i++)
+    {
+      m_cmacSapProvider.at(i)->Reset (); // reset the MAC
+    }
   m_hasReceivedSib2 = false;         // invalidate the previously received SIB2
   SwitchToState (IDLE_CAMPED_NORMALLY);
   m_asSapUser->NotifyConnectionFailed ();  // inform upper layer
