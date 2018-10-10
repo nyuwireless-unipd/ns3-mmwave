@@ -1996,8 +1996,6 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
   // number of component carriers in eNB RRC
   ccmEnbManager->SetNumberOfComponentCarriers (m_noOfLteCcs);
 
-  ccmEnbManager->SetRrc (rrc);
-
   rrc->ConfigureCarriers (ccMap);
 
   if (m_useIdealRrc)

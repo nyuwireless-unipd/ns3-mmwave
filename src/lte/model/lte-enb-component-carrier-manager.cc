@@ -135,12 +135,6 @@ LteEnbComponentCarrierManager::SetNumberOfComponentCarriers (uint16_t noOfCompon
 
 
 void
-LteEnbComponentCarrierManager::SetRrc (const Ptr<LteEnbRrc> rrc)
-{
-  m_rrc = rrc;
-}
-
-void
 LteEnbComponentCarrierManager::SetBandwidthMap (std::map<uint8_t, double> bandwidthMap)
 {
   m_bandwidthMap = bandwidthMap;
