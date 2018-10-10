@@ -635,12 +635,14 @@ LteUeRrc::DoInitialize (void)
 
   if(m_interRatHoCapable)
   {
-    m_mmWaveCmacSapProvider.at(0)->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
-    m_lteCmacSapProvider.at(0)->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+    LteMacSapUser* msu = m_ccmRrcSapProvider->ConfigureSignalBearer(lcid, lcConfig, rlc->GetLteMacSapUser ());
+    m_mmWaveCmacSapProvider.at(0)->AddLc (lcid, lcConfig, msu);
+    m_lteCmacSapProvider.at(0)->AddLc (lcid, lcConfig, msu);
   }
   else
   {
-    m_cmacSapProvider.at(0)->AddLc (lcid, lcConfig, rlc->GetLteMacSapUser ());
+    LteMacSapUser* msu = m_ccmRrcSapProvider->ConfigureSignalBearer(lcid, lcConfig, rlc->GetLteMacSapUser ());
+    m_cmacSapProvider.at(0)->AddLc (lcid, lcConfig, msu);
   }
 }
 
@@ -2253,196 +2255,31 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
           lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
           lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
 
-          for (uint32_t i = 0; i < m_numberOfComponentCarriers; i++)
-          {
-            m_cmacSapProvider.at (i)->AddLc (dtamIt->logicalChannelIdentity,
-                                    lcConfig,
-                                    rlc->GetLteMacSapUser ());
-          }
+          NS_LOG_DEBUG (this << " UE RRC RNTI " << m_rnti << " Number Of Component Carriers "<<m_numberOfComponentCarriers<< " lcID " << (uint16_t) dtamIt->logicalChannelIdentity);
+          //Call AddLc of UE component carrier manager
+          std::vector <LteUeCcmRrcSapProvider::LcsConfig> lcOnCcMapping = m_ccmRrcSapProvider->AddLc (dtamIt->logicalChannelIdentity, lcConfig, rlc->GetLteMacSapUser ());
+
+         NS_LOG_DEBUG ("Size of lcOnCcMapping vector "<<lcOnCcMapping.size());
+         std::vector<LteUeCcmRrcSapProvider::LcsConfig>::iterator itLcOnCcMapping = lcOnCcMapping.begin ();
+         NS_ASSERT_MSG (itLcOnCcMapping != lcOnCcMapping.end (), "Component carrier manager failed to add LC for data radio bearer");
+
+         for (itLcOnCcMapping = lcOnCcMapping.begin (); itLcOnCcMapping != lcOnCcMapping.end (); ++itLcOnCcMapping)
+           {
+             NS_LOG_DEBUG ("RNTI " << m_rnti <<" LCG id " << (uint16_t) itLcOnCcMapping->lcConfig.logicalChannelGroup
+                                                       <<" ComponentCarrierId " << itLcOnCcMapping->componentCarrierId);
+             uint8_t index = itLcOnCcMapping->componentCarrierId;
+             LteUeCmacSapProvider::LogicalChannelConfig lcConfigFromCcm = itLcOnCcMapping->lcConfig;
+             LteMacSapUser *msu = itLcOnCcMapping->msu;
+             m_cmacSapProvider.at (index)->AddLc (dtamIt->logicalChannelIdentity, lcConfigFromCcm, msu);
+           }
+
           rlc->Initialize ();
         }
       else
         {
           NS_LOG_INFO ("request to modify existing DRBID");
           Ptr<LteDataRadioBearerInfo> drbInfo = drbMapIt->second;
-          NS_LOG_INFO ("Is MC " << dtamIt->is_mc);
-          if(dtamIt->is_mc == true) // we need to setup the RLC for MmWave communications
-          {
-            Ptr<McUePdcp> pdcp = DynamicCast<McUePdcp> (drbInfo->m_pdcp);
-            if(pdcp !=0)
-            {
-              // create Rlc
-              TypeId rlcTypeId;
-              if (m_useRlcSm)
-                {
-                  rlcTypeId = LteRlcSm::GetTypeId ();
-                  NS_LOG_INFO("SM");
-                }
-              else
-                {
-                  switch (dtamIt->rlcConfig.choice)
-                    {
-                    case LteRrcSap::RlcConfig::AM:
-                      rlcTypeId = LteRlcAm::GetTypeId ();
-                      NS_LOG_INFO("AM");
-                      break;
-
-                    case LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL:
-                      rlcTypeId = LteRlcUm::GetTypeId ();
-                      NS_LOG_INFO("UM");
-                      break;
-
-                    default:
-                      NS_FATAL_ERROR ("unsupported RLC configuration");
-                      break;
-                    }
-                }
-
-              ObjectFactory rlcObjectFactory;
-              rlcObjectFactory.SetTypeId (rlcTypeId);
-              Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
-              rlc->SetLteMacSapProvider (m_mmWaveMacSapProvider);
-              rlc->SetRnti (m_mmWaveRnti);
-              rlc->SetLcId (dtamIt->logicalChannelIdentity);
-
-              struct LteUeCmacSapProvider::LogicalChannelConfig lcConfig;
-              lcConfig.priority = dtamIt->logicalChannelConfig.priority;
-              lcConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
-              lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
-              lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
-
-              //This is executed only if this is a secondary (mmWave) rrc
-              for (uint32_t i = 0; i < m_numberOfMmWaveComponentCarriers; i++)
-              {
-                m_mmWaveCmacSapProvider.at (i)->AddLc (dtamIt->logicalChannelIdentity,
-                                        lcConfig,
-                                        rlc->GetLteMacSapUser ());
-              }
-              if (rlcTypeId != LteRlcSm::GetTypeId ())
-              {
-                pdcp->SetMmWaveRnti (m_mmWaveRnti);
-                pdcp->SetMmWaveRlcSapProvider (rlc->GetLteRlcSapProvider ());
-                rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
-              }
-              rlc->Initialize();
-
-              Ptr<RlcBearerInfo> rlcInfo = CreateObject<RlcBearerInfo>();
-              rlcInfo->m_rlc = rlc;
-              rlcInfo->rlcConfig.choice = dtamIt->rlcConfig.choice;
-              rlcInfo->logicalChannelIdentity = dtamIt->logicalChannelIdentity;
-              rlcInfo->mmWaveRnti = m_mmWaveRnti;
-
-              LteRrcSap::LogicalChannelConfig logicalChannelConfig;
-              logicalChannelConfig.priority = dtamIt->logicalChannelConfig.priority;
-              logicalChannelConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
-              logicalChannelConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
-              logicalChannelConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
-
-              rlcInfo->logicalChannelConfig = logicalChannelConfig;
-
-              // switch to the mmWave RLC
-              bool useMmWaveConnection = true;
-              pdcp->SwitchConnection(useMmWaveConnection);
-              NS_LOG_INFO("LteUeRrc SwitchToMmWave and create new rlc " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
-              m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
-
-              // check if this rlc is already in the map
-              if(m_rlcMap.find(dtamIt->drbIdentity) != m_rlcMap.end())
-              {
-                // get the RLC buffer content and store it in this RLC
-                CopyRlcBuffers(m_rlcMap.find(dtamIt->drbIdentity)->second->m_rlc, drbInfo->m_pdcp, drbInfo->m_logicalChannelIdentity);
-              }
-              m_rlcMap[dtamIt->drbIdentity] = rlcInfo;
-            }
-            else
-            {
-              NS_FATAL_ERROR("MC setup on a non MC-capable bearer");
-            }
-
-          }
-          else
-          {
-            NS_LOG_INFO ("Modify Data Radio Bearer : not implemented");
-            // TypeId rlcTypeId;
-            // if (m_useRlcSm)
-            //   {
-            //     rlcTypeId = LteRlcSm::GetTypeId ();
-            //   }
-            // else
-            //   {
-            //     switch (dtamIt->rlcConfig.choice)
-            //       {
-            //       case LteRrcSap::RlcConfig::AM:
-            //         rlcTypeId = LteRlcAm::GetTypeId ();
-            //         break;
-
-            //       case LteRrcSap::RlcConfig::UM_BI_DIRECTIONAL:
-            //         rlcTypeId = LteRlcUm::GetTypeId ();
-            //         break;
-
-            //       default:
-            //         NS_FATAL_ERROR ("unsupported RLC configuration");
-            //         break;
-            //       }
-            //   }
-
-            // ObjectFactory rlcObjectFactory;
-            // rlcObjectFactory.SetTypeId (rlcTypeId);
-            // Ptr<LteRlc> rlc = rlcObjectFactory.Create ()->GetObject<LteRlc> ();
-            // rlc->SetLteMacSapProvider (m_macSapProvider);
-            // rlc->SetRnti (m_rnti);
-            // rlc->SetLcId (dtamIt->logicalChannelIdentity);
-
-            // Ptr<LteDataRadioBearerInfo> drbInfo = CreateObject<LteDataRadioBearerInfo> ();
-            // drbInfo->m_rlc = rlc;
-            // drbInfo->m_epsBearerIdentity = dtamIt->epsBearerIdentity;
-            // drbInfo->m_logicalChannelIdentity = dtamIt->logicalChannelIdentity;
-            // drbInfo->m_drbIdentity = dtamIt->drbIdentity;
-            // drbInfo->m_rlcConfig.choice = dtamIt->rlcConfig.choice;
-
-            // // we need PDCP only for real RLC, i.e., RLC/UM or RLC/AM
-            // // if we are using RLC/SM we don't care of anything above RLC
-            // if (rlcTypeId != LteRlcSm::GetTypeId ())
-            //   {
-            //     Ptr<LtePdcp> pdcp = CreateObject<LtePdcp> ();
-            //     pdcp->SetRnti (m_rnti);
-            //     pdcp->SetLcId (dtamIt->logicalChannelIdentity);
-            //     pdcp->SetLtePdcpSapUser (m_drbPdcpSapUser);
-            //     pdcp->SetLteRlcSapProvider (rlc->GetLteRlcSapProvider ());
-            //     rlc->SetLteRlcSapUser (pdcp->GetLteRlcSapUser ());
-            //     drbInfo->m_pdcp = pdcp;
-            //   }
-
-            // m_bid2DrbidMap[dtamIt->epsBearerIdentity] = dtamIt->drbIdentity;
-
-            // struct LteRrcSap::LogicalChannelConfig lcConfigToStore;
-            // lcConfigToStore.priority = dtamIt->logicalChannelConfig.priority;
-            // lcConfigToStore.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
-            // lcConfigToStore.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
-            // lcConfigToStore.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
-            // drbInfo->m_logicalChannelConfig = lcConfigToStore;
-
-            // struct LteUeCmacSapProvider::LogicalChannelConfig lcConfig;
-            // lcConfig.priority = dtamIt->logicalChannelConfig.priority;
-            // lcConfig.prioritizedBitRateKbps = dtamIt->logicalChannelConfig.prioritizedBitRateKbps;
-            // lcConfig.bucketSizeDurationMs = dtamIt->logicalChannelConfig.bucketSizeDurationMs;
-            // lcConfig.logicalChannelGroup = dtamIt->logicalChannelConfig.logicalChannelGroup;
-
-            // rlc->Initialize ();
-
-            // // check if an RLC for this drbid is already in the map
-            // if(m_drbMap.find(dtamIt->drbIdentity) != m_drbMap.end())
-            // {
-            //   // get the RLC buffer content and store it in this RLC
-            //   CopyRlcBuffers(m_drbMap.find(dtamIt->drbIdentity)->second->m_rlc, drbInfo->m_pdcp, drbInfo->m_logicalChannelIdentity);
-            // }
-            // m_drbMap[dtamIt->drbIdentity] = drbInfo;
-
-            // m_cmacSapProvider->AddLc (dtamIt->logicalChannelIdentity,
-            //                           lcConfig,
-            //                           rlc->GetLteMacSapUser ());
-
-          }
+          /// \todo currently not implemented. Would need to modify drbInfo, and then propagate changes to the MAC
         }
     }
 
