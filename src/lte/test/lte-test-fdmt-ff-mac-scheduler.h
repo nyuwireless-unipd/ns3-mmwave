@@ -54,7 +54,7 @@ public:
    * \param thrRefUl UL throughput reference
    * \param errorModelEnabled error model enabled?
    */
-  LenaFdMtFfMacSchedulerTestCase (uint16_t nUser, uint16_t dist, double thrRefDl, double thrRefUl,bool errorModelEnabled);
+  LenaFdMtFfMacSchedulerTestCase (uint16_t nUser, double dist, double thrRefDl, double thrRefUl,bool errorModelEnabled);
   virtual ~LenaFdMtFfMacSchedulerTestCase ();
 
 private:
@@ -65,10 +65,10 @@ private:
    * \param dist distance between nodes
    * \returns name string
    */
-  static std::string BuildNameString (uint16_t nUser, uint16_t dist);
+  static std::string BuildNameString (uint16_t nUser, double dist);
   virtual void DoRun (void);
   uint16_t m_nUser; ///< number of UE nodes
-  uint16_t m_dist; ///< distance between the nodes
+  double m_dist; ///< distance between the nodes
   double m_thrRefDl; ///< DL throughput reference
   double m_thrRefUl; ///< UL throughput reference
   bool m_errorModelEnabled; ///< error model enabled?

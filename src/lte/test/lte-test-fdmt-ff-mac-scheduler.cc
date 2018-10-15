@@ -157,14 +157,14 @@ static LenaTestFdMtFfMacSchedulerSuite lenaTestFdMtFfMacSchedulerSuite;
 // --------------- T E S T - C A S E ------------------------------
 
 std::string
-LenaFdMtFfMacSchedulerTestCase::BuildNameString (uint16_t nUser, uint16_t dist)
+LenaFdMtFfMacSchedulerTestCase::BuildNameString (uint16_t nUser, double dist)
 {
   std::ostringstream oss;
   oss << nUser << " UEs, distance " << dist << " m";
   return oss.str ();
 }
 
-LenaFdMtFfMacSchedulerTestCase::LenaFdMtFfMacSchedulerTestCase (uint16_t nUser, uint16_t dist, double thrRefDl, double thrRefUl, bool errorModelEnabled)
+LenaFdMtFfMacSchedulerTestCase::LenaFdMtFfMacSchedulerTestCase (uint16_t nUser, double dist, double thrRefDl, double thrRefUl, bool errorModelEnabled)
   : TestCase (BuildNameString (nUser, dist)),
     m_nUser (nUser),
     m_dist (dist),
@@ -192,6 +192,7 @@ LenaFdMtFfMacSchedulerTestCase::DoRun (void)
     }
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
+  Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (40));
 
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));

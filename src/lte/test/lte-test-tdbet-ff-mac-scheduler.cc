@@ -211,6 +211,7 @@ LenaTdBetFfMacSchedulerTestCase1::DoRun (void)
     }
 
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
+  Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (40));
 
   //Disable Uplink Power Control
   Config::SetDefault ("ns3::LteUePhy::EnableUplinkPowerControl", BooleanValue (false));
