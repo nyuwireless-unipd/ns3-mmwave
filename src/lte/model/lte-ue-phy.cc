@@ -150,8 +150,6 @@ LteUePhy::LteUePhy ()
 
 LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   : LtePhy (dlPhy, ulPhy),
-    m_p10CqiPeriodicity (MilliSeconds (1)),  // ideal behavior
-    m_a30CqiPeriodicity (MilliSeconds (1)),  // ideal behavior
     m_uePhySapUser (0),
     m_ueCphySapUser (0),
     m_state (CELL_SEARCH),
@@ -289,6 +287,12 @@ LteUePhy::GetTypeId (void)
                    "length of layer-1 filtering.",
                    TimeValue (MilliSeconds (200)),
                    MakeTimeAccessor (&LteUePhy::m_ueMeasurementsFilterPeriod),
+                   MakeTimeChecker ())
+    .AddAttribute ("DownlinkCqiPeriodicity",
+                   "Periodicity in milliseconds for reporting the"
+                   "wideband and subband downlink CQIs to the eNB",
+                   TimeValue (MilliSeconds (1)),
+                   MakeTimeAccessor (&LteUePhy::SetDownlinkCqiPeriodicity),
                    MakeTimeChecker ())
     .AddTraceSource ("ReportUeMeasurements",
                      "Report UE measurements RSRP (dBm) and RSRQ (dB).",
@@ -845,6 +849,14 @@ LteUePhy::ReportUeMeasurements ()
 
   m_ueMeasurementsMap.clear ();
   Simulator::Schedule (m_ueMeasurementsFilterPeriod, &LteUePhy::ReportUeMeasurements, this);
+}
+
+void
+LteUePhy::SetDownlinkCqiPeriodicity (Time cqiPeriodicity)
+{
+  NS_LOG_FUNCTION (this << cqiPeriodicity);
+  m_a30CqiPeriodicity = cqiPeriodicity;
+  m_p10CqiPeriodicity = cqiPeriodicity;
 }
 
 void

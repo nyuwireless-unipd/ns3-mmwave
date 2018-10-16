@@ -376,6 +376,13 @@ private:
    */
   void ReportUeMeasurements ();
   /**
+   * \brief Set the periodicty for the downlink periodic
+   * wideband and aperiodic subband CQI reporting.
+   *
+   * \param cqiPeriodicity The downlink CQI reporting periodicity in milliseconds
+   */
+  void SetDownlinkCqiPeriodicity (Time cqiPeriodicity);
+  /**
    * Switch the UE PHY to the given state.
    * \param s the destination state
    */
