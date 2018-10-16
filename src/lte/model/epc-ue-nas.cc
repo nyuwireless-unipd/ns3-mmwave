@@ -1,7 +1,6 @@
 /* -*-  Mode: C++; c-file-style: "gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2011 Centre Tecnologic de Telecomunicacions de Catalunya (CTTC)
- * Copyright (c) 2016, University of Padova, Dep. of Information Engineering, SIGNET lab
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -230,15 +229,15 @@ EpcUeNas::ActivateEpsBearer (EpsBearer bearer, Ptr<EpcTft> tft)
 }
 
 bool
-EpcUeNas::Send (Ptr<Packet> packet)
+EpcUeNas::Send (Ptr<Packet> packet, uint16_t protocolNumber)
 {
-  NS_LOG_FUNCTION (this << packet);
+  NS_LOG_FUNCTION (this << packet << protocolNumber);
 
   switch (m_state)
     {
     case ACTIVE:
       {
-        uint32_t id = m_tftClassifier.Classify (packet, EpcTft::UPLINK);
+        uint32_t id = m_tftClassifier.Classify (packet, EpcTft::UPLINK, protocolNumber);
         NS_ASSERT ((id & 0xFFFFFF00) == 0);
         uint8_t bid = (uint8_t) (id & 0x000000FF);
         if (bid == 0)
