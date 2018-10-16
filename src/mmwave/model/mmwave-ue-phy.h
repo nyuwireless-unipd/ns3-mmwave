@@ -144,6 +144,7 @@ private:
   void DoSynchronizeWithEnb (uint16_t cellId);
   void DoSynchronizeWithEnb (uint16_t cellId, uint16_t dlEarfcn);
   void DoSetPa (double pa);
+  void DoSetRsrpFilterCoefficient (uint8_t rsrpFilterCoefficient);
   void DoSetDlBandwidth (uint8_t ulBandwidth);
   void DoConfigureUplink (uint16_t ulEarfcn, uint8_t ulBandwidth);
   void DoConfigureReferenceSignalPower (int8_t referenceSignalPower);
