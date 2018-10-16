@@ -4203,13 +4203,13 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       }
       else
       {
+        m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
         if(m_handoverMode == THRESHOLD)
         {
           ThresholdBasedSecondaryCellHandover(imsiIter, sinrDifference, maxSinrCellId, maxSinrDb);
         }
         else if(m_handoverMode == FIXED_TTT || m_handoverMode == DYNAMIC_TTT)
         {
-          m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
           TttBasedHandover(imsiIter, sinrDifference, maxSinrCellId, maxSinrDb);
         }
         else
