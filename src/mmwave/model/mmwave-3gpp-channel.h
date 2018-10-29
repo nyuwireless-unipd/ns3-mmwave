@@ -264,7 +264,7 @@ private:
    */
   Ptr<Params3gpp> GetNewChannel (Ptr<ParamsTable> table3gpp, Vector locUT, bool los, bool o2i,
                                  Ptr<AntennaArrayModel> txAntenna, Ptr<AntennaArrayModel> rxAntenna,
-                                 uint8_t *txAntennaNum, uint8_t *rxAntennaNum, Angles &rxAngle, Angles &txAngle,
+                                 uint16_t *txAntennaNum, uint16_t *rxAntennaNum, Angles &rxAngle, Angles &txAngle,
                                  Vector speed, double dis2D, double dis3D) const;
 
   /**
@@ -282,7 +282,7 @@ private:
    */
   Ptr<Params3gpp> UpdateChannel (Ptr<Params3gpp> params3gpp, Ptr<ParamsTable> table3gpp,
                                  Ptr<AntennaArrayModel> txAntenna, Ptr<AntennaArrayModel> rxAntenna,
-                                 uint8_t *txAntennaNum, uint8_t *rxAntennaNum, Angles &rxAngle, Angles &txAngle) const;
+                                 uint16_t *txAntennaNum, uint16_t *rxAntennaNum, Angles &rxAngle, Angles &txAngle) const;
 
   /**
    * Compute the optimal BF vector with the Power Method (Maximum Ratio Transmission method).
@@ -297,7 +297,7 @@ private:
    * @params the channel realizationin as a Params3gpp object
    */
   void BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
-                              Ptr<AntennaArrayModel> rxAntenna, uint8_t *txAntennaNum, uint8_t *rxAntennaNum) const;
+                              Ptr<AntennaArrayModel> rxAntenna, uint16_t *txAntennaNum, uint16_t *rxAntennaNum) const;
 
 
   /**

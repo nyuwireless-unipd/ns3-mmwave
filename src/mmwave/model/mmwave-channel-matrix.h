@@ -101,8 +101,8 @@ private:
                                                    Ptr<const MobilityModel> a,
                                                    Ptr<const MobilityModel> b) const;
 
-  complex2DVector_t GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const;
-  complexVector_t GenSinglePath (double hAngle, double vAngle, uint8_t* antennaNum) const;
+  complex2DVector_t GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint16_t* antennaNum) const;
+  complexVector_t GenSinglePath (double hAngle, double vAngle, uint16_t* antennaNum) const;
   //complexVector_t CalcBeamformingVector (complex2DVector_t SpatialMatrix) const;
   Ptr<SpectrumValue> GetChannelGain (Ptr<const SpectrumValue> txPsd, Ptr<mmWaveBeamFormingParams> bfParams, double speed) const;
   double GetSystemBandwidth () const;

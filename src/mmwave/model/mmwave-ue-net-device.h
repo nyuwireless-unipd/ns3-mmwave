@@ -98,9 +98,9 @@ public:
 
   Ptr<MmWaveEnbNetDevice> GetTargetEnb (void);
 
-  void SetAntennaNum (uint8_t antennaNum);
+  void SetAntennaNum (uint16_t antennaNum);
 
-  uint8_t GetAntennaNum () const;
+  uint16_t GetAntennaNum () const;
 
   std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > GetCcMap ();
 
@@ -130,7 +130,7 @@ private:
 
   std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > m_ccMap;       ///< CC map
 
-  uint8_t m_antennaNum;
+  uint16_t m_antennaNum;
 
 
 };
