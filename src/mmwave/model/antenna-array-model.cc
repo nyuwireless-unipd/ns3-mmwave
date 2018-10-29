@@ -362,7 +362,7 @@ AntennaArrayModel::GetRadiationPattern (double vAngleRadian, double hAngleRadian
 }
 
 Vector
-AntennaArrayModel::GetAntennaLocation (uint8_t index, uint16_t* antennaNum)
+AntennaArrayModel::GetAntennaLocation (uint16_t index, uint16_t* antennaNum)
 {
   //assume the left bottom corner is (0,0,0), and the rectangular antenna array is on the y-z plane.
   Vector loc;

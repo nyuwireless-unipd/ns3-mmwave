@@ -58,7 +58,7 @@ public:
   void ChangeToOmniTx ();
   bool IsOmniTx ();
   double GetRadiationPattern (double vangle, double hangle = 0);
-  Vector GetAntennaLocation (uint8_t index, uint16_t* antennaNum);
+  Vector GetAntennaLocation (uint16_t index, uint16_t* antennaNum);
   void SetSector (uint8_t sector, uint16_t *antennaNum, double elevation = 90);
 
   void SetPlanesNumber (double planesNumber);
