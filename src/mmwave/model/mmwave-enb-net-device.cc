@@ -90,7 +90,7 @@ TypeId MmWaveEnbNetDevice::GetTypeId ()
                    UintegerValue (64),
                    MakeUintegerAccessor (&MmWaveEnbNetDevice::SetAntennaNum,
                                          &MmWaveEnbNetDevice::GetAntennaNum),
-                   MakeUintegerChecker<uint8_t> ())
+                   MakeUintegerChecker<uint16_t> ())
   ;
 
   return tid;
@@ -236,11 +236,11 @@ MmWaveEnbNetDevice::GetRrc (void)
 }
 
 void
-MmWaveEnbNetDevice::SetAntennaNum (uint8_t antennaNum)
+MmWaveEnbNetDevice::SetAntennaNum (uint16_t antennaNum)
 {
   m_antennaNum = antennaNum;
 }
-uint8_t
+uint16_t
 MmWaveEnbNetDevice::GetAntennaNum () const
 {
   return m_antennaNum;

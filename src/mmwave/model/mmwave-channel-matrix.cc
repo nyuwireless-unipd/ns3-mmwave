@@ -160,8 +160,8 @@ MmWaveChannelMatrix::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPs
   Ptr<mmwave::MmWaveUeNetDevice> rxUe =
     DynamicCast<mmwave::MmWaveUeNetDevice> (rxDevice);
 
-  uint8_t txAntennaNum[2];
-  uint8_t rxAntennaNum[2];
+  uint16_t txAntennaNum[2];
+  uint16_t rxAntennaNum[2];
 
   if (txEnb != 0 && rxUe != 0)
     {
@@ -490,7 +490,7 @@ MmWaveChannelMatrix::CalcBeamformingVector(complex2DVector_t spatialMatrix) cons
 
 
 complex2DVector_t
-MmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint8_t* antennaNum) const
+MmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles angle, uint16_t* antennaNum) const
 {
   complex2DVector_t spatialMatrix;
   for (unsigned int clusterIndex = 0; clusterIndex < cluster.size (); clusterIndex++)
@@ -522,16 +522,16 @@ MmWaveChannelMatrix::GenSpatialMatrix (std::vector<uint16_t> cluster, Angles ang
 
 
 complexVector_t
-MmWaveChannelMatrix::GenSinglePath (double hAngle, double vAngle, uint8_t* antennaNum) const
+MmWaveChannelMatrix::GenSinglePath (double hAngle, double vAngle, uint16_t* antennaNum) const
 {
   NS_LOG_FUNCTION (this);
   complexVector_t singlePath;
-  uint16_t vSize = antennaNum[0];
-  uint16_t hSize = antennaNum[1];
+  uint64_t vSize = antennaNum[0];
+  uint64_t hSize = antennaNum[1];
 
-  for (int vIndex = 0; vIndex < vSize; vIndex++)
+  for (uint64_t vIndex = 0; vIndex < vSize; vIndex++)
     {
-      for (int hIndex = 0; hIndex < hSize; hIndex++)
+      for (uint64_t hIndex = 0; hIndex < hSize; hIndex++)
         {
           double w = (-2) * M_PI * hIndex * m_antennaSeparation * cos (hAngle)
             + (-2) * M_PI * vIndex * m_antennaSeparation * cos (vAngle);

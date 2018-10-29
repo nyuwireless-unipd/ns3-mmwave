@@ -120,7 +120,7 @@ TypeId McUeNetDevice::GetTypeId (void)
                    UintegerValue (16),
                    MakeUintegerAccessor (&McUeNetDevice::SetAntennaNum,
                                          &McUeNetDevice::GetAntennaNum),
-                   MakeUintegerChecker<uint8_t> ())
+                   MakeUintegerChecker<uint16_t> ())
   ;
   return tid;
 }
@@ -641,14 +641,14 @@ McUeNetDevice::SetMmWaveCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> 
 }
 
 
-uint8_t
+uint16_t
 McUeNetDevice::GetAntennaNum () const
 {
   return m_mmWaveAntennaNum;
 }
 
 void
-McUeNetDevice::SetAntennaNum (uint8_t antennaNum)
+McUeNetDevice::SetAntennaNum (uint16_t antennaNum)
 {
   m_mmWaveAntennaNum = antennaNum;
 }

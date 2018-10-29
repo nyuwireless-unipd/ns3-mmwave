@@ -417,8 +417,8 @@ MmWave3gppChannel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
   /* txAntennaNum[0]-number of vertical antenna elements
    * txAntennaNum[1]-number of horizontal antenna elements*/
-  uint8_t txAntennaNum[2];
-  uint8_t rxAntennaNum[2];
+  uint16_t txAntennaNum[2];
+  uint16_t rxAntennaNum[2];
   Ptr<AntennaArrayModel> txAntennaArray, rxAntennaArray;
 
   Vector locUT;
@@ -1485,7 +1485,7 @@ MmWave3gppChannel::DeleteChannel (Ptr<const MobilityModel> a, Ptr<const Mobility
 Ptr<Params3gpp>
 MmWave3gppChannel::GetNewChannel (Ptr<ParamsTable>  table3gpp, Vector locUT, bool los, bool o2i,
                                   Ptr<AntennaArrayModel> txAntenna, Ptr<AntennaArrayModel> rxAntenna,
-                                  uint8_t *txAntennaNum, uint8_t *rxAntennaNum,  Angles &rxAngle, Angles &txAngle,
+                                  uint16_t *txAntennaNum, uint16_t *rxAntennaNum,  Angles &rxAngle, Angles &txAngle,
                                   Vector speed, double dis2D, double dis3D) const
 {
   uint8_t numOfCluster = table3gpp->m_numOfCluster;
@@ -2052,8 +2052,8 @@ MmWave3gppChannel::GetNewChannel (Ptr<ParamsTable>  table3gpp, Vector locUT, boo
 
   complex3DVector_t H_NLOS;       // channel coefficients H_NLOS [u][s][n],
   // where u and s are receive and transmit antenna element, n is cluster index.
-  uint16_t uSize = rxAntennaNum[0] * rxAntennaNum[1];
-  uint16_t sSize = txAntennaNum[0] * txAntennaNum[1];
+  uint64_t uSize = rxAntennaNum[0] * rxAntennaNum[1];
+  uint64_t sSize = txAntennaNum[0] * txAntennaNum[1];
 
   uint8_t cluster1st = 0, cluster2nd = 0;       // first and second strongest cluster;
   double maxPower = 0;
@@ -2081,21 +2081,21 @@ MmWave3gppChannel::GetNewChannel (Ptr<ParamsTable>  table3gpp, Vector locUT, boo
   //Since each of the strongest 2 clusters are divided into 3 sub-clusters, the total cluster will be numReducedCLuster + 4.
 
   H_usn.resize (uSize);
-  for (uint16_t uIndex = 0; uIndex < uSize; uIndex++)
+  for (uint64_t uIndex = 0; uIndex < uSize; uIndex++)
     {
       H_usn.at (uIndex).resize (sSize);
-      for (uint16_t sIndex = 0; sIndex < sSize; sIndex++)
+      for (uint64_t sIndex = 0; sIndex < sSize; sIndex++)
         {
           H_usn.at (uIndex).at (sIndex).resize (numReducedCluster);
         }
     }
   //double slotTime = Simulator::Now ().GetSeconds ();
   // The following for loops computes the channel coefficients
-  for (uint16_t uIndex = 0; uIndex < uSize; uIndex++)
+  for (uint64_t uIndex = 0; uIndex < uSize; uIndex++)
     {
       Vector uLoc = rxAntenna->GetAntennaLocation (uIndex,rxAntennaNum);
 
-      for (uint16_t sIndex = 0; sIndex < sSize; sIndex++)
+      for (uint64_t sIndex = 0; sIndex < sSize; sIndex++)
         {
 
           Vector sLoc = txAntenna->GetAntennaLocation (sIndex,txAntennaNum);
@@ -2326,7 +2326,7 @@ MmWave3gppChannel::GetNewChannel (Ptr<ParamsTable>  table3gpp, Vector locUT, boo
 Ptr<Params3gpp>
 MmWave3gppChannel::UpdateChannel (Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  table3gpp,
                                   Ptr<AntennaArrayModel> txAntenna, Ptr<AntennaArrayModel> rxAntenna,
-                                  uint8_t *txAntennaNum, uint8_t *rxAntennaNum, Angles &rxAngle, Angles &txAngle) const
+                                  uint16_t *txAntennaNum, uint16_t *rxAntennaNum, Angles &rxAngle, Angles &txAngle) const
 {
   Ptr<Params3gpp> params = params3gpp;
   uint8_t raysPerCluster = table3gpp->m_raysPerCluster;
@@ -2709,8 +2709,8 @@ MmWave3gppChannel::UpdateChannel (Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  
 
   complex3DVector_t H_NLOS;       // channel coefficients H_NLOS [u][s][n],
   // where u and s are receive and transmit antenna element, n is cluster index.
-  uint16_t uSize = rxAntennaNum[0] * rxAntennaNum[1];
-  uint16_t sSize = txAntennaNum[0] * txAntennaNum[1];
+  uint64_t uSize = rxAntennaNum[0] * rxAntennaNum[1];
+  uint64_t sSize = txAntennaNum[0] * txAntennaNum[1];
 
   uint8_t cluster1st = 0, cluster2nd = 0;       // first and second strongest cluster;
   double maxPower = 0;
@@ -2738,21 +2738,21 @@ MmWave3gppChannel::UpdateChannel (Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  
   //Since each of the strongest 2 clusters are divided into 3 sub-clusters, the total cluster will be numReducedCLuster + 4.
 
   H_usn.resize (uSize);
-  for (uint16_t uIndex = 0; uIndex < uSize; uIndex++)
+  for (uint64_t uIndex = 0; uIndex < uSize; uIndex++)
     {
       H_usn.at (uIndex).resize (sSize);
-      for (uint16_t sIndex = 0; sIndex < sSize; sIndex++)
+      for (uint64_t sIndex = 0; sIndex < sSize; sIndex++)
         {
           H_usn.at (uIndex).at (sIndex).resize (params->m_numCluster);
         }
     }
   //double slotTime = Simulator::Now ().GetSeconds ();
   // The following for loops computes the channel coefficients
-  for (uint16_t uIndex = 0; uIndex < uSize; uIndex++)
+  for (uint64_t uIndex = 0; uIndex < uSize; uIndex++)
     {
       Vector uLoc = rxAntenna->GetAntennaLocation (uIndex,rxAntennaNum);
 
-      for (uint16_t sIndex = 0; sIndex < sSize; sIndex++)
+      for (uint64_t sIndex = 0; sIndex < sSize; sIndex++)
         {
 
           Vector sLoc = txAntenna->GetAntennaLocation (sIndex,txAntennaNum);
@@ -2962,7 +2962,7 @@ MmWave3gppChannel::UpdateChannel (Ptr<Params3gpp> params3gpp, Ptr<ParamsTable>  
 
 void
 MmWave3gppChannel::BeamSearchBeamforming (Ptr<const SpectrumValue> txPsd, Ptr<Params3gpp> params, Ptr<AntennaArrayModel> txAntenna,
-                                          Ptr<AntennaArrayModel> rxAntenna, uint8_t *txAntennaNum, uint8_t *rxAntennaNum) const
+                                          Ptr<AntennaArrayModel> rxAntenna, uint16_t *txAntennaNum, uint16_t *rxAntennaNum) const
 {
   double max = 0, maxTx = 0, maxRx = 0, maxTxTheta = 0, maxRxTheta = 0;
   NS_LOG_LOGIC ("BeamSearchBeamforming method at time " << Simulator::Now ().GetSeconds ());

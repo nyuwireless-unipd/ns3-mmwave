@@ -99,7 +99,7 @@ MmWaveUeNetDevice::GetTypeId (void)
                    UintegerValue (16),
                    MakeUintegerAccessor (&MmWaveUeNetDevice::SetAntennaNum,
                                          &MmWaveUeNetDevice::GetAntennaNum),
-                   MakeUintegerChecker<uint8_t> ())
+                   MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("LteUeRrc",
                    "The RRC layer associated with the ENB",
                    PointerValue (),
@@ -297,7 +297,7 @@ MmWaveUeNetDevice::SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > 
 }
 
 
-uint8_t
+uint16_t
 MmWaveUeNetDevice::GetAntennaNum () const
 {
   NS_LOG_FUNCTION (this);
@@ -305,7 +305,7 @@ MmWaveUeNetDevice::GetAntennaNum () const
 }
 
 void
-MmWaveUeNetDevice::SetAntennaNum (uint8_t antennaNum)
+MmWaveUeNetDevice::SetAntennaNum (uint16_t antennaNum)
 {
   NS_LOG_FUNCTION (this << antennaNum);
   m_antennaNum = antennaNum;
