@@ -308,6 +308,7 @@ void
 MmWaveUeNetDevice::SetAntennaNum (uint16_t antennaNum)
 {
   NS_LOG_FUNCTION (this << antennaNum);
+  NS_ASSERT_MSG (std::floor (std::sqrt(antennaNum)) == std::sqrt(antennaNum), "Only square antenna arrays are currently supported.");
   m_antennaNum = antennaNum;
 }
 
