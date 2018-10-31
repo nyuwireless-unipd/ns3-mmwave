@@ -577,6 +577,12 @@ MmWaveBearerStatsConnector::StoreUeManagerPath (std::string context, uint16_t ce
   key.cellId = cellId;
   key.rnti = rnti;
   m_ueManagerPathByCellIdRnti[key] = ueManagerPath.str ();
+
+  if(m_rlcStats)
+  {
+      Config::Connect (ueManagerPath.str () + "/SecondaryRlcCreated",
+                 MakeBoundCallback (&NotifySecondaryMmWaveEnbAvailable, this));
+  }
 }
 
 void
@@ -625,9 +631,6 @@ MmWaveBearerStatsConnector::ConnectSrb0Traces (std::string context, uint64_t ims
                        MakeBoundCallback (&DlTxPduCallback, arg));
       Config::Connect (ueManagerPath + "/Srb1/LteRlc/RxPDU",
                        MakeBoundCallback (&UlRxPduCallback, arg));
-
-      Config::Connect (ueManagerPath + "/SecondaryRlcCreated",
-                       MakeBoundCallback (&NotifySecondaryMmWaveEnbAvailable, this));
 
     }
   if (m_pdcpStats)
@@ -928,9 +931,9 @@ MmWaveBearerStatsConnector::ConnectSecondaryTracesUe (std::string context, uint6
       arg->cellId = cellId;
       arg->stats = m_rlcStats;
       // for MC devices
-      Config::Connect (basePath + "/DataRadioRlcMap/*/TxPDU",
+      Config::Connect (basePath + "/DataRadioRlcMap/*/LteRlc/TxPDU",
                        MakeBoundCallback (&UlTxPduCallback, arg));
-      Config::Connect (basePath + "/DataRadioRlcMap/*/RxPDU",
+      Config::Connect (basePath + "/DataRadioRlcMap/*/LteRlc/RxPDU",
                        MakeBoundCallback (&DlRxPduCallback, arg));
     }
 }

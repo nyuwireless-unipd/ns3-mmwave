@@ -2017,6 +2017,7 @@ LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uin
           m_rlcMap[dtamIt->drbIdentity] = rlcInfo;
 
           NS_LOG_INFO(this << "LteUeRrc Secondary Cell Handover, created new rlc " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
+          m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
         }
         else
         {
@@ -2325,8 +2326,6 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
               // switch to the mmWave RLC
               bool useMmWaveConnection = true;
               pdcp->SwitchConnection(useMmWaveConnection);
-              NS_LOG_INFO("LteUeRrc SwitchToMmWave and create new rlc " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
-              m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
 
               // check if this rlc is already in the map
               if(m_rlcMap.find(dtamIt->drbIdentity) != m_rlcMap.end())
@@ -2335,6 +2334,9 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
                 CopyRlcBuffers(m_rlcMap.find(dtamIt->drbIdentity)->second->m_rlc, drbInfo->m_pdcp, drbInfo->m_logicalChannelIdentity);
               }
               m_rlcMap[dtamIt->drbIdentity] = rlcInfo;
+              
+              NS_LOG_INFO("LteUeRrc SwitchToMmWave and create new rlc " << m_imsi << m_mmWaveCellId << m_mmWaveRnti << " at time " << Simulator::Now().GetSeconds());
+              m_switchToMmWaveTrace(m_imsi, m_mmWaveCellId, m_mmWaveRnti);
             }
             else
             {

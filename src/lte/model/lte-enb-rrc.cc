@@ -4693,8 +4693,8 @@ LteEnbRrc::DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
       ackParams.admittedBearers.push_back (i);
     }
 
-    // For secondary cell HO for MC devices, setup RLC instances
-    for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = req.rlcRequests.begin();
+  // For secondary cell HO for MC devices, setup RLC instances
+  for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = req.rlcRequests.begin();
        it != req.rlcRequests.end ();
          ++it)
     {
