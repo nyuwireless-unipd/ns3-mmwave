@@ -628,13 +628,23 @@ MmWaveEnbMac::DoReceivePhyPdu (Ptr<Packet> p)
                         << p->GetSize () << " header= " << (uint32_t)macSubheaders[ipdu].m_size << ")" );
           rlcPdu = p->CreateFragment (currPos, macSubheaders[ipdu].m_size);
           currPos += macSubheaders[ipdu].m_size;
-          (*lcidIt).second->ReceivePdu (rlcPdu, rnti, macSubheaders[ipdu].m_lcid);
+
+          LteMacSapUser::ReceivePduParameters rxPduParams;
+          rxPduParams.p = rlcPdu;
+          rxPduParams.rnti = rnti;
+          rxPduParams.lcid = macSubheaders[ipdu].m_lcid;
+          (*lcidIt).second->ReceivePdu (rxPduParams);
         }
       else
         {
           rlcPdu = p->CreateFragment (currPos, p->GetSize () - currPos);
           currPos = p->GetSize ();
-          (*lcidIt).second->ReceivePdu (rlcPdu, rnti, macSubheaders[ipdu].m_lcid);
+
+          LteMacSapUser::ReceivePduParameters rxPduParams;
+          rxPduParams.p = rlcPdu;
+          rxPduParams.rnti = rnti;
+          rxPduParams.lcid = macSubheaders[ipdu].m_lcid;
+          (*lcidIt).second->ReceivePdu (rxPduParams);
         }
       NS_LOG_INFO ("MmWave Enb Mac Rx Packet, Rnti:" << rnti << " lcid:" << (uint32_t)macSubheaders[ipdu].m_lcid << " size:" << macSubheaders[ipdu].m_size);
     }
@@ -877,6 +887,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 {
   m_phySapProvider->SetDlSfAllocInfo (ind.m_sfAllocInfo);
   //m_phySapProvider->SetUlSfAllocInfo (ind.m_ulSfAllocInfo);
+  LteMacSapUser::TxOpportunityParameters txOpParams;
 
   for (unsigned islot = 0; islot < ind.m_sfAllocInfo.m_slotAllocInfo.size (); islot++)
     {
@@ -932,7 +943,14 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
                       NS_ASSERT_MSG (lcidIt != rntiIt->second.end (), "could not find LCID" << rlcPduInfo[ipdu].m_lcid);
                       NS_LOG_DEBUG ("Notifying RLC of TX opportunity for TB " << (unsigned int)tbUid << " PDU num " << ipdu << " size " << (unsigned int) rlcPduInfo[ipdu].m_size);
                       MacSubheader subheader (rlcPduInfo[ipdu].m_lcid, rlcPduInfo[ipdu].m_size);
-                      (*lcidIt).second->NotifyTxOpportunity ((rlcPduInfo[ipdu].m_size) - subheader.GetSize (), 0, tbUid, m_componentCarrierId, rnti, rlcPduInfo[ipdu].m_lcid);
+
+                      txOpParams.bytes = (rlcPduInfo[ipdu].m_size) - subheader.GetSize ();
+                      txOpParams.layer = 0;
+                      txOpParams.harqId = tbUid;
+                      txOpParams.componentCarrierId = m_componentCarrierId;
+                      txOpParams.rnti = rnti;
+                      txOpParams.lcid = rlcPduInfo[ipdu].m_lcid;
+                      (*lcidIt).second->NotifyTxOpportunity (txOpParams);
                       harqIt->second.at (tbUid).m_lcidList.push_back (rlcPduInfo[ipdu].m_lcid);
                     }
 

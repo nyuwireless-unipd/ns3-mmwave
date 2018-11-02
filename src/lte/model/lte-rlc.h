@@ -57,10 +57,10 @@ public:
   LteRlcSpecificLteMacSapUser (LteRlc* rlc);
 
   // Interface implemented from LteMacSapUser
-  virtual void NotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
+  virtual void NotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters params);
   virtual void NotifyHarqDeliveryFailure ();
   virtual void NotifyHarqDeliveryFailure (uint8_t harqId);
-  virtual void ReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
+  virtual void ReceivePdu (LteMacSapUser::ReceivePduParameters params);
 
 private:
   LteRlcSpecificLteMacSapUser ();
@@ -201,14 +201,9 @@ protected:
   /**
    * Notify transmit opportunity
    *
-   * \param bytes number of bytes
-   * \param layer the layer
-   * \param harqId the HARQ ID
-   * \param componentCarrierId component carrier ID
-   * \param rnti the RNTI
-   * \param lcid the LCID
+   * \param params LteMacSapUser::TxOpportunityParameters
    */
-  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid) = 0;
+  virtual void DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters params) = 0;
   /**
    * Notify HARQ delivery failure
    */
@@ -217,11 +212,9 @@ protected:
   /**
    * Receive PDU function
    *
-   * \param p the packet
-   * \param rnti the RNTI
-   * \param lcid the LCID
+   * \param params the LteMacSapUser::ReceivePduParameters
    */
-  virtual void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid) = 0;
+  virtual void DoReceivePdu (LteMacSapUser::ReceivePduParameters params) = 0;
 
   virtual void DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params) = 0;
 
@@ -275,14 +268,15 @@ public:
   virtual void DoDispose ();
 
   virtual void DoTransmitPdcpPdu (Ptr<Packet> p);
-  virtual void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
+  virtual void DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpParams);
   virtual void DoNotifyHarqDeliveryFailure ();
-  virtual void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
   virtual void DoSendMcPdcpSdu (EpcX2Sap::UeDataParams params);
+  virtual void DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams);
 
 
 
 private:
+  /// Report buffer status
   void ReportBufferStatus ();
 
 };
