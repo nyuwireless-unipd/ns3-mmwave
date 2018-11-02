@@ -541,10 +541,134 @@ LteRlcAm::DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpPara
                 }
               else
                 {
-                  NS_LOG_LOGIC ("TxOpportunity (size = " << txOpParams.bytes << ") too small for retransmission of the packet (size = " << packet->GetSize () << ")");
-                  NS_LOG_LOGIC ("Waiting for bigger TxOpportunity");
+//                  NS_LOG_LOGIC ("TxOpportunity (size = " << bytes << ") too small for retransmission of the packet (size = " << packet->GetSize () << ")");
+//                  NS_LOG_LOGIC ("Waiting for bigger TxOpportunity");
+//                  return;
+                  // According to 5.2.1, the data field is left as is, but we rebuild the header
+                  LteRlcAmHeader firstSegHdr;
+
+                  // if(bytes < firstSegHdr.GetSerializedSize() )
+                  // {
+                  //   return;
+                  // }
+
+                  packet->RemoveHeader (firstSegHdr);
+                  NS_LOG_LOGIC ("old AM RLC header: " << firstSegHdr);
+
+                  // Calculate the Polling Bit (5.2.2.1)
+                  firstSegHdr.SetPollingBit (LteRlcAmHeader::STATUS_REPORT_NOT_REQUESTED);
+
+                  NS_LOG_LOGIC ("polling conditions: m_txonBuffer.empty=" << m_txonBuffer.empty ()
+                                << " retxBufferSize="  << m_retxBufferSize
+                                << " packet->GetSize ()=" << packet->GetSize ());
+                  if (((m_txonBuffer.empty ()) && (m_txonQueue->GetNPackets () == 0) && (m_retxBufferSize == packet->GetSize () + firstSegHdr.GetSerializedSize ()))
+                      || (m_vtS >= m_vtMs)
+                      || m_pollRetransmitTimerJustExpired)
+                  {
+                    m_pollRetransmitTimerJustExpired = false;
+                    firstSegHdr.SetPollingBit (LteRlcAmHeader::STATUS_REPORT_IS_REQUESTED);
+                    m_pduWithoutPoll = 0;
+                    m_byteWithoutPoll = 0;
+
+                    m_pollSn = m_vtS - 1;
+                    NS_LOG_LOGIC ("New POLL_SN = " << m_pollSn);
+
+                    if (! m_pollRetransmitTimer.IsRunning () )
+                    {
+                      NS_LOG_LOGIC ("Start PollRetransmit timer");
+
+                      m_pollRetransmitTimer = Simulator::Schedule (m_pollRetransmitTimerValue,
+                                                                   &LteRlcAm::ExpirePollRetransmitTimer, this);
+                    }
+                    else
+                    {
+                      NS_LOG_LOGIC ("Restart PollRetransmit timer");
+
+                      m_pollRetransmitTimer.Cancel ();
+                      m_pollRetransmitTimer = Simulator::Schedule (m_pollRetransmitTimerValue,
+                                                                   &LteRlcAm::ExpirePollRetransmitTimer, this);
+                    }
+                  }
+
+                  // set flags
+                  firstSegHdr.SetResegmentationFlag (LteRlcAmHeader::SEGMENT);
+                  firstSegHdr.SetLastSegmentFlag (LteRlcAmHeader::NO_LAST_PDU_SEGMENT);
+                  //firstSegHdr.PushLengthIndicator (firstPduSegSize);
+
+                  // build header for second segment
+                  LteRlcAmHeader nextSegHdr = firstSegHdr;
+                  //nextSegHdr.PushLengthIndicator (nextPduSegSize);
+                  // get size of last segment
+                  //unsigned segSize = rlcAmHeader.PopLengthIndicator ();
+                  // set offset to last offset + last size
+
+                  if (!segment)
+                  {
+                    firstSegHdr.SetSegmentOffset (0);
+                  }
+
+                  if (txOpParams.bytes < firstSegHdr.GetSerializedSize ())
+                  {
                   return;
                 }
+
+                   // segment packet
+                  uint16_t firstPduSegSize = txOpParams.bytes - firstSegHdr.GetSerializedSize ();
+                  uint16_t nextPduSegSize = packet->GetSize ()-firstPduSegSize;
+                  Ptr<Packet> firstSeg = packet->CreateFragment (0, firstPduSegSize);
+                  Ptr<Packet> nextSeg = packet->CreateFragment (firstPduSegSize, nextPduSegSize);
+
+                  nextSegHdr.SetSegmentOffset (firstSegHdr.GetSegmentOffset () + firstPduSegSize);
+
+                  firstSeg->AddHeader (firstSegHdr);
+                  nextSeg->AddHeader (nextSegHdr);
+
+                  // add next segment to reTX segment buffer
+                  m_retxSegBuffer.at (seqNumberValue).m_pdu = nextSeg;
+
+                  NS_LOG_LOGIC ("new AM RLC header: " << firstSegHdr);
+
+                  // Send RLC PDU to MAC layer
+                  LteMacSapProvider::TransmitPduParameters params;
+                  params.pdu = firstSeg;
+                  params.rnti = m_rnti;
+                  params.lcid = m_lcid;
+                  params.layer = txOpParams.layer;
+                  params.harqProcessId = txOpParams.harqId;
+                  params.componentCarrierId =  txOpParams.componentCarrierId;
+
+                  NS_LOG_INFO ("Sending RLC PDU segment, sn= " << seqNumberValue << " offset= " << firstSegHdr.GetSegmentOffset()
+                                                   << " size= " << firstPduSegSize);
+
+                  if (firstSeg->GetSize () > txOpParams.bytes)
+                  {
+                    NS_FATAL_ERROR ("PDU header too large " << firstSegHdr);
+            }
+
+                  m_macSapProvider->TransmitPdu (params);
+
+                  //m_retxSegBuffer.at (seqNumberValue).m_pdu
+
+//                  m_retxBuffer.at (seqNumberValue).m_retxCount++;
+//                  NS_LOG_INFO ("Incr RETX_COUNT for SN = " << seqNumberValue);
+//                  if (m_retxBuffer.at (seqNumberValue).m_retxCount >= m_maxRetxThreshold)
+//                  {
+//                    NS_LOG_INFO ("Max RETX_COUNT for SN = " << seqNumberValue);
+//                  }
+//
+//                  NS_LOG_INFO ("Move SN = " << seqNumberValue << " back to txedBuffer");
+//                  m_txedBuffer.at (seqNumberValue).m_pdu = m_retxBuffer.at (seqNumberValue).m_pdu->Copy ();
+//                  m_txedBuffer.at (seqNumberValue).m_retxCount = m_retxBuffer.at (seqNumberValue).m_retxCount;
+//                  m_txedBufferSize += m_txedBuffer.at (seqNumberValue).m_pdu->GetSize ();
+//
+//                  m_retxBufferSize -= m_retxBuffer.at (seqNumberValue).m_pdu->GetSize ();
+//                  m_retxBuffer.at (seqNumberValue).m_pdu = 0;
+//                  m_retxBuffer.at (seqNumberValue).m_retxCount = 0;
+
+                  NS_LOG_LOGIC ("retxBufferSize = " << m_retxBufferSize);
+
+                  return;
+        }
             }
         }
       NS_ASSERT_MSG (found, "m_retxBufferSize > 0, but no PDU considered for retx found");
