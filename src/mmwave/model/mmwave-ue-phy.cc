@@ -1022,7 +1022,7 @@ MmWaveUePhy::DoSetPa (double pa)
 void
 MmWaveUePhy::DoSetRsrpFilterCoefficient (uint8_t rsrpFilterCoefficient)
 {
-  NS_FATAL_ERROR ("This method is not supported");
+  NS_LOG_WARN ("This method is not supported");
 }
 
 void
