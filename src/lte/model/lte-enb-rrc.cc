@@ -2369,7 +2369,7 @@ UeManager::BuildRadioResourceConfigDedicated ()
 uint8_t
 UeManager::GetNewRrcTransactionIdentifier ()
 {
-  return ++m_lastRrcTransactionIdentifier;
+  ++m_lastRrcTransactionIdentifier;
   m_lastRrcTransactionIdentifier %= 4;
   return m_lastRrcTransactionIdentifier;
 }
