@@ -97,9 +97,9 @@ public:
   LteUePhySapProvider* GetLteUePhySapProvider ();
 
   /**
-  * \brief Set the PHY SAP User
-  * \param s a pointer to the SAP user
-  */
+   * \brief Set the PHY SAP User
+   * \param s a pointer to the SAP user
+   */
   void SetLteUePhySapUser (LteUePhySapUser* s);
 
   /**
@@ -109,9 +109,9 @@ public:
   LteUeCphySapProvider* GetLteUeCphySapProvider ();
 
   /**
-  * \brief Set the CPHY SAP User
-  * \param s a pointer to the SAP user
-  */
+   * \brief Set the CPHY SAP User
+   * \param s a pointer to the SAP user
+   */
   void SetLteUeCphySapUser (LteUeCphySapUser* s);
 
 
@@ -184,11 +184,11 @@ public:
   std::vector <int> GetSubChannelsForReception (void);
 
   /**
-  * \brief Create the DL CQI feedback from SINR values perceived at
-  * the physical layer with the signal received from eNB
-  * \param sinr SINR values vector
-  * \return a DL CQI control message containing the CQI feedback
-  */
+   * \brief Create the DL CQI feedback from SINR values perceived at
+   * the physical layer with the signal received from eNB
+   * \param sinr SINR values vector
+   * \return a DL CQI control message containing the CQI feedback
+   */
   Ptr<DlCqiLteControlMessage> CreateDlCqiFeedbackMessage (const SpectrumValue& sinr);
 
 
@@ -197,33 +197,33 @@ public:
   virtual void GenerateCtrlCqiReport (const SpectrumValue& sinr);
   virtual void GenerateDataCqiReport (const SpectrumValue& sinr);
   /**
-  * \brief Create the mixed CQI report
-  *
-  * \param sinr SINR values vector
-  */
+   * \brief Create the mixed CQI report
+   *
+   * \param sinr SINR values vector
+   */
   virtual void GenerateMixedCqiReport (const SpectrumValue& sinr);
   virtual void ReportInterference (const SpectrumValue& interf);
   /**
-  * \brief Create the mixed CQI report
-  *
-  * \param interf interference values vector
-  */
+   * \brief Create the mixed CQI report
+   *
+   * \param interf interference values vector
+   */
   virtual void ReportDataInterference (const SpectrumValue& interf);
   virtual void ReportRsReceivedPower (const SpectrumValue& power);
 
   // callbacks for LteSpectrumPhy
   /**
-  * \brief Receive LTE control message list function
-  *
-  * \param msgList LTE control message list
-  */
+   * \brief Receive LTE control message list function
+   *
+   * \param msgList LTE control message list
+   */
   virtual void ReceiveLteControlMessageList (std::list<Ptr<LteControlMessage> > msgList);
   /**
-  * \brief Receive PSS function
-  *
-  * \param cellId the cell ID
-  * \param p PSS list
-  */
+   * \brief Receive PSS function
+   *
+   * \param cellId the cell ID
+   * \param p PSS list
+   */
   virtual void ReceivePss (uint16_t cellId, Ptr<SpectrumValue> p);
 
 
@@ -235,11 +235,11 @@ public:
 
 
   /**
-  * \brief trigger from eNB the start from a new frame
-  *
-  * \param frameNo frame number
-  * \param subframeNo subframe number
-  */
+   * \brief trigger from eNB the start from a new frame
+   *
+   * \param frameNo frame number
+   * \param subframeNo subframe number
+   */
   void SubframeIndication (uint32_t frameNo, uint32_t subframeNo);
 
 
@@ -287,7 +287,7 @@ public:
    */
   typedef void (* RsrpSinrTracedCallback)
     (uint16_t cellId, uint16_t rnti,
-      double rsrp, double sinr, uint8_t componentCarrierId);
+     double rsrp, double sinr, uint8_t componentCarrierId);
 
   /**
    * TracedCallback signature for cell RSRP and RSRQ.
@@ -354,15 +354,12 @@ private:
    * \param [in] gain
    */
   void SetTxModeGain (uint8_t txMode, double gain);
-
   /**
    * queue subchannels for transmission function
    *
    * \param [in] rbMap
    */
   void QueueSubChannelsForTransmission (std::vector <int> rbMap);
-
-
   /**
    * internal method that takes care of generating CQI reports,
    * calculating the RSRP and RSRQ metrics, and generating RSRP+SINR traces
@@ -370,8 +367,6 @@ private:
    * \param sinr
    */
   void GenerateCqiRsrpRsrq (const SpectrumValue& sinr);
-
-
   /**
    * \brief Layer-1 filtering of RSRP and RSRQ measurements and reporting to
    *        the RRC entity.
@@ -380,7 +375,13 @@ private:
    * periodicity as indicated by the *UeMeasurementsFilterPeriod* attribute.
    */
   void ReportUeMeasurements ();
-
+  /**
+   * \brief Set the periodicty for the downlink periodic
+   * wideband and aperiodic subband CQI reporting.
+   *
+   * \param cqiPeriodicity The downlink CQI reporting periodicity in milliseconds
+   */
+  void SetDownlinkCqiPeriodicity (Time cqiPeriodicity);
   /**
    * Switch the UE PHY to the given state.
    * \param s the destination state
@@ -419,7 +420,7 @@ private:
   void DoConfigureUplink (uint32_t ulEarfcn, uint8_t ulBandwidth);
   /**
    * Configure reference signal power function
-   * \param referenceSignalPower reference signal power
+   * \param referenceSignalPower reference signal power in dBm
    */
   void DoConfigureReferenceSignalPower (int8_t referenceSignalPower);
   /**
@@ -442,11 +443,18 @@ private:
    * \param pa the PA value
    */
   void DoSetPa (double pa);
+  /**
+   * \param rsrpFilterCoefficient value. Determines the strength of
+   * smoothing effect induced by layer 3 filtering of RSRP
+   * used for uplink power control in all attached UE.
+   * If equals to 0, no layer 3 filtering is applicable.
+   */
+  void DoSetRsrpFilterCoefficient (uint8_t rsrpFilterCoefficient);
 
   // UE PHY SAP methods
   virtual void DoSendMacPdu (Ptr<Packet> p);
   /**
-   * Send LTE conrol message function
+   * Send LTE control message function
    * \param msg the LTE control message
    */
   virtual void DoSendLteControlMessage (Ptr<LteControlMessage> msg);
@@ -569,7 +577,7 @@ private:
   Ptr<LteHarqPhy> m_harqPhyModule; ///< HARQ phy module
 
   uint32_t m_raPreambleId; ///< RA preamble ID
-  uint32_t m_raRnti; ///< RA rnti
+  uint32_t m_raRnti; ///< RA RNTI
 
   /**
    * The `ReportCurrentCellRsrpSinr` trace source. Trace information regarding

@@ -823,6 +823,17 @@ UeManager::RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params
 
   Ptr<Packet> encodedHandoverCommand = params.rrcContext;
   LteRrcSap::RrcConnectionReconfiguration handoverCommand = m_rrc->m_rrcSapUser->DecodeHandoverCommand (encodedHandoverCommand);
+  if (handoverCommand.haveNonCriticalExtension)
+    {
+      //Total number of component carriers = handoverCommand.nonCriticalExtension.sCellsToAddModList.size() + 1 (Primary carrier)
+      if (handoverCommand.nonCriticalExtension.sCellsToAddModList.size() + 1 != m_rrc->m_numberOfComponentCarriers)
+        {
+          //Currently handover is only possible if source and target eNBs have equal number of component carriers
+          NS_FATAL_ERROR ("The source and target eNBs have unequal number of component carriers. Target eNB CCs = "
+                           << handoverCommand.nonCriticalExtension.sCellsToAddModList.size() + 1
+                           << " Source eNB CCs = " << m_rrc->m_numberOfComponentCarriers);
+        }
+    }
   m_rrc->m_rrcSapUser->SendRrcConnectionReconfiguration (m_rnti, handoverCommand);
   SwitchToState (HANDOVER_LEAVING);
   m_handoverLeavingTimeout = Simulator::Schedule (m_rrc->m_handoverLeavingTimeoutDuration,
@@ -2698,9 +2709,8 @@ LteEnbRrc::ConfigureCarriers (std::map<uint8_t, Ptr<ComponentCarrierEnb>> ccPhyC
 {
   NS_ASSERT_MSG (!m_carriersConfigured, "Secondary carriers can be configured only once.");
   m_componentCarrierPhyConf = ccPhyConf;
-  m_numberOfComponentCarriers = ccPhyConf.size ();
-
-  NS_ASSERT (m_numberOfComponentCarriers >= MIN_NO_CC && m_numberOfComponentCarriers <= MAX_NO_CC);
+  NS_ABORT_MSG_IF (m_numberOfComponentCarriers != m_componentCarrierPhyConf.size (), " Number of component carriers "
+                                                  "are not equal to the number of he component carrier configuration provided");
 
   for (uint8_t i = 1; i < m_numberOfComponentCarriers; i++)
     {
@@ -4719,8 +4729,6 @@ LteEnbRrc::DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
   handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.preambleInfo.numberOfRaPreambles = rc.numberOfRaPreambles;
   handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.preambleTransMax = rc.preambleTransMax;
   handoverCommand.mobilityControlInfo.radioResourceConfigCommon.rachConfigCommon.raSupervisionInfo.raResponseWindowSize = rc.raResponseWindowSize;
-  //handoverCommand.haveNonCriticalExtension = false; // this is correctly set in BuildRrcConnectionReconfiguration
-
   Ptr<Packet> encodedHandoverCommand = m_rrcSapUser->EncodeHandoverCommand (handoverCommand);
 
   ackParams.rrcContext = encodedHandoverCommand;
@@ -4997,6 +5005,12 @@ LteEnbRrc::DoAddUeMeasReportConfigForComponentCarrier (LteRrcSap::ReportConfigEu
 }
 
 void
+LteEnbRrc::DoSetNumberOfComponentCarriers (uint16_t numberOfComponentCarriers)
+{
+  m_numberOfComponentCarriers = numberOfComponentCarriers;
+}
+
+void
 LteEnbRrc::DoTriggerHandover (uint16_t rnti, uint16_t targetCellId)
 {
   NS_LOG_FUNCTION (this << rnti << targetCellId);
@@ -5185,12 +5199,6 @@ LteEnbRrc::SetCsgId (uint32_t csgId, bool csgIndication)
       m_sib1.at (componentCarrierId).cellAccessRelatedInfo.csgIndication = csgIndication;
       m_cphySapProvider.at (componentCarrierId)->SetSystemInformationBlockType1 (m_sib1.at (componentCarrierId));
     }
-}
-
-void
-LteEnbRrc::SetNumberOfComponentCarriers(uint16_t numberOfComponentCarriers)
-{
-  m_numberOfComponentCarriers = numberOfComponentCarriers;
 }
 
 /// Number of distinct SRS periodicity plus one.

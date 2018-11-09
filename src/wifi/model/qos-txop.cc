@@ -748,7 +748,7 @@ QosTxop::RestartAccessIfNeeded (void)
 void
 QosTxop::StartAccessIfNeeded (void)
 {
-  //NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this);
   if (m_currentPacket == 0
       && (!m_queue->IsEmpty () || m_baManager->HasPackets ())
       && !IsAccessRequested ())
@@ -950,10 +950,10 @@ bool
 QosTxop::NeedFragmentation (void) const
 {
   NS_LOG_FUNCTION (this);
-  if (m_stationManager->HasVhtSupported ()
-      || m_stationManager->HasHeSupported ()
+  if (m_stationManager->GetVhtSupported ()
+      || m_stationManager->GetHeSupported ()
       || GetAmpduExist (m_currentHdr.GetAddr1 ())
-      || (m_stationManager->HasHtSupported ()
+      || (m_stationManager->GetHtSupported ()
           && m_currentHdr.IsQosData ()
           && GetBaAgreementExists (m_currentHdr.GetAddr1 (), GetTid (m_currentPacket, m_currentHdr))
           && GetMpduAggregator ()->GetMaxAmpduSize () >= m_currentPacket->GetSize ()))
@@ -971,7 +971,7 @@ QosTxop::NeedFragmentation (void) const
 }
 
 bool
-QosTxop::IsTxopFragmentation () const
+QosTxop::IsTxopFragmentation (void) const
 {
   if (GetTxopLimit ().IsZero ())
     {
@@ -986,7 +986,7 @@ QosTxop::IsTxopFragmentation () const
 }
 
 uint32_t
-QosTxop::GetTxopFragmentSize () const
+QosTxop::GetTxopFragmentSize (void) const
 {
   Time txopDuration = GetTxopLimit ();
   if (txopDuration.IsZero ())
@@ -1019,7 +1019,7 @@ QosTxop::GetTxopFragmentSize () const
 }
 
 uint32_t
-QosTxop::GetNTxopFragment () const
+QosTxop::GetNTxopFragment (void) const
 {
   uint32_t fragmentSize = GetTxopFragmentSize ();
   uint32_t nFragments = (m_currentPacket->GetSize () / fragmentSize);
@@ -1339,7 +1339,7 @@ QosTxop::CompleteMpduTx (Ptr<const Packet> packet, WifiMacHeader hdr, Time tstam
 }
 
 bool
-QosTxop::SetupBlockAckIfNeeded ()
+QosTxop::SetupBlockAckIfNeeded (void)
 {
   NS_LOG_FUNCTION (this);
   uint8_t tid = m_currentHdr.GetQosTid ();
@@ -1347,8 +1347,8 @@ QosTxop::SetupBlockAckIfNeeded ()
   uint32_t packets = m_queue->GetNPacketsByTidAndAddress (tid, recipient);
   if ((GetBlockAckThreshold () > 0 && packets >= GetBlockAckThreshold ())
       || (m_mpduAggregator != 0 && m_mpduAggregator->GetMaxAmpduSize () > 0 && packets > 1)
-      || m_stationManager->HasVhtSupported ()
-      || m_stationManager->HasHeSupported ())
+      || m_stationManager->GetVhtSupported ()
+      || m_stationManager->GetHeSupported ())
     {
       /* Block ack setup */
       uint16_t startingSequence = m_txMiddle->GetNextSeqNumberByTidAndAddress (tid, recipient);
@@ -1530,7 +1530,7 @@ QosTxop::SendDelbaFrame (Mac48Address addr, uint8_t tid, bool byOriginator)
 }
 
 void
-QosTxop::DoInitialize ()
+QosTxop::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
   ResetCw ();
@@ -1560,7 +1560,7 @@ QosTxop::BaTxFailed (const WifiMacHeader &hdr)
 }
 
 bool
-QosTxop::IsQosTxop () const
+QosTxop::IsQosTxop (void) const
 {
   return true;
 }

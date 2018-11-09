@@ -28,6 +28,9 @@
 #include "mac-low.h"
 #include "mgt-headers.h"
 #include "snr-tag.h"
+#include "wifi-net-device.h"
+#include "ht-configuration.h"
+#include "he-configuration.h"
 
 namespace ns3 {
 
@@ -802,7 +805,7 @@ StaWifiMac::UpdateApInfoFromBeacon (MgtBeaconHeader beacon, Mac48Address apAddr,
             {
               m_stationManager->SetUseGreenfieldProtection (false);
             }
-          if (!GetVhtSupported () && GetRifsSupported () && htOperation.GetRifsMode ())
+          if (!GetVhtSupported () && GetHtConfiguration ()->GetRifsSupported () && htOperation.GetRifsMode ())
             {
               m_stationManager->SetRifsPermitted (true);
             }
@@ -1001,7 +1004,7 @@ StaWifiMac::UpdateApInfoFromAssocResp (MgtAssocResponseHeader assocResp, Mac48Ad
             {
               m_stationManager->SetUseGreenfieldProtection (false);
             }
-          if (!GetVhtSupported () && GetRifsSupported () && htOperation.GetRifsMode ())
+          if (!GetVhtSupported () && GetHtConfiguration ()->GetRifsSupported () && htOperation.GetRifsMode ())
             {
               m_stationManager->SetRifsPermitted (true);
             }
@@ -1027,6 +1030,7 @@ StaWifiMac::UpdateApInfoFromAssocResp (MgtAssocResponseHeader assocResp, Mac48Ad
       //todo: once we support non constant rate managers, we should add checks here whether HE is supported by the peer
       m_stationManager->AddStationHeCapabilities (apAddr, hecapabilities);
       HeOperation heOperation = assocResp.GetHeOperation ();
+      GetHeConfiguration ()->SetAttribute ("BssColor", UintegerValue (heOperation.GetBssColor ()));
     }
   for (uint8_t i = 0; i < m_phy->GetNModes (); i++)
     {

@@ -153,14 +153,14 @@ LteRlcUm::DoSendMcPdcpSdu(EpcX2Sap::UeDataParams params)
  */
 
 void
-LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid)
+LteRlcUm::DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpParams)
 {
-  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << bytes);
+  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << txOpParams.bytes);
 
-  if (bytes <= 2)
+  if (txOpParams.bytes <= 2)
     {
       // Stingy MAC: Header fix part is 2 bytes, we need more bytes for the data
-      NS_LOG_LOGIC ("TX opportunity too small = " << bytes);
+      NS_LOG_LOGIC ("TX opportunity too small = " << txOpParams.bytes);
       return;
     }
 
@@ -168,7 +168,7 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, 
   LteRlcHeader rlcHeader;
 
   // Build Data field
-  uint32_t nextSegmentSize = bytes - 2;
+  uint32_t nextSegmentSize = txOpParams.bytes - 2;
   uint32_t nextSegmentId = 1;
   uint32_t dataFieldTotalSize = 0;
   uint32_t dataFieldAddedSize = 0;
@@ -416,9 +416,9 @@ LteRlcUm::DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, 
   params.pdu = packet;
   params.rnti = m_rnti;
   params.lcid = m_lcid;
-  params.layer = layer;
-  params.harqProcessId = harqId;
-  params.componentCarrierId = componentCarrierId;
+  params.layer = txOpParams.layer;
+  params.harqProcessId = txOpParams.harqId;
+  params.componentCarrierId = txOpParams.componentCarrierId;
 
   m_macSapProvider->TransmitPdu (params);
 
@@ -442,26 +442,26 @@ LteRlcUm::GetTxBuffer()
 }
 
 void
-LteRlcUm::DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid)
+LteRlcUm::DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams)
 {
-  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << p->GetSize ());
+  NS_LOG_FUNCTION (this << m_rnti << (uint32_t) m_lcid << rxPduParams.p->GetSize ());
 
   // Receiver timestamp
   RlcTag rlcTag;
   Time delay;
-  if (p->FindFirstMatchingByteTag (rlcTag))
+  if (rxPduParams.p->FindFirstMatchingByteTag (rlcTag))
   {
     delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
   }
-  p->RemovePacketTag (rlcTag);
+  rxPduParams.p->RemovePacketTag (rlcTag);
   delay = Simulator::Now() - rlcTag.GetSenderTimestamp ();
-  m_rxPdu (m_rnti, m_lcid, p->GetSize (), delay.GetNanoSeconds ());
+  m_rxPdu (m_rnti, m_lcid, rxPduParams.p->GetSize (), delay.GetNanoSeconds ());
 
   // 5.1.2.2 Receive operations
 
   // Get RLC header parameters
   LteRlcHeader rlcHeader;
-  p->PeekHeader (rlcHeader);
+  rxPduParams.p->PeekHeader (rlcHeader);
   NS_LOG_LOGIC ("RLC header: " << rlcHeader);
   SequenceNumber10 seqNumber = rlcHeader.GetSequenceNumber ();
 
@@ -498,13 +498,13 @@ LteRlcUm::DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid)
      )
     {
       NS_LOG_LOGIC ("PDU discarded");
-      p = 0;
+      rxPduParams.p = 0;
       return;
     }
   else
     {
       NS_LOG_LOGIC ("Place PDU in the reception buffer");
-      m_rxBuffer[seqNumber.GetValue ()] = p;
+      m_rxBuffer[seqNumber.GetValue ()] = rxPduParams.p;
     }
 
 
@@ -686,7 +686,7 @@ LteRlcUm::ReassembleAndDeliver (Ptr<Packet> packet)
   std::list < Ptr<Packet> >::iterator it;
 
   // Current reassembling state
-  if      (m_reassemblingState == WAITING_S0_FULL)  NS_LOG_LOGIC ("Reassembling State = 'WAITING_S0_FULL'");
+  if (m_reassemblingState == WAITING_S0_FULL)       NS_LOG_LOGIC ("Reassembling State = 'WAITING_S0_FULL'");
   else if (m_reassemblingState == WAITING_SI_SF)    NS_LOG_LOGIC ("Reassembling State = 'WAITING_SI_SF'");
   else                                              NS_LOG_LOGIC ("Reassembling State = Unknown state");
 

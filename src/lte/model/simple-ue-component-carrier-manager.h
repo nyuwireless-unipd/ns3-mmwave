@@ -52,8 +52,6 @@ public:
   static TypeId GetTypeId ();
 
   // inherited from LteComponentCarrierManager
-  virtual void SetLteCcmRrcSapUser (LteUeCcmRrcSapUser* s);
-  virtual LteUeCcmRrcSapProvider* GetLteCcmRrcSapProvider ();
   virtual LteMacSapProvider* GetLteMacSapProvider ();
 
 
@@ -61,7 +59,7 @@ public:
   /// let the forwarder class access the protected and private members
   friend class MemberLteUeCcmRrcSapProvider<SimpleUeComponentCarrierManager>;
   //friend class MemberLteUeCcmRrcSapUser<SimpleUeComponentCarrierManager>;
-  
+
   /// allow SimpleUeCcmMacSapProvider class friend access
   friend class SimpleUeCcmMacSapProvider;
   /// allow SimpleUeCcmMacSapUser class friend access
@@ -95,21 +93,16 @@ protected:
   // forwarded from LteMacSapUser
   /**
    * \brief Notify TX opportunity function
-   * \param bytes the number of bytes
-   * \param layer the layer
-   * \param harqId the HARQ ID
-   * \param componentCarrierId the component carrier ID
-   * \param rnti the RNTI
-   * \param lcid the LCID
+   *
+   * \param txOpParams the LteMacSapUser::TxOpportunityParameters
    */
-  void DoNotifyTxOpportunity (uint32_t bytes, uint8_t layer, uint8_t harqId, uint8_t componentCarrierId, uint16_t rnti, uint8_t lcid);
+  void DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpParams);
   /**
    * \brief Receive PDU function
-   * \param p the packet
-   * \param rnti the RNTI
-   * \param lcid the LCID
+   *
+   * \param rxPduParams the LteMacSapUser::ReceivePduParameters
    */
-  void DoReceivePdu (Ptr<Packet> p, uint16_t rnti, uint8_t lcid);
+  void DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams);
   //forwarded from LteUeCcmRrcSapProvider
   /**
    * \brief Add LC function
@@ -125,8 +118,6 @@ protected:
    * \returns updated LC list
    */
   std::vector<uint16_t> DoRemoveLc (uint8_t lcid);
-  /// Notify connection reconfiguration message
-  void DoNotifyConnectionReconfigurationMsg ();
   /**
    * \brief Configure signal bearer function
    * \param lcId the LCID
@@ -135,13 +126,16 @@ protected:
    * \returns LteMacSapUser *
    */
   LteMacSapUser* DoConfigureSignalBearer (uint8_t lcId,  LteUeCmacSapProvider::LogicalChannelConfig lcConfig, LteMacSapUser* msu);
-  
+  /**
+   * \brief Reset LC map
+   *
+   */
+  void DoReset ();
+
 private:
-  
-  LteUeCcmRrcSapUser* m_ccmRrcSapUser;//!< Interface to the eNodeB RRC instance.
-  LteUeCcmRrcSapProvider* m_ccmRrcSapProvider; //!< Receive API calls from the eNodeB RRC instance.
-  LteMacSapUser* m_ccmMacSapUser;//!< Interface to the eNodeB RLC instance.
-  LteMacSapProvider* m_ccmMacSapProvider; //!< Receive API calls from the eNodeB RLC instance
+
+  LteMacSapUser* m_ccmMacSapUser;//!< Interface to the UE RLC instance.
+  LteMacSapProvider* m_ccmMacSapProvider; //!< Receive API calls from the UE RLC instance
 
 }; // end of class SimpleUeComponentCarrierManager
 

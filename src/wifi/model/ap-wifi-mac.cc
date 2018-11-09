@@ -34,6 +34,9 @@
 #include "msdu-aggregator.h"
 #include "amsdu-subframe-header.h"
 #include "wifi-phy.h"
+#include "wifi-net-device.h"
+#include "ht-configuration.h"
+#include "he-configuration.h"
 
 namespace ns3 {
 
@@ -589,7 +592,7 @@ ApWifiMac::GetHtOperation (void) const
             }
           uint8_t nss = (mcs.GetMcsValue () / 8) + 1;
           NS_ASSERT (nss > 0 && nss < 5);
-          uint64_t dataRate = mcs.GetDataRate (m_phy->GetChannelWidth (), m_phy->GetShortGuardInterval () ? 400 : 800, nss);
+          uint64_t dataRate = mcs.GetDataRate (m_phy->GetChannelWidth (), GetHtConfiguration ()->GetShortGuardIntervalSupported () ? 400 : 800, nss);
           if (dataRate > maxSupportedRate)
             {
               maxSupportedRate = dataRate;
@@ -612,7 +615,7 @@ ApWifiMac::GetHtOperation (void) const
                     }
                   uint8_t nss = (mcs.GetMcsValue () / 8) + 1;
                   NS_ASSERT (nss > 0 && nss < 5);
-                  uint64_t dataRate = mcs.GetDataRate (m_stationManager->GetChannelWidthSupported (i->second), m_stationManager->GetShortGuardInterval (i->second) ? 400 : 800, nss);
+                  uint64_t dataRate = mcs.GetDataRate (m_stationManager->GetChannelWidthSupported (i->second), m_stationManager->GetShortGuardIntervalSupported (i->second) ? 400 : 800, nss);
                   if (dataRate > maxSupportedRateByHtSta)
                     {
                       maxSupportedRateByHtSta = dataRate;
@@ -714,6 +717,9 @@ ApWifiMac::GetHeOperation (void) const
         {
           operation.SetMaxHeMcsPerNss (nss, 11); //TBD: hardcode to 11 for now since we assume all MCS values are supported
         }
+      UintegerValue bssColor;
+      GetHeConfiguration ()->GetAttribute ("BssColor", bssColor);
+      operation.SetBssColor (bssColor.Get ());
     }
   return operation;
 }
@@ -1584,7 +1590,7 @@ ApWifiMac::GetRifsMode (void) const
           rifsMode = true;
         }
     }
-  if (GetRifsSupported () && rifsMode)
+  if (GetHtSupported () && GetHtConfiguration ()->GetRifsSupported () && rifsMode)
     {
       m_stationManager->SetRifsPermitted (true);
     }

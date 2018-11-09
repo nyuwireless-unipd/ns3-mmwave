@@ -203,7 +203,7 @@ MmWaveUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t pro
       return false;
     }
 
-  return m_nas->Send (packet);
+  return m_nas->Send (packet, protocolNumber);
 }
 
 Ptr<MmWaveUePhy>

@@ -29,6 +29,9 @@
 #include <map>
 #include <vector>
 
+#define MIN_NO_CC 1
+#define MAX_NO_CC 5 // this is the maximum number of carrier components allowed by 3GPP up to R13
+
 namespace ns3 {
 
 
@@ -40,7 +43,7 @@ class LteMacSapProvider;
 
 
 /**
- * \brief The abstract base class of a Component Carrier Manager* for UE 
+ * \brief The abstract base class of a Component Carrier Manager* for UE
   that operates using the component carrier manager SAP interface.
  *
  */
@@ -63,15 +66,15 @@ public:
    * \param s a reference to the "user" part of the interface, typically a
    *          member of an LteEnbRrc instance
    */
-  virtual void SetLteCcmRrcSapUser (LteUeCcmRrcSapUser* s) = 0;
+  virtual void SetLteCcmRrcSapUser (LteUeCcmRrcSapUser* s);
 
   /**
    * \brief Exports the "provider" part of the ComponentCarrier Management SAP interface.
    * \return the reference to the "provider" part of the interface, typically to
    *         be kept by an LteUeRrc instance
    */
-  virtual LteUeCcmRrcSapProvider* GetLteCcmRrcSapProvider () = 0;
-  
+  virtual LteUeCcmRrcSapProvider* GetLteCcmRrcSapProvider ();
+
   /**
    * \brief Returns the MAC sap provider interface that if forwarding calls to the
    * instance of the LteUeComponentCarrierManager.
@@ -89,7 +92,7 @@ public:
 
   /**
    * \brief Sets number of component carriers that are supported by this UE.
-   * \param noOfComponentCarriers numbr of component carriers
+   * \param noOfComponentCarriers number of component carriers
    */
   void SetNumberOfComponentCarriers (uint8_t noOfComponentCarriers);
 
@@ -98,10 +101,12 @@ protected:
   // inherited from Object
   virtual void DoDispose ();
 
+  LteUeCcmRrcSapUser* m_ccmRrcSapUser;//!< Interface to the UE RRC instance.
+  LteUeCcmRrcSapProvider* m_ccmRrcSapProvider; //!< Receive API calls from the UE RRC instance.
+
   std::map<uint8_t, LteMacSapUser*> m_lcAttached; //!< Map of pointers to SAP interfaces of the RLC instance of the flows of this UE.
   std::map<uint8_t, std::map<uint8_t, LteMacSapProvider*> > m_componentCarrierLcMap; //!< Flow configuration per flow Id of this UE.
   uint16_t m_noOfComponentCarriers; //!<// The number of component carriers that this UE can support.
-  uint16_t m_noOfComponentCarriersEnabled; //!< The number of enabled component carriers that are enabled for this UE.
   std::map <uint8_t, LteMacSapProvider*> m_macSapProvidersMap; //!< Map of pointers to SAP to interfaces of the MAC instance if the flows of this UE.
 
 }; // end of class LteUeComponentCarrierManager

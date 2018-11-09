@@ -150,8 +150,6 @@ LteUePhy::LteUePhy ()
 
 LteUePhy::LteUePhy (Ptr<LteSpectrumPhy> dlPhy, Ptr<LteSpectrumPhy> ulPhy)
   : LtePhy (dlPhy, ulPhy),
-    m_p10CqiPeriodicity (MilliSeconds (1)),  // ideal behavior
-    m_a30CqiPeriodicity (MilliSeconds (1)),  // ideal behavior
     m_uePhySapUser (0),
     m_ueCphySapUser (0),
     m_state (CELL_SEARCH),
@@ -289,6 +287,12 @@ LteUePhy::GetTypeId (void)
                    "length of layer-1 filtering.",
                    TimeValue (MilliSeconds (200)),
                    MakeTimeAccessor (&LteUePhy::m_ueMeasurementsFilterPeriod),
+                   MakeTimeChecker ())
+    .AddAttribute ("DownlinkCqiPeriodicity",
+                   "Periodicity in milliseconds for reporting the"
+                   "wideband and subband downlink CQIs to the eNB",
+                   TimeValue (MilliSeconds (1)),
+                   MakeTimeAccessor (&LteUePhy::SetDownlinkCqiPeriodicity),
                    MakeTimeChecker ())
     .AddTraceSource ("ReportUeMeasurements",
                      "Report UE measurements RSRP (dBm) and RSRQ (dB).",
@@ -472,7 +476,7 @@ LteUePhy::CreateTxPowerSpectralDensity ()
 {
   NS_LOG_FUNCTION (this);
   LteSpectrumValueHelper psdHelper;
-  Ptr<SpectrumValue> psd = psdHelper.CreateTxPowerSpectralDensity (m_ulEarfcn, m_ulBandwidth, m_txPower, GetSubChannelsForTransmission ());
+  Ptr<SpectrumValue> psd = psdHelper.CreateUlTxPowerSpectralDensity (m_ulEarfcn, m_ulBandwidth, m_txPower, GetSubChannelsForTransmission ());
 
   return psd;
 }
@@ -735,7 +739,7 @@ LteUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
               cqiSum += cqi.at (i);
               activeSubChannels++;
             }
-          //NS_LOG_DEBUG (this << " subch " << i << " cqi " <<  cqi.at (i));
+          NS_LOG_DEBUG (this << " subch " << i << " cqi " <<  cqi.at (i));
         }
       dlcqi.m_rnti = m_rnti;
       dlcqi.m_ri = 1; // not yet used
@@ -848,6 +852,14 @@ LteUePhy::ReportUeMeasurements ()
 }
 
 void
+LteUePhy::SetDownlinkCqiPeriodicity (Time cqiPeriodicity)
+{
+  NS_LOG_FUNCTION (this << cqiPeriodicity);
+  m_a30CqiPeriodicity = cqiPeriodicity;
+  m_p10CqiPeriodicity = cqiPeriodicity;
+}
+
+void
 LteUePhy::DoSendLteControlMessage (Ptr<LteControlMessage> msg)
 {
   NS_LOG_FUNCTION (this << msg);
@@ -875,6 +887,7 @@ LteUePhy::ReceiveLteControlMessageList (std::list<Ptr<LteControlMessage> > msgLi
   NS_LOG_FUNCTION (this);
 
   std::list<Ptr<LteControlMessage> >::iterator it;
+  NS_LOG_DEBUG (this << " I am rnti = " << m_rnti << " and I received msgs " << (uint16_t) msgList.size ());
   for (it = msgList.begin (); it != msgList.end (); it++)
     {
       Ptr<LteControlMessage> msg = (*it);
@@ -918,7 +931,7 @@ LteUePhy::ReceiveLteControlMessageList (std::list<Ptr<LteControlMessage> > msgLi
 
 
           // send TB info to LteSpectrumPhy
-          //NS_LOG_DEBUG (this << " UE " << m_rnti << " DL-DCI " << dci.m_rnti << " bitmap "  << dci.m_rbBitmap);
+          NS_LOG_DEBUG (this << " UE " << m_rnti << " DL-DCI " << dci.m_rnti << " bitmap "  << dci.m_rbBitmap);
           for (uint8_t i = 0; i < dci.m_tbsSize.size (); i++)
             {
               m_downlinkSpectrumPhy->AddExpectedTb (dci.m_rnti, dci.m_ndi.at (i), dci.m_tbsSize.at (i), dci.m_mcs.at (i), dlRb, i, dci.m_harqProcess, dci.m_rv.at (i), true /* DL */);
@@ -1351,7 +1364,7 @@ LteUePhy::DoSetSrsConfigurationIndex (uint16_t srcCi)
   // a guard time is needed for the case where the SRS periodicity is changed dynamically at run time
   // if we use a static one, we can have a 0ms guard time
   m_srsStartTime = Simulator::Now () + MilliSeconds (0);
-  //NS_LOG_DEBUG (this << " UE SRS P " << m_srsPeriodicity << " RNTI " << m_rnti << " offset " << m_srsSubframeOffset << " cellId " << m_cellId << " CI " << srcCi);
+  NS_LOG_DEBUG (this << " UE SRS P " << m_srsPeriodicity << " RNTI " << m_rnti << " offset " << m_srsSubframeOffset << " cellId " << m_cellId << " CI " << srcCi);
 }
 
 void
@@ -1359,6 +1372,13 @@ LteUePhy::DoSetPa (double pa)
 {
   NS_LOG_FUNCTION (this << pa);
   m_paLinear = pow (10,(pa/10));
+}
+
+void
+LteUePhy::DoSetRsrpFilterCoefficient (uint8_t rsrpFilterCoefficient)
+{
+  NS_LOG_FUNCTION (this << (uint16_t) (rsrpFilterCoefficient));
+  m_powerControl->SetRsrpFilterCoefficient (rsrpFilterCoefficient);
 }
 
 void

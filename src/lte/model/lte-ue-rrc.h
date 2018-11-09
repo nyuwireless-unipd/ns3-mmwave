@@ -525,12 +525,11 @@ private:
   /// Part of the RRC protocol. Implement the LteUeRrcSapProvider:;RecvRrcConnectionSwitch interface.
   void DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg);
 
-
   /**
    * RRC CCM SAP USER Method
-   * \param res
+   * \param noOfComponentCarriers the number of component carriers
    */
-  void DoComponentCarrierEnabling (std::vector<uint8_t> res);
+  void DoSetNumberOfComponentCarriers (uint16_t noOfComponentCarriers);
 
 
   // INTERNAL METHODS

@@ -27,6 +27,10 @@ New user-visible features
 Bugs fixed
 ----------
 
+- Bug 2992 - lte: Send method of the LteUeNetDevice doesn't use protocolNumber parameter
+- Bug 2997 - lte: EpcTft::PacketFilter::Matches does not use ipv6 address to match an IP packet
+- Bug 2860 - mobility: Set Z coordinate for position-allocation classes
+
 Known issues
 ------------
 In general, known issues are tracked on the project tracker available
@@ -34,6 +38,8 @@ at http://www.nsnam.org/bugzilla/
 
 Release 3.29
 ============
+
+This release is dedicated to the memory of project co-founder George Riley.
 
 Availability
 ------------

@@ -30,6 +30,7 @@
 #include <iostream>
 #include "ns3/radio-bearer-stats-calculator.h"
 #include <ns3/constant-position-mobility-model.h>
+#include <ns3/ff-mac-scheduler.h>
 #include <ns3/eps-bearer.h>
 #include <ns3/node-container.h>
 #include <ns3/mobility-helper.h>
@@ -151,7 +152,7 @@ LenaTestRrFfMacSchedulerSuite::LenaTestRrFfMacSchedulerSuite ()
 
 static LenaTestRrFfMacSchedulerSuite lenaTestRrFfMacSchedulerSuite;
 
-std::string 
+std::string
 LenaRrFfMacSchedulerTestCase::BuildNameString (uint16_t nUser, uint16_t dist)
 {
   std::ostringstream oss;
@@ -219,6 +220,7 @@ LenaRrFfMacSchedulerTestCase::DoRun (void)
   NetDeviceContainer enbDevs;
   NetDeviceContainer ueDevs;
   lteHelper->SetSchedulerType ("ns3::RrFfMacScheduler");
+  lteHelper->SetSchedulerAttribute ("UlCqiFilter", EnumValue (FfMacScheduler::SRS_UL_CQI));
   enbDevs = lteHelper->InstallEnbDevice (enbNodes);
   ueDevs = lteHelper->InstallUeDevice (ueNodes);
 

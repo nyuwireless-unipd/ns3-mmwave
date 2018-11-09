@@ -564,14 +564,24 @@ MmWaveUeMac::DoReceivePhyPdu (Ptr<Packet> p)
                                 << p->GetSize () << " header= " << (uint32_t)macSubheaders[ipdu].m_size << ")" );
                   rlcPdu = p->CreateFragment (currPos, (uint32_t)macSubheaders[ipdu].m_size);
                   currPos += (uint32_t)macSubheaders[ipdu].m_size;
-                  it->second.macSapUser->ReceivePdu (rlcPdu, m_rnti, macSubheaders[ipdu].m_lcid);
+
+                  LteMacSapUser::ReceivePduParameters rxPduParams;
+                  rxPduParams.p = rlcPdu;
+                  rxPduParams.rnti = m_rnti;
+                  rxPduParams.lcid = macSubheaders[ipdu].m_lcid;
+                  it->second.macSapUser->ReceivePdu (rxPduParams);
                 }
               else
                 {
                   rlcPdu = p->CreateFragment (currPos, p->GetSize () - currPos);
                   currPos = p->GetSize ();
                   LteRlcSpecificLteMacSapUser* user = (LteRlcSpecificLteMacSapUser*)it->second.macSapUser;
-                  user->ReceivePdu (rlcPdu, m_rnti, macSubheaders[ipdu].m_lcid);
+
+                  LteMacSapUser::ReceivePduParameters rxPduParams;
+                  rxPduParams.p = rlcPdu;
+                  rxPduParams.rnti = m_rnti;
+                  rxPduParams.lcid = macSubheaders[ipdu].m_lcid;
+                  user->ReceivePdu (rxPduParams);
                 }
             }
         }
@@ -736,6 +746,9 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
                       }
                   }
                 NS_LOG_LOGIC (this << " UE " << m_rnti << ": UL-CQI notified TxOpportunity of " << dciInfoElem.m_tbSize << " => " << bytesPerActiveLc << " bytes per active LC" << " statusPduMinSize " << statusPduMinSize);
+
+                LteMacSapUser::TxOpportunityParameters txOpParams;
+
                 for (lcIt = m_lcInfoMap.begin (); lcIt != m_lcInfoMap.end (); lcIt++)
                   {
                     itBsr = m_ulBsrReceived.find ((*lcIt).first);
@@ -748,7 +761,14 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
                         if ((statusPduPriority) && ((*itBsr).second.statusPduSize == statusPduMinSize))
                           {
                             MacSubheader subheader ((*lcIt).first,(*itBsr).second.statusPduSize);
-                            (*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first);
+
+                            txOpParams.bytes = (*itBsr).second.statusPduSize;
+                            txOpParams.layer = 0;
+                            txOpParams.harqId = dciInfoElem.m_harqProcess;
+                            txOpParams.componentCarrierId = m_componentCarrierId;
+                            txOpParams.rnti = m_rnti;
+                            txOpParams.lcid = (*lcIt).first;
+                            (*lcIt).second.macSapUser->NotifyTxOpportunity (txOpParams);
                             NS_LOG_LOGIC (this << "\t" << bytesPerActiveLc << " send  " << (*itBsr).second.statusPduSize << " status bytes to LC " << (uint32_t)(*lcIt).first << " statusQueue " << (*itBsr).second.statusPduSize << " retxQueue" << (*itBsr).second.retxQueueSize << " txQueue" <<  (*itBsr).second.txQueueSize);
                             (*itBsr).second.statusPduSize = 0;
                             break;
@@ -764,7 +784,14 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
                                     macPduIt->second.m_numRlcPdu++;                                             // send status PDU + data PDU
                                   }
                                 //MacSubheader subheader((*lcIt).first,(*itBsr).second.statusPduSize);
-                                (*lcIt).second.macSapUser->NotifyTxOpportunity (((*itBsr).second.statusPduSize), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first);
+
+                                txOpParams.bytes = (*itBsr).second.statusPduSize;
+                                txOpParams.layer = 0;
+                                txOpParams.harqId = dciInfoElem.m_harqProcess;
+                                txOpParams.componentCarrierId = m_componentCarrierId;
+                                txOpParams.rnti = m_rnti;
+                                txOpParams.lcid = (*lcIt).first;
+                                (*lcIt).second.macSapUser->NotifyTxOpportunity (txOpParams);
                                 bytesForThisLc -= (*itBsr).second.statusPduSize;
                                 NS_LOG_DEBUG (this << " serve STATUS " << (*itBsr).second.statusPduSize);
                                 (*itBsr).second.statusPduSize = 0;
@@ -785,7 +812,14 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
                                   {
                                     NS_LOG_DEBUG (this << " serve retx DATA, bytes " << bytesForThisLc);
                                     MacSubheader subheader ((*lcIt).first, bytesForThisLc);
-                                    (*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize () - 1), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first);                                     //zml add 1 byte overhead
+
+                                    txOpParams.bytes = (bytesForThisLc - subheader.GetSize () - 1);
+                                    txOpParams.layer = 0;
+                                    txOpParams.harqId = dciInfoElem.m_harqProcess;
+                                    txOpParams.componentCarrierId = m_componentCarrierId;
+                                    txOpParams.rnti = m_rnti;
+                                    txOpParams.lcid = (*lcIt).first;
+                                    (*lcIt).second.macSapUser->NotifyTxOpportunity (txOpParams); //zml add 1 byte overhead
                                     if ((*itBsr).second.retxQueueSize >= bytesForThisLc)
                                       {
                                         (*itBsr).second.retxQueueSize -= bytesForThisLc;
@@ -814,7 +848,14 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
                                       }
                                     NS_LOG_DEBUG (this << " serve tx DATA, bytes " << bytesForThisLc << ", RLC overhead " << rlcOverhead);
                                     MacSubheader subheader ((*lcIt).first, bytesForThisLc);
-                                    (*lcIt).second.macSapUser->NotifyTxOpportunity ((bytesForThisLc - subheader.GetSize () - 1), 0, dciInfoElem.m_harqProcess, m_componentCarrierId, m_rnti, (*lcIt).first);                                     //zml add 1 byte overhead
+
+                                    txOpParams.bytes = (bytesForThisLc - subheader.GetSize () - 1);
+                                    txOpParams.layer = 0;
+                                    txOpParams.harqId = dciInfoElem.m_harqProcess;
+                                    txOpParams.componentCarrierId = m_componentCarrierId;
+                                    txOpParams.rnti = m_rnti;
+                                    txOpParams.lcid = (*lcIt).first;
+                                    (*lcIt).second.macSapUser->NotifyTxOpportunity (txOpParams); //zml add 1 byte overhead
                                     if ((*itBsr).second.txQueueSize >= bytesForThisLc - rlcOverhead)
                                       {
                                         (*itBsr).second.txQueueSize -= bytesForThisLc - rlcOverhead;
