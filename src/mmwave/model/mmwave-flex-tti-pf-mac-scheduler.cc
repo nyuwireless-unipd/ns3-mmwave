@@ -1057,7 +1057,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
                   ueInfo->m_totBufDl += ueInfo->m_flowStatsDl[iflow].m_totalBufSize;
                   RlcPduInfo newRlcEl;
                   newRlcEl.m_lcid = ueInfo->m_flowStatsDl[iflow].m_lcid;
-                  newRlcEl.m_size = ueInfo->m_flowStatsDl[iflow].m_totalBufSize;
+                  newRlcEl.m_size = ueInfo->m_flowStatsDl[iflow].m_totalBufSize + m_subHdrSize + m_rlcHdrSize;
                   ueInfo->m_rlcPduInfo.push_back (newRlcEl);
                 }
             }
@@ -1104,7 +1104,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
           ueInfo->m_ulMcs = mcs;
           for (unsigned iflow = 0; iflow < ueInfo->m_flowStatsUl.size (); iflow++)
             {
-              ueInfo->m_totBufUl += ueInfo->m_flowStatsUl[iflow].m_totalBufSize;
+              ueInfo->m_totBufUl += ueInfo->m_flowStatsUl[iflow].m_totalBufSize + m_subHdrSize + m_rlcHdrSize;
             }
           if (ueInfo->m_totBufUl > 0)
             {
