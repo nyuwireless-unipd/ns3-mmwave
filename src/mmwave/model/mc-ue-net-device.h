@@ -214,9 +214,9 @@ public:
 
   Ptr<MmWaveEnbNetDevice> GetMmWaveTargetEnb (void);
 
-  void SetAntennaNum (uint8_t antennaNum);
+  void SetAntennaNum (uint16_t antennaNum);
 
-  uint8_t GetAntennaNum () const;
+  uint16_t GetAntennaNum () const;
 
 protected:
   NetDevice::ReceiveCallback m_rxCallback;
@@ -262,7 +262,7 @@ private:
   Ptr<LteUeComponentCarrierManager> m_mmWaveComponentCarrierManager; ///< mmWave component carrier manager
   std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > m_mmWaveCcMap; ///< mmWave CC map
   uint16_t m_mmWaveEarfcn; /**< MmWave carrier frequency */
-  uint8_t m_mmWaveAntennaNum;
+  uint16_t m_mmWaveAntennaNum;
 
   // Common
   Ptr<EpcUeNas> m_nas;

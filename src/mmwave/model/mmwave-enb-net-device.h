@@ -97,9 +97,9 @@ public:
 
   Ptr<LteEnbRrc> GetRrc (void);
 
-  void SetAntennaNum (uint8_t antennaNum);
+  void SetAntennaNum (uint16_t antennaNum);
 
-  uint8_t GetAntennaNum () const;
+  uint16_t GetAntennaNum () const;
 
   std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> > GetCcMap ();
 
@@ -121,7 +121,7 @@ private:
 
   uint16_t m_Earfcn;        /* carrier frequency */
 
-  uint8_t m_antennaNum;
+  uint16_t m_antennaNum;
 
   std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> > m_ccMap;       /**< ComponentCarrier map */
 

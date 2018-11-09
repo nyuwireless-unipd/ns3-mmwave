@@ -206,7 +206,7 @@ AntennaArrayModel::SetBeamformingVectorPanelDevices (Ptr<NetDevice> thisDevice, 
       double hAngleRadian = fmod ((phiAngle + (M_PI / m_noPlane)),2 * M_PI / m_noPlane) - (M_PI / m_noPlane);
       double vAngleRadian = completeAngle.theta;
       double power = 1 / sqrt (m_totNoArrayElements);
-      uint8_t antennaNum [2];
+      uint16_t antennaNum [2];
       antennaNum[0] = sqrt (m_totNoArrayElements);
       antennaNum[1] = sqrt (m_totNoArrayElements);
       NS_LOG_INFO ("hAngleRadian: " << hAngleRadian);
@@ -362,7 +362,7 @@ AntennaArrayModel::GetRadiationPattern (double vAngleRadian, double hAngleRadian
 }
 
 Vector
-AntennaArrayModel::GetAntennaLocation (uint8_t index, uint8_t* antennaNum)
+AntennaArrayModel::GetAntennaLocation (uint16_t index, uint16_t* antennaNum)
 {
   //assume the left bottom corner is (0,0,0), and the rectangular antenna array is on the y-z plane.
   Vector loc;
@@ -373,14 +373,14 @@ AntennaArrayModel::GetAntennaLocation (uint8_t index, uint8_t* antennaNum)
 }
 
 void
-AntennaArrayModel::SetSector (uint8_t sector, uint8_t *antennaNum, double elevation)
+AntennaArrayModel::SetSector (uint8_t sector, uint16_t *antennaNum, double elevation)
 {
   complexVector_t tempVector;
   double hAngle_radian = M_PI * (double)sector / (double)antennaNum[1] - 0.5 * M_PI;
   double vAngle_radian = elevation * M_PI / 180;
-  uint16_t size = antennaNum[0] * antennaNum[1];
+  uint64_t size = antennaNum[0] * antennaNum[1];
   double power = 1 / sqrt (size);
-  for (int ind = 0; ind < size; ind++)
+  for (uint64_t ind = 0; ind < size; ind++)
     {
       Vector loc = GetAntennaLocation (ind, antennaNum);
       double phase = -2 * M_PI * (sin (vAngle_radian) * cos (hAngle_radian) * loc.x

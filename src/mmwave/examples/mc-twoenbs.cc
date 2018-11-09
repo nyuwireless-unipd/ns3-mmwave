@@ -512,6 +512,10 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue (true)); // use blockage model with UT in portrait mode
   Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue (4)); // number of non-self blocking obstacles
 
+  // set the number of antennas in the devices
+  Config::SetDefault ("ns3::McUeNetDevice::AntennaNum", UintegerValue(16));
+  Config::SetDefault ("ns3::MmWaveEnbNetDevice::AntennaNum", UintegerValue(64));
+
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   if (true)
     {

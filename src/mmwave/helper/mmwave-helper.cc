@@ -817,7 +817,8 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       Ptr<AntennaModel> antenna = (m_ueAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
       DynamicCast<AntennaArrayModel> (antenna)->SetPlanesNumber (m_noUePanels);
       DynamicCast<AntennaArrayModel> (antenna)->SetDeviceType (true);
-      DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements (m_noRxAntenna);
+      NS_LOG_INFO("MC device->GetAntennaNum() " << device->GetAntennaNum());
+      DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements (device->GetAntennaNum());
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
       dlPhy->SetAntenna (antenna);
       ulPhy->SetAntenna (antenna);
@@ -1440,7 +1441,8 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       Ptr<AntennaModel> antenna = (m_ueAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
       DynamicCast<AntennaArrayModel> (antenna)->SetPlanesNumber (m_noUePanels);
       DynamicCast<AntennaArrayModel> (antenna)->SetDeviceType (true);
-      DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements (m_noRxAntenna);
+      NS_LOG_INFO("UE device->GetAntennaNum() " << device->GetAntennaNum());
+      DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements (device->GetAntennaNum());
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
       dlPhy->SetAntenna (antenna);
       ulPhy->SetAntenna (antenna);
@@ -1570,6 +1572,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
   //configuration of the phy paramenters
   //2) call SetCcPhyParams
   NS_ASSERT_MSG (m_componentCarrierPhyParams.size () != 0, "Cannot create enb ccm map. Call SetCcPhyParams first.");
+  Ptr<MmWaveEnbNetDevice> device = m_enbNetDeviceFactory.Create<MmWaveEnbNetDevice> ();
 
   // create component carrier map for this eNb device
   std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> > ccMap;
@@ -1657,7 +1660,8 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       Ptr<AntennaModel> antenna = (m_enbAntennaModelFactory.Create ())->GetObject<AntennaModel> ();
       DynamicCast<AntennaArrayModel> (antenna)->SetPlanesNumber (m_noEnbPanels);
       DynamicCast<AntennaArrayModel> (antenna)->SetDeviceType (false);
-      DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements (m_noTxAntenna);
+      NS_LOG_INFO("eNB device->GetAntennaNum() " << device->GetAntennaNum());
+      DynamicCast<AntennaArrayModel> (antenna)->SetTotNoArrayElements (device->GetAntennaNum());      
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
       dlPhy->SetAntenna (antenna);
       ulPhy->SetAntenna (antenna);
@@ -1814,8 +1818,6 @@ it->second->GetFfrAlgorithm ()->SetLteFfrRrcSapUser (rrc->GetLteFfrRrcSapUser (i
         }
     }
 
-
-  Ptr<MmWaveEnbNetDevice> device = m_enbNetDeviceFactory.Create<MmWaveEnbNetDevice> ();
   device->SetNode (n);
   device->SetAttribute ("CellId", UintegerValue (cellId));
   device->SetAttribute ("LteEnbComponentCarrierManager", PointerValue (ccmEnbManager));

@@ -4213,13 +4213,13 @@ LteEnbRrc::TriggerUeAssociationUpdate()
       }
       else
       {
+        m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
         if(m_handoverMode == THRESHOLD)
         {
           ThresholdBasedSecondaryCellHandover(imsiIter, sinrDifference, maxSinrCellId, maxSinrDb);
         }
         else if(m_handoverMode == FIXED_TTT || m_handoverMode == DYNAMIC_TTT)
         {
-          m_bestMmWaveCellForImsiMap[imsi] = maxSinrCellId;
           TttBasedHandover(imsiIter, sinrDifference, maxSinrCellId, maxSinrDb);
         }
         else
@@ -4703,8 +4703,8 @@ LteEnbRrc::DoRecvHandoverRequest (EpcX2SapUser::HandoverRequestParams req)
       ackParams.admittedBearers.push_back (i);
     }
 
-    // For secondary cell HO for MC devices, setup RLC instances
-    for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = req.rlcRequests.begin();
+  // For secondary cell HO for MC devices, setup RLC instances
+  for (std::vector <EpcX2Sap::RlcSetupRequest>::iterator it = req.rlcRequests.begin();
        it != req.rlcRequests.end ();
          ++it)
     {

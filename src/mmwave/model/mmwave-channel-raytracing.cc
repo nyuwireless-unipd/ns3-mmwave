@@ -264,8 +264,8 @@ MmWaveChannelRaytracing::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> 
   Ptr<mmwave::MmWaveUeNetDevice> rxUe =
     DynamicCast<mmwave::MmWaveUeNetDevice> (rxDevice);
 
-  uint8_t txAntennaNum[2];
-  uint8_t rxAntennaNum[2];
+  uint16_t txAntennaNum[2];
+  uint16_t rxAntennaNum[2];
 
   bool dl = true;
 
@@ -570,7 +570,7 @@ MmWaveChannelRaytracing::CalcBeamformingVector (complex2DVector_t spatialMatrix,
 
 
 complex2DVector_t
-MmWaveChannelRaytracing::GenSpatialMatrix (uint64_t traceIndex, uint8_t* antennaNum, bool bs) const
+MmWaveChannelRaytracing::GenSpatialMatrix (uint64_t traceIndex, uint16_t* antennaNum, bool bs) const
 {
   complex2DVector_t spatialMatrix;
   uint16_t pathNum = g_path.at (traceIndex);
@@ -598,16 +598,16 @@ MmWaveChannelRaytracing::GenSpatialMatrix (uint64_t traceIndex, uint8_t* antenna
 
 
 complexVector_t
-MmWaveChannelRaytracing::GenSinglePath (double hAngle, double vAngle, uint8_t* antennaNum) const
+MmWaveChannelRaytracing::GenSinglePath (double hAngle, double vAngle, uint16_t* antennaNum) const
 {
   NS_LOG_FUNCTION (this);
   complexVector_t singlePath;
-  uint16_t vSize = antennaNum[0];
-  uint16_t hSize = antennaNum[1];
+  uint64_t vSize = antennaNum[0];
+  uint64_t hSize = antennaNum[1];
 
-  for (int vIndex = 0; vIndex < vSize; vIndex++)
+  for (uint64_t vIndex = 0; vIndex < vSize; vIndex++)
     {
-      for (int hIndex = 0; hIndex < hSize; hIndex++)
+      for (uint64_t hIndex = 0; hIndex < hSize; hIndex++)
         {
           double w = (-2) * M_PI * hIndex * m_antennaSeparation * cos (hAngle)
             + (-2) * M_PI * vIndex * m_antennaSeparation * cos (vAngle);
