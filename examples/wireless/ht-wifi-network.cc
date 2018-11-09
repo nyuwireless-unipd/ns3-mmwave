@@ -127,9 +127,6 @@ int main (int argc, char *argv[])
               YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
               phy.SetChannel (channel.Create ());
 
-              // Set guard interval
-              phy.Set ("ShortGuardEnabled", BooleanValue (sgi));
-
               WifiMacHelper mac;
               WifiHelper wifi;
               if (frequency == 5.0)
@@ -169,6 +166,9 @@ int main (int argc, char *argv[])
 
               // Set channel width
               Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (channelWidth));
+              
+              // Set guard interval
+              Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (sgi));
 
               // mobility.
               MobilityHelper mobility;
@@ -262,8 +262,7 @@ int main (int argc, char *argv[])
                 {
                   if (throughput < minExpectedThroughput)
                     {
-                      NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
-                      exit (1);
+                      NS_FATAL_ERROR ("Obtained throughput " << throughput << " is not expected!");
                     }
                 }
               //test last element
@@ -271,8 +270,7 @@ int main (int argc, char *argv[])
                 {
                   if (maxExpectedThroughput > 0 && throughput > maxExpectedThroughput)
                     {
-                      NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
-                      exit (1);
+                      NS_FATAL_ERROR ("Obtained throughput " << throughput << " is not expected!");
                     }
                 }
               //test previous throughput is smaller (for the same mcs)
@@ -282,8 +280,7 @@ int main (int argc, char *argv[])
                 }
               else
                 {
-                  NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
-                  exit (1);
+                  NS_FATAL_ERROR ("Obtained throughput " << throughput << " is not expected!");
                 }
               //test previous throughput is smaller (for the same channel width and GI)
               if (throughput > prevThroughput [index])
@@ -292,8 +289,7 @@ int main (int argc, char *argv[])
                 }
               else
                 {
-                  NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
-                  exit (1);
+                  NS_FATAL_ERROR ("Obtained throughput " << throughput << " is not expected!");
                 }
               index++;
 
