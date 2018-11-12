@@ -25,8 +25,11 @@
 *                         Russell Ford <russell.ford@nyu.edu>
 *                         Menglei Zhang <menglei@nyu.edu>
 *
-*  Modified by: Michele Polese <michele.polese@gmail.com>
+*   Modified by: Michele Polese <michele.polese@gmail.com>
 *                Dual Connectivity and Handover functionalities
+*
+*   Modified by: Gabriel Arrobo <gab.arrobo@gmail.com>
+*                Added IPv6 support in ActivateEpsBearer function
 */
 
 #ifndef MMWAVE_POINT_TO_POINT_EPC_HELPER_H
@@ -105,12 +108,12 @@ private:
   /**
    * helper to assign addresses to UE devices as well as to the TUN device of the SGW/PGW
    */
-  Ipv4AddressHelper m_ueAddressHelper;
+  Ipv4AddressHelper m_uePgwAddressHelper;
 
   /**
    * helper to assign IPv6 addresses to UE devices as well as to the TUN device of the SGW/PGW
    */
-  Ipv6AddressHelper m_ueAddressHelper6;
+  Ipv6AddressHelper m_uePgwAddressHelper6;
 
   /**
    * SGW-PGW network element
