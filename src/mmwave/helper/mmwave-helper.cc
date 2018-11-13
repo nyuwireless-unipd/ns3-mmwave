@@ -627,7 +627,7 @@ MmWaveHelper::InstallUeDevice (NodeContainer c)
     {
       Ptr<Node> node = *i;
       Ptr<NetDevice> device = InstallSingleUeDevice (node);
-      device->SetAddress (Mac48Address::Allocate ());
+      device->SetAddress (Mac64Address::Allocate ());
       devices.Add (device);
     }
   return devices;
@@ -644,7 +644,7 @@ MmWaveHelper::InstallMcUeDevice (NodeContainer c)
     {
       Ptr<Node> node = *i;
       Ptr<NetDevice> device = InstallSingleMcUeDevice (node);
-      device->SetAddress (Mac48Address::Allocate ());
+      device->SetAddress (Mac64Address::Allocate ());
       devices.Add (device);
     }
   return devices;
@@ -660,7 +660,7 @@ MmWaveHelper::InstallInterRatHoCapableUeDevice (NodeContainer c)
     {
       Ptr<Node> node = *i;
       Ptr<NetDevice> device = InstallSingleInterRatHoCapableUeDevice (node);
-      device->SetAddress (Mac48Address::Allocate ());
+      device->SetAddress (Mac64Address::Allocate ());
       devices.Add (device);
     }
   return devices;
@@ -676,7 +676,7 @@ MmWaveHelper::InstallEnbDevice (NodeContainer c)
     {
       Ptr<Node> node = *i;
       Ptr<NetDevice> device = InstallSingleEnbDevice (node);
-      device->SetAddress (Mac48Address::Allocate ());
+      device->SetAddress (Mac64Address::Allocate ());
       devices.Add (device);
     }
   return devices;

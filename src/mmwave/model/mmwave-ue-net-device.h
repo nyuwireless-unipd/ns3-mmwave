@@ -36,7 +36,6 @@
 #include "mmwave-net-device.h"
 #include "mmwave-enb-net-device.h"
 #include "ns3/event-id.h"
-#include "ns3/mac48-address.h"
 #include "ns3/traced-callback.h"
 #include "ns3/nstime.h"
 #include "mmwave-phy.h"

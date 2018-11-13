@@ -34,7 +34,7 @@
 
 #include <ns3/net-device.h>
 #include <ns3/event-id.h>
-#include <ns3/mac48-address.h>
+#include <ns3/mac64-address.h>
 #include <ns3/traced-callback.h>
 #include <ns3/nstime.h>
 #include "mmwave-phy.h"
@@ -88,7 +88,7 @@ public:
 protected:
   NetDevice::ReceiveCallback m_rxCallback;
 private:
-  Mac48Address m_macaddress;
+  Mac64Address m_macaddress;
   Ptr<Node> m_node;
   mutable uint16_t m_mtu;
   bool m_linkUp;

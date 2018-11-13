@@ -225,7 +225,7 @@ protected:
 private:
   McUeNetDevice (const McUeNetDevice &);
 
-  Mac48Address m_macaddress;
+  Mac64Address m_macaddress;
   Ptr<Node> m_node;
   mutable uint16_t m_mtu;
   bool m_linkUp;

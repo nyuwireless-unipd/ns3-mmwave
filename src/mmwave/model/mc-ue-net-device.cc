@@ -218,7 +218,7 @@ void
 McUeNetDevice::SetAddress (Address address)
 {
   NS_LOG_FUNCTION (this << address);
-  m_macaddress = Mac48Address::ConvertFrom (address);
+  m_macaddress = Mac64Address::ConvertFrom (address);
 }
 
 
@@ -399,7 +399,23 @@ void
 McUeNetDevice::Receive (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
-  m_rxCallback (this, p, Ipv4L3Protocol::PROT_NUMBER, Address ());
+  Ipv4Header ipv4Header;
+  Ipv6Header ipv6Header;
+
+  if (p->PeekHeader (ipv4Header) != 0)
+    {
+      NS_LOG_LOGIC ("IPv4 stack...");
+      m_rxCallback (this, p, Ipv4L3Protocol::PROT_NUMBER, Address ());
+    }
+  else if  (p->PeekHeader (ipv6Header) != 0)
+    {
+      NS_LOG_LOGIC ("IPv6 stack...");
+      m_rxCallback (this, p, Ipv6L3Protocol::PROT_NUMBER, Address ());
+    }
+  else
+    {
+      NS_ABORT_MSG ("McUeNetDevice::Receive - Unknown IP type...");
+    }
 }
 
 

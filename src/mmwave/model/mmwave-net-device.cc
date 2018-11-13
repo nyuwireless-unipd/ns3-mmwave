@@ -100,7 +100,7 @@ void
 MmWaveNetDevice::SetAddress (Address address)
 {
   NS_LOG_FUNCTION (this << address);
-  m_macaddress = Mac48Address::ConvertFrom (address);
+  m_macaddress = Mac64Address::ConvertFrom (address);
 }
 Address
 MmWaveNetDevice::GetAddress (void) const
