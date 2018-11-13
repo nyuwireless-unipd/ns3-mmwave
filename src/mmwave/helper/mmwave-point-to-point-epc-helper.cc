@@ -508,13 +508,29 @@ MmWavePointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, Ptr<Epc
   // the user simulation program, rather than done by the EPC
   Ptr<Node> ueNode = ueDevice->GetNode ();
   Ptr<Ipv4> ueIpv4 = ueNode->GetObject<Ipv4> ();
-  NS_ASSERT_MSG (ueIpv4 != 0, "UEs need to have IPv4 installed before EPS bearers can be activated");
-  int32_t interface =  ueIpv4->GetInterfaceForDevice (ueDevice);
-  NS_ASSERT (interface >= 0);
-  NS_ASSERT (ueIpv4->GetNAddresses (interface) == 1);
-  Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
-  NS_LOG_LOGIC (" UE IP address: " << ueAddr);
-  m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
+
+  Ptr<Ipv6> ueIpv6 = ueNode->GetObject<Ipv6> ();
+  NS_ASSERT_MSG (ueIpv4 != 0 || ueIpv6 != 0, "UEs need to have IPv4/IPv6 installed before EPS bearers can be activated");
+  if (ueIpv4)
+    {
+      int32_t interface =  ueIpv4->GetInterfaceForDevice (ueDevice);
+      if (interface >= 0 && ueIpv4->GetNAddresses (interface) == 1)
+        {
+          Ipv4Address ueAddr = ueIpv4->GetAddress (interface, 0).GetLocal ();
+          NS_LOG_LOGIC (" UE IP address: " << ueAddr);
+          m_sgwPgwApp->SetUeAddress (imsi, ueAddr);
+        }
+    }
+  if (ueIpv6)
+    {
+      int32_t interface6 =  ueIpv6->GetInterfaceForDevice (ueDevice);
+      if (interface6 >= 0 && ueIpv6->GetNAddresses (interface6) == 2)
+        {
+          Ipv6Address ueAddr6 = ueIpv6->GetAddress (interface6, 1).GetAddress ();
+          NS_LOG_LOGIC (" UE IPv6 address: " << ueAddr6);
+          m_sgwPgwApp->SetUeAddress6 (imsi, ueAddr6);
+        }
+    }
 
   uint8_t bearerId = m_mmeApp->AddBearer (imsi, tft, bearer);
   ueNas->ActivateEpsBearer (bearer, tft);
