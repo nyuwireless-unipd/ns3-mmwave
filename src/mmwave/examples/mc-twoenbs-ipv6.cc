@@ -665,8 +665,8 @@ main (int argc, char *argv[])
   uint16_t ulPort = 2000;
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  bool dl = 1;
-  bool ul = 0;
+  bool dl = 0;
+  bool ul = 1;
 
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
@@ -687,9 +687,10 @@ main (int argc, char *argv[])
       if (ul)
         {
           ++ulPort;
-          PacketSinkHelper ulPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), ulPort));
+          UdpServerHelper ulPacketSinkHelper (ulPort);
           ulPacketSinkHelper.SetAttribute ("PacketWindowSize", UintegerValue (256));
           serverApps.Add (ulPacketSinkHelper.Install (remoteHost));
+          
           UdpClientHelper ulClient (remoteHostAddr, ulPort);
           ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds (interPacketInterval)));
           ulClient.SetAttribute ("MaxPackets", UintegerValue (0xFFFFFFFF));
