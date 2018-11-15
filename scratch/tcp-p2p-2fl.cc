@@ -102,7 +102,7 @@ main (int argc, char *argv[])
 
   uint32_t maxBytes = 0;
   int packetSize = 14000;
-  std::string protocol = "TcpBbr";
+  std::string protocol = "TcpNyu";
   double simStopTime = 60;
   int bufferSize = 1000;
   int p2pDelay = 9;
@@ -177,7 +177,13 @@ main (int argc, char *argv[])
     {
       Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
 
-    }    else
+    }
+    else if (protocol == "TcpNyu")
+    {
+      Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNyu::GetTypeId ()));
+
+    }    
+    else
     {
     std::cout<<protocol<<" Unkown protocol.\n";
     return 1;

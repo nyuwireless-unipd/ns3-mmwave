@@ -148,10 +148,10 @@ main (int argc, char *argv[])
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue(true));
 	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue(true));
-	Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(2.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
-	Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue(MilliSeconds(200.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue(MilliSeconds(1.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MilliSeconds(1.0)));
+	//Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue(MilliSeconds(2.0)));
 	Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (bufferSize));
     Config::SetDefault ("ns3::QueueBase::MaxPackets", UintegerValue (100*1000));
 
@@ -217,6 +217,11 @@ main (int argc, char *argv[])
     	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpBbr::GetTypeId ()));
 
     }
+    else if (protocol == "TcpNyu")
+    {
+      Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNyu::GetTypeId ()));
+
+    }   
     else
     {
 		std::cout<<protocol<<" Unkown protocol.\n";
@@ -318,7 +323,7 @@ main (int argc, char *argv[])
 		remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.255.0.0"), 1);
 
 	}
-
+/*
 	Ptr < Building > buildingxx;
 	buildingxx = Create<Building> ();
 	buildingxx->SetBoundaries (Box (6.2,6.5,
@@ -394,9 +399,13 @@ main (int argc, char *argv[])
 	building15->SetBoundaries (Box (53,53.2,
 								99.5, 99.8,
 								0.0, 40));
+*/
 
-
-
+	Ptr < Building > buildingx;
+	buildingx = Create<Building> ();
+	buildingx->SetBoundaries (Box (0.5,1,
+								99.5, 99.8,
+								0.0, 40));
 
 
 	  NodeContainer ueNodes;
@@ -407,7 +416,7 @@ main (int argc, char *argv[])
 
 
 	Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-	enbPositionAlloc->Add (Vector (0.0, -80.0, hBS));
+	enbPositionAlloc->Add (Vector (0.0, -100.0, hBS));
 
 	MobilityHelper enbmobility;
 	enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
