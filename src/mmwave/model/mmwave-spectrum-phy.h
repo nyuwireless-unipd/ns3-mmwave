@@ -65,7 +65,7 @@ namespace mmwave {
 struct ExpectedTbInfo_t
 {
   uint8_t ndi;
-  uint16_t size;
+  uint32_t size;
   uint8_t mcs;
   std::vector<int> rbBitmap;
   uint8_t harqProcessId;
@@ -159,7 +159,7 @@ public:
 
   void UpdateSinrPerceived (const SpectrumValue& sinr);
 
-  void AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs, std::vector<int> map, uint8_t harqId,
+  void AddExpectedTb (uint16_t rnti, uint8_t ndi, uint32_t size, uint8_t mcs, std::vector<int> map, uint8_t harqId,
                       uint8_t rv, bool downlink, uint8_t symStart, uint8_t numSym);
 //	void AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t m_mcs, std::vector<int> chunkMap, bool downlink);
 

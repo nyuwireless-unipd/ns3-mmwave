@@ -271,7 +271,7 @@ MmWaveSpectrumPhy::SetPhyRxCtrlEndOkCallback (MmWavePhyRxCtrlEndOkCallback c)
 }
 
 void
-MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs,
+MmWaveSpectrumPhy::AddExpectedTb (uint16_t rnti, uint8_t ndi, uint32_t size, uint8_t mcs,
                                   std::vector<int> chunkMap, uint8_t harqId, uint8_t rv, bool downlink,
                                   uint8_t symStart, uint8_t numSym)
 {
