@@ -65,7 +65,7 @@ namespace mmwave {
 struct ExpectedTbInfo_t
 {
   uint8_t ndi;
-  uint16_t size;
+  uint32_t size;
   uint8_t mcs;
   std::vector<int> rbBitmap;
   uint8_t harqProcessId;
@@ -159,9 +159,22 @@ public:
 
   void UpdateSinrPerceived (const SpectrumValue& sinr);
 
-  void AddExpectedTb (uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs, std::vector<int> map, uint8_t harqId,
+  /**
+   * Add the transport block that the spectrum should expect to receive.
+   *
+   * \param rnti the RNTI of the UE
+   * \param ndi the New Data Indicator
+   * \param tbSize the size of the transport block
+   * \param mcs the modulation and coding scheme to use
+   * \param map a map of the resource blocks used
+   * \param harqId the ID of the HARQ process
+   * \param rv the number of retransmissions
+   * \param downlink a boolean flag for a downlink transmission
+   * \param symStart the first symbol of this TB
+   * \param numSym the number of symbols of the TB
+   */
+  void AddExpectedTb (uint16_t rnti, uint8_t ndi, uint32_t tbSize, uint8_t mcs, std::vector<int> map, uint8_t harqId,
                       uint8_t rv, bool downlink, uint8_t symStart, uint8_t numSym);
-//	void AddExpectedTb (uint16_t rnti, uint16_t size, uint8_t m_mcs, std::vector<int> chunkMap, bool downlink);
 
   void SetHarqPhyModule (Ptr<MmWaveHarqPhy> harq);
 

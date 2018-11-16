@@ -1212,7 +1212,6 @@ MmWave3gppChannel::CalBeamformingGain (Ptr<const SpectrumValue> txPsd, Ptr<Param
           for (uint8_t cIndex = 0; cIndex < numCluster; cIndex++)
             {
               double delay = -2 * M_PI * fsb * (params->m_delay.at (cIndex));
-              std::complex<double> txSum (0,0);
               subsbandGain = subsbandGain + longTerm.at (cIndex) * doppler.at (cIndex) * exp (std::complex<double> (0, delay));
             }
           *vit = (*vit) * (norm (subsbandGain));
