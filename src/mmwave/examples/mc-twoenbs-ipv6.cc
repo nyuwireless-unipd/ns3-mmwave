@@ -665,8 +665,8 @@ main (int argc, char *argv[])
   uint16_t ulPort = 2000;
   ApplicationContainer clientApps;
   ApplicationContainer serverApps;
-  bool dl = 0;
-  bool ul = 1;
+  bool dl = 1;
+  bool ul = 0;
 
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
