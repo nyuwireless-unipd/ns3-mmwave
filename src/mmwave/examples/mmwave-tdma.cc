@@ -121,6 +121,7 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
   Config::SetDefault ("ns3::MmWaveBeamforming::FixSpeed", BooleanValue (true));
   Config::SetDefault ("ns3::MmWaveBeamforming::UeSpeed", DoubleValue (speed));
+  Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 
   Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
 
