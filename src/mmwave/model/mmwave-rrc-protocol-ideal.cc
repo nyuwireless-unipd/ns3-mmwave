@@ -347,11 +347,11 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
             }
           else
             {
-              NS_LOG_UNCOND ("-----------This implementation is wrong. Use MmWaveRrcProtocolReal.");
               // it may be a McUeNetDevice
               Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
               if (mcUeDev != 0)
                 {
+                  NS_FATAL_ERROR ("-----------This implementation does not support McUeNetDevice. Use MmWaveRrcProtocolReal.");
                   ueRrc = mcUeDev->GetMmWaveRrc ();
                   if (ueRrc != 0) // actually is using 2 connections
                     {

@@ -170,6 +170,7 @@ main (int argc, char *argv[])
   //Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::FixedLossTst", BooleanValue (false));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::LossFixedDb", DoubleValue (100.0));
+  Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 
   Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
 
