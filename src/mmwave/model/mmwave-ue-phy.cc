@@ -881,6 +881,8 @@ MmWaveUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
 
   dlcqi.m_rnti = m_rnti;
   dlcqi.m_cqiType = DlCqiInfo::WB;
+  dlcqi.m_ri = 0;
+  dlcqi.m_wbPmi = 0;
 
   std::vector<int> cqi;
 
