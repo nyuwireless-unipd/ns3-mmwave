@@ -132,7 +132,9 @@ private:
         m_dlSymbolsRetx (0),
         m_ulSymbolsRetx (0),
         m_dlTbSize (0),
-        m_ulTbSize (0)
+        m_ulTbSize (0),
+        m_dlAllocDone (false),
+        m_ulAllocDone (false)
     {
     }
 
@@ -149,7 +151,9 @@ private:
         m_dlSymbolsRetx (0),
         m_ulSymbolsRetx (0),
         m_dlTbSize (0),
-        m_ulTbSize (0)
+        m_ulTbSize (0),
+        m_dlAllocDone (false),
+        m_ulAllocDone (false)
     {
     }
 

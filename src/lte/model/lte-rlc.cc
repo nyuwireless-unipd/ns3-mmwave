@@ -318,6 +318,7 @@ LteRlcSm::ReportBufferStatus ()
   p.retxQueueSize = 0;
   p.retxQueueHolDelay = 0;
   p.statusPduSize = 0;
+  p.arrivalRate = 0;
   m_macSapProvider->ReportBufferStatus (p);
 }
 

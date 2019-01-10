@@ -141,7 +141,7 @@ EpcMmeApplication::DoInitialUeMessage (uint64_t mmeUeS1Id, uint16_t enbUeS1Id, u
   std::map<uint64_t, Ptr<UeInfo> >::iterator it = m_ueInfoMap.find (imsi);
   NS_ASSERT_MSG (it != m_ueInfoMap.end (), "could not find any UE with IMSI " << imsi);
   it->second->cellId = gci;
-  EpcS11SapSgw::CreateSessionRequestMessage msg;
+  EpcS11SapSgw::CreateSessionRequestMessage msg = EpcS11SapSgw::CreateSessionRequestMessage();
   msg.imsi = imsi;
   msg.uli.gci = gci;
   for (std::list<BearerInfo>::iterator bit = it->second->bearersToBeActivated.begin ();
