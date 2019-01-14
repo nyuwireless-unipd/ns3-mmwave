@@ -492,7 +492,6 @@ TcpNyu::CheckDrain (Ptr<TcpSocketState> tcb)
 
   if (m_state == NyuMode_t::NYU_DRAIN && tcb->m_bytesInFlight <= InFlight (tcb, 1))
     {
-      tcb->m_packetBundle = 1;
       EnterProbeBW ();
     }
 }
