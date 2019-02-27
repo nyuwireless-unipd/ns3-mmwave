@@ -47,7 +47,7 @@ struct MacSubheader
 
   }
 
-  MacSubheader (uint8_t lcid, uint16_t size)
+  MacSubheader (uint8_t lcid, uint32_t size)
     : m_lcid (lcid),
       m_size (size)
   {
