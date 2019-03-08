@@ -23550,7 +23550,7 @@ def register_Ns3MmwaveExpectedTbInfo_t_methods(root_module, cls):
     ## mmwave-spectrum-phy.h (module 'mmwave'): ns3::mmwave::ExpectedTbInfo_t::rv [variable]
     cls.add_instance_attribute('rv', 'uint8_t', is_const=False)
     ## mmwave-spectrum-phy.h (module 'mmwave'): ns3::mmwave::ExpectedTbInfo_t::size [variable]
-    cls.add_instance_attribute('size', 'uint16_t', is_const=False)
+    cls.add_instance_attribute('size', 'uint32_t', is_const=False)
     ## mmwave-spectrum-phy.h (module 'mmwave'): ns3::mmwave::ExpectedTbInfo_t::symStart [variable]
     cls.add_instance_attribute('symStart', 'uint8_t', is_const=False)
     ## mmwave-spectrum-phy.h (module 'mmwave'): ns3::mmwave::ExpectedTbInfo_t::tbler [variable]
@@ -23607,8 +23607,8 @@ def register_Ns3MmwaveMacSubheader_methods(root_module, cls):
     cls.add_constructor([param('ns3::mmwave::MacSubheader const &', 'arg0')])
     ## mmwave-mac-pdu-header.h (module 'mmwave'): ns3::mmwave::MacSubheader::MacSubheader() [constructor]
     cls.add_constructor([])
-    ## mmwave-mac-pdu-header.h (module 'mmwave'): ns3::mmwave::MacSubheader::MacSubheader(uint8_t lcid, uint16_t size) [constructor]
-    cls.add_constructor([param('uint8_t', 'lcid'), param('uint16_t', 'size')])
+    ## mmwave-mac-pdu-header.h (module 'mmwave'): ns3::mmwave::MacSubheader::MacSubheader(uint8_t lcid, uint32_t size) [constructor]
+    cls.add_constructor([param('uint8_t', 'lcid'), param('uint32_t', 'size')])
     ## mmwave-mac-pdu-header.h (module 'mmwave'): uint32_t ns3::mmwave::MacSubheader::GetSize() [member function]
     cls.add_method('GetSize', 
                    'uint32_t', 
@@ -27321,10 +27321,10 @@ def register_Ns3MmwaveMmWaveSpectrumPhy_methods(root_module, cls):
     cls.add_method('UpdateSinrPerceived', 
                    'void', 
                    [param('ns3::SpectrumValue const &', 'sinr')])
-    ## mmwave-spectrum-phy.h (module 'mmwave'): void ns3::mmwave::MmWaveSpectrumPhy::AddExpectedTb(uint16_t rnti, uint8_t ndi, uint16_t size, uint8_t mcs, std::vector<int, std::allocator<int> > map, uint8_t harqId, uint8_t rv, bool downlink, uint8_t symStart, uint8_t numSym) [member function]
+    ## mmwave-spectrum-phy.h (module 'mmwave'): void ns3::mmwave::MmWaveSpectrumPhy::AddExpectedTb(uint16_t rnti, uint8_t ndi, uint32_t tbSize, uint8_t mcs, std::vector<int, std::allocator<int> > map, uint8_t harqId, uint8_t rv, bool downlink, uint8_t symStart, uint8_t numSym) [member function]
     cls.add_method('AddExpectedTb', 
                    'void', 
-                   [param('uint16_t', 'rnti'), param('uint8_t', 'ndi'), param('uint16_t', 'size'), param('uint8_t', 'mcs'), param('std::vector< int >', 'map'), param('uint8_t', 'harqId'), param('uint8_t', 'rv'), param('bool', 'downlink'), param('uint8_t', 'symStart'), param('uint8_t', 'numSym')])
+                   [param('uint16_t', 'rnti'), param('uint8_t', 'ndi'), param('uint32_t', 'tbSize'), param('uint8_t', 'mcs'), param('std::vector< int >', 'map'), param('uint8_t', 'harqId'), param('uint8_t', 'rv'), param('bool', 'downlink'), param('uint8_t', 'symStart'), param('uint8_t', 'numSym')])
     ## mmwave-spectrum-phy.h (module 'mmwave'): void ns3::mmwave::MmWaveSpectrumPhy::SetHarqPhyModule(ns3::Ptr<ns3::mmwave::MmWaveHarqPhy> harq) [member function]
     cls.add_method('SetHarqPhyModule', 
                    'void', 
