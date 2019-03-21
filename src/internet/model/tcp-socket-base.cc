@@ -1488,6 +1488,15 @@ TcpSocketBase::ReadOptions (const TcpHeader &tcpHeader, bool &scoreboardUpdated)
 void
 TcpSocketBase::EnterRecovery ()
 {
+      m_rateVector.clear();
+      m_rttVector.clear();
+      m_cwndVector.clear();
+      m_computeAverage.Cancel();
+      m_window = 0;
+      m_sampleSize = 0;
+      m_windowVector.clear();
+      m_scale = 1;
+
   NS_LOG_FUNCTION (this);
   NS_ASSERT (m_tcb->m_congState != TcpSocketState::CA_RECOVERY);
 
@@ -1662,6 +1671,58 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   // are inside the function ProcessAck
   ProcessAck (ackNumber, scoreboardUpdated, oldHeadSequence);
 
+   
+
+
+    if(m_tcb->m_congState == TcpSocketState::CA_OPEN)
+    {
+       FILE* log_file;
+
+      char* fname = (char*)malloc(sizeof(char) * 255);
+
+      memset(fname, 0, sizeof(char) * 255);
+      std::string temp;
+      int pointer = reinterpret_cast<size_t>(this);
+
+      temp = std::to_string(pointer)+"-rate.txt";
+      //temp = "1-rate.txt";
+      log_file = fopen(temp.c_str(), "a");
+
+      fprintf(log_file, "%f \t  %llu \n", Now().GetSeconds(), rs->m_deliveryRate.GetBitRate ());
+
+      fflush(log_file);
+
+      fclose(log_file);
+
+      if(fname)
+
+      free(fname);
+
+      fname = 0;
+
+      m_rateVector.push_back((double)rs->m_deliveryRate.GetBitRate ()/1e6); // stop mbps
+      m_rttVector.push_back(m_tcb->m_lastRtt.Get().GetSeconds()); //store seconds
+      m_cwndVector.push_back((double)m_tcb->m_cWnd.Get()/1e6*8); //store mbits
+      m_sampleSize++;
+      if(!m_computeAverage.IsRunning())
+      {
+        m_computeAverage = Simulator::Schedule (m_tcb->m_lastRtt.Get(), &TcpSocketBase::LinearRegression, this);
+      }
+    }
+    else
+    {
+      m_rateVector.clear();
+      m_rttVector.clear();
+      m_cwndVector.clear();
+      m_computeAverage.Cancel();
+      m_window = 0;
+      m_sampleSize = 0;
+      m_windowVector.clear();
+      m_scale = 1;
+    }
+
+
+
   if (m_congestionControl->HasCongControl ())
     {
       m_congestionControl->CongControl (m_tcb, rs);
@@ -1678,6 +1739,170 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   // inside SendPendingData
   SendPendingData (m_connected);
 }
+
+
+void
+TcpSocketBase::LinearRegression ()
+{
+  m_window++;
+  if(m_rateVector.size()!=m_rttVector.size() || m_rttVector.size()!=m_cwndVector.size())
+  {
+    NS_FATAL_ERROR ("There size should be the same");
+  }
+  m_windowVector.push_back(m_sampleSize);
+  m_sampleSize = 0;
+
+  if(m_window > 10)
+  {
+    uint32_t size = m_windowVector.at(0);
+    m_windowVector.erase (m_windowVector.begin());
+
+    m_rateVector.erase (m_rateVector.begin(),m_rateVector.begin()+size);
+    m_rttVector.erase (m_rttVector.begin(),m_rttVector.begin()+size);
+    m_cwndVector.erase (m_cwndVector.begin(),m_cwndVector.begin()+size);
+    m_window--;
+
+  }
+
+
+  if(m_window == 10)
+  {
+      if(m_rateVector.size()!=0 && m_rateVector.size()==m_rttVector.size() && m_rttVector.size()==m_cwndVector.size())
+      {
+      //perform linear regression
+
+        if(m_rateVector.at(0) != 0)
+        {
+          uint32_t size = m_rateVector.size();
+          //std::cout << m_rateVector.at(0) << "  " << m_rttVector.at(0) << "  " << m_cwndVector.at(0) << "\n";
+
+          double meanRate = 0;
+          double meanRtt = 0;
+          double meanCwnd = 0;
+          for (uint32_t ind = 0; ind < size; ind++)
+          {
+            meanRate += m_rateVector.at(ind);
+            meanRtt += m_rttVector.at(ind);
+            meanCwnd += m_cwndVector.at(ind);
+          }
+          meanRate = meanRate/size;
+          meanRtt = meanRtt/size;
+          meanCwnd = meanCwnd/size;
+          //std::cout << Now().GetSeconds()<<" Mean: "<< meanRate << "  " << meanRtt<< "  " << meanCwnd<< "\n";
+
+          double cross_Rate_Cwnd = 0;
+          double cross_Rtt_Cwnd = 0;
+          double varCwnd = 0;
+          for (uint32_t ind = 0; ind < size; ind++)
+          {
+            cross_Rate_Cwnd += (m_rateVector.at(ind) - meanRate)*(m_cwndVector.at(ind)-meanCwnd);
+            cross_Rtt_Cwnd += (m_rttVector.at(ind) - meanRtt)*(m_cwndVector.at(ind)-meanCwnd);
+            varCwnd += std::pow(m_cwndVector.at(ind)-meanCwnd, 2);
+          }
+          double rateSlope = cross_Rate_Cwnd/varCwnd;
+          double rttSlope = cross_Rtt_Cwnd/varCwnd;
+          //std::cout << Now().GetSeconds()<<" Cross: "<< cross_Rate_Cwnd << " Var: "<< varCwnd<< " Rate Slope: " << rateSlope <<  "\n";
+
+          //std::cout << Now().GetSeconds()<<" Cross: "<< cross_Rtt_Cwnd << " Var: "<< varCwnd<< " Rtt Slope: " << rttSlope <<  "\n";
+
+          //std::cout << "1/RTT" << 1/meanRtt << " RateSlope:" << rateSlope << "\n";
+          //std::cout << "1/Rate" << 1/meanRate << " RTTSlope:" << rttSlope << "\n";
+
+          double errorA = std::abs(rateSlope-1/meanRtt)/std::abs(1/meanRtt) + std::abs(rttSlope-0)/std::abs(1/meanRate);
+          double errorB = std::abs(rateSlope-0)/std::abs(1/meanRtt) + std::abs(rttSlope-1/meanRate)/std::abs(1/meanRate);
+
+          if(m_firstCal == true)
+          {
+            if( Now().GetSeconds() > 100.0 )
+            {
+              m_flag = true;
+            }
+            m_firstCal = false;
+          }
+  
+          if(m_flag==true)
+          {
+
+            /*if(errorA/(errorA+errorB) <= 0.25)
+            {
+               m_scale = 3;
+            }
+            else if (errorA/(errorA+errorB) <= 0.5)
+            {
+               m_scale = 1;
+            }
+            else if (errorA/(errorA+errorB) <= 0.75)
+            {
+              m_scale = -1;
+            }
+            else
+            {
+               m_scale = -3;
+            }*/
+
+
+            // option B
+            //double proA = errorB/(errorA+errorB);
+
+            //m_scale = (proA*2-1)*3;
+
+            //option A
+            /*if(errorA/(errorA+errorB) > 0.9)
+            {
+              uint32_t bytesInFlight = m_sackEnabled ? BytesInFlight () : BytesInFlight () + m_tcb->m_segmentSize;
+              m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, bytesInFlight);
+
+              if (!m_congestionControl->HasCongControl ())
+                {
+                  m_tcb->m_cWnd = m_tcb->m_ssThresh;
+                  m_cWndInfl = m_tcb->m_ssThresh + m_dupAckCount * m_tcb->m_segmentSize;
+                }
+              m_scale = 1;
+              std::cout << "drop \n";
+            }*/
+
+
+
+
+            std::cout << Now().GetSeconds() << "ErrorA: " << errorA << " ErrorB: " << errorB << "  P(Phase_B): " << errorA/(errorA+errorB)<<
+            " Scale:" << m_scale << "\n";
+
+
+          }
+
+
+           FILE* log_file;
+
+          char* fname = (char*)malloc(sizeof(char) * 255);
+
+          memset(fname, 0, sizeof(char) * 255);
+          std::string temp;
+          int pointer = reinterpret_cast<size_t>(this);
+
+          temp = std::to_string(pointer)+"-prob.txt";
+          //temp = "1-prob.txt";
+          log_file = fopen(temp.c_str(), "a");
+
+          fprintf(log_file, "%f \t  %f \n", Now().GetSeconds(), errorA/(errorA+errorB));
+
+          fflush(log_file);
+
+          fclose(log_file);
+
+          if(fname)
+
+          free(fname);
+
+          fname = 0;
+
+        }
+
+      }
+  }
+
+
+}
+
 
 void
 TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpdated,
@@ -1944,7 +2169,25 @@ TcpSocketBase::ProcessAck (const SequenceNumber32 &ackNumber, bool scoreboardUpd
             {
               if (!m_congestionControl->HasCongControl ())
                 {
+                  TracedValue<uint32_t> oldCwnd = m_tcb->m_cWnd;
                   m_congestionControl->IncreaseWindow (m_tcb, segsAcked);
+                  if(m_flag == true && m_tcb->m_cWnd > m_tcb->m_ssThresh)
+                  { 
+                    if(m_scale > 1)
+                    {
+                      m_tcb->m_cWnd += (m_scale-1)*m_tcb->m_segmentSize * m_tcb->m_segmentSize / m_tcb->m_cWnd.Get ();
+                    }
+                    else
+                    {
+                      //std::cout  << (int)m_tcb->m_cWnd - (int)m_tcb->m_ssThresh <<"CW new - old: " << (int)m_tcb->m_cWnd - (int)oldCwnd << "  diff: " << (1-m_scale)*m_tcb->m_segmentSize * m_tcb->m_segmentSize / m_tcb->m_cWnd.Get () << "\n";
+                      m_tcb->m_cWnd -= (1-m_scale)*m_tcb->m_segmentSize * m_tcb->m_segmentSize / m_tcb->m_cWnd.Get ();
+                    }
+
+                    if(m_tcb->m_cWnd < m_tcb->m_ssThresh)
+                    {
+                      m_tcb->m_ssThresh = m_tcb->m_cWnd;
+                    }
+                  }
                   m_cWndInfl = m_tcb->m_cWnd;
                 }
               NS_LOG_LOGIC ("Congestion control called: " <<
@@ -3246,6 +3489,15 @@ TcpSocketBase::NewAck (SequenceNumber32 const& ack, bool resetRTO)
 void
 TcpSocketBase::ReTxTimeout ()
 {
+      m_rateVector.clear();
+      m_rttVector.clear();
+      m_cwndVector.clear();
+      m_computeAverage.Cancel();
+      m_window = 0;
+      m_sampleSize = 0;
+      m_windowVector.clear();
+      m_scale = 1;
+
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC (this << " ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ());
   // If erroneous timeout in closed/timed-wait state, just return

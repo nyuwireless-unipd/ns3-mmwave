@@ -69,19 +69,19 @@ Traces(uint16_t nodeNum, std::string protocol)
 	AsciiTraceHelper asciiTraceHelper;
 
 	std::ostringstream pathCW;
-	pathCW<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow";
+	pathCW<<"/NodeList/"<<2+nodeNum<<"/$ns3::TcpL4Protocol/SocketList/"<<0<<"/CongestionWindow";
 
 	std::ostringstream fileCW;
 	fileCW<<protocol<<"-"<<nodeNum+1<<"-TCP-CWND.txt";
 
 	std::ostringstream pathRTT;
-	pathRTT<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RTT";
+	pathRTT<<"/NodeList/"<<2+nodeNum<<"/$ns3::TcpL4Protocol/SocketList/"<<0<<"/RTT";
 
 	std::ostringstream fileRTT;
 	fileRTT<<protocol<<"-"<<nodeNum+1<<"-TCP-RTT.txt";
 
 	std::ostringstream pathRCWnd;
-	pathRCWnd<<"/NodeList/"<<nodeNum+2<<"/$ns3::TcpL4Protocol/SocketList/0/RWND";
+	pathRCWnd<<"/NodeList/"<<2+nodeNum<<"/$ns3::TcpL4Protocol/SocketList/"<<0<<"/RWND";
 
 	std::ostringstream fileRCWnd;
 	fileRCWnd<<protocol<<"-"<<nodeNum+1<<"-TCP-RCWND.txt";
@@ -105,14 +105,14 @@ main (int argc, char *argv[])
   // LogComponentEnable("TcpCongestionOps", LOG_LEVEL_INFO);
   // LogComponentEnable("TcpSocketBase", LOG_LEVEL_INFO);
 
-	uint16_t nodeNum = 1;
+	uint16_t nodeNum = 6;
 	double simStopTime = 60;
 	bool harqEnabled = true;
 	bool rlcAmEnabled = true;
 	std::string protocol = "TcpBbr";
-	int bufferSize = 1000 *1000 * 20;
+	int bufferSize = 250 *1000*2 ;
 	//int bufferSize = 85*1000*1.1;
-	int packetSize = 14000;
+	int packetSize = 1400;
 	int p2pDelay = 9;
 	// This 3GPP channel model example only demonstrate the pathloss model. The fast fading model is still in developing.
 
@@ -309,7 +309,7 @@ main (int argc, char *argv[])
 		PointToPointHelper p2ph;
 		p2ph.SetDeviceAttribute ("DataRate", DataRateValue (DataRate ("100Gb/s")));
 		p2ph.SetDeviceAttribute ("Mtu", UintegerValue (1500));
-		p2ph.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (p2pDelay)));
+		p2ph.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (p2pDelay + (1-i/3)*10)));
 
 		NetDeviceContainer internetDevices = p2ph.Install (pgw, remoteHost);
 
@@ -401,12 +401,6 @@ main (int argc, char *argv[])
 								0.0, 40));
 */
 
-	Ptr < Building > buildingx;
-	buildingx = Create<Building> ();
-	buildingx->SetBoundaries (Box (0.5,1,
-								99.5, 99.8,
-								0.0, 40));
-
 
 	  NodeContainer ueNodes;
 	  NodeContainer mmWaveEnbNodes;
@@ -443,7 +437,6 @@ main (int argc, char *argv[])
 	ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, 100, hUT));
 	ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (1, 0, 0));
 
-
 	//ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (1, 0, 0));
 
 
@@ -470,16 +463,16 @@ main (int argc, char *argv[])
 
 
 
-	for (uint16_t i = 0; i < ueNodes.GetN (); i++)
+	for (uint16_t i = 0; i < nodeNum; i++)
 	{
 		// Set the default gateway for the UE
-		Ptr<Node> ueNode = ueNodes.Get (i);
+		Ptr<Node> ueNode = ueNodes.Get (0);
 		Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
 		ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
 
 		//Install and start applications on UEs and remote host
 		PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
-		sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (i)));
+		sinkApps.Add (packetSinkHelper.Install (ueNodes.Get (0)));
 
       /*PacketSinkHelper dlPacketSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
       sinkApps.Add (dlPacketSinkHelper.Install (ueNodes.Get(0)));
@@ -497,8 +490,8 @@ main (int argc, char *argv[])
 
 
 		BulkSendHelper ftp ("ns3::TcpSocketFactory",
-		                         InetSocketAddress (ueIpIface.GetAddress (i), sinkPort));
-		sourceApps.Add (ftp.Install (remoteHostContainer.Get (0)));
+		                         InetSocketAddress (ueIpIface.GetAddress (0), sinkPort));
+		sourceApps.Add (ftp.Install (remoteHostContainer.Get (i)));
 
 	    std::ostringstream fileName;
 	    fileName<<protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay)<<"-"<<i+1<<"-TCP-DATA.txt";
@@ -509,7 +502,6 @@ main (int argc, char *argv[])
 		sinkApps.Get(i)->TraceConnectWithoutContext("Rx",MakeBoundCallback (&Rx, stream));
 	    sourceApps.Get(i)->SetStartTime(Seconds (0.1+2.005*i));
 	    Simulator::Schedule (Seconds (0.1001+2.005*i), &Traces, i, protocol+"-"+std::to_string(bufferSize)+"-"+std::to_string(packetSize)+"-"+std::to_string(p2pDelay));
-	    //sourceApps.Get(i)->SetStopTime (Seconds (10-1.5*i));
 	    sourceApps.Get(i)->SetStopTime (Seconds (simStopTime));
 
 		sinkPort++;

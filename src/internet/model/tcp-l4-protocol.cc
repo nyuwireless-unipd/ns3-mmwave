@@ -199,6 +199,14 @@ TcpL4Protocol::CreateSocket (TypeId congestionTypeId)
 Ptr<Socket>
 TcpL4Protocol::CreateSocket (void)
 {
+  /*if( (Now().GetSeconds() > 1.0 && Now().GetSeconds() <5.0)  || Now().GetSeconds() > 7.0 )
+  {
+    return CreateSocket (TcpNewReno::GetTypeId ());
+  }
+  else
+  {
+    return CreateSocket (m_congestionTypeId);
+  }*/
   return CreateSocket (m_congestionTypeId);
 }
 

@@ -214,6 +214,30 @@ TcpBbr::AdvanceCyclePhase ()
       m_alpha = std::max(m_alpha, 0.05);
 
       m_pacingGain = 1+m_alpha;
+
+      FILE* log_file;
+
+      char* fname = (char*)malloc(sizeof(char) * 255);
+
+      memset(fname, 0, sizeof(char) * 255);
+      std::string temp;
+      int pointer = reinterpret_cast<size_t>(this);
+
+      temp = std::to_string(pointer)+"-alpha.txt";
+      //temp = "1-rate.txt";
+      log_file = fopen(temp.c_str(), "a");
+
+      fprintf(log_file, "%f \t  %f \n", Now().GetSeconds(), m_alpha);
+
+      fflush(log_file);
+
+      fclose(log_file);
+
+      if(fname)
+
+      free(fname);
+
+      fname = 0;
     }
 
   }

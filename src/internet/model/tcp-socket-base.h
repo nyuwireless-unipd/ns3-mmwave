@@ -1174,8 +1174,27 @@ protected:
    */
   void AddSocketTags (const Ptr<Packet> &p) const;
 
+  void LinearRegression ();
+
 protected:
   // Counters and events
+
+  EventId  m_computeAverage;
+
+  std::vector<double> m_rateVector;   //mbps
+  std::vector<double> m_rttVector;  //seconds
+  std::vector<double> m_cwndVector; //mbit
+  uint32_t m_window {0};
+  uint32_t m_sampleSize {0};
+  std::vector<uint32_t> m_windowVector;
+
+
+  double m_scale {1.0};
+  uint32_t m_preScale {1};
+
+  bool m_firstCal {true};
+  bool m_flag {false};
+
   EventId           m_retxEvent     {}; //!< Retransmission event
   EventId           m_lastAckEvent  {}; //!< Last ACK timeout event
   EventId           m_delAckEvent   {}; //!< Delayed ACK timeout event

@@ -102,7 +102,7 @@ main (int argc, char *argv[])
 
   uint32_t maxBytes = 0;
   int packetSize = 14000;
-  std::string protocol = "TcpNyu";
+  std::string protocol = "TcpBbr";
   double simStopTime = 60;
   int bufferSize = 1000;
   int p2pDelay = 9;

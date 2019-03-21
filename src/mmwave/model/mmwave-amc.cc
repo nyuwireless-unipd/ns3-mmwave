@@ -175,7 +175,7 @@ MmWaveAmc::GetTbSizeFromMcs (unsigned mcs, unsigned nprb)
         int C = ceil ((double)tbSize / ((double)(6144)));
     	tbSize -= C*m_crcLen; //subtract bits of m_crcLen used in code-blocks.
     }
-   	return tbSize;
+   	return tbSize*0.044;
 
 }
 
@@ -197,7 +197,7 @@ MmWaveAmc::GetTbSizeFromMcsSymbols (unsigned mcs, unsigned nsymb)
 		int C = ceil ((double)tbSize / ((double)(6144)));
 		tbSize -= C*m_crcLen; //subtract bits of m_crcLen used in code-blocks.
 	}
-	return tbSize;
+	return tbSize*0.044;
 }
 
 int
