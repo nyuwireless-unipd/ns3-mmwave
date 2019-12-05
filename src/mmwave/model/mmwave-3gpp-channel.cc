@@ -184,6 +184,7 @@ MmWave3gppChannel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::MmWave3gppChannel")
     .SetParent<Object> ()
+    .AddConstructor<MmWave3gppChannel> ()
     .AddAttribute ("UpdatePeriod",
                    "Enable spatially-consistent UT mobility modeling procedure A, the update period unit is in ms, set to 0 ms to disable update",
                    TimeValue (MilliSeconds (1)),
