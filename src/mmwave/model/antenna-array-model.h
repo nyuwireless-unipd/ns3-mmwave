@@ -61,10 +61,11 @@ public:
   Vector GetAntennaLocation (uint16_t index, uint16_t* antennaNum);
   void SetSector (uint8_t sector, uint16_t *antennaNum, double elevation = 90);
 
-  void SetPlanesNumber (double planesNumber);
+  void SetPlanesNumber (uint8_t planesNumber);
   double GetPlanesId (void);
   void SetDeviceType (bool isUe);
-  void SetTotNoArrayElements (double arrayElements);
+  void SetTotNoArrayElements (uint64_t arrayElements);
+  uint64_t GetTotNoArrayElements () const;
   double GetOffset ();
 
   Ptr<NetDevice> GetCurrentDevice ();
@@ -82,9 +83,9 @@ private:
   double m_disV;       //antenna spacing in the vertical direction in terms of wave length.
   double m_disH;       //antenna spacing in the horizontal direction in terms of wave length.
 
-  double m_noPlane;
+  uint8_t m_noPlane;
   bool m_isUe;
-  double m_totNoArrayElements;
+  uint64_t m_totNoArrayElements;
   double m_hpbw;
   double m_gMax;
 
@@ -94,6 +95,8 @@ private:
   std::map<Ptr<NetDevice>, Time> m_lastUpdatePairMap;
 
   bool m_isotropicElement;
+
+  std::string m_antennaElementPattern; // configuration of antenna parameters based on different 3GPP technical reports (38.901, 37.885)
 };
 
 } /* namespace mmwave */

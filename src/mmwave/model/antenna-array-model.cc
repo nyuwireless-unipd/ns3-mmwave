@@ -25,11 +25,13 @@
 
 
 #include "antenna-array-model.h"
+#include "ns3/string.h"
 #include <ns3/log.h>
 #include <ns3/math.h>
 #include <ns3/simulator.h>
 #include "ns3/double.h"
 #include "ns3/boolean.h"
+#include "ns3/uinteger.h"
 
 
 NS_LOG_COMPONENT_DEFINE ("AntennaArrayModel");
@@ -80,6 +82,22 @@ AntennaArrayModel::GetTypeId ()
                    BooleanValue (true),
                    MakeBooleanAccessor (&AntennaArrayModel::m_isotropicElement),
                    MakeBooleanChecker ())
+    .AddAttribute ("AntennaElementPattern",
+                   "The available antenna element patterns refer to '3GPP-MmWave', '3GPP-V2V'",
+                   StringValue ("3GPP-MmWave"),
+                   MakeStringAccessor (&AntennaArrayModel ::m_antennaElementPattern),
+                   MakeStringChecker ())
+    .AddAttribute ("AntennaElements",
+                   "The number of antenna elements",
+                   UintegerValue (4),
+                   MakeUintegerAccessor (&AntennaArrayModel::SetTotNoArrayElements,
+                                         &AntennaArrayModel::GetTotNoArrayElements),
+                   MakeUintegerChecker<uint64_t> ())
+    .AddAttribute ("NumSectors",
+                   "The number of antenna sectors",
+                   UintegerValue (2),
+                   MakeUintegerAccessor (&AntennaArrayModel::SetPlanesNumber),
+                   MakeUintegerChecker<uint8_t> ())
   ;
   return tid;
 }
@@ -126,7 +144,7 @@ AntennaArrayModel::SetBeamformingVectorWithDelay (complexVector_t antennaWeights
 }
 
 void
-AntennaArrayModel::SetPlanesNumber (double planesNumber)
+AntennaArrayModel::SetPlanesNumber (uint8_t planesNumber)
 {
   m_noPlane = planesNumber;
 }
@@ -139,16 +157,24 @@ AntennaArrayModel::GetPlanesId (void)
 
 
 void
-AntennaArrayModel::SetTotNoArrayElements (double arrayElements)
+AntennaArrayModel::SetTotNoArrayElements (uint64_t arrayElements)
 {
   m_totNoArrayElements = arrayElements;
+}
+
+uint64_t
+AntennaArrayModel::GetTotNoArrayElements () const
+{
+  return m_totNoArrayElements;
 }
 
 void
 AntennaArrayModel::SetDeviceType (bool isUe)
 {
   m_isUe = isUe;
-  if (isUe)
+  if (m_antennaElementPattern == "3GPP-MmWave")
+  {
+    if (isUe)
     {
       m_hpbw = 90;           //HPBW value of each antenna element
       m_gMax = 5;           //directivity value expressed in dBi and valid only for TRP (see table A.1.6-3 in 38.802
@@ -158,6 +184,16 @@ AntennaArrayModel::SetDeviceType (bool isUe)
       m_hpbw = 65;           //HPBW value of each antenna element
       m_gMax = 8;           //directivity value expressed in dBi and valid only for TRP (see table A.1.6-3 in 38.802
     }
+  }
+  else if (m_antennaElementPattern == "3GPP-V2V")
+  {
+      m_hpbw = 90;           //HPBW value of each antenna element
+      m_gMax = 5;           //directivity value expressed in dBi and valid only in the case of V2V communication (see table 6.1.4-4 in TR 37.885)
+  }
+  else
+  {
+    NS_FATAL_ERROR("Unknown antenna element pattern");
+  }
 }
 
 double
@@ -211,7 +247,7 @@ AntennaArrayModel::SetBeamformingVectorPanelDevices (Ptr<NetDevice> thisDevice, 
       antennaNum[1] = sqrt (m_totNoArrayElements);
       NS_LOG_INFO ("hAngleRadian: " << hAngleRadian);
 
-      for (int ind = 0; ind < m_totNoArrayElements; ind++)
+      for (uint64_t ind = 0; ind < m_totNoArrayElements; ind++)
         {
           Vector loc = GetAntennaLocation (ind, antennaNum);
           double phase = -2 * M_PI * (sin (vAngleRadian) * cos (hAngleRadian) * loc.x
@@ -351,8 +387,23 @@ AntennaArrayModel::GetRadiationPattern (double vAngleRadian, double hAngleRadian
   //NS_LOG_INFO(" it is " << hAngle);
   NS_ASSERT_MSG (hAngle >= -180&&hAngle <= 180, "the horizontal angle should be the range of [-180,180]");
 
-  double A_M = 30;       //front-back ratio expressed in dB
-  double SLA = 30;       //side-lobe level limit expressed in dB
+  double A_M = 0;       //front-back ratio expressed in dB
+  double SLA = 0;       //side-lobe level limit expressed in dB
+
+  if (m_antennaElementPattern == "3GPP-MmWave") //front-back ratio and side-lobe level in case of standard mmWave antenna configuration
+  {
+    A_M = 30;
+    SLA = 30;
+  }
+  else if (m_antennaElementPattern == "3GPP-V2V") //front-back ratio and side-lobe level values in case of V2V antenna configuration
+  {
+    A_M = 25;
+    SLA = 25;
+  }
+  else
+  {
+    NS_FATAL_ERROR("Unknown antenna element pattern");
+  }
 
   double A_v = -1 * std::min (SLA,12 * pow ((vAngle - 90) / m_hpbw,2));      //TODO: check position of z-axis zero
   double A_h = -1 * std::min (A_M,12 * pow (hAngle / m_hpbw,2));
