@@ -612,44 +612,51 @@ MmWaveFlexTtiMacScheduler::UpdateUlHarqProcessId (uint16_t rnti)
 
 unsigned MmWaveFlexTtiMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned bufSize, unsigned &tbSize)
 {
-  // bisection line search to find minimum number of slots needed to encode entire buffer
+  // Bisection line search is used to find the minimum number of slots (OFDM symbols)
+  // needed to encode entire buffer.
   MmWaveMacPduHeader dummyMacHeader;
   //unsigned macHdrSize = 10; //dummyMacHeader.GetSerializedSize ();
   int numSymLow = 0;
-  int numSymHigh = m_phyMacConfig->GetSymbolsPerSubframe ();
+  int numSymHigh = m_phyMacConfig->GetSymbolsPerSubframe();
 
   int diff = 0;
-  tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);       // start with max value
+  tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8); // start with max value, in number of bytes
   while ((unsigned)tbSize > bufSize)
-    {
-      diff = abs (numSymHigh - numSymLow) / 2;
+  {
+      diff = abs(numSymHigh-numSymLow)/2;
       if (diff == 0)
-        {
+      {
           tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
           return numSymHigh;
-        }
+      }
       tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh - diff) / 8);
-      if ((unsigned)tbSize > bufSize)
-        {
+      if ((unsigned)tbSize >= bufSize)
+      {
           numSymHigh -= diff;
-        }
+      }
+      if ((unsigned) tbSize == bufSize)
+      {
+          return numSymHigh;
+      }
       while ((unsigned)tbSize < bufSize)
-        {
-          diff = abs (numSymHigh - numSymLow) / 2;
+      {
+          diff = abs(numSymHigh-numSymLow)/2;
           if (diff == 0)
-            {
+          {
               tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
               return numSymHigh;
-            }
-          //tmp2 = numSym;
+          }
           tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymLow + diff) / 8);
-          if ((unsigned)tbSize < bufSize)
-            {
+          if ((unsigned)tbSize <= bufSize)
+          {
               numSymLow += diff;
-            }
-        }
-    }
-
+          }
+          if ((unsigned) tbSize == bufSize)
+          {
+              return numSymLow;
+          }
+      }
+  }
   tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
   return (unsigned)numSymHigh;
 }
