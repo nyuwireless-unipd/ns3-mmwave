@@ -1535,6 +1535,7 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
     {
       Ptr<MmWaveUePhy> ccPhy = it->second->GetPhy ();
       ccPhy->SetDevice (device);
+      ccPhy->SetImsi (imsi);
       ccPhy->GetUlSpectrumPhy ()->SetDevice (device);
       ccPhy->GetDlSpectrumPhy ()->SetDevice (device);
       ccPhy->GetDlSpectrumPhy ()->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveUePhy::PhyDataPacketReceived, ccPhy));
