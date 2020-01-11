@@ -83,6 +83,7 @@ MmwaveSpectrumSignalParametersDataFrame::MmwaveSpectrumSignalParametersDataFrame
       packetBurst = p.packetBurst->Copy ();
     }
   ctrlMsgList = p.ctrlMsgList;
+  slotInd = p.slotInd;
 }
 
 Ptr<SpectrumSignalParameters>
