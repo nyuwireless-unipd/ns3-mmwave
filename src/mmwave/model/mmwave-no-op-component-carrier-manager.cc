@@ -585,12 +585,21 @@ MmWaveBaRrComponentCarrierManager::DoReportBufferStatus (LteMacSapProvider::Repo
         }
       NS_LOG_DEBUG ("Total bandwidth = " << totalBandwidth);
 
+      uint32_t totalTxQueueSize = params.txQueueSize;
+      uint32_t totalRetxQueueSize = params.retxQueueSize;
+
+      NS_LOG_DEBUG ("total tx queue size " << totalTxQueueSize);
+      NS_LOG_DEBUG ("total retx queue size " << totalRetxQueueSize);
+
       for ( uint16_t i = 0;  i < numberOfCarriersForUe; i++)
         {
           NS_LOG_DEBUG ("m_bandwidthMap[i] / totalBandwidth = " << m_bandwidthMap[i] / totalBandwidth);
-          params.retxQueueSize = params.retxQueueSize * m_bandwidthMap[i] / totalBandwidth;
-          params.txQueueSize = params.txQueueSize * m_bandwidthMap[i] / totalBandwidth;
+          params.retxQueueSize = totalRetxQueueSize * m_bandwidthMap[i] / totalBandwidth;
+          params.txQueueSize = totalTxQueueSize * m_bandwidthMap[i] / totalBandwidth;
 
+          NS_LOG_DEBUG ("CC" << i << " tx queue size " << params.txQueueSize);
+          NS_LOG_DEBUG ("CC" << i << " retx queue size " << params.retxQueueSize);
+          
           NS_ASSERT_MSG (m_macSapProvidersMap.find (i) != m_macSapProvidersMap.end (), "Mac sap provider does not exist.");
 
           if (i == 0)
