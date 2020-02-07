@@ -278,7 +278,7 @@ public:
 protected:
   virtual void DoInitialize ();
 
-private:
+protected:
   void MmWaveChannelModelInitialization ();
   void LteChannelModelInitialization ();
 

@@ -126,7 +126,7 @@ public:
   */
   void SetBeamformingVector (Ptr<NetDevice> ueDevice, Ptr<NetDevice> enbDevice);
 
-private:
+protected:
   /**
   * \breif Get complex number from a string
   * \param strCmplx a string store complex bumber i.e. 3+2i,
@@ -214,7 +214,7 @@ private:
 //	uint32_t m_numResourceBlocks;
 //	uint32_t m_numSubbbandPerRB;
 
-private:
+protected:
   Ptr<MmWavePhyMacCommon> m_phyMacConfig;
   Time m_longTermUpdatePeriod;
   bool m_smallScale;
