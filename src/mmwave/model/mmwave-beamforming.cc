@@ -617,6 +617,9 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
         {
           bfParams->m_ueW = ueW;
           bfParams->m_enbW = enbW;
+          if (bfParams->m_beam) {
+            delete bfParams->m_beam;
+          }
           bfParams->m_beam = GetLongTermFading (bfParams);
         }
       else if (ueW.empty ())
