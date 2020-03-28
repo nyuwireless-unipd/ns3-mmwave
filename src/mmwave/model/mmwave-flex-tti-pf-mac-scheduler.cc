@@ -395,10 +395,10 @@ MmWaveFlexTtiPfMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWaveMacSche
                           itUe->second.m_flowStatsUl[lcg].m_txPacketSizes.push_back (diff);
                           // since we expect the BSR to be generated following a packet arrival and sent at least by the end of the prev. subframe,
                           // the maximum delay is one SF (in microseconds)
-                          itUe->second.m_flowStatsUl[lcg].m_txPacketDelays.push_back (m_phyMacConfig->GetSubframePeriod ());
+                          itUe->second.m_flowStatsUl[lcg].m_txPacketDelays.push_back (m_phyMacConfig->GetSubframePeriod ().GetMicroSeconds());
                           if (itUe->second.m_flowStatsUl[lcg].m_txQueueHolDelay == 0)
                             {
-                              itUe->second.m_flowStatsUl[lcg].m_txQueueHolDelay = m_phyMacConfig->GetSubframePeriod ();
+                              itUe->second.m_flowStatsUl[lcg].m_txQueueHolDelay = m_phyMacConfig->GetSubframePeriod ().GetMicroSeconds();
                             }
                         }
                     }
@@ -1071,7 +1071,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
           if (ueInfo->m_totBufDl > 0)
             {
               uint32_t tbSizeMax = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, 1);
-              ueInfo->m_currTputDl = std::min (ueInfo->m_totBufDl,tbSizeMax) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+              ueInfo->m_currTputDl = std::min (ueInfo->m_totBufDl,tbSizeMax) / (m_phyMacConfig->GetSubframePeriod ().GetSeconds());
               m_ueStatHeap.push_back (ueInfo);
               itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
               if (itUeAllocMap == ueAllocMap.end ())
@@ -1116,7 +1116,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
           if (ueInfo->m_totBufUl > 0)
             {
               uint32_t tbSizeMax = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, 1);
-              ueInfo->m_currTputUl = std::min (ueInfo->m_totBufUl,tbSizeMax) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+              ueInfo->m_currTputUl = std::min (ueInfo->m_totBufUl,tbSizeMax) / (m_phyMacConfig->GetSubframePeriod ().GetSeconds());
               if (!dlAdded)
                 {
                   m_ueStatHeap.push_back (ueInfo);
@@ -1179,9 +1179,9 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
               ueInfo->m_allocUlLast = true;
 
               uint32_t tbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols);
-              ueInfo->m_currTputUl = std::min (ueInfo->m_totBufUl,tbSize) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+              ueInfo->m_currTputUl = std::min (ueInfo->m_totBufUl,tbSize) / (m_phyMacConfig->GetSubframePeriod ().GetSeconds());
               ueInfo->m_avgTputUl = ((1.0 - (1.0 / m_timeWindow)) * ueInfo->m_lastAvgTputUl) +
-                ((1.0 / m_timeWindow) * ((double)ueInfo->m_ulTbSize / (m_phyMacConfig->GetSubframePeriod () * 1E-6)));
+                ((1.0 / m_timeWindow) * ((double)ueInfo->m_ulTbSize / (m_phyMacConfig->GetSubframePeriod ().GetSeconds())));
               ueAlloc = true;
 
             }
@@ -1199,9 +1199,9 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
               ueInfo->m_allocUlLast = false;
 
               uint32_t tbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols);
-              ueInfo->m_currTputDl = std::min (ueInfo->m_totBufDl,tbSize) / (m_phyMacConfig->GetSubframePeriod () * 1E-6);
+              ueInfo->m_currTputDl = std::min (ueInfo->m_totBufDl,tbSize) / (m_phyMacConfig->GetSubframePeriod ().GetSeconds());
               ueInfo->m_avgTputDl = ((1.0 - (1.0 / m_timeWindow)) * ueInfo->m_lastAvgTputDl) +
-                ((1.0 / m_timeWindow) * ((double)ueInfo->m_dlTbSize / (m_phyMacConfig->GetSubframePeriod () * 1E-6)));
+                ((1.0 / m_timeWindow) * ((double)ueInfo->m_dlTbSize / (m_phyMacConfig->GetSubframePeriod ().GetSeconds())));
               ueAlloc = true;
             }
 

@@ -91,7 +91,7 @@ public:
   /**
    * \returns transmission time interval
    */
-  double GetTti (void) const;
+  Time GetTti (void) const;
 
   void DoSetCellId (uint16_t cellId);
 

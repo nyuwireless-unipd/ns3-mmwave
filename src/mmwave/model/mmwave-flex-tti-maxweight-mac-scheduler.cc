@@ -396,10 +396,10 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlMacCtrlInfoReq (const struct MmWave
                           itUe->second.m_flowStatsUl[lcg].m_txPacketSizes.push_back (diff);
                           // since we expect the BSR to be generated following a packet arrival and sent at least by the end of the prev. subframe,
                           // the maximum delay is one SF (in microseconds)
-                          itUe->second.m_flowStatsUl[lcg].m_txPacketDelays.push_back (m_phyMacConfig->GetSubframePeriod ());
+                          itUe->second.m_flowStatsUl[lcg].m_txPacketDelays.push_back (m_phyMacConfig->GetSubframePeriod ().GetMicroSeconds());
                           if (itUe->second.m_flowStatsUl[lcg].m_txQueueHolDelay == 0)
                             {
-                              itUe->second.m_flowStatsUl[lcg].m_txQueueHolDelay = m_phyMacConfig->GetSubframePeriod ();
+                              itUe->second.m_flowStatsUl[lcg].m_txQueueHolDelay = m_phyMacConfig->GetSubframePeriod ().GetMicroSeconds();
                             }
                         }
                     }
@@ -1259,7 +1259,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           for (std::list<double>::iterator delayIt = (*flowIt)->m_txPacketDelays.begin ();
                delayIt != (*flowIt)->m_txPacketDelays.end (); delayIt++)
             {
-              *delayIt += m_phyMacConfig->GetSubframePeriod ();
+              *delayIt += double(m_phyMacConfig->GetSubframePeriod ().GetMicroSeconds());
             }
           if ((*flowIt)->m_txPacketDelays.size () > 0)
             {

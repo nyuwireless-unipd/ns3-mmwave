@@ -180,7 +180,7 @@ MmWavePhy::SetChannel (Ptr<SpectrumChannel> c)
 
 }
 
-double
+Time
 MmWavePhy::GetTti (void) const
 {
   NS_LOG_FUNCTION (this);

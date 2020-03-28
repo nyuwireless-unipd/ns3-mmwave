@@ -132,8 +132,8 @@ void
 MmWaveUePhy::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
-  m_dlCtrlPeriod = NanoSeconds (1000 * m_phyMacConfig->GetDlCtrlSymbols () * m_phyMacConfig->GetSymbolPeriod ());
-  m_ulCtrlPeriod = NanoSeconds (1000 * m_phyMacConfig->GetUlCtrlSymbols () * m_phyMacConfig->GetSymbolPeriod ());
+  m_dlCtrlPeriod = NanoSeconds (m_phyMacConfig->GetDlCtrlSymbols () * m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds());
+  m_ulCtrlPeriod = NanoSeconds (m_phyMacConfig->GetUlCtrlSymbols () * m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds());
 
   for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame (); i++)
     {
@@ -160,7 +160,7 @@ MmWaveUePhy::DoInitialize (void)
       m_channelChunks.push_back (i);
     }
 
-  m_sfPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSubframePeriod ());
+  m_sfPeriod = NanoSeconds (m_phyMacConfig->GetSubframePeriod ().GetNanoSeconds());
 
   m_phyReset = true;
   MmWavePhy::DoInitialize ();
@@ -649,7 +649,7 @@ MmWaveUePhy::StartSlot ()
 
   if (m_slotNum == 0)        // reserved DL control
     {
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetDlCtrlSymbols ());
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds() * m_phyMacConfig->GetDlCtrlSymbols ());
       NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " RXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
                          << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1) <<
                     "\t start " << Simulator::Now () << " end " << (Simulator::Now () + slotPeriod));
@@ -657,7 +657,7 @@ MmWaveUePhy::StartSlot ()
   else if (m_slotNum == m_currSfAllocInfo.m_slotAllocInfo.size () - 1)    // reserved UL control
     {
       SetSubChannelsForTransmission (m_channelChunks);
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetUlCtrlSymbols ());
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds()  * m_phyMacConfig->GetUlCtrlSymbols ());
       std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
       NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
                          << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1) <<
@@ -667,7 +667,7 @@ MmWaveUePhy::StartSlot ()
   else if (currSlot.m_dci.m_format == DciInfoElementTdma::DL_dci)        // scheduled DL data slot
     {
       m_receptionEnabled = true;
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * currSlot.m_dci.m_numSym);
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds()  * currSlot.m_dci.m_numSym);
       m_downlinkSpectrumPhy->AddExpectedTb (currSlot.m_dci.m_rnti, currSlot.m_dci.m_ndi, currSlot.m_dci.m_tbSize, currSlot.m_dci.m_mcs,
                                             m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, true,
                                             currSlot.m_dci.m_symStart, currSlot.m_dci.m_numSym);
@@ -679,7 +679,7 @@ MmWaveUePhy::StartSlot ()
   else if (currSlot.m_dci.m_format == DciInfoElementTdma::UL_dci)       // scheduled UL data slot
     {
       SetSubChannelsForTransmission (m_channelChunks);
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * currSlot.m_dci.m_numSym);
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds()  * currSlot.m_dci.m_numSym);
       Ptr<PacketBurst> pktBurst = GetPacketBurst (SfnSf (m_frameNum, m_sfNum, currSlot.m_dci.m_symStart));
       if (pktBurst && pktBurst->GetNPackets () > 0)
         {
@@ -773,7 +773,7 @@ MmWaveUePhy::EndSlot ()
               }
       }*/
       m_slotNum++;
-      nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
+      nextSlotStart = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds() *
                                    m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
       NS_LOG_INFO ("m_slotNum " << (uint16_t)m_slotNum);
       NS_LOG_INFO ("m_phyMacConfig->GetSymbolPeriod () " << m_phyMacConfig->GetSymbolPeriod () << " other part " << (uint16_t) m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);

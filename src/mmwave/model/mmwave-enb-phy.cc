@@ -181,7 +181,7 @@ MmWaveEnbPhy::DoInitialize (void)
     }
   SetSubChannels (m_channelChunks);
 
-  m_sfPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSubframePeriod ());
+  m_sfPeriod = NanoSeconds (m_phyMacConfig->GetSubframePeriod ().GetNanoSeconds());
 
   for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame (); i++)
     {
@@ -1083,7 +1083,7 @@ MmWaveEnbPhy::StartSlot (void)
         }
 
       // TX control period
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetDlCtrlSymbols ());
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds()  * m_phyMacConfig->GetDlCtrlSymbols ());
       NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
                            << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + slotPeriod - NanoSeconds (1.0));
@@ -1091,14 +1091,14 @@ MmWaveEnbPhy::StartSlot (void)
     }
   else if (m_slotNum == m_currSfNumSlots - 1)       // UL control slot
     {
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetUlCtrlSymbols ());
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds()  * m_phyMacConfig->GetUlCtrlSymbols ());
       NS_LOG_DEBUG ("ENB " << m_cellId << " RXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
                            << (unsigned)currSlot.m_dci.m_symStart << "-" << (unsigned)(currSlot.m_dci.m_symStart + currSlot.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + slotPeriod);
     }
   else if (currSlot.m_tddMode == SlotAllocInfo::DL_slotAllocInfo)                 // transmit DL slot
     {
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * currSlot.m_dci.m_numSym);
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds() * currSlot.m_dci.m_numSym);
       NS_ASSERT (currSlot.m_tddMode == SlotAllocInfo::DL_slotAllocInfo);
       //NS_LOG_DEBUG ("Slot " << m_slotNum << " scheduled for Downlink");
       //			if (m_prevSlotDir == SlotAllocInfo::UL_slotAllocInfo)  // if curr slot == DL and prev slot == UL
@@ -1136,7 +1136,7 @@ MmWaveEnbPhy::StartSlot (void)
     }
   else if (currSlot.m_tddMode == SlotAllocInfo::UL_slotAllocInfo)        // receive UL slot
     {
-      slotPeriod = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () * currSlot.m_dci.m_numSym);
+      slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds() * currSlot.m_dci.m_numSym);
       //NS_LOG_DEBUG ("Slot " << (uint8_t)m_slotNum << " scheduled for Uplink");
       m_downlinkSpectrumPhy->AddExpectedTb (currSlot.m_dci.m_rnti, currSlot.m_dci.m_ndi, currSlot.m_dci.m_tbSize,
                                             currSlot.m_dci.m_mcs, m_channelChunks, currSlot.m_dci.m_harqProcess, currSlot.m_dci.m_rv, false,
@@ -1207,7 +1207,7 @@ MmWaveEnbPhy::EndSlot (void)
               }
       }*/
       m_slotNum++;
-      nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
+      nextSlotStart = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds() *
                                    m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
       Simulator::Schedule (nextSlotStart + m_lastSfStart - Simulator::Now (), &MmWaveEnbPhy::StartSlot, this);
     }
