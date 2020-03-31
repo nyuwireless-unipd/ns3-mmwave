@@ -104,11 +104,10 @@ MmWavePhyMacCommon::GetTypeId (void)
                    StringValue ("ccdddddd"),
                    MakeStringAccessor (&MmWavePhyMacCommon::m_staticTddPattern),
                    MakeStringChecker ())
-    .AddAttribute (
-      "UlSchedDelay",
-      "Number of TTIs between UL scheduling decision and subframe to which it applies",
-      UintegerValue (1), MakeUintegerAccessor (&MmWavePhyMacCommon::m_ulSchedDelay),
-      MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("UlSchedDelay",
+                   "Number of TTIs between UL scheduling decision and subframe to which it applies",
+                   UintegerValue (1), MakeUintegerAccessor (&MmWavePhyMacCommon::m_ulSchedDelay),
+                   MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("NumRbPerRbg", "Number of resource blocks per resource block group",
                    UintegerValue (1),
                    MakeUintegerAccessor (&MmWavePhyMacCommon::m_numRbPerRbg),
@@ -136,39 +135,17 @@ MmWavePhyMacCommon::GetTypeId (void)
     .AddAttribute ("ComponentCarrierId", "Component carrier ID", UintegerValue (0),
                    MakeUintegerAccessor (&MmWavePhyMacCommon::m_componentCarrierId),
                    MakeUintegerChecker<uint8_t> ());
-
   return tid;
 }
 
 MmWavePhyMacCommon::MmWavePhyMacCommon ()
-  : m_symbolsPerSlot (30),
-  m_symbolPeriod (NanoSeconds (4160)),
-  m_symbolsPerSubframe (24),
-  m_subframePeriod (MicroSeconds (100)),
-  m_ctrlSymbols (1),
-  m_dlCtrlSymbols (1),
+  : m_dlCtrlSymbols (1),
   m_ulCtrlSymbols (1),
-  m_slotsPerSubframe (8),
-  m_subframesPerFrame (10),
-  m_numRefSymbols (6),
-  m_numRbPerRbg (1),
-  m_numSubCarriersPerChunk (48),
-  m_chunksPerRb (72),
   m_numRefScPerRb (6),
   m_numRefScPerSym (864),
-  m_chunkWidth (14e6),
-  m_numRb (1),
-  m_numHarqProcess (20),
-  m_harqTimeout (20),
-  m_centerFrequency (28e9),
-  m_guardPeriod (NanoSeconds (4160)),
   m_l1L2CtrlLatency (2),
   m_l1L2DataLatency (2),
-  m_ulSchedDelay (1),
-  m_wbCqiPeriodUs (MicroSeconds (500)),
-  m_tbDecodeLatencyUs (100.0),
-  m_maxTbSizeBytes (0x7FFF),
-  m_componentCarrierId (0)
+  m_maxTbSizeBytes (0x7FFF)
 {
   NS_LOG_INFO ("Initialized MmWavePhyMacCommon");
 }
