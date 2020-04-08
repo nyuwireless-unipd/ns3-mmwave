@@ -101,10 +101,51 @@ public:
 
   void ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > msgList);
 
-  void SubframeIndication (uint16_t frameNum, uint8_t subframeNum);
-  void StartSlot ();
-  void EndSlot ();
+ /**
+  * Marks the beginning of a new NR slot.
+  *
+  * \param frameNum the current frame
+  * \param subframeNum the current subframe
+  * \param slotNum the current slot
+  */  
+  void SlotIndication (uint16_t frameNum, uint8_t subframeNum, uint8_t slotNum);
 
+ /**
+  * Marks the beginning of a new Transmission Time Interval (Tti).
+  *
+  * Periodically, it alternates with \ref EndTti in order to scan through the TTIs scheduled within a slot.
+  * 
+  */  
+  void StartTti ();
+
+ /**
+  * Marks the end of a Transmission Time Interval (TTI).
+  *
+  * Periodically, it alternates with \ref StartTti in order to scan through the TTIs scheduled within a slot.
+  * Using the duration of the current TTI, the various frame/subframe and slot counters get updated; 
+  * whenever the end of the current slot is reached, \ref SlotIndication is called.
+  * 
+  * \param ttiDuration duration, in number of OFDM symbols, of the current Tti.
+  */  
+  void EndTti ();
+
+ /**
+  * Sets the control data allocation within a NR slot.
+  *
+  * The first OFDM symbol of each slot gets assigned to DL control data, while the last one to UL control data.
+  * 
+  * \param sfToAlloc the slot index to be allocated.
+  */   
+  void SetSlotCtrlStructure (uint8_t sfToAlloc);
+
+ /**
+  * Initializes the slots allocation info for the provided frame and subframe number.
+  * 
+  * \param frameNum the intended frame number.
+  * \param sfNum the intended subframe number.
+  * 
+  */   
+  void InitializeSubframeAllocation (uint16_t frameNum, uint8_t sfNum);
 
   uint32_t GetSubframeNumber (void);
 
@@ -170,18 +211,16 @@ private:
   Time m_wbCqiPeriod;       /**< Wideband Periodic CQI: 2, 5, 10, 16, 20, 32, 40, 64, 80 or 160 ms */
   Time m_wbCqiLast;
 
-  SlotAllocInfo::TddMode m_prevSlotDir;
+  SlotAllocInfo::TddMode m_prevTtiDir;  //!< Time Division Duplexing (TDD) mode of the previous Tti.
 
-  SfAllocInfo m_currSfAllocInfo;
+  SfAllocInfo m_currSlotAllocInfo;  //<! Holds the allocation info for the current NR slot
   std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue;       // for storing info on future UL TB transmissions
   bool m_ulGrant;               // true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
   bool m_sfAllocInfoUpdated;
-  Time m_dlCtrlPeriod;
-  Time m_ulCtrlPeriod;
 
-  Time m_dataPeriod;            // data period length in microseconds
-  Time m_sfPeriod;
-  Time m_lastSfStart;
+  Time m_dataPeriod;            //!< Data period time duration
+  Time m_slotPeriod;            //!< Slot period time duration
+  Time m_lastSlotStart;         //!< Time at which the current slot started
 
   bool m_dlConfigured;
   bool m_ulConfigured;
@@ -200,7 +239,7 @@ private:
 
   std::vector<int> m_channelChunks;
 
-  SlotAllocInfo m_currSlot;
+  SlotAllocInfo m_currTti;    //!< Holds the allocation info for the current Tti.
 
   std::map<uint16_t, std::pair<Ptr<MmWavePhyMacCommon>, Ptr<MmWaveEnbNetDevice> > > m_registeredEnb;
 

@@ -336,7 +336,7 @@ struct SfAllocInfo
   //std::vector <SlotAllocInfo::TddMode> m_tddPattern;
   std::deque<SlotAllocInfo> m_dlSlotAllocInfo;
   std::deque<SlotAllocInfo> m_ulSlotAllocInfo;
-  std::deque<SlotAllocInfo> m_slotAllocInfo;
+  std::deque<SlotAllocInfo> m_ttiAllocInfo;
 };
 
 typedef std::vector<SlotAllocInfo::TddSlotType> TddSlotTypeList;
@@ -402,7 +402,7 @@ struct SchedInfo
   uint8_t m_sfNum;
   uint16_t m_rnti;
 
-  SfAllocInfo m_sfAllocInfo;
+  SfAllocInfo m_slotAllocInfo;  //!< Holds the allocation info for a single NR slot
   struct DciInfoElement m_dci;
   std::map<uint8_t, std::vector<struct RlcPduInfo> > m_rlcPduMap; // RLC PDU elems for each MAC TB
 };

@@ -185,7 +185,7 @@ MmWaveEnbPhy::DoInitialize (void)
 
   for (unsigned i = 0; i < m_phyMacConfig->GetSubframesPerFrame (); i++)
     {
-      m_sfAllocInfo.push_back (SfAllocInfo (SfnSf (m_frameNum, i, 0)));
+      m_slotAllocInfo.push_back (SfAllocInfo (SfnSf (m_frameNum, i, 0)));
       SlotAllocInfo dlCtrlSlot;
       dlCtrlSlot.m_slotType = SlotAllocInfo::CTRL;
       dlCtrlSlot.m_numCtrlSym = 1;
@@ -199,8 +199,8 @@ MmWaveEnbPhy::DoInitialize (void)
       ulCtrlSlot.m_slotIdx = 0xFF;
       ulCtrlSlot.m_dci.m_numSym = 1;
       ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
-      m_sfAllocInfo[i].m_slotAllocInfo.push_back (dlCtrlSlot);
-      m_sfAllocInfo[i].m_slotAllocInfo.push_back (ulCtrlSlot);
+      m_slotAllocInfo[i].m_ttiAllocInfo.push_back (dlCtrlSlot);
+      m_slotAllocInfo[i].m_ttiAllocInfo.push_back (ulCtrlSlot);
     }
 
   NS_LOG_DEBUG ("In mmWaveEnbPhy, the RT periodicity is: " << m_updateSinrPeriod << " microseconds");
@@ -862,49 +862,6 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
               m_sinrMap[ue->first] = sampleToForward;                   // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< in order to FORWARD to LteEnbRrc the value of SINR for the RT
             }
 
-
-          // // START PRINTING
-          // if (m_cellId == 3)
-          // {
-
-          //    std::ofstream outFile ("SINR_real.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-          //    if (outFile.is_open())
-          //    {
-
-          //            outFile << m_sinrVector.at(pairDevices).back() << '\n';
-          //            outFile.close();
-          //    }
-          // }
-          // //END PRINTING
-
-
-          // // START PRINTING
-          // if (m_cellId == 3)
-          // {
-          //    std::ofstream outFileter ("SINR_final.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-          //    if (outFileter.is_open())
-          //    {
-          //            outFileter << m_sinrVectorToFilter.at(pairDevices).back() << '\n';
-          //            outFileter.close();
-          //    }
-          // }
-          // // END PRINTING
-
-          //            // START PRINTING
-          // if (m_cellId == 3)
-          // {
-          //    std::ofstream outFileter ("SINR_noisy.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-          //    if (outFileter.is_open())
-          //    {
-          //            outFileter << sinrNoisy << '\n';
-          //            outFileter.close();
-          //    }
-          // }
-          // // END PRINTING
-
-
-
-
           /* after the SINR sample is forwarded, I need to REFRESH all the maps, so that
           * a new SINR sequence can be created, to generate a new SINR sample
           * for the next RT
@@ -962,9 +919,9 @@ MmWaveEnbPhy::StartSubFrame (void)
 
   m_lastSfStart = Simulator::Now ();
 
-  m_currSfAllocInfo = m_sfAllocInfo[m_sfNum];
+  m_currSfAllocInfo = m_slotAllocInfo[m_sfNum];
   //m_currSfNumSlots = m_currSfAllocInfo.m_dlSlotAllocInfo.size () + m_currSfAllocInfo.m_ulSlotAllocInfo.size ();
-  m_currSfNumSlots = m_currSfAllocInfo.m_slotAllocInfo.size ();
+  m_currSfNumSlots = m_currSfAllocInfo.m_ttiAllocInfo.size ();
 
   NS_ASSERT ((m_currSfAllocInfo.m_sfnSf.m_frameNum == m_frameNum)
              && (m_currSfAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
@@ -1028,7 +985,7 @@ MmWaveEnbPhy::StartSlot (void)
   }*/
 
   //slotInd = m_slotNum;
-  currSlot = m_currSfAllocInfo.m_slotAllocInfo[m_slotNum];
+  currSlot = m_currSfAllocInfo.m_ttiAllocInfo[m_slotNum];
   m_currSymStart = currSlot.m_dci.m_symStart;
 
   SfnSf sfn = SfnSf (m_frameNum, m_sfNum, m_slotNum);
@@ -1045,12 +1002,12 @@ MmWaveEnbPhy::StartSlot (void)
       std::list <Ptr<MmWaveControlMessage > > ctrlMsgs = GetControlMessages ();
       //std::list <Ptr<MmWaveControlMessage > >::iterator it = ctrlMsgs.begin ();
       // find all DL/UL DCI elements and create DCI messages to be transmitted in DL control period
-      for (unsigned islot = 0; islot < m_currSfAllocInfo.m_slotAllocInfo.size (); islot++)
+      for (unsigned islot = 0; islot < m_currSfAllocInfo.m_ttiAllocInfo.size (); islot++)
         {
-          if (m_currSfAllocInfo.m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL
-              && m_currSfAllocInfo.m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
+          if (m_currSfAllocInfo.m_ttiAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL
+              && m_currSfAllocInfo.m_ttiAllocInfo[islot].m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
             {
-              DciInfoElementTdma &dciElem = m_currSfAllocInfo.m_slotAllocInfo[islot].m_dci;
+              DciInfoElementTdma &dciElem = m_currSfAllocInfo.m_ttiAllocInfo[islot].m_dci;
               NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL_dci);
               if (dciElem.m_tbSize > 0)
                 {
@@ -1064,12 +1021,12 @@ MmWaveEnbPhy::StartSlot (void)
         }
 
       unsigned ulSfNum = (m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
-      for (unsigned islot = 0; islot < m_sfAllocInfo[ulSfNum].m_slotAllocInfo.size (); islot++)
+      for (unsigned islot = 0; islot < m_slotAllocInfo[ulSfNum].m_ttiAllocInfo.size (); islot++)
         {
-          if (m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL
-              && m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_tddMode == SlotAllocInfo::UL_slotAllocInfo)
+          if (m_slotAllocInfo[ulSfNum].m_ttiAllocInfo[islot].m_slotType != SlotAllocInfo::CTRL
+              && m_slotAllocInfo[ulSfNum].m_ttiAllocInfo[islot].m_tddMode == SlotAllocInfo::UL_slotAllocInfo)
             {
-              DciInfoElementTdma &dciElem = m_sfAllocInfo[ulSfNum].m_slotAllocInfo[islot].m_dci;
+              DciInfoElementTdma &dciElem = m_slotAllocInfo[ulSfNum].m_ttiAllocInfo[islot].m_dci;
               NS_ASSERT (dciElem.m_format == DciInfoElementTdma::UL_dci);
               if (dciElem.m_tbSize > 0)
                 {
@@ -1188,27 +1145,9 @@ MmWaveEnbPhy::EndSlot (void)
   else
     {
       Time nextSlotStart;
-      //uint8_t slotInd = m_slotNum+1;
-      /*if (slotInd >= m_currSfAllocInfo.m_slotAllocInfo.size ())
-      {
-              if (m_currSfAllocInfo.m_slotAllocInfo.size () > 0)
-              {
-                      slotInd = slotInd - m_currSfAllocInfo.m_slotAllocInfo.size ();
-                      nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
-                                                   m_currSfAllocInfo.m_ulSlotAllocInfo[slotInd].m_dci.m_symStart);
-              }
-      }
-      else
-      {
-              if (m_currSfAllocInfo.m_slotAllocInfo.size () > 0)
-              {
-                      nextSlotStart = NanoSeconds (1000.0 * m_phyMacConfig->GetSymbolPeriod () *
-                                                   m_currSfAllocInfo.m_slotAllocInfo[slotInd].m_dci.m_symStart);
-              }
-      }*/
       m_slotNum++;
       nextSlotStart = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds() *
-                                   m_currSfAllocInfo.m_slotAllocInfo[m_slotNum].m_dci.m_symStart);
+                                   m_currSfAllocInfo.m_ttiAllocInfo[m_slotNum].m_dci.m_symStart);
       Simulator::Schedule (nextSlotStart + m_lastSfStart - Simulator::Now (), &MmWaveEnbPhy::StartSlot, this);
     }
 }
@@ -1223,14 +1162,6 @@ MmWaveEnbPhy::EndSubFrame (void)
   if (m_sfNum == m_phyMacConfig->GetSubframesPerFrame () - 1)
     {
       m_sfNum = 0;
-//		if (m_frameNum == 1023)
-//		{
-//			m_frameNum = 0;
-//		}
-//		else
-//		{
-//			m_frameNum++;
-//		}
       m_frameNum++;
     }
   else
@@ -1283,16 +1214,6 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo
         }
     }
 
-  /*
-  if (!slotInfo.m_isOmni && !slotInfo.m_ueRbMap.empty ())
-  {
-          Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
-           //set beamforming vector;
-           //for ENB, you can choose 64 antenna with 0-15 sectors, or 4 antenna with 0-3 sectors;
-           //input is (sector, antenna number)
-          antennaArray->SetSector (0,64);
-  }
-  */
 
   std::list<Ptr<MmWaveControlMessage> > ctrlMsgs;
   m_downlinkSpectrumPhy->StartTxDataFrames (pb, ctrlMsgs, slotPrd, slotInfo.m_slotIdx);

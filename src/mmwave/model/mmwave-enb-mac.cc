@@ -889,9 +889,9 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
   //m_phySapProvider->SetUlSfAllocInfo (ind.m_ulSfAllocInfo);
   LteMacSapUser::TxOpportunityParameters txOpParams;
 
-  for (unsigned islot = 0; islot < ind.m_sfAllocInfo.m_slotAllocInfo.size (); islot++)
+  for (unsigned islot = 0; islot < ind.m_sfAllocInfo.m_ttiAllocInfo.size (); islot++)
     {
-      SlotAllocInfo &slotAllocInfo = ind.m_sfAllocInfo.m_slotAllocInfo[islot];
+      SlotAllocInfo &slotAllocInfo = ind.m_sfAllocInfo.m_ttiAllocInfo[islot];
       if (slotAllocInfo.m_slotType != SlotAllocInfo::CTRL && slotAllocInfo.m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
         {
           uint16_t rnti = slotAllocInfo.m_dci.m_rnti;

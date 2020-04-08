@@ -136,6 +136,7 @@ MmWavePhy::MmWavePhy (Ptr<MmWaveSpectrumPhy> dlChannelPhy, Ptr<MmWaveSpectrumPhy
     m_frameNum (0),
     m_sfNum (0),
     m_slotNum (0),
+    m_ttiIndex (0),
     m_sfAllocInfoUpdated (false),
     m_componentCarrierId (0)
 {
@@ -327,7 +328,7 @@ MmWavePhy::GetPhySapProvider ()
 SfAllocInfo
 MmWavePhy::GetSfAllocInfo (uint8_t subframeNum)
 {
-  return m_sfAllocInfo[subframeNum];
+  return m_slotAllocInfo[subframeNum];
 }
 
 void
@@ -337,7 +338,7 @@ MmWavePhy::SetDlSfAllocInfo (SfAllocInfo sfAllocInfo)
   //SfAllocInfo &sf = m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum];
   // merge slot lists
   //sf.m_dlSlotAllocInfo = sfAllocInfo.m_dlSlotAllocInfo;
-  m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
+  m_slotAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
   //m_sfAllocInfoUpdated = true;
 }
 
