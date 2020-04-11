@@ -111,7 +111,7 @@ public:
   void SlotIndication (uint16_t frameNum, uint8_t subframeNum, uint8_t slotNum);
 
  /**
-  * Marks the beginning of a new Transmission Time Interval (Tti).
+  * Marks the beginning of a new Transmission Time Interval (TTI).
   *
   * Periodically, it alternates with \ref EndTti in order to scan through the TTIs scheduled within a slot.
   * 
@@ -125,18 +125,8 @@ public:
   * Using the duration of the current TTI, the various frame/subframe and slot counters get updated; 
   * whenever the end of the current slot is reached, \ref SlotIndication is called.
   * 
-  * \param ttiDuration duration, in number of OFDM symbols, of the current Tti.
   */  
   void EndTti ();
-
- /**
-  * Sets the control data allocation within a NR slot.
-  *
-  * The first OFDM symbol of each slot gets assigned to DL control data, while the last one to UL control data.
-  * 
-  * \param sfToAlloc the slot index to be allocated.
-  */   
-  void SetSlotCtrlStructure (uint8_t sfToAlloc);
 
  /**
   * Initializes the slots allocation info for the provided frame and subframe number.
@@ -213,14 +203,12 @@ private:
 
   SlotAllocInfo::TddMode m_prevTtiDir;  //!< Time Division Duplexing (TDD) mode of the previous Tti.
 
-  SfAllocInfo m_currSlotAllocInfo;  //<! Holds the allocation info for the current NR slot
+  SfAllocInfo m_currSlotAllocInfo;  //!< Holds the allocation info for the current NR slot
   std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue;       // for storing info on future UL TB transmissions
   bool m_ulGrant;               // true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
   bool m_sfAllocInfoUpdated;
 
   Time m_dataPeriod;            //!< Data period time duration
-  Time m_slotPeriod;            //!< Slot period time duration
-  Time m_lastSlotStart;         //!< Time at which the current slot started
 
   bool m_dlConfigured;
   bool m_ulConfigured;

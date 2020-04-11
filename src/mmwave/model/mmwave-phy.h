@@ -88,10 +88,17 @@ public:
 
   virtual void DoInitialize (void);
 
-  /**
-   * \returns transmission time interval
-   */
+ /**
+  * \returns transmission time interval
+  */
   Time GetTti (void) const;
+
+ /**
+  * Computes the delay between the current instant and the beginning of the next NR slot
+  *
+  * \returns Time difference between the current instant and the beginning of the next NR slot
+  */
+  Time GetNextSlotDelay ();
 
   void DoSetCellId (uint16_t cellId);
 
@@ -117,6 +124,15 @@ public:
 //	void SetPhySapUser (MmWavePhySapUser* ptr);
 
   void UpdateCurrentAllocationAndSchedule (uint32_t frame, uint32_t sf);
+
+ /**
+  * Sets the control data allocation within a NR slot.
+  *
+  * The first OFDM symbol of each slot gets assigned to DL control data, while the last one to UL control data.
+  *
+  * \param sfToAlloc the slot index to be allocated.
+  */
+  void SetSlotCtrlStructure (uint8_t sfToAlloc);
 
   SfAllocInfo GetSfAllocInfo (uint8_t subframeNum);
   void SetDlSfAllocInfo (SfAllocInfo sfAllocInfo);
@@ -159,7 +175,6 @@ protected:
 
   TddSlotTypeList m_currTddMap;
 //	std::list<SfAllocInfo> m_sfAllocInfoList;
-  SfAllocInfo m_currSfAllocInfo;
 
   std::vector <SfAllocInfo> m_slotAllocInfo;  //!< Maps slot number to its allocation info
 
@@ -170,6 +185,8 @@ protected:
 
   Time m_ctrlPeriod;
   Time m_dataPeriod;
+  Time m_slotPeriod;            //!< Slot period time duration
+  Time m_lastSlotStart;         //!< Time at which the current slot started
 
   std::map <uint32_t,TddSlotTypeList> m_tddPatternForSlotMap;
 

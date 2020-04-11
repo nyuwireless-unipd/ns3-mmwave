@@ -188,6 +188,12 @@ MmWavePhy::GetTti (void) const
   return m_phyMacConfig->GetTti ();
 }
 
+Time 
+MmWavePhy::GetNextSlotDelay ()
+{
+  return m_lastSlotStart + m_slotPeriod - Simulator::Now ();
+}
+
 void
 MmWavePhy::DoSetCellId (uint16_t cellId)
 {
@@ -303,6 +309,27 @@ MmWavePhy::GetControlMessages (void)
       std::list<Ptr<MmWaveControlMessage> > emptylist;
       return (emptylist);
     }
+}
+
+void 
+MmWavePhy::SetSlotCtrlStructure (uint8_t slotToAlloc)
+{
+  // Currently hardcoded: first OFDM symbol = DL control, last OFDM symbol = UL control
+  SlotAllocInfo dlCtrlTti;
+  dlCtrlTti.m_slotType = SlotAllocInfo::CTRL;
+  dlCtrlTti.m_numCtrlSym = 1;
+  dlCtrlTti.m_tddMode = SlotAllocInfo::DL_slotAllocInfo;
+  dlCtrlTti.m_dci.m_numSym = 1;
+  dlCtrlTti.m_dci.m_symStart = 0;
+  SlotAllocInfo ulCtrlTti;
+  ulCtrlTti.m_slotType = SlotAllocInfo::CTRL;
+  ulCtrlTti.m_numCtrlSym = 1;
+  ulCtrlTti.m_tddMode = SlotAllocInfo::UL_slotAllocInfo;
+  ulCtrlTti.m_slotIdx = 0xFF;
+  ulCtrlTti.m_dci.m_numSym = 1;
+  ulCtrlTti.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
+  m_slotAllocInfo[slotToAlloc].m_ttiAllocInfo.push_front (dlCtrlTti);
+  m_slotAllocInfo[slotToAlloc].m_ttiAllocInfo.push_back (ulCtrlTti);
 }
 
 void
