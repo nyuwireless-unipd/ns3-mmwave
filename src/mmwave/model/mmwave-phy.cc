@@ -65,9 +65,9 @@ public:
 
   virtual void SendRachPreamble (uint8_t PreambleId, uint8_t Rnti);
 
-  virtual void SetDlSfAllocInfo (SfAllocInfo sfAllocInfo);
+  virtual void SetDlSfAllocInfo (SlotAllocInfo slotAllocInfo);
 
-  virtual void SetUlSfAllocInfo (SfAllocInfo sfAllocInfo);
+  virtual void SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo);
 
 private:
   MmWavePhy* m_phy;
@@ -98,15 +98,15 @@ MmWaveMemberPhySapProvider::SendRachPreamble (uint8_t PreambleId, uint8_t Rnti)
 }
 
 void
-MmWaveMemberPhySapProvider::SetDlSfAllocInfo (SfAllocInfo sfAllocInfo)
+MmWaveMemberPhySapProvider::SetDlSfAllocInfo (SlotAllocInfo slotAllocInfo)
 {
-  m_phy->SetDlSfAllocInfo (sfAllocInfo);
+  m_phy->SetDlSfAllocInfo (slotAllocInfo);
 }
 
 void
-MmWaveMemberPhySapProvider::SetUlSfAllocInfo (SfAllocInfo sfAllocInfo)
+MmWaveMemberPhySapProvider::SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo)
 {
-  m_phy->SetUlSfAllocInfo (sfAllocInfo);
+  m_phy->SetUlSfAllocInfo (slotAllocInfo);
 }
 
 /* ======= */
@@ -131,14 +131,14 @@ MmWavePhy::MmWavePhy ()
 
 MmWavePhy::MmWavePhy (Ptr<MmWaveSpectrumPhy> dlChannelPhy, Ptr<MmWaveSpectrumPhy> ulChannelPhy)
   : m_downlinkSpectrumPhy (dlChannelPhy),
-    m_uplinkSpectrumPhy (ulChannelPhy),
-    m_cellId (0),
-    m_frameNum (0),
-    m_sfNum (0),
-    m_slotNum (0),
-    m_ttiIndex (0),
-    m_sfAllocInfoUpdated (false),
-    m_componentCarrierId (0)
+  m_uplinkSpectrumPhy (ulChannelPhy),
+  m_cellId (0),
+  m_frameNum (0),
+  m_sfNum (0),
+  m_slotNum (0),
+  m_ttiIndex (0),
+  m_sfAllocInfoUpdated (false),
+  m_componentCarrierId (0)
 {
   NS_LOG_FUNCTION (this);
   m_phySapProvider = new MmWaveMemberPhySapProvider (this);
@@ -188,7 +188,7 @@ MmWavePhy::GetTti (void) const
   return m_phyMacConfig->GetTti ();
 }
 
-Time 
+Time
 MmWavePhy::GetNextSlotDelay ()
 {
   return m_lastSlotStart + m_slotPeriod - Simulator::Now ();
@@ -232,11 +232,11 @@ MmWavePhy::SetMacPdu (Ptr<Packet> p)
   MmWaveMacPduTag tag;
   if (p->PeekPacketTag (tag))
     {
-      NS_ASSERT ((tag.GetSfn ().m_sfNum >= 0) && (tag.GetSfn ().m_sfNum < m_phyMacConfig->GetSymbolsPerSubframe ()));
-      std::map<uint32_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (tag.GetSfn ().Encode ());
+      NS_ASSERT ((tag.GetSfn ().m_sfNum >= 0) && (tag.GetSfn ().m_sfNum < m_phyMacConfig->GetSubframesPerFrame ()));
+      std::map<uint64_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (tag.GetSfn ().Encode ());
       if (it == m_packetBurstMap.end ())
         {
-          it = m_packetBurstMap.insert (std::pair<uint32_t, Ptr<PacketBurst> > (tag.GetSfn ().Encode (), CreateObject<PacketBurst> ())).first;
+          it = m_packetBurstMap.insert (std::pair<uint64_t, Ptr<PacketBurst> > (tag.GetSfn ().Encode (), CreateObject<PacketBurst> ())).first;
         }
       else
         {
@@ -254,10 +254,11 @@ Ptr<PacketBurst>
 MmWavePhy::GetPacketBurst (SfnSf sfn)
 {
   Ptr<PacketBurst> pburst;
-  std::map<uint32_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (sfn.Encode ());
+  std::map<uint64_t, Ptr<PacketBurst> >::iterator it = m_packetBurstMap.find (sfn.Encode ());
   if (it == m_packetBurstMap.end ())
     {
-      NS_LOG_ERROR ("GetPacketBurst(): Packet burst not found for subframe " << (unsigned)sfn.m_sfNum << " slot/sym start "  << (unsigned)sfn.m_slotNum);
+      NS_LOG_ERROR ("GetPacketBurst(): Packet burst not found for frame " << (unsigned)sfn.m_frameNum << " subframe "
+                                                                          << (unsigned)sfn.m_sfNum << " slot " << (unsigned)sfn.m_slotNum << "sym start " << (unsigned)sfn.m_symStart);
       return pburst;
     }
   else
@@ -311,20 +312,20 @@ MmWavePhy::GetControlMessages (void)
     }
 }
 
-void 
+void
 MmWavePhy::SetSlotCtrlStructure (uint8_t slotToAlloc)
 {
   // Currently hardcoded: first OFDM symbol = DL control, last OFDM symbol = UL control
-  SlotAllocInfo dlCtrlTti;
-  dlCtrlTti.m_slotType = SlotAllocInfo::CTRL;
+  TtiAllocInfo dlCtrlTti;
+  dlCtrlTti.m_slotType = TtiAllocInfo::CTRL;
   dlCtrlTti.m_numCtrlSym = 1;
-  dlCtrlTti.m_tddMode = SlotAllocInfo::DL_slotAllocInfo;
+  dlCtrlTti.m_tddMode = TtiAllocInfo::DL_slotAllocInfo;
   dlCtrlTti.m_dci.m_numSym = 1;
   dlCtrlTti.m_dci.m_symStart = 0;
-  SlotAllocInfo ulCtrlTti;
-  ulCtrlTti.m_slotType = SlotAllocInfo::CTRL;
+  TtiAllocInfo ulCtrlTti;
+  ulCtrlTti.m_slotType = TtiAllocInfo::CTRL;
   ulCtrlTti.m_numCtrlSym = 1;
-  ulCtrlTti.m_tddMode = SlotAllocInfo::UL_slotAllocInfo;
+  ulCtrlTti.m_tddMode = TtiAllocInfo::UL_slotAllocInfo;
   ulCtrlTti.m_slotIdx = 0xFF;
   ulCtrlTti.m_dci.m_numSym = 1;
   ulCtrlTti.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
@@ -352,28 +353,28 @@ MmWavePhy::GetPhySapProvider ()
 }
 
 
-SfAllocInfo
+SlotAllocInfo
 MmWavePhy::GetSfAllocInfo (uint8_t subframeNum)
 {
   return m_slotAllocInfo[subframeNum];
 }
 
 void
-MmWavePhy::SetDlSfAllocInfo (SfAllocInfo sfAllocInfo)
+MmWavePhy::SetDlSfAllocInfo (SlotAllocInfo slotAllocInfo)
 {
-  // get previously enqueued SfAllocInfo and set DL slot allocations
-  //SfAllocInfo &sf = m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum];
+  // get previously enqueued SlotAllocInfo and set DL slot allocations
+  //SlotAllocInfo &sf = m_sfAllocInfo[slotAllocInfo.m_sfnSf.m_sfNum];
   // merge slot lists
-  //sf.m_dlSlotAllocInfo = sfAllocInfo.m_dlSlotAllocInfo;
-  m_slotAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
+  //sf.m_dlSlotAllocInfo = slotAllocInfo.m_dlSlotAllocInfo;
+  m_slotAllocInfo[slotAllocInfo.m_sfnSf.m_slotNum] = slotAllocInfo;
   //m_sfAllocInfoUpdated = true;
 }
 
 void
-MmWavePhy::SetUlSfAllocInfo (SfAllocInfo sfAllocInfo)
+MmWavePhy::SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo)
 {
-  // add new SfAllocInfo with UL slot allocation
-  //m_sfAllocInfo[sfAllocInfo.m_sfnSf.m_sfNum] = sfAllocInfo;
+  // add new SlotAllocInfo with UL slot allocation
+  //m_sfAllocInfo[slotAllocInfo.m_sfnSf.m_sfNum] = slotAllocInfo;
 }
 
 void

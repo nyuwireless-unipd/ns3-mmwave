@@ -241,12 +241,12 @@ MmWaveUeMac::GetTypeId (void)
 
 MmWaveUeMac::MmWaveUeMac (void)
   : m_bsrPeriodicity (MicroSeconds (100.0)),
-    // ideal behavior
-    m_bsrLast (MilliSeconds (0)),
-    m_freshUlBsr (false),
-    //m_harqProcessId (0),
-    m_rnti (0),
-    m_waitingForRaResponse (true)
+  // ideal behavior
+  m_bsrLast (MilliSeconds (0)),
+  m_freshUlBsr (false),
+  //m_harqProcessId (0),
+  m_rnti (0),
+  m_waitingForRaResponse (true)
 {
   NS_LOG_FUNCTION (this);
   m_cmacSapProvider = new UeMemberMmWaveUeCmacSapProvider (this);
@@ -509,6 +509,7 @@ MmWaveUeMac::DoSubframeIndication (SfnSf sfn)
   m_frameNum = sfn.m_frameNum;
   m_sfNum = sfn.m_sfNum;
   m_slotNum = sfn.m_slotNum;
+
   RefreshHarqProcessesPacketBuffer ();
   if ((Simulator::Now () >= m_bsrLast + m_bsrPeriodicity) && (m_freshUlBsr == true))
     {
@@ -632,19 +633,15 @@ MmWaveUeMac::RecvRaResponse (BuildRarListElement_s raResponse)
 
 std::map<uint32_t, struct MacPduInfo>::iterator MmWaveUeMac::AddToMacPduMap (DciInfoElementTdma dci, unsigned activeLcs)
 {
-  unsigned frameNum;
-  unsigned sfNum;
-  if (m_sfNum + m_phyMacConfig->GetUlSchedDelay () >= m_phyMacConfig->GetSubframesPerFrame ())
-    {
-      frameNum = m_frameNum + 1;
-      sfNum = m_sfNum + m_phyMacConfig->GetUlSchedDelay () - m_phyMacConfig->GetSubframesPerFrame ();
-    }
-  else
-    {
-      frameNum = m_frameNum;
-      sfNum = m_sfNum + m_phyMacConfig->GetUlSchedDelay ();
-    }
-  MacPduInfo macPduInfo (SfnSf (frameNum, sfNum, dci.m_symStart), dci.m_tbSize, activeLcs);
+  uint8_t slotNum = (m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
+  uint8_t sfNum = m_sfNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
+                             % m_phyMacConfig->GetSubframesPerFrame ());
+  uint16_t frameNum = m_frameNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
+                                    / m_phyMacConfig->GetSubframesPerFrame ());
+
+  NS_ASSERT ((slotNum < m_phyMacConfig->GetSlotsPerSubframe ()) && (sfNum < m_phyMacConfig->GetSubframesPerFrame ()));
+
+  MacPduInfo macPduInfo (SfnSf (frameNum, sfNum, slotNum, dci.m_symStart), dci.m_tbSize, activeLcs);
   std::map<uint32_t, struct MacPduInfo>::iterator it = m_macPduMap.find (dci.m_harqProcess);
   if (it != m_macPduMap.end ())
     {
@@ -703,19 +700,15 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
                   {
                     NS_LOG_DEBUG (this << " No active flows for this UL-DCI");
                     // the UE may have been scheduled when it has no buffered data due to BSR quantization, send empty packet
-                    unsigned frameNum;
-                    unsigned sfNum;
-                    if (m_sfNum + m_phyMacConfig->GetUlSchedDelay () >= m_phyMacConfig->GetSubframesPerFrame ())
-                      {
-                        frameNum = m_frameNum + 1;
-                        sfNum = m_sfNum + m_phyMacConfig->GetUlSchedDelay () - m_phyMacConfig->GetSubframesPerFrame ();
-                      }
-                    else
-                      {
-                        frameNum = m_frameNum;
-                        sfNum = m_sfNum + m_phyMacConfig->GetUlSchedDelay ();
-                      }
-                    MmWaveMacPduTag tag (SfnSf (frameNum, sfNum, dciInfoElem.m_symStart));
+                    uint8_t slotNum = (m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
+                    uint8_t sfNum = m_sfNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
+                                               % m_phyMacConfig->GetSubframesPerFrame ());
+                    uint16_t frameNum = m_frameNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
+                                                      / m_phyMacConfig->GetSubframesPerFrame ());
+
+                    NS_ASSERT ((slotNum < m_phyMacConfig->GetSlotsPerSubframe ()) && (sfNum < m_phyMacConfig->GetSubframesPerFrame ()));
+
+                    MmWaveMacPduTag tag (SfnSf (frameNum, sfNum, slotNum, dciInfoElem.m_symStart));
                     Ptr<Packet> emptyPdu = Create <Packet> ();
                     MmWaveMacPduHeader header;
                     MacSubheader subheader (3, 0);                      // lcid = 3, size = 0
@@ -899,19 +892,15 @@ MmWaveUeMac::DoReceiveControlMessage  (Ptr<MmWaveControlMessage> msg)
                       {
                         NS_FATAL_ERROR ("No radio bearer tag");
                       }
-                    unsigned frameNum;
-                    unsigned sfNum;
-                    if (m_sfNum + m_phyMacConfig->GetUlSchedDelay () >= m_phyMacConfig->GetSubframesPerFrame ())
-                      {
-                        frameNum = m_frameNum + 1;
-                        sfNum = m_sfNum + m_phyMacConfig->GetUlSchedDelay () - m_phyMacConfig->GetSubframesPerFrame ();
-                      }
-                    else
-                      {
-                        frameNum = m_frameNum;
-                        sfNum = m_sfNum + m_phyMacConfig->GetUlSchedDelay ();
-                      }
-                    tag.SetSfn (SfnSf (frameNum, sfNum, dciInfoElem.m_symStart));
+                    uint8_t slotNum = (m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
+                    uint8_t sfNum = m_sfNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
+                                               % m_phyMacConfig->GetSubframesPerFrame ());
+                    uint16_t frameNum = m_frameNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
+                                                      / m_phyMacConfig->GetSubframesPerFrame ());
+
+                    NS_ASSERT ((slotNum < m_phyMacConfig->GetSlotsPerSubframe ()) && (sfNum < m_phyMacConfig->GetSubframesPerFrame ()));
+
+                    tag.SetSfn (SfnSf (frameNum, sfNum, slotNum, dciInfoElem.m_symStart));
                     pkt->AddPacketTag (tag);
 
                     m_txMacPacketTraceUe (m_rnti, m_componentCarrierId, pkt->GetSize ());

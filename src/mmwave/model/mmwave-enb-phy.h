@@ -86,45 +86,45 @@ public:
 
   void DoSetSubChannels ();
 
- /**
-  * Marks the beginning of a new NR slot.
-  * 
-  * Periodically, it alternates with \ref EndSlot in order to scan through the different NR slots.
-  * Additionally, it is in charge of the MIB and SIB management. 
-  *
-  */  
+  /**
+   * Marks the beginning of a new NR slot.
+   *
+   * Periodically, it alternates with \ref EndSlot in order to scan through the different NR slots.
+   * Additionally, it is in charge of the MIB and SIB management.
+   *
+   */
   void StartSlot (void);
 
- /**
-  * Marks the beginning of a new Transmission Time Interval (TTI).
-  *
-  * Periodically, it alternates with \ref EndTti in order to scan through the TTIs scheduled within a slot.
-  * 
-  */  
+  /**
+   * Marks the beginning of a new Transmission Time Interval (TTI).
+   *
+   * Periodically, it alternates with \ref EndTti in order to scan through the TTIs scheduled within a slot.
+   *
+   */
   void StartTti (void);
 
- /**
-  * Marks the end of the current Transmission Time Interval (TTI).
-  *
-  * Periodically, it alternates with \ref StartTti in order to scan through the TTIs scheduled within a slot.
-  * If the end of the current TTI marks also the end of the current slot, \ref EndSlot is called.
-  * 
-  */  
+  /**
+   * Marks the end of the current Transmission Time Interval (TTI).
+   *
+   * Periodically, it alternates with \ref StartTti in order to scan through the TTIs scheduled within a slot.
+   * If the end of the current TTI marks also the end of the current slot, \ref EndSlot is called.
+   *
+   */
   void EndTti (void);
 
- /**
-  * Marks the end of the current NR slot.
-  * 
-  * Periodically, it alternates with \ref StartSlot in order to scan through the different NR slots.
-  * The various frame/subframe and slot counters get updated and, finally, a call to \ref StartSlot 
-  * is scheduled in order to start the next NR slot.
-  *
-  */  
+  /**
+   * Marks the end of the current NR slot.
+   *
+   * Periodically, it alternates with \ref StartSlot in order to scan through the different NR slots.
+   * The various frame/subframe and slot counters get updated and, finally, a call to \ref StartSlot
+   * is scheduled in order to start the next NR slot.
+   *
+   */
   void EndSlot (void);
 
-  SfAllocInfo m_currSlotAllocInfo;  //!< Holds the allocation info for the current NR slot
+  SlotAllocInfo m_currSlotAllocInfo;  //!< Holds the allocation info for the current NR slot
 
-  void SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, SlotAllocInfo& slotInfo);
+  void SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, TtiAllocInfo& slotInfo);
 
   void SendCtrlChannels (std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time slotPrd);
 
@@ -197,7 +197,7 @@ private:
 
   uint8_t m_prevSlot;       //!< 1->UL 0->DL 2->Unspecified
 
-  SlotAllocInfo::TddMode m_prevTtiDir;      //!< Previous TTI TDD mode; 0->Unspecified, 1->DL, 2->UL
+  TtiAllocInfo::TddMode m_prevTtiDir;      //!< Previous TTI TDD mode; 0->Unspecified, 1->DL, 2->UL
 
   std::vector< Ptr<NetDevice> > m_deviceMap;
 

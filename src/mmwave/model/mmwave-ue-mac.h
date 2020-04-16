@@ -122,7 +122,7 @@ private:
   LteUeCmacSapProvider* m_cmacSapProvider;
 
   TddSlotTypeList m_DataTxTDDMap;
-  SfAllocInfo m_DataTxAllocationList;
+  SlotAllocInfo m_DataTxAllocationList;
 
   MmWavePhySapProvider* m_phySapProvider;
   MmWaveUePhySapUser* m_phySapUser;

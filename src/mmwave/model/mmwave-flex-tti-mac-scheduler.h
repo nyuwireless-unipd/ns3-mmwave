@@ -313,7 +313,7 @@ private:
   std::map <uint16_t, UlHarqProcessesDciInfoList_t> m_ulHarqProcessesDciInfoMap;
 
   // needed to keep track of uplink allocations in later slots
-  std::list <struct SfAllocInfo> m_ulSfAllocInfo;
+  std::list <struct SlotAllocInfo> m_ulSfAllocInfo;
 
   static const unsigned m_macHdrSize;
   static const unsigned m_subHdrSize;

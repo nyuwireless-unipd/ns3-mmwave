@@ -51,34 +51,54 @@ namespace ns3 {
 
 namespace mmwave {
 
+/**
+ * struct holding the numerology information such as frame, subframe,
+ * slot and (eventually) starting OFDM symbol number.
+ */
 struct SfnSf
 {
-  SfnSf () : m_frameNum (0), m_sfNum (0), m_slotNum (0)
+
+  /**
+   * Default constructor, the starting symbol is optional
+   *
+   * \param frameNum the frame number
+   * \param sfNum the subframe number
+   * \param slotNum the slot number
+   * \param symStart the (optional) starting symbol
+   */
+  SfnSf (uint16_t frameNum = 0, uint8_t sfNum = 0, uint8_t slotNum = 0, uint8_t symStart = 0)
+    : m_frameNum (frameNum), m_sfNum (sfNum), m_slotNum (slotNum), m_symStart (symStart)
   {
+    // Non-negative
+    NS_ASSERT ((m_frameNum >= 0) && (m_sfNum >= 0) && (m_slotNum >= 0) && (m_symStart >= 0));
   }
 
-  SfnSf (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
-    : m_frameNum (frameNum), m_sfNum (sfNum), m_slotNum (slotNum)
-  {
-  }
-
-  uint32_t
+  /**
+   * Encodes the struct into an uint64_t
+   */
+  uint64_t
   Encode () const
   {
-    return ((m_frameNum << 16) | ((m_sfNum & 0xFF) << 8) | (m_slotNum & 0xFF));
+    return ((uint64_t (m_frameNum) << 24 ) | ((m_sfNum & 0xFF) << 16) | ((m_slotNum & 0xFF) << 8) | (m_symStart & 0xFF));
   }
 
+  /**
+   * Decodes the struct from an uint64_t and updates the struct variables with the given values
+   */
   void
-  Decode (uint32_t sfn)
+  Decode (uint64_t sfn)
   {
-    m_frameNum = sfn >> 16;
-    m_sfNum = ((sfn & 0xFF00) >> 8);
-    m_slotNum = sfn & 0xFF;
+    m_frameNum = sfn >> 24;
+    m_sfNum = ((sfn & 0xFF0000) >> 16);
+    m_slotNum = ((sfn & 0xFF00) >> 8);
+    m_symStart = sfn & 0xFF;
+
   }
 
-  uint16_t m_frameNum;
-  uint8_t m_sfNum;
-  uint8_t m_slotNum; // also used for symbol start index in some cases
+  uint16_t m_frameNum;  //!< Frame number
+  uint8_t m_sfNum;  //!<Subframe number
+  uint8_t m_slotNum;  //!< Slot number
+  uint8_t m_symStart;   //!< Starting symbol (not always used!)
 };
 
 /* Equivalent to the DCI in LTE*/
@@ -233,7 +253,7 @@ struct RlcPduInfo
   uint32_t m_size;
 };
 
-struct SlotAllocInfo
+struct TtiAllocInfo
 {
   enum TddMode
   {
@@ -252,7 +272,7 @@ struct SlotAllocInfo
     ANALOG = 0, DIGITAL = 1, OMNI = 2
   };
 
-  SlotAllocInfo ()
+  TtiAllocInfo ()
     : m_tddMode (NA),
     m_isOmni (0),
     m_slotType (CTRL_DATA),
@@ -263,8 +283,8 @@ struct SlotAllocInfo
   {
   }
 
-  SlotAllocInfo (uint8_t slotIdx, TddMode tddMode, TddSlotType slotType, CtrlTxMode ctrlTxMode,
-                 uint16_t rnti)
+  TtiAllocInfo (uint8_t slotIdx, TddMode tddMode, TddSlotType slotType, CtrlTxMode ctrlTxMode,
+                uint16_t rnti)
     : m_tddMode (tddMode),
     m_isOmni (0),
     m_slotType (slotType),
@@ -309,37 +329,27 @@ struct SlotAllocInfo
   //std::list<MmWaveControlMessage> m_controlMessages;  // ctrl messages for this user
 };
 
-struct SfAllocInfo
+struct SlotAllocInfo
 {
-  SfAllocInfo () : m_sfnSf (SfnSf ()), m_numSymAlloc (0), m_ulSymStart (0)
+  SlotAllocInfo () : m_sfnSf (SfnSf ()), m_numSymAlloc (0), m_ulSymStart (0)
   {
     //m_tddPattern.resize (8);
   }
 
-  SfAllocInfo (SfnSf sfn) : m_sfnSf (sfn), m_numSymAlloc (0), m_ulSymStart (0)
+  SlotAllocInfo (SfnSf sfn) : m_sfnSf (sfn), m_numSymAlloc (0), m_ulSymStart (0)
   {
   }
-
-  //	SfAllocInfo& operator= (const SfAllocInfo &src)
-  //	{
-  //		m_sfnSf = src.m_sfnSf;
-  //		m_numSymAlloc = src.m_numSymAlloc;
-  //		m_ulSymStart = src.m_ulSymStart;
-  //		m_dlSlotAllocInfo = src.m_dlSlotAllocInfo;
-  //		m_ulSlotAllocInfo = src.m_ulSlotAllocInfo;
-  //		return *this;
-  //	}
 
   SfnSf m_sfnSf;
   uint32_t m_numSymAlloc; // number of allocated slots
   uint32_t m_ulSymStart; // start of UL region
   //std::vector <SlotAllocInfo::TddMode> m_tddPattern;
-  std::deque<SlotAllocInfo> m_dlSlotAllocInfo;
-  std::deque<SlotAllocInfo> m_ulSlotAllocInfo;
-  std::deque<SlotAllocInfo> m_ttiAllocInfo;
+  std::deque<TtiAllocInfo> m_dlSlotAllocInfo;
+  std::deque<TtiAllocInfo> m_ulSlotAllocInfo;
+  std::deque<TtiAllocInfo> m_ttiAllocInfo;
 };
 
-typedef std::vector<SlotAllocInfo::TddSlotType> TddSlotTypeList;
+typedef std::vector<TtiAllocInfo::TddSlotType> TddSlotTypeList;
 
 struct DlCqiInfo
 {
@@ -402,7 +412,7 @@ struct SchedInfo
   uint8_t m_sfNum;
   uint16_t m_rnti;
 
-  SfAllocInfo m_slotAllocInfo;  //!< Holds the allocation info for a single NR slot
+  SlotAllocInfo m_slotAllocInfo;  //!< Holds the allocation info for a single NR slot
   struct DciInfoElement m_dci;
   std::map<uint8_t, std::vector<struct RlcPduInfo> > m_rlcPduMap; // RLC PDU elems for each MAC TB
 };
@@ -686,10 +696,10 @@ public:
 
     m_symbolsPerSlot = 14; // TS 38.211 Sec 4.3.2: each slot must have 14 symbols
     m_slotsPerSubframe = std::pow (2, index);// Number of slots per subframe, see TS 38.211 Sec 4.3.2
-    m_symbolsPerSubframe = m_symbolsPerSlot*m_slotsPerSubframe;
+    m_symbolsPerSubframe = m_symbolsPerSlot * m_slotsPerSubframe;
     m_subframePeriod = Time (MilliSeconds (1)); // TS 38.211 Section 4.3.1: the subframe duration is 1ms
     m_symbolPeriod = Time (NanoSeconds (m_subframePeriod / m_symbolsPerSlot / m_slotsPerSubframe)); // Duration of an OFDM symbol
-    m_chunkWidth = subCarriersPerRB*subcarrierSpacing;
+    m_chunkWidth = subCarriersPerRB * subcarrierSpacing;
   }
 
   void
@@ -902,7 +912,7 @@ private:
 
   uint32_t m_l1L2CtrlLatency; // In no. of sub-frames
   uint32_t m_l1L2DataLatency; // In no. of slots
-  uint32_t m_ulSchedDelay;   // delay between transmission of UL-DCI and corresponding subframe in TTIs
+  uint32_t m_ulSchedDelay;   // delay between transmission of UL-DCI and corresponding subframe in # of NR slots
   Time m_wbCqiPeriodUs; // WB CQI periodicity in microseconds
 
   uint32_t m_tbDecodeLatencyUs;

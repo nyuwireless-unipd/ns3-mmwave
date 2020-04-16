@@ -175,8 +175,7 @@ public:
    * \param [in] the allocated transport block size
    * \param [in] the number of HARQ retransmissions for that packet
    */
-  typedef void (*HarqRetxCallback)
-    (uint16_t rnti, uint16_t cellId, uint32_t tbSize, uint8_t numRetx);
+  typedef void (*HarqRetxCallback)(uint16_t rnti, uint16_t cellId, uint32_t tbSize, uint8_t numRetx);
 
 private:
   // forwarded from LteEnbCmacSapProvider

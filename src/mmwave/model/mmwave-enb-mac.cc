@@ -374,10 +374,10 @@ MmWaveEnbMac::GetTypeId (void)
 
 MmWaveEnbMac::MmWaveEnbMac (void)
   : m_ccmMacSapUser (0),
-    m_frameNum (0),
-    m_sfNum (0),
-    m_slotNum (0),
-    m_tbUid (0)
+  m_frameNum (0),
+  m_sfNum (0),
+  m_slotNum (0),
+  m_tbUid (0)
 {
   NS_LOG_FUNCTION (this);
   m_cmacSapProvider = new MmWaveEnbMacMemberEnbCmacSapProvider (this);
@@ -891,8 +891,8 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 
   for (unsigned islot = 0; islot < ind.m_sfAllocInfo.m_ttiAllocInfo.size (); islot++)
     {
-      SlotAllocInfo &slotAllocInfo = ind.m_sfAllocInfo.m_ttiAllocInfo[islot];
-      if (slotAllocInfo.m_slotType != SlotAllocInfo::CTRL && slotAllocInfo.m_tddMode == SlotAllocInfo::DL_slotAllocInfo)
+      TtiAllocInfo &slotAllocInfo = ind.m_sfAllocInfo.m_ttiAllocInfo[islot];
+      if (slotAllocInfo.m_slotType != TtiAllocInfo::CTRL && slotAllocInfo.m_tddMode == TtiAllocInfo::DL_slotAllocInfo)
         {
           uint16_t rnti = slotAllocInfo.m_dci.m_rnti;
           // here log all the packets sent in downlink

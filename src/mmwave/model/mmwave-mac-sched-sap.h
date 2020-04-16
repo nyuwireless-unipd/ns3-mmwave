@@ -111,9 +111,9 @@ public:
   {
     SfnSf m_sfnSf;
 //		TddSlotTypeList m_tddPattern;
-    SfAllocInfo m_sfAllocInfo;
-    SfAllocInfo m_dlSfAllocInfo;
-    SfAllocInfo m_ulSfAllocInfo;
+    SlotAllocInfo m_sfAllocInfo;
+    SlotAllocInfo m_dlSfAllocInfo;
+    SlotAllocInfo m_ulSfAllocInfo;
 
     std::map<uint16_t, SchedInfo> m_schedInfoMap;
   };

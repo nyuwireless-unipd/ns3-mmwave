@@ -55,9 +55,9 @@ public:
 
   virtual void SendRachPreamble (uint8_t PreambleId, uint8_t Rnti) = 0;
 
-  virtual void SetDlSfAllocInfo (SfAllocInfo sfAllocInfo) = 0;
+  virtual void SetDlSfAllocInfo (SlotAllocInfo sfAllocInfo) = 0;
 
-  virtual void SetUlSfAllocInfo (SfAllocInfo sfAllocInfo) = 0;
+  virtual void SetUlSfAllocInfo (SlotAllocInfo sfAllocInfo) = 0;
 };
 
 /* Phy to Mac comm */

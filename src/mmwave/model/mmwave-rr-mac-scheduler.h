@@ -138,7 +138,7 @@ private:
   void RefreshHarqProcesses ();
 
   void SetTBSizeAssigned ();
-  SfAllocInfo ScheduleUsersInTime (uint32_t slotNum);
+  SlotAllocInfo ScheduleUsersInTime (uint32_t slotNum);
   void SetScheduleDirection  (std::string patt);
 
   TddSlotTypeList m_tddMap;
@@ -224,7 +224,7 @@ private:
   std::map <uint16_t, UlHarqProcessesStatus_t> m_ulHarqProcessesStatus;
   std::map <uint16_t, UlHarqProcessesTbInfoList_t> m_ulHarqProcessesTbInfoMap;
 
-  std::list <SfAllocInfo> m_ulSfAllocInfo;       // queue for storing uplink allocations in later scheduling intervals
+  std::list <SlotAllocInfo> m_ulSfAllocInfo;       // queue for storing uplink allocations in later scheduling intervals
 };
 
 }

@@ -47,14 +47,7 @@ public:
   static TypeId  GetTypeId (void);
   virtual TypeId  GetInstanceTypeId (void) const;
 
-  /**
-   * Create an empty MacP PDU tag
-   */
-  MmWaveMacPduTag ();
-
-  MmWaveMacPduTag (SfnSf sfn);
-
-  MmWaveMacPduTag (SfnSf sfn, uint8_t symStart, uint8_t numSym);
+  MmWaveMacPduTag (SfnSf sfn = SfnSf (), uint8_t numSym = 0);
 
   virtual void  Serialize (TagBuffer i) const;
   virtual void  Deserialize (TagBuffer i);
@@ -73,17 +66,14 @@ public:
 
   uint8_t GetSymStart ()
   {
-    return m_symStart;
+    return m_sfnSf.m_symStart;
   }
 
-  uint8_t GetNumSym ()
-  {
-    return m_numSym;
-  }
 
+  // TODO: remove, use SfnSf's new structure
   void SetSymStart (uint8_t symStart)
   {
-    m_symStart = symStart;
+    m_sfnSf.m_symStart = symStart;
   }
 
   void SetNumSym (uint8_t numSym)
@@ -93,7 +83,6 @@ public:
 
 protected:
   SfnSf m_sfnSf;
-  uint8_t m_symStart;
   uint8_t m_numSym;
   uint32_t m_tagSize;
 };

@@ -71,7 +71,8 @@ struct MacPduInfo
   {
     m_pdu = Create<Packet> ();
     m_macHeader = MmWaveMacPduHeader ();
-    MmWaveMacPduTag tag (sfn, dci.m_symStart, dci.m_numSym);
+    // TODO: set dci.m_symStart in SfnSf 
+    MmWaveMacPduTag tag (sfn, dci.m_numSym);
     m_pdu->AddPacketTag (tag);
   }
 
