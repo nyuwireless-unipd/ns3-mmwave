@@ -399,10 +399,10 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
                                  << " symStart " << (unsigned)dciInfoElem.m_symStart << " numSym " << (unsigned)dciInfoElem.m_numSym  << " tbs " << dciInfoElem.m_tbSize
                                  << " harqId " << (unsigned)dciInfoElem.m_harqProcess);
 
-              TtiAllocInfo slotInfo;
-              slotInfo.m_tddMode = TtiAllocInfo::DL_slotAllocInfo;
-              slotInfo.m_dci = dciInfoElem;
-              slotInfo.m_slotIdx = 0;
+              TtiAllocInfo ttiInfo;
+              ttiInfo.m_tddMode = TtiAllocInfo::DL_slotAllocInfo;
+              ttiInfo.m_dci = dciInfoElem;
+              ttiInfo.m_slotIdx = 0;
               std::deque <TtiAllocInfo>::iterator itTti;
               for (itTti = m_currSlotAllocInfo.m_ttiAllocInfo.begin ();
                    itTti != m_currSlotAllocInfo.m_ttiAllocInfo.end (); itTti++)
@@ -411,12 +411,12 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
                     {
                       break;
                     }
-                  slotInfo.m_slotIdx++;
+                  ttiInfo.m_slotIdx++;
                 }
               //m_currSfAllocInfo.m_slotAllocInfo.push_back (slotInfo);  // add SlotAllocInfo to current SfAllocInfo
-              m_currSlotAllocInfo.m_ttiAllocInfo.insert (itTti, slotInfo);
+              m_currSlotAllocInfo.m_ttiAllocInfo.insert (itTti, ttiInfo);
             }
-          else if (dciInfoElem.m_format == DciInfoElementTdma::UL_dci)               // set downlink slot schedule for t+Tul_sched slot
+          else if (dciInfoElem.m_format == DciInfoElementTdma::UL_dci)               // set UL slot schedule for t+ulSchedDelay slot
             {
               uint8_t ulSlotIdx = (m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
               uint8_t dciSubframe = m_sfNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
@@ -429,15 +429,15 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
                                  << (unsigned)dciInfoElem.m_numSym << " tbs " << dciInfoElem.m_tbSize
                                  << " harqId " << (unsigned)dciInfoElem.m_harqProcess);
 
-              TtiAllocInfo slotInfo;
-              slotInfo.m_tddMode = TtiAllocInfo::UL_slotAllocInfo;
-              slotInfo.m_dci = dciInfoElem;
-              TtiAllocInfo ulCtrlSlot = m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.back ();
+              TtiAllocInfo ttiInfo;
+              ttiInfo.m_tddMode = TtiAllocInfo::UL_slotAllocInfo;
+              ttiInfo.m_dci = dciInfoElem;
+              TtiAllocInfo ulCtrlTti = m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.back ();
               m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.pop_back ();
               //ulCtrlSlot.m_slotIdx++;
-              slotInfo.m_slotIdx = m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.size ();
-              m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.push_back (slotInfo);
-              m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.push_back (ulCtrlSlot);
+              ttiInfo.m_slotIdx = m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.size ();
+              m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.push_back (ttiInfo);
+              m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.push_back (ulCtrlTti);
             }
 
           m_phySapUser->ReceiveControlMessage (msg);
@@ -639,7 +639,9 @@ MmWaveUePhy::StartTti ()
 
   m_prevTtiDir = currTti.m_tddMode;
 
-  m_phySapUser->SubframeIndication (SfnSf (m_frameNum, m_sfNum, m_slotNum));            // trigger mac
+
+  NS_ASSERT (m_ttiIndex != 0 || currTti.m_dci.m_symStart == m_ttiIndex);
+  m_phySapUser->SlotIndication (SfnSf (m_frameNum, m_sfNum, m_slotNum, currTti.m_dci.m_symStart));            // trigger mac
 
   NS_LOG_DEBUG ("MmWaveUePhy: Scheduling TTI end after " << currTtiDuration);
   Simulator::Schedule (currTtiDuration, &MmWaveUePhy::EndTti, this);

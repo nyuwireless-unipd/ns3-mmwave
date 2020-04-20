@@ -167,7 +167,7 @@ MmWaveEnbPhy::DoInitialize (void)
   m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
   //m_numRbg = m_phyMacConfig->GetNumRb() / m_phyMacConfig->GetNumRbPerRbg();
 
-  for (unsigned i = 0; i < m_phyMacConfig->GetL1L2CtrlLatency (); i++)
+  for (unsigned i = 0; i < m_phyMacConfig->GetL1L2Latency (); i++)
     {   // push elements onto queue for initial scheduling delay
       m_controlMessageQueue.push_back (std::list<Ptr<MmWaveControlMessage> > ());
     }
@@ -1085,8 +1085,9 @@ MmWaveEnbPhy::StartTti (void)
     }
 
   m_prevTtiDir = currTti.m_tddMode;
-  // TODO: update to reflect NR numerology changes
-  m_phySapUser->SubframeIndication (SfnSf (m_frameNum, m_sfNum, m_slotNum));        // trigger MAC
+
+  NS_ASSERT (m_ttiIndex != 0 || currTti.m_dci.m_symStart == m_ttiIndex);
+  m_phySapUser->SlotIndication (SfnSf (m_frameNum, m_sfNum, m_slotNum, currTti.m_dci.m_symStart));  // trigger MAC
 
   Simulator::Schedule (ttiPeriod, &MmWaveEnbPhy::EndTti, this);
 }

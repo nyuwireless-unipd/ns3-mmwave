@@ -152,7 +152,7 @@ public:
 
   virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg);
 
-  virtual void SubframeIndication (SfnSf);
+  virtual void SlotIndication (SfnSf snf);
 
   virtual void UlCqiReport (MmWaveMacSchedSapProvider::SchedUlCqiInfoReqParameters cqi);
 
@@ -183,9 +183,9 @@ MmWaveMacEnbMemberPhySapUser::ReceiveControlMessage (Ptr<MmWaveControlMessage> m
 }
 
 void
-MmWaveMacEnbMemberPhySapUser::SubframeIndication (SfnSf sfn)
+MmWaveMacEnbMemberPhySapUser::SlotIndication (SfnSf sfn)
 {
-  m_mac->DoSubframeIndication (sfn);
+  m_mac->DoSlotIndication (sfn);
 }
 
 void
@@ -455,11 +455,12 @@ MmWaveEnbMac::SetEnbCmacSapUser (LteEnbCmacSapUser* s)
 }
 
 void
-MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
+MmWaveEnbMac::DoSlotIndication (SfnSf sfnSf)
 {
   m_frameNum = sfnSf.m_frameNum;
   m_sfNum = sfnSf.m_sfNum;
   m_slotNum = sfnSf.m_slotNum;
+  bool slotStart = (sfnSf.m_symStart == 0);
 
   // --- DOWNLINK ---
   // Send Dl-CQI info to the scheduler	if(m_dlCqiReceived.size () > 0)
@@ -527,24 +528,21 @@ MmWaveEnbMac::DoSubframeIndication (SfnSf sfnSf)
       m_macSchedSapProvider->SchedUlMacCtrlInfoReq (ulMacReq);
     }
 
-  if (m_slotNum == 0)
+  if (slotStart)
     {
-      // trigger scheduler
-      uint32_t dlSchedframeNum = m_frameNum;
-      uint32_t dlSchedSubframeNum = m_sfNum;
+      NS_LOG_DEBUG ("Starting a new NR slot");
+      // Trigger scheduler, taking into consideration the L1L2 delay 
 
-      if (dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency () >= m_phyMacConfig->GetSubframesPerFrame ())
-        {
-          dlSchedframeNum++;
-          dlSchedSubframeNum = (dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency ()) - m_phyMacConfig->GetSubframesPerFrame ();
-        }
-      else
-        {
-          dlSchedSubframeNum = dlSchedSubframeNum + m_phyMacConfig->GetL1L2CtrlLatency ();
-        }
+      uint8_t delayedSlotNum = (m_slotNum + m_phyMacConfig->GetL1L2Latency ()) % m_phyMacConfig->GetSlotsPerSubframe ();
+      uint8_t deltaSubframe = (m_slotNum + m_phyMacConfig->GetL1L2Latency ()) / m_phyMacConfig->GetSlotsPerSubframe ();
+      uint8_t delayedSchedSfNum = (m_sfNum + deltaSubframe) % m_phyMacConfig->GetSubframesPerFrame ();
+      uint16_t delayedSchedFrameNum = m_frameNum + ((m_sfNum + deltaSubframe) / m_phyMacConfig->GetSubframesPerFrame ());
+
+      NS_ASSERT ((delayedSlotNum < m_phyMacConfig->GetSlotsPerSubframe ()) && (delayedSchedSfNum < m_phyMacConfig->GetSubframesPerFrame ())
+                  && (deltaSubframe >= 0) && (delayedSlotNum >= 0) && (delayedSchedSfNum >= 0) && (delayedSchedFrameNum >= m_frameNum));
 
       MmWaveMacSchedSapProvider::SchedTriggerReqParameters params;
-      SfnSf schedSfn (dlSchedframeNum, dlSchedSubframeNum, 0);
+      SfnSf schedSfn (delayedSchedFrameNum, delayedSchedSfNum, delayedSlotNum);
       params.m_snfSf = schedSfn;
 
       // Forward DL HARQ feebacks collected during last subframe TTI
@@ -889,14 +887,14 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
   //m_phySapProvider->SetUlSfAllocInfo (ind.m_ulSfAllocInfo);
   LteMacSapUser::TxOpportunityParameters txOpParams;
 
-  for (unsigned islot = 0; islot < ind.m_sfAllocInfo.m_ttiAllocInfo.size (); islot++)
+  for (unsigned iTti = 0; iTti < ind.m_sfAllocInfo.m_ttiAllocInfo.size (); iTti++)
     {
-      TtiAllocInfo &slotAllocInfo = ind.m_sfAllocInfo.m_ttiAllocInfo[islot];
-      if (slotAllocInfo.m_slotType != TtiAllocInfo::CTRL && slotAllocInfo.m_tddMode == TtiAllocInfo::DL_slotAllocInfo)
+      TtiAllocInfo &ttiAllocInfo = ind.m_sfAllocInfo.m_ttiAllocInfo[iTti];
+      if (ttiAllocInfo.m_slotType != TtiAllocInfo::CTRL && ttiAllocInfo.m_tddMode == TtiAllocInfo::DL_slotAllocInfo)
         {
-          uint16_t rnti = slotAllocInfo.m_dci.m_rnti;
+          uint16_t rnti = ttiAllocInfo.m_dci.m_rnti;
           // here log all the packets sent in downlink
-          m_macDlTxSizeRetx (rnti, m_cellId, slotAllocInfo.m_dci.m_tbSize, slotAllocInfo.m_dci.m_rv);
+          m_macDlTxSizeRetx (rnti, m_cellId, ttiAllocInfo.m_dci.m_tbSize, ttiAllocInfo.m_dci.m_rv);
 
           std::map <uint16_t, std::map<uint8_t, LteMacSapUser*> >::iterator rntiIt = m_rlcAttached.find (rnti);
           if (rntiIt == m_rlcAttached.end ())
@@ -906,18 +904,18 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
           else
             {
               // Call RLC entities to generate RLC PDUs
-              DciInfoElementTdma &dciElem = slotAllocInfo.m_dci;
+              DciInfoElementTdma &dciElem = ttiAllocInfo.m_dci;
               uint8_t tbUid = dciElem.m_harqProcess;
 
               // update Harq Processes
               if (dciElem.m_ndi == 1)
                 {
                   NS_ASSERT (dciElem.m_format == DciInfoElementTdma::DL_dci);
-                  std::vector<RlcPduInfo> &rlcPduInfo = slotAllocInfo.m_rlcPduInfo;
+                  std::vector<RlcPduInfo> &rlcPduInfo = ttiAllocInfo.m_rlcPduInfo;
                   NS_ASSERT (rlcPduInfo.size () > 0);
                   SfnSf pduSfn = ind.m_sfnSf;
-                  pduSfn.m_slotNum = slotAllocInfo.m_dci.m_symStart;
-                  MacPduInfo macPduInfo (pduSfn, slotAllocInfo.m_dci.m_tbSize, rlcPduInfo.size (), dciElem);
+                  pduSfn.m_symStart = ttiAllocInfo.m_dci.m_symStart;
+                  MacPduInfo macPduInfo (pduSfn, ttiAllocInfo.m_dci.m_tbSize, rlcPduInfo.size (), dciElem);
                   // insert into MAC PDU map
                   uint32_t tbMapKey = ((rnti & 0xFFFF) << 8) | (tbUid & 0xFF);
                   std::pair <std::map<uint32_t, struct MacPduInfo>::iterator, bool> mapRet =
@@ -996,8 +994,7 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
                             {
                               NS_FATAL_ERROR ("No MAC PDU tag");
                             }
-                          tag.SetSfn (SfnSf (ind.m_sfnSf.m_frameNum, ind.m_sfnSf.m_sfNum, dciElem.m_symStart));
-                          tag.SetSymStart (dciElem.m_symStart);
+                          tag.SetSfn (SfnSf (ind.m_sfnSf.m_frameNum, ind.m_sfnSf.m_sfNum, ind.m_sfnSf.m_slotNum, dciElem.m_symStart));
                           tag.SetNumSym (dciElem.m_numSym);
                           pkt->AddPacketTag (tag);
 

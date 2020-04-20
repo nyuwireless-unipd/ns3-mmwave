@@ -125,7 +125,7 @@ MmWavePhyMacCommon::GetTypeId (void)
                    MakeStringAccessor (&MmWavePhyMacCommon::m_staticTddPattern),
                    MakeStringChecker ())
     .AddAttribute ("UlSchedDelay",
-                   "Number of TTIs between UL scheduling decision and subframe to which it applies",
+                   "Delay between the UL-DCI transmission and when such scheduled UL will take place, defined as # of NR slots.",
                    UintegerValue (1),
                    MakeUintegerAccessor (&MmWavePhyMacCommon::m_ulSchedDelay),
                    MakeUintegerChecker<uint32_t> ())
@@ -173,8 +173,7 @@ MmWavePhyMacCommon::MmWavePhyMacCommon ()
   m_ulCtrlSymbols (1),
   m_numRefScPerRb (6),
   m_numRefScPerSym (864),
-  m_l1L2CtrlLatency (2),
-  m_l1L2DataLatency (2),
+  m_L1L2Latency (2),
   m_maxTbSizeBytes (0x7FFF)
 {
   NS_LOG_INFO ("Initialized MmWavePhyMacCommon");

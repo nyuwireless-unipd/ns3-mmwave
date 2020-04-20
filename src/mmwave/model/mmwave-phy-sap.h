@@ -82,11 +82,10 @@ public:
   virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg) = 0;
 
   /**
-   * \brief Trigger the start from a new frame (input from Phy layer)
-   * \param frameNo frame number
-   * \param subframeNo subframe number
+   * \brief Send from the PHY layer the current frame, subframe, slot numbers and the current starting OFDM symbol within the slot.
+   * \param snf The current frame, subframe, slot and starting OFDM symbol counters
    */
-  virtual void SubframeIndication (SfnSf) = 0;
+  virtual void SlotIndication (SfnSf snf) = 0;
 
   /**
    * \brief Returns to MAC level the UL-CQI evaluated
@@ -130,11 +129,10 @@ public:
   virtual void ReceiveControlMessage (Ptr<MmWaveControlMessage> msg) = 0;
 
   /**
-   * \brief Trigger the start from a new frame (input from Phy layer)
-   * \param frameNo frame number
-   * \param subframeNo subframe number
+   * \brief Send from the PHY layer the current frame, subframe, slot numbers and the current starting OFDM symbol within the slot.
+   * \param snf The current frame, subframe, slot and starting OFDM symbol counters
    */
-  virtual void SubframeIndication (SfnSf) = 0;
+  virtual void SlotIndication (SfnSf snf) = 0;
 
   /**
    * When PHY connects to a new eNB, update the configuration parameters

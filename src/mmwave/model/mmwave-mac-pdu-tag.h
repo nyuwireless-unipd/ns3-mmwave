@@ -64,18 +64,6 @@ public:
     this->m_sfnSf = sfn;
   }
 
-  uint8_t GetSymStart ()
-  {
-    return m_sfnSf.m_symStart;
-  }
-
-
-  // TODO: remove, use SfnSf's new structure
-  void SetSymStart (uint8_t symStart)
-  {
-    m_sfnSf.m_symStart = symStart;
-  }
-
   void SetNumSym (uint8_t numSym)
   {
     m_numSym = numSym;

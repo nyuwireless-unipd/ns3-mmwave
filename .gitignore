@@ -6,6 +6,7 @@
 *.o
 *.pyc
 *.pyo
+*.gch
 
 *.cwnd
 *.dat
@@ -37,3 +38,4 @@ build-dir/
 build/
 /.cproject
 /.project
+.vscode/settings.json

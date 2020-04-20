@@ -98,7 +98,7 @@ struct SfnSf
   uint16_t m_frameNum;  //!< Frame number
   uint8_t m_sfNum;  //!<Subframe number
   uint8_t m_slotNum;  //!< Slot number
-  uint8_t m_symStart;   //!< Starting symbol (not always used!)
+  uint8_t m_symStart;   //!< Starting symbol (not always used!), sometimes used to indicate the ttiIndex
 };
 
 /* Equivalent to the DCI in LTE*/
@@ -632,16 +632,14 @@ public:
     return m_centerFrequency;
   }
 
-  inline uint32_t
-  GetL1L2CtrlLatency (void)
-  {
-    return m_l1L2CtrlLatency;
-  }
 
+ /**
+  * Returns the L1L2 control info latency, expressed in # of NR slots.
+  */
   inline uint32_t
-  GetL1L2DataLatency (void)
+  GetL1L2Latency (void)
   {
-    return m_l1L2DataLatency;
+    return m_L1L2Latency;
   }
 
   inline Time
@@ -822,15 +820,9 @@ public:
   }
 
   void
-  SetL1L2CtrlLatency (uint32_t delaySfs)
+  SetL1L2Latency (uint32_t delaySfs)
   {
-    m_l1L2CtrlLatency = delaySfs;
-  }
-
-  void
-  SetL1L2DataLatency (uint32_t delaySlots)
-  {
-    m_l1L2DataLatency = delaySlots;
+    m_L1L2Latency = delaySfs;
   }
 
   void
@@ -910,9 +902,8 @@ private:
   double m_centerFrequency;
   Time m_guardPeriod; // UL to DL switching time
 
-  uint32_t m_l1L2CtrlLatency; // In no. of sub-frames
-  uint32_t m_l1L2DataLatency; // In no. of slots
-  uint32_t m_ulSchedDelay;   // delay between transmission of UL-DCI and corresponding subframe in # of NR slots
+  uint32_t m_L1L2Latency; //!< L1L2 control latency, expressed in # of NR slots.
+  uint32_t m_ulSchedDelay;   //!<  Delay between the UL-DCI transmission and when such scheduled UL will take place, defined as # of NR slots.
   Time m_wbCqiPeriodUs; // WB CQI periodicity in microseconds
 
   uint32_t m_tbDecodeLatencyUs;

@@ -69,7 +69,11 @@ public:
   void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
   Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
-  void DoSubframeIndication (SfnSf sfn);
+  /**
+   * \brief Receive from the PHY layer the current frame, subframe, slot numbers and the current starting OFDM symbol within the slot.
+   * \param snf The current frame, subframe, slot and starting OFDM symbol counters
+   */
+  void DoSlotIndication (SfnSf sfn);
 
   MmWaveUePhySapUser* GetPhySapUser ();
   void SetPhySapProvider (MmWavePhySapProvider* ptr);
@@ -128,9 +132,9 @@ private:
   MmWaveUePhySapUser* m_phySapUser;
   LteMacSapProvider* m_macSapProvider;
 
-  uint32_t m_frameNum;
-  uint32_t m_sfNum;
-  uint32_t m_slotNum;
+  uint16_t m_frameNum;
+  uint8_t m_sfNum;
+  uint8_t m_slotNum;
 
   //uint8_t	m_tbUid;
   std::map<uint32_t, struct MacPduInfo> m_macPduMap;
