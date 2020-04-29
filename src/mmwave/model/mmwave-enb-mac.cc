@@ -457,6 +457,7 @@ MmWaveEnbMac::SetEnbCmacSapUser (LteEnbCmacSapUser* s)
 void
 MmWaveEnbMac::DoSlotIndication (SfnSf sfnSf)
 {
+  NS_LOG_FUNCTION (this);
   m_frameNum = sfnSf.m_frameNum;
   m_sfNum = sfnSf.m_sfNum;
   m_slotNum = sfnSf.m_slotNum;
@@ -530,7 +531,8 @@ MmWaveEnbMac::DoSlotIndication (SfnSf sfnSf)
 
   if (slotStart)
     {
-      NS_LOG_DEBUG ("Starting a new NR slot");
+      NS_LOG_DEBUG ("Starting a new NR slot - DoSlotIndication");
+      NS_LOG_DEBUG ("Current frame " << sfnSf.m_frameNum << " subframe " << (unsigned)sfnSf.m_sfNum << " slot " << (unsigned)sfnSf.m_slotNum);
       // Trigger scheduler, taking into consideration the L1L2 delay 
 
       uint8_t delayedSlotNum = (m_slotNum + m_phyMacConfig->GetL1L2Latency ()) % m_phyMacConfig->GetSlotsPerSubframe ();
@@ -540,6 +542,9 @@ MmWaveEnbMac::DoSlotIndication (SfnSf sfnSf)
 
       NS_ASSERT ((delayedSlotNum < m_phyMacConfig->GetSlotsPerSubframe ()) && (delayedSchedSfNum < m_phyMacConfig->GetSubframesPerFrame ())
                   && (deltaSubframe >= 0) && (delayedSlotNum >= 0) && (delayedSchedSfNum >= 0) && (delayedSchedFrameNum >= m_frameNum));
+
+      NS_LOG_DEBUG ("Requesting scheduler allocation for frame " << delayedSchedFrameNum << " subframe " << (unsigned)delayedSchedSfNum 
+                   << " slot " << (unsigned)delayedSlotNum);
 
       MmWaveMacSchedSapProvider::SchedTriggerReqParameters params;
       SfnSf schedSfn (delayedSchedFrameNum, delayedSchedSfNum, delayedSlotNum);
@@ -883,14 +888,13 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 void
 MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndParameters ind)
 {
-  m_phySapProvider->SetDlSfAllocInfo (ind.m_sfAllocInfo);
-  //m_phySapProvider->SetUlSfAllocInfo (ind.m_ulSfAllocInfo);
+  m_phySapProvider->SetSlotAllocInfo (ind.m_slotAllocInfo);
   LteMacSapUser::TxOpportunityParameters txOpParams;
 
-  for (unsigned iTti = 0; iTti < ind.m_sfAllocInfo.m_ttiAllocInfo.size (); iTti++)
+  for (unsigned iTti = 0; iTti < ind.m_slotAllocInfo.m_ttiAllocInfo.size (); iTti++)
     {
-      TtiAllocInfo &ttiAllocInfo = ind.m_sfAllocInfo.m_ttiAllocInfo[iTti];
-      if (ttiAllocInfo.m_slotType != TtiAllocInfo::CTRL && ttiAllocInfo.m_tddMode == TtiAllocInfo::DL_slotAllocInfo)
+      TtiAllocInfo &ttiAllocInfo = ind.m_slotAllocInfo.m_ttiAllocInfo[iTti];
+      if (ttiAllocInfo.m_ttiType != TtiAllocInfo::CTRL && ttiAllocInfo.m_tddMode == TtiAllocInfo::DL_slotAllocInfo)
         {
           uint16_t rnti = ttiAllocInfo.m_dci.m_rnti;
           // here log all the packets sent in downlink

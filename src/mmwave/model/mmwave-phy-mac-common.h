@@ -262,7 +262,7 @@ struct TtiAllocInfo
     UL_slotAllocInfo = 2,
   };
 
-  enum TddSlotType
+  enum TddTtiType
   {
     CTRL_DATA = 0, DATA = 1, CTRL = 2
   };
@@ -275,21 +275,21 @@ struct TtiAllocInfo
   TtiAllocInfo ()
     : m_tddMode (NA),
     m_isOmni (0),
-    m_slotType (CTRL_DATA),
+    m_ttiType (CTRL_DATA),
     m_numCtrlSym (0),
-    m_slotIdx (0),
+    m_ttiIdx (0),
     m_ctrlTxMode (DIGITAL),
     m_rnti (0)
   {
   }
 
-  TtiAllocInfo (uint8_t slotIdx, TddMode tddMode, TddSlotType slotType, CtrlTxMode ctrlTxMode,
+  TtiAllocInfo (uint8_t ttiIdx, TddMode tddMode, TddTtiType ttiType, CtrlTxMode ctrlTxMode,
                 uint16_t rnti)
     : m_tddMode (tddMode),
     m_isOmni (0),
-    m_slotType (slotType),
+    m_ttiType (ttiType),
     m_numCtrlSym (0),
-    m_slotIdx (slotIdx),
+    m_ttiIdx (ttiIdx),
     m_ctrlTxMode (ctrlTxMode),
     m_rnti (rnti)
   {
@@ -319,9 +319,9 @@ struct TtiAllocInfo
 
   TddMode m_tddMode;
   bool m_isOmni; // Beamforming disabled, true if omnidirectional
-  TddSlotType m_slotType;
+  TddTtiType m_ttiType;
   uint8_t m_numCtrlSym; // number of DL ctrl (or ctrl+data) symbols at beginning of slot
-  uint8_t m_slotIdx;
+  uint8_t m_ttiIdx;
   CtrlTxMode m_ctrlTxMode;
   uint16_t m_rnti;
   struct DciInfoElementTdma m_dci;
@@ -341,15 +341,13 @@ struct SlotAllocInfo
   }
 
   SfnSf m_sfnSf;
-  uint32_t m_numSymAlloc; // number of allocated slots
+  uint32_t m_numSymAlloc; // number of allocated OFDM symbols
   uint32_t m_ulSymStart; // start of UL region
   //std::vector <SlotAllocInfo::TddMode> m_tddPattern;
   std::deque<TtiAllocInfo> m_dlSlotAllocInfo;
   std::deque<TtiAllocInfo> m_ulSlotAllocInfo;
   std::deque<TtiAllocInfo> m_ttiAllocInfo;
 };
-
-typedef std::vector<TtiAllocInfo::TddSlotType> TddSlotTypeList;
 
 struct DlCqiInfo
 {

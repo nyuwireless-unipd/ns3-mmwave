@@ -71,7 +71,6 @@ public:
 /*	struct SchedConfigIndParameters
         {
                 uint32_t m_sfn;
-                TddSlotTypeList m_tddPattern;
                 SfAllocInfo m_allocationList;
         };*/
 

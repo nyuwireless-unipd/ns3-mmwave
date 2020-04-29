@@ -55,9 +55,12 @@ public:
 
   virtual void SendRachPreamble (uint8_t PreambleId, uint8_t Rnti) = 0;
 
-  virtual void SetDlSfAllocInfo (SlotAllocInfo sfAllocInfo) = 0;
-
-  virtual void SetUlSfAllocInfo (SlotAllocInfo sfAllocInfo) = 0;
+  /**
+   * Updates the current NR slot with the allocation info provided by the scheduler.
+   *
+   * \param slotAllocInfo the slot allocation info created by the scheduler.
+   */
+  virtual void SetSlotAllocInfo (SlotAllocInfo slotAllocInfo) = 0;
 };
 
 /* Phy to Mac comm */

@@ -141,8 +141,6 @@ private:
   SlotAllocInfo ScheduleUsersInTime (uint32_t slotNum);
   void SetScheduleDirection  (std::string patt);
 
-  TddSlotTypeList m_tddMap;
-
   Ptr<MmWaveAmc> m_amc;
 
   /*

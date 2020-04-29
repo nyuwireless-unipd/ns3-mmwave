@@ -65,9 +65,9 @@ public:
 
   virtual void SendRachPreamble (uint8_t PreambleId, uint8_t Rnti);
 
-  virtual void SetDlSfAllocInfo (SlotAllocInfo slotAllocInfo);
+  virtual void SetSlotAllocInfo (SlotAllocInfo slotAllocInfo);
 
-  virtual void SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo);
+  //virtual void SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo);
 
 private:
   MmWavePhy* m_phy;
@@ -98,18 +98,10 @@ MmWaveMemberPhySapProvider::SendRachPreamble (uint8_t PreambleId, uint8_t Rnti)
 }
 
 void
-MmWaveMemberPhySapProvider::SetDlSfAllocInfo (SlotAllocInfo slotAllocInfo)
+MmWaveMemberPhySapProvider::SetSlotAllocInfo (SlotAllocInfo slotAllocInfo)
 {
-  m_phy->SetDlSfAllocInfo (slotAllocInfo);
+  m_phy->DoSetSlotAllocInfo (slotAllocInfo);
 }
-
-void
-MmWaveMemberPhySapProvider::SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo)
-{
-  m_phy->SetUlSfAllocInfo (slotAllocInfo);
-}
-
-/* ======= */
 
 TypeId
 MmWavePhy::GetTypeId ()
@@ -317,16 +309,16 @@ MmWavePhy::SetSlotCtrlStructure (uint8_t slotToAlloc)
 {
   // Currently hardcoded: first OFDM symbol = DL control, last OFDM symbol = UL control
   TtiAllocInfo dlCtrlTti;
-  dlCtrlTti.m_slotType = TtiAllocInfo::CTRL;
+  dlCtrlTti.m_ttiType = TtiAllocInfo::CTRL;
   dlCtrlTti.m_numCtrlSym = 1;
   dlCtrlTti.m_tddMode = TtiAllocInfo::DL_slotAllocInfo;
   dlCtrlTti.m_dci.m_numSym = 1;
   dlCtrlTti.m_dci.m_symStart = 0;
   TtiAllocInfo ulCtrlTti;
-  ulCtrlTti.m_slotType = TtiAllocInfo::CTRL;
+  ulCtrlTti.m_ttiType = TtiAllocInfo::CTRL;
   ulCtrlTti.m_numCtrlSym = 1;
   ulCtrlTti.m_tddMode = TtiAllocInfo::UL_slotAllocInfo;
-  ulCtrlTti.m_slotIdx = 0xFF;
+  ulCtrlTti.m_ttiIdx = 0xFF;
   ulCtrlTti.m_dci.m_numSym = 1;
   ulCtrlTti.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
   m_slotAllocInfo[slotToAlloc].m_ttiAllocInfo.push_front (dlCtrlTti);
@@ -360,7 +352,7 @@ MmWavePhy::GetSfAllocInfo (uint8_t subframeNum)
 }
 
 void
-MmWavePhy::SetDlSfAllocInfo (SlotAllocInfo slotAllocInfo)
+MmWavePhy::DoSetSlotAllocInfo (SlotAllocInfo slotAllocInfo)
 {
   // get previously enqueued SlotAllocInfo and set DL slot allocations
   //SlotAllocInfo &sf = m_sfAllocInfo[slotAllocInfo.m_sfnSf.m_sfNum];
@@ -370,12 +362,6 @@ MmWavePhy::SetDlSfAllocInfo (SlotAllocInfo slotAllocInfo)
   //m_sfAllocInfoUpdated = true;
 }
 
-void
-MmWavePhy::SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo)
-{
-  // add new SlotAllocInfo with UL slot allocation
-  //m_sfAllocInfo[slotAllocInfo.m_sfnSf.m_sfNum] = slotAllocInfo;
-}
 
 void
 MmWavePhy::AddPropagationLossModel (Ptr<PropagationLossModel> model)

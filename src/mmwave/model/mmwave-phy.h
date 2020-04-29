@@ -135,8 +135,7 @@ public:
   void SetSlotCtrlStructure (uint8_t sfToAlloc);
 
   SlotAllocInfo GetSfAllocInfo (uint8_t subframeNum);
-  void SetDlSfAllocInfo (SlotAllocInfo sfAllocInfo);
-  void SetUlSfAllocInfo (SlotAllocInfo sfAllocInfo);
+  void DoSetSlotAllocInfo (SlotAllocInfo sfAllocInfo);
 
   // hacks needed to compute SINR at eNB for each UE, without pilots
   void AddSpectrumPropagationLossModel (Ptr<SpectrumPropagationLossModel> model);
@@ -173,9 +172,6 @@ protected:
   std::map<uint64_t, Ptr<PacketBurst> > m_packetBurstMap;
   std::vector< std::list<Ptr<MmWaveControlMessage> > > m_controlMessageQueue;
 
-  TddSlotTypeList m_currTddMap;
-//	std::list<SfAllocInfo> m_sfAllocInfoList;
-
   std::vector <SlotAllocInfo> m_slotAllocInfo;  //!< Maps slot number to its allocation info
 
   uint16_t m_frameNum;
@@ -187,8 +183,6 @@ protected:
   Time m_dataPeriod;
   Time m_slotPeriod;            //!< Slot period time duration
   Time m_lastSlotStart;         //!< Time at which the current slot started
-
-  std::map <uint32_t,TddSlotTypeList> m_tddPatternForSlotMap;
 
   std::map <uint32_t,SlotAllocInfo> m_slotAllocInfoMap;
 

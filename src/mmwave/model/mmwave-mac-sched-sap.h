@@ -110,10 +110,7 @@ public:
   struct SchedConfigIndParameters
   {
     SfnSf m_sfnSf;
-//		TddSlotTypeList m_tddPattern;
-    SlotAllocInfo m_sfAllocInfo;
-    SlotAllocInfo m_dlSfAllocInfo;
-    SlotAllocInfo m_ulSfAllocInfo;
+    SlotAllocInfo m_slotAllocInfo;
 
     std::map<uint16_t, SchedInfo> m_schedInfoMap;
   };

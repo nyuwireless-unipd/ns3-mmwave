@@ -969,7 +969,7 @@ MmWaveEnbPhy::StartTti (void)
       // find all DL/UL DCI elements and create DCI messages to be transmitted in DL control period
       for (unsigned iTti = 0; iTti < m_currSlotAllocInfo.m_ttiAllocInfo.size (); iTti++)
         {
-          if (m_currSlotAllocInfo.m_ttiAllocInfo[iTti].m_slotType != TtiAllocInfo::CTRL
+          if (m_currSlotAllocInfo.m_ttiAllocInfo[iTti].m_ttiType != TtiAllocInfo::CTRL
               && m_currSlotAllocInfo.m_ttiAllocInfo[iTti].m_tddMode == TtiAllocInfo::DL_slotAllocInfo)
             {
               DciInfoElementTdma &dciElem = m_currSlotAllocInfo.m_ttiAllocInfo[iTti].m_dci;
@@ -988,7 +988,7 @@ MmWaveEnbPhy::StartTti (void)
       unsigned ulSlotNum = (m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
       for (unsigned iTti = 0; iTti < m_slotAllocInfo[ulSlotNum].m_ttiAllocInfo.size (); iTti++)
         {
-          if (m_slotAllocInfo[ulSlotNum].m_ttiAllocInfo[iTti].m_slotType != TtiAllocInfo::CTRL
+          if (m_slotAllocInfo[ulSlotNum].m_ttiAllocInfo[iTti].m_ttiType != TtiAllocInfo::CTRL
               && m_slotAllocInfo[ulSlotNum].m_ttiAllocInfo[iTti].m_tddMode == TtiAllocInfo::UL_slotAllocInfo)
             {
               DciInfoElementTdma &dciElem = m_slotAllocInfo[ulSlotNum].m_ttiAllocInfo[iTti].m_dci;
@@ -1007,7 +1007,7 @@ MmWaveEnbPhy::StartTti (void)
       // DL control data duration
       ttiPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds ()  * m_phyMacConfig->GetDlCtrlSymbols ());
       NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " slot "
-                           << (uint16_t)m_slotNum << " symbols " << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym)
+                           << (uint16_t)m_slotNum << " symbols " << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + ttiPeriod - NanoSeconds (1.0));
       SendCtrlChannels (ctrlMsgs, ttiPeriod - NanoSeconds (1.0));       // -1 ns ensures control ends before data period
     }
@@ -1015,7 +1015,7 @@ MmWaveEnbPhy::StartTti (void)
     {
       ttiPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod ().GetNanoSeconds ()  * m_phyMacConfig->GetUlCtrlSymbols ());
       NS_LOG_DEBUG ("ENB " << m_cellId << " RXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " slot "
-                           << (uint16_t)m_slotNum << " symbols " << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym)
+                           << (uint16_t)m_slotNum << " symbols " << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + ttiPeriod);
     }
   else if (currTti.m_tddMode == TtiAllocInfo::DL_slotAllocInfo)            // Scheduled DL data Tti
@@ -1186,7 +1186,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, TtiAllocInfo&
 
 
   std::list<Ptr<MmWaveControlMessage> > ctrlMsgs;
-  m_downlinkSpectrumPhy->StartTxDataFrames (pb, ctrlMsgs, slotPrd, slotInfo.m_slotIdx);
+  m_downlinkSpectrumPhy->StartTxDataFrames (pb, ctrlMsgs, slotPrd, slotInfo.m_ttiIdx);
 }
 
 void

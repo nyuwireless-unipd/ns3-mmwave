@@ -202,8 +202,6 @@ private:
    */
   void RefreshHarqProcesses ();
 
-  TddSlotTypeList m_tddMap;
-
   Ptr<MmWaveAmc> m_amc;
 
   /*
@@ -253,8 +251,6 @@ private:
   uint64_t m_nextRntiDl;
   uint64_t m_nextRntiUl;
 
-  uint32_t m_subframeNo;
-  uint32_t m_frameNo;
   uint8_t m_tbUid;
   uint32_t m_numChunks;
   uint32_t m_numDataSymbols;
@@ -312,8 +308,6 @@ private:
   std::map <uint16_t, UlHarqProcessesTimer_t>     m_ulHarqProcessesTimer;
   std::map <uint16_t, UlHarqProcessesDciInfoList_t> m_ulHarqProcessesDciInfoMap;
 
-  // needed to keep track of uplink allocations in later slots
-  std::list <struct SlotAllocInfo> m_ulSfAllocInfo;
 
   static const unsigned m_macHdrSize;
   static const unsigned m_subHdrSize;

@@ -294,8 +294,6 @@ private:
    */
   void RefreshHarqProcesses ();
 
-  TddSlotTypeList m_tddMap;
-
   Ptr<MmWaveAmc> m_amc;
 
   /*

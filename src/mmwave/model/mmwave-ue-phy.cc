@@ -374,7 +374,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 
       if (msg->GetMessageType () == MmWaveControlMessage::DCI_TDMA)
         {
-          NS_ASSERT_MSG (m_slotNum == 0, "UE" << m_rnti << " got DCI on slot != 0");
+          NS_ASSERT_MSG (m_ttiIndex == 0, "UEs" << m_rnti << " should receive DCIs only at the beginning of new slots");
           Ptr<MmWaveTdmaDciMessage> dciMsg = DynamicCast<MmWaveTdmaDciMessage> (msg);
           DciInfoElementTdma dciInfoElem = dciMsg->GetDciInfoElement ();
           SfnSf dciSfn = dciMsg->GetSfnSf ();
@@ -402,7 +402,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
               TtiAllocInfo ttiInfo;
               ttiInfo.m_tddMode = TtiAllocInfo::DL_slotAllocInfo;
               ttiInfo.m_dci = dciInfoElem;
-              ttiInfo.m_slotIdx = 0;
+              ttiInfo.m_ttiIdx = 0;
               std::deque <TtiAllocInfo>::iterator itTti;
               for (itTti = m_currSlotAllocInfo.m_ttiAllocInfo.begin ();
                    itTti != m_currSlotAllocInfo.m_ttiAllocInfo.end (); itTti++)
@@ -411,7 +411,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
                     {
                       break;
                     }
-                  ttiInfo.m_slotIdx++;
+                  ttiInfo.m_ttiIdx++;
                 }
               //m_currSfAllocInfo.m_slotAllocInfo.push_back (slotInfo);  // add SlotAllocInfo to current SfAllocInfo
               m_currSlotAllocInfo.m_ttiAllocInfo.insert (itTti, ttiInfo);
@@ -435,7 +435,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
               TtiAllocInfo ulCtrlTti = m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.back ();
               m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.pop_back ();
               //ulCtrlSlot.m_slotIdx++;
-              ttiInfo.m_slotIdx = m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.size ();
+              ttiInfo.m_ttiIdx = m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.size ();
               m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.push_back (ttiInfo);
               m_slotAllocInfo[ulSlotIdx].m_ttiAllocInfo.push_back (ulCtrlTti);
             }
@@ -573,7 +573,7 @@ MmWaveUePhy::StartTti ()
     {
       currTtiDuration = m_phyMacConfig->GetDlCtrlSymbols () * m_phyMacConfig->GetSymbolPeriod ();
       NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " RXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
-                         << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym) <<
+                         << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1) <<
                     "\t start " << Simulator::Now () << " end " << (Simulator::Now () + currTtiDuration ));
 
     }
@@ -583,7 +583,7 @@ MmWaveUePhy::StartTti ()
       currTtiDuration = m_phyMacConfig->GetUlCtrlSymbols () * m_phyMacConfig->GetSymbolPeriod ();
       std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
       NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
-                         << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym) <<
+                         << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1) <<
                     "\t start " << Simulator::Now () << " end " << (Simulator::Now () + currTtiDuration - NanoSeconds (1.0)));
       SendCtrlChannels (ctrlMsg, currTtiDuration - NanoSeconds (1.0));
 
