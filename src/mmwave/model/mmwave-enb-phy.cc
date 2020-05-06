@@ -153,6 +153,10 @@ MmWaveEnbPhy::GetTypeId (void)
                      "UL SINR statistics.",
                      MakeTraceSourceAccessor (&MmWaveEnbPhy::m_ulSinrTrace),
                      "ns3::UlSinr::TracedCallback")
+    .AddTraceSource ("ReportDlPhyTransmission",
+                     "Report the allocation info for the current DL transmission",
+                     MakeTraceSourceAccessor (&MmWaveEnbPhy::m_dlPhyTrace),
+                     "ns3::DlPhyTransmission::TracedCallback")
 
   ;
   return tid;
@@ -1009,6 +1013,10 @@ MmWaveEnbPhy::StartTti (void)
       NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " slot "
                            << (uint16_t)m_slotNum << " symbols " << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + ttiPeriod - NanoSeconds (1.0));
+
+      // Trace current DL transmission info
+      TraceDlPhyTransmission (currTti.m_dci, PhyTransmissionTraceParams::CTRL);
+
       SendCtrlChannels (ctrlMsgs, ttiPeriod - NanoSeconds (1.0));       // -1 ns ensures control ends before data period
     }
   else if (m_ttiIndex == m_currSlotNumTti - 1)      // Last TTI of this slot: reserved UL control
@@ -1017,6 +1025,7 @@ MmWaveEnbPhy::StartTti (void)
       NS_LOG_DEBUG ("ENB " << m_cellId << " RXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " slot "
                            << (uint16_t)m_slotNum << " symbols " << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () << " end " << Simulator::Now () + ttiPeriod);
+
     }
   else if (currTti.m_tddMode == TtiAllocInfo::DL_slotAllocInfo)            // Scheduled DL data Tti
     {
@@ -1051,6 +1060,10 @@ MmWaveEnbPhy::StartTti (void)
       NS_LOG_DEBUG ("ENB " << m_cellId << " TXing DL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " slot "
                            << (uint16_t)m_slotNum << " symbols " << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1)
                            << "\t start " << Simulator::Now () + NanoSeconds (1.0) << " end " << Simulator::Now () + ttiPeriod - NanoSeconds (2.0));
+
+      // Trace current DL transmission info
+      TraceDlPhyTransmission (currTti.m_dci, PhyTransmissionTraceParams::DATA);
+
       Simulator::Schedule (NanoSeconds (1.0), &MmWaveEnbPhy::SendDataChannels, this, pktBurst, ttiPeriod - NanoSeconds (2.0), currTti);
     }
   else if (currTti.m_tddMode == TtiAllocInfo::UL_slotAllocInfo)        // Scheduled UL data Tti
@@ -1305,6 +1318,20 @@ uint32_t
 MmWaveEnbPhy::GetAbsoluteSubframeNo ()
 {
   return ((m_frameNum - 1) * (m_phyMacConfig->GetSubframesPerFrame () * m_phyMacConfig->GetSlotsPerSubframe ()) + m_slotNum);
+}
+
+void
+MmWaveEnbPhy::TraceDlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType)
+{
+  PhyTransmissionTraceParams dlPhyTraceInfo;   //!< Holds the current DL transmission info
+  dlPhyTraceInfo.m_frameNum = m_frameNum;
+  dlPhyTraceInfo.m_sfNum = m_sfNum;
+  dlPhyTraceInfo.m_slotNum = m_slotNum;
+  dlPhyTraceInfo.m_symStart = dciInfo.m_symStart;
+  dlPhyTraceInfo.m_numSym = dciInfo.m_numSym;
+  dlPhyTraceInfo.m_tddMode = PhyTransmissionTraceParams::DL;
+  dlPhyTraceInfo.m_ttiType = tddType;
+  m_dlPhyTrace (dlPhyTraceInfo);
 }
 
 ////////////////////////////////////////////////////////////

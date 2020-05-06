@@ -113,6 +113,10 @@ MmWaveUePhy::GetTypeId (void)
                      "Report allocated downlink TB size for trace.",
                      MakeTraceSourceAccessor (&MmWaveUePhy::m_reportDlTbSize),
                      "ns3::DlTbSize::TracedCallback")
+    .AddTraceSource ("ReportUlPhyTransmission",
+                     "Report the allocation info for the current UL transmission",
+                     MakeTraceSourceAccessor (&MmWaveUePhy::m_ulPhyTrace),
+                     "ns3::UlPhyTransmission::TracedCallback")
     .AddAttribute ("OutageThreshold",
                    "SNR threshold for outage events [dB]",
                    DoubleValue (-5.0),
@@ -561,6 +565,7 @@ MmWaveUePhy::StartTti ()
 
   TtiAllocInfo currTti = m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex];
   Time currTtiDuration; // Duration of the current TTI
+  PhyTransmissionTraceParams ulPhyTraceInfo;   //!< Holds the current UL transmission info
 
   m_currTti = currTti;
 
@@ -585,6 +590,10 @@ MmWaveUePhy::StartTti ()
       NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL CTRL frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
                          << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1) <<
                     "\t start " << Simulator::Now () << " end " << (Simulator::Now () + currTtiDuration - NanoSeconds (1.0)));
+
+      // Trace current UL transmission info
+      TraceUlPhyTransmission (currTti.m_dci, PhyTransmissionTraceParams::CTRL);
+
       SendCtrlChannels (ctrlMsg, currTtiDuration - NanoSeconds (1.0));
 
     }
@@ -625,6 +634,10 @@ MmWaveUePhy::StartTti ()
       NS_LOG_DEBUG ("UE" << m_rnti << " imsi" << m_imsi << " TXing UL DATA frame " << m_frameNum << " subframe " << (unsigned)m_sfNum << " symbols "
                          << (unsigned)currTti.m_dci.m_symStart << "-" << (unsigned)(currTti.m_dci.m_symStart + currTti.m_dci.m_numSym - 1)
                          << "\t start " << Simulator::Now () << " end " << (Simulator::Now () + currTtiDuration));
+
+      // Trace current UL transmission info
+      TraceUlPhyTransmission (currTti.m_dci, PhyTransmissionTraceParams::DATA);
+
       if (pktBurst != 0)
         {
           std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
@@ -981,6 +994,20 @@ void
 MmWaveUePhy::DoSetSrsConfigurationIndex (uint16_t srcCi)
 {
   NS_LOG_FUNCTION (this << srcCi);
+}
+
+void
+MmWaveUePhy::TraceUlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType)
+{
+  PhyTransmissionTraceParams ulPhyTraceInfo;   //!< Holds the current DL transmission info
+  ulPhyTraceInfo.m_frameNum = m_frameNum;
+  ulPhyTraceInfo.m_sfNum = m_sfNum;
+  ulPhyTraceInfo.m_slotNum = m_slotNum;
+  ulPhyTraceInfo.m_symStart = dciInfo.m_symStart;
+  ulPhyTraceInfo.m_numSym = dciInfo.m_numSym;
+  ulPhyTraceInfo.m_tddMode = PhyTransmissionTraceParams::UL;
+  ulPhyTraceInfo.m_ttiType = tddType;
+  m_ulPhyTrace (ulPhyTraceInfo);
 }
 
 void

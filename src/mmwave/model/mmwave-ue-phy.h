@@ -183,6 +183,16 @@ private:
   void DoSetTransmissionMode (uint8_t txMode);
   void DoSetSrsConfigurationIndex (uint16_t srcCi);
 
+ /**
+  * Triggers the callback for the ReportUlPhyTransmission Trace Source
+  * 
+  * Sets up the necessary info for the ReportUlPhyTransmission source and triggers the related callback
+  *
+  * \param dciInfo the actual DCI info for the current UL transmission
+  * \param tddType the TDD TTI type. Either DATA or CTRL
+  */
+  void TraceUlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType);
+
   void ReceiveDataPeriod (uint32_t slotNum);
   void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
   std::list<TbAllocInfo> DequeueUlTbAlloc ();
@@ -217,6 +227,9 @@ private:
 
   TracedCallback<uint64_t, uint64_t> m_reportUlTbSize;
   TracedCallback<uint64_t, uint64_t> m_reportDlTbSize;
+
+  TracedCallback<PhyTransmissionTraceParams> m_ulPhyTrace;   //!< Traces the current TTI allocation info, from the UE side
+
   uint8_t m_prevSlot;
 
   bool m_receptionEnabled;

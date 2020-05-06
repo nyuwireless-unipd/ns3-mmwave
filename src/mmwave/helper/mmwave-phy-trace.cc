@@ -33,29 +33,33 @@
 */
 
 
-
-
 #include <ns3/log.h>
-#include "mmwave-phy-rx-trace.h"
+#include "mmwave-phy-trace.h"
 #include <ns3/simulator.h>
 #include <stdio.h>
 
 namespace ns3 {
 
-NS_LOG_COMPONENT_DEFINE ("MmWavePhyRxTrace");
+NS_LOG_COMPONENT_DEFINE ("MmWavePhyTrace");
 
 namespace mmwave {
 
-NS_OBJECT_ENSURE_REGISTERED (MmWavePhyRxTrace);
+NS_OBJECT_ENSURE_REGISTERED (MmWavePhyTrace);
 
-std::ofstream MmWavePhyRxTrace::m_rxPacketTraceFile;
-std::string MmWavePhyRxTrace::m_rxPacketTraceFilename;
+std::ofstream MmWavePhyTrace::m_rxPacketTraceFile;
+std::string MmWavePhyTrace::m_rxPacketTraceFilename;
 
-MmWavePhyRxTrace::MmWavePhyRxTrace ()
+std::ofstream MmWavePhyTrace::m_ulPhyTraceFile {};
+std::string MmWavePhyTrace::m_ulPhyTraceFilename {};
+
+std::ofstream MmWavePhyTrace::m_dlPhyTraceFile {};
+std::string MmWavePhyTrace::m_dlPhyTraceFilename {};
+
+MmWavePhyTrace::MmWavePhyTrace ()
 {
 }
 
-MmWavePhyRxTrace::~MmWavePhyRxTrace ()
+MmWavePhyTrace::~MmWavePhyTrace ()
 {
   if (m_rxPacketTraceFile.is_open ())
     {
@@ -64,29 +68,54 @@ MmWavePhyRxTrace::~MmWavePhyRxTrace ()
 }
 
 TypeId
-MmWavePhyRxTrace::GetTypeId (void)
+MmWavePhyTrace::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::MmWavePhyRxTrace")
+  static TypeId tid = TypeId ("ns3::MmWavePhyTrace")
     .SetParent<Object> ()
-    .AddConstructor<MmWavePhyRxTrace> ()
+    .AddConstructor<MmWavePhyTrace> ()
     .AddAttribute ("OutputFilename",
                    "Name of the file where the uplink results will be saved.",
                    StringValue ("RxPacketTrace.txt"),
-                   MakeStringAccessor (&MmWavePhyRxTrace::SetOutputFilename),
+                   MakeStringAccessor (&MmWavePhyTrace::SetOutputFilename),
                    MakeStringChecker ())
+    .AddAttribute ("UlPhyTransmissionFilename",
+                   "Name of the file where the UL transmission info will be saved.",
+                   StringValue ("UlPhyTransmissionTrace.txt"),
+                   MakeStringAccessor (&MmWavePhyTrace::SetUlPhyOutputFilename),
+                   MakeStringChecker ())
+    .AddAttribute ("DlPhyTransmissionFilename",
+                   "Name of the file where the DL transmission info will be saved.",
+                   StringValue ("DlPhyTransmissionTrace.txt"),
+                   MakeStringAccessor (&MmWavePhyTrace::SetDlPhyOutputFilename),
+                   MakeStringChecker ())
+          
   ;
   return tid;
 }
 
 void
-MmWavePhyRxTrace::SetOutputFilename ( std::string fileName)
+MmWavePhyTrace::SetOutputFilename (std::string fileName)
 {
-  NS_LOG_INFO ("Filename: " << fileName);
+  NS_LOG_INFO ("RxPacketTrace main filename: " << fileName);
   m_rxPacketTraceFilename = fileName;
 }
 
 void
-MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyTrace::SetUlPhyOutputFilename (std::string fileName)
+{
+  NS_LOG_INFO ("UL PHY transmission trace filename: " << fileName);
+  m_ulPhyTraceFilename = fileName;
+}
+
+void
+MmWavePhyTrace::SetDlPhyOutputFilename (std::string fileName)
+{
+  NS_LOG_INFO ("DL PHY transmission trace filename: " << fileName);
+  m_dlPhyTraceFilename = fileName;
+}
+
+void
+MmWavePhyTrace::ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                                      uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power)
 {
   NS_LOG_INFO ("UE" << imsi << "->Generate RsrpSinrTrace");
@@ -96,7 +125,7 @@ MmWavePhyRxTrace::ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phySt
 
 
 /*void
-MmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
+MmWavePhyTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 {
         uint64_t slot_count = Now().GetMicroSeconds ()/125;
         uint32_t rb_count = 1;
@@ -119,20 +148,20 @@ MmWavePhyRxTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
 
 
 void
-MmWavePhyRxTrace::ReportPacketCountUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyTrace::ReportPacketCountUeCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                                UePhyPacketCountParameter param)
 {
   //phyStats->ReportPacketCountUe (param);
 }
 void
-MmWavePhyRxTrace::ReportPacketCountEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyTrace::ReportPacketCountEnbCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                                 EnbPhyPacketCountParameter param)
 {
   //phyStats->ReportPacketCountEnb (param);
 }
 
 void
-MmWavePhyRxTrace::ReportDownLinkTBSize (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+MmWavePhyTrace::ReportDownLinkTBSize (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                         uint64_t imsi, uint64_t tbSize)
 {
   //phyStats->ReportDLTbSize (imsi, tbSize);
@@ -141,7 +170,7 @@ MmWavePhyRxTrace::ReportDownLinkTBSize (Ptr<MmWavePhyRxTrace> phyStats, std::str
 
 /*
 void
-MmWavePhyRxTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
+MmWavePhyTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
 {
         FILE* log_file;
         char fname[255];
@@ -162,7 +191,7 @@ MmWavePhyRxTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
 }
 
 void
-MmWavePhyRxTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
+MmWavePhyTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
 {
         FILE* log_file;
         char fname[255];
@@ -182,7 +211,7 @@ MmWavePhyRxTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
 }
 
 void
-MmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
+MmWavePhyTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
 {
         FILE* log_file;
         char fname[255];
@@ -195,52 +224,90 @@ MmWavePhyRxTrace::ReportDLTbSize (uint64_t imsi, uint64_t tbSize)
         fclose(log_file);
 }
 */
+void 
+MmWavePhyTrace::ReportUlPhyTransmissionCallback (Ptr<MmWavePhyTrace> phyStats, PhyTransmissionTraceParams param)
+{
+  if (!m_ulPhyTraceFile.is_open ())
+    {
+      m_ulPhyTraceFile.open (m_ulPhyTraceFilename.c_str ());
+      if (!m_ulPhyTraceFile.is_open ())
+        {
+          NS_FATAL_ERROR ("Could not open tracefile");
+        }
+      m_ulPhyTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode" << std::endl;
+    }
+
+  // Trace the UL PHY transmission info
+  m_ulPhyTraceFile << (unsigned)param.m_frameNum << "\t" << (unsigned)param.m_sfNum << "\t"<< (unsigned)param.m_slotNum 
+                   << "\t" << (unsigned)param.m_rnti << "\t" << (unsigned)param.m_symStart << "\t" << (unsigned)param.m_numSym 
+                   << "\t" << (unsigned)param.m_ttiType << "\t" << (unsigned)param.m_tddMode << std::endl;
+}
+
+void 
+MmWavePhyTrace::ReportDlPhyTransmissionCallback (Ptr<MmWavePhyTrace> phyStats, PhyTransmissionTraceParams param)
+{
+  if (!m_dlPhyTraceFile.is_open ())
+    {
+      m_dlPhyTraceFile.open (m_dlPhyTraceFilename.c_str ());
+      if (!m_dlPhyTraceFile.is_open ())
+        {
+          NS_FATAL_ERROR ("Could not open tracefile");
+        }
+      m_dlPhyTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode" << std::endl;
+    }
+
+   // Trace the DL PHY transmission info
+  m_dlPhyTraceFile << (unsigned)param.m_frameNum << "\t" << (unsigned)param.m_sfNum << "\t"<< (unsigned)param.m_slotNum 
+                   << "\t" << (unsigned)param.m_rnti << "\t" << (unsigned)param.m_symStart << "\t" << (unsigned)param.m_numSym 
+                   << "\t" << (unsigned)param.m_ttiType << "\t" << (unsigned)param.m_tddMode << std::endl;
+}
+
 void
-MmWavePhyRxTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams params)
+MmWavePhyTrace::RxPacketTraceUeCallback (Ptr<MmWavePhyTrace> phyStats, std::string path, RxPacketTraceParams params)
 {
   if (!m_rxPacketTraceFile.is_open ())
     {
       m_rxPacketTraceFile.open (m_rxPacketTraceFilename.c_str ());
-      m_rxPacketTraceFile << "\ttime\tframe\tsubF\t1stSym\tsymbol#\tcellId\trnti\tccId\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
+      m_rxPacketTraceFile << "DL/UL\ttime\tframe\tsubF\tslot\t1stSym\tsymbol#\tcellId\trnti\tccId\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
       if (!m_rxPacketTraceFile.is_open ())
         {
           NS_FATAL_ERROR ("Could not open tracefile");
         }
     }
-  m_rxPacketTraceFile << "DL\t" << Simulator::Now ().GetSeconds () << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
-                      << "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
+  m_rxPacketTraceFile << "DL\t" << Simulator::Now ().GetSeconds () << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" 
+                      << (unsigned)params.m_slotNum << "\t" << (unsigned)params.m_symStart << "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
                       << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
-                      << 10 * std::log10 (params.m_sinr) << "\t" << " \t" << params.m_corrupt << "\t" <<  params.m_tbler << std::endl;
+                      << 10 * std::log10 (params.m_sinr) << "\t" << params.m_corrupt << "\t" <<  params.m_tbler << std::endl;
 
   if (params.m_corrupt)
     {
-      NS_LOG_DEBUG ("DL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
-                                    << "\t" << (unsigned)params.m_numSym
+      NS_LOG_DEBUG ("DL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_slotNum 
+                                    << "\t" << (unsigned)params.m_symStart << "\t" << (unsigned)params.m_numSym
                                     << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
                                     << 10 * std::log10 (params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt);
     }
 }
 void
-MmWavePhyRxTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams params)
+MmWavePhyTrace::RxPacketTraceEnbCallback (Ptr<MmWavePhyTrace> phyStats, std::string path, RxPacketTraceParams params)
 {
   if (!m_rxPacketTraceFile.is_open ())
     {
       m_rxPacketTraceFile.open (m_rxPacketTraceFilename.c_str ());
-      m_rxPacketTraceFile << "\ttime\tframe\tsubF\t1stSym\tsymbol#\tcellId\trnti\tccId\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
+      m_rxPacketTraceFile << "DL/UL\ttime\tframe\tsubF\tslot\t1stSym\tsymbol#\tcellId\trnti\tccId\ttbSize\tmcs\trv\tSINR(dB)\tcorrupt\tTBler" << std::endl;
       if (!m_rxPacketTraceFile.is_open ())
         {
           NS_FATAL_ERROR ("Could not open tracefile");
         }
     }
-  m_rxPacketTraceFile << "UL\t" << Simulator::Now ().GetSeconds () << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
-                      << "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
+  m_rxPacketTraceFile << "UL\t" << Simulator::Now ().GetSeconds () << "\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t"
+                      << (unsigned)params.m_slotNum << "\t" << (unsigned)params.m_symStart << "\t" << (unsigned)params.m_numSym << "\t" << params.m_cellId
                       << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
                       << 10 * std::log10 (params.m_sinr) << " \t" << params.m_corrupt << "\t" << params.m_tbler << std::endl;
 
   if (params.m_corrupt)
     {
-      NS_LOG_DEBUG ("UL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_symStart
-                                    << "\t" << (unsigned)params.m_numSym
+      NS_LOG_DEBUG ("UL TB error\t" << params.m_frameNum << "\t" << (unsigned)params.m_sfNum << "\t" << (unsigned)params.m_slotNum 
+                                    << "\t" << (unsigned)params.m_symStart << "\t" << (unsigned)params.m_numSym
                                     << "\t" << params.m_rnti << "\t" << (unsigned)params.m_ccId << "\t" << params.m_tbSize << "\t" << (unsigned)params.m_mcs << "\t" << (unsigned)params.m_rv << "\t"
                                     << 10 * std::log10 (params.m_sinr) << "\t" << params.m_tbler << "\t" << params.m_corrupt << "\t" << params.m_sinrMin);
     }

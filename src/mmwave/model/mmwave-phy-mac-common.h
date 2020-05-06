@@ -113,6 +113,44 @@ struct SfnSf
 //	uint8_t m_harqProcess;
 //};
 
+struct PhyTransmissionTraceParams
+{
+  enum TddMode
+  {
+    TDD_NA = 0,
+    DL = 1,
+    UL = 2,
+  };
+  enum TddTtiType
+  {
+    DATA = 0, 
+    TYPE_NA = 1,  
+    CTRL = 2,
+  };
+
+  PhyTransmissionTraceParams()
+    : m_tddMode (0),    //!< TDD mode. Either DL or UL
+    m_slotNum (0),    //!< Slot number
+    m_sfNum (0),    //!< Subframe number
+    m_frameNum (0),   //!< Frame number
+    m_rnti (0),   //!< UE RNTI (where such distinction is applicable, 0 otherwise)
+    m_symStart (0),   //!< Starting OFDM symbol of the current transmission
+    m_numSym (0),   //!< Amount of OFDM symbols of current transmission
+    m_ttiType (0)   //!< TDD transmission type. Either DATA or CTRL.
+  {
+
+  }
+
+  uint8_t m_tddMode;
+  uint8_t m_slotNum;
+  uint8_t m_sfNum;
+  uint8_t m_frameNum;
+  uint16_t m_rnti;
+  uint8_t m_symStart;
+  uint8_t m_numSym;
+  uint8_t m_ttiType;
+};
+
 struct TbInfoElement
 {
   TbInfoElement ()

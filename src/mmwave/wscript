@@ -10,12 +10,13 @@ def build(bld):
     module = bld.create_ns3_module('mmwave', ['core','network', 'spectrum', 'virtual-net-device','point-to-point','applications','internet', 'lte', 'propagation'])
     module.source = [
         'helper/mmwave-helper.cc',
-        'helper/mmwave-phy-rx-trace.cc',
+        'helper/mmwave-phy-trace.cc',
         'helper/mmwave-point-to-point-epc-helper.cc',
         'helper/mmwave-bearer-stats-calculator.cc',
         'helper/mmwave-bearer-stats-connector.cc',
         'helper/mc-stats-calculator.cc',
         'helper/core-network-stats-calculator.cc',
+        'helper/mmwave-mac-trace.cc',
         'model/mmwave-net-device.cc',
         'model/mmwave-enb-net-device.cc',
         'model/mmwave-ue-net-device.cc',
@@ -75,12 +76,13 @@ def build(bld):
     headers.module = 'mmwave'
     headers.source = [
         'helper/mmwave-helper.h',
-        'helper/mmwave-phy-rx-trace.h',
+        'helper/mmwave-phy-trace.h',
         'helper/mmwave-point-to-point-epc-helper.h',
         'helper/mmwave-bearer-stats-calculator.h',
         'helper/mc-stats-calculator.h',
         'helper/core-network-stats-calculator.h',
         'helper/mmwave-bearer-stats-connector.h',
+        'helper/mmwave-mac-trace.h',
         'model/mmwave-net-device.h',
         'model/mmwave-enb-net-device.h',
         'model/mmwave-ue-net-device.h',

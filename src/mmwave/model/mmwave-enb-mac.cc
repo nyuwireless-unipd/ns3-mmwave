@@ -368,6 +368,10 @@ MmWaveEnbMac::GetTypeId (void)
                      "Packets transmitted by EnbMac",
                      MakeTraceSourceAccessor (&MmWaveEnbMac::m_txMacPacketTraceEnb),
                      "ns3::EnbTxRxPacketCount::TracedCallback")
+    .AddTraceSource ("SchedulingTraceEnb",
+                     "Information regarding scheduling allocation.",
+                     MakeTraceSourceAccessor (&MmWaveEnbMac::m_schedEnbInfo),
+                     "ns3::MmWaveEnbMac::SchedAllocTracedCallback")
   ;
   return tid;
 }
@@ -888,6 +892,9 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
 void
 MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndParameters ind)
 {
+  // Trace the scheduling decisions performed by the scheduler
+  TraceSchedInfo(ind);
+
   m_phySapProvider->SetSlotAllocInfo (ind.m_slotAllocInfo);
   LteMacSapUser::TxOpportunityParameters txOpParams;
 
@@ -1015,6 +1022,21 @@ MmWaveEnbMac::DoSchedConfigIndication (MmWaveMacSchedSapUser::SchedConfigIndPara
 uint8_t MmWaveEnbMac::AllocateTbUid (void)
 {
   return m_tbUid++;
+}
+ 
+void
+MmWaveEnbMac::TraceSchedInfo (MmWaveMacSchedSapUser::SchedConfigIndParameters ind)
+{
+  MmWaveSchedTraceInfo mmWaveSchedInfo;
+  mmWaveSchedInfo.m_indParam = ind;
+  SfnSf ulSfn = SfnSf ();
+  ulSfn.m_slotNum = (ind.m_sfnSf.m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
+  unsigned ulDeltaSubframe = (ind.m_sfnSf.m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) 
+                              / m_phyMacConfig->GetSlotsPerSubframe ();
+  ulSfn.m_sfNum = (ind.m_sfnSf.m_sfNum + ulDeltaSubframe) % m_phyMacConfig->GetSubframesPerFrame ();
+  ulSfn.m_frameNum = ind.m_sfnSf.m_frameNum + ((ind.m_sfnSf.m_sfNum + ulDeltaSubframe) / m_phyMacConfig->GetSubframesPerFrame ());
+  mmWaveSchedInfo.m_ulSfnSf = ulSfn;
+  m_schedEnbInfo(mmWaveSchedInfo);
 }
 
 // ////////////////////////////////////////////

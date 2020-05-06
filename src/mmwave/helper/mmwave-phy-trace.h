@@ -31,8 +31,8 @@
 
 
 
-#ifndef SRC_MMWAVE_HELPER_MMWAVE_PHY_RX_TRACE_H_
-#define SRC_MMWAVE_HELPER_MMWAVE_PHY_RX_TRACE_H_
+#ifndef SRC_MMWAVE_HELPER_MMWAVE_PHY_TRACE_H_
+#define SRC_MMWAVE_HELPER_MMWAVE_PHY_TRACE_H_
 #include <ns3/object.h>
 #include <ns3/spectrum-value.h>
 #include <ns3/mmwave-phy-mac-common.h>
@@ -43,23 +43,47 @@ namespace ns3 {
 
 namespace mmwave {
 
-class MmWavePhyRxTrace : public Object
+class MmWavePhyTrace : public Object
 {
 public:
-  MmWavePhyRxTrace ();
-  virtual ~MmWavePhyRxTrace ();
+  MmWavePhyTrace ();
+  virtual ~MmWavePhyTrace ();
   static TypeId GetTypeId (void);
-  static void ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+  static void ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                                  uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power);
-  static void ReportPacketCountUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+  static void ReportPacketCountUeCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                            UePhyPacketCountParameter param);
-  static void ReportPacketCountEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+  static void ReportPacketCountEnbCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                             EnbPhyPacketCountParameter param);
-  static void ReportDownLinkTBSize (Ptr<MmWavePhyRxTrace> phyStats, std::string path,
+  static void ReportDownLinkTBSize (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                     uint64_t imsi, uint64_t tbSize);
-  static void RxPacketTraceUeCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams param);
-  static void RxPacketTraceEnbCallback (Ptr<MmWavePhyRxTrace> phyStats, std::string path, RxPacketTraceParams param);
-  void SetOutputFilename ( std::string fileName);
+  static void RxPacketTraceUeCallback (Ptr<MmWavePhyTrace> phyStats, std::string path, RxPacketTraceParams param);
+  static void RxPacketTraceEnbCallback (Ptr<MmWavePhyTrace> phyStats, std::string path, RxPacketTraceParams param);
+
+ /**
+  * Callback used to trace an UL PHY tranmission 
+  */
+  static void ReportUlPhyTransmissionCallback (Ptr<MmWavePhyTrace> phyStats, PhyTransmissionTraceParams param);
+
+ /**
+  * Callback used to trace a DL PHY tranmission 
+  */
+  static void ReportDlPhyTransmissionCallback (Ptr<MmWavePhyTrace> phyStats, PhyTransmissionTraceParams param);
+
+ /**
+  * Sets the filename of the generic PHY traces
+  */
+  void SetOutputFilename (std::string fileName);
+
+ /**
+  * Sets the filename of the UL PHY tranmission traces
+  */
+  void SetUlPhyOutputFilename (std::string fileName);
+
+ /**
+  * Sets the filename of the DL PHY tranmission traces
+  */
+  void SetDlPhyOutputFilename (std::string fileName);
 
 private:
   //void ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr);
@@ -69,6 +93,13 @@ private:
 
   static std::ofstream m_rxPacketTraceFile;
   static std::string m_rxPacketTraceFilename;
+
+  static std::ofstream m_ulPhyTraceFile;    //!< Output stream for the UL PHY transmission trace
+  static std::string m_ulPhyTraceFilename;    //!< Output filename for the UL PHY transmission trace
+  
+  static std::ofstream m_dlPhyTraceFile;    //!< Output stream for the DL PHY transmission trace
+  static std::string m_dlPhyTraceFilename;    //!< Output filename for the DL PHY transmission trace
+  
 };
 
 } // namespace mmwave

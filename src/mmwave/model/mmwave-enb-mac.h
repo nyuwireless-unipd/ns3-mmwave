@@ -68,12 +68,6 @@ public:
   virtual ~MmWaveEnbMac (void);
   virtual void DoDispose (void);
 
-/*	struct SchedConfigIndParameters
-        {
-                uint32_t m_sfn;
-                SfAllocInfo m_allocationList;
-        };*/
-
   struct TransmitPduParameters
   {
     Ptr<Packet> pdu;  /**< the RLC PDU */
@@ -92,6 +86,17 @@ public:
     uint32_t retxQueueSize;  /**<  the current size of the RLC retransmission queue in bytes */
     uint16_t retxQueueHolDelay;  /**<  the Head Of Line delay of the retransmission queue */
     uint16_t statusPduSize;  /**< the current size of the pending STATUS RLC  PDU message in bytes */
+  };
+
+ /**
+  * Data structure used for tracing purposes only.
+  * 
+  * Specifically, it carries the information regarding a TTI allocation.
+  */
+  struct MmWaveSchedTraceInfo
+  {
+    SfnSf m_ulSfnSf;    //!< The UL scheduling delay
+    MmWaveMacSchedSapUser::SchedConfigIndParameters m_indParam;    //!< Structure containing all the scheduling decisions
   };
 
 /*
@@ -196,6 +201,15 @@ private:
   void DoDlHarqFeedback (DlHarqInfo params);
   void DoUlHarqFeedback (UlHarqInfo params);
 
+ /**
+  * Triggers the callback for the SchedulingTraceEnb Trace Source
+  * 
+  * Sets up the necessary info for the SchedulingTraceEnb source and triggers the related callback
+  *
+  * \param ind the actual scheduling info
+  */
+  void TraceSchedInfo(MmWaveMacSchedSapUser::SchedConfigIndParameters ind);
+
   Ptr<MmWavePhyMacCommon> m_phyMacConfig;
 
   LteMacSapProvider* m_macSapProvider;
@@ -266,6 +280,8 @@ private:
   TracedCallback<uint16_t, uint16_t, uint32_t, uint8_t> m_macDlTxSizeRetx;
 
   TracedCallback<uint16_t, uint8_t, uint32_t> m_txMacPacketTraceEnb;
+
+  TracedCallback<MmWaveSchedTraceInfo> m_schedEnbInfo;    //!< Trace information registering the scheduling decisions undertaken by the scheduler.
 
 };
 

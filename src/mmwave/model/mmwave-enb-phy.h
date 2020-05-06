@@ -184,6 +184,16 @@ private:
   void DoSetBandwidth (uint8_t Bandwidth );
   void DoSetEarfcn (uint16_t Earfcn );
 
+ /**
+  * Triggers the callback for the ReportDlPhyTransmission Trace Source
+  * 
+  * Sets up the necessary info for the ReportDlPhyTransmission source and triggers the related callback
+  *
+  * \param dciInfo the actual DCI info for the current DL transmission
+  * \param tddType the TDD TTI type. Either DATA or CTRL
+  */
+  void TraceDlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType);
+
   void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
   std::list<TbAllocInfo> DequeueUlTbAlloc ();
 
@@ -229,6 +239,8 @@ private:
   uint8_t m_currSymStart;     //!< Beginning of the current TTI, expressed as OFDM symbol # within the NR slot
 
   TracedCallback< uint64_t, SpectrumValue&, SpectrumValue& > m_ulSinrTrace;
+
+  TracedCallback<PhyTransmissionTraceParams> m_dlPhyTrace;   //!< Traces the current TTI allocation info, from the eNB side
 };
 
 } // namespace mmwave

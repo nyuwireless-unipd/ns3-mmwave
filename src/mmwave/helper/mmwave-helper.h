@@ -54,7 +54,8 @@
 #include <ns3/mmwave-spectrum-value-helper.h>
 #include <ns3/mmwave-phy-mac-common.h>
 #include <ns3/mmwave-rrc-protocol-ideal.h>
-#include "mmwave-phy-rx-trace.h"
+#include "mmwave-phy-trace.h"
+#include "mmwave-mac-trace.h"
 #include <ns3/epc-helper.h>
 #include <ns3/epc-ue-nas.h>
 #include <ns3/lte-enb-rrc.h>
@@ -273,7 +274,9 @@ public:
   void EnableRlcTraces (void);
   void EnableDlPhyTrace ();
   void EnableUlPhyTrace ();
+  void EnableEnbSchedTrace ();
 
+  
 protected:
   virtual void DoInitialize ();
 
@@ -342,7 +345,9 @@ private:
 
   uint64_t m_imsiCounter;
   uint16_t m_cellIdCounter;
-  Ptr<MmWavePhyRxTrace> m_phyStats;
+
+  Ptr<MmWavePhyTrace> m_phyStats;
+  Ptr<MmWaveMacTrace> m_enbStats;
 
   ObjectFactory m_lteUeAntennaModelFactory;             /// Factory of antenna object for Lte UE.
   ObjectFactory m_lteEnbAntennaModelFactory;       /// Factory of antenna objects for Lte eNB.
