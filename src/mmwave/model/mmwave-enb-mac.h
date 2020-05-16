@@ -95,7 +95,7 @@ public:
   */
   struct MmWaveSchedTraceInfo
   {
-    SfnSf m_ulSfnSf;    //!< The UL scheduling delay
+    uint8_t m_ccId;    //!< The Component Carrier ID
     MmWaveMacSchedSapUser::SchedConfigIndParameters m_indParam;    //!< Structure containing all the scheduling decisions
   };
 

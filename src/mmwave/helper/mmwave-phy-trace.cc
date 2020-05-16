@@ -234,13 +234,14 @@ MmWavePhyTrace::ReportUlPhyTransmissionCallback (Ptr<MmWavePhyTrace> phyStats, P
         {
           NS_FATAL_ERROR ("Could not open tracefile");
         }
-      m_ulPhyTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode" << std::endl;
+      m_ulPhyTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode\tretxNum\tccId" << std::endl;
     }
 
   // Trace the UL PHY transmission info
   m_ulPhyTraceFile << (unsigned)param.m_frameNum << "\t" << (unsigned)param.m_sfNum << "\t"<< (unsigned)param.m_slotNum 
                    << "\t" << (unsigned)param.m_rnti << "\t" << (unsigned)param.m_symStart << "\t" << (unsigned)param.m_numSym 
-                   << "\t" << (unsigned)param.m_ttiType << "\t" << (unsigned)param.m_tddMode << std::endl;
+                   << "\t" << (unsigned)param.m_ttiType << "\t" << (unsigned)param.m_tddMode << "\t" 
+                   << (unsigned)param.m_rv << "\t" << (unsigned)param.m_ccId << std::endl;
 }
 
 void 
@@ -253,13 +254,14 @@ MmWavePhyTrace::ReportDlPhyTransmissionCallback (Ptr<MmWavePhyTrace> phyStats, P
         {
           NS_FATAL_ERROR ("Could not open tracefile");
         }
-      m_dlPhyTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode" << std::endl;
+      m_dlPhyTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode\tretxNum\tccId" << std::endl;
     }
 
    // Trace the DL PHY transmission info
   m_dlPhyTraceFile << (unsigned)param.m_frameNum << "\t" << (unsigned)param.m_sfNum << "\t"<< (unsigned)param.m_slotNum 
                    << "\t" << (unsigned)param.m_rnti << "\t" << (unsigned)param.m_symStart << "\t" << (unsigned)param.m_numSym 
-                   << "\t" << (unsigned)param.m_ttiType << "\t" << (unsigned)param.m_tddMode << std::endl;
+                   << "\t" << (unsigned)param.m_ttiType << "\t" << (unsigned)param.m_tddMode << "\t" 
+                   << (unsigned)param.m_rv << "\t" << (unsigned)param.m_ccId << std::endl;
 }
 
 void

@@ -93,11 +93,16 @@ public:
    */
   Time GetTti (void) const;
 
-  /**
-   * Computes the delay between the current instant and the beginning of the next NR slot
-   *
-   * \returns Time difference between the current instant and the beginning of the next NR slot
-   */
+ /**
+  * The purpose of this function is to sync the slot duration to the correct value
+  * 
+  * Since the OFDM symbols duration can not be expressed in ns as an integer,
+  * each of these symbols has a slightly lower duration (by a fraction of ns) than it should.
+  * Therefore, a sync anchor is needed in order to align the slots starting time.
+  *
+  * \returns the exact delay between the current TTI end and the next slot start
+  * 
+  */
   Time GetNextSlotDelay ();
 
   void DoSetCellId (uint16_t cellId);

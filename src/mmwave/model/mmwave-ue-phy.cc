@@ -148,7 +148,7 @@ MmWaveUePhy::DoInitialize (void)
       m_channelChunks.push_back (i);
     }
 
-  m_slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbolPeriod () * m_phyMacConfig->GetSymbPerSlot ());
+  m_slotPeriod = NanoSeconds (m_phyMacConfig->GetSubframePeriod () / m_phyMacConfig->GetSlotsPerSubframe ());
   m_phyReset = true;
 
   MmWavePhy::DoInitialize ();
@@ -520,15 +520,16 @@ MmWaveUePhy::DequeueUlTbAlloc (void)
     }
 }
 
-
 void
-MmWaveUePhy::InitializeSubframeAllocation (uint16_t frameNum, uint8_t sfNum)
+MmWaveUePhy::InitializeSlotAllocation (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
 {
-  for (unsigned i = 0; i < m_phyMacConfig->GetSlotsPerSubframe (); i++)
-    {
-      m_slotAllocInfo[i] = SlotAllocInfo (SfnSf (frameNum, sfNum, i));
-      MmWavePhy::SetSlotCtrlStructure (i);
-    }
+  uint8_t nextSf = (sfNum + 1) % m_phyMacConfig->GetSubframesPerFrame ();
+  uint8_t nextFrame = frameNum + (sfNum+1)/m_phyMacConfig->GetSubframesPerFrame ();
+
+  NS_ASSERT ((nextSf > sfNum && frameNum == nextFrame) || (nextFrame > frameNum && nextSf == 0));
+
+  m_slotAllocInfo [slotNum] = SlotAllocInfo (SfnSf(nextFrame, nextSf, slotNum));
+  MmWavePhy::SetSlotCtrlStructure (slotNum);
 }
 
 void
@@ -543,6 +544,9 @@ MmWaveUePhy::SlotIndication (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
   m_ttiIndex = 0;
   m_lastSlotStart = Simulator::Now ();
   m_currSlotAllocInfo = m_slotAllocInfo[m_slotNum];
+
+  InitializeSlotAllocation (frameNum, sfNum, slotNum);
+
   NS_ASSERT ((m_currSlotAllocInfo.m_sfnSf.m_frameNum == m_frameNum));
   NS_ASSERT ((m_currSlotAllocInfo.m_sfnSf.m_sfNum == m_sfNum));
   NS_ASSERT ((m_currSlotAllocInfo.m_sfnSf.m_slotNum == m_slotNum));
@@ -565,7 +569,6 @@ MmWaveUePhy::StartTti ()
 
   TtiAllocInfo currTti = m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex];
   Time currTtiDuration; // Duration of the current TTI
-  PhyTransmissionTraceParams ulPhyTraceInfo;   //!< Holds the current UL transmission info
 
   m_currTti = currTti;
 
@@ -649,9 +652,7 @@ MmWaveUePhy::StartTti ()
       NS_FATAL_ERROR ("Neither slot start or end, and no UL/DL scheduled: StartTti error!");
     }
 
-
   m_prevTtiDir = currTti.m_tddMode;
-
 
   NS_ASSERT (m_ttiIndex != 0 || currTti.m_dci.m_symStart == m_ttiIndex);
   m_phySapUser->SlotIndication (SfnSf (m_frameNum, m_sfNum, m_slotNum, currTti.m_dci.m_symStart));            // trigger mac
@@ -682,12 +683,8 @@ MmWaveUePhy::EndTti ()
             }
           else // End of the current subframe only
             {
-              // Initialize allocation info for such subframe
               sfNum = m_sfNum + 1;
             }
-
-          // Initialize allocation info for such new subframe
-          InitializeSubframeAllocation (frameNum, sfNum);
         }
       else // End of just the slot
         {
@@ -696,7 +693,6 @@ MmWaveUePhy::EndTti ()
 
       m_ttiIndex = 0; // Start of a new NR slot
       Time nextSlotDelay = MmWavePhy::GetNextSlotDelay ();
-      NS_LOG_INFO ("MmWaveUePhy: Next slot scheduled for " << nextSlotDelay << " first if");
       Simulator::Schedule (nextSlotDelay, &MmWaveUePhy::SlotIndication, this, frameNum, sfNum, slotNum);
     }
   else
@@ -1007,6 +1003,9 @@ MmWaveUePhy::TraceUlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType
   ulPhyTraceInfo.m_numSym = dciInfo.m_numSym;
   ulPhyTraceInfo.m_tddMode = PhyTransmissionTraceParams::UL;
   ulPhyTraceInfo.m_ttiType = tddType;
+  ulPhyTraceInfo.m_rnti = dciInfo.m_rnti;
+  ulPhyTraceInfo.m_rv = dciInfo.m_rv;
+  ulPhyTraceInfo.m_ccId = m_componentCarrierId;
   m_ulPhyTrace (ulPhyTraceInfo);
 }
 

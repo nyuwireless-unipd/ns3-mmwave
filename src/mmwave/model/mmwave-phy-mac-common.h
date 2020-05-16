@@ -129,26 +129,30 @@ struct PhyTransmissionTraceParams
   };
 
   PhyTransmissionTraceParams()
-    : m_tddMode (0),    //!< TDD mode. Either DL or UL
-    m_slotNum (0),    //!< Slot number
-    m_sfNum (0),    //!< Subframe number
-    m_frameNum (0),   //!< Frame number
-    m_rnti (0),   //!< UE RNTI (where such distinction is applicable, 0 otherwise)
-    m_symStart (0),   //!< Starting OFDM symbol of the current transmission
-    m_numSym (0),   //!< Amount of OFDM symbols of current transmission
-    m_ttiType (0)   //!< TDD transmission type. Either DATA or CTRL.
+    : m_tddMode (0),    
+    m_slotNum (0),    
+    m_sfNum (0),   
+    m_frameNum (0),   
+    m_rnti (0),   
+    m_symStart (0),   
+    m_numSym (0),   
+    m_ttiType (0),
+    m_rv (0),
+    m_ccId (0)    
   {
 
   }
 
-  uint8_t m_tddMode;
-  uint8_t m_slotNum;
-  uint8_t m_sfNum;
-  uint8_t m_frameNum;
-  uint16_t m_rnti;
-  uint8_t m_symStart;
-  uint8_t m_numSym;
-  uint8_t m_ttiType;
+  uint8_t m_tddMode;  //!< TDD mode. Either DL or UL
+  uint8_t m_slotNum;  //!< Slot number
+  uint8_t m_sfNum;   //!< Subframe number
+  uint8_t m_frameNum;  //!< Frame number
+  uint16_t m_rnti;    //!< UE RNTI (where such distinction is applicable, 0 otherwise)
+  uint8_t m_symStart;   //!< Starting OFDM symbol of the current transmission
+  uint8_t m_numSym;   //!< Amount of OFDM symbols of current transmission
+  uint8_t m_ttiType;    //!< TDD transmission type. Either DATA or CTRL.
+  uint8_t m_rv;    //!< (Re)TX number. If 0 the TTI refers to new data, otherwise to a retx.
+  uint8_t m_ccId;    //!< The Component Carrier (CC) ID
 };
 
 struct TbInfoElement
@@ -714,16 +718,16 @@ public:
     return m_maxTbSizeBytes;
   }
 
-/**
+ /**
+  * Makes a MmWavePhyMacCommon object NR-compliant by adjusting its parameters
+  * 
   * \param index The numerology index, as per TS 38.211 Sec 4.3.2.
-  * \param bw The bandwidth of this Component Carrier (Cc)
   *
-  * Creates a NR-compliant MmWavePhyMacCommon object
   **/
   void
   SetNumerology (uint8_t index)
   {
-    NS_ASSERT_MSG ( (index == 2) || (index == 3), "Numerology index is not valid."); // only 2 and 3 are supported in NR for FR2.
+    NS_ASSERT_MSG ( (index == 2) || (index == 3), "Numerology index is not valid."); // Only 2 and 3 are supported in NR for FR2.
 
     double subCarriersPerRB = 12; // TS 38.211 Sec 4.4.4.1
     double subcarrierSpacing = 15 * std::pow (2, index) * 1000; // Subcarrier spacing, only 60KHz and 120KHz are supported in NR for FR2.
@@ -734,6 +738,19 @@ public:
     m_subframePeriod = Time (MilliSeconds (1)); // TS 38.211 Section 4.3.1: the subframe duration is 1ms
     m_symbolPeriod = Time (NanoSeconds (m_subframePeriod / m_symbolsPerSlot / m_slotsPerSubframe)); // Duration of an OFDM symbol
     m_chunkWidth = subCarriersPerRB * subcarrierSpacing;
+  }
+
+ /**
+  * Sets the desired bandwidth for a given \ref MmWavePhyMacCommon object.
+  * 
+  * \param bw The intended bandwidth.
+  *
+  **/
+  void
+  SetBandwidth (double bw)
+  {
+    m_chunksPerRb = bw/(m_chunkWidth*m_numRb);  // The amount of RBs is fixed to 1 as only TDMA is supported
+    m_numRefScPerSym = 864*bw/1e9; // TODO: check whether 864 is the proper value for 1 GHz of bandwidth
   }
 
   void

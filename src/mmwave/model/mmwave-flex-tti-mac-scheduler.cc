@@ -216,7 +216,7 @@ MmWaveFlexTtiMacScheduler::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("HarqEnabled",
                    "Activate/Deactivate the HARQ [by default is active].",
-                   BooleanValue (false),
+                   BooleanValue (true),
                    MakeBooleanAccessor (&MmWaveFlexTtiMacScheduler::m_harqOn),
                    MakeBooleanChecker ())
     .AddAttribute ("FixedMcsDl",
@@ -669,20 +669,8 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
   ret.m_sfnSf = params.m_snfSf;
   ret.m_slotAllocInfo.m_sfnSf = ret.m_sfnSf;
 
-  uint8_t ulSlotNum = (slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
-  uint8_t ulDeltaSubframe = (slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ();
-  uint8_t ulSfNum = (sfNum + ulDeltaSubframe) % m_phyMacConfig->GetSubframesPerFrame ();
-  uint16_t ulFrameNum = frameNum + ((sfNum + ulDeltaSubframe) / m_phyMacConfig->GetSubframesPerFrame ());
-
-  NS_LOG_DEBUG ("Incoming Sfn: frame " << frameNum << " subframe " << (unsigned)sfNum << " slot " << (unsigned)slotNum);
-  NS_LOG_DEBUG ("UL sched info for: frame " << ulFrameNum << " subframe " << (unsigned)ulSfNum << " slot " << (unsigned)ulSlotNum);
-  NS_ASSERT ((ulSlotNum < m_phyMacConfig->GetSlotsPerSubframe ()) && (ulSfNum < m_phyMacConfig->GetSubframesPerFrame ())
-             && (ulDeltaSubframe >= 0) && (ulSlotNum >= 0) && (ulSfNum >= 0) && (ulFrameNum >= frameNum));
-
-  SfnSf ulSfn = SfnSf (ulFrameNum, ulSfNum, ulSlotNum);
-
-  NS_LOG_DEBUG ("Scheduling DL frame " << (unsigned)frameNum << " subframe " << (unsigned)sfNum << " slot " << (unsigned)slotNum << " UL frame " <<
-                (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum << " slot " << (unsigned)ulSfn.m_slotNum);
+  NS_LOG_DEBUG ("Creating scheduling allocation info for: frame " << frameNum << " subframe " 
+                << (unsigned)sfNum << " slot " << (unsigned)slotNum);
 
   // Add TTI for DL control at the beginning of the slot
   TtiAllocInfo dlCtrlSlot (0, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL, TtiAllocInfo::DIGITAL, 0);
@@ -950,8 +938,8 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, TtiAllocInfo::DIGITAL, rnti);
                   ttiInfo.m_dci = dciInfoReTx;
                   NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL OFDM symbols " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
-                                " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe "
-                                << (unsigned)ulSfn.m_sfNum << " slot " << (unsigned)ulSfn.m_slotNum << " RETX");
+                                " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe "
+                                << (unsigned)ret.m_sfnSf.m_sfNum << " slot " << (unsigned)ret.m_sfnSf.m_slotNum << " RETX");
                   ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
                   ret.m_slotAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
                   if (itUeInfo == ueInfo.end ())
@@ -1507,7 +1495,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 
           NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL OFDM symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv <<
-                        " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum << " slot " << (unsigned)ulSfn.m_slotNum);
+                        " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " slot " << (unsigned)ret.m_sfnSf.m_slotNum);
 
           UpdateUlRlcBufferInfo (itUeInfo->first, dci.m_tbSize - m_subHdrSize);
           ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);   // add to front

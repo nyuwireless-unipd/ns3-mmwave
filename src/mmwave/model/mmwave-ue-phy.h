@@ -129,13 +129,19 @@ public:
   void EndTti ();
 
   /**
-   * Initializes the slots allocation info for the provided frame and subframe number.
+   * Initializes the slots allocation info for the given frame, subframe and slot.
+   * 
+   * This function is periodically called by \ref SlotIndication in order to initialize the slot allocation
+   * structure for the same slot and next subframe (and, eventually, frame).
+   * N.S. The timing of such process can not be changed, as future slots might contain UL DCIs that have been
+   * previously scheduled in advance. 
    *
    * \param frameNum the intended frame number.
    * \param sfNum the intended subframe number.
+   * \param slotNum the intended slot number.
    *
    */
-  void InitializeSubframeAllocation (uint16_t frameNum, uint8_t sfNum);
+  void InitializeSlotAllocation (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum);
 
   uint32_t GetSubframeNumber (void);
 

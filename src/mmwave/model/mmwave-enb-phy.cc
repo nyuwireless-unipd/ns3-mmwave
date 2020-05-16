@@ -183,7 +183,7 @@ MmWaveEnbPhy::DoInitialize (void)
     }
   SetSubChannels (m_channelChunks);
 
-  m_slotPeriod = NanoSeconds (m_phyMacConfig->GetSymbPerSlot () * m_phyMacConfig->GetSymbolPeriod ());
+  m_slotPeriod = NanoSeconds (m_phyMacConfig->GetSubframePeriod () / m_phyMacConfig->GetSlotsPerSubframe ());
 
   for (unsigned i = 0; i < m_phyMacConfig->GetSlotsPerSubframe (); i++)
     {
@@ -953,6 +953,8 @@ MmWaveEnbPhy::StartTti (void)
   // antennaArray->ChangeToOmniTx ();
 
   NS_LOG_FUNCTION (this);
+  NS_LOG_INFO ("MmWave eNB " << m_cellId << " frame " << m_frameNum << " subframe " << (uint16_t) m_sfNum << " slot "
+                            << (uint16_t) m_slotNum << " TTI index " << (uint16_t) m_ttiIndex );
 
   TtiAllocInfo currTti = m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex];
   m_currSymStart = currTti.m_dci.m_symStart;
@@ -1115,7 +1117,8 @@ MmWaveEnbPhy::EndTti (void)
 
   if (m_ttiIndex == m_currSlotNumTti - 1)     // End of the current NR slot
     {
-      EndSlot ();
+      Time nextSlotDelay = MmWavePhy::GetNextSlotDelay ();
+      Simulator::Schedule (nextSlotDelay, &MmWaveEnbPhy::EndSlot, this);
     }
   else
     {
@@ -1131,7 +1134,6 @@ MmWaveEnbPhy::EndSlot (void)
 {
   NS_LOG_FUNCTION (this << Simulator::Now ().GetSeconds ());
 
-  Time slotStart = MmWavePhy::GetNextSlotDelay ();
   m_ttiIndex = 0;
 
   if (m_slotNum == m_phyMacConfig->GetSlotsPerSubframe () - 1) // End of this subframe
@@ -1152,7 +1154,9 @@ MmWaveEnbPhy::EndSlot (void)
       m_slotNum++;
     }
 
-  Simulator::Schedule (slotStart, &MmWaveEnbPhy::StartSlot, this);
+  // The slot end time should already be anchored to the proper value, hence try to avoid using Schedule.
+  NS_ASSERT (MmWavePhy::GetNextSlotDelay () == 0);
+  StartSlot ();
 }
 
 void
@@ -1331,6 +1335,9 @@ MmWaveEnbPhy::TraceDlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddTyp
   dlPhyTraceInfo.m_numSym = dciInfo.m_numSym;
   dlPhyTraceInfo.m_tddMode = PhyTransmissionTraceParams::DL;
   dlPhyTraceInfo.m_ttiType = tddType;
+  dlPhyTraceInfo.m_rnti = dciInfo.m_rnti;
+  dlPhyTraceInfo.m_rv = dciInfo.m_rv;
+  dlPhyTraceInfo.m_ccId = m_componentCarrierId;
   m_dlPhyTrace (dlPhyTraceInfo);
 }
 

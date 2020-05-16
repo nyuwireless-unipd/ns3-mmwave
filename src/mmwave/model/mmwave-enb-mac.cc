@@ -1029,13 +1029,8 @@ MmWaveEnbMac::TraceSchedInfo (MmWaveMacSchedSapUser::SchedConfigIndParameters in
 {
   MmWaveSchedTraceInfo mmWaveSchedInfo;
   mmWaveSchedInfo.m_indParam = ind;
-  SfnSf ulSfn = SfnSf ();
-  ulSfn.m_slotNum = (ind.m_sfnSf.m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
-  unsigned ulDeltaSubframe = (ind.m_sfnSf.m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) 
-                              / m_phyMacConfig->GetSlotsPerSubframe ();
-  ulSfn.m_sfNum = (ind.m_sfnSf.m_sfNum + ulDeltaSubframe) % m_phyMacConfig->GetSubframesPerFrame ();
-  ulSfn.m_frameNum = ind.m_sfnSf.m_frameNum + ((ind.m_sfnSf.m_sfNum + ulDeltaSubframe) / m_phyMacConfig->GetSubframesPerFrame ());
-  mmWaveSchedInfo.m_ulSfnSf = ulSfn;
+  mmWaveSchedInfo.m_ccId = m_componentCarrierId;
+  
   m_schedEnbInfo(mmWaveSchedInfo);
 }
 

@@ -73,33 +73,21 @@ MmWaveMacTrace::ReportEnbSchedulingInfo (Ptr<MmWaveMacTrace> enbStats, MmWaveEnb
         {
           NS_FATAL_ERROR ("Could not open tracefile");
         }
-      m_schedAllocTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode" << std::endl;
+      m_schedAllocTraceFile << "frame\tsubF\tslot\trnti\tfirstSym\tnumSym\ttype\ttddMode\tretxNum\tccId" << std::endl;
     }
     
 
     SlotAllocInfo allocInfo = schedParams.m_indParam.m_slotAllocInfo;
-    SfnSf dlSfn = schedParams.m_indParam.m_sfnSf;   // Holds the intended slot, subframe and frame info for DL data and controls allocations
-    SfnSf ulSfn = schedParams.m_ulSfnSf;   // Holds the intended slot, subframe and frame info for UL data and controls allocations
-
+    SfnSf dlSfn = schedParams.m_indParam.m_sfnSf;   // Holds the intended slot, subframe and frame info
 
     for (auto iTti : allocInfo.m_ttiAllocInfo)
     {
-      if (iTti.m_ttiType == TtiAllocInfo::DATA && iTti.m_tddMode == TtiAllocInfo::UL_slotAllocInfo)   // If UL data, shift by UlSchedDelay
-      {
-        // Trace the UL DATA alloc info
-        m_schedAllocTraceFile << (unsigned)ulSfn.m_frameNum << "\t" << (unsigned)ulSfn.m_sfNum << "\t"
-                              << (unsigned)ulSfn.m_slotNum << "\t" << (unsigned)iTti.m_dci.m_rnti << "\t" 
-                              << (unsigned)iTti.m_dci.m_symStart << "\t" << (unsigned)iTti.m_dci.m_numSym 
-                              << "\t" << iTti.m_ttiType << "\t" << iTti.m_tddMode << std::endl;
-      }
-      else
-      {
-        // Trace the DL DATA or CONTROL alloc info
-        m_schedAllocTraceFile << (unsigned)dlSfn.m_frameNum << "\t" << (unsigned)dlSfn.m_sfNum << "\t"
-                              << (unsigned)dlSfn.m_slotNum << "\t" << (unsigned)iTti.m_dci.m_rnti 
-                              << "\t" << (unsigned)iTti.m_dci.m_symStart << "\t" << (unsigned)iTti.m_dci.m_numSym 
-                              << "\t" << iTti.m_ttiType << "\t" << iTti.m_tddMode << std::endl;
-      }
+      // Trace the incoming alloc info
+      m_schedAllocTraceFile << (unsigned)dlSfn.m_frameNum << "\t" << (unsigned)dlSfn.m_sfNum << "\t"
+                            << (unsigned)dlSfn.m_slotNum << "\t" << (unsigned)iTti.m_dci.m_rnti 
+                            << "\t" << (unsigned)iTti.m_dci.m_symStart << "\t" << (unsigned)iTti.m_dci.m_numSym 
+                            << "\t" << iTti.m_ttiType << "\t" << iTti.m_tddMode << "\t" << (unsigned)iTti.m_dci.m_rv 
+                            << "\t" << (unsigned)schedParams.m_ccId << std::endl;
     }   
 }
 
