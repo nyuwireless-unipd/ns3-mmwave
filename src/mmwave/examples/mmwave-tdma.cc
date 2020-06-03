@@ -64,18 +64,6 @@ main (int argc, char *argv[])
    *    Time (micro-sec)  |  Tb-size in bytes
    * */
 
-//	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("MmWavePhyRxTrace", LOG_LEVEL_DEBUG);
-  //LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-  //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
   double distMin = 15.0;        // eNB-UE distance in meters
@@ -84,8 +72,6 @@ main (int argc, char *argv[])
   bool harqEnabled = true;
   int mcsDl = -1;
   std::string channelState = "n";
-  bool smallScale = true;
-  double speed = 1.0;
 
   // Command line arguments
   CommandLine cmd;
@@ -99,7 +85,6 @@ main (int argc, char *argv[])
   cmd.AddValue ("distMax", "Final distance", distMax);
   cmd.AddValue ("distInc", "Distance increment", distInc);
   cmd.AddValue ("distUpdateInterval", "Period after which distance is updated", distUpdateInterval);
-  cmd.AddValue ("smallScale", "Enable small scale fading", smallScale);
   cmd.Parse (argc, argv);
 
   simTime = ((distMax - distMin) / distInc) * (distUpdateInterval / 1000.0);
@@ -114,18 +99,22 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue (true));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
-  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (Seconds (2 * simTime)));
+  Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (Seconds (2 * simTime)));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (1.0)));
   Config::SetDefault ("ns3::MmWaveAmc::Ber", DoubleValue (0.001));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
-  Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
-  Config::SetDefault ("ns3::MmWaveBeamforming::FixSpeed", BooleanValue (true));
-  Config::SetDefault ("ns3::MmWaveBeamforming::UeSpeed", DoubleValue (speed));
   Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 
   Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
+  if (channelState == "l")
+  {
+    mmwHelper->SetChannelConditionModelType ("ns3::AlwaysLosChannelConditionModel");
+  }
+  else if (channelState == "n")
+  {
+    mmwHelper->SetChannelConditionModelType ("ns3::NeverLosChannelConditionModel");
+  }
 
-  mmwHelper->Initialize ();
   mmwHelper->SetHarqEnabled (harqEnabled);
 
   /* A configuration example.

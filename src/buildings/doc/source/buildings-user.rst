@@ -47,7 +47,7 @@ rectangular grid. Here's an example of how to use it::
   Ptr<GridBuildingAllocator>  gridBuildingAllocator;
   gridBuildingAllocator = CreateObject<GridBuildingAllocator> ();
   gridBuildingAllocator->SetAttribute ("GridWidth", UintegerValue (3));
-  gridBuildingAllocator->SetAttribute ("LengthX", DoubleValue (7)); 
+  gridBuildingAllocator->SetAttribute ("LengthX", DoubleValue (7));
   gridBuildingAllocator->SetAttribute ("LengthY", DoubleValue (13));
   gridBuildingAllocator->SetAttribute ("DeltaX", DoubleValue (3));
   gridBuildingAllocator->SetAttribute ("DeltaY", DoubleValue (3));
@@ -62,7 +62,7 @@ rectangular grid. Here's an example of how to use it::
 
 This will create a 3x2 grid of 6 buildings, each 7 x 13 x 6 m with 2 x
 4 rooms inside and 2 foors; the buildings are spaced by 3 m on both
-the x and the y axis. 
+the x and the y axis.
 
 
 Setup nodes and mobility models
@@ -84,7 +84,7 @@ user is advised to make sure that the behavior of the mobility model
 being used is consistent with the presence of Buildings. For example,
 using a simple random mobility over the whole simulation area in
 presence of buildings might easily results in node moving in and out
-of buildings, regardless of the presence of walls. 
+of buildings, regardless of the presence of walls.
 
 
 Place some nodes
@@ -126,34 +126,36 @@ in special positions with respect to buildings:
 
  - ``RandomBuildingPositionAllocator``: Allocate each position by
    randomly choosing a building from the list of all buildings, and
-   then randomly choosing a position inside the building. 
+   then randomly choosing a position inside the building.
 
  - ``RandomRoomPositionAllocator``: Allocate each position by randomly
    choosing a room from the list of rooms in all buildings, and then
-   randomly choosing a position inside the room. 
+   randomly choosing a position inside the room.
 
  - ``SameRoomPositionAllocator``: Walks a given NodeContainer
    sequentially, and for each node allocate a new position randomly in
-   the same room of that node.  
+   the same room of that node.
 
  - ``FixedRoomPositionAllocator``: Generate a random position
    uniformly distributed in the volume of a chosen room inside a
-   chosen building.   
+   chosen building.
 
 
 
-Make the Mobility Model Consistent
-**********************************
+Making the Mobility Model Consistent for a node
+***********************************************
 
-**Important**: whenever you use buildings, you have to issue the
-following command after we have placed all nodes and buildings in the simulation::
+Initially, a mobility model of a node is made consistent when a node is
+initialized, which eventually triggers a call to the ``DoInitialize``
+method of the `MobilityBuildingInfo`` class. In particular, it calls the
+``MakeMobilityModelConsistent`` method, which goes through the lists of
+all buildings, determine if the node is indoor or outdoor, and if indoor
+it also determines the building in which the node is located and the
+corresponding floor number inside the building. Moreover, this method also
+caches the position of the node, which is used to make the mobility model
+consistent for a moving node whenever the ``IsInside`` method of
+``MobilityBuildingInfo`` class is called.
 
-    BuildingsHelper::MakeMobilityModelConsistent ();
-
-This command will go through the lists of all nodes and of all
-buildings, determine for each user if it is indoor or outdoor, and if
-indoor it will also determine the building in which the user is
-located and the corresponding floor and number inside the building. 
 
 
 Building-aware pathloss model
@@ -166,7 +168,12 @@ for the wireless module that you are considering (lte, wifi, wimax,
 etc.), so please refer to the documentation of that model for specific
 instructions.
 
+Building-aware channel condition model
+**************************************
 
+The class BuildingsChannelConditionModel implements a `channel condition model <propagation.html#channelconditionmodel>`_
+which determines the LOS/NLOS channel state based on the buildings deployed in
+the scenario.
 
 
 Main configurable attributes
@@ -202,12 +209,3 @@ The ``BuildingPropagationLossModel`` class has the following configurable parame
 
 In order to use the hybrid mode, the class to be used is the ``HybridBuildingMobilityLossModel``, which allows the selection of the proper pathloss model according to the pathloss logic presented in the design chapter. However, this solution has the problem that the pathloss model switching points might present discontinuities due to the different characteristics of the model. This implies that according to the specific scenario, the threshold used for switching have to be properly tuned.
 The simple ``OhBuildingMobilityLossModel`` overcome this problem by using only the Okumura Hata model and the wall penetration losses.
-
-
-
-
-
-
-
-
-

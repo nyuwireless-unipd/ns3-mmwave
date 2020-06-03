@@ -124,8 +124,6 @@ public:
 
   void UpdateUeSinrEstimate ();
 
-  void CallPathloss ();
-
   double AddGaussianNoise (double sample);
 
   std::pair <uint64_t,uint64_t> ApplyFilter (std::vector<double>);

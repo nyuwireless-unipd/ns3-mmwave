@@ -37,6 +37,7 @@
 #include "ns3/ipv6-header.h"
 #include <ns3/ipv6-l3-protocol.h>
 #include "mmwave-net-device.h"
+#include "ns3/uinteger.h"
 
 
 namespace ns3 {

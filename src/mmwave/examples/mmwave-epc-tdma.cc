@@ -37,7 +37,6 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/config-store.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
-#include "ns3/rng-seed-manager.h"
 //#include "ns3/gtk-config-store.h"
 #include <sstream>
 #include <string>
@@ -54,38 +53,17 @@ NS_LOG_COMPONENT_DEFINE ("MmWaveEpcTdma");
 int
 main (int argc, char *argv[])
 {
-  //LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
-  //LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-  //	LogComponentEnable("mmWavePointToPointEpcHelper",LOG_LEVEL_ALL);
-  //	LogComponentEnable("EpcUeNas",LOG_LEVEL_ALL);
-//		LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
-  //LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
-//	LogComponentEnable ("LteRlcAm", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-  //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-
-
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
   double simTime = 5.0;
-  double interPacketInterval = 100;        // 500 microseconds
-  double minDistance = 10.0;        // eNB-UE distance in meters
-  double maxDistance = 200.0;        // eNB-UE distance in meters
+  double interPacketInterval = 100;
+  double minDistance = 10.0; // eNB-UE distance in meters
+  double maxDistance = 200.0; // eNB-UE distance in meters
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
   bool fixedTti = false;
   unsigned symPerSf = 24;
   double sfPeriod = 100.0;
-  unsigned run = 0;
-
 
   // Command line arguments
   CommandLine cmd;
@@ -98,7 +76,6 @@ main (int argc, char *argv[])
   cmd.AddValue ("symPerSf", "OFDM symbols per subframe", symPerSf);
   cmd.AddValue ("sfPeriod", "Subframe period = 4.16 * symPerSf", sfPeriod);
   cmd.AddValue ("fixedTti", "Fixed TTI scheduler", fixedTti);
-  cmd.AddValue ("run", "run for RNG (for generating different deterministic sequences for different drops)", fixedTti);
   cmd.Parse (argc, argv);
 
   Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue (rlcAmEnabled));
@@ -112,9 +89,8 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue (symPerSf));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue (sfPeriod));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue (200.0));
-  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100000.0)));
+  Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (MilliSeconds (100000.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
-  //Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue ("n"));
   Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue (MicroSeconds (100.0)));
   Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue (MicroSeconds (100.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
@@ -125,9 +101,6 @@ main (int argc, char *argv[])
   // and set to the minimum the latency on the S1-AP link to speed up the link and bearers setup
   Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue (true));
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (Seconds (0)));
-
-  RngSeedManager::SetSeed (1234);
-  RngSeedManager::SetRun (run);
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");
@@ -291,4 +264,3 @@ config.ConfigureAttributes();*/
   return 0;
 
 }
-

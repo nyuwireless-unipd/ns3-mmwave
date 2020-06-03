@@ -47,26 +47,15 @@ double snrUpdateIntervalMs = 100.0;  // in ms
 double snrIncDb = 0.1; // increment by 10 meters
 double snrMinDb = -7.0;  // eNB-UE distance in meters
 double snrMaxDb = 30;  // eNB-UE distance in meters
-bool smallScale = true;
-double speed = 1.0;
-
 
 void updateSnr (double snrInit, Ptr<MmWaveEnbNetDevice> enbDev, Ptr<SpectrumModel> model, Ptr<MmWaveAmc> amc)
 {
-//  std::cout << "************* distance changing to " << dist << " *************" << std::endl;
-//  Ptr<MobilityModel> mobModel = ue->GetObject<MobilityModel> ();
-//  mobModel->SetPosition (Vector (dist, 0.0, 0.0));
-
   Ptr<MmWavePhyMacCommon> config = enbDev->GetPhy ()->GetConfigurationParameters ();
 
   SpectrumValue specVals (model);
   Values::iterator specIt = specVals.ValuesBegin ();
   for (unsigned ichunk = 0; ichunk < model->GetNumBands (); ichunk++)
     {
-      //double sinrLin = std::pow (10, itCqi->second.m_ueUlCqi.at (ichunk) / 10);
-      //						double se1 = log2 ( 1 + (std::pow (10, sinrLin / 10 )  /
-      //								( (-std::log (5.0 * m_berDl )) / 1.5) ));
-      //						cqi += m_amc->GetCqiFromSpectralEfficiency (se1);
       NS_ASSERT (specIt != specVals.ValuesEnd ());
       *specIt = std::pow (10, snrInit / 10);         //sinrLin;
       specIt++;
@@ -92,8 +81,6 @@ void updateSnr (double snrInit, Ptr<MmWaveEnbNetDevice> enbDev, Ptr<SpectrumMode
   Simulator::Schedule (MicroSeconds (3 * 100), &MmWaveSpectrumPhy::UpdateSinrPerceived,
                        enbDev->GetPhy ()->GetDlSpectrumPhy (), specVals);
 
-  //enbPhy->GenerateDataCqiReport(specVals);
-
   if (snrInit > snrMaxDb)
     {
       return;
@@ -113,19 +100,6 @@ main (int argc, char *argv[])
    * 2. UE_1_Tb_size.txt : Allocated transport block size
    *    Time (micro-sec)  |  Tb-size in bytes
    * */
-
-//	LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("MmWavePhyRxTrace", LOG_LEVEL_DEBUG);
-  //LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-  //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
 
@@ -146,7 +120,6 @@ main (int argc, char *argv[])
   cmd.AddValue ("snrMaxDb", "Maximum (initial) SNR", snrMaxDb);
   cmd.AddValue ("snrIncDb", "SNR increment", snrIncDb);
   cmd.AddValue ("snrUpdateIntervalMs", "Period after which distance is updated", snrUpdateIntervalMs);
-  cmd.AddValue ("smallScale", "Enable small scale fading", smallScale);
   cmd.Parse (argc, argv);
 
   simTime = ((snrMaxDb - snrMinDb) / snrIncDb) * (snrUpdateIntervalMs / 1000.0) + 1;
@@ -161,13 +134,8 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue (true));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
-  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (Seconds (2 * simTime)));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (1.0)));
   Config::SetDefault ("ns3::MmWaveAmc::Ber", DoubleValue (0.001));
-  Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
-  Config::SetDefault ("ns3::MmWaveBeamforming::FixSpeed", BooleanValue (true));
-  Config::SetDefault ("ns3::MmWaveBeamforming::UeSpeed", DoubleValue (speed));
-  //Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::FixedLossTst", BooleanValue (false));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::LossFixedDb", DoubleValue (100.0));
   Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
@@ -177,10 +145,6 @@ main (int argc, char *argv[])
   mmwHelper->Initialize ();
   mmwHelper->SetHarqEnabled (harqEnabled);
   mmwHelper->SetSnrTest (true);
-  // Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel ()->GetObject<MmWavePropagationLossModel> ();
-
-  /* A configuration example.
-   * mmwHelper->GetPhyMacConfigurable ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -200,7 +164,7 @@ main (int argc, char *argv[])
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
   uePositionAlloc->Add (Vector (snrMinDb, 0.0, 0.0));
 
-  uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.SetPositionAllocator (uePositionAlloc);
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
@@ -216,7 +180,6 @@ main (int argc, char *argv[])
   EpsBearer bearer (q);
   mmwHelper->ActivateDataRadioBearer (ueNetDev, bearer);
   Ptr<MmWaveEnbNetDevice> enbMmwDev = enbNetDev.Get (0)->GetObject<MmWaveEnbNetDevice> ();
-
 
   Ptr<MmWaveAmc> amc = CreateObject <MmWaveAmc> (mmwHelper->GetCcPhyParams ().at (0).GetConfigurationParameters ());
 

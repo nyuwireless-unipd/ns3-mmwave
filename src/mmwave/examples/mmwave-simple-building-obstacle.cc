@@ -44,8 +44,6 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.Parse (argc, argv);
 
-  LogComponentEnable ("LteRlcAm", LOG_LEVEL_LOGIC);
-
   /* Information regarding the traces generated:
    *
    * 1. UE_1_SINR.txt : Gives the SINR for each sub-band
@@ -56,8 +54,7 @@ main (int argc, char *argv[])
    * */
 
   Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
-  ptr_mmWave->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
-  ptr_mmWave->Initialize ();
+  ptr_mmWave->SetChannelConditionModelType ("ns3::BuildingsChannelConditionModel");
 
   NodeContainer enbNodes;
   NodeContainer ueNodes;
@@ -110,12 +107,9 @@ main (int argc, char *argv[])
   enum EpsBearer::Qci q = EpsBearer::GBR_CONV_VOICE;
   EpsBearer bearer (q);
   ptr_mmWave->ActivateDataRadioBearer (ueNetDev, bearer);
-  BuildingsHelper::MakeMobilityModelConsistent ();
 
   Simulator::Stop (Seconds (1));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
 }
-
-

@@ -43,12 +43,6 @@
 #include <ns3/packet.h>
 #include <ns3/tag.h>
 #include <ns3/queue-size.h>
-/*#include <ns3/lte-helper.h>
-#include <ns3/epc-helper.h>
-#include <ns3/point-to-point-helper.h>
-#include <ns3/lte-module.h>*/
-
-//#include "ns3/gtk-config-store.h"
 
 using namespace ns3;
 using namespace mmwave;
@@ -254,17 +248,12 @@ ChangeSpeed (Ptr<Node>  n, Vector speed)
 int
 main (int argc, char *argv[])
 {
-//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiMaxWeightMacScheduler", LOG_LEVEL_DEBUG);
-
   /*
    * scenario 1: 1 building;
    * scenario 2: 3 building;
    * scenario 3: 6 random located small building, simulate tree and human blockage.
    * */
-  int scenario = 3;
+  int scenario = 1;
   double stopTime = 25;
   double simStopTime = 25;
   bool harqEnabled = true;
@@ -272,22 +261,24 @@ main (int argc, char *argv[])
   bool tcp = true;
 
   CommandLine cmd;
-//	cmd.AddValue("numEnb", "Number of eNBs", numEnb);
-//	cmd.AddValue("numUe", "Number of UEs per eNB", numUe);
   cmd.AddValue ("simTime", "Total duration of the simulation [s])", simStopTime);
-//	cmd.AddValue("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("rlcAm", "Enable RLC-AM", rlcAmEnabled);
   cmd.Parse (argc, argv);
 
+  
+  // TCP settings
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
+  Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (200)));
+  Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (0.2)));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
-//	Config::SetDefault ("ns3::PointToPointNetDevice::Mtu", UintegerValue (3000));
-//	Config::SetDefault ("ns3::VirtualNetDevice::Mtu", UintegerValue (3000));
+  Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
+  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*400));
+  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*400));
 
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
-  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072 * 50));
-  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072 * 50));
+  Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (1024 * 1024));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
   Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue (rlcAmEnabled));
@@ -295,30 +286,24 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue (true));
   Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue (true));
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue (true));
-  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
+  Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (MilliSeconds (100.0)));
   Config::SetDefault ("ns3::LteRlcAm::PollRetransmitTimer", TimeValue (MilliSeconds (4.0)));
   Config::SetDefault ("ns3::LteRlcAm::ReorderingTimer", TimeValue (MilliSeconds (2.0)));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue (MilliSeconds (1.0)));
   Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue (MilliSeconds (4.0)));
   Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (20 * 1024 * 1024));
 
-
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
+  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
 
-  mmwaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
+  mmwaveHelper->SetChannelConditionModelType ("ns3::BuildingsChannelConditionModel");
   mmwaveHelper->Initialize ();
   mmwaveHelper->SetHarqEnabled (true);
 
   Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
   mmwaveHelper->SetEpcHelper (epcHelper);
-
-  /*
-  Ptr<LteHelper> mmwaveHelper = CreateObject<LteHelper> ();
-  Ptr<PointToPointEpcHelper>  epcHelper = CreateObject<PointToPointEpcHelper> ();
-  mmwaveHelper->SetEpcHelper (epcHelper);
-*/
 
   Ptr<Node> pgw = epcHelper->GetPgwNode ();
 
@@ -441,8 +426,8 @@ main (int argc, char *argv[])
   uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.Install (ueNodes);
 
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (150, -0.2, 1));
-  ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (70, -2.0, 1));
+  ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 1.0, 0));
 
   Simulator::Schedule (Seconds (2), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
   Simulator::Schedule (Seconds (22), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
@@ -527,7 +512,6 @@ main (int argc, char *argv[])
 
 
   //p2ph.EnablePcapAll("mmwave-sgi-capture");
-  BuildingsHelper::MakeMobilityModelConsistent ();
   Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxSize", QueueSizeValue (QueueSize ("1000000p")));
 
   Simulator::Stop (Seconds (simStopTime));

@@ -52,8 +52,7 @@ main (int argc, char *argv[])
   uint32_t bandDiv = 2; // if useCa=true, CC0 get (1-1/bandDiv)*totalBandwidth, CC1 get (1/bandDiv)*totalBandwidth
   bool useRR = false;
   bool useEpc = false;
-  bool blockage0 = false;
-  bool blockage1 = false;
+  bool blockage = false;
   int numRefSc0 = 864;
   int numRefSc1 = 864;
   uint32_t chunkPerRb0 = 72;
@@ -61,21 +60,18 @@ main (int argc, char *argv[])
   double frequency0 = 28e9;
   double frequency1 = 73e9;
   double simTime = 5;
-  uint32_t runSet = 1;
-  std::string filePath;
+  std::string condition = "l"; // channel condition, l = LOS, n = NLOS, otherwise the condition is randomly determined
 
   CommandLine cmd;
   cmd.AddValue ("useCa", "If enabled use 2 CC", useCa);
   cmd.AddValue ("bandDiv", "Bandwidth division factor (B1=B0/bandDiv)", bandDiv);
   cmd.AddValue ("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
   cmd.AddValue ("useEpc", "If enabled use EPC, else use RLC saturation mode", useEpc);
-  cmd.AddValue ("blockage0", "If enabled CC0 blockage = true", blockage0);
-  cmd.AddValue ("blockage1", "If enabled CC1 blockage = true", blockage1);
+  cmd.AddValue ("blockage", "If enabled blockage = true", blockage);
   cmd.AddValue ("frequency0", "CC0 central frequency", frequency0);
   cmd.AddValue ("frequency1", "CC1 central frequency", frequency1);
   cmd.AddValue ("simTime", "Simulation time", simTime);
-  cmd.AddValue ("filePath", "Where to put the output files", filePath);
-  cmd.AddValue ("runSet", "Run number", runSet);
+  cmd.AddValue ("condition", "Channel condition, l = LOS, n = NLOS, otherwise the condition is randomly determined", condition);
   cmd.Parse (argc, argv);
 
   if (useCa)
@@ -85,20 +81,6 @@ main (int argc, char *argv[])
       numRefSc0 = numRefSc0 * (bandDiv - 1) / bandDiv;
       numRefSc1 = numRefSc1 / bandDiv;
     }
-
-  // RNG
-  uint32_t seedSet = 1;
-  RngSeedManager::SetSeed (seedSet);
-  RngSeedManager::SetRun (runSet);
-
-  // set output file names
-  std::cout << "File path: " << filePath << std::endl;
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlRlcOutputFilename", StringValue (filePath + "DlRlcStats.txt"));
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlRlcOutputFilename", StringValue (filePath + "UlRlcStats.txt"));
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::DlPdcpOutputFilename", StringValue (filePath + "DlPdcpStats.txt"));
-  Config::SetDefault ("ns3::MmWaveBearerStatsCalculator::UlPdcpOutputFilename", StringValue (filePath + "UlPdcpStats.txt"));
-  Config::SetDefault ("ns3::MmWavePhyRxTrace::OutputFilename", StringValue (filePath + "RxPacketTrace.txt"));
-  Config::SetDefault ("ns3::LteRlcAm::BufferSizeFilename", StringValue (filePath + "RlcAmBufferSize.txt"));
 
   // CC 0
   // 1. create MmWavePhyMacCommon object
@@ -138,14 +120,6 @@ main (int argc, char *argv[])
       ccMap [1] = *cc1;
     }
 
-  // set the blockage map
-  std::map <uint8_t, bool> blockageMap;
-  blockageMap [0] = blockage0;
-  if (useCa)
-    {
-      blockageMap [1] = blockage1;
-    }
-
   // print CC parameters
   for (uint8_t i = 0; i < ccMap.size (); i++)
     {
@@ -153,7 +127,6 @@ main (int argc, char *argv[])
       std::cout << "Component Carrier " << (uint32_t)(phyMacConfig->GetCcId ())
                 << " frequency : " << phyMacConfig->GetCenterFrequency () / 1e9 << " GHz,"
                 << " bandwidth : " << (phyMacConfig->GetNumRb () * phyMacConfig->GetChunkWidth () * phyMacConfig->GetNumChunkPerRb ()) / 1e6 << " MHz,"
-                << " blockage : " << blockageMap[i]
                 << ", numRefSc: " << (uint32_t)phyMacConfig->GetNumRefScPerSym ()
                 << ", ChunkPerRB: " << phyMacConfig->GetNumChunkPerRb ()
                 << std::endl;
@@ -175,27 +148,25 @@ main (int argc, char *argv[])
           Config::SetDefault ("ns3::MmWaveHelper::EnbComponentCarrierManager",StringValue ("ns3::MmWaveBaRrComponentCarrierManager"));
         }
     }
-  Config::SetDefault ("ns3::MmWaveHelper::ChannelModel",StringValue ("ns3::MmWave3gppChannel"));
-  Config::SetDefault ("ns3::MmWaveHelper::PathlossModel",StringValue ("ns3::MmWave3gppPropagationLossModel"));
+  
+  Config::SetDefault ("ns3::MmWaveHelper::PathlossModel", StringValue ("ns3::ThreeGppUmaPropagationLossModel"));
+  Config::SetDefault ("ns3::ThreeGppChannelModel::Scenario", StringValue ("UMa"));
+  Config::SetDefault ("ns3::ThreeGppChannelModel::Blockage", BooleanValue (blockage)); // Enable/disable the blockage model
 
-  // The available channel scenarios are 'RMa', 'UMa', 'UMi-StreetCanyon', 'InH-OfficeMixed', 'InH-OfficeOpen', 'InH-ShoppingMall'
-  std::string scenario = "UMa";
-  std::string condition = "n"; // n = NLOS, l = LOS
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::ChannelCondition", StringValue (condition));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Scenario", StringValue (scenario));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::OptionalNlos", BooleanValue (false));
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::Shadowing", BooleanValue (false)); // enable or disable the shadowing effect
-  Config::SetDefault ("ns3::MmWave3gppPropagationLossModel::InCar", BooleanValue (false)); // enable or disable the shadowing effect
-
-  Config::SetDefault ("ns3::MmWave3gppChannel::UpdatePeriod", TimeValue (MilliSeconds (100))); // Set channel update period, 0 stands for no update.
-  Config::SetDefault ("ns3::MmWave3gppChannel::DirectBeam", BooleanValue (true)); // Set true to perform the beam in the exact direction of receiver node.
-  Config::SetDefault ("ns3::MmWave3gppChannel::PortraitMode", BooleanValue (true)); // use blockage model with UT in portrait mode
-  Config::SetDefault ("ns3::MmWave3gppChannel::NumNonselfBlocking", IntegerValue (4)); // number of non-self blocking obstacles
-  Config::SetDefault ("ns3::MmWave3gppChannel::BlockerSpeed", DoubleValue (1)); // speed of non-self blocking obstacles
+  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
+  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
 
   Ptr<MmWaveHelper> helper = CreateObject<MmWaveHelper> ();
   helper->SetCcPhyParams (ccMap);
-  helper->SetBlockageMap (blockageMap);
+  if (condition == "l")
+  {
+    helper->SetChannelConditionModelType ("ns3::AlwaysLosChannelConditionModel");
+  }
+  else if (condition == "n")
+  {
+    helper->SetChannelConditionModelType ("ns3::NeverLosChannelConditionModel");
+  }
+  
 
   // create the EPC
   Ipv4Address remoteHostAddr;
@@ -327,9 +298,7 @@ main (int argc, char *argv[])
     }
 
   helper->EnableTraces ();
-  Traces (filePath); // enable UL MAC traces
-
-  BuildingsHelper::MakeMobilityModelConsistent ();
+  Traces ("./"); // enable UL MAC traces
 
   Simulator::Stop (Seconds (simTime));
   Simulator::Run ();

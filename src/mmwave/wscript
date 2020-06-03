@@ -24,7 +24,6 @@ def build(bld):
         'model/mmwave-ue-phy.cc',
         'model/mmwave-spectrum-phy.cc',
         'model/mmwave-spectrum-value-helper.cc',
-        'model/mmwave-beamforming.cc',
         'model/mmwave-interference.cc',
         'model/mmwave-chunk-processor.cc',
         'model/mmwave-mac.cc',
@@ -42,8 +41,6 @@ def build(bld):
         'model/mmwave-ue-mac.cc',
         'model/mmwave-rrc-protocol-ideal.cc',
         'model/mmwave-lte-rrc-protocol-real.cc',
-        'model/mmwave-channel-matrix.cc',
-		'model/buildings-obstacle-propagation-loss-model.cc',
         'model/mmwave-mac-pdu-header.cc',
         'model/mmwave-mac-pdu-tag.cc',
         'model/mmwave-harq-phy.cc',
@@ -52,17 +49,12 @@ def build(bld):
         'model/mmwave-flex-tti-maxrate-mac-scheduler.cc',
         'model/mmwave-flex-tti-pf-mac-scheduler.cc',
         'model/mmwave-propagation-loss-model.cc',
-        'model/antenna-array-model.cc',
-        'model/mmwave-channel-raytracing.cc',
         'model/mc-ue-net-device.cc',
-        'model/mmwave-los-tracker.cc',
-        'model/mmwave-3gpp-propagation-loss-model.cc',
-        'model/mmwave-3gpp-channel.cc',
-        'model/mmwave-3gpp-buildings-propagation-loss-model.cc',
         'model/mmwave-component-carrier.cc',
         'model/mmwave-component-carrier-ue.cc',
         'model/mmwave-component-carrier-enb.cc',
-        'model/mmwave-no-op-component-carrier-manager.cc'
+        'model/mmwave-no-op-component-carrier-manager.cc',
+        'model/mmwave-beamforming-model.cc'
         #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',
         #'model/mmwave-mac-sap.cc',
@@ -73,7 +65,10 @@ def build(bld):
 
     module_test = bld.create_ns3_module_test_library('mmwave')
     module_test.source = [
-        #'mmwave-test-suite.cc'
+        'test/mmwave-channel-model-initialization-test.cc',
+        'test/mmwave-antenna-initialization-test.cc',
+        'test/mmwave-beamforming-test.cc',
+        'test/mmwave-attachment-test.cc',
         ]
 
     headers = bld(features='ns3header')
@@ -94,7 +89,6 @@ def build(bld):
         'model/mmwave-ue-phy.h',
         'model/mmwave-spectrum-phy.h',
         'model/mmwave-spectrum-value-helper.h',
-        'model/mmwave-beamforming.h',
         'model/mmwave-interference.h',
         'model/mmwave-chunk-processor.h',
         'model/mmwave-mac.h',
@@ -112,8 +106,6 @@ def build(bld):
         'model/mmwave-ue-mac.h',
         'model/mmwave-rrc-protocol-ideal.h',
         'model/mmwave-lte-rrc-protocol-real.h',
-        'model/mmwave-channel-matrix.h',
-		'model/buildings-obstacle-propagation-loss-model.h',
         'model/mmwave-mac-pdu-header.h',
         'model/mmwave-mac-pdu-tag.h',
         'model/mmwave-harq-phy.h',
@@ -122,17 +114,12 @@ def build(bld):
         'model/mmwave-flex-tti-maxrate-mac-scheduler.h',
         'model/mmwave-flex-tti-pf-mac-scheduler.h',
         'model/mmwave-propagation-loss-model.h',
-        'model/antenna-array-model.h',
-        'model/mmwave-channel-raytracing.h',
         'model/mc-ue-net-device.h',
-        'model/mmwave-los-tracker.h' ,
-        'model/mmwave-3gpp-propagation-loss-model.h',
-        'model/mmwave-3gpp-channel.h',
-        'model/mmwave-3gpp-buildings-propagation-loss-model.h',
         'model/mmwave-component-carrier.h',
         'model/mmwave-component-carrier-ue.h',
         'model/mmwave-component-carrier-enb.h',
-        'model/mmwave-no-op-component-carrier-manager.h'
+        'model/mmwave-no-op-component-carrier-manager.h',
+        'model/mmwave-beamforming-model.h'
         #'model/mmwave-enb-cmac-sap.h',
         #'model/mmwave-enb-rrc.h',
         #'model/mmwave-mac-sap.h',

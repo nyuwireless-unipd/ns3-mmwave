@@ -50,22 +50,6 @@ main (int argc, char *argv[])
 
   CommandLine cmd;
   cmd.Parse (argc, argv);
-//  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_INFO);
-//LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_INFO);
-//LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_INFO);
-//LogComponentEnable ("MmWavePhy", LOG_LEVEL_INFO);
-
-//  LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_INFO);
-//  LogComponentEnable ("MmWaveEnbMac", LOG_LEVEL_INFO);
-//  LogComponentEnable ("MmWaveRrMacScheduler", LOG_LEVEL_INFO);
-
-  //LogComponentEnable ("LteUeRrc", LOG_LEVEL_ALL);
-  //LogComponentEnable ("LteEnbRrc", LOG_LEVEL_ALL);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-  //LogComponentEnable("mmWaveInterference",LOG_LEVEL_ALL);
-  //LogComponentEnable("MmWaveBeamforming",LOG_LEVEL_ALL);
-  //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-  //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
   /* Information regarding the traces generated:
    *
@@ -77,9 +61,6 @@ main (int argc, char *argv[])
    * */
 
   Ptr<MmWaveHelper> ptr_mmWave = CreateObject<MmWaveHelper> ();
-
-  ptr_mmWave->Initialize ();
-
   /* A configuration example.
    * ptr_mmWave->GetCcPhyParams ().at (0).GetConfigurationParameters ()->SetAttribute("SymbolPerSlot", UintegerValue(30)); */
 

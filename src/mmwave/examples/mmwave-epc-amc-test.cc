@@ -51,11 +51,8 @@ double lossMax = 145.0;
 
 void updateLoss (double loss, Ptr<MmWavePropagationLossModel> model)
 {
-//  std::cout << "************* distance changing to " << dist << " *************" << std::endl;
-//  Ptr<MobilityModel> mobModel = ue->GetObject<MobilityModel> ();
-//  mobModel->SetPosition (Vector (dist, 0.0, 0.0));
   model->SetLossFixedDb (loss);
-  std::cout << "************* SINR changing to " << loss << " *************" << std::endl;
+  std::cout << "************* Path loss changing to " << loss << " *************" << std::endl;
   if (loss >= lossMax)
     {
       return;
@@ -75,18 +72,6 @@ main (int argc, char *argv[])
    *    Time (micro-sec)  |  Tb-size in bytes
    * */
 
-  LogComponentEnable ("MmWaveSpectrumPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveBeamforming", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveUePhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveEnbPhy", LOG_LEVEL_DEBUG);
-//	LogComponentEnable ("MmWaveFlexTtiMacScheduler", LOG_LEVEL_DEBUG);
-  LogComponentEnable ("MmWavePhyRxTrace", LOG_LEVEL_DEBUG);
-  //LogComponentEnable ("LteRlcUm", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("MmWaveUeMac", LOG_LEVEL_LOGIC);
-  //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-  //LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
-  //LogComponentEnable("PropagationLossModel",LOG_LEVEL_ALL);
-
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
 
@@ -95,10 +80,8 @@ main (int argc, char *argv[])
   bool rlcAmEnabled = true;
   int mcsDl = -1;
   std::string channelState = "n";
-  bool smallScale = true;
-  double speed = 0.5;
   double dist = 100.0;
-  double interPacketInterval = 1000;        // 500 microseconds
+  double interPacketInterval = 1000;
 
   // Command line arguments
   CommandLine cmd;
@@ -112,7 +95,6 @@ main (int argc, char *argv[])
   cmd.AddValue ("lossMax", "Final distance", lossMax);
   cmd.AddValue ("increment", "Distance increment", increment);
   cmd.AddValue ("updateInterval", "Period after which distance is updated", updateInterval);
-  cmd.AddValue ("smallScale", "Enable small scale fading", smallScale);
   cmd.AddValue ("rlcAm", "Enable RLC-AM", rlcAmEnabled);
   cmd.Parse (argc, argv);
 
@@ -130,12 +112,8 @@ main (int argc, char *argv[])
 //	Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue(true));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
-  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (Seconds (2 * simTime)));
+  Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (Seconds (2 * simTime)));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (1.0)));
-  Config::SetDefault ("ns3::MmWaveBeamforming::SmallScaleFading", BooleanValue (smallScale));
-  Config::SetDefault ("ns3::MmWaveBeamforming::FixSpeed", BooleanValue (true));
-  Config::SetDefault ("ns3::MmWaveBeamforming::UeSpeed", DoubleValue (speed));
-  //Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::FixedLossTst", BooleanValue (true));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::LossFixedDb", DoubleValue (100.0));
   Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue (harqEnabled));
@@ -145,10 +123,20 @@ main (int argc, char *argv[])
 //	Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue(MicroSeconds(100.0)));
 
   Ptr<MmWaveHelper> mmwHelper = CreateObject<MmWaveHelper> ();
-
-  mmwHelper->Initialize ();
-  // get the pathloss model for the default CC
-  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel (0)->GetObject<MmWavePropagationLossModel> ();
+  mmwHelper->SetPathlossModelType ("ns3::MmWavePropagationLossModel");
+  if (channelState == "l")
+  {
+    mmwHelper->SetChannelConditionModelType ("ns3::NeverLosChannelConditionModel");    
+  }
+  else if (channelState == "n")
+  {
+    mmwHelper->SetChannelConditionModelType ("ns3::NeverLosChannelConditionModel");   
+  }
+  else
+  {
+    NS_FATAL_ERROR ("Unknown channel condition");
+  }
+  
   Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
   mmwHelper->SetEpcHelper (epcHelper);
 
@@ -202,8 +190,6 @@ main (int argc, char *argv[])
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator (uePositionAlloc);
   uemobility.Install (ueNodes);
-
-  Simulator::Schedule (MilliSeconds (0), &updateLoss, lossMin, lossModel);
 
   // Install mmWave Devices to the nodes
   NetDeviceContainer enbmmWaveDevs = mmwHelper->InstallEnbDevice (enbNodes);
@@ -267,15 +253,19 @@ main (int argc, char *argv[])
       //			clientApps.Add (client.Install (ueNodes.Get(0)));
       //		}
     }
+  mmwHelper->EnableTraces ();
+  
+  // get the loss model for the default CC
+  Ptr<MmWavePropagationLossModel> lossModel = mmwHelper->GetPathLossModel (0)->GetObject<MmWavePropagationLossModel> ();
+  NS_LOG_UNCOND ("lossModel " << lossModel);
+  NS_ASSERT_MSG (lossModel, "Unable to find the correct loss model");
+  Simulator::Schedule (MilliSeconds (0), &updateLoss, lossMin, lossModel);
+
   serverApps.Start (Seconds (0.020));
   clientApps.Start (Seconds (0.020));
-  mmwHelper->EnableTraces ();
-
   Simulator::Stop (Seconds (simTime));
   NS_LOG_UNCOND ("Simulation running for " << simTime << " seconds");
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
 }
-
-

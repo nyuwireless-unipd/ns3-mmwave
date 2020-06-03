@@ -47,15 +47,12 @@
 #include <ns3/spectrum-interference.h>
 #include <ns3/propagation-loss-model.h>
 #include <ns3/generic-phy.h>
-#include <ns3/antenna-array-model.h>
 #include "mmwave-phy-mac-common.h"
 #include "mmwave-spectrum-phy.h"
 #include "mmwave-net-device.h"
 #include "mmwave-phy-sap.h"
 #include <string>
 #include <map>
-#include <ns3/mmwave-los-tracker.h>
-
 
 namespace ns3 {
 
@@ -128,7 +125,6 @@ public:
   // hacks needed to compute SINR at eNB for each UE, without pilots
   void AddSpectrumPropagationLossModel (Ptr<SpectrumPropagationLossModel> model);
   void AddPropagationLossModel (Ptr<PropagationLossModel> model);
-  void AddLosTracker (Ptr<MmWaveLosTracker>);
 
   /**
 * Set the component carrier ID
@@ -187,7 +183,6 @@ protected:
   // hack to allow eNB to compute the SINR, periodically, without pilots
   Ptr<SpectrumPropagationLossModel> m_spectrumPropagationLossModel;
   Ptr<PropagationLossModel> m_propagationLoss;
-  Ptr<MmWaveLosTracker> m_losTracker;
 
   /// component carrier Id used to address sap
   uint8_t m_componentCarrierId;

@@ -53,10 +53,10 @@
 #include <ns3/packet-burst.h>
 #include "mmwave-spectrum-signal-parameters.h"
 #include "ns3/random-variable-stream.h"
-#include "ns3/mmwave-beamforming.h"
 #include "mmwave-interference.h"
 #include "mmwave-control-messages.h"
 #include "mmwave-harq-phy.h"
+#include "ns3/mmwave-beamforming-model.h"
 
 namespace ns3 {
 
@@ -105,7 +105,7 @@ public:
 
   enum State
   {
-    IDLE = 0,
+    IDLE,
     TX,
     RX_DATA,
     RX_CTRL
@@ -124,16 +124,38 @@ public:
   void SetChannel (Ptr<SpectrumChannel> c);
   Ptr<const SpectrumModel> GetRxSpectrumModel () const;
 
+  /**
+  * This function is used by SpectrumChannel to account for the antenna gain.
+  * However, in our module the antenna gain is implicitly accounted in the
+  * channel model classes, therefore this function returns 0.
+  * \return 0
+  */
   Ptr<AntennaModel> GetRxAntenna ();
-  void SetAntenna (Ptr<AntennaModel> a);
 
-  void SetState (State newState);
+  /**
+  * Set the beamforming module
+  * \param bfModule the beamforming module
+  */
+  void SetBeamformingModel (Ptr<MmWaveBeamformingModel> bfModule);
+
+  /**
+  * Returns the beamforming module
+  * \return the beamforming module
+  */
+  Ptr<MmWaveBeamformingModel> GetBeamformingModel () const;
+
+  /**
+  * Compute the beamforming vector and update the antenna configuration
+  * to point the beam towards the target device.
+  * \param device target device
+  */
+  void ConfigureBeamforming (Ptr<NetDevice> device);
 
   void SetNoisePowerSpectralDensity (Ptr<const SpectrumValue> noisePsd);
   void SetTxPowerSpectralDensity (Ptr<SpectrumValue> TxPsd);
   void StartRx (Ptr<SpectrumSignalParameters> params);
   void StartRxData (Ptr<MmwaveSpectrumSignalParametersDataFrame> params);
-  void StartRxCtrl (Ptr<SpectrumSignalParameters> params);
+  void StartRxCtrl (Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> params);
   Ptr<SpectrumChannel> GetSpectrumChannel ();
   void SetCellId (uint16_t cellId);
 
@@ -180,6 +202,11 @@ public:
 
 
 private:
+
+  /**
+   * \brief change the state
+   * \param the new state
+   */
   void ChangeState (State newState);
   void EndTx ();
   void EndRxData ();
@@ -198,7 +225,8 @@ private:
   Time m_firstRxStart;
   Time m_firstRxDuration;
 
-  Ptr<AntennaModel> m_antenna;
+  Ptr<AntennaModel> m_antenna; // TODO can we remove this? it is never used
+  Ptr<MmWaveBeamformingModel> m_beamforming; //!< used to compute the beamforming vector
 
   uint16_t m_cellId;
 

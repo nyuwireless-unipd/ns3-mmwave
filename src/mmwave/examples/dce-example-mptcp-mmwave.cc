@@ -105,9 +105,6 @@ PrintPid (ApplicationContainer apps, DceApplicationHelper dce)
   NS_LOG_UNCOND ("PID " << dce.GetPid (PeekPointer (apps.Get (0))));
 }
 
-
-static ns3::GlobalValue g_runNumber ("runNumber", "Run number for rng",
-                                     ns3::UintegerValue (1), ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_dist ("dist", "Distance from eNB",
                                 ns3::UintegerValue (190), ns3::MakeUintegerChecker<uint32_t> ());
 static ns3::GlobalValue g_outPath ("outPath",
@@ -140,18 +137,6 @@ int main (int argc, char *argv[])
   UintegerValue uintegerValue;
   StringValue stringValue;
   BooleanValue booleanValue;
-
-  // rng things
-  GlobalValue::GetValueByName ("runNumber", uintegerValue);
-  uint32_t runSet = uintegerValue.Get ();
-  uint32_t seedSet = 1;
-  NS_LOG_UNCOND ("runSet " << runSet);
-  RngSeedManager::SetSeed (seedSet);
-  RngSeedManager::SetRun (runSet);
-  char seedSetStr[21];
-  char runSetStr[21];
-  sprintf (seedSetStr, "%d", seedSet);
-  sprintf (runSetStr, "%d", runSet);
 
   GlobalValue::GetValueByName ("outPath", stringValue);
   std::string path = stringValue.Get ();
@@ -202,16 +187,11 @@ int main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue (sfPeriod));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue (200.0));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue (100));
-  Config::SetDefault ("ns3::MmWaveBeamforming::LongTermUpdatePeriod", TimeValue (MilliSeconds (100.0)));
+  Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (MilliSeconds (100.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (false));
-  Config::SetDefault ("ns3::RadioBearerStatsCalculator::DlRlcOutputFilename", StringValue        (path + dlRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::RadioBearerStatsCalculator::UlRlcOutputFilename", StringValue        (path + ulRlcOutName   + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::RadioBearerStatsCalculator::DlPdcpOutputFilename", StringValue       (path + dlPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-  Config::SetDefault ("ns3::RadioBearerStatsCalculator::UlPdcpOutputFilename", StringValue       (path + ulPdcpOutName + "_" + seedSetStr + "_" + runSetStr + "_" + time_str + extension));
-
   Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.001)));
   Config::SetDefault ("ns3::PointToPointEpcHelper::S1uLinkDelay", TimeValue (Seconds (0.001)));
 
@@ -239,7 +219,7 @@ int main (int argc, char *argv[])
   mmWaveHelper->SetAttribute ("BasicCellId", UintegerValue (0));
   mmWaveHelper->SetAttribute ("BasicImsi", UintegerValue (0));
   mmWaveHelper->SetHarqEnabled (harqEnabled);
-  mmWaveHelper->SetAttribute ("PathlossModel", StringValue ("ns3::BuildingsObstaclePropagationLossModel"));
+  mmWaveHelper->SetChannelConditionModelType ("ns3::BuildingsChannelConditionModel");
   mmWaveHelper->Initialize ();
   mmWaveHelper->SetPhyMacConfigurationParameters ("CenterFreq", "28e9");
   Ptr<MmWavePointToPointEpcHelper> mmWaveEpcHelper = CreateObject<MmWavePointToPointEpcHelper> ();

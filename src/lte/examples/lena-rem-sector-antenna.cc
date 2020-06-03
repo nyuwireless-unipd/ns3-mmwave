@@ -204,10 +204,8 @@ main (int argc, char *argv[])
       lteHelper->ActivateDataRadioBearer (ueDev, bearer);
     }
 
-  BuildingsHelper::MakeMobilityModelConsistent ();
-
   // by default, simulation will anyway stop right after the REM has been generated
-  Simulator::Stop (Seconds (0.0069));  
+  Simulator::Stop (Seconds (0.0069));
 
   Ptr<RadioEnvironmentMapHelper> remHelper = CreateObject<RadioEnvironmentMapHelper> ();
   remHelper->SetAttribute ("ChannelPath", StringValue ("/ChannelList/0"));
