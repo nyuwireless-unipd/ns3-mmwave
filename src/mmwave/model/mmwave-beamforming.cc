@@ -604,9 +604,9 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
       complexVector_t vec;
       for (unsigned int i = 0; i < m_pathNum; i++)
         {
-          vec.push_back (std::complex<double> (1,0));
+          bfParams->m_beam->push_back (std::complex<double> (1,0));
         }
-      (*bfParams->m_beam) = vec;
+      //(*bfParams->m_beam) = vec;
     }
   else
     {
@@ -617,6 +617,10 @@ MmWaveBeamforming::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
         {
           bfParams->m_ueW = ueW;
           bfParams->m_enbW = enbW;
+          
+          // prevent memory leak here
+          delete bfParams->m_beam;
+        
           bfParams->m_beam = GetLongTermFading (bfParams);
         }
       else if (ueW.empty ())
