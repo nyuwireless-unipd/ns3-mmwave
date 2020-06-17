@@ -71,28 +71,30 @@ public:
   static void ReportDlPhyTransmissionCallback (Ptr<MmWavePhyTrace> phyStats, PhyTransmissionTraceParams param);
 
  /**
-  * Sets the filename of the generic PHY traces
+  * Sets the filename of the PHY reception traces
+  * \param fileName the file name
   */
-  void SetOutputFilename (std::string fileName);
+  void SetPhyRxOutputFilename (std::string fileName);
 
  /**
   * Sets the filename of the UL PHY tranmission traces
+  * \param fileName the file name
   */
-  void SetUlPhyOutputFilename (std::string fileName);
+  void SetUlPhyTxOutputFilename (std::string fileName);
 
  /**
   * Sets the filename of the DL PHY tranmission traces
+  * \param fileName the file name
   */
-  void SetDlPhyOutputFilename (std::string fileName);
+  void SetDlPhyTxOutputFilename (std::string fileName);
 
 private:
   //void ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr);
   //void ReportPacketCountUe (UePhyPacketCountParameter param);
   //void ReportPacketCountEnb (EnbPhyPacketCountParameter param);
   //void ReportDLTbSize (uint64_t imsi, uint64_t tbSize);
-
-  static std::ofstream m_rxPacketTraceFile;
-  static std::string m_rxPacketTraceFilename;
+  static std::ofstream m_rxPacketTraceFile;   //!< Output stream for the PHY reception trace
+  static std::string m_rxPacketTraceFilename;   //!< Output filename for the PHY reception trace
 
   static std::ofstream m_ulPhyTraceFile;    //!< Output stream for the UL PHY transmission trace
   static std::string m_ulPhyTraceFilename;    //!< Output filename for the UL PHY transmission trace

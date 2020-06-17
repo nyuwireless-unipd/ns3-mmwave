@@ -524,8 +524,8 @@ void
 MmWaveUePhy::InitializeSlotAllocation (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
 {
   uint8_t nextSf = (sfNum + 1) % m_phyMacConfig->GetSubframesPerFrame ();
-  uint8_t nextFrame = frameNum + (sfNum+1)/m_phyMacConfig->GetSubframesPerFrame ();
-
+  uint16_t nextFrame = frameNum + (sfNum+1)/m_phyMacConfig->GetSubframesPerFrame ();
+  
   NS_ASSERT ((nextSf > sfNum && frameNum == nextFrame) || (nextFrame > frameNum && nextSf == 0));
 
   m_slotAllocInfo [slotNum] = SlotAllocInfo (SfnSf(nextFrame, nextSf, slotNum));

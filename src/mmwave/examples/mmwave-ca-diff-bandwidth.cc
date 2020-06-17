@@ -53,10 +53,7 @@ main (int argc, char *argv[])
   bool useRR = false;
   bool useEpc = false;
   bool blockage = false;
-  int numRefSc0 = 864;
-  int numRefSc1 = 864;
-  uint32_t chunkPerRb0 = 72;
-  uint32_t chunkPerRb1 = 72;
+  double totalBandwidth = 800e6;
   double frequency0 = 28e9;
   double frequency1 = 73e9;
   double simTime = 5;
@@ -65,6 +62,7 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue ("useCa", "If enabled use 2 CC", useCa);
   cmd.AddValue ("bandDiv", "Bandwidth division factor (B1=B0/bandDiv)", bandDiv);
+  cmd.AddValue ("totalBandwidth", "System bandwidth in Hz", totalBandwidth);
   cmd.AddValue ("useRR", "If true use MmWaveRrComponentCarrierManager, else use MmWaveBaRrComponentCarrierManager", useRR);
   cmd.AddValue ("useEpc", "If enabled use EPC, else use RLC saturation mode", useEpc);
   cmd.AddValue ("blockage", "If enabled blockage = true", blockage);
@@ -74,21 +72,12 @@ main (int argc, char *argv[])
   cmd.AddValue ("condition", "Channel condition, l = LOS, n = NLOS, otherwise the condition is randomly determined", condition);
   cmd.Parse (argc, argv);
 
-  if (useCa)
-    {
-      chunkPerRb0 = chunkPerRb0 * (bandDiv - 1) / bandDiv;
-      chunkPerRb1 = chunkPerRb1 / bandDiv;
-      numRefSc0 = numRefSc0 * (bandDiv - 1) / bandDiv;
-      numRefSc1 = numRefSc1 / bandDiv;
-    }
-
   // CC 0
   // 1. create MmWavePhyMacCommon object
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue (frequency0));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue (0));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (chunkPerRb0));
   Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
-  phyMacConfig0->SetNumRefScPerSym ( numRefSc0 );
+  phyMacConfig0->SetNumerology (2); 
+  phyMacConfig0->SetBandwidth (totalBandwidth * (bandDiv - 1) / bandDiv);
+  phyMacConfig0->SetCentreFrequency (frequency0);
 
   // 2. create the MmWaveComponentCarrier object
   Ptr<MmWaveComponentCarrier> cc0 = CreateObject<MmWaveComponentCarrier> ();
@@ -100,11 +89,11 @@ main (int argc, char *argv[])
   if (useCa)
     {
       // 1. create MmWavePhyMacCommon object
-      Config::SetDefault ("ns3::MmWavePhyMacCommon::CenterFreq",DoubleValue (frequency1));
-      Config::SetDefault ("ns3::MmWavePhyMacCommon::ComponentCarrierId", UintegerValue (1));
-      Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (chunkPerRb1));
       Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
-      phyMacConfig1->SetNumRefScPerSym ( numRefSc1 );
+      phyMacConfig1->SetNumerology (2); 
+      phyMacConfig1->SetBandwidth (totalBandwidth / bandDiv);
+      phyMacConfig1->SetCentreFrequency (frequency1);
+      phyMacConfig1->SetCcId (1);
 
       // 2. create the MmWaveComponentCarrier object
       cc1 = CreateObject<MmWaveComponentCarrier> ();

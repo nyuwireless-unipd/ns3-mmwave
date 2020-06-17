@@ -18,9 +18,6 @@
 *   Author: Matteo Pagin <mattpagg@gmail.com>
 */
 
-
-
-
 #include <ns3/log.h>
 #include "mmwave-mac-trace.h"
 
@@ -83,11 +80,11 @@ MmWaveMacTrace::ReportEnbSchedulingInfo (Ptr<MmWaveMacTrace> enbStats, MmWaveEnb
     for (auto iTti : allocInfo.m_ttiAllocInfo)
     {
       // Trace the incoming alloc info
-      m_schedAllocTraceFile << (unsigned)dlSfn.m_frameNum << "\t" << (unsigned)dlSfn.m_sfNum << "\t"
-                            << (unsigned)dlSfn.m_slotNum << "\t" << (unsigned)iTti.m_dci.m_rnti 
-                            << "\t" << (unsigned)iTti.m_dci.m_symStart << "\t" << (unsigned)iTti.m_dci.m_numSym 
-                            << "\t" << iTti.m_ttiType << "\t" << iTti.m_tddMode << "\t" << (unsigned)iTti.m_dci.m_rv 
-                            << "\t" << (unsigned)schedParams.m_ccId << std::endl;
+      m_schedAllocTraceFile << +dlSfn.m_frameNum << "\t" << +dlSfn.m_sfNum << "\t"
+                            << +dlSfn.m_slotNum << "\t" << +iTti.m_dci.m_rnti << "\t" 
+                            << +iTti.m_dci.m_symStart << "\t" << +iTti.m_dci.m_numSym << "\t" 
+                            << iTti.m_ttiType << "\t" << iTti.m_tddMode << "\t" 
+                            << +iTti.m_dci.m_rv << "\t" << +schedParams.m_ccId << std::endl;
     }   
 }
 

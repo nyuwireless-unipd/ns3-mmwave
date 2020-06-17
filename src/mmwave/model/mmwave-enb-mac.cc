@@ -535,7 +535,7 @@ MmWaveEnbMac::DoSlotIndication (SfnSf sfnSf)
 
   if (slotStart)
     {
-      NS_LOG_DEBUG ("Starting a new NR slot - DoSlotIndication");
+      NS_LOG_LOGIC ("Starting a new NR slot - DoSlotIndication");
       NS_LOG_DEBUG ("Current frame " << sfnSf.m_frameNum << " subframe " << (unsigned)sfnSf.m_sfNum << " slot " << (unsigned)sfnSf.m_slotNum);
       // Trigger scheduler, taking into consideration the L1L2 delay 
 

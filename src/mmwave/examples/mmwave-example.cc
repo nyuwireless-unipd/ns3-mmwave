@@ -44,10 +44,6 @@ using namespace mmwave;
 int
 main (int argc, char *argv[])
 {
-
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
-
   CommandLine cmd;
   cmd.Parse (argc, argv);
 

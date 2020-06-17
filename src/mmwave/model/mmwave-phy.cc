@@ -67,8 +67,6 @@ public:
 
   virtual void SetSlotAllocInfo (SlotAllocInfo slotAllocInfo);
 
-  //virtual void SetUlSfAllocInfo (SlotAllocInfo slotAllocInfo);
-
 private:
   MmWavePhy* m_phy;
 };

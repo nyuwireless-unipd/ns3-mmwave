@@ -115,8 +115,6 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue (harqEnabled));
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::DlSchedOnly", BooleanValue (false));
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::UlSchedOnly", BooleanValue (true));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (1.0)));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::ChannelStates", StringValue (channelState));
   Config::SetDefault ("ns3::MmWavePropagationLossModel::FixedLossTst", BooleanValue (true));

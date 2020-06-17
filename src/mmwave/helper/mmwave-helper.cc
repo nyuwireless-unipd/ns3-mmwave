@@ -272,7 +272,13 @@ MmWaveHelper::DoInitialize ()
   if (!m_useCa && m_componentCarrierPhyParams.size () == 0)
     {
       NS_LOG_INFO ("useCa=false and empty CC map. Create the default CC.");
-      Ptr<MmWavePhyMacCommon> phyMacConfig = CreateObject<MmWavePhyMacCommon> ();
+      
+      // NOTE: The default numerology index is 2, the default bw is 400MHz. 
+      // For custom configurations use the method SetCcPhyParams
+      Ptr<MmWavePhyMacCommon> phyMacConfig = CreateObject<MmWavePhyMacCommon> (); 
+      phyMacConfig->SetNumerology (2);
+      phyMacConfig->SetBandwidth (400e6);
+      NS_LOG_UNCOND ("SubF period " << phyMacConfig->GetSubframePeriod ());     
       Ptr<MmWaveComponentCarrier> cc = CreateObject<MmWaveComponentCarrier> ();
       cc->SetConfigurationParameters (phyMacConfig);
       cc->SetAsPrimary (true);

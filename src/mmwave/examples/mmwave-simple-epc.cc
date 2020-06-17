@@ -60,8 +60,6 @@ main (int argc, char *argv[])
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
   bool fixedTti = false;
-  unsigned symPerSf = 24;
-  double sfPeriod = 100.0;
 
   // Command line arguments
   CommandLine cmd;
@@ -71,8 +69,6 @@ main (int argc, char *argv[])
   cmd.AddValue ("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("rlcAm", "Enable RLC-AM", rlcAmEnabled);
-  cmd.AddValue ("symPerSf", "OFDM symbols per subframe", symPerSf);
-  cmd.AddValue ("sfPeriod", "Subframe period = 4.16 * symPerSf", sfPeriod);
   cmd.AddValue ("fixedTti", "Fixed TTI scheduler", fixedTti);
   cmd.Parse (argc, argv);
 
@@ -83,10 +79,6 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue (harqEnabled));
   Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::FixedTti", BooleanValue (fixedTti));
   Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::SymPerSlot", UintegerValue (6));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ResourceBlockNum", UintegerValue (1));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (72));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::SymbolsPerSubframe", UintegerValue (symPerSf));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::SubframePeriod", DoubleValue (sfPeriod));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue (200.0));
   Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (MilliSeconds (100.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
