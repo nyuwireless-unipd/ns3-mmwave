@@ -298,6 +298,7 @@ MmWaveUePhy::DoSendControlMessage (Ptr<MmWaveControlMessage> msg)
 void
 MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 {
+  NS_LOG_FUNCTION (this);
   m_cellId = cellId;
   m_phyReset = false;
   //TBD how to assign bandwitdh and earfcn
@@ -319,23 +320,12 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
   // point the beam towards the serving BS
   m_downlinkSpectrumPhy->ConfigureBeamforming (m_registeredEnb.find (m_cellId)->second.second);
 
-  if (m_frameNum != 0)
-    {
-      m_slotAllocInfo.clear ();          //clear the no more valid DCI, then rebuild the structure
-      uint8_t nextSlot = m_slotNum + 1;
-      for (unsigned i = 0; i < nextSlot; i++)
-        {
-          NS_LOG_INFO ("SlotAllocInfo for slot " << i << " subframe " << (uint16_t)m_sfNum << " frame " << m_frameNum + 1);
-          m_slotAllocInfo.push_back (SlotAllocInfo (SfnSf (m_frameNum + 1, 0, i)));
-          SetSlotCtrlStructure (i);
-        }
-      for (unsigned i = nextSlot; i < m_phyMacConfig->GetSlotsPerSubframe (); i++)
-        {
-          NS_LOG_INFO ("SlotAllocInfo for slot " << i << " subframe " << (uint16_t)m_sfNum << " frame " << m_frameNum);
-          m_slotAllocInfo.push_back (SlotAllocInfo (SfnSf (m_frameNum, 0, i)));
-          SetSlotCtrlStructure (i);
-        }
-    }
+  // remove the old DCIs, they are no more valid
+  for (unsigned i = 0; i < m_slotAllocInfo.size (); i++)
+  {
+    m_slotAllocInfo [i].m_ttiAllocInfo.clear ();
+    SetSlotCtrlStructure (i);
+  }
 
   m_downlinkSpectrumPhy->ResetSpectrumModel ();
   Ptr<SpectrumValue> noisePsd =

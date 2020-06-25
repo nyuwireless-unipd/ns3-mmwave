@@ -135,9 +135,9 @@ public:
    *
    * The first OFDM symbol of each slot gets assigned to DL control data, while the last one to UL control data.
    *
-   * \param sfToAlloc the slot index to be allocated.
+   * \param slotIndex the slot index to be allocated.
    */
-  void SetSlotCtrlStructure (uint8_t sfToAlloc);
+  void SetSlotCtrlStructure (uint8_t slotIndex);
 
   SlotAllocInfo GetSfAllocInfo (uint8_t subframeNum);
   void DoSetSlotAllocInfo (SlotAllocInfo sfAllocInfo);

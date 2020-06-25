@@ -303,7 +303,7 @@ MmWavePhy::GetControlMessages (void)
 }
 
 void
-MmWavePhy::SetSlotCtrlStructure (uint8_t slotToAlloc)
+MmWavePhy::SetSlotCtrlStructure (uint8_t slotIndex)
 {
   // Currently hardcoded: first OFDM symbol = DL control, last OFDM symbol = UL control
   TtiAllocInfo dlCtrlTti;
