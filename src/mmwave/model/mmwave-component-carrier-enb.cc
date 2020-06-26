@@ -109,7 +109,7 @@ MmWaveComponentCarrierEnb::DoDispose ()
       m_ffrAlgorithm = 0;
     }
  */
-  Object::DoDispose ();
+  MmWaveComponentCarrier::DoDispose ();
 }
 
 

@@ -20,6 +20,7 @@
 #include "ns3/three-gpp-antenna-array-model.h"
 #include "ns3/mobility-model.h"
 #include "ns3/pointer.h"
+#include "ns3/uinteger.h"
 #include "ns3/net-device.h"
 #include "ns3/node.h"
 #include "ns3/log.h"
@@ -41,11 +42,17 @@ MmWaveBeamformingModel::GetTypeId ()
     tid =
     TypeId ("ns3::MmWaveBeamformingModel")
     .SetParent<Object> ()
-    .AddAttribute ("AntennaArray",
-                   "Poiter to the antenna array",
-                   PointerValue (),
+    .AddAttribute ("Device",
+                   "The current NetDevice",
+                   PointerValue (0),
+                   MakePointerAccessor (&MmWaveBeamformingModel::SetDevice,
+                                        &MmWaveBeamformingModel::GetDevice),
+                   MakePointerChecker<NetDevice> ())
+    .AddAttribute ("Antenna",
+                   "The antenna of the Device to configure",
+                   PointerValue (0),
                    MakePointerAccessor (&MmWaveBeamformingModel::SetAntenna,
-                                        &MmWaveBeamformingModel::GetAntenna),
+                                         &MmWaveBeamformingModel::GetAntenna),
                    MakePointerChecker<ThreeGppAntennaArrayModel> ())
   ;
   return tid;
@@ -58,22 +65,41 @@ MmWaveBeamformingModel::MmWaveBeamformingModel ()
 
 MmWaveBeamformingModel::~MmWaveBeamformingModel ()
 {
+}
 
+void
+MmWaveBeamformingModel::DoDispose ()
+{
+  NS_LOG_FUNCTION (this);
+  m_device = 0;
+  m_antenna = 0;
+}
+
+Ptr<NetDevice>
+MmWaveBeamformingModel::GetDevice () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_device;
+}
+
+void
+MmWaveBeamformingModel::SetDevice (Ptr<NetDevice> device)
+{
+  NS_LOG_FUNCTION (this << device);
+  m_device = device;
 }
 
 Ptr<ThreeGppAntennaArrayModel>
-MmWaveBeamformingModel::GetAntenna () const
+MmWaveBeamformingModel::GetAntenna (void) const
 {
   NS_LOG_FUNCTION (this);
-
   return m_antenna;
 }
 
 void
 MmWaveBeamformingModel::SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna)
 {
-  NS_LOG_FUNCTION (this);
-
+  NS_LOG_FUNCTION (this << antenna);
   m_antenna = antenna;
 }
 
@@ -89,11 +115,6 @@ MmWaveDftBeamforming::GetTypeId ()
     TypeId ("ns3::MmWaveDftBeamforming")
     .SetParent<MmWaveBeamformingModel> ()
     .AddConstructor<MmWaveDftBeamforming> ()
-    .AddAttribute ("MobilityModel",
-                   "Poiter to the MobilityModel associated with this device",
-                   PointerValue (),
-                   MakePointerAccessor (&MmWaveDftBeamforming::m_mobility),
-                   MakePointerChecker<MobilityModel> ())
   ;
   return tid;
 }
@@ -105,18 +126,18 @@ MmWaveDftBeamforming::MmWaveDftBeamforming ()
 
 MmWaveDftBeamforming::~MmWaveDftBeamforming ()
 {
-
 }
 
 void
-MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice)
+MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this << otherDevice << otherAntenna);
 
   ThreeGppAntennaArrayModel::ComplexVector antennaWeights;
 
   // retrieve the position of the two devices
-  Vector aPos = m_mobility->GetPosition ();
+  Ptr<MobilityModel> mobility = m_device->GetNode ()->GetObject<MobilityModel> ();
+  Vector aPos = mobility->GetPosition ();
 
   NS_ASSERT_MSG (otherDevice->GetNode (), "the device " << otherDevice << " is not associated to a node");
   NS_ASSERT_MSG (otherDevice->GetNode ()->GetObject<MobilityModel> (), "the device " << otherDevice << " has not a mobility model");

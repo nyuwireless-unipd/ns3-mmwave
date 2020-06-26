@@ -50,7 +50,7 @@
 #include <ns3/abort.h>
 #include <ns3/log.h>
 #include <ns3/lte-enb-component-carrier-manager.h>
-#include <ns3/object-map.h>
+#include <ns3/mmwave-component-carrier-enb.h>
 
 namespace ns3 {
 
@@ -72,10 +72,6 @@ TypeId MmWaveEnbNetDevice::GetTypeId ()
                    PointerValue (),
                    MakePointerAccessor (&MmWaveEnbNetDevice::m_componentCarrierManager),
                    MakePointerChecker <LteEnbComponentCarrierManager> ())
-    .AddAttribute ("ComponentCarrierMap", "List of component carriers.",
-                   ObjectMapValue (),
-                   MakeObjectMapAccessor (&MmWaveEnbNetDevice::m_ccMap),
-                   MakeObjectMapChecker<MmWaveComponentCarrierEnb> ())
     .AddAttribute ("LteEnbRrc",
                    "The RRC layer associated with the ENB",
                    PointerValue (),
@@ -86,12 +82,6 @@ TypeId MmWaveEnbNetDevice::GetTypeId ()
                    UintegerValue (0),
                    MakeUintegerAccessor (&MmWaveEnbNetDevice::m_cellId),
                    MakeUintegerChecker<uint16_t> ())
-    .AddAttribute ("AntennaNum",
-                   "Antenna number of the device",
-                   UintegerValue (64),
-                   MakeUintegerAccessor (&MmWaveEnbNetDevice::SetAntennaNum,
-                                         &MmWaveEnbNetDevice::GetAntennaNum),
-                   MakeUintegerChecker<uint16_t> ())
   ;
   return tid;
 }
@@ -101,7 +91,6 @@ MmWaveEnbNetDevice::MmWaveEnbNetDevice ()
 // m_Bandwidth (72),
 // m_Earfcn(1),
   : m_componentCarrierManager (0),
-    m_isConstructed (false),
     m_isConfigured (false)
 {
   NS_LOG_FUNCTION (this);
@@ -118,8 +107,7 @@ MmWaveEnbNetDevice::DoInitialize (void)
   NS_LOG_FUNCTION (this);
   m_isConstructed = true;
   UpdateConfig ();
-  std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> >::iterator it;
-  for (it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
+  for (auto it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
     {
       it->second->Initialize ();
     }
@@ -152,13 +140,13 @@ Ptr<MmWaveEnbPhy>
 MmWaveEnbNetDevice::GetPhy (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_ccMap.at (0)->GetPhy ();
+  return DynamicCast<MmWaveComponentCarrierEnb> (m_ccMap.at (0))->GetPhy ();
 }
 
 Ptr<MmWaveEnbPhy>
 MmWaveEnbNetDevice::GetPhy (uint8_t index)
 {
-  return m_ccMap.at (index)->GetPhy ();
+  return DynamicCast<MmWaveComponentCarrierEnb> (m_ccMap.at (index))->GetPhy ();
 }
 
 
@@ -174,7 +162,8 @@ MmWaveEnbNetDevice::HasCellId (uint16_t cellId) const
 {
   for (auto &it : m_ccMap)
     {
-      if (it.second->GetCellId () == cellId)
+
+      if (DynamicCast<MmWaveComponentCarrierEnb> (it.second)->GetCellId () == cellId)
         {
           return true;
         }
@@ -196,31 +185,16 @@ MmWaveEnbNetDevice::SetBandwidth (uint8_t bw)
   m_Bandwidth = bw;
 }
 
-void
-MmWaveEnbNetDevice::SetEarfcn (uint16_t earfcn)
-{
-  NS_LOG_FUNCTION (this << earfcn);
-  m_Earfcn = earfcn;
-}
-
-uint16_t
-MmWaveEnbNetDevice::GetEarfcn () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_Earfcn;
-
-}
-
 Ptr<MmWaveEnbMac>
 MmWaveEnbNetDevice::GetMac (void)
 {
-  return m_ccMap.at (0)->GetMac ();
+  return DynamicCast<MmWaveComponentCarrierEnb> (m_ccMap.at (0))->GetMac ();
 }
 
 Ptr<MmWaveEnbMac>
 MmWaveEnbNetDevice::GetMac (uint8_t index)
 {
-  return m_ccMap.at (index)->GetMac ();
+  return DynamicCast<MmWaveComponentCarrierEnb> (m_ccMap.at (index))->GetMac ();
 }
 
 void
@@ -233,18 +207,6 @@ Ptr<LteEnbRrc>
 MmWaveEnbNetDevice::GetRrc (void)
 {
   return m_rrc;
-}
-
-void
-MmWaveEnbNetDevice::SetAntennaNum (uint16_t antennaNum)
-{
-  NS_ASSERT_MSG (std::floor (std::sqrt(antennaNum)) == std::sqrt(antennaNum), "Only square antenna arrays are currently supported.");
-  m_antennaNum = antennaNum;
-}
-uint16_t
-MmWaveEnbNetDevice::GetAntennaNum () const
-{
-  return m_antennaNum;
 }
 
 bool
@@ -273,12 +235,13 @@ MmWaveEnbNetDevice::UpdateConfig (void)
 
           // create the MmWaveComponentCarrierConf map used for the RRC setup
           std::map<uint8_t, LteEnbRrc::MmWaveComponentCarrierConf> ccConfMap;
-          for (std::map<uint8_t,Ptr<MmWaveComponentCarrierEnb> >::iterator it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
+          for (auto it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
             {
+              Ptr<MmWaveComponentCarrierEnb> ccEnb = DynamicCast<MmWaveComponentCarrierEnb> (it->second);
               LteEnbRrc::MmWaveComponentCarrierConf ccConf;
-              ccConf.m_ccId = it->second->GetConfigurationParameters ()->GetCcId ();
-              ccConf.m_cellId = it->second->GetCellId ();
-              ccConf.m_bandwidth = it->second->GetBandwidth ();
+              ccConf.m_ccId = ccEnb->GetConfigurationParameters ()->GetCcId ();
+              ccConf.m_cellId = ccEnb->GetCellId ();
+              ccConf.m_bandwidth = ccEnb->GetBandwidth ();
 
               ccConfMap[it->first] = ccConf;
             }
@@ -298,14 +261,8 @@ MmWaveEnbNetDevice::UpdateConfig (void)
     }
 }
 
-std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> >
-MmWaveEnbNetDevice::GetCcMap ()
-{
-  return m_ccMap;
-}
-
 void
-MmWaveEnbNetDevice::SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> > ccm)
+MmWaveEnbNetDevice::SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrier> > ccm)
 {
   NS_ASSERT_MSG (!m_isConfigured, "attempt to set CC map after configuration");
   m_ccMap = ccm;

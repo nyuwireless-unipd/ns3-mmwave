@@ -53,6 +53,7 @@
 #include <ns3/double.h>
 #include <ns3/mmwave-mi-error-model.h>
 #include "mmwave-mac-pdu-tag.h"
+#include <ns3/three-gpp-antenna-array-model.h>
 
 namespace ns3 {
 
@@ -309,8 +310,24 @@ MmWaveSpectrumPhy::SetPhyUlHarqFeedbackCallback (MmWavePhyUlHarqFeedbackCallback
 void
 MmWaveSpectrumPhy::ConfigureBeamforming (Ptr<NetDevice> device)
 {
-  NS_LOG_FUNCTION (this);
-  m_beamforming->SetBeamformingVectorForDevice (device);
+  NS_LOG_FUNCTION (this << device);
+  Ptr<ThreeGppAntennaArrayModel> antenna;
+
+  // test if device is a MmWaveNetDevice
+  Ptr<MmWaveNetDevice> mmNetDevice = DynamicCast<MmWaveNetDevice> (device);
+  if (mmNetDevice)
+    {
+      antenna = mmNetDevice->GetAntenna (m_componentCarrierId);
+    }
+
+  // test if device is a MmWaveNetDevice
+  Ptr<McUeNetDevice> mcUeNetDevice = DynamicCast<McUeNetDevice> (device);
+  if (mcUeNetDevice)
+    {
+      antenna = mcUeNetDevice->GetAntenna (m_componentCarrierId);
+    }
+  
+  m_beamforming->SetBeamformingVectorForDevice (device, antenna);
 }
 
 void

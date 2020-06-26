@@ -51,7 +51,7 @@
 #include <ns3/ipv6-l3-protocol.h>
 #include <ns3/log.h>
 #include <ns3/lte-ue-component-carrier-manager.h>
-#include <ns3/object-map.h>
+#include "ns3/mmwave-component-carrier-ue.h"
 
 
 namespace ns3 {
@@ -86,21 +86,11 @@ MmWaveUeNetDevice::GetTypeId (void)
                    PointerValue (),
                    MakePointerAccessor (&MmWaveUeNetDevice::m_componentCarrierManager),
                    MakePointerChecker <LteUeComponentCarrierManager> ())
-    .AddAttribute ("ComponentCarrierMapUe", "List of all component Carrier.",
-                   ObjectMapValue (),
-                   MakeObjectMapAccessor (&MmWaveUeNetDevice::m_ccMap),
-                   MakeObjectMapChecker<MmWaveComponentCarrierUe> ())
     .AddAttribute ("Imsi",
                    "International Mobile Subscriber Identity assigned to this UE",
                    UintegerValue (0),
                    MakeUintegerAccessor (&MmWaveUeNetDevice::m_imsi),
                    MakeUintegerChecker<uint64_t> ())
-    .AddAttribute ("AntennaNum",
-                   "Antenna number of the device",
-                   UintegerValue (16),
-                   MakeUintegerAccessor (&MmWaveUeNetDevice::SetAntennaNum,
-                                         &MmWaveUeNetDevice::GetAntennaNum),
-                   MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("LteUeRrc",
                    "The RRC layer associated with the ENB",
                    PointerValue (),
@@ -111,8 +101,6 @@ MmWaveUeNetDevice::GetTypeId (void)
 }
 
 MmWaveUeNetDevice::MmWaveUeNetDevice (void)
-  : m_isConstructed (false)
-
 {
   NS_LOG_FUNCTION (this);
 }
@@ -129,11 +117,11 @@ MmWaveUeNetDevice::DoInitialize (void)
   m_isConstructed = true;
   UpdateConfig ();
 
-  std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> >::iterator it;
-  for (it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
+  for (auto it = m_ccMap.begin (); it != m_ccMap.end (); ++it)
     {
-      it->second->GetPhy ()->Initialize ();
-      it->second->GetMac ()->Initialize ();
+      Ptr<MmWaveComponentCarrierUe> ccUe = DynamicCast<MmWaveComponentCarrierUe> (it->second);
+      ccUe->GetPhy ()->Initialize ();
+      ccUe->GetMac ()->Initialize ();
     }
   m_rrc->Initialize ();
 
@@ -209,14 +197,14 @@ Ptr<MmWaveUePhy>
 MmWaveUeNetDevice::GetPhy (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_ccMap.at (0)->GetPhy ();
+  return DynamicCast<MmWaveComponentCarrierUe> (m_ccMap.at (0))->GetPhy ();
 }
 
 Ptr<MmWaveUePhy>
 MmWaveUeNetDevice::GetPhy (uint8_t index) const
 {
   NS_LOG_FUNCTION (this);
-  return m_ccMap.at (index)->GetPhy ();
+  return DynamicCast<MmWaveComponentCarrierUe> (m_ccMap.at (index))->GetPhy ();
 }
 
 Ptr<LteUeComponentCarrierManager>
@@ -230,7 +218,7 @@ Ptr<MmWaveUeMac>
 MmWaveUeNetDevice::GetMac (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_ccMap.at (0)->GetMac ();
+  return DynamicCast<MmWaveComponentCarrierUe> (m_ccMap.at (0))->GetMac ();
 }
 
 Ptr<EpcUeNas>
@@ -255,20 +243,6 @@ MmWaveUeNetDevice::GetImsi () const
   return m_imsi;
 }
 
-uint16_t
-MmWaveUeNetDevice::GetEarfcn () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_earfcn;
-}
-
-void
-MmWaveUeNetDevice::SetEarfcn (uint16_t earfcn)
-{
-  NS_LOG_FUNCTION (this << earfcn);
-  m_earfcn = earfcn;
-}
-
 void
 MmWaveUeNetDevice::SetTargetEnb (Ptr<MmWaveEnbNetDevice> enb)
 {
@@ -281,34 +255,6 @@ MmWaveUeNetDevice::GetTargetEnb (void)
 {
   NS_LOG_FUNCTION (this);
   return m_targetEnb;
-}
-
-std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> >
-MmWaveUeNetDevice::GetCcMap ()
-{
-  return m_ccMap;
-}
-
-void
-MmWaveUeNetDevice::SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > ccm)
-{
-  m_ccMap = ccm;
-}
-
-
-uint16_t
-MmWaveUeNetDevice::GetAntennaNum () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_antennaNum;
-}
-
-void
-MmWaveUeNetDevice::SetAntennaNum (uint16_t antennaNum)
-{
-  NS_LOG_FUNCTION (this << antennaNum);
-  NS_ASSERT_MSG (std::floor (std::sqrt(antennaNum)) == std::sqrt(antennaNum), "Only square antenna arrays are currently supported.");
-  m_antennaNum = antennaNum;
 }
 
 }

@@ -218,6 +218,13 @@ public:
 
   uint16_t GetAntennaNum () const;
 
+  /**
+   * Get the antenna for the given mmWave component carrier
+   * \param ccId the target mmwave Component Carrier ID
+   * \return the antenna
+   */
+  Ptr<ThreeGppAntennaArrayModel> GetAntenna (uint8_t ccId) const;
+
 protected:
   NetDevice::ReceiveCallback m_rxCallback;
   virtual void DoInitialize (void);

@@ -54,26 +54,42 @@ public:
   static TypeId GetTypeId (void);
 
   /**
-   * Returns the antenna object
-   * \return the antenna object
+   * Returns the NetDevice
+   * \return the net device
+   */
+  Ptr<NetDevice> GetDevice (void) const;
+
+  /**
+   * Set the NetDevice
+   * \param device the net device
+   */
+  void SetDevice (Ptr<NetDevice> device);
+
+  /**
+   * Get the antenna on which beamforming is applied
+   * \return the antenna
    */
   Ptr<ThreeGppAntennaArrayModel> GetAntenna (void) const;
 
   /**
-   * Set the antenna array object.
-   * \param antenna the antenna object
+   * Set the antenna on which beamforming is applied
+   * \param antenna
    */
   void SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna);
 
   /**
-   * Computes the beamforming vector to communicate with the target device
-   * and sets the antenna.
-   * \param the target device
+   * Computes the beamforming vector to communicate with the target device and antenna
+   * and configures the antenna
+   * \param otherDevice the target device
+   * \param otherAntenna the target antenna of otherDevice
    */
-  virtual void SetBeamformingVectorForDevice (Ptr<NetDevice> device) = 0;
+  virtual void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) = 0;
 
 protected:
-  Ptr<ThreeGppAntennaArrayModel> m_antenna; // pointer to the antenna array instance
+  virtual void DoDispose (void) override;
+
+  Ptr<NetDevice> m_device; //!< pointer to the NetDevice
+  Ptr<ThreeGppAntennaArrayModel> m_antenna; //!< The antenna of the device on which the beamforming is applied
 };
 
 
@@ -101,16 +117,12 @@ public:
   static TypeId GetTypeId (void);
 
   /**
-   * Computes the beamforming vector to communicate with the target device
-   * and sets the antenna.
-   * The beamforming vector is computed using a DFT-based beamforming
-   * algorithm.
-   * \param the target device
+   * Computes the beamforming vector to communicate with the target device and antenna
+   * and configures the antenna
+   * \param otherDevice the target device
+   * \param otherAntenna the target antenna of otherDevice
    */
-  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice) override;
-
-private:
-  Ptr<MobilityModel> m_mobility; // pointer to the MobilityModel installed in this device
+  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) override;
 };
 
 } // namespace mmwave

@@ -681,5 +681,12 @@ McUeNetDevice::DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protoco
   return m_nas->Send (packet, protocolNumber);
 }
 
+Ptr<ThreeGppAntennaArrayModel>
+McUeNetDevice::GetAntenna (uint8_t ccId) const
+{
+  NS_LOG_FUNCTION (this << +ccId);
+  return m_mmWaveCcMap.at (ccId)->GetAntenna ();
+}
+
 }
 }

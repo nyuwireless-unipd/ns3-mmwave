@@ -42,7 +42,6 @@
 #include "mmwave-ue-mac.h"
 #include <ns3/lte-ue-rrc.h>
 #include <ns3/epc-ue-nas.h>
-#include "ns3/mmwave-component-carrier-ue.h"
 #include <map>
 
 namespace ns3 {
@@ -83,27 +82,15 @@ public:
 
   uint64_t GetImsi () const;
 
-  uint16_t GetEarfcn () const;
-
   Ptr<EpcUeNas> GetNas (void) const;
 
   Ptr<LteUeComponentCarrierManager> GetComponentCarrierManager (void) const;
 
   Ptr<LteUeRrc> GetRrc () const;
 
-  void SetEarfcn (uint16_t earfcn);
-
   void SetTargetEnb (Ptr<MmWaveEnbNetDevice> enb);
 
   Ptr<MmWaveEnbNetDevice> GetTargetEnb (void);
-
-  void SetAntennaNum (uint16_t antennaNum);
-
-  uint16_t GetAntennaNum () const;
-
-  std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > GetCcMap ();
-
-  void SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierUe> > ccm);
 
 protected:
   // inherited from Object
@@ -112,25 +99,16 @@ protected:
 private:
   MmWaveUeNetDevice (const MmWaveUeNetDevice &);
 
-  bool m_isConstructed;
-
   Ptr<MmWaveEnbNetDevice> m_targetEnb;
 
   Ptr<LteUeRrc> m_rrc;
   Ptr<EpcUeNas> m_nas;
   Ptr<LteUeComponentCarrierManager> m_componentCarrierManager;       ///< the component carrier manager
 
-
   uint64_t m_imsi;
 
-  uint16_t m_earfcn;
-
   uint32_t m_csgId;
-
-  std::map < uint8_t, Ptr<MmWaveComponentCarrierUe> > m_ccMap;       ///< CC map
-
-  uint16_t m_antennaNum;
-
+  
 
 };
 

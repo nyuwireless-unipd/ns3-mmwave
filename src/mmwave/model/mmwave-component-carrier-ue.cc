@@ -78,7 +78,7 @@ MmWaveComponentCarrierUe::DoDispose ()
   m_phy = 0;
   m_mac->Dispose ();
   m_mac = 0;
-  Object::DoDispose ();
+  MmWaveComponentCarrier::DoDispose ();
 }
 
 

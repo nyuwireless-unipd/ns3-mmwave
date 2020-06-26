@@ -38,6 +38,7 @@
 #include <ns3/traced-callback.h>
 #include <ns3/nstime.h>
 #include "mmwave-phy.h"
+#include <ns3/three-gpp-antenna-array-model.h>
 
 namespace ns3 {
 
@@ -45,6 +46,9 @@ class Node;
 class Packet;
 
 namespace mmwave {
+  
+class MmWaveComponentCarrier;
+
 
 class MmWaveNetDevice : public NetDevice
 {
@@ -85,8 +89,31 @@ public:
   Ipv4Address GetPacketDestination (Ptr<Packet> packet);
 
   void Receive (Ptr<Packet> p);
+
+  virtual void SetAntennaNum (uint16_t antennaNum);
+  virtual uint16_t GetAntennaNum () const;
+
+  virtual void SetEarfcn (uint16_t earfcn);
+  virtual uint16_t GetEarfcn () const;
+
+  virtual void SetCcMap (std::map<uint8_t, Ptr<MmWaveComponentCarrier> > ccm);
+  virtual std::map<uint8_t, Ptr<MmWaveComponentCarrier> > GetCcMap () const;
+
+  /**
+   * Get the antenna for the component carrier
+   * \param ccId the target Component Carrier ID
+   * \return the antenna
+   */
+  Ptr<ThreeGppAntennaArrayModel> GetAntenna (uint8_t ccId) const;
+
 protected:
   NetDevice::ReceiveCallback m_rxCallback;
+
+  uint16_t m_antennaNum; //!< Number of antenna elements for the device
+  uint16_t m_earfcn; //!< Carrier frequency
+  std::map<uint8_t, Ptr<MmWaveComponentCarrier> > m_ccMap; //!< ComponentCarrier map
+  bool m_isConstructed; //!< indicates if the object has been initialized
+
 private:
   Mac64Address m_macaddress;
   Ptr<Node> m_node;

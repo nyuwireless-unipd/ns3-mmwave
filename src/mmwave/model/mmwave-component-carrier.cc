@@ -67,6 +67,12 @@ TypeId MmWaveComponentCarrier::GetTypeId (void)
                    MakeBooleanAccessor (&MmWaveComponentCarrier::SetAsPrimary,
                                         &MmWaveComponentCarrier::IsPrimary),
                    MakeBooleanChecker ())
+    .AddAttribute ("Antenna",
+                   "Antenna used by the device in this component carrier",
+                   PointerValue (0),
+                   MakePointerAccessor (&MmWaveComponentCarrier::SetAntenna,
+                                        &MmWaveComponentCarrier::GetAntenna),
+                   MakePointerChecker<ThreeGppAntennaArrayModel> ())
   ;
   return tid;
 }
@@ -85,6 +91,7 @@ void
 MmWaveComponentCarrier::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
+  m_antenna = 0;
   Object::DoDispose ();
 }
 
@@ -158,6 +165,21 @@ MmWaveComponentCarrier::GetConfigurationParameters (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_phyMacConfig;
+}
+
+
+void
+MmWaveComponentCarrier::SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna)
+{
+  NS_LOG_FUNCTION (this << antenna);
+  m_antenna = antenna;
+}
+
+Ptr<ThreeGppAntennaArrayModel>
+MmWaveComponentCarrier::GetAntenna (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_antenna;
 }
 
 } // namespace mmwave

@@ -32,6 +32,7 @@
 #include "ns3/mmwave-phy.h"
 #include <ns3/mmwave-enb-phy.h>
 #include <ns3/pointer.h>
+#include <ns3/three-gpp-antenna-array-model.h>
 
 namespace ns3 {
 
@@ -134,6 +135,18 @@ public:
 
   Ptr<MmWavePhyMacCommon> GetConfigurationParameters (void) const;
 
+  /**
+   * Set the antenna used by the device in the component carrier
+   * \params antenna
+   */
+  void SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna);
+
+  /**
+   * Get the antenna used by the device in the component carrier
+   * \return the antenna
+   */
+  Ptr<ThreeGppAntennaArrayModel> GetAntenna (void) const;
+
 protected:
   // inherited from Object
   virtual void DoInitialize (void);
@@ -144,6 +157,7 @@ protected:
   bool m_isConstructed; ///< whether the instance is constructed
 //    bool m_isConfigured;
   Ptr<MmWavePhyMacCommon> m_phyMacConfig;
+  Ptr<ThreeGppAntennaArrayModel> m_antenna; //!< the antenna used by the device in the component carrier
 
 };
 

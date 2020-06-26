@@ -43,7 +43,6 @@
 #include "mmwave-enb-phy.h"
 #include "mmwave-enb-mac.h"
 #include "mmwave-mac-scheduler.h"
-#include "ns3/mmwave-component-carrier-enb.h"
 #include <vector>
 #include <map>
 #include <ns3/lte-enb-rrc.h>
@@ -84,10 +83,6 @@ public:
 
   void SetBandwidth (uint8_t bw);
 
-  void SetEarfcn (uint16_t earfcn);
-
-  uint16_t GetEarfcn () const;
-
   Ptr<MmWaveEnbMac> GetMac (void);
 
   Ptr<MmWaveEnbMac> GetMac (uint8_t index);
@@ -96,13 +91,7 @@ public:
 
   Ptr<LteEnbRrc> GetRrc (void);
 
-  void SetAntennaNum (uint16_t antennaNum);
-
-  uint16_t GetAntennaNum () const;
-
-  std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> > GetCcMap ();
-
-  void SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrierEnb> > ccm);
+  void SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrier> > ccm) override;
 
 protected:
   virtual void DoInitialize (void);
@@ -118,15 +107,8 @@ private:
 
   uint8_t m_Bandwidth;       /* bandwidth in RBs (?) */
 
-  uint16_t m_Earfcn;        /* carrier frequency */
-
-  uint16_t m_antennaNum;
-
-  std::map < uint8_t, Ptr<MmWaveComponentCarrierEnb> > m_ccMap;       /**< ComponentCarrier map */
-
   Ptr<LteEnbComponentCarrierManager> m_componentCarrierManager; ///< the component carrier manager of this eNb
 
-  bool m_isConstructed;
   bool m_isConfigured;
 
 };

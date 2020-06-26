@@ -38,6 +38,8 @@
 #include <ns3/ipv6-l3-protocol.h>
 #include "mmwave-net-device.h"
 #include "ns3/uinteger.h"
+#include "ns3/mmwave-component-carrier.h"
+#include <ns3/object-map.h>
 
 
 namespace ns3 {
@@ -59,12 +61,24 @@ TypeId MmWaveNetDevice::GetTypeId ()
                    MakeUintegerAccessor (&MmWaveNetDevice::SetMtu,
                                          &MmWaveNetDevice::GetMtu),
                    MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("AntennaNum",
+                   "Number of antenna elements for the device",
+                   UintegerValue (64),
+                   MakeUintegerAccessor (&MmWaveNetDevice::SetAntennaNum,
+                                         &MmWaveNetDevice::GetAntennaNum),
+                   MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("ComponentCarrierMap",
+                   "List of component carriers",
+                   ObjectMapValue (),
+                   MakeObjectMapAccessor (&MmWaveNetDevice::m_ccMap),
+                   MakeObjectMapChecker<MmWaveComponentCarrier> ())
   ;
 
   return tid;
 }
 
 MmWaveNetDevice::MmWaveNetDevice (void)
+  : m_isConstructed (false)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -252,6 +266,56 @@ MmWaveNetDevice::GetPacketDestination (Ptr<Packet> packet)
   q->PeekHeader (ipHeader);
   dest_ip = ipHeader.GetDestination ();
   return dest_ip;
+}
+
+uint16_t
+MmWaveNetDevice::GetEarfcn () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_earfcn;
+}
+
+void
+MmWaveNetDevice::SetEarfcn (uint16_t earfcn)
+{
+  NS_LOG_FUNCTION (this << earfcn);
+  m_earfcn = earfcn;
+}
+
+uint16_t
+MmWaveNetDevice::GetAntennaNum () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_antennaNum;
+}
+
+void
+MmWaveNetDevice::SetAntennaNum (uint16_t antennaNum)
+{
+  NS_LOG_FUNCTION (this << antennaNum);
+  NS_ASSERT_MSG (std::floor (std::sqrt(antennaNum)) == std::sqrt(antennaNum), "Only square antenna arrays are currently supported.");
+  m_antennaNum = antennaNum;
+}
+
+std::map <uint8_t, Ptr<MmWaveComponentCarrier> >
+MmWaveNetDevice::GetCcMap () const
+{
+  NS_LOG_FUNCTION (this);
+  return m_ccMap;
+}
+
+void
+MmWaveNetDevice::SetCcMap (std::map<uint8_t, Ptr<MmWaveComponentCarrier> > ccm)
+{
+  NS_LOG_FUNCTION (this);
+  m_ccMap = ccm;
+}
+
+Ptr<ThreeGppAntennaArrayModel>
+MmWaveNetDevice::GetAntenna (uint8_t ccId) const
+{
+  NS_LOG_FUNCTION (this << +ccId);
+  return m_ccMap.at (ccId)->GetAntenna ();
 }
 
 
