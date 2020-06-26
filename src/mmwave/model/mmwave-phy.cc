@@ -319,8 +319,8 @@ MmWavePhy::SetSlotCtrlStructure (uint8_t slotIndex)
   ulCtrlTti.m_ttiIdx = 0xFF;
   ulCtrlTti.m_dci.m_numSym = 1;
   ulCtrlTti.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
-  m_slotAllocInfo[slotToAlloc].m_ttiAllocInfo.push_front (dlCtrlTti);
-  m_slotAllocInfo[slotToAlloc].m_ttiAllocInfo.push_back (ulCtrlTti);
+  m_slotAllocInfo[slotIndex].m_ttiAllocInfo.push_front (dlCtrlTti);
+  m_slotAllocInfo[slotIndex].m_ttiAllocInfo.push_back (ulCtrlTti);
 }
 
 void
