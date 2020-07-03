@@ -2615,7 +2615,7 @@ MmWaveHelper::EnableDlPhyTrace (void)
                                  MakeBoundCallback (&MmWavePhyTrace::ReportDlPhyTransmissionCallback, m_phyStats));
 
   // regulare mmWave UE device
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
+  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
                    MakeBoundCallback (&MmWavePhyTrace::RxPacketTraceUeCallback, m_phyStats));
 
   // MC ue device
