@@ -160,13 +160,15 @@ MmWaveAmc::GetMcsFromCqi (int cqi)
   return mcs;
 }
 
+// TODO this method is used only by mmwave-rr-mac-scheduler, consider to remove it
 int
 MmWaveAmc::GetTbSizeFromMcs (unsigned mcs, unsigned nprb)
 {
   NS_LOG_FUNCTION (mcs);
   NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
+  NS_UNUSED (nprb);
   //NS_ASSERT_MSG (nprb < 5, "NPRB=" << nprb);
-  int rscElement = m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetNumChunkPerRb () * nprb * \
+  int rscElement = m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetNumChunks () * \
     (m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetNumReferenceSymbols ());
   double s = SpectralEfficiencyForMcs[mcs];
 
@@ -187,7 +189,7 @@ MmWaveAmc::GetTbSizeFromMcsSymbols (unsigned mcs, unsigned nsymb)
   NS_LOG_FUNCTION (mcs);
   NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
   //unsigned itb = McsToItbs[mcs];
-  int rscElement = (m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetTotalNumChunk ()
+  int rscElement = (m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetNumChunks ()
                     - m_phyMacConfig->GetNumRefScPerSym ()) * nsymb;
   double Rcode = McsEcrTable[mcs];
   double Qm = ModulationSchemeForMcs[mcs];
@@ -208,7 +210,7 @@ MmWaveAmc::GetNumSymbolsFromTbsMcs (unsigned tbSize, unsigned mcs)
   NS_LOG_FUNCTION (mcs);
   NS_ASSERT_MSG (mcs < 29, "MCS=" << mcs);
   //unsigned itb = McsToItbs[mcs];
-  int rscElementPerSym = (m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetTotalNumChunk ()
+  int rscElementPerSym = (m_phyMacConfig->GetNumSCperChunk () * m_phyMacConfig->GetNumChunks ()
                           - m_phyMacConfig->GetNumRefScPerSym ());
   double Rcode = McsEcrTable[mcs];
   double Qm = ModulationSchemeForMcs[mcs];

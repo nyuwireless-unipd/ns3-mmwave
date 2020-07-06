@@ -194,12 +194,7 @@ private:
   */
   void TraceDlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType);
 
-  void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
-  std::list<TbAllocInfo> DequeueUlTbAlloc ();
-
   uint8_t m_currSlotNumTti;     //!< The amount of TTIs scheduled in the current slot
-
-  uint32_t m_numRbg;
 
   std::set <uint64_t> m_ueAttached;
 

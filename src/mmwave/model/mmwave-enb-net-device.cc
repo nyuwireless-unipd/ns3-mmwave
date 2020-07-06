@@ -241,7 +241,7 @@ MmWaveEnbNetDevice::UpdateConfig (void)
               LteEnbRrc::MmWaveComponentCarrierConf ccConf;
               ccConf.m_ccId = ccEnb->GetConfigurationParameters ()->GetCcId ();
               ccConf.m_cellId = ccEnb->GetCellId ();
-              ccConf.m_bandwidth = ccEnb->GetBandwidth ();
+              ccConf.m_bandwidth = ccEnb->GetBandwidthInRb ();
 
               ccConfMap[it->first] = ccConf;
             }

@@ -51,10 +51,6 @@ public:
   static TypeId GetTypeId (void);
   static void ReportCurrentCellRsrpSinrCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                                  uint64_t imsi, SpectrumValue& sinr, SpectrumValue& power);
-  static void ReportPacketCountUeCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
-                                           UePhyPacketCountParameter param);
-  static void ReportPacketCountEnbCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
-                                            EnbPhyPacketCountParameter param);
   static void ReportDownLinkTBSize (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                     uint64_t imsi, uint64_t tbSize);
   static void RxPacketTraceUeCallback (Ptr<MmWavePhyTrace> phyStats, std::string path, RxPacketTraceParams param);
@@ -90,8 +86,6 @@ public:
 
 private:
   //void ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr);
-  //void ReportPacketCountUe (UePhyPacketCountParameter param);
-  //void ReportPacketCountEnb (EnbPhyPacketCountParameter param);
   //void ReportDLTbSize (uint64_t imsi, uint64_t tbSize);
   static std::ofstream m_rxPacketTraceFile;   //!< Output stream for the PHY reception trace
   static std::string m_rxPacketTraceFilename;   //!< Output filename for the PHY reception trace

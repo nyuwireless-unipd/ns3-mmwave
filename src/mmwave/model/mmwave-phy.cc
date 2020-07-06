@@ -172,13 +172,6 @@ MmWavePhy::SetChannel (Ptr<SpectrumChannel> c)
 }
 
 Time
-MmWavePhy::GetTti (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_phyMacConfig->GetTti ();
-}
-
-Time
 MmWavePhy::GetNextSlotDelay ()
 {
   return m_lastSlotStart + m_slotPeriod - Simulator::Now ();

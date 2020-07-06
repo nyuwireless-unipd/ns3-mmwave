@@ -88,11 +88,6 @@ public:
 
   virtual void DoInitialize (void);
 
-  /**
-   * \returns transmission time interval
-   */
-  Time GetTti (void) const;
-
  /**
   * The purpose of this function is to sync the slot duration to the correct value
   * 

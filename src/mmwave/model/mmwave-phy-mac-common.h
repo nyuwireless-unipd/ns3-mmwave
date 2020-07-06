@@ -17,19 +17,6 @@
 *   along with this program; if not, write to the Free Software
 *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 *
-*   Author: Marco Miozzo <marco.miozzo@cttc.es>
-*           Nicola Baldo  <nbaldo@cttc.es>
-*
-*   Modified by: Marco Mezzavilla < mezzavilla@nyu.edu>
-*                         Sourjya Dutta <sdutta@nyu.edu>
-*                         Russell Ford <russell.ford@nyu.edu>
-*                         Menglei Zhang <menglei@nyu.edu>
-*
-* Modified by: Michele Polese <michele.polese@gmail.com>
-*                Dual Connectivity and Handover functionalities
-*
-* Modified by: Tommaso Zugno <tommasozugno@gmail.com>
-*								 Integration of Carrier Aggregation
 */
 
 #ifndef SRC_MMWAVE_MODEL_MMWAVE_PHY_MAC_COMMON_H
@@ -44,15 +31,13 @@
 #include <ns3/packet.h>
 #include <ns3/string.h>
 #include <ns3/log.h>
-//#include "mmwave-mac-pdu-header.h"
-//#include "mmwave-mac-pdu-tag.h"
 
 namespace ns3 {
 
 namespace mmwave {
 
 /**
- * struct holding the numerology information such as frame, subframe,
+ * Struct holding the numerology information such as frame, subframe,
  * slot and (eventually) starting OFDM symbol number.
  */
 struct SfnSf
@@ -101,31 +86,24 @@ struct SfnSf
   uint8_t m_symStart;   //!< Starting symbol (not always used!), sometimes used to indicate the ttiIndex
 };
 
-/* Equivalent to the DCI in LTE*/
-
-//struct RbAllocationInfo
-//{
-//	bool m_noAllocation;
-//	uint64_t m_userImsi;
-//	uint32_t m_tbSize;
-//	int mcs;
-//
-//	uint8_t m_harqProcess;
-//};
-
+/**
+ * Struct used to trace a PHY layer transmission. 
+ * \see mmwave-phy-trace.cc
+ */
 struct PhyTransmissionTraceParams
-{
+{ 
   enum TddMode
   {
-    TDD_NA = 0,
-    DL = 1,
-    UL = 2,
+    TDD_NA = 0, //!< unknown
+    DL = 1, //!< downlink transmission
+    UL = 2, //!< uplink transmission
   };
+  
   enum TddTtiType
   {
-    DATA = 0, 
-    TYPE_NA = 1,  
-    CTRL = 2,
+    DATA = 0, //!< data transmission
+    TYPE_NA = 1, //!< unknown
+    CTRL = 2, //!< transmission of control signals
   };
 
   PhyTransmissionTraceParams()
@@ -155,6 +133,7 @@ struct PhyTransmissionTraceParams
   uint8_t m_ccId;    //!< The Component Carrier (CC) ID
 };
 
+// TODO this is unsed only by mmwave-rr-mac-scheduler. Consider to remove it
 struct TbInfoElement
 {
   TbInfoElement ()
@@ -191,28 +170,9 @@ struct TbInfoElement
   uint8_t m_harqProcess;
 };
 
-struct DlDciInfoElementTdma
-{
-  DlDciInfoElementTdma ()
-    : m_symStart (0),
-    m_numSym (0),
-    m_mcs (0),
-    m_tbSize (0),
-    m_ndi (0),
-    m_rv (0),
-    m_harqProcess (0)
-  {
-  }
-
-  uint8_t m_symStart; // starting symbol index for flexible TTI scheme
-  uint8_t m_numSym; // number of symbols for flexible TTI scheme
-  uint8_t m_mcs;
-  uint32_t m_tbSize;
-  uint8_t m_ndi;
-  uint8_t m_rv;
-  uint8_t m_harqProcess;
-};
-
+/**
+ * Struct holding the information of a DCI message
+ */
 struct DciInfoElementTdma
 {
   enum DciFormat
@@ -247,28 +207,19 @@ struct DciInfoElementTdma
   {
   }
 
-  uint16_t m_rnti;
-  uint8_t m_format; // {DL assig. = 0, UL grant = 1}, only contiguous symbols supported
-  uint8_t m_symStart; // starting symbol index for flexible TTI scheme
-  uint8_t m_numSym; // number of symbols for flexible TTI scheme
-  uint8_t m_mcs;
-  uint32_t m_tbSize;
-  uint8_t m_ndi;
-  uint8_t m_rv; // not used for UL DCI
-  uint8_t m_harqProcess;
+  uint16_t m_rnti; //!< the RNTI
+  uint8_t m_format; //!< {DL assig. = 0, UL grant = 1}, only contiguous symbols supported
+  uint8_t m_symStart; //!< index of the first allocated symbol
+  uint8_t m_numSym; //!< number of allocated symbols
+  uint8_t m_mcs; //!< selected MCS
+  uint32_t m_tbSize; //!< transport block size
+  uint8_t m_ndi; //!< if 1 indicates a new transmission, if 0 indicates a retransmission
+  uint8_t m_rv; //!< counter holding the number of retransmissions
+  uint8_t m_harqProcess; //!< HARQ process ID
 };
 
-struct TbAllocInfo
-{
-  TbAllocInfo () : m_rnti (0)
-  {
-  }
-  struct SfnSf m_sfnSf;
-  uint16_t m_rnti;
-  std::vector<unsigned> m_rbMap;
-  TbInfoElement m_tbInfo;
-};
-
+// TODO this is used only by mmwave-rr-mac-scheduler and mmwave-control-message. 
+// consider to replace it with DciInfoElementTdma
 struct DciInfoElement
 {
   DciInfoElement () : m_rnti (0), m_cceIndex (0), m_format (0), m_tddBitmap (0)
@@ -282,6 +233,9 @@ struct DciInfoElement
   std::vector<TbInfoElement> m_tbInfoElements;
 };
 
+/**
+ * Struct used to schedule the transmission of RLC PDUs
+ */
 struct RlcPduInfo
 {
   RlcPduInfo () : m_lcid (0), m_size (0)
@@ -291,27 +245,27 @@ struct RlcPduInfo
   RlcPduInfo (uint8_t lcid, uint16_t size) : m_lcid (lcid), m_size (size)
   {
   }
-  uint8_t m_lcid;
-  uint32_t m_size;
+  uint8_t m_lcid; //!< the logical channel ID
+  uint32_t m_size; //!< the grant size
 };
 
+/**
+ * Struct holding the scheduling information of a TTI
+ */
 struct TtiAllocInfo
 {
   enum TddMode
   {
-    NA = 0,
-    DL_slotAllocInfo = 1,
-    UL_slotAllocInfo = 2,
+    NA = 0, //!< unknown
+    DL_slotAllocInfo = 1, //!< downlink transmission
+    UL_slotAllocInfo = 2, //!< uplink transmission
   };
 
   enum TddTtiType
   {
-    CTRL_DATA = 0, DATA = 1, CTRL = 2
-  };
-
-  enum CtrlTxMode
-  {
-    ANALOG = 0, DIGITAL = 1, OMNI = 2
+    CTRL_DATA = 0,
+    DATA = 1, //!< data transmission
+    CTRL = 2 //!< transmission of control signals
   };
 
   TtiAllocInfo ()
@@ -320,77 +274,52 @@ struct TtiAllocInfo
     m_ttiType (CTRL_DATA),
     m_numCtrlSym (0),
     m_ttiIdx (0),
-    m_ctrlTxMode (DIGITAL),
     m_rnti (0)
   {
   }
 
-  TtiAllocInfo (uint8_t ttiIdx, TddMode tddMode, TddTtiType ttiType, CtrlTxMode ctrlTxMode,
-                uint16_t rnti)
+  TtiAllocInfo (uint8_t ttiIdx, TddMode tddMode, TddTtiType ttiType, uint16_t rnti)
     : m_tddMode (tddMode),
     m_isOmni (0),
     m_ttiType (ttiType),
     m_numCtrlSym (0),
     m_ttiIdx (ttiIdx),
-    m_ctrlTxMode (ctrlTxMode),
     m_rnti (rnti)
   {
   }
 
-  //	SlotAllocInfo& operator= (const SlotAllocInfo &src)
-  //	{
-  //		m_tddMode = src.m_tddMode;
-  //		m_isOmni = src.m_isOmni;
-  //		m_slotType = src.m_slotType;
-  //		m_numCtrlSym = src.m_numCtrlSym;
-  //		m_slotIdx = src.m_slotIdx;
-  //		m_ctrlTxMode = src.m_ctrlTxMode;
-  //		m_rnti = src.m_rnti;
-  //		m_dci = src.m_dci;
-  //		m_rlcPduInfo = src.m_rlcPduInfo;
-  //	}
-
-  //std::vector<TbAllocInfo> m_tbInfo;
-  //std::vector<unsigned> m_rntiCtrlSymMap;		// RNTI to which ctrl data is TXed for each ctrl symbol index (analog bf only)
-  //std::map<uint16_t, std::vector<unsigned> > m_ueRbMap; // for FDMA
-
-  //struct DciInfoElement m_dci;
-  //std::vector<TbAllocInfo> m_tbInfo;
-  //std::vector<unsigned> m_rntiCtrlSymMap;		// RNTI to which ctrl data is TXed for each ctrl symbol index (analog bf only)
-  //std::vector<struct RlcPduInfo >  m_rlcPduList; // RLC PDU elems for MAC TB
-
-  TddMode m_tddMode;
-  bool m_isOmni; // Beamforming disabled, true if omnidirectional
-  TddTtiType m_ttiType;
-  uint8_t m_numCtrlSym; // number of DL ctrl (or ctrl+data) symbols at beginning of slot
-  uint8_t m_ttiIdx;
-  CtrlTxMode m_ctrlTxMode;
-  uint16_t m_rnti;
-  struct DciInfoElementTdma m_dci;
-  std::vector<RlcPduInfo> m_rlcPduInfo;
-  //std::list<MmWaveControlMessage> m_controlMessages;  // ctrl messages for this user
+  TddMode m_tddMode; //!< indicates the transmission mode, uplink or downlink
+  bool m_isOmni; //!< if true, the transmission is omnidirectional
+  TddTtiType m_ttiType; //!< indicates the type of information transmitted
+  uint8_t m_numCtrlSym; //!< number of DL ctrl symbols at beginning of slot
+  uint8_t m_ttiIdx; //!< index of the TTI inside the slot
+  uint16_t m_rnti; //!< the RNTI
+  struct DciInfoElementTdma m_dci; //!< the DCI containing the scheduling information corresponding to this TTI
+  std::vector<RlcPduInfo> m_rlcPduInfo; //!< vector of RlcPduInfo instances to be transmitted
 };
 
+/**
+ * Struct holding the scheduling information of a slot. 
+ * SlotAllocInfo contains the TtiAllocInfo instances associated with a slot.
+ */
 struct SlotAllocInfo
 {
-  SlotAllocInfo () : m_sfnSf (SfnSf ()), m_numSymAlloc (0), m_ulSymStart (0)
-  {
-    //m_tddPattern.resize (8);
-  }
-
-  SlotAllocInfo (SfnSf sfn) : m_sfnSf (sfn), m_numSymAlloc (0), m_ulSymStart (0)
+  SlotAllocInfo () : m_sfnSf (SfnSf ()), m_numSymAlloc (0)
   {
   }
 
-  SfnSf m_sfnSf;
-  uint32_t m_numSymAlloc; // number of allocated OFDM symbols
-  uint32_t m_ulSymStart; // start of UL region
-  //std::vector <SlotAllocInfo::TddMode> m_tddPattern;
-  std::deque<TtiAllocInfo> m_dlSlotAllocInfo;
-  std::deque<TtiAllocInfo> m_ulSlotAllocInfo;
-  std::deque<TtiAllocInfo> m_ttiAllocInfo;
+  SlotAllocInfo (SfnSf sfn) : m_sfnSf (sfn), m_numSymAlloc (0)
+  {
+  }
+
+  SfnSf m_sfnSf; //!< frame, subframe and slot indices
+  uint32_t m_numSymAlloc; //!< number of allocated OFDM symbols
+  std::deque<TtiAllocInfo> m_ttiAllocInfo; //!< contains the TtiAllocInfo instances corresponding to this slot
 };
 
+/**
+ * Struct carrying a downlink CQI
+ */
 struct DlCqiInfo
 {
   uint16_t m_rnti;
@@ -404,9 +333,11 @@ struct DlCqiInfo
   uint8_t m_wbPmi;
 };
 
+/**
+ * Struct carrying a downlink CQI
+ */
 struct UlCqiInfo
 {
-  //std::vector <uint16_t> m_sinr;
   std::vector<double> m_sinr;
   enum UlCqiType
   {
@@ -414,6 +345,9 @@ struct UlCqiInfo
   } m_type;
 };
 
+/**
+ * Represents a MAC Control Element value
+ */
 struct MacCeValue
 {
   uint8_t m_phr;
@@ -422,7 +356,7 @@ struct MacCeValue
 };
 
 /**
- * \brief See section 4.3.14 macCEListElement
+ * Represents a MAC Control Element
  */
 struct MacCeElement
 {
@@ -434,11 +368,7 @@ struct MacCeElement
   struct MacCeValue m_macCeValue;
 };
 
-struct RlcListElement
-{
-  std::vector<struct RlcPduInfo> m_rlcPduElements;
-};
-
+// TODO this is used only by mmwave-rr-mac-scheduler. Consider to remove it
 struct SchedInfo
 {
   SchedInfo () : m_frameNum (0), m_sfNum (0), m_rnti (0)
@@ -457,221 +387,253 @@ struct SchedInfo
   std::map<uint8_t, std::vector<struct RlcPduInfo> > m_rlcPduMap; // RLC PDU elems for each MAC TB
 };
 
-struct UePhyPacketCountParameter
-{
-  uint64_t m_imsi;
-  uint32_t m_noBytes;
-  bool m_isTx; //Set to false if Rx and true if tx
-  uint32_t m_subframeno;
-};
-
-struct EnbPhyPacketCountParameter
-{
-  uint64_t m_cellId;
-  uint32_t m_noBytes;
-  bool m_isTx; //Set to false if Rx and true if tx
-  uint32_t m_subframeno;
-};
-
+/**
+ * Struct used to trace the reception of a transport block by the PHY layer
+ * \see mmwave-phy-trace.cc
+ */
 struct RxPacketTraceParams
 {
-  uint64_t m_cellId;
-  uint8_t m_ccId;
-  uint16_t m_rnti;
-  uint16_t m_frameNum;
-  uint8_t m_sfNum;
-  uint8_t m_slotNum;
-  uint8_t m_symStart;
-  uint8_t m_numSym;
-  uint32_t m_tbSize;
-  uint8_t m_mcs;
-  uint8_t m_rv;
-  double m_sinr;
-  double m_sinrMin;
-  double m_tbler;
-  bool m_corrupt;
+  uint64_t m_cellId; //!< the cell ID
+  uint8_t m_ccId; //!< the component carrier ID
+  uint16_t m_rnti; //!< the RNTI
+  uint16_t m_frameNum; //!< frame index
+  uint8_t m_sfNum; //!< subframe index
+  uint8_t m_slotNum; //!< slot index
+  uint8_t m_symStart; //!< index of the first OFDM symbol
+  uint8_t m_numSym; //!< number of OFDM symbols
+  uint32_t m_tbSize; //!< transport block size
+  uint8_t m_mcs; //!< the MCS
+  uint8_t m_rv; //!< the number of retransmissions
+  double m_sinr; //!< the average SINR over all the subchannels
+  double m_sinrMin; //!< the minimum SINR value over all the subchannels
+  double m_tbler; //!< the transport block error rate
+  bool m_corrupt; //!< if true the TB has failed
 };
 
+/**
+ * Struct holding the information of a DL HARQ process
+ */
 struct DlHarqInfo
 {
-  uint16_t m_rnti;
-  uint8_t m_harqProcessId;
-  enum HarqStatus
+  uint16_t m_rnti; //!< the RNTI
+  uint8_t m_harqProcessId; //!< the HARQ process ID
+  enum HarqStatus 
   {
     ACK, NACK
   };
-  enum HarqStatus m_harqStatus;
-  uint8_t m_numRetx;
+  enum HarqStatus m_harqStatus; //!< the status of the process
+  uint8_t m_numRetx; //!< the number of retransmissions
 };
 
+/**
+ * Struct holding the information of an UL HARQ process
+ */
 struct UlHarqInfo
 {
-  uint16_t m_rnti;
-  uint8_t m_harqProcessId;
-  std::vector<uint16_t> m_ulReception;
+  uint16_t m_rnti; //!< the RNTI
+  uint8_t m_harqProcessId; //!< the HARQ process ID
   enum ReceptionStatus
   {
     Ok, NotOk, NotValid
-  } m_receptionStatus;
-  uint8_t m_tpc;
-  uint8_t m_numRetx;
+  } m_receptionStatus; //!< the status of the process
+  uint8_t m_numRetx; //!< the number of retransmissions
 };
 
+/**
+ * This class is a containter holding the parameters used by MAC and PHY layers.
+ */
 class MmWavePhyMacCommon : public Object
 {
 public:
+  
+  /**
+   * Represents the PHY layer numerology configuration
+   */
+  enum Numerology
+  {
+    NrNumerology2 = 2, //!< NR numerology index 2
+    NrNumerology3 = 3 //!< NR numerology index 3
+  };
+  
+  /**
+   * Constructor
+   */
   MmWavePhyMacCommon (void);
-
+  
+  /**
+   * Destructor
+   */
   ~MmWavePhyMacCommon (void)
   {
   }
 
   static TypeId GetTypeId (void);
 
+  /**
+   * Returns the number of OFDM symbols inside a slot.
+   */
   inline uint32_t
   GetSymbPerSlot (void)
   {
     return m_symbolsPerSlot;
   }
 
+  /**
+   * Returns the duration of a single OFDM symbol.
+   */
   inline Time
   GetSymbolPeriod (void)
   {
     return m_symbolPeriod;
   }
 
+  /**
+   * Returns the number of OFDM symbols in a slot which are used to carry 
+   * downlink and uplink control information.
+   */
   inline uint32_t
   GetCtrlSymbols (void)
   {
-    return m_ctrlSymbols;
+    return (m_dlCtrlSymbols + m_ulCtrlSymbols);
   }
-
+  
+  /**
+   * Returns the number of OFDM symbols in a slot which are used to carry 
+   * downlink control information.
+   */
   inline uint32_t
   GetDlCtrlSymbols (void)
   {
     return m_dlCtrlSymbols;
   }
 
+  /**
+   * Returns the number of OFDM symbols in a slot which are used to carry 
+   * uplink control information.
+   */
   inline uint32_t
   GetUlCtrlSymbols (void)
   {
     return m_ulCtrlSymbols;
   }
 
+  /**
+   * Returns the number of OFDM symbols in a subframe.
+   */
   inline uint32_t
   GetSymbolsPerSubframe (void)
   {
     return m_symbolsPerSubframe;
   }
 
+  /**
+   * Returns the duration of a subframe.
+   */
   inline Time
   GetSubframePeriod (void)
   {
     return m_subframePeriod;
   }
 
+  /**
+   * Returns the duration of a slot.
+   */
   inline Time
-  GetTti (void)
+  GetSlotPeriod (void)
   {
     return NanoSeconds (m_symbolsPerSlot * m_symbolPeriod.GetNanoSeconds ());  //seconds
   }
 
+  /**
+   * Returns the number of slots in a subframe.
+   */
   inline uint32_t
   GetSlotsPerSubframe (void)
   {
     return m_slotsPerSubframe;
   }
 
+  /**
+   * Returns the number of subframes in a frame.
+   */
   inline uint32_t
   GetSubframesPerFrame (void)
   {
     return m_subframesPerFrame;
   }
 
+  // TODO this parameter is used by MmWaveAmc::GetTbSizeFromMcs, which is never used 
+  // consider to remove it
   inline uint32_t
   GetNumReferenceSymbols (void)
   {
     return m_numRefSymbols;
   }
 
-  inline Time
-  GetGuardPeriod (void)
-  {
-    return m_guardPeriod;
-  }
-
+  /**
+   * Returns the delay between the UL-DCI transmission and when such scheduled UL 
+   * will take place, defined as # of NR slots.
+   */
   inline uint8_t
   GetUlSchedDelay (void)
   {
     return m_ulSchedDelay;
   }
 
+  /**
+   * Returns the number of subcarriers in a spectrum chunk.
+   */
   inline uint32_t
   GetNumSCperChunk (void)
   {
     return m_numSubCarriersPerChunk;
   }
 
+  /**
+   * Returns the width of a spectrum chunk in Hz.
+   */
   inline double
   GetChunkWidth (void)
   {
     return m_chunkWidth;
   }
 
+  /**
+   * Returns the number of spectrum chunks.
+   */
   inline uint32_t
-  GetNumChunkPerRb (void)
+  GetNumChunks (void)
   {
-    return m_chunksPerRb;
+    return m_numChunks;
   }
 
-  inline uint32_t
-  GetNumRefScPerRb (void)
-  {
-    return m_numRefScPerRb;
-  }
-
+  /**
+   * Returns the number of subcarriers used to carry reference 
+   * signals in each symbol.
+   */
   inline uint32_t
   GetNumRefScPerSym (void)
   {
     return m_numRefScPerSym;
   }
 
-  inline uint32_t
-  GetNumRb (void)
-  {
-    return m_numRb;
-  }
-
-  inline uint32_t
-  GetNumRbPerRbg (void)
-  {
-    return m_numRbPerRbg;
-  }
-
+  /**
+   * Returns the carrier bandwidth in Hz. 
+   */
   inline double
-  GetRBWidth (void)
+  GetBandwidth (void)
   {
-    return (m_chunksPerRb * m_chunkWidth);
+    return (GetChunkWidth () * GetNumChunks ());
   }
-
-  inline double
-  GetSystemBandwidth (void)
-  {
-    return (GetRBWidth () * m_numRb);
-  }
-
-  inline uint32_t
-  GetTotalNumChunk ()
-  {
-    return (m_chunksPerRb * m_numRb);
-  }
-
+  
+  /**
+   * Returns the carrier frequency in Hz. 
+   */
   inline double
   GetCenterFrequency (void)
   {
     return m_centerFrequency;
   }
-
 
  /**
   * Returns the L1L2 control info latency, expressed in # of NR slots.
@@ -682,49 +644,41 @@ public:
     return m_L1L2Latency;
   }
 
-  inline Time
-  GetWbCqiPeriodUs (void)
-  {
-    return m_wbCqiPeriodUs;
-  }
-
-  inline std::string
-  GetStaticTDDPattern ()
-  {
-    return m_staticTddPattern;
-  }
-
+  /**
+   * Returns number of concurrent stop-and-wait Hybrid ARQ processes per user. 
+   */
   inline uint32_t
   GetNumHarqProcess (void)
   {
     return m_numHarqProcess;
   }
 
+  /**
+   * Returns the Hybrid ARQ timeout period. 
+   */
   inline uint8_t
   GetHarqTimeout (void)
   {
     return m_harqTimeout;
   }
 
+  /**
+   * Returns the time required by the PHY layer to decode a transport block
+   * in micro seconds. 
+   */
   inline uint32_t
   GetTbDecodeLatency (void)
   {
     return m_tbDecodeLatencyUs;
   }
 
-  inline uint32_t
-  GetMaxTbSize (void)
-  {
-    return m_maxTbSizeBytes;
-  }
-
  /**
-  * Makes a MmWavePhyMacCommon object NR-compliant by adjusting its parameters
+  * Configures the PHY layer parameters based on the desired numerology
   * 
-  * \param index The numerology index, as per TS 38.211 Sec 4.3.2.
+  * \param num The desired numerology configuration
   *
   **/
-  void SetNumerology (uint8_t index);
+  void SetNumerology (Numerology num);
 
  /**
   * Sets the desired bandwidth for a given \ref MmWavePhyMacCommon object.
@@ -759,12 +713,6 @@ public:
   }
 
   void
-  SetCtrlSymbols (uint32_t ctrlSymbols)
-  {
-    m_ctrlSymbols = ctrlSymbols;
-  }
-
-  void
   SetDlCtrlSymbols (uint32_t ctrlSymbols)
   {
     m_dlCtrlSymbols = ctrlSymbols;
@@ -795,12 +743,6 @@ public:
   }
 
   void
-  SetGuardPeriod (Time usec)
-  {
-    m_guardPeriod = usec;
-  }
-
-  void
   SetUlSchedDelay (uint32_t tti)
   {
     m_ulSchedDelay = tti;
@@ -810,18 +752,6 @@ public:
   SetNumSCperChunk (uint32_t numSC)
   {
     m_numSubCarriersPerChunk = numSC;
-  }
-
-  void
-  SetNumChunkPerRB (uint32_t numChunk)
-  {
-    m_chunksPerRb = numChunk;
-  }
-
-  void
-  SetNumRefScPerRb (uint32_t numRefSc)
-  {
-    m_numRefScPerRb = numRefSc;
   }
 
   void
@@ -835,17 +765,6 @@ public:
   {
     m_chunkWidth = chumkWidth;
   }
-  void
-  SetNumRb (uint32_t numRB)
-  {
-    m_numRb = numRB;
-  }
-
-  void
-  SetNumRbPerRbg (uint32_t numRB)
-  {
-    m_numRbPerRbg = numRB;
-  }
 
   void
   SetCentreFrequency (double fc)
@@ -857,22 +776,6 @@ public:
   SetL1L2Latency (uint32_t delaySfs)
   {
     m_L1L2Latency = delaySfs;
-  }
-
-  void
-  SetWbCqiPeriodUs (Time us)
-  {
-    m_wbCqiPeriodUs = us;
-  }
-
-  void
-  SetStaticTDDPattern (std::string p)
-  {
-    if (p.length () != m_slotsPerSubframe)
-      {
-        NS_FATAL_ERROR ("TDD pattern length should be equal to the number of slots per SF");
-      }
-    m_staticTddPattern = p;
   }
 
   void
@@ -894,12 +797,6 @@ public:
   }
 
   void
-  SetMaxTbSize (uint32_t bytes)
-  {
-    m_maxTbSizeBytes = bytes;
-  }
-
-  void
   SetCcId (uint8_t ccId)
   {
     m_componentCarrierId = ccId;
@@ -912,40 +809,38 @@ public:
   }
 
 private:
-  uint32_t m_symbolsPerSlot;
-  Time m_symbolPeriod; // time duration of a single OFDM symbol
-  uint32_t m_symbolsPerSubframe;
-  Time m_subframePeriod; // time duration of a single subframe
-  uint32_t m_ctrlSymbols;
-  uint32_t m_dlCtrlSymbols; // num OFDM symbols for downlink control at beginning of subframe
-  uint32_t m_ulCtrlSymbols; // num OFDM symbols for uplink control at end of subframe
-  uint32_t m_slotsPerSubframe;
-  uint32_t m_subframesPerFrame;
-  uint32_t m_numRefSymbols;
-  uint32_t m_numRbPerRbg;
+  /**
+   * Makes a MmWavePhyMacCommon object NR-compliant by adjusting its parameters
+   * 
+   * \param index The numerology index, as per TS 38.211 Sec 4.3.2.
+   *
+   **/
+   void SetNrNumerology (uint8_t index);
+   
+  uint32_t m_symbolsPerSlot; //!< number of OFDM symbols in a slot
+  Time m_symbolPeriod; //!< time duration of a single OFDM symbol
+  uint32_t m_symbolsPerSubframe; //!< number of OFDM symbols in a subframe
+  Time m_subframePeriod; //!< time duration of a single subframe
+  uint32_t m_dlCtrlSymbols; //!< num OFDM symbols for downlink control
+  uint32_t m_ulCtrlSymbols; //!< num OFDM symbols for uplink control
+  uint32_t m_slotsPerSubframe; //!< number of slots in a subframe
+  uint32_t m_subframesPerFrame; //!< number of subframes in a frame
+  uint32_t m_numRefSymbols;   // TODO this parameter is used by MmWaveAmc::GetTbSizeFromMcs, which is never used  
 
-  uint32_t m_numSubCarriersPerChunk;
-  uint32_t m_chunksPerRb;
-  uint32_t m_numRefScPerRb;
-  uint32_t m_numRefScPerSym; // for TDMA, number of reference subcarriers across entire bandwidth (default to 1/4th of SCs)
-  double m_chunkWidth; //enter in Hz.
-  uint32_t m_numRb;
-  uint8_t m_numHarqProcess;
-  uint8_t m_harqTimeout;
+  uint32_t m_numSubCarriersPerChunk; //!< number of subcarriers in a chunk
+  uint32_t m_numChunks; //!< number of spectrum chunks
+  uint32_t m_numRefScPerSym; //!< number of reference subcarriers across entire bandwidth
+  double m_chunkWidth; //!< width of a spectrum chunk in Hz
+  uint8_t m_numHarqProcess; //!< number of concurrent stop-and-wait Hybrid ARQ processes per user
+  uint8_t m_harqTimeout; //!< hybrid ARQ timeout period
 
-  double m_centerFrequency;
-  Time m_guardPeriod; // UL to DL switching time
+  double m_centerFrequency; //!< the carrier frequency
 
   uint32_t m_L1L2Latency; //!< L1L2 control latency, expressed in # of NR slots.
   uint32_t m_ulSchedDelay;   //!<  Delay between the UL-DCI transmission and when such scheduled UL will take place, defined as # of NR slots.
-  Time m_wbCqiPeriodUs; // WB CQI periodicity in microseconds
 
-  uint32_t m_tbDecodeLatencyUs;
-  uint32_t m_maxTbSizeBytes;
-
-  std::string m_staticTddPattern;
-
-  uint8_t m_componentCarrierId;
+  uint32_t m_tbDecodeLatencyUs; //!< time required by the PHY layer to decode a transport block
+  uint8_t m_componentCarrierId; //!< the component carrier ID
 };
 
 } // namespace mmwave

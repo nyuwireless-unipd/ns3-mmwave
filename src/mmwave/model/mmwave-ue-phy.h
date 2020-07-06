@@ -200,8 +200,6 @@ private:
   void TraceUlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType);
 
   void ReceiveDataPeriod (uint32_t slotNum);
-  void QueueUlTbAlloc (TbAllocInfo tbAllocInfo);
-  std::list<TbAllocInfo> DequeueUlTbAlloc ();
 
   MmWaveUePhySapUser* m_phySapUser;
 
@@ -212,15 +210,12 @@ private:
   std::vector <int> m_subChannelsForTx;
   std::vector <int> m_subChannelsforRx;
 
-  uint32_t m_numRbg;
-
   Time m_wbCqiPeriod;       /**< Wideband Periodic CQI: 2, 5, 10, 16, 20, 32, 40, 64, 80 or 160 ms */
   Time m_wbCqiLast;
 
   TtiAllocInfo::TddMode m_prevTtiDir;  //!< Time Division Duplexing (TDD) mode of the previous Tti.
 
   SlotAllocInfo m_currSlotAllocInfo;  //!< Holds the allocation info for the current NR slot
-  std::vector< std::list<TbAllocInfo> > m_ulTbAllocQueue;       // for storing info on future UL TB transmissions
   bool m_ulGrant;               // true if no uplink grant in subframe, need to transmit UL control in PUCCH instead
   bool m_sfAllocInfoUpdated;
 

@@ -145,21 +145,6 @@ MmWavePhyTrace::ReportInterferenceTrace (uint64_t imsi, SpectrumValue& sinr)
         fclose(log_file);
 }*/
 
-
-
-void
-MmWavePhyTrace::ReportPacketCountUeCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
-                                               UePhyPacketCountParameter param)
-{
-  //phyStats->ReportPacketCountUe (param);
-}
-void
-MmWavePhyTrace::ReportPacketCountEnbCallback (Ptr<MmWavePhyTrace> phyStats, std::string path,
-                                                EnbPhyPacketCountParameter param)
-{
-  //phyStats->ReportPacketCountEnb (param);
-}
-
 void
 MmWavePhyTrace::ReportDownLinkTBSize (Ptr<MmWavePhyTrace> phyStats, std::string path,
                                         uint64_t imsi, uint64_t tbSize)
@@ -169,27 +154,6 @@ MmWavePhyTrace::ReportDownLinkTBSize (Ptr<MmWavePhyTrace> phyStats, std::string 
 
 
 /*
-void
-MmWavePhyTrace::ReportPacketCountUe (UePhyPacketCountParameter param)
-{
-        FILE* log_file;
-        char fname[255];
-        sprintf (fname,"UE_%llu_Packet_Trace.txt", (long long unsigned) param.m_imsi);
-        log_file = fopen (fname, "a");
-        if (param.m_isTx)
-        {
-                fprintf (log_file, "%d\t%d\t%d\n", param.m_subframeno, param.m_noBytes, 0);
-        }
-        else
-        {
-                fprintf (log_file, "%d\t%d\t%d\n", param.m_subframeno, 0, param.m_noBytes);
-        }
-
-        fflush(log_file);
-        fclose(log_file);
-
-}
-
 void
 MmWavePhyTrace::ReportPacketCountEnb (EnbPhyPacketCountParameter param)
 {

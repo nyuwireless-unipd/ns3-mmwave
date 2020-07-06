@@ -66,7 +66,7 @@ public:
   /**
    * \return the bandwidth in RBs
    */
-  uint32_t GetBandwidth () const;
+  uint32_t GetBandwidthInRb () const;
 
   /**
    * \return the carrier frequency in Hz

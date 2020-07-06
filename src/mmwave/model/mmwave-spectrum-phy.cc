@@ -669,7 +669,6 @@ MmWaveSpectrumPhy::EndRxData ()
                     {
                       UlHarqInfo harqUlInfo;
                       harqUlInfo.m_rnti = rnti;
-                      harqUlInfo.m_tpc = 0;
                       harqUlInfo.m_harqProcessId = itTb->second.harqProcessId;
                       harqUlInfo.m_numRetx = itTb->second.rv;
                       if (itTb->second.corrupt)

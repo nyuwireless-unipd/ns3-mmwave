@@ -175,7 +175,6 @@ MmWaveRrMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config)
 {
   m_phyMacConfig = config;
   m_amc = CreateObject <MmWaveAmc> (m_phyMacConfig);
-  m_numRbg = m_phyMacConfig->GetNumRb () / m_phyMacConfig->GetNumRbPerRbg ();
   m_numHarqProcess = m_phyMacConfig->GetNumHarqProcess ();
   m_harqTimeout = m_phyMacConfig->GetHarqTimeout ();
 }
@@ -314,9 +313,9 @@ MmWaveRrMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapProvide
               {
                 // create a new entry
                 std::vector <double> newCqi;
-                for (uint32_t j = 0; j < (m_phyMacConfig->GetNumRb () * m_phyMacConfig->GetNumChunkPerRb ()); j++)
+                for (uint32_t j = 0; j < m_phyMacConfig->GetNumChunks (); j++)
                   {
-                    unsigned chunkInd = i * m_phyMacConfig->GetNumChunkPerRb ();
+                    unsigned chunkInd = i;
                     if (chunkInd == j)
                       {
                         newCqi.push_back (sinr);
@@ -516,7 +515,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
   std::vector <bool> rbgMap;
   uint16_t rbgAllocatedNum = 0;
   std::set <uint16_t> rntiAllocated;
-  rbgMap.resize (m_phyMacConfig->GetNumRb (), false);
+  rbgMap.resize (m_phyMacConfig->GetNumChunks (), false);
 
   std::map<uint16_t,SchedInfo>& schedInfoMap = ret.m_schedInfoMap;
 
@@ -625,7 +624,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
               std::vector <int> dciRbg;
               uint32_t mask = 0x1;
               NS_LOG_INFO ("Original RBGs " << harqTbInfo.m_rbBitmap << " rnti " << rnti);
-              for (unsigned int j = 0; j < m_phyMacConfig->GetNumRb (); j++)
+              for (uint32_t int j = 0; j < m_phyMacConfig->GetNumChunks (); j++)
                 {
                   if (((harqTbInfo.m_rbBitmap & mask) >> j) == 1)
                     {
@@ -660,7 +659,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
                 {
                   // find RBGs for sending HARQ retx
                   uint8_t j = 0;
-                  uint8_t rbgId = (dciRbg.at (dciRbg.size () - 1) + 1) % m_phyMacConfig->GetNumRb ();
+                  uint8_t rbgId = (dciRbg.at (dciRbg.size () - 1) + 1) % m_phyMacConfig->GetNumChunks ();
                   uint8_t startRbg = dciRbg.at (dciRbg.size () - 1);
                   std::vector <bool> rbgMapCopy = rbgMap;
                   while ((j < dciRbg.size ())&&(startRbg != rbgId))
@@ -671,7 +670,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
                           dciRbg.at (j) = rbgId;
                           j++;
                         }
-                      rbgId = (rbgId + 1) % m_phyMacConfig->GetNumRb ();
+                      rbgId = (rbgId + 1) % m_phyMacConfig->GetNumChunks ();
                     }
                   if (j == dciRbg.size ())
                     {
@@ -820,7 +819,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
       m_dlHarqInfoList.clear ();
       m_dlHarqInfoList = dlInfoListUntxed;
 
-      if (rbgAllocatedNum == m_phyMacConfig->GetNumRb ())
+      if (rbgAllocatedNum == m_phyMacConfig->GetNumChunks ())
         {
           // all the RBGs are already allocated -> exit
           //			if ((ret.m_buildDataList.size () > 0) || (ret.m_buildRarList.size () > 0))
@@ -890,7 +889,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
     }
 
   // int rbgPerTb = (nTbs > 0) ? ((numRbg - rbgAllocatedNum) / nTbs) : INT_MAX;
-  unsigned int rbgPerTb = (nTbs > 0) ? (m_phyMacConfig->GetNumRb ()  / nTbs) : m_phyMacConfig->GetNumRb ();
+  unsigned int rbgPerTb = (nTbs > 0) ? (m_phyMacConfig->GetNumChunks ()  / nTbs) : m_phyMacConfig->GetNumChunks ();
 
   NS_LOG_INFO (this << " Flows to be transmitted " << nflows << " rbgPerTb " << rbgPerTb);
   if (rbgPerTb == 0)
@@ -993,7 +992,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
         }
 
       MmWaveMacPduHeader macHeader;
-      int tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, m_phyMacConfig->GetNumRb ()) / 8) - macHeader.GetSerializedSize ();
+      int tbSize = (m_amc->GetTbSizeFromMcs (newTbInfoElem.m_mcs, m_phyMacConfig->GetNumChunks ()) / 8) - macHeader.GetSerializedSize ();
       uint16_t rlcPduSize = tbSize / lcNum;
       while ((*it).m_rnti == schedInfo.m_rnti)
         {
@@ -1075,7 +1074,7 @@ MmWaveRrMacScheduler::DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvide
           (*itHarqTimer).second.at (newTbInfoElem.m_harqProcess) = 0;
         }
 
-      if (rbgAllocatedNum == m_phyMacConfig->GetNumRb ())
+      if (rbgAllocatedNum == m_phyMacConfig->GetNumChunks ())
         {
           m_nextRntiDl = (*it).m_rnti;               // store last RNTI served
           break;                                     // no more RGB to be allocated
@@ -1100,7 +1099,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
   uint16_t rbAllocatedNum = 0;
   std::set <uint16_t> rntiAllocated;
   std::vector <uint16_t> rbgAllocationMap;
-  uint32_t numRb = m_phyMacConfig->GetNumRb ();
+  uint32_t numRb = m_phyMacConfig->GetNumChunks ();
   rbMap.resize (numRb);
   rbgAllocationMap.resize (numRb);
   std::map<uint16_t,SchedInfo>& schedInfoMap = ret.m_schedInfoMap;
@@ -1222,7 +1221,7 @@ MmWaveRrMacScheduler::DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvide
 
   // Divide the remaining resources equally among the active users starting from after the one served last scheduling trigger
   //			  uint16_t rbPerFlow = numRbg / (nflows + rntiAllocated.size ());
-  unsigned int rbPerFlow = m_phyMacConfig->GetNumRb () / nflows;
+  unsigned int rbPerFlow = m_phyMacConfig->GetNumChunks () / nflows;
   if (rbPerFlow == 0)
     {
       rbPerFlow = 1;            // at least 1 rbg per flow (till available resource) to ensure TxOpportunity >= 7 bytes

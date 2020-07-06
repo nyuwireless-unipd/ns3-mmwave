@@ -55,7 +55,7 @@ std::map<uint8_t,Ptr<SpectrumModel> > MmWaveSpectrumValueHelper::m_model;
 Ptr<SpectrumModel>
 MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
-  NS_LOG_FUNCTION (ptrConfig->GetCenterFrequency () << (uint32_t) ptrConfig->GetTotalNumChunk ());
+  NS_LOG_FUNCTION (ptrConfig->GetCenterFrequency () << (uint32_t) ptrConfig->GetNumChunks ());
   uint8_t ccId = ptrConfig->GetCcId ();
   if (m_model.find (ccId) != m_model.end () )
     {
@@ -71,10 +71,10 @@ MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 
   NS_ASSERT_MSG (fc != 0, "The carrier frequency cannot be set to 0");
 
-  f = fc - (ptrConfig->GetTotalNumChunk () * ptrConfig->GetChunkWidth () / 2.0);
+  f = fc - (ptrConfig->GetNumChunks () * ptrConfig->GetChunkWidth () / 2.0);
 
   Bands rbs; // A vector representing each resource block
-  for (uint32_t numrb = 0; numrb < ptrConfig->GetTotalNumChunk (); ++numrb)
+  for (uint32_t numrb = 0; numrb < ptrConfig->GetNumChunks (); ++numrb)
     {
       BandInfo rb;
       rb.fl = f;
@@ -99,7 +99,7 @@ MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (Ptr<MmWavePhyMacCommon>
   double powerTxW = std::pow (10., (powerTx - 30) / 10);
 
   double txPowerDensity = 0;
-  txPowerDensity = (powerTxW / (ptrConfig->GetSystemBandwidth ()));
+  txPowerDensity = (powerTxW / (ptrConfig->GetBandwidth ()));
 
   for (std::vector <int>::iterator it = activeRbs.begin (); it != activeRbs.end (); it++)
     {

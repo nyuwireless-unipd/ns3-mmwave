@@ -169,7 +169,6 @@ MmWaveEnbPhy::DoInitialize (void)
   NS_LOG_FUNCTION (this);
   Ptr<SpectrumValue> noisePsd = MmWaveSpectrumValueHelper::CreateNoisePowerSpectralDensity (m_phyMacConfig, m_noiseFigure);
   m_downlinkSpectrumPhy->SetNoisePowerSpectralDensity (noisePsd);
-  //m_numRbg = m_phyMacConfig->GetNumRb() / m_phyMacConfig->GetNumRbPerRbg();
 
   for (unsigned i = 0; i < m_phyMacConfig->GetL1L2Latency (); i++)
     {   // push elements onto queue for initial scheduling delay
@@ -177,7 +176,7 @@ MmWaveEnbPhy::DoInitialize (void)
     }
   //m_sfAllocInfoUpdated = true;
 
-  for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk (); i++)
+  for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
     {
       m_channelChunks.push_back (i);
     }
@@ -616,9 +615,9 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
       NS_LOG_LOGIC ("UE Tx power = " << ueTxPower);
       double powerTxW = std::pow (10., (ueTxPower - 30) / 10);
       double txPowerDensity = 0;
-      txPowerDensity = (powerTxW / (m_phyMacConfig->GetSystemBandwidth ()));
+      txPowerDensity = (powerTxW / (m_phyMacConfig->GetBandwidth ()));
       NS_LOG_LOGIC ("Linear UE Tx power = " << powerTxW);
-      NS_LOG_LOGIC ("System bandwidth = " << m_phyMacConfig->GetSystemBandwidth ());
+      NS_LOG_LOGIC ("System bandwidth = " << m_phyMacConfig->GetBandwidth ());
       NS_LOG_LOGIC ("txPowerDensity = " << txPowerDensity);
       // create tx psd
       Ptr<SpectrumValue> txPsd =                                                        // it is the eNB that dictates the conf, m_listOfSubchannels contains all the subch
@@ -910,7 +909,6 @@ MmWaveEnbPhy::StartSlot (void)
   m_currSlotAllocInfo = m_slotAllocInfo[m_slotNum];
   NS_LOG_DEBUG ("currSlotAllocInfo referring to: frame " << m_currSlotAllocInfo.m_sfnSf.m_frameNum << " subframe " << (uint16_t)m_currSlotAllocInfo.m_sfnSf.m_sfNum);
   NS_LOG_DEBUG ("Member variables counters indicating: frame " << m_frameNum << " subframe " << (uint16_t)m_sfNum);
-  //m_currSfNumSlots = m_currSfAllocInfo.m_dlSlotAllocInfo.size () + m_currSfAllocInfo.m_ulSlotAllocInfo.size ();
   m_currSlotNumTti = m_currSlotAllocInfo.m_ttiAllocInfo.size ();
 
   NS_ASSERT ((m_currSlotAllocInfo.m_sfnSf.m_frameNum == m_frameNum)

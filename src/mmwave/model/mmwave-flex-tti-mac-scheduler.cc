@@ -294,13 +294,10 @@ MmWaveFlexTtiMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> co
 {
   m_phyMacConfig = config;
   m_amc = CreateObject <MmWaveAmc> (m_phyMacConfig);
-  m_numRbg = m_phyMacConfig->GetNumRb () / m_phyMacConfig->GetNumRbPerRbg ();
   m_numHarqProcess = m_phyMacConfig->GetNumHarqProcess ();
   m_harqTimeout = m_phyMacConfig->GetHarqTimeout ();
   m_numDataSymbols = m_phyMacConfig->GetSymbPerSlot () -
     m_phyMacConfig->GetDlCtrlSymbols () - m_phyMacConfig->GetUlCtrlSymbols ();
-  NS_ASSERT_MSG (m_phyMacConfig->GetNumRb () == 1, \
-                 "System must be configured with numRb=1 for TDMA mode");
 }
 
 void
@@ -401,7 +398,7 @@ MmWaveFlexTtiMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapPr
             NS_LOG_INFO (this << " Does not find info on allocation, size : " << m_ulAllocationMap.size ());
             return;
           }
-        NS_ASSERT_MSG (itMap->second.m_rntiPerChunk.size () == m_phyMacConfig->GetTotalNumChunk (), "SINR chunk map must cover full BW in TDMA mode");
+        NS_ASSERT_MSG (itMap->second.m_rntiPerChunk.size () == m_phyMacConfig->GetNumChunks (), "SINR chunk map must cover full BW in TDMA mode");
         for (unsigned i = 0; i < itMap->second.m_rntiPerChunk.size (); i++)
           {
             // convert from fixed point notation Sxxxxxxxxxxx.xxx to double
@@ -411,7 +408,7 @@ MmWaveFlexTtiMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapPr
               {
                 // create a new entry
                 std::vector <double> newCqi;
-                for (unsigned j = 0; j < m_phyMacConfig->GetTotalNumChunk (); j++)
+                for (uint32_t j = 0; j < m_phyMacConfig->GetNumChunks (); j++)
                   {
                     unsigned chunkInd = i;
                     if (chunkInd == j)
@@ -673,7 +670,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                 << (unsigned)sfNum << " slot " << (unsigned)slotNum);
 
   // Add TTI for DL control at the beginning of the slot
-  TtiAllocInfo dlCtrlSlot (0, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL, TtiAllocInfo::DIGITAL, 0);
+  TtiAllocInfo dlCtrlSlot (0, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
   dlCtrlSlot.m_dci.m_numSym = 1;
   dlCtrlSlot.m_dci.m_symStart = 0;
   ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (dlCtrlSlot);
@@ -846,7 +843,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   dciInfoReTx.m_ndi = 0;
                   itHarq->second.at (harqId) = dciInfoReTx;
                   itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
-                  TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, TtiAllocInfo::DIGITAL, itUeInfo->first);
+                  TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, itUeInfo->first);
                   ttiInfo.m_dci = dciInfoReTx;
                   NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL OFDM symbols " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
@@ -935,7 +932,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   dciInfoReTx.m_ndi = 0;
                   itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
                   itHarq->second.at (harqId) = dciInfoReTx;
-                  TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, TtiAllocInfo::DIGITAL, rnti);
+                  TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, rnti);
                   ttiInfo.m_dci = dciInfoReTx;
                   NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL OFDM symbols " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe "
@@ -1072,41 +1069,15 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   cqi = 0;
                   SpectrumValue specVals (MmWaveSpectrumValueHelper::GetSpectrumModel (m_phyMacConfig));
                   Values::iterator specIt = specVals.ValuesBegin ();
-                  for (unsigned ichunk = 0; ichunk < m_phyMacConfig->GetTotalNumChunk (); ichunk++)
+                  for (uint32_t ichunk = 0; ichunk < m_phyMacConfig->GetNumChunks (); ichunk++)
                     {
-                      //double sinrLin = std::pow (10, itCqi->second.m_ueUlCqi.at (ichunk) / 10);
-//						double se1 = log2 ( 1 + (std::pow (10, sinrLin / 10 )  /
-//								( (-std::log (5.0 * m_berDl )) / 1.5) ));
-//						cqi += m_amc->GetCqiFromSpectralEfficiency (se1);
                       NS_ASSERT (specIt != specVals.ValuesEnd ());
                       *specIt = itCqi->second.m_ueUlCqi.at (ichunk);                           //sinrLin;
                       specIt++;
                     }
 
                   cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, itCqi->second.m_numSym, itCqi->second.m_tbSize, mcs);
-//					for (unsigned i = 0; i < chunkCqi.size(); i++)
-//					{
-//						cqi += chunkCqi[i];
-//					}
-//					cqi = cqi / m_phyMacConfig->GetTotalNumChunk ();
 
-                  // take the lowest CQI value (worst chunk)
-                  //				double minSinr = itCqi->second.at (0);
-                  //				double sinrLinAvg = std::pow (10, itCqi->second.at (0) / 10);
-                  //				for (unsigned ichunk = 1; ichunk < m_phyMacConfig->GetTotalNumChunk (); ichunk++)
-                  //				{
-                  //					if (itCqi->second.at (ichunk) < minSinr)
-                  //					{
-                  //						minSinr = itCqi->second.at (ichunk);
-                  //					}
-                  //					sinrLinAvg += std::pow (10, itCqi->second.at (ichunk) / 10);
-                  //				}
-                  //				// TODO: verify SE calculation
-                  //				sinrLinAvg /= m_phyMacConfig->GetTotalNumChunk ();
-                  ////				double se = log2 ( 1 + sinrLinAvg );
-                  //				double se = log2 ( 1 + (std::pow (10, minSinr / 10 )  /
-                  //						( (-std::log (5.0 * 0.00005 )) / 1.5) ));
-                  //				cqi = m_amc->GetCqiFromSpectralEfficiency (se);
                   if (cqi == 0 && !m_fixedMcsUl)                       // out of range (SINR too low)
                     {
                       NS_LOG_INFO ("*** RNTI " << ceBsrIt->first << " UL-CQI out of range, skipping allocation in UL");
@@ -1140,7 +1111,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
   if (ueInfo.size () == 0)  // No new data to schedule: only UL CTRL left to schedule, then scheduling operations are over
     {
       // Add TTI for UL control at the end of the slot
-      TtiAllocInfo ulCtrlTti (ttiIdx, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL, TtiAllocInfo::DIGITAL, 0);
+      TtiAllocInfo ulCtrlTti (ttiIdx, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
       ulCtrlTti.m_dci.m_numSym = 1;
       ulCtrlTti.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
       ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ulCtrlTti);
@@ -1363,7 +1334,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
           dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
           NS_LOG_DEBUG ("UE" << itUeInfo->first << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
-          TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, TtiAllocInfo::DIGITAL, itUeInfo->first);
+          TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, itUeInfo->first);
           ttiInfo.m_dci = dci;
           NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL OFDM symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv <<
@@ -1481,16 +1452,11 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
           dci.m_mcs = ueSchedInfo.m_ulMcs;
           dci.m_ndi = 1;
           dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
-          /*	while (dci.m_tbSize > m_phyMacConfig->GetMaxTbSize () && dci.m_mcs > 0)
-                  {
-                          dci.m_mcs--;
-                          dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
-                  }*/
           dci.m_harqProcess = UpdateUlHarqProcessId (itUeInfo->first);
           NS_LOG_DEBUG ("UE" << itUeInfo->first << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
 
-          TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, TtiAllocInfo::DIGITAL, itUeInfo->first);
+          TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, itUeInfo->first);
           ttiInfo.m_dci = dci;
 
           NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL OFDM symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
@@ -1501,7 +1467,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
           ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);   // add to front
           ret.m_slotAllocInfo.m_numSymAlloc += dci.m_numSym;
           std::vector<uint16_t> ueChunkMap;
-          for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk (); i++)
+          for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
             {
               ueChunkMap.push_back (dci.m_rnti);
             }
@@ -1540,7 +1506,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
   while (itUeInfo != itUeInfoStart);       // break when looped back to initial RNTI
 
   // Add TTI for UL control at the end of the slot
-  TtiAllocInfo ulCtrlTti (ttiIdx, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL, TtiAllocInfo::DIGITAL, 0);
+  TtiAllocInfo ulCtrlTti (ttiIdx, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
   ulCtrlTti.m_dci.m_numSym = 1;
   ulCtrlTti.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
   ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ulCtrlTti);

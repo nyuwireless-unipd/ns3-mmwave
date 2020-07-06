@@ -273,12 +273,8 @@ MmWaveHelper::DoInitialize ()
     {
       NS_LOG_INFO ("useCa=false and empty CC map. Create the default CC.");
       
-      // NOTE: The default numerology index is 2, the default bw is 400MHz. 
       // For custom configurations use the method SetCcPhyParams
-      Ptr<MmWavePhyMacCommon> phyMacConfig = CreateObject<MmWavePhyMacCommon> (); 
-      phyMacConfig->SetNumerology (2);
-      phyMacConfig->SetBandwidth (400e6);
-      NS_LOG_UNCOND ("SubF period " << phyMacConfig->GetSubframePeriod ());     
+      Ptr<MmWavePhyMacCommon> phyMacConfig = CreateObject<MmWavePhyMacCommon> ();      
       Ptr<MmWaveComponentCarrier> cc = CreateObject<MmWaveComponentCarrier> ();
       cc->SetConfigurationParameters (phyMacConfig);
       cc->SetAsPrimary (true);
@@ -1534,8 +1530,6 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
   for (auto it = m_componentCarrierPhyParams.begin (); it != m_componentCarrierPhyParams.end (); ++it)
     {
       Ptr<MmWaveComponentCarrierEnb> cc =  CreateObject<MmWaveComponentCarrierEnb> ();
-      //cc->SetBandwidth(it->second.GetBandwidth());
-      //cc->SetEarfcn(it->second.GetEarfcn());
       cc->SetConfigurationParameters (it->second.GetConfigurationParameters ());
       cc->SetAsPrimary (it->second.IsPrimary ());
       NS_ABORT_MSG_IF (m_cellIdCounter == 65535, "max num cells exceeded");
@@ -1554,11 +1548,9 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       Ptr<MmWaveSpectrumPhy> dlPhy = CreateObject<MmWaveSpectrumPhy> ();
 
       Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
-      //NS_LOG_UNCOND("CC " << cellId << " MmWaveSpectrumPhy " << dlPhy);
 
       Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (ccEnb->GetConfigurationParameters ()->GetNumHarqProcess ());
       dlPhy->SetHarqPhyModule (harq);
-      //	ulPhy->SetHarqPhyModule (harq);
       phy->SetHarqPhyModule (harq);
 
       Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
@@ -1659,7 +1651,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
       ccConf.m_ccId = ccEnb->GetConfigurationParameters ()->GetCcId ();
       ccConf.m_cellId = ccEnb->GetCellId ();
-      ccConf.m_bandwidth = ccEnb->GetBandwidth ();
+      ccConf.m_bandwidth = ccEnb->GetBandwidthInRb ();
 
       ccConfMap[it->first] = ccConf;
     }
@@ -1669,7 +1661,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
   for (auto it = ccMap.begin (); it != ccMap.end (); ++it)
     {
       Ptr<MmWavePhyMacCommon> phyMacConfig = it->second->GetConfigurationParameters ();
-      bandwidthMap[it->first] = phyMacConfig->GetNumRb () * phyMacConfig->GetChunkWidth () * phyMacConfig->GetNumChunkPerRb ();
+      bandwidthMap[it->first] = phyMacConfig->GetBandwidth ();
       NS_LOG_UNCOND ("bandwidth " << (uint32_t)it->first << " = " << bandwidthMap[it->first]);
     }
 
@@ -2586,8 +2578,6 @@ MmWaveHelper::EnableTraces (void)
   EnableDlPhyTrace ();
   EnableUlPhyTrace ();
   EnableEnbSchedTrace ();
-  //EnableEnbPacketCountTrace (); //the trace source does not exist
-  //EnableUePacketCountTrace (); //the trace source does not exist
   //EnableTransportBlockTrace (); //the callback does nothing
   EnableRlcTraces ();
   EnablePdcpTraces ();
@@ -2633,24 +2623,6 @@ MmWaveHelper::EnableUlPhyTrace (void)
 
   Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
                    MakeBoundCallback (&MmWavePhyTrace::RxPacketTraceEnbCallback, m_phyStats));
-}
-
-void
-MmWaveHelper::EnableEnbPacketCountTrace ()
-{
-  NS_LOG_FUNCTION_NOARGS ();
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/ReportEnbTxRxPacketCount",
-                   MakeBoundCallback (&MmWavePhyTrace::ReportPacketCountEnbCallback, m_phyStats));
-
-}
-
-void
-MmWaveHelper::EnableUePacketCountTrace ()
-{
-  NS_LOG_FUNCTION_NOARGS ();
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/DlSpectrumPhy/ReportUeTxRxPacketCount",
-                   MakeBoundCallback (&MmWavePhyTrace::ReportPacketCountUeCallback, m_phyStats));
-
 }
 
 void

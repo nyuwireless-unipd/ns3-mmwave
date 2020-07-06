@@ -75,8 +75,8 @@ main (int argc, char *argv[])
   // CC 0
   // 1. create MmWavePhyMacCommon object
   Ptr<MmWavePhyMacCommon> phyMacConfig0 = CreateObject<MmWavePhyMacCommon> ();
-  phyMacConfig0->SetNumerology (2); 
   phyMacConfig0->SetBandwidth (totalBandwidth * (bandDiv - 1) / bandDiv);
+  phyMacConfig0->SetNumerology (MmWavePhyMacCommon::Numerology::NrNumerology2);
   phyMacConfig0->SetCentreFrequency (frequency0);
 
   // 2. create the MmWaveComponentCarrier object
@@ -90,8 +90,8 @@ main (int argc, char *argv[])
     {
       // 1. create MmWavePhyMacCommon object
       Ptr<MmWavePhyMacCommon> phyMacConfig1 = CreateObject<MmWavePhyMacCommon> ();
-      phyMacConfig1->SetNumerology (2); 
       phyMacConfig1->SetBandwidth (totalBandwidth / bandDiv);
+      phyMacConfig1->SetNumerology (MmWavePhyMacCommon::Numerology::NrNumerology2);
       phyMacConfig1->SetCentreFrequency (frequency1);
       phyMacConfig1->SetCcId (1);
 
@@ -115,9 +115,8 @@ main (int argc, char *argv[])
       Ptr<MmWavePhyMacCommon> phyMacConfig = ccMap[i].GetConfigurationParameters ();
       std::cout << "Component Carrier " << (uint32_t)(phyMacConfig->GetCcId ())
                 << " frequency : " << phyMacConfig->GetCenterFrequency () / 1e9 << " GHz,"
-                << " bandwidth : " << (phyMacConfig->GetNumRb () * phyMacConfig->GetChunkWidth () * phyMacConfig->GetNumChunkPerRb ()) / 1e6 << " MHz,"
+                << " bandwidth : " << phyMacConfig->GetBandwidth () / 1e6 << " MHz,"
                 << ", numRefSc: " << (uint32_t)phyMacConfig->GetNumRefScPerSym ()
-                << ", ChunkPerRB: " << phyMacConfig->GetNumChunkPerRb ()
                 << std::endl;
     }
 

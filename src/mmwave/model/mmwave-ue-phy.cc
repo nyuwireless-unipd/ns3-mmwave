@@ -137,13 +137,13 @@ MmWaveUePhy::DoInitialize (void)
 {
   NS_LOG_FUNCTION (this);
 
-  for (unsigned i = 0; i < m_phyMacConfig->GetSlotsPerSubframe (); i++)
+  for (uint32_t i = 0; i < m_phyMacConfig->GetSlotsPerSubframe (); i++)
     {
       m_slotAllocInfo.push_back (SfnSf (0, 0, i));
       MmWavePhy::SetSlotCtrlStructure (i);
     }
 
-  for (unsigned i = 0; i < m_phyMacConfig->GetTotalNumChunk (); i++)
+  for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
     {
       m_channelChunks.push_back (i);
     }
@@ -474,43 +474,6 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 }
 
 void
-MmWaveUePhy::QueueUlTbAlloc (TbAllocInfo m)
-{
-  NS_LOG_FUNCTION (this);
-//  NS_LOG_DEBUG ("UL TB Info Elem queue size == " << m_ulTbAllocQueue.size ());
-  m_ulTbAllocQueue.at (m_phyMacConfig->GetUlSchedDelay () - 1).push_back (m);
-}
-
-std::list<TbAllocInfo>
-MmWaveUePhy::DequeueUlTbAlloc (void)
-{
-  NS_LOG_FUNCTION (this);
-
-  if (m_ulTbAllocQueue.empty ())
-    {
-      std::list<TbAllocInfo> emptylist;
-      return (emptylist);
-    }
-
-  if (m_ulTbAllocQueue.at (0).size () > 0)
-    {
-      std::list<TbAllocInfo> ret = m_ulTbAllocQueue.at (0);
-      m_ulTbAllocQueue.erase (m_ulTbAllocQueue.begin ());
-      std::list<TbAllocInfo> l;
-      m_ulTbAllocQueue.push_back (l);
-      return (ret);
-    }
-  else
-    {
-      m_ulTbAllocQueue.erase (m_ulTbAllocQueue.begin ());
-      std::list<TbAllocInfo> l;
-      m_ulTbAllocQueue.push_back (l);
-      std::list<TbAllocInfo> emptylist;
-      return (emptylist);
-    }
-}
-
-void
 MmWaveUePhy::InitializeSlotAllocation (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
 {
   uint8_t nextSf = (sfNum + 1) % m_phyMacConfig->GetSubframesPerFrame ();
@@ -781,7 +744,6 @@ MmWaveUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
 
   std::vector<int> cqi;
 
-  //uint8_t dlBandwidth = m_phyMacConfig->GetNumChunkPerRb () * m_phyMacConfig->GetNumRb ();
   NS_ASSERT (m_currTti.m_dci.m_format == 0);
   int mcs;
   dlcqi.m_wbCqi = m_amc->CreateCqiFeedbackWbTdma (newSinr, m_currTti.m_dci.m_numSym, m_currTti.m_dci.m_tbSize, mcs);
@@ -985,7 +947,7 @@ MmWaveUePhy::DoSetSrsConfigurationIndex (uint16_t srcCi)
 void
 MmWaveUePhy::TraceUlPhyTransmission (DciInfoElementTdma dciInfo, uint8_t tddType)
 {
-  PhyTransmissionTraceParams ulPhyTraceInfo;   //!< Holds the current DL transmission info
+  PhyTransmissionTraceParams ulPhyTraceInfo;   //!< Holds the current UL transmission info
   ulPhyTraceInfo.m_frameNum = m_frameNum;
   ulPhyTraceInfo.m_sfNum = m_sfNum;
   ulPhyTraceInfo.m_slotNum = m_slotNum;
