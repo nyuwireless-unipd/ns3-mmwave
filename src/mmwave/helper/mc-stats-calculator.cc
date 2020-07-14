@@ -94,8 +94,8 @@ McStatsCalculator::DoDispose ()
 void
 McStatsCalculator::SetLteOutputFilename (std::string outputFilename)
 {
+  NS_LOG_FUNCTION (this << outputFilename);
   m_lteOutputFilename = outputFilename;
-  NS_LOG_UNCOND ("m_lteOutputFilename " << m_lteOutputFilename);
 }
 
 void

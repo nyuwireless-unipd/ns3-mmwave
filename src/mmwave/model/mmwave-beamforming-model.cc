@@ -19,8 +19,12 @@
 #include "ns3/mmwave-beamforming-model.h"
 #include "ns3/three-gpp-antenna-array-model.h"
 #include "ns3/mobility-model.h"
+#include "ns3/matrix-based-channel-model.h"
+#include "ns3/channel-condition-model.h"
 #include "ns3/pointer.h"
 #include "ns3/uinteger.h"
+#include "ns3/double.h"
+#include "ns3/boolean.h"
 #include "ns3/net-device.h"
 #include "ns3/node.h"
 #include "ns3/log.h"
@@ -128,6 +132,7 @@ MmWaveDftBeamforming::~MmWaveDftBeamforming ()
 {
 }
 
+
 void
 MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna)
 {
@@ -171,6 +176,290 @@ MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice,
 
   // configure the antenna to use the new beamforming vector
   m_antenna->SetBeamformingVector (antennaWeights);
+}
+
+/*----------------------------------------------------------------------------*/
+
+NS_OBJECT_ENSURE_REGISTERED (MmWaveSvdBeamforming);
+
+TypeId
+MmWaveSvdBeamforming::GetTypeId ()
+{
+  static TypeId
+    tid =
+    TypeId ("ns3::MmWaveSvdBeamforming")
+    .SetParent<MmWaveBeamformingModel> ()
+    .AddConstructor<MmWaveSvdBeamforming> ()
+    .AddAttribute ("ChannelModel",
+                   "Pointer to the MatrixBasedChannelModel object used in the simulation scenario",
+                   PointerValue (),
+                   MakePointerAccessor (&MmWaveSvdBeamforming::m_channel),
+                   MakePointerChecker<MatrixBasedChannelModel> ())
+    .AddAttribute ("MaxIterations",
+                   "Maximum number of iterations to numerically approximate the SVD decomposition",
+                   UintegerValue (30),
+                   MakeUintegerAccessor (&MmWaveSvdBeamforming::m_maxIterations),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("Tolerance",
+                   "Tolerance to numerically approximate the SVD decomposition",
+                   DoubleValue (1e-8),
+                   MakeDoubleAccessor (&MmWaveSvdBeamforming::m_tolerance),
+                   MakeDoubleChecker<double> ())
+    .AddAttribute ("UseCache",
+                   "Use the cache for the BF vectors. Do not set it to false unless you have very good reasons",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&MmWaveSvdBeamforming::m_useCache),
+                   MakeBooleanChecker ())
+  ;
+  return tid;
+}
+
+MmWaveSvdBeamforming::MmWaveSvdBeamforming ()
+  : m_useCache {false}
+{
+  NS_LOG_FUNCTION (this);
+}
+
+MmWaveSvdBeamforming::~MmWaveSvdBeamforming ()
+{
+}
+
+void
+MmWaveSvdBeamforming::DoDispose (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_channel = 0;
+  MmWaveBeamformingModel::DoDispose ();
+}
+
+void
+MmWaveSvdBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna)
+{
+  NS_LOG_FUNCTION (this << otherDevice << otherAntenna);
+
+  Ptr<MobilityModel> thisMob = m_device->GetNode ()->GetObject<MobilityModel> ();
+  NS_ASSERT_MSG (thisMob, "This device " << m_device << " does not have a mobility model");
+  Ptr<MobilityModel> otherMob = otherDevice->GetNode ()->GetObject<MobilityModel> ();
+  NS_ASSERT_MSG (otherMob, "The otherDevice " << otherDevice << " does not have a mobility model");
+
+  // this will trigger a new computation (if needed)
+  auto channelMatrix = m_channel->GetChannel (thisMob, otherMob, m_antenna, otherAntenna);
+
+  std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector> bfVectors;
+
+  bool toCache {false};
+
+  if (m_useCache)
+    {
+      auto entry {m_cacheChannelMap.find (otherDevice)};
+      if (entry != m_cacheChannelMap.end () && entry->second == channelMatrix) // hit: the channel was already cached
+        {
+          NS_LOG_DEBUG ("channel cached " << channelMatrix);
+          bfVectors = m_cacheBfVectors.find (otherDevice)->second;
+        }
+      else
+        {
+          NS_LOG_DEBUG ("new channel " << channelMatrix);
+          toCache = true;
+        }
+    }
+
+  if (!m_useCache || toCache)
+    {
+      if (channelMatrix->m_channel[0][0].size () == 0)
+        {
+          NS_LOG_LOGIC ("Channel has no MPCs");
+
+          uint64_t thisAntennaNumElements = m_antenna->GetNumberOfElements ();
+          uint64_t otherAntennaNumElements = otherAntenna->GetNumberOfElements ();
+          ThreeGppAntennaArrayModel::ComplexVector thisBf;
+          thisBf.resize (thisAntennaNumElements);
+          ThreeGppAntennaArrayModel::ComplexVector otherBf;
+          otherBf.resize (otherAntennaNumElements);
+
+          bfVectors = std::make_pair (thisBf, otherBf);
+        }
+      else
+        {
+          bfVectors = ComputeBeamformingVectors (channelMatrix);
+
+          uint32_t thisDeviceId = m_device->GetNode ()->GetId ();
+          uint32_t otherDeviceId = otherDevice->GetNode ()->GetId ();
+          if (channelMatrix->IsReverse (thisDeviceId, otherDeviceId))
+            {
+              // reverse BF vectors
+              bfVectors = std::make_pair (std::get<1> (bfVectors), std::get<0> (bfVectors));
+            }
+        }
+    }
+
+  // configure the antenna to use the new beamforming vector
+  m_antenna->SetBeamformingVector (std::get<0> (bfVectors));
+  NS_LOG_LOGIC ("antenna " << m_antenna
+                           << " set BF vector"
+                           << " numAntennaElem " << m_antenna->GetNumberOfElements ()
+                           << " this device ID=" << m_device->GetNode ()->GetId ()
+                           << " otherDevice ID=" << otherDevice->GetNode ()->GetId ());
+  otherAntenna->SetBeamformingVector (std::get<1> (bfVectors));
+  NS_LOG_LOGIC ("antenna " << otherAntenna
+                           << " set BF vector"
+                           << " numAntennaElem " << otherAntenna->GetNumberOfElements ()
+                           << " this device ID=" << otherDevice->GetNode ()->GetId ()
+                           << " otherDevice ID=" << m_device->GetNode ()->GetId ());
+
+  if (toCache)
+    {
+      auto entry {m_cacheChannelMap.find (otherDevice)};
+      if (entry != m_cacheChannelMap.end ())
+        {
+          entry->second = channelMatrix;
+          // this means there is also an entry for the bf vector
+          m_cacheBfVectors.find (otherDevice)->second = bfVectors;
+        }
+      else
+        {
+          m_cacheChannelMap.insert (std::make_pair (otherDevice, channelMatrix));
+          m_cacheBfVectors.insert (std::make_pair (otherDevice, bfVectors));
+        }
+    }
+}
+
+std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector>
+MmWaveSvdBeamforming::ComputeBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params) const
+{
+  //generate transmitter side spatial correlation matrix
+  uint16_t aSize = params->m_channel.size ();
+  uint16_t bSize = params->m_channel[0].size ();
+  uint16_t clusterSize = params->m_channel[0][0].size ();
+
+  // compute narrowband channel by summing over the cluster index
+  MatrixBasedChannelModel::Complex2DVector narrowbandChannel;
+  narrowbandChannel.resize (aSize);
+
+  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
+    {
+      narrowbandChannel[aIndex].resize (bSize);
+    }
+
+  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
+    {
+      for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
+        {
+          std::complex<double> cSum (0, 0);
+          for (uint16_t cIndex = 0; cIndex < clusterSize; cIndex++)
+            {
+              cSum += params->m_channel[aIndex][bIndex][cIndex];
+            }
+          narrowbandChannel[aIndex][bIndex] = cSum;
+        }
+    }
+
+  //compute the transmitter side spatial correlation matrix bQ = H*H, where H is the sum of H_n over n clusters.
+  MatrixBasedChannelModel::Complex2DVector bQ;
+  bQ.resize (bSize);
+
+  for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
+    {
+      bQ[bIndex].resize (bSize);
+    }
+
+  for (uint16_t b1Index = 0; b1Index < bSize; b1Index++)
+    {
+      for (uint16_t b2Index = 0; b2Index < bSize; b2Index++)
+        {
+          std::complex<double> aSum (0,0);
+          for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
+            {
+              aSum += std::conj (narrowbandChannel[aIndex][b1Index]) * narrowbandChannel[aIndex][b2Index];
+            }
+          bQ[b1Index][b2Index] += aSum;
+        }
+    }
+
+  //calculate beamforming vector from spatial correlation matrix
+  ThreeGppAntennaArrayModel::ComplexVector bW = GetFirstEigenvector (bQ);
+
+  //compute the receiver side spatial correlation matrix aQ = HH*, where H is the sum of H_n over n clusters.
+  MatrixBasedChannelModel::Complex2DVector aQ;
+  aQ.resize (aSize);
+
+  for (uint16_t aIndex = 0; aIndex < aSize; aIndex++)
+    {
+      aQ[aIndex].resize (aSize);
+    }
+
+  for (uint16_t a1Index = 0; a1Index < aSize; a1Index++)
+    {
+      for (uint16_t a2Index = 0; a2Index < aSize; a2Index++)
+        {
+          std::complex<double> bSum (0,0);
+          for (uint16_t bIndex = 0; bIndex < bSize; bIndex++)
+            {
+              bSum += narrowbandChannel[a1Index][bIndex] * std::conj (narrowbandChannel[a2Index][bIndex]);
+            }
+          aQ[a1Index][a2Index] += bSum;
+        }
+    }
+
+  //calculate beamforming vector from spatial correlation matrix.
+  ThreeGppAntennaArrayModel::ComplexVector aW = GetFirstEigenvector (aQ);
+
+  for (size_t i = 0; i < aW.size (); ++i)
+    {
+      aW[i] = std::conj (aW[i]);
+    }
+
+  return std::make_pair (bW, aW);
+}
+
+ThreeGppAntennaArrayModel::ComplexVector
+MmWaveSvdBeamforming::GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A) const
+{
+  ThreeGppAntennaArrayModel::ComplexVector antennaWeights;
+  uint16_t arraySize = A.size ();
+  for (uint16_t eIndex = 0; eIndex < arraySize; eIndex++)
+    {
+      antennaWeights.push_back (A[0][eIndex]);
+    }
+
+
+  uint32_t iter = 0;
+  double diff = 1;
+  while (iter < m_maxIterations && diff > m_tolerance)
+    {
+      ThreeGppAntennaArrayModel::ComplexVector antennaWeightsNew;
+
+      for (uint16_t row = 0; row < arraySize; row++)
+        {
+          std::complex<double> sum (0,0);
+          for (uint16_t col = 0; col < arraySize; col++)
+            {
+              sum += A[row][col] * antennaWeights[col];
+            }
+
+          antennaWeightsNew.push_back (sum);
+        }
+      //normalize antennaWeights;
+      double weighbSum = 0;
+      for (uint16_t i = 0; i < arraySize; i++)
+        {
+          weighbSum += norm (antennaWeightsNew[i]);
+        }
+      for (uint16_t i = 0; i < arraySize; i++)
+        {
+          antennaWeightsNew[i] = antennaWeightsNew[i] / sqrt (weighbSum);
+        }
+      diff = 0;
+      for (uint16_t i = 0; i < arraySize; i++)
+        {
+          diff += std::norm (antennaWeightsNew[i] - antennaWeights[i]);
+        }
+      iter++;
+      antennaWeights = antennaWeightsNew;
+    }
+  NS_LOG_DEBUG ("antennaWeigths stopped after " << iter << " iterations with diff=" << diff << std::endl);
+
+  return antennaWeights;
 }
 
 } // namespace mmwave

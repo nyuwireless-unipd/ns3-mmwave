@@ -20,12 +20,15 @@
 #define SRC_MMWAVE_BEAMFORMING_MODEL_H_
 
 #include "ns3/object.h"
+#include "ns3/matrix-based-channel-model.h"
+#include <map>
 
 namespace ns3 {
 
 class MobilityModel;
 class ThreeGppAntennaArrayModel;
 class NetDevice;
+class ChannelConditionModel;
 
 namespace mmwave {
 
@@ -45,7 +48,7 @@ public:
   /**
    * Destructor
    */
-  virtual ~MmWaveBeamformingModel ();
+  virtual ~MmWaveBeamformingModel () override;
 
   /**
    * Returns the object type id
@@ -108,7 +111,7 @@ public:
   /**
    * Destructor
    */
-  virtual ~MmWaveDftBeamforming ();
+  virtual ~MmWaveDftBeamforming () override;
 
   /**
    * Returns the object type id
@@ -124,6 +127,70 @@ public:
    */
   void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) override;
 };
+
+
+/**
+ * This class extends the MmWaveBeamformingModel interface.
+ * It implements an SVD-based beamforming algorithm.
+ * See Sec. 5.1 for references https://arxiv.org/pdf/1702.04822.pdf
+ */
+class MmWaveSvdBeamforming : public MmWaveBeamformingModel
+{
+public:
+  /**
+   * Constructor
+   */
+  MmWaveSvdBeamforming ();
+
+  /**
+   * Destructor
+   */
+  virtual ~MmWaveSvdBeamforming () override;
+
+  /**
+   * Returns the object type id
+   * \return the type id
+   */
+  static TypeId GetTypeId (void);
+
+  /**
+   * Computes the beamforming vector to communicate with the target device
+   * and sets the antenna.
+   * The beamforming vector is computed using a SVD-based beamforming
+   * algorithm.
+   * \param the target device
+   * \param the target antenna of otherDevice
+   */
+  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) override;
+
+private:
+  void DoDispose (void) override;
+  /**
+   * Compute the beamforming vectors using SVD
+   * \param params the channel matrix
+   * \return a pair with the beamforming vectors
+   */
+  std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector> ComputeBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params) const;
+
+  /**
+   * Compute eigenvector related to highest eigenvalue
+   * \param A spatial correlation matrix (complex, hermitian)
+   * \param nIter maximum number of iterations
+   * \param threshold if norm of two consecutive vectors is below this threshold, stop computation before nIter iterations
+   * \return eigenvector
+   */
+  ThreeGppAntennaArrayModel::ComplexVector GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A) const;
+
+
+  Ptr<MatrixBasedChannelModel> m_channel; //!< pointer to the MatrixChannel, to retrieve the matrix on which the SVD should be computed
+
+  std::map<Ptr<NetDevice>, Ptr<const MatrixBasedChannelModel::ChannelMatrix> > m_cacheChannelMap; //!< map that stores the channel previously computed
+  std::map<Ptr<NetDevice>, std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector> > m_cacheBfVectors; //!< map that stores the previous bf vectors
+  uint32_t m_maxIterations; //!< Maximum number of iterations to numerically approximate the SVD decomposition
+  double m_tolerance; //!< Tolerance to numerically approximate the SVD decomposition
+  bool m_useCache; //!< Cache the channel matrix whenever possible. NOTE: the SVD decomposition can be extremely computationally expensive, caching is suggested.
+};
+
 
 } // namespace mmwave
 } // namespace ns3

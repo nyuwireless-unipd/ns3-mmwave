@@ -1,6 +1,8 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
+    bld.env['ENABLE_QD_CHANNEL'] = False
+
     obj = bld.create_ns3_program('mmwave-example', ['mmwave'])
     obj.source = 'mmwave-example.cc'
     obj = bld.create_ns3_program('mmwave-tcp-example', ['mmwave'])
@@ -31,3 +33,7 @@ def build(bld):
     obj.source = 'mmwave-ca-diff-bandwidth.cc' 
     obj = bld.create_ns3_program('mmwave-ca-same-bandwidth', ['mmwave'])
     obj.source = 'mmwave-ca-same-bandwidth.cc' 
+
+    if bld.env['ENABLE_QD_CHANNEL']:
+        obj = bld.create_ns3_program('qd-channel-full-stack-example', ['mmwave'])
+        obj.source = 'qd-channel-full-stack-example.cc'

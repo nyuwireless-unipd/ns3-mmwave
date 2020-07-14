@@ -29,7 +29,7 @@
 *                 Dual Connectivity and Handover functionalities
 *
 * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
-*								 Integration of Carrier Aggregation
+*                Integration of Carrier Aggregation
 */
 
 
@@ -356,7 +356,7 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
         }
       else
         {
-          NS_LOG_UNCOND (this << " No PropagationLossModel!");
+          NS_LOG_WARN (this << " No PropagationLossModel!");
         }
 
       // create and configure the SpectrumPropagationLossModel
@@ -378,12 +378,16 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
               {
                 threeGppSplm->SetChannelModelAttribute ("ChannelConditionModel", PointerValue (ccm));
               }
-              else // the channel condition model was created inside the propagation loss model 
+              else if (!m_pathlossModel.empty ()) // the channel condition model was created inside the propagation loss model 
               {
                 PointerValue ptr; 
                 m_pathlossModel.at (it->first)->GetAttribute ("ChannelConditionModel", ptr);
                 ccm = ptr.Get<ChannelConditionModel> ();
                 threeGppSplm->SetChannelModelAttribute ("ChannelConditionModel", PointerValue (ccm));
+              }
+              else
+              {
+                NS_LOG_DEBUG ("ChannelConditionModel not set for ThreeGppSpectrumPropagationLossModel");
               }
             }
           else 
@@ -396,7 +400,7 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
         }
       else
         {
-          NS_LOG_UNCOND (this << " No SpectrumPropagationLossModel!");
+          NS_LOG_WARN (this << " No SpectrumPropagationLossModel!");
         }
 
       m_channel [it->first] = channel;
@@ -502,6 +506,27 @@ MmWaveHelper::SetChannelModelAttribute (std::string name, const AttributeValue &
 {
   NS_LOG_FUNCTION (this);
   m_spectrumPropagationLossModelFactory.Set (name, value);
+}
+
+void
+MmWaveHelper::SetMmWaveEnbNetDeviceAttribute (std::string name, const AttributeValue &value)
+{
+  NS_LOG_FUNCTION (this);
+  m_enbNetDeviceFactory.Set (name, value);
+}
+
+void
+MmWaveHelper::SetMmWaveUeNetDeviceAttribute (std::string name, const AttributeValue &value)
+{
+  NS_LOG_FUNCTION (this);
+  m_ueNetDeviceFactory.Set (name, value);
+}
+
+void
+MmWaveHelper::SetMcUeNetDeviceAttribute (std::string name, const AttributeValue &value)
+{
+  NS_LOG_FUNCTION (this);
+  m_mcUeNetDeviceFactory.Set (name, value);
 }
 
 void
@@ -777,12 +802,8 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       dlPhy->SetMobility (mm);
       ulPhy->SetMobility (mm);
 
-      // TODO how to support other kinds of antennas?
       Ptr<ThreeGppAntennaArrayModel> antenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumRows", UintegerValue (sqrt (device->GetAntennaNum())), "NumColumns", UintegerValue (sqrt (device->GetAntennaNum())));
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
-      // TODO make the bf module configurable
-      Ptr<MmWaveDftBeamforming> bfModule = CreateObjectWithAttributes<MmWaveDftBeamforming> ("Device", PointerValue (device), "Antenna", PointerValue (antenna));
-      dlPhy->SetBeamformingModel (bfModule);
 
       // initialize the 3GPP channel model
       Ptr<SpectrumPropagationLossModel> splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
@@ -791,6 +812,15 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       {
         threeGppSplm->AddDevice (device, antenna);
       }
+
+      auto channelModel = threeGppSplm->GetChannelModel();
+      // TODO make the bf module configurable
+      Ptr<MmWaveSvdBeamforming> bfModule = 
+        CreateObjectWithAttributes<MmWaveSvdBeamforming> (
+          "Device", PointerValue (device), 
+          "Antenna", PointerValue (antenna),
+          "ChannelModel", PointerValue (channelModel));
+      dlPhy->SetBeamformingModel (bfModule);
 
       it->second->SetPhy (phy);
       it->second->SetAntenna (antenna);
@@ -1379,13 +1409,8 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       dlPhy->SetMobility (mm);
       ulPhy->SetMobility (mm);
 
-      // TODO how to support other kinds of antennas?
       Ptr<ThreeGppAntennaArrayModel> antenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumRows", UintegerValue (sqrt (device->GetAntennaNum())), "NumColumns", UintegerValue (sqrt (device->GetAntennaNum())));
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
-
-      // TODO make the bf module configurable
-      Ptr<MmWaveDftBeamforming> bfModule = CreateObjectWithAttributes<MmWaveDftBeamforming> ("Device", PointerValue (device), "Antenna", PointerValue (antenna));
-      dlPhy->SetBeamformingModel (bfModule);
 
       // initialize the 3GPP channel model
       Ptr<SpectrumPropagationLossModel> splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
@@ -1394,6 +1419,15 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       {
         threeGppSplm->AddDevice (device, antenna);
       }
+
+      auto channelModel = threeGppSplm->GetChannelModel();
+      // TODO make the bf module configurable
+      Ptr<MmWaveSvdBeamforming> bfModule = 
+        CreateObjectWithAttributes<MmWaveSvdBeamforming> (
+          "Device", PointerValue (device), 
+          "Antenna", PointerValue (antenna),
+          "ChannelModel", PointerValue (channelModel));
+      dlPhy->SetBeamformingModel (bfModule);
 
       DynamicCast<MmWaveComponentCarrierUe> (it->second)->SetPhy (phy);
       it->second->SetAntenna (antenna);
@@ -1581,18 +1615,13 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
         }
       else
         {
-          NS_LOG_UNCOND (this << " No PropagationLossModel!");
+          NS_LOG_WARN (this << " No PropagationLossModel!");
         }
 
       NS_LOG_DEBUG ("Create antenna");
       // TODO how to support other kinds of antennas?
       Ptr<ThreeGppAntennaArrayModel> antenna = CreateObjectWithAttributes<ThreeGppAntennaArrayModel> ("NumRows", UintegerValue (sqrt (device->GetAntennaNum())), "NumColumns", UintegerValue (sqrt (device->GetAntennaNum())));
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
-
-      NS_LOG_DEBUG ("Create bf module");
-      // TODO make the bf module configurable
-      Ptr<MmWaveDftBeamforming> bfModule = CreateObjectWithAttributes<MmWaveDftBeamforming> ("Device", PointerValue (device), "Antenna", PointerValue (antenna));
-      dlPhy->SetBeamformingModel (bfModule);
 
       // initialize the 3GPP channel model
       Ptr<SpectrumPropagationLossModel> splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
@@ -1602,6 +1631,15 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
         NS_LOG_DEBUG ("Initialize the 3GPP channel model");
         threeGppSplm->AddDevice (device, antenna);
       }
+      
+      auto channelModel = threeGppSplm->GetChannelModel();
+      // TODO make the bf module configurable
+      Ptr<MmWaveSvdBeamforming> bfModule = 
+        CreateObjectWithAttributes<MmWaveSvdBeamforming> (
+          "Device", PointerValue (device), 
+          "Antenna", PointerValue (antenna),
+          "ChannelModel", PointerValue (channelModel));
+      dlPhy->SetBeamformingModel (bfModule);
 
       NS_LOG_DEBUG ("Create the mac");
       Ptr<MmWaveEnbMac> mac = CreateObject<MmWaveEnbMac> ();
@@ -1662,7 +1700,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
     {
       Ptr<MmWavePhyMacCommon> phyMacConfig = it->second->GetConfigurationParameters ();
       bandwidthMap[it->first] = phyMacConfig->GetBandwidth ();
-      NS_LOG_UNCOND ("bandwidth " << (uint32_t)it->first << " = " << bandwidthMap[it->first]);
+      NS_LOG_DEBUG ("bandwidth " << +it->first << " = " << bandwidthMap[it->first] / 1e6 << " MHz");
     }
 
   ccmEnbManager->SetBandwidthMap (bandwidthMap);
@@ -1778,7 +1816,7 @@ it->second->GetFfrAlgorithm ()->SetLteFfrRrcSapUser (rrc->GetLteFfrRrcSapUser (i
         mac->SetCellId(cellId);
         *dlPhy->SetPhyRxDataEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyDataPacketReceived, phy));
         *dlPhy->SetPhyRxCtrlEndOkCallback (MakeCallback (&MmWaveEnbPhy::PhyCtrlMessagesReceived, phy));
-  *	dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));
+  * dlPhy->SetPhyUlHarqFeedbackCallback (MakeCallback (&MmWaveEnbPhy::ReceiveUlHarqFeedback, phy));
 */
   for (auto it = ccMap.begin (); it != ccMap.end (); ++it)
     {
@@ -1952,10 +1990,10 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
       // it does not make sense to use RLC/SM when also using the EPC
 
 // ***************** RDF EDIT 6/9/2016 ***************** //
-//	  if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
-//	    {
-//	      rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
-//	    }
+//    if (epsBearerToRlcMapping.Get () == LteEnbRrc::RLC_SM_ALWAYS)
+//      {
+//        rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
+//      }
 
       if (m_rlcAmEnabled)
         {
@@ -2158,81 +2196,27 @@ MmWaveHelper::AttachIrToClosestEnb (NetDeviceContainer ueDevices, NetDeviceConta
 void
 MmWaveHelper::AttachToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this << ueDevice << enbDevices.GetN ());
   NS_ASSERT_MSG (enbDevices.GetN () > 0, "empty enb device container");
-  Vector uepos = ueDevice->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+  Vector uePos = ueDevice->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
 
   // find the closest BS
   double minDistance = std::numeric_limits<double>::infinity ();
-  Ptr<NetDevice> closestEnbDevice;
-  for (NetDeviceContainer::Iterator i = enbDevices.Begin (); i != enbDevices.End (); ++i)
+  int closestEnbIndex = -1;
+  for (uint32_t i = 0; i < enbDevices.GetN (); ++i)
     {
-      Vector enbpos = (*i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
-      double distance = CalculateDistance (uepos, enbpos);
+      Vector enbPos = enbDevices.Get (i)->GetNode ()->GetObject<MobilityModel> ()->GetPosition ();
+      double distance = CalculateDistance (uePos, enbPos);
+
       if (distance < minDistance)
         {
           minDistance = distance;
-          closestEnbDevice = *i;
+          closestEnbIndex = i;
         }
     }
-  NS_ASSERT (closestEnbDevice != 0);
+  NS_ASSERT_MSG (closestEnbIndex >= 0, "Closest eNB not found!");
 
-  // connect the UE to the closest BS
-  Ptr<MmWaveUeNetDevice> mmWaveUe = ueDevice->GetObject<MmWaveUeNetDevice> ();
-
-  // Necessary operation to connect MmWave UE to eNB at lower layers
-  for (NetDeviceContainer::Iterator i = enbDevices.Begin (); i != enbDevices.End (); ++i)
-    {
-      Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> ();
-
-      std::map<uint8_t, Ptr<MmWaveComponentCarrier> > enbCcMap = mmWaveEnb->GetCcMap ();
-
-      for (auto itEnb = enbCcMap.begin (); itEnb != enbCcMap.end (); ++itEnb)
-        {
-          Ptr<MmWaveComponentCarrierEnb> ccEnb = DynamicCast<MmWaveComponentCarrierEnb> (itEnb->second);
-          uint16_t mmWaveCellId = ccEnb->GetCellId ();
-          Ptr<MmWavePhyMacCommon> configParams = ccEnb->GetPhy ()->GetConfigurationParameters ();
-          ccEnb->GetPhy ()->AddUePhy (mmWaveUe->GetImsi (), ueDevice);
-          // register MmWave eNBs informations in the MmWaveUePhy
-
-          std::map<uint8_t, Ptr<MmWaveComponentCarrier> > ueCcMap = mmWaveUe->GetCcMap ();
-          for (auto itUe = ueCcMap.begin (); itUe != ueCcMap.end (); ++itUe)
-            {
-              DynamicCast<MmWaveComponentCarrierUe> (itUe->second)->GetPhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
-            }
-          //closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
-          NS_LOG_INFO ("mmWaveCellId " << mmWaveCellId);
-        }
-    }
-
-  // TODO check: the initial access is performed by the PCC, the method RegisterToEnb
-  // should be called only on the PCC PHY. The configuration of the SCCs will be
-  // performed by UE RRC during the connection setup phase
-  uint16_t cellId = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId ();
-  Ptr<MmWavePhyMacCommon> configParams = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy ()->GetConfigurationParameters ();
-
-  // this has alread been called in the for loop above
-  closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy ()->AddUePhy (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), ueDevice);
-  ueDevice->GetObject<MmWaveUeNetDevice> ()->GetPhy ()->RegisterToEnb (cellId, configParams);
-  closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetMac ()->AssociateUeMAC (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi ());
-
-  // connect to the closest one
-  Ptr<EpcUeNas> ueNas = ueDevice->GetObject<MmWaveUeNetDevice> ()->GetNas ();
-  ueNas->Connect (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId (),
-                  closestEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetEarfcn ());
-
-  if (m_epcHelper != 0)
-    {
-      // activate default EPS bearer
-      m_epcHelper->ActivateEpsBearer (ueDevice, ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
-    }
-
-  // tricks needed for the simplified LTE-only simulations
-  //if (m_epcHelper == 0)
-  //{
-  ueDevice->GetObject<MmWaveUeNetDevice> ()->SetTargetEnb (closestEnbDevice->GetObject<MmWaveEnbNetDevice> ());
-  //}
-
+  AttachToEnbWithIndex (ueDevice, enbDevices, closestEnbIndex);
 }
 
 void
@@ -2375,6 +2359,77 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
   Ptr<MmWaveEnbNetDevice> enbDevice = closestEnbDevice->GetObject<MmWaveEnbNetDevice> ();
   mcDevice->SetLteTargetEnb (enbLteDevice);
   mcDevice->SetMmWaveTargetEnb (enbDevice);
+}
+
+void
+MmWaveHelper::AttachToEnbWithIndex (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices, uint32_t index)
+{
+  NS_LOG_FUNCTION (this << ueDevice << enbDevices.GetN () << index);
+  NS_ASSERT_MSG (enbDevices.GetN () > 0, "empty enb device container");
+
+  // select the eNB with the given index
+  Ptr<NetDevice> targetEnbDevice = enbDevices.Get(index);
+  NS_ASSERT (targetEnbDevice != 0);
+
+  // connect the UE to the target BS
+  Ptr<MmWaveUeNetDevice> mmWaveUe = ueDevice->GetObject<MmWaveUeNetDevice> ();
+
+  // Necessary operation to connect MmWave UE to eNB at lower layers
+  for (NetDeviceContainer::Iterator i = enbDevices.Begin (); i != enbDevices.End (); ++i)
+    {
+      Ptr<MmWaveEnbNetDevice> mmWaveEnb = (*i)->GetObject<MmWaveEnbNetDevice> ();
+
+      std::map<uint8_t, Ptr<MmWaveComponentCarrier> > enbCcMap = mmWaveEnb->GetCcMap ();
+
+      // TODO here I have to pair UE CC and eNB CC with the same CCid, CCs with different
+      // IDs cannot communicate
+      for (const auto& itEnb : enbCcMap)
+        {
+          Ptr<MmWaveComponentCarrierEnb> ccEnb = DynamicCast<MmWaveComponentCarrierEnb> (itEnb.second);
+
+          uint16_t mmWaveCellId = ccEnb->GetCellId ();
+          Ptr<MmWavePhyMacCommon> configParams = ccEnb->GetPhy ()->GetConfigurationParameters ();
+          ccEnb->GetPhy ()->AddUePhy (mmWaveUe->GetImsi (), ueDevice);
+          // register MmWave eNBs informations in the MmWaveUePhy
+
+          std::map<uint8_t, Ptr<MmWaveComponentCarrier> > ueCcMap = mmWaveUe->GetCcMap ();
+          for (const auto& itUe : ueCcMap)
+            {
+              DynamicCast<MmWaveComponentCarrierUe> (itUe.second)->GetPhy ()->RegisterOtherEnb (mmWaveCellId, configParams, mmWaveEnb);
+            }
+          //closestMmWave->GetMac ()->AssociateUeMAC (mcDevice->GetImsi ()); //TODO this does not do anything
+          NS_LOG_INFO ("mmWaveCellId " << mmWaveCellId);
+        }
+    }
+
+  // TODO check: the initial access is performed by the PCC, the method RegisterToEnb
+  // should be called only on the PCC PHY. The configuration of the SCCs will be
+  // performed by UE RRC during the connection setup phase
+  uint16_t cellId = targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId ();
+  Ptr<MmWavePhyMacCommon> configParams = targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy ()->GetConfigurationParameters ();
+
+  // this has alread been called in the for loop above
+  targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetPhy ()->AddUePhy (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), ueDevice);
+  ueDevice->GetObject<MmWaveUeNetDevice> ()->GetPhy ()->RegisterToEnb (cellId, configParams);
+  targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetMac ()->AssociateUeMAC (ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi ());
+
+  // connect to the target one
+  Ptr<EpcUeNas> ueNas = ueDevice->GetObject<MmWaveUeNetDevice> ()->GetNas ();
+  ueNas->Connect (targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId (),
+                  targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetEarfcn ());
+
+  if (m_epcHelper != 0)
+    {
+      // activate default EPS bearer
+      m_epcHelper->ActivateEpsBearer (ueDevice, ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
+    }
+
+  // tricks needed for the simplified LTE-only simulations
+  //if (m_epcHelper == 0)
+  //{
+  ueDevice->GetObject<MmWaveUeNetDevice> ()->SetTargetEnb (targetEnbDevice->GetObject<MmWaveEnbNetDevice> ());
+  //}
+
 }
 
 void

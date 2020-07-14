@@ -29,7 +29,7 @@
 *                 Dual Connectivity and Handover functionalities
 *
 * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
-*								 Integration of Carrier Aggregation
+*                Integration of Carrier Aggregation
 */
 
 
@@ -119,6 +119,27 @@ public:
    */
   void SetChannelModelAttribute (std::string name, const AttributeValue &value);
 
+  /**
+   * Set an attribute to the MmWaveEnbNetDevice
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetMmWaveEnbNetDeviceAttribute (std::string name, const AttributeValue &value);
+
+  /**
+   * Set an attribute to the MmWaveUeNetDevice
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetMmWaveUeNetDeviceAttribute (std::string name, const AttributeValue &value);
+
+  /**
+   * Set an attribute to the McUeNetDevice
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetMcUeNetDeviceAttribute (std::string name, const AttributeValue &value);
+
   void SetLtePathlossModelType (std::string type);
 
   /**
@@ -154,6 +175,15 @@ public:
    * Attach MC ueDevices to the closest LTE enbDevice, register all MmWave eNBs to the MmWaveUePhy
    */
   void AttachToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
+
+  /**
+   * Attach to an eNB selecting which one with an index
+   * \param the ueNetDevice
+   * \param all the eNBs
+   * \param an index to select the eNB (cellId - 1)
+   */
+  void AttachToEnbWithIndex (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices, uint32_t index);
+  
 
   /**
    * Attach MC ueDevices to the closest MmWave eNB device, register all MmWave eNBs to the MmWaveUePhy,

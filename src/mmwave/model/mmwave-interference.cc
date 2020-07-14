@@ -153,7 +153,7 @@ mmWaveInterference::AddSignal (Ptr<const SpectrumValue> spd, const Time duration
 
 
 void
-mmWaveInterference::DoAddSignal  (Ptr<const SpectrumValue> spd)
+mmWaveInterference::DoAddSignal (Ptr<const SpectrumValue> spd)
 {
   NS_LOG_FUNCTION (this << *spd);
   ConditionallyEvaluateChunk ();

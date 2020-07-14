@@ -89,6 +89,18 @@ MmWaveUePhy::GetTypeId (void)
                    MakeDoubleAccessor (&MmWaveUePhy::SetTxPower,
                                        &MmWaveUePhy::GetTxPower),
                    MakeDoubleChecker<double> ())
+    .AddAttribute ("NoiseFigure",
+                   "Loss (dB) in the Signal-to-Noise-Ratio due to non-idealities in the receiver."
+                   " According to Wikipedia (http://en.wikipedia.org/wiki/Noise_figure), this is "
+                   "\"the difference in decibels (dB) between"
+                   " the noise output of the actual receiver to the noise output of an "
+                   " ideal receiver with the same overall gain and bandwidth when the receivers "
+                   " are connected to sources at the standard noise temperature T0.\" "
+                   "In this model, we consider T0 = 290K.",
+                   DoubleValue (5.0),
+                   MakeDoubleAccessor (&MmWavePhy::SetNoiseFigure,
+                                       &MmWavePhy::GetNoiseFigure),
+                   MakeDoubleChecker<double> ())
     .AddAttribute ("DlSpectrumPhy",
                    "The downlink MmWaveSpectrumPhy associated to this MmWavePhy",
                    TypeId::ATTR_GET,
@@ -198,9 +210,9 @@ MmWaveUePhy::GetTxPower () const
 }
 
 void
-MmWaveUePhy::SetNoiseFigure (double pf)
+MmWaveUePhy::SetNoiseFigure (double nf)
 {
-
+  m_noiseFigure = nf;
 }
 
 double
@@ -302,7 +314,6 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
   m_cellId = cellId;
   m_phyReset = false;
   //TBD how to assign bandwitdh and earfcn
-  m_noiseFigure = 5.0;
   m_phyMacConfig = config;
   m_phySapUser->SetConfigurationParameters (config);
 
@@ -315,7 +326,7 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
     {
       DynamicCast<McUeNetDevice> (m_netDevice)->SetMmWaveTargetEnb (enbNetDevice);
     }
-  NS_LOG_UNCOND ("UE register to enb " << m_cellId);
+  NS_LOG_LOGIC ("UE register to enb " << m_cellId);
   
   // point the beam towards the serving BS
   m_downlinkSpectrumPhy->ConfigureBeamforming (m_registeredEnb.find (m_cellId)->second.second);
@@ -517,6 +528,7 @@ MmWaveUePhy::StartTti ()
   if (m_cellId > 0)
   {
       // point the beam towards the serving BS
+      NS_LOG_LOGIC("UE " << m_rnti << " cid " << m_cellId << " BF");
       m_downlinkSpectrumPhy->ConfigureBeamforming (m_registeredEnb.find (m_cellId)->second.second);
   }
 
@@ -691,7 +703,7 @@ void
 MmWaveUePhy::SendDataChannels (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time duration, uint8_t slotInd)
 {
 
-  //Ptr<AntennaArrayModel> antennaArray = DynamicCast<AntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+  //Ptr<ThreeGppAntennaArrayModel> antennaArray = DynamicCast<ThreeGppAntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
   /* set beamforming vector;
    * for UE, you can choose 16 antenna with 0-7 sectors, or 4 antenna with 0-3 sectors
    * input is (sector, antenna number)

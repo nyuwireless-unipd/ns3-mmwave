@@ -129,7 +129,7 @@ MmWaveBeamformingModel
 MmWaveBeamformingModel is a base class handling the beamforming operations.
 The classes deriving from MmWaveBeamformingModel implement specific beamforming
 schemes.
-It holds a pointer to an instance of the class AntennaArrayBasicModel implementing
+It holds a pointer to an instance of the class ThreeGppAntennaArrayModel implementing
 the antenna model.
 The main method is SetBeamformingVectorForDevice (), which computes the proper
 beamforming vector in order to communicate with a specific device and configures
