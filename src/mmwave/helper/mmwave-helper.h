@@ -141,6 +141,19 @@ public:
   void SetMcUeNetDeviceAttribute (std::string name, const AttributeValue &value);
 
   void SetLtePathlossModelType (std::string type);
+  
+  /**
+   * Set the type of beamforming model to be used
+   * \param type beamforming model type
+   */
+  void SetBeamformingModelType (std::string type);
+  
+  /**
+   * Set an attribute to the MmWaveBeamformingModel
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetBeamformingModelAttribute (std::string name, const AttributeValue &value);
 
   /**
    * This method is used to set the MmWaveComponentCarrier map.
@@ -382,6 +395,7 @@ private:
   ObjectFactory m_lteUeAntennaModelFactory;             /// Factory of antenna object for Lte UE.
   ObjectFactory m_lteEnbAntennaModelFactory;       /// Factory of antenna objects for Lte eNB.
 
+  ObjectFactory m_bfModelFactory; //!< Factory for the beamforming model 
   /**
   * From lte-helper.h
   * The `UsePdschForCqiGeneration` attribute. If true, DL-CQI will be

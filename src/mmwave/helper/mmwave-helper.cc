@@ -94,7 +94,8 @@ MmWaveHelper::MmWaveHelper (void)
 
   m_lteUeAntennaModelFactory.SetTypeId (IsotropicAntennaModel::GetTypeId ());
   m_lteEnbAntennaModelFactory.SetTypeId (IsotropicAntennaModel::GetTypeId ());
-  // TODO add Set methods for LTE antenna
+  
+  m_bfModelFactory.SetTypeId (MmWaveSvdBeamforming::GetTypeId ());
 }
 
 MmWaveHelper::~MmWaveHelper (void)
@@ -172,6 +173,11 @@ MmWaveHelper::GetTypeId (void)
                    "of any class inheriting from ns3::PropagationLossModel.",
                    StringValue ("ns3::FriisPropagationLossModel"),
                    MakeStringAccessor (&MmWaveHelper::SetLtePathlossModelType),
+                   MakeStringChecker ())
+    .AddAttribute ("BeamformingModel",
+                   "The type of beamforming model to be used.",
+                   StringValue ("ns3::MmWaveSvdBeamforming"),
+                   MakeStringAccessor (&MmWaveHelper::SetBeamformingModelType),
                    MakeStringChecker ())
     .AddAttribute ("UsePdschForCqiGeneration",
                    "If true, DL-CQI will be calculated from PDCCH as signal and PDSCH as interference "
@@ -458,6 +464,13 @@ MmWaveHelper::SetLtePathlossModelType (std::string type)
 }
 
 void
+MmWaveHelper::SetBeamformingModelType (std::string type)
+{
+  NS_LOG_FUNCTION (this << type);
+  m_bfModelFactory = ObjectFactory (type);
+}
+
+void
 MmWaveHelper::SetChannelConditionModelType (std::string type)
 {
   NS_LOG_FUNCTION (this << type);
@@ -527,6 +540,13 @@ MmWaveHelper::SetMcUeNetDeviceAttribute (std::string name, const AttributeValue 
 {
   NS_LOG_FUNCTION (this);
   m_mcUeNetDeviceFactory.Set (name, value);
+}
+
+void
+MmWaveHelper::SetBeamformingModelAttribute (std::string name, const AttributeValue &value)
+{
+  NS_LOG_FUNCTION (this);
+  m_bfModelFactory.Set (name, value);
 }
 
 void
@@ -814,13 +834,11 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       }
 
       auto channelModel = threeGppSplm->GetChannelModel();
-      // TODO make the bf module configurable
-      Ptr<MmWaveSvdBeamforming> bfModule = 
-        CreateObjectWithAttributes<MmWaveSvdBeamforming> (
-          "Device", PointerValue (device), 
-          "Antenna", PointerValue (antenna),
-          "ChannelModel", PointerValue (channelModel));
-      dlPhy->SetBeamformingModel (bfModule);
+      Ptr<MmWaveBeamformingModel> bfModel = m_bfModelFactory.Create<MmWaveBeamformingModel> ();
+      bfModel->SetAttributeFailSafe ("Device", PointerValue (device));
+      bfModel->SetAttributeFailSafe ("Antenna", PointerValue (antenna));
+      bfModel->SetAttributeFailSafe ("ChannelModel", PointerValue (channelModel));
+      dlPhy->SetBeamformingModel (bfModel);
 
       it->second->SetPhy (phy);
       it->second->SetAntenna (antenna);
@@ -1421,13 +1439,11 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       }
 
       auto channelModel = threeGppSplm->GetChannelModel();
-      // TODO make the bf module configurable
-      Ptr<MmWaveSvdBeamforming> bfModule = 
-        CreateObjectWithAttributes<MmWaveSvdBeamforming> (
-          "Device", PointerValue (device), 
-          "Antenna", PointerValue (antenna),
-          "ChannelModel", PointerValue (channelModel));
-      dlPhy->SetBeamformingModel (bfModule);
+      Ptr<MmWaveBeamformingModel> bfModel = m_bfModelFactory.Create<MmWaveBeamformingModel> ();
+      bfModel->SetAttributeFailSafe ("Device", PointerValue (device));
+      bfModel->SetAttributeFailSafe ("Antenna", PointerValue (antenna));
+      bfModel->SetAttributeFailSafe ("ChannelModel", PointerValue (channelModel));
+      dlPhy->SetBeamformingModel (bfModel);
 
       DynamicCast<MmWaveComponentCarrierUe> (it->second)->SetPhy (phy);
       it->second->SetAntenna (antenna);
@@ -1633,13 +1649,11 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       }
       
       auto channelModel = threeGppSplm->GetChannelModel();
-      // TODO make the bf module configurable
-      Ptr<MmWaveSvdBeamforming> bfModule = 
-        CreateObjectWithAttributes<MmWaveSvdBeamforming> (
-          "Device", PointerValue (device), 
-          "Antenna", PointerValue (antenna),
-          "ChannelModel", PointerValue (channelModel));
-      dlPhy->SetBeamformingModel (bfModule);
+      Ptr<MmWaveBeamformingModel> bfModel = m_bfModelFactory.Create<MmWaveBeamformingModel> ();
+      bfModel->SetAttributeFailSafe ("Device", PointerValue (device));
+      bfModel->SetAttributeFailSafe ("Antenna", PointerValue (antenna));
+      bfModel->SetAttributeFailSafe ("ChannelModel", PointerValue (channelModel));
+      dlPhy->SetBeamformingModel (bfModel);
 
       NS_LOG_DEBUG ("Create the mac");
       Ptr<MmWaveEnbMac> mac = CreateObject<MmWaveEnbMac> ();
