@@ -133,43 +133,6 @@ struct PhyTransmissionTraceParams
   uint8_t m_ccId;    //!< The Component Carrier (CC) ID
 };
 
-// TODO this is unsed only by mmwave-rr-mac-scheduler. Consider to remove it
-struct TbInfoElement
-{
-  TbInfoElement ()
-    : m_isUplink (0),
-    m_slotIdx (0),
-    m_rbBitmap (0),
-    m_rbShift (0),
-    m_rbStart (0),
-    m_rbLen (0),
-    m_symStart (0),
-    m_numSym (0),
-    m_resAlloc (0),
-    m_mcs (0),
-    m_tbSize (0),
-    m_ndi (0),
-    m_rv (0),
-    m_harqProcess (0)
-  {
-  }
-
-  bool m_isUplink; // is uplink grant?
-  uint8_t m_slotIdx; // slot index
-  uint32_t m_rbBitmap; // Resource Block Group bitmap
-  uint8_t m_rbShift; // shift for res alloc type 1
-  uint8_t m_rbStart; // starting RB index for uplink res alloc type 0
-  uint16_t m_rbLen;
-  uint8_t m_symStart; // starting symbol index for flexible TTI scheme
-  uint8_t m_numSym; // number of symbols for flexible TTI scheme
-  uint8_t m_resAlloc; // resource allocation type
-  uint8_t m_mcs;
-  uint32_t m_tbSize;
-  uint8_t m_ndi;
-  uint8_t m_rv;
-  uint8_t m_harqProcess;
-};
-
 /**
  * Struct holding the information of a DCI message
  */
@@ -216,21 +179,6 @@ struct DciInfoElementTdma
   uint8_t m_ndi; //!< if 1 indicates a new transmission, if 0 indicates a retransmission
   uint8_t m_rv; //!< counter holding the number of retransmissions
   uint8_t m_harqProcess; //!< HARQ process ID
-};
-
-// TODO this is used only by mmwave-rr-mac-scheduler and mmwave-control-message. 
-// consider to replace it with DciInfoElementTdma
-struct DciInfoElement
-{
-  DciInfoElement () : m_rnti (0), m_cceIndex (0), m_format (0), m_tddBitmap (0)
-  {
-  }
-
-  uint16_t m_rnti;
-  uint8_t m_cceIndex;
-  uint8_t m_format; // to support different DCI types
-  uint16_t m_tddBitmap; // 0 == DL, 1 == UL
-  std::vector<TbInfoElement> m_tbInfoElements;
 };
 
 /**
@@ -366,25 +314,6 @@ struct MacCeElement
     BSR, PHR, CRNTI
   } m_macCeType;
   struct MacCeValue m_macCeValue;
-};
-
-// TODO this is used only by mmwave-rr-mac-scheduler. Consider to remove it
-struct SchedInfo
-{
-  SchedInfo () : m_frameNum (0), m_sfNum (0), m_rnti (0)
-  {
-  }
-  SchedInfo (unsigned int numSlots) : m_frameNum (0), m_sfNum (0), m_rnti (0)
-  {
-  }
-
-  uint16_t m_frameNum;
-  uint8_t m_sfNum;
-  uint16_t m_rnti;
-
-  SlotAllocInfo m_slotAllocInfo;  //!< Holds the allocation info for a single NR slot
-  struct DciInfoElement m_dci;
-  std::map<uint8_t, std::vector<struct RlcPduInfo> > m_rlcPduMap; // RLC PDU elems for each MAC TB
 };
 
 /**

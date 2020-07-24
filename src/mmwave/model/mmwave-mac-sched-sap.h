@@ -111,8 +111,6 @@ public:
   {
     SfnSf m_sfnSf;
     SlotAllocInfo m_slotAllocInfo;
-
-    std::map<uint16_t, SchedInfo> m_schedInfoMap;
   };
 
   virtual void SchedConfigInd (const struct SchedConfigIndParameters& params) = 0;

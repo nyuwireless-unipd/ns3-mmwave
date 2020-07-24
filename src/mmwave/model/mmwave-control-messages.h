@@ -68,32 +68,6 @@ private:
   messageType m_messageType;
 };
 
-/************************************************************
- * Defines the time and frequency based resource allocation *
- * for the UEs attached to a given BS.                      *
- ************************************************************/
-
-class MmWaveDciMessage : public MmWaveControlMessage
-{
-public:
-  MmWaveDciMessage (void);
-  virtual ~MmWaveDciMessage (void);
-
-//	void SetRbAllocationMap (SfAllocInfo allocMap);
-//	SfAllocInfo GetRbAllocationMap (void);
-
-  void SetDciInfoElement (DciInfoElement dci);
-  DciInfoElement GetDciInfoElement (void);
-
-  void SetSfnSf (uint32_t sfn);
-  uint32_t GetSfnSf (void);
-
-private:
-  uint32_t m_sfnSf;        // frame num and sf num for debugging
-//	SfAllocInfo m_rscAllocationMap;
-  DciInfoElement m_dciInfoElement;
-};
-
 class MmWaveTdmaDciMessage : public MmWaveControlMessage
 {
 public:

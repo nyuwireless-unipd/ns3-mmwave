@@ -150,7 +150,6 @@ const unsigned MmWaveFlexTtiMaxWeightMacScheduler::m_rlcHdrSize = 3;
 
 MmWaveFlexTtiMaxWeightMacScheduler::MmWaveFlexTtiMaxWeightMacScheduler ()
   : m_nextRnti (0),
-    m_subframeNo (0),
     m_tbUid (0),
     m_macSchedSapUser (0),
     m_macCschedSapUser (0)
@@ -281,13 +280,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::ConfigureCommonParameters (Ptr<MmWavePhyMacC
   m_amc = CreateObject <MmWaveAmc> (m_phyMacConfig);
   m_numHarqProcess = m_phyMacConfig->GetNumHarqProcess ();
   m_harqTimeout = m_phyMacConfig->GetHarqTimeout ();
-  m_numDataSymbols = m_phyMacConfig->GetSymbolsPerSubframe () -
+  m_numDataSymbols = m_phyMacConfig->GetSymbPerSlot () -
     m_phyMacConfig->GetDlCtrlSymbols () - m_phyMacConfig->GetUlCtrlSymbols ();
-
-  for (unsigned i = 0; i < m_phyMacConfig->GetUlSchedDelay (); i++)
-    {
-      m_ulSfAllocInfo.push_back (SlotAllocInfo (SfnSf (0, i, 0)));
-    }
 }
 
 void
@@ -457,9 +451,10 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacS
 {
   NS_LOG_FUNCTION (this);
 
-  unsigned frameNum = params.m_sfnSf.m_frameNum;
-  unsigned subframeNum =  params.m_sfnSf.m_sfNum;
-  unsigned startSymIdx =  params.m_sfnSf.m_slotNum;
+  uint16_t frameNum = params.m_sfnSf.m_frameNum;
+  uint8_t subframeNum =  params.m_sfnSf.m_sfNum;
+  uint8_t slotNum = params.m_sfnSf.m_slotNum;
+  uint8_t symNum =  params.m_sfnSf.m_symStart;
 
   switch (params.m_ulCqi.m_type)
     {
@@ -490,7 +485,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacS
                       {
                         newCqi.push_back (params.m_ulCqi.m_sinr.at (i));
                         NS_LOG_INFO ("UL CQI report for RNTI " << itMap->second.m_rntiPerChunk.at (i) << " chunk " << i << " SINR " << params.m_ulCqi.m_sinr.at (i) << \
-                                     " frame " << frameNum << " subframe " << subframeNum << " startSym " << startSymIdx);
+                                     " frame " << frameNum << " subframe " << (unsigned)subframeNum << " slot " << (unsigned)slotNum << " startSym " << (unsigned)symNum);
                       }
                     else
                       {
@@ -515,7 +510,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacS
                 (*itTimers).second = m_cqiTimersThreshold;
 
                 NS_LOG_INFO ("UL CQI report for RNTI " << itMap->second.m_rntiPerChunk.at (i) << " chunk " << i << " SINR " << params.m_ulCqi.m_sinr.at (i) << \
-                             " frame " << frameNum << " subframe " << subframeNum << " startSym " << startSymIdx);
+                             " frame " << frameNum << " subframe " << (unsigned)subframeNum << " slot " << (unsigned)slotNum << " startSym " << (unsigned)symNum);
 
               }
 
@@ -709,7 +704,7 @@ unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, 
   MmWaveMacPduHeader dummyMacHeader;
   //unsigned macHdrSize = 10; //dummyMacHeader.GetSerializedSize ();
   int numSymLow = 0;
-  int numSymHigh = m_phyMacConfig->GetSymbolsPerSubframe();
+  int numSymHigh = m_phyMacConfig->GetSymbPerSlot();
 
   int diff = 0;
   tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8); // start with max value, in number of bytes
@@ -758,7 +753,10 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
 {
   uint16_t frameNum = params.m_snfSf.m_frameNum;
   uint8_t sfNum = params.m_snfSf.m_sfNum;
-  //uint8_t slotNum = params.m_snfSf.m_slotNum;
+  uint8_t slotNum = params.m_snfSf.m_slotNum;
+
+  NS_LOG_DEBUG ("Creating scheduling allocation info for: frame " << frameNum << " subframe " 
+                << (unsigned)sfNum << " slot " << (unsigned)slotNum);
 
   MmWaveMacSchedSapUser::SchedConfigIndParameters ret;
   ret.m_sfnSf = params.m_snfSf;
@@ -776,16 +774,14 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
   ulSfn.m_sfNum = (ret.m_sfnSf.m_sfNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSubframesPerFrame ();
   NS_LOG_DEBUG ("Scheduling DL frame " << (unsigned)frameNum << " subframe " << (unsigned)sfNum
                                        << " UL frame " << (unsigned)ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum);
-  //ret.m_ulSfAllocInfo = SfAllocInfo (ulSfn);
-
-  // add slot for DL control
+  // Add TTI for DL control at the beginning of the slot
   TtiAllocInfo dlCtrlSlot (0, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
   dlCtrlSlot.m_dci.m_numSym = 1;
   dlCtrlSlot.m_dci.m_symStart = 0;
   ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (dlCtrlSlot);
-
-  int symAvail = m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetDlCtrlSymbols () - m_phyMacConfig->GetUlCtrlSymbols ();
-  uint8_t slotIdx = 1;
+  int resvCtrl = m_phyMacConfig->GetDlCtrlSymbols () + m_phyMacConfig->GetUlCtrlSymbols ();
+  int symAvail = m_phyMacConfig->GetSymbPerSlot () - resvCtrl;
+  uint8_t ttiIdx = 1;
   uint8_t symIdx = m_phyMacConfig->GetDlCtrlSymbols ();      // symbols reserved for control at beginning of subframe
 
   // process received CQIs
@@ -889,13 +885,13 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                   symAvail -= dciInfoReTx.m_numSym;
                   dciInfoReTx.m_symStart = symIdx;
                   symIdx += dciInfoReTx.m_numSym;
-                  NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
+                  NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetUlCtrlSymbols ());
                   dciInfoReTx.m_rv++;
                   dciInfoReTx.m_ndi = 0;
                   itHarq->second.at (harqId) = dciInfoReTx;
                   itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
-                  TtiAllocInfo slotInfo (slotIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, rnti);
-                  slotInfo.m_dci = dciInfoReTx;
+                  TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, rnti);
+                  ttiInfo.m_dci = dciInfoReTx;
                   NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
                                 " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " RETX");
@@ -906,9 +902,9 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                     }
                   for (uint16_t k = 0; k < (*itRlcList).second.at (dciInfoReTx.m_harqProcess).size (); k++)
                     {
-                      slotInfo.m_rlcPduInfo.push_back ((*itRlcList).second.at (dciInfoReTx.m_harqProcess).at (k));
+                      ttiInfo.m_rlcPduInfo.push_back ((*itRlcList).second.at (dciInfoReTx.m_harqProcess).at (k));
                     }
-                  ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (slotInfo);
+                  ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
                   ret.m_slotAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
 
                   itUeSchedInfoMap->second.m_dlSymbolsRetx = dciInfoReTx.m_numSym;
@@ -979,17 +975,17 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                   symAvail -= dciInfoReTx.m_numSym;
                   dciInfoReTx.m_symStart = symIdx;
                   symIdx += dciInfoReTx.m_numSym;
-                  NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
+                  NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetUlCtrlSymbols ());
                   dciInfoReTx.m_rv++;
                   dciInfoReTx.m_ndi = 0;
                   itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
                   itHarq->second.at (harqId) = dciInfoReTx;
-                  TtiAllocInfo slotInfo (slotIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, rnti);
-                  slotInfo.m_dci = dciInfoReTx;
+                  TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, rnti);
+                  ttiInfo.m_dci = dciInfoReTx;
                   NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL slots " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
                                 " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ulSfn.m_frameNum << " subframe " << (unsigned)ulSfn.m_sfNum <<
                                 " RETX");
-                  ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (slotInfo);
+                  ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
                   ret.m_slotAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
 
                   itUeSchedInfoMap->second.m_ulSymbolsRetx = dciInfoReTx.m_numSym;
@@ -1016,7 +1012,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
       // add slot for UL control
       TtiAllocInfo ulCtrlSlot (0xFF, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
       ulCtrlSlot.m_dci.m_numSym = 1;
-      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
+      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
       //ret.m_ulSfAllocInfo.m_ttiAllocInfo.push_back (ulCtrlSlot);
       ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ulCtrlSlot);
       //m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
@@ -1272,7 +1268,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
       // add slot for UL control
       TtiAllocInfo ulCtrlSlot (0xFF, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
       ulCtrlSlot.m_dci.m_numSym = 1;
-      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
+      ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
       //ret.m_ulSfAllocInfo.m_ttiAllocInfo.push_back (ulCtrlSlot);
       ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ulCtrlSlot);
       //m_ulSfAllocInfo.push_back (ret.m_ulSfAllocInfo); // add UL SF info for later calls to scheduler
@@ -1306,7 +1302,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           dci.m_symStart = symIdx;
           dci.m_numSym = ueInfo->m_dlSymbols;
           symIdx += ueInfo->m_dlSymbols;
-          NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
+          NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetUlCtrlSymbols ());
           dci.m_mcs = ueInfo->m_dlMcs;
           dci.m_rv = 0;
           dci.m_ndi = 1;
@@ -1314,8 +1310,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           dci.m_harqProcess = UpdateDlHarqProcessId (ueInfo->m_rnti);
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
-          TtiAllocInfo slotInfo (slotIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, ueInfo->m_rnti);
-          slotInfo.m_dci = dci;
+          TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, ueInfo->m_rnti);
+          ttiInfo.m_dci = dci;
           NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
 
@@ -1345,13 +1341,12 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
             {
               // update RLC buffer info with expected queue size after scheduling
               //UpdateDlRlcBufferInfo (ueInfo->m_rnti, ueInfo->m_rlcPduInfo[i].m_lcid, ueInfo->m_rlcPduInfo[i].m_size-m_subHdrSize);
-              //schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (itRlcInfo->second[i]);
               // give remaining bytes to default bearer
               if (ueInfo->m_rlcPduInfo[i].m_lcid == 3 && totalBytesAlloc < dci.m_tbSize)
                 {
                   ueInfo->m_rlcPduInfo[i].m_size += dci.m_tbSize - totalBytesAlloc;
                 }
-              slotInfo.m_rlcPduInfo.push_back (ueInfo->m_rlcPduInfo[i]);
+              ttiInfo.m_rlcPduInfo.push_back (ueInfo->m_rlcPduInfo[i]);
               if (m_harqOn == true)
                 {
                   // store RLC PDU list for HARQ
@@ -1367,39 +1362,39 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
             {
               // reorder/reindex slots to maintain DL before UL slot order
               bool reordered = false;
-              std::deque <TtiAllocInfo>::iterator itSlot = ret.m_slotAllocInfo.m_ttiAllocInfo.begin ();
-              for (unsigned islot = 0; islot < ret.m_slotAllocInfo.m_ttiAllocInfo.size (); islot++)
+              std::deque <TtiAllocInfo>::iterator itTti = ret.m_slotAllocInfo.m_ttiAllocInfo.begin ();
+              for (unsigned iTti = 0; iTti < ret.m_slotAllocInfo.m_ttiAllocInfo.size (); iTti++)
                 {
-                  if (ret.m_slotAllocInfo.m_ttiAllocInfo [islot].m_tddMode == TtiAllocInfo::UL_slotAllocInfo)
+                  if (ret.m_slotAllocInfo.m_ttiAllocInfo [iTti].m_tddMode == TtiAllocInfo::UL_slotAllocInfo)
                     {
-                      slotInfo.m_ttiIdx = ret.m_slotAllocInfo.m_ttiAllocInfo [islot].m_ttiIdx;
-                      slotInfo.m_dci.m_symStart = ret.m_slotAllocInfo.m_ttiAllocInfo [islot].m_dci.m_symStart;
-                      ret.m_slotAllocInfo.m_ttiAllocInfo.insert (itSlot, slotInfo);
-                      for (unsigned jslot = islot + 1; jslot < ret.m_slotAllocInfo.m_ttiAllocInfo.size (); jslot++)
+                      ttiInfo.m_ttiIdx = ret.m_slotAllocInfo.m_ttiAllocInfo [iTti].m_ttiIdx;
+                      ttiInfo.m_dci.m_symStart = ret.m_slotAllocInfo.m_ttiAllocInfo [iTti].m_dci.m_symStart;
+                      ret.m_slotAllocInfo.m_ttiAllocInfo.insert (itTti, ttiInfo);
+                      for (unsigned jTti = iTti + 1; jTti < ret.m_slotAllocInfo.m_ttiAllocInfo.size (); jTti++)
                         {
-                          ret.m_slotAllocInfo.m_ttiAllocInfo[jslot].m_ttiIdx++;                                 // increase indices of UL slots
-                          ret.m_slotAllocInfo.m_ttiAllocInfo[jslot].m_dci.m_symStart =
-                            ret.m_slotAllocInfo.m_ttiAllocInfo[jslot - 1].m_dci.m_symStart +
-                            ret.m_slotAllocInfo.m_ttiAllocInfo[jslot - 1].m_dci.m_numSym;
+                          ret.m_slotAllocInfo.m_ttiAllocInfo[jTti].m_ttiIdx++;                                 // increase indices of UL slots
+                          ret.m_slotAllocInfo.m_ttiAllocInfo[jTti].m_dci.m_symStart =
+                            ret.m_slotAllocInfo.m_ttiAllocInfo[jTti - 1].m_dci.m_symStart +
+                            ret.m_slotAllocInfo.m_ttiAllocInfo[jTti - 1].m_dci.m_numSym;
                         }
                       reordered = true;
                       break;
                     }
-                  itSlot++;
+                  itTti++;
                 }
               if (!reordered)
                 {
-                  ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (slotInfo);
+                  ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
                 }
             }
           else
             {
-              ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (slotInfo);
+              ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
             }
           ret.m_slotAllocInfo.m_numSymAlloc += dci.m_numSym;
         }
     }
-  slotIdx = ret.m_slotAllocInfo.m_ttiAllocInfo.back ().m_ttiIdx + 1;
+  ttiIdx = ret.m_slotAllocInfo.m_ttiAllocInfo.back ().m_ttiIdx + 1;
   symIdx = ret.m_slotAllocInfo.m_ttiAllocInfo.back ().m_dci.m_symStart + ret.m_slotAllocInfo.m_ttiAllocInfo.back ().m_dci.m_numSym;
 
   for (itUeAllocMap = ueAllocMap.begin (); itUeAllocMap != ueAllocMap.end (); itUeAllocMap++)
@@ -1414,19 +1409,19 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           dci.m_symStart = symIdx;
           dci.m_numSym = ueInfo->m_ulSymbols;
           symIdx += ueInfo->m_ulSymbols;
-          NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbolsPerSubframe () - m_phyMacConfig->GetUlCtrlSymbols ());
+          NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetUlCtrlSymbols ());
           dci.m_mcs = ueInfo->m_ulMcs;
           dci.m_ndi = 1;
           dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
           dci.m_harqProcess = UpdateUlHarqProcessId (ueInfo->m_rnti);
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
-          TtiAllocInfo slotInfo (slotIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, ueInfo->m_rnti);
-          slotInfo.m_dci = dci;
+          TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, ueInfo->m_rnti);
+          ttiInfo.m_dci = dci;
           NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
                         " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum);
           //UpdateUlRlcBufferInfo (ueInfo->m_rnti, dci.m_tbSize - m_subHdrSize);
-          ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (slotInfo);
+          ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
           ret.m_slotAllocInfo.m_numSymAlloc += dci.m_numSym;
           std::vector<uint16_t> ueChunkMap;
           for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
@@ -1477,7 +1472,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
   // add slot for UL control
   TtiAllocInfo ulCtrlSlot (0xFF, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
   ulCtrlSlot.m_dci.m_numSym = 1;
-  ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbolsPerSubframe () - 1;
+  ulCtrlSlot.m_dci.m_symStart = m_phyMacConfig->GetSymbPerSlot () - 1;
   //ret.m_ulSfAllocInfo.m_ttiAllocInfo.push_back (ulCtrlSlot);
   ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ulCtrlSlot);
 

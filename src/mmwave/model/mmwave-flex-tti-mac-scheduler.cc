@@ -1397,7 +1397,6 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
               }*/
               // update RLC buffer info with expected queue size after scheduling
               UpdateDlRlcBufferInfo (itUeInfo->first, ueSchedInfo.m_rlcPduInfo[i].m_lcid, ueSchedInfo.m_rlcPduInfo[i].m_size - m_subHdrSize);
-              //schedInfo.m_rlcPduList[schedInfo.m_rlcPduList.size ()-1].push_back (itRlcInfo->second[i]);
               ttiInfo.m_rlcPduInfo.push_back (ueSchedInfo.m_rlcPduInfo[i]);
               if (m_harqOn == true)
                 {

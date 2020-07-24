@@ -355,7 +355,6 @@ private:
   uint64_t m_nextRntiDl;
   uint64_t m_nextRntiUl;
 
-  uint32_t m_subframeNo;
   uint32_t m_frameNo;
   uint8_t m_tbUid;
   uint32_t m_numChunks;

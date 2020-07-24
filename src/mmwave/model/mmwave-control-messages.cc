@@ -94,42 +94,6 @@ MmWaveTdmaDciMessage::GetSfnSf (void)
   return m_sfnSf;
 }
 
-MmWaveDciMessage::MmWaveDciMessage (void)
-{
-  NS_LOG_INFO (this);
-  SetMessageType (MmWaveControlMessage::DCI);
-}
-
-MmWaveDciMessage::~MmWaveDciMessage (void)
-{
-  NS_LOG_INFO (this);
-}
-
-
-void
-MmWaveDciMessage::SetDciInfoElement (DciInfoElement dci)
-{
-  m_dciInfoElement = dci;
-}
-
-DciInfoElement
-MmWaveDciMessage::GetDciInfoElement (void)
-{
-  return m_dciInfoElement;
-}
-
-void
-MmWaveDciMessage::SetSfnSf (uint32_t sfn)
-{
-  m_sfnSf = sfn;
-}
-
-uint32_t
-MmWaveDciMessage::GetSfnSf (void)
-{
-  return m_sfnSf;
-}
-
 MmWaveDlCqiMessage::MmWaveDlCqiMessage (void)
 {
   SetMessageType (MmWaveControlMessage::DL_CQI);
