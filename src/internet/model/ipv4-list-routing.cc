@@ -75,7 +75,7 @@ Ipv4ListRouting::PrintRoutingTable (Ptr<OutputStreamWrapper> stream, Time::Unit 
   NS_LOG_FUNCTION (this << stream);
   *stream->GetStream () << "Node: " << m_ipv4->GetObject<Node> ()->GetId () 
                         << ", Time: " << Now().As (unit)
-                        << ", Local time: " << GetObject<Node> ()->GetLocalTime ().As (unit)
+                        << ", Local time: " << m_ipv4->GetObject<Node> ()->GetLocalTime ().As (unit)
                         << ", Ipv4ListRouting table" << std::endl;
   for (Ipv4RoutingProtocolList::const_iterator i = m_routingProtocols.begin ();
        i != m_routingProtocols.end (); i++)
@@ -292,7 +292,7 @@ Ipv4ListRouting::GetRoutingProtocol (uint32_t index, int16_t& priority) const
 bool 
 Ipv4ListRouting::Compare (const Ipv4RoutingProtocolEntry& a, const Ipv4RoutingProtocolEntry& b)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (a.first << a.second << b.first << b.second);
   return a.first > b.first;
 }
 

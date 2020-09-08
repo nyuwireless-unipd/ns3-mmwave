@@ -55,7 +55,7 @@ int main (int argc, char *argv[])
   bool useShortGuardInterval = false;
   bool useRts = false;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("nWifi", "Number of stations", nWifi);
   cmd.AddValue ("distance", "Distance in meters between the stations and the access point", distance);
   cmd.AddValue ("simulationTime", "Simulation time in seconds", simulationTime);
@@ -73,9 +73,6 @@ int main (int argc, char *argv[])
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
   phy.SetChannel (channel.Create ());
-
-  // Set guard interval
-  phy.Set ("ShortGuardEnabled", BooleanValue (useShortGuardInterval));
 
   WifiMacHelper mac;
   WifiHelper wifi;
@@ -104,6 +101,9 @@ int main (int argc, char *argv[])
 
   // Set channel width
   Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (channelWidth));
+
+  // Set guard interval
+  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (useShortGuardInterval));
 
   // mobility
   MobilityHelper mobility;

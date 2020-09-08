@@ -40,16 +40,16 @@ public:
   MmWaveFlexTtiMaxWeightMacScheduler ();
 
   virtual ~MmWaveFlexTtiMaxWeightMacScheduler ();
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
   static TypeId GetTypeId (void);
 
-  virtual void SetMacSchedSapUser (MmWaveMacSchedSapUser* sap);
-  virtual void SetMacCschedSapUser (MmWaveMacCschedSapUser* s);
+  virtual void SetMacSchedSapUser (MmWaveMacSchedSapUser* sap) override;
+  virtual void SetMacCschedSapUser (MmWaveMacCschedSapUser* s) override;
 
-  virtual MmWaveMacSchedSapProvider* GetMacSchedSapProvider ();
-  virtual MmWaveMacCschedSapProvider* GetMacCschedSapProvider ();
+  virtual MmWaveMacSchedSapProvider* GetMacSchedSapProvider () override;
+  virtual MmWaveMacCschedSapProvider* GetMacCschedSapProvider () override;
 
-  virtual void ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config);
+  virtual void ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config) override;
 
   static bool SortRlcBufferReq (MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters i, MmWaveMacSchedSapProvider::SchedDlRlcBufferReqParameters j);
 

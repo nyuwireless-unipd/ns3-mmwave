@@ -29,7 +29,9 @@ for dirname in os.listdir('src'):
         all_modules.append(dirname)
 all_modules.sort()
 
-
+def get_required_boost_libs(conf):
+    for module in all_modules:
+        conf.recurse (module, name="required_boost_libs", mandatory=False)
 
 def options(opt):
     opt.add_option('--enable-rpath',
@@ -49,18 +51,6 @@ def options(opt):
         opt.recurse(module, mandatory=False)
 
 def configure(conf):
-    conf.env['REQUIRED_BOOST_LIBS'] = []
-    for module in all_modules:
-        conf.recurse (module, name="required_boost_libs", mandatory=False)
-
-    if conf.env['REQUIRED_BOOST_LIBS'] is not []:
-        conf.load('boost')
-        conf.check_boost(lib=' '.join (conf.env['REQUIRED_BOOST_LIBS']), mandatory=False)
-        if not conf.env['LIB_BOOST']:
-            conf.check_boost(lib=' '.join (conf.env['REQUIRED_BOOST_LIBS']), libpath="/usr/lib64", mandatory=False)
-            if not conf.env['LIB_BOOST']:
-                conf.env['LIB_BOOST'] = []
-
     # Append blddir to the module path before recursing into modules
     blddir = os.path.abspath(os.path.join(conf.bldnode.abspath(), conf.variant))
     conf.env.append_value('NS3_MODULE_PATH', blddir + "/lib")
@@ -202,10 +192,6 @@ def ns3_python_bindings(bld):
                       Warning, stacklevel=2)
         return
 
-    if ("ns3-%s" % (module,)) not in env.NS3_ENABLED_MODULES:
-        #print "bindings for module %s which is not enabled, skip" % module
-        return
-
     env.append_value('PYTHON_MODULES_BUILT', module)
     try:
         apidefs = env['PYTHON_BINDINGS_APIDEFS'].replace("-", "_")
@@ -262,17 +248,22 @@ def ns3_python_bindings(bld):
     bindgen = bld(features='command', source=source, target=target, command=argv)
     bindgen.env['FEATURES'] = ','.join(features)
     bindgen.dep_vars = ['FEATURES', "GCC_RTTI_ABI_COMPLETE"]
-    bindgen.before = 'cxx'
-    bindgen.after = 'gen_ns3_module_header'
     bindgen.name = "pybindgen(ns3 module %s)" % module
+    bindgen.module = module
     bindgen.install_path = None
+
+    # Retrieve the module dependencies
+    module_obj = bld.get_tgen_by_name('ns3-' + module)
+    module_deps = module_obj.use.copy()
+    module_deps.append('ns3-' + module)
 
     # generate the extension module
     pymod = bld(features='cxx cxxshlib pyext')
     pymod.source = ['bindings/ns3module.cc']
     pymod.target = '%s/%s' % (module_target_dir, extension_name)
     pymod.name = 'ns3module_%s' % module
-    pymod.use = ["%s" % mod for mod in pymod.env['NS3_ENABLED_MODULES']] #  Should be '"ns3-"+module', but see bug 1117
+    pymod.module= module
+    pymod.use =  module_deps #  Should be '"ns3-"+module', but see bug 1117
     if pymod.env['ENABLE_STATIC_NS3']:
         if sys.platform == 'darwin':
             pymod.env.append_value('LINKFLAGS', '-Wl,-all_load')
@@ -287,6 +278,10 @@ def ns3_python_bindings(bld):
             pymod.env.append_value('LINKFLAGS', '-Wl,-Bdynamic,--no-whole-archive')
     defines = list(pymod.env['DEFINES'])
     defines.extend(['NS_DEPRECATED=', 'NS3_DEPRECATED_H'])
+    defines.extend(['NS_DEPRECATED_3_31=', 'NS3_DEPRECATED_H'])
+    defines.extend(['NS_DEPRECATED_3_30=', 'NS3_DEPRECATED_H'])
+    defines.extend(['NS_DEPRECATED_3_27=', 'NS3_DEPRECATED_H'])
+    defines.extend(['NS_DEPRECATED_3_26=', 'NS3_DEPRECATED_H'])
     if Utils.unversioned_sys_platform()== 'win32':
         try:
             defines.remove('_DEBUG') # causes undefined symbols on win32
@@ -331,7 +326,7 @@ def build(bld):
         modheader.module = module.split('/')[-1]
 
 class ns3pcfile(Task.Task):
-    after = 'cxx'
+    after = ['cxxprogram', 'cxxshlib', 'cxxstlib']
 
     def __str__(self):
         "string to display to the user"
@@ -471,7 +466,7 @@ def apply_ns3header(self):
 
 
 class ns3header(Task.Task):
-    before = 'cxx gen_ns3_module_header'
+    before = ['cxxprogram', 'cxxshlib', 'cxxstlib', 'gen_ns3_module_header']
     color = 'BLUE'
 
     def __str__(self):
@@ -562,7 +557,7 @@ def apply_ns3privateheader(self):
     self.source = '' # tell WAF not to process these files further
 
 class ns3privateheader(Task.Task):
-    before = 'cxx gen_ns3_module_header'
+    before = ['cxxprogram', 'cxxshlib', 'cxxstlib', 'gen_ns3_module_header']
     after = 'ns3header'
     color = 'BLUE'
 
@@ -632,7 +627,7 @@ class ns3privateheader(Task.Task):
 
 
 class gen_ns3_module_header(Task.Task):
-    before = 'cxx'
+    before = ['cxxprogram', 'cxxshlib', 'cxxstlib']
     after = 'ns3header'
     color = 'BLUE'
 

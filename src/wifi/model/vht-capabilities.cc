@@ -63,9 +63,9 @@ VhtCapabilities::ElementId () const
 }
 
 void
-VhtCapabilities::SetVhtSupported (uint8_t vhtsupported)
+VhtCapabilities::SetVhtSupported (uint8_t vhtSupported)
 {
-  m_vhtSupported = vhtsupported;
+  m_vhtSupported = vhtSupported;
 }
 
 uint8_t
@@ -208,51 +208,72 @@ VhtCapabilities::GetSupportedMcsAndNssSet () const
 }
 
 void
-VhtCapabilities::SetMaxMpduLength (uint8_t length)
+VhtCapabilities::SetMaxMpduLength (uint16_t length)
 {
-  m_maxMpduLength = length;
+  NS_ABORT_MSG_IF (length != 3895 && length != 7991 && length != 11454,
+                   "Invalid MPDU Max Length value");
+  if (length == 11454)
+    {
+      m_maxMpduLength = 2;
+    }
+  else if (length == 7991)
+    {
+      m_maxMpduLength = 1;
+    }
+  else
+    {
+      m_maxMpduLength = 0;
+    }
 }
 
 void
-VhtCapabilities::SetSupportedChannelWidthSet (uint8_t channelwidthset)
+VhtCapabilities::SetSupportedChannelWidthSet (uint8_t channelWidthSet)
 {
-  m_supportedChannelWidthSet = channelwidthset;
+  m_supportedChannelWidthSet = channelWidthSet;
 }
 
 void
-VhtCapabilities::SetRxLdpc (uint8_t rxldpc)
+VhtCapabilities::SetRxLdpc (uint8_t rxLdpc)
 {
-  m_rxLdpc = rxldpc;
+  m_rxLdpc = rxLdpc;
 }
 
 void
-VhtCapabilities::SetShortGuardIntervalFor80Mhz (uint8_t shortguardinterval)
+VhtCapabilities::SetShortGuardIntervalFor80Mhz (uint8_t shortGuardInterval)
 {
-  m_shortGuardIntervalFor80Mhz = shortguardinterval;
+  m_shortGuardIntervalFor80Mhz = shortGuardInterval;
 }
 
 void
-VhtCapabilities::SetShortGuardIntervalFor160Mhz (uint8_t shortguardinterval)
+VhtCapabilities::SetShortGuardIntervalFor160Mhz (uint8_t shortGuardInterval)
 {
-  m_shortGuardIntervalFor160Mhz = shortguardinterval;
+  m_shortGuardIntervalFor160Mhz = shortGuardInterval;
 }
 
 void
-VhtCapabilities::SetRxStbc (uint8_t rxstbc)
+VhtCapabilities::SetRxStbc (uint8_t rxStbc)
 {
-  m_rxStbc = rxstbc;
+  m_rxStbc = rxStbc;
 }
 
 void
-VhtCapabilities::SetTxStbc (uint8_t txstbc)
+VhtCapabilities::SetTxStbc (uint8_t txStbc)
 {
-  m_txStbc = txstbc;
+  m_txStbc = txStbc;
 }
 
 void
-VhtCapabilities::SetMaxAmpduLengthExponent (uint8_t exponent)
+VhtCapabilities::SetMaxAmpduLength (uint32_t maxampdulength)
 {
-  m_maxAmpduLengthExponent = exponent;
+  for (uint8_t i = 0; i <= 7; i++)
+    {
+      if ((1ul << (13 + i)) - 1 == maxampdulength)
+        {
+          m_maxAmpduLengthExponent = i;
+          return;
+        }
+    }
+  NS_ABORT_MSG ("Invalid A-MPDU Max Length value");
 }
 
 void
@@ -310,15 +331,33 @@ VhtCapabilities::IsSupportedRxMcs (uint8_t mcs) const
 }
 
 void
-VhtCapabilities::SetRxHighestSupportedLgiDataRate (uint16_t supporteddatarate)
+VhtCapabilities::SetRxHighestSupportedLgiDataRate (uint16_t supportedDatarate)
 {
-  m_rxHighestSupportedLongGuardIntervalDataRate = supporteddatarate;
+  m_rxHighestSupportedLongGuardIntervalDataRate = supportedDatarate;
 }
 
 void
-VhtCapabilities::SetTxHighestSupportedLgiDataRate (uint16_t supporteddatarate)
+VhtCapabilities::SetTxHighestSupportedLgiDataRate (uint16_t supportedDatarate)
 {
-  m_txHighestSupportedLongGuardIntervalDataRate = supporteddatarate;
+  m_txHighestSupportedLongGuardIntervalDataRate = supportedDatarate;
+}
+
+uint16_t
+VhtCapabilities::GetMaxMpduLength (void) const
+{
+  if (m_maxMpduLength == 0)
+    {
+      return 3895;
+    }
+  if (m_maxMpduLength == 1)
+    {
+      return 7991;
+    }
+  if (m_maxMpduLength == 2)
+    {
+      return 11454;
+    }
+  NS_ABORT_MSG ("The value 3 is reserved");
 }
 
 uint8_t
@@ -343,6 +382,12 @@ uint8_t
 VhtCapabilities::GetTxStbc () const
 {
   return m_txStbc;
+}
+
+uint32_t
+VhtCapabilities::GetMaxAmpduLength (void) const
+{
+  return (1ul << (13 + m_maxAmpduLengthExponent)) - 1;
 }
 
 bool
@@ -370,14 +415,6 @@ VhtCapabilities::GetRxHighestSupportedLgiDataRate () const
   return m_rxHighestSupportedLongGuardIntervalDataRate;
 }
 
-/**
- * output stream output operator
- *
- * \param os output stream
- * \param VhtCapabilities the VHT capabilities
- *
- * \returns output stream
- */
 std::ostream &
 operator << (std::ostream &os, const VhtCapabilities &VhtCapabilities)
 {

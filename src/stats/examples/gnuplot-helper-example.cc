@@ -98,7 +98,7 @@ Emitter::Count (void)
 
 int main (int argc, char *argv[])
 {
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.Parse (argc, argv);
 
   //

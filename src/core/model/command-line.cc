@@ -18,12 +18,6 @@
  * Authors: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
-#include <algorithm>  // for transform
-#include <cctype>     // for tolower
-#include <cstdlib>    // for exit
-#include <iomanip>    // for setw, boolalpha
-#include <set>
-#include <sstream>
 
 #include "command-line.h"
 #include "des-metrics.h"
@@ -33,6 +27,14 @@
 #include "system-path.h"
 #include "type-id.h"
 #include "string.h"
+
+#include <algorithm>  // transform
+#include <cctype>     // tolower
+#include <cstdlib>    // exit, getenv
+#include <cstring>    // strlen
+#include <iomanip>    // setw, boolalpha
+#include <set>
+#include <sstream>
 
 
 /**
@@ -47,10 +49,22 @@ NS_LOG_COMPONENT_DEFINE ("CommandLine");
 
 CommandLine::CommandLine ()
   : m_NNonOptions (0),
-    m_nonOptionCount (0)
+    m_nonOptionCount (0),
+    m_usage (),
+    m_shortName ()
 {
   NS_LOG_FUNCTION (this);
 }
+CommandLine::CommandLine (const std::string filename)
+  : m_NNonOptions (0),
+    m_nonOptionCount (0),
+    m_usage ()
+{
+  NS_LOG_FUNCTION (this << filename);
+  std::string basename = SystemPath::Split (filename).back ();
+  m_shortName = basename.substr (0, basename.rfind (".cc"));
+}
+  
 CommandLine::CommandLine (const CommandLine &cmd)
 {
   Copy (cmd);
@@ -76,8 +90,9 @@ CommandLine::Copy (const CommandLine &cmd)
   std::copy (cmd.m_nonOptions.begin (), cmd.m_nonOptions.end (), m_nonOptions.end ());
 
   m_NNonOptions = cmd.m_NNonOptions;
-  m_usage = cmd.m_usage;
-  m_name  = cmd.m_name;
+  m_nonOptionCount = 0;
+  m_usage       = cmd.m_usage;
+  m_shortName   = cmd.m_shortName;
 }
 void
 CommandLine::Clear (void)
@@ -95,8 +110,8 @@ CommandLine::Clear (void)
   m_options.clear ();
   m_nonOptions.clear ();
   m_NNonOptions = 0;
-  m_usage = "";
-  m_name  = "";
+  m_usage       = "";
+  m_shortName   = "";
 }
 
 void
@@ -108,7 +123,7 @@ CommandLine::Usage (const std::string usage)
 std::string
 CommandLine::GetName () const
 {
-  return m_name;
+  return m_shortName;
 }
 
 CommandLine::Item::~Item ()
@@ -121,19 +136,25 @@ CommandLine::Parse (std::vector<std::string> args)
 {
   NS_LOG_FUNCTION (this << args.size () << args);
 
+  PrintDoxygenUsage ();
+  
   m_nonOptionCount = 0;
-  m_name = "";
 
   if (args.size () > 0)
     {
-      m_name = SystemPath::Split (args[0]).back ();
       args.erase (args.begin ());  // discard the program name
-      
+
       for (auto param : args)
         {
-          if (HandleOption (param)) continue;
-          if (HandleNonOption (param)) continue;
-          
+          if (HandleOption (param))
+            {
+              continue;
+            }
+          if (HandleNonOption (param))
+            {
+              continue;
+            }
+
           // is this possible?
           NS_ASSERT_MSG (false,
                          "unexpected error parsing command line parameter: '"
@@ -145,7 +166,7 @@ CommandLine::Parse (std::vector<std::string> args)
 #ifdef ENABLE_DES_METRICS
   DesMetrics::Get ()->Initialize (args);
 #endif
-  
+
 }
 
 bool
@@ -182,7 +203,7 @@ CommandLine::HandleOption (const std::string & param) const
   else
     {
       name = arg.substr (0, cur);
-      value = arg.substr (cur + 1, arg.size () - (cur+1));
+      value = arg.substr (cur + 1, arg.size () - (cur + 1));
     }
   HandleArgument (name, value);
 
@@ -194,11 +215,11 @@ CommandLine::HandleNonOption (const std::string &value)
 {
   NS_LOG_FUNCTION (this << value);
 
-  if (m_nonOptionCount == m_nonOptions.size())
+  if (m_nonOptionCount == m_nonOptions.size ())
     {
       // Add an unspecified non-option as a string
       NS_LOG_LOGIC ("adding StringItem, NOCount:" << m_nonOptionCount
-                    << ", NOSize:" << m_nonOptions.size ());
+                                                  << ", NOSize:" << m_nonOptions.size ());
       StringItem * item = new StringItem;
       item->m_name = "extra-non-option-argument";
       item->m_help = "Extra non-option argument encountered.";
@@ -212,6 +233,7 @@ CommandLine::HandleNonOption (const std::string &value)
       std::cerr << "Invalid non-option argument value "
                 << value << " for " << i->m_name
                 << std::endl;
+      PrintHelp (std::cerr);
       std::exit (1);
     }
   ++m_nonOptionCount;
@@ -236,18 +258,18 @@ CommandLine::PrintHelp (std::ostream &os) const
   // Hack to show just the declared non-options
   Items nonOptions (m_nonOptions.begin (),
                     m_nonOptions.begin () + m_NNonOptions);
-  os << m_name
+  os << m_shortName
      << (m_options.size ()  ? " [Program Options]" : "")
      << (nonOptions.size () ? " [Program Arguments]" : "")
      << " [General Arguments]"
      << std::endl;
-  
+
   if (m_usage.length ())
     {
       os << std::endl;
       os << m_usage << std::endl;
     }
-  
+
   std::size_t width = 0;
   for (auto it : m_options)
     {
@@ -310,6 +332,93 @@ CommandLine::PrintHelp (std::ostream &os) const
     << std::endl;
 }
 
+#include <unistd.h>  // getcwd
+
+void
+CommandLine::PrintDoxygenUsage (void) const
+{
+  NS_LOG_FUNCTION (this);
+
+  const char * envVar = std::getenv ("NS_COMMANDLINE_INTROSPECTION");
+  if (envVar == 0 || std::strlen (envVar) == 0)
+    {
+      return;
+    }
+ 
+  if (m_shortName.size () == 0)
+    {
+      NS_FATAL_ERROR ("No file name on example-to-run; forgot to use CommandLine var (__FILE__)?");
+      return;
+    }
+
+  // Hack to show just the declared non-options
+  Items nonOptions (m_nonOptions.begin (),
+                    m_nonOptions.begin () + m_NNonOptions);
+
+  std::string outf = SystemPath::Append (std::string (envVar), m_shortName + ".command-line");
+  
+  NS_LOG_INFO ("Writing CommandLine doxy to " << outf);
+  
+  std::fstream os (outf, std::fstream::out);
+
+  
+  os << "/**\n \\file " << m_shortName << ".cc\n"
+     << "<h3>Usage</h3>\n"
+     << "<code>$ ./waf --run \"" << m_shortName
+     << (m_options.size ()  ? " [Program Options]" : "")
+     << (nonOptions.size () ? " [Program Arguments]" : "")
+     << "\"</code>\n";
+    
+  if (m_usage.length ())
+    {
+      os << m_usage << std::endl;
+    }
+
+  if (!m_options.empty ())
+    {
+      os << std::endl;
+      os << "<h3>Program Options</h3>\n"
+         << "<dl>\n";
+      for (auto i : m_options)
+        {
+          os << "  <dt>\\c --" << i->m_name << " </dt>\n"
+             << "    <dd>" << i->m_help;
+
+          if ( i->HasDefault ())
+            {
+              os << " [" << i->GetDefault () << "]";
+            }
+          os << " </dd>\n";
+        }
+      os << "</dl>\n";
+    }
+
+  if (!nonOptions.empty ())
+    {
+      os << std::endl;
+      os << "<h3>Program Arguments</h3>\n"
+         << "<dl>\n";
+      for (auto i : nonOptions)
+        {
+          os << "  <dt> \\c " << i->m_name << " </dt>\n"
+             << "    <dd>" << i->m_help;
+
+          if ( i->HasDefault ())
+            {
+              os << " [" << i->GetDefault () << "]";
+            }
+          os << " </dd>\n";
+        }
+      os << "</dl>\n";
+    }
+
+  os << "*/" << std::endl;
+
+  // All done, don't need to actually run the example
+  os.close ();
+  std::exit (0);
+}
+
 void
 CommandLine::PrintGlobals (std::ostream &os) const
 {
@@ -319,7 +428,7 @@ CommandLine::PrintGlobals (std::ostream &os) const
 
   // Sort output
   std::vector<std::string> globals;
-  
+
   for (GlobalValue::Iterator i = GlobalValue::Begin ();
        i != GlobalValue::End ();
        ++i)
@@ -354,17 +463,17 @@ CommandLine::PrintAttributes (std::ostream &os, const std::string &type) const
     }
 
   os << "Attributes for TypeId " << tid.GetName () << std::endl;
-  
+
   // Sort output
   std::vector<std::string> attributes;
-  
+
   for (uint32_t i = 0; i < tid.GetAttributeN (); ++i)
     {
       std::stringstream ss;
       ss << "    --" << tid.GetAttributeFullName (i) << "=[";
       struct TypeId::AttributeInformation info = tid.GetAttribute (i);
       ss << info.initialValue->SerializeToString (info.checker) << "]"
-                << std::endl;
+         << std::endl;
       ss << "        " << info.help << std::endl;
       attributes.push_back (ss.str ());
     }
@@ -384,17 +493,17 @@ CommandLine::PrintGroup (std::ostream &os, const std::string &group) const
   NS_LOG_FUNCTION (this);
 
   os << "TypeIds in group " << group << ":" << std::endl;
-  
+
   // Sort output
   std::vector<std::string> groupTypes;
-  
+
   for (uint16_t i = 0; i < TypeId::GetRegisteredN (); ++i)
     {
       std::stringstream ss;
       TypeId tid = TypeId::GetRegistered (i);
       if (tid.GetGroupName () == group)
         {
-          ss << "    " <<tid.GetName () << std::endl;
+          ss << "    " << tid.GetName () << std::endl;
         }
       groupTypes.push_back (ss.str ());
     }
@@ -415,7 +524,7 @@ CommandLine::PrintTypeIds (std::ostream &os) const
 
   // Sort output
   std::vector<std::string> types;
-    
+
   for (uint16_t i = 0; i < TypeId::GetRegisteredN (); ++i)
     {
       std::stringstream ss;
@@ -443,7 +552,7 @@ CommandLine::PrintGroups (std::ostream &os) const
       TypeId tid = TypeId::GetRegistered (i);
       groups.insert (tid.GetGroupName ());
     }
-  
+
   os << "Registered TypeId groups:" << std::endl;
   // Sets are already sorted
   for (std::set<std::string>::const_iterator k = groups.begin ();
@@ -467,7 +576,7 @@ CommandLine::HandleArgument (const std::string &name, const std::string &value) 
       // method below never returns.
       PrintHelp (std::cout);
       std::exit (0);
-    } 
+    }
   else if (name == "PrintGroups")
     {
       // method below never returns.
@@ -504,10 +613,11 @@ CommandLine::HandleArgument (const std::string &name, const std::string &value) 
         {
           if (i->m_name == name)
             {
-              if (! i->Parse (value))
+              if (!i->Parse (value))
                 {
                   std::cerr << "Invalid argument value: "
                             << name << "=" << value << std::endl;
+                  PrintHelp (std::cerr);
                   std::exit (1);
                 }
               else
@@ -529,6 +639,18 @@ CommandLine::HandleArgument (const std::string &name, const std::string &value) 
 }
 
 bool
+CommandLine::CallbackItem::HasDefault (void) const
+{
+  return m_default != "";
+}
+
+std::string
+CommandLine::CallbackItem::GetDefault (void) const
+{
+  return m_default;
+}
+
+bool
 CommandLine::CallbackItem::Parse (const std::string value)
 {
   NS_LOG_FUNCTION (this);
@@ -539,13 +661,16 @@ CommandLine::CallbackItem::Parse (const std::string value)
 void
 CommandLine::AddValue (const std::string &name,
                        const std::string &help,
-                       Callback<bool, std::string> callback)
+                       ns3::Callback<bool, std::string> callback,
+                       std::string defaultValue /* = "" */)
+
 {
   NS_LOG_FUNCTION (this << &name << &help << &callback);
   CallbackItem *item = new CallbackItem ();
   item->m_name = name;
   item->m_help = help;
   item->m_callback = callback;
+  item->m_default = defaultValue;
   m_options.push_back (item);
 }
 
@@ -558,7 +683,7 @@ CommandLine::AddValue (const std::string &name,
   std::size_t colon = attributePath.rfind ("::");
   const std::string typeName = attributePath.substr (0, colon);
   NS_LOG_DEBUG ("typeName: '" << typeName << "', colon: " << colon);
-  
+
   TypeId tid;
   if (!TypeId::LookupByNameFailSafe (typeName, &tid))
     {
@@ -566,26 +691,26 @@ CommandLine::AddValue (const std::string &name,
     }
 
   const std::string attrName = attributePath.substr (colon + 2);
-  struct TypeId::AttributeInformation info;  
+  struct TypeId::AttributeInformation info;
   if (!tid.LookupAttributeByName (attrName, &info))
     {
       NS_FATAL_ERROR ("Attribute not found: " << attributePath);
     }
-      
+
   std::stringstream ss;
   ss << info.help
      << " (" << attributePath << ") ["
      << info.initialValue->SerializeToString (info.checker) << "]";
-  
+
   AddValue (name, ss.str (),
-            MakeBoundCallback (CommandLine::HandleAttribute, attributePath)) ;
+            MakeBoundCallback (CommandLine::HandleAttribute, attributePath));
 }
 
 std::string
 CommandLine::GetExtraNonOption (std::size_t i) const
 {
   std::string value;
-  
+
   if (m_nonOptions.size () >= i + m_NNonOptions)
     {
       auto ip = dynamic_cast<StringItem *> (m_nonOptions[i + m_NNonOptions]);
@@ -624,7 +749,7 @@ CommandLine::HandleAttribute (const std::string name,
     }
   return success;
 }
-    
+
 
 bool
 CommandLine::Item::HasDefault () const
@@ -650,7 +775,7 @@ CommandLine::StringItem::HasDefault (void) const
 {
   return false;
 }
- 
+
 std::string
 CommandLine::StringItem::GetDefault (void) const
 {
@@ -671,11 +796,11 @@ bool
 CommandLineHelper::UserItemParse<bool> (const std::string value, bool & val)
 {
   std::string src = value;
-  std::transform(src.begin(), src.end(), src.begin(),
-    [](char c) {return static_cast<char>(std::tolower(c)); });
+  std::transform (src.begin (), src.end (), src.begin (),
+                  [](char c) {return static_cast<char> (std::tolower (c)); });
   if (src.length () == 0)
     {
-      val = ! val;
+      val = !val;
       return true;
     }
   else if ( (src == "true") || (src == "t") )
@@ -683,7 +808,7 @@ CommandLineHelper::UserItemParse<bool> (const std::string value, bool & val)
       val = true;
       return true;
     }
-  else if ( (src == "false") || (src == "f"))
+  else if ( (src == "false") || (src == "f") )
     {
       val = false;
       return true;
@@ -696,6 +821,38 @@ CommandLineHelper::UserItemParse<bool> (const std::string value, bool & val)
       return !iss.bad () && !iss.fail ();
     }
 }
+
+template <>
+bool
+CommandLineHelper::UserItemParse<uint8_t> (const std::string value, uint8_t & val)
+{
+  uint8_t oldVal = val;
+  long newVal;
+
+  try
+    {
+      newVal = std::stoi (value);
+    }
+  catch (std::invalid_argument & ia)
+    {
+      NS_LOG_WARN ("invalid argument: " << ia.what ());
+      val = oldVal;
+      return false;
+    }
+  catch (std::out_of_range & oor)
+    {
+      NS_LOG_WARN ("out of range: " << oor.what ());
+      val = oldVal;
+      return false;
+    }
+  if (newVal < 0 || newVal > 255)
+    {
+      return false;
+    }
+  val = newVal;
+  return true;
+}
+
 
 std::ostream &
 operator << (std::ostream & os, const CommandLine & cmd)

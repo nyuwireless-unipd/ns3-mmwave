@@ -16,10 +16,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
+ * Author: Alexander Krotov <krotov@iitp.ru>
  */
 
 #include "calendar-scheduler.h"
 #include "event-impl.h"
+#include "type-id.h"
+#include "boolean.h"
 #include <utility>
 #include <string>
 #include <list>
@@ -45,6 +48,12 @@ CalendarScheduler::GetTypeId (void)
     .SetParent<Scheduler> ()
     .SetGroupName ("Core")
     .AddConstructor<CalendarScheduler> ()
+    .AddAttribute ("Reverse",
+                   "Store events in reverse chronological order",
+                   TypeId::ATTR_CONSTRUCT,
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&CalendarScheduler::SetReverse),
+                   MakeBooleanChecker ())
   ;
   return tid;
 }
@@ -60,6 +69,43 @@ CalendarScheduler::~CalendarScheduler ()
   NS_LOG_FUNCTION (this);
   delete [] m_buckets;
   m_buckets = 0;
+}
+void
+CalendarScheduler::SetReverse (bool reverse)
+{
+  NS_LOG_FUNCTION (this << reverse);
+  m_reverse = reverse;
+
+  if (m_reverse)
+    {
+      NextEvent = [] (Bucket & bucket) -> Scheduler::Event &
+        {
+          return bucket.back ();
+        };
+      Order = [](const EventKey & a, const EventKey & b) -> bool
+        {
+          return a > b;
+        };
+      Pop = [] (Bucket & bucket) -> void
+        {
+          bucket.pop_back ();
+        };
+    }
+  else
+    {
+      NextEvent = [](Bucket & bucket) -> Scheduler::Event &
+        {
+          return bucket.front ();
+        };
+      Order = [](const EventKey & a, const EventKey & b) -> bool
+        {
+          return a < b;
+        };
+      Pop = [] (Bucket & bucket) -> void
+        {
+          bucket.pop_front ();
+        };
+    }
 }
 void
 CalendarScheduler::Init (uint32_t nBuckets,
@@ -108,7 +154,7 @@ CalendarScheduler::DoInsert (const Event &ev)
   Bucket::iterator end = m_buckets[bucket].end ();
   for (Bucket::iterator i = m_buckets[bucket].begin (); i != end; ++i)
     {
-      if (ev.key < i->key)
+      if (Order (ev.key, i->key) )
         {
           m_buckets[bucket].insert (i, ev);
           return;
@@ -147,7 +193,7 @@ CalendarScheduler::PeekNext (void) const
     {
       if (!m_buckets[i].empty ())
         {
-          Scheduler::Event next = m_buckets[i].front ();
+          Scheduler::Event next = NextEvent (m_buckets[i]);
           if (next.key.m_ts < bucketTop)
             {
               return next;
@@ -175,21 +221,21 @@ CalendarScheduler::DoRemoveNext (void)
   uint64_t bucketTop = m_bucketTop;
   int32_t minBucket = -1;
   Scheduler::EventKey minKey;
-  NS_ASSERT(!IsEmpty());
-  minKey.m_ts = uint64_t(-int64_t(1));
+  NS_ASSERT (!IsEmpty ());
+  minKey.m_ts = uint64_t (-int64_t (1));
   minKey.m_uid = 0;
   minKey.m_context = 0xffffffff;
   do
     {
       if (!m_buckets[i].empty ())
         {
-          Scheduler::Event next = m_buckets[i].front ();
+          Scheduler::Event next = NextEvent (m_buckets[i]);
           if (next.key.m_ts < bucketTop)
             {
               m_lastBucket = i;
               m_lastPrio = next.key.m_ts;
               m_bucketTop = bucketTop;
-              m_buckets[i].pop_front ();
+              Pop (m_buckets[i]);
               return next;
             }
           if (next.key < minKey)
@@ -207,8 +253,8 @@ CalendarScheduler::DoRemoveNext (void)
   m_lastPrio = minKey.m_ts;
   m_lastBucket = Hash (minKey.m_ts);
   m_bucketTop = (minKey.m_ts / m_width + 1) * m_width;
-  Scheduler::Event next = m_buckets[minBucket].front();
-  m_buckets[minBucket].pop_front ();
+  Scheduler::Event next = NextEvent (m_buckets[minBucket]);
+  Pop (m_buckets[minBucket]);
 
   return next;
 }

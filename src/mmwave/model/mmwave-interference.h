@@ -48,7 +48,7 @@ public:
   mmWaveInterference ();
   virtual ~mmWaveInterference ();
   static TypeId GetTypeId (void);
-  virtual void DoDispose ();
+  virtual void DoDispose () override;
   void StartRx (Ptr<const SpectrumValue> rxPsd);
   void EndRx ();
   void AddSignal (Ptr<const SpectrumValue> spd, const Time duration);

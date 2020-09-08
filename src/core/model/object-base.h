@@ -152,7 +152,7 @@ public:
    *   - The attribute doesn't exist in this Object.
    *   - The attribute can't be set (no Setter).
    *   - The attribute couldn't be deserialized from the AttributeValue.
-   * 
+   *
    * \param [in] name The name of the attribute to set.
    * \param [in] value The name of the attribute to set.
    */
@@ -165,7 +165,7 @@ public:
    *
    * \param [in] name The name of the attribute to set.
    * \param [in] value The value to set it to.
-   * \return \c true if the requested attribute exists and could be set, 
+   * \return \c true if the requested attribute exists and could be set,
    *         \c false otherwise.
    */
   bool SetAttributeFailSafe (std::string name, const AttributeValue &value);
@@ -204,7 +204,7 @@ public:
    * \param [in] name The name of the target trace source.
    * \param [in] context The trace context associated to the callback.
    * \param [in] cb The callback to connect to the trace source.
-   * \returns \c true.
+   * \returns \c true on success, \c false if TraceSource was not found.
    */
   bool TraceConnect (std::string name, std::string context, const CallbackBase &cb);
   /**
@@ -214,7 +214,7 @@ public:
    *
    * \param [in] name The name of the target trace source.
    * \param [in] cb The callback to connect to the trace source.
-   * \returns \c true.
+   * \returns \c true on success, \c false if TraceSource was not found.
    */
   bool TraceConnectWithoutContext (std::string name, const CallbackBase &cb);
   /**
@@ -226,7 +226,7 @@ public:
    * \param [in] name The name of the target trace source.
    * \param [in] context The trace context associated to the callback.
    * \param [in] cb The callback to disconnect from the trace source.
-   * \returns \c true.
+   * \returns \c true on success, \c false if TraceSource was not found.
    */
   bool TraceDisconnect (std::string name, std::string context, const CallbackBase &cb);
   /**
@@ -237,7 +237,7 @@ public:
    *
    * \param [in] name The name of the target trace source.
    * \param [in] cb The callback to disconnect from the trace source.
-   * \returns \c true.
+   * \returns \c true on success, \c false if TraceSource was not found.
    */
   bool TraceDisconnectWithoutContext (std::string name, const CallbackBase &cb);
 
@@ -245,40 +245,40 @@ protected:
   /**
    * Notifier called once the ObjectBase is fully constructed.
    *
-   * This method is invoked once all member attributes have been 
+   * This method is invoked once all member attributes have been
    * initialized. Subclasses can override this method to be notified
    * of this event but if they do this, they must chain up to their
    * parent's NotifyConstructionCompleted method.
    */
   virtual void NotifyConstructionCompleted (void);
   /**
-   * Complete construction of ObjectBase; invoked by derived classes. 
+   * Complete construction of ObjectBase; invoked by derived classes.
    *
-   * Invoked from subclasses to initialize all of their 
+   * Invoked from subclasses to initialize all of their
    * attribute members. This method will typically be invoked
    * automatically from ns3::CreateObject if your class derives
    * from ns3::Object. If you derive from ns3::ObjectBase directly,
    * you should make sure that you invoke this method from
    * your most-derived constructor.
    *
-   * \param [in] attributes The attribute values used to initialize 
+   * \param [in] attributes The attribute values used to initialize
    *        the member variables of this object's instance.
    */
   void ConstructSelf (const AttributeConstructionList &attributes);
 
 private:
   /**
-   * Attempt to set the value referenced by the accessor \p spec
-   * to a valid value according to the \c checker, based on \p value.
+   * Attempt to set the value referenced by the accessor \pname{spec}
+   * to a valid value according to the \c checker, based on \pname{value}.
    *
    * \param [in] spec The accessor for the storage location.
    * \param [in] checker The checker to use in validating the value.
    * \param [in] value The value to attempt to store.
-   * \returns \c true if the \c value could be validated by the \p checker
+   * \returns \c true if the \c value could be validated by the \pname{checker}
    *          and written to the storage location.
    */
   bool DoSet (Ptr<const AttributeAccessor> spec,
-              Ptr<const AttributeChecker> checker, 
+              Ptr<const AttributeChecker> checker,
               const AttributeValue &value);
 
 };

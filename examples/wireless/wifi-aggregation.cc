@@ -32,6 +32,8 @@
 #include "ns3/udp-client-server-helper.h"
 #include "ns3/packet-sink-helper.h"
 #include "ns3/yans-wifi-channel.h"
+#include "ns3/wifi-net-device.h"
+#include "ns3/wifi-mac.h"
 
 // This is an example that illustrates how 802.11n aggregation is configured.
 // It defines 4 independent Wi-Fi networks (working on different channels).
@@ -51,17 +53,16 @@
 // - station C enables A-MSDU (with maximum size of 8 kB) but disables A-MPDU;
 // - station D uses two-level aggregation (A-MPDU with maximum size of 32 kB and A-MSDU with maximum size of 4 kB).
 //
-// Packets in this simulation aren't marked with a QosTag so they
-// are considered belonging to BestEffort Access Class (AC_BE).
+//Packets in this simulation belong to BestEffort Access Class (AC_BE).
 //
 // The user can select the distance between the stations and the APs and can enable/disable the RTS/CTS mechanism.
 // Example: ./waf --run "wifi-aggregation --distance=10 --enableRts=0 --simulationTime=20"
 //
 // The output prints the throughput measured for the 4 cases/networks described above. When default aggregation parameters are enabled, the
-// maximum A-MPDU size is 65 kB and the throughput is maximal. When aggregation is disabled, the throughput is about the half of the
-// physical bitrate as in legacy wifi networks. When only A-MSDU is enabled, the throughput is increased but is not maximal, since the maximum
-// A-MSDU size is limited to 7935 bytes (whereas the maximum A-MPDU size is limited to 65535 bytes). When A-MSDU and A-MPDU are both enabled
-// (= two-level aggregation), the throughput is slightly smaller than the first scenario since we set a smaller maximum A-MPDU size.
+// maximum A-MPDU size is 65 kB and the throughput is maximal. When aggregation is disabled, the throughput is about the half of the physical
+// bitrate. When only A-MSDU is enabled, the throughput is increased but is not maximal, since the maximum A-MSDU size is limited to 7935 bytes
+// (whereas the maximum A-MPDU size is limited to 65535 bytes). When A-MSDU and A-MPDU are both enabled (= two-level aggregation),
+// the throughput is slightly smaller than the first scenario since we set a smaller maximum A-MPDU size.
 //
 // When the distance is increased, the frame error rate gets higher, and the output shows how it affects the throughput for the 4 networks.
 // Even through A-MSDU has less overheads than A-MPDU, A-MSDU is less robust against transmission errors than A-MPDU. When the distance is
@@ -80,7 +81,7 @@ int main (int argc, char *argv[])
   bool enablePcap = 0;
   bool verifyResults = 0; //used for regression
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("payloadSize", "Payload size in bytes", payloadSize);
   cmd.AddValue ("enableRts", "Enable or disable RTS/CTS", enableRts);
   cmd.AddValue ("simulationTime", "Simulation time in seconds", simulationTime);
@@ -109,7 +110,7 @@ int main (int argc, char *argv[])
   NetDeviceContainer staDeviceA, staDeviceB, staDeviceC, staDeviceD, apDeviceA, apDeviceB, apDeviceC, apDeviceD;
   Ssid ssid;
 
-  //Network A
+  // Network A
   ssid = Ssid ("network-A");
   phy.Set ("ChannelNumber", UintegerValue (36));
   mac.SetType ("ns3::StaWifiMac",
@@ -121,61 +122,92 @@ int main (int argc, char *argv[])
                "EnableBeaconJitter", BooleanValue (false));
   apDeviceA = wifi.Install (phy, mac, wifiApNodes.Get (0));
 
-  //Network B
+  // Network B
   ssid = Ssid ("network-B");
   phy.Set ("ChannelNumber", UintegerValue (40));
   mac.SetType ("ns3::StaWifiMac",
-               "Ssid", SsidValue (ssid),
-               "BE_MaxAmpduSize", UintegerValue (0)); //Disable A-MPDU
+               "Ssid", SsidValue (ssid));
 
   staDeviceB = wifi.Install (phy, mac, wifiStaNodes.Get (1));
+  
+  // Disable A-MPDU
+  Ptr<NetDevice> dev = wifiStaNodes.Get (1)->GetDevice (0);
+  Ptr<WifiNetDevice> wifi_dev = DynamicCast<WifiNetDevice> (dev);
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmpduSize", UintegerValue (0));
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
                "EnableBeaconJitter", BooleanValue (false));
   apDeviceB = wifi.Install (phy, mac, wifiApNodes.Get (1));
+  
+  // Disable A-MPDU
+  dev = wifiApNodes.Get (1)->GetDevice (0);
+  wifi_dev = DynamicCast<WifiNetDevice> (dev);
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmpduSize", UintegerValue (0));
 
-  //Network C
+  // Network C
   ssid = Ssid ("network-C");
   phy.Set ("ChannelNumber", UintegerValue (44));
   mac.SetType ("ns3::StaWifiMac",
-               "Ssid", SsidValue (ssid),
-               "BE_MaxAmpduSize", UintegerValue (0), //Disable A-MPDU
-               "BE_MaxAmsduSize", UintegerValue (7935)); //Enable A-MSDU with the highest maximum size allowed by the standard (7935 bytes)
+               "Ssid", SsidValue (ssid));
 
   staDeviceC = wifi.Install (phy, mac, wifiStaNodes.Get (2));
+
+  // Disable A-MPDU and enable A-MSDU with the highest maximum size allowed by the standard (7935 bytes)
+  dev = wifiStaNodes.Get (2)->GetDevice (0);
+  wifi_dev = DynamicCast<WifiNetDevice> (dev);
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmpduSize", UintegerValue (0));
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmsduSize", UintegerValue (7935));
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
                "EnableBeaconJitter", BooleanValue (false));
   apDeviceC = wifi.Install (phy, mac, wifiApNodes.Get (2));
 
-  //Network D
+  // Disable A-MPDU and enable A-MSDU with the highest maximum size allowed by the standard (7935 bytes)
+  dev = wifiApNodes.Get (2)->GetDevice (0);
+  wifi_dev = DynamicCast<WifiNetDevice> (dev);
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmpduSize", UintegerValue (0));
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmsduSize", UintegerValue (7935));
+
+  // Network D
   ssid = Ssid ("network-D");
   phy.Set ("ChannelNumber", UintegerValue (48));
   mac.SetType ("ns3::StaWifiMac",
-               "Ssid", SsidValue (ssid),
-               "BE_MaxAmpduSize", UintegerValue (32768), //Enable A-MPDU with a smaller size than the default one
-               "BE_MaxAmsduSize", UintegerValue (3839)); //Enable A-MSDU with the smallest maximum size allowed by the standard (3839 bytes)
+               "Ssid", SsidValue (ssid));
 
   staDeviceD = wifi.Install (phy, mac, wifiStaNodes.Get (3));
+
+  // Enable A-MPDU with a smaller size than the default one and
+  // enable A-MSDU with the smallest maximum size allowed by the standard (3839 bytes)
+  dev = wifiStaNodes.Get (3)->GetDevice (0);
+  wifi_dev = DynamicCast<WifiNetDevice> (dev);
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmpduSize", UintegerValue (32768));
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmsduSize", UintegerValue (3839));
 
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid),
                "EnableBeaconJitter", BooleanValue (false));
   apDeviceD = wifi.Install (phy, mac, wifiApNodes.Get (3));
 
-  /* Setting mobility model */
+  // Enable A-MPDU with a smaller size than the default one and
+  // enable A-MSDU with the smallest maximum size allowed by the standard (3839 bytes)
+  dev = wifiApNodes.Get (3)->GetDevice (0);
+  wifi_dev = DynamicCast<WifiNetDevice> (dev);
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmpduSize", UintegerValue (32768));
+  wifi_dev->GetMac ()->SetAttribute ("BE_MaxAmsduSize", UintegerValue (3839));
+
+  // Setting mobility model
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
 
-  //Set position for APs
+  // Set position for APs
   positionAlloc->Add (Vector (0.0, 0.0, 0.0));
   positionAlloc->Add (Vector (10.0, 0.0, 0.0));
   positionAlloc->Add (Vector (20.0, 0.0, 0.0));
   positionAlloc->Add (Vector (30.0, 0.0, 0.0));
-  //Set position for STAs
+  // Set position for STAs
   positionAlloc->Add (Vector (distance, 0.0, 0.0));
   positionAlloc->Add (Vector (10 + distance, 0.0, 0.0));
   positionAlloc->Add (Vector (20 + distance, 0.0, 0.0));
@@ -185,7 +217,7 @@ int main (int argc, char *argv[])
   mobility.Install (wifiApNodes);
   mobility.Install (wifiStaNodes);
 
-  /* Internet stack */
+  // Internet stack
   InternetStackHelper stack;
   stack.Install (wifiApNodes);
   stack.Install (wifiStaNodes);
@@ -215,7 +247,7 @@ int main (int argc, char *argv[])
   Ipv4InterfaceContainer ApInterfaceD;
   ApInterfaceD = address.Assign (apDeviceD);
 
-  /* Setting applications */
+  // Setting applications
   uint16_t port = 9;
   UdpServerHelper serverA (port);
   ApplicationContainer serverAppA = serverA.Install (wifiStaNodes.Get (0));
@@ -224,7 +256,7 @@ int main (int argc, char *argv[])
 
   UdpClientHelper clientA (StaInterfaceA.GetAddress (0), port);
   clientA.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  clientA.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  clientA.SetAttribute ("Interval", TimeValue (Time ("0.0001"))); //packets/s
   clientA.SetAttribute ("PacketSize", UintegerValue (payloadSize));
 
   ApplicationContainer clientAppA = clientA.Install (wifiApNodes.Get (0));
@@ -238,7 +270,7 @@ int main (int argc, char *argv[])
 
   UdpClientHelper clientB (StaInterfaceB.GetAddress (0), port);
   clientB.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  clientB.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  clientB.SetAttribute ("Interval", TimeValue (Time ("0.0001"))); //packets/s
   clientB.SetAttribute ("PacketSize", UintegerValue (payloadSize));
 
   ApplicationContainer clientAppB = clientB.Install (wifiApNodes.Get (1));
@@ -252,7 +284,7 @@ int main (int argc, char *argv[])
 
   UdpClientHelper clientC (StaInterfaceC.GetAddress (0), port);
   clientC.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  clientC.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  clientC.SetAttribute ("Interval", TimeValue (Time ("0.0001"))); //packets/s
   clientC.SetAttribute ("PacketSize", UintegerValue (payloadSize));
 
   ApplicationContainer clientAppC = clientC.Install (wifiApNodes.Get (2));
@@ -266,7 +298,7 @@ int main (int argc, char *argv[])
 
   UdpClientHelper clientD (StaInterfaceD.GetAddress (0), port);
   clientD.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
-  clientD.SetAttribute ("Interval", TimeValue (Time ("0.00002"))); //packets/s
+  clientD.SetAttribute ("Interval", TimeValue (Time ("0.0001"))); //packets/s
   clientD.SetAttribute ("PacketSize", UintegerValue (payloadSize));
 
   ApplicationContainer clientAppD = clientD.Install (wifiApNodes.Get (3));
@@ -288,7 +320,7 @@ int main (int argc, char *argv[])
   Simulator::Stop (Seconds (simulationTime + 1));
   Simulator::Run ();
 
-  /* Show results */
+  // Show results
   uint64_t totalPacketsThroughA = DynamicCast<UdpServer> (serverAppA.Get (0))->GetReceived ();
   uint64_t totalPacketsThroughB = DynamicCast<UdpServer> (serverAppB.Get (0))->GetReceived ();
   uint64_t totalPacketsThroughC = DynamicCast<UdpServer> (serverAppC.Get (0))->GetReceived ();
@@ -298,7 +330,7 @@ int main (int argc, char *argv[])
 
   double throughput = totalPacketsThroughA * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput with default configuration (A-MPDU aggregation enabled, 65kB): " << throughput << " Mbit/s" << '\n';
-  if (verifyResults && (throughput < 59 || throughput > 60))
+  if (verifyResults && (throughput < 58.5 || throughput > 59.5))
     {
       NS_LOG_ERROR ("Obtained throughput " << throughput << " is not in the expected boundaries!");
       exit (1);
@@ -306,7 +338,7 @@ int main (int argc, char *argv[])
 
   throughput = totalPacketsThroughB * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput with aggregation disabled: " << throughput << " Mbit/s" << '\n';
-  if (verifyResults && (throughput < 30 || throughput > 30.5))
+  if (verifyResults && (throughput < 30 || throughput > 31))
     {
       NS_LOG_ERROR ("Obtained throughput " << throughput << " is not in the expected boundaries!");
       exit (1);

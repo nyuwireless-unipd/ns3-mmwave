@@ -37,9 +37,9 @@ struct AarfcdWifiRemoteStation;
  * version of ns-3. Federico died before merging this work in ns-3 itself so his code was ported
  * to ns-3 later without his supervision.
  *
- * This RAA does not support HT, VHT nor HE modes and will error
+ * This RAA does not support HT modes and will error
  * exit if the user tries to configure this RAA with a Wi-Fi MAC
- * that has VhtSupported, HtSupported or HeSupported set.
+ * that supports 802.11n or higher.
  */
 class AarfcdWifiManager : public WifiRemoteStationManager
 {
@@ -70,20 +70,19 @@ private:
    * The fundamental reason for this is that there is a backoff between each data
    * transmission, be it an initial transmission or a retransmission.
    *
-   * \param station the station that we failed to send DATA
+   * \param station the station that we failed to send Data
    */
   void DoReportDataFailed (WifiRemoteStation *station);
   void DoReportRtsOk (WifiRemoteStation *station,
                       double ctsSnr, WifiMode ctsMode, double rtsSnr);
-  void DoReportDataOk (WifiRemoteStation *station,
-                       double ackSnr, WifiMode ackMode, double dataSnr);
+  void DoReportDataOk (WifiRemoteStation *station, double ackSnr, WifiMode ackMode,
+                       double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss);
   void DoReportFinalRtsFailed (WifiRemoteStation *station);
   void DoReportFinalDataFailed (WifiRemoteStation *station);
   WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
   WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
   bool DoNeedRts (WifiRemoteStation *station,
-                  Ptr<const Packet> packet, bool normally);
-  bool IsLowLatency (void) const;
+                  uint32_t size, bool normally);
 
   /**
    * Check if the use of RTS for the given station can be turned off.
@@ -116,18 +115,18 @@ private:
    */
   void TurnOnRts (AarfcdWifiRemoteStation *station);
 
-  //aarf fields below
-  uint32_t m_minTimerThreshold; ///< minimum timer threshold
+  //AARF fields below
+  uint32_t m_minTimerThreshold;   ///< minimum timer threshold
   uint32_t m_minSuccessThreshold; ///< minimum success threshold
-  double m_successK; ///< Multiplication factor for the success threshold
+  double m_successK;              ///< Multiplication factor for the success threshold
   uint32_t m_maxSuccessThreshold; ///< maximum success threshold
-  double m_timerK; ///< Multiplication factor for the timer threshold
+  double m_timerK;                ///< Multiplication factor for the timer threshold
 
-  //aarf-cd fields below
-  uint32_t m_minRtsWnd; ///< minimum RTS window
-  uint32_t m_maxRtsWnd; ///< maximum RTS window
+  //AARF-CD fields below
+  uint32_t m_minRtsWnd;               ///< minimum RTS window
+  uint32_t m_maxRtsWnd;               ///< maximum RTS window
   bool m_turnOffRtsAfterRateDecrease; ///< turn off RTS after rate decrease
-  bool m_turnOnRtsAfterRateIncrease; ///< turn on RTS after rate increase
+  bool m_turnOnRtsAfterRateIncrease;  ///< turn on RTS after rate increase
 
   TracedValue<uint64_t> m_currentRate; //!< Trace rate changes
 };

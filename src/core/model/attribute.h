@@ -42,7 +42,7 @@ class ObjectBase;
 /**
  *
  * \ingroup core
- * \defgroup attribute Attributes
+ * \defgroup attributes Attributes
  *
  * The \c ns-3 attribute system is the mechanism used in \c ns-3 to
  * organize, document, and modify the *values* used by the various
@@ -57,12 +57,12 @@ class ObjectBase;
 
 /**
  *
- * \ingroup attribute
+ * \ingroup attributes
  *
  * \brief Hold a value for an Attribute.
  *
  * Instances of this class should always be wrapped into an Attribute object.
- * Most subclasses of this base class are implemented by the 
+ * Most subclasses of this base class are implemented by the
  * ATTRIBUTE_HELPER_* macros.
  */
 class AttributeValue : public SimpleRefCount<AttributeValue>
@@ -104,7 +104,7 @@ public:
 /**
  * \brief allow setting and getting the value of an attribute.
  *
- * \ingroup attribute
+ * \ingroup attributes
  *
  * The goal of this class is to hide from the user how an attribute
  * is actually set or get to or from a class instance. Implementations
@@ -152,7 +152,7 @@ public:
 /**
  * \brief Represent the type of an attribute
  *
- * \ingroup attribute
+ * \ingroup attributes
  *
  * Each type of attribute has an associated unique AttributeChecker
  * subclass. The type of the subclass can be safely used by users
@@ -160,7 +160,7 @@ public:
  * binding authors to use the checker associated to an attribute
  * to detect the type of the associated attribute.
  *
- * Most subclasses of this base class are implemented by the 
+ * Most subclasses of this base class are implemented by the
  * ATTRIBUTE_HELPER_HEADER and ATTRIBUTE_HELPER_CPP macros.
  */
 class AttributeChecker : public SimpleRefCount<AttributeChecker>
@@ -207,7 +207,7 @@ public:
    */
   virtual std::string GetUnderlyingTypeInformation (void) const = 0;
   /**
-   * \returns a new instance of an AttributeValue (wrapper in an Attribute 
+   * \returns a new instance of an AttributeValue (wrapper in an Attribute
    *          instance) which matches the type of the underlying attribute.
    *
    * This method is typically used to create a temporary variable prior
@@ -227,13 +227,14 @@ public:
 /**
  * \brief A class for an empty attribute value.
  *
- * \ingroup attribute
+ * \ingroup attributes
  */
 class EmptyAttributeValue : public AttributeValue
 {
 public:
   /** Default constructor. */
   EmptyAttributeValue ();
+
 private:
   /**
    * \returns a deep copy of this class, wrapped into an Attribute object.
@@ -274,7 +275,7 @@ public:
 };
 
 /**
- * \ingroup attribute
+ * \ingroup attributes
  *
  * \brief Create an empty AttributeAccessor.
  *
@@ -306,7 +307,7 @@ public:
 };
 
 /**
- * \ingroup attribute
+ * \ingroup attributes
  *
  * \brief Create an empty AttributeChecker.
  *

@@ -84,9 +84,9 @@ public:
    */
   virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity () = 0;
 
-  void DoDispose ();
+  virtual void DoDispose () override;
 
-  virtual void DoInitialize (void);
+  virtual void DoInitialize (void) override;
 
  /**
   * The purpose of this function is to sync the slot duration to the correct value

@@ -66,7 +66,7 @@ def configure(conf):
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
                                      "NSC not found (see option --with-nsc)")
         return
-
+    
     if Utils.unversioned_sys_platform() in ['linux', 'freebsd']:
         arch = os.uname()[4]
     else:
@@ -78,7 +78,7 @@ def configure(conf):
         conf.check_nonfatal(mandatory=True, lib='dl', define_name='HAVE_DL', uselib_store='DL')
         ok = True
     conf.msg('Checking for NSC supported architecture ' + (arch or ''), ok)
-
+    
     if not ok:
         conf.env['NSC_ENABLED'] = False
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
@@ -103,8 +103,8 @@ def configure(conf):
 
 
 def build(bld):
-    # bridge and mpi dependencies are due to global routing
-    obj = bld.create_ns3_module('internet', ['bridge', 'mpi', 'traffic-control', 'network', 'core'])
+    # bridge dependency is due to global routing
+    obj = bld.create_ns3_module('internet', ['bridge', 'traffic-control', 'network', 'core'])
     obj.source = [
         'model/ip-l4-protocol.cc',
         'model/udp-header.cc',
@@ -153,16 +153,19 @@ def build(bld):
         'model/tcp-congestion-ops.cc',
         'model/tcp-westwood.cc',
         'model/tcp-scalable.cc',
+        'model/tcp-cubic.cc',
         'model/tcp-veno.cc',
         'model/tcp-bic.cc',
-        'model/tcp-cubic.cc',
         'model/tcp-yeah.cc',
         'model/tcp-ledbat.cc',
         'model/tcp-illinois.cc',
         'model/tcp-htcp.cc',
         'model/tcp-lp.cc',
+        'model/tcp-dctcp.cc',
         'model/tcp-rx-buffer.cc',
         'model/tcp-tx-buffer.cc',
+        'model/tcp-tx-item.cc',
+        'model/tcp-rate-ops.cc',
         'model/tcp-option.cc',
         'model/tcp-option-rfc793.cc',
         'model/tcp-option-winscale.cc',
@@ -249,6 +252,7 @@ def build(bld):
         'test/ipv6-packet-info-tag-test-suite.cc',
         'test/ipv6-test.cc',
         'test/ipv6-raw-test.cc',
+        'test/ipv6-address-duplication-test.cc',
         'test/tcp-test.cc',
         'test/tcp-timestamp-test.cc',
         'test/tcp-sack-permitted-test.cc',
@@ -280,6 +284,7 @@ def build(bld):
         'test/tcp-advertised-window-test.cc',
         'test/tcp-classic-recovery-test.cc',
         'test/tcp-prr-recovery-test.cc',
+        'test/tcp-loss-test.cc',
         'test/udp-test.cc',
         'test/ipv6-address-generator-test-suite.cc',
         'test/ipv6-dual-stack-test-suite.cc',
@@ -292,9 +297,20 @@ def build(bld):
         'test/tcp-rx-buffer-test.cc',
         'test/tcp-endpoint-bug2211.cc',
         'test/tcp-datasentcb-test.cc',
+        'test/tcp-rate-ops-test.cc',
         'test/ipv4-rip-test.cc',
         'test/tcp-close-test.cc',
+        'test/icmp-test.cc',
+        'test/ipv4-deduplication-test.cc',
+        'test/tcp-dctcp-test.cc',
+        'test/tcp-syn-connection-failed-test.cc',
         ]
+    # Tests encapsulating example programs should be listed here
+    if (bld.env['ENABLE_EXAMPLES']):
+        internet_test.source.extend([
+        #   'test/internet-examples-test-suite.cc',
+            ])
+    
     privateheaders = bld(features='ns3privateheader')
     privateheaders.module = 'internet'
     privateheaders.source = [
@@ -315,12 +331,16 @@ def build(bld):
         # used by routing
         'model/ipv4-interface.h',
         'model/ipv4-l3-protocol.h',
+        'model/ipv4-end-point.h',
+        'model/ipv4-end-point-demux.h',
         'model/ipv6-l3-protocol.h',
         'model/ipv6-extension.h',
         'model/ipv6-extension-demux.h',
         'model/ipv6-extension-header.h',
         'model/ipv6-option.h',
         'model/ipv6-option-header.h',
+        'model/ipv6-end-point.h',
+        'model/ipv6-end-point-demux.h',
         'model/arp-l3-protocol.h',
         'model/udp-l4-protocol.h',
         'model/tcp-l4-protocol.h',
@@ -388,17 +408,20 @@ def build(bld):
         'model/tcp-congestion-ops.h',
         'model/tcp-westwood.h',
         'model/tcp-scalable.h',
+        'model/tcp-cubic.h',
         'model/tcp-veno.h',
         'model/tcp-bic.h',
-        'model/tcp-cubic.h',
         'model/tcp-yeah.h',
         'model/tcp-illinois.h',
         'model/tcp-htcp.h',
         'model/tcp-lp.h',
+        'model/tcp-dctcp.h',
         'model/tcp-ledbat.h',
         'model/tcp-socket-base.h',
         'model/tcp-socket-state.h',
         'model/tcp-tx-buffer.h',
+        'model/tcp-tx-item.h',
+        'model/tcp-rate-ops.h',
         'model/tcp-rx-buffer.h',
         'model/tcp-recovery-ops.h',
         'model/tcp-prr-recovery.h',
@@ -427,3 +450,4 @@ def build(bld):
         bld.recurse('examples')
 
     bld.ns3_python_bindings()
+

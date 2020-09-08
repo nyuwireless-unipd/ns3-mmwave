@@ -64,7 +64,7 @@ public:
 
   MmWaveUeNetDevice (void);
   virtual ~MmWaveUeNetDevice (void);
-  virtual void DoDispose ();
+  virtual void DoDispose () override;
 
   uint32_t GetCsgId () const;
   void SetCsgId (uint32_t csgId);
@@ -72,7 +72,7 @@ public:
   void UpdateConfig (void);
 
 
-  virtual bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
+  virtual bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber) override;
 
   Ptr<MmWaveUePhy> GetPhy (void) const;
 
@@ -94,7 +94,7 @@ public:
 
 protected:
   // inherited from Object
-  virtual void DoInitialize (void);
+  virtual void DoInitialize (void) override;
 
 private:
   MmWaveUeNetDevice (const MmWaveUeNetDevice &);

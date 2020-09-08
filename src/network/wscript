@@ -24,7 +24,6 @@ def build(bld):
         'model/tag-buffer.cc',
         'model/trailer.cc',
         'utils/address-utils.cc',
-        'utils/ascii-file.cc',
         'utils/crc32.cc',
         'utils/data-rate.cc',
         'utils/drop-tail-queue.cc',
@@ -87,6 +86,12 @@ def build(bld):
         'test/packet-socket-apps-test-suite.cc',
         ]
 
+    # Tests encapsulating example programs should be listed here
+    if (bld.env['ENABLE_EXAMPLES']):
+        network_test.source.extend([
+        #   'test/network-examples-test-suite.cc',
+            ])
+    
     headers = bld(features='ns3header')
     headers.module = 'network'
     headers.source = [
@@ -111,8 +116,6 @@ def build(bld):
         'model/tag-buffer.h',
         'model/trailer.h',
         'utils/address-utils.h',
-        'utils/ascii-file.h',
-        'utils/ascii-test.h',
         'utils/crc32.h',
         'utils/data-rate.h',
         'utils/drop-tail-queue.h',

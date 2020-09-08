@@ -19,15 +19,18 @@
  *          Tommaso Pecorella <tommaso.pecorella@unifi.it>
  */
 
+#include "ns3/log.h"
 #include "originator-block-ack-agreement.h"
+#include "wifi-mac-queue-item.h"
+#include "wifi-utils.h"
 
 namespace ns3 {
 
+NS_LOG_COMPONENT_DEFINE ("OriginatorBlockAckAgreement");
+
 OriginatorBlockAckAgreement::OriginatorBlockAckAgreement (Mac48Address recipient, uint8_t tid)
   : BlockAckAgreement (recipient, tid),
-    m_state (PENDING),
-    m_sentMpdus (0),
-    m_needBlockAckReq (false)
+    m_state (PENDING)
 {
 }
 
@@ -39,11 +42,6 @@ void
 OriginatorBlockAckAgreement::SetState (State state)
 {
   m_state = state;
-  if (state == INACTIVE)
-    {
-      m_needBlockAckReq = false;
-      m_sentMpdus = 0;
-    }
 }
 
 bool
@@ -59,41 +57,121 @@ OriginatorBlockAckAgreement::IsEstablished (void) const
 }
 
 bool
-OriginatorBlockAckAgreement::IsInactive (void) const
+OriginatorBlockAckAgreement::IsRejected (void) const
 {
-  return (m_state == INACTIVE) ? true : false;
+  return (m_state == REJECTED) ? true : false;
 }
 
 bool
-OriginatorBlockAckAgreement::IsUnsuccessful (void) const
+OriginatorBlockAckAgreement::IsNoReply (void) const
 {
-  return (m_state == UNSUCCESSFUL) ? true : false;
+  return (m_state == NO_REPLY) ? true : false;
+}
+
+bool
+OriginatorBlockAckAgreement::IsReset (void) const
+{
+  return (m_state == RESET) ? true : false;
+}
+
+uint16_t
+OriginatorBlockAckAgreement::GetStartingSequence (void) const
+{
+  if (m_txWindow.GetWinSize () == 0)
+    {
+      // the TX window has not been initialized yet
+      return m_startingSeq;
+    }
+  return m_txWindow.GetWinStart ();
+}
+
+std::size_t
+OriginatorBlockAckAgreement::GetDistance (uint16_t seqNumber) const
+{
+  NS_ASSERT (seqNumber < SEQNO_SPACE_SIZE);
+  return (seqNumber - GetStartingSequence () + SEQNO_SPACE_SIZE) % SEQNO_SPACE_SIZE;
 }
 
 void
-OriginatorBlockAckAgreement::NotifyMpduTransmission (uint16_t nextSeqNumber)
+OriginatorBlockAckAgreement::InitTxWindow (void)
 {
-  NS_ASSERT (m_sentMpdus < m_bufferSize);
-  m_sentMpdus++;
-  uint16_t delta = (nextSeqNumber - m_startingSeq + 4096) % 4096;
-  uint16_t min = m_bufferSize < 64 ? m_bufferSize : 64;
-  if (delta >= min || m_sentMpdus == m_bufferSize)
+  m_txWindow.Init (m_startingSeq, m_bufferSize);
+}
+
+void
+OriginatorBlockAckAgreement::AdvanceTxWindow (void)
+{
+  while (m_txWindow.At (0))
     {
-      m_needBlockAckReq = true;
+      m_txWindow.Advance (1); // reset the current head -- ensures loop termination
     }
 }
 
-bool
-OriginatorBlockAckAgreement::IsBlockAckRequestNeeded (void) const
+void
+OriginatorBlockAckAgreement::NotifyTransmittedMpdu (Ptr<const WifiMacQueueItem> mpdu)
 {
-  return m_needBlockAckReq;
+  uint16_t mpduSeqNumber = mpdu->GetHeader ().GetSequenceNumber ();
+  uint16_t distance = GetDistance (mpduSeqNumber);
+
+  if (distance >= SEQNO_SPACE_HALF_SIZE)
+    {
+      NS_LOG_DEBUG ("Transmitted an old MPDU, do nothing.");
+      return;
+    }
+
+  // advance the transmit window if an MPDU beyond the current transmit window
+  // is transmitted (see Section 10.24.7.7 of 802.11-2016)
+  if (distance >= m_txWindow.GetWinSize ())
+    {
+      std::size_t count = distance - m_txWindow.GetWinSize () + 1;
+      m_txWindow.Advance (count);
+      // transmit window may advance further
+      AdvanceTxWindow ();
+      NS_LOG_DEBUG ("Transmitted MPDU beyond current transmit window. New starting sequence number: "
+                    << m_txWindow.GetWinStart ());
+    }
 }
 
 void
-OriginatorBlockAckAgreement::CompleteExchange (void)
+OriginatorBlockAckAgreement::NotifyAckedMpdu (Ptr<const WifiMacQueueItem> mpdu)
 {
-  m_needBlockAckReq = false;
-  m_sentMpdus = 0;
+  uint16_t mpduSeqNumber = mpdu->GetHeader ().GetSequenceNumber ();
+  uint16_t distance = GetDistance (mpduSeqNumber);
+
+  if (distance >= SEQNO_SPACE_HALF_SIZE)
+    {
+      NS_LOG_DEBUG ("Acked an old MPDU, do nothing.");
+      return;
+    }
+
+  // when an MPDU is transmitted, the transmit window is updated such that the
+  // transmitted MPDU is in the window, hence we cannot be notified of the
+  // acknowledgment of an MPDU which is beyond the transmit window
+  m_txWindow.At (distance) = true;
+
+  // the starting sequence number can be advanced to the sequence number of
+  // the nearest unacknowledged MPDU
+  AdvanceTxWindow ();
+  NS_LOG_DEBUG ("Starting sequence number: " << m_txWindow.GetWinStart ());
+}
+
+void
+OriginatorBlockAckAgreement::NotifyDiscardedMpdu (Ptr<const WifiMacQueueItem> mpdu)
+{
+  uint16_t mpduSeqNumber = mpdu->GetHeader ().GetSequenceNumber ();
+  uint16_t distance = GetDistance (mpduSeqNumber);
+
+  if (distance >= SEQNO_SPACE_HALF_SIZE)
+    {
+      NS_LOG_DEBUG ("Discarded an old MPDU, do nothing.");
+      return;
+    }
+
+  m_txWindow.Advance (distance + 1);
+  // transmit window may advance further
+  AdvanceTxWindow ();
+  NS_LOG_DEBUG ("Discarded MPDU within current transmit window. New starting sequence number: "
+                << m_txWindow.GetWinStart ());
 }
 
 } //namespace ns3

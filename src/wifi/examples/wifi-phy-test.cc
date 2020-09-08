@@ -28,6 +28,7 @@
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
 #include "ns3/nist-error-rate-model.h"
+#include "ns3/wifi-psdu.h"
 
 using namespace ns3;
 
@@ -64,11 +65,12 @@ private:
   void Send (void);
   /**
    * Send receive function
-   * \param p the packet
+   * \param psdu the PSDU
    * \param snr the SNR
    * \param txVector the wifi transmit vector
+   * \param statusPerMpdu reception status per MPDU
    */
-  void Receive (Ptr<Packet> p, double snr, WifiTxVector txVector);
+  void Receive (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, std::vector<bool> statusPerMpdu);
   Ptr<WifiPhy> m_tx; ///< transmit
   struct Input m_input; ///< input
   struct Output m_output; ///< output
@@ -77,17 +79,17 @@ private:
 void
 PsrExperiment::Send (void)
 {
-  Ptr<Packet> p = Create<Packet> (m_input.packetSize);
+  Ptr<WifiPsdu> psdu = Create<WifiPsdu> (Create<Packet> (m_input.packetSize), WifiMacHeader ());
   WifiMode mode = WifiMode (m_input.txMode);
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevel);
   txVector.SetMode (mode);
   txVector.SetPreambleType (WIFI_PREAMBLE_LONG);
-  m_tx->SendPacket (p, txVector);
+  m_tx->Send (psdu, txVector);
 }
 
 void
-PsrExperiment::Receive (Ptr<Packet> p, double snr, WifiTxVector txVector)
+PsrExperiment::Receive (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, std::vector<bool> statusPerMpdu)
 {
   m_output.received++;
 }
@@ -185,11 +187,12 @@ private:
   void SendB (void) const;
   /**
    * Receive function
-   * \param p the packet
+   * \param psdu the PSDU
    * \param snr the SNR
    * \param txVector the wifi transmit vector
+   * \param statusPerMpdu reception status per MPDU
    */
-  void Receive (Ptr<Packet> p, double snr, WifiTxVector txVector);
+  void Receive (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, std::vector<bool> statusPerMpdu);
   Ptr<WifiPhy> m_txA; ///< transmit A
   Ptr<WifiPhy> m_txB; ///< transmit B
   uint32_t m_flowIdA; ///< flow ID A
@@ -201,32 +204,32 @@ private:
 void
 CollisionExperiment::SendA (void) const
 {
-  Ptr<Packet> p = Create<Packet> (m_input.packetSizeA);
-  p->AddByteTag (FlowIdTag (m_flowIdA));
+  Ptr<WifiPsdu> psdu = Create<WifiPsdu> (Create<Packet> (m_input.packetSizeA), WifiMacHeader ());
+  (*psdu->begin ())->GetPacket ()->AddByteTag (FlowIdTag (m_flowIdA));
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevelA);
   txVector.SetMode (WifiMode (m_input.txModeA));
   txVector.SetPreambleType (WIFI_PREAMBLE_LONG);
-  m_txA->SendPacket (p, txVector);
+  m_txA->Send (psdu, txVector);
 }
 
 void
 CollisionExperiment::SendB (void) const
 {
-  Ptr<Packet> p = Create<Packet> (m_input.packetSizeB);
-  p->AddByteTag (FlowIdTag (m_flowIdB));
+  Ptr<WifiPsdu> psdu = Create<WifiPsdu> (Create<Packet> (m_input.packetSizeB), WifiMacHeader ());
+  (*psdu->begin ())->GetPacket ()->AddByteTag (FlowIdTag (m_flowIdB));
   WifiTxVector txVector;
   txVector.SetTxPowerLevel (m_input.txPowerLevelB);
   txVector.SetMode (WifiMode (m_input.txModeB));
   txVector.SetPreambleType (WIFI_PREAMBLE_LONG);
-  m_txB->SendPacket (p, txVector);
+  m_txB->Send (psdu, txVector);
 }
 
 void
-CollisionExperiment::Receive (Ptr<Packet> p, double snr, WifiTxVector txVector)
+CollisionExperiment::Receive (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, std::vector<bool> statusPerMpdu)
 {
   FlowIdTag tag;
-  if (p->FindFirstMatchingByteTag (tag))
+  if ((*psdu->begin ())->GetPacket ()->FindFirstMatchingByteTag (tag))
     {
       if (tag.GetFlowId () == m_flowIdA)
         {
@@ -320,7 +323,7 @@ static void PrintPsr (int argc, char *argv[])
   PsrExperiment experiment;
   struct PsrExperiment::Input input;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("Distance", "The distance between two phys", input.distance);
   cmd.AddValue ("PacketSize", "The size of each packet sent", input.packetSize);
   cmd.AddValue ("TxMode", "The mode to use to send each packet", input.txMode);
@@ -347,7 +350,7 @@ double CalcPsr (struct PsrExperiment::Output output, struct PsrExperiment::Input
 static void PrintPsrVsDistance (int argc, char *argv[])
 {
   struct PsrExperiment::Input input;
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("TxPowerLevel", "The power level index to use to send each packet", input.txPowerLevel);
   cmd.AddValue ("TxMode", "The mode to use to send each packet", input.txMode);
   cmd.AddValue ("NPackets", "The number of packets to send", input.nPackets);
@@ -400,7 +403,7 @@ static void PrintSizeVsRange (int argc, char *argv[])
 {
   double targetPsr = 0.05;
   struct PsrExperiment::Input input;
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("TxPowerLevel", "The power level index to use to send each packet", input.txPowerLevel);
   cmd.AddValue ("TxMode", "The mode to use to send each packet", input.txMode);
   cmd.AddValue ("NPackets", "The number of packets to send", input.nPackets);
@@ -437,7 +440,7 @@ static void PrintPsrVsCollisionInterval (int argc, char *argv[])
 {
   CollisionExperiment::Input input;
   input.nPackets = 100;
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("NPackets", "The number of packets to send for each transmitter", input.nPackets);
   cmd.AddValue ("xA", "the position of transmitter A", input.xA);
   cmd.AddValue ("xB", "the position of transmitter B", input.xB);

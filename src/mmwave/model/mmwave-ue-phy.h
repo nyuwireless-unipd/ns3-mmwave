@@ -68,8 +68,8 @@ public:
 
   // inherited from Object
   static TypeId GetTypeId (void);
-  virtual void DoInitialize (void);
-  virtual void DoDispose (void);
+  virtual void DoInitialize (void) override;
+  virtual void DoDispose (void) override;
 
   LteUeCphySapProvider* GetUeCphySapProvider ();
   void SetUeCphySapUser (LteUeCphySapUser* s);
@@ -82,7 +82,7 @@ public:
 
   bool SendPacket (Ptr<Packet> packet);
 
-  Ptr<SpectrumValue> CreateTxPowerSpectralDensity ();
+  Ptr<SpectrumValue> CreateTxPowerSpectralDensity () override;
 
   void DoSetSubChannels ();
 

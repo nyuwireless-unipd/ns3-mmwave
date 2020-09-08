@@ -49,7 +49,7 @@ int main (int argc, char *argv[])
   std::string bottleNeckLinkBw = "1Mbps";
   std::string bottleNeckLinkDelay = "50ms";
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("nLeaf",     "Number of left and right side leaf nodes", nLeaf);
   cmd.AddValue ("maxPackets","Max Packets allowed in the device queue", maxPackets);
   cmd.AddValue ("queueDiscLimitPackets","Max Packets allowed in the queue disc", queueDiscLimitPackets);
@@ -70,7 +70,7 @@ int main (int argc, char *argv[])
   Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (pktSize));
   Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue (appDataRate));
 
-  Config::SetDefault ("ns3::QueueBase::MaxSize",
+  Config::SetDefault ("ns3::DropTailQueue<Packet>::MaxSize",
                       QueueSizeValue (QueueSize (QueueSizeUnit::PACKETS, maxPackets)));
 
   if (!modeBytes)

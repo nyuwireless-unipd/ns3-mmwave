@@ -21,10 +21,12 @@
  *  Tom Henderson <thomas.r.henderson@boeing.com>
  *  Sascha Alexander Jopen <jopen@cs.uni-bonn.de>
  *  Erwan Livolant <erwan.livolant@inria.fr>
+ *  Alberto Gallegos Ramonet <ramonet@fc.ritsumei.ac.jp>
  */
 #include "lr-wpan-mac.h"
 #include "lr-wpan-csmaca.h"
 #include "lr-wpan-mac-header.h"
+#include "lr-wpan-mac-pl-headers.h"
 #include "lr-wpan-mac-trailer.h"
 #include <ns3/simulator.h>
 #include <ns3/log.h>
@@ -44,7 +46,13 @@ NS_LOG_COMPONENT_DEFINE ("LrWpanMac");
 
 NS_OBJECT_ENSURE_REGISTERED (LrWpanMac);
 
-const uint32_t LrWpanMac::aMinMPDUOverhead = 9; // Table 85
+//IEEE 802.15.4-2011 Table 51
+const uint32_t LrWpanMac::aMinMPDUOverhead = 9;
+const uint32_t LrWpanMac::aBaseSlotDuration = 60;
+const uint32_t LrWpanMac::aNumSuperframeSlots = 16;
+const uint32_t LrWpanMac::aBaseSuperframeDuration = aBaseSlotDuration * aNumSuperframeSlots;
+const uint32_t LrWpanMac::aMaxLostBeacons = 4;
+const uint32_t LrWpanMac::aMaxSIFSFrameSize = 18;
 
 TypeId
 LrWpanMac::GetTypeId (void)
@@ -115,6 +123,14 @@ LrWpanMac::GetTypeId (void)
                      "The state of LrWpan Mac",
                      MakeTraceSourceAccessor (&LrWpanMac::m_lrWpanMacState),
                      "ns3::TracedValueCallback::LrWpanMacState")
+    .AddTraceSource ("MacIncSuperframeStatus",
+                     "The period status of the incoming superframe",
+                     MakeTraceSourceAccessor (&LrWpanMac::m_incSuperframeStatus),
+                     "ns3::TracedValueCallback::SuperframeState")
+    .AddTraceSource ("MacOutSuperframeStatus",
+                     "The period status of the outgoing superframe",
+                     MakeTraceSourceAccessor (&LrWpanMac::m_outSuperframeStatus),
+                     "ns3::TracedValueCallback::SuperframeState")
     .AddTraceSource ("MacState",
                      "The state of LrWpan Mac",
                      MakeTraceSourceAccessor (&LrWpanMac::m_macStateLogger),
@@ -133,10 +149,15 @@ LrWpanMac::LrWpanMac ()
 
   // First set the state to a known value, call ChangeMacState to fire trace source.
   m_lrWpanMacState = MAC_IDLE;
+
   ChangeMacState (MAC_IDLE);
 
+  m_incSuperframeStatus = INACTIVE;
+  m_outSuperframeStatus = INACTIVE;
+
   m_macRxOnWhenIdle = true;
-  m_macPanId = 0;
+  m_macPanId = 0xffff;
+  m_deviceCapability = DeviceType::FFD;
   m_associationStatus = ASSOCIATED;
   m_selfExt = Mac64Address::Allocate ();
   m_macPromiscuousMode = false;
@@ -144,17 +165,32 @@ LrWpanMac::LrWpanMac ()
   m_retransmission = 0;
   m_numCsmacaRetry = 0;
   m_txPkt = 0;
+  m_ifs = 0;
+
+  m_macLIFSPeriod = 40;
+  m_macSIFSPeriod = 12;
+
+  m_macBeaconOrder = 15;
+  m_macSuperframeOrder = 15;
+  m_macTransactionPersistanceTime = 500; //0x01F5
+  m_macAutoRequest = true;
+
+  m_incomingBeaconOrder = 15;
+  m_incomingSuperframeOrder = 15;
+  m_beaconTrackingOn = false;
+  m_numLostBeacons = 0;
+
 
   Ptr<UniformRandomVariable> uniformVar = CreateObject<UniformRandomVariable> ();
   uniformVar->SetAttribute ("Min", DoubleValue (0.0));
   uniformVar->SetAttribute ("Max", DoubleValue (255.0));
   m_macDsn = SequenceNumber8 (uniformVar->GetValue ());
+  m_macBsn = SequenceNumber8 (uniformVar->GetValue ());
   m_shortAddress = Mac16Address ("00:00");
 }
 
 LrWpanMac::~LrWpanMac ()
-{
-}
+{}
 
 void
 LrWpanMac::DoInitialize ()
@@ -189,6 +225,8 @@ LrWpanMac::DoDispose ()
   m_phy = 0;
   m_mcpsDataIndicationCallback = MakeNullCallback< void, McpsDataIndicationParams, Ptr<Packet> > ();
   m_mcpsDataConfirmCallback = MakeNullCallback< void, McpsDataConfirmParams > ();
+
+  m_beaconEvent.Cancel ();
 
   Object::DoDispose ();
 }
@@ -288,62 +326,63 @@ LrWpanMac::McpsDataRequest (McpsDataRequestParams params, Ptr<Packet> p)
     }
   switch (params.m_srcAddrMode)
     {
-    case NO_PANID_ADDR:
-      macHdr.SetSrcAddrMode (params.m_srcAddrMode);
-      macHdr.SetNoPanIdComp ();
-      break;
-    case ADDR_MODE_RESERVED:
-      NS_ABORT_MSG ("Can not set source address type to ADDR_MODE_RESERVED. Aborting.");
-      break;
-    case SHORT_ADDR:
-      macHdr.SetSrcAddrMode (params.m_srcAddrMode);
-      macHdr.SetSrcAddrFields (GetPanId (), GetShortAddress ());
-      break;
-    case EXT_ADDR:
-      macHdr.SetSrcAddrMode (params.m_srcAddrMode);
-      macHdr.SetSrcAddrFields (GetPanId (), GetExtendedAddress ());
-      break;
-    default:
-      NS_LOG_ERROR (this << " Can not send packet with incorrect Source Address mode = " << params.m_srcAddrMode);
-      confirmParams.m_status = IEEE_802_15_4_INVALID_ADDRESS;
-      if (!m_mcpsDataConfirmCallback.IsNull ())
-        {
-          m_mcpsDataConfirmCallback (confirmParams);
-        }
-      return;
+      case NO_PANID_ADDR:
+        macHdr.SetSrcAddrMode (params.m_srcAddrMode);
+        macHdr.SetNoPanIdComp ();
+        break;
+      case ADDR_MODE_RESERVED:
+        NS_ABORT_MSG ("Can not set source address type to ADDR_MODE_RESERVED. Aborting.");
+        break;
+      case SHORT_ADDR:
+        macHdr.SetSrcAddrMode (params.m_srcAddrMode);
+        macHdr.SetSrcAddrFields (GetPanId (), GetShortAddress ());
+        break;
+      case EXT_ADDR:
+        macHdr.SetSrcAddrMode (params.m_srcAddrMode);
+        macHdr.SetSrcAddrFields (GetPanId (), GetExtendedAddress ());
+        break;
+      default:
+        NS_LOG_ERROR (this << " Can not send packet with incorrect Source Address mode = " << params.m_srcAddrMode);
+        confirmParams.m_status = IEEE_802_15_4_INVALID_ADDRESS;
+        if (!m_mcpsDataConfirmCallback.IsNull ())
+          {
+            m_mcpsDataConfirmCallback (confirmParams);
+          }
+        return;
     }
   switch (params.m_dstAddrMode)
     {
-    case NO_PANID_ADDR:
-      macHdr.SetDstAddrMode (params.m_dstAddrMode);
-      macHdr.SetNoPanIdComp ();
-      break;
-    case ADDR_MODE_RESERVED:
-      NS_ABORT_MSG ("Can not set destination address type to ADDR_MODE_RESERVED. Aborting.");
-      break;
-    case SHORT_ADDR:
-      macHdr.SetDstAddrMode (params.m_dstAddrMode);
-      macHdr.SetDstAddrFields (params.m_dstPanId, params.m_dstAddr);
-      break;
-    case EXT_ADDR:
-      macHdr.SetDstAddrMode (params.m_dstAddrMode);
-      macHdr.SetDstAddrFields (params.m_dstPanId, params.m_dstExtAddr);
-      break;
-    default:
-      NS_LOG_ERROR (this << " Can not send packet with incorrect Destination Address mode = " << params.m_dstAddrMode);
-      confirmParams.m_status = IEEE_802_15_4_INVALID_ADDRESS;
-      if (!m_mcpsDataConfirmCallback.IsNull ())
-        {
-          m_mcpsDataConfirmCallback (confirmParams);
-        }
-      return;
+      case NO_PANID_ADDR:
+        macHdr.SetDstAddrMode (params.m_dstAddrMode);
+        macHdr.SetNoPanIdComp ();
+        break;
+      case ADDR_MODE_RESERVED:
+        NS_ABORT_MSG ("Can not set destination address type to ADDR_MODE_RESERVED. Aborting.");
+        break;
+      case SHORT_ADDR:
+        macHdr.SetDstAddrMode (params.m_dstAddrMode);
+        macHdr.SetDstAddrFields (params.m_dstPanId, params.m_dstAddr);
+        break;
+      case EXT_ADDR:
+        macHdr.SetDstAddrMode (params.m_dstAddrMode);
+        macHdr.SetDstAddrFields (params.m_dstPanId, params.m_dstExtAddr);
+        break;
+      default:
+        NS_LOG_ERROR (this << " Can not send packet with incorrect Destination Address mode = " << params.m_dstAddrMode);
+        confirmParams.m_status = IEEE_802_15_4_INVALID_ADDRESS;
+        if (!m_mcpsDataConfirmCallback.IsNull ())
+          {
+            m_mcpsDataConfirmCallback (confirmParams);
+          }
+        return;
     }
 
   macHdr.SetSecDisable ();
-  //extract the last 3 bits in TxOptions and map to macHdr
+  //extract the first 3 bits in TxOptions
   int b0 = params.m_txOptions & TX_OPTION_ACK;
   int b1 = params.m_txOptions & TX_OPTION_GTS;
   int b2 = params.m_txOptions & TX_OPTION_INDIRECT;
+
   if (b0 == TX_OPTION_ACK)
     {
       // Set AckReq bit only if the destination is not the broadcast address.
@@ -352,110 +391,550 @@ LrWpanMac::McpsDataRequest (McpsDataRequestParams params, Ptr<Packet> p)
           macHdr.SetAckReq ();
         }
     }
-  else if (b0 == 0)
+  else
     {
       macHdr.SetNoAckReq ();
     }
-  else
-    {
-      confirmParams.m_status = IEEE_802_15_4_INVALID_PARAMETER;
-      NS_LOG_ERROR (this << "Incorrect TxOptions bit 0 not 0/1");
-      if (!m_mcpsDataConfirmCallback.IsNull ())
-        {
-          m_mcpsDataConfirmCallback (confirmParams);
-        }
-      return;
-    }
 
-  //if is Slotted CSMA means its beacon enabled
-  if (m_csmaCa->IsSlottedCsmaCa ())
+
+  if (b1 == TX_OPTION_GTS)
     {
-      if (b1 == TX_OPTION_GTS)
+      //TODO:GTS Transmission
+    }
+  else if (b2 == TX_OPTION_INDIRECT)
+    {
+      // Indirect Tx
+      // A COORDINATOR will save the packet in the pending queue and await for data
+      // requests from its associated devices. The devices are aware of pending data,
+      // from the pending bit information extracted from the received beacon.
+      // A DEVICE must be tracking beacons (MLME-SYNC.request is running) before attempting
+      // request data from the coordinator.
+
+
+      //TODO: Check if the current device is coordinator or PAN coordinator
+      p->AddHeader (macHdr);
+
+      LrWpanMacTrailer macTrailer;
+      // Calculate FCS if the global attribute ChecksumEnable is set.
+      if (Node::ChecksumEnabled ())
         {
-          //TODO:GTS Transmission
+          macTrailer.EnableFcs (true);
+          macTrailer.SetFcs (p);
         }
-      else if (b1 == 0)
+      p->AddTrailer (macTrailer);
+
+      if (m_txQueue.size () == m_txQueue.max_size ())
         {
-          //TODO:CAP Transmission
+          confirmParams.m_status = IEEE_802_15_4_TRANSACTION_OVERFLOW;
+          if (!m_mcpsDataConfirmCallback.IsNull ())
+            {
+              m_mcpsDataConfirmCallback (confirmParams);
+            }
         }
       else
         {
-          NS_LOG_ERROR (this << "Incorrect TxOptions bit 1 not 0/1");
-          confirmParams.m_status = IEEE_802_15_4_INVALID_PARAMETER;
-          if (!m_mcpsDataConfirmCallback.IsNull ())
+          IndTxQueueElement *indTxQElement = new IndTxQueueElement;
+          uint64_t unitPeriodSymbols;
+          Time   expireTime;
+
+          if (m_macBeaconOrder == 15)
             {
-              m_mcpsDataConfirmCallback (confirmParams);
+              unitPeriodSymbols = aBaseSuperframeDuration;
             }
-          return;
+          else
+            {
+              unitPeriodSymbols = ((uint64_t) 1 << m_macBeaconOrder) * aBaseSuperframeDuration;
+            }
+
+          //TODO:  check possible incorrect expire time here.
+
+          expireTime = Simulator::Now () + m_macTransactionPersistanceTime
+            * MicroSeconds (unitPeriodSymbols * 1000 * 1000 / m_phy->GetDataOrSymbolRate (false));
+          indTxQElement->expireTime = expireTime;
+          indTxQElement->txQMsduHandle = params.m_msduHandle;
+          indTxQElement->txQPkt = p;
+
+          m_indTxQueue.push_back (indTxQElement);
+
+          std::cout << "Indirect Transmission Pushed | Elements in the queue: " << m_indTxQueue.size ()
+                    << " " << "Element to expire in: " << expireTime.GetSeconds () << "secs\n";
         }
     }
   else
     {
-      if (b1 != 0)
+      // Direct Tx
+      // From this point the packet will be pushed to a Tx queue and immediately
+      // use a slotted (beacon-enabled) or unslotted (nonbeacon-enabled) version of CSMA/CA
+      // before sending the packet, depending on whether it has previously
+      // received a valid beacon or not.
+
+      p->AddHeader (macHdr);
+
+      LrWpanMacTrailer macTrailer;
+      // Calculate FCS if the global attribute ChecksumEnable is set.
+      if (Node::ChecksumEnabled ())
         {
-          NS_LOG_ERROR (this << "for non-beacon-enables PAN, bit 1 should always be set to 0");
-          confirmParams.m_status = IEEE_802_15_4_INVALID_PARAMETER;
-          if (!m_mcpsDataConfirmCallback.IsNull ())
-            {
-              m_mcpsDataConfirmCallback (confirmParams);
-            }
-          return;
+          macTrailer.EnableFcs (true);
+          macTrailer.SetFcs (p);
         }
+      p->AddTrailer (macTrailer);
+
+      m_macTxEnqueueTrace (p);
+
+      TxQueueElement *txQElement = new TxQueueElement;
+      txQElement->txQMsduHandle = params.m_msduHandle;
+      txQElement->txQPkt = p;
+      m_txQueue.push_back (txQElement);
+      CheckQueue ();
     }
 
-  if (b2 == TX_OPTION_INDIRECT)
+}
+
+
+void
+LrWpanMac::MlmeStartRequest (MlmeStartRequestParams params)
+{
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT (m_deviceCapability == DeviceType::FFD);
+
+  MlmeStartConfirmParams confirmParams;
+
+
+  if (GetShortAddress () == Mac16Address ("ff:ff"))
     {
-      //TODO :indirect tx
-    }
-  else if (b2 == 0)
-    {
-      //TODO :direct tx
-    }
-  else
-    {
-      NS_LOG_ERROR (this << "Incorrect TxOptions bit 2 not 0/1");
-      confirmParams.m_status = IEEE_802_15_4_INVALID_PARAMETER;
-      if (!m_mcpsDataConfirmCallback.IsNull ())
+      NS_LOG_ERROR (this << " Invalid MAC short address" );
+      confirmParams.m_status = MLMESTART_NO_SHORT_ADDRESS;
+      if (!m_mlmeStartConfirmCallback.IsNull ())
         {
-          m_mcpsDataConfirmCallback (confirmParams);
+          m_mlmeStartConfirmCallback (confirmParams);
         }
       return;
     }
 
-  p->AddHeader (macHdr);
 
+  if ( (params.m_logCh > 26)
+       || (params.m_bcnOrd > 15)
+       || (params.m_sfrmOrd > params.m_bcnOrd))
+    {
+      NS_LOG_ERROR (this << " One or more parameters are invalid" );
+      confirmParams.m_status = MLMESTART_INVALID_PARAMETER;
+      if (!m_mlmeStartConfirmCallback.IsNull ())
+        {
+          m_mlmeStartConfirmCallback (confirmParams);
+        }
+      return;
+    }
+
+
+  if (params.m_coorRealgn)  //Coordinator Realignment
+    {
+      // TODO:: Send realignment request command frame in CSMA/CA
+      return;
+    }
+  else
+    {
+      if (params.m_panCoor)
+        {
+          m_panCoor = true;
+          m_macPanId = params.m_PanId;
+
+          // Setting Channel and Page in the LrWpanPhy
+          LrWpanPhyPibAttributes pibAttr;
+          pibAttr.phyCurrentChannel = params.m_logCh;
+          pibAttr.phyCurrentPage = params.m_logChPage;
+          m_phy->PlmeSetAttributeRequest (LrWpanPibAttributeIdentifier::phyCurrentChannel,&pibAttr);
+          m_phy->PlmeSetAttributeRequest (LrWpanPibAttributeIdentifier::phyCurrentPage,&pibAttr);
+        }
+
+      NS_ASSERT (params.m_PanId != 0xffff);
+
+
+      m_macBeaconOrder = params.m_bcnOrd;
+      if (m_macBeaconOrder == 15)
+        {
+          //Non-beacon enabled PAN
+          m_macSuperframeOrder = 15;
+          m_beaconInterval = 0;
+          m_csmaCa->SetUnSlottedCsmaCa ();
+
+          confirmParams.m_status = MLMESTART_SUCCESS;
+          if (!m_mlmeStartConfirmCallback.IsNull ())
+            {
+              m_mlmeStartConfirmCallback (confirmParams);
+            }
+        }
+      else
+        {
+          m_macSuperframeOrder = params.m_sfrmOrd;
+          m_csmaCa->SetBatteryLifeExtension (params.m_battLifeExt);
+
+          m_csmaCa->SetSlottedCsmaCa ();
+
+          //TODO: Calculate the real Final CAP slot (requires GTS implementation)
+          // FinalCapSlot = Superframe duration slots - CFP slots.
+          // In the current implementation the value of the final cap slot is equal to
+          // the total number of possible slots in the superframe (15).
+          m_fnlCapSlot = 15;
+
+          m_beaconInterval = ((uint32_t) 1 << m_macBeaconOrder) * aBaseSuperframeDuration;
+          m_superframeDuration = ((uint32_t) 1 << m_macSuperframeOrder) * aBaseSuperframeDuration;
+
+          //TODO: change the beacon sending according to the startTime parameter (if not PAN coordinator)
+
+          m_beaconEvent = Simulator::ScheduleNow (&LrWpanMac::SendOneBeacon, this);
+        }
+    }
+}
+
+
+void
+LrWpanMac::MlmeSyncRequest (MlmeSyncRequestParams params)
+{
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT (params.m_logCh <= 26 && m_macPanId != 0xffff);
+
+  uint64_t symbolRate = (uint64_t) m_phy->GetDataOrSymbolRate (false); //symbols per second
+  //change phy current logical channel
+  LrWpanPhyPibAttributes pibAttr;
+  pibAttr.phyCurrentChannel = params.m_logCh;
+  m_phy->PlmeSetAttributeRequest (LrWpanPibAttributeIdentifier::phyCurrentChannel,&pibAttr);
+
+  //Enable Phy receiver
+  m_phy->PlmeSetTRXStateRequest (IEEE_802_15_4_PHY_RX_ON);
+
+  uint64_t searchSymbols;
+  Time searchBeaconTime;
+
+  if (m_trackingEvent.IsRunning ())
+    {
+      m_trackingEvent.Cancel ();
+    }
+
+  if (params.m_trackBcn)
+    {
+      m_numLostBeacons = 0;
+      //search for a beacon for a time = incomingSuperframe symbols + 960 symbols
+      searchSymbols = ((uint64_t) 1 << m_incomingBeaconOrder) + 1 * aBaseSuperframeDuration;
+      searchBeaconTime = Seconds ((double) searchSymbols / symbolRate);
+      m_beaconTrackingOn = true;
+      m_trackingEvent = Simulator::Schedule (searchBeaconTime, &LrWpanMac::BeaconSearchTimeout, this);
+    }
+  else
+    {
+      m_beaconTrackingOn = false;
+    }
+
+}
+
+
+void
+LrWpanMac::MlmePollRequest (MlmePollRequestParams params)
+{
+  NS_LOG_FUNCTION (this);
+
+  LrWpanMacHeader macHdr (LrWpanMacHeader::LRWPAN_MAC_COMMAND, m_macBsn.GetValue ());
+  m_macBsn++;
+
+  CommandPayloadHeader macPayload (CommandPayloadHeader::DATA_REQ);
+
+  Ptr<Packet> beaconPacket = Create <Packet> ();
+}
+
+
+void
+LrWpanMac::SendOneBeacon ()
+{
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT (m_lrWpanMacState == MAC_IDLE);
+
+  LrWpanMacHeader macHdr (LrWpanMacHeader::LRWPAN_MAC_BEACON, m_macBsn.GetValue ());
+  m_macBsn++;
+  BeaconPayloadHeader macPayload;
+  Ptr<Packet> beaconPacket = Create <Packet> ();
   LrWpanMacTrailer macTrailer;
+
+  macHdr.SetDstAddrMode (LrWpanMacHeader::SHORTADDR);
+  macHdr.SetDstAddrFields (GetPanId (),Mac16Address ("ff:ff"));
+
+  //see IEEE 802.15.4-2011 Section 5.1.2.4
+  if (GetShortAddress () == Mac16Address ("ff:fe"))
+    {
+      macHdr.SetSrcAddrMode (LrWpanMacHeader::EXTADDR);
+      macHdr.SetSrcAddrFields (GetPanId (),GetExtendedAddress ());
+    }
+  else
+    {
+      macHdr.SetSrcAddrMode (LrWpanMacHeader::SHORTADDR);
+      macHdr.SetSrcAddrFields (GetPanId (), GetShortAddress ());
+    }
+
+  macHdr.SetSecDisable ();
+  macHdr.SetNoAckReq ();
+
+  macPayload.SetSuperframeSpecField (GetSuperframeField ());
+  macPayload.SetGtsFields (GetGtsFields ());
+  macPayload.SetPndAddrFields (GetPendingAddrFields ());
+
+  beaconPacket->AddHeader (macPayload);
+  beaconPacket->AddHeader (macHdr);
+
   // Calculate FCS if the global attribute ChecksumEnable is set.
   if (Node::ChecksumEnabled ())
     {
       macTrailer.EnableFcs (true);
-      macTrailer.SetFcs (p);
+      macTrailer.SetFcs (beaconPacket);
     }
-  p->AddTrailer (macTrailer);
 
-  m_macTxEnqueueTrace (p);
+  beaconPacket->AddTrailer (macTrailer);
 
-  TxQueueElement *txQElement = new TxQueueElement;
-  txQElement->txQMsduHandle = params.m_msduHandle;
-  txQElement->txQPkt = p;
-  m_txQueue.push_back (txQElement);
+  //Set the Beacon packet to be transmitted
+  m_txPkt = beaconPacket;
+
+  m_outSuperframeStatus = BEACON;
+
+  NS_LOG_DEBUG ("Outgoing superframe Active Portion (Beacon + CAP + CFP): " << m_superframeDuration << " symbols");
+
+  ChangeMacState (MAC_SENDING);
+  m_phy->PlmeSetTRXStateRequest (IEEE_802_15_4_PHY_TX_ON);
+}
+
+
+void
+LrWpanMac::StartCAP (SuperframeType superframeType)
+{
+  uint32_t activeSlot;
+  uint64_t capDuration;
+  Time endCapTime;
+  uint64_t symbolRate;
+
+  symbolRate = (uint64_t) m_phy->GetDataOrSymbolRate (false); //symbols per second
+
+  if (superframeType == OUTGOING)
+    {
+      m_outSuperframeStatus = CAP;
+      activeSlot = m_superframeDuration / 16;
+      capDuration = activeSlot * (m_fnlCapSlot + 1);
+      endCapTime = Seconds ((double) capDuration  / symbolRate);
+      // Obtain the end of the CAP by adjust the time it took to send the beacon
+      endCapTime -= (Simulator::Now () - m_macBeaconTxTime);
+
+      NS_LOG_DEBUG ("Outgoing superframe CAP duration " << (endCapTime.GetSeconds () * symbolRate) << " symbols (" << endCapTime.As (Time::S) << ")");
+      NS_LOG_DEBUG ("Active Slots duration " << activeSlot << " symbols");
+
+      m_capEvent =  Simulator::Schedule (endCapTime,
+                                         &LrWpanMac::StartCFP, this, SuperframeType::OUTGOING);
+
+    }
+  else
+    {
+      m_incSuperframeStatus = CAP;
+      activeSlot = m_incomingSuperframeDuration / 16;
+      capDuration = activeSlot * (m_incomingFnlCapSlot + 1);
+      endCapTime = Seconds ((double) capDuration / symbolRate);
+      // Obtain the end of the CAP by adjust the time it took to receive the beacon
+      endCapTime -= (Simulator::Now () - m_macBeaconRxTime);
+
+      NS_LOG_DEBUG ("Incoming superframe CAP duration " << (endCapTime.GetSeconds () * symbolRate) << " symbols (" << endCapTime.As (Time::S) << ")");
+      NS_LOG_DEBUG ("Active Slots duration " << activeSlot << " symbols");
+
+      m_capEvent =  Simulator::Schedule (endCapTime,
+                                         &LrWpanMac::StartCFP, this, SuperframeType::INCOMING);
+    }
 
   CheckQueue ();
+
 }
+
+
+void
+LrWpanMac::StartCFP (SuperframeType superframeType)
+{
+  uint32_t activeSlot;
+  uint64_t cfpDuration;
+  Time endCfpTime;
+  uint64_t symbolRate;
+
+  symbolRate = (uint64_t) m_phy->GetDataOrSymbolRate (false); //symbols per second
+
+  if (superframeType == INCOMING)
+    {
+      activeSlot = m_incomingSuperframeDuration / 16;
+      cfpDuration = activeSlot * (15 - m_incomingFnlCapSlot);
+      endCfpTime = Seconds ((double) cfpDuration / symbolRate);
+      if (cfpDuration > 0)
+        {
+          m_incSuperframeStatus = CFP;
+        }
+
+      NS_LOG_DEBUG ("Incoming superframe CFP duration " << cfpDuration << " symbols (" << endCfpTime.As (Time::S) << ")");
+
+      m_incCfpEvent =  Simulator::Schedule (endCfpTime,
+                                            &LrWpanMac::StartInactivePeriod, this, SuperframeType::INCOMING);
+    }
+  else
+    {
+      activeSlot = m_superframeDuration / 16;
+      cfpDuration = activeSlot * (15 - m_fnlCapSlot);
+      endCfpTime = Seconds ((double) cfpDuration / symbolRate);
+
+      if (cfpDuration > 0)
+        {
+          m_outSuperframeStatus = CFP;
+        }
+
+      NS_LOG_DEBUG ("Outgoing superframe CFP duration " << cfpDuration << " symbols (" << endCfpTime.As (Time::S) << ")");
+
+      m_cfpEvent =  Simulator::Schedule (endCfpTime,
+                                         &LrWpanMac::StartInactivePeriod, this, SuperframeType::OUTGOING);
+
+    }
+  //TODO: Start transmit or receive  GTS here.
+}
+
+
+void
+LrWpanMac::StartInactivePeriod (SuperframeType superframeType)
+{
+  uint64_t inactiveDuration;
+  Time endInactiveTime;
+  uint64_t symbolRate;
+
+  symbolRate = (uint64_t) m_phy->GetDataOrSymbolRate (false); //symbols per second
+
+  if (superframeType == INCOMING)
+    {
+      inactiveDuration = m_incomingBeaconInterval - m_incomingSuperframeDuration;
+      endInactiveTime = Seconds ((double) inactiveDuration / symbolRate);
+
+      if (inactiveDuration > 0)
+        {
+          m_incSuperframeStatus = INACTIVE;
+        }
+
+      NS_LOG_DEBUG ("Incoming superframe Inactive Portion duration " << inactiveDuration << " symbols (" << endInactiveTime.As (Time::S) << ")");
+      m_beaconEvent = Simulator::Schedule (endInactiveTime, &LrWpanMac::AwaitBeacon, this);
+    }
+  else
+    {
+      inactiveDuration = m_beaconInterval - m_superframeDuration;
+      endInactiveTime = Seconds ((double) inactiveDuration / symbolRate);
+
+      if (inactiveDuration > 0)
+        {
+          m_outSuperframeStatus = INACTIVE;
+        }
+
+      NS_LOG_DEBUG ("Outgoing superframe Inactive Portion duration " << inactiveDuration << " symbols (" << endInactiveTime.As (Time::S) << ")");
+      m_beaconEvent =  Simulator::Schedule (endInactiveTime, &LrWpanMac::SendOneBeacon, this);
+    }
+}
+
+void
+LrWpanMac::AwaitBeacon (void)
+{
+  m_incSuperframeStatus = BEACON;
+
+  //TODO: If the device waits more than the expected time to receive the beacon (wait = 46 symbols for default beacon size)
+  //      it should continue with the start of the incoming CAP even if it did not receive the beacon.
+  //      At the moment, the start of the incoming CAP is only triggered if the beacon is received.
+  //      See MLME-SyncLoss for details.
+
+
+}
+
+void
+LrWpanMac::BeaconSearchTimeout (void)
+{
+  uint64_t symbolRate = (uint64_t) m_phy->GetDataOrSymbolRate (false); //symbols per second
+
+  if (m_numLostBeacons > aMaxLostBeacons)
+    {
+      MlmeSyncLossIndicationParams syncLossParams;
+      //syncLossParams.m_logCh =
+      syncLossParams.m_lossReason = MLMESYNCLOSS_BEACON_LOST;
+      syncLossParams.m_panId = m_macPanId;
+      m_mlmeSyncLossIndicationCallback (syncLossParams);
+
+      m_beaconTrackingOn = false;
+      m_numLostBeacons = 0;
+    }
+  else
+    {
+      m_numLostBeacons++;
+
+      //Search for one more beacon
+      uint64_t searchSymbols;
+      Time searchBeaconTime;
+      searchSymbols = ((uint64_t) 1 << m_incomingBeaconOrder) + 1 * aBaseSuperframeDuration;
+      searchBeaconTime = Seconds ((double) searchSymbols / symbolRate);
+      m_trackingEvent = Simulator::Schedule (searchBeaconTime, &LrWpanMac::BeaconSearchTimeout, this);
+
+    }
+}
+
 
 void
 LrWpanMac::CheckQueue ()
 {
   NS_LOG_FUNCTION (this);
-
-  // Pull a packet from the queue and start sending, if we are not already sending.
-  if (m_lrWpanMacState == MAC_IDLE && !m_txQueue.empty () && m_txPkt == 0 && !m_setMacState.IsRunning ())
+  // Pull a packet from the queue and start sending if we are not already sending.
+  if (m_lrWpanMacState == MAC_IDLE && !m_txQueue.empty () && !m_setMacState.IsRunning ())
     {
-      TxQueueElement *txQElement = m_txQueue.front ();
-      m_txPkt = txQElement->txQPkt;
-      m_setMacState = Simulator::ScheduleNow (&LrWpanMac::SetLrWpanMacState, this, MAC_CSMA);
+      //TODO: this should check if the node is a coordinator and using the outcoming superframe not just the PAN coordinator
+      if (m_csmaCa->IsUnSlottedCsmaCa () || (m_outSuperframeStatus == CAP && m_panCoor) || m_incSuperframeStatus == CAP)
+        {
+          TxQueueElement *txQElement = m_txQueue.front ();
+          m_txPkt = txQElement->txQPkt;
+          m_setMacState = Simulator::ScheduleNow (&LrWpanMac::SetLrWpanMacState, this, MAC_CSMA);
+        }
     }
 }
+
+
+SuperframeField
+LrWpanMac::GetSuperframeField ()
+{
+  SuperframeField sfrmSpec;
+
+  sfrmSpec.SetBeaconOrder (m_macBeaconOrder);
+  sfrmSpec.SetSuperframeOrder (m_macSuperframeOrder);
+  sfrmSpec.SetFinalCapSlot (m_fnlCapSlot);
+
+  if (m_csmaCa->GetBatteryLifeExtension ())
+    {
+      sfrmSpec.SetBattLifeExt (true);
+    }
+
+  if (m_panCoor)
+    {
+      sfrmSpec.SetPanCoor (true);
+    }
+  //TODO: It is possible to do association using Beacons,
+  //      however, the current implementation only support manual association.
+  //      The association permit should be set here.
+
+  return sfrmSpec;
+}
+
+GtsFields
+LrWpanMac::GetGtsFields ()
+{
+  GtsFields gtsFields;
+
+  // TODO: Logic to populate the GTS Fields from local information here
+
+  return gtsFields;
+}
+
+PendingAddrFields
+LrWpanMac::GetPendingAddrFields ()
+{
+  PendingAddrFields pndAddrFields;
+
+  // TODO: Logic to populate the Pending Address Fields from local information here
+  return pndAddrFields;
+}
+
 
 void
 LrWpanMac::SetCsmaCa (Ptr<LrWpanCsmaCa> csmaCa)
@@ -488,10 +967,33 @@ LrWpanMac::SetMcpsDataConfirmCallback (McpsDataConfirmCallback c)
 }
 
 void
+LrWpanMac::SetMlmeStartConfirmCallback (MlmeStartConfirmCallback c)
+{
+  m_mlmeStartConfirmCallback = c;
+}
+
+void
+LrWpanMac::SetMlmeBeaconNotifyIndicationCallback (MlmeBeaconNotifyIndicationCallback c)
+{
+  m_mlmeBeaconNotifyIndicationCallback = c;
+}
+
+void
+LrWpanMac::SetMlmeSyncLossIndicationCallback (MlmeSyncLossIndicationCallback c)
+{
+  m_mlmeSyncLossIndicationCallback = c;
+}
+
+void
+LrWpanMac::SetMlmePollConfirmCallback (MlmePollConfirmCallback c)
+{
+  m_mlmePollConfirmCallback = c;
+}
+
+void
 LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
 {
   NS_ASSERT (m_lrWpanMacState == MAC_IDLE || m_lrWpanMacState == MAC_ACK_PENDING || m_lrWpanMacState == MAC_CSMA);
-
   NS_LOG_FUNCTION (this << psduLength << p << (uint16_t)lqi);
 
   bool acceptFrame;
@@ -507,7 +1009,7 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
   // if only srcAddr field in Data or Command frame,accept frame if srcPanId=m_macPanId
 
   Ptr<Packet> originalPkt = p->Copy (); // because we will strip headers
-
+  uint64_t symbolRate = (uint64_t) m_phy->GetDataOrSymbolRate (false); //symbols per second
   m_promiscSnifferTrace (originalPkt);
 
   m_macPromiscRxTrace (originalPkt);
@@ -537,36 +1039,45 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
       params.m_srcAddrMode = receivedMacHdr.GetSrcAddrMode ();
       switch (params.m_srcAddrMode)
         {
-        case SHORT_ADDR:
-          params.m_srcAddr = receivedMacHdr.GetShortSrcAddr ();
-          NS_LOG_DEBUG ("Packet from " << params.m_srcAddr);
-          break;
-        case EXT_ADDR:
-          params.m_srcExtAddr = receivedMacHdr.GetExtSrcAddr ();
-          NS_LOG_DEBUG ("Packet from " << params.m_srcExtAddr);
-          break;
-        default:
-          break;
+          case SHORT_ADDR:
+            params.m_srcAddr = receivedMacHdr.GetShortSrcAddr ();
+            break;
+          case EXT_ADDR:
+            params.m_srcExtAddr = receivedMacHdr.GetExtSrcAddr ();
+            break;
+          default:
+            break;
         }
       params.m_dstPanId = receivedMacHdr.GetDstPanId ();
       params.m_dstAddrMode = receivedMacHdr.GetDstAddrMode ();
       switch (params.m_dstAddrMode)
         {
-        case SHORT_ADDR:
-          params.m_dstAddr = receivedMacHdr.GetShortDstAddr ();
-          NS_LOG_DEBUG ("Packet to " << params.m_dstAddr);
-          break;
-        case EXT_ADDR:
-          params.m_dstExtAddr = receivedMacHdr.GetExtDstAddr ();
-          NS_LOG_DEBUG ("Packet to " << params.m_dstExtAddr);
-          break;
-        default:
-          break;
+          case SHORT_ADDR:
+            params.m_dstAddr = receivedMacHdr.GetShortDstAddr ();
+            break;
+          case EXT_ADDR:
+            params.m_dstExtAddr = receivedMacHdr.GetExtDstAddr ();
+            break;
+          default:
+            break;
         }
 
       if (m_macPromiscuousMode)
         {
           //level 2 filtering
+          if (receivedMacHdr.GetDstAddrMode () == SHORT_ADDR)
+            {
+              NS_LOG_DEBUG ("Packet from " << params.m_srcAddr);
+              NS_LOG_DEBUG ("Packet to " << params.m_dstAddr);
+            }
+          else if (receivedMacHdr.GetDstAddrMode () == EXT_ADDR)
+            {
+              NS_LOG_DEBUG ("Packet from " << params.m_srcExtAddr);
+              NS_LOG_DEBUG ("Packet to " << params.m_dstExtAddr);
+            }
+
+          //TODO: Fix here, this should trigger different Indication Callbacks
+          //depending the type of frame received (data,command, beacon)
           if (!m_mcpsDataIndicationCallback.IsNull ())
             {
               NS_LOG_DEBUG ("promiscuous mode, forwarding up");
@@ -574,7 +1085,7 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
             }
           else
             {
-              NS_LOG_ERROR (this << " Data Indication Callback not initialised");
+              NS_LOG_ERROR (this << " Data Indication Callback not initialized");
             }
         }
       else
@@ -595,14 +1106,38 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
             }
 
           if (acceptFrame
-              && (receivedMacHdr.GetDstAddrMode () == 2))
+              && (receivedMacHdr.GetDstAddrMode () == SHORT_ADDR))
             {
-              acceptFrame = receivedMacHdr.GetShortDstAddr () == m_shortAddress
-                || receivedMacHdr.GetShortDstAddr () == Mac16Address ("ff:ff");        // check for broadcast addrs
+              if (receivedMacHdr.GetShortDstAddr () == m_shortAddress)
+                {
+                  // unicast, for me
+                  acceptFrame = true;
+                }
+              else if (receivedMacHdr.GetShortDstAddr () == Mac16Address ("ff:ff"))
+                {
+                  // broadcast
+                  acceptFrame = true;
+                }
+              else
+                {
+                  // multicast
+                  // See RFC 4944, Section 12
+                  // Multicast address 16 bits: 100X XXXX XXXX XXXX
+                  uint8_t buf[2];
+                  receivedMacHdr.GetShortDstAddr ().CopyTo (buf);
+                  if (buf[0] & 0x80)
+                    {
+                      acceptFrame = true;
+                    }
+                  else
+                    {
+                      acceptFrame = false;
+                    }
+                }
             }
 
           if (acceptFrame
-              && (receivedMacHdr.GetDstAddrMode () == 3))
+              && (receivedMacHdr.GetDstAddrMode () == EXT_ADDR))
             {
               acceptFrame = (receivedMacHdr.GetExtDstAddr () == m_selfExt);
             }
@@ -626,7 +1161,7 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
                   || (receivedMacHdr.GetType () == LrWpanMacHeader::LRWPAN_MAC_COMMAND))
               && (receivedMacHdr.GetSrcAddrMode () > 1))
             {
-              acceptFrame = receivedMacHdr.GetSrcPanId () == m_macPanId; // \todo need to check if PAN coord
+              acceptFrame = receivedMacHdr.GetSrcPanId () == m_macPanId; // TODO: need to check if PAN coord
             }
 
           if (acceptFrame)
@@ -660,18 +1195,145 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
                   // Cancel any pending MAC state change, ACKs have higher priority.
                   m_setMacState.Cancel ();
                   ChangeMacState (MAC_IDLE);
+
                   m_setMacState = Simulator::ScheduleNow (&LrWpanMac::SendAck, this, receivedMacHdr.GetSeqNum ());
                 }
 
-              if (receivedMacHdr.IsData () && !m_mcpsDataIndicationCallback.IsNull ())
+
+              if (receivedMacHdr.GetDstAddrMode () == SHORT_ADDR)
+                {
+                  NS_LOG_DEBUG ("Packet from " << params.m_srcAddr);
+                  NS_LOG_DEBUG ("Packet to " << params.m_dstAddr);
+                }
+              else if (receivedMacHdr.GetDstAddrMode () == EXT_ADDR)
+                {
+                  NS_LOG_DEBUG ("Packet from " << params.m_srcExtAddr);
+                  NS_LOG_DEBUG ("Packet to " << params.m_dstExtAddr);
+                }
+
+
+              if (receivedMacHdr.IsBeacon ())
+                {
+
+
+                  // The received beacon size in symbols
+                  // Beacon = 5 bytes Sync Header (SHR) +  1 byte PHY header (PHR) + PSDU (default 17 bytes)
+                  m_rxBeaconSymbols = m_phy->GetPhySHRDuration () + 1 * m_phy->GetPhySymbolsPerOctet () +
+                    (originalPkt->GetSize () * m_phy->GetPhySymbolsPerOctet ());
+
+                  // The start of Rx beacon time and start of the Incoming superframe Active Period
+                  m_macBeaconRxTime = Simulator::Now () - Seconds (double(m_rxBeaconSymbols) / symbolRate);
+
+                  NS_LOG_DEBUG ("Beacon Received; forwarding up (m_macBeaconRxTime: " << m_macBeaconRxTime.As (Time::S) << ")");
+
+
+                  //TODO: Handle mlme-scan.request here
+
+                  // Device not associated.
+                  if (m_macPanId == 0xffff)
+                    {
+                      //TODO: mlme-associate.request here.
+                      NS_LOG_ERROR (this << "The current device is not associated to any coordinator");
+                      return;
+                    }
+
+
+                  if (m_macPanId != receivedMacHdr.GetDstPanId ())
+                    {
+                      return;
+                    }
+
+                  BeaconPayloadHeader receivedMacPayload;
+                  p->RemoveHeader (receivedMacPayload);
+
+                  SuperframeField incomingSuperframe;
+                  incomingSuperframe = receivedMacPayload.GetSuperframeSpecField ();
+
+                  m_incomingBeaconOrder = incomingSuperframe.GetBeaconOrder ();
+                  m_incomingSuperframeOrder = incomingSuperframe.GetFrameOrder ();
+                  m_incomingFnlCapSlot = incomingSuperframe.GetFinalCapSlot ();
+
+                  m_incomingBeaconInterval = ((uint32_t) 1 << m_incomingBeaconOrder) * aBaseSuperframeDuration;
+                  m_incomingSuperframeDuration = aBaseSuperframeDuration * ((uint32_t) 1 << m_incomingSuperframeOrder);
+
+                  if (incomingSuperframe.IsBattLifeExt ())
+                    {
+                      m_csmaCa->SetBatteryLifeExtension (true);
+                    }
+                  else
+                    {
+                      m_csmaCa->SetBatteryLifeExtension (false);
+                    }
+
+                  if (m_incomingBeaconOrder  < 15  && !m_csmaCa->IsSlottedCsmaCa ())
+                    {
+                      m_csmaCa->SetSlottedCsmaCa ();
+                    }
+
+                  //TODO: get Incoming frame GTS Fields here
+
+                  NS_LOG_DEBUG ("Incoming superframe Active Portion (Beacon + CAP + CFP): " << m_incomingSuperframeDuration << " symbols");
+
+                  //Begin CAP on the current device using info from the Incoming superframe
+                  m_incCapEvent =  Simulator::ScheduleNow (&LrWpanMac::StartCAP, this,SuperframeType::INCOMING);
+
+
+                  // Send a Beacon notification only if we are not
+                  // automatically sending data command requests or the beacon contains
+                  // a beacon payload in its MAC payload.
+                  // see IEEE 802.15.4-2011 Section 6.2.4.1
+                  if ((m_macAutoRequest == false) || p->GetSize () > 0)
+                    {
+                      //TODO: Add the rest of the MlmeBeaconNotifyIndication params
+                      if (!m_mlmeBeaconNotifyIndicationCallback.IsNull ())
+                        {
+                          MlmeBeaconNotifyIndicationParams beaconParams;
+                          beaconParams.m_bsn = receivedMacHdr.GetSeqNum ();
+                          m_mlmeBeaconNotifyIndicationCallback (beaconParams,originalPkt);
+                        }
+                    }
+
+                  if (m_macAutoRequest)
+                    {
+                      // check if MLME-SYNC.request was previously issued and running
+                      //  Sync. is necessary to handle pending messages (indirect transmissions)
+                      if (m_trackingEvent.IsRunning ())
+                        {
+                          m_trackingEvent.Cancel ();
+                          m_numLostBeacons = 0;
+
+                          if (m_beaconTrackingOn)
+                            {
+                              //if tracking option is on keep tracking the next beacon
+                              uint64_t searchSymbols;
+                              Time searchBeaconTime;
+
+                              searchSymbols = ((uint64_t) 1 << m_incomingBeaconOrder) + 1 * aBaseSuperframeDuration;
+                              searchBeaconTime = Seconds ((double) searchSymbols / symbolRate);
+                              m_trackingEvent = Simulator::Schedule (searchBeaconTime, &LrWpanMac::BeaconSearchTimeout, this);
+                            }
+
+                          PendingAddrFields pndAddrFields;
+                          pndAddrFields = receivedMacPayload.GetPndAddrFields ();
+
+                          //TODO: Ignore pending request if the address is in the GTS list.
+                          //      If the address is not in the GTS list, then  check if the address
+                          //      is in the short address pending list or in the extended address
+                          //      pending list.
+
+                        }
+                    }
+                }
+              else if (receivedMacHdr.IsData () && !m_mcpsDataIndicationCallback.IsNull ())
                 {
                   // If it is a data frame, push it up the stack.
-                  NS_LOG_DEBUG ("PdDataIndication():  Packet is for me; forwarding up");
+                  NS_LOG_DEBUG ("Data Packet is for me; forwarding up");
                   m_mcpsDataIndicationCallback (params, p);
                 }
               else if (receivedMacHdr.IsAcknowledgment () && m_txPkt && m_lrWpanMacState == MAC_ACK_PENDING)
                 {
                   LrWpanMacHeader macHdr;
+                  Time ifsWaitTime = Seconds ((double) GetIfsSize () / symbolRate);
                   m_txPkt->PeekHeader (macHdr);
                   if (receivedMacHdr.GetSeqNum () == macHdr.GetSeqNum ())
                     {
@@ -688,8 +1350,9 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
                           m_mcpsDataConfirmCallback (confirmParams);
                         }
                       RemoveFirstTxQElement ();
-                      m_setMacState.Cancel ();
-                      m_setMacState = Simulator::ScheduleNow (&LrWpanMac::SetLrWpanMacState, this, MAC_IDLE);
+
+                      // Ack was succesfully received, wait for the Interframe Space (IFS) and then proceed
+                      m_ifsEvent = Simulator::Schedule (ifsWaitTime, &LrWpanMac::IfsWaitTimeout, this);
                     }
                   else
                     {
@@ -715,6 +1378,8 @@ LrWpanMac::PdDataIndication (uint32_t psduLength, Ptr<Packet> p, uint8_t lqi)
         }
     }
 }
+
+
 
 void
 LrWpanMac::SendAck (uint8_t seqno)
@@ -743,6 +1408,7 @@ LrWpanMac::SendAck (uint8_t seqno)
   // Switch transceiver to TX mode. Proceed sending the Ack on confirm.
   ChangeMacState (MAC_SENDING);
   m_phy->PlmeSetTRXStateRequest (IEEE_802_15_4_PHY_TX_ON);
+
 }
 
 void
@@ -787,6 +1453,15 @@ LrWpanMac::AckWaitTimeout (void)
     }
 }
 
+void
+LrWpanMac::IfsWaitTimeout (void)
+{
+  NS_LOG_DEBUG ("IFS Completed");
+  m_setMacState.Cancel ();
+  m_setMacState = Simulator::ScheduleNow (&LrWpanMac::SetLrWpanMacState, this, MAC_IDLE);
+}
+
+
 bool
 LrWpanMac::PrepareRetransmission (void)
 {
@@ -821,22 +1496,49 @@ void
 LrWpanMac::PdDataConfirm (LrWpanPhyEnumeration status)
 {
   NS_ASSERT (m_lrWpanMacState == MAC_SENDING);
-
   NS_LOG_FUNCTION (this << status << m_txQueue.size ());
 
   LrWpanMacHeader macHdr;
+  Time ifsWaitTime;
+  uint64_t symbolRate;
+
+  symbolRate = (uint64_t) m_phy->GetDataOrSymbolRate (false); //symbols per second
+
   m_txPkt->PeekHeader (macHdr);
+
   if (status == IEEE_802_15_4_PHY_SUCCESS)
     {
       if (!macHdr.IsAcknowledgment ())
         {
-          // We have just send a regular data packet, check if we have to wait
-          // for an ACK.
-          if (macHdr.IsAckReq ())
+          if (macHdr.IsBeacon ())
+            {
+              ifsWaitTime = Seconds ((double) GetIfsSize () / symbolRate);
+
+              // The Tx Beacon in symbols
+              // Beacon = 5 bytes Sync Header (SHR) +  1 byte PHY header (PHR) + PSDU (default 17 bytes)
+              uint64_t beaconSymbols = m_phy->GetPhySHRDuration () + 1 * m_phy->GetPhySymbolsPerOctet () +
+                (m_txPkt->GetSize () * m_phy->GetPhySymbolsPerOctet ());
+
+              // The beacon Tx time and start of the Outgoing superframe Active Period
+              m_macBeaconTxTime = Simulator::Now () - Seconds (double(beaconSymbols) / symbolRate);
+
+
+              m_txPkt = 0;
+              m_capEvent = Simulator::ScheduleNow (&LrWpanMac::StartCAP, this, SuperframeType::OUTGOING);
+              NS_LOG_DEBUG ("Beacon Sent (m_macBeaconTxTime: " << m_macBeaconTxTime.As (Time::S) << ")");
+
+              MlmeStartConfirmParams  mlmeConfirmParams;
+              mlmeConfirmParams.m_status = MLMESTART_SUCCESS;
+              if (!m_mlmeStartConfirmCallback.IsNull ())
+                {
+                  m_mlmeStartConfirmCallback (mlmeConfirmParams);
+                }
+            }
+          else if (macHdr.IsAckReq ()) // We have sent a regular data packet, check if we have to wait  for an ACK.
             {
               // wait for the ack or the next retransmission timeout
               // start retransmission timer
-              Time waitTime = MicroSeconds (GetMacAckWaitDuration () * 1000 * 1000 / m_phy->GetDataOrSymbolRate (false));
+              Time waitTime = Seconds ((double) GetMacAckWaitDuration () / symbolRate);
               NS_ASSERT (m_ackWaitTimeout.IsExpired ());
               m_ackWaitTimeout = Simulator::Schedule (waitTime, &LrWpanMac::AckWaitTimeout, this);
               m_setMacState.Cancel ();
@@ -856,6 +1558,7 @@ LrWpanMac::PdDataConfirm (LrWpanPhyEnumeration status)
                   confirmParams.m_status = IEEE_802_15_4_SUCCESS;
                   m_mcpsDataConfirmCallback (confirmParams);
                 }
+              ifsWaitTime = Seconds ((double) GetIfsSize () / symbolRate);
               RemoveFirstTxQElement ();
             }
         }
@@ -894,8 +1597,17 @@ LrWpanMac::PdDataConfirm (LrWpanPhyEnumeration status)
       NS_FATAL_ERROR ("Transmission attempt failed with PHY status " << status);
     }
 
-  m_setMacState.Cancel ();
-  m_setMacState = Simulator::ScheduleNow (&LrWpanMac::SetLrWpanMacState, this, MAC_IDLE);
+
+  if (!ifsWaitTime.IsZero ())
+    {
+      m_ifsEvent = Simulator::Schedule (ifsWaitTime, &LrWpanMac::IfsWaitTimeout, this);
+    }
+  else
+    {
+      m_setMacState.Cancel ();
+      m_setMacState = Simulator::ScheduleNow (&LrWpanMac::SetLrWpanMacState, this, MAC_IDLE);
+    }
+
 }
 
 void
@@ -1021,8 +1733,13 @@ LrWpanMac::SetLrWpanMacState (LrWpanMacState macState)
         }
       // remove the copy of the packet that was just sent
       RemoveFirstTxQElement ();
-
       ChangeMacState (MAC_IDLE);
+    }
+  else if (m_lrWpanMacState == MAC_CSMA && macState == MAC_CSMA_DEFERRED)
+    {
+      ChangeMacState (MAC_IDLE);
+      m_txPkt = 0;
+      NS_LOG_DEBUG ("****** PACKET DEFERRED to the next superframe *****");
     }
 }
 
@@ -1074,9 +1791,84 @@ LrWpanMac::GetMacMaxFrameRetries (void) const
 }
 
 void
+LrWpanMac::PrintTransmitQueueSize (void)
+{
+  NS_LOG_DEBUG("Transit Queue Size: "<<m_txQueue.size());
+}
+
+void
 LrWpanMac::SetMacMaxFrameRetries (uint8_t retries)
 {
   m_macMaxFrameRetries = retries;
 }
 
+bool
+LrWpanMac::isCoordDest (void)
+{
+  NS_ASSERT (m_txPkt);
+  LrWpanMacHeader macHdr;
+  m_txPkt->PeekHeader (macHdr);
+
+  if (m_macCoordShortAddress == macHdr.GetShortDstAddr ()
+      || m_macCoordExtendedAddress == macHdr.GetExtDstAddr ())
+    {
+      return true;
+    }
+  else
+    {
+      std::cout << "ERROR: Packet not for the coordinator!\n";
+      return false;
+
+    }
+
+}
+
+uint32_t
+LrWpanMac::GetIfsSize ()
+{
+  NS_ASSERT (m_txPkt);
+
+  if (m_txPkt->GetSize () <= aMaxSIFSFrameSize)
+    {
+      return m_macSIFSPeriod;
+    }
+  else
+    {
+      return m_macLIFSPeriod;
+    }
+}
+
+void
+LrWpanMac::SetAssociatedCoor (Mac16Address mac)
+{
+  m_macCoordShortAddress = mac;
+}
+
+void
+LrWpanMac::SetAssociatedCoor (Mac64Address mac)
+{
+  m_macCoordExtendedAddress = mac;
+}
+
+
+uint64_t
+LrWpanMac::GetTxPacketSymbols (void)
+{
+  NS_ASSERT (m_txPkt);
+  // Sync Header (SHR) +  8 bits PHY header (PHR) + PSDU
+  return (m_phy->GetPhySHRDuration () + 1 * m_phy->GetPhySymbolsPerOctet () +
+          (m_txPkt->GetSize () * m_phy->GetPhySymbolsPerOctet ()));
+}
+
+bool
+LrWpanMac::isTxAckReq (void)
+{
+  NS_ASSERT (m_txPkt);
+  LrWpanMacHeader macHdr;
+  m_txPkt->PeekHeader (macHdr);
+
+  return macHdr.IsAckReq ();
+}
+
 } // namespace ns3
+

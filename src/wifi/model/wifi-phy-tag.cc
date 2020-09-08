@@ -40,52 +40,52 @@ WifiPhyTag::GetInstanceTypeId (void) const
 uint32_t
 WifiPhyTag::GetSerializedSize (void) const
 {
-  return (sizeof (WifiTxVector) + 2 + 1);
+  return 3;
 }
 
 void
 WifiPhyTag::Serialize (TagBuffer i) const
 {
-  i.Write ((uint8_t *)&m_wifiTxVector, sizeof (WifiTxVector));
-  i.WriteU16 (static_cast<uint16_t> (m_mpduType));
+  i.WriteU8 (static_cast<uint8_t> (m_preamble));
+  i.WriteU8 (static_cast<uint8_t> (m_modulation));
   i.WriteU8 (m_frameComplete);
 }
 
 void
 WifiPhyTag::Deserialize (TagBuffer i)
 {
-  i.Read ((uint8_t *)&m_wifiTxVector, sizeof (WifiTxVector));
-  m_mpduType = static_cast<MpduType> (i.ReadU16 ());
+  m_preamble = static_cast<WifiPreamble> (i.ReadU8 ());
+  m_modulation = static_cast<WifiModulationClass> (i.ReadU8 ());
   m_frameComplete = i.ReadU8 ();
 }
 
 void
 WifiPhyTag::Print (std::ostream &os) const
 {
-  os << m_wifiTxVector << " " << m_mpduType << " " << m_frameComplete;
+  os << +m_preamble << " " << +m_modulation << " " << m_frameComplete;
 }
 
 WifiPhyTag::WifiPhyTag ()
 {
 }
 
-WifiPhyTag::WifiPhyTag (WifiTxVector txVector, MpduType mpdutype, uint8_t frameComplete)
-  : m_wifiTxVector (txVector),
-    m_mpduType (mpdutype),
+WifiPhyTag::WifiPhyTag (WifiPreamble preamble, WifiModulationClass modulation, uint8_t frameComplete)
+  : m_preamble (preamble),
+    m_modulation (modulation),
     m_frameComplete (frameComplete)
 {
 }
 
-WifiTxVector
-WifiPhyTag::GetWifiTxVector (void) const
+WifiPreamble
+WifiPhyTag::GetPreambleType (void) const
 {
-  return m_wifiTxVector;
+  return m_preamble;
 }
 
-MpduType
-WifiPhyTag::GetMpduType (void) const
+WifiModulationClass
+WifiPhyTag::GetModulation (void) const
 {
-  return m_mpduType;
+  return m_modulation;
 }
 
 uint8_t

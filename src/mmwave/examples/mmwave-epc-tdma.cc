@@ -222,7 +222,7 @@ main (int argc, char *argv[])
       //ulClient.SetAttribute ("Remote", AddressValue (InetSocketAddress (remoteHostAddr, ulPort)));
 
       clientApps.Add (dlClient.Install (remoteHost));
-//		clientApps.Add (ulClient.Install (ueNodes.Get(u)));
+		  clientApps.Add (ulClient.Install (ueNodes.Get(u)));
 //		if (u+1 < ueNodes.GetN ())
 //		{
 //			clientApps.Add (client.Install (ueNodes.Get(u+1)));
@@ -232,8 +232,8 @@ main (int argc, char *argv[])
 //			clientApps.Add (client.Install (ueNodes.Get(0)));
 //		}
     }
-  serverApps.Start (Seconds (0.003));
-  clientApps.Start (Seconds (0.003));
+  serverApps.Start (Seconds (0.1));
+  clientApps.Start (Seconds (0.1));
   mmwaveHelper->EnableTraces ();
   // Uncomment to enable PCAP tracing
   //p2ph.EnablePcapAll("mmwave-epc-simple");

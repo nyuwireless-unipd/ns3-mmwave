@@ -44,7 +44,7 @@ NS_LOG_COMPONENT_DEFINE ("TcpEcnTestSuite");
  *
  * \brief checks if ECT, CWR and ECE bits are set correctly in different scenarios
  *
- * This test suite will run four combinations of enabling ECN (sender off and receiver off; sender on and sender off;
+ * This test suite will run four combinations of enabling ECN (sender off and receiver off; sender on and receiver off;
  * sender off and receiver on; sender on and receiver on;) and checks that the TOS byte of eventual packets transmitted
  * or received have ECT, CWR, and ECE set correctly (or not). It also checks if congestion window is being reduced by half
  * only once per every window on receipt of ECE flags
@@ -161,7 +161,7 @@ TcpSocketCongestedRouter::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize
       isRetransmission = true;
     }
 
-  Ptr<Packet> p = m_txBuffer->CopyFromSequence (maxSize, seq);
+  Ptr<Packet> p = m_txBuffer->CopyFromSequence (maxSize, seq)->GetPacketCopy ();
   uint32_t sz = p->GetSize (); // Size of packet
   uint8_t flags = withAck ? TcpHeader::ACK : 0;
   uint32_t remainingData = m_txBuffer->SizeFromSequence (seq + SequenceNumber32 (sz));
@@ -326,7 +326,7 @@ TcpSocketCongestedRouter::SendDataPacket (SequenceNumber32 seq, uint32_t maxSize
   TcpHeader header;
   header.SetFlags (flags);
   header.SetSequenceNumber (seq);
-  header.SetAckNumber (m_rxBuffer->NextRxSequence ());
+  header.SetAckNumber (m_tcb->m_rxBuffer->NextRxSequence ());
   if (m_endPoint)
     {
       header.SetSourcePort (m_endPoint->GetLocalPort ());
@@ -405,11 +405,11 @@ TcpEcnTest::ConfigureProperties ()
   TcpGeneralTest::ConfigureProperties ();
   if (m_testcase == 2 || m_testcase == 4 || m_testcase == 5 || m_testcase == 6)
     {
-      SetEcn (SENDER, TcpSocketBase::ClassicEcn);
+      SetUseEcn (SENDER, TcpSocketState::On);
     }
   if (m_testcase == 3 || m_testcase == 4 ||m_testcase == 5 || m_testcase == 6)
     {
-      SetEcn (RECEIVER, TcpSocketBase::ClassicEcn);
+      SetUseEcn (RECEIVER, TcpSocketState::On);
     }
 }
 

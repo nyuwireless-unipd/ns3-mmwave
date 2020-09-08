@@ -37,9 +37,9 @@ namespace ns3 {
  * Originally implemented by Federico Maguolo for a very early
  * prototype version of ns-3.
  *
- * This RAA does not support HT, VHT nor HE modes and will error
+ * This RAA does not support HT modes and will error
  * exit if the user tries to configure this RAA with a Wi-Fi MAC
- * that has VhtSupported, HtSupported or HeSupported set.
+ * that supports 802.11n or higher.
  */
 class CaraWifiManager : public WifiRemoteStationManager
 {
@@ -63,20 +63,19 @@ private:
   void DoReportDataFailed (WifiRemoteStation *station);
   void DoReportRtsOk (WifiRemoteStation *station,
                       double ctsSnr, WifiMode ctsMode, double rtsSnr);
-  void DoReportDataOk (WifiRemoteStation *station,
-                       double ackSnr, WifiMode ackMode, double dataSnr);
+  void DoReportDataOk (WifiRemoteStation *station, double ackSnr, WifiMode ackMode,
+                       double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss);
   void DoReportFinalRtsFailed (WifiRemoteStation *station);
   void DoReportFinalDataFailed (WifiRemoteStation *station);
   WifiTxVector DoGetDataTxVector (WifiRemoteStation *station);
   WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station);
   bool DoNeedRts (WifiRemoteStation *station,
-                  Ptr<const Packet> packet, bool normally);
-  bool IsLowLatency (void) const;
+                  uint32_t size, bool normally);
 
-  uint32_t m_timerTimeout; ///< timer threshold
+  uint32_t m_timerTimeout;     ///< timer threshold
   uint32_t m_successThreshold; ///< success threshold
   uint32_t m_failureThreshold; ///< failure threshold
-  uint32_t m_probeThreshold; ///< probe threshold
+  uint32_t m_probeThreshold;   ///< probe threshold
 
   TracedValue<uint64_t> m_currentRate; //!< Trace rate changes
 };

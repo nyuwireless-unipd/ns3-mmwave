@@ -30,6 +30,7 @@
  * In addition comment blocks have been converted to Doxygen format.
  * Function arguments for buffer length which were originally
  * "int len" or "int i" have been changed to "std::size_t".
+ * In the _x86 versions the main loop used negative indexes, as shown.
  * Other conversions to std::size_t are marked.
  */
 
@@ -60,8 +61,8 @@ namespace Murmur3Implementation {
  * \defgroup hash_murmur3 Murmur3 Hash Implementation
  */
 /**@{*/
-  
-  
+
+
 // Changes from Murmur3 distribution are marked with `//PDB'
 //
 
@@ -71,7 +72,7 @@ namespace Murmur3Implementation {
 
 // Adapted from http://code.google.com/p/smhasher/
 
-// Begin Murmur3.cpp ----------------------------->
+// Begin Murmur3.cpp -------- *NS_CHECK_STYLE_OFF* ---->
 
 //
 //-----------------------------------------------------------------------------
@@ -126,7 +127,7 @@ inline uint32_t getblock ( const uint32_t * p, std::size_t i )
 {
   return p[i];
 }
-/** \copydoc getblock(const uint32_t*,int) */
+/** \copydoc getblock(const uint32_t*,std::size_t) */
 inline uint64_t getblock ( const uint64_t * p, std::size_t i )
 {
   return p[i];
@@ -210,16 +211,18 @@ void MurmurHash3_x86_32_incr ( const void * key, std::size_t len,
   //----------
   // body
 
-  const uint32_t * blocks = (const uint32_t *)(data + nblocks*4);
+  //PDB: const uint32_t * blocks = (const uint32_t *)(data + nblocks*4);
+  const uint32_t * blocks = (const uint32_t *)(data);
 
-  for(std::size_t i = -nblocks; i; i++)  //PDB: was int i
+  //PDB: for(int i = -nblocks; i; i++)
+  for(std::size_t i = 0; i < nblocks; i++)
   {
     uint32_t k1 = getblock(blocks,i);
 
     k1 *= c1;
     k1 = rotl32(k1,15);
     k1 *= c2;
-    
+
     h1 ^= k1;
     h1 = rotl32(h1,13); 
     h1 = h1*5+0xe6546b64;
@@ -320,9 +323,11 @@ void MurmurHash3_x86_128_incr ( const void * key, const std::size_t len,
   //----------
   // body
 
-  const uint32_t * blocks = (const uint32_t *)(data + nblocks*16);
+  //PDB: const uint32_t * blocks = (const uint32_t *)(data + nblocks*16);
+  const uint32_t * blocks = (const uint32_t *)(data);
 
-  for(std::size_t i = -nblocks; i; i++)  //PDB: was int i
+  //PDB: for(int i = -nblocks; i; i++)
+  for(std::size_t i = 0; i < nblocks; i++)
   {
     uint32_t k1 = getblock(blocks,i*4+0);
     uint32_t k2 = getblock(blocks,i*4+1);
@@ -399,7 +404,7 @@ void MurmurHash3_x86_128_fin ( const std::size_t len,
   uint32_t h2 = seeds[1];
   uint32_t h3 = seeds[2];
   uint32_t h4 = seeds[3];
-  
+
   h1 ^= len; h2 ^= len; h3 ^= len; h4 ^= len;
 
   h1 += h2; h1 += h3; h1 += h4;
@@ -501,11 +506,11 @@ void MurmurHash3_x64_128 ( const void * key, const std::size_t len,
 }
 
 
-// End Murmur3.cpp ----------------------------->
+// End Murmur3.cpp ---------- *NS_CHECK_STYLE_ON* ----->
 
 #undef BIG_CONSTANT
 
-  
+
 //-----------------------------------------------------------------------------
 
 
@@ -525,10 +530,10 @@ Murmur3::GetHash32  (const char * buffer, const std::size_t size)
   using namespace Murmur3Implementation;
 
   MurmurHash3_x86_32_incr (buffer, size,
-                           m_hash32, (void *)& m_hash32);
+                           m_hash32, (void *) &m_hash32);
   m_size32 += static_cast<uint32_t> (size);
   uint32_t hash;
-  MurmurHash3_x86_32_fin  (m_size32, m_hash32, (void *) & hash);
+  MurmurHash3_x86_32_fin  (m_size32, m_hash32, (void *) &hash);
 
   return hash;
 }
@@ -555,7 +560,7 @@ Murmur3::GetHash64  (const char * buffer, const std::size_t size)
   //
   // Using uint32_t here avoids the bug, and continues to works with newer gcc.
   uint32_t hash[4];
-  
+
   MurmurHash3_x86_128_fin (static_cast<int> (m_size64),
                            (uint32_t *)(void *)m_hash64, hash);
   uint64_t result = hash[1];

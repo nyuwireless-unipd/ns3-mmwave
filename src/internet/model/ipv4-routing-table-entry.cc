@@ -96,7 +96,7 @@ bool
 Ipv4RoutingTableEntry::IsHost (void) const
 {
   NS_LOG_FUNCTION (this);
-  if (m_destNetworkMask.IsEqual (Ipv4Mask::GetOnes ()))
+  if (m_destNetworkMask == Ipv4Mask::GetOnes ())
     {
       return true;
     }
@@ -121,7 +121,7 @@ bool
 Ipv4RoutingTableEntry::IsDefault (void) const
 {
   NS_LOG_FUNCTION (this);
-  if (m_dest.IsEqual (Ipv4Address::GetZero ()))
+  if (m_dest == Ipv4Address::GetZero ())
     {
       return true;
     }
@@ -146,7 +146,7 @@ bool
 Ipv4RoutingTableEntry::IsGateway (void) const
 {
   NS_LOG_FUNCTION (this);
-  if (m_gateway.IsEqual (Ipv4Address::GetZero ()))
+  if (m_gateway == Ipv4Address::GetZero ())
     {
       return false;
     }
@@ -173,14 +173,14 @@ Ipv4RoutingTableEntry::CreateHostRouteTo (Ipv4Address dest,
                                           Ipv4Address nextHop,
                                           uint32_t interface)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (dest << nextHop << interface);
   return Ipv4RoutingTableEntry (dest, nextHop, interface);
 }
 Ipv4RoutingTableEntry 
 Ipv4RoutingTableEntry::CreateHostRouteTo (Ipv4Address dest,
                                           uint32_t interface)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (dest << interface);
   return Ipv4RoutingTableEntry (dest, interface);
 }
 Ipv4RoutingTableEntry 
@@ -189,7 +189,7 @@ Ipv4RoutingTableEntry::CreateNetworkRouteTo (Ipv4Address network,
                                              Ipv4Address nextHop,
                                              uint32_t interface)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (network << networkMask << nextHop << interface);
   return Ipv4RoutingTableEntry (network, networkMask, 
                                 nextHop, interface);
 }
@@ -198,7 +198,7 @@ Ipv4RoutingTableEntry::CreateNetworkRouteTo (Ipv4Address network,
                                              Ipv4Mask networkMask,
                                              uint32_t interface)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (network << networkMask << interface);
   return Ipv4RoutingTableEntry (network, networkMask, 
                                 interface);
 }
@@ -206,7 +206,7 @@ Ipv4RoutingTableEntry
 Ipv4RoutingTableEntry::CreateDefaultRoute (Ipv4Address nextHop, 
                                            uint32_t interface)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (nextHop << interface);
   return Ipv4RoutingTableEntry (Ipv4Address::GetZero (), Ipv4Mask::GetZero (), nextHop, interface);
 }
 
@@ -351,13 +351,12 @@ Ipv4MulticastRoutingTableEntry::GetOutputInterfaces (void) const
 }
 
 Ipv4MulticastRoutingTableEntry 
-Ipv4MulticastRoutingTableEntry::CreateMulticastRoute (
-  Ipv4Address origin, 
-  Ipv4Address group, 
-  uint32_t inputInterface,
-  std::vector<uint32_t> outputInterfaces)
+Ipv4MulticastRoutingTableEntry::CreateMulticastRoute (Ipv4Address origin,
+                                                      Ipv4Address group,
+                                                      uint32_t inputInterface,
+                                                      std::vector<uint32_t> outputInterfaces)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (origin << group << inputInterface << outputInterfaces);
   return Ipv4MulticastRoutingTableEntry (origin, group, inputInterface, outputInterfaces);
 }
 

@@ -251,14 +251,43 @@ void
 LrWpanNetDevice::SetAddress (Address address)
 {
   NS_LOG_FUNCTION (this);
-  m_mac->SetShortAddress (Mac16Address::ConvertFrom (address));
+  if (Mac16Address::IsMatchingType (address))
+    {
+      m_mac->SetShortAddress (Mac16Address::ConvertFrom (address));
+    }
+  else if (Mac48Address::IsMatchingType (address))
+    {
+      uint8_t buf[6];
+      Mac48Address addr = Mac48Address::ConvertFrom (address);
+      addr.CopyTo (buf);
+      Mac16Address addr16;
+      addr16.CopyFrom (buf+4);
+      m_mac->SetShortAddress (addr16);
+      uint16_t panId;
+      panId = buf[0];
+      panId <<= 8;
+      panId |= buf[1];
+      m_mac->SetPanId (panId);
+    }
+  else
+    {
+      NS_ABORT_MSG ("LrWpanNetDevice::SetAddress - address is not of a compatible type");
+    }
 }
 
 Address
 LrWpanNetDevice::GetAddress (void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_mac->GetShortAddress ();
+
+  if (m_mac->GetShortAddress () == Mac16Address ("00:00"))
+    {
+      return m_mac->GetExtendedAddress ();
+    }
+
+  Mac48Address pseudoAddress = BuildPseudoMacAddress (m_mac->GetPanId (), m_mac->GetShortAddress ());
+
+  return pseudoAddress;
 }
 
 bool
@@ -304,7 +333,10 @@ Address
 LrWpanNetDevice::GetBroadcast (void) const
 {
   NS_LOG_FUNCTION (this);
-  return Mac16Address ("ff:ff");
+
+  Mac48Address pseudoAddress = BuildPseudoMacAddress (m_mac->GetPanId (), Mac16Address::GetBroadcast ());
+
+  return pseudoAddress;
 }
 
 bool
@@ -324,34 +356,11 @@ LrWpanNetDevice::GetMulticast (Ipv4Address multicastGroup) const
 Address
 LrWpanNetDevice::GetMulticast (Ipv6Address addr) const
 {
-  NS_LOG_FUNCTION (this);
-  /* Implementation based on RFC 4944 Section 9.
-   * An IPv6 packet with a multicast destination address (DST),
-   * consisting of the sixteen octets DST[1] through DST[16], is
-   * transmitted to the following 802.15.4 16-bit multicast address:
-   *           0                   1
-   *           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
-   *          +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   *          |1 0 0|DST[15]* |   DST[16]     |
-   *          +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   * Here, DST[15]* refers to the last 5 bits in octet DST[15], that is,
-   * bits 3-7 within DST[15].  The initial 3-bit pattern of "100" follows
-   * the 16-bit address format for multicast addresses (Section 12). */
+  NS_LOG_FUNCTION (this << addr);
 
-  // \todo re-add this once Lr-Wpan will be able to accept these multicast addresses
-  //  uint8_t buf[16];
-  //  uint8_t buf2[2];
-  //
-  //  addr.GetBytes(buf);
-  //
-  //  buf2[0] = 0x80 | (buf[14] & 0x1F);
-  //  buf2[1] = buf[15];
-  //
-  //  Mac16Address newaddr = Mac16Address();
-  //  newaddr.CopyFrom(buf2);
-  //  return newaddr;
+  Mac48Address pseudoAddress = BuildPseudoMacAddress (m_mac->GetPanId (), Mac16Address::GetMulticast (addr));
 
-  return Mac16Address ("ff:ff");
+  return pseudoAddress;
 }
 
 bool
@@ -385,7 +394,19 @@ LrWpanNetDevice::Send (Ptr<Packet> packet, const Address& dest, uint16_t protoco
     }
 
   McpsDataRequestParams m_mcpsDataRequestParams;
-  m_mcpsDataRequestParams.m_dstAddr = Mac16Address::ConvertFrom (dest);
+
+  Mac16Address dst16;
+  if (Mac48Address::IsMatchingType (dest))
+    {
+      uint8_t buf[6];
+      dest.CopyTo (buf);
+      dst16.CopyFrom (buf+4);
+    }
+  else
+    {
+      dst16 = Mac16Address::ConvertFrom (dest);
+    }
+  m_mcpsDataRequestParams.m_dstAddr = dst16;
   m_mcpsDataRequestParams.m_dstAddrMode = SHORT_ADDR;
   m_mcpsDataRequestParams.m_dstPanId = m_mac->GetPanId ();
   m_mcpsDataRequestParams.m_srcAddrMode = SHORT_ADDR;
@@ -453,7 +474,7 @@ LrWpanNetDevice::McpsDataIndication (McpsDataIndicationParams params, Ptr<Packet
 {
   NS_LOG_FUNCTION (this);
   // TODO: Use the PromiscReceiveCallback if the MAC is in promiscuous mode.
-  m_receiveCallback (this, pkt, 0, params.m_srcAddr);
+    m_receiveCallback (this, pkt, 0, BuildPseudoMacAddress (params.m_srcPanId, params.m_srcAddr));
 }
 
 bool
@@ -461,6 +482,27 @@ LrWpanNetDevice::SupportsSendFrom (void) const
 {
   NS_LOG_FUNCTION_NOARGS ();
   return false;
+}
+
+Mac48Address
+LrWpanNetDevice::BuildPseudoMacAddress (uint16_t panId, Mac16Address shortAddr) const
+{
+  NS_LOG_FUNCTION (this);
+
+  uint8_t buf[6];
+
+  buf[0] = panId >> 8;
+  // Make sure the U/L bit is set
+  buf[0] |= 0x02;
+  buf[1] = panId & 0xff;
+  buf[2] = 0;
+  buf[3] = 0;
+  shortAddr.CopyTo (buf+4);
+
+  Mac48Address pseudoAddress;
+  pseudoAddress.CopyFrom (buf);
+
+  return pseudoAddress;
 }
 
 int64_t

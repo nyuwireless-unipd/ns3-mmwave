@@ -56,45 +56,14 @@ public:
   ApWifiMac ();
   virtual ~ApWifiMac ();
 
-  /**
-   * \param stationManager the station manager attached to this MAC.
-   */
+  // Implementations of pure virtual methods, or overridden from base class.
   void SetWifiRemoteStationManager (const Ptr<WifiRemoteStationManager> stationManager);
-
-  /**
-   * \param linkUp the callback to invoke when the link becomes up.
-   */
   void SetLinkUpCallback (Callback<void> linkUp);
-
-  /**
-   * \param packet the packet to send.
-   * \param to the address to which the packet should be sent.
-   *
-   * The packet should be enqueued in a tx queue, and should be
-   * dequeued as soon as the channel access function determines that
-   * access is granted to this MAC.
-   */
-  void Enqueue (Ptr<const Packet> packet, Mac48Address to);
-
-  /**
-   * \param packet the packet to send.
-   * \param to the address to which the packet should be sent.
-   * \param from the address from which the packet should be sent.
-   *
-   * The packet should be enqueued in a tx queue, and should be
-   * dequeued as soon as the channel access function determines that
-   * access is granted to this MAC.  The extra parameter "from" allows
-   * this device to operate in a bridged mode, forwarding received
-   * frames without altering the source address.
-   */
-  void Enqueue (Ptr<const Packet> packet, Mac48Address to, Mac48Address from);
-
+  void Enqueue (Ptr<Packet> packet, Mac48Address to);
+  void Enqueue (Ptr<Packet> packet, Mac48Address to, Mac48Address from);
   bool SupportsSendFrom (void) const;
-
-  /**
-   * \param address the current address of this MAC layer.
-   */
   void SetAddress (Mac48Address address);
+
   /**
    * \param interval the interval between two beacon transmissions.
    */
@@ -113,7 +82,7 @@ public:
   Time GetCfpMaxDuration (void) const;
   /**
    * Determine whether short slot time should be enabled or not in the BSS.
-   * Typically, true is returned only when there is no non-erp stations associated
+   * Typically, true is returned only when there is no non-ERP stations associated
    * to the AP, and that short slot time is supported by the AP and by all other
    * ERP stations that are associated to the AP. Otherwise, false is returned.
    *
@@ -123,7 +92,7 @@ public:
   /**
    * Determine whether short preamble should be enabled or not in the BSS.
    * Typically, true is returned only when the AP and all associated
-   * stations support short PLCP preamble.
+   * stations support short PHY preamble.
    *
    * \returns whether short preamble should be enabled or not in the BSS.
    */
@@ -154,10 +123,10 @@ public:
 
 
 private:
-  void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
+  void Receive (Ptr<WifiMacQueueItem> mpdu);
   /**
    * The packet we sent was successfully received by the receiver
-   * (i.e. we received an ACK from the receiver).  If the packet
+   * (i.e. we received an Ack from the receiver).  If the packet
    * was an association response to the receiver, we record that
    * the receiver is now associated with us.
    *
@@ -166,7 +135,7 @@ private:
   void TxOk (const WifiMacHeader &hdr);
   /**
    * The packet we sent was successfully received by the receiver
-   * (i.e. we did not receive an ACK from the receiver).  If the packet
+   * (i.e. we did not receive an Ack from the receiver).  If the packet
    * was an association response to the receiver, we record that
    * the receiver is not associated with us yet.
    *
@@ -180,11 +149,9 @@ private:
    * here because, as an AP, we also need to think about redistributing
    * to other associated STAs.
    *
-   * \param aggregatedPacket the Packet containing the A-MSDU.
-   * \param hdr a pointer to the MAC header for \c aggregatedPacket.
+   * \param mpdu the MPDU containing the A-MSDU.
    */
-  void DeaggregateAmsduAndForward (Ptr<Packet> aggregatedPacket,
-                                   const WifiMacHeader *hdr);
+  void DeaggregateAmsduAndForward (Ptr<WifiMacQueueItem> mpdu);
   /**
    * Forward the packet down to DCF/EDCAF (enqueue the packet). This method
    * is a wrapper for ForwardDown with traffic id.
@@ -193,7 +160,7 @@ private:
    * \param from the address to be used for Address 3 field in the header
    * \param to the address to be used for Address 1 field in the header
    */
-  void ForwardDown (Ptr<const Packet> packet, Mac48Address from, Mac48Address to);
+  void ForwardDown (Ptr<Packet> packet, Mac48Address from, Mac48Address to);
   /**
    * Forward the packet down to DCF/EDCAF (enqueue the packet).
    *
@@ -202,7 +169,7 @@ private:
    * \param to the address to be used for Address 1 field in the header
    * \param tid the traffic id for the packet
    */
-  void ForwardDown (Ptr<const Packet> packet, Mac48Address from, Mac48Address to, uint8_t tid);
+  void ForwardDown (Ptr<Packet> packet, Mac48Address from, Mac48Address to, uint8_t tid);
   /**
    * Forward a probe response packet to the DCF. The standard is not clear on the correct
    * queue for management frames if QoS is supported. We always use the DCF.
@@ -306,13 +273,6 @@ private:
    */
   bool GetUseNonErpProtection (void) const;
   /**
-   * Return whether RIFS is allowed in the BSS.
-   *
-   * \return true if RIFS is allowed in the BSS,
-   *         false otherwise
-   */
-  bool GetRifsMode (void) const;
-  /**
    * Increment the PCF polling list iterator to indicate
    * that the next polling station can be polled.
    */
@@ -338,7 +298,6 @@ private:
   std::list<Mac48Address> m_cfPollingList;   //!< List of all PCF stations currently associated to the AP
   std::list<Mac48Address>::iterator m_itCfPollingList; //!< Iterator to the list of all PCF stations currently associated to the AP
   bool m_enableNonErpProtection;             //!< Flag whether protection mechanism is used or not when non-ERP STAs are present within the BSS
-  bool m_disableRifs;                        //!< Flag whether to force RIFS to be disabled within the BSS If non-HT STAs are detected
 };
 
 } //namespace ns3

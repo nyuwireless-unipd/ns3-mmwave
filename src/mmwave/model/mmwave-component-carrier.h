@@ -61,7 +61,7 @@ public:
   MmWaveComponentCarrier ();
 
   virtual ~MmWaveComponentCarrier (void);
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
 
   /**
    * \return the bandwidth in RBs
@@ -149,7 +149,7 @@ public:
 
 protected:
   // inherited from Object
-  virtual void DoInitialize (void);
+  virtual void DoInitialize (void) override;
   uint16_t m_csgId; ///< CSG ID
   bool m_csgIndication; ///< CSG indication
 

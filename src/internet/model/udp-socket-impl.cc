@@ -86,13 +86,13 @@ UdpSocketImpl::UdpSocketImpl ()
     m_connected (false),
     m_rxAvailable (0)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_allowBroadcast = false;
 }
 
 UdpSocketImpl::~UdpSocketImpl ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 
   /// \todo  leave any multicast groups that have been joined
   m_node = 0;
@@ -137,14 +137,14 @@ UdpSocketImpl::~UdpSocketImpl ()
 void 
 UdpSocketImpl::SetNode (Ptr<Node> node)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this << node);
   m_node = node;
 
 }
 void 
 UdpSocketImpl::SetUdp (Ptr<UdpL4Protocol> udp)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this << udp);
   m_udp = udp;
 }
 
@@ -152,7 +152,7 @@ UdpSocketImpl::SetUdp (Ptr<UdpL4Protocol> udp)
 enum Socket::SocketErrno
 UdpSocketImpl::GetErrno (void) const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_errno;
 }
 
@@ -165,21 +165,21 @@ UdpSocketImpl::GetSocketType (void) const
 Ptr<Node>
 UdpSocketImpl::GetNode (void) const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_node;
 }
 
 void 
 UdpSocketImpl::Destroy (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_endPoint = 0;
 }
 
 void
 UdpSocketImpl::Destroy6 (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_endPoint6 = 0;
 }
 
@@ -205,7 +205,7 @@ UdpSocketImpl::DeallocateEndPoint (void)
 int
 UdpSocketImpl::FinishBind (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   bool done = false;
   if (m_endPoint != 0)
     {
@@ -231,7 +231,7 @@ UdpSocketImpl::FinishBind (void)
 int
 UdpSocketImpl::Bind (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_endPoint = m_udp->Allocate ();
   if (m_boundnetdevice)
     {
@@ -243,7 +243,7 @@ UdpSocketImpl::Bind (void)
 int
 UdpSocketImpl::Bind6 (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_endPoint6 = m_udp->Allocate6 ();
   if (m_boundnetdevice)
     {
@@ -355,7 +355,7 @@ UdpSocketImpl::Bind (const Address &address)
 int 
 UdpSocketImpl::ShutdownSend (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_shutdownSend = true;
   return 0;
 }
@@ -363,7 +363,7 @@ UdpSocketImpl::ShutdownSend (void)
 int 
 UdpSocketImpl::ShutdownRecv (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_shutdownRecv = true;
   if (m_endPoint)
     {
@@ -379,7 +379,7 @@ UdpSocketImpl::ShutdownRecv (void)
 int
 UdpSocketImpl::Close (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   if (m_shutdownRecv == true && m_shutdownSend == true)
     {
       m_errno = Socket::ERROR_BADF;
@@ -568,15 +568,9 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port, uint8_t
         p->AddPacketTag (tag);
       }
   }
-  //
-  // If dest is set to the limited broadcast address (all ones),
-  // convert it to send a copy of the packet out of every 
-  // interface as a subnet-directed broadcast.
-  // Exception:  if the interface has a /32 address, there is no
-  // valid subnet-directed broadcast, so send it as limited broadcast
-  // Note also that some systems will only send limited broadcast packets
+
+  // Note that some systems will only send limited broadcast packets
   // out of the "default" interface; here we send it out all interfaces
-  //
   if (dest.IsBroadcast ())
     {
       if (!m_allowBroadcast)
@@ -630,6 +624,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port, uint8_t
           NS_LOG_LOGIC ("Route exists");
           if (!m_allowBroadcast)
             {
+              // Here we try to route subnet-directed broadcasts
               uint32_t outputIfIndex = ipv4->GetInterfaceForDevice (route->GetOutputDevice ());
               uint32_t ifNAddr = ipv4->GetNAddresses (outputIfIndex);
               for (uint32_t addrI = 0; addrI < ifNAddr; ++addrI)
@@ -796,7 +791,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv6Address dest, uint16_t port)
 uint32_t
 UdpSocketImpl::GetTxAvailable (void) const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   // No finite send buffer is modelled, but we must respect
   // the maximum size of an IP datagram (65535 bytes - headers).
   return MAX_IPV4_UDP_DATAGRAM_SIZE;
@@ -827,7 +822,7 @@ UdpSocketImpl::SendTo (Ptr<Packet> p, uint32_t flags, const Address &address)
 uint32_t
 UdpSocketImpl::GetRxAvailable (void) const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   // We separately maintain this state to avoid walking the queue 
   // every time this might be called
   return m_rxAvailable;
@@ -872,7 +867,7 @@ UdpSocketImpl::RecvFrom (uint32_t maxSize, uint32_t flags,
 int
 UdpSocketImpl::GetSockName (Address &address) const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this << address);
   if (m_endPoint != 0)
     {
       address = InetSocketAddress (m_endPoint->GetLocalAddress (), m_endPoint->GetLocalPort ());

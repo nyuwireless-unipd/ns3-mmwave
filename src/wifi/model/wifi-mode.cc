@@ -26,53 +26,22 @@
 
 namespace ns3 {
 
-/**
- * Check if the two WifiModes are identical.
- *
- * \param a WifiMode
- * \param b WifiMode
- *
- * \return true if the two WifiModes are identical,
- *         false otherwise
- */
 bool operator == (const WifiMode &a, const WifiMode &b)
 {
   return a.GetUid () == b.GetUid ();
 }
-/**
- * Compare two WifiModes
- *
- * \param a WifiMode
- * \param b WifiMode
- *
- * \return true if a is less than b,
- *         false otherwise
- */
+
 bool operator < (const WifiMode &a, const WifiMode &b)
 {
   return a.GetUid () < b.GetUid ();
 }
-/**
- * Serialize WifiMode to ostream (human-readable).
- *
- * \param os std::ostream
- * \param mode
- *
- * \return std::ostream
- */
+
 std::ostream & operator << (std::ostream & os, const WifiMode &mode)
 {
   os << mode.GetUniqueName ();
   return os;
 }
-/**
- * Serialize WifiMode from istream (human-readable).
- *
- * \param is std::istream
- * \param mode
- *
- * \return std::istream
- */
+
 std::istream & operator >> (std::istream &is, WifiMode &mode)
 {
   std::string str;
@@ -95,12 +64,6 @@ WifiMode::IsAllowed (uint16_t channelWidth, uint8_t nss) const
         {
           return false;
         }
-    }
-  else
-    {
-      //We should not go here!
-      NS_ASSERT (false);
-      return false;
     }
   return true;
 }
@@ -447,7 +410,7 @@ WifiMode::GetConstellationSize (void) const
           return 256;
         case 10:
         case 11:
-          NS_ASSERT (item->modClass == WIFI_MOD_CLASS_HE);
+          NS_ASSERT (item->modClass != WIFI_MOD_CLASS_VHT);
           return 1024;
         default:
           return 0;
@@ -478,7 +441,7 @@ uint8_t
 WifiMode::GetMcsValue (void) const
 {
   WifiModeFactory::WifiModeItem *item = WifiModeFactory::GetFactory ()->Get (m_uid);
-  if (item->modClass == WIFI_MOD_CLASS_HT || item->modClass == WIFI_MOD_CLASS_VHT || item->modClass == WIFI_MOD_CLASS_HE)
+  if (item->modClass >= WIFI_MOD_CLASS_HT)
     {
       return item->mcsValue;
     }
@@ -508,7 +471,7 @@ WifiMode::GetNonHtReferenceRate (void) const
 {
   uint64_t dataRate;
   WifiModeFactory::WifiModeItem *item = WifiModeFactory::GetFactory ()->Get (m_uid);
-  if (item->modClass == WIFI_MOD_CLASS_HT || item->modClass == WIFI_MOD_CLASS_VHT || item->modClass == WIFI_MOD_CLASS_HE)
+  if (item->modClass >= WIFI_MOD_CLASS_HT)
     {
       WifiCodeRate codeRate = GetCodeRate ();
       switch (GetConstellationSize ())
@@ -721,8 +684,8 @@ WifiModeFactory::CreateWifiMode (std::string uniqueName,
   item->constellationSize = constellationSize;
   item->isMandatory = isMandatory;
 
-  NS_ASSERT (modClass != WIFI_MOD_CLASS_HT && modClass != WIFI_MOD_CLASS_VHT && modClass != WIFI_MOD_CLASS_HE);
-  //fill unused mcs item with a dummy value
+  NS_ASSERT (modClass < WIFI_MOD_CLASS_HT);
+  //fill unused MCS item with a dummy value
   item->mcsValue = 0;
 
   return WifiMode (uid);
@@ -739,8 +702,7 @@ WifiModeFactory::CreateWifiMcs (std::string uniqueName,
   item->uniqueUid = uniqueName;
   item->modClass = modClass;
 
-  //The modulation class must be either HT, VHT or HE
-  NS_ASSERT (modClass == WIFI_MOD_CLASS_HT || modClass == WIFI_MOD_CLASS_VHT || modClass == WIFI_MOD_CLASS_HE);
+  NS_ASSERT (modClass >= WIFI_MOD_CLASS_HT);
 
   item->mcsValue = mcsValue;
   //fill unused items with dummy values

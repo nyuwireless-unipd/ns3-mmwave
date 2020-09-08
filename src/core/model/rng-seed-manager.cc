@@ -42,6 +42,7 @@ NS_LOG_COMPONENT_DEFINE ("RngSeedManager");
 static uint64_t g_nextStreamIndex = 0;
 /**
  * \relates RngSeedManager
+ * \anchor GlobalValueRngSeed
  * The random number generator seed number global value.  This is used to
  * generate an new master PRNG sequence.  It is typically not modified
  * by user programs; the variable RngRun is preferred for independent
@@ -49,12 +50,13 @@ static uint64_t g_nextStreamIndex = 0;
  *
  * This is accessible as "--RngSeed" from CommandLine.
  */
-static ns3::GlobalValue g_rngSeed ("RngSeed", 
+static ns3::GlobalValue g_rngSeed ("RngSeed",
                                    "The global seed of all rng streams",
-                                   ns3::UintegerValue(1),
+                                   ns3::UintegerValue (1),
                                    ns3::MakeUintegerChecker<uint32_t> ());
 /**
  * \relates RngSeedManager
+ * \anchor GlobalValueRngRun
  * The random number generator substream index.  This is used to generate
  * new PRNG sequences for all streams (random variables) in such a manner
  * that the streams remain uncorrelated.  Incrementing this variable can
@@ -62,7 +64,7 @@ static ns3::GlobalValue g_rngSeed ("RngSeed",
  *
  * This is accessible as "--RngRun" from CommandLine.
  */
-static ns3::GlobalValue g_rngRun ("RngRun", 
+static ns3::GlobalValue g_rngRun ("RngRun",
                                   "The substream index used for all streams",
                                   ns3::UintegerValue (1),
                                   ns3::MakeUintegerChecker<uint64_t> ());
@@ -75,11 +77,11 @@ uint32_t RngSeedManager::GetSeed (void)
   g_rngSeed.GetValue (seedValue);
   return static_cast<uint32_t> (seedValue.Get ());
 }
-void 
+void
 RngSeedManager::SetSeed (uint32_t seed)
 {
   NS_LOG_FUNCTION (seed);
-  Config::SetGlobal ("RngSeed", UintegerValue(seed));
+  Config::SetGlobal ("RngSeed", UintegerValue (seed));
 }
 
 void RngSeedManager::SetRun (uint64_t run)
@@ -93,7 +95,7 @@ uint64_t RngSeedManager::GetRun ()
   NS_LOG_FUNCTION_NOARGS ();
   UintegerValue value;
   g_rngRun.GetValue (value);
-  uint64_t run = value.Get();
+  uint64_t run = value.Get ();
   return run;
 }
 

@@ -60,7 +60,7 @@ public:
   MmWaveComponentCarrierEnb ();
 
   virtual ~MmWaveComponentCarrierEnb (void);
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
 
   /**
    * Get cell identifier
@@ -118,7 +118,7 @@ public:
   //void SetFfrAlgorithm (Ptr<LteFfrAlgorithm> s);
 
 protected:
-  virtual void DoInitialize (void);
+  virtual void DoInitialize (void) override;
 
 private:
   uint16_t m_cellId; ///< Cell identifer

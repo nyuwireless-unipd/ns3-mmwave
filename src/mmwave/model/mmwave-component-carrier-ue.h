@@ -55,7 +55,7 @@ public:
   MmWaveComponentCarrierUe ();
 
   virtual ~MmWaveComponentCarrierUe (void);
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
 
 
   /**
@@ -82,7 +82,7 @@ public:
 
 protected:
   // inherited from Object
-  virtual void DoInitialize (void);
+  virtual void DoInitialize (void) override;
 
 private:
   Ptr<MmWaveUePhy> m_phy; ///< the Phy instance of this eNodeB component carrier

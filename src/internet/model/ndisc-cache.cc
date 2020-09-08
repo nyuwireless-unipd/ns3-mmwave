@@ -51,18 +51,18 @@ TypeId NdiscCache::GetTypeId ()
 
 NdiscCache::NdiscCache ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 }
 
 NdiscCache::~NdiscCache ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   Flush ();
 }
 
 void NdiscCache::DoDispose ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   Flush ();
   m_device = 0;
   m_interface = 0;
@@ -80,13 +80,13 @@ void NdiscCache::SetDevice (Ptr<NetDevice> device, Ptr<Ipv6Interface> interface,
 
 Ptr<Ipv6Interface> NdiscCache::GetInterface () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_interface;
 }
 
 Ptr<NetDevice> NdiscCache::GetDevice () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_device;
 }
 
@@ -97,7 +97,8 @@ NdiscCache::Entry* NdiscCache::Lookup (Ipv6Address dst)
   if (m_ndCache.find (dst) != m_ndCache.end ())
     {
       NdiscCache::Entry* entry = m_ndCache[dst];
-      NS_LOG_LOGIC ("Found an entry:" << dst << " to " << entry->GetMacAddress ());
+      NS_LOG_LOGIC ("Found an entry: " << *entry);
+
       return entry;
     }
   NS_LOG_LOGIC ("Nothing found");
@@ -114,7 +115,7 @@ std::list<NdiscCache::Entry*> NdiscCache::LookupInverse (Address dst)
       NdiscCache::Entry *entry = (*i).second;
       if (entry->GetMacAddress () == dst)
         {
-          NS_LOG_LOGIC ("Found an entry:" << (*i).first << " to " << (*i).second);
+          NS_LOG_LOGIC ("Found an entry:" << (*entry));
           entryList.push_back (entry);
         }
     }
@@ -135,7 +136,7 @@ NdiscCache::Entry* NdiscCache::Add (Ipv6Address to)
 
 void NdiscCache::Remove (NdiscCache::Entry* entry)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this << entry);
 
   for (CacheI i = m_ndCache.begin (); i != m_ndCache.end (); i++)
     {
@@ -151,7 +152,7 @@ void NdiscCache::Remove (NdiscCache::Entry* entry)
 
 void NdiscCache::Flush ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 
   for (CacheI i = m_ndCache.begin (); i != m_ndCache.end (); i++)
     {
@@ -169,7 +170,7 @@ void NdiscCache::SetUnresQlen (uint32_t unresQlen)
 
 uint32_t NdiscCache::GetUnresQlen ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_unresQlen;
 }
 
@@ -214,13 +215,13 @@ void NdiscCache::PrintNdiscCache (Ptr<OutputStreamWrapper> stream)
           *os << " STALE\n";
         }
       else if (i->second->IsPermanent ())
-	{
-	  *os << " PERMANENT\n";
-	}
+        {
+          *os << " PERMANENT\n";
+        }
       else
-	{
-	  NS_FATAL_ERROR ("Test for possibly unreachable code-- please file a bug report, with a test case, if this is ever hit");
-	}
+        {
+          NS_FATAL_ERROR ("Test for possibly unreachable code-- please file a bug report, with a test case, if this is ever hit");
+        }
     }
 }
 
@@ -232,7 +233,7 @@ NdiscCache::Entry::Entry (NdiscCache* nd)
     m_lastReachabilityConfirmation (Seconds (0.0)),
     m_nsRetransmit (0)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 }
 
 void NdiscCache::Entry::SetRouter (bool router)
@@ -243,7 +244,7 @@ void NdiscCache::Entry::SetRouter (bool router)
 
 bool NdiscCache::Entry::IsRouter () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_router;
 }
 
@@ -262,20 +263,20 @@ void NdiscCache::Entry::AddWaitingPacket (Ipv6PayloadHeaderPair p)
 
 void NdiscCache::Entry::ClearWaitingPacket ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   /** \todo report packets as 'dropped' */
   m_waiting.clear ();
 }
 
 void NdiscCache::Entry::FunctionReachableTimeout ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   this->MarkStale ();
 }
 
 void NdiscCache::Entry::FunctionRetransmitTimeout ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   Ipv6Address addr;
 
   /* determine source address */
@@ -324,7 +325,7 @@ void NdiscCache::Entry::FunctionRetransmitTimeout ()
 
 void NdiscCache::Entry::FunctionDelayTimeout ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   Ipv6Address addr;
 
   this->MarkProbe ();
@@ -359,7 +360,7 @@ void NdiscCache::Entry::FunctionDelayTimeout ()
 
 void NdiscCache::Entry::FunctionProbeTimeout ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 
   if (m_nsRetransmit < m_ndCache->m_icmpv6->GetMaxUnicastSolicit ())
     {
@@ -410,13 +411,13 @@ void NdiscCache::Entry::SetIpv6Address (Ipv6Address ipv6Address)
 
 Time NdiscCache::Entry::GetLastReachabilityConfirmation () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_lastReachabilityConfirmation;
 }
 
 void NdiscCache::Entry::StartReachableTimer ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   if (m_nudTimer.IsRunning ())
     {
       m_nudTimer.Cancel ();
@@ -430,7 +431,7 @@ void NdiscCache::Entry::StartReachableTimer ()
 
 void NdiscCache::Entry::UpdateReachableTimer ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 
   if (m_state == REACHABLE)
     {
@@ -445,7 +446,7 @@ void NdiscCache::Entry::UpdateReachableTimer ()
 
 void NdiscCache::Entry::StartProbeTimer ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   if (m_nudTimer.IsRunning ())
     {
       m_nudTimer.Cancel ();
@@ -458,7 +459,7 @@ void NdiscCache::Entry::StartProbeTimer ()
 
 void NdiscCache::Entry::StartDelayTimer ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   if (m_nudTimer.IsRunning ())
     {
       m_nudTimer.Cancel ();
@@ -471,7 +472,7 @@ void NdiscCache::Entry::StartDelayTimer ()
 
 void NdiscCache::Entry::StartRetransmitTimer ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   if (m_nudTimer.IsRunning ())
     {
       m_nudTimer.Cancel ();
@@ -484,7 +485,7 @@ void NdiscCache::Entry::StartRetransmitTimer ()
 
 void NdiscCache::Entry::StopNudTimer ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_nudTimer.Cancel ();
   m_nsRetransmit = 0;
 }
@@ -510,19 +511,19 @@ std::list<NdiscCache::Ipv6PayloadHeaderPair> NdiscCache::Entry::MarkReachable (A
 
 void NdiscCache::Entry::MarkProbe ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_state = PROBE;
 }
 
 void NdiscCache::Entry::MarkStale ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_state = STALE;
 }
 
 void NdiscCache::Entry::MarkReachable ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_state = REACHABLE;
 }
 
@@ -536,56 +537,56 @@ std::list<NdiscCache::Ipv6PayloadHeaderPair> NdiscCache::Entry::MarkStale (Addre
 
 void NdiscCache::Entry::MarkDelay ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   m_state = DELAY;
 }
 
 void NdiscCache::Entry::MarkPermanent ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   StopNudTimer ();
   m_state = PERMANENT;
 }
 
 bool NdiscCache::Entry::IsStale () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return (m_state == STALE);
 }
 
 bool NdiscCache::Entry::IsReachable () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return (m_state == REACHABLE);
 }
 
 bool NdiscCache::Entry::IsDelay () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return (m_state == DELAY);
 }
 
 bool NdiscCache::Entry::IsIncomplete () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return (m_state == INCOMPLETE);
 }
 
 bool NdiscCache::Entry::IsProbe () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return (m_state == PROBE);
 }
 
 bool NdiscCache::Entry::IsPermanent () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return (m_state == PERMANENT);
 }
 
 Address NdiscCache::Entry::GetMacAddress () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
   return m_macAddress;
 }
 
@@ -593,6 +594,38 @@ void NdiscCache::Entry::SetMacAddress (Address mac)
 {
   NS_LOG_FUNCTION (this << mac << int(m_state));
   m_macAddress = mac;
+}
+
+void NdiscCache::Entry::Print (std::ostream &os) const
+{
+  os << m_ipv6Address << " lladdr " << m_macAddress << " state ";
+  switch (m_state)
+  {
+    case INCOMPLETE:
+      os << "INCOMPLETE";
+      break;
+    case REACHABLE:
+      os << "REACHABLE";
+      break;
+    case STALE:
+      os << "STALE";
+      break;
+    case DELAY:
+      os << "DELAY";
+      break;
+    case PROBE:
+      os << "PROBE";
+      break;
+    case PERMANENT:
+      os << "PERMANENT";
+      break;
+  }
+}
+
+std::ostream& operator << (std::ostream& os, NdiscCache::Entry const& entry)
+{
+  entry.Print (os);
+  return os;
 }
 
 } /* namespace ns3 */

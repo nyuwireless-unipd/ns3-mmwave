@@ -41,7 +41,7 @@
 namespace ns3 {
 
 class TimeWithUnit;
-  
+
 /**
  * \ingroup core
  * \defgroup time Virtual Time
@@ -144,7 +144,7 @@ public:
    *
    * \param [in] o Time to copy
    */
-  inline Time(const Time & o)
+  inline Time (const Time & o)
     : m_data (o.m_data)
   {
     if (g_markingTimes)
@@ -181,7 +181,7 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   explicit inline Time (int v)
@@ -189,7 +189,7 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   explicit inline Time (long int v)
@@ -197,7 +197,7 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   explicit inline Time (long long int v)
@@ -205,7 +205,7 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   explicit inline Time (unsigned int v)
@@ -213,7 +213,7 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   explicit inline Time (unsigned long int v)
@@ -221,7 +221,7 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   explicit inline Time (unsigned long long int v)
@@ -229,7 +229,7 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   explicit inline Time (const int64x64_t & v)
@@ -237,11 +237,11 @@ public:
   {
     if (g_markingTimes)
       {
-	Mark (this);
+        Mark (this);
       }
   }
   /**@}*/
-  
+
   /**
    * \brief Construct Time object from common time expressions like "1ms"
    *
@@ -264,12 +264,18 @@ public:
    */
   explicit Time (const std::string & s);
 
-  /** Minimum representable Time */
+  /**
+   * Minimum representable Time
+   * \returns the minimum representable Time.
+   */
   static Time Min ()
   {
     return Time (std::numeric_limits<int64_t>::min ());
   }
-  /** Maximum representable Time */
+  /**
+   * Maximum representable Time
+   * \returns the maximum representable Time.
+   */
   static Time Max ()
   {
     return Time (std::numeric_limits<int64_t>::max ());
@@ -310,7 +316,7 @@ public:
     return m_data > 0;
   }
   /**
-   *  Compare \p this to another Time
+   *  Compare \pname{this} to another Time
    *
    *  \param [in] o The other Time
    *  \return -1,0,+1 if `this < o`, `this == o`, or `this > o`
@@ -416,12 +422,12 @@ public:
    */
   static enum Unit GetResolution (void);
 
-  
+
   /**
    *  Create a Time in the current unit.
    *
    *  \param [in] value The value of the new Time.
-   *  \return A Time with \p value in the current time unit.
+   *  \return A Time with \pname{value} in the current time unit.
    */
   inline static Time From (const int64x64_t & value)
   {
@@ -434,11 +440,11 @@ public:
    * @{
    */
   /**
-   *  Create a Time equal to \p value  in unit \c unit
+   *  Create a Time equal to \pname{value}  in unit \c unit
    *
    *  \param [in] value The new Time value, expressed in \c unit
-   *  \param [in] unit The unit of \p value
-   *  \return The Time representing \p value in \c unit
+   *  \param [in] unit The unit of \pname{value}
+   *  \return The Time representing \pname{value} in \c unit
    */
   inline static Time FromInteger (uint64_t value, enum Unit unit)
   {
@@ -486,7 +492,7 @@ public:
    *  Get the Time value expressed in a particular unit.
    *
    *  \param [in] unit The desired unit
-   *  \return The Time expressed in \p unit
+   *  \return The Time expressed in \pname{unit}
    */
   inline int64_t ToInteger (enum Unit unit) const
   {
@@ -522,14 +528,6 @@ public:
   }
   /**@}*/
 
-  
-  /** Cast to int64x64_t */
-  inline operator int64x64_t () const
-  {
-    return int64x64_t (m_data);
-  }
-
-  
   /**
    * Attach a unit to a Time, to facilitate output in a specific unit.
    *
@@ -574,20 +572,20 @@ private:
    *
    * \return A pointer to the current Resolution
    */
-  static inline struct Resolution *PeekResolution (void)
+  static inline struct Resolution * PeekResolution (void)
   {
     static struct Time::Resolution resolution = SetDefaultNsResolution ();
-    return & resolution;
+    return &resolution;
   }
   /**
-   *  Get the Information record for \p timeUnit for the current Resolution
+   *  Get the Information record for \pname{timeUnit} for the current Resolution
    *
    *  \param [in] timeUnit The Unit to get Information for
-   *  \return The Information for \p timeUnit
+   *  \return The Information for \pname{timeUnit}
    */
-  static inline struct Information *PeekInformation (enum Unit timeUnit)
+  static inline struct Information * PeekInformation (enum Unit timeUnit)
   {
-    return & (PeekResolution ()->info[timeUnit]);
+    return &(PeekResolution ()->info[timeUnit]);
   }
 
   /**
@@ -641,6 +639,7 @@ private:
    *  includes nstime.h.
    */
   static MarkedTimes * g_markingTimes;
+
 public:
   /**
    *  Function to force static initialization of Time.
@@ -648,9 +647,10 @@ public:
    * \return \c true on the first call
    */
   static bool StaticInit ();
+
 private:
 
-  /* Friend the Simulator class so it can call the private function
+  /** Friend the Simulator class so it can call the private function
      ClearMarkedTimes ()
   */
   friend class Simulator;
@@ -733,15 +733,15 @@ private:
 };  // class Time
 
 namespace TracedValueCallback {
-  
-  /**
+
+/**
    * TracedValue callback signature for Time
    *
    * \param [in] oldValue Original value of the traced variable
    * \param [in] newValue New value of the traced variable
    */
-  typedef void (* Time)(Time oldValue, Time newValue);
-  
+typedef void (* Time)(Time oldValue, Time newValue);
+
 }  // namespace TracedValueCallback
 
 /// Force static initialization of Time
@@ -964,7 +964,7 @@ inline Time & operator -= (Time & lhs, const Time & rhs)
   lhs.m_data -= rhs.m_data;
   return lhs;
 }
-  
+
 inline Time Abs (const Time & time)
 {
   return Time ((time.m_data < 0) ? -time.m_data : time.m_data);
@@ -981,7 +981,7 @@ inline Time Min (const Time & ta, const Time & tb)
 /**
  * \ingroup time
  * \brief Time output streamer.
- * 
+ *
  * Generates output such as "3.96ns".  Times are printed with the
  * following format flags (independent of the stream flags):
  *   - `showpos`
@@ -1108,7 +1108,7 @@ inline Time FemtoSeconds (int64x64_t value)
   return Time::From (value, Time::FS);
 }
 /**@}*/
-  
+
 
 /**
  *  \ingroup time
@@ -1125,7 +1125,7 @@ ATTRIBUTE_VALUE_DEFINE (Time);
 ATTRIBUTE_ACCESSOR_DEFINE (Time);
 
 /**
- *  \ingroup time
+ *  \ingroup attribute_time
  *  \brief Helper to make a Time checker with bounded range.
  *  Both limits are inclusive
  *
@@ -1136,7 +1136,7 @@ ATTRIBUTE_ACCESSOR_DEFINE (Time);
 Ptr<const AttributeChecker> MakeTimeChecker (const Time min, const Time max);
 
 /**
- * \ingroup time
+ * \ingroup attribute_time
  * \brief Helper to make an unbounded Time checker.
  *
  * \return The AttributeChecker
@@ -1148,7 +1148,7 @@ Ptr<const AttributeChecker> MakeTimeChecker (void)
 }
 
 /**
- * \ingroup time
+ * \ingroup attribute_time
  * \brief Helper to make a Time checker with a lower bound.
  *
  *  \param [in] min Minimum allowed value.
@@ -1176,7 +1176,7 @@ public:
   TimeWithUnit (const Time time, const Time::Unit unit)
     : m_time (time),
       m_unit (unit)
-  { };
+  { }
 
 private:
   Time m_time;        //!< The time

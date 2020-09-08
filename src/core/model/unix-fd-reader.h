@@ -42,15 +42,15 @@ namespace ns3 {
  * This class can be used to start a system thread that reads from a
  * given file descriptor and invokes a given callback when data is
  * received.  This class handles thread management automatically but
- * the \p DoRead() method must be implemented by a subclass.
+ * the \pname{DoRead()} method must be implemented by a subclass.
  */
 class FdReader : public SimpleRefCount<FdReader>
 {
 public:
   /** Constructor. */
-  FdReader();
+  FdReader ();
   /** Destructor. */
-  virtual ~FdReader();
+  virtual ~FdReader ();
 
   /**
    * Start a new read thread.
@@ -76,14 +76,16 @@ protected:
   struct Data
   {
     /** Default constructor, with null buffer and zero length. */
-    Data () : m_buf (0), m_len (0) {}
+    Data () : m_buf (0), m_len (0)
+    {}
     /**
      * Construct from a buffer of a given length.
      *
      * \param [in] buf The buffer.
      * \param [in] len The size of the buffer, in bytes.
      */
-    Data (uint8_t *buf, ssize_t len) : m_buf (buf), m_len (len) {}
+    Data (uint8_t *buf, ssize_t len) : m_buf (buf), m_len (len)
+    {}
     /** The read data buffer. */
     uint8_t *m_buf;
     /** The size of the read data buffer, in bytes. */
@@ -93,12 +95,12 @@ protected:
   /**
    * \brief The read implementation.
    *
-   * The value of \p m_len returned controls further processing.  The
-   * callback function is only invoked when \p m_len is positive; any
-   * data read is not processed when \p m_len is negative; reading
-   * stops when \p m_len is zero.
+   * The value of \pname{m_len} returned controls further processing.  The
+   * callback function is only invoked when \pname{m_len} is positive; any
+   * data read is not processed when \pname{m_len} is negative; reading
+   * stops when \pname{m_len} is zero.
    *
-   * The management of memory associated with \p m_buf must be
+   * The management of memory associated with \pname{m_buf} must be
    * compatible with the read callback.
    *
    * \return A structure representing what was read.
@@ -119,7 +121,7 @@ private:
 
   /** The main thread callback function to invoke when we have data. */
   Callback<void, uint8_t *, ssize_t> m_readCallback;
-  
+
   /** The thread doing the read, created and launched by Start(). */
   Ptr<SystemThread> m_readThread;
 
@@ -127,7 +129,7 @@ private:
   int m_evpipe[2];
   /** Signal the read thread to stop. */
   bool m_stop;
-  
+
   /**
    * The event scheduled for destroy time which will invoke DestroyEvent
    * and halt the thread.

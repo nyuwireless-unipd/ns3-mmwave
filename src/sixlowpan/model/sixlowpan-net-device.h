@@ -25,9 +25,12 @@
 #include <stdint.h>
 #include <string>
 #include <map>
+#include <tuple>
 #include "ns3/traced-callback.h"
 #include "ns3/nstime.h"
 #include "ns3/net-device.h"
+#include "ns3/random-variable-stream.h"
+#include "ns3/simulator.h"
 
 namespace ns3 {
 
@@ -153,9 +156,9 @@ public:
    * is deprecated and will be changed to \c Ptr<const SixLowPanNetDevice>
    * in a future release.
    */
-  typedef void (* RxTxTracedCallback)
-    (Ptr<const Packet> packet, Ptr<SixLowPanNetDevice> sixNetDevice,
-     uint32_t ifindex);
+  typedef void (* RxTxTracedCallback)(Ptr<const Packet> packet,
+                                      Ptr<SixLowPanNetDevice> sixNetDevice,
+                                      uint32_t ifindex);
 
   /**
    * TracedCallback signature for
@@ -168,11 +171,11 @@ public:
    * is deprecated and will be changed to \c Ptr<const SixLowPanNetDevice>
    * in a future release.
    */
-  typedef void (* DropTracedCallback)
-    (DropReason reason, Ptr<const Packet> packet,
-     Ptr<SixLowPanNetDevice> sixNetDevice,
-     uint32_t ifindex);
-   
+  typedef void (* DropTracedCallback)(DropReason reason,
+                                      Ptr<const Packet> packet,
+                                      Ptr<SixLowPanNetDevice> sixNetDevice,
+                                      uint32_t ifindex);
+
 protected:
   virtual void DoDispose (void);
 
@@ -271,21 +274,6 @@ private:
   TracedCallback<DropReason, Ptr<const Packet>, Ptr<SixLowPanNetDevice>, uint32_t> m_dropTrace;
 
   /**
-   * \brief Make a link-local address from a MAC address.
-   * \param [in] addr The MAC address.
-   * \return The IPv6 link-local address.
-   */
-  Ipv6Address MakeLinkLocalAddressFromMac (Address const &addr);
-
-  /**
-   * \brief Make a global address from a MAC address.
-   * \param [in] addr the MAC address.
-   * \param [in] prefix The address prefix.
-   * \return The IPv6 address.
-   */
-  Ipv6Address MakeGlobalAddressFromMac (Address const &addr, Ipv6Address prefix);
-
-  /**
    * \brief Compress the headers according to HC1 compression.
    * \param [in] packet The packet to be compressed.
    * \param [in] src The MAC source address.
@@ -366,7 +354,29 @@ private:
   /**
    * Fragment identifier type: src/dst address src/dst port.
    */
-  typedef std::pair< std::pair<Address, Address>, std::pair<uint16_t, uint16_t> > FragmentKey;
+  typedef std::pair< std::pair<Address, Address>, std::pair<uint16_t, uint16_t> > FragmentKey_t;
+
+  /// Container for fragment timeouts.
+  typedef std::list< std::tuple <Time, FragmentKey_t, uint32_t > > FragmentsTimeoutsList_t;
+  /// Container Iterator for fragment timeouts.
+  typedef std::list< std::tuple <Time, FragmentKey_t, uint32_t > >::iterator FragmentsTimeoutsListI_t;
+
+  /**
+   * \brief Set a new timeout "event" for a fragmented packet
+   * \param key the fragment identification
+   * \param iif input interface of the packet
+   * \return an iterator to the inserted "event"
+   */
+  FragmentsTimeoutsListI_t SetTimeout (FragmentKey_t key, uint32_t iif);
+
+  /**
+   * \brief Handles a fragmented packet timeout
+   */
+  void HandleTimeout (void);
+
+  FragmentsTimeoutsList_t m_timeoutEventList;  //!< Timeout "events" container
+
+  EventId m_timeoutEvent;  //!< Event for the next scheduled timeout
 
   /**
    * \brief A Set of Fragments.
@@ -422,6 +432,18 @@ public:
      */
     std::list< Ptr<Packet> > GetFraments () const;
 
+    /**
+     * \brief Set the Timeout iterator.
+     * \param iter The iterator.
+     */
+    void SetTimeoutIter (FragmentsTimeoutsListI_t iter);
+
+    /**
+     * \brief Get the Timeout iterator.
+     * \returns The iterator.
+     */
+    FragmentsTimeoutsListI_t GetTimeoutIter ();
+
 private:
     /**
      * \brief The size of the reconstructed packet (bytes).
@@ -438,6 +460,10 @@ private:
      */
     Ptr<Packet> m_firstFragment;
 
+    /**
+     * \brief Timeout iterator to "event" handler
+     */
+    FragmentsTimeoutsListI_t m_timeoutIter;
   };
 
   /**
@@ -465,7 +491,7 @@ private:
    * \param [in] key A key representing the packet fragments.
    * \param [in] iif Input Interface.
    */
-  void HandleFragmentsTimeout ( FragmentKey key, uint32_t iif);
+  void HandleFragmentsTimeout (FragmentKey_t key, uint32_t iif);
 
   /**
    * \brief Drops the oldest fragment set.
@@ -473,24 +499,22 @@ private:
   void DropOldestFragmentSet ();
 
   /**
+   * Get a Mac16 from its Mac48 pseudo-MAC
+   * \param addr the PseudoMac address
+   * \return the Mac16Address
+   */
+  Address Get16MacFrom48Mac (Address addr);
+
+  /**
    * Container for fragment key -> fragments.
    */
-  typedef std::map< FragmentKey, Ptr<Fragments> > MapFragments_t;
+  typedef std::map< FragmentKey_t, Ptr<Fragments> > MapFragments_t;
   /**
    * Container Iterator for fragment key -> fragments.
    */
-  typedef std::map< FragmentKey, Ptr<Fragments> >::iterator MapFragmentsI_t;
-  /**
-   * Container for fragment key -> expiration event.
-   */
-  typedef std::map< FragmentKey, EventId > MapFragmentsTimers_t;
-  /**
-   * Container Iterator for fragment key -> expiration event.
-   */
-  typedef std::map< FragmentKey, EventId >::iterator MapFragmentsTimersI_t;
+  typedef std::map< FragmentKey_t, Ptr<Fragments> >::iterator MapFragmentsI_t;
 
   MapFragments_t       m_fragments; //!< Fragments hold to be rebuilt.
-  MapFragmentsTimers_t m_fragmentsTimers; //!< Timers related to fragment rebuilding.
   Time                 m_fragmentExpirationTimeout; //!< Time limit for fragment rebuilding.
 
   /**
@@ -500,6 +524,13 @@ private:
   uint16_t             m_fragmentReassemblyListSize;
 
   bool m_useIphc; //!< Use IPHC or HC1.
+
+  bool m_meshUnder;               //!< Use a mesh-under routing.
+  uint8_t m_bc0Serial;            //!< Serial number used in BC0 header.
+  uint8_t m_meshUnderHopsLeft;    //!< Start value for mesh-under hops left.
+  uint16_t m_meshCacheLength;     //!< length of the cache for each source.
+  Ptr<RandomVariableStream> m_meshUnderJitter; //!< Random variable for the mesh-under packet retransmission.
+  std::map <Address /* OriginatorAdddress */, std::list <uint8_t  /* SequenceNumber */> > m_seenPkts; //!< Seen packets, memorized by OriginatorAdddress, SequenceNumber.
 
   Ptr<Node> m_node; //!< Smart pointer to the Node.
   Ptr<NetDevice> m_netDevice; //!< Smart pointer to the underlying NetDevice.

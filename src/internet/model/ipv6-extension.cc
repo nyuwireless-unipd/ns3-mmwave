@@ -61,14 +61,11 @@ TypeId Ipv6Extension::GetTypeId ()
 
 Ipv6Extension::Ipv6Extension ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   m_uvar = CreateObject<UniformRandomVariable> ();
 }
 
 Ipv6Extension::~Ipv6Extension ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 void Ipv6Extension::SetNode (Ptr<Node> node)
@@ -80,8 +77,6 @@ void Ipv6Extension::SetNode (Ptr<Node> node)
 
 Ptr<Node> Ipv6Extension::GetNode () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return m_node;
 }
 
@@ -201,18 +196,14 @@ TypeId Ipv6ExtensionHopByHop::GetTypeId ()
 
 Ipv6ExtensionHopByHop::Ipv6ExtensionHopByHop ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ipv6ExtensionHopByHop::~Ipv6ExtensionHopByHop ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 uint8_t Ipv6ExtensionHopByHop::GetExtensionNumber () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return EXT_NUMBER;
 }
 
@@ -261,18 +252,14 @@ TypeId Ipv6ExtensionDestination::GetTypeId ()
 
 Ipv6ExtensionDestination::Ipv6ExtensionDestination ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ipv6ExtensionDestination::~Ipv6ExtensionDestination ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 uint8_t Ipv6ExtensionDestination::GetExtensionNumber () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return EXT_NUMBER;
 }
 
@@ -315,23 +302,27 @@ TypeId Ipv6ExtensionFragment::GetTypeId ()
     .SetParent<Ipv6Extension> ()
     .SetGroupName ("Internet")
     .AddConstructor<Ipv6ExtensionFragment> ()
+    .AddAttribute ("FragmentExpirationTimeout",
+                   "When this timeout expires, the fragments "
+                   "will be cleared from the buffer.",
+                   TimeValue (Seconds (60)),
+                   MakeTimeAccessor (&Ipv6ExtensionFragment::m_fragmentExpirationTimeout),
+                   MakeTimeChecker ())
   ;
   return tid;
 }
 
 Ipv6ExtensionFragment::Ipv6ExtensionFragment ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ipv6ExtensionFragment::~Ipv6ExtensionFragment ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 void Ipv6ExtensionFragment::DoDispose ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  NS_LOG_FUNCTION (this);
 
   for (MapFragments_t::iterator it = m_fragments.begin (); it != m_fragments.end (); it++)
     {
@@ -339,13 +330,16 @@ void Ipv6ExtensionFragment::DoDispose ()
     }
 
   m_fragments.clear ();
+  m_timeoutEventList.clear ();
+  if (m_timeoutEvent.IsRunning ())
+    {
+      m_timeoutEvent.Cancel ();
+    }
   Ipv6Extension::DoDispose ();
 }
 
 uint8_t Ipv6ExtensionFragment::GetExtensionNumber () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return EXT_NUMBER;
 }
 
@@ -376,21 +370,20 @@ uint8_t Ipv6ExtensionFragment::Process (Ptr<Packet>& packet,
   uint32_t identification = fragmentHeader.GetIdentification ();
   Ipv6Address src = ipv6Header.GetSourceAddress ();
 
-  std::pair<Ipv6Address, uint32_t> fragmentsId = std::pair<Ipv6Address, uint32_t> (src, identification);
+  FragmentKey_t fragmentKey = FragmentKey_t (src, identification);
   Ptr<Fragments> fragments;
 
   Ipv6Header ipHeader = ipv6Header;
   ipHeader.SetNextHeader (fragmentHeader.GetNextHeader ());
 
-  MapFragments_t::iterator it = m_fragments.find (fragmentsId);
+  MapFragments_t::iterator it = m_fragments.find (fragmentKey);
   if (it == m_fragments.end ())
     {
       fragments = Create<Fragments> ();
-      m_fragments.insert (std::make_pair (fragmentsId, fragments));
-      EventId timeout = Simulator::Schedule (Seconds (60),
-                                             &Ipv6ExtensionFragment::HandleFragmentsTimeout, this,
-                                             fragmentsId, ipHeader);
-      fragments->SetTimeoutEventId (timeout);
+      m_fragments.insert (std::make_pair (fragmentKey, fragments));
+      NS_LOG_DEBUG ("Insert new fragment key: src: " << src << " IP hdr id " << identification << " m_fragments.size() " << m_fragments.size () << " offset " << fragmentOffset);
+      FragmentsTimeoutsListI_t iter = SetTimeout (fragmentKey, ipHeader);
+      fragments->SetTimeoutIter (iter);
     }
   else
     {
@@ -404,13 +397,15 @@ uint8_t Ipv6ExtensionFragment::Process (Ptr<Packet>& packet,
       fragments->SetUnfragmentablePart (unfragmentablePart);
     }
 
+  NS_LOG_DEBUG ("Add fragment with IP hdr id " << identification << " offset " << fragmentOffset);
   fragments->AddFragment (p, fragmentOffset, moreFragment);
 
   if (fragments->IsEntire ())
     {
       packet = fragments->GetPacket ();
-      fragments->CancelTimeout ();
-      m_fragments.erase (fragmentsId);
+      m_timeoutEventList.erase (fragments->GetTimeoutIter ());
+      m_fragments.erase (fragmentKey);
+      NS_LOG_DEBUG ("Finished fragment with IP hdr id " << fragmentKey.second << " erase timeout, m_fragments.size(): " << m_fragments.size ());
       stopProcessing = false;
     }
   else
@@ -423,6 +418,7 @@ uint8_t Ipv6ExtensionFragment::Process (Ptr<Packet>& packet,
 
 void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, Ipv6Header ipv6Header, uint32_t maxFragmentSize, std::list<Ipv6PayloadHeaderPair>& listFragments)
 {
+  NS_LOG_FUNCTION (this << packet << ipv6Header << maxFragmentSize);
   Ptr<Packet> p = packet->Copy ();
 
   uint8_t nextHeader = ipv6Header.GetNextHeader ();
@@ -466,7 +462,7 @@ void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, Ipv6Header ipv6Hea
               hopbyhopHeader->SetNextHeader (Ipv6Header::IPV6_EXT_FRAGMENTATION);
             }
 
-          unfragmentablePart.push_back (std::pair<Ipv6ExtensionHeader *, uint8_t> (hopbyhopHeader, Ipv6Header::IPV6_EXT_HOP_BY_HOP));
+          unfragmentablePart.emplace_back (hopbyhopHeader, Ipv6Header::IPV6_EXT_HOP_BY_HOP);
           unfragmentablePartSize += extensionHeaderLength;
         }
       else if (nextHeader == Ipv6Header::IPV6_EXT_ROUTING)
@@ -490,7 +486,7 @@ void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, Ipv6Header ipv6Hea
               routingHeader->SetNextHeader (Ipv6Header::IPV6_EXT_FRAGMENTATION);
             }
 
-          unfragmentablePart.push_back (std::pair<Ipv6ExtensionHeader *, uint8_t> (routingHeader, Ipv6Header::IPV6_EXT_ROUTING));
+          unfragmentablePart.emplace_back (routingHeader, Ipv6Header::IPV6_EXT_ROUTING);
           unfragmentablePartSize += extensionHeaderLength;
         }
       else if (nextHeader == Ipv6Header::IPV6_EXT_DESTINATION)
@@ -510,7 +506,7 @@ void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, Ipv6Header ipv6Hea
               destinationHeader->SetNextHeader (Ipv6Header::IPV6_EXT_FRAGMENTATION);
             }
 
-          unfragmentablePart.push_back (std::pair<Ipv6ExtensionHeader *, uint8_t> (destinationHeader, Ipv6Header::IPV6_EXT_DESTINATION));
+          unfragmentablePart.emplace_back (destinationHeader, Ipv6Header::IPV6_EXT_DESTINATION);
           unfragmentablePartSize += extensionHeaderLength;
         }
     }
@@ -581,7 +577,7 @@ void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, Ipv6Header ipv6Hea
       oss << ipv6Header;
       fragment->Print (oss);
 
-      listFragments.push_back (Ipv6PayloadHeaderPair (fragment, ipv6Header));
+      listFragments.emplace_back (fragment, ipv6Header);
     }
   while (moreFragment);
 
@@ -594,19 +590,20 @@ void Ipv6ExtensionFragment::GetFragments (Ptr<Packet> packet, Ipv6Header ipv6Hea
 }
 
 
-void Ipv6ExtensionFragment::HandleFragmentsTimeout (std::pair<Ipv6Address, uint32_t> fragmentsId,
+void Ipv6ExtensionFragment::HandleFragmentsTimeout (FragmentKey_t fragmentKey,
                                                     Ipv6Header ipHeader)
 {
+  NS_LOG_FUNCTION (this << fragmentKey.first << fragmentKey.second << ipHeader);
   Ptr<Fragments> fragments;
 
-  MapFragments_t::iterator it = m_fragments.find (fragmentsId);
+  MapFragments_t::iterator it = m_fragments.find (fragmentKey);
   NS_ASSERT_MSG(it != m_fragments.end (), "IPv6 Fragment timeout reached for non-existent fragment");
   fragments = it->second;
 
   Ptr<Packet> packet = fragments->GetPartialPacket ();
 
   // if we have at least 8 bytes, we can send an ICMP.
-  if ( packet->GetSize () > 8 )
+  if (packet && packet->GetSize () > 8)
     {
       Ptr<Packet> p = packet->Copy ();
       p->AddHeader (ipHeader);
@@ -618,8 +615,57 @@ void Ipv6ExtensionFragment::HandleFragmentsTimeout (std::pair<Ipv6Address, uint3
   ipL3->ReportDrop (ipHeader, packet, Ipv6L3Protocol::DROP_FRAGMENT_TIMEOUT);
 
   // clear the buffers
-  m_fragments.erase (fragmentsId);
+  m_fragments.erase (fragmentKey);
 }
+
+
+Ipv6ExtensionFragment::FragmentsTimeoutsListI_t Ipv6ExtensionFragment::SetTimeout (FragmentKey_t key, Ipv6Header ipHeader)
+{
+  NS_LOG_FUNCTION (this << key.first << key.second << ipHeader);
+  if (m_timeoutEventList.empty ())
+    {
+      NS_LOG_DEBUG ("Scheduling timeout for IP hdr id " << key.second << " at time " << (Simulator::Now () + m_fragmentExpirationTimeout).GetSeconds ());
+      m_timeoutEvent = Simulator::Schedule (m_fragmentExpirationTimeout, &Ipv6ExtensionFragment::HandleTimeout, this);
+    }
+  NS_LOG_DEBUG ("Adding timeout at " << (Simulator::Now () + m_fragmentExpirationTimeout).GetSeconds () << " with key " << key.second);
+  m_timeoutEventList.emplace_back (Simulator::Now () + m_fragmentExpirationTimeout, key, ipHeader);
+
+  Ipv6ExtensionFragment::FragmentsTimeoutsListI_t iter = --m_timeoutEventList.end();
+
+  return (iter);
+}
+
+void Ipv6ExtensionFragment::HandleTimeout (void)
+{
+  NS_LOG_FUNCTION (this);
+  Time now = Simulator::Now ();
+
+  // std::list Time, Fragment_key_t, Ipv6Header
+  // Fragment key is a pair: Ipv6Address, uint32_t ipHeaderId
+  for (auto & element : m_timeoutEventList)
+    {
+      NS_LOG_DEBUG ("Handle time " << std::get<0> (element).GetSeconds () << " IP hdr id " << std::get<1> (element).second);
+    }
+  while (!m_timeoutEventList.empty () && std::get<0> (*m_timeoutEventList.begin ()) == now)
+    {
+      HandleFragmentsTimeout (std::get<1> (*m_timeoutEventList.begin ()),
+                              std::get<2> (*m_timeoutEventList.begin ()));
+      m_timeoutEventList.pop_front ();
+    }
+
+  if (m_timeoutEventList.empty ())
+    {
+      return;
+    }
+
+  Time difference = std::get<0> (*m_timeoutEventList.begin ()) - now;
+  NS_LOG_DEBUG ("Scheduling later HandleTimeout at " << (now + difference).GetSeconds ());
+  m_timeoutEvent = Simulator::Schedule (difference, &Ipv6ExtensionFragment::HandleTimeout, this);
+
+  return;
+}
+
+
 
 Ipv6ExtensionFragment::Fragments::Fragments ()
   : m_moreFragment (0)
@@ -632,6 +678,7 @@ Ipv6ExtensionFragment::Fragments::~Fragments ()
 
 void Ipv6ExtensionFragment::Fragments::AddFragment (Ptr<Packet> fragment, uint16_t fragmentOffset, bool moreFragment)
 {
+  NS_LOG_FUNCTION (this << fragment << fragmentOffset << moreFragment);
   std::list<std::pair<Ptr<Packet>, uint16_t> >::iterator it;
 
   for (it = m_packetFragments.begin (); it != m_packetFragments.end (); it++)
@@ -652,6 +699,7 @@ void Ipv6ExtensionFragment::Fragments::AddFragment (Ptr<Packet> fragment, uint16
 
 void Ipv6ExtensionFragment::Fragments::SetUnfragmentablePart (Ptr<Packet> unfragmentablePart)
 {
+  NS_LOG_FUNCTION (this << unfragmentablePart);
   m_unfragmentable = unfragmentablePart;
 }
 
@@ -718,16 +766,16 @@ Ptr<Packet> Ipv6ExtensionFragment::Fragments::GetPartialPacket () const
   return p;
 }
 
-void Ipv6ExtensionFragment::Fragments::SetTimeoutEventId (EventId event)
+void Ipv6ExtensionFragment::Fragments::SetTimeoutIter (FragmentsTimeoutsListI_t iter)
 {
-  m_timeoutEventId = event;
+  NS_LOG_FUNCTION (this);
+  m_timeoutIter = iter;
   return;
 }
 
-void Ipv6ExtensionFragment::Fragments::CancelTimeout ()
+Ipv6ExtensionFragment::FragmentsTimeoutsListI_t Ipv6ExtensionFragment::Fragments::GetTimeoutIter ()
 {
-  m_timeoutEventId.Cancel ();
-  return;
+  return m_timeoutIter;
 }
 
 
@@ -745,24 +793,19 @@ TypeId Ipv6ExtensionRouting::GetTypeId ()
 
 Ipv6ExtensionRouting::Ipv6ExtensionRouting ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ipv6ExtensionRouting::~Ipv6ExtensionRouting ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 uint8_t Ipv6ExtensionRouting::GetExtensionNumber () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return EXT_NUMBER;
 }
 
 uint8_t Ipv6ExtensionRouting::GetTypeRouting () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
   return 0;
 }
 
@@ -850,6 +893,7 @@ Ipv6ExtensionRoutingDemux::~Ipv6ExtensionRoutingDemux ()
 
 void Ipv6ExtensionRoutingDemux::DoDispose ()
 {
+  NS_LOG_FUNCTION (this);
   for (Ipv6ExtensionRoutingList_t::iterator it = m_extensionsRouting.begin (); it != m_extensionsRouting.end (); it++)
     {
       (*it)->Dispose ();
@@ -862,11 +906,13 @@ void Ipv6ExtensionRoutingDemux::DoDispose ()
 
 void Ipv6ExtensionRoutingDemux::SetNode (Ptr<Node> node)
 {
+  NS_LOG_FUNCTION (this << node);
   m_node = node;
 }
 
 void Ipv6ExtensionRoutingDemux::Insert (Ptr<Ipv6ExtensionRouting> extensionRouting)
 {
+  NS_LOG_FUNCTION (this << extensionRouting);
   m_extensionsRouting.push_back (extensionRouting);
 }
 
@@ -884,6 +930,7 @@ Ptr<Ipv6ExtensionRouting> Ipv6ExtensionRoutingDemux::GetExtensionRouting (uint8_
 
 void Ipv6ExtensionRoutingDemux::Remove (Ptr<Ipv6ExtensionRouting> extensionRouting)
 {
+  NS_LOG_FUNCTION (this << extensionRouting);
   m_extensionsRouting.remove (extensionRouting);
 }
 
@@ -902,18 +949,14 @@ TypeId Ipv6ExtensionLooseRouting::GetTypeId ()
 
 Ipv6ExtensionLooseRouting::Ipv6ExtensionLooseRouting ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ipv6ExtensionLooseRouting::~Ipv6ExtensionLooseRouting ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 uint8_t Ipv6ExtensionLooseRouting::GetTypeRouting () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return TYPE_ROUTING;
 }
 
@@ -1066,18 +1109,14 @@ TypeId Ipv6ExtensionESP::GetTypeId ()
 
 Ipv6ExtensionESP::Ipv6ExtensionESP ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ipv6ExtensionESP::~Ipv6ExtensionESP ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 uint8_t Ipv6ExtensionESP::GetExtensionNumber () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return EXT_NUMBER;
 }
 
@@ -1112,18 +1151,14 @@ TypeId Ipv6ExtensionAH::GetTypeId ()
 
 Ipv6ExtensionAH::Ipv6ExtensionAH ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 Ipv6ExtensionAH::~Ipv6ExtensionAH ()
 {
-  NS_LOG_FUNCTION_NOARGS ();
 }
 
 uint8_t Ipv6ExtensionAH::GetExtensionNumber () const
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
   return EXT_NUMBER;
 }
 

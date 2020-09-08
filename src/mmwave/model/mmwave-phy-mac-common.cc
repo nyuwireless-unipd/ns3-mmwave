@@ -124,7 +124,7 @@ MmWavePhyMacCommon::SetNrNumerology (uint8_t index)
   m_symbolsPerSubframe = m_symbolsPerSlot * m_slotsPerSubframe;
   m_subframesPerFrame = 10;
   m_subframePeriod = Time (MilliSeconds (1)); // TS 38.211 Section 4.3.1: the subframe duration is 1ms
-  m_symbolPeriod = Time (NanoSeconds (m_subframePeriod / m_symbolsPerSlot / m_slotsPerSubframe)); // Duration of an OFDM symbol
+  m_symbolPeriod = Time (m_subframePeriod / m_symbolsPerSlot / m_slotsPerSubframe); // Duration of an OFDM symbol
   m_numSubCarriersPerChunk = subCarriersPerRB;
   m_chunkWidth = subCarriersPerRB * subcarrierSpacing;
 }

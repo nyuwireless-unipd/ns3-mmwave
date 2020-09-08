@@ -54,7 +54,7 @@ main (int argc, char *argv[])
   bool tracing = false;
   bool nullmsg = false;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("nCsma", "Number of \"extra\" CSMA nodes/devices", nCsma);
   cmd.AddValue ("nWifi", "Number of wifi STA devices", nWifi);
   cmd.AddValue ("verbose", "Tell echo applications to log if true", verbose);
@@ -82,8 +82,6 @@ main (int argc, char *argv[])
   uint32_t systemId = 0;
   uint32_t systemCount = 1;
 
-#ifdef NS3_MPI
-
   // Distributed simulation setup; by default use granted time window algorithm.
   if(nullmsg) 
     {
@@ -108,8 +106,6 @@ main (int argc, char *argv[])
       std::cout << "This simulation requires 2 and only 2 logical processors." << std::endl;
       return 1;
     }
-
-#endif // NS3_MPI
 
   // System id of Wifi side
   uint32_t systemWifi = 0;
@@ -262,10 +258,8 @@ main (int argc, char *argv[])
   Simulator::Run ();
   Simulator::Destroy ();
 
-#ifdef NS3_MPI
   // Exit the MPI execution environment
   MpiInterface::Disable ();
-#endif
   
   return 0;
 }

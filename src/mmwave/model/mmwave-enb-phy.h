@@ -66,8 +66,8 @@ public:
   virtual ~MmWaveEnbPhy ();
 
   static TypeId GetTypeId (void);
-  virtual void DoInitialize (void);
-  virtual void DoDispose (void);
+  virtual void DoInitialize (void) override;
+  virtual void DoDispose (void) override;
 
   void SetMmWaveEnbCphySapUser (LteEnbCphySapUser* s);
   LteEnbCphySapProvider* GetMmWaveEnbCphySapProvider ();
@@ -80,7 +80,7 @@ public:
 
   void CalcChannelQualityForUe (std::vector <double> sinr, Ptr<MmWaveSpectrumPhy> ue);
 
-  virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity ();
+  virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity () override;
 
   void SetSubChannels (std::vector<int> mask );
 

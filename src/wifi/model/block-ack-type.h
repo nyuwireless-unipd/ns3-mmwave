@@ -25,13 +25,14 @@ namespace ns3 {
 
 /**
  * \ingroup wifi
- * The different block ACK policies.
+ * The different block ack policies.
  */
 enum BlockAckType
 {
   BASIC_BLOCK_ACK,
   COMPRESSED_BLOCK_ACK,
-  MULTI_TID_BLOCK_ACK
+  EXTENDED_COMPRESSED_BLOCK_ACK,
+  MULTI_TID_BLOCK_ACK,
 };
 
 } //namespace ns3

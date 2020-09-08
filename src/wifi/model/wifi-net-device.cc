@@ -103,12 +103,36 @@ WifiNetDevice::DoDispose (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
   m_node = 0;
-  m_mac->Dispose ();
-  m_phy->Dispose ();
-  m_stationManager->Dispose ();
-  m_mac = 0;
-  m_phy = 0;
-  m_stationManager = 0;
+  if (m_mac)
+    {
+      m_mac->Dispose ();
+      m_mac = 0;
+    }
+  if (m_phy)
+    {
+      m_phy->Dispose ();
+      m_phy = 0;
+    }
+  if (m_stationManager)
+    {
+      m_stationManager->Dispose ();
+      m_stationManager = 0;
+    }
+  if (m_htConfiguration)
+    {
+      m_htConfiguration->Dispose ();
+      m_htConfiguration = 0;
+    }
+  if (m_vhtConfiguration)
+    {
+      m_vhtConfiguration->Dispose ();
+      m_vhtConfiguration = 0;
+    }
+  if (m_heConfiguration)
+    {
+      m_heConfiguration->Dispose ();
+      m_heConfiguration = 0;
+    }
   NetDevice::DoDispose ();
 }
 
@@ -116,9 +140,18 @@ void
 WifiNetDevice::DoInitialize (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  m_phy->Initialize ();
-  m_mac->Initialize ();
-  m_stationManager->Initialize ();
+  if (m_phy)
+    {
+      m_phy->Initialize ();
+    }
+  if (m_mac)
+    {
+      m_mac->Initialize ();
+    }
+  if (m_stationManager)
+    {
+      m_stationManager->Initialize ();
+    }
   NetDevice::DoInitialize ();
 }
 
@@ -325,7 +358,7 @@ WifiNetDevice::SetReceiveCallback (NetDevice::ReceiveCallback cb)
 }
 
 void
-WifiNetDevice::ForwardUp (Ptr<Packet> packet, Mac48Address from, Mac48Address to)
+WifiNetDevice::ForwardUp (Ptr<const Packet> packet, Mac48Address from, Mac48Address to)
 {
   NS_LOG_FUNCTION (this << packet << from << to);
   LlcSnapHeader llc;
@@ -347,21 +380,22 @@ WifiNetDevice::ForwardUp (Ptr<Packet> packet, Mac48Address from, Mac48Address to
       type = NetDevice::PACKET_OTHERHOST;
     }
 
+  Ptr<Packet> copy = packet->Copy ();
   if (type != NetDevice::PACKET_OTHERHOST)
     {
       m_mac->NotifyRx (packet);
-      packet->RemoveHeader (llc);
-      m_forwardUp (this, packet, llc.GetType (), from);
+      copy->RemoveHeader (llc);
+      m_forwardUp (this, copy, llc.GetType (), from);
     }
   else
     {
-      packet->RemoveHeader (llc);
+      copy->RemoveHeader (llc);
     }
 
   if (!m_promiscRx.IsNull ())
     {
-      m_mac->NotifyPromiscRx (packet);
-      m_promiscRx (this, packet, llc.GetType (), from, to, type);
+      m_mac->NotifyPromiscRx (copy);
+      m_promiscRx (this, copy, llc.GetType (), from, to, type);
     }
 }
 

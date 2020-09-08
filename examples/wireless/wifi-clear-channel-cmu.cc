@@ -175,7 +175,7 @@ int main (int argc, char *argv[])
   modes.push_back ("DsssRate5_5Mbps");
   modes.push_back ("DsssRate11Mbps");
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.Parse (argc, argv);
 
   Gnuplot gnuplot = Gnuplot ("clear-channel.eps");
@@ -208,8 +208,6 @@ int main (int argc, char *argv[])
 
           NS_LOG_DEBUG (modes[i]);
           experiment = Experiment (modes[i]);
-          wifiPhy.Set ("EnergyDetectionThreshold", DoubleValue (-110.0) );
-          wifiPhy.Set ("CcaMode1Threshold", DoubleValue (-110.0) );
           wifiPhy.Set ("TxPowerStart", DoubleValue (15.0) );
           wifiPhy.Set ("TxPowerEnd", DoubleValue (15.0) );
           wifiPhy.Set ("RxGain", DoubleValue (0) );

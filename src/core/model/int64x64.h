@@ -69,11 +69,11 @@ namespace ns3 {
  *   Comparison  | `==`, `!=`, `<`, `<=`, `>`, `>=`
  *   Unary       | `+`, `-`, `!`
  */
-  
+
 /**
  * \ingroup highprec
  * \class int64x64_t
- * 
+ *
  * High precision numerical type, implementing Q64.64 fixed precision.
  */
 
@@ -81,6 +81,9 @@ namespace ns3 {
 /**
  * \ingroup highprec
  * Addition operator.
+ * \param [in] lhs Left hand argument
+ * \param [in] rhs Right hand argument
+ * \return The result of the operator.
  */
 inline
 int64x64_t operator + (const int64x64_t & lhs, const int64x64_t & rhs)
@@ -92,6 +95,9 @@ int64x64_t operator + (const int64x64_t & lhs, const int64x64_t & rhs)
 /**
  * \ingroup highprec
  * Subtraction operator.
+ * \param [in] lhs Left hand argument
+ * \param [in] rhs Right hand argument
+ * \return The result of the operator.
  */
 inline
 int64x64_t operator - (const int64x64_t & lhs, const int64x64_t & rhs)
@@ -103,6 +109,9 @@ int64x64_t operator - (const int64x64_t & lhs, const int64x64_t & rhs)
 /**
  * \ingroup highprec
  * Multiplication operator.
+ * \param [in] lhs Left hand argument
+ * \param [in] rhs Right hand argument
+ * \return The result of the operator.
  */
 inline
 int64x64_t operator * (const int64x64_t & lhs, const int64x64_t & rhs)
@@ -114,6 +123,9 @@ int64x64_t operator * (const int64x64_t & lhs, const int64x64_t & rhs)
 /**
  * \ingroup highprec
  * Division operator.
+ * \param [in] lhs Left hand argument
+ * \param [in] rhs Right hand argument
+ * \return The result of the operator.
  */
 inline
 int64x64_t operator / (const int64x64_t & lhs, const int64x64_t & rhs)
@@ -125,6 +137,9 @@ int64x64_t operator / (const int64x64_t & lhs, const int64x64_t & rhs)
 /**
  * \ingroup highprec
  * Inequality operator
+ * \param [in] lhs Left hand argument
+ * \param [in] rhs Right hand argument
+ * \return The result of the operator.
  */
 inline bool operator != (const int64x64_t & lhs, const int64x64_t & rhs)
 {
@@ -133,6 +148,9 @@ inline bool operator != (const int64x64_t & lhs, const int64x64_t & rhs)
 /**
  * \ingroup highprec
  * Less or equal operator.
+ * \param [in] lhs Left hand argument
+ * \param [in] rhs Right hand argument
+ * \return The result of the operator.
  */
 inline bool operator <= (const int64x64_t & lhs, const int64x64_t & rhs)
 {
@@ -141,6 +159,9 @@ inline bool operator <= (const int64x64_t & lhs, const int64x64_t & rhs)
 /**
  * \ingroup highprec
  * Greater or equal operator.
+ * \param [in] lhs Left hand argument
+ * \param [in] rhs Right hand argument
+ * \return The result of the operator.
  */
 inline bool operator >= (const int64x64_t & lhs, const int64x64_t & rhs)
 {
@@ -179,7 +200,7 @@ std::istream &operator >> (std::istream &is, int64x64_t &value);
  * \ingroup highprec
  * Absolute value.
  * \param [in] value The value to operate on.
- * \return The absolute value of \p value.
+ * \return The absolute value of \pname{value}.
  */
 inline int64x64_t Abs (const int64x64_t &value)
 {

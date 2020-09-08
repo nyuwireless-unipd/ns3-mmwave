@@ -24,6 +24,8 @@
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
 #include "ns3/error-rate-model.h"
+#include "ns3/frame-capture-model.h"
+#include "ns3/preamble-detection-model.h"
 #include "ns3/yans-wifi-phy.h"
 #include "yans-wifi-helper.h"
 
@@ -154,6 +156,16 @@ YansWifiPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
   Ptr<YansWifiPhy> phy = m_phy.Create<YansWifiPhy> ();
   Ptr<ErrorRateModel> error = m_errorRateModel.Create<ErrorRateModel> ();
   phy->SetErrorRateModel (error);
+  if (m_frameCaptureModel.IsTypeIdSet ())
+    {
+      Ptr<FrameCaptureModel> capture = m_frameCaptureModel.Create<FrameCaptureModel> ();
+      phy->SetFrameCaptureModel (capture);
+    }
+  if (m_preambleDetectionModel.IsTypeIdSet ())
+    {
+      Ptr<PreambleDetectionModel> capture = m_preambleDetectionModel.Create<PreambleDetectionModel> ();
+      phy->SetPreambleDetectionModel (capture);
+    }
   phy->SetChannel (m_channel);
   phy->SetDevice (device);
   return phy;

@@ -24,6 +24,7 @@
 #define MAC_LOW_TRANSMISSION_PARAMETERS_H
 
 #include "ns3/uinteger.h"
+#include "block-ack-type.h"
 
 namespace ns3 {
 
@@ -41,23 +42,23 @@ public:
   MacLowTransmissionParameters ();
 
   /**
-   * Wait ACKTimeout for an ACK. If we get an ACK
+   * Wait ACKTimeout for an Ack. If we get an Ack
    * on time, call MacLowTransmissionListener::GotAck.
    * Call MacLowTransmissionListener::MissedAck otherwise.
    */
   void EnableAck (void);
   /**
-   * Wait BASICBLOCKACKTimeout for a Basic Block Ack Response frame.
+   * Wait the timeout corresponding to the given BlockAck response type.
+   *
+   * \param type the BlockAck response type
    */
-  void EnableBasicBlockAck (void);
+  void EnableBlockAck (BlockAckType type);
   /**
-   * Wait COMPRESSEDBLOCKACKTimeout for a Compressed Block Ack Response frame.
+   * Schedule the transmission of a BlockAckRequest of the given type.
+   *
+   * \param type the BlockAckRequest type
    */
-  void EnableCompressedBlockAck (void);
-  /**
-   * NOT IMPLEMENTED FOR NOW
-   */
-  void EnableMultiTidBlockAck (void);
+  void EnableBlockAckRequest (BlockAckType type);
   /**
    * Send a RTS, and wait CTSTimeout for a CTS. If we get a
    * CTS on time, call MacLowTransmissionListener::GotCts
@@ -67,7 +68,7 @@ public:
   void EnableRts (void);
   /**
    * \param size size of next data to send after current packet is
-   *        sent.
+   *        sent in bytes.
    *
    * Add the transmission duration of the next data to the
    * durationId of the outgoing packet and call
@@ -81,7 +82,11 @@ public:
    */
   void DisableAck (void);
   /**
-   * Do not send rts and wait for cts before sending data.
+   * Do not send BlockAckRequest after data transmission
+   */
+  void DisableBlockAckRequest (void);
+  /**
+   * Do not send RTS and wait for CTS before sending data.
    */
   void DisableRts (void);
   /**
@@ -89,7 +94,7 @@ public:
    */
   void DisableNextData (void);
   /**
-   * \returns true if normal ACK protocol should be used, false
+   * \returns true if normal ack protocol should be used, false
    *          otherwise.
    *
    * \sa EnableAck
@@ -100,19 +105,25 @@ public:
    *
    * \sa EnableBlockAck
    */
-  bool MustWaitBasicBlockAck (void) const;
+  bool MustWaitBlockAck (void) const;
   /**
-   * \returns true if compressed block ack mechanism is used, false otherwise.
+   * \returns the selected BlockAck variant.
    *
-   * \sa EnableCompressedBlockAck
+   * Only call this method if the block ack mechanism is used.
    */
-  bool MustWaitCompressedBlockAck (void) const;
+  BlockAckType GetBlockAckType (void) const;
   /**
-   * \returns true if multi-tid block ack mechanism is used, false otherwise.
+   * \returns true if a BlockAckRequest must be sent, false otherwise.
    *
-   * \sa EnableMultiTidBlockAck
+   * Return true if a BlockAckRequest must be sent, false otherwise.
    */
-  bool MustWaitMultiTidBlockAck (void) const;
+  bool MustSendBlockAckRequest (void) const;
+  /**
+   * \returns the selected BlockAckRequest variant.
+   *
+   * Only call this method if a BlockAckRequest must be sent.
+   */
+  BlockAckType GetBlockAckRequestType (void) const;
   /**
    * \returns true if RTS should be sent and CTS waited for before
    *          sending data, false otherwise.
@@ -130,15 +141,25 @@ public:
 private:
   friend std::ostream &operator << (std::ostream &os, const MacLowTransmissionParameters &params);
   uint32_t m_nextSize; //!< the next size
-  /// wait ack enumerated type
+  /// wait Ack enumerated type
   enum
   {
     ACK_NONE,
     ACK_NORMAL,
     BLOCK_ACK_BASIC,
     BLOCK_ACK_COMPRESSED,
+    BLOCK_ACK_EXTENDED_COMPRESSED,
     BLOCK_ACK_MULTI_TID
-  } m_waitAck; //!< wait ack
+  } m_waitAck; //!< wait Ack
+  /// send BAR enumerated type
+  enum
+  {
+    BLOCK_ACK_REQUEST_NONE,
+    BLOCK_ACK_REQUEST_BASIC,
+    BLOCK_ACK_REQUEST_COMPRESSED,
+    BLOCK_ACK_REQUEST_EXTENDED_COMPRESSED,
+    BLOCK_ACK_REQUEST_MULTI_TID
+  } m_sendBar; //!< send BAR
   bool m_sendRts; //!< send an RTS?
 };
 

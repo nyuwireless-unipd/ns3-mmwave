@@ -116,7 +116,7 @@ main (int argc, char *argv[])
   // system so that they can be overridden with flags such as
   // "--backboneNodes=20"
   //
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("backboneNodes", "number of backbone nodes", backboneNodes);
   cmd.AddValue ("infraNodes", "number of leaf nodes", infraNodes);
   cmd.AddValue ("lanNodes", "number of LAN nodes", lanNodes);
@@ -301,8 +301,7 @@ main (int argc, char *argv[])
       NetDeviceContainer staDevices = wifiInfra.Install (wifiPhy, macInfra, stas);
       // setup ap.
       macInfra.SetType ("ns3::ApWifiMac",
-                        "Ssid", SsidValue (ssid),
-                        "BeaconInterval", TimeValue (Seconds (2.5)));
+                        "Ssid", SsidValue (ssid));
       NetDeviceContainer apDevices = wifiInfra.Install (wifiPhy, macInfra, backbone.Get (i));
       // Collect all of these new devices
       NetDeviceContainer infraDevices (apDevices, staDevices);

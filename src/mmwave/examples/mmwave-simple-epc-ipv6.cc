@@ -59,7 +59,6 @@ main (int argc, char *argv[])
   double maxDistance = 150.0;       // eNB-UE distance in meters
   bool harqEnabled = true;
   bool rlcAmEnabled = false;
-  bool fixedTti = false;
 
   // Command line arguments
   CommandLine cmd;
@@ -69,23 +68,15 @@ main (int argc, char *argv[])
   cmd.AddValue ("interPacketInterval", "Inter-packet interval [us])", interPacketInterval);
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("rlcAm", "Enable RLC-AM", rlcAmEnabled);
-  cmd.AddValue ("fixedTti", "Fixed TTI scheduler", fixedTti);
   cmd.Parse (argc, argv);
 
   Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue (rlcAmEnabled));
   Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue (harqEnabled));
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue (harqEnabled));
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::CqiTimerThreshold", UintegerValue (1000));
-  Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue (harqEnabled));
-  Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::FixedTti", BooleanValue (fixedTti));
-  Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::SymPerSlot", UintegerValue (6));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue (200.0));
   Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (MilliSeconds (100.0)));
-  Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
   Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue (MicroSeconds (100.0)));
   Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue (MicroSeconds (100.0)));
-  Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
-  Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
@@ -197,10 +188,11 @@ main (int argc, char *argv[])
       ulClient.SetAttribute ("Interval", TimeValue (MicroSeconds (interPacketInterval)));
       ulClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
 
+      clientApps.Add (ulClient.Install (ueNodes.Get(u)));
       clientApps.Add (dlClient.Install (remoteHost));
     }
-  serverApps.Start (Seconds (0.01));
-  clientApps.Start (Seconds (0.01));
+  serverApps.Start (Seconds (0.1));
+  clientApps.Start (Seconds (0.1));
   mmwaveHelper->EnableTraces ();
   // Uncomment to enable PCAP tracing
   //p2ph.EnablePcapAll ("mmwave-epc-simple");

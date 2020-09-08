@@ -160,7 +160,7 @@ MmWaveUePhy::DoInitialize (void)
       m_channelChunks.push_back (i);
     }
 
-  m_slotPeriod = NanoSeconds (m_phyMacConfig->GetSubframePeriod () / m_phyMacConfig->GetSlotsPerSubframe ());
+  m_slotPeriod = m_phyMacConfig->GetSubframePeriod () / m_phyMacConfig->GetSlotsPerSubframe ();
   m_phyReset = true;
 
   MmWavePhy::DoInitialize ();
@@ -663,8 +663,8 @@ MmWaveUePhy::EndTti ()
   else
     {
       m_ttiIndex++;
-      Time nexTtiStart = NanoSeconds (m_phyMacConfig->GetSymbolPeriod () * // Find out when the next TTI starts
-                                      m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex].m_dci.m_symStart);
+      Time nexTtiStart = m_phyMacConfig->GetSymbolPeriod () * // Find out when the next TTI starts
+                                      m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex].m_dci.m_symStart;
 
       NS_LOG_INFO ("Symbol period: " << m_phyMacConfig->GetSymbolPeriod () << " next TTI at symbol #: "
                                      << (uint16_t) m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex].m_dci.m_symStart);

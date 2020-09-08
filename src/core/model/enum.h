@@ -96,10 +96,25 @@ public:
   /**
    * Add a new value.
    * \param [in] value The value.
-   * \param [in] name Then enum symbol name.
+   * \param [in] name The enum symbol name.
    */
   void Add (int value, std::string name);
 
+  /**
+   * Get the enum symbol name by value.
+   * \param [in] value The value.
+   * \return The enum symbol name.
+   */
+  std::string GetName (int value) const;
+
+  /**
+   * Get the enum value by name.
+   * \param [in] name Then enum symbol name.
+   * \returns The enum value.
+   */
+  int GetValue (const std::string name) const;
+  
+  // Inherited
   virtual bool Check (const AttributeValue &value) const;
   virtual std::string GetValueTypeName (void) const;
   virtual bool HasUnderlyingTypeInformation (void) const;
@@ -108,9 +123,10 @@ public:
   virtual bool Copy (const AttributeValue &src, AttributeValue &dst) const;
 
 private:
-  friend class EnumValue;
+  /** Type for the pair value, name */
+  typedef std::pair<int,std::string> Value;
   /** Type of container for storing Enum values and symbol names. */
-  typedef std::list<std::pair<int,std::string> > ValueSet;
+  typedef std::list<Value> ValueSet;
   /** The stored Enum values and symbol names. */
   ValueSet m_valueSet;
 };
@@ -176,7 +192,7 @@ Ptr<const AttributeAccessor> MakeEnumAccessor (T1 a1, T2 a2);
  * \param [in] n21 The corresponding name.
  * \param [in] v22 A enum value
  * \param [in] n22 The corresponding name.
- */ 
+ */
 Ptr<const AttributeChecker> MakeEnumChecker (int v1, std::string n1,
                                              int v2 = 0, std::string n2 = "",
                                              int v3 = 0, std::string n3 = "",

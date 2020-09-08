@@ -9,6 +9,8 @@ def build(bld):
         'model/udp-client.cc',
         'model/udp-server.cc',
         'model/seq-ts-header.cc',
+        'model/seq-ts-size-header.cc',
+        'model/seq-ts-echo-header.cc',
         'model/udp-trace-client.cc',
         'model/packet-loss-counter.cc',
         'model/udp-echo-client.cc',
@@ -29,9 +31,16 @@ def build(bld):
     applications_test = bld.create_ns3_module_test_library('applications')
     applications_test.source = [
         'test/three-gpp-http-client-server-test.cc', 
+        'test/bulk-send-application-test-suite.cc',
         'test/udp-client-server-test.cc'
         ]
 
+    # Tests encapsulating example programs should be listed here
+    if (bld.env['ENABLE_EXAMPLES']):
+        applications_test.source.extend([
+        #   'test/applications-examples-test-suite.cc',
+            ])
+    
     headers = bld(features='ns3header')
     headers.module = 'applications'
     headers.source = [
@@ -41,6 +50,8 @@ def build(bld):
         'model/udp-client.h',
         'model/udp-server.h',
         'model/seq-ts-header.h',
+        'model/seq-ts-size-header.h',
+        'model/seq-ts-echo-header.h',
         'model/udp-trace-client.h',
         'model/packet-loss-counter.h',
         'model/udp-echo-client.h',

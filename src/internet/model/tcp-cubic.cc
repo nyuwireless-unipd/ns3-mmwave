@@ -41,7 +41,7 @@ TcpCubic::GetTypeId (void)
                    MakeBooleanAccessor (&TcpCubic::m_fastConvergence),
                    MakeBooleanChecker ())
     .AddAttribute ("Beta", "Beta for multiplicative decrease",
-                   DoubleValue (0.8),
+                   DoubleValue (0.7),
                    MakeDoubleAccessor (&TcpCubic::m_beta),
                    MakeDoubleChecker <double> (0.0))
     .AddAttribute ("HyStart", "Enable (true) or disable (false) hybrid slow start algorithm",
@@ -397,8 +397,7 @@ TcpCubic::GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight)
   /* Wmax and fast convergence */
   if (segCwnd < m_lastMaxCwnd && m_fastConvergence)
     {
-      //m_lastMaxCwnd = m_beta * segCwnd;
-	  m_lastMaxCwnd = (1+m_beta) * segCwnd/2; //by zml
+      m_lastMaxCwnd = (segCwnd * (1 + m_beta)) / 2; // Section 4.6 in RFC 8312
     }
   else
     {
@@ -408,12 +407,19 @@ TcpCubic::GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight)
   m_epochStart = Time::Min ();    // end of epoch
 
   /* Formula taken from the Linux kernel */
+  uint32_t ssThresh = std::max (static_cast<uint32_t> (segInFlight * m_beta ), 2U) * tcb->m_segmentSize;
 
-  //uint32_t ssThresh = std::max (static_cast<uint32_t> (segInFlight * m_beta ), 2U) * tcb->m_segmentSize;
-  uint32_t temp = std::min (segCwnd, segInFlight);
-  uint32_t ssThresh = std::max (static_cast<uint32_t> (temp * m_beta ), 2U) * tcb->m_segmentSize;
+  NS_LOG_DEBUG ("SsThresh = " << ssThresh);
 
   return ssThresh;
+}
+
+void
+TcpCubic::ReduceCwnd (Ptr<TcpSocketState> tcb)
+{
+  NS_LOG_FUNCTION (this << tcb);
+
+  tcb->m_cWnd = std::max (tcb->m_cWnd.Get () / 2, tcb->m_segmentSize);
 }
 
 void

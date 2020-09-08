@@ -62,7 +62,7 @@ public:
   MmWaveMacScheduler ();
   virtual ~MmWaveMacScheduler ();
 
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
   static TypeId GetTypeId (void);
 
   virtual void ConfigureCommonParameters (Ptr<MmWavePhyMacCommon> config) = 0;

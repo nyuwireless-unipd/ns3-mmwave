@@ -43,6 +43,8 @@
 
 #include "ns3/command-line.h"
 #include "ns3/double.h"
+#include "ns3/uinteger.h"
+#include "ns3/rectangle.h"
 #include "ns3/string.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/ssid.h"
@@ -52,7 +54,6 @@
 #include "ns3/on-off-helper.h"
 #include "ns3/yans-wifi-channel.h"
 #include "ns3/csma-helper.h"
-#include "ns3/animation-interface.h"
 #include "ns3/bridge-helper.h"
 #include "ns3/packet-socket-address.h"
 
@@ -65,7 +66,7 @@ int main (int argc, char *argv[])
   bool sendIp = true;
   bool writeMobility = false;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("nWifis", "Number of wifi networks", nWifis);
   cmd.AddValue ("nStas", "Number of stations per wifi network", nStas);
   cmd.AddValue ("SendIp", "Send Ipv4 or raw packets", sendIp);

@@ -68,9 +68,9 @@ public:
 
 protected:
   // Inherited methods
-  virtual void DoInitialize ();
-  virtual void DoDispose ();
-  virtual void DoReportUeMeas (uint16_t rnti, LteRrcSap::MeasResults measResults);
+  virtual void DoInitialize () override;
+  virtual void DoDispose () override;
+  virtual void DoReportUeMeas (uint16_t rnti, LteRrcSap::MeasResults measResults) override;
   /**
    * \brief Add UE.
    * \param rnti the RNTI

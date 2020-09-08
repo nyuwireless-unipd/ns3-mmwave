@@ -60,8 +60,6 @@ NS_LOG_COMPONENT_DEFINE ("CampusNetworkModelDistributed");
 int
 main (int argc, char *argv[])
 {
-#ifdef NS3_MPI
-
   typedef std::vector<NodeContainer> vectorOfNodeContainer;
   typedef std::vector<vectorOfNodeContainer> vectorOfVectorOfNodeContainer;
   typedef std::vector<vectorOfVectorOfNodeContainer> vectorOfVectorOfVectorOfNodeContainer;  
@@ -91,7 +89,7 @@ main (int argc, char *argv[])
   int nBytes = 500000; // Bytes for each on/off app
   bool nix = true;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("CN", "Number of total CNs [2]", nCN);
   cmd.AddValue ("LAN", "Number of nodes per LAN [42]", nLANClients);
   cmd.AddValue ("single", "1 if use single flow", single);
@@ -624,8 +622,5 @@ main (int argc, char *argv[])
   std::cout << "Simulator run time: " << d2 << std::endl;
   std::cout << "Total elapsed time: " << d1 + d2 << std::endl;
   return 0;
-#else
-  NS_FATAL_ERROR ("Can't use distributed simulator without MPI compiled in");
-#endif
 }
 

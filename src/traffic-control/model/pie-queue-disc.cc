@@ -33,7 +33,6 @@
 #include "ns3/abort.h"
 #include "pie-queue-disc.h"
 #include "ns3/drop-tail-queue.h"
-#include "ns3/net-device-queue-interface.h"
 
 namespace ns3 {
 
@@ -116,7 +115,7 @@ PieQueueDisc::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   m_uv = 0;
-  Simulator::Remove (m_rtrsEvent);
+  m_rtrsEvent.Cancel ();
   QueueDisc::DoDispose ();
 }
 

@@ -66,6 +66,7 @@ def build(bld):
 
     module_test = bld.create_ns3_module_test_library('mmwave')
     module_test.source = [
+        'test/simple-matrix-based-channel-model.cc',
         'test/mmwave-channel-model-initialization-test.cc',
         'test/mmwave-antenna-initialization-test.cc',
         'test/mmwave-beamforming-test.cc',

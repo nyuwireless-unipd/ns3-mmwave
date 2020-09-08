@@ -49,7 +49,7 @@ class TraceSourceAccessor;
  * \defgroup object Object
  * \brief Base classes which provide memory management and object aggregation.
  */
-  
+
 /**
  * \ingroup object
  * \ingroup ptr
@@ -97,13 +97,13 @@ public:
    * \brief Iterate over the Objects aggregated to an ns3::Object.
    *
    * This iterator does not allow you to iterate over the parent
-   * Object used to call Object::GetAggregateIterator. 
+   * Object used to call Object::GetAggregateIterator.
    *
    * \note This is a java-style iterator.
    */
   class AggregateIterator
   {
-public:
+  public:
     /** Default constructor, which has no Object. */
     AggregateIterator ();
 
@@ -121,7 +121,9 @@ public:
      * \returns The next aggregated Object.
      */
     Ptr<const Object> Next (void);
-private:
+
+  private:
+    /** Object needs access. */
     friend class Object;
     /**
      * Construct from an Object.
@@ -144,19 +146,23 @@ private:
   virtual TypeId GetInstanceTypeId (void) const;
 
   /**
-   * Get a pointer to the requested aggregated Object.
+   * Get a pointer to the requested aggregated Object.  If the type of object
+   * requested is ns3::Object, a Ptr to the calling object is returned.
    *
+   * \tparam T \explicit The type of the aggregated Object to retrieve.
    * \returns A pointer to the requested Object, or zero
    *          if it could not be found.
    */
   template <typename T>
   inline Ptr<T> GetObject (void) const;
   /**
-   * Get a pointer to the requested aggregated Object by TypeId.
-   * 
+   * Get a pointer to the requested aggregated Object by TypeId.  If the
+   * TypeId argument is ns3::Object, a Ptr to the calling object is returned.
+   *
+   * \tparam T \explicit The type of the aggregated Object to retrieve.
    * \param [in] tid The TypeId of the requested Object.
-   * \returns A pointer to the requested Object, or zero
-   *          if it could not be found.
+   * \returns A pointer to the requested Object with the specified TypeId,
+   *          or zero if it could not be found.
    */
   template <typename T>
   Ptr<T> GetObject (TypeId tid) const;
@@ -164,7 +170,7 @@ private:
    * Dispose of this Object.
    *
    * Run the DoDispose() methods of this Object and all the
-   * Objects aggregated to it.  
+   * Objects aggregated to it.
    * After calling this method, this Object is expected to be
    * totally unusable except for the Ref() and Unref() methods.
    *
@@ -182,7 +188,7 @@ private:
    *
    * This method aggregates the two Objects together: after this
    * method returns, it becomes possible to call GetObject()
-   * on one to get the other, and vice-versa. 
+   * on one to get the other, and vice-versa.
    *
    * This method calls the virtual method NotifyNewAggregates() to
    * notify all aggregated Objects that they have been aggregated
@@ -219,7 +225,8 @@ private:
   /**
    * Check if the object has been initialized.
    *
-   * \brief returns true if the object has been initialized. 
+   * \brief Check if the object has been initialized.
+   * \returns \c true if the object has been initialized.
    */
   bool IsInitialized (void) const;
 
@@ -253,7 +260,7 @@ protected:
   /**
    * Destructor implementation.
    *
-   * This method is called by Dispose() or by the Object's 
+   * This method is called by Dispose() or by the Object's
    * destructor, whichever comes first.
    *
    * Subclasses are expected to implement their real destruction
@@ -287,12 +294,13 @@ protected:
    * valid state.
    */
   Object (const Object &o);
-  
+
 private:
 
   /**
    * Copy an Object.
    *
+   * \tparam T \deduced The type of the Object being copied.
    * \param [in] object A pointer to the object to copy.
    * \returns A copy of the input object.
    *
@@ -305,25 +313,27 @@ private:
   template <typename T>
   friend Ptr<T> CopyObject (Ptr<const T> object);
   /**@}*/
-  
+
   /**
    * Set the TypeId and construct all Attributes of an Object.
    *
-   * \tparam T \explicit The type of the derived object we are constructing.
+   * \tparam T \deduced The type of the Object to complete.
    * \param [in] object The uninitialized object pointer.
    * \return The derived object.
    */
   template <typename T>
   friend Ptr<T> CompleteConstruct (T *object);
 
+  /** Friends. @{*/
   friend class ObjectFactory;
   friend class AggregateIterator;
   friend struct ObjectDeleter;
+  /**@}*/
 
   /**
    * The list of Objects aggregated to this one.
    *
-   * This data structure uses a classic C-style trick to 
+   * This data structure uses a classic C-style trick to
    * hold an array of variable size without performing
    * two memory allocations: the declaration of the structure
    * declares a one-element array but when we allocate
@@ -332,7 +342,8 @@ private:
    * variable sized buffer whose size is indicated by the element
    * \c n
    */
-  struct Aggregates {
+  struct Aggregates
+  {
     /** The number of entries in \c buffer. */
     uint32_t n;
     /** The array of Objects. */
@@ -366,7 +377,7 @@ private:
   bool CheckLoose (void) const;
   /**
    * Set the TypeId of this Object.
-   
+
    * \param [in] tid The TypeId value to set.
    *
    * Invoked from ns3::CreateObject only.
@@ -396,7 +407,7 @@ private:
   /**
    * Attempt to delete this Object.
    *
-   * This method iterates over all aggregated Objects to check if they all 
+   * This method iterates over all aggregated Objects to check if they all
    * have a zero refcount. If yes, the Object and all
    * its aggregates are deleted. If not, nothing is done.
    */
@@ -419,7 +430,7 @@ private:
   /**
    * A pointer to an array of 'aggregates'.
    *
-   * A pointer to each Object aggregated to this Object is stored in this 
+   * A pointer to each Object aggregated to this Object is stored in this
    * array.  The array is shared by all aggregated Objects
    * so the size of the array is indirectly a reference count.
    */
@@ -448,14 +459,14 @@ namespace ns3 {
  *   The Object implementation which depends on templates
  *************************************************************************/
 
-void 
+void
 ObjectDeleter::Delete (Object *object)
 {
   object->DoDelete ();
 }
 
 template <typename T>
-Ptr<T> 
+Ptr<T>
 Object::GetObject () const
 {
   // This is an optimization: if the cast works (which is likely),
@@ -474,8 +485,16 @@ Object::GetObject () const
   return 0;
 }
 
+template
+<>
+inline Ptr<Object>
+Object::GetObject () const
+{
+  return Ptr<Object> (const_cast<Object *> (this));
+}
+
 template <typename T>
-Ptr<T> 
+Ptr<T>
 Object::GetObject (TypeId tid) const
 {
   Ptr<Object> found = DoGetObject (tid);
@@ -484,6 +503,21 @@ Object::GetObject (TypeId tid) const
       return Ptr<T> (static_cast<T *> (PeekPointer (found)));
     }
   return 0;
+}
+
+template
+<>
+inline Ptr<Object>
+Object::GetObject (TypeId tid) const
+{
+  if (tid == Object::GetTypeId ())
+    {
+      return Ptr<Object> (const_cast<Object *> (this));
+    }
+  else
+    {
+      return DoGetObject (tid);
+    }
 }
 
 /*************************************************************************
@@ -514,7 +548,7 @@ Ptr<T> CompleteConstruct (T *object)
   return Ptr<T> (object, false);
 }
 
-/** 
+/**
  * \ingroup object
  * @{
  */
@@ -522,144 +556,13 @@ Ptr<T> CompleteConstruct (T *object)
  * Create an object by type, with varying number of constructor parameters.
  *
  * \tparam T \explicit The type of the derived object to construct.
+ * \param [in] args Arguments to pass to the constructor.
  * \return The derived object.
  */
-template <typename T>
-Ptr<T> CreateObject (void)
+template <typename T, typename... Args>
+Ptr<T> CreateObject (Args&&... args)
 {
-  return CompleteConstruct (new T ());
-}
-/**
- * \copybrief CreateObject()
- * \tparam T \explicit The type of the derived object to construct.
- * \tparam T1 \deduced The type of the constructor argument.
- * \param [in] a1 The constructor argument
- * \return The derived object.
- */
-template <typename T, typename T1>
-Ptr<T> CreateObject (T1 a1)
-{
-  return CompleteConstruct (new T (a1));
-}
-
-/**
- * \copybrief CreateObject()
- * \tparam T \explicit The type of the derived object to construct.
- * \tparam T1 \deduced The type of the first constructor argument.
- * \tparam T2 \deduced The type of the second constructor argument.
- * \param [in] a1 The constructor first argument
- * \param [in] a2 The constructor second argument
- * \return The derived object.
- */
-template <typename T, typename T1, typename T2>
-Ptr<T> CreateObject (T1 a1, T2 a2)
-{
-  return CompleteConstruct (new T (a1,a2));
-}
-
-/**
- * \copybrief CreateObject()
- * \tparam T \explicit The type of the derived object to construct.
- * \tparam T1 \deduced The type of the first constructor argument.
- * \tparam T2 \deduced The type of the second constructor argument.
- * \tparam T3 \deduced The type of the third constructor argument.
- * \param [in] a1 The constructor first argument
- * \param [in] a2 The constructor second argument
- * \param [in] a3 The constructor third argument
- * \return The derived object.
- */
-template <typename T, typename T1, typename T2, typename T3>
-Ptr<T> CreateObject (T1 a1, T2 a2, T3 a3)
-{
-  return CompleteConstruct (new T (a1,a2,a3));
-}
-
-/**
- * \copybrief CreateObject()
- * \tparam T \explicit The type of the derived object to construct.
- * \tparam T1 \deduced The type of the first constructor argument.
- * \tparam T2 \deduced The type of the second constructor argument.
- * \tparam T3 \deduced The type of the third constructor argument.
- * \tparam T4 \deduced The type of the fourth constructor argument.
- * \param [in] a1 The constructor first argument
- * \param [in] a2 The constructor second argument
- * \param [in] a3 The constructor third argument
- * \param [in] a4 The constructor fourth argument
- * \return The derived object.
- */
-template <typename T, typename T1, typename T2, typename T3, typename T4>
-Ptr<T> CreateObject (T1 a1, T2 a2, T3 a3, T4 a4)
-{
-  return CompleteConstruct (new T (a1,a2,a3,a4));
-}
-
-/**
- * \copybrief CreateObject()
- * \tparam T \explicit The type of the derived object to construct.
- * \tparam T1 \deduced The type of the first constructor argument.
- * \tparam T2 \deduced The type of the second constructor argument.
- * \tparam T3 \deduced The type of the third constructor argument.
- * \tparam T4 \deduced The type of the fourth constructor argument.
- * \tparam T5 \deduced The type of the fifth constructor argument.
- * \param [in] a1 The constructor first argument
- * \param [in] a2 The constructor second argument
- * \param [in] a3 The constructor third argument
- * \param [in] a4 The constructor fourth argument
- * \param [in] a5 The constructor fifth argument
- * \return The derived object.
- */
-template <typename T, typename T1, typename T2, typename T3, typename T4, typename T5>
-Ptr<T> CreateObject (T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
-{
-  return CompleteConstruct (new T (a1,a2,a3,a4,a5));
-}
-
-/**
- * \copybrief CreateObject()
- * \tparam T \explicit The type of the derived object to construct.
- * \tparam T1 \deduced The type of the first constructor argument.
- * \tparam T2 \deduced The type of the second constructor argument.
- * \tparam T3 \deduced The type of the third constructor argument.
- * \tparam T4 \deduced The type of the fourth constructor argument.
- * \tparam T5 \deduced The type of the fifth constructor argument.
- * \tparam T6 \deduced The type of the sixth constructor argument.
- * \param [in] a1 The constructor first argument
- * \param [in] a2 The constructor second argument
- * \param [in] a3 The constructor third argument
- * \param [in] a4 The constructor fourth argument
- * \param [in] a5 The constructor fifth argument
- * \param [in] a6 The constructor sixth argument
- * \return The derived object.
- */
-template <typename T, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6>
-Ptr<T> CreateObject (T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6)
-{
-  return CompleteConstruct (new T (a1,a2,a3,a4,a5,a6));
-}
-
-/**
- * \copybrief CreateObject()
- * \tparam T \explicit The type of the derived object to construct.
- * \tparam T1 \deduced The type of the first constructor argument.
- * \tparam T2 \deduced The type of the second constructor argument.
- * \tparam T3 \deduced The type of the third constructor argument.
- * \tparam T4 \deduced The type of the fourth constructor argument.
- * \tparam T5 \deduced The type of the fifth constructor argument.
- * \tparam T6 \deduced The type of the sixth constructor argument.
- * \tparam T7 \deduced The type of the seventh constructor argument.
- * \param [in] a1 The constructor first argument
- * \param [in] a2 The constructor second argument
- * \param [in] a3 The constructor third argument
- * \param [in] a4 The constructor fourth argument
- * \param [in] a5 The constructor fifth argument
- * \param [in] a6 The constructor sixth argument
- * \param [in] a7 The constructor seventh argument
- * \return The derived object.
- */
-template <typename T, typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T7>
-Ptr<T> CreateObject (T1 a1, T2 a2, T3 a3, T4 a4, T5 a5, T6 a6, T7 a7)
-{
-  return CompleteConstruct (new T (a1,a2,a3,a4,a5,a6,a7));
+  return CompleteConstruct (new T (std::forward<Args> (args)...));
 }
 /**@}*/
 

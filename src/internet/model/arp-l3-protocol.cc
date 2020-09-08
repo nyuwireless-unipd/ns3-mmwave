@@ -106,7 +106,7 @@ ArpL3Protocol::SetTrafficControl (Ptr<TrafficControlLayer> tc)
 }
 
 /*
- * This method is called by AddAgregate and completes the aggregation
+ * This method is called by AggregateObject and completes the aggregation
  * by setting the node in the ipv4 stack
  */
 void
@@ -228,7 +228,7 @@ ArpL3Protocol::Receive (Ptr<NetDevice> device, Ptr<const Packet> p, uint16_t pro
           break;
         } 
       else if (arp.IsReply () && 
-               arp.GetDestinationIpv4Address ().IsEqual (cache->GetInterface ()->GetAddress (i).GetLocal ()) &&
+               arp.GetDestinationIpv4Address () == cache->GetInterface ()->GetAddress (i).GetLocal () &&
                arp.GetDestinationHardwareAddress () == device->GetAddress ())
         {
           found = true;
@@ -370,8 +370,6 @@ ArpL3Protocol::SendArpRequest (Ptr<const ArpCache> cache, Ipv4Address to)
   Ptr<Ipv4L3Protocol> ipv4 = m_node->GetObject<Ipv4L3Protocol> ();
   Ptr<NetDevice> device = cache->GetDevice ();
   NS_ASSERT (device != 0);
-  Ipv4Header header;
-  header.SetDestination (to);
   Ptr<Packet> packet = Create<Packet> ();
   Ipv4Address source = ipv4->SelectSourceAddress (device,  to, Ipv4InterfaceAddress::GLOBAL);
   NS_LOG_LOGIC ("ARP: sending request from node "<<m_node->GetId ()<<

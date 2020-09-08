@@ -14,6 +14,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Based on simple-global-routing.cc
+ * The Tunnel class adds two tunnels, n0<=>n3 and n1<=>n3
  */
 
 // Network topology
@@ -27,20 +28,15 @@
 //   n1
 //
 // - all links are point-to-point links with indicated one-way BW/delay
-// - CBR/UDP flows from n0 to n3, and from n3 to n1
-// - FTP/TCP flow from n0 to n3, starting at time 1.2 to time 1.35 sec.
-// - UDP packet size of 210 bytes, with per-packet interval 0.00375 sec.
-//   (i.e., DataRate of 448,000 bps)
-// - DropTail queues 
 // - Tracing of queues and packet receptions to file "virtual-net-device.tr"
 
 // Tunneling changes (relative to the simple-global-routing example):
-// n0 will receive an extra virtual interface with address 11.0.0.1
-// n1 will also receive an extra virtual interface with the same address 11.0.0.1
-// n3 will receive an extra virtual interface with address 11.0.0.254
-// The flows will be between 11.0.0.x (tunnel) addresses instead of 10.1.x.y ones
-// n3 will decide, on a per-packet basis, via random number, whether to
-// send the packet to n0 or to n1.
+// - n0 will receive an extra virtual interface with hardcoded inner-tunnel address 11.0.0.1
+// - n1 will also receive an extra virtual interface with the same inner-tunnel address 11.0.0.1
+// - n3 will receive an extra virtual interface with inner-tunnel address 11.0.0.254
+// - The flows will be between 11.0.0.x (inner-tunnel) addresses instead of 10.1.x.y ones
+// - n3 will decide, on a per-packet basis, via random number, whether to
+//   send the packet to n0 or to n1.
 //
 // Note: here we create a tunnel where IP packets are tunneled over
 // UDP/IP, but tunneling directly IP-over-IP would also be possible;
@@ -57,7 +53,6 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/virtual-net-device.h"
-#include "ns3/ipv4-global-routing-helper.h"
 
 using namespace ns3;
 
@@ -189,7 +184,7 @@ public:
 int 
 main (int argc, char *argv[])
 {
-  // Users may find it convenient to turn on explicit debugging
+  // Users may find it convenient to turn on explicit logging
   // for selected modules; the below lines suggest how to do this
 #if 0 
   LogComponentEnable ("VirtualNetDeviceExample", LOG_LEVEL_INFO);
@@ -201,15 +196,11 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (210));
   Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue ("448kb/s"));
 
-  //DefaultValue::Bind ("DropTailQueue::m_maxPackets", 30);
-
   // Allow the user to override any of the defaults and the above
-  // DefaultValue::Bind ()s at run-time, via command-line arguments
-  CommandLine cmd;
+  // Config::SetDefault ()s at run-time, via command-line arguments
+  CommandLine cmd (__FILE__);
   cmd.Parse (argc, argv);
 
-  // Here, we will explicitly create four nodes.  In more sophisticated
-  // topologies, we could configure a node factory.
   NS_LOG_INFO ("Create nodes.");
   NodeContainer c;
   c.Create (4);
@@ -249,7 +240,7 @@ main (int argc, char *argv[])
   // tables in the nodes.
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
-  // Add the tunnels
+  // Add the tunnels n0<=>n3 and n1<=>n3
   Tunnel tunnel (c.Get (3), c.Get (0), c.Get (1),
                  i3i2.GetAddress (0), i0i2.GetAddress (0), i1i2.GetAddress (0));
 

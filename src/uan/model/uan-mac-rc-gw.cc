@@ -206,7 +206,7 @@ UanMacRcGw::ReceivePacket (Ptr<Packet> pkt, double sinr, UanTxMode mode)
   UanHeaderCommon ch;
   pkt->PeekHeader (ch);
 
-  if (ch.GetDest () == m_address || ch.GetDest () == Mac8Address::GetBroadcast ())
+  if (ch.GetDest () == Mac8Address::ConvertFrom (GetAddress ()) || ch.GetDest () == Mac8Address::GetBroadcast ())
     {
       m_rxLogger (pkt, mode);
     }
@@ -226,11 +226,11 @@ UanMacRcGw::ReceivePacket (Ptr<Packet> pkt, double sinr, UanTxMode mode)
         m_propDelay[ch.GetSrc ()] = dh.GetPropDelay ();
         if (m_ackData.find (ch.GetSrc ()) == m_ackData.end ())
           {
-            NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GATEWAY Received unexpected data packet");
+            NS_LOG_DEBUG (Now ().As (Time::S) << " GATEWAY Received unexpected data packet");
           }
         else
           {
-            NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GW Received data packet from " << ch.GetSrc () << " length = " << pkt->GetSize ());
+            NS_LOG_DEBUG (Now ().As (Time::S) << " GW Received data packet from " << ch.GetSrc () << " length = " << pkt->GetSize ());
             m_ackData[ch.GetSrc ()].rxFrames.insert (dh.GetFrameNo ());
           }
         m_forwardUpCb (pkt, ch.GetProtocolNumber (), ch.GetSrc ());
@@ -255,7 +255,7 @@ UanMacRcGw::ReceivePacket (Ptr<Packet> pkt, double sinr, UanTxMode mode)
             req.frameNo = rh.GetFrameNo ();
             req.retryNo = rh.GetRetryNo ();
             req.length = rh.GetLength ();
-            NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GW storing reservation from " << ch.GetSrc () << " with length " << req.length);
+            NS_LOG_DEBUG (Now ().As (Time::S) << " GW storing reservation from " << ch.GetSrc () << " with length " << req.length);
             m_requests.insert (std::make_pair (ch.GetSrc (), req));
             std::map<Mac8Address, Time>::iterator it = m_propDelay.find (ch.GetSrc ());
             if (it == m_propDelay.end ())
@@ -291,11 +291,11 @@ UanMacRcGw::StartCycle (void)
 
   if (numRts)
     {
-      NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " Simulator starting non-empty cycle");
+      NS_LOG_DEBUG (Now ().As (Time::S) << " Simulator starting non-empty cycle");
     }
   else
     {
-      NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " Simulator starting EMPTY cycle");
+      NS_LOG_DEBUG (Now ().As (Time::S) << " Simulator starting EMPTY cycle");
     }
 
   // Calculate dataRate
@@ -374,7 +374,12 @@ UanMacRcGw::StartCycle (void)
       ctsg.SetRetryRate (m_currentRetryRate);
       ctsg.SetTxTimeStamp (Simulator::Now ());
 
-      UanHeaderCommon ch (m_address, Mac8Address::GetBroadcast (), UanMacRc::TYPE_CTS, 0);
+      UanHeaderCommon ch;
+      ch.SetSrc (Mac8Address::ConvertFrom (GetAddress ()));
+      ch.SetDest (Mac8Address::GetBroadcast ());
+      ch.SetType (UanMacRc::TYPE_CTS);
+      ch.SetProtocolNumber (0);
+
       Ptr<Packet> p = Create<Packet> ();
       p->AddHeader (ctsg);
       p->AddHeader (ch);
@@ -409,8 +414,8 @@ UanMacRcGw::StartCycle (void)
 
       Time earliestArr = ctsTxTimeTotal + pdelay + pdelay + m_sifs;
       Time arrivalTime = std::max (earliestArr, nextEarliest);
-      NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GW: Scheduling request for prop. delay " << pdelay.GetSeconds () << " for " << (*it).second << " Earliest possible arrival=" << earliestArr.GetSeconds () << "  Next arrival time=" << nextEarliest.GetSeconds ());
-      nextEarliest = arrivalTime + Seconds (req.length * 8.0 / dataRate) + Seconds (m_sifs.GetSeconds () * req.numFrames);
+      NS_LOG_DEBUG (Now ().As (Time::S) << " GW: Scheduling request for prop. delay " << pdelay.As (Time::S) << " for " << (*it).second << " Earliest possible arrival=" << earliestArr.As (Time::S) << "  Next arrival time=" << nextEarliest.As (Time::S));
+      nextEarliest = arrivalTime + Seconds (req.length * 8.0 / dataRate) + m_sifs * req.numFrames;
 
       UanHeaderRcCts ctsh;
       ctsh.SetAddress (dest);
@@ -420,9 +425,9 @@ UanMacRcGw::StartCycle (void)
       ctsh.SetDelayToTx (arrivalTime);
       cts->AddHeader (ctsh);
 
-      NS_LOG_DEBUG (Simulator::Now ().GetSeconds () <<
+      NS_LOG_DEBUG (Now ().As (Time::S) <<
                     " GW Scheduling reception for " << (uint32_t) req.numFrames <<
-                    " frames at " << (Simulator::Now () + arrivalTime).GetSeconds () << "  (delaytiltx of " << arrivalTime.GetSeconds () << ")  Total length is " << req.length << " with txtime " << req.length * 8 / dataRate << " seconds");
+                    " frames at " << (Simulator::Now () + arrivalTime).As (Time::S) << "  (delaytiltx of " << arrivalTime.As (Time::S) << ")  Total length is " << req.length << " with txtime " << req.length * 8 / dataRate << " seconds");
     }
 
   UanHeaderRcCtsGlobal ctsg;
@@ -432,7 +437,7 @@ UanMacRcGw::StartCycle (void)
   ctsg.SetTxTimeStamp (Simulator::Now ());
   UanHeaderCommon ch;
   ch.SetDest (Mac8Address::GetBroadcast ());
-  ch.SetSrc (m_address);
+  ch.SetSrc (Mac8Address::ConvertFrom (GetAddress ()));
   ch.SetType (UanMacRc::TYPE_CTS);
   cts->AddHeader (ctsg);
   cts->AddHeader (ch);
@@ -455,7 +460,7 @@ void
 UanMacRcGw::EndCycle ()
 {
 
-  NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GW Ending cycle");
+  NS_LOG_DEBUG (Now ().As (Time::S) << " GW Ending cycle");
 
   Time nextAck = Seconds (0);
 
@@ -477,7 +482,7 @@ UanMacRcGw::EndCycle ()
         }
       UanHeaderCommon ch;
       ch.SetDest (dest);
-      ch.SetSrc (m_address);
+      ch.SetSrc (Mac8Address::ConvertFrom (GetAddress ()));
       ch.SetType (UanMacRc::TYPE_ACK);
       UanHeaderRcAck ah;
       ah.SetFrameNo (data.frameNo);
@@ -524,7 +529,7 @@ UanMacRcGw::SendPacket (Ptr<Packet> pkt, uint32_t rate)
       type = "UNKNOWN";
       break;
     }
-  NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GW sending " << type << " packet with size " << pkt->GetSize () << " to " << ch.GetDest () << " at rate " << rate);
+  NS_LOG_DEBUG (Now ().As (Time::S) << " GW sending " << type << " packet with size " << pkt->GetSize () << " to " << ch.GetDest () << " at rate " << rate);
   m_phy->SendPacket (pkt, rate);
 }
 
@@ -705,7 +710,7 @@ UanMacRcGw::FindOptA (void)
           a++;
         }
     }
-  NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << " GW: Found optimum a = " << a);
+  NS_LOG_DEBUG (Now ().As (Time::S) << " GW: Found optimum a = " << a);
   return a;
 }
 

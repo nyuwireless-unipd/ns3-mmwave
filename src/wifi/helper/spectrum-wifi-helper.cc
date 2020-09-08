@@ -23,6 +23,8 @@
 #include "ns3/names.h"
 #include "ns3/spectrum-wifi-phy.h"
 #include "ns3/error-rate-model.h"
+#include "ns3/frame-capture-model.h"
+#include "ns3/preamble-detection-model.h"
 #include "ns3/mobility-model.h"
 #include "spectrum-wifi-helper.h"
 
@@ -64,6 +66,16 @@ SpectrumWifiPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
   phy->CreateWifiSpectrumPhyInterface (device);
   Ptr<ErrorRateModel> error = m_errorRateModel.Create<ErrorRateModel> ();
   phy->SetErrorRateModel (error);
+  if (m_frameCaptureModel.IsTypeIdSet ())
+    {
+      Ptr<FrameCaptureModel> capture = m_frameCaptureModel.Create<FrameCaptureModel> ();
+      phy->SetFrameCaptureModel (capture);
+    }
+  if (m_preambleDetectionModel.IsTypeIdSet ())
+    {
+      Ptr<PreambleDetectionModel> capture = m_preambleDetectionModel.Create<PreambleDetectionModel> ();
+      phy->SetPreambleDetectionModel (capture);
+    }
   phy->SetChannel (m_channel);
   phy->SetDevice (device);
   phy->SetMobility (node->GetObject<MobilityModel> ());

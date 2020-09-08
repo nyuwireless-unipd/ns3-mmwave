@@ -27,7 +27,7 @@
 #include "ns3/three-gpp-antenna-array-model.h"
 #include "ns3/object-factory.h"
 #include "ns3/node.h"
-#include "ns3/simple-matrix-based-channel-model.h"
+#include "simple-matrix-based-channel-model.h"
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveBeamformingTest");
 

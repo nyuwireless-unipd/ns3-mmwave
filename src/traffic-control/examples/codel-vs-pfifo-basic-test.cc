@@ -95,7 +95,7 @@ int main (int argc, char *argv[])
   std::string cwndTrFileName = "cwndPfifoFast.tr";
   bool logging = false;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("bottleneckBandwidth", "Bottleneck bandwidth", bottleneckBandwidth);
   cmd.AddValue ("bottleneckDelay", "Bottleneck delay", bottleneckDelay);
   cmd.AddValue ("accessBandwidth", "Access link bandwidth", accessBandwidth);
@@ -129,7 +129,7 @@ int main (int argc, char *argv[])
     }
 
   // Devices queue configuration
-  Config::SetDefault ("ns3::QueueBase::MaxSize",
+  Config::SetDefault ("ns3::DropTailQueue<Packet>::MaxSize",
                       QueueSizeValue (QueueSize (QueueSizeUnit::PACKETS, queueSize)));
 
   // Create gateway, source, and sink

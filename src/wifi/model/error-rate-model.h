@@ -44,9 +44,9 @@ public:
 
   /**
    * \param txVector a specific transmission vector including WifiMode
-   * \param ber a target ber
+   * \param ber a target BER
    *
-   * \return the snr which corresponds to the requested ber
+   * \return the SNR which corresponds to the requested BER
    */
   double CalculateSnr (WifiTxVector txVector, double ber) const;
 
@@ -61,7 +61,7 @@ public:
    *
    * Note that both a WifiMode and a WifiTxVector (which contains a WifiMode)
    * are passed into this method.  The WifiTxVector may be from a signal that
-   * contains multiple modes (e.g. PLCP header sent differently from PLCP
+   * contains multiple modes (e.g. PHY header sent differently from PHY
    * payload).  Consequently, the mode parameter is what the method uses
    * to calculate the chunk error rate, and the txVector is used for
    * other information as needed.

@@ -88,13 +88,13 @@ MeshWifiInterfaceMac::~MeshWifiInterfaceMac ()
 // WifiMac inherited
 //-----------------------------------------------------------------------------
 void
-MeshWifiInterfaceMac::Enqueue (Ptr<const Packet> packet, Mac48Address to, Mac48Address from)
+MeshWifiInterfaceMac::Enqueue (Ptr<Packet> packet, Mac48Address to, Mac48Address from)
 {
   NS_LOG_FUNCTION (this << packet << to << from);
   ForwardDown (packet, from, to);
 }
 void
-MeshWifiInterfaceMac::Enqueue (Ptr<const Packet> packet, Mac48Address to)
+MeshWifiInterfaceMac::Enqueue (Ptr<Packet> packet, Mac48Address to)
 {
   NS_LOG_FUNCTION (this << packet << to);
   ForwardDown (packet, m_low->GetAddress (), to);
@@ -212,10 +212,8 @@ MeshWifiInterfaceMac::SwitchFrequencyChannel (uint16_t new_id)
 // Forward frame down
 //-----------------------------------------------------------------------------
 void
-MeshWifiInterfaceMac::ForwardDown (Ptr<const Packet> const_packet, Mac48Address from, Mac48Address to)
+MeshWifiInterfaceMac::ForwardDown (Ptr<Packet> packet, Mac48Address from, Mac48Address to)
 {
-  // copy packet to allow modifications
-  Ptr<Packet> packet = const_packet->Copy ();
   WifiMacHeader hdr;
   hdr.SetType (WIFI_MAC_QOSDATA);
   hdr.SetAddr2 (GetAddress ());
@@ -417,8 +415,10 @@ MeshWifiInterfaceMac::SendBeacon ()
   ScheduleNextBeacon ();
 }
 void
-MeshWifiInterfaceMac::Receive (Ptr<Packet> packet, WifiMacHeader const *hdr)
+MeshWifiInterfaceMac::Receive (Ptr<WifiMacQueueItem> mpdu)
 {
+  const WifiMacHeader* hdr = &mpdu->GetHeader ();
+  Ptr<Packet> packet = mpdu->GetPacket ()->Copy ();
   // Process beacon
   if ((hdr->GetAddr1 () != GetAddress ()) && (hdr->GetAddr1 () != Mac48Address::GetBroadcast ()))
     {
@@ -548,9 +548,9 @@ MeshWifiInterfaceMac::ResetStats ()
 }
 
 void
-MeshWifiInterfaceMac::FinishConfigureStandard (enum WifiPhyStandard standard)
+MeshWifiInterfaceMac::ConfigureStandard (enum WifiPhyStandard standard)
 {
-  RegularWifiMac::FinishConfigureStandard (standard);
+  RegularWifiMac::ConfigureStandard (standard);
   m_standard = standard;
 
   // We use the single DCF provided by WifiMac for the purpose of

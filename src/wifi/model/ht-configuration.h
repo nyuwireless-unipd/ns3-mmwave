@@ -39,6 +39,10 @@ public:
   HtConfiguration ();
   virtual ~HtConfiguration ();
 
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   /**
@@ -55,7 +59,6 @@ public:
    *         false otherwise.
    */
   bool GetShortGuardIntervalSupported (void) const;
-
   /**
    * Enable or disable Greenfield support.
    *
@@ -71,25 +74,9 @@ public:
    */
   bool GetGreenfieldSupported (void) const;
 
-  /**
-   * Enable or disable RIFS support.
-   *
-   * \param enable true if RIFS is to be supported,
-   *               false otherwise
-   */
-  void SetRifsSupported (bool enable);
-  /**
-   * \return whether the device supports RIFS capability.
-   *
-   * \return true if short RIFS is supported,
-   *         false otherwise.
-   */
-  bool GetRifsSupported (void) const;
-
 
 private:
-  bool m_sgiSupported; ///< flag whether short guard interval is supported
-  bool m_rifsSupported; ///< flag whether RIFS is supported
+  bool m_sgiSupported;        ///< flag whether short guard interval is supported
   bool m_greenfieldSupported; ///< flag whether Greenfield is supported
 };
 

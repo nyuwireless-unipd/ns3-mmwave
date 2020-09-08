@@ -68,8 +68,8 @@ public:
   MmWaveEnbNetDevice ();
 
   virtual ~MmWaveEnbNetDevice (void);
-  virtual void DoDispose (void);
-  virtual bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber);
+  virtual void DoDispose (void) override;
+  virtual bool DoSend (Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber) override;
 
   Ptr<MmWaveEnbPhy> GetPhy (void) const;
 
@@ -94,7 +94,7 @@ public:
   void SetCcMap (std::map< uint8_t, Ptr<MmWaveComponentCarrier> > ccm) override;
 
 protected:
-  virtual void DoInitialize (void);
+  virtual void DoInitialize (void) override;
   void UpdateConfig ();
 
 

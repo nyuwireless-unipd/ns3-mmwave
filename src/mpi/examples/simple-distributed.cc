@@ -51,10 +51,7 @@
 #include "ns3/ipv4-address-helper.h"
 #include "ns3/on-off-helper.h"
 #include "ns3/packet-sink-helper.h"
-
-#ifdef NS3_MPI
 #include <mpi.h>
-#endif
 
 using namespace ns3;
 
@@ -63,14 +60,12 @@ NS_LOG_COMPONENT_DEFINE ("SimpleDistributed");
 int
 main (int argc, char *argv[])
 {
-#ifdef NS3_MPI
-
   bool nix = true;
   bool nullmsg = false;
   bool tracing = false;
 
   // Parse command line
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("nix", "Enable the use of nix-vector or global routing", nix);
   cmd.AddValue ("nullmsg", "Enable the use of null-message synchronization", nullmsg);
   cmd.AddValue ("tracing", "Enable pcap tracing", tracing);
@@ -271,7 +266,4 @@ main (int argc, char *argv[])
   // Exit the MPI execution environment
   MpiInterface::Disable ();
   return 0;
-#else
-  NS_FATAL_ERROR ("Can't use distributed simulator without MPI compiled in");
-#endif
 }

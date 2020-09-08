@@ -46,10 +46,17 @@ HeConfiguration::GetTypeId (void)
                    MakeTimeAccessor (&HeConfiguration::GetGuardInterval,
                                      &HeConfiguration::SetGuardInterval),
                    MakeTimeChecker (NanoSeconds (800), NanoSeconds (3200)))
-    .AddAttribute ("BssColor", "BSS color",
+    .AddAttribute ("BssColor",
+                   "The BSS color",
                    UintegerValue (0),
                    MakeUintegerAccessor (&HeConfiguration::m_bssColor),
                    MakeUintegerChecker<uint8_t> ())
+    .AddAttribute ("MpduBufferSize",
+                   "The MPDU buffer size for receiving A-MPDUs",
+                   UintegerValue (64),
+                   MakeUintegerAccessor (&HeConfiguration::GetMpduBufferSize,
+                                         &HeConfiguration::SetMpduBufferSize),
+                   MakeUintegerChecker<uint16_t> (64, 256))
     ;
     return tid;
 }
@@ -66,6 +73,19 @@ Time
 HeConfiguration::GetGuardInterval (void) const
 {
   return m_guardInterval;
+}
+
+void
+HeConfiguration::SetMpduBufferSize (uint16_t size)
+{
+  NS_LOG_FUNCTION (this << size);
+  m_mpduBufferSize = size;
+}
+
+uint16_t
+HeConfiguration::GetMpduBufferSize (void) const
+{
+  return m_mpduBufferSize;
 }
 
 } //namespace ns3

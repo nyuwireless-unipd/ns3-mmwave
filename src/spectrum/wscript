@@ -32,7 +32,6 @@ def build(bld):
         'model/trace-fading-loss-model.cc',
         'model/three-gpp-spectrum-propagation-loss-model.cc',
         'model/three-gpp-channel-model.cc',
-        'model/simple-matrix-based-channel-model.cc',
         'model/matrix-based-channel-model.cc',
         'helper/spectrum-helper.cc',
         'helper/adhoc-aloha-noack-ideal-phy-helper.cc',
@@ -52,6 +51,12 @@ def build(bld):
         'test/three-gpp-channel-test-suite.cc',
         ]
 
+    # Tests encapsulating example programs should be listed here
+    if (bld.env['ENABLE_EXAMPLES']):
+        module_test.source.extend([
+        #   'test/spectrum-examples-test-suite.cc',
+            ])
+    
     headers = bld(features='ns3header')
     headers.module = 'spectrum'
     headers.source = [
@@ -83,7 +88,6 @@ def build(bld):
         'model/trace-fading-loss-model.h',
         'model/three-gpp-spectrum-propagation-loss-model.h',
         'model/three-gpp-channel-model.h',
-        'model/simple-matrix-based-channel-model.h',
         'model/matrix-based-channel-model.h',
         'helper/spectrum-helper.h',
         'helper/adhoc-aloha-noack-ideal-phy-helper.h',

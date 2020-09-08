@@ -13,6 +13,7 @@ is available at U{http://www.opensource.org/licenses/bsd-license.php}
 # this file is a modified version of source code from the Accerciser project
 # http://live.gnome.org/accerciser
 
+from __future__ import print_function
 import gtk, gobject
 import re
 import sys
@@ -319,11 +320,11 @@ class IterableIPShell:
     @return none
     """
     stat = 0
-    if verbose or debug: print header+cmd
+    if verbose or debug: print(header+cmd)
     # flush stdout so we don't mangle python's buffering
     if not debug:
       input, output = os.popen4(cmd)
-      print output.read()
+      print(output.read())
       output.close()
       input.close()
 

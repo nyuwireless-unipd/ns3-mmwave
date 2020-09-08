@@ -66,7 +66,7 @@ public:
   static TypeId GetTypeId (void);
   MmWaveEnbMac (void);
   virtual ~MmWaveEnbMac (void);
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
 
   struct TransmitPduParameters
   {

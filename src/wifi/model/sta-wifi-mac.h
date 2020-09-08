@@ -28,6 +28,7 @@
 
 class TwoLevelAggregationTest;
 class AmpduAggregationTest;
+class HeAggregationTest;
 
 namespace ns3  {
 
@@ -44,7 +45,7 @@ struct ApInfo
 {
   Mac48Address m_bssid;               ///< BSSID
   Mac48Address m_apAddr;              ///< AP MAC address
-  double m_snr;                       ///< SNR
+  double m_snr;                       ///< SNR in linear scale
   bool m_activeProbing;               ///< Flag whether active probing is used or not
   MgtBeaconHeader m_beacon;           ///< Beacon header
   MgtProbeResponseHeader m_probeResp; ///< Probe Response header
@@ -109,7 +110,8 @@ public:
   friend class ::TwoLevelAggregationTest;
   /// Allow test cases to access private members
   friend class ::AmpduAggregationTest;
-
+  /// Allow test cases to access private members
+  friend class ::HeAggregationTest;
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -130,17 +132,30 @@ public:
    * \param packet the packet to send.
    * \param to the address to which the packet should be sent.
    *
-   * The packet should be enqueued in a tx queue, and should be
+   * The packet should be enqueued in a TX queue, and should be
    * dequeued as soon as the channel access function determines that
    * access is granted to this MAC.
    */
-  void Enqueue (Ptr<const Packet> packet, Mac48Address to);
+  void Enqueue (Ptr<Packet> packet, Mac48Address to);
 
   /**
    * \param phy the physical layer attached to this MAC.
    */
   void SetWifiPhy (const Ptr<WifiPhy> phy);
 
+  /**
+   * Return whether we are associated with an AP.
+   *
+   * \return true if we are associated with an AP, false otherwise
+   */
+  bool IsAssociated (void) const;
+
+  /**
+   * Return the association ID.
+   *
+   * \return the association ID
+   */
+  uint16_t GetAssociationId (void) const;
 
 private:
   /**
@@ -172,10 +187,9 @@ private:
   /**
    * Handle a received packet.
    *
-   * \param packet the received packet
-   * \param hdr the MAC header of the received packet
+   * \param mpdu the received MPDU
    */
-  void Receive (Ptr<Packet> packet, const WifiMacHeader *hdr);
+  void Receive (Ptr<WifiMacQueueItem> mpdu);
   /**
    * Update associated AP's information from beacon. If STA is not associated,
    * this information will used for the association process.
@@ -249,12 +263,6 @@ private:
    */
   void ScanningTimeout (void);
   /**
-   * Return whether we are associated with an AP.
-   *
-   * \return true if we are associated with an AP, false otherwise
-   */
-  bool IsAssociated (void) const;
-  /**
    * Return whether we are waiting for an association response from an AP.
    *
    * \return true if we are waiting for an association response from an AP, false otherwise
@@ -308,24 +316,25 @@ private:
   void DoInitialize (void);
 
   MacState m_state;            ///< MAC state
+  uint16_t m_aid;              ///< Association AID
   Time m_waitBeaconTimeout;    ///< wait beacon timeout
   Time m_probeRequestTimeout;  ///< probe request timeout
-  Time m_assocRequestTimeout;  ///< assoc request timeout
+  Time m_assocRequestTimeout;  ///< association request timeout
   EventId m_waitBeaconEvent;   ///< wait beacon event
   EventId m_probeRequestEvent; ///< probe request event
-  EventId m_assocRequestEvent; ///< assoc request event
+  EventId m_assocRequestEvent; ///< association request event
   EventId m_beaconWatchdog;    ///< beacon watchdog
   Time m_beaconWatchdogEnd;    ///< beacon watchdog end
   uint32_t m_maxMissedBeacons; ///< maximum missed beacons
   bool m_activeProbing;        ///< active probing
-  std::vector<ApInfo> m_candidateAps; ///< list of candidate APs to associate
+  std::vector<ApInfo> m_candidateAps; ///< list of candidate APs to associate to
   // Note: std::multiset<ApInfo> might be a candidate container to implement
   // this sorted list, but we are using a std::vector because we want to sort
   // based on SNR but find duplicates based on BSSID, and in practice this
   // candidate vector should not be too large.
 
-  TracedCallback<Mac48Address> m_assocLogger;   ///< assoc logger
-  TracedCallback<Mac48Address> m_deAssocLogger; ///< deassoc logger
+  TracedCallback<Mac48Address> m_assocLogger;   ///< association logger
+  TracedCallback<Mac48Address> m_deAssocLogger; ///< disassociation logger
   TracedCallback<Time>         m_beaconArrival; ///< beacon arrival logger
 };
 

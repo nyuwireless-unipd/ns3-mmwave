@@ -45,8 +45,8 @@ classes). More recently, after the appearance of multi-queue devices (such as Wi
 some multi-queue aware queue discs have been introduced. Multi-queue aware queue discs
 handle as many queues (or queue discs -- without using classes) as the number of
 transmission queues used by the device on which the queue disc is installed.
-An attempt is made, also, to enqueue each packet in the "same" queue both within the
-queue disc and within the device.
+An attempt is made, also, to classify each packet similarly in the queue disc and within
+the device (i.e., to keep the packet classification consistent across layers).
 
 The traffic control layer interacts with a queue disc in a simple manner: after requesting
 to enqueue a packet, the traffic control layer requests the qdisc to "run", i.e., to
@@ -60,7 +60,7 @@ is stopped. Waking a queue disc is equivalent to make it run.
 Every queue disc collects statistics about the total number of packets/bytes
 received from the upper layers (in case of root queue disc) or from the parent
 queue disc (in case of child queue disc), enqueued, dequeued, requeued, dropped,
-dropped before enqueue, dropped after dequeue, stored in the queue disc and
+dropped before enqueue, dropped after dequeue, marked, and stored in the queue disc and
 sent to the netdevice or to the parent queue disc. Note that packets that are
 dequeued may be requeued, i.e., retained by the traffic control infrastructure,
 if the netdevice is not ready to receive them. Requeued packets are not part
@@ -126,6 +126,7 @@ The base class QueueDisc provides many trace sources:
 * ``Dequeue``
 * ``Requeue``
 * ``Drop``
+* ``Mark``
 * ``PacketsInQueue``
 * ``BytesInQueue``
 
@@ -169,25 +170,29 @@ of the classified packets.
 Usage
 *****
 
-By default, the InternetStackHelper aggregates a TrafficControlLayer object to every
+The traffic control layer is automatically created and inserted on an ``ns3::Node`` object
+when typical device and internet module helpers are used.  By default, the  
+``InternetStackHelper::Install()`` method aggregates a TrafficControlLayer object to every
 node. When invoked to assign an IPv{4,6} address to a device, the Ipv{4,6}AddressHelper,
-besides creating a Ipv{4,6}Interface, also installs the default qdisc, PfifoFastQueueDisc,
-on the device, unless a queue disc has been already installed. Thus, devices get the default
-queue disc installed even if they are added to the node after the Internet stack has been
-installed on the node.
+besides creating an Ipv{4,6}Interface, also installs the default qdisc
+on the device, unless a queue disc has been already installed.
+For single-queue NetDevices (such as PointToPoint, Csma and Simple), the default root
+qdisc is FqCoDel. For multi-queue NetDevices (such as Wifi), the default root qdisc is
+Mq with as many FqCoDel child qdiscs as the number of device queues.
 
 To install a queue disc other than the default one, it is necessary to install such queue
 disc before an IP address is assigned to the device. Alternatively, the default queue disc
-can be removed from the device after assigning an IP address, by using the convenient
+can be removed from the device after assigning an IP address, by using the
 Uninstall method of the TrafficControlHelper C++ class, and then installing a different
-queue disc on the device. Clearly, it is also possible to have no queue disc installed on a device.
+queue disc on the device.  By uninstalling without adding a new queue disc, it is also possible
+to have no queue disc installed on a device.
 
 Helpers
 =======
 
 A typical usage pattern is to create a traffic control helper and to configure type
 and attributes of queue discs, queues, classes and filters from the helper, For example,
-the default pfifo_fast can be configured as follows:
+the pfifo_fast can be configured as follows:
 
 .. sourcecode:: cpp
 
@@ -196,7 +201,7 @@ the default pfifo_fast can be configured as follows:
   tch.AddInternalQueues (handle, 3, "ns3::DropTailQueue", "MaxSize", StringValue ("1000p"));
   QueueDiscContainer qdiscs = tch.Install (devices);
 
-The above code adds three internal queues and a packet filter to the root queue disc of type PfifoFast.
+The above code adds three internal queues to the root queue disc of type PfifoFast.
 With the above configuration, the config path of the root queue disc installed on the j-th
 device of the i-th node (the index of a device is the same as in DeviceList) is:
 
@@ -205,6 +210,10 @@ device of the i-th node (the index of a device is the same as in DeviceList) is:
 and the config path of the second internal queue is:
 
 /NodeList/[i]/$ns3::TrafficControlLayer/RootQueueDiscList/[j]/InternalQueueList/1
+
+For this helper's configuration to take effect, it should be added to the ns-3 program after
+``InternetStackHelper::Install()`` is called, but before IP addresses are configured using 
+``Ipv{4,6}AddressHelper``.
 
 Implementation details
 **********************
@@ -270,10 +279,9 @@ given packet. A NetDeviceQueueInterface object must be therefore aggregated to a
 devices having an interface supporting the traffic control layer (i.e., an IPv4 or IPv6
 interface). In particular:
 
-* a NetDeviceQueueInterface object is aggregated to all the devices as soon as an IPv4/v6 \
-  interface is added to the device. This is because Ipv{4,6}AddressHelper::Assign calls \
-  Ipv{4,6}L3Protocol::AddInterface, which calls TrafficControlLayer::SetupDevice, which \
-  creates the queue interface and aggregates it to device.
+* a NetDeviceQueueInterface object is aggregated to all the devices by the NetDevice
+  helper classes, at ``Install`` time.  See, for example, the implementation in the
+  method ``CsmaHelper::InstallPriv()``.  
 
 * when notified that a netdevice queue interface has been aggregated, traffic control \
   aware devices can cache the pointer to the \
@@ -285,7 +293,8 @@ interface). In particular:
   that the netdevice has set the number of device transmission queues, if it has to do so) \
   completes the installation of the queue discs by setting the wake callbacks on the device \
   transmission queues (through the netdevice queue interface). Also, the traffic control \
-  calls the Initialize method of the root queue discs.
+  calls the Initialize method of the root queue discs.  This initialization of queue discs \
+  triggers calls to the ``CheckConfig`` and ``InitializeParams`` methods of the queue disc.
 
 Requeue
 ========

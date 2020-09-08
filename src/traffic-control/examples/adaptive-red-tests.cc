@@ -202,7 +202,7 @@ main (int argc, char *argv[])
   aredTest = 1;
   // Will only save in the directory if enable opts below
   pathOut = "."; // Current directory
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("testNumber", "Run test 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14 or 15", aredTest);
   cmd.AddValue ("pathOut", "Path to save results from --writeForPlot/--writePcap/--writeFlowMonitor", pathOut);
   cmd.AddValue ("writeForPlot", "<0/1> to write results for plot (gnuplot)", writeForPlot);
@@ -262,7 +262,7 @@ main (int argc, char *argv[])
   else if (aredTest == 3) //test 3: red1ECN
     {
       Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("25p"));
-      Config::SetDefault ("ns3::TcpSocketBase::EcnMode", StringValue ("ClassicEcn"));
+      Config::SetDefault ("ns3::TcpSocketBase::UseEcn", StringValue ("On"));
       Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
     }
   else if (aredTest == 4) // test 4: red1AdaptECN
@@ -270,7 +270,7 @@ main (int argc, char *argv[])
       Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
       Config::SetDefault ("ns3::RedQueueDisc::MaxSize", StringValue ("25p"));
-      Config::SetDefault ("ns3::TcpSocketBase::EcnMode", StringValue ("ClassicEcn"));
+      Config::SetDefault ("ns3::TcpSocketBase::UseEcn", StringValue ("On"));
       Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
     }
   else if (aredTest == 7) // test 7: fastlinkAutowq
@@ -297,7 +297,7 @@ main (int argc, char *argv[])
       Config::SetDefault ("ns3::RedQueueDisc::ARED", BooleanValue (true));
       Config::SetDefault ("ns3::RedQueueDisc::UseHardDrop", BooleanValue (false));
       Config::SetDefault ("ns3::RedQueueDisc::LInterm", DoubleValue (10));
-      Config::SetDefault ("ns3::TcpSocketBase::EcnMode", StringValue ("ClassicEcn"));
+      Config::SetDefault ("ns3::TcpSocketBase::UseEcn", StringValue ("On"));
       Config::SetDefault ("ns3::RedQueueDisc::UseEcn", BooleanValue (true));
     }
   else if (aredTest == 12) // test 12: fastlinkAllAdapt1

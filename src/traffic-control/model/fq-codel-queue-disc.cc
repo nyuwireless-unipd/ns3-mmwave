@@ -44,7 +44,8 @@ TypeId FqCoDelFlow::GetTypeId (void)
 
 FqCoDelFlow::FqCoDelFlow ()
   : m_deficit (0),
-    m_status (INACTIVE)
+    m_status (INACTIVE),
+    m_index (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -89,6 +90,19 @@ FqCoDelFlow::GetStatus (void) const
   return m_status;
 }
 
+void
+FqCoDelFlow::SetIndex (uint32_t index)
+{
+  NS_LOG_FUNCTION (this);
+  m_index = index;
+}
+
+uint32_t
+FqCoDelFlow::GetIndex (void) const
+{
+  return m_index;
+}
+
 
 NS_OBJECT_ENSURE_REGISTERED (FqCoDelQueueDisc);
 
@@ -98,6 +112,11 @@ TypeId FqCoDelQueueDisc::GetTypeId (void)
     .SetParent<QueueDisc> ()
     .SetGroupName ("TrafficControl")
     .AddConstructor<FqCoDelQueueDisc> ()
+    .AddAttribute ("UseEcn",
+                   "True to use ECN (packets are marked instead of being dropped)",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&FqCoDelQueueDisc::m_useEcn),
+                   MakeBooleanChecker ())
     .AddAttribute ("Interval",
                    "The CoDel algorithm interval for each FQCoDel queue",
                    StringValue ("100ms"),
@@ -129,6 +148,21 @@ TypeId FqCoDelQueueDisc::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&FqCoDelQueueDisc::m_perturbation),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("CeThreshold",
+                   "The FqCoDel CE threshold for marking packets",
+                   TimeValue (Time::Max ()),
+                   MakeTimeAccessor (&FqCoDelQueueDisc::m_ceThreshold),
+                   MakeTimeChecker ())
+    .AddAttribute ("EnableSetAssociativeHash",
+                   "Enable/Disable Set Associative Hash",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&FqCoDelQueueDisc::m_enableSetAssociativeHash),
+                   MakeBooleanChecker ())
+    .AddAttribute ("SetWays",
+                   "The size of a set of queues (used by set associative hash)",
+                   UintegerValue (8),
+                   MakeUintegerAccessor (&FqCoDelQueueDisc::m_setWays),
+                   MakeUintegerChecker<uint32_t> ())
   ;
   return tid;
 }
@@ -158,16 +192,45 @@ FqCoDelQueueDisc::GetQuantum (void) const
   return m_quantum;
 }
 
+uint32_t
+FqCoDelQueueDisc::SetAssociativeHash (uint32_t flowHash)
+{
+  NS_LOG_FUNCTION (this << flowHash);
+
+  uint32_t h = (flowHash % m_flows);
+  uint32_t innerHash = h % m_setWays;
+  uint32_t outerHash = h - innerHash;
+
+  for (uint32_t i = outerHash; i < outerHash + m_setWays; i++)
+    {
+      auto it = m_flowsIndices.find (i);
+
+      if (it == m_flowsIndices.end ()
+          || (m_tags.find (i) != m_tags.end () && m_tags[i] == flowHash)
+          || StaticCast<FqCoDelFlow> (GetQueueDiscClass (it->second))->GetStatus () == FqCoDelFlow::INACTIVE)
+        {
+          // this queue has not been created yet or is associated with this flow
+          // or is inactive, hence we can use it
+          m_tags[i] = flowHash;
+          return i;
+        }
+    }
+
+  // all the queues of the set are used. Use the first queue of the set
+  m_tags[outerHash] = flowHash;
+  return outerHash;
+}
+
 bool
 FqCoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
 {
   NS_LOG_FUNCTION (this << item);
 
-  uint32_t h = 0;
+  uint32_t flowHash, h;
 
   if (GetNPacketFilters () == 0)
     {
-      h = item->Hash (m_perturbation) % m_flows;
+      flowHash = item->Hash (m_perturbation);
     }
   else
     {
@@ -175,7 +238,7 @@ FqCoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
 
       if (ret != PacketFilter::PF_NO_MATCH)
         {
-          h = ret % m_flows;
+          flowHash = static_cast<uint32_t> (ret);
         }
       else
         {
@@ -185,14 +248,31 @@ FqCoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
         }
     }
 
+  if (m_enableSetAssociativeHash)
+    {
+      h = SetAssociativeHash (flowHash);
+    }
+  else
+    {
+      h = flowHash % m_flows;
+    }
+
   Ptr<FqCoDelFlow> flow;
   if (m_flowsIndices.find (h) == m_flowsIndices.end ())
     {
       NS_LOG_DEBUG ("Creating a new flow queue with index " << h);
       flow = m_flowFactory.Create<FqCoDelFlow> ();
       Ptr<QueueDisc> qd = m_queueDiscFactory.Create<QueueDisc> ();
+      // If CoDel, Set values of CoDelQueueDisc to match this QueueDisc
+      Ptr<CoDelQueueDisc> codel = qd->GetObject<CoDelQueueDisc> ();
+      if (codel)
+        {
+          codel->SetAttribute ("UseEcn", BooleanValue (m_useEcn));
+          codel->SetAttribute ("CeThreshold", TimeValue (m_ceThreshold));
+        }
       qd->Initialize ();
       flow->SetQueueDisc (qd);
+      flow->SetIndex (h);
       AddQueueDiscClass (flow);
 
       m_flowsIndices[h] = GetNQueueDiscClasses () - 1;
@@ -215,6 +295,7 @@ FqCoDelQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
 
   if (GetCurrentSize () > GetMaxSize ())
     {
+      NS_LOG_DEBUG ("Overload; enter FqCodelDrop ()");
       FqCoDelDrop ();
     }
 
@@ -239,6 +320,7 @@ FqCoDelQueueDisc::DoDequeue (void)
 
           if (flow->GetDeficit () <= 0)
             {
+              NS_LOG_DEBUG ("Increase deficit for new flow index " << flow->GetIndex ());
               flow->IncreaseDeficit (m_quantum);
               flow->SetStatus (FqCoDelFlow::OLD_FLOW);
               m_oldFlows.push_back (flow);
@@ -246,7 +328,7 @@ FqCoDelQueueDisc::DoDequeue (void)
             }
           else
             {
-              NS_LOG_DEBUG ("Found a new flow with positive deficit");
+              NS_LOG_DEBUG ("Found a new flow " << flow->GetIndex () << " with positive deficit");
               found = true;
             }
         }
@@ -257,13 +339,14 @@ FqCoDelQueueDisc::DoDequeue (void)
 
           if (flow->GetDeficit () <= 0)
             {
+              NS_LOG_DEBUG ("Increase deficit for old flow index " << flow->GetIndex ());
               flow->IncreaseDeficit (m_quantum);
               m_oldFlows.push_back (flow);
               m_oldFlows.pop_front ();
             }
           else
             {
-              NS_LOG_DEBUG ("Found an old flow with positive deficit");
+              NS_LOG_DEBUG ("Found an old flow " << flow->GetIndex () << " with positive deficit");
               found = true;
             }
         }
@@ -339,6 +422,13 @@ FqCoDelQueueDisc::CheckConfig (void)
         }
     }
 
+  if (m_enableSetAssociativeHash && (m_flows % m_setWays != 0))
+    {
+      NS_LOG_ERROR ("The number of queues must be an integer multiple of the size "
+                    "of the set of queues used by set associative hash");
+      return false;
+    }
+
   return true;
 }
 
@@ -382,6 +472,7 @@ FqCoDelQueueDisc::FqCoDelDrop (void)
 
   do
     {
+      NS_LOG_DEBUG ("Drop packet (overflow); count: " << count << " len: " << len << " threshold: " << threshold);
       item = qd->GetInternalQueue (0)->Dequeue ();
       DropAfterDequeue (item, OVERLIMIT_DROP);
       len += item->GetSize ();
@@ -391,3 +482,4 @@ FqCoDelQueueDisc::FqCoDelDrop (void)
 }
 
 } // namespace ns3
+

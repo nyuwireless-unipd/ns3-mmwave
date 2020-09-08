@@ -41,16 +41,17 @@ class EventImpl;
  * Each EventId identifies a unique event scheduled with one
  * of the many Simulator::Schedule() methods. This EventId can
  * be used to cancel or remove events after they are scheduled
- * with Simulator::Cancel() or Simulator::Remove().
+ * with Cancel(), Remove(), or Simulator::Cancel() or Simulator::Remove().
  *
  * The important thing to remember about this class is that
- * every variable of this type is _always_ in a valid state, 
+ * every variable of this type is _always_ in a valid state,
  * even when it has not been assigned an EventId coming from a
  * Simulator::Schedule() method:  calling Simulator::Cancel(), IsRunning(),
  * IsExpired() or passing around instances of this object
  * will not result in crashes or memory leaks.
  */
-class EventId {
+class EventId
+{
 public:
   /** Default constructor. This EventId does nothing. */
   EventId ();
@@ -69,6 +70,11 @@ public:
    */
   void Cancel (void);
   /**
+   * This method is syntactic sugar for the ns3::Simulator::Remove
+   * method.
+   */
+  void Remove (void);
+  /**
    * This method is syntactic sugar for the ns3::Simulator::IsExpired
    * method.
    * \returns \c true if the event has expired, \c false otherwise.
@@ -76,10 +82,11 @@ public:
   bool IsExpired (void) const;
   /**
    * This method is syntactic sugar for !IsExpired().
-   * 
+   *
    * \returns \c true if the event has not expired, \c false otherwise.
    */
   bool IsRunning (void) const;
+
 public:
   /**
    * \name Scheduler Helpers.
@@ -88,7 +95,7 @@ public:
    */
   /**@{*/
   /** \return The underlying EventImpl pointer. */
-  EventImpl *PeekEventImpl (void) const;
+  EventImpl * PeekEventImpl (void) const;
   /** \return The virtual time stamp. */
   uint64_t GetTs (void) const;
   /** \return The event context. */
@@ -96,26 +103,26 @@ public:
   /** \return The unique id. */
   uint32_t GetUid (void) const;
   /**@}*/
-  
+
   /**
    * Test if two EventId's are equal.
    * \param [in] a The first EventId.
    * \param [in] b The second EventId.
-   * \return \c true if the \p a and \p b represent the same event.
+   * \return \c true if the \pname{a} and \pname{b} represent the same event.
    */
   friend bool operator == (const EventId &a, const EventId &b);
   /**
    * Test if two EventId's are not equal.
    * \param [in] a The first EventId.
    * \param [in] b The second EventId.
-   * \return \c true if the \p a and \p b are not the same event.
+   * \return \c true if the \pname{a} and \pname{b} are not the same event.
    */
   friend bool operator != (const EventId &a, const EventId &b);
   /**
    * Less than operator for two EventId's, based on time stamps.
    * \param [in] a The first EventId.
    * \param [in] b The second EventId.
-   * \return \c true if \p a occurs before \p b.
+   * \return \c true if \pname{a} occurs before \pname{b}.
    */
   friend bool operator <  (const EventId &a, const EventId &b);
 
@@ -130,25 +137,25 @@ private:
  **  Inline implementations
  ************************************************/
 
-inline  
+inline
 bool
 operator == (const EventId &a, const EventId &b)
 {
-  return 
-    a.m_uid == b.m_uid && 
-    a.m_context == b.m_context && 
-    a.m_ts == b.m_ts && 
-    a.m_eventImpl == b.m_eventImpl;
+  return
+    a.m_uid == b.m_uid
+    && a.m_context == b.m_context
+    && a.m_ts == b.m_ts
+    && a.m_eventImpl == b.m_eventImpl;
 }
-  
-inline  
+
+inline
 bool
 operator != (const EventId &a, const EventId &b)
 {
   return !(a == b);
 }
-  
-inline  
+
+inline
 bool
 operator <  (const EventId &a, const EventId &b)
 {

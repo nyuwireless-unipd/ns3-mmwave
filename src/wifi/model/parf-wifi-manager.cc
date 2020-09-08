@@ -179,7 +179,7 @@ void
 ParfWifiManager::DoReportDataFailed (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  ParfWifiRemoteStation *station = (ParfWifiRemoteStation *)st;
+  ParfWifiRemoteStation *station = static_cast<ParfWifiRemoteStation*> (st);
   CheckInit (station);
   station->m_nAttempt++;
   station->m_nFail++;
@@ -258,11 +258,11 @@ void ParfWifiManager::DoReportRtsOk (WifiRemoteStation *station,
   NS_LOG_FUNCTION (this << station << ctsSnr << ctsMode << rtsSnr);
 }
 
-void ParfWifiManager::DoReportDataOk (WifiRemoteStation *st,
-                                      double ackSnr, WifiMode ackMode, double dataSnr)
+void ParfWifiManager::DoReportDataOk (WifiRemoteStation *st, double ackSnr, WifiMode ackMode,
+                                      double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss)
 {
-  NS_LOG_FUNCTION (this << st << ackSnr << ackMode << dataSnr);
-  ParfWifiRemoteStation *station = (ParfWifiRemoteStation *) st;
+  NS_LOG_FUNCTION (this << st << ackSnr << ackMode << dataSnr << dataChannelWidth << +dataNss);
+  ParfWifiRemoteStation *station = static_cast<ParfWifiRemoteStation*> (st);
   CheckInit (station);
   station->m_nAttempt++;
   station->m_nSuccess++;
@@ -311,11 +311,10 @@ WifiTxVector
 ParfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  ParfWifiRemoteStation *station = (ParfWifiRemoteStation *) st;
+  ParfWifiRemoteStation *station = static_cast<ParfWifiRemoteStation*> (st);
   uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
-      //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
   CheckInit (station);
@@ -334,20 +333,19 @@ ParfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       m_rateChange (prevRate, rate, station->m_state->m_address);
       station->m_prevRateIndex = station->m_rateIndex;
     }
-  return WifiTxVector (mode, station->m_powerLevel, GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, station->m_powerLevel, GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
 ParfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  /// \todo we could/should implement the Arf algorithm for
+  /// \todo we could/should implement the ARF algorithm for
   /// RTS only by picking a single rate within the BasicRateSet.
-  ParfWifiRemoteStation *station = (ParfWifiRemoteStation *) st;
+  ParfWifiRemoteStation *station = static_cast<ParfWifiRemoteStation*> (st);
   uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
-      //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
   WifiTxVector rtsTxVector;
@@ -360,14 +358,8 @@ ParfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
-}
-
-bool
-ParfWifiManager::IsLowLatency (void) const
-{
-  return true;
 }
 
 } //namespace ns3

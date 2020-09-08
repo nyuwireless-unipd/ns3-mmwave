@@ -60,7 +60,7 @@ public:
 
   MmWaveUeMac (void);
   ~MmWaveUeMac (void);
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
 
   void  SetUeCmacSapUser (LteUeCmacSapUser* s);
   LteUeCmacSapProvider*  GetUeCmacSapProvider (void);

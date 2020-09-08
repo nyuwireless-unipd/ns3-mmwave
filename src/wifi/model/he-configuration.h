@@ -21,6 +21,7 @@
 #define HE_CONFIGURATION_H
 
 #include "ns3/object.h"
+#include "ns3/nstime.h"
 
 namespace ns3 {
 
@@ -36,6 +37,11 @@ class HeConfiguration : public Object
 {
 public:
   HeConfiguration ();
+
+  /**
+   * \brief Get the type ID.
+   * \return the object TypeId
+   */
   static TypeId GetTypeId (void);
 
   /**
@@ -46,11 +52,20 @@ public:
    * \return the supported HE guard interval
    */
   Time GetGuardInterval (void) const;
+  /**
+   * \param size the MPDU buffer size to receive A-MPDUs
+   */
+  void SetMpduBufferSize (uint16_t size);
+  /**
+   * \return the MPDU buffer size to receive A-MPDUs
+   */
+  uint16_t GetMpduBufferSize (void) const;
 
 
 private:
-  Time m_guardInterval; //!< Supported HE guard interval
-  uint8_t m_bssColor;   //!< BSS color
+  Time m_guardInterval;      //!< Supported HE guard interval
+  uint8_t m_bssColor;        //!< BSS color
+  uint16_t m_mpduBufferSize; //!< MPDU buffer size
 };
 
 } //namespace ns3

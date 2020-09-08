@@ -23,7 +23,6 @@
 #include "ns3/object.h"
 #include "ns3/traced-value.h"
 #include "ns3/traced-callback.h"
-#include "ns3/net-device.h"
 #include "ns3/queue-item.h"
 #include "ns3/queue-size.h"
 #include <vector>
@@ -516,6 +515,7 @@ public:
   // Reasons for dropping packets
   static constexpr const char* INTERNAL_QUEUE_DROP = "Dropped by internal queue";    //!< Packet dropped by an internal queue
   static constexpr const char* CHILD_QUEUE_DISC_DROP = "(Dropped by child queue disc) "; //!< Packet dropped by a child queue disc
+  static constexpr const char* CHILD_QUEUE_DISC_MARK = "(Marked by child queue disc) "; //!< Packet marked by a child queue disc
 
 protected:
   /**
@@ -529,6 +529,8 @@ protected:
    * This method is not virtual to prevent subclasses from redefining it.
    * Subclasses must instead provide the implementation of the CheckConfig
    * and InitializeParams methods (which are called by this method).
+   * \sa QueueDisc::InitializeParams
+   * \sa QueueDisc::CheckConfig
    */
   void DoInitialize (void);
 
@@ -616,13 +618,21 @@ private:
   /**
    * Check whether the current configuration is correct. Default objects (such
    * as internal queues) might be created by this method to ensure the
-   * configuration is correct.
+   * configuration is correct.  This method is automatically called at
+   * simulation initialization time, and it is called before
+   * the InitializeParams () method.  It is appropriate to promote parameter
+   * initialization to this method if it aids in checking for correct
+   * configuration.
+   * \sa QueueDisc::InitializeParams
    * \return true if the configuration is correct, false otherwise
    */
   virtual bool CheckConfig (void) = 0;
 
   /**
    * Initialize parameters (if any) before the first packet is enqueued.
+   * This method is automatically called at simulation initialization time,
+   * after the CheckConfig() method has been called.
+   * \sa QueueDisc::CheckConfig
    */
   virtual void InitializeParams (void) = 0;
 
@@ -700,6 +710,7 @@ private:
   Ptr<QueueDiscItem> m_requeued;    //!< The last packet that failed to be transmitted
   bool m_peeked;                    //!< A packet was dequeued because Peek was called
   std::string m_childQueueDiscDropMsg;  //!< Reason why a packet was dropped by a child queue disc
+  std::string m_childQueueDiscMarkMsg;  //!< Reason why a packet was marked by a child queue disc
   QueueDiscSizePolicy m_sizePolicy;     //!< The queue disc size policy
   bool m_prohibitChangeMode;            //!< True if changing mode is prohibited
 
@@ -722,6 +733,8 @@ private:
   typedef std::function<void (Ptr<const QueueDiscItem>)> InternalQueueDropFunctor;
   /// Type for the function objects notifying that a packet has been dropped by a child queue disc
   typedef std::function<void (Ptr<const QueueDiscItem>, const char*)> ChildQueueDiscDropFunctor;
+  /// Type for the function objects notifying that a packet has been marked by a child queue disc
+  typedef std::function<void (Ptr<const QueueDiscItem>, const char*)> ChildQueueDiscMarkFunctor;
 
   /// Function object called when an internal queue dropped a packet before enqueue
   InternalQueueDropFunctor m_internalQueueDbeFunctor;
@@ -731,6 +744,8 @@ private:
   ChildQueueDiscDropFunctor m_childQueueDiscDbeFunctor;
   /// Function object called when a child queue disc dropped a packet after dequeue
   ChildQueueDiscDropFunctor m_childQueueDiscDadFunctor;
+  /// Function object called when a child queue disc marked a packet
+  ChildQueueDiscMarkFunctor m_childQueueDiscMarkFunctor;
 };
 
 /**

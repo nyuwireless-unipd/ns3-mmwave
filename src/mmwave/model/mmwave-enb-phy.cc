@@ -182,7 +182,7 @@ MmWaveEnbPhy::DoInitialize (void)
     }
   SetSubChannels (m_channelChunks);
 
-  m_slotPeriod = NanoSeconds (m_phyMacConfig->GetSubframePeriod () / m_phyMacConfig->GetSlotsPerSubframe ());
+  m_slotPeriod = m_phyMacConfig->GetSubframePeriod () / m_phyMacConfig->GetSlotsPerSubframe ();
 
   for (unsigned i = 0; i < m_phyMacConfig->GetSlotsPerSubframe (); i++)
     {
@@ -1121,8 +1121,8 @@ MmWaveEnbPhy::EndTti (void)
   else
     {
       m_ttiIndex++;
-      Time nextTtiStart = NanoSeconds (m_phyMacConfig->GetSymbolPeriod () *
-                                       m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex].m_dci.m_symStart);
+      Time nextTtiStart = m_phyMacConfig->GetSymbolPeriod () *
+                                       m_currSlotAllocInfo.m_ttiAllocInfo[m_ttiIndex].m_dci.m_symStart;
       Simulator::Schedule (nextTtiStart + m_lastSlotStart - Simulator::Now (), &MmWaveEnbPhy::StartTti, this);
     }
 }
@@ -1153,7 +1153,7 @@ MmWaveEnbPhy::EndSlot (void)
     }
 
   // The slot end time should already be anchored to the proper value, hence try to avoid using Schedule.
-  NS_ASSERT (MmWavePhy::GetNextSlotDelay () == 0);
+  NS_ASSERT (MmWavePhy::GetNextSlotDelay () == Time(0));
   StartSlot ();
 }
 

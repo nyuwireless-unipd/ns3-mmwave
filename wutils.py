@@ -110,9 +110,20 @@ def get_proc_env(os_env=None):
 
 def run_argv(argv, env, os_env=None, cwd=None, force_no_valgrind=False):
     proc_env = get_proc_env(os_env)
-    if Options.options.valgrind and not force_no_valgrind:
-        if Options.options.command_template:
-            raise WafError("Options --command-template and --valgrind are conflicting")
+
+    if Options.options.valgrind and Options.options.command_template:
+        raise WafError("Options --command-template and --valgrind are conflicting")
+    if Options.options.gdb and Options.options.command_template:
+        raise WafError("Options --command-template and --gdb are conflicting")
+    if Options.options.gdb and Options.options.valgrind:
+        raise WafError("Options --valgrind and --gdb are conflicting")
+
+    if Options.options.gdb:
+        argv = ["gdb", "--args"] + argv
+        proc = subprocess.Popen(argv, env=proc_env, cwd=cwd)
+        retval = proc.wait()
+        return retval
+    elif Options.options.valgrind and not force_no_valgrind:
         if not env['VALGRIND']:
             raise WafError("valgrind is not installed")
         # Use the first program found in the env['VALGRIND'] list
@@ -150,7 +161,7 @@ def run_argv(argv, env, os_env=None, cwd=None, force_no_valgrind=False):
         if signame:
             raise WafError("Command %s terminated with signal %s."
                                  " Run it under a debugger to get more information "
-                                 "(./waf --run <program> --command-template=\"gdb --args %%s <args>\")." % (argv, signame))
+                                 "(./waf --run <program> --gdb\")." % (argv, signame))
         else:
             raise WafError("Command %s exited with code %i" % (argv, retval))
     return retval

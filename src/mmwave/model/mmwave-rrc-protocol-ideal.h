@@ -65,7 +65,7 @@ public:
   virtual ~MmWaveUeRrcProtocolIdeal ();
 
   // inherited from Object
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
   static TypeId GetTypeId (void);
 
   void SetLteUeRrcSapProvider (LteUeRrcSapProvider* p);
@@ -111,7 +111,7 @@ public:
   virtual ~MmWaveEnbRrcProtocolIdeal ();
 
   // inherited from Object
-  virtual void DoDispose (void);
+  virtual void DoDispose (void) override;
   static TypeId GetTypeId (void);
 
   void SetLteEnbRrcSapProvider (LteEnbRrcSapProvider* p);

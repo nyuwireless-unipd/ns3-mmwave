@@ -28,7 +28,7 @@
  * \file
  * \ingroup core-examples
  * \ingroup commandline
- * Example program illustrating use of ns3::CommandLine.
+ * \brief Example program illustrating use of ns3::CommandLine.
  */
 
 using namespace ns3;
@@ -45,7 +45,7 @@ std::string g_cbArg = "cbArg default";
  * Function to illustrate command line arguments handled by a
  * Callback function.
  *
- * \param [in] val New value for \p g_cbArg.
+ * \param [in] val New value for \pname{g_cbArg}.
  * \returns \c true.
  */
 bool SetCbArg (std::string val)
@@ -70,7 +70,7 @@ int main (int argc, char *argv[])
   // Non-option arguments
   int         nonOpt1 = 1;
   int         nonOpt2 = 1;
-   
+
   // Cache the initial values.  Normally one wouldn't do this,
   // but we want to demonstrate that CommandLine has changed them.
   const int intDef = intArg;
@@ -87,9 +87,9 @@ int main (int argc, char *argv[])
   }
   const int nonOpt1Def = nonOpt1;
   const int nonOpt2Def = nonOpt2;
-  
-  
-  CommandLine cmd;
+
+
+  CommandLine cmd (__FILE__);
   cmd.Usage ("CommandLine example program.\n"
              "\n"
              "This little program demonstrates how to use CommandLine.");
@@ -98,22 +98,22 @@ int main (int argc, char *argv[])
   cmd.AddValue ("strArg",  "a string argument",     strArg);
   cmd.AddValue ("anti",    attrPath);
   cmd.AddValue ("cbArg",   "a string via callback", MakeCallback (SetCbArg));
-  cmd.AddNonOption ("nonOpt1", "first non-option", nonOpt1);
-  cmd.AddNonOption ("nonOpt2", "first non-option", nonOpt2);
+  cmd.AddNonOption ("nonOpt1", "first non-option",  nonOpt1);
+  cmd.AddNonOption ("nonOpt2", "second non-option", nonOpt2);
   cmd.Parse (argc, argv);
 
   // Show initial values:
   std::cout << std::endl;
-  std::cout << cmd.GetName () << ":" << std::endl;
+  std::cout << cmd.GetName () << std::endl;
   std::cout << "Initial values:" << std::endl;
-  
+
   std::cout << std::left << std::setw (10) << "intArg:"
             <<                   intDef
             << std::endl;
   std::cout << std::setw (10)              << "boolArg:"
             << std::boolalpha << boolDef   << std::noboolalpha
             << std::endl;
-  
+
   std::cout << std::setw (10)              << "strArg:"
             << "\""           << strDef    << "\""
             << std::endl;
@@ -140,7 +140,7 @@ int main (int argc, char *argv[])
   std::cout << std::setw (10)              << "boolArg:"
             << std::boolalpha << boolArg   << std::noboolalpha
             << std::endl;
-  
+
   std::cout << std::setw (10)              << "strArg:"
             << "\""           << strArg    << "\""
             << std::endl;
@@ -149,7 +149,7 @@ int main (int argc, char *argv[])
   {
     struct TypeId::AttributeInformation info;
     tid.LookupAttributeByName (attrName, &info);
-  
+
     std::cout << std::setw (10)            << "anti:"
               << "\""
               << info.initialValue->SerializeToString (info.checker)

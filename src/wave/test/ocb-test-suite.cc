@@ -28,6 +28,7 @@
 #include "ns3/packet-socket-address.h"
 #include "ns3/mobility-model.h"
 #include "ns3/yans-wifi-helper.h"
+#include "ns3/sta-wifi-mac.h"
 #include "ns3/position-allocator.h"
 #include "ns3/packet-socket-helper.h"
 #include "ns3/mobility-helper.h"
@@ -353,7 +354,11 @@ OcbWifiMacTestCase::PostDeviceConfiguration (Ptr<Node> static_node, Ptr<Node> mo
   phytx_time = macassoc_time = phyrx_time = Time ();
   phytx_pos = macassoc_pos = phyrx_pos = Vector ();
 
-  Config::Connect ("/NodeList/1/DeviceList/*/Mac/Assoc", MakeCallback (&OcbWifiMacTestCase::MacAssoc, this));
+  if ( DynamicCast<StaWifiMac> (mobile_device->GetMac () ) )
+    {
+      // This trace is available only in a StaWifiMac
+      Config::Connect ("/NodeList/1/DeviceList/*/Mac/Assoc", MakeCallback (&OcbWifiMacTestCase::MacAssoc, this));
+    }
   Config::Connect ("/NodeList/1/DeviceList/*/Phy/State/RxOk", MakeCallback (&OcbWifiMacTestCase::PhyRxOkTrace, this));
   Config::Connect ("/NodeList/1/DeviceList/*/Phy/State/Tx", MakeCallback (&OcbWifiMacTestCase::PhyTxTrace, this));
 }
@@ -387,7 +392,8 @@ OcbWifiMacTestCase::DoRun ()
   Simulator::Destroy ();
   NS_TEST_ASSERT_MSG_LT (phyrx_time, macassoc_time, "In Sta mode with AP, you cannot associate until receive beacon or AssocResponse frame" );
   NS_TEST_ASSERT_MSG_LT (macassoc_time, phytx_time, "In Sta mode with AP,  you cannot send data packet until associate" );
-  NS_TEST_ASSERT_MSG_GT ((phyrx_pos.x - macassoc_pos.x), 0.0, "");
+  //Are these position tests redundant with time check tests?
+  //NS_TEST_ASSERT_MSG_GT ((phyrx_pos.x - macassoc_pos.x), 0.0, "");
   //actually macassoc_pos.x - phytx_pos.x is greater than 0
   //however associate switch to send is so fast with less than 100ms
   //and in our mobility model that every 0.1s update position,
@@ -453,7 +459,7 @@ public:
 };
 
 OcbTestSuite::OcbTestSuite ()
-  : TestSuite ("wifi-80211p-ocb", UNIT)
+  : TestSuite ("wave-80211p-ocb", UNIT)
 {
   // TestDuration for TestCase can be QUICK, EXTENSIVE or TAKES_FOREVER
   AddTestCase (new OcbWifiMacTestCase, TestCase::QUICK);

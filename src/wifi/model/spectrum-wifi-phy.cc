@@ -32,6 +32,8 @@
 #include "wifi-spectrum-signal-parameters.h"
 #include "wifi-spectrum-phy-interface.h"
 #include "wifi-utils.h"
+#include "wifi-ppdu.h"
+#include "wifi-psdu.h"
 
 namespace ns3 {
 
@@ -188,33 +190,6 @@ SpectrumWifiPhy::ConfigureStandard (WifiPhyStandard standard)
 }
 
 void
-SpectrumWifiPhy::AddOperationalChannel (uint8_t channelNumber)
-{
-  m_operationalChannelList.push_back (channelNumber);
-}
-
-std::vector<uint8_t>
-SpectrumWifiPhy::GetOperationalChannelList () const
-{
-  std::vector<uint8_t> channelList;
-  channelList.push_back (GetChannelNumber ());  // first channel of list
-  for (std::vector<uint8_t>::size_type i = 0; i != m_operationalChannelList.size (); i++)
-    {
-      if (m_operationalChannelList[i] != GetChannelNumber ())
-        {
-          channelList.push_back (m_operationalChannelList[i]);
-        }
-    }
-  return channelList;
-}
-
-void
-SpectrumWifiPhy::ClearOperationalChannelList ()
-{
-  m_operationalChannelList.clear ();
-}
-
-void
 SpectrumWifiPhy::StartRx (Ptr<SpectrumSignalParameters> rxParams)
 {
   NS_LOG_FUNCTION (this << rxParams);
@@ -242,6 +217,14 @@ SpectrumWifiPhy::StartRx (Ptr<SpectrumSignalParameters> rxParams)
 
   // Log the signal arrival to the trace source
   m_signalCb (wifiRxParams ? true : false, senderNodeId, WToDbm (rxPowerW), rxDuration);
+
+  // Do no further processing if signal is too weak
+  // Current implementation assumes constant RX power over the PPDU duration
+  if (WToDbm (rxPowerW) < GetRxSensitivity ())
+    {
+      NS_LOG_INFO ("Received signal too weak to process: " << WToDbm (rxPowerW) << " dBm");
+      return;
+    }
   if (wifiRxParams == 0)
     {
       NS_LOG_INFO ("Received non Wi-Fi signal");
@@ -258,8 +241,8 @@ SpectrumWifiPhy::StartRx (Ptr<SpectrumSignalParameters> rxParams)
     }
 
   NS_LOG_INFO ("Received Wi-Fi signal");
-  Ptr<Packet> packet = wifiRxParams->packet->Copy ();
-  StartReceivePreambleAndHeader (packet, rxPowerW, rxDuration);
+  Ptr<WifiPpdu> ppdu = Copy (wifiRxParams->ppdu);
+  StartReceivePreamble (ppdu, rxPowerW);
 }
 
 Ptr<AntennaModel>
@@ -330,27 +313,30 @@ SpectrumWifiPhy::GetCenterFrequencyForChannelWidth (WifiTxVector txVector) const
 }
 
 void
-SpectrumWifiPhy::StartTx (Ptr<Packet> packet, WifiTxVector txVector, Time txDuration)
+SpectrumWifiPhy::StartTx (Ptr<WifiPpdu> ppdu)
 {
-  NS_LOG_DEBUG ("Start transmission: signal power before antenna gain=" << GetPowerDbm (txVector.GetTxPowerLevel ()) << "dBm");
-  double txPowerWatts = DbmToW (GetPowerDbm (txVector.GetTxPowerLevel ()) + GetTxGain ());
+  NS_LOG_FUNCTION (this << ppdu);
+  WifiTxVector txVector = ppdu->GetTxVector ();
+  double txPowerDbm = GetTxPowerForTransmission (txVector) + GetTxGain ();
+  NS_LOG_DEBUG ("Start transmission: signal power before antenna gain=" << txPowerDbm << "dBm");
+  double txPowerWatts = DbmToW (txPowerDbm);
   Ptr<SpectrumValue> txPowerSpectrum = GetTxPowerSpectralDensity (GetCenterFrequencyForChannelWidth (txVector), txVector.GetChannelWidth (), txPowerWatts, txVector.GetMode ().GetModulationClass ());
   Ptr<WifiSpectrumSignalParameters> txParams = Create<WifiSpectrumSignalParameters> ();
-  txParams->duration = txDuration;
+  txParams->duration = ppdu->GetTxDuration ();
   txParams->psd = txPowerSpectrum;
   NS_ASSERT_MSG (m_wifiSpectrumPhyInterface, "SpectrumPhy() is not set; maybe forgot to call CreateWifiSpectrumPhyInterface?");
   txParams->txPhy = m_wifiSpectrumPhyInterface->GetObject<SpectrumPhy> ();
   txParams->txAntenna = m_antenna;
-  txParams->packet = packet;
+  txParams->ppdu = ppdu;
   NS_LOG_DEBUG ("Starting transmission with power " << WToDbm (txPowerWatts) << " dBm on channel " << +GetChannelNumber ());
   NS_LOG_DEBUG ("Starting transmission with integrated spectrum power " << WToDbm (Integral (*txPowerSpectrum)) << " dBm; spectrum model Uid: " << txPowerSpectrum->GetSpectrumModel ()->GetUid ());
   m_channel->StartTx (txParams);
 }
 
-double
+uint32_t
 SpectrumWifiPhy::GetBandBandwidth (void) const
 {
-  double bandBandwidth = 0;
+  uint32_t bandBandwidth = 0;
   switch (GetStandard ())
     {
     case WIFI_PHY_STANDARD_80211a:
@@ -389,7 +375,7 @@ SpectrumWifiPhy::GetGuardBandwidth (uint16_t currentChannelWidth) const
   uint16_t guardBandwidth = 0;
   if (currentChannelWidth == 22)
     {
-      //handle case of use of legacy DSSS transmission
+      //handle case of DSSS transmission
       guardBandwidth = 10;
     }
   else

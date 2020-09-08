@@ -45,15 +45,16 @@ namespace ns3 {
  *
  * The main entry point is CommandLine
  */
+
 /**
  * \ingroup commandline
  * \brief Parse command-line arguments
  *
- * Instances of this class can be used to parse command-line 
+ * Instances of this class can be used to parse command-line
  * arguments.  Programs can register a general usage message with
  * CommandLine::Usage, and arguments with CommandLine::AddValue.
  * Argument variable types with input streamers (`operator>>`)
- * can be set directly; more complex argument parsing 
+ * can be set directly; more complex argument parsing
  * can be accomplished by providing a Callback.
  *
  * CommandLine also provides handlers for these standard arguments:
@@ -64,7 +65,7 @@ namespace ns3 {
    --PrintTypeIds:              Print all TypeIds.
    --PrintAttributes=[typeid]:  Print all attributes of typeid.
    --PrintHelp:                 Print this help message. \endverbatim
- * 
+ *
  * The more common \c --help is a synonym for \c --PrintHelp; an example
  * is given below.
  *
@@ -86,7 +87,7 @@ namespace ns3 {
  * the forms
  * \verbatim
    --toggle1 --toggle2=1 --toggle3=t --toggle4=true \endverbatim
- * The first form changes the state of toggle1 from its default; 
+ * The first form changes the state of toggle1 from its default;
  * all the rest set the corresponding boolean variable to true.
  * \c 0, \c f and \c false are accepted to set the variable to false.
  * Option arguments can appear in any order on the command line,
@@ -104,11 +105,9 @@ namespace ns3 {
  * value each variable ended up with, especially when using boolean toggles.
  * Suggested best practice is for scripts to report the values of all items
  * settable through CommandLine, as done by the example below.
- * 
  *
  * CommandLine can set the initial value of every attribute in the system
- * with the 
- * \c --TypeIdName::AttributeName=value syntax, for example
+ * with the \c --TypeIdName::AttributeName=value syntax, for example
  * \verbatim
    --Application::StartTime=3s \endverbatim
  * In some cases you may want to highlight the use of a particular
@@ -133,8 +132,8 @@ namespace ns3 {
  *    int         intArg  = 1;
  *    bool        boolArg = false;
  *    std::string strArg  = "strArg default";
- *  
- *    CommandLine cmd;
+ *
+ *    CommandLine cmd (__FILE__);
  *    cmd.Usage ("CommandLine example program.\n"
  *               "\n"
  *               "This little program demonstrates how to use CommandLine.");
@@ -162,21 +161,21 @@ namespace ns3 {
    boolArg:  true
    strArg:   "Hello"
    cbArg:    "World"
-   
+
    $ ./waf --run="command-line-example --help"
    ns3-dev-command-line-example-debug [Program Arguments] [General Arguments]
-   
+
    CommandLine example program.
-   
+
    This little program demonstrates how to use CommandLine.
-   
+
    Program Arguments:
        --intArg:   an int argument [1]
        --boolArg:  a bool argument [false]
        --strArg:   a string argument [strArg default]
        --anti:     Set this RNG stream to generate antithetic values (ns3::RandomVariableStream::Antithetic) [false]
        --cbArg:    a string via callback
-   
+
    General Arguments:
        --PrintGlobals:              Print the list of globals.
        --PrintGroups:               Print the list of groups.
@@ -194,8 +193,8 @@ namespace ns3 {
  * \code
  *   int value1;
  *   int value2;
- *   
- *   CommandLine cmd;
+ *
+ *   CommandLine cmd (__FILE__);
  *   cmd.Usage ("...");
  *   cmd.AddValue ("value1", "first value", value1);
  *   cmd.AddValue ("value2", "second value", value1);
@@ -209,12 +208,32 @@ namespace ns3 {
  *       exit (-1);
  *     }
  * \endcode
+ *
+ * Finally, note that for examples which will be run by \c test.py
+ * the preferred declaration of a CommandLine instance is
+ *
+ * \code
+ *     CommandLine cmd (__FILE__);
+ * \endcode
+ * This will ensure that the program usage and arguments can be added to
+ * the Doxygen documentation automatically.
  */
 class CommandLine
 {
 public:
   /** Constructor */
-  CommandLine ();
+  CommandLine (void);
+  /**
+   * Construct and register the source file name.
+   * This would typically be called by 
+   *     CommandLine cmd (__FILE__);
+   *
+   * This form is required to generate Doxygen documentation of the
+   * arguments and options.
+   *
+   * \param [in] filename The source file name.
+   */
+  CommandLine (const std::string filename);
   /**
    * Copy constructor
    *
@@ -237,7 +256,7 @@ public:
    * \param [in] usage Program usage message to write with \c --help.
    */
   void Usage (const std::string usage);
-  
+
   /**
    * Add a program argument, assigning to POD
    *
@@ -253,19 +272,30 @@ public:
                  T &value);
 
   /**
+   * Callback function signature for
+   * AddValue(const std::string&,const std::string&,Callback<bool,const std::string>).
+   *
+   * \param [in] value The argument value.
+   */
+  typedef bool (* Callback) (const std::string value);
+
+  /**
    * Add a program argument, using a Callback to parse the value
    *
    * \param [in] name The name of the program-supplied argument
    * \param [in] help The help text used by \c --help
    * \param [in] callback A Callback function that will be invoked to parse and
    *   store the value.
+   * \param [in] defaultValue Optional default value for argument.
    *
    * The callback should have the signature
-   * <tt>bool callback (const std::string value)</tt>
+   * CommandLine::Callback
    */
   void AddValue (const std::string &name,
                  const std::string &help,
-                 Callback<bool, std::string> callback);
+                 ns3::Callback<bool, std::string> callback,
+                 const std::string defaultValue = "");
+
 
   /**
    * Add a program argument as a shorthand for an Attribute.
@@ -275,7 +305,7 @@ public:
    */
   void AddValue (const std::string &name,
                  const std::string &attributePath);
-  
+
   /**
    * Add a non-option argument, assigning to POD
    *
@@ -299,7 +329,7 @@ public:
    * \return The i'th non-option argument, as a string.
    */
   std::string GetExtraNonOption (std::size_t i) const;
-  
+
   /**
    * Get the total number of non-option arguments found,
    * including those configured with AddNonOption() and extra non-option
@@ -318,7 +348,7 @@ public:
    *        main program name as first element).
    * \param [in] argv The 'argv' variable: a null-terminated array of strings,
    *        each of which identifies a command-line argument.
-   * 
+   *
    * Obviously, this method will parse the input command-line arguments and
    * will attempt to handle them all.
    *
@@ -352,7 +382,7 @@ public:
    *
    * Alternatively, an overloaded operator << can be used:
    * \code
-   *       CommandLine cmd;
+   *       CommandLine cmd (__FILE__);
    *       cmd.Parse (argc, argv);
    *     ...
    *
@@ -369,7 +399,7 @@ private:
    * \ingroup commandline
    * \brief The argument abstract base class
    */
-  class Item 
+  class Item
   {
   public:
     std::string m_name;       /**< Argument label:  \c \-\--m_name=... */
@@ -404,11 +434,15 @@ private:
     virtual bool Parse (const std::string value);
     bool HasDefault () const;
     std::string GetDefault () const;
-      
+
     T *m_valuePtr;            /**< Pointer to the POD location */
     std::string m_default;    /**< String representation of default value */
   };  // class UserItem
 
+  /**
+   * \ingroup commandline
+   * \brief Extension of Item for strings.
+   */
   class StringItem : public Item
   {
   public:
@@ -416,7 +450,7 @@ private:
     bool Parse (const std::string value);
     bool HasDefault (void) const;
     std::string GetDefault (void) const;
-    
+
     std::string m_value;     /**< The argument value. */
   };  // class StringItem
 
@@ -427,6 +461,10 @@ private:
   class CallbackItem : public Item
   {
   public:
+    // Inherited
+    bool HasDefault (void) const;
+    std::string GetDefault (void) const;
+
     /**
      * Parse from a string.
      *
@@ -434,18 +472,19 @@ private:
      * \return \c true if parsing the value succeeded
      */
     virtual bool Parse (const std::string value);
-    Callback<bool, std::string> m_callback;  /**< The Callback */
+    ns3::Callback<bool, std::string> m_callback;  /**< The Callback */
+    std::string m_default;  /**< The default value, as a string, if it exists. */
   };  // class CallbackItem
 
 
   /**
    * Handle an option in the form \c param=value.
    *
-   * \param [in] param The option string. 
+   * \param [in] param The option string.
    * \returns \c true if this was really an option.
    */
   bool HandleOption (const std::string & param) const;
-  
+
   /**
    * Handle a non-option
    *
@@ -453,7 +492,7 @@ private:
    * \return \c true if \c value could be parsed correctly.
    */
   bool HandleNonOption (const std::string &value);
-  
+
   /**
    * Match name against the program or general arguments,
    * and dispatch to the appropriate handler.
@@ -466,9 +505,9 @@ private:
    * Callback function to handle attributes.
    *
    * \param [in] name The full name of the Attribute.
-   * \param [in] value The value to assign to \p name.
+   * \param [in] value The value to assign to \pname{name}.
    * \return \c true if the value was set successfully, false otherwise.
-   */  
+   */
   static bool HandleAttribute (const std::string name, const std::string value);
 
   /**
@@ -510,6 +549,11 @@ private:
   void Copy (const CommandLine &cmd);
   /** Remove all arguments, Usage(), name */
   void Clear (void);
+  /**
+   * Append usage message in Doxygen format to the file indicated
+   * by the NS_COMMANDLINE_INTROSPECTION environment variable.
+   */
+  void PrintDoxygenUsage (void) const;
 
   typedef std::vector<Item *> Items;    /**< Argument list container */
   Items m_options;                      /**< The list of option arguments */
@@ -517,7 +561,7 @@ private:
   std::size_t m_NNonOptions;            /**< The expected number of non-option arguments */
   std::size_t m_nonOptionCount;         /**< The number of actual non-option arguments seen so far. */
   std::string m_usage;                  /**< The Usage string */
-  std::string m_name;                   /**< The program name */
+  std::string m_shortName;              /**< The source file name (without `.cc`), as would be given to `waf --run` */
 
 };  // class CommandLine
 
@@ -531,39 +575,54 @@ private:
  */
 namespace CommandLineHelper {
 
-  /**
-   * \ingroup commandlinehelper
-   * \brief Helpers to specialize CommandLine::UserItem::Parse() on bool
-   *
-   * \param [in] value The argument name
-   * \param [out] val The argument location
-   * \return \c true if parsing was successful
-   * @{
-   */
-  template <typename T>
-  bool UserItemParse (const std::string value, T & val);
-  template <>
-  bool UserItemParse<bool> (const std::string value, bool & val);
-  /**@}*/
+/**
+ * \ingroup commandlinehelper
+ * \brief Helpers to specialize CommandLine::UserItem::Parse()
+ *
+ * \param [in] value The argument name
+ * \param [out] val The argument location
+ * \tparam \deduced T The type being specialized
+ * \return \c true if parsing was successful
+ */
+template <typename T>
+bool UserItemParse (const std::string value, T & val);
+/**
+ * \brief Specialization of CommandLine::UserItem to \c bool
+ *
+ * \param [in] value The argument name
+ * \param [out] val The boolean variable to set
+ * \return \c true if parsing was successful
+ */
+template <>
+bool UserItemParse<bool> (const std::string value, bool & val);
+/**
+ * \brief Specialization of CommandLine::UserItem to \c uint8_t
+ * to distinguish from \c char
+ *
+ * \param [in] value The argument name
+ * \param [out] val The \c uint8_t variable to set
+ * \return \c true if parsing was successful
+ */
+template <>
+bool UserItemParse<uint8_t> (const std::string value, uint8_t & val);
 
-  /**
-   * \ingroup commandlinehelper
-   * \brief Helper to specialize CommandLine::UserItem::GetDefault() on bool
-   *
-   * \param [in] val The argument value
-   * \return The string representation of value
-   * @{
-   */
-  template <typename T>
-  std::string GetDefault (const T & val);
-  template <>
-  std::string GetDefault<bool> (const bool & val);
-  /**@}*/
+/**
+ * \ingroup commandlinehelper
+ * \brief Helper to specialize CommandLine::UserItem::GetDefault() on bool
+ *
+ * \param [in] val The argument value
+ * \return The string representation of value
+ * @{
+ */
+template <typename T>
+std::string GetDefault (const T & val);
+template <>
+std::string GetDefault<bool> (const bool & val);
+/**@}*/
 
 }  // namespace CommandLineHelper
-    
-  
-  
+
+
 } // namespace ns3
 
 
@@ -574,7 +633,7 @@ namespace CommandLineHelper {
 namespace ns3 {
 
 template <typename T>
-void 
+void
 CommandLine::AddValue (const std::string &name,
                        const std::string &help,
                        T &value)
@@ -583,11 +642,11 @@ CommandLine::AddValue (const std::string &name,
   item->m_name = name;
   item->m_help = help;
   item->m_valuePtr = &value;
-  
+
   std::stringstream ss;
   ss << value;
   ss >> item->m_default;
-    
+
   m_options.push_back (item);
 }
 
@@ -601,13 +660,13 @@ CommandLine::AddNonOption (const std::string name,
   item->m_name = name;
   item->m_help = help;
   item->m_valuePtr = &value;
-  
+
   std::stringstream ss;
   ss << value;
   ss >> item->m_default;
   m_nonOptions.push_back (item);
   ++m_NNonOptions;
-    
+
 }
 
 template <typename T>
@@ -659,10 +718,10 @@ CommandLineHelper::UserItemParse (const std::string value, T & val)
  *
  * Example usage:
  * \code
- *    CommandLine cmd;
+ *    CommandLine cmd (__FILE__);
  *    cmd.Parse (argc, argv);
  *    ...
- *    
+ *
  *    std::cerr << cmd;
  * \endcode
  *

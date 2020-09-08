@@ -38,14 +38,14 @@ NS_LOG_COMPONENT_DEFINE ("AmrrWifiManager");
 struct AmrrWifiRemoteStation : public WifiRemoteStation
 {
   Time m_nextModeUpdate; ///< next mode update time
-  uint32_t m_tx_ok; ///< transmit ok
-  uint32_t m_tx_err; ///< transmit error
-  uint32_t m_tx_retr; ///< transmit retry
-  uint32_t m_retry; ///< retry
-  uint8_t m_txrate; ///< transmit rate
+  uint32_t m_tx_ok;      ///< transmit OK
+  uint32_t m_tx_err;     ///< transmit error
+  uint32_t m_tx_retr;    ///< transmit retry
+  uint32_t m_retry;      ///< retry
+  uint8_t m_txrate;      ///< transmit rate
   uint32_t m_successThreshold; ///< success threshold
-  uint32_t m_success; ///< success
-  bool m_recovery; ///< recovery
+  uint32_t m_success;    ///< success
+  bool m_recovery;       ///< recovery
 };
 
 
@@ -155,7 +155,7 @@ void
 AmrrWifiManager::DoReportDataFailed (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  AmrrWifiRemoteStation *station = (AmrrWifiRemoteStation *)st;
+  AmrrWifiRemoteStation *station = static_cast<AmrrWifiRemoteStation*> (st);
   station->m_retry++;
   station->m_tx_retr++;
 }
@@ -168,11 +168,11 @@ AmrrWifiManager::DoReportRtsOk (WifiRemoteStation *st,
 }
 
 void
-AmrrWifiManager::DoReportDataOk (WifiRemoteStation *st,
-                                 double ackSnr, WifiMode ackMode, double dataSnr)
+AmrrWifiManager::DoReportDataOk (WifiRemoteStation *st, double ackSnr, WifiMode ackMode,
+                                 double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss)
 {
-  NS_LOG_FUNCTION (this << st << ackSnr << ackMode << dataSnr);
-  AmrrWifiRemoteStation *station = (AmrrWifiRemoteStation *)st;
+  NS_LOG_FUNCTION (this << st << ackSnr << ackMode << dataSnr << dataChannelWidth << +dataNss);
+  AmrrWifiRemoteStation *station = static_cast<AmrrWifiRemoteStation*> (st);
   station->m_retry = 0;
   station->m_tx_ok++;
 }
@@ -187,7 +187,7 @@ void
 AmrrWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  AmrrWifiRemoteStation *station = (AmrrWifiRemoteStation *)st;
+  AmrrWifiRemoteStation *station = static_cast<AmrrWifiRemoteStation*> (st);
   station->m_retry = 0;
   station->m_tx_err++;
 }
@@ -322,7 +322,7 @@ WifiTxVector
 AmrrWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  AmrrWifiRemoteStation *station = (AmrrWifiRemoteStation *)st;
+  AmrrWifiRemoteStation *station = static_cast<AmrrWifiRemoteStation*> (st);
   UpdateMode (station);
   NS_ASSERT (station->m_txrate < GetNSupported (station));
   uint8_t rateIndex;
@@ -366,7 +366,6 @@ AmrrWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
   uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
-      //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
   WifiMode mode = GetSupported (station, rateIndex);
@@ -375,18 +374,17 @@ AmrrWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
       m_currentRate = mode.GetDataRate (channelWidth);
     }
-  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
 }
 
 WifiTxVector
 AmrrWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
 {
   NS_LOG_FUNCTION (this << st);
-  AmrrWifiRemoteStation *station = (AmrrWifiRemoteStation *)st;
+  AmrrWifiRemoteStation *station = static_cast<AmrrWifiRemoteStation*> (st);
   uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
     {
-      //avoid to use legacy rate adaptation algorithms for IEEE 802.11n/ac
       channelWidth = 20;
     }
   UpdateMode (station);
@@ -400,14 +398,8 @@ AmrrWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode, GetAddress (station)), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
   return rtsTxVector;
-}
-
-bool
-AmrrWifiManager::IsLowLatency (void) const
-{
-  return true;
 }
 
 } //namespace ns3

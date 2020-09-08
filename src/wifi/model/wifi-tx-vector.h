@@ -31,8 +31,8 @@ namespace ns3 {
 /**
  * This class mimics the TXVECTOR which is to be
  * passed to the PHY in order to define the parameters which are to be
- * used for a transmission. See IEEE 802.11-2007 15.2.6 "Transmit PLCP",
- * and also 15.4.4.2 "PMD_SAP peer-to-peer service primitive
+ * used for a transmission. See IEEE 802.11-2016 16.2.5 "Transmit PHY",
+ * and also 8.3.4.1 "PHY SAP peer-to-peer service primitive
  * parameters".
  *
  * If this class is constructed with the constructor that takes no
@@ -50,7 +50,7 @@ namespace ns3 {
  * appropriately.
  *
  * \note the above reference is valid for the DSSS PHY only (clause
- * 15). TXVECTOR is defined also for the other PHYs, however they
+ * 16). TXVECTOR is defined also for the other PHYs, however they
  * don't include the TXPWRLVL explicitly in the TXVECTOR. This is
  * somewhat strange, since all PHYs actually have a
  * PMD_TXPWRLVL.request primitive. We decide to include the power
@@ -75,6 +75,7 @@ public:
    * \param channelWidth the channel width in MHz
    * \param aggregation enable or disable MPDU aggregation
    * \param stbc enable or disable STBC
+   * \param bssColor the BSS color
    */
   WifiTxVector (WifiMode mode,
                 uint8_t powerLevel,
@@ -85,7 +86,12 @@ public:
                 uint8_t ness,
                 uint16_t channelWidth,
                 bool aggregation,
-                bool stbc);
+                bool stbc,
+                uint8_t bssColor = 0);
+  /**
+   * \returns whether mode has been initialized
+   */
+  bool GetModeInitialized (void) const;
   /**
    * \returns the selected payload transmission mode
    */
@@ -93,7 +99,7 @@ public:
   /**
   * Sets the selected payload transmission mode
   *
-  * \param mode
+  * \param mode the payload WifiMode
   */
   void SetMode (WifiMode mode);
   /**
@@ -103,7 +109,7 @@ public:
   /**
    * Sets the selected transmission power level
    *
-   * \param powerlevel
+   * \param powerlevel the transmission power level
    */
   void SetTxPowerLevel (uint8_t powerlevel);
   /**
@@ -113,7 +119,7 @@ public:
   /**
    * Sets the preamble type
    *
-   * \param preamble
+   * \param preamble the preamble type
    */
   void SetPreambleType (WifiPreamble preamble);
   /**
@@ -123,7 +129,7 @@ public:
   /**
    * Sets the selected channelWidth (in MHz)
    *
-   * \param channelWidth
+   * \param channelWidth the channel width (in MHz)
    */
   void SetChannelWidth (uint16_t channelWidth);
   /**
@@ -143,27 +149,27 @@ public:
   /**
    * Sets the number of TX antennas
    *
-   * \param nTx
+   * \param nTx the number of TX antennas
    */
   void SetNTx (uint8_t nTx);
   /**
-   * \returns the number of Nss
+   * \returns the number of spatial streams
    */
   uint8_t GetNss (void) const;
   /**
    * Sets the number of Nss refer to IEEE 802.11n Table 20-28 for explanation and range
    *
-   * \param nss
+   * \param nss the number of spatial streams
    */
   void SetNss (uint8_t nss);
   /**
-   * \returns the number of Ness
+   * \returns the number of extended spatial streams
    */
   uint8_t GetNess (void) const;
   /**
    * Sets the Ness number refer to IEEE 802.11n Table 20-6 for explanation
    *
-   * \param ness
+   * \param ness the number of extended spatial streams
    */
   void SetNess (uint8_t ness);
   /**
@@ -192,13 +198,23 @@ public:
    */
   void SetStbc (bool stbc);
   /**
+   * Set the BSS color
+   * \param color the BSS color
+   */
+  void SetBssColor (uint8_t color);
+  /**
+   * Get the BSS color
+   * \return the BSS color
+   */
+  uint8_t GetBssColor (void) const;
+  /**
    * The standard disallows certain combinations of WifiMode, number of
    * spatial streams, and channel widths.  This method can be used to
    * check whether this WifiTxVector contains an invalid combination.
    *
    * \return true if the WifiTxVector parameters are allowed by the standard
    */
-   bool IsValid (void) const;
+  bool IsValid (void) const;
 
 
 private:
@@ -216,18 +232,18 @@ private:
   uint8_t  m_ness;               /**< number of spatial streams in beamforming */
   bool     m_aggregation;        /**< Flag whether the PSDU contains A-MPDU. */
   bool     m_stbc;               /**< STBC used or not */
+  uint8_t  m_bssColor;           /**< BSS color */
 
   bool     m_modeInitialized;         /**< Internal initialization flag */
-  bool     m_txPowerLevelInitialized; /**< Internal initialization flag */
 };
 
 /**
  * Serialize WifiTxVector to the given ostream.
  *
- * \param os
- * \param v
+ * \param os the output stream
+ * \param v the WifiTxVector to stringify
  *
- * \return ostream
+ * \return ouput stream
  */
 std::ostream & operator << (std::ostream & os,const WifiTxVector &v);
 

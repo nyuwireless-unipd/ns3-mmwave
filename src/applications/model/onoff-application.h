@@ -31,6 +31,7 @@
 #include "ns3/ptr.h"
 #include "ns3/data-rate.h"
 #include "ns3/traced-callback.h"
+#include "ns3/seq-ts-size-header.h"
 
 namespace ns3 {
 
@@ -82,6 +83,14 @@ class Socket;
 *
 * If the underlying socket type supports broadcast, this application
 * will automatically enable the SetAllowBroadcast(true) socket option.
+*
+ * If the attribute "EnableSeqTsSizeHeader" is enabled, the application will
+ * use some bytes of the payload to store an header with a sequence number,
+ * a timestamp, and the size of the packet sent. Support for extracting 
+ * statistics from this header have been added to \c ns3::PacketSink 
+ * (enable its "EnableSeqTsSizeHeader" attribute), or users may extract
+ * the header via trace sources.  Note that the continuity of the sequence
+ * number may be disrupted across On/Off cycles.
 */
 class OnOffApplication : public Application 
 {
@@ -150,6 +159,7 @@ private:
 
   Ptr<Socket>     m_socket;       //!< Associated socket
   Address         m_peer;         //!< Peer address
+  Address         m_local;        //!< Local address to bind to
   bool            m_connected;    //!< True if connected
   Ptr<RandomVariableStream>  m_onTime;       //!< rng for On Time
   Ptr<RandomVariableStream>  m_offTime;      //!< rng for Off Time
@@ -163,12 +173,19 @@ private:
   EventId         m_startStopEvent;     //!< Event id for next start or stop event
   EventId         m_sendEvent;    //!< Event id of pending "send packet" event
   TypeId          m_tid;          //!< Type of the socket used
+  uint32_t        m_seq {0};      //!< Sequence
+  Ptr<Packet>     m_unsentPacket; //!< Unsent packet cached for future attempt
+  bool            m_enableSeqTsSizeHeader {false}; //!< Enable or disable the use of SeqTsSizeHeader
+
 
   /// Traced Callback: transmitted packets.
   TracedCallback<Ptr<const Packet> > m_txTrace;
 
   /// Callbacks for tracing the packet Tx events, includes source and destination addresses
   TracedCallback<Ptr<const Packet>, const Address &, const Address &> m_txTraceWithAddresses;
+
+  /// Callback for tracing the packet Tx events, includes source, destination, the packet sent, and header
+  TracedCallback<Ptr<const Packet>, const Address &, const Address &, const SeqTsSizeHeader &> m_txTraceWithSeqTsSize;
 
 private:
   /**

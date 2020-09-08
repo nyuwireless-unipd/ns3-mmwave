@@ -101,7 +101,8 @@ public:
     DROP_BAD_CHECKSUM,   /**< Bad checksum */
     DROP_INTERFACE_DOWN,   /**< Interface is down so can not send packet */
     DROP_ROUTE_ERROR,   /**< Route error */
-    DROP_FRAGMENT_TIMEOUT /**< Fragment timeout exceeded */
+    DROP_FRAGMENT_TIMEOUT, /**< Fragment timeout exceeded */
+    DROP_DUPLICATE  /**< Duplicate packet received */
   };
 
   /**
@@ -229,8 +230,8 @@ public:
    * \param [in] interface
    */
   typedef void (* SentTracedCallback)
-    (const Ipv4Header & header, Ptr<const Packet> packet, uint32_t interface);
-   
+      (const Ipv4Header & header, Ptr<const Packet> packet, uint32_t interface);
+
   /**
    * TracedCallback signature for packet transmission or reception events.
    *
@@ -242,7 +243,7 @@ public:
    * and will be changed to \c Ptr<const Ipv4> in a future release.
    */
   typedef void (* TxRxTracedCallback)
-    (Ptr<const Packet> packet, Ptr<Ipv4> ipv4, uint32_t interface);
+      (Ptr<const Packet> packet, Ptr<Ipv4> ipv4, uint32_t interface);
 
   /**
    * TracedCallback signature for packet drop events.
@@ -256,10 +257,10 @@ public:
    * and will be changed to \c Ptr<const Ipv4> in a future release.
    */
   typedef void (* DropTracedCallback)
-    (const Ipv4Header & header, Ptr<const Packet> packet,
-     DropReason reason, Ptr<Ipv4> ipv4,
-     uint32_t interface);
-   
+      (const Ipv4Header & header, Ptr<const Packet> packet,
+          DropReason reason, Ptr<Ipv4> ipv4,
+          uint32_t interface);
+
 protected:
 
   virtual void DoDispose (void);
@@ -297,6 +298,16 @@ private:
   virtual bool GetWeakEsModel (void) const;
 
   /**
+   * \brief Decrease the identification value for a dropped or recursed packet
+   * \param source source IPv4 address
+   * \param destination destination IPv4 address
+   * \param protocol L4 protocol
+   */
+  void DecreaseIdentification (Ipv4Address source,
+                               Ipv4Address destination,
+                               uint8_t protocol);
+
+  /**
    * \brief Construct an IPv4 header.
    * \param source source IPv4 address
    * \param destination destination IPv4 address
@@ -308,13 +319,13 @@ private:
    * \return newly created IPv4 header
    */
   Ipv4Header BuildHeader (
-    Ipv4Address source,
-    Ipv4Address destination,
-    uint8_t protocol,
-    uint16_t payloadSize,
-    uint8_t ttl,
-    uint8_t tos,
-    bool mayFragment);
+      Ipv4Address source,
+      Ipv4Address destination,
+      uint8_t protocol,
+      uint16_t payloadSize,
+      uint8_t ttl,
+      uint8_t tos,
+      bool mayFragment);
 
   /**
    * \brief Send packet with route.
@@ -415,14 +426,6 @@ private:
   bool ProcessFragment (Ptr<Packet>& packet, Ipv4Header & ipHeader, uint32_t iif);
 
   /**
-   * \brief Process the timeout for packet fragments
-   * \param key representing the packet fragments
-   * \param ipHeader the IP header of the original packet
-   * \param iif Input Interface
-   */
-  void HandleFragmentsTimeout ( std::pair<uint64_t, uint32_t> key, Ipv4Header & ipHeader, uint32_t iif);
-
-  /**
    * \brief Make a copy of the packet, add the header and invoke the TX trace callback
    * \param ipHeader the IP header that will be added to the packet
    * \param packet the packet
@@ -470,6 +473,8 @@ private:
   TracedCallback<const Ipv4Header &, Ptr<const Packet>, uint32_t> m_sendOutgoingTrace;
   /// Trace of unicast forwarded packets
   TracedCallback<const Ipv4Header &, Ptr<const Packet>, uint32_t> m_unicastForwardTrace;
+  /// Trace of multicast forwarded packets
+  TracedCallback<const Ipv4Header &, Ptr<const Packet>, uint32_t> m_multicastForwardTrace;
   /// Trace of locally delivered packets
   TracedCallback<const Ipv4Header &, Ptr<const Packet>, uint32_t> m_localDeliverTrace;
 
@@ -492,12 +497,46 @@ private:
 
   SocketList m_sockets; //!< List of IPv4 raw sockets.
 
+  /// Key identifying a fragmented packet
+  typedef std::pair<uint64_t, uint32_t> FragmentKey_t;
+
+  /// Container for fragment timeouts.
+  typedef std::list< std::tuple <Time, FragmentKey_t, Ipv4Header, uint32_t > > FragmentsTimeoutsList_t;
+  /// Container Iterator for fragment timeouts..
+  typedef std::list< std::tuple <Time, FragmentKey_t, Ipv4Header, uint32_t > >::iterator FragmentsTimeoutsListI_t;
+
+  /**
+   * \brief Process the timeout for packet fragments
+   * \param key representing the packet fragments
+   * \param ipHeader the IP header of the original packet
+   * \param iif Input Interface
+   */
+  void HandleFragmentsTimeout (FragmentKey_t key, Ipv4Header & ipHeader, uint32_t iif);
+
+  /**
+   * \brief Set a new timeout "event" for a fragmented packet
+   * \param key the fragment identification
+   * \param ipHeader the IPv4 header of the fragmented packet
+   * \param iif input interface of the packet
+   * \return an iterator to the inserted "event"
+   */
+  FragmentsTimeoutsListI_t SetTimeout (FragmentKey_t key, Ipv4Header ipHeader, uint32_t iif);
+
+  /**
+   * \brief Handles a fragmented packet timeout
+   */
+  void HandleTimeout (void);
+
+  FragmentsTimeoutsList_t m_timeoutEventList;  //!< Timeout "events" container
+
+  EventId m_timeoutEvent;  //!< Event for the next scheduled timeout
+
   /**
    * \brief A Set of Fragment belonging to the same packet (src, dst, identification and proto)
    */
   class Fragments : public SimpleRefCount<Fragments>
   {
-public:
+  public:
     /**
      * \brief Constructor.
      */
@@ -534,7 +573,19 @@ public:
      */
     Ptr<Packet> GetPartialPacket () const;
 
-private:
+    /**
+     * \brief Set the Timeout iterator.
+     * \param iter The iterator.
+     */
+    void SetTimeoutIter (FragmentsTimeoutsListI_t iter);
+
+    /**
+     * \brief Get the Timeout iterator.
+     * \returns The iterator.
+     */
+    FragmentsTimeoutsListI_t GetTimeoutIter ();
+
+  private:
     /**
      * \brief True if other fragments will be sent.
      */
@@ -545,17 +596,42 @@ private:
      */
     std::list<std::pair<Ptr<Packet>, uint16_t> > m_fragments;
 
+    /**
+     * \brief Timeout iterator to "event" handler
+     */
+    FragmentsTimeoutsListI_t m_timeoutIter;
   };
 
   /// Container of fragments, stored as pairs(src+dst addr, src+dst port) / fragment
-  typedef std::map< std::pair<uint64_t, uint32_t>, Ptr<Fragments> > MapFragments_t;
-  /// Container of fragment timeout event, stored as pairs(src+dst addr, src+dst port) / EventId
-  typedef std::map< std::pair<uint64_t, uint32_t>, EventId > MapFragmentsTimers_t;
+  typedef std::map< FragmentKey_t, Ptr<Fragments> > MapFragments_t;
 
   MapFragments_t       m_fragments; //!< Fragmented packets.
   Time                 m_fragmentExpirationTimeout; //!< Expiration timeout
-  MapFragmentsTimers_t m_fragmentsTimers; //!< Expiration events.
 
+  /// IETF RFC 6621, Section 6.2 de-duplication w/o IPSec
+  /// RFC 6621 recommended duplicate packet tuple: {IPV hash, IP protocol, IP source address, IP destination address}
+  typedef std::tuple <uint64_t, uint8_t, Ipv4Address, Ipv4Address> DupTuple_t;
+  /// Maps packet duplicate tuple to expiration time
+  typedef std::map<DupTuple_t, Time> DupMap_t;
+
+  /**
+   * Registers duplicate entry, return false if new
+   * \param [in] p Possibly duplicate packet.
+   * \param [in] header Packet \pname{p} header.
+   * \return True if this packet is a duplicate
+   */
+  bool UpdateDuplicate (Ptr<const Packet> p, const Ipv4Header &header);
+  /**
+   * Remove duplicate packet entry
+   * \param [in] iter Iterator into duplicate map to remove
+   */
+  void RemoveDuplicates (void);
+
+  bool                m_enableDpd;    //!< Enable multicast duplicate packet detection
+  DupMap_t            m_dups;         //!< map of packet duplicate tuples to expiry event
+  Time                m_expire;       //!< duplicate entry expiration delay
+  Time                m_purge;        //!< time between purging expired duplicate entries
+  EventId             m_cleanDpd;     //!< event to cleanup expired duplicate entries
 };
 
 } // Namespace ns3

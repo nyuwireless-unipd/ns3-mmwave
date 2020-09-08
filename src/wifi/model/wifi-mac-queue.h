@@ -25,10 +25,19 @@
 #define WIFI_MAC_QUEUE_H
 
 #include "wifi-mac-queue-item.h"
+#include "ns3/queue.h"
 
 namespace ns3 {
 
 class QosBlockedDestinations;
+
+// The following explicit template instantiation declaration prevents modules
+// including this header file from implicitly instantiating Queue<WifiMacQueueItem>.
+// This would cause python examples using wifi to crash at runtime with the
+// following error message: "Trying to allocate twice the same UID:
+// ns3::Queue<WifiMacQueueItem>"
+extern template class Queue<WifiMacQueueItem>;
+
 
 /**
  * \ingroup wifi
@@ -63,6 +72,12 @@ public:
     DROP_OLDEST
   };
 
+  /// allow the usage of iterators and const iterators
+  using Queue<WifiMacQueueItem>::ConstIterator;
+  using Queue<WifiMacQueueItem>::Iterator;
+  using Queue<WifiMacQueueItem>::begin;
+  using Queue<WifiMacQueueItem>::end;
+
   /**
    * Set the maximum delay before the packet is discarded.
    *
@@ -91,14 +106,22 @@ public:
    */
   bool PushFront (Ptr<WifiMacQueueItem> item);
   /**
+   * Enqueue the given Wifi MAC queue item before the given position.
+   *
+   * \param pos the position before which the item is to be inserted
+   * \param item the Wifi MAC queue item to be enqueued
+   * \return true if success, false if the packet has been dropped
+   */
+  bool Insert (ConstIterator pos, Ptr<WifiMacQueueItem> item);
+  /**
    * Dequeue the packet in the front of the queue.
    *
    * \return the packet
    */
   Ptr<WifiMacQueueItem> Dequeue (void);
   /**
-   * Search and return, if present in the queue, the first packet having the
-   * address indicated by <i>type</i> equal to <i>addr</i>.
+   * Search and return, if present in the queue, the first packet (either Data
+   * frame or QoS Data frame) having the receiver address equal to <i>addr</i>.
    * This method removes the packet from the queue.
    * It is typically used by ns3::Txop during the CF period.
    *
@@ -109,7 +132,17 @@ public:
   Ptr<WifiMacQueueItem> DequeueByAddress (Mac48Address dest);
   /**
    * Search and return, if present in the queue, the first packet having the
-   * address indicated by <i>type</i> equal to <i>addr</i>, and tid
+   * TID equal to <i>tid</i>.
+   * This method removes the packet from the queue.
+   *
+   * \param tid the given TID
+   *
+   * \return the packet
+   */
+  Ptr<WifiMacQueueItem> DequeueByTid (uint8_t tid);
+  /**
+   * Search and return, if present in the queue, the first packet having the
+   * address indicated by <i>type</i> equal to <i>addr</i>, and TID
    * equal to <i>tid</i>. This method removes the packet from the queue.
    * It is typically used by ns3::QosTxop in order to perform correct MSDU
    * aggregation (A-MSDU).
@@ -123,16 +156,25 @@ public:
                                                 Mac48Address dest);
   /**
    * Return first available packet for transmission. A packet could be no available
-   * if it is a QoS packet with a tid and an address1 fields equal to <i>tid</i> and <i>addr</i>
+   * if it is a QoS packet with a TID and an address1 fields equal to <i>tid</i> and <i>addr</i>
    * respectively that index a pending agreement in the BlockAckManager object.
    * So that packet must not be transmitted until reception of an ADDBA response frame from station
    * addressed by <i>addr</i>. This method removes the packet from queue.
    *
-   * \param blockedPackets
+   * \param blockedPackets the destination address & TID pairs that are waiting for a BlockAck response
    *
-   * \return packet
+   * \return the packet
    */
-  Ptr<WifiMacQueueItem> DequeueFirstAvailable (const Ptr<QosBlockedDestinations> blockedPackets);
+  Ptr<WifiMacQueueItem> DequeueFirstAvailable (const Ptr<QosBlockedDestinations> blockedPackets = nullptr);
+  /**
+   * Dequeue the item at position <i>pos</i> in the queue. Return a null
+   * pointer if the given iterator is invalid, the queue is empty or the
+   * lifetime of the item pointed to by the given iterator is expired.
+   *
+   * \param pos the position of the item to be dequeued
+   * \return the dequeued item, if any
+   */
+  Ptr<WifiMacQueueItem> Dequeue (WifiMacQueue::ConstIterator pos);
   /**
    * Peek the packet in the front of the queue. The packet is not removed.
    *
@@ -140,27 +182,55 @@ public:
    */
   Ptr<const WifiMacQueueItem> Peek (void) const;
   /**
+   * Search and return, if present in the queue, the first packet (either Data
+   * frame or QoS Data frame) having the receiver address equal to <i>addr</i>.
+   * If <i>pos</i> is a valid iterator, the search starts from the packet pointed
+   * to by the given iterator.
+   * This method does not remove the packet from the queue.
+   *
+   * \param dest the given destination
+   * \param pos the iterator pointing to the packet the search starts from
+   *
+   * \return an iterator pointing to the peeked packet
+   */
+  ConstIterator PeekByAddress (Mac48Address dest, ConstIterator pos = EMPTY) const;
+  /**
    * Search and return, if present in the queue, the first packet having the
-   * address indicated by <i>type</i> equal to <i>addr</i>, and tid
-   * equal to <i>tid</i>. This method does not remove the packet from the queue.
-   * It is typically used by ns3::QosTxop in order to perform correct MSDU
-   * aggregation (A-MSDU).
+   * TID equal to <i>tid</i>. If <i>pos</i> is a valid iterator, the search starts
+   * from the packet pointed to by the given iterator.
+   * This method does not remove the packet from the queue.
+   *
+   * \param tid the given TID
+   * \param pos the iterator pointing to the packet the search starts from
+   *
+   * \return an iterator pointing to the peeked packet
+   */
+  ConstIterator PeekByTid (uint8_t tid, ConstIterator pos = EMPTY) const;
+  /**
+   * Search and return, if present in the queue, the first packet having the
+   * receiver address equal to <i>dest</i>, and TID equal to <i>tid</i>.
+   * If <i>pos</i> is a valid iterator, the search starts from the packet pointed
+   * to by the given iterator. This method does not remove the packet from the queue.
+   * It is typically used by ns3::QosTxop in order to perform correct MSDU aggregation
+   * (A-MSDU).
    *
    * \param tid the given TID
    * \param dest the given destination
+   * \param pos the iterator pointing to the packet the search starts from
    *
-   * \return packet
+   * \return an iterator pointing to the peeked packet
    */
-  Ptr<const WifiMacQueueItem> PeekByTidAndAddress (uint8_t tid,
-                                                   Mac48Address dest);
+  ConstIterator PeekByTidAndAddress (uint8_t tid, Mac48Address dest, ConstIterator pos = EMPTY) const;
   /**
    * Return first available packet for transmission. The packet is not removed from queue.
    *
-   * \param blockedPackets
+   * \param blockedPackets the destination address & TID pairs that are waiting for a BlockAck response
+   * \param pos the iterator pointing to the packet the search starts from
    *
-   * \return packet
+   * \return an iterator pointing to the peeked packet
    */
-  Ptr<const WifiMacQueueItem> PeekFirstAvailable (const Ptr<QosBlockedDestinations> blockedPackets);
+  ConstIterator PeekFirstAvailable (const Ptr<QosBlockedDestinations> blockedPackets = nullptr,
+                                    ConstIterator pos = EMPTY) const;
   /**
    * Remove the packet in the front of the queue.
    *
@@ -178,6 +248,17 @@ public:
    */
   bool Remove (Ptr<const Packet> packet);
   /**
+   * Remove the item at position <i>pos</i> in the queue and return an iterator
+   * pointing to the item following the removed one. If <i>removeExpired</i> is
+   * true, all the items in the queue from the head to the given position are
+   * removed if their lifetime expired.
+   *
+   * \param pos the position of the item to be removed
+   * \param removeExpired true to remove expired items
+   * \return an iterator pointing to the item following the removed one
+   */
+  ConstIterator Remove (ConstIterator pos, bool removeExpired = false);
+  /**
    * Return the number of packets having destination address specified by
    * <i>dest</i>.
    *
@@ -187,7 +268,7 @@ public:
    */
   uint32_t GetNPacketsByAddress (Mac48Address dest);
   /**
-   * Return the number of QoS packets having tid equal to <i>tid</i> and
+   * Return the number of QoS packets having TID equal to <i>tid</i> and
    * destination address equal to <i>dest</i>.
    *
    * \param tid the given TID
@@ -218,6 +299,9 @@ public:
    */
   uint32_t GetNBytes (void);
 
+  static const ConstIterator EMPTY;         //!< Invalid iterator to signal an empty queue
+
+
 private:
   /**
    * Remove the item pointed to by the iterator <i>it</i> if it has been in the
@@ -231,6 +315,10 @@ private:
 
   Time m_maxDelay;                          //!< Time to live for packets in the queue
   DropPolicy m_dropPolicy;                  //!< Drop behavior of queue
+  mutable bool m_expiredPacketsPresent;     //!< True if expired packets are in the queue
+
+  /// Traced callback: fired when a packet is dropped due to lifetime expiration
+  TracedCallback<Ptr<const WifiMacQueueItem> > m_traceExpired;
 
   NS_LOG_TEMPLATE_DECLARE;                  //!< redefinition of the log component
 };
