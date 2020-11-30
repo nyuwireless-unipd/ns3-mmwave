@@ -127,7 +127,7 @@ public:
 
   /**
    * \brief Receive from the PHY layer the current frame, subframe, slot numbers and the current starting OFDM symbol within the slot.
-   * \param snf The current frame, subframe, slot and starting OFDM symbol counters
+   * \param sfnSf The current frame, subframe, slot and starting OFDM symbol counters
    */
   void DoSlotIndication (SfnSf sfnSf);
 

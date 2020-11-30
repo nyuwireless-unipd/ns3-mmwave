@@ -160,7 +160,7 @@ public:
    * The structure will be used within InstallSingleEnbDevice,
    * InstallSingleUeNetDevice and InstallSingleMcUeDevice.
    *
-   * \param ccmap the component carrier map
+   * \param ccMapParams the component carrier map
    */
   void SetCcPhyParams ( std::map< uint8_t, MmWaveComponentCarrier> ccMapParams);
 
@@ -176,7 +176,7 @@ public:
    * The structure will be used within InstallSingleLteEnbDevice,
    * and InstallSingleMcUeDevice.
    *
-   * \param ccmap the component carrier map
+   * \param ccMapParams the component carrier map
    */
   void SetLteCcPhyParams ( std::map< uint8_t, ComponentCarrier> ccMapParams);
 
@@ -191,9 +191,9 @@ public:
 
   /**
    * Attach to an eNB selecting which one with an index
-   * \param the ueNetDevice
-   * \param all the eNBs
-   * \param an index to select the eNB (cellId - 1)
+   * \param ueDevice the ueNetDevice
+   * \param enbDevices all the eNBs
+   * \param index an index to select the eNB (cellId - 1)
    */
   void AttachToEnbWithIndex (Ptr<NetDevice> ueDevice, NetDeviceContainer enbDevices, uint32_t index);
   
@@ -202,6 +202,9 @@ public:
    * Attach MC ueDevices to the closest MmWave eNB device, register all MmWave eNBs to the MmWaveUePhy,
    * store all cellId in each LteUeRrc layer.
    * This must be used when attaching InterRatHandover capable devices
+   * \param ueDevices the ueNetDevice
+   * \param mmWaveEnbDevices all the mmwave eNBs
+   * \param lteEnbDevices all the lte eNBs
    */
   void AttachIrToClosestEnb (NetDeviceContainer ueDevices, NetDeviceContainer mmWaveEnbDevices, NetDeviceContainer lteEnbDevices);
 
@@ -307,8 +310,7 @@ public:
   /**
    * Set the blockage attribute of each channel if MmWave3gppChannel is used.
    *
-   * \parmam map (CC ID, blockage attribute value)
-   *
+   * \param blockageMap (CC ID, blockage attribute value)
    */
   void SetBlockageMap (std::map<uint8_t, bool> blockageMap);
 

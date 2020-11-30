@@ -158,8 +158,8 @@ public:
    * and sets the antenna.
    * The beamforming vector is computed using a SVD-based beamforming
    * algorithm.
-   * \param the target device
-   * \param the target antenna of otherDevice
+   * \param otherDevice the target device
+   * \param otherAntenna the target antenna of otherDevice
    */
   void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) override;
 
@@ -175,8 +175,6 @@ private:
   /**
    * Compute eigenvector related to highest eigenvalue
    * \param A spatial correlation matrix (complex, hermitian)
-   * \param nIter maximum number of iterations
-   * \param threshold if norm of two consecutive vectors is below this threshold, stop computation before nIter iterations
    * \return eigenvector
    */
   ThreeGppAntennaArrayModel::ComplexVector GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A) const;

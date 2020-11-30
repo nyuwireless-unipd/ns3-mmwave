@@ -137,13 +137,13 @@ public:
 
   /**
    * Set the antenna used by the device in the component carrier
-   * \params antenna
+   * \param antenna pointer to ThreeGppAntennaArrayModel object
    */
   void SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna);
 
   /**
    * Get the antenna used by the device in the component carrier
-   * \return the antenna
+   * \return pointer to ThreeGppAntennaArrayModel object
    */
   Ptr<ThreeGppAntennaArrayModel> GetAntenna (void) const;
 

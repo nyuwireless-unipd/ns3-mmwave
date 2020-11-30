@@ -346,11 +346,12 @@ public:
   static double MappingMiBler (double mib, uint8_t ecrId, uint32_t cbSize);
 
   /**
-   * \brief run the error-model algorithm for the specified TB
+   * \brief Run the error-model algorithm for the specified TB
    * \param sinr the perceived sinrs in the whole bandwidth
    * \param map the actives RBs for the TB
    * \param size the size in bytes of the TB
    * \param mcs the MCS of the TB
+   * \param miHistory the MI history
    * \return the TB error rate and MI
    */
   static MmWaveTbStats_t GetTbDecodificationStats (const SpectrumValue& sinr, const std::vector<int>& map, uint32_t size, uint8_t mcs, MmWaveHarqProcessInfoList_t miHistory);

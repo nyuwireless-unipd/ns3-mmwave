@@ -57,7 +57,7 @@ public:
 
   /**
    * Set the configuration parameters which are common in the whole simulation
-   * \param a pointer to the MmWavePhyMacCommon object
+   * \param ptrConfig a pointer to the MmWavePhyMacCommon object
    */
   void SetConfigurationParameters (Ptr<MmWavePhyMacCommon> ptrConfig);
 

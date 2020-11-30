@@ -111,10 +111,6 @@ public:
    */
   void SetMacScheduler (Ptr<MmWaveMacScheduler> s);
 
-  /**
-   * Set the LteFfrAlgorithm
-   * \param s a pointer to the LteFfrAlgorithm
-   */
   //void SetFfrAlgorithm (Ptr<LteFfrAlgorithm> s);
 
 protected:

@@ -205,7 +205,7 @@ private:
 
   /**
    * \brief change the state
-   * \param the new state
+   * \param newState the new state
    */
   void ChangeState (State newState);
   void EndTx ();

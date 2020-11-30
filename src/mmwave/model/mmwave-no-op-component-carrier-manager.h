@@ -106,19 +106,12 @@ protected:
   virtual void DoReportBufferStatus (LteMacSapProvider::ReportBufferStatusParameters params);
   /**
    * \brief Notify transmit opportunity.
-   * \param bytes the number of bytes
-   * \param layer the layer
-   * \param harqId the HARQ ID
-   * \param componentCarrierId the component carrier ID
-   * \param rnti the RNTI
-   * \param lcid the LCID
+   * \param txOpParams the TX opportunity parameters
    */
   virtual void DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpParams);
   /**
    * \brief Receive PDU.
-   * \param p the packet
-   * \param rnti the RNTI
-   * \param lcid the LCID
+   * \param rxPduParams the parameters of the received PDU
    */
   virtual void DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams);
   /// Notify HARQ delivery failure

@@ -77,17 +77,17 @@ public:
   /**
   * \brief Return the cumulated MI of the HARQ procId in case of retranmissions
   * for DL (asynchronous)
-  * \param harqProcId the HARQ proc id
-  * \param layer layer no. (for MIMO spatial multiplexing)
-  * \return the MI accumulated
+  * \param rnti rnti associated to the process
+  * \param harqId the HARQ proc id
+  * \return the MI accumulated for downlink
   */
   double GetAccumulatedMiDl (uint16_t rnti, uint8_t harqId);
 
   /**
   * \brief Return the info of the HARQ procId in case of retranmissions
   * for DL (asynchronous)
+  * \param rnti rnti associated to the process
   * \param harqProcId the HARQ proc id
-  * \param layer layer no. (for MIMO spatail multiplexing)
   * \return the vector of the info related to HARQ proc Id
   */
   MmWaveHarqProcessInfoList_t GetHarqProcessInfoDl (uint16_t rnti, uint8_t harqProcId);
@@ -95,7 +95,9 @@ public:
   /**
   * \brief Return the cumulated MI of the HARQ procId in case of retranmissions
   * for UL (synchronous)
-  * \return the MI accumulated
+  * \param rnti rnti associated to the process
+  * \param harqId the HARQ proc id
+  * \return the MI accumulated for uplink
   */
   double GetAccumulatedMiUl (uint16_t rnti, uint8_t harqId);
 
@@ -111,17 +113,18 @@ public:
   /**
   * \brief Update the Info associated to the decodification of an HARQ process
   * for DL (asynchronous)
+  * \param rnti rnti associated to the process
   * \param id the HARQ proc id
-  * \param layer layer no. (for MIMO spatail multiplexing)
   * \param mi the new MI
   * \param infoBytes the no. of bytes of info
-  * \param mi the total no. of bytes txed
+  * \param codeBytes codeBytes
   */
   void UpdateDlHarqProcessStatus (uint16_t rnti, uint8_t id, double mi, uint32_t infoBytes, uint32_t codeBytes);
 
   /**
   * \brief Reset  the info associated to the decodification of an HARQ process
   * for DL (asynchronous)
+  * \param rnti rnti associated to the process
   * \param id the HARQ proc id
   */
   void ResetDlHarqProcessStatus (uint16_t rnti, uint8_t id);
@@ -130,15 +133,17 @@ public:
   * \brief Update the MI value associated to the decodification of an HARQ process
   * for DL (asynchronous)
   * \param rnti the RNTI of the transmitter
+  * \param harqId the HARQ proc id
   * \param mi the new MI
   * \param infoBytes the no. of bytes of info
-  * \param mi the total no. of bytes txed
+  * \param codeBytes codeBytes
   */
   void UpdateUlHarqProcessStatus (uint16_t rnti, uint8_t harqId, double mi, uint32_t infoBytes, uint32_t codeBytes);
 
   /**
   * \brief Reset  the info associated to the decodification of an HARQ process
   * for DL (asynchronous)
+  * \param rnti rnti associated to the process
   * \param id the HARQ proc id
   */
   void ResetUlHarqProcessStatus (uint16_t rnti, uint8_t id);

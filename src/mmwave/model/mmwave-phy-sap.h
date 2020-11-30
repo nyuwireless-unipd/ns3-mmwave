@@ -99,7 +99,7 @@ public:
   /**
    * notify the reception of a RACH preamble on the PRACH
    *
-   * \param prachId the ID of the preamble
+   * \param raId the ID of the preamble
    */
   virtual void ReceiveRachPreamble (uint32_t raId) = 0;
 
