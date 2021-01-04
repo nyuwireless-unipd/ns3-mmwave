@@ -143,8 +143,6 @@ private:
   Time m_bsrLast;
   bool m_freshUlBsr;       // true when a BSR has been received in the last TTI
 
-
-  Ptr<UniformRandomVariable> m_raPreambleUniformVariable;
   uint8_t m_raPreambleId;
   uint8_t m_raRnti;
 

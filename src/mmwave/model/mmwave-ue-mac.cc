@@ -240,11 +240,12 @@ MmWaveUeMac::GetTypeId (void)
 }
 
 MmWaveUeMac::MmWaveUeMac (void)
-  : m_bsrPeriodicity (MicroSeconds (100.0)),
+  : m_componentCarrierId (0),
+  m_bsrPeriodicity (MicroSeconds (100.0)),
   // ideal behavior
   m_bsrLast (MilliSeconds (0)),
   m_freshUlBsr (false),
-  //m_harqProcessId (0),
+  m_raPreambleId (0),
   m_rnti (0),
   m_waitingForRaResponse (true)
 {
@@ -252,9 +253,7 @@ MmWaveUeMac::MmWaveUeMac (void)
   m_cmacSapProvider = new UeMemberMmWaveUeCmacSapProvider (this);
   m_macSapProvider = new UeMemberMmWaveMacSapProvider (this);
   m_phySapUser = new MacUeMemberPhySapUser (this);
-  m_raPreambleUniformVariable = CreateObject<UniformRandomVariable> ();
   m_randomAccessProcedureDelay = CreateObject<UniformRandomVariable> ();
-  m_componentCarrierId = 0;
 }
 
 MmWaveUeMac::~MmWaveUeMac (void)
@@ -979,15 +978,14 @@ MmWaveUeMac::RandomlySelectAndSendRaPreamble ()
 void
 MmWaveUeMac::SendRaPreamble (bool contention)
 {
-  //m_raPreambleId = m_raPreambleUniformVariable->GetInteger (0, 64 - 1);
   if (contention)
     {
-      m_raPreambleId = g_raPreambleId++;
+      m_raPreambleId = ++g_raPreambleId;
     }
   // else m_raPreambleId was already set
 
   /*raRnti should be subframeNo -1 */
-  m_raRnti = 1;
+  m_raRnti = m_sfNum - 1;
   m_waitingForRaResponse = true;
 
   NS_LOG_DEBUG ("SendRachPreamble at time " << Simulator::Now ());
