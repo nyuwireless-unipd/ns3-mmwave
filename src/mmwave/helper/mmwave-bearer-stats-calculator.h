@@ -440,6 +440,11 @@ private:
    * true if any output is pending
    */
   bool m_pendingOutput;
+  
+  /**
+   * true if results are shown aggregated
+   */
+  bool m_aggregatedStats;
 
   /**
    * Protocol type, by default RLC
