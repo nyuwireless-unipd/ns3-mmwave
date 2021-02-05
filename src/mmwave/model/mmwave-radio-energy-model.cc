@@ -55,6 +55,12 @@ MmWaveRadioEnergyModel::GetTypeId (void)
                         MakeDoubleAccessor (&MmWaveRadioEnergyModel::SetRxCurrentA,
                                             &MmWaveRadioEnergyModel::GetRxCurrentA),
                         MakeDoubleChecker<double> ())
+        .AddAttribute ("RxCTRLCurrentA",
+                        "The default Rx CTRL current in Amperes",
+                        DoubleValue (0.175),
+                        MakeDoubleAccessor (&MmWaveRadioEnergyModel::SetRxCTRLCurrentA,
+                                            &MmWaveRadioEnergyModel::GetRxCTRLCurrentA),
+                        MakeDoubleChecker<double> ())
         .AddAttribute ("TxCurrentA",
                         "The default Tx current in Amperes",
                         DoubleValue(0.350),
@@ -265,7 +271,7 @@ MmWaveRadioEnergyModel::GetStateA (int state) const
   case 2:
     return m_rxCurrentA;
   case 3:
-    return m_rxCurrentA;
+    return m_rxCTRLCurrentA;
   }
   NS_FATAL_ERROR ("MmWaveRadioEnergyModel: undefined radio state " << state);
 }

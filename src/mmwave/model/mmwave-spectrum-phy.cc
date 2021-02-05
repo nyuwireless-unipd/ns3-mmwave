@@ -129,7 +129,7 @@ MmWaveSpectrumPhy::GetTypeId (void)
                      MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_rxPacketTraceUe),
                      "ns3::UeTxRxPacketCount::TracedCallback")
     .AddTraceSource ("State",
-                     "State Vlue to trace",
+                     "State Value to trace",
                      MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_intstate),
                      "ns3::TracedValueCallback::Int32")
     .AddAttribute ("DataErrorModelEnabled",

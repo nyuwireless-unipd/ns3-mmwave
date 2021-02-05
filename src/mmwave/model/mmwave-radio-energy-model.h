@@ -125,6 +125,20 @@ public:
     void SetRxCurrentA (double rxCurrentA);
 
     /**
+     * \brief Gets Rx CTRL current in Amperes.
+     *
+     * \returns rx CTRL current of the mmwave device.
+     */
+    double GetRxCTRLCurrentA (void) const;
+
+    /**
+     * \brief Sets RX CTRL current in Amperes.
+     *
+     * \param rxCTRLCurrentA the Rx current
+     */
+    void SetRxCTRLCurrentA (double rxCTRLCurrentA);
+
+    /**
      *  \brief Gets Tx current in Amperes.
      * 
      *  \returns tx current of the mmwave device.
@@ -203,6 +217,7 @@ private:
     Time m_lastUpdateTime;
     double m_txCurrentA;
     double m_rxCurrentA;
+    double m_rxCTRLCurrentA;
     double m_SleepCurrentA;
     double m_lightSleepCurrentA;
     double m_microSleepCurrentA;
