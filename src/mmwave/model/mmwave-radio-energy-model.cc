@@ -162,6 +162,20 @@ MmWaveRadioEnergyModel::GetTxCurrentA (void) const
 }
 
 void 
+MmWaveRadioEnergyModel::SetRxCTRLCurrentA (double rxCurrentA)
+{
+  NS_LOG_FUNCTION (this << rxCurrentA);
+  m_rxCurrentA = rxCurrentA;
+} 
+
+double 
+MmWaveRadioEnergyModel::GetRxCTRLCurrentA (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_txCurrentA;
+}
+
+void 
 MmWaveRadioEnergyModel::SetTxCurrentA (double txCurrentA)
 {
   NS_LOG_FUNCTION (this << txCurrentA);
