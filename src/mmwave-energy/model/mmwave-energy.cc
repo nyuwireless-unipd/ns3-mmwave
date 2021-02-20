@@ -24,7 +24,7 @@
 #include "ns3/simulator.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/energy-source.h"
-#include "mmwave-radio-energy-model.h"
+#include "mmwave-energy.h"
 #include "ns3/log.h"
 #include "ns3/config-store-module.h"
 #include "ns3/config.h"

@@ -51,7 +51,7 @@ public:
      */
     static TypeId GetTypeId (void);
     MmWaveRadioEnergyModel ();
-    virtual ~ MmWaveRadioEnergyModel ();
+    ~ MmWaveRadioEnergyModel ();
     /**
     * \brief Sets pointer to node.
     *
@@ -59,7 +59,7 @@ public:
     *
     * Implements DeviceEnergyModel::SetNode.
     */
-    virtual void SetNode (Ptr<Node> node);
+    void SetNode (Ptr<Node> node);
 
     /**
      * \brief Gets pointer to node.
@@ -68,7 +68,7 @@ public:
      *
      * Implements DeviceEnergyModel::GetNode.
      */
-    virtual Ptr<Node> GetNode (void) const;
+    Ptr<Node> GetNode (void) const;
 
     /**
      * \brief Sets pointer to EnergySouce installed on node.
@@ -77,14 +77,14 @@ public:
      *
      * Implements DeviceEnergyModel::SetEnergySource.
      */
-    virtual void SetEnergySource (Ptr<EnergySource> source);
+    void SetEnergySource (Ptr<EnergySource> source);
 
     /**
      * \returns Total energy consumption of the Device.
      *
      * Implements DeviceEnergyModel::GetTotalEnergyConsumption.
      */
-    virtual double GetTotalEnergyConsumption (void) const;
+    double GetTotalEnergyConsumption (void) const;
 
 
     /**
@@ -206,7 +206,7 @@ private:
      *
      * Implements DeviceEnergyModel::GetCurrentA.
      */
-    virtual double DoGetCurrentA (void) const;
+    double DoGetCurrentA (void) const;
 
     /**
      * \param state the MmWave state

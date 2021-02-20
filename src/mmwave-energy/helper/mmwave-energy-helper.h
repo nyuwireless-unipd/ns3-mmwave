@@ -26,7 +26,7 @@
 #define MMWAVE_RADIO_ENERGY_MODEL_HELPER_H
 
 #include "ns3/energy-model-helper.h"
-#include "ns3/mmwave-radio-energy-model.h"
+#include "ns3/mmwave-energy.h"
 
 namespace ns3 {
 
@@ -82,7 +82,7 @@ private:
    *
    * Implements DeviceEnergyModel::Install.
    */
-  virtual Ptr<DeviceEnergyModel> DoInstall (Ptr<NetDevice> device,
+  Ptr<DeviceEnergyModel> DoInstall (Ptr<NetDevice> device,
                                             Ptr<EnergySource> source) const;
 
 private:

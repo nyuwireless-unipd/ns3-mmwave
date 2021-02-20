@@ -22,7 +22,7 @@
  * Author: Sandip Chakraborty <sandipchkraborty@gmail.com>
  */
 
-#include "mmwave-radio-energy-model-helper.h"
+#include "mmwave-energy-helper.h"
 #include "ns3/mmwave-ue-net-device.h"
 #include "ns3/mc-ue-net-device.h"
 #include "ns3/mmwave-spectrum-phy.h"
