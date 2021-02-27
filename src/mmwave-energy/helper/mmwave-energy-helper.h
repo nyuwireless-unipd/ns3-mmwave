@@ -22,8 +22,8 @@
  * Author: Sandip Chakraborty <sandipchkraborty@gmail.com>
  */
 
-#ifndef MMWAVE_RADIO_ENERGY_MODEL_HELPER_H
-#define MMWAVE_RADIO_ENERGY_MODEL_HELPER_H
+#ifndef MMWAVE_ENERGY_HELPER_H
+#define MMWAVE_ENERGY_HELPER_H
 
 #include "ns3/energy-model-helper.h"
 #include "ns3/mmwave-energy.h"

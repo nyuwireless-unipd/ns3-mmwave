@@ -21,8 +21,8 @@
  * Author: Niloy Ganguly <gangulyniloy@gmail.com>
  * Author: Sandip Chakraborty <sandipchkraborty@gmail.com>
  */
-#ifndef MMWAVE_RADIO_ENERGY_MODEL_H
-#define MMWAVE_RADIO_ENERGY_MODEL_H
+#ifndef MMWAVE_ENERGY_H
+#define MMWAVE_ENERGY_H
 
 #include "ns3/device-energy-model.h"
 #include "ns3/traced-value.h"
