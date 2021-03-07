@@ -55,8 +55,8 @@ def build(bld):
         'model/mmwave-component-carrier-ue.cc',
         'model/mmwave-component-carrier-enb.cc',
         'model/mmwave-no-op-component-carrier-manager.cc',
-        'model/mmwave-beamforming-model.cc',
-        #'model/mmwave-enb-cmac-sap.cc'
+        'model/mmwave-beamforming-model.cc'
+        #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',
         #'model/mmwave-mac-sap.cc',
         #'model/mmwave-rrc-sap.cc',
