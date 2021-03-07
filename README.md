@@ -19,6 +19,9 @@ The mmWave module for ns-3 can be used to simulate 5G cellular networks at mmWav
 
 * Simulation of core network elements (with also the MME as a real node)
 
+A seperate module is being developed for [mmWave UE Energy Consumption]("https://github.com/arghasen10/mmwave-energy"). You can use this module for analyzing 
+Energy Consumption behaviour of mmwave UE. Check this repository for further details.
+
 The following papers describe in detail the features implemented in the mmWave
 module:
 - [End-to-End Simulation of 5G mmWave Networks](https://ieeexplore.ieee.org/document/8344116/ "comst paper") is a comprehensive tutorial with a detailed description of the whole module. We advise the researchers interested in this module to start reading from this paper;
