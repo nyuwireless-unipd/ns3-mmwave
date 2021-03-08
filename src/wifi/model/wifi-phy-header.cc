@@ -195,13 +195,10 @@ LSigHeader::GetSerializedSize (void) const
 void
 LSigHeader::SetRate (uint64_t rate, uint16_t channelWidth)
 {
-  if (channelWidth == 5)
+  if (channelWidth < 20)
     {
-      rate *= 4; //corresponding 20 MHz rate if 5 MHz is used
-    }
-  else if (channelWidth == 10)
-    {
-      rate *= 2; //corresponding 20 MHz rate if 10 MHz is used
+      //conversion for 5 MHz and 10 MHz
+      rate *= (20 / channelWidth);
     }
   /* Here is the binary representation for a given rate:
    * 6 Mbit/s: 1101
@@ -370,6 +367,7 @@ HtSigHeader::Print (std::ostream &os) const
   os << "MCS=" << +m_mcs
      << " HT_LENGTH=" << m_htLength
      << " CHANNEL_WIDTH=" << GetChannelWidth ()
+     << " FEC_CODING=" << (m_fecCoding ? "LDPC" : "BCC")
      << " SGI=" << +m_sgi
      << " AGGREGATION=" << +m_aggregation;
 }
@@ -430,6 +428,18 @@ HtSigHeader::GetAggregation (void) const
 }
 
 void
+HtSigHeader::SetFecCoding (bool ldpc)
+{
+  m_fecCoding = ldpc ? 1 : 0;
+}
+
+bool
+HtSigHeader::IsLdpcFecCoding (void) const
+{
+  return m_fecCoding ? true : false;
+}
+
+void
 HtSigHeader::SetShortGuardInterval (bool sgi)
 {
   m_sgi = sgi ? 1 : 0;
@@ -450,6 +460,7 @@ HtSigHeader::Serialize (Buffer::Iterator start) const
   start.WriteU16 (m_htLength);
   byte = (0x01 << 2); //Set Reserved bit #2 to 1
   byte |= ((m_aggregation & 0x01) << 3);
+  byte |= ((m_fecCoding & 0x01) << 6);
   byte |= ((m_sgi & 0x01) << 7);
   start.WriteU8 (byte);
   start.WriteU16 (0);
@@ -465,6 +476,7 @@ HtSigHeader::Deserialize (Buffer::Iterator start)
   m_htLength = i.ReadU16 ();
   byte = i.ReadU8 ();
   m_aggregation = ((byte >> 3) & 0x01);
+  m_fecCoding = ((byte >> 6) & 0x01);
   m_sgi = ((byte >> 7) & 0x01);
   i.ReadU16 ();
   return i.GetDistanceFrom (start);
@@ -510,6 +522,7 @@ VhtSigHeader::Print (std::ostream &os) const
      << " CHANNEL_WIDTH=" << GetChannelWidth ()
      << " SGI=" << +m_sgi
      << " NSTS=" << +m_nsts
+     << " CODING=" << (m_coding ? "LDPC" : "BCC")
      << " MU=" << +m_mu;
 }
 
@@ -612,6 +625,19 @@ VhtSigHeader::GetShortGuardIntervalDisambiguation (void) const
 }
 
 void
+VhtSigHeader::SetCoding (bool ldpc)
+{
+  m_coding = ldpc ? 1 : 0;
+}
+
+bool
+VhtSigHeader::IsLdpcCoding (void) const
+{
+  return m_coding ? true : false;
+
+}
+
+void
 VhtSigHeader::SetSuMcs (uint8_t mcs)
 {
   NS_ASSERT (mcs <= 9);
@@ -638,6 +664,7 @@ VhtSigHeader::Serialize (Buffer::Iterator start) const
   //VHT-SIG-A2
   byte = m_sgi & 0x01;
   byte |= ((m_sgi_disambiguation & 0x01) << 1);
+  byte |= ((m_coding & 0x01) << 2);
   byte |= ((m_suMcs & 0x0f) << 4);
   start.WriteU8 (byte);
   bytes = (0x01 << (9 - 8)); //Set Reserved bit #9 to 1
@@ -665,6 +692,7 @@ VhtSigHeader::Deserialize (Buffer::Iterator start)
   byte = i.ReadU8 ();
   m_sgi = byte & 0x01;
   m_sgi_disambiguation = ((byte >> 1) & 0x01);
+  m_coding = ((byte >> 2) & 0x01);
   m_suMcs = ((byte >> 4) & 0x0f);
   i.ReadU16 ();
 
@@ -722,6 +750,7 @@ HeSigHeader::Print (std::ostream &os) const
      << " GI=" << GetGuardInterval ()
      << " NSTS=" << +m_nsts
      << " BSSColor=" << +m_bssColor
+     << " CODING=" << (m_coding ? "LDPC" : "BCC")
      << " MU=" << +m_mu;
 }
 
@@ -865,6 +894,19 @@ HeSigHeader::GetNStreams (void) const
 }
 
 void
+HeSigHeader::SetCoding (bool ldpc)
+{
+  m_coding = ldpc ? 1 : 0;
+}
+
+bool
+HeSigHeader::IsLdpcCoding (void) const
+{
+  return m_coding ? true : false;
+
+}
+
+void
 HeSigHeader::Serialize (Buffer::Iterator start) const
 {
   //HE-SIG-A1
@@ -883,6 +925,7 @@ HeSigHeader::Serialize (Buffer::Iterator start) const
 
   //HE-SIG-A2
   uint32_t sigA2 = 0;
+  sigA2 |= ((m_coding & 0x01) << 7);
   sigA2 |= (0x01 << 14); //Set Reserved bit #14 to 1
   start.WriteU32 (sigA2);
 
@@ -913,7 +956,8 @@ HeSigHeader::Deserialize (Buffer::Iterator start)
   m_nsts |= (byte & 0x03) << 1;
 
   //HE-SIG-A2
-  i.ReadU32 ();
+  uint32_t sigA2 = i.ReadU32 ();
+  m_coding = ((sigA2 >> 7) & 0x01);
 
   if (m_mu)
     {

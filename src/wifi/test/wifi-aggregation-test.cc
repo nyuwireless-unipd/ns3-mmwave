@@ -84,7 +84,7 @@ AmpduAggregationTest::DoRun (void)
    */
   m_phy = CreateObject<YansWifiPhy> ();
   m_phy->SetDevice (m_device);
-  m_phy->ConfigureStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211n, WIFI_PHY_BAND_5GHZ);
   m_device->SetPhy (m_phy);
 
   /*
@@ -105,7 +105,7 @@ AmpduAggregationTest::DoRun (void)
   m_mac->SetWifiPhy (m_phy);
   m_mac->SetWifiRemoteStationManager (m_manager);
   m_mac->SetAddress (Mac48Address ("00:00:00:00:00:01"));
-  m_mac->ConfigureStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  m_mac->ConfigureStandard (WIFI_STANDARD_80211n_5GHZ);
   m_device->SetMac (m_mac);
 
   /*
@@ -290,7 +290,7 @@ TwoLevelAggregationTest::DoRun (void)
    */
   m_phy = CreateObject<YansWifiPhy> ();
   m_phy->SetDevice (m_device);
-  m_phy->ConfigureStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211n, WIFI_PHY_BAND_5GHZ);
   m_device->SetPhy (m_phy);
 
   /*
@@ -311,7 +311,7 @@ TwoLevelAggregationTest::DoRun (void)
   m_mac->SetWifiPhy (m_phy);
   m_mac->SetWifiRemoteStationManager (m_manager);
   m_mac->SetAddress (Mac48Address ("00:00:00:00:00:01"));
-  m_mac->ConfigureStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  m_mac->ConfigureStandard (WIFI_STANDARD_80211n_5GHZ);
   m_device->SetMac (m_mac);
 
   /*
@@ -511,7 +511,7 @@ HeAggregationTest::DoRunSubTest (uint16_t bufferSize)
    */
   m_phy = CreateObject<YansWifiPhy> ();
   m_phy->SetDevice (m_device);
-  m_phy->ConfigureStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
   m_device->SetPhy (m_phy);
 
   /*
@@ -532,7 +532,7 @@ HeAggregationTest::DoRunSubTest (uint16_t bufferSize)
   m_mac->SetWifiPhy (m_phy);
   m_mac->SetWifiRemoteStationManager (m_manager);
   m_mac->SetAddress (Mac48Address ("00:00:00:00:00:01"));
-  m_mac->ConfigureStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+  m_mac->ConfigureStandard (WIFI_STANDARD_80211ax_5GHZ);
   m_device->SetMac (m_mac);
 
   /*
@@ -654,11 +654,11 @@ private:
   void NotifyMacTransmit (Ptr<const Packet> packet);
   /**
    * Callback invoked when the sender MAC passes a PSDU(s) to the PHY
-   * \param psdu the PSDU
+   * \param psduMap the PSDU map
    * \param txVector the TX vector
    * \param txPowerW the transmit power in Watts
    */
-  void NotifyPsduForwardedDown (Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW);
+  void NotifyPsduForwardedDown (WifiConstPsduMap psduMap, WifiTxVector txVector, double txPowerW);
   /**
    * Callback invoked when the receiver MAC forwards a packet up to the upper layer
    * \param p the packet
@@ -682,16 +682,19 @@ PreservePacketsInAmpdus::NotifyMacTransmit (Ptr<const Packet> packet)
 }
 
 void
-PreservePacketsInAmpdus::NotifyPsduForwardedDown (Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW)
+PreservePacketsInAmpdus::NotifyPsduForwardedDown (WifiConstPsduMap psduMap, WifiTxVector txVector, double txPowerW)
 {
-  if (!psdu->GetHeader (0).IsQosData ())
+  NS_TEST_EXPECT_MSG_EQ ((psduMap.size () == 1 && psduMap.begin ()->first == SU_STA_ID),
+                         true, "No DL MU PPDU expected");
+
+  if (!psduMap[SU_STA_ID]->GetHeader (0).IsQosData ())
     {
       return;
     }
 
-  m_nMpdus.push_back (psdu->GetNMpdus ());
+  m_nMpdus.push_back (psduMap[SU_STA_ID]->GetNMpdus ());
 
-  for (auto& mpdu : *PeekPointer (psdu))
+  for (auto& mpdu : *PeekPointer (psduMap[SU_STA_ID]))
     {
       std::size_t dist = std::distance (mpdu->begin (), mpdu->end ());
       // the list of aggregated MSDUs is empty if the MPDU includes a non-aggregated MSDU
@@ -717,11 +720,11 @@ PreservePacketsInAmpdus::DoRun (void)
   wifiApNode.Create (1);
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
 
   WifiMacHelper mac;

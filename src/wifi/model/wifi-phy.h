@@ -23,12 +23,12 @@
 #define WIFI_PHY_H
 
 #include "ns3/event-id.h"
-#include "ns3/deprecated.h"
 #include "ns3/error-model.h"
 #include "wifi-mpdu-type.h"
-#include "wifi-phy-standard.h"
+#include "wifi-standards.h"
 #include "interference-helper.h"
 #include "wifi-phy-state-helper.h"
+#include "wifi-ppdu.h"
 
 namespace ns3 {
 
@@ -45,7 +45,6 @@ class PreambleDetectionModel;
 class WifiRadioEnergyModel;
 class UniformRandomVariable;
 class WifiPsdu;
-class WifiPpdu;
 
 /**
  * Enumeration of the possible reception failure reasons.
@@ -65,7 +64,8 @@ enum WifiPhyRxfailureReason
   SIG_A_FAILURE,
   PREAMBLE_DETECTION_PACKET_SWITCH,
   FRAME_CAPTURE_PACKET_SWITCH,
-  OBSS_PD_CCA_RESET
+  OBSS_PD_CCA_RESET,
+  FILTERED
 };
 
 /**
@@ -105,6 +105,8 @@ inline std::ostream& operator<< (std::ostream& os, WifiPhyRxfailureReason reason
       return (os << "FRAME_CAPTURE_PACKET_SWITCH");
     case OBSS_PD_CCA_RESET:
       return (os << "OBSS_PD_CCA_RESET");
+    case FILTERED:
+      return (os << "FILTERED");
     case UNKNOWN:
     default:
       NS_FATAL_ERROR ("Unknown reason");
@@ -152,6 +154,19 @@ public:
   virtual ~WifiPhy ();
 
   /**
+   * A pair of a channel number and a WifiPhyBand
+   */
+  typedef std::pair<uint8_t, WifiPhyBand> ChannelNumberBandPair;
+  /**
+   * A pair of a ChannelNumberBandPair and a WifiPhyStandard
+   */
+  typedef std::pair<ChannelNumberBandPair, WifiPhyStandard> ChannelNumberStandardPair;
+  /**
+   * A pair of a center frequency (MHz) and a channel width (MHz)
+   */
+  typedef std::pair<uint16_t, uint16_t> FrequencyWidthPair;
+  
+  /**
    * Return the WifiPhyStateHelper of this PHY
    *
    * \return the WifiPhyStateHelper of this PHY
@@ -193,9 +208,9 @@ public:
    * Start receiving the PHY preamble of a PPDU (i.e. the first bit of the preamble has arrived).
    *
    * \param ppdu the arriving PPDU
-   * \param rxPowerW the receive power in W
+   * \param rxPowersW the receive power in W per 20 MHz channel band
    */
-  void StartReceivePreamble (Ptr<WifiPpdu> ppdu, double rxPowerW);
+  void StartReceivePreamble (Ptr<WifiPpdu> ppdu, RxPowerWattPerChannelBand rxPowersW);
 
   /**
    * Start receiving the PHY header of a PPDU (i.e. after the end of receiving the preamble).
@@ -221,7 +236,7 @@ public:
   /**
    * The last symbol of the PPDU has arrived.
    *
-   * \param event the corresponding event of the first time the packet arrives (also storing packet and TxVector information)
+   * \param event the event holding incoming PPDU's information
    */
   void EndReceive (Ptr<Event> event);
 
@@ -245,6 +260,13 @@ public:
    *        power is calculated as txPowerMin + txPowerLevel * (txPowerMax - txPowerMin) / nTxLevels
    */
   void Send (Ptr<const WifiPsdu> psdu, WifiTxVector txVector);
+  /**
+   * \param psdus the PSDUs to send
+   * \param txVector the TXVECTOR that has tx parameters such as mode, the transmission mode to use to send
+   *        this PSDU, and txPowerLevel, a power level to use to send the whole PPDU. The real transmission
+   *        power is calculated as txPowerMin + txPowerLevel * (txPowerMax - txPowerMin) / nTxLevels
+   */
+  void Send (WifiConstPsduMap psdus, WifiTxVector txVector);
 
   /**
    * \param ppdu the PPDU to send
@@ -321,11 +343,21 @@ public:
   /**
    * \param size the number of bytes in the packet to send
    * \param txVector the TXVECTOR used for the transmission of this packet
-   * \param frequency the channel center frequency (MHz)
+   * \param band the frequency band being used
+   * \param staId the STA-ID of the recipient (only used for MU)
    *
    * \return the total amount of time this PHY will stay busy for the transmission of these bytes.
    */
-  static Time CalculateTxDuration (uint32_t size, WifiTxVector txVector, uint16_t frequency);
+  static Time CalculateTxDuration (uint32_t size, WifiTxVector txVector, WifiPhyBand band,
+                                   uint16_t staId = SU_STA_ID);
+  /**
+   * \param psduMap the PSDU(s) to transmit indexed by STA-ID
+   * \param txVector the TXVECTOR used for the transmission of the PPDU
+   * \param band the frequency band being used
+   *
+   * \return the total amount of time this PHY will stay busy for the transmission of the PPDU
+   */
+  static Time CalculateTxDuration (WifiConstPsduMap psduMap, WifiTxVector txVector, WifiPhyBand band);
 
   /**
    * \param txVector the transmission parameters used for this packet
@@ -402,16 +434,18 @@ public:
   /**
    * \param size the number of bytes in the packet to send
    * \param txVector the TXVECTOR used for the transmission of this packet
-   * \param frequency the channel center frequency (MHz)
+   * \param band the frequency band
    * \param mpdutype the type of the MPDU as defined in WifiPhy::MpduType.
+   * \param staId the STA-ID of the PSDU (only used for MU PPDUs)
    *
-   * \return the duration of the payload
+   * \return the duration of the PSDU
    */
-  static Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, uint16_t frequency, MpduType mpdutype = NORMAL_MPDU);
+  static Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, WifiPhyBand band, MpduType mpdutype = NORMAL_MPDU,
+                                  uint16_t staId = SU_STA_ID);
   /**
    * \param size the number of bytes in the packet to send
    * \param txVector the TXVECTOR used for the transmission of this packet
-   * \param frequency the channel center frequency (MHz)
+   * \param band the frequency band
    * \param mpdutype the type of the MPDU as defined in WifiPhy::MpduType.
    * \param incFlag this flag is used to indicate that the variables need to be update or not
    * This function is called a couple of times for the same packet so variables should not be increased each time.
@@ -420,10 +454,13 @@ public:
    * \param totalAmpduNumSymbols the number of symbols previously transmitted for the MPDUs in the concerned A-MPDU,
    * used for the computation of the number of symbols needed for the last MPDU.
    * If incFlag is set, this parameter will be updated.
+   * \param staId the STA-ID of the PSDU (only used for MU PPDUs)
    *
-   * \return the duration of the payload
+   * \return the duration of the PSDU
    */
-  static Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, uint16_t frequency, MpduType mpdutype, bool incFlag, uint32_t &totalAmpduSize, double &totalAmpduNumSymbols);
+  static Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, WifiPhyBand band, MpduType mpdutype,
+                                  bool incFlag, uint32_t &totalAmpduSize, double &totalAmpduNumSymbols,
+                                  uint16_t staId);
   /**
    * \param txVector the transmission parameters used for this packet
    *
@@ -620,7 +657,7 @@ public:
    * \return the WifiMode object corresponding to the given MCS of the
    *         HT modulation class
    */
-  WifiMode GetHtMcs (uint8_t mcs) const;
+  static WifiMode GetHtMcs (uint8_t mcs);
   /**
    * Get the WifiMode object corresponding to the given MCS of the
    * VHT modulation class.
@@ -630,7 +667,7 @@ public:
    * \return the WifiMode object corresponding to the given MCS of the
    *         VHT modulation class
    */
-  WifiMode GetVhtMcs (uint8_t mcs) const;
+  static WifiMode GetVhtMcs (uint8_t mcs);
   /**
    * Get the WifiMode object corresponding to the given MCS of the
    * HE modulation class.
@@ -640,7 +677,7 @@ public:
    * \return the WifiMode object corresponding to the given MCS of the
    *         HE modulation class
    */
-  WifiMode GetHeMcs (uint8_t mcs) const;
+  static WifiMode GetHeMcs (uint8_t mcs);
 
   /**
    * \brief Set channel number.
@@ -670,41 +707,41 @@ public:
    * Configure the PHY-level parameters for different Wi-Fi standard.
    *
    * \param standard the Wi-Fi standard
+   * \param band the Wi-Fi band
    */
-  virtual void ConfigureStandard (WifiPhyStandard standard);
+  virtual void ConfigureStandardAndBand (WifiPhyStandard standard, WifiPhyBand band);
 
   /**
    * Get the configured Wi-Fi standard
    *
    * \return the Wi-Fi standard that has been configured
    */
-  WifiPhyStandard GetStandard (void) const;
+  WifiPhyStandard GetPhyStandard (void) const;
 
   /**
-   * Add a channel definition to the WifiPhy.  The pair (channelNumber,
-   * WifiPhyStandard) may then be used to lookup a pair (frequency,
-   * channelWidth).
+   * Get the configured Wi-Fi band
+   *
+   * \return the Wi-Fi band that has been configured
+   */
+  WifiPhyBand GetPhyBand (void) const;
+
+  /**
+   * Add a channel definition to the WifiPhy. The channelNumber, PHY
+   * band and PHY standard informations may then be used to lookup a
+   * pair (frequency, channelWidth).
    *
    * If the channel is not already defined for the standard, the method
    * should return true; otherwise false.
    *
    * \param channelNumber the channel number to define
+   * \param band the PHY band which the channel belongs to
    * \param standard the applicable WifiPhyStandard
    * \param frequency the frequency (MHz)
    * \param channelWidth the channel width (MHz)
    *
    * \return true if the channel definition succeeded
    */
-  bool DefineChannelNumber (uint8_t channelNumber, WifiPhyStandard standard, uint16_t frequency, uint16_t channelWidth);
-
-  /**
-   * A pair of a ChannelNumber and WifiPhyStandard
-   */
-  typedef std::pair<uint8_t, WifiPhyStandard> ChannelNumberStandardPair;
-  /**
-   * A pair of a center Frequency (MHz) and a ChannelWidth (MHz)
-   */
-  typedef std::pair<uint16_t, uint16_t> FrequencyWidthPair;
+  bool DefineChannelNumber (uint8_t channelNumber, WifiPhyBand band, WifiPhyStandard standard, uint16_t frequency, uint16_t channelWidth);
 
   /**
    * Return the Channel this WifiPhy is connected to.
@@ -1261,17 +1298,17 @@ public:
    * Public method used to fire a PhyTxBegin trace.
    * Implemented for encapsulation purposes.
    *
-   * \param psdu the PSDU being transmitted
+   * \param psdus the PSDUs being transmitted (only one unless DL MU transmission)
    * \param txPowerW the transmit power in Watts
    */
-  void NotifyTxBegin (Ptr<const WifiPsdu> psdu, double txPowerW);
+  void NotifyTxBegin (WifiConstPsduMap psdus, double txPowerW);
   /**
    * Public method used to fire a PhyTxEnd trace.
    * Implemented for encapsulation purposes.
    *
-   * \param psdu the PSDU being transmitted
+   * \param psdus the PSDUs being transmitted (only one unless DL MU transmission)
    */
-  void NotifyTxEnd (Ptr<const WifiPsdu> psdu);
+  void NotifyTxEnd (WifiConstPsduMap psdus);
   /**
    * Public method used to fire a PhyTxDrop trace.
    * Implemented for encapsulation purposes.
@@ -1284,8 +1321,9 @@ public:
    * Implemented for encapsulation purposes.
    *
    * \param psdu the PSDU being transmitted
+   * \param rxPowersW the receive power per channel band in Watts
    */
-  void NotifyRxBegin (Ptr<const WifiPsdu> psdu);
+  void NotifyRxBegin (Ptr<const WifiPsdu> psdu, RxPowerWattPerChannelBand rxPowersW);
   /**
    * Public method used to fire a PhyRxEnd trace.
    * Implemented for encapsulation purposes.
@@ -1320,12 +1358,14 @@ public:
    * \param txVector the TXVECTOR that holds RX parameters
    * \param signalNoise signal power and noise power in dBm (noise power includes the noise figure)
    * \param statusPerMpdu reception status per MPDU
+   * \param staId the STA-ID
    */
   void NotifyMonitorSniffRx (Ptr<const WifiPsdu> psdu,
                              uint16_t channelFreqMhz,
                              WifiTxVector txVector,
                              SignalNoiseDbm signalNoise,
-                             std::vector<bool> statusPerMpdu);
+                             std::vector<bool> statusPerMpdu,
+                             uint16_t staId = SU_STA_ID);
 
   /**
    * TracedCallback signature for monitor mode receive events.
@@ -1343,6 +1383,7 @@ public:
    * \param aMpdu the type of the packet (0 is not A-MPDU, 1 is a MPDU that is part of an A-MPDU and 2 is the last MPDU in an A-MPDU)
    *        and the A-MPDU reference number (must be a different value for each A-MPDU but the same for each subframe within one A-MPDU)
    * \param signalNoise signal power and noise power in dBm
+   * \param staId the STA-ID
    * \todo WifiTxVector should be passed by const reference because
    * of its size.
    */
@@ -1350,7 +1391,8 @@ public:
                                             uint16_t channelFreqMhz,
                                             WifiTxVector txVector,
                                             MpduInfo aMpdu,
-                                            SignalNoiseDbm signalNoise);
+                                            SignalNoiseDbm signalNoise,
+                                            uint16_t staId);
 
   /**
    * Public method used to fire a MonitorSniffer trace for a wifi PSDU being transmitted.
@@ -1363,10 +1405,12 @@ public:
    * \param channelFreqMhz the frequency in MHz at which the packet is
    *        transmitted.
    * \param txVector the TXVECTOR that holds TX parameters
+   * \param staId the STA-ID
    */
   void NotifyMonitorSniffTx (Ptr<const WifiPsdu> psdu,
                              uint16_t channelFreqMhz,
-                             WifiTxVector txVector);
+                             WifiTxVector txVector,
+                             uint16_t staId = SU_STA_ID);
 
   /**
    * TracedCallback signature for monitor mode transmit events.
@@ -1377,22 +1421,24 @@ public:
    * \param txVector the TXVECTOR that holds TX parameters
    * \param aMpdu the type of the packet (0 is not A-MPDU, 1 is a MPDU that is part of an A-MPDU and 2 is the last MPDU in an A-MPDU)
    *        and the A-MPDU reference number (must be a different value for each A-MPDU but the same for each subframe within one A-MPDU)
+   * \param staId the STA-ID
    * \todo WifiTxVector should be passed by const reference because
    * of its size.
    */
   typedef void (* MonitorSnifferTxCallback)(const Ptr<const Packet> packet,
                                             uint16_t channelFreqMhz,
                                             WifiTxVector txVector,
-                                            MpduInfo aMpdu);
+                                            MpduInfo aMpdu,
+                                            uint16_t staId);
 
   /**
    * TracedCallback signature for PSDU transmit events.
    *
-   * \param psdu the PSDU being transmitted
+   * \param psduMap the PSDU map being transmitted
    * \param txVector the TXVECTOR holding the TX parameters
    * \param txPowerW the transmit power in Watts
    */
-  typedef void (* PsduTxBeginCallback)(Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW);
+  typedef void (* PsduTxBeginCallback)(WifiConstPsduMap psduMap, WifiTxVector txVector, double txPowerW);
 
   /**
    * Public method used to fire a EndOfHePreamble trace once both HE SIG fields have been received, as well as training fields.
@@ -1427,16 +1473,6 @@ public:
    */
   virtual int64_t AssignStreams (int64_t stream);
 
-  /**
-   * Sets the energy detection threshold (dBm).
-   * The energy of a received signal should be higher than
-   * this threshold (dBm) to allow the PHY layer to detect the signal.
-   *
-   * \param threshold the energy detection threshold in dBm
-   *
-   * \deprecated
-   */
-  void SetEdThreshold (double threshold);
   /**
    * Sets the receive sensitivity threshold (dBm).
    * The energy of a received signal should be higher than
@@ -1601,50 +1637,6 @@ public:
    */
   uint8_t GetMaxSupportedRxSpatialStreams (void) const;
   /**
-   * Enable or disable support for HT/VHT short guard interval.
-   *
-   * \param shortGuardInterval Enable or disable support for short guard interval
-   *
-   * \deprecated
-   */
-  void SetShortGuardInterval (bool shortGuardInterval);
-  /**
-   * Return whether short guard interval is supported.
-   *
-   * \return true if short guard interval is supported, false otherwise
-   *
-   * \deprecated
-   */
-  bool GetShortGuardInterval (void) const;
-  /**
-   * \param guardInterval the supported HE guard interval
-   *
-   * \deprecated
-   */
-  void SetGuardInterval (Time guardInterval);
-  /**
-   * \return the supported HE guard interval
-   *
-   * \deprecated
-   */
-  Time GetGuardInterval (void) const;
-  /**
-   * Enable or disable Greenfield support.
-   *
-   * \param greenfield Enable or disable Greenfield
-   *
-   * \deprecated
-   */
-  void SetGreenfield (bool greenfield);
-  /**
-   * Return whether Greenfield is supported.
-   *
-   * \return true if Greenfield is supported, false otherwise
-   *
-   * \deprecated
-   */
-  bool GetGreenfield (void) const;
-  /**
    * Enable or disable short PHY preamble.
    *
    * \param preamble sets whether short PHY preamble is supported or not
@@ -1780,6 +1772,33 @@ protected:
    */
   void SwitchMaybeToCcaBusy (void);
 
+  /**
+   * Return the STA ID that has been assigned to the station this PHY belongs to.
+   * This is typically called for MU PPDUs, in order to pick the correct PSDU.
+   *
+   * \return the STA ID
+   */
+  virtual uint16_t GetStaId (void) const;
+
+  /**
+   * Get the start band index and the stop band index for a given band
+   *
+   * \param bandWidth the width of the band to be returned (MHz)
+   * \param bandIndex the index of the band to be returned
+   *
+   * \return a pair of start and stop indexes that defines the band
+   */
+  virtual WifiSpectrumBand GetBand (uint16_t bandWidth, uint8_t bandIndex = 0);
+
+  /**
+   * \param channelWidth the total channel width (MHz) used for the OFDMA transmission
+   * \param range the subcarrier range of the HE RU
+   * \return the converted subcarriers
+   *
+   * This is a helper function to convert HE RU subcarriers, which are relative to the center frequency subcarrier, to the indexes used by the Spectrum model.
+   */
+  virtual WifiSpectrumBand ConvertHeRuSubcarriers (uint16_t channelWidth, HeRu::SubcarrierRange range) const;
+
   InterferenceHelper m_interference;   //!< Pointer to InterferenceHelper
   Ptr<UniformRandomVariable> m_random; //!< Provides uniform random variables.
   Ptr<WifiPhyStateHelper> m_state;     //!< Pointer to WifiPhyStateHelper
@@ -1822,14 +1841,9 @@ private:
   void Configure80211g (void);
   /**
    * Configure WifiPhy with appropriate channel frequency and
-   * supported rates for 802.11a standard with 10MHz channel spacing.
+   * supported rates for 802.11p standard.
    */
-  void Configure80211_10Mhz (void);
-  /**
-   * Configure WifiPhy with appropriate channel frequency and
-   * supported rates for 802.11a standard with 5MHz channel spacing.
-   */
-  void Configure80211_5Mhz ();
+  void Configure80211p (void);
   /**
    * Configure WifiPhy with appropriate channel frequency and
    * supported rates for Holland.
@@ -1869,19 +1883,15 @@ private:
    * Configure the PHY-level parameters for different Wi-Fi standard.
    * This method is called when defaults for each standard must be
    * selected.
-   *
-   * \param standard the Wi-Fi standard
    */
-  void ConfigureDefaultsForStandard (WifiPhyStandard standard);
+  void ConfigureDefaultsForStandard (void);
   /**
    * Configure the PHY-level parameters for different Wi-Fi standard.
    * This method is called when the Frequency or ChannelNumber attributes
    * are set by the user.  If the Frequency or ChannelNumber are valid for
    * the standard, they are used instead.
-   *
-   * \param standard the Wi-Fi standard
    */
-  void ConfigureChannelForStandard (WifiPhyStandard standard);
+  void ConfigureChannelForStandard (void);
 
   /**
    * Look for channel number matching the frequency and width
@@ -1893,10 +1903,11 @@ private:
   /**
    * Lookup frequency/width pair for channelNumber/standard pair
    * \param channelNumber The channel number to check
+   * \param band the PHY band to check
    * \param standard The WifiPhyStandard to check
    * \return the FrequencyWidthPair found
    */
-  FrequencyWidthPair GetFrequencyWidthForChannelNumberStandard (uint8_t channelNumber, WifiPhyStandard standard) const;
+  FrequencyWidthPair GetFrequencyWidthForChannelNumberStandard (uint8_t channelNumber, WifiPhyBand band, WifiPhyStandard standard) const;
 
   /**
    * Due to newly arrived signal, the current reception cannot be continued and has to be aborted
@@ -1914,23 +1925,58 @@ private:
    * Starting receiving the PPDU after having detected the medium is idle or after a reception switch.
    *
    * \param event the event holding incoming PPDU's information
-   * \param rxPowerW the receive power in W
    */
-  void StartRx (Ptr<Event> event, double rxPowerW);
+  void StartRx (Ptr<Event> event);
   /**
    * Get the reception status for the provided MPDU and notify.
    *
    * \param psdu the arriving MPDU formatted as a PSDU
    * \param event the event holding incoming PPDU's information
+   * \param staId the station ID of the PSDU (only used for MU)
    * \param relativeMpduStart the relative start time of the MPDU within the A-MPDU. 0 for normal MPDUs
    * \param mpduDuration the duration of the MPDU
    *
    * \return information on MPDU reception: status, signal power (dBm), and noise power (in dBm)
    */
   std::pair<bool, SignalNoiseDbm> GetReceptionStatus (Ptr<const WifiPsdu> psdu,
-                                                      Ptr<Event> event,
+                                                      Ptr<Event> event, uint16_t staId,
                                                       Time relativeMpduStart,
                                                       Time mpduDuration);
+  /**
+   * The last symbol of an MPDU in an A-MPDU has arrived.
+   *
+   * \param event the event holding incoming PPDU's information
+   * \param psdu the arriving MPDU formatted as a PSDU containing a normal MPDU
+   * \param mpduIndex the index of the MPDU within the A-MPDU
+   * \param relativeMpduStart the relative start time of the MPDU within the A-MPDU.
+   * \param mpduDuration the duration of the MPDU
+   */  
+  void EndOfMpdu (Ptr<Event> event, Ptr<const WifiPsdu> psdu, size_t mpduIndex, Time relativeStart, Time mpduDuration);
+
+  /**
+   * Schedule end of MPDUs events.
+   *
+   * \param event the event holding incoming PPDU's information
+   */
+  void ScheduleEndOfMpdus (Ptr<Event> event);
+
+  /**
+   * Get the PSDU addressed to that PHY in a PPDU (useful for MU PPDU).
+   *
+   * \param ppdu the PPDU to extract the PSDU from
+   * \return the PSDU addressed to that PHY
+   */
+  Ptr<const WifiPsdu> GetAddressedPsduInPpdu (Ptr<const WifiPpdu> ppdu) const;
+
+  /**
+   * Get the RU band used to transmit a PSDU to a given STA in a HE MU PPDU
+   *
+   * \param txVector the TXVECTOR used for the transmission
+   * \param staId the STA-ID of the recipient
+   *
+   * \return the RU band used to transmit a PSDU to a given STA in a HE MU PPDU
+   */
+  WifiSpectrumBand GetRuBand (WifiTxVector txVector, uint16_t staId);
 
   /**
    * The trace source fired when a packet begins the transmission process on
@@ -1940,12 +1986,12 @@ private:
    */
   TracedCallback<Ptr<const Packet>, double > m_phyTxBeginTrace;
   /**
-   * The trace source fired when a PSDU begins the transmission process on
+   * The trace source fired when a PSDU map begins the transmission process on
    * the medium.
    *
    * \see class CallBackTraceSource
    */
-  TracedCallback<Ptr<const WifiPsdu>, WifiTxVector, double /* TX power (W) */> m_phyTxPsduBeginTrace;
+  TracedCallback<WifiConstPsduMap, WifiTxVector, double /* TX power (W) */> m_phyTxPsduBeginTrace;
 
   /**
    * The trace source fired when a packet ends the transmission process on
@@ -1969,7 +2015,7 @@ private:
    *
    * \see class CallBackTraceSource
    */
-  TracedCallback<Ptr<const Packet> > m_phyRxBeginTrace;
+  TracedCallback<Ptr<const Packet>, RxPowerWattPerChannelBand > m_phyRxBeginTrace;
 
   /**
    * The trace source fired when the reception of the PHY payload (PSDU) begins.
@@ -2014,7 +2060,7 @@ private:
    * \todo WifiTxVector and signalNoiseDbm should be be passed as
    *       const references because of their sizes.
    */
-  TracedCallback<Ptr<const Packet>, uint16_t, WifiTxVector, MpduInfo, SignalNoiseDbm> m_phyMonitorSniffRxTrace;
+  TracedCallback<Ptr<const Packet>, uint16_t /* frequency (MHz) */, WifiTxVector, MpduInfo, SignalNoiseDbm, uint16_t /* STA-ID*/> m_phyMonitorSniffRxTrace;
 
   /**
    * A trace source that emulates a Wi-Fi device in monitor mode
@@ -2028,7 +2074,7 @@ private:
    * \todo WifiTxVector should be passed by const reference because
    * of its size.
    */
-  TracedCallback<Ptr<const Packet>, uint16_t, WifiTxVector, MpduInfo> m_phyMonitorSniffTxTrace;
+  TracedCallback<Ptr<const Packet>, uint16_t /* frequency (MHz) */, WifiTxVector, MpduInfo, uint16_t /* STA-ID*/> m_phyMonitorSniffTxTrace;
 
   /**
    * A trace source that indicates the end of both HE SIG fields as well as training fields for received 802.11ax packets
@@ -2081,6 +2127,7 @@ private:
   std::vector<uint8_t> m_bssMembershipSelectorSet; //!< the BSS membership selector set
 
   WifiPhyStandard m_standard;               //!< WifiPhyStandard
+  WifiPhyBand m_band;                       //!< WifiPhyBand
   bool m_isConstructed;                     //!< true when ready to set frequency
   uint16_t m_channelCenterFrequency;        //!< Center frequency in MHz
   uint16_t m_initialFrequency;              //!< Store frequency until initialization (MHz)
@@ -2106,17 +2153,12 @@ private:
   double m_txPowerMaxMimo;       //!< MIMO maximum transmit power due to OBSS PD SR power restriction (dBm)
   bool m_channelAccessRequested; //!< Flag if channels access has been requested (used for OBSS_PD SR)
 
-  bool     m_greenfield;         //!< Flag if GreenField format is supported (deprecated)
-  bool     m_shortGuardInterval; //!< Flag if HT/VHT short guard interval is supported (deprecated)
-  bool     m_shortPreamble;      //!< Flag if short PHY preamble is supported
-
-  Time m_guardInterval; //!< Supported HE guard interval (deprecated)
-
+  bool m_shortPreamble;        //!< Flag if short PHY preamble is supported
   uint8_t m_numberOfAntennas;  //!< Number of transmitters
   uint8_t m_txSpatialStreams;  //!< Number of supported TX spatial streams
   uint8_t m_rxSpatialStreams;  //!< Number of supported RX spatial streams
 
-  typedef std::map<ChannelNumberStandardPair,FrequencyWidthPair> ChannelToFrequencyWidthMap; //!< channel to frequency width map typedef
+  typedef std::map<ChannelNumberStandardPair, FrequencyWidthPair> ChannelToFrequencyWidthMap; //!< channel to frequency width map typedef
   static ChannelToFrequencyWidthMap m_channelToFrequencyWidth;                               //!< the channel to frequency width map
 
   std::vector<uint16_t> m_supportedChannelWidthSet; //!< Supported channel width set (MHz)
@@ -2134,6 +2176,9 @@ private:
   Ptr<WifiRadioEnergyModel> m_wifiRadioEnergyModel;     //!< Wifi radio energy model
   Ptr<ErrorModel> m_postReceptionErrorModel;            //!< Error model for receive packet events
   Time m_timeLastPreambleDetected;                      //!< Record the time the last preamble was detected
+
+  std::vector<bool> m_statusPerMpdu; //!<  current reception status per MPDU that is filled in as long as MPDUs are being processed by the PHY in case of an A-MPDU
+  SignalNoiseDbm m_signalNoise;      //!< latest signal power and noise power in dBm (noise power includes the noise figure)
 
   Callback<void> m_capabilitiesChangedCallback;         //!< Callback when PHY capabilities changed
 };

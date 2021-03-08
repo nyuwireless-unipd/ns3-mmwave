@@ -355,9 +355,9 @@ BasicEnergyDepletionTest::DepletionTestCase (double simTimeS,
 
   // install YansWifiPhy
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
+  wifi.SetStandard (WIFI_STANDARD_80211b);
 
-  YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper wifiPhy;
   /*
    * This is one parameter that matters when using FixedRssLossModel, set it to
    * zero; otherwise, gain will be added.

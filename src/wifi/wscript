@@ -14,6 +14,7 @@ def build(bld):
         'model/yans-error-rate-model.cc',
         'model/nist-error-rate-model.cc',
         'model/dsss-error-rate-model.cc',
+        'model/table-based-error-rate-model.cc',
         'model/interference-helper.cc',
         'model/yans-wifi-phy.cc',
         'model/yans-wifi-channel.cc',
@@ -100,6 +101,7 @@ def build(bld):
         'model/constant-obss-pd-algorithm.cc',
         'model/wifi-ack-policy-selector.cc',
         'model/constant-wifi-ack-policy-selector.cc',
+        'model/he-ru.cc',
         'helper/wifi-radio-energy-model-helper.cc',
         'helper/athstats-helper.cc',
         'helper/wifi-helper.cc',
@@ -122,6 +124,7 @@ def build(bld):
         'test/wifi-phy-thresholds-test.cc',
         'test/wifi-phy-reception-test.cc',
         'test/inter-bss-test-suite.cc',
+        'test/wifi-phy-ofdma-test.cc'
         ]
 
     # Tests encapsulating example programs should be listed here
@@ -140,7 +143,8 @@ def build(bld):
         'model/wifi-mode.h',
         'model/ssid.h',
         'model/wifi-preamble.h',
-        'model/wifi-phy-standard.h',
+        'model/wifi-phy-band.h',
+        'model/wifi-standards.h',
         'model/yans-wifi-phy.h',
         'model/spectrum-wifi-phy.h',
         'model/yans-wifi-channel.h',
@@ -172,6 +176,7 @@ def build(bld):
         'model/yans-error-rate-model.h',
         'model/nist-error-rate-model.h',
         'model/dsss-error-rate-model.h',
+        'model/table-based-error-rate-model.h',
         'model/wifi-mac-queue.h',
         'model/txop.h',
         'model/wifi-phy-header.h',
@@ -236,6 +241,8 @@ def build(bld):
         'model/constant-obss-pd-algorithm.h',
         'model/wifi-ack-policy-selector.h',
         'model/constant-wifi-ack-policy-selector.h',
+        'model/he-ru.h',
+        'model/reference/error-rate-tables.h',
         'helper/wifi-radio-energy-model-helper.h',
         'helper/athstats-helper.h',
         'helper/wifi-helper.h',

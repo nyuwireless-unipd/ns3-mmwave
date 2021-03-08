@@ -26,7 +26,6 @@
 #include "wifi-remote-station-manager.h"
 #include "wifi-phy.h"
 #include "wifi-mac.h"
-#include "wifi-utils.h"
 #include "wifi-mac-header.h"
 #include "wifi-mac-trailer.h"
 #include "ht-configuration.h"
@@ -286,6 +285,19 @@ WifiRemoteStationManager::GetGreenfieldSupported (void) const
 }
 
 bool
+WifiRemoteStationManager::GetLdpcSupported (void) const
+{
+  if (GetHtSupported ())
+    {
+      Ptr<WifiNetDevice> device = DynamicCast<WifiNetDevice> (m_wifiPhy->GetDevice ());
+      Ptr<HtConfiguration> htConfiguration = device->GetHtConfiguration ();
+      NS_ASSERT (htConfiguration); //If HT is supported, we should have a HT configuration attached
+      return htConfiguration->GetLdpcSupported ();
+    }
+  return false;
+}
+
+bool
 WifiRemoteStationManager::GetShortGuardIntervalSupported (void) const
 {
   if (GetHtSupported ())
@@ -505,7 +517,6 @@ WifiRemoteStationManager::GetDataTxVector (const WifiMacHeader &header)
       v.SetNTx (1);
       v.SetNss (1);
       v.SetNess (0);
-      v.SetStbc (0);
       return v;
     }
   WifiTxVector txVector;
@@ -530,6 +541,7 @@ WifiRemoteStationManager::GetDataTxVector (const WifiMacHeader &header)
   else
     {
       txVector = DoGetDataTxVector (Lookup (address));
+      txVector.SetLdpc (txVector.GetMode ().GetModulationClass () < WIFI_MOD_CLASS_HT ? 0 : UseLdpcForDestination (address));
     }
   Ptr<WifiNetDevice> device = DynamicCast<WifiNetDevice> (m_wifiPhy->GetDevice ());
   Ptr<HeConfiguration> heConfiguration = device->GetHeConfiguration ();
@@ -572,7 +584,6 @@ WifiRemoteStationManager::GetCtsToSelfTxVector (void)
                        GetMaxNumberOfTransmitStreams (),
                        0,
                        GetChannelWidthForTransmission (defaultMode, m_wifiPhy->GetChannelWidth ()),
-                       false,
                        false);
 }
 
@@ -592,7 +603,6 @@ WifiRemoteStationManager::GetRtsTxVector (Mac48Address address)
         v.SetNTx (1);
         v.SetNss (1);
         v.SetNess (0);
-        v.SetStbc (0);
         return v;
     }
   return DoGetRtsTxVector (Lookup (address));
@@ -1138,7 +1148,7 @@ WifiRemoteStationManager::AddStationHeCapabilities (Mac48Address from, HeCapabil
   NS_LOG_FUNCTION (this << from << heCapabilities);
   WifiRemoteStationState *state;
   state = LookupState (from);
-  if (Is5Ghz (m_wifiPhy->GetFrequency ()))
+  if ((m_wifiPhy->GetPhyBand () == WIFI_PHY_BAND_5GHZ) || (m_wifiPhy->GetPhyBand () == WIFI_PHY_BAND_6GHZ))
     {
       if (heCapabilities.GetChannelWidthSet () & 0x04)
         {
@@ -1150,7 +1160,7 @@ WifiRemoteStationManager::AddStationHeCapabilities (Mac48Address from, HeCapabil
         }
       //For other cases at 5 GHz, the supported channel width is set by the VHT capabilities
     }
-  else if (Is2_4Ghz (m_wifiPhy->GetFrequency ()))
+  else if (m_wifiPhy->GetPhyBand () == WIFI_PHY_BAND_2_4GHZ)
     {
       if (heCapabilities.GetChannelWidthSet () & 0x01)
         {
@@ -1218,6 +1228,28 @@ WifiRemoteStationManager::GetGreenfieldSupported (Mac48Address address) const
       return false;
     }
   return htCapabilities->GetGreenfield ();
+}
+
+bool
+WifiRemoteStationManager::GetLdpcSupported (Mac48Address address) const
+{
+  Ptr<const HtCapabilities> htCapabilities = LookupState (address)->m_htCapabilities;
+  Ptr<const VhtCapabilities> vhtCapabilities = LookupState (address)->m_vhtCapabilities;
+  Ptr<const HeCapabilities> heCapabilities = LookupState (address)->m_heCapabilities;
+  bool supported = false;
+  if (htCapabilities)
+    {
+      supported |= htCapabilities->GetLdpc ();
+    }
+  if (vhtCapabilities)
+    {
+      supported |= vhtCapabilities->GetRxLdpc ();
+    }
+  if (heCapabilities)
+    {
+      supported |= heCapabilities->GetLdpcCodingInPayload ();
+    }
+  return supported;
 }
 
 WifiMode
@@ -1644,6 +1676,12 @@ bool
 WifiRemoteStationManager::UseGreenfieldForDestination (Mac48Address dest) const
 {
   return (GetGreenfieldSupported () && GetGreenfieldSupported (dest) && !GetUseGreenfieldProtection ());
+}
+
+bool
+WifiRemoteStationManager::UseLdpcForDestination (Mac48Address dest) const
+{
+  return (GetLdpcSupported () && GetLdpcSupported (dest));
 }
 
 } //namespace ns3

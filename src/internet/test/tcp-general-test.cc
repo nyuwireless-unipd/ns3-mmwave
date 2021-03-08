@@ -952,6 +952,22 @@ TcpGeneralTest::SetInitialCwnd (SocketWho who, uint32_t initialCwnd)
     }
 }
 void
+TcpGeneralTest::SetDelAckMaxCount (SocketWho who, uint32_t count)
+{
+  if (who == SENDER)
+    {
+      m_senderSocket->SetDelAckMaxCount (count);
+    }
+  else if (who == RECEIVER)
+    {
+      m_receiverSocket->SetDelAckMaxCount (count);
+    }
+  else
+    {
+      NS_FATAL_ERROR ("Not defined");
+    }
+}
+void
 TcpGeneralTest::SetUseEcn (SocketWho who, TcpSocketState::UseEcn_t useEcn)
 {
   if (who == SENDER)
@@ -961,6 +977,40 @@ TcpGeneralTest::SetUseEcn (SocketWho who, TcpSocketState::UseEcn_t useEcn)
    else if (who == RECEIVER)
     {
       m_receiverSocket->SetUseEcn (useEcn);
+    }
+  else
+    {
+      NS_FATAL_ERROR ("Not defined");
+    }
+}
+
+void
+TcpGeneralTest::SetPacingStatus (SocketWho who, bool pacing)
+{
+  if (who == SENDER)
+    {
+      m_senderSocket->SetPacingStatus (pacing);
+    }
+  else if (who == RECEIVER)
+    {
+      m_receiverSocket->SetPacingStatus (pacing);
+    }
+  else
+    {
+      NS_FATAL_ERROR ("Not defined");
+    }
+}
+
+void
+TcpGeneralTest::SetPaceInitialWindow (SocketWho who, bool paceWindow)
+{
+  if (who == SENDER)
+    {
+      m_senderSocket->SetPaceInitialWindow (paceWindow);
+    }
+  else if (who == RECEIVER)
+    {
+      m_receiverSocket->SetPaceInitialWindow (paceWindow);
     }
   else
     {

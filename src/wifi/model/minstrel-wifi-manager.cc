@@ -120,7 +120,7 @@ MinstrelWifiManager::SetupPhy (const Ptr<WifiPhy> phy)
       WifiTxVector txVector;
       txVector.SetMode (mode);
       txVector.SetPreambleType (WIFI_PREAMBLE_LONG);
-      AddCalcTxTime (mode, phy->CalculateTxDuration (m_pktLen, txVector, phy->GetFrequency ()));
+      AddCalcTxTime (mode, phy->CalculateTxDuration (m_pktLen, txVector, phy->GetPhyBand ()));
     }
   WifiRemoteStationManager::SetupPhy (phy);
 }
@@ -381,7 +381,7 @@ MinstrelWifiManager::GetDataTxVector (MinstrelWifiRemoteStation *station)
       NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
       m_currentRate = mode.GetDataRate (channelWidth);
     }
-  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station));
 }
 
 WifiTxVector
@@ -404,7 +404,7 @@ MinstrelWifiManager::GetRtsTxVector (MinstrelWifiRemoteStation *station)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station), false);
+  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, 1, 1, 0, channelWidth, GetAggregation (station));
   return rtsTxVector;
 }
 

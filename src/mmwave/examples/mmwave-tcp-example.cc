@@ -26,19 +26,14 @@
 */
 
 
-#include "ns3/point-to-point-module.h"
-#include "ns3/mmwave-helper.h"
-#include "ns3/epc-helper.h"
-#include "ns3/mmwave-point-to-point-epc-helper.h"
-#include "ns3/core-module.h"
-#include "ns3/network-module.h"
-#include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/internet-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/applications-module.h"
+#include "ns3/config-store-module.h"
+#include "ns3/command-line.h"
 #include "ns3/point-to-point-helper.h"
-#include "ns3/config-store.h"
-//#include "ns3/gtk-config-store.h"
+#include "ns3/mmwave-helper.h"
+#include "ns3/mmwave-point-to-point-epc-helper.h"
 
 using namespace ns3;
 using namespace mmwave;
@@ -176,16 +171,16 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
   Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (200)));
   Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (0.2)));
-  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (2500));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
-  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*400));
-  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*400));
+  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*100));
+  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*100));
     
   // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
   Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
   
-  double stopTime = 5.9;
-  double simStopTime = 7.00;
+  double stopTime = 8;
+  double simStopTime = 10;
   Ipv4Address remoteHostAddr;
 
   // Command line arguments
@@ -236,14 +231,14 @@ main (int argc, char *argv[])
   // Install Mobility Model
   MobilityHelper enbmobility;
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
+  enbPositionAlloc->Add (Vector (0.0, 0.0, 25.0));
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator (enbPositionAlloc);
   enbmobility.Install (enbNodes);
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (30.0, 0.0, 0.0));
+  uePositionAlloc->Add (Vector (30.0, 0.0, 1.8));
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator (uePositionAlloc);
   uemobility.Install (ueNodes);
@@ -278,7 +273,7 @@ main (int argc, char *argv[])
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
 
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("1000Mb/s"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("500Mb/s"));
   remoteHostContainer.Get (0)->AddApplication (app);
 
   AsciiTraceHelper asciiTraceHelper;

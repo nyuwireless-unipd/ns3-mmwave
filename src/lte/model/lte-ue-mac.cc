@@ -552,6 +552,7 @@ LteUeMac::DoRemoveLc (uint8_t lcId)
   NS_LOG_FUNCTION (this << " lcId" << lcId);
   NS_ASSERT_MSG (m_lcInfoMap.find (lcId) != m_lcInfoMap.end (), "could not find LCID " << lcId);
   m_lcInfoMap.erase (lcId);
+  m_ulBsrReceived.erase (lcId);
 }
 
 void

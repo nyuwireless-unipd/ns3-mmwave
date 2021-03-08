@@ -59,7 +59,7 @@ int main (int argc, char** argv)
   bool verbose = false;
   CommandLine cmd (__FILE__);
   cmd.AddValue ("standard",
-                "OFDM-based Wi-Fi standard [11a, 11_10MHZ, 11_5MHZ, 11n_2_4GHZ, 11n_5GHZ, 11ac, 11ax_2_4GHZ, 11ax_5GHZ]",
+                "OFDM-based Wi-Fi standard [11a, 11p_10MHZ, 11p_5MHZ, 11n_2_4GHZ, 11n_5GHZ, 11ac, 11ax_2_4GHZ, 11ax_5GHZ]",
                 standard);
   cmd.AddValue ("bw", "Bandwidth (consistent with standard, in MHz)", bw);
   cmd.AddValue ("txPower", "Transmit power (dBm)", pow);
@@ -74,7 +74,7 @@ int main (int argc, char** argv)
   Time dataDuration = MicroSeconds (300); // leaving enough time for data transfer (+ acknowledgment)
   if (standard == "11a")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211a);
+      wifi.SetStandard (WIFI_STANDARD_80211a);
       ssid = Ssid ("ns380211a");
       dataRate = "OfdmRate6Mbps";
       freq = 5180;
@@ -84,10 +84,10 @@ int main (int argc, char** argv)
           return 1;
         }
     }
-  else if (standard == "11_10MHZ")
+  else if (standard == "11p_10MHZ")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211_10MHZ);
-      ssid = Ssid ("ns380211_10MHZ");
+      wifi.SetStandard (WIFI_STANDARD_80211p);
+      ssid = Ssid ("ns380211p_10MHZ");
       dataRate = "OfdmRate3MbpsBW10MHz";
       freq = 5860;
       dataStartTime = MicroSeconds (1400);
@@ -98,10 +98,10 @@ int main (int argc, char** argv)
           return 1;
         }
     }
-  else if (standard == "11_5MHZ")
+  else if (standard == "11p_5MHZ")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211_5MHZ);
-      ssid = Ssid ("ns380211_5MHZ");
+      wifi.SetStandard (WIFI_STANDARD_80211p);
+      ssid = Ssid ("ns380211p_5MHZ");
       dataRate = "OfdmRate1_5MbpsBW5MHz";
       freq = 5860;
       dataStartTime = MicroSeconds (2500);
@@ -114,7 +114,7 @@ int main (int argc, char** argv)
     }
   else if (standard == "11n_2_4GHZ")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
       ssid = Ssid ("ns380211n_2_4GHZ");
       dataRate = "HtMcs0";
       freq = 2402 + (bw / 2); //so as to have 2412/2422 for 20/40
@@ -128,7 +128,7 @@ int main (int argc, char** argv)
     }
   else if (standard == "11n_5GHZ")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
       ssid = Ssid ("ns380211n_5GHZ");
       dataRate = "HtMcs0";
       freq = 5170 + (bw / 2); //so as to have 5180/5190 for 20/40
@@ -141,7 +141,7 @@ int main (int argc, char** argv)
     }
   else if (standard == "11ac")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+      wifi.SetStandard (WIFI_STANDARD_80211ac);
       ssid = Ssid ("ns380211ac");
       dataRate = "VhtMcs0";
       freq = 5170 + (bw / 2); //so as to have 5180/5190/5210/5250 for 20/40/80/160
@@ -155,7 +155,7 @@ int main (int argc, char** argv)
     }
   else if (standard == "11ax_2_4GHZ")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211ax_2_4GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
       ssid = Ssid ("ns380211ax_2_4GHZ");
       dataRate = "HeMcs0";
       freq = 2402 + (bw / 2); //so as to have 2412/2422/2442 for 20/40/80
@@ -169,7 +169,7 @@ int main (int argc, char** argv)
     }
   else if (standard == "11ax_5GHZ")
     {
-      wifi.SetStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
       ssid = Ssid ("ns380211ax_5GHZ");
       dataRate = "HeMcs0";
       freq = 5170 + (bw / 2); //so as to have 5180/5190/5210/5250 for 20/40/80/160
@@ -217,7 +217,7 @@ int main (int argc, char** argv)
 
   /* Wi-Fi transmitter setup */
 
-  SpectrumWifiPhyHelper spectrumPhy = SpectrumWifiPhyHelper::Default ();
+  SpectrumWifiPhyHelper spectrumPhy;
   spectrumPhy.SetChannel (channel);
   spectrumPhy.SetErrorRateModel ("ns3::NistErrorRateModel");
   spectrumPhy.Set ("Frequency", UintegerValue (freq));

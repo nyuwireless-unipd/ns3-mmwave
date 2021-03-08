@@ -27,6 +27,7 @@
 #include "ns3/nstime.h"
 #include "wifi-phy-state.h"
 #include "wifi-preamble.h"
+#include "wifi-ppdu.h"
 
 namespace ns3 {
 
@@ -164,12 +165,12 @@ public:
   /**
    * Switch state to TX for the given duration.
    *
-   * \param txDuration the duration of the TX
-   * \param packet the packet
+   * \param txDuration the duration of the PPDU to transmit
+   * \param psdus the PSDUs in the transmitted PPDU (only one unless it is a MU PPDU)
    * \param txPowerDbm the nominal TX power in dBm
-   * \param txVector the TX vector of the packet
+   * \param txVector the TX vector for the transmission
    */
-  void SwitchToTx (Time txDuration, Ptr<const Packet> packet, double txPowerDbm, WifiTxVector txVector);
+  void SwitchToTx (Time txDuration, WifiConstPsduMap psdus, double txPowerDbm, WifiTxVector txVector);
   /**
    * Switch state to RX for the given duration.
    *
@@ -183,14 +184,23 @@ public:
    */
   void SwitchToChannelSwitching (Time switchingDuration);
   /**
+   * Continue RX after the reception of an MPDU in an A-MPDU was successful.
+   *
+   * \param psdu the successfully received PSDU
+   * \param snr the SNR of the received PSDU in linear scale
+   * \param txVector TXVECTOR of the PSDU
+   */
+  void ContinueRxNextMpdu (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector);
+  /**
    * Switch from RX after the reception was successful.
    *
    * \param psdu the successfully received PSDU
    * \param snr the SNR of the received PSDU in linear scale
    * \param txVector TXVECTOR of the PSDU
+   * \param staId the station ID of the PSDU (only used for MU)
    * \param statusPerMpdu reception status per MPDU
    */
-  void SwitchFromRxEndOk (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, std::vector<bool> statusPerMpdu);
+  void SwitchFromRxEndOk (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, uint16_t staId, std::vector<bool> statusPerMpdu);
   /**
    * Switch from RX after the reception failed.
    *

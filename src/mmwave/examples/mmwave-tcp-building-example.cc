@@ -28,16 +28,13 @@
 
 #include "ns3/point-to-point-module.h"
 #include "ns3/mmwave-helper.h"
-#include "ns3/epc-helper.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
-#include "ns3/core-module.h"
-#include "ns3/network-module.h"
-#include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/internet-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/point-to-point-helper.h"
 #include "ns3/config-store.h"
+#include "ns3/command-line.h"
 #include <ns3/buildings-helper.h>
 #include <ns3/buildings-module.h>
 #include <ns3/packet.h>
@@ -254,8 +251,8 @@ main (int argc, char *argv[])
    * scenario 3: 6 random located small building, simulate tree and human blockage.
    * */
   int scenario = 1;
-  double stopTime = 25;
-  double simStopTime = 25;
+  double stopTime = 8;
+  double simStopTime = 10;
   bool harqEnabled = true;
   bool rlcAmEnabled = true;
   bool tcp = true;
@@ -265,16 +262,15 @@ main (int argc, char *argv[])
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("rlcAm", "Enable RLC-AM", rlcAmEnabled);
   cmd.Parse (argc, argv);
-
   
   // TCP settings
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId ()));
   Config::SetDefault ("ns3::TcpSocketBase::MinRto", TimeValue (MilliSeconds (200)));
   Config::SetDefault ("ns3::Ipv4L3Protocol::FragmentExpirationTimeout", TimeValue (Seconds (0.2)));
-  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1400));
+  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (2500));
   Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
-  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*400));
-  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*400));
+  Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*50));
+  Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*50));
 
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (1024 * 1024));
   Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (1024 * 1024));
@@ -414,7 +410,7 @@ main (int argc, char *argv[])
   ueNodes.Create (1);
 
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  enbPositionAlloc->Add (Vector (0.0, 0.0, 3.0));
+  enbPositionAlloc->Add (Vector (0.0, 0.0, 25.0));
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator (enbPositionAlloc);
@@ -424,7 +420,7 @@ main (int argc, char *argv[])
   uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.Install (ueNodes);
 
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (70, -2.0, 1));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (70, -2.0, 1.8));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 1.0, 0));
 
   Simulator::Schedule (Seconds (2), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
@@ -464,7 +460,7 @@ main (int argc, char *argv[])
 
       Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
       Ptr<MyApp> app = CreateObject<MyApp> ();
-      app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("1000Mb/s"));
+      app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("500Mb/s"));
 
       remoteHostContainer.Get (0)->AddApplication (app);
       AsciiTraceHelper asciiTraceHelper;
@@ -496,7 +492,7 @@ main (int argc, char *argv[])
 
       Ptr<Socket> ns3UdpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
       Ptr<MyApp> app = CreateObject<MyApp> ();
-      app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("1000Mb/s"));
+      app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("500Mb/s"));
 
       remoteHostContainer.Get (0)->AddApplication (app);
       AsciiTraceHelper asciiTraceHelper;
@@ -510,7 +506,7 @@ main (int argc, char *argv[])
 
 
   //p2ph.EnablePcapAll("mmwave-sgi-capture");
-  Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxSize", QueueSizeValue (QueueSize ("1000000p")));
+  Config::Set ("/NodeList/*/DeviceList/*/TxQueue/MaxSize", QueueSizeValue (QueueSize ("100000p")));
 
   Simulator::Stop (Seconds (simStopTime));
   Simulator::Run ();

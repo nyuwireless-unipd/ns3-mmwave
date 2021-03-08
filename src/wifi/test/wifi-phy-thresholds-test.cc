@@ -136,7 +136,7 @@ WifiPhyThresholdsTest::~WifiPhyThresholdsTest ()
 Ptr<SpectrumSignalParameters>
 WifiPhyThresholdsTest::MakeWifiSignal (double txPowerWatts)
 {
-  WifiTxVector txVector = WifiTxVector (WifiPhy::GetOfdmRate6Mbps (), 0, WIFI_PREAMBLE_LONG, 800, 1, 1, 0, 20, false, false);
+  WifiTxVector txVector = WifiTxVector (WifiPhy::GetOfdmRate6Mbps (), 0, WIFI_PREAMBLE_LONG, 800, 1, 1, 0, 20, false);
 
   Ptr<Packet> pkt = Create<Packet> (1000);
   WifiMacHeader hdr;
@@ -145,9 +145,9 @@ WifiPhyThresholdsTest::MakeWifiSignal (double txPowerWatts)
   hdr.SetQosTid (0);
 
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (pkt, hdr);
-  Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetFrequency ());
+  Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetPhyBand ());
 
-  Ptr<WifiPpdu> ppdu = Create<WifiPpdu> (psdu, txVector, txDuration, FREQUENCY);
+  Ptr<WifiPpdu> ppdu = Create<WifiPpdu> (psdu, txVector, txDuration, WIFI_PHY_BAND_5GHZ);
 
   Ptr<SpectrumValue> txPowerSpectrum = WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (FREQUENCY, CHANNEL_WIDTH, txPowerWatts, CHANNEL_WIDTH);
   Ptr<WifiSpectrumSignalParameters> txParams = Create<WifiSpectrumSignalParameters> ();
@@ -226,7 +226,7 @@ void
 WifiPhyThresholdsTest::DoSetup (void)
 {
   m_phy = CreateObject<SpectrumWifiPhy> ();
-  m_phy->ConfigureStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
   Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_phy->SetErrorRateModel (error);
   m_phy->SetChannelNumber (CHANNEL_NUMBER);

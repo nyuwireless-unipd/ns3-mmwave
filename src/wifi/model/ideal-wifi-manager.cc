@@ -58,7 +58,7 @@ IdealWifiManager::GetTypeId (void)
     .AddConstructor<IdealWifiManager> ()
     .AddAttribute ("BerThreshold",
                    "The maximum Bit Error Rate acceptable at any transmission mode",
-                   DoubleValue (1e-5),
+                   DoubleValue (1e-6),
                    MakeDoubleAccessor (&IdealWifiManager::m_ber),
                    MakeDoubleChecker<double> ())
     .AddTraceSource ("Rate",
@@ -534,7 +534,7 @@ IdealWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
       NS_LOG_DEBUG ("New datarate: " << maxMode.GetDataRate (channelWidth, guardInterval, selectedNss));
       m_currentRate = maxMode.GetDataRate (channelWidth, guardInterval, selectedNss);
     }
-  return WifiTxVector (maxMode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (maxMode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), guardInterval, GetNumberOfAntennas (), selectedNss, 0, GetChannelWidthForTransmission (maxMode, channelWidth), GetAggregation (station), false);
+  return WifiTxVector (maxMode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (maxMode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), guardInterval, GetNumberOfAntennas (), selectedNss, 0, GetChannelWidthForTransmission (maxMode, channelWidth), GetAggregation (station));
 }
 
 WifiTxVector
@@ -564,7 +564,7 @@ IdealWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
           maxMode = mode;
         }
     }
-  return WifiTxVector (maxMode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (maxMode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, GetNumberOfAntennas (), nss, 0, GetChannelWidthForNonHtMode (maxMode), GetAggregation (station), false);
+  return WifiTxVector (maxMode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (maxMode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), 800, GetNumberOfAntennas (), nss, 0, GetChannelWidthForNonHtMode (maxMode), GetAggregation (station));
 }
 
 double

@@ -136,13 +136,13 @@ LteSecondaryCellSelectionTestCase::DoRun ()
   lteHelper->Attach (ueDevs);
 
   // Connect to trace sources in UEs
-  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/StateTransition",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/LteUeRrc/StateTransition",
                    MakeCallback (&LteSecondaryCellSelectionTestCase::StateTransitionCallback,
                                  this));
-  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/InitialSecondaryCellSelectionEndOk",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/LteUeRrc/InitialSecondaryCellSelectionEndOk",
                    MakeCallback (&LteSecondaryCellSelectionTestCase::InitialSecondaryCellSelectionEndOkCallback,
                                  this));
-  Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished",
                    MakeCallback (&LteSecondaryCellSelectionTestCase::ConnectionEstablishedCallback,
                                  this));
 

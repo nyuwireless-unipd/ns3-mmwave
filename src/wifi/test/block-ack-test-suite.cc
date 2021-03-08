@@ -711,8 +711,9 @@ private:
    * Callback invoked when PHY receives a packet
    * \param context the context
    * \param p the packet
+   * \param rxPowersW the received power per channel band in watts
    */
-  void Receive (std::string context, Ptr<const Packet> p);
+  void Receive (std::string context, Ptr<const Packet> p, RxPowerWattPerChannelBand rxPowersW);
 };
 
 void
@@ -788,7 +789,7 @@ BlockAckAggregationDisabledTest::Transmit (std::string context, Ptr<const Packet
 }
 
 void
-BlockAckAggregationDisabledTest::Receive (std::string context, Ptr<const Packet> p)
+BlockAckAggregationDisabledTest::Receive (std::string context, Ptr<const Packet> p, RxPowerWattPerChannelBand rxPowersW)
 {
   WifiMacHeader hdr;
   p->PeekHeader (hdr);
@@ -809,11 +810,11 @@ BlockAckAggregationDisabledTest::DoRun (void)
   wifiApNode.Create (1);
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211a);
+  wifi.SetStandard (WIFI_STANDARD_80211a);
   wifi.SetAckPolicySelectorForAc (AC_BE, "ns3::ConstantWifiAckPolicySelector",
                                   "BaThreshold", DoubleValue (0.125));
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");

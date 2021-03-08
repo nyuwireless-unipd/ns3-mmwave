@@ -27,29 +27,29 @@ In the course of this chapter we will discuss the various ways to set or
 modify the values used by |ns3| model objects.  In increasing order of
 specificity, these are:
 
-+---------------------------------------+-------------------------------------+
-| Method                                | Scope                               |
-+=======================================+=====================================+
-| Default Attribute values set when     | Affect all instances of the class.  |
-| Attributes are defined in             |                                     |
-| :cpp:func:`GetTypeId ()`.             |                                     |
-+---------------------------------------+-------------------------------------+
-| | :cpp:class:`CommandLine`            | Affect all future instances.        |
-| | :cpp:func:`Config::SetDefault()`    |                                     |
-| | :cpp:class:`ConfigStore`            |                                     |
-+---------------------------------------+-------------------------------------+
-| :cpp:class:`ObjectFactory`            | Affects all instances created with  |
-|                                       | the factory.                        |
-+---------------------------------------+-------------------------------------+
-| Helper methods with (string/          | Affects all instances created by    |
-| AttributeValue) parameter pairs       | the helper.                         |
-+---------------------------------------+-------------------------------------+
-| | :cpp:func:`MyClass::SetX ()`        | Alters this particular instance.    |
-| | :cpp:func:`Object::SetAttribute ()` | Generally this is the only form     |
-| | :cpp:func:`Config::Set()`           | which can be scheduled to alter     |
-|                                       | an instance once the simulation     |
-|                                       | is running.                         |
-+---------------------------------------+-------------------------------------+
++-------------------------------------+------------------------------------+
+| Method                              | Scope                              |
++=====================================+====================================+
+| Default Attribute values set when   | Affect all instances of the class. |
+| Attributes are defined in           |                                    |
+| :cpp:func:`GetTypeId ()`.           |                                    |
++-------------------------------------+------------------------------------+
+| :cpp:class:`CommandLine`            | Affect all future instances.       |
+| :cpp:func:`Config::SetDefault()`    |                                    |
+| :cpp:class:`ConfigStore`            |                                    |
++-------------------------------------+------------------------------------+
+| :cpp:class:`ObjectFactory`          | Affects all instances created with |
+|                                     | the factory.                       |
++-------------------------------------+------------------------------------+
+| Helper methods with (string/        | Affects all instances created by   |
+| AttributeValue) parameter pairs     | the helper.                        |
++-------------------------------------+------------------------------------+
+| :cpp:func:`MyClass::SetX ()`        | Alters this particular instance.   |
+| :cpp:func:`Object::SetAttribute ()` | Generally this is the only form    |
+| :cpp:func:`Config::Set()`           | which can be scheduled to alter    |
+|                                     | an instance once the simulation    |
+|                                     | is running.                        |
++-------------------------------------+------------------------------------+
 
 By "specificity" we mean that methods in later rows in the table
 override the values set by, and typically affect fewer instances than,
@@ -463,7 +463,15 @@ default values.::
 
 At this point, we have created a single :cpp:class:`Node` (``n0``)
 and a single :cpp:class:`PointToPointNetDevice` (``net0``),
-and added a :cpp:class:`DropTailQueue` (``q``) to ``net0``.
+added a :cpp:class:`DropTailQueue` (``q``) to ``net0``,
+which will be configured with a queue size limit of 80 packets.
+
+As a final note, the `Config::Set...()` functions
+will throw an error if the targeted Attribute does not exist at the path
+given.  There are also "fail-safe" versions,
+`Config::Set...FailSafe()`, if you can't be sure the Attribute
+exists.  The fail-safe versions return `true` if at least one instance
+could be set.
 
 Constructors, Helpers and ObjectFactory
 =======================================
@@ -1150,20 +1158,61 @@ write out the resulting attributes to a separate file called
       Simulator::Run ();
     }
 
+ConfigStore use cases (pre- and post-simulation)
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+It is worth stressing that ConfigStore can be used for different purposes, and this is
+reflected in where in the script ConfigStore is invoked.
+
+The typical use-cases are:
+
+* Change an Object default attributes
+* Inspect/change a *specific* Object attributes
+* Inspect the simulation Objects and their attributes
+
+As a matter of fact, some Objects might be created when the simulation starts.
+Hence, ConfigStore will not "report" their attributes if invoked earlier in the code.
+
+A typical workflow might involve running the simulation, calling ConfigStore 
+at the end of the simulation (after ``Simulator::Run ()`` and before ``Simulator::Destroy ()``)
+This will show all the attributes in the Objects, both those with default values, and those
+with values changed during the simulation execution.
+
+To change these values, you'll need to either change the default (class-wide) attribute values
+(in this case call ConfigStore before the Object creation), or  specific object attribute
+(in this case call ConfigStore after the Object creation, typically just before ``Simulator::Run ()``.
+
+
 ConfigStore GUI
 +++++++++++++++
 
 There is a GTK-based front end for the ConfigStore.  This allows users to use a
-GUI to access and change variables.  Screenshots of this feature are available
-in the `|ns3| Overview <http://www.nsnam.org/docs/ns-3-overview.pdf>`_
-presentation.
+GUI to access and change variables.
 
-To use this feature, one must install ``libgtk`` and ``libgtk-dev``; an example
+Some screenshots are presented here. They are the result of using GtkConfig on 
+``src/lte/examples/lena-dual-stripe.cc`` after ``Simulator::Run ()``.
+
+.. _GtkConfig:
+
+.. figure:: figures/gtk-config-lena-dual-stripe-device-view.*
+
+.. figure:: figures/gtk-config-lena-dual-stripe-eNB-tx-power.*
+
+
+To use this feature, one must install ``libgtk-3-dev``; an example
 Ubuntu installation command is:
 
 .. sourcecode:: bash
 
-  $ sudo apt-get install libgtk2.0-0 libgtk2.0-dev
+  $ sudo apt-get install libgtk-3-dev
+
+On a MacOS it is possible to install GTK-3 using `Homebrew <https://brew.sh>`_.
+The installation command is:
+
+.. sourcecode:: bash
+
+  $ brew install gtk+3 adwaita-icon-theme
+
 
 To check whether it is configured or not, check the output of the step:
 
@@ -1175,7 +1224,7 @@ To check whether it is configured or not, check the output of the step:
   Python Bindings               : enabled
   Python API Scanning Support   : enabled
   NS-3 Click Integration        : enabled
-  GtkConfigStore                : not enabled (library 'gtk+-2.0 >= 2.12' not found)
+  GtkConfigStore                : not enabled (library 'gtk+-3.0 >= 3.0' not found)
 
 In the above example, it was not enabled, so it cannot be used until a suitable
 version is installed and:
@@ -1198,3 +1247,9 @@ are no :cpp:class:`ConfigStore` attributes involved::
 Now, when you run the script, a GUI should pop up, allowing you to open menus of
 attributes on different nodes/objects, and then launch the simulation execution
 when you are done.
+
+Note that "launch the simulation" means to proceed with the simulation script.
+If GtkConfigStore has been called after ``Simulator::Run ()`` the simulation will
+not be started again - it will just end.
+
+

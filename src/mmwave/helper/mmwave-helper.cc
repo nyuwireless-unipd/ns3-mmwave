@@ -2657,7 +2657,7 @@ MmWaveHelper::EnableTraces (void)
 void 
 MmWaveHelper::EnableEnbSchedTrace ()
 {
-   Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbMac/SchedulingTraceEnb", 
+   Config::ConnectWithoutContextFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbMac/SchedulingTraceEnb", 
                                  MakeBoundCallback (&MmWaveMacTrace::ReportEnbSchedulingInfo, m_enbStats));
 }
 
@@ -2670,27 +2670,26 @@ MmWaveHelper::EnableDlPhyTrace (void)
   //Config::Connect ("/NodeList/*/DeviceList/*/MmWaveUePhy/ReportCurrentCellRsrpSinr",
   //		MakeBoundCallback (&MmWavePhyTrace::ReportCurrentCellRsrpSinrCallback, m_phyStats));
 
-  Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/ReportDlPhyTransmission", 
+  Config::ConnectWithoutContextFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/ReportDlPhyTransmission", 
                                  MakeBoundCallback (&MmWavePhyTrace::ReportDlPhyTransmissionCallback, m_phyStats));
 
   // regulare mmWave UE device
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
                    MakeBoundCallback (&MmWavePhyTrace::RxPacketTraceUeCallback, m_phyStats));
 
   // MC ue device
-  Config::Connect ("/NodeList/*/DeviceList/*/MmWaveComponentCarrierMapUe/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
-                   MakeBoundCallback (&MmWavePhyTrace::RxPacketTraceUeCallback, m_phyStats));
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/MmWaveComponentCarrierMapUe/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
+                     MakeBoundCallback (&MmWavePhyTrace::RxPacketTraceUeCallback, m_phyStats));
 }
 
 void
 MmWaveHelper::EnableUlPhyTrace (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
-  Config::ConnectWithoutContext ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/ReportUlPhyTransmission", 
+  Config::ConnectWithoutContextFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveUePhy/ReportUlPhyTransmission", 
                                  MakeBoundCallback (&MmWavePhyTrace::ReportUlPhyTransmissionCallback, m_phyStats));
 
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
                    MakeBoundCallback (&MmWavePhyTrace::RxPacketTraceEnbCallback, m_phyStats));
 }
 
@@ -2698,7 +2697,7 @@ void
 MmWaveHelper::EnableTransportBlockTrace ()
 {
   NS_LOG_FUNCTION_NOARGS ();
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/ReportDownlinkTbSize",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/MmWaveUePhy/ReportDownlinkTbSize",
                    MakeBoundCallback (&MmWavePhyTrace::ReportDownLinkTBSize, m_phyStats));
 }
 

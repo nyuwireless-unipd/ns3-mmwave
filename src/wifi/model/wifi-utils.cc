@@ -55,18 +55,6 @@ RatioToDb (double ratio)
   return 10.0 * std::log10 (ratio);
 }
 
-bool
-Is2_4Ghz (double frequency)
-{
-  return frequency >= 2400 && frequency <= 2500;
-}
-
-bool
-Is5Ghz (double frequency)
-{
-  return frequency >= 5000 && frequency <= 6000;
-}
-
 uint16_t
 ConvertGuardIntervalToNanoSeconds (WifiMode mode, const Ptr<WifiNetDevice> device)
 {
@@ -274,6 +262,24 @@ GetPpduMaxTime (WifiPreamble preamble)
       break;
     }
   return duration;
+}
+
+bool
+IsHt (WifiPreamble preamble)
+{
+   return (preamble == WIFI_PREAMBLE_HT_MF || preamble == WIFI_PREAMBLE_HT_GF);
+}
+
+bool
+IsVht (WifiPreamble preamble)
+{
+   return (preamble == WIFI_PREAMBLE_VHT_SU || preamble == WIFI_PREAMBLE_VHT_MU);
+}
+
+bool
+IsHe (WifiPreamble preamble)
+{
+   return (preamble == WIFI_PREAMBLE_HE_SU || preamble == WIFI_PREAMBLE_HE_MU || preamble == WIFI_PREAMBLE_HE_TB || preamble == WIFI_PREAMBLE_HE_ER_SU);
 }
 
 } //namespace ns3

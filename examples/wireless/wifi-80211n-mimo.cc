@@ -134,7 +134,7 @@ int main (int argc, char *argv[])
           wifiApNode.Create (1);
 
           YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
-          YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+          YansWifiPhyHelper phy;
           phy.SetChannel (channel.Create ());
 
           // Set MIMO capabilities
@@ -146,11 +146,11 @@ int main (int argc, char *argv[])
           WifiHelper wifi;
           if (frequency == 5.0)
             {
-              wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+              wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
             }
           else if (frequency == 2.4)
             {
-              wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
+              wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
               Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40.046));
             }
           else

@@ -41,7 +41,7 @@ Traces (std::string filePath)
   AsciiTraceHelper asciiTraceHelper;
   Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream (filePath);
   *stream1->GetStream () << "Time" << "\t" << "CC" << '\t' << "Packet size" << std::endl;
-  Config::ConnectWithoutContext (path, MakeBoundCallback (&TxMacPacketTraceUe, stream1));
+  Config::ConnectWithoutContextFailSafe (path, MakeBoundCallback (&TxMacPacketTraceUe, stream1));
 }
 
 

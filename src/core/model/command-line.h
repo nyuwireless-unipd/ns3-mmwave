@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "callback.h"
+#include "nstime.h"
 
 /**
  * \file
@@ -64,9 +65,12 @@ namespace ns3 {
    --PrintGroup=[group]:        Print all TypeIds of group.
    --PrintTypeIds:              Print all TypeIds.
    --PrintAttributes=[typeid]:  Print all attributes of typeid.
+   --PrintVersion:              Print the ns-3 version.
    --PrintHelp:                 Print this help message. \endverbatim
  *
- * The more common \c --help is a synonym for \c --PrintHelp; an example
+ * The more common \c \--version is a synonym for \c \--PrintVersion.
+ *
+ * The more common \c \--help is a synonym for \c \--PrintHelp; an example
  * is given below.
  *
  * CommandLine can also handle non-option arguments
@@ -82,7 +86,7 @@ namespace ns3 {
  * In use, arguments are given in the form
  * \verbatim
    --arg=value --toggle first-non-option\endverbatim
- * Most arguments expect a value, as in the first form, \c --arg=value.
+ * Most arguments expect a value, as in the first form, \c \--arg=value.
  * Toggles, corresponding to boolean arguments, can be given in any of
  * the forms
  * \verbatim
@@ -98,28 +102,29 @@ namespace ns3 {
  * will be the final value used.  For example,
  * \verbatim
    --arg=one --toggle=f --arg=another --toggle \endverbatim
- * The variable set by \c --arg will end up with the value \c "another";
- * the boolean set by \c --toggle will end up as \c true.
+ * The variable set by \c \--arg will end up with the value \c "another";
+ * the boolean set by \c \--toggle will end up as \c true.
  *
  * Because arguments can be repeated it can be hard to decipher what
  * value each variable ended up with, especially when using boolean toggles.
  * Suggested best practice is for scripts to report the values of all items
  * settable through CommandLine, as done by the example below.
  *
+ *
  * CommandLine can set the initial value of every attribute in the system
- * with the \c --TypeIdName::AttributeName=value syntax, for example
+ * with the \c \--TypeIdName::AttributeName=value syntax, for example
  * \verbatim
    --Application::StartTime=3s \endverbatim
  * In some cases you may want to highlight the use of a particular
  * attribute for a simulation script.  For example, you might want
  * to make it easy to set the \c Application::StartTime using
- * the argument \c --start, and have its help string show as part
+ * the argument \c \--start, and have its help string show as part
  * of the help message.  This can be done using the
  * \link AddValue(const std::string&, const std::string&) AddValue (name, attributePath) \endlink
  * method.
  *
  * CommandLine can also set the value of every GlobalValue
- * in the system with the \c --GlobalValueName=value syntax, for example
+ * in the system with the \c \--GlobalValueName=value syntax, for example
  * \verbatim
    --SchedulerType=HeapScheduler \endverbatim
  *
@@ -182,6 +187,7 @@ namespace ns3 {
        --PrintGroup=[group]:        Print all TypeIds of group.
        --PrintTypeIds:              Print all TypeIds.
        --PrintAttributes=[typeid]:  Print all attributes of typeid.
+       --PrintVersion:              Print the ns-3 version.
        --PrintHelp:                 Print this help message. \endverbatim
  *
  * Having parsed the arguments, some programs will need to perform
@@ -225,7 +231,7 @@ public:
   CommandLine (void);
   /**
    * Construct and register the source file name.
-   * This would typically be called by 
+   * This would typically be called by
    *     CommandLine cmd (__FILE__);
    *
    * This form is required to generate Doxygen documentation of the
@@ -253,7 +259,7 @@ public:
   /**
    * Supply the program usage and documentation.
    *
-   * \param [in] usage Program usage message to write with \c --help.
+   * \param [in] usage Program usage message to write with \c \--help.
    */
   void Usage (const std::string usage);
 
@@ -261,7 +267,7 @@ public:
    * Add a program argument, assigning to POD
    *
    * \param [in] name The name of the program-supplied argument
-   * \param [in] help The help text used by \c \-\-PrintHelp
+   * \param [in] help The help text used by \c \--PrintHelp
    * \param [out] value A reference to the variable where the
    *        value parsed will be stored (if no value
    *        is parsed, this variable is not modified).
@@ -283,7 +289,7 @@ public:
    * Add a program argument, using a Callback to parse the value
    *
    * \param [in] name The name of the program-supplied argument
-   * \param [in] help The help text used by \c --help
+   * \param [in] help The help text used by \c \--help
    * \param [in] callback A Callback function that will be invoked to parse and
    *   store the value.
    * \param [in] defaultValue Optional default value for argument.
@@ -310,7 +316,7 @@ public:
    * Add a non-option argument, assigning to POD
    *
    * \param [in] name The name of the program-supplied argument
-   * \param [in] help The help text used by \c \-\-PrintHelp
+   * \param [in] help The help text used by \c \--PrintHelp
    * \param [out] value A reference to the variable where the
    *        value parsed will be stored (if no value
    *        is parsed, this variable is not modified).
@@ -378,7 +384,7 @@ public:
   /**
    * \brief Print program usage to the desired output stream
    *
-   * Handler for \c \-\-PrintHelp and \c \-\-help:  print Usage(), argument names, and help strings
+   * Handler for \c \--PrintHelp and \c \--help:  print Usage(), argument names, and help strings
    *
    * Alternatively, an overloaded operator << can be used:
    * \code
@@ -393,6 +399,22 @@ public:
    */
   void PrintHelp (std::ostream &os) const;
 
+  /**
+   * Get the program version.
+   *
+   * \return The program version
+   */
+  std::string GetVersion () const;
+
+  /**
+   * Print ns-3 version to the desired output stream
+   *
+   * Handler for \c \--PrintVersion and \c \--version.
+   *
+   * \param [in,out] os The output stream to print on.
+   */
+  void PrintVersion (std::ostream &os) const;
+
 private:
 
   /**
@@ -402,7 +424,7 @@ private:
   class Item
   {
   public:
-    std::string m_name;       /**< Argument label:  \c \-\--m_name=... */
+    std::string m_name;       /**< Argument label:  \c \--m_name=... */
     std::string m_help;       /**< Argument help string */
     virtual ~Item ();         /**< Destructor */
     /**
@@ -419,7 +441,7 @@ private:
     /**
      * \return The default value
      */
-    virtual std::string GetDefault () const;
+    virtual std::string GetDefault () const = 0;
   };  // class Item
 
   /**
@@ -511,32 +533,32 @@ private:
   static bool HandleAttribute (const std::string name, const std::string value);
 
   /**
-   * Handler for \c \-\-PrintGlobals:  print all global variables and values
+   * Handler for \c \--PrintGlobals:  print all global variables and values
    * \param [in,out] os The output stream to print on.
    */
   void PrintGlobals (std::ostream &os) const;
   /**
-   * Handler for \c \-\-PrintAttributes:  print the attributes for a given type.
+   * Handler for \c \--PrintAttributes:  print the attributes for a given type.
    *
    * \param [in,out] os the output stream.
    * \param [in] type The TypeId whose Attributes should be displayed
    */
   void PrintAttributes (std::ostream &os, const std::string &type) const;
   /**
-   * Handler for \c \-\-PrintGroup:  print all types belonging to a given group.
+   * Handler for \c \--PrintGroup:  print all types belonging to a given group.
    *
    * \param [in,out] os The output stream.
    * \param [in] group The name of the TypeId group to display
    */
   void PrintGroup (std::ostream &os, const std::string &group) const;
   /**
-   * Handler for \c \-\-PrintTypeIds:  print all TypeId names.
+   * Handler for \c \--PrintTypeIds:  print all TypeId names.
    *
    * \param [in,out] os The output stream.
    */
   void PrintTypeIds (std::ostream &os) const;
   /**
-   * Handler for \c \-\-PrintGroups:  print all TypeId group names
+   * Handler for \c \--PrintGroups:  print all TypeId group names
    *
    * \param [in,out] os The output stream.
    */
@@ -608,16 +630,16 @@ bool UserItemParse<uint8_t> (const std::string value, uint8_t & val);
 
 /**
  * \ingroup commandlinehelper
- * \brief Helper to specialize CommandLine::UserItem::GetDefault() on bool
+ * \brief Helper to specialize CommandLine::UserItem::GetDefault() on types
+ * needing special handling.
  *
  * \param [in] val The argument value
  * \return The string representation of value
  * @{
  */
-template <typename T>
-std::string GetDefault (const T & val);
-template <>
-std::string GetDefault<bool> (const bool & val);
+template <typename T> std::string GetDefault       (const T & val);
+template <>           std::string GetDefault<bool> (const bool & val);
+template <>           std::string GetDefault<Time> (const Time & val);
 /**@}*/
 
 }  // namespace CommandLineHelper
@@ -691,7 +713,6 @@ CommandLineHelper::GetDefault (const T & val)
   oss << val;
   return oss.str ();
 }
-
 
 template <typename T>
 bool

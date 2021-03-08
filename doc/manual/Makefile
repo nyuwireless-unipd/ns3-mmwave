@@ -16,6 +16,7 @@ SOURCES = \
 	source/replace.txt \
 	source/attributes.rst \
 	source/callbacks.rst \
+	source/working-with-git.rst \
 	source/documentation.rst \
 	source/enable-modules.rst \
 	source/enable-tests.rst \
@@ -40,6 +41,7 @@ SOURCES = \
 	source/tests.rst \
 	source/tracing.rst \
 	source/troubleshoot.rst \
+	source/utilities.rst \
 	${SRC}/stats/doc/data-collection.rst \
 	${SRC}/stats/doc/data-collection-overview.rst \
 	${SRC}/stats/doc/statistics.rst \
@@ -62,6 +64,8 @@ SOURCEFIGS = \
 	figures/plot-2d.png \
 	figures/plot-2d-with-error-bars.png \
 	figures/plot-3d.png \
+	figures/gtk-config-lena-dual-stripe-device-view.png \
+	figures/gtk-config-lena-dual-stripe-eNB-tx-power.png \
 	${SRC}/stats/doc/Stat-framework-arch.png \
 	${SRC}/stats/doc/Wifi-default.png \
 	${SRC}/stats/doc/dcf-overview.dia \

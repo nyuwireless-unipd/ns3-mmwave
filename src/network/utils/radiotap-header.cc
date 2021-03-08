@@ -54,7 +54,17 @@ RadiotapHeader::RadiotapHeader ()
     m_heData1 (0),
     m_heData2 (0),
     m_heData3 (0),
-    m_heData5 (0)
+    m_heData4 (0),
+    m_heData5 (0),
+    m_heData6 (0),
+    m_heMuPad (0),
+    m_heMuFlags1 (0),
+    m_heMuFlags2 (0),
+    m_heMuOtherUserPad (0),
+    m_heMuPerUser1 (0),
+    m_heMuPerUser2 (0),
+    m_heMuPerUserPosition (0),
+    m_heMuPerUserKnown (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -96,6 +106,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // Time Synchronization Function Timer (when the first bit of the MPDU
   // arrived at the MAC)
+  // Reference: https://www.radiotap.org/fields/TSFT.html
   //
   if (m_present & RADIOTAP_TSFT) // bit 0
     {
@@ -104,6 +115,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // Properties of transmitted and received frames.
+  // Reference: https://www.radiotap.org/fields/Flags.html
   //
   if (m_present & RADIOTAP_FLAGS) // bit 1
     {
@@ -112,6 +124,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // TX/RX data rate in units of 500 kbps
+  // Reference: https://www.radiotap.org/fields/Rate.html
   //
   if (m_present & RADIOTAP_RATE) // bit 2
     {
@@ -120,6 +133,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // Tx/Rx frequency in MHz, followed by flags.
+  // Reference: https://www.radiotap.org/fields/Channel.html
   //
   if (m_present & RADIOTAP_CHANNEL) // bit 3
     {
@@ -131,6 +145,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // The hop set and pattern for frequency-hopping radios.  We don't need it but
   // still need to account for it.
+  // Reference: https://www.radiotap.org/fields/FHSS.html
   //
   if (m_present & RADIOTAP_FHSS) // bit 4
     {
@@ -140,6 +155,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // RF signal power at the antenna, decibel difference from an arbitrary, fixed
   // reference.
+  // Reference: https://www.radiotap.org/fields/Antenna%20signal.html
   //
   if (m_present & RADIOTAP_DBM_ANTSIGNAL) // bit 5
     {
@@ -149,6 +165,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // RF noise power at the antenna, decibel difference from an arbitrary, fixed
   // reference.
+  // Reference: https://www.radiotap.org/fields/Antenna%20noise.html
   //
   if (m_present & RADIOTAP_DBM_ANTNOISE) // bit 6
     {
@@ -157,6 +174,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // Quality of Barker code lock.
+  // Reference: https://www.radiotap.org/fields/Lock%20quality.html
   //
   if (m_present & RADIOTAP_LOCK_QUALITY) // bit 7
     {
@@ -166,6 +184,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // Transmit power expressed as unitless distance from max power
   // set at factory calibration (0 is max power).
+  // Reference: https://www.radiotap.org/fields/TX%20attenuation.html
   //
   if (m_present & RADIOTAP_TX_ATTENUATION) // bit 8
     {
@@ -175,6 +194,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // Transmit power expressed as decibel distance from max power
   // set at factory calibration (0 is max power).
+  // Reference: https://www.radiotap.org/fields/dB%20TX%20attenuation.html
   //
   if (m_present & RADIOTAP_DB_TX_ATTENUATION) // bit 9
     {
@@ -184,6 +204,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // Transmit power expressed as dBm (decibels from a 1 milliwatt reference).
   // This is the absolute power level measured at the antenna port.
+  // Reference: https://www.radiotap.org/fields/dBm%20TX%20power.html
   //
   if (m_present & RADIOTAP_DBM_TX_POWER) // bit 10
     {
@@ -193,6 +214,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
   //
   // Unitless indication of the Rx/Tx antenna for this packet.
   // The first antenna is antenna 0.
+  // Reference: https://www.radiotap.org/fields/Antenna.html
   //
   if (m_present & RADIOTAP_ANTENNA) // bit 11
     {
@@ -201,6 +223,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // RF signal power at the antenna (decibel difference from an arbitrary fixed reference).
+  // Reference: https://www.radiotap.org/fields/dB%20antenna%20signal.html
   //
   if (m_present & RADIOTAP_DB_ANTSIGNAL) // bit 12
     {
@@ -209,6 +232,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // RF noise power at the antenna (decibel difference from an arbitrary fixed reference).
+  // Reference: https://www.radiotap.org/fields/dB%20antenna%20noise.html
   //
   if (m_present & RADIOTAP_DB_ANTNOISE) // bit 13
     {
@@ -217,6 +241,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // Properties of received frames.
+  // Reference: https://www.radiotap.org/fields/RX%20flags.html
   //
   if (m_present & RADIOTAP_RX_FLAGS) // bit 14
     {
@@ -225,6 +250,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // MCS field.
+  // Reference: https://www.radiotap.org/fields/MCS.html
   //
   if (m_present & RADIOTAP_MCS) // bit 19
     {
@@ -235,6 +261,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // A-MPDU Status, information about the received or transmitted A-MPDU.
+  // Reference: https://www.radiotap.org/fields/A-MPDU%20status.html
   //
   if (m_present & RADIOTAP_AMPDU_STATUS) // bit 20
     {
@@ -247,6 +274,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // Information about the received or transmitted VHT frame.
+  // Reference: https://www.radiotap.org/fields/VHT.html
   //
   if (m_present & RADIOTAP_VHT) // bit 21
     {
@@ -265,6 +293,7 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
 
   //
   // HE field.
+  // Reference: https://www.radiotap.org/fields/HE.html
   //
   if (m_present & RADIOTAP_HE) // bit 23
     {
@@ -272,9 +301,41 @@ RadiotapHeader::Serialize (Buffer::Iterator start) const
       start.WriteU16 (m_heData1);
       start.WriteU16 (m_heData2);
       start.WriteU16 (m_heData3);
-      start.WriteU16 (0); //HE data4 field
+      start.WriteU16 (m_heData4);
       start.WriteU16 (m_heData5);
-      start.WriteU16 (0); //HE data6 field
+      start.WriteU16 (m_heData6);
+    }
+
+  //
+  // HE MU field.
+  // Reference: https://www.radiotap.org/fields/HE-MU.html
+  //
+  if (m_present & RADIOTAP_HE_MU) // bit 24
+    {
+      start.WriteU8 (0, m_heMuPad);
+      start.WriteU16 (m_heMuFlags1);
+      start.WriteU16 (m_heMuFlags2);
+      start.WriteU8 (0);
+      start.WriteU8 (0);
+      start.WriteU8 (0);
+      start.WriteU8 (0);
+      start.WriteU8 (0);
+      start.WriteU8 (0);
+      start.WriteU8 (0);
+      start.WriteU8 (0);
+    }
+
+  //
+  // HE MU other user field.
+  // Reference: https://www.radiotap.org/fields/HE-MU-other-user.html
+  //
+  if (m_present & RADIOTAP_HE_MU_OTHER_USER) // bit 25
+    {
+      start.WriteU8 (0, m_heMuOtherUserPad);
+      start.WriteU16 (m_heMuPerUser1);
+      start.WriteU16 (m_heMuPerUser2);
+      start.WriteU8 (m_heMuPerUserPosition);
+      start.WriteU8 (m_heMuPerUserKnown);
     }
 }
 
@@ -294,6 +355,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // Time Synchronization Function Timer (when the first bit of the MPDU arrived at the MAC)
+  // Reference: https://www.radiotap.org/fields/TSFT.html
   //
   if (m_present & RADIOTAP_TSFT) // bit 0
     {
@@ -303,6 +365,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // Properties of transmitted and received frames.
+  // Reference: https://www.radiotap.org/fields/Flags.html
   //
   if (m_present & RADIOTAP_FLAGS) // bit 1
     {
@@ -312,6 +375,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // TX/RX data rate in units of 500 kbps
+  // Reference: https://www.radiotap.org/fields/Rate.html
   //
   if (m_present & RADIOTAP_RATE) // bit 2
     {
@@ -321,6 +385,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // Tx/Rx frequency in MHz, followed by flags.
+  // Reference: https://www.radiotap.org/fields/Channel.html
   //
   if (m_present & RADIOTAP_CHANNEL) // bit 3
     {
@@ -334,6 +399,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
   //
   // The hop set and pattern for frequency-hopping radios.  We don't need it but
   // still need to account for it.
+  // Reference: https://www.radiotap.org/fields/FHSS.html
   //
   if (m_present & RADIOTAP_FHSS) // bit 4
     {
@@ -345,6 +411,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
   //
   // RF signal power at the antenna, decibel difference from an arbitrary, fixed
   // reference.
+  // Reference: https://www.radiotap.org/fields/Antenna%20signal.html
   //
   if (m_present & RADIOTAP_DBM_ANTSIGNAL) // bit 5
     {
@@ -355,6 +422,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
   //
   // RF noise power at the antenna, decibel difference from an arbitrary, fixed
   // reference.
+  // Reference: https://www.radiotap.org/fields/Antenna%20noise.html
   //
   if (m_present & RADIOTAP_DBM_ANTNOISE) // bit 6
     {
@@ -364,6 +432,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // Quality of Barker code lock.
+  // Reference: https://www.radiotap.org/fields/Lock%20quality.html
   //
   if (m_present & RADIOTAP_LOCK_QUALITY) // bit 7
     {
@@ -375,6 +444,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
   //
   // Transmit power expressed as unitless distance from max power
   // set at factory calibration (0 is max power).
+  // Reference: https://www.radiotap.org/fields/TX%20attenuation.html
   //
   if (m_present & RADIOTAP_TX_ATTENUATION) // bit 8
     {
@@ -386,6 +456,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
   //
   // Transmit power expressed as decibel distance from max power
   // set at factory calibration (0 is max power).
+  // Reference: https://www.radiotap.org/fields/dB%20TX%20attenuation.html
   //
   if (m_present & RADIOTAP_DB_TX_ATTENUATION) // bit 9
     {
@@ -397,6 +468,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
   //
   // Transmit power expressed as dBm (decibels from a 1 milliwatt reference).
   // This is the absolute power level measured at the antenna port.
+  // Reference: https://www.radiotap.org/fields/dBm%20TX%20power.html
   //
   if (m_present & RADIOTAP_DBM_TX_POWER) // bit 10
     {
@@ -408,6 +480,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
   //
   // Unitless indication of the Rx/Tx antenna for this packet.
   // The first antenna is antenna 0.
+  // Reference: https://www.radiotap.org/fields/Antenna.html
   //
   if (m_present & RADIOTAP_ANTENNA) // bit 11
     {
@@ -418,6 +491,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // RF signal power at the antenna (decibel difference from an arbitrary fixed reference).
+  // Reference: https://www.radiotap.org/fields/dB%20antenna%20signal.html
   //
   if (m_present & RADIOTAP_DB_ANTSIGNAL) // bit 12
     {
@@ -428,6 +502,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // RF noise power at the antenna (decibel difference from an arbitrary fixed reference).
+  // Reference: https://www.radiotap.org/fields/dB%20antenna%20noise.html
   //
   if (m_present & RADIOTAP_DB_ANTNOISE) // bit 13
     {
@@ -438,6 +513,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // Properties of received frames.
+  // Reference: https://www.radiotap.org/fields/RX%20flags.html
   //
   if (m_present & RADIOTAP_RX_FLAGS) // bit 14
     {
@@ -448,6 +524,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // MCS field.
+  // Reference: https://www.radiotap.org/fields/MCS.html
   //
   if (m_present & RADIOTAP_MCS) // bit 19
     {
@@ -459,6 +536,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // A-MPDU Status, information about the received or transmitted A-MPDU.
+  // Reference: https://www.radiotap.org/fields/A-MPDU%20status.html
   //
   if (m_present & RADIOTAP_AMPDU_STATUS) // bit 20
     {
@@ -473,6 +551,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // Information about the received or transmitted VHT frame.
+  // Reference: https://www.radiotap.org/fields/VHT.html
   //
   if (m_present & RADIOTAP_VHT) // bit 21
     {
@@ -493,6 +572,7 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
 
   //
   // HE field.
+  // Reference: https://www.radiotap.org/fields/HE.html
   //
   if (m_present & RADIOTAP_HE) // bit 23
     {
@@ -501,10 +581,44 @@ RadiotapHeader::Deserialize (Buffer::Iterator start)
       m_heData1 = start.ReadU16 ();
       m_heData2 = start.ReadU16 ();
       m_heData3 = start.ReadU16 ();
-      start.ReadU16 (); //HE data4 field
+      m_heData4 = start.ReadU16 ();
       m_heData5 = start.ReadU16 ();
-      start.ReadU16 (); //HE data6 field
+      m_heData6 = start.ReadU16 ();
       bytesRead += (12 + m_hePad);
+    }
+
+  //
+  // HE MU field.
+  // Reference: https://www.radiotap.org/fields/HE-MU.html
+  //
+  if (m_present & RADIOTAP_HE_MU) // bit 24
+    {
+      m_heMuPad = ((2 - bytesRead % 2) % 2);
+      m_heMuFlags1 = start.ReadU16 ();
+      m_heMuFlags2 = start.ReadU16 ();
+      start.ReadU8 ();
+      start.ReadU8 ();
+      start.ReadU8 ();
+      start.ReadU8 ();
+      start.ReadU8 ();
+      start.ReadU8 ();
+      start.ReadU8 ();
+      start.ReadU8 ();
+      bytesRead += (12 + m_heMuPad);
+    }
+
+  //
+  // HE MU other user field.
+  // Reference: https://www.radiotap.org/fields/HE-MU-other-user.html
+  //
+  if (m_present & RADIOTAP_HE_MU_OTHER_USER) // bit 25
+    {
+      m_heMuOtherUserPad = ((2 - bytesRead % 2) % 2);
+      m_heMuPerUser1 = start.ReadU16 ();
+      m_heMuPerUser2 = start.ReadU16 ();
+      m_heMuPerUserPosition = start.ReadU8 ();
+      m_heMuPerUserKnown = start.ReadU8 ();
+      bytesRead += (6 + m_heMuOtherUserPad);
     }
 
   NS_ASSERT_MSG (m_length == bytesRead, "RadiotapHeader::Deserialize(): expected and actual lengths inconsistent");
@@ -539,7 +653,15 @@ RadiotapHeader::Print (std::ostream &os) const
      << " heData1=" << m_heData1
      << " heData2=" << m_heData2
      << " heData3=" << m_heData3
-     << " heData5=" << m_heData5;
+     << " heData4=" << m_heData4
+     << " heData5=" << m_heData5
+     << " heData6=" << m_heData6
+     << " heMuFlags1=" << m_heMuFlags1
+     << " heMuFlags2=" << m_heMuFlags2
+     << " heMuPerUser1=" << m_heMuPerUser1
+     << " heMuPerUser2=" << m_heMuPerUser2
+     << " heMuPerUserPosition=" << +m_heMuPerUserPosition
+     << " heMuPerUserKnown=" << +m_heMuPerUserKnown;
 }
 
 void
@@ -714,18 +836,54 @@ RadiotapHeader::SetVhtFields (uint16_t known, uint8_t flags, uint8_t bandwidth, 
 }
 
 void
-RadiotapHeader::SetHeFields (uint16_t data1, uint16_t data2, uint16_t data3, uint16_t data5)
+RadiotapHeader::SetHeFields (uint16_t data1, uint16_t data2, uint16_t data3, uint16_t data4, uint16_t data5, uint16_t data6)
 {
-  NS_LOG_FUNCTION (this << data1 << data2 << data3 << data5);
+  NS_LOG_FUNCTION (this << data1 << data2 << data3 << data4 << data5 << data6);
   m_heData1 = data1;
   m_heData2 = data2;
   m_heData3 = data3;
+  m_heData4 = data4;
   m_heData5 = data5;
+  m_heData6 = data6;
   if (!(m_present & RADIOTAP_HE))
     {
       m_hePad = ((2 - m_length % 2) % 2);
       m_present |= RADIOTAP_HE;
-      m_length += 12;
+      m_length += (12 + m_hePad);
+    }
+
+  NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
+}
+
+void
+RadiotapHeader::SetHeMuFields (uint16_t flags1, uint16_t flags2, const std::array<uint8_t, 4> &/*ruChannel1*/, const std::array<uint8_t, 4> &/*ruChannel2*/)
+{
+  NS_LOG_FUNCTION (this << flags1 << flags2);
+  m_heMuFlags1 = flags1;
+  m_heMuFlags2 = flags2;
+  if (!(m_present & RADIOTAP_HE_MU))
+    {
+      m_heMuPad = ((2 - m_length % 2) % 2);
+      m_present |= RADIOTAP_HE_MU;
+      m_length += (12 + m_heMuPad);
+    }
+
+  NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);
+}
+
+void
+RadiotapHeader::SetHeMuPerUserFields (uint16_t per_user_1, uint16_t per_user_2, uint8_t perUserPosition, uint8_t perUserKnown)
+{
+  NS_LOG_FUNCTION (this << per_user_1 << per_user_2 << +perUserPosition << +perUserKnown);
+  m_heMuPerUser1 = per_user_1;
+  m_heMuPerUser2 = per_user_2;
+  m_heMuPerUserPosition = perUserPosition;
+  m_heMuPerUserKnown = perUserKnown;
+  if (!(m_present & RADIOTAP_HE_MU_OTHER_USER))
+    {
+      m_heMuOtherUserPad = ((2 - m_length % 2) % 2);
+      m_present |= RADIOTAP_HE_MU_OTHER_USER;
+      m_length += (6 + m_heMuOtherUserPad);
     }
 
   NS_LOG_LOGIC (this << " m_length=" << m_length << " m_present=0x" << std::hex << m_present << std::dec);

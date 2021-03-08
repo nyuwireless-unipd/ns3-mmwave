@@ -32,6 +32,7 @@
 #include "ns3/double.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/socket.h"
+#include "ns3/wifi-net-device.h"
 
 namespace ns3 {
 
@@ -72,7 +73,7 @@ MeshWifiInterfaceMac::GetTypeId ()
   return tid;
 }
 MeshWifiInterfaceMac::MeshWifiInterfaceMac ()
-  : m_standard (WIFI_PHY_STANDARD_80211a)
+  : m_standard (WIFI_STANDARD_80211a)
 {
   NS_LOG_FUNCTION (this);
 
@@ -176,17 +177,9 @@ MeshWifiInterfaceMac::GetFrequencyChannel () const
 {
   NS_LOG_FUNCTION (this);
   NS_ASSERT (m_phy != 0); // need PHY to set/get channel
-
-  Ptr<YansWifiPhy> phy = m_phy->GetObject<YansWifiPhy> ();
-  if (phy != 0)
-    {
-      return phy->GetChannelNumber ();
-    }
-  else
-    {
-      return 0;
-    }
+  return m_phy->GetChannelNumber ();
 }
+
 void
 MeshWifiInterfaceMac::SwitchFrequencyChannel (uint16_t new_id)
 {
@@ -203,8 +196,7 @@ MeshWifiInterfaceMac::SwitchFrequencyChannel (uint16_t new_id)
    *
    * Now we use dirty channel switch -- just change frequency
    */
-  Ptr<YansWifiPhy> phy = m_phy->GetObject<YansWifiPhy> ();
-  phy->SetChannelNumber (new_id);
+  m_phy->SetChannelNumber (new_id);
   // Don't know NAV on new channel
   m_channelAccessManager->NotifyNavResetNow (Seconds (0));
 }
@@ -314,14 +306,14 @@ MeshWifiInterfaceMac::GetSupportedRates () const
   for (uint32_t i = 0; i < m_phy->GetNModes (); i++)
     {
       WifiMode mode = m_phy->GetMode (i);
-      uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, m_phy->GetShortGuardInterval (), m_phy->GetGuardInterval ());
+      uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, DynamicCast<WifiNetDevice> (m_phy->GetDevice ()));
       rates.AddSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth (), gi, 1));
     }
   // set the basic rates
   for (uint32_t j = 0; j < m_stationManager->GetNBasicModes (); j++)
     {
       WifiMode mode = m_stationManager->GetBasicMode (j);
-      uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, m_phy->GetShortGuardInterval (), m_phy->GetGuardInterval ());
+      uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, DynamicCast<WifiNetDevice> (m_phy->GetDevice ()));
       rates.SetBasicRate (mode.GetDataRate (m_phy->GetChannelWidth (), gi, 1));
     }
   return rates;
@@ -332,7 +324,7 @@ MeshWifiInterfaceMac::CheckSupportedRates (SupportedRates rates) const
   for (uint32_t i = 0; i < m_stationManager->GetNBasicModes (); i++)
     {
       WifiMode mode = m_stationManager->GetBasicMode (i);
-      uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, m_phy->GetShortGuardInterval (), m_phy->GetGuardInterval ());
+      uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, DynamicCast<WifiNetDevice> (m_phy->GetDevice ()));
       if (!rates.IsSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth (), gi, 1)))
         {
           return false;
@@ -442,7 +434,7 @@ MeshWifiInterfaceMac::Receive (Ptr<WifiMacQueueItem> mpdu)
           for (uint32_t i = 0; i < m_phy->GetNModes (); i++)
             {
               WifiMode mode = m_phy->GetMode (i);
-              uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, m_phy->GetShortGuardInterval (), m_phy->GetGuardInterval ());
+              uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, DynamicCast<WifiNetDevice> (m_phy->GetDevice ()));
               uint64_t rate = mode.GetDataRate (m_phy->GetChannelWidth (), gi, 1);
               if (rates.IsSupportedRate (rate))
                 {
@@ -548,7 +540,7 @@ MeshWifiInterfaceMac::ResetStats ()
 }
 
 void
-MeshWifiInterfaceMac::ConfigureStandard (enum WifiPhyStandard standard)
+MeshWifiInterfaceMac::ConfigureStandard (enum WifiStandard standard)
 {
   RegularWifiMac::ConfigureStandard (standard);
   m_standard = standard;
@@ -559,11 +551,6 @@ MeshWifiInterfaceMac::ConfigureStandard (enum WifiPhyStandard standard)
   m_txop->SetMinCw (0);
   m_txop->SetMaxCw (0);
   m_txop->SetAifsn (1);
-}
-WifiPhyStandard
-MeshWifiInterfaceMac::GetPhyStandard () const
-{
-  return m_standard;
 }
 } // namespace ns3
 

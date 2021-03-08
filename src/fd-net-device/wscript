@@ -28,6 +28,42 @@ def configure(conf):
                                          "File descriptor NetDevice",
                                          True,
                                          "FdNetDevice module enabled")
+
+            # Check if dpdk environment variables are set. Also check if we have correct paths set.
+            env_rte_sdk = os.environ.get('RTE_SDK', '')
+            env_rte_target = os.environ.get('RTE_TARGET', '')
+            have_dpdk_src = env_rte_sdk != '' and env_rte_target != '' and \
+                            os.path.exists(os.path.join(env_rte_sdk, env_rte_target, 'include/rte_eal.h')) and \
+                            os.path.exists(os.path.join(env_rte_sdk, env_rte_target, 'lib/librte_eal.so'))
+
+            have_dpdk_pkg = False
+            if not have_dpdk_src:
+                # Check if libdpdk is installed as package
+                have_dpdk_pkg = conf.check_cfg(package='libdpdk', uselib_store='DPDK',
+                                  args=['--cflags', '--libs'], mandatory=False)
+
+            conf.env['ENABLE_DPDKNETDEV'] = have_dpdk_pkg or have_dpdk_src
+
+            if conf.env['ENABLE_DPDKNETDEV']:
+                # Set DPDK Lib Mode. pkg if the package if installed or src if built from source.
+                dpdk_lib_mode = 'pkg' if have_dpdk_pkg else 'src'
+                conf.env.append_value('DPDK_LIB_MODE', [dpdk_lib_mode])
+                conf.env.append_value('DEFINES', ['HAVE_DPDK_USER_H'])
+                if have_dpdk_pkg:
+                    conf.report_optional_feature("DpdkNetDevice",
+                                                "DPDK NetDevice",
+                                                True,
+                                                "DPDKNetDevice module enabled (from libdpdk)")
+                else:
+                    conf.report_optional_feature("DpdkNetDevice",
+                                                "DPDK NetDevice",
+                                                True,
+                                                "DPDKNetDevice module enabled (from source)")
+            else:
+                conf.report_optional_feature("DpdkNetDevice",
+                                            "DPDK NetDevice",
+                                            False,
+                                            "libdpdk not found, $RTE_SDK and/or $RTE_TARGET environment variable not set or incorrect")
         else:
             conf.report_optional_feature("FdNetDevice", 
                                          "File descriptor NetDevice",
@@ -44,13 +80,26 @@ def configure(conf):
         blddir = os.path.abspath(os.path.join(conf.bldnode.abspath(), conf.variant))
         dir = os.path.abspath(os.path.join(blddir, "src/fd-net-device"))
         conf.env.append_value('NS3_EXECUTABLE_PATH', dir)
+
+        if conf.env['ENABLE_DPDKNETDEV']:
+            if 'src' in conf.env['DPDK_LIB_MODE']:
+                dpdk_build = os.path.join(os.environ['RTE_SDK'], os.environ['RTE_TARGET'])
+                conf.env.append_value('CXXFLAGS', ['-I' + os.path.join(dpdk_build, 'include'), '-mssse3'])
+                conf.env.append_value('LINKFLAGS', ['-I' + os.path.join(dpdk_build, 'include')])
+                conf.env.append_value('LINKFLAGS', ['-L' + os.path.join(dpdk_build, 'lib')])
+                conf.env.SHLIB_MARKER += ',-lrte_eal,-lrte_ethdev,-lrte_pmd_virtio,-lrte_pmd_e1000,-lrte_pmd_ixgbe,-lrte_pmd_i40e,-lnuma,-ldl,-lrte_mempool,-lrte_mbuf,-lrte_ring,-lrte_kvargs,-lrte_net'
+        else:
+            # Add this module to the list of modules that won't be built
+            # if they are enabled.
+            conf.env['MODULES_NOT_BUILT'].append('dpdk-net-device')
+
     else:
         # Add this module to the list of modules that won't be built
         # if they are enabled.
         conf.env['MODULES_NOT_BUILT'].append('fd-net-device')
 
     # Next, check for whether specialized FdNetDevice features are enabled
-    # such as tap device support, raw socket support, and planetlab
+    # such as tap device support, raw socket support, netmap support, and planetlab
     
     if conf.env['ENABLE_FDNETDEV']:
         conf.env['ENABLE_TAP'] = conf.check_nonfatal(
@@ -83,6 +132,22 @@ def configure(conf):
                 "Emulation FdNetDevice", 
                 False,
                 "needs netpacket/packet.h")
+
+        # Enable use of netmap EMU support
+        conf.env['ENABLE_NETMAP_EMU'] = conf.check_nonfatal(
+           header_name='net/netmap_user.h',
+           define_name='HAVE_NETMAP_USER_H') and have_sysioctl and have_netif
+
+        if conf.env['ENABLE_NETMAP_EMU']:
+            conf.report_optional_feature("NetmapFdNetDevice",
+                "Netmap emulation FdNetDevice",
+                True,
+                "Netmap emulation support enabled")
+        else:
+            conf.report_optional_feature("NetmapFdNetDevice",
+                "Netmap emulation FdNetDevice",
+                False,
+                "needs net/netmap_user.h")
 
         # Enable use of PlanetLab TAP helper
         # TODO: How to validate 
@@ -141,6 +206,29 @@ def build(bld):
         module.env.append_value("DEFINES", 
            "TAP_DEV_CREATOR=\"%s\"" % (creator.target,))
 
+    if bld.env['ENABLE_DPDKNETDEV']:
+        module.use.append('DPDK')
+        module.source.extend([
+            'helper/dpdk-net-device-helper.cc',
+            'model/dpdk-net-device.cc'
+        ])
+        headers.source.extend([
+            'helper/dpdk-net-device-helper.h',
+            'model/dpdk-net-device.h'
+        ])
+        if 'src' in bld.env['DPDK_LIB_MODE']:
+            # Add DPDK libraries to library path
+            dpdk_build = os.path.join(os.environ['RTE_SDK'], os.environ['RTE_TARGET'])
+            if os.environ.get('LD_LIBRARY_PATH', '') == '':
+                os.environ['LD_LIBRARY_PATH'] = os.path.join(dpdk_build, 'lib')
+            else:
+                os.environ['LD_LIBRARY_PATH'] += ':' + os.path.join(dpdk_build, 'lib')
+            # Add $RTE_SDK/usertools to PATH env
+            if os.environ.get('PATH', '') == '':
+                os.environ['PATH'] = os.path.join(os.environ['RTE_SDK'], 'usertools')
+            else:
+                os.environ['PATH'] += ':' + os.path.join(os.environ['RTE_SDK'], 'usertools')
+
     if bld.env['ENABLE_EMU']:
         module.source.extend([
             'helper/emu-fd-net-device-helper.cc',
@@ -159,6 +247,27 @@ def build(bld):
 
         module.env.append_value("DEFINES", 
            "RAW_SOCK_CREATOR=\"%s\"" % (creator.target,))
+
+    if bld.env['ENABLE_NETMAP_EMU']:
+        module.source.extend([
+            'model/netmap-net-device.cc',
+            'helper/netmap-net-device-helper.cc',
+        ])
+
+        headers.source.extend([
+            'model/netmap-net-device.h',
+            'helper/netmap-net-device-helper.h',
+        ])
+
+        creator = bld.create_suid_program('netmap-device-creator')
+        creator.source = [
+           'helper/netmap-device-creator.cc',
+           'helper/encode-decode.cc',
+           'helper/creator-utils.cc',
+        ]
+
+        module.env.append_value("DEFINES",
+           "NETMAP_DEV_CREATOR=\"%s\"" % (creator.target,))
 
     if bld.env['ENABLE_PLANETLAB']:
         module.source.extend([

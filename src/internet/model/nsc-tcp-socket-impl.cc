@@ -18,7 +18,7 @@
  */
 
 #define NS_LOG_APPEND_CONTEXT                                   \
-  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << "] "; } 
+  if (m_node) { std::clog << Simulator::Now ().As (Time::S) << " [node " << m_node->GetId () << "] "; } 
 
 #include "ns3/node.h"
 #include "ns3/inet-socket-address.h"
@@ -456,7 +456,9 @@ NscTcpSocketImpl::NSCWakeup ()
 }
 
 Ptr<Packet>
-NscTcpSocketImpl::Recv (uint32_t maxSize, uint32_tNS_LOG_FUNCTION (this)ON_NOARGS ();
+NscTcpSocketImpl::Recv (uint32_t maxSize, uint32_t flags)
+{
+  NS_LOG_FUNCTION (this << maxSize << flags);
   if (m_deliveryQueue.empty () )
     {
       m_errno = ERROR_AGAIN;

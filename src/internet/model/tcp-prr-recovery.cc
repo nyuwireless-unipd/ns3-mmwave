@@ -102,7 +102,14 @@ TcpPrrRecovery::DoRecovery (Ptr<TcpSocketState> tcb, uint32_t deliveredBytes)
         }
       else if (m_reductionBoundMode == SSRB)
         {
-          limit = std::max (m_prrDelivered - m_prrOut, deliveredBytes) + tcb->m_segmentSize;
+          if (tcb->m_isRetransDataAcked)
+            {
+              limit = std::max (m_prrDelivered - m_prrOut, deliveredBytes) + tcb->m_segmentSize;
+            }
+          else
+            {
+              limit = deliveredBytes;
+            }
         }
       sendCount = std::min (limit, static_cast<int> (tcb->m_ssThresh - tcb->m_bytesInFlight));
     }
@@ -117,7 +124,6 @@ void
 TcpPrrRecovery::ExitRecovery (Ptr<TcpSocketState> tcb)
 {
   NS_LOG_FUNCTION (this << tcb);
-  tcb->m_cWnd = tcb->m_ssThresh.Get ();
   tcb->m_cWndInfl = tcb->m_cWnd;
 }
 

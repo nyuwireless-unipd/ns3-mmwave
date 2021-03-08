@@ -111,9 +111,9 @@ public:
  * - CA_DISORDER
  * - CA_RECOVERY
  * - CA_LOSS
+ * - CA_CWR
  *
- * Another one (CA_CWR) is present but not used. For more information, see
- * the TcpCongState_t documentation.
+ * For more information, see the TcpCongState_t documentation.
  *
  * Congestion control interface
  * ---------------------------
@@ -318,6 +318,11 @@ public:
   uint32_t GetRetxThresh (void) const { return m_retxThresh; }
 
   /**
+   * \brief Callback pointer for pacing rate trace chaining
+   */
+  TracedCallback<DataRate, DataRate>  m_pacingRateTrace;
+
+  /**
    * \brief Callback pointer for cWnd trace chaining
    */
   TracedCallback<uint32_t, uint32_t> m_cWndTrace;
@@ -361,6 +366,13 @@ public:
    * \brief Callback pointer for RTT trace chaining
    */
   TracedCallback<Time, Time> m_lastRttTrace;
+
+  /**
+   * \brief Callback function to hook to TcpSocketState pacing rate
+   * \param oldValue old pacing rate value
+   * \param newValue new pacing rate value
+   */
+  void UpdatePacingRateTrace (DataRate oldValue, DataRate newValue);
 
   /**
    * \brief Callback function to hook to TcpSocketState congestion window
@@ -546,6 +558,18 @@ public:
    * \param useEcn Mode of ECN to use.
    */
   void SetUseEcn (TcpSocketState::UseEcn_t useEcn);
+
+  /**
+   * \brief Enable or disable pacing
+   * \param pacing Boolean to enable or disable pacing
+   */
+  void SetPacingStatus (bool pacing);
+
+  /**
+   * \brief Enable or disable pacing of the initial window
+   * \param pacing Boolean to enable or disable pacing of the initial window
+   */
+  void SetPaceInitialWindow (bool paceWindow);
 
   // Necessary implementations of null functions from ns3::Socket
   virtual enum SocketErrno GetErrno (void) const;    // returns m_errno
@@ -1021,6 +1045,13 @@ protected:
   void DupAck (uint32_t currentDelivered);
 
   /**
+   * \brief Enter CA_CWR state upon receipt of an ECN Echo
+   *
+   * \param currentDelivered Currently (S)ACKed bytes
+   */
+  void EnterCwr (uint32_t currentDelivered);
+
+  /**
    * \brief Enter the CA_RECOVERY, and retransmit the head
    *
    * \param currentDelivered Currently (S)ACKed bytes
@@ -1177,6 +1208,19 @@ protected:
    * \brief Notify Pacing
    */
   void NotifyPacingPerformed (void);
+
+  /**
+   * \brief Return true if packets in the current window should be paced
+   * \return true if pacing is currently enabled
+   */
+  bool IsPacingEnabled (void) const;
+
+  /**
+   * \brief Dynamically update the pacing rate
+   *
+   * \param tcb internal congestion state
+   */
+  void UpdatePacingRate (void);
 
   /**
    * \brief Add Tags for the Socket

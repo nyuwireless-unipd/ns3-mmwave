@@ -592,12 +592,36 @@ protected:
   void SetInitialCwnd (SocketWho who, uint32_t initialCwnd);
 
   /**
+   * \brief Forcefully set the delayed acknowledgement count
+   *
+   * \param who socket to force
+   * \param count value of delayed ACKs
+   */
+  void SetDelAckMaxCount (SocketWho who, uint32_t count);
+
+  /**
    * \brief Forcefully set the ECN mode of use
    *
    * \param who socket to force
    * \param useEcn Value representing the mode of ECN usage requested
    */
   void SetUseEcn (SocketWho who, TcpSocketState::UseEcn_t useEcn);
+
+  /**
+   * \brief Enable or disable pacing in the TCP socket
+   * 
+   * \param who socket
+   * \param pacing Boolean to enable or disable pacing
+   */
+  void SetPacingStatus (SocketWho who, bool pacing);
+
+  /**
+   * \brief Enable or disable pacing of the initial window
+   * 
+   * \param who socket
+   * \param pacing Boolean to enable or disable pacing of initial window
+   */
+  void SetPaceInitialWindow (SocketWho who, bool paceWindow);
 
   /**
    * \brief Forcefully set the initial ssthresh

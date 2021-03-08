@@ -162,7 +162,8 @@ LteUeRrc::LteUeRrc ()
     m_hasReceivedSib2 (false),
     m_csgWhiteList (0),
     m_ncRaStarted (true),
-    m_numberOfComponentCarriers (MIN_NO_CC)
+    m_numberOfComponentCarriers (MIN_NO_CC),
+    m_numberOfMmWaveComponentCarriers (MIN_NO_MMW_CC)
 {
   NS_LOG_FUNCTION (this);
   m_cphySapUser.push_back (new MemberLteUeCphySapUser<LteUeRrc> (this));

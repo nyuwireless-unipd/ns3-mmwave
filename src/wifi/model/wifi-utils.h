@@ -66,16 +66,6 @@ double WToDbm (double w);
  */
 double RatioToDb (double ratio);
 /**
- * \param frequency the frequency to check
- * \return whether frequency is in the 2.4 GHz band
- */
-bool Is2_4Ghz (double frequency);
-/**
- * \param frequency the frequency to check
- * \return whether frequency is in the 5 GHz band
- */
-bool Is5Ghz (double frequency);
-/**
  * Convert the guard interval to nanoseconds based on the WifiMode.
  *
  * \param mode the WifiMode
@@ -192,6 +182,34 @@ uint32_t GetSize (Ptr<const Packet> packet, const WifiMacHeader *hdr, bool isAmp
  * \return the maximum PPDU duration, if defined, and zero otherwise
  */
 Time GetPpduMaxTime (WifiPreamble preamble);
+
+/**
+ * Return whether the preamble is a HT format preamble.
+ *
+ * \param preamble the preamble type
+ *
+ * \return true if the preamble is a HT format preamble,
+ *         false otherwise
+ */
+bool IsHt (WifiPreamble preamble);
+/**
+ * Return whether the preamble is a VHT format preamble.
+ *
+ * \param preamble the preamble type
+ *
+ * \return true if the preamble is a VHT format preamble,
+ *         false otherwise
+ */
+bool IsVht (WifiPreamble preamble);
+/**
+ * Return whether the preamble is a HE format preamble.
+ *
+ * \param preamble the preamble type
+ *
+ * \return true if the preamble is a HE format preamble,
+ *         false otherwise
+ */
+bool IsHe (WifiPreamble preamble);
 
 /// Size of the space of sequence numbers
 const uint16_t SEQNO_SPACE_SIZE = 4096;

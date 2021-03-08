@@ -62,12 +62,19 @@ NS_LOG_COMPONENT_DEFINE ("EmuFdNetDeviceHelper");
 EmuFdNetDeviceHelper::EmuFdNetDeviceHelper ()
 {
   m_deviceName = "undefined";
+  m_hostQdiscBypass = false;
 }
 
 void
 EmuFdNetDeviceHelper::SetDeviceName (std::string deviceName)
 {
   m_deviceName = deviceName;
+}
+
+void
+EmuFdNetDeviceHelper::HostQdiscBypass (bool hostQdiscBypass)
+{
+  m_hostQdiscBypass = hostQdiscBypass;
 }
 
 std::string
@@ -140,6 +147,23 @@ EmuFdNetDeviceHelper::SetFileDescriptor (Ptr<FdNetDevice> device) const
       NS_FATAL_ERROR ("EmuFdNetDeviceHelper::SetFileDescriptor (): Can't get interface flags");
     }
 
+  if (m_hostQdiscBypass)
+    {
+#ifdef PACKET_QDISC_BYPASS
+      static const int32_t sock_qdisc_bypass = 1;
+      int32_t sock_qdisc_ret = setsockopt (fd, SOL_PACKET, PACKET_QDISC_BYPASS, &sock_qdisc_bypass,
+                                           sizeof (sock_qdisc_bypass));
+
+      if (sock_qdisc_ret == -1)
+        {
+          NS_LOG_ERROR ("Cannot use the qdisc bypass option");
+        }
+#else
+      // PACKET_QDISC_BYPASS is defined since Linux 3.14
+      NS_LOG_ERROR ("PACKET_QDISC_BYPASS undefined; cannot use the qdisc bypass option");
+#endif
+    }
+
   //
   // This device only works if the underlying interface is up in promiscuous
   // mode.  We could have turned it on in the socket creator, but the situation
@@ -173,7 +197,7 @@ EmuFdNetDeviceHelper::SetFileDescriptor (Ptr<FdNetDevice> device) const
 
   // Set the MTU of the device to the mtu of the associated network interface
   struct ifreq ifr2;
-  
+
   bzero (&ifr2, sizeof (ifr2));
   strcpy (ifr2.ifr_name, m_deviceName.c_str ());
 
@@ -184,7 +208,7 @@ EmuFdNetDeviceHelper::SetFileDescriptor (Ptr<FdNetDevice> device) const
     {
       NS_FATAL_ERROR ("FdNetDevice::SetFileDescriptor (): Can't ioctl SIOCGIFMTU");
     }
- 
+
   close (mtufd);
   device->SetMtu (ifr2.ifr_mtu);
 }

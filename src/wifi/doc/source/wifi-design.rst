@@ -20,13 +20,15 @@ on the IEEE 802.11 standard [ieee80211]_. We will go into more detail below but 
 |ns3| provides models for these aspects of 802.11:
 
 * basic 802.11 DCF with **infrastructure** and **adhoc** modes
-* **802.11a**, **802.11b**, **802.11g**, **802.11n** (both 2.4 and 5 GHz bands), **802.11ac** and **802.11ax** (both 2.4 and 5 GHz bands) physical layers
+* **802.11a**, **802.11b**, **802.11g**, **802.11n** (both 2.4 and 5 GHz bands), **802.11ac** and **802.11ax** (2.4, 5 and 6 GHz bands) physical layers
 * **MSDU aggregation** and **MPDU aggregation** extensions of 802.11n, and both can be combined together (two-level aggregation)
 * QoS-based EDCA and queueing extensions of **802.11e**
 * the ability to use different propagation loss models and propagation delay models,
   please see the chapter on :ref:`Propagation` for more detail
+* packet error models and frame detection models that have been validated
+  against link simulations and other references
 * various rate control algorithms including **Aarf, Arf, Cara, Onoe, Rraa,
-  ConstantRate, and Minstrel**
+  ConstantRate, Minstrel and Minstrel-HT**
 * 802.11s (mesh), described in another chapter
 * 802.11p and WAVE (vehicular), described in another chapter
 
@@ -135,11 +137,11 @@ are typically three main components to packet reception:
 
 |ns3| offers users a choice between two physical layer models, with a
 base interface defined in the ``ns3::WifiPhy`` class.  The YansWifiPhy
-class has been the only physical layer model until recently; the model
-implemented there is described in a paper entitled
+class implements a simple physical layer model, which is described
+in a paper entitled
 `Yet Another Network Simulator <https://dl.acm.org/doi/pdf/10.1145/1190455.1190467?download=true>`_
 The acronym *Yans* derives from this paper title.  The SpectrumWifiPhy
-class is an alternative implementation based on the Spectrum framework
+class is a more advanced implementation based on the Spectrum framework
 used for other |ns3| wireless models.  Spectrum allows a fine-grained
 frequency decomposition of the signal, and permits scenarios to
 include multiple technologies coexisting on the same channel.
@@ -154,18 +156,18 @@ attempts to summarize compliance with the standard and with behavior
 found in practice.
 
 The physical layer and channel models operate on a per-packet basis, with
-no frequency-selective propagation or interference effects when using
+no frequency-selective propagation nor interference effects when using
 the default YansWifiPhy model.  Directional antennas are also not
 supported at this time.  For additive white Gaussian noise (AWGN)
 scenarios, or wideband interference scenarios, performance is governed
 by the application of analytical models (based on modulation and factors
 such as channel width) to the received signal-to-noise ratio, where noise
 combines the effect of thermal noise and of interference from other Wi-Fi
-packets.  Moreover, interference from other technologies is not modeled.
+packets.  Interference from other wireless technologies is only modeled
+when the SpectrumWifiPhy is used.
 The following details pertain to the physical layer and channel models:
 
-* 802.11ax MU-OFDMA is not supported
-* 802.11ax only supports SU PPDU format
+* 802.11ax OFDMA is not supported (but some code changes are progressively being added)
 * 802.11ac/ax MU-MIMO is not supported, and no more than 4 antennas can be configured
 * 802.11n/ac/ax beamforming is not supported
 * 802.11n RIFS is not supported
@@ -174,6 +176,8 @@ The following details pertain to the physical layer and channel models:
 * Authentication and encryption are missing
 * Processing delays are not modeled
 * The current implementation assumes that secondary channels are always higher than primary channels
+* Channel bonding implementation only supports the use of the configured channel width
+  and does not perform CCA on secondary channels
 * Cases where RTS/CTS and ACK are transmitted using HT/VHT/HE formats are not supported
 * Energy consumption model does not consider MIMO
 
@@ -192,7 +196,7 @@ Design Details
 
 The remainder of this section is devoted to more in-depth design descriptions
 of some of the Wi-Fi models.  Users interested in skipping to the section
-on usage of the wifi module (User Documentation) may do so at this point.
+on usage of the wifi module (:ref:`User Documentation<sec-wifi-user-doc>`) may do so at this point.
 We organize these more detailed sections from the bottom-up, in terms of
 layering, by describing the channel and PHY models first, followed by
 the MAC models.
@@ -207,9 +211,8 @@ mixed technologies on the same channel, or frequency dependent effects,
 the SpectrumWifiPhy is more appropriate.  The two frameworks are very
 similarly configured.
 
-The SpectrumWifiPhy framework uses the ``Spectrum`` channel
-framework, which is not documented herein but in the Spectrum module
-documentation.
+The SpectrumWifiPhy framework uses the :ref:`sec-spectrum-module` channel
+framework.
 
 The YansWifiChannel is the only concrete channel model class in 
 the |ns3| wifi module.  The 
@@ -227,7 +230,7 @@ delay between the positions of the devices).
 
 Only objects of ``ns3::YansWifiPhy`` may be attached to a 
 ``ns3::YansWifiChannel``; therefore, objects modeling other 
-(interfering) technologies such as LTE are not allowed.    Furthermore,
+(interfering) technologies such as LTE are not allowed. Furthermore,
 packets from different channels do not interact; if a channel is logically
 configured for e.g. channels 5 and 6, the packets do not cause 
 adjacent channel interference (even if their channel numbers overlap).
@@ -237,12 +240,12 @@ WifiPhy and related models
 
 The ``ns3::WifiPhy`` is an abstract base class representing the 802.11
 physical layer functions.  Packets passed to this object (via a
-``SendPacket()`` method) are sent over a channel object, and
+``Send()`` method) are sent over a channel object, and
 upon reception, the receiving PHY object decides (based on signal power
 and interference) whether the packet was successful or not.  This class
 also provides a number of callbacks for notifications of physical layer
 events, exposes a notion of a state machine that can be monitored for
-MAC-level processes such as carrier sense, and handles sleep/wake models
+MAC-level processes such as carrier sense, and handles sleep/wake/off models
 and energy consumption.  The ``ns3::WifiPhy`` hooks to the ``ns3::MacLow``
 object in the WifiNetDevice.
 
@@ -273,16 +276,17 @@ layer, and allows other objects to hook as *listeners* to monitor PHY
 state.  The main use of listeners is for the MAC layer to know when
 the PHY is busy or not (for transmission and collision avoidance).
 
-The PHY layer can be in one of six states:
+The PHY layer can be in one of seven states:
 
 #. TX: the PHY is currently transmitting a signal on behalf of its associated
    MAC
 #. RX: the PHY is synchronized on a signal and is waiting until it has received
    its last bit to forward it to the MAC.
-#. IDLE: the PHY is not in the TX, RX, or CCA BUSY states.
-#. CCA Busy: the PHY is not in TX or RX state but the measured energy is higher than the energy detection threshold.
+#. IDLE: the PHY is not in the TX, RX, or CCA_BUSY states.
+#. CCA_BUSY: the PHY is not in TX or RX state but the measured energy is higher than the energy detection threshold.
 #. SWITCHING: the PHY is switching channels.
 #. SLEEP: the PHY is in a power save mode and cannot send nor receive frames.
+#. OFF: the PHY is powered off and cannot send nor receive frames.
 
 Packet reception works as follows.  For ``YansWifiPhy``, most of the logic
 is implemented in the ``WifiPhy`` base class.  The ``YansWifiChannel`` calls
@@ -317,8 +321,8 @@ detection event.
 
 The ``StartReceiveHeader ()`` method will check, with a preamble detection
 model, whether the signal is strong enough to be received, and if so,
-an event ``WifiPhy::EndReceive ()`` is scheduled for the end of reception,
-and the PHY is put into the RX state.  Currently, there is only a 
+an event ``WifiPhy::ContinueReceiveHeader ()`` is scheduled for the end of the
+non-HT header and the PHY is put into the CCA_BUSY state. Currently, there is only a
 simple threshold-based preamble detection model in ns-3,
 called ``ThresholdPreambleDetectionModel``.  If there is no preamble detection
 model, the preamble is assumed to have been detected.  
@@ -331,34 +335,25 @@ compared with that of previous releases, so some packet receptions that were
 previously successful will now fail on this check.  More details on the
 modeling behind this change are provided in [lanante2019]_.
 
-In a real system, the ``EndReceive ()`` time would
-not be determined until later when the PHY headers are successfully decoded,
-but this ns-3 model has the available information at the start of the 
-packet to schedule this.  The second event to schedule is 
-``StartReceivePayload ()`` for the time at which the PHY headers
-have been received and the payload is about to start.
+The next event to schedule is ``StartReceivePayload ()`` for the time at which
+the remaining PHY header fields have been received and the payload is about to start.
+This event is scheduled only if the non-HT PHY headers have been successfully received,
+otherwise the reception is aborted and PHY is put either in IDLE state or in CCA_BUSY state,
+depending on whether the measured energy is higher than the energy detection threshold.
 
 The next event at ``StartReceivePayload ()`` checks, using the interference
 helper and error model, whether the header was successfully decoded, and if so,
 a ``PhyRxPayloadBegin`` callback (equivalent to the PHY-RXSTART primitive)
-is triggered.
-The PHY header is often transmitted
-at a lower modulation rate than is the payload.  The portion of the packet
+is triggered. The PHY header is often transmitted
+at a lower modulation rate than is the payload. The portion of the packet
 corresponding to the PHY header is evaluated for probability of error
 based on the observed SNR.  The InterferenceHelper object returns a value
 for "probability of error (PER)" for this header based on the SNR that has
 been tracked by the InterferenceHelper.  The ``YansWifiPhy`` then draws
 a random number from a uniform distribution and compares it against the 
 PER and decides success or failure.  The process is again repeated after 
-the payload has been received (possibly with a different error model 
-applied for the different modulation).  If both the header and payload 
-are successfully received, the packet is passed up to the ``MacLow`` object.  
-
-If the header is determined to have errors, then a "PlcpSuccess" flag is
-set for future reference, but the ``EndReceive ()`` is not cancelled and
-the PHY stays in RX state; upon the ``EndReceive ()`` event, the packet
-will be considered errored in this case regardless of the payload reception,
-based on the PlcpSuccess flag.
+the payload has been received.  If both the header and payload
+are successfully received, the packet is passed up to the ``MacLow`` object.
 
 Even if packet objects received by the PHY are not part of the reception
 process, they are tracked by the InterferenceHelper object for purposes
@@ -381,10 +376,11 @@ the possibility to raise the CCA_BUSY while the overall energy exceeds
 this threshold.
 
 The above describes the case in which the packet is a single MPDU.  For
-more recent Wi-Fi standards using MPDU aggregation, each individual MPDU
-in the aggregate is sent as a single ``ns3::Packet``, and the logic in
-the ``WifiPhy`` is a bit different than the above for handling such 
-MPDUs (MPDUs after the first arrive without a preamble and header).
+more recent Wi-Fi standards using MPDU aggregation, ``StartReceivePayload``
+schedules an event for reception of each individual MPDU (``ScheduleEndOfMpdus``),
+which then forwards each MPDU as they arrive up to MacLow, if the reception
+of the MPDU has been successful. Once the A-MPDU reception is finished,
+MacLow is also notified about the amount of successfully received MPDUs.
 
 InterferenceHelper
 ##################
@@ -402,7 +398,7 @@ model, and the InterferenceHelper breaks the packet into one or more
 of error for a given number of bits from the error model in use.  The
 InterferenceHelper builds an aggregate "probability of error" value
 based on these chunks and their duration, and returns this back to
-the ``YansWifiPhy`` for a reception decision.
+the ``WifiPhy`` for a reception decision.
 
 .. _snir:
 
@@ -439,13 +435,95 @@ Having more TX antennas can be safely ignored for AWGN. The resulting gain is:
   4 x 4       4     0 dB
   ...
 
-ErrorModel
-##########
+ErrorRateModel
+##############
 
-The error models are described in more detail in outside references.  Please refer to [pei80211ofdm]_, [pei80211b]_, [lacage2006yans]_, [Haccoun]_ and [Frenger]_ for a detailed description of the available BER/PER models.
+|ns3| makes a packet error or success decision based on the input received
+SNR of a frame and based on any possible interfering frames that may overlap
+in time; i.e. based on the signal-to-noise (plus interference) ratio, or
+SINR.  The relationship between packet error ratio (PER) and SINR in |ns3|
+is defined by the ``ns3::ErrorRateModel``, of which there are several.
+The PER is a function of the frame's modulation and coding (MCS), its SINR,
+and the specific ErrorRateModel configured for the MCS.
+
+|ns3| has updated its default ErrorRateModel over time.  The current
+(as of ns-3.33 release) model for recent OFDM-based standards (i.e.,
+802.11n/ac/ax), is the ``ns3::TableBasedErrorRateModel``.  The default
+for 802.11a/g is the ``ns3::YansErrorRateModel``, and the default for
+802.11b is the ``ns3::DsssErrorRateModel``.  The error rate model for
+recent standards was updated during the ns-3.33 release cycle (previously,
+it was the ``ns3::NistErrorRateModel``).
+
+The error models are described in more detail in outside references.  The
+current OFDM model is based on work published in [patidar2017]_, using
+link simulations results from the MATLAB WLAN Toolbox, and validated against
+IEEE TGn results [erceg2004]_.  For publications related to other error models,
+please refer to [pei80211ofdm]_, [pei80211b]_, [lacage2006yans]_, [Haccoun]_ and [Frenger]_ for a detailed description of the legacy PER models.
 
 The current |ns3| error rate models are for additive white gaussian
-noise channels (AWGN) only; any potential fast fading effects are not modeled.
+noise channels (AWGN) only; any potential frequency-selective fading
+effects are not modeled.
+
+In summary, there are four error models:
+
+#. ``ns3::TableBasedErrorRateModel``: for OFDM modes and reuses
+   ``ns3::DsssErrorRateModel`` for 802.11b modes.
+   This is the default for 802.11n/ac/ax.
+#. ``ns3::YansErrorRateModel``: for OFDM modes and reuses
+   ``ns3::DsssErrorRateModel`` for 802.11b modes.
+   This is the default for 802.11a/g.
+#. ``ns3::DsssErrorRateModel``:  contains models for 802.11b modes.  The
+   802.11b 1 Mbps and 2 Mbps error models are based on classical modulation
+   analysis.  If GNU Scientific Library (GSL) is installed, the 5.5 Mbps
+   and 11 Mbps from [pursley2009]_ are used for CCK modulation;
+   otherwise, results from a backup MATLAB-based CCK model are used.
+#. ``ns3::NistErrorRateModel``: for OFDM modes and reuses
+   ``ns3::DsssErrorRateModel`` for 802.11b modes.
+
+Users may select either NIST, YANS or Table-based models for OFDM,
+and DSSS will be used in either case for 802.11b.  The NIST model was
+a long-standing default in ns-3 (through release 3.32).
+
+TableBasedErrorRateModel
+########################
+
+The ``ns3::TableBasedErrorRateModel`` has been recently added and is now the |ns3| default
+for 802.11n/ac/ax, while ``ns3::YansErrorRateModel`` is the |ns3| default for 802.11a/g.
+
+Unlike analytical error models based on error bounds, ``ns3::TableBasedErrorRateModel`` contains
+end-to-end link simulation tables (PER vs SNR) for AWGN channels. Since it is infeasible to generate
+such look-up tables for all desired packet sizes and input SNRs, we adopt the recommendation of IEEE P802.11 TGax [porat2016]_ that proposed
+estimating PER for any desired packet length using BCC FEC encoding by extrapolating the results from two reference lengths:
+32 (all lengths less than 400) bytes and 1458 (all lengths greater or equal to 400) bytes respectively.
+In case of LDPC FEC encoding, IEEE P802.11 TGax recommends the use of a single reference length.
+Hence, we provide two tables for BCC and one table for LDPC that are generated using a reliable and publicly
+available commercial link simulator (MATLAB WLAN Toolbox) for each modulation and coding scheme.
+Note that BCC tables are limited to MCS 9. For higher MCSs, the models fall back to the use of the YANS analytical model.
+
+The validation scenario is set as follows:
+
+#. Ideal channel and perfect channel estimation.
+#. Perfect packet synchronization and detection.
+#. Phase tracking, phase correction, phase noise, carrier frequency offset, power amplifier non-linearities etc. are not considered.
+
+Several packets are simulated across the link to obtain PER, the number of packets needed to reliably
+estimate a PER value is computed using the consideration that ratio of the estimation error to the true
+value should be within 10 % with probability 0.95.
+For each SNR value (using 0.2 dB SNR resolution), simulations were run until either a minimum value
+of 400 unsuccessfully decoded packets were observed or a total of 40000 packets were simulated.
+
+The obtained results are very close to original TGn curves as shown in Figure
+:ref:`default-table-based-error-model-validation`
+
+.. _default-table-based-error-model-validation:
+
+.. figure:: figures/default-table-based-error-model-validation.*
+   :scale: 75%
+  
+   *Comparison of table-based OFDM Error Model with TGn results.*
+
+Legacy ErrorRateModels
+######################
 
 The original error rate model was called the ``ns3::YansErrorRateModel`` and
 was based on analytical results.  For 802.11b modulations, the 1 Mbps mode 
@@ -453,7 +531,7 @@ is based on DBPSK. BER is from equation 5.2-69 from [proakis2001]_.
 The 2 Mbps model is based on DQPSK. Equation 8 of [ferrari2004]_.  
 More details are provided in [lacage2006yans]_.
 
-The ``ns3::NistErrorRateModel`` was later added and became the |ns3| default.
+The ``ns3::NistErrorRateModel`` was later added.
 The model was largely aligned with the previous ``ns3::YansErrorRateModel``
 for DSSS modulations 1 Mbps and 2 Mbps, but the 5.5 Mbps and 11 Mbps models
 were re-based on equations (17) and (18) from [pursley2009]_.
@@ -471,21 +549,18 @@ Furthermore, the 5.5 Mbps and 11 Mbps models for 802.11b rely on library
 methods implemented in the GNU Scientific Library (GSL).  The Waf build
 system tries to detect whether the host platform has GSL installed; if so,
 it compiles in the newer models from [pursley2009]_ for 5.5 Mbps and 11 Mbps;
-if not, it uses a backup model derived from Matlab simulations.
+if not, it uses a backup model derived from MATLAB simulations.
 
-As a result, there are three error models:
+The error curves for analytical models are shown to diverge from link simulation results for higher MCS in
+Figure :ref:`error-models-comparison`. This prompted the move to a new error
+model based on link simulations (the default TableBasedErrorRateModel, which
+provides curves close to those depicted by the TGn dashed line).
 
-#. ``ns3::DsssErrorRateModel``:  contains models for 802.11b modes.  The
-   802.11b 1 Mbps and 2 Mbps error models are based on classical modulation
-   analysis.  If GSL is installed, the 5.5 Mbps and 11 Mbps from
-   [pursley2009]_ are used; otherwise, a backup Matlab model is used.
-#. ``ns3::NistErrorRateModel``: is the default for OFDM modes and reuses
-   ``ns3::DsssErrorRateModel`` for 802.11b modes. 
-#. ``ns3::YansErrorRateModel``: is the legacy for OFDM modes and reuses
-   ``ns3::DsssErrorRateModel`` for 802.11b modes. 
+.. _error-models-comparison:
 
-Users should select either Nist or Yans models for OFDM (Nist is default), 
-and Dsss will be used in either case for 802.11b.
+.. figure:: figures/error-models-comparison.*
+
+  *YANS and NIST error model comparison with TGn results*
 
 SpectrumWifiPhy
 ###############
@@ -518,7 +593,7 @@ add their received power to the noise, in the same way that
 unintended Wi-Fi signals (perhaps from a different SSID or arriving
 late from a hidden node) are added to the noise.
 
-Unlike YansWifiPhy, where there are no foreign signals, CCA BUSY state
+Unlike YansWifiPhy, where there are no foreign signals, CCA_BUSY state
 will be raised for foreign signals that are higher than CcaEdThreshold
 (see section 16.4.8.5 in the 802.11-2012 standard for definition of
 CCA Mode 1).  The attribute ``WifiPhy::CcaEdThreshold`` therefore
@@ -697,6 +772,7 @@ Algorithms found in real devices:
 * ``OnoeWifiManager``
 * ``ConstantRateWifiManager``
 * ``MinstrelWifiManager``
+* ``MinstrelHtWifiManager``
 
 Algorithms in literature:
 
@@ -759,14 +835,22 @@ mode-specific SNR/BER curves.
 
 Available attribute:
 
-* BerThreshold (default 10e-6): The maximum Bit Error Rate
+* BerThreshold (default 1e-6): The maximum Bit Error Rate
   that is used to calculate the SNR threshold for each mode.
+
+Note that the BerThreshold has to be low enough to select a robust enough MCS
+(or mode) for a given SNR value, without being too restrictive on the target BER.
+Indeed we had noticed that the previous default value (i.e. 1e-5) led to the
+selection of HE MCS-11 which resulted in high PER.
+With this new default value (i.e. 1e-6), a HE STA moving away from a HE AP has
+smooth throughput decrease (whereas with 1e-5, better performance was seen further
+away, which is not "ideal").
 
 MinstrelWifiManager
 ###################
 
 The minstrel rate control algorithm is a rate control algorithm originated from
-madwifi project.  It is currently the default rate control algorithm of the Linux kernel.
+madwifi project. It is currently the default rate control algorithm of the Linux kernel.
 
 Minstrel keeps track of the probability of successfully sending a frame of each available rate.
 Minstrel then calculates the expected throughput by multiplying the probability with the rate.
@@ -777,6 +861,11 @@ In minstrel, roughly 10 percent of transmissions are sent at the so-called looka
 The goal of the lookaround rate is to force minstrel to try higher rate than the currently used rate.
 
 For a more detailed information about minstrel, see [linuxminstrel]_.
+
+MinstrelHtWifiManager
+#####################
+
+This is the extension of minstrel for 802.11n/ac/ax.
 
 Ack policy selection
 ####################
@@ -868,4 +957,3 @@ Depending on your goal, the common tasks are (in no particular order):
   ``Txop`` or ``QosTxop`` while RTS/CTS transaction is handled by ``MacLow``.
 * Modifying or creating new rate control algorithms can be done by creating a new child class of Wi-Fi remote
   station manager or modifying the existing ones.
-

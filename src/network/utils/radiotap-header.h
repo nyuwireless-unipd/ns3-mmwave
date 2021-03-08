@@ -22,7 +22,6 @@
 #ifndef RADIOTAP_HEADER_H
 #define RADIOTAP_HEADER_H
 
-
 #include <ns3/header.h>
 
 namespace ns3 {
@@ -325,21 +324,6 @@ public:
   };
 
   /**
-   * @brief HE data3.
-   */
-  enum HeData3
-  {
-    HE_DATA3_BSS_COLOR    = 0x003f, /**< BSS Color */
-    HE_DATA3_BEAM_CHANGE  = 0x0040, /**< Beam Change */
-    HE_DATA3_UL_DL        = 0x0080, /**< UL/DL */
-    HE_DATA3_DATA_MCS     = 0x0f00, /**< data MCS */
-    HE_DATA3_DATA_DCM     = 0x1000, /**< data DCM */
-    HE_DATA3_CODING       = 0x2000, /**< Coding */
-    HE_DATA3_LDPC_XSYMSEG = 0x4000, /**< LDPC extra symbol segment */
-    HE_DATA3_STBC         = 0x8000, /**< STBC */
-  };
-
-  /**
    * @brief HE data5.
    */
   enum HeData5
@@ -369,9 +353,83 @@ public:
    * @param data1 The data1 field.
    * @param data2 The data2 field.
    * @param data3 The data3 field.
+   * @param data4 The data4 field.
    * @param data5 The data5 field.
+   * @param data6 The data6 field.
    */
-  void SetHeFields (uint16_t data1, uint16_t data2, uint16_t data3, uint16_t data5);
+  void SetHeFields (uint16_t data1,
+                    uint16_t data2,
+                    uint16_t data3,
+                    uint16_t data4,
+                    uint16_t data5,
+                    uint16_t data6);
+
+  /**
+   * @brief HE MU flags1.
+   */
+  enum HeMuFlags1
+  {
+    HE_MU_FLAGS1_SIGB_MCS                = 0x000f, /**< SIG-B MCS (from SIG-A) */
+    HE_MU_FLAGS1_SIGB_MCS_KNOWN          = 0x0010, /**< SIG-B MCS known */
+    HE_MU_FLAGS1_SIGB_DCM                = 0x0020, /**< SIG-B DCM (from SIG-A) */
+    HE_MU_FLAGS1_SIGB_DCM_KNOWN          = 0x0040, /**< SIG-B DCM known */
+    HE_MU_FLAGS1_CH2_CENTER_26T_RU_KNOWN = 0x0080, /**< (Channel 2) Center 26-tone RU bit known */
+    HE_MU_FLAGS1_CH1_RUS_KNOWN           = 0x0100, /**< Channel 1 RUs known (which depends on BW) */
+    HE_MU_FLAGS1_CH2_RUS_KNOWN           = 0x0200, /**< Channel 2 RUs known (which depends on BW) */
+    HE_MU_FLAGS1_CH1_CENTER_26T_RU_KNOWN = 0x1000, /**< (Channel 1) Center 26-tone RU bit known */
+    HE_MU_FLAGS1_CH1_CENTER_26T_RU       = 0x2000, /**< (Channel 1) Center 26-tone RU value */
+    HE_MU_FLAGS1_SIGB_COMPRESSION_KNOWN  = 0x4000, /**< SIG-B Compression known */
+    HE_MU_FLAGS1_NUM_SIGB_SYMBOLS_KNOWN  = 0x8000, /**< # of HE-SIG-B Symbols/MU-MIMO Users known */
+  };
+
+  /**
+   * @brief HE MU flags2.
+   */
+  enum HeMuFlags2
+  {
+    HE_MU_FLAGS2_BW_FROM_SIGA                                 = 0x0003, /**< Bandwidth from Bandwidth field in HE-SIG-A */
+    HE_MU_FLAGS2_BW_FROM_SIGA_KNOWN                           = 0x0004, /**< Bandwidth from Bandwidth field in HE-SIG-A known */
+    HE_MU_FLAGS2_SIGB_COMPRESSION_FROM_SIGA                   = 0x0008, /**< SIG-B compression from SIG-A */
+    HE_MU_FLAGS2_NUM_SIGB_SYMBOLS_FROM_SIGA                   = 0x00f0, /**< # of HE-SIG-B Symbols - 1 or # of MU-MIMO Users - 1 from SIG-A */
+    HE_MU_FLAGS2_PREAMBLE_PUNCTURING_FROM_SIGA_BW_FIELD       = 0x0300, /**< Preamble puncturing from Bandwidth field in HE-SIG-A */
+    HE_MU_FLAGS2_PREAMBLE_PUNCTURING_FROM_SIGA_BW_FIELD_KNOWN = 0x0400, /**< Preamble puncturing from Bandwidth field in HE-SIG-A known */
+    HE_MU_FLAGS2_CH2_CENTER_26T_RU                            = 0x0800, /**< (Channel 2) Center 26-tone RU value */
+  };
+
+  /**
+   * @brief Set the HE MU fields
+   *
+   * @param flags1 The flags1 field.
+   * @param flags2 The flags2 field.
+   * @param ruChannel1 The RU_channel1 field.
+   * @param ruChannel2 The RU_channel2 field.
+   */
+  void SetHeMuFields (uint16_t flags1, uint16_t flags2, const std::array<uint8_t, 4> &ruChannel1, const std::array<uint8_t, 4> &ruChannel2);
+
+  /**
+   * @brief HE MU per_user_known.
+   */
+  enum HeMuPerUserKnown
+  {
+    HE_MU_PER_USER_POSITION_KNOWN              = 0x01, /**< User field position known */
+    HE_MU_PER_USER_STA_ID_KNOWN                = 0x02, /**< STA-ID known */
+    HE_MU_PER_USER_NSTS_KNOWN                  = 0x04, /**< NSTS known */
+    HE_MU_PER_USER_TX_BF_KNOWN                 = 0x08, /**< Tx Beamforming known */
+    HE_MU_PER_USER_SPATIAL_CONFIGURATION_KNOWN = 0x10, /**< Spatial Configuration known */
+    HE_MU_PER_USER_MCS_KNOWN                   = 0x20, /**< MCS known */
+    HE_MU_PER_USER_DCM_KNOWN                   = 0x40, /**< DCM known */
+    HE_MU_PER_USER_CODING_KNOWN                = 0x80, /**< Coding known */
+  };
+
+  /**
+   * @brief Set the HE MU per user fields
+   *
+   * @param perUser1 The per_user_1 field.
+   * @param perUser2 The per_user_2 field.
+   * @param perUserPosition The per_user_position field.
+   * @param perUserKnown The per_user_known field.
+   */
+  void SetHeMuPerUserFields (uint16_t per_user_1, uint16_t per_user_2, uint8_t perUserPosition, uint8_t perUserKnown);
 
 private:
   /**
@@ -398,7 +456,11 @@ private:
     RADIOTAP_AMPDU_STATUS      = 0x00100000,
     RADIOTAP_VHT               = 0x00200000,
     RADIOTAP_HE                = 0x00800000,
-    RADIOTAP_EXT               = 0x10000000
+    RADIOTAP_HE_MU             = 0x01000000,
+    RADIOTAP_HE_MU_OTHER_USER  = 0x02000000,
+    RADIOTAP_ZERO_LEN_PSDU     = 0x04000000,
+    RADIOTAP_LSIG              = 0x08000000,
+    RADIOTAP_EXT               = 0x80000000
   };
 
   uint16_t m_length;        //!< entire length of radiotap data + header
@@ -435,7 +497,19 @@ private:
   uint16_t m_heData1;      //!< HE data1 field.
   uint16_t m_heData2;      //!< HE data2 field.
   uint16_t m_heData3;      //!< HE data3 field.
+  uint16_t m_heData4;      //!< HE data4 field.
   uint16_t m_heData5;      //!< HE data5 field.
+  uint16_t m_heData6;      //!< HE data6 field.
+
+  uint8_t m_heMuPad;       //!< HE MU padding.
+  uint16_t m_heMuFlags1;   //!< HE MU flags1 field.
+  uint16_t m_heMuFlags2;   //!< HE MU flags2 field.
+
+  uint8_t m_heMuOtherUserPad;    //!< HE MU other user padding.
+  uint16_t m_heMuPerUser1;       //!< HE MU per_user_1 field.
+  uint16_t m_heMuPerUser2;       //!< HE MU per_user_2 field.
+  uint8_t m_heMuPerUserPosition; //!< HE MU per_user_position field.
+  uint8_t m_heMuPerUserKnown;    //!< HE MU per_user_known field.
 };
 
 } // namespace ns3

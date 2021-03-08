@@ -315,9 +315,6 @@ tagged. However, if the next layer down inserts an IPv4 header, this ByteTag
 will not cover those bytes.  The converse is true for the PacketTag; it covers a
 packet despite the operations on it.
 
-PacketTags are limited in size to 20 bytes. This is a modifiable compile-time
-constant in ``src/network/model/packet-tag-list.h``. ByteTags have no such restriction.
-
 Each tag type must subclass ``ns3::Tag``, and only one instance of
 each Tag type may be in each tag list. Here are a few differences in the
 behavior of packet tags and byte tags.
@@ -338,10 +335,6 @@ behavior of packet tags and byte tags.
   once a byte tag is added, it can only be removed by stripping all byte tags
   from the packet. Removing one of possibly multiple byte tags is not supported
   by the current API.  
-
-As of *ns-3.5* and later, Tags are not serialized and deserialized to a buffer when
-``Packet::Serialize ()`` and ``Packet::Deserialize ()`` are called; this is an
-open bug.
 
 If a user wants to take an existing packet object and reuse it as a new packet,
 he or she should remove all byte tags and packet tags before doing so. An

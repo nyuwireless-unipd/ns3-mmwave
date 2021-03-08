@@ -28,7 +28,6 @@
 #include "mac-low.h"
 #include "msdu-aggregator.h"
 #include "mpdu-aggregator.h"
-#include "wifi-utils.h"
 #include "mgt-headers.h"
 #include "amsdu-subframe-header.h"
 #include "wifi-net-device.h"
@@ -166,7 +165,7 @@ RegularWifiMac::GetHtCapabilities (void) const
       bool greenfieldSupported = htConfiguration->GetGreenfieldSupported ();
       bool sgiSupported = htConfiguration->GetShortGuardIntervalSupported ();
       capabilities.SetHtSupported (1);
-      capabilities.SetLdpc (0);
+      capabilities.SetLdpc (htConfiguration->GetLdpcSupported ());
       capabilities.SetSupportedChannelWidth (m_phy->GetChannelWidth () >= 40);
       capabilities.SetShortGuardInterval20 (sgiSupported);
       capabilities.SetShortGuardInterval40 (m_phy->GetChannelWidth () >= 40 && sgiSupported);
@@ -259,7 +258,7 @@ RegularWifiMac::GetVhtCapabilities (void) const
       // The maximum A-MPDU length in VHT capabilities elements ranges from 2^13-1 to 2^20-1
       capabilities.SetMaxAmpduLength (std::min (std::max (maxAmpduLength, 8191u), 1048575u));
 
-      capabilities.SetRxLdpc (0);
+      capabilities.SetRxLdpc (htConfiguration->GetLdpcSupported ());
       capabilities.SetShortGuardIntervalFor80Mhz ((m_phy->GetChannelWidth () == 80) && sgiSupported);
       capabilities.SetShortGuardIntervalFor160Mhz ((m_phy->GetChannelWidth () == 160) && sgiSupported);
       uint8_t maxMcs = 0;
@@ -311,22 +310,24 @@ RegularWifiMac::GetHeCapabilities (void) const
   HeCapabilities capabilities;
   if (GetHeSupported ())
     {
+      Ptr<HtConfiguration> htConfiguration = GetHtConfiguration ();
       Ptr<HeConfiguration> heConfiguration = GetHeConfiguration ();
       capabilities.SetHeSupported (1);
       uint8_t channelWidthSet = 0;
-      if (m_phy->GetChannelWidth () >= 40 && Is2_4Ghz (m_phy->GetFrequency ()))
+      if ((m_phy->GetChannelWidth () >= 40) && (m_phy->GetPhyBand () == WIFI_PHY_BAND_2_4GHZ))
         {
           channelWidthSet |= 0x01;
         }
-      if (m_phy->GetChannelWidth () >= 80 && Is5Ghz (m_phy->GetFrequency ()))
+      if ((m_phy->GetChannelWidth () >= 80) && ((m_phy->GetPhyBand () == WIFI_PHY_BAND_5GHZ) || (m_phy->GetPhyBand () == WIFI_PHY_BAND_6GHZ)))
         {
           channelWidthSet |= 0x02;
         }
-      if (m_phy->GetChannelWidth () >= 160 && Is5Ghz (m_phy->GetFrequency ()))
+      if ((m_phy->GetChannelWidth () >= 160) && ((m_phy->GetPhyBand () == WIFI_PHY_BAND_5GHZ) || (m_phy->GetPhyBand () == WIFI_PHY_BAND_6GHZ)))
         {
           channelWidthSet |= 0x04;
         }
       capabilities.SetChannelWidthSet (channelWidthSet);
+      capabilities.SetLdpcCodingInPayload (htConfiguration->GetLdpcSupported ());
       uint8_t gi = 0;
       if (heConfiguration->GetGuardInterval () <= NanoSeconds (1600))
         {
@@ -536,24 +537,6 @@ bool
 RegularWifiMac::GetQosSupported () const
 {
   return m_qosSupported;
-}
-
-void
-RegularWifiMac::SetVhtSupported (bool enable)
-{
-  //To be removed once deprecated API is cleaned up
-}
-
-void
-RegularWifiMac::SetHtSupported (bool enable)
-{
-  //To be removed once deprecated API is cleaned up
-}
-
-void
-RegularWifiMac::SetHeSupported (bool enable)
-{
-  //To be removed once deprecated API is cleaned up
 }
 
 bool
@@ -890,27 +873,6 @@ RegularWifiMac::GetTypeId (void)
                    MakeBooleanAccessor (&RegularWifiMac::SetQosSupported,
                                         &RegularWifiMac::GetQosSupported),
                    MakeBooleanChecker ())
-    .AddAttribute ("HtSupported",
-                   "This Boolean attribute is set to enable 802.11n support at this STA.",
-                   BooleanValue (false),
-                   MakeBooleanAccessor (&RegularWifiMac::SetHtSupported,
-                                        &RegularWifiMac::GetHtSupported),
-                   MakeBooleanChecker (),
-                   TypeId::DEPRECATED, "Not used anymore")
-    .AddAttribute ("VhtSupported",
-                   "This Boolean attribute is set to enable 802.11ac support at this STA.",
-                   BooleanValue (false),
-                   MakeBooleanAccessor (&RegularWifiMac::SetVhtSupported,
-                                        &RegularWifiMac::GetVhtSupported),
-                   MakeBooleanChecker (),
-                   TypeId::DEPRECATED, "Not used anymore")
-    .AddAttribute ("HeSupported",
-                   "This Boolean attribute is set to enable 802.11ax support at this STA.",
-                   BooleanValue (false),
-                   MakeBooleanAccessor (&RegularWifiMac::SetHeSupported,
-                                        &RegularWifiMac::GetHeSupported),
-                   MakeBooleanChecker (),
-                   TypeId::DEPRECATED, "Not used anymore")
     .AddAttribute ("CtsToSelfSupported",
                    "Use CTS to Self when using a rate that is not in the basic rate set.",
                    BooleanValue (false),
@@ -1076,44 +1038,39 @@ RegularWifiMac::GetTypeId (void)
 }
 
 void
-RegularWifiMac::ConfigureStandard (WifiPhyStandard standard)
+RegularWifiMac::ConfigureStandard (WifiStandard standard)
 {
   NS_LOG_FUNCTION (this << standard);
   uint32_t cwmin = 0;
   uint32_t cwmax = 0;
   switch (standard)
     {
-    case WIFI_PHY_STANDARD_80211ax_5GHZ:
-    case WIFI_PHY_STANDARD_80211ac:
-    case WIFI_PHY_STANDARD_80211n_5GHZ:
+    case WIFI_STANDARD_80211n_5GHZ:
+    case WIFI_STANDARD_80211ac:
+    case WIFI_STANDARD_80211ax_5GHZ:
+    case WIFI_STANDARD_80211ax_6GHZ:
       {
         EnableAggregation ();
-        //To be removed once deprecated attributes are removed
-        Ptr<HtConfiguration> htConfiguration = GetHtConfiguration ();
-        NS_ASSERT (htConfiguration);
         SetQosSupported (true);
         cwmin = 15;
         cwmax = 1023;
         break;
       }
-    case WIFI_PHY_STANDARD_80211ax_2_4GHZ:
-    case WIFI_PHY_STANDARD_80211n_2_4GHZ:
+    case WIFI_STANDARD_80211ax_2_4GHZ:
+    case WIFI_STANDARD_80211n_2_4GHZ:
       {
         EnableAggregation ();
-        Ptr<HtConfiguration> htConfiguration = GetHtConfiguration ();
-        NS_ASSERT (htConfiguration);
         SetQosSupported (true);
       }
-    case WIFI_PHY_STANDARD_80211g:
+    case WIFI_STANDARD_80211g:
       SetErpSupported (true);
-    case WIFI_PHY_STANDARD_holland:
-    case WIFI_PHY_STANDARD_80211a:
-    case WIFI_PHY_STANDARD_80211_10MHZ:
-    case WIFI_PHY_STANDARD_80211_5MHZ:
+    case WIFI_STANDARD_holland:
+    case WIFI_STANDARD_80211a:
+    case WIFI_STANDARD_80211p:
       cwmin = 15;
       cwmax = 1023;
       break;
-    case WIFI_PHY_STANDARD_80211b:
+    case WIFI_STANDARD_80211b:
       SetDsssSupported (true);
       cwmin = 31;
       cwmax = 1023;

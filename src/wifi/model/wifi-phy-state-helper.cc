@@ -354,11 +354,13 @@ WifiPhyStateHelper::LogPreviousIdleAndCcaBusyStates (void)
 }
 
 void
-WifiPhyStateHelper::SwitchToTx (Time txDuration, Ptr<const Packet> packet, double txPowerDbm,
-                                WifiTxVector txVector)
+WifiPhyStateHelper::SwitchToTx (Time txDuration, WifiConstPsduMap psdus, double txPowerDbm, WifiTxVector txVector)
 {
-  NS_LOG_FUNCTION (this << txDuration << packet << txPowerDbm << txVector);
-  m_txTrace (packet, txVector.GetMode (), txVector.GetPreambleType (), txVector.GetTxPowerLevel ());
+  NS_LOG_FUNCTION (this << txDuration << psdus << txPowerDbm << txVector);
+  for (auto const& psdu : psdus)
+    {
+      m_txTrace (psdu.second->GetPacket (), txVector.GetMode (psdu.first), txVector.GetPreambleType (), txVector.GetTxPowerLevel ());
+    }
   Time now = Simulator::Now ();
   switch (GetState ())
     {
@@ -462,20 +464,30 @@ WifiPhyStateHelper::SwitchToChannelSwitching (Time switchingDuration)
 }
 
 void
-WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, std::vector<bool> statusPerMpdu)
+WifiPhyStateHelper::ContinueRxNextMpdu (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector)
+{
+  NS_LOG_FUNCTION (this << *psdu << snr << txVector);
+  std::vector<bool> statusPerMpdu;
+  if (!m_rxOkCallback.IsNull ())
+    {
+      m_rxOkCallback (psdu, snr, txVector, statusPerMpdu);
+    }
+}
+
+void
+WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, uint16_t staId, std::vector<bool> statusPerMpdu)
 {
   NS_LOG_FUNCTION (this << *psdu << snr << txVector << statusPerMpdu.size () <<
                    std::all_of(statusPerMpdu.begin(), statusPerMpdu.end(), [](bool v) { return v; })); //returns true if all true
   NS_ASSERT (statusPerMpdu.size () != 0);
   NS_ASSERT (m_endRx == Simulator::Now ());
-  m_rxOkTrace (psdu->GetPacket (), snr, txVector.GetMode (), txVector.GetPreambleType ());
+  m_rxOkTrace (psdu->GetPacket (), snr, txVector.GetMode (staId), txVector.GetPreambleType ());
   NotifyRxEndOk ();
   DoSwitchFromRx ();
   if (!m_rxOkCallback.IsNull ())
     {
       m_rxOkCallback (psdu, snr, txVector, statusPerMpdu);
     }
-
 }
 
 void

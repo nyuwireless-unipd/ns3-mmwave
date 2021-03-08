@@ -26,6 +26,11 @@
 #include "ns3/log.h"
 #include "ns3/config.h"
 
+#include <istream>
+#include <sstream>
+#include <algorithm>
+#include <functional>
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("RawTextConfig");
@@ -45,14 +50,14 @@ RawTextConfigSave::~RawTextConfigSave ()
   delete m_os;
   m_os = 0;
 }
-void 
+void
 RawTextConfigSave::SetFilename (std::string filename)
 {
   NS_LOG_FUNCTION (this << filename);
   m_os = new std::ofstream ();
   m_os->open (filename.c_str (), std::ios::out);
 }
-void 
+void
 RawTextConfigSave::Default (void)
 {
   NS_LOG_FUNCTION (this);
@@ -77,7 +82,7 @@ private:
   RawTextDefaultIterator iterator = RawTextDefaultIterator (m_os);
   iterator.Iterate ();
 }
-void 
+void
 RawTextConfigSave::Global (void)
 {
   NS_LOG_FUNCTION (this);
@@ -89,7 +94,7 @@ RawTextConfigSave::Global (void)
       *m_os << "global " << (*i)->GetName () << " \"" << value.Get () << "\"" << std::endl;
     }
 }
-void 
+void
 RawTextConfigSave::Attributes (void)
 {
   NS_LOG_FUNCTION (this);
@@ -127,7 +132,7 @@ RawTextConfigLoad::~RawTextConfigLoad ()
       m_is = 0;
     }
 }
-void 
+void
 RawTextConfigLoad::SetFilename (std::string filename)
 {
   NS_LOG_FUNCTION (this << filename);
@@ -137,69 +142,126 @@ RawTextConfigLoad::SetFilename (std::string filename)
 std::string
 RawTextConfigLoad::Strip (std::string value)
 {
+  NS_LOG_FUNCTION (this << value);
   std::string::size_type start = value.find ("\"");
   std::string::size_type end = value.find ("\"", 1);
-  NS_ASSERT (start == 0);
-  NS_ASSERT (end == value.size () - 1);
+  NS_ABORT_MSG_IF (start != 0, "Ill-formed attribute value: " << value);
+  NS_ABORT_MSG_IF (end != value.size () - 1, "Ill-formed attribute value: " << value);
   return value.substr (start+1, end-start-1);
 }
 
-void 
+void
 RawTextConfigLoad::Default (void)
 {
   NS_LOG_FUNCTION (this);
   m_is->clear ();
   m_is->seekg (0);
   std::string type, name, value;
-  *m_is >> type >> name >> value;
-  while (m_is->good ())
+  for (std::string line; std::getline (*m_is, line);)
     {
+      if (!ParseLine (line, type, name, value)) 
+        {
+          continue;
+        }
+
       NS_LOG_DEBUG ("type=" << type << ", name=" << name << ", value=" << value);
       value = Strip (value);
       if (type == "default")
         {
           Config::SetDefault (name, StringValue (value));
         }
-      *m_is >> type >> name >> value;
+      name.clear ();
+      type.clear ();
+      value.clear ();
     }
 }
-void 
+void
 RawTextConfigLoad::Global (void)
 {
   NS_LOG_FUNCTION (this);
   m_is->clear ();
   m_is->seekg (0);
   std::string type, name, value;
-  *m_is >> type >> name >> value;
-  while (m_is->good ())
+  for (std::string line; std::getline (*m_is, line);)
     {
+      if (!ParseLine (line, type, name, value)) 
+        {
+          continue;
+        }
+
       NS_LOG_DEBUG ("type=" << type << ", name=" << name << ", value=" << value);
       value = Strip (value);
       if (type == "global")
         {
           Config::SetGlobal (name, StringValue (value));
         }
-      *m_is >> type >> name >> value;
+      name.clear ();
+      type.clear ();
+      value.clear ();
     }
 }
-void 
+void
 RawTextConfigLoad::Attributes (void)
 {
   NS_LOG_FUNCTION (this);
   m_is->clear ();
   m_is->seekg (0);
-  std::string type, path, value;
-  *m_is >> type >> path >> value;
-  while (m_is->good ())
+  std::string type, name, value;
+  for (std::string line; std::getline (*m_is, line);)
     {
-      NS_LOG_DEBUG ("type=" << type << ", path=" << path << ", value=" << value);
+      if (!ParseLine (line, type, name, value)) 
+        {
+          continue;
+        }
+
+      NS_LOG_DEBUG ("type=" << type << ", name=" << name << ", value=" << value);
       value = Strip (value);
       if (type == "value")
         {
-          Config::Set (path, StringValue (value));
+          Config::Set (name, StringValue (value));
         }
-      *m_is >> type >> path >> value;
+      name.clear ();
+      type.clear ();
+      value.clear ();
     }
+}
+
+bool
+RawTextConfigLoad::ParseLine (const std::string &line, std::string &type, std::string &name, std::string &value)
+{
+  NS_LOG_FUNCTION (this << line << type << name << value);
+
+  // check for blank line
+  {
+    std::istringstream iss (line);
+    iss >> std::ws;     // remove all blanks line
+    if (!iss.good ())   // eofbit set if no non-blanks
+      {
+        return false;
+      }
+  }
+
+  if (line.front () == '#')
+    {
+      return false;     // comment line
+    }
+
+  // for multiline values, append line to value if type and name not empty
+  if (type.empty () && name.empty ())
+    {
+      std::istringstream iss (line);
+      iss >> type >> name >> std::ws;
+      std::getline (iss, value);   // remaining line, includes embedded spaces
+    }
+  else
+    {
+      value.append (line);
+    }
+
+  // two quotes in value signifies a completed (possibly multi-line)
+  // config-store entry, return True to signal load function to
+  // validate value (see Strip method) and set attribute
+  return std::count (value.begin (), value.end (), '"') == 2;
 }
 
 

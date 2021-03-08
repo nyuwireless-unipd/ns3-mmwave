@@ -137,12 +137,14 @@ fi
 outf="doc/ns3_html_theme/static/ns3_version.js"
 
 # Distance from last tag
-# Zero distance means we're at the tag
-distance=`hg log -r tip --template '{latesttagdistance}'`
+# 'git describe HEAD --tags' will return a string such as either
+# 'ns-3.29-159-xxx' (if we are at a distance from the last release tag) or
+# 'ns-3.29' if we are at the tag.
+distance=`git describe HEAD --tags | cut -d '-' -f 3- | cut -d '-' -f 1`
 
 if [ $distance -eq 1 ]; then
-    version=`hg log -r tip --template '{latesttag}'`
-    say "at tag $version"
+    version=`git describe HEAD --tags | cut -d '-' -f 2`
+    say "at version $version"
 
 elif [ $tag -eq 1 ]; then
     distance=1
@@ -150,10 +152,13 @@ elif [ $tag -eq 1 ]; then
     vers_href=
 
 else
-    version=`hg log -r tip --template '{node|short}'`
+    version=`git describe HEAD --tags | cut -d '-' -f 3- | cut -d '-' -f 2 | cut -c 2-`
     # Check for uncommitted changes
-    hg summary | grep 'commit:' | grep -q '(clean)'
-    if [ ! $? ] ; then
+    changes=0
+    if [ "$(git status --porcelain)" ]; then
+        changes=1
+    fi
+    if [ $changes ] ; then
 	say "beyond latest tag, last commit: $version, dirty"
 	dirty="(+)"
     else
@@ -170,14 +175,13 @@ if [ $PUBLIC -eq 1 ]; then
     
     if [ $distance -eq 1 ]; then
 	# Like "http://www.nsnam.org/ns-3-14"
-	vers_href="http://www.nsnam.org/ns-3-${version#ns-3.}"
+	vers_href="https://www.nsnam.org/ns-3-${version#ns-3.}"
 	vers_href="<a href=\\\"$vers_href\\\">$version$dirty</a>"
 	
 	echo "var ns3_version = \"Release $vers_href\";"     >> $outf
 	echo "var ns3_release = \"docs/release/${version#ns-}/\";" >> $outf
     else
-	# Like "http://code.nsnam.org/ns-3-dev/rev/<hash>"
-	vers_href="http://code.nsnam.org/ns-3-dev/rev/$version"
+	vers_href="https://gitlab.com/nsnam/ns-3-dev/commits/$version"
 	version="<a href=\\\"$vers_href\\\">$version$dirty</a>"
 	
 	echo "var ns3_version = \"ns-3-dev @ $version\";"    >> $outf
@@ -201,7 +205,7 @@ fi
 # This seems not always done automatically
 # by Sphinx when rebuilding
 cd doc 2>&1 >/dev/null
-for d in {manual,models,tutorial{,-pt-br}}/build/{single,}html/_static/ ; do
+for d in {manual,models,tutorial}/build/{single,}html/_static/ ; do
     if [ ! -d $d ]; then
 	mkdir -p $d
     fi

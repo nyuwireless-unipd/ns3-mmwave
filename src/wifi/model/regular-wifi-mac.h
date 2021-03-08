@@ -68,7 +68,7 @@ public:
   Ptr<WifiPhy> GetWifiPhy (void) const;
   void ResetWifiPhy (void);
   virtual void SetWifiRemoteStationManager (const Ptr<WifiRemoteStationManager> stationManager);
-  void ConfigureStandard (WifiPhyStandard standard);
+  void ConfigureStandard (WifiStandard standard);
 
   /**
    * This type defines the callback of a higher layer that a
@@ -279,24 +279,12 @@ protected:
   bool GetQosSupported () const;
 
   /**
-   * Enable or disable HT support for the device.
-   *
-   * \param enable whether HT is supported
-   */
-  void SetHtSupported (bool enable);
-  /**
    * Return whether the device supports HT.
    *
    * \return true if HT is supported, false otherwise
    */
   bool GetHtSupported () const;
 
-  /**
-   * Enable or disable VHT support for the device.
-   *
-   * \param enable whether VHT is supported
-   */
-  void SetVhtSupported (bool enable);
   /**
    * Return whether the device supports VHT.
    *
@@ -330,12 +318,6 @@ protected:
    */
   bool GetDsssSupported () const;
 
-  /**
-   * Enable or disable HE support for the device.
-   *
-   * \param enable whether HE is supported
-   */
-  void SetHeSupported (bool enable);
   /**
    * Return whether the device supports HE.
    *

@@ -428,7 +428,7 @@ IncrementCounter (std::map<Mac48Address, uint64_t> & counter, Mac48Address addr,
 }
 
 void
-TracePacketReception (std::string context, Ptr<const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector, MpduInfo aMpdu, SignalNoiseDbm signalNoise)
+TracePacketReception (std::string context, Ptr<const Packet> packet, uint16_t channelFreqMhz, WifiTxVector txVector, MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId)
 {
   WifiMacHeader hdr;
   packet->PeekHeader (hdr);
@@ -480,7 +480,7 @@ BackoffTrace (std::string context, uint32_t newVal)
 }
 
 void
-PhyRxTrace (std::string context, Ptr<const Packet> p)
+PhyRxTrace (std::string context, Ptr<const Packet> p, RxPowerWattPerChannelBand power)
 {
   NS_LOG_INFO ("PHY-RX-START time=" << Simulator::Now () << " node=" << ContextToNodeId (context) << " size=" << p->GetSize ());
 }
@@ -712,6 +712,7 @@ Experiment::Run (const WifiHelper &helper, const YansWifiPhyHelper &wifiPhy, con
     }
 
   YansWifiPhyHelper phy = wifiPhy;
+  phy.SetErrorRateModel ("ns3::NistErrorRateModel");
   phy.SetChannel (wifiChannel.Create ());
   phy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
 
@@ -960,11 +961,11 @@ int main (int argc, char *argv[])
   ss << "wifi-" << standard << "-p-" << pktSize << (infra ? "-infrastructure" : "-adhoc") <<"-r-" << phyRate << "-min-" << nMinStas << "-max-" << nMaxStas << "-step-" << nStepSize << "-throughput.eps";
   Gnuplot gnuplot = Gnuplot (ss.str ());
 
-  WifiPhyStandard wifiStandard;
+  WifiStandard wifiStandard;
   std::stringstream phyRateStr;
   if (standard == "11a")
     {
-      wifiStandard = WIFI_PHY_STANDARD_80211a;
+      wifiStandard = WIFI_STANDARD_80211a;
       if ((phyRate != 6) && (phyRate != 9) && (phyRate != 12) && (phyRate != 18) && (phyRate != 24) && (phyRate != 36) && (phyRate != 48) && (phyRate != 54))
         {
           NS_FATAL_ERROR ("Selected PHY rate " << phyRate << " is not defined in " << standard);
@@ -973,7 +974,7 @@ int main (int argc, char *argv[])
     }
   else if (standard == "11b")
     {
-      wifiStandard = WIFI_PHY_STANDARD_80211b;
+      wifiStandard = WIFI_STANDARD_80211b;
       if ((phyRate != 1) && (phyRate != 2) && (phyRate != 5.5) && (phyRate != 11))
         {
           NS_FATAL_ERROR ("Selected PHY rate " << phyRate << " is not defined in " << standard);
@@ -989,7 +990,7 @@ int main (int argc, char *argv[])
     }
   else if (standard == "11g")
     {
-      wifiStandard = WIFI_PHY_STANDARD_80211g;
+      wifiStandard = WIFI_STANDARD_80211g;
       if ((phyRate != 6) && (phyRate != 9) && (phyRate != 12) && (phyRate != 18) && (phyRate != 24) && (phyRate != 36) && (phyRate != 48) && (phyRate != 54))
         {
           NS_FATAL_ERROR ("Selected PHY rate " << phyRate << " is not defined in " << standard);
@@ -1001,7 +1002,7 @@ int main (int argc, char *argv[])
       NS_FATAL_ERROR ("Unsupported standard: " << standard);
     }
 
-  YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper wifiPhy;
   YansWifiChannelHelper wifiChannel;
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");

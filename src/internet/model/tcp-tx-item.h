@@ -37,8 +37,9 @@ public:
   /**
    * \brief Print the time
    * \param os ostream
+   * \param unit Time::Unit
    */
-  void Print (std::ostream &os) const;
+  void Print (std::ostream &os, Time::Unit unit = Time::S) const;
 
   /**
    * \brief Get the size in the sequence number space
@@ -98,6 +99,8 @@ public:
    */
   RateInformation & GetRateInformation (void);
 
+  bool m_retrans       {false};      //!< Indicates if the segment is retransmitted
+
 private:
   // Only TcpTxBuffer is allower to touch this part of the TcpTxItem, to manage
   // its internal lists and counters
@@ -106,7 +109,6 @@ private:
   SequenceNumber32 m_startSeq {0};   //!< Sequence number of the item (if transmitted)
   Ptr<Packet> m_packet {nullptr};    //!< Application packet (can be null)
   bool m_lost          {false};      //!< Indicates if the segment has been lost (RTO)
-  bool m_retrans       {false};      //!< Indicates if the segment is retransmitted
   Time m_lastSent      {Time::Max ()};//!< Timestamp of the time at which the segment has been sent last time
   bool m_sacked        {false};      //!< Indicates if the segment has been SACKed
 

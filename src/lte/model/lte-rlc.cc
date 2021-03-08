@@ -142,8 +142,9 @@ void
 LteRlc::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
-  delete (m_rlcSapProvider);
-  delete (m_macSapUser);
+  delete m_rlcSapProvider;
+  delete m_epcX2RlcUser;
+  delete m_macSapUser;
 }
 
 void

@@ -1,6 +1,8 @@
 .. include:: replace.txt
 .. highlight:: cpp
 
+.. _sec-wifi-user-doc:
+
 ++++++++++++++++++
 User Documentation
 ++++++++++++++++++
@@ -48,8 +50,9 @@ To create a WifiNetDevice, users need to follow these steps:
   HT (802.11n) and/or VHT (802.11ac) and/or HE (802.11ax) features are supported or not.
 * Create WifiDevice: at this step, users configure the desired wifi standard
   (e.g. **802.11b**, **802.11g**, **802.11a**, **802.11n**, **802.11ac** or **802.11ax**) and rate control algorithm.
-* Configure mobility: finally, mobility model is (usually) required before WifiNetDevice
-  can be used.
+* Configure mobility: finally, a mobility model is (usually) required before WifiNetDevice
+  can be used; even if the devices are stationary, their relative positions
+  are needed for propagation loss calculations.
 
 The following sample code illustrates a typical configuration using mostly
 default values in the simulator, and infrastructure mode::
@@ -71,7 +74,7 @@ default values in the simulator, and infrastructure mode::
   // and install Wifi devices.  Configure a Wifi standard to use, which
   // will align various parameters in the Phy and Mac to standard defaults.
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
   // Declare NetDeviceContainers to hold the container returned by the helper
   NetDeviceContainer wifiStaDevices;
   NetDeviceContainer wifiApDevice;
@@ -117,9 +120,8 @@ a discussion of the |ns3| object model, if you are not familiar with it.
 
 The following two methods are useful when configuring YansWifiChannelHelper:
 
-* ``YansWifiChannelHelper::AddPropagationLoss`` adds a PropagationLossModel
-  to a chain of PropagationLossModel
-* ``YansWifiChannelHelper::SetPropagationDelay`` sets a PropagationDelayModel
+* ``YansWifiChannelHelper::AddPropagationLoss`` adds a PropagationLossModel; if one or more PropagationLossModels already exist, the new model is chained to the end
+* ``YansWifiChannelHelper::SetPropagationDelay`` sets a PropagationDelayModel (not chainable)
 
 YansWifiPhyHelper
 =================
@@ -133,11 +135,11 @@ a ``YansWifiPhy`` and adds some other objects to it, including possibly a
 supplemental ErrorRateModel and a pointer to a MobilityModel. The user code is
 typically::
 
-  YansWifiPhyHelper wifiPhyHelper = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper wifiPhyHelper;
   wifiPhyHelper.SetChannel (wifiChannel);
 
-The default YansWifiPhyHelper is configured with NistErrorRateModel
-(``ns3::NistErrorRateModel``). You can change the error rate model by
+The default YansWifiPhyHelper is configured with TableBasedErrorRateModel
+(``ns3::TableBasedErrorRateModel``). You can change the error rate model by
 calling the ``YansWifiPhyHelper::SetErrorRateModel`` method.
 
 Optionally, if pcap tracing is needed, a user may use the following
@@ -170,7 +172,7 @@ For example, this code configures a node with 3 antennas that supports 2 spatial
 ::
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+  wifi.SetStandard (WIFI_STANDARD_80211ac);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("VhtMcs9"),
                                 "ControlMode", StringValue ("VhtMcs0"));
@@ -223,7 +225,7 @@ in a number of ways:
   wifiPhyHelper.Set ("ChannelNumber", UintegerValue (3));
 
 
-* by setting the WifiHelper::SetStandard (enum WifiPhyStandard) method; and
+* by setting the WifiHelper::SetStandard (enum WifiStandard) method; and
 
 * by performing post-installation configuration of the option, either
   via a Ptr to the WifiPhy object, or through the Config namespace; e.g.:
@@ -241,49 +243,29 @@ WifiHelper::SetStandard()
 
 ``WifiHelper::SetStandard ()`` is a method to set various parameters
 in the Mac and Phy to standard values and some reasonable defaults.
-For example, ``SetStandard (WIFI_PHY_STANDARD_80211a)`` will set the
+For example, ``SetStandard (WIFI_STANDARD_80211a)`` will set the
 WifiPhy to Channel 36 in the 5 GHz band, among other settings appropriate
 for 802.11a.
 
-The following values for WifiPhyStandard are defined in 
-``src/wifi/model/wifi-phy-standard.h``:
+The following values for WifiStandard are defined in
+``src/wifi/model/wifi-standards.h``:
 
 ::
 
-  /** OFDM PHY for the 5 GHz band (Clause 17) */
-  WIFI_PHY_STANDARD_80211a,
-  /** DSSS PHY (Clause 15) and HR/DSSS PHY (Clause 18) */
-  WIFI_PHY_STANDARD_80211b,
-  /** ERP-OFDM PHY (Clause 19, Section 19.5) */
-  WIFI_PHY_STANDARD_80211g,
-  /** OFDM PHY for the 5 GHz band (Clause 17 with 10 MHz channel bandwidth) */
-  WIFI_PHY_STANDARD_80211_10MHZ,
-  /** OFDM PHY for the 5 GHz band (Clause 17 with 5 MHz channel bandwidth) */
-  WIFI_PHY_STANDARD_80211_5MHZ,
-  /** This is intended to be the configuration used in this paper:
-   *  Gavin Holland, Nitin Vaidya and Paramvir Bahl, "A Rate-Adaptive
-   *  MAC Protocol for Multi-Hop Wireless Networks", in Proc. of
-   *  ACM MOBICOM, 2001.
-   */
-  WIFI_PHY_STANDARD_holland,
-  /** HT OFDM PHY for the 2.4 GHz band (clause 20) */
-  WIFI_PHY_STANDARD_80211n_2_4GHZ,
-  /** HT OFDM PHY for the 5 GHz band (clause 20) */
-  WIFI_PHY_STANDARD_80211n_5GHZ,
-  /** VHT OFDM PHY (clause 22) */
-  WIFI_PHY_STANDARD_80211ac,
-  /** HE PHY for the 2.4 GHz band (clause 26) */
-  WIFI_PHY_STANDARD_80211ax_2_4GHZ,
-  /** HE PHY for the 5 GHz band (clause 26) */
-  WIFI_PHY_STANDARD_80211ax_5GHZ
+  WIFI_STANDARD_80211a,
+  WIFI_STANDARD_80211b,
+  WIFI_STANDARD_80211g,
+  WIFI_STANDARD_80211p,
+  WIFI_STANDARD_holland,
+  WIFI_STANDARD_80211n_2_4GHZ,
+  WIFI_STANDARD_80211n_5GHZ,
+  WIFI_STANDARD_80211ac,
+  WIFI_STANDARD_80211ax_2_4GHZ,
+  WIFI_STANDARD_80211ax_5GHZ,
+  WIFI_STANDARD_80211ax_6GHZ
 
-In addition, a value WIFI_PHY_STANDARD_UNSPECIFIED is defined to indicate
-that the user has not set a standard.
-
-By default, the WifiPhy will be initialized to WIFI_PHY_STANDARD_UNSPECIFIED,
-when it is created directly by ``CreateObject`` (i.e. not by WifiHelper).
-However, the WifiHelper (the typical use case for WifiPhy creation) will 
-configure the WIFI_PHY_STANDARD_80211a standard by default.  Other values 
+By default, the WifiHelper (the typical use case for WifiPhy creation) will
+configure the WIFI_STANDARD_80211a standard by default.  Other values
 for standards should be passed explicitly to the WifiHelper object.
 
 If user has not already separately configured Frequency or ChannelNumber
@@ -349,7 +331,7 @@ known for that channel in practice.  For example:
 * Channel 1, when IEEE 802.11b is configured, corresponds to a channel
   width of 22 MHz and a center frequency of 2412 MHz.  
 
-* Channel 36, when IEEE 802.11n is configured at 5GHz, corresponds to 
+* Channel 36, when IEEE 802.11n is configured at 5 GHz, corresponds to 
   a channel width of 20 MHz and a center frequency of 5180 MHz.  
 
 The following channel numbers are well-defined for 2.4 GHz standards:
@@ -359,6 +341,9 @@ The following channel numbers are well-defined for 2.4 GHz standards:
 
 The following channel numbers are well-defined for 5 GHz standards:
 
+.. table:: 5 GHz channel numbers
+    :width: 30 70
+.. tabularcolumns:: |p{3cm}|p{10cm}|
 +------------------+-------------------------------------------+
 | ``ChannelWidth`` | ``ChannelNumber``                         |
 +------------------+-------------------------------------------+
@@ -375,6 +360,35 @@ The following channel numbers are well-defined for 5 GHz standards:
 | 160 MHz          | 50, 114                                   |
 +------------------+-------------------------------------------+
 | 10 MHz (802.11p) | 172, 174, 176, 178, 180, 182, 184         |
++------------------+-------------------------------------------+
+| 5 MHz (802.11p)  | 171, 173, 175, 177, 179, 181, 183         |
++------------------+-------------------------------------------+
+
+The following channel numbers are well-defined for 6 GHz standards (802.11ax only):
+
+.. table:: 6 GHz channel numbers
+    :width: 30 70
+.. tabularcolumns:: |p{3cm}|p{10cm}|
++------------------+-------------------------------------------+
+| ``ChannelWidth`` | ``ChannelNumber``                         |
++------------------+-------------------------------------------+
+| 20 MHz           | 1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41,  |
+|                  | 45, 49, 53, 57, 61, 65, 69, 73, 77, 81,   |
+|                  | 85, 89, 93, 97, 101, 105, 109, 113, 117,  |
+|                  | 121, 125, 129, 133, 137, 141, 145, 149,   |
+|                  | 153, 157, 161, 165, 169, 173, 177, 181,   |
+|                  | 185, 189, 193, 197, 201, 205, 209, 213,   |
+|                  | 217, 221, 225, 229, 233                   |
++------------------+-------------------------------------------+
+| 40 MHz           | 3, 11, 19, 27, 35, 43, 51, 59, 67, 75,    |
+|                  | 83, 91, 99, 107, 115, 123, 131, 139, 147, |
+|                  | 155, 163, 171, 179, 187, 195, 203, 211,   |
+|                  | 219, 227                                  |
++------------------+-------------------------------------------+
+| 80 MHz           | 7, 23, 39, 55, 71, 87, 103, 119, 135,     |
+|                  | 151, 167, 183, 199, 215                   |
++------------------+-------------------------------------------+
+| 160 MHz          | 15, 47, 79, 111, 143, 175, 207            |
 +------------------+-------------------------------------------+
 
 The channel number may be set either before or after creation of the
@@ -400,7 +414,7 @@ such as:
 ::
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
   ...
   Ptr<WifiPhy> wifiPhy = ...;
   wifiPhy->SetAttribute ("ChannelNumber", UintegerValue (14));
@@ -464,8 +478,8 @@ different configurations can be obtained.   Below are some common use cases.
 * **(accepting the standard defaults):**  If a user has not already 
   separately configured frequency or channel number when 
   ``WifiHelper::SetStandard ()`` is called, the user gets default values 
-  (e.g. channel 1 for 802.11b/g or channel 36 for a/n, with 20 MHz 
-  channel widths)
+  (e.g. channel 1 for 802.11b/g/n, channel 36 for a/n with 20 MHz
+  channel widths and channel 42 for ac/ax with 80 MHz channel widths)
 
 * **(overwriting the standard channel):**  If the user has previously 
   configured (e.g. via SetDefault) either frequency or channel number when 
@@ -492,10 +506,10 @@ different configurations can be obtained.   Below are some common use cases.
   * *example:*  ChannelNumber previously set to 36, user sets Frequency to 5200, then ChannelNumber gets automatically set to 40
   * *example:*  ChannelNumber set to 36, user later sets Frequency to 5185, ChannelNumber gets reset to 0
 
-In summary, ChannelNumber and Frequency follow each other.  ChannelNumber
+In summary, ChannelNumber and Frequency follow each other. ChannelNumber
 sets both Frequency and ChannelWidth if the channel number has been defined
 for the standard.  Setting ChannelWidth has no effect on Frequency or
-ChannelNumber.  Setting Frequency will set ChannelNumber to either the
+ChannelNumber. Setting Frequency will set ChannelNumber to either the
 defined value for that Wi-Fi standard, or to the value 0 if undefined.
 
 SpectrumWifiPhyHelper
@@ -591,7 +605,7 @@ For example the following user code configures a MAC that will be a non-AP STA w
 in an infrastructure network where the AP has SSID ``ns-3-ssid``::
 
     WifiHelper wifi;
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
 
     WifiMacHelper wifiMacHelper;
     Ssid ssid = Ssid ("ns-3-ssid");
@@ -707,7 +721,7 @@ The ``WifiHelper::SetStandard`` method sets various default timing parameters as
 In order to change parameters that are overwritten by ``WifiHelper::SetStandard``, this should be done post-install using ``Config::Set``::
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue("HtMcs7"), "ControlMode", StringValue("HtMcs0"));
 
   //Install PHY and MAC
@@ -843,7 +857,7 @@ Finally, we manually place them by using the ``ns3::ListPositionAllocator``::
   c.Create (2);
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211a);
+  wifi.SetStandard (WIFI_STANDARD_80211a);
 
   YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default ();
   // ns-3 supports RadioTap and Prism tracing extensions for 802.11
@@ -890,7 +904,7 @@ Each node is equipped with 802.11b Wi-Fi device::
   sta.Create (2);
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
+  wifi.SetStandard (WIFI_STANDARD_80211b);
 
   YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default (); 
   // ns-3 supports RadioTap and Prism tracing extensions for 802.11

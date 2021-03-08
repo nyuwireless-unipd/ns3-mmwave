@@ -38,6 +38,8 @@ SOURCES = \
 	$(SRC)/mpi/doc/distributed.rst \
 	$(SRC)/energy/doc/energy.rst \
 	$(SRC)/fd-net-device/doc/fd-net-device.rst \
+	$(SRC)/fd-net-device/doc/dpdk-net-device.rst \
+	$(SRC)/fd-net-device/doc/netmap-net-device.rst \
 	$(SRC)/tap-bridge/doc/tap.rst \
 	$(SRC)/mesh/doc/source/mesh.rst \
 	$(SRC)/mesh/doc/source/mesh-user.rst \
@@ -86,6 +88,7 @@ SOURCES = \
 	$(SRC)/traffic-control/doc/tbf.rst \
 	$(SRC)/traffic-control/doc/red.rst \
 	$(SRC)/traffic-control/doc/codel.rst \
+	$(SRC)/traffic-control/doc/cobalt.rst \
 	$(SRC)/traffic-control/doc/fq-codel.rst \
 	$(SRC)/traffic-control/doc/pie.rst \
 	$(SRC)/traffic-control/doc/mq.rst \
@@ -95,11 +98,10 @@ SOURCES = \
 	$(SRC)/wave/doc/wave.rst \
 	$(SRC)/sixlowpan/doc/sixlowpan.rst \
 	$(SRC)/lr-wpan/doc/lr-wpan.rst \
-	$(SRC)/mmwave/doc/mmwave.rst \
 
-# list all model library figure files that need to be copied to
+# list all model library figure files that need to be copied to 
 # $SOURCETEMP/figures.  For each figure to be included in all
-# documentation formats (html, latex...) the following formats are supported:
+# documentation formats (html, latex...) the following formats are supported: 
 #  1) a single .dia file (preferred option, because it can be edited)
 #  2) a single .eps file
 #  3) both a .pdf and .png file
@@ -121,6 +123,17 @@ SOURCEFIGS = \
 	$(SRC)/internet/doc/routing.dia \
 	$(SRC)/internet/doc/routing-specialization.dia \
 	$(SRC)/internet/doc/figures/tcp-state-machine.png \
+	$(SRC)/internet/doc/figures/dctcp-10ms-50mbps-tcp-throughput.pdf \
+	$(SRC)/internet/doc/figures/dctcp-10ms-50mbps-tcp-throughput.png \
+	$(SRC)/internet/doc/figures/dctcp-80ms-50mbps-tcp-throughput.pdf \
+	$(SRC)/internet/doc/figures/dctcp-80ms-50mbps-tcp-throughput.png \
+	$(SRC)/internet/doc/figures/cubic-50ms-50mbps-tcp-cwnd-no-ecn.pdf \
+	$(SRC)/internet/doc/figures/cubic-50ms-50mbps-tcp-cwnd-no-ecn.png \
+	$(SRC)/internet/doc/figures/cubic-50ms-50mbps-tcp-cwnd-ecn.pdf \
+	$(SRC)/internet/doc/figures/cubic-50ms-50mbps-tcp-cwnd-ecn.png \
+	$(SRC)/internet/doc/figures/dce-linux-reno-vs-ns3-linux-reno.png \
+	$(SRC)/internet/doc/figures/dce-linux-reno-vs-ns3-new-reno.png \
+	$(SRC)/internet/doc/figures/ns3-new-reno-vs-ns3-linux-reno.png \
 	$(SRC)/wifi/doc/source/figures/WifiArchitecture.dia \
 	$(SRC)/wifi/doc/source/figures/snir.dia \
 	$(SRC)/wifi/doc/source/figures/clear-channel.eps \
@@ -128,12 +141,19 @@ SOURCEFIGS = \
 	$(SRC)/wifi/doc/source/figures/nist-frame-success-rate-n.eps \
 	$(SRC)/wifi/doc/source/figures/nist-frame-success-rate-ac.eps \
 	$(SRC)/wifi/doc/source/figures/nist-frame-success-rate-ax.eps \
+	$(SRC)/wifi/doc/source/figures/wifi-11a-p-1500-adhoc-r-54-min-5-max-50-step-5-throughput.eps \
+	$(SRC)/wifi/doc/source/figures/wifi-11g-p-1500-infrastructure-r-6-min-5-max-50-step-5-throughput.eps \
+	$(SRC)/wifi/doc/source/figures/default-table-based-error-model-validation.eps \
+	$(SRC)/wifi/doc/source/figures/error-models-comparison.eps \
 	$(SRC)/wimax/doc/WimaxArchitecture.dia \
 	$(SRC)/lte/doc/source/figures/epc-ctrl-arch.dia \
 	$(SRC)/lte/doc/source/figures/epc-data-flow-dl.dia \
+	$(SRC)/lte/doc/source/figures/epc-data-flow-dl-with-split.dia \
 	$(SRC)/lte/doc/source/figures/epc-data-flow-ul.dia \
+	$(SRC)/lte/doc/source/figures/epc-data-flow-ul-with-split.dia \
 	$(SRC)/lte/doc/source/figures/epc-profiling-scenario.dia \
 	$(SRC)/lte/doc/source/figures/epc-topology.dia \
+	$(SRC)/lte/doc/source/figures/epc-topology-with-split.dia \
 	$(SRC)/lte/doc/source/figures/epc-topology-x2-enhanced.dia \
 	$(SRC)/lte/doc/source/figures/eutran-profiling-scenario.dia \
 	$(SRC)/lte/doc/source/figures/ff-example.dia \
@@ -146,6 +166,8 @@ SOURCEFIGS = \
 	$(SRC)/lte/doc/source/figures/lte-ue-phy.dia \
 	$(SRC)/lte/doc/source/figures/lte-epc-x2-handover-seq-diagram.dia \
 	$(SRC)/lte/doc/source/figures/lte-epc-e2e-data-protocol-stack.dia \
+	$(SRC)/lte/doc/source/figures/lte-epc-e2e-data-protocol-stack-with-split.dia \
+	$(SRC)/lte/doc/source/figures/lte-epc-e2e-control-protocol-stack-with-split.dia \
 	$(SRC)/lte/doc/source/figures/lte-interference-test-scenario.dia \
 	$(SRC)/lte/doc/source/figures/lte-subframe-structure.dia \
 	$(SRC)/lte/doc/source/figures/lte-epc-x2-interface.dia \
@@ -174,6 +196,10 @@ SOURCEFIGS = \
 	$(SRC)/lte/doc/source/figures/lte-rlc-data-retx-dl.dia \
 	$(SRC)/lte/doc/source/figures/lte-rlc-data-txon-ul.dia \
 	$(SRC)/lte/doc/source/figures/lte-rlc-data-retx-ul.dia \
+	$(SRC)/lte/doc/source/figures/lte-test-rlf-one-enb.dia \
+	$(SRC)/lte/doc/source/figures/lte-test-rlf-two-enb.dia \
+	$(SRC)/lte/doc/source/figures/lena-radio-link-failure-one-enb.dia \
+	$(SRC)/lte/doc/source/figures/lena-radio-link-failure-two-enb.dia \
 	$(SRC)/lte/doc/source/figures/lte-epc-x2-entity-saps.dia \
 	$(SRC)/lte/doc/source/figures/ca-rrc-reconf.dia \
 	$(SRC)/lte/doc/source/figures/ca-lte-enb-net-device-changes.dia \
@@ -265,12 +291,20 @@ SOURCEFIGS = \
 	$(SRC)/lte/doc/source/figures/ca-test-example-ul.png \
 	$(SRC)/lte/doc/source/figures/ca-test-example-dl.pdf \
 	$(SRC)/lte/doc/source/figures/ca-test-example-dl.png \
+	$(SRC)/lte/doc/source/figures/lena-radio-link-failure-one-enb-thrput.png \
+	$(SRC)/lte/doc/source/figures/lena-radio-link-failure-two-enb-thrput.png \
 	$(SRC)/lte/doc/source/figures/lte-dl-power-control.dia \
 	$(SRC)/lte/doc/source/figures/lte-ffr-scheduling.dia \
 	$(SRC)/lte/doc/source/figures/lte-handover-campaign-rem.pdf \
 	$(SRC)/lte/doc/source/figures/lte-handover-campaign-rem.png \
 	$(SRC)/lte/doc/source/figures/lte-legacy-handover-algorithm.pdf \
 	$(SRC)/lte/doc/source/figures/lte-legacy-handover-algorithm.png \
+	$(SRC)/lte/doc/source/figures/lte-ue-context-removal-from-epc.pdf \
+	$(SRC)/lte/doc/source/figures/lte-ue-context-removal-from-epc.png \
+	$(SRC)/lte/doc/source/figures/lte-ue-context-removal-from-enb-stack.pdf \
+	$(SRC)/lte/doc/source/figures/lte-ue-context-removal-from-enb-stack.png \
+	$(SRC)/lte/doc/source/figures/lte-ue-procedures-after-rlf.pdf \
+	$(SRC)/lte/doc/source/figures/lte-ue-procedures-after-rlf.png \
 	$(SRC)/uan/doc/auvmobility-classes.dia \
 	$(SRC)/netanim/doc/figures/PacketStatistics.png \
 	$(SRC)/netanim/doc/figures/PacketStatistics.pdf \
@@ -294,14 +328,14 @@ SOURCEFIGS = \
 	$(SRC)/spectrum/doc/spectrum-tv-cofdm.png \
 	$(SRC)/traffic-control/doc/classful-queue-disc.dia \
 	$(SRC)/traffic-control/doc/multi-queue-aware-queue-disc.dia \
+	$(SRC)/traffic-control/doc/figures/collision_prob.jpeg \
+	$(SRC)/traffic-control/doc/figures/overlapped.jpeg \
 	$(SRC)/lr-wpan/doc/lr-wpan-arch.dia \
 	$(SRC)/lr-wpan/doc/lr-wpan-data-example.dia \
 	$(SRC)/lr-wpan/doc/lr-wpan-primitives.dia \
 	$(SRC)/lr-wpan/doc/802-15-4-ber.eps \
 	$(SRC)/lr-wpan/doc/802-15-4-per-sens.eps \
-	$(SRC)/lr-wpan/doc/802-15-4-psr-distance.eps \
-	$(SRC)/mmwave/doc/figures/mmwave-spectrum-phy-tx.png \
-	$(SRC)/mmwave/doc/figures/mmwave-spectrum-phy-rx.png
+	$(SRC)/lr-wpan/doc/802-15-4-psr-distance.eps
 
 # specify figures from which .png and .pdf figures need to be
 # generated (all dia and eps figures)
@@ -322,9 +356,12 @@ IMAGES_EPS = \
 	$(FIGURES)/WimaxArchitecture.eps \
 	$(FIGURES)/epc-ctrl-arch.eps \
 	$(FIGURES)/epc-data-flow-dl.eps \
+	$(FIGURES)/epc-data-flow-dl-with-split.eps \
 	$(FIGURES)/epc-data-flow-ul.eps \
+	$(FIGURES)/epc-data-flow-ul-with-split.eps \
 	$(FIGURES)/epc-profiling-scenario.eps \
 	$(FIGURES)/epc-topology.eps \
+	$(FIGURES)/epc-topology-with-split.eps \
 	$(FIGURES)/epc-topology-x2-enhanced.eps \
 	$(FIGURES)/eutran-profiling-scenario.eps \
 	$(FIGURES)/ff-example.eps \
@@ -346,6 +383,8 @@ IMAGES_EPS = \
 	$(FIGURES)/lte-enb-phy.eps \
 	$(FIGURES)/lte-ue-phy.eps \
 	$(FIGURES)/lte-epc-e2e-data-protocol-stack.eps \
+	$(FIGURES)/lte-epc-e2e-data-protocol-stack-with-split.eps \
+	$(FIGURES)/lte-epc-e2e-control-protocol-stack-with-split.eps \
 	$(FIGURES)/lte-interference-test-scenario.eps \
 	$(FIGURES)/lte-subframe-structure.eps \
 	$(FIGURES)/lte-epc-x2-interface.eps \
@@ -393,6 +432,10 @@ IMAGES_EPS = \
 	$(FIGURES)/nist-frame-success-rate-n.eps \
 	$(FIGURES)/nist-frame-success-rate-ac.eps \
 	$(FIGURES)/nist-frame-success-rate-ax.eps \
+	$(FIGURES)/wifi-11a-p-1500-adhoc-r-54-min-5-max-50-step-5-throughput.eps \
+	$(FIGURES)/wifi-11g-p-1500-infrastructure-r-6-min-5-max-50-step-5-throughput.eps \
+	$(FIGURES)/default-table-based-error-model-validation.eps \
+	$(FIGURES)/error-models-comparison.eps \
 	$(FIGURES)/ca-rrc-reconf.eps \
 	$(FIGURES)/ca-lte-enb-net-device-changes.eps \
 	$(FIGURES)/ca-lte-ue-net-device-changes.eps \
@@ -400,11 +443,15 @@ IMAGES_EPS = \
 	$(FIGURES)/ca-enb-ctrl-plane.eps \
 	$(FIGURES)/ca-ue-data-plane.eps \
 	$(FIGURES)/ca-ue-ctrl-plane.eps \
+	$(FIGURES)/lte-test-rlf-one-enb.eps \
+	$(FIGURES)/lte-test-rlf-two-enb.eps \
+	$(FIGURES)/lena-radio-link-failure-one-enb.eps \
+	$(FIGURES)/lena-radio-link-failure-two-enb.eps \
 
 # rescale pdf figures as necessary
 $(FIGURES)/testbed.pdf_width = 5in
 $(FIGURES)/emulated-channel.pdf_width = 6in
-$(FIGURES)/antenna-coordinate-system.pdf_width = 7cm
+$(FIGURES)/antenna-coordinate-system.pdf_width = 7cm	
 $(FIGURES)/node.pdf_width = 5in
 $(FIGURES)/packet.pdf_width = 4in
 $(FIGURES)/buffer.pdf_width = 15cm
@@ -418,6 +465,7 @@ $(FIGURES)/lte-interference-test-scenario.pdf_width = 3in
 $(FIGURES)/epc-ctrl-arch.pdf_width = 8cm
 $(FIGURES)/epc-topology.pdf_width = 4in
 $(FIGURES)/epc-topology-x2-enhanced.pdf_width = 14cm
+$(FIGURES)/lena-radio-link-failure-one-enb.pdf_width = 10cm
 $(FIGURES)/lte-arch-data-rrc-pdcp-rlc.pdf_width = 3in
 $(FIGURES)/lte-epc-e2e-data-protocol-stack.pdf_width = 15cm
 $(FIGURES)/ff-mac-saps.pdf_width = 5in
@@ -432,7 +480,7 @@ $(FIGURES)/fr-soft-frequency-reuse-scheme-v1.pdf_width = 8cm
 $(FIGURES)/fr-soft-frequency-reuse-scheme-v2.pdf_width = 8cm
 $(FIGURES)/fr-strict-frequency-reuse-scheme.pdf_width = 8cm
 $(FIGURES)/ffr-distributed-scheme.pdf_width = 8cm
-$(FIGURES)/lte-arch-enb-data.pdf_width = 6cm
+$(FIGURES)/lte-arch-enb-data.pdf_width = 6cm 
 $(FIGURES)/lte-arch-enb-ctrl.pdf_width = 10cm
 $(FIGURES)/lte-arch-ue-data.pdf_width = 6cm
 $(FIGURES)/lte-arch-ue-ctrl.pdf_width = 10cm
@@ -491,7 +539,7 @@ BUILDDIR      = build
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) $(SOURCETEMP)
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) $(SOURCETEMP) 
 
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
 
@@ -517,8 +565,8 @@ help:
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
 copy-sources:  $(SOURCES)
-	@mkdir -p $(SOURCETEMP)
-	@mkdir -p $(FIGURES)
+	@mkdir -p $(SOURCETEMP) 
+	@mkdir -p $(FIGURES) 
 	@cp -r -p $(SOURCES) $(SOURCETEMP)
 	@cp -r -p $(SOURCEFIGS) $(FIGURES)
 
@@ -531,7 +579,7 @@ frag: pickle
 	pushd $(BUILDDIR)/frag && ../../pickle-to-xml.py ../pickle/index.fpickle  > navigation.xml && popd
 	cp -r $(BUILDDIR)/pickle/_images $(BUILDDIR)/frag
 
-html: copy-sources $(IMAGES)
+html: copy-sources $(IMAGES) 
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -623,3 +671,5 @@ doctest: copy-sources $(IMAGES)
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+

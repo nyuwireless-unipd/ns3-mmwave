@@ -174,9 +174,9 @@ int main (int argc, char *argv[])
 
   Experiment experiment;
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211a);
+  wifi.SetStandard (WIFI_STANDARD_80211a);
   WifiMacHelper wifiMac;
-  YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper wifiPhy;
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
   Gnuplot2dDataset dataset;
 
@@ -241,7 +241,7 @@ int main (int argc, char *argv[])
   gnuplot.GenerateOutput (std::cout);
 
   gnuplot = Gnuplot ("rate-control.png");
-  wifi.SetStandard (WIFI_PHY_STANDARD_holland);
+  wifi.SetStandard (WIFI_STANDARD_holland);
 
   NS_LOG_DEBUG ("arf");
   experiment = Experiment ("arf");

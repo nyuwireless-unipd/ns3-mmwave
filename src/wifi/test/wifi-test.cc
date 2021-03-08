@@ -137,14 +137,14 @@ WifiTest::CreateOne (Vector pos, Ptr<YansWifiChannel> channel)
 
   Ptr<WifiMac> mac = m_mac.Create<WifiMac> ();
   mac->SetDevice (dev);
-  mac->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  mac->ConfigureStandard (WIFI_STANDARD_80211a);
   Ptr<ConstantPositionMobilityModel> mobility = CreateObject<ConstantPositionMobilityModel> ();
   Ptr<YansWifiPhy> phy = CreateObject<YansWifiPhy> ();
   Ptr<ErrorRateModel> error = CreateObject<YansErrorRateModel> ();
   phy->SetErrorRateModel (error);
   phy->SetChannel (channel);
   phy->SetDevice (dev);
-  phy->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211a, WIFI_PHY_BAND_5GHZ);
   Ptr<WifiRemoteStationManager> manager = m_manager.Create<WifiRemoteStationManager> ();
 
   mobility->SetPosition (pos);
@@ -294,7 +294,7 @@ void
 InterferenceHelperSequenceTest::SwitchCh (Ptr<WifiNetDevice> dev)
 {
   Ptr<WifiPhy> p = dev->GetPhy ();
-  p->SetChannelNumber (1);
+  p->SetChannelNumber (40);
 }
 
 Ptr<Node>
@@ -305,7 +305,7 @@ InterferenceHelperSequenceTest::CreateOne (Vector pos, Ptr<YansWifiChannel> chan
 
   Ptr<WifiMac> mac = m_mac.Create<WifiMac> ();
   mac->SetDevice (dev);
-  mac->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  mac->ConfigureStandard (WIFI_STANDARD_80211a);
   Ptr<ConstantPositionMobilityModel> mobility = CreateObject<ConstantPositionMobilityModel> ();
   Ptr<YansWifiPhy> phy = CreateObject<YansWifiPhy> ();
   Ptr<ErrorRateModel> error = CreateObject<YansErrorRateModel> ();
@@ -313,7 +313,7 @@ InterferenceHelperSequenceTest::CreateOne (Vector pos, Ptr<YansWifiChannel> chan
   phy->SetChannel (channel);
   phy->SetDevice (dev);
   phy->SetMobility (mobility);
-  phy->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211a, WIFI_PHY_BAND_5GHZ);
   Ptr<WifiRemoteStationManager> manager = m_manager.Create<WifiRemoteStationManager> ();
 
   mobility->SetPosition (pos);
@@ -368,7 +368,6 @@ InterferenceHelperSequenceTest::DoRun (void)
 
   Simulator::Destroy ();
 }
-
 
 //-----------------------------------------------------------------------------
 /**
@@ -500,7 +499,7 @@ DcfImmediateAccessBroadcastTestCase::DoRun (void)
   Ptr<WifiNetDevice> txDev = CreateObject<WifiNetDevice> ();
   Ptr<WifiMac> txMac = m_mac.Create<WifiMac> ();
   txMac->SetDevice (txDev);
-  txMac->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  txMac->ConfigureStandard (WIFI_STANDARD_80211a);
   //Fix the stream assignment to the Dcf Txop objects (backoffs)
   //The below stream assignment will result in the Txop object
   //using a backoff value of zero for this test when the
@@ -514,7 +513,7 @@ DcfImmediateAccessBroadcastTestCase::DoRun (void)
   txPhy->SetChannel (channel);
   txPhy->SetDevice (txDev);
   txPhy->SetMobility (txMobility);
-  txPhy->ConfigureStandard (WIFI_PHY_STANDARD_80211a);
+  txPhy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211a, WIFI_PHY_BAND_5GHZ);
 
   txPhy->TraceConnectWithoutContext ("PhyTxBegin", MakeCallback (&DcfImmediateAccessBroadcastTestCase::NotifyPhyTxBegin, this));
 
@@ -551,7 +550,6 @@ DcfImmediateAccessBroadcastTestCase::DoRun (void)
 
   NS_TEST_ASSERT_MSG_EQ (m_secondTransmissionTime, expectedSecondTransmissionTime, "The second transmission time not correct!");
 }
-
 
 //-----------------------------------------------------------------------------
 /**
@@ -620,11 +618,11 @@ Bug730TestCase::DoRun (void)
   wifiApNode.Create (1);
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
+  wifi.SetStandard (WIFI_STANDARD_80211b);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("DsssRate1Mbps"),
                                 "ControlMode", StringValue ("DsssRate1Mbps"));
@@ -775,11 +773,11 @@ QosFragmentationTestCase::DoRun (void)
   wifiApNode.Create (1);
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("HtMcs7"));
 
@@ -904,7 +902,7 @@ SetChannelFrequencyTest::DoRun ()
   wifiApNode.Create (1);
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
   // Configure and declare other generic components of this example
@@ -919,7 +917,7 @@ SetChannelFrequencyTest::DoRun ()
 
   // Cases taken from src/wifi/examples/wifi-phy-configuration.cc example
   {
-    // case 0
+    // case 0:
     // Default configuration, without WifiHelper::SetStandard or WifiHelper
     phySta = CreateObject<YansWifiPhy> ();
     // The default results in an invalid configuration of channel 0,
@@ -929,7 +927,7 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 0, "default configuration");
   }
   {
-    // case 1
+    // case 1:
     WifiHelper wifi;
     // By default, WifiHelper will use WIFI_PHY_STANDARD_80211a
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
@@ -940,9 +938,9 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5180, "default configuration");
   }
   {
-    // case 2
+    // case 2:
     WifiHelper wifi;
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
+    wifi.SetStandard (WIFI_STANDARD_80211b);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     // We expect channel 1, width 22, frequency 2412
@@ -951,9 +949,9 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 2412, "802.11b configuration");
   }
   {
-    // case 3
+    // case 3:
     WifiHelper wifi;
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
+    wifi.SetStandard (WIFI_STANDARD_80211g);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     // We expect channel 1, width 20, frequency 2412
@@ -962,10 +960,10 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 2412, "802.11g configuration");
   }
   {
-    // case 4
+    // case 4:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 36, "802.11n-5GHz configuration");
@@ -973,10 +971,10 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5180, "802.11n-5GHz configuration");
   }
   {
-    // case 5
+    // case 5:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 1, "802.11n-2.4GHz configuration");
@@ -984,10 +982,10 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 2412, "802.11n-2.4GHz configuration");
   }
   {
-    // case 6
+    // case 6:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+    wifi.SetStandard (WIFI_STANDARD_80211ac);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 42, "802.11ac configuration");
@@ -995,32 +993,67 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5210, "802.11ac configuration");
   }
   {
-    // case 7
+    // case 7:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211_10MHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
-    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 172, "802.11 10Mhz configuration");
-    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 10, "802.11 10Mhz configuration");
-    NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5860, "802.11 10Mhz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 1, "802.11ax-2.4GHz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 20, "802.11ax-2.4GHz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 2412, "802.11ax-2.4GHz configuration");
   }
   {
-    // case 8
+    // case 8:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211_5MHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
-    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 0, "802.11 5Mhz configuration");
-    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 5, "802.11 5Mhz configuration");
-    NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5860, "802.11 5Mhz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 42, "802.11ax-5GHz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 80, "802.11ax-5GHz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5210, "802.11ax-5GHz configuration");
   }
   {
-    // case 9
+    // case 9:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_holland);
+    wifi.SetStandard (WIFI_STANDARD_80211ax_6GHZ);
+    staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
+    phySta = GetYansWifiPhyPtr (staDevice);
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 7, "802.11ax-6GHz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 80, "802.11ax-6GHz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5975, "802.11ax-6GHz configuration");
+  }
+  {
+    // case 10:
+    WifiHelper wifi;
+    wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
+    wifi.SetStandard (WIFI_STANDARD_80211p);
+    phy.Set ("ChannelWidth", UintegerValue (10));
+    staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
+    phySta = GetYansWifiPhyPtr (staDevice);
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 172, "802.11p 10Mhz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 10, "802.11p 10Mhz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5860, "802.11p 10Mhz configuration");
+  }
+  {
+    // case 11:
+    WifiHelper wifi;
+    wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
+    wifi.SetStandard (WIFI_STANDARD_80211p);
+    phy.Set ("ChannelWidth", UintegerValue (5));
+    staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
+    phySta = GetYansWifiPhyPtr (staDevice);
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 171, "802.11p 5Mhz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 5, "802.11p 5Mhz configuration");
+    NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5860, "802.11p 5Mhz configuration");
+  }
+  {
+    // case 12:
+    WifiHelper wifi;
+    wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
+    wifi.SetStandard (WIFI_STANDARD_holland);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     // We expect channel 36, width 20, frequency 5180
@@ -1029,10 +1062,10 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5180, "802.11 5Mhz configuration");
   }
   {
-    // case 10
+    // case 13:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     phy.Set ("ChannelNumber", UintegerValue (44));
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
@@ -1041,27 +1074,31 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5220, "802.11 5GHz configuration");
   }
   {
-    // case 11
+    // case 14:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
     phy.Set ("ChannelNumber", UintegerValue (44));
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     // Post-install reconfiguration to channel number 40
-    Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber", UintegerValue (40));
+    std::ostringstream path;
+    path << "/NodeList/*/DeviceList/" << staDevice.Get(0)->GetIfIndex () << "/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber";
+    Config::Set (path.str(), UintegerValue (40));
     NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 40, "802.11 5GHz configuration");
     NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelWidth (), 20, "802.11 5GHz configuration");
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5200, "802.11 5GHz configuration");
   }
   {
-    // case 12
+    // case 15:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
     phy.Set ("ChannelNumber", UintegerValue (44));
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     // Post-install reconfiguration to channel width 40 MHz
-    Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelWidth", UintegerValue (40));
+    std::ostringstream path;
+    path << "/NodeList/*/DeviceList/" << staDevice.Get(0)->GetIfIndex () << "/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelWidth";
+    Config::Set (path.str(), UintegerValue (40));
     // Although channel 44 is configured originally for 20 MHz, we
     // allow it to be used for 40 MHz here
     NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 44, "802.11 5GHz configuration");
@@ -1069,15 +1106,17 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5220, "802.11 5GHz configuration");
   }
   {
-    // case 13
+    // case 16:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     phySta->SetAttribute ("ChannelNumber", UintegerValue (44));
     // Post-install reconfiguration to channel width 40 MHz
-    Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelWidth", UintegerValue (40));
+    std::ostringstream path;
+    path << "/NodeList/*/DeviceList/" << staDevice.Get(0)->GetIfIndex () << "/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelWidth";
+    Config::Set (path.str(), UintegerValue (40));
     // Although channel 44 is configured originally for 20 MHz, we
     // allow it to be used for 40 MHz here
     NS_TEST_ASSERT_MSG_EQ (phySta->GetChannelNumber (), 44, "802.11 5GHz configuration");
@@ -1085,12 +1124,12 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5220, "802.11 5GHz configuration");
   }
   {
-    // case 14
+    // case 17:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
     // Test that setting Frequency to a non-standard value will zero the
     // channel number
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     phySta->SetAttribute ("Frequency", UintegerValue (5281));
@@ -1100,10 +1139,10 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5281, "802.11 5GHz configuration");
   }
   {
-    // case 15:
+    // case 18:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     // Test that setting Frequency to a standard value will set the
@@ -1115,23 +1154,23 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5500, "802.11 5GHz configuration");
   }
   {
-    // case 16:
+    // case 19:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     // This case will error exit due to invalid channel number unless
     // we provide the DefineChannelNumber() below
-    phySta->DefineChannelNumber (99, WIFI_PHY_STANDARD_80211n_5GHZ, 5185, 40);
+    phySta->DefineChannelNumber (99, WIFI_PHY_BAND_5GHZ, WIFI_PHY_STANDARD_80211n, 5185, 40);
     phySta->SetAttribute ("ChannelNumber", UintegerValue (99));
   }
   {
-    // case 17:
+    // case 20:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
     // Test how channel number behaves when frequency is non-standard
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     phySta->SetAttribute ("Frequency", UintegerValue (5181));
@@ -1155,11 +1194,11 @@ SetChannelFrequencyTest::DoRun ()
     NS_TEST_ASSERT_MSG_EQ (phySta->GetFrequency (), 5180, "802.11 5GHz configuration");
   }
   {
-    // case 18:
+    // case 21:
     WifiHelper wifi;
     wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
     // Set both channel and frequency to consistent values
-    wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+    wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
     staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
     phySta = GetYansWifiPhyPtr (staDevice);
     phySta->SetAttribute ("Frequency", UintegerValue (5200));
@@ -1217,8 +1256,6 @@ public:
 private:
   uint32_t m_countInternalCollisions; ///< count internal collisions
 
-  /// Populate ARP cache function
-  void PopulateArpCache ();
   /**
    * Transmit data failed function
    * \param context the context
@@ -1259,7 +1296,7 @@ Bug2222TestCase::DoRun (void)
   wifiNodes.Create (2);
 
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
@@ -1440,7 +1477,7 @@ Bug2843TestCase::DoRun (void)
   NodeContainer wifiApNode;
   wifiApNode.Create (1);
 
-  SpectrumWifiPhyHelper spectrumPhy = SpectrumWifiPhyHelper::Default ();
+  SpectrumWifiPhyHelper spectrumPhy;
   Ptr<MultiModelSpectrumChannel> spectrumChannel = CreateObject<MultiModelSpectrumChannel> ();
   Ptr<FriisPropagationLossModel> lossModel = CreateObject<FriisPropagationLossModel> ();
   lossModel->SetFrequency (5.180e9);
@@ -1458,7 +1495,7 @@ Bug2843TestCase::DoRun (void)
   spectrumPhy.Set ("TxPowerEnd", DoubleValue (10));
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+  wifi.SetStandard (WIFI_STANDARD_80211ac);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("VhtMcs8"),
                                 "ControlMode", StringValue ("VhtMcs8"),
@@ -1536,8 +1573,9 @@ private:
    * Callback triggered when a packet is received by the PHYs
    * \param context the context
    * \param p the received packet
+   * \param rxPowersW the received power per channel band in watts
    */
-  void RxCallback (std::string context, Ptr<const Packet> p);
+  void RxCallback (std::string context, Ptr<const Packet> p, RxPowerWattPerChannelBand rxPowersW);
 
   Ptr<YansWifiPhy> m_apPhy; ///< AP PHY
   Ptr<YansWifiPhy> m_staPhy; ///< STA PHY
@@ -1571,7 +1609,7 @@ Bug2831TestCase::ChangeSupportedChannelWidth ()
 }
 
 void
-Bug2831TestCase::RxCallback (std::string context, Ptr<const Packet> p)
+Bug2831TestCase::RxCallback (std::string context, Ptr<const Packet> p, RxPowerWattPerChannelBand rxPowersW)
 {
   Ptr<Packet> packet = p->Copy ();
   WifiMacHeader hdr;
@@ -1620,7 +1658,7 @@ Bug2831TestCase::DoRun (void)
   mac.Set ("EnableBeaconJitter", BooleanValue (false));
   Ptr<WifiMac> apMac = mac.Create<WifiMac> ();
   apMac->SetDevice (apDev);
-  apMac->ConfigureStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+  apMac->ConfigureStandard (WIFI_STANDARD_80211ax_5GHZ);
 
   Ptr<Node> staNode = CreateObject<Node> ();
   Ptr<WifiNetDevice> staDev = CreateObject<WifiNetDevice> ();
@@ -1629,7 +1667,7 @@ Bug2831TestCase::DoRun (void)
   mac.SetTypeId ("ns3::StaWifiMac");
   Ptr<WifiMac> staMac = mac.Create<WifiMac> ();
   staMac->SetDevice (staDev);
-  staMac->ConfigureStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+  staMac->ConfigureStandard (WIFI_STANDARD_80211ax_5GHZ);
 
   Ptr<ConstantPositionMobilityModel> apMobility = CreateObject<ConstantPositionMobilityModel> ();
   apMobility->SetPosition (Vector (0.0, 0.0, 0.0));
@@ -1641,7 +1679,7 @@ Bug2831TestCase::DoRun (void)
   m_apPhy->SetChannel (channel);
   m_apPhy->SetMobility (apMobility);
   m_apPhy->SetDevice (apDev);
-  m_apPhy->ConfigureStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+  m_apPhy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
   m_apPhy->SetChannelNumber (36);
   m_apPhy->SetChannelWidth (20);
 
@@ -1654,7 +1692,7 @@ Bug2831TestCase::DoRun (void)
   m_staPhy->SetChannel (channel);
   m_staPhy->SetMobility (staMobility);
   m_staPhy->SetDevice (apDev);
-  m_staPhy->ConfigureStandard (WIFI_PHY_STANDARD_80211ax_5GHZ);
+  m_staPhy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
   m_staPhy->SetChannelNumber (36);
   m_staPhy->SetChannelWidth (20);
 
@@ -1771,18 +1809,22 @@ StaWifiMacScanningTestCase::TurnApOff (Ptr<Node> apNode)
 NodeContainer
 StaWifiMacScanningTestCase::Setup (bool nearestApBeaconGeneration, bool staActiveProbe)
 {
+  RngSeedManager::SetSeed (1);
+  RngSeedManager::SetRun (1);
+  int64_t streamNumber = 1;
+
   NodeContainer apNodes;
   apNodes.Create (2);
 
   Ptr<Node> apNodeNearest = CreateObject<Node> ();
   Ptr<Node> staNode = CreateObject<Node> ();
 
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_2_4GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager");
 
   WifiMacHelper mac;
@@ -1798,6 +1840,11 @@ StaWifiMacScanningTestCase::Setup (bool nearestApBeaconGeneration, bool staActiv
   mac.SetType ("ns3::StaWifiMac",
                "ActiveProbing", BooleanValue (staActiveProbe));
   staDevice = wifi.Install (phy, mac, staNode);
+
+  // Assign fixed streams to random variables in use
+  wifi.AssignStreams (apDevice, streamNumber);
+  wifi.AssignStreams (apDeviceNearest, streamNumber + 1);
+  wifi.AssignStreams (staDevice, streamNumber + 2);
 
   MobilityHelper mobility;
   Ptr<ListPositionAllocator> positionAlloc = CreateObject<ListPositionAllocator> ();
@@ -1822,9 +1869,6 @@ void
 StaWifiMacScanningTestCase::DoRun (void)
 {
   {
-    RngSeedManager::SetSeed (1);
-    RngSeedManager::SetRun (1);
-
     NodeContainer nodes = Setup (false, false);
     Ptr<Node> nearestAp = nodes.Get (2);
     Mac48Address nearestApAddr = DynamicCast<WifiNetDevice> (nearestAp->GetDevice (0))->GetMac ()->GetAddress ();
@@ -1839,9 +1883,6 @@ StaWifiMacScanningTestCase::DoRun (void)
   }
   m_associatedApBssid = Mac48Address ();
   {
-    RngSeedManager::SetSeed (1);
-    RngSeedManager::SetRun (1);
-
     NodeContainer nodes = Setup (true, true);
     Ptr<Node> nearestAp = nodes.Get (2);
     Mac48Address nearestApAddr = DynamicCast<WifiNetDevice> (nearestAp->GetDevice (0))->GetMac ()->GetAddress ();
@@ -1854,9 +1895,6 @@ StaWifiMacScanningTestCase::DoRun (void)
   }
   m_associatedApBssid = Mac48Address ();
   {
-    RngSeedManager::SetSeed (1);
-    RngSeedManager::SetRun (1);
-
     NodeContainer nodes = Setup (true, false);
     Ptr<Node> nearestAp = nodes.Get (2);
     Mac48Address secondNearestApAddr = DynamicCast<WifiNetDevice> (nodes.Get (1)->GetDevice (0))->GetMac ()->GetAddress ();
@@ -1919,8 +1957,9 @@ private:
    * \param txVector the TX vector
    * \param aMpdu the A-MPDU info
    * \param signalNoise the signal noise in dBm
+   * \param staId the STA-ID
    */
-  void RxCallback (std::string context, Ptr<const Packet> p, uint16_t channelFreqMhz, WifiTxVector txVector, MpduInfo aMpdu, SignalNoiseDbm signalNoise);
+  void RxCallback (std::string context, Ptr<const Packet> p, uint16_t channelFreqMhz, WifiTxVector txVector, MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId);
   /**
    * Callback when packet is dropped
    * \param context node context
@@ -1993,7 +2032,7 @@ Bug2470TestCase::AddbaStateChangedCallback (std::string context, Time t, Mac48Ad
 }
 
 void
-Bug2470TestCase::RxCallback (std::string context, Ptr<const Packet> p, uint16_t channelFreqMhz, WifiTxVector txVector, MpduInfo aMpdu, SignalNoiseDbm signalNoise)
+Bug2470TestCase::RxCallback (std::string context, Ptr<const Packet> p, uint16_t channelFreqMhz, WifiTxVector txVector, MpduInfo aMpdu, SignalNoiseDbm signalNoise, uint16_t staId)
 {
   Ptr<Packet> packet = p->Copy ();
   if (aMpdu.type != MpduType::NORMAL_MPDU)
@@ -2045,12 +2084,12 @@ Bug2470TestCase::RunSubtest (PointerValue apErrorModel, PointerValue staErrorMod
   wifiApNode.Create (1);
   wifiStaNode.Create (1);
 
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("HtMcs7"),
                                 "ControlMode", StringValue ("HtMcs7"));
@@ -2164,7 +2203,6 @@ Bug2470TestCase::DoRun (void)
   // but before it does not enter RESET state. More tests should be written to verify all possible scenarios.
 }
 
-
 //-----------------------------------------------------------------------------
 /**
  * Make sure that Ideal rate manager recovers when the station is moving away from the access point.
@@ -2269,12 +2307,12 @@ Issue40TestCase::RunOne (bool useAmpdu)
   wifiApNode.Create (1);
   wifiStaNode.Create (1);
 
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+  wifi.SetStandard (WIFI_STANDARD_80211ac);
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
 
   WifiMacHelper mac;
@@ -2386,11 +2424,11 @@ private:
   /**
    * Callback that indicates a PSDU is being transmitted
    * \param context the context
-   * \param psdu the PSDU to transmit
+   * \param psduMap the PSDU map to transmit
    * \param txVector the TX vector
    * \param txPowerW the TX power (W)
    */
-  void TxCallback (std::string context, Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW);
+  void TxCallback (std::string context, WifiConstPsduMap psdus, WifiTxVector txVector, double txPowerW);
 };
 
 Issue169TestCase::Issue169TestCase ()
@@ -2416,9 +2454,9 @@ Issue169TestCase::SendPackets (uint8_t numPackets, Ptr<NetDevice> sourceDevice, 
 }
 
 void
-Issue169TestCase::TxCallback (std::string context, Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW)
+Issue169TestCase::TxCallback (std::string context, WifiConstPsduMap psdus, WifiTxVector txVector, double txPowerW)
 {
-  if (psdu->GetSize () >= 1000)
+  if (psdus.begin()->second->GetSize () >= 1000)
     {
       NS_TEST_ASSERT_MSG_EQ (txVector.GetMode ().GetModulationClass (), WifiModulationClass::WIFI_MOD_CLASS_VHT, "Ideal rate manager selected incorrect modulation class");
     }
@@ -2435,12 +2473,12 @@ Issue169TestCase::DoRun (void)
   wifiApNode.Create (1);
   wifiStaNode.Create (1);
 
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+  wifi.SetStandard (WIFI_STANDARD_80211ac);
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
 
   WifiMacHelper mac;
@@ -2520,11 +2558,11 @@ private:
   /**
    * Callback that indicates a PSDU is being transmitted
    * \param context the context
-   * \param psdu the PSDU to transmit
+   * \param psduMap the PSDU map to transmit
    * \param txVector the TX vector
    * \param txPowerW the TX power (W)
    */
-  void TxCallback (std::string context, Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW);
+  void TxCallback (std::string context, WifiConstPsduMap psduMap, WifiTxVector txVector, double txPowerW);
 
   /**
    * Check if the selected WifiMode is correct
@@ -2558,9 +2596,9 @@ IdealRateManagerChannelWidthTest::SendPacket (Ptr<NetDevice> sourceDevice, Addre
 }
 
 void
-IdealRateManagerChannelWidthTest::TxCallback (std::string context, Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW)
+IdealRateManagerChannelWidthTest::TxCallback (std::string context, WifiConstPsduMap psduMap, WifiTxVector txVector, double txPowerW)
 {
-  if (psdu->GetSize () >= 1000)
+  if (psduMap.begin ()->second->GetSize () >= 1000)
     {
       m_txMode = txVector.GetMode ();
     }
@@ -2583,12 +2621,12 @@ IdealRateManagerChannelWidthTest::DoRun (void)
   wifiApNode.Create (1);
   wifiStaNode.Create (1);
 
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+  wifi.SetStandard (WIFI_STANDARD_80211ac);
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
 
   WifiMacHelper mac;
@@ -2619,20 +2657,20 @@ IdealRateManagerChannelWidthTest::DoRun (void)
   //Set channel width to 80 MHz & send packet
   Simulator::Schedule (Seconds (0.5), &IdealRateManagerChannelWidthTest::ChangeChannelWidth, this, 80);
   Simulator::Schedule (Seconds (1.0), &IdealRateManagerChannelWidthTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
-  //Selected rate should be VHT-MCS 0
-  Simulator::Schedule (Seconds (1.1), &IdealRateManagerChannelWidthTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs0 ());
+  //Selected rate should be VHT-MCS 1
+  Simulator::Schedule (Seconds (1.1), &IdealRateManagerChannelWidthTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs1 ());
 
   //Set channel width to 20 MHz & send packet
   Simulator::Schedule (Seconds (1.5), &IdealRateManagerChannelWidthTest::ChangeChannelWidth, this, 20);
   Simulator::Schedule (Seconds (2.0), &IdealRateManagerChannelWidthTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
-  //Selected rate should be VHT-MCS 2 since SNR should be 6 dB higher than previously
-  Simulator::Schedule (Seconds (2.1), &IdealRateManagerChannelWidthTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
+  //Selected rate should be VHT-MCS 3 since SNR should be 6 dB higher than previously
+  Simulator::Schedule (Seconds (2.1), &IdealRateManagerChannelWidthTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs3 ());
 
   //Set channel width to 40 MHz & send packet
   Simulator::Schedule (Seconds (2.5), &IdealRateManagerChannelWidthTest::ChangeChannelWidth, this, 40);
   Simulator::Schedule (Seconds (3.0), &IdealRateManagerChannelWidthTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
-  //Selected rate should be VHT-MCS 1 since SNR should be 3 dB lower than previously
-  Simulator::Schedule (Seconds (3.1), &IdealRateManagerChannelWidthTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs1 ());
+  //Selected rate should be VHT-MCS 2 since SNR should be 3 dB lower than previously
+  Simulator::Schedule (Seconds (3.1), &IdealRateManagerChannelWidthTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
 
   Simulator::Stop (Seconds (3.2));
   Simulator::Run ();
@@ -2679,11 +2717,11 @@ private:
   /**
    * Callback that indicates a PSDU is being transmitted
    * \param context the context
-   * \param psdu the PSDU to transmit
+   * \param psduMap the PSDU map to transmit
    * \param txVector the TX vector
    * \param txPowerW the TX power (W)
    */
-  void TxCallback (std::string context, Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW);
+  void TxCallback (std::string context, WifiConstPsduMap psdus, WifiTxVector txVector, double txPowerW);
 
   /**
    * Check if the selected WifiMode is correct
@@ -2732,9 +2770,9 @@ IdealRateManagerMimoTest::SendPacket (Ptr<NetDevice> sourceDevice, Address& dest
 }
 
 void
-IdealRateManagerMimoTest::TxCallback (std::string context, Ptr<const WifiPsdu> psdu, WifiTxVector txVector, double txPowerW)
+IdealRateManagerMimoTest::TxCallback (std::string context, WifiConstPsduMap psdus, WifiTxVector txVector, double txPowerW)
 {
-  if (psdu->GetSize () >= 1000)
+  if (psdus.begin ()->second->GetSize () >= 1000)
     {
       m_txVector = txVector;
     }
@@ -2763,12 +2801,12 @@ IdealRateManagerMimoTest::DoRun (void)
   wifiApNode.Create (1);
   wifiStaNode.Create (1);
 
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default ();
+  YansWifiPhyHelper phy;
   YansWifiChannelHelper channel = YansWifiChannelHelper::Default ();
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211ac);
+  wifi.SetStandard (WIFI_STANDARD_80211ac);
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
 
   WifiMacHelper mac;
@@ -2806,8 +2844,8 @@ IdealRateManagerMimoTest::DoRun (void)
   Simulator::Schedule (Seconds (1.1), &IdealRateManagerMimoTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
   // Selected NSS should be 1 since both TX and RX support a single antenna
   Simulator::Schedule (Seconds (1.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
-  // Selected rate should be VHT-MCS1 because of settings and distance between TX and RX
-  Simulator::Schedule (Seconds (1.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs1 ());
+  // Selected rate should be VHT-MCS 2 because of settings and distance between TX and RX
+  Simulator::Schedule (Seconds (1.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
 
 
   // TX: 1 antenna
@@ -2819,8 +2857,8 @@ IdealRateManagerMimoTest::DoRun (void)
   Simulator::Schedule (Seconds (2.1), &IdealRateManagerMimoTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
   // Selected NSS should be 1 since both TX and RX support a single antenna
   Simulator::Schedule (Seconds (2.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
-  // Selected rate should be increased to VHT-MCS2 because of RX diversity resulting in SNR improvement of about 3dB
-  Simulator::Schedule (Seconds (2.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
+  // Selected rate should be increased to VHT-MCS 3 because of RX diversity resulting in SNR improvement of about 3dB
+  Simulator::Schedule (Seconds (2.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs3 ());
 
 
   // TX: 1 antenna
@@ -2833,7 +2871,7 @@ IdealRateManagerMimoTest::DoRun (void)
   // Selected NSS should be 1 since TX supports a single antenna
   Simulator::Schedule (Seconds (3.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
   // Selected rate should be as previously
-  Simulator::Schedule (Seconds (3.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
+  Simulator::Schedule (Seconds (3.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs3 ());
 
 
   // TX: 2 antennas, but only supports 1 spatial stream
@@ -2845,8 +2883,8 @@ IdealRateManagerMimoTest::DoRun (void)
   Simulator::Schedule (Seconds (4.1), &IdealRateManagerMimoTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
   // Selected NSS should be 1 since both TX and RX support a single antenna
   Simulator::Schedule (Seconds (4.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
-  // Selected rate should be VHT-MCS1 because we do no longer have diversity in this scenario (more antennas at TX does not result in SNR improvement in AWGN channel)
-  Simulator::Schedule (Seconds (4.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs1 ());
+  // Selected rate should be VHT-MCS 2 because we do no longer have diversity in this scenario (more antennas at TX does not result in SNR improvement in AWGN channel)
+  Simulator::Schedule (Seconds (4.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
 
 
   // TX: 2 antennas, but only supports 1 spatial stream
@@ -2858,8 +2896,8 @@ IdealRateManagerMimoTest::DoRun (void)
   Simulator::Schedule (Seconds (5.1), &IdealRateManagerMimoTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
   // Selected NSS should be 1 since both TX and RX support a single antenna
   Simulator::Schedule (Seconds (5.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
-  // Selected rate should be increased to VHT-MCS2 because of RX diversity resulting in SNR improvement of about 3dB (more antennas at TX does not result in SNR improvement in AWGN channel)
-  Simulator::Schedule (Seconds (5.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
+  // Selected rate should be increased to VHT-MCS 3 because of RX diversity resulting in SNR improvement of about 3dB (more antennas at TX does not result in SNR improvement in AWGN channel)
+  Simulator::Schedule (Seconds (5.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs3 ());
 
 
   // TX: 2 antennas, but only supports 1 spatial stream
@@ -2872,7 +2910,7 @@ IdealRateManagerMimoTest::DoRun (void)
   // Selected NSS should be 1 since TX supports a single antenna
   Simulator::Schedule (Seconds (6.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
   // Selected rate should be as previously
-  Simulator::Schedule (Seconds (6.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
+  Simulator::Schedule (Seconds (6.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs3 ());
 
 
   // TX: 2 antennas, and supports 2 spatial streams
@@ -2884,8 +2922,8 @@ IdealRateManagerMimoTest::DoRun (void)
   Simulator::Schedule (Seconds (7.1), &IdealRateManagerMimoTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
   // Selected NSS should be 1 since RX supports a single antenna
   Simulator::Schedule (Seconds (7.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
-  // Selected rate should be VHT-MCS1 because we do no longer have diversity in this scenario (more antennas at TX does not result in SNR improvement in AWGN channel)
-  Simulator::Schedule (Seconds (7.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs1 ());
+  // Selected rate should be VHT-MCS 2 because we do no longer have diversity in this scenario (more antennas at TX does not result in SNR improvement in AWGN channel)
+  Simulator::Schedule (Seconds (7.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
 
 
   // TX: 2 antennas, and supports 2 spatial streams
@@ -2897,8 +2935,8 @@ IdealRateManagerMimoTest::DoRun (void)
   Simulator::Schedule (Seconds (8.1), &IdealRateManagerMimoTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
   // Selected NSS should be 1 since RX supports a single antenna
   Simulator::Schedule (Seconds (8.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
-  // Selected rate should be increased to VHT-MCS2 because of RX diversity resulting in SNR improvement of about 3dB (more antennas at TX does not result in SNR improvement in AWGN channel)
-  Simulator::Schedule (Seconds (8.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
+  // Selected rate should be increased to VHT-MCS 3 because of RX diversity resulting in SNR improvement of about 3dB (more antennas at TX does not result in SNR improvement in AWGN channel)
+  Simulator::Schedule (Seconds (8.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs3 ());
 
 
   // TX: 2 antennas, and supports 2 spatial streams
@@ -2911,7 +2949,7 @@ IdealRateManagerMimoTest::DoRun (void)
   // Selected NSS should be 2 since both TX and RX support 2 antennas
   Simulator::Schedule (Seconds (9.2), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 2);
   // Selecte rate should be the same as without diversity, as it uses 2 spatial streams so there is no more benefits from diversity in AWGN channels
-  Simulator::Schedule (Seconds (9.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs1 ());
+  Simulator::Schedule (Seconds (9.2), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
 
 
   // Verify we can go back to initial situation
@@ -2919,11 +2957,97 @@ IdealRateManagerMimoTest::DoRun (void)
   Simulator::Schedule (Seconds (9.9), &IdealRateManagerMimoTest::SetStaMimoSettings, this, 1, 1);
   Simulator::Schedule (Seconds (10.0), &IdealRateManagerMimoTest::SendPacket, this, apDevice.Get (0), staDevice.Get (0)->GetAddress ());
   Simulator::Schedule (Seconds (10.1), &IdealRateManagerMimoTest::CheckLastSelectedNss, this, 1);
-  Simulator::Schedule (Seconds (10.1), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs1 ());
+  Simulator::Schedule (Seconds (10.1), &IdealRateManagerMimoTest::CheckLastSelectedMode, this, WifiPhy::GetVhtMcs2 ());
 
   Simulator::Stop (Seconds (10.2));
   Simulator::Run ();
   Simulator::Destroy ();
+}
+
+//-----------------------------------------------------------------------------
+/**
+ * \ingroup wifi-test
+ * \ingroup tests
+ *
+ * \brief Data rate verification test for MCSs of different RU sizes
+ */
+class HeRuMcsDataRateTestCase : public TestCase
+{
+public:
+  HeRuMcsDataRateTestCase ();
+
+private:
+  /**
+   * Compare the data rate computed for the provided combination with standard defined one.
+   * \param ruType the RU type
+   * \param mcs the modulation and coding scheme (as a string, e.g. HeMcs0)
+   * \param nss the number of spatial streams
+   * \param guardInterval the guard interval to use
+   * \param expectedDataRate the expected data rate in 100 kbps units (minimum granularity in standard tables)
+   * \returns true if data rates are the same, false otherwise
+   */
+  bool CheckDataRate (HeRu::RuType ruType, std::string mcs, uint8_t nss, uint16_t guardInterval, uint16_t expectedDataRate);
+  virtual void DoRun (void);
+};
+
+HeRuMcsDataRateTestCase::HeRuMcsDataRateTestCase ()
+  : TestCase ("Check data rates for different RU types.")
+{
+}
+
+bool
+HeRuMcsDataRateTestCase::CheckDataRate (HeRu::RuType ruType, std::string mcs, uint8_t nss, uint16_t guardInterval, uint16_t expectedDataRate)
+{
+  uint16_t approxWidth = HeRu::GetBandwidth (ruType);
+  WifiMode mode (mcs);
+  uint64_t dataRate = round (mode.GetDataRate (approxWidth, guardInterval, nss) / 100000.0);
+  NS_ABORT_MSG_IF (dataRate > 65535, "Rate is way too high");
+  if (static_cast<uint16_t> (dataRate) != expectedDataRate)
+    {
+      std::cerr << "RU=" << ruType
+                << " mode=" << mode
+                << " Nss=" << +nss
+                << " guardInterval=" << guardInterval
+                << " expected=" << expectedDataRate << " x100kbps"
+                << " computed=" << static_cast<uint16_t> (dataRate) << " x100kbps"
+                << std::endl;
+      return false;
+    }
+  return true;
+}
+
+void
+HeRuMcsDataRateTestCase::DoRun (void)
+{
+  bool retval = true;
+
+  //26-tone RU, browse over all MCSs, GIs and Nss's (up to 4, current max)
+  retval = retval
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs0", 1,  800,   9)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs1", 1, 1600,  17)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs2", 1, 3200,  23)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs3", 1, 3200,  30)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs4", 2, 1600, 100)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs5", 3, 1600, 200)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs6", 4, 1600, 300)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs7", 4, 3200, 300)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs8", 4, 1600, 400)
+      && CheckDataRate (HeRu::RU_26_TONE,  "HeMcs9", 4, 3200, 400)
+      && CheckDataRate (HeRu::RU_26_TONE, "HeMcs10", 4, 1600, 500)
+      && CheckDataRate (HeRu::RU_26_TONE, "HeMcs11", 4, 3200, 500);
+
+  NS_TEST_EXPECT_MSG_EQ (retval, true, "26-tone RU  data rate verification for different MCSs, GIs, and Nss's failed");
+
+  //Check other RU sizes
+  retval = retval
+      && CheckDataRate (   HeRu::RU_52_TONE, "HeMcs2", 1, 1600,   50)
+      && CheckDataRate (  HeRu::RU_106_TONE, "HeMcs9", 1,  800,  500)
+      && CheckDataRate (  HeRu::RU_242_TONE, "HeMcs5", 1, 1600,  650)
+      && CheckDataRate (  HeRu::RU_484_TONE, "HeMcs3", 1, 1600,  650)
+      && CheckDataRate (  HeRu::RU_996_TONE, "HeMcs5", 1, 3200, 2450)
+      && CheckDataRate (HeRu::RU_2x996_TONE, "HeMcs3", 1, 3200, 2450);
+
+  NS_TEST_EXPECT_MSG_EQ (retval, true, "Data rate verification for RUs above 52-tone RU (included) failed");
 }
 
 /**
@@ -2957,6 +3081,7 @@ WifiTestSuite::WifiTestSuite ()
   AddTestCase (new Issue169TestCase, TestCase::QUICK); //Issue #169
   AddTestCase (new IdealRateManagerChannelWidthTest, TestCase::QUICK);
   AddTestCase (new IdealRateManagerMimoTest, TestCase::QUICK);
+  AddTestCase (new HeRuMcsDataRateTestCase, TestCase::QUICK);
 }
 
 static WifiTestSuite g_wifiTestSuite; ///< the test suite

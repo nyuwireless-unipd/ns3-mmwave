@@ -124,12 +124,12 @@ Issue211Test::DoRun (void)
   Ptr<ConstantSpeedPropagationDelayModel> delayModel = CreateObject<ConstantSpeedPropagationDelayModel> ();
   spectrumChannel->SetPropagationDelayModel (delayModel);
 
-  SpectrumWifiPhyHelper phy = SpectrumWifiPhyHelper::Default ();
+  SpectrumWifiPhyHelper phy;
   phy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
   phy.SetChannel (spectrumChannel);
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("HtMcs0"),
                                 "ControlMode", StringValue ("HtMcs0"));

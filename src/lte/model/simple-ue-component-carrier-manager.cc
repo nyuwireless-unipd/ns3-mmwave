@@ -152,6 +152,7 @@ SimpleUeComponentCarrierManager::DoDispose ()
   NS_LOG_FUNCTION (this);
   delete m_ccmMacSapUser;
   delete m_ccmMacSapProvider;
+  delete m_ccmRrcSapProvider;
 }
 
 

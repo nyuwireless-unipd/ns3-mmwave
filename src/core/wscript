@@ -1,7 +1,8 @@
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 import sys
+import re
 
-from waflib import Options, Utils
+from waflib import Context, Configure, Options, Utils
 import wutils
 
 int64x64 = {
@@ -41,9 +42,21 @@ def options(opt):
                    action="store_true", default=False,
                    dest='disable_pthread')
 
+    opt.add_option('--check-version',
+                    help=("Print the current build version"),
+                    action="store_true", default=False,
+                    dest='check_version')
 
+    opt.add_option('--enable-build-version',
+                    help=("Check git repository for changes and update build version"
+                          "during waf build"),
+                    action="store_true", default=False,
+                    dest='enable_build_version')
 
 def configure(conf):
+
+    conf.load('versioning', ['waf-tools'])
+
     int64x64_impl = Options.options.int64x64_impl
     if int64x64_impl == 'default' or int64x64_impl == 'int128':
 
@@ -147,9 +160,39 @@ int main ()
                                      "threading not enabled")
         conf.env["ENABLE_REAL_TIME"] = conf.env['ENABLE_THREADING']
 
+    if Options.options.enable_build_version:
+        conf.env['ENABLE_BUILD_VERSION'] = True 
+        conf.env.append_value('DEFINES', 'ENABLE_BUILD_VERSION=1')
+    else:
+        conf.env['ENABLE_BUILD_VERSION'] = False 
+
+    # Check for boost::units
+    if 'INCLUDES_BOOST' in conf.env:
+        fragment = r"""
+#include <boost/units/systems/si.hpp>
+int main ()
+{
+    auto q = 2 * boost::units::si::meter;
+    q.value ();
+}
+""" 
+        test_env = conf.env.derive()
+        test_env.append_value('INCLUDES', conf.env['INCLUDES_BOOST'])
+
+        ret = conf.check_nonfatal(compiler='cxx',
+                            define_name='HAVE_BOOST_UNITS',
+                            header_name='boost/units/systems/si.hpp',
+                            env=test_env,
+                            fragment=fragment,
+                            errmsg='not found')
+
+        conf.env.append_value ('CPPFLAGS', '-DHAVE_BOOST_UNITS')
+
     conf.write_config_header('ns3/core-config.h', top=True)
 
 def build(bld):
+
+
     bld.install_files('${INCLUDEDIR}/%s%s/ns3' % (wutils.APPNAME, wutils.VERSION), '../../ns3/core-config.h')
 
     core = bld.create_ns3_module('core')
@@ -214,6 +257,8 @@ def build(bld):
         'model/time-printer.cc',
         'model/show-progress.cc',
         'model/system-wall-clock-timestamp.cc',
+        'helper/csv-reader.cc',
+        'model/length.cc',
         ]
 
     if (bld.env['ENABLE_EXAMPLES']):
@@ -222,6 +267,7 @@ def build(bld):
     core_test = bld.create_ns3_module_test_library('core')
     core_test.source = [
         'test/attribute-test-suite.cc',
+        'test/attribute-container-test-suite.cc',
         'test/build-profile-test-suite.cc',
         'test/callback-test-suite.cc',
         'test/command-line-test-suite.cc',
@@ -234,6 +280,7 @@ def build(bld):
         'test/event-garbage-collector-test-suite.cc',
         'test/many-uniform-random-variables-one-get-value-call-test-suite.cc',
         'test/one-uniform-random-variable-many-get-value-calls-test-suite.cc',
+        'test/pair-value-test-suite.cc',
         'test/sample-test-suite.cc',
         'test/simulator-test-suite.cc',
         'test/time-test-suite.cc',
@@ -243,6 +290,7 @@ def build(bld):
         'test/watchdog-test-suite.cc',
         'test/hash-test-suite.cc',
         'test/type-id-test-suite.cc',
+        'test/length-test-suite.cc',
         ]
 
     if (bld.env['ENABLE_EXAMPLES']):
@@ -310,6 +358,8 @@ def build(bld):
         'model/pointer.h',
         'model/object-factory.h',
         'model/attribute-helper.h',
+        'model/attribute-container.h',
+        'model/attribute-container-accessor-helper.h',
         'model/global-value.h',
         'model/traced-callback.h',
         'model/traced-value.h',
@@ -318,6 +368,7 @@ def build(bld):
         'model/object-ptr-container.h',
         'model/object-vector.h',
         'model/object-map.h',
+        'model/pair.h',
         'model/deprecated.h',
         'model/abort.h',
         'model/names.h',
@@ -342,6 +393,8 @@ def build(bld):
         'model/node-printer.h',
         'model/time-printer.h',
         'model/show-progress.h',
+        'helper/csv-reader.h',
+        'model/length.h'
         ]
 
     if (bld.env['ENABLE_EXAMPLES']):
@@ -409,9 +462,72 @@ def build(bld):
                 'test/random-variable-stream-test-suite.cc'
                 ])
 
+    vers_tg = None
+    if env['ENABLE_BUILD_VERSION']:
+        version_template = bld.path.find_node('model/version-defines.h.in')
+        version_header = bld.bldnode.make_node('ns3/version-defines.h') 
+
+        vers_tg = bld(features='version-defines', 
+                      source=version_template, 
+                      target=version_header)
+
+        #silence errors about no mapping for version-defines.h.in
+        vers_tg.mappings['.h'] = lambda *a, **k: None
+        vers_tg.mappings['.h.in'] = lambda *a, **k: None
+
+        core.source.append('model/version.cc')
+
+        headers.source.append('model/version.h')
+
+    if Options.options.check_version:
+        print_version(bld, vers_tg)
+        raise SystemExit(0)
+        return
+
     if (bld.env['ENABLE_EXAMPLES']):
         bld.recurse('examples')
 
     pymod = bld.ns3_python_bindings()
     if pymod is not None:
         pymod.source += ['bindings/module_helpers.cc']
+
+def print_version(bld, tg):
+
+    if tg is None:
+        print ('Build version support is not enabled, reconfigure with --enable-build-version flag')
+        return
+
+    tg.post()
+
+    for task in tg.tasks:
+        if task.__class__.__name__ == 'git_ns3_version_info':
+            #manually run task
+            task.run()
+            break
+
+    handlers = {
+        'VERSION_TAG': lambda s: s.strip('"'),
+        'CLOSEST_TAG': lambda s: s.strip('"'),
+        'VERSION_TAG_DISTANCE': lambda s: '' if s == '0' else "+" + s,
+        'VERSION_COMMIT_HASH': lambda s: "@" + s.strip('"'),
+        'VERSION_DIRTY_FLAG': lambda s: '' if s == '0' else '-dirty',
+        'BUILD_PROFILE': lambda s: "-" + s
+    }
+
+    fields=('VERSION_TAG', 'CLOSEST_TAG', 'VERSION_TAG_DISTANCE', 
+            'VERSION_COMMIT_HASH', 'VERSION_DIRTY_FLAG', 'BUILD_PROFILE') 
+
+    parts = dict()
+
+    for field in fields:
+        if field in bld.env:
+            parts[field] = handlers[field](bld.env[field])
+        else:
+            parts[field] = ''
+
+    if parts['CLOSEST_TAG'] != parts['VERSION_TAG']:
+        parts['CLOSEST_TAG'] = "+" + parts['CLOSEST_TAG']
+    else:
+        parts['CLOSEST_TAG'] = ""
+    
+    print(''.join([parts[f] for f in fields]))

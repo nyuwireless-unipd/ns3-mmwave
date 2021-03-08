@@ -81,8 +81,13 @@ MinstrelHtWifiManager::GetTypeId (void)
     .SetGroupName ("Wifi")
     .AddAttribute ("UpdateStatistics",
                    "The interval between updating statistics table ",
-                   TimeValue (MilliSeconds (100)),
+                   TimeValue (MilliSeconds (50)),
                    MakeTimeAccessor (&MinstrelHtWifiManager::m_updateStats),
+                   MakeTimeChecker ())
+    .AddAttribute ("LegacyUpdateStatistics",
+                   "The interval between updating statistics table (for legacy Minstrel) ",
+                   TimeValue (MilliSeconds (100)),
+                   MakeTimeAccessor (&MinstrelHtWifiManager::m_legacyUpdateStats),
                    MakeTimeChecker ())
     .AddAttribute ("LookAroundRate",
                    "The percentage to try other rates (for legacy Minstrel)",
@@ -320,7 +325,7 @@ MinstrelHtWifiManager::CalculateMpduTxDuration (Ptr<WifiPhy> phy, uint8_t stream
   txvector.SetMode (mode);
   txvector.SetPreambleType (WIFI_PREAMBLE_HT_MF);
   return WifiPhy::CalculatePhyPreambleAndHeaderDuration (txvector)
-         + WifiPhy::GetPayloadDuration (m_frameLength, txvector, phy->GetFrequency (), mpduType);
+         + WifiPhy::GetPayloadDuration (m_frameLength, txvector, phy->GetPhyBand (), mpduType);
 }
 
 Time
@@ -428,7 +433,7 @@ MinstrelHtWifiManager::CheckInit (MinstrelHtWifiRemoteStation *station)
           NS_LOG_INFO ("non-HT station " << station);
           station->m_isHt = false;
           // We will use non-HT minstrel for this station. Initialize the manager.
-          m_legacyManager->SetAttribute ("UpdateStatistics", TimeValue (m_updateStats));
+          m_legacyManager->SetAttribute ("UpdateStatistics", TimeValue (m_legacyUpdateStats));
           m_legacyManager->SetAttribute ("LookAroundRate", UintegerValue (m_lookAroundRate));
           m_legacyManager->SetAttribute ("EWMA", UintegerValue (m_ewmaLevel));
           m_legacyManager->SetAttribute ("SampleColumn", UintegerValue (m_nSampleCol));
@@ -860,7 +865,7 @@ MinstrelHtWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
           NS_LOG_DEBUG ("New datarate: " << dataRate);
           m_currentRate = dataRate;
         }
-      return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), group.sgi ? 400 : 800, GetNumberOfAntennas (), group.streams, GetNess (station), GetChannelWidthForTransmission (mode, group.chWidth), GetAggregation (station) && !station->m_isSampling, false);
+      return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))), group.sgi ? 400 : 800, GetNumberOfAntennas (), group.streams, GetNess (station), GetChannelWidthForTransmission (mode, group.chWidth), GetAggregation (station) && !station->m_isSampling);
     }
 }
 
@@ -936,7 +941,7 @@ MinstrelHtWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
       NS_ASSERT (rateFound);
 
       return WifiTxVector (rtsRate, GetDefaultTxPowerLevel (), GetPreambleForTransmission (rtsRate.GetModulationClass (), GetShortPreambleEnabled (), UseGreenfieldForDestination (GetAddress (station))),
-                           800, 1, 1, 0, GetChannelWidthForTransmission (rtsRate, GetChannelWidth (station)), GetAggregation (station), false);
+                           800, 1, 1, 0, GetChannelWidthForTransmission (rtsRate, GetChannelWidth (station)), GetAggregation (station));
     }
 }
 

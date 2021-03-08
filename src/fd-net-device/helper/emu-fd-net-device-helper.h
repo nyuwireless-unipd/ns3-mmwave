@@ -45,8 +45,7 @@ public:
    */
   EmuFdNetDeviceHelper ();
   virtual ~EmuFdNetDeviceHelper ()
-  {
-  }
+  {}
 
   /**
    * Get the device name of this device.
@@ -61,6 +60,12 @@ public:
    * \param deviceName The device name of this device.
    */
   void SetDeviceName (std::string deviceName);
+
+  /**
+   * \brief Request host qdisc bypass
+   * \param hostQdiscBypass to enable host qdisc bypass
+   */
+  void HostQdiscBypass (bool hostQdiscBypass);
 
 protected:
 
@@ -86,9 +91,10 @@ protected:
   virtual int CreateFileDescriptor (void) const;
 
   /**
-   * The unix/linux name of the underlying device (e.g., eth0)
+   * The Unix/Linux name of the underlying device (e.g., eth0)
    */
   std::string m_deviceName;
+  bool m_hostQdiscBypass;
 };
 
 } // namespace ns3

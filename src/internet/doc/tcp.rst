@@ -13,7 +13,7 @@ Overview of support for TCP
 inherit from a few common header classes in the ``src/network`` directory, so that
 user code can swap out implementations with minimal changes to the scripts.
 
-There are two important abstract base classes:
+There are three important abstract base classes:
 
 * class :cpp:class:`TcpSocket`: This is defined in
   ``src/internet/model/tcp-socket.{cc,h}``. This class exists for hosting TcpSocket
@@ -22,6 +22,8 @@ There are two important abstract base classes:
   that derive from class :cpp:class:`TcpSocket`.
 * class :cpp:class:`TcpSocketFactory`: This is used by the layer-4 protocol
   instance to create TCP sockets of the right type.
+* class :cpp:class:`TcpCongestionOps`: This supports different variants of 
+  congestion control-- a key topic of simulation-based TCP research.
 
 There are presently two active and one legacy implementations of TCP available for |ns3|.
 
@@ -32,6 +34,11 @@ There are presently two active and one legacy implementations of TCP available f
 NSC is no longer actively supported; it requires use of gcc-5 or gcc-4.9, and
 only covers up to Linux kernel version 2.6.29.
 
+Direct Code Execution is also limited in its support for newer kernels; at
+present, only Linux kernel 4.4 is supported.  However, the TCP implementations
+in kernel 4.4 can still be used for ns-3 validation or for specialized
+simulation use cases.
+
 It should also be mentioned that various ways of combining virtual machines
 with |ns3| makes available also some additional TCP implementations, but
 those are out of scope for this chapter.
@@ -41,7 +48,7 @@ ns-3 TCP
 
 In brief, the native |ns3| TCP model supports a full bidirectional TCP with
 connection setup and close logic. Several congestion control algorithms
-are supported, with NewReno the default, and Westwood, Hybla, HighSpeed,
+are supported, with NewReno the default, and CUBIC, Westwood, Hybla, HighSpeed,
 Vegas, Scalable, Veno, Binary Increase Congestion Control (BIC), Yet Another
 HighSpeed TCP (YeAH), Illinois, H-TCP, Low Extra Delay Background Transport
 (LEDBAT), TCP Low Priority (TCP-LP) and and Data Center TCP (DCTCP) also supported. The model also supports
@@ -64,16 +71,23 @@ Before the ns-3.25 release, a congestion control was considered as a stand-alone
 through an inheritance relation: each congestion control (e.g. TcpNewReno) was
 a subclass of TcpSocketBase, reimplementing some inherited methods. The
 architecture was redone to avoid this inheritance,
-the fundamental principle of the GSoC proposal was avoiding this inheritance,
-by making each congestion control a separate class, and making an interface
+by making each congestion control a separate class, and defining an interface
 to exchange important data between TcpSocketBase and the congestion modules.
-For instance, similar modularity is used in Linux.
+The Linux ``tcp_congestion_ops`` interface was used as the design reference.
 
 Along with congestion control, Fast Retransmit and Fast Recovery algorithms
-have been modified; in previous releases, these algorithms were demanded to
+have been modified; in previous releases, these algorithms were delegated to
 TcpSocketBase subclasses. Starting from ns-3.25, they have been merged inside
 TcpSocketBase. In future releases, they can be extracted as separate modules,
 following the congestion control design.
+
+As of the ns-3.31 release, the default initial window was set to 10 segments
+(in previous releases, it was set to 1 segment).  This aligns with current
+Linux default, and is discussed further in :rfc:`6928`.
+
+In the ns-3.32 release, the default recovery algorithm was set to
+Proportional Rate Reduction (PRR) from the classic ack-clocked Fast
+Recovery algorithm.
 
 Acknowledgments
 +++++++++++++++
@@ -364,11 +378,11 @@ callback as well.
 Congestion Control Algorithms
 +++++++++++++++++++++++++++++
 Here follows a list of supported TCP congestion control algorithms. For an
-academic peer-reviewed paper on these congestion control algorithms, see
+academic paper on many of these congestion control algorithms, see
 http://dl.acm.org/citation.cfm?id=2756518 .
 
 NewReno
-^^^^^^^^
+^^^^^^^
 NewReno algorithm introduces partial ACKs inside the well-established Reno
 algorithm. This and other modifications are described in RFC 6582. We have two
 possible congestion window increment strategy: slow start and congestion
@@ -391,8 +405,106 @@ During congestion avoidance, cwnd is incremented by roughly 1 full-sized
 segment per round-trip time (RTT), and for each congestion event, the slow
 start threshold is halved.
 
-HighSpeed
+CUBIC
+^^^^^
+CUBIC (class :cpp:class:`TcpCubic`) is the default TCP congestion control
+in Linux, macOS (since 2014), and Microsoft Windows (since 2017).
+CUBIC has two main differences with respect to
+a more classic TCP congestion control such as NewReno.  First, during the
+congestion avoidance phase, the window size grows according to a cubic
+function (concave, then convex) with the latter convex portion designed
+to allow for bandwidth probing.  Second, a hybrid slow start (HyStart)
+algorithm uses observations of delay increases in the slow start
+phase of window growth to try to exit slow start before window growth
+causes queue overflow.
+
+CUBIC is documented in :rfc:`8312`, and the |ns3| implementation is based
+on the RFC more so than the Linux implementation, although the Linux 4.4
+kernel implementation (through the Direct Code Execution environment) has
+been used to validate the behavior and is fairly well aligned (see below
+section on validation).
+
+Linux Reno
 ^^^^^^^^^^
+TCP Linux Reno (class :cpp:class:`TcpLinuxReno`) is designed to provide a
+Linux-like implementation of
+TCP NewReno. The implementation of class :cpp:class:`TcpNewReno` in ns-3
+follows RFC standards, and increases cwnd more conservatively than does Linux Reno.
+Linux Reno modifies slow start and congestion avoidance algorithms to 
+increase cwnd based on the number of bytes being acknowledged by each 
+arriving ACK, rather than by the number of ACKs that arrive.  Another major
+difference in implementation is that Linux maintains the congestion window
+in units of segments, while the RFCs define the congestion window in units of
+bytes.
+
+In slow start phase, on each incoming ACK at the TCP sender side cwnd 
+is increased by the number of previously unacknowledged bytes ACKed by the
+incoming acknowledgment. In contrast, in ns-3 NewReno, cwnd is increased
+by one segment per acknowledgment.  In standards terminology, this
+difference is referred to as Appropriate Byte Counting (RFC 3465); Linux
+follows Appropriate Byte Counting while ns-3 NewReno does not.
+
+.. math:: cwnd += segAcked * segmentSize
+   :label: linuxrenoslowstart
+
+.. math:: cwnd += segmentSize
+   :label: newrenoslowstart
+
+In congestion avoidance phase, the number of bytes that have been ACKed at
+the TCP sender side are stored in a 'bytes_acked' variable in the TCP control
+block. When 'bytes_acked' becomes greater than or equal to the value of the
+cwnd, 'bytes_acked' is reduced by the value of cwnd. Next, cwnd is incremented
+by a full-sized segment (SMSS).  In contrast, in ns-3 NewReno, cwnd is increased
+by (1/cwnd) with a rounding off due to type casting into int.
+
+.. code-block:: c++
+
+   if (m_cWndCnt >= w)
+    {
+      uint32_t delta = m_cWndCnt / w;
+
+      m_cWndCnt -= delta * w;
+      tcb->m_cWnd += delta * tcb->m_segmentSize;
+      NS_LOG_DEBUG ("Subtracting delta * w from m_cWndCnt " << delta * w);
+    }
+
+   :label: linuxrenocongavoid
+
+.. code-block:: c++
+
+   if (segmentsAcked > 0)
+    {
+      double adder = static_cast<double> (tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get ();
+      adder = std::max (1.0, adder);
+      tcb->m_cWnd += static_cast<uint32_t> (adder);
+      NS_LOG_INFO ("In CongAvoid, updated to cwnd " << tcb->m_cWnd <<
+                   " ssthresh " << tcb->m_ssThresh);
+    }
+
+   :label: newrenocongavoid
+
+So, there are two main difference between the TCP Linux Reno and TCP NewReno
+in ns-3:
+1) In TCP Linux Reno, delayed acknowledgement configuration does not affect
+congestion window growth, while in TCP NewReno, delayed acknowledgments cause
+a slower congestion window growth.
+2) In congestion avoidance phase, the arithmetic for counting the number of 
+segments acked and deciding when to increment the cwnd is different for TCP
+Linux Reno and TCP NewReno.
+
+Following graphs shows the behavior of window growth in TCP Linux Reno and
+TCP NewReno with delayed acknowledgement of 2 segments:
+
+.. _fig-ns3-new-reno-vs-ns3-linux-reno:
+
+.. figure:: figures/ns3-new-reno-vs-ns3-linux-reno.*
+   :scale: 70%
+   :align: center
+
+   ns-3 TCP NewReno vs. ns-3 TCP Linux Reno
+
+HighSpeed
+^^^^^^^^^
 TCP HighSpeed is designed for high-capacity channels or, in general, for
 TCP connections with large congestion windows.
 Conceptually, with respect to the standard TCP, HighSpeed makes the
@@ -538,7 +650,7 @@ More information at: http://dx.doi.org/10.1109/JSAC.2002.807336
 
 BIC
 ^^^
-
+BIC (class :cpp:class:`TcpBic`) is a predecessor of TCP CUBIC.
 In TCP BIC the congestion control problem is viewed as a search
 problem. Taking as a starting point the current window value
 and as a target point the last maximum window value
@@ -800,28 +912,45 @@ More information (paper): http://cs.northwestern.edu/~akuzma/rice/doc/TCP-LP.pdf
 Data Center TCP (DCTCP)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-DCTCP is an enhancement to the TCP congestion control algorithm for data center
-networks and leverages Explicit Congestion Notification (ECN) to provide more fine-grained congestion
-feedback to the end hosts. DCTCP extends the Explicit Congestion Notification
+DCTCP, specified in RFC 8257 and implemented in Linux, is a TCP congestion
+control algorithm for data center networks.  It leverages Explicit Congestion
+Notification (ECN) to provide more fine-grained congestion
+feedback to the end hosts, and is intended to work with routers that
+implement a shallow congestion marking threshold (on the order of a
+few milliseconds) to achieve high throughput and low latency in the
+datacenter.  However, because DCTCP does not react in the same way to
+notification of congestion experienced, there are coexistence (fairness) 
+issues between it and legacy TCP congestion controllers, which is why it
+is recommended to only be used in controlled networking environments such
+as within data centers.  
+
+DCTCP extends the Explicit Congestion Notification signal
 to estimate the fraction of bytes that encounter congestion, rather than simply
 detecting that the congestion has occurred. DCTCP then scales the congestion
 window based on this estimate. This approach achieves high burst tolerance, low
 latency, and high throughput with shallow-buffered switches.
 
-* Receiver functionality: If CE is set in IP header of incoming packet, send congestion notification to the sender by setting ECE in TCP header. This processing is different from standard ECN processing which sets ECE bit for every ACK until it observes CWR
+* *Receiver functionality:* If CE is observed in the IP header of an incoming
+  packet at the TCP receiver, the receiver sends congestion notification to
+  the sender by setting ECE in TCP header. This processing is different
+  from standard receiver ECN processing which sets and holds the ECE bit
+  for every ACK until it observes a CWR signal from the TCP sender.
 
-* Sender functionality: The sender makes use of the modified receiver ECE semantics to maintain an average of fraction of packets marked (:math:`\alpha`) by using the exponential weighted moving average as shown below:
+* *Sender functionality:* The sender makes use of the modified receiver
+  ECE semantics to maintain an estimate of the fraction of packets marked 
+  (:math:`\alpha`) by using the exponential weighted moving average (EWMA) as
+  shown below:
 
 .. math::
 
-               \alpha = (1 - g) x \alpha + g x F
+               \alpha = (1 - g) * \alpha + g * F
 
-where
+In the above EWMA:
 
-* g is the estimation gain (between 0 and 1)
-* F is the fraction of packets marked in current RTT.
+* *g* is the estimation gain (between 0 and 1)
+* *F* is the fraction of packets marked in current RTT.
 
-For windows in which at least one ACK was received with ECE set,
+For send windows in which at least one ACK was received with ECE set,
 the sender should respond by reducing the congestion
 window as follows, once for every window of data:
 
@@ -838,25 +967,21 @@ Following the recommendation of RFC 8257, the default values of the parameters a
   initial alpha (\alpha) = 1
 
 
-
 To enable DCTCP on all TCP sockets, the following configuration can be used:
 
 ::
 
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpDctcp::GetTypeId ()));
 
-To enable DCTCP on a chosen TCP socket, the following configuration can be used:
+To enable DCTCP on a selected node, one can set the "SocketType" attribute
+on the TcpL4Protocol object of that node to the TcpDctcp TypeId.
 
-::
-
-  Config::Set ("$ns3::NodeListPriv/NodeList/1/$ns3::TcpL4Protocol/SocketType", TypeIdValue (TcpDctcp::GetTypeId ()));
-
-This will take effect only if socket has already instantiated.
-
-The ECN is enabled automatically when DCTCP is used, even if the user has not explicitly enabled it.
+The ECN is enabled automatically when DCTCP is used, even if the user
+has not explicitly enabled it.
 
 DCTCP depends on a simple queue management algorithm in routers / switches to
-mark packets. The current implementation of DCTCP in ns-3 uses RED with a simple
+mark packets. The current implementation of DCTCP in ns-3 can use RED with
+a simple
 configuration to achieve the behavior of desired queue management algorithm.
 
 To configure RED router for DCTCP:
@@ -868,14 +993,27 @@ To configure RED router for DCTCP:
   Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (16));
   Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (16));
 
+There is also the option, when running CoDel or FqCoDel, to enable ECN
+on the queue and to set the "CeThreshold" value to a low value such as 1ms.
+The following example uses CoDel:
+
+::
+
+  Config::SetDefault ("ns3::CoDelQueueDisc::UseEcn", BooleanValue (true));
+  Config::SetDefault ("ns3::CoDelQueueDisc::CeThreshold", TimeValue (MilliSeconds (1)));
 
 The following unit tests have been written to validate the implementation of DCTCP:
 
 * ECT flags should be set for SYN, SYN+ACK, ACK and data packets for DCTCP traffic
 * ECT flags should not be set for SYN, SYN+ACK and pure ACK packets, but should be set on data packets for ECN enabled traditional TCP flows
 * ECE should be set only when CE flags are received at receiver and even if sender doesn’t send CWR, receiver should not send ECE if it doesn’t receive packets with CE flags
-* DCTCP follows NewReno behavior for slow start
-* Test to validate cwnd decrement in DCTCP
+
+An example program, ``examples/tcp/tcp-validation.cc``, can be used to
+experiment with DCTCP for long-running flows with different bottleneck
+link bandwidth, base RTTs, and queuing disciplines.  A variant of this
+program has also been run using the |ns3| Direct Code Execution
+environment using DCTCP from Linux kernel 4.4, and the results were
+compared against |ns3| results.  
 
 An example program based on an experimental topology found in the original
 DCTCP SIGCOMM paper is provided in ``examples/tcp/dctcp-example.cc``.
@@ -888,18 +1026,13 @@ the Linux kernel version 4.4 using the ns-3 direct code execution (DCE)
 environment. Some differences were noted:
 
 * Linux maintains its congestion window in segments and not bytes, and
-  the arithmetic is not floating point, so some differences in the
+  the arithmetic is not floating point, so small differences in the
   evolution of congestion window have been observed.
-* Linux uses pacing, while ns-3 currently does not provide a dynamically
-  adjusting pacing implementation; segments are sent out at the line rate
-  unless the user has enabled pacing and set the maximum pacing rate to
-  less than the line rate.
-* Linux implements a state called 'Congestion Window Reduced' (CWR) 
-  immediately following a cwnd reduction, and performs proportional rate
-  reduction similar to how a fast retransmit event is handled.  During
-  CWR, no cwnd additive increases are performed.  This implementation does
-  not implement CWR and performs additive increase during the round trip
-  time that immediately follows a cwnd reduction.
+* Linux uses pacing, where packets to be sent are paced out at regular
+  intervals. However, if at any instant the number of segments that can 
+  be sent are less than two, Linux does not pace them and instead sends 
+  them back-to-back. Currently, ns-3 paces out all packets eligible to 
+  be sent in the same manner.
 
 More information about DCTCP is available in the RFC 8257:
 https://tools.ietf.org/html/rfc8257
@@ -943,6 +1076,7 @@ The following enum represents the mode of ECN:
 The following are some important ECN parameters:
 
 ::
+
   // ECN parameters
   EcnMode_t              m_ecnMode {ClassicEcn}; //!< ECN mode
   UseEcn_t               m_useEcn {Off};         //!< Socket ECN capability
@@ -1072,6 +1206,81 @@ The following issues are yet to be addressed:
    outgoing TCP sessions (e.g. a TCP may perform ECN echoing but not set the
    ECT codepoints on its outbound data segments).
 
+Support for Dynamic Pacing
+++++++++++++++++++++++++++
+
+TCP pacing refers to the sender-side practice of scheduling the transmission
+of a burst of eligible TCP segments across a time interval such as
+a TCP RTT, to avoid or reduce bursts.  Historically,
+TCP used the natural ACK clocking mechanism to pace segments, but some
+network paths introduce aggregation (bursts of ACKs arriving) or ACK
+thinning, either of which disrupts ACK clocking.
+Some latency-sensitive congestion controls under development (Prague, BBR)
+require pacing to operate effectively.
+
+Until recently, the state of the art in Linux was to support pacing in one
+of two ways:
+
+1) fq/pacing with sch_fq
+2) TCP internal pacing
+
+The presentation by Dumazet and Cheng at IETF 88 summarizes:
+https://www.ietf.org/proceedings/88/slides/slides-88-tcpm-9.pdf
+
+The first option was most often used when offloading (TSO) was enabled and
+when the sch_fq scheduler was used at the traffic control (qdisc) sublayer.  In
+this case, TCP was responsible for setting the socket pacing rate, but
+the qdisc sublayer would enforce it.  When TSO was enabled, the kernel
+would break a large burst into smaller chunks, with dynamic sizing based
+on the pacing rate, and hand off the segments to the fq qdisc for
+pacing.
+
+The second option was used if sch_fq was not enabled; TCP would be
+responsible for internally pacing.
+
+In 2018, Linux switched to an Early Departure Model (EDM): https://lwn.net/Articles/766564/.
+
+TCP pacing in Linux was added in kernel 3.12, and authors chose to allow
+a pacing rate of 200% against the current rate, to allow probing for
+optimal throughput even during slow start phase.  Some refinements were
+added in https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=43e122b014c9, 
+in which Google reported that it was better to apply
+a different ratio (120%) in Congestion Avoidance phase.  Furthermore,
+authors found that after cwnd reduction, it was helpful to become more
+conservative and switch to the conservative ratio (120%) as soon as 
+cwnd >= ssthresh/2, as the initial ramp up (when ssthresh is infinite) still
+allows doubling cwnd every other RTT.  Linux also does not pace the initial
+window (IW), typically 10 segments in practice.
+
+Linux has also been observed to not pace if the number of eligible segments
+to be sent is exactly two; they will be sent back to back.  If three or
+more, the first two are sent immediately, and additional segments are paced
+at the current pacing rate.     
+
+In ns-3, the model is as follows.  There is no TSO/sch_fq model; only
+internal pacing according to current Linux policy.
+
+Pacing may be enabled for any TCP congestion control, and a maximum
+pacing rate can be set.  Furthermore, dynamic pacing is enabled for
+all TCP variants, according to the following guidelines.
+
+* Pacing of the initial window (IW) is not done by default but can be
+  separately enabled.
+
+* Pacing of the initial slow start, after IW, is done according to the
+  pacing rate of 200% of the current rate, to allow for window growth
+  This pacing rate can be configured to a different value than 200%.
+
+* Pacing of congestion avoidance phase is done at a pacing rate of 120% of
+  current rate.  This can be configured to a different value than 120%.
+
+* Pacing of subsequent slow start is done according to the following
+  heuristic.  If cwnd < ssthresh/2, such as after a timeout or idle period,
+  pace at the slow start rate (200%).  Otherwise, pace at the congestion
+  avoidance rate.
+
+Dynamic pacing is demonstrated by the example program ``examples/tcp/tcp-pacing.cc``. 
+
 Validation
 ++++++++++
 
@@ -1110,6 +1319,7 @@ section below on :ref:`Writing-tcp-tests`.
 * **tcp-zero-window-test:** Unit test persist behavior for zero window conditions
 * **tcp-close-test:** Unit test on the socket closing: both receiver and sender have to close their socket when all bytes are transferred
 * **tcp-ecn-test:** Unit tests on Explicit Congestion Notification
+* **tcp-pacing-test:** Unit tests on dynamic TCP pacing rate
 
 Several tests have dependencies outside of the ``internet`` module, so they
 are located in a system test directory called ``src/test/ns3tcp``. Three
@@ -1128,8 +1338,111 @@ Several TCP validation test results can also be found in the
 `wiki page <http://www.nsnam.org/wiki/New_TCP_Socket_Architecture>`_ 
 describing this implementation.
 
+The ns-3 implementation of TCP Linux Reno was validated against the NewReno
+implementation of Linux kernel 4.4.0 using ns-3 Direct Code Execution (DCE).
+DCE is a framework which allows the users to run kernel space protocol inside
+ns-3 without changing the source code.
+
+In this validation, cwnd traces of DCE Linux ``reno`` were compared to those of
+ns-3 Linux Reno and NewReno for a delayed acknowledgement configuration of 1
+segment (in the ns-3 implementation; Linux does not allow direct configuration
+of this setting). It can be observed that cwnd traces for ns-3 Linux Reno are
+closely overlapping with DCE ``reno``, while
+for ns-3 NewReno there was deviation in the congestion avoidance phase.
+
+.. _fig-dce-Linux-reno-vs-ns3-linux-reno:
+
+.. figure:: figures/dce-linux-reno-vs-ns3-linux-reno.*
+   :scale: 70%
+   :align: center
+
+   DCE Linux Reno vs. ns-3 Linux Reno
+
+.. _fig-dce-Linux-reno-vs-ns3-new-reno:
+
+.. figure:: figures/dce-linux-reno-vs-ns3-new-reno.*
+   :scale: 70%
+   :align: center
+
+   DCE Linux Reno vs. ns-3 Linux Reno
+
+The difference in the cwnd in the early stage of this flow is because of the
+way cwnd is plotted.  As ns-3 provides a trace source for cwnd, an ns-3 Linux
+Reno cwnd simple is obtained every time the cwnd value changes, whereas for
+DCE Linux Reno, the kernel does not have a corresponding trace source. 
+Instead, we use the "ss" command of the Linux kernel to obtain
+cwnd values. The "ss" samples cwnd at an interval of 0.5 seconds.
+
 TCP ECN operation is tested in the ARED and RED tests that are documented in the traffic-control
 module documentation.
+
+.. _fig-dce-Linux-reno-vs-ns3-linux-reno:
+
+.. figure:: figures/dce-linux-reno-vs-ns3-linux-reno.*
+   :scale: 70 %
+   :align: center
+
+   DCE Linux Reno vs. ns-3 Linux Reno
+
+Figure :ref:`fig-dctcp-10ms-50mbps-tcp-throughput` shows a long-running
+file transfer using DCTCP over a 50 Mbps bottleneck (running CoDel queue
+disc with a 1ms CE threshold setting) with a 10 ms base RTT.  The figure
+shows that DCTCP reaches link capacity very quickly and stays there for
+the duration with minimal change in throughput.  In contrast, Figure
+:ref:`fig-dctcp-80ms-50mbps-tcp-throughput` plots the throughput for
+the same configuration except with an 80 ms base RTT.  In this case,
+the DCTCP exits slow start early and takes a long time to build the
+flow throughput to the bottleneck link capacity.  DCTCP is not intended
+to be used at such a large base RTT, but this figure highlights the
+sensitivity to RTT (and can be reproduced using the Linux implementation).
+
+.. _fig-dctcp-10ms-50mbps-tcp-throughput:
+
+.. figure:: figures/dctcp-10ms-50mbps-tcp-throughput.*
+   :scale: 80 %
+   :align: center
+
+   DCTCP throughput for 10ms/50Mbps bottleneck, 1ms CE threshold
+
+.. _fig-dctcp-80ms-50mbps-tcp-throughput:
+
+.. figure:: figures/dctcp-80ms-50mbps-tcp-throughput.*
+   :scale: 80 %
+   :align: center
+
+   DCTCP throughput for 80ms/50Mbps bottleneck, 1ms CE threshold
+
+Similar to DCTCP, TCP CUBIC has been tested against the Linux kernel version
+4.4 implementation.  Figure :ref:`fig-cubic-50ms-50mbps-tcp-cwnd-no-ecn` 
+compares the congestion window evolution between ns-3 and Linux for a single
+flow operating over a 50 Mbps link with 50 ms base RTT and the CoDel AQM.
+Some differences can be observed between the peak of slow start window
+growth (ns-3 exits slow start earlier due to its HyStart implementation),
+and the window growth is a bit out-of-sync (likely due to different
+implementations of the algorithm), but the cubic concave/convex window
+pattern, and the signs of TCP CUBIC fast convergence algorithm
+(alternating patterns of cubic and concave window growth) can be observed.
+The |ns3| congestion window is maintained in bytes (unlike Linux which uses
+segments) but has been normalized to segments for these plots.
+Figure :ref:`fig-cubic-50ms-50mbps-tcp-cwnd-ecn` displays the outcome of
+a similar scenario but with ECN enabled throughout.
+
+.. _fig-cubic-50ms-50mbps-tcp-cwnd-no-ecn:
+
+.. figure:: figures/cubic-50ms-50mbps-tcp-cwnd-no-ecn.*
+   :scale: 80 %
+   :align: center
+
+   CUBIC cwnd evolution for 50ms/50Mbps bottleneck, no ECN
+
+.. _fig-cubic-50ms-50mbps-tcp-cwnd-ecn:
+
+.. figure:: figures/cubic-50ms-50mbps-tcp-cwnd-ecn.*
+   :scale: 80 %
+   :align: center
+
+   CUBIC cwnd evolution for 50ms/50Mbps bottleneck, with ECN
+
 
 Writing a new congestion control algorithm
 ++++++++++++++++++++++++++++++++++++++++++
@@ -1189,7 +1502,9 @@ please refer to https://dl.acm.org/citation.cfm?id=3067666.
 
 Loss Recovery Algorithms
 ++++++++++++++++++++++++
-The following loss recovery algorithms are supported in ns-3 TCP:
+The following loss recovery algorithms are supported in ns-3 TCP.  The current
+default (as of ns-3.32 release) is Proportional Rate Reduction (PRR), while
+the default for ns-3.31 and earlier was Classic Recovery.
 
 Classic Recovery
 ^^^^^^^^^^^^^^^^

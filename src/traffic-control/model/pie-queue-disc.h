@@ -38,6 +38,7 @@
 
 #define BURST_RESET_TIMEOUT 1.5
 
+class PieQueueDiscTestCase;  // Forward declaration for unit test
 namespace ns3 {
 
 class TraceContainer;
@@ -83,7 +84,6 @@ public:
    * \returns The current queue delay.
    */
   Time GetQueueDelay (void);
-
   /**
    * Assign a fixed random variable stream number to the random variables
    * used by this model.  Return the number of streams (possibly zero) that
@@ -97,6 +97,7 @@ public:
   // Reasons for dropping packets
   static constexpr const char* UNFORCED_DROP = "Unforced drop";  //!< Early probability drops: proactive
   static constexpr const char* FORCED_DROP = "Forced drop";      //!< Drops due to queue limit: reactive
+  static constexpr const char* UNFORCED_MARK = "Unforced mark";  //!< Early probability marks: proactive
 
 protected:
   /**
@@ -105,6 +106,7 @@ protected:
   virtual void DoDispose (void);
 
 private:
+  friend class::PieQueueDiscTestCase;         // Test code
   virtual bool DoEnqueue (Ptr<QueueDiscItem> item);
   virtual Ptr<QueueDiscItem> DoDequeue (void);
   virtual bool CheckConfig (void);
@@ -140,6 +142,12 @@ private:
   double m_a;                                   //!< Parameter to pie controller
   double m_b;                                   //!< Parameter to pie controller
   uint32_t m_dqThreshold;                       //!< Minimum queue size in bytes before dequeue rate is measured
+  bool m_useDqRateEstimator;                    //!< Enable/Disable usage of dequeue rate estimator for queue delay calculation
+  bool  m_isCapDropAdjustment;                  //!< Enable/Disable Cap Drop Adjustment feature mentioned in RFC 8033
+  bool m_useEcn;                                //!< Enable ECN Marking functionality
+  bool m_useDerandomization;                    //!< Enable Derandomization feature mentioned in RFC 8033
+  double m_markEcnTh;                           //!< ECN marking threshold (default 10% as suggested in RFC 8033)
+  Time m_activeThreshold;                       //!< Threshold for activating PIE (disabled by default)
 
   // ** Variables maintained by PIE
   double m_dropProb;                            //!< Variable used in calculation of drop probability
@@ -154,6 +162,8 @@ private:
   uint64_t m_dqCount;                           //!< Number of bytes departed since current measurement cycle starts
   EventId m_rtrsEvent;                          //!< Event used to decide the decision of interval of drop probability calculation
   Ptr<UniformRandomVariable> m_uv;              //!< Rng stream
+  double m_accuProb;                            //!< Accumulated drop probability
+  bool m_active;                                //!< Indicates whether PIE is in active state or not
 };
 
 };   // namespace ns3

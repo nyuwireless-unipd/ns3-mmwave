@@ -196,16 +196,15 @@ LteUeMeasurementsTestCase::DoRun (void)
   EpsBearer bearer (q);
   lteHelper->ActivateDataRadioBearer (ueDevs1, bearer);
   lteHelper->ActivateDataRadioBearer (ueDevs2, bearer);
-
-
-  Config::Connect ("/NodeList/2/DeviceList/0/LteUePhy/ReportUeMeasurements",
+  
+  Config::ConnectFailSafe ("/NodeList/2/DeviceList/0/LteUePhy/ReportUeMeasurements",
                    MakeBoundCallback (&ReportUeMeasurementsCallback, this));
-  Config::Connect ("/NodeList/0/DeviceList/0/LteEnbRrc/RecvMeasurementReport",
+  Config::ConnectFailSafe ("/NodeList/0/DeviceList/0/LteEnbRrc/RecvMeasurementReport",
                    MakeBoundCallback (&RecvMeasurementReportCallback, this));
 
-  Config::Connect ("/NodeList/3/DeviceList/0/LteUePhy/ReportUeMeasurements",
+  Config::ConnectFailSafe ("/NodeList/3/DeviceList/0/LteUePhy/ReportUeMeasurements",
                    MakeBoundCallback (&ReportUeMeasurementsCallback, this));
-  Config::Connect ("/NodeList/1/DeviceList/0/LteEnbRrc/RecvMeasurementReport",
+  Config::ConnectFailSafe ("/NodeList/1/DeviceList/0/LteEnbRrc/RecvMeasurementReport",
                    MakeBoundCallback (&RecvMeasurementReportCallback, this));
 
   // need to allow for RRC connection establishment + SRS

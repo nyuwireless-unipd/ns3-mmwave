@@ -131,6 +131,10 @@ Ns3TcpLossTestCase::DoSetup (void)
 {
   // This test was written before SACK was added to ns-3
   Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue (false));
+  // This test was written with initial window of 1 segment
+  Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue (1));
+  // This test was written with the TCP Classic Recovery algorithm
+  Config::SetDefault ("ns3::TcpL4Protocol::RecoveryType", TypeIdValue (TypeId (ns3::TcpClassicRecovery::GetTypeId ())));
 
   //
   // We expect there to be a file called ns3tcp-state-response-vectors.pcap in

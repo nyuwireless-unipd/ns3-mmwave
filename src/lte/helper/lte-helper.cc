@@ -1499,28 +1499,28 @@ LteHelper::EnablePhyTraces (void)
 void
 LteHelper::EnableDlTxPhyTraces (void)
 {
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/DlPhyTransmission",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/DlPhyTransmission",
                    MakeBoundCallback (&PhyTxStatsCalculator::DlPhyTransmissionCallback, m_phyTxStats));
 }
 
 void
 LteHelper::EnableUlTxPhyTraces (void)
 {
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/UlPhyTransmission",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/UlPhyTransmission",
                    MakeBoundCallback (&PhyTxStatsCalculator::UlPhyTransmissionCallback, m_phyTxStats));
 }
 
 void
 LteHelper::EnableDlRxPhyTraces (void)
 {
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/DlSpectrumPhy/DlPhyReception",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/DlSpectrumPhy/DlPhyReception",
                    MakeBoundCallback (&PhyRxStatsCalculator::DlPhyReceptionCallback, m_phyRxStats));
 }
 
 void
 LteHelper::EnableUlRxPhyTraces (void)
 {
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/UlSpectrumPhy/UlPhyReception",
+  Config::ConnectFailSafe("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/UlSpectrumPhy/UlPhyReception",
                    MakeBoundCallback (&PhyRxStatsCalculator::UlPhyReceptionCallback, m_phyRxStats));
 }
 
@@ -1537,7 +1537,7 @@ void
 LteHelper::EnableDlMacTraces (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbMac/DlScheduling",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbMac/DlScheduling",
                    MakeBoundCallback (&MacStatsCalculator::DlSchedulingCallback, m_macStats));
 }
 
@@ -1545,7 +1545,7 @@ void
 LteHelper::EnableUlMacTraces (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbMac/UlScheduling",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbMac/UlScheduling",
                    MakeBoundCallback (&MacStatsCalculator::UlSchedulingCallback, m_macStats));
 }
 
@@ -1553,7 +1553,7 @@ void
 LteHelper::EnableDlPhyTraces (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/ReportCurrentCellRsrpSinr",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMapUe/*/LteUePhy/ReportCurrentCellRsrpSinr",
                    MakeBoundCallback (&PhyStatsCalculator::ReportCurrentCellRsrpSinrCallback, m_phyStats));
 }
 
@@ -1561,9 +1561,9 @@ void
 LteHelper::EnableUlPhyTraces (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/ReportUeSinr",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/ReportUeSinr",
                    MakeBoundCallback (&PhyStatsCalculator::ReportUeSinr, m_phyStats));
-  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/ReportInterference",
+  Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/LteEnbPhy/ReportInterference",
                    MakeBoundCallback (&PhyStatsCalculator::ReportInterference, m_phyStats));
 
 }
