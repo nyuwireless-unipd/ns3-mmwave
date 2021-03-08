@@ -71,6 +71,15 @@ public:
   virtual void DoInitialize (void) override;
   virtual void DoDispose (void) override;
 
+  /**
+   * Sets the period of the WB CQI generation and report process.
+   * The supported values are: {4, 5, 8, 10, 16, 20, 40, 80, 160, 320} slots, 
+   * see CSI-ReportPeriodicityAndOffset from TS 38.331 V16.0.0 Sec 6.3.2
+   *
+   * \param period the WB CQI period, in number of slots
+   */  
+  void SetWbCqiPeriod (uint16_t period);
+
   LteUeCphySapProvider* GetUeCphySapProvider ();
   void SetUeCphySapUser (LteUeCphySapUser* s);
 
@@ -210,7 +219,7 @@ private:
   std::vector <int> m_subChannelsForTx;
   std::vector <int> m_subChannelsforRx;
 
-  Time m_wbCqiPeriod;       /**< Wideband Periodic CQI: 2, 5, 10, 16, 20, 32, 40, 64, 80 or 160 ms */
+  uint16_t m_wbCqiPeriod;       //!< The period of the WB CQI, in number of slots. See TS 38.331 V16.0.0 Sec 6.3.2
   Time m_wbCqiLast;
 
   TtiAllocInfo::TddMode m_prevTtiDir;  //!< Time Division Duplexing (TDD) mode of the previous Tti.

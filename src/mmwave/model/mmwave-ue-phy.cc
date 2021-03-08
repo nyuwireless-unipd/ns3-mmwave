@@ -139,6 +139,11 @@ MmWaveUePhy::GetTypeId (void)
                    UintegerValue (2),
                    MakeUintegerAccessor (&MmWaveUePhy::m_n310),
                    MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("CqiReportPeriod",
+                   "The period of the DL wideband CQI update, in number of slots",
+                   UintegerValue (10),
+                   MakeUintegerAccessor (&MmWaveUePhy::SetWbCqiPeriod),
+                   MakeUintegerChecker<uint16_t> ())
   ;
 
   return tid;
@@ -170,6 +175,14 @@ void
 MmWaveUePhy::DoDispose (void)
 {
   m_registeredEnb.clear ();
+}
+
+void
+MmWaveUePhy::SetWbCqiPeriod (uint16_t period)
+{
+  const std::set<uint16_t> supportedValues = {4, 5, 8, 10, 16, 20, 40, 80, 160, 320}; // CSI-ReportPeriodicityAndOffset, see TS 38.331 V16.0.0 Sec 6.3.2
+  NS_ASSERT_MSG (supportedValues.find (period) != supportedValues.end (), "The chosen periodicity is not supported!");
+  m_wbCqiPeriod = period;
 }
 
 void
@@ -792,7 +805,7 @@ MmWaveUePhy::GenerateDlCqiReport (const SpectrumValue& sinr)
 {
   if (m_ulConfigured && (m_rnti > 0) && m_receptionEnabled)
     {
-      if (Simulator::Now () > m_wbCqiLast + m_wbCqiPeriod)
+      if (Simulator::Now () > m_wbCqiLast + m_wbCqiPeriod * m_phyMacConfig->GetSlotPeriod ())
         {
           SpectrumValue newSinr = sinr;
           Ptr<MmWaveDlCqiMessage> msg = CreateDlCqiFeedbackMessage (newSinr);
