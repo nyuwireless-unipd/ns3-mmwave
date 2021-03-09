@@ -769,7 +769,7 @@ MmWaveHelper::InstallSingleMcUeDevice (Ptr<Node> n)
 
       Ptr<MmWaveUePhy> phy = CreateObject<MmWaveUePhy> (dlPhy, ulPhy);
 
-      Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (it->second->GetConfigurationParameters ()->GetNumHarqProcess ());
+      Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> ();
 
       dlPhy->SetHarqPhyModule (harq);
       //ulPhy->SetHarqPhyModule (harq);
@@ -1374,7 +1374,7 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
 
       Ptr<MmWaveUePhy> phy = CreateObject<MmWaveUePhy> (dlPhy, ulPhy);
 
-      Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (it->second->GetConfigurationParameters ()->GetNumHarqProcess ());
+      Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> ();
 
       dlPhy->SetHarqPhyModule (harq);
       //ulPhy->SetHarqPhyModule (harq);
@@ -1599,7 +1599,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
 
       Ptr<MmWaveEnbPhy> phy = CreateObject<MmWaveEnbPhy> (dlPhy, ulPhy);
 
-      Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> (ccEnb->GetConfigurationParameters ()->GetNumHarqProcess ());
+      Ptr<MmWaveHarqPhy> harq = Create<MmWaveHarqPhy> ();
       dlPhy->SetHarqPhyModule (harq);
       phy->SetHarqPhyModule (harq);
 
@@ -1682,6 +1682,16 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       ccEnb->SetMacScheduler (sched);
       ccEnb->SetPhy (phy);
       it->second->SetAntenna (antenna);
+
+      // Check that the error model has been set in a consistent manner
+      TypeIdValue dlPhySpectrumEm, ulPhySpectrumEm, tempAmcEm;
+      dlPhy->GetAttribute ("ErrorModelType", dlPhySpectrumEm);
+      ulPhy->GetAttribute ("ErrorModelType", ulPhySpectrumEm);
+      Ptr<MmWaveAmc> tempAmc = CreateObject <MmWaveAmc> (ccEnb->GetConfigurationParameters ());
+      tempAmc->GetAttribute ("ErrorModelType", tempAmcEm);
+      NS_ASSERT_MSG ((dlPhySpectrumEm.Get () == ulPhySpectrumEm.Get ()) &&
+                     (dlPhySpectrumEm.Get () == tempAmcEm.Get ()),
+                     "The same error model must be set in the MmWaveSpectrumPhy and MmWaveAmc classes!");
     }
 
   Ptr<LteEnbRrc> rrc = CreateObject<LteEnbRrc> ();

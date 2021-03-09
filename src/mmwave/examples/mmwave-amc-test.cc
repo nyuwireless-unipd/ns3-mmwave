@@ -62,12 +62,11 @@ void updateSnr (double snrInit, Ptr<MmWaveEnbNetDevice> enbDev, Ptr<SpectrumMode
     }
 
   int mcsTmp = 28;
-  int mcs = 0;
+  uint8_t mcs = 0;
   int mcsOrig = 0;
   while (true)
     {
-      int tbs = amc->GetTbSizeFromMcsSymbols (mcsTmp, 22) / 8;
-      amc->CreateCqiFeedbackWbTdma (specVals, 22, tbs, mcs);
+      amc->CreateCqiFeedbackWbTdma (specVals, mcs);
       if (mcs == mcsTmp || mcs == mcsOrig)
         {
           break;
@@ -76,7 +75,7 @@ void updateSnr (double snrInit, Ptr<MmWaveEnbNetDevice> enbDev, Ptr<SpectrumMode
       mcsTmp = mcs;
     }
   enbDev->GetMac ()->SetMcs (mcs);
-  std::cout << "************* SINR changing to " << snrInit << " (MCS = " << mcs << " ) *************" << std::endl;
+  std::cout << "************* SINR changing to " << snrInit << " (MCS = " << +mcs << " ) *************" << std::endl;
 
   Simulator::Schedule (MicroSeconds (3 * 100), &MmWaveSpectrumPhy::UpdateSinrPerceived,
                        enbDev->GetPhy ()->GetDlSpectrumPhy (), specVals);

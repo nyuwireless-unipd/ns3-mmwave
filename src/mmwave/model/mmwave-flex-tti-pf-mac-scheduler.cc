@@ -472,7 +472,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSap
             NS_LOG_INFO (this << " Does not find info on allocation, size : " << m_ulAllocationMap.size ());
             return;
           }
-        NS_ASSERT_MSG (itMap->second.m_rntiPerChunk.size () == m_phyMacConfig->GetNumChunks (), "SINR chunk map must cover full BW in TDMA mode");
+        NS_ASSERT_MSG (itMap->second.m_rntiPerChunk.size () == m_phyMacConfig->GetNumRb (), "SINR chunk map must cover full BW in TDMA mode");
         for (unsigned i = 0; i < itMap->second.m_rntiPerChunk.size (); i++)
           {
             // convert from fixed point notation Sxxxxxxxxxxx.xxx to double
@@ -482,7 +482,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSap
               {
                 // create a new entry
                 std::vector <double> newCqi;
-                for (uint32_t j = 0; j < m_phyMacConfig->GetNumChunks (); j++)
+                for (uint32_t j = 0; j < m_phyMacConfig->GetNumRb (); j++)
                   {
                     unsigned chunkInd = i;
                     if (chunkInd == j)
@@ -711,16 +711,16 @@ unsigned MmWaveFlexTtiPfMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigne
   int numSymHigh = m_phyMacConfig->GetSymbPerSlot();
 
   int diff = 0;
-  tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8); // start with max value, in number of bytes
+  tbSize = m_amc->CalculateTbSize (mcs, numSymHigh); // start with max value, in number of bytes
   while ((unsigned)tbSize > bufSize)
   {
       diff = abs(numSymHigh-numSymLow)/2;
       if (diff == 0)
       {
-          tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+          tbSize = m_amc->CalculateTbSize (mcs, numSymHigh);
           return numSymHigh;
       }
-      tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh - diff) / 8);
+      tbSize = m_amc->CalculateTbSize (mcs, numSymHigh - diff);
       if ((unsigned)tbSize >= bufSize)
       {
           numSymHigh -= diff;
@@ -734,10 +734,10 @@ unsigned MmWaveFlexTtiPfMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigne
           diff = abs(numSymHigh-numSymLow)/2;
           if (diff == 0)
           {
-              tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+              tbSize = m_amc->CalculateTbSize (mcs, numSymHigh);
               return numSymHigh;
           }
-          tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymLow + diff) / 8);
+          tbSize = m_amc->CalculateTbSize (mcs, numSymLow + diff);
           if ((unsigned)tbSize <= bufSize)
           {
               numSymLow += diff;
@@ -748,7 +748,7 @@ unsigned MmWaveFlexTtiPfMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigne
           }
       }
   }
-  tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+  tbSize = m_amc->CalculateTbSize (mcs, numSymHigh);
   return (unsigned)numSymHigh;
 }
 
@@ -1058,7 +1058,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
             }
           if (ueInfo->m_totBufDl > 0)
             {
-              uint32_t tbSizeMax = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, 1);
+              uint32_t tbSizeMax = m_amc->CalculateTbSize (ueInfo->m_dlMcs, 1)*8; // Bytes -> Bits
               ueInfo->m_currTputDl = std::min (ueInfo->m_totBufDl,tbSizeMax) / (m_phyMacConfig->GetSlotPeriod ().GetSeconds());
               m_ueStatHeap.push_back (ueInfo);
               itUeAllocMap = ueAllocMap.find (ueInfo->m_rnti);
@@ -1073,20 +1073,20 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
 
       // get UL-CQI and compute UL rate per symbol
       std::map <uint16_t, struct UlCqiMapElem>::iterator itCqiUl = m_ueUlCqi.find (ueInfo->m_rnti);
-      int mcs = 0;
+      uint8_t mcs {0};
       if (itCqiUl != m_ueUlCqi.end ())           // no cqi info for this UE
         {
           // translate vector of doubles to SpectrumValue's
           SpectrumValue specVals (MmWaveSpectrumValueHelper::GetSpectrumModel (m_phyMacConfig));
           Values::iterator specIt = specVals.ValuesBegin ();
-          for (uint32_t ichunk = 0; ichunk < m_phyMacConfig->GetNumChunks (); ichunk++)
+          for (uint32_t ichunk = 0; ichunk < m_phyMacConfig->GetNumRb (); ichunk++)
             {
               NS_ASSERT (specIt != specVals.ValuesEnd ());
               *specIt = itCqiUl->second.m_ueUlCqi.at (ichunk);                   //sinrLin;
               specIt++;
             }
           // for UL CQI, we need to know the TB size previously allocated to accurately compute CQI/MCS
-          cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, itCqiUl->second.m_numSym, itCqiUl->second.m_tbSize, mcs);
+          cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, mcs);
         }
       else
         {
@@ -1103,7 +1103,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
             }
           if (ueInfo->m_totBufUl > 0)
             {
-              uint32_t tbSizeMax = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, 1);
+              uint32_t tbSizeMax = m_amc->CalculateTbSize (ueInfo->m_ulMcs, 1)*8; // Bytes -> Bits
               ueInfo->m_currTputUl = std::min (ueInfo->m_totBufUl,tbSizeMax) / (m_phyMacConfig->GetSlotPeriod ().GetSeconds());
               if (!dlAdded)
                 {
@@ -1158,7 +1158,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
 
               ueInfo->m_ulSymbols++;
               symAvail--;
-              ueInfo->m_ulTbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols) / 8;
+              ueInfo->m_ulTbSize = m_amc->CalculateTbSize (ueInfo->m_ulMcs, ueInfo->m_ulSymbols);
               if (ueInfo->m_ulTbSize >= ueInfo->m_totBufUl)
                 {
                   ueInfo->m_ulAllocDone = true;
@@ -1166,7 +1166,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
                 }
               ueInfo->m_allocUlLast = true;
 
-              uint32_t tbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols);
+              uint32_t tbSize = m_amc->CalculateTbSize (ueInfo->m_ulMcs, ueInfo->m_ulSymbols)*8; // Bytes -> Bits
               ueInfo->m_currTputUl = std::min (ueInfo->m_totBufUl,tbSize) / (m_phyMacConfig->GetSlotPeriod ().GetSeconds());
               ueInfo->m_avgTputUl = ((1.0 - (1.0 / m_timeWindow)) * ueInfo->m_lastAvgTputUl) +
                 ((1.0 / m_timeWindow) * ((double)ueInfo->m_ulTbSize / (m_phyMacConfig->GetSlotPeriod ().GetSeconds())));
@@ -1178,7 +1178,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
 
               ueInfo->m_dlSymbols++;
               symAvail--;
-              ueInfo->m_dlTbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols) / 8;
+              ueInfo->m_dlTbSize = m_amc->CalculateTbSize (ueInfo->m_dlMcs, ueInfo->m_dlSymbols);
               if (ueInfo->m_dlTbSize >= ueInfo->m_totBufDl)
                 {
                   ueInfo->m_dlAllocDone = true;
@@ -1186,7 +1186,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
                 }
               ueInfo->m_allocUlLast = false;
 
-              uint32_t tbSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols);
+              uint32_t tbSize = m_amc->CalculateTbSize (ueInfo->m_dlMcs, ueInfo->m_dlSymbols)*8; // Bytes -> Bits
               ueInfo->m_currTputDl = std::min (ueInfo->m_totBufDl,tbSize) / (m_phyMacConfig->GetSlotPeriod ().GetSeconds());
               ueInfo->m_avgTputDl = ((1.0 - (1.0 / m_timeWindow)) * ueInfo->m_lastAvgTputDl) +
                 ((1.0 / m_timeWindow) * ((double)ueInfo->m_dlTbSize / (m_phyMacConfig->GetSlotPeriod ().GetSeconds())));
@@ -1259,7 +1259,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
           dci.m_mcs = ueInfo->m_dlMcs;
           dci.m_rv = 0;
           dci.m_ndi = 1;
-          dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+          dci.m_tbSize = m_amc->CalculateTbSize (dci.m_mcs, dci.m_numSym);
           dci.m_harqProcess = UpdateDlHarqProcessId (ueInfo->m_rnti);
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
@@ -1408,7 +1408,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
           NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetUlCtrlSymbols ());
           dci.m_mcs = ueInfo->m_ulMcs;
           dci.m_ndi = 1;
-          dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+          dci.m_tbSize = m_amc->CalculateTbSize (dci.m_mcs, dci.m_numSym);
           dci.m_harqProcess = UpdateUlHarqProcessId (ueInfo->m_rnti);
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
@@ -1420,7 +1420,7 @@ MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapPr
           ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
           ret.m_slotAllocInfo.m_numSymAlloc += dci.m_numSym;
           std::vector<uint16_t> ueChunkMap;
-          for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
+          for (uint32_t i = 0; i < m_phyMacConfig->GetNumRb (); i++)
             {
               ueChunkMap.push_back (dci.m_rnti);
             }

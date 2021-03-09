@@ -55,7 +55,7 @@ std::map<uint8_t,Ptr<SpectrumModel> > MmWaveSpectrumValueHelper::m_model;
 Ptr<SpectrumModel>
 MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 {
-  NS_LOG_FUNCTION (ptrConfig->GetCenterFrequency () << (uint32_t) ptrConfig->GetNumChunks ());
+  NS_LOG_FUNCTION (ptrConfig->GetCenterFrequency () << (uint32_t) ptrConfig->GetNumRb ());
   uint8_t ccId = ptrConfig->GetCcId ();
   if (m_model.find (ccId) != m_model.end () )
     {
@@ -71,16 +71,16 @@ MmWaveSpectrumValueHelper::GetSpectrumModel (Ptr<MmWavePhyMacCommon> ptrConfig)
 
   NS_ASSERT_MSG (fc != 0, "The carrier frequency cannot be set to 0");
 
-  f = fc - (ptrConfig->GetNumChunks () * ptrConfig->GetChunkWidth () / 2.0);
+  f = fc - (ptrConfig->GetNumRb () * ptrConfig->GetRbWidth () / 2.0);
 
   Bands rbs; // A vector representing each resource block
-  for (uint32_t numrb = 0; numrb < ptrConfig->GetNumChunks (); ++numrb)
+  for (uint32_t numrb = 0; numrb < ptrConfig->GetNumRb (); ++numrb)
     {
       BandInfo rb;
       rb.fl = f;
-      f += ptrConfig->GetChunkWidth () / 2;
+      f += ptrConfig->GetRbWidth () / 2;
       rb.fc = f;
-      f += ptrConfig->GetChunkWidth () / 2;
+      f += ptrConfig->GetRbWidth () / 2;
       rb.fh = f;
 
       rbs.push_back (rb);

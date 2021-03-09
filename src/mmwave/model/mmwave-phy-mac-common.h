@@ -375,6 +375,9 @@ class MmWavePhyMacCommon : public Object
 {
 public:
   
+  static const uint8_t SUBCARRIERS_PER_RB {12}; //!< The amount of subcarriers per Resource Block. See TS 38.211 Sec 4.4.4.1
+  static const uint8_t REF_SUBCARRIERS_PER_RB {1}; //!< The amount of reference subcarriers per Resource Block. TODO: check in the TS
+
   /**
    * Represents the PHY layer numerology configuration
    */
@@ -510,30 +513,21 @@ public:
   }
 
   /**
-   * Returns the number of subcarriers in a spectrum chunk.
-   */
-  inline uint32_t
-  GetNumSCperChunk (void)
-  {
-    return m_numSubCarriersPerChunk;
-  }
-
-  /**
-   * Returns the width of a spectrum chunk in Hz.
+   * Returns the width of a Resource Block in Hz.
    */
   inline double
-  GetChunkWidth (void)
+  GetRbWidth (void)
   {
-    return m_chunkWidth;
+    return m_rbWidth;
   }
 
   /**
-   * Returns the number of spectrum chunks.
+   * Returns the number of Resource Blocks.
    */
   inline uint32_t
-  GetNumChunks (void)
+  GetNumRb (void)
   {
-    return m_numChunks;
+    return m_numRbs;
   }
 
   /**
@@ -543,7 +537,7 @@ public:
   inline uint32_t
   GetNumRefScPerSym (void)
   {
-    return m_numRefScPerSym;
+    return m_numRefSc;
   }
 
   /**
@@ -552,7 +546,7 @@ public:
   inline double
   GetBandwidth (void)
   {
-    return (GetChunkWidth () * GetNumChunks ());
+    return (GetRbWidth () * GetNumRb ());
   }
   
   /**
@@ -678,21 +672,15 @@ public:
   }
 
   void
-  SetNumSCperChunk (uint32_t numSC)
-  {
-    m_numSubCarriersPerChunk = numSC;
-  }
-
-  void
   SetNumRefScPerSym (uint32_t numRefSc)
   {
-    m_numRefScPerSym = numRefSc;
+    m_numRefSc = numRefSc;
   }
 
   void
   SetChunkWidth (double chumkWidth)
   {
-    m_chunkWidth = chumkWidth;
+    m_rbWidth = chumkWidth;
   }
 
   void
@@ -756,10 +744,9 @@ private:
   uint32_t m_subframesPerFrame; //!< number of subframes in a frame
   uint32_t m_numRefSymbols;   // TODO this parameter is used by MmWaveAmc::GetTbSizeFromMcs, which is never used  
 
-  uint32_t m_numSubCarriersPerChunk; //!< number of subcarriers in a chunk
-  uint32_t m_numChunks; //!< number of spectrum chunks
-  uint32_t m_numRefScPerSym; //!< number of reference subcarriers across entire bandwidth
-  double m_chunkWidth; //!< width of a spectrum chunk in Hz
+  uint32_t m_numRbs; //!< number of Resource Blocks
+  uint32_t m_numRefSc; //!< number of reference subcarriers across entire bandwidth
+  double m_rbWidth; //!< width of a Resource Block in Hz
   uint8_t m_numHarqProcess; //!< number of concurrent stop-and-wait Hybrid ARQ processes per user
   uint8_t m_harqTimeout; //!< hybrid ARQ timeout period
 

@@ -90,7 +90,7 @@ MmWavePhyMacCommon::GetTypeId (void)
 MmWavePhyMacCommon::MmWavePhyMacCommon ()
   : m_dlCtrlSymbols (1),
   m_ulCtrlSymbols (1),
-  m_numRefScPerSym (864),
+  m_numRefSc (864),
   m_L1L2Latency (2)
 {
   NS_LOG_INFO ("Initialized MmWavePhyMacCommon");
@@ -106,17 +106,15 @@ MmWavePhyMacCommon::SetNumerology (Numerology num)
   else if (num == Numerology::NrNumerology3)
     SetNrNumerology (3);
   else 
-    NS_FATAL_ERROR ("Unknown value");
+    NS_FATAL_ERROR ("Currently, only numerologies 2 and 3 are supported!");
 }
 
 void
 MmWavePhyMacCommon::SetNrNumerology (uint8_t index)
 {
   NS_LOG_FUNCTION (this << index); 
-  
   NS_ASSERT_MSG ( (index == 2) || (index == 3), "Numerology index is not valid."); // Only 2 and 3 are supported in NR for FR2.
 
-  double subCarriersPerRB = 12; // TS 38.211 Sec 4.4.4.1
   double subcarrierSpacing = 15 * std::pow (2, index) * 1000; // Subcarrier spacing, only 60KHz and 120KHz are supported in NR for FR2.
 
   m_symbolsPerSlot = 14; // TS 38.211 Sec 4.3.2: each slot must have 14 symbols
@@ -125,8 +123,7 @@ MmWavePhyMacCommon::SetNrNumerology (uint8_t index)
   m_subframesPerFrame = 10;
   m_subframePeriod = Time (MilliSeconds (1)); // TS 38.211 Section 4.3.1: the subframe duration is 1ms
   m_symbolPeriod = Time (m_subframePeriod / m_symbolsPerSlot / m_slotsPerSubframe); // Duration of an OFDM symbol
-  m_numSubCarriersPerChunk = subCarriersPerRB;
-  m_chunkWidth = subCarriersPerRB * subcarrierSpacing;
+  m_rbWidth = SUBCARRIERS_PER_RB * subcarrierSpacing;
 }
 
 void
@@ -134,8 +131,8 @@ MmWavePhyMacCommon::SetBandwidth (double bw)
 {
   NS_LOG_FUNCTION (this << bw); 
   
-  m_numChunks = bw/m_chunkWidth;  // The amount of RBs is fixed to 1 as only TDMA is supported
-  m_numRefScPerSym = 864*bw/1e9; // TODO: check whether 864 is the proper value for 1 GHz of bandwidth
+  m_numRbs = std::ceil(bw/m_rbWidth);  // The amount of RBs is fixed to 1 as only TDMA is supported
+  m_numRefSc = REF_SUBCARRIERS_PER_RB*m_numRbs; 
 }
 
 } // namespace mmwave

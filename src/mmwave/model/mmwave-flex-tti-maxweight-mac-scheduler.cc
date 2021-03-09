@@ -468,7 +468,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacS
             NS_LOG_INFO (this << " Does not find info on allocation, size : " << m_ulAllocationMap.size ());
             return;
           }
-        NS_ASSERT_MSG (itMap->second.m_rntiPerChunk.size () == m_phyMacConfig->GetNumChunks (), "SINR chunk map must cover full BW in TDMA mode");
+        NS_ASSERT_MSG (itMap->second.m_rntiPerChunk.size () == m_phyMacConfig->GetNumRb (), "SINR chunk map must cover full BW in TDMA mode");
         for (unsigned i = 0; i < itMap->second.m_rntiPerChunk.size (); i++)
           {
             // convert from fixed point notation Sxxxxxxxxxxx.xxx to double
@@ -478,7 +478,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacS
               {
                 // create a new entry
                 std::vector <double> newCqi;
-                for (uint32_t j = 0; j < m_phyMacConfig->GetNumChunks (); j++)
+                for (uint32_t j = 0; j < m_phyMacConfig->GetNumRb (); j++)
                   {
                     unsigned chunkInd = i;
                     if (chunkInd == j)
@@ -707,16 +707,16 @@ unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, 
   int numSymHigh = m_phyMacConfig->GetSymbPerSlot();
 
   int diff = 0;
-  tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8); // start with max value, in number of bytes
+  tbSize = m_amc->CalculateTbSize (mcs, numSymHigh); // start with max value, in number of bytes
   while ((unsigned)tbSize > bufSize)
   {
       diff = abs(numSymHigh-numSymLow)/2;
       if (diff == 0)
       {
-          tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+          tbSize = m_amc->CalculateTbSize (mcs, numSymHigh);
           return numSymHigh;
       }
-      tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh - diff) / 8);
+      tbSize = m_amc->CalculateTbSize (mcs, numSymHigh - diff);
       if ((unsigned)tbSize >= bufSize)
       {
           numSymHigh -= diff;
@@ -730,10 +730,10 @@ unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, 
           diff = abs(numSymHigh-numSymLow)/2;
           if (diff == 0)
           {
-              tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+              tbSize = m_amc->CalculateTbSize (mcs, numSymHigh);
               return numSymHigh;
           }
-          tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymLow + diff) / 8);
+          tbSize = m_amc->CalculateTbSize (mcs, numSymLow + diff);
           if ((unsigned)tbSize <= bufSize)
           {
               numSymLow += diff;
@@ -744,7 +744,7 @@ unsigned MmWaveFlexTtiMaxWeightMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, 
           }
       }
   }
-  tbSize = (m_amc->GetTbSizeFromMcsSymbols (mcs, numSymHigh) / 8);
+  tbSize = m_amc->CalculateTbSize (mcs, numSymHigh);
   return (unsigned)numSymHigh;
 }
 
@@ -1075,7 +1075,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                       uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
                       // get required symbols to send whole RLC PDU
                       // (could be zero additional symbols if enough resources already allocated)
-                      uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_dlTbSize + pduSize) * 8, ueInfo->m_dlMcs) - ueInfo->m_dlSymbols;
+                      uint32_t numSymReq = m_amc->GetMinNumSymForTbSize ((ueInfo->m_dlTbSize + pduSize) * 8, ueInfo->m_dlMcs) - ueInfo->m_dlSymbols;
                       if (numSymReq <= (unsigned)symAvail)                              // sufficient symbols to TX whole RLC PDU at this MCS
                         {
                           flow->m_txPacketSizes.pop_front ();
@@ -1092,7 +1092,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                                 {
                                   numSymReq = numSymFixed;
                                   // recalculate TB size in case numSymReq increased
-                                  pduSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + numSymReq) / 8 - ueInfo->m_dlTbSize;
+                                  pduSize = m_amc->CalculateTbSize (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + numSymReq) - ueInfo->m_dlTbSize;
                                 }
                             }
                           ueInfo->m_dlSymbols += numSymReq;                                             // add to total symbols/bits for UE
@@ -1110,8 +1110,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                       else                              // insufficient symbols, allocate remaining symbols (must segment RLC PDU)
                         {
                           // get maximum TB size from MCS and available symbols
-                          uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + symAvail);
-                          pduSize = ceil (tbSizeBits / 8.0) - ueInfo->m_dlTbSize - (m_rlcHdrSize + m_subHdrSize);
+                          uint32_t tbSize = m_amc->CalculateTbSize (ueInfo->m_dlMcs, ueInfo->m_dlSymbols + symAvail);
+                          pduSize = tbSize - ueInfo->m_dlTbSize - (m_rlcHdrSize + m_subHdrSize);
                           //NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
                           flow->m_txPacketSizes.front () -= pduSize;                                            // subtract from HOL packet
                           ueInfo->m_dlSymbols += symAvail;
@@ -1143,20 +1143,20 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                 {
                   std::map <uint16_t, struct UlCqiMapElem>::iterator itCqi = m_ueUlCqi.find (ueInfo->m_rnti);
                   int cqi = 0;
-                  int mcs = 0;
+                  uint8_t mcs {0};
                   if (itCqi != m_ueUlCqi.end ())                       // no cqi info for this UE
                     {
                       // translate vector of doubles to SpectrumValue's
                       SpectrumValue specVals (MmWaveSpectrumValueHelper::GetSpectrumModel (m_phyMacConfig));
                       Values::iterator specIt = specVals.ValuesBegin ();
-                      for (uint32_t ichunk = 0; ichunk < m_phyMacConfig->GetNumChunks (); ichunk++)
+                      for (uint32_t ichunk = 0; ichunk < m_phyMacConfig->GetNumRb (); ichunk++)
                         {
                           NS_ASSERT (specIt != specVals.ValuesEnd ());
                           *specIt = itCqi->second.m_ueUlCqi.at (ichunk);                               //sinrLin;
                           specIt++;
                         }
                       // for UL CQI, we need to know the TB size previously allocated to accurately compute CQI/MCS
-                      cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, itCqi->second.m_numSym, itCqi->second.m_tbSize, mcs);
+                      cqi = m_amc->CreateCqiFeedbackWbTdma (specVals, mcs);
                     }
                   else
                     {
@@ -1175,7 +1175,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                       ueInfo->m_ulMcs = mcs;
                       uint32_t pduSize = flow->m_txPacketSizes.front () + m_rlcHdrSize + m_subHdrSize;
                       // get required additional symbols to send whole RLC PDU given current TB size (new total - prev. allocation)
-                      uint32_t numSymReq = m_amc->GetNumSymbolsFromTbsMcs ((ueInfo->m_ulTbSize + pduSize) * 8, ueInfo->m_ulMcs) - ueInfo->m_ulSymbols;
+                      uint32_t numSymReq = m_amc->GetMinNumSymForTbSize ((ueInfo->m_ulTbSize + pduSize) * 8, ueInfo->m_ulMcs) - ueInfo->m_ulSymbols;
                       if (numSymReq <= (unsigned)symAvail)                              // sufficient symbols to TX whole RLC PDU at this MCS
                         {
                           flow->m_txPacketSizes.pop_front ();
@@ -1190,7 +1190,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                                 {
                                   numSymReq = numSymFixed;
                                   // recalculate TB size in case numSymReq increased
-                                  pduSize = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols + numSymReq) / 8 - ueInfo->m_ulTbSize;
+                                  pduSize = m_amc->CalculateTbSize (ueInfo->m_ulMcs, ueInfo->m_ulSymbols + numSymReq) - ueInfo->m_ulTbSize;
                                 }
                             }
                           ueInfo->m_ulSymbols += numSymReq;                                             // add to total symbols/bits for UE
@@ -1206,8 +1206,8 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
                       else                              // insufficient symbols, allocate remaining symbols (must segment RLC PDU)
                         {
                           // get maximum TB size from MCS and available symbols
-                          uint32_t tbSizeBits = m_amc->GetTbSizeFromMcsSymbols (ueInfo->m_ulMcs, ueInfo->m_ulSymbols + symAvail);
-                          pduSize = ceil (tbSizeBits / 8.0) - ueInfo->m_ulTbSize - (m_rlcHdrSize + m_subHdrSize);
+                          uint32_t tbSize = m_amc->CalculateTbSize (ueInfo->m_ulMcs, ueInfo->m_ulSymbols + symAvail);
+                          pduSize = tbSize - ueInfo->m_ulTbSize - (m_rlcHdrSize + m_subHdrSize);
                           NS_ASSERT (pduSize <= flow->m_txPacketSizes.front ());
                           flow->m_txPacketSizes.front () -= pduSize;                                            // subtract from HOL packet
                           ueInfo->m_ulSymbols += symAvail;
@@ -1306,7 +1306,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           dci.m_mcs = ueInfo->m_dlMcs;
           dci.m_rv = 0;
           dci.m_ndi = 1;
-          dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+          dci.m_tbSize = m_amc->CalculateTbSize (dci.m_mcs, dci.m_numSym);
           dci.m_harqProcess = UpdateDlHarqProcessId (ueInfo->m_rnti);
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
@@ -1412,7 +1412,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           NS_ASSERT (symIdx <= m_phyMacConfig->GetSymbPerSlot () - m_phyMacConfig->GetUlCtrlSymbols ());
           dci.m_mcs = ueInfo->m_ulMcs;
           dci.m_ndi = 1;
-          dci.m_tbSize = m_amc->GetTbSizeFromMcsSymbols (dci.m_mcs, dci.m_numSym) / 8;
+          dci.m_tbSize = m_amc->CalculateTbSize (dci.m_mcs, dci.m_numSym);
           dci.m_harqProcess = UpdateUlHarqProcessId (ueInfo->m_rnti);
           //NS_LOG_DEBUG ("UE" << ueInfo->m_rnti << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
@@ -1424,7 +1424,7 @@ MmWaveFlexTtiMaxWeightMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSch
           ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
           ret.m_slotAllocInfo.m_numSymAlloc += dci.m_numSym;
           std::vector<uint16_t> ueChunkMap;
-          for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
+          for (uint32_t i = 0; i < m_phyMacConfig->GetNumRb (); i++)
             {
               ueChunkMap.push_back (dci.m_rnti);
             }

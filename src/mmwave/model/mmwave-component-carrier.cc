@@ -98,7 +98,7 @@ MmWaveComponentCarrier::DoDispose ()
 uint32_t
 MmWaveComponentCarrier::GetBandwidthInRb () const
 {
-  return m_phyMacConfig->GetNumChunks ();
+  return m_phyMacConfig->GetNumRb ();
 }
 
 double

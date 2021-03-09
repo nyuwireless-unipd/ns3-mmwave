@@ -37,7 +37,7 @@
 #ifndef SRC_MMWAVE_MODEL_MMWAVE_SPECTRUM_PHY_H_
 #define SRC_MMWAVE_MODEL_MMWAVE_SPECTRUM_PHY_H_
 
-
+#include <algorithm>
 #include <ns3/object-factory.h>
 #include <ns3/event-id.h>
 #include <ns3/spectrum-value.h>
@@ -62,24 +62,56 @@ namespace ns3 {
 
 namespace mmwave {
 
-struct ExpectedTbInfo_t
-{
-  uint8_t ndi;
-  uint32_t size;
-  uint8_t mcs;
-  std::vector<int> rbBitmap;
-  uint8_t harqProcessId;
-  uint8_t rv;
-  double mi;
-  bool downlink;
-  bool corrupt;
-  bool harqFeedbackSent;
-  double tbler;
-  uint8_t               symStart;
-  uint8_t               numSym;
-};
+/**
+    * \brief Information about the expected transport block at a certain point in the slot
+    *
+    * Information passed by the PHY through a call to AddExpectedTb
+    */
+  struct ExpectedTb
+  {
+    ExpectedTb (uint8_t ndi, uint32_t tbSize, uint8_t mcs, const std::vector<int> &rbBitmap,
+                uint8_t harqProcessId, uint8_t rv, bool isDownlink, uint8_t symStart,
+                uint8_t numSym) :
+      m_ndi (ndi),
+      m_tbSize (tbSize),
+      m_mcs (mcs),
+      m_rbBitmap (rbBitmap),
+      m_harqProcessId (harqProcessId),
+      m_rv (rv),
+      m_isDownlink (isDownlink),
+      m_symStart (symStart),
+      m_numSym (numSym) {}
+      
+    ExpectedTb () = delete;
+    ExpectedTb (const ExpectedTb &o) = default;
 
-typedef std::map<uint16_t, ExpectedTbInfo_t> ExpectedTbMap_t;
+    uint8_t m_ndi               {0}; //!< New data indicator
+    uint32_t m_tbSize           {0}; //!< TBSize
+    uint8_t m_mcs               {0}; //!< MCS
+    std::vector<int> m_rbBitmap;     //!< RB Bitmap
+    uint8_t m_harqProcessId     {0}; //!< HARQ process ID (MAC)
+    uint8_t m_rv                {0}; //!< RV
+    bool m_isDownlink           {0}; //!< is Downlink?
+    uint8_t m_symStart          {0}; //!< Sym start
+    uint8_t m_numSym            {0}; //!< Num sym
+  };
+
+  struct TransportBlockInfo
+  {
+    TransportBlockInfo (const ExpectedTb &expected) :
+      m_expected (expected) { }
+    TransportBlockInfo () = delete;
+
+    ExpectedTb m_expected;                //!< Expected data from the PHY. Filled by AddExpectedTb
+    bool m_isCorrupted {false};           //!< True if the ErrorModel indicates that the TB is corrupted.
+                                          //    Filled at the end of data rx/tx
+    bool m_harqFeedbackSent {false};      //!< Indicate if the feedback has been sent for an entire TB
+    Ptr<MmWaveErrorModelOutput> m_outputOfEM; //!< Output of the Error Model (depends on the EM type)
+    double m_sinrAvg {0.0};               //!< AVG SINR (only for the RB used to transmit the TB)
+    double m_sinrMin {0.0};               //!< MIN SINR (only between the RB used to transmit the TB)
+  };
+
+typedef std::unordered_map<uint16_t, TransportBlockInfo> TbInfoMap_t; //!< Transport block map per RNTI of TBs which are expected to be received by reading DL or UL DCIs
 
 typedef Callback< void, Ptr<Packet> > MmWavePhyRxDataEndOkCallback;
 typedef Callback< void, std::list<Ptr<MmWaveControlMessage> > > MmWavePhyRxCtrlEndOkCallback;
@@ -123,6 +155,18 @@ public:
   Ptr<MobilityModel> GetMobility () override;
   void SetChannel (Ptr<SpectrumChannel> c) override;
   Ptr<const SpectrumModel> GetRxSpectrumModel () const override;
+
+  /**
+   * \brief Set Error model type
+   * \param type the Error model type
+   */
+  void SetErrorModelType (TypeId errorModelType); 
+
+  /**
+   * \brief Get the error model type
+   * \return the error model type
+   */
+  TypeId GetErrorModelType () const;
 
   /**
   * This function is used by SpectrumChannel to account for the antenna gain.
@@ -212,6 +256,12 @@ private:
   void EndRxData ();
   void EndRxCtrl ();
 
+  /**
+   * \brief Computes the minimum of the stored values
+   * \param specVal the SpectrumValue
+   */
+  double Min (const SpectrumValue& specVal);
+
   Ptr<mmWaveInterference> m_interferenceData;
   Ptr<MobilityModel> m_mobility;
   Ptr<NetDevice> m_device;
@@ -245,12 +295,13 @@ private:
 
   SpectrumValue m_sinrPerceived;
 
-  ExpectedTbMap_t m_expectedTbs;
+  TbInfoMap_t m_transportBlocks;
 
   Ptr<UniformRandomVariable> m_random;
 
   bool m_dataErrorModelEnabled;       // when true (default) the phy error model is enabled
   bool m_ctrlErrorModelEnabled;       // when true (default) the phy error model is enabled for DL ctrl frame
+  TypeId m_errorModelType {Object::GetTypeId()}; //!< Error model type by default is MmWaveLteMiErrorModel
 
   Ptr<MmWaveHarqPhy> m_harqPhyModule;
 

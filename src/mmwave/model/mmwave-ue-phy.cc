@@ -160,7 +160,7 @@ MmWaveUePhy::DoInitialize (void)
       MmWavePhy::SetSlotCtrlStructure (i);
     }
 
-  for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
+  for (uint32_t i = 0; i < m_phyMacConfig->GetNumRb (); i++)
     {
       m_channelChunks.push_back (i);
     }
@@ -770,8 +770,8 @@ MmWaveUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
   std::vector<int> cqi;
 
   NS_ASSERT (m_currTti.m_dci.m_format == 0);
-  int mcs;
-  dlcqi.m_wbCqi = m_amc->CreateCqiFeedbackWbTdma (newSinr, m_currTti.m_dci.m_numSym, m_currTti.m_dci.m_tbSize, mcs);
+  uint8_t mcs;
+  dlcqi.m_wbCqi = m_amc->CreateCqiFeedbackWbTdma (newSinr, mcs);
 
 //	int activeSubChannels = newSinr.GetSpectrumModel()->GetNumBands ();
   /*cqi = m_amc->CreateCqiFeedbacksTdma (newSinr, m_currNumSym);

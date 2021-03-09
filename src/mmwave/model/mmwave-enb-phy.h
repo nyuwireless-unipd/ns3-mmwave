@@ -78,13 +78,17 @@ public:
   void SetNoiseFigure (double pf);
   double GetNoiseFigure () const;
 
-  void CalcChannelQualityForUe (std::vector <double> sinr, Ptr<MmWaveSpectrumPhy> ue);
-
   virtual Ptr<SpectrumValue> CreateTxPowerSpectralDensity () override;
 
+  /**
+   * Creates the PSD of the tx signal and calls SetTxPowerSpectralDensity () 
+   * on the associated MmWaveSpectrumPhy instance.
+   *
+   * \param mask a vector of integers, representing the active resource blocks 
+   * in DL.
+   *
+   */
   void SetSubChannels (std::vector<int> mask );
-
-  void DoSetSubChannels ();
 
   /**
    * Marks the beginning of a new NR slot.

@@ -176,7 +176,7 @@ MmWaveEnbPhy::DoInitialize (void)
     }
   //m_sfAllocInfoUpdated = true;
 
-  for (uint32_t i = 0; i < m_phyMacConfig->GetNumChunks (); i++)
+  for (uint32_t i = 0; i < m_phyMacConfig->GetNumRb (); i++)
     {
       m_channelChunks.push_back (i);
     }
@@ -536,24 +536,12 @@ MmWaveEnbPhy::GetNoiseFigure () const
   return m_noiseFigure;
 }
 
-void
-MmWaveEnbPhy::CalcChannelQualityForUe (std::vector <double> sinr, Ptr<MmWaveSpectrumPhy> ue)
-{
-
-}
-
 Ptr<SpectrumValue>
 MmWaveEnbPhy::CreateTxPowerSpectralDensity ()
 {
   Ptr<SpectrumValue> psd =
     MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (m_phyMacConfig, m_txPower, m_listOfSubchannels );
   return psd;
-}
-
-void
-MmWaveEnbPhy::DoSetSubChannels ()
-{
-
 }
 
 void
@@ -958,10 +946,7 @@ MmWaveEnbPhy::StartTti (void)
   m_currSymStart = currTti.m_dci.m_symStart;
 
   SfnSf sfn = SfnSf (m_frameNum, m_sfNum, m_slotNum);
-  m_harqPhyModule->SubframeIndication (sfn);  // trigger HARQ module
-
   std::list <Ptr<MmWaveControlMessage > > dciMsgList;
-
   Time guardPeriod;
   Time ttiPeriod;
 
