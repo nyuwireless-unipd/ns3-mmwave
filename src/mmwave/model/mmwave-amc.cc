@@ -28,7 +28,7 @@
 #include <ns3/enum.h>
 #include <ns3/uinteger.h>
 #include <ns3/object-factory.h>
-#include "mmwave-lte-mi-error-model.h"
+#include <ns3/mmwave-lte-mi-error-model.h>
 #include "mmwave-spectrum-value-helper.h"
 
 namespace ns3 {

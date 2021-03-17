@@ -55,17 +55,17 @@ def build(bld):
         'model/mmwave-component-carrier-enb.cc',
         'model/mmwave-no-op-component-carrier-manager.cc',
         'model/mmwave-beamforming-model.cc',
-        'model/mmwave-error-model.cc',
-        'model/mmwave-lte-mi-error-model.cc',
-        'model/mmwave-eesm-cc-t1.cc',
-        'model/mmwave-eesm-cc-t2.cc',
-        'model/mmwave-eesm-cc.cc',
-        'model/mmwave-eesm-error-model.cc',
-        'model/mmwave-eesm-ir-t1.cc',
-        'model/mmwave-eesm-ir-t2.cc',
-        'model/mmwave-eesm-ir.cc',
-        'model/mmwave-eesm-t1.cc',
-        'model/mmwave-eesm-t2.cc'
+        'model/error-model/mmwave-error-model.cc',
+        'model/error-model/mmwave-lte-mi-error-model.cc',
+        'model/error-model/mmwave-eesm-cc-t1.cc',
+        'model/error-model/mmwave-eesm-cc-t2.cc',
+        'model/error-model/mmwave-eesm-cc.cc',
+        'model/error-model/mmwave-eesm-error-model.cc',
+        'model/error-model/mmwave-eesm-ir-t1.cc',
+        'model/error-model/mmwave-eesm-ir-t2.cc',
+        'model/error-model/mmwave-eesm-ir.cc',
+        'model/error-model/mmwave-eesm-t1.cc',
+        'model/error-model/mmwave-eesm-t2.cc'
         #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',
         #'model/mmwave-mac-sap.cc',
@@ -73,6 +73,11 @@ def build(bld):
         #'model/mmwave-rlc.cc',
         #'model/mmwave-rlc-sap.cc'
         ]
+
+    # GCC Variable Tracking Assignment (VTA) severely slows down compilation with the NR error model
+    # since such assignment tracking is indeed useful only if a debugger is used, keep such flag only for debug builds
+    if (bld.env ['BUILD_PROFILE'] == 'optimized'):
+        module.env.append_value('CXXFLAGS', '-fno-var-tracking-assignments')
 
     module_test = bld.create_ns3_module_test_library('mmwave')
     module_test.source = [
@@ -133,17 +138,17 @@ def build(bld):
         'model/mmwave-component-carrier-enb.h',
         'model/mmwave-no-op-component-carrier-manager.h',
         'model/mmwave-beamforming-model.h',
-        'model/mmwave-error-model.h',
-        'model/mmwave-lte-mi-error-model.h',
-        'model/mmwave-eesm-cc-t1.h',
-        'model/mmwave-eesm-cc-t2.h',
-        'model/mmwave-eesm-cc.h',
-        'model/mmwave-eesm-error-model.h',
-        'model/mmwave-eesm-ir-t1.h',
-        'model/mmwave-eesm-ir-t2.h',
-        'model/mmwave-eesm-ir.h',
-        'model/mmwave-eesm-t1.h',
-        'model/mmwave-eesm-t2.h'
+        'model/error-model/mmwave-error-model.h',
+        'model/error-model/mmwave-lte-mi-error-model.h',
+        'model/error-model/mmwave-eesm-cc-t1.h',
+        'model/error-model/mmwave-eesm-cc-t2.h',
+        'model/error-model/mmwave-eesm-cc.h',
+        'model/error-model/mmwave-eesm-error-model.h',
+        'model/error-model/mmwave-eesm-ir-t1.h',
+        'model/error-model/mmwave-eesm-ir-t2.h',
+        'model/error-model/mmwave-eesm-ir.h',
+        'model/error-model/mmwave-eesm-t1.h',
+        'model/error-model/mmwave-eesm-t2.h'
         #'model/mmwave-enb-cmac-sap.h',
         #'model/mmwave-enb-rrc.h',
         #'model/mmwave-mac-sap.h',

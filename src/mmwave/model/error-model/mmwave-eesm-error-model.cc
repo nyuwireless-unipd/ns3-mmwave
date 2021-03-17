@@ -27,7 +27,7 @@
 #include <cmath>
 #include <algorithm>
 #include "ns3/enum.h"
-#include "mmwave-phy-mac-common.h"
+#include <ns3/mmwave-phy-mac-common.h>
 
 namespace ns3 {
 

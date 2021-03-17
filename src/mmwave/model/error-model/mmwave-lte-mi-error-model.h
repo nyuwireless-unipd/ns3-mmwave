@@ -22,7 +22,7 @@
 #ifndef SRC_MMWAVE_MODEL_MMWAVE_MI_ERROR_MODEL_H_
 #define SRC_MMWAVE_MODEL_MMWAVE_MI_ERROR_MODEL_H_
 
-#include "mmwave-harq-phy.h"
+#include <ns3/mmwave-harq-phy.h>
 #include "mmwave-error-model.h"
 
 namespace ns3 {

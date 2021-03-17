@@ -27,7 +27,7 @@
 #include <vector>
 #include <unordered_map>
 #include <ns3/simple-ref-count.h>
-#include "mmwave-error-model.h"
+#include <ns3/mmwave-error-model.h>
 
 namespace ns3 {
 

@@ -25,7 +25,7 @@
 #define SRC_MMWAVE_MODEL_MMWAVE_AMC_H_
 
 #include "mmwave-phy-mac-common.h"
-#include "mmwave-error-model.h"
+#include <ns3/mmwave-error-model.h>
 
 namespace ns3 {
 
