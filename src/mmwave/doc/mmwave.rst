@@ -131,8 +131,8 @@ The classes deriving from MmWaveBeamformingModel implement specific beamforming
 schemes.
 It holds a pointer to an instance of the class ThreeGppAntennaArrayModel implementing
 the antenna model.
-The main method is SetBeamformingVectorForDevice (), which computes the proper
-beamforming vector in order to communicate with a specific device and configures
+The main method is SetBeamformingVectorForDevice (), which computes the
+beamforming vector to communicate with a specific device and configures
 the antenna.
 
 MmWaveDftBeamforming
@@ -145,6 +145,15 @@ When the method SetBeamformingVectorForDevice () is called, it computes the
 beamforming vector using a DFT-based algorithm and properly configures the
 antenna weights by calling the method SetBeamformingVector () on the
 associated antenna object.
+
+MmWaveSvdBeamforming
+####################
+
+This class implements an ideal beamforming algorithm based on the SVD 
+decomposition of the channel matrix. The beamforming vectors 
+are computed using the power method described in [ZP2017]_, Section 5. This is 
+an ideal method, in the sense that it assumes the perfect knowledge of the 
+channel matrix.
 
 References
 ##########
