@@ -30,6 +30,9 @@
 *
 * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
 *								 Integration of Carrier Aggregation
+* 
+* Modified by: Argha Sen <arghasen10@gmail.com>
+*                 MmWave Radio Energy Model
 */
 
 
@@ -125,6 +128,10 @@ MmWaveSpectrumPhy::GetTypeId (void)
                      "The no. of packets received and transmitted by the User Device",
                      MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_rxPacketTraceUe),
                      "ns3::UeTxRxPacketCount::TracedCallback")
+    .AddTraceSource ("State",
+                     "State Value to trace",
+                     MakeTraceSourceAccessor (&MmWaveSpectrumPhy::m_intState),
+                     "ns3::TracedValueCallback::Int32")
     .AddAttribute ("DataErrorModelEnabled",
                    "Activate/Deactivate the error model of data (TBs of PDSCH and PUSCH) [by default is active].",
                    BooleanValue (true),
@@ -256,6 +263,7 @@ MmWaveSpectrumPhy::ChangeState (State newState)
 {
   NS_LOG_LOGIC (this << " state: " << m_state << " -> " << newState);
   m_state = newState;
+  m_intState = newState;
 }
 
 

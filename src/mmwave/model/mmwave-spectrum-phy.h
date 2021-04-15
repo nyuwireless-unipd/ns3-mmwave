@@ -30,6 +30,8 @@
 *
 * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
 *								 Integration of Carrier Aggregation
+* Modified by: Argha Sen <arghasen10@gmail.com>
+*                 MmWave Radio Energy Model
 */
 
 
@@ -57,6 +59,8 @@
 #include "mmwave-control-messages.h"
 #include "mmwave-harq-phy.h"
 #include "ns3/mmwave-beamforming-model.h"
+#include "ns3/traced-value.h"
+#include "ns3/trace-source-accessor.h"
 
 namespace ns3 {
 
@@ -137,12 +141,13 @@ public:
 
   enum State
   {
-    IDLE,
-    TX,
-    RX_DATA,
-    RX_CTRL
+    IDLE = 0,
+    TX = 1,
+    RX_DATA = 2,
+    RX_CTRL = 3
   };
 
+  TracedValue<int32_t> m_intState; //!< used to trace the value of m_state
   static TypeId GetTypeId (void);
   virtual void DoDispose () override;
 
