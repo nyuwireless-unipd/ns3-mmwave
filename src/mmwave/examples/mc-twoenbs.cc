@@ -448,6 +448,11 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::MmWaveEnbPhy::Transient", IntegerValue (vectorTransient));
   Config::SetDefault ("ns3::MmWaveEnbPhy::NoiseAndFilter", BooleanValue (noiseAndFilter));
+  
+  // set the type of RRC to use, i.e., ideal or real
+  // by setting the following two attributes to true, the simulation will use 
+  // the ideal paradigm, meaning no packets are sent. in fact, only the callbacks are triggered
+  Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 
   GlobalValue::GetValueByName ("lteUplink", booleanValue);
   bool lteUplink = booleanValue.Get ();

@@ -274,7 +274,7 @@ static ns3::GlobalValue g_x2Latency ("x2Latency", "Latency on X2 interface (us)"
 static ns3::GlobalValue g_mmeLatency ("mmeLatency", "Latency on MME interface (us)",
                                       ns3::DoubleValue (10000), ns3::MakeDoubleChecker<double> ());
 static ns3::GlobalValue g_mobileUeSpeed ("mobileSpeed", "The speed of the UE (m/s)",
-                                         ns3::DoubleValue (2), ns3::MakeDoubleChecker<double> ());
+                                         ns3::DoubleValue (3), ns3::MakeDoubleChecker<double> ());
 static ns3::GlobalValue g_rlcAmEnabled ("rlcAmEnabled", "If true, use RLC AM, else use RLC UM",
                                         ns3::BooleanValue (true), ns3::MakeBooleanChecker ());
 static ns3::GlobalValue g_maxXAxis ("maxXAxis", "The maximum X coordinate for the area in which to deploy the buildings",
@@ -449,6 +449,11 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::MmWaveEnbPhy::Transient", IntegerValue (vectorTransient));
   Config::SetDefault ("ns3::MmWaveEnbPhy::NoiseAndFilter", BooleanValue (noiseAndFilter));
+
+  // set the type of RRC to use, i.e., ideal or real
+  // by setting the following two attributes to true, the simulation will use 
+  // the ideal paradigm, meaning no packets are sent. in fact, only the callbacks are triggered
+  Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 
   GlobalValue::GetValueByName ("lteUplink", booleanValue);
   bool lteUplink = booleanValue.Get ();

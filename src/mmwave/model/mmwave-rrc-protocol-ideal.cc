@@ -44,6 +44,8 @@
 
 #include "ns3/lte-ue-rrc.h"
 #include "ns3/lte-enb-rrc.h"
+#include "ns3/lte-enb-net-device.h"
+#include "ns3/lte-ue-net-device.h"
 #include "mmwave-ue-net-device.h"
 #include "mc-ue-net-device.h"
 #include "mmwave-enb-net-device.h"
@@ -201,7 +203,8 @@ MmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
   uint16_t cellId = m_rrc->GetCellId ();
 
   // walk list of all nodes to get the peer eNB
-  Ptr<MmWaveEnbNetDevice> enbDev;
+  Ptr<LteEnbNetDevice> enbDev;
+  Ptr<MmWaveEnbNetDevice> mmWaveEnbDev;
   NodeList::Iterator listEnd = NodeList::End ();
   bool found = false;
   for (NodeList::Iterator i = NodeList::Begin ();
@@ -214,10 +217,23 @@ MmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
            (j < nDevs) && (!found);
            j++)
         {
-          enbDev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+          enbDev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
           if (enbDev == 0)
             {
-              continue;
+              // check if it is a MmWave eNB
+              mmWaveEnbDev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
+              if (mmWaveEnbDev == 0)
+                {
+                  continue;
+                }
+              else
+                {
+                  if (mmWaveEnbDev->HasCellId (cellId))
+                    {
+                      found = true;
+                      break;
+                    }
+                }
             }
           else
             {
@@ -230,9 +246,23 @@ MmWaveUeRrcProtocolIdeal::SetEnbRrcSapProvider ()
         }
     }
   NS_ASSERT_MSG (found, " Unable to find eNB with CellId =" << cellId);
-  m_enbRrcSapProvider = enbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
-  Ptr<MmWaveEnbRrcProtocolIdeal> enbRrcProtocolIdeal = enbDev->GetRrc ()->GetObject<MmWaveEnbRrcProtocolIdeal> ();
-  enbRrcProtocolIdeal->SetUeRrcSapProvider (m_rnti, m_ueRrcSapProvider);
+  
+  if (enbDev != 0)
+    {
+      m_enbRrcSapProvider = enbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
+      Ptr<MmWaveEnbRrcProtocolIdeal> enbRrcProtocolIdeal = enbDev->GetRrc ()->GetObject<MmWaveEnbRrcProtocolIdeal> ();
+      enbRrcProtocolIdeal->SetUeRrcSapProvider (m_rnti, m_ueRrcSapProvider);
+    }
+  else if (mmWaveEnbDev != 0)
+    {
+      m_enbRrcSapProvider = mmWaveEnbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
+      Ptr<MmWaveEnbRrcProtocolIdeal> enbRrcProtocolIdeal = mmWaveEnbDev->GetRrc ()->GetObject<MmWaveEnbRrcProtocolIdeal> ();
+      enbRrcProtocolIdeal->SetUeRrcSapProvider (m_rnti, m_ueRrcSapProvider);
+    }
+  else
+    {
+      NS_FATAL_ERROR ("Nor LTE eNB neither MmWave eNB");
+    }
 }
 
 
@@ -351,38 +381,42 @@ MmWaveEnbRrcProtocolIdeal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::
               Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
               if (mcUeDev != 0)
                 {
-                  NS_FATAL_ERROR ("-----------This implementation does not support McUeNetDevice. Use MmWaveRrcProtocolReal.");
-                  ueRrc = mcUeDev->GetMmWaveRrc ();
-                  if (ueRrc != 0) // actually is using 2 connections
+                  ueRrc = mcUeDev->GetLteRrc ();
+                  NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+                  if (ueRrc->GetCellId () == cellId) // actually is using 2 connections
                     {
-                      NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-                      NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
-                      if (ueRrc->GetCellId () == m_cellId)
+                        NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                        ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
+                        Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                                             &LteUeRrcSapProvider::RecvSystemInformation,
+                                             ueRrc->GetLteUeRrcSapProvider (),
+                                             msg);
+                    } //if the first condition is false, the second is not executed
+                  else if (mcUeDev->GetMmWaveRrc () != 0 && mcUeDev->GetMmWaveRrc ()->GetCellId () == cellId)
+                    {
+                      NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                      Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                                           &LteUeRrcSapProvider::RecvSystemInformation,
+                                           mcUeDev->GetMmWaveRrc ()->GetLteUeRrcSapProvider (),
+                                           msg);
+                    }
+                }
+              else
+                {
+                  // it may be a LTE device
+                  Ptr<LteUeNetDevice> LteUeDev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
+                  if (LteUeDev != 0)
+                    {
+                      ueRrc = LteUeDev->GetRrc ();
+                      NS_LOG_LOGIC ("considering UE IMSI " << LteUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
+                      if (ueRrc->GetCellId () == cellId)
                         {
-                          NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
+                          NS_LOG_LOGIC ("sending SI to IMSI " << LteUeDev->GetImsi ());
                           ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
                           Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
                                                &LteUeRrcSapProvider::RecvSystemInformation,
                                                ueRrc->GetLteUeRrcSapProvider (),
                                                msg);
-                        }
-                    }
-                  else // it may have just a double stack up to MAC layer
-                    {
-                      ueRrc = mcUeDev->GetLteRrc ();
-                      if (ueRrc != 0)
-                        {
-                          NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
-                          NS_LOG_LOGIC ("UE cellId " << (uint32_t)ueRrc->GetCellId () << " ENB cellId " << (uint32_t)cellId);
-                          if (ueRrc->GetCellId () == m_cellId)
-                            {
-                              NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
-                              ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-                              Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
-                                                   &LteUeRrcSapProvider::RecvSystemInformation,
-                                                   ueRrc->GetLteUeRrcSapProvider (),
-                                                   msg);
-                            }
                         }
                     }
                 }
@@ -449,7 +483,10 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::
 void
 MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionSwitch (uint16_t rnti, LteRrcSap::RrcConnectionSwitch msg)
 {
-  NS_FATAL_ERROR ("A MmWave eNB should not use this primitive");
+  Simulator::Schedule (RRC_IDEAL_MSG_DELAY,
+                       &LteUeRrcSapProvider::RecvRrcConnectionSwitch,
+                       GetUeRrcSapProvider (rnti),
+                       msg);
 }
 
 void
