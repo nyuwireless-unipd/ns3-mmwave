@@ -1,6 +1,7 @@
 .. include:: replace.txt
 .. highlight:: cpp
-
+.. role:: cpp(code)
+   :language: cpp
 .. heading hierarchy:
    ------------- Chapter
    ************* Section (#.#)
@@ -22,6 +23,8 @@ includes features such as:
 
 * Custom PHY and MAC classes, inspired to the PHY and MAC of 3GPP NR. They support dynamic TDD, and are parameterized and highly customizable in order to be flexible enough for testing different designs.
 
+* 3GPP NR-based PHY layer abstraction and error model
+
 * Custom schedulers for the dynamic TDD format
 
 * Carrier Aggregation at the MAC layer
@@ -42,6 +45,8 @@ module:
 * [ZP2020]_ describes the integration of the spatial channel model based on the 3GPP specifications TR 38.901 V15.0.0;
 
 * [PM2016]_ describes the Dual Connectivity feature.
+  
+* [SL2020]_ describes the PHY layer abstraction and error model
 
 These other papers describe features that were implemented in older releases: 
 
@@ -155,6 +160,42 @@ are computed using the power method described in [ZP2017]_, Section 5. This is
 an ideal method, in the sense that it assumes the perfect knowledge of the 
 channel matrix.
 
+MmWaveErrorModel
+======================
+
+The class MmWaveErrorModel is a base class handling the error model and the PHY layer
+abstraction. In particular, all the derived classes implement the computation of the TB BLER, 
+starting from the SNR calculated by the MmWaveSpectrumPhy class. This implementation has been 
+adapted from the release 1.0 of the 5G-LENA simulator [#f1]_ presented in [SL2020]_. 
+
+In order to configure the specific ErrorModel of choice, the following attributes must be
+set to the same value:
+:cpp:`ns3::MmWaveSpectrumPhy::ErrorModelType` and :cpp:`ns3::MmWaveAmc::ErrorModelType`.
+Accordingly, a configuration example is:
+
+.. code-block::
+
+   Config::SetDefault ("ns3::MmWaveSpectrumPhy::ErrorModelType", TypeIdValue (MmWaveEesmIrT1::GetTypeId ()));
+   Config::SetDefault ("ns3::MmWaveAmc::ErrorModelType", TypeIdValue (MmWaveEesmIrT1::GetTypeId ()));
+
+MmWaveEesmErrorModel
+####################
+
+The class MmWaveEesmErrorModel implements an Effective Exponential SNR Mapping 
+(EESM)-based PHY layer abstraction, based on the 3GPP NR specifications.
+In particular, LDPC coding and MCS up to 256-QAM are considered. 
+
+Different MCS Tables (T1 and T2) and HARQ methods (Incremental Redundancy (IR) 
+and Chase Combining (CC)) are provided; the corresponding SNR to BLER mappings 
+are implemented in the specific MmWaveEesmXXTY (XX = IR, CC; Y = 1, 2) derived 
+class.
+
+MmWaveLteMiErrorModel
+####################
+
+The class MmWaveLteMiErrorModel implements a Mutual Information (MI)-based PHY layer 
+abstraction, based on the 3GPP LTE specifications and IR HARQ.
+
 References
 ##########
 
@@ -184,3 +225,12 @@ References
 .. [PM2016] M. Polese, M. Mezzavilla, and M. Zorzi, “Performance Comparison of
    Dual Connectivity and Hard Handover for LTE-5G Tight Integration,” in SIMUTools
    2016
+
+.. [SL2020] S. Lagen, K. Wanuga, H. Elkotby, S. Goyal, N. Patriciello and L. Giupponi, 
+   "New radio physical layer abstraction for system-level simulations of 5G networks."
+   in IEEE International Conference on Communications (ICC), Jun 2020
+
+Footnotes
+##########
+
+.. [#f1] Please refer to https://5g-lena.cttc.es/ for further details and https://gitlab.com/cttc-lena/nr/-/tree/v1.0 for the reference code.
