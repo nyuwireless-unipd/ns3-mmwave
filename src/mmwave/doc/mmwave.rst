@@ -173,7 +173,7 @@ set to the same value:
 :cpp:`ns3::MmWaveSpectrumPhy::ErrorModelType` and :cpp:`ns3::MmWaveAmc::ErrorModelType`.
 Accordingly, a configuration example is:
 
-.. code-block::
+.. code-block:: c++
 
    Config::SetDefault ("ns3::MmWaveSpectrumPhy::ErrorModelType", TypeIdValue (MmWaveEesmIrT1::GetTypeId ()));
    Config::SetDefault ("ns3::MmWaveAmc::ErrorModelType", TypeIdValue (MmWaveEesmIrT1::GetTypeId ()));
