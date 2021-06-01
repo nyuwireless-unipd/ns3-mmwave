@@ -76,6 +76,11 @@ MmWaveBearerStatsCalculator::GetTypeId (void)
     TypeId ("ns3::MmWaveBearerStatsCalculator")
     .SetParent<LteStatsCalculator> ().AddConstructor<MmWaveBearerStatsCalculator> ()
     .SetGroupName ("Lte")
+    .AddAttribute ("AggregatedStats",
+                   "Choice to show the results aggregated of disaggregated.",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&MmWaveBearerStatsCalculator::m_aggregatedStats),
+                   MakeBooleanChecker ())
     .AddAttribute ("StartTime", "Start time of the on going epoch.",
                    TimeValue (Seconds (0.)),
                    MakeTimeAccessor (&MmWaveBearerStatsCalculator::SetStartTime,
@@ -106,11 +111,6 @@ MmWaveBearerStatsCalculator::GetTypeId (void)
                    StringValue ("UlPdcpStats.txt"),
                    MakeStringAccessor (&MmWaveBearerStatsCalculator::SetUlPdcpOutputFilename),
                    MakeStringChecker ())
-    .AddAttribute ("AggregatedStats",
-                   "Choice to show the results aggregated of disaggregated.",
-                   BooleanValue (true),
-                   MakeBooleanAccessor (&MmWaveBearerStatsCalculator::m_aggregatedStats),
-                   MakeBooleanChecker ())
   ;
   return tid;
 }

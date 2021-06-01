@@ -309,12 +309,12 @@ if ($sampleTrace[2]) # 1. DlPdcpStats: packets sent by the eNB and received by t
   my $averageDelay=0; # average delay in nanoseconds
 
   my $row; # find the first received data packet
-  my($mode, $time, $cellId, $rnti, $lcid, $size, $delay);
+  my($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay);
   do
   {
     $row=<$fh>;
     chomp $row; # this removes the EOL character
-    ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+    ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
   while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
                                               # or if there are no more packets
@@ -348,7 +348,7 @@ if ($sampleTrace[2]) # 1. DlPdcpStats: packets sent by the eNB and received by t
           if ($row) # this is used to avoid the warning at the last iteration
           {
             chomp $row;
-            ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+            ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
                                                                                        # this returns a warning at the last
                                                                                        # iteration because we are splitting an
                                                                                        # undef value
@@ -374,6 +374,7 @@ if ($sampleTrace[2]) # 1. DlPdcpStats: packets sent by the eNB and received by t
   }
   $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
                                              # first time instant 0
+  say "avg throughput [bps]\tavg delay [ns]\tnum rx pcks";
   say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
 
   if($saveSampledTrace)
@@ -407,12 +408,12 @@ if ($sampleTrace[3]) # 2. UlPdcpStats: packets sent by the UE and received by th
   my $averageDelay=0; # average delay in nanoseconds
 
   my $row; # find the first received data packet
-  my($mode, $time, $cellId, $rnti, $lcid, $size, $delay);
+  my($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay);
   do
   {
     $row=<$fh>;
     chomp $row; # this removes the EOL character
-    ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+    ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
   while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
                                               # or if there are no more packets
@@ -446,7 +447,7 @@ if ($sampleTrace[3]) # 2. UlPdcpStats: packets sent by the UE and received by th
           if ($row) # this is used to avoid the warning at the last iteration
           {
             chomp $row;
-            ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+            ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
                                                                                        # this returns a warning at the last
                                                                                        # iteration because we are splitting an
                                                                                        # undef value
@@ -472,6 +473,7 @@ if ($sampleTrace[3]) # 2. UlPdcpStats: packets sent by the UE and received by th
   }
   $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
                                              # first time instant 0
+  say "avg throughput [bps]\tavg delay [ns]\tnum rx pcks";
   say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
 
   if($saveSampledTrace)
@@ -770,12 +772,12 @@ if ($sampleTrace[6]) # 1. DlRlcStats: packets sent by the eNB and received by th
   my $averageDelay=0; # average delay in nanoseconds
 
   my $row; # find the first received data packet
-  my($mode, $time, $cellId, $rnti, $lcid, $size, $delay);
+  my($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay);
   do
   {
     $row=<$fh>;
     chomp $row; # this removes the EOL character
-    ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+    ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
   while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
                                               # or if there are no more packets
@@ -809,7 +811,7 @@ if ($sampleTrace[6]) # 1. DlRlcStats: packets sent by the eNB and received by th
           if ($row) # this is used to avoid the warning at the last iteration
           {
             chomp $row;
-            ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+            ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
                                                                                        # this returns a warning at the last
                                                                                        # iteration because we are splitting an
                                                                                        # undef value
@@ -835,6 +837,7 @@ if ($sampleTrace[6]) # 1. DlRlcStats: packets sent by the eNB and received by th
   }
   $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
                                              # first time instant 0
+  say "avg throughput [bps]\tavg delay [ns]\tnum rx pcks";  
   say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
 
   if($saveSampledTrace)
@@ -868,12 +871,12 @@ if ($sampleTrace[7]) # 2. UlRlcStats: packets sent by the UE and received by the
   my $averageDelay=0; # average delay in nanoseconds
 
   my $row; # find the first received data packet
-  my($mode, $time, $cellId, $rnti, $lcid, $size, $delay);
+  my($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay);
   do
   {
     $row=<$fh>;
     chomp $row; # this removes the EOL character
-    ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+    ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
   }
   while($row && !($mode eq 'Rx' && $lcid>2)); # exit if mode=Rx and it is a data packet
                                               # or if there are no more packets
@@ -907,7 +910,7 @@ if ($sampleTrace[7]) # 2. UlRlcStats: packets sent by the UE and received by the
           if ($row) # this is used to avoid the warning at the last iteration
           {
             chomp $row;
-            ($mode, $time, $cellId, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
+            ($mode, $time, $cellId, $imsi, $rnti, $lcid, $size, $delay) = split(' ',$row); # this splits the arguments
                                                                                        # this returns a warning at the last
                                                                                        # iteration because we are splitting an
                                                                                        # undef value
@@ -933,6 +936,7 @@ if ($sampleTrace[7]) # 2. UlRlcStats: packets sent by the UE and received by the
   }
   $averageThroughput/=(scalar(@timeAxis)-1); # we do not have to consider the
                                              # first time instant 0
+  say "avg throughput [bps]\tavg delay [ns]\tnum rx pcks";
   say "$averageThroughput\t$averageDelay\t$numOfRxpackets";
 
   if($saveSampledTrace)
