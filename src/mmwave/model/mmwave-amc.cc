@@ -159,13 +159,14 @@ MmWaveAmc::CalculateTbSize (uint8_t mcs, uint8_t nSym) const
 uint8_t 
 MmWaveAmc::GetMinNumSymForTbSize (uint32_t tbSize, uint8_t mcs) const
 {
-  uint8_t numSym {0}, effTbSize {0};
+  uint32_t effTbSize {0};
+  uint8_t numSym {0};
   while (effTbSize < tbSize && numSym < m_phyMacConfig->GetSymbPerSlot ())
   {
     numSym++;
     effTbSize = CalculateTbSize (mcs, numSym);
   }
-  NS_ABORT_MSG_IF (effTbSize >= tbSize, "No way to create such TB size, something went wrong!");
+  NS_ABORT_MSG_IF (effTbSize < tbSize, "No way to create such TB size, something went wrong!");
 
   return numSym;
 }
@@ -362,4 +363,3 @@ MmWaveAmc::GetErrorModelType () const
 } // end namespace mmwave
 
 } // end namespace ns3
-
