@@ -66,38 +66,6 @@ namespace mmwave {
 
 NS_OBJECT_ENSURE_REGISTERED (MmWaveSpectrumPhy);
 
-static const double EffectiveCodingRate[29] = {
-  0.08,
-  0.1,
-  0.11,
-  0.15,
-  0.19,
-  0.24,
-  0.3,
-  0.37,
-  0.44,
-  0.51,
-  0.3,
-  0.33,
-  0.37,
-  0.42,
-  0.48,
-  0.54,
-  0.6,
-  0.43,
-  0.45,
-  0.5,
-  0.55,
-  0.6,
-  0.65,
-  0.7,
-  0.75,
-  0.8,
-  0.85,
-  0.89,
-  0.92
-};
-
 MmWaveSpectrumPhy::MmWaveSpectrumPhy ()
   : m_cellId (0),
     m_state (IDLE),
