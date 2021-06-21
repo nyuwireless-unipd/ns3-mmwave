@@ -1081,7 +1081,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   if (cqi == 0 && !m_fixedMcsUl)                       // out of range (SINR too low)
                     {
                       NS_LOG_INFO ("*** RNTI " << ceBsrIt->first << " UL-CQI out of range, skipping allocation in UL");
-                      break;                            // do not allocate UE in uplink
+                      continue;                            // do not allocate UE in uplink
                     }
                 }
               itUeInfo = ueInfo.find (ceBsrIt->first);
