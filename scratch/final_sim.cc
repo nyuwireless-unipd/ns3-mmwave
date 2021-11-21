@@ -672,7 +672,7 @@ trace_data (uint32_t node_id)
           << params.m_cellId << "," << params.m_rnti << "," << +params.m_ccId << ","
           << params.m_tbSize << "," << +params.m_mcs << "," << +params.m_rv << ","
           << 10 * std::log10 (params.m_sinr) << "," << params.m_corrupt << "," << params.m_tbler
-          << "," << 10 * std::log10 (params.m_sinrMin) << params.m_sinr << std::endl;
+          << "," << 10 * std::log10 (params.m_sinrMin) << "," << params.m_sinr << std::endl;
 
   Simulator::Schedule (Seconds (1), &trace_data, node_id);
 }
