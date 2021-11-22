@@ -28,6 +28,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
 #include "ns3/mmwave-radio-energy-model-helper.h"
+#include "ns3/mmwave-radio-energy-model-enb-helper.h"
 #include "ns3/basic-energy-source-helper.h"
 #include "ns3/buildings-helper.h"
 #include "ns3/buildings-module.h"
@@ -55,6 +56,7 @@ map<uint16_t, Ptr<Node>> cellid_node;
 
 map<uint32_t, uint16_t> ue_cellid_usinghandover;
 map<uint32_t, double> ue_energy_map;
+map<uint16_t, double> enb_energy_map;
 map<uint32_t, pair<uint16_t, double>> ue_distancefromgnodeb;
 map<uint32_t, RxPacketTraceParams> ue_rxpackettrace;
 map<uint32_t, double> ue_speed;
@@ -535,6 +537,13 @@ EnergyConsumptionUpdate (uint32_t node_id, double totaloldEnergyConsumption,
 }
 
 void
+EnbEnergyConsumptionUpdate (uint32_t node_id, double totaloldEnergyConsumption,
+                         double totalnewEnergyConsumption)
+{
+  enb_energy_map[node_id] = totalnewEnergyConsumption;
+}
+
+void
 NotifyConnectionEstablishedUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti)
 {
 
@@ -661,13 +670,14 @@ trace_data (uint32_t node_id)
   RxPacketTraceParams params = ue_rxpackettrace[node_id];
   double velocity = ue_speed[node_id];
   pair<uint16_t, double> cellid_distance = ue_distancefromgnodeb[node_id];
+  double enbEnergyConsumption = enb_energy_map[cellid_distance.first];
 
   double currenttime = Simulator::Now ().GetSeconds ();
   std::ofstream outFile;
   outFile.open (outputDir + tracefilename, std::ios::out | std::ios::app);
   outFile << currenttime << "," << node_id << "," << totalnewEnergyConsumption << ","
-          << cellid_distance.first << "," << cellid_distance.second << "," << velocity << ","
-          << params.m_cellId << "," << params.m_rnti << "," << +params.m_ccId << ","
+          << enbEnergyConsumption << "," << cellid_distance.first << "," << cellid_distance.second << "," 
+          << velocity << "," << params.m_cellId << "," << params.m_rnti << "," << +params.m_ccId << ","
           << params.m_tbSize << "," << +params.m_mcs << "," << +params.m_rv << ","
           << 10 * std::log10 (params.m_sinr) << "," << params.m_corrupt << "," << params.m_tbler
           << "," << 10 * std::log10 (params.m_sinrMin) << "," << params.m_sinr << std::endl;
@@ -1126,7 +1136,7 @@ main (int argc, char *argv[])
 BasicEnergySourceHelper basicSourceHelper;
   basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (10));
   basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (5.0));
-  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (1000.0));
+  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (1000000000.0));
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
   {
     // Install Energy Source
@@ -1136,6 +1146,19 @@ BasicEnergySourceHelper basicSourceHelper;
     DeviceEnergyModelContainer deviceEnergyModel = nrEnergyHelper.Install (ueNodes.Get(u)->GetDevice (0), sources);
     //Install and start applications on UEs and remote host
     Ptr<Node> nn = ueNodes.Get (u);
+    deviceEnergyModel.Get(0)->TraceConnectWithoutContext ("TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate,nn->GetId()));
+    
+  }
+
+  for (uint32_t u = 0; u < mmWaveEnbNodes.GetN (); ++u)
+  {
+    // Install Energy Source
+    EnergySourceContainer sources = basicSourceHelper.Install (mmWaveEnbNodes.Get (u));
+    // Device Energy Model
+    MmWaveRadioEnergyModelEnbHelper nrEnergyHelper;
+    DeviceEnergyModelContainer deviceEnergyModel = nrEnergyHelper.Install (mmWaveEnbNodes.Get(u)->GetDevice (0), sources);
+    //Install and start applications on UEs and remote host
+    Ptr<Node> nn = mmWaveEnbNodes.Get (u);
     deviceEnergyModel.Get(0)->TraceConnectWithoutContext ("TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate,nn->GetId()));
     
   }
@@ -1202,7 +1225,7 @@ BasicEnergySourceHelper basicSourceHelper;
   // Start applications
   std::ofstream tracefile;
   tracefile.open (outputDir + tracefilename, std::ios::out | std::ios::trunc);
-  tracefile << "Time,NodeId,Energy,CellId,Distance,Velocity,cellId,rnti,ccId,tbSize,mcs,rv,SINR(dB),corrupt,TBler,min_sinr,rsrp";
+  tracefile << "Time,NodeId,Energy,Energy_BS,CellId,Distance,Velocity,cellId,rnti,ccId,tbSize,mcs,rv,SINR(dB),corrupt,TBler,min_sinr,rsrp";
   tracefile << std::endl;
   
   Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
