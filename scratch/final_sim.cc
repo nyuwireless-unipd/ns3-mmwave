@@ -28,6 +28,7 @@
 #include "ns3/config-store-module.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
 #include "ns3/mmwave-radio-energy-model-helper.h"
+#include "ns3/mmwave-radio-energy-model-enb-helper.h"
 #include "ns3/basic-energy-source-helper.h"
 #include "ns3/buildings-helper.h"
 #include "ns3/buildings-module.h"
@@ -55,6 +56,7 @@ map<uint16_t, Ptr<Node>> cellid_node;
 
 map<uint32_t, uint16_t> ue_cellid_usinghandover;
 map<uint32_t, double> ue_energy_map;
+map<uint16_t, double> enb_energy_map;
 map<uint32_t, pair<uint16_t, double>> ue_distancefromgnodeb;
 map<uint32_t, RxPacketTraceParams> ue_rxpackettrace;
 map<uint32_t, double> ue_speed;
@@ -535,11 +537,16 @@ EnergyConsumptionUpdate (uint32_t node_id, double totaloldEnergyConsumption,
 }
 
 void
+EnbEnergyConsumptionUpdate (uint32_t node_id, double totaloldEnergyConsumption,
+                         double totalnewEnergyConsumption)
+{
+  enb_energy_map[node_id] = totalnewEnergyConsumption;
+}
+
+void
 NotifyConnectionEstablishedUe (std::string context, uint64_t imsi, uint16_t cellid, uint16_t rnti)
 {
 
-  if (imsi_list[cellid].find (imsi) != imsi_list[cellid].end ())
-    imsi_list[cellid].insert (imsi);
 
   int imsi_count = imsi_list[cellid].size ();
   Ptr<Node> gnode_2 = cellid_node[cellid];
@@ -663,13 +670,14 @@ trace_data (uint32_t node_id)
   RxPacketTraceParams params = ue_rxpackettrace[node_id];
   double velocity = ue_speed[node_id];
   pair<uint16_t, double> cellid_distance = ue_distancefromgnodeb[node_id];
+  double enbEnergyConsumption = enb_energy_map[cellid_distance.first];
 
   double currenttime = Simulator::Now ().GetSeconds ();
   std::ofstream outFile;
   outFile.open (outputDir + tracefilename, std::ios::out | std::ios::app);
   outFile << currenttime << "," << node_id << "," << totalnewEnergyConsumption << ","
-          << cellid_distance.first << "," << cellid_distance.second << "," << velocity << ","
-          << params.m_cellId << "," << params.m_rnti << "," << +params.m_ccId << ","
+          << enbEnergyConsumption << "," << cellid_distance.first << "," << cellid_distance.second << "," 
+          << velocity << "," << params.m_cellId << "," << params.m_rnti << "," << +params.m_ccId << ","
           << params.m_tbSize << "," << +params.m_mcs << "," << +params.m_rv << ","
           << 10 * std::log10 (params.m_sinr) << "," << params.m_corrupt << "," << params.m_tbler
           << "," << 10 * std::log10 (params.m_sinrMin) << "," << params.m_sinr << std::endl;
@@ -744,15 +752,15 @@ main (int argc, char *argv[])
   StringValue stringValue;
   DoubleValue doubleValue;
   //EnumValue enumValue;
-  //   GlobalValue::GetValueByName ("numBlocks", uintegerValue);
-  //   uint32_t numBlocks = uintegerValue.Get ();
-  //   GlobalValue::GetValueByName ("maxXAxis", doubleValue);
-  //   double maxXAxis = doubleValue.Get ();
-  //   GlobalValue::GetValueByName ("maxYAxis", doubleValue);
-  //   double maxYAxis = doubleValue.Get ();
+//   GlobalValue::GetValueByName ("numBlocks", uintegerValue);
+//   uint32_t numBlocks = uintegerValue.Get ();
+//   GlobalValue::GetValueByName ("maxXAxis", doubleValue);
+//   double maxXAxis = doubleValue.Get ();
+//   GlobalValue::GetValueByName ("maxYAxis", doubleValue);
+//   double maxYAxis = doubleValue.Get ();
 
-  //   double ueInitialPosition = 90;
-  //   double ueFinalPosition = 110;
+//   double ueInitialPosition = 90;
+//   double ueFinalPosition = 110;
 
   // Variables for the RT
   int windowForTransient = 150; // number of samples for the vector to use in the filter
@@ -802,8 +810,8 @@ main (int argc, char *argv[])
   GlobalValue::GetValueByName ("mobileSpeed", doubleValue);
   double ueSpeed = doubleValue.Get ();
 
-  //   double transientDuration = double(vectorTransient) / 1000000;
-  //   double simTime = transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition) / ueSpeed + 1;
+//   double transientDuration = double(vectorTransient) / 1000000;
+//   double simTime = transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition) / ueSpeed + 1;
 
   NS_LOG_UNCOND ("rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize
                                  << " interPacketInterval " << interPacketInterval << " x2Latency "
@@ -839,38 +847,30 @@ main (int argc, char *argv[])
   char buffer[80];
   time (&rawtime);
   timeinfo = localtime (&rawtime);
-  strftime (buffer, 80, "%d_%m_%Y_%I_%M_%S", timeinfo);
+  strftime (buffer,80,"%d_%m_%Y_%I_%M_%S",timeinfo);
   std::string time_str (buffer);
 
   Config::SetDefault ("ns3::MmWaveHelper::RlcAmEnabled", BooleanValue (rlcAmEnabled));
   Config::SetDefault ("ns3::MmWaveHelper::HarqEnabled", BooleanValue (harqEnabled));
   Config::SetDefault ("ns3::MmWaveFlexTtiMacScheduler::HarqEnabled", BooleanValue (harqEnabled));
-  Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled",
-                      BooleanValue (harqEnabled));
+  Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::HarqEnabled", BooleanValue (harqEnabled));
   Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::FixedTti", BooleanValue (fixedTti));
   Config::SetDefault ("ns3::MmWaveFlexTtiMaxWeightMacScheduler::SymPerSlot", UintegerValue (6));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::TbDecodeLatency", UintegerValue (200.0));
   Config::SetDefault ("ns3::MmWavePhyMacCommon::NumHarqProcess", UintegerValue (100));
   Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (MilliSeconds (100.0)));
-  Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity",
-                      TimeValue (MilliSeconds (5.0)));
+  Config::SetDefault ("ns3::LteEnbRrc::SystemInformationPeriodicity", TimeValue (MilliSeconds (5.0)));
   Config::SetDefault ("ns3::LteRlcAm::ReportBufferStatusTimer", TimeValue (MicroSeconds (100.0)));
-  Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer",
-                      TimeValue (MicroSeconds (100.0)));
+  Config::SetDefault ("ns3::LteRlcUmLowLat::ReportBufferStatusTimer", TimeValue (MicroSeconds (100.0)));
   Config::SetDefault ("ns3::LteEnbRrc::SrsPeriodicity", UintegerValue (320));
   Config::SetDefault ("ns3::LteEnbRrc::FirstSibTime", UintegerValue (2));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay",
-                      TimeValue (MicroSeconds (x2Latency)));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate",
-                      DataRateValue (DataRate ("1000Gb/s")));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu", UintegerValue (10000));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay",
-                      TimeValue (MicroSeconds (1000)));
-  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay",
-                      TimeValue (MicroSeconds (mmeLatency)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDelay", TimeValue (MicroSeconds (x2Latency)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkDataRate", DataRateValue (DataRate ("1000Gb/s")));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::X2LinkMtu",  UintegerValue (10000));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1uLinkDelay", TimeValue (MicroSeconds (1000)));
+  Config::SetDefault ("ns3::MmWavePointToPointEpcHelper::S1apLinkDelay", TimeValue (MicroSeconds (mmeLatency)));
   Config::SetDefault ("ns3::LteRlcUm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
-  Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize",
-                      UintegerValue (bufferSize * 1024 * 1024));
+  Config::SetDefault ("ns3::LteRlcUmLowLat::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
   Config::SetDefault ("ns3::LteRlcAm::StatusProhibitTimer", TimeValue (MilliSeconds (10.0)));
   Config::SetDefault ("ns3::LteRlcAm::MaxTxBufferSize", UintegerValue (bufferSize * 1024 * 1024));
 
@@ -878,31 +878,27 @@ main (int argc, char *argv[])
   switch (hoMode)
     {
     case 1:
-      Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode",
-                          EnumValue (LteEnbRrc::THRESHOLD));
+      Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue (LteEnbRrc::THRESHOLD));
       break;
     case 2:
-      Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode",
-                          EnumValue (LteEnbRrc::FIXED_TTT));
+      Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue (LteEnbRrc::FIXED_TTT));
       break;
     case 3:
-      Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode",
-                          EnumValue (LteEnbRrc::DYNAMIC_TTT));
+      Config::SetDefault ("ns3::LteEnbRrc::SecondaryCellHandoverMode", EnumValue (LteEnbRrc::DYNAMIC_TTT));
       break;
     }
 
   Config::SetDefault ("ns3::LteEnbRrc::FixedTttValue", UintegerValue (150));
   Config::SetDefault ("ns3::LteEnbRrc::CrtPeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::LteEnbRrc::OutageThreshold", DoubleValue (outageTh));
-  Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod",
-                      IntegerValue (ReportTablePeriodicity));
+  Config::SetDefault ("ns3::MmWaveEnbPhy::UpdateSinrEstimatePeriod", IntegerValue (ReportTablePeriodicity));
   Config::SetDefault ("ns3::MmWaveEnbPhy::Transient", IntegerValue (vectorTransient));
   Config::SetDefault ("ns3::MmWaveEnbPhy::NoiseAndFilter", BooleanValue (noiseAndFilter));
-
+  
   // set the type of RRC to use, i.e., ideal or real
-  // by setting the following two attributes to true, the simulation will use
+  // by setting the following two attributes to true, the simulation will use 
   // the ideal paradigm, meaning no packets are sent. in fact, only the callbacks are triggered
-  Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue (true));
+  Config::SetDefault ("ns3::MmWaveHelper::UseIdealRrc", BooleanValue(true));
 
   GlobalValue::GetValueByName ("lteUplink", booleanValue);
   bool lteUplink = booleanValue.Get ();
@@ -911,26 +907,21 @@ main (int argc, char *argv[])
   std::cout << "Lte uplink " << lteUplink << "\n";
 
   // settings for the 3GPP the channel
-  Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod",
-                      TimeValue (MilliSeconds (
-                          100))); // interval after which the channel for a moving user is updated,
-  Config::SetDefault ("ns3::ThreeGppChannelModel::Blockage",
-                      BooleanValue (true)); // use blockage or not
-  Config::SetDefault ("ns3::ThreeGppChannelModel::PortraitMode",
-                      BooleanValue (true)); // use blockage model with UT in portrait mode
-  Config::SetDefault ("ns3::ThreeGppChannelModel::NumNonselfBlocking",
-                      IntegerValue (4)); // number of non-self blocking obstacles
+  Config::SetDefault ("ns3::ThreeGppChannelModel::UpdatePeriod", TimeValue (MilliSeconds (100))); // interval after which the channel for a moving user is updated,
+  Config::SetDefault ("ns3::ThreeGppChannelModel::Blockage", BooleanValue (true)); // use blockage or not
+  Config::SetDefault ("ns3::ThreeGppChannelModel::PortraitMode", BooleanValue (true)); // use blockage model with UT in portrait mode
+  Config::SetDefault ("ns3::ThreeGppChannelModel::NumNonselfBlocking", IntegerValue (4)); // number of non-self blocking obstacles
 
   // set the number of antennas in the devices
-  Config::SetDefault ("ns3::McUeNetDevice::AntennaNum", UintegerValue (16));
-  Config::SetDefault ("ns3::MmWaveNetDevice::AntennaNum", UintegerValue (64));
-
-  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed)
-  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true));
+  Config::SetDefault ("ns3::McUeNetDevice::AntennaNum", UintegerValue(16));
+  Config::SetDefault ("ns3::MmWaveNetDevice::AntennaNum", UintegerValue(64));
+  
+  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
+  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   mmwaveHelper->SetPathlossModelType ("ns3::ThreeGppUmiStreetCanyonPropagationLossModel");
-  //   mmwaveHelper->SetChannelConditionModelType ("ns3::BuildingsChannelConditionModel");
+//   mmwaveHelper->SetChannelConditionModelType ("ns3::BuildingsChannelConditionModel");
 
   Ptr<MmWavePointToPointEpcHelper> epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
   mmwaveHelper->SetEpcHelper (epcHelper);
@@ -962,117 +953,125 @@ main (int argc, char *argv[])
   Ipv4InterfaceContainer internetIpIfaces = ipv4h.Assign (internetDevices);
   // interface 0 is localhost, 1 is the p2p device
   Ipv4Address remoteHostAddr = internetIpIfaces.GetAddress (1);
-  std::cout << "RemoteHostAddr. " << remoteHostAddr << std::endl;
+  std::cout << "RemoteHostAddr. " << remoteHostAddr << std::endl; 
   Ipv4StaticRoutingHelper ipv4RoutingHelper;
-  Ptr<Ipv4StaticRouting> remoteHostStaticRouting =
-      ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
+  Ptr<Ipv4StaticRouting> remoteHostStaticRouting = ipv4RoutingHelper.GetStaticRouting (remoteHost->GetObject<Ipv4> ());
   remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
+
+  Ns2MobilityHelper sumo_trace ("scratch/ns2mobility.tcl");
 
   // create LTE, mmWave eNB nodes and UE node
   double gNbHeight = 10;
-  uint16_t ueNum = 5;
-  uint16_t gNbNum = 5;
+  uint16_t ueNum = 50;
+  uint16_t gNbNum = 10;
   NodeContainer ueNodes;
-  // NodeContainer enbNodes;
+ // NodeContainer enbNodes;
   NodeContainer mmWaveEnbNodes;
   NodeContainer lteEnbNodes;
   NodeContainer allEnbNodes;
   ueNodes.Create (ueNum);
-  mmWaveEnbNodes.Create (gNbNum);
+  mmWaveEnbNodes.Create (2);
   lteEnbNodes.Create (1);
   allEnbNodes.Add (lteEnbNodes);
   allEnbNodes.Add (mmWaveEnbNodes);
+  sumo_trace.Install(ueNodes.Begin(),ueNodes.End());
 
-  for (uint32_t i = 0; i < mmWaveEnbNodes.GetN (); i++)
+ for (uint32_t i = 0; i < mmWaveEnbNodes.GetN(); i++)
     {
-      std::cout << "gNb:" << i << " : " << mmWaveEnbNodes.Get (i)->GetId () << std::endl;
+      std::cout << "gNb:" << i << " : " << mmWaveEnbNodes.Get (i)->GetId ()
+          << std::endl;
     }
   for (uint32_t i = 0; i < ueNodes.GetN (); i++)
     {
-      std::cout << "ue:" << i << " : " << ueNodes.Get (i)->GetId () << std::endl;
+      std::cout << "ue:" << i << " : " << ueNodes.Get (i)->GetId ()
+          << std::endl;
     }
   for (uint32_t i = 0; i < lteEnbNodes.GetN (); i++)
     {
-      std::cout << "LTE:" << i << " : " << lteEnbNodes.Get (i)->GetId () << std::endl;
+      std::cout << "LTE:" << i << " : " << lteEnbNodes.Get (i)->GetId ()
+          << std::endl;
     }
 
   // Positions
-  //   std::vector<Ptr<Building> > buildingVector;
+//   std::vector<Ptr<Building> > buildingVector;
 
-  //   double maxBuildingSize = 20;
+//   double maxBuildingSize = 20;
 
-  //   for (uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
-  //     {
-  //       Ptr < Building > building;
-  //       building = Create<Building> ();
-  //       /* returns a vecotr where:
-  //       * position [0]: coordinates for x min
-  //       * position [1]: coordinates for x max
-  //       * position [2]: coordinates for y min
-  //       * position [3]: coordinates for y max
-  //       */
-  //       std::pair<Box, std::list<Box> > pairBuildings = GenerateBuildingBounds (maxXAxis, maxYAxis, maxBuildingSize, m_previousBlocks);
-  //       m_previousBlocks = std::get<1> (pairBuildings);
-  //       Box box = std::get<0> (pairBuildings);
-  //       Ptr<UniformRandomVariable> randomBuildingZ = CreateObject<UniformRandomVariable> ();
-  //       randomBuildingZ->SetAttribute ("Min",DoubleValue (1.6));
-  //       randomBuildingZ->SetAttribute ("Max",DoubleValue (40));
-  //       double buildingHeight = randomBuildingZ->GetValue ();
+//   for (uint32_t buildingIndex = 0; buildingIndex < numBlocks; buildingIndex++)
+//     {
+//       Ptr < Building > building;
+//       building = Create<Building> ();
+//       /* returns a vecotr where:
+//       * position [0]: coordinates for x min
+//       * position [1]: coordinates for x max
+//       * position [2]: coordinates for y min
+//       * position [3]: coordinates for y max
+//       */
+//       std::pair<Box, std::list<Box> > pairBuildings = GenerateBuildingBounds (maxXAxis, maxYAxis, maxBuildingSize, m_previousBlocks);
+//       m_previousBlocks = std::get<1> (pairBuildings);
+//       Box box = std::get<0> (pairBuildings);
+//       Ptr<UniformRandomVariable> randomBuildingZ = CreateObject<UniformRandomVariable> ();
+//       randomBuildingZ->SetAttribute ("Min",DoubleValue (1.6));
+//       randomBuildingZ->SetAttribute ("Max",DoubleValue (40));
+//       double buildingHeight = randomBuildingZ->GetValue ();
 
-  //       building->SetBoundaries (Box (box.xMin, box.xMax,
-  //                                     box.yMin,  box.yMax,
-  //                                     0.0, buildingHeight));
-  //       buildingVector.push_back (building);
-  //     }
+//       building->SetBoundaries (Box (box.xMin, box.xMax,
+//                                     box.yMin,  box.yMax,
+//                                     0.0, buildingHeight));
+//       buildingVector.push_back (building);
+//     }
+
 
   // Install Mobility Model
   MobilityHelper gNbMobility, ueMobility, LteMobility;
   Ptr<ListPositionAllocator> ltepositionAloc = CreateObject<ListPositionAllocator> ();
-
+    
   Ptr<ListPositionAllocator> apPositionAlloc = CreateObject<ListPositionAllocator> ();
-  int mobilityType = 1;
-  if (mobilityType == 0)
-    {
-      ueMobility.SetPositionAllocator ("ns3::GridPositionAllocator", "MinX", DoubleValue (166.0),
-                                       "MinY", DoubleValue (333.0), "DeltaX", DoubleValue (166.0),
-                                       "DeltaY", DoubleValue (333.0), "GridWidth",
-                                       UintegerValue (5), "LayoutType", StringValue ("RowFirst"));
-      ueMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-    }
-  else if (mobilityType == 1)
-    {
-      Ptr<ListPositionAllocator> staPositionAllocator = CreateObject<ListPositionAllocator> ();
-      double x_random, y_random;
-      for (uint32_t i = 0; i < ueNodes.GetN (); i++)
-        {
-          x_random = (rand () % 1000) + 1;
-          y_random = (rand () % 1000) + 1;
-          staPositionAllocator->Add (Vector (x_random, y_random, 1.5));
-        }
-      ueMobility.SetPositionAllocator (staPositionAllocator);
-      ueMobility.SetMobilityModel (
-          "ns3::RandomWalk2dMobilityModel", "Bounds", RectangleValue (Rectangle (0, 1000, 0, 1000)),
-          "Speed",
-          StringValue ("ns3::UniformRandomVariable[Min=" + std::to_string (5) +
-                       "|Max=" + std::to_string (30) + "]"));
-    }
-
-  ueMobility.Install (ueNodes);
+  // int mobilityType = 1;
+  // if(mobilityType == 0)
+  //   {
+  //     ueMobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+  //                                      "MinX", DoubleValue (166.0),
+  //                                      "MinY", DoubleValue (333.0),
+  //                                      "DeltaX", DoubleValue (166.0),
+  //                                      "DeltaY", DoubleValue (333.0),
+  //                                      "GridWidth", UintegerValue (5),
+  //                                      "LayoutType", StringValue ("RowFirst"));
+  //     ueMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  //   }
+  // else if (mobilityType == 1)
+  // {
+  //   Ptr<ListPositionAllocator> staPositionAllocator = CreateObject<ListPositionAllocator> ();
+  //   double x_random, y_random;
+  //   for(uint32_t i = 0; i < ueNodes.GetN(); i ++)
+  //   {
+  //     x_random = (rand() % 1000) + 1;
+  //     y_random = (rand() % 1000) + 1;
+  //     staPositionAllocator->Add (Vector (x_random, y_random, 1.5));
+  //   }
+  //   ueMobility.SetPositionAllocator(staPositionAllocator);
+  //   ueMobility.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
+  //     "Bounds", RectangleValue (Rectangle (0, 1000, 0, 1000)),
+  //     "Speed", StringValue("ns3::UniformRandomVariable[Min=" + std::to_string(5) + "|Max=" + std::to_string(30) + "]"));
+  // }
+  
+  
+  // ueMobility.Install (ueNodes);
   //BuildingsHelper::Install(ueNodes);
-  for (uint32_t i = 0; i < ueNodes.GetN (); i++)
-    {
-      Ptr<MobilityModel> model = ueNodes.Get (i)->GetObject<MobilityModel> ();
-      std::cout << "Node " << i << " Position " << model->GetPosition () << std::endl;
-    }
+    for (uint32_t i = 0; i < ueNodes.GetN (); i++)
+  {
+    Ptr<MobilityModel> model = ueNodes.Get (i)->GetObject<MobilityModel> ();
+    std::cout << "Node " << i << " Position " << model->GetPosition () << std::endl;
+  }
   int p[gNbNum][2] = {};
-  deployEnb (p);
-  for (int i = 0; i < gNbNum; i++)
-    {
-      apPositionAlloc->Add (Vector (p[i][0], p[i][1], gNbHeight));
-    }
+  deployEnb(p);
+  for(int i = 0; i < gNbNum; i++)
+   {
+       apPositionAlloc->Add (Vector (p[i][0],p[i][1],gNbHeight));
+   }
 
   LteMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  ltepositionAloc->Add (Vector (500.0, 500, 10.0));
+  ltepositionAloc->Add(Vector(500.0, 500, 10.0));
   LteMobility.SetPositionAllocator (ltepositionAloc);
   LteMobility.Install (lteEnbNodes);
 
@@ -1080,11 +1079,11 @@ main (int argc, char *argv[])
   gNbMobility.SetPositionAllocator (apPositionAlloc);
   gNbMobility.Install (mmWaveEnbNodes);
 
-  //   BuildingsHelper::Install (ueNodes);
+//   BuildingsHelper::Install (ueNodes);
 
   //ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
-  //   ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 1.6));
-  //   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
+//   ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 1.6));
+//   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
   // Install mmWave, lte, mc Devices to the nodes
   NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
@@ -1101,8 +1100,7 @@ main (int argc, char *argv[])
     {
       Ptr<Node> ueNode = ueNodes.Get (u);
       // Set the default gateway for the UE
-      Ptr<Ipv4StaticRouting> ueStaticRouting =
-          ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
+      Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
       ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
     }
 
@@ -1111,89 +1109,92 @@ main (int argc, char *argv[])
 
   // Manual attachment
   mmwaveHelper->AttachToClosestEnb (mcUeDevs, mmWaveEnbDevs, lteEnbDevs);
-  for (uint32_t i = 0; i < ueNodes.GetN (); i++)
+ for (uint32_t i = 0; i < ueNodes.GetN (); i++)
     {
-      ueimsi_nodeid[mcUeDevs.Get (i)->GetObject<McUeNetDevice> ()->GetImsi ()] =
-          ueNodes.Get (i)->GetId ();
-      std::cout << "ue:" << i << " : " << ueNodes.Get (i)->GetId () << std::endl;
+      ueimsi_nodeid[mcUeDevs.Get(i)->GetObject<McUeNetDevice>()->GetImsi()]= ueNodes.Get(i)->GetId();
+      std::cout << "ue:" << i << " : " << ueNodes.Get (i)->GetId ()
+          << std::endl;
     }
 
-  for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
+    for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
-
+      
       Ptr<Node> ueNode = ueNodes.Get (u);
-      seq_nodeid[u] = ueNode->GetId ();
+      seq_nodeid[u]=ueNode->GetId();
       // Set the default gateway for the UE
-      Ptr<Ipv4StaticRouting> ueStaticRouting =
-          ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
+      Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNode->GetObject<Ipv4> ());
       ueStaticRouting->SetDefaultRoute (epcHelper->GetUeDefaultGatewayAddress (), 1);
     }
-  for (uint32_t i = 0; i < mmWaveEnbNodes.GetN (); i++)
-    {
-      Ptr<MmWaveEnbNetDevice> mmdev =
-          DynamicCast<MmWaveEnbNetDevice> (mmWaveEnbNodes.Get (i)->GetDevice (0));
-      Ptr<Node> nn = mmWaveEnbNodes.Get (i);
-      // gnodebIds.push_back(make_pair(nn->GetId(),mmdev->GetCellId()));
-      cellid_node[mmdev->GetCellId ()] = nn;
-    }
-  // distancechange & trackcellid
+  for(uint32_t i = 0; i < mmWaveEnbNodes.GetN(); i++)
+  {
+    Ptr<MmWaveEnbNetDevice> mmdev = DynamicCast<MmWaveEnbNetDevice> (mmWaveEnbNodes.Get(i)->GetDevice(0));
+    Ptr<Node> nn=mmWaveEnbNodes.Get(i);
+    cellid_node[mmdev->GetCellId()]  = nn;
+  }
+// distancechange & trackcellid
 
-  BasicEnergySourceHelper basicSourceHelper;
+BasicEnergySourceHelper basicSourceHelper;
   basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (10));
   basicSourceHelper.Set ("BasicEnergySupplyVoltageV", DoubleValue (5.0));
-  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (1000.0));
+  basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (1000000000.0));
   for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
-    {
-      // Install Energy Source
-      EnergySourceContainer sources = basicSourceHelper.Install (ueNodes.Get (u));
-      // Device Energy Model
-      MmWaveRadioEnergyModelHelper nrEnergyHelper;
-      DeviceEnergyModelContainer deviceEnergyModel =
-          nrEnergyHelper.Install (ueNodes.Get (u)->GetDevice (0), sources);
-      //Install and start applications on UEs and remote host
-      Ptr<Node> nn = ueNodes.Get (u);
-      deviceEnergyModel.Get (0)->TraceConnectWithoutContext (
-          "TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate, nn->GetId ()));
-    }
+  {
+    // Install Energy Source
+    EnergySourceContainer sources = basicSourceHelper.Install (ueNodes.Get (u));
+    // Device Energy Model
+    MmWaveRadioEnergyModelHelper nrEnergyHelper;
+    DeviceEnergyModelContainer deviceEnergyModel = nrEnergyHelper.Install (ueNodes.Get(u)->GetDevice (0), sources);
+    //Install and start applications on UEs and remote host
+    Ptr<Node> nn = ueNodes.Get (u);
+    deviceEnergyModel.Get(0)->TraceConnectWithoutContext ("TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate,nn->GetId()));
+    
+  }
+
+  for (uint32_t u = 0; u < mmWaveEnbNodes.GetN (); ++u)
+  {
+    // Install Energy Source
+    EnergySourceContainer sources = basicSourceHelper.Install (mmWaveEnbNodes.Get (u));
+    // Device Energy Model
+    MmWaveRadioEnergyModelEnbHelper nrEnergyHelper;
+    DeviceEnergyModelContainer deviceEnergyModel = nrEnergyHelper.Install (mmWaveEnbNodes.Get(u)->GetDevice (0), sources);
+    //Install and start applications on UEs and remote host
+    Ptr<Node> nn = mmWaveEnbNodes.Get (u);
+    deviceEnergyModel.Get(0)->TraceConnectWithoutContext ("TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate,nn->GetId()));
+    
+  }
   bool tcp = true;
   // Install and start applications on UEs and remote host
-  if (tcp)
+   if (tcp)
     {
       // Install and start applications on UEs and remote host
       uint16_t sinkPort = 20000;
 
       Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), sinkPort));
-      PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory",
-                                         InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
+      PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
       ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes);
 
       sinkApps.Start (Seconds (5));
-      sinkApps.Stop (Seconds (10));
+      sinkApps.Stop (Seconds (86400));
 
-      Ptr<Socket> ns3TcpSocket =
-          Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
+      Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), TcpSocketFactory::GetTypeId ());
       Ptr<MyApp> app = CreateObject<MyApp> ();
       app->Setup (ns3TcpSocket, sinkAddress, 1400, 5000000, DataRate ("500Mb/s"));
 
       remoteHostContainer.Get (0)->AddApplication (app);
       AsciiTraceHelper asciiTraceHelper;
-      Ptr<OutputStreamWrapper> stream1 =
-          asciiTraceHelper.CreateFileStream ("mmWave-tcp-window-newreno.txt");
-      ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow",
-                                                MakeBoundCallback (&CwndChange, stream1));
+      Ptr<OutputStreamWrapper> stream1 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-window-newreno.txt");
+      ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream1));
 
-      Ptr<OutputStreamWrapper> stream4 =
-          asciiTraceHelper.CreateFileStream ("mmWave-tcp-rtt-newreno.txt");
+      Ptr<OutputStreamWrapper> stream4 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-rtt-newreno.txt");
       ns3TcpSocket->TraceConnectWithoutContext ("RTT", MakeBoundCallback (&RttChange, stream4));
 
-      Ptr<OutputStreamWrapper> stream2 =
-          asciiTraceHelper.CreateFileStream ("mmWave-tcp-data-newreno.txt");
-      sinkApps.Get (0)->TraceConnectWithoutContext ("Rx", MakeBoundCallback (&Rx, stream2));
+      Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-data-newreno.txt");
+      sinkApps.Get (0)->TraceConnectWithoutContext ("Rx",MakeBoundCallback (&Rx, stream2));
 
       //Ptr<OutputStreamWrapper> stream3 = asciiTraceHelper.CreateFileStream ("mmWave-tcp-sstresh-newreno.txt");
       //ns3TcpSocket->TraceConnectWithoutContext("SlowStartThreshold",MakeBoundCallback (&Sstresh, stream3));
       app->SetStartTime (Seconds (5));
-      app->SetStopTime (Seconds (10));
+      app->SetStopTime (Seconds (86400));
     }
   else
     {
@@ -1201,35 +1202,32 @@ main (int argc, char *argv[])
       uint16_t sinkPort = 20000;
 
       Address sinkAddress (InetSocketAddress (ueIpIface.GetAddress (0), sinkPort));
-      PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory",
-                                         InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
+      PacketSinkHelper packetSinkHelper ("ns3::UdpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
       ApplicationContainer sinkApps = packetSinkHelper.Install (ueNodes);
 
       sinkApps.Start (Seconds (5));
-      sinkApps.Stop (Seconds (10));
+      sinkApps.Stop (Seconds (86400));
 
-      Ptr<Socket> ns3UdpSocket =
-          Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
+      Ptr<Socket> ns3UdpSocket = Socket::CreateSocket (remoteHostContainer.Get (0), UdpSocketFactory::GetTypeId ());
       Ptr<MyApp> app = CreateObject<MyApp> ();
       app->Setup (ns3UdpSocket, sinkAddress, 1400, 5000000, DataRate ("500Mb/s"));
 
       remoteHostContainer.Get (0)->AddApplication (app);
       AsciiTraceHelper asciiTraceHelper;
-      Ptr<OutputStreamWrapper> stream2 =
-          asciiTraceHelper.CreateFileStream ("mmWave-udp-data-am.txt");
-      sinkApps.Get (0)->TraceConnectWithoutContext ("Rx", MakeBoundCallback (&Rx, stream2));
+      Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream ("mmWave-udp-data-am.txt");
+      sinkApps.Get (0)->TraceConnectWithoutContext ("Rx",MakeBoundCallback (&Rx, stream2));
 
       app->SetStartTime (Seconds (5));
-      app->SetStopTime (Seconds (10));
+      app->SetStopTime (Seconds (86400));
+
     }
 
   // Start applications
   std::ofstream tracefile;
   tracefile.open (outputDir + tracefilename, std::ios::out | std::ios::trunc);
-  tracefile << "Time,NodeId,Energy,CellId,Distance,Velocity,cellId,rnti,ccId,tbSize,mcs,rv,SINR(dB)"
-               ",corrupt,TBler,min_sinr,rsrp";
+  tracefile << "Time,NodeId,Energy,Energy_BS,CellId,Distance,Velocity,cellId,rnti,ccId,tbSize,mcs,rv,SINR(dB),corrupt,TBler,min_sinr,rsrp";
   tracefile << std::endl;
-
+  
   Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
                    MakeCallback (&NotifyConnectionEstablishedEnb));
   Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/ConnectionEstablished",
@@ -1243,14 +1241,12 @@ main (int argc, char *argv[])
   Config::Connect ("/NodeList/*/DeviceList/*/LteUeRrc/HandoverEndOk",
                    MakeCallback (&NotifyHandoverEndOkUe));
 
-  Config::Connect ("/NodeList/*/DeviceList/*/MmWaveComponentCarrierMapUe/*/MmWaveUePhy/"
-                   "DlSpectrumPhy/RxPacketTraceUe",
+  Config::Connect ("/NodeList/*/DeviceList/*/MmWaveComponentCarrierMapUe/*/MmWaveUePhy/DlSpectrumPhy/RxPacketTraceUe",
                    MakeCallback (&traceuefunc));
 
-  Config::Connect (
-      "/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
-      MakeCallback (&traceenbfunc));
-  for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
+  Config::Connect ("/NodeList/*/DeviceList/*/ComponentCarrierMap/*/MmWaveEnbPhy/DlSpectrumPhy/RxPacketTraceEnb",
+                   MakeCallback (&traceenbfunc));
+    for (uint32_t u = 0; u < ueNodes.GetN (); ++u)
     {
       Ptr<Node> nn = ueNodes.Get (u);
       Ptr<MmWaveUePhy> mmwaveUePhy =
@@ -1273,7 +1269,7 @@ main (int argc, char *argv[])
     {
       Simulator::Schedule (Seconds (1), &trace_data, ueNodes.Get (u)->GetId ());
     }
-  Simulator::Stop (Seconds (15));
+  Simulator::Stop (Seconds (86400));
   Simulator::Run ();
   Simulator::Destroy ();
 

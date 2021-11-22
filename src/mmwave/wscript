@@ -18,6 +18,7 @@ def build(bld):
         'helper/core-network-stats-calculator.cc',
         'helper/mmwave-mac-trace.cc',
         'helper/mmwave-radio-energy-model-helper.cc',
+        'helper/mmwave-radio-energy-model-enb-helper.cc',
         'model/mmwave-net-device.cc',
         'model/mmwave-enb-net-device.cc',
         'model/mmwave-ue-net-device.cc',
@@ -67,7 +68,8 @@ def build(bld):
         'model/error-model/mmwave-eesm-ir.cc',
         'model/error-model/mmwave-eesm-t1.cc',
         'model/error-model/mmwave-eesm-t2.cc',
-        'model/mmwave-radio-energy-model.cc'
+        'model/mmwave-radio-energy-model.cc',
+        'model/mmwave-radio-energy-model-enb.cc'
         #'model/mmwave-enb-cmac-sap.cc',
         #'model/mmwave-enb-rrc.cc',
         #'model/mmwave-mac-sap.cc',
@@ -102,6 +104,7 @@ def build(bld):
         'helper/core-network-stats-calculator.h',
         'helper/mmwave-bearer-stats-connector.h',
         'helper/mmwave-radio-energy-model-helper.h',
+        'helper/mmwave-radio-energy-model-enb-helper.h',
         'helper/mmwave-mac-trace.h',
         'model/mmwave-net-device.h',
         'model/mmwave-enb-net-device.h',
@@ -152,7 +155,8 @@ def build(bld):
         'model/error-model/mmwave-eesm-ir.h',
         'model/error-model/mmwave-eesm-t1.h',
         'model/error-model/mmwave-eesm-t2.h',
-        'model/mmwave-radio-energy-model.h'
+        'model/mmwave-radio-energy-model.h',
+        'model/mmwave-radio-energy-model-enb.h'
         #'model/mmwave-enb-cmac-sap.h',
         #'model/mmwave-enb-rrc.h',
         #'model/mmwave-mac-sap.h',
