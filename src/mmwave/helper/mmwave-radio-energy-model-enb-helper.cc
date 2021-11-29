@@ -22,6 +22,8 @@
  */
 
 #include "mmwave-radio-energy-model-enb-helper.h"
+#include "ns3/device-energy-model.h"
+#include "ns3/energy-source.h"
 #include "ns3/mmwave-ue-net-device.h"
 #include "ns3/mmwave-enb-net-device.h"
 #include "ns3/mc-ue-net-device.h"

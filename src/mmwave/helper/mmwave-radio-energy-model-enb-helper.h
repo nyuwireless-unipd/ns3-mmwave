@@ -26,7 +26,8 @@
 
 #include "ns3/energy-model-helper.h"
 #include "ns3/mmwave-radio-energy-model-enb.h"
-
+#include "ns3/energy-source.h"
+#include "ns3/net-device.h"
 namespace ns3 {
 
 /**
