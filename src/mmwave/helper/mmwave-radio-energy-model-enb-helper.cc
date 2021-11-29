@@ -27,10 +27,10 @@
 #include "ns3/mc-ue-net-device.h"
 #include "ns3/mmwave-spectrum-phy.h"
 #include "ns3/mmwave-phy.h"
-
+#include <ns3/log.h>
 namespace ns3{
 
-
+NS_LOG_COMPONENT_DEFINE ("MmWaveRadioEnergyModelEnbHelper");
 MmWaveRadioEnergyModelEnbHelper::MmWaveRadioEnergyModelEnbHelper ()
 {
     m_radioEnergy.SetTypeId ("ns3::MmWaveRadioEnergyModelEnb");
