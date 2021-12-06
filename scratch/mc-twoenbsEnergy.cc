@@ -380,7 +380,7 @@ main (int argc, char *argv[])
   double ueSpeed = doubleValue.Get ();
 
   double transientDuration = double(vectorTransient) / 1000000;
-  double simTime = transientDuration + ((double)ueFinalPosition - (double)ueInitialPosition) / ueSpeed + 1;
+  double simTime=transientDuration + 15;
 
   NS_LOG_UNCOND ("rlcAmEnabled " << rlcAmEnabled << " bufferSize " << bufferSize << " interPacketInterval " <<
                  interPacketInterval << " x2Latency " << x2Latency << " mmeLatency " << mmeLatency << " mobileSpeed " << ueSpeed);
@@ -529,15 +529,16 @@ main (int argc, char *argv[])
   NodeContainer mmWaveEnbNodes;
   NodeContainer lteEnbNodes;
   NodeContainer allEnbNodes;
-  mmWaveEnbNodes.Create (2);
+  mmWaveEnbNodes.Create (3);
   lteEnbNodes.Create (1);
-  ueNodes.Create (1);
+  ueNodes.Create (2);
   allEnbNodes.Add (lteEnbNodes);
   allEnbNodes.Add (mmWaveEnbNodes);
 
   // Positions
   Vector mmw1Position = Vector (50, 70, 3);
-  Vector mmw2Position = Vector (150, 70, 3);
+  Vector mmw2Position = Vector (300, 70, 3);
+  Vector mmw3Position = Vector (550, 70, 3);
 
   std::vector<Ptr<Building> > buildingVector;
 
@@ -574,6 +575,7 @@ main (int argc, char *argv[])
   enbPositionAlloc->Add (mmw1Position); // LTE BS, out of area where buildings are deployed
   enbPositionAlloc->Add (mmw1Position);
   enbPositionAlloc->Add (mmw2Position);
+  enbPositionAlloc->Add (mmw3Position);
   MobilityHelper enbmobility;
   enbmobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbmobility.SetPositionAllocator (enbPositionAlloc);
@@ -583,16 +585,21 @@ main (int argc, char *argv[])
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
   //uePositionAlloc->Add (Vector (ueInitialPosition, -5, 0));
-  uePositionAlloc->Add (Vector (ueInitialPosition, -5, 1.6));
+  uePositionAlloc->Add (Vector (90, -5, 1.6));
+  uePositionAlloc->Add (Vector (510, -5, 1.6));
   uemobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   uemobility.SetPositionAllocator (uePositionAlloc);
   uemobility.Install (ueNodes);
   BuildingsHelper::Install (ueNodes);
 
-  //ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 1.6));
+ //ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (ueInitialPosition, -5, 0));
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (90, -5, 1.6));
+  //positive velocity
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
 
+  ueNodes.Get (1)->GetObject<MobilityModel> ()->SetPosition (Vector (510, -5, 1.6));
+   //negative velocity
+  ueNodes.Get (1)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 0, 0));
   // Install mmWave, lte, mc Devices to the nodes
   NetDeviceContainer lteEnbDevs = mmwaveHelper->InstallLteEnbDevice (lteEnbNodes);
   NetDeviceContainer mmWaveEnbDevs = mmwaveHelper->InstallEnbDevice (mmWaveEnbNodes);
@@ -638,8 +645,15 @@ main (int argc, char *argv[])
   outFile2.open (energyFileName2,std::ios_base::out | std::ios_base::trunc);
   outFile2 << "Time,NetEnergy,DiffEnergy" << std::endl;
 
+  std::ofstream outFile3;
+  std::string energyFileName3 = "energyfile3.csv";
+  outFile3.open (energyFileName3,std::ios_base::out | std::ios_base::trunc);
+  outFile3 << "Time,NetEnergy,DiffEnergy" << std::endl;
+
   deviceEModel.Get(0)->TraceConnectWithoutContext("TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate, "energyfile1.csv"));
   deviceEModel.Get(1)->TraceConnectWithoutContext("TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate, "energyfile2.csv"));
+  deviceEModel.Get(2)->TraceConnectWithoutContext("TotalEnergyConsumption", MakeBoundCallback (&EnergyConsumptionUpdate, "energyfile3.csv"));
+
   
   // Install and start applications on UEs and remote host
   uint16_t dlPort = 1234;
@@ -684,8 +698,11 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (transientDuration));
   clientApps.Stop (Seconds (simTime - 1));
 
-  Simulator::Schedule (Seconds (transientDuration), &ChangeSpeed, ueNodes.Get (0), Vector (ueSpeed, 0, 0)); // start UE movement after Seconds(0.5)
+  Simulator::Schedule (Seconds (transientDuration), &ChangeSpeed, ueNodes.Get (0), Vector (30, 0, 0)); // start UE movement after Seconds(0.5)
   Simulator::Schedule (Seconds (simTime - 1), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0)); // start UE movement after Seconds(0.5)
+
+  Simulator::Schedule (Seconds (transientDuration), &ChangeSpeed, ueNodes.Get (1), Vector (-30, 0, 0)); // start UE movement after Seconds(0.5)
+  Simulator::Schedule (Seconds (simTime - 1), &ChangeSpeed, ueNodes.Get (1), Vector (0, 0, 0)); // start UE movement after Seconds(0.5)
 
   double numPrints = 0;
   for (int i = 0; i < numPrints; i++)
