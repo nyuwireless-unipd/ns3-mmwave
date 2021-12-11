@@ -332,8 +332,6 @@ main (int argc, char *argv[])
   GlobalValue::GetValueByName ("maxYAxis", doubleValue);
   double maxYAxis = doubleValue.Get ();
 
-  double ueInitialPosition = 90;
-  double ueFinalPosition = 110;
 
   // Variables for the RT
   int windowForTransient = 150; // number of samples for the vector to use in the filter
