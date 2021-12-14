@@ -42,6 +42,10 @@ MmWaveRadioEnergyModelEnb::GetTypeId (void)
                         "Total energy consumption of the radio device.",
                         MakeTraceSourceAccessor (&MmWaveRadioEnergyModelEnb::m_totalEnergyConsumption),
                         "ns3::TracedValueCallback::Double")
+        .AddTraceSource ("state_time",
+                     "Time spent in each PHY state",
+                     MakeTraceSourceAccessor (&MmWaveRadioEnergyModelEnb::mstate_time),
+                     "ns3::energyTimeParams::TracedCallback")                
         .AddAttribute ("DeepSleepA",
                         "The default Deep Sleep Current in Amperes.",
                         DoubleValue (86.3),
@@ -73,6 +77,10 @@ MmWaveRadioEnergyModelEnb::MmWaveRadioEnergyModelEnb ()
     m_source = 0;
     m_currentState = 0;
     m_lastUpdateTime = Seconds (0);
+    mstate_time.m_idle_t=0.0;
+    mstate_time.m_data_t=0.0;
+    mstate_time.m_ctrl_t=0.0;
+    mstate_time.m_tx_t=0.0;
 }
 
 MmWaveRadioEnergyModelEnb::~MmWaveRadioEnergyModelEnb ()
@@ -192,6 +200,10 @@ MmWaveRadioEnergyModelEnb::ChangeStateEvent(int32_t oldState, int32_t newState)
 {
   ChangeState (newState);
 }
+struct energyTimeParams MmWaveRadioEnergyModelEnb::getTime()
+{
+  return mstate_time;
+}
 void 
 MmWaveRadioEnergyModelEnb::ChangeState (int state)
 {
@@ -200,6 +212,23 @@ MmWaveRadioEnergyModelEnb::ChangeState (int state)
 
   Time duration = Simulator::Now () - m_lastUpdateTime;
   NS_ASSERT (duration.IsPositive ());
+
+  switch (m_currentState)
+  {
+  case 0:
+    mstate_time.m_idle_t+=duration.GetSeconds();
+    break;
+  case 1:
+     mstate_time.m_tx_t+=duration.GetSeconds();
+    break;
+  case 2:
+     mstate_time.m_data_t+=duration.GetSeconds();
+    break;
+  case 3:
+     mstate_time.m_ctrl_t+=duration.GetSeconds();
+    break;
+  }
+
 
   double supplyVoltage = m_source->GetSupplyVoltage ();
   double energyToDecrease = duration.GetSeconds () * GetStateA (m_currentState) * supplyVoltage;
