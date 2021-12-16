@@ -44,15 +44,14 @@ public:
      */
     typedef Callback<void> MmWaveRadioEnergyRechargedCallback;
 
-    struct energyTimeParams
-    {
-        double m_idle_t;
-        double m_rxctrl_t;
-        double m_tx_t;
-        double m_data_t;
+    TracedValue<double> m_idle_t
+    TracedValue<double> m_ctrl_t
+    TracedValue<double> m_tx_t
+    TracedValue<double> m_data_t
 
-    };
-    TracedCallback<energyTimeParams> mstate_time;
+
+   
+    //TracedCallback<energyTimeParams> mstate_time;
 
     /**
      * \brief Get the type ID.
