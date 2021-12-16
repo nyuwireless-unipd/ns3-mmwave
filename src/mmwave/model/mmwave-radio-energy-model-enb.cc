@@ -52,7 +52,7 @@ MmWaveRadioEnergyModelEnb::GetTypeId (void)
                      "ns3::TracedValueCallback::Double")    
         .AddTraceSource ("rxctrl_time",
                      "Time spent in ctrl state",
-                     MakeTraceSourceAccessor (&MmWaveRadioEnergyModelEnb::m_rxctrl_t),
+                     MakeTraceSourceAccessor (&MmWaveRadioEnergyModelEnb::m_ctrl_t),
                      "ns3::TracedValueCallback::Double") 
         .AddTraceSource ("tx_time",
                      "Time spent in transmission state",
@@ -228,16 +228,16 @@ MmWaveRadioEnergyModelEnb::ChangeState (int state)
   switch (m_currentState)
   {
   case 0:
-    mstate_time.m_idle_t+=duration.GetSeconds();
+    m_idle_t+=duration.GetSeconds();
     break;
   case 1:
-     mstate_time.m_tx_t+=duration.GetSeconds();
+     m_tx_t+=duration.GetSeconds();
     break;
   case 2:
-     mstate_time.m_data_t+=duration.GetSeconds();
+     m_data_t+=duration.GetSeconds();
     break;
   case 3:
-     mstate_time.m_ctrl_t+=duration.GetSeconds();
+     m_ctrl_t+=duration.GetSeconds();
     break;
   }
 
