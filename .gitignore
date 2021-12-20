@@ -4,7 +4,9 @@
 *.rej
 
 *.DS_Store
-
+newOStest1/
+testEnergy1/
+trynew1/
 *.o
 *.pyc
 *.pyo
