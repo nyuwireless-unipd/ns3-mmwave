@@ -685,6 +685,7 @@ void
 LteUeRrc::DoSendData (Ptr<Packet> packet, uint8_t bid)
 {
   NS_LOG_FUNCTION (this << packet);
+  std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti()<<" LteUeRrc::DoSendData "<<g_ueRrcStateName[m_state]<<" "<<packet->GetSize()<<" UID: "<<packet->GetUid() <<std::endl;
 
   uint8_t drbid = Bid2Drbid (bid);
 
