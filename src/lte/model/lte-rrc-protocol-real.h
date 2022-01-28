@@ -21,6 +21,8 @@
  *
  * Modified by: Michele Polese <michele.polese@gmail.com>
  *          Dual Connectivity functionalities
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 
@@ -298,6 +300,7 @@ private:
    * \param msg LteRrcSap::RrcConnectionRelease
    */
   void DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::RrcConnectionRelease msg);
+  void DoSendRrcPagingDirect (uint16_t rnti);
   /**
    * Send RRC connection reject function
    *

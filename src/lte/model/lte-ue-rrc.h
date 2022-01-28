@@ -25,6 +25,8 @@
  *          Dual Connectivity functionalities
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
  *              Integration of Carrier Aggregation for the mmWave module
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #ifndef LTE_UE_RRC_H
@@ -120,12 +122,15 @@ public:
     IDLE_WAIT_SIB1,
     IDLE_CAMPED_NORMALLY,
     IDLE_WAIT_SIB2,
+    IDLE_PAGING,
     IDLE_RANDOM_ACCESS,
     IDLE_CONNECTING,
     CONNECTED_NORMALLY,
     CONNECTED_HANDOVER,
     CONNECTED_PHY_PROBLEM,
     CONNECTED_REESTABLISHING,
+    CONNECTION_INACTIVITY,
+    PAGING_INACTIVITY,
     NUM_STATES
   };
 
@@ -490,6 +495,9 @@ private:
    * \param msg the LteRrcSap::SystemInformation
    */
   void DoRecvSystemInformation (LteRrcSap::SystemInformation msg);
+  void DoPaging ();
+  void DoRecvPagingInformation (uint16_t cellId,
+                                          LteRrcSap::PagingInformation msg);
   /**
    * Part of the RRC protocol. Implement the LteUeRrcSapProvider::RecvRrcConnectionSetup interface.
    * \param msg the LteRrcSap::RrcConnectionSetup
@@ -515,6 +523,7 @@ private:
    * \param msg LteRrcSap::RrcConnectionRelease
    */
   void DoRecvRrcConnectionRelease (LteRrcSap::RrcConnectionRelease msg);
+  void DoRecvRrcPagingDirect();
   /**
    * Part of the RRC protocol. Implement the LteUeRrcSapProvider::RecvRrcConnectionReject interface.
    * \param msg the LteRrcSap::RrcConnectionReject
@@ -840,6 +849,20 @@ private:
   uint8_t m_dlBandwidth; /**< Downlink bandwidth in RBs. */
   uint8_t m_ulBandwidth; /**< Uplink bandwidth in RBs. */
 
+  uint32_t m_frameNo;
+  uint32_t m_subframeNo;
+
+  /* Parameters for Paging */
+  uint16_t  m_T;
+  uint16_t  m_nb;
+  uint64_t  m_pf;
+  uint16_t  m_po;
+  int32_t  m_t3324;
+  int32_t  m_edrx_cycle;
+  bool m_gotpaging;
+
+  bool m_requirepagingflag;  
+
   uint32_t m_dlEarfcn;  /**< Downlink carrier frequency. */
   uint32_t m_ulEarfcn;  /**< Uplink carrier frequency. */
   std::list<LteRrcSap::SCellToAddMod> m_sCellToAddModList; /**< Secondary carriers. */
@@ -946,6 +969,7 @@ private:
   /// True if SIB2 was received for the current cell.
   bool m_hasReceivedSib2;
 
+  bool m_hasReceivedPaging;
   /// Stored content of the last SIB1 received.
   LteRrcSap::SystemInformationBlockType1 m_lastSib1;
 

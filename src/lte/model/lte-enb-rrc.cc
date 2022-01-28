@@ -27,6 +27,8 @@
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
  *              Integration of Carrier Aggregation for the mmWave module
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #include "lte-enb-rrc.h"
@@ -134,7 +136,8 @@ static const std::string g_ueManagerStateName[UeManager::NUM_STATES] =
   "HANDOVER_PATH_SWITCH",
   "HANDOVER_LEAVING",
   "PREPARE_MC_CONNECTION_RECONFIGURATION",
-  "MC_CONNECTION_RECONFIGURATION"
+  "MC_CONNECTION_RECONFIGURATION",
+  "CONNECTION_INACTIVITY"
 };
 
 /**
@@ -157,13 +160,13 @@ UeManager::UeManager ()
 
 
 UeManager::UeManager (Ptr<LteEnbRrc> rrc, uint16_t rnti, State s, uint8_t componentCarrierId)
-  : m_lastAllocatedDrbid (0),
+  : m_state (s),
+    m_lastAllocatedDrbid (0),
     m_rnti (rnti),
     m_imsi (0),
     m_componentCarrierId (componentCarrierId),
     m_lastRrcTransactionIdentifier (0),
     m_rrc (rrc),
-    m_state (s),
     m_pendingRrcConnectionReconfiguration (false),
     m_pendingConnectToMmWave (false),
     m_sourceX2apId (0),
@@ -668,6 +671,9 @@ UeManager::ScheduleRrcConnectionReconfiguration ()
         RecordDataRadioBearersToBeStarted ();
         SwitchToState (MC_CONNECTION_RECONFIGURATION);
       }
+      break;
+    case CONNECTION_INACTIVITY:
+      m_pendingRrcConnectionReconfiguration = false;
       break;
 
     default:
@@ -1228,6 +1234,8 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
     }
       break;
 
+    case CONNECTION_INACTIVITY:
+      break;
     default:
       NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
       break;
@@ -1567,6 +1575,11 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
       m_rrc->m_connectionEstablishedTrace (m_imsi, m_rrc->ComponentCarrierToCellId (m_componentCarrierId), m_rnti);
       break;
 
+    case CONNECTION_INACTIVITY:
+      m_connectionSetupTimeout.Cancel ();
+      SwitchToState (CONNECTED_NORMALLY);
+      m_rrc->SendData(NULL);
+      break;
     default:
       NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
       break;
@@ -1724,6 +1737,10 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
       }
       break;
 
+    case CONNECTION_INACTIVITY:
+      SwitchToState (CONNECTED_NORMALLY);
+      m_rrc->SendData(NULL);
+      break;
     default:
       NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
       break;
@@ -2169,6 +2186,15 @@ void
 UeManager::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params)
 {
   NS_LOG_FUNCTION (this);
+  std::cout<< Simulator::Now().GetSeconds()<<" "<<m_rnti<<" eNb_UeManager::DoReceivePdcpSdu "<<g_ueManagerStateName[m_state]<<" "<<params.pdcpSdu->GetSize()<<" UID: "<<params.pdcpSdu->GetUid()<<std::endl;
+  EventId id;
+
+  if(CONNECTION_INACTIVITY == m_state)
+  {
+    m_datareceived = true;
+    SwitchToState (CONNECTED_NORMALLY);
+    m_rrc->SendData(NULL);
+  }
   if (params.lcid > 2)
     {
       // data radio bearer
@@ -2416,8 +2442,15 @@ void
 UeManager::SwitchToState (State newState)
 {
   NS_LOG_FUNCTION (this << ToString (newState));
+  std::cout<<Simulator::Now().GetSeconds()<<" "<<m_rnti<<" eNb::SwitchToState "<< g_ueManagerStateName[m_state]<<" --> "<<g_ueManagerStateName[newState]<<std::endl;
+
+  if ( (true == m_datareceived && (CONNECTION_INACTIVITY == newState)))
+  {
+    return;
+  }
   State oldState = m_state;
   m_state = newState;
+  EventId id;
   NS_LOG_INFO (this << " IMSI " << m_imsi << " RNTI " << m_rnti << " UeManager "
                     << ToString (oldState) << " --> " << ToString (newState));
   m_stateTransitionTrace (m_imsi, m_rrc->ComponentCarrierToCellId (m_componentCarrierId), m_rnti, oldState, newState);
@@ -2473,6 +2506,19 @@ UeManager::SwitchToState (State newState)
           {
             StartDataRadioBearers ();
           }
+          m_datareceived = false;
+          /* Remove all the events of suspend */
+        if(id_suspend.size() > 0)
+        {
+            for ( EventId idIt: id_suspend)
+            {
+                if ( !(Simulator::IsExpired(idIt)) )
+                {
+                    Simulator::Cancel (idIt);
+                }
+            }
+            id_suspend.clear();
+        }
       }
       break;
 
@@ -2484,7 +2530,15 @@ UeManager::SwitchToState (State newState)
 
     case HANDOVER_LEAVING:
       break;
+    case CONNECTION_INACTIVITY:
+      if(false == m_datareceived)
+      {
+        NS_LOG_FUNCTION (this << ToString (newState) << Simulator::Now() << m_cdrxTimer << "Scheduled PSM for:"<<Simulator::Now() +  (m_cdrxTimer));
+        id = Simulator::Schedule ( (m_cdrxTimer), &UeManager::SwitchToState, this, CONNECTION_INACTIVITY);
+        id_suspend.push_back(id);
 
+      }
+      break;
     default:
       break;
     }
@@ -3586,6 +3640,10 @@ LteEnbRrc::SetCellId (uint16_t cellId, uint8_t ccIndex)
   m_cphySapProvider.at (ccIndex)->SetSystemInformationBlockType1 (m_sib1.at (ccIndex));
 }
 
+void UeManager::SendPage (uint16_t rnti)
+{
+  m_rrc->m_rrcSapUser->SendRrcPagingDirect(rnti);
+}
 void
 LteEnbRrc::SetClosestLteCellId (uint16_t cellId)
 {
@@ -4480,17 +4538,71 @@ LteEnbRrc::ComponentCarrierToCellId (uint8_t componentCarrierId)
 }
 
 bool
-LteEnbRrc::SendData (Ptr<Packet> packet)
+LteEnbRrc::SendData (Ptr<Packet> orgpacket)
 {
-  NS_LOG_FUNCTION (this << packet);
+  NS_LOG_FUNCTION (this << orgpacket);
+  if(orgpacket == NULL)
+  {
+    std::vector<Ptr<Packet>>::iterator it;
+    NS_LOG_FUNCTION (this << m_packetsaved.size ());
+    if(m_packetsaved.size() == 0)
+    {
+      return true;
+    }
+    else if (m_packetsaved.size() > 0)
+    {
+      for (it=m_packetsaved.begin(); it != m_packetsaved.end(); it++)
+      {
+        if(*it == 0)
+        {
+          NS_LOG_FUNCTION (this << "Data");
+        }
+        EpsBearerTag tag_t;
+        bool c = (*it)->PeekPacketTag (tag_t);
+        NS_ASSERT_MSG (c, "no EpsBearerTag found in packet to be sent");
+        NS_LOG_FUNCTION (this << c);
+        Ptr<UeManager> ueManager_t = GetUeManager (tag_t.GetRnti ());
+        NS_LOG_FUNCTION (this << ueManager_t->m_state);
+        if (ueManager_t->CONNECTED_NORMALLY == ueManager_t->m_state)
+        {
+                // TODO: Need to check if after delete the pointer still data go?
+            (*it)->RemovePacketTag (tag_t);
+            ueManager_t->SendData (tag_t.GetBid (), *it);
+            m_packetsaved.erase(it);
+            --it;  // Erase will make the it to move to next item
+        }
 
-  EpsBearerTag tag;
-  bool found = packet->RemovePacketTag (tag);
-  NS_ASSERT_MSG (found, "no EpsBearerTag found in packet to be sent");
-  Ptr<UeManager> ueManager = GetUeManager (tag.GetRnti ());
-  ueManager->SendData (tag.GetBid (), packet);
+      }
+    }
+    return true;
+  }
+  else
+  {
+    Ptr<Packet> packet = orgpacket->Copy();
+    EpsBearerTag tag;
+    bool found = (packet)->PeekPacketTag (tag);
+    NS_ASSERT_MSG (found, "no EpsBearerTag found in packet to be sent");
+    Ptr<UeManager> ueManager = GetUeManager (tag.GetRnti ());
 
-  return true;
+    ueManager->SendPage(tag.GetRnti());
+
+    NS_LOG_FUNCTION (this << ueManager->m_state);
+    if ( ueManager->CONNECTION_INACTIVITY == ueManager->m_state)
+    {
+        {
+                NS_LOG_FUNCTION (this << "else");
+                m_packetsaved.push_back((orgpacket->Copy()));
+        }
+
+
+    }
+    else
+    {
+        (packet)->RemovePacketTag (tag);
+        ueManager->SendData (tag.GetBid (), packet);
+    }
+    return true;
+  }
 }
 
 void
@@ -4506,6 +4618,32 @@ LteEnbRrc::ConnectionRequestTimeout (uint16_t rnti)
   NS_ASSERT_MSG (GetUeManager (rnti)->GetState () == UeManager::INITIAL_RANDOM_ACCESS,
                  "ConnectionRequestTimeout in unexpected state " << ToString (GetUeManager (rnti)->GetState ()));
   RemoveUe (rnti);
+}
+
+
+void UeManager::SwitchtoDRXState()
+{
+  NS_LOG_FUNCTION (this);
+  SwitchToState (CONNECTION_INACTIVITY);
+}
+void UeManager::SendRrcRelease(uint16_t rnti)
+{
+    NS_LOG_FUNCTION (this);
+    std::cout << Simulator::Now() << "  " << "rnti" << rnti << g_ueManagerStateName[m_state] << "m_lastRrcTransactionIdentifier" << m_lastRrcTransactionIdentifier << std::endl;
+    EventId id;
+
+    if (m_state == CONNECTED_NORMALLY)
+    {
+      LteRrcSap::RrcConnectionRelease msg;
+      msg.rrcTransactionIdentifier = m_lastRrcTransactionIdentifier;
+      m_rrc->m_rrcSapUser->SendRrcConnectionRelease(rnti, msg);
+
+      m_datareceived = false;
+      SwitchtoDRXState();
+    }  
+
+    id = Simulator::Schedule (MilliSeconds(m_rrcreleaseinterval), &UeManager::SendRrcRelease, m_rrc->GetUeManager (m_rnti), m_rnti);
+    m_rrcRequestTimeout.push_back(id);
 }
 
 void

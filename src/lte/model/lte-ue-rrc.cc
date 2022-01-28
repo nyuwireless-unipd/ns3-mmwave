@@ -25,6 +25,8 @@
  *          Dual Connectivity functionalities
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
  *              Integration of Carrier Aggregation for the mmWave module
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #include "lte-ue-rrc.h"
@@ -120,12 +122,15 @@ static const std::string g_ueRrcStateName[LteUeRrc::NUM_STATES] =
   "IDLE_WAIT_SIB1",
   "IDLE_CAMPED_NORMALLY",
   "IDLE_WAIT_SIB2",
+  "IDLE_PAGING",
   "IDLE_RANDOM_ACCESS",
   "IDLE_CONNECTING",
   "CONNECTED_NORMALLY",
   "CONNECTED_HANDOVER",
   "CONNECTED_PHY_PROBLEM",
-  "CONNECTED_REESTABLISHING"
+  "CONNECTED_REESTABLISHING",
+  "CONNECTION_INACTIVITY",
+  "PAGING_INACTIVITY"
 };
 
 /**
@@ -156,10 +161,14 @@ LteUeRrc::LteUeRrc ()
     m_rnti (0),
     m_cellId (0),
     m_useRlcSm (true),
+    m_edrx_cycle(0),
+    m_gotpaging(false),
+    m_requirepagingflag(true),
     m_connectionPending (false),
     m_hasReceivedMib (false),
     m_hasReceivedSib1 (false),
     m_hasReceivedSib2 (false),
+    m_hasReceivedPaging (false),
     m_csgWhiteList (0),
     m_ncRaStarted (true),
     m_numberOfComponentCarriers (MIN_NO_CC),
@@ -1352,7 +1361,15 @@ void
 LteUeRrc::DoRecvRrcConnectionRelease (LteRrcSap::RrcConnectionRelease msg)
 {
   NS_LOG_FUNCTION (this << " RNTI " << m_rnti);
+  std::cout<<Simulator::Now().GetSeconds()<<" LteUeRrc::DoRecvRrcConnectionRelease  "<<g_ueRrcStateName[m_state]<<std::endl;
   /// \todo Currently not implemented, see Section 5.3.8 of 3GPP TS 36.331.
+}
+
+void 
+LteUeRrc::DoRecvRrcPagingDirect ()
+{
+  std::cout<<Simulator::Now().GetSeconds()<<" "<<m_rnti<<" LteUeRrc::DoRecvRrcPagingDirect  "<<g_ueRrcStateName[m_state]<<std::endl;
+  m_hasReceivedPaging = true;
 }
 
 void
@@ -4029,6 +4046,8 @@ void
 LteUeRrc::SwitchToState (State newState)
 {
   NS_LOG_FUNCTION (this << ToString (newState));
+  std::cout<< Simulator::Now().GetSeconds()<<" "<<GetRnti()<<" LteUeRrc::SwitchToState from "<<g_ueRrcStateName[m_state]<<" --> "<<g_ueRrcStateName[newState]<<std::endl;
+  
   State oldState = m_state;
   m_state = newState;
   NS_LOG_INFO (this << " IMSI " << m_imsi << " RNTI " << m_rnti << " CellId " << m_cellId << " UeRrc "

@@ -30,6 +30,8 @@
 *
 * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
 *								 Integration of Carrier Aggregation
+* Modified by: Argha Sen <arghasen10@gmail.com>
+*              Integration of RRC Energy Module
 */
 
 
@@ -468,6 +470,14 @@ MmWaveEnbRrcProtocolIdeal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap:
                        &LteUeRrcSapProvider::RecvRrcConnectionRelease,
                        GetUeRrcSapProvider (rnti),
                        msg);
+}
+
+void
+MmWaveEnbRrcProtocolIdeal::DoSendRrcPagingDirect (uint16_t rnti)
+{
+  Simulator::Schedule (MilliSeconds(0),
+                      &LteUeRrcSapProvider::RecvRrcPagingDirect,
+                      GetUeRrcSapProvider (rnti));
 }
 
 void

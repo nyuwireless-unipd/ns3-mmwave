@@ -27,6 +27,8 @@
 *
 * Modified by: Michele Polese <michele.polese@gmail.com>
 *                 Dual Connectivity and Handover functionalities
+* Modified by: Argha Sen <arghasen10@gmail.com>
+*              Integration of RRC Energy Module
 */
 
 
@@ -133,6 +135,7 @@ private:
   void DoSendRrcConnectionReestablishment (uint16_t rnti, LteRrcSap::RrcConnectionReestablishment msg);
   void DoSendRrcConnectionReestablishmentReject (uint16_t rnti, LteRrcSap::RrcConnectionReestablishmentReject msg);
   void DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::RrcConnectionRelease msg);
+  void DoSendRrcPagingDirect (uint16_t rnti);
   void DoSendRrcConnectionReject (uint16_t rnti, LteRrcSap::RrcConnectionReject msg);
   void DoSendRrcConnectionSwitch (uint16_t rnti, LteRrcSap::RrcConnectionSwitch msg);
   void DoSendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId);
