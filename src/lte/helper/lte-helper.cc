@@ -19,6 +19,8 @@
  *         Giuseppe Piro <g.piro@poliba.it> (parts of the PHY & channel  creation & configuration copied from the GSoC 2011 code)
  * Modified by: Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015)
  *              Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation)
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #include "lte-helper.h"
@@ -118,6 +120,41 @@ TypeId LteHelper::GetTypeId (void)
                    MakeStringAccessor (&LteHelper::SetSchedulerType,
                                        &LteHelper::GetSchedulerType),
                    MakeStringChecker ())
+    .AddAttribute ("InactivityTimer", 
+                    "C-DRX Inactivity Timer",
+                    TimeValue(MilliSeconds(320)),
+                    MakeTimeAccessor (&LteHelper::m_ue_inactivity_timer),
+                    MakeTimeChecker())
+    .AddAttribute ("DSTimer",
+                    "Deep Sleep Timer",
+                    TimeValue (MilliSeconds(640)),
+                    MakeTimeAccessor (&LteHelper::m_ue_ds_timer),
+                    MakeTimeChecker())
+    .AddAttribute ("CDRXCycle",
+                    "cDRX Cycle Length",
+                    TimeValue(MilliSeconds(320)),
+                    MakeTimeAccessor(&LteHelper::m_ue_cdrx_cycle),
+                    MakeTimeChecker())
+    .AddAttribute ("enbInactivityTimer", 
+                    "C-DRX Inactivity Timer",
+                    TimeValue(MilliSeconds(320)),
+                    MakeTimeAccessor (&LteHelper::m_enb_inactivity_timer),
+                    MakeTimeChecker())
+    .AddAttribute ("enbDSTimer",
+                    "Deep Sleep Timer",
+                    TimeValue (MilliSeconds(640)),
+                    MakeTimeAccessor (&LteHelper::m_enb_ds_timer),
+                    MakeTimeChecker())
+    .AddAttribute ("enbCDRXCycle",
+                    "cDRX Cycle Length",
+                    TimeValue(MilliSeconds(320)),
+                    MakeTimeAccessor(&LteHelper::m_enb_cdrx_cycle),
+                    MakeTimeChecker())
+    .AddAttribute ("enbrrcReleaseTimer",
+                    "RRC Release Interval in ms",
+                    TimeValue(MilliSeconds(80)),
+                    MakeTimeAccessor (&LteHelper::m_enb_rrc_release_timer),
+                    MakeTimeChecker())
     .AddAttribute ("FfrAlgorithm",
                    "The type of FFR algorithm to be used for eNBs. "
                    "The allowed values for this attributes are the type names "
@@ -627,7 +664,11 @@ LteHelper::InstallSingleEnbDevice (Ptr<Node> n)
           rrc->SetAttribute ("EpsBearerToRlcMapping", EnumValue (LteEnbRrc::RLC_UM_ALWAYS));
         }
     }
-
+  
+  rrc->SetAttribute("InactivityTimer", TimeValue(m_enb_inactivity_timer));
+  rrc->SetAttribute("DSTimer", TimeValue(m_enb_ds_timer));
+  rrc->SetAttribute("CDRXCycle", TimeValue(m_enb_cdrx_cycle));
+  rrc->SetAttribute("rrcReleaseTimer", TimeValue(m_enb_rrc_release_timer));
   rrc->SetLteHandoverManagementSapProvider (handoverAlgorithm->GetLteHandoverManagementSapProvider ());
   handoverAlgorithm->SetLteHandoverManagementSapUser (rrc->GetLteHandoverManagementSapUser ());
 
@@ -897,6 +938,9 @@ LteHelper::InstallSingleUeDevice (Ptr<Node> n)
   for (std::map<uint8_t, Ptr<ComponentCarrierUe> >::iterator it = ueCcMap.begin (); it != ueCcMap.end (); ++it)
     {
       rrc->SetLteUeCmacSapProvider (it->second->GetMac ()->GetLteUeCmacSapProvider (), it->first);
+      rrc->SetAttribute("InactivityTimer", TimeValue(MilliSeconds(320)));
+      rrc->SetAttribute("cDRXCycle", TimeValue(MilliSeconds(20)));
+      rrc->SetAttribute("DSTimer", TimeValue(MilliSeconds(640)));
       it->second->GetMac ()->SetLteUeCmacSapUser (rrc->GetLteUeCmacSapUser (it->first));
       it->second->GetMac ()->SetComponentCarrierId (it->first);
 

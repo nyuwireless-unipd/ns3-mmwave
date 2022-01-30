@@ -137,7 +137,8 @@ static const std::string g_ueManagerStateName[UeManager::NUM_STATES] =
   "HANDOVER_LEAVING",
   "PREPARE_MC_CONNECTION_RECONFIGURATION",
   "MC_CONNECTION_RECONFIGURATION",
-  "CONNECTION_INACTIVITY"
+  "CONNECTION_CDRX",
+  "CONNECTION_DS"
 };
 
 /**
@@ -176,7 +177,11 @@ UeManager::UeManager (Ptr<LteEnbRrc> rrc, uint16_t rnti, State s, uint8_t compon
     m_maxx2forwardingBufferSize (2*1024),
     m_allMmWaveInOutageAtInitialAccess (false),
     m_caSupportConfigured (false),
-    m_pendingStartDataRadioBearers (false)
+    m_pendingStartDataRadioBearers (false),
+    m_cdrxcycle(0),
+    m_inactivity_timer(0),
+    m_ds_timer(0),
+    m_datareceived(false)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -185,6 +190,7 @@ void
 UeManager::DoInitialize ()
 {
   NS_LOG_FUNCTION (this);
+  EventId id;
   m_drbPdcpSapUser = new LtePdcpSpecificLtePdcpSapUser<UeManager> (this);
 
   m_physicalConfigDedicated.haveAntennaInfoDedicated = true;
@@ -196,6 +202,7 @@ UeManager::DoInitialize ()
   m_physicalConfigDedicated.havePdschConfigDedicated = true;
   m_physicalConfigDedicated.pdschConfigDedicated.pa = LteRrcSap::PdschConfigDedicated::dB0;
 
+  m_rrcreleaseinterval = m_rrc->m_rrc_release_interval_d.GetMilliSeconds();
   m_rlcMap.clear();
 
   for (uint8_t i = 0; i < m_rrc->m_numberOfComponentCarriers; i++)
@@ -306,7 +313,8 @@ UeManager::DoInitialize ()
                                                         &LteEnbRrc::ConnectionRequestTimeout,
                                                         m_rrc, m_rnti);
       break;
-
+    Simulator::Schedule (MilliSeconds (m_rrcreleaseinterval), &UeManager::SendRrcRelease, m_rrc->GetUeManager (m_rnti), m_rnti);
+    m_rrcRequestTimeout.push_back(id);
     case HANDOVER_JOINING:
       m_handoverJoiningTimeout = Simulator::Schedule (m_rrc->m_handoverJoiningTimeoutDuration,
                                                       &LteEnbRrc::HandoverJoiningTimeout,
@@ -672,7 +680,8 @@ UeManager::ScheduleRrcConnectionReconfiguration ()
         SwitchToState (MC_CONNECTION_RECONFIGURATION);
       }
       break;
-    case CONNECTION_INACTIVITY:
+    case CONNECTION_CDRX:
+    case CONNECTION_DS:
       m_pendingRrcConnectionReconfiguration = false;
       break;
 
@@ -1176,6 +1185,22 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
       break;
 
     case CONNECTED_NORMALLY:
+      {
+        EventId id;
+        if(m_rrcRequestTimeout.size() > 0)
+        {
+          for (EventId idIt: m_rrcRequestTimeout)
+          {
+            if (!(Simulator::IsExpired(idIt)))
+            {
+              Simulator::Cancel(idIt);
+            }
+          }
+          m_rrcRequestTimeout.clear();
+        }
+        id  = Simulator::Schedule(MilliSeconds(m_rrcreleaseinterval), &UeManager::SendRrcRelease, m_rrc->GetUeManager (m_rnti), m_rnti);
+        m_rrcRequestTimeout.push_back(id);
+      }
     case CONNECTION_RECONFIGURATION:
     case MC_CONNECTION_RECONFIGURATION:
     case CONNECTION_REESTABLISHMENT:
@@ -1233,8 +1258,8 @@ UeManager::SendData (uint8_t bid, Ptr<Packet> p)
       }
     }
       break;
-
-    case CONNECTION_INACTIVITY:
+    case CONNECTION_CDRX:
+    case CONNECTION_DS:
       break;
     default:
       NS_FATAL_ERROR ("method unexpected in state " << ToString (m_state));
@@ -1573,9 +1598,14 @@ UeManager::RecvRrcConnectionSetupCompleted (LteRrcSap::RrcConnectionSetupComplet
         }
       SwitchToState (CONNECTED_NORMALLY);
       m_rrc->m_connectionEstablishedTrace (m_imsi, m_rrc->ComponentCarrierToCellId (m_componentCarrierId), m_rnti);
+      m_inactivity_timer = MilliSeconds(m_rrc->m_inactivity_timer_d.GetMilliSeconds());
+      m_ds_timer = MilliSeconds(m_rrc->m_ds_timer_d.GetMilliSeconds());
+      m_cdrxcycle = MilliSeconds(m_rrc->m_cdrx_cycle_d.GetMilliSeconds());
+      std::cout << Simulator::Now().GetSeconds() << " " << m_rnti << "  m_inactivity_timer:  " << m_inactivity_timer << "   m_ds_timer:   " << m_ds_timer << "   m_cdrxcycle:  " << m_cdrxcycle << std::endl;
       break;
 
-    case CONNECTION_INACTIVITY:
+    case CONNECTION_DS:
+    case CONNECTION_CDRX:
       m_connectionSetupTimeout.Cancel ();
       SwitchToState (CONNECTED_NORMALLY);
       m_rrc->SendData(NULL);
@@ -1736,8 +1766,9 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
         }
       }
       break;
-
-    case CONNECTION_INACTIVITY:
+    
+    case CONNECTION_DS:
+    case CONNECTION_CDRX:
       SwitchToState (CONNECTED_NORMALLY);
       m_rrc->SendData(NULL);
       break;
@@ -2188,8 +2219,21 @@ UeManager::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params)
   NS_LOG_FUNCTION (this);
   std::cout<< Simulator::Now().GetSeconds()<<" "<<m_rnti<<" eNb_UeManager::DoReceivePdcpSdu "<<g_ueManagerStateName[m_state]<<" "<<params.pdcpSdu->GetSize()<<" UID: "<<params.pdcpSdu->GetUid()<<std::endl;
   EventId id;
+  if(m_rrcRequestTimeout.size() > 0)
+  {
+    for (EventId idIt: m_rrcRequestTimeout)
+    {
+      if (!(Simulator::IsExpired(idIt)))
+      {
+        Simulator::Cancel(idIt);
+      }
+    }
+    m_rrcRequestTimeout.clear();
+  }
+  id =  Simulator::Schedule(MilliSeconds(m_rrcreleaseinterval), &UeManager::SendRrcRelease, m_rrc->GetUeManager (m_rnti), m_rnti);
+  m_rrcRequestTimeout.push_back(id);
 
-  if(CONNECTION_INACTIVITY == m_state)
+  if(CONNECTION_DS == m_state || CONNECTION_CDRX == m_state)
   {
     m_datareceived = true;
     SwitchToState (CONNECTED_NORMALLY);
@@ -2441,10 +2485,10 @@ UeManager::Bid2Drbid (uint8_t bid)
 void
 UeManager::SwitchToState (State newState)
 {
-  NS_LOG_FUNCTION (this << ToString (newState));
+  NS_LOG_FUNCTION (this << ToString (newState) << m_datareceived);
   std::cout<<Simulator::Now().GetSeconds()<<" "<<m_rnti<<" eNb::SwitchToState "<< g_ueManagerStateName[m_state]<<" --> "<<g_ueManagerStateName[newState]<<std::endl;
 
-  if ( (true == m_datareceived && (CONNECTION_INACTIVITY == newState)))
+  if ( (true == m_datareceived && (CONNECTION_CDRX == newState || CONNECTION_DS == newState)) || (CONNECTION_DS == newState && CONNECTED_NORMALLY == m_state))
   {
     return;
   }
@@ -2530,11 +2574,21 @@ UeManager::SwitchToState (State newState)
 
     case HANDOVER_LEAVING:
       break;
-    case CONNECTION_INACTIVITY:
+    case CONNECTION_CDRX:
       if(false == m_datareceived)
       {
-        NS_LOG_FUNCTION (this << ToString (newState) << Simulator::Now() << m_cdrxTimer << "Scheduled PSM for:"<<Simulator::Now() +  (m_cdrxTimer));
-        id = Simulator::Schedule ( (m_cdrxTimer), &UeManager::SwitchToState, this, CONNECTION_INACTIVITY);
+        NS_LOG_FUNCTION (this << ToString(newState) << Simulator::Now() << m_inactivity_timer << "Scheduled Deep Sleep for: " << Simulator::Now() + (m_inactivity_timer));
+        std::cout << "\n\n\n\n\n\n" << ToString(newState) << Simulator::Now() << m_inactivity_timer << "Scheduled Deep Sleep for: " << Simulator::Now() + (m_inactivity_timer) << std::endl;
+        id = Simulator::Schedule(m_inactivity_timer, &UeManager::SwitchToState, this, CONNECTION_DS);
+        id_suspend.push_back(id);
+      }
+      break;
+    case CONNECTION_DS:
+      if(false == m_datareceived)
+      {
+        NS_LOG_FUNCTION (this << ToString (newState) << Simulator::Now() << m_cdrxcycle << "Scheduled PSM for:"<<Simulator::Now() +  (m_cdrxcycle));
+        std::cout << "\n\n\n\n\n\n" << ToString (newState) << Simulator::Now() << m_cdrxcycle << "Scheduled PSM for:"<<Simulator::Now() +  (m_cdrxcycle) << std::endl;
+        id = Simulator::Schedule ( (m_ds_timer - m_inactivity_timer), &UeManager::SwitchToState, this, CONNECTION_CDRX);
         id_suspend.push_back(id);
 
       }
@@ -2876,7 +2930,26 @@ LteEnbRrc::GetTypeId (void)
                    TimeValue (MilliSeconds (5)),
                    MakeTimeAccessor (&LteEnbRrc::m_systemInformationPeriodicity),
                    MakeTimeChecker ())
-
+    .AddAttribute ("InactivityTimer",
+                    "cDRX Inactivity Timer",
+                    TimeValue (MilliSeconds(320)),
+                    MakeTimeAccessor (&LteEnbRrc::m_inactivity_timer_d),
+                    MakeTimeChecker())
+    .AddAttribute ("cDRXCycle", 
+                    "cDRX Cycle length",
+                    TimeValue (MilliSeconds(20)),
+                    MakeTimeAccessor(&LteEnbRrc::m_cdrx_cycle_d),
+                    MakeTimeChecker())
+    .AddAttribute ("DSTimer",
+                    "Deep Sleep Timer",
+                    TimeValue (MilliSeconds(640)),
+                    MakeTimeAccessor (&LteEnbRrc::m_ds_timer_d),
+                    MakeTimeChecker())
+    .AddAttribute ("rrcReleaseTimer",
+                    "RRC Release Interval in ms",
+                    TimeValue (MilliSeconds(10000)),
+                    MakeTimeAccessor (&LteEnbRrc::m_ds_timer_d),
+                    MakeTimeChecker())
     // SRS related attributes
     .AddAttribute ("SrsPeriodicity",
                    "The SRS periodicity in milliseconds",
@@ -4587,10 +4660,10 @@ LteEnbRrc::SendData (Ptr<Packet> orgpacket)
     ueManager->SendPage(tag.GetRnti());
 
     NS_LOG_FUNCTION (this << ueManager->m_state);
-    if ( ueManager->CONNECTION_INACTIVITY == ueManager->m_state)
+    if ( ueManager->CONNECTION_CDRX == ueManager->m_state || ueManager->CONNECTION_DS == ueManager->m_state)
     {
         {
-                NS_LOG_FUNCTION (this << "else");
+                NS_LOG_FUNCTION (this);
                 m_packetsaved.push_back((orgpacket->Copy()));
         }
 
@@ -4624,12 +4697,12 @@ LteEnbRrc::ConnectionRequestTimeout (uint16_t rnti)
 void UeManager::SwitchtoDRXState()
 {
   NS_LOG_FUNCTION (this);
-  SwitchToState (CONNECTION_INACTIVITY);
+  SwitchToState (CONNECTION_CDRX);
 }
 void UeManager::SendRrcRelease(uint16_t rnti)
 {
     NS_LOG_FUNCTION (this);
-    std::cout << Simulator::Now() << "  " << "rnti" << rnti << g_ueManagerStateName[m_state] << "m_lastRrcTransactionIdentifier" << m_lastRrcTransactionIdentifier << std::endl;
+    std::cout << Simulator::Now() << "  " << "rnti" << rnti << "SendRrcRelease" << g_ueManagerStateName[m_state] << "m_lastRrcTransactionIdentifier" << m_lastRrcTransactionIdentifier << std::endl;
     EventId id;
 
     if (m_state == CONNECTED_NORMALLY)

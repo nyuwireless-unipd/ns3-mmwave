@@ -40,6 +40,7 @@ TAGS
 
 build-dir/
 build/
+resultswns3/
 /.cproject
 /.project
 .vscode/settings.json

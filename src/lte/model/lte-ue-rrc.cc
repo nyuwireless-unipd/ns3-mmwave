@@ -285,6 +285,11 @@ LteUeRrc::GetTypeId (void)
                     TimeValue (MilliSeconds(20)),
                     MakeTimeAccessor(&LteUeRrc::m_cdrx_cycle_d),
                     MakeTimeChecker())
+    .AddAttribute ("DSTimer",
+                    "Deep Sleep Timer",
+                    TimeValue (MilliSeconds(640)),
+                    MakeTimeAccessor (&LteUeRrc::m_ds_timer_d),
+                    MakeTimeChecker())
     .AddTraceSource ("MibReceived",
                      "trace fired upon reception of Master Information Block",
                      MakeTraceSourceAccessor (&LteUeRrc::m_mibReceivedTrace),
@@ -1547,7 +1552,7 @@ LteUeRrc::DoRecvRrcConnectionRelease (LteRrcSap::RrcConnectionRelease msg)
 void 
 LteUeRrc::DoRecvRrcPagingDirect ()
 {
-  std::cout<<Simulator::Now().GetSeconds()<<" "<<m_rnti<<" LteUeRrc::DoRecvRrcPagingDirect  "<<g_ueRrcStateName[m_state]<<std::endl;
+  // std::cout<<Simulator::Now().GetSeconds()<<" "<<m_rnti<<" LteUeRrc::DoRecvRrcPagingDirect  "<<g_ueRrcStateName[m_state]<<std::endl;
   m_hasReceivedPaging = true;
 }
 

@@ -18,6 +18,8 @@
  * Author: Nicola Baldo <nbaldo@cttc.es>
  * Modified by: Danilo Abrignani <danilo.abrignani@unibo.it> (Carrier Aggregation - GSoC 2015)
  *              Biljana Bojovic <biljana.bojovic@cttc.es> (Carrier Aggregation)
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #ifndef LTE_HELPER_H
@@ -811,7 +813,15 @@ private:
    * will have a cell ID of 1. The maximum number of eNodeB is 65535.
    */
   uint16_t m_cellIdCounter;
+  Time m_ue_inactivity_timer;
+  Time m_ue_cdrx_cycle;
+  Time m_ue_ds_timer;
+  Time m_ue_rrc_release_timer;
 
+  Time m_enb_inactivity_timer;
+  Time m_enb_cdrx_cycle;
+  Time m_enb_ds_timer;
+  Time m_enb_rrc_release_timer;
   /**
    * The `UseIdealRrc` attribute. If true, LteRrcProtocolIdeal will be used for
    * RRC signaling. If false, LteRrcProtocolReal will be used.

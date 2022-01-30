@@ -110,7 +110,8 @@ public:
     HANDOVER_LEAVING,
     PREPARE_MC_CONNECTION_RECONFIGURATION,
     MC_CONNECTION_RECONFIGURATION,
-    CONNECTION_INACTIVITY,
+    CONNECTION_CDRX,
+    CONNECTION_DS,
     NUM_STATES
   };
 
@@ -707,7 +708,9 @@ private:
   /// Pending start data radio bearers
   bool m_pendingStartDataRadioBearers;
 
-  Time m_cdrxTimer;
+  Time m_cdrxcycle;
+  Time m_inactivity_timer;
+  Time m_ds_timer;
   bool m_datareceived;
 
   std::list<EventId> id_suspend;
@@ -1809,6 +1812,11 @@ private:
    * system information.
    */
   Time m_systemInformationPeriodicity;
+  Time m_inactivity_timer_d;
+  Time m_ds_timer_d;
+  Time m_cdrx_cycle_d;
+  Time m_rrc_release_interval_d;
+  bool m_enable_ds_d;
   /**
    * The `SrsPeriodicity` attribute. The SRS periodicity in milliseconds.
    */
