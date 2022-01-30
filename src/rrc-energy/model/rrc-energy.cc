@@ -32,8 +32,8 @@ RrcEnergy::Only_uplink_tx(double idletime)
     std::cout<<"Only_uplink_tx: 4 "<<idletime<<" m_total: "<< m_total<<std::endl;
 	Callback<void, double> only_tx;
 	only_tx = MakeCallback(&LiIonEnergySource::DecreaseRemainingEnergy, &LIES);
-    double energyDecreasedIdle=0.0000000000216 * idletime;
-	double energyDecreasedTx = 0.00073542744;
+    double energyDecreasedIdle=1 * idletime;
+	double energyDecreasedTx = 350* idletime;
 	m_time_last_tx=Simulator::Now().GetMilliSeconds();
 
 	if(m_time_last_rx==m_time_last_tx)
@@ -56,8 +56,8 @@ void RrcEnergy::Only_downlink_rx(double idleTime)
 	Callback<void, double> only_tx;
 	only_tx = MakeCallback(&LiIonEnergySource::DecreaseRemainingEnergy, &LIES);
 
-    double energyDecreasedIdle=0.0000000000216 * idleTime;
-	double energyDecreasedRx = 0.000153771192;
+    double energyDecreasedIdle=1 * idleTime;
+	double energyDecreasedRx = 350*idleTime;
 	if(m_time_last_rx == m_time_last_tx && m_time_last_tx != 0)
 	{
 	    std::cout<<"m_time_last_rx: "<<m_time_last_rx<< "m_time_last_tx "<<m_time_last_tx<<std::endl;
@@ -82,8 +82,7 @@ void RrcEnergy::Only_idle_decrease(double idleTime)
     std::cout << std::setprecision(16) << std::fixed;
     std::cout<<"Only_idle_decrease: 3 "<<idleTime<<" m_total: "<<m_total<<std::endl;
 
-	//double supplyVoltage=3.6;
-	double energyDecreasedIdle=0.0000000000320 * idleTime;//(6/1000)*supplyVoltage*idleTime;
+	double energyDecreasedIdle=1 * idleTime;
 
     Callback<void, double> only_tx;
     only_tx = MakeCallback(&LiIonEnergySource::DecreaseRemainingEnergy, &LIES);
@@ -93,14 +92,11 @@ void RrcEnergy::Only_idle_decrease(double idleTime)
 void RrcEnergy::Only_deepsleep_decrease(double idleTime)
 {
     m_total += idleTime;
-    std::cout<<"Only_psm_decrease: 1 "<<idleTime<<" m_total: "<<m_total<<std::endl;
+    std::cout<<"Only_deep_sleep_decrease: 1 "<<idleTime<<" m_total: "<<m_total<<std::endl;
     Callback<void, double> only_tx;
     only_tx = MakeCallback(&LiIonEnergySource::DecreaseRemainingEnergy, &LIES);
-
-    //double supplyVoltage=3.6;
-    //double energyDecreasedPsm=0.001*supplyVoltage*idleTime/1000000000;
-    double energyDecreasedPsm = (0.0000000000000000108)*idleTime;//*supplyVoltage*idleTime/1000000000;
-    only_tx(energyDecreasedPsm);
+    double energyDecreaseddeepSleep = (1)*idleTime;
+    only_tx(energyDecreaseddeepSleep);
 }
 
 void RrcEnergy::Only_drx_decrease(double idleTime)
@@ -110,8 +106,7 @@ void RrcEnergy::Only_drx_decrease(double idleTime)
     Callback<void, double> only_tx;
     only_tx = MakeCallback(&LiIonEnergySource::DecreaseRemainingEnergy, &LIES);
 
-    //double supplyVoltage=3.6;
-    double energyDecreasedDrx=0.0000000000216*idleTime;//(6/1000)*supplyVoltage*idleTime/1000000000;
+    double energyDecreasedDrx=20*idleTime;
     only_tx(energyDecreasedDrx);
 }
 
@@ -122,20 +117,16 @@ void RrcEnergy::Only_paging_decrease(double idleTime)
     Callback<void, double> only_tx;
     only_tx = MakeCallback(&LiIonEnergySource::DecreaseRemainingEnergy, &LIES);
 
-    //double supplyVoltage=3.6;
-    double energyDecreasedPaging=0.0000000000216*idleTime;//(6/1000)*supplyVoltage*idleTime/1000000000;
+    double energyDecreasedPaging=40*idleTime;
     only_tx(energyDecreasedPaging);
 }
 
 void RrcEnergy::both_downlink_and_uplink(double idleTime)
 {
-    //m_total += idleTime;
     std::cout<<"both_downlink_and_uplink: 6 "<<idleTime<<" m_total: "<<m_total<<std::endl;
 	Callback<void, double> only_tx;
 	only_tx = MakeCallback(&LiIonEnergySource::DecreaseRemainingEnergy, &LIES);
-	//double supplyVoltage=3.6;
-	//double energyDecreasedIdle=0.032*supplyVoltage*0.001;
-	double energyDecreasedIdle= 0.00073542744;//(220/1000)*supplyVoltage*(0.000928570);
+	double energyDecreasedIdle= 350*idleTime;
 	only_tx(energyDecreasedIdle);
 	std::cout<<"Both Transmit and Receive chain is consuming power "<<std::endl;
 }
