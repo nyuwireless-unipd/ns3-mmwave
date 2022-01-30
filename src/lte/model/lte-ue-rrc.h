@@ -51,6 +51,10 @@
 #include <ns3/lte-pdcp.h>
 #include <ns3/lte-rlc-am.h>
 
+#include "ns3/simple-device-energy-model.h"
+#include "ns3/energy-source-container.h"
+#include "ns3/rrc-energy-module.h"
+
 #define MIN_NO_CC 1
 #define MAX_NO_CC 5 // this is the maximum number of carrier components allowed by 3GPP up to R13
 #define MIN_NO_MMW_CC 1
@@ -129,8 +133,9 @@ public:
     CONNECTED_HANDOVER,
     CONNECTED_PHY_PROBLEM,
     CONNECTED_REESTABLISHING,
-    CONNECTION_INACTIVITY,
-    PAGING_INACTIVITY,
+    RRC_INACTIVE,
+    INACTIVE_PAGING,
+    IDLE_DS,
     NUM_STATES
   };
 
@@ -410,7 +415,8 @@ private:
    * \param params LtePdcpSapUser::ReceivePdcpSduParameters
    */
   void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);
-
+  void DoNotifyEnergyChange();
+  void DoSetFrameSubframe(uint32_t frame, uint32_t sfn);
   // CMAC SAP methods
   /**
    * Set temporary cell rnti function
@@ -857,14 +863,18 @@ private:
   uint16_t  m_nb;
   uint64_t  m_pf;
   uint16_t  m_po;
-  int32_t  m_t3324;
-  int32_t  m_edrx_cycle;
+  double  m_inactivity_timer;
+  double  m_cdrx_cycle;
+  double m_ds_timer;
   bool m_gotpaging;
 
   bool m_requirepagingflag;  
 
   uint32_t m_dlEarfcn;  /**< Downlink carrier frequency. */
   uint32_t m_ulEarfcn;  /**< Uplink carrier frequency. */
+
+  Time m_lastUpdatedTime;
+  RrcEnergy energyModel;
   std::list<LteRrcSap::SCellToAddMod> m_sCellToAddModList; /**< Secondary carriers. */
 
   /**
@@ -1256,6 +1266,10 @@ private:
    * See Section 7.3 of 3GPP TS 36.331.
    */
   Time m_t300;
+
+  Time m_inactivity_timer_d;
+  Time m_ds_timer_d;
+  Time m_cdrx_cycle_d;
 
   /**
    * \brief Invokes ConnectionEstablishmentTimeout() if RRC connection
