@@ -277,7 +277,7 @@ LteUeRrc::GetTypeId (void)
                    MakeTimeChecker ())
     .AddAttribute ("InactivityTimer",
                     "cDRX Inactivity Timer",
-                    TimeValue (MilliSeconds(320)),
+                    TimeValue (MilliSeconds(40)),
                     MakeTimeAccessor (&LteUeRrc::m_inactivity_timer_d),
                     MakeTimeChecker())
     .AddAttribute ("cDRXCycle", 
@@ -287,7 +287,7 @@ LteUeRrc::GetTypeId (void)
                     MakeTimeChecker())
     .AddAttribute ("DSTimer",
                     "Deep Sleep Timer",
-                    TimeValue (MilliSeconds(640)),
+                    TimeValue (MilliSeconds(80)),
                     MakeTimeAccessor (&LteUeRrc::m_ds_timer_d),
                     MakeTimeChecker())
     .AddTraceSource ("MibReceived",

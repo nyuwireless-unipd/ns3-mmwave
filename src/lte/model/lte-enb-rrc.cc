@@ -203,6 +203,7 @@ UeManager::DoInitialize ()
   m_physicalConfigDedicated.pdschConfigDedicated.pa = LteRrcSap::PdschConfigDedicated::dB0;
 
   m_rrcreleaseinterval = m_rrc->m_rrc_release_interval_d.GetMilliSeconds();
+  std::cout << "rrc release interval in ms " << m_rrcreleaseinterval << std::endl;
   m_rlcMap.clear();
 
   for (uint8_t i = 0; i < m_rrc->m_numberOfComponentCarriers; i++)
@@ -2490,6 +2491,7 @@ UeManager::SwitchToState (State newState)
 
   if ( (true == m_datareceived && (CONNECTION_CDRX == newState || CONNECTION_DS == newState)) || (CONNECTION_DS == newState && CONNECTED_NORMALLY == m_state))
   {
+    std::cout << "Isuue here " << this << std::endl;
     return;
   }
   State oldState = m_state;
@@ -2932,7 +2934,7 @@ LteEnbRrc::GetTypeId (void)
                    MakeTimeChecker ())
     .AddAttribute ("InactivityTimer",
                     "cDRX Inactivity Timer",
-                    TimeValue (MilliSeconds(320)),
+                    TimeValue (MilliSeconds(40)),
                     MakeTimeAccessor (&LteEnbRrc::m_inactivity_timer_d),
                     MakeTimeChecker())
     .AddAttribute ("cDRXCycle", 
@@ -2942,13 +2944,13 @@ LteEnbRrc::GetTypeId (void)
                     MakeTimeChecker())
     .AddAttribute ("DSTimer",
                     "Deep Sleep Timer",
-                    TimeValue (MilliSeconds(640)),
+                    TimeValue (MilliSeconds(200)),
                     MakeTimeAccessor (&LteEnbRrc::m_ds_timer_d),
                     MakeTimeChecker())
     .AddAttribute ("rrcReleaseTimer",
                     "RRC Release Interval in ms",
-                    TimeValue (MilliSeconds(10000)),
-                    MakeTimeAccessor (&LteEnbRrc::m_ds_timer_d),
+                    TimeValue (MilliSeconds(200)),
+                    MakeTimeAccessor (&LteEnbRrc::m_rrc_release_interval_d),
                     MakeTimeChecker())
     // SRS related attributes
     .AddAttribute ("SrsPeriodicity",
