@@ -66,7 +66,6 @@ public:
 
   virtual ~MmWaveUePhy ();
 
-  TracedValue<uint16_t> current_cellid;
   // inherited from Object
   static TypeId GetTypeId (void);
   virtual void DoInitialize (void) override;

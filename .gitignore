@@ -4,14 +4,12 @@
 *.rej
 
 *.DS_Store
-newOStest1/
-testEnergy1/
-trynew1/
+
 *.o
 *.pyc
 *.pyo
 *.gch
-*.txt
+
 *.cwnd
 *.dat
 *.log
@@ -29,7 +27,7 @@ seventh-packet-byte-count.png
 testpy-output
 
 bindings/python/pybindgen/
-.vscode
+
 ms_print.*
 massif.*
 coverity
@@ -40,7 +38,6 @@ TAGS
 
 build-dir/
 build/
-resultswns3/
 /.cproject
 /.project
 .vscode/settings.json

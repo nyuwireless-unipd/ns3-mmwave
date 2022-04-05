@@ -284,7 +284,7 @@ private:
   Ptr<MmWaveBeamformingModel> m_beamforming; //!< used to compute the beamforming vector
 
   uint16_t m_cellId;
-  uint128_t m_countSleep;
+
   State m_state;
 
   uint8_t m_componentCarrierId; ///< the component carrier ID
@@ -306,7 +306,6 @@ private:
 
   bool m_dataErrorModelEnabled;       // when true (default) the phy error model is enabled
   bool m_ctrlErrorModelEnabled;       // when true (default) the phy error model is enabled for DL ctrl frame
-  bool m_sleepEnabled;                // when true make the base station to sleep or IDLE
   TypeId m_errorModelType {Object::GetTypeId()}; //!< Error model type by default is MmWaveLteMiErrorModel
 
   Ptr<MmWaveHarqPhy> m_harqPhyModule;

@@ -129,10 +129,6 @@ MmWaveUePhy::GetTypeId (void)
                      "Report the allocation info for the current UL transmission",
                      MakeTraceSourceAccessor (&MmWaveUePhy::m_ulPhyTrace),
                      "ns3::UlPhyTransmission::TracedCallback")
-    .AddTraceSource ("CurrentCellId",
-                     "gives the current cellid of base statin it connected to",
-                     MakeTraceSourceAccessor (&MmWaveUePhy::current_cellid),
-                     "ns3::TracedValueCallback::Uint16")
     .AddAttribute ("OutageThreshold",
                    "SNR threshold for outage events [dB]",
                    DoubleValue (-5.0),
@@ -329,7 +325,6 @@ MmWaveUePhy::RegisterToEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config)
 {
   NS_LOG_FUNCTION (this);
   m_cellId = cellId;
-  current_cellid=cellId;
   m_phyReset = false;
   //TBD how to assign bandwitdh and earfcn
   m_phyMacConfig = config;
