@@ -60,7 +60,7 @@
 // attributes, global values, and default values typically available:
 //
 //    --simulationTime:  Simulation time in seconds [10]
-//    --distance:        meters separation between nodes [50]
+//    --distance:        meters separation between nodes [1]
 //    --index:           restrict index to single value between 0 and 31 [256]
 //    --wifiType:        select ns3::SpectrumWifiPhy or ns3::YansWifiPhy [ns3::SpectrumWifiPhy]
 //    --errorModelType:  select ns3::NistErrorRateModel or ns3::YansErrorRateModel [ns3::NistErrorRateModel]
@@ -190,7 +190,6 @@ int main (int argc, char *argv[])
 
           spectrumPhy.SetChannel (spectrumChannel);
           spectrumPhy.SetErrorRateModel (errorModelType);
-          spectrumPhy.Set ("Frequency", UintegerValue (5180)); // channel 36 at 20 MHz
           spectrumPhy.Set ("TxPowerStart", DoubleValue (1));
           spectrumPhy.Set ("TxPowerEnd", DoubleValue (1));
 
@@ -563,13 +562,17 @@ int main (int argc, char *argv[])
       NetDeviceContainer staDevice;
       NetDeviceContainer apDevice;
 
+      channelWidth = (i <= 15 || (i > 31 && i <= 47) ? 20 : 40);
+
       if (wifiType == "ns3::YansWifiPhy")
         {
           mac.SetType ("ns3::StaWifiMac",
                        "Ssid", SsidValue (ssid));
+          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
           staDevice = wifi.Install (phy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));
+          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
           apDevice = wifi.Install (phy, mac, wifiApNode);
 
         }
@@ -577,30 +580,28 @@ int main (int argc, char *argv[])
         {
           mac.SetType ("ns3::StaWifiMac",
                        "Ssid", SsidValue (ssid));
+          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
           staDevice = wifi.Install (spectrumPhy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));
+          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
           apDevice = wifi.Install (spectrumPhy, mac, wifiApNode);
         }
 
      if ((i <= 7) || (i > 31 && i <= 39))
         {
-          Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (20));
           Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (false));
         }
       else if ((i > 7 && i <= 15) || (i > 39 && i <= 47))
         {
-          Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (20));
           Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (true));
         }
       else if ((i > 15 && i <= 23) || (i > 47 && i <= 55))
         {
-          Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (40));
           Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (false));
         }
       else
         {
-          Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/ChannelWidth", UintegerValue (40));
           Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (true));
         }
 
@@ -647,6 +648,7 @@ int main (int argc, char *argv[])
 
       if (enablePcap)
         {
+          phy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
           std::stringstream ss;
           ss << "wifi-spectrum-saturation-example-" << i;
           phy.EnablePcap (ss.str (), apDevice);

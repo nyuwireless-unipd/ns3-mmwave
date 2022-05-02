@@ -201,7 +201,7 @@ EpcSgwPgwApplication::RecvFromTunDevice (Ptr<Packet> packet, const Address& sour
       {
         Ipv6Header ipv6Header;
         pCopy->RemoveHeader (ipv6Header);
-        Ipv6Address ueAddr =  ipv6Header.GetDestinationAddress ();
+        Ipv6Address ueAddr =  ipv6Header.GetDestination ();
         NS_LOG_LOGIC ("packet addressed to UE " << ueAddr);
         // find corresponding UeInfo address
         std::map<Ipv6Address, Ptr<UeInfo> >::iterator it = m_ueInfoByAddrMap6.find (ueAddr);

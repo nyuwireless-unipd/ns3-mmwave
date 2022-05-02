@@ -223,7 +223,7 @@ public:
    * \param ccId the target mmwave Component Carrier ID
    * \return the antenna
    */
-  Ptr<ThreeGppAntennaArrayModel> GetAntenna (uint8_t ccId) const;
+  Ptr<PhasedArrayModel> GetAntenna (uint8_t ccId) const;
 
 protected:
   NetDevice::ReceiveCallback m_rxCallback;

@@ -124,7 +124,7 @@ WifiSpectrumValueHelper::GetSpectrumModel (uint32_t centerFrequency, uint16_t ch
           NS_LOG_DEBUG ("creating band " << i << " (" << info.fl << ":" << info.fc << ":" << info.fh << ")");
           bands.push_back (info);
         }
-      ret = Create<SpectrumModel> (bands);
+      ret = Create<SpectrumModel> (std::move (bands));
       g_wifiSpectrumModelMap.insert (std::pair<WifiSpectrumModelId, Ptr<SpectrumModel> > (key, ret));
     }
   NS_LOG_LOGIC ("returning SpectrumModel::GetUid () == " << ret->GetUid ());
@@ -422,6 +422,33 @@ WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (uint32_t centerFreq
 }
 
 Ptr<SpectrumValue>
+WifiSpectrumValueHelper::CreateHeMuOfdmTxPowerSpectralDensity (uint32_t centerFrequency, uint16_t channelWidth, double txPowerW, uint16_t guardBandwidth, WifiSpectrumBand ru)
+{
+  NS_LOG_FUNCTION (centerFrequency << channelWidth << txPowerW << guardBandwidth << ru.first << ru.second);
+  uint32_t bandBandwidth = 78125;
+  Ptr<SpectrumValue> c = Create<SpectrumValue> (GetSpectrumModel (centerFrequency, channelWidth, bandBandwidth, guardBandwidth));
+
+  //Build spectrum mask
+  Values::iterator vit = c->ValuesBegin ();
+  Bands::const_iterator bit = c->ConstBandsBegin ();
+  double txPowerPerBandW = (txPowerW / (ru.second - ru.first + 1)); //FIXME: null subcarriers
+  uint32_t numBands = c->GetSpectrumModel ()->GetNumBands ();
+  for (size_t i = 0; i < numBands; i++, vit++, bit++)
+    {
+      if (i < ru.first || i > ru.second) //outside the spectrum mask
+        {
+          *vit = 0.0;
+        }
+      else
+        {
+          *vit = (txPowerPerBandW / (bit->fh - bit->fl));
+        }
+    }
+  
+  return c;
+}
+
+Ptr<SpectrumValue>
 WifiSpectrumValueHelper::CreateNoisePowerSpectralDensity (uint32_t centerFrequency, uint16_t channelWidth, uint32_t bandBandwidth, double noiseFigure, uint16_t guardBandwidth)
 {
   Ptr<SpectrumModel> model = GetSpectrumModel (centerFrequency, channelWidth, bandBandwidth, guardBandwidth);
@@ -611,6 +638,21 @@ double
 WifiSpectrumValueHelper::DbmToW (double dBm)
 {
   return std::pow (10.0, 0.1 * (dBm - 30.0));
+}
+
+double
+WifiSpectrumValueHelper::GetBandPowerW (Ptr<SpectrumValue> psd, const WifiSpectrumBand &band)
+{
+    double powerWattPerHertz = 0.0;
+    auto valueIt = psd->ConstValuesBegin() + band.first;
+    auto end = psd->ConstValuesBegin() + band.second;
+    auto bandIt = psd->ConstBandsBegin() + band.first;
+    while (valueIt <= end)
+    {
+        powerWattPerHertz += *valueIt;
+        ++valueIt;
+    }
+    return powerWattPerHertz * (bandIt->fh - bandIt->fl);
 }
 
 static Ptr<SpectrumModel> g_WifiSpectrumModel5Mhz; ///< static initializer for the class

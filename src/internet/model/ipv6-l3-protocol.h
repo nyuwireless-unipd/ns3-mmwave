@@ -210,10 +210,11 @@ public:
   /**
    * \brief Add an address on interface.
    * \param i interface index
-   * \param address to add
+   * \param address address to add
+   * \param addOnLinkRoute add on-link route to the network (default true)
    * \returns true if the operation succeeded
    */
-  bool AddAddress (uint32_t i, Ipv6InterfaceAddress address);
+  bool AddAddress (uint32_t i, Ipv6InterfaceAddress address, bool addOnLinkRoute = true);
 
   /**
    * \brief Get an address.
@@ -447,6 +448,25 @@ public:
    * \return true if the address is registered.
    */
   bool IsRegisteredMulticastAddress (Ipv6Address address, uint32_t interface) const;
+
+  /**
+   * Provides reachability hint for Neighbor Cache Entries from L4-L7 protocols.
+   * 
+   * This function shall be called by L4-L7 protocols when an address is confirmed
+   * to be reachable (i.e., at least a packet send and a reply received).
+   * The net effect is to extend the NCE reachability time if the NCE is in
+   * REACHABLE state, and to mark the NCE as REACHABLE if it is in STALE, PROBE, or
+   * DELAY states. NCEs in INCOMPLETE state are not changed.
+   * 
+   * Note that the IP interface index might not be the same as the NetDevice index.
+   * The correct way to check the IP interface index is by using 
+   * Ipv6::GetInterfaceForDevice ().
+   * 
+   * \param ipInterfaceIndex IP interface index
+   * \param address reachable address
+   * \return true if the NCE has been successfully updated.
+   */
+  bool ReachabilityHint (uint32_t ipInterfaceIndex, Ipv6Address address);
 
 protected:
   /**

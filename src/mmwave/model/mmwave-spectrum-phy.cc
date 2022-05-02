@@ -56,7 +56,7 @@
 #include <ns3/double.h>
 #include <ns3/mmwave-lte-mi-error-model.h>
 #include "mmwave-mac-pdu-tag.h"
-#include <ns3/three-gpp-antenna-array-model.h>
+#include <ns3/phased-array-model.h>
 
 namespace ns3 {
 
@@ -179,7 +179,7 @@ MmWaveSpectrumPhy::SetMobility (Ptr<MobilityModel> m)
 }
 
 Ptr<MobilityModel>
-MmWaveSpectrumPhy::GetMobility ()
+MmWaveSpectrumPhy::GetMobility () const
 {
   return m_mobility;
 }
@@ -203,7 +203,7 @@ MmWaveSpectrumPhy::SetErrorModelType (TypeId errorModelType)
 }
 
 Ptr<AntennaModel>
-MmWaveSpectrumPhy::GetRxAntenna ()
+MmWaveSpectrumPhy::GetRxAntenna () const
 {
   // NOTE the antenna gain is implicitly taken into account in the channel
   // model classes
@@ -297,7 +297,7 @@ void
 MmWaveSpectrumPhy::ConfigureBeamforming (Ptr<NetDevice> device)
 {
   NS_LOG_FUNCTION (this << device);
-  Ptr<ThreeGppAntennaArrayModel> antenna;
+  Ptr<PhasedArrayModel> antenna;
 
   // test if device is a MmWaveNetDevice
   Ptr<MmWaveNetDevice> mmNetDevice = DynamicCast<MmWaveNetDevice> (device);

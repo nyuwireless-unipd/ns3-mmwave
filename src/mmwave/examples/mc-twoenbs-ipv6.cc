@@ -30,6 +30,7 @@
 #include <ns3/buildings-module.h>
 #include <ns3/random-variable-stream.h>
 #include <ns3/lte-ue-net-device.h>
+#include "ns3/isotropic-antenna-model.h"
 
 #include <iostream>
 #include <ctime>
@@ -466,17 +467,20 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::ThreeGppChannelModel::Blockage", BooleanValue (true)); // use blockage or not
   Config::SetDefault ("ns3::ThreeGppChannelModel::PortraitMode", BooleanValue (true)); // use blockage model with UT in portrait mode
   Config::SetDefault ("ns3::ThreeGppChannelModel::NumNonselfBlocking", IntegerValue (4)); // number of non-self blocking obstacles
-
-  // set the number of antennas in the devices
-  Config::SetDefault ("ns3::McUeNetDevice::AntennaNum", UintegerValue(16));
-  Config::SetDefault ("ns3::MmWaveNetDevice::AntennaNum", UintegerValue(64));
   
-  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
-  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
+  // by default, isotropic antennas are used. To use the 3GPP radiation pattern instead, use the <ThreeGppAntennaArrayModel>
+  // beware: proper configuration of the bearing and downtilt angles is needed
+  Config::SetDefault ("ns3::PhasedArrayModel::AntennaElement", PointerValue (CreateObject<IsotropicAntennaModel> ()));
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   mmwaveHelper->SetPathlossModelType ("ns3::ThreeGppUmiStreetCanyonPropagationLossModel");
   mmwaveHelper->SetChannelConditionModelType ("ns3::BuildingsChannelConditionModel");
+
+  // set the number of antennas for both UEs and eNBs
+  mmwaveHelper->SetUePhasedArrayModelAttribute ("NumColumns" , UintegerValue (4));
+  mmwaveHelper->SetUePhasedArrayModelAttribute ("NumRows" , UintegerValue (4));
+  mmwaveHelper->SetEnbPhasedArrayModelAttribute ("NumColumns" , UintegerValue (8));
+  mmwaveHelper->SetEnbPhasedArrayModelAttribute ("NumRows" , UintegerValue (8));
 
   //Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   //mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMaxWeightMacScheduler");

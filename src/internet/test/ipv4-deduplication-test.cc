@@ -126,19 +126,35 @@ class Ipv4DeduplicationTest : public TestCase
    */
   void CheckDrops (const std::string &name);
 
-  static const Time DELAY;
+  static const Time DELAY; //!< Channel delay
+
+  /**
+   * Creates the test name according to the parameters
+   * \param enable deduplication enabled
+   * \param expire expiration delay for duplicate cache entries
+   * \returns A string describing the test
+   */
   static std::string MakeName (bool enable, Time expire);
 
+  /**
+   * Enum of test types
+   */
   enum MODE {ENABLED = 0,
              DISABLED,
              DEGENERATE};  // enabled, but expiration time too low
-  MODE m_mode;
-  Time m_expire;
-  std::map<std::string, uint32_t> m_packetCountMap;
-  std::map<std::string, uint32_t> m_dropCountMap;
+  MODE m_mode; //!< Test type
+  Time m_expire; //!< Expiration delay for duplicate cache entries
+  std::map<std::string, uint32_t> m_packetCountMap; //!< map of received packets (node name, counter)
+  std::map<std::string, uint32_t> m_dropCountMap; //!< map of received packets (node name, counter)
 
 public:
   virtual void DoRun (void);
+
+  /**
+   * Constructor
+   * \param enable deduplication enabled
+   * \param expire expiration delay for duplicate cache entries
+   */
   Ipv4DeduplicationTest (bool enable, Time expire = Seconds (1));
 
   /**
@@ -408,6 +424,11 @@ Ipv4DeduplicationTest::CheckPackets (const std::string &name)
     std::map <std::string, uint32_t> packets = {
       {"A", 14}, {"B", 16}, {"C", 16}, {"D", 16}, {"E", 4}
     };
+
+    // a priori determined packet receptions based on
+    std:: map <std::string, uint32_t> packetsDuped = {
+      {"A", 0}, {"B", 1}, {"C", 1}, {"D", 1}, {"E", 1}
+    };
     // a priori determined packet receptions based on initial TTL of 4, degenerate de-dup
     // There are TTL (4) rounds of packets.  Each round a node will register a
     // received packet if another connected node transmits.  A misses the 1st round
@@ -417,12 +438,10 @@ Ipv4DeduplicationTest::CheckPackets (const std::string &name)
       {"A", 3}, {"B", 4}, {"C", 4}, {"D", 3}, {"E", 2}
     };
 
-    NS_TEST_ASSERT_MSG_NE ((m_packetCountMap.find (name) == m_packetCountMap.end ()), true,
-                          "No packets received for node " << name);
     switch (m_mode)
       {
         case ENABLED:
-          NS_TEST_EXPECT_MSG_EQ (m_packetCountMap[name], 1, "Wrong number of packets received for node " << name);
+          NS_TEST_ASSERT_MSG_EQ (m_packetCountMap[name], packetsDuped[name], "Wrong number of packets received for node " << name);
           break;
         case DISABLED:
           NS_TEST_EXPECT_MSG_EQ (m_packetCountMap[name],  packets[name], "Wrong number of packets received for node " << name);
@@ -441,10 +460,10 @@ Ipv4DeduplicationTest::CheckDrops (const std::string &name)
       {
         case ENABLED:
           // a priori determined packet drops based on initial TTL of 4, enabled de-dup;
-          // A hears from B & C
+          // A hears from B & C -- > 2 drops
           // D hears from B, C, AND E
-          // B (C) hears from A, C (B), D, and A again
-          drops = {{"A", 1}, {"B", 3}, {"C", 3}, {"D", 2}, {"E", 0}};
+          // B (C) hears from A, C (B), D,
+          drops = {{"A", 2}, {"B", 2}, {"C", 2}, {"D", 2}, {"E", 0}};
           break;
         case DISABLED:
           // a priori determined packet drops based on initial TTL of 4, disabled de-dup
@@ -532,9 +551,16 @@ class Ipv4DeduplicationPerformanceTest : public TestCase
     Ipv4DeduplicationPerformanceTest (void);
     virtual void DoRun (void);
   private:
-    std::vector <Ptr<Socket> > m_sockets;
-    std::vector <uint8_t> m_txPackets;
-    uint8_t m_target;
+    std::vector <Ptr<Socket> > m_sockets; //!< sockets in use
+    std::vector <uint8_t> m_txPackets;  //!< transmitted packets for each socket
+    uint8_t m_target; //!< number of packets to transmit on each socket
+
+    /**
+     * Send data
+     * \param socket output socket
+     * \param to destination address
+     * \param socketIndex index of the socket
+     */
     void DoSendData (Ptr<Socket> socket, Address to, uint8_t socketIndex);
 };
 

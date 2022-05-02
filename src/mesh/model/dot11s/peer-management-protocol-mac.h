@@ -25,6 +25,8 @@
 
 namespace ns3 {
 class MeshWifiInterfaceMac;
+class WifiMacQueueItem;
+enum WifiMacDropReason : uint8_t;  // opaque enum declaration
 namespace dot11s {
 class PeerManagementProtocol;
 class IeConfiguration;
@@ -87,12 +89,23 @@ public:
    * \return the assigned stream
    */
   int64_t AssignStreams (int64_t stream);
-  ///\name Statistics
-  // \{
+
+  /// \name Statistics
+  ///@{
+  /**
+   * \brief Report statistics
+   * \param os the output stream
+   */
   void Report (std::ostream &) const;
+  /// Reset stats
   void ResetStats ();
+  /**
+   * Get the link metric
+   * \param peerAddress the peer address
+   * \return The metric
+   */
   uint32_t GetLinkMetric (Mac48Address peerAddress);
-  // \}
+  ///@}
 
 private:
   /**
@@ -146,14 +159,15 @@ private:
   // \}
   /**
    *  Closes link when a proper number of successive transmissions have failed
-   * \param hdr the header
+   * \param reason the reason why the MPDU was dropped
+   * \param mpdu the dropped MPDU
    */
-  void TxError (WifiMacHeader const &hdr);
+  void TxError (WifiMacDropReason reason, Ptr<const WifiMacQueueItem> mpdu);
   /**
    * Transmit OK function
-   * \param hdr the header
+   * \param mpdu the MPDU
    */
-  void TxOk (WifiMacHeader const &hdr);
+  void TxOk (Ptr <const WifiMacQueueItem> mpdu);
   // BCA functionality
   /**
    * Set beacon shift function

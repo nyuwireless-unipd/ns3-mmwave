@@ -313,18 +313,6 @@ MgtProbeResponseHeader::GetHeOperation (void) const
 }
 
 void
-MgtProbeResponseHeader::SetCfParameterSet (CfParameterSet cfParameterSet)
-{
-  m_cfParameterSet = cfParameterSet;
-}
-
-CfParameterSet
-MgtProbeResponseHeader::GetCfParameterSet (void) const
-{
-  return m_cfParameterSet;
-}
-
-void
 MgtProbeResponseHeader::SetSsid (Ssid ssid)
 {
   m_ssid = ssid;
@@ -372,10 +360,22 @@ MgtProbeResponseHeader::SetEdcaParameterSet (EdcaParameterSet edcaParameters)
   m_edcaParameterSet = edcaParameters;
 }
 
+void
+MgtProbeResponseHeader::SetMuEdcaParameterSet (MuEdcaParameterSet muEdcaParameters)
+{
+  m_muEdcaParameterSet = muEdcaParameters;
+}
+
 EdcaParameterSet
 MgtProbeResponseHeader::GetEdcaParameterSet (void) const
 {
   return m_edcaParameterSet;
+}
+
+MuEdcaParameterSet
+MgtProbeResponseHeader::GetMuEdcaParameterSet (void) const
+{
+  return m_muEdcaParameterSet;
 }
 
 TypeId
@@ -404,7 +404,6 @@ MgtProbeResponseHeader::GetSerializedSize (void) const
   size += m_capability.GetSerializedSize ();
   size += m_ssid.GetSerializedSize ();
   size += m_rates.GetSerializedSize ();
-  size += m_cfParameterSet.GetSerializedSize ();
   size += m_dsssParameterSet.GetSerializedSize ();
   size += m_erpInformation.GetSerializedSize ();
   size += m_rates.extended.GetSerializedSize ();
@@ -416,6 +415,7 @@ MgtProbeResponseHeader::GetSerializedSize (void) const
   size += m_vhtOperation.GetSerializedSize ();
   size += m_heCapability.GetSerializedSize ();
   size += m_heOperation.GetSerializedSize ();
+  size += m_muEdcaParameterSet.GetSerializedSize ();
   return size;
 }
 
@@ -452,7 +452,6 @@ MgtProbeResponseHeader::Serialize (Buffer::Iterator start) const
   i = m_capability.Serialize (i);
   i = m_ssid.Serialize (i);
   i = m_rates.Serialize (i);
-  i = m_cfParameterSet.Serialize (i);
   i = m_dsssParameterSet.Serialize (i);
   i = m_erpInformation.Serialize (i);
   i = m_rates.extended.Serialize (i);
@@ -464,6 +463,7 @@ MgtProbeResponseHeader::Serialize (Buffer::Iterator start) const
   i = m_vhtOperation.Serialize (i);
   i = m_heCapability.Serialize (i);
   i = m_heOperation.Serialize (i);
+  i = m_muEdcaParameterSet.Serialize (i);
 }
 
 uint32_t
@@ -476,7 +476,6 @@ MgtProbeResponseHeader::Deserialize (Buffer::Iterator start)
   i = m_capability.Deserialize (i);
   i = m_ssid.Deserialize (i);
   i = m_rates.Deserialize (i);
-  i = m_cfParameterSet.DeserializeIfPresent (i);
   i = m_dsssParameterSet.DeserializeIfPresent (i);
   i = m_erpInformation.DeserializeIfPresent (i);
   i = m_rates.extended.DeserializeIfPresent (i);
@@ -488,6 +487,7 @@ MgtProbeResponseHeader::Deserialize (Buffer::Iterator start)
   i = m_vhtOperation.DeserializeIfPresent (i);
   i = m_heCapability.DeserializeIfPresent (i);
   i = m_heOperation.DeserializeIfPresent (i);
+  i = m_muEdcaParameterSet.DeserializeIfPresent (i);
   return i.GetDistanceFrom (start);
 }
 
@@ -1060,10 +1060,22 @@ MgtAssocResponseHeader::SetEdcaParameterSet (EdcaParameterSet edcaparameters)
   m_edcaParameterSet = edcaparameters;
 }
 
+void
+MgtAssocResponseHeader::SetMuEdcaParameterSet (MuEdcaParameterSet muEdcaParameters)
+{
+  m_muEdcaParameterSet = muEdcaParameters;
+}
+
 EdcaParameterSet
 MgtAssocResponseHeader::GetEdcaParameterSet (void) const
 {
   return m_edcaParameterSet;
+}
+
+MuEdcaParameterSet
+MgtAssocResponseHeader::GetMuEdcaParameterSet (void) const
+{
+  return m_muEdcaParameterSet;
 }
 
 TypeId
@@ -1101,6 +1113,7 @@ MgtAssocResponseHeader::GetSerializedSize (void) const
   size += m_vhtOperation.GetSerializedSize ();
   size += m_heCapability.GetSerializedSize ();
   size += m_heOperation.GetSerializedSize ();
+  size += m_muEdcaParameterSet.GetSerializedSize ();
   return size;
 }
 
@@ -1138,6 +1151,7 @@ MgtAssocResponseHeader::Serialize (Buffer::Iterator start) const
   i = m_vhtOperation.Serialize (i);
   i = m_heCapability.Serialize (i);
   i = m_heOperation.Serialize (i);
+  i = m_muEdcaParameterSet.Serialize (i);
 }
 
 uint32_t
@@ -1158,6 +1172,7 @@ MgtAssocResponseHeader::Deserialize (Buffer::Iterator start)
   i = m_vhtOperation.DeserializeIfPresent (i);
   i = m_heCapability.DeserializeIfPresent (i);
   i = m_heOperation.DeserializeIfPresent (i);
+  i = m_muEdcaParameterSet.DeserializeIfPresent (i);
   return i.GetDistanceFrom (start);
 }
 

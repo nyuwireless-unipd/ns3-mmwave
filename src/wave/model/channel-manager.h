@@ -21,7 +21,7 @@
 #include <vector>
 #include "ns3/object.h"
 #include "ns3/wifi-mode.h"
-#include "ns3/wifi-preamble.h"
+#include "ns3/wifi-phy-common.h"
 
 namespace ns3 {
 
@@ -131,6 +131,9 @@ public:
    * \return the tx power level for management frames
    */
   uint32_t GetManagementPowerLevel (uint32_t channelNumber);
+
+protected:
+  virtual void DoDispose (void);
 
 private:
   /// 1609.4-2010 Annex H

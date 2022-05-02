@@ -74,7 +74,7 @@ protected:
   double m_tolerance;                  ///< tolerance (in dB)
 
 private:
-  virtual void DoRun (void);
+  void DoRun (void) override;
   /**
    * Interpolate PSD values for indexes between provided start and stop and append to provided
    * vector.
@@ -113,7 +113,6 @@ WifiOfdmMaskSlopesTestCase::WifiOfdmMaskSlopesTestCase (const char* str, WifiPhy
       freq = 2412;
     // no break on purpose
     case WIFI_PHY_STANDARD_80211a:
-    case WIFI_PHY_STANDARD_holland:
       NS_ASSERT (bw == 20);
       m_actualSpectrum = WifiSpectrumValueHelper::CreateOfdmTxPowerSpectralDensity (freq, bw, refTxPowerW, bw, -20.0, -28.0, outerBandMaximumRejection);
       break;
@@ -327,13 +326,6 @@ WifiTransmitMaskTestSuite::WifiTransmitMaskTestSuite ()
   maskSlopesRight.push_back (std::make_pair (161, -28.375)); // Outer band right (start)
   maskSlopesRight.push_back (std::make_pair (192, -40.0)); // Outer band right (stop)
   AddTestCase (new WifiOfdmMaskSlopesTestCase ("11a", WIFI_PHY_STANDARD_80211a, WIFI_PHY_BAND_5GHZ,
-                                               20, maskSlopesLeft, maskSlopesRight, tol),
-               TestCase::QUICK);
-
-  // 11a (holland)
-  NS_LOG_FUNCTION ("Check slopes for 11a (holland)");
-  // same slopes as 11a (same PHY layer)
-  AddTestCase (new WifiOfdmMaskSlopesTestCase ("11a (holland)", WIFI_PHY_STANDARD_holland, WIFI_PHY_BAND_5GHZ,
                                                20, maskSlopesLeft, maskSlopesRight, tol),
                TestCase::QUICK);
 
@@ -711,4 +703,7 @@ WifiTransmitMaskTestSuite::WifiTransmitMaskTestSuite ()
   AddTestCase (new WifiOfdmMaskSlopesTestCase ("11ax_5GHz 160MHz", WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ,
                                                160, maskSlopesLeft, maskSlopesRight, tol),
                TestCase::QUICK);
+
+  maskSlopesLeft.clear ();
+  maskSlopesRight.clear ();
 }

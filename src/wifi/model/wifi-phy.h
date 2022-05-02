@@ -22,19 +22,14 @@
 #ifndef WIFI_PHY_H
 #define WIFI_PHY_H
 
-#include "ns3/event-id.h"
 #include "ns3/error-model.h"
-#include "wifi-mpdu-type.h"
 #include "wifi-standards.h"
 #include "interference-helper.h"
 #include "wifi-phy-state-helper.h"
-#include "wifi-ppdu.h"
+#include "phy-entity.h"
+#include "wifi-phy-operating-channel.h"
 
 namespace ns3 {
-
-#define HE_PHY 125
-#define VHT_PHY 126
-#define HT_PHY 127
 
 class Channel;
 class NetDevice;
@@ -44,97 +39,6 @@ class FrameCaptureModel;
 class PreambleDetectionModel;
 class WifiRadioEnergyModel;
 class UniformRandomVariable;
-class WifiPsdu;
-
-/**
- * Enumeration of the possible reception failure reasons.
- */
-enum WifiPhyRxfailureReason
-{
-  UNKNOWN = 0,
-  UNSUPPORTED_SETTINGS,
-  CHANNEL_SWITCHING,
-  RXING,
-  TXING,
-  SLEEPING,
-  BUSY_DECODING_PREAMBLE,
-  PREAMBLE_DETECT_FAILURE,
-  RECEPTION_ABORTED_BY_TX,
-  L_SIG_FAILURE,
-  SIG_A_FAILURE,
-  PREAMBLE_DETECTION_PACKET_SWITCH,
-  FRAME_CAPTURE_PACKET_SWITCH,
-  OBSS_PD_CCA_RESET,
-  FILTERED
-};
-
-/**
-* \brief Stream insertion operator.
-*
-* \param os the stream
-* \param reason the failure reason
-* \returns a reference to the stream
-*/
-inline std::ostream& operator<< (std::ostream& os, WifiPhyRxfailureReason reason)
-{
-  switch (reason)
-    {
-    case UNSUPPORTED_SETTINGS:
-      return (os << "UNSUPPORTED_SETTINGS");
-    case CHANNEL_SWITCHING:
-      return (os << "CHANNEL_SWITCHING");
-    case RXING:
-      return (os << "RXING");
-    case TXING:
-      return (os << "TXING");
-    case SLEEPING:
-      return (os << "SLEEPING");
-    case BUSY_DECODING_PREAMBLE:
-      return (os << "BUSY_DECODING_PREAMBLE");
-    case PREAMBLE_DETECT_FAILURE:
-      return (os << "PREAMBLE_DETECT_FAILURE");
-    case RECEPTION_ABORTED_BY_TX:
-      return (os << "RECEPTION_ABORTED_BY_TX");
-    case L_SIG_FAILURE:
-      return (os << "L_SIG_FAILURE");
-    case SIG_A_FAILURE:
-      return (os << "SIG_A_FAILURE");
-    case PREAMBLE_DETECTION_PACKET_SWITCH:
-      return (os << "PREAMBLE_DETECTION_PACKET_SWITCH");
-    case FRAME_CAPTURE_PACKET_SWITCH:
-      return (os << "FRAME_CAPTURE_PACKET_SWITCH");
-    case OBSS_PD_CCA_RESET:
-      return (os << "OBSS_PD_CCA_RESET");
-    case FILTERED:
-      return (os << "FILTERED");
-    case UNKNOWN:
-    default:
-      NS_FATAL_ERROR ("Unknown reason");
-      return (os << "UNKNOWN");
-    }
-}
-
-
-/// SignalNoiseDbm structure
-struct SignalNoiseDbm
-{
-  double signal; ///< in dBm
-  double noise; ///< in dBm
-};
-
-/// MpduInfo structure
-struct MpduInfo
-{
-  MpduType type; ///< type
-  uint32_t mpduRefNumber; ///< MPDU ref number
-};
-
-/// Parameters for receive HE preamble
-struct HePreambleParameters
-{
-  double rssiW; ///< RSSI in W
-  uint8_t bssColor; ///< BSS color
-};
 
 /**
  * \brief 802.11 PHY layer model
@@ -144,6 +48,7 @@ struct HePreambleParameters
 class WifiPhy : public Object
 {
 public:
+  friend class PhyEntity;
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -153,19 +58,8 @@ public:
   WifiPhy ();
   virtual ~WifiPhy ();
 
-  /**
-   * A pair of a channel number and a WifiPhyBand
-   */
-  typedef std::pair<uint8_t, WifiPhyBand> ChannelNumberBandPair;
-  /**
-   * A pair of a ChannelNumberBandPair and a WifiPhyStandard
-   */
-  typedef std::pair<ChannelNumberBandPair, WifiPhyStandard> ChannelNumberStandardPair;
-  /**
-   * A pair of a center frequency (MHz) and a channel width (MHz)
-   */
-  typedef std::pair<uint16_t, uint16_t> FrequencyWidthPair;
-  
+  static const std::set<FrequencyChannelInfo> m_frequencyChannels;  //!< Available frequency channels
+
   /**
    * Return the WifiPhyStateHelper of this PHY
    *
@@ -208,37 +102,10 @@ public:
    * Start receiving the PHY preamble of a PPDU (i.e. the first bit of the preamble has arrived).
    *
    * \param ppdu the arriving PPDU
-   * \param rxPowersW the receive power in W per 20 MHz channel band
+   * \param rxPowersW the receive power in W per band
+   * \param rxDuration the duration of the PPDU
    */
-  void StartReceivePreamble (Ptr<WifiPpdu> ppdu, RxPowerWattPerChannelBand rxPowersW);
-
-  /**
-   * Start receiving the PHY header of a PPDU (i.e. after the end of receiving the preamble).
-   *
-   * \param event the event holding incoming PPDU's information
-   */
-  void StartReceiveHeader (Ptr<Event> event);
-
-  /**
-   * Continue receiving the PHY header of a PPDU (i.e. after the end of receiving the non-HT header part).
-   *
-   * \param event the event holding incoming PPDU's information
-   */
-  void ContinueReceiveHeader (Ptr<Event> event);
-
-  /**
-   * Start receiving the PSDU (i.e. the first symbol of the PSDU has arrived).
-   *
-   * \param event the event holding incoming PPDU's information
-   */
-  void StartReceivePayload (Ptr<Event> event);
-
-  /**
-   * The last symbol of the PPDU has arrived.
-   *
-   * \param event the event holding incoming PPDU's information
-   */
-  void EndReceive (Ptr<Event> event);
+  void StartReceivePreamble (Ptr<WifiPpdu> ppdu, RxPowerWattPerChannelBand& rxPowersW, Time rxDuration);
 
   /**
    * Reset PHY at the end of the packet under reception after it has failed the PHY header.
@@ -254,12 +121,28 @@ public:
   void EndReceiveInterBss (void);
 
   /**
-   * \param psdu the PSDU to send
+   * Get a WifiConstPsduMap from a PSDU and the TXVECTOR to use to send the PSDU.
+   * The STA-ID value is properly determined based on whether the given PSDU has
+   * to be transmitted as a DL or UL frame.
+   *
+   * \param psdu the given PSDU
+   * \param txVector the TXVECTOR to use to send the PSDU
+   * \return a WifiConstPsduMap built from the given PSDU and the given TXVECTOR
+   */
+  static WifiConstPsduMap GetWifiConstPsduMap (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector);
+
+  /**
+   * This function is a wrapper for the Send variant that accepts a WifiConstPsduMap
+   * as first argument. This function inserts the given PSDU in a WifiConstPsduMap
+   * along with a STA-ID value that is determined based on whether the given PSDU has
+   * to be transmitted as a DL or UL frame.
+   *
+   * \param psdu the PSDU to send (in a SU PPDU)
    * \param txVector the TXVECTOR that has TX parameters such as mode, the transmission mode to use to send
    *        this PSDU, and txPowerLevel, a power level to use to send the whole PPDU. The real transmission
    *        power is calculated as txPowerMin + txPowerLevel * (txPowerMax - txPowerMin) / nTxLevels
    */
-  void Send (Ptr<const WifiPsdu> psdu, WifiTxVector txVector);
+  void Send (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector);
   /**
    * \param psdus the PSDUs to send
    * \param txVector the TXVECTOR that has tx parameters such as mode, the transmission mode to use to send
@@ -348,8 +231,23 @@ public:
    *
    * \return the total amount of time this PHY will stay busy for the transmission of these bytes.
    */
-  static Time CalculateTxDuration (uint32_t size, WifiTxVector txVector, WifiPhyBand band,
+  static Time CalculateTxDuration (uint32_t size, const WifiTxVector& txVector, WifiPhyBand band,
                                    uint16_t staId = SU_STA_ID);
+  /**
+   * This function is a wrapper for the CalculateTxDuration variant that accepts a
+   * WifiConstPsduMap as first argument. This function inserts the given PSDU in a
+   * WifiConstPsduMap along with a STA-ID value that is determined based on whether
+   * the given PSDU has to be transmitted as a DL or UL frame, thus allowing to
+   * properly calculate the TX duration in case the PSDU has to be transmitted as
+   * an UL frame.
+   *
+   * \param psdu the PSDU to transmit
+   * \param txVector the TXVECTOR used for the transmission of the PSDU
+   * \param band the frequency band
+   *
+   * \return the total amount of time this PHY will stay busy for the transmission of the PPDU
+   */
+  static Time CalculateTxDuration (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, WifiPhyBand band);
   /**
    * \param psduMap the PSDU(s) to transmit indexed by STA-ID
    * \param txVector the TXVECTOR used for the transmission of the PPDU
@@ -357,80 +255,18 @@ public:
    *
    * \return the total amount of time this PHY will stay busy for the transmission of the PPDU
    */
-  static Time CalculateTxDuration (WifiConstPsduMap psduMap, WifiTxVector txVector, WifiPhyBand band);
+  static Time CalculateTxDuration (WifiConstPsduMap psduMap, const WifiTxVector& txVector, WifiPhyBand band);
 
   /**
    * \param txVector the transmission parameters used for this packet
    *
    * \return the total amount of time this PHY will stay busy for the transmission of the PHY preamble and PHY header.
    */
-  static Time CalculatePhyPreambleAndHeaderDuration (WifiTxVector txVector);
+  static Time CalculatePhyPreambleAndHeaderDuration (const WifiTxVector& txVector);
   /**
-   *
    * \return the preamble detection duration, which is the time correlation needs to detect the start of an incoming frame.
    */
   static Time GetPreambleDetectionDuration (void);
-  /**
-   * \param txVector the transmission parameters used for this packet
-   *
-   * \return the training symbol duration
-   */
-  static Time GetPhyTrainingSymbolDuration (WifiTxVector txVector);
-  /**
-   * \return the WifiMode used for the transmission of the HT-SIG and the HT training fields
-   *         in Mixed Format and Greenfield format PHY header
-   */
-  static WifiMode GetHtPhyHeaderMode ();
-  /**
-   * \return the WifiMode used for the transmission of the VHT-STF, VHT-LTF and VHT-SIG-B fields
-   */
-  static WifiMode GetVhtPhyHeaderMode ();
-  /**
-   * \return the WifiMode used for the transmission of the HE-STF, HE-LTF and HE-SIG-B fields
-   */
-  static WifiMode GetHePhyHeaderMode ();
-  /**
-   * \param preamble the type of preamble
-   *
-   * \return the duration of the HT-SIG in Mixed Format and Greenfield format PHY header
-   */
-  static Time GetPhyHtSigHeaderDuration (WifiPreamble preamble);
-  /**
-   * \param preamble the type of preamble
-   *
-   * \return the duration of the SIG-A1 in PHY header
-   */
-  static Time GetPhySigA1Duration (WifiPreamble preamble);
-  /**
-   * \param preamble the type of preamble
-   *
-   * \return the duration of the SIG-A2 in PHY header
-   */
-  static Time GetPhySigA2Duration (WifiPreamble preamble);
-  /**
-   * \param preamble the type of preamble
-   *
-   * \return the duration of the SIG-B in PHY header
-   */
-  static Time GetPhySigBDuration (WifiPreamble preamble);
-  /**
-   * \param txVector the transmission parameters used for this packet
-   *
-   * \return the WifiMode used for the transmission of the PHY header
-   */
-  static WifiMode GetPhyHeaderMode (WifiTxVector txVector);
-  /**
-   * \param txVector the transmission parameters used for this packet
-   *
-   * \return the duration of the PHY header
-   */
-  static Time GetPhyHeaderDuration (WifiTxVector txVector);
-  /**
-   * \param txVector the transmission parameters used for this packet
-   *
-   * \return the duration of the PHY preamble
-   */
-  static Time GetPhyPreambleDuration (WifiTxVector txVector);
   /**
    * \param size the number of bytes in the packet to send
    * \param txVector the TXVECTOR used for the transmission of this packet
@@ -440,7 +276,7 @@ public:
    *
    * \return the duration of the PSDU
    */
-  static Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, WifiPhyBand band, MpduType mpdutype = NORMAL_MPDU,
+  static Time GetPayloadDuration (uint32_t size, const WifiTxVector& txVector, WifiPhyBand band, MpduType mpdutype = NORMAL_MPDU,
                                   uint16_t staId = SU_STA_ID);
   /**
    * \param size the number of bytes in the packet to send
@@ -458,7 +294,7 @@ public:
    *
    * \return the duration of the PSDU
    */
-  static Time GetPayloadDuration (uint32_t size, WifiTxVector txVector, WifiPhyBand band, MpduType mpdutype,
+  static Time GetPayloadDuration (uint32_t size, const WifiTxVector& txVector, WifiPhyBand band, MpduType mpdutype,
                                   bool incFlag, uint32_t &totalAmpduSize, double &totalAmpduNumSymbols,
                                   uint16_t staId);
   /**
@@ -466,46 +302,33 @@ public:
    *
    * \return the duration until the start of the packet
    */
-  static Time GetStartOfPacketDuration (WifiTxVector txVector);
+  static Time GetStartOfPacketDuration (const WifiTxVector& txVector);
 
   /**
-   * The WifiPhy::GetNModes() and WifiPhy::GetMode() methods are used
+   * The WifiPhy::GetModeList() method is used
    * (e.g., by a WifiRemoteStationManager) to determine the set of
-   * transmission/reception modes that this WifiPhy(-derived class)
-   * can support - a set of WifiMode objects which we call the
-   * DeviceRateSet, and which is stored as WifiPhy::m_deviceRateSet.
+   * transmission/reception (non-MCS) modes that this WifiPhy(-derived class)
+   * can support - a set of modes which is stored by each non-HT PHY.
    *
-   * It is important to note that the DeviceRateSet is a superset (not
+   * It is important to note that this list is a superset (not
    * necessarily proper) of the OperationalRateSet (which is
    * logically, if not actually, a property of the associated
    * WifiRemoteStationManager), which itself is a superset (again, not
    * necessarily proper) of the BSSBasicRateSet.
    *
-   * \return the number of transmission modes supported by this PHY.
-   *
-   * \sa WifiPhy::GetMode()
+   * \return the list of supported (non-MCS) modes.
    */
-  uint8_t GetNModes (void) const;
+  std::list<WifiMode> GetModeList (void) const;
   /**
-   * The WifiPhy::GetNModes() and WifiPhy::GetMode() methods are used
-   * (e.g., by a WifiRemoteStationManager) to determine the set of
-   * transmission/reception modes that this WifiPhy(-derived class)
-   * can support - a set of WifiMode objects which we call the
-   * DeviceRateSet, and which is stored as WifiPhy::m_deviceRateSet.
+   * Get the list of supported (non-MCS) modes for the given modulation class (i.e.
+   * corresponding to a given PHY entity).
    *
-   * It is important to note that the DeviceRateSet is a superset (not
-   * necessarily proper) of the OperationalRateSet (which is
-   * logically, if not actually, a property of the associated
-   * WifiRemoteStationManager), which itself is a superset (again, not
-   * necessarily proper) of the BSSBasicRateSet.
+   * \param modulation the modulation class
+   * \return the list of supported (non-MCS) modes for the given modulation class.
    *
-   * \param mode index in array of supported modes
-   *
-   * \return the mode whose index is specified.
-   *
-   * \sa WifiPhy::GetNModes()
+   * \see GetModeList (void)
    */
-  WifiMode GetMode (uint8_t mode) const;
+  std::list<WifiMode> GetModeList (WifiModulationClass modulation) const;
   /**
    * Check if the given WifiMode is supported by the PHY.
    *
@@ -516,24 +339,23 @@ public:
    */
   bool IsModeSupported (WifiMode mode) const;
   /**
-   * Check if the given WifiMode is supported by the PHY.
+   * Get the default WifiMode supported by the PHY.
+   * This is the first mode to be added (i.e. the lowest one
+   * over all supported PHY entities).
    *
-   * \param mcs the wifi mode to check
-   *
-   * \return true if the given mode is supported,
-   *         false otherwise
+   * \return the default WifiMode
    */
-  bool IsMcsSupported (WifiMode mcs) const;
+  WifiMode GetDefaultMode (void) const;
   /**
    * Check if the given MCS of the given modulation class is supported by the PHY.
    *
-   * \param mc the modulation class
+   * \param modulation the modulation class
    * \param mcs the MCS value
    *
    * \return true if the given mode is supported,
    *         false otherwise
    */
-  bool IsMcsSupported (WifiModulationClass mc, uint8_t mcs) const;
+  bool IsMcsSupported (WifiModulationClass modulation, uint8_t mcs) const;
 
   /**
    * \param txVector the transmission vector
@@ -542,7 +364,7 @@ public:
    * \return the minimum SNR which is required to achieve
    *          the requested BER for the specified transmission vector. (W/W)
    */
-  double CalculateSnr (WifiTxVector txVector, double ber) const;
+  double CalculateSnr (const WifiTxVector& txVector, double ber) const;
 
   /**
    * Set the Short Interframe Space (SIFS) for this PHY.
@@ -594,49 +416,49 @@ public:
   Time GetBlockAckTxTime (void) const;
 
   /**
-  * The WifiPhy::NBssMembershipSelectors() method is used
-  * (e.g., by a WifiRemoteStationManager) to determine the set of
-  * transmission/reception modes that this WifiPhy(-derived class)
-  * can support - a set of WifiMode objects which we call the
-  * BssMembershipSelectorSet, and which is stored as WifiPhy::m_bssMembershipSelectorSet.
-  *
-  * \return the membership selector whose index is specified.
-  */
-  uint8_t GetNBssMembershipSelectors (void) const;
+   * Get the maximum PSDU size in bytes for the given modulation class.
+   *
+   * \param modulation the modulation class
+   * \return the maximum PSDU size in bytes for the given modulation class
+   */
+  static uint32_t GetMaxPsduSize (WifiModulationClass modulation);
+
   /**
   * The WifiPhy::BssMembershipSelector() method is used
   * (e.g., by a WifiRemoteStationManager) to determine the set of
   * transmission/reception modes that this WifiPhy(-derived class)
   * can support - a set of WifiMode objects which we call the
-  * BssMembershipSelectorSet, and which is stored as WifiPhy::m_bssMembershipSelectorSet.
+  * BssMembershipSelectorSet, and which is stored inside HT PHY (and above)
+  * instances.
   *
-  * \param selector index in array of supported memberships
-  *
-  * \return the membership selector whose index is specified.
+  * \return the list of BSS membership selectors.
   */
-  uint8_t GetBssMembershipSelector (uint8_t selector) const;
+  std::list<uint8_t> GetBssMembershipSelectorList (void) const;
   /**
-   * The WifiPhy::GetNMcs() method is used
-   * (e.g., by a WifiRemoteStationManager) to determine the set of
-   * transmission/reception MCS indexes that this WifiPhy(-derived class)
-   * can support - a set of MCS indexes which we call the
-   * DeviceMcsSet, and which is stored as WifiPhy::m_deviceMcsSet.
+   * \return the number of supported MCSs.
    *
-   * \return the MCS index whose index is specified.
+   * \see GetMcsList (void)
    */
-  uint8_t GetNMcs (void) const;
+  uint16_t GetNMcs (void) const;
   /**
-   * The WifiPhy::GetMcs() method is used
+   * The WifiPhy::GetMcsList() method is used
    * (e.g., by a WifiRemoteStationManager) to determine the set of
-   * transmission/reception MCS indexes that this WifiPhy(-derived class)
-   * can support - a set of MCS indexes which we call the
-   * DeviceMcsSet, and which is stored as WifiPhy::m_deviceMcsSet.
+   * transmission/reception MCS indices that this WifiPhy(-derived class)
+   * can support - a set of MCS indices which is stored by each HT PHY (and above).
    *
-   * \param mcs index in array of supported MCS
-   *
-   * \return the MCS index whose index is specified.
+   * \return the list of supported MCSs.
    */
-  WifiMode GetMcs (uint8_t mcs) const;
+  std::list<WifiMode> GetMcsList (void) const;
+  /**
+   * Get the list of supported MCSs for the given modulation class (i.e.
+   * corresponding to a given PHY entity).
+   *
+   * \param modulation the modulation class
+   * \return the list of supported MCSs for the given modulation class.
+   *
+   * \see GetMcsList (void)
+   */
+  std::list<WifiMode> GetMcsList (WifiModulationClass modulation) const;
   /**
    * Get the WifiMode object corresponding to the given MCS of the given
    * modulation class.
@@ -648,36 +470,6 @@ public:
    *         modulation class
    */
   WifiMode GetMcs (WifiModulationClass modulation, uint8_t mcs) const;
-  /**
-   * Get the WifiMode object corresponding to the given MCS of the
-   * HT modulation class.
-   *
-   * \param mcs the MCS value
-   *
-   * \return the WifiMode object corresponding to the given MCS of the
-   *         HT modulation class
-   */
-  static WifiMode GetHtMcs (uint8_t mcs);
-  /**
-   * Get the WifiMode object corresponding to the given MCS of the
-   * VHT modulation class.
-   *
-   * \param mcs the MCS value
-   *
-   * \return the WifiMode object corresponding to the given MCS of the
-   *         VHT modulation class
-   */
-  static WifiMode GetVhtMcs (uint8_t mcs);
-  /**
-   * Get the WifiMode object corresponding to the given MCS of the
-   * HE modulation class.
-   *
-   * \param mcs the MCS value
-   *
-   * \return the WifiMode object corresponding to the given MCS of the
-   *         HE modulation class
-   */
-  static WifiMode GetHeMcs (uint8_t mcs);
 
   /**
    * \brief Set channel number.
@@ -686,7 +478,17 @@ public:
    *
    * where Starting channel frequency is standard-dependent,
    * as defined in (Section 18.3.8.4.2 "Channel numbering"; IEEE Std 802.11-2012).
-   * This method may fail to take action if the PHY model determines that
+   *
+   * If the operating channel for this object has not been set yet, the given
+   * channel number is saved and will be used, along with the center frequency and
+   * width that have been saved similarly, to set the operating channel when the
+   * standard and band are configured. Note that if center frequency and channel
+   * number are both 0 when the standard and band are configured, a default channel
+   * (of the configured width, if any, or the default width for the current standard
+   * and band, otherwise) is set.
+   * If the operating channel for this object has been already set, the specified
+   * channel number must uniquely identify a channel in the band being used. If so,
+   * this method may still fail to take action if the PHY model determines that
    * the channel number cannot be switched for some reason (e.g. sleep state)
    *
    * \param id the channel number
@@ -726,22 +528,11 @@ public:
   WifiPhyBand GetPhyBand (void) const;
 
   /**
-   * Add a channel definition to the WifiPhy. The channelNumber, PHY
-   * band and PHY standard informations may then be used to lookup a
-   * pair (frequency, channelWidth).
+   * Get a const reference to the operating channel
    *
-   * If the channel is not already defined for the standard, the method
-   * should return true; otherwise false.
-   *
-   * \param channelNumber the channel number to define
-   * \param band the PHY band which the channel belongs to
-   * \param standard the applicable WifiPhyStandard
-   * \param frequency the frequency (MHz)
-   * \param channelWidth the channel width (MHz)
-   *
-   * \return true if the channel definition succeeded
+   * \return a const reference to the operating channel
    */
-  bool DefineChannelNumber (uint8_t channelNumber, WifiPhyBand band, WifiPhyStandard standard, uint16_t frequency, uint16_t channelWidth);
+  const WifiPhyOperatingChannel& GetOperatingChannel (void) const;
 
   /**
    * Return the Channel this WifiPhy is connected to.
@@ -749,550 +540,6 @@ public:
    * \return the Channel this WifiPhy is connected to
    */
   virtual Ptr<Channel> GetChannel (void) const = 0;
-
-  /**
-   * Return a WifiMode for DSSS at 1Mbps.
-   *
-   * \return a WifiMode for DSSS at 1Mbps
-   */
-  static WifiMode GetDsssRate1Mbps ();
-  /**
-   * Return a WifiMode for DSSS at 2Mbps.
-   *
-   * \return a WifiMode for DSSS at 2Mbps
-   */
-  static WifiMode GetDsssRate2Mbps ();
-  /**
-   * Return a WifiMode for DSSS at 5.5Mbps.
-   *
-   * \return a WifiMode for DSSS at 5.5Mbps
-   */
-  static WifiMode GetDsssRate5_5Mbps ();
-  /**
-   * Return a WifiMode for DSSS at 11Mbps.
-   *
-   * \return a WifiMode for DSSS at 11Mbps
-   */
-  static WifiMode GetDsssRate11Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 6Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 6Mbps
-   */
-  static WifiMode GetErpOfdmRate6Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 9Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 9Mbps
-   */
-  static WifiMode GetErpOfdmRate9Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 12Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 12Mbps
-   */
-  static WifiMode GetErpOfdmRate12Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 18Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 18Mbps
-   */
-  static WifiMode GetErpOfdmRate18Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 24Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 24Mbps
-   */
-  static WifiMode GetErpOfdmRate24Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 36Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 36Mbps
-   */
-  static WifiMode GetErpOfdmRate36Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 48Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 48Mbps
-   */
-  static WifiMode GetErpOfdmRate48Mbps ();
-  /**
-   * Return a WifiMode for ERP-OFDM at 54Mbps.
-   *
-   * \return a WifiMode for ERP-OFDM at 54Mbps
-   */
-  static WifiMode GetErpOfdmRate54Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 6Mbps.
-   *
-   * \return a WifiMode for OFDM at 6Mbps
-   */
-  static WifiMode GetOfdmRate6Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 9Mbps.
-   *
-   * \return a WifiMode for OFDM at 9Mbps
-   */
-  static WifiMode GetOfdmRate9Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 12Mbps.
-   *
-   * \return a WifiMode for OFDM at 12Mbps
-   */
-  static WifiMode GetOfdmRate12Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 18Mbps.
-   *
-   * \return a WifiMode for OFDM at 18Mbps
-   */
-  static WifiMode GetOfdmRate18Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 24Mbps.
-   *
-   * \return a WifiMode for OFDM at 24Mbps
-   */
-  static WifiMode GetOfdmRate24Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 36Mbps.
-   *
-   * \return a WifiMode for OFDM at 36Mbps
-   */
-  static WifiMode GetOfdmRate36Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 48Mbps.
-   *
-   * \return a WifiMode for OFDM at 48Mbps
-   */
-  static WifiMode GetOfdmRate48Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 54Mbps.
-   *
-   * \return a WifiMode for OFDM at 54Mbps
-   */
-  static WifiMode GetOfdmRate54Mbps ();
-  /**
-   * Return a WifiMode for OFDM at 3Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 3Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate3MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 4.5Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 4.5Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate4_5MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 6Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 6Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate6MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 9Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 9Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate9MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 12Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 12Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate12MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 18Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 18Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate18MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 24Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 24Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate24MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 27Mbps with 10MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 27Mbps with 10MHz channel spacing
-   */
-  static WifiMode GetOfdmRate27MbpsBW10MHz ();
-  /**
-   * Return a WifiMode for OFDM at 1.5Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 1.5Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate1_5MbpsBW5MHz ();
-  /**
-   * Return a WifiMode for OFDM at 2.25Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 2.25Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate2_25MbpsBW5MHz ();
-  /**
-   * Return a WifiMode for OFDM at 3Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 3Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate3MbpsBW5MHz ();
-  /**
-   * Return a WifiMode for OFDM at 4.5Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 4.5Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate4_5MbpsBW5MHz ();
-  /**
-   * Return a WifiMode for OFDM at 6Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 6Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate6MbpsBW5MHz ();
-  /**
-   * Return a WifiMode for OFDM at 9Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 9Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate9MbpsBW5MHz ();
-  /**
-   * Return a WifiMode for OFDM at 12Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 12Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate12MbpsBW5MHz ();
-  /**
-   * Return a WifiMode for OFDM at 13.5Mbps with 5MHz channel spacing.
-   *
-   * \return a WifiMode for OFDM at 13.5Mbps with 5MHz channel spacing
-   */
-  static WifiMode GetOfdmRate13_5MbpsBW5MHz ();
-
-  /**
-   * Return MCS 0 from HT MCS values.
-   *
-   * \return MCS 0 from HT MCS values
-   */
-  static WifiMode GetHtMcs0 ();
-  /**
-   * Return MCS 1 from HT MCS values.
-   *
-   * \return MCS 1 from HT MCS values
-   */
-  static WifiMode GetHtMcs1 ();
-  /**
-   * Return MCS 2 from HT MCS values.
-   *
-   * \return MCS 2 from HT MCS values
-   */
-  static WifiMode GetHtMcs2 ();
-  /**
-   * Return MCS 3 from HT MCS values.
-   *
-   * \return MCS 3 from HT MCS values
-   */
-  static WifiMode GetHtMcs3 ();
-  /**
-   * Return MCS 4 from HT MCS values.
-   *
-   * \return MCS 4 from HT MCS values
-   */
-  static WifiMode GetHtMcs4 ();
-  /**
-   * Return MCS 5 from HT MCS values.
-   *
-   * \return MCS 5 from HT MCS values
-   */
-  static WifiMode GetHtMcs5 ();
-  /**
-   * Return MCS 6 from HT MCS values.
-   *
-   * \return MCS 6 from HT MCS values
-   */
-  static WifiMode GetHtMcs6 ();
-  /**
-   * Return MCS 7 from HT MCS values.
-   *
-   * \return MCS 7 from HT MCS values
-   */
-  static WifiMode GetHtMcs7 ();
-  /**
-   * Return MCS 8 from HT MCS values.
-   *
-   * \return MCS 8 from HT MCS values
-   */
-  static WifiMode GetHtMcs8 ();
-  /**
-   * Return MCS 9 from HT MCS values.
-   *
-   * \return MCS 9 from HT MCS values
-   */
-  static WifiMode GetHtMcs9 ();
-  /**
-   * Return MCS 10 from HT MCS values.
-   *
-   * \return MCS 10 from HT MCS values
-   */
-  static WifiMode GetHtMcs10 ();
-  /**
-   * Return MCS 11 from HT MCS values.
-   *
-   * \return MCS 11 from HT MCS values
-   */
-  static WifiMode GetHtMcs11 ();
-  /**
-   * Return MCS 12 from HT MCS values.
-   *
-   * \return MCS 12 from HT MCS values
-   */
-  static WifiMode GetHtMcs12 ();
-  /**
-   * Return MCS 13 from HT MCS values.
-   *
-   * \return MCS 13 from HT MCS values
-   */
-  static WifiMode GetHtMcs13 ();
-  /**
-   * Return MCS 14 from HT MCS values.
-   *
-   * \return MCS 14 from HT MCS values
-   */
-  static WifiMode GetHtMcs14 ();
-  /**
-   * Return MCS 15 from HT MCS values.
-   *
-   * \return MCS 15 from HT MCS values
-   */
-  static WifiMode GetHtMcs15 ();
-  /**
-   * Return MCS 16 from HT MCS values.
-   *
-   * \return MCS 16 from HT MCS values
-   */
-  static WifiMode GetHtMcs16 ();
-  /**
-   * Return MCS 17 from HT MCS values.
-   *
-   * \return MCS 17 from HT MCS values
-   */
-  static WifiMode GetHtMcs17 ();
-  /**
-   * Return MCS 18 from HT MCS values.
-   *
-   * \return MCS 18 from HT MCS values
-   */
-  static WifiMode GetHtMcs18 ();
-  /**
-   * Return MCS 19 from HT MCS values.
-   *
-   * \return MCS 19 from HT MCS values
-   */
-  static WifiMode GetHtMcs19 ();
-  /**
-   * Return MCS 20 from HT MCS values.
-   *
-   * \return MCS 20 from HT MCS values
-   */
-  static WifiMode GetHtMcs20 ();
-  /**
-   * Return MCS 21 from HT MCS values.
-   *
-   * \return MCS 21 from HT MCS values
-   */
-  static WifiMode GetHtMcs21 ();
-  /**
-   * Return MCS 22 from HT MCS values.
-   *
-   * \return MCS 22 from HT MCS values
-   */
-  static WifiMode GetHtMcs22 ();
-  /**
-   * Return MCS 23 from HT MCS values.
-   *
-   * \return MCS 23 from HT MCS values
-   */
-  static WifiMode GetHtMcs23 ();
-  /**
-   * Return MCS 24 from HT MCS values.
-   *
-   * \return MCS 24 from HT MCS values
-   */
-  static WifiMode GetHtMcs24 ();
-  /**
-   * Return MCS 25 from HT MCS values.
-   *
-   * \return MCS 25 from HT MCS values
-   */
-  static WifiMode GetHtMcs25 ();
-  /**
-   * Return MCS 26 from HT MCS values.
-   *
-   * \return MCS 26 from HT MCS values
-   */
-  static WifiMode GetHtMcs26 ();
-  /**
-   * Return MCS 27 from HT MCS values.
-   *
-   * \return MCS 27 from HT MCS values
-   */
-  static WifiMode GetHtMcs27 ();
-  /**
-   * Return MCS 28 from HT MCS values.
-   *
-   * \return MCS 28 from HT MCS values
-   */
-  static WifiMode GetHtMcs28 ();
-  /**
-   * Return MCS 29 from HT MCS values.
-   *
-   * \return MCS 29 from HT MCS values
-   */
-  static WifiMode GetHtMcs29 ();
-  /**
-   * Return MCS 30 from HT MCS values.
-   *
-   * \return MCS 30 from HT MCS values
-   */
-  static WifiMode GetHtMcs30 ();
-  /**
-   * Return MCS 31 from HT MCS values.
-   *
-   * \return MCS 31 from HT MCS values
-   */
-  static WifiMode GetHtMcs31 ();
-
-  /**
-   * Return MCS 0 from VHT MCS values.
-   *
-   * \return MCS 0 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs0 ();
-  /**
-   * Return MCS 1 from VHT MCS values.
-   *
-   * \return MCS 1 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs1 ();
-  /**
-   * Return MCS 2 from VHT MCS values.
-   *
-   * \return MCS 2 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs2 ();
-  /**
-   * Return MCS 3 from VHT MCS values.
-   *
-   * \return MCS 3 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs3 ();
-  /**
-   * Return MCS 4 from VHT MCS values.
-   *
-   * \return MCS 4 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs4 ();
-  /**
-   * Return MCS 5 from VHT MCS values.
-   *
-   * \return MCS 5 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs5 ();
-  /**
-   * Return MCS 6 from VHT MCS values.
-   *
-   * \return MCS 6 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs6 ();
-  /**
-   * Return MCS 7 from VHT MCS values.
-   *
-   * \return MCS 7 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs7 ();
-  /**
-   * Return MCS 8 from VHT MCS values.
-   *
-   * \return MCS 8 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs8 ();
-  /**
-   * Return MCS 9 from VHT MCS values.
-   *
-   * \return MCS 9 from VHT MCS values
-   */
-  static WifiMode GetVhtMcs9 ();
-
-  /**
-   * Return MCS 0 from HE MCS values.
-   *
-   * \return MCS 0 from HE MCS values
-   */
-  static WifiMode GetHeMcs0 ();
-  /**
-   * Return MCS 1 from HE MCS values.
-   *
-   * \return MCS 1 from HE MCS values
-   */
-  static WifiMode GetHeMcs1 ();
-  /**
-   * Return MCS 2 from HE MCS values.
-   *
-   * \return MCS 2 from HE MCS values
-   */
-  static WifiMode GetHeMcs2 ();
-  /**
-   * Return MCS 3 from HE MCS values.
-   *
-   * \return MCS 3 from HE MCS values
-   */
-  static WifiMode GetHeMcs3 ();
-  /**
-   * Return MCS 4 from HE MCS values.
-   *
-   * \return MCS 4 from HE MCS values
-   */
-  static WifiMode GetHeMcs4 ();
-  /**
-   * Return MCS 5 from HE MCS values.
-   *
-   * \return MCS 5 from HE MCS values
-   */
-  static WifiMode GetHeMcs5 ();
-  /**
-   * Return MCS 6 from HE MCS values.
-   *
-   * \return MCS 6 from HE MCS values
-   */
-  static WifiMode GetHeMcs6 ();
-  /**
-   * Return MCS 7 from HE MCS values.
-   *
-   * \return MCS 7 from HE MCS values
-   */
-  static WifiMode GetHeMcs7 ();
-  /**
-   * Return MCS 8 from HE MCS values.
-   *
-   * \return MCS 8 from HE MCS values
-   */
-  static WifiMode GetHeMcs8 ();
-  /**
-   * Return MCS 9 from HE MCS values.
-   *
-   * \return MCS 9 from HE MCS values
-   */
-  static WifiMode GetHeMcs9 ();
-  /**
-   * Return MCS 10 from HE MCS values.
-   *
-   * \return MCS 10 from HE MCS values
-   */
-  static WifiMode GetHeMcs10 ();
-  /**
-   * Return MCS 11 from HE MCS values.
-   *
-   * \return MCS 11 from HE MCS values
-   */
-  static WifiMode GetHeMcs11 ();
 
   /**
    * Public method used to fire a PhyTxBegin trace.
@@ -1323,7 +570,7 @@ public:
    * \param psdu the PSDU being transmitted
    * \param rxPowersW the receive power per channel band in Watts
    */
-  void NotifyRxBegin (Ptr<const WifiPsdu> psdu, RxPowerWattPerChannelBand rxPowersW);
+  void NotifyRxBegin (Ptr<const WifiPsdu> psdu, const RxPowerWattPerChannelBand& rxPowersW);
   /**
    * Public method used to fire a PhyRxEnd trace.
    * Implemented for encapsulation purposes.
@@ -1432,6 +679,14 @@ public:
                                             uint16_t staId);
 
   /**
+   * TracedCallback signature for Phy transmit events.
+   *
+   * \param packet the packet being transmitted
+   * \param txPowerW the transmit power in Watts
+   */
+  typedef void (* PhyTxBeginTracedCallback)(Ptr<const Packet> packet, double txPowerW);
+
+  /**
    * TracedCallback signature for PSDU transmit events.
    *
    * \param psduMap the PSDU map being transmitted
@@ -1441,19 +696,12 @@ public:
   typedef void (* PsduTxBeginCallback)(WifiConstPsduMap psduMap, WifiTxVector txVector, double txPowerW);
 
   /**
-   * Public method used to fire a EndOfHePreamble trace once both HE SIG fields have been received, as well as training fields.
+   * TracedCallback signature for PhyRxBegin trace source.
    *
-   * \param params the HE preamble parameters
+   * \param packet the packet being received
+   * \param rxPowersW the receive power per channel band in Watts
    */
-  void NotifyEndOfHePreamble (HePreambleParameters params);
-
-  /**
-   * TracedCallback signature for end of HE-SIG-A events.
-   *
-   *
-   * \param params the HE preamble parameters
-   */
-  typedef void (* EndOfHePreambleCallback)(HePreambleParameters params);
+  typedef void (* PhyRxBeginTracedCallback) (Ptr<const Packet> packet, RxPowerWattPerChannelBand rxPowersW);
 
   /**
    * TracedCallback signature for start of PSDU reception events.
@@ -1605,6 +853,29 @@ public:
   Ptr<MobilityModel> GetMobility (void) const;
 
   /**
+   * Set the operating channel according to the specified parameters. If this object
+   * has been already initialized, setting the operating channel involves a channel
+   * switch, which might be suppressed (e.g., if this object is in sleep mode) or
+   * delayed (e.g., if this object is transmitting a frame).
+   *
+   * \param number the channel number (use 0 to leave it unspecified)
+   * \param frequency the channel center frequency in MHz (use 0 to leave it unspecified)
+   * \param width the channel width in MHz (use 0 to leave it unspecified)
+   */
+  void SetOperatingChannel (uint8_t number, uint16_t frequency, uint16_t width);
+  /**
+   * If the operating channel for this object has not been set yet, the given
+   * center frequency is saved and will be used, along with the channel number and
+   * width that have been saved similarly, to set the operating channel when the
+   * standard and band are configured. Note that if center frequency and
+   * channel number are both 0 when the standard and band are configured, a default
+   * channel (of the configured width, if any, or the default width for the current
+   * standard and band, otherwise) is set.
+   * If the operating channel for this object has been already set, the specified
+   * center frequency must uniquely identify a channel in the band being used. If so,
+   * this method may still fail to take action if the PHY model determines that
+   * the operating channel cannot be switched for some reason (e.g. sleep state)
+   *
    * \param freq the operating center frequency (MHz) on this node.
    */
   virtual void SetFrequency (uint16_t freq);
@@ -1612,6 +883,13 @@ public:
    * \return the operating center frequency (MHz)
    */
   uint16_t GetFrequency (void) const;
+  /**
+   * Set the index of the primary 20 MHz channel (0 indicates the 20 MHz subchannel
+   * with the lowest center frequency).
+   *
+   * \param index the index of the primary 20 MHz channel
+   */
+  void SetPrimary20Index (uint8_t index);
   /**
    * \param antennas the number of antennas on this node.
    */
@@ -1691,6 +969,17 @@ public:
    */
   uint16_t GetChannelWidth (void) const;
   /**
+   * If the operating channel for this object has not been set yet, the given
+   * channel width is saved and will be used, along with the center frequency and
+   * channel number that have been saved similarly, to set the operating channel
+   * when the standard and band are configured. Note that if center frequency and
+   * channel number are both 0 when the standard and band are configured, a default
+   * channel (of the configured width, if any, or the default width for the current
+   * standard and band, otherwise) is set.
+   * Do not call this method when the standard and band of this object have been
+   * already configured, because it cannot uniquely identify a channel in the band
+   * being used.
+   *
    * \param channelWidth the channel width (in MHz)
    */
   virtual void SetChannelWidth (uint16_t channelWidth);
@@ -1722,12 +1011,14 @@ public:
    */
   void ResetCca (bool powerRestricted, double txPowerMaxSiso = 0, double txPowerMaxMimo = 0);
   /**
-   * Compute the transmit power (in dBm) for the next transmission.
+   * Compute the transmit power for the next transmission.
+   * The returned power will satisfy the power density constraints
+   * after addition of antenna gain.
    *
-   * \param txVector the TXVECTOR
+   * \param ppdu the PPDU to transmit
    * \return the transmit power in dBm for the next transmission
    */
-  double GetTxPowerForTransmission (WifiTxVector txVector) const;
+  double GetTxPowerForTransmission (Ptr<const WifiPpdu> ppdu) const;
   /**
    * Notify the PHY that an access to the channel was requested.
    * This is typically called by the channel access manager to
@@ -1738,47 +1029,116 @@ public:
   void NotifyChannelAccessRequested (void);
 
 
+  /**
+   * \param bandWidth the width (MHz) of the band used for the OFDMA transmission. Must be
+   *                  a multiple of 20 MHz
+   * \param guardBandwidth width of the guard band (MHz)
+   * \param range the subcarrier range of the HE RU
+   * \param bandIndex the index (starting at 0) of the band within the operating channel
+   * \return the converted subcarriers
+   *
+   * This is a helper function to convert HE RU subcarriers, which are relative to the center frequency subcarrier, to the indexes used by the Spectrum model.
+   */
+  virtual WifiSpectrumBand ConvertHeRuSubcarriers (uint16_t bandWidth, uint16_t guardBandwidth,
+                                                   HeRu::SubcarrierRange range, uint8_t bandIndex = 0) const;
+
+  /**
+   * Add the PHY entity to the map of __implemented__ PHY entities for the
+   * given modulation class.
+   * Through this method, child classes can add their own PHY entities in
+   * a static manner.
+   *
+   * \param modulation the modulation class
+   * \param phyEntity the PHY entity
+   */
+  static void AddStaticPhyEntity (WifiModulationClass modulation, Ptr<PhyEntity> phyEntity);
+
+  /**
+   * Get the __implemented__ PHY entity corresponding to the modulation class.
+   * This is used to compute the different amendment-specific parameters within
+   * calling static methods.
+   *
+   * \param modulation the modulation class
+   * \return the pointer to the static implemented PHY entity
+   */
+  static const Ptr<const PhyEntity> GetStaticPhyEntity (WifiModulationClass modulation);
+
+  /**
+   * Get the supported PHY entity corresponding to the modulation class, for
+   * the WifiPhy instance.
+   *
+   * \param modulation the modulation class
+   * \return the pointer to the supported PHY entity
+   */
+  Ptr<PhyEntity> GetPhyEntity (WifiModulationClass modulation) const;
+
+  /**
+   * \return the UID of the previously received PPDU (reset to UINT64_MAX upon transmission)
+   */
+  uint64_t GetPreviouslyRxPpduUid (void) const;
+
+  /**
+   * \param currentChannelWidth channel width of the current transmission (MHz)
+   * \return the width of the guard band (MHz)
+   *
+   * Note: in order to properly model out of band transmissions for OFDM, the guard
+   * band has been configured so as to expand the modeled spectrum up to the
+   * outermost referenced point in "Transmit spectrum mask" sections' PSDs of
+   * each PHY specification of 802.11-2016 standard. It thus ultimately corresponds
+   * to the current channel bandwidth (which can be different from devices max
+   * channel width).
+   *
+   * This method is only relevant for SpectrumWifiPhy.
+   */
+  virtual uint16_t GetGuardBandwidth (uint16_t currentChannelWidth) const = 0;
+  /**
+   * \return a tuple containing the minimum rejection (in dBr) for the inner band,
+   *                            the minimum rejection (in dBr) for the outer band, and
+   *                            the maximum rejection (in dBr) for the outer band
+   *                            for the transmit spectrum mask.
+   *
+   * This method is only relevant for SpectrumWifiPhy.
+   */
+  virtual std::tuple<double, double, double> GetTxMaskRejectionParams (void) const = 0;
+
 protected:
-  // Inherited
-  virtual void DoInitialize (void);
   virtual void DoDispose (void);
 
   /**
-   * The default implementation does nothing and returns true.  This method
-   * is typically called internally by SetChannelNumber ().
-   *
-   * \brief Perform any actions necessary when user changes channel number
-   * \param id channel number to try to switch to
-   * \return true if WifiPhy can actually change the number; false if not
-   * \see SetChannelNumber
+   * Reset data upon end of TX or RX
    */
-  bool DoChannelSwitch (uint8_t id);
+  void Reset (void);
+
   /**
-   * The default implementation does nothing and returns true.  This method
-   * is typically called internally by SetFrequency ().
+   * Perform any actions necessary when user changes operating channel after
+   * initialization.
    *
-   * \brief Perform any actions necessary when user changes frequency
-   * \param frequency frequency to try to switch to in MHz
-   * \return true if WifiPhy can actually change the frequency; false if not
-   * \see SetFrequency
+   * \return zero if the PHY can immediately switch channel, a positive value
+   *         indicating the amount of time to wait until the channel switch can
+   *         be performed or a negative value indicating that channel switch is
+   *         currently not possible (i.e., the radio is in sleep mode)
    */
-  bool DoFrequencySwitch (uint16_t frequency);
+  Time DoChannelSwitch (void);
 
   /**
    * Check if PHY state should move to CCA busy state based on current
    * state of interference tracker.  In this model, CCA becomes busy when
    * the aggregation of all signals as tracked by the InterferenceHelper
    * class is higher than the CcaEdThreshold
+   *
+   * \param channelWidth the channel width in MHz used for RSSI measurement
    */
-  void SwitchMaybeToCcaBusy (void);
+  void SwitchMaybeToCcaBusy (uint16_t channelWidth);
 
   /**
-   * Return the STA ID that has been assigned to the station this PHY belongs to.
-   * This is typically called for MU PPDUs, in order to pick the correct PSDU.
+   * Return the channel width used to measure the RSSI.
+   * This corresponds to the primary channel unless it corresponds to the
+   * HE TB PPDU solicited by the AP.
    *
-   * \return the STA ID
+   * \param ppdu the PPDU that is being received
+   * \return the channel width (in MHz) used for RSSI measurement
    */
-  virtual uint16_t GetStaId (void) const;
+  uint16_t GetMeasurementChannelWidth (const Ptr<const WifiPpdu> ppdu) const;
 
   /**
    * Get the start band index and the stop band index for a given band
@@ -1791,39 +1151,66 @@ protected:
   virtual WifiSpectrumBand GetBand (uint16_t bandWidth, uint8_t bandIndex = 0);
 
   /**
-   * \param channelWidth the total channel width (MHz) used for the OFDMA transmission
-   * \param range the subcarrier range of the HE RU
-   * \return the converted subcarriers
+   * If the operating channel width is a multiple of 20 MHz, return the start
+   * band index and the stop band index for the primary channel of the given
+   * bandwidth (which must be a multiple of 20 MHz and not exceed the operating
+   * channel width). Otherwise, this call is equivalent to GetBand with
+   * <i>bandIndex</i> equal to zero.
    *
-   * This is a helper function to convert HE RU subcarriers, which are relative to the center frequency subcarrier, to the indexes used by the Spectrum model.
+   * \param bandWidth the width of the band to be returned (MHz)
+   *
+   * \return a pair of start and stop indexes that defines the band
    */
-  virtual WifiSpectrumBand ConvertHeRuSubcarriers (uint16_t channelWidth, HeRu::SubcarrierRange range) const;
+  WifiSpectrumBand GetPrimaryBand (uint16_t bandWidth);
 
-  InterferenceHelper m_interference;   //!< Pointer to InterferenceHelper
+  /**
+   * Add the PHY entity to the map of supported PHY entities for the
+   * given modulation class for the WifiPhy instance.
+   * This is a wrapper method used to check that the PHY entity is
+   * in the static map of implemented PHY entities (\see m_staticPhyEntities).
+   * In addition, child classes can add their own PHY entities.
+   *
+   * \param modulation the modulation class
+   * \param phyEntity the PHY entity
+   */
+  void AddPhyEntity (WifiModulationClass modulation, Ptr<PhyEntity> phyEntity);
+
+  InterferenceHelper m_interference;   //!< the class handling interference computations
   Ptr<UniformRandomVariable> m_random; //!< Provides uniform random variables.
   Ptr<WifiPhyStateHelper> m_state;     //!< Pointer to WifiPhyStateHelper
 
   uint32_t m_txMpduReferenceNumber;    //!< A-MPDU reference number to identify all transmitted subframes belonging to the same received A-MPDU
   uint32_t m_rxMpduReferenceNumber;    //!< A-MPDU reference number to identify all received subframes belonging to the same received A-MPDU
 
-  EventId m_endRxEvent;                //!< the end of receive event
   EventId m_endPhyRxEvent;             //!< the end of PHY receive event
-  EventId m_endPreambleDetectionEvent; //!< the end of preamble detection event
-
   EventId m_endTxEvent;                //!< the end of transmit event
 
-private:
+  Ptr<Event> m_currentEvent; //!< Hold the current event
+  std::map <std::pair<uint64_t /* UID*/, WifiPreamble>, Ptr<Event> > m_currentPreambleEvents; //!< store event associated to a PPDU (that has a unique ID and preamble combination) whose preamble is being received
+
+  uint64_t m_previouslyRxPpduUid;  //!< UID of the previously received PPDU, reset to UINT64_MAX upon transmission
+
   /**
-   * \brief post-construction setting of frequency and/or channel number
+   * This map holds the supported PHY entities.
    *
-   * This method exists to handle the fact that two attribute values,
-   * Frequency and ChannelNumber, are coupled.  The initialization of
-   * these values needs to be deferred until after attribute construction
-   * time, to avoid static initialization order issues.  This method is
-   * typically called either when ConfigureStandard () is called or when
-   * DoInitialize () is called.
+   * The set of parameters (e.g. mode) that this WifiPhy(-derived class) can
+   * support can be obtained through it.
+   *
+   * When it comes to modes, in conversation we call this set
+   * the DeviceRateSet (not a term you'll find in the standard), and
+   * it is a superset of standard-defined parameters such as the
+   * OperationalRateSet, and the BSSBasicRateSet (which, themselves,
+   * have a superset/subset relationship).
+   *
+   * Mandatory rates relevant to this WifiPhy can be found by
+   * iterating over the elements of this map, for each modulation class,
+   * looking for WifiMode objects for which
+   * WifiMode::IsMandatory() is true.
    */
-  void InitializeFrequencyChannelNumber (void);
+  std::map<WifiModulationClass, Ptr<PhyEntity> > m_phyEntities;
+
+
+private:
   /**
    * Configure WifiPhy with appropriate channel frequency and
    * supported rates for 802.11a standard.
@@ -1844,11 +1231,6 @@ private:
    * supported rates for 802.11p standard.
    */
   void Configure80211p (void);
-  /**
-   * Configure WifiPhy with appropriate channel frequency and
-   * supported rates for Holland.
-   */
-  void ConfigureHolland (void);
   /**
    * Configure WifiPhy with appropriate channel frequency and
    * supported rates for 802.11n standard.
@@ -1879,35 +1261,6 @@ private:
    * Rebuild the mapping of MCS values to indices in the device MCS set.
    */
   void RebuildMcsMap (void);
-  /**
-   * Configure the PHY-level parameters for different Wi-Fi standard.
-   * This method is called when defaults for each standard must be
-   * selected.
-   */
-  void ConfigureDefaultsForStandard (void);
-  /**
-   * Configure the PHY-level parameters for different Wi-Fi standard.
-   * This method is called when the Frequency or ChannelNumber attributes
-   * are set by the user.  If the Frequency or ChannelNumber are valid for
-   * the standard, they are used instead.
-   */
-  void ConfigureChannelForStandard (void);
-
-  /**
-   * Look for channel number matching the frequency and width
-   * \param frequency The center frequency to use in MHz
-   * \param width The channel width to use in MHz
-   * \return the channel number if found, zero if not
-   */
-  uint8_t FindChannelNumberForFrequencyWidth (uint16_t frequency, uint16_t width) const;
-  /**
-   * Lookup frequency/width pair for channelNumber/standard pair
-   * \param channelNumber The channel number to check
-   * \param band the PHY band to check
-   * \param standard The WifiPhyStandard to check
-   * \return the FrequencyWidthPair found
-   */
-  FrequencyWidthPair GetFrequencyWidthForChannelNumberStandard (uint8_t channelNumber, WifiPhyBand band, WifiPhyStandard standard) const;
 
   /**
    * Due to newly arrived signal, the current reception cannot be continued and has to be aborted
@@ -1917,66 +1270,12 @@ private:
   void AbortCurrentReception (WifiPhyRxfailureReason reason);
 
   /**
-   * Eventually switch to CCA busy
-   */
-  void MaybeCcaBusyDuration (void);
-
-  /**
-   * Starting receiving the PPDU after having detected the medium is idle or after a reception switch.
-   *
-   * \param event the event holding incoming PPDU's information
-   */
-  void StartRx (Ptr<Event> event);
-  /**
-   * Get the reception status for the provided MPDU and notify.
-   *
-   * \param psdu the arriving MPDU formatted as a PSDU
-   * \param event the event holding incoming PPDU's information
-   * \param staId the station ID of the PSDU (only used for MU)
-   * \param relativeMpduStart the relative start time of the MPDU within the A-MPDU. 0 for normal MPDUs
-   * \param mpduDuration the duration of the MPDU
-   *
-   * \return information on MPDU reception: status, signal power (dBm), and noise power (in dBm)
-   */
-  std::pair<bool, SignalNoiseDbm> GetReceptionStatus (Ptr<const WifiPsdu> psdu,
-                                                      Ptr<Event> event, uint16_t staId,
-                                                      Time relativeMpduStart,
-                                                      Time mpduDuration);
-  /**
-   * The last symbol of an MPDU in an A-MPDU has arrived.
-   *
-   * \param event the event holding incoming PPDU's information
-   * \param psdu the arriving MPDU formatted as a PSDU containing a normal MPDU
-   * \param mpduIndex the index of the MPDU within the A-MPDU
-   * \param relativeMpduStart the relative start time of the MPDU within the A-MPDU.
-   * \param mpduDuration the duration of the MPDU
-   */  
-  void EndOfMpdu (Ptr<Event> event, Ptr<const WifiPsdu> psdu, size_t mpduIndex, Time relativeStart, Time mpduDuration);
-
-  /**
-   * Schedule end of MPDUs events.
-   *
-   * \param event the event holding incoming PPDU's information
-   */
-  void ScheduleEndOfMpdus (Ptr<Event> event);
-
-  /**
    * Get the PSDU addressed to that PHY in a PPDU (useful for MU PPDU).
    *
    * \param ppdu the PPDU to extract the PSDU from
    * \return the PSDU addressed to that PHY
    */
   Ptr<const WifiPsdu> GetAddressedPsduInPpdu (Ptr<const WifiPpdu> ppdu) const;
-
-  /**
-   * Get the RU band used to transmit a PSDU to a given STA in a HE MU PPDU
-   *
-   * \param txVector the TXVECTOR used for the transmission
-   * \param staId the STA-ID of the recipient
-   *
-   * \return the RU band used to transmit a PSDU to a given STA in a HE MU PPDU
-   */
-  WifiSpectrumBand GetRuBand (WifiTxVector txVector, uint16_t staId);
 
   /**
    * The trace source fired when a packet begins the transmission process on
@@ -2057,7 +1356,7 @@ private:
    * ieee80211_input_monitor()
    *
    * \see class CallBackTraceSource
-   * \todo WifiTxVector and signalNoiseDbm should be be passed as
+   * \todo WifiTxVector and signalNoiseDbm should be passed as
    *       const references because of their sizes.
    */
   TracedCallback<Ptr<const Packet>, uint16_t /* frequency (MHz) */, WifiTxVector, MpduInfo, SignalNoiseDbm, uint16_t /* STA-ID*/> m_phyMonitorSniffRxTrace;
@@ -2077,62 +1376,22 @@ private:
   TracedCallback<Ptr<const Packet>, uint16_t /* frequency (MHz) */, WifiTxVector, MpduInfo, uint16_t /* STA-ID*/> m_phyMonitorSniffTxTrace;
 
   /**
-   * A trace source that indicates the end of both HE SIG fields as well as training fields for received 802.11ax packets
-   *
-   * \see class CallBackTraceSource
+   * Map of __implemented__ PHY entities. This is used to compute the different
+   * amendment-specific parameters in a static manner.
+   * For PHY entities supported by a given WifiPhy instance,
+   * \see m_phyEntities.
    */
-  TracedCallback<HePreambleParameters> m_phyEndOfHePreambleTrace;
-
-  /**
-   * This vector holds the set of transmission modes that this
-   * WifiPhy(-derived class) can support. In conversation we call this
-   * the DeviceRateSet (not a term you'll find in the standard), and
-   * it is a superset of standard-defined parameters such as the
-   * OperationalRateSet, and the BSSBasicRateSet (which, themselves,
-   * have a superset/subset relationship).
-   *
-   * Mandatory rates relevant to this WifiPhy can be found by
-   * iterating over this vector looking for WifiMode objects for which
-   * WifiMode::IsMandatory() is true.
-   *
-   * A quick note is appropriate here (well, here is as good a place
-   * as any I can find)...
-   *
-   * In the standard there is no text that explicitly precludes
-   * production of a device that does not support some rates that are
-   * mandatory (according to the standard) for PHYs that the device
-   * happens to fully or partially support.
-   *
-   * This approach is taken by some devices which choose to only support,
-   * for example, 6 and 9 Mbps ERP-OFDM rates for cost and power
-   * consumption reasons (i.e., these devices don't need to be designed
-   * for and waste current on the increased linearity requirement of
-   * higher-order constellations when 6 and 9 Mbps more than meet their
-   * data requirements). The wording of the standard allows such devices
-   * to have an OperationalRateSet which includes 6 and 9 Mbps ERP-OFDM
-   * rates, despite 12 and 24 Mbps being "mandatory" rates for the
-   * ERP-OFDM PHY.
-   *
-   * Now this doesn't actually have any impact on code, yet. It is,
-   * however, something that we need to keep in mind for the
-   * future. Basically, the key point is that we can't be making
-   * assumptions like "the Operational Rate Set will contain all the
-   * mandatory rates".
-   */
-  WifiModeList m_deviceRateSet;
-  WifiModeList m_deviceMcsSet; //!< the device MCS set
-  /// Maps MCS values to indices in m_deviceMcsSet, for HT, VHT and HE modulation classes
-  std::map<WifiModulationClass, std::map<uint8_t /* MCS value */, uint8_t /* index */>> m_mcsIndexMap;
-
-  std::vector<uint8_t> m_bssMembershipSelectorSet; //!< the BSS membership selector set
+  static std::map<WifiModulationClass, Ptr<PhyEntity> > m_staticPhyEntities;
 
   WifiPhyStandard m_standard;               //!< WifiPhyStandard
   WifiPhyBand m_band;                       //!< WifiPhyBand
-  bool m_isConstructed;                     //!< true when ready to set frequency
-  uint16_t m_channelCenterFrequency;        //!< Center frequency in MHz
   uint16_t m_initialFrequency;              //!< Store frequency until initialization (MHz)
-  bool m_frequencyChannelNumberInitialized; //!< Store initialization state
-  uint16_t m_channelWidth;                  //!< Channel width (MHz)
+  uint8_t m_initialChannelNumber;           //!< Store channel number until initialization
+  uint16_t m_initialChannelWidth;           //!< Store channel width (MHz) until initialization
+  uint8_t m_initialPrimary20Index;          //!< Store the index of primary20 until initialization
+
+  WifiPhyOperatingChannel m_operatingChannel;       //!< Operating channel
+  std::vector<uint16_t> m_supportedChannelWidthSet; //!< Supported channel width set (MHz)
 
   Time m_sifs;                              //!< Short Interframe Space (SIFS) duration
   Time m_slot;                              //!< Slot duration
@@ -2147,6 +1406,7 @@ private:
   double   m_txPowerBaseDbm;      //!< Minimum transmission power (dBm)
   double   m_txPowerEndDbm;       //!< Maximum transmission power (dBm)
   uint8_t  m_nTxPower;            //!< Number of available transmission power levels
+  double m_powerDensityLimit;     //!< the power density limit (dBm/MHz)
 
   bool m_powerRestricted;        //!< Flag whether transmit power is restricted by OBSS PD SR
   double m_txPowerMaxSiso;       //!< SISO maximum transmit power due to OBSS PD SR power restriction (dBm)
@@ -2158,30 +1418,26 @@ private:
   uint8_t m_txSpatialStreams;  //!< Number of supported TX spatial streams
   uint8_t m_rxSpatialStreams;  //!< Number of supported RX spatial streams
 
-  typedef std::map<ChannelNumberStandardPair, FrequencyWidthPair> ChannelToFrequencyWidthMap; //!< channel to frequency width map typedef
-  static ChannelToFrequencyWidthMap m_channelToFrequencyWidth;                               //!< the channel to frequency width map
-
-  std::vector<uint16_t> m_supportedChannelWidthSet; //!< Supported channel width set (MHz)
-  uint8_t               m_channelNumber;            //!< Operating channel number
-  uint8_t               m_initialChannelNumber;     //!< Initial channel number
-
   Time m_channelSwitchDelay;     //!< Time required to switch between channel
 
   Ptr<NetDevice>     m_device;   //!< Pointer to the device
   Ptr<MobilityModel> m_mobility; //!< Pointer to the mobility model
 
-  Ptr<Event> m_currentEvent;                            //!< Hold the current event
   Ptr<FrameCaptureModel> m_frameCaptureModel;           //!< Frame capture model
   Ptr<PreambleDetectionModel> m_preambleDetectionModel; //!< Preamble detection model
   Ptr<WifiRadioEnergyModel> m_wifiRadioEnergyModel;     //!< Wifi radio energy model
   Ptr<ErrorModel> m_postReceptionErrorModel;            //!< Error model for receive packet events
   Time m_timeLastPreambleDetected;                      //!< Record the time the last preamble was detected
 
-  std::vector<bool> m_statusPerMpdu; //!<  current reception status per MPDU that is filled in as long as MPDUs are being processed by the PHY in case of an A-MPDU
-  SignalNoiseDbm m_signalNoise;      //!< latest signal power and noise power in dBm (noise power includes the noise figure)
-
-  Callback<void> m_capabilitiesChangedCallback;         //!< Callback when PHY capabilities changed
+  Callback<void> m_capabilitiesChangedCallback; //!< Callback when PHY capabilities changed
 };
+
+/**
+ * \param os           output stream
+ * \param rxSignalInfo received signal info to stringify
+ * \return output stream
+ */
+std::ostream& operator<< (std::ostream& os, RxSignalInfo rxSignalInfo);
 
 } //namespace ns3
 

@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include <list>
+#include <unordered_map>
 
 #include "ns3/packet.h"
 #include "ns3/nstime.h"
@@ -30,7 +31,6 @@
 #include "ns3/ipv6-address.h"
 #include "ns3/ptr.h"
 #include "ns3/timer.h"
-#include "ns3/sgi-hashmap.h"
 #include "ns3/output-stream-wrapper.h"
 
 namespace ns3
@@ -343,6 +343,12 @@ public:
      * \param ipv6Address IPv6 address
      */
     void SetIpv6Address (Ipv6Address ipv6Address);
+    
+    /**
+     * \brief Get the IPv6 address.
+     * \returns The IPv6 address
+     */
+    Ipv6Address GetIpv6Address (void) const;
 
     /**
      * \brief Print this entry to the given output stream.
@@ -421,11 +427,11 @@ protected:
   /**
    * \brief Neighbor Discovery Cache container
    */
-  typedef sgi::hash_map<Ipv6Address, NdiscCache::Entry *, Ipv6AddressHash> Cache;
+  typedef std::unordered_map<Ipv6Address, NdiscCache::Entry *, Ipv6AddressHash> Cache;
   /**
    * \brief Neighbor Discovery Cache container iterator
    */
-  typedef sgi::hash_map<Ipv6Address, NdiscCache::Entry *, Ipv6AddressHash>::iterator CacheI;
+  typedef std::unordered_map<Ipv6Address, NdiscCache::Entry *, Ipv6AddressHash>::iterator CacheI;
 
   /**
    * \brief A list of Entry.

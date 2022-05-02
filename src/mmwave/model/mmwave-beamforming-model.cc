@@ -17,17 +17,25 @@
 */
 
 #include "ns3/mmwave-beamforming-model.h"
-#include "ns3/three-gpp-antenna-array-model.h"
+#include "ns3/phased-array-model.h"
 #include "ns3/mobility-model.h"
 #include "ns3/matrix-based-channel-model.h"
 #include "ns3/channel-condition-model.h"
+#include "ns3/file-beamforming-codebook.h"
+#include "ns3/mmwave-phy-mac-common.h"
+#include "ns3/mmwave-spectrum-value-helper.h"
+#include "ns3/object-factory.h"
 #include "ns3/pointer.h"
 #include "ns3/uinteger.h"
 #include "ns3/double.h"
 #include "ns3/boolean.h"
+#include "ns3/string.h"
 #include "ns3/net-device.h"
 #include "ns3/node.h"
 #include "ns3/log.h"
+#include <fstream>
+#include <algorithm>
+
 
 namespace ns3 {
 
@@ -56,8 +64,8 @@ MmWaveBeamformingModel::GetTypeId ()
                    "The antenna of the Device to configure",
                    PointerValue (0),
                    MakePointerAccessor (&MmWaveBeamformingModel::SetAntenna,
-                                         &MmWaveBeamformingModel::GetAntenna),
-                   MakePointerChecker<ThreeGppAntennaArrayModel> ())
+                                        &MmWaveBeamformingModel::GetAntenna),
+                   MakePointerChecker<PhasedArrayModel> ())
   ;
   return tid;
 }
@@ -93,7 +101,7 @@ MmWaveBeamformingModel::SetDevice (Ptr<NetDevice> device)
   m_device = device;
 }
 
-Ptr<ThreeGppAntennaArrayModel>
+Ptr<PhasedArrayModel>
 MmWaveBeamformingModel::GetAntenna (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -101,7 +109,7 @@ MmWaveBeamformingModel::GetAntenna (void) const
 }
 
 void
-MmWaveBeamformingModel::SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna)
+MmWaveBeamformingModel::SetAntenna (Ptr<PhasedArrayModel> antenna)
 {
   NS_LOG_FUNCTION (this << antenna);
   m_antenna = antenna;
@@ -134,11 +142,9 @@ MmWaveDftBeamforming::~MmWaveDftBeamforming ()
 
 
 void
-MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna)
+MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna)
 {
   NS_LOG_FUNCTION (this << otherDevice << otherAntenna);
-
-  ThreeGppAntennaArrayModel::ComplexVector antennaWeights;
 
   // retrieve the position of the two devices
   Ptr<MobilityModel> mobility = m_device->GetNode ()->GetObject<MobilityModel> ();
@@ -151,30 +157,8 @@ MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice,
   // compute the azimuth and the elevation angles
   Angles completeAngle (bPos,aPos);
 
-  double hAngleRadian = fmod (completeAngle.phi, 2.0 * M_PI); // the azimuth angle
-  if (hAngleRadian < 0)
-  {
-    hAngleRadian += 2.0 * M_PI;     
-  } 
-  double vAngleRadian = completeAngle.theta; // the elevation angle
-
-  // retrieve the number of antenna elements
-  uint32_t totNoArrayElements = m_antenna->GetNumberOfElements ();
-
-  // the total power is divided equally among the antenna elements
-  double power = 1 / sqrt (totNoArrayElements);
-
-  // compute the antenna weights
-  for (uint32_t ind = 0; ind < totNoArrayElements; ind++)
-    {
-      Vector loc = m_antenna->GetElementLocation (ind);
-      double phase = -2 * M_PI * (sin (vAngleRadian) * cos (hAngleRadian) * loc.x
-                                  + sin (vAngleRadian) * sin (hAngleRadian) * loc.y
-                                  + cos (vAngleRadian) * loc.z);
-      antennaWeights.push_back (exp (std::complex<double> (0, phase)) * power);
-    }
-
   // configure the antenna to use the new beamforming vector
+  PhasedArrayModel::ComplexVector antennaWeights = m_antenna->GetBeamformingVector (completeAngle);
   m_antenna->SetBeamformingVector (antennaWeights);
 }
 
@@ -233,7 +217,7 @@ MmWaveSvdBeamforming::DoDispose (void)
 }
 
 void
-MmWaveSvdBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna)
+MmWaveSvdBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna)
 {
   NS_LOG_FUNCTION (this << otherDevice << otherAntenna);
 
@@ -245,7 +229,7 @@ MmWaveSvdBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice,
   // this will trigger a new computation (if needed)
   auto channelMatrix = m_channel->GetChannel (thisMob, otherMob, m_antenna, otherAntenna);
 
-  std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector> bfVectors;
+  std::pair<PhasedArrayModel::ComplexVector, PhasedArrayModel::ComplexVector> bfVectors;
 
   bool toCache {false};
 
@@ -272,9 +256,9 @@ MmWaveSvdBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice,
 
           uint64_t thisAntennaNumElements = m_antenna->GetNumberOfElements ();
           uint64_t otherAntennaNumElements = otherAntenna->GetNumberOfElements ();
-          ThreeGppAntennaArrayModel::ComplexVector thisBf;
+          PhasedArrayModel::ComplexVector thisBf;
           thisBf.resize (thisAntennaNumElements);
-          ThreeGppAntennaArrayModel::ComplexVector otherBf;
+          PhasedArrayModel::ComplexVector otherBf;
           otherBf.resize (otherAntennaNumElements);
 
           bfVectors = std::make_pair (thisBf, otherBf);
@@ -324,7 +308,7 @@ MmWaveSvdBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice,
     }
 }
 
-std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector>
+std::pair<PhasedArrayModel::ComplexVector, PhasedArrayModel::ComplexVector>
 MmWaveSvdBeamforming::ComputeBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params) const
 {
   //generate transmitter side spatial correlation matrix
@@ -377,7 +361,7 @@ MmWaveSvdBeamforming::ComputeBeamformingVectors (Ptr<const MatrixBasedChannelMod
     }
 
   //calculate beamforming vector from spatial correlation matrix
-  ThreeGppAntennaArrayModel::ComplexVector bW = GetFirstEigenvector (bQ);
+  PhasedArrayModel::ComplexVector bW = GetFirstEigenvector (bQ);
 
   //compute the receiver side spatial correlation matrix aQ = HH*, where H is the sum of H_n over n clusters.
   MatrixBasedChannelModel::Complex2DVector aQ;
@@ -402,7 +386,7 @@ MmWaveSvdBeamforming::ComputeBeamformingVectors (Ptr<const MatrixBasedChannelMod
     }
 
   //calculate beamforming vector from spatial correlation matrix.
-  ThreeGppAntennaArrayModel::ComplexVector aW = GetFirstEigenvector (aQ);
+  PhasedArrayModel::ComplexVector aW = GetFirstEigenvector (aQ);
 
   for (size_t i = 0; i < aW.size (); ++i)
     {
@@ -412,10 +396,10 @@ MmWaveSvdBeamforming::ComputeBeamformingVectors (Ptr<const MatrixBasedChannelMod
   return std::make_pair (bW, aW);
 }
 
-ThreeGppAntennaArrayModel::ComplexVector
+PhasedArrayModel::ComplexVector
 MmWaveSvdBeamforming::GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A) const
 {
-  ThreeGppAntennaArrayModel::ComplexVector antennaWeights;
+  PhasedArrayModel::ComplexVector antennaWeights;
   uint16_t arraySize = A.size ();
   for (uint16_t eIndex = 0; eIndex < arraySize; eIndex++)
     {
@@ -427,7 +411,7 @@ MmWaveSvdBeamforming::GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVec
   double diff = 1;
   while (iter < m_maxIterations && diff > m_tolerance)
     {
-      ThreeGppAntennaArrayModel::ComplexVector antennaWeightsNew;
+      PhasedArrayModel::ComplexVector antennaWeightsNew;
 
       for (uint16_t row = 0; row < arraySize; row++)
         {
@@ -461,6 +445,217 @@ MmWaveSvdBeamforming::GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVec
 
   return antennaWeights;
 }
+
+/*----------------------------------------------------------------------------*/
+
+NS_OBJECT_ENSURE_REGISTERED (MmWaveCodebookBeamforming);
+
+
+TypeId
+MmWaveCodebookBeamforming::GetTypeId ()
+{
+  static TypeId
+    tid =
+    TypeId ("ns3::MmWaveCodebookBeamforming")
+    .SetParent<MmWaveBeamformingModel> ()
+    .AddConstructor<MmWaveCodebookBeamforming> ()
+    .AddAttribute ("SpectrumPropagationLossModel",
+                   "Pointer to SpectrumPropagationLossModel",
+                   PointerValue (),
+                   MakePointerAccessor (&MmWaveCodebookBeamforming::m_splm),
+                   MakePointerChecker<SpectrumPropagationLossModel> ())
+    .AddAttribute ("MmWavePhyMacCommon",
+                   "Pointer to MmWavePhyMacCommon",
+                   PointerValue (),
+                   MakePointerAccessor (&MmWaveCodebookBeamforming::SetMmWavePhyMacCommon),
+                   MakePointerChecker<MmWavePhyMacCommon> ())
+    .AddAttribute ("UpdatePeriod",
+                   "Specify the channel coherence time",
+                   TimeValue (MilliSeconds (0.0)),
+                   MakeTimeAccessor (&MmWaveCodebookBeamforming::m_updatePeriod),
+                   MakeTimeChecker ())
+  ;
+  return tid;
+}
+
+
+MmWaveCodebookBeamforming::MmWaveCodebookBeamforming ()
+{
+  NS_LOG_FUNCTION (this);
+}
+
+
+MmWaveCodebookBeamforming::~MmWaveCodebookBeamforming ()
+{
+}
+
+
+void
+MmWaveCodebookBeamforming::SetBeamformingCodebookFactory (ObjectFactory factory)
+{
+  NS_LOG_FUNCTION (this << factory);
+  NS_ABORT_MSG_IF (!factory.GetTypeId ().IsChildOf (BeamformingCodebook::GetTypeId ()),
+                   "The given factory does not create BeamformingCodebook objects");
+  m_beamformingCodebookFactory = factory;
+}
+
+
+void
+MmWaveCodebookBeamforming::SetMmWavePhyMacCommon (Ptr<MmWavePhyMacCommon> mwpmc)
+{
+  NS_LOG_FUNCTION (this << mwpmc);
+
+  std::vector <int> activeRbs;
+  for (uint32_t i = 0; i < mwpmc->GetNumRb (); i++)
+    {
+      activeRbs.push_back (i);
+    }
+  m_txPsd = MmWaveSpectrumValueHelper::CreateTxPowerSpectralDensity (mwpmc, 0.0, activeRbs); // TODO should i copy this?
+}
+
+
+void
+MmWaveCodebookBeamforming::DoInitialize (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_ASSERT_MSG (m_beamformingCodebookFactory.IsTypeIdSet (),
+                 "The BeamformingCodebook factory is not initialized");
+
+  Ptr<BeamformingCodebook> cb = m_beamformingCodebookFactory.Create<BeamformingCodebook> ();
+  cb->SetAttribute ("Array", PointerValue (m_antenna));
+  cb->Initialize ();
+
+  NS_ASSERT_MSG (cb->GetCodebookSize () > 0, "Empty codebook");
+  NS_ASSERT_MSG (cb->GetCodeword (0).size () == m_antenna->GetNumberOfElements (),
+                 "Inappropriate codebook for the given PhasedArrayModel");
+  m_antenna->AggregateObject (cb);
+
+  // TODO what if SetAntenna is used?
+}
+
+
+void
+MmWaveCodebookBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna)
+{
+  NS_LOG_FUNCTION (this << otherDevice << otherAntenna);
+  
+  uint32_t thisCbIdx; // index of the codeword selected for this antenna
+  uint32_t otherCbIdx; // index of the codeword selected for the other antenna
+  
+  // check if the best beam pair has already been computed
+  bool notFound = true; 
+  bool update = false;
+  auto it = m_codebookIdsCache.find (otherAntenna);
+  if (it != m_codebookIdsCache.end ())
+  {
+    notFound = false;
+    thisCbIdx = it->second.thisCbIdx;
+    otherCbIdx = it->second.otherCbIdx;
+    
+    // check if it has to be updated
+    if (!m_updatePeriod.IsZero () && Simulator::Now () - it->second.lastUpdate > m_updatePeriod)
+    {
+      update = true;
+    }
+    
+    NS_LOG_DEBUG (this << " found an entry in the map for antenna " << otherAntenna);
+    NS_LOG_DEBUG ("Codebook index for this antenna " << it->second.thisCbIdx);
+    NS_LOG_DEBUG ("Codebook index for other antenna " << it->second.otherCbIdx);
+    NS_LOG_DEBUG ("Last update " << it->second.lastUpdate.GetSeconds() << " s ");
+    NS_LOG_DEBUG ("Now " << Simulator::Now ().GetSeconds () << ", update? " << update);
+  }
+  
+  if (notFound || update)
+  {
+    MmWaveCodebookBeamforming::Matrix2D powerMatrix = ComputeBeamformingCodebookMatrix (otherDevice, otherAntenna);
+    
+    // find best beam couple
+    std::vector<double> maxPowers;
+    maxPowers.reserve (powerMatrix.size ());
+    std::vector<uint32_t> argMaxPowers;
+    argMaxPowers.reserve (powerMatrix.size ());
+    
+    for (uint32_t i = 0; i < powerMatrix.size (); i++)
+    {
+      auto argMaxIt = std::max_element (powerMatrix[i].begin (), powerMatrix[i].end ());
+      argMaxPowers.push_back (std::distance (powerMatrix[i].begin (), argMaxIt));
+      maxPowers.push_back (*argMaxIt);
+    }
+    
+    auto argMaxIt = std::max_element (maxPowers.begin (), maxPowers.end ());
+    thisCbIdx = std::distance (maxPowers.begin (), argMaxIt);
+    otherCbIdx = argMaxPowers[thisCbIdx];
+    
+    NS_LOG_DEBUG ("Best beam pair: thisCbIdx=" << thisCbIdx << ", otherCbIdx=" << otherCbIdx <<
+    " with power " << 10 * std::log10 (*argMaxIt) + 30 << " dBm");
+    
+    // insert the new entry in the map
+    Entry newEntry; 
+    newEntry.thisCbIdx = thisCbIdx;
+    newEntry.otherCbIdx = otherCbIdx;
+    newEntry.lastUpdate = Simulator::Now ();
+    m_codebookIdsCache [otherAntenna] = newEntry;    
+  }
+
+  // set best BF codewords for both devices
+  Ptr<BeamformingCodebook> thisCodebook = m_antenna->GetObject<BeamformingCodebook> ();
+  Ptr<BeamformingCodebook> otherCodebook = otherAntenna->GetObject<BeamformingCodebook> ();
+  
+  PhasedArrayModel::ComplexVector thisAntennaWeights = thisCodebook->GetCodeword (thisCbIdx);
+  PhasedArrayModel::ComplexVector otherAntennaWeights = otherCodebook->GetCodeword (otherCbIdx);
+
+  m_antenna->SetBeamformingVector (thisAntennaWeights);
+  otherAntenna->SetBeamformingVector (otherAntennaWeights);
+}
+
+
+MmWaveCodebookBeamforming::Matrix2D
+MmWaveCodebookBeamforming::ComputeBeamformingCodebookMatrix (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna) const
+{
+  NS_LOG_FUNCTION (this << otherDevice << otherAntenna);
+
+  Ptr<BeamformingCodebook> thisCodebook = m_antenna->GetObject<BeamformingCodebook> ();
+  Ptr<BeamformingCodebook> otherCodebook = otherAntenna->GetObject<BeamformingCodebook> ();
+
+  Ptr<MobilityModel> thisMob = m_device->GetNode ()->GetObject<MobilityModel> ();
+  Ptr<MobilityModel> otherMob = otherDevice->GetNode ()->GetObject<MobilityModel> ();
+
+  // init matrix
+  MmWaveCodebookBeamforming::Matrix2D matrix {};
+  matrix.resize (thisCodebook->GetCodebookSize ());
+  for (uint64_t i = 0; i < thisCodebook->GetCodebookSize (); i++)
+    {
+      matrix[i].reserve (otherCodebook->GetCodebookSize ());
+    }
+
+  // save pre-existing bf vectors
+  auto thisOldBfVector = m_antenna->GetBeamformingVector ();
+  auto otherOldBfVector = otherAntenna->GetBeamformingVector ();
+
+  // fill matrix
+  for (uint32_t thisIdx = 0; thisIdx < thisCodebook->GetCodebookSize (); thisIdx++)
+    {
+      m_antenna->SetBeamformingVector (thisCodebook->GetCodeword (thisIdx));
+
+      for (uint32_t otherIdx = 0; otherIdx < otherCodebook->GetCodebookSize (); otherIdx++)
+        {
+          otherAntenna->SetBeamformingVector (otherCodebook->GetCodeword (otherIdx));
+
+          Ptr<SpectrumValue> rxPsd = m_splm->CalcRxPowerSpectralDensity (m_txPsd, thisMob, otherMob);
+          double avgRxPsd = Sum (*rxPsd) / (rxPsd->GetSpectrumModel ()->GetNumBands ());
+          matrix[thisIdx].push_back (avgRxPsd);
+        }
+    }
+  NS_LOG_DEBUG ("Matrix of size " << matrix.size () << "x" << matrix[0].size ());
+
+  // reset to pre-existing bf vectors
+  m_antenna->SetBeamformingVector (thisOldBfVector);
+  otherAntenna->SetBeamformingVector (otherOldBfVector);
+
+  return matrix;
+}
+
 
 } // namespace mmwave
 } // namespace ns3

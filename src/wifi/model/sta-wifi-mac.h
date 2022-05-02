@@ -23,7 +23,7 @@
 #ifndef STA_WIFI_MAC_H
 #define STA_WIFI_MAC_H
 
-#include "infrastructure-wifi-mac.h"
+#include "regular-wifi-mac.h"
 #include "mgt-headers.h"
 
 class TwoLevelAggregationTest;
@@ -103,7 +103,7 @@ struct ApInfo
  * 7. The transition from Associated to Unassociated occurs if the number
  *    of missed beacons exceeds the threshold.
  */
-class StaWifiMac : public InfrastructureWifiMac
+class StaWifiMac : public RegularWifiMac
 {
 public:
   /// Allow test cases to access private members
@@ -122,13 +122,6 @@ public:
   virtual ~StaWifiMac ();
 
   /**
-   * Set up WifiRemoteStationManager associated with this StaWifiMac.
-   *
-   * \param stationManager the station manager attached to this MAC.
-   */
-  void SetWifiRemoteStationManager (const Ptr<WifiRemoteStationManager> stationManager);
-
-  /**
    * \param packet the packet to send.
    * \param to the address to which the packet should be sent.
    *
@@ -136,12 +129,12 @@ public:
    * dequeued as soon as the channel access function determines that
    * access is granted to this MAC.
    */
-  void Enqueue (Ptr<Packet> packet, Mac48Address to);
+  void Enqueue (Ptr<Packet> packet, Mac48Address to) override;
 
   /**
    * \param phy the physical layer attached to this MAC.
    */
-  void SetWifiPhy (const Ptr<WifiPhy> phy);
+  void SetWifiPhy (const Ptr<WifiPhy> phy) override;
 
   /**
    * Return whether we are associated with an AP.
@@ -189,7 +182,7 @@ private:
    *
    * \param mpdu the received MPDU
    */
-  void Receive (Ptr<WifiMacQueueItem> mpdu);
+  void Receive (Ptr<WifiMacQueueItem> mpdu) override;
   /**
    * Update associated AP's information from beacon. If STA is not associated,
    * this information will used for the association process.
@@ -237,10 +230,6 @@ private:
    *
    */
   void SendAssociationRequest (bool isReassoc);
-  /**
-   * Forward a CF-Poll response packet to the CFP queue.
-   */
-  void SendCfPollResponse (void);
   /**
    * Try to ensure that we are associated with an AP by taking an appropriate action
    * depending on the current association status.
@@ -302,6 +291,16 @@ private:
    */
   void SetEdcaParameters (AcIndex ac, uint32_t cwMin, uint32_t cwMax, uint8_t aifsn, Time txopLimit);
   /**
+   * Set the MU EDCA parameters.
+   *
+   * \param ac the Access Category
+   * \param cwMin the minimum contention window size
+   * \param cwMax the maximum contention window size
+   * \param aifsn the number of slots that make up an AIFS
+   * \param muEdcaTimer the MU EDCA timer
+   */
+  void SetMuEdcaParameters (AcIndex ac, uint16_t cwMin, uint16_t cwMax, uint8_t aifsn, Time muEdcaTimer);
+  /**
    * Return the Capability information of the current STA.
    *
    * \return the Capability information that we support
@@ -313,7 +312,7 @@ private:
    */
   void PhyCapabilitiesChanged (void);
 
-  void DoInitialize (void);
+  void DoInitialize (void) override;
 
   MacState m_state;            ///< MAC state
   uint16_t m_aid;              ///< Association AID

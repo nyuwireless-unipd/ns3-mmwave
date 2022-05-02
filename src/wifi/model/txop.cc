@@ -25,14 +25,13 @@
 #include "ns3/socket.h"
 #include "txop.h"
 #include "channel-access-manager.h"
+#include "regular-wifi-mac.h"
 #include "wifi-mac-queue.h"
 #include "mac-tx-middle.h"
-#include "mac-low.h"
-#include "wifi-remote-station-manager.h"
 #include "wifi-mac-trailer.h"
 
 #undef NS_LOG_APPEND_CONTEXT
-#define NS_LOG_APPEND_CONTEXT if (m_low != 0) { std::clog << "[mac=" << m_low->GetAddress () << "] "; }
+#define NS_LOG_APPEND_CONTEXT if (m_mac != 0) { std::clog << "[mac=" << m_mac->GetAddress () << "] "; }
 
 namespace ns3 {
 
@@ -84,18 +83,22 @@ Txop::GetTypeId (void)
 }
 
 Txop::Txop ()
+  : Txop (CreateObject<WifiMacQueue> (AC_BE_NQOS))
+{
+}
+
+Txop::Txop (Ptr<WifiMacQueue> queue)
   : m_channelAccessManager (0),
+    m_queue (queue),
     m_cwMin (0),
     m_cwMax (0),
     m_cw (0),
     m_backoff (0),
-    m_accessRequested (false),
+    m_access (NOT_REQUESTED),
     m_backoffSlots (0),
-    m_backoffStart (Seconds (0.0)),
-    m_currentPacket (0)
+    m_backoffStart (Seconds (0.0))
 {
   NS_LOG_FUNCTION (this);
-  m_queue = CreateObject<WifiMacQueue> ();
   m_rng = CreateObject<UniformRandomVariable> ();
 }
 
@@ -109,8 +112,7 @@ Txop::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   m_queue = 0;
-  m_low = 0;
-  m_stationManager = 0;
+  m_mac = 0;
   m_rng = 0;
   m_txMiddle = 0;
   m_channelAccessManager = 0;
@@ -131,48 +133,21 @@ void Txop::SetTxMiddle (const Ptr<MacTxMiddle> txMiddle)
 }
 
 void
-Txop::SetMacLow (const Ptr<MacLow> low)
+Txop::SetWifiMac (const Ptr<RegularWifiMac> mac)
 {
-  NS_LOG_FUNCTION (this << low);
-  m_low = low;
+  NS_LOG_FUNCTION (this << mac);
+  m_mac = mac;
 }
 
 void
-Txop::SetWifiRemoteStationManager (const Ptr<WifiRemoteStationManager> remoteManager)
-{
-  NS_LOG_FUNCTION (this << remoteManager);
-  m_stationManager = remoteManager;
-}
-
-void
-Txop::SetTxOkCallback (TxOk callback)
+Txop::SetDroppedMpduCallback (DroppedMpdu callback)
 {
   NS_LOG_FUNCTION (this << &callback);
-  m_txOkCallback = callback;
-}
-
-void
-Txop::SetTxFailedCallback (TxFailed callback)
-{
-  NS_LOG_FUNCTION (this << &callback);
-  m_txFailedCallback = callback;
-}
-
-void
-Txop::SetTxDroppedCallback (TxDropped callback)
-{
-  NS_LOG_FUNCTION (this << &callback);
-  m_txDroppedCallback = callback;
-  m_queue->TraceConnectWithoutContext ("Drop", MakeCallback (&Txop::TxDroppedPacket, this));
-}
-
-void
-Txop::TxDroppedPacket (Ptr<const WifiMacQueueItem> item)
-{
-  if (!m_txDroppedCallback.IsNull ())
-    {
-      m_txDroppedCallback (item->GetPacket ());
-    }
+  m_droppedMpduCallback = callback;
+  m_queue->TraceConnectWithoutContext ("DropBeforeEnqueue",
+                                       m_droppedMpduCallback.Bind (WIFI_MAC_DROP_FAILED_ENQUEUE));
+  m_queue->TraceConnectWithoutContext ("Expired",
+                                       m_droppedMpduCallback.Bind (WIFI_MAC_DROP_EXPIRED_LIFETIME));
 }
 
 Ptr<WifiMacQueue >
@@ -191,7 +166,6 @@ Txop::SetMinCw (uint32_t minCw)
   if (changed == true)
     {
       ResetCw ();
-      m_cwTrace = GetCw ();
     }
 }
 
@@ -204,7 +178,6 @@ Txop::SetMaxCw (uint32_t maxCw)
   if (changed == true)
     {
       ResetCw ();
-      m_cwTrace = GetCw ();
     }
 }
 
@@ -218,7 +191,8 @@ void
 Txop::ResetCw (void)
 {
   NS_LOG_FUNCTION (this);
-  m_cw = m_cwMin;
+  m_cw = GetMinCw ();
+  m_cwTrace = m_cw;
 }
 
 void
@@ -226,7 +200,10 @@ Txop::UpdateFailedCw (void)
 {
   NS_LOG_FUNCTION (this);
   //see 802.11-2012, section 9.19.2.5
-  m_cw = std::min ( 2 * (m_cw + 1) - 1, m_cwMax);
+  m_cw = std::min ( 2 * (m_cw + 1) - 1, GetMaxCw ());
+  // if the MU EDCA timer is running, CW cannot be less than MU CW min
+  m_cw = std::max (m_cw, GetMinCw ());
+  m_cwTrace = m_cw;
 }
 
 uint32_t
@@ -308,7 +285,7 @@ Txop::GetTxopLimit (void) const
 bool
 Txop::HasFramesToTransmit (void)
 {
-  bool ret = (m_currentPacket != 0 || !m_queue->IsEmpty ());
+  bool ret = (!m_queue->IsEmpty ());
   NS_LOG_FUNCTION (this << ret);
   return ret;
 }
@@ -337,35 +314,13 @@ Txop::AssignStreams (int64_t stream)
 }
 
 void
-Txop::RestartAccessIfNeeded (void)
-{
-  NS_LOG_FUNCTION (this);
-  if ((m_currentPacket != 0
-       || !m_queue->IsEmpty ())
-      && !IsAccessRequested ()
-      && !m_low->IsCfPeriod ())
-    {
-      m_channelAccessManager->RequestAccess (this);
-    }
-}
-
-void
 Txop::StartAccessIfNeeded (void)
 {
   NS_LOG_FUNCTION (this);
-  if (m_currentPacket == 0
-      && !m_queue->IsEmpty ()
-      && !IsAccessRequested ()
-      && !m_low->IsCfPeriod ())
+  if (HasFramesToTransmit () && m_access == NOT_REQUESTED)
     {
       m_channelAccessManager->RequestAccess (this);
     }
-}
-
-Ptr<MacLow>
-Txop::GetLow (void) const
-{
-  return m_low;
 }
 
 void
@@ -373,179 +328,47 @@ Txop::DoInitialize ()
 {
   NS_LOG_FUNCTION (this);
   ResetCw ();
-  m_cwTrace = GetCw ();
   GenerateBackoff ();
 }
 
-bool
-Txop::NeedRtsRetransmission (Ptr<const Packet> packet, const WifiMacHeader &hdr)
+Txop::ChannelAccessStatus
+Txop::GetAccessStatus (void) const
 {
-  NS_LOG_FUNCTION (this);
-  return m_stationManager->NeedRetransmission (hdr.GetAddr1 (), &hdr, packet);
-}
-
-bool
-Txop::NeedDataRetransmission (Ptr<const Packet> packet, const WifiMacHeader &hdr)
-{
-  NS_LOG_FUNCTION (this);
-  return m_stationManager->NeedRetransmission (hdr.GetAddr1 (), &hdr, packet);
-}
-
-bool
-Txop::NeedFragmentation (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_stationManager->NeedFragmentation (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                              m_currentPacket);
-}
-
-void
-Txop::NextFragment (void)
-{
-  NS_LOG_FUNCTION (this);
-  m_fragmentNumber++;
-}
-
-uint32_t
-Txop::GetFragmentSize (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_stationManager->GetFragmentSize (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                            m_currentPacket, m_fragmentNumber);
-}
-
-bool
-Txop::IsLastFragment (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_stationManager->IsLastFragment (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                           m_currentPacket, m_fragmentNumber);
-}
-
-uint32_t
-Txop::GetNextFragmentSize (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_stationManager->GetFragmentSize (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                            m_currentPacket, m_fragmentNumber + 1);
-}
-
-uint32_t
-Txop::GetFragmentOffset (void) const
-{
-  NS_LOG_FUNCTION (this);
-  return m_stationManager->GetFragmentOffset (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                              m_currentPacket, m_fragmentNumber);
-}
-
-Ptr<Packet>
-Txop::GetFragmentPacket (WifiMacHeader *hdr)
-{
-  NS_LOG_FUNCTION (this << hdr);
-  *hdr = m_currentHdr;
-  hdr->SetFragmentNumber (m_fragmentNumber);
-  uint32_t startOffset = GetFragmentOffset ();
-  Ptr<Packet> fragment;
-  if (IsLastFragment ())
-    {
-      hdr->SetNoMoreFragments ();
-    }
-  else
-    {
-      hdr->SetMoreFragments ();
-    }
-  fragment = m_currentPacket->CreateFragment (startOffset,
-                                              GetFragmentSize ());
-  return fragment;
-}
-
-bool
-Txop::IsAccessRequested (void) const
-{
-  return m_accessRequested;
+  return m_access;
 }
 
 void
 Txop::NotifyAccessRequested (void)
 {
   NS_LOG_FUNCTION (this);
-  m_accessRequested = true;
+  m_access = REQUESTED;
 }
 
 void
-Txop::NotifyAccessGranted (void)
+Txop::NotifyChannelAccessed (Time txopDuration)
+{
+  NS_LOG_FUNCTION (this << txopDuration);
+  m_access = GRANTED;
+}
+
+void
+Txop::NotifyChannelReleased (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_ASSERT (m_accessRequested);
-  m_accessRequested = false;
-  if (m_currentPacket == 0)
+  m_access = NOT_REQUESTED;
+  GenerateBackoff ();
+  if (HasFramesToTransmit ())
     {
-      if (m_queue->IsEmpty ())
-        {
-          NS_LOG_DEBUG ("queue empty");
-          return;
-        }
-      Ptr<WifiMacQueueItem> item = m_queue->Dequeue ();
-      NS_ASSERT (item != 0);
-      m_currentPacket = item->GetPacket ();
-      m_currentHdr = item->GetHeader ();
-      NS_ASSERT (m_currentPacket != 0);
-      uint16_t sequence = m_txMiddle->GetNextSequenceNumberFor (&m_currentHdr);
-      m_currentHdr.SetSequenceNumber (sequence);
-      m_stationManager->UpdateFragmentationThreshold ();
-      m_currentHdr.SetFragmentNumber (0);
-      m_currentHdr.SetNoMoreFragments ();
-      m_currentHdr.SetNoRetry ();
-      m_fragmentNumber = 0;
-      NS_LOG_DEBUG ("dequeued size=" << m_currentPacket->GetSize () <<
-                    ", to=" << m_currentHdr.GetAddr1 () <<
-                    ", seq=" << m_currentHdr.GetSequenceControl ());
+      Simulator::ScheduleNow (&Txop::RequestAccess, this);
     }
-  if (m_currentHdr.GetAddr1 ().IsGroup ())
+}
+
+void
+Txop::RequestAccess (void)
+{
+  if (m_access == NOT_REQUESTED)
     {
-      m_currentParams.DisableRts ();
-      m_currentParams.DisableAck ();
-      m_currentParams.DisableNextData ();
-      NS_LOG_DEBUG ("tx broadcast");
-      GetLow ()->StartTransmission (Create<WifiMacQueueItem> (m_currentPacket, m_currentHdr),
-                                    m_currentParams, this);
-    }
-  else
-    {
-      m_currentParams.EnableAck ();
-      if (NeedFragmentation ())
-        {
-          m_currentParams.DisableRts ();
-          WifiMacHeader hdr;
-          Ptr<Packet> fragment = GetFragmentPacket (&hdr);
-          if (IsLastFragment ())
-            {
-              NS_LOG_DEBUG ("fragmenting last fragment size=" << fragment->GetSize ());
-              m_currentParams.DisableNextData ();
-            }
-          else
-            {
-              NS_LOG_DEBUG ("fragmenting size=" << fragment->GetSize ());
-              m_currentParams.EnableNextData (GetNextFragmentSize ());
-            }
-          GetLow ()->StartTransmission (Create<WifiMacQueueItem> (fragment, hdr),
-                                        m_currentParams, this);
-        }
-      else
-        {
-          uint32_t size = m_currentHdr.GetSize () + m_currentPacket->GetSize () + WIFI_MAC_FCS_LENGTH;
-          if (m_stationManager->NeedRts (m_currentHdr, size) && !m_low->IsCfPeriod ())
-            {
-              m_currentParams.EnableRts ();
-            }
-          else
-            {
-              m_currentParams.DisableRts ();
-            }
-          m_currentParams.DisableNextData ();
-          GetLow ()->StartTransmission (Create<WifiMacQueueItem> (m_currentPacket, m_currentHdr),
-                                        m_currentParams, this);
-        }
+      m_channelAccessManager->RequestAccess (this);
     }
 }
 
@@ -559,30 +382,16 @@ Txop::GenerateBackoff (void)
 }
 
 void
-Txop::NotifyInternalCollision (void)
-{
-  NS_LOG_FUNCTION (this);
-  GenerateBackoff ();
-  RestartAccessIfNeeded ();
-}
-
-void
 Txop::NotifyChannelSwitching (void)
 {
   NS_LOG_FUNCTION (this);
   m_queue->Flush ();
-  m_currentPacket = 0;
 }
 
 void
 Txop::NotifySleep (void)
 {
   NS_LOG_FUNCTION (this);
-  if (m_currentPacket != 0)
-    {
-      m_queue->PushFront (Create<WifiMacQueueItem> (m_currentPacket, m_currentHdr));
-      m_currentPacket = 0;
-    }
 }
 
 void
@@ -590,14 +399,13 @@ Txop::NotifyOff (void)
 {
   NS_LOG_FUNCTION (this);
   m_queue->Flush ();
-  m_currentPacket = 0;
 }
 
 void
 Txop::NotifyWakeUp (void)
 {
   NS_LOG_FUNCTION (this);
-  RestartAccessIfNeeded ();
+  StartAccessIfNeeded ();
 }
 
 void
@@ -607,291 +415,10 @@ Txop::NotifyOn (void)
   StartAccessIfNeeded ();
 }
 
-void
-Txop::MissedCts (void)
-{
-  NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("missed cts");
-  if (!NeedRtsRetransmission (m_currentPacket, m_currentHdr))
-    {
-      NS_LOG_DEBUG ("Cts Fail");
-      m_stationManager->ReportFinalRtsFailed (m_currentHdr.GetAddr1 (), &m_currentHdr);
-      if (!m_txFailedCallback.IsNull ())
-        {
-          m_txFailedCallback (m_currentHdr);
-        }
-      //to reset the Txop.
-      m_currentPacket = 0;
-      ResetCw ();
-      m_cwTrace = GetCw ();
-    }
-  else
-    {
-      UpdateFailedCw ();
-      m_cwTrace = GetCw ();
-    }
-  GenerateBackoff ();
-  RestartAccessIfNeeded ();
-}
-
-void
-Txop::GotAck (void)
-{
-  NS_LOG_FUNCTION (this);
-  if (!NeedFragmentation ()
-      || IsLastFragment ())
-    {
-      NS_LOG_DEBUG ("got ack. tx done.");
-      if (!m_txOkCallback.IsNull ())
-        {
-          m_txOkCallback (m_currentHdr);
-        }
-
-      /* we are not fragmenting or we are done fragmenting
-       * so we can get rid of that packet now.
-       */
-      m_currentPacket = 0;
-      ResetCw ();
-      m_cwTrace = GetCw ();
-      GenerateBackoff ();
-      RestartAccessIfNeeded ();
-    }
-  else
-    {
-      NS_LOG_DEBUG ("got ack. tx not done, size=" << m_currentPacket->GetSize ());
-    }
-}
-
-void
-Txop::MissedAck (void)
-{
-  NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("missed ack");
-  if (!NeedDataRetransmission (m_currentPacket, m_currentHdr))
-    {
-      NS_LOG_DEBUG ("Ack Fail");
-      m_stationManager->ReportFinalDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                               m_currentPacket->GetSize ());
-      if (!m_txFailedCallback.IsNull ())
-        {
-          m_txFailedCallback (m_currentHdr);
-        }
-      //to reset the Txop.
-      m_currentPacket = 0;
-      ResetCw ();
-      m_cwTrace = GetCw ();
-    }
-  else
-    {
-      NS_LOG_DEBUG ("Retransmit");
-      m_stationManager->ReportDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                          m_currentPacket->GetSize ());
-      m_currentHdr.SetRetry ();
-      UpdateFailedCw ();
-      m_cwTrace = GetCw ();
-    }
-  GenerateBackoff ();
-  RestartAccessIfNeeded ();
-}
-
-void
-Txop::GotCfEnd (void)
-{
-  NS_LOG_FUNCTION (this);
-  if (m_currentPacket != 0)
-    {
-      RestartAccessIfNeeded ();
-    }
-  else
-    {
-      StartAccessIfNeeded ();
-    }
-}
-
-void
-Txop::MissedCfPollResponse (bool expectedCfAck)
-{
-  NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("missed response to CF-POLL");
-  if (expectedCfAck)
-    {
-      if (!NeedDataRetransmission (m_currentPacket, m_currentHdr))
-        {
-          NS_LOG_DEBUG ("Ack Fail");
-          m_stationManager->ReportFinalDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                                   m_currentPacket->GetSize ());
-          m_currentPacket = 0;
-        }
-      else
-        {
-          NS_LOG_DEBUG ("Retransmit");
-          m_currentHdr.SetRetry ();
-        }
-    }
-  if (!m_txFailedCallback.IsNull ())
-    {
-      m_txFailedCallback (m_currentHdr);
-    }
-}
-
-void
-Txop::StartNextFragment (void)
-{
-  NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("start next packet fragment");
-  /* this callback is used only for fragments. */
-  NextFragment ();
-  WifiMacHeader hdr;
-  Ptr<Packet> fragment = GetFragmentPacket (&hdr);
-  m_currentParams.EnableAck ();
-  m_currentParams.DisableRts ();
-  if (IsLastFragment ())
-    {
-      m_currentParams.DisableNextData ();
-    }
-  else
-    {
-      m_currentParams.EnableNextData (GetNextFragmentSize ());
-    }
-  GetLow ()->StartTransmission (Create<WifiMacQueueItem> (fragment, hdr), m_currentParams, this);
-}
-
-void
-Txop::Cancel (void)
-{
-  NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("transmission cancelled");
-}
-
-void
-Txop::EndTxNoAck (void)
-{
-  NS_LOG_FUNCTION (this);
-  NS_LOG_DEBUG ("a transmission that did not require an ACK just finished");
-  m_currentPacket = 0;
-  ResetCw ();
-  m_cwTrace = GetCw ();
-  GenerateBackoff ();
-  if (!m_txOkCallback.IsNull ())
-    {
-      m_txOkCallback (m_currentHdr);
-    }
-  StartAccessIfNeeded ();
-}
-
-void
-Txop::SendCfFrame (WifiMacType frameType, Mac48Address addr)
-{
-  NS_LOG_FUNCTION (this << frameType << addr);
-  NS_ASSERT (m_low->IsCfPeriod ());
-  if (m_currentPacket != 0 && frameType != WIFI_MAC_CTL_END)
-    {
-      if (!NeedDataRetransmission (m_currentPacket, m_currentHdr))
-        {
-          m_stationManager->ReportFinalDataFailed (m_currentHdr.GetAddr1 (), &m_currentHdr,
-                                                   m_currentPacket->GetSize ());
-          m_currentPacket = 0;
-        }
-      else
-        {
-          m_currentHdr.SetRetry ();
-        }
-    }
-  else if ((m_queue->GetNPacketsByAddress (addr) > 0) && (frameType != WIFI_MAC_CTL_END)) //if no packet for that dest, send to another dest?
-    {
-      Ptr<WifiMacQueueItem> item = m_queue->DequeueByAddress (addr);
-      NS_ASSERT (item != 0);
-      m_currentPacket = item->GetPacket ();
-      m_currentHdr = item->GetHeader ();
-      uint16_t sequence = m_txMiddle->GetNextSequenceNumberFor (&m_currentHdr);
-      m_currentHdr.SetSequenceNumber (sequence);
-      m_currentHdr.SetFragmentNumber (0);
-      m_currentHdr.SetNoMoreFragments ();
-      m_currentHdr.SetNoRetry ();
-    }
-  else
-    {
-      m_currentPacket = Create<Packet> ();
-      m_currentHdr.SetNoRetry ();
-    }
-
-  if (m_currentPacket->GetSize () > 0)
-    {
-      switch (frameType)
-        {
-        case WIFI_MAC_DATA_NULL_CFPOLL:
-          m_currentHdr.SetType (WIFI_MAC_DATA_CFPOLL);
-          break;
-        case WIFI_MAC_DATA_NULL:
-          m_currentHdr.SetType (WIFI_MAC_DATA);
-          break;
-        default:
-          NS_ASSERT (false);
-          break;
-        }
-    }
-  else
-    {
-      m_currentHdr.SetType (frameType);
-    }
-  m_currentHdr.SetAddr1 (addr);
-  m_currentHdr.SetAddr2 (m_low->GetAddress ());
-  if (frameType == WIFI_MAC_DATA_NULL)
-    {
-      m_currentHdr.SetAddr3 (m_low->GetBssid ());
-      m_currentHdr.SetDsTo ();
-      m_currentHdr.SetDsNotFrom ();
-    }
-  else
-    {
-      m_currentHdr.SetAddr3 (m_low->GetAddress ());
-      m_currentHdr.SetDsNotTo ();
-      m_currentHdr.SetDsFrom ();
-    }
-  m_channelAccessManager->RequestAccess (this, true);
-}
-
-bool
-Txop::CanStartNextPolling () const
-{
-  return (!m_channelAccessManager->IsBusy () && GetLow ()->CanTransmitNextCfFrame ());
-}
-
 bool
 Txop::IsQosTxop () const
 {
   return false;
-}
-
-void
-Txop::StartNextPacket (void)
-{
-  NS_LOG_WARN ("StartNext should not be called for non QoS!");
-}
-
-void
-Txop::GotBlockAck (const CtrlBAckResponseHeader *blockAck, Mac48Address recipient, double rxSnr, double dataSnr, WifiTxVector dataTxVector)
-{
-  NS_LOG_WARN ("GotBlockAck should not be called for non QoS!");
-}
-
-void
-Txop::MissedBlockAck (uint8_t nMpdus)
-{
-  NS_LOG_WARN ("MissedBlockAck should not be called for non QoS!");
-}
-
-Time
-Txop::GetTxopRemaining (void) const
-{
-  NS_LOG_WARN ("GetTxopRemaining should not be called for non QoS!");
-  return Seconds (0);
-}
-
-void
-Txop::TerminateTxop (void)
-{
-  NS_LOG_WARN ("TerminateTxop should not be called for non QoS!");
 }
 
 } //namespace ns3

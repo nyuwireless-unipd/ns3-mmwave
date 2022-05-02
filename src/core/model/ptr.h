@@ -226,7 +226,7 @@ public:
  */
 template <typename T,
           typename... Ts>
-Ptr<T> Create (Ts... args);
+Ptr<T> Create (Ts&&... args);
 
 /** @}*/
 
@@ -317,7 +317,11 @@ bool operator != (Ptr<T1> const &lhs, Ptr<T2> const &rhs);
 template <typename T>
 bool operator < (const Ptr<T> &lhs, const Ptr<T> &rhs);
 template <typename T>
-bool operator <= (const Ptr<T> &lhs, const Ptr<T> &rhs);
+bool operator< (const Ptr<T> &lhs, const Ptr<const T> &rhs);
+template <typename T>
+bool operator< (const Ptr<const T> &lhs, const Ptr<T> &rhs);
+template <typename T>
+bool operator<= (const Ptr<T> &lhs, const Ptr<T> &rhs);
 template <typename T>
 bool operator > (const Ptr<T> &lhs, const Ptr<T> &rhs);
 template <typename T>
@@ -402,9 +406,9 @@ namespace ns3 {
  ************************************************/
 
 template <typename T, typename... Ts>
-Ptr<T> Create (Ts... args)
+Ptr<T> Create (Ts&&... args)
 {
-  return Ptr<T> (new T (args...), false);
+  return Ptr<T> (new T (std::forward<Ts> (args)...), false);
 }
 
 template <typename U>
@@ -476,7 +480,22 @@ bool operator < (const Ptr<T> &lhs, const Ptr<T> &rhs)
 }
 
 template <typename T>
-bool operator <= (const Ptr<T> &lhs, const Ptr<T> &rhs)
+bool
+operator< (const Ptr<T> &lhs, const Ptr<const T> &rhs)
+{
+  return PeekPointer<T> (lhs) < PeekPointer<const T> (rhs);
+}
+
+template <typename T>
+bool
+operator< (const Ptr<const T> &lhs, const Ptr<T> &rhs)
+{
+  return PeekPointer<const T> (lhs) < PeekPointer<T> (rhs);
+}
+
+template <typename T>
+bool
+operator<= (const Ptr<T> &lhs, const Ptr<T> &rhs)
 {
   return PeekPointer<T> (lhs) <= PeekPointer<T> (rhs);
 }
@@ -675,5 +694,40 @@ Ptr<T>::operator Tester * () const
 
 
 } // namespace ns3
+
+
+/****************************************************
+ *      Global Functions (outside namespace ns3)
+ ***************************************************/
+
+/**
+ * \ingroup ptr
+ * Hashing functor taking a `Ptr` and returning a @c std::size_t.
+ * For use with `unordered_map` and `unordered_set`.
+ *
+ * \note When a `Ptr` is used in a container the lifetime of the underlying
+ * object is at least as long as the container.  In other words,
+ * you need to remove the object from the container when you are done with
+ * it, otherwise the object will persist until the container itself is
+ * deleted.
+ *
+ * \tparam T \deduced The type held by the `Ptr`
+ */
+template<class T>
+struct
+std::hash<ns3::Ptr<T>>
+{
+  /**
+   * The functor.
+   * \param p The `Ptr` value to hash.
+   * \return the hash
+   */
+  std::size_t
+  operator () (ns3::Ptr<T> p) const
+  {
+    return std::hash<const T *> () (ns3::PeekPointer (p));
+  }
+};
+
 
 #endif /* PTR_H */

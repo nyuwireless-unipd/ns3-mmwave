@@ -23,7 +23,6 @@
 #include "ns3/mesh-wifi-beacon.h"
 #include "ns3/log.h"
 #include "ns3/boolean.h"
-#include "ns3/mac-low.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/simulator.h"
 #include "ns3/yans-wifi-phy.h"
@@ -33,6 +32,7 @@
 #include "ns3/trace-source-accessor.h"
 #include "ns3/socket.h"
 #include "ns3/wifi-net-device.h"
+#include "ns3/channel-access-manager.h"
 
 namespace ns3 {
 
@@ -98,7 +98,7 @@ void
 MeshWifiInterfaceMac::Enqueue (Ptr<Packet> packet, Mac48Address to)
 {
   NS_LOG_FUNCTION (this << packet << to);
-  ForwardDown (packet, m_low->GetAddress (), to);
+  ForwardDown (packet, GetAddress (), to);
 }
 bool
 MeshWifiInterfaceMac::SupportsSendFrom () const
@@ -236,9 +236,9 @@ MeshWifiInterfaceMac::ForwardDown (Ptr<Packet> packet, Mac48Address from, Mac48A
     {
       // in adhoc mode, we assume that every destination
       // supports all the rates we support.
-      for (uint32_t i = 0; i < m_phy->GetNModes (); i++)
+      for (const auto & mode : m_phy->GetModeList ())
         {
-          m_stationManager->AddSupportedMode (hdr.GetAddr1 (), m_phy->GetMode (i));
+          m_stationManager->AddSupportedMode (hdr.GetAddr1 (), mode);
         }
       m_stationManager->RecordDisassociated (hdr.GetAddr1 ());
     }
@@ -303,9 +303,8 @@ MeshWifiInterfaceMac::GetSupportedRates () const
   // set the set of supported rates and make sure that we indicate
   // the Basic Rate set in this set of supported rates.
   SupportedRates rates;
-  for (uint32_t i = 0; i < m_phy->GetNModes (); i++)
+  for (const auto & mode : m_phy->GetModeList ())
     {
-      WifiMode mode = m_phy->GetMode (i);
       uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, DynamicCast<WifiNetDevice> (m_phy->GetDevice ()));
       rates.AddSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth (), gi, 1));
     }
@@ -431,9 +430,8 @@ MeshWifiInterfaceMac::Receive (Ptr<WifiMacQueueItem> mpdu)
         {
           SupportedRates rates = beacon_hdr.GetSupportedRates ();
 
-          for (uint32_t i = 0; i < m_phy->GetNModes (); i++)
+          for (const auto & mode : m_phy->GetModeList ())
             {
-              WifiMode mode = m_phy->GetMode (i);
               uint16_t gi = ConvertGuardIntervalToNanoSeconds (mode, DynamicCast<WifiNetDevice> (m_phy->GetDevice ()));
               uint64_t rate = mode.GetDataRate (m_phy->GetChannelWidth (), gi, 1);
               if (rates.IsSupportedRate (rate))
@@ -542,6 +540,7 @@ MeshWifiInterfaceMac::ResetStats ()
 void
 MeshWifiInterfaceMac::ConfigureStandard (enum WifiStandard standard)
 {
+  SetQosSupported (true);  // a mesh station is a QoS station
   RegularWifiMac::ConfigureStandard (standard);
   m_standard = standard;
 

@@ -26,8 +26,9 @@
 
 #include "ns3/nstime.h"
 #include "wifi-mac-header.h"
-#include "msdu-aggregator.h"
 #include "amsdu-subframe-header.h"
+#include "qos-utils.h"
+#include <list>
 
 namespace ns3 {
 
@@ -99,6 +100,21 @@ public:
   uint32_t GetSize (void) const;
 
   /**
+   * \brief Return the size in bytes of the packet or control header or management
+   *        header stored by this item.
+   *
+   * \return the size in bytes of the packet or control header or management header
+   *         stored by this item
+   */
+  uint32_t GetPacketSize (void) const;
+
+  /**
+   * Return true if this item contains an MSDU fragment, false otherwise
+   * \return true if this item contains an MSDU fragment, false otherwise
+   */
+  bool IsFragment (void) const;
+
+  /**
    * \brief Aggregate the MSDU contained in the given MPDU to this MPDU (thus
    *        constituting an A-MSDU). Note that the given MPDU cannot contain
    *        an A-MSDU.
@@ -106,18 +122,47 @@ public:
    */
   void Aggregate (Ptr<const WifiMacQueueItem> msdu);
 
+  /// DeaggregatedMsdus typedef
+  typedef std::list<std::pair<Ptr<const Packet>, AmsduSubframeHeader> > DeaggregatedMsdus;
+  /// DeaggregatedMsdusCI typedef
+  typedef std::list<std::pair<Ptr<const Packet>, AmsduSubframeHeader> >::const_iterator DeaggregatedMsdusCI;
+
   /**
    * \brief Get a constant iterator pointing to the first MSDU in the list of aggregated MSDUs.
    *
    * \return a constant iterator pointing to the first MSDU in the list of aggregated MSDUs
    */
-  MsduAggregator::DeaggregatedMsdusCI begin (void);
+  DeaggregatedMsdusCI begin (void);
   /**
    * \brief Get a constant iterator indicating past-the-last MSDU in the list of aggregated MSDUs.
    *
    * \return a constant iterator indicating past-the-last MSDU in the list of aggregated MSDUs
    */
-  MsduAggregator::DeaggregatedMsdusCI end (void);
+  DeaggregatedMsdusCI end (void);
+
+  /// Const iterator typedef
+  typedef std::list<Ptr<WifiMacQueueItem>>::const_iterator ConstIterator;
+
+  /**
+   * Return true if this item is stored in some queue, false otherwise.
+   *
+   * \return true if this item is stored in some queue, false otherwise
+   */
+  bool IsQueued (void) const;
+  /**
+   * Get the AC of the queue this item is stored into. Abort if this item
+   * is not stored in a queue.
+   *
+   * \return the AC of the queue this item is stored into
+   */
+  AcIndex GetQueueAc (void) const;
+  /**
+   * Get a const iterator pointing to the position of the MPDU in the queue. This
+   * method should not be called if the MPDU is not stored in a queue.
+   *
+   * \return an iterator pointing to the position of the MPDU in the queue
+   */
+  ConstIterator GetQueueIterator (void) const;
 
   /**
    * \brief Get the MAC protocol data unit (MPDU) corresponding to this item
@@ -126,6 +171,21 @@ public:
    * \return the MAC protocol data unit corresponding to this item.
    */
   Ptr<Packet> GetProtocolDataUnit (void) const;
+
+  /**
+   * Mark this MPDU as being in flight (only used if Block Ack agreement established).
+   */
+  void SetInFlight (void);
+  /**
+   * Mark this MPDU as not being in flight (only used if Block Ack agreement established).
+   */
+  void ResetInFlight (void);
+  /**
+   * Return true if this MPDU is in flight, false otherwise.
+   *
+   * \return true if this MPDU is in flight, false otherwise
+   */
+  bool IsInFlight (void) const;
 
   /**
    * \brief Print the item contents.
@@ -142,10 +202,15 @@ private:
    */
   void DoAggregate (Ptr<const WifiMacQueueItem> msdu);
 
+  friend class WifiMacQueue;  // to set queue AC and iterator information
+
   Ptr<const Packet> m_packet;                   //!< The packet (MSDU or A-MSDU) contained in this queue item
   WifiMacHeader m_header;                       //!< Wifi MAC header associated with the packet
   Time m_tstamp;                                //!< timestamp when the packet arrived at the queue
-  MsduAggregator::DeaggregatedMsdus m_msduList; //!< The list of aggregated MSDUs included in this MPDU
+  DeaggregatedMsdus m_msduList;                 //!< The list of aggregated MSDUs included in this MPDU
+  ConstIterator m_queueIt;                      //!< Queue iterator pointing to this MPDU, if queued
+  AcIndex m_queueAc;                            //!< AC associated with the queue this MPDU is stored into
+  bool m_inFlight;                              //!< whether the MPDU is in flight
 };
 
 /**

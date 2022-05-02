@@ -165,4 +165,37 @@ BlockAckAgreement::IsHtSupported (void) const
   return (m_htSupported == 1) ? true : false;
 }
 
+BlockAckType
+BlockAckAgreement::GetBlockAckType (void) const
+{
+  if (!m_htSupported)
+    {
+      return BlockAckType::BASIC;
+    }
+  // Multi-TID Block Ack is not currently supported
+  if (m_bufferSize > 64)
+    {
+      return {BlockAckType::COMPRESSED, {32}};
+    }
+  return {BlockAckType::COMPRESSED, {8}};
+}
+
+BlockAckReqType
+BlockAckAgreement::GetBlockAckReqType (void) const
+{
+  if (!m_htSupported)
+    {
+      return BlockAckReqType::BASIC;
+    }
+  // Multi-TID Block Ack Request is not currently supported
+  return BlockAckReqType::COMPRESSED;
+}
+
+std::size_t
+BlockAckAgreement::GetDistance (uint16_t seqNumber, uint16_t startingSeqNumber)
+{
+  NS_ASSERT (seqNumber < SEQNO_SPACE_SIZE && startingSeqNumber < SEQNO_SPACE_SIZE);
+  return (seqNumber - startingSeqNumber + SEQNO_SPACE_SIZE) % SEQNO_SPACE_SIZE;
+}
+
 } //namespace ns3

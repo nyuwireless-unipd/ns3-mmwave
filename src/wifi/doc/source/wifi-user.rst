@@ -256,7 +256,6 @@ The following values for WifiStandard are defined in
   WIFI_STANDARD_80211b,
   WIFI_STANDARD_80211g,
   WIFI_STANDARD_80211p,
-  WIFI_STANDARD_holland,
   WIFI_STANDARD_80211n_2_4GHZ,
   WIFI_STANDARD_80211n_5GHZ,
   WIFI_STANDARD_80211ac,
@@ -342,54 +341,56 @@ The following channel numbers are well-defined for 2.4 GHz standards:
 The following channel numbers are well-defined for 5 GHz standards:
 
 .. table:: 5 GHz channel numbers
-    :width: 30 70
-.. tabularcolumns:: |p{3cm}|p{10cm}|
-+------------------+-------------------------------------------+
-| ``ChannelWidth`` | ``ChannelNumber``                         |
-+------------------+-------------------------------------------+
-| 20 MHz           | 36, 40, 44, 48, 52, 56, 60, 64, 100,      |
-|                  | 104, 108, 112, 116, 120, 124,             |
-|                  | 128, 132, 136, 140, 144,                  |
-|                  | 149, 153, 161, 165, 169                   |
-+------------------+-------------------------------------------+
-| 40 MHz           | 38, 46, 54, 62, 102, 110, 118, 126,       |
-|                  | 134, 142, 151, 159                        |
-+------------------+-------------------------------------------+
-| 80 MHz           | 42, 58, 106, 122, 138, 155                |
-+------------------+-------------------------------------------+
-| 160 MHz          | 50, 114                                   |
-+------------------+-------------------------------------------+
-| 10 MHz (802.11p) | 172, 174, 176, 178, 180, 182, 184         |
-+------------------+-------------------------------------------+
-| 5 MHz (802.11p)  | 171, 173, 175, 177, 179, 181, 183         |
-+------------------+-------------------------------------------+
+   :widths: 20 70
+
+   +------------------+-------------------------------------------+
+   | ``ChannelWidth`` | ``ChannelNumber``                         |
+   +------------------+-------------------------------------------+
+   | 20 MHz           | 36, 40, 44, 48, 52, 56, 60, 64, 100,      |
+   |                  | 104, 108, 112, 116, 120, 124,             |
+   |                  | 128, 132, 136, 140, 144,                  |
+   |                  | 149, 153, 161, 165, 169                   |
+   +------------------+-------------------------------------------+
+   | 40 MHz           | 38, 46, 54, 62, 102, 110, 118, 126,       |
+   |                  | 134, 142, 151, 159                        |
+   +------------------+-------------------------------------------+
+   | 80 MHz           | 42, 58, 106, 122, 138, 155                |
+   +------------------+-------------------------------------------+
+   | 160 MHz          | 50, 114                                   |
+   +------------------+-------------------------------------------+
+   | 10 MHz (802.11p) | 172, 174, 176, 178, 180, 182, 184         |
+   +------------------+-------------------------------------------+
+   | 5 MHz (802.11p)  | 171, 173, 175, 177, 179, 181, 183         |
+   +------------------+-------------------------------------------+
+
 
 The following channel numbers are well-defined for 6 GHz standards (802.11ax only):
 
 .. table:: 6 GHz channel numbers
-    :width: 30 70
-.. tabularcolumns:: |p{3cm}|p{10cm}|
-+------------------+-------------------------------------------+
-| ``ChannelWidth`` | ``ChannelNumber``                         |
-+------------------+-------------------------------------------+
-| 20 MHz           | 1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41,  |
-|                  | 45, 49, 53, 57, 61, 65, 69, 73, 77, 81,   |
-|                  | 85, 89, 93, 97, 101, 105, 109, 113, 117,  |
-|                  | 121, 125, 129, 133, 137, 141, 145, 149,   |
-|                  | 153, 157, 161, 165, 169, 173, 177, 181,   |
-|                  | 185, 189, 193, 197, 201, 205, 209, 213,   |
-|                  | 217, 221, 225, 229, 233                   |
-+------------------+-------------------------------------------+
-| 40 MHz           | 3, 11, 19, 27, 35, 43, 51, 59, 67, 75,    |
-|                  | 83, 91, 99, 107, 115, 123, 131, 139, 147, |
-|                  | 155, 163, 171, 179, 187, 195, 203, 211,   |
-|                  | 219, 227                                  |
-+------------------+-------------------------------------------+
-| 80 MHz           | 7, 23, 39, 55, 71, 87, 103, 119, 135,     |
-|                  | 151, 167, 183, 199, 215                   |
-+------------------+-------------------------------------------+
-| 160 MHz          | 15, 47, 79, 111, 143, 175, 207            |
-+------------------+-------------------------------------------+
+   :widths: 20 70
+
+   +------------------+-------------------------------------------+
+   | ``ChannelWidth`` | ``ChannelNumber``                         |
+   +------------------+-------------------------------------------+
+   | 20 MHz           | 1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41,  |
+   |                  | 45, 49, 53, 57, 61, 65, 69, 73, 77, 81,   |
+   |                  | 85, 89, 93, 97, 101, 105, 109, 113, 117,  |
+   |                  | 121, 125, 129, 133, 137, 141, 145, 149,   |
+   |                  | 153, 157, 161, 165, 169, 173, 177, 181,   |
+   |                  | 185, 189, 193, 197, 201, 205, 209, 213,   |
+   |                  | 217, 221, 225, 229, 233                   |
+   +------------------+-------------------------------------------+
+   | 40 MHz           | 3, 11, 19, 27, 35, 43, 51, 59, 67, 75,    |
+   |                  | 83, 91, 99, 107, 115, 123, 131, 139, 147, |
+   |                  | 155, 163, 171, 179, 187, 195, 203, 211,   |
+   |                  | 219, 227                                  |
+   +------------------+-------------------------------------------+
+   | 80 MHz           | 7, 23, 39, 55, 71, 87, 103, 119, 135,     |
+   |                  | 151, 167, 183, 199, 215                   |
+   +------------------+-------------------------------------------+
+   | 160 MHz          | 15, 47, 79, 111, 143, 175, 207            |
+   +------------------+-------------------------------------------+
+
 
 The channel number may be set either before or after creation of the
 WifiPhy object.  
@@ -550,23 +551,6 @@ The following code shows how to create an AP with QoS enabled::
 
 To create ad-hoc MAC instances, simply use ``ns3::AdhocWifiMac`` instead of ``ns3::StaWifiMac`` or ``ns3::ApWifiMac``.
 
-In infrastructure mode without QoS enabled, it is also possible to enable PCF support.
-The following code shows how to create a CF-pollable station::
-
-  WifiMacHelper wifiMacHelper;
-  wifiMacHelper.SetType ("ns3::StaWifiMac",
-                         "Ssid", SsidValue (ssid),
-                         "PcfSupported", BooleanValue (true));
-
-PCF also supports an option to change the maximum duration of the contention-free period (which must be a multiple of 1024 microseconds).
-The following code shows how to create an AP with a custom PCF configuration::
-
-  WifiMacHelper wifiMacHelper;
-  wifiMacHelper.SetType ("ns3::ApWifiMac",
-                         "Ssid", SsidValue (ssid),
-                         "PcfSupported", BooleanValue (true),
-                         "CfpMaxDuration", TimeValue (MicroSeconds (20480)));
-
 With QoS-enabled MAC models it is possible to work with traffic belonging to
 four different Access Categories (ACs): **AC_VO** for voice traffic,
 **AC_VI** for video traffic, **AC_BE** for best-effort
@@ -614,6 +598,22 @@ in an infrastructure network where the AP has SSID ``ns-3-ssid``::
                           "VO_MaxAmpduSize", UintegerValue (65535),
                           "BE_MaxAmsduSize", UintegerValue (7935),
                           "ActiveProbing", BooleanValue (false));
+
+802.11ax APs support sending multi-user frames via DL OFDMA and UL OFDMA if a Multi-User Scheduler is
+aggregated to the wifi MAC (by default no scheduler is aggregated). WifiMacHelper enables to aggregate
+a Multi-User Scheduler to an AP and set its parameters::
+
+    WifiMacHelper wifiMacHelper;
+    wifiMacHelper.SetMultiUserScheduler ("ns3::RrMultiUserScheduler",
+                                        "EnableUlOfdma", BooleanValue (true),
+                                        "EnableBsrp", BooleanValue (false));
+
+The Ack Manager is in charge of selecting the acknowledgment method among the three
+available methods (see section :ref:`wifi-mu-ack-sequences` ). The default ack manager
+enables to select the acknowledgment method, e.g.::
+
+    Config::SetDefault ("ns3::WifiDefaultAckManager::DlMuAckSequenceType",
+                       EnumValue (WifiAcknowledgment::DL_MU_AGGREGATE_TF));
 
 Selection of the Access Category (AC)
 +++++++++++++++++++++++++++++++++++++
@@ -789,10 +789,6 @@ It is also possible to configure HT-specific attributes using ``Config::Set``.
 The following line of code enables the support of a short guard interval for all stations:
 
  Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HtConfiguration/ShortGuardIntervalSupported", BooleanValue (true));
-
-Furthermore, 802.11n provides an optional mode (Greenfield mode) to reduce preamble durations and which is only compatible with 802.11n devices. This mode is enabled as follows::
-
- htConfiguration->SetGreenfieldSupported (true);
 
 VHT configuration
 =================

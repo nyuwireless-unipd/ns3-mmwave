@@ -34,6 +34,7 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/mmwave-helper.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
+#include "ns3/isotropic-antenna-model.h"
 
 using namespace ns3;
 using namespace mmwave;
@@ -176,8 +177,9 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SndBufSize", UintegerValue (131072*100));
   Config::SetDefault ("ns3::TcpSocket::RcvBufSize", UintegerValue (131072*100));
     
-  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
-  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
+  // by default, isotropic antennas are used. To use the 3GPP radiation pattern instead, use the <ThreeGppAntennaArrayModel>
+  // beware: proper configuration of the bearing and downtilt angles is needed
+  Config::SetDefault ("ns3::PhasedArrayModel::AntennaElement", PointerValue (CreateObject<IsotropicAntennaModel> ())); 
   
   double stopTime = 8;
   double simStopTime = 10;

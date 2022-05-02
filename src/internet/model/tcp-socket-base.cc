@@ -1184,8 +1184,8 @@ TcpSocketBase::ForwardUp6 (Ptr<Packet> packet, Ipv6Header header, uint16_t port,
                 " to " << m_endPoint6->GetLocalAddress () <<
                 ":" << m_endPoint6->GetLocalPort ());
 
-  Address fromAddress = Inet6SocketAddress (header.GetSourceAddress (), port);
-  Address toAddress = Inet6SocketAddress (header.GetDestinationAddress (),
+  Address fromAddress = Inet6SocketAddress (header.GetSource (), port);
+  Address toAddress = Inet6SocketAddress (header.GetDestination (),
                                           m_endPoint6->GetLocalPort ());
 
   TcpHeader tcpHeader;
@@ -1811,6 +1811,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   m_txBuffer->DiscardUpTo (ackNumber, MakeCallback (&TcpRateOps::SkbDelivered, m_rateOps));
 
   uint32_t currentDelivered = static_cast<uint32_t> (m_rateOps->GetConnectionRate ().m_delivered - previousDelivered);
+  m_tcb->m_lastAckedSackedBytes = currentDelivered;
 
   if (m_tcb->m_congState == TcpSocketState::CA_CWR && (ackNumber > m_recover))
     {
@@ -2864,7 +2865,7 @@ TcpSocketBase::SetupEndpoint6 ()
   // Create a dummy packet, then ask the routing function for the best output
   // interface's address
   Ipv6Header header;
-  header.SetDestinationAddress (m_endPoint6->GetPeerAddress ());
+  header.SetDestination (m_endPoint6->GetPeerAddress ());
   Socket::SocketErrno errno_;
   Ptr<Ipv6Route> route;
   Ptr<NetDevice> oif = m_boundnetdevice;
@@ -3520,13 +3521,6 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
     }
 }
 
-/**
- * \brief Estimate the RTT
- *
- * Called by ForwardUp() to estimate RTT.
- *
- * \param tcpHeader TCP header for the incoming packet
- */
 void
 TcpSocketBase::EstimateRtt (const TcpHeader& tcpHeader)
 {
@@ -3546,6 +3540,11 @@ TcpSocketBase::EstimateRtt (const TcpHeader& tcpHeader)
               Ptr<const TcpOptionTS> ts;
               ts = DynamicCast<const TcpOptionTS> (tcpHeader.GetOption (TcpOption::TS));
               m = TcpOptionTS::ElapsedTimeFromTsValue (ts->GetEcho ());
+              if (m.IsZero ())
+                {
+                  NS_LOG_LOGIC ("TcpSocketBase::EstimateRtt - RTT calculated from TcpOption::TS is zero, approximating to 1us.");
+                  m = MicroSeconds (1);
+                }
             }
           else
             {

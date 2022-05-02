@@ -39,6 +39,7 @@
 #include "ns3/point-to-point-helper.h"
 #include "ns3/config-store.h"
 #include "ns3/mmwave-point-to-point-epc-helper.h"
+#include "ns3/isotropic-antenna-model.h"
 
 NS_LOG_COMPONENT_DEFINE ("QdChannelModelExample");
 
@@ -48,7 +49,7 @@ using namespace mmwave;
 int
 main (int argc, char *argv[])
 {
-  std::string qdFilesPath = "src/spectrum/model/QD/"; // The path of the folder with the QD scenarios
+  std::string qdFilesPath = "contrib/qd-channel/model/QD/"; // The path of the folder with the QD scenarios
   std::string scenario = "Indoor1"; // The name of the scenario
   uint32_t interPacketInterval = 1e3; // App inter packet arrival [us]
   double txPower = 30.0; // Transmitted power for both eNB and UE [dBm]
@@ -102,23 +103,23 @@ main (int argc, char *argv[])
   Time simTime = qdModel->GetQdSimTime ();
   Config::SetDefault ("ns3::ThreeGppSpectrumPropagationLossModel::ChannelModel", PointerValue (qdModel));
 
-  // Bandwidth = ChunkPerRB * ChunkWidth (about 400 MHz)
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkPerRB", UintegerValue (29));
-  Config::SetDefault ("ns3::MmWavePhyMacCommon::ChunkWidth", DoubleValue (13.889e6));
-
   // Set power and noise figure
+  Config::SetDefault ("ns3::MmWavePhyMacCommon::Bandwidth", DoubleValue (400e6));
   Config::SetDefault ("ns3::MmWaveEnbPhy::TxPower", DoubleValue (txPower));
   Config::SetDefault ("ns3::MmWaveEnbPhy::NoiseFigure", DoubleValue (noiseFigure));
   Config::SetDefault ("ns3::MmWaveUePhy::TxPower", DoubleValue (txPower));
   Config::SetDefault ("ns3::MmWaveUePhy::NoiseFigure", DoubleValue (noiseFigure));
 
   // Setup antenna configuration
-  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true));
+  Config::SetDefault ("ns3::PhasedArrayModel::AntennaElement", PointerValue (CreateObject<IsotropicAntennaModel> ()));
 
   // Create the MmWave helper
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
-  mmwaveHelper->SetMmWaveEnbNetDeviceAttribute("AntennaNum", UintegerValue (enbAntennaNum));
-  mmwaveHelper->SetMmWaveUeNetDeviceAttribute("AntennaNum", UintegerValue (ueAntennaNum));
+  // set the number of antennas in the devices
+  mmwaveHelper->SetUePhasedArrayModelAttribute ("NumColumns" , UintegerValue (std::sqrt (ueAntennaNum)));
+  mmwaveHelper->SetUePhasedArrayModelAttribute ("NumRows" , UintegerValue (std::sqrt (ueAntennaNum)));
+  mmwaveHelper->SetEnbPhasedArrayModelAttribute ("NumColumns" , UintegerValue (std::sqrt (enbAntennaNum)));
+  mmwaveHelper->SetEnbPhasedArrayModelAttribute ("NumRows" , UintegerValue (std::sqrt (enbAntennaNum)));
 
   mmwaveHelper->SetSchedulerType ("ns3::MmWaveFlexTtiMacScheduler");
   Ptr<MmWavePointToPointEpcHelper>  epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();

@@ -24,8 +24,8 @@
 
 #include <list>
 #include "wifi-mode.h"
-#include "wifi-preamble.h"
-#include "he-ru.h"
+#include "wifi-phy-common.h"
+#include "ns3/he-ru.h"
 
 namespace ns3 {
 
@@ -90,6 +90,7 @@ public:
    * \param stbc enable or disable STBC
    * \param ldpc enable or disable LDPC (BCC is used otherwise)
    * \param bssColor the BSS color
+   * \param length the LENGTH field of the L-SIG
    */
   WifiTxVector (WifiMode mode,
                 uint8_t powerLevel,
@@ -102,7 +103,8 @@ public:
                 bool aggregation,
                 bool stbc = false,
                 bool ldpc = false,
-                uint8_t bssColor = 0);
+                uint8_t bssColor = 0,
+                uint16_t length = 0);
   /**
    * Copy constructor
    * \param txVector the TXVECTOR to copy
@@ -119,23 +121,30 @@ public:
    * MU PPDU, return the transmission mode (MCS) selected for the transmission
    * to the station identified by the given STA-ID.
    *
-   * \param staId the station ID for HE MU
+   * \param staId the station ID for MU
    * \returns the selected payload transmission mode
    */
   WifiMode GetMode (uint16_t staId = SU_STA_ID) const;
   /**
-  * Sets the selected payload transmission mode
-  *
-  * \param mode the payload WifiMode
-  */
+   * Sets the selected payload transmission mode
+   *
+   * \param mode the payload WifiMode
+   */
   void SetMode (WifiMode mode);
   /**
-  * Sets the selected payload transmission mode for a given STA ID (for HE MU only)
-  *
-  * \param mode
-   * \param staId the station ID for HE MU
-  */
+   * Sets the selected payload transmission mode for a given STA ID (for MU only)
+   *
+   * \param mode
+   * \param staId the station ID for MU
+   */
   void SetMode (WifiMode mode, uint16_t staId);
+
+  /**
+   * Get the modulation class specified by this TXVECTOR.
+   *
+   * \return the Modulation Class specified by this TXVECTOR
+   */
+  WifiModulationClass GetModulationClass (void) const;
 
   /**
    * \returns the transmission power level
@@ -193,12 +202,12 @@ public:
    * return the number of spatial streams for the transmission to the station
    * identified by the given STA-ID.
    *
-   * \param staId the station ID for HE MU
+   * \param staId the station ID for MU
    * \returns the number of spatial streams
    */
   uint8_t GetNss (uint16_t staId = SU_STA_ID) const;
   /**
-   * \returns the maximum number of Nss (namely if HE MU)
+   * \returns the maximum number of Nss (namely if MU)
    */
   uint8_t GetNssMax (void) const;
   /**
@@ -208,10 +217,10 @@ public:
    */
   void SetNss (uint8_t nss);
   /**
-   * Sets the number of Nss for HE MU
+   * Sets the number of Nss for MU
    *
    * \param nss the number of spatial streams
-   * \param staId the station ID for HE MU
+   * \param staId the station ID for MU
    */
   void SetNss (uint8_t nss, uint16_t staId);
   /**
@@ -273,6 +282,16 @@ public:
    */
   uint8_t GetBssColor (void) const;
   /**
+   * Set the LENGTH field of the L-SIG
+   * \param length the LENGTH field of the L-SIG
+   */
+  void SetLength (uint16_t length);
+  /**
+   * Get the LENGTH field of the L-SIG
+   * \return the LENGTH field of the L-SIG
+   */
+  uint16_t GetLength (void) const;
+  /**
    * The standard disallows certain combinations of WifiMode, number of
    * spatial streams, and channel widths.  This method can be used to
    * check whether this WifiTxVector contains an invalid combination.
@@ -281,8 +300,26 @@ public:
    */
   bool IsValid (void) const;
    /**
+   * Return true if this TX vector is used for a multi-user transmission.
+   *
+   * \return true if this TX vector is used for a multi-user transmission
+   */
+  bool IsMu (void) const;
+   /**
+   * Return true if this TX vector is used for a downlink multi-user transmission.
+   *
+   * \return true if this TX vector is used for a downlink multi-user transmission
+   */
+  bool IsDlMu (void) const;
+   /**
+   * Return true if this TX vector is used for an uplink multi-user transmission.
+   *
+   * \return true if this TX vector is used for an uplink multi-user transmission
+   */
+  bool IsUlMu (void) const;
+  /**
     * Get the RU specification for the STA-ID.
-    * This is applicable only for HE MU.
+    * This is applicable only for MU.
     *
     * \param staId the station ID
     * \return the RU specification for the STA-ID
@@ -290,7 +327,7 @@ public:
    HeRu::RuSpec GetRu (uint16_t staId) const;
    /**
     * Set the RU specification for the STA-ID.
-    * This is applicable only for HE MU.
+    * This is applicable only for MU.
     *
     * \param ru the RU specification
     * \param staId the station ID
@@ -313,12 +350,28 @@ public:
     */
    void SetHeMuUserInfo (uint16_t staId, HeMuUserInfo userInfo);
    /**
-    * Get the map HE MU user-specific transmission information indexed by STA-ID.
+    * Get a const reference to the map HE MU user-specific transmission information indexed by STA-ID.
     * This is applicable only for HE MU.
     *
-    * \return the map of HE MU user-specific information indexed by STA-ID
+    * \return a const reference to the map of HE MU user-specific information indexed by STA-ID
     */
    const HeMuUserInfoMap& GetHeMuUserInfoMap (void) const;
+   /**
+    * Get a reference to the map HE MU user-specific transmission information indexed by STA-ID.
+    * This is applicable only for HE MU.
+    *
+    * \return a reference to the map of HE MU user-specific information indexed by STA-ID
+    */
+   HeMuUserInfoMap& GetHeMuUserInfoMap (void);
+   /**
+    * Get the number of RUs per HE-SIG-B content channel.
+    * This is applicable only for MU. MU-MIMO (i.e. multiple stations
+    * per RU) is not supported yet.
+    * See section 27.3.10.8.3 of IEEE 802.11ax draft 4.0.
+    *
+    * \return a pair containing the number of RUs in each HE-SIG-B content channel (resp. 1 and 2)
+    */
+   std::pair<std::size_t, std::size_t> GetNumRusPerHeSigBContentChannel (void) const;
 
 
 private:
@@ -338,6 +391,7 @@ private:
   bool     m_stbc;               /**< STBC used or not */
   bool     m_ldpc;               /**< LDPC FEC coding if true, BCC otherwise*/
   uint8_t  m_bssColor;           /**< BSS color */
+  uint16_t m_length;             /**< LENGTH field of the L-SIG */
 
   bool     m_modeInitialized;         /**< Internal initialization flag */
 

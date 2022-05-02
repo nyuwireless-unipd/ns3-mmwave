@@ -224,7 +224,7 @@ enum IpL4Protocol::RxStatus Icmpv6L4Protocol::Receive (Ptr<Packet> packet, Ipv4H
 
 enum IpL4Protocol::RxStatus Icmpv6L4Protocol::Receive (Ptr<Packet> packet, Ipv6Header const &header, Ptr<Ipv6Interface> interface)
 {
-  NS_LOG_FUNCTION (this << packet << header.GetSourceAddress () << header.GetDestinationAddress () << interface);
+  NS_LOG_FUNCTION (this << packet << header.GetSource () << header.GetDestination () << interface);
   Ptr<Packet> p = packet->Copy ();
   Ptr<Ipv6> ipv6 = m_node->GetObject<Ipv6> ();
 
@@ -237,26 +237,26 @@ enum IpL4Protocol::RxStatus Icmpv6L4Protocol::Receive (Ptr<Packet> packet, Ipv6H
     case Icmpv6Header::ICMPV6_ND_ROUTER_SOLICITATION:
       if (ipv6->IsForwarding (ipv6->GetInterfaceForDevice (interface->GetDevice ())))
         {
-          HandleRS (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+          HandleRS (p, header.GetSource (), header.GetDestination (), interface);
         }
       break;
     case Icmpv6Header::ICMPV6_ND_ROUTER_ADVERTISEMENT:
       if (!ipv6->IsForwarding (ipv6->GetInterfaceForDevice (interface->GetDevice ())))
         {
-          HandleRA (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+          HandleRA (p, header.GetSource (), header.GetDestination (), interface);
         }
       break;
     case Icmpv6Header::ICMPV6_ND_NEIGHBOR_SOLICITATION:
-      HandleNS (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandleNS (p, header.GetSource (), header.GetDestination (), interface);
       break;
     case Icmpv6Header::ICMPV6_ND_NEIGHBOR_ADVERTISEMENT:
-      HandleNA (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandleNA (p, header.GetSource (), header.GetDestination (), interface);
       break;
     case Icmpv6Header::ICMPV6_ND_REDIRECTION:
-      HandleRedirection (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandleRedirection (p, header.GetSource (), header.GetDestination (), interface);
       break;
     case Icmpv6Header::ICMPV6_ECHO_REQUEST:
-      HandleEchoRequest (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandleEchoRequest (p, header.GetSource (), header.GetDestination (), interface);
       break;
     case Icmpv6Header::ICMPV6_ECHO_REPLY:
       // EchoReply does not contain any info about L4
@@ -264,16 +264,16 @@ enum IpL4Protocol::RxStatus Icmpv6L4Protocol::Receive (Ptr<Packet> packet, Ipv6H
       /// \todo implement request / reply consistency check.
       break;
     case Icmpv6Header::ICMPV6_ERROR_DESTINATION_UNREACHABLE:
-      HandleDestinationUnreachable (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandleDestinationUnreachable (p, header.GetSource (), header.GetDestination (), interface);
       break;
     case Icmpv6Header::ICMPV6_ERROR_PACKET_TOO_BIG:
-      HandlePacketTooBig (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandlePacketTooBig (p, header.GetSource (), header.GetDestination (), interface);
       break;
     case Icmpv6Header::ICMPV6_ERROR_TIME_EXCEEDED:
-      HandleTimeExceeded (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandleTimeExceeded (p, header.GetSource (), header.GetDestination (), interface);
       break;
     case Icmpv6Header::ICMPV6_ERROR_PARAMETER_ERROR:
-      HandleParameterError (p, header.GetSourceAddress (), header.GetDestinationAddress (), interface);
+      HandleParameterError (p, header.GetSource (), header.GetDestination (), interface);
       break;
     default:
       NS_LOG_LOGIC ("Unknown ICMPv6 message type=" << type);
@@ -301,7 +301,7 @@ void Icmpv6L4Protocol::Forward (Ipv6Address source, Icmpv6Header icmp,
       if (l4 != 0)
         {
           l4->ReceiveIcmp (source, ipHeader.GetHopLimit (), icmp.GetType (), icmp.GetCode (),
-                           info, ipHeader.GetSourceAddress (), ipHeader.GetDestinationAddress (), payload);
+                           info, ipHeader.GetSource (), ipHeader.GetDestination (), payload);
         }
     }
 }
@@ -522,45 +522,74 @@ void Icmpv6L4Protocol::HandleNS (Ptr<Packet> packet, Ipv6Address const &src, Ipv
       return;
     }
 
-  Icmpv6OptionLinkLayerAddress lla (1);
-  Address hardwareAddress;
   NdiscCache::Entry* entry = 0;
   Ptr<NdiscCache> cache = FindCache (interface->GetDevice ());
   uint8_t flags = 0;
 
-  /* XXX search all options following the NS header */
+  /* search all options following the NS header */
+  Icmpv6OptionLinkLayerAddress sllaoHdr (true);
+
+  bool next = true;
+  bool hasSllao = false;
+
+  while (next == true)
+    {
+      uint8_t type;
+      packet->CopyData (&type, sizeof (type));
+
+      switch (type)
+        {
+          case Icmpv6Header::ICMPV6_OPT_LINK_LAYER_SOURCE:
+            if (!hasSllao)
+              {
+                packet->RemoveHeader (sllaoHdr);
+                hasSllao = true;
+              }
+            break;
+          default:
+            /* unknow option, quit */
+            next = false;
+        }
+      if (packet->GetSize () == 0)
+        {
+          next = false;
+        }
+    }
+
+  Address replyMacAddress;
 
   if (src != Ipv6Address::GetAny ())
     {
-      uint8_t type;
-      packet->CopyData (&type, sizeof(type));
-
-      if (type != Icmpv6Header::ICMPV6_OPT_LINK_LAYER_SOURCE)
-        {
-          return;
-        }
-
-      /* Get LLA */
-      packet->RemoveHeader (lla);
-
       entry = cache->Lookup (src);
       if (!entry)
         {
+          if (!hasSllao)
+            {
+              NS_LOG_LOGIC ("Icmpv6L4Protocol::HandleNS: NS without SLLAO and we do not have a NCE, discarding.");
+              return;
+            }
           entry = cache->Add (src);
           entry->SetRouter (false);
-          entry->MarkStale (lla.GetAddress ());
+          entry->MarkStale (sllaoHdr.GetAddress ());
+          replyMacAddress = sllaoHdr.GetAddress ();
         }
-      else if (entry->GetMacAddress () != lla.GetAddress ())
+      else if (hasSllao && (entry->GetMacAddress () != sllaoHdr.GetAddress ()))
         {
-          entry->MarkStale (lla.GetAddress ());
+          entry->MarkStale (sllaoHdr.GetAddress ());
+          replyMacAddress = sllaoHdr.GetAddress ();
+        }
+      else
+        {
+          replyMacAddress = entry->GetMacAddress ();
         }
 
       flags = 3; /* S + O flags */
     }
   else
     {
-      /* it means someone do a DAD */
+      /* it's a DAD */
       flags = 1; /* O flag */
+      replyMacAddress = interface->GetDevice ()->GetMulticast (dst);
     }
 
   /* send a NA to src */
@@ -571,14 +600,16 @@ void Icmpv6L4Protocol::HandleNS (Ptr<Packet> packet, Ipv6Address const &src, Ipv
       flags += 4; /* R flag */
     }
 
-  hardwareAddress = interface->GetDevice ()->GetAddress ();
+  Address hardwareAddress = interface->GetDevice ()->GetAddress ();
   NdiscCache::Ipv6PayloadHeaderPair p = ForgeNA (target.IsLinkLocal () ? interface->GetLinkLocalAddress ().GetAddress () : ifaddr.GetAddress (),
                                                  src.IsAny () ? dst : src, // DAD replies must go to the multicast group it was sent to.
                                                  &hardwareAddress,
                                                  flags );
-  interface->Send (p.first, p.second, src.IsAny () ? Ipv6Address::GetAllNodesMulticast () : src);
 
-  /* not a NS for us discard it */
+  // We must bypass the IPv6 layer, as a NA must be sent regardless of the NCE status (and not change it beyond what we did already).
+  Ptr<Packet> pkt = p.first;
+  pkt->AddHeader (p.second);
+  interface->GetDevice ()->Send (pkt, replyMacAddress, Ipv6L3Protocol::PROT_NUMBER);
 }
 
 NdiscCache::Ipv6PayloadHeaderPair Icmpv6L4Protocol::ForgeRS (Ipv6Address src, Ipv6Address dst, Address hardwareAddress)
@@ -587,16 +618,22 @@ NdiscCache::Ipv6PayloadHeaderPair Icmpv6L4Protocol::ForgeRS (Ipv6Address src, Ip
   Ptr<Packet> p = Create<Packet> ();
   Ipv6Header ipHeader;
   Icmpv6RS rs;
-  Icmpv6OptionLinkLayerAddress llOption (1, hardwareAddress);  /* we give our mac address in response */
 
-  NS_LOG_LOGIC ("Send RS ( from " << src << " to " << dst << ")");
-  p->AddHeader (llOption);
+  NS_LOG_LOGIC ("Forge RS (from " << src << " to " << dst << ")");
+  // RFC 4861:
+  // The link-layer address of the sender MUST NOT be included if the Source Address is the unspecified address.
+  // Otherwise, it SHOULD be included on link layers that have addresses.
+  if (!src.IsAny ())
+    {
+      Icmpv6OptionLinkLayerAddress llOption (1, hardwareAddress);  /* we give our mac address in response */
+      p->AddHeader (llOption);
+    }
 
   rs.CalculatePseudoHeaderChecksum (src, dst, p->GetSize () + rs.GetSerializedSize (), PROT_NUMBER);
   p->AddHeader (rs);
 
-  ipHeader.SetSourceAddress (src);
-  ipHeader.SetDestinationAddress (dst);
+  ipHeader.SetSource (src);
+  ipHeader.SetDestination (dst);
   ipHeader.SetNextHeader (PROT_NUMBER);
   ipHeader.SetPayloadLength (p->GetSize ());
   ipHeader.SetHopLimit (255);
@@ -617,8 +654,8 @@ NdiscCache::Ipv6PayloadHeaderPair Icmpv6L4Protocol::ForgeEchoRequest (Ipv6Addres
   req.CalculatePseudoHeaderChecksum (src, dst, p->GetSize () + req.GetSerializedSize (), PROT_NUMBER);
   p->AddHeader (req);
 
-  ipHeader.SetSourceAddress (src);
-  ipHeader.SetDestinationAddress (dst);
+  ipHeader.SetSource (src);
+  ipHeader.SetDestination (dst);
   ipHeader.SetNextHeader (PROT_NUMBER);
   ipHeader.SetPayloadLength (p->GetSize ());
   ipHeader.SetHopLimit (255);
@@ -887,7 +924,7 @@ void Icmpv6L4Protocol::HandlePacketTooBig (Ptr<Packet> p, Ipv6Address const &src
   origPkt->CopyData (payload, 8);
 
   Ptr<Ipv6L3Protocol> ipv6 = m_node->GetObject<Ipv6L3Protocol> ();
-  ipv6->SetPmtu(ipHeader.GetDestinationAddress(), tooBig.GetMtu ());
+  ipv6->SetPmtu(ipHeader.GetDestination(), tooBig.GetMtu ());
 
   Forward (src, tooBig, tooBig.GetMtu (), ipHeader, payload);
 }
@@ -937,7 +974,7 @@ void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address dst, Icmpv6H
   Ptr<Ipv6Route> route;
   Ptr<NetDevice> oif (0); //specify non-zero if bound to a source address
 
-  header.SetDestinationAddress (dst);
+  header.SetDestination (dst);
   route = ipv6->GetRoutingProtocol ()->RouteOutput (packet, header, oif, err);
 
   if (route != 0)
@@ -1036,15 +1073,17 @@ void Icmpv6L4Protocol::SendRS (Ipv6Address src, Ipv6Address dst,  Address hardwa
   NS_LOG_FUNCTION (this << src << dst << hardwareAddress);
   Ptr<Packet> p = Create<Packet> ();
   Icmpv6RS rs;
-  Icmpv6OptionLinkLayerAddress llOption (1, hardwareAddress);  /* we give our mac address in response */
 
-  /* if the source is unspec, multicast the NA to all-nodes multicast */
-  if (src != Ipv6Address::GetAny ())
+  // RFC 4861:
+  // The link-layer address of the sender MUST NOT be included if the Source Address is the unspecified address.
+  // Otherwise, it SHOULD be included on link layers that have addresses.
+  if (!src.IsAny ())
     {
+      Icmpv6OptionLinkLayerAddress llOption (1, hardwareAddress);
       p->AddHeader (llOption);
     }
 
-  NS_LOG_LOGIC ("Send RS ( from " << src << " to " << dst << ")");
+  NS_LOG_LOGIC ("Send RS (from " << src << " to " << dst << ")");
 
   rs.CalculatePseudoHeaderChecksum (src, dst, p->GetSize () + rs.GetSerializedSize (), PROT_NUMBER);
   p->AddHeader (rs);
@@ -1239,8 +1278,8 @@ NdiscCache::Ipv6PayloadHeaderPair Icmpv6L4Protocol::ForgeNA (Ipv6Address src, Ip
   na.CalculatePseudoHeaderChecksum (src, dst, p->GetSize () + na.GetSerializedSize (), PROT_NUMBER);
   p->AddHeader (na);
 
-  ipHeader.SetSourceAddress (src);
-  ipHeader.SetDestinationAddress (dst);
+  ipHeader.SetSource (src);
+  ipHeader.SetDestination (dst);
   ipHeader.SetNextHeader (PROT_NUMBER);
   ipHeader.SetPayloadLength (p->GetSize ());
   ipHeader.SetHopLimit (255);
@@ -1262,8 +1301,8 @@ NdiscCache::Ipv6PayloadHeaderPair Icmpv6L4Protocol::ForgeNS (Ipv6Address src, Ip
   ns.CalculatePseudoHeaderChecksum (src, dst, p->GetSize () + ns.GetSerializedSize (), PROT_NUMBER);
   p->AddHeader (ns);
 
-  ipHeader.SetSourceAddress (src);
-  ipHeader.SetDestinationAddress (dst);
+  ipHeader.SetSource (src);
+  ipHeader.SetDestination (dst);
   ipHeader.SetNextHeader (PROT_NUMBER);
   ipHeader.SetPayloadLength (p->GetSize ());
   ipHeader.SetHopLimit (255);

@@ -43,19 +43,26 @@ public:
   void Iterate (void);
 private:
   /**
-   * \brief Just an interface that needs to be implemented
+   * \brief Begin the analysis of a TypeId
+   * \param name TypeId name
    */
   virtual void StartVisitTypeId (std::string name);
   /**
-   * \brief Just an interface that needs to be implemented
+   * \brief End the analysis of a TypeId
    */
   virtual void EndVisitTypeId (void);
   /**
-   * \brief This method can be implemented, otherwise, it will call DoVisitAttribute
+   * \brief Visit an Attribute
+   * \param tid the TypeId the attribute belongs to
+   * \param name the Attribute name
+   * \param defaultValue the attribute default value
+   * \param index the index of the Attribute
    */
   virtual void VisitAttribute (TypeId tid, std::string name, std::string defaultValue, uint32_t index);
   /**
-   * \brief This method is just an interface and needs to be implemented
+   * \brief Visit an Attribute
+   * \param name the Attribute name
+   * \param defaultValue the attribute default value
    */
   virtual void DoVisitAttribute (std::string name, std::string defaultValue);
 };

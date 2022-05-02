@@ -36,8 +36,7 @@ class WifiPpdu;
 struct WifiSpectrumSignalParameters : public SpectrumSignalParameters
 {
 
-  // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  Ptr<SpectrumSignalParameters> Copy () override;
 
   /**
    * default constructor
@@ -51,7 +50,7 @@ struct WifiSpectrumSignalParameters : public SpectrumSignalParameters
    */
   WifiSpectrumSignalParameters (const WifiSpectrumSignalParameters& p);
 
-  Ptr<WifiPpdu> ppdu; ///< The PPDU being transmitted
+  Ptr<WifiPpdu> ppdu;                  ///< The PPDU being transmitted
 };
 
 }  // namespace ns3

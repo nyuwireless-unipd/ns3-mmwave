@@ -21,17 +21,23 @@
 
 #include "ns3/object.h"
 #include "ns3/matrix-based-channel-model.h"
+#include "ns3/beamforming-codebook.h"
+#include "ns3/spectrum-propagation-loss-model.h"
+#include "ns3/spectrum-value.h"
+#include "ns3/object-factory.h"
+#include "ns3/simulator.h"
 #include <map>
 
 namespace ns3 {
 
 class MobilityModel;
-class ThreeGppAntennaArrayModel;
+class PhasedArrayModel;
 class NetDevice;
 class ChannelConditionModel;
 
 namespace mmwave {
 
+class MmWavePhyMacCommon;
 
 /**
  * This class handles the beamforming operations.
@@ -72,13 +78,13 @@ public:
    * Get the antenna on which beamforming is applied
    * \return the antenna
    */
-  Ptr<ThreeGppAntennaArrayModel> GetAntenna (void) const;
+  Ptr<PhasedArrayModel> GetAntenna (void) const;
 
   /**
    * Set the antenna on which beamforming is applied
    * \param antenna
    */
-  void SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna);
+  void SetAntenna (Ptr<PhasedArrayModel> antenna);
 
   /**
    * Computes the beamforming vector to communicate with the target device and antenna
@@ -86,13 +92,13 @@ public:
    * \param otherDevice the target device
    * \param otherAntenna the target antenna of otherDevice
    */
-  virtual void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) = 0;
+  virtual void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna) = 0;
 
 protected:
   virtual void DoDispose (void) override;
 
   Ptr<NetDevice> m_device; //!< pointer to the NetDevice
-  Ptr<ThreeGppAntennaArrayModel> m_antenna; //!< The antenna of the device on which the beamforming is applied
+  Ptr<PhasedArrayModel> m_antenna; //!< The antenna of the device on which the beamforming is applied
 };
 
 
@@ -125,7 +131,7 @@ public:
    * \param otherDevice the target device
    * \param otherAntenna the target antenna of otherDevice
    */
-  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) override;
+  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna) override;
 };
 
 
@@ -161,7 +167,7 @@ public:
    * \param otherDevice the target device
    * \param otherAntenna the target antenna of otherDevice
    */
-  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<ThreeGppAntennaArrayModel> otherAntenna) override;
+  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna) override;
 
 private:
   void DoDispose (void) override;
@@ -170,23 +176,100 @@ private:
    * \param params the channel matrix
    * \return a pair with the beamforming vectors
    */
-  std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector> ComputeBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params) const;
+  std::pair<PhasedArrayModel::ComplexVector, PhasedArrayModel::ComplexVector> ComputeBeamformingVectors (Ptr<const MatrixBasedChannelModel::ChannelMatrix> params) const;
 
   /**
    * Compute eigenvector related to highest eigenvalue
    * \param A spatial correlation matrix (complex, hermitian)
    * \return eigenvector
    */
-  ThreeGppAntennaArrayModel::ComplexVector GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A) const;
+  PhasedArrayModel::ComplexVector GetFirstEigenvector (MatrixBasedChannelModel::Complex2DVector A) const;
 
 
   Ptr<MatrixBasedChannelModel> m_channel; //!< pointer to the MatrixChannel, to retrieve the matrix on which the SVD should be computed
 
   std::map<Ptr<NetDevice>, Ptr<const MatrixBasedChannelModel::ChannelMatrix> > m_cacheChannelMap; //!< map that stores the channel previously computed
-  std::map<Ptr<NetDevice>, std::pair<ThreeGppAntennaArrayModel::ComplexVector, ThreeGppAntennaArrayModel::ComplexVector> > m_cacheBfVectors; //!< map that stores the previous bf vectors
+  std::map<Ptr<NetDevice>, std::pair<PhasedArrayModel::ComplexVector, PhasedArrayModel::ComplexVector> > m_cacheBfVectors; //!< map that stores the previous bf vectors
   uint32_t m_maxIterations; //!< Maximum number of iterations to numerically approximate the SVD decomposition
   double m_tolerance; //!< Tolerance to numerically approximate the SVD decomposition
   bool m_useCache; //!< Cache the channel matrix whenever possible. NOTE: the SVD decomposition can be extremely computationally expensive, caching is suggested.
+};
+
+
+/**
+ * This class extends the MmWaveBeamformingModel interface.
+ * It implements a codebook-based beamforming algorithm.
+ */
+class MmWaveCodebookBeamforming : public MmWaveBeamformingModel
+{
+public:
+  /**
+   * Constructor
+   */
+  MmWaveCodebookBeamforming ();
+
+  /**
+   * Destructor
+   */
+  virtual ~MmWaveCodebookBeamforming () override;
+
+  /**
+   * Returns the object type id
+   * \return the type id
+   */
+  static TypeId GetTypeId (void);
+
+  /**
+   *
+   */
+  void SetBeamformingCodebookFactory (ObjectFactory factory);
+
+  /**
+   *
+   */
+  void SetMmWavePhyMacCommon (Ptr<MmWavePhyMacCommon> mwpmc);
+
+  /**
+   * Initialize() implementation.
+   *
+   * This method is called only once by Initialize(). If the user
+   * calls Initialize() multiple times, DoInitialize() is called only the
+   * first time.
+   *
+   * Subclasses are expected to override this method and chain up
+   * to their parent's implementation once they are done. It is
+   * safe to call GetObject() and AggregateObject() from within this method.
+   */
+  void DoInitialize (void) override;
+
+  /**
+   * Computes the beamforming vector to communicate with the target device and antenna
+   * and configures the antenna
+   * \param otherDevice the target device
+   * \param otherAntenna the target antenna of otherDevice
+   */
+  void SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna) override;
+
+private:
+  using Matrix2D = std::vector<std::vector<double> >;
+  /**
+   *
+   */
+  Matrix2D ComputeBeamformingCodebookMatrix (Ptr<NetDevice> otherDevice, Ptr<PhasedArrayModel> otherAntenna) const;
+
+  ObjectFactory m_beamformingCodebookFactory;
+  Ptr<SpectrumPropagationLossModel> m_splm; //!<
+  Ptr<SpectrumValue> m_txPsd;
+  
+  /* struct used to store the selected beam pairs */
+  struct Entry
+  {
+    uint32_t thisCbIdx; //!< index of the codeword for this antenna  
+    uint32_t otherCbIdx; //!< index of the codeword for the other antenna
+    Time lastUpdate; //!< time stamp
+  };
+  std::map<Ptr<PhasedArrayModel>, Entry> m_codebookIdsCache; //!< stores the selected beam pairs 
+  Time m_updatePeriod; //!< defines the refresh period for updating the beam pairs
 };
 
 

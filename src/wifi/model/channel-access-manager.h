@@ -31,7 +31,7 @@ namespace ns3 {
 class WifiPhy;
 class PhyListener;
 class Txop;
-class MacLow;
+class FrameExchangeManager;
 
 /**
  * \brief Manage a set of ns3::Txop
@@ -67,11 +67,11 @@ public:
    */
   void RemovePhyListener (Ptr<WifiPhy> phy);
   /**
-   * Set up listener for MacLow events.
+   * Set up the Frame Exchange Manager.
    *
-   * \param low the MacLow to listen to
+   * \param feManager the Frame Exchange Manager
    */
-  void SetupLow (Ptr<MacLow> low);
+  void SetupFrameExchangeManager (Ptr<FrameExchangeManager> feManager);
 
   /**
    * \param txop a new Txop.
@@ -96,14 +96,34 @@ public:
 
   /**
    * \param txop a Txop
-   * \param isCfPeriod flag whether it is called during the CF period
    *
    * Notify the ChannelAccessManager that a specific Txop needs access to the
    * medium. The ChannelAccessManager is then responsible for starting an access
-   * timer and, invoking Txop::DoNotifyAccessGranted when the access
+   * timer and, invoking FrameExchangeManager::StartTransmission when the access
    * is granted if it ever gets granted.
    */
-  void RequestAccess (Ptr<Txop> txop, bool isCfPeriod = false);
+  void RequestAccess (Ptr<Txop> txop);
+
+  /**
+   * Access will never be granted to the medium _before_
+   * the time returned by this method.
+   *
+   * \param ignoreNav flag whether NAV should be ignored
+   *
+   * \returns the absolute time at which access could start to be granted
+   */
+  Time GetAccessGrantStart (bool ignoreNav = false) const;
+
+  /**
+   * \param qosTxop a QosTxop that needs to be disabled
+   * \param duration the amount of time during which the QosTxop is disabled
+   *
+   * Disable the given EDCA for the given amount of time. This EDCA will not be
+   * granted channel access during this period and the backoff timer will be frozen.
+   * After this period, the EDCA will start normal operations again by resuming
+   * the backoff timer.
+   */
+  void DisableEdcaFor (Ptr<Txop> qosTxop, Time duration);
 
   /**
    * \param duration expected duration of reception
@@ -204,8 +224,7 @@ public:
 
 
 protected:
-  // Inherited from ns3::Object
-  void DoDispose (void);
+  void DoDispose (void) override;
 
 
 private:
@@ -221,15 +240,6 @@ private:
    * \return the most recent time
    */
   Time MostRecent (std::initializer_list<Time> list) const;
-  /**
-   * Access will never be granted to the medium _before_
-   * the time returned by this method.
-   *
-   * \param ignoreNav flag whether NAV should be ignored
-   *
-   * \returns the absolute time at which access could start to be granted
-   */
-  Time GetAccessGrantStart (bool ignoreNav = false) const;
   /**
    * Return the time when the backoff procedure
    * started for the given Txop.
@@ -260,12 +270,6 @@ private:
    * Grant access to Txop using DCF/EDCF contention rules
    */
   void DoGrantDcfAccess (void);
-  /**
-   * Grant access to Txop using PCF preemption
-   *
-   * \param txop the Txop
-   */
-  void DoGrantPcfAccess (Ptr<Txop> txop);
 
   /**
    * Return the Short Interframe Space (SIFS) for this PHY.
@@ -291,28 +295,29 @@ private:
    */
   typedef std::vector<Ptr<Txop>> Txops;
 
-  Txops m_txops;                //!< the vector of managed Txops
-  Time m_lastAckTimeoutEnd;     //!< the last Ack timeout end time
-  Time m_lastCtsTimeoutEnd;     //!< the last CTS timeout end time
-  Time m_lastNavStart;          //!< the last NAV start time
-  Time m_lastNavDuration;       //!< the last NAV duration time
-  Time m_lastRxStart;           //!< the last receive start time
-  Time m_lastRxDuration;        //!< the last receive duration time
-  bool m_lastRxReceivedOk;      //!< the last receive OK
-  Time m_lastTxStart;           //!< the last transmit start time
-  Time m_lastTxDuration;        //!< the last transmit duration time
-  Time m_lastBusyStart;         //!< the last busy start time
-  Time m_lastBusyDuration;      //!< the last busy duration time
-  Time m_lastSwitchingStart;    //!< the last switching start time
-  Time m_lastSwitchingDuration; //!< the last switching duration time
-  bool m_sleeping;              //!< flag whether it is in sleeping state
-  bool m_off;                   //!< flag whether it is in off state
-  Time m_eifsNoDifs;            //!< EIFS no DIFS time
-  EventId m_accessTimeout;      //!< the access timeout ID
-  Time m_slot;                  //!< the slot time
-  Time m_sifs;                  //!< the SIFS time
-  PhyListener* m_phyListener;   //!< the PHY listener
-  Ptr<WifiPhy> m_phy;           //!< pointer to the PHY
+  Txops m_txops;                         //!< the vector of managed Txops
+  Time m_lastAckTimeoutEnd;              //!< the last Ack timeout end time
+  Time m_lastCtsTimeoutEnd;              //!< the last CTS timeout end time
+  Time m_lastNavStart;                   //!< the last NAV start time
+  Time m_lastNavDuration;                //!< the last NAV duration time
+  Time m_lastRxStart;                    //!< the last receive start time
+  Time m_lastRxDuration;                 //!< the last receive duration time
+  bool m_lastRxReceivedOk;               //!< the last receive OK
+  Time m_lastTxStart;                    //!< the last transmit start time
+  Time m_lastTxDuration;                 //!< the last transmit duration time
+  Time m_lastBusyStart;                  //!< the last busy start time
+  Time m_lastBusyDuration;               //!< the last busy duration time
+  Time m_lastSwitchingStart;             //!< the last switching start time
+  Time m_lastSwitchingDuration;          //!< the last switching duration time
+  bool m_sleeping;                       //!< flag whether it is in sleeping state
+  bool m_off;                            //!< flag whether it is in off state
+  Time m_eifsNoDifs;                     //!< EIFS no DIFS time
+  EventId m_accessTimeout;               //!< the access timeout ID
+  Time m_slot;                           //!< the slot time
+  Time m_sifs;                           //!< the SIFS time
+  PhyListener* m_phyListener;            //!< the PHY listener
+  Ptr<WifiPhy> m_phy;                    //!< pointer to the PHY
+  Ptr<FrameExchangeManager> m_feManager; //!< pointer to the Frame Exchange Manager
 };
 
 } //namespace ns3

@@ -126,8 +126,8 @@ private:
   struct Input m_input; ///< input
   bool m_droppedA; ///< flag to indicate whether packet A has been dropped
   bool m_droppedB; ///< flag to indicate whether packet B has been dropped
-  mutable uint64_t m_uidA;
-  mutable uint64_t m_uidB;
+  mutable uint64_t m_uidA; ///< UID to use for packet A
+  mutable uint64_t m_uidB; ///< UID to use for packet B
 };
 
 void
@@ -392,10 +392,6 @@ int main (int argc, char *argv[])
   else if (str_preamble == "WIFI_PREAMBLE_HT_MF" && input.standard == WIFI_PHY_STANDARD_80211n)
     {
       input.preamble = WIFI_PREAMBLE_HT_MF;
-    }
-  else if (str_preamble == "WIFI_PREAMBLE_HT_GF" && (input.standard == WIFI_PHY_STANDARD_80211n))
-    {
-      input.preamble = WIFI_PREAMBLE_HT_GF;
     }
   else if (str_preamble == "WIFI_PREAMBLE_VHT_SU" && input.standard == WIFI_PHY_STANDARD_80211ac)
     {

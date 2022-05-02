@@ -28,7 +28,6 @@
 #include "wifi-phy.h"
 #include "error-rate-model.h"
 #include "wifi-utils.h"
-#include "wifi-ppdu.h"
 #include "wifi-psdu.h"
 
 namespace ns3 {
@@ -39,17 +38,19 @@ NS_LOG_COMPONENT_DEFINE ("InterferenceHelper");
  *       PHY event class
  ****************************************************************/
 
-Event::Event (Ptr<const WifiPpdu> ppdu, WifiTxVector txVector, Time duration, RxPowerWattPerChannelBand rxPower)
+Event::Event (Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector, Time duration, RxPowerWattPerChannelBand&& rxPower)
   : m_ppdu (ppdu),
     m_txVector (txVector),
     m_startTime (Simulator::Now ()),
     m_endTime (m_startTime + duration),
-    m_rxPowerW (rxPower)
+    m_rxPowerW (std::move (rxPower))
 {
 }
 
 Event::~Event ()
 {
+  m_ppdu = 0;
+  m_rxPowerW.clear ();
 }
 
 Ptr<const WifiPpdu>
@@ -96,16 +97,32 @@ Event::GetRxPowerW (WifiSpectrumBand band) const
   return it->second;
 }
 
-RxPowerWattPerChannelBand
+const RxPowerWattPerChannelBand&
 Event::GetRxPowerWPerBand (void) const
 {
   return m_rxPowerW;
 }
 
-WifiTxVector
+const WifiTxVector&
 Event::GetTxVector (void) const
 {
   return m_txVector;
+}
+
+void
+Event::UpdateRxPowerW (const RxPowerWattPerChannelBand& rxPower)
+{
+  NS_ASSERT (rxPower.size () == m_rxPowerW.size ());
+  //Update power band per band
+  for (auto & currentRxPowerW : m_rxPowerW)
+    {
+      auto band = currentRxPowerW.first;
+      auto it = rxPower.find (band);
+      if (it != rxPower.end ())
+        {
+          currentRxPowerW.second += it->second;
+        }
+    }
 }
 
 std::ostream & operator << (std::ostream &os, const Event &event)
@@ -126,6 +143,11 @@ InterferenceHelper::NiChange::NiChange (double power, Ptr<Event> event)
   : m_power (power),
     m_event (event)
 {
+}
+
+InterferenceHelper::NiChange::~NiChange ()
+{
+  m_event = 0;
 }
 
 double
@@ -160,27 +182,28 @@ InterferenceHelper::InterferenceHelper ()
 
 InterferenceHelper::~InterferenceHelper ()
 {
-  EraseEvents ();
+  RemoveBands ();
   m_errorRateModel = 0;
 }
 
 Ptr<Event>
-InterferenceHelper::Add (Ptr<const WifiPpdu> ppdu, WifiTxVector txVector, Time duration, RxPowerWattPerChannelBand rxPowerW)
+InterferenceHelper::Add (Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector, Time duration, RxPowerWattPerChannelBand& rxPowerW, bool isStartOfdmaRxing)
 {
-  Ptr<Event> event = Create<Event> (ppdu, txVector, duration, rxPowerW);
-  AppendEvent (event);
+  Ptr<Event> event = Create<Event> (ppdu, txVector, duration, std::move (rxPowerW));
+  AppendEvent (event, isStartOfdmaRxing);
   return event;
 }
 
 void
-InterferenceHelper::AddForeignSignal (Time duration, RxPowerWattPerChannelBand rxPowerW)
+InterferenceHelper::AddForeignSignal (Time duration, RxPowerWattPerChannelBand& rxPowerW)
 {
   // Parameters other than duration and rxPowerW are unused for this type
   // of signal, so we provide dummy versions
   WifiMacHeader hdr;
   hdr.SetType (WIFI_MAC_QOSDATA);
+  hdr.SetQosTid (0);
   Ptr<WifiPpdu> fakePpdu = Create<WifiPpdu> (Create<WifiPsdu> (Create<Packet> (0), hdr),
-                                             WifiTxVector (), duration, WIFI_PHY_BAND_UNSPECIFIED);
+                                             WifiTxVector ());
   Add (fakePpdu, WifiTxVector (), duration, rxPowerW);
 }
 
@@ -188,6 +211,10 @@ void
 InterferenceHelper::RemoveBands(void)
 {
   NS_LOG_FUNCTION (this);
+  for (auto it : m_niChangesPerBand)
+    {
+      it.second.clear ();
+    }
   m_niChangesPerBand.clear();
   m_firstPowerPerBand.clear();
 }
@@ -198,9 +225,10 @@ InterferenceHelper::AddBand (WifiSpectrumBand band)
   NS_LOG_FUNCTION (this << band.first << band.second);
   NS_ASSERT (m_niChangesPerBand.find (band) == m_niChangesPerBand.end ());
   NiChanges niChanges;
-  m_niChangesPerBand.insert ({band, niChanges});
+  auto result = m_niChangesPerBand.insert ({band, niChanges});
+  NS_ASSERT (result.second);
   // Always have a zero power noise event in the list
-  AddNiChangeEvent (Time (0), NiChange (0.0, 0), band);
+  AddNiChangeEvent (Time (0), NiChange (0.0, 0), result.first);
   m_firstPowerPerBand.insert ({band, 0.0});
 }
 
@@ -229,14 +257,14 @@ InterferenceHelper::SetNumberOfReceiveAntennas (uint8_t rx)
 }
 
 Time
-InterferenceHelper::GetEnergyDuration (double energyW, WifiSpectrumBand band) const
+InterferenceHelper::GetEnergyDuration (double energyW, WifiSpectrumBand band)
 {
   Time now = Simulator::Now ();
-  auto i = GetPreviousPosition (now, band);
+  auto niIt = m_niChangesPerBand.find (band);
+  NS_ASSERT (niIt != m_niChangesPerBand.end ());
+  auto i = GetPreviousPosition (now, niIt);
   Time end = i->first;
-  auto ni_it = m_niChangesPerBand.find (band);
-  NS_ASSERT (ni_it != m_niChangesPerBand.end ());
-  for (; i != ni_it->second.end (); ++i)
+  for (; i != niIt->second.end (); ++i)
     {
       double noiseInterferenceW = i->second.GetPower ();
       end = i->first;
@@ -249,32 +277,59 @@ InterferenceHelper::GetEnergyDuration (double energyW, WifiSpectrumBand band) co
 }
 
 void
-InterferenceHelper::AppendEvent (Ptr<Event> event)
+InterferenceHelper::AppendEvent (Ptr<Event> event, bool isStartOfdmaRxing)
 {
-  NS_LOG_FUNCTION (this);
-  RxPowerWattPerChannelBand rxPowerWattPerChannelBand = event->GetRxPowerWPerBand ();
-  for (auto const& it : rxPowerWattPerChannelBand)
+  NS_LOG_FUNCTION (this << event << isStartOfdmaRxing);
+  for (auto const& it : event->GetRxPowerWPerBand ())
     {
       WifiSpectrumBand band = it.first;
-      auto ni_it = m_niChangesPerBand.find (band);
-      NS_ASSERT (ni_it != m_niChangesPerBand.end ());
+      auto niIt = m_niChangesPerBand.find (band);
+      NS_ASSERT (niIt != m_niChangesPerBand.end ());
       double previousPowerStart = 0;
       double previousPowerEnd = 0;
-      previousPowerStart = GetPreviousPosition (event->GetStartTime (), band)->second.GetPower ();
-      previousPowerEnd = GetPreviousPosition (event->GetEndTime (), band)->second.GetPower ();
+      auto previousPowerPosition = GetPreviousPosition (event->GetStartTime (), niIt);
+      previousPowerStart = previousPowerPosition->second.GetPower ();
+      previousPowerEnd = GetPreviousPosition (event->GetEndTime (), niIt)->second.GetPower ();
       if (!m_rxing)
         {
           m_firstPowerPerBand.find (band)->second = previousPowerStart;
           // Always leave the first zero power noise event in the list
-          ni_it->second.erase (++(ni_it->second.begin ()), GetNextPosition (event->GetStartTime (), band));
+          niIt->second.erase (++(niIt->second.begin ()), ++previousPowerPosition);
         }
-      auto first = AddNiChangeEvent (event->GetStartTime (), NiChange (previousPowerStart, event), band);
-      auto last = AddNiChangeEvent (event->GetEndTime (), NiChange (previousPowerEnd, event), band);
+      else if (isStartOfdmaRxing)
+        {
+          //When the first UL-OFDMA payload is received, we need to set m_firstPowerPerBand
+          //so that it takes into account interferences that arrived between the start of the
+          //UL MU transmission and the start of UL-OFDMA payload.
+          m_firstPowerPerBand.find (band)->second = previousPowerStart;
+        }
+      auto first = AddNiChangeEvent (event->GetStartTime (), NiChange (previousPowerStart, event), niIt);
+      auto last = AddNiChangeEvent (event->GetEndTime (), NiChange (previousPowerEnd, event), niIt);
       for (auto i = first; i != last; ++i)
         {
           i->second.AddPower (it.second);
         }
     }
+}
+
+void
+InterferenceHelper::UpdateEvent (Ptr<Event> event, const RxPowerWattPerChannelBand& rxPower)
+{
+  NS_LOG_FUNCTION (this << event);
+  //This is called for UL MU events, in order to scale power as long as UL MU PPDUs arrive
+  for (auto const& it : rxPower)
+    {
+      WifiSpectrumBand band = it.first;
+      auto niIt = m_niChangesPerBand.find (band);
+      NS_ASSERT (niIt != m_niChangesPerBand.end ());
+      auto first = GetPreviousPosition (event->GetStartTime (), niIt);
+      auto last = GetPreviousPosition (event->GetEndTime (), niIt);
+      for (auto i = first; i != last; ++i)
+        {
+          i->second.AddPower (it.second);
+        }
+    }
+    event->UpdateRxPowerW (rxPower);
 }
 
 double
@@ -290,13 +345,16 @@ InterferenceHelper::CalculateSnr (double signal, double noiseInterference, uint1
   double noise = noiseFloor + noiseInterference;
   double snr = signal / noise; //linear scale
   NS_LOG_DEBUG ("bandwidth(MHz)=" << channelWidth << ", signal(W)= " << signal << ", noise(W)=" << noiseFloor << ", interference(W)=" << noiseInterference << ", snr=" << RatioToDb(snr) << "dB");
-  double gain = 1;
-  if (m_numRxAntennas > nss)
+  if (m_errorRateModel->IsAwgn ())
     {
-      gain = static_cast<double>(m_numRxAntennas) / nss; //compute gain offered by diversity for AWGN
+      double gain = 1;
+      if (m_numRxAntennas > nss)
+        {
+          gain = static_cast<double> (m_numRxAntennas) / nss; //compute gain offered by diversity for AWGN
+        }
+      NS_LOG_DEBUG ("SNR improvement thanks to diversity: " << 10 * std::log10 (gain) << "dB");
+      snr *= gain;
     }
-  NS_LOG_DEBUG ("SNR improvement thanks to diversity: " << 10 * std::log10 (gain) << "dB");
-  snr *= gain;
   return snr;
 }
 
@@ -307,19 +365,19 @@ InterferenceHelper::CalculateNoiseInterferenceW (Ptr<Event> event, NiChangesPerB
   auto firstPower_it = m_firstPowerPerBand.find (band);
   NS_ASSERT (firstPower_it != m_firstPowerPerBand.end ());
   double noiseInterferenceW = firstPower_it->second;
-  auto ni_it = m_niChangesPerBand.find (band);
-  NS_ASSERT (ni_it != m_niChangesPerBand.end ());
-  auto it = ni_it->second.find (event->GetStartTime ());
-  for (; it != ni_it->second.end () && it->first < Simulator::Now (); ++it)
+  auto niIt = m_niChangesPerBand.find (band);
+  NS_ASSERT (niIt != m_niChangesPerBand.end ());
+  auto it = niIt->second.find (event->GetStartTime ());
+  for (; it != niIt->second.end () && it->first < Simulator::Now (); ++it)
     {
       noiseInterferenceW = it->second.GetPower () - event->GetRxPowerW (band);
     }
-  it = ni_it->second.find (event->GetStartTime ());
-  NS_ASSERT (it != ni_it->second.end ());
-  for (; it != ni_it->second.end () && it->second.GetEvent () != event; ++it);
+  it = niIt->second.find (event->GetStartTime ());
+  NS_ASSERT (it != niIt->second.end ());
+  for (; it != niIt->second.end () && it->second.GetEvent () != event; ++it);
   NiChanges ni;
   ni.emplace (event->GetStartTime (), NiChange (0, event));
-  while (++it != ni_it->second.end () && it->second.GetEvent () != event)
+  while (++it != niIt->second.end () && it->second.GetEvent () != event)
     {
       ni.insert (*it);
     }
@@ -330,7 +388,7 @@ InterferenceHelper::CalculateNoiseInterferenceW (Ptr<Event> event, NiChangesPerB
 }
 
 double
-InterferenceHelper::CalculateChunkSuccessRate (double snir, Time duration, WifiMode mode, WifiTxVector txVector) const
+InterferenceHelper::CalculateChunkSuccessRate (double snir, Time duration, WifiMode mode, const WifiTxVector& txVector, WifiPpduField field) const
 {
   if (duration.IsZero ())
     {
@@ -338,12 +396,12 @@ InterferenceHelper::CalculateChunkSuccessRate (double snir, Time duration, WifiM
     }
   uint64_t rate = mode.GetDataRate (txVector.GetChannelWidth ());
   uint64_t nbits = static_cast<uint64_t> (rate * duration.GetSeconds ());
-  double csr = m_errorRateModel->GetChunkSuccessRate (mode, txVector, snir, nbits);
+  double csr = m_errorRateModel->GetChunkSuccessRate (mode, txVector, snir, nbits, m_numRxAntennas, field);
   return csr;
 }
 
 double
-InterferenceHelper::CalculatePayloadChunkSuccessRate (double snir, Time duration, WifiTxVector txVector, uint16_t staId) const
+InterferenceHelper::CalculatePayloadChunkSuccessRate (double snir, Time duration, const WifiTxVector& txVector, uint16_t staId) const
 {
   if (duration.IsZero ())
     {
@@ -353,7 +411,7 @@ InterferenceHelper::CalculatePayloadChunkSuccessRate (double snir, Time duration
   uint64_t rate = mode.GetDataRate (txVector, staId);
   uint64_t nbits = static_cast<uint64_t> (rate * duration.GetSeconds ());
   nbits /= txVector.GetNss (staId); //divide effective number of bits by NSS to achieve same chunk error rate as SISO for AWGN
-  double csr = m_errorRateModel->GetChunkSuccessRate (mode, txVector, snir, nbits);
+  double csr = m_errorRateModel->GetChunkSuccessRate (mode, txVector, snir, nbits, m_numRxAntennas, WIFI_PPDU_FIELD_DATA, staId);
   return csr;
 }
 
@@ -363,37 +421,36 @@ InterferenceHelper::CalculatePayloadPer (Ptr<const Event> event, uint16_t channe
                                          uint16_t staId, std::pair<Time, Time> window) const
 {
   NS_LOG_FUNCTION (this << channelWidth << band.first << band.second << staId << window.first << window.second);
-  const WifiTxVector txVector = event->GetTxVector ();
   double psr = 1.0; /* Packet Success Rate */
-  auto ni_it = nis->find (band)->second;
-  auto j = ni_it.begin ();
+  auto niIt = nis->find (band)->second;
+  auto j = niIt.begin ();
   Time previous = j->first;
-  WifiMode payloadMode = txVector.GetMode (staId);
-  WifiPreamble preamble = txVector.GetPreambleType ();
-  Time phyHeaderStart = j->first + WifiPhy::GetPhyPreambleDuration (txVector); //PPDU start time + preamble
-  Time phyHtSigHeaderStart = phyHeaderStart + WifiPhy::GetPhyHeaderDuration (txVector); //PPDU start time + preamble + L-SIG
-  Time phyTrainingSymbolsStart = phyHtSigHeaderStart + WifiPhy::GetPhyHtSigHeaderDuration (preamble) + WifiPhy::GetPhySigA1Duration (preamble) + WifiPhy::GetPhySigA2Duration (preamble); //PPDU start time + preamble + L-SIG + HT-SIG or SIG-A
-  Time phyPayloadStart = phyTrainingSymbolsStart + WifiPhy::GetPhyTrainingSymbolDuration (txVector) + WifiPhy::GetPhySigBDuration (preamble); //PPDU start time + preamble + L-SIG + HT-SIG or SIG-A + Training + SIG-B
+  WifiMode payloadMode = event->GetTxVector ().GetMode (staId);
+  Time phyPayloadStart = j->first;
+  if (event->GetPpdu ()->GetType () != WIFI_PPDU_TYPE_UL_MU) //j->first corresponds to the start of the UL-OFDMA payload
+    {
+      phyPayloadStart = j->first + WifiPhy::CalculatePhyPreambleAndHeaderDuration (event->GetTxVector ());
+    }
   Time windowStart = phyPayloadStart + window.first;
   Time windowEnd = phyPayloadStart + window.second;
   double noiseInterferenceW = m_firstPowerPerBand.find (band)->second;
   double powerW = event->GetRxPowerW (band);
-  while (++j != ni_it.end ())
+  while (++j != niIt.end ())
     {
       Time current = j->first;
       NS_LOG_DEBUG ("previous= " << previous << ", current=" << current);
       NS_ASSERT (current >= previous);
-      double snr = CalculateSnr (powerW, noiseInterferenceW, channelWidth, txVector.GetNss (staId));
+      double snr = CalculateSnr (powerW, noiseInterferenceW, channelWidth, event->GetTxVector ().GetNss (staId));
       //Case 1: Both previous and current point to the windowed payload
       if (previous >= windowStart)
         {
-          psr *= CalculatePayloadChunkSuccessRate (snr, Min (windowEnd, current) - previous, txVector, staId);
+          psr *= CalculatePayloadChunkSuccessRate (snr, Min (windowEnd, current) - previous, event->GetTxVector (), staId);
           NS_LOG_DEBUG ("Both previous and current point to the windowed payload: mode=" << payloadMode << ", psr=" << psr);
         }
       //Case 2: previous is before windowed payload and current is in the windowed payload
       else if (current >= windowStart)
         {
-          psr *= CalculatePayloadChunkSuccessRate (snr, Min (windowEnd, current) - windowStart, txVector, staId);
+          psr *= CalculatePayloadChunkSuccessRate (snr, Min (windowEnd, current) - windowStart, event->GetTxVector (), staId);
           NS_LOG_DEBUG ("previous is before windowed payload and current is in the windowed payload: mode=" << payloadMode << ", psr=" << psr);
         }
       noiseInterferenceW = j->second.GetPower () - powerW;
@@ -409,389 +466,85 @@ InterferenceHelper::CalculatePayloadPer (Ptr<const Event> event, uint16_t channe
 }
 
 double
-InterferenceHelper::CalculateNonHtPhyHeaderPer (Ptr<const Event> event, NiChangesPerBand *nis, WifiSpectrumBand band) const
+InterferenceHelper::CalculatePhyHeaderSectionPsr (Ptr<const Event> event, NiChangesPerBand *nis,
+                                                  uint16_t channelWidth, WifiSpectrumBand band,
+                                                  PhyEntity::PhyHeaderSections phyHeaderSections) const
 {
   NS_LOG_FUNCTION (this << band.first << band.second);
-  const WifiTxVector txVector = event->GetTxVector ();
-  uint16_t channelWidth = txVector.GetChannelWidth () >= 40 ? 20 : txVector.GetChannelWidth (); //calculate PER on the 20 MHz primary channel for L-SIG
   double psr = 1.0; /* Packet Success Rate */
-  auto ni_it = nis->find (band)->second;
-  auto j = ni_it.begin ();
+  auto niIt = nis->find (band)->second;
+  auto j = niIt.begin ();
+
+  NS_ASSERT (!phyHeaderSections.empty ());
+  Time stopLastSection = Seconds (0);
+  for (const auto & section : phyHeaderSections)
+    {
+      stopLastSection = Max (stopLastSection, section.second.first.second);
+    }
+
   Time previous = j->first;
-  WifiPreamble preamble = txVector.GetPreambleType ();
-  WifiMode headerMode = WifiPhy::GetPhyHeaderMode (txVector);
-  Time phyHeaderStart = j->first + WifiPhy::GetPhyPreambleDuration (txVector); //PPDU start time + preamble
-  Time phyLSigHeaderEnd = phyHeaderStart + WifiPhy::GetPhyHeaderDuration (txVector); //PPDU start time + preamble + L-SIG
-  Time phyTrainingSymbolsStart = phyLSigHeaderEnd + WifiPhy::GetPhyHtSigHeaderDuration (preamble) + WifiPhy::GetPhySigA1Duration (preamble) + WifiPhy::GetPhySigA2Duration (preamble); //PPDU start time + preamble + L-SIG + HT-SIG or SIG-A
-  Time phyPayloadStart = phyTrainingSymbolsStart + WifiPhy::GetPhyTrainingSymbolDuration (txVector) + WifiPhy::GetPhySigBDuration (preamble); //PPDU start time + preamble + L-SIG + HT-SIG or SIG-A + Training + SIG-B
   double noiseInterferenceW = m_firstPowerPerBand.find (band)->second;
   double powerW = event->GetRxPowerW (band);
-  while (++j != ni_it.end ())
+  while (++j != niIt.end ())
     {
       Time current = j->first;
       NS_LOG_DEBUG ("previous= " << previous << ", current=" << current);
       NS_ASSERT (current >= previous);
       double snr = CalculateSnr (powerW, noiseInterferenceW, channelWidth, 1);
-      //Case 1: previous and current after payload start
-      if (previous >= phyPayloadStart)
+      for (const auto & section : phyHeaderSections)
         {
-          psr *= 1;
-          NS_LOG_DEBUG ("Case 1 - previous and current after payload start: nothing to do");
-        }
-      //Case 2: previous is in training or in SIG-B: non-HT will not enter here since it didn't enter in the last two and they are all the same for non-HT
-      else if (previous >= phyTrainingSymbolsStart)
-        {
-          NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-          psr *= 1;
-          NS_LOG_DEBUG ("Case 2 - previous is in training or in SIG-B: nothing to do");
-        }
-      //Case 3: previous is in HT-SIG or SIG-A: non-HT will not enter here since it didn't enter in the last two and they are all the same for non-HT
-      else if (previous >= phyLSigHeaderEnd)
-        {
-          NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-          psr *= 1;
-          NS_LOG_DEBUG ("Case 3cii - previous is in HT-SIG or SIG-A: nothing to do");
-        }
-      //Case 4: previous in L-SIG: HT GF will not reach here because it will execute the previous if and exit
-      else if (previous >= phyHeaderStart)
-        {
-          NS_ASSERT (preamble != WIFI_PREAMBLE_HT_GF);
-          //Case 4a: current after payload start
-          if (current >= phyPayloadStart)
-            {
-              psr *= CalculateChunkSuccessRate (snr, phyLSigHeaderEnd - previous, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 4a - previous in L-SIG and current after payload start: mode=" << headerMode << ", psr=" << psr);
-            }
-          //Case 4b: current is in training or in SIG-B. non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyTrainingSymbolsStart)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              psr *= CalculateChunkSuccessRate (snr, phyLSigHeaderEnd - previous, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 4a - previous in L-SIG and current is in training or in SIG-B: mode=" << headerMode << ", psr=" << psr);
-            }
-          //Case 4c: current in HT-SIG or in SIG-A. non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyLSigHeaderEnd)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              psr *= CalculateChunkSuccessRate (snr, phyLSigHeaderEnd - previous, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 4ci - previous is in L-SIG and current in HT-SIG or in SIG-A: mode=" << headerMode << ", psr=" << psr);
-            }
-          //Case 4d: current with previous in L-SIG
-          else
-            {
-              psr *= CalculateChunkSuccessRate (snr, current - previous, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 4d - current with previous in L-SIG: mode=" << headerMode << ", psr=" << psr);
-            }
-        }
-      //Case 5: previous is in the preamble works for all cases
-      else
-        {
-          //Case 5a: current after payload start
-          if (current >= phyPayloadStart)
-            {
-              psr *= CalculateChunkSuccessRate (snr, phyLSigHeaderEnd - phyHeaderStart, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 5aii - previous is in the preamble and current is after payload start: mode=" << headerMode << ", psr=" << psr);
-            }
-          //Case 5b: current is in training or in SIG-B. non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyTrainingSymbolsStart)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              psr *= CalculateChunkSuccessRate (snr, phyLSigHeaderEnd - phyHeaderStart, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 5b - previous is in the preamble and current is in training or in SIG-B: mode=" << headerMode << ", psr=" << psr);
-            }
-          //Case 5c: current in HT-SIG or in SIG-A. non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyLSigHeaderEnd)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              psr *= CalculateChunkSuccessRate (snr, phyLSigHeaderEnd - phyHeaderStart, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 5b - previous is in the preamble and current in HT-SIG or in SIG-A: mode=" << headerMode << ", psr=" << psr);
-            }
-          //Case 5d: current is in L-SIG.
-          else if (current >= phyHeaderStart)
-            {
-              NS_ASSERT (preamble != WIFI_PREAMBLE_HT_GF);
-              psr *= CalculateChunkSuccessRate (snr, current - phyHeaderStart, headerMode, txVector);
-              NS_LOG_DEBUG ("Case 5d - previous is in the preamble and current is in L-SIG: mode=" << headerMode << ", psr=" << psr);
-            }
-        }
+          Time start = section.second.first.first;
+          Time stop = section.second.first.second;
 
+          if (previous <= stop || current >= start)
+            {
+              Time duration = Min (stop, current) - Max (start, previous);
+              if (duration.IsStrictlyPositive ())
+                {
+                  psr *= CalculateChunkSuccessRate (snr, duration, section.second.second, event->GetTxVector (), section.first);
+                  NS_LOG_DEBUG ("Current NI change in " << section.first << " [" << start << ", " << stop << "] for "
+                                << duration.As (Time::NS) << ": mode=" << section.second.second << ", psr=" << psr);
+                }
+            }
+        }
       noiseInterferenceW = j->second.GetPower () - powerW;
       previous = j->first;
+      if (previous > stopLastSection)
+        {
+          NS_LOG_DEBUG ("Stop: new previous=" << previous << " after stop of last section=" << stopLastSection);
+          break;
+        }
     }
-
-  double per = 1 - psr;
-  return per;
+  return psr;
 }
 
 double
-InterferenceHelper::CalculateHtPhyHeaderPer (Ptr<const Event> event, NiChangesPerBand *nis, WifiSpectrumBand band) const
+InterferenceHelper::CalculatePhyHeaderPer (Ptr<const Event> event, NiChangesPerBand *nis,
+                                           uint16_t channelWidth, WifiSpectrumBand band,
+                                           WifiPpduField header) const
 {
-  NS_LOG_FUNCTION (this << band.first << band.second);
-  const WifiTxVector txVector = event->GetTxVector ();
-  uint16_t channelWidth = txVector.GetChannelWidth () >= 40 ? 20 : txVector.GetChannelWidth (); //calculate PER on the 20 MHz primary channel for PHY headers
-  double psr = 1.0; /* Packet Success Rate */
-  auto ni_it = nis->find (band)->second;
-  auto j = ni_it.begin ();
-  Time previous = j->first;
-  WifiPreamble preamble = txVector.GetPreambleType ();
-  WifiMode mcsHeaderMode;
-  if (IsHt (preamble))
-    {
-      //mode for PHY header fields sent with HT modulation
-      mcsHeaderMode = WifiPhy::GetHtPhyHeaderMode ();
-    }
-  else if (IsVht (preamble))
-    {
-      //mode for PHY header fields sent with VHT modulation
-      mcsHeaderMode = WifiPhy::GetVhtPhyHeaderMode ();
-    }
-  else if (IsHe (preamble))
-    {
-      //mode for PHY header fields sent with HE modulation
-      mcsHeaderMode = WifiPhy::GetHePhyHeaderMode ();
-    }
-  WifiMode headerMode = WifiPhy::GetPhyHeaderMode (txVector);
-  Time phyHeaderStart = j->first + WifiPhy::GetPhyPreambleDuration (txVector); //PPDU start time + preamble
-  Time phyLSigHeaderEnd = phyHeaderStart + WifiPhy::GetPhyHeaderDuration (txVector); //PPDU start time + preamble + L-SIG
-  Time phyTrainingSymbolsStart = phyLSigHeaderEnd + WifiPhy::GetPhyHtSigHeaderDuration (preamble) + WifiPhy::GetPhySigA1Duration (preamble) + WifiPhy::GetPhySigA2Duration (preamble); //PPDU start time + preamble + L-SIG + HT-SIG or SIG-A
-  Time phyPayloadStart = phyTrainingSymbolsStart + WifiPhy::GetPhyTrainingSymbolDuration (txVector) + WifiPhy::GetPhySigBDuration (preamble); //PPDU start time + preamble + L-SIG + HT-SIG or SIG-A + Training + SIG-B
-  double noiseInterferenceW = m_firstPowerPerBand.find (band)->second;
-  double powerW = event->GetRxPowerW (band);
-  while (++j != ni_it.end ())
-    {
-      Time current = j->first;
-      NS_LOG_DEBUG ("previous= " << previous << ", current=" << current);
-      NS_ASSERT (current >= previous);
-      double snr = CalculateSnr (powerW, noiseInterferenceW, channelWidth, 1);
-      //Case 1: previous and current after payload start: nothing to do
-      if (previous >= phyPayloadStart)
-        {
-          psr *= 1;
-          NS_LOG_DEBUG ("Case 1 - previous and current after payload start: nothing to do");
-        }
-      //Case 2: previous is in training or in SIG-B: non-HT will not enter here since it didn't enter in the last two and they are all the same for non-HT
-      else if (previous >= phyTrainingSymbolsStart)
-        {
-          NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-          //Case 2a: current after payload start
-          if (current >= phyPayloadStart)
-            {
-              psr *= CalculateChunkSuccessRate (snr, phyPayloadStart - previous, mcsHeaderMode, txVector);
-              NS_LOG_DEBUG ("Case 2a - previous is in training or in SIG-B and current after payload start: mode=" << mcsHeaderMode << ", psr=" << psr);
-            }
-          //Case 2b: current is in training or in SIG-B
-          else
-            {
-              psr *= CalculateChunkSuccessRate (snr, current - previous, mcsHeaderMode, txVector);
-              NS_LOG_DEBUG ("Case 2b - previous is in training or in SIG-B and current is in training or in SIG-B: mode=" << mcsHeaderMode << ", psr=" << psr);
-            }
-        }
-      //Case 3: previous is in HT-SIG or SIG-A: non-HT will not enter here since it didn't enter in the last two and they are all the same for non-HT
-      else if (previous >= phyLSigHeaderEnd)
-        {
-          NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-          //Case 3a: current after payload start
-          if (current >= phyPayloadStart)
-            {
-              psr *= CalculateChunkSuccessRate (snr, phyPayloadStart - phyTrainingSymbolsStart, mcsHeaderMode, txVector);
-              //Case 3ai: VHT or HE format
-              if (IsVht (preamble) || IsHe (preamble))
-                {
-                  //SIG-A is sent using non-HT OFDM modulation
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - previous, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 3ai - previous is in SIG-A and current after payload start: mcs mode=" << mcsHeaderMode << ", non-HT mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 3aii: HT formats
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - previous, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 3aii - previous is in HT-SIG and current after payload start: mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-          //Case 3b: current is in training or in SIG-B
-          else if (current >= phyTrainingSymbolsStart)
-            {
-              psr *= CalculateChunkSuccessRate (snr, current - phyTrainingSymbolsStart, mcsHeaderMode, txVector);
-              //Case 3bi: VHT or HE format
-              if (IsVht (preamble) || IsHe (preamble))
-                {
-                  //SIG-A is sent using non-HT OFDM modulation
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - previous, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 3bi - previous is in SIG-A and current is in training or in SIG-B: mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 3bii: HT formats
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - previous, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 3bii - previous is in HT-SIG and current is in HT training: mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-          //Case 3c: current with previous in HT-SIG or SIG-A
-          else
-            {
-              //Case 3ci: VHT or HE format
-              if (IsVht (preamble) || IsHe (preamble))
-                {
-                  //SIG-A is sent using non-HT OFDM modulation
-                  psr *= CalculateChunkSuccessRate (snr, current - previous, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 3ci - previous with current in SIG-A: mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 3cii: HT mixed format or HT greenfield
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - previous, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 3cii - previous with current in HT-SIG: mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-        }
-      //Case 4: previous in L-SIG: HT GF will not reach here because it will execute the previous if and exit
-      else if (previous >= phyHeaderStart)
-        {
-          NS_ASSERT (preamble != WIFI_PREAMBLE_HT_GF);
-          //Case 4a: current after payload start
-          if (current >= phyPayloadStart)
-            {
-              //Case 4ai: non-HT format
-              if (preamble == WIFI_PREAMBLE_LONG || preamble == WIFI_PREAMBLE_SHORT)
-                {
-                  psr *= 1;
-                  NS_LOG_DEBUG ("Case 4ai - previous in L-SIG and current after payload start: nothing to do");
-                }
-              //Case 4aii: VHT or HE format
-              else if (IsVht (preamble) || IsHe (preamble))
-                {
-                  psr *= CalculateChunkSuccessRate (snr, phyPayloadStart - phyTrainingSymbolsStart, mcsHeaderMode, txVector);
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - phyLSigHeaderEnd, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 4aii - previous is in L-SIG and current after payload start: mcs mode=" << mcsHeaderMode << ", non-HT mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 4aiii: HT mixed format
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, phyPayloadStart - phyLSigHeaderEnd, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 4aiii - previous in L-SIG and current after payload start: mcs mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-          //Case 4b: current is in training or in SIG-B. non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyTrainingSymbolsStart)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              //Case 4bi: VHT or HE format
-              if (IsVht (preamble) || IsHe (preamble))
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyTrainingSymbolsStart, mcsHeaderMode, txVector);
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - phyLSigHeaderEnd, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 4bi - previous is in L-SIG and current in training or in SIG-B: mcs mode=" << mcsHeaderMode << ", non-HT mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 4bii: HT mixed format
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyLSigHeaderEnd, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 4bii - previous in L-SIG and current in HT training: mcs mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-          //Case 4c: current in HT-SIG or in SIG-A. Non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyLSigHeaderEnd)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              //Case 4ci: VHT format
-              if (IsVht (preamble) || IsHe (preamble))
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyLSigHeaderEnd, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 4ci - previous is in L-SIG and current in SIG-A: mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 4cii: HT mixed format
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyLSigHeaderEnd, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 4cii - previous in L-SIG and current in HT-SIG: mcs mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-          //Case 4d: current with previous in L-SIG
-          else
-            {
-              psr *= 1;
-              NS_LOG_DEBUG ("Case 4d - current with previous in L-SIG: nothing to do");
-            }
-        }
-      //Case 5: previous is in the preamble works for all cases
-      else
-        {
-          //Case 5a: current after payload start
-          if (current >= phyPayloadStart)
-            {
-              //Case 5ai: non-HT format (No HT-SIG or Training Symbols)
-              if (preamble == WIFI_PREAMBLE_LONG || preamble == WIFI_PREAMBLE_SHORT)
-                {
-                  psr *= 1;
-                  NS_LOG_DEBUG ("Case 5ai - previous is in the preamble and current is after payload start: nothing to do");
-                }
-              //Case 5aii: VHT or HE format
-              else if (IsVht (preamble) || IsHe (preamble))
-                {
-                  psr *= CalculateChunkSuccessRate (snr, phyPayloadStart - phyTrainingSymbolsStart, mcsHeaderMode, txVector);
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - phyLSigHeaderEnd, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 5aii - previous is in the preamble and current is after payload start: mcs mode=" << mcsHeaderMode << ", non-HT mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 5aiii: HT formats
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, phyPayloadStart - phyLSigHeaderEnd, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 5aiii - previous is in the preamble and current is after payload start: mcs mode=" << mcsHeaderMode << ", non-HT mode=" << headerMode << ", psr=" << psr);
-                }
-            }
-          //Case 5b: current is in training or in SIG-B. Non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyTrainingSymbolsStart)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              //Case 5bi: VHT or HE format
-              if (IsVht (preamble) || IsHe (preamble))
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyTrainingSymbolsStart, mcsHeaderMode, txVector);
-                  psr *= CalculateChunkSuccessRate (snr, phyTrainingSymbolsStart - phyLSigHeaderEnd, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 5bi - previous is in the preamble and current in training or in SIG-B: mcs mode=" << mcsHeaderMode << ", non-HT mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 5bii: HT mixed format
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyLSigHeaderEnd, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 5bii - previous is in the preamble and current in HT training: mcs mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-          //Case 5c: current in HT-SIG or in SIG-A. Non-HT will not come here since it went in previous if or if the previous if is not true this will be not true
-          else if (current >= phyLSigHeaderEnd)
-            {
-              NS_ASSERT ((preamble != WIFI_PREAMBLE_LONG) && (preamble != WIFI_PREAMBLE_SHORT));
-              //Case 5ci: VHT or HE format
-              if (IsVht (preamble) || IsHe (preamble))
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyLSigHeaderEnd, headerMode, txVector);
-                  NS_LOG_DEBUG ("Case 5ci - previous is in preamble and current in SIG-A: mode=" << headerMode << ", psr=" << psr);
-                }
-              //Case 5cii: HT formats
-              else
-                {
-                  psr *= CalculateChunkSuccessRate (snr, current - phyLSigHeaderEnd, mcsHeaderMode, txVector);
-                  NS_LOG_DEBUG ("Case 5cii - previous in preamble and current in HT-SIG: mcs mode=" << mcsHeaderMode << ", psr=" << psr);
-                }
-            }
-          //Case 5d: current is in L-SIG. HT-GF will not come here
-          else if (current >= phyHeaderStart)
-            {
-              NS_ASSERT (preamble != WIFI_PREAMBLE_HT_GF);
-              psr *= 1;
-              NS_LOG_DEBUG ("Case 5d - previous is in the preamble and current is in L-SIG: nothing to do");
-            }
-        }
+  NS_LOG_FUNCTION (this << band.first << band.second << header);
+  auto niIt = nis->find (band)->second;
+  auto phyEntity = WifiPhy::GetStaticPhyEntity (event->GetTxVector ().GetModulationClass ());
 
-      noiseInterferenceW = j->second.GetPower () - powerW;
-      previous = j->first;
+  PhyEntity::PhyHeaderSections sections;
+  for (const auto & section : phyEntity->GetPhyHeaderSections (event->GetTxVector (), niIt.begin ()->first))
+    {
+      if (section.first == header)
+        {
+          sections[header] = section.second;
+        }
     }
 
-  double per = 1 - psr;
-  return per;
+  double psr = 1.0;
+  if (!sections.empty () > 0)
+    {
+      psr = CalculatePhyHeaderSectionPsr (event, nis, channelWidth, band, sections);
+    }
+  return 1 - psr;
 }
 
-struct InterferenceHelper::SnrPer
+struct PhyEntity::SnrPer
 InterferenceHelper::CalculatePayloadSnrPer (Ptr<Event> event, uint16_t channelWidth, WifiSpectrumBand band,
                                             uint16_t staId, std::pair<Time, Time> relativeMpduStartStop) const
 {
@@ -808,10 +561,7 @@ InterferenceHelper::CalculatePayloadSnrPer (Ptr<Event> event, uint16_t channelWi
    */
   double per = CalculatePayloadPer (event, channelWidth, &ni, band, staId, relativeMpduStartStop);
 
-  struct SnrPer snrPer;
-  snrPer.snr = snr;
-  snrPer.per = per;
-  return snrPer;
+  return PhyEntity::SnrPer (snr, per);
 }
 
 double
@@ -826,51 +576,12 @@ InterferenceHelper::CalculateSnr (Ptr<Event> event, uint16_t channelWidth, uint8
   return snr;
 }
 
-struct InterferenceHelper::SnrPer
-InterferenceHelper::CalculateNonHtPhyHeaderSnrPer (Ptr<Event> event, WifiSpectrumBand band) const
+struct PhyEntity::SnrPer
+InterferenceHelper::CalculatePhyHeaderSnrPer (Ptr<Event> event, uint16_t channelWidth, WifiSpectrumBand band,
+                                              WifiPpduField header) const
 {
-  NS_LOG_FUNCTION (this << band.first << band.second);
+  NS_LOG_FUNCTION (this << band.first << band.second << header);
   NiChangesPerBand ni;
-  uint16_t channelWidth;
-  if (event->GetTxVector ().GetChannelWidth () >= 40)
-    {
-      channelWidth = 20; //calculate PER on the 20 MHz primary channel for L-SIG
-    }
-  else
-    {
-      channelWidth = event->GetTxVector ().GetChannelWidth ();
-    }
-  double noiseInterferenceW = CalculateNoiseInterferenceW (event, &ni, band);
-  double snr = CalculateSnr (event->GetRxPowerW (band),
-                             noiseInterferenceW,
-                             channelWidth,
-                             1);
-
-  /* calculate the SNIR at the start of the PHY header and accumulate
-   * all SNIR changes in the SNIR vector.
-   */
-  double per = CalculateNonHtPhyHeaderPer (event, &ni, band);
-
-  struct SnrPer snrPer;
-  snrPer.snr = snr;
-  snrPer.per = per;
-  return snrPer;
-}
-
-struct InterferenceHelper::SnrPer
-InterferenceHelper::CalculateHtPhyHeaderSnrPer (Ptr<Event> event, WifiSpectrumBand band) const
-{
-  NS_LOG_FUNCTION (this << band.first << band.second);
-  NiChangesPerBand ni;
-  uint16_t channelWidth;
-  if (event->GetTxVector ().GetChannelWidth () >= 40)
-    {
-      channelWidth = 20; //calculate PER on the 20 MHz primary channel for PHY headers
-    }
-  else
-    {
-      channelWidth = event->GetTxVector ().GetChannelWidth ();
-    }
   double noiseInterferenceW = CalculateNoiseInterferenceW (event, &ni, band);
   double snr = CalculateSnr (event->GetRxPowerW (band),
                              noiseInterferenceW,
@@ -880,39 +591,34 @@ InterferenceHelper::CalculateHtPhyHeaderSnrPer (Ptr<Event> event, WifiSpectrumBa
   /* calculate the SNIR at the start of the PHY header and accumulate
    * all SNIR changes in the SNIR vector.
    */
-  double per = CalculateHtPhyHeaderPer (event, &ni, band);
+  double per = CalculatePhyHeaderPer (event, &ni, channelWidth, band, header);
   
-  struct SnrPer snrPer;
-  snrPer.snr = snr;
-  snrPer.per = per;
-  return snrPer;
+  return PhyEntity::SnrPer (snr, per);
 }
 
 void
 InterferenceHelper::EraseEvents (void)
 {
-  for (auto it : m_niChangesPerBand)
+  for (auto niIt = m_niChangesPerBand.begin(); niIt != m_niChangesPerBand.end(); ++niIt)
     {
-      it.second.clear ();
+      niIt->second.clear ();
       // Always have a zero power noise event in the list
-      AddNiChangeEvent (Time (0), NiChange (0.0, 0), it.first);
-      m_firstPowerPerBand.at (it.first) = 0.0;
+      AddNiChangeEvent (Time (0), NiChange (0.0, 0), niIt);
+      m_firstPowerPerBand.at (niIt->first) = 0.0;
     }
   m_rxing = false;
 }
 
-InterferenceHelper::NiChanges::const_iterator
-InterferenceHelper::GetNextPosition (Time moment, WifiSpectrumBand band) const
+InterferenceHelper::NiChanges::iterator
+InterferenceHelper::GetNextPosition (Time moment, NiChangesPerBand::iterator niIt)
 {
-  auto it = m_niChangesPerBand.find (band);
-  NS_ASSERT (it != m_niChangesPerBand.end ());
-  return it->second.upper_bound (moment);
+  return niIt->second.upper_bound (moment);
 }
 
-InterferenceHelper::NiChanges::const_iterator
-InterferenceHelper::GetPreviousPosition (Time moment, WifiSpectrumBand band) const
+InterferenceHelper::NiChanges::iterator
+InterferenceHelper::GetPreviousPosition (Time moment, NiChangesPerBand::iterator niIt)
 {
-  auto it = GetNextPosition (moment, band);
+  auto it = GetNextPosition (moment, niIt);
   // This is safe since there is always an NiChange at time 0,
   // before moment.
   --it;
@@ -920,11 +626,9 @@ InterferenceHelper::GetPreviousPosition (Time moment, WifiSpectrumBand band) con
 }
 
 InterferenceHelper::NiChanges::iterator
-InterferenceHelper::AddNiChangeEvent (Time moment, NiChange change, WifiSpectrumBand band)
+InterferenceHelper::AddNiChangeEvent (Time moment, NiChange change, NiChangesPerBand::iterator niIt)
 {
-  auto it = m_niChangesPerBand.find (band);
-  NS_ASSERT (it != m_niChangesPerBand.end ());
-  return it->second.insert (GetNextPosition (moment, band), std::make_pair (moment, change));
+  return niIt->second.insert (GetNextPosition (moment, niIt), std::make_pair (moment, change));
 }
 
 void
@@ -935,17 +639,17 @@ InterferenceHelper::NotifyRxStart ()
 }
 
 void
-InterferenceHelper::NotifyRxEnd ()
+InterferenceHelper::NotifyRxEnd (Time endTime)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this << endTime);
   m_rxing = false;
-  //Update m_firstPower for frame capture
-  for (auto ni : m_niChangesPerBand)
+  //Update m_firstPowerPerBand for frame capture
+  for (auto niIt = m_niChangesPerBand.begin(); niIt != m_niChangesPerBand.end(); ++niIt)
     {
-      NS_ASSERT (ni.second.size () > 1);
-      auto it = GetPreviousPosition (Simulator::Now (), ni.first);
+      NS_ASSERT (niIt->second.size () > 1);
+      auto it = GetPreviousPosition (endTime, niIt);
       it--;
-      m_firstPowerPerBand.find (ni.first)->second = it->second.GetPower ();
+      m_firstPowerPerBand.find (niIt->first)->second = it->second.GetPower ();
     }
 }
 

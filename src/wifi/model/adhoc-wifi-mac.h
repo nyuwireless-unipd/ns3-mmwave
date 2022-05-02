@@ -44,13 +44,12 @@ public:
   AdhocWifiMac ();
   virtual ~AdhocWifiMac ();
 
-  // Implementations of pure virtual methods, or overridden from base class.
-  void SetAddress (Mac48Address address);
-  void SetLinkUpCallback (Callback<void> linkUp);
-  void Enqueue (Ptr<Packet> packet, Mac48Address to);
+  void SetAddress (Mac48Address address) override;
+  void SetLinkUpCallback (Callback<void> linkUp) override;
+  void Enqueue (Ptr<Packet> packet, Mac48Address to) override;
 
 private:
-  void Receive (Ptr<WifiMacQueueItem> mpdu);
+  void Receive (Ptr<WifiMacQueueItem> mpdu) override;
 };
 
 } //namespace ns3

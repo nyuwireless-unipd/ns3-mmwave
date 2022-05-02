@@ -19,7 +19,7 @@
 #include "ns3/node-container.h"
 #include "ns3/mobility-helper.h"
 #include "ns3/test.h"
-#include "ns3/three-gpp-antenna-array-model.h"
+#include "ns3/phased-array-model.h"
 
 NS_LOG_COMPONENT_DEFINE ("MmWaveAntennaInitializationTestSuite");
 
@@ -64,11 +64,21 @@ MmwaveThreeGppAntennaInitializationTestCase::DoRun (void)
 {
   uint8_t numCc = 2; // number of CCs
   double freq[] {6.0e9, 28.0e9}; // frequency of the CCs
+  uint8_t m_numUeAntennaColumns = 2; // number of columns of the UE antenna array
+  uint8_t m_numUeAntennaRows = 2; // number of rows of the UE antenna array
+  uint8_t m_numEnbAntennaColums = 4; // number of columns of the BS antenna array
+  uint8_t m_numEnbAntennaRows = 4; // number of rows of the BS antenna array
 
   // create the MmWaveHelper
   Ptr<MmWaveHelper> helper = CreateObject<MmWaveHelper> ();
   helper->SetAttribute ("UseCa", BooleanValue ((numCc > 1)));
   helper->SetAttribute ("NumberOfComponentCarriers", UintegerValue (numCc));
+  
+  // set the number of antennas in the devices
+  helper->SetUePhasedArrayModelAttribute ("NumColumns" , UintegerValue (m_numUeAntennaColumns));
+  helper->SetUePhasedArrayModelAttribute ("NumRows" , UintegerValue (m_numUeAntennaRows));
+  helper->SetEnbPhasedArrayModelAttribute ("NumColumns" , UintegerValue (m_numEnbAntennaColums));
+  helper->SetEnbPhasedArrayModelAttribute ("NumRows" , UintegerValue (m_numEnbAntennaRows));
 
   // create and configure the CCs
   std::map<uint8_t, MmWaveComponentCarrier> ccMap;
@@ -127,11 +137,11 @@ MmwaveThreeGppAntennaInitializationTestCase::DoRun (void)
     // retrieve the MmWaveBeamformingModel
     Ptr<MmWaveBeamformingModel> mmwaveBfModel = mmWaveSpectrumPhy->GetBeamformingModel ();
 
-    // retrieve the ThreeGppAntennaArrayModel
-    Ptr<ThreeGppAntennaArrayModel> antenna = mmwaveBfModel->GetAntenna ();
+    // retrieve the PhasedArrayModel
+    Ptr<PhasedArrayModel> antenna = mmwaveBfModel->GetAntenna ();
 
     // check if the number of antenna elements has been configured
-    NS_TEST_ASSERT_MSG_EQ (antenna->GetNumberOfElements (), mmWaveEnbDev->GetAntennaNum (),"The number of antenna elements was not properly configured");
+    NS_TEST_ASSERT_MSG_EQ (antenna->GetNumberOfElements (), m_numEnbAntennaRows * m_numEnbAntennaColums, "The number of antenna elements was not properly configured");
   }
 
   // create the UE node
@@ -165,11 +175,11 @@ MmwaveThreeGppAntennaInitializationTestCase::DoRun (void)
     // retrieve the MmWaveBeamformingModel
     Ptr<MmWaveBeamformingModel> mmwaveBfModel = mmWaveSpectrumPhy->GetBeamformingModel ();
 
-    // retrieve the ThreeGppAntennaArrayModel
-    Ptr<ThreeGppAntennaArrayModel> antenna = mmwaveBfModel->GetAntenna ();
+    // retrieve the PhasedArrayModel
+    Ptr<PhasedArrayModel> antenna = mmwaveBfModel->GetAntenna ();
 
     // check if the number of antenna elements has been configured
-    NS_TEST_ASSERT_MSG_EQ (antenna->GetNumberOfElements (), mmWaveUeDev->GetAntennaNum (),"The number of antenna elements was not properly configured");
+    NS_TEST_ASSERT_MSG_EQ (antenna->GetNumberOfElements (), m_numUeAntennaRows * m_numUeAntennaColumns, "The number of antenna elements was not properly configured");
   }
 }
 

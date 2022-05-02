@@ -32,7 +32,7 @@
 #include "ns3/mmwave-phy.h"
 #include <ns3/mmwave-enb-phy.h>
 #include <ns3/pointer.h>
-#include <ns3/three-gpp-antenna-array-model.h>
+#include <ns3/phased-array-model.h>
 
 namespace ns3 {
 
@@ -137,15 +137,15 @@ public:
 
   /**
    * Set the antenna used by the device in the component carrier
-   * \param antenna pointer to ThreeGppAntennaArrayModel object
+   * \param antenna pointer to PhasedArrayModel object
    */
-  void SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna);
+  void SetAntenna (Ptr<PhasedArrayModel> antenna);
 
   /**
    * Get the antenna used by the device in the component carrier
-   * \return pointer to ThreeGppAntennaArrayModel object
+   * \return pointer to PhasedArrayModel object
    */
-  Ptr<ThreeGppAntennaArrayModel> GetAntenna (void) const;
+  Ptr<PhasedArrayModel> GetAntenna (void) const;
 
 protected:
   // inherited from Object
@@ -157,7 +157,7 @@ protected:
   bool m_isConstructed; ///< whether the instance is constructed
 //    bool m_isConfigured;
   Ptr<MmWavePhyMacCommon> m_phyMacConfig;
-  Ptr<ThreeGppAntennaArrayModel> m_antenna; //!< the antenna used by the device in the component carrier
+  Ptr<PhasedArrayModel> m_antenna; //!< the antenna used by the device in the component carrier
 
 };
 

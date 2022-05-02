@@ -33,7 +33,9 @@ def build(bld):
     obj.source = 'mmwave-ca-diff-bandwidth.cc' 
     obj = bld.create_ns3_program('mmwave-ca-same-bandwidth', ['mmwave'])
     obj.source = 'mmwave-ca-same-bandwidth.cc' 
+    obj = bld.create_ns3_program('mmwave-beamforming-codebook-example', ['mmwave'])
+    obj.source = 'mmwave-beamforming-codebook-example.cc' 
 
     if bld.env['ENABLE_QD_CHANNEL']:
-        obj = bld.create_ns3_program('qd-channel-full-stack-example', ['mmwave'])
+        obj = bld.create_ns3_program('qd-channel-full-stack-example', ['mmwave','qd-channel'])
         obj.source = 'qd-channel-full-stack-example.cc'

@@ -20,6 +20,7 @@
  */
 
 #include "wifi-tx-vector.h"
+#include "wifi-phy-common.h"
 #include "ns3/abort.h"
 
 namespace ns3 {
@@ -35,6 +36,7 @@ WifiTxVector::WifiTxVector ()
     m_stbc (false),
     m_ldpc (false),
     m_bssColor (0),
+    m_length (0),
     m_modeInitialized (false)
 {
 }
@@ -50,7 +52,8 @@ WifiTxVector::WifiTxVector (WifiMode mode,
                             bool aggregation,
                             bool stbc,
                             bool ldpc,
-                            uint8_t bssColor)
+                            uint8_t bssColor,
+                            uint16_t length)
   : m_mode (mode),
     m_txPowerLevel (powerLevel),
     m_preamble (preamble),
@@ -63,6 +66,7 @@ WifiTxVector::WifiTxVector (WifiMode mode,
     m_stbc (stbc),
     m_ldpc (ldpc),
     m_bssColor (bssColor),
+    m_length (length),
     m_modeInitialized (true)
 {
 }
@@ -80,6 +84,7 @@ WifiTxVector::WifiTxVector (const WifiTxVector& txVector)
     m_stbc (txVector.m_stbc),
     m_ldpc (txVector.m_ldpc),
     m_bssColor (txVector.m_bssColor),
+    m_length (txVector.m_length),
     m_modeInitialized (txVector.m_modeInitialized)
 {
   m_muUserInfos.clear ();
@@ -110,13 +115,27 @@ WifiTxVector::GetMode (uint16_t staId) const
     {
       NS_FATAL_ERROR ("WifiTxVector mode must be set before using");
     }
-  if (m_preamble == WIFI_PREAMBLE_HE_MU || m_preamble == WIFI_PREAMBLE_HE_TB)
+  if (IsMu ())
     {
-      NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for HE MU (" << staId << ")");
+      NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU (" << staId << ")");
       NS_ASSERT (m_muUserInfos.find (staId) != m_muUserInfos.end ());
       return m_muUserInfos.at (staId).mcs;
     }
   return m_mode;
+}
+
+WifiModulationClass
+WifiTxVector::GetModulationClass (void) const
+{
+  NS_ABORT_MSG_IF (!m_modeInitialized, "WifiTxVector mode must be set before using");
+
+  if (IsMu ())
+    {
+      NS_ASSERT (!m_muUserInfos.empty ());
+      // all the modes belong to the same modulation class
+      return m_muUserInfos.begin ()->second.mcs.GetModulationClass ();
+    }
+  return m_mode.GetModulationClass ();
 }
 
 uint8_t
@@ -152,9 +171,9 @@ WifiTxVector::GetNTx (void) const
 uint8_t
 WifiTxVector::GetNss (uint16_t staId) const
 {
-  if (m_preamble == WIFI_PREAMBLE_HE_MU || m_preamble == WIFI_PREAMBLE_HE_TB)
+  if (IsMu ())
     {
-      NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for HE MU (" << staId << ")");
+      NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU (" << staId << ")");
       NS_ASSERT (m_muUserInfos.find (staId) != m_muUserInfos.end ());
       return m_muUserInfos.at (staId).nss;
     }
@@ -165,7 +184,7 @@ uint8_t
 WifiTxVector::GetNssMax (void) const
 {
   uint8_t nss = 0;
-  if (m_preamble == WIFI_PREAMBLE_HE_MU || m_preamble == WIFI_PREAMBLE_HE_TB)
+  if (IsMu ())
     {
       for (const auto & info : m_muUserInfos)
         {
@@ -213,8 +232,8 @@ WifiTxVector::SetMode (WifiMode mode)
 void
 WifiTxVector::SetMode (WifiMode mode, uint16_t staId)
 {
-  NS_ABORT_MSG_IF (m_preamble != WIFI_PREAMBLE_HE_MU, "Not an HE MU transmission");
-  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for HE MU");
+  NS_ABORT_MSG_IF (!IsMu (), "Not a MU transmission");
+  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU");
   m_muUserInfos[staId].mcs = mode;
   m_modeInitialized = true;
 }
@@ -258,8 +277,8 @@ WifiTxVector::SetNss (uint8_t nss)
 void
 WifiTxVector::SetNss (uint8_t nss, uint16_t staId)
 {
-  NS_ABORT_MSG_IF (m_preamble != WIFI_PREAMBLE_HE_MU, "Not an HE MU transmission");
-  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for HE MU");
+  NS_ABORT_MSG_IF (!IsMu (), "Not a MU transmission");
+  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU");
   m_muUserInfos[staId].nss = nss;
 }
 
@@ -299,6 +318,18 @@ WifiTxVector::GetBssColor (void) const
   return m_bssColor;
 }
 
+void
+WifiTxVector::SetLength (uint16_t length)
+{
+  m_length = length;
+}
+
+uint16_t
+WifiTxVector::GetLength (void) const
+{
+  return m_length;
+}
+
 bool
 WifiTxVector::IsValid (void) const
 {
@@ -335,35 +366,53 @@ WifiTxVector::IsValid (void) const
   return true;
 }
 
+bool
+WifiTxVector::IsMu (void) const
+{
+  return ns3::IsMu (m_preamble);
+}
+
+bool
+WifiTxVector::IsDlMu (void) const
+{
+  return ns3::IsDlMu (m_preamble);
+}
+
+bool
+WifiTxVector::IsUlMu (void) const
+{
+  return ns3::IsUlMu (m_preamble);
+}
+
 HeRu::RuSpec
 WifiTxVector::GetRu (uint16_t staId) const
 {
-  NS_ABORT_MSG_IF (m_preamble != WIFI_PREAMBLE_HE_MU, "RU only available for MU");
-  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for HE MU");
+  NS_ABORT_MSG_IF (!IsMu (), "RU only available for MU");
+  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU");
   return m_muUserInfos.at (staId).ru;
 }
 
 void
 WifiTxVector::SetRu (HeRu::RuSpec ru, uint16_t staId)
 {
-  NS_ABORT_MSG_IF (m_preamble != WIFI_PREAMBLE_HE_MU, "RU only available for MU");
-  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for HE MU");
+  NS_ABORT_MSG_IF (!IsMu (), "RU only available for MU");
+  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU");
   m_muUserInfos[staId].ru = ru;
 }
 
 HeMuUserInfo
 WifiTxVector::GetHeMuUserInfo (uint16_t staId) const
 {
-  NS_ABORT_MSG_IF (m_preamble != WIFI_PREAMBLE_HE_MU, "HE MU user info only available for MU");
+  NS_ABORT_MSG_IF (!IsMu (), "HE MU user info only available for MU");
   return m_muUserInfos.at (staId);
 }
 
 void
 WifiTxVector::SetHeMuUserInfo (uint16_t staId, HeMuUserInfo userInfo)
 {
-  NS_ABORT_MSG_IF (m_preamble != WIFI_PREAMBLE_HE_MU, "HE MU user info only available for MU");
-  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for HE MU");
-  NS_ABORT_MSG_IF (userInfo.mcs.GetModulationClass () != WIFI_MOD_CLASS_HE, "Only HE modes authorized for HE MU");
+  NS_ABORT_MSG_IF (!IsMu (), "HE MU user info only available for MU");
+  NS_ABORT_MSG_IF (staId > 2048, "STA-ID should be correctly set for MU");
+  NS_ABORT_MSG_IF (userInfo.mcs.GetModulationClass () < WIFI_MOD_CLASS_HE, "Only HE (or newer) modes authorized for MU");
   m_muUserInfos[staId] = userInfo;
   m_modeInitialized = true;
 }
@@ -371,8 +420,82 @@ WifiTxVector::SetHeMuUserInfo (uint16_t staId, HeMuUserInfo userInfo)
 const WifiTxVector::HeMuUserInfoMap&
 WifiTxVector::GetHeMuUserInfoMap (void) const
 {
-  NS_ABORT_MSG_IF (m_preamble != WIFI_PREAMBLE_HE_MU, "HE MU user info map only available for MU");
+  NS_ABORT_MSG_IF (!IsMu (), "HE MU user info map only available for MU");
   return m_muUserInfos;
+}
+
+WifiTxVector::HeMuUserInfoMap&
+WifiTxVector::GetHeMuUserInfoMap (void)
+{
+  NS_ABORT_MSG_IF (!IsMu (), "HE MU user info map only available for MU");
+  return m_muUserInfos;
+}
+
+std::pair<std::size_t, std::size_t>
+WifiTxVector::GetNumRusPerHeSigBContentChannel (void) const
+{
+  //MU-MIMO is not handled for now, i.e. one station per RU
+
+  if (m_channelWidth == 20)
+    {
+      return std::make_pair (m_muUserInfos.size (), 0); //all RUs are in HE-SIG-B content channel 1
+    }
+
+  HeRu::SubcarrierGroup toneRangesContentChannel1, toneRangesContentChannel2;
+  // See section 27.3.10.8.3 of IEEE 802.11ax draft 4.0 for tone ranges per HE-SIG-B content channel
+  switch (m_channelWidth)
+    {
+      case 40:
+        toneRangesContentChannel1.push_back (std::make_pair (-244, -3));
+        toneRangesContentChannel2.push_back (std::make_pair (3, 244));
+        break;
+      case 80:
+        toneRangesContentChannel1.push_back (std::make_pair (-500, -259));
+        toneRangesContentChannel2.push_back (std::make_pair (-258, -17));
+        toneRangesContentChannel1.push_back (std::make_pair (-16, -4)); //first part of center carrier (in HE-SIG-B content channel 1)
+        toneRangesContentChannel1.push_back (std::make_pair (4, 16)); //second part of center carrier (in HE-SIG-B content channel 1)
+        toneRangesContentChannel1.push_back (std::make_pair (17, 258));
+        toneRangesContentChannel2.push_back (std::make_pair (259, 500));
+        break;
+      case 160:
+        toneRangesContentChannel1.push_back (std::make_pair (-1012, -771));
+        toneRangesContentChannel2.push_back (std::make_pair (-770, -529));
+        toneRangesContentChannel1.push_back (std::make_pair (-528, -516)); //first part of center carrier of lower 80 MHz band (in HE-SIG-B content channel 1)
+        toneRangesContentChannel1.push_back (std::make_pair (-508, -496)); //second part of center carrier of lower 80 MHz band (in HE-SIG-B content channel 1)
+        toneRangesContentChannel1.push_back (std::make_pair (-495, -254));
+        toneRangesContentChannel2.push_back (std::make_pair (-253, -12));
+        toneRangesContentChannel1.push_back (std::make_pair (12, 253));
+        toneRangesContentChannel2.push_back (std::make_pair (254, 495));
+        toneRangesContentChannel2.push_back (std::make_pair (496, 508)); //first part of center carrier of upper 80 MHz band (in HE-SIG-B content channel 2)
+        toneRangesContentChannel2.push_back (std::make_pair (516, 528)); //second part of center carrier of upper 80 MHz band (in HE-SIG-B content channel 2)
+        toneRangesContentChannel1.push_back (std::make_pair (529, 770));
+        toneRangesContentChannel2.push_back (std::make_pair (771, 1012));
+        break;
+      default:
+        NS_ABORT_MSG ("Unknown channel width: " << m_channelWidth);
+    }
+
+  std::size_t numRusContentChannel1 = 0;
+  std::size_t numRusContentChannel2 = 0;
+  for (auto & userInfo : m_muUserInfos)
+    {
+      HeRu::RuSpec ru = userInfo.second.ru;
+      if (!ru.IsPhyIndexSet ())
+        {
+          // this method can be called when calculating the TX duration of a frame
+          // and at that time the RU PHY index may have not been set yet
+          ru.SetPhyIndex (m_channelWidth, 0);
+        }
+      if (HeRu::DoesOverlap (m_channelWidth, ru, toneRangesContentChannel1))
+        {
+          numRusContentChannel1++;
+        }
+      if (HeRu::DoesOverlap (m_channelWidth, ru, toneRangesContentChannel2))
+        {
+          numRusContentChannel2++;
+        }
+    }
+  return std::make_pair (numRusContentChannel1, numRusContentChannel2);
 }
 
 std::ostream & operator << ( std::ostream &os, const WifiTxVector &v)
@@ -391,7 +514,15 @@ std::ostream & operator << ( std::ostream &os, const WifiTxVector &v)
      << " MPDU aggregation: " << v.IsAggregation ()
      << " STBC: " << v.IsStbc ()
      << " FEC coding: " << (v.IsLdpc () ? "LDPC" : "BCC");
-  if (v.GetPreambleType () == WIFI_PREAMBLE_HE_MU)
+  if (v.GetPreambleType () >= WIFI_PREAMBLE_HE_SU)
+    {
+      os << " BSS color: " << +v.GetBssColor ();
+    }
+  if (v.IsUlMu ())
+    {
+      os << " Length: " << v.GetLength ();
+    }
+  if (v.IsMu ())
     {
       WifiTxVector::HeMuUserInfoMap userInfoMap = v.GetHeMuUserInfoMap ();
       os << " num User Infos: " << userInfoMap.size ();

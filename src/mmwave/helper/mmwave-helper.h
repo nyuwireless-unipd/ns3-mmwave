@@ -111,6 +111,22 @@ public:
   void SetChannelConditionModelType (std::string type);
   void SetPathlossModelType (std::string type);
   void SetChannelModelType (std::string type);
+  void SetUePhasedArrayModelType (std::string type);
+  void SetEnbPhasedArrayModelType (std::string type);
+
+  /**
+   * Set an attribute to the PhasedArrayModel for the UEs
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetUePhasedArrayModelAttribute (std::string name, const AttributeValue &value);
+
+  /**
+   * Set an attribute to the PhasedArrayModel for the eNBs
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetEnbPhasedArrayModelAttribute (std::string name, const AttributeValue &value);
 
   /**
    * Set an attribute to the SpectrumPropagationLossModels
@@ -154,6 +170,32 @@ public:
    * \param value value to set
    */
   void SetBeamformingModelAttribute (std::string name, const AttributeValue &value);
+  
+  /**
+   * Set the type of beamforming codebook to be used by UEs
+   * \param type beamforming codebook type
+   */
+  void SetUeBeamformingCodebookType (std::string type);
+  
+  /**
+   * Set an attribute to the BeamformingCodebook for UEs
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetUeBeamformingCodebookAttribute (std::string name, const AttributeValue &value);
+  
+  /**
+   * Set the type of beamforming codebook to be used by eNBs
+   * \param type beamforming codebook type
+   */
+  void SetEnbBeamformingCodebookType (std::string type);
+  
+  /**
+   * Set an attribute to the BeamformingCodebook for eNBs
+   * \param name name of the attribute to set
+   * \param value value to set
+   */
+  void SetEnbBeamformingCodebookAttribute (std::string name, const AttributeValue &value);
 
   /**
    * This method is used to set the MmWaveComponentCarrier map.
@@ -397,7 +439,13 @@ private:
   ObjectFactory m_lteUeAntennaModelFactory;             /// Factory of antenna object for Lte UE.
   ObjectFactory m_lteEnbAntennaModelFactory;       /// Factory of antenna objects for Lte eNB.
 
-  ObjectFactory m_bfModelFactory; //!< Factory for the beamforming model 
+  ObjectFactory m_uePhasedArrayModelFactory;          /// Factory of PhasedArrayModel objects for UEs
+  ObjectFactory m_enbPhasedArrayModelFactory;         ///Factory of PhasedArrayModel objects for eNBs
+
+  ObjectFactory m_ueBeamformingCodebookFactory;       /// Factory of beamforming codebook for UEs
+  ObjectFactory m_enbBeamformingCodebookFactory;       /// Factory of beamforming codebooks for eNBs
+
+  ObjectFactory m_bfModelFactory; //!< Factory for the beamforming model
   /**
   * From lte-helper.h
   * The `UsePdschForCqiGeneration` attribute. If true, DL-CQI will be

@@ -1,4 +1,3 @@
-
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 from __future__ import print_function
 import os, os.path
@@ -40,12 +39,11 @@ def options(opt):
                          " --run and --shell; moreover, only works in some"
                          " specific platforms, such as Linux and Solaris)"),
                    action="store_true", dest='enable_rpath', default=False)
-    
+
     opt.add_option('--enable-modules',
                    help=("Build only these modules (and dependencies)"),
                    dest='enable_modules')
 
-    opt.load('boost', tooldir=['waf-tools'])
 
     for module in all_modules:
         opt.recurse(module, mandatory=False)
@@ -110,7 +108,7 @@ def create_ns3_module(bld, name, dependencies=(), test=False):
     module.is_static = static
     module.vnum = wutils.VNUM
     # Add the proper path to the module's name.
-    # Set the libraries this module depends on.  
+    # Set the libraries this module depends on.
     module.module_deps = list(dependencies)
 
     module.install_path = "${LIBDIR}"
@@ -126,10 +124,10 @@ def create_ns3_module(bld, name, dependencies=(), test=False):
     module.ns3_dir_location = bld.path.path_from(bld.srcnode)
 
     module.env.append_value("INCLUDES", Context.out_dir)
-    
+
     module.pcfilegen = bld(features='ns3pcfile')
     module.pcfilegen.module = module.name
-    
+
     return module
 
 @TaskGen.feature("ns3testlib")
@@ -157,7 +155,7 @@ def create_ns3_module_test_library(bld, name):
     # Add this module and test library to the list.
     bld.env.append_value('NS3_MODULES_WITH_TEST_LIBRARIES', [(library.module_name, library.name)])
 
-    # Set the include path from the build directory to modules. 
+    # Set the include path from the build directory to modules.
     relative_path_from_build_to_here = bld.path.path_from(bld.bldnode)
     include_flag = '-I' + relative_path_from_build_to_here
     library.env.append_value('CXXFLAGS', include_flag)
@@ -235,7 +233,7 @@ def ns3_python_bindings(bld):
             '${PYTHON}']
     #if debug:
     #    argv.extend(["-m", "pdb"])
-    
+
     argv.extend(['${SRC[0]}', module_abs_src_path, apidefs, extension_name, '${TGT[0]}'])
 
     argv.extend(['2>', '${TGT[2]}']) # 2> ns3modulegen.log
@@ -278,25 +276,18 @@ def ns3_python_bindings(bld):
             pymod.env.append_value('LINKFLAGS', '-Wl,-Bdynamic,--no-whole-archive')
     defines = list(pymod.env['DEFINES'])
     defines.extend(['NS_DEPRECATED=', 'NS3_DEPRECATED_H'])
-    defines.extend(['NS_DEPRECATED_3_32=', 'NS3_DEPRECATED_H'])
-    defines.extend(['NS_DEPRECATED_3_31=', 'NS3_DEPRECATED_H'])
-    defines.extend(['NS_DEPRECATED_3_30=', 'NS3_DEPRECATED_H'])
+    defines.extend(['NS_DEPRECATED_3_35=', 'NS3_DEPRECATED_H'])
+    defines.extend(['NS_DEPRECATED_3_34=', 'NS3_DEPRECATED_H'])
     if Utils.unversioned_sys_platform()== 'win32':
         try:
             defines.remove('_DEBUG') # causes undefined symbols on win32
         except ValueError:
             pass
     pymod.env['DEFINES'] = defines
-    # The following string should lead to includes of 
+    # The following string should lead to includes of
     # '-I.', '-Isrc/core/bindings' when compiling module_helpers.cc
     pymod.includes = Context.out_dir + ' ' + Context.out_dir + '/src/core/bindings'
     pymod.install_path = '${PYTHONARCHDIR}/ns'
-
-    # Workaround to a WAF bug, remove this when ns-3 upgrades to WAF > 1.6.10
-    # https://www.nsnam.org/bugzilla/show_bug.cgi?id=1335
-    # http://code.google.com/p/waf/issues/detail?id=1098
-    if Utils.unversioned_sys_platform() == 'darwin':
-        pymod.mac_bundle = True
 
     return pymod
 
@@ -306,7 +297,7 @@ def build(bld):
     bld.create_ns3_module_test_library = types.MethodType(create_ns3_module_test_library, bld)
     bld.create_obj = types.MethodType(create_obj, bld)
     bld.ns3_python_bindings = types.MethodType(ns3_python_bindings, bld)
-    
+
     # Remove these modules from the list of all modules.
     for not_built in bld.env['MODULES_NOT_BUILT']:
 
@@ -378,14 +369,13 @@ class ns3pcfile(Task.Task):
         return self._listify(self.env['CXXFLAGS_%s' % dep])
 
     def _defines(self, dep):
-        return [self.env['DEFINES_ST'] % define for define in self.env['DEFINES_%s' % dep]] 
+        return [self.env['DEFINES_ST'] % define for define in self.env['DEFINES_%s' % dep]]
 
     def _includes(self, dep):
         includes = self.env['INCLUDES_%s' % dep]
         return [self.env['CPPPATH_ST'] % include for include in Utils.to_list(includes)]
 
     def _generate_pcfile(self, name, use, env, outfilename, module):
-        outfile = open(outfilename, 'wt')
         prefix = env.PREFIX
         includedir = Utils.subst_vars('${INCLUDEDIR}/%s%s' % (wutils.APPNAME, wutils.VERSION), env)
         libdir = env.LIBDIR
@@ -406,7 +396,9 @@ class ns3pcfile(Task.Task):
             if dep.startswith('ns3-'):
                 dep_name = dep[4:]
                 requires.append("libns%s-%s%s" % (wutils.VERSION, dep_name, env.BUILD_SUFFIX))
-        print("""\
+
+        with open(outfilename, 'wt') as outfile:
+            print("""\
 prefix=%s
 libdir=%s
 includedir=%s
@@ -419,11 +411,10 @@ Cflags: %s
 Requires: %s\
 """ % (prefix, libdir, includedir,
        name, name, wutils.VERSION, ' '.join(libs), ' '.join(cflags), ' '.join(requires)), file=outfile)
-        outfile.close()
 
     def run(self):
         output_filename = self.outputs[0].abspath()
-        self._generate_pcfile(self.module.name, 
+        self._generate_pcfile(self.module.name,
                               self.module.to_list(self.module.use),
                               self.env, output_filename, self.module)
 
@@ -448,7 +439,10 @@ def apply_ns3header(self):
     if self.module is None:
         raise WafError("'module' missing on ns3headers object %s" % self)
     ns3_dir_node = self.bld.path.find_or_declare("ns3")
-    for filename in set(self.to_list(self.source)):
+    headers_to_process = set(self.to_list(self.source))
+    if hasattr(self, 'deprecated'):
+        headers_to_process.update(set(self.to_list(self.deprecated)))
+    for filename in headers_to_process:
         src_node = self.path.find_resource(filename)
         if src_node is None:
             raise WafError("source ns3 header file %s not found" % (filename,))
@@ -464,6 +458,9 @@ def apply_ns3header(self):
             task.header_to_remove = dst_node
     self.headers = set(self.to_list(self.source))
     self.source = '' # tell WAF not to process these files further
+    if hasattr(self, 'deprecated'):
+        self.deprecated = '' # tell WAF not to process these files further
+
 
 
 class ns3header(Task.Task):
@@ -626,7 +623,6 @@ class ns3privateheader(Task.Task):
                     raise
             return 0
 
-
 class gen_ns3_module_header(Task.Task):
     before = ['cxxprogram', 'cxxshlib', 'cxxstlib']
     after = 'ns3header'
@@ -666,10 +662,10 @@ class gen_ns3_module_header(Task.Task):
         assert len(self.outputs) == 1
         out_file_name = self.outputs[0].get_bld().abspath()#self.env)
         header_files = [os.path.basename(node.abspath()) for node in self.inputs]
-        outfile = open(out_file_name, "w")
         header_files.sort()
 
-        print("""
+        with open(out_file_name, "w") as outfile:
+            print("""
 #ifdef NS3_MODULE_COMPILATION
 # error "Do not include ns3 module aggregator headers from other modules; these are meant only for end user scripts."
 #endif
@@ -682,14 +678,13 @@ class gen_ns3_module_header(Task.Task):
     #     for dep in self.module_deps:
     #         print >> outfile, "#include \"%s-module.h\"" % dep
 
-        print(file=outfile)
-        print("// Module headers:", file=outfile)
-        for header in header_files:
-            print("#include \"%s\"" % (header,), file=outfile)
+            print(file=outfile)
+            print("// Module headers:", file=outfile)
+            for header in header_files:
+                print("#include \"%s\"" % (header,), file=outfile)
 
-        print("#endif", file=outfile)
+            print("#endif", file=outfile)
 
-        outfile.close()
         return 0
 
     def sig_explicit_deps(self):

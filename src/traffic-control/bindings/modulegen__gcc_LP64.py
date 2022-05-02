@@ -111,12 +111,16 @@ def register_types(module):
     module.add_class('Ipv4Address', import_from_module='ns.network')
     ## ipv4-address.h (module 'network'): ns3::Ipv4Address [class]
     root_module['ns3::Ipv4Address'].implicitly_converts_to(root_module['ns3::Address'])
+    ## ipv4-address.h (module 'network'): ns3::Ipv4AddressHash [class]
+    module.add_class('Ipv4AddressHash', import_from_module='ns.network')
     ## ipv4-address.h (module 'network'): ns3::Ipv4Mask [class]
     module.add_class('Ipv4Mask', import_from_module='ns.network')
     ## ipv6-address.h (module 'network'): ns3::Ipv6Address [class]
     module.add_class('Ipv6Address', import_from_module='ns.network')
     ## ipv6-address.h (module 'network'): ns3::Ipv6Address [class]
     root_module['ns3::Ipv6Address'].implicitly_converts_to(root_module['ns3::Address'])
+    ## ipv6-address.h (module 'network'): ns3::Ipv6AddressHash [class]
+    module.add_class('Ipv6AddressHash', import_from_module='ns.network')
     ## ipv6-address.h (module 'network'): ns3::Ipv6Prefix [class]
     module.add_class('Ipv6Prefix', import_from_module='ns.network')
     ## log.h (module 'core'): ns3::LogComponent [class]
@@ -366,6 +370,18 @@ def register_types(module):
     module.add_enum('FlowStatus', ['INACTIVE', 'NEW_FLOW', 'OLD_FLOW'], outer_class=root_module['ns3::FqCoDelFlow'])
     ## fq-codel-queue-disc.h (module 'traffic-control'): ns3::FqCoDelQueueDisc [class]
     module.add_class('FqCoDelQueueDisc', parent=root_module['ns3::QueueDisc'])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltFlow [class]
+    module.add_class('FqCobaltFlow', parent=root_module['ns3::QueueDiscClass'])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltFlow::FlowStatus [enumeration]
+    module.add_enum('FlowStatus', ['INACTIVE', 'NEW_FLOW', 'OLD_FLOW'], outer_class=root_module['ns3::FqCobaltFlow'])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltQueueDisc [class]
+    module.add_class('FqCobaltQueueDisc', parent=root_module['ns3::QueueDisc'])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieFlow [class]
+    module.add_class('FqPieFlow', parent=root_module['ns3::QueueDiscClass'])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieFlow::FlowStatus [enumeration]
+    module.add_enum('FlowStatus', ['INACTIVE', 'NEW_FLOW', 'OLD_FLOW'], outer_class=root_module['ns3::FqPieFlow'])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieQueueDisc [class]
+    module.add_class('FqPieQueueDisc', parent=root_module['ns3::QueueDisc'])
     ## random-variable-stream.h (module 'core'): ns3::GammaRandomVariable [class]
     module.add_class('GammaRandomVariable', import_from_module='ns.core', parent=root_module['ns3::RandomVariableStream'])
     ## integer.h (module 'core'): ns3::IntegerValue [class]
@@ -670,8 +686,10 @@ def register_methods(root_module):
     register_Ns3IntToType__5_methods(root_module, root_module['ns3::IntToType< 5 >'])
     register_Ns3IntToType__6_methods(root_module, root_module['ns3::IntToType< 6 >'])
     register_Ns3Ipv4Address_methods(root_module, root_module['ns3::Ipv4Address'])
+    register_Ns3Ipv4AddressHash_methods(root_module, root_module['ns3::Ipv4AddressHash'])
     register_Ns3Ipv4Mask_methods(root_module, root_module['ns3::Ipv4Mask'])
     register_Ns3Ipv6Address_methods(root_module, root_module['ns3::Ipv6Address'])
+    register_Ns3Ipv6AddressHash_methods(root_module, root_module['ns3::Ipv6AddressHash'])
     register_Ns3Ipv6Prefix_methods(root_module, root_module['ns3::Ipv6Prefix'])
     register_Ns3LogComponent_methods(root_module, root_module['ns3::LogComponent'])
     register_Ns3Mac48Address_methods(root_module, root_module['ns3::Mac48Address'])
@@ -766,6 +784,10 @@ def register_methods(root_module):
     register_Ns3FifoQueueDisc_methods(root_module, root_module['ns3::FifoQueueDisc'])
     register_Ns3FqCoDelFlow_methods(root_module, root_module['ns3::FqCoDelFlow'])
     register_Ns3FqCoDelQueueDisc_methods(root_module, root_module['ns3::FqCoDelQueueDisc'])
+    register_Ns3FqCobaltFlow_methods(root_module, root_module['ns3::FqCobaltFlow'])
+    register_Ns3FqCobaltQueueDisc_methods(root_module, root_module['ns3::FqCobaltQueueDisc'])
+    register_Ns3FqPieFlow_methods(root_module, root_module['ns3::FqPieFlow'])
+    register_Ns3FqPieQueueDisc_methods(root_module, root_module['ns3::FqPieQueueDisc'])
     register_Ns3GammaRandomVariable_methods(root_module, root_module['ns3::GammaRandomVariable'])
     register_Ns3IntegerValue_methods(root_module, root_module['ns3::IntegerValue'])
     register_Ns3Ipv4AddressChecker_methods(root_module, root_module['ns3::Ipv4AddressChecker'])
@@ -1316,6 +1338,14 @@ def register_Ns3CallbackBase_methods(root_module, cls):
 def register_Ns3DataRate_methods(root_module, cls):
     cls.add_output_stream_operator()
     cls.add_binary_comparison_operator('!=')
+    cls.add_binary_numeric_operator('*', root_module['ns3::DataRate'], root_module['ns3::DataRate'], param('double', 'right'))
+    cls.add_binary_numeric_operator('*', root_module['ns3::DataRate'], root_module['ns3::DataRate'], param('uint64_t', 'right'))
+    cls.add_inplace_numeric_operator('*=', param('double', 'right'))
+    cls.add_inplace_numeric_operator('*=', param('uint64_t', 'right'))
+    cls.add_binary_numeric_operator('+', root_module['ns3::DataRate'], root_module['ns3::DataRate'], param('ns3::DataRate', 'right'))
+    cls.add_inplace_numeric_operator('+=', param('ns3::DataRate', 'right'))
+    cls.add_binary_numeric_operator('-', root_module['ns3::DataRate'], root_module['ns3::DataRate'], param('ns3::DataRate', 'right'))
+    cls.add_inplace_numeric_operator('-=', param('ns3::DataRate', 'right'))
     cls.add_binary_comparison_operator('<')
     cls.add_binary_comparison_operator('<=')
     cls.add_binary_comparison_operator('==')
@@ -1662,11 +1692,6 @@ def register_Ns3Ipv4Address_methods(root_module, cls):
                    'bool', 
                    [], 
                    is_const=True)
-    ## ipv4-address.h (module 'network'): bool ns3::Ipv4Address::IsEqual(ns3::Ipv4Address const & other) const [member function]
-    cls.add_method('IsEqual', 
-                   'bool', 
-                   [param('ns3::Ipv4Address const &', 'other')], 
-                   deprecated=True, is_const=True)
     ## ipv4-address.h (module 'network'): bool ns3::Ipv4Address::IsInitialized() const [member function]
     cls.add_method('IsInitialized', 
                    'bool', 
@@ -1717,6 +1742,18 @@ def register_Ns3Ipv4Address_methods(root_module, cls):
                    [param('char const *', 'address')])
     return
 
+def register_Ns3Ipv4AddressHash_methods(root_module, cls):
+    ## ipv4-address.h (module 'network'): ns3::Ipv4AddressHash::Ipv4AddressHash() [constructor]
+    cls.add_constructor([])
+    ## ipv4-address.h (module 'network'): ns3::Ipv4AddressHash::Ipv4AddressHash(ns3::Ipv4AddressHash const & arg0) [constructor]
+    cls.add_constructor([param('ns3::Ipv4AddressHash const &', 'arg0')])
+    ## ipv4-address.h (module 'network'): size_t ns3::Ipv4AddressHash::operator()(ns3::Ipv4Address const & x) const [member operator]
+    cls.add_method('operator()', 
+                   'size_t', 
+                   [param('ns3::Ipv4Address const &', 'x')], 
+                   custom_name='__call__', is_const=True)
+    return
+
 def register_Ns3Ipv4Mask_methods(root_module, cls):
     cls.add_output_stream_operator()
     cls.add_binary_comparison_operator('==')
@@ -1759,11 +1796,6 @@ def register_Ns3Ipv4Mask_methods(root_module, cls):
                    'ns3::Ipv4Mask', 
                    [], 
                    is_static=True)
-    ## ipv4-address.h (module 'network'): bool ns3::Ipv4Mask::IsEqual(ns3::Ipv4Mask other) const [member function]
-    cls.add_method('IsEqual', 
-                   'bool', 
-                   [param('ns3::Ipv4Mask', 'other')], 
-                   deprecated=True, is_const=True)
     ## ipv4-address.h (module 'network'): bool ns3::Ipv4Mask::IsMatch(ns3::Ipv4Address a, ns3::Ipv4Address b) const [member function]
     cls.add_method('IsMatch', 
                    'bool', 
@@ -1880,11 +1912,6 @@ def register_Ns3Ipv6Address_methods(root_module, cls):
                    'bool', 
                    [], 
                    is_const=True)
-    ## ipv6-address.h (module 'network'): bool ns3::Ipv6Address::IsEqual(ns3::Ipv6Address const & other) const [member function]
-    cls.add_method('IsEqual', 
-                   'bool', 
-                   [param('ns3::Ipv6Address const &', 'other')], 
-                   deprecated=True, is_const=True)
     ## ipv6-address.h (module 'network'): bool ns3::Ipv6Address::IsInitialized() const [member function]
     cls.add_method('IsInitialized', 
                    'bool', 
@@ -1929,6 +1956,11 @@ def register_Ns3Ipv6Address_methods(root_module, cls):
     cls.add_method('MakeAutoconfiguredAddress', 
                    'ns3::Ipv6Address', 
                    [param('ns3::Address', 'addr'), param('ns3::Ipv6Address', 'prefix')], 
+                   is_static=True)
+    ## ipv6-address.h (module 'network'): static ns3::Ipv6Address ns3::Ipv6Address::MakeAutoconfiguredAddress(ns3::Address addr, ns3::Ipv6Prefix prefix) [member function]
+    cls.add_method('MakeAutoconfiguredAddress', 
+                   'ns3::Ipv6Address', 
+                   [param('ns3::Address', 'addr'), param('ns3::Ipv6Prefix', 'prefix')], 
                    is_static=True)
     ## ipv6-address.h (module 'network'): static ns3::Ipv6Address ns3::Ipv6Address::MakeAutoconfiguredAddress(ns3::Mac16Address addr, ns3::Ipv6Address prefix) [member function]
     cls.add_method('MakeAutoconfiguredAddress', 
@@ -2005,6 +2037,18 @@ def register_Ns3Ipv6Address_methods(root_module, cls):
                    [param('uint8_t *', 'address')])
     return
 
+def register_Ns3Ipv6AddressHash_methods(root_module, cls):
+    ## ipv6-address.h (module 'network'): ns3::Ipv6AddressHash::Ipv6AddressHash() [constructor]
+    cls.add_constructor([])
+    ## ipv6-address.h (module 'network'): ns3::Ipv6AddressHash::Ipv6AddressHash(ns3::Ipv6AddressHash const & arg0) [constructor]
+    cls.add_constructor([param('ns3::Ipv6AddressHash const &', 'arg0')])
+    ## ipv6-address.h (module 'network'): size_t ns3::Ipv6AddressHash::operator()(ns3::Ipv6Address const & x) const [member operator]
+    cls.add_method('operator()', 
+                   'size_t', 
+                   [param('ns3::Ipv6Address const &', 'x')], 
+                   custom_name='__call__', is_const=True)
+    return
+
 def register_Ns3Ipv6Prefix_methods(root_module, cls):
     cls.add_output_stream_operator()
     cls.add_binary_comparison_operator('==')
@@ -2025,6 +2069,11 @@ def register_Ns3Ipv6Prefix_methods(root_module, cls):
     cls.add_constructor([param('ns3::Ipv6Prefix const &', 'prefix')])
     ## ipv6-address.h (module 'network'): ns3::Ipv6Prefix::Ipv6Prefix(ns3::Ipv6Prefix const * prefix) [constructor]
     cls.add_constructor([param('ns3::Ipv6Prefix const *', 'prefix')])
+    ## ipv6-address.h (module 'network'): ns3::Ipv6Address ns3::Ipv6Prefix::ConvertToIpv6Address() const [member function]
+    cls.add_method('ConvertToIpv6Address', 
+                   'ns3::Ipv6Address', 
+                   [], 
+                   is_const=True)
     ## ipv6-address.h (module 'network'): void ns3::Ipv6Prefix::GetBytes(uint8_t * buf) const [member function]
     cls.add_method('GetBytes', 
                    'void', 
@@ -2055,11 +2104,6 @@ def register_Ns3Ipv6Prefix_methods(root_module, cls):
                    'ns3::Ipv6Prefix', 
                    [], 
                    is_static=True)
-    ## ipv6-address.h (module 'network'): bool ns3::Ipv6Prefix::IsEqual(ns3::Ipv6Prefix const & other) const [member function]
-    cls.add_method('IsEqual', 
-                   'bool', 
-                   [param('ns3::Ipv6Prefix const &', 'other')], 
-                   deprecated=True, is_const=True)
     ## ipv6-address.h (module 'network'): bool ns3::Ipv6Prefix::IsMatch(ns3::Ipv6Address a, ns3::Ipv6Address b) const [member function]
     cls.add_method('IsMatch', 
                    'bool', 
@@ -5142,36 +5186,43 @@ def register_Ns3CobaltQueueDisc_methods(root_module, cls):
                    is_static=True)
     ## cobalt-queue-disc.h (module 'traffic-control'): ns3::CobaltQueueDisc::CobaltQueueDisc() [constructor]
     cls.add_constructor([])
-    ## cobalt-queue-disc.h (module 'traffic-control'): ns3::Time ns3::CobaltQueueDisc::GetTarget() [member function]
+    ## cobalt-queue-disc.h (module 'traffic-control'): ns3::Time ns3::CobaltQueueDisc::GetTarget() const [member function]
     cls.add_method('GetTarget', 
                    'ns3::Time', 
-                   [])
-    ## cobalt-queue-disc.h (module 'traffic-control'): ns3::Time ns3::CobaltQueueDisc::GetInterval() [member function]
+                   [], 
+                   is_const=True)
+    ## cobalt-queue-disc.h (module 'traffic-control'): ns3::Time ns3::CobaltQueueDisc::GetInterval() const [member function]
     cls.add_method('GetInterval', 
                    'ns3::Time', 
-                   [])
-    ## cobalt-queue-disc.h (module 'traffic-control'): int64_t ns3::CobaltQueueDisc::GetDropNext() [member function]
+                   [], 
+                   is_const=True)
+    ## cobalt-queue-disc.h (module 'traffic-control'): int64_t ns3::CobaltQueueDisc::GetDropNext() const [member function]
     cls.add_method('GetDropNext', 
                    'int64_t', 
-                   [])
+                   [], 
+                   is_const=True)
     ## cobalt-queue-disc.h (module 'traffic-control'): ns3::CobaltQueueDisc::TARGET_EXCEEDED_DROP [variable]
     cls.add_static_attribute('TARGET_EXCEEDED_DROP', 'char const * const', is_const=True)
     ## cobalt-queue-disc.h (module 'traffic-control'): ns3::CobaltQueueDisc::OVERLIMIT_DROP [variable]
     cls.add_static_attribute('OVERLIMIT_DROP', 'char const * const', is_const=True)
     ## cobalt-queue-disc.h (module 'traffic-control'): ns3::CobaltQueueDisc::FORCED_MARK [variable]
     cls.add_static_attribute('FORCED_MARK', 'char const * const', is_const=True)
-    ## cobalt-queue-disc.h (module 'traffic-control'): double ns3::CobaltQueueDisc::GetPdrop() [member function]
+    ## cobalt-queue-disc.h (module 'traffic-control'): ns3::CobaltQueueDisc::CE_THRESHOLD_EXCEEDED_MARK [variable]
+    cls.add_static_attribute('CE_THRESHOLD_EXCEEDED_MARK', 'char const * const', is_const=True)
+    ## cobalt-queue-disc.h (module 'traffic-control'): double ns3::CobaltQueueDisc::GetPdrop() const [member function]
     cls.add_method('GetPdrop', 
                    'double', 
-                   [])
+                   [], 
+                   is_const=True)
     ## cobalt-queue-disc.h (module 'traffic-control'): int64_t ns3::CobaltQueueDisc::AssignStreams(int64_t stream) [member function]
     cls.add_method('AssignStreams', 
                    'int64_t', 
                    [param('int64_t', 'stream')])
-    ## cobalt-queue-disc.h (module 'traffic-control'): int64_t ns3::CobaltQueueDisc::Time2CoDel(ns3::Time t) [member function]
+    ## cobalt-queue-disc.h (module 'traffic-control'): int64_t ns3::CobaltQueueDisc::Time2CoDel(ns3::Time t) const [member function]
     cls.add_method('Time2CoDel', 
                    'int64_t', 
-                   [param('ns3::Time', 't')])
+                   [param('ns3::Time', 't')], 
+                   is_const=True)
     ## cobalt-queue-disc.h (module 'traffic-control'): void ns3::CobaltQueueDisc::DoDispose() [member function]
     cls.add_method('DoDispose', 
                    'void', 
@@ -5758,6 +5809,178 @@ def register_Ns3FqCoDelQueueDisc_methods(root_module, cls):
                    [], 
                    is_virtual=True, visibility='private')
     ## fq-codel-queue-disc.h (module 'traffic-control'): void ns3::FqCoDelQueueDisc::InitializeParams() [member function]
+    cls.add_method('InitializeParams', 
+                   'void', 
+                   [], 
+                   is_virtual=True, visibility='private')
+    return
+
+def register_Ns3FqCobaltFlow_methods(root_module, cls):
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltFlow::FqCobaltFlow(ns3::FqCobaltFlow const & arg0) [constructor]
+    cls.add_constructor([param('ns3::FqCobaltFlow const &', 'arg0')])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltFlow::FqCobaltFlow() [constructor]
+    cls.add_constructor([])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): int32_t ns3::FqCobaltFlow::GetDeficit() const [member function]
+    cls.add_method('GetDeficit', 
+                   'int32_t', 
+                   [], 
+                   is_const=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): uint32_t ns3::FqCobaltFlow::GetIndex() const [member function]
+    cls.add_method('GetIndex', 
+                   'uint32_t', 
+                   [], 
+                   is_const=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltFlow::FlowStatus ns3::FqCobaltFlow::GetStatus() const [member function]
+    cls.add_method('GetStatus', 
+                   'ns3::FqCobaltFlow::FlowStatus', 
+                   [], 
+                   is_const=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): static ns3::TypeId ns3::FqCobaltFlow::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): void ns3::FqCobaltFlow::IncreaseDeficit(int32_t deficit) [member function]
+    cls.add_method('IncreaseDeficit', 
+                   'void', 
+                   [param('int32_t', 'deficit')])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): void ns3::FqCobaltFlow::SetDeficit(uint32_t deficit) [member function]
+    cls.add_method('SetDeficit', 
+                   'void', 
+                   [param('uint32_t', 'deficit')])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): void ns3::FqCobaltFlow::SetIndex(uint32_t index) [member function]
+    cls.add_method('SetIndex', 
+                   'void', 
+                   [param('uint32_t', 'index')])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): void ns3::FqCobaltFlow::SetStatus(ns3::FqCobaltFlow::FlowStatus status) [member function]
+    cls.add_method('SetStatus', 
+                   'void', 
+                   [param('ns3::FqCobaltFlow::FlowStatus', 'status')])
+    return
+
+def register_Ns3FqCobaltQueueDisc_methods(root_module, cls):
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): static ns3::TypeId ns3::FqCobaltQueueDisc::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltQueueDisc::FqCobaltQueueDisc() [constructor]
+    cls.add_constructor([])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): void ns3::FqCobaltQueueDisc::SetQuantum(uint32_t quantum) [member function]
+    cls.add_method('SetQuantum', 
+                   'void', 
+                   [param('uint32_t', 'quantum')])
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): uint32_t ns3::FqCobaltQueueDisc::GetQuantum() const [member function]
+    cls.add_method('GetQuantum', 
+                   'uint32_t', 
+                   [], 
+                   is_const=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltQueueDisc::UNCLASSIFIED_DROP [variable]
+    cls.add_static_attribute('UNCLASSIFIED_DROP', 'char const * const', is_const=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::FqCobaltQueueDisc::OVERLIMIT_DROP [variable]
+    cls.add_static_attribute('OVERLIMIT_DROP', 'char const * const', is_const=True)
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): bool ns3::FqCobaltQueueDisc::DoEnqueue(ns3::Ptr<ns3::QueueDiscItem> item) [member function]
+    cls.add_method('DoEnqueue', 
+                   'bool', 
+                   [param('ns3::Ptr< ns3::QueueDiscItem >', 'item')], 
+                   is_virtual=True, visibility='private')
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): ns3::Ptr<ns3::QueueDiscItem> ns3::FqCobaltQueueDisc::DoDequeue() [member function]
+    cls.add_method('DoDequeue', 
+                   'ns3::Ptr< ns3::QueueDiscItem >', 
+                   [], 
+                   is_virtual=True, visibility='private')
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): bool ns3::FqCobaltQueueDisc::CheckConfig() [member function]
+    cls.add_method('CheckConfig', 
+                   'bool', 
+                   [], 
+                   is_virtual=True, visibility='private')
+    ## fq-cobalt-queue-disc.h (module 'traffic-control'): void ns3::FqCobaltQueueDisc::InitializeParams() [member function]
+    cls.add_method('InitializeParams', 
+                   'void', 
+                   [], 
+                   is_virtual=True, visibility='private')
+    return
+
+def register_Ns3FqPieFlow_methods(root_module, cls):
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieFlow::FqPieFlow(ns3::FqPieFlow const & arg0) [constructor]
+    cls.add_constructor([param('ns3::FqPieFlow const &', 'arg0')])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieFlow::FqPieFlow() [constructor]
+    cls.add_constructor([])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): int32_t ns3::FqPieFlow::GetDeficit() const [member function]
+    cls.add_method('GetDeficit', 
+                   'int32_t', 
+                   [], 
+                   is_const=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): uint32_t ns3::FqPieFlow::GetIndex() const [member function]
+    cls.add_method('GetIndex', 
+                   'uint32_t', 
+                   [], 
+                   is_const=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieFlow::FlowStatus ns3::FqPieFlow::GetStatus() const [member function]
+    cls.add_method('GetStatus', 
+                   'ns3::FqPieFlow::FlowStatus', 
+                   [], 
+                   is_const=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): static ns3::TypeId ns3::FqPieFlow::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): void ns3::FqPieFlow::IncreaseDeficit(int32_t deficit) [member function]
+    cls.add_method('IncreaseDeficit', 
+                   'void', 
+                   [param('int32_t', 'deficit')])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): void ns3::FqPieFlow::SetDeficit(uint32_t deficit) [member function]
+    cls.add_method('SetDeficit', 
+                   'void', 
+                   [param('uint32_t', 'deficit')])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): void ns3::FqPieFlow::SetIndex(uint32_t index) [member function]
+    cls.add_method('SetIndex', 
+                   'void', 
+                   [param('uint32_t', 'index')])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): void ns3::FqPieFlow::SetStatus(ns3::FqPieFlow::FlowStatus status) [member function]
+    cls.add_method('SetStatus', 
+                   'void', 
+                   [param('ns3::FqPieFlow::FlowStatus', 'status')])
+    return
+
+def register_Ns3FqPieQueueDisc_methods(root_module, cls):
+    ## fq-pie-queue-disc.h (module 'traffic-control'): static ns3::TypeId ns3::FqPieQueueDisc::GetTypeId() [member function]
+    cls.add_method('GetTypeId', 
+                   'ns3::TypeId', 
+                   [], 
+                   is_static=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieQueueDisc::FqPieQueueDisc() [constructor]
+    cls.add_constructor([])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): void ns3::FqPieQueueDisc::SetQuantum(uint32_t quantum) [member function]
+    cls.add_method('SetQuantum', 
+                   'void', 
+                   [param('uint32_t', 'quantum')])
+    ## fq-pie-queue-disc.h (module 'traffic-control'): uint32_t ns3::FqPieQueueDisc::GetQuantum() const [member function]
+    cls.add_method('GetQuantum', 
+                   'uint32_t', 
+                   [], 
+                   is_const=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieQueueDisc::UNCLASSIFIED_DROP [variable]
+    cls.add_static_attribute('UNCLASSIFIED_DROP', 'char const * const', is_const=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::FqPieQueueDisc::OVERLIMIT_DROP [variable]
+    cls.add_static_attribute('OVERLIMIT_DROP', 'char const * const', is_const=True)
+    ## fq-pie-queue-disc.h (module 'traffic-control'): bool ns3::FqPieQueueDisc::DoEnqueue(ns3::Ptr<ns3::QueueDiscItem> item) [member function]
+    cls.add_method('DoEnqueue', 
+                   'bool', 
+                   [param('ns3::Ptr< ns3::QueueDiscItem >', 'item')], 
+                   is_virtual=True, visibility='private')
+    ## fq-pie-queue-disc.h (module 'traffic-control'): ns3::Ptr<ns3::QueueDiscItem> ns3::FqPieQueueDisc::DoDequeue() [member function]
+    cls.add_method('DoDequeue', 
+                   'ns3::Ptr< ns3::QueueDiscItem >', 
+                   [], 
+                   is_virtual=True, visibility='private')
+    ## fq-pie-queue-disc.h (module 'traffic-control'): bool ns3::FqPieQueueDisc::CheckConfig() [member function]
+    cls.add_method('CheckConfig', 
+                   'bool', 
+                   [], 
+                   is_virtual=True, visibility='private')
+    ## fq-pie-queue-disc.h (module 'traffic-control'): void ns3::FqPieQueueDisc::InitializeParams() [member function]
     cls.add_method('InitializeParams', 
                    'void', 
                    [], 
@@ -6763,6 +6986,8 @@ def register_Ns3PieQueueDisc_methods(root_module, cls):
     cls.add_static_attribute('FORCED_DROP', 'char const * const', is_const=True)
     ## pie-queue-disc.h (module 'traffic-control'): ns3::PieQueueDisc::UNFORCED_MARK [variable]
     cls.add_static_attribute('UNFORCED_MARK', 'char const * const', is_const=True)
+    ## pie-queue-disc.h (module 'traffic-control'): ns3::PieQueueDisc::CE_THRESHOLD_EXCEEDED_MARK [variable]
+    cls.add_static_attribute('CE_THRESHOLD_EXCEEDED_MARK', 'char const * const', is_const=True)
     ## pie-queue-disc.h (module 'traffic-control'): void ns3::PieQueueDisc::DoDispose() [member function]
     cls.add_method('DoDispose', 
                    'void', 
@@ -6933,6 +7158,11 @@ def register_Ns3Queue__Ns3Packet_methods(root_module, cls):
                    'bool', 
                    [param('std::list< ns3::Ptr< ns3::Packet > > const_iterator', 'pos'), param('ns3::Ptr< ns3::Packet >', 'item')], 
                    visibility='protected')
+    ## queue.h (module 'network'): bool ns3::Queue<ns3::Packet>::DoEnqueue(ns3::Queue<ns3::Packet>::ConstIterator pos, ns3::Ptr<ns3::Packet> item, ns3::Queue<ns3::Packet>::Iterator & ret) [member function]
+    cls.add_method('DoEnqueue', 
+                   'bool', 
+                   [param('std::list< ns3::Ptr< ns3::Packet > > const_iterator', 'pos'), param('ns3::Ptr< ns3::Packet >', 'item'), param('ns3::Queue< ns3::Packet > Iterator &', 'ret')], 
+                   visibility='protected')
     ## queue.h (module 'network'): ns3::Ptr<ns3::Packet> ns3::Queue<ns3::Packet>::DoDequeue(ns3::Queue<ns3::Packet>::ConstIterator pos) [member function]
     cls.add_method('DoDequeue', 
                    'ns3::Ptr< ns3::Packet >', 
@@ -6958,6 +7188,11 @@ def register_Ns3Queue__Ns3Packet_methods(root_module, cls):
                    'void', 
                    [param('ns3::Ptr< ns3::Packet >', 'item')], 
                    visibility='protected')
+    ## queue.h (module 'network'): void ns3::Queue<ns3::Packet>::DoDispose() [member function]
+    cls.add_method('DoDispose', 
+                   'void', 
+                   [], 
+                   is_virtual=True, visibility='protected')
     return
 
 def register_Ns3Queue__Ns3QueueDiscItem_methods(root_module, cls):
@@ -7019,6 +7254,11 @@ def register_Ns3Queue__Ns3QueueDiscItem_methods(root_module, cls):
                    'bool', 
                    [param('std::list< ns3::Ptr< ns3::QueueDiscItem > > const_iterator', 'pos'), param('ns3::Ptr< ns3::QueueDiscItem >', 'item')], 
                    visibility='protected')
+    ## queue.h (module 'network'): bool ns3::Queue<ns3::QueueDiscItem>::DoEnqueue(ns3::Queue<ns3::QueueDiscItem>::ConstIterator pos, ns3::Ptr<ns3::QueueDiscItem> item, ns3::Queue<ns3::QueueDiscItem>::Iterator & ret) [member function]
+    cls.add_method('DoEnqueue', 
+                   'bool', 
+                   [param('std::list< ns3::Ptr< ns3::QueueDiscItem > > const_iterator', 'pos'), param('ns3::Ptr< ns3::QueueDiscItem >', 'item'), param('ns3::Queue< ns3::QueueDiscItem > Iterator &', 'ret')], 
+                   visibility='protected')
     ## queue.h (module 'network'): ns3::Ptr<ns3::QueueDiscItem> ns3::Queue<ns3::QueueDiscItem>::DoDequeue(ns3::Queue<ns3::QueueDiscItem>::ConstIterator pos) [member function]
     cls.add_method('DoDequeue', 
                    'ns3::Ptr< ns3::QueueDiscItem >', 
@@ -7044,6 +7284,11 @@ def register_Ns3Queue__Ns3QueueDiscItem_methods(root_module, cls):
                    'void', 
                    [param('ns3::Ptr< ns3::QueueDiscItem >', 'item')], 
                    visibility='protected')
+    ## queue.h (module 'network'): void ns3::Queue<ns3::QueueDiscItem>::DoDispose() [member function]
+    cls.add_method('DoDispose', 
+                   'void', 
+                   [], 
+                   is_virtual=True, visibility='protected')
     return
 
 def register_Ns3QueueItem_methods(root_module, cls):

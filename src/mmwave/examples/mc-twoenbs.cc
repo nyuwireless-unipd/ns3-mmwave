@@ -19,6 +19,7 @@
 #include "ns3/mmwave-helper.h"
 #include "ns3/epc-helper.h"
 #include "ns3/node-list.h"
+#include "ns3/isotropic-antenna-model.h"
 #include "ns3/internet-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/applications-module.h"
@@ -41,8 +42,11 @@ using namespace ns3;
 using namespace mmwave;
 
 /**
- * Sample simulation script for MC device. It instantiates a LTE and two MmWave eNodeB,
- * attaches one MC UE to both and starts a flow for the UE to and from a remote host.
+ * Sample simulation script for MC devices. 
+ * One LTE and two MmWave eNodeBs are instantiated, and a MC UE device is placed between them.
+ * In particular, the UE is initially closer to one of the two BSs, and progressively moves towards the other.
+ * During the course of the simulation multiple handovers occur, due to the changing distance between the devices
+ * and the presence of obstacles, which can obstruct the LOS path between the UE and the eNBs.
  */
 
 NS_LOG_COMPONENT_DEFINE ("McTwoEnbs");
@@ -465,17 +469,20 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::ThreeGppChannelModel::Blockage", BooleanValue (true)); // use blockage or not
   Config::SetDefault ("ns3::ThreeGppChannelModel::PortraitMode", BooleanValue (true)); // use blockage model with UT in portrait mode
   Config::SetDefault ("ns3::ThreeGppChannelModel::NumNonselfBlocking", IntegerValue (4)); // number of non-self blocking obstacles
-
-  // set the number of antennas in the devices
-  Config::SetDefault ("ns3::McUeNetDevice::AntennaNum", UintegerValue(16));
-  Config::SetDefault ("ns3::MmWaveNetDevice::AntennaNum", UintegerValue(64));
   
-  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
-  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
+  // by default, isotropic antennas are used. To use the 3GPP radiation pattern instead, use the <ThreeGppAntennaArrayModel>
+  // beware: proper configuration of the bearing and downtilt angles is needed
+  Config::SetDefault ("ns3::PhasedArrayModel::AntennaElement", PointerValue (CreateObject<IsotropicAntennaModel> ())); 
 
   Ptr<MmWaveHelper> mmwaveHelper = CreateObject<MmWaveHelper> ();
   mmwaveHelper->SetPathlossModelType ("ns3::ThreeGppUmiStreetCanyonPropagationLossModel");
   mmwaveHelper->SetChannelConditionModelType ("ns3::BuildingsChannelConditionModel");
+
+  // set the number of antennas for both UEs and eNBs
+  mmwaveHelper->SetUePhasedArrayModelAttribute ("NumColumns" , UintegerValue (4));
+  mmwaveHelper->SetUePhasedArrayModelAttribute ("NumRows" , UintegerValue (4));
+  mmwaveHelper->SetEnbPhasedArrayModelAttribute ("NumColumns" , UintegerValue (8));
+  mmwaveHelper->SetEnbPhasedArrayModelAttribute ("NumRows" , UintegerValue (8));
 
   Ptr<MmWavePointToPointEpcHelper> epcHelper = CreateObject<MmWavePointToPointEpcHelper> ();
   mmwaveHelper->SetEpcHelper (epcHelper);

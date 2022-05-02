@@ -321,6 +321,10 @@ def register_Ns3FileConfig_methods(root_module, cls):
                    'void', 
                    [param('std::string', 'filename')], 
                    is_pure_virtual=True, is_virtual=True)
+    ## file-config.h (module 'config-store'): void ns3::FileConfig::SetSaveDeprecated(bool saveDeprecated) [member function]
+    cls.add_method('SetSaveDeprecated', 
+                   'void', 
+                   [param('bool', 'saveDeprecated')])
     return
 
 def register_Ns3Hasher_methods(root_module, cls):
@@ -750,6 +754,10 @@ def register_Ns3ConfigStore_methods(root_module, cls):
     cls.add_method('SetMode', 
                    'void', 
                    [param('ns3::ConfigStore::Mode', 'mode')])
+    ## config-store.h (module 'config-store'): void ns3::ConfigStore::SetSaveDeprecated(bool saveDeprecated) [member function]
+    cls.add_method('SetSaveDeprecated', 
+                   'void', 
+                   [param('bool', 'saveDeprecated')])
     return
 
 def register_Ns3SimpleRefCount__Ns3AttributeAccessor_Ns3Empty_Ns3DefaultDeleter__lt__ns3AttributeAccessor__gt___methods(root_module, cls):

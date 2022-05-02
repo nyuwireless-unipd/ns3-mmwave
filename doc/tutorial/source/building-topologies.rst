@@ -167,7 +167,7 @@ rate is specified by a *channel* ``Attribute`` instead of a device
 for example, 10Base-T and 100Base-T devices on a given channel.  We first set 
 the data rate to 100 megabits per second, and then set the speed-of-light delay
 of the channel to 6560 nano-seconds (arbitrarily chosen as 1 nanosecond per foot
-over a 100 meter segment).  Notice that you can set an ``Attribute`` using 
+over a 2000 meter segment).  Notice that you can set an ``Attribute`` using 
 its native data type.
 
 ::
@@ -1486,7 +1486,7 @@ At the traffic-control layer, these are the options:
 * FifoQueueDisc: The default maximum size is 1000 packets
 * RedQueueDisc: The default maximum size is 25 packets
 * CoDelQueueDisc: The default maximum size is 1500 kilobytes
-* FqCoDelQueueDisc: The default maximum size is 10024 packets
+* FqCoDelQueueDisc: The default maximum size is 10240 packets
 * PieQueueDisc: The default maximum size is 25 packets
 * MqQueueDisc: This queue disc has no limits on its capacity
 * TbfQueueDisc: The default maximum size is 1000 packets

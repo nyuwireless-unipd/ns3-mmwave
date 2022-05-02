@@ -163,6 +163,7 @@ def build(bld):
         'model/tcp-htcp.cc',
         'model/tcp-lp.cc',
         'model/tcp-dctcp.cc',
+        'model/tcp-bbr.cc',
         'model/tcp-rx-buffer.cc',
         'model/tcp-tx-buffer.cc',
         'model/tcp-tx-item.cc',
@@ -307,6 +308,7 @@ def build(bld):
         'test/tcp-dctcp-test.cc',
         'test/tcp-syn-connection-failed-test.cc',
         'test/tcp-pacing-test.cc',
+        'test/tcp-bbr-test.cc',
         ]
     # Tests encapsulating example programs should be listed here
     if (bld.env['ENABLE_EXAMPLES']):
@@ -420,6 +422,8 @@ def build(bld):
         'model/tcp-htcp.h',
         'model/tcp-lp.h',
         'model/tcp-dctcp.h',
+        'model/windowed-filter.h',
+        'model/tcp-bbr.h',
         'model/tcp-ledbat.h',
         'model/tcp-socket-base.h',
         'model/tcp-socket-state.h',

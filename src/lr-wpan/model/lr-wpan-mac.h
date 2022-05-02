@@ -1058,8 +1058,10 @@ private:
    * After a successful transmission of a frame (beacon, data) or an ack frame reception,
    * the mac layer wait an Interframe Space (IFS) time and triggers this function
    * to continue with the MAC flow.
+   *
+   * \param ifsTime IFS time
    */
-  void IfsWaitTimeout (void);
+  void IfsWaitTimeout (Time ifsTime);
   /**
    * Check for remaining retransmissions for the packet currently being sent.
    * Drop the packet, if there are no retransmissions left.
@@ -1076,19 +1078,29 @@ private:
   /**
    * Constructs a Superframe specification field from the local information,
    * the superframe Specification field is necessary to create a beacon frame.
+   *
+   * \returns the Superframe specification field
    */
   SuperframeField GetSuperframeField (void);
   /**
-   * Constructs the Guaranteed Time Slots (GTS) Fields from local information
+   * Constructs the Guaranteed Time Slots (GTS) Fields from local information.
    * The GTS Fields are part of the beacon frame.
+   *
+   * \returns the Guaranteed Time Slots (GTS) Fields
    */
   GtsFields GetGtsFields (void);
   /**
-    * Constructs Pending Address Fields from the local information,
-    * the Pending Address Fields are part of the beacon frame.
-    */
+   * Constructs Pending Address Fields from the local information,
+   * the Pending Address Fields are part of the beacon frame.
+   *
+   * \returns the Pending Address Fields
+   */
   PendingAddrFields GetPendingAddrFields (void);
 
+  /**
+   * The trace source is fired at the end of any Interframe Space (IFS).
+   */
+  TracedCallback<Time> m_macIfsEndTrace;
   /**
    * The trace source fired when packets are considered as successfully sent
    * or the transmission has been given up.

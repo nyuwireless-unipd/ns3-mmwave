@@ -35,7 +35,8 @@ class Time;
  */
 enum WifiMacType
 {
-  WIFI_MAC_CTL_CTLWRAPPER = 0,
+  WIFI_MAC_CTL_TRIGGER = 0,
+  WIFI_MAC_CTL_CTLWRAPPER,
   WIFI_MAC_CTL_RTS,
   WIFI_MAC_CTL_CTS,
   WIFI_MAC_CTL_ACK,
@@ -106,6 +107,12 @@ public:
   };
 
   WifiMacHeader ();
+  /**
+   * Construct a MAC header of the given type
+   *
+   * \param type the MAC header type
+   */
+  WifiMacHeader (WifiMacType type);
   virtual ~WifiMacHeader ();
 
   /**
@@ -113,11 +120,12 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
-  TypeId GetInstanceTypeId (void) const;
-  void Print (std::ostream &os) const;
-  uint32_t GetSerializedSize (void) const;
-  void Serialize (Buffer::Iterator start) const;
-  uint32_t Deserialize (Buffer::Iterator start);
+
+  TypeId GetInstanceTypeId (void) const override;
+  void Print (std::ostream &os) const override;
+  uint32_t GetSerializedSize (void) const override;
+  void Serialize (Buffer::Iterator start) const override;
+  uint32_t Deserialize (Buffer::Iterator start) override;
 
   /**
    * Set the From DS bit in the Frame Control field.
@@ -249,6 +257,12 @@ public:
    * \param txop the TXOP limit
    */
   void SetQosTxopLimit (uint8_t txop);
+  /**
+   * Set the Queue Size subfield in the QoS control field.
+   *
+   * \param size the value for the Queue Size subfield
+   */
+  void SetQosQueueSize (uint8_t size);
   /**
    * Set the Mesh Control Present flag for the QoS header.
    */
@@ -386,6 +400,12 @@ public:
    * \return true if the header is a BlockAck header, false otherwise
    */
   bool IsBlockAck (void) const;
+  /**
+   * Return true if the header is a Trigger header.
+   *
+   * \return true if the header is a Trigger header, false otherwise
+   */
+  bool IsTrigger (void) const;
   /**
    * Return true if the header is an Association Request header.
    *
@@ -544,6 +564,12 @@ public:
    * \return the QoS Ack policy in the QoS control field
    */
   QosAckPolicy GetQosAckPolicy (void) const;
+  /**
+   * Get the Queue Size subfield in the QoS control field.
+   *
+   * \return the value of the Queue Size subfield
+   */
+  uint8_t GetQosQueueSize (void) const;
   /**
    * Return the size of the WifiMacHeader in octets.
    * GetSerializedSize calls this function.

@@ -178,16 +178,24 @@ FdNetDevice::FdNetDevice ()
     m_stopEvent ()
 {
   NS_LOG_FUNCTION (this);
-  Start (m_tStart);
-}
-
-FdNetDevice::FdNetDevice (FdNetDevice const &)
-{
 }
 
 FdNetDevice::~FdNetDevice ()
 {
   NS_LOG_FUNCTION (this);
+}
+
+void
+FdNetDevice::DoInitialize (void)
+{
+  NS_LOG_FUNCTION (this);
+  Start (m_tStart);
+  if (m_tStop != Seconds (0))
+    {
+        Stop (m_tStop);
+    }
+
+  NetDevice::DoInitialize ();
 }
 
 void
@@ -201,7 +209,7 @@ FdNetDevice::DoDispose (void)
 void
 FdNetDevice::SetEncapsulationMode (enum EncapsulationMode mode)
 {
-  NS_LOG_FUNCTION (mode);
+  NS_LOG_FUNCTION (this << mode);
   m_encapMode = mode;
   NS_LOG_LOGIC ("m_encapMode = " << m_encapMode);
 }
@@ -216,7 +224,7 @@ FdNetDevice::GetEncapsulationMode (void) const
 void
 FdNetDevice::Start (Time tStart)
 {
-  NS_LOG_FUNCTION (tStart);
+  NS_LOG_FUNCTION (this << tStart);
   Simulator::Cancel (m_startEvent);
   m_startEvent = Simulator::Schedule (tStart, &FdNetDevice::StartDevice, this);
 }
@@ -224,9 +232,9 @@ FdNetDevice::Start (Time tStart)
 void
 FdNetDevice::Stop (Time tStop)
 {
-  NS_LOG_FUNCTION (tStop);
+  NS_LOG_FUNCTION (this << tStop);
   Simulator::Cancel (m_stopEvent);
-  m_startEvent = Simulator::Schedule (tStop, &FdNetDevice::StopDevice, this);
+  m_stopEvent = Simulator::Schedule (tStop, &FdNetDevice::StopDevice, this);
 }
 
 void
@@ -288,13 +296,20 @@ FdNetDevice::StopDevice (void)
       m_fd = -1;
     }
 
+  while (!m_pendingQueue.empty ())
+    {
+      std::pair<uint8_t *, ssize_t> next = m_pendingQueue.front ();
+      m_pendingQueue.pop ();
+      FreeBuffer (next.first);
+    }
+
   DoFinishStoppingDevice ();
 }
 
 void
 FdNetDevice::ReceiveCallback (uint8_t *buf, ssize_t len)
 {
-  NS_LOG_FUNCTION (this << buf << len);
+  NS_LOG_FUNCTION (this << static_cast<void *> (buf) << len);
   bool skip = false;
 
   {
@@ -402,9 +417,16 @@ FdNetDevice::FreeBuffer (uint8_t *buf)
 void
 FdNetDevice::ForwardUp (void)
 {
+  NS_LOG_FUNCTION (this);
 
   uint8_t *buf = 0;
   ssize_t len = 0;
+
+  if (m_pendingQueue.empty())
+  {
+    NS_LOG_LOGIC ("buffer is empty, probably the device is stopped.");
+    return;
+  }
 
   {
     CriticalSection cs (m_pendingReadMutex);
@@ -415,7 +437,7 @@ FdNetDevice::ForwardUp (void)
     len = next.second;
   }
 
-  NS_LOG_FUNCTION (this << buf << len);
+  NS_LOG_LOGIC ("buffer: " << static_cast<void *> (buf) << " length: " << len);
 
   // We need to remove the PI header and ignore it
   if (m_encapMode == DIXPI)
@@ -626,7 +648,7 @@ FdNetDevice::SendFrom (Ptr<Packet> packet, const Address& src, const Address& de
 ssize_t
 FdNetDevice::Write (uint8_t *buffer, size_t length)
 {
-  NS_LOG_FUNCTION (this << buffer << length);
+  NS_LOG_FUNCTION (this << static_cast<void *> (buffer) << length);
 
   uint32_t ret = write (m_fd, buffer, length);
   return ret;

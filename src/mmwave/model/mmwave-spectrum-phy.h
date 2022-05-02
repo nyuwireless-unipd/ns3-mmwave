@@ -157,7 +157,7 @@ public:
   void SetDevice (Ptr<NetDevice> d) override;
   Ptr<NetDevice> GetDevice () const override;
   void SetMobility (Ptr<MobilityModel> m) override;
-  Ptr<MobilityModel> GetMobility () override;
+  Ptr<MobilityModel> GetMobility () const override;
   void SetChannel (Ptr<SpectrumChannel> c) override;
   Ptr<const SpectrumModel> GetRxSpectrumModel () const override;
 
@@ -179,7 +179,7 @@ public:
   * channel model classes, therefore this function returns 0.
   * \return 0
   */
-  Ptr<AntennaModel> GetRxAntenna () override;
+  Ptr<AntennaModel> GetRxAntenna () const override;
 
   /**
   * Set the beamforming module

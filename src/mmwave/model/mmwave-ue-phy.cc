@@ -366,6 +366,8 @@ MmWaveUePhy::RegisterOtherEnb (uint16_t cellId, Ptr<MmWavePhyMacCommon> config, 
   NS_ASSERT_MSG (m_registeredEnb.find (cellId) == m_registeredEnb.end (), "Enb already registered");
   std::pair<Ptr<MmWavePhyMacCommon>, Ptr<MmWaveEnbNetDevice> > pair (config, enbNetDevice);
   m_registeredEnb[cellId] = pair;
+  // point the beam towards the serving BS
+  m_downlinkSpectrumPhy->ConfigureBeamforming (m_registeredEnb.find (cellId)->second.second);
 }
 
 Ptr<MmWaveSpectrumPhy>
@@ -716,7 +718,7 @@ void
 MmWaveUePhy::SendDataChannels (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveControlMessage> > ctrlMsg, Time duration, uint8_t slotInd)
 {
 
-  //Ptr<ThreeGppAntennaArrayModel> antennaArray = DynamicCast<ThreeGppAntennaArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
+  //Ptr<PhasedArrayModel> antennaArray = DynamicCast<PhasedArrayModel> (GetDlSpectrumPhy ()->GetRxAntenna());
   /* set beamforming vector;
    * for UE, you can choose 16 antenna with 0-7 sectors, or 4 antenna with 0-3 sectors
    * input is (sector, antenna number)

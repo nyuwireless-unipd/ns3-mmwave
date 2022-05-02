@@ -72,7 +72,7 @@ TypeId MmWaveComponentCarrier::GetTypeId (void)
                    PointerValue (0),
                    MakePointerAccessor (&MmWaveComponentCarrier::SetAntenna,
                                         &MmWaveComponentCarrier::GetAntenna),
-                   MakePointerChecker<ThreeGppAntennaArrayModel> ())
+                   MakePointerChecker<PhasedArrayModel> ())
   ;
   return tid;
 }
@@ -169,13 +169,13 @@ MmWaveComponentCarrier::GetConfigurationParameters (void) const
 
 
 void
-MmWaveComponentCarrier::SetAntenna (Ptr<ThreeGppAntennaArrayModel> antenna)
+MmWaveComponentCarrier::SetAntenna (Ptr<PhasedArrayModel> antenna)
 {
   NS_LOG_FUNCTION (this << antenna);
   m_antenna = antenna;
 }
 
-Ptr<ThreeGppAntennaArrayModel>
+Ptr<PhasedArrayModel>
 MmWaveComponentCarrier::GetAntenna (void) const
 {
   NS_LOG_FUNCTION (this);

@@ -271,14 +271,14 @@ public:
 
   /**
    * Remove an item from the Queue (each subclass defines the position),
-   * counting it as dequeued
+   * counting it and tracing it as dequeued
    * \return 0 if the operation was not successful; the item otherwise.
    */
   virtual Ptr<Item> Dequeue (void) = 0;
 
   /**
    * Remove an item from the Queue (each subclass defines the position),
-   * counting it as dropped
+   * counting it and tracing it as both dequeued and dropped
    * \return 0 if the operation was not successful; the item otherwise.
    */
   virtual Ptr<Item>  Remove (void) = 0;
@@ -291,7 +291,9 @@ public:
   virtual Ptr<const Item> Peek (void) const = 0;
 
   /**
-   * Flush the queue.
+   * Flush the queue by calling Remove() on each item enqueued.  Note that
+   * this operation will cause dequeue and drop counts to be incremented and
+   * traces to be triggered for each Remove() action.
    */
   void Flush (void);
 
@@ -371,11 +373,20 @@ protected:
 
   /**
    * Push an item in the queue
-   * \param pos the position where the item is inserted
+   * \param pos the position before which the item will be inserted
    * \param item the item to enqueue
    * \return true if success, false if the packet has been dropped.
    */
   bool DoEnqueue (ConstIterator pos, Ptr<Item> item);
+
+  /**
+   * Push an item in the queue
+   * \param pos the position before which the item will be inserted
+   * \param item the item to enqueue
+   * \param[out] ret an iterator pointing to the inserted value
+   * \return true if success, false if the packet has been dropped.
+   */
+  bool DoEnqueue (ConstIterator pos, Ptr<Item> item, Iterator& ret);
 
   /**
    * Pull the item to dequeue from the queue
@@ -417,6 +428,8 @@ protected:
    * dropped for other reasons after being dequeued.
    */
   void DropAfterDequeue (Ptr<Item> item);
+
+  void DoDispose (void) override;
 
 private:
   std::list<Ptr<Item> > m_packets;          //!< the items in the queue
@@ -481,6 +494,14 @@ template <typename Item>
 bool
 Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item)
 {
+  Iterator ret;
+  return DoEnqueue (pos, item, ret);
+}
+
+template <typename Item>
+bool
+Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item, Iterator& ret)
+{
   NS_LOG_FUNCTION (this << item);
 
   if (GetCurrentSize () + item > GetMaxSize ())
@@ -490,7 +511,7 @@ Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item)
       return false;
     }
 
-  m_packets.insert (pos, item);
+  ret = m_packets.insert (pos, item);
 
   uint32_t size = item->GetSize ();
   m_nBytes += size;
@@ -575,6 +596,15 @@ Queue<Item>::Flush (void)
     {
       Remove ();
     }
+}
+
+template <typename Item>
+void
+Queue<Item>::DoDispose (void)
+{
+  NS_LOG_FUNCTION (this);
+  m_packets.clear ();
+  Object::DoDispose ();
 }
 
 template <typename Item>

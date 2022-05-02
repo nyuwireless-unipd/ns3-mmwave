@@ -69,7 +69,7 @@ simply fires the callback `m_phyRxCtrlEndOkCallback` to trigger the PHY layer.
 `MmWaveBeamformingModel` is a base class handling the beamforming operations.
 The classes deriving from `MmWaveBeamformingModel` implement specific beamforming
 schemes.
-It holds a pointer to an instance of the class `ThreeGppAntennaArrayModel` implementing
+It holds a pointer to an instance of the class `PhasedArrayModel` implementing
 the antenna model.
 The main method is `SetBeamformingVectorForDevice ()`, which computes the
 beamforming vector to communicate with a specific device and configures

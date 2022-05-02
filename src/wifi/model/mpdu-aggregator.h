@@ -33,6 +33,8 @@ class AmpduSubframeHeader;
 class WifiTxVector;
 class Packet;
 class WifiMacQueueItem;
+class RegularWifiMac;
+class WifiTxParameters;
 
 /**
  * \brief Aggregator used to construct A-MPDUs
@@ -95,9 +97,12 @@ public:
    * as determined for the modulation class indicated by the given TxVector
    *
    * - the time to transmit the resulting PPDU, according to the given TxVector,
-   * does not exceed both the maximum PPDU duration allowed by the corresponding
-   * modulation class (if any) and the given PPDU duration limit (if distinct from
-   * Time::Min ())
+   * does not exceed the maximum PPDU duration allowed by the corresponding
+   * modulation class (if any)
+   *
+   * - the time to transmit the resulting PPDU and to carry out protection and
+   * acknowledgment, as specified by the given TX parameters, does not exceed the
+   * given available time (if distinct from Time::Min ())
    *
    * For now, only non-broadcast QoS Data frames can be aggregated (do not pass
    * other types of frames to this method). MPDUs to aggregate are looked for
@@ -111,20 +116,23 @@ public:
    * the returned vector is empty.
    *
    * \param mpdu the given MPDU.
-   * \param txVector the TxVector used to transmit the frame
-   * \param ppduDurationLimit the limit on the PPDU duration
+   * \param txParams the TX parameters used to transmit the frame
+   * \param availableTime the time available for the frame exchange
+   * \param queueIt the QueueIteratorPair pointing to the queue item from which the
+   *                search for an MPDU starts, if the QueueIteratorPair is valid
    * \return the resulting A-MPDU, if aggregation is possible.
    */
-  std::vector<Ptr<WifiMacQueueItem>> GetNextAmpdu (Ptr<const WifiMacQueueItem> mpdu,
-                                                   WifiTxVector txVector,
-                                                   Time ppduDurationLimit = Time::Min ()) const;
+  std::vector<Ptr<WifiMacQueueItem>> GetNextAmpdu (Ptr<WifiMacQueueItem> mpdu,
+                                                   WifiTxParameters& txParams,
+                                                   Time availableTime,
+                                                   WifiMacQueueItem::ConstIterator queueIt) const;
 
   /**
-   * Set the map of EDCA queues.
+   * Set the MAC layer to use.
    *
-   * \param edcaQueues the map of EDCA queues.
+   * \param mac the MAC layer to use
    */
-  void SetEdcaQueues (EdcaQueues edcaQueues);
+  void SetWifiMac (const Ptr<RegularWifiMac> mac);
 
   /**
    * \param ampduSize the size of the A-MPDU that needs to be padded in bytes
@@ -142,11 +150,15 @@ public:
    *
    * \param mpduSize size of the MPDU in bytes.
    * \param isSingle true if S-MPDU.
+   * \return the A-MPDU subframe header
    */
   static AmpduSubframeHeader GetAmpduSubframeHeader (uint16_t mpduSize, bool isSingle);
 
+protected:
+  void DoDispose () override;
+
 private:
-  EdcaQueues m_edca;   //!< the map of EDCA queues
+  Ptr<RegularWifiMac> m_mac;   //!< the MAC of this station
 };
 
 }  //namespace ns3

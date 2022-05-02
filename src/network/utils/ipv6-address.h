@@ -99,17 +99,6 @@ public:
   void Set (uint8_t address[16]);
 
   /**
-   * \brief Comparison operation between two Ipv6Addresses.
-   *
-   * \deprecated Use the == operator (same functionality)
-   *
-   * \param other the IPv6 address to which to compare this address
-   * \return true if the addresses are equal, false otherwise
-   */
-  NS_DEPRECATED_3_31
-  bool IsEqual (const Ipv6Address& other) const;
-
-  /**
    * \brief Serialize this address to a 16-byte buffer.
    * \param buf the output buffer to which this address gets overwritten with this
    * Ipv6Address
@@ -153,6 +142,18 @@ public:
    * \return autoconfigured IPv6 address
    */
   static Ipv6Address MakeAutoconfiguredAddress (Address addr, Ipv6Address prefix);
+
+  /**
+   * \brief Make the autoconfigured IPv6 address from a Mac address.
+   *
+   * Actually the MAC supported are: Mac8, Mac16, Mac48, and Mac64.
+   *
+   * \param addr the MAC address.
+   * \param prefix the IPv6 prefix
+   * \return autoconfigured IPv6 address
+   */
+
+  static Ipv6Address MakeAutoconfiguredAddress (Address addr, Ipv6Prefix prefix);
 
   /**
    * \brief Make the autoconfigured IPv6 address with Mac16Address.
@@ -394,7 +395,6 @@ public:
   /**
    * \brief Get the bytes corresponding to the address.
    * \param buf buffer to store the data
-   * \return bytes of the address
    */
   void GetBytes (uint8_t buf[16]) const;
 
@@ -533,6 +533,12 @@ public:
   void GetBytes (uint8_t buf[16]) const;
 
   /**
+   * \brief Convert the Prefix into an IPv6 Address.
+   * \return an IPv6 address representing the prefix
+   */
+  Ipv6Address ConvertToIpv6Address () const;
+
+  /**
    * \brief Get prefix length.
    * \return prefix length
    */
@@ -549,17 +555,6 @@ public:
     * \return minimum prefix length
     */
   uint8_t GetMinimumPrefixLength () const;
-
-  /**
-   * \brief Comparison operation between two Ipv6Prefix.
-   *
-   * \deprecated Use the == operator (same functionality)
-   *
-   * \param other the IPv6 prefix to which to compare this prefix
-   * \return true if the prefixes are equal, false otherwise
-   */
-  NS_DEPRECATED_3_31
-  bool IsEqual (const Ipv6Prefix& other) const;
 
   /**
    * \brief Print this address to the given output stream.
@@ -685,11 +680,11 @@ inline bool operator != (const Ipv6Prefix& a, const Ipv6Prefix& b)
  * \class Ipv6AddressHash
  * \brief Hash function class for IPv6 addresses.
  */
-class Ipv6AddressHash : public std::unary_function<Ipv6Address, size_t>
+class Ipv6AddressHash
 {
 public:
   /**
-   * \brief Unary operator to hash IPv6 address.
+   * \brief Returns the hash of an IPv6 address.
    * \param x IPv6 address to hash
    * \returns the hash of the address
    */

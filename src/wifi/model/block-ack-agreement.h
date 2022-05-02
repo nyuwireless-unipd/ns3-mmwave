@@ -23,6 +23,7 @@
 
 #include "ns3/mac48-address.h"
 #include "ns3/event-id.h"
+#include "block-ack-type.h"
 
 namespace ns3 {
 /**
@@ -31,9 +32,7 @@ namespace ns3 {
  */
 class BlockAckAgreement
 {
-  /// Provide access to MacLow class
-  friend class MacLow;
-
+  friend class HtFrameExchangeManager;
 
 public:
   /**
@@ -43,7 +42,7 @@ public:
    * \param tid the TID
    */
   BlockAckAgreement (Mac48Address peer, uint8_t tid);
-  ~BlockAckAgreement ();
+  virtual ~BlockAckAgreement ();
   /**
    * Set buffer size.
    *
@@ -111,7 +110,7 @@ public:
    *
    * \return starting sequence number
    */
-  uint16_t GetStartingSequence (void) const;
+  virtual uint16_t GetStartingSequence (void) const;
   /**
    * Return the starting sequence control
    *
@@ -151,6 +150,27 @@ public:
    *         false otherwise
    */
   bool IsHtSupported (void) const;
+  /**
+   * Get the type of the Block Acks sent by the recipient of this agreement.
+   *
+   * \return the type of the Block Acks sent by the recipient of this agreement
+   */
+  BlockAckType GetBlockAckType (void) const;
+  /**
+   * Get the type of the Block Ack Requests sent by the originator of this agreement.
+   *
+   * \return the type of the Block Ack Requests sent by the originator of this agreement
+   */
+  BlockAckReqType GetBlockAckReqType (void) const;
+  /**
+   * Get the distance between the given starting sequence number and the
+   * given sequence number.
+   *
+   * \param seqNumber the given sequence number
+   * \param startingSeqNumber the given starting sequence number
+   * \return the distance of the given sequence number from the given starting sequence number
+   */
+  static std::size_t GetDistance (uint16_t seqNumber, uint16_t startingSeqNumber);
 
 
 protected:

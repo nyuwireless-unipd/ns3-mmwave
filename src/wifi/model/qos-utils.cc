@@ -28,6 +28,100 @@
 
 namespace ns3 {
 
+std::size_t
+WifiAddressTidHash::operator()(const WifiAddressTidPair& addressTidPair) const
+{
+  uint8_t buffer[7];
+  addressTidPair.first.CopyTo (buffer);
+  buffer[6] = addressTidPair.second;
+
+  std::string s (buffer, buffer + 7);
+  return std::hash<std::string>{} (s);
+}
+
+std::size_t
+WifiAddressHash::operator()(const Mac48Address& address) const
+{
+  uint8_t buffer[6];
+  address.CopyTo (buffer);
+
+  std::string s (buffer, buffer + 6);
+  return std::hash<std::string>{} (s);
+}
+
+WifiAc::WifiAc (uint8_t lowTid, uint8_t highTid)
+  : m_lowTid (lowTid),
+    m_highTid (highTid)
+{
+}
+
+uint8_t
+WifiAc::GetLowTid (void) const
+{
+  return m_lowTid;
+}
+
+uint8_t
+WifiAc::GetHighTid (void) const
+{
+  return m_highTid;
+}
+
+uint8_t
+WifiAc::GetOtherTid (uint8_t tid) const
+{
+  if (tid == m_lowTid)
+    {
+      return m_highTid;
+    }
+  if (tid == m_highTid)
+    {
+      return m_lowTid;
+    }
+  NS_ABORT_MSG ("TID " << tid << " does not belong to this AC");
+}
+
+bool operator> (enum AcIndex left, enum AcIndex right)
+{
+  NS_ABORT_MSG_IF (left > 3 || right > 3, "Cannot compare non-QoS ACs");
+
+  if (left == right)
+    {
+      return false;
+    }
+  if (left == AC_BK)
+    {
+      return false;
+    }
+  if (right == AC_BK)
+    {
+      return true;
+    }
+  return static_cast<uint8_t> (left) > static_cast<uint8_t> (right);
+}
+
+bool operator>= (enum AcIndex left, enum AcIndex right)
+{
+  NS_ABORT_MSG_IF (left > 3 || right > 3, "Cannot compare non-QoS ACs");
+
+  return (left == right || left > right);
+}
+
+bool operator< (enum AcIndex left, enum AcIndex right)
+{
+  return !(left >= right);
+}
+
+bool operator<= (enum AcIndex left, enum AcIndex right)
+{
+  return !(left > right);
+}
+
+const std::map<AcIndex, WifiAc> wifiAcList = { {AC_BE, {0, 3}},
+                                               {AC_BK, {1, 2}},
+                                               {AC_VI, {4, 5}},
+                                               {AC_VO, {6, 7}} };
+
 AcIndex
 QosUtilsMapTidToAc (uint8_t tid)
 {
@@ -89,12 +183,6 @@ QosUtilsIsOldPacket (uint16_t startingSeq, uint16_t seqNumber)
   return (distance >= 2048);
 }
 
-/**
- *  \brief Extraction operator for TypeId
- *  \param [in] packet is the packet
- *  \param [in] hdr is Wifi MAC header
- *  \returns the TypeId of the MAC header
- */
 uint8_t
 GetTid (Ptr<const Packet> packet, const WifiMacHeader hdr)
 {

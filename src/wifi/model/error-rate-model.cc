@@ -19,7 +19,7 @@
  */
 
 #include "error-rate-model.h"
-#include "dsss-error-rate-model.h"
+#include "ns3/dsss-error-rate-model.h"
 #include "wifi-tx-vector.h"
 
 namespace ns3 {
@@ -36,7 +36,7 @@ TypeId ErrorRateModel::GetTypeId (void)
 }
 
 double
-ErrorRateModel::CalculateSnr (WifiTxVector txVector, double ber) const
+ErrorRateModel::CalculateSnr (const WifiTxVector& txVector, double ber) const
 {
   //This is a very simple binary search.
   double low, high, precision;
@@ -60,7 +60,7 @@ ErrorRateModel::CalculateSnr (WifiTxVector txVector, double ber) const
 }
 
 double
-ErrorRateModel::GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, double snr, uint64_t nbits) const
+ErrorRateModel::GetChunkSuccessRate (WifiMode mode, const WifiTxVector& txVector, double snr, uint64_t nbits, uint8_t numRxAntennas, WifiPpduField field, uint16_t staId) const
 {
   if (mode.GetModulationClass () == WIFI_MOD_CLASS_DSSS || mode.GetModulationClass () == WIFI_MOD_CLASS_HR_DSSS)
     {
@@ -80,8 +80,21 @@ ErrorRateModel::GetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, doubl
     }
   else
     {
-      return DoGetChunkSuccessRate (mode, txVector, snr, nbits);
+      return DoGetChunkSuccessRate (mode, txVector, snr, nbits, numRxAntennas, field, staId);
     }
+  return 0;
+}
+
+bool
+ErrorRateModel::IsAwgn (void) const
+{
+  return true;
+}
+
+int64_t
+ErrorRateModel::AssignStreams (int64_t stream)
+{
+  // Override this method if the error model uses random variables
   return 0;
 }
 

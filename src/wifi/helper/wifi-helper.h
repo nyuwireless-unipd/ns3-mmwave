@@ -294,7 +294,7 @@ private:
   virtual void EnablePcapInternal (std::string prefix,
                                    Ptr<NetDevice> nd,
                                    bool promiscuous,
-                                   bool explicitFilename);
+                                   bool explicitFilename) override;
 
   /**
    * \brief Enable ASCII trace output on the indicated net device.
@@ -310,7 +310,7 @@ private:
   virtual void EnableAsciiInternal (Ptr<OutputStreamWrapper> stream,
                                     std::string prefix,
                                     Ptr<NetDevice> nd,
-                                    bool explicitFilename);
+                                    bool explicitFilename) override;
 
   PcapHelper::DataLinkType m_pcapDlt; ///< PCAP data link type
 };
@@ -402,39 +402,6 @@ public:
                            std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
                            std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
 
-  /**
-   * \param ac the Access Category to attach the ack policy selector to.
-   * \param type the type of ns3::WifiAckPolicySelector to create.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
-   *
-   * All the attributes specified in this method should exist
-   * in the requested ack policy selector.
-   */
-  void SetAckPolicySelectorForAc (AcIndex ac, std::string type,
-                                  std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                                  std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                                  std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                                  std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                                  std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                                  std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                                  std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                                  std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
-
   /// Callback invoked to determine the MAC queue selected for a given packet
   typedef std::function<std::size_t (Ptr<QueueItem>)> SelectQueueCallback;
 
@@ -506,33 +473,6 @@ public:
    * \sa Config::Set
    */
   virtual void SetStandard (WifiStandard standard);
-
-  /**
-   * \param standard the PHY standard to configure during installation
-   *
-   * This method sets standards-compliant defaults for WifiMac
-   * parameters such as SIFS time, slot time, timeout values, etc.,
-   * based on the standard selected.  It results in
-   * WifiMac::ConfigureStandard(standard) being called on each
-   * installed MAC object.
-   *
-   * The default standard of 802.11a will be applied if SetStandard()
-   * is not called.
-   *
-   * Note that WifiMac::ConfigureStandard () will overwrite certain
-   * defaults in the attribute system, so if a user wants to manipulate
-   * any default values affected by ConfigureStandard() while using this
-   * helper, the user should use a post-install configuration such as
-   * Config::Set() on any objects that this helper creates, such as:
-   * \code
-   * Config::Set ("/NodeList/0/DeviceList/0/$ns3::WifiNetDevice/Mac/Slot", TimeValue (MicroSeconds (slot)));
-   * \endcode
-   * \deprecated This method will go away in future release of ns-3.
-   *
-   * \sa Config::Set
-   */
-  NS_DEPRECATED_3_32
-  virtual void SetStandard (WifiPhyStandard standard);
 
   /**
    * Helper to enable all WifiNetDevice log components with one statement

@@ -12,6 +12,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/log.h"
 #include <map>
+#include "ns3/isotropic-antenna-model.h"
 
 using namespace ns3;
 using namespace mmwave;
@@ -103,8 +104,9 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::ThreeGppChannelModel::Blockage", BooleanValue (blockage)); // Enable/disable the blockage model  
   Config::SetDefault ("ns3::MmWaveHelper::PathlossModel",StringValue ("ns3::ThreeGppUmaPropagationLossModel"));
 
-  // set to false to use the 3GPP radiation pattern (proper configuration of the bearing and downtilt angles is needed) 
-  Config::SetDefault ("ns3::ThreeGppAntennaArrayModel::IsotropicElements", BooleanValue (true)); 
+  // by default, isotropic antennas are used. To use the 3GPP radiation pattern instead, use the <ThreeGppAntennaArrayModel>
+  // beware: proper configuration of the bearing and downtilt angles is needed
+  Config::SetDefault ("ns3::PhasedArrayModel::AntennaElement", PointerValue (CreateObject<IsotropicAntennaModel> ())); 
 
   Ptr<MmWaveHelper> helper = CreateObject<MmWaveHelper> ();
   helper->SetCcPhyParams (ccMap);

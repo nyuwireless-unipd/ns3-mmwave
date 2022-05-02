@@ -28,12 +28,13 @@
 #include "table-based-error-rate-model.h"
 #include "wifi-utils.h"
 #include "wifi-tx-vector.h"
-#include "dsss-error-rate-model.h"
+#include "ns3/dsss-error-rate-model.h"
 #include "yans-error-rate-model.h"
 
-static const double SNR_PRECISION = 2;
-
 namespace ns3 {
+
+static const double SNR_PRECISION = 2; //!< precision for SNR
+static const double TABLED_BASED_ERROR_MODEL_PRECISION = 1e-5; //!< precision for PER
 
 NS_OBJECT_ENSURE_REGISTERED (TableBasedErrorRateModel);
 
@@ -131,7 +132,7 @@ TableBasedErrorRateModel::GetMcsForMode (WifiMode mode)
             }
         }
     }
-  else if (mode.GetModulationClass () == WIFI_MOD_CLASS_HT || mode.GetModulationClass () == WIFI_MOD_CLASS_VHT || mode.GetModulationClass () == WIFI_MOD_CLASS_HE)
+  else if (mode.GetModulationClass () >= WIFI_MOD_CLASS_HT)
     {
       mcs = mode.GetMcsValue ();
     }
@@ -140,9 +141,9 @@ TableBasedErrorRateModel::GetMcsForMode (WifiMode mode)
 }
 
 double
-TableBasedErrorRateModel::DoGetChunkSuccessRate (WifiMode mode, WifiTxVector txVector, double snr, uint64_t nbits) const
+TableBasedErrorRateModel::DoGetChunkSuccessRate (WifiMode mode, const WifiTxVector& txVector, double snr, uint64_t nbits, uint8_t numRxAntennas, WifiPpduField field, uint16_t staId) const
 {
-  NS_LOG_FUNCTION (this << mode << txVector << snr << nbits);
+  NS_LOG_FUNCTION (this << mode << txVector << snr << nbits << +numRxAntennas << field << staId);
   uint64_t size = std::max<uint64_t> (1, (nbits / 8));
   double roundedSnr = RoundSnr (RatioToDb (snr), SNR_PRECISION);
   uint8_t mcs = GetMcsForMode (mode);
@@ -158,7 +159,7 @@ TableBasedErrorRateModel::DoGetChunkSuccessRate (WifiMode mode, WifiTxVector txV
   if (mcs > (ldpc ? ERROR_TABLE_LDPC_MAX_NUM_MCS : ERROR_TABLE_BCC_MAX_NUM_MCS))
     {
       NS_LOG_WARN ("Table missing for MCS: " << +mcs << " in TableBasedErrorRateModel: use fallback error rate model");
-      return m_fallbackErrorModel->GetChunkSuccessRate (mode, txVector, snr, nbits);
+      return m_fallbackErrorModel->GetChunkSuccessRate (mode, txVector, snr, nbits, staId);
     }
 
   auto errorTable = (ldpc ? AwgnErrorTableLdpc1458 : (size < m_threshold ? AwgnErrorTableBcc32 : AwgnErrorTableBcc1458));
@@ -210,6 +211,11 @@ TableBasedErrorRateModel::DoGetChunkSuccessRate (WifiMode mode, WifiTxVector txV
     {
       // From IEEE document 11-14/0803r1 (Packet Length for Box 0 Calibration)
       per = (1.0 - std::pow ((1 - per), (static_cast<double> (size) / tableSize)));
+    }
+
+  if (per < TABLED_BASED_ERROR_MODEL_PRECISION)
+    {
+      per = 0.0;
     }
 
   return 1.0 - per;

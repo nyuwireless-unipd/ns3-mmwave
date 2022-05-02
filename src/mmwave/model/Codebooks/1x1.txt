@@ -1,0 +1,9 @@
+ns3::UniformPlanarArray
+AntennaElement,ns3::IsotropicAntennaModel
+AntennaVerticalSpacing,0.500
+AntennaHorizontalSpacing,0.500
+NumRows,1
+NumColumns,1
+1
+1
+(1,0)

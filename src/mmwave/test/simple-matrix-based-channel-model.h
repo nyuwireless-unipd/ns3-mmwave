@@ -91,8 +91,8 @@ public:
    */
   Ptr<const ChannelMatrix> GetChannel (Ptr<const MobilityModel> aMob,
                                        Ptr<const MobilityModel> bMob,
-                                       Ptr<const ThreeGppAntennaArrayModel> aAntenna,
-                                       Ptr<const ThreeGppAntennaArrayModel> bAntenna) override;
+                                       Ptr<const PhasedArrayModel> aAntenna,
+                                       Ptr<const PhasedArrayModel> bAntenna) override;
 
 private:
   void DoDispose () override;

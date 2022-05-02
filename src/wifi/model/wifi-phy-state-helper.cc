@@ -26,6 +26,7 @@
 #include "wifi-tx-vector.h"
 #include "wifi-phy-listener.h"
 #include "wifi-psdu.h"
+#include "wifi-phy.h"
 
 namespace ns3 {
 
@@ -357,9 +358,13 @@ void
 WifiPhyStateHelper::SwitchToTx (Time txDuration, WifiConstPsduMap psdus, double txPowerDbm, WifiTxVector txVector)
 {
   NS_LOG_FUNCTION (this << txDuration << psdus << txPowerDbm << txVector);
-  for (auto const& psdu : psdus)
+  if (!m_txTrace.IsEmpty ())
     {
-      m_txTrace (psdu.second->GetPacket (), txVector.GetMode (psdu.first), txVector.GetPreambleType (), txVector.GetTxPowerLevel ());
+      for (auto const& psdu : psdus)
+        {
+          m_txTrace (psdu.second->GetPacket (), txVector.GetMode (psdu.first),
+                     txVector.GetPreambleType (), txVector.GetTxPowerLevel ());
+        }
     }
   Time now = Simulator::Now ();
   switch (GetState ())
@@ -464,29 +469,34 @@ WifiPhyStateHelper::SwitchToChannelSwitching (Time switchingDuration)
 }
 
 void
-WifiPhyStateHelper::ContinueRxNextMpdu (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector)
+WifiPhyStateHelper::ContinueRxNextMpdu (Ptr<WifiPsdu> psdu, RxSignalInfo rxSignalInfo, WifiTxVector txVector)
 {
-  NS_LOG_FUNCTION (this << *psdu << snr << txVector);
+  NS_LOG_FUNCTION (this << *psdu << rxSignalInfo << txVector);
   std::vector<bool> statusPerMpdu;
   if (!m_rxOkCallback.IsNull ())
     {
-      m_rxOkCallback (psdu, snr, txVector, statusPerMpdu);
+      m_rxOkCallback (psdu, rxSignalInfo, txVector, statusPerMpdu);
     }
 }
 
 void
-WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<WifiPsdu> psdu, double snr, WifiTxVector txVector, uint16_t staId, std::vector<bool> statusPerMpdu)
+WifiPhyStateHelper::SwitchFromRxEndOk (Ptr<WifiPsdu> psdu, RxSignalInfo rxSignalInfo, WifiTxVector txVector, uint16_t staId, std::vector<bool> statusPerMpdu)
 {
-  NS_LOG_FUNCTION (this << *psdu << snr << txVector << statusPerMpdu.size () <<
+  NS_LOG_FUNCTION (this << *psdu << rxSignalInfo << txVector << staId << statusPerMpdu.size () <<
                    std::all_of(statusPerMpdu.begin(), statusPerMpdu.end(), [](bool v) { return v; })); //returns true if all true
   NS_ASSERT (statusPerMpdu.size () != 0);
-  NS_ASSERT (m_endRx == Simulator::Now ());
-  m_rxOkTrace (psdu->GetPacket (), snr, txVector.GetMode (staId), txVector.GetPreambleType ());
+  NS_ASSERT (Abs (m_endRx - Simulator::Now ()) < MicroSeconds (1)); //1us corresponds to the maximum propagation delay (delay spread)
+  //TODO: a better fix would be to call the function once all HE TB PPDUs are received
+  if (!m_rxOkTrace.IsEmpty ())
+    {
+      m_rxOkTrace (psdu->GetPacket (), rxSignalInfo.snr, txVector.GetMode (staId),
+                   txVector.GetPreambleType ());
+    }
   NotifyRxEndOk ();
   DoSwitchFromRx ();
   if (!m_rxOkCallback.IsNull ())
     {
-      m_rxOkCallback (psdu, snr, txVector, statusPerMpdu);
+      m_rxOkCallback (psdu, rxSignalInfo, txVector, statusPerMpdu);
     }
 }
 
@@ -494,8 +504,12 @@ void
 WifiPhyStateHelper::SwitchFromRxEndError (Ptr<WifiPsdu> psdu, double snr)
 {
   NS_LOG_FUNCTION (this << *psdu << snr);
-  NS_ASSERT (m_endRx == Simulator::Now ());
-  m_rxErrorTrace (psdu->GetPacket (), snr);
+  NS_ASSERT (Abs (m_endRx - Simulator::Now ()) < MicroSeconds (1)); //1us corresponds to the maximum propagation delay (delay spread)
+  //TODO: a better fix would be to call the function once all HE TB PPDUs are received
+  if (!m_rxErrorTrace.IsEmpty ())
+    {
+      m_rxErrorTrace (psdu->GetPacket (), snr);
+    }
   NotifyRxEndError ();
   DoSwitchFromRx ();
   if (!m_rxErrorCallback.IsNull ())
@@ -591,7 +605,7 @@ void
 WifiPhyStateHelper::SwitchFromRxAbort (void)
 {
   NS_LOG_FUNCTION (this);
-  NS_ASSERT (IsStateRx ());
+  NS_ASSERT (IsStateCcaBusy ()); //abort is called (with OBSS_PD_CCA_RESET reason) before RX is set by payload start
   NotifyRxEndOk ();
   DoSwitchFromRx ();
   m_endCcaBusy = Simulator::Now ();

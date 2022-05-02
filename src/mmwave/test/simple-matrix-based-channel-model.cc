@@ -20,7 +20,7 @@
 
 #include "simple-matrix-based-channel-model.h"
 #include "ns3/log.h"
-#include "ns3/three-gpp-antenna-array-model.h"
+#include "ns3/phased-array-model.h"
 #include "ns3/double.h"
 #include "ns3/pointer.h"
 #include "ns3/node.h"
@@ -199,8 +199,8 @@ SimpleMatrixBasedChannelModel::GetDelay (void) const
 Ptr<const MatrixBasedChannelModel::ChannelMatrix>
 SimpleMatrixBasedChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
                                            Ptr<const MobilityModel> bMob,
-                                           Ptr<const ThreeGppAntennaArrayModel> aAntenna,
-                                           Ptr<const ThreeGppAntennaArrayModel> bAntenna)
+                                           Ptr<const PhasedArrayModel> aAntenna,
+                                           Ptr<const PhasedArrayModel> bAntenna)
 {
   NS_LOG_FUNCTION (this << aMob << bMob << aAntenna << bAntenna);
 
@@ -240,17 +240,17 @@ SimpleMatrixBasedChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
         {
           // Element location phase shift
           Vector aLoc = aAntenna->GetElementLocation (aIndex);
-          double aPhase = 2 * M_PI * (sin (aod.theta) * cos (aod.phi) * aLoc.x
-                                      + sin (aod.theta) * sin (aod.phi) * aLoc.y
-                                      + cos (aod.theta) * aLoc.z);
+          double aPhase = 2 * M_PI * (sin (aod.GetInclination ()) * cos (aod.GetAzimuth ()) * aLoc.x
+                                      + sin (aod.GetInclination ()) * sin (aod.GetAzimuth ()) * aLoc.y
+                                      + cos (aod.GetInclination ()) * aLoc.z);
 
           for (uint64_t bIndex = 0; bIndex < bSize; bIndex++)
             {
               // Element location phase shift
               Vector bLoc = bAntenna->GetElementLocation (bIndex);
-              double bPhase = 2 * M_PI * (sin (aoa.theta) * cos (aoa.phi) * bLoc.x
-                                          + sin (aoa.theta) * sin (aoa.phi) * bLoc.y
-                                          + cos (aoa.theta) * bLoc.z);
+              double bPhase = 2 * M_PI * (sin (aoa.GetInclination ()) * cos (aoa.GetAzimuth ()) * bLoc.x
+                                          + sin (aoa.GetInclination ()) * sin (aoa.GetAzimuth ()) * bLoc.y
+                                          + cos (aoa.GetInclination ()) * bLoc.z);
 
               // Pathloss and phase shift
               double p = std::pow (10, m_pathLoss[n] / 20);

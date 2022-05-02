@@ -131,6 +131,20 @@ public:
                                                                 double minInnerBandDbr = -20, double minOuterbandDbr = -28, double lowestPointDbr = -40);
 
   /**
+   * Create a transmit power spectral density corresponding to the OFDMA part
+   * of HE TB PPDUs for a given RU.
+   * An ideal (i.e. rectangular) spectral mask is considered for the time being.
+   *
+   * \param centerFrequency center frequency (MHz)
+   * \param channelWidth channel width (MHz)
+   * \param txPowerW  transmit power (W) to allocate
+   * \param guardBandwidth width of the guard band (MHz)
+   * \param ru the RU band used by the STA
+   * \return a pointer to a newly allocated SpectrumValue representing the HE OFDM Transmit Power Spectral Density on the RU used by the STA in W/Hz for each Band
+   */
+  static Ptr<SpectrumValue> CreateHeMuOfdmTxPowerSpectralDensity (uint32_t centerFrequency, uint16_t channelWidth, double txPowerW, uint16_t guardBandwidth, WifiSpectrumBand ru);
+
+  /**
    * Create a power spectral density corresponding to the noise
    *
    * \param centerFrequency center frequency (MHz)
@@ -201,7 +215,6 @@ public:
    * \param minInnerBandDbr the minimum relative power in the inner band (i.e. -20 dBr in the figure above)
    * \param minOuterbandDbr the minimum relative power in the outer band (i.e. -28 dBr in the figure above)
    * \param lowestPointDbr maximum relative power of the outermost subcarriers of the guard band (in dBr)
-   * \return a pointer to a newly allocated SpectrumValue representing the HT OFDM Transmit Power Spectral Density in W/Hz for each Band
    */
   static void CreateSpectrumMaskForOfdm (Ptr<SpectrumValue> c, std::vector <WifiSpectrumBand> allocatedSubBands, WifiSpectrumBand maskBand,
                                          double txPowerPerBandW, uint32_t nGuardBands, uint32_t innerSlopeWidth,
@@ -226,6 +239,16 @@ public:
    * \return the equivalent Watts for the given dBm
    */
   static double DbmToW (double dbm);
+
+  /**
+   * Calculate the power of the specified band composed of uniformly-sized sub-bands.
+   *
+   * \param psd received Power Spectral Density in W/Hz
+   * \param band a pair of start and stop indexes that defines the band
+   *
+   * \return band power in W
+   */
+  static double GetBandPowerW (Ptr<SpectrumValue> psd, const WifiSpectrumBand &band);
 };
 
 /**
