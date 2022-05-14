@@ -611,6 +611,14 @@ public:
   **/
   void SetBandwidth (double bw);
 
+  /**
+  * Sets the desired delay between when UL DCIs are sent by the scheduler and the slot they refer to.
+  * 
+  * \param delay The intended UL scheduling delay, expressed as number of NR slots.
+  *
+  **/
+  void SetUlSchedDelay (uint32_t delay);
+
   void
   SetSymbPerSlot (uint32_t numSym)
   {

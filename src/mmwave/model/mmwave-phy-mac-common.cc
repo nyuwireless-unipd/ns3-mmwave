@@ -135,6 +135,18 @@ MmWavePhyMacCommon::SetBandwidth (double bw)
   m_numRefSc = REF_SUBCARRIERS_PER_RB*m_numRbs; 
 }
 
+void 
+MmWavePhyMacCommon::SetUlSchedDelay (uint32_t delay)
+{
+  NS_LOG_FUNCTION (this);
+
+  // The scheduler assigns resources m_L1L2Latency slots in advance. Since UL DCIs must be sent m_ulSchedDelay slots in advance,
+  // the latter parameter must be smaller than m_L1L2Latency for the UL DCIs to be correctly received at the intended subframe.
+  NS_ASSERT_MSG (delay < m_L1L2Latency, "The UL scheduling delay must be lower than the L1L2Latency!");
+
+  m_ulSchedDelay = delay;
+}
+
 } // namespace mmwave
 
 } // namespace ns3
