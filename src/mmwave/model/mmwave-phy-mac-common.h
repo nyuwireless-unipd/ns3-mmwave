@@ -674,12 +674,6 @@ public:
   }
 
   void
-  SetUlSchedDelay (uint32_t tti)
-  {
-    m_ulSchedDelay = tti;
-  }
-
-  void
   SetNumRefScPerSym (uint32_t numRefSc)
   {
     m_numRefSc = numRefSc;
