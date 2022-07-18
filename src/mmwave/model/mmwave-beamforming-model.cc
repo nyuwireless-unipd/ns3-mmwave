@@ -615,6 +615,9 @@ MmWaveCodebookBeamforming::ComputeBeamformingCodebookMatrix (Ptr<NetDevice> othe
 {
   NS_LOG_FUNCTION (this << otherDevice << otherAntenna);
 
+  // check whether we are performing the initial configuration
+  bool isInitialConf = m_codebookIdsCache.find (otherAntenna) == m_codebookIdsCache.end ();
+
   Ptr<BeamformingCodebook> thisCodebook = m_antenna->GetObject<BeamformingCodebook> ();
   Ptr<BeamformingCodebook> otherCodebook = otherAntenna->GetObject<BeamformingCodebook> ();
 
@@ -630,8 +633,13 @@ MmWaveCodebookBeamforming::ComputeBeamformingCodebookMatrix (Ptr<NetDevice> othe
     }
 
   // save pre-existing bf vectors
-  auto thisOldBfVector = m_antenna->GetBeamformingVector ();
-  auto otherOldBfVector = otherAntenna->GetBeamformingVector ();
+  PhasedArrayModel::ComplexVector thisOldBfVector;
+  PhasedArrayModel::ComplexVector otherOldBfVector;
+  if (!isInitialConf)
+  {
+    thisOldBfVector = m_antenna->GetBeamformingVector ();
+    otherOldBfVector = otherAntenna->GetBeamformingVector ();
+  }
 
   // fill matrix
   for (uint32_t thisIdx = 0; thisIdx < thisCodebook->GetCodebookSize (); thisIdx++)
@@ -649,9 +657,12 @@ MmWaveCodebookBeamforming::ComputeBeamformingCodebookMatrix (Ptr<NetDevice> othe
     }
   NS_LOG_DEBUG ("Matrix of size " << matrix.size () << "x" << matrix[0].size ());
 
-  // reset to pre-existing bf vectors
-  m_antenna->SetBeamformingVector (thisOldBfVector);
-  otherAntenna->SetBeamformingVector (otherOldBfVector);
+  // reset to pre-existing bf vectors, if configured
+  if (!isInitialConf)
+  {
+    m_antenna->SetBeamformingVector (thisOldBfVector);
+    otherAntenna->SetBeamformingVector (otherOldBfVector);
+  }
 
   return matrix;
 }
