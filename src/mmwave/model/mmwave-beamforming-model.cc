@@ -160,6 +160,13 @@ MmWaveDftBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice,
   // configure the antenna to use the new beamforming vector
   PhasedArrayModel::ComplexVector antennaWeights = m_antenna->GetBeamformingVector (completeAngle);
   m_antenna->SetBeamformingVector (antennaWeights);
+
+  // compute the azimuth and the elevation angles for the other device
+  Angles completeAngleOtherDevice (aPos,bPos);
+
+  // configure the antenna of the other device to use the new beamforming vector
+  PhasedArrayModel::ComplexVector otherAntennaWeights = otherAntenna->GetBeamformingVector (completeAngleOtherDevice);
+  otherAntenna->SetBeamformingVector (otherAntennaWeights);
 }
 
 /*----------------------------------------------------------------------------*/
