@@ -25,6 +25,8 @@
  *          Dual Connectivity functionalities
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
  *              Integration of Carrier Aggregation for the mmWave module
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #ifndef LTE_UE_RRC_H
@@ -48,6 +50,10 @@
 #include <ns3/lte-rlc.h>
 #include <ns3/lte-pdcp.h>
 #include <ns3/lte-rlc-am.h>
+
+#include "ns3/simple-device-energy-model.h"
+#include "ns3/energy-source-container.h"
+#include "ns3/rrc-energy-module.h"
 
 #define MIN_NO_CC 1
 #define MAX_NO_CC 5 // this is the maximum number of carrier components allowed by 3GPP up to R13
@@ -120,12 +126,16 @@ public:
     IDLE_WAIT_SIB1,
     IDLE_CAMPED_NORMALLY,
     IDLE_WAIT_SIB2,
+    IDLE_PAGING,
     IDLE_RANDOM_ACCESS,
     IDLE_CONNECTING,
     CONNECTED_NORMALLY,
     CONNECTED_HANDOVER,
     CONNECTED_PHY_PROBLEM,
     CONNECTED_REESTABLISHING,
+    RRC_INACTIVE,
+    INACTIVE_PAGING,
+    IDLE_DS,
     NUM_STATES
   };
 
@@ -405,7 +415,8 @@ private:
    * \param params LtePdcpSapUser::ReceivePdcpSduParameters
    */
   void DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params);
-
+  void DoNotifyEnergyChange();
+  void DoSetFrameSubframe(uint32_t frame, uint32_t sfn);
   // CMAC SAP methods
   /**
    * Set temporary cell rnti function
@@ -490,6 +501,9 @@ private:
    * \param msg the LteRrcSap::SystemInformation
    */
   void DoRecvSystemInformation (LteRrcSap::SystemInformation msg);
+  void DoPaging ();
+  void DoRecvPagingInformation (uint16_t cellId,
+                                          LteRrcSap::PagingInformation msg);
   /**
    * Part of the RRC protocol. Implement the LteUeRrcSapProvider::RecvRrcConnectionSetup interface.
    * \param msg the LteRrcSap::RrcConnectionSetup
@@ -515,6 +529,7 @@ private:
    * \param msg LteRrcSap::RrcConnectionRelease
    */
   void DoRecvRrcConnectionRelease (LteRrcSap::RrcConnectionRelease msg);
+  void DoRecvRrcPagingDirect();
   /**
    * Part of the RRC protocol. Implement the LteUeRrcSapProvider::RecvRrcConnectionReject interface.
    * \param msg the LteRrcSap::RrcConnectionReject
@@ -840,8 +855,26 @@ private:
   uint8_t m_dlBandwidth; /**< Downlink bandwidth in RBs. */
   uint8_t m_ulBandwidth; /**< Uplink bandwidth in RBs. */
 
+  uint32_t m_frameNo;
+  uint32_t m_subframeNo;
+
+  /* Parameters for Paging */
+  uint16_t  m_T;
+  uint16_t  m_nb;
+  uint64_t  m_pf;
+  uint16_t  m_po;
+  double  m_inactivity_timer;
+  double  m_cdrx_cycle;
+  double m_ds_timer;
+  bool m_gotpaging;
+
+  bool m_requirepagingflag;  
+
   uint32_t m_dlEarfcn;  /**< Downlink carrier frequency. */
   uint32_t m_ulEarfcn;  /**< Uplink carrier frequency. */
+
+  Time m_lastUpdatedTime;
+  RrcEnergy energyModel;
   std::list<LteRrcSap::SCellToAddMod> m_sCellToAddModList; /**< Secondary carriers. */
 
   /**
@@ -946,6 +979,7 @@ private:
   /// True if SIB2 was received for the current cell.
   bool m_hasReceivedSib2;
 
+  bool m_hasReceivedPaging;
   /// Stored content of the last SIB1 received.
   LteRrcSap::SystemInformationBlockType1 m_lastSib1;
 
@@ -1232,6 +1266,10 @@ private:
    * See Section 7.3 of 3GPP TS 36.331.
    */
   Time m_t300;
+
+  Time m_inactivity_timer_d;
+  Time m_ds_timer_d;
+  Time m_cdrx_cycle_d;
 
   /**
    * \brief Invokes ConnectionEstablishmentTimeout() if RRC connection

@@ -24,6 +24,8 @@
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
  *								 Integration of Carrier Aggregation
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #include <ns3/fatal-error.h>
@@ -820,6 +822,12 @@ MmWaveLteEnbRrcProtocolReal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSa
   transmitPdcpSduParameters.lcid = 1;
 
   m_setupUeParametersMap[rnti].srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
+}
+
+void
+MmWaveLteEnbRrcProtocolReal::DoSendRrcPagingDirect (uint16_t rnti)
+{
+  
 }
 
 void

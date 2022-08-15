@@ -20,6 +20,8 @@
  *
  * Modified by: Michele Polese <michele.polese@gmail.com>
  *          Dual Connectivity functionalities
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #include <ns3/fatal-error.h>
@@ -412,6 +414,14 @@ LteEnbRrcProtocolIdeal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::Rr
            &LteUeRrcSapProvider::RecvRrcConnectionRelease,
            GetUeRrcSapProvider (rnti),
            msg);
+}
+
+void 
+LteEnbRrcProtocolIdeal::DoSendRrcPagingDirect (uint16_t rnti)
+{
+  Simulator::Schedule (MilliSeconds (0),
+            &LteUeRrcSapProvider::RecvRrcPagingDirect,
+            GetUeRrcSapProvider (rnti));
 }
 
 void

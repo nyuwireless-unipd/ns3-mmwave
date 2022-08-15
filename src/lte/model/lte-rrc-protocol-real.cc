@@ -21,6 +21,8 @@
  *
  * Modified by: Michele Polese <michele.polese@gmail.com>
  *          Dual Connectivity functionalities
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #include <ns3/fatal-error.h>
@@ -730,6 +732,11 @@ LteEnbRrcProtocolReal::DoSendRrcConnectionRelease (uint16_t rnti, LteRrcSap::Rrc
   transmitPdcpSduParameters.lcid = 1;
 
   m_setupUeParametersMap[rnti].srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
+}
+void 
+LteEnbRrcProtocolReal::DoSendRrcPagingDirect (uint16_t rnti)
+{
+
 }
 
 void

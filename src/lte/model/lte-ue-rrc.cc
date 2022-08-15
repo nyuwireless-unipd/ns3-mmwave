@@ -25,6 +25,8 @@
  *          Dual Connectivity functionalities
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
  *              Integration of Carrier Aggregation for the mmWave module
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #include "lte-ue-rrc.h"
@@ -74,6 +76,8 @@ public:
   UeMemberLteUeCmacSapUser (LteUeRrc* rrc);
 
   virtual void SetTemporaryCellRnti (uint16_t rnti);
+  virtual void NotifyEnergyChange();
+  virtual void SetFrameSubframe(uint32_t frame, uint32_t sfn);
   virtual void NotifyRandomAccessSuccessful ();
   virtual void NotifyRandomAccessFailed ();
 
@@ -90,6 +94,18 @@ void
 UeMemberLteUeCmacSapUser::SetTemporaryCellRnti (uint16_t rnti)
 {
   m_rrc->DoSetTemporaryCellRnti (rnti);
+}
+
+void 
+UeMemberLteUeCmacSapUser::NotifyEnergyChange()
+{
+  m_rrc->DoNotifyEnergyChange ();
+}
+
+void
+UeMemberLteUeCmacSapUser::SetFrameSubframe(uint32_t frame, uint32_t sfn)
+{
+  m_rrc->DoSetFrameSubframe (frame, sfn);
 }
 
 
@@ -120,12 +136,16 @@ static const std::string g_ueRrcStateName[LteUeRrc::NUM_STATES] =
   "IDLE_WAIT_SIB1",
   "IDLE_CAMPED_NORMALLY",
   "IDLE_WAIT_SIB2",
+  "IDLE_PAGING",
   "IDLE_RANDOM_ACCESS",
   "IDLE_CONNECTING",
   "CONNECTED_NORMALLY",
   "CONNECTED_HANDOVER",
   "CONNECTED_PHY_PROBLEM",
-  "CONNECTED_REESTABLISHING"
+  "CONNECTED_REESTABLISHING",
+  "RRC_INACTIVE",
+  "INACTIVE_PAGING",
+  "IDLE_DS"
 };
 
 /**
@@ -156,10 +176,19 @@ LteUeRrc::LteUeRrc ()
     m_rnti (0),
     m_cellId (0),
     m_useRlcSm (true),
+    m_T(128),
+    m_nb(128),
+    m_pf(0),
+    m_po(0),
+    m_inactivity_timer(0),
+    m_cdrx_cycle(0),
+    m_gotpaging(false),
+    m_requirepagingflag(true),
     m_connectionPending (false),
     m_hasReceivedMib (false),
     m_hasReceivedSib1 (false),
     m_hasReceivedSib2 (false),
+    m_hasReceivedPaging (false),
     m_csgWhiteList (0),
     m_ncRaStarted (true),
     m_numberOfComponentCarriers (MIN_NO_CC),
@@ -187,6 +216,7 @@ void
 LteUeRrc::DoDispose ()
 {
   NS_LOG_FUNCTION (this);
+  SwitchToState(CONNECTED_NORMALLY); 
   for ( uint16_t i = 0; i < m_numberOfComponentCarriers; i++)
    {
       delete m_cphySapUser.at(i);
@@ -245,6 +275,21 @@ LteUeRrc::GetTypeId (void)
                    TimeValue (MilliSeconds (100)),
                    MakeTimeAccessor (&LteUeRrc::m_t300),
                    MakeTimeChecker ())
+    .AddAttribute ("InactivityTimer",
+                    "cDRX Inactivity Timer",
+                    TimeValue (MilliSeconds(40)),
+                    MakeTimeAccessor (&LteUeRrc::m_inactivity_timer_d),
+                    MakeTimeChecker())
+    .AddAttribute ("cDRXCycle", 
+                    "cDRX Cycle length",
+                    TimeValue (MilliSeconds(20)),
+                    MakeTimeAccessor(&LteUeRrc::m_cdrx_cycle_d),
+                    MakeTimeChecker())
+    .AddAttribute ("DSTimer",
+                    "Deep Sleep Timer",
+                    TimeValue (MilliSeconds(80)),
+                    MakeTimeAccessor (&LteUeRrc::m_ds_timer_d),
+                    MakeTimeChecker())
     .AddTraceSource ("MibReceived",
                      "trace fired upon reception of Master Information Block",
                      MakeTraceSourceAccessor (&LteUeRrc::m_mibReceivedTrace),
@@ -685,6 +730,7 @@ void
 LteUeRrc::DoSendData (Ptr<Packet> packet, uint8_t bid)
 {
   NS_LOG_FUNCTION (this << packet);
+  std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti()<<" LteUeRrc::DoSendData "<<g_ueRrcStateName[m_state]<<" "<<packet->GetSize()<<" UID: "<<packet->GetUid() <<std::endl;
 
   uint8_t drbid = Bid2Drbid (bid);
 
@@ -702,6 +748,11 @@ LteUeRrc::DoSendData (Ptr<Packet> packet, uint8_t bid)
                      << " on DRBID " << (uint32_t) drbid
                      << " (LCID " << (uint32_t) params.lcid << ")"
                      << " (" << packet->GetSize () << " bytes)");
+
+  if(IDLE_DS == m_state || RRC_INACTIVE == m_state)
+  {
+    SwitchToState(CONNECTED_NORMALLY);
+  }
   it->second->m_pdcp->GetLtePdcpSapProvider ()->TransmitPdcpSdu (params);
     }
 }
@@ -754,6 +805,13 @@ void
 LteUeRrc::DoReceivePdcpSdu (LtePdcpSapUser::ReceivePdcpSduParameters params)
 {
   NS_LOG_FUNCTION (this);
+  std::cout<< Simulator::Now().GetSeconds()<<" "<<GetRnti()<<" LteUeRrc::DoReceivePdcpSdu "<<m_state<<" "<<params.pdcpSdu->GetSize()<<" UID: "<<params.pdcpSdu->GetUid()<<std::endl;
+  double idleTime= ((Simulator::Now()-m_lastUpdatedTime).GetNanoSeconds());
+  Callback<void, double> two;
+  two = MakeCallback(&RrcEnergy::Only_downlink_rx, &energyModel);
+  m_lastUpdatedTime=Simulator::Now();
+  std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti() <<" ";
+  two(idleTime);
   m_asSapUser->RecvData (params.pdcpSdu);
 }
 
@@ -767,6 +825,65 @@ LteUeRrc::DoSetTemporaryCellRnti (uint16_t rnti)
   m_cphySapProvider.at(0)->SetRnti (m_rnti);
 }
 
+void
+LteUeRrc::DoNotifyEnergyChange ()
+{
+    double idleTime= ((Simulator::Now()-m_lastUpdatedTime).GetNanoSeconds());
+    Callback<void, double> two;
+    std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti() <<" ";
+    two = MakeCallback(&RrcEnergy::Only_uplink_tx, &energyModel);
+    m_lastUpdatedTime=Simulator::Now();
+    two(idleTime);
+}
+
+void LteUeRrc::DoSetFrameSubframe(uint32_t frame, uint32_t subframe)
+{
+    NS_LOG_FUNCTION (this << frame << subframe);
+    m_frameNo = frame;
+    m_subframeNo = subframe;
+    if (m_pf == m_frameNo && m_po == m_subframeNo)
+        std::cout<<m_hasReceivedPaging<<" "<<m_pf<<" "<<m_frameNo<<" "<<m_po<<" "<<m_subframeNo<<" "<<m_state<<std::endl;
+    NS_LOG_FUNCTION (this << "Waiting for paging occasion" << m_hasReceivedPaging << m_pf << m_frameNo << m_po << m_subframeNo);
+    std::cout<<m_pf<<" == "<<m_frameNo<<" "<<m_po<<" == "<<m_subframeNo<<" "<<m_hasReceivedPaging<<std::endl;
+    if(m_hasReceivedPaging && m_pf == m_frameNo && m_po == m_subframeNo && IDLE_PAGING == m_state)
+    {
+        m_hasReceivedPaging = false;
+        StartConnection ();
+    }
+
+    if (RRC_INACTIVE == m_state)
+    {
+        --m_inactivity_timer;
+        --m_cdrx_cycle;
+        --m_ds_timer;
+        if (m_cdrx_cycle <0)
+        {
+            m_cdrx_cycle = m_cdrx_cycle_d.GetMilliSeconds();
+        }
+        //NS_LOG_UNCOND( Simulator::Now().GetSeconds()<<" LteUeRrc::DoSetFrameSubframe "<<"m_t3324 "<<m_t3324<<"m_t3412 "<<m_t3412<<" m_edrx_cycle "<<m_edrx_cycle<<" m_hasReceivedPaging "<<m_hasReceivedPaging);
+        if(m_cdrx_cycle ==0)  //Paging
+        {
+            SwitchToState (INACTIVE_PAGING);
+            m_hasReceivedPaging = false;
+        }
+        else if(m_inactivity_timer <= 0)  //DL case
+        {
+            SwitchToState (INACTIVE_PAGING);
+            m_hasReceivedPaging = false;
+        }
+
+    }
+
+    else if(IDLE_DS == m_state)
+    {
+        --m_ds_timer;
+        --m_inactivity_timer;
+        if ( 0 >= (m_ds_timer - m_inactivity_timer) )
+        {
+            SwitchToState(INACTIVE_PAGING);
+        }
+    }
+}
 void
 LteUeRrc::DoNotifyRadioLinkFailure (double lastSinrValue)
 {
@@ -964,7 +1081,14 @@ LteUeRrc::DoConnect ()
     }
 }
 
+void
+LteUeRrc::DoRecvPagingInformation (uint16_t cellId,
+                                        LteRrcSap::PagingInformation msg)
+{
+    NS_LOG_FUNCTION (this << cellId);
+    m_hasReceivedPaging = true;
 
+}
 
 // CPHY SAP methods
 
@@ -1098,6 +1222,61 @@ LteUeRrc::DoCompleteSetup (LteUeRrcSapProvider::CompleteSetupParameters params)
     }
 }
 
+void LteUeRrc::DoPaging()
+{
+    uint16_t ue_id = m_imsi%1024;
+    uint16_t N = std::min(m_T,m_nb);
+    int32_t temp = int32_t((m_nb/m_T));
+    int32_t Ns = (std::max(1,temp));
+    int32_t i_s = int32_t(floor(ue_id/N))%Ns;
+
+    if (0 == i_s)
+    {
+        switch(Ns)
+        {
+            case 1:
+                m_po = 9;
+                break;
+            case 2:
+                m_po = 4;
+                break;
+            case 4:
+                m_po = 0;
+                break;
+        }
+    }
+    else if (1 == i_s)
+    {
+        switch(Ns)
+        {
+            case 2:
+                m_po = 9;
+                break;
+            case 4:
+                m_po = 4;
+                break;
+        }
+    }
+    else if (2 == i_s && 4 == Ns)
+    {
+        m_po = 5;
+    }
+    else if (3 == i_s && 4 == Ns)
+    {
+        m_po = 9;
+    }
+    else
+    {
+        m_po = 0; 
+    }
+    m_pf = m_frameNo;
+
+    NS_LOG_FUNCTION (this << "pf" << m_pf <<"po" << m_po);
+
+    NS_ASSERT (m_connectionPending);
+    SwitchToState (IDLE_PAGING);
+}
+
 
 void
 LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
@@ -1129,6 +1308,9 @@ LteUeRrc::DoRecvSystemInformation (LteRrcSap::SystemInformation msg)
           m_cphySapProvider.at (0)->ConfigureReferenceSignalPower (msg.sib2.radioResourceConfigCommon.pdschConfigCommon.referenceSignalPower);
           if (m_state == IDLE_WAIT_SIB2)
             {
+              m_T = 128;
+              m_nb = m_T;
+              DoPaging();
               NS_ASSERT (m_connectionPending);
               StartConnection ();
             }
@@ -1351,7 +1533,27 @@ void
 LteUeRrc::DoRecvRrcConnectionRelease (LteRrcSap::RrcConnectionRelease msg)
 {
   NS_LOG_FUNCTION (this << " RNTI " << m_rnti);
+  std::cout<<Simulator::Now().GetSeconds()<<" LteUeRrc::DoRecvRrcConnectionRelease  "<<g_ueRrcStateName[m_state]<<std::endl;
   /// \todo Currently not implemented, see Section 5.3.8 of 3GPP TS 36.331.
+
+  switch (m_state)
+    {
+        case CONNECTED_NORMALLY:
+            SwitchToState(RRC_INACTIVE);
+            m_hasReceivedPaging = false;
+            break;
+
+        default:
+            break;
+
+    }
+}
+
+void 
+LteUeRrc::DoRecvRrcPagingDirect ()
+{
+  // std::cout<<Simulator::Now().GetSeconds()<<" "<<m_rnti<<" LteUeRrc::DoRecvRrcPagingDirect  "<<g_ueRrcStateName[m_state]<<std::endl;
+  m_hasReceivedPaging = true;
 }
 
 void
@@ -4028,12 +4230,77 @@ void
 LteUeRrc::SwitchToState (State newState)
 {
   NS_LOG_FUNCTION (this << ToString (newState));
+  std::cout<< Simulator::Now().GetSeconds()<<" "<<GetRnti()<<" LteUeRrc::SwitchToState from "<<g_ueRrcStateName[m_state]<<" --> "<<g_ueRrcStateName[newState]<<std::endl;
+  
   State oldState = m_state;
   m_state = newState;
   NS_LOG_INFO (this << " IMSI " << m_imsi << " RNTI " << m_rnti << " CellId " << m_cellId << " UeRrc "
                     << ToString (oldState) << " --> " << ToString (newState));
   m_stateTransitionTrace (m_imsi, m_cellId, m_rnti, oldState, newState);
+  double idleTime;
+  Callback<void, double> two;
 
+  switch (oldState)
+  {
+      case IDLE_START:
+      case IDLE_CELL_SEARCH:
+      case IDLE_WAIT_MIB_SIB1:
+      case IDLE_WAIT_MIB:
+      case IDLE_WAIT_SIB1:
+      case IDLE_PAGING:
+      case IDLE_CAMPED_NORMALLY:
+      case IDLE_WAIT_SIB2:
+      case IDLE_RANDOM_ACCESS:
+      case IDLE_CONNECTING:
+          break;
+      case CONNECTED_NORMALLY:
+          //TODO: Update from rrc reconfiguration
+          m_inactivity_timer = m_inactivity_timer_d.GetMilliSeconds();
+          m_ds_timer = m_ds_timer_d.GetMilliSeconds();
+          m_cdrx_cycle = m_cdrx_cycle_d.GetMilliSeconds();   // ptw ranges from 2.56 to 40.96 (2.56/16)
+
+          two = MakeCallback(&RrcEnergy::Only_idle_decrease, &energyModel);
+          idleTime= ((Simulator::Now()-m_lastUpdatedTime).GetNanoSeconds());
+          m_lastUpdatedTime=Simulator::Now();
+          std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti() <<" ";
+          two(idleTime);
+
+          break;
+      case CONNECTED_HANDOVER:
+      case CONNECTED_PHY_PROBLEM:
+      case CONNECTED_REESTABLISHING:
+          break;
+      case INACTIVE_PAGING:
+          two = MakeCallback(&RrcEnergy::Only_paging_decrease, &energyModel);
+          idleTime= ((Simulator::Now()-m_lastUpdatedTime).GetNanoSeconds());
+          m_lastUpdatedTime=Simulator::Now();
+          std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti() <<" ";
+          two(idleTime);
+          break;
+
+      case RRC_INACTIVE:
+          two = MakeCallback(&RrcEnergy::Only_drx_decrease, &energyModel);
+          idleTime= ((Simulator::Now()-m_lastUpdatedTime).GetNanoSeconds());
+          m_lastUpdatedTime=Simulator::Now();
+          std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti() <<" ";
+          two(idleTime);
+          break;
+
+      case IDLE_DS:
+          two = MakeCallback(&RrcEnergy::Only_deepsleep_decrease, &energyModel);
+          idleTime= ((Simulator::Now()-m_lastUpdatedTime).GetNanoSeconds());
+          m_lastUpdatedTime=Simulator::Now();
+          std::cout<<Simulator::Now().GetSeconds()<<" "<<GetRnti() <<" ";
+          two(idleTime);
+          //TODO: Update from rrc reconfiguration
+          m_inactivity_timer = m_inactivity_timer_d.GetMilliSeconds();
+          m_ds_timer = m_ds_timer_d.GetMilliSeconds();
+          m_cdrx_cycle = m_cdrx_cycle_d.GetMilliSeconds();   // ptw ranges from 2.56 to 40.96 (2.56/16)
+          break;
+
+      default:
+          break;
+    }
   switch (newState)
     {
     case IDLE_START:
@@ -4044,6 +4311,7 @@ LteUeRrc::SwitchToState (State newState)
     case IDLE_WAIT_MIB_SIB1:
     case IDLE_WAIT_MIB:
     case IDLE_WAIT_SIB1:
+    case IDLE_PAGING:
       break;
 
     case IDLE_CAMPED_NORMALLY:
@@ -4069,6 +4337,28 @@ LteUeRrc::SwitchToState (State newState)
     case CONNECTED_REESTABLISHING:
       break;
 
+    case RRC_INACTIVE:
+      break;
+    case INACTIVE_PAGING:
+        if(true == m_hasReceivedPaging)
+          {
+              SwitchToState(CONNECTED_NORMALLY);
+
+              LteRrcSap::RrcConnectionReconfigurationCompleted msg;
+              msg.rrcTransactionIdentifier = m_lastRrcTransactionIdentifier;
+              m_rrcSapUser->SendRrcConnectionReconfigurationCompleted (msg);
+          }
+          else if(m_inactivity_timer <= 0 && false == m_hasReceivedPaging )
+          {
+              SwitchToState(IDLE_DS);
+          }
+          else if (m_inactivity_timer>0)
+          {
+              SwitchToState(RRC_INACTIVE);
+          }
+          break;
+    case IDLE_DS:
+          break;
     default:
       break;
     }

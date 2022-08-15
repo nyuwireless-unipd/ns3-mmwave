@@ -21,6 +21,8 @@
  *
  * Modified by: Michele Polese <michele.polese@gmail.com>
  *          Dual Connectivity functionalities
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 
@@ -271,6 +273,17 @@ public:
   struct RadioResourceConfigCommon
   {
     RachConfigCommon rachConfigCommon; ///< RACH config common
+  };
+
+  struct PcchConfig
+  {
+    uint16_t defaultPagingCycle;
+    float nb;
+  };
+
+  struct BcchConfig
+  {
+    uint16_t modificationPeriodCoeff;
   };
 
   /// RadioResourceConfigCommonSib structure
@@ -608,6 +621,20 @@ public:
   {
     bool haveSib2; ///< have SIB2?
     SystemInformationBlockType2 sib2; ///< SIB2
+  };
+
+  struct pagingRecordList
+  {
+    uint64_t ue_id;
+    uint8_t cn_domain;
+    bool systemInfoModified;
+    bool etwsIndication;
+  };
+
+  struct PagingInformation
+  {
+    bool pagingRecordListExist;
+    std::list<pagingRecordList> pagingRecord;
   };
 
   /// AsConfig structure
@@ -1059,6 +1086,7 @@ public:
    */
   virtual void RecvRrcConnectionRelease (RrcConnectionRelease msg) = 0;
 
+  virtual void RecvRrcPagingDirect () = 0;
   /**
    * \brief Receive an _RRCConnectionReject_ message from the serving eNodeB
    *        during an RRC connection establishment procedure
@@ -1168,6 +1196,7 @@ public:
    */
   virtual void SendRrcConnectionRelease (uint16_t rnti, RrcConnectionRelease msg) = 0;
 
+  virtual void SendRrcPagingDirect (uint16_t rnti) = 0;
   /**
    * \brief Send an _RRCConnectionReject_ message to a UE
    *        during an RRC connection establishment procedure
@@ -1439,6 +1468,7 @@ public:
   virtual void RecvRrcConnectionReestablishment (RrcConnectionReestablishment msg);
   virtual void RecvRrcConnectionReestablishmentReject (RrcConnectionReestablishmentReject msg);
   virtual void RecvRrcConnectionRelease (RrcConnectionRelease msg);
+  virtual void RecvRrcPagingDirect ();
   virtual void RecvRrcConnectionReject (RrcConnectionReject msg);
   virtual void RecvRrcConnectToMmWave (uint16_t mmWaveCellId);
   virtual void RecvRrcConnectionSwitch (RrcConnectionSwitch msg);
@@ -1510,6 +1540,14 @@ MemberLteUeRrcSapProvider<C>::RecvRrcConnectionRelease (RrcConnectionRelease msg
 
 template <class C>
 void
+MemberLteUeRrcSapProvider<C>::RecvRrcPagingDirect ()
+{
+  Simulator::ScheduleNow (&C::DoRecvRrcPagingDirect, m_owner);
+}
+
+
+template <class C>
+void
 MemberLteUeRrcSapProvider<C>::RecvRrcConnectionReject (RrcConnectionReject msg)
 {
   Simulator::ScheduleNow (&C::DoRecvRrcConnectionReject, m_owner, msg);
@@ -1557,6 +1595,7 @@ public:
   virtual void SendRrcConnectionReestablishment (uint16_t rnti, RrcConnectionReestablishment msg);
   virtual void SendRrcConnectionReestablishmentReject (uint16_t rnti, RrcConnectionReestablishmentReject msg);
   virtual void SendRrcConnectionRelease (uint16_t rnti, RrcConnectionRelease msg);
+  virtual void SendRrcPagingDirect(uint16_t rnti);
   virtual void SendRrcConnectionReject (uint16_t rnti, RrcConnectionReject msg);
   virtual void SendRrcConnectionSwitch (uint16_t rnti, RrcConnectionSwitch msg);
   virtual void SendRrcConnectToMmWave (uint16_t rnti, uint16_t mmWaveCellId);
@@ -1644,6 +1683,13 @@ void
 MemberLteEnbRrcSapUser<C>::SendRrcConnectionRelease (uint16_t rnti, RrcConnectionRelease msg)
 {
   m_owner->DoSendRrcConnectionRelease (rnti, msg);
+}
+
+template <class C>
+void
+MemberLteEnbRrcSapUser<C>::SendRrcPagingDirect (uint16_t rnti)
+{
+  m_owner->DoSendRrcPagingDirect (rnti);
 }
 
 template <class C>

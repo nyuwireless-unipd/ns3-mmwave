@@ -28,6 +28,8 @@
  *
  * Modified by: Tommaso Zugno <tommasozugno@gmail.com>
  *              Integration of Carrier Aggregation for the mmWave module
+ * Modified by: Argha Sen <arghasen10@gmail.com>
+ *              Integration of RRC Energy Module
  */
 
 #ifndef LTE_ENB_RRC_H
@@ -108,6 +110,8 @@ public:
     HANDOVER_LEAVING,
     PREPARE_MC_CONNECTION_RECONFIGURATION,
     MC_CONNECTION_RECONFIGURATION,
+    CONNECTION_CDRX,
+    CONNECTION_DS,
     NUM_STATES
   };
 
@@ -200,6 +204,12 @@ public:
    *
    */
   void ScheduleRrcConnectionReconfiguration ();
+
+  void SendRrcRelease(uint16_t rnti);
+
+  void SendPage(uint16_t rnti);
+
+  void SwitchtoDRXState();
 
   /**
    * Start the handover preparation and send the handover request
@@ -443,7 +453,7 @@ public:
      * source mmWave eNB.
      */
     void RecvSecondaryCellHandoverCompleted (EpcX2SapUser::SecondaryHandoverCompletedParams params);
-
+    State m_state;
 private:
   //Lossless HO: merge 2 buffers into 1 with increment order.
   std::vector < LteRlcAm::RetxPdu > MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < LteRlcAm::RetxPdu > second);
@@ -595,6 +605,8 @@ private:
    * The `C-RNTI` attribute. Cell Radio Network Temporary Identifier.
    */
   uint16_t m_rnti;
+
+  uint16_t m_rrcreleaseinterval;
   /**
    * International Mobile Subscriber Identity assigned to this UE. A globally
    * unique UE identifier.
@@ -611,7 +623,6 @@ private:
   /// Pointer to the parent eNodeB RRC.
   Ptr<LteEnbRrc> m_rrc;
   /// The current UeManager state.
-  State m_state;
   ///
 
   LtePdcpSapUser* m_drbPdcpSapUser; ///< DRB PDCP SAP user
@@ -655,6 +666,8 @@ private:
    * CONNECTION REQUEST is received.
    */
   EventId m_connectionRequestTimeout;
+
+  std::list<EventId> m_rrcRequestTimeout;
   /**
    * Time limit before a _connection setup timeout_ occurs. Set after an RRC
    * CONNECTION SETUP is sent. Calling LteEnbRrc::ConnectionSetupTimeout() when
@@ -695,6 +708,12 @@ private:
   /// Pending start data radio bearers
   bool m_pendingStartDataRadioBearers;
 
+  Time m_cdrxcycle;
+  Time m_inactivity_timer;
+  Time m_ds_timer;
+  bool m_datareceived;
+
+  std::list<EventId> id_suspend;
 }; // end of `class UeManager`
 
 
@@ -1687,6 +1706,8 @@ private:
   /// Interface to the eNodeB MAC instance.
   std::vector<LteEnbCmacSapProvider*> m_cmacSapProvider;
 
+  std::vector<Ptr<Packet>> m_packetsaved;
+
   /// Receive API calls from the handover algorithm instance.
   LteHandoverManagementSapUser* m_handoverManagementSapUser;
   /// Interface to the handover algorithm instance.
@@ -1791,6 +1812,11 @@ private:
    * system information.
    */
   Time m_systemInformationPeriodicity;
+  Time m_inactivity_timer_d;
+  Time m_ds_timer_d;
+  Time m_cdrx_cycle_d;
+  Time m_rrc_release_interval_d;
+  bool m_enable_ds_d;
   /**
    * The `SrsPeriodicity` attribute. The SRS periodicity in milliseconds.
    */
