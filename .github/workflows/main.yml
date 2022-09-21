@@ -22,8 +22,6 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    - name: enable only the mmwave module
-      run: printf "#! /usr/bin/env python \n modules_enabled = ['mmwave']" > .ns3rc
-      
+    # Enable only the mmwave module to speedup the test
     - name: build and run the tests
-      run: ./waf configure --enable-examples --enable-tests && ./waf build && ./test.py
+      run: ./ns3 configure --enable-examples --enable-tests --enable-modules=mmwave && ./ns3 build && ./test.py
