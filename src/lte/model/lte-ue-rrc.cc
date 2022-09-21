@@ -1378,7 +1378,7 @@ LteUeRrc::DoRecvRrcConnectionSwitch (LteRrcSap::RrcConnectionSwitch msg)
     if(m_drbMap.find(*iter) != m_drbMap.end())
     {
       Ptr<McUePdcp> pdcp = DynamicCast<McUePdcp>(m_drbMap.find(*iter)->second->m_pdcp);
-      if(pdcp != 0)
+      if(pdcp)
       {
         pdcp->SwitchConnection(msg.useMmWaveConnection);
 
@@ -1571,7 +1571,7 @@ LteUeRrc::MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < Lt
   bool end_1_reached = false;
   bool end_2_reached = false;
   while (it_1 != first.end() && it_2 != second.end()){
-    while ((*it_1).m_pdu == 0){
+    while (!((*it_1).m_pdu)){
       ++it_1;
       if(it_1 == first.end())
       {
@@ -1579,7 +1579,7 @@ LteUeRrc::MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < Lt
         break;
       }
     }
-    while ((*it_2).m_pdu == 0){
+    while (!((*it_2).m_pdu)){
       ++it_2;
       if(it_2 == second.end())
       {
@@ -1628,7 +1628,7 @@ void
 LteUeRrc::CopyRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint16_t lcid)
 {
   // RlcBuffers forwarding only for RlcAm bearers.
-  if (0 != rlc->GetObject<LteRlcAm> ())
+  if (rlc->GetObject<LteRlcAm> ())
   {
     //Copy lte-rlc-am.m_txOnBuffer to X2 forwarding buffer.
     Ptr<LteRlcAm> rlcAm = rlc->GetObject<LteRlcAm>();
@@ -1690,7 +1690,7 @@ LteUeRrc::CopyRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint16_t lcid)
         NS_LOG_DEBUG ("UE RRC:  *** SIZE = " << rlcAmTransmittingBuffer.size());
         for (std::map< uint32_t, Ptr<Packet> >::iterator it = rlcAmTransmittingBuffer.begin(); it != rlcAmTransmittingBuffer.end(); ++it)
         {
-          if (it->second != 0)
+          if (it->second)
           {
             NS_LOG_DEBUG ( this << " add to forwarding buffer SEQ = " << it->first << " Ptr<Packet> = " << it->second );
             m_rlcBufferToBeForwarded.push_back(it->second);
@@ -1744,14 +1744,14 @@ LteUeRrc::CopyRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint16_t lcid)
   //However, as the LTE-UMTS book, PDCP txbuffer should be forwarded for seamless
   //HO. Enable this code for txbuffer forwarding in seamless HO (which is believe to
   //be correct).
-  else if (0 != rlc->GetObject<LteRlcUm> ())
+  else if (rlc->GetObject<LteRlcUm> ())
   {
     //Copy lte-rlc-um.m_txOnBuffer to X2 forwarding buffer.
     NS_LOG_DEBUG(this << " UE RRC: Copying txonBuffer from RLC UM " << m_rnti);
     m_rlcBufferToBeForwarded = rlc->GetObject<LteRlcUm>()->GetTxBuffer();
     m_rlcBufferToBeForwardedSize =  rlc->GetObject<LteRlcUm>()->GetTxBufferSize();
   }
-  else if (0 != rlc->GetObject<LteRlcUmLowLat> ())
+  else if (rlc->GetObject<LteRlcUmLowLat> ())
   {
     //Copy lte-rlc-um-low-lat.m_txOnBuffer to X2 forwarding buffer.
     NS_LOG_DEBUG(this << " UE RRC: Copying txonBuffer from RLC UM " << m_rnti);
@@ -1958,7 +1958,7 @@ LteUeRrc::DoNotifySecondaryCellHandover (uint16_t oldRnti, uint16_t newRnti, uin
       if(dtamIt->is_mc == true) // we need to modify the RLC for MmWave communications
       {
         Ptr<McUePdcp> pdcp = DynamicCast<McUePdcp> (drbInfo->m_pdcp);
-        if(pdcp !=0)
+        if(pdcp)
         {
           // create Rlc
           TypeId rlcTypeId;
@@ -2114,7 +2114,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
   std::list<LteRrcSap::SrbToAddMod>::const_iterator stamIt = rrcd.srbToAddModList.begin ();
   if (stamIt != rrcd.srbToAddModList.end ())
     {
-      if (m_srb1 == 0)
+      if (!m_srb1)
         {
           NS_LOG_INFO("Setup SBR1 for rnti " << m_rnti << " on cell " << m_cellId);
           // SRB1 not setup yet
@@ -2285,7 +2285,7 @@ LteUeRrc::ApplyRadioResourceConfigDedicated (LteRrcSap::RadioResourceConfigDedic
         if(dtamIt->is_mc == true) // we need to setup the RLC for MmWave communications
         {
           Ptr<McUePdcp> pdcp = DynamicCast<McUePdcp> (drbInfo->m_pdcp);
-          if(pdcp !=0)
+          if(pdcp)
           {
             // create Rlc
             TypeId rlcTypeId;

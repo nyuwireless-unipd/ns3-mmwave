@@ -152,14 +152,12 @@ public:
 
   /**
    * The transmit power spectral density flag, namely used
-   * to correctly build PSD for HE TB PPDU non-OFDMA and
-   * OFDMA portions.
+   * to correctly build PSDs for pre-HE and HE portions.
    */
   enum TxPsdFlag
   {
-    PSD_NON_HE_TB = 0,           //!< non-HE TB PPDU transmissions
-    PSD_HE_TB_NON_OFDMA_PORTION, //!< preamble of HE TB PPDU, which should only be sent on minimum subset of 20 MHz channels containing RU
-    PSD_HE_TB_OFDMA_PORTION      //!< OFDMA portion of HE TB PPDU, which should only be sent on RU
+    PSD_NON_HE_PORTION, //!< Non-HE portion of an HE PPDU
+    PSD_HE_PORTION      //!< HE portion of an HE PPDU
   };
 
   /**
@@ -167,12 +165,13 @@ public:
    *
    * \param psdu the PHY payload (PSDU)
    * \param txVector the TXVECTOR that was used for this PPDU
+   * \param txCenterFreq the center frequency (MHz) that was used for this PPDU
    * \param ppduDuration the transmission duration of this PPDU
    * \param band the WifiPhyBand used for the transmission of this PPDU
    * \param uid the unique ID of this PPDU
    */
-  HePpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, Time ppduDuration,
-          WifiPhyBand band, uint64_t uid);
+  HePpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, uint16_t txCenterFreq,
+          Time ppduDuration, WifiPhyBand band, uint64_t uid);
   /**
    * Create an MU HE PPDU, storing a map of PSDUs.
    *
@@ -180,13 +179,15 @@ public:
    *
    * \param psdus the PHY payloads (PSDUs)
    * \param txVector the TXVECTOR that was used for this PPDU
+   * \param txCenterFreq the center frequency (MHz) that was used for this PPDU
    * \param ppduDuration the transmission duration of this PPDU
    * \param band the WifiPhyBand used for the transmission of this PPDU
    * \param uid the unique ID of this PPDU or of the triggering PPDU if this is an HE TB PPDU
    * \param flag the flag indicating the type of Tx PSD to build
+   * \param p20Index the index of the primary 20 MHz channel
    */
-  HePpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time ppduDuration,
-          WifiPhyBand band, uint64_t uid, TxPsdFlag flag);
+  HePpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, uint16_t txCenterFreq,
+          Time ppduDuration, WifiPhyBand band, uint64_t uid, TxPsdFlag flag, uint8_t p20Index);
   /**
    * Destructor for HePpdu.
    */
@@ -197,8 +198,7 @@ public:
   WifiPpduType GetType (void) const override;
   uint16_t GetStaId (void) const override;
   uint16_t GetTransmissionChannelWidth (void) const override;
-  bool CanBeReceived (uint16_t txCenterFreq, uint16_t p20MinFreq,
-                      uint16_t p20MaxFreq) const override;
+  bool CanBeReceived (uint16_t p20MinFreq, uint16_t p20MaxFreq) const override;
 
   /**
    * Get the payload of the PPDU.
@@ -225,27 +225,23 @@ public:
 
 protected:
   std::string PrintPayload (void) const override;
+  WifiTxVector DoGetTxVector (void) const override;
 
   /**
    * Return true if the PPDU is a MU PPDU
    * \return true if the PPDU is a MU PPDU
    */
-  bool IsMu (void) const;
+  virtual bool IsMu (void) const;
   /**
    * Return true if the PPDU is a DL MU PPDU
    * \return true if the PPDU is a DL MU PPDU
    */
-  bool IsDlMu (void) const;
+  virtual bool IsDlMu (void) const;
   /**
    * Return true if the PPDU is an UL MU PPDU
    * \return true if the PPDU is an UL MU PPDU
    */
-  bool IsUlMu (void) const;
-
-  WifiTxVector::HeMuUserInfoMap m_muUserInfos; //!< the HE MU specific per-user information (to be removed once HE-SIG-B headers are implemented)
-
-private:
-  WifiTxVector DoGetTxVector (void) const override;
+  virtual bool IsUlMu (void) const;
 
   /**
    * Fill in the HE PHY headers.
@@ -253,10 +249,12 @@ private:
    * \param txVector the TXVECTOR that was used for this PPDU
    * \param ppduDuration the transmission duration of this PPDU
    */
-  void SetPhyHeaders (const WifiTxVector& txVector, Time ppduDuration);
+  virtual void SetPhyHeaders (const WifiTxVector& txVector, Time ppduDuration);
 
   HeSigHeader m_heSig;   //!< the HE-SIG PHY header
   TxPsdFlag m_txPsdFlag; //!< the transmit power spectral density flag
+
+  WifiTxVector::HeMuUserInfoMap m_muUserInfos; //!< the HE MU specific per-user information (to be removed once HE-SIG-B headers are implemented)
 }; //class HePpdu
 
 /**

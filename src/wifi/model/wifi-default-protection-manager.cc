@@ -22,7 +22,7 @@
 #include "wifi-default-protection-manager.h"
 #include "wifi-tx-parameters.h"
 #include "wifi-mac-queue-item.h"
-#include "regular-wifi-mac.h"
+#include "wifi-mac.h"
 
 
 namespace ns3 {
@@ -57,6 +57,30 @@ WifiDefaultProtectionManager::TryAddMpdu (Ptr<const WifiMacQueueItem> mpdu,
                                           const WifiTxParameters& txParams)
 {
   NS_LOG_FUNCTION (this << *mpdu << &txParams);
+
+  // TB PPDUs need no protection (the soliciting Trigger Frame can be protected
+  // by an MU-RTS). Until MU-RTS is implemented, we disable protection also for:
+  // - Trigger Frames
+  // - DL MU PPDUs containing more than one PSDU
+  if (txParams.m_txVector.IsUlMu ()
+      || mpdu->GetHeader ().IsTrigger ()
+      || (txParams.m_txVector.IsDlMu () && txParams.GetPsduInfoMap ().size () > 1))
+    {
+      if (txParams.m_protection)
+        {
+          NS_ASSERT (txParams.m_protection->method == WifiProtection::NONE);
+          return nullptr;
+        }
+      return std::unique_ptr<WifiProtection> (new WifiNoProtection);
+    }
+
+  // If we are adding a second PSDU to a DL MU PPDU, switch to no protection
+  // (until MU-RTS is implemented)
+  if (txParams.m_txVector.IsDlMu () && txParams.GetPsduInfoMap ().size () == 1
+      && !txParams.GetPsduInfo (mpdu->GetHeader ().GetAddr1 ()))
+    {
+      return std::unique_ptr<WifiProtection> (new WifiNoProtection);
+    }
 
   // if the current protection method (if any) is already RTS/CTS or CTS-to-Self,
   // it will not change by adding an MPDU
@@ -99,6 +123,13 @@ WifiDefaultProtectionManager::TryAggregateMsdu (Ptr<const WifiMacQueueItem> msdu
     }
 
   NS_ASSERT (txParams.m_protection->method == WifiProtection::NONE);
+
+  // No protection for TB PPDUs and DL MU PPDUs containing more than one PSDU
+  if (txParams.m_txVector.IsUlMu ()
+      || (txParams.m_txVector.IsDlMu () && txParams.GetPsduInfoMap ().size () > 1))
+    {
+      return nullptr;
+    }
 
   std::unique_ptr<WifiProtection> protection;
   protection = GetPsduProtection (msdu->GetHeader (), txParams.GetSizeIfAggregateMsdu (msdu).second,

@@ -16,15 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <ctime>       // clock_t
-#include <sys/time.h>  // gettimeofday
-                       // clock_getres: glibc < 2.17, link with librt
+#include <chrono>
 
 #include "log.h"
-#include "system-condition.h"
-
 #include "wall-clock-synchronizer.h"
+
+#include <condition_variable>
+#include <chrono>
+#include <mutex>
 
 /**
  * \file
@@ -78,14 +78,8 @@ WallClockSynchronizer::WallClockSynchronizer ()
 // If the underlying OS does not support posix clocks, we'll just assume a
 // one millisecond quantum and deal with this as best we can
 
-#ifdef CLOCK_REALTIME
-  struct timespec ts;
-  clock_getres (CLOCK_REALTIME, &ts);
-  m_jiffy = ts.tv_sec * NS_PER_SEC + ts.tv_nsec;
+  m_jiffy = std::chrono::system_clock::period::num*std::nano::den/std::chrono::system_clock::period::den;
   NS_LOG_INFO ("Jiffy is " << m_jiffy << " ns");
-#else
-  m_jiffy = 1000000;
-#endif
 }
 
 WallClockSynchronizer::~WallClockSynchronizer ()
@@ -286,15 +280,21 @@ WallClockSynchronizer::DoSignal (void)
 {
   NS_LOG_FUNCTION (this);
 
-  m_condition.SetCondition (true);
-  m_condition.Signal ();
+  std::unique_lock<std::mutex> lock (m_mutex);
+  m_condition = true;
+
+  // Manual unlocking is done before notifying, to avoid waking up
+  // the waiting thread only to block again (see notify_one for details).
+  // Reference: https://en.cppreference.com/w/cpp/thread/condition_variable
+  lock.unlock ();
+  m_conditionVariable.notify_one ();
 }
 
 void
 WallClockSynchronizer::DoSetCondition (bool cond)
 {
   NS_LOG_FUNCTION (this << cond);
-  m_condition.SetCondition (cond);
+  m_condition = cond;
 }
 
 void
@@ -323,7 +323,7 @@ WallClockSynchronizer::SpinWait (uint64_t ns)
         {
           return true;
         }
-      if (m_condition.GetCondition ())
+      if (m_condition)
         {
           return false;
         }
@@ -336,7 +336,14 @@ bool
 WallClockSynchronizer::SleepWait (uint64_t ns)
 {
   NS_LOG_FUNCTION (this << ns);
-  return m_condition.TimedWait (ns);
+
+  std::unique_lock<std::mutex> lock (m_mutex);
+  bool finishedWaiting = m_conditionVariable.wait_for (
+                            lock,
+                            std::chrono::nanoseconds (ns),    // Timeout
+                            [this](){ return m_condition; }); // Wait condition
+
+  return finishedWaiting;
 }
 
 uint64_t
@@ -374,9 +381,8 @@ uint64_t
 WallClockSynchronizer::GetRealtime (void)
 {
   NS_LOG_FUNCTION (this);
-  struct timeval tvNow;
-  gettimeofday (&tvNow, NULL);
-  return TimevalToNs (&tvNow);
+  auto now = std::chrono::system_clock::now().time_since_epoch();
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
 }
 
 uint64_t
@@ -384,40 +390,6 @@ WallClockSynchronizer::GetNormalizedRealtime (void)
 {
   NS_LOG_FUNCTION (this);
   return GetRealtime () - m_realtimeOriginNano;
-}
-
-void
-WallClockSynchronizer::NsToTimeval (int64_t ns, struct timeval *tv)
-{
-  NS_LOG_FUNCTION (this << ns << tv);
-  NS_ASSERT ((ns % US_PER_NS) == 0);
-  tv->tv_sec = static_cast<long> (ns / NS_PER_SEC);
-  tv->tv_usec = (ns % NS_PER_SEC) / US_PER_NS;
-}
-
-uint64_t
-WallClockSynchronizer::TimevalToNs (struct timeval *tv)
-{
-  NS_LOG_FUNCTION (this << tv);
-  uint64_t nsResult = tv->tv_sec * NS_PER_SEC + tv->tv_usec * US_PER_NS;
-  NS_ASSERT ((nsResult % US_PER_NS) == 0);
-  return nsResult;
-}
-
-void
-WallClockSynchronizer::TimevalAdd (
-  struct timeval *tv1,
-  struct timeval *tv2,
-  struct timeval *result)
-{
-  NS_LOG_FUNCTION (this << tv1 << tv2 << result);
-  result->tv_sec = tv1->tv_sec + tv2->tv_sec;
-  result->tv_usec = tv1->tv_usec + tv2->tv_usec;
-  if (result->tv_usec > (int64_t)US_PER_SEC)
-    {
-      ++result->tv_sec;
-      result->tv_usec %= US_PER_SEC;
-    }
 }
 
 } // namespace ns3

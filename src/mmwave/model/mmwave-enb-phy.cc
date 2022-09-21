@@ -49,7 +49,8 @@
 #include "mmwave-radio-bearer-tag.h"
 #include "mc-ue-net-device.h"
 
-#include <ns3/node-list.h>
+#include <ns3/phased-array-model.h>
+#include <ns3/node-list.h> 
 #include <ns3/node.h>
 #include <ns3/pointer.h>
 #include <math.h>
@@ -585,12 +586,12 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
       Ptr<MmWaveUePhy> uePhy;
       // get tx power
       double ueTxPower = 0;
-      if (ueNetDevice != 0)
+      if (ueNetDevice)
         {
           uePhy = ueNetDevice->GetPhy ();
           ueTxPower = uePhy->GetTxPower ();
         }
-      else if (mcUeDev != 0)           // it may be a MC device
+      else if (mcUeDev)           // it may be a MC device
         {
 
           uePhy = mcUeDev->GetMmWavePhy ();
@@ -623,55 +624,53 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
       // adjuts beamforming of antenna model wrt user
       m_downlinkSpectrumPhy->ConfigureBeamforming (ue->second);
       uePhy->GetDlSpectrumPhy ()->ConfigureBeamforming (m_netDevice);
-
-      // TODO remove, the antenna gains are taken into account by the channel
-      // model. Should we support other kinds of antennas?
-      Ptr<AntennaModel> rxAntenna = GetDlSpectrumPhy ()->GetRxAntenna ();
-      Ptr<AntennaModel> txAntenna = uePhy->GetDlSpectrumPhy ()->GetRxAntenna ();          // Dl, since the Ul is not actually used (TDD device)
+        // Dl, since the Ul is not actually used (TDD device)
       double pathLossDb = 0;
-      if (txAntenna != 0)
-        {
-          Angles txAngles (enbMob->GetPosition (), ueMob->GetPosition ());
-          double txAntennaGain = txAntenna->GetGainDb (txAngles);
-          NS_LOG_LOGIC ("txAntennaGain = " << txAntennaGain << " dB");
-          pathLossDb -= txAntennaGain;
-        }
-      if (rxAntenna != 0)
-        {
-          Angles rxAngles (ueMob->GetPosition (), enbMob->GetPosition ());
-          double rxAntennaGain = rxAntenna->GetGainDb (rxAngles);
-          NS_LOG_LOGIC ("rxAntennaGain = " << rxAntennaGain << " dB");
-          pathLossDb -= rxAntennaGain;
-        }
       if (m_propagationLoss)
         {
           double propagationGainDb = m_propagationLoss->CalcRxPower (0, ueMob, enbMob);
           NS_LOG_LOGIC ("propagationGainDb = " << propagationGainDb << " dB");
           pathLossDb -= propagationGainDb;
         }
-      //NS_LOG_DEBUG ("total pathLoss = " << pathLossDb << " dB");
+      
+      NS_LOG_DEBUG ("Total pathLoss = " << pathLossDb << " dB");
 
       double pathGainLinear = std::pow (10.0, (-pathLossDb) / 10.0);
       Ptr<SpectrumValue> rxPsd = txPsd->Copy ();
       *(rxPsd) *= pathGainLinear;
 
-      rxPsd = m_spectrumPropagationLossModel->CalcRxPowerSpectralDensity (rxPsd, ueMob, enbMob);
+      // Not actually used for the gain, but needed for the call to CalcRxPowerSpectralDensity anyway
+      Ptr<PhasedArrayModel> rxPam = DynamicCast<PhasedArrayModel>(GetDlSpectrumPhy ()->GetAntenna ());
+      Ptr<PhasedArrayModel> txPam = DynamicCast<PhasedArrayModel>(uePhy->GetDlSpectrumPhy ()->GetAntenna ());
+
+      Ptr<SpectrumSignalParameters> rxParams = Create<SpectrumSignalParameters> ();
+      rxParams->psd = rxPsd->Copy ();
+
+      if (m_spectrumPropagationLossModel)
+      {
+        rxPsd = m_spectrumPropagationLossModel->CalcRxPowerSpectralDensity (rxParams, ueMob, enbMob);
+      }
+      else if (m_phasedArraySpectrumPropagationLossModel)
+      {
+        rxPsd = m_phasedArraySpectrumPropagationLossModel->CalcRxPowerSpectralDensity (rxParams, ueMob, enbMob, txPam, rxPam);
+      }
+
       NS_LOG_LOGIC ("RxPsd " << *rxPsd);
 
       m_rxPsdMap[ue->first] = rxPsd;
       *totalReceivedPsd += *rxPsd;
-
+ 
       // set back the bf vector to the main eNB
-      if (ueNetDevice != 0)
+      if (ueNetDevice)
         {                                                                                                                       // target not set yet
-          if ((ueNetDevice->GetTargetEnb () != m_netDevice) && (ueNetDevice->GetTargetEnb () != 0))
+          if ((ueNetDevice->GetTargetEnb () != m_netDevice) && (ueNetDevice->GetTargetEnb ()))
             {
               uePhy->GetDlSpectrumPhy ()->ConfigureBeamforming (ueNetDevice->GetTargetEnb ());
             }
         }
-      else if (mcUeDev != 0)           // it may be a MC device
+      else if (mcUeDev)           // it may be a MC device
         {                                                                                                                               // target not set yet
-          if ((mcUeDev->GetMmWaveTargetEnb () != m_netDevice) && (mcUeDev->GetMmWaveTargetEnb () != 0))
+          if ((mcUeDev->GetMmWaveTargetEnb () != m_netDevice) && (mcUeDev->GetMmWaveTargetEnb ()))
             {
               uePhy->GetDlSpectrumPhy ()->ConfigureBeamforming (mcUeDev->GetMmWaveTargetEnb ());
             }
@@ -863,11 +862,11 @@ MmWaveEnbPhy::UpdateUeSinrEstimate ()
           Ptr<mmwave::MmWaveUeNetDevice> ueNetDevice = DynamicCast<mmwave::MmWaveUeNetDevice> (ue->second);
           Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (ue->second);
           Ptr<MmWaveUePhy> uePhy;
-          if (ueNetDevice != 0)
+          if (ueNetDevice)
             {
               uePhy = ueNetDevice->GetPhy ();
             }
-          else if (mcUeDev != 0)               // it may be a MC device
+          else if (mcUeDev)               // it may be a MC device
             {
               uePhy = mcUeDev->GetMmWavePhy ();
             }
@@ -1063,8 +1062,8 @@ MmWaveEnbPhy::StartTti (void)
         {
           Ptr<mmwave::MmWaveUeNetDevice> ueDev = DynamicCast<mmwave::MmWaveUeNetDevice> (m_deviceMap.at (i));
           Ptr<McUeNetDevice> mcUeDev = DynamicCast<McUeNetDevice> (m_deviceMap.at (i));
-          uint64_t ueRnti = (ueDev != 0) ? (ueDev->GetPhy ()->GetRnti ()) : (mcUeDev->GetMmWavePhy ()->GetRnti ());
-          Ptr<NetDevice> associatedEnb = (ueDev != 0) ? (ueDev->GetTargetEnb ()) : (mcUeDev->GetMmWaveTargetEnb ());
+          uint64_t ueRnti = (ueDev) ? (ueDev->GetPhy ()->GetRnti ()) : (mcUeDev->GetMmWavePhy ()->GetRnti ());
+          Ptr<NetDevice> associatedEnb = (ueDev) ? (ueDev->GetTargetEnb ()) : (mcUeDev->GetMmWaveTargetEnb ());
 
           NS_LOG_DEBUG ("Scheduled rnti: " << currTti.m_rnti << " ue rnti: " << ueRnti
                                            << " target eNB " << associatedEnb << " this eNB " << m_netDevice);
@@ -1160,7 +1159,7 @@ MmWaveEnbPhy::SendDataChannels (Ptr<PacketBurst> pb, Time slotPrd, TtiAllocInfo&
           uint64_t ueRnti = 0;
           Ptr<mmwave::MmWaveUeNetDevice> ueDev = m_deviceMap.at (i)->GetObject<mmwave::MmWaveUeNetDevice> ();
           Ptr<NetDevice> associatedEnb = 0;
-          if (ueDev != 0)
+          if (ueDev)
             {
               ueRnti = ueDev->GetPhy ()->GetRnti ();
               associatedEnb = ueDev->GetTargetEnb ();

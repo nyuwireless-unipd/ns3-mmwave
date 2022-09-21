@@ -34,7 +34,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("WirelessAnimationExample");
 
-int 
+int
 main (int argc, char *argv[])
 {
   uint32_t nWifi = 20;
@@ -55,7 +55,6 @@ main (int argc, char *argv[])
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
 
   WifiMacHelper mac;
   Ssid ssid = Ssid ("ns-3-ssid");
@@ -111,8 +110,8 @@ main (int argc, char *argv[])
   mobility.Install (wifiStaNodes);
   mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   mobility.Install (wifiApNode);
-  AnimationInterface::SetConstantPosition (p2pNodes.Get (1), 10, 30); 
-  AnimationInterface::SetConstantPosition (csmaNodes.Get (1), 10, 33); 
+  AnimationInterface::SetConstantPosition (p2pNodes.Get (1), 10, 30);
+  AnimationInterface::SetConstantPosition (csmaNodes.Get (1), 10, 33);
 
   Ptr<BasicEnergySource> energySource = CreateObject<BasicEnergySource>();
   Ptr<WifiRadioEnergyModel> energyModel = CreateObject<WifiRadioEnergyModel>();
@@ -175,7 +174,7 @@ main (int argc, char *argv[])
   for (uint32_t i = 0; i < csmaNodes.GetN (); ++i)
     {
       anim.UpdateNodeDescription (csmaNodes.Get (i), "CSMA"); // Optional
-      anim.UpdateNodeColor (csmaNodes.Get (i), 0, 0, 255); // Optional 
+      anim.UpdateNodeColor (csmaNodes.Get (i), 0, 0, 255); // Optional
     }
 
   anim.EnablePacketMetadata (); // Optional

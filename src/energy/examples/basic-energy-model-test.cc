@@ -64,11 +64,11 @@ private:
   bool StateSwitchTest (WifiPhyState state);
 
 private:
-  double m_timeS;     // in seconds
-  double m_tolerance; // tolerance for power estimation
+  double m_timeS;     //!< Time in seconds
+  double m_tolerance; //!< Tolerance for power estimation
 
-  ObjectFactory m_energySource;
-  ObjectFactory m_deviceEnergyModel;
+  ObjectFactory m_energySource;       //!< Energy source factory
+  ObjectFactory m_deviceEnergyModel;  //!< Device energy model factory
 };
 
 BasicEnergyUpdateTest::BasicEnergyUpdateTest ()
@@ -156,7 +156,7 @@ BasicEnergyUpdateTest::StateSwitchTest (WifiPhyState state)
   Ptr<WifiRadioEnergyModel> devModel =
     DynamicCast<WifiRadioEnergyModel> (models.Get (0));
   // check pointer
-  if ((devModel == 0))
+  if (!devModel)
     {
       std::cerr << "NULL pointer to device model!." << std::endl;
       return true;
@@ -281,11 +281,11 @@ private:
   bool DepletionTestCase (double simTimeS, double updateIntervalS);
 
 private:
-  int m_numOfNodes;         // number of nodes in simulation
-  int m_callbackCount;      // counter for # of callbacks invoked
-  double m_simTimeS;        // maximum simulation time, in seconds
-  double m_timeStepS;       // simulation time step size, in seconds
-  double m_updateIntervalS; // update interval of each device model
+  int m_numOfNodes;         //!< number of nodes in simulation
+  int m_callbackCount;      //!< counter for # of callbacks invoked
+  double m_simTimeS;        //!< maximum simulation time, in seconds
+  double m_timeStepS;       //!< simulation time step size, in seconds
+  double m_updateIntervalS; //!< update interval of each device model
 
 };
 

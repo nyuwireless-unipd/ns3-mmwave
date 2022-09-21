@@ -25,7 +25,7 @@
  *
  *  - intended usage: this should be used in order to load ns2 movement trace files into ns3.
  *  - behavior:
- *      - Ns2MobilityHelper object is created, associated to the specified trace file. 
+ *      - Ns2MobilityHelper object is created, associated to the specified trace file.
  *      - A log file is created, using the log file name argument.
  *      - A node container is created with the number of nodes specified in the command line.  For the default ns-2 trace, specify the value 2 for this argument.
  *      - the program calls the Install() method of Ns2MobilityHelper to set mobility to nodes. At this moment, the file is read line by line, and the movement is scheduled in the simulator.
@@ -36,7 +36,7 @@
  *
  * Usage of ns2-mobility-trace:
  *
- *  ./waf --run "ns2-mobility-trace \
+ *  ./ns3 run "ns2-mobility-trace \
  *        --traceFile=src/mobility/examples/default.ns_movements
  *        --nodeNum=2  --duration=100.0 --logFile=ns2-mobility-trace.log"
  *
@@ -94,7 +94,7 @@ int main (int argc, char *argv[])
   if (traceFile.empty () || nodeNum <= 0 || duration <= 0 || logFile.empty ())
     {
       std::cout << "Usage of " << argv[0] << " :\n\n"
-      "./waf --run \"ns2-mobility-trace"
+      "./ns3 run \"ns2-mobility-trace"
       " --traceFile=src/mobility/examples/default.ns_movements"
       " --nodeNum=2 --duration=100.0 --logFile=ns2-mob.log\" \n\n"
       "NOTE: ns2-traces-file could be an absolute or relative path. You could use the file default.ns_movements\n"

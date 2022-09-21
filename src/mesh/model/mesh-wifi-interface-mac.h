@@ -29,7 +29,7 @@
 #include "ns3/callback.h"
 #include "ns3/packet.h"
 #include "ns3/nstime.h"
-#include "ns3/regular-wifi-mac.h"
+#include "ns3/wifi-mac.h"
 #include "ns3/mesh-wifi-interface-mac-plugin.h"
 #include "ns3/event-id.h"
 
@@ -47,7 +47,7 @@ class UniformRandomVariable;
  *  - management and priority traffic.
  *
  */
-class MeshWifiInterfaceMac : public RegularWifiMac
+class MeshWifiInterfaceMac : public WifiMac
 {
 public:
   /**
@@ -65,6 +65,7 @@ public:
   virtual void  Enqueue (Ptr<Packet> packet, Mac48Address to);
   virtual bool  SupportsSendFrom () const;
   virtual void  SetLinkUpCallback (Callback<void> linkUp);
+  virtual bool CanForwardPacketsTo (Mac48Address to) const;
 
   /// \name Each mesh point interface must know the mesh point address
   ///@{
@@ -115,7 +116,7 @@ public:
   /**
    * Install plugin.
    *
-   * \param plugin 
+   * \param plugin
    *
    * \todo return unique ID to allow user to unregister plugins
    */
@@ -136,7 +137,7 @@ public:
   /**
    * Switch frequency channel.
    *
-   * \param new_id 
+   * \param new_id
    */
   void SwitchFrequencyChannel (uint16_t new_id);
 
@@ -150,7 +151,7 @@ public:
   /**
    * Check supported rates.
    *
-   * \param rates 
+   * \param rates
    * \return true if rates are supported
    */
   bool CheckSupportedRates (SupportedRates rates) const;
@@ -193,6 +194,15 @@ public:
    */
   virtual void ConfigureStandard (enum WifiStandard standard);
   /**
+   * \param cwMin the minimum contention window size
+   * \param cwMax the maximum contention window size
+   *
+   * This method is called to set the minimum and the maximum
+   * contention window size.
+   */
+  virtual void ConfigureContentionWindow (uint32_t cwMin, uint32_t cwMax);
+
+  /**
    * Assign a fixed random variable stream number to the random variables
    * used by this model.  Return the number of streams (possibly zero) that
    * have been assigned.
@@ -206,8 +216,9 @@ private:
    * Frame receive handler
    *
    * \param mpdu the received MPDU
+   * \param linkId the ID of the link the frame was received over
    */
-  void Receive (Ptr<WifiMacQueueItem> mpdu);
+  void Receive (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId);
   /**
    * Send frame. Frame is supposed to be tagged by routing information.
    *
@@ -265,7 +276,7 @@ private:
     /**
      * Print statistics.
      *
-     * \param os 
+     * \param os
      */
     void Print (std::ostream & os) const;
     /// constructor

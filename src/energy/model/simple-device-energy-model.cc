@@ -62,7 +62,7 @@ void
 SimpleDeviceEnergyModel::SetEnergySource (Ptr<EnergySource> source)
 {
   NS_LOG_FUNCTION (this << source);
-  NS_ASSERT (source != NULL);
+  NS_ASSERT (source);
   m_source = source;
 }
 
@@ -70,7 +70,7 @@ void
 SimpleDeviceEnergyModel::SetNode (Ptr<Node> node)
 {
   NS_LOG_FUNCTION (this << node);
-  NS_ASSERT (node != NULL);
+  NS_ASSERT (node);
   m_node = node;
 }
 
@@ -110,10 +110,10 @@ SimpleDeviceEnergyModel::SetCurrentA (double current)
   m_totalEnergyConsumption += energyToDecrease;
   // update last update time stamp
   m_lastUpdateTime = Simulator::Now ();
-  // notify energy source
-  m_source->UpdateEnergySource ();
   // update the current drain
   m_actualCurrentA = current;
+  // notify energy source
+  m_source->UpdateEnergySource ();
 }
 
 void

@@ -20,7 +20,7 @@
  *      tuned by Samir Das and Mahesh Marina, University of Cincinnati;
  *
  *      AODV-UU implementation by Erik Nordström of Uppsala University
- *      http://core.it.uu.se/core/index.php/AODV-UU
+ *      https://web.archive.org/web/20100527072022/http://core.it.uu.se/core/index.php/AODV-UU
  *
  * Authors: Elena Buchatskaia <borovkovaes@iitp.ru>
  *          Pavel Boyko <boyko@iitp.ru>
@@ -161,7 +161,7 @@ private:
 
   /**
    * Find MAC address by IP using list of ARP caches
-   * 
+   *
    * \param addr the IP address to lookup
    * \returns the MAC address for the IP address
    */

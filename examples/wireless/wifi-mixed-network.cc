@@ -55,35 +55,41 @@
 // short slot time are only observed in a g only configuration.
 //
 // The user can also select the payload size and can choose either an UDP or a TCP connection.
-// Example: ./waf --run "wifi-mixed-network --isUdp=1"
+// Example: ./ns3 run "wifi-mixed-network --isUdp=1"
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("MixedNetwork");
 
+/** Parameters */
 struct Parameters
 {
-  std::string testName;
-  bool enableErpProtection;
-  std::string erpProtectionMode;
-  bool enableShortSlotTime;
-  bool enableShortPhyPreamble;
-  WifiStandard apType;
-  uint32_t nWifiB;
-  bool bHasTraffic;
-  uint32_t nWifiG;
-  bool gHasTraffic;
-  uint32_t nWifiN;
-  bool nHasTraffic;
-  bool isUdp;
-  uint32_t payloadSize;
-  double simulationTime;
+  std::string testName;             //!< Test name
+  bool enableErpProtection;         //!< True to enable ERP protection
+  std::string erpProtectionMode;    //!< ERP protection mode
+  bool enableShortSlotTime;         //!< True to enable short slot time
+  bool enableShortPhyPreamble;      //!< True to enable short PHY preamble
+  WifiStandard apType;              //!< Wifi standard for AP
+  uint32_t nWifiB;                  //!< Number of 802.11b stations
+  bool bHasTraffic;                 //!< True if 802.11b stations generate traffic
+  uint32_t nWifiG;                  //!< Number of 802.11g stations
+  bool gHasTraffic;                 //!< True if 802.11g stations generate traffic
+  uint32_t nWifiN;                  //!< Number of 802.11n stations
+  bool nHasTraffic;                 //!< True if 802.11n stations generate traffic
+  bool isUdp;                       //!< True to generate UDP traffic
+  uint32_t payloadSize;             //!< Payload size in bytes
+  double simulationTime;            //!< Simulation time in seconds
 };
 
 class Experiment
 {
 public:
   Experiment ();
+  /**
+   * Run an experiment with the given parameters
+   * \param params the given parameters
+   * \return the throughput
+   */
   double Run (Parameters params);
 };
 
@@ -99,7 +105,7 @@ Experiment::Run (Parameters params)
     {
       apTypeString = "WIFI_STANDARD_80211g";
     }
-  else if (params.apType == WIFI_STANDARD_80211n_2_4GHZ)
+  else if (params.apType == WIFI_STANDARD_80211n)
     {
       apTypeString = "WIFI_STANDARD_80211n_2_4GHZ";
     }
@@ -167,7 +173,7 @@ Experiment::Run (Parameters params)
   gStaDevice = wifi.Install (phy, mac, wifiGStaNodes);
 
   // 802.11b/g/n STA
-  wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n);
   NetDeviceContainer nStaDevice;
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (ssid),
@@ -187,7 +193,7 @@ Experiment::Run (Parameters params)
   apDevice = wifi.Install (phy, mac, wifiApNode);
 
   // Set TXOP limit
-  if (params.apType == WIFI_STANDARD_80211n_2_4GHZ)
+  if (params.apType == WIFI_STANDARD_80211n)
     {
       Ptr<NetDevice> dev = wifiApNode.Get (0)->GetDevice (0);
       Ptr<WifiNetDevice> wifi_dev = DynamicCast<WifiNetDevice> (dev);
@@ -471,7 +477,7 @@ int main (int argc, char *argv[])
   params.enableErpProtection = false;
   params.enableShortSlotTime = false;
   params.enableShortPhyPreamble = false;
-  params.apType = WIFI_STANDARD_80211n_2_4GHZ;
+  params.apType = WIFI_STANDARD_80211n;
   params.nWifiB = 0;
   params.bHasTraffic = false;
   params.nWifiG = 0;
@@ -490,7 +496,7 @@ int main (int argc, char *argv[])
   params.enableErpProtection = false;
   params.enableShortSlotTime = false;
   params.enableShortPhyPreamble = false;
-  params.apType = WIFI_STANDARD_80211n_2_4GHZ;
+  params.apType = WIFI_STANDARD_80211n;
   params.nWifiB = 0;
   params.bHasTraffic = false;
   params.nWifiG = 1;

@@ -56,30 +56,6 @@ WifiRadioEnergyModelHelper::SetRechargedCallback (
   m_rechargedCallback = callback;
 }
 
-void
-WifiRadioEnergyModelHelper::SetTxCurrentModel (std::string name,
-                                               std::string n0, const AttributeValue& v0,
-                                               std::string n1, const AttributeValue& v1,
-                                               std::string n2, const AttributeValue& v2,
-                                               std::string n3, const AttributeValue& v3,
-                                               std::string n4, const AttributeValue& v4,
-                                               std::string n5, const AttributeValue& v5,
-                                               std::string n6, const AttributeValue& v6,
-                                               std::string n7, const AttributeValue& v7)
-{
-  ObjectFactory factory;
-  factory.SetTypeId (name);
-  factory.Set (n0, v0);
-  factory.Set (n1, v1);
-  factory.Set (n2, v2);
-  factory.Set (n3, v3);
-  factory.Set (n4, v4);
-  factory.Set (n5, v5);
-  factory.Set (n6, v6);
-  factory.Set (n7, v7);
-  m_txCurrentModel = factory;
-}
-
 
 /*
  * Private function starts here.
@@ -89,8 +65,8 @@ Ptr<DeviceEnergyModel>
 WifiRadioEnergyModelHelper::DoInstall (Ptr<NetDevice> device,
                                        Ptr<EnergySource> source) const
 {
-  NS_ASSERT (device != NULL);
-  NS_ASSERT (source != NULL);
+  NS_ASSERT (device);
+  NS_ASSERT (source);
   // check if device is WifiNetDevice
   std::string deviceName = device->GetInstanceTypeId ().GetName ();
   if (deviceName.compare ("ns3::WifiNetDevice") != 0)
@@ -99,7 +75,7 @@ WifiRadioEnergyModelHelper::DoInstall (Ptr<NetDevice> device,
     }
   Ptr<Node> node = device->GetNode ();
   Ptr<WifiRadioEnergyModel> model = m_radioEnergy.Create ()->GetObject<WifiRadioEnergyModel> ();
-  NS_ASSERT (model != NULL);
+  NS_ASSERT (model);
 
   // set energy depletion callback
   // if none is specified, make a callback to WifiPhy::SetOffMode

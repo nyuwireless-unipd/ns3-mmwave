@@ -217,13 +217,13 @@ WaveNetDevice::AddPhy (Ptr<WifiPhy> phy)
   m_phyEntities.push_back (phy);
 }
 Ptr<WifiPhy>
-WaveNetDevice::GetPhy (uint32_t index) const
+WaveNetDevice::GetPhy (uint8_t index) const
 {
-  NS_LOG_FUNCTION (this << index);
+  NS_LOG_FUNCTION (this << +index);
   return m_phyEntities.at (index);
 }
 
-std::vector<Ptr<WifiPhy> >
+const std::vector<Ptr<WifiPhy>>&
 WaveNetDevice::GetPhys (void) const
 {
   NS_LOG_FUNCTION (this);
@@ -243,7 +243,7 @@ WaveNetDevice::StartVsa (const VsaInfo & vsaInfo)
       NS_LOG_DEBUG ("there is no channel access assigned for channel " << vsaInfo.channelNumber);
       return false;
     }
-  if (vsaInfo.vsc == 0)
+  if (!vsaInfo.vsc)
     {
       NS_LOG_DEBUG ("vendor specific information shall not be null");
       return false;

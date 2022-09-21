@@ -18,7 +18,7 @@
  * Author: Yufei Cheng   <yfcheng@ittc.ku.edu>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -1450,7 +1450,7 @@ uint8_t DsrOptionRerr::Process (Ptr<Packet> packet, Ptr<Packet> dsrP, Ipv4Addres
   /*
    * The error serialized size
    */
-  uint32_t rerrSize;
+  [[maybe_unused]] uint32_t rerrSize;
   NS_LOG_DEBUG ("The error type value here " << (uint32_t)errorType);
   if (errorType == 1) // unreachable ip address
     {
@@ -1494,7 +1494,6 @@ uint8_t DsrOptionRerr::Process (Ptr<Packet> packet, Ptr<Packet> dsrP, Ipv4Addres
       p->RemoveHeader (rerrUnsupport);
       rerrSize = rerrUnsupport.GetSerializedSize ();
 
-      NS_UNUSED (rerrSize);
       /// \todo This is for the other two error options, not supporting for now
       // uint32_t serialized = DoSendError (p, rerrUnsupport, rerrSize, ipv4Address, protocol);
       uint32_t serialized = 0;

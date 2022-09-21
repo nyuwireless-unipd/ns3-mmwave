@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2009 The Georgia Institute of Technology 
+ * Copyright (c) 2009 The Georgia Institute of Technology
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -32,31 +32,31 @@ namespace ns3 {
  *
  * \brief Neighbor-index data structure for nix-vector routing
  *
- * This data structure holds a vector of "neighbor-indexes" for 
+ * This data structure holds a vector of "neighbor-indexes" for
  * a simulation specific routing protocol, nix-vector routing.
- * Theses neighbor-indexes correspond to the net-device which a 
+ * Theses neighbor-indexes correspond to the net-device which a
  * node should use to route a packet.  A nix-vector is built
- * (or fetched from a cache) on-demand. The nix-vector is 
- * transmitted with the packet, and along each hop of the 
- * route, the current node extracts the appropriate 
+ * (or fetched from a cache) on-demand. The nix-vector is
+ * transmitted with the packet, and along each hop of the
+ * route, the current node extracts the appropriate
  * neighbor-index and routes the packet.
  *
  * \internal
- * The implementation of NixVector uses a vector to store 
- * the neighbor-indexes.  Each entry in the vector is 32 
- * bits long and can store multiple neighbor-indexes.  A 
- * fair amount of bit manipulation is used to store these 
- * neighbor-indexes efficiently.  A vector is used so that 
- * the nix-vector can grow arbitrarily if the topology and 
+ * The implementation of NixVector uses a vector to store
+ * the neighbor-indexes.  Each entry in the vector is 32
+ * bits long and can store multiple neighbor-indexes.  A
+ * fair amount of bit manipulation is used to store these
+ * neighbor-indexes efficiently.  A vector is used so that
+ * the nix-vector can grow arbitrarily if the topology and
  * route requires a large number of neighbor-indexes.
  *
- * As the nix-vector travels along the route, an internal 
- * private member variable keeps track of how many bits 
- * have been used.  At a particular node, the nix-vector 
- * is used to return the next neighbor-index. This 
- * neighbor-index is used to determine which net-device 
- * to use.  The number of bits used would then be 
- * incremented accordingly, and the packet would be 
+ * As the nix-vector travels along the route, an internal
+ * private member variable keeps track of how many bits
+ * have been used.  At a particular node, the nix-vector
+ * is used to return the next neighbor-index. This
+ * neighbor-index is used to determine which net-device
+ * to use.  The number of bits used would then be
+ * incremented accordingly, and the packet would be
  * routed.
  */
 
@@ -112,7 +112,7 @@ public:
    * \return number of bits remaining in the
    *         nix-vector (ie m_total - m_used)
    */
-  uint32_t GetRemainingBits (void);
+  uint32_t GetRemainingBits (void) const;
   /**
    * \return the number of bytes required for serialization
    */
@@ -150,6 +150,17 @@ public:
    */
   uint32_t BitCount (uint32_t numberOfNeighbors) const;
 
+  /**
+   * Set the NixVector Epoch
+   * \param epoch the NixVector Epoch
+   */
+  void SetEpoch (uint32_t epoch);
+
+  /**
+   * Get the NixVector Epoch
+   * \return the NixVector Epoch
+   */
+  uint32_t GetEpoch () const;
 
 private:
   /// Typedef: the NixVector bits storage.
@@ -159,8 +170,9 @@ private:
    * \brief Print the NixVector.
    *
    * \param os the output stream
+   *
+   * \note: this could be greatly simplified by using std::format (but it's C++20).
    */
-  /* for printing of nix-vector */
   void DumpNixVector (std::ostream &os) const;
 
   /**
@@ -176,26 +188,12 @@ private:
   uint32_t m_used; //!< For tracking where we are in the nix-vector
 
   /**
-   * For tracking how many bits we
-   * have used in the current vector
-   * entry. need this in order to
-   * expand the vector passed 32bits
-   */
-  uint32_t m_currentVectorBitSize;
-
-  /**
    * A counter of how total bits are in
    * the nix-vector
    */
   uint32_t m_totalBitSize;
 
-  /**
-   * Internal for pretty printing of nix-vector (fill)
-   * \param decimalNum decimal divider
-   * \param bitCount bit counter
-   * \param os output stream
-   */
-  void PrintDec2BinNixFill (uint32_t decimalNum, uint32_t bitCount, std::ostream &os) const;
+  uint32_t m_epoch; //!< Epoch of the Nix-vector creation
 
   /**
    * Internal for pretty printing of nix-vector (no fill)

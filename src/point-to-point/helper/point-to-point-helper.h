@@ -25,6 +25,7 @@
 #include "ns3/object-factory.h"
 #include "ns3/net-device-container.h"
 #include "ns3/node-container.h"
+#include "ns3/queue.h"
 
 #include "ns3/trace-helper.h"
 
@@ -36,7 +37,7 @@ class Node;
 /**
  * \brief Build a set of PointToPointNetDevice objects
  *
- * Normally we eschew multiple inheritance, however, the classes 
+ * Normally we eschew multiple inheritance, however, the classes
  * PcapUserHelperForDevice and AsciiTraceUserHelperForDevice are
  * "mixins".
  */
@@ -56,24 +57,15 @@ public:
    * This method allows one to set the type of the queue that is automatically
    * created when the device is created and attached to a node.
    *
+   * \tparam Ts \deduced Argument types
    * \param type the type of queue
-   * \param n1 the name of the attribute to set on the queue
-   * \param v1 the value of the attribute to set on the queue
-   * \param n2 the name of the attribute to set on the queue
-   * \param v2 the value of the attribute to set on the queue
-   * \param n3 the name of the attribute to set on the queue
-   * \param v3 the value of the attribute to set on the queue
-   * \param n4 the name of the attribute to set on the queue
-   * \param v4 the value of the attribute to set on the queue
+   * \param [in] args Name and AttributeValue pairs to set.
    *
    * Set the type of queue to create and associated to each
    * PointToPointNetDevice created through PointToPointHelper::Install.
    */
-  void SetQueue (std::string type,
-                 std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                 std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                 std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                 std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue ());
+  template <typename... Ts>
+  void SetQueue (std::string type, Ts&&... args);
 
   /**
    * Set an attribute value to be propagated to each NetDevice created by the
@@ -100,14 +92,24 @@ public:
   void SetChannelAttribute (std::string name, const AttributeValue &value);
 
   /**
+   * Disable flow control only if you know what you are doing. By disabling
+   * flow control, this NetDevice will be sent packets even if there is no
+   * room for them (such packets will be likely dropped by this NetDevice).
+   * Also, any queue disc installed on this NetDevice will have no effect,
+   * as every packet enqueued to the traffic control layer queue disc will
+   * be immediately dequeued.
+   */
+  void DisableFlowControl (void);
+
+  /**
    * \param c a set of nodes
    * \return a NetDeviceContainer for nodes
    *
    * This method creates a ns3::PointToPointChannel with the
    * attributes configured by PointToPointHelper::SetChannelAttribute,
-   * then, for each node in the input container, we create a 
-   * ns3::PointToPointNetDevice with the requested attributes, 
-   * a queue for this ns3::NetDevice, and associate the resulting 
+   * then, for each node in the input container, we create a
+   * ns3::PointToPointNetDevice with the requested attributes,
+   * a queue for this ns3::NetDevice, and associate the resulting
    * ns3::NetDevice with the ns3::Node and ns3::PointToPointChannel.
    */
   NetDeviceContainer Install (NodeContainer c);
@@ -117,8 +119,8 @@ public:
    * \param b second node
    * \return a NetDeviceContainer for nodes
    *
-   * Saves you from having to construct a temporary NodeContainer. 
-   * Also, if MPI is enabled, for distributed simulations, 
+   * Saves you from having to construct a temporary NodeContainer.
+   * Also, if MPI is enabled, for distributed simulations,
    * appropriate remote point-to-point channels are created.
    */
   NetDeviceContainer Install (Ptr<Node> a, Ptr<Node> b);
@@ -184,7 +186,22 @@ private:
   ObjectFactory m_queueFactory;         //!< Queue Factory
   ObjectFactory m_channelFactory;       //!< Channel Factory
   ObjectFactory m_deviceFactory;        //!< Device Factory
+  bool m_enableFlowControl;             //!< whether to enable flow control
 };
+
+
+/***************************************************************
+ *  Implementation of the templates declared above.
+ ***************************************************************/
+
+template <typename... Ts>
+void PointToPointHelper::SetQueue (std::string type, Ts&&... args)
+{
+  QueueBase::AppendItemTypeIfNotPresent (type, "Packet");
+
+  m_queueFactory.SetTypeId (type);
+  m_queueFactory.Set (std::forward<Ts> (args)...);
+}
 
 } // namespace ns3
 

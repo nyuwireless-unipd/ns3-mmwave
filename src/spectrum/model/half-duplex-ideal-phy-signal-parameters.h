@@ -35,9 +35,7 @@ class Packet;
  */
 struct HalfDuplexIdealPhySignalParameters : public SpectrumSignalParameters
 {
-
-  // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  Ptr<SpectrumSignalParameters> Copy () const override;
 
   /**
    * default constructor
@@ -46,6 +44,7 @@ struct HalfDuplexIdealPhySignalParameters : public SpectrumSignalParameters
 
   /**
    * copy constructor
+   * \param p object to copy
    */
   HalfDuplexIdealPhySignalParameters (const HalfDuplexIdealPhySignalParameters& p);
 

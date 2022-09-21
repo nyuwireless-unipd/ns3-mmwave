@@ -39,7 +39,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("ThirdScriptExample");
 
-int 
+int
 main (int argc, char *argv[])
 {
   bool verbose = true;
@@ -99,22 +99,20 @@ main (int argc, char *argv[])
   YansWifiPhyHelper phy;
   phy.SetChannel (channel.Create ());
 
-  WifiHelper wifi;
-  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-
   WifiMacHelper mac;
   Ssid ssid = Ssid ("ns-3-ssid");
+
+  WifiHelper wifi;
+
+  NetDeviceContainer staDevices;
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (ssid),
                "ActiveProbing", BooleanValue (false));
-
-  NetDeviceContainer staDevices;
   staDevices = wifi.Install (phy, mac, wifiStaNodes);
 
+  NetDeviceContainer apDevices;
   mac.SetType ("ns3::ApWifiMac",
                "Ssid", SsidValue (ssid));
-
-  NetDeviceContainer apDevices;
   apDevices = wifi.Install (phy, mac, wifiApNode);
 
   MobilityHelper mobility;
@@ -164,7 +162,7 @@ main (int argc, char *argv[])
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
 
-  ApplicationContainer clientApps = 
+  ApplicationContainer clientApps =
     echoClient.Install (wifiStaNodes.Get (nWifi - 1));
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));

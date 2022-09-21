@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */ 
+ */
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -30,12 +30,12 @@ int main (int argc, char *argv[])
 
   NodeContainer nodes;
 
-  // create an array of empty nodes for testing purposes 
+  // create an array of empty nodes for testing purposes
   nodes.Create (120);
 
   MobilityHelper mobility;
   // setup the grid itself: objects are laid out
-  // started from (-100,-100) with 20 objects per row, 
+  // started from (-100,-100) with 20 objects per row,
   // the x interval between each object is 5 meters
   // and the y interval between each object is 20 meters
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
@@ -61,7 +61,7 @@ int main (int argc, char *argv[])
     {
       Ptr<Node> object = *j;
       Ptr<MobilityModel> position = object->GetObject<MobilityModel> ();
-      NS_ASSERT (position != 0);
+      NS_ASSERT (position);
       Vector pos = position->GetPosition ();
       std::cout << "x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z << std::endl;
     }

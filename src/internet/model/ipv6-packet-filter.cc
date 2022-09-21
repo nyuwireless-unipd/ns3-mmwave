@@ -35,7 +35,7 @@ NS_LOG_COMPONENT_DEFINE ("Ipv6PacketFilter");
 
 NS_OBJECT_ENSURE_REGISTERED (Ipv6PacketFilter);
 
-TypeId 
+TypeId
 Ipv6PacketFilter::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Ipv6PacketFilter")
@@ -59,7 +59,7 @@ bool
 Ipv6PacketFilter::CheckProtocol (Ptr<QueueDiscItem> item) const
 {
   NS_LOG_FUNCTION (this << item);
-  return (DynamicCast<Ipv6QueueDiscItem> (item) != 0);
+  return bool (DynamicCast<Ipv6QueueDiscItem> (item));
 }
 
 // ------------------------------------------------------------------------- //

@@ -1,6 +1,5 @@
 import math
-import ns.wifi
-import ns.network
+from ns import ns
 from gi.repository import GooCanvas
 from visualizer.base import Link, transform_distance_canvas_to_simulation
 
@@ -114,7 +113,6 @@ class WifiLinkMonitor(object):
         """! Initialize function.
         @param self The object pointer.
         @param dummy_viz A dummy visualizer
-        @return none
         """
         self.access_points = {} # bssid -> node
         self.stations = [] # list of (sta_netdevice, viz_node, wifi_link)

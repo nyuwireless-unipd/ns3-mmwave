@@ -415,7 +415,7 @@ LteX2HandoverMeasuresTestCase::DoRun ()
 
               ApplicationContainer clientApps;
               ApplicationContainer serverApps;
-              BearerData bearerData;
+              BearerData bearerData = BearerData ();
 
               if (m_useUdp)
                 {
@@ -579,7 +579,7 @@ LteX2HandoverMeasuresTestCase::CheckConnected (Ptr<NetDevice> ueDevice, Ptr<NetD
   Ptr<LteEnbRrc> enbRrc = enbLteDevice->GetRrc ();
   uint16_t rnti = ueRrc->GetRnti ();
   Ptr<UeManager> ueManager = enbRrc->GetUeManager (rnti);
-  NS_TEST_ASSERT_MSG_NE (ueManager, 0, "RNTI " << rnti << " not found in eNB");
+  NS_TEST_ASSERT_MSG_NE (ueManager, nullptr, "RNTI " << rnti << " not found in eNB");
 
   UeManager::State ueManagerState = ueManager->GetState ();
   NS_TEST_ASSERT_MSG_EQ (ueManagerState, UeManager::CONNECTED_NORMALLY, "Wrong UeManager state!");

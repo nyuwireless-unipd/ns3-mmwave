@@ -345,9 +345,9 @@ RraaWifiManager::DoReportFinalDataFailed (WifiRemoteStation *st)
 }
 
 WifiTxVector
-RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
+RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint16_t allowedWidth)
 {
-  NS_LOG_FUNCTION (this << st);
+  NS_LOG_FUNCTION (this << st << allowedWidth);
   RraaWifiRemoteStation *station = static_cast<RraaWifiRemoteStation*> (st);
   uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
@@ -356,10 +356,11 @@ RraaWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
     }
   CheckInit (station);
   WifiMode mode = GetSupported (station, station->m_rateIndex);
-  if (m_currentRate != mode.GetDataRate (channelWidth))
+  uint64_t rate = mode.GetDataRate (channelWidth);
+  if (m_currentRate != rate)
     {
-      NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
-      m_currentRate = mode.GetDataRate (channelWidth);
+      NS_LOG_DEBUG ("New datarate: " << rate);
+      m_currentRate = rate;
     }
   return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
 }
@@ -374,7 +375,6 @@ RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       channelWidth = 20;
     }
-  WifiTxVector rtsTxVector;
   WifiMode mode;
   if (GetUseNonErpProtection () == false)
     {
@@ -384,8 +384,7 @@ RraaWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
-  return rtsTxVector;
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
 }
 
 bool

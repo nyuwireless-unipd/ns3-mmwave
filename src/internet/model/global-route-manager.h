@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright 2007 University of Washington
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -32,7 +32,7 @@ namespace ns3 {
  * This singleton object can query interface each node in the system
  * for a GlobalRouter interface.  For those nodes, it fetches one or
  * more Link State Advertisements and stores them in a local database.
- * Then, it can compute shortest paths on a per-node basis to all routers, 
+ * Then, it can compute shortest paths on a per-node basis to all routers,
  * and finally configure each of the node's forwarding tables.
  *
  * The design is guided by OSPFv2 \RFC{2328} section 16.1.1 and quagga ospfd.
@@ -40,6 +40,10 @@ namespace ns3 {
 class GlobalRouteManager
 {
 public:
+  // Delete copy constructor and assignment operator to avoid misuse
+  GlobalRouteManager (const GlobalRouteManager &) = delete;
+  GlobalRouteManager &operator= (const GlobalRouteManager &) = delete;
+
 /**
  * @brief Allocate a 32-bit router ID from monotonically increasing counter.
  * @returns A new new RouterId.
@@ -47,7 +51,7 @@ public:
   static uint32_t AllocateRouterId ();
 
 /**
- * @brief Delete all static routes on all nodes that have a 
+ * @brief Delete all static routes on all nodes that have a
  * GlobalRouterInterface
  *
  */
@@ -64,24 +68,6 @@ public:
  * per-node forwarding tables
  */
   static void InitializeRoutes ();
-
-private:
-/**
- * @brief Global Route Manager copy construction is disallowed.  There's no 
- * need for it and a compiler provided shallow copy would be wrong.
- *
- * @param srm object to copy from
- */
-  GlobalRouteManager (GlobalRouteManager& srm);
-
-/**
- * @brief Global Router copy assignment operator is disallowed.  There's no 
- * need for it and a compiler provided shallow copy would be wrong.
- *
- * @param srm object to copy from
- * @returns the copied object
- */
-  GlobalRouteManager& operator= (GlobalRouteManager& srm);
 };
 
 } // namespace ns3

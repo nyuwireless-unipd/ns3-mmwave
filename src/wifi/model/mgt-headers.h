@@ -32,6 +32,7 @@
 #include "extended-capabilities.h"
 #include "ns3/ht-capabilities.h"
 #include "ns3/ht-operation.h"
+#include "ns3/multi-link-element.h"
 #include "ns3/vht-capabilities.h"
 #include "ns3/vht-operation.h"
 #include "ns3/erp-information.h"
@@ -39,6 +40,8 @@
 #include "ns3/he-capabilities.h"
 #include "ns3/he-operation.h"
 #include "ns3/mu-edca-parameter-set.h"
+#include "ns3/eht-capabilities.h"
+#include "reduced-neighbor-report.h"
 
 namespace ns3 {
 
@@ -57,97 +60,156 @@ public:
    *
    * \param ssid SSID
    */
-  void SetSsid (Ssid ssid);
+  void SetSsid (const Ssid& ssid);
+
+  /** \copydoc SetSsid */
+  void SetSsid (Ssid&& ssid);
+
   /**
    * Set the supported rates.
    *
    * \param rates the supported rates
    */
-  void SetSupportedRates (SupportedRates rates);
+  void SetSupportedRates (const SupportedRates& rates);
+
+  /** \copydoc SetSupportedRates */
+  void SetSupportedRates (SupportedRates&& rates);
+
   /**
    * Set the listen interval.
    *
    * \param interval the listen interval
    */
   void SetListenInterval (uint16_t interval);
+
   /**
    * Set the Capability information.
    *
    * \param capabilities Capability information
    */
-  void SetCapabilities (CapabilityInformation capabilities);
+  void SetCapabilities (const CapabilityInformation& capabilities);
+
+  /** \copydoc SetCapabilities */
+  void SetCapabilities (CapabilityInformation&& capabilities);
+
   /**
    * Set the Extended Capabilities.
    *
    * \param extendedCapabilities the Extended Capabilities
    */
-  void SetExtendedCapabilities (ExtendedCapabilities extendedCapabilities);
+  void SetExtendedCapabilities (const ExtendedCapabilities& extendedCapabilities);
+
+  /** \copydoc SetExtendedCapabilities */
+  void SetExtendedCapabilities (ExtendedCapabilities&& extendedCapabilities);
+
   /**
    * Set the HT capabilities.
    *
    * \param htCapabilities HT capabilities
    */
-  void SetHtCapabilities (HtCapabilities htCapabilities);
+  void SetHtCapabilities (const HtCapabilities& htCapabilities);
+
+  /** \copydoc SetHtCapabilities */
+  void SetHtCapabilities (HtCapabilities&& htCapabilities);
+
   /**
    * Set the VHT capabilities.
    *
    * \param vhtCapabilities VHT capabilities
    */
-  void SetVhtCapabilities (VhtCapabilities vhtCapabilities);
+  void SetVhtCapabilities (const VhtCapabilities& vhtCapabilities);
+
+  /** \copydoc SetVhtCapabilities */
+  void SetVhtCapabilities (VhtCapabilities&& vhtCapabilities);
+
   /**
    * Set the HE capabilities.
    *
    * \param heCapabilities HE capabilities
    */
-  void SetHeCapabilities (HeCapabilities heCapabilities);
+  void SetHeCapabilities (const HeCapabilities& heCapabilities);
+
+  /** \copydoc SetHeCapabilities */
+  void SetHeCapabilities (HeCapabilities&& heCapabilities);
+
+  /**
+   * Set the EHT capabilities.
+   *
+   * \param ehtCapabilities EHT capabilities
+   */
+  void SetEhtCapabilities (const EhtCapabilities& ehtCapabilities);
+
+  /** \copydoc SetEhtCapabilities */
+  void SetEhtCapabilities (EhtCapabilities&& ehtCapabilities);
+
+  /**
+   * Set the Multi-Link Element information element
+   *
+   * \param multiLinkElement the Multi-Link Element information element
+   */
+  void SetMultiLinkElement (Ptr<MultiLinkElement> multiLinkElement);
   /**
    * Return the Capability information.
    *
    * \return Capability information
    */
-  CapabilityInformation GetCapabilities (void) const;
+  const CapabilityInformation& GetCapabilities (void) const;
   /**
    * Return the extended capabilities.
    *
    * \return the extended capabilities
    */
-  ExtendedCapabilities GetExtendedCapabilities (void) const;
+  const ExtendedCapabilities& GetExtendedCapabilities (void) const;
   /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
-  HtCapabilities GetHtCapabilities (void) const;
+  const HtCapabilities& GetHtCapabilities (void) const;
   /**
    * Return the VHT capabilities.
    *
    * \return VHT capabilities
    */
-  VhtCapabilities GetVhtCapabilities (void) const;
+  const VhtCapabilities& GetVhtCapabilities (void) const;
   /**
    * Return the HE capabilities.
    *
    * \return HE capabilities
    */
-  HeCapabilities GetHeCapabilities (void) const;
+  const HeCapabilities& GetHeCapabilities (void) const;
+  /**
+   * Return the EHT capabilities.
+   *
+   * \return EHT capabilities
+   */
+  const EhtCapabilities& GetEhtCapabilities (void) const;
   /**
    * Return the Service Set Identifier (SSID).
    *
    * \return SSID
    */
-  Ssid GetSsid (void) const;
+  const Ssid& GetSsid (void) const;
   /**
    * Return the supported rates.
    *
    * \return the supported rates
    */
-  SupportedRates GetSupportedRates (void) const;
+  const SupportedRates& GetSupportedRates (void) const;
   /**
    * Return the listen interval.
    *
    * \return the listen interval
    */
   uint16_t GetListenInterval (void) const;
+  /**
+   * Return the Multi-Link Element information element, if present, or a null
+   * pointer, otherwise.
+   *
+   * \return the Multi-Link Element information element, if present, or a null
+   *         pointer, otherwise
+   */
+  Ptr<MultiLinkElement> GetMultiLinkElement (void) const;
 
   /**
    * Register this type.
@@ -171,6 +233,8 @@ private:
   VhtCapabilities m_vhtCapability;    //!< VHT capabilities
   HeCapabilities m_heCapability;      //!< HE capabilities
   uint16_t m_listenInterval;          //!< listen interval
+  EhtCapabilities m_ehtCapability;    //!< EHT capabilities
+  Ptr<MultiLinkElement> m_multiLinkElement; //!< Multi-Link Element
 };
 
 
@@ -189,91 +253,150 @@ public:
    *
    * \param ssid SSID
    */
-  void SetSsid (Ssid ssid);
+  void SetSsid (const Ssid& ssid);
+
+  /** \copydoc SetSsid */
+  void SetSsid (Ssid&& ssid);
+
   /**
    * Set the supported rates.
    *
    * \param rates the supported rates
    */
-  void SetSupportedRates (SupportedRates rates);
+  void SetSupportedRates (const SupportedRates& rates);
+
+  /** \copydoc SetSupportedRates */
+  void SetSupportedRates (SupportedRates&& rates);
+
   /**
    * Set the listen interval.
    *
    * \param interval the listen interval
    */
   void SetListenInterval (uint16_t interval);
+
   /**
    * Set the Capability information.
    *
    * \param capabilities Capability information
    */
-  void SetCapabilities (CapabilityInformation capabilities);
+  void SetCapabilities (const CapabilityInformation& capabilities);
+
+  /** \copydoc SetCapabilities */
+  void SetCapabilities (CapabilityInformation&& capabilities);
+
   /**
    * Set the Extended Capabilities.
    *
    * \param extendedCapabilities the Extended Capabilities
    */
-  void SetExtendedCapabilities (ExtendedCapabilities extendedCapabilities);
+  void SetExtendedCapabilities (const ExtendedCapabilities& extendedCapabilities);
+
+  /** \copydoc SetExtendedCapabilities */
+  void SetExtendedCapabilities (ExtendedCapabilities&& extendedCapabilities);
+
   /**
    * Set the HT capabilities.
    *
    * \param htCapabilities HT capabilities
    */
-  void SetHtCapabilities (HtCapabilities htCapabilities);
+  void SetHtCapabilities (const HtCapabilities& htCapabilities);
+
+  /** \copydoc SetHtCapabilities */
+  void SetHtCapabilities (HtCapabilities&& htCapabilities);
+
   /**
    * Set the VHT capabilities.
    *
    * \param vhtCapabilities VHT capabilities
    */
-  void SetVhtCapabilities (VhtCapabilities vhtCapabilities);
+  void SetVhtCapabilities (const VhtCapabilities& vhtCapabilities);
+
+  /** \copydoc SetVhtCapabilities */
+  void SetVhtCapabilities (VhtCapabilities&& vhtCapabilities);
+
   /**
    * Set the HE capabilities.
    *
    * \param heCapabilities HE capabilities
    */
-  void SetHeCapabilities (HeCapabilities heCapabilities);
+  void SetHeCapabilities (const HeCapabilities& heCapabilities);
+
+  /** \copydoc SetHeCapabilities */
+  void SetHeCapabilities (HeCapabilities&& heCapabilities);
+
+  /**
+   * Set the EHT capabilities.
+   *
+   * \param ehtCapabilities EHT capabilities
+   */
+  void SetEhtCapabilities (const EhtCapabilities& ehtCapabilities);
+
+  /** \copydoc SetEhtCapabilities */
+  void SetEhtCapabilities (EhtCapabilities&& ehtCapabilities);
+
+  /**
+   * Set the Multi-Link Element information element
+   *
+   * \param multiLinkElement the Multi-Link Element information element
+   */
+  void SetMultiLinkElement (Ptr<MultiLinkElement> multiLinkElement);
   /**
    * Return the Capability information.
    *
    * \return Capability information
    */
-  CapabilityInformation GetCapabilities (void) const;
+  const CapabilityInformation& GetCapabilities (void) const;
   /**
    * Return the extended capabilities.
    *
    * \return the extended capabilities
    */
-  ExtendedCapabilities GetExtendedCapabilities (void) const;
+  const ExtendedCapabilities& GetExtendedCapabilities (void) const;
   /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
-  HtCapabilities GetHtCapabilities (void) const;
+  const HtCapabilities& GetHtCapabilities (void) const;
   /**
    * Return the VHT capabilities.
    *
    * \return VHT capabilities
    */
-  VhtCapabilities GetVhtCapabilities (void) const;
+  const VhtCapabilities& GetVhtCapabilities (void) const;
   /**
    * Return the HE capabilities.
    *
    * \return HE capabilities
    */
-  HeCapabilities GetHeCapabilities (void) const;
+  const HeCapabilities& GetHeCapabilities (void) const;
+  /**
+   * Return the EHT capabilities.
+   *
+   * \return EHT capabilities
+   */
+  const EhtCapabilities& GetEhtCapabilities (void) const;
   /**
    * Return the Service Set Identifier (SSID).
    *
    * \return SSID
    */
-  Ssid GetSsid (void) const;
+  const Ssid& GetSsid (void) const;
   /**
    * Return the supported rates.
    *
    * \return the supported rates
    */
-  SupportedRates GetSupportedRates (void) const;
+  const SupportedRates& GetSupportedRates (void) const;
+  /**
+   * Return the Multi-Link Element information element, if present, or a null
+   * pointer, otherwise.
+   *
+   * \return the Multi-Link Element information element, if present, or a null
+   *         pointer, otherwise
+   */
+  Ptr<MultiLinkElement> GetMultiLinkElement (void) const;
   /**
    * Return the listen interval.
    *
@@ -309,6 +432,8 @@ private:
   VhtCapabilities m_vhtCapability;    //!< VHT capabilities
   HeCapabilities m_heCapability;      //!< HE capabilities
   uint16_t m_listenInterval;          //!< listen interval
+  EhtCapabilities m_ehtCapability;    //!< EHT capabilities
+  Ptr<MultiLinkElement> m_multiLinkElement; //!< Multi-Link Element
 };
 
 
@@ -333,55 +458,69 @@ public:
    *
    * \return the supported rates
    */
-  SupportedRates GetSupportedRates (void);
+  const SupportedRates& GetSupportedRates (void) const;
   /**
    * Return the Capability information.
    *
    * \return Capability information
    */
-  CapabilityInformation GetCapabilities (void) const;
+  const CapabilityInformation& GetCapabilities (void) const;
   /**
    * Return the extended capabilities.
    *
    * \return the extended capabilities
    */
-  ExtendedCapabilities GetExtendedCapabilities (void) const;
+  const ExtendedCapabilities& GetExtendedCapabilities (void) const;
   /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
-  HtCapabilities GetHtCapabilities (void) const;
+  const HtCapabilities& GetHtCapabilities (void) const;
   /**
    * Return the HT operation.
    *
    * \return HT operation
    */
-  HtOperation GetHtOperation (void) const;
+  const HtOperation& GetHtOperation (void) const;
   /**
    * Return the VHT capabilities.
    *
    * \return VHT capabilities
    */
-  VhtCapabilities GetVhtCapabilities (void) const;
+  const VhtCapabilities& GetVhtCapabilities (void) const;
   /**
    * Return the VHT operation.
    *
    * \return VHT operation
    */
-  VhtOperation GetVhtOperation (void) const;
+  const VhtOperation& GetVhtOperation (void) const;
   /**
    * Return the HE capabilities.
    *
    * \return HE capabilities
    */
-  HeCapabilities GetHeCapabilities (void) const;
+  const HeCapabilities& GetHeCapabilities (void) const;
   /**
    * Return the HE operation.
    *
    * \return HE operation
    */
-  HeOperation GetHeOperation (void) const;
+  const HeOperation& GetHeOperation (void) const;
+  /**
+   * Return the EHT capabilities.
+   *
+   * \return EHT capabilities
+   */
+  const EhtCapabilities& GetEhtCapabilities (void) const;
+  /**
+   * Return the Multi-Link Element information element, if present, or a null
+   * pointer, otherwise.
+   *
+   * \return the Multi-Link Element information element, if present, or a null
+   *         pointer, otherwise
+   */
+  Ptr<MultiLinkElement> GetMultiLinkElement (void) const;
   /**
    * Return the association ID.
    *
@@ -393,103 +532,169 @@ public:
    *
    * \return the ERP information
    */
-  ErpInformation GetErpInformation (void) const;
+  const ErpInformation& GetErpInformation (void) const;
   /**
    * Return the EDCA Parameter Set.
    *
    * \return the EDCA Parameter Set
    */
-  EdcaParameterSet GetEdcaParameterSet (void) const;
+  const EdcaParameterSet& GetEdcaParameterSet (void) const;
   /**
    * Return the MU EDCA Parameter Set.
    *
    * \return the MU EDCA Parameter Set
    */
-  MuEdcaParameterSet GetMuEdcaParameterSet (void) const;
+  const MuEdcaParameterSet& GetMuEdcaParameterSet (void) const;
   /**
    * Set the Capability information.
    *
    * \param capabilities Capability information
    */
-  void SetCapabilities (CapabilityInformation capabilities);
+  void SetCapabilities (const CapabilityInformation& capabilities);
+
+  /** \copydoc SetCapabilities */
+  void SetCapabilities (CapabilityInformation&& capabilities);
+
   /**
    * Set the extended capabilities.
    *
    * \param extendedCapabilities the extended capabilities
    */
-  void SetExtendedCapabilities (ExtendedCapabilities extendedCapabilities);
+  void SetExtendedCapabilities (const ExtendedCapabilities& extendedCapabilities);
+
+  /** \copydoc SetExtendedCapabilities */
+  void SetExtendedCapabilities (ExtendedCapabilities&& extendedCapabilities);
+
   /**
    * Set the VHT operation.
    *
    * \param vhtOperation VHT operation
    */
-  void SetVhtOperation (VhtOperation vhtOperation);
+  void SetVhtOperation (const VhtOperation& vhtOperation);
+
+  /** \copydoc SetVhtOperation */
+  void SetVhtOperation (VhtOperation&& vhtOperation);
+
   /**
    * Set the VHT capabilities.
    *
    * \param vhtCapabilities VHT capabilities
    */
-  void SetVhtCapabilities (VhtCapabilities vhtCapabilities);
+  void SetVhtCapabilities (const VhtCapabilities& vhtCapabilities);
+
+  /** \copydoc SetVhtCapabilities */
+  void SetVhtCapabilities (VhtCapabilities&& vhtCapabilities);
+
   /**
    * Set the HT capabilities.
    *
    * \param htCapabilities HT capabilities
    */
-  void SetHtCapabilities (HtCapabilities htCapabilities);
+  void SetHtCapabilities (const HtCapabilities& htCapabilities);
+
+  /** \copydoc SetHtCapabilities */
+  void SetHtCapabilities (HtCapabilities&& htCapabilities);
+
   /**
    * Set the HT operation.
    *
    * \param htOperation HT operation
    */
-  void SetHtOperation (HtOperation htOperation);
+  void SetHtOperation (const HtOperation& htOperation);
+
+  /** \copydoc SetHtOperation */
+  void SetHtOperation (HtOperation&& htOperation);
+
   /**
    * Set the supported rates.
    *
    * \param rates the supported rates
    */
-  void SetSupportedRates (SupportedRates rates);
+  void SetSupportedRates (const SupportedRates& rates);
+
+  /** \copydoc SetSupportedRates */
+  void SetSupportedRates (SupportedRates&& rates);
+
   /**
    * Set the status code.
    *
    * \param code the status code
    */
   void SetStatusCode (StatusCode code);
+
   /**
    * Set the association ID.
    *
    * \param aid the association ID
    */
   void SetAssociationId (uint16_t aid);
+
   /**
    * Set the ERP information.
    *
    * \param erpInformation the ERP information
    */
-  void SetErpInformation (ErpInformation erpInformation);
+  void SetErpInformation (const ErpInformation& erpInformation);
+
+  /** \copydoc SetErpInformation */
+  void SetErpInformation (ErpInformation&& erpInformation);
+
   /**
    * Set the EDCA Parameter Set.
    *
    * \param edcaParameterSet the EDCA Parameter Set
    */
-  void SetEdcaParameterSet (EdcaParameterSet edcaParameterSet);
+  void SetEdcaParameterSet (const EdcaParameterSet& edcaParameterSet);
+
+  /** \copydoc SetEdcaParameterSet */
+  void SetEdcaParameterSet (EdcaParameterSet&& edcaParameterSet);
+
   /**
    * Set the MU EDCA Parameter Set.
    *
    * \param muEdcaParameterSet the MU EDCA Parameter Set
    */
-  void SetMuEdcaParameterSet (MuEdcaParameterSet muEdcaParameterSet);
+  void SetMuEdcaParameterSet (const MuEdcaParameterSet& muEdcaParameterSet);
+
+  /** \copydoc SetMuEdcaParameterSet */
+  void SetMuEdcaParameterSet (MuEdcaParameterSet&& muEdcaParameterSet);
+
   /**
    * Set the HE capabilities.
    *
    * \param heCapabilities HE capabilities
    */
-  void SetHeCapabilities (HeCapabilities heCapabilities);
+  void SetHeCapabilities (const HeCapabilities& heCapabilities);
+
+  /** \copydoc SetHeCapabilities */
+  void SetHeCapabilities (HeCapabilities&& heCapabilities);
+
   /**
    * Set the HE operation.
    *
    * \param heOperation HE operation
    */
-  void SetHeOperation (HeOperation heOperation);
+  void SetHeOperation (const HeOperation& heOperation);
+
+  /** \copydoc SetHeOperation */
+  void SetHeOperation (HeOperation&& heOperation);
+
+  /**
+   * Set the EHT capabilities.
+   *
+   * \param ehtCapabilities EHT capabilities
+   */
+  void SetEhtCapabilities (const EhtCapabilities& ehtCapabilities);
+
+  /** \copydoc SetEhtCapabilities */
+  void SetEhtCapabilities (EhtCapabilities&& ehtCapabilities);
+
+  /**
+   * Set the Multi-Link Element information element
+   *
+   * \param multiLinkElement the Multi-Link Element information element
+   */
+  void SetMultiLinkElement (Ptr<MultiLinkElement> multiLinkElement);
 
   /**
    * Register this type.
@@ -518,6 +723,8 @@ private:
   HeCapabilities m_heCapability; //!< HE capabilities
   HeOperation m_heOperation; //!< HE operation
   MuEdcaParameterSet m_muEdcaParameterSet; //!< MU EDCA Parameter Set
+  EhtCapabilities m_ehtCapability; //!< EHT capabilities
+  Ptr<MultiLinkElement> m_multiLinkElement; //!< Multi-Link Element
 };
 
 
@@ -535,73 +742,119 @@ public:
    *
    * \param ssid SSID
    */
-  void SetSsid (Ssid ssid);
+  void SetSsid (const Ssid& ssid);
+
+  /** \copydoc SetSsid */
+  void SetSsid (Ssid&& ssid);
+
   /**
    * Set the supported rates.
    *
    * \param rates the supported rates
    */
-  void SetSupportedRates (SupportedRates rates);
+  void SetSupportedRates (const SupportedRates& rates);
+
+  /** \copydoc SetSupportedRates */
+  void SetSupportedRates (SupportedRates&& rates);
+
   /**
    * Set the extended capabilities.
    *
    * \param extendedCapabilities the extended capabilities
    */
-  void SetExtendedCapabilities (ExtendedCapabilities extendedCapabilities);
+  void SetExtendedCapabilities (const ExtendedCapabilities& extendedCapabilities);
+
+  /** \copydoc SetExtendedCapabilities */
+  void SetExtendedCapabilities (ExtendedCapabilities&& extendedCapabilities);
+
   /**
    * Set the HT capabilities.
    *
    * \param htCapabilities HT capabilities
    */
-  void SetHtCapabilities (HtCapabilities htCapabilities);
+  void SetHtCapabilities (const HtCapabilities& htCapabilities);
+
+  /** \copydoc SetHtCapabilities */
+  void SetHtCapabilities (HtCapabilities&& htCapabilities);
+
   /**
    * Set the VHT capabilities.
    *
    * \param vhtCapabilities VHT capabilities
    */
-  void SetVhtCapabilities (VhtCapabilities vhtCapabilities);
+  void SetVhtCapabilities (const VhtCapabilities& vhtCapabilities);
+
+  /** \copydoc SetVhtCapabilities */
+  void SetVhtCapabilities (VhtCapabilities&& vhtCapabilities);
+
   /**
    * Set the HE capabilities.
    *
    * \param heCapabilities HE capabilities
    */
-  void SetHeCapabilities (HeCapabilities heCapabilities);
+  void SetHeCapabilities (const HeCapabilities& heCapabilities);
+
+  /** \copydoc SetHeCapabilities */
+  void SetHeCapabilities (HeCapabilities&& heCapabilities);
+
+  /**
+   * Set the EHT capabilities.
+   *
+   * \param ehtCapabilities EHT capabilities
+   */
+  void SetEhtCapabilities (const EhtCapabilities& ehtCapabilities);
+
+  /** \copydoc SetEhtCapabilities */
+  void SetEhtCapabilities (EhtCapabilities&& ehtCapabilities);
+
   /**
    * Return the Service Set Identifier (SSID).
    *
    * \return SSID
    */
-  Ssid GetSsid (void) const;
+  const Ssid& GetSsid (void) const;
+
   /**
    * Return the supported rates.
    *
    * \return the supported rates
    */
-  SupportedRates GetSupportedRates (void) const;
+  const SupportedRates& GetSupportedRates (void) const;
+
   /**
    * Return the extended capabilities.
    *
    * \return the extended capabilities
    */
-  ExtendedCapabilities GetExtendedCapabilities (void) const;
+  const ExtendedCapabilities& GetExtendedCapabilities (void) const;
+
   /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
-  HtCapabilities GetHtCapabilities (void) const;
+  const HtCapabilities& GetHtCapabilities (void) const;
+
   /**
    * Return the VHT capabilities.
    *
    * \return VHT capabilities
    */
-  VhtCapabilities GetVhtCapabilities (void) const;
+  const VhtCapabilities& GetVhtCapabilities (void) const;
+
   /**
    * Return the HE capabilities.
    *
    * \return HE capabilities
    */
-  HeCapabilities GetHeCapabilities (void) const;
+  const HeCapabilities& GetHeCapabilities (void) const;
+
+  /**
+   * Return the EHT capabilities.
+   *
+   * \return EHT capabilities
+   */
+  const EhtCapabilities& GetEhtCapabilities (void) const;
 
   /**
    * Register this type.
@@ -621,7 +874,8 @@ private:
   ExtendedCapabilities m_extendedCapability; //!< extended capabilities
   HtCapabilities m_htCapability;   //!< HT capabilities
   VhtCapabilities m_vhtCapability; //!< VHT capabilities
-  HeCapabilities m_heCapability; //!< HE capabilities
+  HeCapabilities m_heCapability;   //!< HE capabilities
+  EhtCapabilities m_ehtCapability; //!< EHT capabilities
 };
 
 
@@ -640,7 +894,7 @@ public:
    *
    * \return SSID
    */
-  Ssid GetSsid (void) const;
+  const Ssid& GetSsid (void) const;
   /**
    * Return the beacon interval in microseconds unit.
    *
@@ -652,169 +906,269 @@ public:
    *
    * \return the supported rates
    */
-  SupportedRates GetSupportedRates (void) const;
+  const SupportedRates& GetSupportedRates (void) const;
   /**
    * Return the Capability information.
    *
    * \return Capability information
    */
-  CapabilityInformation GetCapabilities (void) const;
+  const CapabilityInformation& GetCapabilities (void) const;
   /**
    * Return the DSSS Parameter Set.
    *
    * \return the DSSS Parameter Set
    */
-  DsssParameterSet GetDsssParameterSet (void) const;
+  const DsssParameterSet& GetDsssParameterSet (void) const;
   /**
    * Return the extended capabilities.
    *
    * \return the extended capabilities
    */
-  ExtendedCapabilities GetExtendedCapabilities (void) const;
+  const ExtendedCapabilities& GetExtendedCapabilities (void) const;
   /**
    * Return the HT capabilities.
    *
    * \return HT capabilities
    */
-  HtCapabilities GetHtCapabilities (void) const;
+  const HtCapabilities& GetHtCapabilities (void) const;
   /**
    * Return the HT operation.
    *
    * \return HT operation
    */
-  HtOperation GetHtOperation (void) const;
+  const HtOperation& GetHtOperation (void) const;
   /**
    * Return the VHT capabilities.
    *
    * \return VHT capabilities
    */
-  VhtCapabilities GetVhtCapabilities (void) const;
+  const VhtCapabilities& GetVhtCapabilities (void) const;
   /**
    * Return the VHT operation.
    *
    * \return VHT operation
    */
-  VhtOperation GetVhtOperation (void) const;
+  const VhtOperation& GetVhtOperation (void) const;
   /**
    * Return the HE capabilities.
    *
    * \return HE capabilities
    */
-  HeCapabilities GetHeCapabilities (void) const;
+  const HeCapabilities& GetHeCapabilities (void) const;
   /**
    * Return the HE operation.
    *
    * \return HE operation
    */
-  HeOperation GetHeOperation (void) const;
+  const HeOperation& GetHeOperation (void) const;
+  /**
+   * Return the EHT capabilities.
+   *
+   * \return EHT capabilities
+   */
+  const EhtCapabilities& GetEhtCapabilities (void) const;
   /**
    * Return the ERP information.
    *
    * \return the ERP information
    */
-  ErpInformation GetErpInformation (void) const;
+  const ErpInformation& GetErpInformation (void) const;
   /**
    * Return the EDCA Parameter Set.
    *
    * \return the EDCA Parameter Set
    */
-  EdcaParameterSet GetEdcaParameterSet (void) const;
+  const EdcaParameterSet& GetEdcaParameterSet (void) const;
   /**
    * Return the MU EDCA Parameter Set.
    *
    * \return the MU EDCA Parameter Set
    */
-  MuEdcaParameterSet GetMuEdcaParameterSet (void) const;
+  const MuEdcaParameterSet& GetMuEdcaParameterSet (void) const;
+
+  /**
+   * Return the Reduced Neighbor Report information element.
+   *
+   * \return the Reduced Neighbor Report information element
+   */
+  Ptr<ReducedNeighborReport> GetReducedNeighborReport (void) const;
+  /**
+   * Return the Multi-Link Element information element, if present, or a null
+   * pointer, otherwise.
+   *
+   * \return the Multi-Link Element information element, if present, or a null
+   *         pointer, otherwise
+   */
+  Ptr<MultiLinkElement> GetMultiLinkElement (void) const;
   /**
    * Set the Capability information.
    *
    * \param capabilities Capability information
    */
-  void SetCapabilities (CapabilityInformation capabilities);
+  void SetCapabilities (const CapabilityInformation& capabilities);
+
+  /** \copydoc SetCapabilities */
+  void SetCapabilities (CapabilityInformation&& capabilities);
+
   /**
    * Set the extended capabilities.
    *
    * \param extendedCapabilities the extended capabilities
    */
-  void SetExtendedCapabilities (ExtendedCapabilities extendedCapabilities);
+  void SetExtendedCapabilities (const ExtendedCapabilities& extendedCapabilities);
+
+  /** \copydoc SetExtendedCapabilities */
+  void SetExtendedCapabilities (ExtendedCapabilities&& extendedCapabilities);
+
   /**
    * Set the HT capabilities.
    *
    * \param htCapabilities HT capabilities
    */
-  void SetHtCapabilities (HtCapabilities htCapabilities);
+  void SetHtCapabilities (const HtCapabilities& htCapabilities);
+
+  /** \copydoc SetHtCapabilities */
+  void SetHtCapabilities (HtCapabilities&& htCapabilities);
+
   /**
    * Set the HT operation.
    *
    * \param htOperation HT operation
    */
-  void SetHtOperation (HtOperation htOperation);
+  void SetHtOperation (const HtOperation& htOperation);
+
+  /** \copydoc SetHtOperation */
+  void SetHtOperation (HtOperation&& htOperation);
+
   /**
    * Set the VHT capabilities.
    *
    * \param vhtCapabilities VHT capabilities
    */
-  void SetVhtCapabilities (VhtCapabilities vhtCapabilities);
+  void SetVhtCapabilities (const VhtCapabilities& vhtCapabilities);
+
+  /** \copydoc SetVhtCapabilities */
+  void SetVhtCapabilities (VhtCapabilities&& vhtCapabilities);
+
   /**
    * Set the VHT operation.
    *
    * \param vhtOperation VHT operation
    */
-  void SetVhtOperation (VhtOperation vhtOperation);
+  void SetVhtOperation (const VhtOperation& vhtOperation);
+
+  /** \copydoc SetVhtOperation */
+  void SetVhtOperation (VhtOperation&& vhtOperation);
+
   /**
    * Set the HE capabilities.
    *
    * \param heCapabilities HE capabilities
    */
-  void SetHeCapabilities (HeCapabilities heCapabilities);
+  void SetHeCapabilities (const HeCapabilities& heCapabilities);
+
+  /** \copydoc SetHeCapabilities */
+  void SetHeCapabilities (HeCapabilities&& heCapabilities);
+
   /**
    * Set the HE operation.
    *
    * \param heOperation HE operation
    */
-  void SetHeOperation (HeOperation heOperation);
+  void SetHeOperation (const HeOperation& heOperation);
+
+  /** \copydoc SetHeOperation */
+  void SetHeOperation (HeOperation&& heOperation);
+
+  /**
+   * Set the EHT capabilities.
+   *
+   * \param ehtCapabilities EHT capabilities
+   */
+  void SetEhtCapabilities (const EhtCapabilities& ehtCapabilities);
+
+  /** \copydoc SetEhtCapabilities */
+  void SetEhtCapabilities (EhtCapabilities&& ehtCapabilities);
+
   /**
    * Set the Service Set Identifier (SSID).
    *
    * \param ssid SSID
    */
-  void SetSsid (Ssid ssid);
+  void SetSsid (const Ssid& ssid);
+
+  /** \copydoc SetSsid */
+  void SetSsid (Ssid&& ssid);
+
   /**
    * Set the beacon interval in microseconds unit.
    *
    * \param us beacon interval in microseconds unit
    */
   void SetBeaconIntervalUs (uint64_t us);
+
   /**
    * Set the supported rates.
    *
    * \param rates the supported rates
    */
-  void SetSupportedRates (SupportedRates rates);
+  void SetSupportedRates (const SupportedRates& rates);
+
+  /** \copydoc SetSupportedRates */
+  void SetSupportedRates (SupportedRates&& rates);
+
   /**
    * Set the DSSS Parameter Set.
    *
    * \param dsssParameterSet the DSSS Parameter Set
    */
-  void SetDsssParameterSet (DsssParameterSet dsssParameterSet);
+  void SetDsssParameterSet (const DsssParameterSet& dsssParameterSet);
+
+  /** \copydoc SetDsssParameterSet */
+  void SetDsssParameterSet (DsssParameterSet&& dsssParameterSet);
+
   /**
    * Set the ERP information.
    *
    * \param erpInformation the ERP information
    */
-  void SetErpInformation (ErpInformation erpInformation);
+  void SetErpInformation (const ErpInformation& erpInformation);
+
+  /** \copydoc SetErpInformation */
+  void SetErpInformation (ErpInformation&& erpInformation);
+
   /**
    * Set the EDCA Parameter Set.
    *
    * \param edcaParameterSet the EDCA Parameter Set
    */
-  void SetEdcaParameterSet (EdcaParameterSet edcaParameterSet);
+  void SetEdcaParameterSet (const EdcaParameterSet& edcaParameterSet);
+
+  /** \copydoc SetEdcaParameterSet */
+  void SetEdcaParameterSet (EdcaParameterSet&& edcaParameterSet);
+
   /**
    * Set the MU EDCA Parameter Set.
    *
    * \param muEdcaParameterSet the MU EDCA Parameter Set
    */
-  void SetMuEdcaParameterSet (MuEdcaParameterSet muEdcaParameterSet);
+  void SetMuEdcaParameterSet (const MuEdcaParameterSet& muEdcaParameterSet);
+
+  /** \copydoc SetMuEdcaParameterSet */
+  void SetMuEdcaParameterSet (MuEdcaParameterSet&& muEdcaParameterSet);
+
+  /**
+   * Set the Reduced Neighbor Report information element
+   *
+   * \param reducedNeighborReport the Reduced Neighbor Report information element
+   */
+  void SetReducedNeighborReport (Ptr<ReducedNeighborReport> reducedNeighborReport);
+  /**
+   * Set the Multi-Link Element information element
+   *
+   * \param multiLinkElement the Multi-Link Element information element
+   */
+  void SetMultiLinkElement (Ptr<MultiLinkElement> multiLinkElement);
   /**
    * Return the time stamp.
    *
@@ -847,10 +1201,13 @@ private:
   VhtCapabilities m_vhtCapability;     //!< VHT capabilities
   VhtOperation m_vhtOperation;         //!< VHT operation
   HeCapabilities m_heCapability;       //!< HE capabilities
-  HeOperation m_heOperation;         //!< HE operation
+  HeOperation m_heOperation;           //!< HE operation
   ErpInformation m_erpInformation;     //!< ERP information
   EdcaParameterSet m_edcaParameterSet; //!< EDCA Parameter Set
   MuEdcaParameterSet m_muEdcaParameterSet; //!< MU EDCA Parameter Set
+  EhtCapabilities m_ehtCapability;     //!< EHT capabilities
+  Ptr<ReducedNeighborReport> m_reducedNeighborReport; //!< Reduced Neighbor Report information
+  Ptr<MultiLinkElement> m_multiLinkElement; //!< Multi-Link Element
 };
 
 

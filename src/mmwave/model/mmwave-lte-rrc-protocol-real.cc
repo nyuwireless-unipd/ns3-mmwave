@@ -290,11 +290,11 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
            j++)
         {
           enbDev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
-          if (enbDev == 0)
+          if (!enbDev)
             {
               // check if it is a MmWave eNB
               mmWaveEnbDev = node->GetDevice (j)->GetObject <MmWaveEnbNetDevice> ();
-              if (mmWaveEnbDev == 0)
+              if (!mmWaveEnbDev)
                 {
                   continue;
                 }
@@ -318,13 +318,13 @@ MmWaveLteUeRrcProtocolReal::SetEnbRrcSapProvider ()
         }
     }
   NS_ASSERT_MSG (found, " Unable to find eNB with CellId =" << cellId);
-  if (enbDev != 0)
+  if (enbDev)
     {
       m_enbRrcSapProvider = enbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
       Ptr<MmWaveLteEnbRrcProtocolReal> enbRrcProtocolReal = enbDev->GetRrc ()->GetObject<MmWaveLteEnbRrcProtocolReal> ();
       enbRrcProtocolReal->SetUeRrcSapProvider (m_rnti, m_ueRrcSapProvider);
     }
-  else if (mmWaveEnbDev != 0)
+  else if (mmWaveEnbDev)
     {
       m_enbRrcSapProvider = mmWaveEnbDev->GetRrc ()->GetLteEnbRrcSapProvider ();
       Ptr<MmWaveLteEnbRrcProtocolReal> enbRrcProtocolReal = mmWaveEnbDev->GetRrc ()->GetObject<MmWaveLteEnbRrcProtocolReal> ();
@@ -601,7 +601,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
       for (int j = 0; j < nDevs; ++j)
         {
           Ptr<mmwave::MmWaveUeNetDevice> ueDev = node->GetDevice (j)->GetObject <mmwave::MmWaveUeNetDevice> ();
-          if (ueDev != 0)
+          if (ueDev)
             {
               ueRrc = ueDev->GetRrc ();
               NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
@@ -619,7 +619,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
             {
               // it may be a MC device
               Ptr<McUeNetDevice> mcUeDev = node->GetDevice (j)->GetObject <McUeNetDevice> ();
-              if (mcUeDev != 0)
+              if (mcUeDev)
                 {
                   ueRrc = mcUeDev->GetLteRrc ();
                   NS_LOG_LOGIC ("considering UE IMSI " << mcUeDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
@@ -632,7 +632,7 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
                                            ueRrc->GetLteUeRrcSapProvider (),
                                            msg);
                     } //if the first condition is false, the second is not executed
-                  else if (mcUeDev->GetMmWaveRrc () != 0 && mcUeDev->GetMmWaveRrc ()->GetCellId () == cellId)
+                  else if (mcUeDev->GetMmWaveRrc () && mcUeDev->GetMmWaveRrc ()->GetCellId () == cellId)
                     {
                       NS_LOG_LOGIC ("sending SI to IMSI " << mcUeDev->GetImsi ());
                       Simulator::Schedule (RRC_REAL_MSG_DELAY,
@@ -645,14 +645,13 @@ MmWaveLteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap
                 {
                   // it may be a LTE device
                   Ptr<LteUeNetDevice> ueDev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
-                  if (ueDev != 0)
+                  if (ueDev)
                     {
                       ueRrc = ueDev->GetRrc ();
                       NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
                       if (ueRrc->GetCellId () == cellId)
                         {
                           NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
-                          ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
                           Simulator::Schedule (RRC_REAL_MSG_DELAY,
                                                &LteUeRrcSapProvider::RecvSystemInformation,
                                                ueRrc->GetLteUeRrcSapProvider (),

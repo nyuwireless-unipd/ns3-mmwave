@@ -356,7 +356,7 @@ PointToPointEpcHelper::AddEnb (Ptr<Node> enb, Ptr<NetDevice> lteEnbNetDevice, ui
   Ptr<EpcEnbApplication> enbApp = CreateObject<EpcEnbApplication> (enbLteSocket, enbLteSocket6, enbS1uSocket, enbAddress, sgwAddress, cellId);
   enb->AddApplication (enbApp);
   NS_ASSERT (enb->GetNApplications () == 1);
-  NS_ASSERT_MSG (enb->GetApplication (0)->GetObject<EpcEnbApplication> () != 0, "cannot retrieve EpcEnbApplication");
+  NS_ASSERT_MSG (enb->GetApplication (0)->GetObject<EpcEnbApplication> (), "cannot retrieve EpcEnbApplication");
   NS_LOG_LOGIC ("enb: " << enb << ", enb->GetApplication (0): " << enb->GetApplication (0));
 
 
@@ -454,7 +454,7 @@ PointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, uint64_t imsi
   Ptr<Node> ueNode = ueDevice->GetNode ();
   Ptr<Ipv4> ueIpv4 = ueNode->GetObject<Ipv4> ();
   Ptr<Ipv6> ueIpv6 = ueNode->GetObject<Ipv6> ();
-  NS_ASSERT_MSG (ueIpv4 != 0, "UEs need to have IPv4 installed before EPS bearers can be activated");
+  NS_ASSERT_MSG (ueIpv4, "UEs need to have IPv4 installed before EPS bearers can be activated");
 
   if (ueIpv4)
     {
@@ -497,7 +497,7 @@ PointToPointEpcHelper::ActivateEpsBearer (Ptr<NetDevice> ueDevice, Ptr<EpcUeNas>
   // the user simulation program, rather than done by the EPC
   Ptr<Node> ueNode = ueDevice->GetNode ();
   Ptr<Ipv4> ueIpv4 = ueNode->GetObject<Ipv4> ();
-  NS_ASSERT_MSG (ueIpv4 != 0, "UEs need to have IPv4 installed before EPS bearers can be activated");
+  NS_ASSERT_MSG (ueIpv4, "UEs need to have IPv4 installed before EPS bearers can be activated");
   int32_t interface =  ueIpv4->GetInterfaceForDevice (ueDevice);
   NS_ASSERT (interface >= 0);
   NS_ASSERT (ueIpv4->GetNAddresses (interface) == 1);
@@ -557,6 +557,19 @@ PointToPointEpcHelper::GetUeDefaultGatewayAddress6 ()
 {
   // return the address of the tun device
   return m_sgwPgw->GetObject<Ipv6> ()->GetAddress (1, 1).GetAddress ();
+}
+
+int64_t
+PointToPointEpcHelper::AssignStreams (int64_t stream)
+{
+  int64_t currentStream = stream;
+  NS_ABORT_MSG_UNLESS (m_sgwPgw && m_mmeNode, "Running AssignStreams on empty node pointers");
+  InternetStackHelper internet;
+  NodeContainer nc;
+  nc.Add (m_sgwPgw);
+  nc.Add (m_mmeNode);
+  currentStream += internet.AssignStreams (nc, currentStream);
+  return (currentStream - stream);
 }
 
 } // namespace ns3

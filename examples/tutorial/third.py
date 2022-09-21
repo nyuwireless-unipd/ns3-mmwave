@@ -16,14 +16,7 @@
 #  * Ported to Python by Mohit P. Tahiliani
 #  */
 
-import ns.core
-import ns.network
-import ns.point_to_point
-import ns.applications
-import ns.wifi
-import ns.mobility
-import ns.csma
-import ns.internet
+from ns import ns
 import sys
 
 # // Default Network Topology
@@ -37,23 +30,21 @@ import sys
 # //                                   ================
 # //                                     LAN 10.1.2.0
 
-cmd = ns.core.CommandLine()
-cmd.nCsma = 3
-cmd.verbose = "True"
-cmd.nWifi = 3
-cmd.tracing = "False"
+cmd = ns.getCommandLine(__file__)
+nCsma ="3"
+verbose = "True"
+nWifi = "3"
+tracing = "False"
 
-cmd.AddValue("nCsma", "Number of \"extra\" CSMA nodes/devices")
-cmd.AddValue("nWifi", "Number of wifi STA devices")
-cmd.AddValue("verbose", "Tell echo applications to log if true")
-cmd.AddValue("tracing", "Enable pcap tracing")
+cmd.AddValue("nCsma", "Number of extra CSMA nodes/devices", ns.null_callback(), nCsma)
+cmd.AddValue("nWifi", "Number of wifi STA devices", ns.null_callback(), nWifi)
+cmd.AddValue("verbose", "Tell echo applications to log if true", ns.null_callback(), verbose)
+cmd.AddValue("tracing", "Enable pcap tracing", ns.null_callback(), tracing)
 
 cmd.Parse(sys.argv)
 
-nCsma = int(cmd.nCsma)
-verbose = cmd.verbose
-nWifi = int(cmd.nWifi)
-tracing = cmd.tracing
+nCsma = int(nCsma)
+nWifi = int(nWifi)
 
 # The underlying restriction of 18 is due to the grid position
 # allocator's configuration; the grid layout will exceed the
@@ -65,7 +56,7 @@ if nWifi > 18:
 if verbose == "True":
 	ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
 	ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
-	
+
 p2pNodes = ns.network.NodeContainer()
 p2pNodes.Create(2)
 
@@ -93,11 +84,10 @@ channel = ns.wifi.YansWifiChannelHelper.Default()
 phy = ns.wifi.YansWifiPhyHelper()
 phy.SetChannel(channel.Create())
 
-wifi = ns.wifi.WifiHelper()
-wifi.SetRemoteStationManager("ns3::AarfWifiManager")
-
 mac = ns.wifi.WifiMacHelper()
 ssid = ns.wifi.Ssid ("ns-3-ssid")
+
+wifi = ns.wifi.WifiHelper()
 
 mac.SetType ("ns3::StaWifiMac", "Ssid", ns.wifi.SsidValue(ssid), "ActiveProbing", ns.core.BooleanValue(False))
 staDevices = wifi.Install(phy, mac, wifiStaNodes)
@@ -106,10 +96,10 @@ mac.SetType("ns3::ApWifiMac","Ssid", ns.wifi.SsidValue (ssid))
 apDevices = wifi.Install(phy, mac, wifiApNode)
 
 mobility = ns.mobility.MobilityHelper()
-mobility.SetPositionAllocator ("ns3::GridPositionAllocator", "MinX", ns.core.DoubleValue(0.0), 
-								"MinY", ns.core.DoubleValue (0.0), "DeltaX", ns.core.DoubleValue(5.0), "DeltaY", ns.core.DoubleValue(10.0), 
+mobility.SetPositionAllocator ("ns3::GridPositionAllocator", "MinX", ns.core.DoubleValue(0.0),
+								"MinY", ns.core.DoubleValue (0.0), "DeltaX", ns.core.DoubleValue(5.0), "DeltaY", ns.core.DoubleValue(10.0),
                                  "GridWidth", ns.core.UintegerValue(3), "LayoutType", ns.core.StringValue("RowFirst"))
-                                 
+
 mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", "Bounds", ns.mobility.RectangleValue(ns.mobility.Rectangle (-50, 50, -50, 50)))
 mobility.Install(wifiStaNodes)
 
@@ -138,7 +128,7 @@ serverApps = echoServer.Install(csmaNodes.Get(nCsma))
 serverApps.Start(ns.core.Seconds(1.0))
 serverApps.Stop(ns.core.Seconds(10.0))
 
-echoClient = ns.applications.UdpEchoClientHelper(csmaInterfaces.GetAddress(nCsma), 9)
+echoClient = ns.applications.UdpEchoClientHelper(ns.addressFromIpv4Address(csmaInterfaces.GetAddress(nCsma)), 9)
 echoClient.SetAttribute("MaxPackets", ns.core.UintegerValue(1))
 echoClient.SetAttribute("Interval", ns.core.TimeValue(ns.core.Seconds (1.0)))
 echoClient.SetAttribute("PacketSize", ns.core.UintegerValue(1024))

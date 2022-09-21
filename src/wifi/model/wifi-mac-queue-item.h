@@ -25,6 +25,7 @@
 #define WIFI_MAC_QUEUE_ITEM_H
 
 #include "ns3/nstime.h"
+#include "ns3/packet.h"
 #include "wifi-mac-header.h"
 #include "amsdu-subframe-header.h"
 #include "qos-utils.h"
@@ -33,7 +34,6 @@
 namespace ns3 {
 
 class QosBlockedDestinations;
-class Packet;
 
 /**
  * \ingroup wifi
@@ -60,6 +60,15 @@ public:
   WifiMacQueueItem (Ptr<const Packet> p, const WifiMacHeader & header, Time tstamp);
 
   virtual ~WifiMacQueueItem ();
+
+  /**
+   * Get a pointer to this WifiMacQueueItem object. This method is useful to convert
+   * a pointer to const WifiMacQueueItem into a pointer to non-const WifiMacQueueItem.
+   * This method can only be called if this item is stored in a wifi MAC queue.
+   *
+   * \return a pointer to this WifiMacQueueItem object
+   */
+  Ptr<WifiMacQueueItem> GetItem (void) const;
 
   /**
    * \brief Get the packet stored in this item
@@ -156,13 +165,6 @@ public:
    * \return the AC of the queue this item is stored into
    */
   AcIndex GetQueueAc (void) const;
-  /**
-   * Get a const iterator pointing to the position of the MPDU in the queue. This
-   * method should not be called if the MPDU is not stored in a queue.
-   *
-   * \return an iterator pointing to the position of the MPDU in the queue
-   */
-  ConstIterator GetQueueIterator (void) const;
 
   /**
    * \brief Get the MAC protocol data unit (MPDU) corresponding to this item

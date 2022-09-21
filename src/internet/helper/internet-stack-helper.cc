@@ -56,9 +56,9 @@ NS_LOG_COMPONENT_DEFINE ("InternetStackHelper");
 
 //
 // Historically, the only context written to ascii traces was the protocol.
-// Traces from the protocols include the interface, though.  It is not 
+// Traces from the protocols include the interface, though.  It is not
 // possible to really determine where an event originated without including
-// this.  If you want the additional context information, define 
+// this.  If you want the additional context information, define
 // INTERFACE_CONTEXT.  If you want compatibility with the old-style traces
 // comment it out.
 //
@@ -67,13 +67,13 @@ NS_LOG_COMPONENT_DEFINE ("InternetStackHelper");
 //
 // Things are going to work differently here with respect to trace file handling
 // than in most places because the Tx and Rx trace sources we are interested in
-// are going to multiplex receive and transmit callbacks for all Ipv4 and 
-// interface pairs through one callback.  We want packets to or from each 
+// are going to multiplex receive and transmit callbacks for all Ipv4 and
+// interface pairs through one callback.  We want packets to or from each
 // distinct pair to go to an individual file, so we have got to demultiplex the
-// Ipv4 and interface pair into a corresponding Ptr<PcapFileWrapper> at the 
+// Ipv4 and interface pair into a corresponding Ptr<PcapFileWrapper> at the
 // callback.
 //
-// A complication in this situation is that the trace sources are hooked on 
+// A complication in this situation is that the trace sources are hooked on
 // a protocol basis.  There is no trace source hooked by an Ipv4 and interface
 // pair.  This means that if we naively proceed to hook, say, a drop trace
 // for a given Ipv4 with interface 0, and then hook for Ipv4 with interface 1
@@ -81,20 +81,22 @@ NS_LOG_COMPONENT_DEFINE ("InternetStackHelper");
 // we need to do is to hook the event once, and that will result in a single
 // callback per drop event, and the trace source will provide the interface
 // which we filter on in the trace sink.
-// 
-// This has got to continue to work properly after the helper has been 
-// destroyed; but must be cleaned up at the end of time to avoid leaks. 
-// Global maps of protocol/interface pairs to file objects seems to fit the 
-// bill.
 //
-typedef std::pair<Ptr<Ipv4>, uint32_t> InterfacePairIpv4;  /**< Ipv4/interface pair */
+// The use of global maps allows this to continue to work properly even if
+// the helper is destroyed before the simulation completes.  If the maps
+// are populated, the reference counting smart pointers to
+// OutputStreamWrapper and PcapFileWrapper will cause those objects to be
+// destroyed at static object destruction time; i.e., the simulator does
+// not explicitly clear these maps before the program ends.
+//
+typedef std::pair<uint32_t, uint32_t> InterfacePairIpv4;  /**< Ipv4/interface pair */
 typedef std::map<InterfacePairIpv4, Ptr<PcapFileWrapper> > InterfaceFileMapIpv4;  /**< Ipv4/interface and Pcap file wrapper container */
 typedef std::map<InterfacePairIpv4, Ptr<OutputStreamWrapper> > InterfaceStreamMapIpv4;  /**< Ipv4/interface and output stream container */
 
 static InterfaceFileMapIpv4 g_interfaceFileMapIpv4; /**< A mapping of Ipv4/interface pairs to pcap files */
 static InterfaceStreamMapIpv4 g_interfaceStreamMapIpv4; /**< A mapping of Ipv4/interface pairs to ascii streams */
 
-typedef std::pair<Ptr<Ipv6>, uint32_t> InterfacePairIpv6;  /**< Ipv6/interface pair */
+typedef std::pair<uint32_t, uint32_t> InterfacePairIpv6;  /**< Ipv6/interface pair */
 typedef std::map<InterfacePairIpv6, Ptr<PcapFileWrapper> > InterfaceFileMapIpv6;  /**< Ipv6/interface and Pcap file wrapper container */
 typedef std::map<InterfacePairIpv6, Ptr<OutputStreamWrapper> > InterfaceStreamMapIpv6;  /**< Ipv6/interface and output stream container */
 
@@ -171,7 +173,7 @@ InternetStackHelper::Reset (void)
   Initialize ();
 }
 
-void 
+void
 InternetStackHelper::SetRoutingHelper (const Ipv4RoutingHelper &routing)
 {
   delete m_routing;
@@ -214,35 +216,35 @@ InternetStackHelper::AssignStreams (NodeContainer c, int64_t stream)
     {
       Ptr<Node> node = *i;
       Ptr<GlobalRouter> router = node->GetObject<GlobalRouter> ();
-      if (router != 0)
+      if (router)
         {
           Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol ();
-          if (gr != 0)
+          if (gr)
             {
               currentStream += gr->AssignStreams (currentStream);
             }
         }
       Ptr<Ipv6ExtensionDemux> demux = node->GetObject<Ipv6ExtensionDemux> ();
-      if (demux != 0)
+      if (demux)
         {
           Ptr<Ipv6Extension> fe = demux->GetExtension (Ipv6ExtensionFragment::EXT_NUMBER);
           NS_ASSERT (fe);  // should always exist in the demux
           currentStream += fe->AssignStreams (currentStream);
         }
       Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
-      if (ipv4 != 0)
+      if (ipv4)
         {
           Ptr<ArpL3Protocol> arpL3Protocol = ipv4->GetObject<ArpL3Protocol> ();
-          if (arpL3Protocol != 0)
+          if (arpL3Protocol)
             {
               currentStream += arpL3Protocol->AssignStreams (currentStream);
             }
         }
       Ptr<Ipv6> ipv6 = node->GetObject<Ipv6> ();
-      if (ipv6 != 0)
+      if (ipv6)
         {
           Ptr<Icmpv6L4Protocol> icmpv6L4Protocol = ipv6->GetObject<Icmpv6L4Protocol> ();
-          if (icmpv6L4Protocol != 0)
+          if (icmpv6L4Protocol)
             {
               currentStream += icmpv6L4Protocol->AssignStreams (currentStream);
             }
@@ -257,14 +259,7 @@ InternetStackHelper::SetTcp (const std::string tid)
   m_tcpFactory.SetTypeId (tid);
 }
 
-void 
-InternetStackHelper::SetTcp (std::string tid, std::string n0, const AttributeValue &v0)
-{
-  m_tcpFactory.SetTypeId (tid);
-  m_tcpFactory.Set (n0,v0);
-}
-
-void 
+void
 InternetStackHelper::Install (NodeContainer c) const
 {
   for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
@@ -273,7 +268,7 @@ InternetStackHelper::Install (NodeContainer c) const
     }
 }
 
-void 
+void
 InternetStackHelper::InstallAll (void) const
 {
   Install (NodeContainer::GetGlobal ());
@@ -293,9 +288,9 @@ InternetStackHelper::Install (Ptr<Node> node) const
 {
   if (m_ipv4Enabled)
     {
-      if (node->GetObject<Ipv4> () != 0)
+      if (node->GetObject<Ipv4> ())
         {
-          NS_FATAL_ERROR ("InternetStackHelper::Install (): Aggregating " 
+          NS_FATAL_ERROR ("InternetStackHelper::Install (): Aggregating "
                           "an InternetStack to a node with an existing Ipv4 object");
           return;
         }
@@ -318,9 +313,9 @@ InternetStackHelper::Install (Ptr<Node> node) const
   if (m_ipv6Enabled)
     {
       /* IPv6 stack */
-      if (node->GetObject<Ipv6> () != 0)
+      if (node->GetObject<Ipv6> ())
         {
-          NS_FATAL_ERROR ("InternetStackHelper::Install (): Aggregating " 
+          NS_FATAL_ERROR ("InternetStackHelper::Install (): Aggregating "
                           "an InternetStack to a node with an existing Ipv6 object");
           return;
         }
@@ -383,10 +378,10 @@ Ipv4L3ProtocolRxTxSink (Ptr<const Packet> p, Ptr<Ipv4> ipv4, uint32_t interface)
   //
   // Since trace sources are independent of interface, if we hook a source
   // on a particular protocol we will get traces for all of its interfaces.
-  // We need to filter this to only report interfaces for which the user 
+  // We need to filter this to only report interfaces for which the user
   // has expressed interest.
   //
-  InterfacePairIpv4 pair = std::make_pair (ipv4, interface);
+  InterfacePairIpv4 pair = std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceFileMapIpv4.find (pair) == g_interfaceFileMapIpv4.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -400,11 +395,11 @@ Ipv4L3ProtocolRxTxSink (Ptr<const Packet> p, Ptr<Ipv4> ipv4, uint32_t interface)
 bool
 InternetStackHelper::PcapHooked (Ptr<Ipv4> ipv4)
 {
-  for (  InterfaceFileMapIpv4::const_iterator i = g_interfaceFileMapIpv4.begin (); 
-         i != g_interfaceFileMapIpv4.end (); 
+  for (  InterfaceFileMapIpv4::const_iterator i = g_interfaceFileMapIpv4.begin ();
+         i != g_interfaceFileMapIpv4.end ();
          ++i)
     {
-      if ((*i).first.first == ipv4)
+      if ((*i).first.first == ipv4->GetObject<Node> ()->GetId ())
         {
           return true;
         }
@@ -412,7 +407,7 @@ InternetStackHelper::PcapHooked (Ptr<Ipv4> ipv4)
   return false;
 }
 
-void 
+void
 InternetStackHelper::EnablePcapIpv4Internal (std::string prefix, Ptr<Ipv4> ipv4, uint32_t interface, bool explicitFilename)
 {
   NS_LOG_FUNCTION (prefix << ipv4 << interface);
@@ -424,7 +419,7 @@ InternetStackHelper::EnablePcapIpv4Internal (std::string prefix, Ptr<Ipv4> ipv4,
     }
 
   //
-  // We have to create a file and a mapping from protocol/interface to file 
+  // We have to create a file and a mapping from protocol/interface to file
   // irrespective of how many times we want to trace a particular protocol.
   //
   PcapHelper pcapHelper;
@@ -448,7 +443,7 @@ InternetStackHelper::EnablePcapIpv4Internal (std::string prefix, Ptr<Ipv4> ipv4,
   if (!PcapHooked (ipv4))
     {
       //
-      // Ptr<Ipv4> is aggregated to node and Ipv4L3Protocol is aggregated to 
+      // Ptr<Ipv4> is aggregated to node and Ipv4L3Protocol is aggregated to
       // node so we can get to Ipv4L3Protocol through Ipv4.
       //
       Ptr<Ipv4L3Protocol> ipv4L3Protocol = ipv4->GetObject<Ipv4L3Protocol> ();
@@ -464,7 +459,7 @@ InternetStackHelper::EnablePcapIpv4Internal (std::string prefix, Ptr<Ipv4> ipv4,
                      "Unable to connect ipv4L3Protocol \"Rx\"");
     }
 
-  g_interfaceFileMapIpv4[std::make_pair (ipv4, interface)] = file;
+  g_interfaceFileMapIpv4[std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface)] = file;
 }
 
 /**
@@ -481,10 +476,10 @@ Ipv6L3ProtocolRxTxSink (Ptr<const Packet> p, Ptr<Ipv6> ipv6, uint32_t interface)
   //
   // Since trace sources are independent of interface, if we hook a source
   // on a particular protocol we will get traces for all of its interfaces.
-  // We need to filter this to only report interfaces for which the user 
+  // We need to filter this to only report interfaces for which the user
   // has expressed interest.
   //
-  InterfacePairIpv6 pair = std::make_pair (ipv6, interface);
+  InterfacePairIpv6 pair = std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceFileMapIpv6.find (pair) == g_interfaceFileMapIpv6.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -498,11 +493,11 @@ Ipv6L3ProtocolRxTxSink (Ptr<const Packet> p, Ptr<Ipv6> ipv6, uint32_t interface)
 bool
 InternetStackHelper::PcapHooked (Ptr<Ipv6> ipv6)
 {
-  for (  InterfaceFileMapIpv6::const_iterator i = g_interfaceFileMapIpv6.begin (); 
-         i != g_interfaceFileMapIpv6.end (); 
+  for (  InterfaceFileMapIpv6::const_iterator i = g_interfaceFileMapIpv6.begin ();
+         i != g_interfaceFileMapIpv6.end ();
          ++i)
     {
-      if ((*i).first.first == ipv6)
+      if ((*i).first.first == ipv6->GetObject<Node> ()->GetId ())
         {
           return true;
         }
@@ -510,7 +505,7 @@ InternetStackHelper::PcapHooked (Ptr<Ipv6> ipv6)
   return false;
 }
 
-void 
+void
 InternetStackHelper::EnablePcapIpv6Internal (std::string prefix, Ptr<Ipv6> ipv6, uint32_t interface, bool explicitFilename)
 {
   NS_LOG_FUNCTION (prefix << ipv6 << interface);
@@ -522,7 +517,7 @@ InternetStackHelper::EnablePcapIpv6Internal (std::string prefix, Ptr<Ipv6> ipv6,
     }
 
   //
-  // We have to create a file and a mapping from protocol/interface to file 
+  // We have to create a file and a mapping from protocol/interface to file
   // irrespective of how many times we want to trace a particular protocol.
   //
   PcapHelper pcapHelper;
@@ -546,7 +541,7 @@ InternetStackHelper::EnablePcapIpv6Internal (std::string prefix, Ptr<Ipv6> ipv6,
   if (!PcapHooked (ipv6))
     {
       //
-      // Ptr<Ipv6> is aggregated to node and Ipv6L3Protocol is aggregated to 
+      // Ptr<Ipv6> is aggregated to node and Ipv6L3Protocol is aggregated to
       // node so we can get to Ipv6L3Protocol through Ipv6.
       //
       Ptr<Ipv6L3Protocol> ipv6L3Protocol = ipv6->GetObject<Ipv6L3Protocol> ();
@@ -562,7 +557,7 @@ InternetStackHelper::EnablePcapIpv6Internal (std::string prefix, Ptr<Ipv6> ipv6,
                      "Unable to connect ipv6L3Protocol \"Rx\"");
     }
 
-  g_interfaceFileMapIpv6[std::make_pair (ipv6, interface)] = file;
+  g_interfaceFileMapIpv6[std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface)] = file;
 }
 
 /**
@@ -577,19 +572,19 @@ InternetStackHelper::EnablePcapIpv6Internal (std::string prefix, Ptr<Ipv6> ipv6,
 static void
 Ipv4L3ProtocolDropSinkWithoutContext (
   Ptr<OutputStreamWrapper> stream,
-  Ipv4Header const &header, 
+  Ipv4Header const &header,
   Ptr<const Packet> packet,
-  Ipv4L3Protocol::DropReason reason, 
-  Ptr<Ipv4> ipv4, 
+  Ipv4L3Protocol::DropReason reason,
+  Ptr<Ipv4> ipv4,
   uint32_t interface)
 {
   //
   // Since trace sources are independent of interface, if we hook a source
   // on a particular protocol we will get traces for all of its interfaces.
-  // We need to filter this to only report interfaces for which the user 
+  // We need to filter this to only report interfaces for which the user
   // has expressed interest.
   //
-  InterfacePairIpv4 pair = std::make_pair (ipv4, interface);
+  InterfacePairIpv4 pair = std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv4.find (pair) == g_interfaceStreamMapIpv4.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -612,16 +607,16 @@ static void
 Ipv4L3ProtocolTxSinkWithoutContext (
   Ptr<OutputStreamWrapper> stream,
   Ptr<const Packet> packet,
-  Ptr<Ipv4> ipv4, 
+  Ptr<Ipv4> ipv4,
   uint32_t interface)
 {
-  InterfacePairIpv4 pair = std::make_pair (ipv4, interface);
+  InterfacePairIpv4 pair = std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface);
+
   if (g_interfaceStreamMapIpv4.find (pair) == g_interfaceStreamMapIpv4.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
       return;
     }
-
   *stream->GetStream () << "t " << Simulator::Now ().GetSeconds () << " " << *packet << std::endl;
 }
 
@@ -636,10 +631,10 @@ static void
 Ipv4L3ProtocolRxSinkWithoutContext (
   Ptr<OutputStreamWrapper> stream,
   Ptr<const Packet> packet,
-  Ptr<Ipv4> ipv4, 
+  Ptr<Ipv4> ipv4,
   uint32_t interface)
 {
-  InterfacePairIpv4 pair = std::make_pair (ipv4, interface);
+  InterfacePairIpv4 pair = std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv4.find (pair) == g_interfaceStreamMapIpv4.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -663,19 +658,19 @@ static void
 Ipv4L3ProtocolDropSinkWithContext (
   Ptr<OutputStreamWrapper> stream,
   std::string context,
-  Ipv4Header const &header, 
+  Ipv4Header const &header,
   Ptr<const Packet> packet,
-  Ipv4L3Protocol::DropReason reason, 
-  Ptr<Ipv4> ipv4, 
+  Ipv4L3Protocol::DropReason reason,
+  Ptr<Ipv4> ipv4,
   uint32_t interface)
 {
   //
   // Since trace sources are independent of interface, if we hook a source
   // on a particular protocol we will get traces for all of its interfaces.
-  // We need to filter this to only report interfaces for which the user 
+  // We need to filter this to only report interfaces for which the user
   // has expressed interest.
   //
-  InterfacePairIpv4 pair = std::make_pair (ipv4, interface);
+  InterfacePairIpv4 pair = std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv4.find (pair) == g_interfaceStreamMapIpv4.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -685,7 +680,7 @@ Ipv4L3ProtocolDropSinkWithContext (
   Ptr<Packet> p = packet->Copy ();
   p->AddHeader (header);
 #ifdef INTERFACE_CONTEXT
-  *stream->GetStream () << "d " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") " 
+  *stream->GetStream () << "d " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") "
                         << *p << std::endl;
 #else
   *stream->GetStream () << "d " << Simulator::Now ().GetSeconds () << " " << context << " "  << *p << std::endl;
@@ -705,10 +700,10 @@ Ipv4L3ProtocolTxSinkWithContext (
   Ptr<OutputStreamWrapper> stream,
   std::string context,
   Ptr<const Packet> packet,
-  Ptr<Ipv4> ipv4, 
+  Ptr<Ipv4> ipv4,
   uint32_t interface)
 {
-  InterfacePairIpv4 pair = std::make_pair (ipv4, interface);
+  InterfacePairIpv4 pair = std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv4.find (pair) == g_interfaceStreamMapIpv4.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -716,7 +711,7 @@ Ipv4L3ProtocolTxSinkWithContext (
     }
 
 #ifdef INTERFACE_CONTEXT
-  *stream->GetStream () << "t " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") " 
+  *stream->GetStream () << "t " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") "
                         << *packet << std::endl;
 #else
   *stream->GetStream () << "t " << Simulator::Now ().GetSeconds () << " " << context << " "  << *packet << std::endl;
@@ -736,10 +731,10 @@ Ipv4L3ProtocolRxSinkWithContext (
   Ptr<OutputStreamWrapper> stream,
   std::string context,
   Ptr<const Packet> packet,
-  Ptr<Ipv4> ipv4, 
+  Ptr<Ipv4> ipv4,
   uint32_t interface)
 {
-  InterfacePairIpv4 pair = std::make_pair (ipv4, interface);
+  InterfacePairIpv4 pair = std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv4.find (pair) == g_interfaceStreamMapIpv4.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -747,7 +742,7 @@ Ipv4L3ProtocolRxSinkWithContext (
     }
 
 #ifdef INTERFACE_CONTEXT
-  *stream->GetStream () << "r " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") " 
+  *stream->GetStream () << "r " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") "
                         << *packet << std::endl;
 #else
   *stream->GetStream () << "r " << Simulator::Now ().GetSeconds () << " " << context << " "  << *packet << std::endl;
@@ -757,11 +752,11 @@ Ipv4L3ProtocolRxSinkWithContext (
 bool
 InternetStackHelper::AsciiHooked (Ptr<Ipv4> ipv4)
 {
-  for (  InterfaceStreamMapIpv4::const_iterator i = g_interfaceStreamMapIpv4.begin (); 
-         i != g_interfaceStreamMapIpv4.end (); 
+  for (  InterfaceStreamMapIpv4::const_iterator i = g_interfaceStreamMapIpv4.begin ();
+         i != g_interfaceStreamMapIpv4.end ();
          ++i)
     {
-      if ((*i).first.first == ipv4)
+      if ((*i).first.first == ipv4->GetObject<Node> ()->GetId ())
         {
           return true;
         }
@@ -769,11 +764,11 @@ InternetStackHelper::AsciiHooked (Ptr<Ipv4> ipv4)
   return false;
 }
 
-void 
+void
 InternetStackHelper::EnableAsciiIpv4Internal (
-  Ptr<OutputStreamWrapper> stream, 
-  std::string prefix, 
-  Ptr<Ipv4> ipv4, 
+  Ptr<OutputStreamWrapper> stream,
+  std::string prefix,
+  Ptr<Ipv4> ipv4,
   uint32_t interface,
   bool explicitFilename)
 {
@@ -784,26 +779,26 @@ InternetStackHelper::EnableAsciiIpv4Internal (
     }
 
   //
-  // Our trace sinks are going to use packet printing, so we have to 
+  // Our trace sinks are going to use packet printing, so we have to
   // make sure that is turned on.
   //
   Packet::EnablePrinting ();
 
   //
-  // If we are not provided an OutputStreamWrapper, we are expected to create 
+  // If we are not provided an OutputStreamWrapper, we are expected to create
   // one using the usual trace filename conventions and hook WithoutContext
   // since there will be one file per context and therefore the context would
   // be redundant.
   //
-  if (stream == 0)
+  if (!stream)
     {
       //
-      // Set up an output stream object to deal with private ofstream copy 
+      // Set up an output stream object to deal with private ofstream copy
       // constructor and lifetime issues.  Let the helper decide the actual
       // name of the file given the prefix.
       //
-      // We have to create a stream and a mapping from protocol/interface to 
-      // stream irrespective of how many times we want to trace a particular 
+      // We have to create a stream and a mapping from protocol/interface to
+      // stream irrespective of how many times we want to trace a particular
       // protocol.
       //
       AsciiTraceHelper asciiTraceHelper;
@@ -837,7 +832,7 @@ InternetStackHelper::EnableAsciiIpv4Internal (
           //
           // The drop sink for the Ipv4L3Protocol uses a different signature than
           // the default sink, so we have to cook one up for ourselves.  We can get
-          // to the Ptr<Ipv4L3Protocol> through our Ptr<Ipv4> since they must both 
+          // to the Ptr<Ipv4L3Protocol> through our Ptr<Ipv4> since they must both
           // be aggregated to the same node.
           //
           Ptr<Ipv4L3Protocol> ipv4L3Protocol = ipv4->GetObject<Ipv4L3Protocol> ();
@@ -845,29 +840,29 @@ InternetStackHelper::EnableAsciiIpv4Internal (
                                                                     MakeBoundCallback (&Ipv4L3ProtocolDropSinkWithoutContext, theStream));
           NS_ASSERT_MSG (result == true, "InternetStackHelper::EnableAsciiIpv4Internal():  "
                          "Unable to connect ipv4L3Protocol \"Drop\"");
-          result = ipv4L3Protocol->TraceConnectWithoutContext ("Tx", 
+          result = ipv4L3Protocol->TraceConnectWithoutContext ("Tx",
                                                                MakeBoundCallback (&Ipv4L3ProtocolTxSinkWithoutContext, theStream));
           NS_ASSERT_MSG (result == true, "InternetStackHelper::EnableAsciiIpv4Internal():  "
                          "Unable to connect ipv4L3Protocol \"Tx\"");
-          result = ipv4L3Protocol->TraceConnectWithoutContext ("Rx", 
+          result = ipv4L3Protocol->TraceConnectWithoutContext ("Rx",
                                                                MakeBoundCallback (&Ipv4L3ProtocolRxSinkWithoutContext, theStream));
           NS_ASSERT_MSG (result == true, "InternetStackHelper::EnableAsciiIpv4Internal():  "
                          "Unable to connect ipv4L3Protocol \"Rx\"");
         }
 
-      g_interfaceStreamMapIpv4[std::make_pair (ipv4, interface)] = theStream;
+      g_interfaceStreamMapIpv4[std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface)] = theStream;
       return;
     }
 
   //
   // If we are provided an OutputStreamWrapper, we are expected to use it, and
   // to provide a context.  We are free to come up with our own context if we
-  // want, and use the AsciiTraceHelper Hook*WithContext functions, but for 
+  // want, and use the AsciiTraceHelper Hook*WithContext functions, but for
   // compatibility and simplicity, we just use Config::Connect and let it deal
   // with the context.
   //
   // We need to associate the ipv4/interface with a stream to express interest
-  // in tracing events on that pair, however, we only hook the trace sources 
+  // in tracing events on that pair, however, we only hook the trace sources
   // once to avoid multiple trace sink calls per event (connect is independent
   // of interface).
   //
@@ -877,9 +872,9 @@ InternetStackHelper::EnableAsciiIpv4Internal (
       std::ostringstream oss;
 
       //
-      // For the ARP Drop, we are going to use the default trace sink provided by 
-      // the ascii trace helper.  There is actually no AsciiTraceHelper in sight 
-      // here, but the default trace sinks are actually publicly available static 
+      // For the ARP Drop, we are going to use the default trace sink provided by
+      // the ascii trace helper.  There is actually no AsciiTraceHelper in sight
+      // here, but the default trace sinks are actually publicly available static
       // functions that are always there waiting for just such a case.
       //
       oss << "/NodeList/" << node->GetId () << "/$ns3::ArpL3Protocol/Drop";
@@ -900,7 +895,7 @@ InternetStackHelper::EnableAsciiIpv4Internal (
       Config::Connect (oss.str (), MakeBoundCallback (&Ipv4L3ProtocolRxSinkWithContext, stream));
     }
 
-  g_interfaceStreamMapIpv4[std::make_pair (ipv4, interface)] = stream;
+  g_interfaceStreamMapIpv4[std::make_pair (ipv4->GetObject<Node> ()->GetId (), interface)] = stream;
 }
 
 /**
@@ -915,19 +910,19 @@ InternetStackHelper::EnableAsciiIpv4Internal (
 static void
 Ipv6L3ProtocolDropSinkWithoutContext (
   Ptr<OutputStreamWrapper> stream,
-  Ipv6Header const &header, 
+  Ipv6Header const &header,
   Ptr<const Packet> packet,
-  Ipv6L3Protocol::DropReason reason, 
-  Ptr<Ipv6> ipv6, 
+  Ipv6L3Protocol::DropReason reason,
+  Ptr<Ipv6> ipv6,
   uint32_t interface)
 {
   //
   // Since trace sources are independent of interface, if we hook a source
   // on a particular protocol we will get traces for all of its interfaces.
-  // We need to filter this to only report interfaces for which the user 
+  // We need to filter this to only report interfaces for which the user
   // has expressed interest.
   //
-  InterfacePairIpv6 pair = std::make_pair (ipv6, interface);
+  InterfacePairIpv6 pair = std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv6.find (pair) == g_interfaceStreamMapIpv6.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -950,10 +945,10 @@ static void
 Ipv6L3ProtocolTxSinkWithoutContext (
   Ptr<OutputStreamWrapper> stream,
   Ptr<const Packet> packet,
-  Ptr<Ipv6> ipv6, 
+  Ptr<Ipv6> ipv6,
   uint32_t interface)
 {
-  InterfacePairIpv6 pair = std::make_pair (ipv6, interface);
+  InterfacePairIpv6 pair = std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv6.find (pair) == g_interfaceStreamMapIpv6.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -974,10 +969,10 @@ static void
 Ipv6L3ProtocolRxSinkWithoutContext (
   Ptr<OutputStreamWrapper> stream,
   Ptr<const Packet> packet,
-  Ptr<Ipv6> ipv6, 
+  Ptr<Ipv6> ipv6,
   uint32_t interface)
 {
-  InterfacePairIpv6 pair = std::make_pair (ipv6, interface);
+  InterfacePairIpv6 pair = std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv6.find (pair) == g_interfaceStreamMapIpv6.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -1001,19 +996,19 @@ static void
 Ipv6L3ProtocolDropSinkWithContext (
   Ptr<OutputStreamWrapper> stream,
   std::string context,
-  Ipv6Header const &header, 
+  Ipv6Header const &header,
   Ptr<const Packet> packet,
-  Ipv6L3Protocol::DropReason reason, 
-  Ptr<Ipv6> ipv6, 
+  Ipv6L3Protocol::DropReason reason,
+  Ptr<Ipv6> ipv6,
   uint32_t interface)
 {
   //
   // Since trace sources are independent of interface, if we hook a source
   // on a particular protocol we will get traces for all of its interfaces.
-  // We need to filter this to only report interfaces for which the user 
+  // We need to filter this to only report interfaces for which the user
   // has expressed interest.
   //
-  InterfacePairIpv6 pair = std::make_pair (ipv6, interface);
+  InterfacePairIpv6 pair = std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv6.find (pair) == g_interfaceStreamMapIpv6.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -1023,7 +1018,7 @@ Ipv6L3ProtocolDropSinkWithContext (
   Ptr<Packet> p = packet->Copy ();
   p->AddHeader (header);
 #ifdef INTERFACE_CONTEXT
-  *stream->GetStream () << "d " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") " 
+  *stream->GetStream () << "d " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") "
                         << *p << std::endl;
 #else
   *stream->GetStream () << "d " << Simulator::Now ().GetSeconds () << " " << context << " " << *p << std::endl;
@@ -1043,10 +1038,10 @@ Ipv6L3ProtocolTxSinkWithContext (
   Ptr<OutputStreamWrapper> stream,
   std::string context,
   Ptr<const Packet> packet,
-  Ptr<Ipv6> ipv6, 
+  Ptr<Ipv6> ipv6,
   uint32_t interface)
 {
-  InterfacePairIpv6 pair = std::make_pair (ipv6, interface);
+  InterfacePairIpv6 pair = std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv6.find (pair) == g_interfaceStreamMapIpv6.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -1054,7 +1049,7 @@ Ipv6L3ProtocolTxSinkWithContext (
     }
 
 #ifdef INTERFACE_CONTEXT
-  *stream->GetStream () << "t " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") " 
+  *stream->GetStream () << "t " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") "
                         << *packet << std::endl;
 #else
   *stream->GetStream () << "t " << Simulator::Now ().GetSeconds () << " " << context << " " << *packet << std::endl;
@@ -1074,10 +1069,10 @@ Ipv6L3ProtocolRxSinkWithContext (
   Ptr<OutputStreamWrapper> stream,
   std::string context,
   Ptr<const Packet> packet,
-  Ptr<Ipv6> ipv6, 
+  Ptr<Ipv6> ipv6,
   uint32_t interface)
 {
-  InterfacePairIpv6 pair = std::make_pair (ipv6, interface);
+  InterfacePairIpv6 pair = std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface);
   if (g_interfaceStreamMapIpv6.find (pair) == g_interfaceStreamMapIpv6.end ())
     {
       NS_LOG_INFO ("Ignoring packet to/from interface " << interface);
@@ -1085,7 +1080,7 @@ Ipv6L3ProtocolRxSinkWithContext (
     }
 
 #ifdef INTERFACE_CONTEXT
-  *stream->GetStream () << "r " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") " 
+  *stream->GetStream () << "r " << Simulator::Now ().GetSeconds () << " " << context << "(" << interface << ") "
                         << *packet << std::endl;
 #else
   *stream->GetStream () << "r " << Simulator::Now ().GetSeconds () << " " << context << " " << *packet << std::endl;
@@ -1095,11 +1090,11 @@ Ipv6L3ProtocolRxSinkWithContext (
 bool
 InternetStackHelper::AsciiHooked (Ptr<Ipv6> ipv6)
 {
-  for (  InterfaceStreamMapIpv6::const_iterator i = g_interfaceStreamMapIpv6.begin (); 
-         i != g_interfaceStreamMapIpv6.end (); 
+  for (  InterfaceStreamMapIpv6::const_iterator i = g_interfaceStreamMapIpv6.begin ();
+         i != g_interfaceStreamMapIpv6.end ();
          ++i)
     {
-      if ((*i).first.first == ipv6)
+      if ((*i).first.first == ipv6->GetObject<Node> ()->GetId ())
         {
           return true;
         }
@@ -1107,11 +1102,11 @@ InternetStackHelper::AsciiHooked (Ptr<Ipv6> ipv6)
   return false;
 }
 
-void 
+void
 InternetStackHelper::EnableAsciiIpv6Internal (
-  Ptr<OutputStreamWrapper> stream, 
-  std::string prefix, 
-  Ptr<Ipv6> ipv6, 
+  Ptr<OutputStreamWrapper> stream,
+  std::string prefix,
+  Ptr<Ipv6> ipv6,
   uint32_t interface,
   bool explicitFilename)
 {
@@ -1122,26 +1117,26 @@ InternetStackHelper::EnableAsciiIpv6Internal (
     }
 
   //
-  // Our trace sinks are going to use packet printing, so we have to 
+  // Our trace sinks are going to use packet printing, so we have to
   // make sure that is turned on.
   //
   Packet::EnablePrinting ();
 
   //
-  // If we are not provided an OutputStreamWrapper, we are expected to create 
+  // If we are not provided an OutputStreamWrapper, we are expected to create
   // one using the usual trace filename conventions and do a hook WithoutContext
   // since there will be one file per context and therefore the context would
   // be redundant.
   //
-  if (stream == 0)
+  if (!stream)
     {
       //
-      // Set up an output stream object to deal with private ofstream copy 
+      // Set up an output stream object to deal with private ofstream copy
       // constructor and lifetime issues.  Let the helper decide the actual
       // name of the file given the prefix.
       //
-      // We have to create a stream and a mapping from protocol/interface to 
-      // stream irrespective of how many times we want to trace a particular 
+      // We have to create a stream and a mapping from protocol/interface to
+      // stream irrespective of how many times we want to trace a particular
       // protocol.
       //
       AsciiTraceHelper asciiTraceHelper;
@@ -1167,7 +1162,7 @@ InternetStackHelper::EnableAsciiIpv6Internal (
           //
           // The drop sink for the Ipv6L3Protocol uses a different signature than
           // the default sink, so we have to cook one up for ourselves.  We can get
-          // to the Ptr<Ipv6L3Protocol> through our Ptr<Ipv6> since they must both 
+          // to the Ptr<Ipv6L3Protocol> through our Ptr<Ipv6> since they must both
           // be aggregated to the same node.
           //
           Ptr<Ipv6L3Protocol> ipv6L3Protocol = ipv6->GetObject<Ipv6L3Protocol> ();
@@ -1175,29 +1170,29 @@ InternetStackHelper::EnableAsciiIpv6Internal (
                                                                     MakeBoundCallback (&Ipv6L3ProtocolDropSinkWithoutContext, theStream));
           NS_ASSERT_MSG (result == true, "InternetStackHelper::EnableAsciiIpv6Internal():  "
                          "Unable to connect ipv6L3Protocol \"Drop\"");
-          result = ipv6L3Protocol->TraceConnectWithoutContext ("Tx", 
+          result = ipv6L3Protocol->TraceConnectWithoutContext ("Tx",
                                                                MakeBoundCallback (&Ipv6L3ProtocolTxSinkWithoutContext, theStream));
           NS_ASSERT_MSG (result == true, "InternetStackHelper::EnableAsciiIpv6Internal():  "
                          "Unable to connect ipv6L3Protocol \"Tx\"");
-          result = ipv6L3Protocol->TraceConnectWithoutContext ("Rx", 
+          result = ipv6L3Protocol->TraceConnectWithoutContext ("Rx",
                                                                MakeBoundCallback (&Ipv6L3ProtocolRxSinkWithoutContext, theStream));
           NS_ASSERT_MSG (result == true, "InternetStackHelper::EnableAsciiIpv6Internal():  "
                          "Unable to connect ipv6L3Protocol \"Rx\"");
         }
 
-      g_interfaceStreamMapIpv6[std::make_pair (ipv6, interface)] = theStream;
+      g_interfaceStreamMapIpv6[std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface)] = theStream;
       return;
     }
 
   //
   // If we are provided an OutputStreamWrapper, we are expected to use it, and
   // to provide a context.  We are free to come up with our own context if we
-  // want, and use the AsciiTraceHelper Hook*WithContext functions, but for 
+  // want, and use the AsciiTraceHelper Hook*WithContext functions, but for
   // compatibility and simplicity, we just use Config::Connect and let it deal
   // with the context.
   //
   // We need to associate the ipv4/interface with a stream to express interest
-  // in tracing events on that pair, however, we only hook the trace sources 
+  // in tracing events on that pair, however, we only hook the trace sources
   // once to avoid multiple trace sink calls per event (connect is independent
   // of interface).
   //
@@ -1217,7 +1212,7 @@ InternetStackHelper::EnableAsciiIpv6Internal (
       Config::Connect (oss.str (), MakeBoundCallback (&Ipv6L3ProtocolRxSinkWithContext, stream));
     }
 
-  g_interfaceStreamMapIpv6[std::make_pair (ipv6, interface)] = stream;
+  g_interfaceStreamMapIpv6[std::make_pair (ipv6->GetObject<Node> ()->GetId (), interface)] = stream;
 }
 
 } // namespace ns3

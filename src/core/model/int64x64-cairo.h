@@ -19,6 +19,7 @@
 
 #include "ns3/core-config.h"
 #if !defined(INT64X64_CAIRO_H) && defined (INT64X64_USE_CAIRO) && !defined(PYTHON_SCAN)
+/** Using the ns3::int64x64_t based on Cairo 128-bit integers. */
 #define INT64X64_CAIRO_H
 
 #include <cmath>  // pow
@@ -81,11 +82,14 @@ public:
     _v.hi = 0;
     _v.lo = 0;
   }
-  /**@{*/
   /**
-   * Construct from a floating point value.
+   * \name Construct from a floating point value.
+   */
+  /**
+   * @{
+   * Constructor from a floating point.
    *
-   * \param [in] value floating value to represent
+   * \param [in] value Floating value to represent.
    */
   inline int64x64_t (const double value)
   {
@@ -122,6 +126,9 @@ public:
   }
   /**@}*/
 
+  /**
+   * \name Construct from an integral type.
+   */
   /**@{*/
   /**
    * Construct from an integral type.
@@ -191,6 +198,12 @@ public:
     return *this;
   }
 
+  /** Explicit bool conversion. */
+  inline explicit operator bool () const
+  {
+    return (_v.hi != 0 || _v.lo != 0);
+  }
+
   /**
    * Get this value as a double.
    *
@@ -228,7 +241,7 @@ public:
 
   /**
    * Truncate to an integer.
-   * Truncation is always toward zero, 
+   * Truncation is always toward zero,
    * \return The value truncated toward zero.
    */
   int64_t GetInt (void) const
@@ -295,16 +308,33 @@ private:
    *  \param [in] rhs Right hand argument
    *  \return The result of the operator.
    */
-  friend bool         operator == (const int64x64_t & lhs, const int64x64_t & rhs);
+  // *NS_CHECK_STYLE_OFF*
+  friend inline bool operator == (const int64x64_t & lhs, const int64x64_t & rhs) { return _cairo_int128_eq (lhs._v, rhs._v); };
+  friend inline bool operator <  (const int64x64_t & lhs, const int64x64_t & rhs) { return _cairo_int128_lt (lhs._v, rhs._v); };
+  friend inline bool operator >  (const int64x64_t & lhs, const int64x64_t & rhs) { return _cairo_int128_gt (lhs._v, rhs._v); };
 
-  friend bool         operator <  (const int64x64_t & lhs, const int64x64_t & rhs);
-  friend bool         operator >  (const int64x64_t & lhs, const int64x64_t & rhs);
-
-  friend int64x64_t & operator += (      int64x64_t & lhs, const int64x64_t & rhs);
-  friend int64x64_t & operator -= (      int64x64_t & lhs, const int64x64_t & rhs);
-  friend int64x64_t & operator *= (      int64x64_t & lhs, const int64x64_t & rhs);
-  friend int64x64_t & operator /= (      int64x64_t & lhs, const int64x64_t & rhs);
-  /**@}*/
+  friend inline int64x64_t & operator += (int64x64_t & lhs, const int64x64_t & rhs)
+    {
+      lhs._v = _cairo_int128_add ( lhs._v, rhs._v );
+      return lhs;
+    };
+  friend inline int64x64_t & operator -= (int64x64_t & lhs, const int64x64_t & rhs)
+    {
+      lhs._v = _cairo_int128_sub ( lhs._v, rhs._v );
+      return lhs;
+    };
+  friend inline int64x64_t & operator *= (int64x64_t & lhs, const int64x64_t & rhs)
+    {
+      lhs.Mul (rhs);
+      return lhs;
+    };
+  friend inline int64x64_t & operator /= (int64x64_t & lhs, const int64x64_t & rhs)
+    {
+      lhs.Div (rhs);
+      return lhs;
+    };
+  // *NS_CHECK_STYLE_ON*
+  /** @} */
 
   /**
    * \name Unary Operators
@@ -316,9 +346,18 @@ private:
    *  \param [in] lhs Left hand argument
    *  \return The result of the operator.
    */
-  friend int64x64_t   operator -  (const int64x64_t & lhs);
-  friend int64x64_t   operator !  (const int64x64_t & lhs);
-  /**@}*/
+  friend inline int64x64_t   operator +  (const int64x64_t & lhs) { return lhs; };
+  friend inline int64x64_t   operator -  (const int64x64_t & lhs)
+    {
+      int64x64_t tmp = lhs;
+      tmp._v = _cairo_int128_negate (tmp._v);
+      return tmp;
+    };
+  friend inline int64x64_t   operator !  (const int64x64_t & lhs)
+    {
+      return (lhs == int64x64_t ()) ? int64x64_t (1, 0) : int64x64_t ();
+    };
+  /** @} */
 
   /**
    * Implement `*=`.
@@ -379,123 +418,6 @@ private:
   cairo_int128_t _v;  //!< The Q64.64 value.
 
 };  // class int64x64_t
-
-
-/**
- * \ingroup highprec
- * Equality operator.
- * \param [in] lhs Left hand argument
- * \param [in] rhs Right hand argument
- * \return The result of the operator.
- */
-inline bool operator == (const int64x64_t & lhs, const int64x64_t & rhs)
-{
-  return _cairo_int128_eq (lhs._v, rhs._v);
-}
-/**
- * \ingroup highprec
- * Less than operator
- * \param [in] lhs Left hand argument
- * \param [in] rhs Right hand argument
- * \return The result of the operator.
- */
-inline bool operator < (const int64x64_t & lhs, const int64x64_t & rhs)
-{
-  return _cairo_int128_lt (lhs._v, rhs._v);
-}
-/**
- * \ingroup highprec
- * Greater operator
- * \param [in] lhs Left hand argument
- * \param [in] rhs Right hand argument
- * \return The result of the operator.
- */
-inline bool operator > (const int64x64_t & lhs, const int64x64_t & rhs)
-{
-  return _cairo_int128_gt (lhs._v, rhs._v);
-}
-
-/**
- * \ingroup highprec
- * Compound addition operator
- * \param [in] lhs Left hand argument
- * \param [in] rhs Right hand argument
- * \return The result of the operator.
- */
-inline int64x64_t & operator += (int64x64_t & lhs, const int64x64_t & rhs)
-{
-  lhs._v = _cairo_int128_add ( lhs._v, rhs._v );
-  return lhs;
-}
-/**
- * \ingroup highprec
- * Compound subtraction operator
- * \param [in] lhs Left hand argument
- * \param [in] rhs Right hand argument
- * \return The result of the operator.
- */
-inline int64x64_t & operator -= (int64x64_t & lhs, const int64x64_t & rhs)
-{
-  lhs._v = _cairo_int128_sub ( lhs._v, rhs._v );
-  return lhs;
-}
-/**
- * \ingroup highprec
- * Compound multiplication operator
- * \param [in] lhs Left hand argument
- * \param [in] rhs Right hand argument
- * \return The result of the operator.
- */
-inline int64x64_t & operator *= (int64x64_t & lhs, const int64x64_t & rhs)
-{
-  lhs.Mul (rhs);
-  return lhs;
-}
-/**
- * \ingroup highprec
- * Compound division operator
- * \param [in] lhs Left hand argument
- * \param [in] rhs Right hand argument
- * \return The result of the operator.
- */
-inline int64x64_t & operator /= (int64x64_t & lhs, const int64x64_t & rhs)
-{
-  lhs.Div (rhs);
-  return lhs;
-}
-
-/**
- * \ingroup highprec
- * Unary plus operator
- * \param [in] lhs Left hand argument
- * \return The result of the operator.
- */
-inline int64x64_t operator + (const int64x64_t & lhs)
-{
-  return lhs;
-}
-/**
- * \ingroup highprec
- * Unary negation operator (change sign operator)
- * \param [in] lhs Left hand argument
- * \return The result of the operator.
- */
-inline int64x64_t operator - (const int64x64_t & lhs)
-{
-  int64x64_t tmp = lhs;
-  tmp._v = _cairo_int128_negate (tmp._v);
-  return tmp;
-}
-/**
- * \ingroup highprec
- * Logical not operator
- * \param [in] lhs Left hand argument
- * \return The result of the operator.
- */
-inline int64x64_t operator ! (const int64x64_t & lhs)
-{
-  return (lhs == int64x64_t ()) ? int64x64_t (1, 0) : int64x64_t ();
-}
 
 
 } // namespace ns3

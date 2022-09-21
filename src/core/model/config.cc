@@ -457,7 +457,7 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
   // the root of the "/Names" namespace, so we just ignore it and move on to
   // the next segment.
   //
-  if (root == 0)
+  if (!root)
     {
       std::string::size_type offset = path.find ("/Names");
       if (offset == 0)
@@ -492,7 +492,7 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
   // a path that is not in the "/Names" namespace.  We will have previously
   // found any matches, so we just bail out.
   //
-  if (root == 0)
+  if (!root)
     {
       return;
     }
@@ -504,7 +504,7 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
       NS_LOG_DEBUG ("GetObject=" << tidString << " on path=" << GetResolvedPath ());
       TypeId tid = TypeId::LookupByName (tidString);
       Ptr<Object> object = root->GetObject<Object> (tid);
-      if (object == 0)
+      if (!object)
         {
           NS_LOG_DEBUG ("GetObject (" << tidString << ") failed on path=" << GetResolvedPath ());
           return;
@@ -540,7 +540,7 @@ Resolver::DoResolve (std::string path, Ptr<Object> root)
                   PointerValue pValue;
                   root->GetAttribute (info.name, pValue);
                   Ptr<Object> object = pValue.Get<Object> ();
-                  if (object == 0)
+                  if (!object)
                     {
                       NS_LOG_ERROR ("Requested object name=\"" << item <<
                                     "\" exists on path=\"" << GetResolvedPath () << "\""
@@ -619,29 +619,29 @@ class ConfigImpl : public Singleton<ConfigImpl>
 public:
   // Keep Set and SetFailSafe since their errors are triggered
   // by the underlying ObjecBase functions.
-  /** \copydoc Config::Set() */
+  /** \copydoc ns3::Config::Set() */
   void Set (std::string path, const AttributeValue &value);
-  /** \copydoc Config::SetFailSafe() */
+  /** \copydoc ns3::Config::SetFailSafe() */
   bool SetFailSafe (std::string path, const AttributeValue &value);
-  /** \copydoc Config::ConnectWithoutContextFailSafe() */
+  /** \copydoc ns3::Config::ConnectWithoutContextFailSafe() */
   bool ConnectWithoutContextFailSafe (std::string path, const CallbackBase &cb);
-  /** \copydoc Config::ConnectFailSafe() */
+  /** \copydoc ns3::Config::ConnectFailSafe() */
   bool ConnectFailSafe (std::string path, const CallbackBase &cb);
-  /** \copydoc Config::DisconnectWithoutContext() */
+  /** \copydoc ns3::Config::DisconnectWithoutContext() */
   void DisconnectWithoutContext (std::string path, const CallbackBase &cb);
-  /** \copydoc Config::Disconnect() */
+  /** \copydoc ns3::Config::Disconnect() */
   void Disconnect (std::string path, const CallbackBase &cb);
-  /** \copydoc Config::LookupMatches() */
+  /** \copydoc ns3::Config::LookupMatches() */
   MatchContainer LookupMatches (std::string path);
 
-  /** \copydoc Config::RegisterRootNamespaceObject() */
+  /** \copydoc ns3::Config::RegisterRootNamespaceObject() */
   void RegisterRootNamespaceObject (Ptr<Object> obj);
-  /** \copydoc Config::UnregisterRootNamespaceObject() */
+  /** \copydoc ns3::Config::UnregisterRootNamespaceObject() */
   void UnregisterRootNamespaceObject (Ptr<Object> obj);
 
-  /** \copydoc Config::GetRootNamespaceObjectN() */
+  /** \copydoc ns3::Config::GetRootNamespaceObjectN() */
   std::size_t GetRootNamespaceObjectN (void) const;
-  /** \copydoc Config::GetRootNamespaceObject() */
+  /** \copydoc ns3::Config::GetRootNamespaceObject() */
   Ptr<Object> GetRootNamespaceObject (std::size_t i) const;
 
 private:
@@ -878,7 +878,7 @@ bool SetDefaultFailSafe (std::string fullName, const AttributeValue &value)
       if (tmp.name == paramName)
         {
           Ptr<AttributeValue> v = tmp.checker->CreateValidValue (value);
-          if (v == 0)
+          if (!v)
             {
               return false;
             }

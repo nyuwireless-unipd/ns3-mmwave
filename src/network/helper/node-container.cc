@@ -23,6 +23,17 @@
 
 namespace ns3 {
 
+NodeContainer
+NodeContainer::GetGlobal ()
+{
+  NodeContainer c;
+  for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); ++i)
+    {
+      c.Add (*i);
+    }
+  return c;
+}
+
 NodeContainer::NodeContainer ()
 {
 }
@@ -31,70 +42,44 @@ NodeContainer::NodeContainer (Ptr<Node> node)
 {
   m_nodes.push_back (node);
 }
+
 NodeContainer::NodeContainer (std::string nodeName)
 {
   Ptr<Node> node = Names::Find<Node> (nodeName);
   m_nodes.push_back (node);
 }
+
 NodeContainer::NodeContainer (uint32_t n, uint32_t systemId /* = 0 */)
 {
   m_nodes.reserve (n);
   Create (n, systemId);
 }
-NodeContainer::NodeContainer (const NodeContainer &a, const NodeContainer &b)
-{
-  Add (a);
-  Add (b);
-}
-NodeContainer::NodeContainer (const NodeContainer &a, const NodeContainer &b, 
-                              const NodeContainer &c)
-{
-  Add (a);
-  Add (b);
-  Add (c);
-}
-NodeContainer::NodeContainer (const NodeContainer &a, const NodeContainer &b, 
-                              const NodeContainer &c, const NodeContainer &d)
-{
-  Add (a);
-  Add (b);
-  Add (c);
-  Add (d);
-}
 
-NodeContainer::NodeContainer (const NodeContainer &a, const NodeContainer &b, 
-                              const NodeContainer &c, const NodeContainer &d,
-                              const NodeContainer &e)
-{
-  Add (a);
-  Add (b);
-  Add (c);
-  Add (d);
-  Add (e);
-}
-
-NodeContainer::Iterator 
+NodeContainer::Iterator
 NodeContainer::Begin (void) const
 {
   return m_nodes.begin ();
 }
-NodeContainer::Iterator 
+
+NodeContainer::Iterator
 NodeContainer::End (void) const
 {
   return m_nodes.end ();
 }
 
-uint32_t 
+uint32_t
 NodeContainer::GetN (void) const
 {
   return m_nodes.size ();
 }
-Ptr<Node> 
+
+Ptr<Node>
 NodeContainer::Get (uint32_t i) const
 {
   return m_nodes[i];
 }
-void 
+
+void
 NodeContainer::Create (uint32_t n)
 {
   for (uint32_t i = 0; i < n; i++)
@@ -102,7 +87,8 @@ NodeContainer::Create (uint32_t n)
       m_nodes.push_back (CreateObject<Node> ());
     }
 }
-void 
+
+void
 NodeContainer::Create (uint32_t n, uint32_t systemId)
 {
   for (uint32_t i = 0; i < n; i++)
@@ -110,35 +96,27 @@ NodeContainer::Create (uint32_t n, uint32_t systemId)
       m_nodes.push_back (CreateObject<Node> (systemId));
     }
 }
-void 
-NodeContainer::Add (NodeContainer other)
+
+void
+NodeContainer::Add (const NodeContainer& nc)
 {
-  for (Iterator i = other.Begin (); i != other.End (); i++)
+  for (Iterator i = nc.Begin (); i != nc.End (); i++)
     {
       m_nodes.push_back (*i);
     }
 }
-void 
+
+void
 NodeContainer::Add (Ptr<Node> node)
 {
   m_nodes.push_back (node);
 }
-void 
+
+void
 NodeContainer::Add (std::string nodeName)
 {
   Ptr<Node> node = Names::Find<Node> (nodeName);
   m_nodes.push_back (node);
-}
-
-NodeContainer 
-NodeContainer::GetGlobal (void)
-{
-  NodeContainer c;
-  for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); ++i)
-    {
-      c.Add (*i);
-    }
-  return c;
 }
 
 bool

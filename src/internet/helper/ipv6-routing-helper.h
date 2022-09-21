@@ -36,10 +36,10 @@ class Node;
  *
  * \brief A factory to create ns3::Ipv6RoutingProtocol objects
  *
- * For each new routing protocol created as a subclass of 
- * ns3::Ipv6RoutingProtocol, you need to create a subclass of 
- * ns3::Ipv6RoutingHelper which can be used by 
- * ns3::InternetStackHelper::SetRoutingHelper and 
+ * For each new routing protocol created as a subclass of
+ * ns3::Ipv6RoutingProtocol, you need to create a subclass of
+ * ns3::Ipv6RoutingHelper which can be used by
+ * ns3::InternetStackHelper::SetRoutingHelper and
  * ns3::InternetStackHelper::Install.
  */
 class Ipv6RoutingHelper
@@ -53,8 +53,8 @@ public:
 
   /**
    * \brief virtual constructor
-   * \returns pointer to clone of this Ipv6RoutingHelper 
-   * 
+   * \returns pointer to clone of this Ipv6RoutingHelper
+   *
    * This method is mainly for internal use by the other helpers;
    * clients are expected to free the dynamic memory allocated by this method
    */
@@ -193,7 +193,7 @@ public:
    */
   template<class T>
   static Ptr<T> GetRouting (Ptr<Ipv6RoutingProtocol> protocol);
-  
+
 private:
   /**
    * \brief prints the routing tables of a node.
@@ -267,17 +267,17 @@ template<class T>
 Ptr<T> Ipv6RoutingHelper::GetRouting (Ptr<Ipv6RoutingProtocol> protocol)
 {
   Ptr<T> ret = DynamicCast<T> (protocol);
-  if (ret == 0)
+  if (!ret)
     {
       // trying to check if protocol is a list routing
       Ptr<Ipv6ListRouting> lrp = DynamicCast<Ipv6ListRouting> (protocol);
-      if (lrp != 0)
+      if (lrp)
         {
           for (uint32_t i = 0; i < lrp->GetNRoutingProtocols ();  i++)
             {
               int16_t priority;
               ret = GetRouting<T> (lrp->GetRoutingProtocol (i, priority)); // potential recursion, if inside ListRouting is ListRouting
-              if (ret != 0)
+              if (ret)
                 break;
             }
         }

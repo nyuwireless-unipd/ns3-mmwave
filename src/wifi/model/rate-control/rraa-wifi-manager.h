@@ -84,7 +84,7 @@ private:
                        double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss) override;
   void DoReportFinalRtsFailed (WifiRemoteStation *station) override;
   void DoReportFinalDataFailed (WifiRemoteStation *station) override;
-  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station) override;
+  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint16_t allowedWidth) override;
   WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station) override;
   bool DoNeedRts (WifiRemoteStation *st,
                   uint32_t size, bool normally) override;
@@ -178,8 +178,8 @@ private:
   Time m_sifs;             //!< Value of SIFS configured in the device.
   Time m_difs;             //!< Value of DIFS configured in the device.
 
-  uint32_t m_frameLength;  //!< Data frame length used for calculate mode TxTime.
-  uint32_t m_ackLength;    //!< Ack frame length used for calculate mode TxTime.
+  uint32_t m_frameLength;  //!< Data frame length used to calculate mode TxTime.
+  uint32_t m_ackLength;    //!< Ack frame length used to calculate mode TxTime.
 
   bool m_basic;    ///< basic
   Time m_timeout;  ///< timeout

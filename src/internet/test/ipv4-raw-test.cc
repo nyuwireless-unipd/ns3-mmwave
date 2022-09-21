@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2010 Hajime Tazaki
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -119,7 +119,7 @@ public:
 
 
 Ipv4RawSocketImplTest::Ipv4RawSocketImplTest ()
-  : TestCase ("IPv4 Raw socket implementation") 
+  : TestCase ("IPv4 Raw socket implementation")
 {
 }
 
@@ -138,9 +138,9 @@ void Ipv4RawSocketImplTest::ReceivePkt (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket = socket->Recv (2, MSG_PEEK);
-  NS_ASSERT (m_receivedPacket->GetSize () == 2);
+  NS_TEST_ASSERT_MSG_EQ (m_receivedPacket->GetSize (), 2, "ReceivedPacket size is not equal to 2");
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket->GetSize (), "Received packet size is not equal to Rx buffer size");
 }
 
 void Ipv4RawSocketImplTest::ReceivePkt2 (Ptr<Socket> socket)
@@ -148,9 +148,9 @@ void Ipv4RawSocketImplTest::ReceivePkt2 (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket2 = socket->Recv (2, MSG_PEEK);
-  NS_ASSERT (m_receivedPacket2->GetSize () == 2);
+  NS_TEST_ASSERT_MSG_EQ (m_receivedPacket2->GetSize (), 2, "ReceivedPacket size is not equal to 2");
   m_receivedPacket2 = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket2->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket2->GetSize (), "Received packet size is not equal to Rx buffer size");
 }
 
 void

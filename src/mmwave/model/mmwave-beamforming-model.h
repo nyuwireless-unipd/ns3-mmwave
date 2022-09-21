@@ -23,6 +23,7 @@
 #include "ns3/matrix-based-channel-model.h"
 #include "ns3/beamforming-codebook.h"
 #include "ns3/spectrum-propagation-loss-model.h"
+#include "ns3/phased-array-spectrum-propagation-loss-model.h"
 #include "ns3/spectrum-value.h"
 #include "ns3/object-factory.h"
 #include "ns3/simulator.h"
@@ -259,6 +260,7 @@ private:
 
   ObjectFactory m_beamformingCodebookFactory;
   Ptr<SpectrumPropagationLossModel> m_splm; //!<
+  Ptr<PhasedArraySpectrumPropagationLossModel> m_pSplm; //!<
   Ptr<SpectrumValue> m_txPsd;
   
   /* struct used to store the selected beam pairs */

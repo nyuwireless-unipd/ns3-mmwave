@@ -18,7 +18,7 @@
  * Author: Justin Rohrer <rohrej@ittc.ku.edu>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -83,30 +83,60 @@ using namespace dsr;
 
 NS_LOG_COMPONENT_DEFINE ("manet-routing-compare");
 
+/**
+ * Routing experiment class.
+ *
+ * It handles the creation and run of an experiment.
+ */
 class RoutingExperiment
 {
 public:
   RoutingExperiment ();
+  /**
+   * Run the experiment.
+   * \param nSinks The number of Sink Nodes.
+   * \param txp The Tx power.
+   * \param CSVfileName The output CSV filename.
+   */
   void Run (int nSinks, double txp, std::string CSVfileName);
   //static void SetMACParam (ns3::NetDeviceContainer & devices,
   //                                 int slotDistance);
+  /**
+   * Handles the command-line parmeters.
+   * \param argc The argument count.
+   * \param argv The argument vector.
+   * \return the CSV filename.
+   */
   std::string CommandSetup (int argc, char **argv);
 
 private:
+  /**
+   * Setup the receiving socket in a Sink Node.
+   * \param addr The address of the node.
+   * \param node The node pointer.
+   * \return the socket.
+   */
   Ptr<Socket> SetupPacketReceive (Ipv4Address addr, Ptr<Node> node);
+  /**
+   * Receive a packet.
+   * \param socket The receiving socket.
+   */
   void ReceivePacket (Ptr<Socket> socket);
+  /**
+   * Compute the throughput.
+   */
   void CheckThroughput ();
 
-  uint32_t port;
-  uint32_t bytesTotal;
-  uint32_t packetsReceived;
+  uint32_t port;            //!< Receiving port number.
+  uint32_t bytesTotal;      //!< Total received bytes.
+  uint32_t packetsReceived; //!< Total received packets.
 
-  std::string m_CSVfileName;
-  int m_nSinks;
-  std::string m_protocolName;
-  double m_txp;
-  bool m_traceMobility;
-  uint32_t m_protocol;
+  std::string m_CSVfileName;  //!< CSV filename.
+  int m_nSinks;               //!< Number of sink nodes.
+  std::string m_protocolName; //!< Protocol name.
+  double m_txp;               //!< Tx power.
+  bool m_traceMobility;       //!< Enavle mobility tracing.
+  uint32_t m_protocol;        //!< Protocol type.
 };
 
 RoutingExperiment::RoutingExperiment ()
@@ -268,7 +298,7 @@ RoutingExperiment::Run (int nSinks, double txp, std::string CSVfileName)
   NetDeviceContainer adhocDevices = wifi.Install (wifiPhy, wifiMac, adhocNodes);
 
   MobilityHelper mobilityAdhoc;
-  int64_t streamIndex = 0; // used to get consistent mobility across scenarios
+  [[maybe_unused]] int64_t streamIndex = 0; // used to get consistent mobility across scenarios
 
   ObjectFactory pos;
   pos.SetTypeId ("ns3::RandomRectanglePositionAllocator");
@@ -289,7 +319,6 @@ RoutingExperiment::Run (int nSinks, double txp, std::string CSVfileName)
   mobilityAdhoc.SetPositionAllocator (taPositionAlloc);
   mobilityAdhoc.Install (adhocNodes);
   streamIndex += mobilityAdhoc.AssignStreams (adhocNodes, streamIndex);
-  NS_UNUSED (streamIndex); // From this point, streamIndex is unused
 
   AodvHelper aodv;
   OlsrHelper olsr;

@@ -26,6 +26,7 @@
 #include "ns3/wifi-psdu.h"
 #include "ns3/wifi-phy.h" //only used for static mode constructor
 #include "ns3/wifi-utils.h"
+#include "ns3/interference-helper.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 
@@ -181,8 +182,9 @@ Ptr<WifiPpdu>
 DsssPhy::BuildPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time ppduDuration)
 {
   NS_LOG_FUNCTION (this << psdus << txVector << ppduDuration);
-  return Create<DsssPpdu> (psdus.begin ()->second, txVector, ppduDuration,
-                           ObtainNextUid (txVector));
+  return Create<DsssPpdu> (psdus.begin ()->second, txVector,
+                           m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (txVector.GetChannelWidth ()),
+                           ppduDuration, ObtainNextUid (txVector));
 }
 
 PhyEntity::PhyFieldRxStatus
@@ -236,10 +238,15 @@ DsssPhy::GetRxChannelWidth (const WifiTxVector& txVector) const
   return PhyEntity::GetRxChannelWidth (txVector);
 }
 
-Ptr<SpectrumValue>
-DsssPhy::GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> ppdu) const
+uint16_t
+DsssPhy::GetMeasurementChannelWidth (const Ptr<const WifiPpdu> ppdu) const
 {
-  const WifiTxVector& txVector = ppdu->GetTxVector ();
+  return ppdu ? GetRxChannelWidth (ppdu->GetTxVector ()) : 22;
+}
+
+Ptr<SpectrumValue>
+DsssPhy::GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> /* ppdu */, const WifiTxVector& txVector) const
+{
   uint16_t centerFrequency = GetCenterFrequencyForChannelWidth (txVector);
   uint16_t channelWidth = txVector.GetChannelWidth ();
   NS_LOG_FUNCTION (this << centerFrequency << channelWidth << txPowerW);
@@ -306,11 +313,9 @@ DsssPhy::CreateDsssMode (std::string uniqueName,
                                           true,
                                           MakeBoundCallback (&GetCodeRate, uniqueName),
                                           MakeBoundCallback (&GetConstellationSize, uniqueName),
-                                          MakeBoundCallback (&GetDataRate, uniqueName, modClass), //PhyRate is equivalent to DataRate
                                           MakeCallback (&GetDataRateFromTxVector), //PhyRate is equivalent to DataRate
-                                          MakeBoundCallback (&GetDataRate, uniqueName, modClass),
                                           MakeCallback (&GetDataRateFromTxVector),
-                                          MakeCallback (&IsModeAllowed));
+                                          MakeCallback (&IsAllowed));
 }
 
 WifiCodeRate
@@ -330,12 +335,11 @@ DsssPhy::GetDataRateFromTxVector (const WifiTxVector& txVector, uint16_t /* staI
 {
   WifiMode mode = txVector.GetMode ();
   return DsssPhy::GetDataRate (mode.GetUniqueName (),
-                               mode.GetModulationClass (),
-                               22, 0, 1); //dummy values since unused
+                               mode.GetModulationClass ());
 }
 
 uint64_t
-DsssPhy::GetDataRate (const std::string& name, WifiModulationClass modClass, uint16_t /* channelWidth */, uint16_t /* guardInterval */, uint8_t /* nss */)
+DsssPhy::GetDataRate (const std::string& name, WifiModulationClass modClass)
 {
   uint16_t constellationSize = GetConstellationSize (name);
   uint16_t divisor = 0;
@@ -357,7 +361,7 @@ DsssPhy::GetDataRate (const std::string& name, WifiModulationClass modClass, uin
 }
 
 bool
-DsssPhy::IsModeAllowed (uint16_t /* channelWidth */, uint8_t /* nss */)
+DsssPhy::IsAllowed (const WifiTxVector& /*txVector*/)
 {
   return true;
 }

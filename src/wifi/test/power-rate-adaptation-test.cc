@@ -27,6 +27,7 @@
 #include "ns3/simulator.h"
 #include "ns3/test.h"
 #include "ns3/frame-exchange-manager.h"
+#include "ns3/interference-helper.h"
 #include "ns3/wifi-default-protection-manager.h"
 #include "ns3/wifi-default-ack-manager.h"
 
@@ -69,26 +70,16 @@ Ptr<Node>
 PowerRateAdaptationTest::ConfigureNode ()
 {
   /*
+   * Create and configure node.
+   */
+  Ptr<WifiNetDevice> dev = CreateObject<WifiNetDevice> ();
+  Ptr<Node> node = CreateObject<Node> ();
+  node->AddDevice (dev);
+
+  /*
    * Create channel model. Is is necessary to configure correctly the phy layer.
    */
   Ptr<YansWifiChannel> channel = CreateObject<YansWifiChannel> ();
-
-  /*
-   * Create mac layer. We use Adhoc because association is not needed to get supported rates.
-   */
-  Ptr<WifiNetDevice> dev = CreateObject<WifiNetDevice> ();
-  Ptr<AdhocWifiMac> mac = CreateObject<AdhocWifiMac> ();
-  mac->SetDevice (dev);
-  mac->ConfigureStandard (WIFI_STANDARD_80211a);
-  Ptr<FrameExchangeManager> fem = mac->GetFrameExchangeManager ();
-
-  Ptr<WifiProtectionManager> protectionManager = CreateObject<WifiDefaultProtectionManager> ();
-  protectionManager->SetWifiMac (mac);
-  fem->SetProtectionManager (protectionManager);
-
-  Ptr<WifiAckManager> ackManager = CreateObject<WifiDefaultAckManager> ();
-  ackManager->SetWifiMac (mac);
-  fem->SetAckManager (ackManager);
 
   /*
    * Create mobility model. Is needed by the phy layer for transmission.
@@ -99,10 +90,13 @@ PowerRateAdaptationTest::ConfigureNode ()
    * Create and configure phy layer.
    */
   Ptr<YansWifiPhy> phy = CreateObject<YansWifiPhy> ();
+  Ptr<InterferenceHelper> interferenceHelper = CreateObject<InterferenceHelper> ();
+  phy->SetInterferenceHelper (interferenceHelper);
+  dev->SetPhy (phy);
   phy->SetChannel (channel);
   phy->SetDevice (dev);
   phy->SetMobility (mobility);
-  phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211a, WIFI_PHY_BAND_5GHZ);
+  phy->ConfigureStandard (WIFI_STANDARD_80211a);
 
   /*
    * Configure power control parameters.
@@ -115,16 +109,25 @@ PowerRateAdaptationTest::ConfigureNode ()
    * Create manager.
    */
   Ptr<WifiRemoteStationManager> manager = m_manager.Create<WifiRemoteStationManager> ();
+  dev->SetRemoteStationManager (manager);
 
   /*
-   * Create and configure node. Add mac and phy layer and the manager.
+   * Create mac layer. We use Adhoc because association is not needed to get supported rates.
    */
-  Ptr<Node> node = CreateObject<Node> ();
+  Ptr<AdhocWifiMac> mac = CreateObject<AdhocWifiMac> ();
+  mac->SetDevice (dev);
   mac->SetAddress (Mac48Address::Allocate ());
   dev->SetMac (mac);
-  dev->SetPhy (phy);
-  dev->SetRemoteStationManager (manager);
-  node->AddDevice (dev);
+  mac->ConfigureStandard (WIFI_STANDARD_80211a);
+  Ptr<FrameExchangeManager> fem = mac->GetFrameExchangeManager ();
+
+  Ptr<WifiProtectionManager> protectionManager = CreateObject<WifiDefaultProtectionManager> ();
+  protectionManager->SetWifiMac (mac);
+  fem->SetProtectionManager (protectionManager);
+
+  Ptr<WifiAckManager> ackManager = CreateObject<WifiDefaultAckManager> ();
+  ackManager->SetWifiMac (mac);
+  fem->SetAckManager (ackManager);
 
   return node;
 }
@@ -166,7 +169,7 @@ PowerRateAdaptationTest::TestParf ()
   /*
    * Parf initiates with maximal rate and power.
    */
-  WifiTxVector txVector = manager->GetDataTxVector (packetHeader);
+  WifiTxVector txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   WifiMode mode = txVector.GetMode ();
   int power = (int) txVector.GetTxPowerLevel ();
 
@@ -184,7 +187,7 @@ PowerRateAdaptationTest::TestParf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -199,7 +202,7 @@ PowerRateAdaptationTest::TestParf ()
    */
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -219,7 +222,7 @@ PowerRateAdaptationTest::TestParf ()
     }
   manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -234,7 +237,7 @@ PowerRateAdaptationTest::TestParf ()
 
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -250,7 +253,7 @@ PowerRateAdaptationTest::TestParf ()
   manager->ReportDataFailed (mpdu);
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -268,7 +271,7 @@ PowerRateAdaptationTest::TestParf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -283,7 +286,7 @@ PowerRateAdaptationTest::TestParf ()
 
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -301,7 +304,7 @@ PowerRateAdaptationTest::TestParf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -319,7 +322,7 @@ PowerRateAdaptationTest::TestParf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -339,7 +342,7 @@ PowerRateAdaptationTest::TestParf ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -388,7 +391,7 @@ PowerRateAdaptationTest::TestAparf ()
   /*
    * Aparf initiates with maximal rate and power.
    */
-  WifiTxVector txVector = manager->GetDataTxVector (packetHeader);
+  WifiTxVector txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   WifiMode mode = txVector.GetMode ();
   int power = (int) txVector.GetTxPowerLevel ();
 
@@ -407,7 +410,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -422,7 +425,7 @@ PowerRateAdaptationTest::TestAparf ()
    */
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -441,7 +444,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -460,7 +463,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -478,7 +481,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -493,7 +496,7 @@ PowerRateAdaptationTest::TestAparf ()
    */
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -511,7 +514,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -527,7 +530,7 @@ PowerRateAdaptationTest::TestAparf ()
    */
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -545,7 +548,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -565,7 +568,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -577,7 +580,7 @@ PowerRateAdaptationTest::TestAparf ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -658,7 +661,7 @@ PowerRateAdaptationTest::TestRrpaa ()
   /*
    * RRPAA initiates with minimal rate and maximal power.
    */
-  WifiTxVector txVector = manager->GetDataTxVector (packetHeader);
+  WifiTxVector txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   WifiMode mode = txVector.GetMode ();
   int power = (int) txVector.GetTxPowerLevel ();
 
@@ -680,7 +683,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -692,7 +695,7 @@ PowerRateAdaptationTest::TestRrpaa ()
    */
   manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -710,7 +713,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -719,7 +722,7 @@ PowerRateAdaptationTest::TestRrpaa ()
 
   manager->ReportDataFailed (mpdu);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -737,7 +740,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -749,7 +752,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -761,7 +764,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -773,7 +776,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -785,7 +788,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -797,7 +800,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -809,7 +812,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -829,7 +832,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -838,7 +841,7 @@ PowerRateAdaptationTest::TestRrpaa ()
 
   manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -857,7 +860,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -875,7 +878,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -893,7 +896,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -911,7 +914,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -927,7 +930,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -947,7 +950,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -959,7 +962,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -971,7 +974,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataFailed (mpdu);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -983,7 +986,7 @@ PowerRateAdaptationTest::TestRrpaa ()
       manager->ReportDataOk (mpdu, 0, ackMode, 0, txVector);
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 
@@ -1009,7 +1012,7 @@ PowerRateAdaptationTest::TestRrpaa ()
         }
     }
 
-  txVector = manager->GetDataTxVector (packetHeader);
+  txVector = manager->GetDataTxVector (packetHeader, dev->GetPhy ()->GetChannelWidth ());
   mode = txVector.GetMode ();
   power = (int) txVector.GetTxPowerLevel ();
 

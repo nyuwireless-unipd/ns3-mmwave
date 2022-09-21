@@ -29,6 +29,7 @@
 #include "ns3/deprecated.h"
 #include "wifi-mac-helper.h"
 #include <functional>
+#include <vector>
 
 namespace ns3 {
 
@@ -47,124 +48,117 @@ class WifiPhyHelper : public PcapHelperForDevice,
                       public AsciiTraceHelperForDevice
 {
 public:
-  WifiPhyHelper ();
+  /**
+   * Constructor
+   *
+   * \param nLinks the number of links to configure (>1 only for 11be devices)
+   */
+  WifiPhyHelper (uint8_t nLinks = 1);
   virtual ~WifiPhyHelper ();
 
   /**
-   * \param node the node on which the PHY object will reside
-   * \param device the device within which the PHY object will reside
+   * \param node the node on which the PHY object(s) will reside
+   * \param device the device within which the PHY object(s) will reside
    *
-   * \returns a new PHY object.
+   * \returns new PHY objects.
    *
    * Subclasses must implement this method to allow the ns3::WifiHelper class
    * to create PHY objects from ns3::WifiHelper::Install.
-   *
-   * Typically the device type will be of class WifiNetDevice but the
-   * type of the pointer is generalized so that this method may be used
-   * by other Wifi device variants such as WaveNetDevice.
    */
-  virtual Ptr<WifiPhy> Create (Ptr<Node> node, Ptr<NetDevice> device) const = 0;
+  virtual std::vector<Ptr<WifiPhy>> Create (Ptr<Node> node, Ptr<WifiNetDevice> device) const = 0;
 
   /**
    * \param name the name of the attribute to set
    * \param v the value of the attribute
    *
-   * Set an attribute of the underlying PHY object.
+   * Set an attribute of all the underlying PHY object.
    */
   void Set (std::string name, const AttributeValue &v);
-  /**
-   * \param name the name of the error rate model to set.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
-   *
-   * Set the error rate model and its attributes to use when Install is called.
-   */
-  void SetErrorRateModel (std::string name,
-                          std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                          std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                          std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                          std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                          std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                          std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                          std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                          std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
-  /**
-   * \param name the name of the frame capture model to set.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
-   *
-   * Set the frame capture model and its attributes to use when Install is called.
-   */
-  void SetFrameCaptureModel (std::string name,
-                             std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                             std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                             std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                             std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                             std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                             std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                             std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                             std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
-  /**
-   * \param name the name of the preamble detection model to set.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
-   *
-   * Set the preamble detection model and its attributes to use when Install is called.
-   */
-  void SetPreambleDetectionModel (std::string name,
-                                  std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                                  std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                                  std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                                  std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                                  std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                                  std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                                  std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                                  std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
 
   /**
-   * Disable the preamble detection model.
+   * \param name the name of the attribute to set
+   * \param v the value of the attribute
+   * \param linkId ID of the link to configure (>0 only for 11be devices)
+   *
+   * Set an attribute of the given underlying PHY object.
+   */
+  void Set (uint8_t linkId, std::string name, const AttributeValue &v);
+
+  /**
+   * Helper function used to set the interference helper.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param type the type of interference helper
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void SetInterferenceHelper (std::string type, Args&&... args);
+
+  /**
+   * Helper function used to set the error rate model.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param type the type of error rate model
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void SetErrorRateModel (std::string type, Args&&... args);
+
+  /**
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param linkId ID of the link to configure (>0 only for 11be devices)
+   * \param type the type of the error rate model to set.
+   * \param args A sequence of name-value pairs of the attributes to set.
+   *
+   * Set the error rate model and its attributes to use for the given link when Install is called.
+   */
+  template <typename... Args>
+  void SetErrorRateModel (uint8_t linkId, std::string type, Args&&... args);
+
+  /**
+   * Helper function used to set the frame capture model.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param type the type of frame capture model
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void SetFrameCaptureModel (std::string type, Args&&... args);
+
+  /**
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param linkId ID of the link to configure (>0 only for 11be devices)
+   * \param type the type of the frame capture model to set.
+   * \param args A sequence of name-value pairs of the attributes to set.
+   *
+   * Set the frame capture model and its attributes to use for the given link when Install is called.
+   */
+  template <typename... Args>
+  void SetFrameCaptureModel (uint8_t linkId, std::string type, Args&&... args);
+
+  /**
+   * Helper function used to set the preamble detection model.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param type the type of preamble detection model
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void SetPreambleDetectionModel (std::string type, Args&&... args);
+
+  /**
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param linkId ID of the link to configure (>0 only for 11be devices)
+   * \param type the type of the preamble detection model to set.
+   * \param args A sequence of name-value pairs of the attributes to set.
+   *
+   * Set the preamble detection model and its attributes to use for the given link when Install is called.
+   */
+  template <typename... Args>
+  void SetPreambleDetectionModel (uint8_t linkId, std::string type, Args&&... args);
+
+  /**
+   * Disable the preamble detection model on all links.
    */
   void DisablePreambleDetectionModel ();
 
@@ -237,10 +231,11 @@ protected:
                                 SignalNoiseDbm signalNoise,
                                 uint16_t staId = SU_STA_ID);
 
-  ObjectFactory m_phy; ///< PHY object
-  ObjectFactory m_errorRateModel; ///< error rate model
-  ObjectFactory m_frameCaptureModel; ///< frame capture model
-  ObjectFactory m_preambleDetectionModel; ///< preamble detection model
+  std::vector<ObjectFactory> m_phy; ///< PHY object
+  ObjectFactory m_interferenceHelper; ///< interference helper
+  std::vector<ObjectFactory> m_errorRateModel; ///< error rate model
+  std::vector<ObjectFactory> m_frameCaptureModel; ///< frame capture model
+  std::vector<ObjectFactory> m_preambleDetectionModel; ///< preamble detection model
 
 
 private:
@@ -339,68 +334,24 @@ public:
   WifiHelper ();
 
   /**
-   * \param type the type of ns3::WifiRemoteStationManager to create.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
+   * Helper function used to set the station manager
    *
-   * All the attributes specified in this method should exist
-   * in the requested station manager.
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param type the type of station manager
+   * \param args A sequence of name-value pairs of the attributes to set.
    */
-  void SetRemoteStationManager (std::string type,
-                                std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                                std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                                std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                                std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                                std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                                std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                                std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                                std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
+  template <typename... Args>
+  void SetRemoteStationManager (std::string type, Args&&... args);
 
   /**
-   * \param type the type of ns3::ObssPdAlgorithm to create.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
+   * Helper function used to set the OBSS-PD algorithm
    *
-   * All the attributes specified in this method should exist
-   * in the requested algorithm.
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param type the type of OBSS-PD algorithm
+   * \param args A sequence of name-value pairs of the attributes to set.
    */
-  void SetObssPdAlgorithm (std::string type,
-                           std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                           std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                           std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                           std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                           std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                           std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                           std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                           std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
+  template <typename... Args>
+  void SetObssPdAlgorithm (std::string type, Args&&... args);
 
   /// Callback invoked to determine the MAC queue selected for a given packet
   typedef std::function<std::size_t (Ptr<QueueItem>)> SelectQueueCallback;
@@ -409,9 +360,20 @@ public:
    * \param f the select queue callback
    *
    * Set the select queue callback to set on the NetDevice queue interface aggregated
-   * to the WifiNetDevice, in case RegularWifiMac with QoS enabled is used
+   * to the WifiNetDevice, in case WifiMac with QoS enabled is used
    */
   void SetSelectQueueCallback (SelectQueueCallback f);
+
+  /**
+   * Disable flow control only if you know what you are doing. By disabling
+   * flow control, this NetDevice will be sent packets even if there is no
+   * room for them (such packets will be likely dropped by this NetDevice).
+   * Also, any queue disc installed on this NetDevice will have no effect,
+   * as every packet enqueued to the traffic control layer queue disc will
+   * be immediately dequeued.
+   */
+  void DisableFlowControl (void);
+
   /**
    * \param phy the PHY helper to create PHY objects
    * \param mac the MAC helper to create MAC objects
@@ -475,6 +437,46 @@ public:
   virtual void SetStandard (WifiStandard standard);
 
   /**
+   * Helper function used to configure the HT options listed as attributes of
+   * the HtConfiguration class.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void ConfigHtOptions (Args&&... args);
+
+  /**
+   * Helper function used to configure the VHT options listed as attributes of
+   * the VhtConfiguration class.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void ConfigVhtOptions (Args&&... args);
+
+  /**
+   * Helper function used to configure the HE options listed as attributes of
+   * the HeConfiguration class.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void ConfigHeOptions (Args&&... args);
+
+  /**
+   * Helper function used to configure the EHT options listed as attributes of
+   * the EhtConfiguration class.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void ConfigEhtOptions (Args&&... args);
+
+  /**
    * Helper to enable all WifiNetDevice log components with one statement
    */
   static void EnableLogComponents (void);
@@ -498,12 +500,130 @@ public:
 
 protected:
   ObjectFactory m_stationManager;            ///< station manager
-  ObjectFactory m_ackPolicySelector[4];      ///< ack policy selector for all ACs
   WifiStandard m_standard;                   ///< wifi standard
+  ObjectFactory m_htConfig;                  ///< HT configuration
+  ObjectFactory m_vhtConfig;                 ///< VHT configuration
+  ObjectFactory m_heConfig;                  ///< HE configuration
+  ObjectFactory m_ehtConfig;                 ///< EHT configuration
   SelectQueueCallback m_selectQueueCallback; ///< select queue callback
   ObjectFactory m_obssPdAlgorithm;           ///< OBSS_PD algorithm
+  bool m_enableFlowControl;                  //!< whether to enable flow control
 };
 
 } //namespace ns3
+
+/***************************************************************
+ *  Implementation of the templates declared above.
+ ***************************************************************/
+
+namespace ns3 {
+
+template <typename... Args>
+void
+WifiPhyHelper::SetInterferenceHelper (std::string type, Args&&... args)
+{
+  m_interferenceHelper.SetTypeId (type);
+  m_interferenceHelper.Set (args...);
+}
+
+template <typename... Args>
+void
+WifiPhyHelper::SetErrorRateModel (std::string type, Args&&... args)
+{
+  for (uint8_t linkId = 0; linkId < m_phy.size (); linkId++)
+    {
+      SetErrorRateModel (linkId, type, std::forward<Args> (args)...);
+    }
+}
+
+template <typename... Args>
+void
+WifiPhyHelper::SetErrorRateModel (uint8_t linkId, std::string type, Args&&... args)
+{
+  m_errorRateModel.at (linkId).SetTypeId (type);
+  m_errorRateModel.at (linkId).Set (args...);
+}
+
+template <typename... Args>
+void
+WifiPhyHelper::SetFrameCaptureModel (std::string type, Args&&... args)
+{
+  for (uint8_t linkId = 0; linkId < m_phy.size (); linkId++)
+    {
+      SetFrameCaptureModel (linkId, type, std::forward<Args> (args)...);
+    }
+}
+
+template <typename... Args>
+void
+WifiPhyHelper::SetFrameCaptureModel (uint8_t linkId, std::string type, Args&&... args)
+{
+  m_frameCaptureModel.at (linkId).SetTypeId (type);
+  m_frameCaptureModel.at (linkId).Set (args...);
+}
+
+template <typename... Args>
+void
+WifiPhyHelper::SetPreambleDetectionModel (std::string type, Args&&... args)
+{
+  for (uint8_t linkId = 0; linkId < m_phy.size (); linkId++)
+    {
+      SetPreambleDetectionModel (linkId, type, std::forward<Args> (args)...);
+    }
+}
+
+template <typename... Args>
+void
+WifiPhyHelper::SetPreambleDetectionModel (uint8_t linkId, std::string type, Args&&... args)
+{
+  m_preambleDetectionModel.at (linkId).SetTypeId (type);
+  m_preambleDetectionModel.at (linkId).Set (args...);
+}
+
+template <typename... Args>
+void
+WifiHelper::SetRemoteStationManager (std::string type, Args&&... args)
+{
+  m_stationManager.SetTypeId (type);
+  m_stationManager.Set (args...);
+}
+
+template <typename... Args>
+void
+WifiHelper::SetObssPdAlgorithm (std::string type, Args&&... args)
+{
+  m_obssPdAlgorithm.SetTypeId (type);
+  m_obssPdAlgorithm.Set (args...);
+}
+
+template <typename... Args>
+void
+WifiHelper::ConfigHtOptions (Args&&... args)
+{
+  m_htConfig.Set (args...);
+}
+
+template <typename... Args>
+void
+WifiHelper::ConfigVhtOptions (Args&&... args)
+{
+  m_vhtConfig.Set (args...);
+}
+
+template <typename... Args>
+void
+WifiHelper::ConfigHeOptions (Args&&... args)
+{
+  m_heConfig.Set (args...);
+}
+
+template <typename... Args>
+void
+WifiHelper::ConfigEhtOptions (Args&&... args)
+{
+  m_ehtConfig.Set (args...);
+}
+
+} // namespace ns3
 
 #endif /* WIFI_HELPER_H */

@@ -33,7 +33,7 @@ class Address;
 
 /**
  * \ingroup address
- * 
+ *
  * \brief an EUI-48 address
  *
  * This class can contain 48 bit IEEE addresses.
@@ -73,7 +73,7 @@ public:
   /**
    * \param address a polymorphic address
    * \returns a new Mac48Address from the polymorphic address
-   * 
+   *
    * This function performs a type check and asserts if the
    * type of the input address is not compatible with an
    * Mac48Address.
@@ -89,6 +89,21 @@ public:
    * \returns newly allocated mac48Address
    */
   static Mac48Address Allocate (void);
+
+  /**
+   * Reset the Mac48Address allocation index.
+   *
+   * This function resets (to zero) the global integer
+   * that is used for unique address allocation.
+   * It is automatically called whenever
+   * \code
+   * SimulatorDestroy ();
+   * \endcode
+   * is called.  It may also be optionally called
+   * by user code if there is a need to force a reset
+   * of this allocation index.
+   */
+  static void ResetAllocationIndex ();
 
   /**
    * \returns true if this is a broadcast address, false otherwise.
@@ -135,7 +150,7 @@ public:
    * \param [in] value Current value of the Mac48Address
    */
   typedef void (* TracedCallback)(Mac48Address value);
-  
+
 private:
   /**
    * \returns a new Address instance
@@ -195,6 +210,7 @@ private:
    */
   friend std::istream& operator>> (std::istream& is, Mac48Address & address);
 
+  static uint64_t m_allocationIndex; //!< Address allocation index
   uint8_t m_address[6]; //!< address value
 };
 

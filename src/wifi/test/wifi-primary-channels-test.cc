@@ -18,6 +18,8 @@
  * Author: Stefano Avallone <stavallo@unina.it>
  */
 
+#include "ns3/boolean.h"
+#include "ns3/enum.h"
 #include "ns3/test.h"
 #include "ns3/wifi-net-device.h"
 #include "ns3/mobility-helper.h"
@@ -31,6 +33,7 @@
 #include "ns3/he-phy.h"
 #include "ns3/he-configuration.h"
 #include "ns3/ctrl-headers.h"
+#include "ns3/tuple.h"
 #include <bitset>
 #include <algorithm>
 #include <sstream>
@@ -265,14 +268,14 @@ WifiPrimaryChannelsTest::ReceiveUl (uint8_t bss, Ptr<WifiPsdu> psdu, RxSignalInf
                                     WifiTxVector txVector, std::vector<bool> perMpduStatus)
 {
   // if the BSS color is zero, this AP might receive the frame sent by another AP. Given that
-  // stations only send TB PPDUs, we discard this frame if the TX vector is UL MU.
+  // stations only send TB PPDUs, we ignore this frame if the TX vector is not UL MU.
   if (psdu->GetNMpdus () == 1 && psdu->GetHeader (0).IsQosData () && txVector.IsUlMu ())
     {
       auto dev = DynamicCast<WifiNetDevice> (m_apDevices.Get (bss));
 
       uint16_t staId = txVector.GetHeMuUserInfoMap ().begin ()->first;
       uint8_t station = staId - 1;
-      NS_LOG_INFO ("RECEIVED FROM BSS=" << +bss << " STA=" << +station
+      NS_LOG_INFO ("RECEIVED FROM BSSID=" << psdu->GetHeader (0).GetAddr3 () << " STA=" << +station
                    << "  " << *psdu);
       // the MAC received a PSDU containing a QoS data frame from the PHY
       NS_TEST_EXPECT_MSG_EQ (m_received[bss].test (station), false, "AP of BSS " << +bss
@@ -294,7 +297,7 @@ WifiPrimaryChannelsTest::DoSetup (void)
   RngSeedManager::SetSeed (1);
   RngSeedManager::SetRun (40);
   int64_t streamNumber = 100;
-  uint16_t frequency;
+  uint8_t channelNum;
 
   // we create as many stations per BSS as the number of 26-tone RUs in a channel
   // of the configured width
@@ -302,19 +305,19 @@ WifiPrimaryChannelsTest::DoSetup (void)
     {
       case 20:
         m_nStationsPerBss = 9;
-        frequency = 5180;
+        channelNum = 36;
         break;
       case 40:
         m_nStationsPerBss = 18;
-        frequency = 5190;
+        channelNum = 38;
         break;
       case 80:
         m_nStationsPerBss = 37;
-        frequency = 5210;
+        channelNum = 42;
         break;
       case 160:
         m_nStationsPerBss = 74;
-        frequency = 5250;
+        channelNum= 50;
         break;
       default:
         NS_ABORT_MSG ("Channel width (" << m_channelWidth << ") not allowed");
@@ -340,28 +343,32 @@ WifiPrimaryChannelsTest::DoSetup (void)
 
   SpectrumWifiPhyHelper phy;
   phy.SetChannel (spectrumChannel);
-  phy.Set ("Frequency", UintegerValue (frequency));  // same frequency for all BSSes
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211ax);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager");
 
   WifiMacHelper mac;
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (Ssid ("non-existent-ssid")),
+	       "MaxMissedBeacons", UintegerValue (20),
                "WaitBeaconTimeout", TimeValue (MicroSeconds (102400))); // same as BeaconInterval
+
+  TupleValue<UintegerValue, UintegerValue, EnumValue, UintegerValue> channelValue;
 
   // Each BSS uses a distinct primary20 channel
   for (uint8_t bss = 0; bss < m_nBss; bss++)
     {
-      phy.Set ("Primary20MHzIndex", UintegerValue (bss));
+      channelValue.Set (WifiPhy::ChannelTuple {channelNum, m_channelWidth, WIFI_PHY_BAND_5GHZ, bss});
+      phy.Set ("ChannelSettings", channelValue);
 
       m_staDevices.push_back (wifi.Install (phy, mac, wifiStaNodes[bss]));
     }
 
   for (uint8_t bss = 0; bss < m_nBss; bss++)
     {
-      phy.Set ("Primary20MHzIndex", UintegerValue (bss));
+      channelValue.Set (WifiPhy::ChannelTuple {channelNum, m_channelWidth, WIFI_PHY_BAND_5GHZ, bss});
+      phy.Set ("ChannelSettings", channelValue);
 
       mac.SetType ("ns3::ApWifiMac",
                   "Ssid", SsidValue (Ssid ("wifi-ssid-" + std::to_string (bss))),
@@ -370,7 +377,7 @@ WifiPrimaryChannelsTest::DoSetup (void)
 
       m_apDevices.Add (wifi.Install (phy, mac, wifiApNodes.Get (bss)));
     }
-  
+
   // Assign fixed streams to random variables in use
   streamNumber = wifi.AssignStreams (m_apDevices, streamNumber);
   for (uint8_t bss = 0; bss < m_nBss; bss++)
@@ -429,13 +436,18 @@ WifiPrimaryChannelsTest::DoSetup (void)
 void
 WifiPrimaryChannelsTest::DoRun (void)
 {
-  // schedule association requests at different times
+  // schedule association requests at different times. One station's SSID is
+  // set to the correct value before initialization, so that such a station
+  // starts the scanning procedure by looking for the correct SSID
   Ptr<WifiNetDevice> dev;
 
-  for (uint16_t i = 0; i < m_nStationsPerBss; i++)
+  // association can be done in parallel over the multiple BSSes
+  for (uint8_t bss = 0; bss < m_nBss; bss++)
     {
-      // association can be done in parallel over the multiple BSSes
-      for (uint8_t bss = 0; bss < m_nBss; bss++)
+      dev = DynamicCast<WifiNetDevice> (m_staDevices[bss].Get (0));
+      dev->GetMac ()->SetSsid (Ssid ("wifi-ssid-" + std::to_string (bss)));
+
+      for (uint16_t i = 1; i < m_nStationsPerBss; i++)
         {
           dev = DynamicCast<WifiNetDevice> (m_staDevices[bss].Get (i));
           Simulator::Schedule (i * MicroSeconds (102400), &WifiMac::SetSsid,
@@ -467,7 +479,7 @@ WifiPrimaryChannelsTest::DoRun (void)
           auto dev = DynamicCast<WifiNetDevice> (m_staDevices[bss].Get (i));
           Simulator::Schedule (m_time, &WifiPhy::SetReceiveOkCallback, dev->GetPhy (),
                                MakeCallback (&WifiPrimaryChannelsTest::ReceiveDl, this)
-                                             .TwoBind (bss, i));
+                                             .Bind (bss, i));
         }
       auto dev = DynamicCast<WifiNetDevice> (m_apDevices.Get (bss));
       Simulator::Schedule (m_time, &WifiPhy::SetReceiveOkCallback, dev->GetPhy (),
@@ -611,7 +623,7 @@ WifiPrimaryChannelsTest::DoRun (void)
     }
 
   /*
-   * Repeat the same scheme as before with DL MU transmissions. For each transmission
+   * Repeat the same scheme as before with UL MU transmissions. For each transmission
    * channel width, every round is repeated as many times as the number of ways in
    * which we can partition the transmission channel width in equal sized RUs.
    */
@@ -675,7 +687,7 @@ WifiPrimaryChannelsTest::SendDlSuPpdu (uint8_t bss, uint16_t txChannelWidth)
   hdr.SetQosTid (0);
   hdr.SetAddr1 (staDev->GetMac ()->GetAddress ());
   hdr.SetAddr2 (apDev->GetMac ()->GetAddress ());
-  hdr.SetAddr3 (apDev->GetMac ()->GetBssid ());
+  hdr.SetAddr3 (apDev->GetMac ()->GetBssid (0));
   hdr.SetSequenceNumber (1);
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (Create<Packet> (1000), hdr);
   apDev->GetPhy ()->Send (WifiConstPsduMap ({std::make_pair (SU_STA_ID, psdu)}), txVector);
@@ -696,15 +708,15 @@ WifiPrimaryChannelsTest::SendDlMuPpdu (uint8_t bss, uint16_t txChannelWidth, HeR
   hdr.SetType (WIFI_MAC_QOSDATA);
   hdr.SetQosTid (0);
   hdr.SetAddr2 (apDev->GetMac ()->GetAddress ());
-  hdr.SetAddr3 (apDev->GetMac ()->GetBssid ());
+  hdr.SetAddr3 (apDev->GetMac ()->GetBssid (0));
   hdr.SetSequenceNumber (1);
 
   WifiConstPsduMap psduMap;
 
   for (std::size_t i = 1; i <= nRus; i++)
     {
-      std::size_t index = (txChannelWidth == 160 && i > nRus / 2 ? i - nRus / 2 : i);
-      bool primary80 = (txChannelWidth == 160 && i > nRus / 2 ? false : true);
+      bool primary80 = !(txChannelWidth == 160 && i > nRus / 2);
+      std::size_t index = (primary80 ? i : i - nRus / 2);
 
       auto staDev = DynamicCast<WifiNetDevice> (m_staDevices[bss].Get (i - 1));
       uint16_t staId = DynamicCast<StaWifiMac> (staDev->GetMac ())->GetAssociationId ();
@@ -742,25 +754,27 @@ WifiPrimaryChannelsTest::DoSendHeTbPpdu (uint8_t bss, uint16_t txChannelWidth, H
   hdr.SetType (WIFI_MAC_QOSDATA);
   hdr.SetQosTid (0);
   hdr.SetAddr1 (apDev->GetMac ()->GetAddress ());
-  hdr.SetAddr3 (apDev->GetMac ()->GetBssid ());
+  hdr.SetAddr3 (apDev->GetMac ()->GetBssid (0));
   hdr.SetSequenceNumber (1);
 
   Time duration = Seconds (0);
   uint16_t length = 0;
+  WifiTxVector trigVector (HePhy::GetHeMcs8 (), 0, WIFI_PREAMBLE_HE_TB, 3200, 1, 1, 0, txChannelWidth, false, false, false, bssColor);
 
   for (std::size_t i = 1; i <= nRus; i++)
     {
       NS_LOG_INFO ("*** BSS " << +bss << " STA " << i - 1 << " transmits on primary "
                    << txChannelWidth << " MHz channel an HE TB PPDU (RU type: " << ruType << ")");
 
-      std::size_t index = (txChannelWidth == 160 && i > nRus / 2 ? i - nRus / 2 : i);
-      bool primary80 = (txChannelWidth == 160 && i > nRus / 2 ? false : true);
+      bool primary80 = !(txChannelWidth == 160 && i > nRus / 2);
+      std::size_t index = (primary80 ? i : i - nRus / 2);
 
       auto staDev = DynamicCast<WifiNetDevice> (m_staDevices[bss].Get (i - 1));
       uint16_t staId = DynamicCast<StaWifiMac> (staDev->GetMac ())->GetAssociationId ();
 
       WifiTxVector txVector (HePhy::GetHeMcs8 (), 0, WIFI_PREAMBLE_HE_TB, 3200, 1, 1, 0, txChannelWidth, false, false, false, bssColor);
       txVector.SetHeMuUserInfo (staId, {{ruType, index, primary80}, HePhy::GetHeMcs8 (), 1});
+      trigVector.SetHeMuUserInfo (staId, {{ruType, index, primary80}, HePhy::GetHeMcs8 (), 1});
 
       hdr.SetAddr2 (staDev->GetMac ()->GetAddress ());
       Ptr<const WifiPsdu> psdu = Create<const WifiPsdu> (Create<Packet> (1000), hdr);
@@ -770,13 +784,18 @@ WifiPrimaryChannelsTest::DoSendHeTbPpdu (uint8_t bss, uint16_t txChannelWidth, H
           // calculate just once
           duration = WifiPhy::CalculateTxDuration (psdu->GetSize (), txVector,
                                                    staDev->GetMac ()->GetWifiPhy ()->GetPhyBand (), staId);
-          length = HePhy::ConvertHeTbPpduDurationToLSigLength (duration,
-                                                               staDev->GetMac ()->GetWifiPhy ()->GetPhyBand ());
+          std::tie (length, duration) = HePhy::ConvertHeTbPpduDurationToLSigLength (duration, txVector,
+                                                                                    staDev->GetMac ()->GetWifiPhy ()->GetPhyBand ());
         }
       txVector.SetLength (length);
 
       staDev->GetPhy ()->Send (WifiConstPsduMap {{staId, psdu}}, txVector);
     }
+
+  // AP's PHY expects to receive a TRIGVECTOR (just once)
+  trigVector.SetLength (length);
+  auto apHePhy = StaticCast<HePhy> (apDev->GetPhy ()->GetPhyEntity (WIFI_MOD_CLASS_HE));
+  apHePhy->SetTrigVector (trigVector, duration);
 }
 
 void
@@ -861,7 +880,9 @@ WifiPrimaryChannelsTest::CheckReceivedMuPpdus (std::set<uint8_t> txBss, uint16_t
     {
       if (txBss.find (bss) != txBss.end ())
         {
-          // Due to AID filtering, only stations that are addressed by the MU PPDU do hear the frame
+          // There was a transmission in this BSS.
+          // [DL] Due to AID filtering, only stations that are addressed by the MU PPDU do hear the frame
+          // [UL] The AP hears a TB PPDU sent by all and only the solicited stations
           for (uint8_t sta = 0; sta < nRus; sta++)
             {
               NS_TEST_EXPECT_MSG_EQ (m_received[bss].test (sta), true,
@@ -879,7 +900,8 @@ WifiPrimaryChannelsTest::CheckReceivedMuPpdus (std::set<uint8_t> txBss, uint16_t
                                      << (isDlMu ? "by" : "from") << " station [" << +bss << "]["
                                      << +sta << "]");
             }
-          // only the addressed stations actually processed the frames
+          // [DL] Only the addressed stations actually processed the frames
+          // [UL] The AP processed the frames sent by all and only the addressed stations
           for (uint8_t sta = 0; sta < nRus; sta++)
             {
               NS_TEST_EXPECT_MSG_EQ (m_processed[bss].test (sta), true,
@@ -900,10 +922,11 @@ WifiPrimaryChannelsTest::CheckReceivedMuPpdus (std::set<uint8_t> txBss, uint16_t
         }
       else
         {
-          // There was no transmission in this BSS. If BSS Color filtering is enabled or no frame
-          // transmission overlaps with the primary20 channel of this BSS, stations in this BSS
-          // did not hear any frame.
-          if (m_useDistinctBssColors
+          // There was no transmission in this BSS.
+          // [DL] If BSS Color filtering is enabled or no frame transmission overlaps with
+          // the primary20 channel of this BSS, stations in this BSS did not hear any frame.
+          // [UL] The AP did not hear any TB PPDU because no TRIGVECTOR was passed to the PHY
+          if (!isDlMu || m_useDistinctBssColors
               || std::none_of (txBss.begin (), txBss.end (),
                                [&](const uint8_t& txAp)
                                {
@@ -925,7 +948,7 @@ WifiPrimaryChannelsTest::CheckReceivedMuPpdus (std::set<uint8_t> txBss, uint16_t
             }
           else
             {
-              // stations having the same AID of the stations addressed by the MU PPDI received the frame
+              // [DL] Stations having the same AID of the stations addressed by the MU PPDU received the frame
               for (uint8_t sta = 0; sta < nRus; sta++)
                 {
                   NS_TEST_EXPECT_MSG_EQ (m_received[bss].test (sta), true,
@@ -1002,6 +1025,136 @@ WifiPrimaryChannelsTest::CheckReceivedTriggerFrames (std::set<uint8_t> txBss, ui
  * \ingroup wifi-test
  * \ingroup tests
  *
+ * \brief Test functions returning the indices of primary and secondary channels
+ *        of different width.
+ */
+class Wifi20MHzChannelIndicesTest : public TestCase
+{
+public:
+  /**
+   * Constructor
+   */
+  Wifi20MHzChannelIndicesTest ();
+  virtual ~Wifi20MHzChannelIndicesTest () = default;
+
+  /**
+   * Check that the indices of the 20 MHz channels included in all the primary
+   * and secondary channels are correct when setting the given primary20 channel.
+   *
+   * \param primary20 the index of the primary20 channel to configure
+   * \param secondary20 the expected index of the secondary20 channel
+   * \param primary40 the expected indices of the 20 MHz channels in the primary40 channel
+   * \param secondary40 the expected indices of the 20 MHz channels in the secondary40 channel
+   * \param primary80 the expected indices of the 20 MHz channels in the primary80 channel
+   * \param secondary80 the expected indices of the 20 MHz channels in the secondary80 channel
+   */
+  void RunOne (uint8_t primary20, const std::set<uint8_t>& secondary20,
+               const std::set<uint8_t>& primary40, const std::set<uint8_t>& secondary40,
+               const std::set<uint8_t>& primary80, const std::set<uint8_t>& secondary80);
+
+private:
+  void DoRun (void) override;
+
+  WifiPhyOperatingChannel m_channel;   //!< operating channel
+};
+
+Wifi20MHzChannelIndicesTest::Wifi20MHzChannelIndicesTest ()
+  : TestCase ("Check computation of primary and secondary channel indices")
+{
+}
+
+void
+Wifi20MHzChannelIndicesTest::RunOne (uint8_t primary20,
+                                     const std::set<uint8_t>& secondary20,
+                                     const std::set<uint8_t>& primary40,
+                                     const std::set<uint8_t>& secondary40,
+                                     const std::set<uint8_t>& primary80,
+                                     const std::set<uint8_t>& secondary80)
+{
+  auto printToStr = [](const std::set<uint8_t>& s)
+                    {
+                      std::stringstream ss;
+                      ss << "{";
+                      for (const auto& index : s) ss << +index << " ";
+                      ss << "}";
+                      return ss.str ();
+                    };
+
+  m_channel.SetPrimary20Index (primary20);
+
+  auto actualPrimary20 = m_channel.GetAll20MHzChannelIndicesInPrimary (20);
+  NS_TEST_ASSERT_MSG_EQ ((actualPrimary20 == std::set<uint8_t> {primary20}),
+                         true,
+                         "Expected Primary20 {" << +primary20 << "}"
+                         << " differs from actual " << printToStr (actualPrimary20));
+
+  auto actualSecondary20 = m_channel.GetAll20MHzChannelIndicesInSecondary (actualPrimary20);
+  NS_TEST_ASSERT_MSG_EQ ((actualSecondary20 == secondary20),
+                         true,
+                         "Expected Secondary20 " << printToStr (secondary20)
+                         << " differs from actual " << printToStr (actualSecondary20));
+
+  auto actualPrimary40 = m_channel.GetAll20MHzChannelIndicesInPrimary (40);
+  NS_TEST_ASSERT_MSG_EQ ((actualPrimary40 == primary40),
+                         true,
+                         "Expected Primary40 " << printToStr (primary40)
+                         << " differs from actual " << printToStr (actualPrimary40));
+
+  auto actualSecondary40 = m_channel.GetAll20MHzChannelIndicesInSecondary (primary40);
+  NS_TEST_ASSERT_MSG_EQ ((actualSecondary40 == secondary40),
+                         true,
+                         "Expected Secondary40 " << printToStr (secondary40)
+                         << " differs from actual " << printToStr (actualSecondary40));
+
+  auto actualPrimary80 = m_channel.GetAll20MHzChannelIndicesInPrimary (80);
+  NS_TEST_ASSERT_MSG_EQ ((actualPrimary80 == primary80),
+                         true,
+                         "Expected Primary80 " << printToStr (primary80)
+                         << " differs from actual " << printToStr (actualPrimary80));
+
+  auto actualSecondary80 = m_channel.GetAll20MHzChannelIndicesInSecondary (primary80);
+  NS_TEST_ASSERT_MSG_EQ ((actualSecondary80 == secondary80),
+                         true,
+                         "Expected Secondary80 " << printToStr (secondary80)
+                         << " differs from actual " << printToStr (actualSecondary80));
+}
+
+void
+Wifi20MHzChannelIndicesTest::DoRun ()
+{
+  /* 20 MHz channel */
+  m_channel.SetDefault (20, WIFI_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  RunOne (0, {}, {}, {}, {}, {});
+
+  /* 40 MHz channel */
+  m_channel.SetDefault (40, WIFI_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  RunOne (0, {1}, {0, 1}, {}, {}, {});
+  RunOne (1, {0}, {0, 1}, {}, {}, {});
+
+  /* 80 MHz channel */
+  m_channel.SetDefault (80, WIFI_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  RunOne (0, {1}, {0, 1}, {2, 3}, {0, 1, 2, 3}, {});
+  RunOne (1, {0}, {0, 1}, {2, 3}, {0, 1, 2, 3}, {});
+  RunOne (2, {3}, {2, 3}, {0, 1}, {0, 1, 2, 3}, {});
+  RunOne (3, {2}, {2, 3}, {0, 1}, {0, 1, 2, 3}, {});
+
+  /* 160 MHz channel */
+  m_channel.SetDefault (160, WIFI_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  RunOne (0, {1}, {0, 1}, {2, 3}, {0, 1, 2, 3}, {4, 5, 6, 7});
+  RunOne (1, {0}, {0, 1}, {2, 3}, {0, 1, 2, 3}, {4, 5, 6, 7});
+  RunOne (2, {3}, {2, 3}, {0, 1}, {0, 1, 2, 3}, {4, 5, 6, 7});
+  RunOne (3, {2}, {2, 3}, {0, 1}, {0, 1, 2, 3}, {4, 5, 6, 7});
+  RunOne (4, {5}, {4, 5}, {6, 7}, {4, 5, 6, 7}, {0, 1, 2, 3});
+  RunOne (5, {4}, {4, 5}, {6, 7}, {4, 5, 6, 7}, {0, 1, 2, 3});
+  RunOne (6, {7}, {6, 7}, {4, 5}, {4, 5, 6, 7}, {0, 1, 2, 3});
+  RunOne (7, {6}, {6, 7}, {4, 5}, {4, 5, 6, 7}, {0, 1, 2, 3});
+}
+
+
+/**
+ * \ingroup wifi-test
+ * \ingroup tests
+ *
  * \brief wifi primary channels test suite
  */
 class WifiPrimaryChannelsTestSuite : public TestSuite
@@ -1020,6 +1173,7 @@ WifiPrimaryChannelsTestSuite::WifiPrimaryChannelsTestSuite ()
   AddTestCase (new WifiPrimaryChannelsTest (80, false), TestCase::EXTENSIVE);
   AddTestCase (new WifiPrimaryChannelsTest (160, true), TestCase::TAKES_FOREVER);
   AddTestCase (new WifiPrimaryChannelsTest (160, false), TestCase::TAKES_FOREVER);
+  AddTestCase (new Wifi20MHzChannelIndicesTest (), TestCase::QUICK);
 }
 
 static WifiPrimaryChannelsTestSuite g_wifiPrimaryChannelsTestSuite; ///< the test suite

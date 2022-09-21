@@ -52,6 +52,17 @@ HeConfiguration::GetTypeId (void)
                    MakeUintegerAccessor (&HeConfiguration::GetBssColor,
                                          &HeConfiguration::SetBssColor),
                    MakeUintegerChecker<uint8_t> ())
+    .AddAttribute ("MaxTbPpduDelay",
+                   "If positive, the value of this attribute specifies the maximum "
+                   "delay with which a TB PPDU can be received after the reception of "
+                   "the first TB PPDU. If the delay is higher than this value, the "
+                   "TB PPDU is dropped and considered interference. The maximum delay "
+                   "is anyway capped at the duration of the training fields in the PPDU. "
+                   "This attribute is only valid for APs.",
+                   TimeValue (Seconds (0)),
+                   MakeTimeAccessor (&HeConfiguration::GetMaxTbPpduDelay,
+                                     &HeConfiguration::SetMaxTbPpduDelay),
+                   MakeTimeChecker (Seconds (0)))
     .AddAttribute ("MpduBufferSize",
                    "The MPDU buffer size for receiving A-MPDUs",
                    UintegerValue (64),
@@ -195,6 +206,18 @@ uint8_t
 HeConfiguration::GetBssColor (void) const
 {
   return m_bssColor;
+}
+
+Time
+HeConfiguration::GetMaxTbPpduDelay (void) const
+{
+  return m_maxTbPpduDelay;
+}
+
+void
+HeConfiguration::SetMaxTbPpduDelay (Time maxTbPpduDelay)
+{
+  m_maxTbPpduDelay = maxTbPpduDelay;
 }
 
 void

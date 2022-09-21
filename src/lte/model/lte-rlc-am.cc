@@ -433,13 +433,13 @@ LteRlcAm::DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpPara
 
           Ptr<Packet> packet;
           bool segment = false;
-          if (m_retxSegBuffer.at (seqNumberValue).m_pdu != 0)
+          if (m_retxSegBuffer.at (seqNumberValue).m_pdu)
           {
             packet = m_retxSegBuffer.at (seqNumberValue).m_pdu->Copy ();
             found = true;
             segment = true;
           }
-          else if (m_retxBuffer.at (seqNumberValue).m_pdu != 0)
+          else if (m_retxBuffer.at (seqNumberValue).m_pdu)
           {
             packet = m_retxBuffer.at (seqNumberValue).m_pdu->Copy ();
             found = true;
@@ -523,7 +523,7 @@ LteRlcAm::DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpPara
                   NS_LOG_INFO ("Move SN = " << seqNumberValue << " back to txedBuffer");
                   m_txedBuffer.at (seqNumberValue).m_pdu = m_retxBuffer.at (seqNumberValue).m_pdu->Copy ();
                   m_txedBuffer.at (seqNumberValue).m_retxCount = m_retxBuffer.at (seqNumberValue).m_retxCount;
-                  NS_ASSERT_MSG(m_txedBuffer.at (seqNumberValue).m_pdu != 0, "Just inserted an invalid pointer");
+                  NS_ASSERT_MSG(m_txedBuffer.at (seqNumberValue).m_pdu, "Just inserted an invalid pointer");
                   m_txedBufferSize += m_txedBuffer.at (seqNumberValue).m_pdu->GetSize ();
 
                   m_retxBufferSize -= m_retxBuffer.at (seqNumberValue).m_pdu->GetSize ();
@@ -1085,7 +1085,7 @@ LteRlcAm::DoNotifyTxOpportunity (LteMacSapUser::TxOpportunityParameters txOpPara
   m_txedBufferSize += packet->GetSize ();
   m_txedBuffer.at ( rlcAmHeader.GetSequenceNumber ().GetValue () ).m_pdu = packet->Copy ();
   m_txedBuffer.at ( rlcAmHeader.GetSequenceNumber ().GetValue () ).m_retxCount = 0;
-  NS_ASSERT_MSG(m_txedBuffer.at (rlcAmHeader.GetSequenceNumber ().GetValue ()).m_pdu != 0, "Just inserted an invalid pointer");
+  NS_ASSERT_MSG(m_txedBuffer.at (rlcAmHeader.GetSequenceNumber ().GetValue ()).m_pdu, "Just inserted an invalid pointer");
 
   // Sender timestamp
   RlcTag rlcTag (Simulator::Now ());
@@ -1729,7 +1729,7 @@ LteRlcAm::RlcPdusToRlcSdus (std::vector < LteRlcAm::RetxPdu > RlcPdus){
   uint16_t isGotExpectedSeqNumber = 0;
   for ( std::vector <LteRlcAm::RetxPdu>::iterator it = RlcPdus.begin(); it != RlcPdus.end (); it++)
         {
-          if (it->m_pdu == 0){
+          if (!(it->m_pdu)){
             continue;
           }
           NS_LOG_DEBUG (this << "Pdu = " << it->m_pdu );
@@ -2138,7 +2138,7 @@ LteRlcAm::DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams)
 
               incrementVtA = false;
 
-              if (m_txedBuffer.at (seqNumberValue).m_pdu != 0)
+              if (m_txedBuffer.at (seqNumberValue).m_pdu)
                 {
                   NS_LOG_INFO ("Move SN = " << seqNumberValue << " to retxBuffer");
                   m_retxBuffer.at (seqNumberValue).m_pdu = m_txedBuffer.at (seqNumberValue).m_pdu->Copy ();
@@ -2150,7 +2150,7 @@ LteRlcAm::DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams)
                   m_txedBuffer.at (seqNumberValue).m_retxCount = 0;
                 }
 
-              NS_ASSERT (m_retxBuffer.at (seqNumberValue).m_pdu != 0);
+              NS_ASSERT (m_retxBuffer.at (seqNumberValue).m_pdu);
 
             }
           else
@@ -2166,7 +2166,7 @@ LteRlcAm::DoReceivePdu (LteMacSapUser::ReceivePduParameters rxPduParams)
 
                   m_txedBufferSize -= m_txedBuffer.at (seqNumberValue).m_pdu->GetSize ();
                   m_txedBuffer.at (seqNumberValue).m_pdu = 0;
-                  NS_ASSERT (m_retxBuffer.at (seqNumberValue).m_pdu == 0);
+                  NS_ASSERT (!m_retxBuffer.at (seqNumberValue).m_pdu);
                 }
 
               if (m_retxBuffer.at (seqNumberValue).m_pdu)
@@ -2699,7 +2699,7 @@ LteRlcAm::DoReportBufferStatus (void)
   RlcTag retxQueueHolTimeTag;
   if ( m_retxBufferSize > 0 )
     {
-      if (m_retxBuffer.at (m_vtA.GetValue ()).m_pdu != 0)
+      if (m_retxBuffer.at (m_vtA.GetValue ()).m_pdu)
         {
           m_retxBuffer.at (m_vtA.GetValue ()).m_pdu->PeekPacketTag (retxQueueHolTimeTag);
         }
@@ -2836,7 +2836,7 @@ LteRlcAm::ExpirePollRetransmitTimer (void)
         {
       for ( sn = m_vtA.GetValue(); sn < m_vtS.GetValue (); sn++ )
       {
-        bool pduAvailable = m_txedBuffer.at (sn).m_pdu != 0;
+        bool pduAvailable = (bool)m_txedBuffer.at (sn).m_pdu;
 
          if ( pduAvailable )
          {
@@ -2855,7 +2855,7 @@ LteRlcAm::ExpirePollRetransmitTimer (void)
          {
        for ( sn = m_vtA.GetValue(); sn < 1024; sn++ )
          {
-         bool pduAvailable = m_txedBuffer.at (sn).m_pdu != 0;
+         bool pduAvailable = (bool)m_txedBuffer.at (sn).m_pdu;
 
          if ( pduAvailable )
          {
@@ -2872,7 +2872,7 @@ LteRlcAm::ExpirePollRetransmitTimer (void)
 
       for ( sn = 0; sn < m_vtS.GetValue (); sn++ )
       {
-        bool pduAvailable = m_txedBuffer.at (sn).m_pdu != 0;
+        bool pduAvailable = (bool)m_txedBuffer.at (sn).m_pdu;
 
          if ( pduAvailable )
          {

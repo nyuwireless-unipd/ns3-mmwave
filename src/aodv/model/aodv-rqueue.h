@@ -20,7 +20,7 @@
  *      tuned by Samir Das and Mahesh Marina, University of Cincinnati;
  *
  *      AODV-UU implementation by Erik Nordström of Uppsala University
- *      http://core.it.uu.se/core/index.php/AODV-UU
+ *      https://web.archive.org/web/20100527072022/http://core.it.uu.se/core/index.php/AODV-UU
  *
  * Authors: Elena Buchatskaia <borovkovaes@iitp.ru>
  *          Pavel Boyko <boyko@iitp.ru>
@@ -199,7 +199,7 @@ public:
   bool Enqueue (QueueEntry & entry);
   /**
    * Return first found (the earliest) entry for given destination
-   * 
+   *
    * \param dst the destination IP address
    * \param entry the queue entry
    * \returns true if the entry is dequeued
@@ -212,7 +212,7 @@ public:
   void DropPacketWithDst (Ipv4Address dst);
   /**
    * Finds whether a packet with destination dst exists in the queue
-   * 
+   *
    * \param dst the destination IP address
    * \returns true if an entry with the IP address is found
    */

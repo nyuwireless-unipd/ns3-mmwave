@@ -24,6 +24,9 @@
 #include "ns3/wifi-psdu.h"
 #include "ns3/wifi-phy.h" //only used for static mode constructor
 #include "ns3/wifi-utils.h"
+#include "ns3/interference-helper.h"
+#include "ns3/wifi-net-device.h"
+#include "vht-configuration.h"
 #include "ns3/log.h"
 #include "ns3/assert.h"
 
@@ -66,6 +69,26 @@ const VhtPhy::NesExceptionMap VhtPhy::m_exceptionsMap {
   { std::make_tuple (160, 7, 8), 12 },   //instead of 9
   { std::make_tuple (160, 7, 9), 12 }    //instead of 10
 };
+
+/**
+ * \brief map a given channel list type to the corresponding scaling factor in dBm
+ */
+const std::map<WifiChannelListType, double> channelTypeToScalingFactorDbm {
+  {WIFI_CHANLIST_PRIMARY, 0.0},
+  {WIFI_CHANLIST_SECONDARY, 0.0},
+  {WIFI_CHANLIST_SECONDARY40, 3.0},
+  {WIFI_CHANLIST_SECONDARY80, 6.0}
+};
+
+/**
+ * \brief map a given secondary channel width to its channel list type
+ */
+const std::map<uint16_t, WifiChannelListType> secondaryChannels {
+  {20, WIFI_CHANLIST_SECONDARY},
+  {40, WIFI_CHANLIST_SECONDARY40},
+  {80, WIFI_CHANLIST_SECONDARY80}
+};
+
 /* *NS_CHECK_STYLE_ON* */
 
 VhtPhy::VhtPhy (bool buildModeList /* = true */)
@@ -218,7 +241,9 @@ Ptr<WifiPpdu>
 VhtPhy::BuildPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time ppduDuration)
 {
   NS_LOG_FUNCTION (this << psdus << txVector << ppduDuration);
-  return Create<VhtPpdu> (psdus.begin ()->second, txVector, ppduDuration, m_wifiPhy->GetPhyBand (),
+  return Create<VhtPpdu> (psdus.begin ()->second, txVector,
+                          m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (txVector.GetChannelWidth ()),
+                          ppduDuration, m_wifiPhy->GetPhyBand (),
                           ObtainNextUid (txVector));
 }
 
@@ -229,78 +254,59 @@ VhtPhy::DoEndReceiveField (WifiPpduField field, Ptr<Event> event)
   switch (field)
     {
       case WIFI_PPDU_FIELD_SIG_A:
-        return EndReceiveSigA (event);
+        [[fallthrough]];
       case WIFI_PPDU_FIELD_SIG_B:
-        return EndReceiveSigB (event);
+        return EndReceiveSig (event, field);
       default:
         return HtPhy::DoEndReceiveField (field, event);
     }
 }
 
 PhyEntity::PhyFieldRxStatus
-VhtPhy::EndReceiveSigA (Ptr<Event> event)
+VhtPhy::EndReceiveSig (Ptr<Event> event, WifiPpduField field)
 {
-  NS_LOG_FUNCTION (this << *event);
+  NS_LOG_FUNCTION (this << *event << field);
+  SnrPer snrPer = GetPhyHeaderSnrPer (field, event);
+  NS_LOG_DEBUG (field << ": SNR(dB)=" << RatioToDb (snrPer.snr) << ", PER=" << snrPer.per);
+  PhyFieldRxStatus status (GetRandomValue () > snrPer.per);
+  if (status.isSuccess)
+    {
+      NS_LOG_DEBUG ("Received " << field);
+      if (!IsAllConfigSupported (WIFI_PPDU_FIELD_SIG_A, event->GetPpdu ()))
+        {
+          status = PhyFieldRxStatus (false, UNSUPPORTED_SETTINGS, DROP);
+        }
+      status = ProcessSig (event, status, field);
+    }
+  else
+    {
+      NS_LOG_DEBUG ("Drop packet because " << field << " reception failed");
+      status.reason = GetFailureReason (field);
+      status.actionIfFailure = DROP;
+    }
+  return status;
+}
+
+WifiPhyRxfailureReason
+VhtPhy::GetFailureReason (WifiPpduField field) const
+{
+  switch (field)
+    {
+      case WIFI_PPDU_FIELD_SIG_A:
+        return SIG_A_FAILURE;
+      case WIFI_PPDU_FIELD_SIG_B:
+        return SIG_B_FAILURE;
+      default:
+        NS_ASSERT_MSG (false, "Unknown PPDU field");
+        return UNKNOWN;
+    }
+}
+
+PhyEntity::PhyFieldRxStatus
+VhtPhy::ProcessSig (Ptr<Event> event, PhyFieldRxStatus status, WifiPpduField field)
+{
+  NS_LOG_FUNCTION (this << *event << status << field);
   NS_ASSERT (event->GetTxVector ().GetPreambleType () >= WIFI_PREAMBLE_VHT_SU);
-  SnrPer snrPer = GetPhyHeaderSnrPer (WIFI_PPDU_FIELD_SIG_A, event);
-  NS_LOG_DEBUG ("SIG-A: SNR(dB)=" << RatioToDb (snrPer.snr) << ", PER=" << snrPer.per);
-  PhyFieldRxStatus status (GetRandomValue () > snrPer.per);
-  if (status.isSuccess)
-    {
-      NS_LOG_DEBUG ("Received SIG-A");
-      if (!IsAllConfigSupported (WIFI_PPDU_FIELD_SIG_A, event->GetPpdu ()))
-        {
-          status = PhyFieldRxStatus (false, UNSUPPORTED_SETTINGS, DROP);
-        }
-      status = ProcessSigA (event, status);
-    }
-  else
-    {
-      NS_LOG_DEBUG ("Drop packet because SIG-A reception failed");
-      status.reason = SIG_A_FAILURE;
-      status.actionIfFailure = DROP;
-    }
-  return status;
-}
-
-PhyEntity::PhyFieldRxStatus
-VhtPhy::ProcessSigA (Ptr<Event> event, PhyFieldRxStatus status)
-{
-  NS_LOG_FUNCTION (this << *event << status);
-  //TODO see if something should be done here once MU-MIMO is supported
-  return status; //nothing special for VHT
-}
-
-PhyEntity::PhyFieldRxStatus
-VhtPhy::EndReceiveSigB (Ptr<Event> event)
-{
-  NS_LOG_FUNCTION (this << *event);
-  NS_ASSERT (event->GetPpdu ()->GetType () == WIFI_PPDU_TYPE_DL_MU);
-  SnrPer snrPer = GetPhyHeaderSnrPer (WIFI_PPDU_FIELD_SIG_B, event);
-  NS_LOG_DEBUG ("SIG-B: SNR(dB)=" << RatioToDb (snrPer.snr) << ", PER=" << snrPer.per);
-  PhyFieldRxStatus status (GetRandomValue () > snrPer.per);
-  if (status.isSuccess)
-    {
-      NS_LOG_DEBUG ("Received SIG-B");
-      if (!IsAllConfigSupported (WIFI_PPDU_FIELD_SIG_A, event->GetPpdu ()))
-        {
-          status = PhyFieldRxStatus (false, UNSUPPORTED_SETTINGS, DROP);
-        }
-      status = ProcessSigB (event, status);
-    }
-  else
-    {
-      NS_LOG_DEBUG ("Drop reception because SIG-B reception failed");
-      status.reason = SIG_B_FAILURE;
-      status.actionIfFailure = DROP;
-    }
-  return status;
-}
-
-PhyEntity::PhyFieldRxStatus
-VhtPhy::ProcessSigB (Ptr<Event> event, PhyFieldRxStatus status)
-{
-  NS_LOG_FUNCTION (this << *event << status);
   //TODO see if something should be done here once MU-MIMO is supported
   return status; //nothing special for VHT
 }
@@ -377,14 +383,13 @@ VhtPhy::CreateVhtMcs (uint8_t index)
   return WifiModeFactory::CreateWifiMcs ("VhtMcs" + std::to_string (index),
                                          index,
                                          WIFI_MOD_CLASS_VHT,
+                                         false,
                                          MakeBoundCallback (&GetCodeRate, index),
                                          MakeBoundCallback (&GetConstellationSize, index),
-                                         MakeBoundCallback (&GetPhyRate, index),
                                          MakeCallback (&GetPhyRateFromTxVector),
-                                         MakeBoundCallback (&GetDataRate, index),
                                          MakeCallback (&GetDataRateFromTxVector),
                                          MakeBoundCallback (&GetNonHtReferenceRate, index),
-                                         MakeBoundCallback (&IsModeAllowed, index));
+                                         MakeCallback (&IsAllowed));
 }
 
 WifiCodeRate
@@ -445,8 +450,8 @@ VhtPhy::GetDataRate (uint8_t mcsValue, uint16_t channelWidth, uint16_t guardInte
 {
   NS_ASSERT (guardInterval == 800 || guardInterval == 400);
   NS_ASSERT (nss <= 8);
-  NS_ASSERT_MSG (IsModeAllowed (mcsValue, channelWidth, nss), "VHT MCS " << +mcsValue << " forbidden at " << channelWidth << " MHz when NSS is " << +nss);
-  return HtPhy::CalculateDataRate (3.2, guardInterval,
+  NS_ASSERT_MSG (IsCombinationAllowed (mcsValue, channelWidth, nss), "VHT MCS " << +mcsValue << " forbidden at " << channelWidth << " MHz when NSS is " << +nss);
+  return HtPhy::CalculateDataRate (GetSymbolDuration (NanoSeconds (guardInterval)),
                                    GetUsableSubcarriers (channelWidth),
                                    static_cast<uint16_t> (log2 (GetConstellationSize (mcsValue))),
                                    HtPhy::GetCodeRatio (GetCodeRate (mcsValue)), nss);
@@ -497,7 +502,15 @@ VhtPhy::CalculateNonHtReferenceRate (WifiCodeRate codeRate, uint16_t constellati
 }
 
 bool
-VhtPhy::IsModeAllowed (uint8_t mcsValue, uint16_t channelWidth, uint8_t nss)
+VhtPhy::IsAllowed (const WifiTxVector& txVector)
+{
+  return IsCombinationAllowed (txVector.GetMode ().GetMcsValue (),
+                               txVector.GetChannelWidth (),
+                               txVector.GetNss ());
+}
+
+bool
+VhtPhy::IsCombinationAllowed (uint8_t mcsValue, uint16_t channelWidth, uint8_t nss)
 {
   if (mcsValue == 9 && channelWidth == 20 && nss != 3)
     {
@@ -514,6 +527,120 @@ uint32_t
 VhtPhy::GetMaxPsduSize (void) const
 {
   return 4692480;
+}
+
+double
+VhtPhy::GetCcaThreshold (const Ptr<const WifiPpdu> ppdu, WifiChannelListType channelType) const
+{
+  if (ppdu)
+    {
+      const uint16_t ppduBw = ppdu->GetTxVector ().GetChannelWidth ();
+      switch (channelType)
+        {
+          case WIFI_CHANLIST_PRIMARY:
+            {
+              //Start of a PPDU for which its power measured within the primary 20 MHz channel is at or above the CCA sensitivy threshold.
+              return m_wifiPhy->GetCcaSensitivityThreshold ();
+            }
+          case WIFI_CHANLIST_SECONDARY:
+              NS_ASSERT_MSG (ppduBw == 20, "Invalid channel width " << ppduBw);
+              break;
+          case WIFI_CHANLIST_SECONDARY40:
+              NS_ASSERT_MSG (ppduBw <= 40, "Invalid channel width " << ppduBw);
+              break;
+          case WIFI_CHANLIST_SECONDARY80:
+              NS_ASSERT_MSG (ppduBw <= 80, "Invalid channel width " << ppduBw);
+              break;
+          default:
+            NS_ASSERT_MSG (false, "Invalid channel list type");
+        }
+      auto vhtConfiguration = m_wifiPhy->GetDevice ()->GetVhtConfiguration ();
+      NS_ASSERT (vhtConfiguration);
+      const auto thresholds = vhtConfiguration->GetSecondaryCcaSensitivityThresholdsPerBw ();
+      const auto it = thresholds.find (ppduBw);
+      NS_ASSERT_MSG (it != std::end (thresholds), "Invalid channel width " << ppduBw);
+      return it->second;
+    }
+  else
+    {
+      const auto it = channelTypeToScalingFactorDbm.find (channelType);
+      NS_ASSERT_MSG (it != std::end (channelTypeToScalingFactorDbm), "Invalid channel list type");
+      return m_wifiPhy->GetCcaEdThreshold () + it->second;
+    }
+}
+
+PhyEntity::CcaIndication
+VhtPhy::GetCcaIndication (const Ptr<const WifiPpdu> ppdu)
+{
+  NS_LOG_FUNCTION (this);
+
+  if (m_wifiPhy->GetChannelWidth () < 80)
+    {
+      return HtPhy::GetCcaIndication (ppdu);
+    }
+
+  double ccaThresholdDbm = GetCcaThreshold (ppdu, WIFI_CHANLIST_PRIMARY);
+  Time delayUntilCcaEnd = GetDelayUntilCcaEnd (ccaThresholdDbm, GetPrimaryBand (20));
+  if (delayUntilCcaEnd.IsStrictlyPositive ())
+    {
+      return std::make_pair (delayUntilCcaEnd, WIFI_CHANLIST_PRIMARY); //if Primary is busy, ignore CCA for Secondary
+    }
+
+  if (ppdu)
+    {
+      const uint16_t primaryWidth = 20;
+      uint16_t p20MinFreq =
+          m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (primaryWidth) - (primaryWidth / 2);
+      uint16_t p20MaxFreq =
+          m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (primaryWidth) + (primaryWidth / 2);
+      if (ppdu->DoesOverlapChannel (p20MinFreq, p20MaxFreq))
+        {
+          /*
+           * PPDU occupies primary 20 MHz channel, hence we skip CCA sensitivity rules
+           * for signals not occupying the primary 20 MHz channel.
+           */
+          return std::nullopt;
+        }
+    }
+
+  std::vector<uint16_t> secondaryWidthsToCheck;
+  if (ppdu)
+    {
+      for (const auto& secondaryChannel : secondaryChannels)
+        {
+          uint16_t secondaryWidth = secondaryChannel.first;
+          uint16_t secondaryMinFreq =
+              m_wifiPhy->GetOperatingChannel ().GetSecondaryChannelCenterFrequency (secondaryWidth) - (secondaryWidth / 2);
+          uint16_t secondaryMaxFreq =
+              m_wifiPhy->GetOperatingChannel ().GetSecondaryChannelCenterFrequency (secondaryWidth) + (secondaryWidth / 2);
+          if ((m_wifiPhy->GetChannelWidth () > secondaryWidth) && ppdu->DoesOverlapChannel (secondaryMinFreq, secondaryMaxFreq))
+            {
+              secondaryWidthsToCheck.push_back (secondaryWidth);
+            }
+        }
+    }
+  else
+    {
+      secondaryWidthsToCheck.push_back (20);
+      secondaryWidthsToCheck.push_back (40);
+      if (m_wifiPhy->GetChannelWidth () > 80)
+        {
+          secondaryWidthsToCheck.push_back (80);
+        }
+    }
+
+  for (auto secondaryWidth : secondaryWidthsToCheck)
+    {
+      auto channelType = secondaryChannels.at (secondaryWidth);
+      ccaThresholdDbm = GetCcaThreshold (ppdu, channelType);
+      delayUntilCcaEnd = GetDelayUntilCcaEnd (ccaThresholdDbm, GetSecondaryBand (secondaryWidth));
+      if (delayUntilCcaEnd.IsStrictlyPositive ())
+        {
+          return std::make_pair (delayUntilCcaEnd, channelType);
+        }
+    }
+
+  return std::nullopt;
 }
 
 } //namespace ns3

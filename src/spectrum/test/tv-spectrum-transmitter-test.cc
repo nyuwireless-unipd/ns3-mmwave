@@ -25,13 +25,6 @@
 #include <ns3/double.h>
 #include <ns3/tv-spectrum-transmitter.h>
 
-/**
- * This test verifies the accuracy of the spectrum/PSD model in the 
- * TvSpectrumTransmitter class. To do so, it tests if the max power spectral 
- * density, start frequency, and end frequency comply with expected values. 
- * Values for TV/modulation type, start frequency, channel bandwidth, and 
- * base PSD are swept and tested for each case.
- */
 NS_LOG_COMPONENT_DEFINE ("TvSpectrumTransmitterTest");
 
 using namespace ns3;
@@ -41,33 +34,57 @@ const double TOLERANCE = 1e-15;
 //           Follows http://realtimecollisiondetection.net/blog/?p=89
 double epsilon;
 
+/**
+ * \ingroup spectrum-tests
+ *
+ * This test verifies the accuracy of the spectrum/PSD model in the
+ * TvSpectrumTransmitter class. To do so, it tests if the max power spectral
+ * density, start frequency, and end frequency comply with expected values.
+ * Values for TV/modulation type, start frequency, channel bandwidth, and
+ * base PSD are swept and tested for each case.
+ */
 class TvSpectrumTransmitterTestCase : public TestCase
 {
 public:
-  TvSpectrumTransmitterTestCase (double startFrequency, 
-                            double channelBandwidth, 
-                            double basePsd, 
+  /**
+   * Constructor
+   * \param startFrequency Start frequency.
+   * \param channelBandwidth Channel Bandwidth.
+   * \param basePsd Base Power Spectral Density (PSD).
+   * \param tvType TV type.
+   */
+  TvSpectrumTransmitterTestCase (double startFrequency,
+                            double channelBandwidth,
+                            double basePsd,
                             TvSpectrumTransmitter::TvType tvType);
   virtual ~TvSpectrumTransmitterTestCase ();
 
 private:
   virtual void DoRun (void);
-  static std::string Name (TvSpectrumTransmitter::TvType tvType, 
-                           double startFrequency, 
-                           double channelBandwidth, 
+  /**
+   * Build the test name
+   * \param tvType TV type.
+   * \param startFrequency Start frequency.
+   * \param channelBandwidth Channel Bandwidth.
+   * \param basePsd Base Power Spectral Density (PSD).
+   * \return The test name
+   */
+  static std::string Name (TvSpectrumTransmitter::TvType tvType,
+                           double startFrequency,
+                           double channelBandwidth,
                            double basePsd);
 
-  double m_startFrequency;
-  double m_channelBandwidth; 
-  double m_basePsd;
-  TvSpectrumTransmitter::TvType m_tvType;
+  double m_startFrequency;      //!< Start frequency.
+  double m_channelBandwidth;    //!< Channel Bandwidth.
+  double m_basePsd;             //!< Base Power Spectral Density (PSD).
+  TvSpectrumTransmitter::TvType m_tvType; //!< TV type.
 };
 
 
-std::string 
-TvSpectrumTransmitterTestCase::Name (TvSpectrumTransmitter::TvType tvType, 
-                                     double startFrequency, 
-                                     double channelBandwidth, 
+std::string
+TvSpectrumTransmitterTestCase::Name (TvSpectrumTransmitter::TvType tvType,
+                                     double startFrequency,
+                                     double channelBandwidth,
                                      double basePsd)
 {
   std::ostringstream oss;
@@ -96,14 +113,14 @@ TvSpectrumTransmitterTestCase::~TvSpectrumTransmitterTestCase ()
 
 void
 TvSpectrumTransmitterTestCase::DoRun (void)
-{  
+{
   NS_LOG_FUNCTION (m_startFrequency << m_basePsd << m_tvType);
 
   /* TV transmitter setup */
   Ptr<TvSpectrumTransmitter> phy = CreateObject<TvSpectrumTransmitter>();
   phy->SetAttribute ("StartFrequency", DoubleValue (m_startFrequency));
   phy->SetAttribute ("ChannelBandwidth", DoubleValue (m_channelBandwidth));
-  phy->SetAttribute ("BasePsd", DoubleValue (m_basePsd)); 
+  phy->SetAttribute ("BasePsd", DoubleValue (m_basePsd));
   phy->SetAttribute ("TvType", EnumValue (m_tvType));
   phy->CreateTvPsd ();
 
@@ -124,17 +141,17 @@ TvSpectrumTransmitterTestCase::DoRun (void)
     {
       double expectedPsd = (0.502 * basePsdWattsHz) + (21.577 * basePsdWattsHz);
       epsilon = TOLERANCE * std::max (1.0, std::max (maxValue, expectedPsd));
-      NS_TEST_ASSERT_MSG_EQ_TOL (maxValue, 
-                                 expectedPsd, 
+      NS_TEST_ASSERT_MSG_EQ_TOL (maxValue,
+                                 expectedPsd,
                                  epsilon,
                                  "peak PSD value (" << maxValue << ") is incorrect");
     }
   else // highest PSD is base PSD
     {
       epsilon = TOLERANCE * std::max (1.0, std::max (maxValue, basePsdWattsHz));
-      NS_TEST_ASSERT_MSG_EQ_TOL (maxValue, 
-                                 basePsdWattsHz, 
-                                 epsilon, 
+      NS_TEST_ASSERT_MSG_EQ_TOL (maxValue,
+                                 basePsdWattsHz,
+                                 epsilon,
                                  "peak PSD value (" << maxValue << ") is incorrect");
     }
 
@@ -142,18 +159,23 @@ TvSpectrumTransmitterTestCase::DoRun (void)
   Bands::const_iterator bandStart = psd->ConstBandsBegin ();
   Bands::const_iterator bandEnd = psd->ConstBandsEnd ();
   epsilon = TOLERANCE * std::max (1.0, std::max ((*bandStart).fc, m_startFrequency));
-  NS_TEST_ASSERT_MSG_EQ_TOL ((*bandStart).fc, 
-                             m_startFrequency, 
-                             epsilon, 
+  NS_TEST_ASSERT_MSG_EQ_TOL ((*bandStart).fc,
+                             m_startFrequency,
+                             epsilon,
                              "start frequency value (" << (*bandStart).fc << ") is incorrect");
   epsilon = TOLERANCE * std::max (1.0, std::max ((*bandStart).fc, (m_startFrequency + m_channelBandwidth)));
-  NS_TEST_ASSERT_MSG_EQ_TOL ((*(bandEnd - 1)).fc, 
-                             m_startFrequency + m_channelBandwidth, 
-                             epsilon, 
+  NS_TEST_ASSERT_MSG_EQ_TOL ((*(bandEnd - 1)).fc,
+                             m_startFrequency + m_channelBandwidth,
+                             epsilon,
                              "end frequency value (" << (*(bandEnd - 1)).fc << ") is incorrect");
 }
 
 
+/**
+ * \ingroup spectrum-tests
+ *
+ * Test suite for the TvSpectrumTransmitter class
+ */
 class TvSpectrumTransmitterTestSuite : public TestSuite
 {
 public:
@@ -170,10 +192,10 @@ TvSpectrumTransmitterTestSuite::TvSpectrumTransmitterTestSuite ()
         {
           for (double psd = -100; psd <= 100; psd += 20)
             {
-              AddTestCase (new TvSpectrumTransmitterTestCase (startFreq, 
-                                                              bandwidth, 
-                                                              psd, 
-                                                              TvSpectrumTransmitter::TVTYPE_8VSB), 
+              AddTestCase (new TvSpectrumTransmitterTestCase (startFreq,
+                                                              bandwidth,
+                                                              psd,
+                                                              TvSpectrumTransmitter::TVTYPE_8VSB),
                            TestCase::QUICK);
             }
         }
@@ -184,10 +206,10 @@ TvSpectrumTransmitterTestSuite::TvSpectrumTransmitterTestSuite ()
         {
           for (double psd = -100; psd <= 100; psd += 20)
             {
-              AddTestCase (new TvSpectrumTransmitterTestCase (startFreq, 
-                                                              bandwidth, 
-                                                              psd, 
-                                                              TvSpectrumTransmitter::TVTYPE_COFDM), 
+              AddTestCase (new TvSpectrumTransmitterTestCase (startFreq,
+                                                              bandwidth,
+                                                              psd,
+                                                              TvSpectrumTransmitter::TVTYPE_COFDM),
                            TestCase::QUICK);
             }
         }
@@ -198,14 +220,15 @@ TvSpectrumTransmitterTestSuite::TvSpectrumTransmitterTestSuite ()
         {
           for (double psd = -100; psd <= 100; psd += 20)
             {
-              AddTestCase (new TvSpectrumTransmitterTestCase (startFreq, 
-                                                              bandwidth, 
-                                                              psd, 
-                                                              TvSpectrumTransmitter::TVTYPE_ANALOG), 
+              AddTestCase (new TvSpectrumTransmitterTestCase (startFreq,
+                                                              bandwidth,
+                                                              psd,
+                                                              TvSpectrumTransmitter::TVTYPE_ANALOG),
                            TestCase::QUICK);
             }
         }
     }
 }
 
+/// Static variable for test initialization
 static TvSpectrumTransmitterTestSuite g_tvSpectrumTransmitterTestSuite;

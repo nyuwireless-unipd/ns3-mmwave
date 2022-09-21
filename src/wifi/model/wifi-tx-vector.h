@@ -23,6 +23,7 @@
 #define WIFI_TX_VECTOR_H
 
 #include <list>
+#include <vector>
 #include "wifi-mode.h"
 #include "wifi-phy-common.h"
 #include "ns3/he-ru.h"
@@ -35,6 +36,21 @@ struct HeMuUserInfo
   HeRu::RuSpec ru; ///< RU specification
   WifiMode mcs;    ///< MCS
   uint8_t nss;     ///< number of spatial streams
+
+  /**
+    * Compare this user info to the given user info.
+    *
+    * \param other the given user info
+    * \return true if this user info compares equal to the given user info, false otherwise
+    */
+  bool operator== (const HeMuUserInfo& other) const;
+  /**
+    * Compare this user info to the given user info.
+    *
+    * \param other the given user info
+    * \return true if this user info differs from the given user info, false otherwise
+    */
+  bool operator!= (const HeMuUserInfo& other) const;
 };
 
 /**
@@ -373,6 +389,22 @@ public:
     */
    std::pair<std::size_t, std::size_t> GetNumRusPerHeSigBContentChannel (void) const;
 
+   /**
+    * Set the 20 MHz subchannels that are punctured.
+    *
+    * \param inactiveSubchannels the bitmap indexed by the 20 MHz subchannels in ascending order,
+    *        where each bit indicates whether the corresponding 20 MHz subchannel is punctured or not
+    *        within the transmission bandwidth
+    */
+   void SetInactiveSubchannels (const std::vector<bool>& inactiveSubchannels);
+   /**
+    * Get the 20 MHz subchannels that are punctured.
+    *
+    * \return the bitmap indexed by the 20 MHz subchannels in ascending order,
+    *         where each bit indicates whether the corresponding 20 MHz subchannel is punctured or not
+    *         within the transmission bandwidth
+    */
+   const std::vector<bool>& GetInactiveSubchannels (void) const;
 
 private:
   WifiMode m_mode;               /**< The DATARATE parameter in Table 15-4.
@@ -400,6 +432,7 @@ private:
                                       indexed by station ID (STA-ID) corresponding
                                       to the 11 LSBs of the AID of the recipient STA
                                       This list shall be used only for HE MU */
+  std::vector<bool> m_inactiveSubchannels;/**< Bitmap of inactive subchannels used for preamble puncturing */
 };
 
 /**

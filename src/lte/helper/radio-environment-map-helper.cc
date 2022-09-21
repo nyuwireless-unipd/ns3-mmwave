@@ -191,7 +191,7 @@ RadioEnvironmentMapHelper::Install ()
       NS_FATAL_ERROR ("Lookup " << m_channelPath << " should have exactly one match");
     }
   m_channel = match.Get (0)->GetObject<SpectrumChannel> ();
-  NS_ABORT_MSG_IF (m_channel == 0, "object at " << m_channelPath << "is not of type SpectrumChannel");
+  NS_ABORT_MSG_IF (!m_channel, "object at " << m_channelPath << "is not of type SpectrumChannel");
 
   m_outFile.open (m_outputFile.c_str ());
   if (!m_outFile.is_open ())

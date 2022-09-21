@@ -34,7 +34,7 @@ namespace dot11s
  * \ingroup dot11s
  *
  * \brief 802.11s Peer link open management frame
- * 
+ *
  * Peer link open start frame includes the following:
  * - Capability
  * - Supported rates
@@ -45,6 +45,11 @@ class PeerLinkOpenStart : public Header
 {
 public:
   PeerLinkOpenStart ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  PeerLinkOpenStart (const PeerLinkOpenStart &) = delete;
+  PeerLinkOpenStart &operator= (const PeerLinkOpenStart &) = delete;
+
   ///\brief fields:
   struct PlinkOpenStartFields
   {
@@ -91,19 +96,6 @@ private:
    * \returns true if equal
    */
   friend bool operator== (const PeerLinkOpenStart & a, const PeerLinkOpenStart & b);
-
-  /**
-   * assignment operator
-   * \param peer the peer link open start
-   * \returns the assigned value
-   */
-  PeerLinkOpenStart& operator= (const PeerLinkOpenStart & peer);
-  /**
-   * constructor
-   * \param peer the peer link open start
-   */
-  PeerLinkOpenStart (const PeerLinkOpenStart & peer);
-
 };
 
 bool operator== (const PeerLinkOpenStart & a, const PeerLinkOpenStart & b);
@@ -112,7 +104,7 @@ bool operator== (const PeerLinkOpenStart & a, const PeerLinkOpenStart & b);
  * \ingroup dot11s
  *
  * \brief 802.11s Peer link close management frame
- * 
+ *
  * Peer link close frame includes the following:
  * - Mesh ID of mesh
  */
@@ -120,6 +112,11 @@ class PeerLinkCloseStart : public Header
 {
 public:
   PeerLinkCloseStart ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  PeerLinkCloseStart (const PeerLinkCloseStart &) = delete;
+  PeerLinkCloseStart &operator= (const PeerLinkCloseStart &) = delete;
+
   ///\brief fields:
   struct PlinkCloseStartFields
   {
@@ -132,7 +129,7 @@ public:
    */
   void SetPlinkCloseStart (PlinkCloseStartFields fields);
   /**
-   * Get peer link close start fields 
+   * Get peer link close start fields
    * \return PlinkOpenStartFields
    */
   PlinkCloseStartFields GetFields () const;
@@ -160,17 +157,6 @@ private:
    * \returns true if equal
    */
   friend bool operator== (const PeerLinkCloseStart & a, const PeerLinkCloseStart & b);
-
-  /**
-   * assignment operator
-   *
-   * \param peer the value to assign
-   * \returns the assigned value
-   */
-  PeerLinkCloseStart& operator= (const PeerLinkCloseStart & peer);
-  /// type conversion operator
-  PeerLinkCloseStart (const PeerLinkCloseStart &);
-
 };
 bool operator== (const PeerLinkCloseStart & a, const PeerLinkCloseStart & b);
 
@@ -178,7 +164,7 @@ bool operator== (const PeerLinkCloseStart & a, const PeerLinkCloseStart & b);
  * \ingroup dot11s
  *
  * \brief 802.11s Peer link confirm management frame
- * 
+ *
  * Peer link confirm frame includes the following:
  * - Association ID field
  * - Supported rates
@@ -188,6 +174,11 @@ class PeerLinkConfirmStart : public Header
 {
 public:
   PeerLinkConfirmStart ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  PeerLinkConfirmStart (const PeerLinkConfirmStart &) = delete;
+  PeerLinkConfirmStart &operator= (const PeerLinkConfirmStart &) = delete;
+
   ///\brief fields:
   struct PlinkConfirmStartFields
   {
@@ -234,19 +225,6 @@ private:
    * \returns true if equal
    */
   friend bool operator== (const PeerLinkConfirmStart & a, const PeerLinkConfirmStart & b);
-
-  /**
-   * assignment operator
-   * \param peer the peer link confirm start
-   * \returns the assigned value
-   */
-  PeerLinkConfirmStart& operator= (const PeerLinkConfirmStart & peer);
-  /**
-   * constructor
-   * \param peer the peer link confirm start
-   */
-  PeerLinkConfirmStart (const PeerLinkConfirmStart & peer);
-
 };
 bool operator== (const PeerLinkConfirmStart & a, const PeerLinkConfirmStart & b);
 } // namespace dot11s

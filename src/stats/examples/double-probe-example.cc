@@ -31,7 +31,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("DoubleProbeExample");
 
-/*
+/**
  * This is our test object, an object that increments counters at
  * various times and emits one of them as a trace source.
  */
@@ -46,11 +46,14 @@ public:
   Emitter ();
 private:
   void DoInitialize (void);
+
+  /// Generate data - actually this function is not traced.
   void Emit (void);
+  /// Counts how many times this function is called.
   void Count (void);
 
-  TracedValue<double> m_counter;  // normally this would be integer type
-  Ptr<ExponentialRandomVariable> m_var;
+  TracedValue<double> m_counter;  //!< Sample counter, normally this would be integer type
+  Ptr<ExponentialRandomVariable> m_var; //!< Random number generator
 
 };
 
@@ -104,14 +107,26 @@ Emitter::Count (void)
   Simulator::Schedule (Seconds (m_var->GetValue ()), &Emitter::Count, this);
 }
 
-// This is a function to test hooking a raw function to the trace source
+/**
+ * This is a function to test hooking a raw function to the trace source,
+ *
+ * \param context The trace context.
+ * \param oldVal Old value.
+ * \param newVal New value.
+ */
 void
 NotifyViaTraceSource (std::string context, double oldVal, double newVal)
 {
   NS_LOG_DEBUG ("context: " << context << " old " << oldVal << " new " << newVal);
 }
 
-// This is a function to test hooking it to the probe output
+/**
+ * This is a function to test hooking it to the probe output
+ *
+ * \param context The trace context.
+ * \param oldVal Old value.
+ * \param newVal New value.
+ */
 void
 NotifyViaProbe (std::string context, double oldVal, double newVal)
 {

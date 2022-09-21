@@ -43,9 +43,9 @@ typedef std::map<WifiMode, Time> TxTime;
  */
 enum McsGroupType
   {
-    GROUP_HT = 0,
-    GROUP_VHT,
-    GROUP_HE
+    WIFI_MINSTREL_GROUP_HT = 0,
+    WIFI_MINSTREL_GROUP_VHT,
+    WIFI_MINSTREL_GROUP_HE
   };
 
 /**
@@ -59,11 +59,11 @@ inline std::ostream& operator<< (std::ostream& os, McsGroupType type)
 {
   switch (type)
     {
-      case GROUP_HT:
+      case WIFI_MINSTREL_GROUP_HT:
         return (os << "HT");
-      case GROUP_VHT:
+      case WIFI_MINSTREL_GROUP_VHT:
         return (os << "VHT");
-      case GROUP_HE:
+      case WIFI_MINSTREL_GROUP_HE:
         return (os << "HE");
       default:
         return (os << "INVALID");
@@ -256,7 +256,7 @@ private:
                        double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss) override;
   void DoReportFinalRtsFailed (WifiRemoteStation *station) override;
   void DoReportFinalDataFailed (WifiRemoteStation *station) override;
-  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station) override;
+  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint16_t allowedWidth) override;
   WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station) override;
   void DoReportAmpduTxStatus (WifiRemoteStation *station, uint16_t nSuccessfulMpdus, uint16_t nFailedMpdus,
                               double rxSnr, double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss) override;
@@ -599,12 +599,28 @@ private:
    */
   WifiModeList GetHtDeviceMcsList (void) const;
 
+  /**
+   * Given the index of the current TX rate, check whether the channel width is
+   * not greater than the given allowed width. If so, the index of the current TX
+   * rate is returned. Otherwise, try halving the channel width and check if the
+   * MCS group with the same number of streams and same GI is supported. If a
+   * supported MCS group is found, return the index of the TX rate within such a
+   * group with the same MCS as the given TX rate. If no supported MCS group is
+   * found, the simulation aborts.
+   *
+   * \param txRate the index of the current TX rate
+   * \param allowedWidth the allowed width in MHz
+   * \return the index of a TX rate whose channel width is not greater than the
+   *         allowed width, if found (otherwise, the simulation aborts)
+   */
+  uint16_t UpdateRateAfterAllowedWidth (uint16_t txRate, uint16_t allowedWidth);
+
   Time m_updateStats;            //!< How frequent do we calculate the stats.
   Time m_legacyUpdateStats;      //!< How frequent do we calculate the stats for legacy MinstrelWifiManager.
   uint8_t m_lookAroundRate;      //!< The % to try other rates than our current rate.
   uint8_t m_ewmaLevel;           //!< Exponential weighted moving average level (or coefficient).
   uint8_t m_nSampleCol;          //!< Number of sample columns.
-  uint32_t m_frameLength;        //!< Frame length used for calculate modes TxTime in bytes.
+  uint32_t m_frameLength;        //!< Frame length used to calculate modes TxTime in bytes.
   uint8_t m_numGroups;           //!< Number of groups Minstrel should consider.
   uint8_t m_numRates;            //!< Number of rates per group Minstrel should consider.
   bool m_useLatestAmendmentOnly; //!< Flag if only the latest supported amendment by both peers should be used.

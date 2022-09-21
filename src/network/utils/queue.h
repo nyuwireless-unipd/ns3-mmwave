@@ -27,13 +27,13 @@
 #include "ns3/object.h"
 #include "ns3/traced-callback.h"
 #include "ns3/traced-value.h"
-#include "ns3/unused.h"
 #include "ns3/log.h"
 #include "ns3/queue-size.h"
 #include "ns3/queue-item.h"
+#include "ns3/queue-fwd.h"
 #include <string>
 #include <sstream>
-#include <list>
+#include <type_traits>
 
 namespace ns3 {
 
@@ -179,6 +179,15 @@ public:
    */
   QueueSize GetMaxSize (void) const;
 
+  /**
+   * \brief Check if the queue would overflow with additional bytes or packets
+   * Note: the check is performed according to the queue's operating mode (bytes or packets).
+   * \param nPackets number of additional packets
+   * \param nBytes number of additional bytes
+   * \return true if the queue should overflow, false otherwise.
+   */
+  bool WouldOverflow (uint32_t nPackets, uint32_t nBytes) const;
+
 #if 0
   // average calculation requires keeping around
   // a buffer with the date of arrival of past received packets
@@ -203,7 +212,7 @@ public:
   double GetDroppedPacketsPerSecondVariance (void);
 #endif
 
-private:
+protected:
   TracedValue<uint32_t> m_nBytes;               //!< Number of bytes in the queue
   uint32_t m_nTotalReceivedBytes;               //!< Total received bytes
   TracedValue<uint32_t> m_nPackets;             //!< Number of packets in the queue
@@ -216,10 +225,6 @@ private:
   uint32_t m_nTotalDroppedPacketsAfterDequeue;  //!< Total dropped packets after dequeue
 
   QueueSize m_maxSize;                //!< max queue size
-
-  /// Friend class
-  template <typename Item>
-  friend class Queue;
 };
 
 
@@ -236,20 +241,28 @@ private:
  * implement the Enqueue, Dequeue, Remove and Peek methods, and are
  * encouraged to leverage the DoEnqueue, DoDequeue, DoRemove, and DoPeek
  * methods in doing so, to ensure that appropriate trace sources are called
- * and statistics are maintained.
+ * and statistics are maintained. The template parameter specifies the type of
+ * container used internally to store queue items. The container type must provide
+ * the methods insert(), erase() and clear() and define the iterator and const_iterator
+ * types, following the usual syntax of C++ containers. The default container type
+ * is std::list (as defined in queue-fwd.h). In case the container is such that
+ * an object stored within the queue is obtained from a container element through
+ * an operation other than dereferencing an iterator pointing to the container
+ * element, the container has to provide a public method named GetItem that
+ * returns the object stored within the queue that is included in the container
+ * element pointed to by a given const iterator.
  *
  * Users of the Queue template class usually hold a queue through a smart pointer,
  * hence forward declaration is recommended to avoid pulling the implementation
- * of the templates included in this file. Thus, do not include queue.h but add
- * the following forward declaration in your .h file:
- *
- * \code
- *   template <typename Item> class Queue;
- * \endcode
- *
+ * of the templates included in this file. Thus, include queue-fwd.h, which
+ * provides a forward declaration for the Queue class that defines the default
+ * value for the template template parameter, instead of queue.h in your .h file.
  * Then, include queue.h in the corresponding .cc file.
+ *
+ * \tparam Item \explicit Type of the objects stored within the queue
+ * \tparam Container \explicit Type of the container that stores queue items
  */
-template <typename Item>
+template <typename Item, typename Container>
 class Queue : public QueueBase
 {
 public:
@@ -301,75 +314,17 @@ public:
   typedef Item ItemType;
 
 protected:
-
   /// Const iterator.
-  typedef typename std::list<Ptr<Item> >::const_iterator ConstIterator;
+  typedef typename Container::const_iterator ConstIterator;
   /// Iterator.
-  typedef typename std::list<Ptr<Item> >::iterator Iterator;
+  typedef typename Container::iterator Iterator;
 
   /**
-   * \brief Get a const iterator which refers to the first item in the queue.
+   * Get a const reference to the container of queue items.
    *
-   * Subclasses can browse the items in the queue by using a const iterator
-   *
-   * \code
-   *   for (auto i = begin (); i != end (); ++i)
-   *     {
-   *       (*i)->method ();  // some const method of the Item class
-   *     }
-   * \endcode
-   *
-   * \returns a const iterator which refers to the first item in the queue.
+   * \return a const reference to the container of queue items
    */
-  ConstIterator begin (void) const;
-
-  /**
-   * \brief Get an iterator which refers to the first item in the queue.
-   *
-   * Subclasses can browse the items in the queue by using an iterator
-   *
-   * \code
-   *   for (auto i = begin (); i != end (); ++i)
-   *     {
-   *       (*i)->method ();  // some method of the Item class
-   *     }
-   * \endcode
-   *
-   * \returns an iterator which refers to the first item in the queue.
-   */
-  Iterator begin (void);
-
-  /**
-   * \brief Get a const iterator which indicates past-the-last item in the queue.
-   *
-   * Subclasses can browse the items in the queue by using a const iterator
-   *
-   * \code
-   *   for (auto i = begin (); i != end (); ++i)
-   *     {
-   *       (*i)->method ();  // some const method of the Item class
-   *     }
-   * \endcode
-   *
-   * \returns a const iterator which indicates past-the-last item in the queue.
-   */
-  ConstIterator end (void) const;
-
-  /**
-   * \brief Get an iterator which indicates past-the-last item in the queue.
-   *
-   * Subclasses can browse the items in the queue by using an iterator
-   *
-   * \code
-   *   for (auto i = begin (); i != end (); ++i)
-   *     {
-   *       (*i)->method ();  // some method of the Item class
-   *     }
-   * \endcode
-   *
-   * \returns an iterator which indicates past-the-last item in the queue.
-   */
-  Iterator end (void);
+  const Container& GetContainer (void) const;
 
   /**
    * Push an item in the queue
@@ -429,10 +384,51 @@ protected:
    */
   void DropAfterDequeue (Ptr<Item> item);
 
+  /** \copydoc ns3::Object::DoDispose */
   void DoDispose (void) override;
 
 private:
-  std::list<Ptr<Item> > m_packets;          //!< the items in the queue
+  /**
+   * Struct providing a static method returning the object stored within the queue
+   * that is included in the container element pointed to by the given const iterator.
+   * This method is used when the container does not define a GetItem method and
+   * assumes that an object stored in the queue can be obtained by dereferencing the
+   * iterator pointing to the container element that includes such an object.
+   */
+  template <class, class = void>
+  struct MakeGetItem
+  {
+    /**
+     * \param it the given const iterator
+     * \return the item included in the element pointed to by the given iterator
+     */
+    static Ptr<Item> GetItem (const Container&, const ConstIterator it)
+    {
+      return *it;
+    }
+  };
+
+  /**
+   * Struct providing a static method returning the object stored within the queue
+   * that is included in the container element pointed to by the given const iterator.
+   * This method is used when the container defines a GetItem method and is simply a
+   * wrapper to invoke such a method.
+   */
+  template <class T>
+  struct MakeGetItem<T, std::void_t<decltype (std::declval<T> ().GetItem (std::declval<ConstIterator> ()))> >
+  {
+    /**
+     * \param container the container
+     * \param it the given const iterator
+     * \return the item included in the element pointed to by the given iterator
+     */
+    static Ptr<Item> GetItem (const Container& container, const ConstIterator it)
+    {
+      return container.GetItem (it);
+    }
+  };
+
+  Container m_packets;                      //!< the items in the queue
   NS_LOG_TEMPLATE_DECLARE;                  //!< the log component
 
   /// Traced callback: fired when a packet is enqueued
@@ -452,55 +448,66 @@ private:
  * Implementation of the templates declared above.
  */
 
-template <typename Item>
+template <typename Item, typename Container>
 TypeId
-Queue<Item>::GetTypeId (void)
+Queue<Item, Container>::GetTypeId (void)
 {
-  std::string name = GetTypeParamName<Queue<Item> > ();
-  static TypeId tid = TypeId (("ns3::Queue<" + name + ">").c_str ())
+  std::string name = GetTemplateClassName<Queue<Item, Container>> ();
+  auto startPos = name.find ('<') + 1;
+  auto endPos = name.find_first_of (",>", startPos);
+  std::string tcbName = "ns3::" + name.substr (startPos, endPos - startPos) + "::TracedCallback";
+
+  static TypeId tid = TypeId (name)
     .SetParent<QueueBase> ()
     .SetGroupName ("Network")
     .AddTraceSource ("Enqueue", "Enqueue a packet in the queue.",
-                     MakeTraceSourceAccessor (&Queue<Item>::m_traceEnqueue),
-                     "ns3::" + name + "::TracedCallback")
+                     MakeTraceSourceAccessor (&Queue<Item, Container>::m_traceEnqueue),
+                     tcbName)
     .AddTraceSource ("Dequeue", "Dequeue a packet from the queue.",
-                     MakeTraceSourceAccessor (&Queue<Item>::m_traceDequeue),
-                     "ns3::" + name + "::TracedCallback")
+                     MakeTraceSourceAccessor (&Queue<Item, Container>::m_traceDequeue),
+                     tcbName)
     .AddTraceSource ("Drop", "Drop a packet (for whatever reason).",
-                     MakeTraceSourceAccessor (&Queue<Item>::m_traceDrop),
-                     "ns3::" + name + "::TracedCallback")
+                     MakeTraceSourceAccessor (&Queue<Item, Container>::m_traceDrop),
+                     tcbName)
     .AddTraceSource ("DropBeforeEnqueue", "Drop a packet before enqueue.",
-                     MakeTraceSourceAccessor (&Queue<Item>::m_traceDropBeforeEnqueue),
-                     "ns3::" + name + "::TracedCallback")
+                     MakeTraceSourceAccessor (&Queue<Item, Container>::m_traceDropBeforeEnqueue),
+                     tcbName)
     .AddTraceSource ("DropAfterDequeue", "Drop a packet after dequeue.",
-                     MakeTraceSourceAccessor (&Queue<Item>::m_traceDropAfterDequeue),
-                     "ns3::" + name + "::TracedCallback")
+                     MakeTraceSourceAccessor (&Queue<Item, Container>::m_traceDropAfterDequeue),
+                     tcbName)
   ;
   return tid;
 }
 
-template <typename Item>
-Queue<Item>::Queue ()
+template <typename Item, typename Container>
+Queue<Item, Container>::Queue ()
   : NS_LOG_TEMPLATE_DEFINE ("Queue")
 {
 }
 
-template <typename Item>
-Queue<Item>::~Queue ()
+template <typename Item, typename Container>
+Queue<Item, Container>::~Queue ()
 {
 }
 
-template <typename Item>
+template <typename Item, typename Container>
+const Container&
+Queue<Item, Container>::GetContainer (void) const
+{
+  return m_packets;
+}
+
+template <typename Item, typename Container>
 bool
-Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item)
+Queue<Item, Container>::DoEnqueue (ConstIterator pos, Ptr<Item> item)
 {
   Iterator ret;
   return DoEnqueue (pos, item, ret);
 }
 
-template <typename Item>
+template <typename Item, typename Container>
 bool
-Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item, Iterator& ret)
+Queue<Item, Container>::DoEnqueue (ConstIterator pos, Ptr<Item> item, Iterator& ret)
 {
   NS_LOG_FUNCTION (this << item);
 
@@ -526,9 +533,9 @@ Queue<Item>::DoEnqueue (ConstIterator pos, Ptr<Item> item, Iterator& ret)
   return true;
 }
 
-template <typename Item>
+template <typename Item, typename Container>
 Ptr<Item>
-Queue<Item>::DoDequeue (ConstIterator pos)
+Queue<Item, Container>::DoDequeue (ConstIterator pos)
 {
   NS_LOG_FUNCTION (this);
 
@@ -538,11 +545,11 @@ Queue<Item>::DoDequeue (ConstIterator pos)
       return 0;
     }
 
-  Ptr<Item> item = *pos;
-  m_packets.erase (pos);
+  Ptr<Item> item = MakeGetItem<Container>::GetItem (m_packets, pos);
 
-  if (item != 0)
+  if (item)
     {
+      m_packets.erase (pos);
       NS_ASSERT (m_nBytes.Get () >= item->GetSize ());
       NS_ASSERT (m_nPackets.Get () > 0);
 
@@ -555,9 +562,9 @@ Queue<Item>::DoDequeue (ConstIterator pos)
   return item;
 }
 
-template <typename Item>
+template <typename Item, typename Container>
 Ptr<Item>
-Queue<Item>::DoRemove (ConstIterator pos)
+Queue<Item, Container>::DoRemove (ConstIterator pos)
 {
   NS_LOG_FUNCTION (this);
 
@@ -567,11 +574,11 @@ Queue<Item>::DoRemove (ConstIterator pos)
       return 0;
     }
 
-  Ptr<Item> item = *pos;
-  m_packets.erase (pos);
+  Ptr<Item> item = MakeGetItem<Container>::GetItem (m_packets, pos);
 
-  if (item != 0)
+  if (item)
     {
+      m_packets.erase (pos);
       NS_ASSERT (m_nBytes.Get () >= item->GetSize ());
       NS_ASSERT (m_nPackets.Get () > 0);
 
@@ -587,9 +594,9 @@ Queue<Item>::DoRemove (ConstIterator pos)
   return item;
 }
 
-template <typename Item>
+template <typename Item, typename Container>
 void
-Queue<Item>::Flush (void)
+Queue<Item, Container>::Flush (void)
 {
   NS_LOG_FUNCTION (this);
   while (!IsEmpty ())
@@ -598,18 +605,18 @@ Queue<Item>::Flush (void)
     }
 }
 
-template <typename Item>
+template <typename Item, typename Container>
 void
-Queue<Item>::DoDispose (void)
+Queue<Item, Container>::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   m_packets.clear ();
   Object::DoDispose ();
 }
 
-template <typename Item>
+template <typename Item, typename Container>
 Ptr<const Item>
-Queue<Item>::DoPeek (ConstIterator pos) const
+Queue<Item, Container>::DoPeek (ConstIterator pos) const
 {
   NS_LOG_FUNCTION (this);
 
@@ -619,36 +626,12 @@ Queue<Item>::DoPeek (ConstIterator pos) const
       return 0;
     }
 
-  return *pos;
+  return MakeGetItem<Container>::GetItem (m_packets, pos);
 }
 
-template <typename Item>
-typename Queue<Item>::ConstIterator Queue<Item>::begin (void) const
-{
-  return m_packets.cbegin ();
-}
-
-template <typename Item>
-typename Queue<Item>::Iterator Queue<Item>::begin (void)
-{
-  return m_packets.begin ();
-}
-
-template <typename Item>
-typename Queue<Item>::ConstIterator Queue<Item>::end (void) const
-{
-  return m_packets.cend ();
-}
-
-template <typename Item>
-typename Queue<Item>::Iterator Queue<Item>::end (void)
-{
-  return m_packets.end ();
-}
-
-template <typename Item>
+template <typename Item, typename Container>
 void
-Queue<Item>::DropBeforeEnqueue (Ptr<Item> item)
+Queue<Item, Container>::DropBeforeEnqueue (Ptr<Item> item)
 {
   NS_LOG_FUNCTION (this << item);
 
@@ -662,9 +645,9 @@ Queue<Item>::DropBeforeEnqueue (Ptr<Item> item)
   m_traceDropBeforeEnqueue (item);
 }
 
-template <typename Item>
+template <typename Item, typename Container>
 void
-Queue<Item>::DropAfterDequeue (Ptr<Item> item)
+Queue<Item, Container>::DropAfterDequeue (Ptr<Item> item)
 {
   NS_LOG_FUNCTION (this << item);
 

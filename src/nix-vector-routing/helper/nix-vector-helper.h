@@ -15,11 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * This file is adapted from the old ipv4-nix-vector-helper.h.
  *
  * Authors: Josh Pelkey <jpelkey@gatech.edu>
- * 
+ *
  * Modified by: Ameya Deshpande <ameyanrd@outlook.com>
  */
 
@@ -37,26 +37,26 @@ namespace ns3 {
  *
  * \brief Helper class that adds Nix-vector routing to nodes.
  *
- * This class is expected to be used in conjunction with 
+ * This class is expected to be used in conjunction with
  * ns3::InternetStackHelper::SetRoutingHelper
  *
  * \internal
- * Since this class is meant to be specialized only by Ipv4RoutingHelper or 
+ * Since this class is meant to be specialized only by Ipv4RoutingHelper or
  * Ipv6RoutingHelper the implementation of this class doesn't need to be
  * exposed here; it is in nix-vector-helper.cc.
 
  */
 template <typename T>
-class NixVectorHelper : public std::enable_if<std::is_same<Ipv4RoutingHelper, T>::value || std::is_same<Ipv6RoutingHelper, T>::value, T>::type
+class NixVectorHelper : public std::enable_if_t<std::is_same_v<Ipv4RoutingHelper, T> || std::is_same_v<Ipv6RoutingHelper, T>, T>
 {
   /// Alias for determining whether the parent is Ipv4RoutingHelper or Ipv6RoutingHelper
-  using IsIpv4 = std::is_same <Ipv4RoutingHelper, T>;
+  static constexpr bool IsIpv4 = std::is_same_v<Ipv4RoutingHelper, T>;
   /// Alias for Ipv4 and Ipv6 classes
-  using Ip = typename std::conditional <IsIpv4::value, Ipv4, Ipv6>::type;
+  using Ip = typename std::conditional_t<IsIpv4, Ipv4, Ipv6>;
   /// Alias for Ipv4Address and Ipv6Address classes
-  using IpAddress = typename std::conditional<IsIpv4::value, Ipv4Address, Ipv6Address>::type;
+  using IpAddress = typename std::conditional_t<IsIpv4, Ipv4Address, Ipv6Address>;
   /// Alias for Ipv4RoutingProtocol and Ipv6RoutingProtocol classes
-  using IpRoutingProtocol = typename std::conditional<IsIpv4::value, Ipv4RoutingProtocol, Ipv6RoutingProtocol>::type;
+  using IpRoutingProtocol = typename std::conditional_t<IsIpv4, Ipv4RoutingProtocol, Ipv6RoutingProtocol>;
 public:
   /**
    * Construct an NixVectorHelper to make life easier while adding Nix-vector
@@ -72,9 +72,12 @@ public:
    */
   NixVectorHelper (const NixVectorHelper<T> &o);
 
+  // Delete assignment operator to avoid misuse
+  NixVectorHelper &operator= (const NixVectorHelper &) = delete;
+
   /**
    * \returns pointer to clone of this NixVectorHelper
-   * 
+   *
    * This method is mainly for internal use by the other helpers;
    * clients are expected to free the dynamic memory allocated by this method
    */
@@ -105,13 +108,6 @@ public:
   void PrintRoutingPathAt (Time printTime, Ptr<Node> source, IpAddress dest, Ptr<OutputStreamWrapper> stream, Time::Unit unit = Time::S);
 
 private:
-  /**
-   * \brief Assignment operator declared private and not implemented to disallow
-   * assignment and prevent the compiler from happily inserting its own.
-   * \return Nothing useful.
-   */
-  NixVectorHelper &operator = (const NixVectorHelper &);
-
   ObjectFactory m_agentFactory; //!< Object factory
 
   /**

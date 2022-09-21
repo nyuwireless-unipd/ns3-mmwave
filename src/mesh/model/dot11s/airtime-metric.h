@@ -20,7 +20,10 @@
 
 #ifndef AIRTIME_METRIC_H
 #define AIRTIME_METRIC_H
+
 #include "ns3/mesh-wifi-interface-mac.h"
+#include "ns3/wifi-mac-header.h"
+
 namespace ns3 {
 namespace dot11s {
 /**
@@ -56,7 +59,7 @@ public:
    * bt -- the test packet length in bits (8192 by default),
    * r  -- the current bitrate of the packet,
    *
-   * Final result is expressed encoded as an unsigned integer in units of 
+   * Final result is expressed encoded as an unsigned integer in units of
    * 0.01 TU = 10.24 us
    *
    * \param peerAddress The peer MAC address

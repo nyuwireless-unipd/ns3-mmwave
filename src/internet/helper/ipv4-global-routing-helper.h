@@ -46,6 +46,9 @@ public:
    */
   Ipv4GlobalRoutingHelper (const Ipv4GlobalRoutingHelper &o);
 
+  // Delete assignment operator to avoid misuse
+  Ipv4GlobalRoutingHelper &operator= (const Ipv4GlobalRoutingHelper &) = delete;
+
   /**
    * \returns pointer to clone of this Ipv4GlobalRoutingHelper
    *
@@ -74,9 +77,9 @@ public:
   static void PopulateRoutingTables (void);
   /**
    * \brief Remove all routes that were previously installed in a prior call
-   * to either PopulateRoutingTables() or RecomputeRoutingTables(), and 
+   * to either PopulateRoutingTables() or RecomputeRoutingTables(), and
    * add a new set of routes.
-   * 
+   *
    * This method does not change the set of nodes
    * over which GlobalRouting is being used, but it will dynamically update
    * its representation of the global topology before recomputing routes.
@@ -85,13 +88,6 @@ public:
    *
    */
   static void RecomputeRoutingTables (void);
-private:
-  /**
-   * \brief Assignment operator declared private and not implemented to disallow
-   * assignment and prevent the compiler from happily inserting its own.
-   * \return
-   */
-  Ipv4GlobalRoutingHelper &operator = (const Ipv4GlobalRoutingHelper &);
 };
 
 } // namespace ns3

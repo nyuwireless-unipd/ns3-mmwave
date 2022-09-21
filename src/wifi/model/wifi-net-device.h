@@ -23,6 +23,8 @@
 
 #include "ns3/net-device.h"
 #include "ns3/traced-callback.h"
+#include "wifi-standards.h"
+#include <vector>
 
 namespace ns3 {
 
@@ -32,6 +34,7 @@ class WifiMac;
 class HtConfiguration;
 class VhtConfiguration;
 class HeConfiguration;
+class EhtConfiguration;
 
 /// This value conforms to the 802.11 specification
 static const uint16_t MAX_MSDU_SIZE = 2304;
@@ -62,6 +65,23 @@ public:
   WifiNetDevice ();
   virtual ~WifiNetDevice ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  WifiNetDevice (const WifiNetDevice &o) = delete;
+  WifiNetDevice &operator = (const WifiNetDevice &) = delete;
+
+  /**
+   * Set the Wifi standard.
+   *
+   * \param standard the Wifi standard
+   */
+  void SetStandard (WifiStandard standard);
+  /**
+   * Get the Wifi standard.
+   *
+   * \return the Wifi standard
+   */
+  WifiStandard GetStandard (void) const;
+
   /**
    * \param mac the MAC layer to use.
    */
@@ -71,21 +91,61 @@ public:
    */
   void SetPhy (const Ptr<WifiPhy> phy);
   /**
+   * \param phys the PHY layers to use (for 11be multi-link devices only)
+   */
+  void SetPhys (const std::vector<Ptr<WifiPhy>>& phys);
+  /**
    * \param manager the manager to use.
    */
   void SetRemoteStationManager (const Ptr<WifiRemoteStationManager> manager);
+  /**
+   * \param managers the managers to use (for 11be multi-link devices only)
+   */
+  void SetRemoteStationManagers (const std::vector<Ptr<WifiRemoteStationManager>>& managers);
   /**
    * \returns the MAC we are currently using.
    */
   Ptr<WifiMac> GetMac (void) const;
   /**
    * \returns the PHY we are currently using.
+   *
+   * This GetPhy variant is needed to keep using "Phy" in the path names.
    */
   Ptr<WifiPhy> GetPhy (void) const;
   /**
+   * \param i the index (starting at 0) of the PHY object to retrieve
+   * \returns the requested PHY object
+   */
+  virtual Ptr<WifiPhy> GetPhy (uint8_t i) const;
+  /**
+   * \returns a const reference to the vector of PHY objects
+   */
+  virtual const std::vector<Ptr<WifiPhy>>& GetPhys (void) const;
+  /**
+   * \returns the number of PHY objects
+   */
+  uint8_t GetNPhys (void) const;
+  /**
    * \returns the remote station manager we are currently using.
+   *
+   * This GetRemoteStationManager variant is needed to keep using "RemoteStationManager"
+   * in the path names.
    */
   Ptr<WifiRemoteStationManager> GetRemoteStationManager (void) const;
+  /**
+   * \param linkId the ID (starting at 0) of the link of the RemoteStationManager
+   *               object to retrieve
+   * \returns the requested remote station manager
+   */
+  Ptr<WifiRemoteStationManager> GetRemoteStationManager (uint8_t linkId) const;
+  /**
+   * \returns a const reference to the vector of remote station managers
+   */
+  virtual const std::vector<Ptr<WifiRemoteStationManager>>& GetRemoteStationManagers (void) const;
+  /**
+   * \returns the number of remote station managers
+   */
+  uint8_t GetNRemoteStationManagers (void) const;
 
   /**
    * \param htConfiguration pointer to HtConfiguration
@@ -111,6 +171,14 @@ public:
    * \return pointer to HeConfiguration if it exists
    */
   Ptr<HeConfiguration> GetHeConfiguration (void) const;
+  /**
+   * \param ehtConfiguration pointer to EhtConfiguration
+   */
+  void SetEhtConfiguration (Ptr<EhtConfiguration> ehtConfiguration);
+  /**
+   * \return pointer to EhtConfiguration if it exists
+   */
+  Ptr<EhtConfiguration> GetEhtConfiguration (void) const;
 
   void SetIfIndex (const uint32_t index) override;
   uint32_t GetIfIndex (void) const override;
@@ -154,23 +222,6 @@ protected:
 
 private:
   /**
-   * \brief Copy constructor
-   * \param o object to copy
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  WifiNetDevice (const WifiNetDevice &o);
-
-  /**
-   * \brief Assignment operator
-   * \param o object to copy
-   * \returns the copied object
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  WifiNetDevice &operator = (const WifiNetDevice &o);
-
-  /**
    * Set that the link is up. A link is always up in ad-hoc mode.
    * For a STA, a link is up when the STA is associated with an AP.
    */
@@ -186,18 +237,20 @@ private:
   void CompleteConfig (void);
 
   Ptr<Node> m_node; //!< the node
-  Ptr<WifiPhy> m_phy; //!< the phy
+  std::vector<Ptr<WifiPhy>> m_phys; //!< the phy objects
   Ptr<WifiMac> m_mac; //!< the MAC
-  Ptr<WifiRemoteStationManager> m_stationManager; //!< the station manager
+  std::vector<Ptr<WifiRemoteStationManager>> m_stationManagers; //!< the station managers
   Ptr<HtConfiguration> m_htConfiguration; //!< the HtConfiguration
   Ptr<VhtConfiguration> m_vhtConfiguration; //!< the VhtConfiguration
   Ptr<HeConfiguration> m_heConfiguration; //!< the HeConfiguration
+  Ptr<EhtConfiguration> m_ehtConfiguration; //!< the EhtConfiguration
   NetDevice::ReceiveCallback m_forwardUp; //!< forward up callback
   NetDevice::PromiscReceiveCallback m_promiscRx; //!< promiscuous receive callback
 
   TracedCallback<Ptr<const Packet>, Mac48Address> m_rxLogger; //!< receive trace callback
   TracedCallback<Ptr<const Packet>, Mac48Address> m_txLogger; //!< transmit trace callback
 
+  WifiStandard m_standard; //!< Wifi standard
   uint32_t m_ifIndex; //!< IF index
   bool m_linkUp; //!< link up
   TracedCallback<> m_linkChanges; //!< link change callback

@@ -9,9 +9,9 @@ References
 
 .. [ieee80211-2016] IEEE Std 802.11-2016, *Part 11: Wireless LAN Medium Access Control (MAC) and Physical Layer (PHY) Specifications*
 
-.. [pei80211b] \G. Pei and Tom Henderson, `Validation of ns-3 802.11b PHY model <http://www.nsnam.org/~pei/80211b.pdf>`__ 
+.. [pei80211b] \G. Pei and Tom Henderson, `Validation of ns-3 802.11b PHY model <http://www.nsnam.org/~pei/80211b.pdf>`__
 
-.. [pei80211ofdm] \G. Pei and Tom Henderson, `Validation of OFDM error rate model in ns-3 <http://www.nsnam.org/~pei/80211ofdm.pdf>`__ 
+.. [pei80211ofdm] \G. Pei and Tom Henderson, `Validation of OFDM error rate model in ns-3 <http://www.nsnam.org/~pei/80211ofdm.pdf>`__
 
 .. [lacage2006yans] \M. Lacage and T. Henderson, `Yet another Network Simulator <https://dl.acm.org/doi/pdf/10.1145/1190455.1190467?download=true>`__
 
@@ -39,9 +39,9 @@ References
 
 .. [pursley2009] \ M. Pursley and T. Royster, "Properties and performance of the IEEE 802.11b complementary code key signal sets," IEEE Transactions on Communications, 57(2);440-449, February 2009.
 
-.. [akella2007parf] \ A. Akella, G. Judd, S. Seshan, and P. Steenkiste, 'Self-management in chaotic wireless deployments', in Wireless Networks, Kluwer Academic Publishers, 2007, 13, 737-755.  `<http://www.cs.odu.edu/~nadeem/classes/cs795-WNS-S13/papers/enter-006.pdf>`__
+.. [akella2007parf] \ A. Akella, G. Judd, S. Seshan, and P. Steenkiste, 'Self-management in chaotic wireless deployments', in Wireless Networks, Kluwer Academic Publishers, 2007, 13, 737-755.  `<https://web.archive.org/web/20200709172505/https://www.cs.odu.edu/~nadeem/classes/cs795-WNS-S13/papers/enter-006.pdf>`__
 
-.. [chevillat2005aparf] \  Chevillat, P.; Jelitto, J., and Truong, H. L., 'Dynamic data rate and transmit power adjustment in IEEE 802.11 wireless LANs', in International Journal of Wireless Information Networks, Springer, 2005, 12, 123-145.  `<http://www.cs.mun.ca/~yzchen/papers/papers/rate_adaptation/80211_dynamic_rate_power_adjustment_chevillat_j2005.pdf>`__
+.. [chevillat2005aparf] \  Chevillat, P.; Jelitto, J., and Truong, H. L., 'Dynamic data rate and transmit power adjustment in IEEE 802.11 wireless LANs', in International Journal of Wireless Information Networks, Springer, 2005, 12, 123-145.  `<https://web.archive.org/web/20170810111231/http://www.cs.mun.ca/~yzchen/papers/papers/rate_adaptation/80211_dynamic_rate_power_adjustment_chevillat_j2005.pdf>`__
 
 .. [hepner2015] \ C. Hepner, A. Witt, and R. Muenzner, "In depth analysis of the ns-3 physical layer abstraction for WLAN systems and evaluation of its influences on network simulation results", BW-CAR Symposium on Information and Communication Systems (SInCom) 2015.  `<https://core.ac.uk/download/pdf/75487102.pdf#page=50>`__
 
@@ -57,7 +57,7 @@ References
 
 .. [erceg2004] \ V. Erceg and L. Schumacher and P. Kyritsi, "Tgn channel models", IEEE 802.11-03/940r4, 2004.
 
-.. [porat2016] \ R. Porat et al., "11ax Evaluation Methodology", IEE P802.11 Wireless LANs, 11-14-0571r3, 2016. 
+.. [porat2016] \ R. Porat et al., "11ax Evaluation Methodology", IEE P802.11 Wireless LANs, 11-14-0571r3, 2016.
 
 .. [krotov2020rate] \ A. Krotov, A. Kiryanov, E. Khorov., `Rate Control With Spatial Reuse for Wi-Fi 6 Dense Deployments <https://doi.org/10.1109/ACCESS.2020.3023552>`__, IEEE Access, September 2020
 

@@ -23,7 +23,7 @@
 #ifndef ADHOC_WIFI_MAC_H
 #define ADHOC_WIFI_MAC_H
 
-#include "regular-wifi-mac.h"
+#include "wifi-mac.h"
 
 namespace ns3 {
 
@@ -32,7 +32,7 @@ namespace ns3 {
  *
  * \brief Wifi MAC high model for an ad-hoc Wifi MAC
  */
-class AdhocWifiMac : public RegularWifiMac
+class AdhocWifiMac : public WifiMac
 {
 public:
   /**
@@ -44,12 +44,12 @@ public:
   AdhocWifiMac ();
   virtual ~AdhocWifiMac ();
 
-  void SetAddress (Mac48Address address) override;
   void SetLinkUpCallback (Callback<void> linkUp) override;
   void Enqueue (Ptr<Packet> packet, Mac48Address to) override;
+  bool CanForwardPacketsTo (Mac48Address to) const override;
 
 private:
-  void Receive (Ptr<WifiMacQueueItem> mpdu) override;
+  void Receive (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId) override;
 };
 
 } //namespace ns3

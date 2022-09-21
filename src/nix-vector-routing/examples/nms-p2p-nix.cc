@@ -38,10 +38,8 @@
  * to make very large simulations.
  */
 
-// for timing functions
-#include <cstdlib>
-#include <sys/time.h>
-#include <fstream>
+#include <chrono>
+#include <sstream>
 
 #include "ns3/core-module.h"
 #include "ns3/internet-module.h"
@@ -54,11 +52,6 @@
 #include "ns3/nix-vector-helper.h"
 
 using namespace ns3;
-
-typedef struct timeval TIMER_TYPE;
-#define TIMER_NOW(_t) gettimeofday (&_t,NULL);
-#define TIMER_SECONDS(_t) ((double)(_t).tv_sec + (_t).tv_usec*1e-6)
-#define TIMER_DIFF(_t1, _t2) (TIMER_SECONDS (_t1)-TIMER_SECONDS (_t2))
 
 NS_LOG_COMPONENT_DEFINE ("CampusNetworkModel");
 
@@ -157,8 +150,8 @@ private:
 int
 main (int argc, char *argv[])
 {
-  TIMER_TYPE t0, t1, t2;
-  TIMER_NOW (t0);
+  auto t0 = std::chrono::steady_clock::now ();
+
   std::cout << " ==== DARPA NMS CAMPUS NETWORK SIMULATION ====" << std::endl;
   // LogComponentEnable ("OnOffApplication", LOG_LEVEL_INFO);
 
@@ -179,7 +172,7 @@ main (int argc, char *argv[])
            << std::endl;
       return 1;
     }
-  if (nCN < 2) 
+  if (nCN < 2)
     {
       std::cout << "Number of total CNs (" << nCN << ") lower than minimum of 2"
            << std::endl;
@@ -227,12 +220,12 @@ main (int argc, char *argv[])
     }
 
   // Create Campus Networks
-  for (int z = 0; z < nCN; ++z) 
+  for (int z = 0; z < nCN; ++z)
     {
       std::cout << "Creating Campus Network " << z << ":" << std::endl;
       // Create Net0
       std::cout << "  SubNet [ 0";
-      for (int i = 0; i < 3; ++i) 
+      for (int i = 0; i < 3; ++i)
         {
           nodes_net0[z][i].Create (1);
           stack.Install (nodes_net0[z][i]);
@@ -241,13 +234,13 @@ main (int argc, char *argv[])
       nodes_net0[z][1].Add (nodes_net0[z][2].Get (0));
       nodes_net0[z][2].Add (nodes_net0[z][0].Get (0));
       NetDeviceContainer ndc0[3];
-      for (int i = 0; i < 3; ++i) 
+      for (int i = 0; i < 3; ++i)
         {
           ndc0[i] = p2p_1gb5ms.Install (nodes_net0[z][i]);
         }
       // Create Net1
       std::cout << " 1";
-      for (int i = 0; i < 6; ++i) 
+      for (int i = 0; i < 6; ++i)
         {
           nodes_net1[z][i].Create (1);
           stack.Install (nodes_net1[z][i]);
@@ -258,7 +251,7 @@ main (int argc, char *argv[])
       nodes_net1[z][4].Add (nodes_net1[z][1].Get (0));
       nodes_net1[z][5].Add (nodes_net1[z][1].Get (0));
       NetDeviceContainer ndc1[6];
-      for (int i = 0; i < 6; ++i) 
+      for (int i = 0; i < 6; ++i)
         {
           if (i == 1)
             {
@@ -287,7 +280,7 @@ main (int argc, char *argv[])
         }
       // Create Net2
       std::cout << " 2";
-      for (int i = 0; i < 14; ++i) 
+      for (int i = 0; i < 14; ++i)
         {
           nodes_net2[z][i].Create (1);
           stack.Install (nodes_net2[z][i]);
@@ -307,12 +300,12 @@ main (int argc, char *argv[])
       nodes_net2[z][12].Add (nodes_net2[z][6].Get (0));
       nodes_net2[z][13].Add (nodes_net2[z][6].Get (0));
       NetDeviceContainer ndc2[14];
-      for (int i = 0; i < 14; ++i) 
+      for (int i = 0; i < 14; ++i)
         {
           ndc2[i] = p2p_1gb5ms.Install (nodes_net2[z][i]);
         }
       Array2D<NetDeviceContainer> ndc2LAN(7, nLANClients);
-      for (int i = 0; i < 7; ++i) 
+      for (int i = 0; i < 7; ++i)
         {
           oss.str ("");
           if (!useIpv6)
@@ -325,7 +318,7 @@ main (int argc, char *argv[])
               oss << 2001 + z << ":4:" << 15 + i << "::";
               addressHelperv6.SetBase (oss.str ().c_str (), Ipv6Prefix (64));
             }
-          for (int j = 0; j < nLANClients; ++j) 
+          for (int j = 0; j < nLANClients; ++j)
             {
               nodes_net2LAN[z][i][j].Create (1);
               stack.Install (nodes_net2LAN[z][i][j]);
@@ -343,7 +336,7 @@ main (int argc, char *argv[])
         }
       // Create Net3
       std::cout << " 3 ]" << std::endl;
-      for (int i = 0; i < 9; ++i) 
+      for (int i = 0; i < 9; ++i)
         {
           nodes_net3[z][i].Create (1);
           stack.Install (nodes_net3[z][i]);
@@ -358,12 +351,12 @@ main (int argc, char *argv[])
       nodes_net3[z][7].Add (nodes_net3[z][3].Get (0));
       nodes_net3[z][8].Add (nodes_net3[z][3].Get (0));
       NetDeviceContainer ndc3[9];
-      for (int i = 0; i < 9; ++i) 
+      for (int i = 0; i < 9; ++i)
         {
           ndc3[i] = p2p_1gb5ms.Install (nodes_net3[z][i]);
         }
       Array2D<NetDeviceContainer> ndc3LAN(5, nLANClients);
-      for (int i = 0; i < 5; ++i) 
+      for (int i = 0; i < 5; ++i)
         {
           oss.str ("");
           if (!useIpv6)
@@ -377,7 +370,7 @@ main (int argc, char *argv[])
               addressHelperv6.SetBase (oss.str ().c_str (), Ipv6Prefix (64));
 
             }
-          for (int j = 0; j < nLANClients; ++j) 
+          for (int j = 0; j < nLANClients; ++j)
             {
               nodes_net3LAN[z][i][j].Create (1);
               stack.Install (nodes_net3LAN[z][i][j]);
@@ -394,7 +387,7 @@ main (int argc, char *argv[])
             }
         }
       std::cout << "  Connecting Subnets..." << std::endl;
-      // Create Lone Routers (Node 4 & 5) 
+      // Create Lone Routers (Node 4 & 5)
       nodes_netLR[z].Create (2);
       stack.Install (nodes_netLR[z]);
       NetDeviceContainer ndcLR;
@@ -492,7 +485,7 @@ main (int argc, char *argv[])
         }
 
       std::cout << "  Assigning IP addresses..." << std::endl;
-      for (int i = 0; i < 3; ++i) 
+      for (int i = 0; i < 3; ++i)
         {
           oss.str ("");
           if (!useIpv6)
@@ -508,9 +501,9 @@ main (int argc, char *argv[])
               addressHelperv6.Assign (ndc0[i]);
             }
         }
-      for (int i = 0; i < 6; ++i) 
+      for (int i = 0; i < 6; ++i)
         {
-          if (i == 1) 
+          if (i == 1)
             {
               continue;
             }
@@ -542,7 +535,7 @@ main (int argc, char *argv[])
           addressHelperv6.Assign (ndcLR);
 
         }
-      for (int i = 0; i < 14; ++i) 
+      for (int i = 0; i < 14; ++i)
         {
           oss.str ("");
           if (!useIpv6)
@@ -559,7 +552,7 @@ main (int argc, char *argv[])
 
             }
         }
-      for (int i = 0; i < 9; ++i) 
+      for (int i = 0; i < 9; ++i)
         {
           oss.str ("");
           if (!useIpv6)
@@ -577,11 +570,11 @@ main (int argc, char *argv[])
         }
     }
   // Create Ring Links
-  if (nCN > 1) 
+  if (nCN > 1)
     {
       std::cout << "Forming Ring Topology..." << std::endl;
       NodeContainer* nodes_ring = new NodeContainer[nCN];
-      for (int z = 0; z < nCN-1; ++z) 
+      for (int z = 0; z < nCN-1; ++z)
         {
           nodes_ring[z].Add (nodes_net0[z][0].Get (0));
           nodes_ring[z].Add (nodes_net0[z+1][0].Get (0));
@@ -589,7 +582,7 @@ main (int argc, char *argv[])
       nodes_ring[nCN-1].Add (nodes_net0[nCN-1][0].Get (0));
       nodes_ring[nCN-1].Add (nodes_net0[0][0].Get (0));
       NetDeviceContainer* ndc_ring = new NetDeviceContainer[nCN];
-      for (int z = 0; z < nCN; ++z) 
+      for (int z = 0; z < nCN; ++z)
         {
           ndc_ring[z] = p2p_2gb200ms.Install (nodes_ring[z]);
           oss.str ("");
@@ -633,18 +626,18 @@ main (int argc, char *argv[])
       sinkAddress = Inet6SocketAddress (Ipv6Address::GetAny (), 9999);
     }
 
-  for (int z = 0; z < nCN; ++z) 
+  for (int z = 0; z < nCN; ++z)
     {
       int x = z + 1;
-      if (z == nCN - 1) 
+      if (z == nCN - 1)
         {
           x = 0;
         }
       // Subnet 2 LANs
       std::cout << "  Campus Network " << z << " Flows [ Net2 ";
-      for (int i = 0; i < 7; ++i) 
+      for (int i = 0; i < 7; ++i)
         {
-          for (int j = 0; j < nLANClients; ++j) 
+          for (int j = 0; j < nLANClients; ++j)
             {
               // Sinks
               PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", sinkAddress);
@@ -664,9 +657,9 @@ main (int argc, char *argv[])
         }
       // Subnet 3 LANs
       std::cout << "Net3 ]" << std::endl;
-      for (int i = 0; i < 5; ++i) 
+      for (int i = 0; i < 5; ++i)
         {
-          for (int j = 0; j < nLANClients; ++j) 
+          for (int j = 0; j < nLANClients; ++j)
             {
               // Sinks
               PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", sinkAddress);
@@ -687,8 +680,7 @@ main (int argc, char *argv[])
     }
 
   std::cout << "Created " << NodeList::GetNNodes () << " nodes." << std::endl;
-  TIMER_TYPE routingStart;
-  TIMER_NOW (routingStart);
+  auto routingStart = std::chrono::steady_clock::now ();
 
   if (nix)
     {
@@ -702,25 +694,28 @@ main (int argc, char *argv[])
       Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
     }
 
-  TIMER_TYPE routingEnd;
-  TIMER_NOW (routingEnd);
-  std::cout << "Routing tables population took " 
-       << TIMER_DIFF (routingEnd, routingStart) << std::endl;
+  auto routingEnd = std::chrono::steady_clock::now ();
+  std::cout << "Routing tables population took "
+            << std::chrono::duration_cast<std::chrono::milliseconds> (routingEnd - routingStart).count () << "ms"
+            << std::endl;
 
   Simulator::ScheduleNow (Progress);
   std::cout << "Running simulator..." << std::endl;
-  TIMER_NOW (t1);
+  auto t1 = std::chrono::steady_clock::now ();
   Simulator::Stop (Seconds (100.0));
   Simulator::Run ();
-  TIMER_NOW (t2);
+  auto t2 = std::chrono::steady_clock::now ();
   std::cout << "Simulator finished." << std::endl;
   Simulator::Destroy ();
 
-  double d1 = TIMER_DIFF (t1, t0), d2 = TIMER_DIFF (t2, t1);
-  std::cout << "-----" << std::endl << "Runtime Stats:" << std::endl;
-  std::cout << "Simulator init time: " << d1 << std::endl;
-  std::cout << "Simulator run time: " << d2 << std::endl;
-  std::cout << "Total elapsed time: " << d1+d2 << std::endl;
+  auto d1 = std::chrono::duration_cast<std::chrono::seconds>(t1 - t0);
+  auto d2 = std::chrono::duration_cast<std::chrono::seconds>(t2 - t1);
+
+  std::cout << "-----" << std::endl
+            << "Runtime Stats:" << std::endl;
+  std::cout << "Simulator init time: " << d1.count () << "s" << std::endl;
+  std::cout << "Simulator run time: " << d2.count () << "s" << std::endl;
+  std::cout << "Total elapsed time: " << (d1 + d2).count () << "s" << std::endl;
 
   delete[] nodes_netLR;
   return 0;

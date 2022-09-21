@@ -25,20 +25,14 @@ using namespace ns3;
 
 namespace {
 
-//===========================================================================
-// Function: CreateCommaSeparatedFile
-//
-//
-// This function creates a file with 2 columns of values and separated
-// by commas.
-//===========================================================================
-
+/**
+ * This function creates a file with 2 columns of values and separated
+ * by commas.
+ */
 void CreateCommaSeparatedFile ()
 {
-  using namespace std;
-
-  string fileName       = "file-aggregator-comma-separated.txt";
-  string datasetContext = "Dataset/Context/String";
+  std::string fileName       = "file-aggregator-comma-separated.txt";
+  std::string datasetContext = "Dataset/Context/String";
 
   // Create an aggregator.
   Ptr<FileAggregator> aggregator =
@@ -69,20 +63,14 @@ void CreateCommaSeparatedFile ()
 }
 
 
-//===========================================================================
-// Function: CreateSpaceSeparatedFile
-//
-//
-// This function creates a file with 2 columns of values and separated
-// by spaces.
-//===========================================================================
-
+/**
+ * This function creates a file with 2 columns of values and separated
+ * by commas.
+ */
 void CreateSpaceSeparatedFile ()
 {
-  using namespace std;
-
-  string fileName       = "file-aggregator-space-separated.txt";
-  string datasetContext = "Dataset/Context/String";
+  std::string fileName       = "file-aggregator-space-separated.txt";
+  std::string datasetContext = "Dataset/Context/String";
 
   // Create an aggregator.  Note that the default type is space
   // separated.
@@ -114,19 +102,13 @@ void CreateSpaceSeparatedFile ()
 }
 
 
-//===========================================================================
-// Function: CreateFormattedFile
-//
-//
-// This function creates a file with formatted values.
-//===========================================================================
-
+/**
+ * This function creates a file with formatted values.
+ */
 void CreateFormattedFile ()
 {
-  using namespace std;
-
-  string fileName       = "file-aggregator-formatted-values.txt";
-  string datasetContext = "Dataset/Context/String";
+  std::string fileName       = "file-aggregator-formatted-values.txt";
+  std::string datasetContext = "Dataset/Context/String";
 
   // Create an aggregator that will have formatted values.
   Ptr<FileAggregator> aggregator =

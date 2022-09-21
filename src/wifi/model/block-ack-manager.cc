@@ -27,6 +27,7 @@
 #include "wifi-mac-queue.h"
 #include "qos-utils.h"
 #include "wifi-tx-vector.h"
+#include <optional>
 
 namespace ns3 {
 
@@ -184,7 +185,7 @@ BlockAckManager::UpdateAgreement (const MgtAddBaResponseHeader *respHdr, Mac48Ad
   if (it != m_agreements.end ())
     {
       OriginatorBlockAckAgreement& agreement = it->second.first;
-      agreement.SetBufferSize (respHdr->GetBufferSize () + 1);
+      agreement.SetBufferSize (respHdr->GetBufferSize ());
       agreement.SetTimeout (respHdr->GetTimeout ());
       agreement.SetAmsduSupport (respHdr->IsAmsduSupported ());
       agreement.SetStartingSequence (startingSeq);
@@ -236,8 +237,8 @@ BlockAckManager::StorePacket (Ptr<WifiMacQueueItem> mpdu)
 
   // store the packet and keep the list sorted in increasing order of sequence number
   // with respect to the starting sequence number
-  PacketQueueI it = agreementIt->second.second.begin ();
-  while (it != agreementIt->second.second.end ())
+  auto it = agreementIt->second.second.rbegin ();
+  while (it != agreementIt->second.second.rend ())
     {
       if (mpdu->GetHeader ().GetSequenceControl () == (*it)->GetHeader ().GetSequenceControl ())
         {
@@ -247,15 +248,15 @@ BlockAckManager::StorePacket (Ptr<WifiMacQueueItem> mpdu)
 
       uint16_t dist = agreementIt->second.first.GetDistance ((*it)->GetHeader ().GetSequenceNumber ());
 
-      if (mpduDist < dist ||
-          (mpduDist == dist && mpdu->GetHeader ().GetFragmentNumber () < (*it)->GetHeader ().GetFragmentNumber ()))
+      if (mpduDist > dist ||
+          (mpduDist == dist && mpdu->GetHeader ().GetFragmentNumber () > (*it)->GetHeader ().GetFragmentNumber ()))
         {
           break;
         }
 
       it++;
     }
-  agreementIt->second.second.insert (it, mpdu);
+  agreementIt->second.second.insert (it.base (), mpdu);
   agreementIt->second.first.NotifyTransmittedMpdu (mpdu);
   mpdu->SetInFlight ();
 }
@@ -293,7 +294,7 @@ BlockAckManager::GetBar (bool remove, uint8_t tid, Mac48Address address)
               continue;
             }
           if (nextBar->skipIfNoDataQueued
-              && m_queue->PeekByTidAndAddress (nextBar->tid, recipient) == m_queue->end ())
+              && !m_queue->PeekByTidAndAddress (nextBar->tid, recipient))
             {
               // skip this BAR as there is no data queued
               nextBar++;
@@ -309,8 +310,6 @@ BlockAckManager::GetBar (bool remove, uint8_t tid, Mac48Address address)
                   continue;
                 }
 
-              WifiMacQueue::ConstIterator queueIt = (*mpduIt)->GetQueueIterator ();
-
               if ((*mpduIt)->GetTimeStamp () + m_queue->GetMaxDelay () <= now)
                 {
                   // MPDU expired
@@ -319,7 +318,7 @@ BlockAckManager::GetBar (bool remove, uint8_t tid, Mac48Address address)
                   // consequent call to NotifyDiscardedMpdu does nothing (in particular,
                   // does not schedule a BAR) because we have advanced the transmit window
                   // and hence this MPDU became an old packet
-                  m_queue->TtlExceeded (queueIt, now);
+                  m_queue->TtlExceeded (*mpduIt, now);
                   mpduIt = it->second.second.erase (mpduIt);
                 }
               else
@@ -391,7 +390,6 @@ BlockAckManager::HandleInFlightMpdu (PacketQueueI mpduIt, MpduStatus status,
     }
 
   WifiMacHeader& hdr = (*mpduIt)->GetHeader ();
-  WifiMacQueue::ConstIterator queueIt = (*mpduIt)->GetQueueIterator ();
 
   NS_ASSERT (hdr.GetAddr1 () == it->first.first);
   NS_ASSERT (hdr.IsQosData () && hdr.GetQosTid () == it->first.second);
@@ -401,21 +399,25 @@ BlockAckManager::HandleInFlightMpdu (PacketQueueI mpduIt, MpduStatus status,
       NS_LOG_DEBUG ("Old packet. Remove from the EDCA queue, too");
       if (!m_droppedOldMpduCallback.IsNull ())
         {
-          m_droppedOldMpduCallback (*queueIt);
+          m_droppedOldMpduCallback (*mpduIt);
         }
-      m_queue->Remove (queueIt);
+      m_queue->Remove (*mpduIt, false);
       return it->second.second.erase (mpduIt);
     }
 
-  auto nextIt = std::next (mpduIt);
+  std::optional<PacketQueueI> prevIt;
+  if (mpduIt != it->second.second.begin ())
+    {
+      prevIt = std::prev (mpduIt);
+    }
 
-  if (m_queue->TtlExceeded (queueIt, now))
+  if (m_queue->TtlExceeded (*mpduIt, now))
     {
       // WifiMacQueue::TtlExceeded() has removed the MPDU from the EDCA queue
       // and fired the Expired trace source, which called NotifyDiscardedMpdu,
-      // which removed this MPDU from the in flight queue as well
+      // which removed this MPDU (and possibly others) from the in flight queue as well
       NS_LOG_DEBUG ("MSDU lifetime expired, drop MPDU");
-      return nextIt;
+      return (prevIt.has_value () ? std::next (prevIt.value ()) : it->second.second.begin ());
     }
 
   if (status == STAY_INFLIGHT)
@@ -444,6 +446,8 @@ BlockAckManager::NotifyGotAck (Ptr<const WifiMacQueueItem> mpdu)
   AgreementsI it = m_agreements.find (std::make_pair (recipient, tid));
   NS_ASSERT (it != m_agreements.end ());
 
+  it->second.first.NotifyAckedMpdu (mpdu);
+
   // remove the acknowledged frame from the queue of outstanding packets
   for (auto queueIt = it->second.second.begin (); queueIt != it->second.second.end (); ++queueIt)
     {
@@ -453,8 +457,6 @@ BlockAckManager::NotifyGotAck (Ptr<const WifiMacQueueItem> mpdu)
           break;
         }
     }
-
-  it->second.first.NotifyAckedMpdu (mpdu);
 }
 
 void
@@ -547,7 +549,7 @@ BlockAckManager::NotifyGotBlockAck (const CtrlBAckResponseHeader& blockAck, Mac4
     }
   return {nSuccessfulMpdus, nFailedMpdus};
 }
-  
+
 void
 BlockAckManager::NotifyMissedBlockAck (Mac48Address recipient, uint8_t tid)
 {
@@ -608,6 +610,7 @@ BlockAckManager::NotifyDiscardedMpdu (Ptr<const WifiMacQueueItem> mpdu)
     {
       if (it->second.first.GetDistance ((*mpduIt)->GetHeader ().GetSequenceNumber ()) >= SEQNO_SPACE_HALF_SIZE)
         {
+          NS_LOG_DEBUG ("Dropping old MPDU: " << **mpduIt);
           m_queue->DequeueIfQueued (*mpduIt);
           if (!m_droppedOldMpduCallback.IsNull ())
             {

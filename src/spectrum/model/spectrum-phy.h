@@ -31,6 +31,7 @@ class PacketBurst;
 class SpectrumChannel;
 class MobilityModel;
 class AntennaModel;
+class PhasedArrayModel;
 class SpectrumValue;
 class SpectrumModel;
 class NetDevice;
@@ -48,6 +49,10 @@ class SpectrumPhy  : public Object
 public:
   SpectrumPhy ();
   virtual ~SpectrumPhy ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  SpectrumPhy (SpectrumPhy const &) = delete;
+  SpectrumPhy &operator= (SpectrumPhy const &) = delete;
 
   /**
    * \brief Get the type ID.
@@ -99,11 +104,16 @@ public:
   virtual Ptr<const SpectrumModel> GetRxSpectrumModel () const = 0;
 
   /**
-   * Get the AntennaModel used by the NetDevice for reception
+   * \brief Get the AntennaModel used by this SpectrumPhy instance for
+   * transmission and/or reception
    *
-   * @return a Ptr to the AntennaModel used by the NetDevice for reception
+   * Note that in general and depending on each module design, there can be
+   * multiple SpectrumPhy instances per NetDevice.
+   *
+   * @return a Ptr to the AntennaModel used by this SpectrumPhy instance for
+   * transmission and/or reception
    */
-  virtual Ptr<AntennaModel> GetRxAntenna () const = 0;
+  virtual Ptr<Object> GetAntenna () const = 0;
 
   /**
    * Notify the SpectrumPhy instance of an incoming signal
@@ -111,35 +121,7 @@ public:
    * @param params the parameters of the signals being received
    */
   virtual void StartRx (Ptr<SpectrumSignalParameters> params) = 0;
-
-private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  SpectrumPhy (SpectrumPhy const &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  SpectrumPhy& operator= (SpectrumPhy const &);
 };
-
-
-
-
-
-
-
-
-
 } // namespace ns3
-
-
-
-
 
 #endif /* SPECTRUM_PHY_H */

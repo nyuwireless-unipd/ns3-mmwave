@@ -40,7 +40,8 @@ ObssPdAlgorithm::GetTypeId (void)
     .AddAttribute ("ObssPdLevel",
                    "The current OBSS PD level (dBm).",
                    DoubleValue (-82.0),
-                   MakeDoubleAccessor (&ObssPdAlgorithm::m_obssPdLevel),
+                   MakeDoubleAccessor (&ObssPdAlgorithm::SetObssPdLevel,
+                                       &ObssPdAlgorithm::GetObssPdLevel),
                    MakeDoubleChecker<double> (-101, -62))
     .AddAttribute ("ObssPdLevelMin",
                    "Minimum value (dBm) of OBSS PD level.",
@@ -81,6 +82,9 @@ ObssPdAlgorithm::ConnectWifiNetDevice (const Ptr<WifiNetDevice> device)
 {
   NS_LOG_FUNCTION (this << device);
   m_device = device;
+  auto hePhy = DynamicCast<HePhy> (device->GetPhy ()->GetPhyEntity (WIFI_MOD_CLASS_HE));
+  NS_ASSERT (hePhy);
+  hePhy->SetObssPdAlgorithm (this);
 }
 
 void
@@ -104,6 +108,19 @@ ObssPdAlgorithm::ResetPhy (HeSigAParameters params)
     }
   m_resetEvent (bssColor, WToDbm (params.rssiW), powerRestricted, txPowerMaxSiso, txPowerMaxMimo);
   phy->ResetCca (powerRestricted, txPowerMaxSiso, txPowerMaxMimo);
+}
+
+void
+ObssPdAlgorithm::SetObssPdLevel (double level)
+{
+  NS_LOG_FUNCTION (this << level);
+  m_obssPdLevel = level;
+}
+
+double
+ObssPdAlgorithm::GetObssPdLevel (void) const
+{
+  return m_obssPdLevel;
 }
 
 } //namespace ns3

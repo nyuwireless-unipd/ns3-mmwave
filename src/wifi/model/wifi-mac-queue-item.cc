@@ -55,6 +55,13 @@ WifiMacQueueItem::~WifiMacQueueItem ()
 {
 }
 
+Ptr<WifiMacQueueItem>
+WifiMacQueueItem::GetItem (void) const
+{
+  NS_ASSERT (IsQueued ());
+  return *m_queueIt;
+}
+
 Ptr<const Packet>
 WifiMacQueueItem::GetPacket (void) const
 {
@@ -115,7 +122,7 @@ WifiMacQueueItem::GetProtocolDataUnit (void) const
 void
 WifiMacQueueItem::Aggregate (Ptr<const WifiMacQueueItem> msdu)
 {
-  NS_ASSERT (msdu != 0);
+  NS_ASSERT (msdu);
   NS_LOG_FUNCTION (this << *msdu);
   NS_ABORT_MSG_IF (!msdu->GetHeader ().IsQosData () || msdu->GetHeader ().IsQosAmsdu (),
                    "Only QoS data frames that do not contain an A-MSDU can be aggregated");
@@ -212,13 +219,6 @@ WifiMacQueueItem::GetQueueAc (void) const
 {
   NS_ASSERT (IsQueued ());
   return m_queueAc;
-}
-
-WifiMacQueueItem::ConstIterator
-WifiMacQueueItem::GetQueueIterator (void) const
-{
-  NS_ASSERT (IsQueued ());
-  return m_queueIt;
 }
 
 void

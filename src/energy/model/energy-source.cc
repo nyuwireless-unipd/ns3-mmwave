@@ -56,7 +56,7 @@ void
 EnergySource::SetNode (Ptr<Node> node)
 {
   NS_LOG_FUNCTION (this);
-  NS_ASSERT (node != NULL);
+  NS_ASSERT (node);
   m_node = node;
 }
 
@@ -70,7 +70,7 @@ void
 EnergySource::AppendDeviceEnergyModel (Ptr<DeviceEnergyModel> deviceEnergyModelPtr)
 {
   NS_LOG_FUNCTION (this << deviceEnergyModelPtr);
-  NS_ASSERT (deviceEnergyModelPtr != NULL); // model must exist
+  NS_ASSERT (deviceEnergyModelPtr); // model must exist
   m_models.Add (deviceEnergyModelPtr);
 }
 
@@ -135,12 +135,12 @@ EnergySource::DisposeDeviceModels (void)
       (*i)->Dispose ();
     }
 }
-  
+
 void
 EnergySource::ConnectEnergyHarvester (Ptr<EnergyHarvester> energyHarvesterPtr)
 {
   NS_LOG_FUNCTION (this << energyHarvesterPtr);
-  NS_ASSERT (energyHarvesterPtr != 0); // energy harvester must exist
+  NS_ASSERT (energyHarvesterPtr); // energy harvester must exist
   m_harvesters.push_back (energyHarvesterPtr);
 }
 
@@ -169,22 +169,22 @@ EnergySource::CalculateTotalCurrent (void)
     {
       totalCurrentA += (*i)->GetCurrentA ();
     }
-  
+
   double totalHarvestedPower = 0.0;
-  
+
   std::vector< Ptr<EnergyHarvester> >::const_iterator harvester;
   for (harvester = m_harvesters.begin (); harvester != m_harvesters.end (); harvester++)
   {
     totalHarvestedPower += (*harvester)->GetPower ();
   }
-  
+
   NS_LOG_DEBUG ("EnergySource("<< GetNode ()->GetId () << "): Total harvested power = " << totalHarvestedPower);
 
   double currentHarvestersA = totalHarvestedPower / GetSupplyVoltage ();
   NS_LOG_DEBUG ("EnergySource("<< GetNode ()->GetId () << "): Current from harvesters = " << currentHarvestersA);
-  
+
   totalCurrentA -= currentHarvestersA;
-  
+
   return totalCurrentA;
 }
 

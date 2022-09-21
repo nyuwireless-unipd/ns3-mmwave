@@ -3,7 +3,7 @@
  * Copyright (c) 2009 University of Washington
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as 
+ * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
  *
  * This program is distributed in the hope that it will be useful,
@@ -30,7 +30,7 @@ namespace ns3
 {
 
 NS_LOG_COMPONENT_DEFINE ("UanMacAloha");
-  
+
 NS_OBJECT_ENSURE_REGISTERED (UanMacAloha);
 
 UanMacAloha::UanMacAloha ()
@@ -114,9 +114,8 @@ UanMacAloha::AttachPhy (Ptr<UanPhy> phy)
 
 }
 void
-UanMacAloha::RxPacketGood (Ptr<Packet> pkt, double sinr, UanTxMode txMode)
+UanMacAloha::RxPacketGood (Ptr<Packet> pkt, [[maybe_unused]] double sinr, UanTxMode txMode)
 {
-  NS_UNUSED (sinr);
   UanHeaderCommon header;
   pkt->RemoveHeader (header);
   NS_LOG_DEBUG ("Receiving packet from " << header.GetSrc () << " For " << header.GetDest ());

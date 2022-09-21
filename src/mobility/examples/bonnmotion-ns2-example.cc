@@ -21,7 +21,7 @@
  * Example program using a ns-2-formatted mobility trace generated
  * by the BonnMotion mobility framework.
  *
- * With the provided tracefile (bonnmotion.ns_movements), the movements of 
+ * With the provided tracefile (bonnmotion.ns_movements), the movements of
  * one node are simulated for 1000 seconds.  There are a few other files
  * that provide metadata about the mobility:
  * - src/mobility/examples/bonnmotion.ns_params
@@ -37,7 +37,7 @@
  *
  * Finally, note that you can visualize this program using the pyviz
  * visualizer:
- *  ./waf --run bonnmotion-ns2-example --vis
+ *  ./ns3 run bonnmotion-ns2-example --vis
  */
 
 #include "ns3/core-module.h"

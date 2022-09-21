@@ -28,7 +28,7 @@
 #include <stdint.h>
 
 namespace ns3 {
-    
+
 class EnergyHarvester;
 
 /**
@@ -45,9 +45,14 @@ class EnergyHarvester;
 class EnergyHarvesterContainer : public Object
 {
 public:
+  /// Const iterator for EnergyHarvester container
   typedef std::vector< Ptr<EnergyHarvester> >::const_iterator Iterator;
 
 public:
+  /**
+   * \brief Get the type ID.
+   * \return The object TypeId.
+   */
   static TypeId GetTypeId (void);
   /**
    * Creates an empty EnergyHarvesterContainer.
@@ -180,10 +185,10 @@ private:
   virtual void DoInitialize (void);
 
 private:
-  std::vector< Ptr<EnergyHarvester> > m_harvesters;
+  std::vector< Ptr<EnergyHarvester> > m_harvesters; //!< Harvester container
 
 };
-    
+
 } // namespace ns3
 
 

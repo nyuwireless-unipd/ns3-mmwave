@@ -325,7 +325,7 @@ TestCase::AddTestCase (TestCase *testCase, enum TestCase::TestDuration duration)
       /*
         To count the bad test names, use NS_LOG_UNCOND instead
         of NS_FATAL_ERROR, and the command
-        $ ./waf --run "test-runner --list" 2>&1 | grep "^Invalid" | wc
+        $ ./ns3 run "test-runner --list" 2>&1 | grep "^Invalid" | wc
       */
       NS_LOG_UNCOND ("Invalid test name: cannot contain any of '"
                      << badchars << "': " << testCase->m_name);
@@ -587,6 +587,7 @@ TestRunnerImpl::GetTopLevelSourceDir (void) const
       elements.pop_back ();
     }
   NS_FATAL_ERROR ("Could not find source directory from self=" << self);
+  return self;
 }
 
 //

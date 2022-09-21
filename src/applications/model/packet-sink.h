@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright 2007 University of Washington
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -27,6 +27,7 @@
 #include "ns3/traced-callback.h"
 #include "ns3/address.h"
 #include "ns3/inet-socket-address.h"
+#include "ns3/inet6-socket-address.h"
 #include "ns3/seq-ts-size-header.h"
 #include <unordered_map>
 
@@ -37,7 +38,7 @@ class Socket;
 class Packet;
 
 /**
- * \ingroup applications 
+ * \ingroup applications
  * \defgroup packetsink PacketSink
  *
  * This application was written to complement OnOffApplication, but it
@@ -45,7 +46,7 @@ class Packet;
  * important to use in multicast situations, so that reception of the layer-2
  * multicast frames of interest are enabled, but it is also useful for
  * unicast as an example of how you can write something simple to receive
- * packets at the application layer.  Also, if an IP stack generates 
+ * packets at the application layer.  Also, if an IP stack generates
  * ICMP Port Unreachable errors, receiving applications will be needed.
  */
 
@@ -59,16 +60,16 @@ class Packet;
  * important to use in multicast situations, so that reception of the layer-2
  * multicast frames of interest are enabled, but it is also useful for
  * unicast as an example of how you can write something simple to receive
- * packets at the application layer.  Also, if an IP stack generates 
+ * packets at the application layer.  Also, if an IP stack generates
  * ICMP Port Unreachable errors, receiving applications will be needed.
  *
- * The constructor specifies the Address (IP address and port) and the 
- * transport protocol to use.   A virtual Receive () method is installed 
+ * The constructor specifies the Address (IP address and port) and the
+ * transport protocol to use.   A virtual Receive () method is installed
  * as a callback on the receiving socket.  By default, when logging is
  * enabled, it prints out the size of packets and their address.
  * A tracing source to Receive() is also available.
  */
-class PacketSink : public Application 
+class PacketSink : public Application
 {
 public:
   /**
@@ -158,14 +159,24 @@ private:
      *
      * Should this method go in address.h?
      *
-     * It calculates the hash taking the uint32_t hash value of the ipv4 address.
-     * It works only for InetSocketAddresses (Ipv4 version)
+     * It calculates the hash taking the uint32_t hash value of the IPv4 or IPv6 address.
+     * It works only for InetSocketAddresses (IPv4 version) or Inet6SocketAddresses (IPv6 version)
      */
     size_t operator() (const Address &x) const
     {
-      NS_ABORT_IF (!InetSocketAddress::IsMatchingType (x));
-      InetSocketAddress a = InetSocketAddress::ConvertFrom (x);
-      return std::hash<uint32_t>()(a.GetIpv4 ().Get ());
+      if (InetSocketAddress::IsMatchingType (x))
+        {
+          InetSocketAddress a = InetSocketAddress::ConvertFrom (x);
+          return Ipv4AddressHash()(a.GetIpv4 ());
+        }
+      else if (Inet6SocketAddress::IsMatchingType (x))
+        {
+          Inet6SocketAddress a = Inet6SocketAddress::ConvertFrom (x);
+          return Ipv6AddressHash()(a.GetIpv6 ());
+        }
+
+      NS_ABORT_MSG ("PacketSink: unexpected address type, neither IPv4 nor IPv6");
+      return 0; //silence the warnings.
     }
   };
 
@@ -181,7 +192,7 @@ private:
   uint64_t        m_totalRx;      //!< Total bytes received
   TypeId          m_tid;          //!< Protocol TypeId
 
-  bool            m_enableSeqTsSizeHeader {false}; //!< Enable or disable the export of SeqTsSize header 
+  bool            m_enableSeqTsSizeHeader {false}; //!< Enable or disable the export of SeqTsSize header
 
   /// Traced Callback: received packets, source address.
   TracedCallback<Ptr<const Packet>, const Address &> m_rxTrace;

@@ -23,6 +23,11 @@
 #ifndef PHY_ENTITY_H
 #define PHY_ENTITY_H
 
+#include <list>
+#include <map>
+#include <tuple>
+#include <optional>
+#include <utility>
 #include "wifi-mpdu-type.h"
 #include "wifi-tx-vector.h"
 #include "wifi-phy-band.h"
@@ -33,9 +38,6 @@
 #include "ns3/simple-ref-count.h"
 #include "ns3/nstime.h"
 #include "ns3/wifi-spectrum-value-helper.h"
-#include <list>
-#include <map>
-#include <tuple>
 
 /**
  * \file
@@ -358,8 +360,8 @@ public:
    * \param rxPowersW the receive power in W per band
    * \param rxDuration the duration of the PPDU
    */
-  virtual void StartReceivePreamble (Ptr<WifiPpdu> ppdu, RxPowerWattPerChannelBand& rxPowersW,
-                                     Time rxDuration);
+  virtual void StartReceivePreamble (Ptr<const WifiPpdu> ppdu, RxPowerWattPerChannelBand& rxPowersW,
+		                     Time rxDuration);
   /**
    * Start receiving a given field.
    *
@@ -425,29 +427,29 @@ public:
   virtual uint16_t GetStaId (const Ptr<const WifiPpdu> ppdu) const;
 
   /**
-   * Return the channel width used to measure the RSSI.
+   * Check if PHY state should move to CCA busy state based on current
+   * state of interference tracker.
    *
-   * \param ppdu the PPDU that is being received
-   * \return the channel width (in MHz) used for RSSI measurement
+   * \param ppdu the incoming PPDU or nullptr for any signal
    */
-  virtual uint16_t GetMeasurementChannelWidth (const Ptr<const WifiPpdu> ppdu) const;
-
+  virtual void SwitchMaybeToCcaBusy (const Ptr<const WifiPpdu> ppdu);
   /**
-   * Return the channel width used in the reception spectrum model.
+   * Notify PHY state helper to switch to CCA busy state,
    *
-   * \param txVector the TXVECTOR of the PPDU that is being received
-   * \return the channel width (in MHz) used for RxSpectrumModel
+   * \param ppdu the incoming PPDU or nullptr for any signal
+   * \param duration the duration of the CCA state
+   * \param channelType the channel type for which the CCA busy state is reported.
    */
-  virtual uint16_t GetRxChannelWidth (const WifiTxVector& txVector) const;
-
+  virtual void NotifyCcaBusy (const Ptr<const WifiPpdu> ppdu, Time duration, WifiChannelListType channelType);
   /**
    * This function is called by SpectrumWifiPhy to send
    * the PPDU while performing amendment-specific actions.
    * \see SpectrumWifiPhy::StartTx
    *
    * \param ppdu the PPDU to send
+   * \param txVector the TXVECTOR used for the transmission of the PPDU
    */
-  virtual void StartTx (Ptr<WifiPpdu> ppdu);
+  virtual void StartTx (Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector);
 
   /**
    * This function prepares most of the WifiSpectrumSignalParameters
@@ -456,9 +458,10 @@ public:
    *
    * \param txDuration the duration of the transmission
    * \param ppdu the PPDU to send
+   * \param txVector the TXVECTOR used for the transmission of the PPDU
    * \param type the type of transmission (for logging)
    */
-  void Transmit (Time txDuration, Ptr<WifiPpdu> ppdu, std::string type);
+  void Transmit (Time txDuration, Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector, std::string type);
 
   /**
    * \param psduMap the PSDU(s) to transmit indexed by STA-ID
@@ -468,6 +471,15 @@ public:
    * \return the total amount of time this PHY will stay busy for the transmission of the PPDU
    */
   virtual Time CalculateTxDuration (WifiConstPsduMap psduMap, const WifiTxVector& txVector, WifiPhyBand band) const;
+  /**
+   * Return the CCA threshold in dBm for a given channel type.
+   * If the channel type is not provided, the default CCA threshold is returned.
+   *
+   * \param ppdu the PPDU that is being received
+   * \param channelType the channel type
+   * \return the CCA threshold in dBm
+   */
+  virtual double GetCcaThreshold (const Ptr<const WifiPpdu> ppdu, WifiChannelListType channelType) const;
 
 protected:
   /**
@@ -560,8 +572,9 @@ protected:
    * and perform amendment-specific actions.
    *
    * \param event the event holding incoming PPDU's information
+   * \return the payload duration
    */
-  virtual void DoStartReceivePayload (Ptr<Event> event);
+  virtual Time DoStartReceivePayload (Ptr<Event> event);
 
   /**
    * Perform amendment-specific actions before resetting PHY at
@@ -595,9 +608,8 @@ protected:
    * \param ppdu the incoming PPDU
    * \param reason the reason the PPDU is dropped
    * \param endRx the end of the incoming PPDU's reception
-   * \param measurementChannelWidth the measurement width (in MHz) to consider for the PPDU
    */
-  void DropPreambleEvent (Ptr<const WifiPpdu> ppdu, WifiPhyRxfailureReason reason, Time endRx, uint16_t measurementChannelWidth);
+  void DropPreambleEvent (Ptr<const WifiPpdu> ppdu, WifiPhyRxfailureReason reason, Time endRx);
 
   /**
    * Erase the event corresponding to the PPDU from the list of preamble events,
@@ -640,6 +652,27 @@ protected:
    * \param event the event holding incoming PPDU's information
    */
   void ScheduleEndOfMpdus (Ptr<Event> event);
+
+  /**
+   * Perform amendment-specific actions when the payload is successfully received.
+   *
+   * \param psdu the successfully received PSDU
+   * \param rxSignalInfo the info on the received signal (\see RxSignalInfo)
+   * \param txVector TXVECTOR of the PSDU
+   * \param staId the station ID of the PSDU (only used for MU)
+   * \param statusPerMpdu reception status per MPDU
+   */
+  virtual void RxPayloadSucceeded (Ptr<const WifiPsdu> psdu, RxSignalInfo rxSignalInfo,
+                                   const WifiTxVector& txVector, uint16_t staId,
+                                   const std::vector<bool>& statusPerMpdu);
+  /**
+   * Perform amendment-specific actions when the payload is unsuccessfully received.
+   *
+   * \param psdu the PSDU that we failed to received
+   * \param snr the SNR of the received PSDU in linear scale
+   * \param txVector TXVECTOR of the PSDU
+   */
+  virtual void RxPayloadFailed (Ptr<const WifiPsdu> psdu, double snr, const WifiTxVector& txVector);
 
   /**
    * Perform amendment-specific actions at the end of the reception of
@@ -745,12 +778,13 @@ protected:
   /**
    * \param txPowerW power in W to spread across the bands
    * \param ppdu the PPDU that will be transmitted
+   * \param txVector the transmission parameters
    * \return Pointer to SpectrumValue
    *
    * This is a helper function to create the right TX PSD corresponding
    * to the amendment of this PHY.
    */
-  virtual Ptr<SpectrumValue> GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> ppdu) const = 0;
+  virtual Ptr<SpectrumValue> GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector) const = 0;
 
   /**
    * Get the center frequency of the channel corresponding the current TxVector rather than
@@ -761,6 +795,62 @@ protected:
    * \return the center frequency in MHz corresponding to the channel width to be used
    */
   uint16_t GetCenterFrequencyForChannelWidth (const WifiTxVector& txVector) const;
+
+  /**
+   * Fire the trace indicating that the PHY is starting to receive the payload of a PPDU.
+   *
+   * \param txVector the TXVECTOR used to transmit the PPDU
+   * \param payloadDuration the TX duration of the PPDU payload
+   */
+  void NotifyPayloadBegin (const WifiTxVector& txVector, const Time& payloadDuration);
+
+  /**
+   * If the operating channel width is a multiple of 20 MHz, return the start
+   * band index and the stop band index for the primary channel of the given
+   * bandwidth (which must be a multiple of 20 MHz and not exceed the operating
+   * channel width). Otherwise, this call is equivalent to GetBand with
+   * <i>bandIndex</i> equal to zero.
+   *
+   * \param bandWidth the width of the band to be returned (MHz)
+   *
+   * \return a pair of start and stop indexes that defines the band
+   */
+  WifiSpectrumBand GetPrimaryBand (uint16_t bandWidth) const;
+  /**
+   * If the channel bonding is used, return the start band index and the stop band index
+   * for the secondary channel of the given bandwidth (which must be a multiple of 20 MHz
+   * and not exceed the operating channel width).
+   *
+   * \param bandWidth the width of the band to be returned (MHz)
+   *
+   * \return a pair of start and stop indexes that defines the band
+   */
+  WifiSpectrumBand GetSecondaryBand (uint16_t bandWidth) const;
+
+  /**
+   * Return the channel width used to measure the RSSI.
+   *
+   * \param ppdu the PPDU that is being received
+   * \return the channel width (in MHz) used for RSSI measurement
+   */
+  virtual uint16_t GetMeasurementChannelWidth (const Ptr<const WifiPpdu> ppdu) const = 0;
+
+  /**
+   * Return the channel width used in the reception spectrum model.
+   *
+   * \param txVector the TXVECTOR of the PPDU that is being received
+   * \return the channel width (in MHz) used for RxSpectrumModel
+   */
+  virtual uint16_t GetRxChannelWidth (const WifiTxVector& txVector) const;
+
+  /**
+   * Return the delay until CCA busy is ended for a given sensitivity threshold (in dBm) and a given band.
+   *
+   * \param thresholdDbm the CCA sensitivity threshold in dBm
+   * \param band identify the requested band
+   * \return the delay until CCA busy is ended
+   */
+  Time GetDelayUntilCcaEnd (double thresholdDbm, WifiSpectrumBand band);
 
   /**
    * \param currentChannelWidth channel width of the current transmission (MHz)
@@ -779,6 +869,17 @@ protected:
    * Wrapper method used by child classes for PSD generation.
    */
   std::tuple<double, double, double> GetTxMaskRejectionParams (void) const;
+
+  using CcaIndication = std::optional<std::pair<Time, WifiChannelListType>>; //!< CCA end time and its corresponding channel list type (can be std::nullopt if IDLE)
+
+  /**
+   * Get CCA end time and its corresponding channel list type when a new signal has been received by the PHY.
+   *
+   * \param ppdu the incoming PPDU or nullptr for any signal
+   * \return CCA end time and its corresponding channel list type when a new signal has been received by the PHY,
+   *         or std::nullopt if all channel list types are IDLE.
+   */
+  virtual CcaIndication GetCcaIndication (const Ptr<const WifiPpdu> ppdu);
 
   Ptr<WifiPhy> m_wifiPhy;          //!< Pointer to the owning WifiPhy
   Ptr<WifiPhyStateHelper> m_state; //!< Pointer to WifiPhyStateHelper of the WifiPhy (to make it reachable for child classes)

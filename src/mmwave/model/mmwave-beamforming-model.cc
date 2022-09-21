@@ -24,6 +24,7 @@
 #include "ns3/file-beamforming-codebook.h"
 #include "ns3/mmwave-phy-mac-common.h"
 #include "ns3/mmwave-spectrum-value-helper.h"
+#include "ns3/mmwave-spectrum-signal-parameters.h"
 #include "ns3/object-factory.h"
 #include "ns3/pointer.h"
 #include "ns3/uinteger.h"
@@ -274,9 +275,7 @@ MmWaveSvdBeamforming::SetBeamformingVectorForDevice (Ptr<NetDevice> otherDevice,
         {
           bfVectors = ComputeBeamformingVectors (channelMatrix);
 
-          uint32_t thisDeviceId = m_device->GetNode ()->GetId ();
-          uint32_t otherDeviceId = otherDevice->GetNode ()->GetId ();
-          if (channelMatrix->IsReverse (thisDeviceId, otherDeviceId))
+          if (channelMatrix->IsReverse (m_antenna->GetId (), otherAntenna->GetId ()))
             {
               // reverse BF vectors
               bfVectors = std::make_pair (std::get<1> (bfVectors), std::get<0> (bfVectors));
@@ -471,6 +470,11 @@ MmWaveCodebookBeamforming::GetTypeId ()
                    PointerValue (),
                    MakePointerAccessor (&MmWaveCodebookBeamforming::m_splm),
                    MakePointerChecker<SpectrumPropagationLossModel> ())
+    .AddAttribute ("PhasedArraySpectrumPropagationLossModel",
+                   "Pointer to SpectrumPropagationLossModel",
+                   PointerValue (),
+                   MakePointerAccessor (&MmWaveCodebookBeamforming::m_pSplm),
+                   MakePointerChecker<PhasedArraySpectrumPropagationLossModel> ())
     .AddAttribute ("MmWavePhyMacCommon",
                    "Pointer to MmWavePhyMacCommon",
                    PointerValue (),
@@ -657,7 +661,18 @@ MmWaveCodebookBeamforming::ComputeBeamformingCodebookMatrix (Ptr<NetDevice> othe
         {
           otherAntenna->SetBeamformingVector (otherCodebook->GetCodeword (otherIdx));
 
-          Ptr<SpectrumValue> rxPsd = m_splm->CalcRxPowerSpectralDensity (m_txPsd, thisMob, otherMob);
+          Ptr<SpectrumValue> rxPsd;
+          Ptr<SpectrumSignalParameters> rxParams = Create<SpectrumSignalParameters>();
+          
+          if (m_splm)
+          {
+            rxPsd = m_splm->CalcRxPowerSpectralDensity (rxParams, thisMob, otherMob);
+          }
+          else if (m_pSplm)
+          {
+            rxPsd = m_pSplm->CalcRxPowerSpectralDensity (rxParams, thisMob, otherMob, m_antenna, otherAntenna);
+          }
+
           double avgRxPsd = Sum (*rxPsd) / (rxPsd->GetSpectrumModel ()->GetNumBands ());
           matrix[thisIdx].push_back (avgRxPsd);
         }

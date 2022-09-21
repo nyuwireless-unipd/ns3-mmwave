@@ -139,6 +139,7 @@ public:
 
   // hacks needed to compute SINR at eNB for each UE, without pilots
   void AddSpectrumPropagationLossModel (Ptr<SpectrumPropagationLossModel> model);
+  void AddPhasedArraySpectrumPropagationLossModel (Ptr<PhasedArraySpectrumPropagationLossModel> model);
   void AddPropagationLossModel (Ptr<PropagationLossModel> model);
 
   /**
@@ -194,6 +195,7 @@ protected:
 
   // hack to allow eNB to compute the SINR, periodically, without pilots
   Ptr<SpectrumPropagationLossModel> m_spectrumPropagationLossModel;
+  Ptr<PhasedArraySpectrumPropagationLossModel> m_phasedArraySpectrumPropagationLossModel;
   Ptr<PropagationLossModel> m_propagationLoss;
 
   /// component carrier Id used to address sap

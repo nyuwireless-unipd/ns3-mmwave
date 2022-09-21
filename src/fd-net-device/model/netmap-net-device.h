@@ -23,13 +23,12 @@
 
 #include "ns3/net-device-queue-interface.h"
 #include <mutex>
+#include <thread>
 #include "fd-net-device.h"
 #include <net/netmap_user.h>
 #include <atomic>
 
 namespace ns3 {
-
-class SystemThread;
 
 /**
  * \ingroup fd-net-device
@@ -179,15 +178,15 @@ public:
 
   /**
    * \brief Set the netmap receiver rings info
-   * \param nTxRings the number of receiver rings
-   * \param nTxRingsSlots the number of slots for each receiver ring
+   * \param nRxRings the number of receiver rings
+   * \param nRxRingsSlots the number of slots for each receiver ring
    */
   void SetRxRingsInfo (uint32_t nRxRings, uint32_t nRxRingsSlots);
 
   /**
    * \brief The function Writes a packet into the netmap transmission ring.
    * \param buffer the pointer to packet
-   * \param lenght the packet lenght
+   * \param length the packet length
    * \return the number of written bytes
    */
   virtual ssize_t Write (uint8_t *buffer, size_t length);
@@ -210,7 +209,7 @@ private:
   uint32_t m_nRxRingsSlots; //!< Number of slots in the receiver rings
   Ptr<NetDeviceQueue> m_queue; //!< NetDevice queue
   uint32_t m_totalQueuedBytes; //!< Total queued bytes
-  Ptr<SystemThread> m_syncAndNotifyQueueThread; //!< Thread used to perform the flow control
+  std::thread m_syncAndNotifyQueueThread; //!< Thread used to perform the flow control
   std::atomic<bool> m_syncAndNotifyQueueThreadRun; //!< Running flag of the flow control thread
   uint8_t m_syncAndNotifyQueuePeriod; //!< The period of time in us after which the device syncs the netmap ring and notifies queue status
 };

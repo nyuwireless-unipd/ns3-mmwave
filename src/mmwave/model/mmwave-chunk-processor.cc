@@ -68,7 +68,7 @@ void
 mmWaveChunkProcessor::EvaluateChunk (const SpectrumValue& sinr, Time duration)
 {
   NS_LOG_FUNCTION (this << sinr << duration);
-  if (m_sumValues == 0)
+  if (!m_sumValues)
     {
       m_sumValues = Create<SpectrumValue> (sinr.GetSpectrumModel ());
     }

@@ -26,13 +26,9 @@ using namespace ns3;
 
 namespace {
 
-//===========================================================================
-// Function: Create2DPlotFile
-//
-//
-// This function creates a 2-D plot file.
-//===========================================================================
-
+/**
+ * This function creates a 2-D plot file.
+ */
 void Create2DPlotFile ()
 {
   std::string fileNameWithNoExtension = "plot-2d";
@@ -68,10 +64,10 @@ void Create2DPlotFile ()
   for (x = -5.0; x <= +5.0; x += 1.0)
     {
       // Calculate the 2-D curve
-      // 
+      //
       //            2
       //     y  =  x   .
-      //  
+      //
       y = x * x;
 
       // Add this point.
@@ -92,13 +88,9 @@ void Create2DPlotFile ()
 }
 
 
-//===========================================================================
-// Function: Create2DPlotWithErrorBarsFile
-//
-//
-// This function creates a 2-D plot with error bars file.
-//===========================================================================
-
+/**
+ * This function creates a 2-D plot with error bars file.
+ */
 void Create2DPlotWithErrorBarsFile ()
 {
   std::string fileNameWithNoExtension = "plot-2d-with-error-bars";
@@ -139,10 +131,10 @@ void Create2DPlotWithErrorBarsFile ()
   for (x = -5.0; x <= +5.0; x += 1.0)
     {
       // Calculate the 2-D curve
-      // 
+      //
       //            2
       //     y  =  x   .
-      //  
+      //
       y = x * x;
 
       // Make the uncertainty in the x direction be constant and make
@@ -170,13 +162,9 @@ void Create2DPlotWithErrorBarsFile ()
 }
 
 
-//===========================================================================
-// Function: Create3DPlotFile
-//
-//
-// This function creates a 3-D plot file.
-//===========================================================================
-
+/**
+ * This function creates a 3-D plot file.
+ */
 void Create3DPlotFile ()
 {
   std::string fileNameWithNoExtension = "plot-3d";
@@ -225,10 +213,10 @@ void Create3DPlotFile ()
     for (y = -5.0; y <= +5.0; y += 1.0)
 	{
 	  // Calculate the 3-D surface
-	  // 
+	  //
 	  //            2      2
 	  //     z  =  x   *  y   .
-	  //  
+	  //
 	  z = x * x * y * y;
 
 	  // Add this point.

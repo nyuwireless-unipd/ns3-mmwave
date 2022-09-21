@@ -22,7 +22,7 @@
  * \file
  * \ingroup mpi
  *
- * This test is equivalent to simple-distributed with the addition of 
+ * This test is equivalent to simple-distributed with the addition of
  * initialization of MPI by user code (this script) and providing
  * a communicator to ns-3.  The ns-3 communicator is smaller than
  * MPI Comm World as might be the case if ns-3 is run in parallel
@@ -77,26 +77,30 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("SimpleDistributedMpiComm");
 
-// Tag for whether this rank should go into a new communicator
-// ns-3 ranks will have color == 1.
+/**
+ * Tag for whether this rank should go into a new communicator
+ * ns-3 ranks will have color == 1.
+ * @{
+ */
 const int NS_COLOR = 1;
 const int NOT_NS_COLOR = NS_COLOR + 1;
+/** @} */
 
 /**
  * Report my rank, in both MPI_COMM_WORLD and the split communicator.
  *
  * \param [in] color My role, either ns-3 rank or other rank.
- * \param [in] spitComm The split communicator.
+ * \param [in] splitComm The split communicator.
  */
 void
 ReportRank (int color, MPI_Comm splitComm)
 {
   int otherId=0;
   int otherSize=1;
-  
+
   MPI_Comm_rank (splitComm, &otherId);
   MPI_Comm_size (splitComm, &otherSize);
-  
+
   if (color == NS_COLOR)
     {
       RANK0COUT ( "ns-3 rank:  ");
@@ -105,11 +109,11 @@ ReportRank (int color, MPI_Comm splitComm)
     {
       RANK0COUT ( "Other rank: ");
     }
-  
+
   RANK0COUTAPPEND ( "in MPI_COMM_WORLD: " << SinkTracer::GetWorldRank () << ":" << SinkTracer::GetWorldSize ()
                     << ", in splitComm: "    << otherId   << ":" << otherSize
                     << std::endl);
-  
+
 }  // ReportRank()
 
 int
@@ -123,7 +127,7 @@ main (int argc, char *argv[])
   bool testing = false;
 
   // Parse command line
-  CommandLine cmd;
+  CommandLine cmd(__FILE__);
   cmd.AddValue ("nix", "Enable the use of nix-vector or global routing", nix);
   cmd.AddValue ("nullmsg", "Enable the use of null-message synchronization (instead of granted time window)", nullmsg);
   cmd.AddValue ("tracing", "Enable pcap tracing", tracing);
@@ -133,14 +137,14 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   // Defer reporting the configuration until we know the communicator
-  
+
   // Distributed simulation setup; by default use granted time window algorithm.
-  if(nullmsg) 
+  if(nullmsg)
     {
       GlobalValue::Bind ("SimulatorImplementationType",
                          StringValue ("ns3::NullMessageSimulatorImpl"));
-    } 
-  else 
+    }
+  else
     {
       GlobalValue::Bind ("SimulatorImplementationType",
                          StringValue ("ns3::DistributedSimulatorImpl"));
@@ -182,7 +186,7 @@ main (int argc, char *argv[])
   //  b.  worldSize > 2    communicator of ranks 1-2
 
   // Flag to record that we created a communicator so we can free it at the end.
-  bool freeComm = false;  
+  bool freeComm = false;
   // The new communicator, if we create one
   MPI_Comm splitComm = MPI_COMM_WORLD;
   // The list of ranks assigned to ns-3
@@ -203,7 +207,7 @@ main (int argc, char *argv[])
   else
     {
       //  worldSize > 2    communicator of ranks 1-2
-      
+
       // Put ranks 1-2 in the new communicator
       if (worldRank == 1 || worldRank == 2)
         {
@@ -216,7 +220,7 @@ main (int argc, char *argv[])
       std::stringstream ss;
       ss << "Split [1-2] (out of " << worldSize << " ranks) from MPI_COMM_WORLD";
       ns3Ranks = ss.str ();
-      
+
       // Now create the new communicator
       MPI_Comm_split (MPI_COMM_WORLD, color, worldRank, &splitComm);
       freeComm = true;
@@ -249,7 +253,7 @@ main (int argc, char *argv[])
     {
       // Circulate a token to have each rank report in turn
       int token;
-    
+
       if (worldRank == 0)
         {
           token = 1;
@@ -273,11 +277,11 @@ main (int argc, char *argv[])
   if (color != NS_COLOR)
     {
       // Do other work outside the ns-3 communicator
-      
+
       // In real use of a separate communicator from ns-3
       // the other tasks would be running another simulator
       // or other desired work here..
-      
+
       // Our work is done, just wait for everyone else to finish.
 
       MpiInterface::Disable ();
@@ -286,15 +290,15 @@ main (int argc, char *argv[])
         {
           MPI_Finalize ();
         }
-      
+
       return 0;
     }
 
   // The code below here is essentially the same as simple-distributed.cc
   // --------------------------------------------------------------------
-  
+
   // We use a trace instead of relying on NS_LOG
-  
+
   if (verbose)
     {
       LogComponentEnable ("PacketSink", LOG_LEVEL_INFO);
@@ -435,7 +439,7 @@ main (int argc, char *argv[])
           routerLink.EnablePcap("router-left", routerDevices, true);
           leafLink.EnablePcap("leaf-left", leftLeafDevices, true);
         }
-      
+
       if (systemId == 1)
         {
           routerLink.EnablePcap("router-right", routerDevices, true);
@@ -495,7 +499,7 @@ main (int argc, char *argv[])
   // --------------------------------------------------------------------
   // Conditional cleanup based on whether we built a communicator
   // and called MPI_Init
-  
+
   if (freeComm)
     {
       MPI_Comm_free (&splitComm);
@@ -505,7 +509,7 @@ main (int argc, char *argv[])
     {
       SinkTracer::Verify (4);
     }
-  
+
   // Clean up the ns-3 MPI execution environment
   // This will call MPI_Finalize if MpiInterface::Initialize was called
   MpiInterface::Disable ();
@@ -515,6 +519,6 @@ main (int argc, char *argv[])
       // We called MPI_Init, so we have to call MPI_Finalize
       MPI_Finalize ();
     }
-  
+
   return 0;
 }

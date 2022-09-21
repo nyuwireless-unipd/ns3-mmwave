@@ -21,9 +21,11 @@
 #ifndef PTR_H
 #define PTR_H
 
+#include "assert.h"
+#include "deprecated.h"
+
 #include <iostream>
 #include <stdint.h>
-#include "assert.h"
 
 /**
  * \file
@@ -48,24 +50,26 @@ namespace ns3 {
  * \brief Smart pointer class similar to \c boost::intrusive_ptr.
  *
  * This smart-pointer class assumes that the underlying
- * type provides a pair of \c Ref and \c Unref methods which are
+ * type provides a pair of \c Ref() and \c Unref() methods which are
  * expected to increment and decrement the internal reference count
- * of the object instance.  You can add \c Ref and \c Unref
- * to a class simply by inheriting from ns3::SimpleRefCount.
+ * of the object instance.  You can add \c Ref() and \c Unref()
+ * to a class simply by inheriting from ns3::SimpleRefCount<>
+ * using the CRTP (`class Foo : public SimpleRefCount<Foo>`)
  *
  * This implementation allows you to manipulate the smart pointer
- * as if it was a normal pointer: you can compare it with zero,
- * compare it against other pointers, assign zero to it, etc.
+ * as if it was a normal pointer: you can test if it is non-null,
+ * compare it to other pointers of the same type, etc.
  *
  * It is possible to extract the raw pointer from this
  * smart pointer with the GetPointer() and PeekPointer() methods.
  *
- * If you want to store a \c new object into a smart pointer,
- * we recommend you to use the Create() template functions
- * to create the object and store it in a smart pointer to avoid
+ * If you want to store a `new Object()` into a smart pointer,
+ * we recommend you to use the CreateObject<>() template function
+ * to create the Object and store it in a smart pointer to avoid
  * memory leaks. These functions are really small convenience
  * functions and their goal is just is save you a small
- * bit of typing.
+ * bit of typing.  If the Object does not inherit from Object
+ * (or ObjectBase) there is also a convenience wrapper Create<>()
  *
  * \tparam T \explicit The type of the underlying object.
  */
@@ -77,12 +81,21 @@ private:
   /** The pointer. */
   T *m_ptr;
 
-  /** Helper to test for null pointer. */
-  class Tester
+  /**
+   * Helper to test for null pointer.
+   *
+   * \note This has been deprecated; \see operator bool() instead.
+   *
+   * This supports the "safe-bool" idiom, see `operator Tester * ()`
+   */
+  // Don't deprecate the class because the warning fires
+  // every time ptr.h is merely included, masking the real uses of Tester
+  // Leave the macro here so we can find this later to actually remove it.
+  class /* NS_DEPRECATED_3_37 ("see operator bool") */ Tester
   {
-  private:
-    /** Disable delete (by virtue that this is unimplemented). */
-    void operator delete (void *);
+  public:
+    // Delete operator delete to avoid misuse
+    void operator delete (void *) = delete;
   };
 
   /** Interoperate with const instances. */
@@ -184,19 +197,11 @@ public:
    * \returns A pointer to the underlying object.
    */
   T &operator * ();
+
   /**
-   * Test for NULL pointer.
+   * Test for non-NULL Ptr.
    *
-   * This enables simple NULL pointer checks like
-   * \code
-   *   Ptr<..> p = ...;
-   *   if (!p) ...
-   * \endcode
-   * \returns \c true if the underlying pointer is NULL.
-   */
-  bool operator! ();
-  /**
-   * Test for non-NULL pointer.
+   * \note This has been deprecated; \see operator bool() instead.
    *
    * This enables simple pointer checks like
    * \code
@@ -204,8 +209,59 @@ public:
    *   if (p) ...
    * \endcode
    * This also disables deleting a Ptr
+   *
+   * This supports the "safe-bool" idiom; see [More C++ Idioms/Safe bool](https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool)
    */
+  NS_DEPRECATED_3_37 ("see operator bool")
   operator Tester * () const;
+  /**
+   * Test for non-NULL pointer.
+   *
+   * This enables simple pointer checks like
+   * \code
+   *   Ptr<...> p = ...;
+   *   if (p) ...
+   *   if (!p) ...
+   * \endcode
+   *
+   * The same construct works in the NS_ASSERT... and NS_ABORT... macros.
+   *
+   * \note Explicit tests against `0`, `NULL` or `nullptr` are not supported.
+   * All these cases will fail to compile:
+   * \code
+   *   if (p != 0)      {...}    // Should be `if (p)`
+   *   if (p != NULL)   {...}
+   *   if (p != nullptr {...}
+   *
+   *   if (p == 0)      {...}    // Should be `if (!p)`
+   *   if (p == NULL)   {...}
+   *   if (p == nullptr {...}
+   * \endcode
+   * Just use `if (p)` or `if (!p)` as indicated.
+   *
+   * \note NS_TEST... invocations should be written as follows:
+   * \code
+   * // p should be non-NULL
+   * NS_TEST...NE... (p, nullptr, ...);
+   * // p should be NULL
+   * NS_TEST...EQ... (p, nullptr, ...);
+   * \endcode
+   *
+   * \note Unfortunately return values are not
+   * "contextual conversion expression" contexts,
+   * so you need to explicitly cast return values to bool:
+   * \code
+   * bool f (...)
+   * {
+   *   Ptr<...> p = ...;
+   *   return (bool)(p);
+   * }
+   * \endcode
+   *
+   * \returns \c true if the underlying pointer is non-NULL.
+   */
+  explicit operator bool() const;
+
 };
 
 /**
@@ -274,6 +330,15 @@ bool operator == (Ptr<T1> const &lhs, Ptr<T2> const &rhs);
 
 /**
  * \ingroup ptr
+ *  Specialization for comparison to \c nullptr
+ * \copydoc operator==(Ptr<T1>const&,Ptr<T2>const&)
+ */
+template <typename T1, typename T2>
+typename std::enable_if<std::is_same<T2, std::nullptr_t>::value, bool>::type
+operator == (Ptr<T1> const &lhs, T2 rhs);
+
+/**
+ * \ingroup ptr
  * Inequality operator.
  *
  * This enables code such as
@@ -302,6 +367,15 @@ bool operator != (T1 const *lhs, Ptr<T2> &rhs);
 template <typename T1, typename T2>
 bool operator != (Ptr<T1> const &lhs, Ptr<T2> const &rhs);
 /**@}*/
+
+/**
+ * \ingroup ptr
+ * Specialization for comparison to \c nullptr
+ * \copydoc operator==(Ptr<T1>const&,Ptr<T2>const&)
+*/
+template <typename T1, typename T2>
+typename std::enable_if<std::is_same<T2, std::nullptr_t>::value, bool>::type
+operator != (Ptr<T1> const &lhs, T2 rhs);
 
 
 /**
@@ -473,6 +547,20 @@ operator != (Ptr<T1> const &lhs, Ptr<T2> const &rhs)
   return PeekPointer (lhs) != PeekPointer (rhs);
 }
 
+template <typename T1, typename T2>
+typename std::enable_if<std::is_same<T2, std::nullptr_t>::value, bool>::type
+operator == (Ptr<T1> const &lhs, T2 rhs)
+{
+  return PeekPointer (lhs) == nullptr;
+}
+
+template <typename T1, typename T2>
+typename std::enable_if<std::is_same<T2, std::nullptr_t>::value, bool>::type
+operator != (Ptr<T1> const &lhs, T2 rhs)
+{
+  return PeekPointer (lhs) != nullptr;
+}
+
 template <typename T>
 bool operator < (const Ptr<T> &lhs, const Ptr<T> &rhs)
 {
@@ -604,9 +692,14 @@ Ptr<T>::Ptr (T *ptr, bool ref)
 
 template <typename T>
 Ptr<T>::Ptr (Ptr const&o)
-  : m_ptr (PeekPointer (o))
+  : m_ptr (nullptr)
 {
-  Acquire ();
+  T* ptr = PeekPointer (o);
+  if (ptr != 0)
+    {
+       m_ptr = ptr;
+       Acquire ();
+    }
 }
 template <typename T>
 template <typename U>
@@ -675,14 +768,7 @@ Ptr<T>::operator * ()
 }
 
 template <typename T>
-bool
-Ptr<T>::operator! ()
-{
-  return m_ptr == 0;
-}
-
-template <typename T>
-Ptr<T>::operator Tester * () const
+Ptr<T>::operator Tester * () const // NS_DEPRECATED_3_37
 {
   if (m_ptr == 0)
     {
@@ -690,6 +776,12 @@ Ptr<T>::operator Tester * () const
     }
   static Tester test;
   return &test;
+}
+
+template <typename T>
+Ptr<T>::operator bool() const
+{
+  return m_ptr != 0;
 }
 
 

@@ -31,11 +31,11 @@
  *   1 Gbps access incoming link     |             |           100 Mbps bottleneck outgoing link
  * -----------------------------------             -----------------------------------
  *
- * This example builds a node with two interfaces in emulation mode in 
- * either {raw, netmap}. The aim is to explore different qdiscs behaviours 
+ * This example builds a node with two interfaces in emulation mode in
+ * either {raw, netmap}. The aim is to explore different qdiscs behaviours
  * on the backlog of a device emulated bottleneck side.
  *
- * If you run emulation in netmap mode, you need before to load the 
+ * If you run emulation in netmap mode, you need before to load the
  * netmap.ko module.  The user is responsible for configuring and building
  * netmap separately.
  */
@@ -149,7 +149,7 @@ main (int argc, char *argv[])
   // address will have an Organizationally Unique Identifier (OUI) of zero.
   // The Internet Assigned Number Authority IANA
   //
-  //  http://www.iana.org/assignments/ethernet-numberslocalIp
+  //  https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.txt
   //
   // reports that this OUI is unassigned, and so should not conflict with
   // real hardware on your net.  It may raise all kinds of red flags in a

@@ -60,6 +60,7 @@
 #include "ns3/spectrum-wifi-phy.h"
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
+#include "ns3/interference-helper.h"
 #include "ns3/nist-error-rate-model.h"
 #include "ns3/constant-position-mobility-model.h"
 #include "ns3/simple-frame-capture-model.h"
@@ -71,9 +72,9 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("test-interference-helper");
 
-bool checkResults = false;
-bool expectRxASuccessfull = false;
-bool expectRxBSuccessfull = false;
+bool checkResults = false; //!< True if results have to be checked.
+bool expectRxASuccessfull = false; //!< True if Rx from A is expected to be successful.
+bool expectRxBSuccessfull = false; //!< True if Rx from B is expected to be successful.
 
 /// InterferenceExperiment
 class InterferenceExperiment
@@ -96,7 +97,7 @@ public:
     uint16_t channelB; ///< channel number B
     uint16_t widthA; ///< channel width A
     uint16_t widthB; ///< channel width B
-    WifiPhyStandard standard; ///< standard
+    WifiStandard standard; ///< standard
     WifiPhyBand band; ///< band
     WifiPreamble preamble; ///< preamble
     bool captureEnabled; ///< whether physical layer capture is enabled
@@ -202,7 +203,7 @@ InterferenceExperiment::Input::Input ()
     channelB (36),
     widthA (20),
     widthB (20),
-    standard (WIFI_PHY_STANDARD_80211a),
+    standard (WIFI_STANDARD_80211a),
     band (WIFI_PHY_BAND_5GHZ),
     preamble (WIFI_PREAMBLE_LONG),
     captureEnabled (false),
@@ -252,10 +253,18 @@ InterferenceExperiment::Run (struct InterferenceExperiment::Input input)
   rx->CreateWifiSpectrumPhyInterface (devRx);
   rx->SetDevice (devRx);
 
-  Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
-  m_txA->SetErrorRateModel (error);
-  m_txB->SetErrorRateModel (error);
-  rx->SetErrorRateModel (error);
+  Ptr<InterferenceHelper> interferenceTxA = CreateObject<InterferenceHelper> ();
+  m_txA->SetInterferenceHelper (interferenceTxA);
+  Ptr<ErrorRateModel> errorTxA = CreateObject<NistErrorRateModel> ();
+  m_txA->SetErrorRateModel (errorTxA);
+  Ptr<InterferenceHelper> interferenceTxB = CreateObject<InterferenceHelper> ();
+  m_txB->SetInterferenceHelper (interferenceTxB);
+  Ptr<ErrorRateModel> errorTxB = CreateObject<NistErrorRateModel> ();
+  m_txB->SetErrorRateModel (errorTxB);
+  Ptr<InterferenceHelper> interferenceRx = CreateObject<InterferenceHelper> ();
+  rx->SetInterferenceHelper (interferenceRx);
+  Ptr<ErrorRateModel> errorRx = CreateObject<NistErrorRateModel> ();
+  rx->SetErrorRateModel (errorRx);
   m_txA->SetChannel (channel);
   m_txB->SetChannel (channel);
   rx->SetChannel (channel);
@@ -269,9 +278,9 @@ InterferenceExperiment::Run (struct InterferenceExperiment::Input input)
       rx->SetFrameCaptureModel (frameCaptureModel);
     }
 
-  m_txA->ConfigureStandardAndBand (input.standard, input.band);
-  m_txB->ConfigureStandardAndBand (input.standard, input.band);
-  rx->ConfigureStandardAndBand (input.standard, input.band);
+  m_txA->ConfigureStandard (input.standard);
+  m_txB->ConfigureStandard (input.standard);
+  rx->ConfigureStandard (input.standard);
 
   devA->SetPhy (m_txA);
   nodeA->AddDevice (devA);
@@ -280,9 +289,10 @@ InterferenceExperiment::Run (struct InterferenceExperiment::Input input)
   devRx->SetPhy (rx);
   nodeRx->AddDevice (devRx);
 
-  m_txA->SetChannelNumber (input.channelA);
-  m_txB->SetChannelNumber (input.channelB);
-  rx->SetChannelNumber (std::max (input.channelA, input.channelB));
+  m_txA->SetOperatingChannel (WifiPhy::ChannelTuple {input.channelA, 0, (int)(input.band), 0});
+  m_txB->SetOperatingChannel (WifiPhy::ChannelTuple {input.channelB, 0, (int)(input.band), 0});
+  rx->SetOperatingChannel (WifiPhy::ChannelTuple {std::max (input.channelA, input.channelB), 0,
+                                                  (int)(input.band), 0});
 
   rx->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback (&InterferenceExperiment::PacketDropped, this));
 
@@ -342,62 +352,62 @@ int main (int argc, char *argv[])
 
   if (str_standard == "WIFI_PHY_STANDARD_80211a")
     {
-      input.standard = WIFI_PHY_STANDARD_80211a;
+      input.standard = WIFI_STANDARD_80211a;
       input.band = WIFI_PHY_BAND_5GHZ;
     }
   else if (str_standard == "WIFI_PHY_STANDARD_80211b")
     {
-      input.standard = WIFI_PHY_STANDARD_80211b;
+      input.standard = WIFI_STANDARD_80211b;
       input.band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (str_standard == "WIFI_PHY_STANDARD_80211g")
     {
-      input.standard = WIFI_PHY_STANDARD_80211g;
+      input.standard = WIFI_STANDARD_80211g;
       input.band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (str_standard == "WIFI_PHY_STANDARD_80211n_2_4GHZ")
     {
-      input.standard = WIFI_PHY_STANDARD_80211n;
+      input.standard = WIFI_STANDARD_80211n;
       input.band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (str_standard == "WIFI_PHY_STANDARD_80211n_5GHZ")
     {
-      input.standard = WIFI_PHY_STANDARD_80211n;
+      input.standard = WIFI_STANDARD_80211n;
       input.band = WIFI_PHY_BAND_5GHZ;
     }
   else if (str_standard == "WIFI_PHY_STANDARD_80211ac")
     {
-      input.standard = WIFI_PHY_STANDARD_80211ac;
+      input.standard = WIFI_STANDARD_80211ac;
       input.band = WIFI_PHY_BAND_5GHZ;
     }
   else if (str_standard == "WIFI_PHY_STANDARD_80211ax_2_4GHZ")
     {
-      input.standard = WIFI_PHY_STANDARD_80211ax;
+      input.standard = WIFI_STANDARD_80211ax;
       input.band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (str_standard == "WIFI_PHY_STANDARD_80211ax_5GHZ")
     {
-      input.standard = WIFI_PHY_STANDARD_80211ax;
+      input.standard = WIFI_STANDARD_80211ax;
       input.band = WIFI_PHY_BAND_5GHZ;
     }
 
-  if (str_preamble == "WIFI_PREAMBLE_LONG" && (input.standard == WIFI_PHY_STANDARD_80211a || input.standard == WIFI_PHY_STANDARD_80211b || input.standard == WIFI_PHY_STANDARD_80211g))
+  if (str_preamble == "WIFI_PREAMBLE_LONG" && (input.standard == WIFI_STANDARD_80211a || input.standard == WIFI_STANDARD_80211b || input.standard == WIFI_STANDARD_80211g))
     {
       input.preamble = WIFI_PREAMBLE_LONG;
     }
-  else if (str_preamble == "WIFI_PREAMBLE_SHORT" && (input.standard == WIFI_PHY_STANDARD_80211b || input.standard == WIFI_PHY_STANDARD_80211g))
+  else if (str_preamble == "WIFI_PREAMBLE_SHORT" && (input.standard == WIFI_STANDARD_80211b || input.standard == WIFI_STANDARD_80211g))
     {
       input.preamble = WIFI_PREAMBLE_SHORT;
     }
-  else if (str_preamble == "WIFI_PREAMBLE_HT_MF" && input.standard == WIFI_PHY_STANDARD_80211n)
+  else if (str_preamble == "WIFI_PREAMBLE_HT_MF" && input.standard == WIFI_STANDARD_80211n)
     {
       input.preamble = WIFI_PREAMBLE_HT_MF;
     }
-  else if (str_preamble == "WIFI_PREAMBLE_VHT_SU" && input.standard == WIFI_PHY_STANDARD_80211ac)
+  else if (str_preamble == "WIFI_PREAMBLE_VHT_SU" && input.standard == WIFI_STANDARD_80211ac)
     {
       input.preamble = WIFI_PREAMBLE_VHT_SU;
     }
-  else if (str_preamble == "WIFI_PREAMBLE_HE_SU" && input.standard == WIFI_PHY_STANDARD_80211ax)
+  else if (str_preamble == "WIFI_PREAMBLE_HE_SU" && input.standard == WIFI_STANDARD_80211ax)
     {
       input.preamble = WIFI_PREAMBLE_HE_SU;
     }

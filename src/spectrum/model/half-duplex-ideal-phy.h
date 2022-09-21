@@ -73,7 +73,7 @@ namespace ns3 {
  * - the signal propagation
  *
  * This PHY model supports a single antenna model instance which is
- * used for both transmission and reception.  
+ * used for both transmission and reception.
  */
 class HalfDuplexIdealPhy : public SpectrumPhy
 {
@@ -105,7 +105,7 @@ public:
   Ptr<MobilityModel> GetMobility () const;
   Ptr<NetDevice> GetDevice () const;
   Ptr<const SpectrumModel> GetRxSpectrumModel () const;
-  Ptr<AntennaModel> GetRxAntenna () const;
+  Ptr<Object> GetAntenna () const;
   void StartRx (Ptr<SpectrumSignalParameters> params);
 
 
@@ -182,9 +182,9 @@ public:
    */
   void SetGenericPhyRxEndOkCallback (GenericPhyRxEndOkCallback c);
 
-  /** 
+  /**
    * set the AntennaModel to be used
-   * 
+   *
    * \param a the Antenna Model
    */
   void SetAntenna (Ptr<AntennaModel> a);

@@ -55,7 +55,6 @@ MmWaveEesmCc::ComputeSINR (const SpectrumValue& sinr, const std::vector<int>& ma
                          const MmWaveErrorModel::MmWaveErrorModelHistory &sinrHistory) const
 {
   NS_LOG_FUNCTION (this);
-  NS_UNUSED (sizeBit);
 
   // HARQ CHASE COMBINING: update SINReff, but not ECR after retx
   // repetition of coded bits

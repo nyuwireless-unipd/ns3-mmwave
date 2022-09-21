@@ -143,7 +143,7 @@ MmwaveThreeGppChannelInitializationTestCase::DoRun (void)
     }
 
     // retrieve the spectrum propagation loss model
-    Ptr<SpectrumPropagationLossModel> splm = channel->GetSpectrumPropagationLossModel ();
+    Ptr<PhasedArraySpectrumPropagationLossModel> splm = channel->GetPhasedArraySpectrumPropagationLossModel ();
     Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
 
     // be sure that the MmWaveHelper has created the proper spectrum propagation loss model

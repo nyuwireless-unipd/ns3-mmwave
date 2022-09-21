@@ -61,8 +61,9 @@ public:
 
   uint16_t GetSupportedBaBufferSize (void) const override;
   bool StartFrameExchange (Ptr<QosTxop> edca, Time availableTime, bool initialFrame) override;
-  void SetWifiMac (const Ptr<RegularWifiMac> mac) override;
+  void SetWifiMac (const Ptr<WifiMac> mac) override;
   void CalculateAcknowledgmentTime (WifiAcknowledgment* acknowledgment) const override;
+  void SetTxopHolder (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector) override;
 
   /**
    * Set the Multi-user Scheduler associated with this Frame Exchange Manager.
@@ -100,6 +101,9 @@ protected:
   Time GetTxDuration (uint32_t ppduPayloadSize, Mac48Address receiver,
                       const WifiTxParameters& txParams) const override;
   bool SendMpduFromBaManager (Ptr<QosTxop> edca, Time availableTime, bool initialFrame) override;
+  void NormalAckTimeout (Ptr<WifiMacQueueItem> mpdu, const WifiTxVector& txVector) override;
+  void BlockAckTimeout (Ptr<WifiPsdu> psdu, const WifiTxVector& txVector) override;
+  void CtsTimeout (Ptr<WifiMacQueueItem> rts, const WifiTxVector& txVector) override;
 
   /**
    * Send a map of PSDUs as a DL MU PPDU.
@@ -155,6 +159,15 @@ protected:
   virtual void BlockAckAfterTbPpduTimeout (Ptr<WifiPsdu> psdu, const WifiTxVector& txVector);
 
   /**
+   * Get the TRIGVECTOR that the MAC has to pass to the PHY when transmitting
+   * the given Trigger Frame.
+   *
+   * \param trigger the given Trigger Frame
+   * \return the TRIGVECTOR
+   */
+  WifiTxVector GetTrigVector (const CtrlTriggerHeader& trigger) const;
+
+  /**
    * Return a TXVECTOR for the UL frame that the station will send in response to
    * the given Trigger frame, configured with the BSS color and transmit power
    * level to use for the consequent HE TB PPDU.
@@ -200,6 +213,7 @@ protected:
 
   Ptr<ApWifiMac> m_apMac;                             //!< MAC pointer (null if not an AP)
   Ptr<StaWifiMac> m_staMac;                           //!< MAC pointer (null if not a STA)
+  WifiTxVector m_trigVector;                          //!< the TRIGVECTOR
 
 private:
   /**

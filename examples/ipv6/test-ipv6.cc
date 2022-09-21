@@ -23,12 +23,13 @@
 #include "ns3/ipv6-address.h"
 #include "ns3/node.h"
 #include "ns3/mac48-address.h"
+#include "ns3/simulator.h"
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("TestIpv6");
 
-int 
+int
 main (int argc, char *argv[])
 {
   LogComponentEnable ("TestIpv6", LOG_LEVEL_ALL);

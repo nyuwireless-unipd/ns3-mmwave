@@ -580,6 +580,7 @@ TcpTxBuffer::GetPacketFromList (PacketList &list, const SequenceNumber32 &listSt
     }
 
   NS_FATAL_ERROR ("This point is not reachable");
+  return nullptr; // Silence compiler warning about lack of return value
 }
 
 void
@@ -686,9 +687,8 @@ TcpTxBuffer::DiscardUpTo (const SequenceNumber32& seq,
       if (i == m_sentList.end ())
         {
           // Move data from app list to sent list, so we can delete the item
-          Ptr<Packet> p = CopyFromSequence (offset, m_firstByteSeq)->GetPacketCopy ();
-          NS_ASSERT (p != nullptr);
-          NS_UNUSED (p);
+          [[maybe_unused]] Ptr<Packet> p = CopyFromSequence (offset, m_firstByteSeq)->GetPacketCopy ();
+          NS_ASSERT (p);
           i = m_sentList.begin ();
           NS_ASSERT (i != m_sentList.end ());
         }

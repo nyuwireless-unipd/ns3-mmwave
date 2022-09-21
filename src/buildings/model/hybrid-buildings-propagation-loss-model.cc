@@ -17,7 +17,7 @@
  *
  * Author: Marco Miozzo <marco.miozzo@cttc.es>
  *         Nicola Baldo <nbaldo@cttc.es>
- * 
+ *
  */
 
 #include <cmath>
@@ -62,12 +62,12 @@ TypeId
 HybridBuildingsPropagationLossModel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::HybridBuildingsPropagationLossModel")
-    
+
     .SetParent<BuildingsPropagationLossModel> ()
-    
+
     .AddConstructor<HybridBuildingsPropagationLossModel> ()
     .SetGroupName ("Buildings")
-    
+
     .AddAttribute ("Frequency",
                    "The Frequency  (default is 2.106 GHz).",
                    DoubleValue (2160e6),
@@ -103,7 +103,7 @@ HybridBuildingsPropagationLossModel::GetTypeId (void)
                    MakeDoubleChecker<double> (0.0, 90.0))
 
     ;
-  
+
   return tid;
 }
 
@@ -144,13 +144,13 @@ HybridBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobility
 {
   NS_ASSERT_MSG ((a->GetPosition ().z >= 0) && (b->GetPosition ().z >= 0), "HybridBuildingsPropagationLossModel does not support underground nodes (placed at z < 0)");
 
-  
+
   double distance = a->GetDistanceFrom (b);
 
   // get the MobilityBuildingInfo pointers
   Ptr<MobilityBuildingInfo> a1 = a->GetObject<MobilityBuildingInfo> ();
   Ptr<MobilityBuildingInfo> b1 = b->GetObject<MobilityBuildingInfo> ();
-  NS_ASSERT_MSG ((a1 != 0) && (b1 != 0), "HybridBuildingsPropagationLossModel only works with MobilityBuildingInfo");
+  NS_ASSERT_MSG (a1 && b1 , "HybridBuildingsPropagationLossModel only works with MobilityBuildingInfo");
 
   double loss = 0.0;
   bool isAIndoor = a1->IsIndoor ();
@@ -191,7 +191,7 @@ HybridBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<Mobility
             {
               if ((a->GetPosition ().z < m_rooftopHeight)
                   && (b->GetPosition ().z < m_rooftopHeight))
-                {                  
+                {
                   loss = ItuR1411 (a, b) + ExternalWallLoss (b1) + HeightLoss (b1);
                   NS_LOG_INFO (this << " 0-I (>1000): below rooftop -> ITUR1411 : " << loss);
                 }

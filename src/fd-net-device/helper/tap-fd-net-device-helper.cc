@@ -35,12 +35,12 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <linux/if_tun.h>
 #include <memory>
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netpacket/packet.h>
+#include <linux/if_tun.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -399,7 +399,8 @@ TapFdNetDeviceHelper::CreateFileDescriptor (void) const
         }
       NS_FATAL_ERROR ("Did not get the raw socket from the socket creator");
     }
-
+  NS_FATAL_ERROR ("Should be unreachable");
+  return 0; // Silence compiler warning about lack of return value
 }
 
 } // namespace ns3

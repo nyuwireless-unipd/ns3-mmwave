@@ -55,9 +55,9 @@ NS_LOG_COMPONENT_DEFINE ("UanHelper");
  * \param mode The transmission mode.
  */
 static void AsciiPhyTxEvent (std::ostream *os, std::string context,
-                             Ptr<const Packet> packet, double txPowerDb, UanTxMode mode)
+                             Ptr<const Packet> packet,
+                             [[maybe_unused]] double txPowerDb, UanTxMode mode)
 {
-  NS_UNUSED (txPowerDb);
   *os << "+ " << Simulator::Now ().GetSeconds () << " " << context << " " << *packet << std::endl;
 }
 
@@ -71,9 +71,9 @@ static void AsciiPhyTxEvent (std::ostream *os, std::string context,
  * \param mode The channel transmission mode.
  */
 static void AsciiPhyRxOkEvent (std::ostream *os, std::string context,
-                               Ptr<const Packet> packet, double snr, UanTxMode mode)
+                               Ptr<const Packet> packet,
+                               [[maybe_unused]] double snr, UanTxMode mode)
 {
-  NS_UNUSED (snr);
   *os << "r " << Simulator::Now ().GetSeconds () << " " << context << " " << *packet << std::endl;
 }
 
@@ -90,77 +90,6 @@ UanHelper::~UanHelper ()
 
 }
 
-
-void
-UanHelper::SetMac (std::string macType,
-                   std::string n0, const AttributeValue &v0,
-                   std::string n1, const AttributeValue &v1,
-                   std::string n2, const AttributeValue &v2,
-                   std::string n3, const AttributeValue &v3,
-                   std::string n4, const AttributeValue &v4,
-                   std::string n5, const AttributeValue &v5,
-                   std::string n6, const AttributeValue &v6,
-                   std::string n7, const AttributeValue &v7)
-{
-  m_mac = ObjectFactory ();
-  m_mac.SetTypeId (macType);
-  m_mac.Set (n0, v0);
-  m_mac.Set (n1, v1);
-  m_mac.Set (n2, v2);
-  m_mac.Set (n3, v3);
-  m_mac.Set (n4, v4);
-  m_mac.Set (n5, v5);
-  m_mac.Set (n6, v6);
-  m_mac.Set (n7, v7);
-}
-
-void
-UanHelper::SetPhy (std::string phyType,
-                   std::string n0, const AttributeValue &v0,
-                   std::string n1, const AttributeValue &v1,
-                   std::string n2, const AttributeValue &v2,
-                   std::string n3, const AttributeValue &v3,
-                   std::string n4, const AttributeValue &v4,
-                   std::string n5, const AttributeValue &v5,
-                   std::string n6, const AttributeValue &v6,
-                   std::string n7, const AttributeValue &v7)
-{
-  m_phy = ObjectFactory ();
-  m_phy.SetTypeId (phyType);
-  m_phy.Set (n0, v0);
-  m_phy.Set (n1, v1);
-  m_phy.Set (n2, v2);
-  m_phy.Set (n3, v3);
-  m_phy.Set (n4, v4);
-  m_phy.Set (n5, v5);
-  m_phy.Set (n6, v6);
-  m_phy.Set (n7, v7);
-
-}
-
-void
-UanHelper::SetTransducer (std::string type,
-                          std::string n0, const AttributeValue &v0,
-                          std::string n1, const AttributeValue &v1,
-                          std::string n2, const AttributeValue &v2,
-                          std::string n3, const AttributeValue &v3,
-                          std::string n4, const AttributeValue &v4,
-                          std::string n5, const AttributeValue &v5,
-                          std::string n6, const AttributeValue &v6,
-                          std::string n7, const AttributeValue &v7)
-{
-  m_transducer = ObjectFactory ();
-  m_transducer.SetTypeId (type);
-  m_transducer.Set (n0, v0);
-  m_transducer.Set (n1, v1);
-  m_transducer.Set (n2, v2);
-  m_transducer.Set (n3, v3);
-  m_transducer.Set (n4, v4);
-  m_transducer.Set (n5, v5);
-  m_transducer.Set (n6, v6);
-  m_transducer.Set (n7, v7);
-
-}
 
 void
 UanHelper::EnableAscii (std::ostream &os, uint32_t nodeid, uint32_t deviceid)

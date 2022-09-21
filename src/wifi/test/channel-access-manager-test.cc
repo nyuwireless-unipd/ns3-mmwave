@@ -18,11 +18,15 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
+#include <list>
+#include <numeric>
 #include "ns3/test.h"
 #include "ns3/simulator.h"
 #include "ns3/channel-access-manager.h"
 #include "ns3/frame-exchange-manager.h"
 #include "ns3/qos-txop.h"
+#include "ns3/spectrum-wifi-phy.h"
+#include "ns3/adhoc-wifi-mac.h"
 
 using namespace ns3;
 
@@ -61,17 +65,15 @@ private:
   /// \copydoc ns3::Txop::DoDispose
   void DoDispose (void) override;
   /// \copydoc ns3::Txop::NotifyChannelAccessed
-  void NotifyChannelAccessed (Time txopDuration = Seconds (0)) override;
+  void NotifyChannelAccessed (uint8_t linkId, Time txopDuration = Seconds (0)) override;
   /// \copydoc ns3::Txop::HasFramesToTransmit
   bool HasFramesToTransmit (void) override;
-  /// \copydoc ns3::Txop::NotifyChannelSwitching
-  void NotifyChannelSwitching (void) override;
   /// \copydoc ns3::Txop::NotifySleep
-  void NotifySleep (void) override;
+  void NotifySleep (uint8_t linkId) override;
   /// \copydoc ns3::Txop::NotifyWakeUp
-  void NotifyWakeUp (void) override;
+  void NotifyWakeUp (uint8_t linkId) override;
   /// \copydoc ns3::Txop::GenerateBackoff
-  void GenerateBackoff (void) override;
+  void GenerateBackoff (uint8_t linkId) override;
 
   typedef std::pair<uint64_t,uint64_t> ExpectedGrant; //!< the expected grant typedef
   typedef std::list<ExpectedGrant> ExpectedGrants; //!< the collection of expected grants typedef
@@ -181,17 +183,23 @@ public:
    *
    * \param dcf the channel access function that gained channel access. It is
    *            the DCF on non-QoS stations and an EDCA on QoS stations.
+   * \param allowedWidth the maximum allowed TX width in MHz
    * \return true if a frame exchange sequence was started, false otherwise
    */
-  bool StartTransmission (Ptr<Txop> dcf) override
+  bool StartTransmission (Ptr<Txop> dcf, uint16_t allowedWidth) override
   {
-    dcf->NotifyChannelAccessed ();
+    dcf->NotifyChannelAccessed (0);
     return true;
   }
   /// \copydoc ns3::FrameExchangeManager::NotifyInternalCollision
   void NotifyInternalCollision (Ptr<Txop> txop) override
   {
     m_test->NotifyInternalCollision (DynamicCast<TxopTest<TxopType>> (txop));
+  }
+  /// \copydoc ns3::FrameExchangeManager::NotifySwitchingStartNow
+  void NotifySwitchingStartNow (Time duration) override
+  {
+    m_test->NotifyChannelSwitching ();
   }
 
 private:
@@ -228,9 +236,8 @@ public:
   void GenerateBackoff (uint32_t i);
   /**
    * Notify channel switching function
-   * \param i the index of the Txop
    */
-  void NotifyChannelSwitching (uint32_t i);
+  void NotifyChannelSwitching (void);
 
 
 private:
@@ -240,8 +247,9 @@ private:
    * \param sifs the SIFS
    * \param eifsNoDifsNoSifs the EIFS no DIFS no SIFS
    * \param ackTimeoutValue the Ack timeout value
+   * \param chWidth the channel width in MHz
    */
-  void StartTest (uint64_t slotTime, uint64_t sifs, uint64_t eifsNoDifsNoSifs, uint32_t ackTimeoutValue = 20);
+  void StartTest (uint64_t slotTime, uint64_t sifs, uint64_t eifsNoDifsNoSifs, uint32_t ackTimeoutValue = 20, uint16_t chWidth = 20);
   /**
    * Add Txop function
    * \param aifsn the AIFSN
@@ -361,8 +369,12 @@ private:
    * Add CCA busy event function
    * \param at the event time
    * \param duration the duration
+   * \param channelType the channel type
+   * \param per20MhzDurations vector that indicates for how long each 20 MHz subchannel is busy
    */
-  void AddCcaBusyEvt (uint64_t at, uint64_t duration);
+  void AddCcaBusyEvt (uint64_t at, uint64_t duration,
+                      WifiChannelListType channelType = WIFI_CHANLIST_PRIMARY,
+                      const std::vector<Time>& per20MhzDurations = {});
   /**
    * Add switching event function
    * \param at the event time
@@ -380,6 +392,7 @@ private:
 
   Ptr<FrameExchangeManagerStub<TxopType>> m_feManager; //!< the Frame Exchange Manager stubbed
   Ptr<ChannelAccessManagerStub> m_ChannelAccessManager; //!< the channel access manager
+  Ptr<WifiPhy> m_phy; //!< the PHY object
   TxopTests m_txop; //!< the vector of Txop test instances
   uint32_t m_ackTimeoutValue; //!< the Ack timeout value
 };
@@ -408,15 +421,15 @@ TxopTest<TxopType>::DoDispose (void)
 
 template <typename TxopType>
 void
-TxopTest<TxopType>::NotifyChannelAccessed (Time txopDuration)
+TxopTest<TxopType>::NotifyChannelAccessed (uint8_t linkId, Time txopDuration)
 {
-  Txop::m_access = Txop::NOT_REQUESTED;
+  Txop::GetLink (0).access = Txop::NOT_REQUESTED;
   m_test->NotifyAccessGranted (m_i);
 }
 
 template <typename TxopType>
 void
-TxopTest<TxopType>::GenerateBackoff (void)
+TxopTest<TxopType>::GenerateBackoff (uint8_t linkId)
 {
   m_test->GenerateBackoff (m_i);
 }
@@ -430,20 +443,13 @@ TxopTest<TxopType>::HasFramesToTransmit (void)
 
 template <typename TxopType>
 void
-TxopTest<TxopType>::NotifyChannelSwitching (void)
-{
-  m_test->NotifyChannelSwitching (m_i);
-}
-
-template <typename TxopType>
-void
-TxopTest<TxopType>::NotifySleep (void)
+TxopTest<TxopType>::NotifySleep (uint8_t linkId)
 {
 }
 
 template <typename TxopType>
 void
-TxopTest<TxopType>::NotifyWakeUp (void)
+TxopTest<TxopType>::NotifyWakeUp (uint8_t linkId)
 {
 }
 
@@ -488,7 +494,7 @@ ChannelAccessManagerTest<TxopType>::NotifyInternalCollision (Ptr<TxopTest<TxopTy
       struct TxopTest<TxopType>::ExpectedBackoff expected = state->m_expectedInternalCollision.front ();
       state->m_expectedInternalCollision.pop_front ();
       NS_TEST_EXPECT_MSG_EQ (Simulator::Now (), MicroSeconds (expected.at), "Expected internal collision time is now");
-      state->StartBackoffNow (expected.nSlots);
+      state->StartBackoffNow (expected.nSlots, 0);
     }
 }
 
@@ -503,22 +509,24 @@ ChannelAccessManagerTest<TxopType>::GenerateBackoff (uint32_t i)
       struct TxopTest<TxopType>::ExpectedBackoff expected = state->m_expectedBackoff.front ();
       state->m_expectedBackoff.pop_front ();
       NS_TEST_EXPECT_MSG_EQ (Simulator::Now (), MicroSeconds (expected.at), "Expected backoff is now");
-      state->StartBackoffNow (expected.nSlots);
+      state->StartBackoffNow (expected.nSlots, 0);
     }
 }
 
 template <typename TxopType>
 void
-ChannelAccessManagerTest<TxopType>::NotifyChannelSwitching (uint32_t i)
+ChannelAccessManagerTest<TxopType>::NotifyChannelSwitching (void)
 {
-  Ptr<TxopTest<TxopType>> state = m_txop[i];
-  if (!state->m_expectedGrants.empty ())
+  for (auto& state : m_txop)
     {
-      std::pair<uint64_t, uint64_t> expected = state->m_expectedGrants.front ();
-      state->m_expectedGrants.pop_front ();
-      NS_TEST_EXPECT_MSG_EQ (Simulator::Now (), MicroSeconds (expected.second), "Expected grant is now");
+      if (!state->m_expectedGrants.empty ())
+        {
+          std::pair<uint64_t, uint64_t> expected = state->m_expectedGrants.front ();
+          state->m_expectedGrants.pop_front ();
+          NS_TEST_EXPECT_MSG_EQ (Simulator::Now (), MicroSeconds (expected.second), "Expected grant is now");
+        }
+      state->Txop::GetLink (0).access = Txop::NOT_REQUESTED;
     }
-  state->Txop::m_access = Txop::NOT_REQUESTED;
 }
 
 template <typename TxopType>
@@ -560,7 +568,7 @@ ChannelAccessManagerTest<TxopType>::DoCheckBusy (bool busy)
 
 template <typename TxopType>
 void
-ChannelAccessManagerTest<TxopType>::StartTest (uint64_t slotTime, uint64_t sifs, uint64_t eifsNoDifsNoSifs, uint32_t ackTimeoutValue)
+ChannelAccessManagerTest<TxopType>::StartTest (uint64_t slotTime, uint64_t sifs, uint64_t eifsNoDifsNoSifs, uint32_t ackTimeoutValue, uint16_t chWidth)
 {
   m_ChannelAccessManager = CreateObject<ChannelAccessManagerStub> ();
   m_feManager = CreateObject<FrameExchangeManagerStub<TxopType>> (this);
@@ -569,6 +577,15 @@ ChannelAccessManagerTest<TxopType>::StartTest (uint64_t slotTime, uint64_t sifs,
   m_ChannelAccessManager->SetSifs (MicroSeconds (sifs));
   m_ChannelAccessManager->SetEifsNoDifs (MicroSeconds (eifsNoDifsNoSifs + sifs));
   m_ackTimeoutValue = ackTimeoutValue;
+  // the purpose of the following operations is to initialize the last busy struct
+  // of the ChannelAccessManager. Indeed, InitLastBusyStructs(), which is called by
+  // SetupPhyListener(), requires an attached PHY to determine the channel types
+  // to initialize
+  m_phy = CreateObject<SpectrumWifiPhy> ();
+  m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {0, chWidth,
+                                                     WIFI_PHY_BAND_UNSPECIFIED, 0});
+  m_phy->ConfigureStandard (WIFI_STANDARD_80211ac); // required to use 160 MHz channels
+  m_ChannelAccessManager->SetupPhyListener (m_phy);
 }
 
 template <typename TxopType>
@@ -576,9 +593,13 @@ void
 ChannelAccessManagerTest<TxopType>::AddTxop (uint32_t aifsn)
 {
   Ptr<TxopTest<TxopType>> txop = CreateObject<TxopTest<TxopType>> (this, m_txop.size ());
-  txop->SetAifsn (aifsn);
   m_txop.push_back (txop);
-  txop->SetChannelAccessManager (m_ChannelAccessManager);
+  m_ChannelAccessManager->Add (txop);
+  // the following causes the creation of a link for the txop object
+  auto mac = CreateObject<AdhocWifiMac> ();
+  mac->SetWifiPhys ({nullptr});
+  txop->SetWifiMac (mac);
+  txop->SetAifsn (aifsn);
 }
 
 template <typename TxopType>
@@ -598,6 +619,8 @@ ChannelAccessManagerTest<TxopType>::EndTest (void)
     }
   m_txop.clear ();
 
+  m_ChannelAccessManager->RemovePhyListener (m_phy);
+  m_phy->Dispose ();
   m_ChannelAccessManager->Dispose ();
   m_ChannelAccessManager = 0;
   m_feManager = 0;
@@ -644,6 +667,9 @@ ChannelAccessManagerTest<TxopType>::AddRxErrorEvt (uint64_t at, uint64_t duratio
                        MicroSeconds (duration));
   Simulator::Schedule (MicroSeconds (at + timeUntilError) - Now (),
                        &ChannelAccessManager::NotifyRxEndErrorNow, m_ChannelAccessManager);
+  Simulator::Schedule (MicroSeconds (at + timeUntilError) - Now (),
+                       &ChannelAccessManager::NotifyCcaBusyStartNow, m_ChannelAccessManager,
+                       MicroSeconds (duration - timeUntilError), WIFI_CHANLIST_PRIMARY, std::vector<Time> {});
 }
 
 
@@ -710,7 +736,7 @@ ChannelAccessManagerTest<TxopType>::DoAccessRequest (uint64_t txTime, uint64_t e
 {
   if (m_ChannelAccessManager->NeedBackoffUponAccess (state))
     {
-      state->GenerateBackoff ();
+      state->GenerateBackoff (0);
     }
   state->QueueTx (txTime, expectedGrantTime);
   m_ChannelAccessManager->RequestAccess (state);
@@ -718,11 +744,13 @@ ChannelAccessManagerTest<TxopType>::DoAccessRequest (uint64_t txTime, uint64_t e
 
 template <typename TxopType>
 void
-ChannelAccessManagerTest<TxopType>::AddCcaBusyEvt (uint64_t at, uint64_t duration)
+ChannelAccessManagerTest<TxopType>::AddCcaBusyEvt (uint64_t at, uint64_t duration,
+                                                   WifiChannelListType channelType,
+                                                   const std::vector<Time>& per20MhzDurations)
 {
   Simulator::Schedule (MicroSeconds (at) - Now (),
-                       &ChannelAccessManager::NotifyMaybeCcaBusyStartNow, m_ChannelAccessManager,
-                       MicroSeconds (duration));
+                       &ChannelAccessManager::NotifyCcaBusyStartNow, m_ChannelAccessManager,
+                       MicroSeconds (duration), channelType, per20MhzDurations);
 }
 
 template <typename TxopType>
@@ -1092,72 +1120,90 @@ template <>
 void
 ChannelAccessManagerTest<QosTxop>::DoRun (void)
 {
-  // Check alignment at slot boundary after successful reception (backoff = 0):
+  // Check alignment at slot boundary after successful reception (backoff = 0).
+  // Also, check that CCA BUSY on a secondary channel does not affect channel access:
   //    20     50     56      60     80
+  //            |   cca_busy   |
   //     |  rx  | sifs | aifsn |  tx  |
   //                |
   //               52 request access
-  StartTest (4, 6, 10);
+  StartTest (4, 6, 10, 20, 40);
   AddTxop (1);
   AddRxOkEvt (20, 30);
+  AddCcaBusyEvt (50, 10, WIFI_CHANLIST_SECONDARY);
   AddAccessRequest (52, 20, 60, 0);
   EndTest ();
 
-  // Check alignment at slot boundary after successful reception (backoff = 0):
+  // Check alignment at slot boundary after successful reception (backoff = 0).
+  // Also, check that CCA BUSY on a secondary channel does not affect channel access:
   //    20     50     56      60     80
+  //            |   cca_busy   |
   //     |  rx  | sifs | aifsn |  tx  |
   //                       |
   //                      58 request access
-  StartTest (4, 6, 10);
+  StartTest (4, 6, 10, 20, 80);
   AddTxop (1);
   AddRxOkEvt (20, 30);
+  AddCcaBusyEvt (50, 10, WIFI_CHANLIST_SECONDARY);
   AddAccessRequest (58, 20, 60, 0);
   EndTest ();
 
-  // Check alignment at slot boundary after successful reception (backoff = 0):
+  // Check alignment at slot boundary after successful reception (backoff = 0).
+  // Also, check that CCA BUSY on a secondary channel does not affect channel access:
   //    20     50     56      60     64     84
+  //            |      cca_busy       |
   //     |  rx  | sifs | aifsn | idle |  tx  |
   //                               |
   //                              62 request access
-  StartTest (4, 6, 10);
+  StartTest (4, 6, 10, 20, 80);
   AddTxop (1);
   AddRxOkEvt (20, 30);
+  AddCcaBusyEvt (50, 14, WIFI_CHANLIST_SECONDARY40);
   AddAccessRequest (62, 20, 64, 0);
   EndTest ();
 
-  // Check alignment at slot boundary after failed reception (backoff = 0):
+  // Check alignment at slot boundary after failed reception (backoff = 0).
+  // Also, check that CCA BUSY on a secondary channel does not affect channel access:
   //  20         50     56           66             76     96
+  //              |             cca_busy             |
   //   |          | <------eifs------>|              |      |
   //   |    rx    | sifs | acktxttime | sifs + aifsn |  tx  |
   //                   |
   //                  55 request access
-  StartTest (4, 6, 10);
+  StartTest (4, 6, 10, 20, 160);
   AddTxop (1);
   AddRxErrorEvt (20, 30);
+  AddCcaBusyEvt (50, 26, WIFI_CHANLIST_SECONDARY);
   AddAccessRequest (55, 20, 76, 0);
   EndTest ();
 
-  // Check alignment at slot boundary after failed reception (backoff = 0):
+  // Check alignment at slot boundary after failed reception (backoff = 0).
+  // Also, check that CCA BUSY on a secondary channel does not affect channel access:
   //  20         50     56           66             76     96
+  //              |             cca_busy             |
   //   |          | <------eifs------>|              |      |
   //   |    rx    | sifs | acktxttime | sifs + aifsn |  tx  |
   //                                        |
   //                                       70 request access
-  StartTest (4, 6, 10);
+  StartTest (4, 6, 10, 20, 160);
   AddTxop (1);
   AddRxErrorEvt (20, 30);
+  AddCcaBusyEvt (50, 26, WIFI_CHANLIST_SECONDARY40);
   AddAccessRequest (70, 20, 76, 0);
   EndTest ();
 
-  // Check alignment at slot boundary after failed reception (backoff = 0):
+  // Check alignment at slot boundary after failed reception (backoff = 0).
+  // Also, check that CCA BUSY on a secondary channel does not affect channel access:
   //  20         50     56           66             76     84
+  //              |             cca_busy                    |
   //   |          | <------eifs------>|              |      |
   //   |    rx    | sifs | acktxttime | sifs + aifsn | idle |  tx  |
   //                                                     |
   //                                                    82 request access
-  StartTest (4, 6, 10);
+  StartTest (4, 6, 10, 20, 160);
   AddTxop (1);
   AddRxErrorEvt (20, 30);
+  AddCcaBusyEvt (50, 34, WIFI_CHANLIST_SECONDARY80);
   AddAccessRequest (82, 20, 84, 0);
   EndTest ();
 
@@ -1189,6 +1235,220 @@ ChannelAccessManagerTest<QosTxop>::DoRun (void)
   ExpectBackoff (30, 3, 0);
   EndTest ();
 }
+
+
+/**
+ * \ingroup wifi-test
+ * \ingroup tests
+ *
+ * \brief Test the calculation of the largest idle primary channel performed by
+ * ChannelAccessManager::GetLargestIdlePrimaryChannel().
+ *
+ * In every test, the ChannelAccessManager is notified of a CCA_BUSY period and
+ * subsequently of the start of RX. The value returned by GetLargestIdlePrimaryChannel()
+ * is checked at different times and for different intervals. All the possible
+ * combinations of operating channel width and busy channel type are tested.
+ */
+class LargestIdlePrimaryChannelTest : public TestCase
+{
+public:
+  LargestIdlePrimaryChannelTest ();
+  virtual ~LargestIdlePrimaryChannelTest () = default;
+
+private:
+  void DoRun (void) override;
+
+  /**
+   * Test a specific combination of operating channel width and busy channel type.
+   *
+   * \param chWidth the operating channel width
+   * \param busyChannel the busy channel type
+   */
+  void RunOne (uint16_t chWidth, WifiChannelListType busyChannel);
+
+  Ptr<ChannelAccessManager> m_cam;     //!< channel access manager
+  Ptr<WifiPhy> m_phy;                  //!< PHY object
+};
+
+LargestIdlePrimaryChannelTest::LargestIdlePrimaryChannelTest ()
+  : TestCase ("Check calculation of the largest idle primary channel")
+{
+}
+
+void
+LargestIdlePrimaryChannelTest::RunOne (uint16_t chWidth, WifiChannelListType busyChannel)
+{
+  /**
+   *                 <  Interval1  >< Interval2 >
+   *                                <     Interval3   >
+   *                                       < Interval4>       < Interval5 >
+   *                                                       <  Interval6   >
+   * --------|-------^--------------^------------^-----^------^------------^---
+   * P20     |       |              |            |     |  RX  |            |
+   * --------|-------|-----IDLE-----|----IDLE----|-----|------|------------|---
+   * S20     |       |              |            |     |      |    IDLE    |
+   * --------|-------v--------------v------------v-----|------|------------|---
+   * S40     |               |  CCA_BUSY   |   IDLE    |      |            |
+   * --------|-----------------------------|-----------|------|------------|---
+   * S80     |                             |           |      |            |
+   * --------|----------------------|------v-----|-----v------|------------|---
+   *       start     Check times:   t1           t2           t3           t5
+   *                                                          t4           t6
+   */
+
+  Time start = Simulator::Now ();
+
+  // After 1ms, we are notified of CCA_BUSY for 1ms on the given channel
+  Time ccaBusyStartDelay = MilliSeconds (1);
+  Time ccaBusyDuration = MilliSeconds (1);
+  Simulator::Schedule (ccaBusyStartDelay, &ChannelAccessManager::NotifyCcaBusyStartNow, m_cam,
+                       ccaBusyDuration, busyChannel, std::vector<Time> (chWidth / 20, Seconds (0)));
+
+  // During any interval ending within CCA_BUSY period, the idle channel is the
+  // primary channel contiguous to the busy secondary channel, if the busy channel
+  // is a secondary channel, or there is no idle channel, otherwise.
+  uint16_t idleWidth = (busyChannel == WifiChannelListType::WIFI_CHANLIST_PRIMARY)
+                       ? 0 : ((1 << (busyChannel - 1)) * 20);
+
+  Time checkTime1 = start + ccaBusyStartDelay + ccaBusyDuration / 2;
+  Simulator::Schedule (checkTime1 - start,
+                       [=]()
+                       {
+                         Time interval1 = (ccaBusyStartDelay + ccaBusyDuration) / 2;
+                         NS_TEST_EXPECT_MSG_EQ (m_cam->GetLargestIdlePrimaryChannel (interval1, checkTime1),
+                                                idleWidth,
+                                                "Incorrect width of the idle channel in an interval "
+                                                << "ending within CCA_BUSY (channel width: " << chWidth
+                                                << " MHz, busy channel: " << busyChannel << ")");
+                       });
+
+  // During any interval starting within CCA_BUSY period, the idle channel is the
+  // same as the previous case
+  Time ccaBusyRxInterval = MilliSeconds (1);
+  Time checkTime2 = start + ccaBusyStartDelay + ccaBusyDuration + ccaBusyRxInterval / 2;
+  Simulator::Schedule (checkTime2 - start,
+                       [=]()
+                       {
+                         Time interval2 = (ccaBusyDuration + ccaBusyRxInterval) / 2;
+                         NS_TEST_EXPECT_MSG_EQ (m_cam->GetLargestIdlePrimaryChannel (interval2, checkTime2),
+                                                idleWidth,
+                                                "Incorrect width of the idle channel in an interval "
+                                                << "starting within CCA_BUSY (channel width: " << chWidth
+                                                << " MHz, busy channel: " << busyChannel << ")");
+                       });
+
+  // Notify RX start
+  Time rxDuration = MilliSeconds (1);
+  Simulator::Schedule (ccaBusyStartDelay + ccaBusyDuration + ccaBusyRxInterval,
+                       &ChannelAccessManager::NotifyRxStartNow, m_cam, rxDuration);
+
+  // At RX end, we check the status of the channel during an interval immediately
+  // preceding RX start and overlapping the CCA_BUSY period.
+  Time checkTime3 = start + ccaBusyStartDelay + ccaBusyDuration + ccaBusyRxInterval + rxDuration;
+  Simulator::Schedule (checkTime3 - start,
+                       [=]()
+                       {
+                         Time interval3 = ccaBusyDuration / 2 + ccaBusyRxInterval;
+                         Time end3 = checkTime3 - rxDuration;
+                         NS_TEST_EXPECT_MSG_EQ (m_cam->GetLargestIdlePrimaryChannel (interval3, end3),
+                                                idleWidth,
+                                                "Incorrect width of the idle channel in an interval "
+                                                << "preceding RX start and overlapping CCA_BUSY "
+                                                << "(channel width: " << chWidth
+                                                << " MHz, busy channel: " << busyChannel << ")");
+                       });
+
+  // At RX end, we check the status of the channel during the interval following
+  // the CCA_BUSY period and preceding RX start. The entire operating channel is idle.
+  Time checkTime4 = checkTime3;
+  Simulator::Schedule (checkTime4 - start,
+                       [=]()
+                       {
+                         Time interval4 = ccaBusyRxInterval;
+                         Time end4 = checkTime4 - rxDuration;
+                         NS_TEST_EXPECT_MSG_EQ (m_cam->GetLargestIdlePrimaryChannel (interval4, end4),
+                                                chWidth,
+                                                "Incorrect width of the idle channel in the interval "
+                                                << "following CCA_BUSY and preceding RX start (channel "
+                                                << "width: " << chWidth << " MHz, busy channel: "
+                                                << busyChannel << ")");
+                       });
+
+  // After RX end, the entire operating channel is idle if the interval does not
+  // overlap the RX period
+  Time interval5 = MilliSeconds (1);
+  Time checkTime5 = checkTime4 + interval5;
+  Simulator::Schedule (checkTime5 - start,
+                       [=]()
+                       {
+                         NS_TEST_EXPECT_MSG_EQ (m_cam->GetLargestIdlePrimaryChannel (interval5, checkTime5),
+                                                chWidth,
+                                                "Incorrect width of the idle channel in an interval "
+                                                << "following RX end (channel width: " << chWidth
+                                                << " MHz, busy channel: " << busyChannel << ")");
+                       });
+
+  // After RX end, no channel is idle if the interval overlaps the RX period
+  Time checkTime6 = checkTime5;
+  Simulator::Schedule (checkTime6 - start,
+                       [=]()
+                       {
+                         Time interval6 = interval5 + rxDuration / 2;
+                         NS_TEST_EXPECT_MSG_EQ (m_cam->GetLargestIdlePrimaryChannel (interval6, checkTime6),
+                                                0,
+                                                "Incorrect width of the idle channel in an interval "
+                                                << "overlapping RX (channel width: " << chWidth
+                                                << " MHz, busy channel: " << busyChannel << ")");
+                       });
+}
+
+
+void
+LargestIdlePrimaryChannelTest::DoRun ()
+{
+  m_cam = CreateObject<ChannelAccessManager> ();
+  uint16_t delay = 0;
+  uint8_t channel = 0;
+  std::list<WifiChannelListType> busyChannels;
+
+  for (uint16_t chWidth : {20, 40, 80, 160})
+    {
+      busyChannels.push_back (static_cast<WifiChannelListType> (channel));
+
+      for (const auto busyChannel : busyChannels)
+        {
+          Simulator::Schedule (Seconds (delay),
+                              [this, chWidth, busyChannel]()
+                              {
+                                // reset PHY
+                                if (m_phy)
+                                  {
+                                    m_cam->RemovePhyListener (m_phy);
+                                    m_phy->Dispose ();
+                                  }
+                                // create a new PHY operating on a channel of the current width
+                                m_phy = CreateObject<SpectrumWifiPhy> ();
+                                m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {0, chWidth,
+                                                                                    WIFI_PHY_BAND_5GHZ, 0});
+                                m_phy->ConfigureStandard (WIFI_STANDARD_80211ax);
+                                // call SetupPhyListener to initialize the ChannelAccessManager
+                                // last busy structs
+                                m_cam->SetupPhyListener (m_phy);
+                                // run the tests
+                                RunOne (chWidth, busyChannel);
+                              });
+          delay++;
+        }
+      channel++;
+    }
+
+  Simulator::Run ();
+  m_cam->RemovePhyListener (m_phy);
+  m_phy->Dispose ();
+  m_cam->Dispose ();
+  Simulator::Destroy ();
+}
+
 
 /**
  * \ingroup wifi-test
@@ -1229,3 +1489,23 @@ QosTxopTestSuite::QosTxopTestSuite ()
 }
 
 static QosTxopTestSuite g_edcaTestSuite;
+
+/**
+ * \ingroup wifi-test
+ * \ingroup tests
+ *
+ * \brief ChannelAccessManager Test Suite
+ */
+class ChannelAccessManagerTestSuite : public TestSuite
+{
+public:
+  ChannelAccessManagerTestSuite ();
+};
+
+ChannelAccessManagerTestSuite::ChannelAccessManagerTestSuite ()
+  : TestSuite ("wifi-channel-access-manager", UNIT)
+{
+  AddTestCase (new LargestIdlePrimaryChannelTest, TestCase::QUICK);
+}
+
+static ChannelAccessManagerTestSuite g_camTestSuite;

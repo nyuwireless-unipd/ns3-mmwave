@@ -34,11 +34,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("GnuplotHelperExample");
 
-//
-// This is our test object, an object that increments a counter according
-// to a Poisson process, and exports the (integer-valued) count as a
-// trace source.
-//
+/**
+ * This is our test object, an object that increments a counter according
+ * to a Poisson process, and exports the (integer-valued) count as a
+ * trace source.
+ */
 class Emitter : public Object
 {
 public:
@@ -50,10 +50,11 @@ public:
   Emitter ();
 private:
   void DoInitialize (void);
+  /// Counts how many time this function is called.
   void Count (void);
 
-  TracedValue<uint32_t> m_counter;
-  Ptr<ExponentialRandomVariable> m_var;
+  TracedValue<uint32_t> m_counter; //!< Simple counter
+  Ptr<ExponentialRandomVariable> m_var; //!< Random number generator.
 };
 
 NS_OBJECT_ENSURE_REGISTERED (Emitter);
@@ -125,7 +126,7 @@ int main (int argc, char *argv[])
                             "Emitter Count",
                             "png");
 
-  // Create a probe.  Because the trace source we are interested in is 
+  // Create a probe.  Because the trace source we are interested in is
   // of type uint32_t, we specify the type of probe to use by the first
   // argument specifying its ns3 TypeId.
   plotHelper.PlotProbe ("ns3::Uinteger32Probe",

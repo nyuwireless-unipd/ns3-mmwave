@@ -35,7 +35,12 @@
 namespace ns3 {
 /**
  * \defgroup mpi MPI Distributed Simulation
- *
+ */
+
+/**
+ * \ingroup mpi
+ * \ingroup tests
+ * \defgroup mpi-tests MPI Distributed Simulation tests
  */
 
 class ParallelCommunicationInterface;
@@ -44,7 +49,7 @@ class ParallelCommunicationInterface;
  * \ingroup mpi
  *
  * \brief Singleton used to interface to the communications infrastructure
- * when running NS3 in parallel.  
+ * when running NS3 in parallel.
  *
  * Delegates the implementation to the specific parallel
  * infrastructure being used.  Implementation is defined in the
@@ -92,7 +97,7 @@ public:
    * Enable method is the easiest method and should be used in most
    * situations.
    *
-   * Disable() must be invoked at end of an ns-3 application to 
+   * Disable() must be invoked at end of an ns-3 application to
    * properly cleanup the parallel communication interface.
    *
    * This method will call MPI_Init and configure ns-3 to use the

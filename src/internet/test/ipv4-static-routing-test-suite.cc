@@ -91,7 +91,7 @@ Ipv4StaticRoutingSlash32TestCase::ReceivePkt (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket->GetSize (), "Received packet size is not equal to Rx buffer size");
   //cast availableData to void, to suppress 'availableData' set but not used
   //compiler warning
   (void) availableData;
@@ -172,7 +172,7 @@ Ipv4StaticRoutingSlash32TestCase::DoRun (void)
   ipv4C->AddAddress (ifIndexC, ifInAddrC);
   ipv4C->SetMetric (ifIndexC, 1);
   ipv4C->SetUp (ifIndexC);
- 
+
   Ipv4StaticRoutingHelper ipv4RoutingHelper;
   // Create static routes from A to C
   Ptr<Ipv4StaticRouting> staticRoutingA = ipv4RoutingHelper.GetStaticRouting (ipv4A);

@@ -502,8 +502,8 @@ MmWaveEnbMac::DoSlotIndication (SfnSf sfnSf)
               rnti = m_cmacSapUser->AllocateTemporaryCellRnti ();
               NS_LOG_INFO ("preambleId " << (uint32_t) it->first << ": allocated T-C-RNTI " << (uint32_t) rnti << ", sending RAR");
             }
-          MmWaveRarMessage::Rar rar;
-          rar.rapId = (*it).first;
+          MmWaveRarMessage::Rar rar = MmWaveRarMessage::Rar();
+          rar.rapId = (*it).first; 
           rar.rarPayload.m_rnti = rnti;
           rarMsg->AddRar (rar);
           //NS_ASSERT_MSG((*it).second ==1, "Two user send the same Rach ID, collision detected");
@@ -875,7 +875,7 @@ MmWaveEnbMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
     }
   else
     {
-      if (it->second.m_pdu == 0)
+      if (!it->second.m_pdu)
         {
           it->second.m_pdu = params.pdu;
         }

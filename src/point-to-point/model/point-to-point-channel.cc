@@ -29,7 +29,7 @@ NS_LOG_COMPONENT_DEFINE ("PointToPointChannel");
 
 NS_OBJECT_ENSURE_REGISTERED (PointToPointChannel);
 
-TypeId 
+TypeId
 PointToPointChannel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PointToPointChannel")
@@ -51,7 +51,7 @@ PointToPointChannel::GetTypeId (void)
 }
 
 //
-// By default, you get a channel that 
+// By default, you get a channel that
 // has an "infitely" fast transmission speed and zero delay.
 PointToPointChannel::PointToPointChannel()
   :
@@ -67,7 +67,7 @@ PointToPointChannel::Attach (Ptr<PointToPointNetDevice> device)
 {
   NS_LOG_FUNCTION (this << device);
   NS_ASSERT_MSG (m_nDevices < N_DEVICES, "Only two devices permitted");
-  NS_ASSERT (device != 0);
+  NS_ASSERT (device);
 
   m_link[m_nDevices++].m_src = device;
 //

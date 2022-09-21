@@ -156,7 +156,7 @@ MmWaveSpectrumPhy::SetDevice (Ptr<NetDevice> d)
   Ptr<MmWaveEnbNetDevice> enbNetDev = DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
 
   // TODO m_isEnb is never used
-  if (enbNetDev != 0)
+  if (enbNetDev)
     {
       m_isEnb = true;
     }
@@ -202,11 +202,12 @@ MmWaveSpectrumPhy::SetErrorModelType (TypeId errorModelType)
   m_errorModelType = errorModelType;
 }
 
-Ptr<AntennaModel>
-MmWaveSpectrumPhy::GetRxAntenna () const
+Ptr<Object>
+MmWaveSpectrumPhy::GetAntenna () const
 {
-  // NOTE the antenna gain is implicitly taken into account in the channel
-  // model classes
+  // Note: the antenna gain is implicitly taken into account in the channel model classes.
+  //       Still, this method is needed to overload the SpectrumPhy class
+
   return 0;
 }
 
@@ -335,7 +336,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 
   Ptr<MmWaveEnbNetDevice> enbTx = DynamicCast<MmWaveEnbNetDevice> (params->txPhy->GetDevice ());
   Ptr<MmWaveEnbNetDevice> enbRx = DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-  if ((enbTx != 0 && enbRx != 0) || (enbTx == 0 && enbRx == 0))
+  if (( enbTx &&  enbRx) || ( enbTx &&  enbRx))
     {
       NS_LOG_INFO ("BS to BS or UE to UE transmission neglected.");
       return;
@@ -345,7 +346,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
   Ptr<MmwaveSpectrumSignalParametersDataFrame> mmwaveDataRxParams = DynamicCast<MmwaveSpectrumSignalParametersDataFrame> (params);
   Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> mmwaveDlCtrlRxParams = DynamicCast<MmWaveSpectrumSignalParametersDlCtrlFrame> (params);
 
-  if (mmwaveDataRxParams != 0)
+  if (mmwaveDataRxParams)
     {
       // mmWave DATA case
 
@@ -358,17 +359,17 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
       Ptr<McUeNetDevice> rxMcUe = DynamicCast<McUeNetDevice> (GetDevice ());
 
 
-      if ((ueRx != 0) && (ueRx->GetPhy (m_componentCarrierId)->IsReceptionEnabled () == false))
+      if ((ueRx) && (ueRx->GetPhy (m_componentCarrierId)->IsReceptionEnabled () == false))
         {               // if the first cast is 0 (the device is MC) then this if will not be executed
           isAllocated = false;
         }
-      else if ((rxMcUe != 0) && (rxMcUe->GetMmWavePhy (m_componentCarrierId)->IsReceptionEnabled () == false))
+      else if ((rxMcUe) && (rxMcUe->GetMmWavePhy (m_componentCarrierId)->IsReceptionEnabled () == false))
         {               // this is executed if the device is MC and is transmitting
           isAllocated = false;
         }
 
-      NS_LOG_DEBUG("Now: " << Simulator::Now().GetSeconds() << " enb? " << (enbRx != 0)
-        << " ue? " << (ueRx != 0) << " "
+      NS_LOG_DEBUG("Now: " << Simulator::Now().GetSeconds() << " enb? " << (bool) (enbRx)
+        << " ue? " << (bool) (ueRx) << " "
         << isAllocated);
 
       if (isAllocated)
@@ -388,7 +389,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
           }
         }
     }
-  else if (mmwaveDlCtrlRxParams != 0)
+  else if (mmwaveDlCtrlRxParams)
     {
       // for CTRL messages interference is not considered
       StartRxCtrl (mmwaveDlCtrlRxParams);
@@ -843,7 +844,7 @@ MmWaveSpectrumPhy::StartTxDataFrames (Ptr<PacketBurst> pb, std::list<Ptr<MmWaveC
           txParams->cellId = m_cellId;
           txParams->ctrlMsgList = ctrlMsgList;
           txParams->slotInd = slotInd;
-          txParams->txAntenna = GetRxAntenna (); // TODO do we need to know the antenna?
+          txParams->txAntenna = nullptr; // TODO: do we need to know the antenna?
           NS_LOG_DEBUG(Simulator::Now().GetSeconds() << " StartTxDataFrames " << txParams << " cellId " << m_cellId
             << " duration " << (Simulator::Now() + duration).GetSeconds()
             << " slotInd " << (uint16_t)slotInd);
@@ -889,7 +890,7 @@ MmWaveSpectrumPhy::StartTxDlControlFrames (std::list<Ptr<MmWaveControlMessage> >
           txParams->cellId = m_cellId;
           txParams->pss = true;
           txParams->ctrlMsgList = ctrlMsgList;
-          txParams->txAntenna = GetRxAntenna (); // TODO do we need to know the antenna?
+          txParams->txAntenna = nullptr; // TODO: do we need to know the antenna?
 
           m_channel->StartTx (txParams);
 

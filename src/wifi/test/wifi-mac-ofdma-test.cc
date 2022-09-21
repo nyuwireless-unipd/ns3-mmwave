@@ -55,7 +55,7 @@ NS_LOG_COMPONENT_DEFINE ("WifiMacOfdmaTestSuite");
  * (when all BA agreements have been established). Afterwards, it cycles through UL_MU_TX
  * (with a BSRP Trigger Frame), UL_MU_TX (with a Basic Trigger Frame) and DL_MU_TX.
  * This scheduler requires that 4 stations are associated with the AP.
- * 
+ *
  */
 class TestMultiUserScheduler : public MultiUserScheduler
 {
@@ -81,8 +81,8 @@ private:
 
   TxFormat m_txFormat;              //!< the format of next transmission
   TriggerFrameType m_ulTriggerType; //!< Trigger Frame type for UL MU
-  Ptr<WifiMacQueueItem> m_trigger;  //!< Trigger Frame to send
-  Time m_tbPpduDuration;            //!< Duration of the solicited TB PPDUs
+  CtrlTriggerHeader m_trigger;      //!< Trigger Frame to send
+  WifiMacHeader m_triggerHdr;       //!< MAC header for Trigger Frame
   WifiTxVector m_txVector;          //!< the TX vector for MU PPDUs
   WifiTxParameters m_txParams;      //!< TX parameters
   WifiPsduMap m_psduMap;            //!< the DL MU PPDU to transmit
@@ -136,38 +136,41 @@ TestMultiUserScheduler::SelectTxFormat (void)
                                         ? TriggerFrameType::BSRP_TRIGGER
                                         : TriggerFrameType::BASIC_TRIGGER);
 
-      CtrlTriggerHeader trigger (ulTriggerType, m_txVector);
+      m_trigger = CtrlTriggerHeader (ulTriggerType, m_txVector);
 
       WifiTxVector txVector = m_txVector;
-      txVector.SetGuardInterval (trigger.GetGuardInterval ());
+      txVector.SetGuardInterval (m_trigger.GetGuardInterval ());
 
-      uint32_t ampduSize = (ulTriggerType == TriggerFrameType::BSRP_TRIGGER ? m_sizeOf8QosNull : 3500);
+      uint32_t ampduSize = (ulTriggerType == TriggerFrameType::BSRP_TRIGGER)
+                           ? GetMaxSizeOfQosNullAmpdu (m_trigger)
+                           : 3500;  // allows aggregation of 2 MPDUs in TB PPDUs
 
       Time duration = WifiPhy::CalculateTxDuration (ampduSize, txVector,
                                                     m_apMac->GetWifiPhy ()->GetPhyBand (),
                                                     m_apMac->GetStaList ().begin ()->first);
 
-      uint16_t length = HePhy::ConvertHeTbPpduDurationToLSigLength (duration,
-                                                                    m_apMac->GetWifiPhy ()->GetPhyBand ());
-      trigger.SetUlLength (length);
-      m_heFem->SetTargetRssi (trigger);
+      uint16_t length;
+      std::tie (length, duration) = HePhy::ConvertHeTbPpduDurationToLSigLength (duration,
+                                                                                m_trigger.GetHeTbTxVector (m_trigger.begin ()->GetAid12 ()),
+                                                                                m_apMac->GetWifiPhy ()->GetPhyBand ());
+      m_trigger.SetUlLength (length);
 
       Ptr<Packet> packet = Create<Packet> ();
-      packet->AddHeader (trigger);
+      packet->AddHeader (m_trigger);
 
-      WifiMacHeader hdr (WIFI_MAC_CTL_TRIGGER);
-      hdr.SetAddr1 (Mac48Address::GetBroadcast ());
-      hdr.SetAddr2 (m_apMac->GetAddress ());
-      hdr.SetDsNotTo ();
-      hdr.SetDsNotFrom ();
+      m_triggerHdr = WifiMacHeader (WIFI_MAC_CTL_TRIGGER);
+      m_triggerHdr.SetAddr1 (Mac48Address::GetBroadcast ());
+      m_triggerHdr.SetAddr2 (m_apMac->GetAddress ());
+      m_triggerHdr.SetDsNotTo ();
+      m_triggerHdr.SetDsNotFrom ();
 
-      m_trigger = Create<WifiMacQueueItem> (packet, hdr);
+      auto item = Create<WifiMacQueueItem> (packet, m_triggerHdr);
 
       m_txParams.Clear ();
       // set the TXVECTOR used to send the Trigger Frame
-      m_txParams.m_txVector = m_apMac->GetWifiRemoteStationManager ()->GetRtsTxVector (hdr.GetAddr1 ());
+      m_txParams.m_txVector = m_apMac->GetWifiRemoteStationManager ()->GetRtsTxVector (m_triggerHdr.GetAddr1 ());
 
-      if (!m_heFem->TryAddMpdu (m_trigger, m_txParams, m_availableTime)
+      if (!m_heFem->TryAddMpdu (item, m_txParams, m_availableTime)
           || (m_availableTime != Time::Min ()
               && m_txParams.m_protection->protectionTime
                  + m_txParams.m_txDuration     // TF tx time
@@ -182,7 +185,6 @@ TestMultiUserScheduler::SelectTxFormat (void)
 
       m_txFormat = UL_MU_TX;
       m_ulTriggerType = ulTriggerType;
-      m_tbPpduDuration = duration;
     }
   else if (m_txFormat == UL_MU_TX)
     {
@@ -199,24 +201,23 @@ TestMultiUserScheduler::SelectTxFormat (void)
         {
           Ptr<const WifiMacQueueItem> peeked = m_apMac->GetQosTxop (AC_BE)->PeekNextMpdu (0, sta.second);
 
-          if (peeked == 0)
+          if (!peeked)
             {
               NS_LOG_DEBUG ("No frame to send");
               return SU_TX;
             }
 
-          WifiMacQueueItem::ConstIterator queueIt;
           Ptr<WifiMacQueueItem> mpdu = m_apMac->GetQosTxop (AC_BE)->GetNextMpdu (peeked, m_txParams,
                                                                                  m_availableTime,
-                                                                                 m_initialFrame, queueIt);
-          if (mpdu == 0)
+                                                                                 m_initialFrame);
+          if (!mpdu)
             {
               NS_LOG_DEBUG ("Not enough time to send frames to all the stations");
               return SU_TX;
             }
 
           std::vector<Ptr<WifiMacQueueItem>> mpduList;
-          mpduList = m_heFem->GetMpduAggregator ()->GetNextAmpdu (mpdu, m_txParams, m_availableTime, queueIt);
+          mpduList = m_heFem->GetMpduAggregator ()->GetNextAmpdu (mpdu, m_txParams, m_availableTime);
 
           if (mpduList.size () > 1)
             {
@@ -250,7 +251,7 @@ TestMultiUserScheduler::ComputeWifiTxVector (void)
 
   uint16_t bw = m_apMac->GetWifiPhy ()->GetChannelWidth ();
 
-  m_txVector.SetPreambleType (WIFI_PREAMBLE_HE_MU);  
+  m_txVector.SetPreambleType (WIFI_PREAMBLE_HE_MU);
   m_txVector.SetChannelWidth (bw);
   m_txVector.SetGuardInterval (m_apMac->GetHeConfiguration ()->GetGuardInterval ().GetNanoSeconds ());
   m_txVector.SetTxPowerLevel (GetWifiRemoteStationManager ()->GetDefaultTxPowerLevel ());
@@ -303,7 +304,7 @@ MultiUserScheduler::UlMuInfo
 TestMultiUserScheduler::ComputeUlMuInfo (void)
 {
   NS_LOG_FUNCTION (this);
-  return UlMuInfo {m_trigger, m_tbPpduDuration, std::move (m_txParams)};
+  return UlMuInfo {m_trigger, m_triggerHdr, std::move (m_txParams)};
 }
 
 
@@ -315,7 +316,7 @@ TestMultiUserScheduler::ComputeUlMuInfo (void)
  *
  * Run this test with:
  *
- * NS_LOG="WifiMacOfdmaTestSuite=info|prefix_time|prefix_node" ./waf --run "test-runner --suite=wifi-mac-ofdma"
+ * NS_LOG="WifiMacOfdmaTestSuite=info|prefix_time|prefix_node" ./ns3 run "test-runner --suite=wifi-mac-ofdma"
  *
  * to print the list of transmitted frames only, along with the TX time and the
  * node prefix. Replace 'info' with 'debug' if you want to print the debug messages
@@ -360,10 +361,9 @@ public:
   /**
    * Function to trace CW value used by the given station after the MU exchange
    * \param staIndex the index of the given station
-   * \param oldCw the previous Contention Window value
    * \param cw the current Contention Window value
    */
-  void TraceCw (uint32_t staIndex, uint32_t oldCw, uint32_t cw);
+  void TraceCw (uint32_t staIndex, uint32_t cw, uint8_t /* linkId */);
   /**
    * Callback invoked when FrameExchangeManager passes PSDUs to the PHY
    * \param context the context
@@ -382,6 +382,8 @@ public:
 
 private:
   void DoRun (void) override;
+
+  static constexpr uint16_t m_muTimerRes = 8192; ///< MU timer resolution in usec
 
   /// Information about transmitted frames
   struct FrameInfo
@@ -441,7 +443,7 @@ OfdmaAckSequenceTest::L7Receive (std::string context, Ptr<const Packet> p, const
 }
 
 void
-OfdmaAckSequenceTest::TraceCw (uint32_t staIndex, uint32_t oldCw, uint32_t cw)
+OfdmaAckSequenceTest::TraceCw (uint32_t staIndex, uint32_t cw, uint8_t /* linkId */)
 {
   if (m_cwValues.at (staIndex) == 2)
     {
@@ -479,14 +481,14 @@ OfdmaAckSequenceTest::Transmit (std::string context, WifiConstPsduMap psduMap, W
   if (txVector.GetPreambleType () == WIFI_PREAMBLE_HE_MU)
     {
       auto dev = DynamicCast<WifiNetDevice> (m_apDevice);
-      Ptr<WifiMacQueue> queue = DynamicCast<RegularWifiMac> (dev->GetMac ())->GetQosTxop (AC_BE)->GetWifiMacQueue ();
+      Ptr<WifiMacQueue> queue = dev->GetMac ()->GetQosTxop (AC_BE)->GetWifiMacQueue ();
       m_flushed = 0;
-      for (auto it = queue->begin (); it != queue->end (); )
+      for (auto it = queue->GetContainer ().begin (); it != queue->GetContainer ().end (); )
         {
           auto tmp = it++;
           if (!(*tmp)->IsInFlight ())
             {
-              queue->Remove (tmp);
+              queue->Remove (*tmp, false);
               m_flushed++;
             }
         }
@@ -502,7 +504,7 @@ OfdmaAckSequenceTest::Transmit (std::string context, WifiConstPsduMap psduMap, W
 
           if (dev->GetAddress () == sender)
             {
-              Ptr<QosTxop> qosTxop = DynamicCast<RegularWifiMac> (dev->GetMac ())->GetQosTxop (AC_BE);
+              Ptr<QosTxop> qosTxop = dev->GetMac ()->GetQosTxop (AC_BE);
 
               if (m_muEdcaParameterSet.muTimer > 0 && m_muEdcaParameterSet.muAifsn > 0)
                 {
@@ -577,106 +579,74 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
   NS_TEST_EXPECT_MSG_EQ (trigger.IsBsrp (), true, "Expected a BSRP Trigger Frame");
   NS_TEST_EXPECT_MSG_EQ (trigger.GetNUserInfoFields (), 4, "Expected one User Info field per station");
 
-  // A first STA sends 8 QoS Null frames in an HE TB PPDU a SIFS after the reception of the BSRP TF
+  // A first STA sends a QoS Null frame in an HE TB PPDU a SIFS after the reception of the BSRP TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[1].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[1].psduMap.size () == 1
-                          && m_txPsdus[1].psduMap.begin ()->second->GetNMpdus () == 8),
-                         true, "Expected 8 QoS Null frames in an HE TB PPDU");
-  for (uint8_t i = 0; i < 8; i++)
-    {
-      const WifiMacHeader& hdr = m_txPsdus[1].psduMap.begin ()->second->GetHeader (i);
-      NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
-      uint8_t tid = hdr.GetQosTid ();
-      if (tid == 0)
-        {
-          NS_TEST_EXPECT_MSG_GT (hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID " << +tid);
-        }
-      else
-        {
-          NS_TEST_EXPECT_MSG_EQ (hdr.GetQosQueueSize (), 0, "Expected a null queue size for TID " << +tid);
-        }
-    }
+                          && m_txPsdus[1].psduMap.begin ()->second->GetNMpdus () == 1),
+                         true, "Expected a QoS Null frame in an HE TB PPDU");
+  {
+    const WifiMacHeader& hdr = m_txPsdus[1].psduMap.begin ()->second->GetHeader (0);
+    NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
+    NS_TEST_EXPECT_MSG_EQ (+hdr.GetQosTid (), 0, "Expected a TID equal to 0");
+    NS_TEST_EXPECT_MSG_GT (+hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID 0");
+  }
   tEnd = m_txPsdus[0].endTx;
   navEnd = tEnd + m_txPsdus[0].psduMap[SU_STA_ID]->GetDuration ();
   tStart = m_txPsdus[1].startTx;
-  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frames in HE TB PPDU sent too early");
-  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frames in HE TB PPDU sent too late");
+  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frame in HE TB PPDU sent too early");
+  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frame in HE TB PPDU sent too late");
   NS_TEST_EXPECT_MSG_GT_OR_EQ (navEnd + tolerance, m_txPsdus[1].endTx, "Duration/ID in BSRP Trigger Frame is too short");
 
-  // A second STA sends 8 QoS Null frames in an HE TB PPDU a SIFS after the reception of the BSRP TF
+  // A second STA sends a QoS Null frame in an HE TB PPDU a SIFS after the reception of the BSRP TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[2].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[2].psduMap.size () == 1
-                          && m_txPsdus[2].psduMap.begin ()->second->GetNMpdus () == 8),
-                         true, "Expected 8 QoS Null frames in an HE TB PPDU");
-  for (uint8_t i = 0; i < 8; i++)
-    {
-      const WifiMacHeader& hdr = m_txPsdus[2].psduMap.begin ()->second->GetHeader (i);
-      NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
-      uint8_t tid = hdr.GetQosTid ();
-      if (tid == 0)
-        {
-          NS_TEST_EXPECT_MSG_GT (hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID " << +tid);
-        }
-      else
-        {
-          NS_TEST_EXPECT_MSG_EQ (hdr.GetQosQueueSize (), 0, "Expected a null queue size for TID " << +tid);
-        }
-    }
+                          && m_txPsdus[2].psduMap.begin ()->second->GetNMpdus () == 1),
+                         true, "Expected a QoS Null frame in an HE TB PPDU");
+  {
+    const WifiMacHeader& hdr = m_txPsdus[2].psduMap.begin ()->second->GetHeader (0);
+    NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
+    NS_TEST_EXPECT_MSG_EQ (+hdr.GetQosTid (), 0, "Expected a TID equal to 0");
+    NS_TEST_EXPECT_MSG_GT (+hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID 0");
+  }
   tStart = m_txPsdus[2].startTx;
-  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frames in HE TB PPDU sent too early");
-  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frames in HE TB PPDU sent too late");
+  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frame in HE TB PPDU sent too early");
+  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frame in HE TB PPDU sent too late");
   NS_TEST_EXPECT_MSG_GT_OR_EQ (navEnd + tolerance, m_txPsdus[2].endTx, "Duration/ID in BSRP Trigger Frame is too short");
 
-  // A third STA sends 8 QoS Null frames in an HE TB PPDU a SIFS after the reception of the BSRP TF
+  // A third STA sends a QoS Null frame in an HE TB PPDU a SIFS after the reception of the BSRP TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[3].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[3].psduMap.size () == 1
-                          && m_txPsdus[3].psduMap.begin ()->second->GetNMpdus () == 8),
-                         true, "Expected 8 QoS Null frames in an HE TB PPDU");
-  for (uint8_t i = 0; i < 8; i++)
-    {
-      const WifiMacHeader& hdr = m_txPsdus[3].psduMap.begin ()->second->GetHeader (i);
-      NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
-      uint8_t tid = hdr.GetQosTid ();
-      if (tid == 0)
-        {
-          NS_TEST_EXPECT_MSG_GT (hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID " << +tid);
-        }
-      else
-        {
-          NS_TEST_EXPECT_MSG_EQ (hdr.GetQosQueueSize (), 0, "Expected a null queue size for TID " << +tid);
-        }
-    }
+                          && m_txPsdus[3].psduMap.begin ()->second->GetNMpdus () == 1),
+                         true, "Expected a QoS Null frame in an HE TB PPDU");
+  {
+    const WifiMacHeader& hdr = m_txPsdus[3].psduMap.begin ()->second->GetHeader (0);
+    NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
+    NS_TEST_EXPECT_MSG_EQ (+hdr.GetQosTid (), 0, "Expected a TID equal to 0");
+    NS_TEST_EXPECT_MSG_GT (+hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID 0");
+  }
   tStart = m_txPsdus[3].startTx;
-  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frames in HE TB PPDU sent too early");
-  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frames in HE TB PPDU sent too late");
+  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frame in HE TB PPDU sent too early");
+  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frame in HE TB PPDU sent too late");
   NS_TEST_EXPECT_MSG_GT_OR_EQ (navEnd + tolerance, m_txPsdus[3].endTx, "Duration/ID in BSRP Trigger Frame is too short");
 
-  // A fourth STA sends 8 QoS Null frames in an HE TB PPDU a SIFS after the reception of the BSRP TF
+  // A fourth STA sends a QoS Null frame in an HE TB PPDU a SIFS after the reception of the BSRP TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[4].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[4].psduMap.size () == 1
-                          && m_txPsdus[4].psduMap.begin ()->second->GetNMpdus () == 8),
-                         true, "Expected 8 QoS Null frames in an HE TB PPDU");
-  for (uint8_t i = 0; i < 8; i++)
-    {
-      const WifiMacHeader& hdr = m_txPsdus[4].psduMap.begin ()->second->GetHeader (i);
-      NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
-      uint8_t tid = hdr.GetQosTid ();
-      if (tid == 0)
-        {
-          NS_TEST_EXPECT_MSG_GT (hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID " << +tid);
-        }
-      else
-        {
-          NS_TEST_EXPECT_MSG_EQ (hdr.GetQosQueueSize (), 0, "Expected a null queue size for TID " << +tid);
-        }
-    }
+                          && m_txPsdus[4].psduMap.begin ()->second->GetNMpdus () == 1),
+                         true, "Expected a QoS Null frame in an HE TB PPDU");
+  {
+    const WifiMacHeader& hdr = m_txPsdus[4].psduMap.begin ()->second->GetHeader (0);
+    NS_TEST_EXPECT_MSG_EQ (hdr.GetType (), WIFI_MAC_QOSDATA_NULL, "Expected a QoS Null frame");
+    NS_TEST_EXPECT_MSG_EQ (+hdr.GetQosTid (), 0, "Expected a TID equal to 0");
+    NS_TEST_EXPECT_MSG_GT (+hdr.GetQosQueueSize (), 0, "Expected a non null queue size for TID 0");
+  }
   tStart = m_txPsdus[4].startTx;
-  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frames in HE TB PPDU sent too early");
-  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frames in HE TB PPDU sent too late");
+  NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS Null frame in HE TB PPDU sent too early");
+  NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "QoS Null frame in HE TB PPDU sent too late");
   NS_TEST_EXPECT_MSG_GT_OR_EQ (navEnd + tolerance, m_txPsdus[4].endTx, "Duration/ID in BSRP Trigger Frame is too short");
 
   // the AP sends a Basic Trigger Frame to solicit QoS data frames
-  NS_TEST_EXPECT_MSG_GT_OR_EQ (m_txPsdus.size (), 11, "Expected at least 11 transmitted packet");
+  NS_TEST_EXPECT_MSG_GT_OR_EQ (m_txPsdus.size (), 11, "Expected at least 11 transmitted packets");
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[5].psduMap.size () == 1
                           && m_txPsdus[5].psduMap[SU_STA_ID]->GetHeader (0).IsTrigger ()
                           && m_txPsdus[5].psduMap[SU_STA_ID]->GetHeader (0).GetAddr1 ().IsBroadcast ()),
@@ -695,8 +665,10 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
   // A first STA sends QoS data frames in an HE TB PPDU a SIFS after the reception of the Basic TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[6].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[6].psduMap.size () == 1
-                          && m_txPsdus[6].psduMap.begin ()->second->GetHeader (0).IsQosData ()),
-                         true, "Expected QoS data frames in an HE TB PPDU");
+                          && m_txPsdus[6].psduMap.begin ()->second->GetNMpdus () == 2
+                          && m_txPsdus[6].psduMap.begin ()->second->GetHeader (0).IsQosData ()
+                          && m_txPsdus[6].psduMap.begin ()->second->GetHeader (1).IsQosData ()),
+                         true, "Expected 2 QoS data frames in an HE TB PPDU");
   tEnd = m_txPsdus[5].endTx;
   tStart = m_txPsdus[6].startTx;
   NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS data frames in HE TB PPDU sent too early");
@@ -705,8 +677,10 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
   // A second STA sends QoS data frames in an HE TB PPDU a SIFS after the reception of the Basic TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[7].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[7].psduMap.size () == 1
-                          && m_txPsdus[7].psduMap.begin ()->second->GetHeader (0).IsQosData ()),
-                         true, "Expected QoS data frames in an HE TB PPDU");
+                          && m_txPsdus[7].psduMap.begin ()->second->GetNMpdus () == 2
+                          && m_txPsdus[7].psduMap.begin ()->second->GetHeader (0).IsQosData ()
+                          && m_txPsdus[7].psduMap.begin ()->second->GetHeader (1).IsQosData ()),
+                         true, "Expected 2 QoS data frames in an HE TB PPDU");
   tEnd = m_txPsdus[5].endTx;
   tStart = m_txPsdus[7].startTx;
   NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS data frames in HE TB PPDU sent too early");
@@ -715,8 +689,10 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
   // A third STA sends QoS data frames in an HE TB PPDU a SIFS after the reception of the Basic TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[8].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[8].psduMap.size () == 1
-                          && m_txPsdus[8].psduMap.begin ()->second->GetHeader (0).IsQosData ()),
-                         true, "Expected QoS data frames in an HE TB PPDU");
+                          && m_txPsdus[8].psduMap.begin ()->second->GetNMpdus () == 2
+                          && m_txPsdus[8].psduMap.begin ()->second->GetHeader (0).IsQosData ()
+                          && m_txPsdus[8].psduMap.begin ()->second->GetHeader (1).IsQosData ()),
+                         true, "Expected 2 QoS data frames in an HE TB PPDU");
   tEnd = m_txPsdus[5].endTx;
   tStart = m_txPsdus[8].startTx;
   NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS data frames in HE TB PPDU sent too early");
@@ -725,8 +701,10 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
   // A fourth STA sends QoS data frames in an HE TB PPDU a SIFS after the reception of the Basic TF
   NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[9].txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB
                           && m_txPsdus[9].psduMap.size () == 1
-                          && m_txPsdus[9].psduMap.begin ()->second->GetHeader (0).IsQosData ()),
-                         true, "Expected QoS data frames in an HE TB PPDU");
+                          && m_txPsdus[9].psduMap.begin ()->second->GetNMpdus () == 2
+                          && m_txPsdus[9].psduMap.begin ()->second->GetHeader (0).IsQosData ()
+                          && m_txPsdus[9].psduMap.begin ()->second->GetHeader (1).IsQosData ()),
+                         true, "Expected 2 QoS data frames in an HE TB PPDU");
   tEnd = m_txPsdus[5].endTx;
   tStart = m_txPsdus[9].startTx;
   NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "QoS data frames in HE TB PPDU sent too early");
@@ -835,7 +813,7 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
       tStart = m_txPsdus[13].startTx;
       NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "First Block Ack Request sent too early");
       NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "First Block Ack Request sent too late");
-      
+
       // A second STA sends a Block Ack a SIFS after the reception of the Block Ack Request
       NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[14].psduMap.size () == 1
                               && m_txPsdus[14].psduMap[SU_STA_ID]->GetHeader (0).IsBlockAck ()),
@@ -853,7 +831,7 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
       tStart = m_txPsdus[15].startTx;
       NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "Second Block Ack Request sent too early");
       NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "Second Block Ack Request sent too late");
-      
+
       // A third STA sends a Block Ack a SIFS after the reception of the Block Ack Request
       NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[16].psduMap.size () == 1
                               && m_txPsdus[16].psduMap[SU_STA_ID]->GetHeader (0).IsBlockAck ()),
@@ -871,7 +849,7 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
       tStart = m_txPsdus[17].startTx;
       NS_TEST_EXPECT_MSG_LT (tEnd + sifs, tStart, "Third Block Ack Request sent too early");
       NS_TEST_EXPECT_MSG_LT (tStart, tEnd + sifs + tolerance, "Third Block Ack Request sent too late");
-      
+
       // A fourth STA sends a Block Ack a SIFS after the reception of the Block Ack Request
       NS_TEST_EXPECT_MSG_EQ ((m_txPsdus[18].psduMap.size () == 1
                               && m_txPsdus[18].psduMap[SU_STA_ID]->GetHeader (0).IsBlockAck ()),
@@ -1069,7 +1047,7 @@ OfdmaAckSequenceTest::CheckResults (Time sifs, Time slotTime, uint8_t aifsn)
             {
               NS_TEST_EXPECT_MSG_GT_OR_EQ (m_txPsdus[i].startTx.GetMicroSeconds (),
                                            m_edcaDisabledStartTime.GetMicroSeconds ()
-                                           + m_muEdcaParameterSet.muTimer * 8192,
+                                           + m_muEdcaParameterSet.muTimer * m_muTimerRes,
                                            "A station transmitted before the MU EDCA timer expired");
               break;
             }
@@ -1092,8 +1070,8 @@ void
 OfdmaAckSequenceTest::DoRun (void)
 {
   RngSeedManager::SetSeed (1);
-  RngSeedManager::SetRun (2);
-  int64_t streamNumber = 100;
+  RngSeedManager::SetRun (1);
+  int64_t streamNumber = 20;
 
   NodeContainer wifiApNode;
   wifiApNode.Create (1);
@@ -1114,44 +1092,35 @@ OfdmaAckSequenceTest::DoRun (void)
   switch (m_channelWidth)
     {
       case 20:
-        phy.Set ("ChannelNumber", UintegerValue (36));
+        phy.Set ("ChannelSettings", StringValue ("{36, 20, BAND_5GHZ, 0}"));
         break;
       case 40:
-        phy.Set ("ChannelNumber", UintegerValue (38));
+        phy.Set ("ChannelSettings", StringValue ("{38, 40, BAND_5GHZ, 0}"));
         break;
       case 80:
-        phy.Set ("ChannelNumber", UintegerValue (42));
+        phy.Set ("ChannelSettings", StringValue ("{42, 80, BAND_5GHZ, 0}"));
         break;
       case 160:
-        phy.Set ("ChannelNumber", UintegerValue (50));
+        phy.Set ("ChannelSettings", StringValue ("{50, 160, BAND_5GHZ, 0}"));
         break;
       default:
         NS_ABORT_MSG ("Invalid channel bandwidth (must be 20, 40, 80 or 160)");
     }
-  phy.Set ("ChannelWidth", UintegerValue (m_channelWidth));
-
-  Config::SetDefault ("ns3::HeConfiguration::MuBeAifsn",
-                      UintegerValue (m_muEdcaParameterSet.muAifsn));
-  Config::SetDefault ("ns3::HeConfiguration::MuBeCwMin",
-                      UintegerValue (m_muEdcaParameterSet.muCwMin));
-  Config::SetDefault ("ns3::HeConfiguration::MuBeCwMax",
-                      UintegerValue (m_muEdcaParameterSet.muCwMax));
-  Config::SetDefault ("ns3::HeConfiguration::BeMuEdcaTimer",
-                      TimeValue (MicroSeconds (8192 * m_muEdcaParameterSet.muTimer)));
-  // MU EDCA timers must be either all null or all non-null
-  Config::SetDefault ("ns3::HeConfiguration::BkMuEdcaTimer",
-                      TimeValue (MicroSeconds (8192 * m_muEdcaParameterSet.muTimer)));
-  Config::SetDefault ("ns3::HeConfiguration::ViMuEdcaTimer",
-                      TimeValue (MicroSeconds (8192 * m_muEdcaParameterSet.muTimer)));
-  Config::SetDefault ("ns3::HeConfiguration::VoMuEdcaTimer",
-                      TimeValue (MicroSeconds (8192 * m_muEdcaParameterSet.muTimer)));
 
   // increase MSDU lifetime so that it does not expire before the MU EDCA timer ends
   Config::SetDefault ("ns3::WifiMacQueue::MaxDelay", TimeValue (Seconds (2)));
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211ax);
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
+  wifi.ConfigHeOptions ("MuBeAifsn", UintegerValue (m_muEdcaParameterSet.muAifsn),
+                        "MuBeCwMin", UintegerValue (m_muEdcaParameterSet.muCwMin),
+                        "MuBeCwMax", UintegerValue (m_muEdcaParameterSet.muCwMax),
+                        "BeMuEdcaTimer", TimeValue (MicroSeconds (m_muTimerRes * m_muEdcaParameterSet.muTimer)),
+                        // MU EDCA timers must be either all null or all non-null
+                        "BkMuEdcaTimer", TimeValue (MicroSeconds (m_muTimerRes * m_muEdcaParameterSet.muTimer)),
+                        "ViMuEdcaTimer", TimeValue (MicroSeconds (m_muTimerRes * m_muEdcaParameterSet.muTimer)),
+                        "VoMuEdcaTimer", TimeValue (MicroSeconds (m_muTimerRes * m_muEdcaParameterSet.muTimer)));
 
   WifiMacHelper mac;
   Ssid ssid = Ssid ("ns-3-ssid");
@@ -1298,7 +1267,7 @@ OfdmaAckSequenceTest::DoRun (void)
   Simulator::Run ();
 
   CheckResults (dev->GetMac ()->GetWifiPhy ()->GetSifs (), dev->GetMac ()->GetWifiPhy ()->GetSlot (),
-                apBeQosTxop->GetAifsn ());
+                apBeQosTxop->Txop::GetAifsn ());
 
   Simulator::Destroy ();
 }

@@ -380,14 +380,14 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
       // create and configure the SpectrumPropagationLossModel
       if (!m_spectrumPropagationLossModelType.empty ())
         {
-          Ptr<SpectrumPropagationLossModel> splm = m_spectrumPropagationLossModelFactory.Create<SpectrumPropagationLossModel> ();
 
           // if the selected model is ThreeGppSpectrumPropagationLossModel we 
           // need a special configuration procedure, otherwise, for the other 
           // models, we try to configure the frequency
-          Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
-          if (threeGppSplm)
+          
+          if (m_spectrumPropagationLossModelType == "ns3::ThreeGppSpectrumPropagationLossModel")
             {
+              Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm = m_spectrumPropagationLossModelFactory.Create<ThreeGppSpectrumPropagationLossModel>();
               threeGppSplm->SetChannelModelAttribute ("Frequency", DoubleValue (phyMacCommon->GetCenterFrequency ()));
 
               // the ThreeGppSpectrumPropagationLossModel must have the same ChannelConditionModel as the 
@@ -407,14 +407,16 @@ MmWaveHelper::MmWaveChannelModelInitialization (void)
               {
                 NS_LOG_DEBUG ("ChannelConditionModel not set for ThreeGppSpectrumPropagationLossModel");
               }
+              // set the propagation loss model in the channel
+              channel->AddPhasedArraySpectrumPropagationLossModel (threeGppSplm);
             }
           else 
             {
+              Ptr<SpectrumPropagationLossModel> splm = m_spectrumPropagationLossModelFactory.Create<SpectrumPropagationLossModel> ();
               splm->SetAttributeFailSafe ("Frequency", DoubleValue (phyMacCommon->GetCenterFrequency ()));
+              // set the propagation loss model in the channel
+              channel->AddSpectrumPropagationLossModel (splm);
             }
-
-          // set the propagation loss model in the channel
-          channel->AddSpectrumPropagationLossModel (splm);
         }
       else
         {
@@ -434,7 +436,7 @@ MmWaveHelper::LteChannelModelInitialization (void)
   m_uplinkChannel = m_lteChannelFactory.Create<SpectrumChannel> ();
   m_downlinkPathlossModel = m_dlPathlossModelFactory.Create ();
   Ptr<SpectrumPropagationLossModel> dlSplm = m_downlinkPathlossModel->GetObject<SpectrumPropagationLossModel> ();
-  if (dlSplm != 0)
+  if (dlSplm)
     {
       NS_LOG_LOGIC (this << " using a SpectrumPropagationLossModel in DL");
       m_downlinkChannel->AddSpectrumPropagationLossModel (dlSplm);
@@ -443,13 +445,13 @@ MmWaveHelper::LteChannelModelInitialization (void)
     {
       NS_LOG_LOGIC (this << " using a PropagationLossModel in DL");
       Ptr<PropagationLossModel> dlPlm = m_downlinkPathlossModel->GetObject<PropagationLossModel> ();
-      NS_ASSERT_MSG (dlPlm != 0, " " << m_downlinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
+      NS_ASSERT_MSG (dlPlm, " " << m_downlinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
       m_downlinkChannel->AddPropagationLossModel (dlPlm);
     }
 
   m_uplinkPathlossModel = m_ulPathlossModelFactory.Create ();
   Ptr<SpectrumPropagationLossModel> ulSplm = m_uplinkPathlossModel->GetObject<SpectrumPropagationLossModel> ();
-  if (ulSplm != 0)
+  if (ulSplm)
     {
       NS_LOG_LOGIC (this << " using a SpectrumPropagationLossModel in UL");
       m_uplinkChannel->AddSpectrumPropagationLossModel (ulSplm);
@@ -458,7 +460,7 @@ MmWaveHelper::LteChannelModelInitialization (void)
     {
       NS_LOG_LOGIC (this << " using a PropagationLossModel in UL");
       Ptr<PropagationLossModel> ulPlm = m_uplinkPathlossModel->GetObject<PropagationLossModel> ();
-      NS_ASSERT_MSG (ulPlm != 0, " " << m_uplinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
+      NS_ASSERT_MSG (ulPlm, " " << m_uplinkPathlossModel << " is neither PropagationLossModel nor SpectrumPropagationLossModel");
       m_uplinkChannel->AddPropagationLossModel (ulPlm);
     }
   // TODO consider if adding LTE fading
@@ -902,10 +904,6 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       // initialize the 3GPP channel model
       Ptr<SpectrumPropagationLossModel> splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
       Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
-      if (threeGppSplm)
-      {
-        threeGppSplm->AddDevice (device, antenna);
-      }
 
       auto channelModel = threeGppSplm->GetChannelModel();
       Ptr<MmWaveBeamformingModel> bfModel = m_bfModelFactory.Create<MmWaveBeamformingModel> ();
@@ -1028,7 +1026,7 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       mmWaveRrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
     }
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       mmWaveRrc->SetUseRlcSm (false);
     }
@@ -1118,7 +1116,7 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       lteRrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
     }
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       lteRrc->SetUseRlcSm (false);
     }
@@ -1180,7 +1178,7 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
 
   lteNas->SetForwardUpCallback (MakeCallback (&McUeNetDevice::Receive, device));
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       m_epcHelper->AddUe (device, device->GetImsi ());
     }
@@ -1505,19 +1503,39 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
 
       // initialize the 3GPP channel model
-      Ptr<SpectrumPropagationLossModel> splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
-      Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
-      if (threeGppSplm)
+
+      [[maybe_unused]] Ptr<SpectrumPropagationLossModel> splm;
+      [[maybe_unused]] Ptr<PhasedArraySpectrumPropagationLossModel> pSplm;
+      
+      Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm;
+
+      if (m_spectrumPropagationLossModelType == "ns3::ThreeGppSpectrumPropagationLossModel")
       {
-        threeGppSplm->AddDevice (device, antenna);
+        pSplm = m_channel.at (it->first)->GetPhasedArraySpectrumPropagationLossModel ();
+        threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (pSplm);
       }
+      else
+      {
+        splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
+        threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
+      }
+      
       auto channelModel = threeGppSplm->GetChannelModel ();
 
       Ptr<MmWaveBeamformingModel> bfModel = m_bfModelFactory.Create<MmWaveBeamformingModel> ();
       bfModel->SetAttributeFailSafe ("Device", PointerValue (device));
       bfModel->SetAttributeFailSafe ("Antenna", PointerValue (antenna));
       bfModel->SetAttributeFailSafe ("ChannelModel", PointerValue (channelModel));
-      bfModel->SetAttributeFailSafe ("SpectrumPropagationLossModel", PointerValue (splm));
+
+      if (pSplm)
+      {
+        bfModel->SetAttributeFailSafe ("PhasedArraySpectrumPropagationLossModel", PointerValue (pSplm));
+      }
+      else if (splm)
+      {
+        bfModel->SetAttributeFailSafe ("SpectrumPropagationLossModel", PointerValue (splm));
+      }
+
       bfModel->SetAttributeFailSafe ("MmWavePhyMacCommon", PointerValue (it->second->GetConfigurationParameters ()));
       if (m_bfModelFactory.GetTypeId () == MmWaveCodebookBeamforming::GetTypeId ())
         {
@@ -1562,7 +1580,7 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       rrc->SetLteUeRrcSapUser (rrcProtocol->GetLteUeRrcSapUser ());
     }
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       rrc->SetUseRlcSm (false);
     }
@@ -1631,7 +1649,7 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
 
   nas->SetForwardUpCallback (MakeCallback (&MmWaveUeNetDevice::Receive, device));
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       m_epcHelper->AddUe (device, device->GetImsi ());
     }
@@ -1704,7 +1722,14 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       dlPhy->SetMobility (mm);
 
       // hack to allow periodic computation of SINR at the eNB, without pilots
-      phy->AddSpectrumPropagationLossModel (m_channel.at (it->first)->GetSpectrumPropagationLossModel ());
+      if (m_spectrumPropagationLossModelType == "ns3::ThreeGppSpectrumPropagationLossModel")
+        {
+          phy->AddPhasedArraySpectrumPropagationLossModel (m_channel.at (it->first)->GetPhasedArraySpectrumPropagationLossModel ());
+        }
+      else
+        {
+          phy->AddSpectrumPropagationLossModel (m_channel.at (it->first)->GetSpectrumPropagationLossModel ());
+        }
 
       if (!m_pathlossModelType.empty ())
         {
@@ -1721,12 +1746,20 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
 
       // initialize the 3GPP channel model
-      Ptr<SpectrumPropagationLossModel> splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
-      Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
-      if (threeGppSplm)
+      [[maybe_unused]] Ptr<SpectrumPropagationLossModel> splm;
+      [[maybe_unused]] Ptr<PhasedArraySpectrumPropagationLossModel> pSplm;
+
+      Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm;
+
+      if (m_spectrumPropagationLossModelType == "ns3::ThreeGppSpectrumPropagationLossModel")
       {
-        NS_LOG_DEBUG ("Initialize the 3GPP channel model");
-        threeGppSplm->AddDevice (device, antenna);
+        pSplm = m_channel.at (it->first)->GetPhasedArraySpectrumPropagationLossModel ();
+        threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (pSplm);
+      }
+      else
+      {
+        splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
+        threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
       }
       
       auto channelModel = threeGppSplm->GetChannelModel ();
@@ -1735,7 +1768,16 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       bfModel->SetAttributeFailSafe ("Device", PointerValue (device));
       bfModel->SetAttributeFailSafe ("Antenna", PointerValue (antenna));
       bfModel->SetAttributeFailSafe ("ChannelModel", PointerValue (channelModel));
-      bfModel->SetAttributeFailSafe ("SpectrumPropagationLossModel", PointerValue (splm));
+
+      if (pSplm)
+      {
+        bfModel->SetAttributeFailSafe ("PhasedArraySpectrumPropagationLossModel", PointerValue (pSplm));
+      }
+      else if (splm)
+      {
+        bfModel->SetAttributeFailSafe ("SpectrumPropagationLossModel", PointerValue (splm));
+      }
+      
       bfModel->SetAttributeFailSafe ("MmWavePhyMacCommon", PointerValue (it->second->GetConfigurationParameters ()));
       if (m_bfModelFactory.GetTypeId () == MmWaveCodebookBeamforming::GetTypeId ())
         {
@@ -1836,7 +1878,7 @@ MmWaveHelper::InstallSingleEnbDevice (Ptr<Node> n)
       rrcProtocol->SetCellId (cellId);
     }
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       EnumValue epsBearerToRlcMapping;
       rrc->GetAttribute ("EpsBearerToRlcMapping", epsBearerToRlcMapping);
@@ -1970,12 +2012,12 @@ it->second->GetFfrAlgorithm ()->SetLteFfrRrcSapUser (rrc->GetLteFfrRrcSapUser (i
     }
 
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       NS_LOG_INFO ("adding this eNB to the EPC");
       m_epcHelper->AddEnb (n, device, device->GetCellId ());
       Ptr<EpcEnbApplication> enbApp = n->GetApplication (0)->GetObject<EpcEnbApplication> ();
-      NS_ASSERT_MSG (enbApp != 0, "cannot retrieve EpcEnbApplication");
+      NS_ASSERT_MSG (enbApp, "cannot retrieve EpcEnbApplication");
 
       // S1 SAPs
       rrc->SetS1SapProvider (enbApp->GetS1SapProvider ());
@@ -2097,7 +2139,7 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
       rrcProtocol->SetCellId (cellId);
     }
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       EnumValue epsBearerToRlcMapping;
       rrc->GetAttribute ("EpsBearerToRlcMapping", epsBearerToRlcMapping);
@@ -2230,12 +2272,12 @@ MmWaveHelper::InstallSingleLteEnbDevice (Ptr<Node> n)
       m_uplinkChannel->AddRx (it->second->GetPhy ()->GetUlSpectrumPhy ());
     }
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       NS_LOG_INFO ("adding this eNB to the EPC");
       m_epcHelper->AddEnb (n, dev, dev->GetCellId ());
       Ptr<EpcEnbApplication> enbApp = n->GetApplication (0)->GetObject<EpcEnbApplication> ();
-      NS_ASSERT_MSG (enbApp != 0, "cannot retrieve EpcEnbApplication");
+      NS_ASSERT_MSG (enbApp, "cannot retrieve EpcEnbApplication");
 
       // S1 SAPs
       rrc->SetS1SapProvider (enbApp->GetS1SapProvider ());
@@ -2356,8 +2398,8 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
           lteClosestEnbDevice = *i;
         }
     }
-  NS_ASSERT (lteClosestEnbDevice != 0);
-  NS_ASSERT (lteClosestEnbDevice->GetObject<LteEnbNetDevice> () != 0);       // stop if it is not an LTE eNB
+  NS_ASSERT (lteClosestEnbDevice);
+  NS_ASSERT (lteClosestEnbDevice->GetObject<LteEnbNetDevice> ());       // stop if it is not an LTE eNB
 
   // Necessary operation to connect MmWave UE to eNB at lower layers
   for (NetDeviceContainer::Iterator i = mmWaveEnbDevices.Begin (); i != mmWaveEnbDevices.End (); ++i)
@@ -2388,7 +2430,7 @@ MmWaveHelper::AttachMcToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
   Ptr<EpcUeNas> lteUeNas = mcDevice->GetNas ();
   lteUeNas->Connect (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ());       // the MmWaveCell will be automatically selected
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       // activate default EPS bearer
       m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
@@ -2404,7 +2446,7 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
   Ptr<McUeNetDevice> mcDevice = ueDevice->GetObject<McUeNetDevice> ();
   Ptr<LteUeRrc> ueRrc = mcDevice->GetLteRrc ();
 
-  NS_ASSERT_MSG (ueRrc != 0, "McUeDevice with undefined rrc");
+  NS_ASSERT_MSG (ueRrc, "McUeDevice with undefined rrc");
 
   NS_ASSERT_MSG (mmWaveEnbDevices.GetN () > 0 && lteEnbDevices.GetN () > 0,
                  "empty lte or mmwave enb device container");
@@ -2429,7 +2471,7 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
           lteClosestEnbDevice = *i;
         }
     }
-  NS_ASSERT (lteClosestEnbDevice != 0);
+  NS_ASSERT (lteClosestEnbDevice);
 
   // Necessary operation to connect MmWave UE to eNB at lower layers
   minDistance = std::numeric_limits<double>::infinity ();
@@ -2463,7 +2505,7 @@ MmWaveHelper::AttachIrToClosestEnb (Ptr<NetDevice> ueDevice, NetDeviceContainer 
   Ptr<EpcUeNas> lteUeNas = mcDevice->GetNas ();
   lteUeNas->Connect (enbLteDevice->GetCellId (), enbLteDevice->GetDlEarfcn ());       // force connection to the LTE eNB
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       // activate default EPS bearer
       m_epcHelper->ActivateEpsBearer (ueDevice, lteUeNas, mcDevice->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
@@ -2483,7 +2525,7 @@ MmWaveHelper::AttachToEnbWithIndex (Ptr<NetDevice> ueDevice, NetDeviceContainer 
 
   // select the eNB with the given index
   Ptr<NetDevice> targetEnbDevice = enbDevices.Get(index);
-  NS_ASSERT (targetEnbDevice != 0);
+  NS_ASSERT (targetEnbDevice);
 
   // connect the UE to the target BS
   Ptr<MmWaveUeNetDevice> mmWaveUe = ueDevice->GetObject<MmWaveUeNetDevice> ();
@@ -2532,7 +2574,7 @@ MmWaveHelper::AttachToEnbWithIndex (Ptr<NetDevice> ueDevice, NetDeviceContainer 
   ueNas->Connect (targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetCellId (),
                   targetEnbDevice->GetObject<MmWaveEnbNetDevice> ()->GetEarfcn ());
 
-  if (m_epcHelper != 0)
+  if (m_epcHelper)
     {
       // activate default EPS bearer
       m_epcHelper->ActivateEpsBearer (ueDevice, ueDevice->GetObject<MmWaveUeNetDevice> ()->GetImsi (), EpcTft::Default (), EpsBearer (EpsBearer::NGBR_VIDEO_TCP_DEFAULT));
@@ -2551,7 +2593,7 @@ MmWaveHelper::AddX2Interface (NodeContainer enbNodes)
 {
   NS_LOG_FUNCTION (this);
 
-  NS_ASSERT_MSG (m_epcHelper != 0, "X2 interfaces cannot be set up when the EPC is not used");
+  NS_ASSERT_MSG (m_epcHelper, "X2 interfaces cannot be set up when the EPC is not used");
 
   for (NodeContainer::Iterator i = enbNodes.Begin (); i != enbNodes.End (); ++i)
     {
@@ -2583,7 +2625,7 @@ MmWaveHelper::AddX2Interface (NodeContainer lteEnbNodes, NodeContainer mmWaveEnb
 {
   NS_LOG_FUNCTION (this);
 
-  NS_ASSERT_MSG (m_epcHelper != 0, "X2 interfaces cannot be set up when the EPC is not used");
+  NS_ASSERT_MSG (m_epcHelper, "X2 interfaces cannot be set up when the EPC is not used");
 
   for (NodeContainer::Iterator i = mmWaveEnbNodes.Begin (); i != mmWaveEnbNodes.End (); ++i)
     {
@@ -2612,7 +2654,7 @@ MmWaveHelper::AddX2Interface (NodeContainer lteEnbNodes, NodeContainer mmWaveEnb
 
       // get closestLteNode cellId and store it in the MmWaveEnb RRC
       Ptr<LteEnbNetDevice> closestEnbDevice = closestLteNode->GetDevice (0)->GetObject <LteEnbNetDevice> ();
-      if (closestEnbDevice != 0)
+      if (closestEnbDevice)
         {
           uint16_t lteCellId = closestEnbDevice->GetRrc ()->GetCellId ();
           NS_LOG_LOGIC ("ClosestLteCellId " << lteCellId);
@@ -2632,7 +2674,7 @@ MmWaveHelper::AddX2Interface (NodeContainer lteEnbNodes, NodeContainer mmWaveEnb
         }
     }
   // print stats
-  if (m_cnStats == 0)
+  if (!m_cnStats)
     {
       m_cnStats = CreateObject<CoreNetworkStatsCalculator> ();
     }
@@ -2805,7 +2847,7 @@ MmWaveHelper::EnableTransportBlockTrace ()
 void
 MmWaveHelper::EnableRlcTraces (void)
 {
-  NS_ASSERT_MSG (m_rlcStats == 0, "please make sure that MmWaveHelper::EnableRlcTraces is called at most once");
+  NS_ASSERT_MSG (!m_rlcStats, "please make sure that MmWaveHelper::EnableRlcTraces is called at most once");
   m_rlcStats = CreateObject<MmWaveBearerStatsCalculator> ("RLC");
   m_radioBearerStatsConnector->EnableRlcStats (m_rlcStats);
 }
@@ -2819,7 +2861,7 @@ MmWaveHelper::GetRlcStats (void)
 void
 MmWaveHelper::EnablePdcpTraces (void)
 {
-  NS_ASSERT_MSG (m_pdcpStats == 0, "please make sure that MmWaveHelper::EnablePdcpTraces is called at most once");
+  NS_ASSERT_MSG (!m_pdcpStats, "please make sure that MmWaveHelper::EnablePdcpTraces is called at most once");
   m_pdcpStats = CreateObject<MmWaveBearerStatsCalculator> ("PDCP");
   m_radioBearerStatsConnector->EnablePdcpStats (m_pdcpStats);
 }
@@ -2833,7 +2875,7 @@ MmWaveHelper::GetPdcpStats (void)
 void
 MmWaveHelper::EnableMcTraces (void)
 {
-  NS_ASSERT_MSG (m_mcStats == 0, "please make sure that MmWaveHelper::EnableMcTraces is called at most once");
+  NS_ASSERT_MSG (!m_mcStats, "please make sure that MmWaveHelper::EnableMcTraces is called at most once");
   m_mcStats = CreateObject<McStatsCalculator> ();
   m_radioBearerStatsConnector->EnableMcStats (m_mcStats);
 }

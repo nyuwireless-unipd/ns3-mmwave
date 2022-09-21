@@ -45,8 +45,7 @@
 using namespace ns3;
 
 /**
- * \ingroup sixlowpan-test
- * \ingroup tests
+ * \ingroup sixlowpan-tests
  *
  * \brief 6LoWPAN Fragmentation Test
  */
@@ -146,7 +145,7 @@ void
 SixlowpanFragmentationTest::StartServer (Ptr<Node> serverNode)
 {
 
-  if (m_socketServer == 0)
+  if (!m_socketServer)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
       m_socketServer = Socket::CreateSocket (serverNode, tid);
@@ -179,7 +178,7 @@ void
 SixlowpanFragmentationTest::StartClient (Ptr<Node> clientNode)
 {
 
-  if (m_socketClient == 0)
+  if (!m_socketClient)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
       m_socketClient = Socket::CreateSocket (clientNode, tid);
@@ -462,8 +461,7 @@ SixlowpanFragmentationTest::DoRun (void)
 
 
 /**
- * \ingroup sixlowpan-test
- * \ingroup tests
+ * \ingroup sixlowpan-tests
  *
  * \brief 6LoWPAN Fragmentation TestSuite
  */

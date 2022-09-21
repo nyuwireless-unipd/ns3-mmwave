@@ -33,6 +33,7 @@ class MeshPointDevice;
 class Packet;
 class Mac48Address;
 class UniformRandomVariable;
+class RandomVariableStream;
 namespace dot11s {
 class HwmpProtocolMac;
 class HwmpRtable;
@@ -67,8 +68,14 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId ();
+
   HwmpProtocol ();
   ~HwmpProtocol ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  HwmpProtocol (const HwmpProtocol &) = delete;
+  HwmpProtocol &operator= (const HwmpProtocol &) = delete;
+
   void DoDispose ();
 
   /**
@@ -169,18 +176,6 @@ private:
   friend class HwmpProtocolMac;
 
   virtual void DoInitialize ();
-
-  /**
-   * assignment operator
-   * \param hwmp the HWMP protocol to assign
-   * \returns the assigned value
-   */
-  HwmpProtocol& operator= (const HwmpProtocol & hwmp);
-  /**
-   * Copy constructor - defined but not implemented (on purpose)
-   * \param hwmp the HWMP protocol
-   */
-  HwmpProtocol (const HwmpProtocol & hwmp);
 
   /**
    * \brief Structure of path error: IePerr and list of receivers:
@@ -453,7 +448,7 @@ private:
     /// constructor
     Statistics ();
   };
-  Statistics m_stats;  ///< statistics 
+  Statistics m_stats;  ///< statistics
 
   HwmpProtocolMacMap m_interfaces; ///< interfaces
   Mac48Address m_address; ///< address
@@ -483,7 +478,7 @@ private:
   Time m_randomStart;
   /// Packet Queue
   std::vector<QueuedPacket> m_rqueue;
-  
+
   /// \name HWMP-protocol parameters
   /// These are all Attributes
   ///@{
@@ -504,7 +499,7 @@ private:
   bool m_doFlag;                                  //!< Destination only HWMP flag
   bool m_rfFlag;                                  //!< Reply and forward flag
   ///@}
-  
+
   /// Random variable for random start time
   Ptr<UniformRandomVariable> m_coefficient; ///< coefficient
   Callback <std::vector<Mac48Address>, uint32_t> m_neighboursCallback; ///< neighbors callback

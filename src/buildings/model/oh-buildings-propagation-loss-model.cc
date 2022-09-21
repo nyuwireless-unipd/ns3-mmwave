@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Marco Miozzo  <marco.miozzo@cttc.es>
- * 
+ *
  */
 
 #include "ns3/propagation-loss-model.h"
@@ -52,12 +52,12 @@ TypeId
 OhBuildingsPropagationLossModel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::OhBuildingsPropagationLossModel")
-  
+
   .SetParent<BuildingsPropagationLossModel> ()
   .SetGroupName ("Buildings")
-  
+
   .AddConstructor<OhBuildingsPropagationLossModel> ();
-  
+
   return tid;
 }
 
@@ -70,7 +70,7 @@ OhBuildingsPropagationLossModel::GetLoss (Ptr<MobilityModel> a, Ptr<MobilityMode
   // get the MobilityBuildingInfo pointers
   Ptr<MobilityBuildingInfo> a1 = a->GetObject<MobilityBuildingInfo> ();
   Ptr<MobilityBuildingInfo> b1 = b->GetObject<MobilityBuildingInfo> ();
-  NS_ASSERT_MSG ((a1 != 0) && (b1 != 0), "OhBuildingsPropagationLossModel only works with MobilityBuildingInfo");
+  NS_ASSERT_MSG (a1 && b1, "OhBuildingsPropagationLossModel only works with MobilityBuildingInfo");
 
   double loss = 0.0;
 

@@ -35,7 +35,7 @@ NS_LOG_COMPONENT_DEFINE ("MobilityHelper");
 
 MobilityHelper::MobilityHelper ()
 {
-  m_position = CreateObjectWithAttributes<RandomRectanglePositionAllocator> 
+  m_position = CreateObjectWithAttributes<RandomRectanglePositionAllocator>
       ("X", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"),
       "Y", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
   m_mobility.SetTypeId ("ns3::ConstantPositionMobilityModel");
@@ -50,77 +50,27 @@ MobilityHelper::SetPositionAllocator (Ptr<PositionAllocator> allocator)
 }
 
 void
-MobilityHelper::SetPositionAllocator (std::string type,
-                                      std::string n1, const AttributeValue &v1,
-                                      std::string n2, const AttributeValue &v2,
-                                      std::string n3, const AttributeValue &v3,
-                                      std::string n4, const AttributeValue &v4,
-                                      std::string n5, const AttributeValue &v5,
-                                      std::string n6, const AttributeValue &v6,
-                                      std::string n7, const AttributeValue &v7,
-                                      std::string n8, const AttributeValue &v8,
-                                      std::string n9, const AttributeValue &v9)
-{
-  ObjectFactory pos;
-  pos.SetTypeId (type);
-  pos.Set (n1, v1);
-  pos.Set (n2, v2);
-  pos.Set (n3, v3);
-  pos.Set (n4, v4);
-  pos.Set (n5, v5);
-  pos.Set (n6, v6);
-  pos.Set (n7, v7);
-  pos.Set (n8, v8);
-  pos.Set (n9, v9);
-  m_position = pos.Create ()->GetObject<PositionAllocator> ();
-}
-
-void 
-MobilityHelper::SetMobilityModel (std::string type,
-                                  std::string n1, const AttributeValue &v1,
-                                  std::string n2, const AttributeValue &v2,
-                                  std::string n3, const AttributeValue &v3,
-                                  std::string n4, const AttributeValue &v4,
-                                  std::string n5, const AttributeValue &v5,
-                                  std::string n6, const AttributeValue &v6,
-                                  std::string n7, const AttributeValue &v7,
-                                  std::string n8, const AttributeValue &v8,
-                                  std::string n9, const AttributeValue &v9)
-{
-  m_mobility.SetTypeId (type);
-  m_mobility.Set (n1, v1);
-  m_mobility.Set (n2, v2);
-  m_mobility.Set (n3, v3);
-  m_mobility.Set (n4, v4);
-  m_mobility.Set (n5, v5);
-  m_mobility.Set (n6, v6);
-  m_mobility.Set (n7, v7);
-  m_mobility.Set (n8, v8);
-  m_mobility.Set (n9, v9);
-}
-
-void 
 MobilityHelper::PushReferenceMobilityModel (Ptr<Object> reference)
 {
   Ptr<MobilityModel> mobility = reference->GetObject<MobilityModel> ();
   m_mobilityStack.push_back (mobility);
 }
 
-void 
+void
 MobilityHelper::PushReferenceMobilityModel (std::string referenceName)
 {
   Ptr<MobilityModel> mobility = Names::Find<MobilityModel> (referenceName);
   m_mobilityStack.push_back (mobility);
 }
 
-void 
+void
 MobilityHelper::PopReferenceMobilityModel (void)
 {
   m_mobilityStack.pop_back ();
 }
 
 
-std::string 
+std::string
 MobilityHelper::GetMobilityModelType (void) const
 {
   return m_mobility.GetTypeId ().GetName ();
@@ -131,12 +81,12 @@ MobilityHelper::Install (Ptr<Node> node) const
 {
   Ptr<Object> object = node;
   Ptr<MobilityModel> model = object->GetObject<MobilityModel> ();
-  if (model == 0)
+  if (!model)
     {
       model = m_mobility.Create ()->GetObject<MobilityModel> ();
-      if (model == 0)
+      if (!model)
         {
-          NS_FATAL_ERROR ("The requested mobility model is not a mobility model: \""<< 
+          NS_FATAL_ERROR ("The requested mobility model is not a mobility model: \""<<
                           m_mobility.GetTypeId ().GetName ()<<"\"");
         }
       if (m_mobilityStack.empty ())
@@ -148,7 +98,7 @@ MobilityHelper::Install (Ptr<Node> node) const
         {
           // we need to setup a hierarchical mobility model
           Ptr<MobilityModel> parent = m_mobilityStack.back ();
-          Ptr<MobilityModel> hierarchical = 
+          Ptr<MobilityModel> hierarchical =
             CreateObjectWithAttributes<HierarchicalMobilityModel> ("Child", PointerValue (model),
                                                                    "Parent", PointerValue (parent));
           object->AggregateObject (hierarchical);
@@ -165,7 +115,7 @@ MobilityHelper::Install (std::string nodeName) const
   Ptr<Node> node = Names::Find<Node> (nodeName);
   Install (node);
 }
-void 
+void
 MobilityHelper::Install (NodeContainer c) const
 {
   for (NodeContainer::Iterator i = c.Begin (); i != c.End (); ++i)
@@ -174,7 +124,7 @@ MobilityHelper::Install (NodeContainer c) const
     }
 }
 
-void 
+void
 MobilityHelper::InstallAll (void)
 {
   Install (NodeContainer::GetGlobal ());
@@ -230,15 +180,15 @@ MobilityHelper::CourseChanged (Ptr<OutputStreamWrapper> stream, Ptr<const Mobili
   os->precision (saved_precision);
 }
 
-void 
+void
 MobilityHelper::EnableAscii (Ptr<OutputStreamWrapper> stream, uint32_t nodeid)
 {
   std::ostringstream oss;
   oss << "/NodeList/" << nodeid << "/$ns3::MobilityModel/CourseChange";
-  Config::ConnectWithoutContextFailSafe (oss.str (), 
+  Config::ConnectWithoutContextFailSafe (oss.str (),
                                          MakeBoundCallback (&MobilityHelper::CourseChanged, stream));
 }
-void 
+void
 MobilityHelper::EnableAscii (Ptr<OutputStreamWrapper> stream, NodeContainer n)
 {
   for (NodeContainer::Iterator i = n.Begin (); i != n.End (); ++i)
@@ -246,7 +196,7 @@ MobilityHelper::EnableAscii (Ptr<OutputStreamWrapper> stream, NodeContainer n)
       EnableAscii (stream, (*i)->GetId ());
     }
 }
-void 
+void
 MobilityHelper::EnableAsciiAll (Ptr<OutputStreamWrapper> stream)
 {
   EnableAscii (stream, NodeContainer::GetGlobal ());
@@ -276,10 +226,10 @@ MobilityHelper::GetDistanceSquaredBetween (Ptr<Node> n1, Ptr<Node> n2)
   double distSq = 0.0;
 
   Ptr<MobilityModel> rxPosition = n1->GetObject<MobilityModel> ();
-  NS_ASSERT (rxPosition != 0);
+  NS_ASSERT (rxPosition);
 
   Ptr<MobilityModel> txPosition = n2->GetObject<MobilityModel> ();
-  NS_ASSERT (txPosition != 0);
+  NS_ASSERT (txPosition);
 
   double dist = rxPosition -> GetDistanceFrom (txPosition);
   distSq = dist * dist;

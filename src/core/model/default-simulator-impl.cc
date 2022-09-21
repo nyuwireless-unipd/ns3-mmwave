@@ -20,11 +20,8 @@
 
 #include "simulator.h"
 #include "default-simulator-impl.h"
-#include "scheduler.h"
-#include "event-impl.h"
 
-#include "ptr.h"
-#include "pointer.h"
+#include "scheduler.h"
 #include "assert.h"
 #include "log.h"
 
@@ -61,19 +58,14 @@ DefaultSimulatorImpl::DefaultSimulatorImpl ()
 {
   NS_LOG_FUNCTION (this);
   m_stop = false;
-  // uids are allocated from 4.
-  // uid 0 is "invalid" events
-  // uid 1 is "now" events
-  // uid 2 is "destroy" events
-  m_uid = 4;
-  // before ::Run is entered, the m_currentUid will be zero
-  m_currentUid = 0;
+  m_uid = EventId::UID::VALID;
+  m_currentUid = EventId::UID::INVALID;
   m_currentTs = 0;
   m_currentContext = Simulator::NO_CONTEXT;
   m_unscheduledEvents = 0;
   m_eventCount = 0;
   m_eventsWithContextEmpty = true;
-  m_main = SystemThread::Self ();
+  m_mainThreadId = std::this_thread::get_id ();
 }
 
 DefaultSimulatorImpl::~DefaultSimulatorImpl ()
@@ -117,7 +109,7 @@ DefaultSimulatorImpl::SetScheduler (ObjectFactory schedulerFactory)
   NS_LOG_FUNCTION (this << schedulerFactory);
   Ptr<Scheduler> scheduler = schedulerFactory.Create<Scheduler> ();
 
-  if (m_events != 0)
+  if (m_events)
     {
       while (!m_events->IsEmpty ())
         {
@@ -139,6 +131,9 @@ void
 DefaultSimulatorImpl::ProcessOneEvent (void)
 {
   Scheduler::Event next = m_events->RemoveNext ();
+
+  PreEventHook (EventId (next.impl, next.key.m_ts,
+                         next.key.m_context, next.key.m_uid));
 
   NS_ASSERT (next.key.m_ts >= m_currentTs);
   m_unscheduledEvents--;
@@ -171,7 +166,7 @@ DefaultSimulatorImpl::ProcessEventsWithContext (void)
   // swap queues
   EventsWithContext eventsWithContext;
   {
-    CriticalSection cs (m_eventsWithContextMutex);
+    std::unique_lock lock {m_eventsWithContextMutex};
     m_eventsWithContext.swap (eventsWithContext);
     m_eventsWithContextEmpty = true;
   }
@@ -195,7 +190,7 @@ DefaultSimulatorImpl::Run (void)
 {
   NS_LOG_FUNCTION (this);
   // Set the current threadId as the main threadId
-  m_main = SystemThread::Self ();
+  m_mainThreadId = std::this_thread::get_id ();
   ProcessEventsWithContext ();
   m_stop = false;
 
@@ -230,7 +225,8 @@ EventId
 DefaultSimulatorImpl::Schedule (Time const &delay, EventImpl *event)
 {
   NS_LOG_FUNCTION (this << delay.GetTimeStep () << event);
-  NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::Schedule Thread-unsafe invocation!");
+  NS_ASSERT_MSG (m_mainThreadId == std::this_thread::get_id (),
+                 "Simulator::Schedule Thread-unsafe invocation!");
 
   NS_ASSERT_MSG (delay.IsPositive (), "DefaultSimulatorImpl::Schedule(): Negative delay");
   Time tAbsolute = delay + TimeStep (m_currentTs);
@@ -251,7 +247,7 @@ DefaultSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &delay, 
 {
   NS_LOG_FUNCTION (this << context << delay.GetTimeStep () << event);
 
-  if (SystemThread::Equals (m_main))
+  if (m_mainThreadId == std::this_thread::get_id ())
     {
       Time tAbsolute = delay + TimeStep (m_currentTs);
       Scheduler::Event ev;
@@ -271,7 +267,7 @@ DefaultSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &delay, 
       ev.timestamp = delay.GetTimeStep ();
       ev.event = event;
       {
-        CriticalSection cs (m_eventsWithContextMutex);
+        std::unique_lock lock {m_eventsWithContextMutex};
         m_eventsWithContext.push_back (ev);
         m_eventsWithContextEmpty = false;
       }
@@ -281,23 +277,17 @@ DefaultSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &delay, 
 EventId
 DefaultSimulatorImpl::ScheduleNow (EventImpl *event)
 {
-  NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleNow Thread-unsafe invocation!");
+  NS_ASSERT_MSG (m_mainThreadId == std::this_thread::get_id (),
+                 "Simulator::ScheduleNow Thread-unsafe invocation!");
 
-  Scheduler::Event ev;
-  ev.impl = event;
-  ev.key.m_ts = m_currentTs;
-  ev.key.m_context = GetContext ();
-  ev.key.m_uid = m_uid;
-  m_uid++;
-  m_unscheduledEvents++;
-  m_events->Insert (ev);
-  return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  return Schedule (Time (0), event);
 }
 
 EventId
 DefaultSimulatorImpl::ScheduleDestroy (EventImpl *event)
 {
-  NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleDestroy Thread-unsafe invocation!");
+  NS_ASSERT_MSG (m_mainThreadId == std::this_thread::get_id (),
+                 "Simulator::ScheduleDestroy Thread-unsafe invocation!");
 
   EventId id (Ptr<EventImpl> (event, false), m_currentTs, 0xffffffff, 2);
   m_destroyEvents.push_back (id);
@@ -328,7 +318,7 @@ DefaultSimulatorImpl::GetDelayLeft (const EventId &id) const
 void
 DefaultSimulatorImpl::Remove (const EventId &id)
 {
-  if (id.GetUid () == 2)
+  if (id.GetUid () == EventId::UID::DESTROY)
     {
       // destroy events.
       for (DestroyEvents::iterator i = m_destroyEvents.begin (); i != m_destroyEvents.end (); i++)
@@ -370,7 +360,7 @@ DefaultSimulatorImpl::Cancel (const EventId &id)
 bool
 DefaultSimulatorImpl::IsExpired (const EventId &id) const
 {
-  if (id.GetUid () == 2)
+  if (id.GetUid () == EventId::UID::DESTROY)
     {
       if (id.PeekEventImpl () == 0
           || id.PeekEventImpl ()->IsCancelled ())

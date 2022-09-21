@@ -23,7 +23,8 @@
 #ifndef AP_WIFI_MAC_H
 #define AP_WIFI_MAC_H
 
-#include "regular-wifi-mac.h"
+#include "wifi-mac.h"
+#include "wifi-mac-header.h"
 #include <unordered_map>
 
 namespace ns3 {
@@ -34,10 +35,13 @@ class DsssParameterSet;
 class ErpInformation;
 class EdcaParameterSet;
 class MuEdcaParameterSet;
+class ReducedNeighborReport;
+class MultiLinkElement;
 class HtOperation;
 class VhtOperation;
 class HeOperation;
 class CfParameterSet;
+class UniformRandomVariable;
 
 /**
  * \brief Wi-Fi AP state machine
@@ -46,7 +50,7 @@ class CfParameterSet;
  * Handle association, dis-association and authentication,
  * of STAs within an infrastructure BSS.
  */
-class ApWifiMac : public RegularWifiMac
+class ApWifiMac : public WifiMac
 {
 public:
   /**
@@ -59,11 +63,12 @@ public:
   virtual ~ApWifiMac ();
 
   void SetLinkUpCallback (Callback<void> linkUp) override;
+  bool CanForwardPacketsTo (Mac48Address to) const override;
   void Enqueue (Ptr<Packet> packet, Mac48Address to) override;
   void Enqueue (Ptr<Packet> packet, Mac48Address to, Mac48Address from) override;
   bool SupportsSendFrom (void) const override;
-  void SetAddress (Mac48Address address) override;
   Ptr<WifiMacQueue> GetTxopQueue (AcIndex ac) const override;
+  void ConfigureStandard (WifiStandard standard) override;
 
   /**
    * \param interval the interval between two beacon transmissions.
@@ -73,13 +78,6 @@ public:
    * \return the interval between two beacon transmissions.
    */
   Time GetBeaconInterval (void) const;
-
-  /**
-   * Determine the VHT operational channel width (in MHz).
-   *
-   * \returns the VHT operational channel width (in MHz).
-   */
-  uint16_t GetVhtOperationalChannelWidth (void) const;
 
   /**
    * Assign a fixed random variable stream number to the random variables
@@ -143,8 +141,32 @@ public:
    */
   uint8_t GetMaxBufferStatus (Mac48Address address) const;
 
+protected:
+  /**
+   * Structure holding information specific to a single link. Here, the meaning of
+   * "link" is that of the 11be amendment which introduced multi-link devices. For
+   * previous amendments, only one link can be created.
+   */
+  struct ApLinkEntity : public WifiMac::LinkEntity
+  {
+    /// Destructor (a virtual method is needed to make this struct polymorphic)
+    virtual ~ApLinkEntity ();
+
+    EventId beaconEvent;                     //!< Event to generate one beacon
+  };
+
+  /**
+   * Get a reference to the link associated with the given ID.
+   *
+   * \param linkId the given link ID
+   * \return a reference to the link associated with the given ID
+   */
+  ApLinkEntity& GetLink (uint8_t linkId) const;
+
 private:
-  void Receive (Ptr<WifiMacQueueItem> mpdu)  override;
+  std::unique_ptr<LinkEntity> CreateLinkEntity (void) const override;
+
+  void Receive (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId)  override;
   /**
    * The packet we sent was successfully received by the receiver
    * (i.e. we received an Ack from the receiver).  If the packet
@@ -162,9 +184,8 @@ private:
    *
    * \param timeoutReason the reason why the TX timer was started (\see WifiTxTimer::Reason)
    * \param mpdu the MPDU that we failed to sent
-   * \param txVector the TX vector used to send the MPDU
    */
-  void TxFailed (uint8_t timeoutReason, Ptr<const WifiMacQueueItem> mpdu, const WifiTxVector& txVector);
+  void TxFailed (WifiMacDropReason timeoutReason, Ptr<const WifiMacQueueItem> mpdu);
 
   /**
    * This method is called to de-aggregate an A-MSDU and forward the
@@ -194,12 +215,13 @@ private:
    */
   void ForwardDown (Ptr<Packet> packet, Mac48Address from, Mac48Address to, uint8_t tid);
   /**
-   * Forward a probe response packet to the DCF. The standard is not clear on the correct
-   * queue for management frames if QoS is supported. We always use the DCF.
+   * Send a Probe Response in response to a Probe Request received from the STA with the
+   * given address on the given link.
    *
    * \param to the address of the STA we are sending a probe response to
+   * \param linkId the ID of the given link
    */
-  void SendProbeResp (Mac48Address to);
+  void SendProbeResp (Mac48Address to, uint8_t linkId);
   /**
    * Forward an association or a reassociation response packet to the DCF.
    * The standard is not clear on the correct queue for management frames if QoS is supported.
@@ -211,9 +233,12 @@ private:
    */
   void SendAssocResp (Mac48Address to, bool success, bool isReassoc);
   /**
-   * Forward a beacon packet to the beacon special DCF.
+   * Forward a beacon packet to the beacon special DCF for transmission
+   * on the given link.
+   *
+   * \param linkId the ID of the given link
    */
-  void SendOneBeacon (void);
+  void SendOneBeacon (uint8_t linkId);
 
   /**
    * Return the Capability information of the current AP.
@@ -222,23 +247,42 @@ private:
    */
   CapabilityInformation GetCapabilities (void) const;
   /**
-   * Return the ERP information of the current AP.
+   * Return the ERP information of the current AP for the given link.
    *
-   * \return the ERP information that we support
+   * \param linkId the ID of the given link
+   * \return the ERP information that we support for the given link
    */
-  ErpInformation GetErpInformation (void) const;
+  ErpInformation GetErpInformation (uint8_t linkId) const;
   /**
-   * Return the EDCA Parameter Set of the current AP.
+   * Return the EDCA Parameter Set of the current AP for the given link.
    *
-   * \return the EDCA Parameter Set that we support
+   * \param linkId the ID of the given link
+   * \return the EDCA Parameter Set that we support for the given link
    */
-  EdcaParameterSet GetEdcaParameterSet (void) const;
+  EdcaParameterSet GetEdcaParameterSet (uint8_t linkId) const;
   /**
    * Return the MU EDCA Parameter Set of the current AP.
    *
    * \return the MU EDCA Parameter Set that we support
    */
   MuEdcaParameterSet GetMuEdcaParameterSet (void) const;
+  /**
+   * Return the Reduced Neighbor Report (RNR) element that the current AP sends
+   * on the given link
+   *
+   * \param linkId the ID of the link to send the RNR element onto
+   * \return the Reduced Neighbor Report element
+   */
+  Ptr<ReducedNeighborReport> GetReducedNeighborReport (uint8_t linkId) const;
+  /**
+   * Return the Multi-Link Element that the current AP includes in the management
+   * frames of the given type it transmits on the given link.
+   *
+   * \param linkId the ID of the link to send the Multi-Link Element onto
+   * \param frameType the type of the frame containing the Multi-Link Element
+   * \return the Multi-Link Element
+   */
+  Ptr<MultiLinkElement> GetMultiLinkElement (uint8_t linkId, WifiMacType frameType) const;
   /**
    * Return the HT operation of the current AP.
    *
@@ -265,11 +309,12 @@ private:
    */
   SupportedRates GetSupportedRates (void) const;
   /**
-   * Return the DSSS Parameter Set that we support.
+   * Return the DSSS Parameter Set that we support on the given link
    *
-   * \return the DSSS Parameter Set that we support
+   * \param linkId the ID of the given link
+   * \return the DSSS Parameter Set that we support on the given link
    */
-  DsssParameterSet GetDsssParameterSet (void) const;
+  DsssParameterSet GetDsssParameterSet (uint8_t linkId) const;
   /**
    * Enable or disable beacon generation of the AP.
    *
@@ -310,7 +355,6 @@ private:
   Ptr<Txop> m_beaconTxop;                    //!< Dedicated Txop for beacons
   bool m_enableBeaconGeneration;             //!< Flag whether beacons are being generated
   Time m_beaconInterval;                     //!< Beacon interval
-  EventId m_beaconEvent;                     //!< Event to generate one beacon
   Ptr<UniformRandomVariable> m_beaconJitter; //!< UniformRandomVariable used to randomize the time of the first beacon
   bool m_enableBeaconJitter;                 //!< Flag whether the first beacon should be generated at random time
   std::map<uint16_t, Mac48Address> m_staList; //!< Map of all stations currently associated to the AP with their association ID

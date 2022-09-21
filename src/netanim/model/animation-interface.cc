@@ -35,6 +35,11 @@
 #include <map>
 
 // ns3 includes
+#ifdef __WIN32__
+#include "ns3/bs-net-device.h"
+#include "ns3/csma-net-device.h"
+#include "ns3/wave-net-device.h"
+#endif
 #include "ns3/animation-interface.h"
 #include "ns3/channel.h"
 #include "ns3/config.h"
@@ -92,6 +97,29 @@ AnimationInterface::AnimationInterface (const std::string fn)
 {
   initialized = true;
   StartAnimation ();
+
+#ifdef __WIN32__
+  /**
+   * Shared libraries are handled differently on Windows and
+   * need to be explicitly loaded via LoadLibrary("library.dll").
+   *
+   * Otherwise, static import libraries .dll.a/.lib (MinGW/MSVC)
+   * can be linked to the executables to perform the loading of
+   * their respective .dll implicitly during static initialization.
+   *
+   * The .dll.a/.lib however, only gets linked if we instantiate at
+   * least one symbol exported by the .dll.
+   *
+   * To ensure TypeIds from the Csma, Uan, Wave, Wifi and Wimax
+   * modules are registered during runtime, we need to instantiate
+   * at least one symbol exported by each of these module libraries.
+   */
+  static BaseStationNetDevice b;
+  static CsmaNetDevice c;
+  static WifiNetDevice w;
+  static UanNetDevice u;
+  static WaveNetDevice wv;
+#endif
 }
 
 AnimationInterface::~AnimationInterface ()
@@ -298,7 +326,7 @@ AnimationInterface::SetConstantPosition (Ptr <Node> n, double x, double y, doubl
 {
   NS_ASSERT (n);
   Ptr<ConstantPositionMobilityModel> loc =  n->GetObject<ConstantPositionMobilityModel> ();
-  if (loc == 0)
+  if (!loc)
     {
       loc = CreateObject<ConstantPositionMobilityModel> ();
       n->AggregateObject (loc);
@@ -868,10 +896,9 @@ AnimationInterface::UanPhyGenRxTrace (std::string context, Ptr<const Packet> p)
 }
 
 void
-AnimationInterface::WifiPhyTxBeginTrace (std::string context, WifiConstPsduMap psduMap, WifiTxVector txVector, double txPowerW)
+AnimationInterface::WifiPhyTxBeginTrace (std::string context, WifiConstPsduMap psduMap, [[maybe_unused]] WifiTxVector txVector, double txPowerW)
 {
   NS_LOG_FUNCTION (this);
-  NS_UNUSED (txVector);
   CHECK_STARTED_INTIMEWINDOW_TRACKPACKETS;
   Ptr<NetDevice> ndev = GetNetDeviceFromContext (context);
   NS_ASSERT (ndev);
@@ -1659,44 +1686,44 @@ AnimationInterface::ConnectCallbacks ()
                            MakeCallback (&AnimationInterface::UanPhyGenRxTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/$ns3::BasicEnergySource/RemainingEnergy",
                            MakeCallback (&AnimationInterface::RemainingEnergyTrace, this));
-  
+
   ConnectLte ();
-  
+
   Config::ConnectFailSafe ("/NodeList/*/$ns3::Ipv4L3Protocol/Tx",
                            MakeCallback (&AnimationInterface::Ipv4TxTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/$ns3::Ipv4L3Protocol/Rx",
                            MakeCallback (&AnimationInterface::Ipv4RxTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/$ns3::Ipv4L3Protocol/Drop",
                            MakeCallback (&AnimationInterface::Ipv4DropTrace, this));
-  
+
   // Queue Enqueues
-  
+
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::AlohaNoackNetDevice/Queue/Enqueue",
                            MakeCallback (&AnimationInterface::EnqueueTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::CsmaNetDevice/TxQueue/Enqueue",
                            MakeCallback (&AnimationInterface::EnqueueTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/Enqueue",
                            MakeCallback (&AnimationInterface::EnqueueTrace, this));
-  
+
   // Queue Dequeues
-  
+
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::AlohaNoackNetDevice/Queue/Dequeue",
                            MakeCallback (&AnimationInterface::DequeueTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::CsmaNetDevice/TxQueue/Dequeue",
                            MakeCallback (&AnimationInterface::DequeueTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/Dequeue",
                            MakeCallback (&AnimationInterface::DequeueTrace, this));
-  
+
   // Queue Drops
-  
+
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::AlohaNoackNetDevice/Queue/Drop",
                            MakeCallback (&AnimationInterface::QueueDropTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::CsmaNetDevice/TxQueue/Drop",
                            MakeCallback (&AnimationInterface::QueueDropTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::PointToPointNetDevice/TxQueue/Drop",
                            MakeCallback (&AnimationInterface::QueueDropTrace, this));
-  
-  
+
+
   // Wifi Mac
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/MacTx",
                            MakeCallback (&AnimationInterface::WifiMacTxTrace, this));
@@ -1706,13 +1733,13 @@ AnimationInterface::ConnectCallbacks ()
                            MakeCallback (&AnimationInterface::WifiMacRxTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Mac/MacRxDrop",
                            MakeCallback (&AnimationInterface::WifiMacRxDropTrace, this));
-  
+
   // Wifi Phy
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop",
                            MakeCallback (&AnimationInterface::WifiPhyTxDropTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop",
                            MakeCallback (&AnimationInterface::WifiPhyRxDropTrace, this));
-  
+
   // LrWpan
   Config::ConnectFailSafe ("NodeList/*/DeviceList/*/$ns3::LrWpanNetDevice/Phy/PhyTxBegin",
                            MakeCallback (&AnimationInterface::LrWpanPhyTxBeginTrace, this));
@@ -1726,7 +1753,7 @@ AnimationInterface::ConnectCallbacks ()
                            MakeCallback (&AnimationInterface::LrWpanMacRxTrace, this));
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::LrWpanNetDevice/Mac/MacRxDrop",
                            MakeCallback (&AnimationInterface::LrWpanMacRxDropTrace, this));
-  
+
   // Wave
   Config::ConnectFailSafe ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/PhyEntities/*/$ns3::WifiPhy/PhyTxBegin",
                            MakeCallback (&AnimationInterface::WavePhyTxBeginTrace, this));

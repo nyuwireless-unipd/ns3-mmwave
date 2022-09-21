@@ -67,6 +67,10 @@ void Reset (void);
  */
 void Set (std::string path, const AttributeValue &value);
 /**
+ * \ingroup config
+ * \param [in] path A path to match attributes.
+ * \param [in] value The value to set in all matching attributes.
+ *
  * This function will attempt to find attributes which
  * match the input path and will then set their value to the input
  * value, and will return true if at least one such attribute is found.
@@ -117,15 +121,19 @@ bool SetGlobalFailSafe (std::string name, const AttributeValue &value);
  *
  * This function will attempt to find all trace sources which
  * match the input path and will then connect the input callback
- * to them.  If no matching trace sources are found, this method will 
+ * to them.  If no matching trace sources are found, this method will
  * throw a fatal error.  Use ConnectWithoutContextFailSafe if the absence
  * of matching trace sources should not be fatal.
  */
 void ConnectWithoutContext (std::string path, const CallbackBase &cb);
 /**
+ * \ingroup config
+ * \param [in] path A path to match trace sources.
+ * \param [in] cb The callback to connect to the matching trace sources.
+ *
  * This function will attempt to find all trace sources which
  * match the input path and will then connect the input callback
- * to them.  If no matching trace sources are found, this method will 
+ * to them.  If no matching trace sources are found, this method will
  * return false; otherwise true.
  * \returns \c true if any trace sources could be connected.
  */
@@ -147,12 +155,16 @@ void DisconnectWithoutContext (std::string path, const CallbackBase &cb);
  * match the input path and will then connect the input callback
  * to them in such a way that the callback will receive an extra
  * context string upon trace event notification.
- * If no matching trace sources are found, this method will 
+ * If no matching trace sources are found, this method will
  * throw a fatal error.  Use ConnectFailSafe if the absence
  * of matching trace sources should not be fatal.
  */
 void Connect (std::string path, const CallbackBase &cb);
 /**
+ * \ingroup config
+ * \param [in] path A path to match trace sources.
+ * \param [in] cb The callback to connect to the matching trace sources.
+ *
  * This function will attempt to find all trace sources which
  * match the input path and will then connect the input callback
  * to them in such a way that the callback will receive an extra
@@ -196,16 +208,25 @@ public:
 
   /**
    * \returns An iterator which points to the first item in the container
+   * @{
    */
   MatchContainer::Iterator Begin (void) const;
+  MatchContainer::Iterator begin (void) const { return Begin (); }
+  /** @} */
   /**
    * \returns An iterator which points to the last item in the container
+   * @{
    */
   MatchContainer::Iterator End (void) const;
+  MatchContainer::Iterator end (void) const { return End (); }
+  /** @} */
   /**
    * \returns The number of items in the container
+   * @{
    */
   std::size_t GetN (void) const;
+  std::size_t size (void) const { return GetN (); }
+  /** @} */
   /**
    * \param [in] i Index of item to lookup ([0,n[)
    * \returns The item requested.
@@ -231,11 +252,14 @@ public:
    * Set the specified attribute value to all the objects stored in this
    * container.  This method will raise a fatal error if no such attribute
    * exists; use SetFailSafe if the absence of the attribute is to be
-   * permitted.  
+   * permitted.
    * \sa ns3::Config::Set
    */
   void Set (std::string name, const AttributeValue &value);
   /**
+   * \param [in] name Name of attribute to set
+   * \param [in] value Value to set to the attribute
+   *
    * Set the specified attribute value to all the objects stored in this
    * container.  This method will return true if any attributes could be
    * set, and false otherwise.
@@ -254,6 +278,9 @@ public:
    */
   void Connect (std::string name, const CallbackBase &cb);
   /**
+   * \param [in] name The name of the trace source to connect to
+   * \param [in] cb The sink to connect to the trace source
+   *
    * Connect the specified sink to all the objects stored in this
    * container.  This method will return true if any trace sources could be
    * connected, and false otherwise.
@@ -272,6 +299,9 @@ public:
    */
   void ConnectWithoutContext (std::string name, const CallbackBase &cb);
   /**
+   * \param [in] name The name of the trace source to connect to
+   * \param [in] cb The sink to connect to the trace source
+   *
    * Connect the specified sink to all the objects stored in this
    * container.  This method will return true if any trace sources could be
    * connected, and false otherwise.

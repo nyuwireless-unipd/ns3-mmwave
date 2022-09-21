@@ -242,7 +242,6 @@ public:
    *             "ns3::" namespace qualifier.
    * \param [in] supportLevel The support/deprecation status for this attribute.
    * \param [in] supportMsg Upgrade hint if this attribute is no longer supported.
-   * \returns This TypeId instance.
    */
   void AddTraceSource (uint16_t uid,
                        std::string name,
@@ -811,7 +810,7 @@ namespace ns3 {
  *         The TypeId class
  *********************************************************************/
 
-TypeId::TypeId (const char *name)
+TypeId::TypeId (const std::string &name)
 {
   NS_LOG_FUNCTION (this << name);
   uint16_t uid = IidManager::Get ()->AllocateUid (name);

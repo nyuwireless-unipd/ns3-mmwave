@@ -21,7 +21,7 @@
 #include "ns3/log.h"
 #include "wifi-ack-manager.h"
 #include "wifi-psdu.h"
-#include "regular-wifi-mac.h"
+#include "wifi-mac.h"
 
 
 namespace ns3 {
@@ -40,6 +40,12 @@ WifiAckManager::GetTypeId (void)
   return tid;
 }
 
+WifiAckManager::WifiAckManager ()
+  : m_linkId (0)
+{
+  NS_LOG_FUNCTION (this);
+}
+
 WifiAckManager::~WifiAckManager ()
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -54,10 +60,17 @@ WifiAckManager::DoDispose (void)
 }
 
 void
-WifiAckManager::SetWifiMac (Ptr<RegularWifiMac> mac)
+WifiAckManager::SetWifiMac (Ptr<WifiMac> mac)
 {
   NS_LOG_FUNCTION (this << mac);
   m_mac = mac;
+}
+
+void
+WifiAckManager::SetLinkId (uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << +linkId);
+  m_linkId = linkId;
 }
 
 void
@@ -70,7 +83,7 @@ WifiAckManager::SetQosAckPolicy (Ptr<WifiMacQueueItem> item, const WifiAcknowled
     {
       return;
     }
-  NS_ASSERT (acknowledgment != nullptr);
+  NS_ASSERT (acknowledgment);
 
   hdr.SetQosAckPolicy (acknowledgment->GetQosAckPolicy (hdr.GetAddr1 (), hdr.GetQosTid ()));
 }
@@ -86,7 +99,7 @@ WifiAckManager::SetQosAckPolicy (Ptr<WifiPsdu> psdu, const WifiAcknowledgment* a
       return;
     }
 
-  NS_ASSERT (acknowledgment != nullptr);
+  NS_ASSERT (acknowledgment);
 
   for (const auto& tid : psdu->GetTids ())
     {

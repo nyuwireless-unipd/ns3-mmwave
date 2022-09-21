@@ -94,6 +94,16 @@ public:
                                        Ptr<const PhasedArrayModel> aAntenna,
                                        Ptr<const PhasedArrayModel> bAntenna) override;
 
+  /**
+   * Returns a channel parameters structure used to obtain the channel between
+   * the nodes with mobility objects passed as input parameters.
+   *
+   * \param aMob mobility model of the a device
+   * \param bMob mobility model of the b device
+   * \return the channel matrix
+   */
+  Ptr<const ChannelParams> GetParams (Ptr<const MobilityModel> aMob, 
+                                      Ptr<const MobilityModel> bMob) const override;
 private:
   void DoDispose () override;
 

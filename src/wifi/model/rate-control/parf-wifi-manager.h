@@ -34,7 +34,7 @@ struct ParfWifiRemoteStation;
  * <i>Self-management in chaotic wireless deployments</i>, by
  * Akella, A.; Judd, G.; Seshan, S. and Steenkiste, P. in
  * Wireless Networks, Kluwer Academic Publishers, 2007, 13, 737-755
- * http://www.cs.odu.edu/~nadeem/classes/cs795-WNS-S13/papers/enter-006.pdf
+ * https://web.archive.org/web/20210413094117/https://www.cs.odu.edu/~nadeem/classes/cs795-WNS-S13/papers/enter-006.pdf
  *
  * This RAA does not support HT modes and will error
  * exit if the user tries to configure this RAA with a Wi-Fi MAC
@@ -67,7 +67,7 @@ private:
                        double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss) override;
   void DoReportFinalRtsFailed (WifiRemoteStation *station) override;
   void DoReportFinalDataFailed (WifiRemoteStation *station) override;
-  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station) override;
+  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint16_t allowedWidth) override;
   WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station) override;
 
   /** Check for initializations.

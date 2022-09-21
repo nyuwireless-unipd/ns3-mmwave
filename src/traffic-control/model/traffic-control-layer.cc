@@ -44,6 +44,12 @@ TrafficControlLayer::GetTypeId (void)
                    MakeObjectMapAccessor (&TrafficControlLayer::GetNDevices,
                                           &TrafficControlLayer::GetRootQueueDiscOnDeviceByIndex),
                    MakeObjectMapChecker<QueueDisc> ())
+    .AddTraceSource ("TcDrop",
+                     "Trace source indicating a packet has been dropped by the Traffic "
+                     "Control layer because no queue disc is installed on the device, the "
+                     "device supports flow control and the device queue is stopped",
+                     MakeTraceSourceAccessor (&TrafficControlLayer::m_dropped),
+                     "ns3::Packet::TracedCallback")
   ;
   return tid;
 }
@@ -248,7 +254,7 @@ TrafficControlLayer::DeleteRootQueueDiscOnDevice (Ptr<NetDevice> device)
 
   std::map<Ptr<NetDevice>, NetDeviceInfo>::iterator ndi = m_netDevices.find (device);
 
-  NS_ASSERT_MSG (ndi != m_netDevices.end () && ndi->second.m_rootQueueDisc != 0,
+  NS_ASSERT_MSG (ndi != m_netDevices.end () && ndi->second.m_rootQueueDisc,
                  "No root queue disc installed on device " << device);
 
   // remove the root queue disc
@@ -287,12 +293,12 @@ void
 TrafficControlLayer::NotifyNewAggregate ()
 {
   NS_LOG_FUNCTION (this);
-  if (m_node == 0)
+  if (!m_node)
     {
       Ptr<Node> node = this->GetObject<Node> ();
       //verify that it's a valid node and that
       //the node was not set before
-      if (node != 0)
+      if (node)
         {
           this->SetNode (node);
         }
@@ -319,8 +325,8 @@ TrafficControlLayer::Receive (Ptr<NetDevice> device, Ptr<const Packet> p,
   for (ProtocolHandlerList::iterator i = m_handlers.begin ();
        i != m_handlers.end (); i++)
     {
-      if (i->device == 0
-          || (i->device != 0 && i->device == device))
+      if (!i->device
+          || (i->device == device))
         {
           if (i->protocol == 0
               || i->protocol == protocol)
@@ -369,13 +375,13 @@ TrafficControlLayer::Send (Ptr<NetDevice> device, Ptr<QueueDiscItem> item)
 
   NS_ASSERT (!devQueueIface || txq < devQueueIface->GetNTxQueues ());
 
-  if (ndi == m_netDevices.end () || ndi->second.m_rootQueueDisc == 0)
+  if (ndi == m_netDevices.end () || !ndi->second.m_rootQueueDisc)
     {
       // The device has no attached queue disc, thus add the header to the packet and
       // send it directly to the device if the selected queue is not stopped
+      item->AddHeader ();
       if (!devQueueIface || !devQueueIface->GetTxQueue (txq)->IsStopped ())
         {
-          item->AddHeader ();
           // a single queue device makes no use of the priority tag
           if (!devQueueIface || devQueueIface->GetNTxQueues () == 1)
             {
@@ -383,6 +389,10 @@ TrafficControlLayer::Send (Ptr<NetDevice> device, Ptr<QueueDiscItem> item)
               item->GetPacket ()->RemovePacketTag (priorityTag);
             }
           device->Send (item->GetPacket (), item->GetAddress (), item->GetProtocol ());
+        }
+      else
+        {
+          m_dropped (item->GetPacket ());
         }
     }
   else

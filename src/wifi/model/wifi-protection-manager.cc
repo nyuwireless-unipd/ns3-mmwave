@@ -20,7 +20,7 @@
 
 #include "ns3/log.h"
 #include "wifi-protection-manager.h"
-#include "regular-wifi-mac.h"
+#include "wifi-mac.h"
 
 
 namespace ns3 {
@@ -39,6 +39,12 @@ WifiProtectionManager::GetTypeId (void)
   return tid;
 }
 
+WifiProtectionManager::WifiProtectionManager ()
+  : m_linkId (0)
+{
+  NS_LOG_FUNCTION (this);
+}
+
 WifiProtectionManager::~WifiProtectionManager ()
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -53,10 +59,17 @@ WifiProtectionManager::DoDispose (void)
 }
 
 void
-WifiProtectionManager::SetWifiMac (Ptr<RegularWifiMac> mac)
+WifiProtectionManager::SetWifiMac (Ptr<WifiMac> mac)
 {
   NS_LOG_FUNCTION (this << mac);
   m_mac = mac;
+}
+
+void
+WifiProtectionManager::SetLinkId (uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << +linkId);
+  m_linkId = linkId;
 }
 
 } //namespace ns3

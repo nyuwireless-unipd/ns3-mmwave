@@ -78,7 +78,7 @@ public:
    * Customization point for more complicated patterns
    * to invoke the example program.
    *
-   * \returns The string to be given to the `waf --command-template=` argument.
+   * \returns The string to be given to the `ns3 --command-template=` argument.
    */
   virtual std::string GetCommandTemplate (void) const;
 
@@ -114,7 +114,7 @@ protected:
  * methods is what criteria is used to for success.  Examples added to
  * `examples-to-run.py` will be run and the exit status checked
  * (non-zero indicates failure).  ExampleAsTestSuite adds checking of
- * output against a specified known "good" reference file.  
+ * output against a specified known "good" reference file.
  *
  * \warning If you are thinking about using this class, strongly
  * consider using a standard test instead.  The TestSuite class has
@@ -126,7 +126,7 @@ protected:
  * \par Test Addition
  *
  * To use an example program as a test you need to create a test suite
- * file and add it to the appropriate list in your module wscript
+ * file and add it to the appropriate list in your module CMakeLists.txt
  * file. The "good" output reference file needs to be generated for
  * detecting regressions.
  *
@@ -134,7 +134,7 @@ protected:
  * program is `mymodule/examples/mod-example.cc`.  First you should
  * create a test file `mymodule/test/mymodule-examples-test-suite.cc`
  * which looks like this:
- * 
+ *
  * \code{.cpp}
  * #include "ns3/example-as-test.h"
  * static ns3::ExampleAsTestSuite g_modExampleOne ("mymodule-example-mod-example-one", "mod-example", NS_TEST_SOURCEDIR, "--arg-one");
@@ -148,7 +148,7 @@ protected:
  * the same example is run twice with different arguments.
  *
  * You then need to add that newly created test suite file to the list
- * of test sources in `mymodule/wscript`.   Building of examples
+ * of test sources in `mymodule/CMakeLists.txt`.   Building of examples
  * is an option so you need to guard the inclusion of the test suite:
  *
  * \code{.py}
@@ -156,7 +156,7 @@ protected:
  *    module.source.append('model/mymodule-examples-test-suite.cc')
  * \endcode
  *
- * Since you modified a wscript file you need to reconfigure and
+ * Since you modified a CMakeLists.txt file you need to reconfigure and
  * rebuild everything.
  *
  * You just added new tests so you will need to generate the "good"
@@ -180,7 +180,7 @@ protected:
  *
  * This will run all `mymodule-example-...` tests and report whether they
  * produce output matching the reference files.
- * 
+ *
  * \par Writing good examples for testing
  *
  * When setting up an example for use by this class you should be very
@@ -191,7 +191,7 @@ protected:
  * verify and hard to keep up-to-date.  Output as little as needed for
  * the example and include only behavioral state that is important for
  * determining if the example has run correctly.
- * 
+ *
  */
 class ExampleAsTestSuite : public TestSuite
 {

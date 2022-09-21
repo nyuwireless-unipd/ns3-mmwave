@@ -336,9 +336,9 @@ AparfWifiManager::DoReportFinalDataFailed (WifiRemoteStation *station)
 }
 
 WifiTxVector
-AparfWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
+AparfWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint16_t allowedWidth)
 {
-  NS_LOG_FUNCTION (this << st);
+  NS_LOG_FUNCTION (this << st << allowedWidth);
   AparfWifiRemoteStation *station = static_cast<AparfWifiRemoteStation*> (st);
   uint16_t channelWidth = GetChannelWidth (station);
   if (channelWidth > 20 && channelWidth != 22)
@@ -376,7 +376,6 @@ AparfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       channelWidth = 20;
     }
-  WifiTxVector rtsTxVector;
   WifiMode mode;
   if (GetUseNonErpProtection () == false)
     {
@@ -386,8 +385,7 @@ AparfWifiManager::DoGetRtsTxVector (WifiRemoteStation *st)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
-  return rtsTxVector;
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
 }
 
 } //namespace ns3

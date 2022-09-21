@@ -31,6 +31,14 @@
 
 namespace ns3 {
 
+/**
+ * Output streamer for a std::pair.
+ * \tparam A \deduced Type of the `pair.first`.
+ * \tparam B \deduced Type of the `pair.second`.
+ * \param [in,out] os The output stream.
+ * \param [in] p The pair.
+ * \returns The output stream.
+ */
 template <class A, class B>
 std::ostream &
 operator << (std::ostream &os, const std::pair<A, B> &p)
@@ -50,14 +58,14 @@ public:
   /** Type of value stored in the PairValue. */
   typedef std::pair<Ptr<A>, Ptr<B> > value_type;
   /** Type of abscissa (first entry of pair). */
-  typedef typename std::result_of<decltype(&A::Get)(A)>::type first_type;
+  typedef typename std::invoke_result_t<decltype(&A::Get), A> first_type;
   /** Type of ordinal (second entry of pair). */
-  typedef typename std::result_of<decltype(&B::Get)(B)>::type second_type;
+  typedef typename std::invoke_result_t<decltype(&B::Get), B> second_type;
   /** Type returned by Get or passed in Set. */
   typedef typename std::pair<first_type, second_type> result_type;
 
   PairValue ();
-  
+
   /**
    * Construct this PairValue from a std::pair
    *
@@ -72,16 +80,13 @@ public:
 
   /**
    * Get the stored value as a std::pair.
-   * 
-   * This differs from the actual value stored in the object which is 
+   *
+   * This differs from the actual value stored in the object which is
    * a pair of Ptr<AV> where AV is a class derived from AttributeValue.
    * \return stored value as std::pair<A, B>.
    */
   result_type Get (void) const;
-  /**
-   * Set the stored value.
-   * \param[in] value std::pair<A, B> to be stored.
-   */
+  /* Documented by print-introspected-doxygen.cc */
   void Set (const result_type &value);
 
   template <typename T>
@@ -94,19 +99,20 @@ private:
 class PairChecker : public AttributeChecker
 {
 public:
+  /** Type holding an AttributeChecker for each member of a pair. */
   typedef std::pair<Ptr<const AttributeChecker>, Ptr<const AttributeChecker> > checker_pair_type;
 
   /**
    * Set the individual AttributeChecker for each pair entry.
-   * 
+   *
    * \param[in] firstchecker AttributeChecker for abscissa.
    * \param[in] secondchecker AttributeChecker for ordinate.
    */
   virtual void SetCheckers (Ptr<const AttributeChecker> firstchecker, Ptr<const AttributeChecker> secondchecker) = 0;
-  
+
   /**
    * Get the pair of checkers for each pair entry.
-   * 
+   *
    * \return std::pair with AttributeChecker for each of abscissa and ordinate.
    */
   virtual checker_pair_type GetCheckers (void) const = 0;
@@ -114,7 +120,7 @@ public:
 
 /**
  * Make a PairChecker from a PairValue.
- * 
+ *
  * This function returns a Pointer to a non-const instance to
  * allow subsequent setting of the underlying AttributeCheckers.
  * \param[in] value PairValue from which to derive abscissa and ordinate types.
@@ -126,10 +132,10 @@ MakePairChecker (const PairValue<A, B> &value);
 
 /**
  * Make a PairChecker from abscissa and ordinate AttributeCheckers.
- * 
+ *
  * This function returns a Pointer to a const instance since both
  * underlying AttributeCheckers are set.
- * 
+ *
  * \param[in] firstchecker AttributeChecker for abscissa.
  * \param[in] secondchecker AttributeChecker for ordinate.
  * \return Pointer to PairChecker instance.
@@ -140,7 +146,7 @@ MakePairChecker (Ptr<const AttributeChecker> firstchecker, Ptr<const AttributeCh
 
 /**
  * Make a PairChecker without abscissa and ordinate AttributeCheckers.
- * 
+ *
  * \return Pointer to PairChecker instance.
  */
 template <class A, class B>
@@ -170,13 +176,21 @@ template <class A, class B>
 class PairChecker : public ns3::PairChecker
 {
 public:
+  /** Default c'tor. */
   PairChecker (void);
+  /**
+   * Construct from a pair of AttributeChecker's.
+   * \param firstchecker The AttributeChecker for first.
+   * \param secondchecker The AttributeChecker for second.
+   */
   PairChecker (Ptr<const AttributeChecker> firstchecker, Ptr<const AttributeChecker> secondchecker);
   void SetCheckers (Ptr<const AttributeChecker> firstchecker, Ptr<const AttributeChecker> secondchecker);
   typename ns3::PairChecker::checker_pair_type GetCheckers (void) const;
 
 private:
+  /** The first checker. */
   Ptr<const AttributeChecker> m_firstchecker;
+  /** The second checker. */
   Ptr<const AttributeChecker> m_secondchecker;
 };
 
@@ -334,6 +348,14 @@ PairValue<A, B>::GetAccessor (T &value) const
   return true;
 }
 
+/**
+ * Create an AttributeAccessor for std::pair<>.
+ * \tparam A \explicit The type of pair.first.
+ * \tparam B \explicit The type of pair.second.
+ * \tparam T1 \deduced The argument pair type.
+ * \param [in] a1 The std::pair to be accessed.
+ * \returns The AttributeAccessor.
+ */
 template <typename A, typename B, typename T1>
 Ptr<const AttributeAccessor> MakePairAccessor (T1 a1)
 {

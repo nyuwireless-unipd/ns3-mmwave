@@ -39,12 +39,13 @@
 
 using namespace ns3;
 
-// Variable to assign m_hash to a new packet's flow
-int32_t m_hash;
+/// Variable to assign g_hash to a new packet's flow
+static int32_t g_hash;
 
 /**
- * Simple test packet filter able to classify IPv4 packets
+ * \ingroup system-tests-tc
  *
+ * Simple test packet filter able to classify IPv4 packets.
  */
 class Ipv4FqCobaltTestPacketFilter : public Ipv4PacketFilter {
 public:
@@ -58,7 +59,18 @@ public:
   virtual ~Ipv4FqCobaltTestPacketFilter ();
 
 private:
+  /**
+   * Classify a QueueDiscItem
+   * \param item The item to classify (unused).
+   * \return a pre-set hash value.
+   */
   virtual int32_t DoClassify (Ptr<QueueDiscItem> item) const;
+
+  /**
+   * Check the protocol.
+   * \param item The item to check (unused).
+   * \return true.
+   */
   virtual bool CheckProtocol (Ptr<QueueDiscItem> item) const;
 };
 
@@ -84,7 +96,7 @@ Ipv4FqCobaltTestPacketFilter::~Ipv4FqCobaltTestPacketFilter ()
 int32_t
 Ipv4FqCobaltTestPacketFilter::DoClassify (Ptr<QueueDiscItem> item) const
 {
-  return m_hash;
+  return g_hash;
 }
 
 bool
@@ -94,7 +106,9 @@ Ipv4FqCobaltTestPacketFilter::CheckProtocol (Ptr<QueueDiscItem> item) const
 }
 
 /**
- * This class tests packets for which there is no suitable filter
+ * \ingroup system-tests-tc
+ *
+ * This class tests packets for which there is no suitable filter.
  */
 class FqCobaltQueueDiscNoSuitableFilter : public TestCase
 {
@@ -123,7 +137,7 @@ FqCobaltQueueDiscNoSuitableFilter::DoRun (void)
   Ptr<Ipv4FqCobaltTestPacketFilter> filter = CreateObject<Ipv4FqCobaltTestPacketFilter> ();
   queueDisc->AddPacketFilter (filter);
 
-  m_hash = -1;
+  g_hash = -1;
   queueDisc->SetQuantum (1500);
   queueDisc->Initialize ();
 
@@ -145,7 +159,9 @@ FqCobaltQueueDiscNoSuitableFilter::DoRun (void)
 }
 
 /**
- * This class tests the IP flows separation and the packet limit
+ * \ingroup system-tests-tc
+ *
+ * This class tests the IP flows separation and the packet limit.
  */
 class FqCobaltQueueDiscIPFlowsSeparationAndPacketLimit : public TestCase
 {
@@ -155,6 +171,11 @@ public:
 
 private:
   virtual void DoRun (void);
+  /**
+   * Enqueue a packet.
+   * \param queue The queue disc.
+   * \param hdr The IPv4 header.
+   */
   void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr);
 };
 
@@ -214,7 +235,9 @@ FqCobaltQueueDiscIPFlowsSeparationAndPacketLimit::DoRun (void)
 }
 
 /**
- * This class tests the deficit per flow
+ * \ingroup system-tests-tc
+ *
+ * This class tests the deficit per flow.
  */
 class FqCobaltQueueDiscDeficit : public TestCase
 {
@@ -224,6 +247,11 @@ public:
 
 private:
   virtual void DoRun (void);
+  /**
+   * Enqueue a packet.
+   * \param queue The queue disc.
+   * \param hdr The IPv4 header.
+   */
   void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr);
 };
 
@@ -356,7 +384,9 @@ FqCobaltQueueDiscDeficit::DoRun (void)
 }
 
 /**
- * This class tests the TCP flows separation
+ * \ingroup system-tests-tc
+ *
+ * This class tests the TCP flows separation.
  */
 class FqCobaltQueueDiscTCPFlowsSeparation : public TestCase
 {
@@ -366,6 +396,12 @@ public:
 
 private:
   virtual void DoRun (void);
+  /**
+   * Enqueue a packet.
+   * \param queue The queue disc.
+   * \param ipHdr The IPv4 header.
+   * \param tcpHdr The TCP header.
+   */
   void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header ipHdr, TcpHeader tcpHdr);
 };
 
@@ -442,6 +478,8 @@ FqCobaltQueueDiscTCPFlowsSeparation::DoRun (void)
 }
 
 /**
+ * \ingroup system-tests-tc
+ *
  * This class tests the UDP flows separation
  */
 class FqCobaltQueueDiscUDPFlowsSeparation : public TestCase
@@ -452,6 +490,12 @@ public:
 
 private:
   virtual void DoRun (void);
+  /**
+   * Enqueue a packet.
+   * \param queue the queue disc
+   * \param ipHdr the IPv4 header
+   * \param udpHdr the UDP header
+   */
   void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header ipHdr, UdpHeader udpHdr);
 };
 
@@ -528,16 +572,19 @@ FqCobaltQueueDiscUDPFlowsSeparation::DoRun (void)
 }
 
 /**
- * This class tests ECN marking
+ * \ingroup system-tests-tc
+ *
+ * \brief This class tests ECN marking.
+ *
  * The test is divided into 3 sub test cases.
  * 1) CE threshold disabled
  * This test enqueues 100 packets in the beginning of the test and dequeues 60 (some packets are dropped too) packets with the
  * delay of 110ms. This test checks that ECT0 packets are marked and are marked appropriately and NotECT packets are dropped.
- * 
+ *
  * 2) CE threshold enabled.
  * This test enqueues 100 packets in the beginning of the test and dequeues 60 packets with delay of 1ms. This test checks that
  * the ECT0 packets are marked appropriately at CE threshold.
- * 
+ *
  * 3) CE threshold enabled with higher queue delay.
  * This test is similar to the 2nd sub test cases just with higher queue delay and aims to test that the packets are not
  * marked twice
@@ -551,9 +598,33 @@ public:
 
 private:
   virtual void DoRun (void);
-  void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr, u_int32_t nPkt, u_int32_t nPktEnqueued, u_int32_t nQueueFlows);
+  /**
+   * Enqueue the given number of packets.
+   * \param queue The queue disc.
+   * \param hdr The IPv4 header.
+   * \param nPkt The number of packets.
+   * \param nPktEnqueued The expected number of enqueued packets.
+   * \param nQueueFlows The expected number of flow queues.
+   */
+  void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr, uint32_t nPkt, uint32_t nPktEnqueued, uint32_t nQueueFlows);
+  /**
+   * Dequeue the given number of packets.
+   * \param queue The queue disc.
+   * \param nPkt The number of packets.
+   */
   void Dequeue (Ptr<FqCobaltQueueDisc> queue, uint32_t nPkt);
+  /**
+   * Dequeue the given number of packets at different times.
+   * \param queue The queue disc.
+   * \param delay The time between two consecutive dequeue operations.
+   * \param nPkt The number of packets.
+   */
   void DequeueWithDelay (Ptr<FqCobaltQueueDisc> queue, double delay, uint32_t nPkt);
+  /**
+   * Tracer for the DropNext attribute
+   * \param oldVal Old value.
+   * \param newVal New value.
+   */
   void DropNextTracer (int64_t oldVal, int64_t newVal);
   uint32_t m_dropNextCount;    ///< count the number of times m_dropNext is recalculated
 };
@@ -569,7 +640,7 @@ FqCobaltQueueDiscEcnMarking::~FqCobaltQueueDiscEcnMarking ()
 }
 
 void
-FqCobaltQueueDiscEcnMarking::AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr, u_int32_t nPkt, u_int32_t nPktEnqueued, u_int32_t nQueueFlows)
+FqCobaltQueueDiscEcnMarking::AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr, uint32_t nPkt, uint32_t nPktEnqueued, uint32_t nQueueFlows)
 {
   Address dest;
   Ptr<Packet> p = Create<Packet> (100);
@@ -609,10 +680,8 @@ FqCobaltQueueDiscEcnMarking::DequeueWithDelay (Ptr<FqCobaltQueueDisc> queue, dou
 }
 
 void
-FqCobaltQueueDiscEcnMarking::DropNextTracer (int64_t oldVal, int64_t newVal)
+FqCobaltQueueDiscEcnMarking::DropNextTracer ([[maybe_unused]] int64_t oldVal, [[maybe_unused]] int64_t newVal)
 {
-  NS_UNUSED (oldVal);
-  NS_UNUSED (newVal);
   m_dropNextCount++;
 }
 
@@ -681,7 +750,7 @@ FqCobaltQueueDiscEcnMarking::DoRun (void)
                         "Each packet size is 120 bytes and the quantum is 1500 bytes so in the first turn (1514/120 = 12.61) 13 packets are"
                         "dequeued and apart from the first one, all the packets are marked.");
   NS_TEST_EXPECT_MSG_EQ (q2->GetStats ().GetNDroppedPackets (CobaltQueueDisc::TARGET_EXCEEDED_DROP), 0, "There should not be any dropped packets");
-  
+
   // As packets in flow queues are not ECN capable
   NS_TEST_EXPECT_MSG_EQ (q3->GetStats ().GetNDroppedPackets (CobaltQueueDisc::TARGET_EXCEEDED_DROP), m_dropNextCount, "The number of drops should"
                         "be equal to the number of times m_dropNext is updated");
@@ -697,7 +766,7 @@ FqCobaltQueueDiscEcnMarking::DoRun (void)
                                                                                    "CeThreshold", TimeValue (MilliSeconds (2)));
   queueDisc->SetQuantum (1514);
   queueDisc->Initialize ();
-  
+
   // Add 20 ECT0 (ECN capable) packets from first flow
   hdr.SetDestination (Ipv4Address ("10.10.1.2"));
   hdr.SetEcn (Ipv4Header::ECN_ECT0);
@@ -758,7 +827,7 @@ FqCobaltQueueDiscEcnMarking::DoRun (void)
     "CeThreshold", TimeValue (MilliSeconds (2)), "BlueThreshold", TimeValue (Time::Max()));
   queueDisc->SetQuantum (1514);
   queueDisc->Initialize ();
-  
+
   // Add 20 ECT0 (ECN capable) packets from first flow
   hdr.SetDestination (Ipv4Address ("10.10.1.2"));
   hdr.SetEcn (Ipv4Header::ECN_ECT0);
@@ -796,15 +865,15 @@ FqCobaltQueueDiscEcnMarking::DoRun (void)
 
   // As packets in flow queues are ECN capable
   NS_TEST_EXPECT_MSG_EQ (q0->GetStats ().GetNDroppedPackets (CobaltQueueDisc::TARGET_EXCEEDED_DROP), 0, "There should not be any dropped packets");
-  NS_TEST_EXPECT_MSG_EQ (q0->GetStats ().GetNMarkedPackets (CobaltQueueDisc::CE_THRESHOLD_EXCEEDED_MARK) + 
+  NS_TEST_EXPECT_MSG_EQ (q0->GetStats ().GetNMarkedPackets (CobaltQueueDisc::CE_THRESHOLD_EXCEEDED_MARK) +
                          q0->GetStats ().GetNMarkedPackets (CobaltQueueDisc::FORCED_MARK), 20 - q0->GetNPackets (), "Number of CE threshold"
                         " exceeded marks plus Number of Target exceeded marks should be equal to total number of packets dequeued");
   NS_TEST_EXPECT_MSG_EQ (q1->GetStats ().GetNDroppedPackets (CobaltQueueDisc::TARGET_EXCEEDED_DROP), 0, "There should not be any dropped packets");
-  NS_TEST_EXPECT_MSG_EQ (q1->GetStats ().GetNMarkedPackets (CobaltQueueDisc::CE_THRESHOLD_EXCEEDED_MARK) + 
+  NS_TEST_EXPECT_MSG_EQ (q1->GetStats ().GetNMarkedPackets (CobaltQueueDisc::CE_THRESHOLD_EXCEEDED_MARK) +
                          q1->GetStats ().GetNMarkedPackets (CobaltQueueDisc::FORCED_MARK), 20 - q1->GetNPackets (), "Number of CE threshold"
                         " exceeded marks plus Number of Target exceeded marks should be equal to total number of packets dequeued");
   NS_TEST_EXPECT_MSG_EQ (q2->GetStats ().GetNDroppedPackets (CobaltQueueDisc::TARGET_EXCEEDED_DROP), 0, "There should not be any dropped packets");
-  NS_TEST_EXPECT_MSG_EQ (q2->GetStats ().GetNMarkedPackets (CobaltQueueDisc::CE_THRESHOLD_EXCEEDED_MARK) + 
+  NS_TEST_EXPECT_MSG_EQ (q2->GetStats ().GetNMarkedPackets (CobaltQueueDisc::CE_THRESHOLD_EXCEEDED_MARK) +
                          q2->GetStats ().GetNMarkedPackets (CobaltQueueDisc::FORCED_MARK), 20 - q2->GetNPackets (), "Number of CE threshold"
                         " exceeded marks plus Number of Target exceeded marks should be equal to total number of packets dequeued");
 
@@ -819,19 +888,22 @@ FqCobaltQueueDiscEcnMarking::DoRun (void)
   Simulator::Destroy ();
 }
 
-/*
- * This class tests linear probing, collision response, and set
- * creation capability of set associative hashing in FqCodel.
+/**
+ * \ingroup system-tests-tc
+ *
+ * \brief This class tests linear probing, collision response, and set
+ * creation capability of set associative hashing in FqCobalt.
+ *
  * We modified DoClassify () and CheckProtocol () so that we could control
  * the hash returned for each packet. In the beginning, we use flow hashes
- * ranging from 0 to 7. These must go into different queues in the same set. 
- * The set number for these is obtained using outerhash, which is 0.  
+ * ranging from 0 to 7. These must go into different queues in the same set.
+ * The set number for these is obtained using outerhash, which is 0.
  * When a new packet arrives with flow hash 1024, outerhash = 0 is obtained
  * and the first set is iteratively searched.
- * The packet is eventually added to queue 0 since the tags of queues 
- * in the set do not match with the hash of the flow. The tag of queue 0 is 
+ * The packet is eventually added to queue 0 since the tags of queues
+ * in the set do not match with the hash of the flow. The tag of queue 0 is
  * updated as 1024. When a packet with hash 1025 arrives, outerhash = 0
- * is obtained and the first set is iteratively searched. 
+ * is obtained and the first set is iteratively searched.
  * Since there is no match, it is added to queue 0 and the tag of queue 0 is
  * updated to 1025.
  *
@@ -839,8 +911,7 @@ FqCobaltQueueDiscEcnMarking::DoRun (void)
  * the hash. When a flow hash of 20 arrives, the value of outerhash
  * is 16. Since m_flowIndices[16] wasn’t previously allotted, a new flow
  * is created, and the tag corresponding to this queue is set to 20.
-*/
-
+ */
 class FqCobaltQueueDiscSetLinearProbing : public TestCase
 {
 public:
@@ -848,6 +919,11 @@ public:
   virtual ~FqCobaltQueueDiscSetLinearProbing ();
 private:
   virtual void DoRun (void);
+  /**
+   * Enqueue a packet.
+   * \param queue The queue disc.
+   * \param hdr The IPv4 header.
+   */
   void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr);
 };
 
@@ -885,25 +961,25 @@ FqCobaltQueueDiscSetLinearProbing::DoRun (void)
   hdr.SetDestination (Ipv4Address ("10.10.1.2"));
   hdr.SetProtocol (7);
 
-  m_hash = 0;
+  g_hash = 0;
   AddPacket (queueDisc, hdr);
-  m_hash = 1;
-  AddPacket (queueDisc, hdr);
-  AddPacket (queueDisc, hdr);
-  m_hash = 2;
-  AddPacket (queueDisc, hdr);
-  m_hash = 3;
-  AddPacket (queueDisc, hdr);
-  m_hash = 4;
+  g_hash = 1;
   AddPacket (queueDisc, hdr);
   AddPacket (queueDisc, hdr);
-  m_hash = 5;
+  g_hash = 2;
   AddPacket (queueDisc, hdr);
-  m_hash = 6;
+  g_hash = 3;
   AddPacket (queueDisc, hdr);
-  m_hash = 7;
+  g_hash = 4;
   AddPacket (queueDisc, hdr);
-  m_hash = 1024;
+  AddPacket (queueDisc, hdr);
+  g_hash = 5;
+  AddPacket (queueDisc, hdr);
+  g_hash = 6;
+  AddPacket (queueDisc, hdr);
+  g_hash = 7;
+  AddPacket (queueDisc, hdr);
+  g_hash = 1024;
   AddPacket (queueDisc, hdr);
 
   NS_TEST_ASSERT_MSG_EQ (queueDisc->QueueDisc::GetNPackets (), 11,
@@ -924,11 +1000,11 @@ FqCobaltQueueDiscSetLinearProbing::DoRun (void)
                          "unexpected number of packets in the seventh flow queue of set one");
   NS_TEST_ASSERT_MSG_EQ (queueDisc->GetQueueDiscClass (7)->GetQueueDisc ()->GetNPackets (), 1,
                          "unexpected number of packets in the eighth flow queue of set one");
-  m_hash = 1025;
+  g_hash = 1025;
   AddPacket (queueDisc, hdr);
   NS_TEST_ASSERT_MSG_EQ (queueDisc->GetQueueDiscClass (0)->GetQueueDisc ()->GetNPackets (), 3,
                          "unexpected number of packets in the first flow of set one");
-  m_hash = 10;
+  g_hash = 10;
   AddPacket (queueDisc, hdr);
   NS_TEST_ASSERT_MSG_EQ (queueDisc->GetQueueDiscClass (8)->GetQueueDisc ()->GetNPackets (), 1,
                          "unexpected number of packets in the first flow of set two");
@@ -937,10 +1013,15 @@ FqCobaltQueueDiscSetLinearProbing::DoRun (void)
 
 
 /**
- * This class tests L4S mode. This test is divided to sub test one without hash collisions and so ECT0 and ECT1 flows are
+ * \ingroup system-tests-tc
+ *
+ * \brief This class tests L4S mode.
+ *
+ * This test is divided to sub test one without hash collisions and so ECT0 and ECT1 flows are
  * classified into different flows.
+ *
  * Sub Test 1
- * 70 packets are enqueued into both the flows with the delay of 0.5ms between two enqueues, and dequeued with the delay of 
+ * 70 packets are enqueued into both the flows with the delay of 0.5ms between two enqueues, and dequeued with the delay of
  * 1ms between two dequeues.
  * Sub Test 2
  * 140(70 ECT0 + 70 ECT1) packets are enqueued such that ECT1 packets are enqueued at 0.5ms, 1.5ms, 2.5ms and so on, and ECT0 packets are
@@ -955,9 +1036,33 @@ public:
 
 private:
   virtual void DoRun (void);
-  void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr, u_int32_t nPkt);
+  /**
+   * Enqueue the given number of packets.
+   * \param queue The queue disc.
+   * \param hdr The IPv4 header.
+   * \param nPkt The number of packets.
+   */
+  void AddPacket (Ptr<FqCobaltQueueDisc> queue, Ipv4Header hdr, uint32_t nPkt);
+  /**
+   * Enqueue the given number of packets at different times.
+   * \param queue The queue disc.
+   * \param hdr The IPv4 header.
+   * \param delay The time between two consecutive enqueue operations.
+   * \param nPkt The number of packets.
+   */
   void AddPacketWithDelay (Ptr<FqCobaltQueueDisc> queue,Ipv4Header hdr, double delay, uint32_t nPkt);
+  /**
+   * Dequeue the given number of packets.
+   * \param queue The queue disc.
+   * \param nPkt The number of packets.
+   */
   void Dequeue (Ptr<FqCobaltQueueDisc> queue, uint32_t nPkt);
+  /**
+   * Dequeue the given number of packets at different times.
+   * \param queue The queue disc.
+   * \param delay The time between two consecutive dequeue operations.
+   * \param nPkt The number of packets.
+   */
   void DequeueWithDelay (Ptr<FqCobaltQueueDisc> queue, double delay, uint32_t nPkt);
 };
 
@@ -1103,6 +1208,11 @@ FqCobaltQueueDiscL4sMode::DoRun (void)
 
 }
 
+/**
+ * \ingroup system-tests-tc
+ *
+ * FQ-COBALT queue disc test suite.
+ */
 class FqCobaltQueueDiscTestSuite : public TestSuite
 {
 public:
@@ -1122,4 +1232,5 @@ FqCobaltQueueDiscTestSuite::FqCobaltQueueDiscTestSuite ()
   AddTestCase (new FqCobaltQueueDiscL4sMode, TestCase::QUICK);
 }
 
-static FqCobaltQueueDiscTestSuite fqCobaltQueueDiscTestSuite;
+/// Do not forget to allocate an instance of this TestSuite.
+static FqCobaltQueueDiscTestSuite g_fqCobaltQueueDiscTestSuite;

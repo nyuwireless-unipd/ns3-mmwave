@@ -18,11 +18,15 @@
 #include "ns3/uinteger.h"
 #include "ns3/traced-value.h"
 #include "ns3/trace-source-accessor.h"
+#include "ns3/simulator.h"
 
 #include <iostream>
 
 using namespace ns3;
 
+/**
+ * Tutorial 4 - a simple Object to show how to hook a trace.
+ */
 class MyObject : public Object
 {
 public:
@@ -45,7 +49,7 @@ public:
   }
 
   MyObject () {}
-  TracedValue<int32_t> m_myInt;
+  TracedValue<int32_t> m_myInt; //!< The traced value.
 };
 
 void

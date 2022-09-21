@@ -43,27 +43,27 @@ namespace ns3 {
  * Following the Linux implementation, we included the Hybrid Slow Start,
  * that effectively prevents the overshooting of slow start
  * while maintaining a full utilization of the network. This new type of slow
- * start can be disabled through the \Attribute{HyStart} attribute.
+ * start can be disabled through the HyStart attribute.
  *
  * CUBIC TCP is implemented and used by default in Linux kernels 2.6.19
  * and above; this version follows the implementation in Linux 3.14, which
  * slightly differ from the CUBIC paper. It also features HyStart.
  *
  * Home page:
- *      http://netsrv.csc.ncsu.edu/twiki/bin/view/Main/BIC
+ *      https://web.archive.org/web/20080607093013/http://netsrv.csc.ncsu.edu/twiki/bin/view/Main/BIC
  * The work starts from the implementation of CUBIC TCP in
  * Sangtae Ha, Injong Rhee and Lisong Xu,
  * "CUBIC: A New TCP-Friendly High-Speed TCP Variant"
  * in ACM SIGOPS Operating System Review, July 2008.
  * Available from:
- *  http://netsrv.csc.ncsu.edu/export/cubic_a_new_tcp_2008.pdf
+ *  https://web.archive.org/web/20160505194415/http://netsrv.csc.ncsu.edu/export/cubic_a_new_tcp_2008.pdf
  *
  * CUBIC integrates a new slow start algorithm, called HyStart.
  * The details of HyStart are presented in
  *  Sangtae Ha and Injong Rhee,
  *  "Taming the Elephants: New TCP Slow Start", NCSU TechReport 2008.
  * Available from:
- *  http://netsrv.csc.ncsu.edu/export/hystart_techreport_2008.pdf
+ *  https://web.archive.org/web/20160528233754/http://netsrv.csc.ncsu.edu/export/hystart_techreport_2008.pdf
  *
  * More information on this implementation: http://dl.acm.org/citation.cfm?id=2756518
  */

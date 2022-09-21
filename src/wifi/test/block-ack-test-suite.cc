@@ -19,6 +19,8 @@
  */
 
 #include "ns3/test.h"
+#include "ns3/double.h"
+#include "ns3/boolean.h"
 #include "ns3/string.h"
 #include "ns3/qos-utils.h"
 #include "ns3/ctrl-headers.h"
@@ -35,6 +37,9 @@
 #include "ns3/pointer.h"
 #include "ns3/recipient-block-ack-agreement.h"
 #include "ns3/mac-rx-middle.h"
+#include "ns3/qos-txop.h"
+#include "ns3/originator-block-ack-agreement.h"
+#include "ns3/wifi-mac-queue-item.h"
 #include <list>
 
 using namespace ns3;
@@ -663,11 +668,12 @@ public:
   void DoRun (void) override;
 
   /**
-   * Keep track of MPDUs that are forwarded up.
+   * Keep track of MPDUs received on the given link that are forwarded up.
    *
    * \param mpdu an MPDU that is forwarded up
+   * \param linkId the ID of the given link
    */
-  void ForwardUp (Ptr<WifiMacQueueItem> mpdu);
+  void ForwardUp (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId);
 
 private:
   uint16_t m_ssn;                          //!< the Starting Sequence Number used to initialize WinStartB
@@ -685,7 +691,7 @@ BlockAckRecipientBufferTest::~BlockAckRecipientBufferTest ()
 }
 
 void
-BlockAckRecipientBufferTest::ForwardUp (Ptr<WifiMacQueueItem> mpdu)
+BlockAckRecipientBufferTest::ForwardUp (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId)
 {
   m_fwup.push_back (mpdu);
 }
@@ -1349,8 +1355,9 @@ class BlockAckAggregationDisabledTest : public TestCase
      * Callback for the TxopTrace trace
      * \param startTime TXOP start time
      * \param duration TXOP duration
+     * \param linkId the ID of the link
      */
-    void Trace (Time startTime, Time duration);
+    void Trace (Time startTime, Time duration, uint8_t linkId);
     Time m_max {Seconds (0)};  ///< max TXOP duration
   };
 
@@ -1398,7 +1405,8 @@ private:
 };
 
 void
-BlockAckAggregationDisabledTest::TxopDurationTracer::Trace (Time startTime, Time duration)
+BlockAckAggregationDisabledTest::TxopDurationTracer::Trace (Time startTime, Time duration,
+                                                            uint8_t linkId)
 {
   if (duration > m_max)
     {
@@ -1495,7 +1503,7 @@ BlockAckAggregationDisabledTest::DoRun (void)
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n);
   Config::SetDefault ("ns3::WifiDefaultAckManager::BaThreshold", DoubleValue (0.125));
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
 
@@ -1546,9 +1554,7 @@ BlockAckAggregationDisabledTest::DoRun (void)
       ptr.Get<QosTxop> ()->TraceConnectWithoutContext ("TxopTrace", MakeCallback (&TxopDurationTracer::Trace, &txopTracer));
 
       // set the TXOP limit on BE AC
-      Ptr<RegularWifiMac> ap_mac = DynamicCast<RegularWifiMac> (ap_device->GetMac ());
-      NS_ASSERT (ap_mac);
-      ap_mac->GetAttribute ("BE_Txop", ptr);
+      ap_device->GetMac ()->GetAttribute ("BE_Txop", ptr);
       ptr.Get<QosTxop> ()->SetTxopLimit (MicroSeconds (4800));
     }
 

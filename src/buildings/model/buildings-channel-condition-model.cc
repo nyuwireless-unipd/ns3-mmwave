@@ -58,7 +58,7 @@ BuildingsChannelConditionModel::GetChannelCondition (Ptr<const MobilityModel> a,
   NS_LOG_FUNCTION (this);
   Ptr<MobilityBuildingInfo> a1 = a->GetObject<MobilityBuildingInfo> ();
   Ptr<MobilityBuildingInfo> b1 = b->GetObject<MobilityBuildingInfo> ();
-  NS_ASSERT_MSG ((a1 != nullptr) && (b1 != nullptr),
+  NS_ASSERT_MSG (a1 && b1,
                  "BuildingsChannelConditionModel only works with MobilityBuildingInfo");
 
   Ptr<ChannelCondition> cond = CreateObject<ChannelCondition> ();
@@ -70,7 +70,7 @@ BuildingsChannelConditionModel::GetChannelCondition (Ptr<const MobilityModel> a,
   if (!isAIndoor && !isBIndoor) // a and b are outdoor
     {
       cond->SetO2iCondition (ChannelCondition::O2iConditionValue::O2O);
-      
+
       // The outdoor case, determine LOS/NLOS
       // The channel condition should be LOS if the line of sight is not blocked,
       // otherwise NLOS
@@ -89,7 +89,7 @@ BuildingsChannelConditionModel::GetChannelCondition (Ptr<const MobilityModel> a,
   else if (isAIndoor && isBIndoor) // a and b are indoor
     {
       cond->SetO2iCondition (ChannelCondition::O2iConditionValue::I2I);
-      
+
       // Indoor case, determine is the two nodes are inside the same building
       // or not
       if (a1->GetBuilding () == b1->GetBuilding ())
@@ -106,7 +106,7 @@ BuildingsChannelConditionModel::GetChannelCondition (Ptr<const MobilityModel> a,
   else //outdoor to indoor case
     {
       cond->SetO2iCondition (ChannelCondition::O2iConditionValue::O2I);
-      
+
       NS_LOG_DEBUG ("a is indoor and b outdoor or viceversa");
       cond->SetLosCondition (ChannelCondition::LosConditionValue::NLOS);
     }
@@ -133,9 +133,8 @@ BuildingsChannelConditionModel::IsLineOfSightBlocked (const ns3::Vector &l1, con
 }
 
 int64_t
-BuildingsChannelConditionModel::AssignStreams (int64_t stream)
+BuildingsChannelConditionModel::AssignStreams ([[maybe_unused]] int64_t stream)
 {
-  NS_UNUSED (stream);
   return 0;
 }
 

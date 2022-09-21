@@ -21,10 +21,13 @@
 #ifndef CHANNEL_ACCESS_MANAGER_H
 #define CHANNEL_ACCESS_MANAGER_H
 
+#include <map>
 #include <vector>
 #include <algorithm>
 #include "ns3/event-id.h"
 #include "ns3/nstime.h"
+#include "ns3/object.h"
+#include "wifi-phy-common.h"
 
 namespace ns3 {
 
@@ -66,6 +69,12 @@ public:
    * \param phy the WifiPhy to listen to
    */
   void RemovePhyListener (Ptr<WifiPhy> phy);
+  /**
+   * Set the ID of the link this Channel Access Manager is associated with.
+   *
+   * \param linkId the ID of the link this Channel Access Manager is associated with
+   */
+  void SetLinkId (uint8_t linkId);
   /**
    * Set up the Frame Exchange Manager.
    *
@@ -126,6 +135,19 @@ public:
   void DisableEdcaFor (Ptr<Txop> qosTxop, Time duration);
 
   /**
+   * Return the width of the largest primary channel that has been idle for the
+   * given time interval before the given time, if any primary channel has been
+   * idle, or zero, otherwise.
+   *
+   * \param interval the given time interval
+   * \param end the given end time
+   * \return the width of the largest primary channel that has been idle for the
+   *         given time interval before the given time, if any primary channel has
+   *         been idle, or zero, otherwise
+   */
+  uint16_t GetLargestIdlePrimaryChannel (Time interval, Time end);
+
+  /**
    * \param duration expected duration of reception
    *
    * Notify the Txop that a packet reception started
@@ -152,10 +174,17 @@ public:
   void NotifyTxStartNow (Time duration);
   /**
    * \param duration expected duration of CCA busy period
+   * \param channelType the channel type for which the CCA busy state is reported.
+   * \param per20MhzDurations vector that indicates for how long each 20 MHz subchannel
+   *        (corresponding to the index of the element in the vector) is busy and where a zero duration
+   *        indicates that the subchannel is idle. The vector is non-empty if  the PHY supports 802.11ax
+   *        or later and if the operational channel width is larger than 20 MHz.
    *
    * Notify the Txop that a CCA busy period has just started.
    */
-  void NotifyMaybeCcaBusyStartNow (Time duration);
+  void NotifyCcaBusyStartNow (Time duration,
+                              WifiChannelListType channelType,
+                              const std::vector<Time>& per20MhzDurations);
   /**
    * \param duration expected duration of channel switching period
    *
@@ -229,17 +258,14 @@ protected:
 
 private:
   /**
+   * Initialize the structures holding busy end times per channel type (primary,
+   * secondary, etc.) and per 20 MHz channel.
+   */
+  void InitLastBusyStructs (void);
+  /**
    * Update backoff slots for all Txops.
    */
   void UpdateBackoff (void);
-  /**
-   * Return the most recent time.
-   *
-   * \param list the initializer list including the times to compare
-   *
-   * \return the most recent time
-   */
-  Time MostRecent (std::initializer_list<Time> list) const;
   /**
    * Return the time when the backoff procedure
    * started for the given Txop.
@@ -258,6 +284,16 @@ private:
    * \return the time when the backoff procedure ended (or will ended)
    */
   Time GetBackoffEndFor (Ptr<Txop> txop);
+  /**
+   * This method determines whether the medium has been idle during a period (of
+   * non-null duration) immediately preceding the time this method is called. If
+   * so, the last idle start time and end time for each channel type are updated.
+   * Otherwise, no change is made by this method.
+   * This method is normally called when we are notified of the start of a
+   * transmission, reception, CCA Busy or switching to correctly maintain the
+   * information about the last idle period.
+   */
+  void UpdateLastIdlePeriod (void);
 
   void DoRestartAccessTimeoutIfNeeded (void);
 
@@ -291,33 +327,39 @@ private:
   virtual Time GetEifsNoDifs (void) const;
 
   /**
+   * Structure defining start time and end time for a given state.
+   */
+  struct Timespan
+  {
+    Time start {0};     //!< start time
+    Time end {0};       //!< end time
+  };
+
+  /**
    * typedef for a vector of Txops
    */
   typedef std::vector<Ptr<Txop>> Txops;
 
-  Txops m_txops;                         //!< the vector of managed Txops
-  Time m_lastAckTimeoutEnd;              //!< the last Ack timeout end time
-  Time m_lastCtsTimeoutEnd;              //!< the last CTS timeout end time
-  Time m_lastNavStart;                   //!< the last NAV start time
-  Time m_lastNavDuration;                //!< the last NAV duration time
-  Time m_lastRxStart;                    //!< the last receive start time
-  Time m_lastRxDuration;                 //!< the last receive duration time
-  bool m_lastRxReceivedOk;               //!< the last receive OK
-  Time m_lastTxStart;                    //!< the last transmit start time
-  Time m_lastTxDuration;                 //!< the last transmit duration time
-  Time m_lastBusyStart;                  //!< the last busy start time
-  Time m_lastBusyDuration;               //!< the last busy duration time
-  Time m_lastSwitchingStart;             //!< the last switching start time
-  Time m_lastSwitchingDuration;          //!< the last switching duration time
-  bool m_sleeping;                       //!< flag whether it is in sleeping state
-  bool m_off;                            //!< flag whether it is in off state
-  Time m_eifsNoDifs;                     //!< EIFS no DIFS time
-  EventId m_accessTimeout;               //!< the access timeout ID
-  Time m_slot;                           //!< the slot time
-  Time m_sifs;                           //!< the SIFS time
-  PhyListener* m_phyListener;            //!< the PHY listener
-  Ptr<WifiPhy> m_phy;                    //!< pointer to the PHY
-  Ptr<FrameExchangeManager> m_feManager; //!< pointer to the Frame Exchange Manager
+  Txops m_txops;                                      //!< the vector of managed Txops
+  Time m_lastAckTimeoutEnd;                           //!< the last Ack timeout end time
+  Time m_lastCtsTimeoutEnd;                           //!< the last CTS timeout end time
+  Time m_lastNavEnd;                                  //!< the last NAV end time
+  Timespan m_lastRx;                                  //!< the last receive start and end time
+  bool m_lastRxReceivedOk;                            //!< the last receive OK
+  Time m_lastTxEnd;                                   //!< the last transmit end time
+  std::map<WifiChannelListType, Time> m_lastBusyEnd;  //!< the last busy end time for each channel type
+  std::vector<Time> m_lastPer20MHzBusyEnd;            /**< the last busy end time per 20 MHz channel
+                                                           (HE stations and channel width > 20 MHz only) */
+  std::map<WifiChannelListType, Timespan> m_lastIdle; //!< the last idle start and end time for each channel type
+  Time m_lastSwitchingEnd;                            //!< the last switching end time
+  bool m_sleeping;                                    //!< flag whether it is in sleeping state
+  bool m_off;                                         //!< flag whether it is in off state
+  Time m_eifsNoDifs;                                  //!< EIFS no DIFS time
+  EventId m_accessTimeout;                            //!< the access timeout ID
+  PhyListener* m_phyListener;                         //!< the PHY listener
+  Ptr<WifiPhy> m_phy;                                 //!< pointer to the PHY
+  Ptr<FrameExchangeManager> m_feManager;              //!< pointer to the Frame Exchange Manager
+  uint8_t m_linkId;                                   //!< the ID of the link this object is associated with
 };
 
 } //namespace ns3

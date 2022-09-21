@@ -117,10 +117,9 @@ ChannelCondition::IsI2i () const
 }
 
 bool
-ChannelCondition::IsEqual (Ptr<const ChannelCondition> otherCondition) const
+ChannelCondition::IsEqual (LosConditionValue losCondition, O2iConditionValue o2iCondition) const
 {
-  return (m_o2iCondition == otherCondition->GetO2iCondition ()
-          && m_losCondition == otherCondition->GetLosCondition ());
+  return (m_losCondition == losCondition && m_o2iCondition == o2iCondition);
 }
 
 std::ostream& operator<< (std::ostream& os, ChannelCondition::LosConditionValue cond)
@@ -182,12 +181,9 @@ AlwaysLosChannelConditionModel::~AlwaysLosChannelConditionModel ()
 {}
 
 Ptr<ChannelCondition>
-AlwaysLosChannelConditionModel::GetChannelCondition (Ptr<const MobilityModel> a,
-                                                     Ptr<const MobilityModel> b) const
+AlwaysLosChannelConditionModel::GetChannelCondition ([[maybe_unused]] Ptr<const MobilityModel> a,
+                                                     [[maybe_unused]] Ptr<const MobilityModel> b) const
 {
-  NS_UNUSED (a);
-  NS_UNUSED (b);
-
   Ptr<ChannelCondition> c = CreateObject<ChannelCondition> (ChannelCondition::LOS);
 
   return c;
@@ -221,12 +217,9 @@ NeverLosChannelConditionModel::~NeverLosChannelConditionModel ()
 {}
 
 Ptr<ChannelCondition>
-NeverLosChannelConditionModel::GetChannelCondition (Ptr<const MobilityModel> a,
-                                                    Ptr<const MobilityModel> b) const
+NeverLosChannelConditionModel::GetChannelCondition ([[maybe_unused]] Ptr<const MobilityModel> a,
+                                                    [[maybe_unused]] Ptr<const MobilityModel> b) const
 {
-  NS_UNUSED (a);
-  NS_UNUSED (b);
-
   Ptr<ChannelCondition> c = CreateObject<ChannelCondition> (ChannelCondition::NLOS);
 
   return c;

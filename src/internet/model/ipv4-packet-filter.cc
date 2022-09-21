@@ -35,7 +35,7 @@ NS_LOG_COMPONENT_DEFINE ("Ipv4PacketFilter");
 
 NS_OBJECT_ENSURE_REGISTERED (Ipv4PacketFilter);
 
-TypeId 
+TypeId
 Ipv4PacketFilter::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Ipv4PacketFilter")
@@ -59,7 +59,7 @@ bool
 Ipv4PacketFilter::CheckProtocol (Ptr<QueueDiscItem> item) const
 {
   NS_LOG_FUNCTION (this << item);
-  return (DynamicCast<Ipv4QueueDiscItem> (item) != 0);
+  return bool (DynamicCast<Ipv4QueueDiscItem> (item));
 }
 
 // ------------------------------------------------------------------------- //

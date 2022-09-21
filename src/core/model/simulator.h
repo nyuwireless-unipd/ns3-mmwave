@@ -68,6 +68,10 @@ class Scheduler;
 class Simulator
 {
 public:
+  // Delete default constructor and destructor to avoid misuse
+  Simulator () = delete;
+  ~Simulator () = delete;
+
   /**
    * @param [in] impl A new simulator implementation.
    *
@@ -464,7 +468,6 @@ public:
    * @param [in] delay Delay until the event expires.
    * @param [in] context Event context.
    * @param [in] event The event to schedule.
-   * @returns A unique identifier for the newly-scheduled event.
    */
   static void ScheduleWithContext (uint32_t context, const Time &delay, EventImpl *event);
 
@@ -495,11 +498,6 @@ public:
   static uint32_t GetSystemId (void);
 
 private:
-  /** Default constructor. */
-  Simulator ();
-  /** Destructor. */
-  ~Simulator ();
-
   /**
    * Implementation of the various Schedule methods.
    * @param [in] delay Delay until the event should execute.

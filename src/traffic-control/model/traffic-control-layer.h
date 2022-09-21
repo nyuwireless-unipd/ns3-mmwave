@@ -22,6 +22,7 @@
 #include "ns3/object.h"
 #include "ns3/address.h"
 #include "ns3/net-device.h"
+#include "ns3/traced-callback.h"
 #include "ns3/node.h"
 #include "ns3/queue-item.h"
 #include <map>
@@ -107,6 +108,10 @@ public:
   TrafficControlLayer ();
 
   virtual ~TrafficControlLayer ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  TrafficControlLayer (TrafficControlLayer const &) = delete;
+  TrafficControlLayer & operator = (TrafficControlLayer const &) = delete;
 
   /**
    * \brief Register an IN handler
@@ -203,17 +208,6 @@ protected:
 
 private:
   /**
-   * \brief Copy constructor
-   * Disable default implementation to avoid misuse
-   */
-  TrafficControlLayer (TrafficControlLayer const &);
-  /**
-   * \brief Assignment operator
-   * \return this object
-   * Disable default implementation to avoid misuse
-   */
-  TrafficControlLayer& operator= (TrafficControlLayer const &);
-  /**
    * \brief Protocol handler entry.
    * This structure is used to demultiplex all the protocols.
    */
@@ -254,6 +248,13 @@ private:
   /// Map storing the required information for each device with a queue disc installed
   std::map<Ptr<NetDevice>, NetDeviceInfo> m_netDevices;
   ProtocolHandlerList m_handlers;  //!< List of upper-layer handlers
+
+  /**
+   * The trace source fired when the Traffic Control layer drops a packet because
+   * no queue disc is installed on the device, the device supports flow control and
+   * the device queue is stopped
+   */
+  TracedCallback<Ptr<const Packet>> m_dropped;
 };
 
 } // namespace ns3

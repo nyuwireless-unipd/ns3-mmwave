@@ -112,7 +112,7 @@ void
 WifiRadioEnergyModel::SetEnergySource (const Ptr<EnergySource> source)
 {
   NS_LOG_FUNCTION (this << source);
-  NS_ASSERT (source != NULL);
+  NS_ASSERT (source);
   m_source = source;
   m_switchToOffEvent.Cancel ();
   Time durationToOff = GetMaximumTimeInState (m_currentState);
@@ -541,9 +541,10 @@ WifiRadioEnergyModelPhyListener::NotifyTxStart (Time duration, double txPowerDbm
 }
 
 void
-WifiRadioEnergyModelPhyListener::NotifyMaybeCcaBusyStart (Time duration)
+WifiRadioEnergyModelPhyListener::NotifyCcaBusyStart (Time duration, WifiChannelListType channelType,
+                                                     const std::vector<Time>& /*per20MhzDurations*/)
 {
-  NS_LOG_FUNCTION (this << duration);
+  NS_LOG_FUNCTION (this << duration << channelType);
   if (m_changeStateCallback.IsNull ())
     {
       NS_FATAL_ERROR ("WifiRadioEnergyModelPhyListener:Change state callback not set!");

@@ -35,9 +35,9 @@ class WifiPhyHelper;
 class WifiNetDevice;
 class NodeContainer;
 
-/** 
+/**
  * \ingroup dot11s
- * 
+ *
  * \brief Helper to create IEEE 802.11s mesh networks
  */
 class MeshHelper
@@ -61,77 +61,39 @@ public:
   static MeshHelper Default ();
 
   /**
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
+   * \brief Set the Mac Attributes.
    *
    * All the attributes specified in this method should exist
    * in the requested mac.
+   *
+   * \tparam Ts \deduced Argument types
+   * \param [in] args Name and AttributeValue pairs to set.
    */
-  void SetMacType (std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                   std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                   std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                   std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                   std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                   std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                   std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                   std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
+  template <typename... Ts>
+  void SetMacType (Ts&&... args);
   /**
-   * \param type the type of ns3::WifiRemoteStationManager to create.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
+   * \brief Set the remote station manager type and Attributes.
    *
    * All the attributes specified in this method should exist
    * in the requested station manager.
+   *
+   * \tparam Ts \deduced Argument types
+   * \param type the type of remote station manager to use.
+   * \param [in] args Name and AttributeValue pairs to set.
    */
-  void
-  SetRemoteStationManager (std::string type,
-                           std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                           std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                           std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                           std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                           std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                           std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                           std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                           std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
+  template <typename... Ts>
+  void SetRemoteStationManager (std::string type, Ts&&... args);
   /**
    * Set standard
    * \param standard the wifi phy standard
    */
   void SetStandard (enum WifiStandard standard);
-  /// \todo SetMeshId 
+  /// \todo SetMeshId
   //void SetMeshId (std::string s);
-  /** 
-   *  \brief Spread/not spread frequency channels of MP interfaces. 
-   * 
-   *  If set to true different non-overlapping 20MHz frequency 
+  /**
+   *  \brief Spread/not spread frequency channels of MP interfaces.
+   *
+   *  If set to true different non-overlapping 20MHz frequency
    *  channels will be assigned to different mesh point interfaces.
    */
   enum ChannelPolicy
@@ -151,44 +113,25 @@ public:
    */
   void SetNumberOfInterfaces (uint32_t nInterfaces);
 
-  /** 
+  /**
    * \brief Install 802.11s mesh device & protocols on given node list
-   * 
+   *
    * \param phyHelper           Wifi PHY helper
    * \param c               List of nodes to install
-   * 
+   *
    * \return list of created mesh point devices, see MeshPointDevice
    */
   NetDeviceContainer
   Install (const WifiPhyHelper &phyHelper, NodeContainer c) const;
   /**
+   * \brief Set the MeshStack type to use.
+   *
+   * \tparam Ts \deduced Argument types
    * \param type the type of ns3::MeshStack.
-   * \param n0 the name of the attribute to set
-   * \param v0 the value of the attribute to set
-   * \param n1 the name of the attribute to set
-   * \param v1 the value of the attribute to set
-   * \param n2 the name of the attribute to set
-   * \param v2 the value of the attribute to set
-   * \param n3 the name of the attribute to set
-   * \param v3 the value of the attribute to set
-   * \param n4 the name of the attribute to set
-   * \param v4 the value of the attribute to set
-   * \param n5 the name of the attribute to set
-   * \param v5 the value of the attribute to set
-   * \param n6 the name of the attribute to set
-   * \param v6 the value of the attribute to set
-   * \param n7 the name of the attribute to set
-   * \param v7 the value of the attribute to set
+   * \param [in] args Name and AttributeValue pairs to set.
    */
-  void SetStackInstaller (std::string type,
-                          std::string n0 = "", const AttributeValue &v0 = EmptyAttributeValue (),
-                          std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                          std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                          std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                          std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                          std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                          std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                          std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue ());
+  template <typename... Ts>
+  void SetStackInstaller (std::string type, Ts&&... args);
 
   /**
    * \brief Print statistics.
@@ -216,6 +159,11 @@ public:
    */
   int64_t AssignStreams (NetDeviceContainer c, int64_t stream);
 
+  /**
+   * Helper to enable all MeshPointDevice log components with one statement
+   */
+  static void EnableLogComponents (void);
+
 private:
   /**
    * \param phyHelper
@@ -236,6 +184,37 @@ private:
   enum WifiStandard m_standard; ///< standard
 
 };
+
+
+/***************************************************************
+ *  Implementation of the templates declared above.
+ ***************************************************************/
+
+template <typename... Ts>
+void MeshHelper::SetMacType (Ts&&... args)
+{
+  m_mac.SetTypeId ("ns3::MeshWifiInterfaceMac");
+  m_mac.Set (std::forward<Ts> (args)...);
+}
+
+template <typename... Ts>
+void MeshHelper::SetRemoteStationManager (std::string type, Ts&&... args)
+{
+  m_stationManager = ObjectFactory (type, std::forward<Ts> (args)...);
+}
+
+template <typename... Ts>
+void MeshHelper::SetStackInstaller (std::string type, Ts&&... args)
+{
+  m_stackFactory.SetTypeId (type);
+  m_stackFactory.Set (std::forward<Ts> (args)...);
+  m_stack = m_stackFactory.Create<MeshStack> ();
+  if (!m_stack)
+    {
+      NS_FATAL_ERROR ("Stack has not been created: " << type);
+    }
+}
+
 } // namespace ns3
 
 #endif /* MESH_HELPER_H */

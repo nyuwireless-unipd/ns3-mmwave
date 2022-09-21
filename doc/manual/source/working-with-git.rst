@@ -17,7 +17,7 @@ The ns-3 project used Mercurial in the past as its source code control system, b
 
 The ns-3 project is officially hosted on GitLab.com at https://gitlab.com/nsnam/.  For convenience and historical reasons, ns-3-dev mirrors are currently posted on Bitbucket.com and GitHub.com, and kept in sync with the official repository periodically via cron jobs.  We recommend that users who have been working from one of these mirrors repoint their remotes so that they pull origin or upstream from GitLab.com (see below explanation about how to configure remotes).
 
-This section of the manual provides common tips for both users and maintainers. Since the first part is shared, in this manual section we will start with a personal repository and then explain what to do in some typical cases. ns-3 users often combine ns-3-dev with other repositories (pybindgen, netanim, apps from the app store).  This manual chapter does not cover this use case; it only focuses on the single ns-3-dev repository.  See other project documentation such as the ns-3 tutorial for descriptions on bundled releases distributed as source archives, or on the bake build tool for managing multiple repositories.  The guidelines listed below also largely pertain to the user who is using (and cloning) bake from the GitLab.com repository.
+This section of the manual provides common tips for both users and maintainers. Since the first part is shared, in this manual section we will start with a personal repository and then explain what to do in some typical cases. ns-3 users often combine ns-3-dev with other repositories (netanim, apps from the app store).  This manual chapter does not cover this use case; it only focuses on the single ns-3-dev repository.  See other project documentation such as the ns-3 tutorial for descriptions on bundled releases distributed as source archives, or on the bake build tool for managing multiple repositories.  The guidelines listed below also largely pertain to the user who is using (and cloning) bake from the GitLab.com repository.
 
 ns-3's Git workflow in a nutshell
 *********************************
@@ -42,6 +42,8 @@ Setup of a personal repository
 
 We will provide two ways, one anonymous (but will impede the creation of merge requests) and the other, preferred, that include forking the repository through the GitLab.com web interface.
 
+.. _Directly cloning ns-3-dev:
+
 Directly cloning ns-3-dev
 +++++++++++++++++++++++++
 
@@ -62,7 +64,7 @@ Assume that you are the user *john* on GitLab.com and that you want to create a 
 
 Note that you may only do this once; if you try to fork again, Gitlab will take you to the page of the original fork. So, if you are planning to maintain two or more separate forks (for example, one for your private work, another for maintenance, etc.), you are doing a mistake. Instead, you should add these forks as a remote of your existing directory (see below for adding remotes). Usually, it is a good thing to add the maintainer's repository as remotes, because it can happen that "bleeding edge" features will appear there before landing in ns-3-dev.
 
-For more information on forking with Gilab, there is plenty of visual documentation (https://docs.gitlab.com/ee/gitlab-basics/fork-project.html). To work with your forked repository, you have two ways: one is a clean clone while the other is meant to re-use an existing ns-3 git repository.
+For more information on forking with Gilab, there is plenty of visual documentation (https://docs.gitlab.com/ee/user/project/repository/forking_workflow.html). To work with your forked repository, you have two ways: one is a clean clone while the other is meant to re-use an existing ns-3 git repository.
 
 Clone your forked repository on your machine
 ============================================
@@ -92,7 +94,7 @@ With the command above, we added a remote repository, named nsnam, which links t
 
    $ git remote show
 
-To see to what ``origin`` is linking to::
+To see what ``origin`` is linking to::
 
    $ git remote show origin
 
@@ -177,7 +179,7 @@ and we can see the edits with git diff:
    @@ -1439,6 +1439,10 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
           // There is a DupAck
           ++m_dupAckCount;
-   
+
    +      // I'm introducing a subtle bug!
    +
    +      m_tcb->m_cWnd = m_tcb->m_ssThresh;
@@ -247,7 +249,27 @@ Please note that for older git version, the push command looks like::
 Submit work for review
 **********************
 
-After you push your branch to origin, you can follow the instructions here https://docs.gitlab.com/ee/gitlab-basics/add-merge-request.html to create a merge request. Please remember to add, as reviewer, at least one maintainer. To get the information on who is maintaining what, please refer to the `nsnam website <https://www.nsnam.org/develop/maintainers/>`_.
+After you push your branch to origin, you can follow the instructions here https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html
+to create a merge request.
+
+GitLab CI (Continous Integration)
++++++++++++++++++++++++++++++++++
+
+GitLab provides a CI (Continous Integration) feature. Shortly put, after every push the code is built and tests are run in one of the GitLab servers.
+
+Merge requests are expected to pass the CI, as is to not generate errors or warings during compilation, to have all the tests pasing, and to not generate warnings on the documentation.
+Hence, the CI is very important for the workflow. However, sometimes running the Ci is superfluous, for example:
+
+- You are in the middle of some work (and perhaps you know that there are errors),
+- Your changes are not tested by the CI (e.g., changes to the AUTHORS),
+- Etc.
+
+In these cases it is useful to skip the CI to save time, CI runners quota, and energy. This is possible by using the ``-o ci.skip`` option:
+
+::
+
+    $ git push -o ci.skip
+
 
 Porting patches from mercurial repositories to git
 **************************************************
@@ -274,7 +296,7 @@ Please note that if you want to keep track of your branch, you can use as comman
 Review and merge someone else's work
 ************************************
 
-Gitlab.com has a plenty of documentation on how to handle merge requests. Please take a look here: https://docs.gitlab.com/ee/user/project/merge_requests/index.html.
+Gitlab.com has a plenty of documentation on how to handle merge requests. Please take a look here: https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html.
 
 If you are committing a patch from someone else, and it is not coming through a Merge Request process, you can use the --author='' argument to 'git commit' to assign authorship to another email address (such as we have done in the past with the Mercurial -u option).
 
@@ -351,11 +373,14 @@ When you are done, the 'git status' command should show:
 
 Make a commit of these files:
 
+::
+
   $ git commit -a -m"Update VERSION and documentation tags for ns-3.34 release"
 
 Next, make the following change to RELEASE_NOTES and commit it:
 
 ::
+
    Availability
    ------------
   -This release is not yet available.
@@ -365,7 +390,7 @@ Next, make the following change to RELEASE_NOTES and commit it:
   $ git commit -m"Update availability in RELEASE_NOTES" RELEASE_NOTES
 
 Finally, add a git annotated tag:
-  
+
 ::
 
   $ git tag -a 'ns-3.34' -m"ns-3.34 release"
@@ -441,7 +466,7 @@ are committed to ``master`` on ``nsnam/ns-3-dev.git`` as usual::
   ... (now fix a really important bug)
   $ echo 'abc' >> a
   $ git commit -m"Fix missing abc bug on file a" a
-  
+
 
 Now the tree looks like this::
 
@@ -518,10 +543,10 @@ We can next hand-edit these files to restore them to original state, so that::
 
 The new log should show something like the below, with parallel git
 history paths until the merge back again::
-  
+
   $ git log --graph --decorate --oneline --all
   *   815ce6e (HEAD -> master) Merge branch 'ns-3.34.1-release'
-  |\  
+  |\
   | * 12a29ca (tag: ns-3.34.1) Update VERSION to 3.34.1
   | * 21ebdbf Fix missing abc bug on file a
   * | ee37d41 Fix missing abc bug on file a
@@ -529,8 +554,8 @@ history paths until the merge back again::
   * | ba28d6d Add new feature
   * | e50015a make some changes
   * |   fd075f6 Merge ns-3.34-release branch
-  |\ \  
-  | |/  
+  |\ \
+  | |/
   | * 3fab3cf (tag: ns-3.34) Update availability in RELEASE_NOTES
   | * c50aaf7 Update VERSION and documentation tags for ns-3.34 release
   |/

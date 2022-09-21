@@ -35,9 +35,9 @@ class YansWifiChannel;
  *
  * This PHY implements a model of 802.11a. The model
  * implemented here is based on the model described
- * in "Yet Another Network Simulator",
- * (http://cutebugs.net/files/wns2-yans.pdf).
- *
+ * in "Yet Another Network Simulator" published in WNS2 2006;
+ * an author-prepared version of this paper is at:
+ * https://hal.inria.fr/file/index/docid/78318/filename/yans-rr.pdf
  *
  * This PHY model depends on a channel loss and delay
  * model as provided by the ns3::PropagationLossModel
@@ -56,8 +56,8 @@ public:
   YansWifiPhy ();
   virtual ~YansWifiPhy ();
 
-  // Implementation of pure virtual method.
-  void StartTx (Ptr<WifiPpdu> ppdu) override;
+  void SetInterferenceHelper (const Ptr<InterferenceHelper> helper) override;
+  void StartTx (Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector) override;
   Ptr<Channel> GetChannel (void) const override;
   uint16_t GetGuardBandwidth (uint16_t currentChannelWidth) const override;
   std::tuple<double, double, double> GetTxMaskRejectionParams (void) const override;

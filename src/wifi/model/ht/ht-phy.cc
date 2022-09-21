@@ -24,6 +24,7 @@
 #include "ns3/wifi-psdu.h"
 #include "ns3/wifi-phy.h"
 #include "ns3/wifi-utils.h"
+#include "ns3/interference-helper.h"
 #include "ns3/log.h"
 #include "ns3/assert.h"
 
@@ -357,7 +358,9 @@ Ptr<WifiPpdu>
 HtPhy::BuildPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time ppduDuration)
 {
   NS_LOG_FUNCTION (this << psdus << txVector << ppduDuration);
-  return Create<HtPpdu> (psdus.begin ()->second, txVector, ppduDuration, m_wifiPhy->GetPhyBand (),
+  return Create<HtPpdu> (psdus.begin ()->second, txVector,
+                         m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (txVector.GetChannelWidth ()),
+                         ppduDuration, m_wifiPhy->GetPhyBand (),
                          ObtainNextUid (txVector));
 }
 
@@ -431,9 +434,8 @@ HtPhy::IsConfigSupported (Ptr<const WifiPpdu> ppdu) const
 }
 
 Ptr<SpectrumValue>
-HtPhy::GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> ppdu) const
+HtPhy::GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> /* ppdu */, const WifiTxVector& txVector) const
 {
-  const WifiTxVector& txVector = ppdu->GetTxVector ();
   uint16_t centerFrequency = GetCenterFrequencyForChannelWidth (txVector);
   uint16_t channelWidth = txVector.GetChannelWidth ();
   NS_LOG_FUNCTION (this << centerFrequency << channelWidth << txPowerW);
@@ -549,14 +551,13 @@ HtPhy::CreateHtMcs (uint8_t index)
   return WifiModeFactory::CreateWifiMcs ("HtMcs" + std::to_string (index),
                                          index,
                                          WIFI_MOD_CLASS_HT,
+                                         false,
                                          MakeBoundCallback (&GetHtCodeRate, index),
                                          MakeBoundCallback (&GetHtConstellationSize, index),
-                                         MakeBoundCallback (&GetPhyRate, index),
                                          MakeCallback (&GetPhyRateFromTxVector),
-                                         MakeBoundCallback (&GetDataRate, index),
                                          MakeCallback (&GetDataRateFromTxVector),
                                          MakeBoundCallback (&GetNonHtReferenceRate, index),
-                                         MakeCallback (&IsModeAllowed));
+                                         MakeCallback (&IsAllowed));
 }
 
 WifiCodeRate
@@ -664,19 +665,20 @@ HtPhy::GetDataRate (uint8_t mcsValue, uint16_t channelWidth, uint16_t guardInter
 {
   NS_ASSERT (guardInterval == 800 || guardInterval == 400);
   NS_ASSERT (nss <= 4);
-  return CalculateDataRate (3.2, guardInterval,
+  return CalculateDataRate (GetSymbolDuration (NanoSeconds (guardInterval)),
                             GetUsableSubcarriers (channelWidth),
                             static_cast<uint16_t> (log2 (GetHtConstellationSize (mcsValue))),
                             GetCodeRatio (GetHtCodeRate (mcsValue)), nss);
 }
 
 uint64_t
-HtPhy::CalculateDataRate (double symbolDuration, uint16_t guardInterval,
-                          uint16_t usableSubCarriers, uint16_t numberOfBitsPerSubcarrier,
+HtPhy::CalculateDataRate (Time symbolDuration, uint16_t usableSubCarriers,
+                          uint16_t numberOfBitsPerSubcarrier,
                           double codingRate, uint8_t nss)
 {
-  return nss * OfdmPhy::CalculateDataRate (symbolDuration, guardInterval,
-                                           usableSubCarriers, numberOfBitsPerSubcarrier,
+  return nss * OfdmPhy::CalculateDataRate (symbolDuration,
+                                           usableSubCarriers,
+                                           numberOfBitsPerSubcarrier,
                                            codingRate);
 }
 
@@ -684,6 +686,12 @@ uint16_t
 HtPhy::GetUsableSubcarriers (uint16_t channelWidth)
 {
   return (channelWidth == 40) ? 108 : 52;
+}
+
+Time
+HtPhy::GetSymbolDuration (Time guardInterval)
+{
+  return NanoSeconds (3200) + guardInterval;
 }
 
 uint64_t
@@ -763,7 +771,7 @@ HtPhy::CalculateNonHtReferenceRate (WifiCodeRate codeRate, uint16_t constellatio
 }
 
 bool
-HtPhy::IsModeAllowed (uint16_t /* channelWidth */, uint8_t /* nss */)
+HtPhy::IsAllowed (const WifiTxVector& /*txVector*/)
 {
   return true;
 }
@@ -772,6 +780,55 @@ uint32_t
 HtPhy::GetMaxPsduSize (void) const
 {
   return 65535;
+}
+
+PhyEntity::CcaIndication
+HtPhy::GetCcaIndication (const Ptr<const WifiPpdu> ppdu)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_wifiPhy->GetChannelWidth () < 40)
+    {
+      return PhyEntity::GetCcaIndication (ppdu);
+    }
+  double ccaThresholdDbm = GetCcaThreshold (ppdu, WIFI_CHANLIST_PRIMARY);
+  Time delayUntilCcaEnd = GetDelayUntilCcaEnd (ccaThresholdDbm, GetPrimaryBand (20));
+  if (delayUntilCcaEnd.IsStrictlyPositive ())
+    {
+      return std::make_pair (delayUntilCcaEnd, WIFI_CHANLIST_PRIMARY); //if Primary is busy, ignore CCA for Secondary
+    }
+  if (ppdu)
+    {
+      const uint16_t primaryWidth = 20;
+      uint16_t p20MinFreq =
+          m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (primaryWidth) - (primaryWidth / 2);
+      uint16_t p20MaxFreq =
+          m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (primaryWidth) + (primaryWidth / 2);
+      if (ppdu->DoesOverlapChannel (p20MinFreq, p20MaxFreq))
+        {
+          /*
+           * PPDU occupies primary 20 MHz channel, hence we skip CCA sensitivity rules
+           * for signals not occupying the primary 20 MHz channel.
+           */
+          return std::nullopt;
+        }
+    }
+
+  const uint16_t secondaryWidth = 20;
+  uint16_t s20MinFreq =
+      m_wifiPhy->GetOperatingChannel ().GetSecondaryChannelCenterFrequency (secondaryWidth) - (secondaryWidth / 2);
+  uint16_t s20MaxFreq =
+      m_wifiPhy->GetOperatingChannel ().GetSecondaryChannelCenterFrequency (secondaryWidth) + (secondaryWidth / 2);
+  if (!ppdu || ppdu->DoesOverlapChannel (s20MinFreq, s20MaxFreq))
+    {
+      ccaThresholdDbm = GetCcaThreshold (ppdu, WIFI_CHANLIST_SECONDARY);
+      delayUntilCcaEnd = GetDelayUntilCcaEnd (ccaThresholdDbm, GetSecondaryBand (20));
+      if (delayUntilCcaEnd.IsStrictlyPositive ())
+        {
+           return std::make_pair (delayUntilCcaEnd, WIFI_CHANLIST_SECONDARY);
+        }
+    }
+
+  return std::nullopt;
 }
 
 } //namespace ns3

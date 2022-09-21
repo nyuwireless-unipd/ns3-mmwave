@@ -179,7 +179,7 @@ public:
   * channel model classes, therefore this function returns 0.
   * \return 0
   */
-  Ptr<AntennaModel> GetRxAntenna () const override;
+  Ptr<Object> GetAntenna () const override;
 
   /**
   * Set the beamforming module
@@ -280,7 +280,6 @@ private:
   Time m_firstRxStart;
   Time m_firstRxDuration;
 
-  Ptr<AntennaModel> m_antenna; // TODO can we remove this? it is never used
   Ptr<MmWaveBeamformingModel> m_beamforming; //!< used to compute the beamforming vector
 
   uint16_t m_cellId;

@@ -255,8 +255,8 @@ HalfDuplexIdealPhy::SetGenericPhyRxEndOkCallback (GenericPhyRxEndOkCallback c)
   m_phyMacRxEndOkCallback = c;
 }
 
-Ptr<AntennaModel>
-HalfDuplexIdealPhy::GetRxAntenna () const
+Ptr<Object>
+HalfDuplexIdealPhy::GetAntenna () const
 {
   NS_LOG_FUNCTION (this);
   return m_antenna;
@@ -350,7 +350,7 @@ HalfDuplexIdealPhy::StartRx (Ptr<SpectrumSignalParameters> spectrumParams)
   // the device might start RX only if the signal is of a type understood by this device
   // this corresponds in real devices to preamble detection
   Ptr<HalfDuplexIdealPhySignalParameters> rxParams = DynamicCast<HalfDuplexIdealPhySignalParameters> (spectrumParams);
-  if (rxParams != 0)
+  if (rxParams)
     {
       // signal is of known type
       switch (m_state)

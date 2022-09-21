@@ -23,7 +23,6 @@
 #include "ns3/log.h"
 #include "ns3/abort.h"
 #include "ns3/assert.h"
-#include "ns3/unused.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/ipv4-route.h"
 #include "ns3/node.h"
@@ -205,7 +204,7 @@ Ptr<Ipv4Route> Rip::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Ne
       NS_LOG_LOGIC ("RouteOutput (): Multicast destination");
     }
 
-  rtentry = Lookup (destination, oif);
+  rtentry = Lookup (destination, true, oif);
   if (rtentry)
     {
       sockerr = Socket::ERROR_NOTERROR;
@@ -223,7 +222,7 @@ bool Rip::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const N
 {
   NS_LOG_FUNCTION (this << p << header << header.GetSource () << header.GetDestination () << idev);
 
-  NS_ASSERT (m_ipv4 != 0);
+  NS_ASSERT (m_ipv4);
   // Check if input device supports IP
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
@@ -276,9 +275,9 @@ bool Rip::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const N
     }
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination");
-  Ptr<Ipv4Route> rtentry = Lookup (header.GetDestination ());
+  Ptr<Ipv4Route> rtentry = Lookup (header.GetDestination (), false);
 
-  if (rtentry != 0)
+  if (rtentry)
     {
       NS_LOG_LOGIC ("Found unicast destination - calling unicast callback");
       ucb (rtentry, p, header);  // unicast forwarding callback
@@ -471,7 +470,7 @@ void Rip::SetIpv4 (Ptr<Ipv4> ipv4)
 {
   NS_LOG_FUNCTION (this << ipv4);
 
-  NS_ASSERT (m_ipv4 == 0 && ipv4 != 0);
+  NS_ASSERT (!m_ipv4 && ipv4);
   uint32_t i = 0;
   m_ipv4 = ipv4;
 
@@ -582,8 +581,7 @@ void Rip::DoDispose ()
   Ipv4RoutingProtocol::DoDispose ();
 }
 
-
-Ptr<Ipv4Route> Rip::Lookup (Ipv4Address dst, Ptr<NetDevice> interface)
+Ptr<Ipv4Route> Rip::Lookup (Ipv4Address dst, bool setSource, Ptr<NetDevice> interface)
 {
   NS_LOG_FUNCTION (this << dst << interface);
 
@@ -633,13 +631,16 @@ Ptr<Ipv4Route> Rip::Lookup (Ipv4Address dst, Ptr<NetDevice> interface)
                   uint32_t interfaceIdx = route->GetInterface ();
                   rtentry = Create<Ipv4Route> ();
 
-                  if (route->GetDest ().IsAny ()) /* default route */
+                  if (setSource)
                     {
-                      rtentry->SetSource (m_ipv4->SourceAddressSelection (interfaceIdx, route->GetGateway ()));
-                    }
-                  else
-                    {
-                      rtentry->SetSource (m_ipv4->SourceAddressSelection (interfaceIdx, route->GetDest ()));
+                      if (route->GetDest ().IsAny ()) /* default route */
+                        {
+                          rtentry->SetSource (m_ipv4->SourceAddressSelection (interfaceIdx, route->GetGateway ()));
+                        }
+                      else
+                        {
+                          rtentry->SetSource (m_ipv4->SourceAddressSelection (interfaceIdx, route->GetDest ()));
+                        }
                     }
 
                   rtentry->SetDestination (route->GetDest ());

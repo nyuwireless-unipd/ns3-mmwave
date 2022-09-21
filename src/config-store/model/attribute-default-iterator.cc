@@ -12,11 +12,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * Authors: Faker Moatamri <faker.moatamri@sophia.inria.fr>
  *          Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
- 
+
 #include "attribute-default-iterator.h"
 #include "ns3/attribute.h"
 #include "ns3/pointer.h"
@@ -31,7 +31,7 @@ namespace ns3
 AttributeDefaultIterator::~AttributeDefaultIterator ()
 {
 }
-void 
+void
 AttributeDefaultIterator::Iterate (void)
 {
   for (uint32_t i = 0; i < TypeId::GetRegisteredN (); i++)
@@ -52,7 +52,7 @@ AttributeDefaultIterator::Iterate (void)
               continue;
             }
           //No accessor, go to next attribute
-          if (info.accessor == 0)
+          if (!info.accessor)
             {
               continue;
             }
@@ -61,30 +61,30 @@ AttributeDefaultIterator::Iterate (void)
               //skip this attribute it doesn't have an setter
               continue;
             }
-          if (info.checker == 0)
+          if (!info.checker)
             {
               //skip, it doesn't have a checker
               continue;
             }
-          if (info.initialValue == 0)
+          if (!info.initialValue)
             {
               //No value, check next attribute
               continue;
             }
           Ptr<const ObjectPtrContainerValue> vector = DynamicCast<const ObjectPtrContainerValue> (info.initialValue);
-          if (vector != 0)
+          if (vector)
             {
               //a vector value, won't take it
               continue;
             }
           Ptr<const PointerValue> pointer = DynamicCast<const PointerValue> (info.initialValue);
-          if (pointer != 0)
+          if (pointer)
             {
               //pointer value, won't take it
               continue;
             }
           Ptr<const CallbackValue> callback = DynamicCast<const CallbackValue> (info.initialValue);
-          if (callback != 0)
+          if (callback)
             {
               //callback value, won't take it
               continue;
@@ -104,21 +104,21 @@ AttributeDefaultIterator::Iterate (void)
     }
 }
 
-void 
+void
 AttributeDefaultIterator::StartVisitTypeId (std::string name)
 {
 }
-void 
+void
 AttributeDefaultIterator::EndVisitTypeId (void)
 {
 }
 
-void 
+void
 AttributeDefaultIterator::DoVisitAttribute (std::string name, std::string defaultValue)
 {
 }
 
-void 
+void
 AttributeDefaultIterator::VisitAttribute (TypeId tid, std::string name, std::string defaultValue, uint32_t index)
 {
   DoVisitAttribute (name, defaultValue);

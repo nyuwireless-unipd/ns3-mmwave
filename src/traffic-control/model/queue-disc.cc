@@ -24,7 +24,6 @@
 #include "ns3/object-vector.h"
 #include "ns3/packet.h"
 #include "ns3/socket.h"
-#include "ns3/unused.h"
 #include "ns3/simulator.h"
 #include "queue-disc.h"
 #include "ns3/net-device-queue-interface.h"
@@ -402,9 +401,8 @@ QueueDisc::DoInitialize (void)
   NS_LOG_FUNCTION (this);
 
   // Check the configuration and initialize the parameters of this queue disc
-  bool ok = CheckConfig ();
+  [[maybe_unused]] bool ok = CheckConfig ();
   NS_ASSERT_MSG (ok, "The queue disc configuration is not correct");
-  NS_UNUSED (ok); // suppress compiler warning
   InitializeParams ();
 
   // Check the configuration and initialize the parameters of the child queue discs
@@ -634,7 +632,7 @@ void
 QueueDisc::AddQueueDiscClass (Ptr<QueueDiscClass> qdClass)
 {
   NS_LOG_FUNCTION (this);
-  NS_ABORT_MSG_IF (qdClass->GetQueueDisc () == 0, "Cannot add a class with no attached queue disc");
+  NS_ABORT_MSG_IF (!qdClass->GetQueueDisc (), "Cannot add a class with no attached queue disc");
   // the child queue disc cannot be one with wake mode equal to WAKE_CHILD because
   // such queue discs do not implement the enqueue/dequeue methods
   NS_ABORT_MSG_IF (qdClass->GetQueueDisc ()->GetWakeMode () == WAKE_CHILD,
@@ -997,7 +995,7 @@ QueueDisc::Restart (void)
 {
   NS_LOG_FUNCTION (this);
   Ptr<QueueDiscItem> item = DequeuePacket();
-  if (item == 0)
+  if (!item)
     {
       NS_LOG_LOGIC ("No packet to send");
       return false;
@@ -1014,7 +1012,7 @@ QueueDisc::DequeuePacket ()
   Ptr<QueueDiscItem> item;
 
   // First check if there is a requeued packet
-  if (m_requeued != 0)
+  if (m_requeued)
     {
         // If the queue where the requeued packet is destined to is not stopped, return
         // the requeued packet; otherwise, return an empty packet.
@@ -1045,7 +1043,7 @@ QueueDisc::DequeuePacket ()
         {
           item = Dequeue ();
           // If the item is not null, add the header to the packet.
-          if (item != 0)
+          if (item)
             {
               item->AddHeader ();
             }

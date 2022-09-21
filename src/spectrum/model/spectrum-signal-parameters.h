@@ -66,6 +66,7 @@ struct SpectrumSignalParameters : public SimpleRefCount<SpectrumSignalParameters
 
   /**
    * copy constructor
+   * \param p object to copy
    */
   SpectrumSignalParameters (const SpectrumSignalParameters& p);
 
@@ -80,7 +81,7 @@ struct SpectrumSignalParameters : public SimpleRefCount<SpectrumSignalParameters
    *
    * \return a copy of the (possibly derived) class
    */
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  virtual Ptr<SpectrumSignalParameters> Copy () const;
 
   /**
    * The Power Spectral Density of the

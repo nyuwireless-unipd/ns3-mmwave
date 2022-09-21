@@ -3,7 +3,7 @@
  * Copyright (c) 2005,2006,2007 INRIA
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as 
+ * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
  *
  * This program is distributed in the hope that it will be useful,
@@ -58,14 +58,19 @@ public:
    * 'stream'.  Return the number of streams (possibly zero) that
    * have been assigned.
    *
-   * \param stream
+   * \param stream first stream index to use
    * \return the number of stream indices assigned by this model
    */
   int64_t AssignStreams (int64_t stream);
-private:
+protected:
   /**
+   * Assign a fixed random variable stream number to the random variables used by this model.
+   *
    * Subclasses must implement this; those not using random variables
-   * can return zero
+   * can return zero.
+   *
+   * \param stream first stream index to use
+   * \return the number of stream indices assigned by this model
    */
   virtual int64_t DoAssignStreams (int64_t stream) = 0;
 };
@@ -89,9 +94,9 @@ public:
    */
   RandomPropagationDelayModel ();
   virtual ~RandomPropagationDelayModel ();
-  virtual Time GetDelay (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
+  Time GetDelay (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const override;
 private:
-  virtual int64_t DoAssignStreams (int64_t stream);
+  int64_t DoAssignStreams (int64_t stream) override;
   Ptr<RandomVariableStream> m_variable; //!< random generator
 };
 
@@ -113,7 +118,7 @@ public:
    * Use the default parameters from PropagationDelayConstantSpeed.
    */
   ConstantSpeedPropagationDelayModel ();
-  virtual Time GetDelay (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const;
+  Time GetDelay (Ptr<MobilityModel> a, Ptr<MobilityModel> b) const override;
   /**
    * \param speed the new speed (m/s)
    */
@@ -123,7 +128,7 @@ public:
    */
   double GetSpeed (void) const;
 private:
-  virtual int64_t DoAssignStreams (int64_t stream);
+  int64_t DoAssignStreams (int64_t stream) override;
   double m_speed; //!< speed
 };
 

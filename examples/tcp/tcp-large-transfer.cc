@@ -22,12 +22,12 @@
 //       n0-----------------n1-----------------n2
 //
 //
-// - Tracing of queues and packet receptions to file 
+// - Tracing of queues and packet receptions to file
 //   "tcp-large-transfer.tr"
 // - pcap traces also generated in the following files
 //   "tcp-large-transfer-$n-$i.pcap" where n and i represent node and interface
 // numbers respectively
-//  Usage (e.g.): ./waf --run tcp-large-transfer
+//  Usage (e.g.): ./ns3 run tcp-large-transfer
 
 #include <iostream>
 #include <fstream>
@@ -44,23 +44,47 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("TcpLargeTransfer");
 
-// The number of bytes to send in this simulation.
+/// The number of bytes to send in this simulation.
 static const uint32_t totalTxBytes = 2000000;
+/// The actual number of sent bytes.
 static uint32_t currentTxBytes = 0;
+
 // Perform series of 1040 byte writes (this is a multiple of 26 since
 // we want to detect data splicing in the output stream)
+/// Write size.
 static const uint32_t writeSize = 1040;
+/// Data to be written.
 uint8_t data[writeSize];
 
-// These are for starting the writing process, and handling the sending 
+// These are for starting the writing process, and handling the sending
 // socket's notification upcalls (events).  These two together more or less
 // implement a sending "Application", although not a proper ns3::Application
 // subclass.
 
-void StartFlow (Ptr<Socket>, Ipv4Address, uint16_t);
-void WriteUntilBufferFull (Ptr<Socket>, uint32_t);
+/**
+ * Start a flow.
+ *
+ * \param localSocket The local (sending) socket.
+ * \param servAddress The server address.
+ * \param servPort The server port.
+ */
+void StartFlow (Ptr<Socket> localSocket, Ipv4Address servAddress, uint16_t servPort);
 
-static void 
+/**
+ * Write to the buffer, filling it.
+ *
+ * \param localSocket The socket.
+ * \param txSpace The number of bytes to write.
+ */
+void WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSpace);
+
+/**
+ * Congestion window tracker function.
+ *
+ * \param oldval Old value.
+ * \param newval New value.
+ */
+static void
 CwndTracer (uint32_t oldval, uint32_t newval)
 {
   NS_LOG_INFO ("Moving cwnd from " << oldval << " to " << newval);
@@ -125,7 +149,7 @@ int main (int argc, char *argv[])
   // Simulation 1
   //
   // Send 2000000 bytes over a connection to server port 50000 at time 0
-  // Should observe SYN exchange, a lot of data segments and ACKS, and FIN 
+  // Should observe SYN exchange, a lot of data segments and ACKS, and FIN
   // exchange.  FIN exchange isn't quite compliant with TCP spec (see release
   // notes for more info)
   //
@@ -154,7 +178,7 @@ int main (int argc, char *argv[])
   // Trace changes to the congestion window
   Config::ConnectWithoutContext ("/NodeList/0/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow", MakeCallback (&CwndTracer));
 
-  // ...and schedule the sending "Application"; This is similar to what an 
+  // ...and schedule the sending "Application"; This is similar to what an
   // ns3::Application subclass would do internally.
   Simulator::ScheduleNow (&StartFlow, localSocket,
                           ipInterfs.GetAddress (1), servPort);
@@ -197,7 +221,7 @@ void StartFlow (Ptr<Socket> localSocket,
 
 void WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSpace)
 {
-  while (currentTxBytes < totalTxBytes && localSocket->GetTxAvailable () > 0) 
+  while (currentTxBytes < totalTxBytes && localSocket->GetTxAvailable () > 0)
     {
       uint32_t left = totalTxBytes - currentTxBytes;
       uint32_t dataOffset = currentTxBytes % writeSize;

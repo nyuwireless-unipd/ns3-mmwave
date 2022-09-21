@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2007 Georgia Tech Research Corporation
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -18,7 +18,7 @@
  * Author: Raj Bhattacharjea <raj.b@gatech.edu>
  */
 /**
- * This is the test code for udp-socket-impl.cc, it was moved out of udp-socket-impl.cc to 
+ * This is the test code for udp-socket-impl.cc, it was moved out of udp-socket-impl.cc to
  * be in an independent file for clarity purposes.
  */
 
@@ -80,7 +80,7 @@ public:
 };
 
 UdpSocketLoopbackTest::UdpSocketLoopbackTest ()
-  : TestCase ("UDP loopback test") 
+  : TestCase ("UDP loopback test")
 {
 }
 
@@ -89,7 +89,7 @@ void UdpSocketLoopbackTest::ReceivePkt (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket->GetSize (), "ReceivedPacket size is not equal to the Rx buffer size");
 }
 
 void
@@ -132,7 +132,7 @@ public:
 };
 
 Udp6SocketLoopbackTest::Udp6SocketLoopbackTest ()
-  : TestCase ("UDP6 loopback test") 
+  : TestCase ("UDP6 loopback test")
 {
 }
 
@@ -141,7 +141,7 @@ void Udp6SocketLoopbackTest::ReceivePkt (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket->GetSize (), "ReceivedPacket size is not equal to the Rx buffer size");
   //cast availableData to void, to suppress 'availableData' set but not used
   //compiler warning
   (void) availableData;
@@ -236,7 +236,7 @@ public:
 };
 
 UdpSocketImplTest::UdpSocketImplTest ()
-  : TestCase ("UDP socket implementation") 
+  : TestCase ("UDP socket implementation")
 {
 }
 
@@ -245,7 +245,7 @@ void UdpSocketImplTest::ReceivePkt (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket->GetSize (), "ReceivedPacket size is not equal to the Rx buffer size");
 }
 
 void UdpSocketImplTest::ReceivePkt2 (Ptr<Socket> socket)
@@ -253,13 +253,13 @@ void UdpSocketImplTest::ReceivePkt2 (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket2 = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket2->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket2->GetSize (), "ReceivedPacket size is not equal to the Rx buffer size");
 }
 
 void UdpSocketImplTest::SentPkt (Ptr<const QueueDiscItem> item)
 {
   Ptr<const Ipv4QueueDiscItem> ipv4Item = DynamicCast<const Ipv4QueueDiscItem> (item);
-  NS_TEST_EXPECT_MSG_NE (ipv4Item, 0, "no IPv4 packet");
+  NS_TEST_EXPECT_MSG_NE (ipv4Item, nullptr, "no IPv4 packet");
   Address addr;
   m_sentPacket = Create<Ipv4QueueDiscItem> (ipv4Item->GetPacket ()->Copy (), addr, 0, ipv4Item->GetHeader ());
 }
@@ -552,7 +552,7 @@ void Udp6SocketImplTest::ReceivePkt (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket->GetSize (), "ReceivedPacket size is not equal to the Rx buffer size");
   //cast availableData to void, to suppress 'availableData' set but not used
   //compiler warning
   (void) availableData;
@@ -563,7 +563,7 @@ void Udp6SocketImplTest::ReceivePkt2 (Ptr<Socket> socket)
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket2 = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
-  NS_ASSERT (availableData == m_receivedPacket2->GetSize ());
+  NS_TEST_ASSERT_MSG_EQ (availableData, m_receivedPacket2->GetSize (), "ReceivedPacket size is not equal to the Rx buffer size");
   //cast availableData to void, to suppress 'availableData' set but not used
   //compiler warning
   (void) availableData;

@@ -39,11 +39,23 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("CsmaPingExample");
 
+/**
+ * Rx sink
+ *
+ * \param p The packer.
+ * \param ad The sender address.
+ */
 static void SinkRx (Ptr<const Packet> p, const Address &ad)
 {
   //std::cout << *p << std::endl;
 }
 
+/**
+ * Ping RTT trace sink
+ *
+ * \param context The context.
+ * \param rtt The RTT.
+ */
 static void PingRtt (std::string context, Time rtt)
 {
   //std::cout << context << " " << rtt << std::endl;
@@ -113,7 +125,7 @@ main (int argc, char *argv[])
   csma.EnablePcapAll ("csma-ping", false);
 
   // then, print what the packet sink receives.
-  Config::ConnectWithoutContext ("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx", 
+  Config::ConnectWithoutContext ("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx",
                                  MakeCallback (&SinkRx));
   // finally, print the ping rtts.
   Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::V4Ping/Rtt",

@@ -18,7 +18,7 @@
 
 //
 // This example is designed to show the main features of an ns3::TimeProbe.
-// A test object is used to emit values through a trace source.  The 
+// A test object is used to emit values through a trace source.  The
 // example shows three ways to use a ns3::TimeProbe to hook the output
 // of this trace source (in addition to hooking the raw trace source).
 //
@@ -45,11 +45,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("TimeProbeExample");
 
-//
-// This is our test object, an object that emits values according to
-// a Poisson arrival process.   It emits a traced Time value as a 
-// trace source; this takes the value of interarrival time
-//
+/**
+ * This is our test object, an object that emits values according to
+ * a Poisson arrival process.   It emits a traced Time value as a
+ * trace source; this takes the value of interarrival time
+ */
 class Emitter : public Object
 {
 public:
@@ -61,12 +61,12 @@ public:
   Emitter ();
 private:
   void DoInitialize (void);
-//  void Emit (void);
+  /// Generate data.
   void Emit (void);
 
-  TracedValue<Time> m_interval;  
-  Time m_last;  
-  Ptr<ExponentialRandomVariable> m_var;
+  TracedValue<Time> m_interval;  //!< Interarrival time between events.
+  Time m_last;                   //!< Current interarrival time.
+  Ptr<ExponentialRandomVariable> m_var; //!< Random number generator.
 };
 
 NS_OBJECT_ENSURE_REGISTERED (Emitter);

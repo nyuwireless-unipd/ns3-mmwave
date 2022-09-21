@@ -34,6 +34,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("InterferenceHelper");
 
+NS_OBJECT_ENSURE_REGISTERED (InterferenceHelper);
+
 /****************************************************************
  *       PHY event class
  ****************************************************************/
@@ -178,10 +180,29 @@ InterferenceHelper::InterferenceHelper ()
     m_numRxAntennas (1),
     m_rxing (false)
 {
+  NS_LOG_FUNCTION (this);
 }
 
 InterferenceHelper::~InterferenceHelper ()
 {
+  NS_LOG_FUNCTION (this);
+}
+
+TypeId
+InterferenceHelper::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::InterferenceHelper")
+    .SetParent<ns3::Object> ()
+    .SetGroupName ("Wifi")
+    .AddConstructor<InterferenceHelper> ()
+  ;
+  return tid;
+}
+
+void
+InterferenceHelper::DoDispose (void)
+{
+  NS_LOG_FUNCTION (this);
   RemoveBands ();
   m_errorRateModel = 0;
 }
@@ -203,7 +224,7 @@ InterferenceHelper::AddForeignSignal (Time duration, RxPowerWattPerChannelBand& 
   hdr.SetType (WIFI_MAC_QOSDATA);
   hdr.SetQosTid (0);
   Ptr<WifiPpdu> fakePpdu = Create<WifiPpdu> (Create<WifiPsdu> (Create<Packet> (0), hdr),
-                                             WifiTxVector ());
+                                             WifiTxVector (), 0);
   Add (fakePpdu, WifiTxVector (), duration, rxPowerW);
 }
 
@@ -422,12 +443,13 @@ InterferenceHelper::CalculatePayloadPer (Ptr<const Event> event, uint16_t channe
 {
   NS_LOG_FUNCTION (this << channelWidth << band.first << band.second << staId << window.first << window.second);
   double psr = 1.0; /* Packet Success Rate */
-  auto niIt = nis->find (band)->second;
-  auto j = niIt.begin ();
+  const auto& niIt = nis->find (band)->second;
+  auto j = niIt.cbegin ();
   Time previous = j->first;
   WifiMode payloadMode = event->GetTxVector ().GetMode (staId);
   Time phyPayloadStart = j->first;
-  if (event->GetPpdu ()->GetType () != WIFI_PPDU_TYPE_UL_MU) //j->first corresponds to the start of the UL-OFDMA payload
+  if (event->GetPpdu ()->GetType () != WIFI_PPDU_TYPE_UL_MU &&
+      event->GetPpdu ()->GetType () != WIFI_PPDU_TYPE_DL_MU) //j->first corresponds to the start of the OFDMA payload
     {
       phyPayloadStart = j->first + WifiPhy::CalculatePhyPreambleAndHeaderDuration (event->GetTxVector ());
     }
@@ -435,7 +457,7 @@ InterferenceHelper::CalculatePayloadPer (Ptr<const Event> event, uint16_t channe
   Time windowEnd = phyPayloadStart + window.second;
   double noiseInterferenceW = m_firstPowerPerBand.find (band)->second;
   double powerW = event->GetRxPowerW (band);
-  while (++j != niIt.end ())
+  while (++j != niIt.cend ())
     {
       Time current = j->first;
       NS_LOG_DEBUG ("previous= " << previous << ", current=" << current);
@@ -587,12 +609,12 @@ InterferenceHelper::CalculatePhyHeaderSnrPer (Ptr<Event> event, uint16_t channel
                              noiseInterferenceW,
                              channelWidth,
                              1);
-  
+
   /* calculate the SNIR at the start of the PHY header and accumulate
    * all SNIR changes in the SNIR vector.
    */
   double per = CalculatePhyHeaderPer (event, &ni, channelWidth, band, header);
-  
+
   return PhyEntity::SnrPer (snr, per);
 }
 

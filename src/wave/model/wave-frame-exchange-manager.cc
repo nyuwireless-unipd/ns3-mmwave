@@ -58,7 +58,7 @@ WaveFrameExchangeManager::SetWaveNetDevice (Ptr<WaveNetDevice> device)
 {
   m_scheduler = device->GetChannelScheduler ();
   m_coordinator = device->GetChannelCoordinator ();
-  NS_ASSERT (m_scheduler != 0 && m_coordinator != 0);
+  NS_ASSERT (m_scheduler && m_coordinator);
 }
 
 WifiTxVector
@@ -72,7 +72,7 @@ WaveFrameExchangeManager::GetDataTxVector (Ptr<const WifiMacQueueItem> item) con
   // will be determined by MAC layer itself.
   if (!found)
     {
-      return m_mac->GetWifiRemoteStationManager ()->GetDataTxVector (item->GetHeader ());
+      return m_mac->GetWifiRemoteStationManager ()->GetDataTxVector (item->GetHeader (), m_allowedWidth);
     }
 
   // if high layer has set the transmit parameters with non-adaption mode,
@@ -85,7 +85,7 @@ WaveFrameExchangeManager::GetDataTxVector (Ptr<const WifiMacQueueItem> item) con
   // if high layer has set the transmit parameters with non-adaption mode,
   // the real transmit parameters are determined by both high layer and MAC layer.
   WifiTxVector txHigher = datatag.GetTxVector ();
-  WifiTxVector txMac = m_mac->GetWifiRemoteStationManager ()->GetDataTxVector (item->GetHeader ());
+  WifiTxVector txMac = m_mac->GetWifiRemoteStationManager ()->GetDataTxVector (item->GetHeader (), m_allowedWidth);
   WifiTxVector txAdapter;
   txAdapter.SetChannelWidth (10);
   // the DataRate set by higher layer is the minimum data rate
@@ -108,33 +108,34 @@ WaveFrameExchangeManager::GetDataTxVector (Ptr<const WifiMacQueueItem> item) con
 }
 
 bool
-WaveFrameExchangeManager::StartTransmission (Ptr<Txop> dcf)
+WaveFrameExchangeManager::StartTransmission (Ptr<Txop> dcf, uint16_t allowedWidth)
 {
-  NS_LOG_FUNCTION (this << dcf);
+  NS_LOG_FUNCTION (this << dcf << allowedWidth);
 
   uint32_t curChannel = m_phy->GetChannelNumber ();
   // if current channel access is not AlternatingAccess, just do as FrameExchangeManager.
-  if (m_scheduler == 0 || !m_scheduler->IsAlternatingAccessAssigned (curChannel))
+  if (!m_scheduler || !m_scheduler->IsAlternatingAccessAssigned (curChannel))
     {
-      return FrameExchangeManager::StartTransmission (dcf);
+      return FrameExchangeManager::StartTransmission (dcf, allowedWidth);
     }
 
   m_txTimer.Cancel ();
   m_dcf = dcf;
+  m_allowedWidth = allowedWidth;
 
   Ptr<WifiMacQueue> queue = dcf->GetWifiMacQueue ();
 
   if (queue->IsEmpty ())
     {
       NS_LOG_DEBUG ("Queue empty");
-      m_dcf->NotifyChannelReleased ();
+      m_dcf->NotifyChannelReleased (0);
       m_dcf = 0;
       return false;
     }
 
-  m_dcf->NotifyChannelAccessed ();
-  Ptr<WifiMacQueueItem> mpdu = *queue->Peek ()->GetQueueIterator ();
-  NS_ASSERT (mpdu != 0);
+  m_dcf->NotifyChannelAccessed (0);
+  Ptr<WifiMacQueueItem> mpdu = queue->Peek ()->GetItem ();
+  NS_ASSERT (mpdu);
 
   // assign a sequence number if this is not a fragment nor a retransmission
   if (!mpdu->IsFragment () && !mpdu->GetHeader ().IsRetry ())

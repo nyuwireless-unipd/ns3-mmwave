@@ -21,7 +21,8 @@
 #include "ns3/test.h"
 #include "ns3/valgrind.h"  // Bug 1882
 
-#include <cmath>    // fabs
+#include <cfloat>   // FLT_RADIX,...
+#include <cmath>    // fabs, round
 #include <iomanip>
 #include <limits>   // numeric_limits<>::epsilon ()
 
@@ -34,27 +35,20 @@ namespace int64x64 {
 namespace test {
 
 /**
- * \class ns3::int64x64::Int64x64TestSuite
- * \internal
- *
- * Some of these tests are a little unusual for ns-3 in that they
- * are sensitive to implementation, specifically the resolution
- * of the double and long double implementations.
- *
- * To handle this, where needed we define a tolerance to use in the
- * test comparisons.  If you need to increase the tolerance,
- * please append the system and compiler version.  For example:
- *
- * \code
- *   // Darwin 12.5.0 (Mac 10.8.5) g++ 4.2.1
- *   tolerance = 1;
- *   // System Foo gcc 3.9
- *   tolerance = 3;
- * \endcode
+ * \file
+ * \ingroup int64x64-tests
+ * int64x46 test suite
+ */
+
+/**
+ * \ingroup core-tests
+ * \defgroup int64x64-tests int64x64 tests
  */
 
 
 /**
+ * \ingroup int64x64-tests
+ *
  * Pretty printer for test cases.
  */
 class Printer
@@ -117,12 +111,21 @@ std::ostream & operator << (std::ostream & os, const Printer & p)
   return os;
 }
 
-
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: manipulate the high and low part of every number.
+ */
 class Int64x64HiLoTestCase : public TestCase
 {
 public:
   Int64x64HiLoTestCase ();
   virtual void DoRun (void);
+  /**
+   * Check the high and low parts for correctness.
+   * \param hi The high part of the int64x64_t.
+   * \param lo The low part of the int64x64_t.
+   */
   void Check (const int64_t hi, const uint64_t lo);
 };
 
@@ -187,11 +190,22 @@ Int64x64HiLoTestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: check GetInt and Round.
+ */
 class Int64x64IntRoundTestCase : public TestCase
 {
 public:
   Int64x64IntRoundTestCase (void);
   virtual void DoRun (void);
+  /**
+   * Check the int64x64 value for correctness.
+   * \param value The int64x64_t value.
+   * \param expectInt The expected integer value.
+   * \param expectRnd TThe expected rounding value.
+   */
   void Check (const int64x64_t value,
               const int64_t expectInt,
               const int64_t expectRnd);
@@ -249,11 +263,23 @@ Int64x64IntRoundTestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: parse int64x64_t numbers as strings.
+ */
 class Int64x64InputTestCase : public TestCase
 {
 public:
   Int64x64InputTestCase ();
   virtual void DoRun (void);
+  /**
+   * Check the iont64x64 for correctness.
+   * \param str String representation of a number.
+   * \param hi The expected high part of the int64x64_t.
+   * \param lo The expected low part of the int64x64_t.
+   * \param tolerance The allowed tolerance.
+   */
   void Check (const std::string & str,
               const int64_t hi, const uint64_t lo,
               const int64_t tolerance = 0);
@@ -323,11 +349,23 @@ Int64x64InputTestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: roundtrip int64x64_t numbers as strings.
+ *
+ * Prints an int64x64_t and read it back.
+ */
 class Int64x64InputOutputTestCase : public TestCase
 {
 public:
   Int64x64InputOutputTestCase ();
   virtual void DoRun (void);
+  /**
+   * Check the iont64x64 for correctness.
+   * \param str String representation of a number.
+   * \param tolerance The allowed tolerance.
+   */
   void Check (const std::string & str,
               const int64_t tolerance = 0);
 };
@@ -404,29 +442,31 @@ Int64x64InputOutputTestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: basic arithmetic operations.
+ */
 class Int64x64ArithmeticTestCase : public TestCase
 {
 public:
   Int64x64ArithmeticTestCase ();
   virtual void DoRun (void);
-  void Check (const int        test,
-              const int64x64_t value, const int64x64_t expect);
+  /**
+   * Check the int64x64 for correctness.
+   * \param test The test number.
+   * \param value The actual value.
+   * \param expect The expected value.
+   * \param tolerance The allowed tolerance.
+   */
   void Check (const int        test,
               const int64x64_t value, const int64x64_t expect,
-              const int64x64_t tolerance);
+              const int64x64_t tolerance = int64x64_t (0,0));
 };
 
 Int64x64ArithmeticTestCase::Int64x64ArithmeticTestCase ()
   : TestCase ("Basic arithmetic operations")
 {}
-void
-Int64x64ArithmeticTestCase::Check (const int test,
-                                   const int64x64_t value,
-                                   const int64x64_t expect)
-{
-  int64x64_t zero (0,0);
-  Check (test, value, expect, zero);
-}
 void
 Int64x64ArithmeticTestCase::Check (const int test,
                                    const int64x64_t value,
@@ -547,6 +587,10 @@ Int64x64ArithmeticTestCase::DoRun (void)
 
 
 /**
+ * \ingroup int64x64-tests
+ *
+ * Test case for bug 455.
+ *
  * See \bugid{455}
  */
 class Int64x64Bug455TestCase : public TestCase
@@ -554,6 +598,12 @@ class Int64x64Bug455TestCase : public TestCase
 public:
   Int64x64Bug455TestCase ();
   virtual void DoRun (void);
+  /**
+   * Check the int64x64 for correctness.
+   * \param result The actual value.
+   * \param expect The expected value.
+   * \param msg The error message to print.
+   */
   void Check (const double result, const double expect,
               const std::string & msg);
 };
@@ -608,6 +658,10 @@ Int64x64Bug455TestCase::DoRun (void)
 
 
 /**
+ * \ingroup int64x64-tests
+ *
+ * Test case for bug 455.
+ *
  * See \bugid{863}
  */
 class Int64x64Bug863TestCase : public TestCase
@@ -615,6 +669,12 @@ class Int64x64Bug863TestCase : public TestCase
 public:
   Int64x64Bug863TestCase ();
   virtual void DoRun (void);
+  /**
+   * Check the int64x64 for correctness.
+   * \param result The actual value.
+   * \param expect The expected value.
+   * \param msg The error message to print.
+   */
   void Check (const double result, const double expect,
               const std::string & msg);
 };
@@ -670,6 +730,10 @@ Int64x64Bug863TestCase::DoRun (void)
 
 
 /**
+ * \ingroup int64x64-tests
+ *
+ * Test case for bug 455.
+ *
  * See \bugid{1786}
  */
 class Int64x64Bug1786TestCase : public TestCase
@@ -677,6 +741,12 @@ class Int64x64Bug1786TestCase : public TestCase
 public:
   Int64x64Bug1786TestCase ();
   virtual void DoRun (void);
+  /**
+   * Check the int64x64 for correctness.
+   * \param low The actual low value.
+   * \param value The expected low part printed value.
+   * \param tolerance The allowed tolerance.
+   */
   void Check (const uint64_t low, const std::string & value,
               const int64_t tolerance = 0);
 };
@@ -804,12 +874,23 @@ Int64x64Bug1786TestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: basic compare operations.
+ */
 class Int64x64CompareTestCase : public TestCase
 {
 public:
   Int64x64CompareTestCase ();
   virtual void DoRun (void);
 
+  /**
+   * Check the int64x64 for correctness.
+   * \param result The actual value.
+   * \param expect The expected value.
+   * \param msg The error mesage to print.
+   */
   void Check (const bool result, const bool expect,
               const std::string & msg);
 };
@@ -909,12 +990,29 @@ Int64x64CompareTestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: Invert and MulByInvert.
+ */
 class Int64x64InvertTestCase : public TestCase
 {
 public:
   Int64x64InvertTestCase ();
   virtual void DoRun (void);
+  /**
+   * Check the int64x64 for correctness.
+   * \param factor The factor used to invert the number.
+   */
   void Check (const int64_t factor);
+  /**
+   * Check the int64x64 for correctness.
+   * \param factor The factor used to invert the number.
+   * \param result The value.
+   * \param expect The expected value.
+   * \param msg The error mesage to print.
+   * \param tolerance The allowed tolerance.
+   */
   void CheckCase (const uint64_t factor,
                   const int64x64_t result, const int64x64_t expect,
                   const std::string & msg,
@@ -1017,41 +1115,183 @@ Int64x64InvertTestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: construct from floating point.
+ */
 class Int64x64DoubleTestCase : public TestCase
 {
 public:
   Int64x64DoubleTestCase ();
   virtual void DoRun (void);
+
+  /**
+   * Check the int64x64 for correctness.
+   * \param intPart The expected integer part value of the int64x64.
+   */
   void Check (const int64_t intPart);
-  void Check (const long double value,
+  /**
+   * Check the int64x64 for correctness.
+   * \param dec The integer part of the value to test.
+   * \param frac The fractional part of the value to test.x
+   * \param intPart The expected integer part value of the int64x64.
+   * \param lo The expected low part value of the int64x64.
+   */
+  void Check (const long double dec,
+              const long double frac,
               const int64_t intPart,
               const uint64_t lo);
 
 private:
-  long double m_last;
-  int64x64_t  m_deltaMax;
-  int         m_deltaCount;
+
+  /**
+   * Compute a multiplier to match the mantissa size on this platform
+   *
+   * Since we will store the fractional part of a double
+   * in the low word (64 bits) of our Q64.64
+   * the most mantissa bits we can take advantage of is
+   *
+   *     EFF_MANT_DIG = std::min (64, LDBL_MANT_DIG)
+   *
+   * We have to bound this for platforms with LDBL_MANT_DIG > 64.
+   *
+   * The number of "missing" bits in the mantissa is
+   *
+   *     MISS_MANT_DIG = 64 - EFF_MANT_DIG = std::max (0, 64 - LDBL_MANT_DIG)
+   *
+   * This will lie in the closed interval [0, 64]
+   */
+  static constexpr int MISS_MANT_DIG = std::max (0, 64 - LDBL_MANT_DIG);
+
+  /**
+   * The smallest low word we expect to get from a conversion.
+   *
+   *     MIN_LOW = 2^MISS_MANT_DIG
+   *
+   * which will be in [1, 2^64].
+   */
+  static constexpr long double MIN_LOW = 1 << MISS_MANT_DIG;
+
+  /**
+   * Smallest mantissa we expect to convert to a non-zero low word.
+   *
+   *     MIN_MANT = MIN_LOW / 2^64
+   *              = 2^(MISS_MANT_DIG - 64)
+   *              = 2^(-EFF_MANT_DIG)
+   *
+   * We scale and round this value to match the
+   * hard-coded fractional values in Check(intPart)
+   * which have 22 decimal digits.
+   *
+   * Since we use std::round() which isn't constexpr,
+   * just declare this const and initialize below.
+   */
+  static const long double MIN_MANT;
+
+
+  // Member variables
+  long double m_last;       //!< The last value tested.
+  int64x64_t  m_deltaMax;   //!< The maximum observed difference between expected and computed values.
+  int         m_deltaCount; //!< The number of times a delta was recorded.
 };
 
+
+/* static */
+const long double
+Int64x64DoubleTestCase::MIN_MANT =
+  std::round ( 1e22 / std::pow (2.0L, std::min (64, LDBL_MANT_DIG))) / 1e22;
+
 Int64x64DoubleTestCase::Int64x64DoubleTestCase ()
-  : TestCase ("Construct from floating point.")
+  : TestCase ("Construct from floating point."),
+    m_last {0},
+    m_deltaMax {0},
+    m_deltaCount {0}
 {}
 
 void
-Int64x64DoubleTestCase::Check (const long double value,
+Int64x64DoubleTestCase::Check (const long double dec,
+                               const long double frac,
                                const int64_t intPart,
                                const uint64_t lo)
 {
-  // Construct the expected value
-  int64x64_t expect = int64x64_t (0, lo);
-  expect += intPart;
+  // 1.  The double value we're going to convert
+  long double value = dec + frac;
 
-  // Actual value of conversion from double
+  // 2.  The expected value of the conversion
+  int64x64_t expect (intPart, lo);
+
+  // 1a, 2a.  Handle lower-precision architectures by scaling up the fractional part
+  // We assume MISS_MANT_DIG is much less than 64, MIN_MANT much less than 0.5
+  // Could check lo < MIN_LOW instead...
+
+  /*
+    This approach works for real values with mantissa very near zero,
+    but isn't ideal.  For values near 0.5, say, the low order bits
+    are completely lost, since they exceed the precision of the
+    double representation.  This shows up on M1 and ARM architectures
+    as the x.5... values all skipped, because they are indistinguishable
+    from x.5 exactly.
+
+    A more involved alternative would be to separate the
+    "frac" and "low" values in the caller.  Then the underflow
+    rescaling could be applied to the low bits only,
+    before adding to the frac part.
+
+    To do this the signature of this function would have to be
+       Check (cld dec, cld frac, int64_t intPart, int64_t low);
+                                                  ^- Note this signed
+    The caller Check (intPart) would look like
+
+      Check (v, 0.0L, intPart,  0x0LL);
+      Check (v, 0.0L, intPart,  0x1LL);
+      Check (v, 0.0L, intPart,  0x2LL);
+      ...
+      Check (v, 0.5L, intPart, -0xFLL);
+      Check (v, 0.5L, intPart, -0xELL);
+      ...
+      Check (v, 0.5L, intPart,  0x0LL);
+      Check (v, 0.5L, intPart,  0x1LL);
+
+    Here we would construct value as
+      long double lowLd = (double)low / std::pow(2.0L, 64);
+      value = dec + frac + lowLd;
+
+    For underflow cases:
+      value = dec + frac + std::max::(lowLd, MIN_MANT);
+  */
+
+
+  bool under = false;
+  if (frac && (frac < MIN_MANT))
+    {
+      under = true;
+      value = dec + std::max(frac * MIN_LOW, MIN_MANT);
+      expect = int64x64_t (intPart, lo * MIN_LOW);
+    }
+
+  // 3.  The actual value of the conversion
   const int64x64_t result = int64x64_t (value);
 
-  // Make tolerance depend on magnitude of value
+  // 4.  Absolute error in the conversion
+  const int64x64_t delta = Abs (result - expect);
+
+  // Mark repeats (no change in input floating value) as "skip" (but not integers)
+  const bool skip = (frac && (value == m_last));
+  // Save the value to detect unchanged values next time
+  m_last = value;
+
+  // 5.  Tolerance for the test, scaled to the magnitude of value
+  // Tolerance will be computed from the value, epsilon and margin
+  int64x64_t tolerance;
+
+  // Default epsilon
   long double epsilon = std::numeric_limits<long double>::epsilon ();
+
+  // A few cases need extra tolerance
+  // If you add cases please thoroughly document the configuration
   long double margin = 0;
+
   if (int64x64_t::implementation == int64x64_t::ld_impl)
     {
       // Darwin 12.5.0 (Mac 10.8.5) g++ 4.2.1
@@ -1066,11 +1306,13 @@ Int64x64DoubleTestCase::Check (const long double value,
       epsilon = std::numeric_limits<double>::epsilon ();
     }
 
-  const int64x64_t tolerance = (margin + std::fabs (value)) * epsilon;
+  // Final tolerance amount
+  tolerance = std::max (1.0L, std::fabs (value)) * epsilon  +  margin * epsilon;
 
-  const int64x64_t delta = Abs (result - expect);
-  const bool skip = value == m_last;
+  // 6.  Is the conversion acceptably close to the expected value?
   const bool pass = delta <= tolerance;
+
+  // 7.  Show the result of this check
 
   // Save stream format flags
   std::ios_base::fmtflags ff = std::cout.flags ();
@@ -1080,11 +1322,12 @@ Int64x64DoubleTestCase::Check (const long double value,
             << (skip ? "skip " : (pass ? "pass " : "FAIL "))
             << std::showpos << value << " == "
             << Printer (result)
+            << (under ? " (underflow)" : "")
             << std::endl;
 
-  // Log non-zero delta
-  if ( delta > int64x64_t () )
+  if ( delta )
     {
+      // There was a difference, show the expected value
       std::cout << GetParent ()->GetName ()
                 << std::left  << std::setw (43) << "         expected"
                 << std::right << Printer (expect)
@@ -1092,6 +1335,7 @@ Int64x64DoubleTestCase::Check (const long double value,
 
       if (delta == tolerance)
         {
+          // Short form: show the delta, and note it equals the tolerance
           std::cout << GetParent ()->GetName ()
                     << std::left  << std::setw (43) << "         delta = tolerance"
                     << std::right << Printer (delta)
@@ -1099,16 +1343,19 @@ Int64x64DoubleTestCase::Check (const long double value,
         }
       else
         {
+          // Long form, show both delta and tolerance
           std::cout << GetParent ()->GetName ()
                     << std::left  << std::setw (43) << "         delta"
                     << std::right << Printer (delta)
                     << std::endl;
           std::cout << GetParent ()->GetName ()
-                    << std::left  << std::setw (43) << "         +/-"
+                    << std::left  << std::setw (43) << "         tolerance"
                     << std::right << Printer (tolerance)
+                    << " eps: " << epsilon << ", margin: " << margin
                     << std::endl;
         }
 
+      // Record number and max delta
       ++m_deltaCount;
 
       if ( delta > m_deltaMax )
@@ -1117,9 +1364,9 @@ Int64x64DoubleTestCase::Check (const long double value,
         }
     }
 
+  // Report pass/fail
   NS_TEST_ASSERT_MSG_EQ_TOL (result, expect, tolerance,
                              "int64x64_t (long double) failed");
-  m_last = value;
   std::cout.flags (ff);
 
 }
@@ -1131,78 +1378,121 @@ Int64x64DoubleTestCase::Check (const int64_t intPart)
   std::cout << GetParent ()->GetName () << " Double: "
             << "integer: " << intPart
             << std::endl;
-  m_last = static_cast<long double> (intPart);
+  // Reset last value for new intPart
+  m_last = intPart;
+  // Save current number and max delta, so we can report max from just this intPart
+  int64x64_t  deltaMaxPrior = m_deltaMax;
+  m_deltaMax = 0;
+  int deltaCountPrior = m_deltaCount;
   m_deltaCount = 0;
 
   // Nudging the integer part eliminates deltas around 0
-  long double v = static_cast<long double> (intPart);
+  long double v = intPart;
 
-  Check (v + 0.0000000000000000000542L, intPart,                0x1ULL);
-  Check (v + 0.0000000000000000001084L, intPart,                0x2ULL);
-  Check (v + 0.0000000000000000001626L, intPart,                0x3ULL);
-  Check (v + 0.0000000000000000002168L, intPart,                0x4ULL);
-  Check (v + 0.0000000000000000002710L, intPart,                0x5ULL);
-  Check (v + 0.0000000000000000003253L, intPart,                0x6ULL);
-  Check (v + 0.0000000000000000003795L, intPart,                0x7ULL);
-  Check (v + 0.0000000000000000004337L, intPart,                0x8ULL);
-  Check (v + 0.0000000000000000004879L, intPart,                0x9ULL);
-  Check (v + 0.0000000000000000005421L, intPart,                0xAULL);
-  Check (v + 0.0000000000000000008132L, intPart,                0xFULL);
-  Check (v + 0.0000000000000000130104L, intPart,               0xF0ULL);
-  Check (v + 0.0000000000000002081668L, intPart,              0xF00ULL);
-  Check (v + 0.0000000000000033306691L, intPart,             0xF000ULL);
-  Check (v + 0.0000000000000532907052L, intPart,            0xF0000ULL);
-  Check (v + 0.0000000000008526512829L, intPart,           0xF00000ULL);
-  Check (v + 0.0000000000136424205266L, intPart,          0xF000000ULL);
-  Check (v + 0.0000000002182787284255L, intPart,         0xF0000000ULL);
-  Check (v + 0.0000000034924596548080L, intPart,        0xF00000000ULL);
-  Check (v + 0.0000000558793544769287L, intPart,       0xF000000000ULL);
-  Check (v + 0.0000008940696716308594L, intPart,      0xF0000000000ULL);
-  Check (v + 0.0000143051147460937500L, intPart,     0xF00000000000ULL);
-  Check (v + 0.0002288818359375000000L, intPart,    0xF000000000000ULL);
-  Check (v + 0.0036621093750000000000L, intPart,   0xF0000000000000ULL);
-  Check (v + 0.0585937500000000000000L, intPart,  0xF00000000000000ULL);
+  Check (v, 0.0L,                      intPart,                0x0ULL);
+  Check (v, 0.0000000000000000000542L, intPart,                0x1ULL);
+  Check (v, 0.0000000000000000001084L, intPart,                0x2ULL);
+  Check (v, 0.0000000000000000001626L, intPart,                0x3ULL);
+  Check (v, 0.0000000000000000002168L, intPart,                0x4ULL);
+  Check (v, 0.0000000000000000002711L, intPart,                0x5ULL);
+  Check (v, 0.0000000000000000003253L, intPart,                0x6ULL);
+  Check (v, 0.0000000000000000003795L, intPart,                0x7ULL);
+  Check (v, 0.0000000000000000004337L, intPart,                0x8ULL);
+  Check (v, 0.0000000000000000004879L, intPart,                0x9ULL);
+  Check (v, 0.0000000000000000005421L, intPart,                0xAULL);
+  Check (v, 0.0000000000000000005963L, intPart,                0xBULL);
+  Check (v, 0.0000000000000000006505L, intPart,                0xCULL);
+  Check (v, 0.0000000000000000007047L, intPart,                0xDULL);
+  Check (v, 0.0000000000000000007589L, intPart,                0xEULL);
+  Check (v, 0.0000000000000000008132L, intPart,                0xFULL);
+  Check (v, 0.0000000000000000130104L, intPart,               0xF0ULL);
+  Check (v, 0.0000000000000002081668L, intPart,              0xF00ULL);
+  Check (v, 0.0000000000000033306691L, intPart,             0xF000ULL);
+  Check (v, 0.0000000000000532907052L, intPart,            0xF0000ULL);
+  Check (v, 0.0000000000008526512829L, intPart,           0xF00000ULL);
+  Check (v, 0.0000000000136424205266L, intPart,          0xF000000ULL);
+  Check (v, 0.0000000002182787284255L, intPart,         0xF0000000ULL);
+  Check (v, 0.0000000034924596548080L, intPart,        0xF00000000ULL);
+  Check (v, 0.0000000558793544769287L, intPart,       0xF000000000ULL);
+  Check (v, 0.0000008940696716308594L, intPart,      0xF0000000000ULL);
+  Check (v, 0.0000143051147460937500L, intPart,     0xF00000000000ULL);
+  Check (v, 0.0002288818359375000000L, intPart,    0xF000000000000ULL);
+  Check (v, 0.0036621093750000000000L, intPart,   0xF0000000000000ULL);
+  Check (v, 0.0585937500000000000000L, intPart,  0xF00000000000000ULL);
   std::cout << std::endl;
-  Check (v + 0.4999999999999999998374L, intPart, 0x7FFFFFFFFFFFFFFDULL);
-  Check (v + 0.4999999999999999998916L, intPart, 0x7FFFFFFFFFFFFFFEULL);
-  Check (v + 0.4999999999999999999458L, intPart, 0x7FFFFFFFFFFFFFFFULL);
-  Check (v + 0.5000000000000000000000L, intPart, 0x8000000000000000ULL);
-  Check (v + 0.5000000000000000000542L, intPart, 0x8000000000000001ULL);
-  Check (v + 0.5000000000000000001084L, intPart, 0x8000000000000002ULL);
-  Check (v + 0.5000000000000000001626L, intPart, 0x8000000000000003ULL);
+  Check (v, 0.4999999999999999991326L, intPart, 0x7FFFFFFFFFFFFFF0ULL);
+  Check (v, 0.4999999999999999991868L, intPart, 0x7FFFFFFFFFFFFFF1ULL);
+  Check (v, 0.4999999999999999992411L, intPart, 0x7FFFFFFFFFFFFFF2ULL);
+  Check (v, 0.4999999999999999992953L, intPart, 0x7FFFFFFFFFFFFFF3ULL);
+  Check (v, 0.4999999999999999993495L, intPart, 0x7FFFFFFFFFFFFFF4ULL);
+  Check (v, 0.4999999999999999994037L, intPart, 0x7FFFFFFFFFFFFFF5ULL);
+  Check (v, 0.4999999999999999994579L, intPart, 0x7FFFFFFFFFFFFFF6ULL);
+  Check (v, 0.4999999999999999995121L, intPart, 0x7FFFFFFFFFFFFFF7ULL);
+  Check (v, 0.4999999999999999995663L, intPart, 0x7FFFFFFFFFFFFFF8ULL);
+  Check (v, 0.4999999999999999996205L, intPart, 0x7FFFFFFFFFFFFFF9ULL);
+  Check (v, 0.4999999999999999996747L, intPart, 0x7FFFFFFFFFFFFFFAULL);
+  Check (v, 0.4999999999999999997289L, intPart, 0x7FFFFFFFFFFFFFFBULL);
+  Check (v, 0.4999999999999999997832L, intPart, 0x7FFFFFFFFFFFFFFCULL);
+  Check (v, 0.4999999999999999998374L, intPart, 0x7FFFFFFFFFFFFFFDULL);
+  Check (v, 0.4999999999999999998916L, intPart, 0x7FFFFFFFFFFFFFFEULL);
+  Check (v, 0.4999999999999999999458L, intPart, 0x7FFFFFFFFFFFFFFFULL);
+  Check (v, 0.5000000000000000000000L, intPart, 0x8000000000000000ULL);
+  Check (v, 0.5000000000000000000542L, intPart, 0x8000000000000001ULL);
+  Check (v, 0.5000000000000000001084L, intPart, 0x8000000000000002ULL);
+  Check (v, 0.5000000000000000001626L, intPart, 0x8000000000000003ULL);
+  Check (v, 0.5000000000000000002168L, intPart, 0x8000000000000004ULL);
+  Check (v, 0.5000000000000000002711L, intPart, 0x8000000000000005ULL);
+  Check (v, 0.5000000000000000003253L, intPart, 0x8000000000000006ULL);
+  Check (v, 0.5000000000000000003795L, intPart, 0x8000000000000007ULL);
+  Check (v, 0.5000000000000000004337L, intPart, 0x8000000000000008ULL);
+  Check (v, 0.5000000000000000004879L, intPart, 0x8000000000000009ULL);
+  Check (v, 0.5000000000000000005421L, intPart, 0x800000000000000AULL);
+  Check (v, 0.5000000000000000005963L, intPart, 0x800000000000000BULL);
+  Check (v, 0.5000000000000000006505L, intPart, 0x800000000000000CULL);
+  Check (v, 0.5000000000000000007047L, intPart, 0x800000000000000DULL);
+  Check (v, 0.5000000000000000007589L, intPart, 0x800000000000000EULL);
+  Check (v, 0.5000000000000000008132L, intPart, 0x800000000000000FULL);
   std::cout << std::endl;
-  Check (v + 0.9375000000000000000000L, intPart, 0xF000000000000000ULL);
-  Check (v + 0.9960937500000000000000L, intPart, 0xFF00000000000000ULL);
-  Check (v + 0.9997558593750000000000L, intPart, 0xFFF0000000000000ULL);
-  Check (v + 0.9999847412109375000000L, intPart, 0xFFFF000000000000ULL);
-  Check (v + 0.9999990463256835937500L, intPart, 0xFFFFF00000000000ULL);
-  Check (v + 0.9999999403953552246094L, intPart, 0xFFFFFF0000000000ULL);
-  Check (v + 0.9999999962747097015381L, intPart, 0xFFFFFFF000000000ULL);
-  Check (v + 0.9999999997671693563461L, intPart, 0xFFFFFFFF00000000ULL);
-  Check (v + 0.9999999999854480847716L, intPart, 0xFFFFFFFFF0000000ULL);
-  Check (v + 0.9999999999990905052982L, intPart, 0xFFFFFFFFFF000000ULL);
-  Check (v + 0.9999999999999431565811L, intPart, 0xFFFFFFFFFFF00000ULL);
-  Check (v + 0.9999999999999964472863L, intPart, 0xFFFFFFFFFFFF0000ULL);
-  Check (v + 0.9999999999999997779554L, intPart, 0xFFFFFFFFFFFFF000ULL);
-  Check (v + 0.9999999999999999861222L, intPart, 0xFFFFFFFFFFFFFF00ULL);
-  Check (v + 0.9999999999999999991326L, intPart, 0xFFFFFFFFFFFFFFF0ULL);
-  Check (v + 0.9999999999999999994037L, intPart, 0xFFFFFFFFFFFFFFF5ULL);
-  Check (v + 0.9999999999999999994579L, intPart, 0xFFFFFFFFFFFFFFF6ULL);
-  Check (v + 0.9999999999999999995121L, intPart, 0xFFFFFFFFFFFFFFF7ULL);
-  Check (v + 0.9999999999999999995663L, intPart, 0xFFFFFFFFFFFFFFF8ULL);
-  Check (v + 0.9999999999999999996205L, intPart, 0xFFFFFFFFFFFFFFF9ULL);
-  Check (v + 0.9999999999999999996747L, intPart, 0xFFFFFFFFFFFFFFFAULL);
-  Check (v + 0.9999999999999999997289L, intPart, 0xFFFFFFFFFFFFFFFBULL);
-  Check (v + 0.9999999999999999997832L, intPart, 0xFFFFFFFFFFFFFFFCULL);
-  Check (v + 0.9999999999999999998374L, intPart, 0xFFFFFFFFFFFFFFFDULL);
-  Check (v + 0.9999999999999999998916L, intPart, 0xFFFFFFFFFFFFFFFEULL);
-  Check (v + 0.9999999999999999999458L, intPart, 0xFFFFFFFFFFFFFFFFULL);
+  Check (v, 0.9375000000000000000000L, intPart, 0xF000000000000000ULL);
+  Check (v, 0.9960937500000000000000L, intPart, 0xFF00000000000000ULL);
+  Check (v, 0.9997558593750000000000L, intPart, 0xFFF0000000000000ULL);
+  Check (v, 0.9999847412109375000000L, intPart, 0xFFFF000000000000ULL);
+  Check (v, 0.9999990463256835937500L, intPart, 0xFFFFF00000000000ULL);
+  Check (v, 0.9999999403953552246094L, intPart, 0xFFFFFF0000000000ULL);
+  Check (v, 0.9999999962747097015381L, intPart, 0xFFFFFFF000000000ULL);
+  Check (v, 0.9999999997671693563461L, intPart, 0xFFFFFFFF00000000ULL);
+  Check (v, 0.9999999999854480847716L, intPart, 0xFFFFFFFFF0000000ULL);
+  Check (v, 0.9999999999990905052982L, intPart, 0xFFFFFFFFFF000000ULL);
+  Check (v, 0.9999999999999431565811L, intPart, 0xFFFFFFFFFFF00000ULL);
+  Check (v, 0.9999999999999964472863L, intPart, 0xFFFFFFFFFFFF0000ULL);
+  Check (v, 0.9999999999999997779554L, intPart, 0xFFFFFFFFFFFFF000ULL);
+  Check (v, 0.9999999999999999861222L, intPart, 0xFFFFFFFFFFFFFF00ULL);
+  Check (v, 0.9999999999999999991326L, intPart, 0xFFFFFFFFFFFFFFF0ULL);
+  Check (v, 0.9999999999999999991868L, intPart, 0xFFFFFFFFFFFFFFF1ULL);
+  Check (v, 0.9999999999999999992411L, intPart, 0xFFFFFFFFFFFFFFF2ULL);
+  Check (v, 0.9999999999999999992943L, intPart, 0xFFFFFFFFFFFFFFF3ULL);
+  Check (v, 0.9999999999999999993495L, intPart, 0xFFFFFFFFFFFFFFF4ULL);
+  Check (v, 0.9999999999999999994037L, intPart, 0xFFFFFFFFFFFFFFF5ULL);
+  Check (v, 0.9999999999999999994579L, intPart, 0xFFFFFFFFFFFFFFF6ULL);
+  Check (v, 0.9999999999999999995121L, intPart, 0xFFFFFFFFFFFFFFF7ULL);
+  Check (v, 0.9999999999999999995663L, intPart, 0xFFFFFFFFFFFFFFF8ULL);
+  Check (v, 0.9999999999999999996205L, intPart, 0xFFFFFFFFFFFFFFF9ULL);
+  Check (v, 0.9999999999999999996747L, intPart, 0xFFFFFFFFFFFFFFFAULL);
+  Check (v, 0.9999999999999999997289L, intPart, 0xFFFFFFFFFFFFFFFBULL);
+  Check (v, 0.9999999999999999997832L, intPart, 0xFFFFFFFFFFFFFFFCULL);
+  Check (v, 0.9999999999999999998374L, intPart, 0xFFFFFFFFFFFFFFFDULL);
+  Check (v, 0.9999999999999999998916L, intPart, 0xFFFFFFFFFFFFFFFEULL);
+  Check (v, 0.9999999999999999999458L, intPart, 0xFFFFFFFFFFFFFFFFULL);
 
   std::cout << GetParent ()->GetName () << " Double: "
-            << "integer: " << intPart
-            << ": delta count: " << m_deltaCount
-            << ", max: " << Printer (m_deltaMax)
+            << "integer:"  << std::setw (4) << intPart
+            << ": deltas:" << std::setw (4) << m_deltaCount
+            << ", max:   " << Printer (m_deltaMax)
             << std::endl;
+
+  // Add the count, max from this intPart to the grand totals
+  m_deltaCount += deltaCountPrior;
+  m_deltaMax = Max (m_deltaMax, deltaMaxPrior);
 }
 
 void
@@ -1214,12 +1504,17 @@ Int64x64DoubleTestCase::DoRun (void)
 
   // Save stream format flags
   std::ios_base::fmtflags ff = std::cout.flags ();
-  std::cout << std::scientific << std::setprecision (21);
-
-  m_deltaMax = int64x64_t ();
 
   std::cout << GetParent ()->GetName () << " Double: "
+            <<                    "FLT_RADIX:     " << FLT_RADIX
+            << "\n                 LDBL_MANT_DIG: " << LDBL_MANT_DIG
+            << "\n                 MISS_MANT_DIG: " << MISS_MANT_DIG
+            << "\n                 MIN_LOW:       " << Printer (MIN_LOW)
+            << " (" << std::hexfloat << MIN_LOW << ")" << std::defaultfloat
+            << "\n                 MIN_MANT:      " << Printer (MIN_MANT)
             << std::endl;
+
+  std::cout << std::scientific << std::setprecision (21);
 
   Check (-2);
   Check (-1);
@@ -1228,13 +1523,19 @@ Int64x64DoubleTestCase::DoRun (void)
   Check ( 2);
 
   std::cout << GetParent ()->GetName () << " Double: "
-            << "max delta: " << Printer (m_deltaMax)
+            << "Total deltas:" << std::setw (7) << m_deltaCount
+            << ", max delta:  " << Printer (m_deltaMax)
             << std::endl;
 
   std::cout.flags (ff);
 }
 
 
+/**
+ * \ingroup int64x64-tests
+ *
+ * Test: print the implementation
+ */
 class Int64x64ImplTestCase : public TestCase
 {
 public:
@@ -1261,7 +1562,7 @@ Int64x64ImplTestCase::DoRun (void)
     case (int64x64_t::int128_impl) : std::cout << "int128_impl"; break;
     case (int64x64_t::cairo_impl)  : std::cout << "cairo_impl";  break;
     case (int64x64_t::ld_impl)     : std::cout << "ld_impl";     break;
-    default :                        std::cout << "unknown!";    
+    default :                        std::cout << "unknown!";
       /* *NS_CHECK_STYLE_ON* */
     }
   std::cout << std::endl;
@@ -1278,7 +1579,28 @@ Int64x64ImplTestCase::DoRun (void)
 
 }
 
-static class Int64x64TestSuite : public TestSuite
+/**
+ * \ingroup int64x64-tests
+ * \internal
+ *
+ * The int64x64 Test Suite.
+ *
+ * Some of these tests are a little unusual for ns-3 in that they
+ * are sensitive to implementation, specifically the resolution
+ * of the double and long double implementations.
+ *
+ * To handle this, where needed we define a tolerance to use in the
+ * test comparisons.  If you need to increase the tolerance,
+ * please append the system and compiler version.  For example:
+ *
+ * \code
+ *   // Darwin 12.5.0 (Mac 10.8.5) g++ 4.2.1
+ *   tolerance = 1;
+ *   // System Foo gcc 3.9
+ *   tolerance = 3;
+ * \endcode
+ */
+class Int64x64TestSuite : public TestSuite
 {
 public:
   Int64x64TestSuite ()
@@ -1297,7 +1619,9 @@ public:
     AddTestCase (new Int64x64InvertTestCase (), TestCase::QUICK);
     AddTestCase (new Int64x64DoubleTestCase (), TestCase::QUICK);
   }
-}  g_int64x64TestSuite;
+};
+
+static Int64x64TestSuite g_int64x64TestSuite; //!< Static variable for test initialization
 
 }  // namespace test
 

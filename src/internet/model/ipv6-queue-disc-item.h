@@ -46,6 +46,11 @@ public:
 
   virtual ~Ipv6QueueDiscItem ();
 
+  // Delete default constructor, copy constructor and assignment operator to avoid misuse
+  Ipv6QueueDiscItem () = delete;
+  Ipv6QueueDiscItem (const Ipv6QueueDiscItem &) = delete;
+  Ipv6QueueDiscItem & operator = (const Ipv6QueueDiscItem &) = delete;
+
   /**
    * \return the correct packet size (header plus payload).
    */
@@ -77,7 +82,7 @@ public:
   virtual bool GetUint8Value (Uint8Values field, uint8_t &value) const;
 
   /**
-   * \brief Marks the packet by setting ECN_CE bits if the packet has 
+   * \brief Marks the packet by setting ECN_CE bits if the packet has
    * ECN_ECT0 or ECN_ECT1 set.  If ECN_CE is already set, returns true.
    * \return true if the method results in a marked packet, false otherwise
    */
@@ -96,26 +101,6 @@ public:
   virtual uint32_t Hash (uint32_t perturbation) const;
 
 private:
-  /**
-   * \brief Default constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  Ipv6QueueDiscItem ();
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  Ipv6QueueDiscItem (const Ipv6QueueDiscItem &);
-  /**
-   * \brief Assignment operator
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  Ipv6QueueDiscItem &operator = (const Ipv6QueueDiscItem &);
-
   Ipv6Header m_header;  //!< The IPv6 header.
   bool m_headerAdded;   //!< True if the header has already been added to the packet.
 };

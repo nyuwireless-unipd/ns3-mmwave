@@ -58,7 +58,7 @@ DhcpClient::GetTypeId (void)
                    MakeTimeAccessor (&DhcpClient::m_nextoffer),
                    MakeTimeChecker ())
     .AddAttribute ("Transactions",
-                   "The possible value of transaction numbers ",
+                   "The possible value of transaction numbers",
                    StringValue ("ns3::UniformRandomVariable[Min=0.0|Max=1000000.0]"),
                    MakePointerAccessor (&DhcpClient::m_ran),
                    MakePointerChecker<RandomVariableStream> ())
@@ -186,7 +186,7 @@ DhcpClient::StartApplication (void)
     {
       ipv4->AddAddress (ifIndex, Ipv4InterfaceAddress (Ipv4Address ("0.0.0.0"),Ipv4Mask ("/0")));
     }
-  if (m_socket == 0)
+  if (!m_socket)
     {
       TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
       m_socket = Socket::CreateSocket (GetNode (), tid);

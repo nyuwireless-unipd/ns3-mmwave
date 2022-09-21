@@ -40,6 +40,34 @@ MultiUserScheduler::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MultiUserScheduler")
     .SetParent<Object> ()
     .SetGroupName ("Wifi")
+    .AddAttribute ("AccessReqInterval",
+                   "Duration of the interval between two consecutive requests for "
+                   "channel access made by the MultiUserScheduler. Such requests are "
+                   "made independently of the presence of frames in the queues of the "
+                   "AP and are intended to allow the AP to coordinate UL MU transmissions "
+                   "even without DL traffic. A null duration indicates that such "
+                   "requests shall not be made.",
+                   TimeValue (Seconds (0)),
+                   MakeTimeAccessor (&MultiUserScheduler::m_accessReqInterval),
+                   MakeTimeChecker ())
+    .AddAttribute ("AccessReqAc",
+                   "The Access Category for which the MultiUserScheduler makes requests "
+                   "for channel access.",
+                   EnumValue (AcIndex::AC_BE),
+                   MakeEnumAccessor (&MultiUserScheduler::m_accessReqAc),
+                   MakeEnumChecker (AcIndex::AC_BE, "AC_BE",
+                                    AcIndex::AC_VI, "AC_VI",
+                                    AcIndex::AC_VO, "AC_VO",
+                                    AcIndex::AC_BK, "AC_BK"))
+    .AddAttribute ("DelayAccessReqUponAccess",
+                   "If enabled, the access request interval is measured starting "
+                   "from the last time an EDCA function obtained channel access. "
+                   "Otherwise, the access request interval is measured starting "
+                   "from the last time the MultiUserScheduler made a request for "
+                   "channel access.",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&MultiUserScheduler::m_restartTimerUponAccess),
+                   MakeBooleanChecker ())
   ;
   return tid;
 }
@@ -63,7 +91,7 @@ MultiUserScheduler::DoDispose (void)
   m_dlInfo.psduMap.clear ();
   m_dlInfo.txParams.Clear ();
   m_ulInfo.txParams.Clear ();
-  m_ulInfo.trigger = 0;
+  m_accessReqTimer.Cancel ();
   Object::DoDispose ();
 }
 
@@ -71,12 +99,12 @@ void
 MultiUserScheduler::NotifyNewAggregate ()
 {
   NS_LOG_FUNCTION (this);
-  if (m_apMac == 0)
+  if (!m_apMac)
     {
       Ptr<ApWifiMac> apMac = this->GetObject<ApWifiMac> ();
       //verify that it's a valid AP mac and that
       //the AP mac was not set before
-      if (apMac != 0)
+      if (apMac)
         {
           this->SetWifiMac (apMac);
         }
@@ -87,18 +115,11 @@ MultiUserScheduler::NotifyNewAggregate ()
 void
 MultiUserScheduler::DoInitialize (void)
 {
-  // compute the size in bytes of 8 QoS Null frames. It can be used by subclasses
-  // when responding to a BSRP Trigger Frame
-  WifiMacHeader header;
-  header.SetType (WIFI_MAC_QOSDATA_NULL);
-  header.SetDsTo ();
-  header.SetDsNotFrom ();
-  uint32_t headerSize = header.GetSerializedSize ();
+  NS_LOG_FUNCTION (this);
 
-  m_sizeOf8QosNull = 0;
-  for (uint8_t i = 0; i < 8; i++)
+  if (m_accessReqInterval.IsStrictlyPositive ())
     {
-      m_sizeOf8QosNull = MpduAggregator::GetSizeIfAggregated (headerSize + WIFI_MAC_FCS_LENGTH, m_sizeOf8QosNull);
+      m_accessReqTimer = Simulator::Schedule (m_accessReqInterval, &MultiUserScheduler::AccessReqTimeout, this);
     }
 }
 
@@ -110,7 +131,7 @@ MultiUserScheduler::SetWifiMac (Ptr<ApWifiMac> mac)
 
   // When VHT DL MU-MIMO will be supported, we will have to lower this requirement
   // and allow a Multi-user scheduler to be installed on a VHT AP.
-  NS_ABORT_MSG_IF (m_apMac == 0 || m_apMac->GetHeConfiguration () == 0,
+  NS_ABORT_MSG_IF (!m_apMac || !m_apMac->GetHeConfiguration (),
                    "MultiUserScheduler can only be installed on HE APs");
 
   m_heFem = DynamicCast<HeFrameExchangeManager> (m_apMac->GetFrameExchangeManager ());
@@ -123,14 +144,41 @@ MultiUserScheduler::GetWifiRemoteStationManager (void) const
   return m_apMac->GetWifiRemoteStationManager ();
 }
 
-MultiUserScheduler::TxFormat
-MultiUserScheduler::NotifyAccessGranted (Ptr<QosTxop> edca, Time availableTime, bool initialFrame)
+void
+MultiUserScheduler::AccessReqTimeout (void)
 {
-  NS_LOG_FUNCTION (this << edca << availableTime << initialFrame);
+  NS_LOG_FUNCTION (this);
+
+  // request channel access if not requested yet
+  auto edca = m_apMac->GetQosTxop (m_accessReqAc);
+
+  if (edca->GetAccessStatus (SINGLE_LINK_OP_ID) == Txop::NOT_REQUESTED)
+    {
+      m_apMac->GetChannelAccessManager ()->RequestAccess (edca);
+    }
+
+  // restart timer
+  m_accessReqTimer = Simulator::Schedule (m_accessReqInterval, &MultiUserScheduler::AccessReqTimeout, this);
+}
+
+MultiUserScheduler::TxFormat
+MultiUserScheduler::NotifyAccessGranted (Ptr<QosTxop> edca, Time availableTime, bool initialFrame,
+                                         uint16_t allowedWidth)
+{
+  NS_LOG_FUNCTION (this << edca << availableTime << initialFrame << allowedWidth);
 
   m_edca = edca;
   m_availableTime = availableTime;
   m_initialFrame = initialFrame;
+  m_allowedWidth = allowedWidth;
+
+  if (m_accessReqTimer.IsRunning () && m_restartTimerUponAccess)
+    {
+      // restart access timer
+      m_accessReqTimer.Cancel ();
+      m_accessReqTimer = Simulator::Schedule (m_accessReqInterval,
+                                              &MultiUserScheduler::AccessReqTimeout, this);
+    }
 
   TxFormat txFormat = SelectTxFormat ();
 
@@ -140,8 +188,9 @@ MultiUserScheduler::NotifyAccessGranted (Ptr<QosTxop> edca, Time availableTime, 
     }
   else if (txFormat == UL_MU_TX)
     {
-      NS_ABORT_MSG_IF (m_heFem == 0, "UL MU PPDUs are only supported by HE APs");
+      NS_ABORT_MSG_IF (!m_heFem, "UL MU PPDUs are only supported by HE APs");
       m_ulInfo = ComputeUlMuInfo ();
+      CheckTriggerFrame ();
     }
 
   if (txFormat != NO_TX)
@@ -180,6 +229,80 @@ MultiUserScheduler::GetUlMuInfo (void)
   NS_ABORT_MSG_IF (m_lastTxFormat != UL_MU_TX, "Next transmission is not UL MU");
 
   return m_ulInfo;
+}
+
+Ptr<WifiMacQueueItem>
+MultiUserScheduler::GetTriggerFrame (const CtrlTriggerHeader& trigger) const
+{
+  NS_LOG_FUNCTION (this);
+
+  Ptr<Packet> packet = Create<Packet> ();
+  packet->AddHeader (trigger);
+
+  Mac48Address receiver = Mac48Address::GetBroadcast ();
+  if (trigger.GetNUserInfoFields () == 1)
+    {
+      auto aid = trigger.begin ()->GetAid12 ();
+      auto aidAddrMapIt = m_apMac->GetStaList ().find (aid);
+      NS_ASSERT (aidAddrMapIt != m_apMac->GetStaList ().end ());
+      receiver = aidAddrMapIt->second;
+    }
+
+  WifiMacHeader hdr (WIFI_MAC_CTL_TRIGGER);
+  hdr.SetAddr1 (receiver);
+  hdr.SetAddr2 (m_apMac->GetAddress ());
+  hdr.SetDsNotTo ();
+  hdr.SetDsNotFrom ();
+
+  return Create<WifiMacQueueItem> (packet, hdr);
+}
+
+void
+MultiUserScheduler::CheckTriggerFrame (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  // Set the CS Required subfield to true, unless the UL Length subfield is less
+  // than or equal to 76 (see Section 26.5.2.5 of 802.11ax-2021)
+  m_ulInfo.trigger.SetCsRequired (m_ulInfo.trigger.GetUlLength () > 76);
+
+  m_heFem->SetTargetRssi (m_ulInfo.trigger);
+}
+
+uint32_t
+MultiUserScheduler::GetMaxSizeOfQosNullAmpdu (const CtrlTriggerHeader& trigger) const
+{
+  // find the maximum number of TIDs for which a BlockAck agreement has been established
+  // with an STA, among all the STAs solicited by the given Trigger Frame
+  uint8_t maxNTids = 0;
+  for (const auto& userInfo : trigger)
+    {
+      const auto staIt = m_apMac->GetStaList ().find (userInfo.GetAid12 ());
+      NS_ASSERT (staIt != m_apMac->GetStaList ().cend ());
+      uint8_t staNTids = 0;
+      for (uint8_t tid = 0; tid < 8; tid++)
+        {
+          if (m_heFem->GetBaAgreementEstablished (staIt->second, tid))
+            {
+              staNTids++;
+            }
+        }
+      maxNTids = std::max (maxNTids, staNTids);
+    }
+
+  // compute the size in bytes of maxNTids QoS Null frames
+  WifiMacHeader header (WIFI_MAC_QOSDATA_NULL);
+  header.SetDsTo ();
+  header.SetDsNotFrom ();
+  uint32_t headerSize = header.GetSerializedSize ();
+  uint32_t maxSize = 0;
+
+  for (uint8_t i = 0; i < maxNTids; i++)
+    {
+      maxSize = MpduAggregator::GetSizeIfAggregated (headerSize + WIFI_MAC_FCS_LENGTH, maxSize);
+    }
+
+  return maxSize;
 }
 
 } //namespace ns3

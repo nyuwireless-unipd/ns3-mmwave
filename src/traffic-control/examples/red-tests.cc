@@ -50,32 +50,37 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("RedTests");
 
-uint32_t checkTimes;
-double avgQueueSize;
+uint32_t checkTimes; //!< Number of times the queues have been checked.
+double avgQueueSize; //!< Average Queue size.
 
 // The times
-double global_start_time;
-double global_stop_time;
-double sink_start_time;
-double sink_stop_time;
-double client_start_time;
-double client_stop_time;
+double global_start_time; //!< Global start time
+double global_stop_time;  //!< Global stop time.
+double sink_start_time;   //!< Sink start time.
+double sink_stop_time;    //!< Sink stop time.
+double client_start_time; //!< Client start time.
+double client_stop_time;  //!< Client stop time.
 
-NodeContainer n0n2;
-NodeContainer n1n2;
-NodeContainer n2n3;
-NodeContainer n3n4;
-NodeContainer n3n5;
+NodeContainer n0n2; //!< Nodecontainer n0 + n2.
+NodeContainer n1n2; //!< Nodecontainer n1 + n2.
+NodeContainer n2n3; //!< Nodecontainer n2 + n3.
+NodeContainer n3n4; //!< Nodecontainer n3 + n4.
+NodeContainer n3n5; //!< Nodecontainer n3 + n5.
 
-Ipv4InterfaceContainer i0i2;
-Ipv4InterfaceContainer i1i2;
-Ipv4InterfaceContainer i2i3;
-Ipv4InterfaceContainer i3i4;
-Ipv4InterfaceContainer i3i5;
+Ipv4InterfaceContainer i0i2; //!< IPv4 interface container i0 + i2.
+Ipv4InterfaceContainer i1i2; //!< IPv4 interface container i1 + i2.
+Ipv4InterfaceContainer i2i3; //!< IPv4 interface container i2 + i3.
+Ipv4InterfaceContainer i3i4; //!< IPv4 interface container i3 + i4.
+Ipv4InterfaceContainer i3i5; //!< IPv4 interface container i3 + i5.
 
-std::stringstream filePlotQueue;
-std::stringstream filePlotQueueAvg;
+std::stringstream filePlotQueue;    //!< Output file name for queue size.
+std::stringstream filePlotQueueAvg; //!< Output file name for queue average.
 
+/**
+ * Check the queue size and write its stats to the output files.
+ *
+ * \param queue The queue to check.
+ */
 void
 CheckQueueSize (Ptr<QueueDisc> queue)
 {
@@ -96,6 +101,11 @@ CheckQueueSize (Ptr<QueueDisc> queue)
   fPlotQueueAvg.close ();
 }
 
+/**
+ * Setup the apps.
+ *
+ * \param test The test number.
+ */
 void
 BuildAppsTest (uint32_t test)
 {
@@ -118,9 +128,9 @@ BuildAppsTest (uint32_t test)
       OnOffHelper clientHelper1 ("ns3::TcpSocketFactory", Address ());
       clientHelper1.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       clientHelper1.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      clientHelper1.SetAttribute 
+      clientHelper1.SetAttribute
         ("DataRate", DataRateValue (DataRate ("10Mb/s")));
-      clientHelper1.SetAttribute 
+      clientHelper1.SetAttribute
         ("PacketSize", UintegerValue (1000));
 
       ApplicationContainer clientApps1;
@@ -135,9 +145,9 @@ BuildAppsTest (uint32_t test)
       OnOffHelper clientHelper2 ("ns3::TcpSocketFactory", Address ());
       clientHelper2.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       clientHelper2.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      clientHelper2.SetAttribute 
+      clientHelper2.SetAttribute
         ("DataRate", DataRateValue (DataRate ("10Mb/s")));
-      clientHelper2.SetAttribute 
+      clientHelper2.SetAttribute
         ("PacketSize", UintegerValue (1000));
 
       ApplicationContainer clientApps2;
@@ -186,9 +196,9 @@ BuildAppsTest (uint32_t test)
       OnOffHelper clientHelper1 ("ns3::TcpSocketFactory", Address ());
       clientHelper1.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       clientHelper1.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      clientHelper1.SetAttribute 
+      clientHelper1.SetAttribute
         ("DataRate", DataRateValue (DataRate ("10Mb/s")));
-      clientHelper1.SetAttribute 
+      clientHelper1.SetAttribute
         ("PacketSize", UintegerValue (1000));
 
       ApplicationContainer clientApps1;
@@ -203,9 +213,9 @@ BuildAppsTest (uint32_t test)
       OnOffHelper clientHelper2 ("ns3::TcpSocketFactory", Address ());
       clientHelper2.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       clientHelper2.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      clientHelper2.SetAttribute 
+      clientHelper2.SetAttribute
         ("DataRate", DataRateValue (DataRate ("10Mb/s")));
-      clientHelper2.SetAttribute 
+      clientHelper2.SetAttribute
         ("PacketSize", UintegerValue (1000));
 
       ApplicationContainer clientApps2;
@@ -220,9 +230,9 @@ BuildAppsTest (uint32_t test)
       OnOffHelper clientHelper3 ("ns3::TcpSocketFactory", Address ());
       clientHelper3.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       clientHelper3.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      clientHelper3.SetAttribute 
+      clientHelper3.SetAttribute
         ("DataRate", DataRateValue (DataRate ("10Mb/s")));
-      clientHelper3.SetAttribute 
+      clientHelper3.SetAttribute
         ("PacketSize", UintegerValue (1000));
 
       ApplicationContainer clientApps3;
@@ -237,9 +247,9 @@ BuildAppsTest (uint32_t test)
       OnOffHelper clientHelper4 ("ns3::TcpSocketFactory", Address ());
       clientHelper4.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
       clientHelper4.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-      clientHelper4.SetAttribute 
+      clientHelper4.SetAttribute
         ("DataRate", DataRateValue (DataRate ("40b/s")));
-      clientHelper4.SetAttribute 
+      clientHelper4.SetAttribute
         ("PacketSize", UintegerValue (5 * 8)); // telnet
 
       ApplicationContainer clientApps4;
@@ -269,7 +279,7 @@ main (int argc, char *argv[])
   bool printRedStats = true;
 
   global_start_time = 0.0;
-  global_stop_time = 11; 
+  global_stop_time = 11;
   sink_start_time = global_start_time;
   sink_stop_time = global_stop_time + 3.0;
   client_start_time = sink_start_time + 0.2;
@@ -406,7 +416,7 @@ main (int argc, char *argv[])
   // Set up the routing
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
-  if (redTest == 5) 
+  if (redTest == 5)
     {
       // like in ns2 test, r2 -> r1, have a queue in packet mode
       Ptr<QueueDisc> queue = queueDiscs.Get (1);

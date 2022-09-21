@@ -3,12 +3,9 @@
 *.patch
 *.rej
 
-*.DS_Store
-
 *.o
 *.pyc
 *.pyo
-*.gch
 
 *.cwnd
 *.dat
@@ -19,10 +16,9 @@
 *.routes
 *.tr
 [D|U]l[A-Z][a-z]*Stats.txt
-seventh-packet-byte-count.png
 
 \#*#
-~*
+*~
 
 testpy-output
 
@@ -33,13 +29,27 @@ massif.*
 coverity
 TAGS
 
-.lock-waf_*_build
-.waf*
+.lock-ns3_*
 
 build-dir/
 build/
 /.cproject
 /.project
-.vscode/settings.json
 
-docs/
+version.cache
+
+.gitlab-ci-local/
+.idea/
+cmake-cache/
+cmake-build-debug/
+cmake-build-relwithdebinfo/
+cmake-build-minsizerel/
+cmake-build-release/
+
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+.vs/
+
+# Ignore local cache used by e.g. clangd
+.cache/

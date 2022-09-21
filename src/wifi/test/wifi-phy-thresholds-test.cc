@@ -23,6 +23,7 @@
 #include "ns3/spectrum-wifi-helper.h"
 #include "ns3/wifi-spectrum-value-helper.h"
 #include "ns3/spectrum-wifi-phy.h"
+#include "ns3/interference-helper.h"
 #include "ns3/nist-error-rate-model.h"
 #include "ns3/wifi-mac-header.h"
 #include "ns3/wifi-spectrum-signal-parameters.h"
@@ -150,7 +151,7 @@ WifiPhyThresholdsTest::MakeWifiSignal (double txPowerWatts)
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (pkt, hdr);
   Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetPhyBand ());
 
-  Ptr<WifiPpdu> ppdu = Create<OfdmPpdu> (psdu, txVector, WIFI_PHY_BAND_5GHZ, 0);
+  Ptr<WifiPpdu> ppdu = Create<OfdmPpdu> (psdu, txVector, FREQUENCY, WIFI_PHY_BAND_5GHZ, 0);
 
   Ptr<SpectrumValue> txPowerSpectrum = WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (FREQUENCY, CHANNEL_WIDTH, txPowerWatts, CHANNEL_WIDTH);
   Ptr<WifiSpectrumSignalParameters> txParams = Create<WifiSpectrumSignalParameters> ();
@@ -230,11 +231,12 @@ void
 WifiPhyThresholdsTest::DoSetup (void)
 {
   m_phy = CreateObject<SpectrumWifiPhy> ();
-  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  m_phy->ConfigureStandard (WIFI_STANDARD_80211ax);
+  Ptr<InterferenceHelper> interferenceHelper = CreateObject<InterferenceHelper> ();
+  m_phy->SetInterferenceHelper (interferenceHelper);
   Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_phy->SetErrorRateModel (error);
-  m_phy->SetChannelNumber (CHANNEL_NUMBER);
-  m_phy->SetFrequency (FREQUENCY);
+  m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {CHANNEL_NUMBER, 0, WIFI_PHY_BAND_5GHZ, 0});
   m_phy->SetReceiveOkCallback (MakeCallback (&WifiPhyThresholdsTest::RxSuccess, this));
   m_phy->SetReceiveErrorCallback (MakeCallback (&WifiPhyThresholdsTest::RxFailure, this));
   m_phy->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback (&WifiPhyThresholdsTest::RxDropped, this));

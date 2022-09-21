@@ -18,6 +18,7 @@
  * Author: Sebastien Deronne <sebastien.deronne@gmail.com>
  */
 
+#include <functional>
 #include "ns3/command-line.h"
 #include "ns3/config.h"
 #include "ns3/uinteger.h"
@@ -67,6 +68,7 @@ NS_LOG_COMPONENT_DEFINE ("he-wifi-network");
 int main (int argc, char *argv[])
 {
   bool udp {true};
+  bool downlink {true};
   bool useRts {false};
   bool useExtendedBlockAck {false};
   double simulationTime {10}; //seconds
@@ -74,22 +76,29 @@ int main (int argc, char *argv[])
   double frequency {5}; //whether 2.4, 5 or 6 GHz
   std::size_t nStations {1};
   std::string dlAckSeqType {"NO-OFDMA"};
+  bool enableUlOfdma {false};
+  bool enableBsrp {false};
   int mcs {-1}; // -1 indicates an unset value
   uint32_t payloadSize = 700; // must fit in the max TX duration when transmitting at MCS 0 over an RU of 26 tones
   std::string phyModel {"Yans"};
   double minExpectedThroughput {0};
   double maxExpectedThroughput {0};
+  Time accessReqInterval {0};
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("frequency", "Whether working in the 2.4, 5 or 6 GHz band (other values gets rejected)", frequency);
   cmd.AddValue ("distance", "Distance in meters between the station and the access point", distance);
   cmd.AddValue ("simulationTime", "Simulation time in seconds", simulationTime);
   cmd.AddValue ("udp", "UDP if set to 1, TCP otherwise", udp);
+  cmd.AddValue ("downlink", "Generate downlink flows if set to 1, uplink flows otherwise", downlink);
   cmd.AddValue ("useRts", "Enable/disable RTS/CTS", useRts);
   cmd.AddValue ("useExtendedBlockAck", "Enable/disable use of extended BACK", useExtendedBlockAck);
   cmd.AddValue ("nStations", "Number of non-AP HE stations", nStations);
   cmd.AddValue ("dlAckType", "Ack sequence type for DL OFDMA (NO-OFDMA, ACK-SU-FORMAT, MU-BAR, AGGR-MU-BAR)",
                 dlAckSeqType);
+  cmd.AddValue ("enableUlOfdma", "Enable UL OFDMA (useful if DL OFDMA is enabled and TCP is used)", enableUlOfdma);
+  cmd.AddValue ("enableBsrp", "Enable BSRP (useful if DL and UL OFDMA are enabled and TCP is used)", enableBsrp);
+  cmd.AddValue ("muSchedAccessReqInterval", "Duration of the interval between two requests for channel access made by the MU scheduler", accessReqInterval);
   cmd.AddValue ("mcs", "if set, limit testing to a specific MCS (0-11)", mcs);
   cmd.AddValue ("payloadSize", "The application payload size in bytes", payloadSize);
   cmd.AddValue ("phyModel", "PHY model to use when OFDMA is disabled (Yans or Spectrum). If OFDMA is enabled then Spectrum is automatically selected", phyModel);
@@ -167,19 +176,23 @@ int main (int argc, char *argv[])
               NetDeviceContainer apDevice, staDevices;
               WifiMacHelper mac;
               WifiHelper wifi;
+              std::string channelStr ("{0, " + std::to_string (channelWidth) + ", ");
 
               if (frequency == 6)
                 {
-                  wifi.SetStandard (WIFI_STANDARD_80211ax_6GHZ);
+                  wifi.SetStandard (WIFI_STANDARD_80211ax);
+                  channelStr += "BAND_6GHZ, 0}";
                   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (48));
                 }
               else if (frequency == 5)
                 {
-                  wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
+                  wifi.SetStandard (WIFI_STANDARD_80211ax);
+                  channelStr += "BAND_5GHZ, 0}";
                 }
               else if (frequency == 2.4)
                 {
-                  wifi.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
+                  wifi.SetStandard (WIFI_STANDARD_80211ax);
+                  channelStr += "BAND_2_4GHZ, 0}";
                   Config::SetDefault ("ns3::LogDistancePropagationLossModel::ReferenceLoss", DoubleValue (40));
                 }
               else
@@ -192,6 +205,9 @@ int main (int argc, char *argv[])
               oss << "HeMcs" << mcs;
               wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager","DataMode", StringValue (oss.str ()),
                                             "ControlMode", StringValue (oss.str ()));
+              // Set guard interval and MPDU buffer size
+              wifi.ConfigHeOptions ("GuardInterval", TimeValue (NanoSeconds (gi)),
+                                    "MpduBufferSize", UintegerValue (useExtendedBlockAck ? 256 : 64));
 
               Ssid ssid = Ssid ("ns3-80211ax");
 
@@ -210,19 +226,19 @@ int main (int argc, char *argv[])
 
                   mac.SetType ("ns3::StaWifiMac",
                               "Ssid", SsidValue (ssid));
-                  phy.Set ("ChannelWidth", UintegerValue (channelWidth));
+                  phy.Set ("ChannelSettings", StringValue (channelStr));
                   staDevices = wifi.Install (phy, mac, wifiStaNodes);
 
                   if (dlAckSeqType != "NO-OFDMA")
                     {
                       mac.SetMultiUserScheduler ("ns3::RrMultiUserScheduler",
-                                                "EnableUlOfdma", BooleanValue (false),
-                                                "EnableBsrp", BooleanValue (false));
+                                                 "EnableUlOfdma", BooleanValue (enableUlOfdma),
+                                                 "EnableBsrp", BooleanValue (enableBsrp),
+                                                 "AccessReqInterval", TimeValue (accessReqInterval));
                     }
                   mac.SetType ("ns3::ApWifiMac",
                               "EnableBeaconJitter", BooleanValue (false),
                               "Ssid", SsidValue (ssid));
-                  phy.Set ("ChannelWidth", UintegerValue (channelWidth));
                   apDevice = wifi.Install (phy, mac, wifiApNode);
                 }
               else
@@ -234,25 +250,20 @@ int main (int argc, char *argv[])
 
                   mac.SetType ("ns3::StaWifiMac",
                               "Ssid", SsidValue (ssid));
-                  phy.Set ("ChannelWidth", UintegerValue (channelWidth));
+                  phy.Set ("ChannelSettings", StringValue (channelStr));
                   staDevices = wifi.Install (phy, mac, wifiStaNodes);
 
                   mac.SetType ("ns3::ApWifiMac",
                               "EnableBeaconJitter", BooleanValue (false),
                               "Ssid", SsidValue (ssid));
-                  phy.Set ("ChannelWidth", UintegerValue (channelWidth));
                   apDevice = wifi.Install (phy, mac, wifiApNode);
                 }
 
               RngSeedManager::SetSeed (1);
               RngSeedManager::SetRun (1);
-              int64_t streamNumber = 100;
+              int64_t streamNumber = 150;
               streamNumber += wifi.AssignStreams (apDevice, streamNumber);
               streamNumber += wifi.AssignStreams (staDevices, streamNumber);
-
-              // Set guard interval and MPDU buffer size
-              Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/GuardInterval", TimeValue (NanoSeconds (gi)));
-              Config::Set ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/HeConfiguration/MpduBufferSize", UintegerValue (useExtendedBlockAck ? 256 : 64));
 
               // mobility.
               MobilityHelper mobility;
@@ -282,22 +293,31 @@ int main (int argc, char *argv[])
 
               /* Setting applications */
               ApplicationContainer serverApp;
+              auto serverNodes = downlink ? std::ref (wifiStaNodes) : std::ref (wifiApNode);
+              Ipv4InterfaceContainer serverInterfaces;
+              NodeContainer clientNodes;
+              for (std::size_t i = 0; i < nStations; i++)
+                {
+                  serverInterfaces.Add (downlink ? staNodeInterfaces.Get (i) : apNodeInterface.Get (0));
+                  clientNodes.Add (downlink ? wifiApNode.Get (0) : wifiStaNodes.Get (i));
+                }
+
               if (udp)
                 {
                   //UDP flow
                   uint16_t port = 9;
                   UdpServerHelper server (port);
-                  serverApp = server.Install (wifiStaNodes);
+                  serverApp = server.Install (serverNodes.get ());
                   serverApp.Start (Seconds (0.0));
                   serverApp.Stop (Seconds (simulationTime + 1));
 
                   for (std::size_t i = 0; i < nStations; i++)
                     {
-                      UdpClientHelper client (staNodeInterfaces.GetAddress (i), port);
+                      UdpClientHelper client (serverInterfaces.GetAddress (i), port);
                       client.SetAttribute ("MaxPackets", UintegerValue (4294967295u));
                       client.SetAttribute ("Interval", TimeValue (Time ("0.00001"))); //packets/s
                       client.SetAttribute ("PacketSize", UintegerValue (payloadSize));
-                      ApplicationContainer clientApp = client.Install (wifiApNode.Get (0));
+                      ApplicationContainer clientApp = client.Install (clientNodes.Get (i));
                       clientApp.Start (Seconds (1.0));
                       clientApp.Stop (Seconds (simulationTime + 1));
                     }
@@ -308,7 +328,7 @@ int main (int argc, char *argv[])
                   uint16_t port = 50000;
                   Address localAddress (InetSocketAddress (Ipv4Address::GetAny (), port));
                   PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", localAddress);
-                  serverApp = packetSinkHelper.Install (wifiStaNodes);
+                  serverApp = packetSinkHelper.Install (serverNodes.get ());
                   serverApp.Start (Seconds (0.0));
                   serverApp.Stop (Seconds (simulationTime + 1));
 
@@ -319,9 +339,9 @@ int main (int argc, char *argv[])
                       onoff.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
                       onoff.SetAttribute ("PacketSize", UintegerValue (payloadSize));
                       onoff.SetAttribute ("DataRate", DataRateValue (1000000000)); //bit/s
-                      AddressValue remoteAddress (InetSocketAddress (staNodeInterfaces.GetAddress (i), port));
+                      AddressValue remoteAddress (InetSocketAddress (serverInterfaces.GetAddress (i), port));
                       onoff.SetAttribute ("Remote", remoteAddress);
-                      ApplicationContainer clientApp = onoff.Install (wifiApNode.Get (0));
+                      ApplicationContainer clientApp = onoff.Install (clientNodes.Get (i));
                       clientApp.Start (Seconds (1.0));
                       clientApp.Stop (Seconds (simulationTime + 1));
                     }
@@ -375,25 +395,31 @@ int main (int argc, char *argv[])
                       exit (1);
                     }
                 }
-              //test previous throughput is smaller (for the same mcs)
-              if (throughput * (1 + tolerance) > previous)
+              // Skip comparisons with previous cases if more than one stations are present
+              // because, e.g., random collisions in the establishment of Block Ack agreements
+              // have an impact on throughput
+              if (nStations == 1)
                 {
-                  previous = throughput;
-                }
-              else
-                {
-                  NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
-                  exit (1);
-                }
-              //test previous throughput is smaller (for the same channel width and GI)
-              if (throughput * (1 + tolerance) > prevThroughput [index])
-                {
-                  prevThroughput [index] = throughput;
-                }
-              else
-                {
-                  NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
-                  exit (1);
+                  //test previous throughput is smaller (for the same mcs)
+                  if (throughput * (1 + tolerance) > previous)
+                    {
+                      previous = throughput;
+                    }
+                  else if (throughput > 0)
+                    {
+                      NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
+                      exit (1);
+                    }
+                  //test previous throughput is smaller (for the same channel width and GI)
+                  if (throughput * (1 + tolerance) > prevThroughput [index])
+                    {
+                      prevThroughput [index] = throughput;
+                    }
+                  else if (throughput > 0)
+                    {
+                      NS_LOG_ERROR ("Obtained throughput " << throughput << " is not expected!");
+                      exit (1);
+                    }
                 }
               index++;
               gi /= 2;

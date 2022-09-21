@@ -80,13 +80,13 @@ RecipientBlockAckAgreement::PassBufferedMpdusUntilFirstLost (void)
   // highest sequence number)
   NS_ASSERT (m_bufferedMpdus.empty () ||
              GetDistance (m_bufferedMpdus.rbegin ()->first.first, m_winStartB) < SEQNO_SPACE_HALF_SIZE);
-  
+
   auto it = m_bufferedMpdus.begin ();
 
   while (it != m_bufferedMpdus.end () && it->first.first == m_winStartB)
     {
       NS_LOG_DEBUG ("Forwarding up: " << *it->second);
-      m_rxMiddle->Receive (it->second);
+      m_rxMiddle->Receive (it->second, WIFI_LINKID_UNDEFINED);
       it = m_bufferedMpdus.erase (it);
       m_winStartB = (m_winStartB + 1) % SEQNO_SPACE_SIZE;
     }
@@ -101,14 +101,14 @@ RecipientBlockAckAgreement::PassBufferedMpdusWithSeqNumberLessThan (uint16_t new
   // highest sequence number)
   NS_ASSERT (m_bufferedMpdus.empty () ||
              GetDistance (m_bufferedMpdus.rbegin ()->first.first, m_winStartB) < SEQNO_SPACE_HALF_SIZE);
-  
+
   auto it = m_bufferedMpdus.begin ();
 
   while (it != m_bufferedMpdus.end ()
          && GetDistance (it->first.first, m_winStartB) < GetDistance (newWinStartB, m_winStartB))
     {
       NS_LOG_DEBUG ("Forwarding up: " << *it->second);
-      m_rxMiddle->Receive (it->second);
+      m_rxMiddle->Receive (it->second, WIFI_LINKID_UNDEFINED);
       it = m_bufferedMpdus.erase (it);
     }
   m_winStartB = newWinStartB;

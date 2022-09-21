@@ -19,7 +19,7 @@
  * Author: Yufei Cheng   <yfcheng@ittc.ku.edu>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -120,51 +120,62 @@ RoutingProtocol::GetTypeId (void)
     .SetParent<Ipv4RoutingProtocol> ()
     .SetGroupName ("Dsdv")
     .AddConstructor<RoutingProtocol> ()
-    .AddAttribute ("PeriodicUpdateInterval","Periodic interval between exchange of full routing tables among nodes. ",
+    .AddAttribute ("PeriodicUpdateInterval",
+                   "Periodic interval between exchange of full routing tables among nodes.",
                    TimeValue (Seconds (15)),
                    MakeTimeAccessor (&RoutingProtocol::m_periodicUpdateInterval),
                    MakeTimeChecker ())
-    .AddAttribute ("SettlingTime", "Minimum time an update is to be stored in adv table before sending out"
+    .AddAttribute ("SettlingTime",
+                   "Minimum time an update is to be stored in adv table before sending out "
                    "in case of change in metric (in seconds)",
                    TimeValue (Seconds (5)),
                    MakeTimeAccessor (&RoutingProtocol::m_settlingTime),
                    MakeTimeChecker ())
-    .AddAttribute ("MaxQueueLen", "Maximum number of packets that we allow a routing protocol to buffer.",
+    .AddAttribute ("MaxQueueLen",
+                   "Maximum number of packets that we allow a routing protocol to buffer.",
                    UintegerValue (500 /*assuming maximum nodes in simulation is 100*/),
                    MakeUintegerAccessor (&RoutingProtocol::m_maxQueueLen),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("MaxQueuedPacketsPerDst", "Maximum number of packets that we allow per destination to buffer.",
+    .AddAttribute ("MaxQueuedPacketsPerDst",
+                   "Maximum number of packets that we allow per destination to buffer.",
                    UintegerValue (5),
                    MakeUintegerAccessor (&RoutingProtocol::m_maxQueuedPacketsPerDst),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("MaxQueueTime","Maximum time packets can be queued (in seconds)",
+    .AddAttribute ("MaxQueueTime",
+                   "Maximum time packets can be queued (in seconds)",
                    TimeValue (Seconds (30)),
                    MakeTimeAccessor (&RoutingProtocol::m_maxQueueTime),
                    MakeTimeChecker ())
-    .AddAttribute ("EnableBuffering","Enables buffering of data packets if no route to destination is available",
+    .AddAttribute ("EnableBuffering",
+                   "Enables buffering of data packets if no route to destination is available",
                    BooleanValue (true),
                    MakeBooleanAccessor (&RoutingProtocol::SetEnableBufferFlag,
                                         &RoutingProtocol::GetEnableBufferFlag),
                    MakeBooleanChecker ())
-    .AddAttribute ("EnableWST","Enables Weighted Settling Time for the updates before advertising",
+    .AddAttribute ("EnableWST",
+                   "Enables Weighted Settling Time for the updates before advertising",
                    BooleanValue (true),
                    MakeBooleanAccessor (&RoutingProtocol::SetWSTFlag,
                                         &RoutingProtocol::GetWSTFlag),
                    MakeBooleanChecker ())
-    .AddAttribute ("Holdtimes","Times the forwarding Interval to purge the route.",
+    .AddAttribute ("Holdtimes",
+                   "Times the forwarding Interval to purge the route.",
                    UintegerValue (3),
                    MakeUintegerAccessor (&RoutingProtocol::Holdtimes),
                    MakeUintegerChecker<uint32_t> ())
-    .AddAttribute ("WeightedFactor","WeightedFactor for the settling time if Weighted Settling Time is enabled",
+    .AddAttribute ("WeightedFactor",
+                   "WeightedFactor for the settling time if Weighted Settling Time is enabled",
                    DoubleValue (0.875),
                    MakeDoubleAccessor (&RoutingProtocol::m_weightedFactor),
                    MakeDoubleChecker<double> ())
-    .AddAttribute ("EnableRouteAggregation","Enables Weighted Settling Time for the updates before advertising",
+    .AddAttribute ("EnableRouteAggregation",
+                   "Enables Weighted Settling Time for the updates before advertising",
                    BooleanValue (false),
                    MakeBooleanAccessor (&RoutingProtocol::SetEnableRAFlag,
                                         &RoutingProtocol::GetEnableRAFlag),
                    MakeBooleanChecker ())
-    .AddAttribute ("RouteAggregationTime","Time to aggregate updates before sending them out (in seconds)",
+    .AddAttribute ("RouteAggregationTime",
+                   "Time to aggregate updates before sending them out (in seconds)",
                    TimeValue (Seconds (1)),
                    MakeTimeAccessor (&RoutingProtocol::m_routeAggregationTime),
                    MakeTimeChecker ());
@@ -309,11 +320,11 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
       if (rt.GetHop () == 1)
         {
           route = rt.GetRoute ();
-          NS_ASSERT (route != 0);
+          NS_ASSERT (route);
           NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
                                                << " to neighboring destination "
                                                << route->GetDestination ());
-          if (oif != 0 && route->GetOutputDevice () != oif)
+          if (oif && route->GetOutputDevice () != oif)
             {
               NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
               sockerr = Socket::ERROR_NOROUTETOHOST;
@@ -327,11 +338,11 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p,
           if (m_routingTable.LookupRoute (rt.GetNextHop (),newrt))
             {
               route = newrt.GetRoute ();
-              NS_ASSERT (route != 0);
+              NS_ASSERT (route);
               NS_LOG_DEBUG ("A route exists from " << route->GetSource ()
                                                    << " to destination " << dst << " via "
                                                    << rt.GetNextHop ());
-              if (oif != 0 && route->GetOutputDevice () != oif)
+              if (oif && route->GetOutputDevice () != oif)
                 {
                   NS_LOG_DEBUG ("Output device doesn't match. Dropped.");
                   sockerr = Socket::ERROR_NOROUTETOHOST;
@@ -361,7 +372,7 @@ RoutingProtocol::DeferredRouteOutput (Ptr<const Packet> p,
                                       ErrorCallback ecb)
 {
   NS_LOG_FUNCTION (this << p << header);
-  NS_ASSERT (p != 0 && p != Ptr<Packet> ());
+  NS_ASSERT (p && p != Ptr<Packet> ());
   QueueEntry newEntry (p,header,ucb,ecb);
   bool result = m_queue.Enqueue (newEntry);
   if (result)
@@ -388,7 +399,7 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p,
       NS_LOG_DEBUG ("No dsdv interfaces");
       return false;
     }
-  NS_ASSERT (m_ipv4 != 0);
+  NS_ASSERT (m_ipv4);
   // Check if input device supports IP
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   int32_t iif = m_ipv4->GetInterfaceForDevice (idev);
@@ -507,7 +518,7 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p,
 Ptr<Ipv4Route>
 RoutingProtocol::LoopbackRoute (const Ipv4Header & hdr, Ptr<NetDevice> oif) const
 {
-  NS_ASSERT (m_lo != 0);
+  NS_ASSERT (m_lo);
   Ptr<Ipv4Route> rt = Create<Ipv4Route> ();
   rt->SetDestination (hdr.GetDestination ());
   // rt->SetSource (hdr.GetSource ());
@@ -947,13 +958,13 @@ RoutingProtocol::SendPeriodicUpdate ()
 void
 RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 {
-  NS_ASSERT (ipv4 != 0);
-  NS_ASSERT (m_ipv4 == 0);
+  NS_ASSERT (ipv4);
+  NS_ASSERT (!m_ipv4);
   m_ipv4 = ipv4;
   // Create lo route. It is asserted that the only one interface up for now is loopback
   NS_ASSERT (m_ipv4->GetNInterfaces () == 1 && m_ipv4->GetAddress (0, 0).GetLocal () == Ipv4Address ("127.0.0.1"));
   m_lo = m_ipv4->GetNetDevice (0);
-  NS_ASSERT (m_lo != 0);
+  NS_ASSERT (m_lo);
   // Remember lo route
   RoutingTableEntry rt (
     /*device=*/ m_lo,  /*dst=*/
@@ -982,7 +993,7 @@ RoutingProtocol::NotifyInterfaceUp (uint32_t i)
     }
   // Create a socket to listen only on this interface
   Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (),UdpSocketFactory::GetTypeId ());
-  NS_ASSERT (socket != 0);
+  NS_ASSERT (socket);
   socket->SetRecvCallback (MakeCallback (&RoutingProtocol::RecvDsdv,this));
   socket->BindToNetDevice (l3->GetNetDevice (i));
   socket->Bind (InetSocketAddress (Ipv4Address::GetAny (), DSDV_PORT));
@@ -1039,7 +1050,7 @@ RoutingProtocol::NotifyAddAddress (uint32_t i,
           return;
         }
       Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (),UdpSocketFactory::GetTypeId ());
-      NS_ASSERT (socket != 0);
+      NS_ASSERT (socket);
       socket->SetRecvCallback (MakeCallback (&RoutingProtocol::RecvDsdv,this));
       // Bind to any IP address so that broadcasts can be received
       socket->BindToNetDevice (l3->GetNetDevice (i));
@@ -1067,7 +1078,7 @@ RoutingProtocol::NotifyRemoveAddress (uint32_t i,
           Ipv4InterfaceAddress iface = l3->GetAddress (i,0);
           // Create a socket to listen only on this interface
           Ptr<Socket> socket = Socket::CreateSocket (GetObject<Node> (),UdpSocketFactory::GetTypeId ());
-          NS_ASSERT (socket != 0);
+          NS_ASSERT (socket);
           socket->SetRecvCallback (MakeCallback (&RoutingProtocol::RecvDsdv,this));
           // Bind to any IP address so that broadcasts can be received
           socket->Bind (InetSocketAddress (Ipv4Address::GetAny (), DSDV_PORT));
@@ -1100,7 +1111,7 @@ RoutingProtocol::Send (Ptr<Ipv4Route> route,
                        const Ipv4Header & header)
 {
   Ptr<Ipv4L3Protocol> l3 = m_ipv4->GetObject<Ipv4L3Protocol> ();
-  NS_ASSERT (l3 != 0);
+  NS_ASSERT (l3);
   Ptr<Packet> p = packet->Copy ();
   l3->Send (p,route->GetSource (),header.GetDestination (),header.GetProtocol (),route);
 }
@@ -1133,7 +1144,7 @@ RoutingProtocol::LookForQueuedPackets ()
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to neighboring destination "
                                                    << route->GetDestination ());
-              NS_ASSERT (route != 0);
+              NS_ASSERT (route);
             }
           else
             {
@@ -1143,7 +1154,7 @@ RoutingProtocol::LookForQueuedPackets ()
               NS_LOG_LOGIC ("A route exists from " << route->GetSource ()
                                                    << " to destination " << route->GetDestination () << " via "
                                                    << rt.GetNextHop ());
-              NS_ASSERT (route != 0);
+              NS_ASSERT (route);
             }
           SendPacketFromQueue (rt.GetDestination (),route);
         }

@@ -2,6 +2,7 @@
 #include "ns3/ptr.h"
 #include "ns3/packet.h"
 #include "ns3/header.h"
+#include "ns3/simulator.h"
 #include <iostream>
 
 using namespace ns3;
@@ -10,7 +11,7 @@ using namespace ns3;
  * \ingroup network
  * A simple example of an Header implementation
  */
-class MyHeader : public Header 
+class MyHeader : public Header
 {
 public:
 
@@ -44,7 +45,7 @@ private:
 
 MyHeader::MyHeader ()
 {
-  // we must provide a public default constructor, 
+  // we must provide a public default constructor,
   // implicit or explicit, but never private.
 }
 MyHeader::~MyHeader ()
@@ -99,12 +100,12 @@ MyHeader::Deserialize (Buffer::Iterator start)
   return 2;
 }
 
-void 
+void
 MyHeader::SetData (uint16_t data)
 {
   m_data = data;
 }
-uint16_t 
+uint16_t
 MyHeader::GetData (void) const
 {
   return m_data;

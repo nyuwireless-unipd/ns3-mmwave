@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Authors: 
+ * Authors:
  *  Mathieu Lacage <mathieu.lacage@sophia.inria.fr>,
  *  Tom Henderson <tomh@tomh.org>
  */
@@ -62,11 +62,15 @@ public:
   Ipv4Interface ();
   virtual ~Ipv4Interface();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  Ipv4Interface (const Ipv4Interface &) = delete;
+  Ipv4Interface & operator = (const Ipv4Interface &) = delete;
+
   /**
    * \brief Set node associated with interface.
    * \param node node
    */
-  void SetNode (Ptr<Node> node); 
+  void SetNode (Ptr<Node> node);
   /**
    * \brief Set the NetDevice.
    * \param device NetDevice
@@ -98,7 +102,7 @@ public:
    *
    * Note:  This is synonymous to the Metric value that ifconfig prints
    * out.  It is used by ns-3 global routing, but other routing daemons
-   * choose to ignore it. 
+   * choose to ignore it.
    */
   void SetMetric (uint16_t metric);
 
@@ -106,13 +110,13 @@ public:
    * \returns configured routing metric (cost) of this interface
    *
    * Note:  This is synonymous to the Metric value that ifconfig prints
-   * out.  It is used by ns-3 global routing, but other routing daemons 
-   * may choose to ignore it. 
+   * out.  It is used by ns-3 global routing, but other routing daemons
+   * may choose to ignore it.
    */
   uint16_t GetMetric (void) const;
 
   /**
-   * These are IP interface states and may be distinct from 
+   * These are IP interface states and may be distinct from
    * NetDevice states, such as found in real implementations
    * (where the device may be down but IP interface state is still up).
    */
@@ -153,7 +157,7 @@ public:
    *
    * This method will eventually call the private
    * SendTo method which must be implemented by subclasses.
-   */ 
+   */
   void Send (Ptr<Packet> p, const Ipv4Header & hdr, Ipv4Address dest);
 
   /**
@@ -175,39 +179,23 @@ public:
 
   /**
    * \param index Index of Ipv4InterfaceAddress to remove
-   * \returns The Ipv4InterfaceAddress address whose index is index 
+   * \returns The Ipv4InterfaceAddress address whose index is index
    */
   Ipv4InterfaceAddress RemoveAddress (uint32_t index);
 
   /**
    * \brief Remove the given Ipv4 address from the interface.
    * \param address The Ipv4 address to remove
-   * \returns The removed Ipv4 interface address 
-   * \returns The null interface address if the interface did not contain the 
+   * \returns The removed Ipv4 interface address
+   * \returns The null interface address if the interface did not contain the
    * address or if loopback address was passed as argument
    */
   Ipv4InterfaceAddress RemoveAddress (Ipv4Address address);
 
 protected:
   virtual void DoDispose (void);
+
 private:
-  /**
-   * \brief Copy constructor
-   * \param o object to copy
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  Ipv4Interface (const Ipv4Interface &o);
-
-  /**
-   * \brief Assignment operator
-   * \param o object to copy
-   * \returns the copied object
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  Ipv4Interface &operator = (const Ipv4Interface &o);
-
   /**
    * \brief Initialize interface.
    */

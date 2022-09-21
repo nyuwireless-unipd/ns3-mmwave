@@ -113,13 +113,13 @@
 // validation cases (and syntax of how to run):
 // ------------
 // Case 'dctcp-10ms':  DCTCP single flow, 10ms base RTT, 50 Mbps link, ECN enabled, CoDel:
-//     ./waf --run 'tcp-validation --firstTcpType=dctcp --linkRate=50Mbps --baseRtt=10ms --queueUseEcn=1 --stopTime=15s --validate=1 --validation=dctcp-10ms'
+//     ./ns3 run 'tcp-validation --firstTcpType=dctcp --linkRate=50Mbps --baseRtt=10ms --queueUseEcn=1 --stopTime=15s --validate=1 --validation=dctcp-10ms'
 //    - Throughput between 48 Mbps and 49 Mbps for time greater than 5.6s
 //    - DCTCP alpha below 0.1 for time greater than 5.4s
 //    - DCTCP alpha between 0.06 and 0.085 for time greater than 7s
 //
 // Case 'dctcp-80ms': DCTCP single flow, 80ms base RTT, 50 Mbps link, ECN enabled, CoDel:
-//     ./waf --run 'tcp-validation --firstTcpType=dctcp --linkRate=50Mbps --baseRtt=80ms --queueUseEcn=1 --stopTime=40s --validate=1 --validation=dctcp-80ms'
+//     ./ns3 run 'tcp-validation --firstTcpType=dctcp --linkRate=50Mbps --baseRtt=80ms --queueUseEcn=1 --stopTime=40s --validate=1 --validation=dctcp-80ms'
 //    - Throughput less than 20 Mbps for time less than 14s
 //    - Throughput less than 48 Mbps for time less than 30s
 //    - Throughput between 47.5 Mbps and 48.5 for time greater than 32s
@@ -128,14 +128,14 @@
 //    - DCTCP alpha between 0.015 and 0.025 for time greater than 34
 //
 // Case 'cubic-50ms-no-ecn': CUBIC single flow, 50ms base RTT, 50 Mbps link, ECN disabled, CoDel:
-//     ./waf --run 'tcp-validation --firstTcpType=cubic --linkRate=50Mbps --baseRtt=50ms --queueUseEcn=0 --stopTime=20s --validate=1 --validation=cubic-50ms-no-ecn'
+//     ./ns3 run 'tcp-validation --firstTcpType=cubic --linkRate=50Mbps --baseRtt=50ms --queueUseEcn=0 --stopTime=20s --validate=1 --validation=cubic-50ms-no-ecn'
 //    - Maximum value of cwnd is 511 segments at 5.4593 seconds
 //    - cwnd decreases to 173 segments at 5.80304 seconds
 //    - cwnd reaches another local maxima around 14.2815 seconds of 236 segments
 //    - cwnd reaches a second maximum around 18.048 seconds of 234 segments
 //
 // Case 'cubic-50ms-ecn': CUBIC single flow, 50ms base RTT, 50 Mbps link, ECN enabled, CoDel:
-//     ./waf --run 'tcp-validation --firstTcpType=cubic --linkRate=50Mbps --baseRtt=50ms --queueUseEcn=0 --stopTime=20s --validate=1 --validation=cubic-50ms-no-ecn'
+//     ./ns3 run 'tcp-validation --firstTcpType=cubic --linkRate=50Mbps --baseRtt=50ms --queueUseEcn=0 --stopTime=20s --validate=1 --validation=cubic-50ms-no-ecn'
 //    - Maximum value of cwnd is 511 segments at 5.4593 seconds
 //    - cwnd decreases to 173 segments at 5.7939 seconds
 //    - cwnd reaches another local maxima around 14.3477 seconds of 236 segments
@@ -158,13 +158,20 @@ NS_LOG_COMPONENT_DEFINE ("TcpValidation");
 
 // These variables are declared outside of main() so that they can
 // be used in trace sinks.
-uint32_t g_firstBytesReceived = 0;
-uint32_t g_secondBytesReceived = 0;
-uint32_t g_marksObserved = 0;
-uint32_t g_dropsObserved = 0;
-std::string g_validate = "";  // Empty string disables this mode
-bool g_validationFailed = false;
+uint32_t g_firstBytesReceived = 0;    //!< First received packet size.
+uint32_t g_secondBytesReceived = 0;   //!< Second received packet size.
+uint32_t g_marksObserved = 0;         //!< Number of marked packets observed.
+uint32_t g_dropsObserved = 0;         //!< Number of dropped packets observed.
+std::string g_validate = "";  //!< Empty string disables validation.
+bool g_validationFailed = false;  //!< True if validation failed.
 
+/**
+ * Trace first congestion window.
+ *
+ * \param ofStream Output filestream.
+ * \param oldCwnd Old value.
+ * \param newCwnd new value.
+ */
 void
 TraceFirstCwnd (std::ofstream* ofStream, uint32_t oldCwnd, uint32_t newCwnd)
 {
@@ -202,6 +209,14 @@ TraceFirstCwnd (std::ofstream* ofStream, uint32_t oldCwnd, uint32_t newCwnd)
     }
 }
 
+/**
+ * Trace first TcpDctcp.
+ *
+ * \param ofStream Output filestream.
+ * \param bytesMarked Bytes marked.
+ * \param bytesAcked Bytes ACKed.
+ * \param alpha Alpha.
+ */
 void
 TraceFirstDctcp (std::ofstream* ofStream, uint32_t bytesMarked, uint32_t bytesAcked, double alpha)
 {
@@ -245,6 +260,13 @@ TraceFirstDctcp (std::ofstream* ofStream, uint32_t bytesMarked, uint32_t bytesAc
     }
 }
 
+/**
+ * Trace first RTT.
+ *
+ * \param ofStream Output filestream.
+ * \param oldRtt Old value.
+ * \param newRtt New value.
+ */
 void
 TraceFirstRtt (std::ofstream* ofStream, Time oldRtt, Time newRtt)
 {
@@ -254,6 +276,13 @@ TraceFirstRtt (std::ofstream* ofStream, Time oldRtt, Time newRtt)
     }
 }
 
+/**
+ * Trace second congestion window.
+ *
+ * \param ofStream Output filestream.
+ * \param oldCwnd Old value.
+ * \param newCwnd new value.
+ */
 void
 TraceSecondCwnd (std::ofstream* ofStream, uint32_t oldCwnd, uint32_t newCwnd)
 {
@@ -265,6 +294,13 @@ TraceSecondCwnd (std::ofstream* ofStream, uint32_t oldCwnd, uint32_t newCwnd)
     }
 }
 
+/**
+ * Trace second RTT.
+ *
+ * \param ofStream Output filestream.
+ * \param oldRtt Old value.
+ * \param newRtt New value.
+ */
 void
 TraceSecondRtt (std::ofstream* ofStream, Time oldRtt, Time newRtt)
 {
@@ -274,6 +310,14 @@ TraceSecondRtt (std::ofstream* ofStream, Time oldRtt, Time newRtt)
     }
 }
 
+/**
+ * Trace second TcpDctcp.
+ *
+ * \param ofStream Output filestream.
+ * \param bytesMarked Bytes marked.
+ * \param bytesAcked Bytes ACKed.
+ * \param alpha Alpha.
+ */
 void
 TraceSecondDctcp (std::ofstream* ofStream, uint32_t bytesMarked, uint32_t bytesAcked, double alpha)
 {
@@ -283,6 +327,12 @@ TraceSecondDctcp (std::ofstream* ofStream, uint32_t bytesMarked, uint32_t bytesA
     }
 }
 
+/**
+ * Trace ping RTT.
+ *
+ * \param ofStream Output filestream.
+ * \param rtt RTT value.
+ */
 void
 TracePingRtt (std::ofstream* ofStream, Time rtt)
 {
@@ -292,18 +342,36 @@ TracePingRtt (std::ofstream* ofStream, Time rtt)
     }
 }
 
+/**
+ * Trace first Rx.
+ *
+ * \param packet The packet.
+ * \param address The sender address.
+ */
 void
 TraceFirstRx (Ptr<const Packet> packet, const Address &address)
 {
   g_firstBytesReceived += packet->GetSize ();
 }
 
+/**
+ * Trace second Rx.
+ *
+ * \param packet The packet.
+ * \param address The sender address.
+ */
 void
 TraceSecondRx (Ptr<const Packet> packet, const Address &address)
 {
   g_secondBytesReceived += packet->GetSize ();
 }
 
+/**
+ * Trace queue drop.
+ *
+ * \param ofStream Output filestream.
+ * \param item The dropped QueueDiscItem.
+ */
 void
 TraceQueueDrop (std::ofstream* ofStream, Ptr<const QueueDiscItem> item)
 {
@@ -314,6 +382,13 @@ TraceQueueDrop (std::ofstream* ofStream, Ptr<const QueueDiscItem> item)
   g_dropsObserved++;
 }
 
+/**
+ * Trace queue marks.
+ *
+ * \param ofStream Output filestream.
+ * \param item The marked QueueDiscItem.
+ * \param reason The reason.
+ */
 void
 TraceQueueMark (std::ofstream* ofStream, Ptr<const QueueDiscItem> item, const char* reason)
 {
@@ -324,6 +399,14 @@ TraceQueueMark (std::ofstream* ofStream, Ptr<const QueueDiscItem> item, const ch
   g_marksObserved++;
 }
 
+/**
+ * Trace queue length.
+ *
+ * \param ofStream Output filestream.
+ * \param queueLinkRate Queue link rate.
+ * \param oldVal Old value.
+ * \param newVal New value.
+ */
 void
 TraceQueueLength (std::ofstream* ofStream, DataRate queueLinkRate, uint32_t oldVal, uint32_t newVal)
 {
@@ -334,6 +417,12 @@ TraceQueueLength (std::ofstream* ofStream, DataRate queueLinkRate, uint32_t oldV
     }
 }
 
+/**
+ * Trace marks frequency.
+ *
+ * \param ofStream Output filestream.
+ * \param marksSamplingInterval The mark sampling interval.
+ */
 void
 TraceMarksFrequency (std::ofstream* ofStream, Time marksSamplingInterval)
 {
@@ -345,6 +434,12 @@ TraceMarksFrequency (std::ofstream* ofStream, Time marksSamplingInterval)
   Simulator::Schedule (marksSamplingInterval, &TraceMarksFrequency, ofStream, marksSamplingInterval);
 }
 
+/**
+ * Trace the first throughput.
+ *
+ * \param ofStream Output filestream.
+ * \param throughputInterval The throughput interval.
+ */
 void
 TraceFirstThroughput (std::ofstream* ofStream, Time throughputInterval)
 {
@@ -385,6 +480,12 @@ TraceFirstThroughput (std::ofstream* ofStream, Time throughputInterval)
     }
 }
 
+/**
+ * Trace the second throughput.
+ *
+ * \param ofStream Output filestream.
+ * \param throughputInterval The throughput interval.
+ */
 void
 TraceSecondThroughput (std::ofstream* ofStream, Time throughputInterval)
 {
@@ -396,48 +497,84 @@ TraceSecondThroughput (std::ofstream* ofStream, Time throughputInterval)
   Simulator::Schedule (throughputInterval, &TraceSecondThroughput, ofStream, throughputInterval);
 }
 
+/**
+ * Schedule trace connection.
+ *
+ * \param ofStream Output filestream.
+ */
 void
 ScheduleFirstTcpCwndTraceConnection (std::ofstream* ofStream)
 {
   Config::ConnectWithoutContextFailSafe ("/NodeList/1/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow", MakeBoundCallback (&TraceFirstCwnd, ofStream));
 }
 
+/**
+ * Schedule trace connection.
+ *
+ * \param ofStream Output filestream.
+ */
 void
 ScheduleFirstTcpRttTraceConnection (std::ofstream* ofStream)
 {
   Config::ConnectWithoutContextFailSafe ("/NodeList/1/$ns3::TcpL4Protocol/SocketList/0/RTT", MakeBoundCallback (&TraceFirstRtt, ofStream));
 }
 
+/**
+ * Schedule trace connection.
+ *
+ * \param ofStream Output filestream.
+ */
 void
 ScheduleFirstDctcpTraceConnection (std::ofstream* ofStream)
 {
   Config::ConnectWithoutContextFailSafe ("/NodeList/1/$ns3::TcpL4Protocol/SocketList/0/CongestionOps/$ns3::TcpDctcp/CongestionEstimate", MakeBoundCallback (&TraceFirstDctcp, ofStream));
 }
 
+/**
+ * Schedule trace connection.
+ *
+ * \param ofStream Output filestream.
+ */
 void
 ScheduleSecondDctcpTraceConnection (std::ofstream* ofStream)
 {
   Config::ConnectWithoutContextFailSafe ("/NodeList/2/$ns3::TcpL4Protocol/SocketList/0/CongestionOps/$ns3::TcpDctcp/CongestionEstimate", MakeBoundCallback (&TraceSecondDctcp, ofStream));
 }
 
+/**
+ * Schedule trace connection.
+ */
 void
 ScheduleFirstPacketSinkConnection (void)
 {
   Config::ConnectWithoutContextFailSafe ("/NodeList/6/ApplicationList/*/$ns3::PacketSink/Rx", MakeCallback (&TraceFirstRx));
 }
 
+/**
+ * Schedule trace connection.
+ *
+ * \param ofStream Output filestream.
+ */
 void
 ScheduleSecondTcpCwndTraceConnection (std::ofstream* ofStream)
 {
   Config::ConnectWithoutContext ("/NodeList/2/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow", MakeBoundCallback (&TraceSecondCwnd, ofStream));
 }
 
+/**
+ * Schedule trace connection.
+ *
+ * \param ofStream Output filestream.
+ */
 void
 ScheduleSecondTcpRttTraceConnection (std::ofstream* ofStream)
 {
   Config::ConnectWithoutContext ("/NodeList/2/$ns3::TcpL4Protocol/SocketList/0/RTT", MakeBoundCallback (&TraceSecondRtt, ofStream));
 }
 
+/**
+ * Schedule trace connection.
+ */
 void
 ScheduleSecondPacketSinkConnection (void)
 {
@@ -498,7 +635,7 @@ main (int argc, char *argv[])
   ////////////////////////////////////////////////////////////
   // command-line argument parsing                          //
   ////////////////////////////////////////////////////////////
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.AddValue ("firstTcpType", "first TCP type (cubic, dctcp, or reno)", firstTcpType);
   cmd.AddValue ("secondTcpType", "second TCP type (cubic, dctcp, or reno)", secondTcpType);
   cmd.AddValue ("queueType", "bottleneck queue type (fq, codel, pie, or red)", queueType);
@@ -645,11 +782,11 @@ main (int argc, char *argv[])
     {
       NS_LOG_DEBUG ("first TCP: " << firstTcpTypeId.GetName () << "; second TCP: " << secondTcpTypeId.GetName () << "; queue: " << queueTypeId.GetName () << "; ceThreshold: " << ceThreshold.GetSeconds () * 1000 << "ms");
     }
-  else 
+  else
     {
       NS_LOG_DEBUG ("first TCP: " << firstTcpTypeId.GetName () << "; queue: " << queueTypeId.GetName () << "; ceThreshold: " << ceThreshold.GetSeconds () * 1000 << "ms");
     }
-  
+
   // Write traces only if we are not in validation mode (g_validate == "")
   std::ofstream pingOfStream;
   std::ofstream firstTcpRttOfStream;

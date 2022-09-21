@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import subprocess
@@ -10,24 +10,28 @@ import shutil
 import difflib
 import re
 
-def hg_modified_files():
-    files = os.popen ('hg st -nma')
-    return [filename.strip() for filename in files]
+def git_modified_files():
+    files = os.popen('git diff --name-only')
+    process = subprocess.Popen(["git","rev-parse","--show-toplevel"],
+                               stdout = subprocess.PIPE,
+                               stderr = subprocess.PIPE)
+    root_dir, _ = process.communicate()
+    if isinstance(root_dir, bytes):
+        root_dir=root_dir.decode("utf-8")
+    files_changed = [item.strip() for item in files.readlines()]
+    files_changed = [item for item in files_changed if item.endswith('.h') or item.endswith('.cc')]
+    return [root_dir[: -1] + "/" + filename.strip () for filename in files_changed]
 
 def copy_file(filename):
-    [tmp,pathname] = tempfile.mkstemp()
-    src = open(filename, 'r')
-    dst = open(pathname, 'w')
-    for line in src:
-        dst.write(line)
-    dst.close()
-    src.close()
+    _, pathname = tempfile.mkstemp()
+    with open(filename, 'r') as src, open(pathname, 'w') as dst:
+        for line in src:
+            dst.write(line)
     return pathname
 
 # generate a temporary configuration file
 def uncrustify_config_file(level):
     level2 = """
-nl_collapse_empty_body=False
 nl_if_brace=Add
 nl_brace_else=Add
 nl_elseif_brace=Add
@@ -38,17 +42,20 @@ nl_for_brace=Add
 nl_brace_while=Add
 nl_switch_brace=Add
 nl_after_case=True
-nl_namespace_brace=Remove
+nl_namespace_brace=ignore
 nl_after_brace_open=True
 nl_class_leave_one_liners=False
 nl_enum_leave_one_liners=False
 nl_func_leave_one_liners=False
 nl_if_leave_one_liners=False
 nl_class_colon=Ignore
-nl_after_access_spec=1
+nl_before_access_spec=2
+nl_after_access_spec=0
+indent_access_spec=-indent_columns
 nl_after_semicolon=True
 pos_class_colon=Lead
 pos_class_comma=Trail
+indent_constr_colon=true
 pos_bool=Lead
 nl_class_init_args=Add
 nl_template_class=Add
@@ -74,6 +81,7 @@ mod_remove_extra_semicolon=True
 #code_width=128
 #ls_for_split_full=True
 #ls_func_split_full=True
+nl_cpp_lambda_leave_one_liners=True
 """
     level1 = """
 # extra spaces here and there
@@ -95,13 +103,14 @@ sp_func_def_paren=Add
 sp_func_call_paren=Add
 sp_after_semi_for=Ignore
 sp_before_sparen=Ignore
+sp_before_ellipsis=Remove
 sp_type_func=Ignore
 sp_after_type=Ignore
 nl_class_leave_one_liners=True
 nl_enum_leave_one_liners=True
 nl_func_leave_one_liners=True
 nl_assign_leave_one_liners=True
-#nl_collapse_empty_body=False
+nl_collapse_empty_body=True
 nl_getset_leave_one_liners=True
 nl_if_leave_one_liners=True
 nl_fdef_brace=Ignore
@@ -110,24 +119,26 @@ indent_with_tabs=0
 indent_namespace=false
 indent_columns=2
 indent_brace=2
-indent_case_brace=2
+indent_case_brace=indent_columns
 indent_class=true
 indent_class_colon=True
+indent_switch_case=indent_columns
 # alignment
 indent_align_assign=False
 align_left_shift=True
 # comment reformating disabled
 cmt_reflow_mode=1 # do not touch comments at all
 cmt_indent_multi=False # really, do not touch them
+disable_processing_cmt= " *NS_CHECK_STYLE_OFF*"
+enable_processing_cmt=  " *NS_CHECK_STYLE_ON*"
 """
-    [tmp,pathname] = tempfile.mkstemp()
-    dst = open(pathname, 'w')
-    dst.write(level0)
-    if level >= 1:
-        dst.write(level1)
-    if level >= 2:
-        dst.write(level2)
-    dst.close()
+    _, pathname = tempfile.mkstemp()
+    with open(pathname, 'w') as dst:
+        dst.write(level0)
+        if level >= 1:
+            dst.write(level1)
+        if level >= 2:
+            dst.write(level2)
     return pathname
 
 ## PatchChunkLine class
@@ -148,7 +159,6 @@ class PatchChunkLine:
     def __init__(self):
         """! Initializer
         @param self The current class
-        @return none
         """
         self.__type = 0
         self.__line = ''
@@ -169,7 +179,7 @@ class PatchChunkLine:
         self.__type = self.DST
         self.__line = line
     def set_both(self,line):
-        """! Set both 
+        """! Set both
         @param self The current class
         @param line
         @return none
@@ -205,7 +215,7 @@ class PatchChunkLine:
         """! Write to file
         @param self The current class
         @param f file
-        @return exception if invalid type 
+        @return exception if invalid type
         """
         if self.__type == self.SRC:
             f.write('-%s\n' % self.__line)
@@ -215,7 +225,7 @@ class PatchChunkLine:
             f.write(' %s\n' % self.__line)
         else:
             raise Exception('invalid patch')
-    
+
 ## PatchChunk class
 class PatchChunk:
     ## @var __lines
@@ -233,7 +243,6 @@ class PatchChunk:
         @param self:  this object
         @param src_pos: source position
         @param dst_pos: destination position
-        @return none
         """
         self.__lines = []
         self.__src_pos = int(src_pos)
@@ -305,7 +314,6 @@ class Patch:
     def __init__(self):
         """! Initializer
         @param self The current class
-        @return none
         """
         self.__src = ''
         self.__dst = ''
@@ -433,7 +441,8 @@ def indent(source, debug, level):
         uncrust = subprocess.Popen(['uncrustify', '-c', cfg, '-f', source, '-o', output],
                                    stdin = subprocess.PIPE,
                                    stdout = subprocess.PIPE,
-                                   stderr = subprocess.PIPE)
+                                   stderr = subprocess.PIPE,
+                                   universal_newlines = True)
         (out, err) = uncrust.communicate('')
         if debug:
             sys.stderr.write(out)
@@ -441,31 +450,25 @@ def indent(source, debug, level):
     except OSError:
         raise Exception ('uncrustify not installed')
     # generate a diff file
-    src = open(source, 'r')
-    dst = open(output, 'r')
-    diff = difflib.unified_diff(src.readlines(), dst.readlines(), 
-                                fromfile=source, tofile=output)
-    src.close()
-    dst.close()
+    with open(source, 'r') as src, open(output, 'r') as dst:
+        diff = difflib.unified_diff(src.readlines(), dst.readlines(),
+                                    fromfile=source, tofile=output)
     if debug:
         initial_diff = tempfile.mkstemp()[1]
         sys.stderr.write('initial diff file=' + initial_diff + '\n')
-        tmp = open(initial_diff, 'w')
-        tmp.writelines(diff)
-        tmp.close()
+        with open(initial_diff, 'w') as tmp:
+            tmp.writelines(diff)
     final_diff = tempfile.mkstemp()[1]
     if level < 3:
-        patchset = remove_trailing_whitespace_changes(diff);
-        dst = open(final_diff, 'w')
+        patchset = remove_trailing_whitespace_changes(diff)
         if len(patchset) != 0:
-            patchset[0].write(dst)
-        dst.close()
+            with open(final_diff, 'w') as dst:
+                patchset[0].write(dst)
     else:
-        dst = open(final_diff, 'w')
-        dst.writelines(diff)
-        dst.close()
-            
-            
+        with open(final_diff, 'w') as dst:
+            dst.writelines(diff)
+
+
     # apply diff file
     if debug:
         sys.stderr.write('final diff file=' + final_diff + '\n')
@@ -473,13 +476,14 @@ def indent(source, debug, level):
     patch = subprocess.Popen(['patch', '-p1', '-i', final_diff, output],
                              stdin = subprocess.PIPE,
                              stdout = subprocess.PIPE,
-                             stderr = subprocess.PIPE)
+                             stderr = subprocess.PIPE,
+                             universal_newlines = True)
     (out, err) = patch.communicate('')
     if debug:
         sys.stderr.write(out)
         sys.stderr.write(err)
     return output
- 
+
 
 
 def indent_files(files, diff=False, debug=False, level=0, inplace=False):
@@ -506,22 +510,13 @@ def indent_files(files, diff=False, debug=False, level=0, inplace=False):
                 print('  ' + src)
         else:
             for src,dst in failed:
-                s = open(src, 'r').readlines()
-                d = open(dst, 'r').readlines()
-                for line in difflib.unified_diff(s, d, fromfile=src, tofile=dst):
-                    sys.stdout.write(line)
+                with open(src, 'r') as f_src, open(dst, 'r') as f_dst:
+                    s = f_src.readlines()
+                    d = f_dst.readlines()
+                    for line in difflib.unified_diff(s, d, fromfile=src, tofile=dst):
+                        sys.stdout.write(line)
         return False
     return True
-
-def run_as_hg_hook(ui, repo, **kwargs):
-    # hack to work around mercurial < 1.3 bug
-    from mercurial import lock, error
-    lock.LockError = error.LockError
-    # actually do the work
-    files = hg_modified_files()
-    if not indent_files(files, inplace=False):
-        return True
-    return False
 
 def run_as_main():
     parser = optparse.OptionParser()
@@ -531,46 +526,43 @@ def run_as_main():
                       help="Level of style conformance: higher levels include all lower levels. "
                       "level=0: re-indent only. level=1: add extra spaces. level=2: insert extra newlines and "
                       "extra braces around single-line statements. level=3: remove all trailing spaces")
-    parser.add_option('--check-hg-hook', action='store_true', dest='hg_hook', default=False, 
-                      help='Get the list of files to check from mercurial\'s list of modified '
-                      'and added files and assume that the script runs as a pretxncommit mercurial hook')
-    parser.add_option('--check-hg', action='store_true', dest='hg', default=False,
-                      help="Get the list of files to check from mercurial\'s list of modified and added files")
+    parser.add_option('--check-git', action='store_true', dest='git', default=False,
+                      help="Get the list of files to check from Git\'s list of modified and added files")
     parser.add_option('-f', '--check-file', action='store', dest='file', default='',
                       help="Check a single file")
     parser.add_option('--diff', action='store_true', dest='diff', default=False,
                       help="Generate a diff on stdout of the indented files")
     parser.add_option('-i', '--in-place', action='store_true', dest='in_place', default=False,
                       help="Indent the input files in-place")
-    (options,args) = parser.parse_args()
-    debug = options.debug
-    if options.hg_hook:
-        files = hg_modified_files()
-        if not indent_files(files, debug=options.debug,
-                            level=options.level,
-                            inplace=False):
-            sys.exit(1)
-    elif options.hg:
-        files = hg_modified_files()
-        indent_files(files, diff=options.diff, 
-                     debug=options.debug,
-                     level=options.level,
-                     inplace=options.in_place)
+    options, _ = parser.parse_args()
+    style_is_correct = False
+
+    if options.git:
+        files = git_modified_files()
+        style_is_correct = indent_files(files,
+                                        diff=options.diff,
+                                        debug=options.debug,
+                                        level=options.level,
+                                        inplace=options.in_place)
     elif options.file != '':
         file = options.file
         if not os.path.exists(file) or \
                 not os.path.isfile(file):
             print('file %s does not exist' % file)
             sys.exit(1)
-        indent_files([file], diff=options.diff, 
-                     debug=options.debug,
-                     level=options.level,
-                     inplace=options.in_place)
+        style_is_correct = indent_files([file],
+                                        diff=options.diff,
+                                        debug=options.debug,
+                                        level=options.level,
+                                        inplace=options.in_place)
+
+    if not style_is_correct:
+        sys.exit(1)
     sys.exit(0)
 
 if __name__ == '__main__':
-#    try:
+     try:
         run_as_main()
-#    except Exception, e:
-#        sys.stderr.write(str(e) + '\n')
-#        sys.exit(1)
+     except Exception as e:
+        sys.stderr.write(str(e) + '\n')
+        sys.exit(1)

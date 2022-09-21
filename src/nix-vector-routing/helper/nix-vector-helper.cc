@@ -15,11 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * This file is adapted from the old ipv4-nix-vector-helper.cc.
  *
  * Authors: Josh Pelkey <jpelkey@gatech.edu>
- * 
+ *
  * Modified by: Ameya Deshpande <ameyanrd@outlook.com>
  */
 
@@ -32,8 +32,17 @@ namespace ns3 {
 template <typename T>
 NixVectorHelper<T>::NixVectorHelper ()
 {
-  std::string name = (IsIpv4::value ? "Ipv4" : "Ipv6");
-  m_agentFactory.SetTypeId (("ns3::" + name + "NixVectorRouting").c_str ());
+  std::string name;
+  if constexpr (IsIpv4)
+    {
+      name = "Ipv4";
+    }
+  else
+    {
+      name = "Ipv6";
+    }
+
+  m_agentFactory.SetTypeId ("ns3::" + name + "NixVectorRouting");
 }
 
 template <typename T>
@@ -41,8 +50,8 @@ NixVectorHelper<T>::NixVectorHelper (const NixVectorHelper<T> &o)
   : m_agentFactory (o.m_agentFactory)
 {
   // Check if the T is Ipv4RoutingHelper or Ipv6RoutingHelper.
-  NS_ASSERT_MSG ((IsIpv4::value || std::is_same <Ipv6RoutingHelper, T>::value),
-                  "Template parameter is not Ipv4RoutingHelper or Ipv6Routing Helper");
+  static_assert ((std::is_same_v<Ipv4RoutingHelper, T> || std::is_same_v<Ipv6RoutingHelper, T>),
+                 "Template parameter is not Ipv4RoutingHelper or Ipv6Routing Helper");
 }
 
 template <typename T>

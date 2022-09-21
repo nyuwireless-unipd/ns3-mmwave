@@ -40,14 +40,12 @@
  *  Example Output:
  *  \verbatim
 
-./waf --run="hasher-example --time \
+./ns3 run "hasher-example --time \
   --dict=/usr/share/dict/web2 \
   --dict=/usr/share/dict/web2a \
   --dict=/usr/share/dict/propernames \
   --dict=/usr/share/dict/connectives"
 
-Waf: Entering directory `build'
-Waf: Leaving directory `build'
 'build' finished successfully (3.028s)
 
 Hasher
@@ -111,7 +109,7 @@ namespace Hash {
 /**
  * \ingroup hash
  *  Namespace for hasher-example.
-*/
+ */
 namespace Example {
 
 /**
@@ -386,7 +384,7 @@ public:
   /**
    * Time and report the execution of one hash across the entire Dictionary.
    *
-   * \param [in] hindex Index of the hash Collider to use.
+   * \param [in] collider The hash Collider to use.
    */
   void TimeOne (const Collider & collider)
   {

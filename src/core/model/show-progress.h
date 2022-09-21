@@ -89,7 +89,7 @@ namespace ns3 {
  *
  * Based on a python version by Gustavo Carneiro <gjcarneiro@gmail.com>,
  * as released here:
- * 
+ *
  * https://mailman.isi.edu/pipermail/ns-developers/2009-January/005039.html
  */
 class ShowProgress
@@ -136,7 +136,7 @@ public:
   void SetVerbose (bool verbose);
 
 private:
-  
+
   /**
    * Start the elapsed wallclock timestamp and print the start time.
    * This is triggered by the constructor.
@@ -165,6 +165,11 @@ private:
   /**
    * Show execution progress.
    * This function actually generates output, when directed by CheckProgress().
+   * \param [in] nEvents The actual number of events processed since the last
+   *             progress output.
+   * \param [in] ratio The current ratio of elapsed wall clock time to the
+   *             target update interval.
+   * \param [in] speed The execution speed relative to wall clock time.
    */
   void GiveFeedback (uint64_t nEvents, int64x64_t ratio, int64x64_t speed);
 

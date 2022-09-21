@@ -26,13 +26,19 @@
 
 /**
  * \file
+ * \defgroup fatal-example Core example: NS_FATAL error handlers
  * \ingroup core-examples
- * \ingroup ptr
+ * \ingroup fatal
+ *
  * Example program illustrating use of the NS_FATAL error handlers.
  */
 
 using namespace ns3;
 
+/**
+ * \ingroup fatal-example
+ * \brief Triggers a fatal error without message, deferring termination.
+ */
 void
 FatalNoMsg (void)
 {
@@ -41,6 +47,10 @@ FatalNoMsg (void)
   NS_FATAL_ERROR_NO_MSG_CONT ();
 }
 
+/**
+ * \ingroup fatal-example
+ * \brief Triggers a fatal error with an error message, deferring termination.
+ */
 void
 FatalCont (void)
 {
@@ -49,6 +59,10 @@ FatalCont (void)
   NS_FATAL_ERROR_CONT ("fatal error, but continuing");
 }
 
+/**
+ * \ingroup fatal-example
+ * \brief Triggers a fatal error with message, and terminating.
+ */
 void
 Fatal (void)
 {
@@ -64,7 +78,7 @@ main (int argc, char ** argv)
   Simulator::Schedule (Seconds (1), FatalNoMsg);
   Simulator::Schedule (Seconds (2), FatalCont);
   Simulator::Schedule (Seconds (3), Fatal);
-  
+
 
   // Show some errors outside of simulation time
   std::cerr << "\nFatal error with custom message, and continuing:" << std::endl;
@@ -72,7 +86,7 @@ main (int argc, char ** argv)
 
   std::cerr << "\nFatal error without message, and continuing:" << std::endl;
   NS_FATAL_ERROR_NO_MSG_CONT ();
-  
+
   // Now run the simulator
   Simulator::Run ();
 

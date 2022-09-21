@@ -18,7 +18,7 @@
  * Author: Yufei Cheng   <yfcheng@ittc.ku.edu>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -93,7 +93,7 @@ public:
     m_packet = p;
   }
   /**
-   * Get destination address 
+   * Get destination address
    * \returns the destination IPv4 address
    */
   Ipv4Address GetDestination () const
@@ -141,7 +141,7 @@ public:
     m_nextHop = n;
   }
   /**
-   * Set expire time 
+   * Set expire time
    * \param exp the expire time
    */
   void SetExpireTime (Time exp)

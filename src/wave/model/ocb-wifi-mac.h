@@ -23,7 +23,7 @@
 #define OCB_WIFI_MAC_H
 
 #include "ns3/object-factory.h"
-#include "ns3/regular-wifi-mac.h"
+#include "ns3/wifi-mac.h"
 #include "ns3/wifi-mac-queue.h"
 #include "vendor-specific-action.h"
 #include "wave-net-device.h"
@@ -46,7 +46,7 @@ class WaveNetDevice;
  * However in simulation nodes are supposed to have GPS synchronization ability,
  * so we will not implement this feature.
  */
-class OcbWifiMac : public RegularWifiMac
+class OcbWifiMac : public WifiMac
 {
 public:
   /**
@@ -103,7 +103,7 @@ public:
    * here it will overloaded to log warn message
    * \return An invalid BSSID.
    */
-  virtual Mac48Address GetBssid (void) const;
+  virtual Mac48Address GetBssid (uint8_t /* linkId */) const;
   /**
    * SetLinkUpCallback and SetLinkDownCallback will be overloaded
    * In OCB mode, stations can send packets directly whenever they want
@@ -126,6 +126,7 @@ public:
    * access is granted to this MAC.
    */
   virtual void Enqueue (Ptr<Packet> packet, Mac48Address to);
+  virtual bool CanForwardPacketsTo (Mac48Address to) const;
   /**
     * \param cwmin the min contention window
     * \param cwmax the max contention window
@@ -173,13 +174,20 @@ public:
    * Reset current MAC entity and flush its internal queues.
    */
   void Reset (void);
+  /**
+   * Set the PHY.
+   *
+   * \param phy the PHY object
+   */
+  void SetWifiPhy (Ptr<WifiPhy> phy);
 
   // Inherited from base class
   virtual void ConfigureStandard (enum WifiStandard standard);
 protected:
   virtual void DoDispose (void);
 private:
-  virtual void Receive (Ptr<WifiMacQueueItem> mpdu);
+  virtual void Receive (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId);
+  virtual std::optional<uint8_t> GetLinkIdByAddress (const Mac48Address& address) const;
 
   VendorSpecificContentManager m_vscManager; ///< VSC manager
 };

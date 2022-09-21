@@ -18,6 +18,8 @@
  * Author: Gustavo Carneiro <gjcarneiro@gmail.com> <gjc@inescporto.pt>
  */
 #include <Python.h>
+#undef HAVE_PTHREAD_H
+#undef HAVE_SYS_STAT_H
 #include "visual-simulator-impl.h"
 #include "ns3/default-simulator-impl.h"
 #include "ns3/log.h"
@@ -31,7 +33,10 @@ NS_OBJECT_ENSURE_REGISTERED (VisualSimulatorImpl);
 
 namespace
 {
-/// Get an object factory configured to the default simulator implementation
+/**
+ * Get an object factory configured to the default simulator implementation
+ * \return an object factory.
+ */
 ObjectFactory
 GetDefaultSimulatorImplFactory ()
 {
@@ -99,13 +104,13 @@ VisualSimulatorImpl::SetScheduler (ObjectFactory schedulerFactory)
 }
 
 // System ID for non-distributed simulation is always zero
-uint32_t 
+uint32_t
 VisualSimulatorImpl::GetSystemId (void) const
 {
   return m_simulator->GetSystemId ();
 }
 
-bool 
+bool
 VisualSimulatorImpl::IsFinished (void) const
 {
   return m_simulator->IsFinished ();
@@ -133,7 +138,7 @@ VisualSimulatorImpl::Run (void)
   else
     {
       PyGILState_STATE __py_gil_state = PyGILState_Ensure ();
-    
+
       PyRun_SimpleString (
                           "import visualizer\n"
                           "visualizer.start();\n"
@@ -143,13 +148,13 @@ VisualSimulatorImpl::Run (void)
     }
 }
 
-void 
+void
 VisualSimulatorImpl::Stop (void)
 {
   m_simulator->Stop ();
 }
 
-void 
+void
 VisualSimulatorImpl::Stop (Time const &delay)
 {
   m_simulator->Stop (delay);
@@ -188,7 +193,7 @@ VisualSimulatorImpl::Now (void) const
   return m_simulator->Now ();
 }
 
-Time 
+Time
 VisualSimulatorImpl::GetDelayLeft (const EventId &id) const
 {
   return m_simulator->GetDelayLeft (id);
@@ -212,7 +217,7 @@ VisualSimulatorImpl::IsExpired (const EventId &id) const
   return m_simulator->IsExpired (id);
 }
 
-Time 
+Time
 VisualSimulatorImpl::GetMaximumSimulationTime (void) const
 {
   return m_simulator->GetMaximumSimulationTime ();

@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Sebastien Vincent <vincent@clarinet.u-strasbg.fr>
- *         Mehdi Benamor <benamor.mehdi@ensi.rnu.tn> 
+ *         Mehdi Benamor <benamor.mehdi@ensi.rnu.tn>
  *         David Gross <gdavid.devel@gmail.com>
  */
 
@@ -865,13 +865,13 @@ void Icmpv6Redirection::Print (std::ostream& os) const
   os << "( type = " << (uint32_t)GetType () << " (Redirection) code = " << (uint32_t)GetCode () << " checksum = " << (uint32_t)GetChecksum ()  << " target = " << m_target << " destination = " << m_destination << ")";
 }
 
-uint32_t Icmpv6Redirection::GetSerializedSize () const 
+uint32_t Icmpv6Redirection::GetSerializedSize () const
 {
   NS_LOG_FUNCTION (this);
   return 40;
 }
 
-void Icmpv6Redirection::Serialize (Buffer::Iterator start) const 
+void Icmpv6Redirection::Serialize (Buffer::Iterator start) const
 {
   NS_LOG_FUNCTION (this << &start);
   uint8_t buff[16];
@@ -900,7 +900,7 @@ void Icmpv6Redirection::Serialize (Buffer::Iterator start) const
     }
 }
 
-uint32_t Icmpv6Redirection::Deserialize (Buffer::Iterator start) 
+uint32_t Icmpv6Redirection::Deserialize (Buffer::Iterator start)
 {
   NS_LOG_FUNCTION (this << &start);
   uint8_t buff[16];
@@ -990,7 +990,7 @@ void Icmpv6Echo::SetSeq (uint16_t seq)
 void Icmpv6Echo::Print (std::ostream& os) const
 {
   NS_LOG_FUNCTION (this << &os);
-  os << "( type = " << (GetType () == 128 ? "128 (Request)" : "129 (Reply)") << 
+  os << "( type = " << (GetType () == 128 ? "128 (Request)" : "129 (Reply)") <<
   " Id = " << (uint32_t)GetId () <<
   " SeqNo = " << (uint32_t)GetSeq () <<
   " checksum = "  << (uint32_t)GetChecksum () << ")";
@@ -999,7 +999,7 @@ void Icmpv6Echo::Print (std::ostream& os) const
 uint32_t Icmpv6Echo::GetSerializedSize () const
 {
   NS_LOG_FUNCTION (this);
-  return 8; 
+  return 8;
 }
 
 void Icmpv6Echo::Serialize (Buffer::Iterator start) const
@@ -1069,17 +1069,11 @@ Icmpv6DestinationUnreachable::~Icmpv6DestinationUnreachable ()
   NS_LOG_FUNCTION (this);
 }
 
-Ptr<Packet> Icmpv6DestinationUnreachable::GetPacket () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_packet;
-}
-
 void Icmpv6DestinationUnreachable::SetPacket (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << *p);
   NS_ASSERT (p->GetSize () <= 1280);
-  m_packet = p;
+  m_packet = p->Copy ();
 }
 
 void Icmpv6DestinationUnreachable::Print (std::ostream& os) const
@@ -1091,7 +1085,9 @@ void Icmpv6DestinationUnreachable::Print (std::ostream& os) const
 uint32_t Icmpv6DestinationUnreachable::GetSerializedSize () const
 {
   NS_LOG_FUNCTION (this);
-  return 8 + m_packet->GetSize ();
+  // The real size of the header is 8 + m_packet->GetSize ()
+  // HOWEVER we just serialize the first 8 bytes, as the rest is serialized separately.
+  return 8;
 }
 
 void Icmpv6DestinationUnreachable::Serialize (Buffer::Iterator start) const
@@ -1100,40 +1096,40 @@ void Icmpv6DestinationUnreachable::Serialize (Buffer::Iterator start) const
   uint16_t checksum = 0;
   Buffer::Iterator i = start;
 
-  i.WriteU8 (GetType ());
-  i.WriteU8 (GetCode ());
-  i.WriteHtonU16 (0);
-  i.WriteHtonU32 (0);
+  Buffer secondaryBuffer;
+  secondaryBuffer.AddAtStart (8 + m_packet->GetSize ());
+  Buffer::Iterator iter = secondaryBuffer.Begin ();
+
+  iter.WriteU8 (GetType ());
+  iter.WriteU8 (GetCode ());
+  iter.WriteU16 (0);
+  iter.WriteU32 (0);
 
   uint32_t size = m_packet->GetSize ();
   uint8_t *buf = new uint8_t[size];
   m_packet->CopyData (buf, size);
-  i.Write (buf, size);
+  iter.Write (buf, size);
   delete[] buf;
 
-  i = start;
-  checksum = i.CalculateIpChecksum (i.GetSize (), GetChecksum ());
+  iter = secondaryBuffer.Begin ();
+  checksum = iter.CalculateIpChecksum (iter.GetSize (), GetChecksum ());
 
-  i = start;
-  i.Next (2);
+  i.WriteU8 (GetType ());
+  i.WriteU8 (GetCode ());
   i.WriteU16 (checksum);
+  i.WriteU32 (0);
 }
 
 uint32_t Icmpv6DestinationUnreachable::Deserialize (Buffer::Iterator start)
 {
   NS_LOG_FUNCTION (this << &start);
-  uint16_t length = start.GetRemainingSize () - 8;
-  uint8_t* data = new uint8_t[length];
   Buffer::Iterator i = start;
 
   SetType (i.ReadU8 ());
   SetCode (i.ReadU8 ());
   m_checksum = i.ReadU16 ();
-  i.ReadNtohU32 ();
-  i.Read (data, length);
-  m_packet = Create<Packet> (data, length);
+  i.ReadU32 ();
 
-  delete[] data;
   return GetSerializedSize ();
 }
 
@@ -1168,17 +1164,11 @@ Icmpv6TooBig::~Icmpv6TooBig ()
   NS_LOG_FUNCTION (this);
 }
 
-Ptr<Packet> Icmpv6TooBig::GetPacket () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_packet;
-}
-
 void Icmpv6TooBig::SetPacket (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << *p);
   NS_ASSERT (p->GetSize () <= 1280);
-  m_packet = p;
+  m_packet = p->Copy ();
 }
 
 uint32_t Icmpv6TooBig::GetMtu () const
@@ -1187,7 +1177,7 @@ uint32_t Icmpv6TooBig::GetMtu () const
   return m_mtu;
 }
 
-void Icmpv6TooBig::SetMtu (uint32_t mtu) 
+void Icmpv6TooBig::SetMtu (uint32_t mtu)
 {
   NS_LOG_FUNCTION (this << mtu);
   m_mtu = mtu;
@@ -1199,10 +1189,12 @@ void Icmpv6TooBig::Print (std::ostream& os)  const
   os << "( type = " << (uint32_t)GetType () << " (Too Big) code = " << (uint32_t)GetCode () << " checksum = " << (uint32_t)GetChecksum () << " mtu = " << (uint32_t)GetMtu () << ")";
 }
 
-uint32_t Icmpv6TooBig::GetSerializedSize () const 
+uint32_t Icmpv6TooBig::GetSerializedSize () const
 {
   NS_LOG_FUNCTION (this);
-  return 8 + m_packet->GetSize ();
+  // The real size of the header is 8 + m_packet->GetSize ()
+  // HOWEVER we just serialize the first 8 bytes, as the rest is serialized separately.
+  return 8;
 }
 
 void Icmpv6TooBig::Serialize (Buffer::Iterator start) const
@@ -1211,40 +1203,40 @@ void Icmpv6TooBig::Serialize (Buffer::Iterator start) const
   uint16_t checksum = 0;
   Buffer::Iterator i = start;
 
-  i.WriteU8 (GetType ());
-  i.WriteU8 (GetCode ());
-  i.WriteHtonU16 (0);
-  i.WriteHtonU32 (GetMtu ());
+  Buffer secondaryBuffer;
+  secondaryBuffer.AddAtStart (8 + m_packet->GetSize ());
+  Buffer::Iterator iter = secondaryBuffer.Begin ();
+
+  iter.WriteU8 (GetType ());
+  iter.WriteU8 (GetCode ());
+  iter.WriteU16 (0);
+  iter.WriteHtonU32 (GetMtu ());
 
   uint32_t size = m_packet->GetSize ();
   uint8_t *buf = new uint8_t[size];
   m_packet->CopyData (buf, size);
-  i.Write (buf, size);
+  iter.Write (buf, size);
   delete[] buf;
 
-  i = start;
-  checksum = i.CalculateIpChecksum (i.GetSize (), GetChecksum ());
+  iter = secondaryBuffer.Begin ();
+  checksum = iter.CalculateIpChecksum (iter.GetSize (), GetChecksum ());
 
-  i = start;
-  i.Next (2);
+  i.WriteU8 (GetType ());
+  i.WriteU8 (GetCode ());
   i.WriteU16 (checksum);
+  i.WriteHtonU32 (GetMtu ());
 }
 
-uint32_t Icmpv6TooBig::Deserialize (Buffer::Iterator start) 
+uint32_t Icmpv6TooBig::Deserialize (Buffer::Iterator start)
 {
   NS_LOG_FUNCTION (this << &start);
-  uint16_t length = start.GetRemainingSize () - 8;
-  uint8_t* data = new uint8_t[length];
   Buffer::Iterator i = start;
 
   SetType (i.ReadU8 ());
   SetCode (i.ReadU8 ());
   m_checksum = i.ReadU16 ();
   SetMtu (i.ReadNtohU32 ());
-  i.Read (data, length);
-  m_packet = Create<Packet> (data, length);
 
-  delete[] data;
   return GetSerializedSize ();
 }
 
@@ -1278,17 +1270,12 @@ Icmpv6TimeExceeded::~Icmpv6TimeExceeded ()
   NS_LOG_FUNCTION (this);
 }
 
-Ptr<Packet> Icmpv6TimeExceeded::GetPacket () const 
-{
-  NS_LOG_FUNCTION (this);
-  return m_packet;
-}
 
-void Icmpv6TimeExceeded::SetPacket (Ptr<Packet> p) 
+void Icmpv6TimeExceeded::SetPacket (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << *p);
   NS_ASSERT (p->GetSize () <= 1280);
-  m_packet = p;
+  m_packet = p->Copy ();
 }
 
 void Icmpv6TimeExceeded::Print (std::ostream& os) const
@@ -1300,51 +1287,51 @@ void Icmpv6TimeExceeded::Print (std::ostream& os) const
 uint32_t Icmpv6TimeExceeded::GetSerializedSize () const
 {
   NS_LOG_FUNCTION (this);
-  return 8 + m_packet->GetSize ();
+  // The real size of the header is 8 + m_packet->GetSize ()
+  // HOWEVER we just serialize the first 8 bytes, as the rest is serialized separately.
+  return 8;
 }
 
 void Icmpv6TimeExceeded::Serialize (Buffer::Iterator start) const
 {
   NS_LOG_FUNCTION (this << &start);
-  
   uint16_t checksum = 0;
   Buffer::Iterator i = start;
 
-  i.WriteU8 (GetType ());
-  i.WriteU8 (GetCode ());
-  i.WriteHtonU16 (0);
-  i.WriteHtonU32 (0);
+  Buffer secondaryBuffer;
+  secondaryBuffer.AddAtStart (8 + m_packet->GetSize ());
+  Buffer::Iterator iter = secondaryBuffer.Begin ();
+
+  iter.WriteU8 (GetType ());
+  iter.WriteU8 (GetCode ());
+  iter.WriteU16 (0);
+  iter.WriteU32 (0);
 
   uint32_t size = m_packet->GetSize ();
   uint8_t *buf = new uint8_t[size];
   m_packet->CopyData (buf, size);
-  i.Write (buf, size);
+  iter.Write (buf, size);
   delete[] buf;
 
-  i = start;
-  checksum = i.CalculateIpChecksum (i.GetSize (), GetChecksum ());
+  iter = secondaryBuffer.Begin ();
+  checksum = iter.CalculateIpChecksum (iter.GetSize (), GetChecksum ());
 
-  i = start;
-  i.Next (2);
+  i.WriteU8 (GetType ());
+  i.WriteU8 (GetCode ());
   i.WriteU16 (checksum);
+  i.WriteU32 (0);
 }
 
 uint32_t Icmpv6TimeExceeded::Deserialize (Buffer::Iterator start)
 {
   NS_LOG_FUNCTION (this << &start);
-  
-  uint16_t length = start.GetRemainingSize () - 8;
-  uint8_t* data = new uint8_t[length];
   Buffer::Iterator i = start;
 
   SetType (i.ReadU8 ());
   SetCode (i.ReadU8 ());
   m_checksum = i.ReadU16 ();
-  i.ReadNtohU32 ();
-  i.Read (data, length);
-  m_packet = Create<Packet> (data, length);
+  i.ReadU32 ();
 
-  delete[] data;
   return GetSerializedSize ();
 }
 
@@ -1379,17 +1366,11 @@ Icmpv6ParameterError::~Icmpv6ParameterError ()
   NS_LOG_FUNCTION (this);
 }
 
-Ptr<Packet> Icmpv6ParameterError::GetPacket () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_packet;
-}
-
 void Icmpv6ParameterError::SetPacket (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << *p);
   NS_ASSERT (p->GetSize () <= 1280);
-  m_packet = p;
+  m_packet = p->Copy ();
 }
 
 uint32_t Icmpv6ParameterError::GetPtr () const
@@ -1398,7 +1379,7 @@ uint32_t Icmpv6ParameterError::GetPtr () const
   return m_ptr;
 }
 
-void Icmpv6ParameterError::SetPtr (uint32_t ptr) 
+void Icmpv6ParameterError::SetPtr (uint32_t ptr)
 {
   NS_LOG_FUNCTION (this << ptr);
   m_ptr = ptr;
@@ -1410,51 +1391,53 @@ void Icmpv6ParameterError::Print (std::ostream& os) const
   os << "( type = " << (uint32_t)GetType () << " (Destination Unreachable) code = " << (uint32_t)GetCode () << " checksum = " << (uint32_t)GetChecksum ()  << " ptr = " << (uint32_t)GetPtr () << ")";
 }
 
-uint32_t Icmpv6ParameterError::GetSerializedSize () const 
+uint32_t Icmpv6ParameterError::GetSerializedSize () const
 {
   NS_LOG_FUNCTION (this);
-  return 8 + m_packet->GetSize ();
+  // The real size of the header is 8 + m_packet->GetSize ()
+  // HOWEVER we just serialize the first 8 bytes, as the rest is serialized separately.
+  return 8;
 }
 
-void Icmpv6ParameterError::Serialize (Buffer::Iterator start) const 
+void Icmpv6ParameterError::Serialize (Buffer::Iterator start) const
 {
   NS_LOG_FUNCTION (this << &start);
   uint16_t checksum = 0;
   Buffer::Iterator i = start;
 
-  i.WriteU8 (GetType ());
-  i.WriteU8 (GetCode ());
-  i.WriteHtonU16 (0);
-  i.WriteHtonU32 (GetPtr ());
+  Buffer secondaryBuffer;
+  secondaryBuffer.AddAtStart (8 + m_packet->GetSize ());
+  Buffer::Iterator iter = secondaryBuffer.Begin ();
+
+  iter.WriteU8 (GetType ());
+  iter.WriteU8 (GetCode ());
+  iter.WriteU16 (0);
+  iter.WriteHtonU32 (GetPtr ());
 
   uint32_t size = m_packet->GetSize ();
   uint8_t *buf = new uint8_t[size];
   m_packet->CopyData (buf, size);
-  i.Write (buf, size);
+  iter.Write (buf, size);
   delete[] buf;
 
-  i = start;
-  checksum = i.CalculateIpChecksum (i.GetSize (), GetChecksum ());
+  iter = secondaryBuffer.Begin ();
+  checksum = iter.CalculateIpChecksum (iter.GetSize (), GetChecksum ());
 
-  i = start;
-  i.Next (2);
+  i.WriteU8 (GetType ());
+  i.WriteU8 (GetCode ());
   i.WriteU16 (checksum);
+  i.WriteHtonU32 (GetPtr ());
 }
 
-uint32_t Icmpv6ParameterError::Deserialize (Buffer::Iterator start) 
+uint32_t Icmpv6ParameterError::Deserialize (Buffer::Iterator start)
 {
   NS_LOG_FUNCTION (this << &start);
-  uint16_t length = start.GetRemainingSize () - 8;
-  uint8_t* data = new uint8_t[length];
   Buffer::Iterator i = start;
 
   SetType (i.ReadU8 ());
   SetCode (i.ReadU8 ());
   m_checksum = i.ReadU16 ();
   SetPtr (i.ReadNtohU32 ());
-  i.Read (data, length);
-  m_packet = Create<Packet> (data, length);
-  delete[] data;
 
   return GetSerializedSize ();
 }
@@ -1949,17 +1932,11 @@ Icmpv6OptionRedirected::~Icmpv6OptionRedirected ()
   m_packet = 0;
 }
 
-Ptr<Packet> Icmpv6OptionRedirected::GetPacket () const
-{
-  NS_LOG_FUNCTION (this);
-  return m_packet;
-}
-
 void Icmpv6OptionRedirected::SetPacket (Ptr<Packet> packet)
 {
   NS_LOG_FUNCTION (this << *packet);
   NS_ASSERT (packet->GetSize () <= 1280);
-  m_packet = packet;
+  m_packet = packet->Copy ();
   SetLength (1 + (m_packet->GetSize () / 8));
 }
 

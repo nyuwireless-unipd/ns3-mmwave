@@ -58,20 +58,32 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("VirtualNetDeviceExample");
 
+/**
+ * \ingroup virtual-net-device
+ *
+ * Tunnel class - its goal is to create and manage the tunnels between endpoints.
+ */
 class Tunnel
 {
-  Ptr<Socket> m_n3Socket;
-  Ptr<Socket> m_n0Socket;
-  Ptr<Socket> m_n1Socket;
-  Ipv4Address m_n3Address;
-  Ipv4Address m_n0Address;
-  Ipv4Address m_n1Address;
-  Ptr<UniformRandomVariable> m_rng;
-  Ptr<VirtualNetDevice> m_n0Tap;
-  Ptr<VirtualNetDevice> m_n1Tap;
-  Ptr<VirtualNetDevice> m_n3Tap;
+  Ptr<Socket> m_n3Socket; //!< Socket on the N3 node
+  Ptr<Socket> m_n0Socket; //!< Socket on the N0 node
+  Ptr<Socket> m_n1Socket; //!< Socket on the N1 node
+  Ipv4Address m_n3Address;  //!< Address of the N3 node
+  Ipv4Address m_n0Address;  //!< Address of the N0 node
+  Ipv4Address m_n1Address;  //!< Address of the N1 node
+  Ptr<UniformRandomVariable> m_rng; //!< Random number generator
+  Ptr<VirtualNetDevice> m_n0Tap;  //!< VirtualNetDevice on the N0 node
+  Ptr<VirtualNetDevice> m_n1Tap;  //!< VirtualNetDevice on the N1 node
+  Ptr<VirtualNetDevice> m_n3Tap;  //!< VirtualNetDevice on the N3 node
 
-
+  /**
+   * Send a packet through the N0 VirtualNetDevice
+   * \param packet Packet to send
+   * \param source Source IPv4 address
+   * \param dest Destination IPv4 address
+   * \param protocolNumber Protocol number
+   * \return true (always)
+   */
   bool
   N0VirtualSend (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
   {
@@ -80,6 +92,14 @@ class Tunnel
     return true;
   }
 
+  /**
+   * Send a packet through the N1 VirtualNetDevice
+   * \param packet Packet to send
+   * \param source Source IPv4 address
+   * \param dest Destination IPv4 address
+   * \param protocolNumber Protocol number
+   * \return true (always)
+   */
   bool
   N1VirtualSend (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
   {
@@ -88,6 +108,14 @@ class Tunnel
     return true;
   }
 
+  /**
+   * Send a packet through the N3 VirtualNetDevice
+   * \param packet Packet to send
+   * \param source Source IPv4 address
+   * \param dest Destination IPv4 address
+   * \param protocolNumber Protocol number
+   * \return true (always)
+   */
   bool
   N3VirtualSend (Ptr<Packet> packet, const Address& source, const Address& dest, uint16_t protocolNumber)
   {
@@ -96,7 +124,7 @@ class Tunnel
         NS_LOG_DEBUG ("Send to " << m_n0Address << ": " << *packet);
         m_n3Socket->SendTo (packet, 0, InetSocketAddress (m_n0Address, 667));
       }
-    else 
+    else
       {
         NS_LOG_DEBUG ("Send to " << m_n1Address << ": " << *packet);
         m_n3Socket->SendTo (packet, 0, InetSocketAddress (m_n1Address, 667));
@@ -104,6 +132,10 @@ class Tunnel
     return true;
   }
 
+  /**
+   * Receive a packet on the N3 VirtualNetDevice
+   * \param socket Receiving socket
+   */
   void N3SocketRecv (Ptr<Socket> socket)
   {
     Ptr<Packet> packet = socket->Recv (65535, 0);
@@ -111,6 +143,10 @@ class Tunnel
     m_n3Tap->Receive (packet, 0x0800, m_n3Tap->GetAddress (), m_n3Tap->GetAddress (), NetDevice::PACKET_HOST);
   }
 
+  /**
+   * Receive a packet on the N0 VirtualNetDevice
+   * \param socket Receiving socket
+   */
   void N0SocketRecv (Ptr<Socket> socket)
   {
     Ptr<Packet> packet = socket->Recv (65535, 0);
@@ -118,6 +154,10 @@ class Tunnel
     m_n0Tap->Receive (packet, 0x0800, m_n0Tap->GetAddress (), m_n0Tap->GetAddress (), NetDevice::PACKET_HOST);
   }
 
+  /**
+   * Receive a packet on the N1 VirtualNetDevice
+   * \param socket Receiving socket
+   */
   void N1SocketRecv (Ptr<Socket> socket)
   {
     Ptr<Packet> packet = socket->Recv (65535, 0);
@@ -127,6 +167,15 @@ class Tunnel
 
 public:
 
+  /**
+   * Constructor
+   * \param n3 Pointer of Node 3
+   * \param n0 Pointer of Node 0
+   * \param n1 Pointer of Node 1
+   * \param n3Addr IPv4 address of Node 3
+   * \param n0Addr IPv4 address of Node 0
+   * \param n1Addr IPv4 address of Node 1
+   */
   Tunnel (Ptr<Node> n3, Ptr<Node> n0, Ptr<Node> n1,
           Ipv4Address n3Addr, Ipv4Address n0Addr, Ipv4Address n1Addr)
     : m_n3Address (n3Addr), m_n0Address (n0Addr), m_n1Address (n1Addr)
@@ -181,18 +230,18 @@ public:
 
 
 
-int 
+int
 main (int argc, char *argv[])
 {
   // Users may find it convenient to turn on explicit logging
   // for selected modules; the below lines suggest how to do this
-#if 0 
+#if 0
   LogComponentEnable ("VirtualNetDeviceExample", LOG_LEVEL_INFO);
 #endif
   Packet::EnablePrinting ();
 
 
-  // Set up some default values for the simulation.  Use the 
+  // Set up some default values for the simulation.  Use the
   Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (210));
   Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue ("448kb/s"));
 
@@ -248,7 +297,7 @@ main (int argc, char *argv[])
   // 210 bytes at a rate of 448 Kb/s
   NS_LOG_INFO ("Create Applications.");
   uint16_t port = 9;   // Discard port (RFC 863)
-  OnOffHelper onoff ("ns3::UdpSocketFactory", 
+  OnOffHelper onoff ("ns3::UdpSocketFactory",
                      Address (InetSocketAddress (Ipv4Address ("11.0.0.254"), port)));
   onoff.SetConstantRate (DataRate ("448kb/s"));
   ApplicationContainer apps = onoff.Install (c.Get (0));
@@ -263,7 +312,7 @@ main (int argc, char *argv[])
   //apps.Stop (Seconds (10.0));
 
   // Create a similar flow from n3 to n1, starting at time 1.1 seconds
-  onoff.SetAttribute ("Remote", 
+  onoff.SetAttribute ("Remote",
                       AddressValue (InetSocketAddress (Ipv4Address ("11.0.0.1"), port)));
   apps = onoff.Install (c.Get (3));
   apps.Start (Seconds (1.1));

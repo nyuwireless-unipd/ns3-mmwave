@@ -33,7 +33,8 @@
 #include "ns3/ht-capabilities.h"
 #include "ns3/vht-capabilities.h"
 #include "ns3/he-capabilities.h"
-#include "regular-wifi-mac.h"
+#include "wifi-mac.h"
+#include "qos-txop.h"
 #include "ctrl-headers.h"
 #include "wifi-mac-trailer.h"
 #include "wifi-tx-parameters.h"
@@ -71,7 +72,7 @@ MpduAggregator::DoDispose ()
 }
 
 void
-MpduAggregator::SetWifiMac (const Ptr<RegularWifiMac> mac)
+MpduAggregator::SetWifiMac (const Ptr<WifiMac> mac)
 {
   NS_LOG_FUNCTION (this << mac);
   m_mac = mac;
@@ -144,7 +145,7 @@ MpduAggregator::GetMaxAmpduSize (Mac48Address recipient, uint8_t tid,
 
   // Determine the constraint imposed by the recipient based on the PPDU
   // format used to transmit the A-MPDU
-  if (modulation == WIFI_MOD_CLASS_HE)
+  if (modulation >= WIFI_MOD_CLASS_HE)
     {
       NS_ABORT_MSG_IF (!heCapabilities, "HE Capabilities element not received");
 
@@ -192,7 +193,7 @@ MpduAggregator::GetAmpduSubframeHeader (uint16_t mpduSize, bool isSingle)
 
 std::vector<Ptr<WifiMacQueueItem>>
 MpduAggregator::GetNextAmpdu (Ptr<WifiMacQueueItem> mpdu, WifiTxParameters& txParams,
-                              Time availableTime, WifiMacQueueItem::ConstIterator queueIt) const
+                              Time availableTime) const
 {
   NS_LOG_FUNCTION (this << *mpdu << &txParams << availableTime);
 
@@ -203,7 +204,7 @@ MpduAggregator::GetNextAmpdu (Ptr<WifiMacQueueItem> mpdu, WifiTxParameters& txPa
   uint8_t tid = mpdu->GetHeader ().GetQosTid ();
 
   Ptr<QosTxop> qosTxop = m_mac->GetQosTxop (tid);
-  NS_ASSERT (qosTxop != 0);
+  NS_ASSERT (qosTxop);
 
   //Have to make sure that the block ack agreement is established and A-MPDU is enabled
   if (qosTxop->GetBaAgreementEstablished (recipient, tid)
@@ -212,7 +213,7 @@ MpduAggregator::GetNextAmpdu (Ptr<WifiMacQueueItem> mpdu, WifiTxParameters& txPa
       /* here is performed MPDU aggregation */
       Ptr<WifiMacQueueItem> nextMpdu = mpdu;
 
-      while (nextMpdu != 0)
+      while (nextMpdu)
         {
           // if we are here, nextMpdu can be aggregated to the A-MPDU.
           NS_LOG_DEBUG ("Adding packet with sequence number " << nextMpdu->GetHeader ().GetSequenceNumber ()
@@ -222,11 +223,11 @@ MpduAggregator::GetNextAmpdu (Ptr<WifiMacQueueItem> mpdu, WifiTxParameters& txPa
           mpduList.push_back (nextMpdu);
 
           // If allowed by the BA agreement, get the next MPDU
+          Ptr<const WifiMacQueueItem> peekedMpdu;
+          peekedMpdu = qosTxop->PeekNextMpdu (tid, recipient, nextMpdu);
           nextMpdu = 0;
 
-          Ptr<const WifiMacQueueItem> peekedMpdu;
-          peekedMpdu = qosTxop->PeekNextMpdu (queueIt, tid, recipient);
-          if (peekedMpdu != 0)
+          if (peekedMpdu)
             {
               // PeekNextMpdu() does not return an MPDU that is beyond the transmit window
               NS_ASSERT (IsInWindow (peekedMpdu->GetHeader ().GetSequenceNumber (),
@@ -237,7 +238,7 @@ MpduAggregator::GetNextAmpdu (Ptr<WifiMacQueueItem> mpdu, WifiTxParameters& txPa
               // and duration limit are met. Note that the returned MPDU differs from
               // the peeked MPDU if A-MSDU aggregation is enabled.
               NS_LOG_DEBUG ("Trying to aggregate another MPDU");
-              nextMpdu = qosTxop->GetNextMpdu (peekedMpdu, txParams, availableTime, false, queueIt);
+              nextMpdu = qosTxop->GetNextMpdu (peekedMpdu, txParams, availableTime, false);
             }
         }
 

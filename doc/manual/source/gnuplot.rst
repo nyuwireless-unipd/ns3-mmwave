@@ -1,6 +1,6 @@
 .. include:: replace.txt
 .. highlight:: cpp
- 
+
 Making Plots using the Gnuplot Class
 ------------------------------------
 
@@ -16,7 +16,7 @@ Creating Plots Using the Gnuplot Class
 
 The following steps must be taken in order to create a plot using |ns3|'s Gnuplot class:
 
-#. Modify your code so that is uses the Gnuplot class and its functions. 
+#. Modify your code so that is uses the Gnuplot class and its functions.
 #. Run your code so that it creates a gnuplot control file.
 #. Call gnuplot with the name of the gnuplot control file.
 #. View the graphics file that was produced in your favorite graphics viewer.
@@ -36,44 +36,44 @@ In order to run this example, do the following:
 
 .. sourcecode:: bash
 
-  $ ./waf --run src/stats/examples/gnuplot-example
+  $ ./ns3 run src/stats/examples/gnuplot-example
 
 This should produce the following gnuplot control files:
 
 .. sourcecode:: text
 
-  plot-2d.plt 
+  plot-2d.plt
   plot-2d-with-error-bars.plt
-  plot-3d.plt 
+  plot-3d.plt
 
 In order to process these gnuplot control files, do the following:
 
 .. sourcecode:: bash
 
-  $ gnuplot plot-2d.plt 
+  $ gnuplot plot-2d.plt
   $ gnuplot plot-2d-with-error-bars.plt
-  $ gnuplot plot-3d.plt 
+  $ gnuplot plot-3d.plt
 
 This should produce the following graphics files:
 
 .. sourcecode:: text
 
-  plot-2d.png 
+  plot-2d.png
   plot-2d-with-error-bars.png
-  plot-3d.png 
+  plot-3d.png
 
 You can view these graphics files in your favorite graphics viewer.  If you have gimp installed on your machine, for example, you can do this:
 
 .. sourcecode:: bash
 
-  $ gimp plot-2d.png 
+  $ gimp plot-2d.png
   $ gimp plot-2d-with-error-bars.png
-  $ gimp plot-3d.png 
+  $ gimp plot-3d.png
 
 An Example 2-Dimensional Plot
 *****************************
 
-The following 2-Dimensional plot 
+The following 2-Dimensional plot
 
 .. _plot-2d:
 
@@ -81,13 +81,11 @@ The following 2-Dimensional plot
 
 was created using the following code from gnuplot-example.cc: ::
 
-  using namespace std;
-
-  string fileNameWithNoExtension = "plot-2d";
-  string graphicsFileName        = fileNameWithNoExtension + ".png";
-  string plotFileName            = fileNameWithNoExtension + ".plt";
-  string plotTitle               = "2-D Plot";
-  string dataTitle               = "2-D Data";
+  std::string fileNameWithNoExtension = "plot-2d";
+  std::string graphicsFileName        = fileNameWithNoExtension + ".png";
+  std::string plotFileName            = fileNameWithNoExtension + ".plt";
+  std::string plotTitle               = "2-D Plot";
+  std::string dataTitle               = "2-D Data";
 
   // Instantiate the plot and set its title.
   Gnuplot plot (graphicsFileName);
@@ -116,10 +114,10 @@ was created using the following code from gnuplot-example.cc: ::
   for (x = -5.0; x <= +5.0; x += 1.0)
     {
       // Calculate the 2-D curve
-      // 
+      //
       //            2
       //     y  =  x   .
-      //  
+      //
       y = x * x;
 
       // Add this point.
@@ -130,14 +128,14 @@ was created using the following code from gnuplot-example.cc: ::
   plot.AddDataset (dataset);
 
   // Open the plot file.
-  ofstream plotFile (plotFileName.c_str());
+  std::ofstream plotFile (plotFileName.c_str());
 
   // Write the plot file.
   plot.GenerateOutput (plotFile);
 
   // Close the plot file.
   plotFile.close ();
-  
+
 An Example 2-Dimensional Plot with Error Bars
 *********************************************
 
@@ -149,13 +147,11 @@ The following 2-Dimensional plot with error bars in the x and y directions
 
 was created using the following code from gnuplot-example.cc: ::
 
-  using namespace std;
-
-  string fileNameWithNoExtension = "plot-2d-with-error-bars";
-  string graphicsFileName        = fileNameWithNoExtension + ".png";
-  string plotFileName            = fileNameWithNoExtension + ".plt";
-  string plotTitle               = "2-D Plot With Error Bars";
-  string dataTitle               = "2-D Data With Error Bars";
+  std::string fileNameWithNoExtension = "plot-2d-with-error-bars";
+  std::string graphicsFileName        = fileNameWithNoExtension + ".png";
+  std::string plotFileName            = fileNameWithNoExtension + ".plt";
+  std::string plotTitle               = "2-D Plot With Error Bars";
+  std::string dataTitle               = "2-D Data With Error Bars";
 
   // Instantiate the plot and set its title.
   Gnuplot plot (graphicsFileName);
@@ -189,10 +185,10 @@ was created using the following code from gnuplot-example.cc: ::
   for (x = -5.0; x <= +5.0; x += 1.0)
     {
       // Calculate the 2-D curve
-      // 
+      //
       //            2
       //     y  =  x   .
-      //  
+      //
       y = x * x;
 
       // Make the uncertainty in the x direction be constant and make
@@ -210,7 +206,7 @@ was created using the following code from gnuplot-example.cc: ::
   plot.AddDataset (dataset);
 
   // Open the plot file.
-  ofstream plotFile (plotFileName.c_str());
+  std::ofstream plotFile (plotFileName.c_str());
 
   // Write the plot file.
   plot.GenerateOutput (plotFile);
@@ -221,7 +217,7 @@ was created using the following code from gnuplot-example.cc: ::
 An Example 3-Dimensional Plot
 *****************************
 
-The following 3-Dimensional plot 
+The following 3-Dimensional plot
 
 .. _plot-3d:
 
@@ -229,13 +225,11 @@ The following 3-Dimensional plot
 
 was created using the following code from gnuplot-example.cc: ::
 
-  using namespace std;
-
-  string fileNameWithNoExtension = "plot-3d";
-  string graphicsFileName        = fileNameWithNoExtension + ".png";
-  string plotFileName            = fileNameWithNoExtension + ".plt";
-  string plotTitle               = "3-D Plot";
-  string dataTitle               = "3-D Data";
+  std::string fileNameWithNoExtension = "plot-3d";
+  std::string graphicsFileName        = fileNameWithNoExtension + ".png";
+  std::string plotFileName            = fileNameWithNoExtension + ".plt";
+  std::string plotTitle               = "3-D Plot";
+  std::string dataTitle               = "3-D Data";
 
   // Instantiate the plot and set its title.
   Gnuplot plot (graphicsFileName);
@@ -274,29 +268,29 @@ was created using the following code from gnuplot-example.cc: ::
   // Create the 3-D dataset.
   for (x = -5.0; x <= +5.0; x += 1.0)
     {
-    for (y = -5.0; y <= +5.0; y += 1.0)
-	{
-	  // Calculate the 3-D surface
-	  // 
-	  //            2      2
-	  //     z  =  x   *  y   .
-	  //  
-	  z = x * x * y * y;
+      for (y = -5.0; y <= +5.0; y += 1.0)
+        {
+          // Calculate the 3-D surface
+          //
+          //            2      2
+          //     z  =  x   *  y   .
+          //
+          z = x * x * y * y;
 
-	  // Add this point.
-	  dataset.Add (x, y, z);
-	}
+          // Add this point.
+          dataset.Add (x, y, z);
+        }
 
-    // The blank line is necessary at the end of each x value's data
-    // points for the 3-D surface grid to work.
-    dataset.AddEmptyLine ();
+      // The blank line is necessary at the end of each x value's data
+      // points for the 3-D surface grid to work.
+      dataset.AddEmptyLine ();
     }
 
   // Add the dataset to the plot.
   plot.AddDataset (dataset);
 
   // Open the plot file.
-  ofstream plotFile (plotFileName.c_str());
+  std::ofstream plotFile (plotFileName.c_str());
 
   // Write the plot file.
   plot.GenerateOutput (plotFile);

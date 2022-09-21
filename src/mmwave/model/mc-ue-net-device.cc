@@ -162,7 +162,7 @@ McUeNetDevice::DoInitialize (void)
       mmWaveIt->second->GetMac ()->Initialize ();
     }
 
-  if (m_mmWaveRrc != 0)
+  if (m_mmWaveRrc)
     {
       m_mmWaveRrc->Initialize ();
     }
@@ -188,7 +188,7 @@ McUeNetDevice::DoDispose (void)
   m_lteComponentCarrierManager->Dispose ();
 
   m_mmWaveTargetEnb = 0;
-  if (m_mmWaveRrc != 0)
+  if (m_mmWaveRrc)
     {
       m_mmWaveRrc->Dispose ();
     }
@@ -450,7 +450,7 @@ McUeNetDevice::UpdateConfig (void)
       m_nas->SetImsi (m_imsi);
 
       m_lteRrc->SetImsi (m_imsi);
-      if (m_mmWaveRrc != 0)
+      if (m_mmWaveRrc)
         {
           m_mmWaveRrc->SetImsi (m_imsi);
         }

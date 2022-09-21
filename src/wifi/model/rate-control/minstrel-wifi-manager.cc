@@ -26,7 +26,7 @@
  * 2) By default, Minstrel applies the multi-rate retry (the core of Minstrel
  *    algorithm). Otherwise, please use ConstantRateWifiManager instead.
  *
- * http://linuxwireless.org/en/developers/Documentation/mac80211/RateControl/minstrel
+ * https://wireless.wiki.kernel.org/en/developers/documentation/mac80211/ratecontrol/minstrel
  */
 
 #include <iomanip>
@@ -54,7 +54,7 @@ MinstrelWifiManager::GetTypeId (void)
     .SetGroupName ("Wifi")
     .AddConstructor<MinstrelWifiManager> ()
     .AddAttribute ("UpdateStatistics",
-                   "The interval between updating statistics table ",
+                   "The interval between updating statistics table",
                    TimeValue (Seconds (0.1)),
                    MakeTimeAccessor (&MinstrelWifiManager::m_updateStats),
                    MakeTimeChecker ())
@@ -374,10 +374,11 @@ MinstrelWifiManager::GetDataTxVector (MinstrelWifiRemoteStation *station)
       CheckInit (station);
     }
   WifiMode mode = GetSupported (station, station->m_txrate);
-  if (m_currentRate != mode.GetDataRate (channelWidth) && !station->m_isSampling)
+  uint64_t rate = mode.GetDataRate (channelWidth);
+  if (m_currentRate != rate && !station->m_isSampling)
     {
-      NS_LOG_DEBUG ("New datarate: " << mode.GetDataRate (channelWidth));
-      m_currentRate = mode.GetDataRate (channelWidth);
+      NS_LOG_DEBUG ("New datarate: " << rate);
+      m_currentRate = rate;
     }
   return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
 }
@@ -392,7 +393,6 @@ MinstrelWifiManager::GetRtsTxVector (MinstrelWifiRemoteStation *station)
     {
       channelWidth = 20;
     }
-  WifiTxVector rtsTxVector;
   WifiMode mode;
   if (GetUseNonErpProtection () == false)
     {
@@ -402,8 +402,7 @@ MinstrelWifiManager::GetRtsTxVector (MinstrelWifiRemoteStation *station)
     {
       mode = GetNonErpSupported (station, 0);
     }
-  rtsTxVector = WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
-  return rtsTxVector;
+  return WifiTxVector (mode, GetDefaultTxPowerLevel (), GetPreambleForTransmission (mode.GetModulationClass (), GetShortPreambleEnabled ()), 800, 1, 1, 0, channelWidth, GetAggregation (station));
 }
 
 uint32_t
@@ -850,9 +849,9 @@ MinstrelWifiManager::UpdateRetry (MinstrelWifiRemoteStation *station)
 }
 
 WifiTxVector
-MinstrelWifiManager::DoGetDataTxVector (WifiRemoteStation *st)
+MinstrelWifiManager::DoGetDataTxVector (WifiRemoteStation *st, uint16_t allowedWidth)
 {
-  NS_LOG_FUNCTION (this << st);
+  NS_LOG_FUNCTION (this << st << allowedWidth);
   MinstrelWifiRemoteStation *station = static_cast<MinstrelWifiRemoteStation*> (st);
   return GetDataTxVector (station);
 }

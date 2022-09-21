@@ -34,7 +34,6 @@
 #include <ns3/tcp-socket-factory.h>
 #include <ns3/inet-socket-address.h>
 #include <ns3/inet6-socket-address.h>
-#include <ns3/unused.h>
 
 
 NS_LOG_COMPONENT_DEFINE ("ThreeGppHttpServer");
@@ -204,7 +203,7 @@ ThreeGppHttpServer::StartApplication ()
   if (m_state == NOT_STARTED)
     {
       m_httpVariables->Initialize ();
-      if (m_initialSocket == 0)
+      if (!m_initialSocket)
         {
           // Find the current default MTU value of TCP sockets.
           Ptr<const ns3::AttributeValue> previousSocketMtu;
@@ -223,7 +222,7 @@ ThreeGppHttpServer::StartApplication ()
                                                   TcpSocketFactory::GetTypeId ());
           m_initialSocket->SetAttribute ("SegmentSize", UintegerValue (m_mtuSize));
 
-          int ret;
+          [[maybe_unused]] int ret;
 
           if (Ipv4Address::IsMatchingType (m_localAddress))
             {
@@ -257,11 +256,10 @@ ThreeGppHttpServer::StartApplication ()
                              << " GetErrNo= " << m_initialSocket->GetErrno ()
                              << ".");
 
-          NS_UNUSED (ret);
 
         } // end of `if (m_initialSocket == 0)`
 
-      NS_ASSERT_MSG (m_initialSocket != 0, "Failed creating socket.");
+      NS_ASSERT_MSG (m_initialSocket, "Failed creating socket.");
       m_initialSocket->SetAcceptCallback (MakeCallback (&ThreeGppHttpServer::ConnectionRequestCallback,
                                                         this),
                                           MakeCallback (&ThreeGppHttpServer::NewConnectionCreatedCallback,
@@ -297,7 +295,7 @@ ThreeGppHttpServer::StopApplication ()
   m_txBuffer->CloseAllSockets ();
 
   // Stop listening.
-  if (m_initialSocket != 0)
+  if (m_initialSocket)
     {
       m_initialSocket->Close ();
       m_initialSocket->SetAcceptCallback (MakeNullCallback<bool, Ptr<Socket>, const Address &> (),
@@ -491,8 +489,8 @@ ThreeGppHttpServer::SendCallback (Ptr<Socket> socket, uint32_t availableBufferSi
 
   if (!m_txBuffer->IsBufferEmpty (socket))
     {
-      const uint32_t txBufferSize = m_txBuffer->GetBufferSize (socket);
-      const uint32_t actualSent = ServeFromTxBuffer (socket);
+      [[maybe_unused]] const uint32_t txBufferSize = m_txBuffer->GetBufferSize (socket);
+      [[maybe_unused]] const uint32_t actualSent = ServeFromTxBuffer (socket);
 
 #ifdef NS3_LOG_ENABLE
       // Some log messages.
@@ -529,10 +527,6 @@ ThreeGppHttpServer::SendCallback (Ptr<Socket> socket, uint32_t availableBufferSi
             }
         }
 #endif /* NS3_LOG_ENABLE */
-
-      // Mute compiler warnings.
-      NS_UNUSED (txBufferSize);
-      NS_UNUSED (actualSent);
 
     } // end of `if (m_txBuffer->IsBufferEmpty (socket))`
 

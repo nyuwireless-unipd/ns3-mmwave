@@ -31,6 +31,8 @@
 #include "ns3/pointer.h"
 #include "ns3/string.h"
 #include "ns3/integer.h"
+#include "ns3/uinteger.h"
+#include "ns3/double.h"
 
 #include "ipv6-l3-protocol.h"
 #include "ipv6-interface.h"
@@ -94,6 +96,33 @@ TypeId Icmpv6L4Protocol::GetTypeId ()
                    TimeValue (Seconds (5)),
                    MakeTimeAccessor (&Icmpv6L4Protocol::m_delayFirstProbe),
                    MakeTimeChecker ())
+    .AddAttribute ("DadTimeout", "Duplicate Address Detection (DAD) timeout",
+                   TimeValue (Seconds (1)),
+                   MakeTimeAccessor (&Icmpv6L4Protocol::m_dadTimeout),
+                   MakeTimeChecker ())
+    .AddAttribute ("RsRetransmissionJitter", "Multicast RS retransmission randomization quantity",
+                   StringValue ("ns3::UniformRandomVariable[Min=-0.1|Max=0.1]"),
+                   MakePointerAccessor (&Icmpv6L4Protocol::m_rsRetransmissionJitter),
+                   MakePointerChecker<RandomVariableStream> ())
+    .AddAttribute ("RsInitialRetransmissionTime", "Multicast RS initial retransmission time.",
+                   TimeValue (Seconds (4)),
+                   MakeTimeAccessor (&Icmpv6L4Protocol::m_rsInitialRetransmissionTime),
+                   MakeTimeChecker ())
+    .AddAttribute ("RsMaxRetransmissionTime", "Multicast RS maximum retransmission time (0 means unbound).",
+                   TimeValue (Seconds (3600)),
+                   MakeTimeAccessor (&Icmpv6L4Protocol::m_rsMaxRetransmissionTime),
+                   MakeTimeChecker ())
+    .AddAttribute ("RsMaxRetransmissionCount",
+                   "Multicast RS maximum retransmission count (0 means unbound). "
+                   "Note: RFC 7559 suggest a zero value (infinite). The default is 4 to avoid "
+                   "non-terminating simulations.",
+                   UintegerValue (4),
+                   MakeUintegerAccessor (&Icmpv6L4Protocol::m_rsMaxRetransmissionCount),
+                   MakeUintegerChecker<uint32_t> ())
+    .AddAttribute ("RsMaxRetransmissionDuration", "Multicast RS maximum retransmission duration (0 means unbound).",
+                   TimeValue (Seconds (0)),
+                   MakeTimeAccessor (&Icmpv6L4Protocol::m_rsMaxRetransmissionDuration),
+                   MakeTimeChecker ())
     ;
   return tid;
 }
@@ -135,19 +164,20 @@ int64_t Icmpv6L4Protocol::AssignStreams (int64_t stream)
 {
   NS_LOG_FUNCTION (this << stream);
   m_solicitationJitter->SetStream (stream);
-  return 1;
+  m_rsRetransmissionJitter->SetStream (stream+1);
+  return 2;
 }
 
 void Icmpv6L4Protocol::NotifyNewAggregate ()
 {
   NS_LOG_FUNCTION (this);
-  if (m_node == 0)
+  if (!m_node)
     {
       Ptr<Node> node = this->GetObject<Node> ();
-      if (node != 0)
+      if (node)
         {
           Ptr<Ipv6> ipv6 = this->GetObject<Ipv6> ();
-          if (ipv6 != 0 && m_downTarget.IsNull ())
+          if (ipv6 && m_downTarget.IsNull ())
             {
               SetNode (node);
               ipv6->Insert (this);
@@ -208,7 +238,7 @@ void Icmpv6L4Protocol::DoDAD (Ipv6Address target, Ptr<Ipv6Interface> interface)
     }
 
   /** \todo disable multicast loopback to prevent NS probing to be received by the sender */
-  
+
   NdiscCache::Ipv6PayloadHeaderPair p = ForgeNS ("::",Ipv6Address::MakeSolicitedAddress (target), target, interface->GetDevice ()->GetAddress ());
 
   /* update last packet UID */
@@ -298,7 +328,7 @@ void Icmpv6L4Protocol::Forward (Ipv6Address source, Icmpv6Header icmp,
   if (nextHeader != Icmpv6L4Protocol::PROT_NUMBER)
     {
       Ptr<IpL4Protocol> l4 = ipv6->GetProtocol (nextHeader);
-      if (l4 != 0)
+      if (l4)
         {
           l4->ReceiveIcmp (source, ipHeader.GetHopLimit (), icmp.GetType (), icmp.GetCode (),
                            info, ipHeader.GetSource (), ipHeader.GetDestination (), payload);
@@ -325,6 +355,14 @@ void Icmpv6L4Protocol::HandleEchoRequest (Ptr<Packet> packet, Ipv6Address const 
 void Icmpv6L4Protocol::HandleRA (Ptr<Packet> packet, Ipv6Address const &src, Ipv6Address const &dst, Ptr<Ipv6Interface> interface)
 {
   NS_LOG_FUNCTION (this << packet << src << dst << interface);
+
+  if (m_handleRsTimeoutEvent.IsRunning ())
+    {
+      m_handleRsTimeoutEvent.Cancel ();
+      // We need to update this in case we need to restart RS retransmissions.
+      m_rsRetransmissionCount = 0;
+    }
+
   Ptr<Packet> p = packet->Copy ();
   Icmpv6RA raHeader;
   Ptr<Ipv6L3Protocol> ipv6 = m_node->GetObject<Ipv6L3Protocol> ();
@@ -683,7 +721,7 @@ void Icmpv6L4Protocol::HandleNA (Ptr<Packet> packet, Ipv6Address const &src, Ipv
   if (!entry)
     {
       /* ouch!! we might be victim of a DAD */
-      
+
       Ipv6InterfaceAddress ifaddr;
       bool found = false;
       uint32_t i = 0;
@@ -787,7 +825,7 @@ void Icmpv6L4Protocol::HandleNA (Ptr<Packet> packet, Ipv6Address const &src, Ipv
                           entry->MarkReachable (lla.GetAddress ());
                         }
                     }
-                  if (!entry->IsPermanent ())
+                  if (!entry->IsPermanent () )
                     {
                       entry->StartReachableTimer ();
                     }
@@ -881,14 +919,13 @@ void Icmpv6L4Protocol::HandleDestinationUnreachable (Ptr<Packet> p, Ipv6Address 
 
   Icmpv6DestinationUnreachable unreach;
   pkt->RemoveHeader (unreach);
-  Ptr<Packet> origPkt = unreach.GetPacket ();
 
   Ipv6Header ipHeader;
-  if ( origPkt->GetSize () > ipHeader.GetSerializedSize () )
+  if (pkt->GetSize () > ipHeader.GetSerializedSize ())
     {
-      origPkt->RemoveHeader (ipHeader);
+      pkt->RemoveHeader (ipHeader);
       uint8_t payload[8];
-      origPkt->CopyData (payload, 8);
+      pkt->CopyData (payload, 8);
       Forward (src, unreach, unreach.GetCode (), ipHeader, payload);
     }
 }
@@ -900,13 +937,16 @@ void Icmpv6L4Protocol::HandleTimeExceeded (Ptr<Packet> p, Ipv6Address const &src
 
   Icmpv6TimeExceeded timeexceeded;
   pkt->RemoveHeader (timeexceeded);
-  Ptr<Packet> origPkt = timeexceeded.GetPacket ();
-  Ipv6Header ipHeader;
-  uint8_t payload[8];
-  origPkt->RemoveHeader (ipHeader);
-  origPkt->CopyData (payload, 8);
 
-  Forward (src, timeexceeded, timeexceeded.GetCode (), ipHeader, payload);
+  Ipv6Header ipHeader;
+  if (pkt->GetSize () > ipHeader.GetSerializedSize ())
+    {
+      Ipv6Header ipHeader;
+      pkt->RemoveHeader (ipHeader);
+      uint8_t payload[8];
+      pkt->CopyData (payload, 8);
+      Forward (src, timeexceeded, timeexceeded.GetCode (), ipHeader, payload);
+    }
 }
 
 void Icmpv6L4Protocol::HandlePacketTooBig (Ptr<Packet> p, Ipv6Address const &src, Ipv6Address const &dst, Ptr<Ipv6Interface> interface)
@@ -916,17 +956,19 @@ void Icmpv6L4Protocol::HandlePacketTooBig (Ptr<Packet> p, Ipv6Address const &src
 
   Icmpv6TooBig tooBig;
   pkt->RemoveHeader (tooBig);
-  Ptr<Packet> origPkt = tooBig.GetPacket ();
 
   Ipv6Header ipHeader;
-  origPkt->RemoveHeader (ipHeader);
-  uint8_t payload[8];
-  origPkt->CopyData (payload, 8);
+  if (pkt->GetSize () > ipHeader.GetSerializedSize ())
+    {
+      pkt->RemoveHeader (ipHeader);
+      uint8_t payload[8];
+      pkt->CopyData (payload, 8);
 
-  Ptr<Ipv6L3Protocol> ipv6 = m_node->GetObject<Ipv6L3Protocol> ();
-  ipv6->SetPmtu(ipHeader.GetDestination(), tooBig.GetMtu ());
+      Ptr<Ipv6L3Protocol> ipv6 = m_node->GetObject<Ipv6L3Protocol> ();
+      ipv6->SetPmtu (ipHeader.GetDestination (), tooBig.GetMtu ());
 
-  Forward (src, tooBig, tooBig.GetMtu (), ipHeader, payload);
+      Forward (src, tooBig, tooBig.GetMtu (), ipHeader, payload);
+    }
 }
 
 void Icmpv6L4Protocol::HandleParameterError (Ptr<Packet> p, Ipv6Address const &src, Ipv6Address const &dst, Ptr<Ipv6Interface> interface)
@@ -936,13 +978,15 @@ void Icmpv6L4Protocol::HandleParameterError (Ptr<Packet> p, Ipv6Address const &s
 
   Icmpv6ParameterError paramErr;
   pkt->RemoveHeader (paramErr);
-  Ptr<Packet> origPkt = paramErr.GetPacket ();
 
   Ipv6Header ipHeader;
-  origPkt->RemoveHeader (ipHeader);
-  uint8_t payload[8];
-  origPkt->CopyData (payload, 8);
-  Forward (src, paramErr, paramErr.GetCode (), ipHeader, payload);
+  if (pkt->GetSize () > ipHeader.GetSerializedSize ())
+    {
+      pkt->RemoveHeader (ipHeader);
+      uint8_t payload[8];
+      pkt->CopyData (payload, 8);
+      Forward (src, paramErr, paramErr.GetCode (), ipHeader, payload);
+    }
 }
 
 void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address src, Ipv6Address dst, uint8_t ttl)
@@ -950,7 +994,7 @@ void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address src, Ipv6Add
   NS_LOG_FUNCTION (this << packet << src << dst << (uint32_t)ttl);
   Ptr<Ipv6L3Protocol> ipv6 = m_node->GetObject<Ipv6L3Protocol> ();
   SocketIpv6HopLimitTag tag;
-  NS_ASSERT (ipv6 != 0);
+  NS_ASSERT (ipv6);
 
   tag.SetHopLimit (ttl);
   packet->AddPacketTag (tag);
@@ -967,7 +1011,7 @@ void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address dst, Icmpv6H
 {
   NS_LOG_FUNCTION (this << packet << dst << icmpv6Hdr << (uint32_t)ttl);
   Ptr<Ipv6L3Protocol> ipv6 = m_node->GetObject<Ipv6L3Protocol> ();
-  NS_ASSERT (ipv6 != 0 && ipv6->GetRoutingProtocol () != 0);
+  NS_ASSERT (ipv6 && ipv6->GetRoutingProtocol ());
   Ipv6Header header;
   SocketIpv6HopLimitTag tag;
   Socket::SocketErrno err;
@@ -977,7 +1021,7 @@ void Icmpv6L4Protocol::SendMessage (Ptr<Packet> packet, Ipv6Address dst, Icmpv6H
   header.SetDestination (dst);
   route = ipv6->GetRoutingProtocol ()->RouteOutput (packet, header, oif, err);
 
-  if (route != 0)
+  if (route)
     {
       NS_LOG_LOGIC ("Route exists");
       tag.SetHopLimit (ttl);
@@ -1068,7 +1112,7 @@ void Icmpv6L4Protocol::SendNS (Ipv6Address src, Ipv6Address dst, Ipv6Address tar
     }
 }
 
-void Icmpv6L4Protocol::SendRS (Ipv6Address src, Ipv6Address dst,  Address hardwareAddress)
+void Icmpv6L4Protocol::SendRS (Ipv6Address src, Ipv6Address dst, Address hardwareAddress)
 {
   NS_LOG_FUNCTION (this << src << dst << hardwareAddress);
   Ptr<Packet> p = Create<Packet> ();
@@ -1094,16 +1138,66 @@ void Icmpv6L4Protocol::SendRS (Ipv6Address src, Ipv6Address dst,  Address hardwa
   else
     {
       NS_LOG_LOGIC ("Destination is Multicast, using DelayedSendMessage");
-      Simulator::Schedule (Time (MilliSeconds (m_solicitationJitter->GetValue ())), &Icmpv6L4Protocol::DelayedSendMessage, this, p, src, dst, 255);
+      Time rsDelay = Time (0);
+      Time rsTimeout = Time (0);
+
+      if (m_rsRetransmissionCount == 0)
+        {
+          // First RS transmission - also add some jitter to desynchronize nodes.
+          m_rsInitialRetransmissionTime = Simulator::Now ();
+          rsTimeout = m_rsInitialRetransmissionTime * (1 + m_rsRetransmissionJitter->GetValue ());
+          rsDelay = Time (MilliSeconds (m_solicitationJitter->GetValue ()));
+        }
+      else
+        {
+          // Following RS transmission - adding further jitter is unnecesary.
+          rsTimeout = m_rsPrevRetransmissionTimeout * (2 + m_rsRetransmissionJitter->GetValue ());
+          if (rsTimeout > m_rsMaxRetransmissionTime)
+            {
+              rsTimeout = m_rsMaxRetransmissionTime * (1 + m_rsRetransmissionJitter->GetValue ());
+            }
+        }
+      m_rsPrevRetransmissionTimeout = rsTimeout;
+      Simulator::Schedule (rsDelay, &Icmpv6L4Protocol::DelayedSendMessage, this, p, src, dst, 255);
+      m_handleRsTimeoutEvent = Simulator::Schedule (rsDelay+m_rsPrevRetransmissionTimeout, &Icmpv6L4Protocol::HandleRsTimeout, this, src, dst, hardwareAddress);
     }
+}
+
+void Icmpv6L4Protocol::HandleRsTimeout (Ipv6Address src, Ipv6Address dst,  Address hardwareAddress)
+{
+  NS_LOG_FUNCTION (this << src << dst << hardwareAddress);
+
+  if (m_rsMaxRetransmissionCount == 0)
+    {
+      // Unbound number of retransmissions - just add one to signal that we're in retransmission mode.
+      m_rsRetransmissionCount = 1;
+    }
+  else
+    {
+      m_rsRetransmissionCount ++;
+      if (m_rsRetransmissionCount > m_rsMaxRetransmissionCount)
+        {
+          NS_LOG_LOGIC ("Maximum number of multicast RS reached, giving up.");
+          return;
+        }
+    }
+
+    if (m_rsMaxRetransmissionDuration != Time (0) &&
+        Simulator::Now () - m_rsInitialRetransmissionTime > m_rsMaxRetransmissionDuration)
+      {
+          NS_LOG_LOGIC ("Maximum RS retransmission time reached, giving up.");
+          return;
+      }
+
+  SendRS (src, dst, hardwareAddress);
 }
 
 void Icmpv6L4Protocol::SendErrorDestinationUnreachable (Ptr<Packet> malformedPacket, Ipv6Address dst, uint8_t code)
 {
   NS_LOG_FUNCTION (this << malformedPacket << dst << (uint32_t)code);
-  Ptr<Packet> p = Create<Packet> ();
   uint32_t malformedPacketSize = malformedPacket->GetSize ();
   Icmpv6DestinationUnreachable header;
+  header.SetCode (code);
 
   NS_LOG_LOGIC ("Send Destination Unreachable ( to " << dst << " code " << (uint32_t)code << " )");
 
@@ -1111,23 +1205,23 @@ void Icmpv6L4Protocol::SendErrorDestinationUnreachable (Ptr<Packet> malformedPac
   if (malformedPacketSize <= 1280 - 48)
     {
       header.SetPacket (malformedPacket);
+      SendMessage (malformedPacket, dst, header, 255);
     }
   else
     {
       Ptr<Packet> fragment = malformedPacket->CreateFragment (0, 1280 - 48);
       header.SetPacket (fragment);
+      SendMessage (fragment, dst, header, 255);
     }
-
-  header.SetCode (code);
-  SendMessage (p, dst, header, 255);
 }
 
 void Icmpv6L4Protocol::SendErrorTooBig (Ptr<Packet> malformedPacket, Ipv6Address dst, uint32_t mtu)
 {
   NS_LOG_FUNCTION (this << malformedPacket << dst << mtu);
-  Ptr<Packet> p = Create<Packet> ();
   uint32_t malformedPacketSize = malformedPacket->GetSize ();
   Icmpv6TooBig header;
+  header.SetCode (0);
+  header.SetMtu (mtu);
 
   NS_LOG_LOGIC ("Send Too Big ( to " << dst << " )");
 
@@ -1135,24 +1229,22 @@ void Icmpv6L4Protocol::SendErrorTooBig (Ptr<Packet> malformedPacket, Ipv6Address
   if (malformedPacketSize <= 1280 - 48)
     {
       header.SetPacket (malformedPacket);
+      SendMessage (malformedPacket, dst, header, 255);
     }
   else
     {
       Ptr<Packet> fragment = malformedPacket->CreateFragment (0, 1280 - 48);
       header.SetPacket (fragment);
+      SendMessage (fragment, dst, header, 255);
     }
-
-  header.SetCode (0);
-  header.SetMtu (mtu);
-  SendMessage (p, dst, header, 255);
 }
 
 void Icmpv6L4Protocol::SendErrorTimeExceeded (Ptr<Packet> malformedPacket, Ipv6Address dst, uint8_t code)
 {
   NS_LOG_FUNCTION (this << malformedPacket << dst << static_cast<uint32_t> (code));
-  Ptr<Packet> p = Create<Packet> ();
   uint32_t malformedPacketSize = malformedPacket->GetSize ();
   Icmpv6TimeExceeded header;
+  header.SetCode (code);
 
   NS_LOG_LOGIC ("Send Time Exceeded ( to " << dst << " code " << (uint32_t)code << " )");
 
@@ -1160,23 +1252,23 @@ void Icmpv6L4Protocol::SendErrorTimeExceeded (Ptr<Packet> malformedPacket, Ipv6A
   if (malformedPacketSize <= 1280 - 48)
     {
       header.SetPacket (malformedPacket);
+      SendMessage (malformedPacket, dst, header, 255);
     }
   else
     {
       Ptr<Packet> fragment = malformedPacket->CreateFragment (0, 1280 - 48);
       header.SetPacket (fragment);
+      SendMessage (fragment, dst, header, 255);
     }
-
-  header.SetCode (code);
-  SendMessage (p, dst, header, 255);
 }
 
 void Icmpv6L4Protocol::SendErrorParameterError (Ptr<Packet> malformedPacket, Ipv6Address dst, uint8_t code, uint32_t ptr)
 {
   NS_LOG_FUNCTION (this << malformedPacket << dst << static_cast<uint32_t> (code) << ptr);
-  Ptr<Packet> p = Create<Packet> ();
   uint32_t malformedPacketSize = malformedPacket->GetSize ();
   Icmpv6ParameterError header;
+  header.SetCode (code);
+  header.SetPtr (ptr);
 
   NS_LOG_LOGIC ("Send Parameter Error ( to " << dst << " code " << (uint32_t)code << " )");
 
@@ -1184,16 +1276,14 @@ void Icmpv6L4Protocol::SendErrorParameterError (Ptr<Packet> malformedPacket, Ipv
   if (malformedPacketSize <= 1280 - 48 )
     {
       header.SetPacket (malformedPacket);
+      SendMessage (malformedPacket, dst, header, 255);
     }
   else
     {
       Ptr<Packet> fragment = malformedPacket->CreateFragment (0, 1280 - 48);
       header.SetPacket (fragment);
+      SendMessage (fragment, dst, header, 255);
     }
-
-  header.SetCode (code);
-  header.SetPtr (ptr);
-  SendMessage (p, dst, header, 255);
 }
 
 void Icmpv6L4Protocol::SendRedirection (Ptr<Packet> redirectedPacket, Ipv6Address src, Ipv6Address dst, Ipv6Address redirTarget, Ipv6Address redirDestination, Address redirHardwareTarget)
@@ -1353,7 +1443,7 @@ bool Icmpv6L4Protocol::Lookup (Ipv6Address dst, Ptr<NetDevice> device, Ptr<Ndisc
       NdiscCache::Entry* entry = cache->Lookup (dst);
       if (entry)
         {
-          if (entry->IsReachable () || entry->IsDelay () || entry->IsPermanent ())
+          if (entry->IsReachable () || entry->IsDelay () || entry->IsPermanent () || entry->IsAutoGenerated ())
             {
               *hardwareDestination = entry->GetMacAddress ();
               return true;
@@ -1387,7 +1477,7 @@ bool Icmpv6L4Protocol::Lookup (Ptr<Packet> p, const Ipv6Header & ipHeader, Ipv6A
   NdiscCache::Entry* entry = cache->Lookup (dst);
   if (entry)
     {
-      if (entry->IsReachable () || entry->IsDelay () || entry->IsPermanent ())
+      if (entry->IsReachable () || entry->IsDelay () || entry->IsPermanent () || entry->IsAutoGenerated ())
         {
           /* XXX check reachability time */
           /* send packet */
@@ -1488,7 +1578,8 @@ void Icmpv6L4Protocol::FunctionDadTimeout (Ipv6Interface* interface, Ipv6Address
           /* \todo Add random delays before sending RS
            * because all nodes start at the same time, there will be many of RS around 1 second of simulation time
            */
-          NS_LOG_LOGIC ("Scheduled a Router Solicitation");
+          NS_LOG_LOGIC ("Scheduled a first Router Solicitation");
+          m_rsRetransmissionCount = 0;
           Simulator::Schedule (Seconds (0.0), &Icmpv6L4Protocol::SendRS, this, ifaddr.GetAddress (), Ipv6Address::GetAllRoutersMulticast (), interface->GetDevice ()->GetAddress ());
         }
       else
@@ -1515,7 +1606,7 @@ IpL4Protocol::DownTargetCallback
 Icmpv6L4Protocol::GetDownTarget (void) const
 {
   NS_LOG_FUNCTION (this);
-  return (IpL4Protocol::DownTargetCallback)NULL;
+  return IpL4Protocol::DownTargetCallback ();
 }
 
 IpL4Protocol::DownTargetCallback6
@@ -1553,6 +1644,12 @@ Time
 Icmpv6L4Protocol::GetDelayFirstProbe () const
 {
   return m_delayFirstProbe;
+}
+
+Time
+Icmpv6L4Protocol::GetDadTimeout () const
+{
+  return m_dadTimeout;
 }
 
 

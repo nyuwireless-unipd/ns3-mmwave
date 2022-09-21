@@ -31,7 +31,7 @@
 // There are a number of command-line options available to control
 // the default behavior.  The list of available command-line options
 // can be listed with the following command:
-// ./waf --run "wifi-sleep --help"
+// ./ns3 run "wifi-sleep --help"
 //
 // Note that all ns-3 attributes (not just the ones exposed in the below
 // script) can be changed at command line; see the documentation.
@@ -39,7 +39,7 @@
 // This script can also be helpful to put the Wifi layer into verbose
 // logging mode; this command will turn on all wifi logging:
 //
-// ./waf --run "wifi-sleep --verbose=1"
+// ./ns3 run "wifi-sleep --verbose=1"
 //
 // When you are done, you will notice four trace files in your directory:
 // two for the remaining energy on each node and two for the state transitions
@@ -66,6 +66,13 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("WifiSleep");
 
+/**
+ * Remaining energy trace sink
+ *
+ * \tparam node The node ID this trace belongs to.
+ * \param oldValue Old value.
+ * \param newValue New value.
+ */
 template <int node>
 void RemainingEnergyTrace (double oldValue, double newValue)
 {
@@ -77,6 +84,15 @@ void RemainingEnergyTrace (double oldValue, double newValue)
   f << Simulator::Now ().GetSeconds () << "    remaining energy=" << newValue << std::endl;
 }
 
+/**
+ * PHY state trace sink
+ *
+ * \tparam node The node ID this trace belongs to.
+ * \param context The context
+ * \param start Start time for the current state
+ * \param duration Duratio of the current state
+ * \param state State
+ */
 template <int node>
 void PhyStateTrace (std::string context, Time start, Time duration, WifiPhyState state)
 {
@@ -211,7 +227,7 @@ int main (int argc, char *argv[])
         {
           wnd = (*n)->GetDevice (i)->GetObject<WifiNetDevice> ();
           // if it is a WifiNetDevice
-          if (wnd != 0)
+          if (wnd)
             {
               // this device draws power from the last created energy source
               radioEnergyHelper.Install (wnd, eSources.Get (eSources.GetN () - 1));

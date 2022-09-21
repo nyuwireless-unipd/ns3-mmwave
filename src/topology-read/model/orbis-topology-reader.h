@@ -44,7 +44,7 @@ namespace ns3 {
  * the information needed to build the topology
  * (i.e.number of nodes, links and links structure).
  * It have been tested with Orbis 0.70
- * http://www.sysnet.ucsd.edu/~pmahadevan/topo_research/topo.html
+ * https://web.archive.org/web/20181102004219/http://sysnet.ucsd.edu/~pmahadevan/topo_research/topo.html
  */
 class OrbisTopologyReader : public TopologyReader
 {
@@ -58,6 +58,10 @@ public:
   OrbisTopologyReader ();
   virtual ~OrbisTopologyReader ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  OrbisTopologyReader (const OrbisTopologyReader &) = delete;
+  OrbisTopologyReader & operator = (const OrbisTopologyReader &) = delete;
+
   /**
    * \brief Main topology reading function.
    *
@@ -69,22 +73,6 @@ public:
    * \return The container of the nodes created (or empty container if there was an error)
    */
   virtual NodeContainer Read (void);
-
-private:
-private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse.
-   */
-  OrbisTopologyReader (const OrbisTopologyReader&);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse.
-   * \returns
-   */
-  OrbisTopologyReader& operator= (const OrbisTopologyReader&);
 
   // end class OrbisTopologyReader
 };

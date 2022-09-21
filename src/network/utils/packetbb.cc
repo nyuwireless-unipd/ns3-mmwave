@@ -1,8 +1,8 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /* vim: set ts=2 sw=2 sta expandtab ai si cin: */
-/* 
+/*
  * Copyright (c) 2009 Drexel University
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -15,12 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  * Author: Tom Wambold <tom5760@gmail.com>
  */
 /* These classes implement RFC 5444 - The Generalized Mobile Ad Hoc Network
  * (MANET) Packet/PbbMessage Format
- * See: http://tools.ietf.org/html/rfc5444 for details */
+ * See: https://datatracker.ietf.org/doc/html/rfc5444 for details */
 
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv6-address.h"
@@ -934,7 +934,7 @@ PbbPacket::Deserialize (Buffer::Iterator start)
   while (!start.IsEnd ())
     {
       Ptr<PbbMessage> newmsg = PbbMessage::DeserializeMessage (start);
-      if (newmsg == 0)
+      if (!newmsg)
         {
           return start.GetDistanceFrom (begin);
         }
@@ -1728,11 +1728,6 @@ PbbMessageIpv4::PbbMessageIpv4 ()
   NS_LOG_FUNCTION (this);
 }
 
-PbbMessageIpv4::~PbbMessageIpv4 ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
 PbbAddressLength
 PbbMessageIpv4::GetAddressLength (void) const
 {
@@ -1780,11 +1775,6 @@ PbbMessageIpv4::AddressBlockDeserialize (Buffer::Iterator &start) const
 /* End PbbMessageIpv4 Class */
 
 PbbMessageIpv6::PbbMessageIpv6 ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
-PbbMessageIpv6::~PbbMessageIpv6 ()
 {
   NS_LOG_FUNCTION (this);
 }
@@ -2817,8 +2807,8 @@ PbbTlv::GetSerializedSize (void) const
       if (GetValue ().GetSize () > 255)
         {
           size += 2;
-        } 
-      else 
+        }
+      else
         {
           size++;
         }
@@ -2852,14 +2842,14 @@ PbbTlv::Serialize (Buffer::Iterator &start) const
         {
           flags |= THAS_MULTI_INDEX;
           start.WriteU8 (GetIndexStop ());
-        } 
+        }
       else
         {
           flags |= THAS_SINGLE_INDEX;
         }
     }
 
-  if (HasValue ()) 
+  if (HasValue ())
     {
       flags |= THAS_VALUE;
 
@@ -3028,7 +3018,7 @@ PbbTlv::operator!= (const PbbTlv &other) const
 
 /* End PbbTlv Class */
 
-void 
+void
 PbbAddressTlv::SetIndexStart (uint8_t index)
 {
   NS_LOG_FUNCTION (this << static_cast<uint32_t> (index));
@@ -3049,7 +3039,7 @@ PbbAddressTlv::HasIndexStart (void) const
   return PbbTlv::HasIndexStart ();
 }
 
-void 
+void
 PbbAddressTlv::SetIndexStop (uint8_t index)
 {
   NS_LOG_FUNCTION (this << static_cast<uint32_t> (index));

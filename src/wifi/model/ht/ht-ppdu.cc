@@ -31,11 +31,11 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("HtPpdu");
 
-HtPpdu::HtPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, Time ppduDuration,
+HtPpdu::HtPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, uint16_t txCenterFreq, Time ppduDuration,
                 WifiPhyBand band, uint64_t uid)
-  : OfdmPpdu (psdu, txVector, band, uid, false) //don't instantiate LSigHeader of OfdmPpdu
+  : OfdmPpdu (psdu, txVector, txCenterFreq, band, uid, false) //don't instantiate LSigHeader of OfdmPpdu
 {
-  NS_LOG_FUNCTION (this << psdu << txVector << ppduDuration << band << uid);
+  NS_LOG_FUNCTION (this << psdu << txVector << txCenterFreq << ppduDuration << band << uid);
   uint8_t sigExtension = 0;
   if (m_band == WIFI_PHY_BAND_2_4GHZ)
     {
@@ -79,7 +79,7 @@ HtPpdu::GetTxDuration (void) const
 Ptr<WifiPpdu>
 HtPpdu::Copy (void) const
 {
-  return Create<HtPpdu> (GetPsdu (), GetTxVector (), GetTxDuration (), m_band, m_uid);
+  return Create<HtPpdu> (GetPsdu (), GetTxVector (), m_txCenterFreq, GetTxDuration (), m_band, m_uid);
 }
 
 HtPpdu::HtSigHeader::HtSigHeader ()
@@ -174,7 +174,7 @@ HtPpdu::HtSigHeader::SetAggregation (bool aggregation)
 bool
 HtPpdu::HtSigHeader::GetAggregation (void) const
 {
-  return m_aggregation ? true : false;
+  return m_aggregation;
 }
 
 void
@@ -186,7 +186,7 @@ HtPpdu::HtSigHeader::SetShortGuardInterval (bool sgi)
 bool
 HtPpdu::HtSigHeader::GetShortGuardInterval (void) const
 {
-  return m_sgi ? true : false;
+  return m_sgi;
 }
 
 void

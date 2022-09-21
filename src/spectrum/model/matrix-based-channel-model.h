@@ -22,7 +22,7 @@
 #ifndef MATRIX_BASED_CHANNEL_H
 #define MATRIX_BASED_CHANNEL_H
 
-#include <complex.h>
+// #include <complex>
 #include <ns3/object.h>
 #include <ns3/nstime.h>
 #include <ns3/vector.h>
@@ -54,38 +54,54 @@ public:
   typedef std::vector<PhasedArrayModel::ComplexVector> Complex2DVector; //!< type definition for complex matrices
   typedef std::vector<Complex2DVector> Complex3DVector; //!< type definition for complex 3D matrices
 
-
   /**
    * Data structure that stores a channel realization
    */
   struct ChannelMatrix : public SimpleRefCount<ChannelMatrix>
   {
     Complex3DVector    m_channel; //!< channel matrix H[u][s][n].
-    DoubleVector       m_delay; //!< cluster delay in nanoseconds.
-    Double2DVector     m_angle; //!< cluster angle angle[direction][n], where direction = 0(AOA), 1(ZOA), 2(AOD), 3(ZOD) in degree.
     Time               m_generatedTime; //!< generation time
+    std::pair<uint32_t, uint32_t> m_antennaPair; //!< the first element is the ID of the antenna of the s-node (the antenna of the transmitter when the channel was generated), the second element is ID of the antenna of the u-node antenna (the antenna of the receiver when the channel was generated)
     std::pair<uint32_t, uint32_t> m_nodeIds; //!< the first element is the s-node ID (the transmitter when the channel was generated), the second element is the u-node ID (the receiver when the channel was generated)
 
     /**
      * Destructor for ChannelMatrix
      */
     virtual ~ChannelMatrix () = default;
-    
+
     /**
      * Returns true if the ChannelMatrix object was generated
      * considering node b as transmitter and node a as receiver.
-     * \param aId id of the a node
-     * \param bId id of the b node
+     * \param aAntennaId the ID of the antenna array of the a node
+     * \param bAntennaId the ID of the antenna array of the b node
      * \return true if b is the rx and a is the tx, false otherwise
      */
-    bool IsReverse (const uint32_t aId, const uint32_t bId) const
+    bool IsReverse (uint32_t aAntennaId, uint32_t bAntennaId) const
     {
-      uint32_t sId, uId;
-      std::tie (sId, uId) = m_nodeIds;
-      NS_ASSERT_MSG ((sId == aId && uId == bId) || (sId == bId && uId == aId),
-                      "This matrix represents the channel between " << sId << " and " << uId);
-      return (sId == bId && uId == aId);
+      uint32_t sAntennaId, uAntennaId;
+      std::tie (sAntennaId, uAntennaId) = m_antennaPair;
+      NS_ASSERT_MSG ((sAntennaId == aAntennaId && uAntennaId == bAntennaId) || (sAntennaId == bAntennaId && uAntennaId == aAntennaId),
+                      "This channel matrix does not represent the channel among the antenna arrays for which are provided IDs.");
+      return (sAntennaId == bAntennaId && uAntennaId == aAntennaId);
     }
+  };
+
+
+  /**
+   * Data structure that stores channel parameters
+   */
+  struct ChannelParams : public SimpleRefCount<ChannelParams>
+  {
+    Time               m_generatedTime; //!< generation time
+    DoubleVector       m_delay; //!< cluster delay in nanoseconds.
+    Double2DVector     m_angle; //!< cluster angle angle[direction][n], where direction = 0(AOA), 1(ZOA), 2(AOD), 3(ZOD) in degree.
+    DoubleVector m_alpha; //!< alpha term per cluster as described in 3GPP TR 37.885 v15.3.0, Sec. 6.2.3 for calculating doppler
+    DoubleVector m_D; //!< D term per cluster as described in 3GPP TR 37.885 v15.3.0, Sec. 6.2.3 for calculating doppler
+    std::pair<uint32_t, uint32_t> m_nodeIds; //!< the first element is the s-node ID (the transmitter when the channel params were generated), the second element is the u-node ID (the receiver when the channel params were generated generated)
+    /**
+     * Destructor for ChannelParams
+     */
+    virtual ~ChannelParams () = default;
   };
 
   /**
@@ -110,16 +126,28 @@ public:
                                                Ptr<const MobilityModel> bMob,
                                                Ptr<const PhasedArrayModel> aAntenna,
                                                Ptr<const PhasedArrayModel> bAntenna) = 0;
-  
+
   /**
-   * Calculate the channel key using the Cantor function
-   * \param x1 first value
-   * \param x2 second value
-   * \return \f$ (((x1 + x2) * (x1 + x2 + 1))/2) + x2; \f$
+   * Returns a channel parameters structure used to obtain the channel between
+   * the nodes with mobility objects passed as input parameters.
+   *
+   * \param aMob mobility model of the a device
+   * \param bMob mobility model of the b device
+   * \return the channel matrix
    */
-  static constexpr uint32_t GetKey (uint32_t x1, uint32_t x2)
+  virtual Ptr<const ChannelParams> GetParams (Ptr<const MobilityModel> aMob,
+                                              Ptr<const MobilityModel> bMob) const = 0;
+
+  /**
+   * Generate a unique value for the pair of unsigned integer of 32 bits,
+   * where the order does not matter, i.e., the same value will be returned for (a,b) and (b,a).
+   * \param a the first value
+   * \param b the second value
+   * \return return an integer representing a unique value for the pair of values
+   */
+  static uint64_t GetKey (uint32_t a, uint32_t b)
   {
-   return (((x1 + x2) * (x1 + x2 + 1)) / 2) + x2;
+   return (uint64_t) std::min (a, b) << 32 | std::max (a, b);
   }
 
   static const uint8_t AOA_INDEX = 0; //!< index of the AOA value in the m_angle array

@@ -43,27 +43,22 @@ public:
   static TypeId GetTypeId ();
   JakesPropagationLossModel ();
   virtual ~JakesPropagationLossModel ();
-  
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  JakesPropagationLossModel (const JakesPropagationLossModel &) = delete;
+  JakesPropagationLossModel & operator = (const JakesPropagationLossModel &) = delete;
+
+protected:
+  virtual void DoDispose () override;
+
 private:
   friend class JakesProcess;
 
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  JakesPropagationLossModel (const JakesPropagationLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  JakesPropagationLossModel & operator = (const JakesPropagationLossModel &);
   double DoCalcRxPower (double txPowerDbm,
                         Ptr<MobilityModel> a,
-                        Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
+                        Ptr<MobilityModel> b) const override;
+
+  int64_t DoAssignStreams (int64_t stream) override;
 
   /**
    * Get the underlying RNG stream

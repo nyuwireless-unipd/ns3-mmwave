@@ -23,8 +23,9 @@
 #ifndef STA_WIFI_MAC_H
 #define STA_WIFI_MAC_H
 
-#include "regular-wifi-mac.h"
+#include "wifi-mac.h"
 #include "mgt-headers.h"
+#include <variant>
 
 class TwoLevelAggregationTest;
 class AmpduAggregationTest;
@@ -34,21 +35,42 @@ namespace ns3  {
 
 class SupportedRates;
 class CapabilityInformation;
+class RandomVariableStream;
+class WifiAssocManager;
+
 
 /**
  * \ingroup wifi
  *
- * Struct to hold information regarding observed AP through
- * active/passive scanning
+ * Structure holding scan parameters
  */
-struct ApInfo
+struct WifiScanParams
 {
-  Mac48Address m_bssid;               ///< BSSID
-  Mac48Address m_apAddr;              ///< AP MAC address
-  double m_snr;                       ///< SNR in linear scale
-  bool m_activeProbing;               ///< Flag whether active probing is used or not
-  MgtBeaconHeader m_beacon;           ///< Beacon header
-  MgtProbeResponseHeader m_probeResp; ///< Probe Response header
+  /**
+   * Struct identifying a channel to scan.
+   * A channel number equal to zero indicates to scan all the channels;
+   * an unspecified band (WIFI_PHY_BAND_UNSPECIFIED) indicates to scan
+   * all the supported PHY bands.
+   */
+  struct Channel
+  {
+    uint16_t number {0};                           ///< channel number
+    WifiPhyBand band {WIFI_PHY_BAND_UNSPECIFIED};  ///< PHY band
+  };
+
+  /// typedef for a list of channels
+  using ChannelList = std::list<Channel>;
+
+  enum : uint8_t
+  {
+    ACTIVE = 0,
+    PASSIVE
+  } type;                               ///< indicates either active or passive scanning
+  Ssid ssid;                            ///< desired SSID or wildcard SSID
+  std::vector<ChannelList> channelList; ///< list of channels to scan, for each link
+  Time probeDelay;                      ///< delay prior to transmitting a Probe Request
+  Time minChannelTime;                  ///< minimum time to spend on each channel
+  Time maxChannelTime;                  ///< maximum time to spend on each channel
 };
 
 /**
@@ -58,37 +80,29 @@ struct ApInfo
  * machine is as follows:
  *
    \verbatim
-   ---------       --------------                                         -----------
-   | Start |       | Associated | <-------------------------        ----> | Refused |
-   ---------       --------------                           |      /      -----------
-      |              |   /------------------------------\   |     /
-      \              v   v                              |   v    /
-       \    ----------------     ---------------     -----------------------------
-        \-> | Unassociated | --> | Wait Beacon | --> | Wait Association Response |
-            ----------------     ---------------     -----------------------------
-                  \                  ^     ^ |              ^    ^ |
-                   \                 |     | |              |    | |
-                    \                v      -               /     -
-                     \    -----------------------          /
-                      \-> | Wait Probe Response | --------/
-                          -----------------------
-                                  ^ |
-                                  | |
-                                   -
+   ┌───────────┐            ┌────────────────┐                           ┌─────────────┐
+   │   Start   │      ┌─────┤   Associated   ◄───────────────────┐    ┌──►   Refused   │
+   └─┬─────────┘      │     └────────────────┘                   │    │  └─────────────┘
+     │                │                                          │    │
+     │                │ ┌─────────────────────────────────────┐  │    │
+     │                │ │                                     │  │    │
+     │  ┌─────────────▼─▼──┐       ┌──────────────┐       ┌───┴──▼────┴───────────────────┐
+     └──►   Unassociated   ├───────►   Scanning   ├───────►   Wait AssociationiResponse   │
+        └──────────────────┘       └──────┬──▲────┘       └───────────────┬──▲────────────┘
+                                          │  │                            │  │
+                                          │  │                            │  │
+                                          └──┘                            └──┘
    \endverbatim
  *
  * Notes:
  * 1. The state 'Start' is not included in #MacState and only used
  *    for illustration purpose.
  * 2. The Unassociated state is a transient state before STA starts the
- *    scanning procedure which moves it into either Wait Beacon or Wait
- *    Probe Response, based on whether passive or active scanning is
- *    selected.
- * 3. In Wait Beacon and Wait Probe Response, STA is gathering beacon or
- *    probe response packets from APs, resulted in a list of candidate AP.
- *    After the respective timeout, it then tries to associate to the best
- *    AP (i.e., best SNR). STA will switch between the two states and
- *    restart the scanning procedure if SetActiveProbing() called.
+ *    scanning procedure which moves it into the Scanning state.
+ * 3. In Scanning, STA is gathering beacon or probe response frames from APs,
+ *    resulted in a list of candidate AP. After the timeout, it then tries to
+ *    associate to the best AP, which is indicated by the Association Manager.
+ *    STA will restart the scanning procedure if SetActiveProbing() called.
  * 4. In the case when AP responded to STA's association request with a
  *    refusal, STA will try to associate to the next best AP until the list
  *    of candidate AP is exhausted which sends STA to Refused state.
@@ -103,7 +117,7 @@ struct ApInfo
  * 7. The transition from Associated to Unassociated occurs if the number
  *    of missed beacons exceeds the threshold.
  */
-class StaWifiMac : public RegularWifiMac
+class StaWifiMac : public WifiMac
 {
 public:
   /// Allow test cases to access private members
@@ -112,6 +126,24 @@ public:
   friend class ::AmpduAggregationTest;
   /// Allow test cases to access private members
   friend class ::HeAggregationTest;
+
+  /// type of the management frames used to get info about APs
+  using MgtFrameType = std::variant<MgtBeaconHeader, MgtProbeResponseHeader, MgtAssocResponseHeader>;
+
+  /**
+  * Struct to hold information regarding observed AP through
+  * active/passive scanning
+  */
+  struct ApInfo
+  {
+    Mac48Address m_bssid;              ///< BSSID
+    Mac48Address m_apAddr;             ///< AP MAC address
+    double m_snr;                      ///< SNR in linear scale
+    MgtFrameType m_frame;              ///< The body of the management frame used to update AP info
+    WifiScanParams::Channel m_channel; ///< The channel the management frame was received on
+    uint8_t m_linkId;                  ///< ID of the link used to communicate with the AP
+  };
+
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -130,11 +162,34 @@ public:
    * access is granted to this MAC.
    */
   void Enqueue (Ptr<Packet> packet, Mac48Address to) override;
+  bool CanForwardPacketsTo (Mac48Address to) const override;
 
   /**
-   * \param phy the physical layer attached to this MAC.
+   * \param phys the physical layers attached to this MAC.
    */
-  void SetWifiPhy (const Ptr<WifiPhy> phy) override;
+  void SetWifiPhys (const std::vector<Ptr<WifiPhy>>& phys) override;
+
+  /**
+   * Set the Association Manager.
+   *
+   * \param assocManager the Association Manager
+   */
+  void SetAssocManager (Ptr<WifiAssocManager> assocManager);
+
+  /**
+   * Forward a probe request packet to the DCF. The standard is not clear on the correct
+   * queue for management frames if QoS is supported. We always use the DCF.
+   */
+  void SendProbeRequest (void);
+
+  /**
+   * This method is called after wait beacon timeout or wait probe request timeout has
+   * occurred. This will trigger association process from beacons or probe responses
+   * gathered while scanning.
+   *
+   * \param bestAp the info about the best AP to associate with, if one was found
+   */
+  void ScanningTimeout (const std::optional<ApInfo>& bestAp);
 
   /**
    * Return whether we are associated with an AP.
@@ -150,6 +205,19 @@ public:
    */
   uint16_t GetAssociationId (void) const;
 
+  void NotifyChannelSwitching (void) override;
+
+  /**
+   * Assign a fixed random variable stream number to the random variables
+   * used by this model.  Return the number of streams (possibly zero) that
+   * have been assigned.
+   *
+   * \param stream first stream index to use
+   *
+   * \return the number of stream indices assigned by this model
+   */
+  int64_t AssignStreams (int64_t stream);
+
 private:
   /**
    * The current MAC state of the STA.
@@ -157,8 +225,7 @@ private:
   enum MacState
   {
     ASSOCIATED,
-    WAIT_BEACON,
-    WAIT_PROBE_RESP,
+    SCANNING,
     WAIT_ASSOC_RESP,
     UNASSOCIATED,
     REFUSED
@@ -178,49 +245,55 @@ private:
   bool GetActiveProbing (void) const;
 
   /**
-   * Handle a received packet.
+   * Determine whether the supported rates indicated in a given Beacon frame or
+   * Probe Response frame fit with the configured membership selector.
    *
-   * \param mpdu the received MPDU
+   * \param frame the given Beacon or Probe Response frame
+   * \param linkId ID of the link the mgt frame was received over
+   * \return whether the the supported rates indicated in the given management
+   *         frame fit with the configured membership selector
    */
-  void Receive (Ptr<WifiMacQueueItem> mpdu) override;
-  /**
-   * Update associated AP's information from beacon. If STA is not associated,
-   * this information will used for the association process.
-   *
-   * \param beacon the beacon header
-   * \param apAddr MAC address of the AP
-   * \param bssid MAC address of BSSID
-   */
-  void UpdateApInfoFromBeacon (MgtBeaconHeader beacon, Mac48Address apAddr, Mac48Address bssid);
-  /**
-   * Update AP's information from probe response. This information is required
-   * for the association process.
-   *
-   * \param probeResp the probe response header
-   * \param apAddr MAC address of the AP
-   * \param bssid MAC address of BSSID
-   */
-  void UpdateApInfoFromProbeResp (MgtProbeResponseHeader probeResp, Mac48Address apAddr, Mac48Address bssid);
-  /**
-   * Update AP's information from association response.
-   *
-   * \param assocResp the association response header
-   * \param apAddr MAC address of the AP
-   */
-  void UpdateApInfoFromAssocResp (MgtAssocResponseHeader assocResp, Mac48Address apAddr);
-  /**
-   * Update list of candidate AP to associate. The list should contain ApInfo sorted from
-   * best to worst SNR, with no duplicate.
-   *
-   * \param newApInfo the new ApInfo to be inserted
-   */
-  void UpdateCandidateApList (ApInfo newApInfo);
+  bool CheckSupportedRates (std::variant<MgtBeaconHeader, MgtProbeResponseHeader> frame, uint8_t linkId);
+
+  void Receive (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId) override;
 
   /**
-   * Forward a probe request packet to the DCF. The standard is not clear on the correct
-   * queue for management frames if QoS is supported. We always use the DCF.
+   * Process the Beacon frame received on the given link.
+   *
+   * \param mpdu the MPDU containing the Beacon frame
+   * \param linkId the ID of the given link
    */
-  void SendProbeRequest (void);
+  void ReceiveBeacon (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId);
+
+  /**
+   * Process the Probe Response frame received on the given link.
+   *
+   * \param mpdu the MPDU containing the Probe Response frame
+   * \param linkId the ID of the given link
+   */
+  void ReceiveProbeResp (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId);
+
+  /**
+   * Process the (Re)Association Response frame received on the given link.
+   *
+   * \param mpdu the MPDU containing the (Re)Association Response frame
+   * \param linkId the ID of the given link
+   */
+  void ReceiveAssocResp (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId);
+
+  /**
+   * Update associated AP's information from the given management frame (Beacon,
+   * Probe Response or Association Response). If STA is not associated, this
+   * information will be used for the association process.
+   *
+   * \param frame the body of the given management frame
+   * \param apAddr MAC address of the AP
+   * \param bssid MAC address of BSSID
+   * \param linkId ID of the link the management frame was received over
+   */
+  void UpdateApInfo (const MgtFrameType& frame, const Mac48Address& apAddr,
+                     const Mac48Address& bssid, uint8_t linkId);
+
   /**
    * Forward an association or reassociation request packet to the DCF.
    * The standard is not clear on the correct queue for management frames if QoS is supported.
@@ -246,12 +319,6 @@ private:
    */
   void StartScanning (void);
   /**
-   * This method is called after wait beacon timeout or wait probe request timeout has
-   * occurred. This will trigger association process from beacons or probe responses
-   * gathered while scanning.
-   */
-  void ScanningTimeout (void);
-  /**
    * Return whether we are waiting for an association response from an AP.
    *
    * \return true if we are waiting for an association response from an AP, false otherwise
@@ -267,6 +334,10 @@ private:
    * \param delay the delay before the watchdog fires
    */
   void RestartBeaconWatchdog (Time delay);
+  /**
+   * Take actions after disassociation.
+   */
+  void Disassociated (void);
   /**
    * Return an instance of SupportedRates that contains all rates that we support
    * including HT rates.
@@ -312,30 +383,46 @@ private:
    */
   void PhyCapabilitiesChanged (void);
 
+  /**
+   * Get the current primary20 channel used on the given link as a
+   * (channel number, PHY band) pair.
+   *
+   * \param linkId the ID of the given link
+   * \return a (channel number, PHY band) pair
+   */
+  WifiScanParams::Channel GetCurrentChannel (uint8_t linkId) const;
+
   void DoInitialize (void) override;
+  void DoDispose (void) override;
 
   MacState m_state;            ///< MAC state
   uint16_t m_aid;              ///< Association AID
+  Ptr<WifiAssocManager> m_assocManager; ///< Association Manager
   Time m_waitBeaconTimeout;    ///< wait beacon timeout
   Time m_probeRequestTimeout;  ///< probe request timeout
   Time m_assocRequestTimeout;  ///< association request timeout
-  EventId m_waitBeaconEvent;   ///< wait beacon event
-  EventId m_probeRequestEvent; ///< probe request event
   EventId m_assocRequestEvent; ///< association request event
   EventId m_beaconWatchdog;    ///< beacon watchdog
   Time m_beaconWatchdogEnd;    ///< beacon watchdog end
   uint32_t m_maxMissedBeacons; ///< maximum missed beacons
   bool m_activeProbing;        ///< active probing
-  std::vector<ApInfo> m_candidateAps; ///< list of candidate APs to associate to
-  // Note: std::multiset<ApInfo> might be a candidate container to implement
-  // this sorted list, but we are using a std::vector because we want to sort
-  // based on SNR but find duplicates based on BSSID, and in practice this
-  // candidate vector should not be too large.
+  Ptr<RandomVariableStream> m_probeDelay;  ///< RandomVariable used to randomize the time
+                                           ///< of the first Probe Response on each channel
 
   TracedCallback<Mac48Address> m_assocLogger;   ///< association logger
   TracedCallback<Mac48Address> m_deAssocLogger; ///< disassociation logger
   TracedCallback<Time>         m_beaconArrival; ///< beacon arrival logger
 };
+
+
+/**
+ * \brief Stream insertion operator.
+ *
+ * \param os the output stream
+ * \param apInfo the AP information
+ * \returns a reference to the stream
+ */
+std::ostream& operator<< (std::ostream& os, const StaWifiMac::ApInfo& apInfo);
 
 } //namespace ns3
 

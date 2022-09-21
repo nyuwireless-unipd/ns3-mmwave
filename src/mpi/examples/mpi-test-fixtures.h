@@ -26,12 +26,12 @@
  * \file
  * \ingroup mpi
  *
- * Common methods for MPI examples. 
+ * Common methods for MPI examples.
  *
  * Since MPI output is coming from multiple processors it is the
  * ordering between the processors is non-deterministic.  For
  * regression testing the output is sorted to force a deterministic
- * ordering. Methods include here add line number to support 
+ * ordering. Methods include here add line number to support
  * this sorting.
  *
  * Testing output is also grepped so only lines with "TEST" are
@@ -45,8 +45,10 @@ template <typename T> class Ptr;
 class Address;
 class Packet;
 
-  
+
 /**
+ * \ingroup mpi
+ *
  * Write to std::cout only from rank 0.
  * Number line for sorting output of parallel runs.
  *
@@ -63,7 +65,15 @@ class Packet;
         std::cout << " : " << x;                                                       \
       }                                                                                \
   while (false)
-  
+
+/**
+ * \ingroup mpi
+ *
+ * Append to std::cout only from rank 0.
+ * Number line for sorting output of parallel runs.
+ *
+ * \param x The output operators.
+ */
 #define RANK0COUTAPPEND(x)                      \
   do                                            \
     if (SinkTracer::GetWorldRank () == 0)       \
@@ -72,13 +82,17 @@ class Packet;
       }                                         \
   while (false)
 
+/**
+ * \ingroup mpi
+ *
+ * Collects data about incoming packets.
+ */
 class SinkTracer
 {
 
 public:
   /**
-   * PacketSink receive trace callback.
-   * \copydetails ns3::Packet::TwoAddressTracedCallback
+   * PacketSink Init.
    */
   static void Init (void);
 
@@ -93,9 +107,11 @@ public:
   /**
    * Verify the sink trace count observed matches the expected count.
    * Prints message to std::cout indicating success or fail.
+   *
+   * \param expectedCount Expected number of packet received.
    */
   static void Verify (unsigned long expectedCount);
-  
+
   /**
    * Get the source address and port, as a formatted string.
    *
@@ -125,8 +141,8 @@ public:
   }
 
   /**
-   * Get current line count and increment.
-   *
+   * Get current line count and increment it.
+   * \return the line count.
    */
   static int GetLineCount (void)
   {
@@ -134,10 +150,10 @@ public:
   }
 
 private:
-  static unsigned long m_sinkCount; /*< Running sum of number of SinkTrace calls observed */
-  static unsigned long m_line; /*< Current output line number for ordering output */
-  static int m_worldRank; /*< MPI CommWorld rank */
-  static int m_worldSize; /*< MPI CommWorld size */
+  static unsigned long m_sinkCount; //!< Running sum of number of SinkTrace calls observed
+  static unsigned long m_line; //!< Current output line number for ordering output
+  static int m_worldRank; //!< MPI CommWorld rank
+  static int m_worldSize; //!< MPI CommWorld size
 };
 
 }  // namespace ns3

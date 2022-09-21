@@ -23,7 +23,6 @@
 #include "ns3/log.h"
 #include "ns3/abort.h"
 #include "ns3/assert.h"
-#include "ns3/unused.h"
 #include "ns3/random-variable-stream.h"
 #include "ns3/ipv6-route.h"
 #include "ns3/node.h"
@@ -197,7 +196,7 @@ Ptr<Ipv6Route> RipNg::RouteOutput (Ptr<Packet> p, const Ipv6Header &header, Ptr<
       NS_LOG_LOGIC ("RouteOutput (): Multicast destination");
     }
 
-  rtentry = Lookup (destination, oif);
+  rtentry = Lookup (destination, true, oif);
   if (rtentry)
     {
       sockerr = Socket::ERROR_NOTERROR;
@@ -215,7 +214,7 @@ bool RipNg::RouteInput (Ptr<const Packet> p, const Ipv6Header &header, Ptr<const
 {
   NS_LOG_FUNCTION (this << p << header << header.GetSource () << header.GetDestination () << idev);
 
-  NS_ASSERT (m_ipv6 != 0);
+  NS_ASSERT (m_ipv6);
   // Check if input device supports IP
   NS_ASSERT (m_ipv6->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv6->GetInterfaceForDevice (idev);
@@ -250,9 +249,9 @@ bool RipNg::RouteInput (Ptr<const Packet> p, const Ipv6Header &header, Ptr<const
     }
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination");
-  Ptr<Ipv6Route> rtentry = Lookup (header.GetDestination ());
+  Ptr<Ipv6Route> rtentry = Lookup (header.GetDestination (), false);
 
-  if (rtentry != 0)
+  if (rtentry)
     {
       NS_LOG_LOGIC ("Found unicast destination - calling unicast callback");
       ucb (idev, rtentry, p, header);  // unicast forwarding callback
@@ -451,7 +450,7 @@ void RipNg::SetIpv6 (Ptr<Ipv6> ipv6)
 {
   NS_LOG_FUNCTION (this << ipv6);
 
-  NS_ASSERT (m_ipv6 == 0 && ipv6 != 0);
+  NS_ASSERT (!m_ipv6 && ipv6);
   uint32_t i = 0;
   m_ipv6 = ipv6;
 
@@ -555,8 +554,7 @@ void RipNg::DoDispose ()
   Ipv6RoutingProtocol::DoDispose ();
 }
 
-
-Ptr<Ipv6Route> RipNg::Lookup (Ipv6Address dst, Ptr<NetDevice> interface)
+Ptr<Ipv6Route> RipNg::Lookup (Ipv6Address dst, bool setSource, Ptr<NetDevice> interface)
 {
   NS_LOG_FUNCTION (this << dst << interface);
 
@@ -606,17 +604,20 @@ Ptr<Ipv6Route> RipNg::Lookup (Ipv6Address dst, Ptr<NetDevice> interface)
                   uint32_t interfaceIdx = route->GetInterface ();
                   rtentry = Create<Ipv6Route> ();
 
-                  if (route->GetGateway ().IsAny ())
+                  if (setSource)
                     {
-                      rtentry->SetSource (m_ipv6->SourceAddressSelection (interfaceIdx, route->GetDest ()));
-                    }
-                  else if (route->GetDest ().IsAny ()) /* default route */
-                    {
-                      rtentry->SetSource (m_ipv6->SourceAddressSelection (interfaceIdx, route->GetPrefixToUse ().IsAny () ? dst : route->GetPrefixToUse ()));
-                    }
-                  else
-                    {
-                      rtentry->SetSource (m_ipv6->SourceAddressSelection (interfaceIdx, route->GetDest ()));
+                      if (route->GetGateway ().IsAny ())
+                        {
+                          rtentry->SetSource (m_ipv6->SourceAddressSelection (interfaceIdx, route->GetDest ()));
+                        }
+                      else if (route->GetDest ().IsAny ()) /* default route */
+                        {
+                          rtentry->SetSource (m_ipv6->SourceAddressSelection (interfaceIdx, route->GetPrefixToUse ().IsAny () ? dst : route->GetPrefixToUse ()));
+                        }
+                      else
+                        {
+                          rtentry->SetSource (m_ipv6->SourceAddressSelection (interfaceIdx, route->GetDest ()));
+                        }
                     }
 
                   rtentry->SetDestination (route->GetDest ());

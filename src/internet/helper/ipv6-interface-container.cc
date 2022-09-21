@@ -80,6 +80,12 @@ void Ipv6InterfaceContainer::Add (const Ipv6InterfaceContainer& c)
     }
 }
 
+std::pair<Ptr<Ipv6>, uint32_t>
+Ipv6InterfaceContainer::Get (uint32_t i) const
+{
+  return m_interfaces[i];
+}
+
 void Ipv6InterfaceContainer::SetForwarding (uint32_t i, bool router)
 {
   Ptr<Ipv6> ipv6 = m_interfaces[i].first;
@@ -103,7 +109,7 @@ void Ipv6InterfaceContainer::SetDefaultRouteInAllNodes (uint32_t router)
 
           ipv6 = m_interfaces[other].first;
           routing = routingHelper.GetStaticRouting (ipv6);
-          NS_ASSERT_MSG (routing != 0, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
+          NS_ASSERT_MSG (routing, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
           routing->SetDefaultRoute (routerAddress, m_interfaces[other].second);
         }
     }
@@ -142,7 +148,7 @@ void Ipv6InterfaceContainer::SetDefaultRouteInAllNodes (Ipv6Address routerAddres
 
           Ptr<Ipv6> ipv6 = m_interfaces[other].first;
           routing = routingHelper.GetStaticRouting (ipv6);
-          NS_ASSERT_MSG (routing != 0, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
+          NS_ASSERT_MSG (routing, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
           routing->SetDefaultRoute (routerAddress, m_interfaces[other].second);
         }
     }
@@ -162,7 +168,7 @@ void Ipv6InterfaceContainer::SetDefaultRoute (uint32_t i, uint32_t router)
   Ipv6StaticRoutingHelper routingHelper;
 
   routing = routingHelper.GetStaticRouting (ipv6);
-  NS_ASSERT_MSG (routing != 0, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
+  NS_ASSERT_MSG (routing, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
   routing->SetDefaultRoute (routerAddress, m_interfaces[i].second);
 }
 
@@ -199,7 +205,7 @@ void Ipv6InterfaceContainer::SetDefaultRoute (uint32_t i, Ipv6Address routerAddr
   Ipv6StaticRoutingHelper routingHelper;
 
   routing = routingHelper.GetStaticRouting (ipv6);
-  NS_ASSERT_MSG (routing != 0, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
+  NS_ASSERT_MSG (routing, "Default router setup failed because no Ipv6StaticRouting was found on the node.");
   routing->SetDefaultRoute (routerLinkLocalAddress, m_interfaces[i].second);
 }
 

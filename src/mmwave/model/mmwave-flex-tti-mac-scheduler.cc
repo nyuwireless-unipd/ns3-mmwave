@@ -415,7 +415,7 @@ MmWaveFlexTtiMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapPr
                       {
                         newCqi.push_back (params.m_ulCqi.m_sinr.at (i));
                         NS_LOG_INFO ("UL CQI report for RNTI " << itMap->second.m_rntiPerChunk.at (i) << " chunk " << i << " SINR " << params.m_ulCqi.m_sinr.at (i) << \
-                                     " frame " << frameNum << " subframe " << (unsigned)subframeNum << " slot " << (unsigned)slotNum << " startSym " << (unsigned)symNum);
+                                     " frame " << frameNum << " subframe " << +subframeNum << " slot " << +slotNum << " startSym " << +symNum);
                       }
                     else
                       {
@@ -440,7 +440,7 @@ MmWaveFlexTtiMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapPr
                 (*itTimers).second = m_cqiTimersThreshold;
 
                 NS_LOG_INFO ("UL CQI report for RNTI " << itMap->second.m_rntiPerChunk.at (i) << " chunk " << i << " SINR " << params.m_ulCqi.m_sinr.at (i) << \
-                             " frame " << frameNum << " subframe " << (unsigned)subframeNum << " slot " << (unsigned)slotNum << " startSym " << (unsigned)symNum);
+                             " frame " << frameNum << " subframe " << +subframeNum << " slot " << +slotNum << " startSym " << +symNum);
 
               }
 
@@ -626,7 +626,7 @@ unsigned MmWaveFlexTtiMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned 
       {
           numSymHigh -= diff;
       }
-      if ((unsigned) tbSize == bufSize)
+      if ((unsigned)tbSize == bufSize)
       {
           return numSymHigh;
       }
@@ -643,7 +643,7 @@ unsigned MmWaveFlexTtiMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigned 
           {
               numSymLow += diff;
           }
-          if ((unsigned) tbSize == bufSize)
+          if ((unsigned)tbSize == bufSize)
           {
               return numSymLow;
           }
@@ -667,7 +667,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
   ret.m_slotAllocInfo.m_sfnSf = ret.m_sfnSf;
 
   NS_LOG_DEBUG ("Creating scheduling allocation info for: frame " << frameNum << " subframe " 
-                << (unsigned)sfNum << " slot " << (unsigned)slotNum);
+                << +sfNum << " slot " << +slotNum);
 
   // Add TTI for DL control at the beginning of the slot
   TtiAllocInfo dlCtrlSlot (0, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL, 0);
@@ -743,7 +743,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
             }
           if (m_dlHarqInfoList.at (i).m_harqStatus == DlHarqInfo::ACK || itStat->second.at (harqId) == 0)
             {             // acknowledgment or process timeout, reset process
-              //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-ACK received");
+              //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << +harqId << " HARQ-ACK received");
               itStat->second.at (harqId) = 0;                      // release process ID
               for (uint16_t k = 0; k < itRlcPdu->second.size (); k++)                           // clear RLC buffers
                 {
@@ -759,7 +759,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   NS_FATAL_ERROR ("No DCI/HARQ buffer entry found for UE " << rnti);
                 }
               DciInfoElementTdma dciInfoReTx = itHarq->second.at (harqId);
-              //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << (unsigned)harqId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
+              //NS_LOG_DEBUG ("UE" << rnti << " DL harqId " << +harqId << " HARQ-NACK received, rv " << +dciInfoReTx.m_rv);
               NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
               //NS_ASSERT(itStat->second.at (harqId) > 0);
               NS_ASSERT (itStat->second.at (harqId) - 1 == dciInfoReTx.m_rv);
@@ -845,10 +845,10 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   itStat->second.at (harqId) = itStat->second.at (harqId) + 1;
                   TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, itUeInfo->first);
                   ttiInfo.m_dci = dciInfoReTx;
-                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL OFDM symbols " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
-                                " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " harqId " << (unsigned)dciInfoReTx.m_harqProcess <<
-                                " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " slot " <<
-                                (unsigned)ret.m_sfnSf.m_slotNum << " RETX");
+                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets DL OFDM symbols " << +dciInfoReTx.m_symStart << "-" << +(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
+                                " tbs " << dciInfoReTx.m_tbSize << " harqId " << +dciInfoReTx.m_harqProcess << " harqId " << +dciInfoReTx.m_harqProcess <<
+                                " rv " << +dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << +ret.m_sfnSf.m_sfNum << " slot " <<
+                                +ret.m_sfnSf.m_slotNum << " RETX");
 
                   std::map <uint16_t, DlHarqRlcPduList_t>::iterator itRlcList =  m_dlHarqProcessesRlcPduMap.find (rnti);
                   if (itRlcList == m_dlHarqProcessesRlcPduMap.end ())
@@ -896,7 +896,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
             }
           if (harqInfo.m_receptionStatus == UlHarqInfo::Ok || itStat->second.at (harqId) == 0)
             {
-              //NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-ACK received");
+              //NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << +harqInfo.m_harqProcessId << " HARQ-ACK received");
               if (itStat != m_ulHarqProcessesStatus.end ())
                 {
                   itStat->second.at (harqId) = 0;                        // release process ID
@@ -911,7 +911,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                 }
               // retx correspondent block: retrieve the UL-DCI
               DciInfoElementTdma dciInfoReTx = itHarq->second.at (harqId);
-              //NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << (unsigned)harqInfo.m_harqProcessId << " HARQ-NACK received, rv " << (unsigned)dciInfoReTx.m_rv);
+              //NS_LOG_DEBUG ("UE" << rnti << " UL harqId " << +harqInfo.m_harqProcessId << " HARQ-NACK received, rv " << +dciInfoReTx.m_rv);
               NS_ASSERT (harqId == dciInfoReTx.m_harqProcess);
               NS_ASSERT (itStat->second.at (harqId) > 0);
               NS_ASSERT (itStat->second.at (harqId) - 1 == dciInfoReTx.m_rv);
@@ -934,9 +934,9 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
                   itHarq->second.at (harqId) = dciInfoReTx;
                   TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, rnti);
                   ttiInfo.m_dci = dciInfoReTx;
-                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL OFDM symbols " << (unsigned)dciInfoReTx.m_symStart << "-" << (unsigned)(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
-                                " tbs " << dciInfoReTx.m_tbSize << " harqId " << (unsigned)dciInfoReTx.m_harqProcess << " rv " << (unsigned)dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe "
-                                << (unsigned)ret.m_sfnSf.m_sfNum << " slot " << (unsigned)ret.m_sfnSf.m_slotNum << " RETX");
+                  NS_LOG_DEBUG ("UE" << dciInfoReTx.m_rnti << " gets UL OFDM symbols " << +dciInfoReTx.m_symStart << "-" << +(dciInfoReTx.m_symStart + dciInfoReTx.m_numSym - 1) <<
+                                " tbs " << dciInfoReTx.m_tbSize << " harqId " << +dciInfoReTx.m_harqProcess << " rv " << +dciInfoReTx.m_rv << " in frame " << ret.m_sfnSf.m_frameNum << " subframe "
+                                << +ret.m_sfnSf.m_sfNum << " slot " << +ret.m_sfnSf.m_slotNum << " RETX");
                   ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);
                   ret.m_slotAllocInfo.m_numSymAlloc += dciInfoReTx.m_numSym;
                   if (itUeInfo == ueInfo.end ())
@@ -1333,12 +1333,12 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
           dci.m_rv = 0;
           dci.m_harqProcess = UpdateDlHarqProcessId (itUeInfo->first);
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
-          NS_LOG_DEBUG ("UE" << itUeInfo->first << " DL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
+          NS_LOG_DEBUG ("UE" << itUeInfo->first << " DL harqId " << +dci.m_harqProcess << " HARQ process assigned");
           TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::DL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, itUeInfo->first);
           ttiInfo.m_dci = dci;
-          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL OFDM symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
-                        " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv <<
-                        " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " slot " << (unsigned)ret.m_sfnSf.m_slotNum);
+          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets DL OFDM symbols " << +dci.m_symStart << "-" << +(dci.m_symStart + dci.m_numSym - 1) <<
+                        " tbs " << dci.m_tbSize << " mcs " << +dci.m_mcs << " harqId " << +dci.m_harqProcess << " rv " << +dci.m_rv <<
+                        " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << +ret.m_sfnSf.m_sfNum << " slot " << +ret.m_sfnSf.m_slotNum);
 
           if (m_harqOn == true)
             {                   // store DCI for HARQ buffer
@@ -1452,15 +1452,15 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
           dci.m_ndi = 1;
           dci.m_tbSize = m_amc->CalculateTbSize (dci.m_mcs, dci.m_numSym);
           dci.m_harqProcess = UpdateUlHarqProcessId (itUeInfo->first);
-          NS_LOG_DEBUG ("UE" << itUeInfo->first << " UL harqId " << (unsigned)dci.m_harqProcess << " HARQ process assigned");
+          NS_LOG_DEBUG ("UE" << itUeInfo->first << " UL harqId " << +dci.m_harqProcess << " HARQ process assigned");
           NS_ASSERT (dci.m_harqProcess < m_phyMacConfig->GetNumHarqProcess ());
 
           TtiAllocInfo ttiInfo (ttiIdx++, TtiAllocInfo::UL_slotAllocInfo, TtiAllocInfo::CTRL_DATA, itUeInfo->first);
           ttiInfo.m_dci = dci;
 
-          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL OFDM symbols " << (unsigned)dci.m_symStart << "-" << (unsigned)(dci.m_symStart + dci.m_numSym - 1) <<
-                        " tbs " << dci.m_tbSize << " mcs " << (unsigned)dci.m_mcs << " harqId " << (unsigned)dci.m_harqProcess << " rv " << (unsigned)dci.m_rv <<
-                        " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << (unsigned)ret.m_sfnSf.m_sfNum << " slot " << (unsigned)ret.m_sfnSf.m_slotNum);
+          NS_LOG_DEBUG ("UE" << dci.m_rnti << " gets UL OFDM symbols " << +dci.m_symStart << "-" << +(dci.m_symStart + dci.m_numSym - 1) <<
+                        " tbs " << dci.m_tbSize << " mcs " << +dci.m_mcs << " harqId " << +dci.m_harqProcess << " rv " << +dci.m_rv <<
+                        " in frame " << ret.m_sfnSf.m_frameNum << " subframe " << +ret.m_sfnSf.m_sfNum << " slot " << +ret.m_sfnSf.m_slotNum);
 
           UpdateUlRlcBufferInfo (itUeInfo->first, dci.m_tbSize - m_subHdrSize);
           ret.m_slotAllocInfo.m_ttiAllocInfo.push_back (ttiInfo);   // add to front

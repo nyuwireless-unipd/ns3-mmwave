@@ -1,7 +1,8 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright (c) 2006, 2009 INRIA
- * Copyright (c) 2009 MIRKO BANCHI
+ * Copyright (c) 2009 MIRKO BANCHICONFLICT (content): Merge conflict in src/wifi/model/sta-wifi-mac.cc
+
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -22,11 +23,16 @@
 
 #include "ns3/log.h"
 #include "ns3/packet.h"
+#include "ns3/pointer.h"
+#include "ns3/random-variable-stream.h"
 #include "ns3/simulator.h"
+#include "ns3/string.h"
+#include "qos-txop.h"
 #include "sta-wifi-mac.h"
 #include "wifi-phy.h"
 #include "mgt-headers.h"
 #include "snr-tag.h"
+#include "wifi-assoc-manager.h"
 #include "wifi-net-device.h"
 #include "ns3/ht-configuration.h"
 #include "ns3/he-configuration.h"
@@ -41,7 +47,7 @@ TypeId
 StaWifiMac::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::StaWifiMac")
-    .SetParent<RegularWifiMac> ()
+    .SetParent<WifiMac> ()
     .SetGroupName ("Wifi")
     .AddConstructor<StaWifiMac> ()
     .AddAttribute ("ProbeRequestTimeout", "The duration to actively probe the channel.",
@@ -71,6 +77,12 @@ StaWifiMac::GetTypeId (void)
                    BooleanValue (false),
                    MakeBooleanAccessor (&StaWifiMac::SetActiveProbing, &StaWifiMac::GetActiveProbing),
                    MakeBooleanChecker ())
+    .AddAttribute ("ProbeDelay",
+                   "Delay (in microseconds) to be used prior to transmitting a "
+                   "Probe frame during active scanning.",
+                   StringValue ("ns3::UniformRandomVariable[Min=50.0|Max=250.0]"),
+                   MakePointerAccessor (&StaWifiMac::m_probeDelay),
+                   MakePointerChecker<RandomVariableStream> ())
     .AddTraceSource ("Assoc", "Associated with an access point.",
                      MakeTraceSourceAccessor (&StaWifiMac::m_assocLogger),
                      "ns3::Mac48Address::TracedCallback")
@@ -88,8 +100,6 @@ StaWifiMac::GetTypeId (void)
 StaWifiMac::StaWifiMac ()
   : m_state (UNASSOCIATED),
     m_aid (0),
-    m_waitBeaconEvent (),
-    m_probeRequestEvent (),
     m_assocRequestEvent (),
     m_beaconWatchdogEnd (Seconds (0))
 {
@@ -107,9 +117,37 @@ StaWifiMac::DoInitialize (void)
   StartScanning ();
 }
 
+void
+StaWifiMac::DoDispose (void)
+{
+  NS_LOG_FUNCTION (this);
+  if (m_assocManager)
+    {
+      m_assocManager->Dispose ();
+    }
+  m_assocManager = nullptr;
+  WifiMac::DoDispose ();
+}
+
 StaWifiMac::~StaWifiMac ()
 {
   NS_LOG_FUNCTION (this);
+}
+
+int64_t
+StaWifiMac::AssignStreams (int64_t stream)
+{
+  NS_LOG_FUNCTION (this << stream);
+  m_probeDelay->SetStream (stream);
+  return 1;
+}
+
+void
+StaWifiMac::SetAssocManager (Ptr<WifiAssocManager> assocManager)
+{
+  NS_LOG_FUNCTION (this << assocManager);
+  m_assocManager = assocManager;
+  m_assocManager->SetStaWifiMac (this);
 }
 
 uint16_t
@@ -124,7 +162,7 @@ StaWifiMac::SetActiveProbing (bool enable)
 {
   NS_LOG_FUNCTION (this << enable);
   m_activeProbing = enable;
-  if (m_state == WAIT_PROBE_RESP || m_state == WAIT_BEACON)
+  if (m_state == SCANNING)
     {
       NS_LOG_DEBUG ("STA is still scanning, reset scanning process");
       StartScanning ();
@@ -138,11 +176,23 @@ StaWifiMac::GetActiveProbing (void) const
 }
 
 void
-StaWifiMac::SetWifiPhy (const Ptr<WifiPhy> phy)
+StaWifiMac::SetWifiPhys (const std::vector<Ptr<WifiPhy>>& phys)
 {
-  NS_LOG_FUNCTION (this << phy);
-  RegularWifiMac::SetWifiPhy (phy);
-  m_phy->SetCapabilitiesChangedCallback (MakeCallback (&StaWifiMac::PhyCapabilitiesChanged, this));
+  NS_LOG_FUNCTION (this);
+  WifiMac::SetWifiPhys (phys);
+  for (auto& phy : phys)
+    {
+      phy->SetCapabilitiesChangedCallback (MakeCallback (&StaWifiMac::PhyCapabilitiesChanged, this));
+    }
+}
+
+WifiScanParams::Channel
+StaWifiMac::GetCurrentChannel (uint8_t linkId) const
+{
+  auto phy = GetWifiPhy (linkId);
+  uint16_t width = phy->GetOperatingChannel ().IsOfdm () ? 20 : phy->GetChannelWidth ();
+  uint8_t ch = phy->GetOperatingChannel ().GetPrimaryChannelNumber (width, phy->GetStandard ());
+  return {ch, phy->GetPhyBand ()};
 }
 
 void
@@ -173,24 +223,38 @@ StaWifiMac::SendProbeRequest (void)
     {
       probe.SetHeCapabilities (GetHeCapabilities ());
     }
+  if (GetEhtSupported ())
+    {
+      probe.SetEhtCapabilities (GetEhtCapabilities ());
+    }
   packet->AddHeader (probe);
 
-  //The standard is not clear on the correct queue for management
-  //frames if we are a QoS AP. The approach taken here is to always
-  //use the non-QoS for these regardless of whether we have a QoS
-  //association or not.
-  m_txop->Queue (packet, hdr);
+  if (!GetQosSupported ())
+    {
+      GetTxop ()->Queue (packet, hdr);
+    }
+  // "A QoS STA that transmits a Management frame determines access category used
+  // for medium access in transmission of the Management frame as follows
+  // (If dot11QMFActivated is false or not present)
+  // — If the Management frame is individually addressed to a non-QoS STA, category
+  //   AC_BE should be selected.
+  // — If category AC_BE was not selected by the previous step, category AC_VO
+  //   shall be selected." (Sec. 10.2.3.2 of 802.11-2020)
+  else
+    {
+      GetVOQueue ()->Queue (packet, hdr);
+    }
 }
 
 void
 StaWifiMac::SendAssociationRequest (bool isReassoc)
 {
-  NS_LOG_FUNCTION (this << GetBssid () << isReassoc);
+  NS_LOG_FUNCTION (this << GetBssid (0) << isReassoc);  // TODO use appropriate linkId
   WifiMacHeader hdr;
   hdr.SetType (isReassoc ? WIFI_MAC_MGT_REASSOCIATION_REQUEST : WIFI_MAC_MGT_ASSOCIATION_REQUEST);
-  hdr.SetAddr1 (GetBssid ());
+  hdr.SetAddr1 (GetBssid (0));  // TODO use appropriate linkId
   hdr.SetAddr2 (GetAddress ());
-  hdr.SetAddr3 (GetBssid ());
+  hdr.SetAddr3 (GetBssid (0));  // TODO use appropriate linkId
   hdr.SetDsNotFrom ();
   hdr.SetDsNotTo ();
   Ptr<Packet> packet = Create<Packet> ();
@@ -214,12 +278,16 @@ StaWifiMac::SendAssociationRequest (bool isReassoc)
         {
           assoc.SetHeCapabilities (GetHeCapabilities ());
         }
+      if (GetEhtSupported ())
+        {
+          assoc.SetEhtCapabilities (GetEhtCapabilities ());
+        }
       packet->AddHeader (assoc);
     }
   else
     {
       MgtReassocRequestHeader reassoc;
-      reassoc.SetCurrentApAddress (GetBssid ());
+      reassoc.SetCurrentApAddress (GetBssid (0));  // TODO use appropriate linkId
       reassoc.SetSsid (GetSsid ());
       reassoc.SetSupportedRates (GetSupportedRates ());
       reassoc.SetCapabilities (GetCapabilities ());
@@ -237,14 +305,32 @@ StaWifiMac::SendAssociationRequest (bool isReassoc)
         {
           reassoc.SetHeCapabilities (GetHeCapabilities ());
         }
+      if (GetEhtSupported ())
+        {
+          reassoc.SetEhtCapabilities (GetEhtCapabilities ());
+        }
       packet->AddHeader (reassoc);
     }
 
-  //The standard is not clear on the correct queue for management
-  //frames if we are a QoS AP. The approach taken here is to always
-  //use the non-QoS for these regardless of whether we have a QoS
-  //association or not.
-  m_txop->Queue (packet, hdr);
+  if (!GetQosSupported ())
+    {
+      GetTxop ()->Queue (packet, hdr);
+    }
+  // "A QoS STA that transmits a Management frame determines access category used
+  // for medium access in transmission of the Management frame as follows
+  // (If dot11QMFActivated is false or not present)
+  // — If the Management frame is individually addressed to a non-QoS STA, category
+  //   AC_BE should be selected.
+  // — If category AC_BE was not selected by the previous step, category AC_VO
+  //   shall be selected." (Sec. 10.2.3.2 of 802.11-2020)
+  else if (!GetWifiRemoteStationManager ()->GetQosSupported (GetBssid (0)))  // TODO use appropriate linkId
+    {
+      GetBEQueue ()->Queue (packet, hdr);
+    }
+  else
+    {
+      GetVOQueue ()->Queue (packet, hdr);
+    }
 
   if (m_assocRequestEvent.IsRunning ())
     {
@@ -263,16 +349,9 @@ StaWifiMac::TryToEnsureAssociated (void)
     case ASSOCIATED:
       return;
       break;
-    case WAIT_PROBE_RESP:
-      /* we have sent a probe request earlier so we
-         do not need to re-send a probe request immediately.
-         We just need to wait until probe-request-timeout
-         or until we get a probe response
-       */
-      break;
-    case WAIT_BEACON:
-      /* we have initiated passive scanning, continue to wait
-         and gather beacons
+    case SCANNING:
+      /* we have initiated active or passive scanning, continue to wait
+         and gather beacons or probe responses until the scanning timeout
        */
       break;
     case UNASSOCIATED:
@@ -303,63 +382,68 @@ void
 StaWifiMac::StartScanning (void)
 {
   NS_LOG_FUNCTION (this);
-  m_candidateAps.clear ();
-  if (m_probeRequestEvent.IsRunning ())
+  SetState (SCANNING);
+  NS_ASSERT (m_assocManager);
+
+  WifiScanParams scanParams;
+  scanParams.ssid = GetSsid ();
+  for (uint8_t linkId = 0; linkId < GetNLinks (); linkId++)
     {
-      m_probeRequestEvent.Cancel ();
+      WifiScanParams::ChannelList channel {(GetWifiPhy (linkId)->HasFixedPhyBand ())
+                                           ? WifiScanParams::Channel {0, GetWifiPhy (linkId)->GetPhyBand ()}
+                                           : WifiScanParams::Channel {0, WIFI_PHY_BAND_UNSPECIFIED}};
+
+      scanParams.channelList.push_back (channel);
     }
-  if (m_waitBeaconEvent.IsRunning ())
+  if (m_activeProbing)
     {
-      m_waitBeaconEvent.Cancel ();
-    }
-  if (GetActiveProbing ())
-    {
-      SetState (WAIT_PROBE_RESP);
-      SendProbeRequest ();
-      m_probeRequestEvent = Simulator::Schedule (m_probeRequestTimeout,
-                                                 &StaWifiMac::ScanningTimeout,
-                                                 this);
+      scanParams.type = WifiScanParams::ACTIVE;
+      scanParams.probeDelay = MicroSeconds (m_probeDelay->GetValue ());
+      scanParams.minChannelTime = scanParams.maxChannelTime = m_probeRequestTimeout;
     }
   else
     {
-      SetState (WAIT_BEACON);
-      m_waitBeaconEvent = Simulator::Schedule (m_waitBeaconTimeout,
-                                               &StaWifiMac::ScanningTimeout,
-                                               this);
+      scanParams.type = WifiScanParams::PASSIVE;
+      scanParams.maxChannelTime = m_waitBeaconTimeout;
     }
+
+  m_assocManager->StartScanning (std::move (scanParams));
 }
 
 void
-StaWifiMac::ScanningTimeout (void)
+StaWifiMac::ScanningTimeout (const std::optional<ApInfo>& bestAp)
 {
   NS_LOG_FUNCTION (this);
-  if (!m_candidateAps.empty ())
-    {
-      ApInfo bestAp = m_candidateAps.front();
-      m_candidateAps.erase(m_candidateAps.begin ());
-      NS_LOG_DEBUG ("Attempting to associate with BSSID " << bestAp.m_bssid);
-      Time beaconInterval;
-      if (bestAp.m_activeProbing)
-        {
-          UpdateApInfoFromProbeResp (bestAp.m_probeResp, bestAp.m_apAddr, bestAp.m_bssid);
-          beaconInterval = MicroSeconds (bestAp.m_probeResp.GetBeaconIntervalUs ());
-        }
-      else
-        {
-          UpdateApInfoFromBeacon (bestAp.m_beacon, bestAp.m_apAddr, bestAp.m_bssid);
-          beaconInterval = MicroSeconds (bestAp.m_beacon.GetBeaconIntervalUs ());
-        }
 
-      Time delay = beaconInterval * m_maxMissedBeacons;
-      RestartBeaconWatchdog (delay);
-      SetState (WAIT_ASSOC_RESP);
-      SendAssociationRequest (false);
-    }
-  else
+  if (!bestAp.has_value ())
     {
       NS_LOG_DEBUG ("Exhausted list of candidate AP; restart scanning");
       StartScanning ();
+      return;
     }
+
+  NS_LOG_DEBUG ("Attempting to associate with AP: " << *bestAp);
+  UpdateApInfo (bestAp->m_frame, bestAp->m_apAddr, bestAp->m_bssid, bestAp->m_linkId);
+  // lambda to get beacon interval from Beacon or Probe Response
+  auto getBeaconInterval =
+    [](auto&& frame)
+    {
+      using T = std::decay_t<decltype (frame)>;
+      if constexpr (std::is_same_v<T, MgtBeaconHeader> || std::is_same_v<T, MgtProbeResponseHeader>)
+        {
+          return MicroSeconds (frame.GetBeaconIntervalUs ());
+        }
+      else
+        {
+          NS_ABORT_MSG ("Unexpected frame type");
+          return Seconds (0);
+        }
+    };
+  Time beaconInterval = std::visit (getBeaconInterval, bestAp->m_frame);
+  Time delay = beaconInterval * m_maxMissedBeacons;
+  RestartBeaconWatchdog (delay);
+  SetState (WAIT_ASSOC_RESP);
+  SendAssociationRequest (false);
 }
 
 void
@@ -389,12 +473,20 @@ StaWifiMac::MissedBeacons (void)
   // a frame, wait until the RX is completed (otherwise, crashes may occur if
   // we are receiving a MU frame because its reception requires the STA-ID)
   Time delay = Seconds (0);
-  if (m_phy->IsStateRx ())
+  if (GetWifiPhy ()->IsStateRx ())
     {
-      delay = m_phy->GetDelayUntilIdle ();
+      delay = GetWifiPhy ()->GetDelayUntilIdle ();
     }
-  Simulator::Schedule (delay, &StaWifiMac::SetState, this, UNASSOCIATED);
-  Simulator::Schedule (delay, &StaWifiMac::TryToEnsureAssociated, this);
+  Simulator::Schedule (delay, &StaWifiMac::Disassociated, this);
+}
+
+void
+StaWifiMac::Disassociated (void)
+{
+  NS_LOG_FUNCTION (this);
+  NS_LOG_DEBUG ("Set state to UNASSOCIATED and start scanning");
+  SetState (UNASSOCIATED);
+  TryToEnsureAssociated ();
 }
 
 void
@@ -422,11 +514,17 @@ StaWifiMac::IsWaitAssocResp (void) const
   return m_state == WAIT_ASSOC_RESP;
 }
 
+bool
+StaWifiMac::CanForwardPacketsTo (Mac48Address to) const
+{
+  return (IsAssociated ());
+}
+
 void
 StaWifiMac::Enqueue (Ptr<Packet> packet, Mac48Address to)
 {
   NS_LOG_FUNCTION (this << packet << to);
-  if (!IsAssociated ())
+  if (!CanForwardPacketsTo (to))
     {
       NotifyTxDrop (packet);
       TryToEnsureAssociated ();
@@ -474,7 +572,7 @@ StaWifiMac::Enqueue (Ptr<Packet> packet, Mac48Address to)
       hdr.SetNoOrder (); // explicitly set to 0 for the time being since HT control field is not yet implemented (set it to 1 when implemented)
     }
 
-  hdr.SetAddr1 (GetBssid ());
+  hdr.SetAddr1 (GetBssid (0));  // TODO use appropriate linkId
   hdr.SetAddr2 (GetAddress ());
   hdr.SetAddr3 (to);
   hdr.SetDsNotFrom ();
@@ -484,18 +582,18 @@ StaWifiMac::Enqueue (Ptr<Packet> packet, Mac48Address to)
     {
       //Sanity check that the TID is valid
       NS_ASSERT (tid < 8);
-      m_edca[QosUtilsMapTidToAc (tid)]->Queue (packet, hdr);
+      GetQosTxop (tid)->Queue (packet, hdr);
     }
   else
     {
-      m_txop->Queue (packet, hdr);
+      GetTxop ()->Queue (packet, hdr);
     }
 }
 
 void
-StaWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
+StaWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId)
 {
-  NS_LOG_FUNCTION (this << *mpdu);
+  NS_LOG_FUNCTION (this << *mpdu << +linkId);
   const WifiMacHeader* hdr = &mpdu->GetHeader ();
   Ptr<const Packet> packet = mpdu->GetPacket ();
   NS_ASSERT (!hdr->IsCtl ());
@@ -504,7 +602,7 @@ StaWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
       NS_LOG_LOGIC ("packet sent by us.");
       return;
     }
-  else if (hdr->GetAddr1 () != GetAddress ()
+  if (hdr->GetAddr1 () != GetAddress ()
            && !hdr->GetAddr1 ().IsGroup ())
     {
       NS_LOG_LOGIC ("packet is not for us");
@@ -525,7 +623,7 @@ StaWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
           NotifyRxDrop (packet);
           return;
         }
-      if (hdr->GetAddr2 () != GetBssid ())
+      if (hdr->GetAddr2 () != GetBssid (0))  // TODO use appropriate linkId
         {
           NS_LOG_LOGIC ("Received data frame not from the BSS we are associated with: ignore");
           NotifyRxDrop (packet);
@@ -535,7 +633,7 @@ StaWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
         {
           if (hdr->IsQosAmsdu ())
             {
-              NS_ASSERT (hdr->GetAddr3 () == GetBssid ());
+              NS_ASSERT (hdr->GetAddr3 () == GetBssid (0));  // TODO use appropriate linkId
               DeaggregateAmsduAndForward (mpdu);
               packet = 0;
             }
@@ -550,217 +648,243 @@ StaWifiMac::Receive (Ptr<WifiMacQueueItem> mpdu)
         }
       return;
     }
-  else if (hdr->IsProbeReq ()
-           || hdr->IsAssocReq ()
-           || hdr->IsReassocReq ())
+
+  switch (hdr->GetType ())
     {
+    case WIFI_MAC_MGT_PROBE_REQUEST:
+    case WIFI_MAC_MGT_ASSOCIATION_REQUEST:
+    case WIFI_MAC_MGT_REASSOCIATION_REQUEST:
       //This is a frame aimed at an AP, so we can safely ignore it.
       NotifyRxDrop (packet);
+      break;
+
+    case WIFI_MAC_MGT_BEACON:
+      ReceiveBeacon (mpdu, linkId);
+      break;
+
+    case WIFI_MAC_MGT_PROBE_RESPONSE:
+      ReceiveProbeResp (mpdu, linkId);
+      break;
+
+    case WIFI_MAC_MGT_ASSOCIATION_RESPONSE:
+    case WIFI_MAC_MGT_REASSOCIATION_RESPONSE:
+      ReceiveAssocResp (mpdu, linkId);
+      break;
+
+    default:
+      //Invoke the receive handler of our parent class to deal with any
+      //other frames. Specifically, this will handle Block Ack-related
+      //Management Action frames.
+      WifiMac::Receive (mpdu, linkId);
+    }
+}
+
+void
+StaWifiMac::ReceiveBeacon (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << *mpdu << +linkId);
+  const WifiMacHeader& hdr = mpdu->GetHeader ();
+  NS_ASSERT (hdr.IsBeacon ());
+
+  NS_LOG_DEBUG ("Beacon received");
+  MgtBeaconHeader beacon;
+  mpdu->GetPacket ()->PeekHeader (beacon);
+  const CapabilityInformation& capabilities = beacon.GetCapabilities ();
+  NS_ASSERT (capabilities.IsEss ());
+  bool goodBeacon;
+  if (IsWaitAssocResp () || IsAssociated ())
+    {
+      // we have to process this Beacon only if sent by the AP we are associated
+      // with or from which we are waiting an Association Response frame
+      goodBeacon = (hdr.GetAddr3 () == GetBssid (linkId));
+    }
+  else
+    {
+      // we retain this Beacon as candidate AP if the supported rates fit the
+      // configured BSS membership selector
+      goodBeacon = CheckSupportedRates (beacon, linkId);
+    }
+
+  if (!goodBeacon)
+    {
+      NS_LOG_LOGIC ("Beacon is not for us");
       return;
     }
-  else if (hdr->IsBeacon ())
+  if (m_state == ASSOCIATED)
     {
-      NS_LOG_DEBUG ("Beacon received");
-      MgtBeaconHeader beacon;
-      Ptr<Packet> copy = packet->Copy ();
-      copy->RemoveHeader (beacon);
-      CapabilityInformation capabilities = beacon.GetCapabilities ();
-      NS_ASSERT (capabilities.IsEss ());
-      bool goodBeacon = false;
-      if (GetSsid ().IsBroadcast ()
-          || beacon.GetSsid ().IsEqual (GetSsid ()))
-        {
-          NS_LOG_LOGIC ("Beacon is for our SSID");
-          goodBeacon = true;
-        }
-      SupportedRates rates = beacon.GetSupportedRates ();
-      bool bssMembershipSelectorMatch = false;
-      auto selectorList = m_phy->GetBssMembershipSelectorList ();
-      for (const auto & selector : selectorList)
-        {
-          if (rates.IsBssMembershipSelectorRate (selector))
-            {
-              NS_LOG_LOGIC ("Beacon is matched to our BSS membership selector");
-              bssMembershipSelectorMatch = true;
-            }
-        }
-      if (selectorList.size () > 0 && bssMembershipSelectorMatch == false)
-        {
-          NS_LOG_LOGIC ("No match for BSS membership selector");
-          goodBeacon = false;
-        }
-      if ((IsWaitAssocResp () || IsAssociated ()) && hdr->GetAddr3 () != GetBssid ())
-        {
-          NS_LOG_LOGIC ("Beacon is not for us");
-          goodBeacon = false;
-        }
-      if (goodBeacon && m_state == ASSOCIATED)
-        {
-          m_beaconArrival (Simulator::Now ());
-          Time delay = MicroSeconds (beacon.GetBeaconIntervalUs () * m_maxMissedBeacons);
-          RestartBeaconWatchdog (delay);
-          UpdateApInfoFromBeacon (beacon, hdr->GetAddr2 (), hdr->GetAddr3 ());
-        }
-      if (goodBeacon && m_state == WAIT_BEACON)
-        {
-          NS_LOG_DEBUG ("Beacon received while scanning from " << hdr->GetAddr2 ());
-          SnrTag snrTag;
-          bool removed = copy->RemovePacketTag (snrTag);
-          NS_ASSERT (removed);
-          ApInfo apInfo;
-          apInfo.m_apAddr = hdr->GetAddr2 ();
-          apInfo.m_bssid = hdr->GetAddr3 ();
-          apInfo.m_activeProbing = false;
-          apInfo.m_snr = snrTag.Get ();
-          apInfo.m_beacon = beacon;
-          UpdateCandidateApList (apInfo);
-        }
+      m_beaconArrival (Simulator::Now ());
+      Time delay = MicroSeconds (beacon.GetBeaconIntervalUs () * m_maxMissedBeacons);
+      RestartBeaconWatchdog (delay);
+      UpdateApInfo (beacon, hdr.GetAddr2 (), hdr.GetAddr3 (), linkId);
+    }
+  else
+    {
+      NS_LOG_DEBUG ("Beacon received from " << hdr.GetAddr2 ());
+      SnrTag snrTag;
+      bool found = mpdu->GetPacket ()->PeekPacketTag (snrTag);
+      NS_ASSERT (found);
+      m_assocManager->NotifyApInfo (ApInfo {.m_bssid = hdr.GetAddr3 (),
+                                            .m_apAddr = hdr.GetAddr2 (),
+                                            .m_snr = snrTag.Get (),
+                                            .m_frame = std::move (beacon),
+                                            .m_channel = {GetCurrentChannel (linkId)},
+                                            .m_linkId = linkId});
+    }
+}
+
+void
+StaWifiMac::ReceiveProbeResp (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << *mpdu << +linkId);
+  const WifiMacHeader& hdr = mpdu->GetHeader ();
+  NS_ASSERT (hdr.IsProbeResp ());
+
+  NS_LOG_DEBUG ("Probe response received from " << hdr.GetAddr2 ());
+  MgtProbeResponseHeader probeResp;
+  mpdu->GetPacket ()->PeekHeader (probeResp);
+  if (!CheckSupportedRates (probeResp, linkId))
+    {
       return;
     }
-  else if (hdr->IsProbeResp ())
+  SnrTag snrTag;
+  bool found = mpdu->GetPacket ()->PeekPacketTag (snrTag);
+  NS_ASSERT (found);
+  m_assocManager->NotifyApInfo (ApInfo {.m_bssid = hdr.GetAddr3 (),
+                                        .m_apAddr = hdr.GetAddr2 (),
+                                        .m_snr = snrTag.Get (),
+                                        .m_frame = std::move (probeResp),
+                                        .m_channel = {GetCurrentChannel (linkId)},
+                                        .m_linkId = linkId});
+}
+
+void
+StaWifiMac::ReceiveAssocResp (Ptr<WifiMacQueueItem> mpdu, uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << *mpdu << +linkId);
+  const WifiMacHeader& hdr = mpdu->GetHeader ();
+  NS_ASSERT (hdr.IsAssocResp () || hdr.IsReassocResp ());
+
+  if (m_state != WAIT_ASSOC_RESP)
     {
-      if (m_state == WAIT_PROBE_RESP)
-        {
-          NS_LOG_DEBUG ("Probe response received while scanning from " << hdr->GetAddr2 ());
-          MgtProbeResponseHeader probeResp;
-          Ptr<Packet> copy = packet->Copy ();
-          copy->RemoveHeader (probeResp);
-          if (!probeResp.GetSsid ().IsEqual (GetSsid ()))
-            {
-              NS_LOG_DEBUG ("Probe response is not for our SSID");
-              return;
-            }
-          SnrTag snrTag;
-          bool removed = copy->RemovePacketTag (snrTag);
-          NS_ASSERT (removed);
-          ApInfo apInfo;
-          apInfo.m_apAddr = hdr->GetAddr2 ();
-          apInfo.m_bssid = hdr->GetAddr3 ();
-          apInfo.m_activeProbing = true;
-          apInfo.m_snr = snrTag.Get ();
-          apInfo.m_probeResp = probeResp;
-          UpdateCandidateApList (apInfo);
-        }
       return;
     }
-  else if (hdr->IsAssocResp () || hdr->IsReassocResp ())
+
+  MgtAssocResponseHeader assocResp;
+  mpdu->GetPacket ()->PeekHeader (assocResp);
+  if (m_assocRequestEvent.IsRunning ())
     {
-      if (m_state == WAIT_ASSOC_RESP)
+      m_assocRequestEvent.Cancel ();
+    }
+  if (assocResp.GetStatusCode ().IsSuccess ())
+    {
+      SetState (ASSOCIATED);
+      m_aid = assocResp.GetAssociationId ();
+      if (hdr.IsReassocResp ())
         {
-          MgtAssocResponseHeader assocResp;
-          packet->PeekHeader (assocResp);
-          if (m_assocRequestEvent.IsRunning ())
+          NS_LOG_DEBUG ("reassociation done");
+        }
+      else
+        {
+          NS_LOG_DEBUG ("association completed");
+        }
+      UpdateApInfo (assocResp, hdr.GetAddr2 (), hdr.GetAddr3 (), linkId);
+      if (!m_linkUp.IsNull ())
+        {
+          m_linkUp ();
+        }
+    }
+  else
+    {
+      NS_LOG_DEBUG ("association refused");
+      SetState (REFUSED);
+      StartScanning ();
+    }
+}
+
+bool
+StaWifiMac::CheckSupportedRates (std::variant<MgtBeaconHeader, MgtProbeResponseHeader> frame,
+                                 uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << +linkId);
+
+  // lambda to invoke on the current frame variant
+  auto check =
+    [&](auto&& mgtFrame) -> bool
+    {
+      // check supported rates
+      const SupportedRates& rates = mgtFrame.GetSupportedRates ();
+      for (const auto & selector : GetWifiPhy (linkId)->GetBssMembershipSelectorList ())
+        {
+          if (!rates.IsBssMembershipSelectorRate (selector))
             {
-              m_assocRequestEvent.Cancel ();
+              NS_LOG_DEBUG ("Supported rates do not fit with the BSS membership selector");
+              return false;
             }
-          if (assocResp.GetStatusCode ().IsSuccess ())
+        }
+
+      return true;
+    };
+
+  return std::visit (check, frame);
+}
+
+void
+StaWifiMac::UpdateApInfo (const MgtFrameType& frame, const Mac48Address& apAddr,
+                          const Mac48Address& bssid, uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << frame.index () << apAddr << bssid << +linkId);
+
+  SetBssid (bssid, linkId);
+
+  // lambda processing Information Elements included in all frame types
+  auto commonOps =
+    [&](auto&& frame)
+    {
+      const CapabilityInformation& capabilities = frame.GetCapabilities ();
+      const SupportedRates& rates = frame.GetSupportedRates ();
+      for (const auto & mode : GetWifiPhy (linkId)->GetModeList ())
+        {
+          if (rates.IsSupportedRate (mode.GetDataRate (GetWifiPhy (linkId)->GetChannelWidth ())))
             {
-              SetState (ASSOCIATED);
-              m_aid = assocResp.GetAssociationId ();
-              if (hdr->IsReassocResp ())
+              GetWifiRemoteStationManager (linkId)->AddSupportedMode (apAddr, mode);
+              if (rates.IsBasicRate (mode.GetDataRate (GetWifiPhy (linkId)->GetChannelWidth ())))
                 {
-                  NS_LOG_DEBUG ("reassociation done");
+                  GetWifiRemoteStationManager (linkId)->AddBasicMode (mode);
                 }
-              else
-                {
-                  NS_LOG_DEBUG ("association completed");
-                }
-              UpdateApInfoFromAssocResp (assocResp, hdr->GetAddr2 ());
-              if (!m_linkUp.IsNull ())
-                {
-                  m_linkUp ();
-                }
+            }
+        }
+
+      bool isShortPreambleEnabled = capabilities.IsShortPreamble ();
+      if (GetErpSupported (linkId))
+        {
+          const ErpInformation& erpInformation = frame.GetErpInformation ();
+          isShortPreambleEnabled &= !erpInformation.GetBarkerPreambleMode ();
+          if (erpInformation.GetUseProtection () != 0)
+            {
+              GetWifiRemoteStationManager (linkId)->SetUseNonErpProtection (true);
             }
           else
             {
-              NS_LOG_DEBUG ("association refused");
-              if (m_candidateAps.empty ())
-                {
-                  SetState (REFUSED);
-                }
-              else
-                {
-                  ScanningTimeout ();
-                }
+              GetWifiRemoteStationManager (linkId)->SetUseNonErpProtection (false);
+            }
+          if (capabilities.IsShortSlotTime () == true)
+            {
+              //enable short slot time
+              GetWifiPhy (linkId)->SetSlot (MicroSeconds (9));
+            }
+          else
+            {
+              //disable short slot time
+              GetWifiPhy (linkId)->SetSlot (MicroSeconds (20));
             }
         }
-      return;
-    }
+      GetWifiRemoteStationManager (linkId)->SetShortPreambleEnabled (isShortPreambleEnabled);
+      GetWifiRemoteStationManager (linkId)->SetShortSlotTimeEnabled (capabilities.IsShortSlotTime ());
 
-  //Invoke the receive handler of our parent class to deal with any
-  //other frames. Specifically, this will handle Block Ack-related
-  //Management Action frames.
-  RegularWifiMac::Receive (Create<WifiMacQueueItem> (packet, *hdr));
-}
-
-void
-StaWifiMac::UpdateCandidateApList (ApInfo newApInfo)
-{
-  NS_LOG_FUNCTION (this << newApInfo.m_bssid << newApInfo.m_apAddr << newApInfo.m_snr << newApInfo.m_activeProbing << newApInfo.m_beacon << newApInfo.m_probeResp);
-  // Remove duplicate ApInfo entry
-  for (std::vector<ApInfo>::iterator i = m_candidateAps.begin(); i != m_candidateAps.end(); ++i)
-    {
-      if (newApInfo.m_bssid == (*i).m_bssid)
-        {
-          m_candidateAps.erase(i);
-          break;
-        }
-    }
-  // Insert before the entry with lower SNR
-  for (std::vector<ApInfo>::iterator i = m_candidateAps.begin(); i != m_candidateAps.end(); ++i)
-    {
-      if (newApInfo.m_snr > (*i).m_snr)
-        {
-          m_candidateAps.insert (i, newApInfo);
-          return;
-        }
-    }
-  // If new ApInfo is the lowest, insert at back
-  m_candidateAps.push_back(newApInfo);
-}
-
-void
-StaWifiMac::UpdateApInfoFromBeacon (MgtBeaconHeader beacon, Mac48Address apAddr, Mac48Address bssid)
-{
-  NS_LOG_FUNCTION (this << beacon << apAddr << bssid);
-  SetBssid (bssid);
-  CapabilityInformation capabilities = beacon.GetCapabilities ();
-  SupportedRates rates = beacon.GetSupportedRates ();
-  for (const auto & mode : m_phy->GetModeList ())
-    {
-      if (rates.IsSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth ())))
-        {
-          m_stationManager->AddSupportedMode (apAddr, mode);
-        }
-    }
-  bool isShortPreambleEnabled = capabilities.IsShortPreamble ();
-  if (GetErpSupported ())
-    {
-      ErpInformation erpInformation = beacon.GetErpInformation ();
-      isShortPreambleEnabled &= !erpInformation.GetBarkerPreambleMode ();
-      if (erpInformation.GetUseProtection () != 0)
-        {
-          m_stationManager->SetUseNonErpProtection (true);
-        }
-      else
-        {
-          m_stationManager->SetUseNonErpProtection (false);
-        }
-      if (capabilities.IsShortSlotTime () == true)
-        {
-          //enable short slot time
-          m_phy->SetSlot (MicroSeconds (9));
-        }
-      else
-        {
-          //disable short slot time
-          m_phy->SetSlot (MicroSeconds (20));
-        }
-    }
-  if (GetQosSupported ())
-    {
+      if (!GetQosSupported ()) return;
+      /* QoS station */
       bool qosSupported = false;
-      EdcaParameterSet edcaParameters = beacon.GetEdcaParameterSet ();
+      const EdcaParameterSet& edcaParameters = frame.GetEdcaParameterSet ();
       if (edcaParameters.IsQosSupported ())
         {
           qosSupported = true;
@@ -770,311 +894,96 @@ StaWifiMac::UpdateApInfoFromBeacon (MgtBeaconHeader beacon, Mac48Address apAddr,
           SetEdcaParameters (AC_VI, edcaParameters.GetViCWmin (), edcaParameters.GetViCWmax (), edcaParameters.GetViAifsn (), 32 * MicroSeconds (edcaParameters.GetViTxopLimit ()));
           SetEdcaParameters (AC_VO, edcaParameters.GetVoCWmin (), edcaParameters.GetVoCWmax (), edcaParameters.GetVoAifsn (), 32 * MicroSeconds (edcaParameters.GetVoTxopLimit ()));
         }
-      m_stationManager->SetQosSupport (apAddr, qosSupported);
-    }
-  if (GetHtSupported ())
-    {
-      HtCapabilities htCapabilities = beacon.GetHtCapabilities ();
+      GetWifiRemoteStationManager (linkId)->SetQosSupport (apAddr, qosSupported);
+
+      if (!GetHtSupported ()) return;
+      /* HT station */
+      const HtCapabilities& htCapabilities = frame.GetHtCapabilities ();
       if (!htCapabilities.IsSupportedMcs (0))
         {
-          m_stationManager->RemoveAllSupportedMcs (apAddr);
+          GetWifiRemoteStationManager (linkId)->RemoveAllSupportedMcs (apAddr);
         }
       else
         {
-          m_stationManager->AddStationHtCapabilities (apAddr, htCapabilities);
+          GetWifiRemoteStationManager (linkId)->AddStationHtCapabilities (apAddr, htCapabilities);
         }
-    }
-  if (GetVhtSupported ())
-    {
-      VhtCapabilities vhtCapabilities = beacon.GetVhtCapabilities ();
-      //we will always fill in RxHighestSupportedLgiDataRate field at TX, so this can be used to check whether it supports VHT
-      if (vhtCapabilities.GetRxHighestSupportedLgiDataRate () > 0)
+      // TODO: process ExtendedCapabilities
+      // ExtendedCapabilities extendedCapabilities = frame.GetExtendedCapabilities ();
+
+      // we do not return if VHT is not supported because HE STAs operating in
+      // the 2.4 GHz band do not support VHT
+      if (GetVhtSupported ())
         {
-          m_stationManager->AddStationVhtCapabilities (apAddr, vhtCapabilities);
-          VhtOperation vhtOperation = beacon.GetVhtOperation ();
-          for (const auto & mcs : m_phy->GetMcsList (WIFI_MOD_CLASS_VHT))
+          const VhtCapabilities& vhtCapabilities = frame.GetVhtCapabilities ();
+          //we will always fill in RxHighestSupportedLgiDataRate field at TX, so this can be used to check whether it supports VHT
+          if (vhtCapabilities.GetRxHighestSupportedLgiDataRate () > 0)
             {
-              if (vhtCapabilities.IsSupportedRxMcs (mcs.GetMcsValue ()))
+              GetWifiRemoteStationManager (linkId)->AddStationVhtCapabilities (apAddr, vhtCapabilities);
+              VhtOperation vhtOperation = frame.GetVhtOperation ();
+              for (const auto & mcs : GetWifiPhy (linkId)->GetMcsList (WIFI_MOD_CLASS_VHT))
                 {
-                  m_stationManager->AddSupportedMcs (apAddr, mcs);
+                  if (vhtCapabilities.IsSupportedRxMcs (mcs.GetMcsValue ()))
+                    {
+                      GetWifiRemoteStationManager (linkId)->AddSupportedMcs (apAddr, mcs);
+                    }
                 }
             }
         }
-    }
-  if (GetHtSupported ())
-    {
-      ExtendedCapabilities extendedCapabilities = beacon.GetExtendedCapabilities ();
-      //TODO: to be completed
-    }
-  if (GetHeSupported ())
-    {
-      HeCapabilities heCapabilities = beacon.GetHeCapabilities ();
+
+      if (!GetHeSupported ()) return;
+      /* HE station */
+      const HeCapabilities& heCapabilities = frame.GetHeCapabilities ();
       if (heCapabilities.GetSupportedMcsAndNss () != 0)
         {
-          m_stationManager->AddStationHeCapabilities (apAddr, heCapabilities);
-          HeOperation heOperation = beacon.GetHeOperation ();
-          for (const auto & mcs : m_phy->GetMcsList (WIFI_MOD_CLASS_HE))
+          GetWifiRemoteStationManager (linkId)->AddStationHeCapabilities (apAddr, heCapabilities);
+          HeOperation heOperation = frame.GetHeOperation ();
+          for (const auto & mcs : GetWifiPhy (linkId)->GetMcsList (WIFI_MOD_CLASS_HE))
             {
               if (heCapabilities.IsSupportedRxMcs (mcs.GetMcsValue ()))
                 {
-                  m_stationManager->AddSupportedMcs (apAddr, mcs);
+                  GetWifiRemoteStationManager (linkId)->AddSupportedMcs (apAddr, mcs);
                 }
             }
-        }
-
-      MuEdcaParameterSet muEdcaParameters = beacon.GetMuEdcaParameterSet ();
-      if (muEdcaParameters.IsPresent ())
-        {
-          SetMuEdcaParameters (AC_BE, muEdcaParameters.GetMuCwMin (AC_BE), muEdcaParameters.GetMuCwMax (AC_BE),
-                               muEdcaParameters.GetMuAifsn (AC_BE), muEdcaParameters.GetMuEdcaTimer (AC_BE));
-          SetMuEdcaParameters (AC_BK, muEdcaParameters.GetMuCwMin (AC_BK), muEdcaParameters.GetMuCwMax (AC_BK),
-                               muEdcaParameters.GetMuAifsn (AC_BK), muEdcaParameters.GetMuEdcaTimer (AC_BK));
-          SetMuEdcaParameters (AC_VI, muEdcaParameters.GetMuCwMin (AC_VI), muEdcaParameters.GetMuCwMax (AC_VI),
-                               muEdcaParameters.GetMuAifsn (AC_VI), muEdcaParameters.GetMuEdcaTimer (AC_VI));
-          SetMuEdcaParameters (AC_VO, muEdcaParameters.GetMuCwMin (AC_VO), muEdcaParameters.GetMuCwMax (AC_VO),
-                               muEdcaParameters.GetMuAifsn (AC_VO), muEdcaParameters.GetMuEdcaTimer (AC_VO));
-        }
-    }
-  m_stationManager->SetShortPreambleEnabled (isShortPreambleEnabled);
-  m_stationManager->SetShortSlotTimeEnabled (capabilities.IsShortSlotTime ());
-}
-
-void
-StaWifiMac::UpdateApInfoFromProbeResp (MgtProbeResponseHeader probeResp, Mac48Address apAddr, Mac48Address bssid)
-{
-  NS_LOG_FUNCTION (this << probeResp << apAddr << bssid);
-  CapabilityInformation capabilities = probeResp.GetCapabilities ();
-  SupportedRates rates = probeResp.GetSupportedRates ();
-  for (const auto & selector : m_phy->GetBssMembershipSelectorList ())
-    {
-      if (!rates.IsBssMembershipSelectorRate (selector))
-        {
-          NS_LOG_DEBUG ("Supported rates do not fit with the BSS membership selector");
-          return;
-        }
-    }
-  for (const auto & mode : m_phy->GetModeList ())
-    {
-      if (rates.IsSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth ())))
-        {
-          m_stationManager->AddSupportedMode (apAddr, mode);
-          if (rates.IsBasicRate (mode.GetDataRate (m_phy->GetChannelWidth ())))
-            {
-              m_stationManager->AddBasicMode (mode);
-            }
-        }
-    }
-
-  bool isShortPreambleEnabled = capabilities.IsShortPreamble ();
-  if (GetErpSupported ())
-    {
-      bool isErpAllowed = false;
-      for (const auto & mode : m_phy->GetModeList (WIFI_MOD_CLASS_ERP_OFDM))
-        {
-          if (rates.IsSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth ())))
-            {
-              isErpAllowed = true;
-              break;
-            }
-        }
-      if (!isErpAllowed)
-        {
-          //disable short slot time and set cwMin to 31
-          m_phy->SetSlot (MicroSeconds (20));
-          ConfigureContentionWindow (31, 1023);
-        }
-      else
-        {
-          ErpInformation erpInformation = probeResp.GetErpInformation ();
-          isShortPreambleEnabled &= !erpInformation.GetBarkerPreambleMode ();
-          if (m_stationManager->GetShortSlotTimeEnabled ())
-            {
-              //enable short slot time
-              m_phy->SetSlot (MicroSeconds (9));
-            }
-          else
-            {
-              //disable short slot time
-              m_phy->SetSlot (MicroSeconds (20));
-            }
-          ConfigureContentionWindow (15, 1023);
-        }
-    }
-  m_stationManager->SetShortPreambleEnabled (isShortPreambleEnabled);
-  m_stationManager->SetShortSlotTimeEnabled (capabilities.IsShortSlotTime ());
-  SetBssid (bssid);
-}
-
-void
-StaWifiMac::UpdateApInfoFromAssocResp (MgtAssocResponseHeader assocResp, Mac48Address apAddr)
-{
-  NS_LOG_FUNCTION (this << assocResp << apAddr);
-  CapabilityInformation capabilities = assocResp.GetCapabilities ();
-  SupportedRates rates = assocResp.GetSupportedRates ();
-  bool isShortPreambleEnabled = capabilities.IsShortPreamble ();
-  if (GetErpSupported ())
-    {
-      bool isErpAllowed = false;
-      for (const auto & mode : m_phy->GetModeList (WIFI_MOD_CLASS_ERP_OFDM))
-        {
-          if (rates.IsSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth ())))
-            {
-              isErpAllowed = true;
-              break;
-            }
-        }
-      if (!isErpAllowed)
-        {
-          //disable short slot time and set cwMin to 31
-          m_phy->SetSlot (MicroSeconds (20));
-          ConfigureContentionWindow (31, 1023);
-        }
-      else
-        {
-          ErpInformation erpInformation = assocResp.GetErpInformation ();
-          isShortPreambleEnabled &= !erpInformation.GetBarkerPreambleMode ();
-          if (m_stationManager->GetShortSlotTimeEnabled ())
-            {
-              //enable short slot time
-              m_phy->SetSlot (MicroSeconds (9));
-            }
-          else
-            {
-              //disable short slot time
-              m_phy->SetSlot (MicroSeconds (20));
-            }
-          ConfigureContentionWindow (15, 1023);
-        }
-    }
-  m_stationManager->SetShortPreambleEnabled (isShortPreambleEnabled);
-  m_stationManager->SetShortSlotTimeEnabled (capabilities.IsShortSlotTime ());
-  if (GetQosSupported ())
-    {
-      bool qosSupported = false;
-      EdcaParameterSet edcaParameters = assocResp.GetEdcaParameterSet ();
-      if (edcaParameters.IsQosSupported ())
-        {
-          qosSupported = true;
-          //The value of the TXOP Limit field is specified as an unsigned integer, with the least significant octet transmitted first, in units of 32 μs.
-          SetEdcaParameters (AC_BE, edcaParameters.GetBeCWmin (), edcaParameters.GetBeCWmax (), edcaParameters.GetBeAifsn (), 32 * MicroSeconds (edcaParameters.GetBeTxopLimit ()));
-          SetEdcaParameters (AC_BK, edcaParameters.GetBkCWmin (), edcaParameters.GetBkCWmax (), edcaParameters.GetBkAifsn (), 32 * MicroSeconds (edcaParameters.GetBkTxopLimit ()));
-          SetEdcaParameters (AC_VI, edcaParameters.GetViCWmin (), edcaParameters.GetViCWmax (), edcaParameters.GetViAifsn (), 32 * MicroSeconds (edcaParameters.GetViTxopLimit ()));
-          SetEdcaParameters (AC_VO, edcaParameters.GetVoCWmin (), edcaParameters.GetVoCWmax (), edcaParameters.GetVoAifsn (), 32 * MicroSeconds (edcaParameters.GetVoTxopLimit ()));
-        }
-      m_stationManager->SetQosSupport (apAddr, qosSupported);
-    }
-  if (GetHtSupported ())
-    {
-      HtCapabilities htCapabilities = assocResp.GetHtCapabilities ();
-      if (!htCapabilities.IsSupportedMcs (0))
-        {
-          m_stationManager->RemoveAllSupportedMcs (apAddr);
-        }
-      else
-        {
-          m_stationManager->AddStationHtCapabilities (apAddr, htCapabilities);
-        }
-    }
-  if (GetVhtSupported ())
-    {
-      VhtCapabilities vhtCapabilities = assocResp.GetVhtCapabilities ();
-      //we will always fill in RxHighestSupportedLgiDataRate field at TX, so this can be used to check whether it supports VHT
-      if (vhtCapabilities.GetRxHighestSupportedLgiDataRate () > 0)
-        {
-          m_stationManager->AddStationVhtCapabilities (apAddr, vhtCapabilities);
-          VhtOperation vhtOperation = assocResp.GetVhtOperation ();
-        }
-    }
-  if (GetHeSupported ())
-    {
-      HeCapabilities hecapabilities = assocResp.GetHeCapabilities ();
-      if (hecapabilities.GetSupportedMcsAndNss () != 0)
-        {
-          m_stationManager->AddStationHeCapabilities (apAddr, hecapabilities);
-          HeOperation heOperation = assocResp.GetHeOperation ();
           GetHeConfiguration ()->SetAttribute ("BssColor", UintegerValue (heOperation.GetBssColor ()));
         }
 
-      MuEdcaParameterSet muEdcaParameters = assocResp.GetMuEdcaParameterSet ();
+      const MuEdcaParameterSet& muEdcaParameters = frame.GetMuEdcaParameterSet ();
       if (muEdcaParameters.IsPresent ())
         {
           SetMuEdcaParameters (AC_BE, muEdcaParameters.GetMuCwMin (AC_BE), muEdcaParameters.GetMuCwMax (AC_BE),
-                               muEdcaParameters.GetMuAifsn (AC_BE), muEdcaParameters.GetMuEdcaTimer (AC_BE));
+                              muEdcaParameters.GetMuAifsn (AC_BE), muEdcaParameters.GetMuEdcaTimer (AC_BE));
           SetMuEdcaParameters (AC_BK, muEdcaParameters.GetMuCwMin (AC_BK), muEdcaParameters.GetMuCwMax (AC_BK),
-                               muEdcaParameters.GetMuAifsn (AC_BK), muEdcaParameters.GetMuEdcaTimer (AC_BK));
+                              muEdcaParameters.GetMuAifsn (AC_BK), muEdcaParameters.GetMuEdcaTimer (AC_BK));
           SetMuEdcaParameters (AC_VI, muEdcaParameters.GetMuCwMin (AC_VI), muEdcaParameters.GetMuCwMax (AC_VI),
-                               muEdcaParameters.GetMuAifsn (AC_VI), muEdcaParameters.GetMuEdcaTimer (AC_VI));
+                              muEdcaParameters.GetMuAifsn (AC_VI), muEdcaParameters.GetMuEdcaTimer (AC_VI));
           SetMuEdcaParameters (AC_VO, muEdcaParameters.GetMuCwMin (AC_VO), muEdcaParameters.GetMuCwMax (AC_VO),
-                               muEdcaParameters.GetMuAifsn (AC_VO), muEdcaParameters.GetMuEdcaTimer (AC_VO));
+                              muEdcaParameters.GetMuAifsn (AC_VO), muEdcaParameters.GetMuEdcaTimer (AC_VO));
         }
-    }
-  for (const auto & mode : m_phy->GetModeList ())
-    {
-      if (rates.IsSupportedRate (mode.GetDataRate (m_phy->GetChannelWidth ())))
-        {
-          m_stationManager->AddSupportedMode (apAddr, mode);
-          if (rates.IsBasicRate (mode.GetDataRate (m_phy->GetChannelWidth ())))
-            {
-              m_stationManager->AddBasicMode (mode);
-            }
-        }
-    }
-  if (GetHtSupported ())
-    {
-      HtCapabilities htCapabilities = assocResp.GetHtCapabilities ();
-      for (const auto & mcs : m_phy->GetMcsList (WIFI_MOD_CLASS_HT))
-        {
-          if (htCapabilities.IsSupportedMcs (mcs.GetMcsValue ()))
-            {
-              m_stationManager->AddSupportedMcs (apAddr, mcs);
-              //here should add a control to add basic MCS when it is implemented
-            }
-        }
-    }
-  if (GetVhtSupported ())
-    {
-      VhtCapabilities vhtcapabilities = assocResp.GetVhtCapabilities ();
-      for (const auto & mcs : m_phy->GetMcsList (WIFI_MOD_CLASS_VHT))
-        {
-          if (vhtcapabilities.IsSupportedRxMcs (mcs.GetMcsValue ()))
-            {
-              m_stationManager->AddSupportedMcs (apAddr, mcs);
-              //here should add a control to add basic MCS when it is implemented
-            }
-        }
-    }
-  if (GetHtSupported ())
-    {
-      ExtendedCapabilities extendedCapabilities = assocResp.GetExtendedCapabilities ();
-      //TODO: to be completed
-    }
-  if (GetHeSupported ())
-    {
-      HeCapabilities heCapabilities = assocResp.GetHeCapabilities ();
-      for (const auto & mcs : m_phy->GetMcsList (WIFI_MOD_CLASS_HE))
-        {
-          if (heCapabilities.IsSupportedRxMcs (mcs.GetMcsValue ()))
-            {
-              m_stationManager->AddSupportedMcs (apAddr, mcs);
-              //here should add a control to add basic MCS when it is implemented
-            }
-        }
-    }
+
+      if (!GetEhtSupported ()) return;
+      /* EHT station */
+      const EhtCapabilities& ehtCapabilities = frame.GetEhtCapabilities ();
+      //TODO: once we support non constant rate managers, we should add checks here whether EHT is supported by the peer
+      GetWifiRemoteStationManager (linkId)->AddStationEhtCapabilities (apAddr, ehtCapabilities);
+    };
+
+  // process Information Elements included in the current frame variant
+  std::visit (commonOps, frame);
 }
 
 SupportedRates
 StaWifiMac::GetSupportedRates (void) const
 {
   SupportedRates rates;
-  for (const auto & mode : m_phy->GetModeList ())
+  for (const auto & mode : GetWifiPhy ()->GetModeList ())
     {
-      uint64_t modeDataRate = mode.GetDataRate (m_phy->GetChannelWidth ());
+      uint64_t modeDataRate = mode.GetDataRate (GetWifiPhy ()->GetChannelWidth ());
       NS_LOG_DEBUG ("Adding supported rate of " << modeDataRate);
       rates.AddSupportedRate (modeDataRate);
     }
   if (GetHtSupported ())
     {
-      for (const auto & selector : m_phy->GetBssMembershipSelectorList ())
+      for (const auto & selector : GetWifiPhy ()->GetBssMembershipSelectorList ())
         {
           rates.AddBssMembershipSelectorRate (selector);
         }
@@ -1086,8 +995,8 @@ CapabilityInformation
 StaWifiMac::GetCapabilities (void) const
 {
   CapabilityInformation capabilities;
-  capabilities.SetShortPreamble (m_phy->GetShortPhyPreambleSupported () || GetErpSupported ());
-  capabilities.SetShortSlotTime (GetShortSlotTimeSupported () && GetErpSupported ());
+  capabilities.SetShortPreamble (GetWifiPhy ()->GetShortPhyPreambleSupported () || GetErpSupported (SINGLE_LINK_OP_ID));
+  capabilities.SetShortSlotTime (GetShortSlotTimeSupported () && GetErpSupported (SINGLE_LINK_OP_ID));
   return capabilities;
 }
 
@@ -1097,12 +1006,12 @@ StaWifiMac::SetState (MacState value)
   if (value == ASSOCIATED
       && m_state != ASSOCIATED)
     {
-      m_assocLogger (GetBssid ());
+      m_assocLogger (GetBssid (0));  // TODO use appropriate linkId
     }
   else if (value != ASSOCIATED
            && m_state == ASSOCIATED)
     {
-      m_deAssocLogger (GetBssid ());
+      m_deAssocLogger (GetBssid (0));  // TODO use appropriate linkId
     }
   m_state = value;
 }
@@ -1111,20 +1020,20 @@ void
 StaWifiMac::SetEdcaParameters (AcIndex ac, uint32_t cwMin, uint32_t cwMax, uint8_t aifsn, Time txopLimit)
 {
   Ptr<QosTxop> edca = GetQosTxop (ac);
-  edca->SetMinCw (cwMin);
-  edca->SetMaxCw (cwMax);
-  edca->SetAifsn (aifsn);
-  edca->SetTxopLimit (txopLimit);
+  edca->SetMinCw (cwMin, SINGLE_LINK_OP_ID);
+  edca->SetMaxCw (cwMax, SINGLE_LINK_OP_ID);
+  edca->SetAifsn (aifsn, SINGLE_LINK_OP_ID);
+  edca->SetTxopLimit (txopLimit, SINGLE_LINK_OP_ID);
 }
 
 void
 StaWifiMac::SetMuEdcaParameters (AcIndex ac, uint16_t cwMin, uint16_t cwMax, uint8_t aifsn, Time muEdcaTimer)
 {
   Ptr<QosTxop> edca = GetQosTxop (ac);
-  edca->SetMuCwMin (cwMin);
-  edca->SetMuCwMax (cwMax);
-  edca->SetMuAifsn (aifsn);
-  edca->SetMuEdcaTimer (muEdcaTimer);
+  edca->SetMuCwMin (cwMin, SINGLE_LINK_OP_ID);
+  edca->SetMuCwMax (cwMax, SINGLE_LINK_OP_ID);
+  edca->SetMuAifsn (aifsn, SINGLE_LINK_OP_ID);
+  edca->SetMuEdcaTimer (muEdcaTimer, SINGLE_LINK_OP_ID);
 }
 
 void
@@ -1137,6 +1046,32 @@ StaWifiMac::PhyCapabilitiesChanged (void)
       SetState (WAIT_ASSOC_RESP);
       SendAssociationRequest (true);
     }
+}
+
+void
+StaWifiMac::NotifyChannelSwitching (void)
+{
+  NS_LOG_FUNCTION (this);
+
+  WifiMac::NotifyChannelSwitching ();
+
+  if (IsInitialized ())
+    {
+      Disassociated ();
+    }
+}
+
+std::ostream & operator << (std::ostream &os, const StaWifiMac::ApInfo& apInfo)
+{
+  os << "BSSID=" << apInfo.m_bssid
+     << ", AP addr=" << apInfo.m_apAddr
+     << ", SNR=" << apInfo.m_snr
+     << ", Channel={" << apInfo.m_channel.number << "," << apInfo.m_channel.band
+     << "}, Link ID=" << +apInfo.m_linkId
+     << ", Frame=[";
+  std::visit ([&os](auto&& frame){frame.Print (os);}, apInfo.m_frame);
+  os << "]";
+  return os;
 }
 
 } //namespace ns3

@@ -18,11 +18,12 @@
  * Author: Sébastien Deronne <sebastien.deronne@gmail.com>
  */
 
-#include "ns3/net-device.h"
+#include "ns3/wifi-net-device.h"
 #include "wifi-mac-helper.h"
 #include "ns3/frame-exchange-manager.h"
 #include "ns3/wifi-protection-manager.h"
 #include "ns3/wifi-ack-manager.h"
+#include "ns3/wifi-assoc-manager.h"
 #include "ns3/multi-user-scheduler.h"
 #include "ns3/boolean.h"
 
@@ -30,10 +31,10 @@ namespace ns3 {
 
 WifiMacHelper::WifiMacHelper ()
 {
-  //By default, we create an AdHoc MAC layer without QoS.
-  SetType ("ns3::AdhocWifiMac",
-           "QosSupported", BooleanValue (false));
+  //By default, we create an AdHoc MAC layer (without QoS).
+  SetType ("ns3::AdhocWifiMac");
 
+  m_assocManager.SetTypeId ("ns3::WifiDefaultAssocManager");
   m_protectionManager.SetTypeId ("ns3::WifiDefaultProtectionManager");
   m_ackManager.SetTypeId ("ns3::WifiDefaultAckManager");
 }
@@ -43,38 +44,69 @@ WifiMacHelper::~WifiMacHelper ()
 }
 
 Ptr<WifiMac>
-WifiMacHelper::Create (Ptr<NetDevice> device, WifiStandard standard) const
+WifiMacHelper::Create (Ptr<WifiNetDevice> device, WifiStandard standard) const
 {
-  auto standardIt = wifiStandards.find (standard);
-  NS_ABORT_MSG_IF (standardIt == wifiStandards.end (), "Selected standard is not defined!");
+  NS_ABORT_MSG_IF (standard == WIFI_STANDARD_UNSPECIFIED, "No standard specified!");
 
-  Ptr<WifiMac> mac = m_mac.Create<WifiMac> ();
+  // this is a const method, but we need to force the correct QoS setting
+  ObjectFactory macObjectFactory = m_mac;
+  if (standard >= WIFI_STANDARD_80211n)
+    {
+      macObjectFactory.Set ("QosSupported", BooleanValue (true));
+    }
+
+  Ptr<WifiMac> mac = macObjectFactory.Create<WifiMac> ();
   mac->SetDevice (device);
   mac->SetAddress (Mac48Address::Allocate ());
+  device->SetMac (mac);
   mac->ConfigureStandard (standard);
 
-  Ptr<RegularWifiMac> wifiMac = DynamicCast<RegularWifiMac> (mac);
-  Ptr<FrameExchangeManager> fem;
-
-  if (wifiMac != 0 && (fem = wifiMac->GetFrameExchangeManager ()) != 0)
+  // WaveNetDevice stores PHY entities in a different member than WifiNetDevice, hence
+  // GetNPhys() would return 0. We have to attach a protection manager and an ack manager
+  // to the unique instance of frame exchange manager anyway
+  for (uint8_t linkId = 0; linkId < std::max<uint8_t> (device->GetNPhys (), 1); ++linkId)
     {
+      auto fem = mac->GetFrameExchangeManager (linkId);
+
       Ptr<WifiProtectionManager> protectionManager = m_protectionManager.Create<WifiProtectionManager> ();
-      protectionManager->SetWifiMac (wifiMac);
+      protectionManager->SetWifiMac (mac);
+      protectionManager->SetLinkId (linkId);
       fem->SetProtectionManager (protectionManager);
 
       Ptr<WifiAckManager> ackManager = m_ackManager.Create<WifiAckManager> ();
-      ackManager->SetWifiMac (wifiMac);
+      ackManager->SetWifiMac (mac);
+      ackManager->SetLinkId (linkId);
       fem->SetAckManager (ackManager);
 
-      // create and install the Multi User Scheduler if this is an HE AP
-      Ptr<ApWifiMac> apMac = DynamicCast<ApWifiMac> (mac);
-      if (apMac != nullptr && standardIt->second.macStandard >= WIFI_MAC_STANDARD_80211ax
-          && m_muScheduler.IsTypeIdSet ())
+      // 11be MLDs require a MAC address to be assigned to each STA. Note that
+      // FrameExchangeManager objects are created by WifiMac::SetupFrameExchangeManager
+      // (which is invoked by WifiMac::ConfigureStandard, which is called above),
+      // which sets the FrameExchangeManager's address to the address held by WifiMac.
+      // Hence, in case the number of PHY objects is 1, the FrameExchangeManager's
+      // address equals the WifiMac's address.
+      if (device->GetNPhys () > 1)
         {
-          Ptr<MultiUserScheduler> muScheduler = m_muScheduler.Create<MultiUserScheduler> ();
-          apMac->AggregateObject (muScheduler);
+          fem->SetAddress (Mac48Address::Allocate ());
         }
     }
+
+  // create and install the Multi User Scheduler if this is an HE AP
+  Ptr<ApWifiMac> apMac;
+  if (standard >= WIFI_STANDARD_80211ax
+      && m_muScheduler.IsTypeIdSet ()
+      && (apMac = DynamicCast<ApWifiMac> (mac)))
+    {
+      Ptr<MultiUserScheduler> muScheduler = m_muScheduler.Create<MultiUserScheduler> ();
+      apMac->AggregateObject (muScheduler);
+    }
+
+  // create and install the Association Manager if this is a STA
+  if (auto staMac = DynamicCast<StaWifiMac> (mac); staMac != nullptr)
+    {
+      Ptr<WifiAssocManager> assocManager = m_assocManager.Create<WifiAssocManager> ();
+      staMac->SetAssocManager (assocManager);
+    }
+
   return mac;
 }
 

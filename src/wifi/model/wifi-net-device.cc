@@ -18,6 +18,7 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 
+#include "ns3/object-vector.h"
 #include "ns3/llc-snap-header.h"
 #include "ns3/channel.h"
 #include "ns3/pointer.h"
@@ -30,6 +31,7 @@
 #include "ns3/ht-configuration.h"
 #include "ns3/vht-configuration.h"
 #include "ns3/he-configuration.h"
+#include "ns3/eht-configuration.h"
 
 namespace ns3 {
 
@@ -52,12 +54,19 @@ WifiNetDevice::GetTypeId (void)
     .AddAttribute ("Channel", "The channel attached to this device",
                    PointerValue (),
                    MakePointerAccessor (&WifiNetDevice::GetChannel),
-                   MakePointerChecker<Channel> ())
+                   MakePointerChecker<Channel> (),
+                   TypeId::DEPRECATED,
+                   "Use the Channel attribute of WifiPhy")
     .AddAttribute ("Phy", "The PHY layer attached to this device.",
                    PointerValue (),
-                   MakePointerAccessor (&WifiNetDevice::GetPhy,
+                   MakePointerAccessor ((Ptr<WifiPhy> (WifiNetDevice::*) (void) const) &WifiNetDevice::GetPhy,
                                         &WifiNetDevice::SetPhy),
                    MakePointerChecker<WifiPhy> ())
+    .AddAttribute ("Phys", "The PHY layers attached to this device (11be multi-link devices only).",
+                   ObjectVectorValue (),
+                   MakeObjectVectorAccessor (&WifiNetDevice::GetPhy,
+                                             &WifiNetDevice::GetNPhys),
+                   MakeObjectVectorChecker<WifiPhy> ())
     .AddAttribute ("Mac", "The MAC layer attached to this device.",
                    PointerValue (),
                    MakePointerAccessor (&WifiNetDevice::GetMac,
@@ -66,8 +75,14 @@ WifiNetDevice::GetTypeId (void)
     .AddAttribute ("RemoteStationManager", "The station manager attached to this device.",
                    PointerValue (),
                    MakePointerAccessor (&WifiNetDevice::SetRemoteStationManager,
-                                        &WifiNetDevice::GetRemoteStationManager),
+                                        (Ptr<WifiRemoteStationManager> (WifiNetDevice::*) (void) const) &WifiNetDevice::GetRemoteStationManager),
                    MakePointerChecker<WifiRemoteStationManager> ())
+    .AddAttribute ("RemoteStationManagers",
+                   "The remote station managers attached to this device (11be multi-link devices only).",
+                   ObjectVectorValue (),
+                   MakeObjectVectorAccessor (&WifiNetDevice::GetRemoteStationManager,
+                                             &WifiNetDevice::GetNRemoteStationManagers),
+                   MakeObjectVectorChecker<WifiPhy> ())
     .AddAttribute ("HtConfiguration",
                    "The HtConfiguration object.",
                    PointerValue (),
@@ -83,12 +98,18 @@ WifiNetDevice::GetTypeId (void)
                    PointerValue (),
                    MakePointerAccessor (&WifiNetDevice::GetHeConfiguration),
                    MakePointerChecker<HeConfiguration> ())
+    .AddAttribute ("EhtConfiguration",
+                   "The EhtConfiguration object.",
+                   PointerValue (),
+                   MakePointerAccessor (&WifiNetDevice::GetEhtConfiguration),
+                   MakePointerChecker<EhtConfiguration> ())
   ;
   return tid;
 }
 
 WifiNetDevice::WifiNetDevice ()
-  : m_configComplete (false)
+  : m_standard (WIFI_STANDARD_UNSPECIFIED),
+    m_configComplete (false)
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -108,16 +129,24 @@ WifiNetDevice::DoDispose (void)
       m_mac->Dispose ();
       m_mac = 0;
     }
-  if (m_phy)
+  for (auto& phy : m_phys)
     {
-      m_phy->Dispose ();
-      m_phy = 0;
+      if (phy)
+        {
+          phy->Dispose ();
+          phy = nullptr;
+        }
     }
-  if (m_stationManager)
+  m_phys.clear ();
+  for (auto& stationManager : m_stationManagers)
     {
-      m_stationManager->Dispose ();
-      m_stationManager = 0;
+      if (stationManager)
+        {
+          stationManager->Dispose ();
+          stationManager = nullptr;
+        }
     }
+  m_stationManagers.clear ();
   if (m_htConfiguration)
     {
       m_htConfiguration->Dispose ();
@@ -133,6 +162,11 @@ WifiNetDevice::DoDispose (void)
       m_heConfiguration->Dispose ();
       m_heConfiguration = 0;
     }
+  if (m_ehtConfiguration)
+    {
+      m_ehtConfiguration->Dispose ();
+      m_ehtConfiguration = 0;
+    }
   NetDevice::DoDispose ();
 }
 
@@ -140,17 +174,24 @@ void
 WifiNetDevice::DoInitialize (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  if (m_phy)
+
+  for (const auto& phy : m_phys)
     {
-      m_phy->Initialize ();
+      if (phy)
+        {
+          phy->Initialize ();
+        }
     }
   if (m_mac)
     {
       m_mac->Initialize ();
     }
-  if (m_stationManager)
+  for (const auto& stationManager : m_stationManagers)
     {
-      m_stationManager->Initialize ();
+      if (stationManager)
+        {
+          stationManager->Initialize ();
+        }
     }
   NetDevice::DoInitialize ();
 }
@@ -158,22 +199,39 @@ WifiNetDevice::DoInitialize (void)
 void
 WifiNetDevice::CompleteConfig (void)
 {
-  if (m_mac == 0
-      || m_phy == 0
-      || m_stationManager == 0
-      || m_node == 0
+  if (!m_mac
+      || m_phys.empty ()
+      || m_stationManagers.empty ()
+      || !m_node
       || m_configComplete)
     {
       return;
     }
-  m_mac->SetWifiRemoteStationManager (m_stationManager);
-  m_mac->SetWifiPhy (m_phy);
+  NS_ABORT_IF (m_phys.size () != m_stationManagers.size ());
+  m_mac->SetWifiPhys (m_phys);
+  m_mac->SetWifiRemoteStationManagers (m_stationManagers);
   m_mac->SetForwardUpCallback (MakeCallback (&WifiNetDevice::ForwardUp, this));
   m_mac->SetLinkUpCallback (MakeCallback (&WifiNetDevice::LinkUp, this));
   m_mac->SetLinkDownCallback (MakeCallback (&WifiNetDevice::LinkDown, this));
-  m_stationManager->SetupPhy (m_phy);
-  m_stationManager->SetupMac (m_mac);
+  for (uint8_t linkId = 0; linkId < m_stationManagers.size (); linkId++)
+    {
+      m_stationManagers.at (linkId)->SetupPhy (m_phys.at (linkId));
+      m_stationManagers.at (linkId)->SetupMac (m_mac);
+    }
   m_configComplete = true;
+}
+
+void
+WifiNetDevice::SetStandard (WifiStandard standard)
+{
+  NS_ABORT_MSG_IF (m_standard != WIFI_STANDARD_UNSPECIFIED, "Wifi standard already set");
+  m_standard = standard;
+}
+
+WifiStandard
+WifiNetDevice::GetStandard (void) const
+{
+  return m_standard;
 }
 
 void
@@ -186,14 +244,36 @@ WifiNetDevice::SetMac (const Ptr<WifiMac> mac)
 void
 WifiNetDevice::SetPhy (const Ptr<WifiPhy> phy)
 {
-  m_phy = phy;
+  m_phys.clear ();
+  m_phys.push_back (phy);
+  m_linkUp = true;
+  CompleteConfig ();
+}
+
+void
+WifiNetDevice::SetPhys (const std::vector<Ptr<WifiPhy>>& phys)
+{
+  NS_ABORT_MSG_IF (phys.size () > 1 && !m_ehtConfiguration,
+                   "Multiple PHYs only allowed for 11be multi-link devices");
+  m_phys = phys;
+  m_linkUp = true;
   CompleteConfig ();
 }
 
 void
 WifiNetDevice::SetRemoteStationManager (const Ptr<WifiRemoteStationManager> manager)
 {
-  m_stationManager = manager;
+  m_stationManagers.clear ();
+  m_stationManagers.push_back (manager);
+  CompleteConfig ();
+}
+
+void
+WifiNetDevice::SetRemoteStationManagers (const std::vector<Ptr<WifiRemoteStationManager>>& managers)
+{
+  NS_ABORT_MSG_IF (managers.size () > 1 && !m_ehtConfiguration,
+                   "Multiple remote station managers only allowed for 11be multi-link devices");
+  m_stationManagers = managers;
   CompleteConfig ();
 }
 
@@ -206,13 +286,51 @@ WifiNetDevice::GetMac (void) const
 Ptr<WifiPhy>
 WifiNetDevice::GetPhy (void) const
 {
-  return m_phy;
+  return GetPhy (SINGLE_LINK_OP_ID);
+}
+
+Ptr<WifiPhy>
+WifiNetDevice::GetPhy (uint8_t i) const
+{
+  NS_ASSERT (i < GetPhys ().size ());
+  return GetPhys ().at (i);
+}
+
+const std::vector<Ptr<WifiPhy>>&
+WifiNetDevice::GetPhys (void) const
+{
+  return m_phys;
+}
+
+uint8_t
+WifiNetDevice::GetNPhys (void) const
+{
+  return GetPhys ().size ();
 }
 
 Ptr<WifiRemoteStationManager>
 WifiNetDevice::GetRemoteStationManager (void) const
 {
-  return m_stationManager;
+  return GetRemoteStationManager (0);
+}
+
+Ptr<WifiRemoteStationManager>
+WifiNetDevice::GetRemoteStationManager (uint8_t linkId) const
+{
+  NS_ASSERT (linkId < GetRemoteStationManagers ().size ());
+  return GetRemoteStationManagers ().at (linkId);
+}
+
+const std::vector<Ptr<WifiRemoteStationManager>>&
+WifiNetDevice::GetRemoteStationManagers (void) const
+{
+  return m_stationManagers;
+}
+
+uint8_t
+WifiNetDevice::GetNRemoteStationManagers (void) const
+{
+  return GetRemoteStationManagers ().size ();
 }
 
 void
@@ -230,7 +348,15 @@ WifiNetDevice::GetIfIndex (void) const
 Ptr<Channel>
 WifiNetDevice::GetChannel (void) const
 {
-  return m_phy->GetChannel ();
+  for (uint8_t i = 1; i < GetNPhys (); i++)
+    {
+      if (GetPhy (i)->GetChannel () != GetPhy (i - 1)->GetChannel ())
+        {
+          NS_ABORT_MSG ("Do not call WifiNetDevice::GetChannel() when using multiple channels");
+        }
+    }
+
+  return m_phys[SINGLE_LINK_OP_ID]->GetChannel ();
 }
 
 void
@@ -265,7 +391,7 @@ WifiNetDevice::GetMtu (void) const
 bool
 WifiNetDevice::IsLinkUp (void) const
 {
-  return m_phy != 0 && m_linkUp;
+  return !m_phys.empty () && m_linkUp;
 }
 
 void
@@ -455,7 +581,7 @@ WifiNetDevice::SetHtConfiguration (Ptr<HtConfiguration> htConfiguration)
 Ptr<HtConfiguration>
 WifiNetDevice::GetHtConfiguration (void) const
 {
-  return m_htConfiguration;
+  return (m_standard >= WIFI_STANDARD_80211n ? m_htConfiguration : nullptr);
 }
 
 void
@@ -467,7 +593,8 @@ WifiNetDevice::SetVhtConfiguration (Ptr<VhtConfiguration> vhtConfiguration)
 Ptr<VhtConfiguration>
 WifiNetDevice::GetVhtConfiguration (void) const
 {
-  return m_vhtConfiguration;
+  return (m_standard >= WIFI_STANDARD_80211ac && m_phys[SINGLE_LINK_OP_ID]->GetPhyBand () == WIFI_PHY_BAND_5GHZ
+          ? m_vhtConfiguration : nullptr);
 }
 
 void
@@ -479,7 +606,19 @@ WifiNetDevice::SetHeConfiguration (Ptr<HeConfiguration> heConfiguration)
 Ptr<HeConfiguration>
 WifiNetDevice::GetHeConfiguration (void) const
 {
-  return m_heConfiguration;
+  return (m_standard >= WIFI_STANDARD_80211ax ? m_heConfiguration : nullptr);
+}
+
+void
+WifiNetDevice::SetEhtConfiguration (Ptr<EhtConfiguration> ehtConfiguration)
+{
+  m_ehtConfiguration = ehtConfiguration;
+}
+
+Ptr<EhtConfiguration>
+WifiNetDevice::GetEhtConfiguration (void) const
+{
+  return (m_standard >= WIFI_STANDARD_80211be ? m_ehtConfiguration : nullptr);
 }
 
 } //namespace ns3

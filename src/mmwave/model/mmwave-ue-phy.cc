@@ -621,7 +621,7 @@ MmWaveUePhy::StartTti ()
       // Trace current UL transmission info
       TraceUlPhyTransmission (currTti.m_dci, PhyTransmissionTraceParams::DATA);
 
-      if (pktBurst != 0)
+      if (pktBurst)
         {
           std::list<Ptr<MmWaveControlMessage> > ctrlMsg = GetControlMessages ();
           m_sendDataChannelEvent = Simulator::Schedule (NanoSeconds (1.0), &MmWaveUePhy::SendDataChannels, this, pktBurst, ctrlMsg, currTtiDuration - NanoSeconds (2.0), m_slotNum);

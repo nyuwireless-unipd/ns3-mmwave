@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
  * Copyright 2007 University of Washington
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -45,7 +45,7 @@ class SPFVertex;
  *
  * Although a STL priority_queue almost does what we want, the requirement
  * for a Find () operation, the dynamic nature of the data and the derived
- * requirement for a Reorder () operation led us to implement this simple 
+ * requirement for a Reorder () operation led us to implement this simple
  * enhanced priority queue.
  */
 class CandidateQueue
@@ -59,15 +59,19 @@ public:
   CandidateQueue ();
 
 /**
- * @brief Destroy an SPF Candidate Queue and release any resources held 
+ * @brief Destroy an SPF Candidate Queue and release any resources held
  * by the contents.
  *
  * @see SPFVertex
  */
   virtual ~CandidateQueue ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  CandidateQueue (const CandidateQueue &) = delete;
+  CandidateQueue &operator= (const CandidateQueue &) = delete;
+
 /**
- * @brief Empty the Candidate Queue and release all of the resources 
+ * @brief Empty the Candidate Queue and release all of the resources
  * associated with the Shortest Path First Vertex pointers in the queue.
  *
  * @see SPFVertex
@@ -77,10 +81,10 @@ public:
 /**
  * @brief Push a Shortest Path First Vertex pointer onto the queue according
  * to the priority scheme.
- * 
+ *
  * On completion, the top of the queue will hold the Shortest Path First
  * Vertex pointer that points to a vertex having lowest value of the field
- * m_distanceFromRoot.  Remaining vertices are ordered according to 
+ * m_distanceFromRoot.  Remaining vertices are ordered according to
  * increasing distance.
  *
  * @see SPFVertex
@@ -91,7 +95,7 @@ public:
 /**
  * @brief Pop the Shortest Path First Vertex pointer at the top of the queue.
  *
- * The caller is given the responsibility for releasing the resources 
+ * The caller is given the responsibility for releasing the resources
  * associated with the vertex.
  *
  * @see SPFVertex
@@ -101,10 +105,10 @@ public:
   SPFVertex* Pop (void);
 
 /**
- * @brief Return the Shortest Path First Vertex pointer at the top of the 
+ * @brief Return the Shortest Path First Vertex pointer at the top of the
  * queue.
  *
- * This method does not pop the SPFVertex* off of the queue, it simply 
+ * This method does not pop the SPFVertex* off of the queue, it simply
  * returns the pointer.
  *
  * @see SPFVertex
@@ -130,7 +134,7 @@ public:
   uint32_t Size (void) const;
 
 /**
- * @brief Searches the Candidate Queue for a Shortest Path First Vertex 
+ * @brief Searches the Candidate Queue for a Shortest Path First Vertex
  * pointer that points to a vertex having the given IP address.
  *
  * @see SPFVertex
@@ -141,10 +145,10 @@ public:
 
 /**
  * @brief Reorders the Candidate Queue according to the priority scheme.
- * 
+ *
  * On completion, the top of the queue will hold the Shortest Path First
  * Vertex pointer that points to a vertex having lowest value of the field
- * m_distanceFromRoot.  Remaining vertices are ordered according to 
+ * m_distanceFromRoot.  Remaining vertices are ordered according to
  * increasing distance.
  *
  * This method is provided in case the values of m_distanceFromRoot change
@@ -156,26 +160,10 @@ public:
 
 private:
 /**
- * Candidate Queue copy construction is disallowed (not implemented) to 
- * prevent the compiler from slipping in incorrect versions that don't
- * properly deal with deep copies.
- * \param sr object to copy
- */
-  CandidateQueue (CandidateQueue& sr);
-
-/**
- * Candidate Queue assignment operator is disallowed (not implemented) to
- * prevent the compiler from slipping in incorrect versions that don't
- * properly deal with deep copies.
- * \param sr object to assign
- * \return copied object
- */
-  CandidateQueue& operator= (CandidateQueue& sr);
-/**
  * \brief return true if v1 < v2
  *
  * SPFVertexes are added into the queue according to the ordering
- * defined by this method. If v1 should be popped before v2, this 
+ * defined by this method. If v1 should be popped before v2, this
  * method return true; false otherwise
  *
  * \param v1 first operand

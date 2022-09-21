@@ -36,7 +36,7 @@
 // This example considers two hidden stations in an 802.11n network which supports MPDU aggregation.
 // The user can specify whether RTS/CTS is used and can set the number of aggregated MPDUs.
 //
-// Example: ./waf --run "wifi-simple-ht-hidden-stations --enableRts=1 --nMpdus=8"
+// Example: ./ns3 run "wifi-simple-ht-hidden-stations --enableRts=1 --nMpdus=8"
 //
 // Network topology:
 //
@@ -98,9 +98,10 @@ int main (int argc, char *argv[])
   YansWifiPhyHelper phy;
   phy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
   phy.SetChannel (channel.Create ());
+  phy.Set ("ChannelSettings", StringValue ("{36, 0, BAND_5GHZ, 0}"));
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HtMcs7"), "ControlMode", StringValue ("HtMcs0"));
   WifiMacHelper mac;
 

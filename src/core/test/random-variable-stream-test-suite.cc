@@ -49,6 +49,13 @@ namespace test {
 namespace RandomVariable {
 
 /**
+ * \file
+ * \ingroup rng-tests
+ * Random number generator streams tests.
+ */
+
+/**
+ * \ingroup rng-tests
  * Base class for RandomVariableStream test suites.
  */
 class TestCaseBase : public TestCase
@@ -265,7 +272,7 @@ public:
                         std::size_t nRuns) const
   {
     NS_LOG_FUNCTION (this << generator << nRuns);
-    
+
     double sum = 0.;
     for (std::size_t i = 0; i < nRuns; ++i)
       {
@@ -285,7 +292,7 @@ public:
    * for basic regression testing; random values can be used to more
    * exhaustively test the generated streams, with the side effect of
    * occasional test failures.
-   * 
+   *
    * By default, this test suite will use the default values of RngSeed = 1
    * and RngRun = 1.  Users can configure any other seed and run number
    * in the usual way, but the special value of RngRun = 0 results in
@@ -301,10 +308,10 @@ public:
    * deterministic value of seed=3 and default run number=1 every time:
    *   NS_GLOBAL_VALUE="RngSeed=3" ./test.py -s random-variable-stream-generators
    * or equivalently (to see log output):
-   *   NS_LOG="RandomVariableStreamGenerators" NS_GLOBAL_VALUE="RngSeed=3" ./waf --run "test-runner --suite=random-variable-stream-generators"
+   *   NS_LOG="RandomVariableStreamGenerators" NS_GLOBAL_VALUE="RngSeed=3" ./ns3 run "test-runner --suite=random-variable-stream-generators"
    *
    * Conversely, this command will cause this test suite to use a seed
-   * based on time-of-day, and run number=0: 
+   * based on time-of-day, and run number=0:
    *   NS_GLOBAL_VALUE="RngRun=0" ./test.py -s random-variable-stream-generators
    */
   void
@@ -339,6 +346,7 @@ private:
 
 
 /**
+ * \ingroup rng-tests
  * Test case for uniform distribution random variable stream generator.
  */
 class UniformTestCase : public TestCaseBase
@@ -460,6 +468,7 @@ UniformTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic uniform distribution random variable stream generator
  */
 class UniformAntitheticTestCase : public TestCaseBase
@@ -535,6 +544,7 @@ UniformAntitheticTestCase::DoRun (void)
 
 }
 /**
+ * \ingroup rng-tests
  * Test case for constant random variable stream generator
  */
 class ConstantTestCase : public TestCaseBase
@@ -581,6 +591,7 @@ ConstantTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for sequential random variable stream generator
  */
 class SequentialTestCase : public TestCaseBase
@@ -592,7 +603,7 @@ public:
 private:
   // Inherited
   virtual void DoRun (void);
-  
+
   /** Tolerance for testing rng values against expectation. */
   static constexpr double TOLERANCE {1e-8};
 };
@@ -637,6 +648,7 @@ SequentialTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for normal distribution random variable stream generator
  */
 class NormalTestCase : public TestCaseBase
@@ -653,7 +665,7 @@ private:
   virtual void DoRun (void);
 
   /** Tolerance for testing rng values against expectation, in rms. */
-  static constexpr double TOLERANCE {5};  
+  static constexpr double TOLERANCE {5};
 };
 
 NormalTestCase::NormalTestCase ()
@@ -692,7 +704,7 @@ NormalTestCase::DoRun (void)
 
   auto generator = RngGenerator<NormalRandomVariable> ();
   auto rng = generator.Create ();
-  
+
   double sum = ChiSquaredsAverage (&generator, N_RUNS);
   double maxStatistic = gsl_cdf_chisq_Qinv (0.05, N_BINS);
   NS_TEST_ASSERT_MSG_LT (sum, maxStatistic, "Chi-squared statistic out of range");
@@ -718,6 +730,7 @@ NormalTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic normal distribution random variable stream generator
  */
 class NormalAntitheticTestCase : public TestCaseBase
@@ -734,7 +747,7 @@ private:
   virtual void DoRun (void);
 
   /** Tolerance for testing rng values against expectation, in rms. */
-  static constexpr double TOLERANCE {5};  
+  static constexpr double TOLERANCE {5};
 };
 
 NormalAntitheticTestCase::NormalAntitheticTestCase ()
@@ -801,6 +814,7 @@ NormalAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for exponential distribution random variable stream generator
  */
 class ExponentialTestCase : public TestCaseBase
@@ -817,7 +831,7 @@ private:
   virtual void DoRun (void);
 
   /** Tolerance for testing rng values against expectation, in rms. */
-  static constexpr double TOLERANCE {5};  
+  static constexpr double TOLERANCE {5};
 };
 
 ExponentialTestCase::ExponentialTestCase ()
@@ -877,6 +891,7 @@ ExponentialTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic exponential distribution random variable stream generator
  */
 class ExponentialAntitheticTestCase : public TestCaseBase
@@ -956,6 +971,7 @@ ExponentialAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for Pareto distribution random variable stream generator
  */
 class ParetoTestCase : public TestCaseBase
@@ -975,7 +991,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ParetoTestCase::ParetoTestCase ()
@@ -1043,6 +1059,7 @@ ParetoTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic Pareto distribution random variable stream generator
  */
 class ParetoAntitheticTestCase : public TestCaseBase
@@ -1062,7 +1079,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ParetoAntitheticTestCase::ParetoAntitheticTestCase ()
@@ -1134,6 +1151,7 @@ ParetoAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for Weibull distribution random variable stream generator
  */
 class WeibullTestCase : public TestCaseBase
@@ -1153,7 +1171,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 WeibullTestCase::WeibullTestCase ()
@@ -1238,6 +1256,7 @@ WeibullTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic Weibull distribution random variable stream generator
  */
 class WeibullAntitheticTestCase : public TestCaseBase
@@ -1257,7 +1276,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 WeibullAntitheticTestCase::WeibullAntitheticTestCase ()
@@ -1344,6 +1363,7 @@ WeibullAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for log-normal distribution random variable stream generator
  */
 class LogNormalTestCase : public TestCaseBase
@@ -1363,7 +1383,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {3e-2};  
+  static constexpr double TOLERANCE {3e-2};
 };
 
 LogNormalTestCase::LogNormalTestCase ()
@@ -1440,6 +1460,7 @@ LogNormalTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic log-normal distribution random variable stream generator
  */
 class LogNormalAntitheticTestCase : public TestCaseBase
@@ -1459,7 +1480,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {3e-2};  
+  static constexpr double TOLERANCE {3e-2};
 };
 
 LogNormalAntitheticTestCase::LogNormalAntitheticTestCase ()
@@ -1538,6 +1559,7 @@ LogNormalAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for gamma distribution random variable stream generator
  */
 class GammaTestCase : public TestCaseBase
@@ -1557,7 +1579,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 GammaTestCase::GammaTestCase ()
@@ -1624,6 +1646,7 @@ GammaTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic gamma distribution random variable stream generator
  */
 class GammaAntitheticTestCase : public TestCaseBase
@@ -1643,7 +1666,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 GammaAntitheticTestCase::GammaAntitheticTestCase ()
@@ -1714,6 +1737,7 @@ GammaAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for Erlang distribution random variable stream generator
  */
 class ErlangTestCase : public TestCaseBase
@@ -1733,7 +1757,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ErlangTestCase::ErlangTestCase ()
@@ -1803,6 +1827,7 @@ ErlangTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic Erlang distribution random variable stream generator
  */
 class ErlangAntitheticTestCase : public TestCaseBase
@@ -1822,7 +1847,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ErlangAntitheticTestCase::ErlangAntitheticTestCase ()
@@ -1896,6 +1921,7 @@ ErlangAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for Zipf distribution random variable stream generator
  */
 class ZipfTestCase : public TestCaseBase
@@ -1912,7 +1938,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ZipfTestCase::ZipfTestCase ()
@@ -1971,6 +1997,7 @@ ZipfTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic Zipf distribution random variable stream generator
  */
 class ZipfAntitheticTestCase : public TestCaseBase
@@ -1987,7 +2014,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ZipfAntitheticTestCase::ZipfAntitheticTestCase ()
@@ -2049,6 +2076,7 @@ ZipfAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for Zeta distribution random variable stream generator
  */
 class ZetaTestCase : public TestCaseBase
@@ -2065,7 +2093,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ZetaTestCase::ZetaTestCase ()
@@ -2108,6 +2136,7 @@ ZetaTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic Zeta distribution random variable stream generator
  */
 class ZetaAntitheticTestCase : public TestCaseBase
@@ -2124,7 +2153,7 @@ private:
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
    */
-  static constexpr double TOLERANCE {1e-2};  
+  static constexpr double TOLERANCE {1e-2};
 };
 
 ZetaAntitheticTestCase::ZetaAntitheticTestCase ()
@@ -2170,6 +2199,7 @@ ZetaAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for deterministic random variable stream generator
  */
 class DeterministicTestCase : public TestCaseBase
@@ -2181,7 +2211,7 @@ public:
 private:
   // Inherited
   virtual void DoRun (void);
-  
+
   /** Tolerance for testing rng values against expectation. */
   static constexpr double TOLERANCE {1e-8};
 };
@@ -2243,6 +2273,7 @@ DeterministicTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for empirical distribution random variable stream generator
  */
 class EmpiricalTestCase : public TestCaseBase
@@ -2254,7 +2285,7 @@ public:
 private:
   // Inherited
   virtual void DoRun (void);
-  
+
   /**
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
@@ -2302,12 +2333,12 @@ EmpiricalTestCase::DoRun (void)
   // Test that values have approximately the right mean value.
   double expectedMean = 8.75;
   NS_TEST_ASSERT_MSG_EQ_TOL (valueMean, expectedMean, expectedMean * TOLERANCE, "Wrong mean value.");
- 
+
 
   // Calculate the mean of the interpolated values.
   x->SetInterpolate (true);
   valueMean = Average (x);
- 
+
   // The expected distribution (with interpolation) is
   //     Bin     Probability
   //     [0, 5)     25%
@@ -2324,7 +2355,7 @@ EmpiricalTestCase::DoRun (void)
 
   // Test that values have approximately the right mean value.
   NS_TEST_ASSERT_MSG_EQ_TOL (valueMean, expectedMean, expectedMean * TOLERANCE, "Wrong mean value.");
- 
+
   // Bug 2082: Create the RNG with a uniform distribution between -1 and 1.
   Ptr<EmpiricalRandomVariable> y = CreateObject<EmpiricalRandomVariable> ();
   y->SetInterpolate (false);
@@ -2335,6 +2366,7 @@ EmpiricalTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for antithetic empirical distribution random variable stream generator
  */
 class EmpiricalAntitheticTestCase : public TestCaseBase
@@ -2346,7 +2378,7 @@ public:
 private:
   // Inherited
   virtual void DoRun (void);
-  
+
   /**
    * Tolerance for testing rng values against expectation,
    * as a fraction of mean value.
@@ -2392,7 +2424,7 @@ EmpiricalAntitheticTestCase::DoRun (void)
   // Check interpolated sampling
   x->SetInterpolate (true);
   valueMean = Average (x);
-  
+
   // The expected value for the mean of the values returned by this
   // empirical distribution with interpolation is
   //
@@ -2405,6 +2437,7 @@ EmpiricalAntitheticTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * Test case for caching of Normal RV parameters (see issue #302)
  */
 class NormalCachingTestCase : public TestCaseBase
@@ -2437,9 +2470,10 @@ NormalCachingTestCase::DoRun (void)
 }
 
 /**
+ * \ingroup rng-tests
  * RandomVariableStream test suite, covering all random number variable
  * stream generator types.
- */ 
+ */
 class RandomVariableSuite : public TestSuite
 {
 public:
@@ -2489,7 +2523,7 @@ RandomVariableSuite::RandomVariableSuite ()
   AddTestCase (new NormalCachingTestCase);
 }
 
-static RandomVariableSuite randomVariableSuite;
+static RandomVariableSuite randomVariableSuite;  //!< Static variable for test initialization
 
 }  // namespace RandomVariable
 

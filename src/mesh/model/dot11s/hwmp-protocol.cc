@@ -25,6 +25,9 @@
 #include "ns3/log.h"
 #include "ns3/simulator.h"
 #include "ns3/packet.h"
+#include "ns3/random-variable-stream.h"
+#include "ns3/string.h"
+#include "ns3/pointer.h"
 #include "ns3/mesh-point-device.h"
 #include "ns3/wifi-net-device.h"
 #include "ns3/mesh-wifi-interface-mac.h"
@@ -38,11 +41,11 @@
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("HwmpProtocol");
-  
+
 namespace dot11s {
 
 NS_OBJECT_ENSURE_REGISTERED (HwmpProtocol);
-  
+
 TypeId
 HwmpProtocol::GetTypeId ()
 {
@@ -274,6 +277,7 @@ HwmpProtocol::RequestRoute (
       tag.DecrementTtl ();
       if (tag.GetTtl () == 0)
         {
+          NS_LOG_DEBUG ("Dropping frame due to TTL expiry");
           m_stats.droppedTtl++;
           return false;
         }
@@ -310,6 +314,7 @@ HwmpProtocol::RequestRoute (
               Mac48Address address = *i;
               tag.SetAddress (address);
               packetCopy->AddPacketTag (tag);
+              NS_LOG_DEBUG ("Sending route reply for broadcast; address " << address);
               routeReply (true, packetCopy, source, destination, protocolType, plugin->first);
             }
         }
@@ -607,7 +612,9 @@ HwmpProtocol::ReceivePreq (IePreq preq, Mac48Address from, uint32_t interface, M
   NS_LOG_DEBUG ("I am " << GetAddress () << "retransmitting PREQ:" << preq);
   for (HwmpProtocolMacMap::const_iterator i = m_interfaces.begin (); i != m_interfaces.end (); i++)
     {
-      i->second->SendPreq (preq);
+      Time forwardingDelay = GetMeshPoint ()->GetForwardingDelay ();
+      NS_LOG_DEBUG ("Forwarding PREQ from " << from << " with delay " << forwardingDelay.As (Time::US));
+      Simulator::Schedule (forwardingDelay, &HwmpProtocolMac::SendPreq, i->second, preq);
     }
 }
 void
@@ -708,7 +715,9 @@ HwmpProtocol::ReceivePrep (IePrep prep, Mac48Address from, uint32_t interface, M
   //Forward PREP
   HwmpProtocolMacMap::const_iterator prep_sender = m_interfaces.find (result.ifIndex);
   NS_ASSERT (prep_sender != m_interfaces.end ());
-  prep_sender->second->SendPrep (prep, result.retransmitter);
+  Time forwardingDelay = GetMeshPoint ()->GetForwardingDelay ();
+  NS_LOG_DEBUG ("Forwarding PREP from " << from << " with delay " << forwardingDelay.As (Time::US));
+  Simulator::Schedule (forwardingDelay, &HwmpProtocolMac::SendPrep, prep_sender->second, prep, result.retransmitter);
 }
 void
 HwmpProtocol::ReceivePerr (std::vector<FailedDestination> destinations, Mac48Address from, uint32_t interface, Mac48Address fromMp)
@@ -771,12 +780,12 @@ HwmpProtocol::Install (Ptr<MeshPointDevice> mp)
     {
       // Checking for compatible net device
       Ptr<WifiNetDevice> wifiNetDev = (*i)->GetObject<WifiNetDevice> ();
-      if (wifiNetDev == 0)
+      if (!wifiNetDev)
         {
           return false;
         }
       Ptr<MeshWifiInterfaceMac>  mac = wifiNetDev->GetMac ()->GetObject<MeshWifiInterfaceMac> ();
-      if (mac == 0)
+      if (!mac)
         {
           return false;
         }
@@ -817,6 +826,7 @@ HwmpProtocol::DropDataFrame (uint32_t seqno, Mac48Address source)
   NS_LOG_FUNCTION (this << seqno << source);
   if (source == GetAddress ())
     {
+      NS_LOG_DEBUG ("Dropping seqno " << seqno << "; from self");
       return true;
     }
   std::map<Mac48Address, uint32_t,std::less<Mac48Address> >::const_iterator i = m_lastDataSeqno.find (source);
@@ -828,6 +838,7 @@ HwmpProtocol::DropDataFrame (uint32_t seqno, Mac48Address source)
     {
       if ((int32_t)(i->second - seqno)  >= 0)
         {
+          NS_LOG_DEBUG ("Dropping seqno " << seqno << "; stale frame");
           return true;
         }
       m_lastDataSeqno[source] = seqno;
@@ -890,6 +901,9 @@ HwmpProtocol::ForwardPathError (PathError perr)
               receivers_for_interface.push_back (perr.receivers[j].second);
             }
         }
+      Time forwardingDelay = GetMeshPoint ()->GetForwardingDelay ();
+      NS_LOG_DEBUG ("Forwarding PERR with delay " << forwardingDelay.As (Time::US));
+      Simulator::Schedule (forwardingDelay, &HwmpProtocolMac::ForwardPerr, i->second, perr.destinations, receivers_for_interface);
       i->second->ForwardPerr (perr.destinations, receivers_for_interface);
     }
 }
@@ -1025,7 +1039,7 @@ HwmpProtocol::ReactivePathResolved (Mac48Address dst)
   NS_ASSERT (result.retransmitter != Mac48Address::GetBroadcast ());
   //Send all packets stored for this destination
   QueuedPacket packet = DequeueFirstPacketByDst (dst);
-  while (packet.pkt != 0)
+  while (packet.pkt)
     {
       //set RA tag for retransmitter:
       HwmpTag tag;
@@ -1047,7 +1061,7 @@ HwmpProtocol::ProactivePathResolved ()
   HwmpRtable::LookupResult result = m_rtable->LookupProactive ();
   NS_ASSERT (result.retransmitter != Mac48Address::GetBroadcast ());
   QueuedPacket packet = DequeueFirstPacket ();
-  while (packet.pkt != 0)
+  while (packet.pkt)
     {
       //set RA tag for retransmitter:
       HwmpTag tag;
@@ -1100,7 +1114,7 @@ HwmpProtocol::RetryPathDiscovery (Mac48Address dst, uint8_t numOfRetry)
     {
       QueuedPacket packet = DequeueFirstPacketByDst (dst);
       //purge queue and delete entry from retryDatabase
-      while (packet.pkt != 0)
+      while (packet.pkt)
         {
           m_stats.totalDropped++;
           packet.reply (false, packet.pkt, packet.src, packet.dst, packet.protocol, HwmpRtable::MAX_METRIC);

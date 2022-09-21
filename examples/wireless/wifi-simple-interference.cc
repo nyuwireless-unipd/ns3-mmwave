@@ -58,7 +58,7 @@
 // For instance, for this configuration, the interfering frame arrives
 // at -90 dBm with a time offset of 3.2 microseconds:
 //
-// ./waf --run "wifi-simple-interference --Irss=-90 --delta=3.2"
+// ./ns3 run "wifi-simple-interference --Irss=-90 --delta=3.2"
 //
 // Note that all ns-3 attributes (not just the ones exposed in the below
 // script) can be changed at command line; see the documentation.
@@ -66,7 +66,7 @@
 // This script can also be helpful to put the Wifi layer into verbose
 // logging mode; this command will turn on all wifi logging:
 //
-// ./waf --run "wifi-simple-interference --verbose=1"
+// ./ns3 run "wifi-simple-interference --verbose=1"
 //
 // When you are done, you will notice a pcap trace file in your directory.
 // If you have tcpdump installed, you can try this:
@@ -77,7 +77,7 @@
 //
 // Next, try this command and look at the tcpdump-- you should see two packets
 // that are no longer interfering:
-// ./waf --run "wifi-simple-interference --delta=30000"
+// ./ns3 run "wifi-simple-interference --delta=30000"
 
 #include "ns3/command-line.h"
 #include "ns3/config.h"
@@ -95,6 +95,12 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("WifiSimpleInterference");
 
+/**
+ * Print a packer that has been received.
+ *
+ * \param socket The receiving socket.
+ * \return a string with the packet details.
+ */
 static inline std::string PrintReceivedPacket (Ptr<Socket> socket)
 {
   Address addr;
@@ -112,19 +118,32 @@ static inline std::string PrintReceivedPacket (Ptr<Socket> socket)
   return oss.str ();
 }
 
+/**
+ * Function called when a packet is received.
+ *
+ * \param socket The receiving socket.
+ */
 static void ReceivePacket (Ptr<Socket> socket)
 {
   NS_LOG_UNCOND (PrintReceivedPacket (socket));
 }
 
+/**
+ * Generate traffic
+ *
+ * \param socket The seding socket.
+ * \param pktSize The packet size.
+ * \param pktCount The packet counter.
+ * \param pktInterval The interval between two packets.
+ */
 static void GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize,
-                             uint32_t pktCount, Time pktInterval )
+                             uint32_t pktCount, Time pktInterval)
 {
   if (pktCount > 0)
     {
       socket->Send (Create<Packet> (pktSize));
       Simulator::Schedule (pktInterval, &GenerateTraffic,
-                           socket, pktSize,pktCount - 1, pktInterval);
+                           socket, pktSize, pktCount - 1, pktInterval);
     }
   else
     {

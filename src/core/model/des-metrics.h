@@ -29,10 +29,10 @@
 
 #include "nstime.h"
 #include "singleton.h"
-#include "system-mutex.h"
 
 #include <stdint.h>    // uint32_t
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -48,7 +48,7 @@ namespace ns3 {
  * event, and the (virtual) times when the event was scheduled and
  * when it will execute.
  *
- * See the DES Metrics Project page: https://wilseypa.github.io/desMetrics/
+ * See the DES Metrics Project page: https://github.com/wilseypa/desMetrics
  * for more information and analysis tools.
  *
  * If enabled (see below), ns-3 scripts should use CommandLine to
@@ -88,14 +88,14 @@ namespace ns3 {
  *
  * Enable DES Metrics at configure time with
  * \verbatim
-   $ waf configure ... --enable-des-metrics \endverbatim
+   $ ns3 configure ... --enable-des-metrics \endverbatim
  *
  * <b> Working with DES Metrics </b>
  *
  * Some useful shell pipelines:
  *
  * \li Run everything, retaining the results directory: <br/>
- *   \code  ./test.py --nowaf --retain \endcode
+ *   \code  ./test.py --nobuild --retain \endcode
  * \li Example traces end up in \c testpy-output/, so move there: <br/>
  *   \code cd testpy-output/$(date +"%F")*_/  \endcode
  *   (Remove the `_', which is to work around a Doxygen limitation.)
@@ -160,7 +160,7 @@ private:
   char m_separator;      //!< The separator between event records.
 
   /** Mutex to control access to the output file. */
-  SystemMutex m_mutex;
+  std::mutex m_mutex;
 
 };  // class DesMetrics
 

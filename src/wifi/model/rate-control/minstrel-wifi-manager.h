@@ -256,7 +256,7 @@ private:
                        double dataSnr, uint16_t dataChannelWidth, uint8_t dataNss) override;
   void DoReportFinalRtsFailed (WifiRemoteStation *station) override;
   void DoReportFinalDataFailed (WifiRemoteStation *station) override;
-  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station) override;
+  WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint16_t allowedWidth) override;
   WifiTxVector DoGetRtsTxVector (WifiRemoteStation *station) override;
 
   bool DoNeedRetransmission (WifiRemoteStation *st,
@@ -342,7 +342,7 @@ private:
   uint8_t m_lookAroundRate; ///< the % to try other rates than our current rate
   uint8_t m_ewmaLevel;      ///< exponential weighted moving average
   uint8_t m_sampleCol;      ///< number of sample columns
-  uint32_t m_pktLen;        ///< packet length used for calculate mode TxTime
+  uint32_t m_pktLen;        ///< packet length used to calculate mode TxTime
   bool m_printStats;        ///< whether statistics table should be printed.
   bool m_printSamples;      ///< whether samples table should be printed.
 

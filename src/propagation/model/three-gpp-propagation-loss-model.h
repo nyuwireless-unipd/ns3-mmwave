@@ -26,8 +26,10 @@
 namespace ns3 {
 
 /**
-* \brief Base class for the 3GPP propagation models
-*/
+ * \ingroup propagation
+ *
+ * \brief Base class for the 3GPP propagation models
+ */
 class ThreeGppPropagationLossModel : public PropagationLossModel
 {
 public:
@@ -46,6 +48,10 @@ public:
    * Destructor
    */
   virtual ~ThreeGppPropagationLossModel () override;
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  ThreeGppPropagationLossModel (const ThreeGppPropagationLossModel &) = delete;
+  ThreeGppPropagationLossModel &operator= (const ThreeGppPropagationLossModel &) = delete;
 
   /**
    * \brief Set the channel condition model used to determine the channel
@@ -72,21 +78,6 @@ public:
    */
   double GetFrequency (void) const;
 
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  ThreeGppPropagationLossModel (const ThreeGppPropagationLossModel &) = delete;
-
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns the ThreeGppPropagationLossModel instance
-   */
-  ThreeGppPropagationLossModel & operator = (const ThreeGppPropagationLossModel &) = delete;
-
 private:
   /**
    * Computes the received power by applying the pathloss model described in
@@ -101,17 +92,8 @@ private:
                                 Ptr<MobilityModel> a,
                                 Ptr<MobilityModel> b) const override;
 
-  /**
-   * If this  model uses objects of type RandomVariableStream,
-   * set the stream numbers to the integers starting with the offset
-   * 'stream'. Return the number of streams (possibly zero) that
-   * have been assigned.
-   *
-   * \param stream
-   * \return the number of stream indices assigned by this model
-   */
   virtual int64_t DoAssignStreams (int64_t stream) override;
-  
+
   /**
    * \brief Computes the pathloss between a and b
    * \param cond the channel condition
@@ -144,10 +126,10 @@ private:
    * \return pathloss value in dB
    */
   virtual double GetLossNlos (double distance2D, double distance3D, double hUt, double hBs) const = 0;
-  
+
   /**
    * \brief Computes the pathloss between a and b considering that the line of
-   *        sight is obstructed by a vehicle. By default it raises an error to 
+   *        sight is obstructed by a vehicle. By default it raises an error to
    *        avoid misuse.
    * \param distance2D the 2D distance between tx and rx in meters
    * \param distance3D the 3D distance between tx and rx in meters
@@ -222,8 +204,8 @@ private:
   static Vector GetVectorDifference (Ptr<MobilityModel> a, Ptr<MobilityModel> b);
 
 protected:
-  virtual void DoDispose () override; 
-  
+  virtual void DoDispose () override;
+
   /**
   * \brief Computes the 2D distance between two 3D vectors
   * \param a the first 3D vector
@@ -273,20 +255,9 @@ public:
    */
   virtual ~ThreeGppRmaPropagationLossModel () override;
 
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
+  // Delete copy constructor and assignment operator to avoid misuse
   ThreeGppRmaPropagationLossModel (const ThreeGppRmaPropagationLossModel &) = delete;
-
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns the ThreeGppRmaPropagationLossModel instance
-   */
-  ThreeGppRmaPropagationLossModel & operator = (const ThreeGppRmaPropagationLossModel &) = delete;
+  ThreeGppRmaPropagationLossModel &operator= (const ThreeGppRmaPropagationLossModel &) = delete;
 
 private:
   /**
@@ -375,31 +346,11 @@ public:
    */
   virtual ~ThreeGppUmaPropagationLossModel () override;
 
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
+  // Delete copy constructor and assignment operator to avoid misuse
   ThreeGppUmaPropagationLossModel (const ThreeGppUmaPropagationLossModel &) = delete;
-
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \return the ThreeGppUmaPropagationLossModel instance
-   */
-  ThreeGppUmaPropagationLossModel & operator = (const ThreeGppUmaPropagationLossModel &) = delete;
+  ThreeGppUmaPropagationLossModel &operator= (const ThreeGppUmaPropagationLossModel &) = delete;
 
 private:
-  /**
-   * If this  model uses objects of type RandomVariableStream,
-   * set the stream numbers to the integers starting with the offset
-   * 'stream'. Return the number of streams (possibly zero) that
-   * have been assigned.
-   *
-   * \param stream
-   * \return the number of stream indices assigned by this model
-   */
   virtual int64_t DoAssignStreams (int64_t stream) override;
 
   /**
@@ -477,20 +428,9 @@ public:
    */
   virtual ~ThreeGppUmiStreetCanyonPropagationLossModel () override;
 
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
+  // Delete copy constructor and assignment operator to avoid misuse
   ThreeGppUmiStreetCanyonPropagationLossModel (const ThreeGppUmiStreetCanyonPropagationLossModel &) = delete;
-
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \return the ThreeGppUmiStreetCanyonPropagationLossModel instance
-   */
-  ThreeGppUmiStreetCanyonPropagationLossModel & operator = (const ThreeGppUmiStreetCanyonPropagationLossModel &) = delete;
+  ThreeGppUmiStreetCanyonPropagationLossModel &operator= (const ThreeGppUmiStreetCanyonPropagationLossModel &) = delete;
 
 private:
   /**
@@ -574,20 +514,9 @@ public:
    */
   virtual ~ThreeGppIndoorOfficePropagationLossModel () override;
 
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
+  // Delete copy constructor and assignment operator to avoid misuse
   ThreeGppIndoorOfficePropagationLossModel (const ThreeGppIndoorOfficePropagationLossModel &) = delete;
-
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \return the ThreeGppIndoorOfficePropagationLossModel instance
-   */
-  ThreeGppIndoorOfficePropagationLossModel & operator = (const ThreeGppIndoorOfficePropagationLossModel &) = delete;
+  ThreeGppIndoorOfficePropagationLossModel &operator= (const ThreeGppIndoorOfficePropagationLossModel &) = delete;
 
 private:
   /**

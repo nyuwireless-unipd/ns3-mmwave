@@ -35,7 +35,7 @@ since this event could change other events which have already been executed. To
 address this problem, two conservative synchronization algorithm with lookahead are
 used in |ns3|. For more information on different synchronization approaches and
 parallel and distributed simulation in general, please refer to "Parallel and
-Distributed Simulation Systems" by Richard Fujimoto.   
+Distributed Simulation Systems" by Richard Fujimoto.
 
 The default parallel synchronization strategy implemented in the
 DistributedSimulatorImpl class is based on a globally synchronized
@@ -99,15 +99,15 @@ Prerequisites
 +++++++++++++
 .. highlight:: bash
 
-Ensure that MPI is installed, as well as mpic++. In Ubuntu repositories, 
-these are openmpi-bin, openmpi-common, openmpi-doc, libopenmpi-dev. In 
+Ensure that MPI is installed, as well as mpic++. In Ubuntu repositories,
+these are openmpi-bin, openmpi-common, openmpi-doc, libopenmpi-dev. In
 Fedora, these are openmpi and openmpi-devel.
 
-Note: 
+Note:
 
-There is a conflict on some Fedora systems between libotf and openmpi. A 
-possible "quick-fix" is to yum remove libotf before installing openmpi. 
-This will remove conflict, but it will also remove emacs. Alternatively, 
+There is a conflict on some Fedora systems between libotf and openmpi. A
+possible "quick-fix" is to yum remove libotf before installing openmpi.
+This will remove conflict, but it will also remove emacs. Alternatively,
 these steps could be followed to resolve the conflict:
 
     1) Rename the tiny otfdump which emacs says it needs::
@@ -118,7 +118,7 @@ these steps could be followed to resolve the conflict:
 
          $ sudo yum install libgfortran libtorque numactl
 
-    3) Download rpm packages: 
+    3) Download rpm packages:
 
        .. sourcecode:: text
 
@@ -146,21 +146,21 @@ the openmpi lib directory to LD_LIBRARY_PATH.
 Here is an example of setting up PATH and LD_LIBRARY_PATH using a bash shell:
 
     * For a 32-bit Linux distribution::
-         
+
          $ export PATH=$PATH:/usr/lib/openmpi/bin
-         $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/openmpi/lib      
-    
+         $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/openmpi/lib
+
      For a 64-bit Linux distribution::
-     
+
          $ export PATH=$PATH:/usr/lib64/openmpi/bin
-         $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64/openmpi/lib          
+         $ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64/openmpi/lib
 
 These lines can be added into ~/.bash_profile or ~/.bashrc to avoid having to
 retype them when a new shell is opened.
 
 Note 2:  There is a separate issue on recent Fedora distributions, which is
 that the libraries are built with AVX instructions.  On older machines or
-some virtual machines, this results in an illegal instruction 
+some virtual machines, this results in an illegal instruction
 being thrown.  This is not an |ns3| issue, a simple MPI test case will also
 fail.  The AVX instructions are being called during initialization.
 
@@ -184,32 +184,32 @@ Building and Running Examples
 
 If you already built |ns3| without MPI enabled, you must re-build::
 
-    $ ./waf distclean
+    $ ./ns3 distclean
 
 Configure |ns3| with the --enable-mpi option::
 
-    $ ./waf -d debug configure --enable-examples --enable-tests --enable-mpi
+    $ ./ns3 configure -d debug --enable-examples --enable-tests --enable-mpi
 
 Ensure that MPI is enabled by checking the optional features shown from the
 output of configure.
 
 Next, build |ns3|::
 
-    $ ./waf
+    $ ./ns3
 
 After building |ns3| with mpi enabled, the example programs are now
-ready to run with `mpiexec`.  It is advised to avoid running Waf directly
+ready to run with `mpiexec`.  It is advised to avoid running ns3 directly
 with `mpiexec`; two options that should be more robust are to either use
 the `--command-template` way of running the mpiexec program, or to use
-`./waf shell` and run the executables directly on the command line.
+`./ns3 shell` and run the executables directly on the command line.
 Here are a few examples (from the root |ns3| directory)::
 
-    $ ./waf --command-template="mpiexec -np 2 %s" --run simple-distributed
-    $ ./waf --command-template="mpiexec -np 2 -machinefile mpihosts %s --nix=0" --run nms-p2p-nix-distributed
-            
+    $ ./ns3 run simple-distributed --command-template="mpiexec -np 2 %s"
+    $ ./ns3 run nms-p2p-nix-distributed --command-template="mpiexec -np 2 -machinefile mpihosts %s --nix=0"
+
 An example using the null message synchronization algorithm::
 
-    $ ./waf --command-template="mpiexec -np 2 %s --nullmsg" --run simple-distributed
+    $ ./ns3 run simple-distributed --command-template="mpiexec -np 2 %s --nullmsg"
 
 The np switch is the number of logical processors to use. The machinefile switch
 is which machines to use. In order to use machinefile, the target file must
@@ -224,10 +224,10 @@ exist (in this case mpihosts). This can simply contain something like:
 
 Or if you have a cluster of machines, you can name them.
 
-The other alternative to `command-template` is to use `./waf shell`.  Here
+The other alternative to `command-template` is to use `./ns3 shell`.  Here
 are the equivalent examples to the above (assuming optimized build profile)::
 
-    $ ./waf shell
+    $ ./ns3 shell
     $ cd build/src/mpi/examples
     $ mpiexec -np 2 ns3-dev-simple-distributed-optimized
     $ mpiexec -np 2 -machinefile mpihosts ns3-dev-nms-p2p-nix-distributed-optimized --nix=0
@@ -244,12 +244,12 @@ showing how to add a command line argument to control the
 synchronization algorithm choice:::
 
   cmd.AddValue ("nullmsg", "Enable the use of null-message synchronization", nullmsg);
-  if(nullmsg) 
+  if(nullmsg)
     {
       GlobalValue::Bind ("SimulatorImplementationType",
                          StringValue ("ns3::NullMessageSimulatorImpl"));
-    } 
-  else 
+    }
+  else
     {
       GlobalValue::Bind ("SimulatorImplementationType",
                          StringValue ("ns3::DistributedSimulatorImpl"));
@@ -286,9 +286,9 @@ system ids::
     nodes.Add (node1);
     nodes.Add (node2);
 
-Next, where the simulation is divided is determined by the placement of 
-point-to-point links. If a point-to-point link is created between two 
-nodes with different system ids, a remote point-to-point link is created, 
+Next, where the simulation is divided is determined by the placement of
+point-to-point links. If a point-to-point link is created between two
+nodes with different system ids, a remote point-to-point link is created,
 as described in :ref:`current-implementation-details`.
 
 Finally, installing applications only on the LP associated with the target node

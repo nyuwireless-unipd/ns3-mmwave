@@ -20,7 +20,7 @@
 
 // This program can be used to benchmark packet serialization/deserialization
 // operations using Headers and Tags, for various numbers of packets 'n'
-// Sample usage:  ./waf --run 'bench-packets --n=10000'
+// Sample usage:  ./ns3 run 'bench-packets --n=10000'
 
 #include "ns3/command-line.h"
 #include "ns3/system-wall-clock-ms.h"
@@ -42,7 +42,7 @@ class BenchHeader : public Header
 public:
   BenchHeader ();
   /**
-   * Returns true if the header has been deserialized and the 
+   * Returns true if the header has been deserialized and the
    * deserialization was correct.  If Deserialize() has not yet been
    * called on the header, will return false.
    *
@@ -75,14 +75,14 @@ BenchHeader<N>::BenchHeader ()
 {}
 
 template <int N>
-bool 
+bool
 BenchHeader<N>::IsOk (void) const
 {
   return m_ok;
 }
 
 template <int N>
-std::string 
+std::string
 BenchHeader<N>::GetTypeName (void)
 {
   std::ostringstream oss;
@@ -91,10 +91,10 @@ BenchHeader<N>::GetTypeName (void)
 }
 
 template <int N>
-TypeId 
+TypeId
 BenchHeader<N>::GetTypeId (void)
 {
-  static TypeId tid = TypeId (GetTypeName ().c_str ())
+  static TypeId tid = TypeId (GetTypeName ())
     .SetParent<Header> ()
     .SetGroupName ("Utils")
     .HideFromDocumentation ()
@@ -103,26 +103,26 @@ BenchHeader<N>::GetTypeId (void)
   return tid;
 }
 template <int N>
-TypeId 
+TypeId
 BenchHeader<N>::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 template <int N>
-void 
+void
 BenchHeader<N>::Print (std::ostream &os) const
 {
   NS_ASSERT (false);
 }
 template <int N>
-uint32_t 
+uint32_t
 BenchHeader<N>::GetSerializedSize (void) const
 {
   return N;
 }
 template <int N>
-void 
+void
 BenchHeader<N>::Serialize (Buffer::Iterator start) const
 {
   start.WriteU8 (N, N);
@@ -161,7 +161,7 @@ public:
    * \return The TypeId.
    */
   static TypeId GetTypeId (void) {
-    static TypeId tid = TypeId (GetName ().c_str ())
+    static TypeId tid = TypeId (GetName ())
       .SetParent<Tag> ()
       .SetGroupName ("Utils")
       .HideFromDocumentation ()
@@ -195,7 +195,7 @@ public:
 };
 
 
-static void 
+static void
 benchD (uint32_t n)
 {
   BenchHeader<25> ipv4;
@@ -219,7 +219,7 @@ benchD (uint32_t n)
 
 
 
-static void 
+static void
 benchA (uint32_t n)
 {
   BenchHeader<25> ipv4;
@@ -239,7 +239,7 @@ benchA (uint32_t n)
   NS_ASSERT_MSG (ipv4.IsOk () == true, "IsOk() should be true after deserialization");
 }
 
-static void 
+static void
 benchB (uint32_t n)
 {
   BenchHeader<25> ipv4;
@@ -260,7 +260,7 @@ C2 (Ptr<Packet> p)
   p->RemoveHeader (udp);
 }
 
-static void 
+static void
 C1 (Ptr<Packet> p)
 {
   BenchHeader<25> ipv4;
@@ -363,7 +363,7 @@ int main (int argc, char *argv[])
   uint32_t minIterations = 1;
   bool enablePrinting = false;
 
-  CommandLine cmd;
+  CommandLine cmd (__FILE__);
   cmd.Usage ("Benchmark Packet class");
   cmd.AddValue ("n", "number of iterations", n);
   cmd.AddValue ("min-iterations", "number of subiterations to minimize iteration time over", minIterations);

@@ -1,6 +1,4 @@
 from gi.repository import Gtk
-import ns.core
-import ns.network
 from visualizer.base import InformationWindow
 
 NODE_STATISTICS_MEMORY = 10
@@ -18,13 +16,12 @@ class StatisticsCollector(object):
 
     ## NetDevStats class
     class NetDevStats(object):
-        ## @var __slots__
-        #  class members
+        ## class members
         __slots__ = ['rxPackets', 'rxBytes', 'txPackets', 'txBytes',
                      'rxPacketRate', 'rxBitRate', 'txPacketRate', 'txBitRate']
 
     def __init__(self, visualizer):
-        """
+        """!
         Collects interface statistics for all nodes.
         @param self this object
         @param visualizer visualizer object
@@ -120,10 +117,10 @@ class ShowInterfaceStatistics(InformationWindow):
         COLUMN_RX_PACKET_RATE,
         COLUMN_RX_BIT_RATE,
 
-        ) = range(9)
+    ) = range(9)
 
     def __init__(self, visualizer, node_index, statistics_collector):
-        """
+        """!
         Initializer.
         @param self this object
         @param visualizer the visualizer object
@@ -183,13 +180,13 @@ class ShowInterfaceStatistics(InformationWindow):
         @param self this object
         @return none
         """
-        node = ns.network.NodeList.GetNode(self.node_index)
+        node = ns.NodeList.GetNode(self.node_index)
         stats_list = self.statistics_collector.get_interface_statistics(self.node_index)
         self.table_model.clear()
         for iface, stats in enumerate(stats_list):
             tree_iter = self.table_model.append()
             netdevice = node.GetDevice(iface)
-            interface_name = ns.core.Names.FindName(netdevice)
+            interface_name = ns.Names.FindName(netdevice)
             if not interface_name:
                 interface_name = "(interface %i)" % iface
             self.table_model.set(tree_iter,

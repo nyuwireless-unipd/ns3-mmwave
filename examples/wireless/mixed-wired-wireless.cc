@@ -80,10 +80,13 @@ using namespace ns3;
 //
 NS_LOG_COMPONENT_DEFINE ("MixedWireless");
 
-//
-// This function will be used below as a trace sink, if the command-line
-// argument or default value "useCourseChangeCallback" is set to true
-//
+/**
+ * This function will be used below as a trace sink, if the command-line
+ * argument or default value "useCourseChangeCallback" is set to true
+ *
+ * \param path The callback path.
+ * \param model The mobility model.
+ */
 static void
 CourseChangeCallback (std::string path, Ptr<const MobilityModel> model)
 {
@@ -295,7 +298,6 @@ main (int argc, char *argv[])
       ss << i;
       ssidString += ss.str ();
       Ssid ssid = Ssid (ssidString);
-      wifiInfra.SetRemoteStationManager ("ns3::ArfWifiManager");
       // setup stas
       macInfra.SetType ("ns3::StaWifiMac",
                         "Ssid", SsidValue (ssid));

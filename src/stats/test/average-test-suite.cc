@@ -29,10 +29,11 @@ using namespace ns3;
 // documented.  Current value is sufficient for all test platforms.
 const double TOLERANCE = 2e-14;
 
-// ===========================================================================
-// Test case for a single integer.
-// ===========================================================================
-
+/**
+ * \ingroup stats-tests
+ *
+ * \brief Average class - Test case for a single integer.
+ */
 class OneIntegerAverageTestCase : public TestCase
 {
 public:
@@ -61,7 +62,6 @@ OneIntegerAverageTestCase::DoRun (void)
   long count = 1;
 
   double sum = 0;
-  double sqrSum = 0;
   double min;
   double max;
   double mean;
@@ -78,7 +78,6 @@ OneIntegerAverageTestCase::DoRun (void)
       calculator.Update (value);
 
       sum    += value;
-      sqrSum += value * value;
     }
 
   // Calculate the expected values for the statistical functions.
@@ -98,10 +97,11 @@ OneIntegerAverageTestCase::DoRun (void)
 }
 
 
-// ===========================================================================
-// Test case for five integers.
-// ===========================================================================
-
+/**
+ * \ingroup stats-tests
+ *
+ * \brief Average class - Test case for five integers.
+ */
 class FiveIntegersAverageTestCase : public TestCase
 {
 public:
@@ -167,10 +167,11 @@ FiveIntegersAverageTestCase::DoRun (void)
 }
 
 
-// ===========================================================================
-// Test case for five double values.
-// ===========================================================================
-
+/**
+ * \ingroup stats-tests
+ *
+ * \brief Average class - Test case for five double values.
+ */
 class FiveDoublesAverageTestCase : public TestCase
 {
 public:
@@ -236,6 +237,11 @@ FiveDoublesAverageTestCase::DoRun (void)
 }
 
 
+/**
+ * \ingroup stats-tests
+ *
+ * \brief Average class TestSuite
+ */
 class AverageTestSuite : public TestSuite
 {
 public:
@@ -250,4 +256,5 @@ AverageTestSuite::AverageTestSuite ()
   AddTestCase (new FiveDoublesAverageTestCase, TestCase::QUICK);
 }
 
+ /// Static variable for test initialization
 static AverageTestSuite averageTestSuite;

@@ -317,10 +317,10 @@ LteUePhy::DoInitialize ()
   NS_LOG_FUNCTION (this);
   bool haveNodeId = false;
   uint32_t nodeId = 0;
-  if (m_netDevice != 0)
+  if (m_netDevice)
     {
       Ptr<Node> node = m_netDevice->GetNode ();
-      if (node != 0)
+      if (node)
         {
           nodeId = node->GetId ();
           haveNodeId = true;
@@ -475,9 +475,7 @@ Ptr<SpectrumValue>
 LteUePhy::CreateTxPowerSpectralDensity ()
 {
   NS_LOG_FUNCTION (this);
-  LteSpectrumValueHelper psdHelper;
-  Ptr<SpectrumValue> psd = psdHelper.CreateUlTxPowerSpectralDensity (m_ulEarfcn, m_ulBandwidth, m_txPower, GetSubChannelsForTransmission ());
-
+  Ptr<SpectrumValue> psd = LteSpectrumValueHelper::CreateUlTxPowerSpectralDensity (m_ulEarfcn, m_ulBandwidth, m_txPower, GetSubChannelsForTransmission ());
   return psd;
 }
 
@@ -721,7 +719,7 @@ LteUePhy::CreateDlCqiFeedbackMessage (const SpectrumValue& sinr)
 
   // CREATE DlCqiLteControlMessage
   Ptr<DlCqiLteControlMessage> msg = Create<DlCqiLteControlMessage> ();
-  CqiListElement_s dlcqi;
+  CqiListElement_s dlcqi = CqiListElement_s{};
   std::vector<int> cqi;
   if (Simulator::Now () > m_p10CqiLast + m_p10CqiPeriodicity)
     {

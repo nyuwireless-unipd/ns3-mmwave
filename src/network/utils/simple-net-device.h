@@ -27,12 +27,11 @@
 #include "ns3/net-device.h"
 #include "ns3/data-rate.h"
 #include "ns3/event-id.h"
-
+#include "ns3/queue-fwd.h"
 #include "mac48-address.h"
 
 namespace ns3 {
 
-template <typename Item> class Queue;
 class SimpleChannel;
 class Node;
 class ErrorModel;
@@ -42,7 +41,7 @@ class ErrorModel;
  *
  * This device assumes 48-bit mac addressing; there is also the possibility to
  * add an ErrorModel if you want to force losses on the device.
- * 
+ *
  * The device can be installed on a node through the SimpleNetDeviceHelper.
  * In case of manual creation, the user is responsible for assigning an unique
  * address to the device.
@@ -62,7 +61,7 @@ public:
   SimpleNetDevice ();
 
   /**
-   * Receive a packet from a connected SimpleChannel.  The 
+   * Receive a packet from a connected SimpleChannel.  The
    * SimpleNetDevice receives packets from its connected channel
    * and then forwards them by calling its rx callback method
    *
@@ -72,11 +71,11 @@ public:
    * \param from address packet was sent from
    */
   void Receive (Ptr<Packet> packet, uint16_t protocol, Mac48Address to, Mac48Address from);
-  
+
   /**
-   * Attach a channel to this net device.  This will be the 
+   * Attach a channel to this net device.  This will be the
    * channel the net device sends on
-   * 
+   *
    * \param channel channel to assign to this net device
    *
    */
@@ -150,7 +149,7 @@ private:
 
   /**
    * The trace source fired when the phy layer drops a packet it has received
-   * due to the error model being active.  Although SimpleNetDevice doesn't 
+   * due to the error model being active.  Although SimpleNetDevice doesn't
    * really have a Phy model, we choose this trace source name for alignment
    * with other trace sources.
    *

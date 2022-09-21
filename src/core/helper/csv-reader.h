@@ -40,7 +40,7 @@ namespace ns3 {
 
 /**
  * \ingroup core
- * \defgroup csvreader
+ * \defgroup csvreader CSV File Reader
  *
  * A way to extract data from simple csv files.
  */
@@ -86,7 +86,7 @@ namespace ns3 {
  *           // Handle error, then
  *           continue;
  *         }
- *       
+ *
  *       // Do something with values
  *
  *     }  // while FetchNextRow

@@ -51,6 +51,11 @@ class PeerManagementProtocol : public Object
 public:
   PeerManagementProtocol ();
   ~PeerManagementProtocol ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  PeerManagementProtocol (const PeerManagementProtocol &) = delete;
+  PeerManagementProtocol &operator= (const PeerManagementProtocol &) = delete;
+
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -177,7 +182,7 @@ public:
    */
   uint8_t GetNumberOfLinks ();
   /**
-   * Set mesh ID to a string value 
+   * Set mesh ID to a string value
    * \param s the mesh ID string value
    */
   void SetMeshId (std::string s);
@@ -203,7 +208,7 @@ public:
    */
   void NotifyBeaconSent (uint32_t interface, Time beaconInterval);
   ///@}
-  
+
   /**
    * \brief Report statistics
    * \param os the output stream
@@ -229,11 +234,11 @@ public:
    */
   typedef void (* LinkOpenCloseTracedCallback)
     (Mac48Address src, const Mac48Address dst);
-   
+
 
 private:
   virtual void DoInitialize ();
-  
+
   // Private structures
   /// Keeps information about beacon of peer station: beacon interval, association ID, last time we have received a beacon
   struct BeaconInfo
@@ -253,17 +258,6 @@ private:
   typedef std::map<uint32_t, BeaconsOnInterface> BeaconInfoMap;
   ///\brief this vector keeps pointers to MAC-plugins
   typedef std::map<uint32_t, Ptr<PeerManagementProtocolMac> > PeerManagementProtocolMacMap;
-
-private:
-  /**
-   * assignment operator
-   *
-   * \param peer the value to assign
-   * \returns the assigned value
-   */
-  PeerManagementProtocol& operator= (const PeerManagementProtocol & peer);
-  /// type conversion operator
-  PeerManagementProtocol (const PeerManagementProtocol &);
 
   /**
    * Initiate link function
@@ -387,7 +381,7 @@ private:
     /**
      * Constructor
      *
-     * \param t 
+     * \param t
      */
     Statistics (uint16_t t = 0);
     /**

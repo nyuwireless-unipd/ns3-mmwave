@@ -21,12 +21,12 @@
 #include "example-as-test.h"
 #include "ascii-test.h"
 #include "log.h"
-#include "unused.h"
 #include "assert.h"
 
 #include <string>
 #include <sstream>
-#include <cstdlib>  // itoa(), system ()
+#include <cstdlib>  // itoa(), system (), getenv ()
+#include <cstring>
 
 /**
  * \file
@@ -88,8 +88,8 @@ ExampleAsTestCase::DoRun (void)
   std::stringstream ss;
 
   // Use bash as shell to allow use of PIPESTATUS
-  ss << "bash -c './waf --run-no-build " << m_program
-     << " --command-template=\"" << GetCommandTemplate () << "\""
+  ss << "bash -c './ns3 run " << m_program
+     << " --no-build --command-template=\"" << GetCommandTemplate () << "\""
 
     // redirect std::clog, std::cerr to std::cout
      << " 2>&1 "
@@ -100,7 +100,7 @@ ExampleAsTestCase::DoRun (void)
      << GetPostProcessingCommand ()
      << " > " << testFile
 
-    // Get the status of waf
+    // Get the status of ns3
      << "; exit ${PIPESTATUS[0]}'";
 
   int status = std::system (ss.str ().c_str ());
@@ -122,6 +122,13 @@ ExampleAsTestCase::DoRun (void)
 
   // Make sure the example didn't outright crash
   NS_TEST_ASSERT_MSG_EQ (status, 0, "example " + m_program + " failed");
+
+  // Check that we're not just introspecting the command-line
+  const char * envVar = std::getenv ("NS_COMMANDLINE_INTROSPECTION");
+  if (envVar != 0 && std::strlen (envVar) != 0)
+    {
+      return;
+    }
 
   // Compare the testFile to the reference file
   NS_ASCII_TEST_EXPECT_EQ (testFile, refFile);

@@ -21,6 +21,7 @@
 #include "ns3/address.h"
 #include "ns3/assert.h"
 #include "ns3/log.h"
+#include "ns3/simulator.h"
 #include <iomanip>
 #include <iostream>
 #include <cstring>
@@ -56,6 +57,7 @@ AsciiToLowCase (char c)
     }
 }
 
+uint64_t Mac64Address::m_allocationIndex = 0;
 
 Mac64Address::Mac64Address ()
 {
@@ -66,10 +68,10 @@ Mac64Address::Mac64Address (const char *str)
 {
   NS_LOG_FUNCTION (this << str);
   int i = 0;
-  while (*str != 0 && i < 8) 
+  while (*str != 0 && i < 8)
     {
       uint8_t byte = 0;
-      while (*str != ASCII_COLON && *str != 0) 
+      while (*str != ASCII_COLON && *str != 0)
         {
           byte <<= 4;
           char low = AsciiToLowCase (*str);
@@ -85,7 +87,7 @@ Mac64Address::Mac64Address (const char *str)
         }
       m_address[i] = byte;
       i++;
-      if (*str == 0) 
+      if (*str == 0)
         {
           break;
         }
@@ -93,20 +95,20 @@ Mac64Address::Mac64Address (const char *str)
     }
   NS_ASSERT (i == 8);
 }
-void 
+void
 Mac64Address::CopyFrom (const uint8_t buffer[8])
 {
   NS_LOG_FUNCTION (this << &buffer);
   std::memcpy (m_address, buffer, 8);
 }
-void 
+void
 Mac64Address::CopyTo (uint8_t buffer[8]) const
 {
   NS_LOG_FUNCTION (this << &buffer);
   std::memcpy (buffer, m_address, 8);
 }
 
-bool 
+bool
 Mac64Address::IsMatchingType (const Address &address)
 {
   NS_LOG_FUNCTION (&address);
@@ -116,7 +118,7 @@ Mac64Address::operator Address () const
 {
   return ConvertTo ();
 }
-Mac64Address 
+Mac64Address
 Mac64Address::ConvertFrom (const Address &address)
 {
   NS_LOG_FUNCTION (address);
@@ -133,24 +135,37 @@ Mac64Address::ConvertTo (void) const
   return Address (GetType (), m_address, 8);
 }
 
-Mac64Address 
+Mac64Address
 Mac64Address::Allocate (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  static uint64_t id = 0;
-  id++;
+
+  if (m_allocationIndex == 0)
+    {
+      Simulator::ScheduleDestroy (Mac64Address::ResetAllocationIndex);
+    }
+
+  m_allocationIndex++;
   Mac64Address address;
-  address.m_address[0] = (id >> 56) & 0xff;
-  address.m_address[1] = (id >> 48) & 0xff;
-  address.m_address[2] = (id >> 40) & 0xff;
-  address.m_address[3] = (id >> 32) & 0xff;
-  address.m_address[4] = (id >> 24) & 0xff;
-  address.m_address[5] = (id >> 16) & 0xff;
-  address.m_address[6] = (id >> 8) & 0xff;
-  address.m_address[7] = (id >> 0) & 0xff;
+  address.m_address[0] = (m_allocationIndex >> 56) & 0xff;
+  address.m_address[1] = (m_allocationIndex >> 48) & 0xff;
+  address.m_address[2] = (m_allocationIndex >> 40) & 0xff;
+  address.m_address[3] = (m_allocationIndex >> 32) & 0xff;
+  address.m_address[4] = (m_allocationIndex >> 24) & 0xff;
+  address.m_address[5] = (m_allocationIndex >> 16) & 0xff;
+  address.m_address[6] = (m_allocationIndex >> 8) & 0xff;
+  address.m_address[7] = m_allocationIndex & 0xff;
   return address;
 }
-uint8_t 
+
+void
+Mac64Address::ResetAllocationIndex ()
+{
+  NS_LOG_FUNCTION_NOARGS ();
+  m_allocationIndex = 0;
+}
+
+uint8_t
 Mac64Address::GetType (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -165,7 +180,7 @@ std::ostream& operator<< (std::ostream& os, const Mac64Address & address)
 
   os.setf (std::ios::hex, std::ios::basefield);
   os.fill ('0');
-  for (uint8_t i=0; i < 7; i++) 
+  for (uint8_t i=0; i < 7; i++)
     {
       os << std::setw (2) << (uint32_t)ad[i] << ":";
     }

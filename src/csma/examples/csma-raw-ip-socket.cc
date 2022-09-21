@@ -23,7 +23,7 @@
 //
 // Node n0 sends data to node n3 over a raw IP socket.  The protocol
 // number used is 2.
-// The default traffic rate is to send 1250 bytes/second for 10 kb/s 
+// The default traffic rate is to send 1250 bytes/second for 10 kb/s
 // The data rate can be toggled by command line argument
 
 #include <iostream>
@@ -42,6 +42,12 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("CsmaRawIpSocketExample");
 
+/**
+ * Receive sink function
+ *
+ * \param p the packet.
+ * \param ad the sender's address.
+ */
 static void SinkRx (Ptr<const Packet> p, const Address &ad)
 {
   // Enable the below line to see the packet contents printed out at the
@@ -52,7 +58,7 @@ static void SinkRx (Ptr<const Packet> p, const Address &ad)
 int
 main (int argc, char *argv[])
 {
-#if 0 
+#if 0
   LogComponentEnable ("CsmaPacketSocketExample", LOG_LEVEL_INFO);
 #endif
   uint32_t dataRate = 10;
@@ -106,7 +112,7 @@ main (int argc, char *argv[])
   // first, pcap tracing in non-promiscuous mode
   csma.EnablePcapAll ("csma-raw-ip-socket", false);
   // then, print what the packet sink receives.
-  Config::ConnectWithoutContext ("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx", 
+  Config::ConnectWithoutContext ("/NodeList/3/ApplicationList/0/$ns3::PacketSink/Rx",
                                  MakeCallback (&SinkRx));
 
   Packet::EnablePrinting ();

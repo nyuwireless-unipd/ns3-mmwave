@@ -18,7 +18,7 @@
  * by: Amir Modarresi <amodarresi@ittc.ku.edu>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -42,8 +42,8 @@ class TcpSocketState;
  * Internet-Draft draft-leith-tcp-htcp-03 and its related paper,
  * "H-TCP: TCP for high-speed and long-distance networks"
  * H-TCP is a congestion control protocol suitable for high bandwidth-delay
- * product networks. It is fair to similar flows present in the network and 
- * also friendly with conventional TCP. It also makes use of free 
+ * product networks. It is fair to similar flows present in the network and
+ * also friendly with conventional TCP. It also makes use of free
  * bandwidth when it is available.
  */
 class TcpHtcp : public TcpNewReno

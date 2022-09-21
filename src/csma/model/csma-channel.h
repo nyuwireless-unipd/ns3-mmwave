@@ -34,10 +34,10 @@ class CsmaNetDevice;
 
 /**
  * \ingroup csma
- * \brief CsmaNetDevice Record 
+ * \brief CsmaNetDevice Record
  *
  * Stores the information related to each net device that is
- * connected to the channel. 
+ * connected to the channel.
  */
 class CsmaDeviceRec {
 public:
@@ -69,7 +69,7 @@ public:
 
 /**
  * Current state of the channel
- */ 
+ */
 enum WireState
 {
   IDLE,            /**< Channel is IDLE, no packet is being transmitted */
@@ -87,7 +87,7 @@ enum WireState
  * take into account the distances between stations or the speed of
  * light to determine collisions.
  */
-class CsmaChannel : public Channel 
+class CsmaChannel : public Channel
 {
 public:
 
@@ -105,6 +105,10 @@ public:
    * \brief Destroy a CsmaChannel
    */
   virtual ~CsmaChannel ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  CsmaChannel (const CsmaChannel &) = delete;
+  CsmaChannel &operator= (const CsmaChannel &) = delete;
 
   /**
    * \brief Attach a given netdevice to this channel
@@ -293,21 +297,6 @@ public:
   Time GetDelay (void);
 
 private:
-  /**
-   * Copy constructor is declared but not implemented.  This disables the
-   * copy constructor for CsmaChannel objects.
-   * \param o object to copy
-   */
-  CsmaChannel (CsmaChannel const &o);
-
-  /**
-   * Operator = is declared but not implemented.  This disables the assignment
-   * operator for CsmaChannel objects.
-   * \param o object to copy
-   * \returns the copied object
-   */
-  CsmaChannel &operator = (CsmaChannel const &o);
-
   /**
    * The assigned data rate of the channel
    */

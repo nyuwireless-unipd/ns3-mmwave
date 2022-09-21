@@ -267,7 +267,23 @@ SimpleMatrixBasedChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
         }
     }
 
-  // Channel matrix params
+
+  // fill channel matrix
+  Ptr<MatrixBasedChannelModel::ChannelMatrix> channelMatrix = Create<MatrixBasedChannelModel::ChannelMatrix> ();
+  channelMatrix->m_channel = H;
+  channelMatrix->m_generatedTime = Seconds (0);
+  channelMatrix->m_antennaPair = std::make_pair (aAntenna->GetId (), bAntenna->GetId ());
+  channelMatrix->m_nodeIds = std::make_pair (aMob->GetObject<Node> ()->GetId (), bMob->GetObject<Node> ()->GetId ());
+
+  return channelMatrix;
+}
+
+Ptr<const MatrixBasedChannelModel::ChannelParams> 
+SimpleMatrixBasedChannelModel::GetParams (Ptr<const MobilityModel> aMob,
+                                          Ptr<const MobilityModel> bMob) const
+{
+  Ptr<MatrixBasedChannelModel::ChannelParams> channelParams = Create<MatrixBasedChannelModel::ChannelParams> ();
+
   Double2DVector angles;
   angles.resize (4);
   angles[0] = m_aoaAz;
@@ -282,16 +298,9 @@ SimpleMatrixBasedChannelModel::GetChannel (Ptr<const MobilityModel> aMob,
       delays[i] = m_delay[i] * 1e9; // [s] -> [ns]
     }
 
-  // fill channel matrix
-  Ptr<MatrixBasedChannelModel::ChannelMatrix> channelMatrix = Create<MatrixBasedChannelModel::ChannelMatrix> ();
-  channelMatrix->m_channel = H;
-  channelMatrix->m_delay = delays;
-  channelMatrix->m_angle = angles;
-  channelMatrix->m_generatedTime = Seconds (0);
-  channelMatrix->m_nodeIds = std::make_pair (aMob->GetObject<Node> ()->GetId (),
-                                             bMob->GetObject<Node> ()->GetId ());
-
-  return channelMatrix;
+  channelParams->m_delay = delays;
+  channelParams->m_angle = angles;
+  return channelParams;
 }
 
 }  // namespace ns3

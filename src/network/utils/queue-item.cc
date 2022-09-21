@@ -49,7 +49,7 @@ uint32_t
 QueueItem::GetSize (void) const
 {
   NS_LOG_FUNCTION (this);
-  NS_ASSERT (m_packet != 0);
+  NS_ASSERT (m_packet);
   return m_packet->GetSize ();
 }
 
@@ -134,8 +134,8 @@ QueueDiscItem::Print (std::ostream& os) const
 {
   os << GetPacket () << " "
      << "Dst addr " << m_address << " "
-     << "proto " << (uint16_t) m_protocol << " "
-     << "txq " << (uint8_t) m_txq
+     << "proto " << m_protocol << " "
+     << "txq " << +m_txq
   ;
 }
 

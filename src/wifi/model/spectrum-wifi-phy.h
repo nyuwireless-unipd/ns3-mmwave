@@ -67,7 +67,7 @@ public:
   virtual ~SpectrumWifiPhy ();
 
   // Implementation of pure virtual method.
-  void StartTx (Ptr<WifiPpdu> ppdu) override;
+  void StartTx (Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector) override;
   Ptr<Channel> GetChannel (void) const override;
   uint16_t GetGuardBandwidth (uint16_t currentChannelWidth) const override;
   std::tuple<double, double, double> GetTxMaskRejectionParams (void) const override;
@@ -100,7 +100,7 @@ public:
    *                SpectrumSignalParameters (in case any objects downstream of the
    *                SpectrumWifiPhy wish to adjust signal properties based on the
    *                transmitted antenna model.  This antenna is also used when
-   *                the underlying WifiSpectrumPhyInterface::GetRxAntenna() method
+   *                the underlying WifiSpectrumPhyInterface::GetAntenna() method
    *                is called.
    *
    * Note:  this method may be split into separate SetTx and SetRx
@@ -112,7 +112,7 @@ public:
    *
    * \return the AntennaModel used for reception
    */
-  Ptr<AntennaModel> GetRxAntenna (void) const;
+  Ptr<Object> GetAntenna (void) const;
   /**
    * \return the SpectrumModel that this SpectrumPhy expects to be used
    *         for all SpectrumValues that are passed to StartRx. If 0 is
@@ -135,12 +135,9 @@ public:
    */
   typedef void (* SignalArrivalCallback) (bool signalType, uint32_t senderNodeId, double rxPower, Time duration);
 
-  // The following four methods call to the base WifiPhy class method
-  // but also generate a new SpectrumModel if called during runtime
-  void SetChannelNumber (uint8_t id) override;
-  void SetFrequency (uint16_t freq) override;
-  void SetChannelWidth (uint16_t channelwidth) override;
-  void ConfigureStandardAndBand (WifiPhyStandard standard, WifiPhyBand band) override;
+  // The following method calls the base WifiPhy class method
+  // but also generates a new SpectrumModel if called during runtime
+  void DoChannelSwitch (void) override;
 
   /**
    * This function is sending the signal to the Spectrum channel

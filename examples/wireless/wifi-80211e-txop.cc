@@ -49,13 +49,13 @@
 //
 // The configuration is the following on the 4 networks:
 // - STA A sends AC_BE traffic to AP A with default AC_BE TXOP value of 0 (1 MSDU);
-// - STA B sends AC_BE traffic to AP B with non-default AC_BE TXOP of 3.008 ms;
-// - STA C sends AC_VI traffic to AP C with default AC_VI TXOP of 3.008 ms;
+// - STA B sends AC_BE traffic to AP B with non-default AC_BE TXOP of 4096 us;
+// - STA C sends AC_VI traffic to AP C with default AC_VI TXOP of 4096 us;
 // - STA D sends AC_VI traffic to AP D with non-default AC_VI TXOP value of 0 (1 MSDU);
 //
 // The user can select the distance between the stations and the APs, can enable/disable the RTS/CTS mechanism
 // and can choose the payload size and the simulation duration.
-// Example: ./waf --run "wifi-80211e-txop --distance=10 --simulationTime=20 --payloadSize=1000"
+// Example: ./ns3 run "wifi-80211e-txop --distance=10 --simulationTime=20 --payloadSize=1000"
 //
 // The output prints the throughput measured for the 4 cases/networks described above. When TXOP is enabled, results show
 // increased throughput since the channel is granted for a longer duration. TXOP is enabled by default for AC_VI and AC_VO,
@@ -70,12 +70,19 @@ NS_LOG_COMPONENT_DEFINE ("80211eTxop");
  */
 struct TxopDurationTracer
 {
-  void Trace (Time startTime, Time duration);
-  Time m_max {Seconds (0)};
+  /**
+   * Callback connected to TXOP duration trace source.
+   *
+   * \param startTime TXOP start time
+   * \param duration TXOP duration
+   * \param linkId the ID of the link
+   */
+  void Trace (Time startTime, Time duration, uint8_t linkId);
+  Time m_max {Seconds (0)};     //!< maximum TXOP duration
 };
 
 void
-TxopDurationTracer::Trace (Time startTime, Time duration)
+TxopDurationTracer::Trace (Time startTime, Time duration, uint8_t linkId)
 {
   if (duration > m_max)
     {
@@ -90,6 +97,7 @@ int main (int argc, char *argv[])
   double distance = 5; //meters
   bool enablePcap = 0;
   bool verifyResults = 0; //used for regression
+  Time txopLimit = MicroSeconds (4096);
 
   CommandLine cmd (__FILE__);
   cmd.AddValue ("payloadSize", "Payload size in bytes", payloadSize);
@@ -109,7 +117,8 @@ int main (int argc, char *argv[])
   phy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
   phy.SetChannel (channel.Create ());
 
-  WifiHelper wifi; //the default standard of 802.11a will be selected by this helper since the program doesn't specify another one
+  WifiHelper wifi;
+  wifi.SetStandard (WIFI_STANDARD_80211a);
   wifi.SetRemoteStationManager ("ns3::IdealWifiManager");
   WifiMacHelper mac;
 
@@ -118,7 +127,7 @@ int main (int argc, char *argv[])
 
   //Network A
   ssid = Ssid ("network-A");
-  phy.Set ("ChannelNumber", UintegerValue (36));
+  phy.Set ("ChannelSettings", StringValue ("{36, 20, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "QosSupported", BooleanValue (true),
                "Ssid", SsidValue (ssid));
@@ -132,7 +141,7 @@ int main (int argc, char *argv[])
 
   //Network B
   ssid = Ssid ("network-B");
-  phy.Set ("ChannelNumber", UintegerValue (40));
+  phy.Set ("ChannelSettings", StringValue ("{40, 20, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "QosSupported", BooleanValue (true),
                "Ssid", SsidValue (ssid));
@@ -153,7 +162,7 @@ int main (int argc, char *argv[])
   Ptr<QosTxop> edca;
   wifi_mac->GetAttribute ("BE_Txop", ptr);
   edca = ptr.Get<QosTxop> ();
-  edca->SetTxopLimit (MicroSeconds (3008));
+  edca->SetTxopLimit (txopLimit);
 
   // Trace TXOP duration for BE on STA1
   dev = wifiStaNodes.Get (1)->GetDevice (0);
@@ -166,7 +175,7 @@ int main (int argc, char *argv[])
 
   //Network C
   ssid = Ssid ("network-C");
-  phy.Set ("ChannelNumber", UintegerValue (44));
+  phy.Set ("ChannelSettings", StringValue ("{44, 20, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "QosSupported", BooleanValue (true),
                "Ssid", SsidValue (ssid));
@@ -190,7 +199,7 @@ int main (int argc, char *argv[])
 
   //Network D
   ssid = Ssid ("network-D");
-  phy.Set ("ChannelNumber", UintegerValue (48));
+  phy.Set ("ChannelSettings", StringValue ("{48, 20, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "QosSupported", BooleanValue (true),
                "Ssid", SsidValue (ssid));
@@ -370,30 +379,30 @@ int main (int argc, char *argv[])
     }
 
   throughput = totalPacketsThroughB * payloadSize * 8 / (simulationTime * 1000000.0);
-  std::cout << "AC_BE with non-default TXOP limit (3.008ms): " << '\n'
+  std::cout << "AC_BE with non-default TXOP limit (4.096ms): " << '\n'
             << "  Throughput = " << throughput << " Mbit/s" << '\n';
-  if (verifyResults && (throughput < 35 || throughput > 36))
+  if (verifyResults && (throughput < 36.5 || throughput > 37))
     {
       NS_LOG_ERROR ("Obtained throughput " << throughput << " is not in the expected boundaries!");
       exit (1);
     }
   std::cout << "  Maximum TXOP duration = " << beTxopTracer.m_max.GetMicroSeconds () << " us" << '\n';
-  if (verifyResults && (beTxopTracer.m_max < MicroSeconds (2700) || beTxopTracer.m_max > MicroSeconds (3008)))
+  if (verifyResults && (beTxopTracer.m_max < MicroSeconds (3008) || beTxopTracer.m_max > txopLimit))
     {
       NS_LOG_ERROR ("Maximum TXOP duration " << beTxopTracer.m_max << " is not in the expected boundaries!");
       exit (1);
     }
 
   throughput = totalPacketsThroughC * payloadSize * 8 / (simulationTime * 1000000.0);
-  std::cout << "AC_VI with default TXOP limit (3.008ms): " << '\n'
+  std::cout << "AC_VI with default TXOP limit (4.096ms): " << '\n'
             << "  Throughput = " << throughput << " Mbit/s" << '\n';
-  if (verifyResults && (throughput < 35 || throughput > 36))
+  if (verifyResults && (throughput < 36.5 || throughput > 37.5))
     {
       NS_LOG_ERROR ("Obtained throughput " << throughput << " is not in the expected boundaries!");
       exit (1);
     }
   std::cout << "  Maximum TXOP duration = " << viTxopTracer.m_max.GetMicroSeconds () << " us" << '\n';
-  if (verifyResults && (viTxopTracer.m_max < MicroSeconds (2700) || viTxopTracer.m_max > MicroSeconds (3008)))
+  if (verifyResults && (viTxopTracer.m_max < MicroSeconds (3008) || viTxopTracer.m_max > txopLimit))
     {
       NS_LOG_ERROR ("Maximum TXOP duration " << viTxopTracer.m_max << " is not in the expected boundaries!");
       exit (1);

@@ -60,7 +60,7 @@ public:
   virtual ~HtFrameExchangeManager ();
 
   bool StartFrameExchange (Ptr<QosTxop> edca, Time availableTime, bool initialFrame) override;
-  void SetWifiMac (const Ptr<RegularWifiMac> mac) override;
+  void SetWifiMac (const Ptr<WifiMac> mac) override;
   void CalculateAcknowledgmentTime (WifiAcknowledgment* acknowledgment) const override;
 
   /**
@@ -145,7 +145,7 @@ public:
    * \param startingSeq Sequence number of the first MPDU of all
    *        packets for which block ack was negotiated.
    *
-   * This function is typically invoked only by ns3::RegularWifiMac
+   * This function is typically invoked only by ns3::WifiMac
    * when the STA (which may be non-AP in ESS, or in an IBSS) has
    * received an ADDBA Request frame and is transmitting an ADDBA
    * Response frame. At this point the frame exchange manager must
@@ -198,6 +198,16 @@ public:
    */
   BlockAckType GetBlockAckType (Mac48Address originator, uint8_t tid) const;
 
+  /**
+   * Sends DELBA frame to cancel a block ack agreement with STA
+   * addressed by <i>addr</i> for TID <i>tid</i>.
+   *
+   * \param addr address of the recipient.
+   * \param tid traffic ID.
+   * \param byOriginator flag to indicate whether this is set by the originator.
+   */
+  void SendDelbaFrame (Mac48Address addr, uint8_t tid, bool byOriginator);
+
 protected:
   void DoDispose () override;
 
@@ -208,7 +218,7 @@ protected:
   void NotifyReceivedNormalAck (Ptr<WifiMacQueueItem> mpdu) override;
   void NotifyPacketDiscarded (Ptr<const WifiMacQueueItem> mpdu) override;
   void RetransmitMpduAfterMissedAck (Ptr<WifiMacQueueItem> mpdu) const override;
-  void RetransmitMpduAfterMissedCts (Ptr<WifiMacQueueItem> mpdu) const override;
+  void ReleaseSequenceNumber (Ptr<WifiMacQueueItem> mpdu) const override;
   void ForwardMpduDown (Ptr<WifiMacQueueItem> mpdu, WifiTxVector& txVector) override;
   void CtsTimeout (Ptr<WifiMacQueueItem> rts, const WifiTxVector& txVector) override;
   void TransmissionSucceeded (void) override;
@@ -335,16 +345,6 @@ protected:
                          uint16_t timeout, bool immediateBAck);
 
   /**
-   * Sends DELBA frame to cancel a block ack agreement with STA
-   * addressed by <i>addr</i> for TID <i>tid</i>.
-   *
-   * \param addr address of the recipient.
-   * \param tid traffic ID.
-   * \param byOriginator flag to indicate whether this is set by the originator.
-   */
-  void SendDelbaFrame (Mac48Address addr, uint8_t tid, bool byOriginator);
-
-  /**
    * Create a BlockAck frame with header equal to <i>blockAck</i> and start its transmission.
    *
    * \param agreement the agreement the Block Ack response belongs to
@@ -376,9 +376,17 @@ protected:
   /// agreement key typedef (MAC address and TID)
   typedef std::pair<Mac48Address, uint8_t> AgreementKey;
 
-  std::map<AgreementKey, RecipientBlockAckAgreement> m_agreements; //!< agreements
-  Ptr<MsduAggregator> m_msduAggregator;                            //!< A-MSDU aggregator
-  Ptr<MpduAggregator> m_mpduAggregator;                            //!< A-MPDU aggregator
+  /// typedef for map of recipient Block Ack agreements
+  using RecipientBlockAckAgreementMap = std::map<AgreementKey, RecipientBlockAckAgreement>;
+
+  RecipientBlockAckAgreementMap m_agreements;        //!< Block Ack agreements
+  RecipientBlockAckAgreementMap m_pendingAgreements; //!< pending Block Ack agreements (waiting
+                                                     //!< for Ack in response to ADDBA_RESPONSE)
+  Ptr<MsduAggregator> m_msduAggregator;              //!< A-MSDU aggregator
+  Ptr<MpduAggregator> m_mpduAggregator;              //!< A-MPDU aggregator
+
+  /// pending ADDBA_RESPONSE frames indexed by agreement key
+  std::map<AgreementKey, Ptr<WifiMacQueueItem>> m_pendingAddBaResp;
 
 private:
   /**

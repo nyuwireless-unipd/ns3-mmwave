@@ -67,6 +67,10 @@ public:
    */
   virtual ~Ipv6Interface ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  Ipv6Interface (const Ipv6Interface &) = delete;
+  Ipv6Interface & operator = (const Ipv6Interface &) = delete;
+
   /**
    * \brief Set node associated with interface.
    * \param node node
@@ -246,8 +250,8 @@ public:
   /**
    * \brief Remove the given Ipv6 address from the interface.
    * \param address The Ipv6 address to remove
-   * \returns The removed Ipv6 interface address 
-   * \returns The null interface address if the interface did not contain the 
+   * \returns The removed Ipv6 interface address
+   * \returns The null interface address if the interface did not contain the
    * address or if loopback address was passed as argument
    */
   Ipv6InterfaceAddress RemoveAddress (Ipv6Address address);
@@ -262,7 +266,7 @@ public:
   /**
    * \brief Update NS DAD packet UID of an interface address.
    * \param address IPv6 address
-   * \param uid packet UID 
+   * \param uid packet UID
    */
   void SetNsDadUid (Ipv6Address address, uint32_t uid);
 
@@ -279,23 +283,6 @@ protected:
   virtual void DoDispose ();
 
 private:
-  /**
-   * \brief Copy constructor
-   * \param o object to copy
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  Ipv6Interface (const Ipv6Interface &o);
-
-  /**
-   * \brief Assignment operator
-   * \param o object to copy
-   * \returns the copied object
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  Ipv6Interface &operator = (const Ipv6Interface &o);
-
   /**
    * \brief Container for the Ipv6InterfaceAddresses.
    */

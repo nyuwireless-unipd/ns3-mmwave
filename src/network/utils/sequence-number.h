@@ -21,6 +21,8 @@
 #ifndef NS3_SEQ_NUM_H
 #define NS3_SEQ_NUM_H
 
+#include "ns3/type-name.h"
+
 #include <limits>
 #include <iostream>
 #include <stdint.h>
@@ -66,7 +68,7 @@ public:
   /**
    * \brief Constructs a SequenceNumber with the given value
    * \param value the sequence number value
-   */ 
+   */
   explicit SequenceNumber (NUMERIC_TYPE value)
     : m_value (value)
   {}
@@ -112,7 +114,7 @@ public:
   /**
    * \brief Extracts the numeric value of the sequence number
    * \returns the sequence number value
-   */ 
+   */
   NUMERIC_TYPE GetValue () const
   {
     return m_value;
@@ -121,7 +123,7 @@ public:
   /**
    * \brief Prefix increment operator
    * \returns incremented sequence number
-   */ 
+   */
   SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator++ ()
   {
     m_value++;
@@ -131,7 +133,7 @@ public:
   /**
    * \brief Postfix increment operator
    * \returns incremented sequence number
-   */ 
+   */
   SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator++ (int)
   {
     SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> retval (m_value);
@@ -142,7 +144,7 @@ public:
   /**
    * \brief Prefix decrement operator
    * \returns decremented sequence number
-   */ 
+   */
   SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator-- ()
   {
     m_value--;
@@ -152,7 +154,7 @@ public:
    /**
    * \brief Postfix decrement operator
    * \returns decremented sequence number
-   */ 
+   */
   SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator-- (int)
   {
     SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> retval (m_value);
@@ -164,18 +166,18 @@ public:
    * \brief Plus equals operator
    * \param value value to add to sequence number
    * \returns incremented sequence number
-   */ 
+   */
   SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& operator+= (SIGNED_TYPE value)
   {
     m_value += value;
     return *this;
   }
-  
+
   /**
    * \brief Minus equals operator
    * \param value value to subtract from sequence number
    * \returns decremented sequence number
-   */ 
+   */
   SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& operator-= (SIGNED_TYPE value)
   {
     m_value -= value;
@@ -347,95 +349,24 @@ public:
   template<typename NUMERIC_TYPE2, typename SIGNED_TYPE2>
   friend std::istream & operator >> (std::istream &is, const SequenceNumber<NUMERIC_TYPE2, SIGNED_TYPE2> &val);
 
-private: // unimplemented operators
-  /**
-   * \brief Plus equals operator - unimplemented
-   * \param value value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& operator+= (SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> const &value);
-  /**
-   * \brief Minus equals operator - unimplemented
-   * \param value value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& operator-= (SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> const &value);
-  /**
-   * \brief Multiplication operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator* (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Division operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator/ (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Modulo operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator% (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Logical NOT operator - unimplemented
-   * \returns condition
-   */
-  bool operator ! () const;
-  /**
-   * \brief Logical AND operator - unimplemented
-   * \param b value
-   * \returns condition
-   */
-  bool operator && (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Logical OR operator - unimplemented
-   * \param b value
-   * \returns condition
-   */
-  bool operator || (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Bitwise NOT operator - unimplemented
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator~ () const;
-  /**
-   * \brief Bitwise AND operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator& (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Bitwise OR operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator| (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Bitwise XOR operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator^ (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Bitwise left shift operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator<< (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Bitwise right shift operator - unimplemented
-   * \param b value
-   * \returns sequence number
-   */
-  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator>> (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>& b) const;
-  /**
-   * \brief Indirection operator - unimplemented
-   * \returns integer
-   */
-  int operator* ();
-  //SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>* operator& ();
+public:
+  // Unimplemented operators
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &operator+= (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &operator-= (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator* (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator/ (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator% (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  bool operator ! () const = delete;
+  bool operator && (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  bool operator || (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator~ () const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator& (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator| (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator^ (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator<< (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> operator>> (const SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE> &) const = delete;
+  int operator* () = delete;
+  //SequenceNumber<NUMERIC_TYPE, SIGNED_TYPE>* operator& () = delete;
 
 private:
   NUMERIC_TYPE m_value; //!< Sequence number value
@@ -502,8 +433,14 @@ typedef void (* SequenceNumber32)(SequenceNumber32 oldValue,
 
 }  // namespace TracedValueCallback
 
+/**
+ * \ingroup seq-counters
+ *
+ * ns3::TypeNameGet<SequenceNumber32>() specialization.
+ * \returns The type name as a string.
+ */
+TYPENAMEGET_DEFINE (SequenceNumber32);
+
 } // namespace ns3
 
 #endif /* NS3_SEQ_NUM_H */
-
-

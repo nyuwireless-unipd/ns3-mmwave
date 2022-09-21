@@ -33,7 +33,6 @@
 #include "log.h"
 #include "rng-stream.h"
 #include "rng-seed-manager.h"
-#include "unused.h"
 #include <cmath>
 #include <iostream>
 #include <algorithm>    // upper_bound
@@ -1590,14 +1589,14 @@ EmpiricalRandomVariable::PreSample (double & value)
     {
       Validate ();
     }
- 
+
   // Get a uniform random variable in [0, 1].
   double r = Peek ()->RandU01 ();
   if (IsAntithetic ())
     {
       r = (1 - r);
     }
- 
+
   value = r;
   bool valid = false;
   // check extrema
@@ -1624,7 +1623,7 @@ EmpiricalRandomVariable::GetValue (void)
     {
       return value;
     }
-  
+
   // value now has the (unused) URNG selector
   if (m_interpolate)
     {
@@ -1641,10 +1640,10 @@ double
 EmpiricalRandomVariable::DoSampleCDF (double r)
 {
   NS_LOG_FUNCTION (this << r);
-  
+
   ValueCDF selector (0, r);
   auto bound = std::upper_bound (m_emp.begin (), m_emp.end (), selector);
-  
+
   return bound->value;
 }
 
@@ -1686,7 +1685,7 @@ EmpiricalRandomVariable::DoInterpolate (double r)
   double c2 = upper->cdf;
   double v1 = lower->value;
   double v2 = upper->value;
-  
+
   double value = (v1 + ((v2 - v1) / (c2 - c1)) * (r - c1));
   return value;
 }

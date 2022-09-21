@@ -414,7 +414,7 @@ ThreeGppHttpObjectTestCase::DoRun ()
   NS_TEST_ASSERT_MSG_EQ (serverApplications.GetN (), 1,
                          "Invalid number of HTTP servers has been installed");
   Ptr<ThreeGppHttpServer> httpServer = serverApplications.Get (0)->GetObject<ThreeGppHttpServer> ();
-  NS_TEST_ASSERT_MSG_NE (httpServer, 0,
+  NS_TEST_ASSERT_MSG_NE (httpServer, nullptr,
                          "HTTP server installation fails to produce a proper type");
   httpServer->SetMtuSize (m_mtuSize);
 
@@ -426,7 +426,7 @@ ThreeGppHttpObjectTestCase::DoRun ()
   NS_TEST_ASSERT_MSG_EQ (clientApplications.GetN (), 1,
                          "Invalid number of HTTP clients has been installed");
   Ptr<ThreeGppHttpClient> httpClient = clientApplications.Get (0)->GetObject<ThreeGppHttpClient> ();
-  NS_TEST_ASSERT_MSG_NE (httpClient, 0,
+  NS_TEST_ASSERT_MSG_NE (httpClient, nullptr,
                          "HTTP client installation fails to produce a proper type");
 
   // Uplink (requests) trace sources.
@@ -639,8 +639,8 @@ ThreeGppHttpObjectTestCase::ServerRxCallback (Ptr<const Packet> packet,
    * Request objects are assumed to be small and to not typically split. So we
    * immediately follow by concluding the receive of a whole request object.
    */
-  uint32_t txSize;
-  uint32_t rxSize;
+  uint32_t txSize = 0;
+  uint32_t rxSize = 0;
   bool isSent = m_requestObjectTracker.ObjectReceived (txSize, rxSize);
   NS_TEST_ASSERT_MSG_EQ (isSent, true,
                          "Server receives one too many request object");
@@ -679,8 +679,9 @@ ThreeGppHttpObjectTestCase::ClientRxMainObjectCallback (Ptr<const ThreeGppHttpCl
                          "Main object's client TS is unexpectedly non-positive");
   NS_TEST_ASSERT_MSG_GT (httpHeader.GetServerTs (), Seconds (0.0),
                          "Main object's server TS is unexpectedly non-positive");
-  uint32_t txSize;
-  uint32_t rxSize;
+
+  uint32_t txSize = 0;
+  uint32_t rxSize = 0;
   bool isSent = m_mainObjectTracker.ObjectReceived (txSize, rxSize);
   NS_TEST_ASSERT_MSG_EQ (isSent, true,
                          "Client receives one too many main object");
@@ -722,8 +723,8 @@ ThreeGppHttpObjectTestCase::ClientRxEmbeddedObjectCallback (Ptr<const ThreeGppHt
   NS_TEST_ASSERT_MSG_GT (httpHeader.GetServerTs (), Seconds (0.0),
                          "Embedded object's server TS is unexpectedly non-positive");
 
-  uint32_t txSize;
-  uint32_t rxSize;
+  uint32_t txSize = 0;
+  uint32_t rxSize = 0;
   bool isSent = m_embeddedObjectTracker.ObjectReceived (txSize, rxSize);
   NS_TEST_ASSERT_MSG_EQ (isSent, true,
                          "Client receives one too many embedded object");
@@ -909,4 +910,3 @@ private:
 
 /// The global instance of the `three-gpp-http-client-server` system test.
 static ThreeGppHttpClientServerTestSuite g_httpClientServerTestSuiteInstance;
-

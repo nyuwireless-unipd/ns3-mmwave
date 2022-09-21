@@ -62,7 +62,7 @@ class Ipv6AutoconfiguredPrefix;
 class Ipv6L3Protocol : public Ipv6
 {
 public:
-  /** 
+  /**
    * \brief Get the type ID of this class.
    * \return type ID
    */
@@ -77,7 +77,7 @@ public:
    * \enum DropReason
    * \brief Reason why a packet has been dropped.
    */
-  enum DropReason 
+  enum DropReason
   {
     DROP_TTL_EXPIRED = 1, /**< Packet TTL has expired */
     DROP_NO_ROUTE, /**< No route to host */
@@ -98,6 +98,10 @@ public:
    * \brief Destructor.
    */
   virtual ~Ipv6L3Protocol ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  Ipv6L3Protocol (const Ipv6L3Protocol &) = delete;
+  Ipv6L3Protocol & operator = (const Ipv6L3Protocol &) = delete;
 
   /**
    * \brief Set node associated with this stack.
@@ -372,20 +376,19 @@ public:
    * TracedCallback signature for packet sent, forwarded or
    * local-delivered events.
    *
-   * \param [in] header The Ipv6Header.
-   * \param [in] packet The packet.
-   * \param [in] interface
+   * \param [in] header the Ipv6Header.
+   * \param [in] packet the packet.
+   * \param [in] interface the IP-level interface index
    */
   typedef void (* SentTracedCallback)
     (const Ipv6Header & header, Ptr<const Packet> packet, uint32_t interface);
-   
+
   /**
    * TracedCallback signature for packet transmission or reception events.
    *
-   * \param [in] header The Ipv6Header.
-   * \param [in] packet The packet.
-   * \param [in] ipv6
-   * \param [in] interface
+   * \param [in] packet the packet.
+   * \param [in] ipv6 the Ipv6 protocol
+   * \param [in] interface the IP-level interface index
    * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
    * and will be changed to \c Ptr<const Ipv6> in a future release.
    */
@@ -395,11 +398,11 @@ public:
   /**
    * TracedCallback signature for packet drop events.
    *
-   * \param [in] header The Ipv6Header.
-   * \param [in] packet The packet.
-   * \param [in] reason The reason the packet was dropped.
-   * \param [in] ipv6
-   * \param [in] interface
+   * \param [in] header the Ipv6Header.
+   * \param [in] packet the packet.
+   * \param [in] reason the reason the packet was dropped.
+   * \param [in] ipv6 the Ipv6 protocol
+   * \param [in] interface the IP-level interface index
    * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
    * and will be changed to \c Ptr<const Ipv6> in a future release.
    */
@@ -451,17 +454,17 @@ public:
 
   /**
    * Provides reachability hint for Neighbor Cache Entries from L4-L7 protocols.
-   * 
+   *
    * This function shall be called by L4-L7 protocols when an address is confirmed
    * to be reachable (i.e., at least a packet send and a reply received).
    * The net effect is to extend the NCE reachability time if the NCE is in
    * REACHABLE state, and to mark the NCE as REACHABLE if it is in STALE, PROBE, or
    * DELAY states. NCEs in INCOMPLETE state are not changed.
-   * 
+   *
    * Note that the IP interface index might not be the same as the NetDevice index.
-   * The correct way to check the IP interface index is by using 
+   * The correct way to check the IP interface index is by using
    * Ipv6::GetInterfaceForDevice ().
-   * 
+   *
    * \param ipInterfaceIndex IP interface index
    * \param address reachable address
    * \return true if the NCE has been successfully updated.
@@ -533,7 +536,7 @@ private:
    * \param ipHeader the IP header that will be added to the packet
    * \param packet the packet
    * \param ipv6 the Ipv6 protocol
-   * \param interface the interface index
+   * \param interface the IP-level interface index
    *
    * Note: If the TracedCallback API ever is extended, we could consider
    * to check for connected functions before adding the header
@@ -544,21 +547,21 @@ private:
    * \brief Callback to trace TX (transmission) packets.
    * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
    * and will be changed to \c Ptr<const Ipv6> in a future release.
-   */ 
+   */
   TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_txTrace;
 
   /**
    * \brief Callback to trace RX (reception) packets.
    * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
    * and will be changed to \c Ptr<const Ipv6> in a future release.
-   */ 
+   */
   TracedCallback<Ptr<const Packet>, Ptr<Ipv6>, uint32_t> m_rxTrace;
 
   /**
    * \brief Callback to trace drop packets.
    * \deprecated The non-const \c Ptr<Ipv6> argument is deprecated
    * and will be changed to \c Ptr<const Ipv6> in a future release.
-   */ 
+   */
   TracedCallback<const Ipv6Header &, Ptr<const Packet>, DropReason, Ptr<Ipv6>, uint32_t> m_dropTrace;
 
   /// Trace of sent packets
@@ -567,21 +570,6 @@ private:
   TracedCallback<const Ipv6Header &, Ptr<const Packet>, uint32_t> m_unicastForwardTrace;
   /// Trace of locally delivered packets
   TracedCallback<const Ipv6Header &, Ptr<const Packet>, uint32_t> m_localDeliverTrace;
-
-  /**
-   * \brief Copy constructor.
-   *
-   * Defined but not implemented to avoid misuse
-   */
-  Ipv6L3Protocol (const Ipv6L3Protocol&);
-
-  /**
-   * \brief Copy constructor.
-   *
-   * Defined but not implemented to avoid misuse
-   * \returns the copied object
-   */
-  Ipv6L3Protocol &operator = (const Ipv6L3Protocol&);
 
   /**
    * \brief Construct an IPv6 header.
@@ -598,7 +586,7 @@ private:
 
   /**
    * \brief Send packet with route.
-   * \param route route 
+   * \param route route
    * \param packet packet to send
    * \param ipHeader IPv6 header to add to the packet
    */
@@ -607,7 +595,7 @@ private:
   /**
    * \brief Forward a packet.
    * \param idev Pointer to ingress network device
-   * \param rtentry route 
+   * \param rtentry route
    * \param p packet to forward
    * \param header IPv6 header to add to the packet
    */
@@ -616,7 +604,7 @@ private:
   /**
    * \brief Forward a multicast packet.
    * \param idev Pointer to ingress network device
-   * \param mrtentry route 
+   * \param mrtentry route
    * \param p packet to forward
    * \param header IPv6 header to add to the packet
    */

@@ -23,10 +23,12 @@
 #include "ns3/names.h"
 #include "ns3/propagation-loss-model.h"
 #include "ns3/propagation-delay-model.h"
+#include "ns3/interference-helper.h"
 #include "ns3/error-rate-model.h"
 #include "ns3/frame-capture-model.h"
 #include "ns3/preamble-detection-model.h"
 #include "ns3/yans-wifi-phy.h"
+#include "ns3/wifi-net-device.h"
 #include "yans-wifi-helper.h"
 
 namespace ns3 {
@@ -46,54 +48,6 @@ YansWifiChannelHelper::Default (void)
   return helper;
 }
 
-void
-YansWifiChannelHelper::AddPropagationLoss (std::string type,
-                                           std::string n0, const AttributeValue &v0,
-                                           std::string n1, const AttributeValue &v1,
-                                           std::string n2, const AttributeValue &v2,
-                                           std::string n3, const AttributeValue &v3,
-                                           std::string n4, const AttributeValue &v4,
-                                           std::string n5, const AttributeValue &v5,
-                                           std::string n6, const AttributeValue &v6,
-                                           std::string n7, const AttributeValue &v7)
-{
-  ObjectFactory factory;
-  factory.SetTypeId (type);
-  factory.Set (n0, v0);
-  factory.Set (n1, v1);
-  factory.Set (n2, v2);
-  factory.Set (n3, v3);
-  factory.Set (n4, v4);
-  factory.Set (n5, v5);
-  factory.Set (n6, v6);
-  factory.Set (n7, v7);
-  m_propagationLoss.push_back (factory);
-}
-
-void
-YansWifiChannelHelper::SetPropagationDelay (std::string type,
-                                            std::string n0, const AttributeValue &v0,
-                                            std::string n1, const AttributeValue &v1,
-                                            std::string n2, const AttributeValue &v2,
-                                            std::string n3, const AttributeValue &v3,
-                                            std::string n4, const AttributeValue &v4,
-                                            std::string n5, const AttributeValue &v5,
-                                            std::string n6, const AttributeValue &v6,
-                                            std::string n7, const AttributeValue &v7)
-{
-  ObjectFactory factory;
-  factory.SetTypeId (type);
-  factory.Set (n0, v0);
-  factory.Set (n1, v1);
-  factory.Set (n2, v2);
-  factory.Set (n3, v3);
-  factory.Set (n4, v4);
-  factory.Set (n5, v5);
-  factory.Set (n6, v6);
-  factory.Set (n7, v7);
-  m_propagationDelay = factory;
-}
-
 Ptr<YansWifiChannel>
 YansWifiChannelHelper::Create (void) const
 {
@@ -102,7 +56,7 @@ YansWifiChannelHelper::Create (void) const
   for (std::vector<ObjectFactory>::const_iterator i = m_propagationLoss.begin (); i != m_propagationLoss.end (); ++i)
     {
       Ptr<PropagationLossModel> cur = (*i).Create<PropagationLossModel> ();
-      if (prev != 0)
+      if (prev)
         {
           prev->SetNext (cur);
         }
@@ -124,9 +78,11 @@ YansWifiChannelHelper::AssignStreams (Ptr<YansWifiChannel> c, int64_t stream)
 }
 
 YansWifiPhyHelper::YansWifiPhyHelper ()
-  : m_channel (0)
+  : WifiPhyHelper (1),    // YANS phy is not used for 11be devices
+    m_channel (0)
 {
-  m_phy.SetTypeId ("ns3::YansWifiPhy");
+  m_phy.at (0).SetTypeId ("ns3::YansWifiPhy");
+  SetInterferenceHelper ("ns3::InterferenceHelper");
   SetErrorRateModel ("ns3::TableBasedErrorRateModel");
 }
 
@@ -143,25 +99,27 @@ YansWifiPhyHelper::SetChannel (std::string channelName)
   m_channel = channel;
 }
 
-Ptr<WifiPhy>
-YansWifiPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
+std::vector<Ptr<WifiPhy>>
+YansWifiPhyHelper::Create (Ptr<Node> node, Ptr<WifiNetDevice> device) const
 {
-  Ptr<YansWifiPhy> phy = m_phy.Create<YansWifiPhy> ();
-  Ptr<ErrorRateModel> error = m_errorRateModel.Create<ErrorRateModel> ();
+  Ptr<YansWifiPhy> phy = m_phy.at (0).Create<YansWifiPhy> ();
+  Ptr<InterferenceHelper> interference = m_interferenceHelper.Create<InterferenceHelper> ();
+  phy->SetInterferenceHelper (interference);
+  Ptr<ErrorRateModel> error = m_errorRateModel.at (0).Create<ErrorRateModel> ();
   phy->SetErrorRateModel (error);
-  if (m_frameCaptureModel.IsTypeIdSet ())
+  if (m_frameCaptureModel.at (0).IsTypeIdSet ())
     {
-      auto frameCapture = m_frameCaptureModel.Create<FrameCaptureModel> ();
+      auto frameCapture = m_frameCaptureModel.at (0).Create<FrameCaptureModel> ();
       phy->SetFrameCaptureModel (frameCapture);
     }
-  if (m_preambleDetectionModel.IsTypeIdSet ())
+  if (m_preambleDetectionModel.at (0).IsTypeIdSet ())
     {
-      auto preambleDetection = m_preambleDetectionModel.Create<PreambleDetectionModel> ();
+      auto preambleDetection = m_preambleDetectionModel.at (0).Create<PreambleDetectionModel> ();
       phy->SetPreambleDetectionModel (preambleDetection);
     }
   phy->SetChannel (m_channel);
   phy->SetDevice (device);
-  return phy;
+  return std::vector<Ptr<WifiPhy>> ({phy});
 }
 
 } //namespace ns3

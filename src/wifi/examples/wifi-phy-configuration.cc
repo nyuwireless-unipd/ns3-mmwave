@@ -39,6 +39,12 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("WifiPhyConfigurationExample");
 
+/**
+ * Get the Yans Wifi Phy Ptr object for the 1st node in the NodeContainer
+ *
+ * \param nc The node container.
+ * \return the Yans Wifi Phy Ptr object of the 1st node in the NodeContainer
+ */
 Ptr<YansWifiPhy>
 GetYansWifiPhyPtr (const NetDeviceContainer &nc)
 {
@@ -47,6 +53,11 @@ GetYansWifiPhyPtr (const NetDeviceContainer &nc)
   return wp->GetObject<YansWifiPhy> ();
 }
 
+/**
+ * Print the attributes to a file.
+ *
+ * \param enabled Enable printing.
+ */
 void
 PrintAttributesIfEnabled (bool enabled)
 {
@@ -112,7 +123,7 @@ int main (int argc, char *argv[])
     // i.e. without further channel number/width/frequency configuration
 
     case 1:
-      // By default, WifiHelper will use WIFI_STANDARD_80211a
+      wifi.SetStandard (WIFI_STANDARD_80211a);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -145,7 +156,8 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 4:
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n);
+      phy.Set ("ChannelSettings", StringValue ("{0, 0, BAND_5GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -156,7 +168,7 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 5:
-      wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -178,7 +190,9 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 7:
-      wifi.SetStandard (WIFI_STANDARD_80211ax_2_4GHZ);
+      // By default, WifiHelper will use WIFI_STANDARD_80211ax
+      wifi.SetStandard (WIFI_STANDARD_80211ax);
+      phy.Set ("ChannelSettings", StringValue ("{0, 0, BAND_2_4GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -189,7 +203,7 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 8:
-      wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211ax);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -200,7 +214,8 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 9:
-      wifi.SetStandard (WIFI_STANDARD_80211ax_6GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211ax);
+      phy.Set ("ChannelSettings", StringValue ("{0, 0, BAND_6GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -212,7 +227,7 @@ int main (int argc, char *argv[])
       break;
     case 10:
       wifi.SetStandard (WIFI_STANDARD_80211p);
-      phy.Set ("ChannelWidth", UintegerValue (10));
+      phy.Set ("ChannelSettings", StringValue ("{0, 10, BAND_5GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -224,7 +239,7 @@ int main (int argc, char *argv[])
       break;
     case 11:
       wifi.SetStandard (WIFI_STANDARD_80211p);
-      phy.Set ("ChannelWidth", UintegerValue (5));
+      phy.Set ("ChannelSettings", StringValue ("{0, 5, BAND_5GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -235,8 +250,8 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 12:
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
-      phy.Set ("ChannelNumber", UintegerValue (44));
+      wifi.SetStandard (WIFI_STANDARD_80211n);
+      phy.Set ("ChannelSettings", StringValue ("{44, 20, BAND_5GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -247,14 +262,14 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 13:
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
-      phy.Set ("ChannelNumber", UintegerValue (44));
+      wifi.SetStandard (WIFI_STANDARD_80211n);
+      phy.Set ("ChannelSettings", StringValue ("{44, 0, BAND_5GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
       // Post-install reconfiguration to channel number 40
-      Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber", UintegerValue (40));
-      Config::Set ("/NodeList/1/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber", UintegerValue (40));
+      Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelSettings", StringValue ("{40, 0, BAND_5GHZ, 0}"));
+      Config::Set ("/NodeList/1/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelSettings", StringValue ("{40, 0, BAND_5GHZ, 0}"));
       // We expect channel 40, width 20, frequency 5200
       NS_ASSERT (phySta->GetChannelNumber () == 40);
       NS_ASSERT (phySta->GetChannelWidth () == 20);
@@ -262,37 +277,37 @@ int main (int argc, char *argv[])
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 14:
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
-      phy.Set ("ChannelNumber", UintegerValue (44));
+      wifi.SetStandard (WIFI_STANDARD_80211n);
+      phy.Set ("ChannelSettings", StringValue ("{44, 0, BAND_5GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
       // Post-install reconfiguration to a 40 MHz channel
-      Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber", UintegerValue (46));
-      Config::Set ("/NodeList/1/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber", UintegerValue (46));
+      Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelSettings", StringValue ("{46, 0, BAND_5GHZ, 0}"));
+      Config::Set ("/NodeList/1/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelSettings", StringValue ("{46, 0, BAND_5GHZ, 0}"));
       NS_ASSERT (phySta->GetChannelNumber () == 46);
       NS_ASSERT (phySta->GetChannelWidth () == 40);
       NS_ASSERT (phySta->GetFrequency () == 5230);
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 15:
-      Config::SetDefault ("ns3::WifiPhy::ChannelNumber", UintegerValue (44));
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      Config::SetDefault ("ns3::WifiPhy::ChannelSettings", StringValue ("{44, 0, BAND_5GHZ, 0}"));
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
       // Post-install reconfiguration to a 40 MHz channel
-      Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber", UintegerValue (46));
-      Config::Set ("/NodeList/1/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelNumber", UintegerValue (46));
+      Config::Set ("/NodeList/0/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelSettings", StringValue ("{46, 0, BAND_5GHZ, 0}"));
+      Config::Set ("/NodeList/1/DeviceList/*/$ns3::WifiNetDevice/Phy/$ns3::YansWifiPhy/ChannelSettings", StringValue ("{46, 0, BAND_5GHZ, 0}"));
       NS_ASSERT (phySta->GetChannelNumber () == 46);
       NS_ASSERT (phySta->GetChannelWidth () == 40);
       NS_ASSERT (phySta->GetFrequency () == 5230);
       PrintAttributesIfEnabled (printAttributes);
       break;
     case 16:
-      // Test that setting Frequency to a non-standard value will throw an exception
-      Config::SetDefault ("ns3::WifiPhy::Frequency", UintegerValue (5281));
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      // Test that setting channel number to a non-standard value will throw an exception
+      Config::SetDefault ("ns3::WifiPhy::ChannelSettings", StringValue ("{45, 0, BAND_5GHZ, 0}"));
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       exceptionThrown = false;
       try
         {
@@ -318,8 +333,8 @@ int main (int argc, char *argv[])
     case 17:
       // Test that setting Frequency to a standard value will set the
       // channel number correctly
-      Config::SetDefault ("ns3::WifiPhy::Frequency", UintegerValue (5500));
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      Config::SetDefault ("ns3::WifiPhy::ChannelSettings", StringValue ("{100, 0, BAND_5GHZ, 0}"));
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -331,14 +346,14 @@ int main (int argc, char *argv[])
       break;
     case 18:
       // Set a wrong channel after initialization
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
       exceptionThrown = false;
       try
         {
-          phySta->SetOperatingChannel (99, 5185, 40);
+          phySta->SetOperatingChannel (WifiPhy::ChannelTuple {99, 40, WIFI_PHY_BAND_5GHZ, 0});
         }
       catch (const std::runtime_error&)
         {
@@ -349,22 +364,23 @@ int main (int argc, char *argv[])
       break;
     case 19:
       // Test how channel number behaves when frequency is non-standard
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n);
+      phy.Set ("ChannelSettings", StringValue ("{44, 0, BAND_5GHZ, 0}"));
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
       exceptionThrown = false;
       try
         {
-          phySta->SetAttribute ("Frequency", UintegerValue (5181));
+          phySta->SetAttribute ("ChannelSettings", StringValue ("{45, 0, BAND_5GHZ, 0}"));
         }
       catch (const std::runtime_error&)
         {
           exceptionThrown = true;
         }
-      // We expect that an exception is thrown due to unknown center frequency 5181
+      // We expect that an exception is thrown due to unknown channel number 45
       NS_ASSERT (exceptionThrown);
-      phySta->SetAttribute ("Frequency", UintegerValue (5180));
+      phySta->SetAttribute ("ChannelSettings", StringValue ("{36, 0, BAND_5GHZ, 0}"));
       // We expect channel number to be 36 due to known center frequency 5180
       NS_ASSERT (phySta->GetChannelNumber () == 36);
       NS_ASSERT (phySta->GetChannelWidth () == 20);
@@ -372,15 +388,15 @@ int main (int argc, char *argv[])
       exceptionThrown = false;
       try
         {
-          phySta->SetAttribute ("Frequency", UintegerValue (5179));
+          phySta->SetAttribute ("ChannelSettings", StringValue ("{43, 0, BAND_5GHZ, 0}"));
         }
       catch (const std::runtime_error&)
         {
           exceptionThrown = true;
         }
-      // We expect that an exception is thrown due to unknown center frequency 5179
+      // We expect that an exception is thrown due to unknown channel number 43
       NS_ASSERT (exceptionThrown);
-      phySta->SetAttribute ("ChannelNumber", UintegerValue (36));
+      phySta->SetAttribute ("ChannelSettings", StringValue ("{36, 0, BAND_5GHZ, 0}"));
       NS_ASSERT (phySta->GetChannelNumber () == 36);
       NS_ASSERT (phySta->GetChannelWidth () == 20);
       NS_ASSERT (phySta->GetFrequency () == 5180);
@@ -388,9 +404,8 @@ int main (int argc, char *argv[])
       break;
     case 20:
       // Set both channel and frequency to consistent values before initialization
-      Config::SetDefault ("ns3::WifiPhy::Frequency", UintegerValue (5200));
-      Config::SetDefault ("ns3::WifiPhy::ChannelNumber", UintegerValue (40));
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      Config::SetDefault ("ns3::WifiPhy::ChannelSettings", StringValue ("{40, 0, BAND_5GHZ, 0}"));
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
@@ -398,48 +413,34 @@ int main (int argc, char *argv[])
       NS_ASSERT (phySta->GetChannelWidth () == 20);
       NS_ASSERT (phySta->GetFrequency () == 5200);
       // Set both channel and frequency to consistent values after initialization
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       staDevice = wifi.Install (phy, macSta, wifiStaNode.Get (0));
       apDevice = wifi.Install (phy, macAp, wifiApNode.Get (0));
       phySta = GetYansWifiPhyPtr (staDevice);
-      phySta->SetAttribute ("Frequency", UintegerValue (5200));
-      phySta->SetAttribute ("ChannelNumber", UintegerValue (40));
-      NS_ASSERT (phySta->GetChannelNumber () == 40);
-      NS_ASSERT (phySta->GetChannelWidth () == 20);
-      NS_ASSERT (phySta->GetFrequency () == 5200);
-      // Set both channel and frequency to inconsistent values
-      phySta->SetAttribute ("Frequency", UintegerValue (5200));
-      phySta->SetAttribute ("ChannelNumber", UintegerValue (36));
-      // We expect channel number to be 36
-      NS_ASSERT (phySta->GetChannelNumber () == 36);
-      NS_ASSERT (phySta->GetChannelWidth () == 20);
-      NS_ASSERT (phySta->GetFrequency () == 5180);
-      phySta->SetAttribute ("ChannelNumber", UintegerValue (36));
-      phySta->SetAttribute ("Frequency", UintegerValue (5200));
-      // We expect channel number to be 40
+      phySta->SetAttribute ("ChannelSettings", StringValue ("{40, 0, BAND_5GHZ, 0}"));
       NS_ASSERT (phySta->GetChannelNumber () == 40);
       NS_ASSERT (phySta->GetChannelWidth () == 20);
       NS_ASSERT (phySta->GetFrequency () == 5200);
       exceptionThrown = false;
       try
         {
-          phySta->SetAttribute ("Frequency", UintegerValue (5179));
+          phySta->SetAttribute ("ChannelSettings", StringValue ("{45, 0, BAND_5GHZ, 0}"));
         }
       catch (const std::runtime_error&)
         {
           exceptionThrown = true;
         }
-      phySta->SetAttribute ("ChannelNumber", UintegerValue (36));
+      phySta->SetAttribute ("ChannelSettings", StringValue ("{36, 0, BAND_5GHZ, 0}"));
       // We expect channel number to be 36 and an exception to be thrown
       NS_ASSERT (phySta->GetChannelNumber () == 36);
       NS_ASSERT (phySta->GetChannelWidth () == 20);
       NS_ASSERT (phySta->GetFrequency () == 5180);
       NS_ASSERT (exceptionThrown);
-      phySta->SetAttribute ("ChannelNumber", UintegerValue (36));
+      phySta->SetAttribute ("ChannelSettings", StringValue ("{36, 0, BAND_5GHZ, 0}"));
       exceptionThrown = false;
       try
         {
-          phySta->SetAttribute ("Frequency", UintegerValue (5179));
+          phySta->SetAttribute ("ChannelSettings", StringValue ("{43, 0, BAND_5GHZ, 0}"));
         }
       catch (const std::runtime_error&)
         {

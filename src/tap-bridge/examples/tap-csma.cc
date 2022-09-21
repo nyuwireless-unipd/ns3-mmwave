@@ -51,7 +51,7 @@
 //
 // 1) Ping one of the simulated nodes
 //
-//    ./waf --run tap-csma&
+//    ./ns3 run tap-csma&
 //    ping 10.1.1.2
 //
 #include <iostream>
@@ -69,7 +69,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("TapCsmaExample");
 
-int 
+int
 main (int argc, char *argv[])
 {
   std::string mode = "ConfigureLocal";

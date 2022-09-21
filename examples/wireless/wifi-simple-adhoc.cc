@@ -26,15 +26,15 @@
 // There are a number of command-line options available to control
 // the default behavior.  The list of available command-line options
 // can be listed with the following command:
-// ./waf --run "wifi-simple-adhoc --help"
+// ./ns3 run "wifi-simple-adhoc --help"
 //
 // For instance, for this configuration, the physical layer will
 // stop successfully receiving packets when rss drops below -97 dBm.
 // To see this effect, try running:
 //
-// ./waf --run "wifi-simple-adhoc --rss=-97 --numPackets=20"
-// ./waf --run "wifi-simple-adhoc --rss=-98 --numPackets=20"
-// ./waf --run "wifi-simple-adhoc --rss=-99 --numPackets=20"
+// ./ns3 run "wifi-simple-adhoc --rss=-97 --numPackets=20"
+// ./ns3 run "wifi-simple-adhoc --rss=-98 --numPackets=20"
+// ./ns3 run "wifi-simple-adhoc --rss=-99 --numPackets=20"
 //
 // Note that all ns-3 attributes (not just the ones exposed in the below
 // script) can be changed at command line; see the documentation.
@@ -42,7 +42,7 @@
 // This script can also be helpful to put the Wifi layer into verbose
 // logging mode; this command will turn on all wifi logging:
 //
-// ./waf --run "wifi-simple-adhoc --verbose=1"
+// ./ns3 run "wifi-simple-adhoc --verbose=1"
 //
 // When you are done, you will notice two pcap trace files in your directory.
 // If you have tcpdump installed, you can try this:
@@ -66,6 +66,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("WifiSimpleAdhoc");
 
+/**
+ * Function called when a packet is received.
+ *
+ * \param socket The receiving socket.
+ */
 void ReceivePacket (Ptr<Socket> socket)
 {
   while (socket->Recv ())
@@ -74,6 +79,14 @@ void ReceivePacket (Ptr<Socket> socket)
     }
 }
 
+/**
+ * Generate traffic.
+ *
+ * \param socket The sending socket.
+ * \param pktSize The packet size.
+ * \param pktCount The packet count.
+ * \param pktInterval The interval between two packets.
+ */
 static void GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize,
                              uint32_t pktCount, Time pktInterval )
 {

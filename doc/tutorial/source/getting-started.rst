@@ -1,5 +1,5 @@
 .. include:: replace.txt
-.. highlight:: bash
+.. highlight:: console
 
 .. _Getting Started:
 
@@ -16,17 +16,17 @@ Overview
 
 |ns3| is built as a system of software libraries that work together.
 User programs can be written that links with (or imports from) these
-libraries.  User programs are written in either the C++ or Python 
+libraries.  User programs are written in either the C++ or Python
 programming languages.
 
 |ns3| is distributed as source code, meaning that the target system
 needs to have a software development environment to build the libraries
-first, then build the user program.  |ns3| could in principle be 
+first, then build the user program.  |ns3| could in principle be
 distributed as pre-built libraries for selected systems, and in the
 future it may be distributed that way, but at present, many users
 actually do their work by editing |ns3| itself, so having the source
-code around to rebuild the libraries is useful.  If someone would like 
-to undertake the job of making pre-built libraries and packages for 
+code around to rebuild the libraries is useful.  If someone would like
+to undertake the job of making pre-built libraries and packages for
 operating systems, please contact the ns-developers mailing list.
 
 In the following, we'll look at three ways of downloading and building
@@ -49,11 +49,11 @@ a non-privileged user account is recommended.
 Prerequisites
 *************
 
-The entire set of available |ns3| libraries has a number of dependencies   
+The entire set of available |ns3| libraries has a number of dependencies
 on third-party libraries, but most of |ns3| can be built and used with
 support for a few common (often installed by default) components:  a
 C++ compiler, an installation of Python, a source code editor (such as vim,
-emacs, or Eclipse) and, if using the development repositories, an 
+emacs, or Eclipse) and, if using the development repositories, an
 installation of Git source code control system.  Most beginning users
 need not concern themselves if their configuration reports some missing
 optional features of |ns3|, but for those wishing a full installation,
@@ -62,22 +62,24 @@ and tips.  One such page is the "Installation" page, with install instructions
 for various systems, available at
 https://www.nsnam.org/wiki/Installation.
 
-The "Prerequisites" section of this wiki page explains which packages are 
-required to support common |ns3| options, and also provides the 
+The "Prerequisites" section of this wiki page explains which packages are
+required to support common |ns3| options, and also provides the
 commands used to install them for common Linux or macOS variants.
 
-You may want to take this opportunity to explore the |ns3| wiki 
-a bit, or the main web site at https://www.nsnam.org, since there is a 
-wealth of information there. 
+You may want to take this opportunity to explore the |ns3| wiki
+a bit, or the main web site at https://www.nsnam.org, since there is a
+wealth of information there.
 
-As of the most recent |ns3| release (ns-3.35), the following tools
+As of the most recent |ns3| release (ns-3.36.1), the following tools
 are needed to get started with |ns3|:
 
 ============  ===========================================================
 Prerequisite  Package/version
 ============  ===========================================================
-C++ compiler  ``clang++`` or ``g++`` (g++ version 7 or greater)
+C++ compiler  ``clang++`` or ``g++`` (g++ version 8 or greater)
 Python        ``python3`` version >=3.6
+CMake         ``cmake`` version >=3.10
+Build system  ``make``, ``ninja``, ``xcodebuild`` (XCode)
 Git           any recent version (to access |ns3| from `GitLab.com <https://gitlab.com/nsnam/ns-3-dev/>`_)
 tar           any recent version (to unpack an `ns-3 release <https://www.nsnam.org/releases/>`_)
 bunzip2       any recent version (to uncompress an |ns3| release)
@@ -91,14 +93,10 @@ From this point forward, we are going to assume that the reader is working in
 Linux, macOS, or a Linux emulation environment, and has at least the above
 prerequisites.
 
-**Note:** The |ns3| build system (`Waf`, introduced below) does not
-tolerate spaces in the installation path.  Make sure that you are downloading
-into a directory that does not contain spaces in the full path name.
-
 For example, do not use a directory path such as the below, because one
 of the parent directories contains a space in the directory name:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ pwd
   /home/user/5G simulations/ns-3-allinone/ns-3-dev
@@ -106,7 +104,7 @@ of the parent directories contains a space in the directory name:
 Downloading a release of ns-3 as a source archive
 +++++++++++++++++++++++++++++++++++++++++++++++++
 
-This option is for the new user who wishes to download and experiment with 
+This option is for the new user who wishes to download and experiment with
 the most recently released and packaged version of |ns3|.
 |ns3| publishes its releases as compressed source archives, sometimes
 referred to as a tarball.
@@ -116,32 +114,32 @@ The process for downloading |ns3| via tarball is simple; you just
 have to pick a release, download it and uncompress it.
 
 Let's assume that you, as a user, wish to build |ns3| in a local
-directory called ``workspace``. 
-If you adopt the ``workspace`` directory approach, you can 
-get a copy of a release by typing the following into your Linux shell 
+directory called ``workspace``.
+If you adopt the ``workspace`` directory approach, you can
+get a copy of a release by typing the following into your Linux shell
 (substitute the appropriate version numbers, of course)
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ cd
   $ mkdir workspace
   $ cd workspace
-  $ wget https://www.nsnam.org/release/ns-allinone-3.35.tar.bz2
-  $ tar xjf ns-allinone-3.35.tar.bz2
+  $ wget https://www.nsnam.org/release/ns-allinone-3.36.1.tar.bz2
+  $ tar xjf ns-allinone-3.36.1.tar.bz2
 
 Notice the use above of the ``wget`` utility, which is a command-line
 tool to fetch objects from the web; if you do not have this installed,
 you can use a browser for this step.
- 
-Following these steps, if you change into the directory 
-``ns-allinone-3.35``, you should see a number of files and directories
+
+Following these steps, if you change into the directory
+``ns-allinone-3.36.1``, you should see a number of files and directories
 
 .. sourcecode:: text
 
-  $ cd ns-allinone-3.35
+  $ cd ns-allinone-3.36.1
   $ ls
-  bake      constants.py   ns-3.35                            README
-  build.py  netanim-3.108  pybindgen-0.22.0                   util.py
+  bake      constants.py   ns-3.36.1                          README.md
+  build.py  netanim-3.108  pybindgen-0.22.1                   util.py
 
 You are now ready to build the base |ns3| distribution and may skip ahead
 to the section on building |ns3|.
@@ -154,14 +152,14 @@ at https://gitlab.com/nsnam/.  The group name ``nsnam`` organizes the
 various repositories used by the open source project.
 
 The simplest way to get started using Git repositories is to fork or clone
-the ``ns-3-allinone`` environment.  This is a set of scripts that manages the 
+the ``ns-3-allinone`` environment.  This is a set of scripts that manages the
 downloading and building of the most commonly used subsystems of |ns3|
 for you.  If you are new to Git, the terminology of ``fork`` and ``clone``
 may be foreign to you; if so, we recommend that you simply ``clone``
 (create your own replica) of the repository found on GitLab.com, as
 follows:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ cd
   $ mkdir workspace
@@ -173,29 +171,29 @@ At this point, your view of the ns-3-allinone directory is slightly
 different than described above with a release archive; it should look
 something like this:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ ls
-  build.py  constants.py   download.py  README  util.py
+  build.py  constants.py   download.py  README.md  util.py
 
 Note the presence of the ``download.py`` script, which will further fetch
 the |ns3| and related sourcecode.  At this point, you have a choice, to
 either download the most recent development snapshot of |ns3|:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ python3 download.py
 
 or to specify a release of |ns3|, using the ``-n`` flag to specify a
 release number:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ python3 download.py -n ns-3.35
+  $ python3 download.py -n ns-3.36.1
 
 After this step, the additional repositories of |ns3|, bake, pybindgen,
 and netanim will be downloaded to the ``ns-3-allinone`` directory.
- 
+
 Downloading ns-3 Using Bake
 +++++++++++++++++++++++++++
 
@@ -206,8 +204,8 @@ for network animiations).  The third repository provided by default in
 ns-3-allinone is called ``bake``.
 
 Bake is a tool for coordinated software building from multiple repositories,
-developed for the |ns3| project.  Bake can be used to fetch development
-versions of the |ns3| software, and to download and build extensions to the 
+developed for the |ns3| project. Bake can be used to fetch development
+versions of the |ns3| software, and to download and build extensions to the
 base |ns3| distribution, such as the Direct Code Execution environment,
 Network Simulation Cradle, ability to create new Python bindings, and
 various |ns3| "apps".  If you envision that your |ns3| installation may
@@ -220,10 +218,10 @@ will allow one to download any software that was current at the
 time of the release.  That is, for example, the version of Bake that
 is distributed with the ``ns-3.30`` release can be used to fetch components
 for that |ns3| release or earlier, but can't be used to fetch components
-for later releases (unless the ``bakeconf.xml`` package description file 
+for later releases (unless the ``bakeconf.xml`` package description file
 is updated).
 
-You can also get the most recent copy of ``bake`` by typing the 
+You can also get the most recent copy of ``bake`` by typing the
 following into your Linux shell (assuming you have installed Git)::
 
   $ cd
@@ -231,10 +229,10 @@ following into your Linux shell (assuming you have installed Git)::
   $ cd workspace
   $ git clone https://gitlab.com/nsnam/bake.git
 
-As the git command executes, you should see something like the 
+As the git command executes, you should see something like the
 following displayed:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   Cloning into 'bake'...
   remote: Enumerating objects: 2086, done.
@@ -244,10 +242,10 @@ following displayed:
   Receiving objects: 100% (2086/2086), 2.68 MiB | 3.82 MiB/s, done.
   Resolving deltas: 100% (1404/1404), done.
 
-After the clone command completes, you should have a directory called 
+After the clone command completes, you should have a directory called
 ``bake``, the contents of which should look something like the following:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ cd bake
   $ ls
@@ -260,29 +258,29 @@ distribution of your choice.
 
 There are a few configuration targets available:
 
-1.  ``ns-3.35``:  the module corresponding to the release; it will download
+1.  ``ns-3.36.1``:  the module corresponding to the release; it will download
     components similar to the release tarball.
 2.  ``ns-3-dev``:  a similar module but using the development code tree
-3.  ``ns-allinone-3.35``:  the module that includes other optional features
+3.  ``ns-allinone-3.36.1``:  the module that includes other optional features
     such as bake build system, netanim animator, and pybindgen
 4.  ``ns-3-allinone``:  similar to the released version of the allinone
     module, but for development code.
 
-The current development snapshot (unreleased) of |ns3| may be found 
-at https://gitlab.com/nsnam/ns-3-dev.git.  The 
+The current development snapshot (unreleased) of |ns3| may be found
+at https://gitlab.com/nsnam/ns-3-dev.git.  The
 developers attempt to keep these repositories in consistent, working states but
-they are in a development area with unreleased code present, so you may want 
+they are in a development area with unreleased code present, so you may want
 to consider staying with an official release if you do not need newly-
 introduced features.
 
 You can find the latest version  of the
-code either by inspection of the repository list or by going to the 
+code either by inspection of the repository list or by going to the
 `"ns-3 Releases"
 <https://www.nsnam.org/releases>`_
 web page and clicking on the latest release link.  We'll proceed in
-this tutorial example with ``ns-3.35``.
+this tutorial example with ``ns-3.36.1``.
 
-We are now going to use the bake tool to pull down the various pieces of 
+We are now going to use the bake tool to pull down the various pieces of
 |ns3| you will be using.  First, we'll say a word about running bake.
 
 Bake works by downloading source packages into a source directory,
@@ -292,9 +290,9 @@ outside of the directory it was downloaded into, it is advisable
 to put bake into your path, such as follows (Linux bash shell example).
 First, change into the 'bake' directory, and then set the following
 environment variables:
- 
-.. sourcecode:: bash
- 
+
+.. sourcecode:: console
+
   $ export BAKE_HOME=`pwd`
   $ export PATH=$PATH:$BAKE_HOME:$BAKE_HOME/build/bin
   $ export PYTHONPATH=$PYTHONPATH:$BAKE_HOME:$BAKE_HOME/build/lib
@@ -306,14 +304,14 @@ full builds of ns-3-allinone (with the optional packages) typically do.
 
 Step into the workspace directory and type the following into your shell:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./bake.py configure -e ns-3.35
+  $ ./bake.py configure -e ns-3.36.1
 
 Next, we'll ask bake to check whether we have enough tools to download
 various components.  Type:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ ./bake.py check
 
@@ -335,12 +333,12 @@ You should see something like the following:
 In particular, download tools such as Git and Mercurial
 are our principal concerns at this point, since they allow us to fetch
 the code.  Please install missing tools at this stage, in the usual
-way for your system (if you are able to), or contact your system 
-administrator as needed to install these tools.  You can also 
+way for your system (if you are able to), or contact your system
+administrator as needed to install these tools.  You can also
 
 Next, try to download the software:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ ./bake.py download
 
@@ -363,17 +361,17 @@ should yield something like:
   >> Searching for system dependency pygobject - OK
   >> Searching for system dependency cmake - OK
   >> Downloading netanim-3.108 - OK
-  >> Downloading pybindgen-0.22.0 (target directory:pybindgen) - OK
-  >> Downloading ns-3.35 (target directory:ns-3.35) - OK
+  >> Downloading pybindgen-0.22.1 (target directory:pybindgen) - OK
+  >> Downloading ns-3.36.1 (target directory:ns-3.36.1) - OK
 
 The above suggests that three sources have been downloaded.  Check the
 ``source`` directory now and type ``ls``; one should see:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ cd source
   $ ls
-  netanim-3.108  ns-3.35 pybindgen
+  netanim-3.108  ns-3.36.1 pybindgen
 
 You are now ready to build the |ns3| distribution.
 
@@ -382,11 +380,10 @@ Building ns-3
 
 As with downloading |ns3|, there are a few ways to build |ns3|.  The main
 thing that we wish to emphasize is the following.  |ns3| is built with
-a build tool called ``Waf``, described below.  Most users will end up
-working most directly with Waf, but there are some convenience scripts
-to get you started or to orchestrate more complicated builds.  Therefore,
-please have a look at ``build.py`` and building with ``bake``, before
-reading about Waf below.
+a build tool called ``CMake``, described below.  Most users will end up
+working most directly with the ns3 command-line wrapper for CMake, for the sake
+of convenience.  Therefore, please have a look at ``build.py`` and building
+with ``bake``, before reading about CMake and the ns3 wrapper below.
 
 Building with ``build.py``
 ++++++++++++++++++++++++++
@@ -396,18 +393,18 @@ described above; not from downloading via git or bake.
 
 When working from a released tarball, a convenience script available as
 part of ``ns-3-allinone`` can orchestrate a simple build of components.
-This program is called ``build.py``.  This 
+This program is called ``build.py``.  This
 program will get the project configured for you
 in the most commonly useful way.  However, please note that more advanced
 configuration and work with |ns3| will typically involve using the
-native |ns3| build system, Waf, to be introduced later in this tutorial.  
+native |ns3| build system, CMake, to be introduced later in this tutorial.
 
 If you downloaded
-using a tarball you should have a directory called something like 
-``ns-allinone-3.35`` under your ``~/workspace`` directory.  
+using a tarball you should have a directory called something like
+``ns-allinone-3.36.1`` under your ``~/workspace`` directory.
 Type the following:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ ./build.py --enable-examples --enable-tests
 
@@ -421,50 +418,15 @@ are not necessary for your work, if you wish.
 You will see lots of compiler output messages displayed as the build
 script builds the various pieces you downloaded.  First, the script will
 attempt to build the netanim animator, then the pybindgen bindings generator,
-and finally |ns3|.  Eventually you should see the following::
-
-   Waf: Leaving directory '/path/to/workspace/ns-allinone-3.35/ns-3.35/build'
-   'build' finished successfully (6m25.032s)
-  
-   Modules built:
-   antenna                aodv                      applications              
-   bridge                 buildings                 config-store              
-   core                   csma                      csma-layout               
-   dsdv                   dsr                       energy                    
-   fd-net-device          flow-monitor              internet                  
-   internet-apps          lr-wpan                   lte                       
-   mesh                   mobility                  mpi                       
-   netanim (no Python)    network                   nix-vector-routing        
-   olsr                   point-to-point            point-to-point-layout     
-   propagation            sixlowpan                 spectrum                  
-   stats                  tap-bridge                test (no Python)          
-   topology-read          traffic-control           uan                       
-   virtual-net-device     visualizer                wave                      
-   wifi                   wimax                     
-
-   Modules not built (see ns-3 tutorial for explanation):
-   brite                  click                     openflow                  
-
-   Leaving directory ./ns-3.35
-
-Regarding the portion about modules not built::
-
-  Modules not built (see ns-3 tutorial for explanation):
-  brite                     click                     
-
-This just means that some |ns3| modules that have dependencies on
-outside libraries may not have been built, or that the configuration
-specifically asked not to build them.  It does not mean that the 
-simulator did not build successfully or that it will provide wrong 
-results for the modules listed as being built.
+and finally |ns3|.
 
 Building with bake
 ++++++++++++++++++
 
 If you used bake above to fetch source code from project repositories, you
-may continue to use it to build |ns3|.  Type: 
+may continue to use it to build |ns3|.  Type:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ ./bake.py build
 
@@ -472,18 +434,18 @@ and you should see something like:
 
 .. sourcecode:: text
 
-  >> Building pybindgen-0.22.0 - OK
+  >> Building pybindgen-0.22.1 - OK
   >> Building netanim-3.108 - OK
-  >> Building ns-3.35 - OK
+  >> Building ns-3.36.1 - OK
 
 There may be failures to build all components, but the build will proceed
 anyway if the component is optional.  For example, a recent portability issue
-has been that castxml may not build via the bake build tool on all 
+has been that castxml may not build via the bake build tool on all
 platforms; in this case, the line will show something like::
 
   >> Building castxml - Problem
   > Problem: Optional dependency, module "castxml" failed
-    This may reduce the  functionality of the final build. 
+    This may reduce the  functionality of the final build.
     However, bake will continue since "castxml" is not an essential dependency.
     For more information call bake with -v or -vvv, for full verbose mode.
 
@@ -495,175 +457,255 @@ for now.
 If there happens to be a failure, please have a look at what the following
 command tells you; it may give a hint as to a missing dependency:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ ./bake.py show
 
 This will list out the various dependencies of the packages you are
 trying to build.
 
-Building with Waf
-+++++++++++++++++
+Building with the ns3 CMake wrapper
++++++++++++++++++++++++++++++++++++
 
 Up to this point, we have used either the `build.py` script, or the
 `bake` tool, to get started with building |ns3|.  These tools are useful
 for building |ns3| and supporting libraries, and they call into
-the |ns3| directory to call the Waf build tool to do the actual building.  
-An installation of Waf is bundled with the |ns3| source code.
-Most users quickly transition to using Waf directly to configure and 
-build |ns3|.  So, to proceed, please change your working directory to 
+the |ns3| directory to call the CMake build tool to do the actual building.
+CMake needs to be installed before building |ns3|.
+So, to proceed, please change your working directory to
 the |ns3| directory that you have initially built.
 
-It's not 
+It's not
 strictly required at this point, but it will be valuable to take a slight
 detour and look at how to make changes to the configuration of the project.
-Probably the most useful configuration change you can make will be to 
-build the optimized version of the code.  By default you have configured
-your project to build the debug version.  Let's tell the project to 
-make an optimized build.  To explain to Waf that it should do optimized
-builds that include the examples and tests, you will need to execute the 
+Probably the most useful configuration change you can make will be to
+build the optimized version of the code. The project will be configured
+by default using the ``default`` build profile, which is an optimized
+build with debug information (CMAKE_BUILD_TYPE=relwithdebinfo) version.
+Let's tell the project to make an optimized build.
+
+To maintain a similar interface for command-line users, we include a
+wrapper script for CMake, |ns3|. To tell |ns3| that it should do optimized
+builds that include the examples and tests, you will need to execute the
 following commands:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf clean
-  $ ./waf configure --build-profile=optimized --enable-examples --enable-tests
+  $ ./ns3 clean
+  $ ./ns3 configure --build-profile=optimized --enable-examples --enable-tests
 
-This runs Waf out of the local directory (which is provided as a convenience
-for you).  The first command to clean out the previous build is not 
+This runs CMake out of the local directory (which is provided as a convenience
+for you).  The first command to clean out the previous build is not
 typically strictly necessary but is good practice (but see `Build Profiles`_,
 below); it will remove the
-previously built libraries and object files found in directory ``build/``. 
-When the project is reconfigured and the build system checks for various 
+previously built libraries and object files found in directory ``build/``.
+When the project is reconfigured and the build system checks for various
 dependencies, you should see
-output that looks similar to the following::
+output that looks similar to the following:
 
-   Setting top to                           : /home/ns3user/workspace/bake/source/ns-3-dev 
-   Setting out to                           : /home/ns3user/workspace/bake/source/ns-3-dev/build 
-   Checking for 'gcc' (C compiler)          : /usr/bin/gcc 
-   Checking for cc version                  : 7.3.0 
-   Checking for 'g++' (C++ compiler)        : /usr/bin/g++ 
-   Checking for compilation flag -march=native support : ok 
-   Checking for compilation flag -Wl,--soname=foo support : ok 
-   Checking for compilation flag -std=c++11 support       : ok 
-   Checking boost includes                                : headers not found, please provide a --boost-includes argument (see help) 
-   Checking boost includes                                : headers not found, please provide a --boost-includes argument (see help) 
-   Checking for program 'python'                          : /usr/bin/python 
-   Checking for python version >= 2.3                     : 2.7.15 
-   python-config                                          : /usr/bin/python-config 
-   Asking python-config for pyembed '--cflags --libs --ldflags' flags : yes 
-   Testing pyembed configuration                                      : yes 
-   Asking python-config for pyext '--cflags --libs --ldflags' flags   : yes 
-   Testing pyext configuration                                        : yes 
-   Checking for compilation flag -fvisibility=hidden support          : ok 
-   Checking for compilation flag -Wno-array-bounds support            : ok 
-   Checking for pybindgen location                                    : ../pybindgen (guessed) 
-   Checking for python module 'pybindgen'                             : 0.21.0 
-   Checking for pybindgen version                                     : 0.21.0 
-   Checking for code snippet                                          : yes 
-   Checking for types uint64_t and unsigned long equivalence          : no 
-   Checking for code snippet                                          : no 
-   Checking for types uint64_t and unsigned long long equivalence     : yes 
-   Checking for the apidefs that can be used for Python bindings      : gcc-LP64 
-   Checking for internal GCC cxxabi                                   : complete 
-   Checking for python module 'pygccxml'                              : not found 
-   Checking for click location                                        : not found 
-   Checking for program 'pkg-config'                                  : /usr/bin/pkg-config 
-   Checking for 'gtk+-3.0'                                            : not found 
-   Checking for 'libxml-2.0'                                          : yes 
-   checking for uint128_t                                             : not found 
-   checking for __uint128_t                                           : yes 
-   Checking high precision implementation                             : 128-bit integer (default) 
-   Checking for header stdint.h                                       : yes 
-   Checking for header inttypes.h                                     : yes 
-   Checking for header sys/inttypes.h                                 : not found 
-   Checking for header sys/types.h                                    : yes 
-   Checking for header sys/stat.h                                     : yes 
-   Checking for header dirent.h                                       : yes 
-   Checking for header stdlib.h                                       : yes 
-   Checking for header signal.h                                       : yes 
-   Checking for header pthread.h                                      : yes 
-   Checking for header stdint.h                                       : yes 
-   Checking for header inttypes.h                                     : yes 
-   Checking for header sys/inttypes.h                                 : not found 
-   Checking for library rt                                            : yes 
-   Checking for header sys/ioctl.h                                    : yes 
-   Checking for header net/if.h                                       : yes 
-   Checking for header net/ethernet.h                                 : yes 
-   Checking for header linux/if_tun.h                                 : yes 
-   Checking for header netpacket/packet.h                             : yes 
-   Checking for NSC location                                          : not found 
-   Checking for 'sqlite3'                                             : not found 
-   Checking for header linux/if_tun.h                                 : yes 
-   Checking for python module 'gi'                                    : 3.26.1 
-   Checking for python module 'gi.repository.GObject'                 : ok 
-   Checking for python module 'cairo'                                 : ok 
-   Checking for python module 'pygraphviz'                            : 1.4rc1 
-   Checking for python module 'gi.repository.Gtk'                     : ok 
-   Checking for python module 'gi.repository.Gdk'                     : ok 
-   Checking for python module 'gi.repository.Pango'                   : ok 
-   Checking for python module 'gi.repository.GooCanvas'               : ok 
-   Checking for program 'sudo'                                        : /usr/bin/sudo 
-   Checking for program 'valgrind'                                    : not found 
-   Checking for 'gsl'                                                 : not found 
-   python-config                                                      : not found 
-   Checking for compilation flag -fstrict-aliasing support            : ok 
-   Checking for compilation flag -fstrict-aliasing support            : ok 
-   Checking for compilation flag -Wstrict-aliasing support            : ok 
-   Checking for compilation flag -Wstrict-aliasing support            : ok 
-   Checking for program 'doxygen'                                     : /usr/bin/doxygen 
-   ---- Summary of optional NS-3 features:
-   Build profile                 : optimized
-   Build directory               : 
-   BRITE Integration             : not enabled (BRITE not enabled (see option --with-brite))
-   DES Metrics event collection  : not enabled (defaults to disabled)
-   Emulation FdNetDevice         : enabled
-   Examples                      : enabled
-   File descriptor NetDevice     : enabled
-   GNU Scientific Library (GSL)  : not enabled (GSL not found)
-   Gcrypt library                : not enabled (libgcrypt not found: you can use libgcrypt-config to find its location.)
-   GtkConfigStore                : not enabled (library 'gtk+-3.0 >= 3.0' not found)
-   MPI Support                   : not enabled (option --enable-mpi not selected)
-   NS-3 Click Integration        : not enabled (nsclick not enabled (see option --with-nsclick))
-   NS-3 OpenFlow Integration     : not enabled (Required boost libraries not found)
-   Network Simulation Cradle     : not enabled (NSC not found (see option --with-nsc))
-   PlanetLab FdNetDevice         : not enabled (PlanetLab operating system not detected (see option --force-planetlab))
-   PyViz visualizer              : enabled
-   Python API Scanning Support   : not enabled (Missing 'pygccxml' Python module)
-   Python Bindings               : enabled
-   Real Time Simulator           : enabled
-   SQlite stats data output      : not enabled (library 'sqlite3' not found)
-   Tap Bridge                    : enabled
-   Tap FdNetDevice               : enabled
-   Tests                         : enabled
-   Threading Primitives          : enabled
-   Use sudo to set suid bit      : not enabled (option --enable-sudo not selected)
-   XmlIo                         : enabled
-   'configure' finished successfully (6.387s)
+.. sourcecode:: console
+
+  $ ./ns3 configure --build-profile=optimized --enable-examples --enable-tests
+  -- CCache is enabled. Precompiled headers are disabled by default.
+  -- The CXX compiler identification is GNU 11.2.0
+  -- The C compiler identification is GNU 11.2.0
+  -- Detecting CXX compiler ABI info
+  -- Detecting CXX compiler ABI info - done
+  -- Check for working CXX compiler: /usr/bin/c++ - skipped
+  -- Detecting CXX compile features
+  -- Detecting CXX compile features - done
+  -- Detecting C compiler ABI info
+  -- Detecting C compiler ABI info - done
+  -- Check for working C compiler: /usr/bin/cc - skipped
+  -- Detecting C compile features
+  -- Detecting C compile features - done
+  -- Using default output directory /mnt/dev/tools/source/ns-3-dev/build
+  -- Found GTK3_GTK: /usr/lib/x86_64-linux-gnu/libgtk-3.so
+  -- GTK3 was found.
+  -- LibXML2 was found.
+  -- LibRT was found.
+  -- Visualizer requires Python bindings
+  -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0")
+  -- Found PkgConfig: /usr/bin/pkg-config (found version "0.29.2")
+  -- GSL was found.
+  -- Found Sphinx: /usr/bin/sphinx-build
+  -- Looking for sys/types.h
+  -- Looking for sys/types.h - found
+  -- Looking for stdint.h
+  -- Looking for stdint.h - found
+  -- Looking for stddef.h
+  -- Looking for stddef.h - found
+  -- Check size of long long
+  -- Check size of long long - done
+  -- Check size of int128_t
+  -- Check size of int128_t - failed
+  -- Check size of __int128_t
+  -- Check size of __int128_t - done
+  -- Performing Test has_hash___int128_t
+  -- Performing Test has_hash___int128_t - Success
+  -- Check size of unsigned long long
+  -- Check size of unsigned long long - done
+  -- Check size of uint128_t
+  -- Check size of uint128_t - failed
+  -- Check size of __uint128_t
+  -- Check size of __uint128_t - done
+  -- Performing Test has_hash___uint128_t
+  -- Performing Test has_hash___uint128_t - Success
+  -- Looking for C++ include inttypes.h
+  -- Looking for C++ include inttypes.h - found
+  -- Looking for C++ include stat.h
+  -- Looking for C++ include stat.h - not found
+  -- Looking for C++ include dirent.h
+  -- Looking for C++ include dirent.h - found
+  -- Looking for C++ include stdlib.h
+  -- Looking for C++ include stdlib.h - found
+  -- Looking for C++ include signal.h
+  -- Looking for C++ include signal.h - found
+  -- Looking for C++ include netpacket/packet.h
+  -- Looking for C++ include netpacket/packet.h - found
+  -- Looking for getenv
+  -- Looking for getenv - found
+  -- Processing src/antenna
+  -- Processing src/aodv
+  -- Processing src/applications
+  -- Processing src/bridge
+  -- Processing src/brite
+  -- Brite was not found
+  -- Processing src/buildings
+  -- Processing src/click
+  -- Click was not found
+  -- Processing src/config-store
+  -- Processing src/core
+  -- Looking for C++ include boost/units/quantity.hpp
+  -- Looking for C++ include boost/units/quantity.hpp - found
+  -- Looking for C++ include boost/units/systems/si.hpp
+  -- Looking for C++ include boost/units/systems/si.hpp - found
+  -- Boost Units have been found.
+  -- Processing src/csma
+  -- Processing src/csma-layout
+  -- Processing src/dsdv
+  -- Processing src/dsr
+  -- Processing src/energy
+  -- Processing src/fd-net-device
+  -- Looking for C++ include net/ethernet.h
+  -- Looking for C++ include net/ethernet.h - found
+  -- Looking for C++ include netpacket/packet.h
+  -- Looking for C++ include netpacket/packet.h - found
+  -- Looking for C++ include net/if.h
+  -- Looking for C++ include net/if.h - found
+  -- Looking for C++ include linux/if_tun.h
+  -- Looking for C++ include linux/if_tun.h - found
+  -- Looking for C++ include net/netmap_user.h
+  -- Looking for C++ include net/netmap_user.h - not found
+  -- Looking for C++ include sys/ioctl.h
+  -- Looking for C++ include sys/ioctl.h - found
+  -- Checking for module 'libdpdk'
+  --   No package 'libdpdk' found
+  -- Processing src/flow-monitor
+  -- Processing src/internet
+  -- Processing src/internet-apps
+  -- Processing src/lr-wpan
+  -- Processing src/lte
+  -- Processing src/mesh
+  -- Processing src/mobility
+  -- Processing src/netanim
+  -- Processing src/network
+  -- Processing src/nix-vector-routing
+  -- Processing src/olsr
+  -- Processing src/openflow
+  -- Openflow was not found
+  -- Processing src/point-to-point
+  -- Processing src/point-to-point-layout
+  -- Processing src/propagation
+  -- Processing src/sixlowpan
+  -- Processing src/spectrum
+  -- Processing src/stats
+  -- Processing src/tap-bridge
+  -- Processing src/test
+  -- Processing src/topology-read
+  -- Processing src/traffic-control
+  -- Processing src/uan
+  -- Processing src/virtual-net-device
+  -- Processing src/wave
+  -- Processing src/wifi
+  -- Processing src/wimax
+  -- ---- Summary of optional NS-3 features:
+  Build profile                 : optimized
+  Build directory               : /mnt/dev/tools/source/ns-3-dev/build
+  BRITE Integration             : OFF (missing dependency)
+  DES Metrics event collection  : OFF (not requested)
+  DPDK NetDevice                : OFF (missing dependency)
+  Emulation FdNetDevice         : ON
+  Examples                      : ON
+  File descriptor NetDevice     : ON
+  GNU Scientific Library (GSL)  : ON
+  GtkConfigStore                : ON
+  MPI Support                   : OFF (not requested)
+  NS-3 Click Integration        : OFF (missing dependency)
+  NS-3 OpenFlow Integration     : OFF (missing dependency)
+  Netmap emulation FdNetDevice  : OFF (missing dependency)
+  PyViz visualizer              : OFF (missing dependency)
+  Python Bindings               : OFF (not requested)
+  Real Time Simulator           : ON
+  SQLite stats support          : ON
+  Tap Bridge                    : ON
+  Tap FdNetDevice               : ON
+  Tests                         : ON
+
+
+  Modules configured to be built:
+  antenna                   aodv                      applications
+  bridge                    buildings                 config-store
+  core                      csma                      csma-layout
+  dsdv                      dsr                       energy
+  fd-net-device             flow-monitor              internet
+  internet-apps             lr-wpan                   lte
+  mesh                      mobility                  netanim
+  network                   nix-vector-routing        olsr
+  point-to-point            point-to-point-layout     propagation
+  sixlowpan                 spectrum                  stats
+  tap-bridge                test                      topology-read
+  traffic-control           uan                       virtual-net-device
+  wave                      wifi                      wimax
+
+
+  Modules that cannot be built:
+  brite                     click                     mpi
+  openflow                  visualizer
+
+
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: /mnt/dev/tools/source/ns-3-dev/cmake-cache
+  Finished executing the following commands:
+  mkdir cmake-cache
+  cd cmake-cache; /usr/bin/cmake -DCMAKE_BUILD_TYPE=release -DNS3_NATIVE_OPTIMIZATIONS=ON -DNS3_EXAMPLES=ON -DNS3_TESTS=ON -G Unix Makefiles .. ; cd ..
+
 
 Note the last part of the above output.  Some |ns3| options are not enabled by
-default or require support from the underlying system to work properly.
-For instance, to enable XmlTo, the library libxml-2.0 must be found on the
-system.  If this library were not found, the corresponding |ns3| feature 
-would not be enabled and a message would be displayed.  Note further that there is 
+default or require support from the underlying system to work properly (``OFF (not requested)``).
+Other options might depend on third-party libraries, which if not found will be disabled
+(``OFF(missing dependency)``).
+If this library were not found, the corresponding |ns3| feature
+would not be enabled and a message would be displayed.  Note further that there is
 a feature to use the program ``sudo`` to set the suid bit of certain programs.
 This is not enabled by default and so this feature is reported as "not enabled."
 Finally, to reprint this summary of which optional features are enabled, use
-the ``--check-config`` option to waf.
+the ``show config`` option to ns3.
 
 Now go ahead and switch back to the debug build that includes the examples and tests.
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf clean
-  $ ./waf configure --build-profile=debug --enable-examples --enable-tests
+  $ ./ns3 clean
+  $ ./ns3 configure --build-profile=debug --enable-examples --enable-tests
 
-The build system is now configured and you can build the debug versions of 
+The build system is now configured and you can build the debug versions of
 the |ns3| programs by simply typing:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf
+  $ ./ns3 build
 
 Although the above steps made you build the |ns3| part of the system twice,
 now you know how to change the configuration and build optimized code.
@@ -671,36 +713,36 @@ now you know how to change the configuration and build optimized code.
 A command exists for checking which profile is currently active
 for an already configured project:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --check-profile
-  Waf: Entering directory \`/path/to/ns-allinone-3.35/ns-3.35/build\'
+  $ ./ns3 show profile
   Build profile: debug
 
 The build.py script discussed above supports also the ``--enable-examples``
-and ``enable-tests`` arguments, but in general, does not directly support
-other waf options; for example, this will not work:
+and ``enable-tests`` arguments and passes them through to the ns-3
+configuration, but in general, does not directly support
+other ns3 options; for example, this will not work:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./build.py --disable-python
+  $ ./build.py --enable-asserts
 
 will result in:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  build.py: error: no such option: --disable-python
+  build.py: error: no such option: --enable-asserts
 
 However, the special operator ``--`` can be used to pass additional
-options through to waf, so instead of the above, the following will work:
+configure options through to ns3, so instead of the above, the following will work:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./build.py -- --disable-python   
+  $ ./build.py -- --enable-asserts
 
-as it generates the underlying command ``./waf configure --disable-python``.
+as it generates the underlying command ``./ns3 configure --enable-asserts``.
 
-Here are a few more introductory tips about Waf.
+Here are a few more introductory tips about CMake.
 
 Handling build errors
 =====================
@@ -720,48 +762,48 @@ on Fedora 28, when Gtk2+ is installed, will result in an error such as::
   /usr/include/gtk-2.0/gtk/gtkfilechooserbutton.h:59:8: error: unnecessary parentheses in declaration of ‘__gtk_reserved1’ [-Werror=parentheses]
    void (*__gtk_reserved1);
 
-In releases starting with ns-3.28.1, an option is available in Waf to work
-around these issues.  The option disables the inclusion of the '-Werror' 
+In releases starting with ns-3.28.1, an option is available in CMake to work
+around these issues.  The option disables the inclusion of the '-Werror'
 flag to g++ and clang++.  The option is '--disable-werror' and must be
 used at configure time; e.g.:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  ./waf configure --disable-werror --enable-examples --enable-tests
+  ./ns3 configure --disable-werror --enable-examples --enable-tests
 
 Configure vs. Build
 ===================
 
-Some Waf commands are only meaningful during the configure phase and some commands are valid
-in the build phase.  For example, if you wanted to use the emulation 
+Some CMake commands are only meaningful during the configure phase and some commands are valid
+in the build phase.  For example, if you wanted to use the emulation
 features of |ns3|, you might want to enable setting the suid bit using
-sudo as described above.  This turns out to be a configuration-time command, and so 
+sudo as described above.  This turns out to be a configuration-time command, and so
 you could reconfigure using the following command that also includes the examples and tests.
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf configure --enable-sudo --enable-examples --enable-tests
+  $ ./ns3 configure --enable-sudo --enable-examples --enable-tests
 
-If you do this, Waf will have run sudo to change the socket creator programs of the
+If you do this, ns3 will have run sudo to change the socket creator programs of the
 emulation code to run as root.
 
 There are many other configure- and build-time options
-available in Waf.  To explore these options, type:
+available in ns3.  To explore these options, type:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --help
+  $ ./ns3 --help
 
 We'll use some of the testing-related commands in the next section.
 
 Build Profiles
 ==============
 
-We already saw how you can configure Waf for ``debug`` or ``optimized`` builds:
+We already saw how you can configure CMake for ``debug`` or ``optimized`` builds:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --build-profile=debug
+  $ ./ns3 configure --build-profile=debug
 
 There is also an intermediate build profile, ``release``.  ``-d`` is a
 synonym for ``--build-profile``.
@@ -769,30 +811,30 @@ synonym for ``--build-profile``.
 The build profile controls the use of logging, assertions, and compiler optimization:
 
 .. table:: Build profiles
-    :widths: 10 28 30 32
+    :widths: 10 28 30 30 32
 
-    +----------+---------------------------------+-----------------------------------------------------------------+
-    | Feature  | Build Profile                                                                                     |
-    +          +---------------------------------+-------------------------------+---------------------------------+
-    |          | ``debug``                       | ``release``                   | ``optimized``                   |
-    +==========+=================================+===============================+=================================+
-    | Enabled  | |  ``NS3_BUILD_PROFILE_DEBUG``  | ``NS3_BUILD_PROFILE_RELEASE`` | ``NS3_BUILD_PROFILE_OPTIMIZED`` |
-    | Features | |  ``NS_LOG...``                |                               |                                 |
-    |          | |  ``NS_ASSERT...``             |                               |                                 |
-    +----------+---------------------------------+-------------------------------+---------------------------------+
-    | Code     | ``NS_BUILD_DEBUG(code)``        |  ``NS_BUILD_RELEASE(code)``   | ``NS_BUILD_OPTIMIZED(code)``    |
-    | Wrapper  |                                 |                               |                                 |
-    | Macro    |                                 |                               |                                 |
-    +----------+---------------------------------+-------------------------------+---------------------------------+
-    | Compiler | ``-O0 -ggdb -g3``               | ``-O3 -g0``                   | ``-O3 -g``                      |
-    | Flags    |                                 | ``-fomit-frame-pointer``      | ``-fstrict-overflow``           |
-    |          |                                 |                               | ``-march=native``               |
-    +----------+---------------------------------+-------------------------------+---------------------------------+
-    
+    +----------+---------------------------------------------------------------------------------------------------------------------------------+
+    | Feature  | Build Profile                                                                                                                   |
+    +          +---------------------------------+-----------------------------+-------------------------------+---------------------------------+
+    |          | ``debug``                       | ``default``                 | ``release``                   | ``optimized``                   |
+    +==========+=================================+=============================+===============================+=================================+
+    | Enabled  | ``NS3_BUILD_PROFILE_DEBUG``     | ``NS3_BUILD_PROFILE_DEBUG`` | ``NS3_BUILD_PROFILE_RELEASE`` | ``NS3_BUILD_PROFILE_OPTIMIZED`` |
+    | Features | ``NS_LOG...``                   | ``NS_LOG...``               |                               |                                 |
+    |          | ``NS_ASSERT...``                | ``NS_ASSERT...``            |                               |                                 |
+    +----------+---------------------------------+-----------------------------+-------------------------------+---------------------------------+
+    | Code     | ``NS_BUILD_DEBUG(code)``        | ``NS_BUILD_DEBUG(code)``    | ``NS_BUILD_RELEASE(code)``    | ``NS_BUILD_OPTIMIZED(code)``    |
+    | Wrapper  |                                 |                             |                               |                                 |
+    | Macro    |                                 |                             |                               |                                 |
+    +----------+---------------------------------+-----------------------------+-------------------------------+---------------------------------+
+    | Compiler | ``-Og -g``                      | ``-O2 -g``                  | ``-O3``                       | ``-O3``                         |
+    | Flags    |                                 |                             |                               | ``-march=native``               |
+    |          |                                 |                             |                               | ``-mtune=native``               |
+    +----------+---------------------------------+-----------------------------+-------------------------------+---------------------------------+
+
 As you can see, logging and assertions are only configured
 by default in debug builds, although they can be selectively enabled
-in other build profiles by using the ``--enable-logs`` and 
-``--enable-asserts`` flags during Waf configuration time.
+in other build profiles by using the ``--enable-logs`` and
+``--enable-asserts`` flags during CMake configuration time.
 Recommended practice is to develop your scenario in debug mode, then
 conduct repetitive runs (for statistics or changing parameters) in
 optimized build profile.
@@ -806,66 +848,66 @@ use the indicated Code Wrapper macro:
   DoLongInvolvedComputation ();
   NS_BUILD_DEBUG (timer.Stop (); std::cout << "Done: " << timer << std::endl;)
 
-By default Waf puts the build artifacts in the ``build`` directory.  
+By default ns3 puts the build artifacts in the ``build`` directory.
 You can specify a different output directory with the ``--out``
 option, e.g.
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf configure --out=my-build-dir
+  $ ./ns3 configure --out=my-build-dir
 
 Combining this with build profiles lets you switch between the different
 compile options in a clean way:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf configure --build-profile=debug --out=build/debug
-  $ ./waf build
+  $ ./ns3 configure --build-profile=debug --out=build/debug
+  $ ./ns3 build
   ...
-  $ ./waf configure --build-profile=optimized --out=build/optimized
-  $ ./waf build
+  $ ./ns3 configure --build-profile=optimized --out=build/optimized
+  $ ./ns3 build
   ...
 
 This allows you to work with multiple builds rather than always
-overwriting the last build.  When you switch, Waf will only compile
+overwriting the last build.  When you switch, ns3 will only compile
 what it has to, instead of recompiling everything.
 
 When you do switch build profiles like this, you have to be careful
 to give the same configuration parameters each time.  It may be convenient
 to define some environment variables to help you avoid mistakes:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ export NS3CONFIG="--enable-examples --enable-tests"
   $ export NS3DEBUG="--build-profile=debug --out=build/debug"
   $ export NS3OPT=="--build-profile=optimized --out=build/optimized"
 
-  $ ./waf configure $NS3CONFIG $NS3DEBUG
-  $ ./waf build
+  $ ./ns3 configure $NS3CONFIG $NS3DEBUG
+  $ ./ns3 build
   ...
-  $ ./waf configure $NS3CONFIG $NS3OPT
-  $ ./waf build
+  $ ./ns3 configure $NS3CONFIG $NS3OPT
+  $ ./ns3 build
 
 Compilers and Flags
 ===================
 
-In the examples above, Waf uses the GCC C++ compiler, ``g++``, for
-building |ns3|. However, it's possible to change the C++ compiler used by Waf
+In the examples above, CMake uses the GCC C++ compiler, ``g++``, for
+building |ns3|. However, it's possible to change the C++ compiler used by CMake
 by defining the ``CXX`` environment variable.
 For example, to use the Clang C++ compiler, ``clang++``,
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ CXX="clang++" ./waf configure
-  $ ./waf build
+  $ CXX="clang++" ./ns3 configure
+  $ ./ns3 build
 
-One can also set up Waf to do distributed compilation with ``distcc`` in
+One can also set up ns3 to do distributed compilation with ``distcc`` in
 a similar way:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ CXX="distcc g++" ./waf configure
-  $ ./waf build
+  $ CXX="distcc g++" ./ns3 configure
+  $ ./ns3 build
 
 More info on ``distcc`` and distributed compilation can be found on it's
 `project page
@@ -878,20 +920,20 @@ you configure |ns3|.
 Install
 =======
 
-Waf may be used to install libraries in various places on the system.
+ns3 may be used to install libraries in various places on the system.
 The default location where libraries and executables are built is
-in the ``build`` directory, and because Waf knows the location of these
+in the ``build`` directory, and because ns3 knows the location of these
 libraries and executables, it is not necessary to install the libraries
 elsewhere.
 
 If users choose to install things outside of the build directory, users
-may issue the ``./waf install`` command.  By default, the prefix for
-installation is ``/usr/local``, so ``./waf install`` will install programs
+may issue the ``./ns3 install`` command.  By default, the prefix for
+installation is ``/usr/local``, so ``./ns3 install`` will install programs
 into ``/usr/local/bin``, libraries into ``/usr/local/lib``, and headers
 into ``/usr/local/include``.  Superuser privileges are typically needed
 to install to the default prefix, so the typical command would be
-``sudo ./waf install``.  When running programs with Waf, Waf will
-first prefer to use shared libraries in the build directory, then 
+``sudo ./ns3 install``.  When running programs with ns3, ns3 will
+first prefer to use shared libraries in the build directory, then
 will look for libraries in the library path configured in the local
 environment.  So when installing libraries to the system, it is good
 practice to check that the intended libraries are being used.
@@ -899,65 +941,329 @@ practice to check that the intended libraries are being used.
 Users may choose to install to a different prefix by passing the ``--prefix``
 option at configure time, such as::
 
-  ./waf configure --prefix=/opt/local
+  ./ns3 configure --prefix=/opt/local
 
-If later after the build the user issues the ``./waf install`` command, the 
+If later after the build the user issues the ``./ns3 install`` command, the
 prefix ``/opt/local`` will be used.
 
-The ``./waf clean`` command should be used prior to reconfiguring 
-the project if Waf will be used to install things at a different prefix.
+The ``./ns3 clean`` command should be used prior to reconfiguring
+the project if ns3 will be used to install things at a different prefix.
 
-In summary, it is not necessary to call ``./waf install`` to use |ns3|.
-Most users will not need this command since Waf will pick up the
-current libraries from the ``build`` directory, but some users may find 
+In summary, it is not necessary to call ``./ns3 install`` to use |ns3|.
+Most users will not need this command since ns3 will pick up the
+current libraries from the ``build`` directory, but some users may find
 it useful if their use case involves working with programs outside
 of the |ns3| directory.
 
-One Waf
+One ns3
 =======
 
-There is only one Waf script, at the top level of the |ns3| source tree.
+There is only one ns3 script, at the top level of the |ns3| source tree.
 As you work, you may find yourself spending a lot of time in ``scratch/``,
-or deep in ``src/...``, and needing to invoke Waf.  You could just
-remember where you are, and invoke Waf like this:
+or deep in ``src/...``, and needing to invoke ns3.  You could just
+remember where you are, and invoke ns3 like this:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ../../../waf ...
+  $ ../../../ns3 ...
 
 but that gets tedious, and error prone, and there are better solutions.
 
-One common way when using a text-based editor such as emacs or vim is to 
-open two terminal sessions and use one to build |ns3| and one to 
+One common way when using a text-based editor such as emacs or vim is to
+open two terminal sessions and use one to build |ns3| and one to
 edit source code.
 
 If you only have the tarball, an environment variable can help:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   $ export NS3DIR="$PWD"
-  $ function waff { cd $NS3DIR && ./waf $* ; }
+  $ function ns3f { cd $NS3DIR && ./ns3 $* ; }
 
   $ cd scratch
-  $ waff build
+  $ ns3f build
 
-It might be tempting in a module directory to add a trivial ``waf``
-script along the lines of ``exec ../../waf``.  Please don't.  It's
+It might be tempting in a module directory to add a trivial ``ns3``
+script along the lines of ``exec ../../ns3``.  Please don't.  It's
 confusing to newcomers, and when done poorly it leads to subtle build
 errors.  The solutions above are the way to go.
+
+Building with CMake
++++++++++++++++++++++++
+
+The ns3 wrapper script calls CMake directly, mapping Waf-like options
+to the verbose settings used by CMake. Calling ``./ns3`` will execute
+a series of commands, that will be shown at the end of their execution.
+The execution of those underlying commands can be skipped to just
+print them using ``./ns3 --dry-run``.
+
+Here is are a few examples showing why we suggest the use of the ns3 wrapper script.
+
+Configuration command
+=====================
+
+.. sourcecode:: console
+
+  $ ./ns3 configure --enable-tests --enable-examples -d optimized
+
+Corresponds to
+
+.. sourcecode:: console
+
+  $ cd /ns-3-dev/cmake-cache/
+  $ cmake -DCMAKE_BUILD_TYPE=release -DNS3_NATIVE_OPTIMIZATIONS=ON -DNS3_ASSERT=OFF -DNS3_LOG=OFF -DNS3_TESTS=ON -DNS3_EXAMPLES=ON ..
+
+Build command
+=============
+
+To build a specific target such as ``test-runner`` we use the following ns3 command:
+
+.. sourcecode:: console
+
+  $ ./ns3 build test-runner
+
+Which corresponds to the following commands:
+
+.. sourcecode:: console
+
+  $ cd /ns-3-dev/cmake-cache/
+  $ cmake --build . -j 16 --target test-runner # This command builds the test-runner target with the underlying build system
+
+
+To build all targets such as modules, examples and tests, we use the following ns3 command:
+
+.. sourcecode:: console
+
+  $ ./ns3 build
+
+Which corresponds to:
+
+.. sourcecode:: console
+
+  $ cd /ns-3-dev/cmake-cache/
+  $ cmake --build . -j 16  # This command builds all the targets with the underlying build system
+
+Run command
+===========
+
+.. sourcecode:: console
+
+  $ ./ns3 run test-runner
+
+Corresponds to:
+
+.. sourcecode:: console
+
+  $ cd /ns-3-dev/cmake-cache/
+  $ cmake --build . -j 16 --target test-runner # This command builds the test-runner target calling the underlying build system
+  $ export PATH=$PATH:/ns-3-dev/build/:/ns-3-dev/build/lib:/ns-3-dev/build/bindings/python # export library paths
+  $ export LD_LIBRARY_PATH=/ns-3-dev/build/:/ns-3-dev/build/lib:/ns-3-dev/build/bindings/python
+  $ export PYTHON_PATH=/ns-3-dev/build/:/ns-3-dev/build/lib:/ns-3-dev/build/bindings/python
+  $ /ns-3-dev/build/utils/ns3-dev-test-runner-optimized # call the executable with the real path
+
+Note: the command above would fail if ``./ns3 build`` was not executed first,
+since the examples won't be built by the test-runner target.
+
+Building with IDEs
+++++++++++++++++++
+
+With CMake, IDE integration is much easier. We list the steps on how to use ns-3 with a few IDEs.
+
+Microsoft Visual Code
+=====================
+
+Start by downloading `VS Code <https://code.visualstudio.com/>`_.
+
+Then install it and then install the CMake and C++ plugins.
+
+This can be done accessing the extensions' menu button on the left.
+
+.. figure:: figures/vscode/install_cmake_tools.png
+
+.. figure:: figures/vscode/install_cpp_tools.png
+
+It will take a while, but it will locate the available toolchains for you to use.
+
+After that, open the ns-3-dev folder. It should run CMake automatically and preconfigure it.
+
+.. figure:: figures/vscode/open_project.png
+
+After this happens, you can choose ns-3 features by opening the CMake cache and toggling them on or off.
+
+.. figure:: figures/vscode/open_cmake_cache.png
+
+.. figure:: figures/vscode/configure_ns3.png
+
+Just as an example, here is how to enable examples
+
+.. figure:: figures/vscode/enable_examples_and_save_to_reload_cache.png
+
+After saving the cache, CMake will run, refreshing the cache. Then VsCode will update its
+list of targets on the left side of the screen in the CMake menu.
+
+After selecting a target on the left side menu, there are options to build, run or debug it.
+
+.. figure:: figures/vscode/select_target_build_and_debug.png
+
+Any of them will automatically build the selected target.
+If you choose run or debug, the executable targets will be executed.
+You can open the source files you want, put some breakpoints and then click debug to visually debug programs.
+
+.. figure:: figures/vscode/debugging.png
+
+JetBrains CLion
+===============
+
+Start by downloading `CLion <https://www.jetbrains.com/clion/>`_.
+
+
+The following image contains the toolchain configuration window for
+CLion running on Windows (only WSLv2 is currently supported).
+
+.. figure:: figures/clion/toolchains.png
+
+CLion uses Makefiles for your platform as the default generator.
+Here you can choose a better generator like `ninja` by setting the cmake options flag to `-G Ninja`.
+You can also set options to enable examples (`-DNS3_EXAMPLES=ON`) and tests (`-DNS3_TESTS=ON`).
+
+.. figure:: figures/clion/cmake_configuration.png
+
+To refresh the CMake cache, triggering the discovery of new targets (libraries, executables and/or modules),
+you can either configure to re-run CMake automatically after editing CMake files (pretty slow and easily
+triggered) or reload it manually. The following image shows how to trigger the CMake cache refresh.
+
+.. figure:: figures/clion/reload_cache.png
+
+After configuring the project, the available targets are listed in a drop-down list on the top right corner.
+Select the target you want and then click the hammer symbol to build, as shown in the image below.
+
+.. figure:: figures/clion/build_targets.png
+
+If you have selected and executable target, you can click either the play button to execute the program;
+the bug to debug the program; the play button with a chip, to run Valgrind and analyze memory usage,
+leaks and so on.
+
+.. figure:: figures/clion/run_target.png
+
+Code::Blocks
+============
+
+Start by installing `Code::Blocks <https://www.codeblocks.org/>`_.
+
+Code::Blocks does not support CMake project natively, but we can use the corresponding CMake
+generator to generate a project in order to use it. The generator name depends on the operating
+system and underlying build system. https://cmake.org/cmake/help/latest/generator/CodeBlocks.html
+
+.. sourcecode:: console
+
+  $ ./ns3 configure -G"CodeBlocks - Ninja" --enable-examples
+
+  ...
+
+  $ -- Build files have been written to: /ns-3-dev/cmake-cache
+
+
+There will be a NS3.cbp file inside the cache folder used during configuration (in this case cmake-cache).
+This is a Code::Blocks project file that can be opened by the IDE.
+
+When you first open the IDE, you will be greeted by a window asking you to select the compiler you want.
+
+.. figure:: figures/codeblocks/compiler_detection.png
+
+After that you will get into the landing page where you can open the project.
+
+.. figure:: figures/codeblocks/landing.png
+
+Loading it will take a while.
+
+.. figure:: figures/codeblocks/open_project.png
+
+After that we can select a target in the top menu (where it says "all") and click to build, run or debug.
+We can also set breakpoints on the source code.
+
+.. figure:: figures/codeblocks/breakpoint_and_debug.png
+
+After clicking to build, the build commands of the underlying build system will be printed in the tab at the bottom.
+If you clicked to debug, the program will start automatically and stop at the first breakpoint.
+
+.. figure:: figures/codeblocks/build_finished_breakpoint_waiting.png
+
+You can inspect memory and the current stack enabling those views in Debug->Debugging Windows->Watches and Call Stack.
+Using the debugging buttons, you can advance line by line, continue until the next breakpoint.
+
+.. figure:: figures/codeblocks/debug_watches.png
+
+Note: as Code::Blocks doesn't natively support CMake projects, it doesn't refresh the CMake cache, which means you
+will need to close the project, run the ``./ns3`` command to refresh the CMake caches after adding/removing
+source files to/from the CMakeLists.txt files, adding a new module or dependencies between modules.
+
+Apple XCode
+============
+
+Start by installing `XCode <https://developer.apple.com/xcode/>`_.
+Then open it for the first time and accept the license.
+Then open Xcode->Preferences->Locations and select the command-line tools location.
+
+.. figure:: figures/xcode/select_command_line.png
+
+XCode does not support CMake project natively, but we can use the corresponding CMake
+generator to generate a project in order to use it. The generator name depends on the operating
+system and underlying build system. https://cmake.org/cmake/help/latest/generator/Xcode.html
+
+.. sourcecode:: console
+
+  $ ./ns3 configure -GXcode --enable-examples
+
+  ...
+
+  $ -- Build files have been written to: /ns-3-dev/cmake-cache
+
+
+There will be a NS3.xcodeproj file inside the cache folder used during configuration
+(in this case cmake-cache). This is a XCode project file that can be opened by the IDE.
+
+Loading the project will take a while, and you will be greeted with the following prompt.
+Select to automatically create the schemes.
+
+.. figure:: figures/xcode/create_schemes.png
+
+After that we can select a target in the top menu and click to run, which will build and run
+(if executable, or debug if build with debugging symbols).
+
+.. figure:: figures/xcode/target_dropdown.png
+
+After clicking to build, the build will start and progress is shown in the top bar.
+
+.. figure:: figures/xcode/select_target_and_build.png
+
+Before debugging starts, Xcode will request for permissions to attach to the process
+(as an attacker could pretend to be a debugging tool and steal data from other processes).
+
+.. figure:: figures/xcode/debug_permission_to_attach.png
+
+After attaching, we are greeted with profiling information and call stack on the left panel,
+source code, breakpoint and warnings on the central panel. At the bottom there are the memory
+watches panel in the left and the output panel on the right, which is also used to read the command line.
+
+.. figure:: figures/xcode/profiling_stack_watches_output.png
+
+
+Note: as XCode doesn't natively support CMake projects, it doesn't refresh the CMake cache, which means you
+will need to close the project, run the ``./ns3`` command to refresh the CMake caches after adding/removing
+source files to/from the CMakeLists.txt files, adding a new module or dependencies between modules.
 
 
 Testing ns-3
 ************
 
-You can run the unit tests of the |ns3| distribution by running the 
+You can run the unit tests of the |ns3| distribution by running the
 ``./test.py`` script:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./test.py
+  $ ./test.py --no-build
 
-These tests are run in parallel by Waf. You should eventually
+These tests are run in parallel by ns3. You should eventually
 see a report saying that
 
 .. sourcecode:: text
@@ -968,60 +1274,70 @@ This is the important message to check for; failures, crashes, or valgrind
 errors indicate problems with the code or incompatibilities between the
 tools and the code.
 
-You will also see the summary output from Waf and the test runner
-executing each test, which will actually look something like::
+You will also see the summary output from ns3 and the test runner
+executing each test, which will actually look something like:
 
-  Waf: Entering directory `/path/to/workspace/ns-3-allinone/ns-3-dev/build'
-  Waf: Leaving directory `/path/to/workspace/ns-3-allinone/ns-3-dev/build'
-  'build' finished successfully (1.799s)
-  
-  Modules built: 
-  aodv                      applications              bridge
-  click                     config-store              core
-  csma                      csma-layout               dsdv
-  emu                       energy                    flow-monitor
-  internet                  lte                       mesh
-  mobility                  mpi                       netanim
-  network                   nix-vector-routing        ns3tcp
-  ns3wifi                   olsr                      openflow
-  point-to-point            point-to-point-layout     propagation
-  spectrum                  stats                     tap-bridge
-  template                  test                      tools
-  topology-read             uan                       virtual-net-device
-  visualizer                wifi                      wimax
+.. sourcecode:: console
 
-  PASS: TestSuite wifi-interference
-  PASS: TestSuite histogram
+  -- CCache is enabled
+  -- The CXX compiler identification is GNU 11.2.0
+  -- The C compiler identification is GNU 11.2.0
 
   ...
 
-  PASS: TestSuite object
-  PASS: TestSuite random-number-generators
-  92 of 92 tests passed (92 passed, 0 failed, 0 crashed, 0 valgrind errors)
+  -- Configuring done
+  -- Generating done
+  -- Build files have been written to: /ns-3-dev/cmake-cache
 
-This command is typically run by users to quickly verify that an 
+  ...
+  Scanning dependencies of target tap-creator
+  [  1%] Building CXX object src/fd-net-device/CMakeFiles/tap-device-creator.dir/helper/tap-device-creator.cc.o
+  [  1%] Building CXX object src/tap-bridge/CMakeFiles/tap-creator.dir/model/tap-creator.cc.o
+  [  1%] Building CXX object src/fd-net-device/CMakeFiles/raw-sock-creator.dir/helper/creator-utils.cc.o
+  [  1%] Building CXX object src/tap-bridge/CMakeFiles/tap-creator.dir/model/tap-encode-decode.cc.o
+  [  1%] Linking CXX executable ../../../build/src/fd-net-device/ns3-dev-tap-device-creator
+
+   ...
+
+  [100%] Linking CXX executable ../../../build/examples/matrix-topology/ns3-dev-matrix-topology
+  [100%] Built target manet-routing-compare
+  [100%] Built target matrix-topology
+  [1/742] PASS: TestSuite aodv-routing-id-cache
+  [2/742] PASS: TestSuite routing-aodv
+  [3/742] PASS: TestSuite uniform-planar-array-test
+  [4/742] PASS: TestSuite angles
+
+  ...
+
+  [740/742] PASS: Example src/wifi/examples/wifi-manager-example --wifiManager=MinstrelHt --standard=802.11ax-6GHz --serverChannelWidth=160 --clientChannelWidth=160 --serverShortGuardInterval=3200 --clientShortGuardInterval=3200 --serverNss=4 --clientNss=4 --stepTime=0.1
+  [741/742] PASS: Example src/lte/examples/lena-radio-link-failure --numberOfEnbs=2 --useIdealRrc=0 --interSiteDistance=700 --simTime=17
+  [742/742] PASS: Example src/lte/examples/lena-radio-link-failure --numberOfEnbs=2 --interSiteDistance=700 --simTime=17
+  739 of 742 tests passed (739 passed, 3 skipped, 0 failed, 0 crashed, 0 valgrind errors)
+
+
+This command is typically run by users to quickly verify that an
 |ns3| distribution has built correctly.  (Note the order of the ``PASS: ...``
 lines can vary, which is okay.  What's important is that the summary line at
 the end report that all tests passed; none failed or crashed.)
 
-Both Waf and ``test.py`` will split up the job on the available CPU cores
+Both ns3 and ``test.py`` will split up the job on the available CPU cores
 of the machine, in parallel.
 
 Running a Script
 ****************
 
-We typically run scripts under the control of Waf.  This allows the build 
+We typically run scripts under the control of ns3.  This allows the build
 system to ensure that the shared library paths are set correctly and that
 the libraries are available at run time.  To run a program, simply use the
-``--run`` option in Waf.  Let's run the |ns3| equivalent of the
+``--run`` option in ns3.  Let's run the |ns3| equivalent of the
 ubiquitous hello world program by typing the following:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run hello-simulator
+  $ ./ns3 run hello-simulator
 
-Waf first checks to make sure that the program is built correctly and 
-executes a build if required.  Waf then executes the program, which 
+ns3 first checks to make sure that the program is built correctly and
+executes a build if required.  ns3 then executes the program, which
 produces the following output.
 
 .. sourcecode:: text
@@ -1032,30 +1348,30 @@ Congratulations!  You are now an ns-3 user!
 
 **What do I do if I don't see the output?**
 
-If you see Waf messages indicating that the build was 
-completed successfully, but do not see the "Hello Simulator" output, 
-chances are that you have switched your build mode to ``optimized`` in 
-the `Building with Waf`_ section, but have missed the change back to 
-``debug`` mode.  All of the console output used in this tutorial uses a 
-special |ns3| logging component that is useful for printing 
-user messages to the console.  Output from this component is 
-automatically disabled when you compile optimized code -- it is 
+If you see ns3 messages indicating that the build was
+completed successfully, but do not see the "Hello Simulator" output,
+chances are that you have switched your build mode to ``optimized`` in
+the `Building with the ns3 CMake wrapper`_ section, but have missed the change back to
+``debug`` mode.  All of the console output used in this tutorial uses a
+special |ns3| logging component that is useful for printing
+user messages to the console.  Output from this component is
+automatically disabled when you compile optimized code -- it is
 "optimized out."  If you don't see the "Hello Simulator" output,
 type the following:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf configure --build-profile=debug --enable-examples --enable-tests
+  $ ./ns3 configure --build-profile=debug --enable-examples --enable-tests
 
-to tell Waf to build the debug versions of the |ns3| 
-programs that includes the examples and tests.  You must still build 
+to tell ns3 to build the debug versions of the |ns3|
+programs that includes the examples and tests.  You must still build
 the actual debug version of the code by typing
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf
+  $ ./ns3
 
-Now, if you run the ``hello-simulator`` program, you should see the 
+Now, if you run the ``hello-simulator`` program, you should see the
 expected output.
 
 Program Arguments
@@ -1063,25 +1379,25 @@ Program Arguments
 
 To feed command line arguments to an |ns3| program use this pattern:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run <ns3-program> --command-template="%s <args>"
+  $ ./ns3 run <ns3-program> --command-template="%s <args>"
 
 Substitute your program name for ``<ns3-program>``, and the arguments
-for ``<args>``.  The ``--command-template`` argument to Waf is
-basically a recipe for constructing the actual command line Waf should use
-to execute the program.  Waf checks that the build is complete,
+for ``<args>``.  The ``--command-template`` argument to ns3 is
+basically a recipe for constructing the actual command line ns3 should use
+to execute the program.  ns3 checks that the build is complete,
 sets the shared library paths, then invokes the executable
-using the provided command line template, 
+using the provided command line template,
 inserting the program name for the ``%s`` placeholder.
 
 If you find the above to be syntactically complicated, a simpler variant
 exists, which is to include the |ns3| program and its arguments enclosed
 by single quotes, such as:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run '<ns3-program> --arg1=value1 --arg2=value2 ...'
+  $ ./ns3 run '<ns3-program> --arg1=value1 --arg2=value2 ...'
 
 Another particularly useful example is to run a test suite by itself.
 Let's assume that a ``mytest`` test suite exists (it doesn't).
@@ -1089,17 +1405,17 @@ Above, we used the ``./test.py`` script to run a whole slew of
 tests in parallel, by repeatedly invoking the real testing program,
 ``test-runner``.  To invoke ``test-runner`` directly for a single test:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run test-runner --command-template="%s --suite=mytest --verbose"
+  $ ./ns3 run test-runner --command-template="%s --suite=mytest --verbose"
 
 This passes the arguments to the ``test-runner`` program.
 Since ``mytest`` does not exist, an error message will be generated.
 To print the available ``test-runner`` options:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run test-runner --command-template="%s --help"
+  $ ./ns3 run test-runner --command-template="%s --help"
 
 Debugging
 +++++++++
@@ -1111,9 +1427,9 @@ you use a similar ``--command-template="..."`` form.
 For example, to run your |ns3| program ``hello-simulator`` with the arguments
 ``<args>`` under the ``gdb`` debugger:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run=hello-simulator --command-template="gdb %s --args <args>"
+  $ ./ns3 run hello-simulator --command-template="gdb %s --args <args>"
 
 Notice that the |ns3| program name goes with the ``--run`` argument,
 and the control utility (here ``gdb``) is the first token
@@ -1126,62 +1442,45 @@ and use the ``gdb`` command ``set args``.)
 We can combine this recipe and the previous one to run a test under the
 debugger:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run test-runner --command-template="gdb %s --args --suite=mytest --verbose"
+  $ ./ns3 run test-runner --command-template="gdb %s --args --suite=mytest --verbose"
 
 Working Directory
 +++++++++++++++++
 
-Waf needs to run from its location at the top of the |ns3| tree.
+ns3 needs to run from its location at the top of the |ns3| tree.
 This becomes the working directory where output files will be written.
 But what if you want to keep those files out of the |ns3| source tree?  Use
 the ``--cwd`` argument:
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --cwd=...
-
-It may be more convenient to start with your working directory where
-you want the output files, in which case a little indirection can help:
-
-.. sourcecode:: bash
-
-  $ function waff {
-      CWD="$PWD"
-      cd $NS3DIR >/dev/null
-      ./waf --cwd="$CWD" $*
-      cd - >/dev/null
-    }
-
-This embellishment of the previous version saves the current working directory,
-``cd``'s to the Waf directory, then instructs Waf to change the working
-directory *back* to the saved current working directory before running the
-program.
+  $ ./ns3 run program-name --cwd=...
 
 We mention this ``--cwd`` command for completeness; most users will simply
-run Waf from the top-level directory and generate the output data files there.
+run ns3 from the top-level directory and generate the output data files there.
 
 Running without Building
 ++++++++++++++++++++++++
 
-As of the ns-3.30 release, a new Waf option was introduced to allow the
+As of the ns-3.30 release, a new ns3 option was introduced to allow the
 running of programs while skipping the build step.  This can reduce the time
 to run programs when, for example, running the same program repeatedly
-through a shell script, or when demonstrating program execution. 
-This option, ``--run-no-build``, behaves the same as the ``-run`` option, 
-except that the program and ns-3 libraries will not be rebuilt.
+through a shell script, or when demonstrating program execution.
+The option ``--no-build`` modifies the ``run`` option,
+skipping the build steps of the program and required ns-3 libraries.
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --run-no-build '<ns3-program> --arg1=value1 --arg2=value2 ...'
+  $ ./ns3 run '<ns3-program> --arg1=value1 --arg2=value2 ...' --no-build
 
 Build version
 +++++++++++++
 
-As of the ns-3.32 release, a new Waf configure option ``--enable-build-version`` 
-was introduced which inspects the local ns3 git repository during builds and adds 
-version metadata to the core module. 
+As of the ns-3.32 release, a new ns3 configure option ``--enable-build-version``
+was introduced which inspects the local ns3 git repository during builds and adds
+version metadata to the core module.
 
 This configuration option has the following prerequisites:
 
@@ -1195,72 +1494,72 @@ or
 
 If these prerequisites are not met, the configuration will fail.
 
-When these prerequisites are met and ns-3 is configured with the 
-``--enable-build-version`` option, the waf command ``--check-version`` can be 
-used to query the local git repository and display the current version metadata. 
+When these prerequisites are met and ns-3 is configured with the
+``--enable-build-version`` option, the ns3 command ``show version`` can be
+used to query the local git repository and display the current version metadata.
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
-  $ ./waf --check-version
+  $ ./ns3 show version
 
-Waf will collect information about the build and print out something similar
+ns3 will collect information about the build and print out something similar
 to the output below.
 
 .. sourcecode:: text
 
   ns-3.33+249@g80e0dd0-dirty-debug
 
-If ``--check-version`` is run when ``-enable-build-version`` was not configured,
+If ``show version`` is run when ``--enable-build-version`` was not configured,
 an error message indicating that the option is disabled will be displayed instead.
 
 .. sourcecode:: text
 
-  Build version support is not enabled, reconfigure with --enable-build-version flag 
+  Build version support is not enabled, reconfigure with --enable-build-version flag
 
-The build information is generated by examining the current state of the git 
-repository.  The output of  ``--check-version`` will change whenever the state 
+The build information is generated by examining the current state of the git
+repository.  The output of  ``show version`` will change whenever the state
 of the active branch changes.
 
-The output of ``--check-version`` has the following format:
+The output of ``show version`` has the following format:
 
 .. sourcecode:: text
 
   <version_tag>[+closest_tag][+distance_from_tag]@<commit_hash>[-tree_state]-<profile>
 
-version_tag 
+version_tag
   version_tag contains the version of the ns-3 code.  The version tag is
   defined as a git tag with the format ns-3*.  If multiple git tags match the
   format, the tag on the active branch which is closest to the current commit
-  is chosen. 
+  is chosen.
 
 closest_tag
   closest_tag is similar to version_tag except it is the first tag found,
   regardless of format.  The closest tag is not included in the output when
-  closest_tag and version_tag have the same value. 
+  closest_tag and version_tag have the same value.
 
 distance_from_tag
-  distance_from_tag contains the number of commits between the current commit 
-  and closest_tag.  distance_from_tag is not included in the output when the 
+  distance_from_tag contains the number of commits between the current commit
+  and closest_tag.  distance_from_tag is not included in the output when the
   value is 0 (i.e. when closest_tag points to the current commit)
 
 commit_hash
   commit_hash is the hash of the commit at the tip of the active branch. The
   value is 'g' followed by the first 7 characters of the commit hash. The 'g'
-  prefix is used to indicate that this is a git hash. 
+  prefix is used to indicate that this is a git hash.
 
 tree_state
   tree_state indicates the state of the working tree.  When the working tree
-  has uncommitted changes this field has the value 'dirty'.  The tree state is 
-  not included in the version output when the working tree is clean (e.g. when 
-  there are no uncommitted changes). 
+  has uncommitted changes this field has the value 'dirty'.  The tree state is
+  not included in the version output when the working tree is clean (e.g. when
+  there are no uncommitted changes).
 
 profile
-  The build profile specified in the ``--build-profile`` option passed to 
-  ``waf configure``
+  The build profile specified in the ``--build-profile`` option passed to
+  ``ns3 configure``
 
-A new class, named Version, has been added to the core module.  The Version class 
-contains functions to retrieve individual fields of the build version as well 
-as functions to print the full build version like ``--check-version``.
+A new class, named Version, has been added to the core module.  The Version class
+contains functions to retrieve individual fields of the build version as well
+as functions to print the full build version like ``show version``.
 The ``build-version-example``  application provides an example of how to use
 the Version class to retrieve the various build version fields.  See the
 documentation for the Version class for specifics on the output of the Version
@@ -1274,7 +1573,7 @@ the core module when the ``--enable-build-version`` option is configured.
 
   build-version-example:
   Program Version (according to CommandLine): ns-3.33+249@g80e0dd0-dirty-debug
-  
+
   Version fields:
   LongVersion:        ns-3.33+249@g80e0dd0-dirty-debug
   ShortVersion:       ns-3.33+*
@@ -1283,24 +1582,23 @@ the core module when the ``--enable-build-version`` option is configured.
   Major:              3
   Minor:              33
   Patch:              0
-  ReleaseCandidate:   
+  ReleaseCandidate:
   ClosestAncestorTag: ns-3.33
   TagDistance:        249
   CommitHash:         g80e0dd0
   BuildProfile:       debug
   WorkingTree:        dirty
 
-The CommandLine class has also been updated to support the ``--version`` 
+The CommandLine class has also been updated to support the ``--version``
 option which will print the full build version and exit.
 
 .. sourcecode:: text
 
-  ./waf --run-no-build "command-line-example --version"
-  Waf: Entering directory `/g/g14/mdb/gitlab/mdb/ns-3-dev/build/debug'
+  ./ns3 run "command-line-example --version" --no-build
   ns-3.33+249@g80e0dd0-dirty-debug
 
 If the ``--enable-build-version`` option was not configured, ``--version``
-will print out a message similar to ``--check-version`` indicating that the build
+will print out a message similar to ``show version`` indicating that the build
 version option is not enabled.
 
 Source version
@@ -1314,7 +1612,7 @@ with a patch of any changes to that revision if the repository is dirty.
 The resulting text file can then be saved with any corresponding
 |ns3| simulation results.
 
-.. sourcecode:: bash
+.. sourcecode:: console
 
   echo `git describe` > version.txt
   gitDiff=`git diff`

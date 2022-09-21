@@ -3,7 +3,7 @@
  * Copyright (c) 2005,2006,2007 INRIA
  *
  * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as 
+ * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
  *
  * This program is distributed in the hope that it will be useful,
@@ -33,7 +33,12 @@ namespace ns3 {
 
 /**
  * \defgroup propagation Propagation Models
- *
+ */
+
+/**
+ * \ingroup propagation
+ * \ingroup tests
+ * \defgroup propagation-tests Propagation module tests
  */
 
 class MobilityModel;
@@ -58,6 +63,10 @@ public:
 
   PropagationLossModel ();
   virtual ~PropagationLossModel ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  PropagationLossModel (const PropagationLossModel &) = delete;
+  PropagationLossModel & operator = (const PropagationLossModel &) = delete;
 
   /**
    * \brief Enables a chain of loss models to act on the signal
@@ -101,28 +110,25 @@ public:
    * together, this method will also assign streams to the
    * downstream models.
    *
-   * \param stream
+   * \param stream the stream index offset start
    * \return the number of stream indices assigned by this model
    */
   int64_t AssignStreams (int64_t stream);
 
+protected:
+  /**
+   * Assign a fixed random variable stream number to the random variables used by this model.
+   *
+   * Subclasses must implement this; those not using random variables
+   * can return zero.
+   *
+   * \param stream first stream index to use
+   * \return the number of stream indices assigned by this model
+   */
+  virtual int64_t DoAssignStreams (int64_t stream) = 0;
+
 private:
   /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  PropagationLossModel (const PropagationLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  PropagationLossModel &operator = (const PropagationLossModel &);
-
-  /**
-   * Returns the Rx Power taking into account only the particular
    * PropagationLossModel.
    *
    * \param txPowerDbm current transmission power (in dBm)
@@ -134,12 +140,6 @@ private:
                                 Ptr<MobilityModel> a,
                                 Ptr<MobilityModel> b) const = 0;
 
-  /**
-   * Subclasses must implement this; those not using random variables
-   * can return zero
-   */
-  virtual int64_t DoAssignStreams (int64_t stream) = 0;
-
   Ptr<PropagationLossModel> m_next; //!< Next propagation loss model in the list
 };
 
@@ -147,7 +147,7 @@ private:
  * \ingroup propagation
  *
  * \brief The propagation loss follows a random distribution.
- */ 
+ */
 class RandomPropagationLossModel : public PropagationLossModel
 {
 public:
@@ -160,24 +160,16 @@ public:
   RandomPropagationLossModel ();
   virtual ~RandomPropagationLossModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  RandomPropagationLossModel (const RandomPropagationLossModel &) = delete;
+  RandomPropagationLossModel & operator = (const RandomPropagationLossModel &) = delete;
+
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  RandomPropagationLossModel (const RandomPropagationLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  RandomPropagationLossModel & operator = (const RandomPropagationLossModel &);
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
+  int64_t DoAssignStreams (int64_t stream) override;
+
   Ptr<RandomVariableStream> m_variable; //!< random generator
 };
 
@@ -187,9 +179,9 @@ private:
  * \brief a Friis propagation loss model
  *
  * The Friis propagation loss model was first described in
- * "A Note on a Simple Transmission Formula", by 
+ * "A Note on a Simple Transmission Formula", by
  * "Harald T. Friis".
- * 
+ *
  * The original equation was described as:
  *  \f$ \frac{P_r}{P_t} = \frac{A_r A_t}{d^2\lambda^2} \f$
  *  with the following equation for the case of an
@@ -210,8 +202,8 @@ private:
  *  - \f$ \lambda \f$ : wavelength (m)
  *  - \f$ d \f$ : distance (m)
  *  - \f$ L \f$ : system loss (unit-less)
- * 
- * In the implementation,  \f$ \lambda \f$ is calculated as 
+ *
+ * In the implementation,  \f$ \lambda \f$ is calculated as
  * \f$ \frac{C}{f} \f$, where  \f$ C = 299792458\f$ m/s is the speed of light in
  * vacuum, and \f$ f \f$ is the frequency in Hz which can be configured by
  * the user via the Frequency attribute.
@@ -222,13 +214,13 @@ private:
  * The model will still return a value for \f$ d < 3 \lambda \f$, as
  * doing so (rather than triggering a fatal error) is practical for
  * many simulation scenarios. However, we stress that the values
- * obtained in such conditions shall not be considered realistic. 
- * 
+ * obtained in such conditions shall not be considered realistic.
+ *
  * Related with this issue, we note that the Friis formula is
- * undefined for \f$ d = 0 \f$, and results in 
+ * undefined for \f$ d = 0 \f$, and results in
  * \f$ P_r > P_t \f$ for \f$ d < \lambda / 2 \sqrt{\pi} \f$.
  * Both these conditions occur outside of the far field region, so in
- * principle the Friis model shall not be used in these conditions. 
+ * principle the Friis model shall not be used in these conditions.
  * In practice, however, Friis is often used in scenarios where accurate
  * propagation modeling is not deemed important, and values of \f$ d =
  * 0 \f$ can occur. To allow practical use of the model in such
@@ -236,7 +228,7 @@ private:
  * 2) avoid large discontinuities in propagation loss values (which
  * could lead to artifacts such as bogus capture effects which are
  * much worse than inaccurate propagation loss values). The two issues
- * are conflicting, as, according to the Friis formula, 
+ * are conflicting, as, according to the Friis formula,
  * \f$\lim_{d \to 0 }  P_r = +\infty \f$;
  * so if, for \f$ d = 0 \f$, we use a fixed loss value, we end up with an infinitely large
  * discontinuity, which as we discussed can cause undesirable
@@ -245,18 +237,18 @@ private:
  * To avoid these artifact, this implementation of the Friis model
  * provides an attribute called MinLoss which allows to specify the
  * minimum total loss (in dB) returned by the model. This is used in
- * such a way that 
+ * such a way that
  * \f$ P_r \f$ continuously increases for \f$ d \to 0 \f$, until
  * MinLoss is reached, and then stay constant; this allow to
  * return a value for \f$ d  = 0 \f$ and at the same time avoid
  * discontinuities. The model won't be much realistic, but at least
  * the simulation artifacts discussed before are avoided. The default value of
- * MinLoss is 0 dB, which means that by default the model will return 
+ * MinLoss is 0 dB, which means that by default the model will return
  * \f$ P_r = P_t \f$ for \f$ d <= \lambda / 2 \sqrt{\pi} \f$. We note
  * that this value of \f$ d \f$ is outside of the far field
  * region, hence the validity of the model in the far field region is
  * not affected.
- * 
+ *
  */
 class FriisPropagationLossModel : public PropagationLossModel
 {
@@ -267,10 +259,15 @@ public:
    */
   static TypeId GetTypeId (void);
   FriisPropagationLossModel ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  FriisPropagationLossModel (const FriisPropagationLossModel &) = delete;
+  FriisPropagationLossModel & operator = (const FriisPropagationLossModel &) = delete;
+
   /**
    * \param frequency (Hz)
    *
-   * Set the carrier frequency used in the Friis model 
+   * Set the carrier frequency used in the Friis model
    * calculation.
    */
   void SetFrequency (double frequency);
@@ -285,7 +282,7 @@ public:
    * \param minLoss the minimum loss (dB)
    *
    * no matter how short the distance, the total propagation loss (in
-   * dB) will always be greater or equal than this value 
+   * dB) will always be greater or equal than this value
    */
   void SetMinLoss (double minLoss);
 
@@ -304,24 +301,10 @@ public:
   double GetSystemLoss (void) const;
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  FriisPropagationLossModel (const FriisPropagationLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  FriisPropagationLossModel & operator = (const FriisPropagationLossModel &);
-
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
+  int64_t DoAssignStreams (int64_t stream) override;
 
   /**
    * Transforms a Dbm value to Watt
@@ -360,13 +343,13 @@ private:
  *
  * The two-ray model does not give a good result for short distances, due to the
  * oscillation caused by constructive and destructive combination of the two
- * rays. Instead the Friis free-space model is used for small distances. 
+ * rays. Instead the Friis free-space model is used for small distances.
  *
  * The crossover distance, below which Friis is used, is calculated as follows:
  *
  * \f$ dCross = \frac{(4 * \pi * H_t * H_r)}{\lambda} \f$
  *
- * In the implementation,  \f$ \lambda \f$ is calculated as 
+ * In the implementation,  \f$ \lambda \f$ is calculated as
  * \f$ \frac{C}{f} \f$, where  \f$ C = 299792458\f$ m/s is the speed of light in
  * vacuum, and \f$ f \f$ is the frequency in Hz which can be configured by
  * the user via the Frequency attribute.
@@ -381,10 +364,14 @@ public:
   static TypeId GetTypeId (void);
   TwoRayGroundPropagationLossModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  TwoRayGroundPropagationLossModel (const TwoRayGroundPropagationLossModel &) = delete;
+  TwoRayGroundPropagationLossModel & operator = (const TwoRayGroundPropagationLossModel &) = delete;
+
   /**
    * \param frequency (Hz)
    *
-   * Set the carrier frequency used in the TwoRayGround model 
+   * Set the carrier frequency used in the TwoRayGround model
    * calculation.
    */
   void SetFrequency (double frequency);
@@ -424,24 +411,10 @@ public:
   void SetHeightAboveZ (double heightAboveZ);
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  TwoRayGroundPropagationLossModel (const TwoRayGroundPropagationLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  TwoRayGroundPropagationLossModel & operator = (const TwoRayGroundPropagationLossModel &);
-
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
+  int64_t DoAssignStreams (int64_t stream) override;
 
   /**
    * Transforms a Dbm value to Watt
@@ -494,12 +467,16 @@ public:
   static TypeId GetTypeId (void);
   LogDistancePropagationLossModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  LogDistancePropagationLossModel (const LogDistancePropagationLossModel &) = delete;
+  LogDistancePropagationLossModel & operator = (const LogDistancePropagationLossModel &) = delete;
+
   /**
    * \param n the path loss exponent.
    * Set the path loss exponent.
    */
   void SetPathLossExponent (double n);
-  /** 
+  /**
    * \returns the current path loss exponent.
    */
   double GetPathLossExponent (void) const;
@@ -512,24 +489,11 @@ public:
   void SetReference (double referenceDistance, double referenceLoss);
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  LogDistancePropagationLossModel (const LogDistancePropagationLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  LogDistancePropagationLossModel & operator = (const LogDistancePropagationLossModel &);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
 
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
+  int64_t DoAssignStreams (int64_t stream) override;
 
   /**
    *  Creates a default reference loss model
@@ -592,27 +556,18 @@ public:
   static TypeId GetTypeId (void);
   ThreeLogDistancePropagationLossModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  ThreeLogDistancePropagationLossModel (const ThreeLogDistancePropagationLossModel &) = delete;
+  ThreeLogDistancePropagationLossModel & operator = (const ThreeLogDistancePropagationLossModel &) = delete;
+
   // Parameters are all accessible via attributes.
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  ThreeLogDistancePropagationLossModel (const ThreeLogDistancePropagationLossModel&);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  ThreeLogDistancePropagationLossModel& operator= (const ThreeLogDistancePropagationLossModel&);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
 
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
+  int64_t DoAssignStreams (int64_t stream) override;
 
   double m_distance0; //!< Beginning of the first (near) distance field
   double m_distance1; //!< Beginning of the second (middle) distance field.
@@ -629,20 +584,20 @@ private:
  * \ingroup propagation
  *
  * \brief Nakagami-m fast fading propagation loss model.
- * 
+ *
  * This propagation loss model implements the Nakagami-m fast fading
  * model, which accounts for the variations in signal strength due to multipath
  * fading. The model does not account for the path loss due to the
  * distance traveled by the signal, hence for typical simulation usage it
  * is recommended to consider using it in combination with other models
- * that take into account this aspect. 
+ * that take into account this aspect.
  *
  * The Nakagami-m distribution is applied to the power level. The probability
  * density function is defined as
  * \f[ p(x; m, \omega) = \frac{2 m^m}{\Gamma(m) \omega^m} x^{2m - 1} e^{-\frac{m}{\omega} x^2}  \f]
  * with \f$ m \f$ the fading depth parameter and \f$ \omega \f$ the average received power.
  *
- * It is implemented by either a ns3::GammaRandomVariable or a 
+ * It is implemented by either a ns3::GammaRandomVariable or a
  * ns3::ErlangRandomVariable random variable.
  *
  * The implementation of the model allows to specify different values of the m parameter (and hence different fading profiles)
@@ -663,27 +618,18 @@ public:
 
   NakagamiPropagationLossModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  NakagamiPropagationLossModel (const NakagamiPropagationLossModel &) = delete;
+  NakagamiPropagationLossModel & operator = (const NakagamiPropagationLossModel &) = delete;
+
   // Parameters are all accessible via attributes.
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  NakagamiPropagationLossModel (const NakagamiPropagationLossModel&);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  NakagamiPropagationLossModel& operator= (const NakagamiPropagationLossModel&);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
 
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
+  int64_t DoAssignStreams (int64_t stream) override;
 
   double m_distance1; //!< Distance1
   double m_distance2; //!< Distance2
@@ -699,16 +645,16 @@ private:
 /**
  * \ingroup propagation
  *
- * \brief Return a constant received power level independent of the transmit 
+ * \brief Return a constant received power level independent of the transmit
  *  power
  *
  * The received power is constant independent of the transmit power.  The user
- * must set received power level through the Rss attribute or public 
+ * must set received power level through the Rss attribute or public
  * SetRss() method.  Note that if this loss model is chained to other loss
  * models via SetNext() method, it can only be the first loss model in such
  * a chain, or else it will disregard the losses computed by loss models
- * that precede it in the chain. 
- */ 
+ * that precede it in the chain.
+ */
 class FixedRssLossModel : public PropagationLossModel
 {
 public:
@@ -720,6 +666,11 @@ public:
 
   FixedRssLossModel ();
   virtual ~FixedRssLossModel ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  FixedRssLossModel (const FixedRssLossModel &) = delete;
+  FixedRssLossModel & operator = (const FixedRssLossModel &) = delete;
+
   /**
    * \param rss (dBm) the received signal strength
    *
@@ -728,25 +679,12 @@ public:
   void SetRss (double rss);
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  FixedRssLossModel (const FixedRssLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  FixedRssLossModel & operator = (const FixedRssLossModel &);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
 
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
+  int64_t DoAssignStreams (int64_t stream) override;
 
-  virtual int64_t DoAssignStreams (int64_t stream);
   double m_rss; //!< the received signal strength
 };
 
@@ -754,7 +692,7 @@ private:
  * \ingroup propagation
  *
  * \brief The propagation loss is fixed for each pair of nodes and doesn't depend on their actual positions.
- * 
+ *
  * This is supposed to be used by synthetic tests. Note that by default propagation loss is assumed to be symmetric.
  */
 class MatrixPropagationLossModel : public PropagationLossModel
@@ -769,15 +707,19 @@ public:
   MatrixPropagationLossModel ();
   virtual ~MatrixPropagationLossModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  MatrixPropagationLossModel (const MatrixPropagationLossModel &) = delete;
+  MatrixPropagationLossModel & operator = (const MatrixPropagationLossModel &) = delete;
+
   /**
    * \brief Set loss (in dB, positive) between pair of ns-3 objects
    * (typically, nodes).
-   * 
+   *
    * \param a ma          Source mobility model
    * \param b mb          Destination mobility model
    * \param loss        a -> b path loss, positive in dB
    * \param symmetric   If true (default), both a->b and b->a paths will be affected
-   */ 
+   */
   void SetLoss (Ptr<MobilityModel> a, Ptr<MobilityModel> b, double loss, bool symmetric = true);
 
   /**
@@ -787,30 +729,16 @@ public:
   void SetDefaultLoss (double defaultLoss);
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  MatrixPropagationLossModel (const MatrixPropagationLossModel &);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  MatrixPropagationLossModel &operator = (const MatrixPropagationLossModel &);
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
 
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
+  int64_t DoAssignStreams (int64_t stream) override;
 
-  virtual int64_t DoAssignStreams (int64_t stream);
-private:
   double m_default; //!< default loss
 
   /// Typedef: Mobility models pair
-  typedef std::pair< Ptr<MobilityModel>, Ptr<MobilityModel> > MobilityPair; 
+  typedef std::pair< Ptr<MobilityModel>, Ptr<MobilityModel> > MobilityPair;
 
   std::map<MobilityPair, double> m_loss; //!< Propagation loss between pair of nodes
 };
@@ -834,25 +762,18 @@ public:
    */
   static TypeId GetTypeId (void);
   RangePropagationLossModel ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  RangePropagationLossModel (const RangePropagationLossModel &) = delete;
+  RangePropagationLossModel & operator = (const RangePropagationLossModel &) = delete;
+
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   */
-  RangePropagationLossModel (const RangePropagationLossModel&);
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse
-   * \returns
-   */
-  RangePropagationLossModel& operator= (const RangePropagationLossModel&);
-  virtual double DoCalcRxPower (double txPowerDbm,
-                                Ptr<MobilityModel> a,
-                                Ptr<MobilityModel> b) const;
-  virtual int64_t DoAssignStreams (int64_t stream);
-private:
+  double DoCalcRxPower (double txPowerDbm,
+                        Ptr<MobilityModel> a,
+                        Ptr<MobilityModel> b) const override;
+
+  int64_t DoAssignStreams (int64_t stream) override;
+
   double m_range; //!< Maximum Transmission Range (meters)
 };
 

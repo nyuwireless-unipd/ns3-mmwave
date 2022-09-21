@@ -21,6 +21,7 @@
 
 #include "ns3/test.h"
 #include "ns3/string.h"
+#include "ns3/boolean.h"
 #include "ns3/qos-utils.h"
 #include "ns3/packet.h"
 #include "ns3/wifi-net-device.h"
@@ -128,7 +129,7 @@ Issue211Test::DoRun (void)
   phy.SetChannel (spectrumChannel);
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("HtMcs0"),
                                 "ControlMode", StringValue ("HtMcs0"));

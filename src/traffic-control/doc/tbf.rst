@@ -79,11 +79,11 @@ class.
 References
 ==========
 
-.. [Ref1] A. Kuznetsov and D. Torokhov; Linux Cross Reference Source Code; Available online at `<http://lxr.free-electrons.com/source/net/sched/sch_tbf.c>`_.
+.. [Ref1] A. Kuznetsov and D. Torokhov; Linux Cross Reference Source Code; Available online at `<https://raw.githubusercontent.com/torvalds/linux/8efd0d9c316af470377894a6a0f9ff63ce18c177/net/sched/sch_tbf.c>`_.
 
 .. [Ref2] J. Vehent; Journey to the Center of the Linux Kernel: Traffic Control, Shaping and QoS; Available online at `<http://wiki.linuxwall.info/doku.php/en:resources:dossiers:networking:traffic_control#tbf_-_token_bucket_filter>`_.
 
-.. [Ref3] Practical IP Network QoS: TBF queuing discipline; Available online at `<http://web.opalsoft.net/qos/default.php?p=ds-24>`_.
+.. [Ref3] Practical IP Network QoS: TBF queuing discipline; Available online at `<https://web.archive.org/web/20200516025221/http://web.opalsoft.net/qos/default.php>`_.
 
 Attributes
 ==========
@@ -113,8 +113,8 @@ The example for TBF is `tbf-example.cc` located in ``examples/traffic-control/``
 
 .. sourcecode:: bash
 
-   $ ./waf --run "tbf-example --PrintHelp"
-   $ ./waf --run "tbf-example --burst=125000 --rate=1Mbps --peakRate=1.5Mbps"
+   $ ./ns3 run "tbf-example --PrintHelp"
+   $ ./ns3 run "tbf-example --burst=125000 --rate=1Mbps --peakRate=1.5Mbps"
 
 The expected output from the previous commands are traced value changes in the number of tokens in the first and second buckets.
 
@@ -134,8 +134,8 @@ The test suite can be run using the following commands:
 
 .. sourcecode:: bash
 
-  $ ./waf configure --enable-examples --enable-tests
-  $ ./waf build
+  $ ./ns3 configure --enable-examples --enable-tests
+  $ ./ns3 build
   $ ./test.py -s tbf-queue-disc
 
 or
@@ -144,4 +144,4 @@ or
 
 .. sourcecode:: bash
 
-  $ NS_LOG="TbfQueueDisc" ./waf --run "test-runner --suite=tbf-queue-disc"
+  $ NS_LOG="TbfQueueDisc" ./ns3 run "test-runner --suite=tbf-queue-disc"

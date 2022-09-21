@@ -323,7 +323,7 @@ MmWaveUeMac::DoTransmitPdu (LteMacSapProvider::TransmitPduParameters params)
         {
           return;
         }
-      if (it->second.m_pdu == 0)
+      if (!it->second.m_pdu)
         {
           it->second.m_pdu = params.pdu;
         }

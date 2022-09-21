@@ -29,12 +29,14 @@
 #include "ns3/packet-socket-server.h"
 #include "ns3/test.h"
 #include "ns3/double.h"
+#include "ns3/boolean.h"
 #include "ns3/pointer.h"
 #include "ns3/rng-seed-manager.h"
 #include "ns3/spectrum-wifi-helper.h"
 #include "ns3/wifi-net-device.h"
 #include "ns3/wifi-spectrum-value-helper.h"
 #include "ns3/spectrum-wifi-phy.h"
+#include "ns3/interference-helper.h"
 #include "ns3/nist-error-rate-model.h"
 #include "ns3/wifi-mac-header.h"
 #include "ns3/ampdu-tag.h"
@@ -140,7 +142,7 @@ TestThresholdPreambleDetectionWithoutFrameCapture::SendPacket (double rxPowerDbm
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (pkt, hdr);
   Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetPhyBand ());
 
-  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
+  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, FREQUENCY, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
 
   Ptr<SpectrumValue> txPowerSpectrum = WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (FREQUENCY, CHANNEL_WIDTH, DbmToW (rxPowerDbm), GUARD_WIDTH);
 
@@ -203,11 +205,12 @@ void
 TestThresholdPreambleDetectionWithoutFrameCapture::DoSetup (void)
 {
   m_phy = CreateObject<SpectrumWifiPhy> ();
-  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  m_phy->ConfigureStandard (WIFI_STANDARD_80211ax);
+  Ptr<InterferenceHelper> interferenceHelper = CreateObject<InterferenceHelper> ();
+  m_phy->SetInterferenceHelper (interferenceHelper);
   Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_phy->SetErrorRateModel (error);
-  m_phy->SetChannelNumber (CHANNEL_NUMBER);
-  m_phy->SetFrequency (FREQUENCY);
+  m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {CHANNEL_NUMBER, 0, WIFI_PHY_BAND_5GHZ, 0});
   m_phy->SetReceiveOkCallback (MakeCallback (&TestThresholdPreambleDetectionWithoutFrameCapture::RxSuccess, this));
   m_phy->SetReceiveErrorCallback (MakeCallback (&TestThresholdPreambleDetectionWithoutFrameCapture::RxFailure, this));
 
@@ -343,23 +346,25 @@ TestThresholdPreambleDetectionWithoutFrameCapture::DoRun (void)
 
   // CASE 7: send two packets with same power within the 4us window and check PHY state:
   // PHY preamble detection should fail because SNR is too low (around 0 dB, which is lower than the threshold of 4 dB),
-  // and PHY state should stay IDLE since the total energy is below CCA-ED (-62 dBm).
+  // and PHY state should be CCA_BUSY since it should detect the start of a valid OFDM transmission at a receive level greater
+  // than or equal to the minimum modulation and coding rate sensitivity (–82 dBm for 20 MHz channel spacing).
 
   Simulator::Schedule (Seconds (7.0), &TestThresholdPreambleDetectionWithoutFrameCapture::SendPacket, this, rxPowerDbm);
   Simulator::Schedule (Seconds (7.0) + MicroSeconds (2.0), &TestThresholdPreambleDetectionWithoutFrameCapture::SendPacket, this, rxPowerDbm);
   // At 4us, STA PHY STATE should stay IDLE
-  Simulator::Schedule (Seconds (7.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (7.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // No more packet should have been successfully received, and since preamble detection did not pass the packet should not have been counted as a failure
   Simulator::Schedule (Seconds (7.1), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckRxPacketCount, this, 2, 1);
 
   // CASE 8: send two packets with second one 3 dB weaker within the 4us window and check PHY state: PHY preamble detection should fail
   // PHY preamble detection should fail because SNR is too low (around 3 dB, which is lower than the threshold of 4 dB),
-  // and PHY state should stay IDLE since the total energy is below CCA-ED (-62 dBm).
+  // and PHY state should be CCA_BUSY since it should detect the start of a valid OFDM transmission at a receive level greater
+  // than or equal to the minimum modulation and coding rate sensitivity (–82 dBm for 20 MHz channel spacing).
 
   Simulator::Schedule (Seconds (8.0), &TestThresholdPreambleDetectionWithoutFrameCapture::SendPacket, this, rxPowerDbm);
   Simulator::Schedule (Seconds (8.0) + MicroSeconds (2.0), &TestThresholdPreambleDetectionWithoutFrameCapture::SendPacket, this, rxPowerDbm - 3);
   // At 4us, STA PHY STATE should stay IDLE
-  Simulator::Schedule (Seconds (8.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (8.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // No more packet should have been successfully received, and since preamble detection did not pass the packet should not have been counted as a failure
   Simulator::Schedule (Seconds (8.1), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckRxPacketCount, this, 2, 1);
 
@@ -375,9 +380,9 @@ TestThresholdPreambleDetectionWithoutFrameCapture::DoRun (void)
   // At 44us, PHY header should be successfully received and STA PHY STATE should move from CCA_BUSY to RX
   Simulator::Schedule (Seconds (9.0) + NanoSeconds (43999), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   Simulator::Schedule (Seconds (9.0) + NanoSeconds (44000), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::RX);
-  // Since it takes 152.8us to transmit the packet, PHY should be back to IDLE at time 152.8us.
+  // Since it takes 152.8us to transmit the packet, PHY should be back to CCA_BUSY at time 152.8us.
   Simulator::Schedule (Seconds (9.0) + NanoSeconds (152799), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::RX);
-  Simulator::Schedule (Seconds (9.0) + NanoSeconds (152800), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (9.0) + NanoSeconds (152800), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // In this case, the first packet should be marked as a failure
   Simulator::Schedule (Seconds (9.1), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckRxPacketCount, this, 2, 2);
 
@@ -407,7 +412,7 @@ TestThresholdPreambleDetectionWithoutFrameCapture::DoRun (void)
   // Since it takes 152.8us to transmit the packet, PHY should be back to IDLE at time 152.8us.
   Simulator::Schedule (Seconds (11.0) + NanoSeconds (152799), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::RX);
   Simulator::Schedule (Seconds (11.0) + NanoSeconds (152800), &TestThresholdPreambleDetectionWithoutFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
-  
+
   // RX power < CCA-PD < CCA-ED
   rxPowerDbm = -83;
 
@@ -495,7 +500,7 @@ void
 TestThresholdPreambleDetectionWithFrameCapture::SendPacket (double rxPowerDbm)
 {
   WifiTxVector txVector = WifiTxVector (HePhy::GetHeMcs7 (), 0, WIFI_PREAMBLE_HE_SU, 800, 1, 1, 0, 20, false);
-  
+
   Ptr<Packet> pkt = Create<Packet> (1000);
   WifiMacHeader hdr;
 
@@ -505,7 +510,7 @@ TestThresholdPreambleDetectionWithFrameCapture::SendPacket (double rxPowerDbm)
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (pkt, hdr);
   Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetPhyBand ());
 
-  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
+  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, FREQUENCY, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
 
   Ptr<SpectrumValue> txPowerSpectrum = WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (FREQUENCY, CHANNEL_WIDTH, DbmToW (rxPowerDbm), GUARD_WIDTH);
 
@@ -514,7 +519,7 @@ TestThresholdPreambleDetectionWithFrameCapture::SendPacket (double rxPowerDbm)
   txParams->txPhy = 0;
   txParams->duration = txDuration;
   txParams->ppdu = ppdu;
-  
+
   m_phy->StartRx (txParams);
 }
 
@@ -568,11 +573,12 @@ void
 TestThresholdPreambleDetectionWithFrameCapture::DoSetup (void)
 {
   m_phy = CreateObject<SpectrumWifiPhy> ();
-  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  m_phy->ConfigureStandard (WIFI_STANDARD_80211ax);
+  Ptr<InterferenceHelper> interferenceHelper = CreateObject<InterferenceHelper> ();
+  m_phy->SetInterferenceHelper (interferenceHelper);
   Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_phy->SetErrorRateModel (error);
-  m_phy->SetChannelNumber (CHANNEL_NUMBER);
-  m_phy->SetFrequency (FREQUENCY);
+  m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {CHANNEL_NUMBER, 0, WIFI_PHY_BAND_5GHZ, 0});
   m_phy->SetReceiveOkCallback (MakeCallback (&TestThresholdPreambleDetectionWithFrameCapture::RxSuccess, this));
   m_phy->SetReceiveErrorCallback (MakeCallback (&TestThresholdPreambleDetectionWithFrameCapture::RxFailure, this));
 
@@ -821,23 +827,25 @@ TestThresholdPreambleDetectionWithFrameCapture::DoRun (void)
 
   // CASE 13: send two packets with same power within the 4us window and check PHY state:
   // PHY preamble detection should fail because SNR is too low (around 0 dB, which is lower than the threshold of 4 dB),
-  // and PHY state should stay IDLE since the total energy is below CCA-ED (-62 dBm).
+  // and PHY state should be CCA_BUSY since it should detect the start of a valid OFDM transmission at a receive level greater
+  // than or equal to the minimum modulation and coding rate sensitivity (–82 dBm for 20 MHz channel spacing).
 
   Simulator::Schedule (Seconds (13.0), &TestThresholdPreambleDetectionWithFrameCapture::SendPacket, this, rxPowerDbm);
   Simulator::Schedule (Seconds (13.0) + MicroSeconds (2.0), &TestThresholdPreambleDetectionWithFrameCapture::SendPacket, this, rxPowerDbm);
   // At 4us, STA PHY STATE should stay IDLE
-  Simulator::Schedule (Seconds (13.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (13.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // No more packet should have been successfully received, and since preamble detection did not pass the packet should not have been counted as a failure
   Simulator::Schedule (Seconds (13.1), &TestThresholdPreambleDetectionWithFrameCapture::CheckRxPacketCount, this, 2, 4);
 
   // CASE 14: send two packets with second one 3 dB weaker within the 4us window and check PHY state: PHY preamble detection should fail
   // PHY preamble detection should fail because SNR is too low (around 3 dB, which is lower than the threshold of 4 dB),
-  // and PHY state should stay IDLE since the total energy is below CCA-ED (-62 dBm).
+  // and PHY state should be CCA_BUSY since it should detect the start of a valid OFDM transmission at a receive level greater
+  // than or equal to the minimum modulation and coding rate sensitivity (–82 dBm for 20 MHz channel spacing).
 
   Simulator::Schedule (Seconds (14.0), &TestThresholdPreambleDetectionWithFrameCapture::SendPacket, this, rxPowerDbm);
   Simulator::Schedule (Seconds (14.0) + MicroSeconds (2.0), &TestThresholdPreambleDetectionWithFrameCapture::SendPacket, this, rxPowerDbm - 3);
   // At 4us, STA PHY STATE should stay IDLE
-  Simulator::Schedule (Seconds (14.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (14.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // No more packet should have been successfully received, and since preamble detection did not pass the packet should not have been counted as a failure
   Simulator::Schedule (Seconds (14.1), &TestThresholdPreambleDetectionWithFrameCapture::CheckRxPacketCount, this, 2, 4);
 
@@ -853,23 +861,24 @@ TestThresholdPreambleDetectionWithFrameCapture::DoRun (void)
   // At 44us, PHY header should be successfully received and STA PHY STATE should move from CCA_BUSY to RX
   Simulator::Schedule (Seconds (15.0) + NanoSeconds (43999), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   Simulator::Schedule (Seconds (15.0) + NanoSeconds (44000), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::RX);
-  // Since it takes 152.8us to transmit the packet, PHY should be back to IDLE at time 152.8us.
+  // Since it takes 152.8us to transmit the packet, PHY should be back to CCA_BUSY at time 152.8us.
   Simulator::Schedule (Seconds (15.0) + NanoSeconds (152799), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::RX);
-  Simulator::Schedule (Seconds (15.0) + NanoSeconds (152800), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (15.0) + NanoSeconds (152800), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // In this case, the first packet should be marked as a failure
   Simulator::Schedule (Seconds (15.1), &TestThresholdPreambleDetectionWithFrameCapture::CheckRxPacketCount, this, 2, 5);
 
   // CASE 16: send two packets with second one 3 dB higher within the 4us window and check PHY state:
   // PHY preamble detection should switch because a higher packet is received within the 4us window,
   // but preamble detection should fail because SNR is too low (around 3 dB, which is lower than the threshold of 4 dB).
-  // PHY state should stay IDLE since the total energy is below CCA-ED (-62 dBm).
+  // and PHY state should be CCA_BUSY since it should detect the start of a valid OFDM transmission at a receive level greater
+  // than or equal to the minimum modulation and coding rate sensitivity (–82 dBm for 20 MHz channel spacing).
 
   Simulator::Schedule (Seconds (16.0), &TestThresholdPreambleDetectionWithFrameCapture::SendPacket, this, rxPowerDbm);
   Simulator::Schedule (Seconds (16.0) + MicroSeconds (2.0), &TestThresholdPreambleDetectionWithFrameCapture::SendPacket, this, rxPowerDbm + 3);
   // At 4us, STA PHY STATE should stay IDLE
   Simulator::Schedule (Seconds (16.0) + MicroSeconds (4.0), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
-  // At 6us, STA PHY STATE should stay IDLE
-  Simulator::Schedule (Seconds (16.0) + MicroSeconds (6.0), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::IDLE);
+  // At 6us, STA PHY STATE should be CCA_BUSY
+  Simulator::Schedule (Seconds (16.0) + MicroSeconds (6.0), &TestThresholdPreambleDetectionWithFrameCapture::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // No more packet should have been successfully received, and since preamble detection did not pass the packet should not have been counted as a failure
   Simulator::Schedule (Seconds (16.1), &TestThresholdPreambleDetectionWithFrameCapture::CheckRxPacketCount, this, 2, 5);
 
@@ -1013,17 +1022,17 @@ void
 TestSimpleFrameCaptureModel::SendPacket (double rxPowerDbm, uint32_t packetSize)
 {
   WifiTxVector txVector = WifiTxVector (HePhy::GetHeMcs0 (), 0, WIFI_PREAMBLE_HE_SU, 800, 1, 1, 0, 20, false);
-  
+
   Ptr<Packet> pkt = Create<Packet> (packetSize);
   WifiMacHeader hdr;
-  
+
   hdr.SetType (WIFI_MAC_QOSDATA);
   hdr.SetQosTid (0);
 
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (pkt, hdr);
   Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetPhyBand ());
 
-  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
+  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, FREQUENCY, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
 
   Ptr<SpectrumValue> txPowerSpectrum = WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (FREQUENCY, CHANNEL_WIDTH, DbmToW (rxPowerDbm), GUARD_WIDTH);
 
@@ -1032,7 +1041,7 @@ TestSimpleFrameCaptureModel::SendPacket (double rxPowerDbm, uint32_t packetSize)
   txParams->txPhy = 0;
   txParams->duration = txDuration;
   txParams->ppdu = ppdu;
-  
+
   m_phy->StartRx (txParams);
 }
 
@@ -1107,11 +1116,12 @@ void
 TestSimpleFrameCaptureModel::DoSetup (void)
 {
   m_phy = CreateObject<SpectrumWifiPhy> ();
-  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  m_phy->ConfigureStandard (WIFI_STANDARD_80211ax);
+  Ptr<InterferenceHelper> interferenceHelper = CreateObject<InterferenceHelper> ();
+  m_phy->SetInterferenceHelper (interferenceHelper);
   Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_phy->SetErrorRateModel (error);
-  m_phy->SetChannelNumber (CHANNEL_NUMBER);
-  m_phy->SetFrequency (FREQUENCY);
+  m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {CHANNEL_NUMBER, 0, WIFI_PHY_BAND_5GHZ, 0});
 
   m_phy->SetReceiveOkCallback (MakeCallback (&TestSimpleFrameCaptureModel::RxSuccess, this));
   m_phy->TraceConnectWithoutContext ("PhyRxDrop", MakeCallback (&TestSimpleFrameCaptureModel::RxDropped, this));
@@ -1239,7 +1249,7 @@ TestPhyHeadersReception::SendPacket (double rxPowerDbm)
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (pkt, hdr);
   Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetPhyBand ());
 
-  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
+  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, FREQUENCY, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
 
   Ptr<SpectrumValue> txPowerSpectrum = WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (FREQUENCY, CHANNEL_WIDTH, DbmToW (rxPowerDbm), GUARD_WIDTH);
 
@@ -1271,7 +1281,6 @@ TestPhyHeadersReception::DoCheckPhyState (WifiPhyState expectedState)
   NS_TEST_ASSERT_MSG_EQ (currentState, expectedState, "PHY State " << currentState << " does not match expected state " << expectedState << " at " << Simulator::Now ());
 }
 
-
 TestPhyHeadersReception::~TestPhyHeadersReception ()
 {
   m_phy = 0;
@@ -1281,11 +1290,12 @@ void
 TestPhyHeadersReception::DoSetup (void)
 {
   m_phy = CreateObject<SpectrumWifiPhy> ();
-  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  m_phy->ConfigureStandard (WIFI_STANDARD_80211ax);
+  Ptr<InterferenceHelper> interferenceHelper = CreateObject<InterferenceHelper> ();
+  m_phy->SetInterferenceHelper (interferenceHelper);
   Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_phy->SetErrorRateModel (error);
-  m_phy->SetChannelNumber (CHANNEL_NUMBER);
-  m_phy->SetFrequency (FREQUENCY);
+  m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {CHANNEL_NUMBER, 0, WIFI_PHY_BAND_5GHZ, 0});
 }
 
 void
@@ -1305,7 +1315,7 @@ TestPhyHeadersReception::DoRun (void)
 
   // RX power > CCA-ED
   double rxPowerDbm = -50;
-  
+
   // CASE 1: send one packet followed by a second one with same power between the end of the 4us preamble detection window
   // and the start of L-SIG of the first packet: reception should be aborted since L-SIG cannot be decoded (SNR too low).
 
@@ -1352,7 +1362,7 @@ TestPhyHeadersReception::DoRun (void)
 
   // CASE 4: send one packet followed by a second one 3 dB weaker between the end of L-SIG and the start of HE-SIG of the first packet:
   // PHY header reception should succeed.
-  
+
   Simulator::Schedule (Seconds (4.0), &TestPhyHeadersReception::SendPacket, this, rxPowerDbm);
   Simulator::Schedule (Seconds (4.0) + MicroSeconds (25), &TestPhyHeadersReception::SendPacket, this, rxPowerDbm - 3);
   // At 10 us, STA PHY STATE should be CCA_BUSY.
@@ -1372,14 +1382,13 @@ TestPhyHeadersReception::DoRun (void)
 
   // CASE 5: send one packet followed by a second one with same power between the end of the 4us preamble detection window
   // and the start of L-SIG of the first packet: reception should be aborted since L-SIG cannot be decoded (SNR too low).
-  
+
   Simulator::Schedule (Seconds (5.0), &TestPhyHeadersReception::SendPacket, this, rxPowerDbm);
   Simulator::Schedule (Seconds (5.0) + MicroSeconds (10), &TestPhyHeadersReception::SendPacket, this, rxPowerDbm);
   // At 10 us, STA PHY STATE should be CCA_BUSY.
   Simulator::Schedule (Seconds (5.0) + MicroSeconds (10.0), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
-  // At 24us (end of L-SIG), STA PHY STATE should go to IDLE because L-SIG reception failed and the total energy is below CCA-ED.
-  Simulator::Schedule (Seconds (5.0) + NanoSeconds (23999), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
-  Simulator::Schedule (Seconds (5.0) + NanoSeconds (24000), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::IDLE);
+  // At 24us (end of L-SIG), STA PHY STATE stay CCA_BUSY because L-SIG reception failed and the start of a valid OFDM transmission has been detected
+  Simulator::Schedule (Seconds (5.0) + NanoSeconds (24000), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
 
   // CASE 6: send one packet followed by a second one 3 dB weaker between the end of the 4us preamble detection window
   // and the start of L-SIG of the first packet: reception should not be aborted since L-SIG can be decoded (SNR high enough).
@@ -1393,9 +1402,9 @@ TestPhyHeadersReception::DoRun (void)
   // At 44 us (end of HE-SIG), STA PHY STATE should move to RX since the PHY header reception should have succeeded.
   Simulator::Schedule (Seconds (6.0) + NanoSeconds (43999), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   Simulator::Schedule (Seconds (6.0) + NanoSeconds (44000), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::RX);
-  // Since it takes 152.8us to transmit the packet, PHY should be back to IDLE at time 152.8us.
+  // Since it takes 152.8us to transmit the packet, PHY should be back to CCA_BUSY at time 152.8us.
   Simulator::Schedule (Seconds (6.0) + NanoSeconds (152799), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::RX);
-  Simulator::Schedule (Seconds (6.0) + NanoSeconds (152800), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (6.0) + NanoSeconds (152800), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
 
   // CASE 7: send one packet followed by a second one with same power between the end of L-SIG and the start of HE-SIG of the first packet:
   // PHY header reception should not succeed but PHY should stay in RX state for the duration estimated from L-SIG.
@@ -1408,9 +1417,8 @@ TestPhyHeadersReception::DoRun (void)
   Simulator::Schedule (Seconds (7.0) + MicroSeconds (24.0), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   // At 44 us (end of HE-SIG), STA PHY STATE should be not have moved to RX since reception of HE-SIG should have failed.
   Simulator::Schedule (Seconds (7.0) + MicroSeconds (44.0), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
-  // STA PHY STATE should move back to IDLE once the duration estimated from L-SIG has elapsed, i.e. at 152.8us.
-  Simulator::Schedule (Seconds (7.0) + NanoSeconds (152799), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
-  Simulator::Schedule (Seconds (7.0) + NanoSeconds (152800), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::IDLE);
+  // STA PHY STATE should keep CCA_BUSY once the duration estimated from L-SIG has elapsed, i.e. at 152.8us.
+  Simulator::Schedule (Seconds (7.0) + NanoSeconds (152800), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
 
   // CASE 8: send one packet followed by a second one 3 dB weaker between the end of L-SIG and the start of HE-SIG of the first packet:
   // PHY header reception should succeed.
@@ -1424,9 +1432,9 @@ TestPhyHeadersReception::DoRun (void)
   // At 44 us (end of HE-SIG), STA PHY STATE should move to RX since the PHY header reception should have succeeded.
   Simulator::Schedule (Seconds (8.0) + NanoSeconds (43999), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
   Simulator::Schedule (Seconds (8.0) + NanoSeconds (44000), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::RX);
-  // STA PHY STATE should move back to IDLE once the duration estimated from L-SIG has elapsed, i.e. at 152.8us.
+  // STA PHY STATE should move back to CCA_BUSY once the duration estimated from L-SIG has elapsed, i.e. at 152.8us.
   Simulator::Schedule (Seconds (8.0) + NanoSeconds (152799), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::RX);
-  Simulator::Schedule (Seconds (8.0) + NanoSeconds (152800), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::IDLE);
+  Simulator::Schedule (Seconds (8.0) + NanoSeconds (152800), &TestPhyHeadersReception::CheckPhyState, this, WifiPhyState::CCA_BUSY);
 
   Simulator::Run ();
   Simulator::Destroy ();
@@ -1759,10 +1767,10 @@ TestAmpduReception::SendAmpduWithThreeMpdus (double rxPowerDbm, uint32_t referen
       mpduList.push_back (Create<WifiMacQueueItem> (p, hdr));
     }
   Ptr<WifiPsdu> psdu = Create<WifiPsdu> (mpduList);
-  
+
   Time txDuration = m_phy->CalculateTxDuration (psdu->GetSize (), txVector, m_phy->GetPhyBand ());
 
-  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
+  Ptr<WifiPpdu> ppdu = Create<HePpdu> (psdu, txVector, FREQUENCY, txDuration, WIFI_PHY_BAND_5GHZ, m_uid++);
 
   Ptr<SpectrumValue> txPowerSpectrum = WifiSpectrumValueHelper::CreateHeOfdmTxPowerSpectralDensity (FREQUENCY, CHANNEL_WIDTH, DbmToW (rxPowerDbm), GUARD_WIDTH);
 
@@ -1771,7 +1779,7 @@ TestAmpduReception::SendAmpduWithThreeMpdus (double rxPowerDbm, uint32_t referen
   txParams->txPhy = 0;
   txParams->duration = txDuration;
   txParams->ppdu = ppdu;
-  
+
   m_phy->StartRx (txParams);
 }
 
@@ -1779,11 +1787,12 @@ void
 TestAmpduReception::DoSetup (void)
 {
   m_phy = CreateObject<SpectrumWifiPhy> ();
-  m_phy->ConfigureStandardAndBand (WIFI_PHY_STANDARD_80211ax, WIFI_PHY_BAND_5GHZ);
+  m_phy->ConfigureStandard (WIFI_STANDARD_80211ax);
+  Ptr<InterferenceHelper> interferenceHelper = CreateObject<InterferenceHelper> ();
+  m_phy->SetInterferenceHelper (interferenceHelper);
   Ptr<ErrorRateModel> error = CreateObject<NistErrorRateModel> ();
   m_phy->SetErrorRateModel (error);
-  m_phy->SetChannelNumber (CHANNEL_NUMBER);
-  m_phy->SetFrequency (FREQUENCY);
+  m_phy->SetOperatingChannel (WifiPhy::ChannelTuple {CHANNEL_NUMBER, 0, WIFI_PHY_BAND_5GHZ, 0});
 
   m_phy->SetReceiveOkCallback (MakeCallback (&TestAmpduReception::RxSuccess, this));
   m_phy->SetReceiveErrorCallback (MakeCallback (&TestAmpduReception::RxFailure, this));
@@ -2454,12 +2463,12 @@ TestUnsupportedModulationReception::DoRun (void)
   mac.SetType ("ns3::StaWifiMac", "QosSupported", BooleanValue (true), "Ssid",
                SsidValue (Ssid ("non-existent-ssid")));
 
-  wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211ax);
   m_staDevices.Add (wifi.Install (phy, mac, wifiStaNodes.Get (0)));
   wifi.SetStandard (WIFI_STANDARD_80211ac);
   m_staDevices.Add (wifi.Install (phy, mac, wifiStaNodes.Get (1)));
 
-  wifi.SetStandard (WIFI_STANDARD_80211ax_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211ax);
   mac.SetType ("ns3::ApWifiMac", "QosSupported", BooleanValue (true), "Ssid",
                SsidValue (Ssid ("wifi-backoff-ssid")), "BeaconInterval",
                TimeValue (MicroSeconds (102400)), "EnableBeaconJitter", BooleanValue (false));

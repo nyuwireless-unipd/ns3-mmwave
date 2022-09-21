@@ -17,7 +17,7 @@
  *
  * Author: Marco Miozzo  <marco.miozzo@cttc.es>,
  *         Nicola Baldo <nbaldo@cttc.es>
- * 
+ *
  */
 
 #include "ns3/propagation-loss-model.h"
@@ -69,18 +69,18 @@ BuildingsPropagationLossModel::GetTypeId (void)
 
 
     .AddAttribute ("ShadowSigmaOutdoor",
-                   "Standard deviation of the normal distribution used for calculate the shadowing for outdoor nodes",
+                   "Standard deviation of the normal distribution used to calculate the shadowing for outdoor nodes",
                    DoubleValue (7.0),
                    MakeDoubleAccessor (&BuildingsPropagationLossModel::m_shadowingSigmaOutdoor),
                    MakeDoubleChecker<double> ())
 
     .AddAttribute ("ShadowSigmaIndoor",
-                   "Standard deviation of the normal distribution used for calculate the shadowing for indoor nodes ",
+                   "Standard deviation of the normal distribution used to calculate the shadowing for indoor nodes",
                    DoubleValue (8.0),
                    MakeDoubleAccessor (&BuildingsPropagationLossModel::m_shadowingSigmaIndoor),
                    MakeDoubleChecker<double> ())
     .AddAttribute ("ShadowSigmaExtWalls",
-                   "Standard deviation of the normal distribution used for calculate the shadowing due to ext walls ",
+                   "Standard deviation of the normal distribution used to calculate the shadowing due to ext walls",
                    DoubleValue (5.0),
                    MakeDoubleAccessor (&BuildingsPropagationLossModel::m_shadowingSigmaExtWalls),
                    MakeDoubleChecker<double> ())
@@ -139,7 +139,7 @@ BuildingsPropagationLossModel::InternalWallsLoss (Ptr<MobilityBuildingInfo> a, P
 {
   // approximate the number of internal walls with the Manhattan distance in "rooms" units
   double dx = std::abs (a->GetRoomNumberX () - b->GetRoomNumberX ());
-  double dy = std::abs (a->GetRoomNumberY () - b->GetRoomNumberY ());    
+  double dy = std::abs (a->GetRoomNumberY () - b->GetRoomNumberY ());
   return m_lossInternalWall * (dx+dy);
 }
 
@@ -151,8 +151,8 @@ const
 {
     Ptr<MobilityBuildingInfo> a1 = a->GetObject <MobilityBuildingInfo> ();
     Ptr<MobilityBuildingInfo> b1 = b->GetObject <MobilityBuildingInfo> ();
-    NS_ASSERT_MSG ((a1 != 0) && (b1 != 0), "BuildingsPropagationLossModel only works with MobilityBuildingInfo");
-  
+    NS_ASSERT_MSG (a1 && b1, "BuildingsPropagationLossModel only works with MobilityBuildingInfo");
+
   std::map<Ptr<MobilityModel>,  std::map<Ptr<MobilityModel>, ShadowingLoss> >::iterator ait = m_shadowingLossMap.find (a);
   if (ait != m_shadowingLossMap.end ())
     {
@@ -164,10 +164,10 @@ const
       else
         {
           double sigma = EvaluateSigma (a1, b1);
-          // side effect: will create new entry          
+          // side effect: will create new entry
           // sigma is standard deviation, not variance
           double shadowingValue = m_randVariable->GetValue (0.0, (sigma*sigma));
-          ait->second[b] = ShadowingLoss (shadowingValue, b);          
+          ait->second[b] = ShadowingLoss (shadowingValue, b);
           return (ait->second[b].GetLoss ());
         }
     }
@@ -177,8 +177,8 @@ const
       // side effect: will create new entries in both maps
       // sigma is standard deviation, not variance
       double shadowingValue = m_randVariable->GetValue (0.0, (sigma*sigma));
-      m_shadowingLossMap[a][b] = ShadowingLoss (shadowingValue, b);  
-      return (m_shadowingLossMap[a][b].GetLoss ());       
+      m_shadowingLossMap[a][b] = ShadowingLoss (shadowingValue, b);
+      return (m_shadowingLossMap[a][b].GetLoss ());
     }
 }
 

@@ -38,7 +38,7 @@
 //
 // Example: set slot time to 20 microseconds, while keeping other values as defined in the simulation script:
 //
-//          ./waf --run "wifi-timing-attributes --slot=20"
+//          ./ns3 run "wifi-timing-attributes --slot=20"
 //
 // Network topology:
 //
@@ -83,7 +83,7 @@ int main (int argc, char *argv[])
 
   //Default IEEE 802.11n (2.4 GHz)
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_STANDARD_80211n_2_4GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager",
                                 "DataMode", StringValue ("HtMcs7"),
                                 "ControlMode", StringValue ("HtMcs0"));

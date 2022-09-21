@@ -51,6 +51,4 @@ SpectrumPhy::~SpectrumPhy ()
 {
   NS_LOG_FUNCTION (this);
 }
-
-
 } // namespace

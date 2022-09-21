@@ -49,14 +49,14 @@ function doo ()
 say $(date)
 blank
 
-doo ./waf clean
+doo ./ns3 clean
 blank
 
-doo ./waf configure $NS3CONFIG
+doo ./ns3 configure $NS3CONFIG
 blank
 
 cov=coverity/cov-int
-doo cov-build --dir $cov ./waf build
+doo cov-build --dir $cov ./ns3 build
 blank
 
 tarf=coverity/ns-3.tgz
@@ -70,7 +70,7 @@ repoversion="$(basename $(dirname $PWD))@$(hg id -i)"
 
 # curl complains if this contains white space
 description="Coverity-mods"
-    
+
 doo curl \
      --form file=@$tarf \
      --form project=ns-3 \

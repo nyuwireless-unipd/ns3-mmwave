@@ -40,7 +40,7 @@ struct LteSpectrumSignalParameters : public SpectrumSignalParameters
 {
 
   // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  Ptr<SpectrumSignalParameters> Copy () const override;
 
   /**
    * default constructor
@@ -71,7 +71,7 @@ struct LteSpectrumSignalParametersDataFrame : public SpectrumSignalParameters
 {
   
   // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  Ptr<SpectrumSignalParameters> Copy () const override;
   
   /**
   * default constructor
@@ -104,7 +104,7 @@ struct LteSpectrumSignalParametersDlCtrlFrame : public SpectrumSignalParameters
 {
   
   // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  Ptr<SpectrumSignalParameters> Copy () const override;
   
   /**
   * default constructor
@@ -135,7 +135,7 @@ struct LteSpectrumSignalParametersUlSrsFrame : public SpectrumSignalParameters
 {
   
   // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  Ptr<SpectrumSignalParameters> Copy () const override;
   
   /**
   * default constructor

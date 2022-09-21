@@ -22,7 +22,9 @@
 #define WIFI_REMOTE_STATION_MANAGER_H
 
 #include <array>
+#include <optional>
 #include <unordered_map>
+#include <memory>
 #include "ns3/traced-callback.h"
 #include "ns3/object.h"
 #include "ns3/data-rate.h"
@@ -34,6 +36,7 @@
 #include "ns3/ht-capabilities.h"
 #include "ns3/vht-capabilities.h"
 #include "ns3/he-capabilities.h"
+#include "ns3/eht-capabilities.h"
 
 namespace ns3 {
 
@@ -95,6 +98,8 @@ struct WifiRemoteStationState
   Mac48Address m_address;            //!< Mac48Address of the remote station
   uint16_t m_aid;                    /**< AID of the remote station (unused if this object
                                           is installed on a non-AP station) */
+  std::optional<Mac48Address> m_mldAddress; /**< MLD MAC address if the remote station is
+                                                 affiliated with an MLD */
   WifiRemoteStationInfo m_info;      //!< remote station info
   bool m_dsssSupported;              //!< Flag if DSSS is supported by the remote station
   bool m_erpOfdmSupported;           //!< Flag if ERP OFDM is supported by the remote station
@@ -102,6 +107,8 @@ struct WifiRemoteStationState
   Ptr<const HtCapabilities> m_htCapabilities;   //!< remote station HT capabilities
   Ptr<const VhtCapabilities> m_vhtCapabilities; //!< remote station VHT capabilities
   Ptr<const HeCapabilities> m_heCapabilities;   //!< remote station HE capabilities
+  Ptr<const EhtCapabilities> m_ehtCapabilities; //!< remote station EHT capabilities
+
   uint16_t m_channelWidth;    //!< Channel width (in MHz) supported by the remote station
   uint16_t m_guardInterval;   //!< HE Guard interval duration (in nanoseconds) supported by the remote station
   uint8_t m_ness;             //!< Number of extended spatial streams of the remote station
@@ -143,7 +150,7 @@ public:
   /**
    * A map of WifiRemoteStationStates with Mac48Address as key
    */
-  using StationStates = std::unordered_map <Mac48Address, WifiRemoteStationState *, WifiAddressHash>;
+  using StationStates = std::unordered_map <Mac48Address, std::shared_ptr<WifiRemoteStationState>, WifiAddressHash>;
 
   /**
    * Set up PHY associated with this device since it is the object that
@@ -239,6 +246,13 @@ public:
    */
   void AddStationHeCapabilities (Mac48Address from, HeCapabilities heCapabilities);
   /**
+   * Records EHT capabilities of the remote station.
+   *
+   * \param from the address of the station being recorded
+   * \param ehtCapabilities the EHT capabilities of the station
+   */
+  void AddStationEhtCapabilities (Mac48Address from, EhtCapabilities ehtCapabilities);
+  /**
    * Return the HT capabilities sent by the remote station.
    *
    * \param from the address of the remote station
@@ -260,6 +274,13 @@ public:
    */
   Ptr<const HeCapabilities> GetStationHeCapabilities (Mac48Address from);
   /**
+   * Return the EHT capabilities sent by the remote station.
+   *
+   * \param from the address of the remote station
+   * \return the EHT capabilities sent by the remote station
+   */
+  Ptr<const EhtCapabilities> GetStationEhtCapabilities (Mac48Address from);
+  /**
    * Return whether the device has HT capability support enabled.
    *
    * \return true if HT capability support is enabled, false otherwise
@@ -277,6 +298,12 @@ public:
    * \return true if HE capability support is enabled, false otherwise
    */
   bool GetHeSupported (void) const;
+  /**
+   * Return whether the device has EHT capability support enabled.
+   *
+   * \return true if EHT capability support is enabled, false otherwise
+   */
+  bool GetEhtSupported (void) const;
   /**
    * Return whether the device has LDPC support enabled.
    *
@@ -452,6 +479,13 @@ public:
    */
   WifiMode GetDefaultMcs (void) const;
   /**
+   * Return the default MCS to use to transmit frames to the given station.
+   *
+   * \param st the given station
+   * \return the default MCS to use to transmit frames to the given station
+   */
+  WifiMode GetDefaultModeForSta (const WifiRemoteStation *st) const;
+  /**
    * Return the number of basic MCS index.
    *
    * \return the number of basic MCS index
@@ -559,6 +593,15 @@ public:
    *         false otherwise
    */
   bool GetHeSupported (Mac48Address address) const;
+  /**
+   * Return whether the station supports EHT or not.
+   *
+   * \param address the address of the station
+   *
+   * \return true if EHT is supported by the station,
+   *         false otherwise
+   */
+  bool GetEhtSupported (Mac48Address address) const;
 
   /**
    * Return a mode for non-unicast packets.
@@ -670,11 +713,37 @@ public:
   void RecordDisassociated (Mac48Address address);
 
   /**
-   * \param header MAC header
+   * Set the address of the MLD the given station is affiliated with.
    *
+   * \param address the MAC address of the remote station
+   * \param mldAddress the MAC address of the MLD the remote station is
+   *                   affiliated with
+   */
+  void SetMldAddress (const Mac48Address& address, const Mac48Address& mldAddress);
+  /**
+   * Get the address of the MLD the given station is affiliated with, if any,
+   * or the broadcast address, otherwise.
+   *
+   * \param address the MAC address of the remote station
+   * \return the address of the MLD the given station is affiliated with, if any
+   */
+  std::optional<Mac48Address> GetMldAddress (const Mac48Address& address) const;
+  /**
+   * Get the address of the remote station operating on this link and affiliated
+   * with the MLD having the given MAC address, if any.
+   *
+   * \param mldAddress the MLD MAC address
+   * \return the address of the remote station operating on this link and
+   *         affiliated with the MLD, if any
+   */
+  std::optional<Mac48Address> GetAffiliatedStaAddress (const Mac48Address& mldAddress) const;
+
+  /**
+   * \param header MAC header
+   * \param allowedWidth the allowed width in MHz to send this packet
    * \return the TXVECTOR to use to send this packet
    */
-  WifiTxVector GetDataTxVector (const WifiMacHeader &header);
+  WifiTxVector GetDataTxVector (const WifiMacHeader &header, uint16_t allowedWidth);
   /**
    * \param address remote address
    *
@@ -986,6 +1055,15 @@ protected:
    */
   bool GetHeSupported (const WifiRemoteStation *station) const;
   /**
+   * Return whether the given station is EHT capable.
+   *
+   * \param station the station being queried
+   *
+   * \return true if the station has EHT capabilities,
+   *         false otherwise
+   */
+  bool GetEhtSupported (const WifiRemoteStation *station) const;
+  /**
    * Return the WifiMode supported by the specified station at the specified index.
    *
    * \param station the station being queried
@@ -1138,13 +1216,13 @@ private:
   virtual WifiRemoteStation* DoCreateStation (void) const = 0;
   /**
     * \param station the station that we need to communicate
-    *
+    * \param allowedWidth the allowed width in MHz to send a packet to the station
     * \return the TXVECTOR to use to send a packet to the station
     *
     * Note: This method is called before sending a unicast packet or a fragment
     *       of a unicast packet to decide which transmission mode to use.
     */
-  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station) = 0;
+  virtual WifiTxVector DoGetDataTxVector (WifiRemoteStation *station, uint16_t allowedWidth) = 0;
   /**
    * \param station the station that we need to communicate
    *
@@ -1241,7 +1319,7 @@ private:
    * \param address the address of the station
    * \return WifiRemoteStationState corresponding to the address
    */
-  WifiRemoteStationState* LookupState (Mac48Address address) const;
+  std::shared_ptr<WifiRemoteStationState> LookupState (Mac48Address address) const;
   /**
    * Return the station associated with the given address.
    *

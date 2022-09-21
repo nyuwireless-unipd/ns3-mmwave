@@ -9,7 +9,7 @@ Low-Rate Wireless Personal Area Network (LR-WPAN)
 
 This chapter describes the implementation of |ns3| models for the
 low-rate, wireless personal area network (LR-WPAN) as specified by
-IEEE standard 802.15.4 (2006).
+IEEE standard 802.15.4 (2003,2006,2011).
 
 Model Description
 *****************
@@ -32,7 +32,7 @@ show the scope of the model.
 
 The Spectrum NetDevice from Nicola Baldo is the basis for the implementation.
 
-The implementation also plans to borrow from the ns-2 models developed by 
+The implementation also plans to borrow from the ns-2 models developed by
 Zheng and Lee in the future.
 
 APIs
@@ -40,7 +40,7 @@ APIs
 
 The APIs closely follow the standard, adapted for |ns3| naming conventions
 and idioms.  The APIs are organized around the concept of service primitives
-as shown in the following figure adapted from Figure 14 of 
+as shown in the following figure adapted from Figure 14 of
 IEEE Std. 802.15.4-2006.
 
 .. _fig-lr-wpan-primitives:
@@ -90,11 +90,41 @@ This maps to |ns3| classes and methods such as:::
   ...
   }
 
+The primitives currently supported by the ns-3 model are:
+
+MAC Primitives
+++++++++++++++
+
+* MCPS-DATA.Request
+* MCPS-DATA.Confirm
+* MCPS-DATA.Indication
+* MLME-START.Request
+* MLME-START.Confirm
+* MLME-SCAN.Request
+* MLME-SCAN.Confirm
+* MLME-BEACON-NOFIFY.Indication
+
+PHY Primitives
+++++++++++++++
+
+* PLME-CCA.Request
+* PLME-CCA.Confirm
+* PD-DATA.Request
+* PD-DATA.Confirm
+* PD-DATA.Indication
+* PLME-SET-TRX-STATE.Request
+* PLME-SET-TRX-STATE.Confirm
+
 MAC
 ###
 
-The MAC at present implements the unslotted CSMA/CA variant, without beaconing.
-Currently there is no support for coordinators and the relevant APIs.
+The MAC at present implements both, the unslotted CSMA/CA (non-beacon mode) and
+the slotted CSMA/CA (beacon-enabled mode). The beacon-enabled mode supports only
+direct transmissions. Indirect transmissions and Guaranteed Time Slots (GTS) are
+currently not supported.
+
+The present implementation supports a single PAN coordinator, support for additional
+coordinators is under consideration for future releases.
 
 The implemented MAC is similar to Contiki's NullMAC, i.e., a MAC without sleep
 features. The radio is assumed to be always active (receiving or transmitting),
@@ -108,20 +138,46 @@ Std 802.15.4-2006, section 7.5.6.2 is supported, including acknowledgements.
 Only short addressing completely implemented. Various trace sources are
 supported, and trace sources can be hooked to sinks.
 
+The implemented ns-3 MAC supports scanning. Typically, a scanning request is preceded
+by an association request but these can be used independently.
+IEEE 802.15.4 supports 4 types of scanning:
+
+* *Energy Detection (ED) Scan:* In an energy scan, a device or a coordinator scan a set number of channels looking for traces of energy. The maximum energy registered during a given amount of time is stored. Energy scan is typically used to measure the quality of a channel at any given time. For this reason, coordinators often use this scan before initiating a PAN on a channel.
+
+* *Active Scan:* A device sends beacon requests on a set number of channels looking for a PAN coordinator. The receiving coordinator must be configured on non-beacon mode. Coordinators on beacon-mode ignore these requests. The coordinators who accept the request, respond with a beacon. After an active scan take place, during the association process devices extract the information in the PAN descriptors from the collected beacons and based on this information (e.g. channel, LQI level), choose a coordinator to associate with.
+
+* *Passive Scan:* In a passive scan, no beacon requests are sent. Devices scan a set number of channels looking for beacons currently being transmitted (coordinators in beacon-mode). Like in the active scan, the information from beacons is stored in PAN descriptors and used by the device to choose a coordinator to associate with.
+
+* *Orphan Scan:* <Not supported by ns-3>
+
+In active and passive scans, the link quality indicator (LQI) is the main parameter used to
+determine the optimal coordinator. LQI values range from 0 to 255. Where 255 is the highest quality
+link value and 0 the lowest. Typically, a link lower than 127 is considered a link with poor quality.
+
+
 PHY
 ###
 
-The physical layer components consist of a Phy model, an error rate model, 
-and a loss model.  The error rate model presently models the error rate 
-for IEEE 802.15.4 2.4 GHz AWGN channel for OQPSK; the model description can 
-be found in IEEE Std 802.15.4-2006, section E.4.1.7.   The Phy model is 
-based on SpectrumPhy and it follows specification described in section 6 
-of IEEE Std 802.15.4-2006. It models PHY service specifications, PPDU 
-formats, PHY constants and PIB attributes. It currently only supports 
-the transmit power spectral density mask specified in 2.4 GHz per section 
-6.5.3.1. The noise power density assumes uniformly distributed thermal 
-noise across the frequency bands. The loss model can fully utilize all 
-existing simple (non-spectrum phy) loss models. The Phy model uses 
+The physical layer components consist of a Phy model, an error rate model,
+and a loss model. The PHY state transitions are roughly model after
+ATMEL's AT86RF233.
+
+.. _fig-lr-wpan-phy:
+
+.. figure:: figures/lr-wpan-phy.*
+
+    Ns-3 lr-wpan PHY basic operating mode state diagram
+
+The error rate model presently models the error rate
+for IEEE 802.15.4 2.4 GHz AWGN channel for OQPSK; the model description can
+be found in IEEE Std 802.15.4-2006, section E.4.1.7.   The Phy model is
+based on SpectrumPhy and it follows specification described in section 6
+of IEEE Std 802.15.4-2006. It models PHY service specifications, PPDU
+formats, PHY constants and PIB attributes. It currently only supports
+the transmit power spectral density mask specified in 2.4 GHz per section
+6.5.3.1. The noise power density assumes uniformly distributed thermal
+noise across the frequency bands. The loss model can fully utilize all
+existing simple (non-spectrum phy) loss models. The Phy model uses
 the existing single spectrum channel model.
 The physical layer is modeled on packet level, that is, no preamble/SFD
 detection is done. Packet reception will be started with the first bit of the
@@ -133,7 +189,7 @@ reception will add up to the interference/noise.
 Currently the receiver sensitivity is set to a fixed value of -106.58 dBm. This
 corresponds to a packet error rate of 1% for 20 byte reference packets for this
 signal power, according to IEEE Std 802.15.4-2006, section 6.1.7. In the future
-we will provide support for changing the sensitivity to different values. 
+we will provide support for changing the sensitivity to different values.
 
 .. _fig-802-15-4-per-sens:
 
@@ -145,7 +201,7 @@ we will provide support for changing the sensitivity to different values.
 NetDevice
 #########
 
-Although it is expected that other technology profiles (such as 
+Although it is expected that other technology profiles (such as
 6LoWPAN and ZigBee) will write their own NetDevice classes, a basic
 LrWpanNetDevice is provided, which encapsulates the common operations
 of creating a generic LrWpan device and hooking things together.
@@ -159,7 +215,7 @@ Contrary to other technologies, a IEEE 802.15.4 has 2 different kind of addresse
 * Short addresses (16 bits)
 
 The 64-bit addresses are unique worldwide, and set by the device vendor (in a real device).
-The 16-bit addresses are not guaranteed to be unique, and they are typically either assigned 
+The 16-bit addresses are not guaranteed to be unique, and they are typically either assigned
 during the devices deployment, or assigned dynamically during the device bootstrap.
 
 In |ns3| the device bootstrap is not (yet) present. Hence, both addresses are set when the
@@ -168,7 +224,7 @@ device is created.
 The other relavant "address" to consider is the PanId (16 bits), which represents the PAN
 the device is attached to.
 
-Due to the limited number of available bytes in a packet, IEEE 802.15.4 tries to use short 
+Due to the limited number of available bytes in a packet, IEEE 802.15.4 tries to use short
 addresses instead of long addresses, even though the two might be used at the same time.
 
 For the sake of communicating with the upper layers, and in particular to generate auto-configured
@@ -184,7 +240,7 @@ while RFC 6282 mandates that the IID part of the IPv6 address is calculated as `
 where ``XXXX`` is the device short address, and ``YYYY`` is the PanId.
 In both cases the U/L bit must be set to local, so in the RFC 4944 the PanId might have one bit flipped.
 
-In order to facilitate interoperability, and to avoid unwanted module dependencies, the |ns3| 
+In order to facilitate interoperability, and to avoid unwanted module dependencies, the |ns3|
 implementation moves the IID calculation in the ``LrWpanNetDevice::GetAddress ()``, which will
 return an ``Address`` formatted properly, i.e.:
 
@@ -197,7 +253,7 @@ configuration of an Attribute (``PseudoMacAddressMode``).
 The default is to use RFC 6282 style addresses.
 
 Note that, on reception, a packet might contain either a short or a long address. This is reflected
-in the upper-layer notification callback, which can contain either the pseudo-address (48 bits) or 
+in the upper-layer notification callback, which can contain either the pseudo-address (48 bits) or
 the long address (64 bit) of the sender.
 
 Note also that RFC 4944 or RFC 6282 are the RFCs defining the IPv6 address compression formats
@@ -210,16 +266,19 @@ Scope and Limitations
 =====================
 
 Future versions of this document will contain a PICS proforma similar to
-Appendix D of IEEE 802.15.4-2006.  The current emphasis is on the 
-unslotted mode of 802.15.4 operation for use in Zigbee, and the scope
-is limited to enabling a single mode (CSMA/CA) with basic data transfer
-capabilities. Association with PAN coordinators is not yet supported, nor the
+Appendix D of IEEE 802.15.4-2006. The current emphasis is on direct transmissions
+running on both, slotted and unslotted mode (CSMA/CA) of 802.15.4 operation for use in Zigbee.
+Association with PAN coordinators is not yet supported, nor the
 use of extended addressing. Interference is modeled as AWGN but this is
 currently not thoroughly tested.
 
+The standard describes the support of multiple PHY band-modulations but currently, only 250kbps O-QPSK (channel page 0) is supported.
+
 The NetDevice Tx queue is not limited, i.e., packets are never dropped
-due to queue becoming full. They may be dropped due to excessive transmission 
+due to queue becoming full. They may be dropped due to excessive transmission
 retries or channel access failure.
+
+Active and passive MAC scans are able to obtain a LQI value from a beacon frame, however, the scan primitives assumes LQI is correctly implemented and does not check the validity of its value.
 
 References
 ==========
@@ -257,6 +316,8 @@ The following examples have been written, which can be found in ``src/lr-wpan/ex
 * ``lr-wpan-error-model-plot.cc``:  An example to test the phy.
 * ``lr-wpan-packet-print.cc``:  An example to print out the MAC header fields.
 * ``lr-wpan-phy-test.cc``:  An example to test the phy.
+* ``lr-wpan-ed-scan.cc``:  Simple example showing the use of energy detection (ED) scan in the MAC.
+* ``lr-wpan-active-scan.cc``:  A simple example showing the use of an active scan in the MAC.
 
 In particular, the module enables a very simplified end-to-end data
 transfer scenario, implemented in ``lr-wpan-data.cc``.  The figure
@@ -265,7 +326,7 @@ a DataRequest from the higher layer.  It invokes a Clear Channel
 Assessment (CCA) from the PHY, and if successful, sends the frame
 down to the PHY where it is transmitted over the channel and results
 in a DataIndication on the peer node.
-  
+
 .. _fig-lr-wpan-data:
 
 .. figure:: figures/lr-wpan-data-example.*
@@ -279,7 +340,7 @@ packet size (default 20 bytes) and transmit power (default 0 dBm) can be
 varied by command line arguments.  The program outputs a file named
 ``802.15.4-psr-distance.plt``.  Loading this file into gnuplot yields
 a file ``802.15.4-psr-distance.eps``, which can be converted to pdf or
-other formats.  The default output is shown below. 
+other formats.  The default output is shown below.
 
 .. _fig-802-15-4-psr-distance:
 
@@ -298,14 +359,16 @@ The following tests have been written, which can be found in ``src/lr-wpan/tests
 * ``lr-wpan-packet-test.cc``:  Test the 802.15.4 MAC header/trailer classes
 * ``lr-wpan-pd-plme-sap-test.cc``:  Test the PLME and PD SAP per IEEE 802.15.4
 * ``lr-wpan-spectrum-value-helper-test.cc``:  Test that the conversion between power (expressed as a scalar quantity) and spectral power, and back again, falls within a 25% tolerance across the range of possible channels and input powers.
+* ``lr-wpan-ifs-test.cc``:  Check that the Intraframe Spaces (IFS) are being used and issued in the correct order.
+* ``lr-wpan-slotted-csmaca-test.cc``:  Test the transmission and deferring of data packets in the Contention Access Period (CAP) for the slotted CSMA/CA (beacon-enabled mode).
 
 Validation
 **********
 
 The model has not been validated against real hardware.  The error model
-has been validated against the data in IEEE Std 802.15.4-2006, 
-section E.4.1.7 (Figure E.2). The MAC behavior (CSMA backoff) has been 
-validated by hand against expected behavior.  The below plot is an example 
+has been validated against the data in IEEE Std 802.15.4-2006,
+section E.4.1.7 (Figure E.2). The MAC behavior (CSMA backoff) has been
+validated by hand against expected behavior.  The below plot is an example
 of the error model validation and can be reproduced by running
 ``lr-wpan-error-model-plot.cc``:
 
@@ -313,6 +376,6 @@ of the error model validation and can be reproduced by running
 
 .. figure:: figures/802-15-4-ber.*
 
-    Default output of the program ``lr-wpan-error-model-plot.cc`` 
+    Default output of the program ``lr-wpan-error-model-plot.cc``
 
 

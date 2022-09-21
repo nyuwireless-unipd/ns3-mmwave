@@ -126,6 +126,7 @@ void
 LrWpanCsmaCa::SetMacMinBE (uint8_t macMinBE)
 {
   NS_LOG_FUNCTION (this << macMinBE);
+  NS_ASSERT_MSG (macMinBE <= m_macMaxBE,"MacMinBE ("<<macMinBE<<") should be <= MacMaxBE ("<<m_macMaxBE<<")");
   m_macMinBE = macMinBE;
 }
 
@@ -140,7 +141,8 @@ void
 LrWpanCsmaCa::SetMacMaxBE (uint8_t macMaxBE)
 {
   NS_LOG_FUNCTION (this << macMaxBE);
-  m_macMinBE = macMaxBE;
+  NS_ASSERT_MSG (macMaxBE >= 3 && macMaxBE <= 8, "MacMaxBE ("<<macMaxBE<<") should be >= 3 and <= 8");
+  m_macMaxBE = macMaxBE;
 }
 
 uint8_t
@@ -154,6 +156,7 @@ void
 LrWpanCsmaCa::SetMacMaxCSMABackoffs (uint8_t macMaxCSMABackoffs)
 {
   NS_LOG_FUNCTION (this << macMaxCSMABackoffs);
+  NS_ASSERT_MSG (macMaxCSMABackoffs <= 5, "MacMaxCSMABackoffs should be <= 5");
   m_macMaxCSMABackoffs = macMaxCSMABackoffs;
 }
 
@@ -195,8 +198,8 @@ LrWpanCsmaCa::GetTimeToNextSlot (void) const
   uint64_t elapsedSuperframeSymbols;
   uint64_t symbolRate;
   Time timeAtBoundary;
-  Time elapsedCap;
-  Time beaconTime;
+  [[maybe_unused]] Time elapsedCap;
+  [[maybe_unused]] Time beaconTime;
 
 
   currentTime = Simulator::Now ();
@@ -210,8 +213,6 @@ LrWpanCsmaCa::GetTimeToNextSlot (void) const
       beaconTime = Seconds ((double) m_mac->m_rxBeaconSymbols / symbolRate);
       elapsedCap = elapsedSuperframe - beaconTime;
       NS_LOG_DEBUG ("Elapsed incoming CAP symbols: " << (elapsedCap.GetSeconds () * symbolRate)  << " (" << elapsedCap.As (Time::S) << ")");
-      NS_UNUSED (beaconTime);
-      NS_UNUSED (elapsedCap);
     }
   else
     {

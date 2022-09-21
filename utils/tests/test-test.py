@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 ## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 #
 # Copyright (c) 2014 Siddharth Santurkar
@@ -17,12 +17,12 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-# NOTE: Run this script with the Python3 interpreter if the python3 compatibility 
+# NOTE: Run this script with the Python3 interpreter if the python3 compatibility
 #       of the ns-3 unit test runner needs to be tested.
 
 #   The following options of test.py are being tested for poratability by this script.
 #   To see the options supported by this script, run with the -h option on the command line
-#      
+#
 #   -h, --help            show this help message and exit
 #   -b BUILDPATH, --buildpath=BUILDPATH
 #                         specify the path where ns-3 was built (defaults to the
@@ -45,7 +45,7 @@
 #   -l, --list            print the list of known tests
 #   -m, --multiple        report multiple failures from test suites and test
 #                         cases
-#   -n, --nowaf           do not run waf before starting testing
+#   -n, --no-build           do not run ns3 before starting testing
 #   -p PYEXAMPLE, --pyexample=PYEXAMPLE
 #                         specify a single python example to run (with relative
 #                         path)
@@ -93,7 +93,7 @@ def main(argv):
       '-m',
       '--multiple',
       '-n',
-      '--nowaf',
+      '--no-build',
       '-p first',
       '--pyexample=first',
       '-r',
@@ -111,8 +111,8 @@ def main(argv):
       '--xml=t_opt.xml && rm -rf t_opt.xml',
     ]
 
-    configure_string = sys.executable + ' waf configure --enable-tests --enable-examples'
-    clean_string = sys.executable + ' waf clean'
+    configure_string = sys.executable + ' ns3 configure --enable-tests --enable-examples'
+    clean_string = sys.executable + ' ns3 clean'
     cmd_execute_list = [ '%s && %s test.py %s && %s' % (configure_string, sys.executable, option, clean_string) for option in test_cases]
     runner = TestBaseClass(argv[1:], "Test suite for the ns-3 unit test runner" , 'test-py')
     return runner.runtests(cmd_execute_list)

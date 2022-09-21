@@ -56,7 +56,7 @@
 //Packets in this simulation belong to BestEffort Access Class (AC_BE).
 //
 // The user can select the distance between the stations and the APs and can enable/disable the RTS/CTS mechanism.
-// Example: ./waf --run "wifi-aggregation --distance=10 --enableRts=0 --simulationTime=20"
+// Example: ./ns3 run "wifi-aggregation --distance=10 --enableRts=0 --simulationTime=20"
 //
 // The output prints the throughput measured for the 4 cases/networks described above. When default aggregation parameters are enabled, the
 // maximum A-MPDU size is 65 kB and the throughput is maximal. When aggregation is disabled, the throughput is about the half of the physical
@@ -103,7 +103,7 @@ int main (int argc, char *argv[])
   phy.SetChannel (channel.Create ());
 
   WifiHelper wifi;
-  wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+  wifi.SetStandard (WIFI_STANDARD_80211n);
   wifi.SetRemoteStationManager ("ns3::ConstantRateWifiManager", "DataMode", StringValue ("HtMcs7"), "ControlMode", StringValue ("HtMcs0"));
   WifiMacHelper mac;
 
@@ -112,7 +112,7 @@ int main (int argc, char *argv[])
 
   // Network A
   ssid = Ssid ("network-A");
-  phy.Set ("ChannelNumber", UintegerValue (36));
+  phy.Set ("ChannelSettings", StringValue ("{36, 0, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (ssid));
   staDeviceA = wifi.Install (phy, mac, wifiStaNodes.Get (0));
@@ -124,12 +124,12 @@ int main (int argc, char *argv[])
 
   // Network B
   ssid = Ssid ("network-B");
-  phy.Set ("ChannelNumber", UintegerValue (40));
+  phy.Set ("ChannelSettings", StringValue ("{40, 0, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (ssid));
 
   staDeviceB = wifi.Install (phy, mac, wifiStaNodes.Get (1));
-  
+
   // Disable A-MPDU
   Ptr<NetDevice> dev = wifiStaNodes.Get (1)->GetDevice (0);
   Ptr<WifiNetDevice> wifi_dev = DynamicCast<WifiNetDevice> (dev);
@@ -139,7 +139,7 @@ int main (int argc, char *argv[])
                "Ssid", SsidValue (ssid),
                "EnableBeaconJitter", BooleanValue (false));
   apDeviceB = wifi.Install (phy, mac, wifiApNodes.Get (1));
-  
+
   // Disable A-MPDU
   dev = wifiApNodes.Get (1)->GetDevice (0);
   wifi_dev = DynamicCast<WifiNetDevice> (dev);
@@ -147,7 +147,7 @@ int main (int argc, char *argv[])
 
   // Network C
   ssid = Ssid ("network-C");
-  phy.Set ("ChannelNumber", UintegerValue (44));
+  phy.Set ("ChannelSettings", StringValue ("{44, 0, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (ssid));
 
@@ -172,7 +172,7 @@ int main (int argc, char *argv[])
 
   // Network D
   ssid = Ssid ("network-D");
-  phy.Set ("ChannelNumber", UintegerValue (48));
+  phy.Set ("ChannelSettings", StringValue ("{48, 0, BAND_5GHZ, 0}"));
   mac.SetType ("ns3::StaWifiMac",
                "Ssid", SsidValue (ssid));
 
@@ -330,7 +330,7 @@ int main (int argc, char *argv[])
 
   double throughput = totalPacketsThroughA * payloadSize * 8 / (simulationTime * 1000000.0);
   std::cout << "Throughput with default configuration (A-MPDU aggregation enabled, 65kB): " << throughput << " Mbit/s" << '\n';
-  if (verifyResults && (throughput < 58.5 || throughput > 59.5))
+  if (verifyResults && (throughput < 59.0 || throughput > 60.0))
     {
       NS_LOG_ERROR ("Obtained throughput " << throughput << " is not in the expected boundaries!");
       exit (1);

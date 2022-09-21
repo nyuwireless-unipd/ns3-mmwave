@@ -137,7 +137,7 @@ FileBeamformingCodebook::ValidateAntenna (std::ifstream &cbFile) const
   // read PhasedArrayModel TypeId
   std::getline (cbFile, arrayId);
   // TODO find a way to do this check
-  NS_ABORT_MSG_IF (m_array == 0, "Array was not set");
+  NS_ABORT_MSG_IF (!m_array, "Array was not set");
   NS_ABORT_MSG_IF (arrayId != m_array->GetInstanceTypeId ().GetName (),
                    arrayId << " != " << m_array->GetInstanceTypeId ().GetName ());
 

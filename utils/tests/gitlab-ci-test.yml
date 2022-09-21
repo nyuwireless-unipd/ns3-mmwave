@@ -1,0 +1,135 @@
+# NS3 CI script for testing
+
+# Defines the steps to run the tests
+# Inherit with "extends: .base-test" and remember to set
+# the following variables: COMPILER (g++, clang++, ...) and
+# MODE (debug, default, optimized)
+
+.base-test:
+  stage: test
+  image: archlinux
+  before_script:
+    # add the core-debug repo to pacman.conf
+    - printf "\n%s\n%s\n" "[core-debug]" "Include = /etc/pacman.d/mirrorlist" >> /etc/pacman.conf
+    - pacman-key --init
+    - pacman -Syu --noconfirm
+      base-devel cmake ninja ccache valgrind
+      python
+      boost gsl gtk3
+      glibc-debug
+  script:
+    - mkdir -p $CCACHE_BASEDIR_VALUE
+    - export CCACHE_BASEDIR=${PWD}
+    - export CCACHE_DIR=${PWD}/$CCACHE_BASEDIR_VALUE
+    # missing the flag --disable-python
+    - ./ns3 configure -d $MODE -GNinja --enable-examples --enable-tests --disable-gtk
+    - ./ns3 build
+    - ./test.py -n $VALGRIND_FLAG $FULLNESS
+  cache:
+    key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
+    paths:
+      - $CCACHE_BASEDIR_VALUE/
+    when: 'always'
+  variables:
+    COMPILER: g++
+    CCACHE_BASEDIR_VALUE: ns-3-ccache-storage
+    VALGRIND_FLAG: ""
+    FULLNESS: ""
+    # workaround for Valgrind on Archlinux https://bbs.archlinux.org/viewtopic.php?pid=2036171#p2036171
+    DEBUGINFOD_URLS: "https://debuginfod.archlinux.org"
+
+# Run the test.py script with files compiled in debug mode
+daily-test-debug:
+  extends: .base-test
+  variables:
+    MODE: debug
+  only:
+    variables:
+      - $RELEASE == "daily"
+  tags:
+    - nsnam
+    - linux
+
+# Run the test.py script with files compiled in default mode
+daily-test-default:
+  extends: .base-test
+  variables:
+    MODE: default
+  only:
+    variables:
+      - $RELEASE == "daily"
+
+# Run the test.py script with files compiled in optimized mode
+daily-test-optimized:
+  extends: .base-test
+  variables:
+    MODE: optimized
+  only:
+    variables:
+      - $RELEASE == "daily"
+
+### Valgrind tests
+# Run the test.py script with files compiled in optimized mode + valgrind (daily)
+daily-test-optimized-valgrind:
+  extends: .base-test
+  variables:
+    MODE: optimized
+    VALGRIND_FLAG: -g
+  only:
+    variables:
+      - $RELEASE == "daily"
+  tags:
+    - nsnam
+    - linux
+
+# Run the test.py script with files compiled in debug mode
+weekly-test-debug-valgrind:
+  extends: .base-test
+  variables:
+    MODE: debug
+    VALGRIND_FLAG: -g
+  only:
+    variables:
+      - $RELEASE == "weekly"
+  tags:
+    - nsnam
+    - linux
+
+# Run the test.py script with files compiled in default mode
+weekly-test-default-valgrind:
+  extends: .base-test
+  variables:
+    MODE: default
+    VALGRIND_FLAG: -g
+  only:
+    variables:
+      - $RELEASE == "weekly"
+  tags:
+    - nsnam
+    - linux
+
+# Run the test.py script with files compiled in optimized mode
+weekly-test-optimized-valgrind:
+  extends: .base-test
+  variables:
+    MODE: optimized
+    VALGRIND_FLAG: -g
+  only:
+    variables:
+      - $RELEASE == "weekly"
+  tags:
+    - nsnam
+    - linux
+
+# Do a check for the TAKES_FOREVER jobs, only in optimized mode
+weekly-test-takes-forever-optimized:
+  extends: .base-test
+  variables:
+    MODE: optimized
+    FULLNESS: "-f TAKES_FOREVER"
+  only:
+    variables:
+      - $RELEASE == "weekly"
+  tags:
+    - nsnam
+    - linux

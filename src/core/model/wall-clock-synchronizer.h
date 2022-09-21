@@ -19,8 +19,10 @@
 #ifndef WALL_CLOCK_CLOCK_SYNCHRONIZER_H
 #define WALL_CLOCK_CLOCK_SYNCHRONIZER_H
 
-#include "system-condition.h"
 #include "synchronizer.h"
+
+#include <condition_variable>
+#include <mutex>
 
 /**
  * @file
@@ -62,10 +64,6 @@ namespace ns3 {
  *
  * @todo Add more on jiffies, sleep, processes, etc.
  *
- * @internal
- * Nanosleep takes a <tt>struct timeval</tt> as an input so we have to
- * deal with conversion between Time and @c timeval here.
- * They are both interpreted as elapsed times.
  */
 class WallClockSynchronizer : public Synchronizer
 {
@@ -114,7 +112,8 @@ protected:
    * scheduled event might be before the time we are waiting until, so we have
    * to break out of both the SleepWait and the following SpinWait to go back
    * and reschedule/resynchronize taking the new event into account.  The
-   * SystemCondition we have saved in m_condition takes care of this for us.
+   * condition we have saved in m_condition, along with the condition variable
+   * m_conditionVariable take care of this for us.
    *
    * This call will return if the timeout expires OR if the condition is
    * set @c true by a call to SetCondition (true) followed by a call to
@@ -162,40 +161,17 @@ protected:
    */
   uint64_t GetNormalizedRealtime (void);
 
-  /**
-   * @brief Convert an absolute time in ns to a @c timeval
-   *
-   * @param [in] ns Absolute time in ns.
-   * @param [out] tv Converted @c timeval.
-   */
-  void NsToTimeval (int64_t ns, struct timeval *tv);
-  /**
-   * @brief Convert a @c timeval to absolute time, in ns.
-   *
-   * @param [in] tv The input @c timeval.
-   * @returns The absolute time, in ns.
-   */
-  uint64_t TimevalToNs (struct timeval *tv);
-
-  /**
-   * @brief Add two @c timeval.
-   *
-   * @param [in]  tv1 The first @c timeval.
-   * @param [in]  tv2 The second @c timeval.
-   * @param [out] result The sum of @c tv1 and @c tv2.
-   */
-  void TimevalAdd (
-    struct timeval *tv1,
-    struct timeval *tv2,
-    struct timeval *result);
-
   /** Size of the system clock tick, as reported by @c clock_getres, in ns. */
   uint64_t m_jiffy;
   /** Time recorded by DoEventStart. */
   uint64_t m_nsEventStart;
 
-  /** Thread synchronizer. */
-  SystemCondition m_condition;
+  /** Condition variable for thread synchronizer. */
+  std::condition_variable m_conditionVariable;
+  /** Mutex controlling access to the condition variable. */
+  std::mutex m_mutex;
+  /** The condition state. */
+  bool m_condition;
 };
 
 } // namespace ns3

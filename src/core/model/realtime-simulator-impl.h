@@ -20,7 +20,6 @@
 #define REALTIME_SIMULATOR_IMPL_H
 
 #include "simulator-impl.h"
-#include "system-thread.h"
 
 #include "scheduler.h"
 #include "synchronizer.h"
@@ -29,9 +28,10 @@
 #include "ptr.h"
 #include "assert.h"
 #include "log.h"
-#include "system-mutex.h"
 
 #include <list>
+#include <mutex>
+#include <thread>
 
 /**
  * \file
@@ -112,16 +112,25 @@ public:
 
   /** \copydoc ScheduleWithContext(uint32_t,const Time&,EventImpl*) */
   void ScheduleRealtimeWithContext (uint32_t context, const Time &delay, EventImpl *event);
-  /** \copydoc Schedule(const Time&,EventImpl*) */
+  /**
+   * Schedule a future event execution (in the same context).
+   *
+   * @param [in] delay Delay until the event expires.
+   * @param [in] event The event to schedule.
+   */
   void ScheduleRealtime (const Time &delay, EventImpl *event);
   /**
-   * \copybrief ScheduleNow(EventImpl*)
+   * Schedule an event to run at the current virtual time.
    *
    * \param [in] context Event context.
    * \param [in] event The event to schedule.
    */
   void ScheduleRealtimeNowWithContext (uint32_t context, EventImpl *event);
-  /** \copydoc ScheduleNow(EventImpl*) */
+  /**
+   * Schedule an event to run at the current virtual time.
+   *
+   * @param [in] event The event to schedule.
+   */
   void ScheduleRealtimeNow (EventImpl *event);
   /**
    * Get the current real time from the synchronizer.
@@ -209,7 +218,7 @@ private:
   /**@}*/
 
   /** Mutex to control access to key state. */
-  mutable SystemMutex m_mutex;
+  mutable std::mutex m_mutex;
 
   /** The synchronizer in use to track real time. */
   Ptr<Synchronizer> m_synchronizer;
@@ -220,8 +229,8 @@ private:
   /** The maximum allowable drift from real-time in SYNC_HARD_LIMIT mode. */
   Time m_hardLimit;
 
-  /** Main SystemThread. */
-  SystemThread::ThreadId m_main;
+  /** Main thread. */
+  std::thread::id m_main;
 };
 
 } // namespace ns3

@@ -87,12 +87,17 @@ private:
   virtual TxFormat TrySendingDlMuPpdu (void);
 
   /**
-   * Assign an RU index to all the RUs allocated by the given TXVECTOR. Allocated
-   * RUs must all have the same size, except for allocated central 26-tone RUs.
+   * Compute a TXVECTOR that can be used to construct a Trigger Frame to solicit
+   * transmissions from suitable stations, i.e., stations that have established a
+   * BlockAck agreement with the AP and for which the given predicate returns true.
    *
-   * \param txVector the given TXVECTOR
+   * \tparam Func \deduced the type of the given predicate
+   * \param canBeSolicited a predicate returning false for stations that shall not be solicited
+   * \return a TXVECTOR that can be used to construct a Trigger Frame to solicit
+   *         transmissions from suitable stations
    */
-  void AssignRuIndices (WifiTxVector& txVector);
+  template <class Func>
+  WifiTxVector GetTxVectorForUlMu (Func canBeSolicited);
 
   /**
    * Notify the scheduler that a station associated with the AP
@@ -120,6 +125,28 @@ private:
   };
 
   /**
+   * Finalize the given TXVECTOR by only including the largest subset of the
+   * current set of candidate stations that can be allocated equal-sized RUs
+   * (with the possible exception of using central 26-tone RUs) without
+   * leaving RUs unallocated. The given TXVECTOR must be a MU TXVECTOR and must
+   * contain an HeMuUserInfo entry for each candidate station. The finalized
+   * TXVECTOR contains a subset of such HeMuUserInfo entries. The set of candidate
+   * stations is also updated by removing stations that are not allocated an RU.
+   *
+   * \param txVector the given TXVECTOR
+   */
+  void FinalizeTxVector (WifiTxVector& txVector);
+  /**
+   * Update credits of the stations in the given list considering that a PPDU having
+   * the given duration is being transmitted or solicited by using the given TXVECTOR.
+   *
+   * \param staList the list of stations
+   * \param txDuration the TX duration of the PPDU being transmitted or solicited
+   * \param txVector the TXVECTOR for the PPDU being transmitted or solicited
+   */
+  void UpdateCredits (std::list<MasterInfo>& staList, Time txDuration, const WifiTxVector& txVector);
+
+  /**
    * Information stored for candidate stations
    */
   typedef std::pair<std::list<MasterInfo>::iterator, Ptr<const WifiMacQueueItem>> CandidateInfo;
@@ -131,13 +158,13 @@ private:
   bool m_enableBsrp;                                    //!< send a BSRP before an UL MU transmission
   bool m_useCentral26TonesRus;                          //!< whether to allocate central 26-tone RUs
   uint32_t m_ulPsduSize;                                //!< the size in byte of the solicited PSDU
-  std::map<AcIndex, std::list<MasterInfo>> m_staList;   //!< Per-AC list of stations (next to serve first)
+  std::map<AcIndex, std::list<MasterInfo>> m_staListDl; //!< Per-AC list of stations (next to serve for DL first)
+  std::list<MasterInfo> m_staListUl;                    //!< List of stations to serve for UL
   std::list<CandidateInfo> m_candidates;                //!< Candidate stations for MU TX
   Time m_maxCredits;                                    //!< Max amount of credits a station can have
-  Ptr<WifiMacQueueItem> m_trigger;                      //!< Trigger Frame to send
-  Time m_tbPpduDuration;                                //!< Duration of the solicited TB PPDUs
+  CtrlTriggerHeader m_trigger;                          //!< Trigger Frame to send
+  WifiMacHeader m_triggerMacHdr;                        //!< MAC header for Trigger Frame
   WifiTxParameters m_txParams;                          //!< TX parameters
-  TriggerFrameType m_ulTriggerType;                     //!< Trigger Frame type for UL MU
 };
 
 } //namespace ns3

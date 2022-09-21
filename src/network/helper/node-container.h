@@ -20,7 +20,7 @@
 #ifndef NODE_CONTAINER_H
 #define NODE_CONTAINER_H
 
-#include <stdint.h>
+#include <type_traits>
 #include <vector>
 #include "ns3/node.h"
 
@@ -39,7 +39,21 @@ class NodeContainer
 {
 public:
   /// Node container iterator
-  typedef std::vector<Ptr<Node> >::const_iterator Iterator;
+  typedef std::vector<Ptr<Node>>::const_iterator Iterator;
+
+  /**
+   * \brief Create a NodeContainer that contains a list of _all_ nodes
+   * created through NodeContainer::Create() and stored in the
+   * ns3::NodeList.
+   *
+   * Whenever a Node is created, a Ptr<Node> is added to a global list of all
+   * nodes in the system.  It is sometimes useful to be able to get to all
+   * nodes in one place.  This method creates a NodeContainer that is
+   * initialized to contain all of the simulation nodes,
+   *
+   * \returns a NodeContainer which contains a list of all Nodes.
+   */
+  static NodeContainer GetGlobal ();
 
   /**
    * Create an empty NodeContainer.
@@ -55,9 +69,9 @@ public:
   NodeContainer (Ptr<Node> node);
 
   /**
-   * Create a NodeContainer with exactly one node which has been previously 
-   * instantiated and assigned a name using the Object Name Service.  This 
-   * Node is then specified by its assigned name. 
+   * Create a NodeContainer with exactly one node which has been previously
+   * instantiated and assigned a name using the Object Name Service.  This
+   * Node is then specified by its assigned name.
    *
    * \param nodeName The name of the Node Object to add to the container.
    */
@@ -66,99 +80,45 @@ public:
   /**
    * Create a NodeContainer with the requested number of Nodes.
    *
-   * This is syntatic sugar for
+   * This is syntactic sugar for
    *
-   *     NodeContainer nodes;
-   *     nodes.Create (size);
-   *     // or nodes.Create (size, systemId);
+   * \code
+   *   NodeContainer nodes;
+   *   nodes.Create (size);
+   *   // or nodes.Create (size, systemId);
+   * \endcode
    *
    * \param [in] n The number of nodes to create.
    * \param [in] systemId The system id or rank associated with this node
    */
-  NodeContainer (uint32_t n, uint32_t systemId = 0);
-  
-  /**
-   * Create a node container which is a concatenation of two input
-   * NodeContainers.
-   *
-   * \param a The first NodeContainer
-   * \param b The second NodeContainer
-   *
-   * \note A frequently seen idiom that uses these constructors involves the
-   * implicit conversion by constructor of Ptr<Node>.  When used, two 
-   * Ptr<Node> will be passed to this constructor instead of NodeContainer&.
-   * C++ will notice the implicit conversion path that goes through the 
-   * NodeContainer (Ptr<Node> node) constructor above.  Using this conversion
-   * one may provide optionally provide arguments of Ptr<Node> to these 
-   * constructors.
-   */
-  NodeContainer (const NodeContainer &a, const NodeContainer &b);
+  explicit NodeContainer (uint32_t n, uint32_t systemId = 0);
 
   /**
-   * Create a node container which is a concatenation of three input
+   * Create a node container which is a concatenation of multiple input
    * NodeContainers.
    *
-   * \param a The first NodeContainer
-   * \param b The second NodeContainer
-   * \param c The third NodeContainer
+   * \tparam Ts \deduced Template type parameter pack for the multiple
+   *         NodeContainers
+   * \param nc The first NodeContainer
+   * \param args The remaining NodeContainers
    *
    * \note A frequently seen idiom that uses these constructors involves the
-   * implicit conversion by constructor of Ptr<Node>.  When used, two 
-   * Ptr<Node> will be passed to this constructor instead of NodeContainer&.
-   * C++ will notice the implicit conversion path that goes through the 
+   * implicit conversion by constructor of Ptr<Node>.  When used, Ptr<Node>
+   * will be passed to this constructor instead of NodeContainer&.
+   * C++ will notice the implicit conversion path that goes through the
    * NodeContainer (Ptr<Node> node) constructor above.  Using this conversion
-   * one may provide optionally provide arguments of Ptr<Node> to these 
-   * constructors.
+   * one may optionally provide arguments of Ptr<Node> to these constructors.
    */
-  NodeContainer (const NodeContainer &a, const NodeContainer &b, const NodeContainer &c);
+  template <typename... Ts>
+  NodeContainer (const NodeContainer& nc, Ts&&... args);
 
   /**
-   * Create a node container which is a concatenation of four input
-   * NodeContainers.
-   *
-   * \param a The first NodeContainer
-   * \param b The second NodeContainer
-   * \param c The third NodeContainer
-   * \param d The fourth NodeContainer
-   *
-   * \note A frequently seen idiom that uses these constructors involves the
-   * implicit conversion by constructor of Ptr<Node>.  When used, two 
-   * Ptr<Node> will be passed to this constructor instead of NodeContainer&.
-   * C++ will notice the implicit conversion path that goes through the 
-   * NodeContainer (Ptr<Node> node) constructor above.  Using this conversion
-   * one may provide optionally provide arguments of Ptr<Node> to these 
-   * constructors.
-   */
-  NodeContainer (const NodeContainer &a, const NodeContainer &b, const NodeContainer &c, const NodeContainer &d);
-
-  /**
-   * Create a node container which is a concatenation of five input
-   * NodeContainers.
-   *
-   * \param a The first NodeContainer
-   * \param b The second NodeContainer
-   * \param c The third NodeContainer
-   * \param d The fourth NodeContainer
-   * \param e The fifth NodeContainer
-   *
-   * \note A frequently seen idiom that uses these constructors involves the
-   * implicit conversion by constructor of Ptr<Node>.  When used, two 
-   * Ptr<Node> will be passed to this constructor instead of NodeContainer&.
-   * C++ will notice the implicit conversion path that goes through the 
-   * NodeContainer (Ptr<Node> node) constructor above.  Using this conversion
-   * one may provide optionally provide arguments of Ptr<Node> to these 
-   * constructors.
-   */
-  NodeContainer (const NodeContainer &a, const NodeContainer &b, const NodeContainer &c, const NodeContainer &d,
-                 const NodeContainer &e);
-
-  /**
-   * \brief Get an iterator which refers to the first Node in the 
+   * \brief Get an iterator which refers to the first Node in the
    * container.
    *
    * Nodes can be retrieved from the container in two ways.  First,
    * directly by an index into the container, and second, using an iterator.
-   * This method is used in the iterator method and is typically used in a 
+   * This method is used in the iterator method and is typically used in a
    * for-loop to run through the Nodes
    *
    * \code
@@ -174,12 +134,12 @@ public:
   Iterator Begin (void) const;
 
   /**
-   * \brief Get an iterator which indicates past-the-last Node in the 
+   * \brief Get an iterator which indicates past-the-last Node in the
    * container.
    *
    * Nodes can be retrieved from the container in two ways.  First,
    * directly by an index into the container, and second, using an iterator.
-   * This method is used in the iterator method and is typically used in a 
+   * This method is used in the iterator method and is typically used in a
    * for-loop to run through the Nodes
    *
    * \code
@@ -205,9 +165,9 @@ public:
    *
    * \code
    *   uint32_t nNodes = container.GetN ();
-   *   for (uint32_t i = 0 i < nNodes; ++i)
+   *   for (uint32_t i = 0; i < nNodes; ++i)
    *     {
-   *       Ptr<Node> p = container.Get (i)
+   *       Ptr<Node> p = container.Get (i);
    *       i->method ();  // some Node method
    *     }
    * \endcode
@@ -223,13 +183,13 @@ public:
    * Nodes can be retrieved from the container in two ways.  First,
    * directly by an index into the container, and second, using an iterator.
    * This method is used in the direct method and is used to retrieve the
-   * indexed Ptr<Appliation>.
+   * indexed Ptr<Node>.
    *
    * \code
    *   uint32_t nNodes = container.GetN ();
-   *   for (uint32_t i = 0 i < nNodes; ++i)
+   *   for (uint32_t i = 0; i < nNodes; ++i)
    *     {
-   *       Ptr<Node> p = container.Get (i)
+   *       Ptr<Node> p = container.Get (i);
    *       i->method ();  // some Node method
    *     }
    * \endcode
@@ -240,7 +200,7 @@ public:
   Ptr<Node> Get (uint32_t i) const;
 
   /**
-   * \brief Create n nodes and append pointers to them to the end of this 
+   * \brief Create n nodes and append pointers to them to the end of this
    * NodeContainer.
    *
    * Nodes are at the heart of any ns-3 simulation.  One of the first tasks that
@@ -252,12 +212,12 @@ public:
   void Create (uint32_t n);
 
   /**
-   * \brief Create n nodes with specified systemId for distributed simulations 
+   * \brief Create n nodes with specified systemId for distributed simulations
    * and append pointers to them to the end of this NodeContainer.
    *
    * Nodes are at the heart of any ns-3 simulation.  One of the first tasks that
    * any simulation needs to do is to create a number of nodes.  This method
-   * automates that task, and adds the ability to specify systemId for 
+   * automates that task, and adds the ability to specify systemId for
    * distributed simulations.
    *
    * \param n The number of Nodes to create
@@ -269,9 +229,21 @@ public:
    * \brief Append the contents of another NodeContainer to the end of
    * this container.
    *
-   * \param other The NodeContainer to append.
+   * \param nc The NodeContainer to append.
    */
-  void Add (NodeContainer other);
+  void Add (const NodeContainer& nc);
+
+  /**
+   * \brief Append the contents of another NodeContainer to the end of
+   * this container.
+   *
+   * \tparam Ts \deduced Template type parameter pack for the multiple
+   *         NodeContainer
+   * \param nc The NodeContainer to append
+   * \param args The remaining NodeContainers to append
+   */
+  template <typename... Ts>
+  void Add (const NodeContainer& nc, Ts&&... args);
 
   /**
    * \brief Append a single Ptr<Node> to this container.
@@ -289,30 +261,44 @@ public:
   void Add (std::string nodeName);
 
   /**
-   * \brief Create a NodeContainer that contains a list of _all_ nodes
-   * created through NodeContainer::Create() and stored in the 
-   * ns3::NodeList.
-   *
-   * Whenever a Node is created, a Ptr<Node> is added to a global list of all
-   * nodes in the system.  It is sometimes useful to be able to get to all
-   * nodes in one place.  This method creates a NodeContainer that is 
-   * initialized to contain all of the simulation nodes,
-   *
-   * \returns a NoceContainer which contains a list of all Nodes.
-   */
-  static NodeContainer GetGlobal (void);
-
-  /**
    * \brief Return true if container contains a Node with index id
    *
-   * \return whether the NodeContainer contains a node with index id
    * \param id Node Id
+   * \return whether the NodeContainer contains a node with index id
    */
   bool Contains (uint32_t id) const;
 
 private:
-  std::vector<Ptr<Node> > m_nodes; //!< Nodes smart pointers
+  std::vector<Ptr<Node>> m_nodes; //!< Nodes smart pointers
 };
+
+} // namespace ns3
+
+///////////////////////////////////////////////////////////
+// Implementation of the templates declared above
+///////////////////////////////////////////////////////////
+
+namespace ns3 {
+
+template <typename... Ts>
+NodeContainer::NodeContainer (const NodeContainer& nc, Ts&&... args)
+{
+  static_assert (std::conjunction_v<std::is_convertible<Ts, NodeContainer>...>,
+                 "Variable types are not convertible to NodeContainer");
+
+  Add (nc, std::forward<Ts> (args)...);
+}
+
+template <typename... Ts>
+void
+NodeContainer::Add (const NodeContainer& nc, Ts&&... args)
+{
+  static_assert (std::conjunction_v<std::is_convertible<Ts, NodeContainer>...>,
+                 "Variable types are not convertible to NodeContainer");
+
+  Add (nc);
+  Add (std::forward<Ts> (args)...);
+}
 
 } // namespace ns3
 

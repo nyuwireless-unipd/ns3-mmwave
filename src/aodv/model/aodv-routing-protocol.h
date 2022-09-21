@@ -20,7 +20,7 @@
  *      tuned by Samir Das and Mahesh Marina, University of Cincinnati;
  *
  *      AODV-UU implementation by Erik Nordström of Uppsala University
- *      http://core.it.uu.se/core/index.php/AODV-UU
+ *      https://web.archive.org/web/20100527072022/http://core.it.uu.se/core/index.php/AODV-UU
  *
  * Authors: Elena Buchatskaia <borovkovaes@iitp.ru>
  *          Pavel Boyko <boyko@iitp.ru>
@@ -269,7 +269,7 @@ private:
    * \param header the IP header
    * \param ucb the UnicastForwardCallback function
    * \param ecb the ErrorCallback function
-   */ 
+   */
   void DeferredRouteOutput (Ptr<const Packet> p, const Ipv4Header & header, UnicastForwardCallback ucb, ErrorCallback ecb);
   /**
    * If route exists and is valid, forward packet.
@@ -279,7 +279,7 @@ private:
    * \param ucb the UnicastForwardCallback function
    * \param ecb the ErrorCallback function
    * \returns true if forwarded
-   */ 
+   */
   bool Forwarding (Ptr<const Packet> p, const Ipv4Header & header, UnicastForwardCallback ucb, ErrorCallback ecb);
   /**
    * Repeated attempts by a source node at route discovery for a single destination
@@ -322,7 +322,7 @@ private:
   Ptr<Socket> FindSubnetBroadcastSocketWithInterfaceAddress (Ipv4InterfaceAddress iface) const;
   /**
    * Process hello message
-   * 
+   *
    * \param rrepHeader RREP message header
    * \param receiverIfaceAddr receiver interface IP address
    */

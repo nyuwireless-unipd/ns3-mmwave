@@ -77,6 +77,7 @@ public:
    * Constructor
    *
    * \param rrc ENB RRC
+   * \param componentCarrierId
    */
   EnbRrcMemberLteEnbCmacSapUser (LteEnbRrc* rrc, uint8_t componentCarrierId);
 
@@ -610,7 +611,7 @@ UeManager::ReleaseDataRadioBearer (uint8_t drbid)
   msg.haveMobilityControlInfo = false;
   msg.radioResourceConfigDedicated = rrcd;
   msg.haveRadioResourceConfigDedicated = true;
-  // ToDo: Resend in eny case this configuration
+  // ToDo: Resend in any case this configuration
   // needs to be initialized
   msg.haveNonCriticalExtension = false;
   //RRC Connection Reconfiguration towards UE
@@ -757,7 +758,7 @@ UeManager::MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < L
   bool end_1_reached = false;
   bool end_2_reached = false;
   while (it_1 != first.end() && it_2 != second.end()){
-    while ((*it_1).m_pdu == 0){
+    while (!((*it_1).m_pdu)){
       ++it_1;
       if(it_1 == first.end())
       {
@@ -765,7 +766,7 @@ UeManager::MergeBuffers(std::vector < LteRlcAm::RetxPdu > first, std::vector < L
         break;
       }
     }
-    while ((*it_2).m_pdu == 0){
+    while (!((*it_2).m_pdu)){
       ++it_2;
       if(it_2 == second.end())
       {
@@ -852,7 +853,7 @@ UeManager::RecvHandoverRequestAck (EpcX2SapUser::HandoverRequestAckParams params
         ++drbIt)
     {
       // SN status transfer is only for AM RLC
-      if (0 != drbIt->second->m_rlc->GetObject<LteRlcAm> ())
+      if (drbIt->second->m_rlc->GetObject<LteRlcAm> ())
         {
           LtePdcp::Status status = drbIt->second->m_pdcp->GetStatus ();
           EpcX2Sap::ErabsSubjectToStatusTransferItem i;
@@ -906,7 +907,7 @@ void
 UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTeid, bool mcLteToMmWaveForwarding, bool mcMmToMmWaveForwarding, uint8_t bid)
 {
   // RlcBuffers forwarding only for RlcAm bearers.
-  if (0 != rlc->GetObject<LteRlcAm> ())
+  if (rlc->GetObject<LteRlcAm> ())
   {
     //Copy lte-rlc-am.m_txOnBuffer to X2 forwarding buffer.
     Ptr<LteRlcAm> rlcAm = rlc->GetObject<LteRlcAm>();
@@ -968,7 +969,7 @@ UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTei
         NS_LOG_DEBUG (" *** SIZE = " << rlcAmTransmittingBuffer.size());
         for (std::map< uint32_t, Ptr<Packet> >::iterator it = rlcAmTransmittingBuffer.begin(); it != rlcAmTransmittingBuffer.end(); ++it)
         {
-          if (it->second != 0)
+          if (it->second)
           {
             NS_LOG_DEBUG ( this << " add to forwarding buffer SEQ = " << it->first << " Ptr<Packet> = " << it->second );
             m_x2forwardingBuffer.push_back(it->second);
@@ -1022,14 +1023,14 @@ UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTei
   //However, as the LTE-UMTS book, PDCP txbuffer should be forwarded for seamless
   //HO. Enable this code for txbuffer forwarding in seamless HO (which is believe to
   //be correct).
-  else if (0 != rlc->GetObject<LteRlcUm> ())
+  else if (rlc->GetObject<LteRlcUm> ())
   {
     //Copy lte-rlc-um.m_txOnBuffer to X2 forwarding buffer.
     NS_LOG_DEBUG(this << " Copying txonBuffer from RLC UM " << m_rnti);
     m_x2forwardingBuffer = rlc->GetObject<LteRlcUm>()->GetTxBuffer();
     m_x2forwardingBufferSize =  rlc->GetObject<LteRlcUm>()->GetTxBufferSize();
   }
-  else if (0 != rlc->GetObject<LteRlcUmLowLat> ())
+  else if (rlc->GetObject<LteRlcUmLowLat> ())
   {
     //Copy lte-rlc-um-low-lat.m_txOnBuffer to X2 forwarding buffer.
     NS_LOG_DEBUG(this << " Copying txonBuffer from RLC UM " << m_rnti);
@@ -1045,7 +1046,7 @@ UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTei
   if(mcLteToMmWaveForwarding)
   {
     mcPdcp = DynamicCast<McEnbPdcp>(pdcp);
-    NS_ASSERT_MSG(mcPdcp != 0, "Invalid option for standard PDCP");
+    NS_ASSERT_MSG(mcPdcp, "Invalid option for standard PDCP");
     NS_ASSERT_MSG(bid > 0, "Bid can't be 0");
     NS_ASSERT_MSG(mcPdcp->GetUseMmWaveConnection(), "The McEnbPdcp is not forwarding data to the mmWave eNB, check if the switch happened!");
   }
@@ -1122,7 +1123,7 @@ UeManager::ForwardRlcBuffers(Ptr<LteRlc> rlc, Ptr<LtePdcp> pdcp, uint32_t gtpTei
         {
           rlcSdu->RemoveHeader(pdcpHeader); //remove pdcp header
           NS_LOG_INFO("Forward to mmWave cell in switch");
-          NS_ASSERT(mcPdcp != 0);
+          NS_ASSERT(mcPdcp);
           NS_ASSERT(mcPdcp->GetUseMmWaveConnection());
           LtePdcpSapProvider::TransmitPdcpSduParameters pdcpParams;
           pdcpParams.pdcpSdu = rlcSdu;
@@ -1600,7 +1601,7 @@ UeManager::RecvRrcConnectionReconfigurationCompleted (LteRrcSap::RrcConnectionRe
             {
               bool useMmWaveConnection = true;
               Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp>(it->second->m_pdcp);
-              if(pdcp != 0)
+              if(pdcp)
               {
                 pdcp->SwitchConnection(useMmWaveConnection);
                 m_rrc->m_lastMmWaveCell[m_imsi] = m_mmWaveCellId;
@@ -1860,7 +1861,7 @@ UeManager::RecvRrcSecondaryCellInitialAccessSuccessful(uint16_t mmWaveRnti, uint
       if(!(it->second->m_isMc) || (it->second->m_isMc && m_rrc->m_lastMmWaveCell.find(m_imsi)->second != m_mmWaveCellId))
       {
         Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp> (it->second->m_pdcp);
-        if (pdcp != 0)
+        if (pdcp)
         {
           // Get the EPC X2 and set it in the PDCP
           pdcp->SetEpcX2PdcpProvider(m_rrc->GetEpcX2PdcpProvider());
@@ -1915,7 +1916,7 @@ UeManager::RecvSecondaryCellHandoverCompleted(EpcX2Sap::SecondaryHandoverComplet
     if(!(it->second->m_isMc) || (it->second->m_isMc && m_rrc->m_lastMmWaveCell.find(m_imsi)->second != m_mmWaveCellId))
     {
       Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp> (it->second->m_pdcp);
-      if (pdcp != 0)
+      if (pdcp)
       {
         // Updated UeDataParams in the PDCP instance
         EpcX2Sap::UeDataParams params;
@@ -1977,7 +1978,7 @@ UeManager::SendRrcConnectionSwitch(bool useMmWaveConnection)
     {
       drbidVector.push_back(it->first);
       Ptr<McEnbPdcp> pdcp = DynamicCast<McEnbPdcp>(it->second->m_pdcp);
-      if(pdcp != 0)
+      if(pdcp)
       {
         //m_rrc->m_x2SapProvider->
         pdcp->SwitchConnection(useMmWaveConnection);
@@ -2320,9 +2321,10 @@ UeManager::BuildRrcConnectionReconfiguration ()
 LteRrcSap::RadioResourceConfigDedicated
 UeManager::BuildRadioResourceConfigDedicated ()
 {
+  NS_LOG_FUNCTION (this);
   LteRrcSap::RadioResourceConfigDedicated rrcd;
 
-  if (m_srb1 != 0)
+  if (m_srb1)
     {
       LteRrcSap::SrbToAddMod stam;
       stam.srbIdentity = m_srb1->m_srbIdentity;
@@ -2369,6 +2371,7 @@ UeManager::BuildRadioResourceConfigDedicated ()
 uint8_t
 UeManager::GetNewRrcTransactionIdentifier ()
 {
+  NS_LOG_FUNCTION (this);
   ++m_lastRrcTransactionIdentifier;
   m_lastRrcTransactionIdentifier %= 4;
   return m_lastRrcTransactionIdentifier;
@@ -5018,7 +5021,7 @@ LteEnbRrc::DoTriggerHandover (uint16_t rnti, uint16_t targetCellId)
   bool isHandoverAllowed = true;
 
   Ptr<UeManager> ueManager = GetUeManager (rnti);
-  NS_ASSERT_MSG (ueManager != 0, "Cannot find UE context with RNTI " << rnti);
+  NS_ASSERT_MSG (ueManager, "Cannot find UE context with RNTI " << rnti);
 
   if (m_anrSapProvider != 0)
     {

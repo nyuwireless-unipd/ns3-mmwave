@@ -27,26 +27,28 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("WifiPpdu");
 
-WifiPpdu::WifiPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, uint64_t uid /* = UINT64_MAX */)
+WifiPpdu::WifiPpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, uint16_t txCenterFreq, uint64_t uid /* = UINT64_MAX */)
   : m_preamble (txVector.GetPreambleType ()),
     m_modulation (txVector.IsValid () ? txVector.GetModulationClass () : WIFI_MOD_CLASS_UNKNOWN),
+    m_txCenterFreq (txCenterFreq),
     m_uid (uid),
     m_truncatedTx (false),
     m_txPowerLevel (txVector.GetTxPowerLevel ())
 {
-  NS_LOG_FUNCTION (this << *psdu << txVector << uid);
+  NS_LOG_FUNCTION (this << *psdu << txVector << txCenterFreq << uid);
   m_psdus.insert (std::make_pair (SU_STA_ID, psdu));
 }
 
-WifiPpdu::WifiPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, uint64_t uid)
+WifiPpdu::WifiPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, uint16_t txCenterFreq, uint64_t uid)
   : m_preamble (txVector.GetPreambleType ()),
     m_modulation (txVector.IsValid () ? txVector.GetMode (psdus.begin()->first).GetModulationClass () : WIFI_MOD_CLASS_UNKNOWN),
+    m_txCenterFreq (txCenterFreq),
     m_uid (uid),
     m_truncatedTx (false),
     m_txPowerLevel (txVector.GetTxPowerLevel ()),
     m_txAntennas (txVector.GetNTx ())
 {
-  NS_LOG_FUNCTION (this << psdus << txVector << uid);
+  NS_LOG_FUNCTION (this << psdus << txVector << txCenterFreq << uid);
   m_psdus = psdus;
 }
 
@@ -107,23 +109,60 @@ WifiPpdu::GetTransmissionChannelWidth (void) const
 }
 
 bool
-WifiPpdu::CanBeReceived (uint16_t txCenterFreq, uint16_t p20MinFreq,
-                              uint16_t p20MaxFreq) const
+WifiPpdu::DoesOverlapChannel (uint16_t minFreq, uint16_t maxFreq) const
 {
-  NS_LOG_FUNCTION (this << txCenterFreq << p20MinFreq << p20MaxFreq);
-
+  NS_LOG_FUNCTION (this << m_txCenterFreq << minFreq << maxFreq);
   uint16_t txChannelWidth = GetTxVector ().GetChannelWidth ();
-  uint16_t minTxFreq = txCenterFreq - txChannelWidth / 2;
-  uint16_t maxTxFreq = txCenterFreq + txChannelWidth / 2;
+  uint16_t minTxFreq = m_txCenterFreq - txChannelWidth / 2;
+  uint16_t maxTxFreq = m_txCenterFreq + txChannelWidth / 2;
+  /**
+   * The PPDU does not overlap the channel in two cases.
+   *
+   * First non-overlapping case:
+   *
+   *                                        ┌─────────┐
+   *                                PPDU    │ Nominal │
+   *                                        │  Band   │
+   *                                        └─────────┘
+   *                                   minTxFreq   maxTxFreq
+   *
+   *       minFreq                       maxFreq
+   *         ┌──────────────────────────────┐
+   *         │           Channel            │
+   *         └──────────────────────────────┘
+   *
+   * Second non-overlapping case:
+   *
+   *         ┌─────────┐
+   * PPDU    │ Nominal │
+   *         │  Band   │
+   *         └─────────┘
+   *    minTxFreq   maxTxFreq
+   *
+   *                 minFreq                       maxFreq
+   *                   ┌──────────────────────────────┐
+   *                   │           Channel            │
+   *                   └──────────────────────────────┘
+   */
+  if (minTxFreq >= maxFreq || maxTxFreq <= minFreq)
+    {
+      return false;
+    }
+  return true;
+}
 
-  if (minTxFreq > p20MinFreq || maxTxFreq < p20MaxFreq)
+bool
+WifiPpdu::CanBeReceived (uint16_t p20MinFreq, uint16_t p20MaxFreq) const
+{
+  NS_LOG_FUNCTION (this << p20MinFreq << p20MaxFreq);
+  const bool overlap = DoesOverlapChannel (p20MinFreq, p20MaxFreq);
+  if (!overlap)
     {
       NS_LOG_INFO ("Received PPDU does not overlap with the primary20 channel");
       return false;
     }
   return true;
 }
-
 
 uint64_t
 WifiPpdu::GetUid (void) const
@@ -179,7 +218,7 @@ Ptr<WifiPpdu>
 WifiPpdu::Copy (void) const
 {
   NS_FATAL_ERROR ("This method should not be called for the base WifiPpdu class. Use the overloaded version in the amendment-specific PPDU subclasses instead!");
-  return Create<WifiPpdu> (GetPsdu (), GetTxVector ());
+  return Create<WifiPpdu> (GetPsdu (), GetTxVector (), m_txCenterFreq);
 }
 
 std::ostream & operator << (std::ostream &os, const Ptr<const WifiPpdu> &ppdu)

@@ -26,6 +26,7 @@
 #include <ostream>
 #include "ns3/fatal-error.h"
 #include "ns3/ptr.h"
+#include "wifi-standards.h"
 
 /**
  * \file
@@ -74,7 +75,9 @@ enum WifiPreamble
   WIFI_PREAMBLE_HE_SU,
   WIFI_PREAMBLE_HE_ER_SU,
   WIFI_PREAMBLE_HE_MU,
-  WIFI_PREAMBLE_HE_TB
+  WIFI_PREAMBLE_HE_TB,
+  WIFI_PREAMBLE_EHT_MU,
+  WIFI_PREAMBLE_EHT_TB
 };
 
 /**
@@ -106,6 +109,10 @@ inline std::ostream& operator<< (std::ostream &os, const WifiPreamble &preamble)
         return (os << "HE_MU");
       case WIFI_PREAMBLE_HE_TB:
         return (os << "HE_TB");
+      case WIFI_PREAMBLE_EHT_MU:
+        return (os << "EHT_MU");
+      case WIFI_PREAMBLE_EHT_TB:
+        return (os << "EHT_TB");
       default:
         NS_FATAL_ERROR ("Invalid preamble");
         return (os << "INVALID");
@@ -129,7 +136,8 @@ enum WifiModulationClass
   WIFI_MOD_CLASS_OFDM,     //!< OFDM (Clause 17)
   WIFI_MOD_CLASS_HT,       //!< HT (Clause 19)
   WIFI_MOD_CLASS_VHT,      //!< VHT (Clause 22)
-  WIFI_MOD_CLASS_HE        //!< HE (Clause 27)
+  WIFI_MOD_CLASS_HE,       //!< HE (Clause 27)
+  WIFI_MOD_CLASS_EHT       //!< EHT (Clause 36)
 };
 
 /**
@@ -157,6 +165,8 @@ inline std::ostream& operator<< (std::ostream &os, const WifiModulationClass &mo
         return (os << "VHT");
       case WIFI_MOD_CLASS_HE:
         return (os << "HE");
+      case WIFI_MOD_CLASS_EHT:
+        return (os << "EHT");
       default:
         NS_FATAL_ERROR ("Unknown modulation");
         return (os << "unknown");
@@ -187,6 +197,8 @@ enum WifiPpduField
   WIFI_PPDU_FIELD_TRAINING, //!< STF + LTF fields (excluding those in preamble for HT-GF)
   WIFI_PPDU_FIELD_SIG_A,    //!< SIG-A field
   WIFI_PPDU_FIELD_SIG_B,    //!< SIG-B field
+  WIFI_PPDU_FIELD_U_SIG,    //!< U-SIG field
+  WIFI_PPDU_FIELD_EHT_SIG,  //!< EHT-SIG field
   WIFI_PPDU_FIELD_DATA      //!< data field
 };
 
@@ -213,6 +225,10 @@ inline std::ostream& operator<< (std::ostream &os, const WifiPpduField &field)
         return (os << "SIG-A");
       case WIFI_PPDU_FIELD_SIG_B:
         return (os << "SIG-B");
+      case WIFI_PPDU_FIELD_U_SIG:
+        return (os << "U-SIG");
+      case WIFI_PPDU_FIELD_EHT_SIG:
+        return (os << "EHT-SIG");
       case WIFI_PPDU_FIELD_DATA:
         return (os << "data");
       default:
@@ -267,6 +283,8 @@ enum WifiPhyRxfailureReason
   RXING,
   TXING,
   SLEEPING,
+  POWERED_OFF,
+  TRUNCATED_TX,
   BUSY_DECODING_PREAMBLE,
   PREAMBLE_DETECT_FAILURE,
   RECEPTION_ABORTED_BY_TX,
@@ -274,6 +292,8 @@ enum WifiPhyRxfailureReason
   HT_SIG_FAILURE,
   SIG_A_FAILURE,
   SIG_B_FAILURE,
+  U_SIG_FAILURE,
+  EHT_SIG_FAILURE,
   PREAMBLE_DETECTION_PACKET_SWITCH,
   FRAME_CAPTURE_PACKET_SWITCH,
   OBSS_PD_CCA_RESET,
@@ -302,6 +322,10 @@ inline std::ostream& operator<< (std::ostream &os, const WifiPhyRxfailureReason 
         return (os << "TXING");
       case SLEEPING:
         return (os << "SLEEPING");
+      case POWERED_OFF:
+        return (os << "OFF");
+      case TRUNCATED_TX:
+        return (os << "TRUNCATED_TX");
       case BUSY_DECODING_PREAMBLE:
         return (os << "BUSY_DECODING_PREAMBLE");
       case PREAMBLE_DETECT_FAILURE:
@@ -316,6 +340,10 @@ inline std::ostream& operator<< (std::ostream &os, const WifiPhyRxfailureReason 
         return (os << "SIG_A_FAILURE");
       case SIG_B_FAILURE:
         return (os << "SIG_B_FAILURE");
+      case U_SIG_FAILURE:
+        return (os << "U_SIG_FAILURE");
+      case EHT_SIG_FAILURE:
+        return (os << "EHT_SIG_FAILURE");
       case PREAMBLE_DETECTION_PACKET_SWITCH:
         return (os << "PREAMBLE_DETECTION_PACKET_SWITCH");
       case FRAME_CAPTURE_PACKET_SWITCH:
@@ -329,6 +357,44 @@ inline std::ostream& operator<< (std::ostream &os, const WifiPhyRxfailureReason 
       case UNKNOWN:
       default:
         NS_FATAL_ERROR ("Unknown reason");
+        return (os << "UNKNOWN");
+    }
+}
+
+/**
+ * \ingroup wifi
+ * Enumeration of the possible channel-list parameter elements
+ * defined in Table 8-5 of IEEE 802.11-2016.
+ */
+enum WifiChannelListType : uint8_t
+{
+    WIFI_CHANLIST_PRIMARY = 0,
+    WIFI_CHANLIST_SECONDARY,
+    WIFI_CHANLIST_SECONDARY40,
+    WIFI_CHANLIST_SECONDARY80
+};
+
+/**
+ * \brief Stream insertion operator.
+ *
+ * \param os the stream
+ * \param type the wifi channel list type
+ * \returns a reference to the stream
+ */
+inline std::ostream& operator<< (std::ostream &os, WifiChannelListType type)
+{
+  switch (type)
+    {
+      case WIFI_CHANLIST_PRIMARY:
+        return (os << "PRIMARY");
+      case WIFI_CHANLIST_SECONDARY:
+        return (os << "SECONDARY");
+      case WIFI_CHANLIST_SECONDARY40:
+        return (os << "SECONDARY40");
+      case WIFI_CHANLIST_SECONDARY80:
+        return (os << "SECONDARY80");
+      default:
+        NS_FATAL_ERROR ("Unknown wifi channel type");
         return (os << "UNKNOWN");
     }
 }
@@ -365,15 +431,28 @@ uint16_t ConvertGuardIntervalToNanoSeconds (WifiMode mode, bool htShortGuardInte
 WifiPreamble GetPreambleForTransmission (WifiModulationClass modulation, bool useShortPreamble);
 
 /**
- * Return the channel width that corresponds to the selected mode (instead of
- * letting the PHY's default channel width). This is especially useful when using
- * non-HT modes with HT/VHT/HE capable stations (with default width above 20 MHz).
+ * Return the channel width that is allowed based on the selected mode and the given
+ * maximum channel width. This is especially useful when using non-HT modes with
+ * HT/VHT/HE capable stations (with default width above 20 MHz).
  *
  * \param mode selected WifiMode
- * \param maxSupportedChannelWidth maximum channel width supported by the PHY layer
+ * \param maxAllowedChannelWidth maximum channel width allowed for the transmission
  * \return channel width adapted to the selected mode
  */
-uint16_t GetChannelWidthForTransmission (WifiMode mode, uint16_t maxSupportedChannelWidth);
+uint16_t GetChannelWidthForTransmission (WifiMode mode, uint16_t maxAllowedChannelWidth);
+/**
+ * Return the channel width that is allowed based on the selected mode, the current
+ * width of the operating channel and the maximum channel width supported by the
+ * receiver. This is especially useful when using non-HT modes with HT/VHT/HE
+ * capable stations (with default width above 20 MHz).
+ *
+ * \param mode selected WifiMode
+ * \param operatingChannelWidth operating channel width
+ * \param maxSupportedChannelWidth maximum channel width supported by the receiver
+ * \return channel width adapted to the selected mode
+ */
+uint16_t GetChannelWidthForTransmission (WifiMode mode, uint16_t operatingChannelWidth,
+                                         uint16_t maxSupportedChannelWidth);
 
 /**
  * Return whether the modulation class of the selected mode for the
@@ -421,6 +500,14 @@ bool IsDlMu (WifiPreamble preamble);
  * \return true if the provided preamble corresponds to a uplink multi-user transmission
  */
 bool IsUlMu (WifiPreamble preamble);
+
+/**
+ * Return the modulation class corresponding to a given standard.
+ *
+ * \param standard the standard
+ * \return the modulation class corresponding to the standard
+ */
+WifiModulationClass GetModulationClassForStandard (WifiStandard standard);
 
 } //namespace ns3
 

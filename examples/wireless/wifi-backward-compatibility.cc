@@ -22,6 +22,8 @@
 #include "ns3/config.h"
 #include "ns3/uinteger.h"
 #include "ns3/boolean.h"
+#include "ns3/enum.h"
+#include "ns3/tuple.h"
 #include "ns3/log.h"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/ssid.h"
@@ -37,57 +39,73 @@
 // network where the AP and the station use different 802.11 standards.
 //
 // It outputs the throughput for a given configuration: user can specify
-// the 802.11 versions for the AT and the station as well as their rate
+// the 802.11 versions for the AP and the station as well as their rate
 // adaptation algorithms. It also allows to decide whether the station,
 // the AP or both has/have traffic to send.
 //
 // Example for an IEEE 802.11ac station sending traffic to an 802.11a AP using Ideal rate adaptation algorithm:
-// ./waf --run "wifi-backward-compatibility --apVersion=80211a --staVersion=80211ac --staRaa=Ideal"
+// ./ns3 run "wifi-backward-compatibility --apVersion=80211a --staVersion=80211ac --staRaa=Ideal"
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("wifi-backward-compatibility");
 
-WifiStandard ConvertStringToStandard (std::string version)
+/**
+ * Convert a string (e.g., "80211a") to a pair {WifiStandard, WifiPhyBand}
+ *
+ * \param version The WiFi standard version.
+ * \return a pair of WifiStandard, WifiPhyBand
+ */
+std::pair<WifiStandard, WifiPhyBand> ConvertStringToStandardAndBand (std::string version)
 {
   WifiStandard standard = WIFI_STANDARD_80211a;
+  WifiPhyBand band = WIFI_PHY_BAND_5GHZ;
   if (version == "80211a")
     {
       standard = WIFI_STANDARD_80211a;
+      band = WIFI_PHY_BAND_5GHZ;
     }
   else if (version == "80211b")
     {
       standard = WIFI_STANDARD_80211b;
+      band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (version == "80211g")
     {
       standard = WIFI_STANDARD_80211g;
+      band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (version == "80211p")
     {
       standard = WIFI_STANDARD_80211p;
+      band = WIFI_PHY_BAND_5GHZ;
     }
   else if (version == "80211n_2_4GHZ")
     {
-      standard = WIFI_STANDARD_80211n_2_4GHZ;
+      standard = WIFI_STANDARD_80211n;
+      band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (version == "80211n_5GHZ")
     {
-      standard = WIFI_STANDARD_80211n_5GHZ;
+      standard = WIFI_STANDARD_80211n;
+      band = WIFI_PHY_BAND_5GHZ;
     }
   else if (version == "80211ac")
     {
       standard = WIFI_STANDARD_80211ac;
+      band = WIFI_PHY_BAND_5GHZ;
     }
   else if (version == "80211ax_2_4GHZ")
     {
-      standard = WIFI_STANDARD_80211ax_2_4GHZ;
+      standard = WIFI_STANDARD_80211ax;
+      band = WIFI_PHY_BAND_2_4GHZ;
     }
   else if (version == "80211ax_5GHZ")
     {
-      standard = WIFI_STANDARD_80211ax_5GHZ;
+      standard = WIFI_STANDARD_80211ax;
+      band = WIFI_PHY_BAND_5GHZ;
     }
-  return standard;
+  return {standard, band};
 }
 
 int main (int argc, char *argv[])
@@ -123,8 +141,10 @@ int main (int argc, char *argv[])
   WifiMacHelper mac;
   WifiHelper wifi;
   Ssid ssid = Ssid ("ns3");
+  TupleValue<UintegerValue, UintegerValue, EnumValue, UintegerValue> channelValue;
 
-  wifi.SetStandard (ConvertStringToStandard (staVersion));
+  const auto& [staStandard, staBand] = ConvertStringToStandardAndBand (staVersion);
+  wifi.SetStandard (staStandard);
   wifi.SetRemoteStationManager ("ns3::" + staRaa + "WifiManager");
 
   mac.SetType ("ns3::StaWifiMac",
@@ -132,16 +152,15 @@ int main (int argc, char *argv[])
                "Ssid", SsidValue (ssid));
 
   //Workaround needed as long as we do not fully support channel bonding
-  if (staVersion == "80211ac")
-    {
-      phy.Set ("ChannelWidth", UintegerValue (20));
-      phy.Set ("Frequency", UintegerValue (5180));
-    }
+  uint16_t width = (staVersion == "80211ac" ? 20 : 0);
+  channelValue.Set (WifiPhy::ChannelTuple {0, width, staBand, 0});
+  phy.Set ("ChannelSettings", channelValue);
 
   NetDeviceContainer staDevice;
   staDevice = wifi.Install (phy, mac, wifiStaNode);
 
-  wifi.SetStandard (ConvertStringToStandard (apVersion));
+  const auto& [apStandard, apBand] = ConvertStringToStandardAndBand (apVersion);
+  wifi.SetStandard (apStandard);
   wifi.SetRemoteStationManager ("ns3::" + apRaa + "WifiManager");
 
   mac.SetType ("ns3::ApWifiMac",
@@ -149,11 +168,9 @@ int main (int argc, char *argv[])
                "Ssid", SsidValue (ssid));
 
   //Workaround needed as long as we do not fully support channel bonding
-  if (apVersion == "80211ac")
-    {
-      phy.Set ("ChannelWidth", UintegerValue (20));
-      phy.Set ("Frequency", UintegerValue (5180));
-    }
+  width = (apVersion == "80211ac" ? 20 : 0);
+  channelValue.Set (WifiPhy::ChannelTuple {0, width, apBand, 0});
+  phy.Set ("ChannelSettings", channelValue);
 
   NetDeviceContainer apDevice;
   apDevice = wifi.Install (phy, mac, wifiApNode);

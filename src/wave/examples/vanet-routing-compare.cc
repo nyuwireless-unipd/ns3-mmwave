@@ -54,7 +54,7 @@
  *
  * Scenario 2 plays back vehicular trace files in
  * ns-2 movement format, and are taken from:
- * http://www.lst.inf.ethz.ch/research/ad-hoc/car-traces/
+ * https://web.archive.org/web/20150218095728/http://www.lst.inf.ethz.ch/research/ad-hoc/car-traces
  * This scenario is 300 simulation seconds of 99
  * vehicles respectively within the Unterstrass
  * section of Zurich Switzerland that travel based on
@@ -81,10 +81,10 @@
  * several different simulation scenarios.
  * For example, to set up a scenario and save the configuration
  * as "scenario1.txt":
- *   ./waf --run "vanet-routing-compare --scenario=1 --saveconfig=scenario1.txt"
+ *   ./ns3 run "vanet-routing-compare --scenario=1 --saveconfig=scenario1.txt"
  * Then, to re-play the scenario using the save configuration
  * settings:
- *   ./waf --run "vanet-routing-compare --loadconfig=scenario1.txt"
+ *   ./ns3 run "vanet-routing-compare --loadconfig=scenario1.txt"
  *
  * Class Diagram:
  *   main()
@@ -1209,7 +1209,7 @@ private:
   std::string m_phyMode; ///< phy mode
   uint32_t m_80211mode; ///< 80211 mode
 
-  std::string m_traceFile; ///< trace file 
+  std::string m_traceFile; ///< trace file
   std::string m_logFile; ///< log file
   uint32_t m_mobility; ///< mobility
   uint32_t m_nNodes; ///< number of nodes
@@ -1635,13 +1635,13 @@ VanetRoutingExperiment::ConfigureDevices ()
       // WAVE
       Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/PhyEntities/*/State/Tx", MakeCallback (&WifiPhyStats::PhyTxTrace, m_wifiPhyStats));
       Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/PhyEntities/*/PhyTxDrop", MakeCallback (&WifiPhyStats::PhyTxDrop, m_wifiPhyStats));
-      Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/PhyEntities/*/PhyRxDrop", MakeCallback (&WifiPhyStats::PhyRxDrop, m_wifiPhyStats)); 
+      Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WaveNetDevice/PhyEntities/*/PhyRxDrop", MakeCallback (&WifiPhyStats::PhyRxDrop, m_wifiPhyStats));
     }
   else
     {
       Config::Connect ("/NodeList/*/DeviceList/*/Phy/State/Tx", MakeCallback (&WifiPhyStats::PhyTxTrace, m_wifiPhyStats));
       Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyTxDrop", MakeCallback (&WifiPhyStats::PhyTxDrop, m_wifiPhyStats));
-      Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&WifiPhyStats::PhyRxDrop, m_wifiPhyStats)); 
+      Config::Connect ("/NodeList/*/DeviceList/*/$ns3::WifiNetDevice/Phy/PhyRxDrop", MakeCallback (&WifiPhyStats::PhyRxDrop, m_wifiPhyStats));
 }
     }
 

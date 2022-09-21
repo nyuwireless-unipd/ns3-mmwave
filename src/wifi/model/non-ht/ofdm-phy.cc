@@ -25,6 +25,7 @@
 #include "ns3/wifi-psdu.h"
 #include "ns3/wifi-phy.h"
 #include "ns3/wifi-utils.h"
+#include "ns3/interference-helper.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
 #include <array>
@@ -274,8 +275,9 @@ Ptr<WifiPpdu>
 OfdmPhy::BuildPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time /* ppduDuration */)
 {
   NS_LOG_FUNCTION (this << psdus << txVector);
-  return Create<OfdmPpdu> (psdus.begin ()->second, txVector, m_wifiPhy->GetPhyBand (),
-                           ObtainNextUid (txVector));
+  return Create<OfdmPpdu> (psdus.begin ()->second, txVector,
+                           m_wifiPhy->GetOperatingChannel ().GetPrimaryChannelCenterFrequency (txVector.GetChannelWidth ()),
+                           m_wifiPhy->GetPhyBand (), ObtainNextUid (txVector));
 }
 
 PhyEntity::PhyFieldRxStatus
@@ -336,9 +338,8 @@ OfdmPhy::IsAllConfigSupported (WifiPpduField /* field */, Ptr<const WifiPpdu> pp
 }
 
 Ptr<SpectrumValue>
-OfdmPhy::GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> ppdu) const
+OfdmPhy::GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> /* ppdu */, const WifiTxVector& txVector) const
 {
-  const WifiTxVector& txVector = ppdu->GetTxVector ();
   uint16_t centerFrequency = GetCenterFrequencyForChannelWidth (txVector);
   uint16_t channelWidth = txVector.GetChannelWidth ();
   NS_LOG_FUNCTION (this << centerFrequency << channelWidth << txPowerW);
@@ -492,11 +493,9 @@ OfdmPhy::CreateOfdmMode (std::string uniqueName, bool isMandatory)
                                           isMandatory,
                                           MakeBoundCallback (&GetCodeRate, uniqueName),
                                           MakeBoundCallback (&GetConstellationSize, uniqueName),
-                                          MakeBoundCallback (&GetPhyRate, uniqueName),
                                           MakeCallback (&GetPhyRateFromTxVector),
-                                          MakeBoundCallback (&GetDataRate, uniqueName),
                                           MakeCallback (&GetDataRateFromTxVector),
-                                          MakeCallback (&IsModeAllowed));
+                                          MakeCallback (&IsAllowed));
 }
 
 WifiCodeRate
@@ -512,10 +511,10 @@ OfdmPhy::GetConstellationSize (const std::string& name)
 }
 
 uint64_t
-OfdmPhy::GetPhyRate (const std::string& name, uint16_t channelWidth, uint16_t guardInterval, uint8_t nss)
+OfdmPhy::GetPhyRate (const std::string& name, uint16_t channelWidth)
 {
   WifiCodeRate codeRate = GetCodeRate (name);
-  uint64_t dataRate = GetDataRate (name, channelWidth, guardInterval, nss);
+  uint64_t dataRate = GetDataRate (name, channelWidth);
   return CalculatePhyRate (codeRate, dataRate);
 }
 
@@ -529,9 +528,7 @@ uint64_t
 OfdmPhy::GetPhyRateFromTxVector (const WifiTxVector& txVector, uint16_t /* staId */)
 {
   return GetPhyRate (txVector.GetMode ().GetUniqueName (),
-                     txVector.GetChannelWidth (),
-                     txVector.GetGuardInterval (),
-                     txVector.GetNss ());
+                     txVector.GetChannelWidth ());
 }
 
 double
@@ -556,50 +553,58 @@ uint64_t
 OfdmPhy::GetDataRateFromTxVector (const WifiTxVector& txVector, uint16_t /* staId */)
 {
   return GetDataRate (txVector.GetMode ().GetUniqueName (),
-                      txVector.GetChannelWidth (),
-                      txVector.GetGuardInterval (),
-                      txVector.GetNss ());
+                      txVector.GetChannelWidth ());
 }
 
 uint64_t
-OfdmPhy::GetDataRate (const std::string& name, uint16_t channelWidth, uint16_t guardInterval, uint8_t nss)
+OfdmPhy::GetDataRate (const std::string& name, uint16_t channelWidth)
 {
   WifiCodeRate codeRate = GetCodeRate (name);
   uint16_t constellationSize = GetConstellationSize (name);
-  return CalculateDataRate (codeRate, constellationSize, channelWidth, guardInterval, nss);
+  return CalculateDataRate (codeRate, constellationSize, channelWidth);
 }
 
 uint64_t
-OfdmPhy::CalculateDataRate (WifiCodeRate codeRate, uint16_t constellationSize, uint16_t channelWidth, uint16_t /* guardInterval */, uint8_t /* nss */)
+OfdmPhy::CalculateDataRate (WifiCodeRate codeRate, uint16_t constellationSize, uint16_t channelWidth)
 {
-  double symbolDuration = 3.2; //in us
-  uint16_t guardInterval = 800; //in ns
-  if (channelWidth == 10)
-    {
-      symbolDuration = 6.4;
-      guardInterval = 1600;
-    }
-  else if (channelWidth == 5)
-    {
-      symbolDuration = 12.8;
-      guardInterval = 3200;
-    }
-  return CalculateDataRate (symbolDuration, guardInterval,
-                            48, static_cast<uint16_t> (log2 (constellationSize)),
+  return CalculateDataRate (GetSymbolDuration (channelWidth),
+                            GetUsableSubcarriers (),
+                            static_cast<uint16_t> (log2 (constellationSize)),
                             GetCodeRatio (codeRate));
 }
 
 uint64_t
-OfdmPhy::CalculateDataRate (double symbolDuration, uint16_t guardInterval,
-                            uint16_t usableSubCarriers, uint16_t numberOfBitsPerSubcarrier,
-                            double codingRate)
+OfdmPhy::CalculateDataRate (Time symbolDuration, uint16_t usableSubCarriers,
+                            uint16_t numberOfBitsPerSubcarrier, double codingRate)
 {
-  double symbolRate = (1 / (symbolDuration + (static_cast<double> (guardInterval) / 1000))) * 1e6;
+  double symbolRate = (1e9 / static_cast<double> (symbolDuration.GetNanoSeconds ()));
   return lrint (ceil (symbolRate * usableSubCarriers * numberOfBitsPerSubcarrier * codingRate));
 }
 
+uint16_t
+OfdmPhy::GetUsableSubcarriers (void)
+{
+  return 48;
+}
+
+Time
+OfdmPhy::GetSymbolDuration (uint16_t channelWidth)
+{
+  Time symbolDuration = MicroSeconds (4);
+  uint8_t bwFactor = 1;
+  if (channelWidth == 10)
+    {
+      bwFactor = 2;
+    }
+  else if (channelWidth == 5)
+    {
+      bwFactor = 4;
+    }
+  return bwFactor * symbolDuration;
+}
+
 bool
-OfdmPhy::IsModeAllowed (uint16_t /* channelWidth */, uint8_t /* nss */)
+OfdmPhy::IsAllowed (const WifiTxVector& /*txVector*/)
 {
   return true;
 }
@@ -608,6 +613,29 @@ uint32_t
 OfdmPhy::GetMaxPsduSize (void) const
 {
   return 4095;
+}
+
+uint16_t
+OfdmPhy::GetMeasurementChannelWidth (const Ptr<const WifiPpdu> ppdu) const
+{
+  if (!ppdu)
+    {
+      return 20;
+    }
+  return GetRxChannelWidth (ppdu->GetTxVector ());
+}
+
+double
+OfdmPhy::GetCcaThreshold (const Ptr<const WifiPpdu> ppdu, WifiChannelListType channelType) const
+{
+  if (ppdu && ppdu->GetTxVector ().GetChannelWidth () < 20)
+    {
+      //scale CCA sensitivity threshold for BW of 5 and 10 MHz
+      uint16_t bw = GetRxChannelWidth (ppdu->GetTxVector ());
+      double thresholdW = DbmToW (m_wifiPhy->GetCcaSensitivityThreshold ()) * (bw / 20.0);
+      return WToDbm (thresholdW);
+    }
+  return PhyEntity::GetCcaThreshold (ppdu, channelType);
 }
 
 } //namespace ns3

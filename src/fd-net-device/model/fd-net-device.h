@@ -31,11 +31,10 @@
 #include "ns3/node.h"
 #include "ns3/packet.h"
 #include "ns3/ptr.h"
-#include "ns3/system-condition.h"
 #include "ns3/traced-callback.h"
 #include "ns3/unix-fd-reader.h"
-#include "ns3/system-mutex.h"
 
+#include <mutex>
 #include <utility>
 #include <queue>
 
@@ -59,6 +58,7 @@ public:
 
   /**
    * Set size of the read buffer.
+   * \param bufferSize the buffer size
    */
   void SetBufferSize (uint32_t bufferSize);
 
@@ -115,6 +115,9 @@ public:
    */
   virtual ~FdNetDevice ();
 
+  // Delete assignment operator to avoid misuse
+  FdNetDevice (FdNetDevice const &) = delete;
+
   /**
    * Set the link layer encapsulation mode of this device.
    *
@@ -132,7 +135,7 @@ public:
 
   /**
    * Set the associated file descriptor.
-   *
+   * \param fd the file descriptor
    */
   void SetFileDescriptor (int fd);
 
@@ -200,7 +203,7 @@ protected:
    * Method Initialization for start and stop attributes.
    */
   virtual void DoInitialize (void);
-  
+
   virtual void DoDispose (void);
 
   /**
@@ -211,23 +214,28 @@ protected:
 
   /**
    * Allocate packet buffer.
+   * \param len the length of the buffer
+   * \return A pointer to the newly allocated buffer.
    */
-  virtual uint8_t* AllocateBuffer(size_t len);
+  virtual uint8_t* AllocateBuffer (size_t len);
 
   /**
    * Free the given packet buffer.
+   * \param buf the buffer to free
    */
   virtual void FreeBuffer (uint8_t* buf);
 
   /**
    * Callback to invoke when a new frame is received
+   * \param buf a buffer containing the received frame
+   * \param len the length of the frame
    */
   void ReceiveCallback (uint8_t *buf, ssize_t len);
 
   /**
    * Mutex to increase pending read counter.
    */
-  SystemMutex m_pendingReadMutex;
+  std::mutex m_pendingReadMutex;
 
   /**
    * Number of packets that were received and scheduled for read but not yet read.
@@ -235,14 +243,6 @@ protected:
   std::queue< std::pair<uint8_t *, ssize_t> > m_pendingQueue;
 
 private:
-  /**
-   * \brief Copy constructor
-   *
-   * Defined and unimplemented to avoid misuse as suggested in
-   * http://www.nsnam.org/wiki/NS-3_Python_Bindings#.22invalid_use_of_incomplete_type.22
-   */
-  FdNetDevice (FdNetDevice const &);
-
   /**
    * Spin up the device
    */

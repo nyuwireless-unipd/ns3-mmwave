@@ -40,7 +40,8 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("LteRrcProtocolReal");
 
-const Time RRC_REAL_MSG_DELAY = MicroSeconds (500);
+/// RRC real message delay
+const Time RRC_REAL_MSG_DELAY = MilliSeconds (0);
 
 NS_OBJECT_ENSURE_REGISTERED (LteUeRrcProtocolReal);
 
@@ -176,7 +177,7 @@ LteUeRrcProtocolReal::DoSendRrcConnectionReconfigurationCompleted (LteRrcSap::Rr
   transmitPdcpSduParameters.pdcpSdu = packet;
   transmitPdcpSduParameters.rnti = m_rnti;
   transmitPdcpSduParameters.lcid = 1;
-  NS_LOG_INFO("Tx RRC Connection reconf completed");
+
   m_setupParameters.srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
 }
 
@@ -224,7 +225,6 @@ LteUeRrcProtocolReal::DoSendNotifySecondaryCellConnected (uint16_t mmWaveRnti, u
   m_setupParameters.srb1SapProvider->TransmitPdcpSdu (transmitPdcpSduParameters);
 }
 
-
 void
 LteUeRrcProtocolReal::DoSendRrcConnectionReestablishmentRequest (LteRrcSap::RrcConnectionReestablishmentRequest msg)
 {
@@ -265,7 +265,11 @@ LteUeRrcProtocolReal::DoSendRrcConnectionReestablishmentComplete (LteRrcSap::Rrc
 void
 LteUeRrcProtocolReal::SetEnbRrcSapProvider ()
 {
+  NS_LOG_FUNCTION (this);
+
   uint16_t cellId = m_rrc->GetCellId ();
+
+  NS_LOG_DEBUG ("RNTI " << m_rnti << " connected to cell " << cellId);
 
   // walk list of all nodes to get the peer eNB
   Ptr<LteEnbNetDevice> enbDev;
@@ -282,7 +286,7 @@ LteUeRrcProtocolReal::SetEnbRrcSapProvider ()
            j++)
         {
           enbDev = node->GetDevice (j)->GetObject <LteEnbNetDevice> ();
-          if (enbDev == 0)
+          if (!enbDev)
             {
               continue;
             }
@@ -468,8 +472,12 @@ LteEnbRrcProtocolReal::SetUeRrcSapProvider (uint16_t rnti, LteUeRrcSapProvider* 
 {
   std::map<uint16_t, LteUeRrcSapProvider*>::iterator it;
   it = m_enbRrcSapProviderMap.find (rnti);
-  NS_ASSERT_MSG (it != m_enbRrcSapProviderMap.end (), "could not find RNTI = " << rnti);
-  it->second = p;
+  // TODO: remove after merge of ho_failure branch
+  // assign UE RRC only if the RNTI is found at eNB
+  if (it != m_enbRrcSapProviderMap.end ())
+    {
+      it->second = p;
+    }
 }
 
 void
@@ -551,7 +559,7 @@ LteEnbRrcProtocolReal::DoRemoveUe (uint16_t rnti)
 void
 LteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::SystemInformation msg)
 {
-    NS_LOG_FUNCTION (this << cellId);
+  NS_LOG_FUNCTION (this << cellId);
   // walk list of all nodes to get UEs with this cellId
   Ptr<LteUeRrc> ueRrc;
   for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); ++i)
@@ -561,18 +569,19 @@ LteEnbRrcProtocolReal::DoSendSystemInformation (uint16_t cellId, LteRrcSap::Syst
       for (int j = 0; j < nDevs; ++j)
         {
           Ptr<LteUeNetDevice> ueDev = node->GetDevice (j)->GetObject <LteUeNetDevice> ();
-          if (ueDev != 0)
+          if (ueDev)
             {
               Ptr<LteUeRrc> ueRrc = ueDev->GetRrc ();
               NS_LOG_LOGIC ("considering UE IMSI " << ueDev->GetImsi () << " that has cellId " << ueRrc->GetCellId ());
               if (ueRrc->GetCellId () == cellId)
                 {
                   NS_LOG_LOGIC ("sending SI to IMSI " << ueDev->GetImsi ());
-                  ueRrc->GetLteUeRrcSapProvider ()->RecvSystemInformation (msg);
-                  Simulator::Schedule (RRC_REAL_MSG_DELAY,
-                                       &LteUeRrcSapProvider::RecvSystemInformation,
-                                       ueRrc->GetLteUeRrcSapProvider (),
-                                       msg);
+
+                  Simulator::ScheduleWithContext (node->GetId (),
+                                                  RRC_REAL_MSG_DELAY,
+                                                  &LteUeRrcSapProvider::RecvSystemInformation,
+                                                  ueRrc->GetLteUeRrcSapProvider (),
+                                                  msg);
                 }
             }
         }

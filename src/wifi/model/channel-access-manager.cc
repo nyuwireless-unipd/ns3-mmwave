@@ -26,6 +26,9 @@
 #include "wifi-phy.h"
 #include "frame-exchange-manager.h"
 
+#undef NS_LOG_APPEND_CONTEXT
+#define NS_LOG_APPEND_CONTEXT std::clog << "[link=" << +m_linkId << "] "
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("ChannelAccessManager");
@@ -64,9 +67,10 @@ public:
   {
     m_cam->NotifyTxStartNow (duration);
   }
-  void NotifyMaybeCcaBusyStart (Time duration)
+  void NotifyCcaBusyStart (Time duration, WifiChannelListType channelType,
+                           const std::vector<Time>& per20MhzDurations)
   {
-    m_cam->NotifyMaybeCcaBusyStartNow (duration);
+    m_cam->NotifyCcaBusyStartNow (duration, channelType, per20MhzDurations);
   }
   void NotifySwitchingStart (Time duration)
   {
@@ -101,22 +105,18 @@ private:
 ChannelAccessManager::ChannelAccessManager ()
   : m_lastAckTimeoutEnd (MicroSeconds (0)),
     m_lastCtsTimeoutEnd (MicroSeconds (0)),
-    m_lastNavStart (MicroSeconds (0)),
-    m_lastNavDuration (MicroSeconds (0)),
-    m_lastRxStart (MicroSeconds (0)),
-    m_lastRxDuration (MicroSeconds (0)),
+    m_lastNavEnd (MicroSeconds (0)),
+    m_lastRx ({MicroSeconds (0), MicroSeconds (0)}),
     m_lastRxReceivedOk (true),
-    m_lastTxStart (MicroSeconds (0)),
-    m_lastTxDuration (MicroSeconds (0)),
-    m_lastBusyStart (MicroSeconds (0)),
-    m_lastBusyDuration (MicroSeconds (0)),
-    m_lastSwitchingStart (MicroSeconds (0)),
-    m_lastSwitchingDuration (MicroSeconds (0)),
+    m_lastTxEnd (MicroSeconds (0)),
+    m_lastSwitchingEnd (MicroSeconds (0)),
     m_sleeping (false),
     m_off (false),
-    m_phyListener (0)
+    m_phyListener (0),
+    m_linkId (0)
 {
   NS_LOG_FUNCTION (this);
+  InitLastBusyStructs ();
 }
 
 ChannelAccessManager::~ChannelAccessManager ()
@@ -147,6 +147,7 @@ ChannelAccessManager::SetupPhyListener (Ptr<WifiPhy> phy)
   m_phyListener = new PhyListener (this);
   phy->RegisterListener (m_phyListener);
   m_phy = phy;
+  InitLastBusyStructs ();
 }
 
 void
@@ -160,6 +161,13 @@ ChannelAccessManager::RemovePhyListener (Ptr<WifiPhy> phy)
       m_phyListener = 0;
       m_phy = 0;
     }
+}
+
+void
+ChannelAccessManager::SetLinkId (uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << +linkId);
+  m_linkId = linkId;
 }
 
 void
@@ -195,41 +203,58 @@ ChannelAccessManager::Add (Ptr<Txop> txop)
   m_txops.push_back (txop);
 }
 
-Time
-ChannelAccessManager::MostRecent (std::initializer_list<Time> list) const
+void
+ChannelAccessManager::InitLastBusyStructs (void)
 {
-  NS_ASSERT (list.size () > 0);
-  return *std::max_element (list.begin (), list.end ());
+  NS_LOG_FUNCTION (this);
+  Time now = Simulator::Now ();
+  m_lastBusyEnd.clear ();
+  m_lastPer20MHzBusyEnd.clear ();
+  m_lastIdle.clear ();
+  m_lastBusyEnd[WIFI_CHANLIST_PRIMARY] = now;
+  m_lastIdle[WIFI_CHANLIST_PRIMARY] = {now, now};
+
+  if (!m_phy || !m_phy->GetOperatingChannel ().IsOfdm ())
+    {
+      return;
+    }
+
+  uint16_t width = m_phy->GetChannelWidth ();
+
+  if (width >= 40)
+    {
+      m_lastBusyEnd[WIFI_CHANLIST_SECONDARY] = now;
+      m_lastIdle[WIFI_CHANLIST_SECONDARY] = {now, now};
+    }
+  if (width >= 80)
+    {
+      m_lastBusyEnd[WIFI_CHANLIST_SECONDARY40] = now;
+      m_lastIdle[WIFI_CHANLIST_SECONDARY40] = {now, now};
+    }
+  if (width >= 160)
+    {
+      m_lastBusyEnd[WIFI_CHANLIST_SECONDARY80] = now;
+      m_lastIdle[WIFI_CHANLIST_SECONDARY80] = {now, now};
+    }
+  // TODO Add conditions for new channel widths as they get supported
+
+  if (m_phy->GetStandard () >= WIFI_STANDARD_80211ax && width > 20)
+    {
+      m_lastPer20MHzBusyEnd.assign (width / 20, now);
+    }
 }
 
 bool
 ChannelAccessManager::IsBusy (void) const
 {
   NS_LOG_FUNCTION (this);
-  // PHY busy
-  Time lastRxEnd = m_lastRxStart + m_lastRxDuration;
-  if (lastRxEnd > Simulator::Now ())
-    {
-      return true;
-    }
-  Time lastTxEnd = m_lastTxStart + m_lastTxDuration;
-  if (lastTxEnd > Simulator::Now ())
-    {
-      return true;
-    }
-  // NAV busy
-  Time lastNavEnd = m_lastNavStart + m_lastNavDuration;
-  if (lastNavEnd > Simulator::Now ())
-    {
-      return true;
-    }
-  // CCA busy
-  Time lastCCABusyEnd = m_lastBusyStart + m_lastBusyDuration;
-  if (lastCCABusyEnd > Simulator::Now ())
-    {
-      return true;
-    }
-  return false;
+  Time now = Simulator::Now ();
+  return (m_lastRx.end > now)       // RX
+         || (m_lastTxEnd > now)     // TX
+         || (m_lastNavEnd > now)    // NAV busy
+  // an EDCA TXOP is obtained based solely on activity of the primary channel
+  // (Sec. 10.23.2.5 of IEEE 802.11-2020)
+         || (m_lastBusyEnd.at (WIFI_CHANLIST_PRIMARY) > now);  // CCA busy
 }
 
 bool
@@ -266,8 +291,8 @@ ChannelAccessManager::NeedBackoffUponAccess (Ptr<Txop> txop)
    *    with that AC has now become non-empty and any other transmit queues
    *    associated with that AC are empty; the medium is busy on the primary channel
    */
-  if (!txop->HasFramesToTransmit () && txop->GetAccessStatus () != Txop::GRANTED
-      && txop->GetBackoffSlots () == 0)
+  if (!txop->HasFramesToTransmit () && txop->GetAccessStatus (m_linkId) != Txop::GRANTED
+      && txop->GetBackoffSlots (m_linkId) == 0)
     {
       if (!IsBusy ())
         {
@@ -277,8 +302,8 @@ ChannelAccessManager::NeedBackoffUponAccess (Ptr<Txop> txop)
           // to correctly align the backoff start time at the next slot boundary
           // (performed by the next call to ChannelAccessManager::RequestAccess())
           Time delay = (txop->IsQosTxop () ? Seconds (0)
-                                           : GetSifs () + txop->GetAifsn () * GetSlot ());
-          txop->UpdateBackoffSlotsNow (0, Simulator::Now () + delay);
+                                           : GetSifs () + txop->GetAifsn (m_linkId) * GetSlot ());
+          txop->UpdateBackoffSlotsNow (0, Simulator::Now () + delay, m_linkId);
         }
       else
         {
@@ -305,21 +330,21 @@ ChannelAccessManager::RequestAccess (Ptr<Txop> txop)
   /*
    * EDCAF operations shall be performed at slot boundaries (Sec. 10.22.2.4 of 802.11-2016)
    */
-  Time accessGrantStart = GetAccessGrantStart () + (txop->GetAifsn () * GetSlot ());
+  Time accessGrantStart = GetAccessGrantStart () + (txop->GetAifsn (m_linkId) * GetSlot ());
 
-  if (txop->IsQosTxop () && txop->GetBackoffStart () > accessGrantStart)
+  if (txop->IsQosTxop () && txop->GetBackoffStart (m_linkId) > accessGrantStart)
     {
       // The backoff start time reported by the EDCAF is more recent than the last
       // time the medium was busy plus an AIFS, hence we need to align it to the
       // next slot boundary.
-      Time diff = txop->GetBackoffStart () - accessGrantStart;
+      Time diff = txop->GetBackoffStart (m_linkId) - accessGrantStart;
       uint32_t nIntSlots = (diff / GetSlot ()).GetHigh () + 1;
-      txop->UpdateBackoffSlotsNow (0, accessGrantStart + (nIntSlots * GetSlot ()));
+      txop->UpdateBackoffSlotsNow (0, accessGrantStart + (nIntSlots * GetSlot ()), m_linkId);
     }
 
   UpdateBackoff ();
-  NS_ASSERT (txop->GetAccessStatus () != Txop::REQUESTED);
-  txop->NotifyAccessRequested ();
+  NS_ASSERT (txop->GetAccessStatus (m_linkId) != Txop::REQUESTED);
+  txop->NotifyAccessRequested (m_linkId);
   DoGrantDcfAccess ();
   DoRestartAccessTimeoutIfNeeded ();
 }
@@ -329,29 +354,30 @@ ChannelAccessManager::DoGrantDcfAccess (void)
 {
   NS_LOG_FUNCTION (this);
   uint32_t k = 0;
+  Time now = Simulator::Now ();
   for (Txops::iterator i = m_txops.begin (); i != m_txops.end (); k++)
     {
       Ptr<Txop> txop = *i;
-      if (txop->GetAccessStatus () == Txop::REQUESTED
-          && (!txop->IsQosTxop () || !StaticCast<QosTxop> (txop)->EdcaDisabled ())
-          && GetBackoffEndFor (txop) <= Simulator::Now () )
+      if (txop->GetAccessStatus (m_linkId) == Txop::REQUESTED
+          && (!txop->IsQosTxop () || !StaticCast<QosTxop> (txop)->EdcaDisabled (m_linkId))
+          && GetBackoffEndFor (txop) <= now)
         {
           /**
            * This is the first Txop we find with an expired backoff and which
            * needs access to the medium. i.e., it has data to send.
            */
-          NS_LOG_DEBUG ("dcf " << k << " needs access. backoff expired. access granted. slots=" << txop->GetBackoffSlots ());
+          NS_LOG_DEBUG ("dcf " << k << " needs access. backoff expired. access granted. slots=" << txop->GetBackoffSlots (m_linkId));
           i++; //go to the next item in the list.
           k++;
           std::vector<Ptr<Txop> > internalCollisionTxops;
           for (Txops::iterator j = i; j != m_txops.end (); j++, k++)
             {
               Ptr<Txop> otherTxop = *j;
-              if (otherTxop->GetAccessStatus () == Txop::REQUESTED
-                  && GetBackoffEndFor (otherTxop) <= Simulator::Now ())
+              if (otherTxop->GetAccessStatus (m_linkId) == Txop::REQUESTED
+                  && GetBackoffEndFor (otherTxop) <= now)
                 {
                   NS_LOG_DEBUG ("dcf " << k << " needs access. backoff expired. internal collision. slots=" <<
-                                otherTxop->GetBackoffSlots ());
+                                otherTxop->GetBackoffSlots (m_linkId));
                   /**
                    * all other Txops with a lower priority whose backoff
                    * has expired and which needed access to the medium
@@ -369,9 +395,16 @@ ChannelAccessManager::DoGrantDcfAccess (void)
            * could change the global state of the manager, and, thus, could change
            * the result of the calculations.
            */
-          NS_ASSERT (m_feManager != 0);
-
-          if (m_feManager->StartTransmission (txop))
+          NS_ASSERT (m_feManager);
+          // If we are operating on an OFDM channel wider than 20 MHz, find the largest
+          // idle primary channel and pass its width to the FrameExchangeManager, so that
+          // the latter can transmit PPDUs of the appropriate width (see Section 10.23.2.5
+          // of IEEE 802.11-2020).
+          auto interval = (m_phy->GetPhyBand () == WIFI_PHY_BAND_2_4GHZ)
+                          ? GetSifs () + 2 * GetSlot () : m_phy->GetPifs ();
+          auto width = (m_phy->GetOperatingChannel ().IsOfdm () && m_phy->GetChannelWidth () > 20)
+                       ? GetLargestIdlePrimaryChannel (interval, now) : m_phy->GetChannelWidth ();
+          if (m_feManager->StartTransmission (txop, width))
             {
               for (auto& collidingTxop : internalCollisionTxops)
                 {
@@ -404,40 +437,41 @@ Time
 ChannelAccessManager::GetAccessGrantStart (bool ignoreNav) const
 {
   NS_LOG_FUNCTION (this);
-  Time lastRxEnd = m_lastRxStart + m_lastRxDuration;
   const Time& sifs = GetSifs();
-  Time rxAccessStart = lastRxEnd + sifs;
-  if ((lastRxEnd <= Simulator::Now ()) && !m_lastRxReceivedOk)
+  Time rxAccessStart = m_lastRx.end + sifs;
+  if ((m_lastRx.end <= Simulator::Now ()) && !m_lastRxReceivedOk)
     {
       rxAccessStart += GetEifsNoDifs ();
     }
-  Time busyAccessStart = m_lastBusyStart + m_lastBusyDuration + sifs;
-  Time txAccessStart = m_lastTxStart + m_lastTxDuration + sifs;
-  Time navAccessStart = m_lastNavStart + m_lastNavDuration + sifs;
+  // an EDCA TXOP is obtained based solely on activity of the primary channel
+  // (Sec. 10.23.2.5 of IEEE 802.11-2020)
+  Time busyAccessStart = m_lastBusyEnd.at (WIFI_CHANLIST_PRIMARY) + sifs;
+  Time txAccessStart = m_lastTxEnd + sifs;
+  Time navAccessStart = m_lastNavEnd + sifs;
   Time ackTimeoutAccessStart = m_lastAckTimeoutEnd + sifs;
   Time ctsTimeoutAccessStart = m_lastCtsTimeoutEnd + sifs;
-  Time switchingAccessStart = m_lastSwitchingStart + m_lastSwitchingDuration + sifs;
+  Time switchingAccessStart = m_lastSwitchingEnd + sifs;
   Time accessGrantedStart;
   if (ignoreNav)
     {
-      accessGrantedStart = MostRecent ({rxAccessStart,
-                                        busyAccessStart,
-                                        txAccessStart,
-                                        ackTimeoutAccessStart,
-                                        ctsTimeoutAccessStart,
-                                        switchingAccessStart}
-                                       );
+      accessGrantedStart = std::max ({rxAccessStart,
+                                      busyAccessStart,
+                                      txAccessStart,
+                                      ackTimeoutAccessStart,
+                                      ctsTimeoutAccessStart,
+                                      switchingAccessStart}
+                                     );
     }
   else
     {
-      accessGrantedStart = MostRecent ({rxAccessStart,
-                                        busyAccessStart,
-                                        txAccessStart,
-                                        navAccessStart,
-                                        ackTimeoutAccessStart,
-                                        ctsTimeoutAccessStart,
-                                        switchingAccessStart}
-                                       );
+      accessGrantedStart = std::max ({rxAccessStart,
+                                      busyAccessStart,
+                                      txAccessStart,
+                                      navAccessStart,
+                                      ackTimeoutAccessStart,
+                                      ctsTimeoutAccessStart,
+                                      switchingAccessStart}
+                                     );
     }
   NS_LOG_INFO ("access grant start=" << accessGrantedStart <<
                ", rx access start=" << rxAccessStart <<
@@ -451,8 +485,8 @@ Time
 ChannelAccessManager::GetBackoffStartFor (Ptr<Txop> txop)
 {
   NS_LOG_FUNCTION (this << txop);
-  Time mostRecentEvent = MostRecent ({txop->GetBackoffStart (),
-                                     GetAccessGrantStart () + (txop->GetAifsn () * GetSlot ())});
+  Time mostRecentEvent = std::max ({txop->GetBackoffStart (m_linkId),
+                                    GetAccessGrantStart () + (txop->GetAifsn (m_linkId) * GetSlot ())});
   NS_LOG_DEBUG ("Backoff start: " << mostRecentEvent.As (Time::US));
 
   return mostRecentEvent;
@@ -462,7 +496,7 @@ Time
 ChannelAccessManager::GetBackoffEndFor (Ptr<Txop> txop)
 {
   NS_LOG_FUNCTION (this << txop);
-  Time backoffEnd = GetBackoffStartFor (txop) + (txop->GetBackoffSlots () * GetSlot ());
+  Time backoffEnd = GetBackoffStartFor (txop) + (txop->GetBackoffSlots (m_linkId) * GetSlot ());
   NS_LOG_DEBUG ("Backoff end: " << backoffEnd.As (Time::US));
 
   return backoffEnd;
@@ -494,10 +528,10 @@ ChannelAccessManager::UpdateBackoff (void)
             {
               nIntSlots++;
             }
-          uint32_t n = std::min (nIntSlots, txop->GetBackoffSlots ());
+          uint32_t n = std::min (nIntSlots, txop->GetBackoffSlots (m_linkId));
           NS_LOG_DEBUG ("dcf " << k << " dec backoff slots=" << n);
           Time backoffUpdateBound = backoffStart + (n * GetSlot ());
-          txop->UpdateBackoffSlotsNow (n, backoffUpdateBound);
+          txop->UpdateBackoffSlotsNow (n, backoffUpdateBound, m_linkId);
         }
       ++k;
     }
@@ -515,7 +549,7 @@ ChannelAccessManager::DoRestartAccessTimeoutIfNeeded (void)
   Time expectedBackoffEnd = Simulator::GetMaximumSimulationTime ();
   for (auto txop : m_txops)
     {
-      if (txop->GetAccessStatus () == Txop::REQUESTED)
+      if (txop->GetAccessStatus (m_linkId) == Txop::REQUESTED)
         {
           Time tmp = GetBackoffEndFor (txop);
           if (tmp > Simulator::Now ())
@@ -543,6 +577,40 @@ ChannelAccessManager::DoRestartAccessTimeoutIfNeeded (void)
     }
 }
 
+uint16_t
+ChannelAccessManager::GetLargestIdlePrimaryChannel (Time interval, Time end)
+{
+  NS_LOG_FUNCTION (this << interval.As (Time::US) << end.As (Time::S));
+
+  // If the medium is busy or it just became idle, UpdateLastIdlePeriod does
+  // nothing. This allows us to call this method, e.g., at the end of a frame
+  // reception and check the busy/idle status of the channel before the start
+  // of the frame reception (last idle period was last updated at the start of
+  // the frame reception).
+  // If the medium has been idle for some time, UpdateLastIdlePeriod updates
+  // the last idle period. This is normally what we want because this method may
+  // also be called before starting a TXOP gained through EDCA.
+  UpdateLastIdlePeriod ();
+
+  uint16_t width = 0;
+
+  // we iterate over the different types of channels in the same order as they
+  // are listed in WifiChannelListType
+  for (const auto& lastIdle : m_lastIdle)
+    {
+      if (lastIdle.second.start <= end -interval && lastIdle.second.end >= end)
+        {
+          // channel idle, update width
+          width = (width == 0) ? 20 : (2 * width);
+        }
+      else
+        {
+          break;
+        }
+    }
+  return width;
+}
+
 void
 ChannelAccessManager::DisableEdcaFor (Ptr<Txop> qosTxop, Time duration)
 {
@@ -551,8 +619,8 @@ ChannelAccessManager::DisableEdcaFor (Ptr<Txop> qosTxop, Time duration)
   UpdateBackoff ();
   Time resume = Simulator::Now () + duration;
   NS_LOG_DEBUG ("Backoff will resume at time " << resume << " with "
-                << qosTxop->GetBackoffSlots () << " remaining slot(s)");
-  qosTxop->UpdateBackoffSlotsNow (0, resume);
+                << qosTxop->GetBackoffSlots (m_linkId) << " remaining slot(s)");
+  qosTxop->UpdateBackoffSlotsNow (0, resume, m_linkId);
   DoRestartAccessTimeoutIfNeeded ();
 }
 
@@ -562,8 +630,9 @@ ChannelAccessManager::NotifyRxStartNow (Time duration)
   NS_LOG_FUNCTION (this << duration);
   NS_LOG_DEBUG ("rx start for=" << duration);
   UpdateBackoff ();
-  m_lastRxStart = Simulator::Now ();
-  m_lastRxDuration = duration;
+  UpdateLastIdlePeriod ();
+  m_lastRx.start = Simulator::Now ();
+  m_lastRx.end = m_lastRx.start + duration;
   m_lastRxReceivedOk = true;
 }
 
@@ -572,7 +641,7 @@ ChannelAccessManager::NotifyRxEndOkNow (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("rx end ok");
-  m_lastRxDuration = Simulator::Now () - m_lastRxStart;
+  m_lastRx.end = Simulator::Now ();
   m_lastRxReceivedOk = true;
 }
 
@@ -581,14 +650,8 @@ ChannelAccessManager::NotifyRxEndErrorNow (void)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("rx end error");
-  Time now = Simulator::Now ();
-  Time lastRxEnd = m_lastRxStart + m_lastRxDuration;
-  if (lastRxEnd > now)
-    {
-      m_lastBusyStart = now;
-      m_lastBusyDuration = lastRxEnd - m_lastBusyStart;
-    }
-  m_lastRxDuration = now - m_lastRxStart;
+  // we expect the PHY to notify us of the start of a CCA busy period, if needed
+  m_lastRx.end = Simulator::Now ();
   m_lastRxReceivedOk = false;
 }
 
@@ -598,28 +661,43 @@ ChannelAccessManager::NotifyTxStartNow (Time duration)
   NS_LOG_FUNCTION (this << duration);
   m_lastRxReceivedOk = true;
   Time now = Simulator::Now ();
-  Time lastRxEnd = m_lastRxStart + m_lastRxDuration;
-  if (lastRxEnd > now)
+  if (m_lastRx.end > now)
     {
       //this may be caused only if PHY has started to receive a packet
       //inside SIFS, so, we check that lastRxStart was maximum a SIFS ago
-      NS_ASSERT (now - m_lastRxStart <= GetSifs ());
-      m_lastRxDuration = now - m_lastRxStart;
+      NS_ASSERT (now - m_lastRx.start <= GetSifs ());
+      m_lastRx.end = now;
+    }
+  else
+    {
+      UpdateLastIdlePeriod ();
     }
   NS_LOG_DEBUG ("tx start for " << duration);
   UpdateBackoff ();
-  m_lastTxStart = now;
-  m_lastTxDuration = duration;
+  m_lastTxEnd = now + duration;
 }
 
 void
-ChannelAccessManager::NotifyMaybeCcaBusyStartNow (Time duration)
+ChannelAccessManager::NotifyCcaBusyStartNow (Time duration,
+                                             WifiChannelListType channelType,
+                                             const std::vector<Time>& per20MhzDurations)
 {
-  NS_LOG_FUNCTION (this << duration);
-  NS_LOG_DEBUG ("busy start for " << duration);
+  NS_LOG_FUNCTION (this << duration << channelType);
   UpdateBackoff ();
-  m_lastBusyStart = Simulator::Now ();
-  m_lastBusyDuration = duration;
+  UpdateLastIdlePeriod ();
+  auto lastBusyEndIt = m_lastBusyEnd.find (channelType);
+  NS_ASSERT (lastBusyEndIt != m_lastBusyEnd.end ());
+  Time now = Simulator::Now ();
+  lastBusyEndIt->second = now + duration;
+  // TODO uncomment assert below when PHY passes correct parameters
+  // NS_ASSERT (per20MhzDurations.size () == m_lastPer20MHzBusyEnd.size ());
+  for (std::size_t chIdx = 0; chIdx < per20MhzDurations.size (); ++chIdx)
+    {
+      if (per20MhzDurations[chIdx].IsStrictlyPositive ())
+        {
+          m_lastPer20MHzBusyEnd[chIdx] =  now + per20MhzDurations[chIdx];
+        }
+    }
 }
 
 void
@@ -627,32 +705,18 @@ ChannelAccessManager::NotifySwitchingStartNow (Time duration)
 {
   NS_LOG_FUNCTION (this << duration);
   Time now = Simulator::Now ();
-  NS_ASSERT (m_lastTxStart + m_lastTxDuration <= now);
-  NS_ASSERT (m_lastSwitchingStart + m_lastSwitchingDuration <= now);
+  NS_ASSERT (m_lastTxEnd <= now);
+  NS_ASSERT (m_lastSwitchingEnd <= now);
 
   m_lastRxReceivedOk = true;
+  UpdateLastIdlePeriod ();
+  m_lastRx.end = std::min (m_lastRx.end, now);
+  m_lastNavEnd = std::min (m_lastNavEnd, now);
+  m_lastAckTimeoutEnd = std::min (m_lastAckTimeoutEnd, now);
+  m_lastCtsTimeoutEnd = std::min (m_lastCtsTimeoutEnd, now);
 
-  if (m_lastRxStart + m_lastRxDuration > now)
-    {
-      //channel switching during packet reception
-      m_lastRxDuration = now - m_lastRxStart;
-    }
-  if (m_lastNavStart + m_lastNavDuration > now)
-    {
-      m_lastNavDuration = now - m_lastNavStart;
-    }
-  if (m_lastBusyStart + m_lastBusyDuration > now)
-    {
-      m_lastBusyDuration = now - m_lastBusyStart;
-    }
-  if (m_lastAckTimeoutEnd > now)
-    {
-      m_lastAckTimeoutEnd = now;
-    }
-  if (m_lastCtsTimeoutEnd > now)
-    {
-      m_lastCtsTimeoutEnd = now;
-    }
+  // the new operating channel may have a different width than the previous one
+  InitLastBusyStructs ();
 
   //Cancel timeout
   if (m_accessTimeout.IsRunning ())
@@ -660,23 +724,24 @@ ChannelAccessManager::NotifySwitchingStartNow (Time duration)
       m_accessTimeout.Cancel ();
     }
 
+  // Notify the FEM, which will in turn notify the MAC
+  m_feManager->NotifySwitchingStartNow (duration);
+
   //Reset backoffs
   for (auto txop : m_txops)
     {
-      uint32_t remainingSlots = txop->GetBackoffSlots ();
+      uint32_t remainingSlots = txop->GetBackoffSlots (m_linkId);
       if (remainingSlots > 0)
         {
-          txop->UpdateBackoffSlotsNow (remainingSlots, now);
-          NS_ASSERT (txop->GetBackoffSlots () == 0);
+          txop->UpdateBackoffSlotsNow (remainingSlots, now, m_linkId);
+          NS_ASSERT (txop->GetBackoffSlots (m_linkId) == 0);
         }
-      txop->ResetCw ();
-      txop->m_access = Txop::NOT_REQUESTED;
-      txop->NotifyChannelSwitching ();
+      txop->ResetCw (m_linkId);
+      txop->GetLink (m_linkId).access = Txop::NOT_REQUESTED;
     }
 
   NS_LOG_DEBUG ("switching start for " << duration);
-  m_lastSwitchingStart = Simulator::Now ();
-  m_lastSwitchingDuration = duration;
+  m_lastSwitchingEnd = now + duration;
 }
 
 void
@@ -693,7 +758,7 @@ ChannelAccessManager::NotifySleepNow (void)
   //Reset backoffs
   for (auto txop : m_txops)
     {
-      txop->NotifySleep ();
+      txop->NotifySleep (m_linkId);
     }
 }
 
@@ -722,15 +787,15 @@ ChannelAccessManager::NotifyWakeupNow (void)
   m_sleeping = false;
   for (auto txop : m_txops)
     {
-      uint32_t remainingSlots = txop->GetBackoffSlots ();
+      uint32_t remainingSlots = txop->GetBackoffSlots (m_linkId);
       if (remainingSlots > 0)
         {
-          txop->UpdateBackoffSlotsNow (remainingSlots, Simulator::Now ());
-          NS_ASSERT (txop->GetBackoffSlots () == 0);
+          txop->UpdateBackoffSlotsNow (remainingSlots, Simulator::Now (), m_linkId);
+          NS_ASSERT (txop->GetBackoffSlots (m_linkId) == 0);
         }
-      txop->ResetCw ();
-      txop->m_access = Txop::NOT_REQUESTED;
-      txop->NotifyWakeUp ();
+      txop->ResetCw (m_linkId);
+      txop->GetLink (m_linkId).access = Txop::NOT_REQUESTED;
+      txop->NotifyWakeUp (m_linkId);
     }
 }
 
@@ -741,14 +806,14 @@ ChannelAccessManager::NotifyOnNow (void)
   m_off = false;
   for (auto txop : m_txops)
     {
-      uint32_t remainingSlots = txop->GetBackoffSlots ();
+      uint32_t remainingSlots = txop->GetBackoffSlots (m_linkId);
       if (remainingSlots > 0)
         {
-          txop->UpdateBackoffSlotsNow (remainingSlots, Simulator::Now ());
-          NS_ASSERT (txop->GetBackoffSlots () == 0);
+          txop->UpdateBackoffSlotsNow (remainingSlots, Simulator::Now (), m_linkId);
+          NS_ASSERT (txop->GetBackoffSlots (m_linkId) == 0);
         }
-      txop->ResetCw ();
-      txop->m_access = Txop::NOT_REQUESTED;
+      txop->ResetCw (m_linkId);
+      txop->GetLink (m_linkId).access = Txop::NOT_REQUESTED;
       txop->NotifyOn ();
     }
 }
@@ -759,8 +824,7 @@ ChannelAccessManager::NotifyNavResetNow (Time duration)
   NS_LOG_FUNCTION (this << duration);
   NS_LOG_DEBUG ("nav reset for=" << duration);
   UpdateBackoff ();
-  m_lastNavStart = Simulator::Now ();
-  m_lastNavDuration = duration;
+  m_lastNavEnd = Simulator::Now () + duration;
   /**
    * If the NAV reset indicates an end-of-NAV which is earlier
    * than the previous end-of-NAV, the expected end of backoff
@@ -774,16 +838,9 @@ void
 ChannelAccessManager::NotifyNavStartNow (Time duration)
 {
   NS_LOG_FUNCTION (this << duration);
-  NS_ASSERT (m_lastNavStart <= Simulator::Now ());
   NS_LOG_DEBUG ("nav start for=" << duration);
   UpdateBackoff ();
-  Time newNavEnd = Simulator::Now () + duration;
-  Time lastNavEnd = m_lastNavStart + m_lastNavDuration;
-  if (newNavEnd > lastNavEnd)
-    {
-      m_lastNavStart = Simulator::Now ();
-      m_lastNavDuration = duration;
-    }
+  m_lastNavEnd = std::max (m_lastNavEnd, Simulator::Now () + duration);
 }
 
 void
@@ -815,6 +872,33 @@ ChannelAccessManager::NotifyCtsTimeoutResetNow (void)
   NS_LOG_FUNCTION (this);
   m_lastCtsTimeoutEnd = Simulator::Now ();
   DoRestartAccessTimeoutIfNeeded ();
+}
+
+void
+ChannelAccessManager::UpdateLastIdlePeriod (void)
+{
+  NS_LOG_FUNCTION (this);
+  Time idleStart = std::max ({m_lastTxEnd, m_lastRx.end, m_lastSwitchingEnd});
+  Time now = Simulator::Now ();
+
+  if (idleStart >= now)
+    {
+      // No new idle period
+      return;
+    }
+
+  for (const auto& busyEnd : m_lastBusyEnd)
+    {
+      if (busyEnd.second < now)
+        {
+          auto lastIdleIt = m_lastIdle.find (busyEnd.first);
+          NS_ASSERT (lastIdleIt != m_lastIdle.end ());
+          lastIdleIt->second = {std::max (idleStart, busyEnd.second), now};
+          NS_LOG_DEBUG ("New idle period (" << lastIdleIt->second.start.As (Time::S)
+                        << ", " << lastIdleIt->second.end.As (Time::S)
+                        << ") on channel " << lastIdleIt->first);
+        }
+    }
 }
 
 } //namespace ns3

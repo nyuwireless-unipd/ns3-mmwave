@@ -367,6 +367,12 @@ MmWavePhy::AddSpectrumPropagationLossModel (Ptr<SpectrumPropagationLossModel> mo
 }
 
 void
+MmWavePhy::AddPhasedArraySpectrumPropagationLossModel (Ptr<PhasedArraySpectrumPropagationLossModel> model)
+{
+  m_phasedArraySpectrumPropagationLossModel = model;
+}
+
+void
 MmWavePhy::SetComponentCarrierId (uint8_t index)
 {
   m_componentCarrierId = index;

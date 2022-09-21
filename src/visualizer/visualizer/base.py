@@ -1,12 +1,4 @@
 from __future__ import print_function
-import ns.point_to_point
-import ns.csma
-import ns.wifi
-import ns.bridge
-import ns.internet
-import ns.mesh
-import ns.wimax
-import ns.lte
 
 from gi.repository import GObject
 import os.path
@@ -16,9 +8,9 @@ PIXELS_PER_METER = 3.0 # pixels-per-meter, at 100% zoom level
 
 ## PyVizObject class
 class PyVizObject(GObject.GObject):
-    ## @var __gtype_name__
-    #  global type name
+    ##  global type name
     __gtype_name__ = "PyVizObject"
+
     ## Returns tooltip text string.
     #
     ## @param tooltip: tooltip object.
@@ -47,26 +39,27 @@ class NetDeviceTraits(object):
     ## @var is_virtual
     #  is virtual
     def __init__(self, is_wireless=None, is_virtual=False):
-        ''' Initialize function.
-
+        """!
+        Initialize function.
+        @param self The current class
         @param is_wireless is wireless flag
         @param is_virtual is virtual flag
-        '''
+        """
         assert is_virtual or is_wireless is not None
         self.is_wireless = is_wireless
         self.is_virtual = is_virtual
 
 netdevice_traits = {
-    ns.point_to_point.PointToPointNetDevice: NetDeviceTraits(is_wireless=False),
-    ns.csma.CsmaNetDevice: NetDeviceTraits(is_wireless=False),
-    ns.wifi.WifiNetDevice: NetDeviceTraits(is_wireless=True),
-    ns.bridge.BridgeNetDevice: NetDeviceTraits(is_virtual=True),
-    ns.internet.LoopbackNetDevice: NetDeviceTraits(is_virtual=True, is_wireless=False),
-    ns.mesh.MeshPointDevice: NetDeviceTraits(is_virtual=True),
-    ns.wimax.SubscriberStationNetDevice: NetDeviceTraits(is_wireless=True),
-    ns.wimax.BaseStationNetDevice: NetDeviceTraits(is_wireless=True),
-    ns.lte.LteUeNetDevice: NetDeviceTraits(is_wireless=True),
-    ns.lte.LteEnbNetDevice: NetDeviceTraits(is_wireless=True),
+    ns.PointToPointNetDevice: NetDeviceTraits(is_wireless=False),
+    ns.CsmaNetDevice: NetDeviceTraits(is_wireless=False),
+    ns.WifiNetDevice: NetDeviceTraits(is_wireless=True),
+    ns.BridgeNetDevice: NetDeviceTraits(is_virtual=True),
+    ns.LoopbackNetDevice: NetDeviceTraits(is_virtual=True, is_wireless=False),
+    ns.MeshPointDevice: NetDeviceTraits(is_virtual=True),
+    ns.SubscriberStationNetDevice: NetDeviceTraits(is_wireless=True),
+    ns.BaseStationNetDevice: NetDeviceTraits(is_wireless=True),
+    ns.LteUeNetDevice: NetDeviceTraits(is_wireless=True),
+    ns.LteEnbNetDevice: NetDeviceTraits(is_wireless=True),
 }
 
 def lookup_netdevice_traits(class_type):

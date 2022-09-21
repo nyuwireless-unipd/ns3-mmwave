@@ -21,12 +21,12 @@
 
 #include <string>
 
-#include "point-to-point-helper.h"
-#include "ipv4-address-helper.h"
-#include "ipv6-address-helper.h"
-#include "internet-stack-helper.h"
-#include "ipv4-interface-container.h"
-#include "ipv6-interface-container.h"
+#include "ns3/point-to-point-helper.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/ipv6-address-helper.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/ipv4-interface-container.h"
+#include "ns3/ipv6-interface-container.h"
 
 namespace ns3 {
 
@@ -48,14 +48,14 @@ public:
    * Create a PointToPointStarHelper in order to easily create
    * star topologies using p2p links
    *
-   * \param numSpokes the number of links attached to 
-   *        the hub node, creating a total of 
+   * \param numSpokes the number of links attached to
+   *        the hub node, creating a total of
    *        numSpokes + 1 nodes
    *
-   * \param p2pHelper the link helper for p2p links, 
+   * \param p2pHelper the link helper for p2p links,
    *        used to link nodes together
    */
-  PointToPointStarHelper (uint32_t numSpokes, 
+  PointToPointStarHelper (uint32_t numSpokes,
                           PointToPointHelper p2pHelper);
 
   ~PointToPointStarHelper ();
@@ -108,14 +108,14 @@ public:
   uint32_t SpokeCount () const;
 
   /**
-   * \param stack an InternetStackHelper which is used to install 
+   * \param stack an InternetStackHelper which is used to install
    *              on every node in the star
    */
   void InstallStack (InternetStackHelper stack);
 
   /**
-   * \param address an Ipv4AddressHelper which is used to install 
-   *                Ipv4 addresses on all the node interfaces in 
+   * \param address an Ipv4AddressHelper which is used to install
+   *                Ipv4 addresses on all the node interfaces in
    *                the star
    */
   void AssignIpv4Addresses (Ipv4AddressHelper address);
@@ -128,7 +128,7 @@ public:
   void AssignIpv6Addresses (Ipv6Address network, Ipv6Prefix prefix);
 
   /**
-   * Sets up the node canvas locations for every node in the star. 
+   * Sets up the node canvas locations for every node in the star.
    * This is needed for use with the animation interface
    *
    * \param ulx upper left x value

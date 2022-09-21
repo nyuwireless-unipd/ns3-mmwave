@@ -372,7 +372,6 @@ uint32_t
 MmWaveEesmErrorModel::GetPayloadSize (uint32_t usefulSc, uint8_t mcs, uint32_t rbNum, Mode mode) const
 {
   NS_LOG_FUNCTION (this);
-  NS_UNUSED (mode);
   NS_ASSERT (GetMcsEcrTable () != nullptr);
   const uint32_t rscElement = usefulSc * rbNum;
   double Rcode = GetMcsEcrTable ()->at (mcs);

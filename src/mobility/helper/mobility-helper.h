@@ -26,7 +26,7 @@
 #include "ns3/attribute.h"
 #include "ns3/output-stream-wrapper.h"
 #include "ns3/position-allocator.h"
-#include "node-container.h"
+#include "ns3/node-container.h"
 
 namespace ns3 {
 
@@ -54,7 +54,7 @@ public:
   ~MobilityHelper ();
 
   /**
-   * Set the position allocator which will be used to allocate the initial 
+   * Set the position allocator which will be used to allocate the initial
    * position of every node initialized during MobilityModel::Install.
    *
    * \param allocator allocate initial node positions
@@ -62,71 +62,23 @@ public:
   void SetPositionAllocator (Ptr<PositionAllocator> allocator);
 
   /**
+   * \tparam Ts \deduced Argument types
    * \param type the type of mobility model to use.
-   * \param n1 the name of the attribute to set in the mobility model.
-   * \param v1 the value of the attribute to set in the mobility model.
-   * \param n2 the name of the attribute to set in the mobility model.
-   * \param v2 the value of the attribute to set in the mobility model.
-   * \param n3 the name of the attribute to set in the mobility model.
-   * \param v3 the value of the attribute to set in the mobility model.
-   * \param n4 the name of the attribute to set in the mobility model.
-   * \param v4 the value of the attribute to set in the mobility model.
-   * \param n5 the name of the attribute to set in the mobility model.
-   * \param v5 the value of the attribute to set in the mobility model.
-   * \param n6 the name of the attribute to set in the mobility model.
-   * \param v6 the value of the attribute to set in the mobility model.
-   * \param n7 the name of the attribute to set in the mobility model.
-   * \param v7 the value of the attribute to set in the mobility model.
-   * \param n8 the name of the attribute to set in the mobility model.
-   * \param v8 the value of the attribute to set in the mobility model.
-   * \param n9 the name of the attribute to set in the mobility model.
-   * \param v9 the value of the attribute to set in the mobility model.
+   * \param [in] args Name and AttributeValue pairs to set.
    */
-  void SetPositionAllocator (std::string type,
-                             std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                             std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                             std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                             std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                             std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                             std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                             std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue (),
-                             std::string n8 = "", const AttributeValue &v8 = EmptyAttributeValue (),
-                             std::string n9 = "", const AttributeValue &v9 = EmptyAttributeValue ());
+  template <typename... Ts>
+  void SetPositionAllocator (std::string type, Ts&&... args);
 
   /**
+   * \tparam Ts \deduced Argument types
    * \param type the type of mobility model to use.
-   * \param n1 the name of the attribute to set in the mobility model.
-   * \param v1 the value of the attribute to set in the mobility model.
-   * \param n2 the name of the attribute to set in the mobility model.
-   * \param v2 the value of the attribute to set in the mobility model.
-   * \param n3 the name of the attribute to set in the mobility model.
-   * \param v3 the value of the attribute to set in the mobility model.
-   * \param n4 the name of the attribute to set in the mobility model.
-   * \param v4 the value of the attribute to set in the mobility model.
-   * \param n5 the name of the attribute to set in the mobility model.
-   * \param v5 the value of the attribute to set in the mobility model.
-   * \param n6 the name of the attribute to set in the mobility model.
-   * \param v6 the value of the attribute to set in the mobility model.
-   * \param n7 the name of the attribute to set in the mobility model.
-   * \param v7 the value of the attribute to set in the mobility model.
-   * \param n8 the name of the attribute to set in the mobility model.
-   * \param v8 the value of the attribute to set in the mobility model.
-   * \param n9 the name of the attribute to set in the mobility model.
-   * \param v9 the value of the attribute to set in the mobility model.
+   * \param [in] args Name and AttributeValue pairs to set.
    *
-   * Calls to MobilityHelper::Install will create an instance of a matching 
+   * Calls to MobilityHelper::Install will create an instance of a matching
    * mobility model for each node.
    */
-  void SetMobilityModel (std::string type,
-                         std::string n1 = "", const AttributeValue &v1 = EmptyAttributeValue (),
-                         std::string n2 = "", const AttributeValue &v2 = EmptyAttributeValue (),
-                         std::string n3 = "", const AttributeValue &v3 = EmptyAttributeValue (),
-                         std::string n4 = "", const AttributeValue &v4 = EmptyAttributeValue (),
-                         std::string n5 = "", const AttributeValue &v5 = EmptyAttributeValue (),
-                         std::string n6 = "", const AttributeValue &v6 = EmptyAttributeValue (),
-                         std::string n7 = "", const AttributeValue &v7 = EmptyAttributeValue (),
-                         std::string n8 = "", const AttributeValue &v8 = EmptyAttributeValue (),
-                         std::string n9 = "", const AttributeValue &v9 = EmptyAttributeValue ());
+  template <typename... Ts>
+  void SetMobilityModel (std::string type, Ts&&... args);
 
   /**
    * \param reference item to push.
@@ -181,10 +133,10 @@ public:
   /**
    * \brief "Layout" a single node according to the current position allocator type.
    *
-   * This method creates an instance of a ns3::MobilityModel subclass (the 
+   * This method creates an instance of a ns3::MobilityModel subclass (the
    * type of which was set with MobilityHelper::SetMobilityModel), aggregates
    * it to the provided node, and sets an initial position based on the current
-   * position allocator (set through MobilityHelper::SetPositionAllocator). 
+   * position allocator (set through MobilityHelper::SetPositionAllocator).
    *
    * \param node The node to "layout."
    */
@@ -192,10 +144,10 @@ public:
   /**
    * \brief "Layout" a single node according to the current position allocator type.
    *
-   * This method creates an instance of a ns3::MobilityModel subclass (the 
+   * This method creates an instance of a ns3::MobilityModel subclass (the
    * type of which was set with MobilityHelper::SetMobilityModel), aggregates
    * it to the provided node, and sets an initial position based on the current
-   * position allocator (set through MobilityHelper::SetPositionAllocator). 
+   * position allocator (set through MobilityHelper::SetPositionAllocator).
    *
    * \param nodeName The name of the node to "layout."
    */
@@ -204,11 +156,11 @@ public:
   /**
    * \brief Layout a collection of nodes according to the current position allocator type.
    *
-   * For each node in the provided NodeContainer, this method creates an instance 
-   * of a ns3::MobilityModel subclass (the type of which was set with 
-   * MobilityHelper::SetMobilityModel), aggregates it to the node, and sets an 
-   * initial position based on the current position allocator (set through 
-   * MobilityHelper::SetPositionAllocator). 
+   * For each node in the provided NodeContainer, this method creates an instance
+   * of a ns3::MobilityModel subclass (the type of which was set with
+   * MobilityHelper::SetMobilityModel), aggregates it to the node, and sets an
+   * initial position based on the current position allocator (set through
+   * MobilityHelper::SetPositionAllocator).
    *
    * \param container The set of nodes to layout.
    */
@@ -225,7 +177,7 @@ public:
    * \param nodeid the id of the node to generate ascii output for.
    *
    * Enable ascii output to record course changes from the mobility model
-   * associated with the specified nodeid and dump that to the specified output 
+   * associated with the specified nodeid and dump that to the specified output
    * stream.  If the Node does not have a MobilityModel aggregated,
    * this method will not produce any output.
    */
@@ -235,7 +187,7 @@ public:
    * \param n node container
    *
    * Enable ascii output to record course changes from the mobility models
-   * associated to the the nodes in the input container and dump that to the 
+   * associated to the the nodes in the input container and dump that to the
    * specified output stream.  Nodes that do not have a MobilityModel
    * aggregated will not result in any output.
    */
@@ -244,15 +196,15 @@ public:
    * \param stream an output stream wrapper
    *
    * Enable ascii output to record course changes from the mobility models
-   * associated to every node in the system and dump that to the specified 
+   * associated to every node in the system and dump that to the specified
    * output stream.  Nodes that do not have a MobilityModel aggregated
    * will not result in any output.
    */
   static void EnableAsciiAll (Ptr<OutputStreamWrapper> stream);
   /**
    * Assign a fixed random variable stream number to the random variables
-   * used by the mobility models on these nodes. Return the number of 
-   * streams (possibly zero) that have been assigned. The Install() 
+   * used by the mobility models on these nodes. Return the number of
+   * streams (possibly zero) that have been assigned. The Install()
    * method should have previously been called by the user.
    *
    * \note If the PositionAllocator used contains random variables, they
@@ -288,6 +240,25 @@ private:
   ObjectFactory m_mobility; //!< Object factory to create mobility objects
   Ptr<PositionAllocator> m_position; //!< Position allocator for use in hierarchical mobility model
 };
+
+
+/***************************************************************
+ *  Implementation of the templates declared above.
+ ***************************************************************/
+
+template <typename... Ts>
+void MobilityHelper::SetPositionAllocator (std::string type, Ts&&... args)
+{
+  ObjectFactory pos(type, std::forward<Ts> (args)...);
+  m_position = pos.Create ()->GetObject<PositionAllocator> ();
+}
+
+template <typename... Ts>
+void MobilityHelper::SetMobilityModel (std::string type, Ts&&... args)
+{
+  m_mobility.SetTypeId (type);
+  m_mobility.Set (std::forward<Ts> (args)...);
+}
 
 } // namespace ns3
 

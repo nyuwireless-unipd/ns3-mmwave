@@ -672,7 +672,6 @@ uint32_t
 MmWaveLteMiErrorModel::GetPayloadSize (uint32_t usefulSC, uint8_t mcs, uint32_t rbNum, Mode mode) const
 {
   NS_LOG_FUNCTION (this);
-  NS_UNUSED (mode);
   const uint32_t rscElement = usefulSC * rbNum;
   const double Rcode = McsEcrTable[mcs];
   const uint8_t Qm = ModulationSchemeForMcs[mcs];
@@ -688,9 +687,6 @@ MmWaveLteMiErrorModel::GetPayloadSize (uint32_t usefulSC, uint8_t mcs, uint32_t 
 uint32_t
 MmWaveLteMiErrorModel::GetMaxCbSize (uint32_t tbSize, uint8_t mcs) const
 {
-  NS_UNUSED (tbSize);
-  NS_UNUSED (mcs);
-
   return cbSizeTable.back () / 8;
 }
 

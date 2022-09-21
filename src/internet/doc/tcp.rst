@@ -22,19 +22,15 @@ There are three important abstract base classes:
   that derive from class :cpp:class:`TcpSocket`.
 * class :cpp:class:`TcpSocketFactory`: This is used by the layer-4 protocol
   instance to create TCP sockets of the right type.
-* class :cpp:class:`TcpCongestionOps`: This supports different variants of 
+* class :cpp:class:`TcpCongestionOps`: This supports different variants of
   congestion control-- a key topic of simulation-based TCP research.
 
-There are presently two active and one legacy implementations of TCP available for |ns3|.
+There are presently two active implementations of TCP available for |ns3|.
 
 * a natively implemented TCP for ns-3
 * support for kernel implementations via `Direct Code Execution (DCE) <https://www.nsnam.org/overview/projects/direct-code-execution/>`__
-* (legacy) support for kernel implementations for the `Network Simulation Cradle (NSC) <http://www.wand.net.nz/~stj2/nsc/>`__
 
-NSC is no longer actively supported; it requires use of gcc-5 or gcc-4.9, and
-only covers up to Linux kernel version 2.6.29.
-
-Direct Code Execution is also limited in its support for newer kernels; at
+Direct Code Execution is limited in its support for newer kernels; at
 present, only Linux kernel 4.4 is supported.  However, the TCP implementations
 in kernel 4.4 can still be used for ns-3 validation or for specialized
 simulation use cases.
@@ -61,11 +57,11 @@ Model history
 +++++++++++++
 
 Until the ns-3.10 release, |ns3| contained a port of the TCP model from `GTNetS
-<http://www.ece.gatech.edu/research/labs/MANIACS/GTNetS/index.html>`_, 
-developed initially by George Riley and ported to |ns3| by Raj Bhattacharjea. 
+<http://www.ece.gatech.edu/research/labs/MANIACS/GTNetS/index.html>`_,
+developed initially by George Riley and ported to |ns3| by Raj Bhattacharjea.
 This implementation was substantially rewritten by Adriam Tam for ns-3.10.
-In 2015, the TCP module was redesigned in order to create a better 
-environment for creating and carrying out automated tests. One of the main 
+In 2015, the TCP module was redesigned in order to create a better
+environment for creating and carrying out automated tests. One of the main
 changes involves congestion control algorithms, and how they are implemented.
 
 Before the ns-3.25 release, a congestion control was considered as a stand-alone TCP
@@ -98,12 +94,12 @@ Acknowledgments
 
 As mentioned above, |ns3| TCP has had multiple authors and maintainers over
 the years. Several publications exist on aspects of |ns3| TCP, and users
-of |ns3| TCP are requested to cite one of the applicable papers when 
+of |ns3| TCP are requested to cite one of the applicable papers when
 publishing new work.
 
 A general reference on the current architecture is found in the following paper:
 
-* Maurizio Casoni, Natale Patriciello, Next-generation TCP for ns-3 simulator, Simulation Modelling Practice and Theory, Volume 66, 2016, Pages 81-93. (http://www.sciencedirect.com/science/article/pii/S1569190X15300939) 
+* Maurizio Casoni, Natale Patriciello, Next-generation TCP for ns-3 simulator, Simulation Modelling Practice and Theory, Volume 66, 2016, Pages 81-93. (http://www.sciencedirect.com/science/article/pii/S1569190X15300939)
 
 For an academic peer-reviewed paper on the SACK implementation in ns-3,
 please refer to:
@@ -137,8 +133,7 @@ The careful reader will note above that we have specified the TypeId of an
 abstract base class :cpp:class:`TcpSocketFactory`. How does the script tell
 |ns3| that it wants the native |ns3| TCP vs. some other one? Well, when
 internet stacks are added to the node, the default TCP implementation that is
-aggregated to the node is the |ns3| TCP. This can be overridden as we show
-below when using Network Simulation Cradle. So, by default, when using the |ns3|
+aggregated to the node is the |ns3| TCP.  So, by default, when using the |ns3|
 helper API, the TCP that is aggregated to nodes with an Internet stack is the
 native |ns3| TCP.
 
@@ -150,15 +145,15 @@ settable attribute.
 
 To set the default socket type before any internet stack-related objects are
 created, one may put the following statement at the top of the simulation
-program:: 
+program::
 
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno")); 
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue ("ns3::TcpNewReno"));
 
 For users who wish to have a pointer to the actual socket (so that
 socket operations like Bind(), setting socket options, etc. can be
-done on a per-socket basis), Tcp sockets can be created by using the 
+done on a per-socket basis), Tcp sockets can be created by using the
 ``Socket::CreateSocket()`` method. The TypeId passed to CreateSocket()
-must be of type :cpp:class:`ns3::SocketFactory`, so configuring the underlying 
+must be of type :cpp:class:`ns3::SocketFactory`, so configuring the underlying
 socket type must be done by twiddling the attribute associated with the
 underlying TcpL4Protocol object. The easiest way to get at this would be
 through the attribute configuration system. In the below example,
@@ -172,7 +167,7 @@ created on this node::
     Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ());
 
 Above, the "*" wild card for node number is passed to the attribute
-configuration system, so that all future sockets on all nodes are set to 
+configuration system, so that all future sockets on all nodes are set to
 NewReno, not just on node 'n0n1.Get (0)'. If one wants to limit it to just
 the specified node, one would have to do something like::
 
@@ -183,7 +178,7 @@ the specified node, one would have to do something like::
   std::string specificNode = "/NodeList/" + nodeId.str () + "/$ns3::TcpL4Protocol/SocketType";
   Config::Set (specificNode, TypeIdValue (tid));
   Ptr<Socket> localSocket =
-    Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ()); 
+    Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ());
 
 Once a TCP socket is created, one will want to follow conventional socket logic
 and either connect() and send() (for a TCP client) or bind(), listen(), and
@@ -216,7 +211,7 @@ definition can be applied to both sockets in case of full-duplex mode.
 
    TCP State machine
 
-In ns-3 we are fully compliant with the state machine depicted in 
+In ns-3 we are fully compliant with the state machine depicted in
 Figure :ref:`fig-tcp-state-machine`.
 
 ----------
@@ -434,14 +429,14 @@ TCP Linux Reno (class :cpp:class:`TcpLinuxReno`) is designed to provide a
 Linux-like implementation of
 TCP NewReno. The implementation of class :cpp:class:`TcpNewReno` in ns-3
 follows RFC standards, and increases cwnd more conservatively than does Linux Reno.
-Linux Reno modifies slow start and congestion avoidance algorithms to 
-increase cwnd based on the number of bytes being acknowledged by each 
+Linux Reno modifies slow start and congestion avoidance algorithms to
+increase cwnd based on the number of bytes being acknowledged by each
 arriving ACK, rather than by the number of ACKs that arrive.  Another major
 difference in implementation is that Linux maintains the congestion window
 in units of segments, while the RFCs define the congestion window in units of
 bytes.
 
-In slow start phase, on each incoming ACK at the TCP sender side cwnd 
+In slow start phase, on each incoming ACK at the TCP sender side cwnd
 is increased by the number of previously unacknowledged bytes ACKed by the
 incoming acknowledgment. In contrast, in ns-3 NewReno, cwnd is increased
 by one segment per acknowledgment.  In standards terminology, this
@@ -492,7 +487,7 @@ in ns-3:
 1) In TCP Linux Reno, delayed acknowledgement configuration does not affect
 congestion window growth, while in TCP NewReno, delayed acknowledgments cause
 a slower congestion window growth.
-2) In congestion avoidance phase, the arithmetic for counting the number of 
+2) In congestion avoidance phase, the arithmetic for counting the number of
 segments acked and deciding when to increment the cwnd is different for TCP
 Linux Reno and TCP NewReno.
 
@@ -552,12 +547,14 @@ More information at: http://dl.acm.org/citation.cfm?id=2756518
 
 Westwood
 ^^^^^^^^
-Westwood and Westwood+ employ the AIAD (Additive Increase/Adaptive Decrease)·
-congestion control paradigm. When a congestion episode happens,·
+Westwood and Westwood+ employ the AIAD (Additive Increase/Adaptive Decrease)
+congestion control paradigm. When a congestion episode happens,
 instead of halving the cwnd, these protocols try to estimate the network's
-bandwidth and use the estimated value to adjust the cwnd.·
-While Westwood performs the bandwidth sampling every ACK reception,·
+bandwidth and use the estimated value to adjust the cwnd.
+While Westwood performs the bandwidth sampling every ACK reception,
 Westwood+ samples the bandwidth every RTT.
+
+WARNING: this TCP model lacks validation and regression tests; use with caution.
 
 More information at: http://dl.acm.org/citation.cfm?id=381704 and
 http://dl.acm.org/citation.cfm?id=2512757
@@ -744,7 +741,7 @@ only if da stays below d1 for a some (theta) amount of time.
       \quad betaMax               & \quad \text{otherwise}
    \end{cases}
    :label: illinoisbeta
-			     
+
 where the calculations of k1, k2, k3, and k4 are shown in the following:
 
 .. math::   k1 &= \frac{(dm - d1) \cdot alphaMin \cdot alphaMax}{alphaMax - alphaMin}
@@ -796,30 +793,30 @@ More information: http://www.doi.org/10.1145/1190095.1190166
 H-TCP
 ^^^^^
 
-H-TCP has been designed for high BDP (Bandwidth-Delay Product) paths. It is 
-a dual mode protocol. In normal conditions, it works like traditional TCP 
-with the same rate of increment and decrement for the congestion window. 
-However, in high BDP networks, when it finds no congestion on the path 
-after ``deltal`` seconds, it increases the window size based on the alpha 
+H-TCP has been designed for high BDP (Bandwidth-Delay Product) paths. It is
+a dual mode protocol. In normal conditions, it works like traditional TCP
+with the same rate of increment and decrement for the congestion window.
+However, in high BDP networks, when it finds no congestion on the path
+after ``deltal`` seconds, it increases the window size based on the alpha
 function in the following:
 
 .. math::   alpha(delta)=1+10(delta-deltal)+0.5(delta-deltal)^2
    :label: htcpalpha
 
-where ``deltal`` is a threshold in seconds for switching between the modes and 
-``delta`` is the elapsed time from the last congestion. During congestion, 
-it reduces the window size by multiplying by beta function provided 
+where ``deltal`` is a threshold in seconds for switching between the modes and
+``delta`` is the elapsed time from the last congestion. During congestion,
+it reduces the window size by multiplying by beta function provided
 in the reference paper. The calculated throughput between the last two
-consecutive congestion events is considered for beta calculation. 
+consecutive congestion events is considered for beta calculation.
 
-The transport ``TcpHtcp`` can be selected in the program 
+The transport ``TcpHtcp`` can be selected in the program
 ``examples/tcp/tcp-variants-comparison.cc`` to perform an experiment with H-TCP,
 although it is useful to increase the bandwidth in this example (e.g.
 to 20 Mb/s) to create a higher BDP link, such as
 
 ::
 
-  ./waf --run "tcp-variants-comparison --transport_prot=TcpHtcp --bandwidth=20Mbps --duration=10"
+  ./ns3 run "tcp-variants-comparison --transport_prot=TcpHtcp --bandwidth=20Mbps --duration=10"
 
 More information (paper): http://www.hamilton.ie/net/htcp3.pdf
 
@@ -828,10 +825,10 @@ More information (Internet Draft): https://tools.ietf.org/html/draft-leith-tcp-h
 LEDBAT
 ^^^^^^
 
-Low Extra Delay Background Transport (LEDBAT) is an experimental delay-based 
+Low Extra Delay Background Transport (LEDBAT) is an experimental delay-based
 congestion control algorithm that seeks to utilize the available bandwidth on
-an end-to-end path while limiting the consequent increase in queueing delay 
-on that path. LEDBAT uses changes in one-way delay measurements to limit 
+an end-to-end path while limiting the consequent increase in queueing delay
+on that path. LEDBAT uses changes in one-way delay measurements to limit
 congestion that the flow itself induces in the network.
 
 As a first approximation, the LEDBAT sender operates as shown below:
@@ -846,10 +843,10 @@ On receipt of an ACK:
        cWnd += GAIN * offtarget * bytesnewlyacked * MSS / cWnd
 
 ``TARGET`` is the maximum queueing delay that LEDBAT itself may introduce in the
-network, and ``GAIN`` determines the rate at which the cwnd responds to changes in 
+network, and ``GAIN`` determines the rate at which the cwnd responds to changes in
 queueing delay; ``offtarget`` is a normalized value representing the difference between
-the measured current queueing delay and the predetermined TARGET delay. offtarget can 
-be positive or negative; consequently, cwnd increases or decreases in proportion to 
+the measured current queueing delay and the predetermined TARGET delay. offtarget can
+be positive or negative; consequently, cwnd increases or decreases in proportion to
 offtarget.
 
 Following the recommendation of RFC 6817, the default values of the parameters are:
@@ -882,7 +879,7 @@ implementation are:
 
 * It assumes that the clocks on the sender side and receiver side are synchronised
 * In line with Linux implementation, the one-way delay is calculated at the sender side by using the timestamps option in TCP header
-* Only the MIN function is used for noise filtering 
+* Only the MIN function is used for noise filtering
 
 More information about LEDBAT is available in RFC 6817: https://tools.ietf.org/html/rfc6817
 
@@ -923,10 +920,10 @@ feedback to the end hosts, and is intended to work with routers that
 implement a shallow congestion marking threshold (on the order of a
 few milliseconds) to achieve high throughput and low latency in the
 datacenter.  However, because DCTCP does not react in the same way to
-notification of congestion experienced, there are coexistence (fairness) 
+notification of congestion experienced, there are coexistence (fairness)
 issues between it and legacy TCP congestion controllers, which is why it
 is recommended to only be used in controlled networking environments such
-as within data centers.  
+as within data centers.
 
 DCTCP extends the Explicit Congestion Notification signal
 to estimate the fraction of bytes that encounter congestion, rather than simply
@@ -941,7 +938,7 @@ latency, and high throughput with shallow-buffered switches.
   for every ACK until it observes a CWR signal from the TCP sender.
 
 * *Sender functionality:* The sender makes use of the modified receiver
-  ECE semantics to maintain an estimate of the fraction of packets marked 
+  ECE semantics to maintain an estimate of the fraction of packets marked
   (:math:`\alpha`) by using the exponential weighted moving average (EWMA) as
   shown below:
 
@@ -1017,7 +1014,7 @@ experiment with DCTCP for long-running flows with different bottleneck
 link bandwidth, base RTTs, and queuing disciplines.  A variant of this
 program has also been run using the |ns3| Direct Code Execution
 environment using DCTCP from Linux kernel 4.4, and the results were
-compared against |ns3| results.  
+compared against |ns3| results.
 
 An example program based on an experimental topology found in the original
 DCTCP SIGCOMM paper is provided in ``examples/tcp/dctcp-example.cc``.
@@ -1033,9 +1030,9 @@ environment. Some differences were noted:
   the arithmetic is not floating point, so small differences in the
   evolution of congestion window have been observed.
 * Linux uses pacing, where packets to be sent are paced out at regular
-  intervals. However, if at any instant the number of segments that can 
-  be sent are less than two, Linux does not pace them and instead sends 
-  them back-to-back. Currently, ns-3 paces out all packets eligible to 
+  intervals. However, if at any instant the number of segments that can
+  be sent are less than two, Linux does not pace them and instead sends
+  them back-to-back. Currently, ns-3 paces out all packets eligible to
   be sent in the same manner.
 
 More information about DCTCP is available in the RFC 8257:
@@ -1326,11 +1323,11 @@ In 2018, Linux switched to an Early Departure Model (EDM): https://lwn.net/Artic
 TCP pacing in Linux was added in kernel 3.12, and authors chose to allow
 a pacing rate of 200% against the current rate, to allow probing for
 optimal throughput even during slow start phase.  Some refinements were
-added in https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=43e122b014c9, 
+added in https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=43e122b014c9,
 in which Google reported that it was better to apply
 a different ratio (120%) in Congestion Avoidance phase.  Furthermore,
 authors found that after cwnd reduction, it was helpful to become more
-conservative and switch to the conservative ratio (120%) as soon as 
+conservative and switch to the conservative ratio (120%) as soon as
 cwnd >= ssthresh/2, as the initial ramp up (when ssthresh is infinite) still
 allows doubling cwnd every other RTT.  Linux also does not pace the initial
 window (IW), typically 10 segments in practice.
@@ -1338,7 +1335,7 @@ window (IW), typically 10 segments in practice.
 Linux has also been observed to not pace if the number of eligible segments
 to be sent is exactly two; they will be sent back to back.  If three or
 more, the first two are sent immediately, and additional segments are paced
-at the current pacing rate.     
+at the current pacing rate.
 
 In ns-3, the model is as follows.  There is no TSO/sch_fq model; only
 internal pacing according to current Linux policy.
@@ -1362,7 +1359,7 @@ all TCP variants, according to the following guidelines.
   pace at the slow start rate (200%).  Otherwise, pace at the congestion
   avoidance rate.
 
-Dynamic pacing is demonstrated by the example program ``examples/tcp/tcp-pacing.cc``. 
+Dynamic pacing is demonstrated by the example program ``examples/tcp/tcp-pacing.cc``.
 
 Validation
 ++++++++++
@@ -1406,20 +1403,15 @@ section below on :ref:`Writing-tcp-tests`.
 * **tcp-pacing-test:** Unit tests on dynamic TCP pacing rate
 
 Several tests have dependencies outside of the ``internet`` module, so they
-are located in a system test directory called ``src/test/ns3tcp``. Three
-of these six tests involve use of the Network Simulation Cradle, and are
-disabled if NSC is not enabled in the build.  
+are located in a system test directory called ``src/test/ns3tcp``.
 
-* **ns3-tcp-cwnd:** Check to see that ns-3 TCP congestion control works against liblinux2.6.26.so implementation
-* **ns3-tcp-interoperability:** Check to see that ns-3 TCP interoperates with liblinux2.6.26.so implementation
 * **ns3-tcp-loss:** Check behavior of ns-3 TCP upon packet losses
-* **nsc-tcp-loss:** Check behavior of NSC TCP upon packet losses
 * **ns3-tcp-no-delay:** Check that ns-3 TCP Nagle's algorithm works correctly and that it can be disabled
 * **ns3-tcp-socket:** Check that ns-3 TCP successfully transfers an application data write of various sizes
 * **ns3-tcp-state:** Check the operation of the TCP state machine for several cases
- 
+
 Several TCP validation test results can also be found in the
-`wiki page <http://www.nsnam.org/wiki/New_TCP_Socket_Architecture>`_ 
+`wiki page <http://www.nsnam.org/wiki/New_TCP_Socket_Architecture>`_
 describing this implementation.
 
 The ns-3 implementation of TCP Linux Reno was validated against the NewReno
@@ -1453,7 +1445,7 @@ for ns-3 NewReno there was deviation in the congestion avoidance phase.
 The difference in the cwnd in the early stage of this flow is because of the
 way cwnd is plotted.  As ns-3 provides a trace source for cwnd, an ns-3 Linux
 Reno cwnd simple is obtained every time the cwnd value changes, whereas for
-DCE Linux Reno, the kernel does not have a corresponding trace source. 
+DCE Linux Reno, the kernel does not have a corresponding trace source.
 Instead, we use the "ss" command of the Linux kernel to obtain
 cwnd values. The "ss" samples cwnd at an interval of 0.5 seconds.
 
@@ -1486,7 +1478,7 @@ sensitivity to RTT (and can be reproduced using the Linux implementation).
    DCTCP throughput for 80ms/50Mbps bottleneck, 1ms CE threshold
 
 Similar to DCTCP, TCP CUBIC has been tested against the Linux kernel version
-4.4 implementation.  Figure :ref:`fig-cubic-50ms-50mbps-tcp-cwnd-no-ecn` 
+4.4 implementation.  Figure :ref:`fig-cubic-50ms-50mbps-tcp-cwnd-no-ecn`
 compares the congestion window evolution between ns-3 and Linux for a single
 flow operating over a 50 Mbps link with 50 ms base RTT and the CoDel AQM.
 Some differences can be observed between the peak of slow start window
@@ -1829,7 +1821,7 @@ the method ConfigureEnvironment:
      SetPropagationDelay (MilliSeconds (50));
    }
 
-For other properties, set after the object creation, one can use 
+For other properties, set after the object creation, one can use
 ConfigureProperties ().
 The difference is that some values, such as initial congestion window
 or initial slow start threshold, are applicable only to a single instance, not
@@ -1965,7 +1957,7 @@ If we run the experiment, enabling the logging, we can see the following:
 
 .. code-block:: bash
 
-   ./waf shell
+   ./ns3 shell
    gdb --args ./build/utils/ns3-dev-test-runner-debug --test-name=tcp-zero-window-test --stop-on-failure --fullness=QUICK --assert-on-failure --verbose
    (gdb) run
 
@@ -2154,12 +2146,12 @@ To run the test, the usual way is
    PASS: TestSuite tcp-zero-window-test
    1 of 1 tests passed (1 passed, 0 skipped, 0 failed, 0 crashed, 0 valgrind errors)
 
-To see INFO messages, use a combination of ./waf shell and gdb (really useful):
+To see INFO messages, use a combination of ./ns3 shell and gdb (really useful):
 
 .. code-block:: bash
 
 
-    ./waf shell && gdb --args ./build/utils/ns3-dev-test-runner-debug --test-name=tcp-zero-window-test --stop-on-failure --fullness=QUICK --assert-on-failure --verbose
+    ./ns3 shell && gdb --args ./build/utils/ns3-dev-test-runner-debug --test-name=tcp-zero-window-test --stop-on-failure --fullness=QUICK --assert-on-failure --verbose
 
 and then, hit "Run".
 
@@ -2171,307 +2163,3 @@ and then, hit "Run".
    process. For instance, commits created to make this test case running without
    errors are 11633:6b74df04cf44, (others to be merged).
 
-Network Simulation Cradle
-*************************
-
-The `Network Simulation Cradle (NSC) <http://www.wand.net.nz/~stj2/nsc/>`_ is a
-framework for wrapping real-world network code into simulators, allowing
-simulation of real-world behavior at little extra cost. This work has been
-validated by comparing situations using a test network with the same situations
-in the simulator. To date, it has been shown that the NSC is able to produce
-extremely accurate results. NSC supports four real world stacks: FreeBSD,
-OpenBSD, lwIP and Linux. Emphasis has been placed on not changing any of the
-network stacks by hand. Not a single line of code has been changed in the
-network protocol implementations of any of the above four stacks. However, a
-custom C parser was built to programmatically change source code.
-
-NSC has previously been ported to |ns2| and OMNeT++, and was 
-was added to |ns3| in September 2008 (ns-3.2 release). This section
-describes the |ns3| port of NSC and how to use it.
-
-NSC has been obsoleted by the Linux kernel support within 
-`Direct Code Execution (DCE) <http://www.nsnam.org/docs/dce/manual/singlehtml/index.html>`__. However, NSC is still available through the bake build
-system. NSC supports Linux kernels 2.6.18 and 2.6.26, and an experimental
-version of 2.6.29 exists on ns-3's code server
-(http://code.nsnam.org/fw/nsc-linux-2.6.29/), but newer
-versions of the kernel have not been ported.  
-
-Prerequisites
-+++++++++++++
-
-Presently, NSC has been tested and shown to work on these platforms:
-Linux i386 and Linux x86-64. NSC does not support powerpc. Use on
-FreeBSD or OS X is unsupported (although it may be able to work).
-
-Building NSC requires the packages flex and bison.  
-
-NSC requires use of gcc-4.9 or gcc-5 series, and will not build on 
-newer systems lacking the older compilers.
-
-Configuring and Downloading
-+++++++++++++++++++++++++++
-
-NSC must either be downloaded separately from
-its own repository, or downloading when using the 
-`bake build system <http://www.nsnam.org/docs/tutorial/html/getting-started.html#downloading-ns3-using-bake>`_ of 
-|ns3|.
-
-For ns-3.17 through ns-3.28 releases, when using bake, one obtains NSC implicitly as part of an "allinone" configuration, such as:
-
-.. sourcecode:: bash
-
-  $ cd bake
-  $ python bake.py configure -e ns-allinone-3.27
-  $ python bake.py download
-  $ python bake.py build
-
-For ns-3.29 and later versions, including the 'ns-3-allinone' development
-version, one must explicitly add NSC ('nsc-0.5.3') to the bake configuration, 
-such as:
-
-.. sourcecode:: bash
-
-  $ cd bake
-  $ python bake.py configure -e ns-allinone-3.29 -e nsc-0.5.3
-  $ python bake.py download
-  $ python bake.py build
-
-Instead of a released version, one may use the ns-3 development version
-by specifying "ns-3-allinone" to the configure step above.
-
-NSC may also be downloaded from 
-`its download site <http://research.wand.net.nz/software/nsc.php>`_ 
-using Mercurial:
-
-.. sourcecode:: bash
-
-  $ hg clone https://secure.wand.net.nz/mercurial/nsc
-
-Prior to the ns-3.17 release, NSC was included in the allinone tarball and
-the released version did not need to be separately downloaded.
-
-Building and validating
-+++++++++++++++++++++++
-
-NSC may be built as part of the bake build process; alternatively, one
-may build NSC by itself using its build system; e.g.:
-
-.. sourcecode:: bash
-
-  $ cd nsc-dev
-  $ python scons.py
-
-Once NSC has been built either manually or through the bake system, change
-into the |ns3| source directory and try running the following configuration:
-
-.. sourcecode:: bash
-
-  $ ./waf configure
-
-If NSC has been previously built and found by waf, then you will see:
-
-.. sourcecode:: bash
-
-  Network Simulation Cradle     : enabled
-
-If NSC has not been found, you will see:
-
-.. sourcecode:: bash
-
-  Network Simulation Cradle     : not enabled (NSC not found (see option --with-nsc))
-
-In this case, you must pass the relative or absolute path to the NSC libraries
-with the "--with-nsc" configure option; e.g.
-
-.. sourcecode:: bash
-
-  $ ./waf configure --with-nsc=/path/to/my/nsc/directory
-
-For |ns3| releases prior to the ns-3.17 release, using the ``build.py`` 
-script in ns-3-allinone directory, NSC will be built by default unless the 
-platform does not support it. To explicitly disable it when building |ns3|, 
-type:
-
-.. sourcecode:: bash
-
-  $ ./waf configure --enable-examples --enable-tests --disable-nsc
-
-If waf detects NSC, then building |ns3| with NSC is performed the same way
-with waf as without it. Once |ns3| is built, try running the following
-test suite:
-
-.. sourcecode:: bash
-
-    $ ./test.py -s ns3-tcp-interoperability
-
-If NSC has been successfully built, the following test should show up 
-in the results:
-
-.. sourcecode:: text
-
-    PASS TestSuite ns3-tcp-interoperability
-
-This confirms that NSC is ready to use.
-
-Usage
-+++++
-
-There are a few example files. Try:
-
-.. sourcecode:: bash
-
-    $ ./waf --run tcp-nsc-zoo
-    $ ./waf --run tcp-nsc-lfn
-
-These examples will deposit some ``.pcap`` files in your directory,
-which can be examined by tcpdump or wireshark.
-
-Let's look at the ``examples/tcp/tcp-nsc-zoo.cc`` file for some typical
-usage. How does it differ from using native |ns3| TCP? There is one main
-configuration line, when using NSC and the |ns3| helper API, that needs to be
-set::
-
-  InternetStackHelper internetStack;
-
-  internetStack.SetNscStack ("liblinux2.6.26.so");
-  // this switches nodes 0 and 1 to NSCs Linux 2.6.26 stack.
-  internetStack.Install (n.Get(0));
-  internetStack.Install (n.Get(1));
-
-
-The key line is the ``SetNscStack``. This tells the InternetStack
-helper to aggregate instances of NSC TCP instead of native |ns3| TCP
-to the remaining nodes. It is important that this function be called
-**before** calling the ``Install()`` function, as shown above.
-
-Which stacks are available to use? Presently, the focus has been on
-Linux 2.6.18 and Linux 2.6.26 stacks for |ns3|. To see which stacks
-were built, one can execute the following find command at the |ns3| top level
-directory:
-
-.. sourcecode:: bash
-
-    $ find nsc -name "*.so" -type f 
-    nsc/linux-2.6.18/liblinux2.6.18.so
-    nsc/linux-2.6.26/liblinux2.6.26.so
-
-This tells us that we may either pass the library name liblinux2.6.18.so or
-liblinux2.6.26.so to the above configuration step.
-
-Stack configuration
-+++++++++++++++++++
-
-NSC TCP shares the same configuration attributes that are common across TCP
-sockets, as described above and documented in `Doxygen
-<http://www.nsnam.org/doxygen/classns3_1_1_tcp_socket.html>`_
-
-Additionally, NSC TCP exports a lot of configuration variables into the 
-|ns3| attributes system, via a `sysctl <http://en.wikipedia.org/wiki/Sysctl>`_-like interface. In the ``examples/tcp/tcp-nsc-zoo`` example, you
-can see the following configuration::
-
-
-  // this disables TCP SACK, wscale and timestamps on node 1 (the attributes 
-    represent sysctl-values).
-  Config::Set ("/NodeList/1/$ns3::Ns3NscStack<linux2.6.26>/net.ipv4.tcp_sack", 
-    StringValue ("0"));
-  Config::Set ("/NodeList/1/$ns3::Ns3NscStack<linux2.6.26>/net.ipv4.tcp_timestamps", 
-  StringValue ("0"));
-  Config::Set ("/NodeList/1/$ns3::Ns3NscStack<linux2.6.26>/net.ipv4.tcp_window_scaling", 
-  StringValue ("0"));
-
-These additional configuration variables are not available to native |ns3| TCP.
-
-Also note that default values for TCP attributes in |ns3| TCP may differ from the NSC TCP implementation. Specifically in |ns3|:
-
-  1) TCP default MSS is 536
-  2) TCP Delayed ACK count is 2
-		
-Therefore when making comparisons between results obtained using NSC and |ns3| TCP, care must be taken to ensure these values are set appropriately. See /examples/tcp/tcp-nsc-comparison.cc for an example.
-
-NSC API
-+++++++
-
-This subsection describes the API that NSC presents to |ns3| or any other
-simulator. NSC provides its API in the form of a number of classes that are
-defined in ``sim/sim_interface.h`` in the nsc directory.
-
-* **INetStack** INetStack contains the 'low level' operations for the operating
-  system network stack, e.g. in and output functions from and to the network
-  stack (think of this as the 'network driver interface'). There are also
-  functions to create new TCP or UDP sockets.
-* **ISendCallback** This is called by NSC when a packet should be sent out to
-  the network. This simulator should use this callback to re-inject the packet
-  into the simulator so the actual data can be delivered/routed to its
-  destination, where it will eventually be handed into Receive() (and eventually
-  back to the receivers NSC instance via INetStack->if_receive()).
-* **INetStreamSocket** This is the structure defining a particular connection
-  endpoint (file descriptor). It contains methods to operate on this endpoint,
-  e.g. connect, disconnect, accept, listen, send_data/read_data, ...
-* **IInterruptCallback** This contains the wakeup() callback, which is called by
-  NSC whenever something of interest happens. Think of wakeup() as a replacement
-  of the operating systems wakeup function: Whenever the operating system would
-  wake up a process that has been waiting for an operation to complete (for
-  example the TCP handshake during connect()), NSC invokes the wakeup() callback
-  to allow the simulator to check for state changes in its connection endpoints. 
-
-ns-3 implementation
-+++++++++++++++++++
-
-The |ns3| implementation makes use of the above NSC API, and is implemented as
-follows.
-
-The three main parts are:
-
-* :cpp:class:`ns3::NscTcpL4Protocol`: a subclass of Ipv4L4Protocol (and two NSC
-  classes: ISendCallback and IInterruptCallback)
-* :cpp:class:`ns3::NscTcpSocketImpl`: a subclass of TcpSocket 
-* :cpp:class:`ns3::NscTcpSocketFactoryImpl`: a factory to create new NSC
-  sockets
-
-``src/internet/model/nsc-tcp-l4-protocol`` is the main class. Upon
-Initialization, it loads an NSC network stack to use (via dlopen()). Each
-instance of this class may use a different stack. The stack (=shared library) to
-use is set using the SetNscLibrary() method (at this time its called indirectly
-via the internet stack helper). The NSC stack is then set up accordingly (timers
-etc). The NscTcpL4Protocol::Receive() function hands the packet it receives
-(must be a complete TCP/IP packet) to the NSC stack for further processing. To
-be able to send packets, this class implements the NSC send_callback() method.
-This method is called by NSC whenever the NSC stack wishes to send a packet out
-to the network. Its arguments are a raw buffer, containing a complete TCP/IP
-packet, and a length value. This method therefore has to convert the raw data to
-a Ptr<Packet> usable by |ns3|. In order to avoid various IPv4 header issues,
-the NSC IP header is not included. Instead, the TCP header and the actual
-payload are put into the Ptr<Packet>, after this the Packet is passed down to
-layer 3 for sending the packet out (no further special treatment is needed in
-the send code path).
-
-This class calls ``ns3::NscTcpSocketImpl`` both from the NSC wakeup() callback
-and from the receive path (to ensure that possibly queued data is scheduled for
-sending).
-
-``src/internet/model/nsc-tcp-socket-impl`` implements the NSC socket interface.
-Each instance has its own m_nscTcpSocket. Data that is sent will be handed to
-the NSC stack via m_nscTcpSocket->send_data() (and not to NscTcpL4Protocol, this
-is the major difference compared to |ns3| TCP). The class also queues up data
-that is sent before the underlying descriptor has entered an ESTABLISHED state.
-This class is called from the NscTcpL4Protocol class, when the NscTcpL4Protocol
-wakeup() callback is invoked by NSC. NscTcpSocketImpl then checks the current
-connection state (SYN_SENT, ESTABLISHED, LISTEN...) and schedules appropriate
-callbacks as needed, e.g. a LISTEN socket will schedule accept() to see if a new
-connection must be accepted, an ESTABLISHED socket schedules any pending data
-for writing, schedule a read() callback, etc.
-
-Note that ``ns3::NscTcpSocketImpl`` does not interact with NSC TCP directly:
-instead, data is redirected to NSC. NSC TCP calls the NSC TCP sockets of a node
-when its wakeup() callback is invoked by NSC.
-
-Limitations
-+++++++++++
-
-* NSC only works on single-interface nodes; attempting to run it on a
-  multi-interface node will cause a program error.  
-* Cygwin and OS X PPC are not supported; OS X Intel is not supported but may work
-* The non-Linux stacks of NSC are not supported in |ns3|
-* Not all socket API callbacks are supported
-
-For more information, see `this wiki page <http://www.nsnam.org/wiki/Network_Simulation_Cradle_Integration>`_.

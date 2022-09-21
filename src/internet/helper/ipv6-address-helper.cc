@@ -35,7 +35,7 @@
 
 #include "ipv6-address-helper.h"
 
-namespace ns3 
+namespace ns3
 {
 
 NS_LOG_COMPONENT_DEFINE ("Ipv6AddressHelper");
@@ -211,7 +211,7 @@ Ipv6InterfaceContainer Ipv6AddressHelper::Assign (const NetDeviceContainer &c)
 {
   NS_LOG_FUNCTION (this);
   std::vector<bool> withConfiguration;
-  for (uint32_t i = 0; i < c.GetN (); ++i) 
+  for (uint32_t i = 0; i < c.GetN (); ++i)
     {
       withConfiguration.push_back (true);
     }
@@ -269,7 +269,7 @@ Ipv6InterfaceContainer Ipv6AddressHelper::Assign (const NetDeviceContainer &c, s
       // control layer has been aggregated, if this is not
       // a loopback interface, and there is no queue disc installed already
       Ptr<TrafficControlLayer> tc = node->GetObject<TrafficControlLayer> ();
-      if (tc && DynamicCast<LoopbackNetDevice> (device) == 0 && tc->GetRootQueueDiscOnDevice (device) == 0)
+      if (tc && !DynamicCast<LoopbackNetDevice> (device) && !tc->GetRootQueueDiscOnDevice (device))
         {
           Ptr<NetDeviceQueueInterface> ndqi = device->GetObject<NetDeviceQueueInterface> ();
           // It is useless to install a queue disc if the device has no
@@ -294,7 +294,7 @@ Ipv6InterfaceContainer Ipv6AddressHelper::AssignWithoutAddress (const NetDeviceC
 {
   NS_LOG_FUNCTION (this);
   std::vector<bool> withConfiguration;
-  for (uint32_t i = 0; i < c.GetN (); ++i) 
+  for (uint32_t i = 0; i < c.GetN (); ++i)
     {
       withConfiguration.push_back (false);
     }

@@ -80,6 +80,7 @@ public:
                            bool incFlag, uint32_t &totalAmpduSize, double &totalAmpduNumSymbols,
                            uint16_t staId) const override;
   Ptr<WifiPpdu> BuildPpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time ppduDuration) override;
+  double GetCcaThreshold (const Ptr<const WifiPpdu> ppdu, WifiChannelListType channelType) const override;
 
   /**
    * Initialize all OFDM modes (for all variants).
@@ -265,12 +266,10 @@ public:
    *
    * \param name the unique name of the OFDM mode
    * \param channelWidth the considered channel width in MHz
-   * \param guardInterval the considered guard interval duration in nanoseconds
-   * \param nss the considered number of streams
    *
    * \return the physical bit rate of this signal in bps.
    */
-  static uint64_t GetPhyRate (const std::string& name, uint16_t channelWidth, uint16_t guardInterval, uint8_t nss);
+  static uint64_t GetPhyRate (const std::string& name, uint16_t channelWidth);
 
   /**
    * Return the PHY rate corresponding to
@@ -301,27 +300,24 @@ public:
    *
    * \param name the unique name of the OFDM mode
    * \param channelWidth the considered channel width in MHz
-   * \param guardInterval the considered guard interval duration in nanoseconds
-   * \param nss the considered number of streams
    *
    * \return the data bit rate of this signal in bps.
    */
-  static uint64_t GetDataRate (const std::string& name, uint16_t channelWidth, uint16_t guardInterval, uint8_t nss);
+  static uint64_t GetDataRate (const std::string& name, uint16_t channelWidth);
   /**
-   * Check whether the combination of <WifiMode, channel width, NSS> is allowed.
-   * This function is used as a callback for WifiMode operation, and always
-   * returns true since there is no limitation for any mode in OfdmPhy.
+   * Check whether the combination in TXVECTOR is allowed.
+   * This function is used as a callback for WifiMode operation.
    *
-   * \param channelWidth the considered channel width in MHz
-   * \param nss the considered number of streams
-   * \returns true.
+   * \param txVector the TXVECTOR
+   * \returns true if this combination is allowed, false otherwise.
    */
-  static bool IsModeAllowed (uint16_t channelWidth, uint8_t nss);
+  static bool IsAllowed (const WifiTxVector& txVector);
 
 protected:
   PhyFieldRxStatus DoEndReceiveField (WifiPpduField field, Ptr<Event> event) override;
-  Ptr<SpectrumValue> GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> ppdu) const override;
+  Ptr<SpectrumValue> GetTxPowerSpectralDensity (double txPowerW, Ptr<const WifiPpdu> ppdu, const WifiTxVector& txVector) const override;
   uint32_t GetMaxPsduSize (void) const override;
+  uint16_t GetMeasurementChannelWidth (const Ptr<const WifiPpdu> ppdu) const override;
 
   /**
    * \param txVector the transmission parameters
@@ -399,27 +395,34 @@ protected:
    * \param codeRate the code rate of the mode
    * \param constellationSize the size of modulation constellation
    * \param channelWidth the considered channel width in MHz
-   * \param guardInterval the considered guard interval duration in nanoseconds
-   * \param nss the considered number of streams
    *
    * \return the data bit rate of this signal in bps.
    */
-  static uint64_t CalculateDataRate (WifiCodeRate codeRate, uint16_t constellationSize, uint16_t channelWidth,
-                                     uint16_t guardInterval, uint8_t nss);
+  static uint64_t CalculateDataRate (WifiCodeRate codeRate, uint16_t constellationSize, uint16_t channelWidth);
   /**
    * Calculates data rate from the supplied parameters.
    *
-   * \param symbolDuration the symbol duration (in us) excluding guard interval
-   * \param guardInterval the considered guard interval duration in nanoseconds
+   * \param symbolDuration the symbol duration
    * \param usableSubCarriers the number of usable subcarriers for data
    * \param numberOfBitsPerSubcarrier the number of data bits per subcarrier
    * \param codingRate the coding rate
    *
    * \return the data bit rate of this signal in bps.
    */
-  static uint64_t CalculateDataRate (double symbolDuration, uint16_t guardInterval,
-                                     uint16_t usableSubCarriers, uint16_t numberOfBitsPerSubcarrier,
-                                     double codingRate);
+  static uint64_t CalculateDataRate (Time symbolDuration, uint16_t usableSubCarriers,
+                                     uint16_t numberOfBitsPerSubcarrier, double codingRate);
+
+  /**
+   * \return the number of usable subcarriers for data
+   */
+  static uint16_t GetUsableSubcarriers (void);
+
+
+  /**
+   * \param channelWidth the channel width in MHz
+   * \return the symbol duration
+   */
+  static Time GetSymbolDuration (uint16_t channelWidth);
 
 private:
   /**

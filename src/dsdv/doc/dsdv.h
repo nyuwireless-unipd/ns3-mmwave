@@ -19,7 +19,7 @@
  * Author: Yufei Cheng   <yfcheng@ittc.ku.edu>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -35,7 +35,7 @@
 
 /**
  * \defgroup dsdv DSDV Routing
- * 
+ *
  * This section documents the API of the ns-3 DSDV module. For a
  * generic functional description, please refer to the ns-3 model
  * library document.

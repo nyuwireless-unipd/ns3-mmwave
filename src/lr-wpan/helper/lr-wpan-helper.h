@@ -52,7 +52,7 @@ class LrWpanHelper : public PcapHelperForDevice,
 public:
   /**
    * \brief Create a LrWpan helper in an empty state.  By default, a
-   * SingleModelSpectrumChannel is created, with a 
+   * SingleModelSpectrumChannel is created, with a
    * LogDistancePropagationLossModel and a ConstantSpeedPropagationDelayModel.
    *
    * To change the channel type, loss model, or delay model, the Get/Set
@@ -65,12 +65,16 @@ public:
    * SingleModelSpectrumChannel or a MultiModelSpectrumChannel.
    * \param useMultiModelSpectrumChannel use a MultiModelSpectrumChannel if true, a SingleModelSpectrumChannel otherwise
    *
-   * A LogDistancePropagationLossModel and a 
+   * A LogDistancePropagationLossModel and a
    * ConstantSpeedPropagationDelayModel are added to the channel.
    */
   LrWpanHelper (bool useMultiModelSpectrumChannel);
 
   virtual ~LrWpanHelper (void);
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  LrWpanHelper (const LrWpanHelper &) = delete;
+  LrWpanHelper &operator= (const LrWpanHelper &) = delete;
 
   /**
    * \brief Get the channel associated to this helper
@@ -158,16 +162,6 @@ public:
   int64_t AssignStreams (NetDeviceContainer c, int64_t stream);
 
 private:
-  // Disable implicit constructors
-  /**
-   * \brief Copy constructor - defined and not implemented.
-   */
-  LrWpanHelper (LrWpanHelper const &);
-  /**
-   * \brief Copy constructor - defined and not implemented.
-   * \returns
-   */
-  LrWpanHelper& operator= (LrWpanHelper const &);
   /**
    * \brief Enable pcap output on the indicated net device.
    *

@@ -93,7 +93,7 @@ public:
   virtual Ipv6InterfaceContainer AssignUeIpv6Address (NetDeviceContainer ueDevices);
   virtual Ipv4Address GetUeDefaultGatewayAddress ();
   virtual Ipv6Address GetUeDefaultGatewayAddress6 ();
-
+  virtual int64_t AssignStreams (int64_t stream) override;
 
 private:
 

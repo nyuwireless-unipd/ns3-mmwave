@@ -18,7 +18,7 @@
  * Author: Hemanth Narra <hemanth@ittc.ku.com>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -65,7 +65,7 @@ public:
    * \param iface the interface
    * \param hops the number of hops
    * \param nextHop the IP address of the next hop
-   * \param lifetime the lifetime 
+   * \param lifetime the lifetime
    * \param SettlingTime the settling time
    * \param changedEntries flag for changed entries
    */
@@ -276,6 +276,7 @@ public:
   /**
    * Print routing table entry
    * \param stream the output stream
+   * \param unit the Time unit
    */
   void
   Print (Ptr<OutputStreamWrapper> stream, Time::Unit unit = Time::S) const;
@@ -393,6 +394,7 @@ public:
   /**
    * Print routing table
    * \param stream the output stream
+   * \param unit the Time unit
    */
   void
   Print (Ptr<OutputStreamWrapper> stream, Time::Unit unit = Time::S) const;

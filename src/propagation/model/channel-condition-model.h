@@ -52,7 +52,7 @@ public:
     NLOSv, //!< Non Line of Sight due to a vehicle
     LC_ND //!< Los condition not defined
   };
-  
+
   /**
    * Possible values for Outdoor to Indoor condition.
    */
@@ -75,7 +75,7 @@ public:
    * Constructor for the ChannelCondition class
    */
   ChannelCondition ();
-  
+
   /**
    * Constructor for the ChannelCondition class
    * \param losCondition the LOS condition value
@@ -100,10 +100,10 @@ public:
    * Set the LosConditionValue with the information about the LOS/NLOS
    * state of the channel
    *
-   * \param the LosConditionValue
+   * \param losCondition the LosConditionValue
    */
   void SetLosCondition (LosConditionValue losCondition);
-  
+
   /**
    * Get the O2iConditionValue contaning the information about the O2I
    * state of the channel
@@ -119,70 +119,71 @@ public:
    * \param o2iCondition the O2iConditionValue
    */
   void SetO2iCondition (O2iConditionValue o2iCondition);
-  
+
   /**
    * Return true if the channel condition is LOS
    *
    * \return true if the channel condition is LOS
    */
   bool IsLos () const;
-  
+
   /**
    * Return true if the channel condition is NLOS
    *
-   * It does not consider the case in which the LOS path is obstructed by a 
-   * vehicle. This case is represented as a separate channel condition (NLOSv), 
+   * It does not consider the case in which the LOS path is obstructed by a
+   * vehicle. This case is represented as a separate channel condition (NLOSv),
    * use the method IsNlosv instead.
    *
    * \return true if the channel condition is NLOS
    */
   bool IsNlos () const;
-  
+
   /**
    * Return true if the channel condition is NLOSv
    *
    * \return true if the channel condition is NLOSv
    */
   bool IsNlosv () const;
-  
+
   /**
    * Return true if the channel is outdoor-to-indoor
    *
    * \return true if the channel is outdoor-to-indoor
    */
   bool IsO2i () const;
-  
+
   /**
    * Return true if the channel is outdoor-to-outdoor
    *
    * \return true if the channel is outdoor-to-outdoor
    */
   bool IsO2o () const;
-  
+
   /**
    * Return true if the channel is indoor-to-indoor
    *
    * \return true if the channel is indoor-to-indoor
    */
   bool IsI2i () const;
-  
+
   /**
    * Return true if this instance is equivalent to the one passed as argument
    *
-   * \param otherCondition the other instance to compare with this instance
-   * \return true if this instance is equivalent to the one passed as argument
+   * \param losCondition the LOS condition of the other channel condition instance
+   * \param o2iCondition the 02I condition of the other channel condition instance
+   * \return true if the channel LOS and O2i conditions of the instance are equivalent to those passed as arguments
    */
-  bool IsEqual (Ptr<const ChannelCondition> otherCondition) const;
+  bool IsEqual (LosConditionValue losCondition, O2iConditionValue o2iCondition) const;
 
 private:
   LosConditionValue m_losCondition; //!< contains the information about the LOS state of the channel
   O2iConditionValue m_o2iCondition; //!< contains the information about the O2I state of the channel
-  
-  /** 
+
+  /**
    * Prints a LosConditionValue to output
    * \param os the output stream
    * \param cond the LosConditionValue
-   * 
+   *
    * \return a reference to the output stream
    */
   friend std::ostream& operator<< (std::ostream& os, LosConditionValue cond);
@@ -217,9 +218,12 @@ public:
    */
   virtual ~ChannelConditionModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  ChannelConditionModel (const ChannelConditionModel &) = delete;
+  ChannelConditionModel &operator= (const ChannelConditionModel &) = delete;
+
   /**
    * Computes the condition of the channel between a and b
-
    *
    * \param a mobility model
    * \param b mobility model
@@ -237,21 +241,6 @@ public:
    * \return the number of stream indices assigned by this model
    */
   virtual int64_t AssignStreams (int64_t stream) = 0;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  */
-  ChannelConditionModel (const ChannelConditionModel&) = delete;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  * \returns the ChannelConditionModel instance
-  */
-  ChannelConditionModel &operator = (const ChannelConditionModel &) = delete;
 };
 
 /**
@@ -279,6 +268,10 @@ public:
    */
   virtual ~AlwaysLosChannelConditionModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  AlwaysLosChannelConditionModel (const AlwaysLosChannelConditionModel &) = delete;
+  AlwaysLosChannelConditionModel &operator= (const AlwaysLosChannelConditionModel &) = delete;
+
   /**
    * Computes the condition of the channel between a and b, that will be always LoS
    *
@@ -287,21 +280,6 @@ public:
    * \return the condition of the channel between a and b, that will be always LoS
    */
   virtual Ptr<ChannelCondition> GetChannelCondition (Ptr<const MobilityModel> a, Ptr<const MobilityModel> b) const override;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  */
-  AlwaysLosChannelConditionModel (const AlwaysLosChannelConditionModel&) = delete;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  * \returns a copy of the object
-  */
-  AlwaysLosChannelConditionModel &operator = (const AlwaysLosChannelConditionModel &) = delete;
 
   /**
    * If this  model uses objects of type RandomVariableStream,
@@ -340,6 +318,10 @@ public:
    */
   virtual ~NeverLosChannelConditionModel ();
 
+  // Delete copy constructor and assignment operator to avoid misuse
+  NeverLosChannelConditionModel (const NeverLosChannelConditionModel &) = delete;
+  NeverLosChannelConditionModel &operator= (const NeverLosChannelConditionModel &) = delete;
+
   /**
    * Computes the condition of the channel between a and b, that will be always non-LoS
    *
@@ -348,21 +330,6 @@ public:
    * \return the condition of the channel between a and b, that will be always non-LoS
    */
   virtual Ptr<ChannelCondition> GetChannelCondition (Ptr<const MobilityModel> a, Ptr<const MobilityModel> b) const override;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  */
-  NeverLosChannelConditionModel (const NeverLosChannelConditionModel&) = delete;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  * \returns a copy of the object
-  */
-  NeverLosChannelConditionModel &operator = (const NeverLosChannelConditionModel &) = delete;
 
   /**
    * If this  model uses objects of type RandomVariableStream,
@@ -392,14 +359,18 @@ public:
   static TypeId GetTypeId (void);
 
   /**
-   * Constructor 
+   * Constructor
    */
   NeverLosVehicleChannelConditionModel ();
 
   /**
-   * Destructor 
+   * Destructor
    */
   virtual ~NeverLosVehicleChannelConditionModel ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  NeverLosVehicleChannelConditionModel (const NeverLosVehicleChannelConditionModel &) = delete;
+  NeverLosVehicleChannelConditionModel &operator= (const NeverLosVehicleChannelConditionModel &) = delete;
 
   /**
    * Computes the condition of the channel between a and b, that will be always NLOSv
@@ -409,21 +380,6 @@ public:
    * \return the condition of the channel between a and b, that will be always NLOSv
    */
   virtual Ptr<ChannelCondition> GetChannelCondition (Ptr<const MobilityModel> a, Ptr<const MobilityModel> b) const override;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  */
-  NeverLosVehicleChannelConditionModel (const NeverLosVehicleChannelConditionModel&) = delete;
-
-  /**
-  * \brief Copy constructor
-  *
-  * Defined and unimplemented to avoid misuse
-  * \returns a copy of the object
-  */
-  NeverLosVehicleChannelConditionModel &operator = (const NeverLosVehicleChannelConditionModel &) = delete;
 
   /**
    * If this  model uses objects of type RandomVariableStream,
@@ -466,8 +422,8 @@ public:
   /**
    * \brief Retrieve the condition of the channel between a and b.
    *
-   * If the channel condition does not exists, the method computes it by calling 
-   * ComputeChannelCondition and stores it in a local cache, that will be updated 
+   * If the channel condition does not exists, the method computes it by calling
+   * ComputeChannelCondition and stores it in a local cache, that will be updated
    * following the "UpdatePeriod" parameter.
    *
    * \param a mobility model
@@ -489,7 +445,7 @@ public:
 
 protected:
   virtual void DoDispose () override;
-  
+
   /**
    * Determine the density of vehicles in a V2V scenario.
    */
@@ -508,12 +464,12 @@ protected:
   * \return the 2D distance between a and b
   */
   static double Calculate2dDistance (const Vector &a, const Vector &b);
-  
+
   Ptr<UniformRandomVariable> m_uniformVar; //!< uniform random variable
 
 private:
   /**
-  * This method computes the channel condition based on a probabilistic model 
+  * This method computes the channel condition based on a probabilistic model
   * that is specific for the scenario of interest
   *
   * \param a tx mobility model
@@ -521,7 +477,7 @@ private:
   * \return the channel condition
   */
   Ptr<ChannelCondition> ComputeChannelCondition (Ptr<const MobilityModel> a, Ptr<const MobilityModel> b) const;
-  
+
   /**
    * Compute the LOS probability.
    *
@@ -530,7 +486,7 @@ private:
    * \return the LOS probability
    */
   virtual double ComputePlos (Ptr<const MobilityModel> a, Ptr<const MobilityModel> b) const = 0;
-  
+
   /**
    * Compute the NLOS probability. By default returns 1 - PLOS
    *

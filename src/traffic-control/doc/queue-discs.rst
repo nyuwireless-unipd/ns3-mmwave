@@ -171,7 +171,7 @@ Usage
 *****
 
 The traffic control layer is automatically created and inserted on an ``ns3::Node`` object
-when typical device and internet module helpers are used.  By default, the  
+when typical device and internet module helpers are used.  By default, the
 ``InternetStackHelper::Install()`` method aggregates a TrafficControlLayer object to every
 node. When invoked to assign an IPv{4,6} address to a device, the Ipv{4,6}AddressHelper,
 besides creating an Ipv{4,6}Interface, also installs the default qdisc
@@ -186,6 +186,20 @@ can be removed from the device after assigning an IP address, by using the
 Uninstall method of the TrafficControlHelper C++ class, and then installing a different
 queue disc on the device.  By uninstalling without adding a new queue disc, it is also possible
 to have no queue disc installed on a device.
+
+Note that if no queue disc is installed on an underlying device, the traffic
+control layer will still respect flow control signals provided by the device, if
+any.  Specifically, if no queue disc is installed on a device, and the device is
+stopped, then any packet for that device will be dropped in the traffic control
+layer, and the device's drop trace will not record the drop -- instead, the TcDrop
+drop trace in the traffic control layer will record the drop.
+
+Flow control can be disabled for the devices that support it by using the
+``DisableFlowControl`` method of their helpers.  If there is no queue disc
+installed on the device, and the device is not performing flow control, then
+packets will immediately transit the traffic control layer and be sent to the
+device, regardless or not of whether the device's internal queue can accept it,
+and the traffic control layer's TcDrop trace will not be called.
 
 Helpers
 =======
@@ -212,13 +226,30 @@ and the config path of the second internal queue is:
 /NodeList/[i]/$ns3::TrafficControlLayer/RootQueueDiscList/[j]/InternalQueueList/1
 
 For this helper's configuration to take effect, it should be added to the ns-3 program after
-``InternetStackHelper::Install()`` is called, but before IP addresses are configured using 
-``Ipv{4,6}AddressHelper``.
+``InternetStackHelper::Install()`` is called, but before IP addresses are configured using
+``Ipv{4,6}AddressHelper``. For an example program, see examples/traffic-control/traffic-control.cc.
+
+If it is desired to install no queue disc on a device, it is necessary to use the Uninstall
+method of the TrafficControlHelper:
+
+.. sourcecode:: cpp
+
+  TrafficControlHelper tch;
+  tch.Uninstall (device);
+
+Note that the Uninstall method must be called after ``InternetStackHelper::Install()`` is called
+and after that IP addresses are configured using ``Ipv{4,6}AddressHelper``. For an example program,
+see src/test/ns3tcp/ns3tcp-cwnd-test-suite.cc (look at the ``Ns3TcpCwndTestCase2::DoRun`` method).
+Note also that this method does not uninstall the traffic control layer but instead
+removes the root queue disc on the device but keeps the traffic control layer present.
+Also, note that removing the root queue disc on a device supporting flow control does not disable
+the flow control. As mentioned above, this requires to call the DisableFlowControl method of the
+device helper, so that the device is created without support for the flow control.
 
 Implementation details
 **********************
 
-In Linux, the struct netdev_queue is used to store information about a single 
+In Linux, the struct netdev_queue is used to store information about a single
 transmission queue of a device: status (i.e., whether it has been stopped or not),
 data used by techniques such as Byte Queue Limits and a qdisc pointer field that
 is mainly used to solve the following problems:
@@ -281,7 +312,7 @@ interface). In particular:
 
 * a NetDeviceQueueInterface object is aggregated to all the devices by the NetDevice
   helper classes, at ``Install`` time.  See, for example, the implementation in the
-  method ``CsmaHelper::InstallPriv()``.  
+  method ``CsmaHelper::InstallPriv()``.
 
 * when notified that a netdevice queue interface has been aggregated, traffic control \
   aware devices can cache the pointer to the \

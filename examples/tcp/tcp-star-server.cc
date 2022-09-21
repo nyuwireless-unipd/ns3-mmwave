@@ -33,11 +33,11 @@
 //   "tcp-star-server-$n-$i.pcap" where n and i represent node and interface
 //   numbers respectively
 // Usage examples for things you might want to tweak:
-//       ./waf --run="tcp-star-server"
-//       ./waf --run="tcp-star-server --nNodes=25"
-//       ./waf --run="tcp-star-server --ns3::OnOffApplication::DataRate=10000"
-//       ./waf --run="tcp-star-server --ns3::OnOffApplication::PacketSize=500"
-// See the ns-3 tutorial for more info on the command line: 
+//       ./ns3 run "tcp-star-server"
+//       ./ns3 run "tcp-star-server --nNodes=25"
+//       ./ns3 run "tcp-star-server --ns3::OnOffApplication::DataRate=10000"
+//       ./ns3 run "tcp-star-server --ns3::OnOffApplication::PacketSize=500"
+// See the ns-3 tutorial for more info on the command line:
 // http://www.nsnam.org/tutorials.html
 
 
@@ -59,7 +59,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("TcpServer");
 
-int 
+int
 main (int argc, char *argv[])
 {
   // Users may find it convenient to turn on explicit debugging

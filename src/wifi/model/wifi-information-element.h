@@ -183,7 +183,9 @@ typedef uint8_t WifiInformationElementId;
 #define IE_AID                                  ((WifiInformationElementId)197)
 #define IE_QUIET_CHANNEL                        ((WifiInformationElementId)198)
 #define IE_OPERATING_MODE_NOTIFICATION          ((WifiInformationElementId)199)
-// 200 to 220 are reserved
+#define IE_UPSIM                                ((WifiInformationElementId)200)
+#define IE_REDUCED_NEIGHBOR_REPORT              ((WifiInformationElementId)201)
+// TODO Add 202 to 220. See Table 9-92 of 802.11-2020
 #define IE_VENDOR_SPECIFIC                      ((WifiInformationElementId)221)
 // 222 to 254 are reserved
 #define IE_EXTENSION                            ((WifiInformationElementId)255)
@@ -192,6 +194,9 @@ typedef uint8_t WifiInformationElementId;
 #define IE_EXT_HE_OPERATION                     ((WifiInformationElementId)36)
 #define IE_EXT_UORA_PARAMETER_SET               ((WifiInformationElementId)37)
 #define IE_EXT_MU_EDCA_PARAMETER_SET            ((WifiInformationElementId)38)
+
+#define IE_EXT_MULTI_LINK_ELEMENT               ((WifiInformationElementId)107)
+#define IE_EXT_EHT_CAPABILITIES                 ((WifiInformationElementId)108)
 
 /**
  * \brief Information element, as defined in 802.11-2007 standard
@@ -274,7 +279,8 @@ public:
 
   // Each subclass must implement these pure virtual functions:
   /**
-   * \returns Own unique Element ID
+   * Get the wifi information element ID
+   * \returns the wifi information element ID
    */
   virtual WifiInformationElementId ElementId () const = 0;
   /**
@@ -307,7 +313,8 @@ public:
                                                uint8_t length) = 0;
 
   /**
-   * \returns Own unique Element ID Extension
+   * Get the wifi information element ID extension
+   * \returns the wifi information element ID extension
    */
   virtual WifiInformationElementId ElementIdExt () const;
 

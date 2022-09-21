@@ -99,7 +99,7 @@ void Sender::StartApplication ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  if (m_socket == 0) {
+  if (!m_socket) {
       Ptr<SocketFactory> socketFactory = GetNode ()->GetObject<SocketFactory>
           (UdpSocketFactory::GetTypeId ());
       m_socket = socketFactory->CreateSocket ();
@@ -196,11 +196,11 @@ Receiver::StartApplication ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  if (m_socket == 0) {
+  if (!m_socket) {
       Ptr<SocketFactory> socketFactory = GetNode ()->GetObject<SocketFactory>
           (UdpSocketFactory::GetTypeId ());
       m_socket = socketFactory->CreateSocket ();
-      InetSocketAddress local = 
+      InetSocketAddress local =
         InetSocketAddress (Ipv4Address::GetAny (), m_port);
       m_socket->Bind (local);
     }
@@ -215,7 +215,7 @@ Receiver::StopApplication ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  if (m_socket != 0) {
+  if (m_socket) {
       m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
     }
 
@@ -254,12 +254,12 @@ Receiver::Receive (Ptr<Socket> socket)
       if (packet->FindFirstMatchingByteTag (timestamp)) {
           Time tx = timestamp.GetTimestamp ();
 
-          if (m_delay != 0) {
+          if (m_delay) {
               m_delay->Update (Simulator::Now () - tx);
             }
         }
 
-      if (m_calc != 0) {
+      if (m_calc) {
           m_calc->Update ();
         }
 
@@ -275,7 +275,7 @@ Receiver::Receive (Ptr<Socket> socket)
 //----------------------------------------------------------------------
 //-- TimestampTag
 //------------------------------------------------------
-TypeId 
+TypeId
 TimestampTag::GetTypeId (void)
 {
   static TypeId tid = TypeId ("TimestampTag")
@@ -289,24 +289,24 @@ TimestampTag::GetTypeId (void)
   ;
   return tid;
 }
-TypeId 
+TypeId
 TimestampTag::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
-uint32_t 
+uint32_t
 TimestampTag::GetSerializedSize (void) const
 {
   return 8;
 }
-void 
+void
 TimestampTag::Serialize (TagBuffer i) const
 {
   int64_t t = m_timestamp.GetNanoSeconds ();
   i.Write ((const uint8_t *)&t, 8);
 }
-void 
+void
 TimestampTag::Deserialize (TagBuffer i)
 {
   int64_t t;
@@ -325,7 +325,7 @@ TimestampTag::GetTimestamp (void) const
   return m_timestamp;
 }
 
-void 
+void
 TimestampTag::Print (std::ostream &os) const
 {
   os << "t=" << m_timestamp;

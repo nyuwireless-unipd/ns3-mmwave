@@ -15,7 +15,6 @@ STANDARDLOGFILE=doxygen.log
 WARNINGSLOGFILE=doxygen.warnings.log
 # Default choice:  generate it
 LOG="$DIR/$WARNINGSLOGFILE"
-
 # Verbose log
 VERBLOG="$DIR/doxygen.verbose.log"
 
@@ -66,7 +65,7 @@ function usage
     report all undocumented elements, and to reduce the run time.
     The output of this special run is kept in doc/$WARNINGSLOGFILE.
     To further reduce the run time, the -i option also skips
-    print-introspected-doxygen, so waf doesn\'t have to compile
+    print-introspected-doxygen, so ns3 doesn\'t have to compile
     any modified files at all.
 
     The -f, -l, and -s options skip the doxygen run altogether.
@@ -309,7 +308,10 @@ if [ $skip_doxy -eq 1 ]; then
 else
 
     # Modify doxygen.conf to generate all the warnings
-    # (We also suppress dot graphs, so shorten the run time.)
+    # We keep dot active to generate graphs in the documentation
+    # (see for example PacketTagList) and warn about ill-formed
+    # graphs, but we disable all the doxygen-generated diagrams
+    # to shorten the run time.
 
     conf=doc/doxygen.conf
     cp $conf ${conf}.bak
@@ -317,29 +319,37 @@ else
 
     # doxygen.warnings.report.sh:
     EXTRACT_ALL = no
-    HAVE_DOT = no
-    CLASS_DIAGRAMS = no
     WARNINGS = no
-    SOURCE_BROWSER = no
-    HTML_OUTPUT html-warn
     WARN_LOGFILE = doc/$WARNINGSLOGFILE
+    SOURCE_BROWSER = no
+    HTML_OUTPUT = html-warn
+    CLASS_DIAGRAMS = no
+    CLASS_GRAPH = no
+    COLLABORATION_GRAPH = no
+    GROUP_GRAPHS = no
+    INCLUDE_GRAPH = no
+    INCLUDED_BY_GRAPH = no
+    CALL_GRAPH = no
+    CALLER_GRAPH = no
+    GRAPHICAL_HIERARCHY = no
+    DIRECTORY_GRAPH = no
 EOF
 
 
     intro_h="introspected-doxygen.h"
     if [ $skip_intro -eq 1 ]; then
-        verbose "" "Skipping ./waf build"
+        verbose "" "Skipping ./ns3 build"
         verbose -n "Trying print-introspected-doxygen with doxygen build"
-        (cd "$ROOT" && ./waf --run-no-build print-introspected-doxygen >doc/$intro_h 2>&6 )
-        status_report $? "./waf --run print-introspected-doxygen" noexit
+        (cd "$ROOT" && ./ns3 run print-introspected-doxygen --no-build >doc/$intro_h 2>&6 )
+        status_report $? "./ns3 run print-introspected-doxygen" noexit
     else
         # Run introspection, which may require a build
         verbose -n "Building"
-        (cd "$ROOT" && ./waf build >&6 2>&6 )
-        status_report $? "./waf build"
+        (cd "$ROOT" && ./ns3 build >&6 2>&6 )
+        status_report $? "./ns3 build"
         verbose -n "Running print-introspected-doxygen with doxygen build"
-        (cd "$ROOT" && ./waf --run-no-build print-introspected-doxygen >doc/$intro_h 2>&6 )
-        status_report $? "./waf --run print-introspected-doxygen"
+        (cd "$ROOT" && ./ns3 run print-introspected-doxygen --no-build >doc/$intro_h 2>&6 )
+        status_report $? "./ns3 run print-introspected-doxygen"
     fi
 
     # Waf insists on writing cruft to stdout
@@ -347,8 +357,8 @@ EOF
     rm doc/$intro_h.bak
 
     verbose -n "Rebuilding doxygen docs with full errors"
-    (cd "$ROOT" && ./waf --doxygen-no-build >&6 2>&6 )
-    status_report $? "./waf --doxygen-no-build"
+    (cd "$ROOT" && ./ns3 docs doxygen-no-build >&6 2>&6 )
+    status_report $? "./ns3 docs doxygen-no-build"
 
     # Swap back to original config
     rm -f $conf
@@ -383,23 +393,34 @@ echo "Net result of all filters:"
 
 verbose -n "Filtering the doxygen log"
 
-# List of module directories (e.g, "src/core/model")
-undocmods=$(                \
-    filter_log            | \
-    cut -d ':' -f 1       | \
-    sed "s|$ROOT/||g"     | \
-    cut -d '/' -f 1-3     | \
-    sort                  | \
-    uniq -c               | \
-    sort -nr                \
-    )
+filter_log_results=$(filter_log)
 
-# Number of directories
-modcount=$(                         \
-    echo "$undocmods"             | \
-    wc -l                         | \
-    sed 's/^[ \t]*//;s/[ \t]*$//'   \
-    )
+# List of module directories (e.g, "src/core/model")
+if [ ! -z "$filter_log_results" ]
+then
+    undocmods=$(                \
+        filter_log            | \
+        cut -d ':' -f 1       | \
+        sed "s|$ROOT/||g"     | \
+        cut -d '/' -f 1-3     | \
+        sort                  | \
+        uniq -c               | \
+        sort -nr                \
+        )
+    modcount=$(                         \
+        echo "$undocmods"             | \
+        wc -l                         | \
+        sed 's/^[ \t]*//;s/[ \t]*$//'   \
+        )
+    modwarncount=$(                               \
+        echo "$undocmods"                       | \
+        awk '{total += $1}; END {print total}'    \
+        )
+else
+    undocmods=""
+    modcount=0
+    modwarncount=0
+fi
 
 # For a function with multiple undocumented parameters,
 # Doxygen prints the additional parameters on separate lines,
@@ -412,33 +433,51 @@ addlparam=$(                                  \
     sed 's/^[ \t]*//;s/[ \t]*$//'             \
     )
 
-# Total number of warnings
-warncount=$(                                  \
-    echo "$undocmods"                       | \
-    awk '{total += $1}; END {print total}'    \
+# Sometimes doxygen can not pinpoint a warning to an exact file.
+# In this case the output is of the form:
+# "<operator==>:1: warning: parameters of member ns3::operator== are not documented"
+# or
+# "<operator==>:1: warning: return type of member ns3::operator== is not documented"
+misplacedWarns=$(                             \
+    grep ">:1:" "$LOG"                      | \
+    wc -l                                   | \
+    sed 's/^[ \t]*//;s/[ \t]*$//'             \
     )
-warncount=$((warncount + addlparam))
+
+
+# Total number of warnings
+warncount=$((modwarncount + addlparam + misplacedWarns))
 
 # List of files appearing in the log
-undocfiles=$(               \
-    filter_log            | \
-    cut -d ':' -f 1       | \
-    sed "s|$ROOT||g"      | \
-    cut -d '/' -f 2-      | \
-    sort                  | \
-    uniq -c               | \
-    sort -k 2               \
-    )
+if [ ! -z "$filter_log_results" ]
+then
+    undocfiles=$(               \
+        filter_log            | \
+        cut -d ':' -f 1       | \
+        sed "s|$ROOT||g"      | \
+        cut -d '/' -f 2-      | \
+        sort                  | \
+        uniq -c               | \
+        sort -k 2               \
+        )
+else
+    undocfiles=""
+fi
 
 # Sorted by number, decreasing
 undocsort=$(echo "$undocfiles" | sort -k1nr,2 )
 
 # Total number of files
-filecount=$(                        \
-    echo "$undocfiles"            | \
-    wc -l                         | \
-    sed 's/^[ \t]*//;s/[ \t]*$//'   \
-    )
+if [ ! -z "$undocfiles" ]
+then
+    filecount=$(                        \
+        echo "$undocfiles"            | \
+        wc -l                         | \
+        sed 's/^[ \t]*//;s/[ \t]*$//'   \
+        )
+else
+    filecount=0
+fi
 
 # Filtered in warnings
 filterin=
@@ -468,6 +507,7 @@ echo "Count Directory"
 echo "----- ----------------------------------"
 echo "$undocmods"
 echo " $addlparam additional undocumented parameters."
+echo " $misplacedWarns additional warnings."
 echo "----------------------------------------"
 printf "%6d total warnings\n" $warncount
 printf "%6d directories with warnings\n" $modcount
@@ -519,9 +559,6 @@ if [ "$filterin" != "" ] ; then
     echo "Filtered Warnings"
     echo "========================================"
     echo "$filterin"
-    exit_status=1
-else
-    exit_status=0
 fi
 
 status_report 0 $me

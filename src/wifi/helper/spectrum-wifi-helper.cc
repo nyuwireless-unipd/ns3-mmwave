@@ -22,57 +22,93 @@
 #include "ns3/log.h"
 #include "ns3/names.h"
 #include "ns3/spectrum-wifi-phy.h"
+#include "ns3/interference-helper.h"
 #include "ns3/error-rate-model.h"
 #include "ns3/frame-capture-model.h"
 #include "ns3/preamble-detection-model.h"
 #include "ns3/mobility-model.h"
+#include "ns3/wifi-net-device.h"
 #include "spectrum-wifi-helper.h"
 
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("SpectrumWifiHelper");
 
-SpectrumWifiPhyHelper::SpectrumWifiPhyHelper ()
-  : m_channel (0)
+SpectrumWifiPhyHelper::SpectrumWifiPhyHelper (uint8_t nLinks)
+  : WifiPhyHelper (nLinks)
 {
-  m_phy.SetTypeId ("ns3::SpectrumWifiPhy");
+  NS_ABORT_IF (m_phy.size () != nLinks);
+  for (auto& phy : m_phy)
+    {
+      phy.SetTypeId ("ns3::SpectrumWifiPhy");
+    }
+  m_channels.resize (m_phy.size ());
+  SetInterferenceHelper ("ns3::InterferenceHelper");
   SetErrorRateModel ("ns3::TableBasedErrorRateModel");
 }
 
 void
 SpectrumWifiPhyHelper::SetChannel (Ptr<SpectrumChannel> channel)
 {
-  m_channel = channel;
+  for (auto& ch : m_channels)
+    {
+      ch = channel;
+    }
 }
 
 void
 SpectrumWifiPhyHelper::SetChannel (std::string channelName)
 {
   Ptr<SpectrumChannel> channel = Names::Find<SpectrumChannel> (channelName);
-  m_channel = channel;
+  for (auto& ch : m_channels)
+    {
+      ch = channel;
+    }
 }
 
-Ptr<WifiPhy>
-SpectrumWifiPhyHelper::Create (Ptr<Node> node, Ptr<NetDevice> device) const
+void
+SpectrumWifiPhyHelper::SetChannel (uint8_t linkId, Ptr<SpectrumChannel> channel)
 {
-  Ptr<SpectrumWifiPhy> phy = m_phy.Create<SpectrumWifiPhy> ();
-  phy->CreateWifiSpectrumPhyInterface (device);
-  Ptr<ErrorRateModel> error = m_errorRateModel.Create<ErrorRateModel> ();
-  phy->SetErrorRateModel (error);
-  if (m_frameCaptureModel.IsTypeIdSet ())
+  m_channels.at (linkId) = channel;
+}
+
+void
+SpectrumWifiPhyHelper::SetChannel (uint8_t linkId, std::string channelName)
+{
+  Ptr<SpectrumChannel> channel = Names::Find<SpectrumChannel> (channelName);
+  m_channels.at (linkId) = channel;
+}
+
+std::vector<Ptr<WifiPhy>>
+SpectrumWifiPhyHelper::Create (Ptr<Node> node, Ptr<WifiNetDevice> device) const
+{
+  std::vector<Ptr<WifiPhy>> ret;
+  Ptr<InterferenceHelper> interference = m_interferenceHelper.Create<InterferenceHelper> ();
+
+  for (std::size_t i = 0; i < m_phy.size (); i++)
     {
-      auto frameCapture = m_frameCaptureModel.Create<FrameCaptureModel> ();
-      phy->SetFrameCaptureModel (frameCapture);
+      Ptr<SpectrumWifiPhy> phy = m_phy.at (i).Create<SpectrumWifiPhy> ();
+      phy->CreateWifiSpectrumPhyInterface (device);
+      phy->SetInterferenceHelper (interference);
+      Ptr<ErrorRateModel> error = m_errorRateModel.at (i).Create<ErrorRateModel> ();
+      phy->SetErrorRateModel (error);
+      if (m_frameCaptureModel.at (i).IsTypeIdSet ())
+        {
+          auto frameCapture = m_frameCaptureModel.at (i).Create<FrameCaptureModel> ();
+          phy->SetFrameCaptureModel (frameCapture);
+        }
+      if (m_preambleDetectionModel.at (i).IsTypeIdSet ())
+        {
+          auto preambleDetection = m_preambleDetectionModel.at (i).Create<PreambleDetectionModel> ();
+          phy->SetPreambleDetectionModel (preambleDetection);
+        }
+      phy->SetChannel (m_channels.at (i));
+      phy->SetDevice (device);
+      phy->SetMobility (node->GetObject<MobilityModel> ());
+      ret.push_back (phy);
     }
-  if (m_preambleDetectionModel.IsTypeIdSet ())
-    {
-      auto preambleDetection = m_preambleDetectionModel.Create<PreambleDetectionModel> ();
-      phy->SetPreambleDetectionModel (preambleDetection);
-    }
-  phy->SetChannel (m_channel);
-  phy->SetDevice (device);
-  phy->SetMobility (node->GetObject<MobilityModel> ());
-  return phy;
+
+  return ret;
 }
 
 } //namespace ns3

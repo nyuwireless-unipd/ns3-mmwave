@@ -27,7 +27,7 @@
 #include "wifi-mac-trailer.h"
 
 #undef NS_LOG_APPEND_CONTEXT
-#define NS_LOG_APPEND_CONTEXT std::clog << "[mac=" << m_self << "] "
+#define NS_LOG_APPEND_CONTEXT std::clog << "[link=" << +m_linkId << "][mac=" << m_self << "] "
 
 // Time (in nanoseconds) to be added to the PSDU duration to yield the duration
 // of the timer that is started when the PHY indicates the start of the reception
@@ -53,6 +53,8 @@ FrameExchangeManager::GetTypeId (void)
 
 FrameExchangeManager::FrameExchangeManager ()
   : m_navEnd (Seconds (0)),
+    m_linkId (0),
+    m_allowedWidth (0),
     m_promisc (false),
     m_moreFragments (false)
 {
@@ -91,7 +93,7 @@ FrameExchangeManager::DoDispose (void)
   m_channelAccessManager = 0;
   m_protectionManager = 0;
   m_ackManager = 0;
-  if (m_phy != 0)
+  if (m_phy)
     {
       m_phy->TraceDisconnectWithoutContext ("PhyRxPayloadBegin",
                                             MakeCallback (&FrameExchangeManager::RxStartIndication, this));
@@ -127,7 +129,14 @@ FrameExchangeManager::GetAckManager (void) const
 }
 
 void
-FrameExchangeManager::SetWifiMac (Ptr<RegularWifiMac> mac)
+FrameExchangeManager::SetLinkId (uint8_t linkId)
+{
+  NS_LOG_FUNCTION (this << +linkId);
+  m_linkId = linkId;
+}
+
+void
+FrameExchangeManager::SetWifiMac (Ptr<WifiMac> mac)
 {
   NS_LOG_FUNCTION (this << mac);
   m_mac = mac;
@@ -167,17 +176,30 @@ FrameExchangeManager::SetWifiPhy (Ptr<WifiPhy> phy)
 void
 FrameExchangeManager::ResetPhy (void)
 {
-  m_phy->TraceDisconnectWithoutContext ("PhyRxPayloadBegin",
-                                        MakeCallback (&FrameExchangeManager::RxStartIndication, this));
-  m_phy->SetReceiveOkCallback (MakeNullCallback<void, Ptr<WifiPsdu>, RxSignalInfo, WifiTxVector, std::vector<bool>> ());
-  m_phy = 0;
+  NS_LOG_FUNCTION (this);
+  if (m_phy)
+    {
+      m_phy->TraceDisconnectWithoutContext ("PhyRxPayloadBegin",
+                                            MakeCallback (&FrameExchangeManager::RxStartIndication, this));
+      m_phy->SetReceiveOkCallback (MakeNullCallback<void, Ptr<WifiPsdu>, RxSignalInfo, WifiTxVector, std::vector<bool>> ());
+      m_phy = nullptr;
+    }
 }
 
 void
 FrameExchangeManager::SetAddress (Mac48Address address)
 {
   NS_LOG_FUNCTION (this << address);
+  // For APs, the BSSID is the MAC address. For STAs, the BSSID will be overwritten
+  // when receiving Beacon frames or Probe Response frames
+  SetBssid (address);
   m_self = address;
+}
+
+Mac48Address
+FrameExchangeManager::GetAddress (void) const
+{
+  return m_self;
 }
 
 void
@@ -185,6 +207,12 @@ FrameExchangeManager::SetBssid (Mac48Address bssid)
 {
   NS_LOG_FUNCTION (this << bssid);
   m_bssid = bssid;
+}
+
+Mac48Address
+FrameExchangeManager::GetBssid (void) const
+{
+  return m_bssid;
 }
 
 void
@@ -256,16 +284,17 @@ FrameExchangeManager::RxStartIndication (WifiTxVector txVector, Time psduDuratio
 }
 
 bool
-FrameExchangeManager::StartTransmission (Ptr<Txop> dcf)
+FrameExchangeManager::StartTransmission (Ptr<Txop> dcf, uint16_t allowedWidth)
 {
-  NS_LOG_FUNCTION (this << dcf);
+  NS_LOG_FUNCTION (this << dcf << allowedWidth);
 
-  NS_ASSERT (m_mpdu == 0);
+  NS_ASSERT (!m_mpdu);
   if (m_txTimer.IsRunning ())
     {
       m_txTimer.Cancel ();
     }
   m_dcf = dcf;
+  m_allowedWidth = allowedWidth;
 
   Ptr<WifiMacQueue> queue = dcf->GetWifiMacQueue ();
 
@@ -275,14 +304,14 @@ FrameExchangeManager::StartTransmission (Ptr<Txop> dcf)
   if (queue->IsEmpty ())
     {
       NS_LOG_DEBUG ("Queue empty");
-      m_dcf->NotifyChannelReleased ();
+      m_dcf->NotifyChannelReleased (m_linkId);
       m_dcf = 0;
       return false;
     }
 
-  m_dcf->NotifyChannelAccessed ();
-  Ptr<WifiMacQueueItem> mpdu = *queue->Peek ()->GetQueueIterator ();
-  NS_ASSERT (mpdu != 0);
+  m_dcf->NotifyChannelAccessed (m_linkId);
+  Ptr<WifiMacQueueItem> mpdu = queue->Peek ()->GetItem ();
+  NS_ASSERT (mpdu);
   NS_ASSERT (mpdu->GetHeader ().IsData () || mpdu->GetHeader ().IsMgt ());
 
   // assign a sequence number if this is not a fragment nor a retransmission
@@ -299,10 +328,10 @@ FrameExchangeManager::StartTransmission (Ptr<Txop> dcf)
   // check if the MSDU needs to be fragmented
   mpdu = GetFirstFragmentIfNeeded (mpdu);
 
-  NS_ASSERT (m_protectionManager != 0);
-  NS_ASSERT (m_ackManager != 0);
+  NS_ASSERT (m_protectionManager);
+  NS_ASSERT (m_ackManager);
   WifiTxParameters txParams;
-  txParams.m_txVector = m_mac->GetWifiRemoteStationManager ()->GetDataTxVector (mpdu->GetHeader ());
+  txParams.m_txVector = m_mac->GetWifiRemoteStationManager ()->GetDataTxVector (mpdu->GetHeader (), m_allowedWidth);
   txParams.m_protection = m_protectionManager->TryAddMpdu (mpdu, txParams);
   txParams.m_acknowledgment = m_ackManager->TryAddMpdu (mpdu, txParams);
   txParams.AddMpdu (mpdu);
@@ -321,21 +350,18 @@ FrameExchangeManager::GetFirstFragmentIfNeeded (Ptr<WifiMacQueueItem> mpdu)
   if (mpdu->IsFragment ())
     {
       // a fragment cannot be further fragmented
-      NS_ASSERT (m_fragmentedPacket != 0);
+      NS_ASSERT (m_fragmentedPacket);
     }
   else if (m_mac->GetWifiRemoteStationManager ()->NeedFragmentation (mpdu))
     {
       NS_LOG_DEBUG ("Fragmenting the MSDU");
       m_fragmentedPacket = mpdu->GetPacket ()->Copy ();
-      AcIndex ac = mpdu->GetQueueAc ();
-      // dequeue the MSDU
-      DequeueMpdu (mpdu);
       // create the first fragment
-      mpdu->GetHeader ().SetMoreFragments ();
       Ptr<Packet> fragment = m_fragmentedPacket->CreateFragment (0, m_mac->GetWifiRemoteStationManager ()->GetFragmentSize (mpdu, 0));
       // enqueue the first fragment
       Ptr<WifiMacQueueItem> item = Create<WifiMacQueueItem> (fragment, mpdu->GetHeader (), mpdu->GetTimeStamp ());
-      m_mac->GetTxopQueue (ac)->PushFront (item);
+      item->GetHeader ().SetMoreFragments ();
+      m_mac->GetTxopQueue (mpdu->GetQueueAc ())->Replace (mpdu, item);
       return item;
     }
   return mpdu;
@@ -388,7 +414,8 @@ FrameExchangeManager::SendMpdu (void)
 {
   NS_LOG_FUNCTION (this);
 
-  Time txDuration = m_phy->CalculateTxDuration (m_mpdu->GetSize (), m_txParams.m_txVector, m_phy->GetPhyBand ());
+  Time txDuration = m_phy->CalculateTxDuration (GetPsduSize (m_mpdu, m_txParams.m_txVector),
+                                                m_txParams.m_txVector, m_phy->GetPhyBand ());
 
   NS_ASSERT (m_txParams.m_acknowledgment);
 
@@ -405,7 +432,8 @@ FrameExchangeManager::SendMpdu (void)
     }
   else if (m_txParams.m_acknowledgment->method == WifiAcknowledgment::NORMAL_ACK)
     {
-      m_mpdu->GetHeader ().SetDuration (GetFrameDurationId (m_mpdu->GetHeader (), m_mpdu->GetSize (),
+      m_mpdu->GetHeader ().SetDuration (GetFrameDurationId (m_mpdu->GetHeader (),
+                                                            GetPsduSize (m_mpdu, m_txParams.m_txVector),
                                                             m_txParams, m_fragmentedPacket));
 
       // the timeout duration is "aSIFSTime + aSlotTime + aRxPHYStartDelay, starting
@@ -457,11 +485,17 @@ FrameExchangeManager::DequeueMpdu (Ptr<const WifiMacQueueItem> mpdu)
     }
 }
 
+uint32_t
+FrameExchangeManager::GetPsduSize (Ptr<const WifiMacQueueItem> mpdu, const WifiTxVector& txVector) const
+{
+  return mpdu->GetSize ();
+}
+
 void
 FrameExchangeManager::CalculateProtectionTime (WifiProtection* protection) const
 {
   NS_LOG_FUNCTION (this << protection);
-  NS_ASSERT (protection != nullptr);
+  NS_ASSERT (protection);
 
   if (protection->method == WifiProtection::NONE)
     {
@@ -490,7 +524,7 @@ void
 FrameExchangeManager::CalculateAcknowledgmentTime (WifiAcknowledgment* acknowledgment) const
 {
   NS_LOG_FUNCTION (this << acknowledgment);
-  NS_ASSERT (acknowledgment != nullptr);
+  NS_ASSERT (acknowledgment);
 
   if (acknowledgment->method == WifiAcknowledgment::NONE)
     {
@@ -747,12 +781,13 @@ FrameExchangeManager::TransmissionSucceeded (void)
   if (m_moreFragments)
     {
       NS_LOG_DEBUG ("Schedule transmission of next fragment in a SIFS");
-      Simulator::Schedule (m_phy->GetSifs (), &FrameExchangeManager::StartTransmission, this, m_dcf);
+      Simulator::Schedule (m_phy->GetSifs (), &FrameExchangeManager::StartTransmission,
+                           this, m_dcf, m_allowedWidth);
       m_moreFragments = false;
     }
   else
     {
-      m_dcf->NotifyChannelReleased ();
+      m_dcf->NotifyChannelReleased (m_linkId);
       m_dcf = 0;
     }
 }
@@ -762,7 +797,7 @@ FrameExchangeManager::TransmissionFailed (void)
 {
   NS_LOG_FUNCTION (this);
   // A non-QoS station always releases the channel upon a transmission failure
-  m_dcf->NotifyChannelReleased ();
+  m_dcf->NotifyChannelReleased (m_linkId);
   m_dcf = 0;
 }
 
@@ -780,14 +815,14 @@ FrameExchangeManager::NormalAckTimeout (Ptr<WifiMacQueueItem> mpdu, const WifiTx
       // Dequeue the MPDU if it is stored in a queue
       DequeueMpdu (mpdu);
       m_mac->GetWifiRemoteStationManager ()->ReportFinalDataFailed (mpdu);
-      m_dcf->ResetCw ();
+      m_dcf->ResetCw (m_linkId);
     }
   else
     {
       NS_LOG_DEBUG ("Missed Ack, retransmit MPDU");
       mpdu->GetHeader ().SetRetry ();
       RetransmitMpduAfterMissedAck (mpdu);
-      m_dcf->UpdateFailedCw ();
+      m_dcf->UpdateFailedCw (m_linkId);
     }
 
   m_mpdu = 0;
@@ -805,29 +840,47 @@ FrameExchangeManager::CtsTimeout (Ptr<WifiMacQueueItem> rts, const WifiTxVector&
 {
   NS_LOG_FUNCTION (this << *rts << txVector);
 
-  m_mac->GetWifiRemoteStationManager ()->ReportRtsFailed (m_mpdu->GetHeader ());
+  DoCtsTimeout (Create<WifiPsdu> (m_mpdu, true));
+  m_mpdu = nullptr;
+}
 
-  if (!m_mac->GetWifiRemoteStationManager ()->NeedRetransmission (m_mpdu))
+void
+FrameExchangeManager::DoCtsTimeout (Ptr<WifiPsdu> psdu)
+{
+  NS_LOG_FUNCTION (this << *psdu);
+
+  m_mac->GetWifiRemoteStationManager ()->ReportRtsFailed (psdu->GetHeader (0));
+
+  if (!m_mac->GetWifiRemoteStationManager ()->NeedRetransmission (*psdu->begin ()))
     {
-      NS_LOG_DEBUG ("Missed CTS, discard MPDU");
-      // Dequeue the MPDU if it is stored in a queue
-      DequeueMpdu (m_mpdu);
-      NotifyPacketDiscarded (m_mpdu);
-      m_mac->GetWifiRemoteStationManager ()->ReportFinalRtsFailed (m_mpdu->GetHeader ());
-      m_dcf->ResetCw ();
+      NS_LOG_DEBUG ("Missed CTS, discard MPDU(s)");
+      m_mac->GetWifiRemoteStationManager ()->ReportFinalRtsFailed (psdu->GetHeader (0));
+      for (const auto& mpdu : *PeekPointer (psdu))
+        {
+          // Dequeue the MPDU if it is stored in a queue
+          DequeueMpdu (mpdu);
+          NotifyPacketDiscarded (mpdu);
+        }
+      m_dcf->ResetCw (m_linkId);
     }
   else
     {
-      NS_LOG_DEBUG ("Missed CTS, retransmit RTS");
-      RetransmitMpduAfterMissedCts (m_mpdu);
-      m_dcf->UpdateFailedCw ();
+      NS_LOG_DEBUG ("Missed CTS, retransmit MPDU(s)");
+      m_dcf->UpdateFailedCw (m_linkId);
     }
-  m_mpdu = 0;
+  // Make the sequence numbers of the MPDUs available again if the MPDUs have never
+  // been transmitted, both in case the MPDUs have been discarded and in case the
+  // MPDUs have to be transmitted (because a new sequence number is assigned to
+  // MPDUs that have never been transmitted and are selected for transmission)
+  for (const auto& mpdu : *PeekPointer (psdu))
+    {
+      ReleaseSequenceNumber (mpdu);
+    }
   TransmissionFailed ();
 }
 
 void
-FrameExchangeManager::RetransmitMpduAfterMissedCts (Ptr<WifiMacQueueItem> mpdu) const
+FrameExchangeManager::ReleaseSequenceNumber (Ptr<WifiMacQueueItem> mpdu) const
 {
   NS_LOG_FUNCTION (this << *mpdu);
 
@@ -854,12 +907,16 @@ FrameExchangeManager::NotifyInternalCollision (Ptr<Txop> txop)
   // sent. As an approximation, we consider the frame peeked from the queues of the AC.
   Ptr<QosTxop> qosTxop = (txop->IsQosTxop () ? StaticCast<QosTxop> (txop) : nullptr);
 
-  Ptr<const WifiMacQueueItem> mpdu = (qosTxop != nullptr ? qosTxop->PeekNextMpdu ()
+  Ptr<const WifiMacQueueItem> mpdu = (qosTxop ? qosTxop->PeekNextMpdu ()
                                                          : txop->GetWifiMacQueue ()->Peek ());
 
-  if (mpdu != nullptr)
+  if (mpdu)
     {
-      m_mac->GetWifiRemoteStationManager ()->ReportDataFailed (mpdu);
+      if (mpdu->GetHeader ().HasData ()
+          && !mpdu->GetHeader ().GetAddr1 ().IsGroup ())
+        {
+          m_mac->GetWifiRemoteStationManager ()->ReportDataFailed (mpdu);
+        }
 
       if (!mpdu->GetHeader ().GetAddr1 ().IsGroup ()
           && !m_mac->GetWifiRemoteStationManager ()->NeedRetransmission (mpdu))
@@ -868,24 +925,31 @@ FrameExchangeManager::NotifyInternalCollision (Ptr<Txop> txop)
           m_mac->GetWifiRemoteStationManager ()->ReportFinalDataFailed (mpdu);
           DequeueMpdu (mpdu);
           NotifyPacketDiscarded (mpdu);
-          txop->ResetCw ();
+          txop->ResetCw (m_linkId);
         }
       else
         {
           NS_LOG_DEBUG ("Update CW");
-          txop->UpdateFailedCw ();
+          txop->UpdateFailedCw (m_linkId);
         }
     }
 
-  txop->Txop::NotifyChannelReleased ();
+  txop->Txop::NotifyChannelReleased (m_linkId);
 }
 
 void
 FrameExchangeManager::NotifySwitchingStartNow (Time duration)
 {
   NS_LOG_DEBUG ("Switching channel. Cancelling MAC pending events");
-  m_mac->GetWifiRemoteStationManager ()->Reset ();
-  Reset ();
+  m_mac->NotifyChannelSwitching ();
+  if (m_txTimer.IsRunning ())
+    {
+      // we were transmitting something before channel switching. Since we will
+      // not be able to receive the response, have the timer expire now, so that
+      // we perform the actions required in case of missing response
+      m_txTimer.Reschedule (Seconds (0));
+    }
+  Simulator::ScheduleNow (&FrameExchangeManager::Reset, this);
 }
 
 void
@@ -921,7 +985,7 @@ FrameExchangeManager::Receive (Ptr<WifiPsdu> psdu, RxSignalInfo rxSignalInfo,
     {
       if (m_promisc && psdu->GetNMpdus () == 1 && psdu->GetHeader (0).IsData ())
         {
-          m_rxMiddle->Receive (*psdu->begin ());
+          m_rxMiddle->Receive (*psdu->begin (), m_linkId);
         }
       return;
     }
@@ -1053,7 +1117,7 @@ FrameExchangeManager::ReceiveMpdu (Ptr<WifiMacQueueItem> mpdu, RxSignalInfo rxSi
             }
         }
       else if (hdr.IsCts () && m_txTimer.IsRunning () && m_txTimer.GetReason () == WifiTxTimer::WAIT_CTS
-               && m_mpdu != 0)
+               && m_mpdu)
         {
           NS_ABORT_MSG_IF (inAmpdu, "Received CTS as part of an A-MPDU");
           NS_ASSERT (hdr.GetAddr1 () == m_self);
@@ -1071,7 +1135,7 @@ FrameExchangeManager::ReceiveMpdu (Ptr<WifiMacQueueItem> mpdu, RxSignalInfo rxSi
           m_channelAccessManager->NotifyCtsTimeoutResetNow ();
           Simulator::Schedule (m_phy->GetSifs (), &FrameExchangeManager::SendMpdu, this);
         }
-      else if (hdr.IsAck () && m_mpdu != 0 && m_txTimer.IsRunning ()
+      else if (hdr.IsAck () && m_mpdu && m_txTimer.IsRunning ()
                && m_txTimer.GetReason () == WifiTxTimer::WAIT_NORMAL_ACK)
         {
           NS_ASSERT (hdr.GetAddr1 () == m_self);
@@ -1102,7 +1166,7 @@ FrameExchangeManager::ReceiveMpdu (Ptr<WifiMacQueueItem> mpdu, RxSignalInfo rxSi
                                this, hdr, txVector, rxSnr);
         }
 
-      m_rxMiddle->Receive (mpdu);
+      m_rxMiddle->Receive (mpdu, m_linkId);
     }
   else if (hdr.IsData () && !hdr.IsQosData ())
     {
@@ -1113,7 +1177,7 @@ FrameExchangeManager::ReceiveMpdu (Ptr<WifiMacQueueItem> mpdu, RxSignalInfo rxSi
                                this, hdr, txVector, rxSnr);
         }
 
-      m_rxMiddle->Receive (mpdu);
+      m_rxMiddle->Receive (mpdu, m_linkId);
     }
 }
 
@@ -1140,17 +1204,18 @@ FrameExchangeManager::ReceivedNormalAck (Ptr<WifiMacQueueItem> mpdu, const WifiT
 
   // The CW shall be reset to aCWmin after every successful attempt to transmit
   // a frame containing all or part of an MSDU or MMPDU (sec. 10.3.3 of 802.11-2016)
-  m_dcf->ResetCw ();
-
-  // The MPDU has been acknowledged, we can now dequeue it if it is stored in a queue
-  DequeueMpdu (mpdu);
+  m_dcf->ResetCw (m_linkId);
 
   if (mpdu->GetHeader ().IsMoreFragments ())
     {
-      // enqueue the next fragment
-      Ptr<WifiMacQueueItem> next = GetNextFragment ();
-      m_dcf->GetWifiMacQueue ()->PushFront (next);
+      // replace the current fragment with the next one
+      m_dcf->GetWifiMacQueue ()->Replace (mpdu, GetNextFragment ());
       m_moreFragments = true;
+    }
+  else
+    {
+      // the MPDU has been acknowledged, we can now dequeue it if it is stored in a queue
+      DequeueMpdu (mpdu);
     }
 
   TransmissionSucceeded ();

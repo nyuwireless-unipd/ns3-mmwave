@@ -699,7 +699,7 @@ EpcX2::DoSendHandoverRequest (EpcX2SapProvider::HandoverRequestParams params)
   NS_LOG_INFO ("X2 HandoverRequest header: " << x2HoReqHeader);
 
   // Build the X2 packet
-  Ptr<Packet> packet = (params.rrcContext != 0) ? (params.rrcContext) : (Create <Packet> ());
+  Ptr<Packet> packet = (params.rrcContext) ? (params.rrcContext) : (Create <Packet> ());
   packet->AddHeader (x2HoReqHeader);
   packet->AddHeader (x2Header);
 
@@ -857,7 +857,7 @@ EpcX2::DoSendHandoverRequestAck (EpcX2SapProvider::HandoverRequestAckParams para
   NS_LOG_INFO ("RRC context: " << params.rrcContext);
 
   // Build the X2 packet
-  Ptr<Packet> packet = (params.rrcContext != 0) ? (params.rrcContext) : (Create <Packet> ());
+  Ptr<Packet> packet = (params.rrcContext) ? (params.rrcContext) : (Create <Packet> ());
   packet->AddHeader (x2HoAckHeader);
   packet->AddHeader (x2Header);
 

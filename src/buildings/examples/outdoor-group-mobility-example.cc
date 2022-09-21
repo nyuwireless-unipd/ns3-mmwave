@@ -55,7 +55,7 @@
  *
  * Randomness in this program is due to the parent mobility model which
  * executes a random walk, while the child mobility models are set as
- * constant position offsets from the parent.  Slightly different motion  
+ * constant position offsets from the parent.  Slightly different motion
  * can be obtained by changing the ns-3 'RunNumber' value (see the
  * documentation on ns-3 random variables).
  */
@@ -70,19 +70,29 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("OutdoorGroupMobilityExample");
 
+/// The time series file.
 std::ofstream g_timeSeries;
 
+/**
+ * Print the node position to the time series file.
+ *
+ * \param node The node.
+ */
 void
 PrintPosition (Ptr<Node> node)
 {
-  if (node == nullptr) return;
+  if (!node) return;
   Ptr<MobilityModel> model = node->GetObject<MobilityModel> ();
-  if (model == nullptr) return;
+  if (!model) return;
   NS_LOG_LOGIC ("Node: " << node->GetId () << " Position: " << model->GetPosition ());
   g_timeSeries << Simulator::Now ().GetSeconds () << " " << node->GetId () << " " << model->GetPosition () << std::endl;
-  
 }
 
+/**
+ * Print the buildings list in a format that can be used by Gnuplot to draw them.
+ *
+ * \param filename The ouput filename.
+ */
 void
 PrintGnuplottableBuildingListToFile (std::string filename)
 {
@@ -117,7 +127,7 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
   g_timeSeries.open ("outdoor-group-mobility-time-series.mob");
-  
+
   NodeContainer n;
   n.Create (3);
 
@@ -209,9 +219,9 @@ main (int argc, char *argv[])
       child2->SetPosition (Vector (0, 1, 0));
       hierarchical2->SetChild (child2);
       n.Get (2)->AggregateObject (hierarchical2);
-    } 
+    }
   else
-    { 
+    {
       // This branch demonstrates an equivalent set of commands but using
       // the GroupMobilityHelper
       GroupMobilityHelper group;
@@ -220,20 +230,20 @@ main (int argc, char *argv[])
       // for construction by an object factory, but in this case, since we
       // are using the WaypointMobilityModel, which requires us to add
       // waypoints directly on the object, we will just pass in the pointer.
-      group.SetReferenceMobilityModel ("ns3::RandomWalk2dOutdoorMobilityModel", 
+      group.SetReferenceMobilityModel ("ns3::RandomWalk2dOutdoorMobilityModel",
         "Bounds", RectangleValue (Rectangle (0, 100, 0, 50)),
         "Tolerance", DoubleValue (2));
       Ptr<ListPositionAllocator> listPosition = CreateObject<ListPositionAllocator> ();
       listPosition->Add (Vector (10, 10, 0));
       group.SetReferencePositionAllocator (listPosition);
-    
+
       group.SetMemberMobilityModel ("ns3::ConstantPositionMobilityModel");
       listPosition = CreateObject<ListPositionAllocator> ();
       listPosition->Add (Vector (1, 0, 0)); // first child
       listPosition->Add (Vector (-1, 0, 0)); // second child
       listPosition->Add (Vector (0, 1, 0)); // second child
       group.SetMemberPositionAllocator (listPosition);
-     
+
       // Install to all three nodes
       group.Install (n);
 

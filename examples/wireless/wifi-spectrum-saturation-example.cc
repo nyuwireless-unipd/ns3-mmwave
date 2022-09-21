@@ -224,7 +224,7 @@ int main (int argc, char *argv[])
         }
 
       WifiHelper wifi;
-      wifi.SetStandard (WIFI_STANDARD_80211n_5GHZ);
+      wifi.SetStandard (WIFI_STANDARD_80211n);
       WifiMacHelper mac;
 
       Ssid ssid = Ssid ("ns380211n");
@@ -563,16 +563,18 @@ int main (int argc, char *argv[])
       NetDeviceContainer apDevice;
 
       channelWidth = (i <= 15 || (i > 31 && i <= 47) ? 20 : 40);
+      std::string channelStr = "{0, " + std::to_string (channelWidth) + ", BAND_5GHZ, 0}";
 
       if (wifiType == "ns3::YansWifiPhy")
         {
           mac.SetType ("ns3::StaWifiMac",
                        "Ssid", SsidValue (ssid));
-          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
+          phy.Set ("ChannelSettings", StringValue (channelStr));
+
           staDevice = wifi.Install (phy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));
-          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
+          phy.Set ("ChannelSettings", StringValue (channelStr));
           apDevice = wifi.Install (phy, mac, wifiApNode);
 
         }
@@ -580,11 +582,11 @@ int main (int argc, char *argv[])
         {
           mac.SetType ("ns3::StaWifiMac",
                        "Ssid", SsidValue (ssid));
-          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
+          phy.Set ("ChannelSettings", StringValue (channelStr));
           staDevice = wifi.Install (spectrumPhy, mac, wifiStaNode);
           mac.SetType ("ns3::ApWifiMac",
                        "Ssid", SsidValue (ssid));
-          phy.Set ("ChannelWidth", UintegerValue (channelWidth));
+          phy.Set ("ChannelSettings", StringValue (channelStr));
           apDevice = wifi.Install (spectrumPhy, mac, wifiApNode);
         }
 

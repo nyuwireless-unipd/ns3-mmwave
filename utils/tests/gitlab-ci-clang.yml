@@ -1,0 +1,127 @@
+# NS3 CI script for CLANG
+
+# Any scheduled pipeline for CLANG should define a variable, named
+# "RELEASE", that has a value "weekly". Also, a variable "CLANG" should be set
+# to True.
+
+# We support CLANG 6, 8 - 11
+# The test is done under Linux.
+
+.weekly-build-clang:
+  image: ubuntu:18.04
+  extends: .base-build
+  only:
+    variables:
+      - $RELEASE == "weekly"
+      - $CLANG_BUILD_ENABLE == "True"
+  before_script:
+    - apt update
+    - apt install -y ca-certificates gnupg software-properties-common wget
+    - echo -en "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-$CLANG main \n deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-$CLANG main" > /etc/apt/sources.list.d/llvm.list
+    - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+    - apt update
+    - apt install -y
+      clang-$CLANG cmake ninja-build ccache build-essential
+      libboost-all-dev
+      libgtk-3-0 libgtk-3-dev
+      libgsl-dev libgsl23 gsl-bin
+      libsqlite3-dev sqlite3
+      libxml2 libxml2-dev
+      ssh
+  variables:
+    COMPILER: clang++-$CLANG
+
+# CLANG 6
+weekly-build-clang-6-debug:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: "6.0"
+    MODE: debug
+
+weekly-build-clang-6-default:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: "6.0"
+    MODE: default
+
+weekly-build-clang-6-optimized:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: "6.0"
+    MODE: optimized
+
+# CLANG 8
+weekly-build-clang-8-debug:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 8
+    MODE: debug
+
+weekly-build-clang-8-default:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 8
+    MODE: default
+
+weekly-build-clang-8-optimized:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 8
+    MODE: optimized
+
+# CLANG 9
+weekly-build-clang-9-debug:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 9
+    MODE: debug
+
+weekly-build-clang-9-default:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 9
+    MODE: default
+
+weekly-build-clang-9-optimized:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 9
+    MODE: optimized
+
+# CLANG 10
+weekly-build-clang-10-debug:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 10
+    MODE: debug
+
+weekly-build-clang-10-default:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 10
+    MODE: default
+
+weekly-build-clang-10-optimized:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 10
+    MODE: optimized
+
+# CLANG 11
+weekly-build-clang-11-debug:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 11
+    MODE: debug
+
+weekly-build-clang-11-default:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 11
+    MODE: default
+
+weekly-build-clang-11-optimized:
+  extends: .weekly-build-clang
+  variables:
+    CLANG: 11
+    MODE: optimized

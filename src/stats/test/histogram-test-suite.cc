@@ -24,13 +24,7 @@
 using namespace ns3;
 
 /**
- * \ingroup stats
- * \defgroup stats-test Stats module tests
- */
-
-/**
- * \ingroup stats-test
- * \ingroup tests
+ * \ingroup stats-tests
  *
  * \brief Histogram Test
  */
@@ -56,7 +50,7 @@ HistogramTestCase::DoRun (void)
   // Testing floating-point bin widths
   {
     for (int i=1; i <= 10; i++)
-      { 
+      {
         h0.AddValue (3.4);
       }
 
@@ -81,8 +75,7 @@ HistogramTestCase::DoRun (void)
 }
 
 /**
- * \ingroup stats-test
- * \ingroup tests
+ * \ingroup stats-tests
  *
  * \brief Histogram TestSuite
  */

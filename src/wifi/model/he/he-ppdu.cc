@@ -35,45 +35,48 @@ std::ostream& operator<< (std::ostream& os, const HePpdu::TxPsdFlag &flag)
 {
   switch (flag)
     {
-      case HePpdu::PSD_NON_HE_TB:
-        return (os << "PSD_NON_HE_TB");
-      case HePpdu::PSD_HE_TB_NON_OFDMA_PORTION:
-        return (os << "PSD_HE_TB_NON_OFDMA_PORTION");
-      case HePpdu::PSD_HE_TB_OFDMA_PORTION:
-        return (os << "PSD_HE_TB_OFDMA_PORTION");
+      case HePpdu::PSD_NON_HE_PORTION:
+        return (os << "PSD_NON_HE_PORTION");
+      case HePpdu::PSD_HE_PORTION:
+        return (os << "PSD_HE_PORTION");
       default:
         NS_FATAL_ERROR ("Invalid PSD flag");
         return (os << "INVALID");
     }
 }
 
-HePpdu::HePpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, Time ppduDuration,
-                WifiPhyBand band, uint64_t uid, TxPsdFlag flag)
-  : OfdmPpdu (psdus.begin ()->second, txVector, band, uid, false) //don't instantiate LSigHeader of OfdmPpdu
+HePpdu::HePpdu (const WifiConstPsduMap & psdus, const WifiTxVector& txVector, uint16_t txCenterFreq,
+                Time ppduDuration, WifiPhyBand band, uint64_t uid, TxPsdFlag flag, uint8_t p20Index)
+  : OfdmPpdu (psdus.begin ()->second, txVector, txCenterFreq, band, uid, false) //don't instantiate LSigHeader of OfdmPpdu
 {
-  NS_LOG_FUNCTION (this << psdus << txVector << ppduDuration << band << uid << flag);
+  NS_LOG_FUNCTION (this << psdus << txVector << txCenterFreq << ppduDuration << band << uid << flag);
 
   //overwrite with map (since only first element used by OfdmPpdu)
   m_psdus.begin ()->second = 0;
   m_psdus.clear ();
   m_psdus = psdus;
-  if (IsMu ())
+  if (txVector.IsMu ())
     {
-      m_muUserInfos = txVector.GetHeMuUserInfoMap ();
+      for (auto heMuUserInfo : txVector.GetHeMuUserInfoMap ())
+        {
+          // Set RU PHY index
+          heMuUserInfo.second.ru.SetPhyIndex (txVector.GetChannelWidth (), p20Index);
+          auto [it, ret] = m_muUserInfos.emplace (heMuUserInfo);
+          NS_ABORT_MSG_IF (!ret, "STA-ID " << heMuUserInfo.first << " already present");
+        }
     }
-
   SetPhyHeaders (txVector, ppduDuration);
   SetTxPsdFlag (flag);
 }
 
-HePpdu::HePpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, Time ppduDuration,
-                WifiPhyBand band, uint64_t uid)
-  : OfdmPpdu (psdu, txVector, band, uid, false) //don't instantiate LSigHeader of OfdmPpdu
+HePpdu::HePpdu (Ptr<const WifiPsdu> psdu, const WifiTxVector& txVector, uint16_t txCenterFreq,
+                Time ppduDuration, WifiPhyBand band, uint64_t uid)
+  : OfdmPpdu (psdu, txVector, txCenterFreq, band, uid, false) //don't instantiate LSigHeader of OfdmPpdu
 {
-  NS_LOG_FUNCTION (this << psdu << txVector << ppduDuration << band << uid);
+  NS_LOG_FUNCTION (this << psdu << txVector << txCenterFreq << ppduDuration << band << uid);
   NS_ASSERT (!IsMu ());
   SetPhyHeaders (txVector, ppduDuration);
-  SetTxPsdFlag (PSD_NON_HE_TB);
+  SetTxPsdFlag (PSD_NON_HE_PORTION);
 }
 
 HePpdu::~HePpdu ()
@@ -89,26 +92,14 @@ HePpdu::SetPhyHeaders (const WifiTxVector& txVector, Time ppduDuration)
     {
       sigExtension = 6;
     }
-  uint8_t m = 0;
-  if ((m_preamble == WIFI_PREAMBLE_HE_SU) || (m_preamble == WIFI_PREAMBLE_HE_TB))
-    {
-      m = 2;
-    }
-  else if (m_preamble == WIFI_PREAMBLE_HE_MU)
-    {
-      m = 1;
-    }
-  else
-    {
-      NS_ASSERT_MSG (false, "Unsupported preamble type");
-    }
+  uint8_t m = IsDlMu () ? 1 : 2;
   uint16_t length = ((ceil ((static_cast<double> (ppduDuration.GetNanoSeconds () - (20 * 1000) - (sigExtension * 1000)) / 1000) / 4.0) * 3) - 3 - m);
   m_lSig.SetLength (length);
-  if (IsDlMu ())
+  if (txVector.IsDlMu ())
     {
       m_heSig.SetMuFlag (true);
     }
-  else if (!IsUlMu ())
+  else if (!txVector.IsUlMu ())
     {
       m_heSig.SetMcs (txVector.GetMode ().GetMcsValue ());
       m_heSig.SetNStreams (txVector.GetNss ());
@@ -128,6 +119,7 @@ HePpdu::DoGetTxVector (void) const
   txVector.SetNss (m_heSig.GetNStreams ());
   txVector.SetGuardInterval (m_heSig.GetGuardInterval ());
   txVector.SetBssColor (m_heSig.GetBssColor ());
+  txVector.SetLength (m_lSig.GetLength ());
   txVector.SetAggregation (m_psdus.size () > 1 || m_psdus.begin ()->second->IsAggregate ());
   for (auto const& muUserInfo : m_muUserInfos)
     {
@@ -151,6 +143,7 @@ HePpdu::GetTxDuration (void) const
   uint8_t m = IsDlMu () ? 1 : 2;
   //Equation 27-11 of IEEE P802.11ax/D4.0
   Time calculatedDuration = MicroSeconds (((ceil (static_cast<double> (m_lSig.GetLength () + 3 + m) / 3)) * 4) + 20 + sigExtension);
+  NS_ASSERT (calculatedDuration > preambleDuration);
   uint32_t nSymbols = floor (static_cast<double> ((calculatedDuration - preambleDuration).GetNanoSeconds () - (sigExtension * 1000)) / tSymbol.GetNanoSeconds ());
   ppduDuration = preambleDuration + (nSymbols * tSymbol) + MicroSeconds (sigExtension);
   return ppduDuration;
@@ -159,7 +152,7 @@ HePpdu::GetTxDuration (void) const
 Ptr<WifiPpdu>
 HePpdu::Copy (void) const
 {
-  return Create<HePpdu> (m_psdus, GetTxVector (), GetTxDuration (), m_band, m_uid, m_txPsdFlag);
+  return ns3::Copy (Ptr (this));
 }
 
 WifiPpduType
@@ -238,9 +231,8 @@ HePpdu::GetTransmissionChannelWidth (void) const
   if (txVector.GetPreambleType () == WIFI_PREAMBLE_HE_TB && GetStaId () != SU_STA_ID)
     {
       TxPsdFlag flag = GetTxPsdFlag ();
-      NS_ASSERT (flag > PSD_NON_HE_TB);
       uint16_t ruWidth = HeRu::GetBandwidth (txVector.GetRu (GetStaId ()).GetRuType ());
-      uint16_t channelWidth = (flag == PSD_HE_TB_NON_OFDMA_PORTION && ruWidth < 20) ? 20 : ruWidth;
+      uint16_t channelWidth = (flag == PSD_NON_HE_PORTION && ruWidth < 20) ? 20 : ruWidth;
       NS_LOG_INFO ("Use channelWidth=" << channelWidth << " MHz for HE TB from " << GetStaId ()
                                        << " for " << flag);
       return channelWidth;
@@ -252,16 +244,15 @@ HePpdu::GetTransmissionChannelWidth (void) const
 }
 
 bool
-HePpdu::CanBeReceived (uint16_t txCenterFreq, uint16_t p20MinFreq, uint16_t p20MaxFreq) const
+HePpdu::CanBeReceived (uint16_t p20MinFreq, uint16_t p20MaxFreq) const
 {
-  NS_LOG_FUNCTION (this << txCenterFreq << p20MinFreq << p20MaxFreq);
-
+  NS_LOG_FUNCTION (this << p20MinFreq << p20MaxFreq);
   if (IsUlMu ())
     {
       // APs are able to receive TB PPDUs sent on a band other than the primary20 channel
       return true;
     }
-  return OfdmPpdu::CanBeReceived (txCenterFreq, p20MinFreq, p20MaxFreq);
+  return OfdmPpdu::CanBeReceived (p20MinFreq, p20MaxFreq);
 }
 
 HePpdu::TxPsdFlag
@@ -274,7 +265,6 @@ void
 HePpdu::SetTxPsdFlag (TxPsdFlag flag)
 {
   NS_LOG_FUNCTION (this << flag);
-  NS_ASSERT ((IsUlMu () && flag > PSD_NON_HE_TB) || (!IsUlMu () && flag == PSD_NON_HE_TB));
   m_txPsdFlag = flag;
 }
 

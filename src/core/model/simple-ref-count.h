@@ -22,10 +22,8 @@
 #ifndef SIMPLE_REF_COUNT_H
 #define SIMPLE_REF_COUNT_H
 
-#include "empty.h"
 #include "default-deleter.h"
 #include "assert.h"
-#include "unused.h"
 #include <stdint.h>
 #include <limits>
 
@@ -36,6 +34,15 @@
  */
 
 namespace ns3 {
+
+/**
+ * \ingroup ptr
+ * \brief Empty class, used as a default parent class for SimpleRefCount
+ */
+class empty
+{
+};
+
 
 /**
  * \ingroup ptr
@@ -60,7 +67,7 @@ namespace ns3 {
  *      Recursive Template Pattern)
  * \tparam PARENT \explicit The typename of the parent of this template.
  *      By default, this typename is "'ns3::empty'" which is an empty
- *      class: compilers which implement the RBCO optimization (empty
+ *      class: compilers which implement the EBCO optimization (empty
  *      base class optimization) will make this a no-op
  * \tparam DELETER \explicit The typename of a class which implements
  *      a public static method named 'Delete'. This method will be called
@@ -81,19 +88,17 @@ public:
    * Copy constructor
    * \param [in] o The object to copy into this one.
    */
-  SimpleRefCount (const SimpleRefCount &o)
+  SimpleRefCount (const SimpleRefCount & o [[maybe_unused]])
     : m_count (1)
   {
-    NS_UNUSED (o);
   }
   /**
    * Assignment operator
    * \param [in] o The object to copy
    * \returns The copy of \pname{o}
    */
-  SimpleRefCount &operator = (const SimpleRefCount &o)
+  SimpleRefCount &operator = ([[maybe_unused]] const SimpleRefCount &o)
   {
-    NS_UNUSED (o);
     return *this;
   }
   /**

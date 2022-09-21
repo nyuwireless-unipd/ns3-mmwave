@@ -27,7 +27,7 @@
 namespace ns3 {
 
 class WifiMac;
-class NetDevice;
+class WifiNetDevice;
 
 /**
  * \brief create MAC layers for a ns3::WifiNetDevice.
@@ -69,6 +69,16 @@ public:
   void SetType (std::string type, Args&&... args);
 
   /**
+   * Helper function used to set the Association Manager.
+   *
+   * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
+   * \param type the type of Association Manager
+   * \param args A sequence of name-value pairs of the attributes to set.
+   */
+  template <typename... Args>
+  void SetAssocManager (std::string type, Args&&... args);
+
+  /**
    * Helper function used to set the Protection Manager.
    *
    * \tparam Args \deduced Template type parameter pack for the sequence of name-value pairs.
@@ -106,11 +116,12 @@ public:
    *
    * This allows the ns3::WifiHelper class to create MAC objects from ns3::WifiHelper::Install.
    */
-  virtual Ptr<WifiMac> Create (Ptr<NetDevice> device, WifiStandard standard) const;
+  virtual Ptr<WifiMac> Create (Ptr<WifiNetDevice> device, WifiStandard standard) const;
 
 
 protected:
   ObjectFactory m_mac;                ///< MAC object factory
+  ObjectFactory m_assocManager;       ///< Association Manager
   ObjectFactory m_protectionManager;  ///< Factory to create a protection manager
   ObjectFactory m_ackManager;         ///< Factory to create an acknowledgment manager
   ObjectFactory m_muScheduler;        ///< Multi-user Scheduler object factory
@@ -131,6 +142,14 @@ WifiMacHelper::SetType (std::string type, Args&&... args)
 {
   m_mac.SetTypeId (type);
   m_mac.Set (args...);
+}
+
+template <typename... Args>
+void
+WifiMacHelper::SetAssocManager (std::string type, Args&&... args)
+{
+  m_assocManager.SetTypeId (type);
+  m_assocManager.Set (args...);
 }
 
 template <typename... Args>

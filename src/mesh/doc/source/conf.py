@@ -25,7 +25,7 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.pngmath']
+extensions = ['sphinx.ext.imgmath']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -210,7 +210,7 @@ latex_documents = [
 
 
 # add page breaks in the pdf. Level 1 is for top-level sections, level 2 for subsections, and so on.
-pdf_break_level = 4 
+pdf_break_level = 4
 
 
 # -- Options for manual page output --------------------------------------------

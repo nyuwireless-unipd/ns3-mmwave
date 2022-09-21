@@ -39,18 +39,15 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include <tuple>
 
 /**
  * \file
- * \ingroup core-tests
- * \ingroup length
  * \ingroup length-tests
- * Length class test suite.
+ * Length class tests.
  */
 
 /**
- * \ingroup core-tests
+ * \ingroup core-tests length
  * \defgroup length-tests Length test suite
  */
 
@@ -139,13 +136,20 @@ private:
 
   /**
    * Test that a length object can be constructed from a string
-   * @{
+   * \param unitValue  //!< Value to test.
+   * \param meterValue //!< Reference value [m].
+   * \param tolerance  //!< Tolerance.
+   * \param symbols    //!< Unit symbols.
    */
   void TestConstructLengthFromString (double unitValue,
                                       double meterValue,
                                       double tolerance,
                                       const std::initializer_list<std::string>& symbols);
 
+  /**
+   * Test that a length object can be constructed from a string
+   * @{
+   */
   void TestConstructLengthFromMeterString ();
   void TestConstructLengthFromNanoMeterString ();
   void TestConstructLengthFromMicroMeterString ();
@@ -438,7 +442,7 @@ LengthTestCase::TestConstructLengthFromMeterString ()
 {
   const double value = 5;
 
-  TestConstructLengthFromString (value, value, 0, 
+  TestConstructLengthFromString (value, value, 0,
                                  {"m", "meter", "meters", "metre", "metres"});
 }
 
@@ -646,12 +650,9 @@ LengthTestCase::TestBuilderFreeFunctions ()
 void
 LengthTestCase::TestTryParseReturnsFalse ()
 {
-  bool result;
-  Length l;
+  auto l = Length::TryParse (1, "");
 
-  std::tie (result, l) = Length::TryParse (1, "");
-
-  AssertFalse (result, "TryParse returned true on bad input");
+  AssertFalse (l.has_value (), "TryParse returned true on bad input");
 }
 
 void
@@ -671,18 +672,15 @@ LengthTestCase::TestTryParseReturnsTrue ()
       TestInput input = entry.first;
       TestArgs args = entry.second;
 
-      bool result;
-      Length l;
+      auto l = Length::TryParse (input.first, input.second);
 
-      std::tie (result, l) = Length::TryParse (input.first, input.second);
-
-      AssertTrue (result, "TryParse returned false when expecting true");
+      AssertTrue (l.has_value (), "TryParse returned false when expecting true");
 
       std::stringstream stream;
       stream << "Parsing input (" << input.first << ", " << input.second
              << ") returned the wrong value";
 
-      NS_TEST_ASSERT_MSG_EQ_TOL (l.GetDouble (), args.first, args.second, stream.str ());
+      NS_TEST_ASSERT_MSG_EQ_TOL (l->GetDouble (), args.first, args.second, stream.str ());
     }
 
 }
@@ -1491,10 +1489,14 @@ public:
   {}
 
 private:
-    //class with Length attribute
+    /// Class with Length attribute
     class TestObject : public Object
     {
     public:
+        /**
+         * \brief Get the type ID.
+         * \return The object TypeId.
+         */
         static TypeId GetTypeId ();
 
         TestObject ()
@@ -1505,7 +1507,7 @@ private:
         {}
 
     private:
-        Length m_length;
+        Length m_length; //!< Length object
     };
 
 private:

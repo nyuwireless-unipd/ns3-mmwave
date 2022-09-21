@@ -45,7 +45,7 @@ GridBuildingAllocator::~GridBuildingAllocator ()
 {
 }
 
-TypeId 
+TypeId
 GridBuildingAllocator::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::GridBuildingAllocator")
@@ -64,11 +64,11 @@ GridBuildingAllocator::GetTypeId (void)
                    DoubleValue (0.0),
                    MakeDoubleAccessor (&GridBuildingAllocator::m_yMin),
                    MakeDoubleChecker<double> ())
-    .AddAttribute ("LengthX", " the length of the wall of each building along the X axis.",
+    .AddAttribute ("LengthX", "The length of the wall of each building along the X axis.",
                    DoubleValue (1.0),
                    MakeDoubleAccessor (&GridBuildingAllocator::m_lengthX),
                    MakeDoubleChecker<double> ())
-    .AddAttribute ("LengthY", " the length of the wall of each building along the X axis.",
+    .AddAttribute ("LengthY", "The length of the wall of each building along the X axis.",
                    DoubleValue (1.0),
                    MakeDoubleAccessor (&GridBuildingAllocator::m_lengthY),
                    MakeDoubleChecker<double> ())
@@ -116,7 +116,7 @@ GridBuildingAllocator::Create (uint32_t n) const
       BoxValue boxValue (box);
       m_buildingFactory.Set ("Boundaries", boxValue);
       Ptr<Building> b  = m_buildingFactory.Create<Building> ();
-      bc.Add (b);     
+      bc.Add (b);
     }
   return bc;
 }
@@ -129,11 +129,11 @@ GridBuildingAllocator::PushAttributes () const
   m_upperRightPositionAllocator->SetMinX (m_xMin + m_lengthX);
   m_lowerLeftPositionAllocator->SetDeltaX (m_lengthX + m_deltaX);
   m_upperRightPositionAllocator->SetDeltaX (m_lengthX + m_deltaX);
-  
+
   m_lowerLeftPositionAllocator->SetMinY (m_yMin);
   m_upperRightPositionAllocator->SetMinY (m_yMin + m_lengthY);
   m_lowerLeftPositionAllocator->SetDeltaY (m_lengthY + m_deltaY);
-  m_upperRightPositionAllocator->SetDeltaY (m_lengthY + m_deltaY); 
+  m_upperRightPositionAllocator->SetDeltaY (m_lengthY + m_deltaY);
 
   m_lowerLeftPositionAllocator->SetLayoutType (m_layoutType);
   m_upperRightPositionAllocator->SetLayoutType (m_layoutType);
@@ -143,4 +143,4 @@ GridBuildingAllocator::PushAttributes () const
 }
 
 
-} // namespace ns3 
+} // namespace ns3

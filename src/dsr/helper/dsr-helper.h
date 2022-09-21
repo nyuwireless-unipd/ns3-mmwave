@@ -18,7 +18,7 @@
  * Author: Yufei Cheng   <yfcheng@ittc.ku.edu>
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -46,7 +46,7 @@ namespace ns3 {
  * \ingroup dsr
  *
  * \brief DSR helper class to manage creation of DSR routing instance and
- *        to insert it on a node as a sublayer between transport and 
+ *        to insert it on a node as a sublayer between transport and
  *        IP layers.
  */
 class DsrHelper
@@ -58,6 +58,10 @@ public:
    */
   DsrHelper ();
   ~DsrHelper ();
+
+  // Delete assignment operator to avoid misuse
+  DsrHelper &operator= (const DsrHelper &) = delete;
+
   /**
    * \brief Construct an DsrHelper from another previously initialized instance
    * (Copy Constructor).
@@ -83,13 +87,6 @@ public:
    */
   void Set (std::string name, const AttributeValue &value);
 private:
-  /**
-   * \brief Assignment operator declared private and not implemented to disallow
-   * assignment and prevent the compiler from happily inserting its own.
-   * \param o source object
-   * \return DsrHelper object
-   */
-  DsrHelper & operator = (const DsrHelper &o);
   ObjectFactory m_agentFactory; ///< DSR factory
 };
 

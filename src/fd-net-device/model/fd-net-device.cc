@@ -284,7 +284,7 @@ FdNetDevice::StopDevice (void)
 {
   NS_LOG_FUNCTION (this);
 
-  if (m_fdReader != 0)
+  if (m_fdReader)
     {
       m_fdReader->Stop ();
       m_fdReader = 0;
@@ -313,7 +313,7 @@ FdNetDevice::ReceiveCallback (uint8_t *buf, ssize_t len)
   bool skip = false;
 
   {
-    CriticalSection cs (m_pendingReadMutex);
+    std::unique_lock lock {m_pendingReadMutex};
     if (m_pendingQueue.size () >= m_maxPendingReads)
       {
         NS_LOG_WARN ("Packet dropped");
@@ -429,7 +429,7 @@ FdNetDevice::ForwardUp (void)
   }
 
   {
-    CriticalSection cs (m_pendingReadMutex);
+    std::unique_lock lock {m_pendingReadMutex};
     std::pair<uint8_t *, ssize_t> next = m_pendingQueue.front ();
     m_pendingQueue.pop ();
 

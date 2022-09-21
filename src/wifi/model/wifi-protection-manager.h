@@ -30,7 +30,7 @@ namespace ns3 {
 
 class WifiTxParameters;
 class WifiMacQueueItem;
-class RegularWifiMac;
+class WifiMac;
 
 /**
  * \ingroup wifi
@@ -46,6 +46,7 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
+  WifiProtectionManager ();
   virtual ~WifiProtectionManager ();
 
   /**
@@ -53,7 +54,13 @@ public:
    *
    * \param mac a pointer to the MAC
    */
-  void SetWifiMac (Ptr<RegularWifiMac> mac);
+  void SetWifiMac (Ptr<WifiMac> mac);
+  /**
+   * Set the ID of the link this Protection Manager is associated with.
+   *
+   * \param linkId the ID of the link this Protection Manager is associated with
+   */
+  void SetLinkId (uint8_t linkId);
 
   /**
    * Determine the protection method to use if the given MPDU is added to the current
@@ -84,7 +91,8 @@ public:
 protected:
   virtual void DoDispose (void);
 
-  Ptr<RegularWifiMac> m_mac;     //!< MAC which is using this Protection Manager
+  Ptr<WifiMac> m_mac; //!< MAC which is using this Protection Manager
+  uint8_t m_linkId;   //!< ID of the link this Protection Manager is operating on
 };
 
 

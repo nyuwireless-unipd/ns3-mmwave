@@ -29,6 +29,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("OutdoorRandomWalkExample");
 
+/**
+ * Print the buildings list in a format that can be used by Gnuplot to draw them.
+ *
+ * \param filename The ouput filename.
+ */
 void
 PrintGnuplottableBuildingListToFile (std::string filename)
 {
@@ -54,7 +59,7 @@ PrintGnuplottableBuildingListToFile (std::string filename)
 
 /**
  * This is an example on how to use the RandomWalk2dOutdoorMobilityModel class.
- * The script outdoor-random-walk-example.sh can be used to visualize the 
+ * The script outdoor-random-walk-example.sh can be used to visualize the
  * positions visited by the random walk.
  */
 int

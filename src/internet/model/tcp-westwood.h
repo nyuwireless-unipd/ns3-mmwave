@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2013 ResiliNets, ITTC, University of Kansas 
+ * Copyright (c) 2013 ResiliNets, ITTC, University of Kansas
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -19,7 +19,7 @@
  * and Greeshma Umapathi
  *
  * James P.G. Sterbenz <jpgs@ittc.ku.edu>, director
- * ResiliNets Research Group  http://wiki.ittc.ku.edu/resilinets
+ * ResiliNets Research Group  https://resilinets.org/
  * Information and Telecommunication Technology Center (ITTC)
  * and Department of Electrical Engineering and Computer Science
  * The University of Kansas Lawrence, KS USA.
@@ -34,28 +34,25 @@
 #define TCP_WESTWOOD_H
 
 #include "tcp-congestion-ops.h"
+#include "ns3/data-rate.h"
 #include "ns3/tcp-recovery-ops.h"
-#include "ns3/sequence-number.h"
 #include "ns3/traced-value.h"
 #include "ns3/event-id.h"
 
 namespace ns3 {
 
-class Packet;
-class TcpHeader;
 class Time;
-class EventId;
 
 /**
  * \ingroup congestionOps
  *
  * \brief An implementation of TCP Westwood and Westwood+.
  *
- * Westwood and Westwood+ employ the AIAD (Additive Increase/Adaptive Decrease) 
- * congestion control paradigm. When a congestion episode happens, 
+ * Westwood and Westwood+ employ the AIAD (Additive Increase/Adaptive Decrease)
+ * congestion control paradigm. When a congestion episode happens,
  * instead of halving the cwnd, these protocols try to estimate the network's
- * bandwidth and use the estimated value to adjust the cwnd. 
- * While Westwood performs the bandwidth sampling every ACK reception, 
+ * bandwidth and use the estimated value to adjust the cwnd.
+ * While Westwood performs the bandwidth sampling every ACK reception,
  * Westwood+ samples the bandwidth every RTT.
  *
  * The two main methods in the implementation are the CountAck (const TCPHeader&)
@@ -63,6 +60,8 @@ class EventId;
  * the number of acknowledged segments on the receipt of an ACK.
  * The EstimateBW estimates the bandwidth based on the value returned by CountAck
  * and the sampling interval (last ACK inter-arrival time for Westwood and last RTT for Westwood+).
+ *
+ * WARNING: this TCP model lacks validation and regression tests; use with caution.
  */
 class TcpWestwood : public TcpNewReno
 {
@@ -84,7 +83,7 @@ public:
   /**
    * \brief Protocol variant (Westwood or Westwood+)
    */
-  enum ProtocolType 
+  enum ProtocolType
   {
     WESTWOOD,
     WESTWOODPLUS
@@ -93,7 +92,7 @@ public:
   /**
    * \brief Filter type (None or Tustin)
    */
-  enum FilterType 
+  enum FilterType
   {
     NONE,
     TUSTIN
@@ -124,9 +123,9 @@ private:
   void EstimateBW (const Time& rtt, Ptr<TcpSocketState> tcb);
 
 protected:
-  TracedValue<double>    m_currentBW;              //!< Current value of the estimated BW
-  double                 m_lastSampleBW;           //!< Last bandwidth sample
-  double                 m_lastBW;                 //!< Last bandwidth sample after being filtered
+  TracedValue<DataRate>  m_currentBW;              //!< Current value of the estimated BW
+  DataRate               m_lastSampleBW;           //!< Last bandwidth sample
+  DataRate               m_lastBW;                 //!< Last bandwidth sample after being filtered
   enum ProtocolType      m_pType;                  //!< 0 for Westwood, 1 for Westwood+
   enum FilterType        m_fType;                  //!< 0 for none, 1 for Tustin
 
@@ -134,7 +133,6 @@ protected:
   bool                   m_IsCount;                //!< Start keeping track of m_ackedSegments for Westwood+ if TRUE
   EventId                m_bwEstimateEvent;        //!< The BW estimation event for Westwood+
   Time                   m_lastAck;                //!< The last ACK time
-
 };
 
 } // namespace ns3

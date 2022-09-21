@@ -30,7 +30,7 @@ TcpSocketFactoryImpl::TcpSocketFactoryImpl ()
 }
 TcpSocketFactoryImpl::~TcpSocketFactoryImpl ()
 {
-  NS_ASSERT (m_tcp == 0);
+  NS_ASSERT (!m_tcp);
 }
 
 void
@@ -45,7 +45,7 @@ TcpSocketFactoryImpl::CreateSocket (void)
   return m_tcp->CreateSocket ();
 }
 
-void 
+void
 TcpSocketFactoryImpl::DoDispose (void)
 {
   m_tcp = 0;

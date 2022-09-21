@@ -33,15 +33,21 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("BuildingsHelperTest");
 
+/**
+ * \ingroup building-test
+ * \ingroup tests
+ *
+ * \brief Struct representing a position in a building
+ */
 struct PositionInBuilding
 {
   PositionInBuilding ();
-  Vector   pos;   // coordinates of the mobility model instance
-  bool     indoor; // true if indoor, false otherwise
-  uint32_t bid;   // building id
-  uint16_t rx;    // room x
-  uint16_t ry;    // room y
-  uint16_t fn;    // floor number
+  Vector   pos;   //!< coordinates of the mobility model instance
+  bool     indoor; //!< true if indoor, false otherwise
+  uint32_t bid;   //!< building id
+  uint16_t rx;    //!< room x
+  uint16_t ry;    //!< room y
+  uint16_t fn;    //!< floor number
 };
 
 PositionInBuilding::PositionInBuilding ()
@@ -55,24 +61,27 @@ PositionInBuilding::PositionInBuilding ()
 }
 
 /**
- * data to construct a Building object. We don't want to pass Building
+ * \ingroup building-test
+ * \ingroup tests
+
+ * Data to construct a Building object. We don't want to pass Building
  * objects to the TestCase constructor because otherwise BuildingList
  * would contain all of them (even if only one is meant to be in the
  * test case).
- * 
+ *
  */
 struct BuildingData
 {
   BuildingData ();
-  double xmin;
-  double xmax;
-  double ymin;
-  double ymax;
-  double zmin;
-  double zmax;
-  uint16_t nrx;
-  uint16_t nry;
-  uint16_t nf;
+  double xmin;   //!< X min coordinate
+  double xmax;   //!< X max coordinate
+  double ymin;   //!< Y min coordinate
+  double ymax;   //!< Y max coordinate
+  double zmin;   //!< Z min coordinate
+  double zmax;   //!< Z max coordinate
+  uint16_t nrx;  //!< Number of rooms (X coord)
+  uint16_t nry;  //!< Number of rooms (Y coord)
+  uint16_t nf;   //!< Number of floors
 };
 
 BuildingData::BuildingData ()
@@ -88,18 +97,36 @@ BuildingData::BuildingData ()
 {
 }
 
+/**
+ * \ingroup building-test
+ * \ingroup tests
+ *
+ * \brief BuildingsHelper test
+ */
 class BuildingsHelperOneTestCase : public TestCase
 {
 public:
+  /**
+   * Build the testcase name
+   * \param pib Position in building
+   * \param bd Building data
+   * \return the TestCase name
+   */
   static std::string BuildNameString (PositionInBuilding pib, BuildingData bd);
+
+  /**
+   * Constructor
+   * \param pib Position in building
+   * \param bd Building data
+   */
   BuildingsHelperOneTestCase (PositionInBuilding pib, BuildingData bd);
 
 private:
   virtual void DoRun (void);
 
-  PositionInBuilding m_pib;
-  BuildingData m_bd;
-  
+  PositionInBuilding m_pib; //!< Position in the building
+  BuildingData m_bd; //!< Building data
+
 };
 
 std::string BuildingsHelperOneTestCase::BuildNameString (PositionInBuilding pib, BuildingData bd)
@@ -107,11 +134,11 @@ std::string BuildingsHelperOneTestCase::BuildNameString (PositionInBuilding pib,
   std::ostringstream oss;
   oss <<  "pos=" << pib.pos;
   if (pib.indoor)
-    {     
+    {
       oss << ", bid=" << pib.bid
-	  << ", rx=" << pib.rx 
+	  << ", rx=" << pib.rx
 	  << ", ry=" << pib.ry
-	  << ", fn=" << pib.fn;    
+	  << ", fn=" << pib.fn;
     }
   else
     {
@@ -138,7 +165,7 @@ BuildingsHelperOneTestCase::DoRun ()
   NodeContainer nodes;
   nodes.Create (1);
   mobility.Install (nodes);
-  
+
   Ptr<ConstantPositionMobilityModel> bmm = nodes.Get (0)->GetObject<ConstantPositionMobilityModel> ();
   bmm->SetPosition (m_pib.pos);
 
@@ -151,7 +178,7 @@ BuildingsHelperOneTestCase::DoRun ()
   Ptr<MobilityBuildingInfo> buildingInfo = CreateObject<MobilityBuildingInfo> (b);
   bmm->AggregateObject (buildingInfo); // operation usually done by BuildingsHelper::Install
 
-  
+
   NS_TEST_ASSERT_MSG_EQ (buildingInfo->IsIndoor (), m_pib.indoor, "indoor/outdoor mismatch");
   if (m_pib.indoor)
     {
@@ -163,15 +190,16 @@ BuildingsHelperOneTestCase::DoRun ()
       NS_TEST_ASSERT_MSG_EQ ((uint32_t) buildingInfo->GetRoomNumberY (), m_pib.ry, "y room number mismatch");
     }
 
-  Simulator::Destroy ();  
+  Simulator::Destroy ();
 }
 
 
-
-
-
-
-
+/**
+ * \ingroup building-test
+ * \ingroup tests
+ *
+ * \brief BuildingsHelper TestSuite
+ */
 class BuildingsHelperTestSuite : public TestSuite
 {
 public:
@@ -193,7 +221,7 @@ BuildingsHelperTestSuite::BuildingsHelperTestSuite ()
   b1.zmax = 4;
   b1.nrx = 1;
   b1.nry = 1;
-  b1.nf = 1;  
+  b1.nf = 1;
 
   Vector vp1 (1.5, 1.5, 0.5);
   PositionInBuilding p1;
@@ -319,7 +347,8 @@ BuildingsHelperTestSuite::BuildingsHelperTestSuite ()
   PositionInBuilding q7;
   q7.pos = vq7;
   q7.indoor = false;
-  AddTestCase (new BuildingsHelperOneTestCase (q7, b2), TestCase::QUICK);     
+  AddTestCase (new BuildingsHelperOneTestCase (q7, b2), TestCase::QUICK);
 }
 
+/// Static variable for test initialization
 static BuildingsHelperTestSuite buildingsHelperAntennaTestSuiteInstance;

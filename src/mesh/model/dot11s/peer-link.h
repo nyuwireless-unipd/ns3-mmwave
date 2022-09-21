@@ -53,6 +53,11 @@ public:
   /// C-tor create empty link
   PeerLink ();
   ~PeerLink ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  PeerLink (const PeerLink &) = delete;
+  PeerLink &operator= (const PeerLink &) = delete;
+
   void DoDispose ();
   /// Peer Link state:
   enum  PeerState {
@@ -69,7 +74,7 @@ public:
   static const char* const PeerStateNames[6];
   /**
    * Process beacon received from peer
-   * 
+   *
    * \param lastBeacon the last beacon
    * \param BeaconInterval the beacon interval
    */
@@ -78,7 +83,7 @@ public:
    * \brief Method used to detect peer link changes
    *
    * \param cb is a callback, which notifies, that on interface (uint32_t), peer link
-   * with address (Mac48Address) was opened (bool is true) or closed (bool is false) 
+   * with address (Mac48Address) was opened (bool is true) or closed (bool is false)
    */
   void  SetLinkStatusCallback (Callback<void, uint32_t, Mac48Address, bool> cb);
   /// \name Peer link getters/setters
@@ -327,19 +332,6 @@ private:
   /// Several successive beacons were lost, close link
   void BeaconLoss ();
 private:
-
-  /**
-   * assignment operator
-   * \param link the peer link
-   * \returns the peer link assigned
-   */
-  PeerLink& operator= (const PeerLink & link);
-  /**
-   * Copy constructor. Intentionally unimplemented
-   * \param o object to copy
-   */
-  PeerLink (const PeerLink & o);
-
   /// The number of interface I am associated with
   uint32_t m_interface;
   /// pointer to MAC plugin, which is responsible for peer management

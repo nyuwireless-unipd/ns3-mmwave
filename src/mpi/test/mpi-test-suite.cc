@@ -25,6 +25,8 @@
 using namespace ns3;
 
 /**
+ * \ingroup mpi-tests
+ *
  * This version of ns3::ExampleTestCase is specialized for MPI
  * by accepting the number of ranks as a parameter,
  * then building a `--command-template` string which
@@ -63,10 +65,10 @@ public:
    */
   std::string
   GetPostProcessingCommand (void) const;
-  
+
 private:
   /** The number of ranks. */
-  int m_ranks;            
+  int m_ranks;
 };
 
 MpiTestCase::MpiTestCase (const std::string name,
@@ -94,7 +96,10 @@ MpiTestCase::GetPostProcessingCommand (void) const
   return command;
 }
 
-/** MPI specialization of ns3::ExampleTestSuite. */
+/**
+ * \ingroup mpi-tests
+ * MPI specialization of ns3::ExampleTestSuite.
+ */
 class MpiTestSuite : public TestSuite
 {
 public:

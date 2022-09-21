@@ -28,7 +28,6 @@
 #include <limits>
 #include <stdint.h>
 
-#include "non-copyable.h"
 #include "system-wall-clock-ms.h"
 
 /**
@@ -111,30 +110,6 @@ namespace tests {} // namespace tests
 // ===========================================================================
 
 /**
- * \ingroup testingimpl
- * \brief Test that an actual and expected (limit) value are equal and report
- * and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_EQ_INTERNAL(actual, limit, msg, file, line)  \
-  do {                                                                  \
-      if (!((actual) == (limit)))                                       \
-        {                                                               \
-          ASSERT_ON_FAILURE;                                            \
-          std::ostringstream msgStream;                                 \
-          msgStream << msg;                                             \
-          std::ostringstream actualStream;                              \
-          actualStream << actual;                                       \
-          std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) == " +  \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE;                                          \
-        }                                                               \
-    } while (false)
-
-/**
  * \ingroup testing
  *
  * \brief Test that an actual and expected (limit) value are equal and
@@ -163,15 +138,7 @@ namespace tests {} // namespace tests
  * numbers (float or double) as it is unlikely to do what you expect.
  * Use NS_TEST_ASSERT_MSG_EQ_TOL instead.
  */
-#define NS_TEST_ASSERT_MSG_EQ(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual and expected (limit) value are equal and report
- * and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL_INTERNAL(actual, limit, msg, file, line) \
+#define NS_TEST_ASSERT_MSG_EQ(actual, limit, msg)                       \
   do {                                                                  \
       if (!((actual) == (limit)))                                       \
         {                                                               \
@@ -185,8 +152,8 @@ namespace tests {} // namespace tests
           ReportTestFailure (std::string (#actual) + " (actual) == " +  \
                              std::string (#limit) + " (limit)",         \
                              actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE_RETURNS_BOOL;                             \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE;                                          \
         }                                                               \
     } while (false)
 
@@ -222,18 +189,7 @@ namespace tests {} // namespace tests
  * This function returns a Boolean value.
  *
  */
-#define NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual and expected (limit) value are equal and
- * report if not.
- *
- * Required to avoid use of return statement which allows use in
- * methods (esp. callbacks) returning void.
- */
-#define NS_TEST_EXPECT_MSG_EQ_INTERNAL(actual, limit, msg, file, line)  \
+#define NS_TEST_ASSERT_MSG_EQ_RETURNS_BOOL(actual, limit, msg)          \
   do {                                                                  \
       if (!((actual) == (limit)))                                       \
         {                                                               \
@@ -247,7 +203,8 @@ namespace tests {} // namespace tests
           ReportTestFailure (std::string (#actual) + " (actual) == " +  \
                              std::string (#limit) + " (limit)",         \
                              actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE_RETURNS_BOOL;                             \
         }                                                               \
     } while (false)
 
@@ -280,22 +237,9 @@ namespace tests {} // namespace tests
  * numbers (float or double) as it is unlikely to do what you expect.
  * Use NS_TEST_EXPECT_MSG_EQ_TOL instead.
  */
-#define NS_TEST_EXPECT_MSG_EQ(actual, limit, msg) \
-  NS_TEST_EXPECT_MSG_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
-// ===========================================================================
-// Test for equality with a provided tolerance (use for floating point
-// comparisons -- both float and double)
-// ===========================================================================
-
-/**
- * \ingroup testingimpl
- * \brief Test that actual and expected (limit) values are equal to
- * plus or minus some tolerance and report and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_EQ_TOL_INTERNAL(actual, limit, tol, msg, file, line) \
+#define NS_TEST_EXPECT_MSG_EQ(actual, limit, msg)                       \
   do {                                                                  \
-      if ((actual) > (limit) + (tol) || (actual) < (limit) - (tol))     \
+      if (!((actual) == (limit)))                                       \
         {                                                               \
           ASSERT_ON_FAILURE;                                            \
           std::ostringstream msgStream;                                 \
@@ -303,18 +247,19 @@ namespace tests {} // namespace tests
           std::ostringstream actualStream;                              \
           actualStream << actual;                                       \
           std::ostringstream limitStream;                               \
-          limitStream << limit << " +- " << tol;                        \
-          std::ostringstream condStream;                                \
-          condStream << #actual << " (actual) < " << #limit             \
-                     << " (limit) + " << #tol << " (tol) && "           \
-                     << #actual << " (actual) > " << #limit             \
-                     << " (limit) - " << #tol << " (tol)";              \
-          ReportTestFailure (condStream.str (), actualStream.str (),    \
-                             limitStream.str (), msgStream.str (),      \
-                             file, line);                               \
-          CONTINUE_ON_FAILURE;                                          \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) == " +  \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
         }                                                               \
     } while (false)
+
+
+// ===========================================================================
+// Test for equality with a provided tolerance (use for floating point
+// comparisons -- both float and double)
+// ===========================================================================
 
 /**
  * \ingroup testing
@@ -375,15 +320,7 @@ namespace tests {} // namespace tests
  * \param [in] tol Tolerance of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_ASSERT_MSG_EQ_TOL(actual, limit, tol, msg)                 \
-  NS_TEST_ASSERT_MSG_EQ_TOL_INTERNAL (actual, limit, tol, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that actual and expected (limit) values are equal to
- * plus or minus some tolerance and report and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL_INTERNAL(actual, limit, tol, msg, file, line) \
+#define NS_TEST_ASSERT_MSG_EQ_TOL(actual, limit, tol, msg)              \
   do {                                                                  \
       if ((actual) > (limit) + (tol) || (actual) < (limit) - (tol))     \
         {                                                               \
@@ -401,9 +338,9 @@ namespace tests {} // namespace tests
                      << " (limit) - " << #tol << " (tol)";              \
           ReportTestFailure (condStream.str (), actualStream.str (),    \
                              limitStream.str (), msgStream.str (),      \
-                             file, line);                               \
-          CONTINUE_ON_FAILURE_RETURNS_BOOL;                             \
-        }                                `                               \
+                             __FILE__, __LINE__);                       \
+          CONTINUE_ON_FAILURE;                                          \
+        }                                                               \
     } while (false)
 
 /**
@@ -468,18 +405,7 @@ namespace tests {} // namespace tests
  * This function returns a Boolean value.
  *
  */
-#define NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL(actual, limit, tol, msg)  \
-  NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL_INTERNAL (actual, limit, tol, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that actual and expected (limit) values are equal to
- * plus or minus some tolerance and report if not.
- *
- * Required to avoid use of return statement which allows use in
- * methods (esp. callbacks) returning void.
- */
-#define NS_TEST_EXPECT_MSG_EQ_TOL_INTERNAL(actual, limit, tol, msg, file, line) \
+#define NS_TEST_ASSERT_MSG_EQ_TOL_RETURNS_BOOL(actual, limit, tol, msg) \
   do {                                                                  \
       if ((actual) > (limit) + (tol) || (actual) < (limit) - (tol))     \
         {                                                               \
@@ -497,9 +423,11 @@ namespace tests {} // namespace tests
                      << " (limit) - " << #tol << " (tol)";              \
           ReportTestFailure (condStream.str (), actualStream.str (),    \
                              limitStream.str (), msgStream.str (),      \
-                             file, line);                               \
+                             __FILE__, __LINE__);                       \
+          CONTINUE_ON_FAILURE_RETURNS_BOOL;                             \
         }                                                               \
     } while (false)
+
 
 /**
  * \ingroup testing
@@ -560,21 +488,9 @@ namespace tests {} // namespace tests
  * \param [in] tol Tolerance of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_EXPECT_MSG_EQ_TOL(actual, limit, tol, msg) \
-  NS_TEST_EXPECT_MSG_EQ_TOL_INTERNAL (actual, limit, tol, msg, __FILE__, __LINE__)
-
-// ===========================================================================
-// Test for inequality
-// ===========================================================================
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual and expected (limit) value are not equal and
- * report and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_NE_INTERNAL(actual, limit, msg, file, line)  \
+#define NS_TEST_EXPECT_MSG_EQ_TOL(actual, limit, tol, msg)              \
   do {                                                                  \
-      if (!((actual) != (limit)))                                       \
+      if ((actual) > (limit) + (tol) || (actual) < (limit) - (tol))     \
         {                                                               \
           ASSERT_ON_FAILURE;                                            \
           std::ostringstream msgStream;                                 \
@@ -582,14 +498,21 @@ namespace tests {} // namespace tests
           std::ostringstream actualStream;                              \
           actualStream << actual;                                       \
           std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) != " +  \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE;                                          \
+          limitStream << limit << " +- " << tol;                        \
+          std::ostringstream condStream;                                \
+          condStream << #actual << " (actual) < " << #limit             \
+                     << " (limit) + " << #tol << " (tol) && "           \
+                     << #actual << " (actual) > " << #limit             \
+                     << " (limit) - " << #tol << " (tol)";              \
+          ReportTestFailure (condStream.str (), actualStream.str (),    \
+                             limitStream.str (), msgStream.str (),      \
+                             __FILE__, __LINE__);                       \
         }                                                               \
     } while (false)
+
+// ===========================================================================
+// Test for inequality
+// ===========================================================================
 
 /**
  * \ingroup testing
@@ -615,19 +538,8 @@ namespace tests {} // namespace tests
  * \param [in] actual Expression for the actual value found during the test.
  * \param [in] limit Expression for the value that actual is tested against.
  * \param [in] msg Message that is output if the test does not pass.
- *
- * \warning Do not use this macro if you are comparing floating point
- * numbers (float or double).  Use NS_TEST_ASSERT_MSG_FLNE instead.
  */
-#define NS_TEST_ASSERT_MSG_NE(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_NE_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual and expected (limit) value are not equal and
- * report and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_NE_RETURNS_BOOL_INTERNAL(actual, limit, msg, file, line) \
+#define NS_TEST_ASSERT_MSG_NE(actual, limit, msg)                       \
   do {                                                                  \
       if (!((actual) != (limit)))                                       \
         {                                                               \
@@ -641,8 +553,8 @@ namespace tests {} // namespace tests
           ReportTestFailure (std::string (#actual) + " (actual) != " +  \
                              std::string (#limit) + " (limit)",         \
                              actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE_RETURNS_BOOL;                             \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE;                                          \
         }                                                               \
     } while (false)
 
@@ -671,24 +583,10 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the expected value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  *
- * \warning Do not use this macro if you are comparing floating point
- * numbers (float or double).  Use NS_TEST_ASSERT_MSG_FLNE instead.
- *
  * This function returns a Boolean value.
  *
  */
-#define NS_TEST_ASSERT_MSG_NE_RETURNS_BOOL(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_NE_RETURNS_BOOL_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual and expected (limit) value are not equal and
- * report if not.
- *
- * Required to avoid use of return statement which allows use in methods
- * (callbacks) returning void.
- */
-#define NS_TEST_EXPECT_MSG_NE_INTERNAL(actual, limit, msg, file, line)  \
+#define NS_TEST_ASSERT_MSG_NE_RETURNS_BOOL(actual, limit, msg)          \
   do {                                                                  \
       if (!((actual) != (limit)))                                       \
         {                                                               \
@@ -702,7 +600,8 @@ namespace tests {} // namespace tests
           ReportTestFailure (std::string (#actual) + " (actual) != " +  \
                              std::string (#limit) + " (limit)",         \
                              actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE_RETURNS_BOOL;                             \
         }                                                               \
     } while (false)
 
@@ -735,59 +634,26 @@ namespace tests {} // namespace tests
  * numbers (float or double).  Use NS_TEST_EXPECT_MSG_FLNE instead.
  */
 #define NS_TEST_EXPECT_MSG_NE(actual, limit, msg) \
-  NS_TEST_EXPECT_MSG_NE_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
+  do {                                                                  \
+      if (!((actual) != (limit)))                                       \
+        {                                                               \
+          ASSERT_ON_FAILURE;                                            \
+          std::ostringstream msgStream;                                 \
+          msgStream << msg;                                             \
+          std::ostringstream actualStream;                              \
+          actualStream << actual;                                       \
+          std::ostringstream limitStream;                               \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) != " +  \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
+        }                                                               \
+    } while (false)
 
 // ===========================================================================
 // Test for less than relation
 // ===========================================================================
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is less than a limit and report and abort
- * if not.
- */
-#define NS_TEST_ASSERT_MSG_LT_INTERNAL(actual, limit, msg, file, line)  \
-  do {                                                                  \
-      if (!((actual) < (limit)))                                        \
-        {                                                               \
-          ASSERT_ON_FAILURE;                                            \
-          std::ostringstream msgStream;                                 \
-          msgStream << msg;                                             \
-          std::ostringstream actualStream;                              \
-          actualStream << actual;                                       \
-          std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) < " +   \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE;                                          \
-        }                                                               \
-    } while (false)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is less than or equal to a limit and report
- * and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_LT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
-  do {                                                                  \
-      if (!((actual) <= (limit)))                                       \
-        {                                                               \
-          ASSERT_ON_FAILURE;                                            \
-          std::ostringstream msgStream;                                 \
-          msgStream << msg;                                             \
-          std::ostringstream actualStream;                              \
-          actualStream << actual;                                       \
-          std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) < " +   \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE;                                          \
-        }                                                               \
-    } while (false)
 
 /**
  * \ingroup testing
@@ -806,8 +672,24 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the limit value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_ASSERT_MSG_LT(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_LT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
+#define NS_TEST_ASSERT_MSG_LT(actual, limit, msg)                       \
+  do {                                                                  \
+      if (!((actual) < (limit)))                                        \
+        {                                                               \
+          ASSERT_ON_FAILURE;                                            \
+          std::ostringstream msgStream;                                 \
+          msgStream << msg;                                             \
+          std::ostringstream actualStream;                              \
+          actualStream << actual;                                       \
+          std::ostringstream limitStream;                               \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) < " +   \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE;                                          \
+        }                                                               \
+    } while (false)
 
 /**
  * \ingroup testing
@@ -827,43 +709,7 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the limit value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_ASSERT_MSG_LT_OR_EQ(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_LT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is less than a limit and report if not.
- *
- * Required to avoid use of return statement which allows use in methods
- * (callbacks) returning void.
- */
-#define NS_TEST_EXPECT_MSG_LT_INTERNAL(actual, limit, msg, file, line)  \
-  do {                                                                  \
-      if (!((actual) < (limit)))                                        \
-        {                                                               \
-          ASSERT_ON_FAILURE;                                            \
-          std::ostringstream msgStream;                                 \
-          msgStream << msg;                                             \
-          std::ostringstream actualStream;                              \
-          actualStream << actual;                                       \
-          std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) < " +   \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-        }                                                               \
-    } while (false)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is less than or equal to a limit
- * and report if not.
- *
- * Required to avoid use of return statement which allows use in
- * methods (callbacks) returning void.
- */
-#define NS_TEST_EXPECT_MSG_LT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
+#define NS_TEST_ASSERT_MSG_LT_OR_EQ(actual, limit, msg)                 \
   do {                                                                  \
       if (!((actual) <= (limit)))                                       \
         {                                                               \
@@ -877,7 +723,8 @@ namespace tests {} // namespace tests
           ReportTestFailure (std::string (#actual) + " (actual) < " +   \
                              std::string (#limit) + " (limit)",         \
                              actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE;                                          \
         }                                                               \
     } while (false)
 
@@ -898,8 +745,24 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the limit value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_EXPECT_MSG_LT(actual, limit, msg) \
-  NS_TEST_EXPECT_MSG_LT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
+#define NS_TEST_EXPECT_MSG_LT(actual, limit, msg)                       \
+  do {                                                                  \
+      if (!((actual) < (limit)))                                        \
+        {                                                               \
+          ASSERT_ON_FAILURE;                                            \
+          std::ostringstream msgStream;                                 \
+          msgStream << msg;                                             \
+          std::ostringstream actualStream;                              \
+          actualStream << actual;                                       \
+          std::ostringstream limitStream;                               \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) < " +   \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
+        }                                                               \
+    } while (false)
+
 
 /**
  * \ingroup testing
@@ -920,59 +783,26 @@ namespace tests {} // namespace tests
  * \param [in] msg Message that is output if the test does not pass.
  */
 #define NS_TEST_EXPECT_MSG_LT_OR_EQ(actual, limit, msg) \
-  NS_TEST_EXPECT_MSG_LT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
+  do {                                                                  \
+      if (!((actual) <= (limit)))                                       \
+        {                                                               \
+          ASSERT_ON_FAILURE;                                            \
+          std::ostringstream msgStream;                                 \
+          msgStream << msg;                                             \
+          std::ostringstream actualStream;                              \
+          actualStream << actual;                                       \
+          std::ostringstream limitStream;                               \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) < " +   \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
+        }                                                               \
+    } while (false)
 
 // ===========================================================================
 // Test for greater than relation
 // ===========================================================================
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is greater than a limit and report and abort
- * if not.
- */
-#define NS_TEST_ASSERT_MSG_GT_INTERNAL(actual, limit, msg, file, line)  \
-  do {                                                                  \
-      if (!((actual) > (limit)))                                        \
-        {                                                               \
-          ASSERT_ON_FAILURE;                                            \
-          std::ostringstream msgStream;                                 \
-          msgStream << msg;                                             \
-          std::ostringstream actualStream;                              \
-          actualStream << actual;                                       \
-          std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) > " +   \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE;                                          \
-        }                                                               \
-    } while (false)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is greater than or equal to a
- * limit and report and abort if not.
- */
-#define NS_TEST_ASSERT_MSG_GT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
-  do {                                                                  \
-      if (!((actual) >= (limit)))                                       \
-        {                                                               \
-          ASSERT_ON_FAILURE;                                            \
-          std::ostringstream msgStream;                                 \
-          msgStream << msg;                                             \
-          std::ostringstream actualStream;                              \
-          actualStream << actual;                                       \
-          std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) > " +   \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-          CONTINUE_ON_FAILURE;                                          \
-        }                                                               \
-    } while (false)
 
 /**
  * \ingroup testing
@@ -992,8 +822,24 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the limit value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_ASSERT_MSG_GT(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_GT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
+#define NS_TEST_ASSERT_MSG_GT(actual, limit, msg)                       \
+  do {                                                                  \
+      if (!((actual) > (limit)))                                        \
+        {                                                               \
+          ASSERT_ON_FAILURE;                                            \
+          std::ostringstream msgStream;                                 \
+          msgStream << msg;                                             \
+          std::ostringstream actualStream;                              \
+          actualStream << actual;                                       \
+          std::ostringstream limitStream;                               \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) > " +   \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE;                                          \
+        }                                                               \
+    } while (false)
 
 /**
  * \ingroup testing
@@ -1013,43 +859,7 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the limit value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_ASSERT_MSG_GT_OR_EQ(actual, limit, msg) \
-  NS_TEST_ASSERT_MSG_GT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is greater than a limit and report if not.
- *
- * Required to avoid use of return statement which allows use in methods
- * (callbacks) returning void.
- */
-#define NS_TEST_EXPECT_MSG_GT_INTERNAL(actual, limit, msg, file, line)  \
-  do {                                                                  \
-      if (!((actual) > (limit)))                                        \
-        {                                                               \
-          ASSERT_ON_FAILURE;                                            \
-          std::ostringstream msgStream;                                 \
-          msgStream << msg;                                             \
-          std::ostringstream actualStream;                              \
-          actualStream << actual;                                       \
-          std::ostringstream limitStream;                               \
-          limitStream << limit;                                         \
-          ReportTestFailure (std::string (#actual) + " (actual) > " +   \
-                             std::string (#limit) + " (limit)",         \
-                             actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
-        }                                                               \
-    } while (false)
-
-/**
- * \ingroup testingimpl
- * \brief Test that an actual value is greater than or equal to limit
- * and report if not.
- *
- * Required to avoid use of return statement which allows use in
- * methods (callbacks) returning void.
- */
-#define NS_TEST_EXPECT_MSG_GT_OR_EQ_INTERNAL(actual, limit, msg, file, line)  \
+#define NS_TEST_ASSERT_MSG_GT_OR_EQ(actual, limit, msg)                 \
   do {                                                                  \
       if (!((actual) >= (limit)))                                       \
         {                                                               \
@@ -1063,7 +873,8 @@ namespace tests {} // namespace tests
           ReportTestFailure (std::string (#actual) + " (actual) > " +   \
                              std::string (#limit) + " (limit)",         \
                              actualStream.str (), limitStream.str (),   \
-                             msgStream.str (), file, line);             \
+                             msgStream.str (), __FILE__, __LINE__);     \
+          CONTINUE_ON_FAILURE;                                          \
         }                                                               \
     } while (false)
 
@@ -1085,8 +896,23 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the limit value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_EXPECT_MSG_GT(actual, limit, msg) \
-  NS_TEST_EXPECT_MSG_GT_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
+#define NS_TEST_EXPECT_MSG_GT(actual, limit, msg)                       \
+  do {                                                                  \
+      if (!((actual) > (limit)))                                        \
+        {                                                               \
+          ASSERT_ON_FAILURE;                                            \
+          std::ostringstream msgStream;                                 \
+          msgStream << msg;                                             \
+          std::ostringstream actualStream;                              \
+          actualStream << actual;                                       \
+          std::ostringstream limitStream;                               \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) > " +   \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
+        }                                                               \
+    } while (false)
 
 /**
  * \ingroup testing
@@ -1106,9 +932,23 @@ namespace tests {} // namespace tests
  * \param [in] limit Expression for the limit value of the test.
  * \param [in] msg Message that is output if the test does not pass.
  */
-#define NS_TEST_EXPECT_MSG_GT_OR_EQ(actual, limit, msg) \
-  NS_TEST_EXPECT_MSG_GT_OR_EQ_INTERNAL (actual, limit, msg, __FILE__, __LINE__)
-
+#define NS_TEST_EXPECT_MSG_GT_OR_EQ(actual, limit, msg)                 \
+  do {                                                                  \
+      if (!((actual) >= (limit)))                                       \
+        {                                                               \
+          ASSERT_ON_FAILURE;                                            \
+          std::ostringstream msgStream;                                 \
+          msgStream << msg;                                             \
+          std::ostringstream actualStream;                              \
+          actualStream << actual;                                       \
+          std::ostringstream limitStream;                               \
+          limitStream << limit;                                         \
+          ReportTestFailure (std::string (#actual) + " (actual) > " +   \
+                             std::string (#limit) + " (limit)",         \
+                             actualStream.str (), limitStream.str (),   \
+                             msgStream.str (), __FILE__, __LINE__);     \
+        }                                                               \
+    } while (false)
 
 /**
  * \ingroup testing
@@ -1150,7 +990,7 @@ class TestRunnerImpl;
  *
  * \see sample-test-suite.cc
  */
-class TestCase : private NonCopyable
+class TestCase
 {
 public:
   /** \brief How long the test takes to execute. */
@@ -1165,6 +1005,10 @@ public:
    *  Destructor
    */
   virtual ~TestCase ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  TestCase (const TestCase &) = delete;
+  TestCase & operator = (const TestCase &) = delete;
 
   /**
    * \return The name of this test
@@ -1202,7 +1046,7 @@ protected:
    * subdirectories, then the variable NS_TEST_SOURCEDIR may not work
    * and the user may want to explicitly pass in a directory string.
    *
-   * Note that NS_TEST_SOURCEDIR is set in src/wscript for each module
+   * Note that NS_TEST_SOURCEDIR is set in src/CMakeLists.txt for each module
    */
   void SetDataDir (std::string directory);
 
@@ -1403,7 +1247,7 @@ public:
  * \brief A simple way to store test vectors (for stimulus or from responses)
  */
 template <typename T>
-class TestVectors : private NonCopyable
+class TestVectors
 {
 public:
   /**
@@ -1414,6 +1258,10 @@ public:
    * Virtual destructor
    */
   virtual ~TestVectors ();
+
+  // Delete copy constructor and assignment operator to avoid misuse
+  TestVectors (const TestVectors &) = delete;
+  TestVectors & operator = (const TestVectors &) = delete;
 
   /**
    * \brief Set the expected length of this vector.

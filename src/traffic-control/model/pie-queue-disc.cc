@@ -50,7 +50,7 @@ TypeId PieQueueDisc::GetTypeId (void)
                    "Average of packet size",
                    UintegerValue (1000),
                    MakeUintegerAccessor (&PieQueueDisc::m_meanPktSize),
-                   MakeUintegerChecker<uint32_t> ()) 
+                   MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("A",
                    "Value of alpha",
                    DoubleValue (0.125),
@@ -89,7 +89,7 @@ TypeId PieQueueDisc::GetTypeId (void)
                    MakeTimeChecker ())
     .AddAttribute ("MaxBurstAllowance",
                    "Current max burst allowance before random drop",
-                   TimeValue (MilliSeconds (15)),
+                   TimeValue (MilliSeconds (150)),
                    MakeTimeAccessor (&PieQueueDisc::m_maxBurst),
                    MakeTimeChecker ())
     .AddAttribute ("UseDequeueRateEstimator",
@@ -190,11 +190,11 @@ PieQueueDisc::DoEnqueue (Ptr<QueueDiscItem> item)
             {
               NS_LOG_DEBUG ("Enqueueing ECT1 packet " << static_cast<uint16_t> (tosByte & 0x3));
             }
-          else 
+          else
             {
               NS_LOG_DEBUG ("Enqueueing CE packet " << static_cast<uint16_t> (tosByte & 0x3));
             }
-          isEct1 = true; 
+          isEct1 = true;
         }
     }
 
@@ -479,7 +479,7 @@ PieQueueDisc::DoDequeue ()
     }
 
   Ptr<QueueDiscItem> item = GetInternalQueue (0)->Dequeue ();
-  NS_ASSERT_MSG (item != nullptr, "Dequeue null, but internal queue not empty");
+  NS_ASSERT_MSG (item, "Dequeue null, but internal queue not empty");
 
   // If L4S is enabled and packet is ECT1, then check if delay is greater
   // than CE threshold and if it is then mark the packet,
@@ -493,7 +493,7 @@ PieQueueDisc::DoDequeue ()
             {
               NS_LOG_DEBUG ("ECT1 packet " << static_cast<uint16_t> (tosByte & 0x3));
             }
-          else 
+          else
             {
               NS_LOG_DEBUG ("CE packet " << static_cast<uint16_t> (tosByte & 0x3));
             }
@@ -503,7 +503,7 @@ PieQueueDisc::DoDequeue ()
             }
           return item;
         }
-    }  
+    }
 
   // if not in a measurement cycle and the queue has built up to dq_threshold,
   // start the measurement cycle

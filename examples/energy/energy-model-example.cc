@@ -35,6 +35,12 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("EnergyExample");
 
+/**
+ * Print a received packet
+ *
+ * \param from sender address
+ * \return a sting with the details of the packet: dst {IP, port}, time.
+ */
 static inline std::string
 PrintReceivedPacket (Address& from)
 {
@@ -93,7 +99,12 @@ GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize, Ptr<Node> n,
     }
 }
 
-/// Trace function for remaining energy at node.
+/**
+ * Trace function for remaining energy at node.
+ *
+ * \param oldValue Old value
+ * \param remainingEnergy New value
+ */
 void
 RemainingEnergy (double oldValue, double remainingEnergy)
 {
@@ -101,7 +112,12 @@ RemainingEnergy (double oldValue, double remainingEnergy)
                  << "s Current remaining energy = " << remainingEnergy << "J");
 }
 
-/// Trace function for total energy consumption at node.
+/**
+ * \brief Trace function for total energy consumption at node.
+ *
+ * \param oldValue Old value
+ * \param totalEnergy New value
+ */
 void
 TotalEnergy (double oldValue, double totalEnergy)
 {
@@ -177,7 +193,7 @@ main (int argc, char *argv[])
   YansWifiChannelHelper wifiChannel;
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
-  
+
   // create wifi channel
   Ptr<YansWifiChannel> wifiChannelPtr = wifiChannel.Create ();
   wifiPhy.SetChannel (wifiChannelPtr);
@@ -248,7 +264,7 @@ main (int argc, char *argv[])
   // device energy model
   Ptr<DeviceEnergyModel> basicRadioModelPtr =
     basicSourcePtr->FindDeviceEnergyModels ("ns3::WifiRadioEnergyModel").Get (0);
-  NS_ASSERT (basicRadioModelPtr != NULL);
+  NS_ASSERT (basicRadioModelPtr);
   basicRadioModelPtr->TraceConnectWithoutContext ("TotalEnergyConsumption", MakeCallback (&TotalEnergy));
   /***************************************************************************/
 
