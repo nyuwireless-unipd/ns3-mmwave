@@ -206,9 +206,9 @@ Ptr<Object>
 MmWaveSpectrumPhy::GetAntenna () const
 {
   // Note: the antenna gain is implicitly taken into account in the channel model classes.
-  //       Still, this method is needed to overload the SpectrumPhy class
-
-  return 0;
+  // Still, this method is needed to overload the SpectrumPhy class
+  
+  return GetBeamformingModel()->GetAntenna();
 }
 
 void

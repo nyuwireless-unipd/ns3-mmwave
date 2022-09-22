@@ -852,17 +852,17 @@ MmWaveHelper::InstallSingleMcUeDevice (Ptr<Node> n)
       phy->SetHarqPhyModule (harq);
 
       /*
-Ptr<LteChunkProcessor> pRs = Create<LteChunkProcessor> ();
-pRs->AddCallback (MakeCallback (&LteUePhy::ReportRsReceivedPower, phy));
-dlPhy->AddRsPowerChunkProcessor (pRs);
+      Ptr<LteChunkProcessor> pRs = Create<LteChunkProcessor> ();
+      pRs->AddCallback (MakeCallback (&LteUePhy::ReportRsReceivedPower, phy));
+      dlPhy->AddRsPowerChunkProcessor (pRs);
 
-Ptr<LteChunkProcessor> pInterf = Create<LteChunkProcessor> ();
-pInterf->AddCallback (MakeCallback (&LteUePhy::ReportInterference, phy));
-dlPhy->AddInterferenceCtrlChunkProcessor (pInterf);   // for RSRQ evaluation of UE Measurements
+      Ptr<LteChunkProcessor> pInterf = Create<LteChunkProcessor> ();
+      pInterf->AddCallback (MakeCallback (&LteUePhy::ReportInterference, phy));
+      dlPhy->AddInterferenceCtrlChunkProcessor (pInterf);   // for RSRQ evaluation of UE Measurements
 
-Ptr<LteChunkProcessor> pCtrl = Create<LteChunkProcessor> ();
-pCtrl->AddCallback (MakeCallback (&LteSpectrumPhy::UpdateSinrPerceived, dlPhy));
-dlPhy->AddCtrlSinrChunkProcessor (pCtrl);
+      Ptr<LteChunkProcessor> pCtrl = Create<LteChunkProcessor> ();
+      pCtrl->AddCallback (MakeCallback (&LteSpectrumPhy::UpdateSinrPerceived, dlPhy));
+      dlPhy->AddCtrlSinrChunkProcessor (pCtrl);
       */
 
       Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
@@ -876,19 +876,19 @@ dlPhy->AddCtrlSinrChunkProcessor (pCtrl);
         }
 
       /*Check if this is supported in mmwave
-if (m_usePdschForCqiGeneration)
-{
-// CQI calculation based on PDCCH for signal and PDSCH for interference
-pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateMixedCqiReport, phy));
-Ptr<LteChunkProcessor> pDataInterf = Create<LteChunkProcessor> ();
-pDataInterf->AddCallback (MakeCallback (&LteUePhy::ReportDataInterference, phy));
-dlPhy->AddInterferenceDataChunkProcessor (pDataInterf);
-}
-else
-{
-// CQI calculation based on PDCCH for both signal and interference
-pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
-}*/
+      if (m_usePdschForCqiGeneration)
+      {
+        // CQI calculation based on PDCCH for signal and PDSCH for interference
+        pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateMixedCqiReport, phy));
+        Ptr<LteChunkProcessor> pDataInterf = Create<LteChunkProcessor> ();
+        pDataInterf->AddCallback (MakeCallback (&LteUePhy::ReportDataInterference, phy));
+        dlPhy->AddInterferenceDataChunkProcessor (pDataInterf);
+      }
+      else
+      {
+        // CQI calculation based on PDCCH for both signal and interference
+        pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
+      }*/
 
       ulPhy->SetChannel (m_channel.at (it->first));
       dlPhy->SetChannel (m_channel.at (it->first));
@@ -902,8 +902,22 @@ pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
       NS_ASSERT_MSG (antenna, "error in creating the AntennaModel object");
 
       // initialize the 3GPP channel model
-      Ptr<SpectrumPropagationLossModel> splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
-      Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
+      
+      [[maybe_unused]] Ptr<SpectrumPropagationLossModel> splm;
+      [[maybe_unused]] Ptr<PhasedArraySpectrumPropagationLossModel> pSplm;
+      
+      Ptr<ThreeGppSpectrumPropagationLossModel> threeGppSplm;
+
+      if (m_spectrumPropagationLossModelType == "ns3::ThreeGppSpectrumPropagationLossModel")
+      {
+        pSplm = m_channel.at (it->first)->GetPhasedArraySpectrumPropagationLossModel ();
+        threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (pSplm);
+      }
+      else
+      {
+        splm = m_channel.at (it->first)->GetSpectrumPropagationLossModel ();
+        threeGppSplm = DynamicCast<ThreeGppSpectrumPropagationLossModel> (splm);
+      }
 
       auto channelModel = threeGppSplm->GetChannelModel();
       Ptr<MmWaveBeamformingModel> bfModel = m_bfModelFactory.Create<MmWaveBeamformingModel> ();
@@ -1453,17 +1467,17 @@ MmWaveHelper::InstallSingleUeDevice (Ptr<Node> n)
       phy->SetHarqPhyModule (harq);
 
       /*
-Ptr<LteChunkProcessor> pRs = Create<LteChunkProcessor> ();
-pRs->AddCallback (MakeCallback (&LteUePhy::ReportRsReceivedPower, phy));
-dlPhy->AddRsPowerChunkProcessor (pRs);
+      Ptr<LteChunkProcessor> pRs = Create<LteChunkProcessor> ();
+      pRs->AddCallback (MakeCallback (&LteUePhy::ReportRsReceivedPower, phy));
+      dlPhy->AddRsPowerChunkProcessor (pRs);
 
-Ptr<LteChunkProcessor> pInterf = Create<LteChunkProcessor> ();
-pInterf->AddCallback (MakeCallback (&LteUePhy::ReportInterference, phy));
-dlPhy->AddInterferenceCtrlChunkProcessor (pInterf);   // for RSRQ evaluation of UE Measurements
+      Ptr<LteChunkProcessor> pInterf = Create<LteChunkProcessor> ();
+      pInterf->AddCallback (MakeCallback (&LteUePhy::ReportInterference, phy));
+      dlPhy->AddInterferenceCtrlChunkProcessor (pInterf);   // for RSRQ evaluation of UE Measurements
 
-Ptr<LteChunkProcessor> pCtrl = Create<LteChunkProcessor> ();
-pCtrl->AddCallback (MakeCallback (&LteSpectrumPhy::UpdateSinrPerceived, dlPhy));
-dlPhy->AddCtrlSinrChunkProcessor (pCtrl);
+      Ptr<LteChunkProcessor> pCtrl = Create<LteChunkProcessor> ();
+      pCtrl->AddCallback (MakeCallback (&LteSpectrumPhy::UpdateSinrPerceived, dlPhy));
+      dlPhy->AddCtrlSinrChunkProcessor (pCtrl);
       */
 
       Ptr<mmWaveChunkProcessor> pData = Create<mmWaveChunkProcessor> ();
@@ -1477,19 +1491,19 @@ dlPhy->AddCtrlSinrChunkProcessor (pCtrl);
         }
 
       /*Check if this is supported in mmwave
-if (m_usePdschForCqiGeneration)
-{
-// CQI calculation based on PDCCH for signal and PDSCH for interference
-pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateMixedCqiReport, phy));
-Ptr<LteChunkProcessor> pDataInterf = Create<LteChunkProcessor> ();
-pDataInterf->AddCallback (MakeCallback (&LteUePhy::ReportDataInterference, phy));
-dlPhy->AddInterferenceDataChunkProcessor (pDataInterf);
-}
-else
-{
-// CQI calculation based on PDCCH for both signal and interference
-pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
-}*/
+      if (m_usePdschForCqiGeneration)
+      {
+        // CQI calculation based on PDCCH for signal and PDSCH for interference
+        pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateMixedCqiReport, phy));
+        Ptr<LteChunkProcessor> pDataInterf = Create<LteChunkProcessor> ();
+        pDataInterf->AddCallback (MakeCallback (&LteUePhy::ReportDataInterference, phy));
+        dlPhy->AddInterferenceDataChunkProcessor (pDataInterf);
+      }
+      else
+      {
+        // CQI calculation based on PDCCH for both signal and interference
+        pCtrl->AddCallback (MakeCallback (&LteUePhy::GenerateCtrlCqiReport, phy));
+      }*/
 
       ulPhy->SetChannel (m_channel.at (it->first));
       dlPhy->SetChannel (m_channel.at (it->first));

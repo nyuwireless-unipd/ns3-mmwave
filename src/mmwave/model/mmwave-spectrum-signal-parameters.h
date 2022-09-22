@@ -49,7 +49,7 @@ struct mmwaveSpectrumSignalParameters : public SpectrumSignalParameters
 {
 
   // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  virtual Ptr<SpectrumSignalParameters> Copy () const;
 
   /**
    * default constructor
@@ -71,7 +71,7 @@ struct MmwaveSpectrumSignalParametersDataFrame : public SpectrumSignalParameters
 {
 
   // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  virtual Ptr<SpectrumSignalParameters> Copy () const;
 
   /**
   * default constructor
@@ -97,7 +97,7 @@ struct MmWaveSpectrumSignalParametersDlCtrlFrame : public SpectrumSignalParamete
 {
 
   // inherited from SpectrumSignalParameters
-  virtual Ptr<SpectrumSignalParameters> Copy ();
+  virtual Ptr<SpectrumSignalParameters> Copy () const;
 
   /**
   * default constructor

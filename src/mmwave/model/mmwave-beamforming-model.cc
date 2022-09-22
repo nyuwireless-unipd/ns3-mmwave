@@ -663,6 +663,7 @@ MmWaveCodebookBeamforming::ComputeBeamformingCodebookMatrix (Ptr<NetDevice> othe
 
           Ptr<SpectrumValue> rxPsd;
           Ptr<SpectrumSignalParameters> rxParams = Create<SpectrumSignalParameters>();
+          rxParams->psd = Copy<SpectrumValue> (m_txPsd); // PSD needs to be initialized
           
           if (m_splm)
           {

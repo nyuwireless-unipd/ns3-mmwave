@@ -53,17 +53,11 @@ mmwaveSpectrumSignalParameters::mmwaveSpectrumSignalParameters (const mmwaveSpec
 }
 
 Ptr<SpectrumSignalParameters>
-mmwaveSpectrumSignalParameters::Copy ()
+mmwaveSpectrumSignalParameters::Copy () const
 {
   NS_LOG_FUNCTION (this);
-  // Ideally we would use:
-  //   return Copy<mmwaveSpectrumSignalParameters> (*this);
-  // but for some reason it doesn't work. Another alternative is
-  //   return Copy<mmwaveSpectrumSignalParameters> (this);
-  // but it causes a double creation of the object, hence it is less efficient.
-  // The solution below is copied from the implementation of Copy<> (Ptr<>) in ptr.h
-  Ptr<mmwaveSpectrumSignalParameters> lssp (new mmwaveSpectrumSignalParameters (*this), false);
-  return lssp;
+  
+  return Create<mmwaveSpectrumSignalParameters> (*this);
 }
 
 
@@ -87,17 +81,11 @@ MmwaveSpectrumSignalParametersDataFrame::MmwaveSpectrumSignalParametersDataFrame
 }
 
 Ptr<SpectrumSignalParameters>
-MmwaveSpectrumSignalParametersDataFrame::Copy ()
+MmwaveSpectrumSignalParametersDataFrame::Copy () const
 {
   NS_LOG_FUNCTION (this);
-  // Ideally we would use:
-  //   return Copy<MmwaveSpectrumSignalParametersDataFrame> (*this);
-  // but for some reason it doesn't work. Another ammwavernative is
-  //   return Copy<MmwaveSpectrumSignalParametersDataFrame> (this);
-  // but it causes a double creation of the object, hence it is less efficient.
-  // The solution below is copied from the implementation of Copy<> (Ptr<>) in ptr.h
-  Ptr<MmwaveSpectrumSignalParametersDataFrame> lssp (new MmwaveSpectrumSignalParametersDataFrame (*this), false);
-  return lssp;
+
+  return Create<MmwaveSpectrumSignalParametersDataFrame> (*this);
 }
 
 
@@ -117,17 +105,11 @@ MmWaveSpectrumSignalParametersDlCtrlFrame::MmWaveSpectrumSignalParametersDlCtrlF
 }
 
 Ptr<SpectrumSignalParameters>
-MmWaveSpectrumSignalParametersDlCtrlFrame::Copy ()
+MmWaveSpectrumSignalParametersDlCtrlFrame::Copy () const
 {
   NS_LOG_FUNCTION (this);
-  // Ideally we would use:
-  //   return Copy<MmWaveSpectrumSignalParametersDlCtrlFrame> (*this);
-  // but for some reason it doesn't work. Another alternative is
-  //   return Copy<MmWaveSpectrumSignalParametersDlCtrlFrame> (this);
-  // but it causes a double creation of the object, hence it is less efficient.
-  // The solution below is copied from the implementation of Copy<> (Ptr<>) in ptr.h
-  Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> lssp (new MmWaveSpectrumSignalParametersDlCtrlFrame (*this), false);
-  return lssp;
+  
+  return Create<MmWaveSpectrumSignalParametersDlCtrlFrame> (*this);
 }
 
 }
