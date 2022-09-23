@@ -222,6 +222,7 @@ private:
   TypeId m_errorModelType;         //!< Type of the error model
   MmWaveErrorModel::Mode m_emMode {MmWaveErrorModel::DL}; //!< Error model mode
   static const unsigned int m_crcLen = 24 / 8; //!< CRC length (in bytes)
+  static const unsigned int m_numSymForCqi = 12;  //!< The number of PDSCH OFDM symbols to be used for CQI determination. See Sec. 5.2.2.5 of TS 38.214
   Ptr<MmWavePhyMacCommon> m_phyMacConfig; //!< Pointer to an instance of MmWavePhyMacCommon
 };
 

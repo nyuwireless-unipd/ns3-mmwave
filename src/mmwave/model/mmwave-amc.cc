@@ -254,7 +254,7 @@ MmWaveAmc::CreateCqiFeedbackWbTdma (const SpectrumValue& sinr, uint8_t &mcs) con
         {
           output = m_errorModel->GetTbDecodificationStats (sinr, 
                                                            rbMap,
-                                                           CalculateTbSize (mcs, 1), // TODO: check that the number of RBs is right
+                                                           CalculateTbSize (mcs, m_numSymForCqi),
                                                            mcs,
                                                            MmWaveErrorModel::MmWaveErrorModelHistory ());
           if (output->m_tbler > 0.1)
