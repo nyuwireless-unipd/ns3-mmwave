@@ -755,7 +755,7 @@ unsigned MmWaveFlexTtiPfMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, unsigne
 void
 MmWaveFlexTtiPfMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
 {
-  uint16_t frameNum = params.m_snfSf.m_frameNum;
+  uint32_t frameNum = params.m_snfSf.m_frameNum;
   uint8_t sfNum = params.m_snfSf.m_sfNum;
   uint8_t slotNum = params.m_snfSf.m_slotNum;
 

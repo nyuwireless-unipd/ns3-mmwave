@@ -184,13 +184,13 @@ private:
 
   bool DoSchedDlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
                             MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
-                            unsigned int frameNum,
+                            uint32_t frameNum,
                             unsigned int sfNum,
                             unsigned int islot);
 
   bool DoSchedUlTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params,
                             MmWaveMacSchedSapUser::SchedConfigIndParameters& ret,
-                            unsigned int frameNum,
+                            uint32_t frameNum,
                             unsigned int sfNum,
                             unsigned int islot);
 

@@ -441,7 +441,7 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
               uint8_t ulSlotIdx = (m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) % m_phyMacConfig->GetSlotsPerSubframe ();
               uint8_t dciSubframe = m_sfNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
                                                % m_phyMacConfig->GetSubframesPerFrame ());
-              uint16_t dciFrame = m_frameNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
+              uint32_t dciFrame = m_frameNum + (((m_slotNum + m_phyMacConfig->GetUlSchedDelay ()) / m_phyMacConfig->GetSlotsPerSubframe ())
                                                 / m_phyMacConfig->GetSubframesPerFrame ());
 
               NS_LOG_DEBUG ("UE" << m_rnti << " UL-DCI received for frame " << dciFrame << " subframe " << (unsigned)dciSubframe
@@ -500,10 +500,10 @@ MmWaveUePhy::ReceiveControlMessageList (std::list<Ptr<MmWaveControlMessage> > ms
 }
 
 void
-MmWaveUePhy::InitializeSlotAllocation (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
+MmWaveUePhy::InitializeSlotAllocation (uint32_t frameNum, uint8_t sfNum, uint8_t slotNum)
 {
   uint8_t nextSf = (sfNum + 1) % m_phyMacConfig->GetSubframesPerFrame ();
-  uint16_t nextFrame = frameNum + (sfNum+1)/m_phyMacConfig->GetSubframesPerFrame ();
+  uint32_t nextFrame = frameNum + (sfNum+1)/m_phyMacConfig->GetSubframesPerFrame ();
   
   NS_ASSERT ((nextSf > sfNum && frameNum == nextFrame) || (nextFrame > frameNum && nextSf == 0));
 
@@ -512,7 +512,7 @@ MmWaveUePhy::InitializeSlotAllocation (uint16_t frameNum, uint8_t sfNum, uint8_t
 }
 
 void
-MmWaveUePhy::SlotIndication (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum)
+MmWaveUePhy::SlotIndication (uint32_t frameNum, uint8_t sfNum, uint8_t slotNum)
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_DEBUG ("frameNum " << frameNum << " sfNum " << (uint16_t)sfNum << " slotNum " << (uint16_t)slotNum << " current frame "
@@ -646,12 +646,12 @@ void
 MmWaveUePhy::EndTti ()
 {
   NS_LOG_FUNCTION (this);
-  NS_LOG_INFO ("MmWave UE " << m_rnti << " frame " << m_frameNum << " subframe " << (uint16_t) m_sfNum << " slot "
-                            << (uint16_t) m_slotNum << " TTI index " << (uint16_t) m_ttiIndex );
+  NS_LOG_INFO ("MmWave UE " << m_rnti << " frame " << m_frameNum << " subframe " << +m_sfNum << " slot "
+                            << +m_slotNum << " TTI index " << +m_ttiIndex );
 
   if (m_ttiIndex == m_currSlotAllocInfo.m_ttiAllocInfo.size () - 1) // End of this slot, as last TTI always happens at the last OFDM symbol
     {
-      uint16_t frameNum = m_frameNum;
+      uint32_t frameNum = m_frameNum;
       uint8_t sfNum = m_sfNum;
       uint8_t slotNum {0};
       if (m_slotNum == m_phyMacConfig->GetSlotsPerSubframe () - 1) // End of this subframe

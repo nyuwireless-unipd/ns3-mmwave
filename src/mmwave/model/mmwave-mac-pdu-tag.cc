@@ -41,7 +41,7 @@ NS_OBJECT_ENSURE_REGISTERED (MmWaveMacPduTag);
 MmWaveMacPduTag::MmWaveMacPduTag (SfnSf sfn, uint8_t numSym)
   :  m_sfnSf (sfn),
   m_numSym (numSym),
-  m_tagSize (6)
+  m_tagSize (8)
 {
 }
 
@@ -69,7 +69,7 @@ MmWaveMacPduTag::GetSerializedSize (void) const
 void
 MmWaveMacPduTag::Serialize (TagBuffer i) const
 {
-  i.WriteU16 (m_sfnSf.m_frameNum);
+  i.WriteU32 (m_sfnSf.m_frameNum);
   i.WriteU8 (m_sfnSf.m_sfNum);
   i.WriteU8 (m_sfnSf.m_slotNum);
   i.WriteU8 (m_sfnSf.m_symStart);
@@ -79,12 +79,12 @@ MmWaveMacPduTag::Serialize (TagBuffer i) const
 void
 MmWaveMacPduTag::Deserialize (TagBuffer i)
 {
-  m_sfnSf.m_frameNum = (uint16_t)i.ReadU16 ();
-  m_sfnSf.m_sfNum = (uint8_t)i.ReadU8 ();
-  m_sfnSf.m_slotNum = (uint8_t)i.ReadU8 ();
-  m_sfnSf.m_symStart = (uint8_t)i.ReadU8 ();
-  m_numSym = (uint8_t)i.ReadU8 ();
-  m_tagSize = 6;
+  m_sfnSf.m_frameNum = i.ReadU32 ();
+  m_sfnSf.m_sfNum = i.ReadU8 ();
+  m_sfnSf.m_slotNum = i.ReadU8 ();
+  m_sfnSf.m_symStart = i.ReadU8 ();
+  m_numSym = i.ReadU8 ();
+  m_tagSize = 8;
 }
 
 void

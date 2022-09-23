@@ -381,7 +381,7 @@ MmWaveFlexTtiMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSchedSapPr
 {
   NS_LOG_FUNCTION (this);
 
-  uint16_t frameNum = params.m_sfnSf.m_frameNum;
+  uint32_t frameNum = params.m_sfnSf.m_frameNum;
   uint8_t subframeNum =  params.m_sfnSf.m_sfNum;
   uint8_t slotNum = params.m_sfnSf.m_slotNum;
   uint8_t symNum =  params.m_sfnSf.m_symStart;
@@ -658,7 +658,7 @@ MmWaveFlexTtiMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProv
 {
   NS_LOG_FUNCTION (this);
 
-  uint16_t frameNum = params.m_snfSf.m_frameNum;
+  uint32_t frameNum = params.m_snfSf.m_frameNum;
   uint8_t sfNum = params.m_snfSf.m_sfNum;
   uint8_t slotNum = params.m_snfSf.m_slotNum;
 

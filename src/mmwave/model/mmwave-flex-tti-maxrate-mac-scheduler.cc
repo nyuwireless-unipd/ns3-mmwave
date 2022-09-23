@@ -451,7 +451,7 @@ MmWaveFlexTtiMaxRateMacScheduler::DoSchedUlCqiInfoReq (const struct MmWaveMacSch
 {
   NS_LOG_FUNCTION (this);
 
-  unsigned frameNum = params.m_sfnSf.m_frameNum;
+  uint32_t frameNum = params.m_sfnSf.m_frameNum;
   unsigned subframeNum =  params.m_sfnSf.m_sfNum;
   unsigned startSymIdx =  params.m_sfnSf.m_slotNum;
 
@@ -750,7 +750,7 @@ unsigned MmWaveFlexTtiMaxRateMacScheduler::CalcMinTbSizeNumSym (unsigned mcs, un
 void
 MmWaveFlexTtiMaxRateMacScheduler::DoSchedTriggerReq (const struct MmWaveMacSchedSapProvider::SchedTriggerReqParameters& params)
 {
-  uint16_t frameNum = params.m_snfSf.m_frameNum;
+  uint32_t frameNum = params.m_snfSf.m_frameNum;
   uint8_t sfNum = params.m_snfSf.m_sfNum;
   uint8_t slotNum = params.m_snfSf.m_slotNum;
 

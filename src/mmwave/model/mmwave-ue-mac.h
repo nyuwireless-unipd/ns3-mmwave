@@ -131,7 +131,7 @@ private:
   MmWaveUePhySapUser* m_phySapUser;
   LteMacSapProvider* m_macSapProvider;
 
-  uint16_t m_frameNum;
+  uint32_t m_frameNum;
   uint8_t m_sfNum;
   uint8_t m_slotNum;
 

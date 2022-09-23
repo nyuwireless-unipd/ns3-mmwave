@@ -72,7 +72,7 @@ public:
 protected:
   SfnSf m_sfnSf;
   uint8_t m_numSym;
-  uint32_t m_tagSize;
+  uint32_t m_tagSize; //!< the tag size, expressed in number of bytes
 };
 
 } // namespace mmwave

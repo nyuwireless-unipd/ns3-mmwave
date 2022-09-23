@@ -223,7 +223,7 @@ private:
   /// component carrier Id used to address sap
   uint8_t m_componentCarrierId;
 
-  uint16_t m_frameNum;
+  uint32_t m_frameNum;
   uint8_t m_sfNum;
   uint8_t m_slotNum;
 

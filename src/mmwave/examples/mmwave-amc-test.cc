@@ -43,6 +43,8 @@
 using namespace ns3;
 using namespace mmwave;
 
+NS_LOG_COMPONENT_DEFINE ("MmwaveAmcTest");
+
 double snrUpdateIntervalMs = 100.0;  // in ms
 double snrIncDb = 0.1; // increment by 10 meters
 double snrMinDb = -7.0;  // eNB-UE distance in meters
@@ -75,10 +77,10 @@ void updateSnr (double snrInit, Ptr<MmWaveEnbNetDevice> enbDev, Ptr<SpectrumMode
       mcsTmp = mcs;
     }
   enbDev->GetMac ()->SetMcs (mcs);
-  std::cout << "************* SINR changing to " << snrInit << " (MCS = " << +mcs << " ) *************" << std::endl;
-
   Simulator::Schedule (MicroSeconds (3 * 100), &MmWaveSpectrumPhy::UpdateSinrPerceived,
                        enbDev->GetPhy ()->GetDlSpectrumPhy (), specVals);
+
+  NS_LOG_INFO("************* SINR changing to " << snrInit << " (MCS = " << +mcs << " ) *************");
 
   if (snrInit > snrMaxDb)
     {
@@ -185,7 +187,6 @@ main (int argc, char *argv[])
                        amc);
 
   Simulator::Stop (Seconds (simTime));
-  NS_LOG_UNCOND ("Simulation running for " << simTime << " seconds");
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;

@@ -42,6 +42,8 @@
 using namespace ns3;
 using namespace mmwave;
 
+NS_LOG_COMPONENT_DEFINE ("MmwaveAmcTest2");
+
 double updateInterval = 2000.0;  // in ms
 double increment = 0.5; // increment by x dB
 double lossMin = 100.0;
@@ -49,8 +51,9 @@ double lossMax = 145.0;
 
 void updateLoss (double loss, Ptr<MmWavePropagationLossModel> model)
 {
+  NS_LOG_INFO("************* Path loss changing to " << loss << " *************");
+
   model->SetLossFixedDb (loss);
-  std::cout << "************* Path loss changing to " << loss << " *************" << std::endl;
   if (loss >= lossMax)
     {
       return;

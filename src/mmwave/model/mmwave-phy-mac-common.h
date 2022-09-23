@@ -51,7 +51,7 @@ struct SfnSf
    * \param slotNum the slot number
    * \param symStart the (optional) starting symbol
    */
-  SfnSf (uint16_t frameNum = 0, uint8_t sfNum = 0, uint8_t slotNum = 0, uint8_t symStart = 0)
+  SfnSf (uint32_t frameNum = 0, uint8_t sfNum = 0, uint8_t slotNum = 0, uint8_t symStart = 0)
     : m_frameNum (frameNum), m_sfNum (sfNum), m_slotNum (slotNum), m_symStart (symStart)
   {
     // Non-negative
@@ -80,7 +80,7 @@ struct SfnSf
 
   }
 
-  uint16_t m_frameNum;  //!< Frame number
+  uint32_t m_frameNum;  //!< Frame number
   uint8_t m_sfNum;  //!<Subframe number
   uint8_t m_slotNum;  //!< Slot number
   uint8_t m_symStart;   //!< Starting symbol (not always used!), sometimes used to indicate the ttiIndex
@@ -124,7 +124,7 @@ struct PhyTransmissionTraceParams
   uint8_t m_tddMode;  //!< TDD mode. Either DL or UL
   uint8_t m_slotNum;  //!< Slot number
   uint8_t m_sfNum;   //!< Subframe number
-  uint8_t m_frameNum;  //!< Frame number
+  uint32_t m_frameNum;  //!< Frame number
   uint16_t m_rnti;    //!< UE RNTI (where such distinction is applicable, 0 otherwise)
   uint8_t m_symStart;   //!< Starting OFDM symbol of the current transmission
   uint8_t m_numSym;   //!< Amount of OFDM symbols of current transmission
@@ -325,7 +325,7 @@ struct RxPacketTraceParams
   uint64_t m_cellId; //!< the cell ID
   uint8_t m_ccId; //!< the component carrier ID
   uint16_t m_rnti; //!< the RNTI
-  uint16_t m_frameNum; //!< frame index
+  uint32_t m_frameNum; //!< frame index
   uint8_t m_sfNum; //!< subframe index
   uint8_t m_slotNum; //!< slot index
   uint8_t m_symStart; //!< index of the first OFDM symbol

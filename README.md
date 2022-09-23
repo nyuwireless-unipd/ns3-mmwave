@@ -1,122 +1,96 @@
-# The Network Simulator, Version 3
+# mmWave ns-3 module #
 
-## Table of Contents
+This is an [ns-3](https://www.nsnam.org "ns-3 Website") module for the simulation
+of 5G cellular networks operating at mmWaves. A description of this module can be found in [this paper](https://ieeexplore.ieee.org/document/8344116/ "mmwave paper").
 
-1) [An overview](#an-open-source-project)
-2) [Building ns-3](#building-ns-3)
-3) [Running ns-3](#running-ns-3)
-4) [Getting access to the ns-3 documentation](#getting-access-to-the-ns-3-documentation)
-5) [Working with the development version of ns-3](#working-with-the-development-version-of-ns-3)
+Main features:
 
-> **NOTE**: Much more substantial information about ns-3 can be found at
-<https://www.nsnam.org>
+* Support of a wide range of channel models, including the model based on 3GPP TR 38.901 for frequencies between 0.5 and 100 GHz. Ray tracing and measured traces can also be used.
 
-## An Open Source project
+* Custom PHY and MAC classes supporting the 3GPP NR frame structure and numerologies.
 
-ns-3 is a free open source project aiming to build a discrete-event
-network simulator targeted for simulation research and education.
-This is a collaborative project; we hope that
-the missing pieces of the models we have not yet implemented
-will be contributed by the community in an open collaboration
-process.
+* Custom schedulers for supporting dynamic TDD formats
 
-The process of contributing to the ns-3 project varies with
-the people involved, the amount of time they can invest
-and the type of model they want to work on, but the current
-process that the project tries to follow is described here:
-<https://www.nsnam.org/developers/contributing-code/>
+* Carrier Aggregation at the MAC layer
 
-This README excerpts some details from a more extensive
-tutorial that is maintained at:
-<https://www.nsnam.org/documentation/latest/>
+* Enhancements to the RLC layer with re-segmentation of packets for retransmissions
 
-## Building ns-3
+* Dual Connectivity with LTE base stations, with fast secondary cell handover and channel tracking
 
-The code for the framework and the default models provided
-by ns-3 is built as a set of libraries. User simulations
-are expected to be written as simple programs that make
-use of these ns-3 libraries.
+* Simulation of core network elements (with also the MME as a real node)
 
-To build the set of default libraries and the example
-programs included in this package, you need to use the
-tool 'ns3'. Detailed information on how to use ns3 is
-included in the file doc/build.txt
+## Installation
+This repository contains a complete ns-3 installation with the addition of the mmwave module. 
 
-However, the real quick and dirty way to get started is to
-type the command
-
-```shell
-./ns3 configure --enable-examples
+Use these commands to download and build `ns3-mmwave`:
+```
+git clone https://github.com/nyuwireless-unipd/ns3-mmwave.git
+cd ns3-mmwave
+./ns3 configure --disable-python --enable-examples && ./ns3 build
 ```
 
-followed by
-
-```shell
-./ns3
+## Usage example
+You can use the following command to run the `mmwave-simple-epc` example. 
 ```
-
-in the directory which contains this README file. The files
-built will be copied in the build/ directory.
-
-The current codebase is expected to build and run on the
-set of platforms listed in the [release notes](RELEASE_NOTES.md)
-file.
-
-Other platforms may or may not work: we welcome patches to
-improve the portability of the code to these other platforms.
-
-## Running ns-3
-
-On recent Linux systems, once you have built ns-3 (with examples
-enabled), it should be easy to run the sample programs with the
-following command, such as:
-
-```shell
-./ns3 run simple-global-routing
+./ns3 --run mmwave-simple-epc
 ```
+Other examples are included in `src/mmwave/examples/`
 
-That program should generate a `simple-global-routing.tr` text
-trace file and a set of `simple-global-routing-xx-xx.pcap` binary
-pcap trace files, which can be read by `tcpdump -tt -r filename.pcap`
-The program source can be found in the examples/routing directory.
+## Documentation
+The documentation of this module is available at [this link](./src/mmwave/doc/mmwave-doc.md).
 
-## Getting access to the ns-3 documentation
+## Related modules
+- MilliCar is an ns-3 module for the simulation of mmWave NR V2X networks. Check [this repo](https://github.com/signetlabdei/millicar) for further details.
+- A seperate module is being developed for [mmWave UE Energy Consumption](https://github.com/arghasen10/mmwave-energy "mmwave-energy"). You can use this module for analyzing 
+Energy Consumption behaviour of mmwave UE. Check this repository for further details.
+- `ns3-mmwave-iab` is an extended version of `ns3-mmWave` adding wireless relaying capabilities to an ns-3 NetDevice, and the possibility of simulating in-band relaying at mmWave frequencies. Check [this repo](https://github.com/signetlabdei/ns3-mmwave-iab) for further details.
 
-Once you have verified that your build of ns-3 works by running
-the simple-point-to-point example as outlined in 3) above, it is
-quite likely that you will want to get started on reading
-some ns-3 documentation.
+## References 
+The following papers describe in detail the features implemented in the mmWave
+module:
+- [End-to-End Simulation of 5G mmWave Networks](https://ieeexplore.ieee.org/document/8344116/ "comst paper") is a comprehensive tutorial with a detailed description of the whole module. We advise the researchers interested in this module to start reading from this paper;
+- [Integration of Carrier Aggregation and Dual Connectivity for the ns-3 mmWave Module](https://arxiv.org/abs/1802.06706 "wns3 2018") describes the Carrier Aggregation implementation;
+- [Implementation of A Spatial Channel Model for ns-3](https://arxiv.org/abs/2002.09341 "wns3 2020") describes the integration of the spatial channel model based on the 3GPP specifications TR 38.901 V15.0.0;
+- [Performance Comparison of Dual Connectivity and Hard Handover for LTE-5G Tight Integration](https://arxiv.org/abs/1607.05425 "simutools paper") describes the Dual Connectivity feature.
 
-All of that documentation should always be available from
-the ns-3 website: <https://www.nsnam.org/documentation/>.
+These other papers describe features that were implemented in older releases: 
+- [ns-3 Implementation of the 3GPP MIMO Channel Model for Frequency Spectrum above 6 GHz](https://dl.acm.org/citation.cfm?id=3067678 "wns3 2017") describes the implementation of the 3GPP channel model based on TR 38.900;
+- [Multi-Sector and Multi-Panel Performance in 5G mmWave Cellular Networks](https://arxiv.org/abs/1808.04905 "globecom2018") describes the multi-sector addition to the 3GPP channel model;
 
-This documentation includes:
+If you use this module in your research, please cite:
 
-- a tutorial
-- a reference manual
-- models in the ns-3 model library
-- a wiki for user-contributed tips: <https://www.nsnam.org/wiki/>
-- API documentation generated using doxygen: this is
-  a reference manual, most likely not very well suited
-  as introductory text:
-  <https://www.nsnam.org/doxygen/index.html>
+M. Mezzavilla, M. Zhang, M. Polese, R. Ford, S. Dutta, S. Rangan, M. Zorzi, _"End-to-End Simulation of 5G mmWave Networks,"_ in IEEE Communications Surveys & Tutorials, vol. 20, no. 3, pp. 2237-2263, thirdquarter 2018. [bibtex available here](https://ieeexplore.ieee.org/document/8344116/)
 
-## Working with the development version of ns-3
+## Future work
+We are actively developing new features for the mmWave module, including:
+- 3GPP NR beam tracking
+- 3GPP NR Integrated Access and Backhaul feature (see [this repo](https://github.com/signetlabdei/ns3-mmwave-iab) for more details)
 
-If you want to download and use the development version of ns-3, you
-need to use the tool `git`. A quick and dirty cheat sheet is included
-in the manual, but reading through the git
-tutorials found in the Internet is usually a good idea if you are not
-familiar with it.
+## About
+This module is being developed by [NYU Wireless](http://wireless.engineering.nyu.edu/) and the [University of Padova](http://mmwave.dei.unipd.it/).
+This  work  was  supported  in  part by  the  U.S.  Department  of  Commerce  National  Institute  of  Standards  and Technology through the Project “An End-to-End Research Platform for Public Safety  Communications  above  6  GHz”  under  Award  70NANB17H16.
 
-If you have successfully installed git, you can get
-a copy of the development version with the following command:
 
-```shell
-git clone https://gitlab.com/nsnam/ns-3-dev.git
-```
 
-However, we recommend to follow the Gitlab guidelines for starters,
-that includes creating a Gitlab account, forking the ns-3-dev project
-under the new account's name, and then cloning the forked repository.
-You can find more information in the [manual](https://www.nsnam.org/docs/manual/html/working-with-git.html).
+<!-- The new-handover branch offers integration between LTE and mmWave and dual connectivity features.
+ -->
+
+## Authors ##
+
+The ns-3 mmWave module is the result of the development effort carried out by different people. The main contributors are: 
+- Tommaso Zugno, University of Padova
+- Michele Polese, University of Padova
+- Matteo Pagin, University of Padova
+- Mattia Lecci, University of Padova
+- Matteo Drago, University of Padova
+- Mattia Rebato, University of Padova
+- Menglei Zhang, NYU Wireless
+- Marco Giordani, University of Padova
+- Marco Mezzavilla, NYU Wireless
+- Sourjya Dutta, NYU Wireless
+- Russell Ford, NYU Wireless
+- Gabriel Arrobo, Intel
+
+## License ##
+
+This software is licensed under the terms of the GNU GPLv2, as like as ns-3. See the LICENSE file for more details.

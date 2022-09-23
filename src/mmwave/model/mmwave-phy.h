@@ -175,7 +175,7 @@ protected:
 
   std::vector <SlotAllocInfo> m_slotAllocInfo;  //!< Maps slot number to its allocation info
 
-  uint16_t m_frameNum;
+  uint32_t m_frameNum;
   uint8_t m_sfNum;
   uint8_t m_slotNum;
   uint8_t m_ttiIndex;   //!< Keeps track of the TTIs within the single NR slot

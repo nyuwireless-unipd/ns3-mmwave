@@ -117,7 +117,7 @@ public:
    * \param subframeNum the current subframe
    * \param slotNum the current slot
    */
-  void SlotIndication (uint16_t frameNum, uint8_t subframeNum, uint8_t slotNum);
+  void SlotIndication (uint32_t frameNum, uint8_t subframeNum, uint8_t slotNum);
 
   /**
    * Marks the beginning of a new Transmission Time Interval (TTI).
@@ -150,7 +150,7 @@ public:
    * \param slotNum the intended slot number.
    *
    */
-  void InitializeSlotAllocation (uint16_t frameNum, uint8_t sfNum, uint8_t slotNum);
+  void InitializeSlotAllocation (uint32_t frameNum, uint8_t sfNum, uint8_t slotNum);
 
   uint32_t GetSubframeNumber (void);
 

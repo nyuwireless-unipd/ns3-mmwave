@@ -542,7 +542,7 @@ MmWaveEnbMac::DoSlotIndication (SfnSf sfnSf)
       uint8_t delayedSlotNum = (m_slotNum + m_phyMacConfig->GetL1L2Latency ()) % m_phyMacConfig->GetSlotsPerSubframe ();
       uint8_t deltaSubframe = (m_slotNum + m_phyMacConfig->GetL1L2Latency ()) / m_phyMacConfig->GetSlotsPerSubframe ();
       uint8_t delayedSchedSfNum = (m_sfNum + deltaSubframe) % m_phyMacConfig->GetSubframesPerFrame ();
-      uint16_t delayedSchedFrameNum = m_frameNum + ((m_sfNum + deltaSubframe) / m_phyMacConfig->GetSubframesPerFrame ());
+      uint32_t delayedSchedFrameNum = m_frameNum + ((m_sfNum + deltaSubframe) / m_phyMacConfig->GetSubframesPerFrame ());
 
       NS_ASSERT ((delayedSlotNum < m_phyMacConfig->GetSlotsPerSubframe ()) && (delayedSchedSfNum < m_phyMacConfig->GetSubframesPerFrame ())
                   && (deltaSubframe >= 0) && (delayedSlotNum >= 0) && (delayedSchedSfNum >= 0) && (delayedSchedFrameNum >= m_frameNum));
