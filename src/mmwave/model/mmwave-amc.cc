@@ -30,6 +30,7 @@
 #include <ns3/object-factory.h>
 #include <ns3/mmwave-lte-mi-error-model.h>
 #include "mmwave-spectrum-value-helper.h"
+#include "ns3/mmwave-eesm-ir-t1.h"
 
 namespace ns3 {
 
@@ -89,7 +90,7 @@ MmWaveAmc::GetTypeId (void)
                    "Type of the Error Model to use when AmcModel is set to ErrorModel. "
                    "This parameter has to match the ErrorModelType in mmwave-spectrum-model,"
                    "because they need to refer to same MCS tables and indexes",
-                   TypeIdValue (MmWaveLteMiErrorModel::GetTypeId ()),
+                   TypeIdValue (MmWaveEesmIrT1::GetTypeId ()),
                    MakeTypeIdAccessor (&MmWaveAmc::SetErrorModelType,
                                        &MmWaveAmc::GetErrorModelType),
                    MakeTypeIdChecker ())

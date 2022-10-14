@@ -136,8 +136,6 @@ set(header_files
     model/error-model/mmwave-eesm-t2.h
 )
 
-add_compile_options(-Werror)
-
 build_lib(
   LIBNAME mmwave
   SOURCE_FILES ${source_files}

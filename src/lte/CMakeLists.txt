@@ -351,8 +351,6 @@ set(header_files
     model/component-carrier-enb.h
 )
 
-add_compile_options(-Werror)
-
 build_lib(
   LIBNAME lte
   SOURCE_FILES ${source_files}

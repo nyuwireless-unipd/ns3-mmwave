@@ -57,6 +57,7 @@
 #include <ns3/mmwave-lte-mi-error-model.h>
 #include "mmwave-mac-pdu-tag.h"
 #include <ns3/phased-array-model.h>
+#include "ns3/mmwave-eesm-ir-t1.h"
 
 namespace ns3 {
 
@@ -107,7 +108,7 @@ MmWaveSpectrumPhy::GetTypeId (void)
                    MakeBooleanChecker ())
     .AddAttribute ("ErrorModelType",
                    "Type of the Error Model to apply to TBs of PDSCH and PUSCH",
-                    TypeIdValue (MmWaveLteMiErrorModel::GetTypeId ()),
+                    TypeIdValue (MmWaveEesmIrT1::GetTypeId ()),
                     MakeTypeIdAccessor (&MmWaveSpectrumPhy::SetErrorModelType,
                                         &MmWaveSpectrumPhy::GetErrorModelType),
                     MakeTypeIdChecker ())
