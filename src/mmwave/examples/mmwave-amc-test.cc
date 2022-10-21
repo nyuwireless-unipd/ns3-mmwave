@@ -46,7 +46,7 @@ using namespace mmwave;
 NS_LOG_COMPONENT_DEFINE ("MmwaveAmcTest");
 
 double snrUpdateIntervalMs = 100.0;  // in ms
-double snrIncDb = 0.1; // increment by 10 meters
+double snrIncDb = 0.5; // increment by 0.5 dB
 double snrMinDb = -7.0;  // eNB-UE distance in meters
 double snrMaxDb = 30;  // eNB-UE distance in meters
 
@@ -104,7 +104,6 @@ main (int argc, char *argv[])
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
 
-  double simTime = 1.0;
   bool harqEnabled = true;
   int mcsDl = 28;
   std::string channelState = "n";
@@ -113,7 +112,6 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue ("numEnb", "Number of eNBs", numEnb);
   cmd.AddValue ("numUe", "Number of UEs per eNB", numUe);
-  cmd.AddValue ("simTime", "Total duration of the simulation [s])", simTime);
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("mcsDl", "Fixed DL MCS", mcsDl);
   cmd.AddValue ("channelState", "Channel state 'l'=LOS, 'n'=NLOS, 'a'=all", channelState);
@@ -123,7 +121,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("snrUpdateIntervalMs", "Period after which distance is updated", snrUpdateIntervalMs);
   cmd.Parse (argc, argv);
 
-  simTime = ((snrMaxDb - snrMinDb) / snrIncDb) * (snrUpdateIntervalMs / 1000.0) + 1;
+  double simTime = ((snrMaxDb - snrMinDb) / snrIncDb) * (snrUpdateIntervalMs / 1000.0) + 1;
 
   if (mcsDl >= 0 && mcsDl < 29)
     {

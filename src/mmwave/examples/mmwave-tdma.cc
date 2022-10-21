@@ -42,7 +42,7 @@ using namespace ns3;
 using namespace mmwave;
 
 double distUpdateInterval = 100.0;  // in ms
-double distInc = 0.5; // increment by 10 meters
+double distInc = 5.0; // increment by 10 meters
 
 void updateDistance (double dist, Ptr<Node> ue)
 {
@@ -68,7 +68,6 @@ main (int argc, char *argv[])
   uint16_t numUe = 1;
   double distMin = 15.0;        // eNB-UE distance in meters
   double distMax = 250.0;        // eNB-UE distance in meters
-  double simTime = 1.0;
   bool harqEnabled = true;
   int mcsDl = -1;
   std::string channelState = "n";
@@ -77,7 +76,6 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue ("numEnb", "Number of eNBs", numEnb);
   cmd.AddValue ("numUe", "Number of UEs per eNB", numUe);
-  cmd.AddValue ("simTime", "Total duration of the simulation [s])", simTime);
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("mcsDl", "Fixed DL MCS", mcsDl);
   cmd.AddValue ("channelState", "Channel state 'l'=LOS, 'n'=NLOS, 'a'=all", channelState);
@@ -87,7 +85,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("distUpdateInterval", "Period after which distance is updated", distUpdateInterval);
   cmd.Parse (argc, argv);
 
-  simTime = ((distMax - distMin) / distInc) * (distUpdateInterval / 1000.0);
+  double simTime = ((distMax - distMin) / distInc) * (distUpdateInterval / 1000.0);
 
   if (mcsDl >= 0 && mcsDl < 29)
     {

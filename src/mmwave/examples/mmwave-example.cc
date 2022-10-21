@@ -63,7 +63,7 @@ main (int argc, char *argv[])
   NodeContainer enbNodes;
   NodeContainer ueNodes;
   enbNodes.Create (1);
-  ueNodes.Create (1);
+  ueNodes.Create (2);
 
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   enbPositionAlloc->Add (Vector (0.0, 0.0, 0.0));
@@ -76,7 +76,8 @@ main (int argc, char *argv[])
 
   MobilityHelper uemobility;
   Ptr<ListPositionAllocator> uePositionAlloc = CreateObject<ListPositionAllocator> ();
-  uePositionAlloc->Add (Vector (80.0, 0.0, 0.0));
+  uePositionAlloc->Add (Vector (80.0, 10.0, 0.0));
+  uePositionAlloc->Add (Vector (80.0, -10.0, 0.0));
 
   uemobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   uemobility.SetPositionAllocator (uePositionAlloc);

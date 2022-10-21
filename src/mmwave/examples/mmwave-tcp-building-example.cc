@@ -252,8 +252,8 @@ main (int argc, char *argv[])
    * scenario 3: 6 random located small building, simulate tree and human blockage.
    * */
   int scenario = 1;
-  double stopTime = 8;
-  double simStopTime = 10;
+  double stopTime = 1.0;
+  double simStopTime = 1.5;
   bool harqEnabled = true;
   bool rlcAmEnabled = true;
   bool tcp = true;
@@ -425,8 +425,8 @@ main (int argc, char *argv[])
   ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (70, -2.0, 1.8));
   ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 1.0, 0));
 
-  Simulator::Schedule (Seconds (2), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
-  Simulator::Schedule (Seconds (22), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
+  Simulator::Schedule (Seconds (0.5), &ChangeSpeed, ueNodes.Get (0), Vector (0, 1.5, 0));
+  Simulator::Schedule (Seconds (1.0), &ChangeSpeed, ueNodes.Get (0), Vector (0, 0, 0));
 
   BuildingsHelper::Install (ueNodes);
 

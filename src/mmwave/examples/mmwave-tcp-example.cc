@@ -181,8 +181,8 @@ main (int argc, char *argv[])
   // beware: proper configuration of the bearing and downtilt angles is needed
   Config::SetDefault ("ns3::PhasedArrayModel::AntennaElement", PointerValue (CreateObject<IsotropicAntennaModel> ())); 
   
-  double stopTime = 8;
-  double simStopTime = 10;
+  double stopTime = 1.0;
+  double simStopTime = 1.5;
   Ipv4Address remoteHostAddr;
 
   // Command line arguments

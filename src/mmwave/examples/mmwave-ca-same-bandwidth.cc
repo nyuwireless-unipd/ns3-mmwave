@@ -32,7 +32,7 @@ main (int argc, char *argv[])
   double totalBandwidth = 800e6;
   double frequency0 = 28e9;
   double frequency1 = 73e9;
-  double simTime = 5;
+  double simTime = 1;
   std::string condition = "l"; // channel condition, l = LOS, n = NLOS, otherwise the condition is randomly determined
 
   CommandLine cmd;

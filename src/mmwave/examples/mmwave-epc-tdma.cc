@@ -52,7 +52,7 @@ main (int argc, char *argv[])
 {
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
-  double simTime = 5.0;
+  double simTime = 1.0;
   double interPacketInterval = 100;
   double minDistance = 10.0; // eNB-UE distance in meters
   double maxDistance = 200.0; // eNB-UE distance in meters

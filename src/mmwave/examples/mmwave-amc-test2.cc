@@ -44,7 +44,7 @@ using namespace mmwave;
 
 NS_LOG_COMPONENT_DEFINE ("MmwaveAmcTest2");
 
-double updateInterval = 2000.0;  // in ms
+double updateInterval = 100.0;  // in ms
 double increment = 0.5; // increment by x dB
 double lossMin = 100.0;
 double lossMax = 145.0;
@@ -76,7 +76,6 @@ main (int argc, char *argv[])
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
 
-  double simTime = 1.0;
   bool harqEnabled = true;
   bool rlcAmEnabled = true;
   int mcs = -1;
@@ -86,7 +85,6 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue ("numEnb", "Number of eNBs", numEnb);
   cmd.AddValue ("numUe", "Number of UEs per eNB", numUe);
-  cmd.AddValue ("simTime", "Total duration of the simulation [s])", simTime);
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("mcs", "Fixed DL MCS", mcs);
   cmd.AddValue ("channelState", "Channel state 'l'=LOS, 'n'=NLOS", channelState);
@@ -103,7 +101,7 @@ main (int argc, char *argv[])
       lossMin = lossMax - 1;
     }
 
-  simTime = ((lossMax - lossMin) / increment) * (updateInterval / 1000.0);
+  double simTime = ((lossMax - lossMin) / increment) * (updateInterval / 1000.0);
 
   if (mcs >= 0 && mcs < 29)
     {

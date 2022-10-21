@@ -75,7 +75,6 @@ main (int argc, char *argv[])
   uint16_t numEnb = 1;
   uint16_t numUe = 1;
 
-  double simTime = 1.0;
   bool harqEnabled = true;
   bool rlcAmEnabled = true;
   int mcsDl = -1;
@@ -87,7 +86,6 @@ main (int argc, char *argv[])
   CommandLine cmd;
   cmd.AddValue ("numEnb", "Number of eNBs", numEnb);
   cmd.AddValue ("numUe", "Number of UEs per eNB", numUe);
-  cmd.AddValue ("simTime", "Total duration of the simulation [s])", simTime);
   cmd.AddValue ("harq", "Enable Hybrid ARQ", harqEnabled);
   cmd.AddValue ("mcsDl", "Fixed DL MCS", mcsDl);
   cmd.AddValue ("channelState", "Channel state 'l'=LOS, 'n'=NLOS, 'a'=all", channelState);
@@ -98,7 +96,7 @@ main (int argc, char *argv[])
   cmd.AddValue ("rlcAm", "Enable RLC-AM", rlcAmEnabled);
   cmd.Parse (argc, argv);
 
-  simTime = ((lossMax - lossMin) / increment) * (updateInterval / 1000.0);
+  double simTime = ((lossMax - lossMin) / increment) * (updateInterval / 1000.0);
 
   if (mcsDl >= 0 && mcsDl < 29)
     {

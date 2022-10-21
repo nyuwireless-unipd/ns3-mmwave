@@ -337,7 +337,7 @@ MmWaveSpectrumPhy::StartRx (Ptr<SpectrumSignalParameters> params)
 
   Ptr<MmWaveEnbNetDevice> enbTx = DynamicCast<MmWaveEnbNetDevice> (params->txPhy->GetDevice ());
   Ptr<MmWaveEnbNetDevice> enbRx = DynamicCast<MmWaveEnbNetDevice> (GetDevice ());
-  if (( enbTx &&  enbRx) || ( enbTx &&  enbRx))
+  if ((enbTx && enbRx) || (!enbTx && !enbRx))
     {
       NS_LOG_INFO ("BS to BS or UE to UE transmission neglected.");
       return;
@@ -471,7 +471,7 @@ MmWaveSpectrumPhy::StartRxCtrl (Ptr<MmWaveSpectrumSignalParametersDlCtrlFrame> d
   switch (m_state)
     {
       case TX:
-        NS_FATAL_ERROR ("Cannot RX while TX: according to FDD channel access, the physical layer for transmission cannot be used for reception");
+        NS_FATAL_ERROR ("Cannot RX while TX: according to TDD channel access, the physical layer for transmission cannot be used for reception");
         break;
 
       case RX_DATA:
